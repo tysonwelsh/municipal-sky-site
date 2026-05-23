@@ -1159,9 +1159,13 @@ blockquote {
   .poem-excerpt .poem-attribution {
     border-top: 0;
     padding-top: 0;
-    /* Balance the wrap so the title doesn't strand a single word
-       ("Island") on its own line. */
-    text-wrap: balance;
+    /* Single-line attribution on mobile: shrink to fit the viewport
+       rather than wrap. Size scales with viewport width so the full
+       "James Tate, Images of Little Compton, Rhode Island" line sits
+       on one row from iPhone SE (375px) up through tablet portrait,
+       capped at 11px so it never grows past the desktop size. */
+    font-size: clamp(9px, 2.7vw, 11px);
+    white-space: nowrap;
   }
 }
 
