@@ -1150,6 +1150,9 @@ blockquote {
   .poem-excerpt .poem-attribution {
     border-top: 0;
     padding-top: 0;
+    /* Balance the wrap so the title doesn't strand a single word
+       ("Island") on its own line. */
+    text-wrap: balance;
   }
 }
 
