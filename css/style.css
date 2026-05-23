@@ -1138,6 +1138,19 @@ blockquote {
   .passage-excerpt {
     padding-left: var(--s-3);
   }
+
+  /* On narrow viewports the poem stands on its own — no border, no
+     background, no inset — so the lines breathe at full width. */
+  .poem-excerpt {
+    padding: 0;
+    background: none;
+    border: 0;
+    width: 100%;
+  }
+  .poem-excerpt .poem-attribution {
+    border-top: 0;
+    padding-top: 0;
+  }
 }
 
 /* -----------------------------
