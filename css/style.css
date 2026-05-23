@@ -720,18 +720,21 @@ pre code {
 }
 
 /* Convention: wrap the title of the work in <cite>. Render in the same mono
-   register as the rest of the attribution (overriding the browser default
-   italic). For poems we keep the cite inline alongside the author; for
-   prose quotes and passages it drops to its own line. */
+   register as the rest of the attribution. For poems we keep the cite
+   inline alongside the author and italicize the title; for prose quotes
+   and passages it drops to its own line and stays upright. */
 .poem-attribution cite,
 .quote-attribution cite,
 .passage-attribution cite {
-  font-style: normal;
   font-family: inherit;
 }
 .quote-attribution cite,
 .passage-attribution cite {
   display: block;
+  font-style: normal;
+}
+.poem-attribution cite {
+  font-style: italic;
 }
 
 blockquote {
