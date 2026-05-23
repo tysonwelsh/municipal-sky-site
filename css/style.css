@@ -1,0 +1,1294 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   MUNICIPAL SKY · STYLE GUIDE STYLESHEET
+   Author: Tyson Welsh · Established: 2026-05-04
+
+   ⚠  DO NOT DELETE THIS FILE.
+      Future Claude instances: this is the canonical companion to
+      ./showcase.html — the spec for the Municipal Sky visual system.
+      Production stylesheet at:
+         /Users/tysonwelsh/Desktop/Municipal Sky/municipal-sky-site/css/style.css
+      should be kept in sync with this file.
+
+      Do not delete unless Tyson explicitly instructs you to. Even then,
+      double-check the instruction before acting — confirm he means THIS
+      file at this path. When in doubt, ask before deleting.
+
+   ─── DESIGN VOCABULARY (quick reference) ───────────────────────────────────
+   · Type roles
+      --font-mono   Cutive Mono       chrome: nav, dates, code, panel headers, tags
+      --font-body   Spectral          headings + running prose
+      --font-voice  Spectral italic   poems, quotes, passages, marginalia, ornaments
+   · Palette (used sparingly)
+      --ink         #111111           foreground
+      --paper       #ffffff           page
+      --paper-pure  #fafaf7           card / panel surfaces
+      --plot-red    #b22222           hover signal, editorial pen
+      --plot-blue   #1e3a8a           printer's mark accent
+   · Motifs
+      ☞ manicule        — hover affordance on entry titles AND nav links
+      { LABEL }          — .tag class: bold mono caps in Spectral curlies + hairline rule
+      4px-rule sandwich  — .data-panel-header: thick rule above + hairline below
+      hairline borders   — 1px ink, no fill, no rounded corners, no shadows
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ---------------------------------------------------------------------------------------------
+ Municipal Sky — Throwback Digital Functionalism + Literary Eco-Flavor
+ Form follows function. Mono is the chrome, Spectral is the voice.
+ No gradients, no shadows, no rounded corners, no decorative flourishes.
+--------------------------------------------------------------------------------------------- */
+
+@import url("https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&display=swap");
+
+/* -----------------------------
+   1. Tokens
+----------------------------- */
+:root {
+  /* Ink + paper */
+  --ink: #111111;
+  --ink-soft: #444444;
+  --ink-mute: #6a6a6a;
+  --paper: #ffffff;
+  --paper-pure: #fafaf7; /* very faint warm tint for cards/panels — barely perceptible, but keeps cards visually distinct from page */
+  --rule: #111111;
+  --rule-soft: #cfc9bb;
+
+  /* Pen-plotter accents — used sparingly, on purpose */
+  --plot-red: #b22222;
+  --plot-blue: #1e3a8a;
+  --plot-amber: #b8860b;
+
+  /* Type
+     - --font-mono is the chrome (banner, nav, dates, code, data panels)
+     - --font-body is the running text (headings, paragraphs, lists)
+     - --font-voice is the literary register (poems, quotes, passages, marginalia, blockquote)
+     Currently --font-body and --font-voice both resolve to Spectral —
+     italic differentiates the voice from the body. Kept as separate
+     variables so the two roles can diverge later without a refactor. */
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --font-body: "Spectral", Georgia, "Times New Roman", serif;
+  --font-voice: "Spectral", Georgia, "Times New Roman", serif;
+  /* Legacy aliases — old class names still work */
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-voice);
+
+  /* Sizes — fixed, not fluid; predictable rhythm beats responsive cleverness here */
+  --fs-xs: 11px;
+  --fs-sm: 13px;
+  --fs-base: 15px;
+  --fs-md: 17px;
+  --fs-lg: 20px;
+  --fs-xl: 24px;
+  --fs-2xl: 32px;
+  --fs-3xl: 44px;
+
+  --lh-tight: 1.2;
+  --lh-base: 1.55;
+  --lh-loose: 1.7;
+
+  /* 8px grid */
+  --s-1: 8px;
+  --s-2: 16px;
+  --s-3: 24px;
+  --s-4: 32px;
+  --s-5: 48px;
+  --s-6: 64px;
+  --s-7: 96px;
+
+  --max-content: 720px;
+  --max-wide: 960px;
+  --max-narrow: 600px;
+
+  --banner-h: 56px;
+  --banner-h-mobile: 48px;
+
+  /* Legacy aliases — keep existing class colors meaningful */
+  --color-red: var(--plot-red);
+  --color-blue: var(--plot-blue);
+  --color-yellow: var(--plot-amber);
+  --color-green: #2f5d3a;
+  --color-purple: #6b3a6b;
+  --color-orange: #c2410c;
+  --color-black: var(--ink);
+  --color-white: var(--paper-pure);
+  --color-text: var(--ink);
+  --color-text-light: var(--ink-mute);
+  --color-border: var(--rule-soft);
+}
+
+/* -----------------------------
+   2. Reset & base
+----------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  line-height: var(--lh-base);
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding-top: var(--banner-h);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Disable browser fake-bold/italic synthesis. Cutive Mono is single-weight,
+     so any `font-weight: 700` on a Cutive Mono element used to be painted as
+     fake-bold (the same glyphs nudged by a device pixel). That looks fine on
+     Retina but soft and muddy on standard external monitors. With synthesis
+     off, Cutive Mono falls back to its real 400 weight everywhere; multi-
+     weight families like Spectral still honor 700. */
+  font-synthesis: none;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+img,
+video,
+table,
+iframe,
+svg {
+  max-width: 100%;
+}
+
+::selection {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* -----------------------------
+   3. Typography
+----------------------------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: var(--lh-tight);
+  color: var(--ink);
+  margin: 0 0 var(--s-2);
+}
+
+h1 {
+  font-size: var(--fs-2xl);
+  margin-bottom: var(--s-3);
+}
+h2 {
+  font-size: var(--fs-xl);
+  margin-bottom: var(--s-2);
+}
+h3 {
+  font-size: var(--fs-lg);
+  margin-bottom: var(--s-2);
+}
+h4 {
+  font-size: var(--fs-md);
+  margin-bottom: var(--s-1);
+}
+h5 {
+  font-size: var(--fs-base);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: var(--s-1);
+}
+h6 {
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+  margin-bottom: var(--s-1);
+}
+
+/* Headings get breathing room when they follow other content.
+   First-of-section headings stay flush. .prose-flow has its own rules. */
+* + h2 {
+  margin-top: var(--s-5);
+}
+* + h3 {
+  margin-top: var(--s-4);
+}
+* + h4,
+* + h5,
+* + h6 {
+  margin-top: var(--s-3);
+}
+
+.display-heading {
+  font-family: var(--font-sans);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0 0 var(--s-4);
+}
+
+p {
+  margin: 0 0 var(--s-2);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-base);
+  color: var(--ink);
+}
+
+.text-large {
+  font-size: var(--fs-md);
+}
+.text-small {
+  font-size: var(--fs-sm);
+  line-height: 1.45;
+}
+.text-condensed {
+  font-family: var(--font-sans);
+  font-weight: 500;
+}
+
+/* Links — hairline underline is the entire signal */
+a {
+  color: var(--ink);
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--ink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color 80ms linear,
+    text-decoration-color 80ms linear,
+    background-color 80ms linear;
+}
+a:hover {
+  color: var(--plot-red);
+  text-decoration-color: var(--plot-red);
+}
+a:focus-visible {
+  outline: 2px solid var(--plot-blue);
+  outline-offset: 2px;
+}
+
+/* Mono / technical */
+.mono-text,
+.ai-text {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  border-left-width: 4px;
+  padding: var(--s-2);
+  white-space: pre-wrap;
+}
+
+.ai-response {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  padding: var(--s-2) var(--s-3);
+  margin: var(--s-3) 0;
+  white-space: pre-wrap;
+}
+/* The AI_RESPONSE label uses the same vocabulary as .tag — curly braces
+   in Spectral around mono caps, with a hairline ink rule beneath. */
+.ai-response::before {
+  content: "{ AI_RESPONSE }";
+  display: block;
+  width: fit-content;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 4px;
+  margin-bottom: var(--s-2);
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule-soft);
+  padding: 1px 5px;
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  background: var(--paper-pure);
+  border: 1px solid var(--rule);
+  padding: var(--s-2);
+  margin: var(--s-3) 0;
+  overflow-x: auto;
+}
+pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+/* -----------------------------
+   4. Banner
+----------------------------- */
+.site-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--banner-h);
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+  z-index: 1000;
+}
+
+.site-banner-inner {
+  max-width: var(--max-wide);
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 var(--s-3);
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+}
+
+.site-title {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  text-decoration: none;
+}
+.site-title::before {
+  content: "▌";
+  margin-right: 8px;
+  color: var(--plot-blue);
+}
+.site-title:hover {
+  color: var(--ink);
+}
+
+.site-navigation {
+  display: flex;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-navigation a {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  /* Left padding reserves room for the hover manicule, sized just enough
+     to seat the glyph with a small gap before the label text. */
+  padding: 0 10px 0 26px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+/* Manicule sits in the reserved space; only opacity changes on hover. */
+.site-navigation a::before {
+  content: "\261E\FE0E";
+  position: absolute;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  color: var(--ink);
+  font-family: var(--font-body);
+  opacity: 0;
+  transition: opacity 120ms linear;
+  pointer-events: none;
+}
+.site-navigation a:hover {
+  color: var(--ink);
+}
+.site-navigation a:hover::before {
+  opacity: 1;
+}
+
+/* Active state — bold + underline, no manicule (it's reserved for hover) */
+.site-navigation a.active {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--ink);
+}
+
+/* Mobile menu toggle */
+.mobile-menu-toggle {
+  display: none;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 0;
+  margin: 8px 0;
+  width: 44px;
+  height: 44px;
+  cursor: pointer;
+  position: relative;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.mobile-menu-toggle span {
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 1px;
+  background: var(--ink);
+  left: 50%;
+  transform: translateX(-50%);
+  transition: all 0.2s linear;
+}
+.mobile-menu-toggle span:nth-child(1) {
+  top: 15px;
+}
+.mobile-menu-toggle span:nth-child(2) {
+  top: 21px;
+}
+.mobile-menu-toggle span:nth-child(3) {
+  top: 27px;
+}
+
+#mobile-menu-checkbox {
+  display: none;
+}
+#mobile-menu-checkbox:checked
+  ~ .site-banner-inner
+  .mobile-menu-toggle
+  span:nth-child(1) {
+  top: 21px;
+  transform: translateX(-50%) rotate(45deg);
+}
+#mobile-menu-checkbox:checked
+  ~ .site-banner-inner
+  .mobile-menu-toggle
+  span:nth-child(2) {
+  opacity: 0;
+}
+#mobile-menu-checkbox:checked
+  ~ .site-banner-inner
+  .mobile-menu-toggle
+  span:nth-child(3) {
+  top: 21px;
+  transform: translateX(-50%) rotate(-45deg);
+}
+
+/* -----------------------------
+   5. Layout containers
+----------------------------- */
+.main-wrapper {
+  width: 100%;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-wrapper > .content-frame {
+  flex: 1 0 auto;
+  width: 100%;
+}
+
+.content-frame {
+  max-width: var(--max-wide);
+  margin: 0 auto;
+  padding: var(--s-5) var(--s-3) var(--s-6);
+  background: transparent;
+}
+
+.post-container {
+  max-width: var(--max-content);
+  margin: 0 auto;
+}
+
+.wide-container {
+  max-width: var(--max-wide);
+  margin: 0 auto;
+}
+
+.index-wrapper {
+  max-width: var(--max-content);
+  margin: 0 auto;
+}
+
+.about-wrapper {
+  max-width: var(--max-narrow);
+  margin: 0 auto;
+}
+
+/* -----------------------------
+   6. Section headers (Swiss rule sandwich)
+----------------------------- */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-mute);
+  margin: 0 0 var(--s-1);
+}
+
+.section-title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 var(--s-2);
+  border-top: 4px solid var(--ink);
+  padding-top: var(--s-2);
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--ink);
+  margin: 0 0 var(--s-4);
+}
+
+/* -----------------------------
+   7. Entry list
+----------------------------- */
+.entry-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.entry {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: var(--s-3);
+  align-items: baseline;
+  padding: var(--s-2) 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.entry:first-child {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.entry-date {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+  white-space: nowrap;
+}
+
+.entry-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.entry-title {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.3;
+  transition:
+    padding-left 120ms linear,
+    color 80ms linear;
+}
+
+/* Hover: a printer's manicule (☞) slides in from the left.
+   The \FE0E variation selector forces text-style rendering so the
+   glyph stays mono-color, not an emoji. */
+.entry-title::before {
+  content: "\261E\FE0E";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  opacity: 0;
+  transition:
+    opacity 120ms linear,
+    left 120ms linear;
+  pointer-events: none;
+}
+.entry-title:hover {
+  color: var(--ink);
+  text-decoration: none;
+  padding-left: 26px;
+}
+.entry-title:hover::before {
+  opacity: 1;
+  left: 0;
+}
+
+.entry-description {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+/* -----------------------------
+   8. Literary excerpt containers
+----------------------------- */
+.poem-excerpt,
+.literary-quote,
+.passage-excerpt {
+  position: relative;
+  margin: var(--s-4) 0;
+  padding: var(--s-4) var(--s-3) var(--s-3) var(--s-5);
+  background: var(--paper-pure);
+  border: 1px solid var(--ink);
+  font-family: var(--font-serif);
+  color: var(--ink);
+}
+
+.poem-excerpt {
+  font-size: var(--fs-md);
+  line-height: 1.5;
+  /* The poet's line is the line. Preserve the exact line breaks they wrote
+     and never auto-wrap; if a line is wider than the container, scroll
+     horizontally rather than reflow. Source-side indentation should be
+     handled in PHP (e.g. via heredoc) so it doesn't render here. */
+  white-space: pre;
+  overflow-x: auto;
+  /* Box hugs the longest line, so right-aligned poems don't show empty
+     gutter to the right of short lines. Width utilities (.width-75 etc.)
+     still cap the upper bound for very long lines. */
+  width: max-content;
+}
+
+.literary-quote {
+  font-size: var(--fs-md);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.passage-excerpt {
+  font-size: var(--fs-base);
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.passage-excerpt p {
+  margin: 0 0 var(--s-2);
+  font-family: inherit;
+}
+.passage-excerpt p:last-child {
+  margin-bottom: 0;
+}
+
+.poem-attribution,
+.quote-attribution,
+.passage-attribution {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: var(--s-3);
+  margin-left: auto;
+  padding-top: var(--s-1);
+  border-top: 1px solid var(--rule-soft);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  text-align: right;
+  white-space: normal;
+}
+.quote-attribution::before {
+  content: "— ";
+}
+
+/* Convention: wrap the title of the work in <cite>. Render in the same mono
+   register as the rest of the attribution (overriding the browser default
+   italic). For poems we keep the cite inline alongside the author; for
+   prose quotes and passages it drops to its own line. */
+.poem-attribution cite,
+.quote-attribution cite,
+.passage-attribution cite {
+  font-style: normal;
+  font-family: inherit;
+}
+.quote-attribution cite,
+.passage-attribution cite {
+  display: block;
+}
+
+blockquote {
+  margin: var(--s-3) 0;
+  padding: var(--s-2) var(--s-3);
+  border-left: 4px solid var(--ink);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--fs-md);
+  line-height: 1.55;
+  background: var(--paper-pure);
+}
+
+/* -----------------------------
+   9. Blog meta
+----------------------------- */
+.post-meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-mute);
+  text-transform: uppercase;
+  margin-bottom: var(--s-3);
+}
+.post-date {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.post-title-link {
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+.post-title-link:hover {
+  color: var(--plot-red);
+}
+
+.post-excerpt {
+  margin-top: var(--s-1);
+  color: var(--ink-soft);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+.read-more {
+  display: inline-block;
+  margin-top: var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink);
+  padding-bottom: 2px;
+}
+.read-more::after {
+  content: " →";
+}
+.read-more:hover {
+  color: var(--plot-red);
+  border-bottom-color: var(--plot-red);
+}
+
+/* -----------------------------
+   10. Prose flow
+----------------------------- */
+.prose-flow p {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-loose);
+  color: var(--ink);
+  margin-bottom: var(--s-3);
+}
+.prose-flow p:last-child {
+  margin-bottom: 0;
+}
+
+/* Marginalia — italic serif side-gloss, used inside .post-container
+   or .prose-flow for asides, citations, errata, glosses, dates. */
+.marginalia {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  border-left: 1px solid var(--ink);
+  padding: 2px 0 2px 12px;
+  margin: 0 0 var(--s-2);
+}
+.marginalia .marginalia-cite {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
+}
+
+/* On wide screens, marginalia floats into the right margin so the
+   main column stays uninterrupted — a true side-gloss. */
+@media (min-width: 1100px) {
+  .post-container .marginalia,
+  .prose-flow .marginalia {
+    float: right;
+    clear: right;
+    width: 200px;
+    margin: 4px -240px 8px var(--s-3);
+  }
+}
+
+.prose-flow h2 {
+  margin-top: var(--s-5);
+  margin-bottom: var(--s-2);
+}
+.prose-flow h3 {
+  margin-top: var(--s-4);
+  margin-bottom: var(--s-2);
+}
+.prose-flow h2:first-child,
+.prose-flow h3:first-child {
+  margin-top: 0;
+}
+
+.prose-flow ul,
+.prose-flow ol {
+  margin: 0 0 var(--s-3);
+  padding-left: var(--s-3);
+}
+.prose-flow li {
+  font-size: var(--fs-base);
+  line-height: 1.65;
+  margin-bottom: 6px;
+}
+.prose-flow li::marker {
+  color: var(--ink-mute);
+  font-family: var(--font-mono);
+}
+
+.prose-flow a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--ink);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.prose-flow a:hover {
+  color: var(--plot-red);
+  text-decoration-color: var(--plot-red);
+}
+
+.literary-text {
+  font-family: var(--font-serif);
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+.literary-text-alt {
+  font-family: var(--font-serif);
+}
+.literary-heading {
+  font-family: var(--font-serif);
+  font-weight: 500;
+}
+
+/* -----------------------------
+   11. Data-ink panel
+----------------------------- */
+.data-panel {
+  margin: var(--s-4) 0;
+  padding: 0;
+  border: 1px solid var(--ink);
+  border-top: 0;
+  background: var(--paper-pure);
+}
+.data-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-top: 4px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  background: var(--paper-pure);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.data-panel-body {
+  padding: var(--s-2) var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+.data-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 4px 0;
+  border-bottom: 1px dotted var(--rule-soft);
+}
+.data-row:last-child {
+  border-bottom: 0;
+}
+.data-row .data-value {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* -----------------------------
+   11b. .tag — reusable label
+   Bold mono caps wrapped in heavy Spectral curly braces, with a
+   hairline ink rule beneath the whole thing. Use anywhere you'd
+   formerly have used the black-bg label.
+----------------------------- */
+.tag {
+  display: inline-block;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.tag::before,
+.tag::after {
+  font-family: var(--font-voice);
+  font-size: 1.3em;
+  font-weight: 700;
+  letter-spacing: 0;
+  color: var(--ink);
+  position: relative;
+  top: 1px;
+}
+.tag::before {
+  content: "{";
+  margin-right: 10px;
+}
+.tag::after {
+  content: "}";
+  margin-left: 10px;
+}
+
+/* -----------------------------
+   11c. .tagged-container — paper card with a .tag at top-left
+----------------------------- */
+.tagged-container {
+  margin: var(--s-3) 0;
+  padding: var(--s-3);
+  border: 1px solid var(--rule-soft);
+  background: var(--paper-pure);
+}
+.tagged-container > .tag {
+  margin-bottom: var(--s-3);
+}
+
+/* -----------------------------
+   12. Utilities
+----------------------------- */
+.font-headers {
+  font-family: var(--font-mono);
+}
+.font-body {
+  font-family: var(--font-sans);
+}
+.font-literary {
+  font-family: var(--font-serif);
+}
+.font-literary-alt {
+  font-family: var(--font-serif);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+.font-mono-alt {
+  font-family: var(--font-mono);
+}
+
+.weight-light {
+  font-weight: 400;
+}
+.weight-normal {
+  font-weight: 400;
+}
+.weight-medium {
+  font-weight: 500;
+}
+.weight-semibold {
+  font-weight: 600;
+}
+.weight-bold {
+  font-weight: 700;
+}
+
+.text-base {
+  font-size: var(--fs-base);
+}
+
+.text-red {
+  color: var(--plot-red);
+}
+.text-blue {
+  color: var(--plot-blue);
+}
+.text-yellow {
+  color: var(--plot-amber);
+}
+.text-orange {
+  color: var(--color-orange);
+}
+.text-purple {
+  color: var(--color-purple);
+}
+.text-green {
+  color: var(--color-green);
+}
+
+.margin-top-none {
+  margin-top: 0;
+}
+.margin-bottom-none {
+  margin-bottom: 0;
+}
+.text-center {
+  text-align: center;
+}
+.text-left {
+  text-align: left;
+}
+.text-right {
+  text-align: right;
+}
+.text-uppercase {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.width-full {
+  max-width: 100%;
+}
+.width-90 {
+  max-width: 90%;
+}
+.width-80 {
+  max-width: 80%;
+}
+.width-75 {
+  max-width: 75%;
+}
+.width-2-3 {
+  max-width: 66.67%;
+}
+.width-60 {
+  max-width: 60%;
+}
+.width-half {
+  max-width: 50%;
+}
+.width-40 {
+  max-width: 40%;
+}
+.width-1-3 {
+  max-width: 33.33%;
+}
+
+.position-left {
+  margin-left: 0;
+  margin-right: auto;
+}
+.position-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+.position-right {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Magazine-style bleed: lets a child of .post-container extend its right
+   edge out to the .content-frame edge instead of stopping at the narrower
+   post-container edge. Combine with .position-right. */
+.bleed-right {
+  margin-right: calc((var(--max-content) - var(--max-wide)) / 2);
+}
+@media (max-width: 960px) {
+  .bleed-right {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .width-90, .width-80, .width-75, .width-2-3,
+  .width-60, .width-half, .width-40, .width-1-3 {
+    max-width: 100%;
+  }
+
+  .poem-excerpt,
+  .literary-quote,
+  .passage-excerpt {
+    padding-left: var(--s-3);
+  }
+}
+
+/* -----------------------------
+   12e. Two-column block
+----------------------------- */
+/* Side-by-side container for a paragraph paired with a diagram, callout,
+   or other companion element. Sits at .content-frame width (960px) so it
+   breaks out of the 720px .post-container; stacks below ~860px. Use it
+   between .post-container blocks, not inside them. */
+.two-col {
+  max-width: var(--max-content);
+  margin: var(--s-4) auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 220px);
+  gap: var(--s-4);
+  align-items: start;
+}
+/* Sidekick on the left, prose on the right. */
+.two-col.two-col--side-left {
+  grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
+}
+/* Stack multiple cards in a side column. */
+.two-col-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+/* .two-col-prose is a layout hook only — typography comes from whatever
+   prose class it shares (e.g. .prose-flow) so font-size, line-height,
+   and paragraph spacing match the surrounding post-container prose. */
+@media (max-width: 860px) {
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* -----------------------------
+   13. Footer
+----------------------------- */
+.site-footer {
+  border-top: 1px solid var(--ink);
+  margin: var(--s-6) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--ink-mute);
+  letter-spacing: 0.04em;
+}
+.site-footer .content-frame {
+  padding: var(--s-2) var(--s-3);
+  margin: 0 auto;
+  max-width: var(--max-wide);
+}
+.site-footer p {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* -----------------------------
+   14. Responsive
+----------------------------- */
+@media (max-width: 768px) {
+  :root {
+    --banner-h: var(--banner-h-mobile);
+  }
+
+  body {
+    padding-top: var(--banner-h-mobile);
+  }
+
+  .site-banner {
+    height: var(--banner-h-mobile);
+  }
+  .site-banner-inner {
+    padding: 0 var(--s-2);
+    align-items: center;
+  }
+
+  .site-title {
+    font-size: var(--fs-base);
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  /* Mobile nav: hidden by default, shown only when checkbox is checked.
+     display:none is honest about the hidden state — no peek-through bugs
+     from partial transforms, no surprise during scroll-bounce. */
+  .site-navigation {
+    display: none;
+  }
+  #mobile-menu-checkbox:checked ~ .site-banner-inner .site-navigation {
+    display: flex;
+    position: fixed;
+    top: var(--banner-h-mobile);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0;
+    background: var(--paper);
+    border-bottom: 1px solid var(--ink);
+    z-index: 999;
+  }
+  .site-navigation a {
+    width: 100%;
+    height: auto;
+    /* Same tight manicule slot as desktop; vertical padding stays
+       generous for tap targets. */
+    padding: var(--s-2) var(--s-2) var(--s-2) 26px;
+    justify-content: flex-start;
+    font-size: var(--fs-base);
+  }
+
+  .content-frame {
+    padding: var(--s-3) var(--s-2) var(--s-5);
+  }
+
+  .entry {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .entry-date {
+    order: 2;
+  }
+  .entry-content {
+    order: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: var(--fs-xl);
+  }
+  .display-heading {
+    font-size: var(--fs-2xl);
+  }
+  .section-title {
+    font-size: var(--fs-xl);
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .site-navigation a:hover {
+    color: var(--ink);
+  }
+  .entry-title:hover {
+    padding-left: 0;
+  }
+  .entry-title:hover::before {
+    opacity: 0;
+  }
+}

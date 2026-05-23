@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Waterphone sandbox — Sycorax</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07060c;
+    --panel: #0c0a14;
+    --border: #1c1830;
+    --text: #c4b5fd;     /* lavender */
+    --text-dim: #7c6ec1;
+    --text-mute: #4b4670;
+    --accent: #d4c0ff;
+    --accent-strong: #ede9fe;
+    --teal: #80e0d0;
+    --red: #f48199;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  body { padding: 28px 24px 60px; }
+
+  h1 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--accent);
+    margin: 0 0 4px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    margin: 0 0 22px;
+  }
+  .blurb {
+    color: var(--text-dim);
+    max-width: 720px;
+    margin: 0 0 28px;
+  }
+
+  /* Top controls bar */
+  .controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 26px;
+  }
+  .controls label {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  .controls select,
+  .controls input[type="range"] {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+  }
+  .controls select {
+    background: #0a0814;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  .controls input[type="range"] {
+    width: 140px;
+    accent-color: var(--accent);
+  }
+  .controls .spacer { flex: 1; }
+
+  button {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    background: #110d1f;
+    border: 1px solid var(--text-dim);
+    border-radius: 3px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  button:hover { background: #1a1530; color: var(--accent); }
+  button:active { background: #251f44; }
+  button.danger { color: var(--red); border-color: var(--red); }
+  button.danger:hover { background: rgba(244, 129, 153, 0.12); }
+  button.primary { color: var(--accent-strong); border-color: var(--accent); }
+  button.playing {
+    background: rgba(196, 181, 253, 0.18);
+    color: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+
+  /* Voice cards */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 18px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card h2 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--accent);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+  }
+  .card .approach {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .card .desc {
+    color: var(--text);
+    font-size: 16px;
+    margin-bottom: 16px;
+    flex: 1;
+  }
+  .card .desc .ingredient {
+    color: var(--teal);
+    font-style: normal;
+  }
+  .card .actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .card .status {
+    color: var(--text-mute);
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin-left: auto;
+  }
+  .card .status.is-playing { color: var(--accent-strong); }
+
+  /* Live tuning panel (under card 3) */
+  .tuning-panel {
+    margin-top: 22px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 22px 18px;
+  }
+  .tuning-header {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+  .tuning-header h3 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 400;
+    font-size: 20px;
+    color: var(--accent);
+    margin: 0;
+    letter-spacing: 1px;
+  }
+  .tuning-header .hint {
+    color: var(--text-mute);
+    font-size: 14px;
+    flex: 1;
+  }
+  .tuning-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px 28px;
+  }
+  .tuning-row {
+    display: grid;
+    grid-template-columns: 130px 1fr 70px;
+    align-items: center;
+    gap: 10px;
+  }
+  .tuning-row label {
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 13px;
+  }
+  .tuning-row input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+  .tuning-row .value-readout {
+    color: var(--teal);
+    text-align: right;
+    font-size: 15px;
+  }
+
+  .footer-note {
+    margin-top: 28px;
+    color: var(--text-mute);
+    font-size: 14px;
+    max-width: 720px;
+  }
+  .footer-note code {
+    color: var(--teal);
+    font-size: 15px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Waterphone Sandbox</h1>
+<p class="subtitle">~ for Sycorax's Spell ~</p>
+
+<p class="blurb">
+  Three different synthesis approaches to a waterphone-like sound. Real waterphones produce <em>inharmonic</em> partials (frequencies that don't follow integer multiples of the fundamental), with slow pitch drift from sloshing water and a long bowed swell. Each approach below gets at that character differently. Listen, compare, pick a favorite — or hybrid bits from several.
+</p>
+
+<div class="controls">
+  <label for="pitch">Pitch</label>
+  <select id="pitch">
+    <option value="196">G3 — 196 Hz</option>
+    <option value="233">Bb3 — 233 Hz</option>
+    <option value="247">B3 — 247 Hz</option>
+    <option value="311" selected>Eb4 — 311 Hz (Sycorax tonic-ish)</option>
+    <option value="370">F#4 — 370 Hz</option>
+    <option value="466">Bb4 — 466 Hz</option>
+  </select>
+
+  <label for="duration">Length</label>
+  <select id="duration">
+    <option value="4">4 sec</option>
+    <option value="7" selected>7 sec</option>
+    <option value="12">12 sec</option>
+  </select>
+
+  <label for="master-vol">Master</label>
+  <input type="range" id="master-vol" min="0" max="100" value="60" />
+
+  <span class="spacer"></span>
+
+  <button id="play-all">▶ Play all in sequence</button>
+  <button id="stop-all" class="danger">■ Stop all</button>
+</div>
+
+<div class="cards">
+
+  <div class="card" id="card-additive">
+    <h2>1. Bowed Steel Bowl</h2>
+    <div class="approach">Additive · inharmonic partials</div>
+    <p class="desc">
+      Six <span class="ingredient">sine oscillators</span> at non-integer frequency ratios (1, 1.41, 2.07, 2.95, 4.13, 5.62 — borrowed from real waterphone spectra). Each partial has its own slow <span class="ingredient">pitch LFO</span> (≈0.3 Hz, ±0.5%) for the water-shimmer wobble. Upper partials add subtle <span class="ingredient">amplitude tremolo</span> for metallic shimmer. Long bowed swell envelope.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary" data-voice="additive">▶ Play</button>
+      <button class="stop-btn" data-voice="additive">■ Stop</button>
+      <span class="status" id="status-additive">ready</span>
+    </div>
+  </div>
+
+  <div class="card" id="card-fm">
+    <h2>2. Wailing Spirit</h2>
+    <div class="approach">FM · dense modulation</div>
+    <p class="desc">
+      A <span class="ingredient">sine carrier</span> at the fundamental, frequency-modulated by another sine at <span class="ingredient">×1.41</span> (√2 — pleasingly inharmonic). Modulation index swells from zero, peaks during sustain, then fades — generating a dense, wavering metallic spectrum. Includes slow <span class="ingredient">downward glissando</span>, a deep water wobble, and a sub-octave sine for body.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary" data-voice="fm">▶ Play</button>
+      <button class="stop-btn" data-voice="fm">■ Stop</button>
+      <span class="status" id="status-fm">ready</span>
+    </div>
+  </div>
+
+  <div class="card" id="card-hybrid">
+    <h2>3. Sea Bell</h2>
+    <div class="approach">Hybrid · partials + bloom</div>
+    <p class="desc">
+      A combination of voices 1 and 2. The <span class="ingredient">inharmonic partial structure</span> from #1 provides the ringing upper register that rises above the drone, with <span class="ingredient">stronger shimmer-tremolo</span> on the top three partials. The <span class="ingredient">swelling FM modulator</span> from #2 layers on top, blooming into the sustain. A <span class="ingredient">shared deep water wobble</span> (≈0.6 Hz) breathes through the lower partials and the FM carrier together, while a mild <span class="ingredient">downward glissando</span> ties it all together. <em>Sliders below tune all five knobs live.</em>
+    </p>
+    <div class="actions">
+      <button class="play-btn primary" data-voice="hybrid">▶ Play</button>
+      <button class="stop-btn" data-voice="hybrid">■ Stop</button>
+      <span class="status" id="status-hybrid">ready</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="tuning-panel">
+  <div class="tuning-header">
+    <h3>Sea Bell — live tuning</h3>
+    <span class="hint">Changes apply to the next play of voice 3.</span>
+    <button id="reset-tuning">↺ Reset</button>
+  </div>
+  <div class="tuning-grid">
+    <div class="tuning-row">
+      <label for="ctrl-shimmer">Shimmer</label>
+      <input type="range" id="ctrl-shimmer" min="0" max="1.5" step="0.05" value="1.30" />
+      <span class="value-readout" id="val-shimmer">1.30×</span>
+    </div>
+    <div class="tuning-row">
+      <label for="ctrl-bloomLevel">Bloom level</label>
+      <input type="range" id="ctrl-bloomLevel" min="0.05" max="0.35" step="0.01" value="0.28" />
+      <span class="value-readout" id="val-bloomLevel">0.28</span>
+    </div>
+    <div class="tuning-row">
+      <label for="ctrl-bloomIntensity">Bloom intensity</label>
+      <input type="range" id="ctrl-bloomIntensity" min="0.5" max="3.0" step="0.1" value="2.4" />
+      <span class="value-readout" id="val-bloomIntensity">2.4×</span>
+    </div>
+    <div class="tuning-row">
+      <label for="ctrl-wail">Wail</label>
+      <input type="range" id="ctrl-wail" min="0" max="2.5" step="0.1" value="1.8" />
+      <span class="value-readout" id="val-wail">1.8%</span>
+    </div>
+    <div class="tuning-row">
+      <label for="ctrl-wobble">Water wobble</label>
+      <input type="range" id="ctrl-wobble" min="0" max="2.5" step="0.1" value="2.0" />
+      <span class="value-readout" id="val-wobble">2.0%</span>
+    </div>
+  </div>
+</div>
+
+<p class="footer-note">
+  Once you've picked a favorite, the next step is to extract that approach into a function in <code>prosperos-jukebox-audio.js</code>, define a Markov-driven layer on Sycorax (similar to <code>sycoraxGhostTones</code>), and let it pick pitches from the existing chromatic-Locrian scale. The motif memory + density envelope infrastructure already there will work without changes.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // ----- Audio context (created on first interaction) -----
+  let ctx = null;
+  let masterGain = null;
+  let reverb = null;
+  let reverbWet = null;
+  let reverbDry = null;
+
+  // Track currently playing nodes per voice so Stop can cut them.
+  // Each entry: { nodes: [{ stop(time) }], gain: GainNode, end: time, timer: timeoutId }
+  const playing = {
+    additive: null,
+    fm: null,
+    hybrid: null,
+  };
+
+  // ----- Live-tuned hybrid parameters -----
+  // Defaults match the prior hard-coded hybrid behavior. Sliders update
+  // these in place; playHybrid reads them at the moment Play is pressed.
+  const HYBRID_DEFAULTS = {
+    shimmer: 1.30,       // multiplier on upper-partial tremolo depth
+    bloomLevel: 0.28,    // FM carrier gain (0.05..0.35)
+    bloomIntensity: 2.4, // FM modulator peak as × fundamental
+    wail: 1.8,           // glissando: total % drop over the note
+    wobble: 2.0,         // shared body wobble depth, % of each freq
+  };
+  const hybridParams = Object.assign({}, HYBRID_DEFAULTS);
+
+  function formatReadout(id, val) {
+    const v = parseFloat(val);
+    if (id === 'shimmer')        return v.toFixed(2) + '×';
+    if (id === 'bloomLevel')     return v.toFixed(2);
+    if (id === 'bloomIntensity') return v.toFixed(1) + '×';
+    if (id === 'wail')           return v.toFixed(1) + '%';
+    if (id === 'wobble')         return v.toFixed(1) + '%';
+    return String(val);
+  }
+
+  function setSliderValue(id, val) {
+    const slider = document.getElementById('ctrl-' + id);
+    const readout = document.getElementById('val-' + id);
+    if (slider) slider.value = val;
+    if (readout) readout.textContent = formatReadout(id, val);
+  }
+
+  function ensureContext() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Master output chain: voice -> reverb routing -> master gain -> destination
+    masterGain = ctx.createGain();
+    masterGain.gain.value = getMasterVol();
+    masterGain.connect(ctx.destination);
+
+    // Convolver reverb for a cavernous, sycorax-appropriate space.
+    reverb = ctx.createConvolver();
+    reverb.buffer = buildIR(ctx, 4.0, 1.5);
+    reverbWet = ctx.createGain();
+    reverbDry = ctx.createGain();
+    reverbWet.gain.value = 0.38;
+    reverbDry.gain.value = 0.85;
+    reverb.connect(reverbWet);
+    reverbWet.connect(masterGain);
+    reverbDry.connect(masterGain);
+  }
+
+  // Build a simple decaying-noise impulse response for convolver reverb.
+  function buildIR(ctx, decay, hfDamp) {
+    const rate = ctx.sampleRate;
+    const length = Math.floor(rate * decay);
+    const buf = ctx.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      let prev = 0;
+      for (let i = 0; i < length; i++) {
+        const env = Math.pow(1 - i / length, decay);
+        const noise = (Math.random() * 2 - 1) * env;
+        // Simple lowpass smoothing for high-freq damping
+        prev = prev + (noise - prev) / hfDamp;
+        data[i] = prev;
+      }
+    }
+    return buf;
+  }
+
+  function getMasterVol() {
+    const v = parseInt(document.getElementById('master-vol').value, 10) / 100;
+    return v * 0.6; // tame the maximum
+  }
+
+  function getPitch() { return parseFloat(document.getElementById('pitch').value); }
+  function getDuration() { return parseFloat(document.getElementById('duration').value); }
+
+  // Connect a voice's output bus to both dry and wet reverb sends.
+  function voiceOut() {
+    const bus = ctx.createGain();
+    bus.connect(reverbDry);
+    bus.connect(reverb);
+    return bus;
+  }
+
+  // -------------------------------------------------------------------
+  // Voice 1: Bowed Steel Bowl (additive inharmonic partials)
+  // -------------------------------------------------------------------
+  function playAdditive(fundamental, duration) {
+    const now = ctx.currentTime;
+    const out = voiceOut();
+    const env = ctx.createGain();
+    env.connect(out);
+    // Slow bowed swell
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.32, now + Math.min(1.6, duration * 0.25));
+    env.gain.setValueAtTime(0.32, now + Math.max(duration - 2.0, duration * 0.6));
+    env.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Inharmonic partial ratios + relative levels.
+    const partials = [
+      { ratio: 1.00, gain: 0.45 },
+      { ratio: 1.41, gain: 0.30 },  // ≈ √2 — the water-character partial
+      { ratio: 2.07, gain: 0.22 },
+      { ratio: 2.95, gain: 0.15 },
+      { ratio: 4.13, gain: 0.10 },
+      { ratio: 5.62, gain: 0.07 },
+    ];
+
+    const nodes = [];
+    partials.forEach((p, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(fundamental * p.ratio, now);
+      g.gain.setValueAtTime(p.gain, now);
+
+      // Slow pitch wobble (water shimmer), slightly different speed per partial.
+      const lfo = ctx.createOscillator();
+      const lfoG = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(0.25 + i * 0.07, now);
+      lfoG.gain.setValueAtTime(fundamental * p.ratio * 0.006, now); // ±0.6%
+      lfo.connect(lfoG);
+      lfoG.connect(osc.frequency);
+
+      // Upper-partial tremolo for metallic shimmer.
+      let trem = null;
+      if (i >= 3) {
+        trem = ctx.createOscillator();
+        const tremG = ctx.createGain();
+        trem.type = 'sine';
+        trem.frequency.setValueAtTime(2 + Math.random() * 4, now);
+        tremG.gain.setValueAtTime(p.gain * 0.5, now);
+        trem.connect(tremG);
+        tremG.connect(g.gain);
+      }
+
+      osc.connect(g);
+      g.connect(env);
+
+      const stopAt = now + duration + 0.4;
+      osc.start(now); osc.stop(stopAt);
+      lfo.start(now); lfo.stop(stopAt);
+      if (trem) { trem.start(now); trem.stop(stopAt); }
+      nodes.push(osc, lfo); if (trem) nodes.push(trem);
+    });
+
+    return registerPlaying('additive', nodes, env, now + duration + 0.5);
+  }
+
+  // -------------------------------------------------------------------
+  // Voice 2: Wailing Spirit (FM, with sub and water wobble)
+  // -------------------------------------------------------------------
+  function playFM(fundamental, duration) {
+    const now = ctx.currentTime;
+    const out = voiceOut();
+    const env = ctx.createGain();
+    env.connect(out);
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.45, now + Math.min(1.2, duration * 0.18));
+    env.gain.setValueAtTime(0.45, now + Math.max(duration - 1.8, duration * 0.6));
+    env.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Carrier sine + slow downward glissando (waterphone notes often sag)
+    const car = ctx.createOscillator();
+    car.type = 'sine';
+    car.frequency.setValueAtTime(fundamental, now);
+    car.frequency.linearRampToValueAtTime(fundamental * 0.985, now + duration);
+
+    // FM modulator at √2 ratio for an inharmonic spectrum
+    const mod = ctx.createOscillator();
+    const modG = ctx.createGain();
+    mod.type = 'sine';
+    mod.frequency.setValueAtTime(fundamental * 1.41, now);
+    // Modulation index swells (0 → peak → tail) so attack is pure and the
+    // sustain blooms into the dense waterphone timbre.
+    modG.gain.setValueAtTime(0, now);
+    modG.gain.linearRampToValueAtTime(fundamental * 2.6, now + Math.min(1.4, duration * 0.22));
+    modG.gain.linearRampToValueAtTime(fundamental * 1.3, now + duration * 0.65);
+    modG.gain.linearRampToValueAtTime(0, now + duration);
+    mod.connect(modG);
+    modG.connect(car.frequency);
+
+    // Water wobble — slow pitch shimmer on carrier
+    const wob = ctx.createOscillator();
+    const wobG = ctx.createGain();
+    wob.type = 'sine';
+    wob.frequency.setValueAtTime(1.1, now);
+    wobG.gain.setValueAtTime(fundamental * 0.014, now); // ±1.4%
+    wob.connect(wobG);
+    wobG.connect(car.frequency);
+
+    // Sub-octave sine for body
+    const sub = ctx.createOscillator();
+    const subG = ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(fundamental * 0.5, now);
+    subG.gain.setValueAtTime(0.18, now);
+
+    car.connect(env);
+    sub.connect(subG);
+    subG.connect(env);
+
+    const stopAt = now + duration + 0.5;
+    car.start(now); car.stop(stopAt);
+    mod.start(now); mod.stop(stopAt);
+    wob.start(now); wob.stop(stopAt);
+    sub.start(now); sub.stop(stopAt);
+
+    return registerPlaying('fm', [car, mod, wob, sub], env, now + duration + 0.6);
+  }
+
+  // -------------------------------------------------------------------
+  // Voice 3: Sea Bell (hybrid of additive partials + FM bloom)
+  // -------------------------------------------------------------------
+  // Takes the inharmonic partial backbone from voice 1 (with stronger
+  // upper-partial tremolo so the instrument rises above the drone) and
+  // layers in voice 2's swelling FM modulator for the blooming sustain.
+  // A unified slow downward glissando ties them together.
+  function playHybrid(fundamental, duration) {
+    const now = ctx.currentTime;
+    const out = voiceOut();
+    const env = ctx.createGain();
+    env.connect(out);
+    // Envelope between #1's slow swell and #2's blooming sustain
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(0.40, now + Math.min(1.5, duration * 0.22));
+    env.gain.setValueAtTime(0.40, now + Math.max(duration - 2.2, duration * 0.6));
+    env.gain.linearRampToValueAtTime(0, now + duration);
+
+    // Read live params at play time so slider tweaks affect the next note.
+    const glissEnd  = 1 - hybridParams.wail / 100;     // total downward drift
+    const wobbleAmt = hybridParams.wobble / 100;       // ± as fraction of each freq
+    const shimmer   = hybridParams.shimmer;
+    const stopAt    = now + duration + 0.5;
+    const nodes = [];
+
+    // -------- Shared body-wobble LFO --------
+    // One slow LFO drives every "body" component (the lower three partials
+    // plus the FM carrier) in lockstep. Per-target gain scales the wobble
+    // depth by that target's center frequency so ±N% reads consistently
+    // across the whole bottom of the spectrum.
+    const bodyWobble = ctx.createOscillator();
+    bodyWobble.type = 'sine';
+    bodyWobble.frequency.setValueAtTime(0.6, now); // slow / "tidal" rate
+    bodyWobble.start(now); bodyWobble.stop(stopAt);
+    nodes.push(bodyWobble);
+
+    // -------- Component A: additive inharmonic partials --------
+    const partials = [
+      { ratio: 1.00, gain: 0.42, trem: 0,    body: true  }, // lower body
+      { ratio: 1.41, gain: 0.30, trem: 0,    body: true  }, // lower body
+      { ratio: 2.07, gain: 0.22, trem: 0,    body: true  }, // lower body
+      { ratio: 2.95, gain: 0.20, trem: 0.55, body: false }, // shimmer
+      { ratio: 4.13, gain: 0.16, trem: 0.65, body: false }, // shimmer
+      { ratio: 5.62, gain: 0.12, trem: 0.75, body: false }, // strongest shimmer at top
+    ];
+
+    partials.forEach((p, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      const startFreq = fundamental * p.ratio;
+      osc.frequency.setValueAtTime(startFreq, now);
+      osc.frequency.linearRampToValueAtTime(startFreq * glissEnd, now + duration);
+      g.gain.setValueAtTime(p.gain, now);
+
+      // Per-partial pitch LFO — small independent shimmer (water shimmer
+      // from voice 1). Stays the same on lower partials so the shared body
+      // wobble doesn't entirely subsume their motion.
+      const lfo = ctx.createOscillator();
+      const lfoG = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(0.25 + i * 0.08, now);
+      lfoG.gain.setValueAtTime(startFreq * 0.006, now);
+      lfo.connect(lfoG);
+      lfoG.connect(osc.frequency);
+
+      // Connect the shared body wobble to the lower partials only — the
+      // upper partials are left free to shimmer above on their own LFOs.
+      if (p.body) {
+        const bw = ctx.createGain();
+        bw.gain.setValueAtTime(startFreq * wobbleAmt, now);
+        bodyWobble.connect(bw);
+        bw.connect(osc.frequency);
+      }
+
+      // Upper-partial amplitude tremolo, scaled by the live shimmer knob.
+      let trem = null;
+      if (p.trem > 0) {
+        trem = ctx.createOscillator();
+        const tremG = ctx.createGain();
+        trem.type = 'sine';
+        trem.frequency.setValueAtTime(2.5 + Math.random() * 4, now);
+        tremG.gain.setValueAtTime(p.gain * p.trem * shimmer, now);
+        trem.connect(tremG);
+        tremG.connect(g.gain);
+      }
+
+      osc.connect(g);
+      g.connect(env);
+
+      osc.start(now); osc.stop(stopAt);
+      lfo.start(now); lfo.stop(stopAt);
+      if (trem) { trem.start(now); trem.stop(stopAt); }
+      nodes.push(osc, lfo);
+      if (trem) nodes.push(trem);
+    });
+
+    // -------- Component B: FM bloom layered in --------
+    // Carrier sine at the fundamental with its own glissando.
+    const carrier = ctx.createOscillator();
+    const carrierGain = ctx.createGain();
+    carrier.type = 'sine';
+    carrier.frequency.setValueAtTime(fundamental, now);
+    carrier.frequency.linearRampToValueAtTime(fundamental * glissEnd, now + duration);
+    carrierGain.gain.setValueAtTime(hybridParams.bloomLevel, now);
+
+    // Modulator at √2 ratio. Modulation index swells in, peaks during
+    // attack, tapers across sustain, and fades to zero by the end.
+    const mod = ctx.createOscillator();
+    const modG = ctx.createGain();
+    mod.type = 'sine';
+    mod.frequency.setValueAtTime(fundamental * 1.41, now);
+    mod.frequency.linearRampToValueAtTime(fundamental * 1.41 * glissEnd, now + duration);
+    const peakIdx = fundamental * hybridParams.bloomIntensity;
+    modG.gain.setValueAtTime(0, now);
+    modG.gain.linearRampToValueAtTime(peakIdx,        now + Math.min(1.5, duration * 0.25));
+    modG.gain.linearRampToValueAtTime(peakIdx * 0.44, now + duration * 0.7); // tail (44% of peak)
+    modG.gain.linearRampToValueAtTime(0,              now + duration);
+    mod.connect(modG);
+    modG.connect(carrier.frequency);
+
+    // Carrier also rides the shared body wobble — the bottom of the
+    // instrument now breathes as one unified shape.
+    const carrierBw = ctx.createGain();
+    carrierBw.gain.setValueAtTime(fundamental * wobbleAmt, now);
+    bodyWobble.connect(carrierBw);
+    carrierBw.connect(carrier.frequency);
+
+    carrier.connect(carrierGain);
+    carrierGain.connect(env);
+
+    carrier.start(now); carrier.stop(stopAt);
+    mod.start(now); mod.stop(stopAt);
+    nodes.push(carrier, mod);
+
+    return registerPlaying('hybrid', nodes, env, now + duration + 0.6);
+  }
+
+  // ----- Common stop/cleanup -----
+  function registerPlaying(voice, nodes, gainNode, endTime) {
+    // If this voice was already playing, stop it first
+    stopVoice(voice);
+    const entry = { nodes, gain: gainNode, endTime, timer: null };
+    playing[voice] = entry;
+    updateStatus(voice, true);
+    entry.timer = setTimeout(() => {
+      if (playing[voice] === entry) {
+        playing[voice] = null;
+        updateStatus(voice, false);
+      }
+    }, (endTime - ctx.currentTime) * 1000 + 50);
+    return entry;
+  }
+
+  function stopVoice(voice) {
+    const entry = playing[voice];
+    if (!entry) return;
+    const now = ctx.currentTime;
+    try {
+      entry.gain.gain.cancelScheduledValues(now);
+      entry.gain.gain.setValueAtTime(entry.gain.gain.value, now);
+      entry.gain.gain.linearRampToValueAtTime(0, now + 0.05);
+    } catch (e) {}
+    entry.nodes.forEach((n) => {
+      try { n.stop(now + 0.08); } catch (e) {}
+    });
+    if (entry.timer) clearTimeout(entry.timer);
+    playing[voice] = null;
+    updateStatus(voice, false);
+  }
+
+  function stopAll() {
+    Object.keys(playing).forEach(stopVoice);
+  }
+
+  function updateStatus(voice, isPlaying) {
+    const el = document.getElementById('status-' + voice);
+    if (el) {
+      el.textContent = isPlaying ? 'playing…' : 'ready';
+      el.classList.toggle('is-playing', isPlaying);
+    }
+    const btn = document.querySelector('.play-btn[data-voice="' + voice + '"]');
+    if (btn) btn.classList.toggle('playing', isPlaying);
+  }
+
+  // ----- Wiring -----
+  const VOICES = {
+    additive: playAdditive,
+    fm: playFM,
+    hybrid: playHybrid,
+  };
+
+  document.querySelectorAll('.play-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      ensureContext();
+      const voice = btn.getAttribute('data-voice');
+      VOICES[voice](getPitch(), getDuration());
+    });
+  });
+
+  document.querySelectorAll('.stop-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      stopVoice(btn.getAttribute('data-voice'));
+    });
+  });
+
+  document.getElementById('stop-all').addEventListener('click', stopAll);
+
+  document.getElementById('master-vol').addEventListener('input', () => {
+    if (masterGain) masterGain.gain.setValueAtTime(getMasterVol(), ctx.currentTime);
+  });
+
+  // Hybrid tuning sliders
+  Object.keys(HYBRID_DEFAULTS).forEach((id) => {
+    const slider = document.getElementById('ctrl-' + id);
+    if (!slider) return;
+    setSliderValue(id, hybridParams[id]);
+    slider.addEventListener('input', () => {
+      hybridParams[id] = parseFloat(slider.value);
+      const readout = document.getElementById('val-' + id);
+      if (readout) readout.textContent = formatReadout(id, slider.value);
+    });
+  });
+  document.getElementById('reset-tuning').addEventListener('click', () => {
+    Object.keys(HYBRID_DEFAULTS).forEach((id) => {
+      hybridParams[id] = HYBRID_DEFAULTS[id];
+      setSliderValue(id, HYBRID_DEFAULTS[id]);
+    });
+  });
+
+  // Play all in sequence: voice 1, brief silence, voice 2, silence, voice 3.
+  let sequenceTimers = [];
+  document.getElementById('play-all').addEventListener('click', () => {
+    ensureContext();
+    sequenceTimers.forEach(clearTimeout);
+    sequenceTimers = [];
+    stopAll();
+    const dur = getDuration();
+    const pitch = getPitch();
+    const order = ['additive', 'fm', 'hybrid'];
+    const gap = 1.2; // seconds between voices
+    order.forEach((voice, i) => {
+      const delayMs = i * (dur + gap) * 1000;
+      sequenceTimers.push(setTimeout(() => VOICES[voice](pitch, dur), delayMs));
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

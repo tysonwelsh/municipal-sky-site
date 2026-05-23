@@ -1,0 +1,1007 @@
+/* ===========================================
+   LOCAL DEV STYLESHEET
+   U.S. Occupations Treemap Dashboard
+   
+   Woodcut Manuscript Edition
+   Inspired by Gregor Reisch's Margarita
+   Philosophica (1503), Christoph Scheiner's
+   Rosa Ursina (1630), and Geoffrey Tory's
+   Champ Fleury (1529). Darker parchment ground,
+   Vermillion rubrication, squared woodcut corners,
+   IM Fell English typography throughout.
+   
+   TABLE OF CONTENTS
+   -----------------
+   0. CSS CUSTOM PROPERTIES
+   1. BASE & GLOBAL STYLES
+   2. MAIN LAYOUT CONTAINERS
+   3. DASHBOARD FRAME STRUCTURE
+   4. NAVIGATION ELEMENTS
+   5. TREEMAP CELLS & LABELS
+   6. SIDEBAR PANELS
+   7. RIASEC RADAR CHART
+   8. RAINCLOUD PLOT (WAGE DISTRIBUTION)
+   9. INDUSTRY DISTRIBUTION CHART
+   10. DETAILED OCCUPATION DASHBOARD
+   11. WORK CONTEXT CAROUSEL
+   12. UNDERWORLD / GHOST FIGURES
+   13. TOOLTIPS
+   14. VALIDATION TABLE
+   15. KDE CURVE STYLES
+   =========================================== */
+
+/* ===========================================
+   0. CSS CUSTOM PROPERTIES
+   =========================================== */
+:root {
+  /* --- Background Colors --- */
+  --color-bg-page: #ffffff;
+  --color-bg-parchment: #ddd0b3;
+  --color-bg-card: #e4dac0;
+  --color-bg-subtle: #d8cdb5;
+  --color-bg-button: #d5c8ac;
+  --color-bg-button-hover: #cdbf9e;
+  --color-bg-table-header: #d8cdb5;
+  --color-bg-table-alt: #e2d8c0;
+
+  /* --- Border Colors (Sepia Ink) --- */
+  --color-border-light: rgba(90, 62, 40, 0.18);
+  --color-border-medium: #5a3e28;
+  --color-border-subtle: rgba(90, 62, 40, 0.15);
+  --color-border-faint: rgba(90, 62, 40, 0.08);
+  --color-border-hover: rgba(90, 62, 40, 0.22);
+
+  /* --- Text Colors (Iron Gall Ink) --- */
+  --color-text-primary: #1a1408;
+  --color-text-secondary: #2c2014;
+  --color-text-tertiary: #3d2b18;
+  --color-text-muted: #4a3a28;
+  --color-text-subtle: #5c5347;
+  --color-text-faint: #7a7167;
+  --color-text-label: #1a1408;
+  --color-text-value: #2c2014;
+  --color-text-table: #4a3a28;
+
+  /* --- Rubrication Color (Vermillion) --- */
+  --color-rubrication: #b33a2b;
+  --color-rubrication-light: rgba(179, 58, 43, 0.15);
+  --color-rubrication-border: rgba(179, 58, 43, 0.2);
+
+  /* --- Accent Colors --- */
+  --color-accent-primary: #1e3f7a;
+  --color-accent-primary-light: rgba(30, 63, 122, 0.15);
+
+  /* --- Status Colors --- */
+  --color-status-positive: #2e7358;
+  --color-status-negative: #b33a2b;
+
+  /* --- Shadows (Parchment-appropriate) --- */
+  --shadow-card:
+    0 2px 8px -2px rgba(26, 20, 8, 0.15), 0 1px 3px -1px rgba(26, 20, 8, 0.1);
+  --shadow-tooltip:
+    0 8px 24px -4px rgba(26, 20, 8, 0.2), 0 2px 8px -2px rgba(26, 20, 8, 0.12);
+
+  /* --- Border Radius (Squared / Woodcut) --- */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
+  --radius-2xl: 0;
+
+  /* --- Transitions --- */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* --- Typography (IM Fell English) --- */
+  --font-family: "IM Fell English", Georgia, "Times New Roman", serif;
+  --font-family-sc: "IM Fell English SC", "IM Fell English", Georgia, serif;
+  --font-family-display:
+    "IM Fell Great Primer SC", "IM Fell English SC", Georgia, serif;
+  --font-family-display-body:
+    "IM Fell Great Primer", "IM Fell English", Georgia, serif;
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 14px;
+  --font-size-xl: 15px;
+  --font-size-2xl: 16px;
+  --font-size-2xs: 9px;
+  --font-family-data: "Cormorant Garamond", Georgia, serif;
+
+  /* --- Frame Inset Background --- */
+  --color-bg-frame-inset: #cfc2a0;
+
+  /* --- Spacing --- */
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+
+  /* --- Layout Widths (for alignment) --- */
+  --width-panel-riasec: 270px;
+  --width-panel-employment: 180px;
+}
+
+/* ===========================================
+   1. BASE & GLOBAL STYLES
+   =========================================== */
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+/* ===========================================
+   2. MAIN LAYOUT CONTAINERS
+   =========================================== */
+/* --- Visualization Container --- */
+#viz-container {
+  margin: 0 !important;
+  height: 605px !important;
+  background: transparent;
+  overflow: visible;
+}
+
+#viz-container svg {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  overflow: visible;
+}
+
+/* ===========================================
+   3. DASHBOARD FRAME STRUCTURE
+   =========================================== */
+/* --- Main Frame Container --- */
+.dashboard-frame {
+  border: 2px solid var(--color-border-medium);
+  border-radius: 0;
+  background:
+    radial-gradient(
+      ellipse at 30% 70%,
+      rgba(120, 90, 50, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 30%,
+      rgba(100, 75, 40, 0.06) 0%,
+      transparent 50%
+    ),
+    linear-gradient(175deg, #ddd0b3 0%, #d4c5a5 30%, #cdbf9e 60%, #d6c9ad 100%);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+/* --- Frame Header --- */
+.dashboard-frame-header {
+  background: var(--color-bg-parchment);
+  border-bottom: 2px solid var(--color-border-medium);
+  padding: 10px var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-frame-header .level-title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 700 !important;
+  color: var(--color-rubrication);
+  flex: 1;
+  margin: 0 var(--spacing-xl);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+/* --- Frame Body --- */
+.dashboard-frame-body {
+  position: relative;
+  background: var(--color-bg-parchment);
+}
+
+/* --- Frame Backgrounds (Hierarchical Layers) --- */
+.frame-backgrounds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.frame-bg {
+  position: absolute;
+  transition: all var(--transition-slow);
+  border-radius: 0;
+}
+
+/* --- Frame Labels --- */
+.frame-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.frame-label {
+  position: absolute;
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-sm);
+  border-radius: 0;
+  transition: background var(--transition-fast);
+  pointer-events: auto;
+}
+
+.frame-label:hover {
+  background: var(--color-border-hover);
+}
+
+/* --- Content Wrapper --- */
+.content-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+/* ===========================================
+   4. NAVIGATION ELEMENTS
+   =========================================== */
+/* --- Dashboard Frame Navigation Buttons --- */
+.dashboard-frame-header .nav-btn {
+  font-family: var(--font-family-sc);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-bg-button);
+  border: 1.5px solid var(--color-border-medium);
+  border-radius: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dashboard-frame-header .nav-btn:hover:not(:disabled) {
+  background: var(--color-bg-button-hover);
+  border-color: var(--color-text-muted);
+}
+
+.dashboard-frame-header .nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===========================================
+   5. TREEMAP CELLS & LABELS
+   =========================================== */
+.treemap-cell {
+  stroke: #1a1408;
+  stroke-width: 0.5px;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+  pointer-events: all;
+}
+
+.treemap-cell:hover {
+  opacity: 1 !important;
+}
+
+.treemap-cell-detailed {
+  cursor: pointer;
+}
+
+.treemap-cell-selected {
+  stroke: var(--color-text-primary) !important;
+  stroke-width: 3px !important;
+}
+
+.treemap-cell-dimmed {
+  opacity: 0.4 !important;
+}
+
+/* --- Cell Labels --- */
+.cell-label {
+  font-family: var(--font-family-sc);
+  fill: var(--color-text-label);
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cell-value {
+  font-family: var(--font-family-data);
+  fill: var(--color-text-value);
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ===========================================
+   6. SIDEBAR PANELS
+   =========================================== */
+/* --- Sidebar Wrapper --- */
+.sidebar-wrapper {
+  padding: 12px 0 32px 0;
+  background: transparent;
+}
+
+.sidebar-content-inner {
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+  width: 952px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+/* --- Panel Base Styles --- */
+.sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+  background: rgba(228, 218, 192, 0.8);
+  border-radius: 0;
+  border: 1.5px solid var(--color-border-subtle);
+  margin: 0 var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+.sidebar-panel:first-child {
+  margin-left: 0;
+}
+
+.sidebar-panel:last-child {
+  margin-right: 0;
+}
+
+.sidebar-panel-title {
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--color-rubrication-border);
+}
+
+/* --- Panel Size Variants --- */
+/* Order: Wage (left), RIASEC (middle), Employment (right) */
+.sidebar-panel-wage {
+  flex: 1;
+  min-width: 0;
+  margin-right: var(--spacing-xs);
+}
+
+.sidebar-panel-riasec {
+  width: var(--width-panel-riasec);
+  flex-shrink: 0;
+  margin: 0 var(--spacing-xs);
+}
+
+.sidebar-panel-employment {
+  width: var(--width-panel-employment);
+  flex-shrink: 0;
+  margin-left: var(--spacing-xs);
+}
+
+.sidebar-panel-employment .nuremberg-title-banner {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.06em;
+}
+
+/* ===========================================
+   7. RIASEC RADAR CHART
+   =========================================== */
+#riasec-container {
+  background: transparent;
+  border-radius: 0;
+}
+
+.riasec-chart-title,
+.riasec-chart-title-original {
+  font-family: var(--font-family-sc) !important;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 600;
+  color: var(--color-rubrication) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md) !important;
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--color-rubrication-border);
+  width: 100%;
+  text-align: left;
+}
+
+/* ===========================================
+   8. WAGE DISTRIBUTION (WOODBLOCK IMPRESSION)
+   =========================================== */
+
+/* --- Nuremberg Frame --- */
+.frame-nuremberg {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  padding: 12px 16px 8px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.nuremberg-title-banner {
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  text-align: center;
+  border-bottom: 1.5px solid rgba(26, 20, 8, 0.5);
+  padding: 0 0 4px;
+  margin: 0 0 10px;
+}
+
+/* ===========================================
+   9. INDUSTRY DISTRIBUTION CHART
+   =========================================== */
+.industry-chart-title {
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--spacing-xs) 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* ===========================================
+   10. DETAILED OCCUPATION DASHBOARD
+   =========================================== */
+/* --- CSS Grid Layout --- */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr var(--width-panel-riasec);
+  grid-template-rows: auto 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-xs) 4px;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+/* --- Stat Boxes --- */
+.detail-stat-employment,
+.detail-stat-injury {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: var(--spacing-lg) var(--spacing-lg);
+  box-sizing: border-box;
+}
+
+/* --- Section Containers --- */
+/* Work Context (center column, row 2) */
+.detail-section-wc {
+  --chart-label-width: 95px;
+  --chart-bar-area-width: 265px;
+  --axis-color: #7a7167;
+  --gridline-color: rgba(90, 62, 40, 0.08);
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: 10px var(--spacing-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Underworld (right column, row 2) */
+.underworld-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  position: relative;
+  pointer-events: none;
+  box-sizing: border-box;
+  margin: 0 2px;
+}
+
+/* Industry (left column, spans both rows) */
+.detail-industry-column {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: var(--spacing-md) var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* --- Section Titles --- */
+.detail-section-title {
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 2px solid var(--color-rubrication-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-section-title-text {
+  flex: 1;
+}
+
+.detail-section-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ===========================================
+   11. WORK CONTEXT CAROUSEL
+   =========================================== */
+/* Make carousel container fill the section */
+#wc-carousel-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wc-no-data-layout {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  padding: 8px;
+}
+
+.wc-no-data-text {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.wc-no-data-ornament {
+  flex: 1;
+  max-height: 240px;
+  opacity: 0.7;
+  object-fit: contain;
+  object-position: right;
+}
+
+.riasec-no-data-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  padding: 12px 16px 8px;
+}
+
+.riasec-no-data-text {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.riasec-no-data-ornament {
+  max-width: 150px;
+  margin-top: 10px;
+  opacity: 0.7;
+  object-fit: contain;
+}
+
+.wc-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.wc-card-header {
+  flex-shrink: 0;
+  padding-left: 8px;
+  margin-bottom: 8px;
+}
+
+.wc-card-title {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.wc-card-description {
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: 1.5;
+  height: 2.8em;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* --- Navigation Buttons --- */
+.wc-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-hover);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+  transition: all var(--transition-fast);
+}
+
+.wc-nav-btn:hover:not(:disabled) {
+  background: var(--color-bg-button);
+  color: var(--color-text-secondary);
+}
+
+.wc-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wc-nav-counter {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: center;
+}
+
+/* --- Chart Area --- */
+.wc-chart-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+  position: relative;
+  min-height: 0;
+}
+
+.wc-chart-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  position: relative;
+  min-height: 0;
+}
+
+/* --- Gridlines --- */
+.wc-gridlines {
+  position: absolute;
+  top: 0;
+  left: var(--chart-label-width);
+  width: var(--chart-bar-area-width);
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wc-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--gridline-color);
+}
+
+/* --- Y-axis line --- */
+.wc-axis-y {
+  position: absolute;
+  top: 0;
+  left: var(--chart-label-width);
+  width: 1px;
+  height: 100%;
+  background-color: var(--axis-color);
+  z-index: 1;
+}
+
+/* --- Bar Rows --- */
+.wc-bar-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0;
+}
+
+.wc-bar-label {
+  font-family: var(--font-family);
+  font-size: 11px;
+  color: var(--color-text-subtle);
+  width: var(--chart-label-width);
+  text-align: right;
+  padding-right: 8px;
+  flex-shrink: 0;
+  line-height: 1.3;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.wc-bar-area {
+  width: var(--chart-bar-area-width);
+  height: 26px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.wc-bar-segment {
+  height: 100%;
+  border-radius: 0;
+  min-width: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid #1a1408;
+  box-sizing: border-box;
+  filter: url(#filter-woodcut);
+}
+
+.wc-bar-pct {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-family-data);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* --- X-axis --- */
+.wc-axis-x-container {
+  margin-left: var(--chart-label-width);
+  width: var(--chart-bar-area-width);
+  flex-shrink: 0;
+}
+
+.wc-axis-x {
+  height: 2px;
+  background-color: #1a1408;
+  width: 100%;
+  filter: url(#filter-woodcut);
+}
+
+.wc-axis-ticks {
+  position: relative;
+  height: 6px;
+  width: 100%;
+}
+
+.wc-axis-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 6px;
+  background-color: #1a1408;
+}
+
+.wc-axis-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.wc-axis-label {
+  font-family: var(--font-family);
+  font-size: 11px;
+  color: #5c5347;
+}
+
+/* ===========================================
+   12. UNDERWORLD / GHOST FIGURES
+   =========================================== */
+/* --- Container --- */
+.underworld-figures-container {
+  height: 100%;
+  position: relative;
+  padding-top: 30px;
+  pointer-events: none;
+}
+
+/* --- Static Ghost Icons on Treemap --- */
+.character-ghost {
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity var(--transition-fast);
+}
+
+.character-ghost:hover {
+  opacity: 1;
+}
+
+/* --- Wandering Ghosts (Underworld Section) --- */
+.wandering-ghost {
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.wandering-ghost:hover {
+  opacity: 1 !important;
+}
+
+/* --- No Data Message --- */
+.underworld-no-data {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.underworld-no-data-content {
+  padding: var(--spacing-lg);
+}
+
+.underworld-no-data-header {
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md);
+}
+
+.underworld-no-data-divider {
+  height: 2px;
+  background: var(--color-rubrication-border);
+  margin-bottom: var(--spacing-lg);
+}
+
+.underworld-no-data-text {
+  font-family: var(--font-family);
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ===========================================
+   13. TOOLTIPS
+   =========================================== */
+.tooltip {
+  position: absolute;
+  display: none;
+  background-color: var(--color-bg-card);
+  border: 2px solid var(--color-border-medium);
+  border-radius: 0;
+  box-shadow: var(--shadow-tooltip);
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  z-index: 50;
+  line-height: 1.5;
+  width: 350px;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+.tooltip.bar-tooltip {
+  width: 200px;
+}
+
+/* --- Tooltip SVG Tree --- */
+.svg-tree-path {
+  stroke: var(--color-border-medium);
+  stroke-width: 1px;
+  fill: none;
+}
+
+.svg-tree-text {
+  font-size: var(--font-size-md);
+  fill: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.svg-tree-text-current {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  fill: var(--color-text-primary);
+}
+
+/* ===========================================
+   14. VALIDATION TABLE
+   =========================================== */
+#validation-table table {
+  font-family: var(--font-family);
+  border-collapse: collapse;
+  background: var(--color-bg-card);
+}
+
+#validation-table th,
+#validation-table td {
+  border: 1.5px solid var(--color-border-subtle);
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: left;
+}
+
+#validation-table th {
+  font-family: var(--font-family-sc);
+  background-color: var(--color-bg-table-header);
+  font-weight: 600;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--font-size-sm);
+  border-bottom: 2px solid var(--color-rubrication-border);
+}
+
+#validation-table td {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-table);
+}
+
+#validation-table tr:nth-child(even) {
+  background-color: var(--color-bg-table-alt);
+}
+
+#validation-table tr:hover {
+  background-color: var(--color-bg-button);
+}
+
+/* ===========================================
+   15. (Reserved)
+   =========================================== */

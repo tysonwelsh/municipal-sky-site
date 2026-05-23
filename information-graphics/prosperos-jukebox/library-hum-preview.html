@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Hum — Living Voice Tuning</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0a;
+        color: #997733;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 32px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 820px;
+        margin: 0 auto;
+        position: relative;
+      }
+      .container::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(0, 0, 0, 0.08) 2px,
+          rgba(0, 0, 0, 0.08) 4px
+        );
+        z-index: 10;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffaa00;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.5),
+          0 0 30px rgba(255, 170, 0, 0.15);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665520;
+        letter-spacing: 3px;
+        margin: 0 0 24px;
+        font-size: 18px;
+      }
+      .intro {
+        color: #776644;
+        font-size: 15px;
+        line-height: 1.55;
+        margin: 0 0 22px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border-left: 3px solid #554422;
+      }
+      .intro em { color: #ffcc55; font-style: italic; }
+      .intro code {
+        color: #66aacc;
+        font-family: "VT323", monospace;
+        font-size: 16px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 22px;
+      }
+      .transport .vol-label { font-size: 14px; letter-spacing: 1px; color: #554422; }
+      .transport input[type="range"] {
+        flex: 1;
+        -webkit-appearance: none; appearance: none;
+        height: 6px; background: #1a1a2a; border-radius: 3px;
+        outline: none; cursor: pointer;
+      }
+      .transport input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 14px; height: 14px;
+        background: #ffaa00;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+      .transport input[type="range"]::-moz-range-thumb {
+        width: 14px; height: 14px;
+        background: #ffaa00; border: none;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+      .stop-all {
+        font-family: "VT323", monospace;
+        font-size: 18px; padding: 6px 16px;
+        background: #111118; color: #554422;
+        border: 2px solid #2a2a3a; border-radius: 3px;
+        cursor: pointer; letter-spacing: 1px;
+      }
+      .stop-all:hover, .stop-all.active {
+        border-color: #ff4444; color: #ff4444;
+        text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+      }
+
+      .panel {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 18px 22px 22px;
+        margin-bottom: 16px;
+      }
+      .panel.active {
+        border-color: #ffaa00;
+        box-shadow: 0 0 12px rgba(255, 170, 0, 0.15);
+      }
+      .panel h2 {
+        font-family: "VT323", monospace;
+        color: #ffaa00;
+        font-size: 24px;
+        letter-spacing: 2px;
+        margin: 0 0 6px;
+      }
+      .panel .desc {
+        font-size: 15px;
+        color: #776644;
+        line-height: 1.55;
+        margin: 0 0 16px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 28px;
+        margin-bottom: 18px;
+      }
+      .col-title {
+        grid-column: span 1;
+        font-size: 16px;
+        letter-spacing: 2px;
+        color: #ffcc55;
+        margin: 6px 0 6px;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #2a2a3a;
+      }
+      .ctrl {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 0 8px;
+        padding: 6px 0;
+      }
+      .ctrl.ctrl-with-preview {
+        grid-template-columns: auto 1fr auto;
+      }
+      .slider-preview-btn {
+        width: 20px;
+        height: 20px;
+        padding: 0;
+        background: #111118;
+        color: #335555;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 9px;
+        line-height: 16px;
+        text-align: center;
+        flex-shrink: 0;
+        transition: all 0.12s;
+        font-family: "VT323", monospace;
+      }
+      .slider-preview-btn:hover {
+        border-color: #00ccaa;
+        color: #00ccaa;
+      }
+      .slider-preview-btn.active {
+        border-color: #00ccaa;
+        color: #00ccaa;
+        background: #0a1a18;
+        box-shadow: 0 0 4px rgba(0, 204, 170, 0.5);
+        text-shadow: 0 0 4px rgba(0, 204, 170, 0.4);
+      }
+      .ctrl-label {
+        font-size: 15px;
+        color: #997733;
+        letter-spacing: 1px;
+      }
+      .ctrl-value {
+        font-size: 14px;
+        color: #66aacc;
+        text-align: right;
+        min-width: 92px;
+      }
+
+      /* --- Dual-handle range slider --- */
+      .range-slider {
+        position: relative;
+        grid-column: 1 / -1;
+        height: 16px;
+        margin-top: 4px;
+      }
+      .range-slider .range-track {
+        position: absolute;
+        top: 6px; left: 0; right: 0;
+        height: 4px;
+        background: #1a1a2a;
+        border-radius: 2px;
+      }
+      .range-slider .range-fill {
+        position: absolute;
+        top: 6px;
+        height: 4px;
+        background: #ffaa00;
+        border-radius: 2px;
+        opacity: 0.55;
+        pointer-events: none;
+      }
+      .range-slider input[type="range"] {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 16px;
+        margin: 0;
+        background: transparent;
+        -webkit-appearance: none; appearance: none;
+        pointer-events: none;
+        outline: none;
+      }
+      .range-slider input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; appearance: none;
+        width: 14px; height: 14px;
+        background: #ffaa00;
+        border: 2px solid #0d0d14;
+        border-radius: 50%;
+        box-shadow: 0 0 4px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        pointer-events: auto;
+        position: relative;
+        z-index: 2;
+      }
+      .range-slider input[type="range"]::-moz-range-thumb {
+        width: 14px; height: 14px;
+        background: #ffaa00;
+        border: 2px solid #0d0d14;
+        border-radius: 50%;
+        box-shadow: 0 0 4px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      .range-slider input[type="range"]::-webkit-slider-runnable-track,
+      .range-slider input[type="range"]::-moz-range-track {
+        background: transparent;
+        border: none;
+      }
+
+      .vowel-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 4px 0 8px;
+      }
+      .vowel-btn {
+        font-family: "VT323", monospace;
+        font-size: 14px;
+        padding: 4px 10px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.12s;
+      }
+      .vowel-btn:hover { border-color: #66aacc; color: #66aacc; }
+      .vowel-btn.active {
+        border-color: #ffaa00;
+        color: #ffaa00;
+        text-shadow: 0 0 4px rgba(255, 170, 0, 0.4);
+        background: #1a1820;
+      }
+
+      /* --- Vowel showcase grid --- */
+      .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        margin-top: 4px;
+      }
+      @media (max-width: 560px) {
+        .showcase-grid { grid-template-columns: repeat(2, 1fr); }
+        .controls { grid-template-columns: 1fr; }
+      }
+      .showcase-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        padding: 12px 8px;
+        background: #111118;
+        color: #997733;
+        border: 2px solid #2a2a3a;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: "VT323", monospace;
+        letter-spacing: 1px;
+        transition: all 0.12s;
+      }
+      .showcase-btn:hover { border-color: #66aacc; color: #66aacc; }
+      .showcase-btn.firing {
+        border-color: #ffaa00; color: #ffaa00;
+        text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+        background: #1a1820;
+      }
+      .showcase-btn .sc-sym { font-size: 22px; letter-spacing: 2px; }
+      .showcase-btn .sc-cap { font-size: 12px; color: #557788; letter-spacing: 1px; }
+      .showcase-btn:hover .sc-cap { color: #66aacc; }
+      .showcase-btn.firing .sc-cap { color: #ffcc55; }
+
+      .play-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 6px;
+        flex-wrap: wrap;
+      }
+      .play-btn {
+        font-family: "VT323", monospace;
+        font-size: 18px;
+        padding: 8px 24px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      .play-btn:hover { border-color: #ffaa00; color: #ffaa00; }
+      .play-btn.active {
+        border-color: #ffaa00; color: #ffaa00;
+        text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+        background: #1a1820;
+      }
+      .reset-btn {
+        font-family: "VT323", monospace;
+        font-size: 14px;
+        padding: 6px 14px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .reset-btn:hover { border-color: #00ccaa; color: #00ccaa; }
+      .play-hint {
+        font-size: 13px;
+        color: #554422;
+        letter-spacing: 1px;
+      }
+
+      .footnote {
+        color: #443322;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 28px;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Living Voice</h1>
+      <p class="subtitle">~ hum, fully ranged ~</p>
+
+      <p class="intro">
+        Every parameter is a <em>min/max range</em>. On each note (or each
+        phrase, where appropriate), the engine picks a fresh value inside
+        that range &mdash; so nothing is metronomic. Voice-character
+        defaults sit at low values with small spread so the voice feels
+        natural rather than artificial. The <code>&#9654;</code> monitors
+        on the left use the midpoint of each range, updating live as you
+        drag handles.
+      </p>
+
+      <div class="transport">
+        <span class="vol-label">VOL</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button class="stop-all" id="stop-all">&#9632; STOP</button>
+      </div>
+
+      <div class="panel" id="panel">
+        <h2>Living Voice</h2>
+        <p class="desc">
+          Each note picks fresh jitter, shimmer, vibrato, sustain, attack,
+          and gap values from these ranges. The vowel <strong>WALK</strong>
+          drifts among <code>/ng/ → /oo/ → /uh/ → /oh/ → /ah/</code>
+          (closed→open) via a Markov walk biased toward neighbors.
+        </p>
+
+        <div class="controls">
+          <div class="col-title">Voice character</div>
+          <div class="col-title">Phrase shape</div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="jitterDepth" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Jitter depth</span>
+            <span class="ctrl-value" id="val-jitterDepth">3–15 c</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-jitterDepth"></div>
+              <input type="range" id="jitterDepthMin" min="0" max="150" step="1" value="3" />
+              <input type="range" id="jitterDepthMax" min="0" max="150" step="1" value="15" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label">Phrase length</span>
+            <span class="ctrl-value" id="val-phraseLen">2–12 notes</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-phraseLen"></div>
+              <input type="range" id="phraseLenMin" min="1" max="12" step="1" value="2" />
+              <input type="range" id="phraseLenMax" min="1" max="12" step="1" value="12" />
+            </div>
+          </div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="jitterRate" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Jitter speed</span>
+            <span class="ctrl-value" id="val-jitterRate">3.0–7.0 Hz</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-jitterRate"></div>
+              <input type="range" id="jitterRateMin" min="0.5" max="30" step="0.5" value="3" />
+              <input type="range" id="jitterRateMax" min="0.5" max="30" step="0.5" value="7" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label">Sustain</span>
+            <span class="ctrl-value" id="val-dur">0.3–3.0 s</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-dur"></div>
+              <input type="range" id="durMin" min="0.2" max="6" step="0.1" value="0.3" />
+              <input type="range" id="durMax" min="0.2" max="6" step="0.1" value="3.0" />
+            </div>
+          </div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="shimmerDepth" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Shimmer depth</span>
+            <span class="ctrl-value" id="val-shimmerDepth">3–12 %</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-shimmerDepth"></div>
+              <input type="range" id="shimmerDepthMin" min="0" max="90" step="1" value="3" />
+              <input type="range" id="shimmerDepthMax" min="0" max="90" step="1" value="12" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label">Attack</span>
+            <span class="ctrl-value" id="val-attack">0.02–0.60 s</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-attack"></div>
+              <input type="range" id="attackMin" min="0.02" max="1.0" step="0.01" value="0.02" />
+              <input type="range" id="attackMax" min="0.02" max="1.0" step="0.01" value="0.60" />
+            </div>
+          </div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="shimmerRate" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Shimmer speed</span>
+            <span class="ctrl-value" id="val-shimmerRate">3.0–8.0 Hz</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-shimmerRate"></div>
+              <input type="range" id="shimmerRateMin" min="0.5" max="30" step="0.5" value="3" />
+              <input type="range" id="shimmerRateMax" min="0.5" max="30" step="0.5" value="8" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label">Inter-note gap</span>
+            <span class="ctrl-value" id="val-gap">0.00–1.50 s</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-gap"></div>
+              <input type="range" id="gapMin" min="0" max="3" step="0.05" value="0.00" />
+              <input type="range" id="gapMax" min="0" max="3" step="0.05" value="1.50" />
+            </div>
+          </div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="vibDepth" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Vibrato depth</span>
+            <span class="ctrl-value" id="val-vibDepth">0.4–1.5 Hz</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-vibDepth"></div>
+              <input type="range" id="vibDepthMin" min="0" max="20" step="0.1" value="0.4" />
+              <input type="range" id="vibDepthMax" min="0" max="20" step="0.1" value="1.5" />
+            </div>
+          </div>
+          <div class="ctrl">
+            <span class="ctrl-label">Phrase interval</span>
+            <span class="ctrl-value" id="val-phraseGap">4–25 s</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-phraseGap"></div>
+              <input type="range" id="phraseGapMin" min="1" max="60" step="1" value="4" />
+              <input type="range" id="phraseGapMax" min="1" max="60" step="1" value="25" />
+            </div>
+          </div>
+
+          <div class="ctrl ctrl-with-preview">
+            <button class="slider-preview-btn" data-preview="vibRate" title="Monitor a continuous hum (drag handles to hear)">&#9654;</button>
+            <span class="ctrl-label">Vibrato rate</span>
+            <span class="ctrl-value" id="val-vibRate">4.5–5.8 Hz</span>
+            <div class="range-slider">
+              <div class="range-track"></div>
+              <div class="range-fill" id="fill-vibRate"></div>
+              <input type="range" id="vibRateMin" min="0.5" max="15" step="0.1" value="4.5" />
+              <input type="range" id="vibRateMax" min="0.5" max="15" step="0.1" value="5.8" />
+            </div>
+          </div>
+          <div class="ctrl"><!-- balance spacer --></div>
+        </div>
+
+        <div class="ctrl" style="grid-template-columns: 1fr; padding-top: 4px;">
+          <span class="ctrl-label">Vowel</span>
+          <div class="vowel-row" id="vowel-row">
+            <button class="vowel-btn active" data-vowel="random" title="Neighbor walk across /ng/ → /oo/ → /uh/ → /oh/ → /ah/">WALK</button>
+            <button class="vowel-btn"        data-vowel="m">/m/</button>
+            <button class="vowel-btn"        data-vowel="n">/n/</button>
+            <button class="vowel-btn"        data-vowel="ng">/ng/</button>
+            <button class="vowel-btn"        data-vowel="oo">/oo/</button>
+            <button class="vowel-btn"        data-vowel="oh">/oh/</button>
+            <button class="vowel-btn"        data-vowel="uh">/uh/</button>
+            <button class="vowel-btn"        data-vowel="er">/er/</button>
+            <button class="vowel-btn"        data-vowel="ah">/ah/</button>
+          </div>
+        </div>
+
+        <div class="play-row">
+          <button class="play-btn" id="play-btn">&#9654; PLAY</button>
+          <button class="reset-btn" id="reset-btn">&#8635; RESET DEFAULTS</button>
+          <span class="play-hint">range handles update live &mdash; loop and monitors pick up new values immediately</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>Vowel Showcase</h2>
+        <p class="desc">
+          Click any vowel for a 2.5s sustained F3 note. Uses the midpoint
+          of your current voice-character ranges so vowels are comparable
+          under your tuning. Plays cleanly even when the looping pattern
+          above is stopped.
+        </p>
+        <div class="showcase-grid" id="showcase-grid">
+          <button class="showcase-btn" data-vowel="m"><span class="sc-sym">/m/</span><span class="sc-cap">closed lips</span></button>
+          <button class="showcase-btn" data-vowel="n"><span class="sc-sym">/n/</span><span class="sc-cap">tongue alveolar</span></button>
+          <button class="showcase-btn" data-vowel="ng"><span class="sc-sym">/ng/</span><span class="sc-cap">back nasal</span></button>
+          <button class="showcase-btn" data-vowel="oo"><span class="sc-sym">/oo/</span><span class="sc-cap">rounded back</span></button>
+          <button class="showcase-btn" data-vowel="oh"><span class="sc-sym">/oh/</span><span class="sc-cap">open round</span></button>
+          <button class="showcase-btn" data-vowel="uh"><span class="sc-sym">/uh/</span><span class="sc-cap">schwa</span></button>
+          <button class="showcase-btn" data-vowel="er"><span class="sc-sym">/er/</span><span class="sc-cap">rhotic</span></button>
+          <button class="showcase-btn" data-vowel="ah"><span class="sc-sym">/ah/</span><span class="sc-cap">open</span></button>
+        </div>
+      </div>
+
+      <p class="footnote">
+        C DORIAN, MALE RANGE (C3&ndash;G3) &middot; SAWTOOTH + DUAL FORMANT
+        &middot; WARM LIBRARY REVERB
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // --- Scale + Markov ---
+        var LIB_HUM_SCALE = [131, 147, 156, 175, 196]; // C3, D3, Eb3, F3, G3
+        var LIB_HUM_MARKOV = [
+          [0.05, 0.3, 0.25, 0.15, 0.25],
+          [0.25, 0.05, 0.3, 0.2, 0.2],
+          [0.2, 0.2, 0.05, 0.3, 0.25],
+          [0.15, 0.25, 0.25, 0.05, 0.3],
+          [0.3, 0.15, 0.2, 0.3, 0.05],
+        ];
+        var humIdx = 0;
+
+        function markovNext(row, r) {
+          var s = 0;
+          for (var i = 0; i < row.length; i++) {
+            s += row[i];
+            if (r < s) return i;
+          }
+          return row.length - 1;
+        }
+        function nextHumIdx() {
+          humIdx = markovNext(LIB_HUM_MARKOV[humIdx], Math.random());
+          return humIdx;
+        }
+
+        // --- Vowels ---
+        var VOWELS = {
+          m:  { f1: 270, f2: 2300, label: "closed lips" },
+          n:  { f1: 270, f2: 1750, label: "tongue alveolar" },
+          ng: { f1: 270, f2: 1500, label: "back nasal" },
+          oo: { f1: 300, f2: 870,  label: "rounded back" },
+          oh: { f1: 570, f2: 840,  label: "open round" },
+          uh: { f1: 520, f2: 1190, label: "schwa" },
+          er: { f1: 490, f2: 1350, label: "rhotic" },
+          ah: { f1: 730, f2: 1090, label: "open" },
+        };
+
+        // WALK pool — closed→open neighbor walk over a 5-vowel subset.
+        var VOWEL_POOL = ["ng", "oo", "uh", "oh", "ah"];
+        var VOWEL_WALK_MATRIX = [
+          [0.05, 0.50, 0.25, 0.12, 0.08],
+          [0.30, 0.05, 0.40, 0.15, 0.10],
+          [0.10, 0.35, 0.05, 0.35, 0.15],
+          [0.10, 0.15, 0.40, 0.05, 0.30],
+          [0.08, 0.12, 0.25, 0.50, 0.05],
+        ];
+        var vowelWalkIdx = 0;
+        function nextWalkVowel() {
+          vowelWalkIdx = markovNext(VOWEL_WALK_MATRIX[vowelWalkIdx], Math.random());
+          return VOWELS[VOWEL_POOL[vowelWalkIdx]];
+        }
+
+        // ===================================================================
+        // DEFAULTS — every parameter is a min/max range. The engine picks a
+        // fresh value within each range per note (or per phrase, for the
+        // phrase-level ones). Voice-character defaults sit at low values
+        // with small spread for a natural-sounding voice.
+        // ===================================================================
+        var DEFAULTS = {
+          jitterDepthMin:   3,   jitterDepthMax:  15,    // cents
+          jitterRateMin:    3,   jitterRateMax:    7,    // Hz
+          shimmerDepthMin:  3,   shimmerDepthMax: 12,    // percent
+          shimmerRateMin:   3,   shimmerRateMax:   8,    // Hz
+          vibDepthMin:      0.4, vibDepthMax:      1.5,  // Hz of pitch mod
+          vibRateMin:       4.5, vibRateMax:       5.8,  // Hz
+          phraseLenMin:     2,   phraseLenMax:    12,    // notes
+          durMin:           0.3, durMax:           3.0,  // seconds — per note
+          attackMin:        0.02, attackMax:       0.60, // seconds — per note
+          gapMin:           0.00, gapMax:          1.50, // seconds — per note
+          phraseGapMin:     4,   phraseGapMax:    25,    // seconds — per phrase
+          vowel:           "random",                     // "random" = walk
+        };
+        var P = Object.assign({}, DEFAULTS);
+
+        function randInRange(mn, mx) { return mn + Math.random() * (mx - mn); }
+        function midpoint(mn, mx)    { return (mn + mx) / 2; }
+
+        // --- Audio graph ---
+        var ctx, masterGain, compressor;
+        var reverbSend, reverbDry, reverbWet, reverbConv, reverbPreDelay;
+        var masterVol = 0.12;
+        var playing = false;
+        var timers = new Set();
+
+        function buildReverbIR() {
+          var decay = 2.0, hfDamp = 4.0;
+          var irLen = ctx.sampleRate * decay;
+          var buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var d = buf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decay);
+              var hf = Math.exp((-hfDamp * t) / decay);
+              d[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+          reverbConv.buffer = buf;
+          reverbPreDelay.delayTime.setValueAtTime(0.025, ctx.currentTime);
+          reverbWet.gain.setValueAtTime(0.35, ctx.currentTime);
+        }
+
+        function initAudio() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+          reverbSend = ctx.createGain();
+          reverbDry = ctx.createGain();
+          reverbWet = ctx.createGain();
+          reverbConv = ctx.createConvolver();
+          reverbPreDelay = ctx.createDelay(0.1);
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(reverbPreDelay);
+          reverbPreDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          reverbDry.connect(masterGain);
+          reverbWet.connect(masterGain);
+          masterGain.connect(compressor);
+          compressor.connect(ctx.destination);
+          buildReverbIR();
+        }
+
+        function randomPanner() {
+          var p = ctx.createStereoPanner();
+          p.pan.setValueAtTime((Math.random() * 2 - 1) * 0.5, ctx.currentTime);
+          p.connect(reverbSend);
+          return p;
+        }
+
+        // Slow noise buffer, linearly interpolated between random keyframes.
+        function slowNoiseBuffer(durationSec, changesPerSec) {
+          var samplesPerSlot = Math.max(1, Math.floor(ctx.sampleRate / changesPerSec));
+          var totalSamples = Math.max(
+            Math.floor(ctx.sampleRate * durationSec),
+            samplesPerSlot * 4
+          );
+          var buf = ctx.createBuffer(1, totalSamples, ctx.sampleRate);
+          var data = buf.getChannelData(0);
+          var nKeys = Math.ceil(totalSamples / samplesPerSlot) + 2;
+          var keys = new Float32Array(nKeys);
+          for (var k = 0; k < nKeys; k++) keys[k] = Math.random() * 2 - 1;
+          for (var i = 0; i < totalSamples; i++) {
+            var pos = i / samplesPerSlot;
+            var i0 = Math.floor(pos);
+            var frac = pos - i0;
+            data[i] = keys[i0] * (1 - frac) + keys[i0 + 1] * frac;
+          }
+          return buf;
+        }
+
+        function currentVowel() {
+          if (P.vowel === "random") return nextWalkVowel();
+          return VOWELS[P.vowel];
+        }
+
+        // ===================================================================
+        // Living-voice note. opts overrides per-parameter; missing values
+        // fall back to the midpoint of their range so showcase/monitor
+        // playback gets sensible "typical" values.
+        // ===================================================================
+        function livingNote(freq, t, dur, out, vowel, opts) {
+          var c = ctx;
+          opts = opts || {};
+          var attack       = opts.attack       != null ? opts.attack       : midpoint(P.attackMin, P.attackMax);
+          var jitterDepth  = opts.jitterDepth  != null ? opts.jitterDepth  : midpoint(P.jitterDepthMin, P.jitterDepthMax);
+          var jitterRate   = opts.jitterRate   != null ? opts.jitterRate   : midpoint(P.jitterRateMin, P.jitterRateMax);
+          var shimmerDepth = opts.shimmerDepth != null ? opts.shimmerDepth : midpoint(P.shimmerDepthMin, P.shimmerDepthMax);
+          var shimmerRate  = opts.shimmerRate  != null ? opts.shimmerRate  : midpoint(P.shimmerRateMin, P.shimmerRateMax);
+          var vibDepth     = opts.vibDepth     != null ? opts.vibDepth     : midpoint(P.vibDepthMin, P.vibDepthMax);
+          var vibRate      = opts.vibRate      != null ? opts.vibRate      : midpoint(P.vibRateMin, P.vibRateMax);
+
+          var peak = 0.045;
+          // Clamp attack/release so envelope events stay in time order.
+          // Without this, short notes with long attack throw
+          // InvalidAccessError from linearRampToValueAtTime, silencing
+          // the entire phrase.
+          var safeAttack  = Math.min(attack, dur * 0.4);
+          var safeRelease = Math.min(Math.max(0.05, dur * 0.4), Math.max(0.05, dur - safeAttack - 0.05));
+          var plateauStart = t + safeAttack;
+          var plateauEnd   = t + dur - safeRelease;
+          if (plateauEnd <= plateauStart) plateauEnd = plateauStart + 0.01;
+          var noteEnd = t + dur;
+          var release = safeRelease;
+
+          // Voice
+          var voice = c.createOscillator();
+          voice.type = "sawtooth";
+          voice.frequency.setValueAtTime(freq, t);
+
+          // Jitter (skip if depth=0)
+          if (jitterDepth > 0) {
+            var jitterBuf = slowNoiseBuffer(dur + 0.4, Math.max(0.5, jitterRate));
+            var jitterSrc = c.createBufferSource();
+            jitterSrc.buffer = jitterBuf;
+            var jitterGain = c.createGain();
+            jitterGain.gain.setValueAtTime(jitterDepth, t);
+            jitterSrc.connect(jitterGain);
+            jitterGain.connect(voice.detune);
+            jitterSrc.start(t);
+            jitterSrc.stop(t + dur + 0.1);
+          }
+
+          // Vibrato (skip if depth=0)
+          if (vibDepth > 0) {
+            var vib = c.createOscillator();
+            var vibGain = c.createGain();
+            vib.type = "sine";
+            vib.frequency.setValueAtTime(vibRate, t);
+            vibGain.gain.setValueAtTime(0, t);
+            vibGain.gain.linearRampToValueAtTime(vibDepth, t + 0.1);
+            vib.connect(vibGain);
+            vibGain.connect(voice.frequency);
+            vib.start(t);
+            vib.stop(t + dur + 0.05);
+          }
+
+          // Formants — Q=3/3.5 so each bandpass passes a band of harmonics
+          // (not a single one); F2 attenuated so it shapes timbre rather
+          // than competing as a second tone.
+          var f1 = c.createBiquadFilter();
+          f1.type = "bandpass";
+          f1.frequency.setValueAtTime(vowel.f1, t);
+          f1.Q.setValueAtTime(3, t);
+          var f2 = c.createBiquadFilter();
+          f2.type = "bandpass";
+          f2.frequency.setValueAtTime(vowel.f2, t);
+          f2.Q.setValueAtTime(3.5, t);
+          var f2Gain = c.createGain();
+          f2Gain.gain.setValueAtTime(0.5, t);
+
+          var voiceMix = c.createGain();
+          voice.connect(f1);
+          voice.connect(f2);
+          f1.connect(voiceMix);
+          f2.connect(f2Gain);
+          f2Gain.connect(voiceMix);
+
+          // Shimmer (in series; bypass if depth=0)
+          var preEnv;
+          if (shimmerDepth > 0) {
+            var shimmerGain = c.createGain();
+            shimmerGain.gain.setValueAtTime(1.0, t);
+            var shimmerBuf = slowNoiseBuffer(dur + 0.4, Math.max(0.5, shimmerRate));
+            var shimmerSrc = c.createBufferSource();
+            shimmerSrc.buffer = shimmerBuf;
+            var shimmerDepthGain = c.createGain();
+            shimmerDepthGain.gain.setValueAtTime(shimmerDepth / 100, t);
+            shimmerSrc.connect(shimmerDepthGain);
+            shimmerDepthGain.connect(shimmerGain.gain);
+            shimmerSrc.start(t);
+            shimmerSrc.stop(t + dur + 0.1);
+            voiceMix.connect(shimmerGain);
+            preEnv = shimmerGain;
+          } else {
+            preEnv = voiceMix;
+          }
+
+          // Envelope — uses clamped safeAttack/safeRelease above
+          var env = c.createGain();
+          env.gain.setValueAtTime(0, t);
+          env.gain.linearRampToValueAtTime(peak, plateauStart);
+          env.gain.setValueAtTime(peak * 0.92, plateauEnd);
+          env.gain.linearRampToValueAtTime(0, noteEnd);
+          preEnv.connect(env);
+          env.connect(out);
+
+          voice.start(t);
+          voice.stop(t + dur + 0.05);
+        }
+
+        function fire() {
+          var out = randomPanner();
+          var now = ctx.currentTime;
+          var minLen = Math.max(1, Math.min(P.phraseLenMin, P.phraseLenMax));
+          var maxLen = Math.max(1, Math.max(P.phraseLenMin, P.phraseLenMax));
+          var phraseLen = minLen + Math.floor(Math.random() * (maxLen - minLen + 1));
+          var dMin = Math.min(P.durMin, P.durMax);
+          var dMax = Math.max(P.durMin, P.durMax);
+          var aMin = Math.min(P.attackMin, P.attackMax);
+          var aMax = Math.max(P.attackMin, P.attackMax);
+          var gMin = Math.min(P.gapMin, P.gapMax);
+          var gMax = Math.max(P.gapMin, P.gapMax);
+          var vowel = currentVowel();
+
+          var offset = 0;
+          for (var i = 0; i < phraseLen; i++) {
+            var idx = nextHumIdx();
+            // Pick fresh per-note values from each range
+            var dur = randInRange(dMin, dMax);
+            var opts = {
+              attack:       randInRange(aMin, aMax),
+              jitterDepth:  randInRange(P.jitterDepthMin, P.jitterDepthMax),
+              jitterRate:   randInRange(P.jitterRateMin, P.jitterRateMax),
+              shimmerDepth: randInRange(P.shimmerDepthMin, P.shimmerDepthMax),
+              shimmerRate:  randInRange(P.shimmerRateMin, P.shimmerRateMax),
+              vibDepth:     randInRange(P.vibDepthMin, P.vibDepthMax),
+              vibRate:      randInRange(P.vibRateMin, P.vibRateMax),
+            };
+            livingNote(LIB_HUM_SCALE[idx], now + offset, dur, out, vowel, opts);
+            offset += dur + randInRange(gMin, gMax);
+          }
+        }
+
+        // ===================================================================
+        // Scheduling
+        // ===================================================================
+        function schedule(fn, ms) {
+          var id = setTimeout(function () {
+            timers.delete(id);
+            if (playing) fn();
+          }, ms);
+          timers.add(id);
+        }
+        function clearTimers() {
+          timers.forEach(function (id) { clearTimeout(id); });
+          timers.clear();
+        }
+
+        function loop() {
+          if (!playing) return;
+          fire();
+          var ms = randInRange(P.phraseGapMin, P.phraseGapMax) * 1000;
+          schedule(loop, ms);
+        }
+
+        // ===================================================================
+        // Continuous slider-preview engine (midpoints of all ranges)
+        // ===================================================================
+        var REF_NOISE_RATE = 30; // Hz baseline for noise buffers; playbackRate scales
+        var contPreview = null;
+
+        function startContPreview(sliderId) {
+          if (contPreview) stopContPreview(true);
+          if (playing) stop();
+          initAudio();
+          if (ctx.state === "suspended") ctx.resume();
+          masterGain.gain.cancelScheduledValues(ctx.currentTime);
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+
+          var c = ctx;
+          var t = c.currentTime;
+          var freq = 175;
+          var vowel = VOWELS.m;
+          var peak = 0.045;
+          var attack = 0.25;
+
+          var pan = c.createStereoPanner();
+          pan.pan.setValueAtTime(0, t);
+          pan.connect(reverbSend);
+
+          var voice = c.createOscillator();
+          voice.type = "sawtooth";
+          voice.frequency.setValueAtTime(freq, t);
+
+          // Jitter — looped slow-noise with playbackRate-controlled speed
+          var jitterBuf = slowNoiseBuffer(8, REF_NOISE_RATE);
+          var jitterSrc = c.createBufferSource();
+          jitterSrc.buffer = jitterBuf;
+          jitterSrc.loop = true;
+          jitterSrc.playbackRate.setValueAtTime(midpoint(P.jitterRateMin, P.jitterRateMax) / REF_NOISE_RATE, t);
+          var jitterGain = c.createGain();
+          jitterGain.gain.setValueAtTime(midpoint(P.jitterDepthMin, P.jitterDepthMax), t);
+          jitterSrc.connect(jitterGain);
+          jitterGain.connect(voice.detune);
+          jitterSrc.start(t);
+
+          // Vibrato
+          var vib = c.createOscillator();
+          var vibGain = c.createGain();
+          vib.type = "sine";
+          vib.frequency.setValueAtTime(midpoint(P.vibRateMin, P.vibRateMax), t);
+          vibGain.gain.setValueAtTime(0, t);
+          vibGain.gain.linearRampToValueAtTime(midpoint(P.vibDepthMin, P.vibDepthMax), t + 0.1);
+          vib.connect(vibGain);
+          vibGain.connect(voice.frequency);
+          vib.start(t);
+
+          var f1 = c.createBiquadFilter();
+          f1.type = "bandpass";
+          f1.frequency.setValueAtTime(vowel.f1, t);
+          f1.Q.setValueAtTime(3, t);
+          var f2 = c.createBiquadFilter();
+          f2.type = "bandpass";
+          f2.frequency.setValueAtTime(vowel.f2, t);
+          f2.Q.setValueAtTime(3.5, t);
+          var f2Gain = c.createGain();
+          f2Gain.gain.setValueAtTime(0.5, t);
+          var voiceMix = c.createGain();
+          voice.connect(f1);
+          voice.connect(f2);
+          f1.connect(voiceMix);
+          f2.connect(f2Gain);
+          f2Gain.connect(voiceMix);
+
+          // Shimmer
+          var shimmerGain = c.createGain();
+          shimmerGain.gain.setValueAtTime(1.0, t);
+          var shimmerBuf = slowNoiseBuffer(8, REF_NOISE_RATE);
+          var shimmerSrc = c.createBufferSource();
+          shimmerSrc.buffer = shimmerBuf;
+          shimmerSrc.loop = true;
+          shimmerSrc.playbackRate.setValueAtTime(midpoint(P.shimmerRateMin, P.shimmerRateMax) / REF_NOISE_RATE, t);
+          var shimmerDepthGain = c.createGain();
+          shimmerDepthGain.gain.setValueAtTime(midpoint(P.shimmerDepthMin, P.shimmerDepthMax) / 100, t);
+          shimmerSrc.connect(shimmerDepthGain);
+          shimmerDepthGain.connect(shimmerGain.gain);
+          shimmerSrc.start(t);
+          voiceMix.connect(shimmerGain);
+
+          var env = c.createGain();
+          env.gain.setValueAtTime(0, t);
+          env.gain.linearRampToValueAtTime(peak, t + attack);
+          shimmerGain.connect(env);
+          env.connect(pan);
+          voice.start(t);
+
+          contPreview = {
+            sliderId: sliderId,
+            voice: voice,
+            vib: vib,
+            vibGain: vibGain,
+            jitterSrc: jitterSrc,
+            jitterGain: jitterGain,
+            shimmerSrc: shimmerSrc,
+            shimmerDepthGain: shimmerDepthGain,
+            env: env,
+            peak: peak,
+          };
+          updateContPreviewBtns();
+        }
+
+        function stopContPreview(immediate) {
+          if (!contPreview) return;
+          var cp = contPreview;
+          contPreview = null;
+          updateContPreviewBtns();
+          if (!ctx) return;
+          var t = ctx.currentTime;
+          var fadeOut = immediate ? 0.05 : 0.2;
+          cp.env.gain.cancelScheduledValues(t);
+          cp.env.gain.setValueAtTime(cp.env.gain.value || cp.peak, t);
+          cp.env.gain.linearRampToValueAtTime(0, t + fadeOut);
+          var stopAt = t + fadeOut + 0.05;
+          try { cp.voice.stop(stopAt); } catch (e) {}
+          try { cp.vib.stop(stopAt); } catch (e) {}
+          try { cp.jitterSrc.stop(stopAt); } catch (e) {}
+          try { cp.shimmerSrc.stop(stopAt); } catch (e) {}
+        }
+
+        function updateContPreviewParams() {
+          if (!contPreview || !ctx) return;
+          var cp = contPreview;
+          var t = ctx.currentTime;
+          cp.jitterGain.gain.setValueAtTime(midpoint(P.jitterDepthMin, P.jitterDepthMax), t);
+          cp.jitterSrc.playbackRate.setValueAtTime(midpoint(P.jitterRateMin, P.jitterRateMax) / REF_NOISE_RATE, t);
+          cp.shimmerDepthGain.gain.setValueAtTime(midpoint(P.shimmerDepthMin, P.shimmerDepthMax) / 100, t);
+          cp.shimmerSrc.playbackRate.setValueAtTime(midpoint(P.shimmerRateMin, P.shimmerRateMax) / REF_NOISE_RATE, t);
+          cp.vibGain.gain.setValueAtTime(midpoint(P.vibDepthMin, P.vibDepthMax), t);
+          cp.vib.frequency.setValueAtTime(midpoint(P.vibRateMin, P.vibRateMax), t);
+        }
+
+        function updateContPreviewBtns() {
+          document.querySelectorAll(".slider-preview-btn").forEach(function (b) {
+            var id = b.getAttribute("data-preview");
+            if (contPreview && contPreview.sliderId === id) {
+              b.classList.add("active");
+              b.innerHTML = "&#9632;";
+            } else {
+              b.classList.remove("active");
+              b.innerHTML = "&#9654;";
+            }
+          });
+        }
+
+        // ===================================================================
+        // Dual-handle slider helper
+        // ===================================================================
+        function formatRange(mn, mx, decimals, unit) {
+          var f = function (v) { return v.toFixed(decimals); };
+          if (mn === mx) return f(mn) + " " + unit;
+          return f(mn) + "–" + f(mx) + " " + unit;
+        }
+
+        function wireDualSlider(idBase, formatFn, onChange) {
+          var minEl  = document.getElementById(idBase + "Min");
+          var maxEl  = document.getElementById(idBase + "Max");
+          var fillEl = document.getElementById("fill-" + idBase);
+          var valEl  = document.getElementById("val-" + idBase);
+          var integerStep = parseFloat(minEl.step || "1") >= 1;
+
+          function update() {
+            var mn = parseFloat(minEl.value);
+            var mx = parseFloat(maxEl.value);
+            P[idBase + "Min"] = mn;
+            P[idBase + "Max"] = mx;
+            var sMin = parseFloat(minEl.min);
+            var sMax = parseFloat(minEl.max);
+            fillEl.style.left  = ((mn - sMin) / (sMax - sMin)) * 100 + "%";
+            fillEl.style.width = ((mx - mn) / (sMax - sMin)) * 100 + "%";
+            valEl.innerHTML = formatFn(mn, mx);
+            if (onChange) onChange();
+          }
+          minEl.addEventListener("input", function () {
+            var mn = parseFloat(minEl.value);
+            var mx = parseFloat(maxEl.value);
+            if (mn > mx) maxEl.value = mn;
+            update();
+          });
+          maxEl.addEventListener("input", function () {
+            var mn = parseFloat(minEl.value);
+            var mx = parseFloat(maxEl.value);
+            if (mx < mn) minEl.value = mx;
+            update();
+          });
+          update();
+
+          return {
+            reset: function () {
+              minEl.value = DEFAULTS[idBase + "Min"];
+              maxEl.value = DEFAULTS[idBase + "Max"];
+              update();
+            }
+          };
+        }
+
+        // Voice character sliders — also push live updates into the monitor.
+        var voiceCharResets = [
+          wireDualSlider("jitterDepth",  function (a, b) { return formatRange(a, b, 0, "c");  }, updateContPreviewParams),
+          wireDualSlider("jitterRate",   function (a, b) { return formatRange(a, b, 1, "Hz"); }, updateContPreviewParams),
+          wireDualSlider("shimmerDepth", function (a, b) { return formatRange(a, b, 0, "%");  }, updateContPreviewParams),
+          wireDualSlider("shimmerRate",  function (a, b) { return formatRange(a, b, 1, "Hz"); }, updateContPreviewParams),
+          wireDualSlider("vibDepth",     function (a, b) { return formatRange(a, b, 1, "Hz"); }, updateContPreviewParams),
+          wireDualSlider("vibRate",      function (a, b) { return formatRange(a, b, 1, "Hz"); }, updateContPreviewParams),
+        ];
+
+        // Phrase shape sliders
+        var phraseResets = [
+          wireDualSlider("phraseLen",  function (a, b) { return a === b ? a + (a === 1 ? " note" : " notes") : a + "–" + b + " notes"; }),
+          wireDualSlider("dur",        function (a, b) { return formatRange(a, b, 1, "s"); }),
+          wireDualSlider("attack",     function (a, b) { return formatRange(a, b, 2, "s"); }),
+          wireDualSlider("gap",        function (a, b) { return formatRange(a, b, 2, "s"); }),
+          wireDualSlider("phraseGap",  function (a, b) { return formatRange(a, b, 0, "s"); }),
+        ];
+
+        // Wire preview buttons
+        document.querySelectorAll(".slider-preview-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var id = btn.getAttribute("data-preview");
+            if (contPreview && contPreview.sliderId === id) stopContPreview();
+            else startContPreview(id);
+          });
+        });
+
+        // Vowel buttons
+        var vowelBtns = document.querySelectorAll(".vowel-btn");
+        vowelBtns.forEach(function (b) {
+          b.addEventListener("click", function () {
+            vowelBtns.forEach(function (x) { x.classList.remove("active"); });
+            b.classList.add("active");
+            P.vowel = b.getAttribute("data-vowel");
+          });
+        });
+        function setVowelButton(key) {
+          vowelBtns.forEach(function (b) {
+            if (b.getAttribute("data-vowel") === key) b.classList.add("active");
+            else b.classList.remove("active");
+          });
+        }
+
+        // Reset
+        function applyDefaults() {
+          Object.assign(P, DEFAULTS);
+          voiceCharResets.forEach(function (r) { r.reset(); });
+          phraseResets.forEach(function (r) { r.reset(); });
+          setVowelButton(DEFAULTS.vowel);
+        }
+
+        // ===================================================================
+        // Transport
+        // ===================================================================
+        var playBtn = document.getElementById("play-btn");
+        var stopBtn = document.getElementById("stop-all");
+        var resetBtn = document.getElementById("reset-btn");
+        var volInput = document.getElementById("vol");
+        var panel = document.getElementById("panel");
+
+        function updateUI() {
+          if (playing) {
+            playBtn.classList.add("active");
+            playBtn.innerHTML = "&#9632; STOP";
+            panel.classList.add("active");
+            stopBtn.classList.add("active");
+          } else {
+            playBtn.classList.remove("active");
+            playBtn.innerHTML = "&#9654; PLAY";
+            panel.classList.remove("active");
+            stopBtn.classList.remove("active");
+          }
+        }
+
+        function start() {
+          if (contPreview) stopContPreview(true);
+          initAudio();
+          if (ctx.state === "suspended") ctx.resume();
+          clearTimers();
+          humIdx = Math.floor(Math.random() * LIB_HUM_SCALE.length);
+          vowelWalkIdx = Math.floor(Math.random() * VOWEL_POOL.length);
+          playing = true;
+          masterGain.gain.cancelScheduledValues(ctx.currentTime);
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+          fire();
+          var ms = randInRange(P.phraseGapMin, P.phraseGapMax) * 1000;
+          schedule(loop, ms);
+          updateUI();
+        }
+
+        function stop() {
+          playing = false;
+          clearTimers();
+          if (contPreview) stopContPreview();
+          if (masterGain && ctx) {
+            masterGain.gain.cancelScheduledValues(ctx.currentTime);
+            masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.12);
+          }
+          updateUI();
+        }
+
+        playBtn.addEventListener("click", function () {
+          if (playing) stop(); else start();
+        });
+        stopBtn.addEventListener("click", stop);
+        resetBtn.addEventListener("click", applyDefaults);
+
+        volInput.addEventListener("input", function () {
+          masterVol = (parseInt(volInput.value, 10) / 100) * 0.2;
+          if (masterGain && playing) {
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+          }
+        });
+
+        // --- Vowel showcase: single 2.5s held note at F3, center-panned ---
+        var SHOWCASE_DUR = 2.5;
+        var SHOWCASE_FREQ = 175;
+        document.querySelectorAll(".showcase-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            masterGain.gain.cancelScheduledValues(ctx.currentTime);
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+            var vowel = VOWELS[btn.getAttribute("data-vowel")];
+            var p = ctx.createStereoPanner();
+            p.pan.setValueAtTime(0, ctx.currentTime);
+            p.connect(reverbSend);
+            // Pass empty opts → livingNote uses midpoints of current ranges
+            livingNote(SHOWCASE_FREQ, ctx.currentTime, SHOWCASE_DUR, p, vowel, {});
+            btn.classList.add("firing");
+            setTimeout(function () { btn.classList.remove("firing"); }, SHOWCASE_DUR * 1000);
+          });
+        });
+
+        updateUI();
+      })();
+    </script>
+  </body>
+</html>

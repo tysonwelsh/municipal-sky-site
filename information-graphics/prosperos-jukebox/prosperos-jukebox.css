@@ -1,0 +1,923 @@
+/* ============================================================================
+   Prospero's Jukebox — Retro Pixel Aesthetic
+   Dark background, amber glow, VT323 monospace, CRT scanline overlay
+   ============================================================================ */
+
+/* --- Scene wrapper: jukebox controls + visualization side by side --- */
+/* On viewports wide enough (~1500px+) the two cards sit next to each other.
+   Otherwise they stack vertically. */
+.jukebox-scene {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 32px;
+  margin: 48px auto 64px;
+  padding: 0 20px;
+  max-width: 1520px;
+}
+
+/* --- Jukebox card --- */
+/* A contained dark "device" sitting on the page, not a full-bleed background.
+   Box-shadow + radius give it a raised-card feel. Margin is delegated to
+   the .jukebox-scene wrapper so the side-by-side layout aligns cleanly. */
+.jukebox-frame {
+  background: #0a0a0a;
+  flex: 0 1 720px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0;
+  padding: 32px 24px 40px;
+  border: 2px solid #1a1a2a;
+  border-radius: 8px;
+  position: relative;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+/* CRT scanline overlay */
+.jukebox-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  border-radius: inherit;
+  z-index: 10;
+}
+
+/* --- Override site styles in dark context --- */
+.jukebox-frame,
+.jukebox-frame * {
+  box-sizing: border-box;
+}
+
+/* --- Title area --- */
+.jukebox-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffaa00;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(255, 170, 0, 0.5), 0 0 30px rgba(255, 170, 0, 0.15);
+  margin: 0 0 4px;
+  letter-spacing: 2px;
+}
+
+.jukebox-subtitle {
+  font-family: "VT323", monospace;
+  font-size: 18px;
+  color: #665520;
+  text-align: center;
+  margin: 0 0 28px;
+  letter-spacing: 3px;
+}
+
+/* --- Track selector tabs --- */
+.jukebox-tracks {
+  display: flex;
+  gap: 0;
+  margin-bottom: 20px;
+}
+
+.jukebox-track-tab {
+  flex: 1;
+  padding: 12px 8px;
+  font-family: "VT323", monospace;
+  font-size: 20px;
+  text-align: center;
+  background: #0d0d14;
+  color: #554422;
+  border: 2px solid #1a1a2a;
+  border-bottom: 3px solid #1a1a2a;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  letter-spacing: 1px;
+  line-height: 1.2;
+}
+
+.jukebox-track-tab:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.jukebox-track-tab:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.jukebox-track-tab + .jukebox-track-tab {
+  border-left: 1px solid #1a1a2a;
+}
+
+.jukebox-track-tab:hover {
+  color: #997733;
+  background: #111118;
+}
+
+.jukebox-track-tab.active {
+  color: #ffaa00;
+  background: #141420;
+  border-bottom-color: #ffaa00;
+  text-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+}
+
+/* --- Transport controls --- */
+.jukebox-transport {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 12px 16px;
+  background: #0d0d14;
+  border: 2px solid #1a1a2a;
+  border-radius: 4px;
+}
+
+.jukebox-btn {
+  font-family: "VT323", monospace;
+  font-size: 18px;
+  padding: 6px 16px;
+  border: 2px solid #2a2a3a;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 1px;
+  background: #111118;
+  color: #554422;
+}
+
+.jukebox-btn:hover {
+  border-color: #ffaa00;
+  color: #ffaa00;
+  background: #1a1a24;
+}
+
+.jukebox-btn.active {
+  border-color: #ffaa00;
+  color: #ffaa00;
+  text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+  background: #1a1820;
+}
+
+.jukebox-btn.stop-btn.active {
+  border-color: #ff4444;
+  color: #ff4444;
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+}
+
+.jukebox-btn.reset-btn:hover {
+  border-color: #00ccaa;
+  color: #00ccaa;
+}
+
+.jukebox-transport-spacer {
+  flex: 1;
+}
+
+.jukebox-vol-label {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: #554422;
+  letter-spacing: 1px;
+}
+
+.jukebox-vol-slider {
+  width: clamp(80px, 20vw, 140px);
+}
+
+/* --- Mixing desk --- */
+.jukebox-mixer {
+  background: #0d0d14;
+  border: 2px solid #1a1a2a;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.jukebox-mixer-title {
+  font-family: "VT323", monospace;
+  font-size: 16px;
+  color: #554422;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #1a1a2a;
+}
+
+.jukebox-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #0f0f1a;
+}
+
+.jukebox-layer-row:last-child {
+  border-bottom: none;
+}
+
+/* --- Preview button (small play triangle) --- */
+.jukebox-preview-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid #2a2a3a;
+  background: #0a0a0a;
+  color: #554422;
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.jukebox-preview-btn:hover {
+  border-color: #00ccaa;
+  color: #00ccaa;
+}
+
+.jukebox-preview-btn:active {
+  background: #112222;
+  color: #00ffcc;
+  border-color: #00ffcc;
+}
+
+/* Illuminated while a preview is running on this layer */
+.jukebox-preview-btn.active {
+  border-color: #ffaa00;
+  color: #ffaa00;
+  background: #1a1820;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+}
+
+/* --- Per-layer preview stop button --- */
+.jukebox-preview-stop-btn {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid #2a2a3a;
+  background: #0a0a0a;
+  color: #553333;
+  font-size: 10px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.jukebox-preview-stop-btn:hover {
+  border-color: #ff4444;
+  color: #ff4444;
+}
+
+.jukebox-preview-stop-btn:active {
+  background: #221111;
+  color: #ff6666;
+  border-color: #ff6666;
+}
+
+/* --- Toggle checkbox (pixel square) --- */
+.jukebox-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #2a2a3a;
+  background: #0a0a0a;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.15s;
+}
+
+.jukebox-toggle:hover {
+  border-color: #ffaa00;
+}
+
+.jukebox-toggle:checked {
+  border-color: #ffaa00;
+  background: #ffaa00;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+}
+
+.jukebox-toggle:checked::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  background: #0a0a0a;
+}
+
+/* --- Layer label --- */
+.jukebox-layer-label {
+  font-family: "VT323", monospace;
+  font-size: 18px;
+  color: #997733;
+  width: 140px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.jukebox-layer-row:hover .jukebox-layer-label {
+  color: #ffaa00;
+}
+
+.jukebox-layer-label.muted {
+  color: #332211;
+  text-decoration: line-through;
+  text-decoration-color: #442211;
+}
+
+/* --- Layer slider columns --- */
+.jukebox-layer-sliders {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.jukebox-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.jukebox-slider-tag {
+  font-family: "VT323", monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  width: 32px;
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.jukebox-slider-tag.vol-tag {
+  color: #997733;
+}
+
+.jukebox-slider-tag.rate-tag {
+  color: #338899;
+}
+
+.jukebox-slider-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --- Custom range slider styling --- */
+.jukebox-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #1a1a2a;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+.jukebox-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #ffaa00;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+}
+
+.jukebox-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: #ffaa00;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+}
+
+.jukebox-range::-webkit-slider-runnable-track {
+  height: 6px;
+  background: #1a1a2a;
+  border-radius: 3px;
+}
+
+.jukebox-range::-moz-range-track {
+  height: 6px;
+  background: #1a1a2a;
+  border-radius: 3px;
+}
+
+/* Frequency slider — cyan/teal variant */
+.jukebox-range.rate-range::-webkit-slider-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+.jukebox-range.rate-range::-moz-range-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+/* --- Flavor text --- */
+.jukebox-flavor {
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  color: #443322;
+  line-height: 1.6;
+  text-align: center;
+  padding: 16px;
+  background: #0d0d14;
+  border: 2px solid #1a1a2a;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.jukebox-flavor em {
+  color: #665520;
+  font-style: normal;
+}
+
+/* --- Status indicator --- */
+.jukebox-status {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: #332211;
+  text-align: center;
+  letter-spacing: 2px;
+  padding-top: 8px;
+}
+
+.jukebox-status.is-playing {
+  color: #ffaa00;
+  text-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+}
+
+/* ==========================================================================
+   SYCORAX PURPLE THEME — applied via .sycorax-theme on .jukebox-frame
+   Recolors all amber (#ffaa00) elements to Sycorax violet (#c896ff)
+   ========================================================================== */
+
+.sycorax-theme .jukebox-title {
+  color: #c896ff;
+  text-shadow: 0 0 12px rgba(200, 150, 255, 0.5), 0 0 30px rgba(200, 150, 255, 0.15);
+}
+
+.sycorax-theme .jukebox-subtitle {
+  color: #4a3566;
+}
+
+.sycorax-theme .jukebox-track-tab:hover {
+  color: #9966cc;
+}
+
+.sycorax-theme .jukebox-track-tab.active {
+  color: #c896ff;
+  border-bottom-color: #c896ff;
+  text-shadow: 0 0 8px rgba(200, 150, 255, 0.4);
+}
+
+.sycorax-theme .jukebox-btn:hover {
+  border-color: #c896ff;
+  color: #c896ff;
+}
+
+.sycorax-theme .jukebox-btn.active {
+  border-color: #c896ff;
+  color: #c896ff;
+  text-shadow: 0 0 6px rgba(200, 150, 255, 0.4);
+}
+
+.sycorax-theme .jukebox-btn.stop-btn.active {
+  border-color: #ff4444;
+  color: #ff4444;
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+}
+
+.sycorax-theme .jukebox-preview-btn:hover,
+.sycorax-theme .jukebox-preview-btn.active {
+  border-color: #c896ff;
+  color: #c896ff;
+}
+
+.sycorax-theme .jukebox-preview-btn.active {
+  box-shadow: 0 0 6px rgba(200, 150, 255, 0.4);
+}
+
+.sycorax-theme .jukebox-vol-label {
+  color: #4a3566;
+}
+
+.sycorax-theme .jukebox-mixer-title {
+  color: #4a3566;
+}
+
+.sycorax-theme .jukebox-toggle:hover {
+  border-color: #c896ff;
+}
+
+.sycorax-theme .jukebox-toggle:checked {
+  border-color: #c896ff;
+  background: #c896ff;
+  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+}
+
+.sycorax-theme .jukebox-layer-label {
+  color: #8866aa;
+}
+
+.sycorax-theme .jukebox-layer-row:hover .jukebox-layer-label {
+  color: #c896ff;
+}
+
+.sycorax-theme .jukebox-layer-label.muted {
+  color: #2a1533;
+  text-decoration-color: #3a2244;
+}
+
+.sycorax-theme .jukebox-slider-tag.vol-tag {
+  color: #8866aa;
+}
+
+.sycorax-theme .jukebox-range::-webkit-slider-thumb {
+  background: #c896ff;
+  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+}
+
+.sycorax-theme .jukebox-range::-moz-range-thumb {
+  background: #c896ff;
+  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+}
+
+/* Freq slider stays teal in both themes — keep its overrides last */
+.sycorax-theme .jukebox-range.rate-range::-webkit-slider-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+.sycorax-theme .jukebox-range.rate-range::-moz-range-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+.sycorax-theme .jukebox-flavor {
+  color: #3d2855;
+}
+
+.sycorax-theme .jukebox-flavor em {
+  color: #5a3d77;
+}
+
+.sycorax-theme .jukebox-status.is-playing {
+  color: #c896ff;
+  text-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+}
+
+/* ==========================================================================
+   ARIEL LIGHT BLUE THEME — applied via .ariel-theme on .jukebox-frame
+   ========================================================================== */
+
+.ariel-theme .jukebox-title {
+  color: #55ccff;
+  text-shadow: 0 0 12px rgba(85, 204, 255, 0.5), 0 0 30px rgba(85, 204, 255, 0.15);
+}
+
+.ariel-theme .jukebox-subtitle {
+  color: #1a4d66;
+}
+
+.ariel-theme .jukebox-track-tab:hover {
+  color: #4499bb;
+}
+
+.ariel-theme .jukebox-track-tab.active {
+  color: #55ccff;
+  border-bottom-color: #55ccff;
+  text-shadow: 0 0 8px rgba(85, 204, 255, 0.4);
+}
+
+.ariel-theme .jukebox-btn:hover {
+  border-color: #55ccff;
+  color: #55ccff;
+}
+
+.ariel-theme .jukebox-btn.active {
+  border-color: #55ccff;
+  color: #55ccff;
+  text-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
+}
+
+.ariel-theme .jukebox-btn.stop-btn.active {
+  border-color: #ff4444;
+  color: #ff4444;
+  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+}
+
+.ariel-theme .jukebox-preview-btn:hover,
+.ariel-theme .jukebox-preview-btn.active {
+  border-color: #55ccff;
+  color: #55ccff;
+}
+
+.ariel-theme .jukebox-preview-btn.active {
+  box-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
+}
+
+.ariel-theme .jukebox-vol-label {
+  color: #1a4d66;
+}
+
+.ariel-theme .jukebox-mixer-title {
+  color: #1a4d66;
+}
+
+.ariel-theme .jukebox-toggle:hover {
+  border-color: #55ccff;
+}
+
+.ariel-theme .jukebox-toggle:checked {
+  border-color: #55ccff;
+  background: #55ccff;
+  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+}
+
+.ariel-theme .jukebox-layer-label {
+  color: #4499bb;
+}
+
+.ariel-theme .jukebox-layer-row:hover .jukebox-layer-label {
+  color: #55ccff;
+}
+
+.ariel-theme .jukebox-layer-label.muted {
+  color: #0f2a33;
+  text-decoration-color: #1a3d4d;
+}
+
+.ariel-theme .jukebox-slider-tag.vol-tag {
+  color: #4499bb;
+}
+
+.ariel-theme .jukebox-range::-webkit-slider-thumb {
+  background: #55ccff;
+  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+}
+
+.ariel-theme .jukebox-range::-moz-range-thumb {
+  background: #55ccff;
+  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+}
+
+.ariel-theme .jukebox-range.rate-range::-webkit-slider-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+.ariel-theme .jukebox-range.rate-range::-moz-range-thumb {
+  background: #00ccaa;
+  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
+}
+
+.ariel-theme .jukebox-flavor {
+  color: #1a4d66;
+}
+
+.ariel-theme .jukebox-flavor em {
+  color: #2a6688;
+}
+
+.ariel-theme .jukebox-status.is-playing {
+  color: #55ccff;
+  text-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+}
+
+/* --- Responsive --- */
+@media (max-width: 520px) {
+  .jukebox-frame {
+    margin: 24px auto 32px;
+    padding: 20px 14px 32px;
+  }
+
+  .jukebox-title {
+    font-size: 22px;
+  }
+
+  .jukebox-track-tab {
+    font-size: 16px;
+    padding: 10px 6px;
+  }
+
+  .jukebox-transport {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .jukebox-transport-spacer {
+    display: none;
+  }
+
+  .jukebox-vol-slider {
+    width: 100%;
+    order: 10;
+  }
+
+  .jukebox-layer-label {
+    width: 110px;
+    font-size: 16px;
+  }
+
+  .jukebox-layer-row {
+    gap: 8px;
+  }
+}
+
+/* ============================================================================
+   Scene visualization card — sibling of .jukebox-frame inside .jukebox-scene
+   ============================================================================ */
+.jukebox-viz-frame {
+  background: #0a0a0a;
+  flex: 0 1 720px;
+  max-width: 720px;
+  width: 100%;
+  margin: 0;
+  padding: 28px 24px 32px;
+  border: 2px solid #1a1a2a;
+  border-radius: 8px;
+  position: relative;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.28),
+    0 2px 6px rgba(0, 0, 0, 0.18);
+}
+
+.jukebox-viz-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffaa00;
+  text-align: center;
+  text-shadow: 0 0 10px rgba(255, 170, 0, 0.45), 0 0 24px rgba(255, 170, 0, 0.12);
+  margin: 0 0 4px;
+  letter-spacing: 2px;
+}
+
+.jukebox-viz-subtitle {
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  color: #665520;
+  letter-spacing: 3px;
+  text-align: center;
+  margin: 0 0 22px;
+}
+
+.jukebox-viz-block {
+  margin-bottom: 22px;
+}
+.jukebox-viz-block:last-child { margin-bottom: 0; }
+
+.jukebox-viz-label {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: #997733;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #1a1a2a;
+}
+
+.jukebox-viz-canvas {
+  display: block;
+  width: 100%;
+  height: 320px;
+  background: #0a0a0a;
+  border: 1px solid #1a1a2a;
+  border-radius: 4px;
+}
+.jukebox-viz-canvas-short { height: 140px; }
+
+/* ---------- Harmonic center indicator ---------- */
+.jukebox-harmonic {
+  background: #0a0a0a;
+  border: 1px solid #1a1a2a;
+  border-radius: 4px;
+  padding: 18px 16px;
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  font-family: "VT323", monospace;
+}
+.jukebox-harmonic-chord {
+  font-size: 30px;
+  color: #f4c95a;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: color 600ms ease;
+}
+.jukebox-harmonic-drone {
+  font-size: 14px;
+  color: #997733;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.jukebox-harmonic-chord.flash {
+  color: #ffeab0;
+}
+
+/* Sycorax theme — cool purple palette for the viz panels */
+.sycorax-theme .jukebox-harmonic-chord       { color: #c4b5fd; }
+.sycorax-theme .jukebox-harmonic-chord.flash { color: #ede9fe; }
+.sycorax-theme .jukebox-harmonic-drone       { color: #7c6ec1; }
+.sycorax-theme .jukebox-log-id               { color: #b8a3e8; }
+.sycorax-theme .jukebox-log-layer            { color: #b8a3e8; }
+.sycorax-theme .jukebox-log-layer[data-layer="waterphone"] { color: #80e0d0; }
+.sycorax-theme .jukebox-log-cluster          { color: #9b87d8; }
+.sycorax-theme .log-tag.fresh                { color: #9b87d8; background: rgba(155, 135, 216, 0.12); }
+.sycorax-theme .log-tag.verbatim             { color: #d4c0ff; background: rgba(212, 192, 255, 0.18); }
+.sycorax-theme .log-tag.transform            { color: #80e0d0; background: rgba(128, 224, 208, 0.15); }
+.sycorax-theme .jukebox-log-transform        { color: #80e0d0; }
+.sycorax-theme .jukebox-viz-readout          { color: #c4b5fd; }
+.sycorax-theme .jukebox-viz-label            { color: #7c6ec1; }
+
+.jukebox-viz-readout {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: #f4c95a;
+  letter-spacing: 1px;
+  float: right;
+  text-transform: none;
+}
+
+.jukebox-viz-caption {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: #554422;
+  letter-spacing: 1px;
+  line-height: 1.45;
+  margin: 10px 0 0;
+}
+
+/* ---------- Harpsichord motif log ---------- */
+.jukebox-log {
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  color: #997733;
+  background: #0a0a0a;
+  border: 1px solid #1a1a2a;
+  border-radius: 4px;
+  height: 260px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  line-height: 1.55;
+}
+.jukebox-log-empty {
+  color: #554422;
+  font-style: italic;
+}
+.jukebox-log-row {
+  display: grid;
+  grid-template-columns: 64px 100px 56px 96px 1fr;
+  column-gap: 12px;
+  align-items: baseline;
+  border-bottom: 1px dotted #1a1a2a;
+  padding: 2px 0;
+}
+.jukebox-log-row:last-child { border-bottom: 0; }
+.jukebox-log-time   { color: #554422; }
+.jukebox-log-layer  { color: #aa8844; text-transform: uppercase; letter-spacing: 1px; font-size: 13px; }
+.jukebox-log-id     { color: #aa8844; }
+.jukebox-log-cluster{ color: #997733; text-transform: uppercase; letter-spacing: 1px; }
+.jukebox-log-action { letter-spacing: 1px; }
+
+/* Action badges. FRESH = neutral amber. VERBATIM = bright gold (the "ah, I
+   recognize that" return). TRANSFORM = cool cyan (returning but changed). */
+.log-tag {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 2px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+.log-tag.fresh     { color: #997733; background: rgba(153, 119, 51, 0.12); }
+.log-tag.verbatim  { color: #f4c95a; background: rgba(244, 201, 90, 0.18); }
+.log-tag.transform { color: #6fc9c9; background: rgba(111, 201, 201, 0.15); }
+
+.jukebox-log-transform {
+  color: #6fc9c9;
+  margin-left: 8px;
+  font-size: 13px;
+}

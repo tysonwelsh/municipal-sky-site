@@ -1,0 +1,18 @@
+# Municipal Sky - Minimal Configuration for Bluehost
+DirectoryIndex index.php index.html
+
+# Enable mod_rewrite for clean URLs (if available)
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Remove .php extension from URLs (basic version)
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^\.]+)$ $1.php [L]
+</IfModule>
+
+# Basic security
+<Files ".htaccess">
+Order allow,deny
+Deny from all
+</Files>

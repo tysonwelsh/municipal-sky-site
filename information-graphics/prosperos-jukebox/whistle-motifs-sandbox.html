@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Whistle motifs sandbox — Ariel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Sky-blue / aqua palette to match the airy F-Lydian Ariel mood */
+    --bg: #06090e;
+    --panel: #0c1219;
+    --border: #16223a;
+    --text: #96dcff;
+    --text-dim: #6aacd6;
+    --text-mute: #3b5777;
+    --accent: #b0e8ff;
+    --accent-strong: #e0f4ff;
+    --teal: #80e0d0;
+    --red: #f48199;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  body { padding: 28px 24px 60px; }
+
+  h1 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--accent);
+    margin: 0 0 4px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    margin: 0 0 22px;
+  }
+  .blurb { color: var(--text-dim); max-width: 760px; margin: 0 0 28px; }
+  .blurb em { color: var(--text); font-style: normal; }
+  .blurb a { color: var(--teal); }
+
+  .controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 26px;
+  }
+  .controls label {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  .controls select, .controls input[type="range"] { font-family: "VT323", monospace; font-size: 16px; }
+  .controls select {
+    background: #050a12;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  .controls input[type="range"] { width: 140px; accent-color: var(--accent); }
+  .controls .value-readout { color: var(--teal); font-size: 14px; min-width: 50px; }
+  .controls .spacer { flex: 1; }
+
+  button {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    background: #0d1421;
+    border: 1px solid var(--text-dim);
+    border-radius: 3px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  button:hover { background: #14203a; color: var(--accent); }
+  button:active { background: #1d2c4c; }
+  button.danger { color: var(--red); border-color: var(--red); }
+  button.danger:hover { background: rgba(244, 129, 153, 0.12); }
+  button.primary { color: var(--accent-strong); border-color: var(--accent); }
+  button.playing {
+    background: rgba(176, 232, 255, 0.18);
+    color: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card h2 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--accent);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+  }
+  .card .approach {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .card .desc { color: var(--text); font-size: 16px; margin-bottom: 16px; flex: 1; }
+  .card .desc .ingredient { color: var(--teal); }
+  .card .actions { display: flex; gap: 10px; align-items: center; }
+  .card .status { color: var(--text-mute); font-size: 14px; letter-spacing: 1px; margin-left: auto; }
+  .card .status.is-playing { color: var(--accent-strong); }
+
+  .footer-note { margin-top: 28px; color: var(--text-mute); font-size: 14px; max-width: 760px; }
+  .footer-note code { color: var(--teal); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Whistle Motifs</h1>
+<p class="subtitle">~ seven options for the Ariel whistle layer ~</p>
+
+<p class="blurb">
+  The whistle currently has one motif type — a 2 – 3 note Markov phrase. These seven cards explore alternative patterns, all built on the same flute-PeriodicWave + breathy-noise + 5.5 Hz vibrato synthesis the actual track uses. Pitches come from <em>F Lydian</em> (F G A B C D E), the same scale Ariel uses. <em>Lydian Gesture</em> specifically highlights the F-to-B tritone — the interval that gives Lydian its fairytale character.
+</p>
+
+<div class="controls">
+  <label for="start-degree">Starting degree</label>
+  <select id="start-degree">
+    <option value="0" selected>1 — F4 (349 Hz · tonic)</option>
+    <option value="1">2 — G4 (392 Hz)</option>
+    <option value="2">3 — A4 (440 Hz)</option>
+    <option value="3">4 — B4 (494 Hz · Lydian #4)</option>
+    <option value="4">5 — C5 (523 Hz)</option>
+    <option value="5">6 — D5 (587 Hz)</option>
+    <option value="6">7 — E5 (659 Hz)</option>
+  </select>
+
+  <label for="master-vol">Master</label>
+  <input type="range" id="master-vol" min="0" max="100" value="60" />
+
+  <span class="spacer"></span>
+
+  <button id="play-all">▶ Play all in sequence</button>
+  <button id="stop-all" class="danger">■ Stop all</button>
+</div>
+
+<div class="cards">
+
+  <div class="card" data-motif="phrase">
+    <h2>1. Phrase</h2>
+    <div class="approach">Markov phrase · 2–8 notes</div>
+    <p class="desc">
+      <span class="ingredient">2 – 8 notes</span> Markov-walked over F Lydian, each 0.6 – 1.1 s with a tiny breath between. Stepwise-biased Markov so the line wanders gently. Length varies widely — sometimes just a quick two-note utterance, sometimes a longer meandering phrase.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="loneTone">
+    <h2>2. Lone Tone</h2>
+    <div class="approach">Single held note · deeper vibrato · occasional bend</div>
+    <p class="desc">
+      One <span class="ingredient">sustained note</span> at the starting degree, 2 – 5 s. Vibrato depth bumped up (4 cents vs the default 2) so the held tone breathes more visibly. <span class="ingredient">~35% of fires include a subtle pitch bend</span> mid-note (±0.7 – 1.2 semitones, going slightly flat or sharp then returning) — reads as the whistler's voice catching expressively rather than the note sitting perfectly still.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="climb">
+    <h2>3. Climb</h2>
+    <div class="approach">Ascending Markov walk · 4–5 notes</div>
+    <p class="desc">
+      <span class="ingredient">4 – 5 notes trending upward</span> via a directional Markov walk — most steps go up by one scale degree, but ~20% step back, ~15% repeat, and ~5% leap up by two. Each note slightly longer than the last; the final note held longest. Less mechanical than a strict ascent — each fire takes its own path.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="sigh">
+    <h2>4. Sigh</h2>
+    <div class="approach">Descending Markov walk · diminuendo</div>
+    <p class="desc">
+      <span class="ingredient">3 – 4 notes trending downward</span> via a directional Markov walk (mirror of Climb), with each note quieter than the last and the final note longest at the softest dynamic. Reads as the whistle's gentle exhale — a downward sigh that occasionally pauses or briefly rises before continuing down.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="lydian">
+    <h2>5. Lydian Gesture</h2>
+    <div class="approach">F → B tritone · the Lydian color</div>
+    <p class="desc">
+      Always plays <span class="ingredient">F → B → (resolve to F)</span>, highlighting the augmented-fourth that defines F Lydian's fairytale character. Optionally returns to F at the end (50% chance). This is the gesture that says "Lydian" most directly — worth weighting fairly rare so it lands as a special moment.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="birdCall">
+    <h2>6. Bird Call</h2>
+    <div class="approach">Rapid leaps · 1–3 clusters of 2–5 notes</div>
+    <p class="desc">
+      <span class="ingredient">1 – 3 clusters</span> (weighted toward 1: ~60% one cluster, ~28% two, ~12% three) of <span class="ingredient">2 – 5 short notes</span> (~0.2 s each) with <span class="ingredient">leaping intervals</span> of 3 – 5 scale degrees, alternating up and down. Each cluster resets to the starting degree. Brief silence (0.4 – 0.8 s) between clusters — like a real bird pausing between calls. Most "Ariel's Day Off" of the bunch.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="trill">
+    <h2>7. Trill</h2>
+    <div class="approach">Rapid alternation · decorative</div>
+    <p class="desc">
+      <span class="ingredient">5 – 8 rapid alternations</span> between two close notes (step apart 70% of the time, third 30%). Each ~0.12 s. Closes with a held note on the lower of the two for resolution. Ornamental in the way a bird or flute player decorates a phrase.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer-note">
+  Listen, pick a subset. Once decided, the work to integrate is the same as for the harpsichord and ghost: build cluster builders that return motif objects, wire them through <code>buildFreshArielWhistleMotif</code> with weighted random pick, and turn on motif memory so motifs can return verbatim or transformed.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // -------- F Lydian scale (mirrors audio.js ARIEL_SCALE_4) --------
+  const SCALE = [349, 392, 440, 494, 523, 587, 659]; // F4, G4, A4, B4, C5, D5, E5
+
+  // Markov matrix from arielWhistle (stepwise biased).
+  const WHISTLE_MARKOV = [
+    [0.05, 0.30, 0.20, 0.10, 0.15, 0.10, 0.10],
+    [0.25, 0.05, 0.30, 0.10, 0.10, 0.10, 0.10],
+    [0.15, 0.25, 0.05, 0.25, 0.10, 0.10, 0.10],
+    [0.10, 0.10, 0.25, 0.05, 0.25, 0.15, 0.10],
+    [0.10, 0.10, 0.10, 0.25, 0.05, 0.25, 0.15],
+    [0.10, 0.10, 0.10, 0.15, 0.25, 0.05, 0.25],
+    [0.15, 0.10, 0.10, 0.10, 0.15, 0.30, 0.10],
+  ];
+
+  function markovNext(row, rng) {
+    let sum = 0;
+    for (let i = 0; i < row.length; i++) {
+      sum += row[i];
+      if (rng < sum) return i;
+    }
+    return row.length - 1;
+  }
+
+  function deg(idx) {
+    if (idx < 0) idx = 0;
+    else if (idx >= SCALE.length) idx = SCALE.length - 1;
+    return SCALE[idx];
+  }
+  function getStartIdx() {
+    return parseInt(document.getElementById('start-degree').value, 10);
+  }
+
+  // Directional Markov step. `direction` = +1 (up) or -1 (down).
+  // 60% step in direction, 20% step opposite, 15% stay, 5% double-step
+  // in direction. Average drift = 0.5 step per call → over 4 calls, ~2
+  // degrees of net motion in the biased direction, with organic wobble.
+  function stepDirectional(idx, direction, len) {
+    const r = Math.random();
+    let delta;
+    if (r < 0.60)      delta = direction;
+    else if (r < 0.80) delta = -direction;
+    else if (r < 0.95) delta = 0;
+    else               delta = 2 * direction;
+    return Math.max(0, Math.min(len - 1, idx + delta));
+  }
+
+  // -------- Audio context lifecycle --------
+  let ctx = null;
+  let masterGain = null;
+  let reverb = null;
+  let reverbWet = null;
+  let reverbDry = null;
+  let fluteWave = null;
+
+  const playing = {
+    phrase: null, loneTone: null, climb: null, sigh: null,
+    lydian: null, birdCall: null, trill: null,
+  };
+
+  function ensureContext() {
+    if (ctx) {
+      // Resume if a previously-running context was suspended.
+      if (ctx.state === 'suspended') ctx.resume();
+      return;
+    }
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = getMasterVol();
+    masterGain.connect(ctx.destination);
+    // Soft "outdoors" reverb — bright and airy for Ariel.
+    reverb = ctx.createConvolver();
+    reverb.buffer = buildIR(ctx, 2.6, 1.8);
+    reverbWet = ctx.createGain();
+    reverbDry = ctx.createGain();
+    reverbWet.gain.value = 0.28;
+    reverbDry.gain.value = 0.9;
+    reverb.connect(reverbWet);
+    reverbWet.connect(masterGain);
+    reverbDry.connect(masterGain);
+
+    // Flute-like PeriodicWave: strong fundamental, soft even harmonics,
+    // tapering quickly. Matches what the jukebox builds for arielWhistle.
+    const real = new Float32Array(8);
+    const imag = new Float32Array(8);
+    imag[1] = 1.0;
+    imag[2] = 0.30;
+    imag[3] = 0.10;
+    imag[4] = 0.05;
+    imag[5] = 0.02;
+    fluteWave = ctx.createPeriodicWave(real, imag);
+
+    console.info('[whistle-motifs] AudioContext created, state =', ctx.state);
+  }
+
+  function buildIR(ctx, decay, hfDamp) {
+    const rate = ctx.sampleRate;
+    const length = Math.floor(rate * decay);
+    const buf = ctx.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      let prev = 0;
+      for (let i = 0; i < length; i++) {
+        const env = Math.pow(1 - i / length, decay);
+        const noise = (Math.random() * 2 - 1) * env;
+        prev = prev + (noise - prev) / hfDamp;
+        data[i] = prev;
+      }
+    }
+    return buf;
+  }
+
+  function getMasterVol() {
+    return (parseInt(document.getElementById('master-vol').value, 10) / 100) * 0.6;
+  }
+
+  function voiceOut() {
+    const bus = ctx.createGain();
+    bus.connect(reverbDry);
+    bus.connect(reverb);
+    return bus;
+  }
+
+  // -------- Core synth: one whistle note --------
+  // Lifted from arielWhistle in the engine and parameterized with overrides
+  // so individual motifs can tweak per-note properties (vibrato depth, gain).
+  function playWhistleNote(scheduledNodes, scheduledEnvs, startTime, freq, noteDur, overrides) {
+    const opts = Object.assign({
+      gainScale: 1,
+      vibRate:   5.5,
+      vibDepth:  2,
+      noiseAmp:  1,
+      bend:      false,         // optional pitch bend (e.g. ±0.7 semitones mid-note)
+      bendSemitones: 0,         // signed bend amount in semitones
+    }, overrides || {});
+
+    const out = voiceOut();
+    const peak = 0.04 * opts.gainScale;
+
+    // Voice oscillator with vibrato — uses the flute PeriodicWave.
+    const voice = ctx.createOscillator();
+    voice.setPeriodicWave(fluteWave);
+    voice.frequency.setValueAtTime(freq, startTime);
+
+    // Optional pitch bend: linger at the original pitch, bend toward target
+    // around the middle, then return. Vibrato modulation continues to add
+    // on top of the changing base frequency.
+    if (opts.bend && opts.bendSemitones !== 0) {
+      const bendFactor = Math.pow(2, opts.bendSemitones / 12);
+      voice.frequency.linearRampToValueAtTime(freq,              startTime + noteDur * 0.35);
+      voice.frequency.linearRampToValueAtTime(freq * bendFactor, startTime + noteDur * 0.55);
+      voice.frequency.linearRampToValueAtTime(freq,              startTime + noteDur * 0.80);
+    }
+
+    const vib = ctx.createOscillator();
+    const vibG = ctx.createGain();
+    vib.type = 'sine';
+    vib.frequency.setValueAtTime(opts.vibRate, startTime);
+    vibG.gain.setValueAtTime(opts.vibDepth, startTime);
+    vib.connect(vibG);
+    vibG.connect(voice.frequency);
+
+    // Breathy noise through bandpass at 1800 Hz (the whistle's air formant).
+    const bufLen = Math.floor(ctx.sampleRate * (noteDur + 0.1));
+    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const nf = ctx.createBiquadFilter();
+    nf.type = 'bandpass';
+    nf.frequency.setValueAtTime(1800, startTime);
+    nf.Q.setValueAtTime(12, startTime);
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(opts.noiseAmp, startTime);
+
+    const mix = ctx.createGain();
+    voice.connect(mix);
+    noise.connect(nf);
+    nf.connect(ng);
+    ng.connect(mix);
+    mix.connect(out);
+
+    mix.gain.setValueAtTime(0, startTime);
+    mix.gain.linearRampToValueAtTime(peak, startTime + Math.min(0.12, noteDur * 0.2));
+    mix.gain.setValueAtTime(peak * 0.85, startTime + noteDur * 0.6);
+    mix.gain.linearRampToValueAtTime(0, startTime + noteDur);
+    scheduledEnvs.push(mix);
+
+    const stopAt = startTime + noteDur + 0.05;
+    voice.start(startTime); voice.stop(stopAt);
+    vib.start(startTime);   vib.stop(stopAt);
+    noise.start(startTime); noise.stop(stopAt);
+    scheduledNodes.push(voice, vib, noise);
+
+    return stopAt;
+  }
+
+  // -------- Motif builders --------
+  // Each returns the latest end time across all notes it scheduled.
+
+  function motifPhrase(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    let idx = startIdx;
+    const count = 2 + Math.floor(Math.random() * 7); // 2-8 notes
+    let t = startTime;
+    let lastEnd = t;
+    for (let i = 0; i < count; i++) {
+      idx = markovNext(WHISTLE_MARKOV[idx], Math.random());
+      const noteDur = 0.6 + Math.random() * 0.5;
+      const end = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idx), noteDur);
+      if (end > lastEnd) lastEnd = end;
+      t += noteDur + 0.08;
+    }
+    return lastEnd;
+  }
+
+  function motifLoneTone(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    const dur = 2 + Math.random() * 3; // 2-5 seconds
+    const overrides = { vibDepth: 4 };
+    // ~35% of fires get a small pitch bend mid-note (±0.7–1.2 semitones).
+    // Reads as expressive wavering instead of a perfectly held tone.
+    if (Math.random() < 0.35) {
+      overrides.bend = true;
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      overrides.bendSemitones = dir * (0.7 + Math.random() * 0.5);
+    }
+    return playWhistleNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx), dur, overrides);
+  }
+
+  function motifClimb(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    const count = 4 + Math.floor(Math.random() * 2); // 4-5 notes
+    let t = startTime;
+    let lastEnd = t;
+    let idx = startIdx;
+    for (let i = 0; i < count; i++) {
+      const isLast = (i === count - 1);
+      const dur = isLast ? 1.5 + Math.random() : 0.4 + 0.18 * i;
+      const end = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+      if (end > lastEnd) lastEnd = end;
+      t += dur + 0.05;
+      // Advance toward the next note via a Markov walk biased upward.
+      if (!isLast) idx = stepDirectional(idx, +1, SCALE.length);
+    }
+    return lastEnd;
+  }
+
+  function motifSigh(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    const count = 3 + Math.floor(Math.random() * 2); // 3-4 notes
+    let t = startTime;
+    let lastEnd = t;
+    let idx = startIdx;
+    for (let i = 0; i < count; i++) {
+      const isLast = (i === count - 1);
+      const dur = isLast ? 1.8 + Math.random() : 0.7 + Math.random() * 0.3;
+      const gainScale = 1.0 - i * 0.15;
+      const end = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur, { gainScale });
+      if (end > lastEnd) lastEnd = end;
+      t += dur + 0.05;
+      // Advance toward the next note via a Markov walk biased downward.
+      if (!isLast) idx = stepDirectional(idx, -1, SCALE.length);
+    }
+    return lastEnd;
+  }
+
+  function motifLydian(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // Always F (degree 0) → B (degree 3); optionally resolve back to F.
+    const dur1 = 1.0 + Math.random() * 0.4;
+    const gap  = 0.15;
+    const dur2 = 1.5 + Math.random() * 0.5;
+    const end1 = playWhistleNote(scheduledNodes, scheduledEnvs, startTime, deg(0), dur1);
+    const t2 = startTime + dur1 + gap;
+    const end2 = playWhistleNote(scheduledNodes, scheduledEnvs, t2, deg(3), dur2);
+    let lastEnd = Math.max(end1, end2);
+    if (Math.random() < 0.5) {
+      const t3 = t2 + dur2 + 0.1;
+      const dur3 = 0.6 + Math.random() * 0.4;
+      const end3 = playWhistleNote(scheduledNodes, scheduledEnvs, t3, deg(0), dur3);
+      if (end3 > lastEnd) lastEnd = end3;
+    }
+    return lastEnd;
+  }
+
+  function motifBirdCall(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // 1–3 clusters per fire, weighted toward fewer.
+    const r = Math.random();
+    const clusters = r < 0.60 ? 1 : (r < 0.88 ? 2 : 3);
+    let t = startTime;
+    let lastEnd = t;
+    for (let c = 0; c < clusters; c++) {
+      const count = 2 + Math.floor(Math.random() * 4); // 2–5 notes per cluster
+      let dir = Math.random() < 0.5 ? 1 : -1;
+      let idx = startIdx; // each cluster starts fresh at the home pitch
+      for (let i = 0; i < count; i++) {
+        const dur = 0.2 + Math.random() * 0.15;
+        const end = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+        if (end > lastEnd) lastEnd = end;
+        t += dur + 0.05;
+        const leap = 3 + Math.floor(Math.random() * 3);
+        idx = Math.max(0, Math.min(SCALE.length - 1, idx + dir * leap));
+        dir = -dir;
+      }
+      // Brief silence between clusters — like a real bird re-collecting
+      // before the next call.
+      if (c < clusters - 1) t += 0.4 + Math.random() * 0.4;
+    }
+    return lastEnd;
+  }
+
+  function motifTrill(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    const count = 5 + Math.floor(Math.random() * 4); // 5-8
+    const interval = Math.random() < 0.7 ? 1 : 2;
+    const idxLow = Math.min(SCALE.length - 1 - interval, startIdx);
+    const idxHigh = idxLow + interval;
+    let t = startTime;
+    let lastEnd = t;
+    for (let i = 0; i < count; i++) {
+      const dur = 0.12 + Math.random() * 0.04;
+      const idx = i % 2 === 0 ? idxLow : idxHigh;
+      const end = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+      if (end > lastEnd) lastEnd = end;
+      t += dur + 0.02;
+    }
+    // Held resolution on the lower note
+    const endR = playWhistleNote(scheduledNodes, scheduledEnvs, t, deg(idxLow), 1.0 + Math.random() * 0.5);
+    if (endR > lastEnd) lastEnd = endR;
+    return lastEnd;
+  }
+
+  const MOTIFS = {
+    phrase: motifPhrase,
+    loneTone: motifLoneTone,
+    climb: motifClimb,
+    sigh: motifSigh,
+    lydian: motifLydian,
+    birdCall: motifBirdCall,
+    trill: motifTrill,
+  };
+
+  // -------- Play / stop bookkeeping --------
+  function playMotif(motifName) {
+    ensureContext();
+    stopMotif(motifName); // restart-on-repeat
+    const startIdx = getStartIdx();
+    const startTime = ctx.currentTime + 0.05;
+    const entry = { nodes: [], envs: [], timer: null };
+    console.info('[whistle-motifs] play', motifName, 'at degree', startIdx + 1,
+                 '— ctx.state:', ctx.state, 'time:', ctx.currentTime.toFixed(3));
+    let stopAt;
+    try {
+      stopAt = MOTIFS[motifName](entry.nodes, entry.envs, startTime, startIdx);
+    } catch (e) {
+      console.error('[whistle-motifs] motif threw:', motifName, e);
+      return;
+    }
+    entry.stopAt = stopAt;
+    playing[motifName] = entry;
+    updateStatus(motifName, true);
+    entry.timer = setTimeout(() => {
+      if (playing[motifName] === entry) {
+        playing[motifName] = null;
+        updateStatus(motifName, false);
+      }
+    }, (stopAt - ctx.currentTime) * 1000 + 100);
+  }
+
+  function stopMotif(motifName) {
+    const entry = playing[motifName];
+    if (!entry || !ctx) return;
+    const now = ctx.currentTime;
+    entry.envs.forEach((g) => {
+      try {
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.05);
+      } catch (e) {}
+    });
+    entry.nodes.forEach((n) => {
+      try { n.stop(now + 0.08); } catch (e) {}
+    });
+    if (entry.timer) clearTimeout(entry.timer);
+    playing[motifName] = null;
+    updateStatus(motifName, false);
+  }
+
+  function stopAll() {
+    Object.keys(playing).forEach(stopMotif);
+    sequenceTimers.forEach(clearTimeout);
+    sequenceTimers = [];
+  }
+
+  function updateStatus(motifName, isPlaying) {
+    const card = document.querySelector('[data-motif="' + motifName + '"]');
+    if (!card) return;
+    const status = card.querySelector('.status');
+    const btn = card.querySelector('.play-btn');
+    if (status) {
+      status.textContent = isPlaying ? 'playing…' : 'ready';
+      status.classList.toggle('is-playing', isPlaying);
+    }
+    if (btn) btn.classList.toggle('playing', isPlaying);
+  }
+
+  // -------- Wiring --------
+  document.querySelectorAll('.card').forEach((card) => {
+    const motifName = card.getAttribute('data-motif');
+    const playBtn = card.querySelector('.play-btn');
+    if (playBtn) playBtn.addEventListener('click', () => playMotif(motifName));
+  });
+
+  document.getElementById('stop-all').addEventListener('click', stopAll);
+
+  document.getElementById('master-vol').addEventListener('input', () => {
+    if (masterGain && ctx) masterGain.gain.setValueAtTime(getMasterVol(), ctx.currentTime);
+  });
+
+  let sequenceTimers = [];
+  document.getElementById('play-all').addEventListener('click', () => {
+    ensureContext();
+    stopAll();
+    const order = [
+      { name: 'phrase',   dur: 9.0 },  // up to ~8 notes × ~1s
+      { name: 'loneTone', dur: 5.5 },
+      { name: 'climb',    dur: 6.5 },
+      { name: 'sigh',     dur: 7.0 },
+      { name: 'lydian',   dur: 4.5 },
+      { name: 'birdCall', dur: 6.5 },
+      { name: 'trill',    dur: 3.5 },
+    ];
+    const gap = 1.2;
+    let accumulated = 0;
+    order.forEach((step) => {
+      sequenceTimers.push(setTimeout(() => playMotif(step.name), accumulated * 1000));
+      accumulated += step.dur + gap;
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

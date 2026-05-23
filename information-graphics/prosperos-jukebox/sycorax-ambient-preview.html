@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sycorax Ambient Preview — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0a;
+        color: #8866aa;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 32px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 780px;
+        margin: 0 auto;
+        position: relative;
+      }
+      .container::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(0, 0, 0, 0.08) 2px,
+          rgba(0, 0, 0, 0.08) 4px
+        );
+        z-index: 10;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #c896ff;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(200, 150, 255, 0.5),
+          0 0 30px rgba(200, 150, 255, 0.15);
+      }
+      .subtitle {
+        text-align: center;
+        color: #4a3566;
+        letter-spacing: 3px;
+        margin: 0 0 28px;
+        font-size: 18px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 22px;
+      }
+      .vol-label {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #4a3566;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #c896ff;
+        box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #c896ff;
+        border: none;
+        box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
+        cursor: pointer;
+      }
+
+      .transport input[type="range"] {
+        flex: 1;
+      }
+
+      .transport-btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #111118;
+        color: #4a3566;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .transport-btn:hover {
+        border-color: #c896ff;
+        color: #c896ff;
+      }
+      .transport-btn.random:hover {
+        border-color: #66dd99;
+        color: #66dd99;
+      }
+
+      .event-card {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 16px 20px 18px;
+        margin-bottom: 16px;
+      }
+      .event-card .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4px;
+      }
+      .event-card h2 {
+        font-family: "VT323", monospace;
+        color: #c896ff;
+        font-size: 22px;
+        letter-spacing: 2px;
+        margin: 0;
+      }
+      .event-card .weight {
+        color: #4a3566;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .event-card .desc {
+        font-size: 15px;
+        color: #7755aa;
+        line-height: 1.5;
+        margin: 0 0 12px;
+      }
+      .ctrl-row {
+        display: grid;
+        grid-template-columns: 95px 1fr 78px;
+        align-items: center;
+        gap: 12px;
+        margin: 5px 0;
+      }
+      .ctrl-row .label {
+        font-size: 14px;
+        color: #7755aa;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .ctrl-row .val {
+        text-align: right;
+        font-size: 15px;
+        color: #8866aa;
+        font-variant-numeric: tabular-nums;
+      }
+      .ctrl-row input[type="range"] {
+        width: 100%;
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 18px;
+        background: #111118;
+        color: #4a3566;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      .btn:hover {
+        border-color: #c896ff;
+        color: #c896ff;
+      }
+      .btn.reset:hover {
+        border-color: #66dd99;
+        color: #66dd99;
+      }
+      .btn.copy:hover {
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .btn.copy.copied {
+        border-color: #66dd66;
+        color: #66dd66;
+      }
+
+      .footnote {
+        color: #3a2244;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 28px;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Sycorax Ambient Preview</h1>
+      <p class="subtitle">~ dark chance events for Sycorax's spell ~</p>
+
+      <div class="transport">
+        <span class="vol-label">MASTER</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button
+          class="transport-btn"
+          id="test-btn"
+          title="Plays a 440Hz sine to verify audio routing"
+        >
+          &#9835; TEST
+        </button>
+        <button class="transport-btn random" id="random-btn">
+          &#9862; RANDOM EVENT
+        </button>
+      </div>
+
+      <div id="events"></div>
+
+      <p class="footnote">
+        CHROMATIC-LOCRIAN &middot; CAVERNOUS DARK REVERB &middot; EACH PLAY USES
+        A FRESH STEREO PAN
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // --- Audio graph ---
+        var ctx, masterGain, compressor;
+        var reverbSend, reverbDry, reverbWet, reverbConv, reverbPreDelay;
+        var sharedNoiseBuf;
+        var NOISE_BUF_DURATION = 30;
+        // Preview master is louder than production (0.12) because single events are
+        // quiet in isolation without the drone/whisper bed under them.
+        var masterVol = 0.6;
+
+        function buildReverbIR() {
+          // Sycorax: dark cavernous cave — long decay, low HF damping, long pre-delay
+          var decay = 4.5,
+            hfDamp = 1.5;
+          var irLen = ctx.sampleRate * decay;
+          var buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var d = buf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decay);
+              var hf = Math.exp((-hfDamp * t) / decay);
+              d[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+          reverbConv.buffer = buf;
+          reverbPreDelay.delayTime.setValueAtTime(0.04, ctx.currentTime);
+          reverbWet.gain.setValueAtTime(0.35, ctx.currentTime);
+        }
+
+        function initAudio() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+          reverbSend = ctx.createGain();
+          reverbDry = ctx.createGain();
+          reverbWet = ctx.createGain();
+          reverbConv = ctx.createConvolver();
+          reverbPreDelay = ctx.createDelay(0.1);
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(reverbPreDelay);
+          reverbPreDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          reverbDry.connect(masterGain);
+          reverbWet.connect(masterGain);
+          masterGain.connect(compressor);
+          compressor.connect(ctx.destination);
+
+          buildReverbIR();
+
+          var noiseSamples = ctx.sampleRate * NOISE_BUF_DURATION;
+          sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
+          var d = sharedNoiseBuf.getChannelData(0);
+          for (var i = 0; i < noiseSamples; i++) d[i] = Math.random() * 2 - 1;
+        }
+
+        function noiseSource(duration) {
+          var n = ctx.createBufferSource();
+          n.buffer = sharedNoiseBuf;
+          n._offset =
+            Math.random() * Math.max(0, NOISE_BUF_DURATION - duration);
+          n._duration = duration;
+          return n;
+        }
+        function startNoise(n, when) {
+          n.start(when, n._offset, n._duration);
+        }
+
+        function panner() {
+          var p = ctx.createStereoPanner();
+          p.pan.setValueAtTime((Math.random() * 2 - 1) * 0.7, ctx.currentTime);
+          p.connect(reverbSend);
+          return p;
+        }
+
+        // ==========================================================================
+        // EVENT SYNTH FUNCTIONS (parameterized)
+        // ==========================================================================
+
+        function evChainsRattle(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.pings; i++) {
+            var t = now + (i / p.pings) * p.duration;
+            var pingDur = 0.02 + Math.random() * 0.03;
+            var n = noiseSource(pingDur);
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            f.type = "bandpass";
+            f.frequency.setValueAtTime(p.centerFreq + Math.random() * 1500, t);
+            f.Q.setValueAtTime(20 + Math.random() * 15, t);
+            n.connect(f);
+            f.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume * (0.8 + Math.random() * 0.6), t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + pingDur);
+            startNoise(n, t);
+          }
+        }
+
+        function evDistantThunder(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var dur = p.duration;
+
+          // 1. Boom — initial impact transient, sharp attack, quick LP sweep down
+          var boomDur = 0.4 + Math.random() * 0.2;
+          var bn = noiseSource(boomDur);
+          var bg = c.createGain();
+          var blp = c.createBiquadFilter();
+          blp.type = "lowpass";
+          blp.frequency.setValueAtTime(500, now);
+          blp.frequency.exponentialRampToValueAtTime(80, now + boomDur);
+          blp.Q.setValueAtTime(1.2, now);
+          bn.connect(blp);
+          blp.connect(bg);
+          bg.connect(out);
+          bg.gain.setValueAtTime(0, now);
+          bg.gain.linearRampToValueAtTime(p.volume * 1.8, now + 0.008);
+          bg.gain.exponentialRampToValueAtTime(0.0001, now + boomDur);
+          startNoise(bn, now);
+
+          // 2. Rolling rumble — trails the boom
+          var n = noiseSource(dur);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "lowpass";
+          f.frequency.setValueAtTime(60, now);
+          f.frequency.linearRampToValueAtTime(p.peakFreq, now + dur * 0.35);
+          f.frequency.linearRampToValueAtTime(40, now + dur);
+          f.Q.setValueAtTime(1, now);
+          n.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + 0.3);
+          g.gain.setValueAtTime(p.volume * 0.9, now + dur * 0.5);
+          g.gain.linearRampToValueAtTime(0, now + dur);
+          startNoise(n, now);
+        }
+
+        function evGlassShatter(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+
+          // Initial transient
+          var transDur = 0.03;
+          var n = noiseSource(transDur);
+          var tg = c.createGain();
+          var hp = c.createBiquadFilter();
+          hp.type = "highpass";
+          hp.frequency.setValueAtTime(p.pitch, now);
+          n.connect(hp);
+          hp.connect(tg);
+          tg.connect(out);
+          tg.gain.setValueAtTime(p.volume * 1.4, now);
+          tg.gain.exponentialRampToValueAtTime(0.001, now + transDur);
+          startNoise(n, now);
+
+          // Scattered pings
+          for (var i = 0; i < p.pings; i++) {
+            var t = now + 0.01 + Math.random() * 0.05;
+            var freq = p.pitch * 0.5 + Math.random() * p.pitch * 1.5;
+            var decay = 0.2 + Math.random() * 0.3;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(freq, t);
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume * 0.6, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+            o.start(t);
+            o.stop(t + decay + 0.01);
+          }
+        }
+
+        function evRavenCry(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + i * (0.15 + Math.random() * 0.1);
+            var dur = 0.12 + Math.random() * 0.08;
+            var startFreq = p.startFreq + (Math.random() - 0.5) * 300;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            var f1 = c.createBiquadFilter();
+            var f2 = c.createBiquadFilter();
+            o.type = "sawtooth";
+            o.frequency.setValueAtTime(startFreq, t);
+            o.frequency.exponentialRampToValueAtTime(startFreq * 0.4, t + dur);
+            f1.type = "bandpass";
+            f1.frequency.setValueAtTime(1200, t);
+            f1.Q.setValueAtTime(8, t);
+            f2.type = "bandpass";
+            f2.frequency.setValueAtTime(2800, t);
+            f2.Q.setValueAtTime(6, t);
+            o.connect(f1);
+            o.connect(f2);
+            var mix = c.createGain();
+            f1.connect(mix);
+            f2.connect(mix);
+            mix.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.start(t);
+            o.stop(t + dur + 0.01);
+          }
+        }
+
+        function evDrippingWater(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + i * (0.15 + Math.random() * 0.2);
+            var startFreq = p.pitch + (Math.random() - 0.5) * 800;
+            var dur = 0.08 + Math.random() * 0.06;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(startFreq, t);
+            o.frequency.exponentialRampToValueAtTime(
+              200 + Math.random() * 200,
+              t + dur,
+            );
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.start(t);
+            o.stop(t + dur + 0.01);
+          }
+        }
+
+        function evWindHowl(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var dur = p.duration;
+          var n = noiseSource(dur);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "bandpass";
+          f.frequency.setValueAtTime(150, now);
+          f.frequency.linearRampToValueAtTime(p.peakFreq, now + dur * 0.4);
+          f.frequency.linearRampToValueAtTime(200, now + dur);
+          f.Q.setValueAtTime(5, now);
+          n.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + dur * 0.2);
+          g.gain.setValueAtTime(p.volume * 0.83, now + dur * 0.6);
+          g.gain.linearRampToValueAtTime(0, now + dur);
+          startNoise(n, now);
+        }
+
+        function evBoneCrack(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "highpass";
+          f.frequency.setValueAtTime(p.cutoff, now);
+          n.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(p.volume, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + p.duration);
+          startNoise(n, now);
+        }
+
+        function evSpectralMoan(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var dur = p.duration;
+          var baseFreq = p.pitch;
+
+          var o = c.createOscillator();
+          var g = c.createGain();
+          o.type = "sine";
+          o.frequency.setValueAtTime(baseFreq, now);
+          o.frequency.linearRampToValueAtTime(baseFreq * 0.7, now + dur);
+          o.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + dur * 0.2);
+          g.gain.setValueAtTime(p.volume * 0.83, now + dur * 0.6);
+          g.gain.linearRampToValueAtTime(0, now + dur);
+          o.start(now);
+          o.stop(now + dur + 0.1);
+
+          var ns = noiseSource(dur);
+          var ng = c.createGain();
+          var nf = c.createBiquadFilter();
+          nf.type = "bandpass";
+          nf.frequency.setValueAtTime(400, now);
+          nf.frequency.linearRampToValueAtTime(250, now + dur);
+          nf.Q.setValueAtTime(3, now);
+          ns.connect(nf);
+          nf.connect(ng);
+          ng.connect(out);
+          ng.gain.setValueAtTime(0, now);
+          ng.gain.linearRampToValueAtTime(p.volume * 0.5, now + dur * 0.25);
+          ng.gain.linearRampToValueAtTime(0, now + dur);
+          startNoise(ns, now);
+        }
+
+        function evCauldronBubble(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + (i / p.count) * p.duration + Math.random() * 0.1;
+            var baseFreq = p.pitch + (Math.random() - 0.5) * p.pitch * 0.5;
+            var popDur = 0.04 + Math.random() * 0.04;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(baseFreq, t);
+            o.frequency.linearRampToValueAtTime(baseFreq * 3, t + popDur * 0.2);
+            o.frequency.exponentialRampToValueAtTime(
+              baseFreq * 0.5,
+              t + popDur,
+            );
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + popDur);
+            o.start(t);
+            o.stop(t + popDur + 0.01);
+          }
+        }
+
+        // ==========================================================================
+        // EVENT CONFIGS
+        // ==========================================================================
+
+        function fmt(unit, val) {
+          if (unit === "s")
+            return (val < 1 ? val.toFixed(2) : val.toFixed(1)) + "s";
+          if (unit === "Hz") return Math.round(val) + "Hz";
+          if (unit === "") return val.toFixed(val < 0.1 ? 3 : 2);
+          return String(val);
+        }
+
+        var EVENTS = [
+          {
+            id: "chains_rattle",
+            name: "1. Chains Rattle",
+            weight: 15,
+            description:
+              "Rapid bandpass-filtered noise pings — rusted chains shifting in the dark.",
+            fn: evChainsRattle,
+            defaults: {
+              pings: 8,
+              duration: 0.7,
+              centerFreq: 5000,
+              volume: 0.025,
+            },
+            controls: [
+              {
+                param: "pings",
+                label: "Pings",
+                min: 2,
+                max: 20,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.2,
+                max: 2.0,
+                step: 0.05,
+                unit: "s",
+              },
+              {
+                param: "centerFreq",
+                label: "Metal tone",
+                min: 1500,
+                max: 9000,
+                step: 100,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "distant_thunder",
+            name: "2. Distant Thunder",
+            weight: 12,
+            description:
+              "Low-pass rumble sweeping up then back — a storm far off over the waste.",
+            fn: evDistantThunder,
+            defaults: { duration: 3.0, peakFreq: 200, volume: 0.04 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 1.0,
+                max: 6.0,
+                step: 0.25,
+                unit: "s",
+              },
+              {
+                param: "peakFreq",
+                label: "Rumble peak",
+                min: 60,
+                max: 400,
+                step: 10,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.01,
+                max: 0.1,
+                step: 0.005,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "glass_shatter",
+            name: "3. Glass Shatter",
+            weight: 8,
+            description:
+              "Sharp high-pass noise transient followed by scattered sine pings.",
+            fn: evGlassShatter,
+            defaults: { pings: 5, pitch: 4000, volume: 0.025 },
+            controls: [
+              {
+                param: "pings",
+                label: "Pings",
+                min: 2,
+                max: 15,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "pitch",
+                label: "Pitch",
+                min: 1500,
+                max: 10000,
+                step: 100,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "raven_cry",
+            name: "4. Raven Cry",
+            weight: 15,
+            description:
+              "Harsh sawtooth squawks through vocal formants — Sycorax's familiar from the rafters.",
+            fn: evRavenCry,
+            defaults: { count: 2, startFreq: 1000, volume: 0.03 },
+            controls: [
+              {
+                param: "count",
+                label: "Squawks",
+                min: 1,
+                max: 5,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "startFreq",
+                label: "Pitch",
+                min: 400,
+                max: 1600,
+                step: 25,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "dripping_water",
+            name: "5. Dripping Water",
+            weight: 20,
+            description:
+              "Sine sweeping down in pitch — water droplets in a cold cavern.",
+            fn: evDrippingWater,
+            defaults: { count: 2, pitch: 2500, volume: 0.025 },
+            controls: [
+              {
+                param: "count",
+                label: "Drops",
+                min: 1,
+                max: 6,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "pitch",
+                label: "Pitch",
+                min: 500,
+                max: 4000,
+                step: 50,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "wind_howl",
+            name: "6. Wind Howl",
+            weight: 18,
+            description:
+              "Band-pass noise sweeping up then down — wind moaning through a crack.",
+            fn: evWindHowl,
+            defaults: { duration: 4.5, peakFreq: 700, volume: 0.03 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 1.0,
+                max: 8.0,
+                step: 0.25,
+                unit: "s",
+              },
+              {
+                param: "peakFreq",
+                label: "Howl peak",
+                min: 200,
+                max: 1500,
+                step: 25,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.08,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "bone_crack",
+            name: "7. Bone Crack",
+            weight: 10,
+            description:
+              "Brief high-pass noise burst — something breaking in the dark.",
+            fn: evBoneCrack,
+            defaults: { duration: 0.03, cutoff: 3000, volume: 0.04 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.01,
+                max: 0.1,
+                step: 0.002,
+                unit: "s",
+              },
+              {
+                param: "cutoff",
+                label: "Brightness",
+                min: 800,
+                max: 6000,
+                step: 100,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.01,
+                max: 0.08,
+                step: 0.005,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "spectral_moan",
+            name: "8. Spectral Moan",
+            weight: 12,
+            description:
+              "Slow descending sine plus breathy bandpass noise — a ghost's lament.",
+            fn: evSpectralMoan,
+            defaults: { duration: 3.0, pitch: 160, volume: 0.03 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.5,
+                max: 5.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "pitch",
+                label: "Pitch",
+                min: 60,
+                max: 300,
+                step: 5,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "cauldron_bubble",
+            name: "9. Cauldron Bubble",
+            weight: 10,
+            description:
+              "Low-pitched sines that spike up then fall — thick mixture simmering.",
+            fn: evCauldronBubble,
+            defaults: { count: 5, duration: 1.5, pitch: 140, volume: 0.025 },
+            controls: [
+              {
+                param: "count",
+                label: "Pops",
+                min: 2,
+                max: 15,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.5,
+                max: 4.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "pitch",
+                label: "Pitch",
+                min: 40,
+                max: 400,
+                step: 5,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+        ];
+
+        EVENTS.forEach(function (ev) {
+          ev.params = {};
+          Object.keys(ev.defaults).forEach(function (k) {
+            ev.params[k] = ev.defaults[k];
+          });
+        });
+
+        // ==========================================================================
+        // UI CONSTRUCTION
+        // ==========================================================================
+
+        function buildCard(ev) {
+          var card = document.createElement("div");
+          card.className = "event-card";
+          card.setAttribute("data-id", ev.id);
+
+          var html = "";
+          html += '<div class="card-header">';
+          html += "<h2>" + ev.name + "</h2>";
+          html += '<span class="weight">pool weight: ' + ev.weight + "</span>";
+          html += "</div>";
+          html += '<p class="desc">' + ev.description + "</p>";
+
+          for (var i = 0; i < ev.controls.length; i++) {
+            var ctrl = ev.controls[i];
+            var curVal = ev.params[ctrl.param];
+            html += '<div class="ctrl-row">';
+            html += '<span class="label">' + ctrl.label + "</span>";
+            html +=
+              '<input type="range" data-param="' +
+              ctrl.param +
+              '" data-unit="' +
+              ctrl.unit +
+              '" ' +
+              'min="' +
+              ctrl.min +
+              '" max="' +
+              ctrl.max +
+              '" step="' +
+              ctrl.step +
+              '" value="' +
+              curVal +
+              '" />';
+            html +=
+              '<span class="val" data-for="' +
+              ctrl.param +
+              '">' +
+              fmt(ctrl.unit, curVal) +
+              "</span>";
+            html += "</div>";
+          }
+
+          html += '<div class="card-footer">';
+          html +=
+            '<button class="btn reset" data-action="reset">&#8635; reset</button>';
+          html +=
+            '<button class="btn copy" data-action="copy" title="Copy current parameters to clipboard">&#9112; copy params</button>';
+          html +=
+            '<button class="btn" data-action="play">&#9654; PLAY</button>';
+          html += "</div>";
+
+          card.innerHTML = html;
+          return card;
+        }
+
+        function attachCardHandlers(card, ev) {
+          var sliders = card.querySelectorAll('input[type="range"]');
+          sliders.forEach(function (slider) {
+            slider.addEventListener("input", function () {
+              var param = slider.getAttribute("data-param");
+              var unit = slider.getAttribute("data-unit");
+              var val = parseFloat(slider.value);
+              ev.params[param] = val;
+              var valEl = card.querySelector('.val[data-for="' + param + '"]');
+              if (valEl) valEl.textContent = fmt(unit, val);
+            });
+          });
+
+          card
+            .querySelector('[data-action="play"]')
+            .addEventListener("click", function () {
+              initAudio();
+              if (ctx.state === "suspended") ctx.resume();
+              console.log(
+                "[sycorax preview] PLAY",
+                ev.id,
+                ev.params,
+                "ctx.state=",
+                ctx.state,
+              );
+              ev.fn(ev.params);
+            });
+
+          card
+            .querySelector('[data-action="reset"]')
+            .addEventListener("click", function () {
+              Object.keys(ev.defaults).forEach(function (k) {
+                ev.params[k] = ev.defaults[k];
+              });
+              card
+                .querySelectorAll('input[type="range"]')
+                .forEach(function (slider) {
+                  var param = slider.getAttribute("data-param");
+                  if (ev.params[param] !== undefined) {
+                    slider.value = ev.params[param];
+                    var unit = slider.getAttribute("data-unit");
+                    var valEl = card.querySelector(
+                      '.val[data-for="' + param + '"]',
+                    );
+                    if (valEl) valEl.textContent = fmt(unit, ev.params[param]);
+                  }
+                });
+            });
+
+          card
+            .querySelector('[data-action="copy"]')
+            .addEventListener("click", function () {
+              var pairs = Object.keys(ev.params).map(function (k) {
+                var v = ev.params[k];
+                var s = Number.isInteger(v)
+                  ? String(v)
+                  : parseFloat(v.toFixed(4)).toString();
+                return k + ": " + s;
+              });
+              var text = ev.id + ": { " + pairs.join(", ") + " }";
+              var btn = card.querySelector('[data-action="copy"]');
+              var finish = function (ok) {
+                var orig = btn.innerHTML;
+                btn.innerHTML = ok ? "&#10003; copied!" : "&#10007; failed";
+                btn.classList.toggle("copied", ok);
+                setTimeout(function () {
+                  btn.innerHTML = orig;
+                  btn.classList.remove("copied");
+                }, 1400);
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(
+                  function () {
+                    finish(true);
+                  },
+                  function () {
+                    finish(false);
+                  },
+                );
+              } else {
+                var ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.left = "-9999px";
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                  document.execCommand("copy");
+                  finish(true);
+                } catch (e) {
+                  finish(false);
+                }
+                document.body.removeChild(ta);
+              }
+            });
+        }
+
+        var eventsContainer = document.getElementById("events");
+        EVENTS.forEach(function (ev) {
+          var card = buildCard(ev);
+          eventsContainer.appendChild(card);
+          attachCardHandlers(card, ev);
+        });
+
+        // --- Master volume (linear 0–1) ---
+        var volInput = document.getElementById("vol");
+        volInput.addEventListener("input", function () {
+          masterVol = parseInt(volInput.value, 10) / 100;
+          if (masterGain)
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+        });
+
+        // --- Diagnostic test tone (direct to destination, bypasses graph) ---
+        document
+          .getElementById("test-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            ctx.resume();
+            var now = ctx.currentTime;
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(440, now);
+            o.connect(g);
+            g.connect(ctx.destination);
+            g.gain.setValueAtTime(0.2, now);
+            g.gain.linearRampToValueAtTime(0, now + 0.35);
+            o.start(now);
+            o.stop(now + 0.4);
+            console.log(
+              "[sycorax preview] TEST tone fired. ctx.state=",
+              ctx.state,
+            );
+          });
+
+        // --- Random event button (weighted by pool weights) ---
+        document
+          .getElementById("random-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            var total = 0;
+            for (var i = 0; i < EVENTS.length; i++) total += EVENTS[i].weight;
+            var r = Math.random() * total;
+            for (var j = 0; j < EVENTS.length; j++) {
+              r -= EVENTS[j].weight;
+              if (r <= 0) {
+                EVENTS[j].fn(EVENTS[j].params);
+                return;
+              }
+            }
+          });
+      })();
+    </script>
+  </body>
+</html>

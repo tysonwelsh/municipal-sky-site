@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Figures of Rabelais&rsquo;s Underworld &mdash; Table</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&family=IM+Fell+Great+Primer+SC&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --color-parchment: #d4c5a5;
+        --color-bg-parchment: #f3e9cf;
+        --color-svg-bg: #ede1c2;
+        --color-text-primary: #3d2818;
+        --color-text-secondary: #5a3e28;
+        --color-text-tertiary: #8a7152;
+        --color-border-medium: rgba(90, 62, 40, 0.35);
+        --color-rubrication: #a64224;
+        --color-rubrication-border: rgba(166, 66, 36, 0.65);
+        --color-rule: rgba(90, 62, 40, 0.35);
+        --color-rule-thin: rgba(90, 62, 40, 0.18);
+        --color-row-hover: rgba(166, 66, 36, 0.08);
+        --color-axis: #5a3e28;
+        --font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+        --font-family-sc:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+        --font-family-display:
+          "IM Fell Great Primer SC", "Cormorant SC",
+          "Cormorant Garamond", Georgia, serif;
+      }
+
+      /* standalone-preview: plain white outer canvas so the parchment
+         frame reads against a neutral background during development. */
+      body.standalone-preview {
+        margin: 0;
+        background: #ffffff;
+        color: var(--color-text-primary);
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 32px;
+      }
+      .deck-wrapper {
+        width: 720px;
+        margin: 0 auto;
+      }
+
+      /* Slide-card frame lifted from the deck so the table reads as
+         a slide-mate to underworld-labor-market and the ghost strip. */
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0 0 6px;
+        line-height: 1.2;
+      }
+      .slide-subtitle {
+        font-family: var(--font-family);
+        font-size: 15px;
+        color: var(--color-text-secondary);
+        margin: 0;
+        line-height: 1.5;
+      }
+      .slide-body {
+        padding: 14px 20px 20px;
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+
+      .status-msg {
+        font-family: var(--font-family);
+        font-size: 15px;
+        color: var(--color-text-secondary);
+        padding: 24px 4px;
+        text-align: center;
+      }
+      .status-msg.error {
+        color: var(--color-rubrication);
+      }
+
+      /* Outer width is constrained by .deck-wrapper (720px). The data
+         columns scroll inside .table-scroll; the Name column inside the
+         table is sticky-left so it stays pinned while the rest slides. */
+      .table-scroll {
+        overflow-x: auto;
+        overflow-y: visible;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+        background: var(--color-svg-bg);
+      }
+      table.figures {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: max-content;
+        min-width: 100%;
+        font-family: var(--font-family);
+        font-size: 14px;
+        color: var(--color-text-primary);
+      }
+      table.figures thead th {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-rubrication);
+        background: var(--color-svg-bg);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: bottom;
+        border-bottom: 1.5px solid var(--color-rubrication-border);
+        white-space: nowrap;
+      }
+      table.figures tbody td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--color-rule-thin);
+        vertical-align: top;
+        background: transparent;
+      }
+      table.figures tbody tr:last-child td {
+        border-bottom: none;
+      }
+      table.figures tbody tr:hover td {
+        background: var(--color-row-hover);
+      }
+
+      /* Sticky Name column. The cell needs an opaque background or
+         scrolled content will visibly bleed underneath. Right-edge rule
+         marks the freeze line. */
+      th.col-name,
+      td.col-name {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+        border-right: 1px solid var(--color-border-medium);
+        min-width: 150px;
+        max-width: 180px;
+      }
+      th.col-name {
+        background: var(--color-svg-bg);
+        z-index: 3;
+      }
+      td.col-name {
+        background: var(--color-svg-bg);
+        font-family: var(--font-family);
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+      table.figures tbody tr:hover td.col-name {
+        background: #e7d9b6;
+      }
+
+      td.col-lot {
+        font-style: italic;
+        color: var(--color-text-secondary);
+        max-width: 220px;
+      }
+      td.col-labor {
+        max-width: 300px;
+        min-width: 220px;
+        line-height: 1.4;
+      }
+      td.col-major,
+      td.col-occ {
+        max-width: 240px;
+        min-width: 160px;
+      }
+      td.col-major {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        white-space: nowrap;
+      }
+      td.col-wage {
+        font-variant-numeric: tabular-nums;
+        text-align: right;
+        white-space: nowrap;
+        min-width: 90px;
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+      td.col-wage.suppressed {
+        color: var(--color-text-tertiary);
+        font-weight: 400;
+        cursor: help;
+      }
+      td.col-major.empty,
+      td.col-occ.empty {
+        color: var(--color-text-tertiary);
+      }
+
+      .caption {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        padding: 10px 4px 0;
+      }
+    </style>
+  </head>
+  <body class="standalone-preview">
+    <div class="deck-wrapper">
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Figures of Rabelais&rsquo;s Underworld
+          </h1>
+          <p class="slide-subtitle">
+            Every ghost Epistemon meets in Hades, with the lot in life
+            Rabelais grants them, the labor he assigns them, and the
+            modern BLS occupation that labor maps to. Scroll the data
+            columns; the name column stays pinned.
+          </p>
+        </div>
+        <div class="slide-body">
+          <div id="table-mount">
+            <p class="status-msg">Loading&hellip;</p>
+          </div>
+          <p class="caption">
+            Median wages: BLS OEWS, May 2024. Em dash = suppressed by
+            BLS or unmapped.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (async function () {
+        const mount = document.getElementById("table-mount");
+        const LOT_TRUNC = 30;
+
+        const fmtWage = (v) => {
+          const n = typeof v === "number" ? v : parseFloat(v);
+          if (!isFinite(n)) return null;
+          return (
+            "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 })
+          );
+        };
+
+        const truncate = (s, max) => {
+          if (!s) return "";
+          if (s.length <= max) return s;
+          return s.slice(0, max - 1).trimEnd() + "…";
+        };
+
+        const esc = (s) => {
+          if (s == null) return "";
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        };
+
+        let data;
+        try {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          data = await res.json();
+        } catch (e) {
+          mount.innerHTML =
+            '<p class="status-msg error">Failed to load figures: ' +
+            esc(e.message) +
+            "</p>";
+          return;
+        }
+
+        const characters = Array.isArray(data.characters)
+          ? data.characters
+          : [];
+        const hierarchical = Array.isArray(data.hierarchical_data)
+          ? data.hierarchical_data
+          : [];
+
+        const hierByCode = new Map();
+        hierarchical.forEach((h) => {
+          if (h && h.OCC_CODE) hierByCode.set(h.OCC_CODE, h);
+        });
+
+        const rows = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const wageRaw = h ? h.A_MEDIAN : null;
+          const wageNum =
+            wageRaw == null || wageRaw === ""
+              ? null
+              : isNaN(parseFloat(wageRaw))
+                ? null
+                : parseFloat(wageRaw);
+          const major =
+            c.major_group_title || (h && h.major_group_title) || null;
+          const occTitle = c.occ_title || (h && h.OCC_TITLE) || null;
+          return {
+            name: c.name || "",
+            lot: c.lot_in_life || "",
+            labor: c.labor || "",
+            major,
+            occTitle,
+            occCode: c.occ_code || null,
+            wage: wageNum,
+          };
+        });
+
+        // Locale-aware alphabetical sort by name; suppressed/unmapped
+        // rows land wherever their name lands (no special bucketing).
+        rows.sort((a, b) =>
+          a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+        );
+
+        const SUPPRESSED_TITLE = "Wage data suppressed by BLS";
+        const EM_DASH = "—";
+
+        const html = [];
+        html.push('<div class="table-scroll" role="region" ');
+        html.push('aria-label="Figures of the underworld table">');
+        html.push('<table class="figures">');
+        html.push("<thead><tr>");
+        html.push('<th class="col-name" scope="col">Name</th>');
+        html.push('<th scope="col">Lot in Life</th>');
+        html.push('<th scope="col">Underworld Labor</th>');
+        html.push('<th scope="col">Major Group</th>');
+        html.push('<th scope="col">Detailed Occupation</th>');
+        html.push(
+          '<th scope="col" style="text-align:right">Median Wage</th>',
+        );
+        html.push("</tr></thead><tbody>");
+
+        for (const r of rows) {
+          const lotShort = truncate(r.lot, LOT_TRUNC);
+          const lotTitle =
+            r.lot && r.lot.length > LOT_TRUNC ? r.lot : null;
+
+          const wageFmt = r.wage != null ? fmtWage(r.wage) : null;
+          // Suppressed = mapped to an occ_code but BLS withheld the
+          // wage. Unmapped = no occ_code. Both render as em dash, but
+          // tooltip only claims BLS suppression when an occ_code exists.
+          const isUnmapped = r.occCode == null;
+          const wageCell =
+            wageFmt != null
+              ? '<td class="col-wage">' + esc(wageFmt) + "</td>"
+              : '<td class="col-wage suppressed" title="' +
+                (isUnmapped ? "No BLS mapping" : SUPPRESSED_TITLE) +
+                '">' +
+                EM_DASH +
+                "</td>";
+
+          html.push("<tr>");
+          html.push('<td class="col-name">' + esc(r.name) + "</td>");
+          html.push(
+            '<td class="col-lot"' +
+              (lotTitle ? ' title="' + esc(lotTitle) + '"' : "") +
+              ">" +
+              esc(lotShort) +
+              "</td>",
+          );
+          html.push('<td class="col-labor">' + esc(r.labor) + "</td>");
+          html.push(
+            r.major
+              ? '<td class="col-major">' + esc(r.major) + "</td>"
+              : '<td class="col-major empty">' + EM_DASH + "</td>",
+          );
+          html.push(
+            r.occTitle
+              ? '<td class="col-occ">' + esc(r.occTitle) + "</td>"
+              : '<td class="col-occ empty">' + EM_DASH + "</td>",
+          );
+          html.push(wageCell);
+          html.push("</tr>");
+        }
+
+        html.push("</tbody></table></div>");
+        mount.innerHTML = html.join("");
+      })();
+    </script>
+  </body>
+</html>

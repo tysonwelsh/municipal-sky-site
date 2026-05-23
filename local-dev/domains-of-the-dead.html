@@ -1,0 +1,2880 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wage Distribution — Underworld vs. U.S. Workforce</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="local-dev-style.css" />
+    <style>
+      /* ===== Design tokens — mirror the treemap dashboard =====
+         Kept in sync with information-graphics/underworld-occupations.css.
+         Update both files together if the design system shifts. */
+      :root {
+        /* Backgrounds */
+        --color-bg-parchment: #ddd0b3;
+        --color-bg-card: #e4dac0;
+        --color-bg-subtle: #d8cdb5;
+        --color-bg-frame-inset: #cfc2a0;
+
+        /* Borders (sepia ink) */
+        --color-border-light: rgba(90, 62, 40, 0.18);
+        --color-border-medium: #5a3e28;
+        --color-border-subtle: rgba(90, 62, 40, 0.15);
+
+        /* Text (iron gall ink) */
+        --color-text-primary: #1a1408;
+        --color-text-secondary: #2c2014;
+        --color-text-tertiary: #3d2b18;
+        --color-text-muted: #4a3a28;
+        --color-text-subtle: #5c5347;
+        --color-text-faint: #5c4a38;
+
+        /* Rubrication (vermillion accent) */
+        --color-rubrication: #b33a2b;
+        --color-rubrication-light: rgba(179, 58, 43, 0.15);
+        --color-rubrication-border: rgba(179, 58, 43, 0.2);
+
+        /* Typography */
+        --font-family: "IM Fell English", Georgia, "Times New Roman", serif;
+        --font-family-sc: "IM Fell English SC", "IM Fell English", Georgia,
+          serif;
+        --font-family-display: "IM Fell Great Primer SC",
+          "IM Fell English SC", Georgia, serif;
+        --font-family-display-body: "IM Fell Great Primer",
+          "IM Fell English", Georgia, serif;
+        --font-family-data: "Cormorant Garamond", Georgia, serif;
+
+        --font-size-xs: 11px;
+        --font-size-sm: 12px;
+        --font-size-base: 13px;
+        --font-size-md: 14px;
+        --font-size-lg: 15px;
+        --font-size-xl: 16px;
+        --font-size-2xl: 20px;
+      }
+
+      /* ===== Page-level overrides for slide prototype ===== */
+      body {
+        background: #ffffff;
+        margin: 0;
+        padding: 40px 20px;
+        /* Disable synthesized bold/italic — only show weights the loaded
+           font actually has. Among the fonts loaded for this page, only
+           Cormorant Garamond ships real heavier weights (500, 600); every
+           IM Fell variant is regular-only. With synthesis off, <strong>
+           and font-weight:600 over IM Fell render at regular weight,
+           which is crisper at all DPIs than the faked bold. */
+        font-synthesis: none;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      .slide-container {
+        max-width: 1020px;
+        margin: 0 auto;
+      }
+
+      /* ===== Slide card ===== */
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        padding: 0;
+        margin-bottom: 48px;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+        position: relative;
+      }
+
+      .slide-header {
+        padding: 14px 40px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+      }
+
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0 0 6px;
+        line-height: 1.2;
+      }
+
+      .slide-subtitle {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: var(--font-size-md);
+        color: var(--color-text-subtle);
+        margin: 0;
+        line-height: 1.5;
+      }
+
+      .slide-body {
+        padding: 10px 40px 20px;
+      }
+
+      /* ===== Visualization sections ===== */
+      .viz-section {
+        margin-bottom: 40px;
+      }
+
+      .viz-section:last-child {
+        margin-bottom: 0;
+      }
+
+      /* ===== Arrangement Showcase ===== */
+      .showcase-section {
+        max-width: 980px;
+        margin: 48px auto 0;
+        padding: 24px 32px 28px;
+        background: var(--color-bg-parchment);
+        border: 1px solid var(--color-text-primary);
+        box-shadow: 0 1px 0 var(--color-text-primary);
+      }
+      .showcase-section-title {
+        font-family: var(--font-family-sc);
+        font-size: var(--font-size-base);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-rubrication);
+        border-bottom: 1.5px solid var(--color-rubrication-border);
+        padding-bottom: 4px;
+        margin: 0 0 6px;
+        text-align: left;
+      }
+      .showcase-section-sub {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: var(--font-size-sm);
+        color: var(--color-text-subtle);
+        margin: 0 0 18px;
+      }
+      .showcase-card {
+        margin-bottom: 14px;
+      }
+      .showcase-card:last-child {
+        margin-bottom: 0;
+      }
+      .showcase-label {
+        font-family: var(--font-family-sc);
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-primary);
+        margin-bottom: 2px;
+      }
+      .showcase-label-sub {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: var(--font-size-xs);
+        color: var(--color-text-subtle);
+        margin-left: 8px;
+        letter-spacing: 0;
+        text-transform: none;
+      }
+
+      /* ===== Tooltip showcase wrapper ===== */
+      .tt-preview-wrap {
+        display: flex;
+        justify-content: center;
+      }
+
+      /* ===== Ghost tooltip — shared between mockup and live tooltip =====
+         The live .tooltip element supplies position/display/pointer-events;
+         this set of classes supplies the visual card and internal layout.
+         Apply both classes on the live tooltip element. */
+      .gt-tooltip {
+        width: 320px;
+        box-sizing: border-box;
+        background-color: var(--color-bg-card);
+        border: 2px solid var(--color-border-medium);
+        box-shadow:
+          0 8px 24px -4px rgba(26, 20, 8, 0.2),
+          0 2px 8px -2px rgba(26, 20, 8, 0.12);
+        padding: 12px;
+        font-family: var(--font-family);
+        font-size: var(--font-size-base);
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+      }
+      .gt-header {
+        display: block;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+        border-bottom: 2px solid var(--color-rubrication-border);
+      }
+      .gt-name {
+        color: var(--color-text-primary);
+        font-size: var(--font-size-md);
+      }
+      .gt-name.is-underworld {
+        color: var(--color-rubrication);
+      }
+      .gt-role {
+        color: var(--color-text-subtle);
+        font-size: var(--font-size-base);
+        margin-left: 4px;
+      }
+      .gt-section {
+        margin-bottom: 12px;
+      }
+      .gt-section:last-child {
+        margin-bottom: 0;
+      }
+      .gt-label {
+        display: block;
+        font-family: var(--font-family-sc);
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-subtle);
+        margin-bottom: 4px;
+      }
+      .gt-content em {
+        font-style: italic;
+      }
+      .gt-tree {
+        display: block;
+        font-family: var(--font-family);
+      }
+      .gt-wage-line {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .gt-wage-amount {
+        font-family: var(--font-family-data);
+        font-size: 20px;
+        color: var(--color-text-primary);
+      }
+      .gt-wage-delta {
+        font-family: var(--font-family-data);
+        font-size: var(--font-size-md);
+        font-weight: 600;
+        color: var(--color-rubrication);
+      }
+      .gt-wage-delta.is-above {
+        color: #2e7358;
+      }
+
+      /* Wage box-compare (major-group tooltip) */
+      .gt-box-compare {
+        display: block;
+      }
+      .gt-box-row-label {
+        font-family: var(--font-family-sc);
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        fill: var(--color-text-subtle);
+      }
+      .gt-box-row-value {
+        font-family: var(--font-family-data);
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        fill: var(--color-text-primary);
+      }
+      .gt-axis-tick {
+        font-family: var(--font-family-data);
+        font-size: 10px;
+        fill: var(--color-text-subtle);
+      }
+
+      /* SVG occupation tree — mirrors .svg-tree-* in the treemap CSS. */
+      .svg-tree-path {
+        stroke: var(--color-border-medium);
+        stroke-width: 1px;
+        fill: none;
+      }
+      .svg-tree-text {
+        font-size: var(--font-size-md);
+        fill: var(--color-text-muted);
+      }
+      .svg-tree-text-current {
+        font-size: var(--font-size-md);
+        fill: var(--color-text-primary);
+        font-style: italic;
+      }
+
+      .viz-section-label {
+        font-family: "IM Fell English SC", Georgia, serif;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #b33a2b;
+        margin-bottom: 12px;
+        padding-bottom: 4px;
+        border-bottom: 1.5px solid rgba(179, 58, 43, 0.2);
+      }
+
+      /* ===== SVG styling ===== */
+      .viz-svg {
+        display: block;
+        width: 100%;
+        overflow: visible;
+      }
+
+      /* ===== Summary stats row ===== */
+      .stats-row {
+        display: flex;
+        gap: 0;
+        margin-top: 16px;
+        border: 1.5px solid rgba(26, 20, 8, 0.5);
+        box-shadow:
+          inset 0 0 0 1px #cfc2a0,
+          inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+        background: #cfc2a0;
+      }
+
+      .stat-cell {
+        flex: 1;
+        text-align: center;
+        padding: 14px 12px;
+        border-right: 1px solid rgba(90, 62, 40, 0.2);
+      }
+
+      .stat-cell:last-child {
+        border-right: none;
+      }
+
+      .stat-cell-label {
+        font-family: "IM Fell English SC", Georgia, serif;
+        font-size: 9px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #7a7167;
+        margin-bottom: 4px;
+      }
+
+      .stat-cell-value {
+        font-family: "Cormorant Garamond", Georgia, serif;
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1408;
+        line-height: 1;
+      }
+
+      .stat-cell-value.rubricated {
+        color: #b33a2b;
+      }
+
+      .stat-cell-sub {
+        font-family: "IM Fell English", Georgia, serif;
+        font-size: 11px;
+        color: #7a7167;
+        font-style: italic;
+        margin-top: 3px;
+      }
+
+      .stat-cell-sub.negative {
+        color: #b33a2b;
+        font-weight: 600;
+        font-style: normal;
+      }
+      .stat-cell-sub.positive {
+        color: #2e7358;
+        font-weight: 600;
+        font-style: normal;
+      }
+
+      /* ===== Strip plot annotations ===== */
+      .strip-annotation {
+        font-family: "IM Fell English", Georgia, serif;
+        font-size: 10px;
+        fill: #3d2b18;
+        pointer-events: none;
+      }
+
+      /* ===== Legend ===== */
+      .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 16px;
+        padding: 8px 12px;
+        background: rgba(90, 62, 40, 0.06);
+        border: 1px solid rgba(90, 62, 40, 0.12);
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "IM Fell English", Georgia, serif;
+        font-size: 13px;
+        color: #3d2b18;
+      }
+
+      .legend-swatch {
+        width: 24px;
+        height: 12px;
+        border: 1px solid #1a1408;
+        flex-shrink: 0;
+      }
+
+      .legend-line {
+        width: 24px;
+        height: 0;
+        border-top: 2px solid;
+        flex-shrink: 0;
+      }
+
+      /* ===== Loading state ===== */
+      .loading-msg {
+        font-family: "IM Fell English", Georgia, serif;
+        font-style: italic;
+        color: #7a7167;
+        text-align: center;
+        padding: 80px 20px;
+        font-size: 16px;
+      }
+
+      .error-msg {
+        font-family: "IM Fell English", Georgia, serif;
+        background: rgba(179, 58, 43, 0.1);
+        border: 2px solid #b33a2b;
+        color: #b33a2b;
+        padding: 16px 20px;
+        margin: 20px;
+      }
+
+      /* ===== Tooltip ===== */
+      /* .tooltip: live tooltip behavior only. Visual styling comes from
+         .gt-tooltip, applied alongside this class on the element. */
+      .tooltip {
+        position: absolute;
+        display: none;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      /* ===== Multi-select UI ===== */
+      .multi-select-container {
+        position: relative;
+        margin-bottom: 24px;
+        width: 340px;
+      }
+      .multi-select-button {
+        width: 100%;
+        padding: 10px 14px;
+        font-family: "IM Fell English SC", Georgia, serif;
+        font-size: 12px;
+        letter-spacing: 0.05em;
+        color: #1a1408;
+        background: #e4dac0;
+        border: 1.5px solid rgba(26, 20, 8, 0.5);
+        cursor: pointer;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: inset 0 0 0 1px #cfc2a0;
+      }
+      .multi-select-button:hover {
+        background: #cfc2a0;
+      }
+      .multi-select-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #e4dac0;
+        border: 1.5px solid rgba(26, 20, 8, 0.5);
+        border-top: none;
+        max-height: 280px;
+        overflow-y: auto;
+        z-index: 60;
+        box-shadow: 0 8px 24px -4px rgba(26, 20, 8, 0.2);
+      }
+      .multi-select-dropdown.open {
+        display: block;
+      }
+      .multi-select-option {
+        padding: 8px 14px;
+        font-family: "IM Fell English", Georgia, serif;
+        font-size: 14px;
+        color: #2c2014;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid rgba(90, 62, 40, 0.1);
+      }
+      .multi-select-option:last-child {
+        border-bottom: none;
+      }
+      .multi-select-option:hover {
+        background: rgba(179, 58, 43, 0.08);
+      }
+      .multi-select-option input[type="checkbox"] {
+        accent-color: #b33a2b;
+        cursor: pointer;
+        width: 14px;
+        height: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Woodcut SVG Filter Definition -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden">
+      <defs>
+        <filter
+          id="filter-woodcut"
+          x="-20%"
+          y="-20%"
+          width="140%"
+          height="140%"
+        >
+          <feTurbulence
+            type="fractalNoise"
+            baseFrequency="0.05"
+            numOctaves="3"
+            seed="5"
+            result="noise"
+          />
+          <feDisplacementMap
+            in="SourceGraphic"
+            in2="noise"
+            scale="4"
+            xChannelSelector="R"
+            yChannelSelector="G"
+            result="distorted"
+          />
+          <feMorphology
+            operator="erode"
+            radius="0.5"
+            in="distorted"
+            result="eroded"
+          />
+          <feMerge><feMergeNode in="eroded" /></feMerge>
+        </filter>
+        <filter id="hand-drawn-hd" x="-4%" y="-4%" width="108%" height="108%">
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.04"
+            numOctaves="3"
+            seed="3"
+            result="t"
+          />
+          <feDisplacementMap in="SourceGraphic" in2="t" scale="2" />
+        </filter>
+        <filter
+          id="hand-drawn-light"
+          x="-4%"
+          y="-4%"
+          width="108%"
+          height="108%"
+        >
+          <feTurbulence
+            type="turbulence"
+            baseFrequency="0.03"
+            numOctaves="2"
+            seed="7"
+            result="t"
+          />
+          <feDisplacementMap in="SourceGraphic" in2="t" scale="1.5" />
+        </filter>
+      </defs>
+    </svg>
+
+    <div class="slide-container">
+      <div class="slide-card" id="slide-major-strip">
+        <div class="slide-header">
+          <h1 class="slide-title">The Underworld Labor Market</h1>
+          <p class="slide-subtitle">
+            Median annual wage for each SOC major group, with Rabelais'
+            underworld figures plotted below by their assigned occupation. The
+            national wage distribution and median are shown above.
+          </p>
+        </div>
+        <div class="slide-body">
+          <div id="major-strip-container" class="viz-section">
+            <p class="loading-msg">Loading major group data…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrangement Showcase -->
+    <section class="showcase-section" id="arrangement-showcase">
+      <h2 class="showcase-section-title">Arrangement Explorations</h2>
+      <p class="showcase-section-sub">
+        The same ninety underworld figures, arranged four different ways.
+      </p>
+    </section>
+
+    <!-- Tooltip preview -->
+    <section class="showcase-section" id="tooltip-showcase">
+      <h2 class="showcase-section-title">Ghost Tooltip</h2>
+      <p class="showcase-section-sub">
+        Final design, refactored. Spacing on a single 4 / 8 / 12 scale; one
+        divider (under the header) and consistent breathing room between
+        sections. Width matches the live tooltip (320px).
+      </p>
+
+      <div class="tt-preview-wrap">
+        <div class="gt-tooltip">
+          <header class="gt-header">
+            <span class="gt-name is-underworld">Lancelot of the Lake</span><span class="gt-role">&mdash; Knight of the Round Table</span>
+          </header>
+
+          <div class="gt-section">
+            <span class="gt-label">Underworld Labor</span>
+            <div class="gt-content">
+              <em>&ldquo;&hellip; a flayer of dead horses &hellip;&rdquo;</em>
+            </div>
+          </div>
+
+          <div class="gt-section">
+            <span class="gt-label">Modern Equivalent</span>
+            <svg class="gt-tree" width="290" height="112" viewBox="0 0 290 112">
+              <g transform="translate(4, 4)">
+                <path class="svg-tree-path" d="M0,4 V24 H20" />
+                <path class="svg-tree-path" d="M20,24 V48 H40" />
+                <path class="svg-tree-path" d="M40,48 V100 H60" />
+                <circle cx="0" cy="4" r="3" fill="#e8dfc8" stroke="#5a3e28" />
+                <text x="10" y="8" class="svg-tree-text">Production</text>
+                <circle cx="20" cy="24" r="3" fill="#e8dfc8" stroke="#5a3e28" />
+                <text x="30" y="28" class="svg-tree-text">Food Processing Workers</text>
+                <circle cx="40" cy="48" r="3" fill="#e8dfc8" stroke="#5a3e28" />
+                <text x="50" y="52" class="svg-tree-text">
+                  <tspan x="50" dy="0">Butchers and Other Meat,</tspan>
+                  <tspan x="50" dy="16">Poultry, and Fish</tspan>
+                  <tspan x="50" dy="16">Processing Workers</tspan>
+                </text>
+                <circle cx="60" cy="100" r="3" fill="#5a3e28" />
+                <text x="70" y="104" class="svg-tree-text-current">Slaughterers and Meat Packers</text>
+              </g>
+            </svg>
+          </div>
+
+          <div class="gt-section">
+            <span class="gt-label">Median Wage</span>
+            <div class="gt-wage-line">
+              <span class="gt-wage-amount">$36,540</span>
+              <span class="gt-wage-delta"><span aria-hidden="true">&darr;</span> 27% below U.S. median</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tooltip -->
+    <div class="tooltip gt-tooltip" id="tooltip"></div>
+
+    <script>
+      // ===========================================
+      // CONSTANTS & CONFIG
+      // ===========================================
+      // Fonts and key colors reference the CSS custom properties defined
+      // in :root above (which mirror the treemap dashboard tokens). Using
+      // var(...) references means SVG text styles inherit the design
+      // tokens automatically.
+      const WOODCUT = {
+        bg: "#d6c9ad",
+        stroke: "#1a1408",
+        strokeWidth: 1,
+        filter: "url(#filter-woodcut)",
+        handDrawn: "url(#hand-drawn-hd)",
+        handDrawnLight: "url(#hand-drawn-light)",
+        fontFamily: "var(--font-family)",
+        scFont: "var(--font-family-sc)",
+        displayFont: "var(--font-family-display)",
+        dataFont: "var(--font-family-data)",
+      };
+
+      // Color literals match the design tokens in :root above
+      // (--color-text-primary, --color-rubrication, etc.). Literals are
+      // required because SVG presentation attributes set via D3 .attr()
+      // do not resolve CSS variables — only inline styles do.
+      const COLOR = {
+        national: "#1a1408",
+        nationalFill: "rgba(26,20,8,0.15)",
+        underworld: "#b33a2b",
+        underworldFill: "rgba(179,58,43,0.22)",
+        median: "#b33a2b",
+        grid: "rgba(26,20,8,0.12)",
+        axis: "#1a1408",
+        dot: "#b33a2b",
+        dotFill: "rgba(179,58,43,0.25)",
+        boxFill: "rgba(26,20,8,0.2)",
+        boxUnderworldFill: "rgba(179,58,43,0.18)",
+      };
+
+      const KDE_BANDWIDTH = 7000;
+
+      // ===========================================
+      // UTILITY FUNCTIONS
+      // ===========================================
+      function safeFloat(v) {
+        const p = parseFloat(v);
+        return isNaN(p) || v === null || v === undefined ? null : p;
+      }
+
+      function formatCurrency(num) {
+        if (num === null || num === undefined || isNaN(num)) return "N/A";
+        if (num >= 1e6) return "$" + (num / 1e6).toFixed(1) + "M";
+        if (num >= 1e3) return "$" + (num / 1e3).toFixed(0) + "K";
+        return (
+          "$" + num.toLocaleString(undefined, { maximumFractionDigits: 0 })
+        );
+      }
+
+      function abbreviateNumber(num) {
+        if (num === null || isNaN(num)) return "N/A";
+        if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+        if (num >= 1e3) return (num / 1e3).toFixed(0) + "K";
+        return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+
+      // ===========================================
+      // KDE FUNCTIONS (from original codebase)
+      // ===========================================
+      function expandToWeightedPoints(data) {
+        const points = [];
+        data.forEach((occ) => {
+          const emp = parseFloat(occ.PROJ_TOT_EMP ?? occ.TOT_EMP);
+          const pct10 = parseFloat(occ.A_PCT10);
+          const pct25 = parseFloat(occ.A_PCT25);
+          const median = parseFloat(occ.A_MEDIAN);
+          const pct75 = parseFloat(occ.A_PCT75);
+          const pct90 = parseFloat(occ.A_PCT90);
+          if (!emp || isNaN(emp) || emp <= 0) return;
+          if ([pct10, pct25, median, pct75, pct90].some(isNaN)) return;
+          points.push(
+            { wage: pct10, employment: emp * 0.175 },
+            { wage: pct25, employment: emp * 0.2 },
+            { wage: median, employment: emp * 0.25 },
+            { wage: pct75, employment: emp * 0.2 },
+            { wage: pct90, employment: emp * 0.175 },
+          );
+        });
+        return points;
+      }
+
+      function weightedKDE(data, bandwidth, xMin, xMax, numPoints = 300) {
+        const points = [];
+        const step = (xMax - xMin) / numPoints;
+        const totalWeight = d3.sum(data, (d) => d.employment);
+        const norm = 1 / (bandwidth * Math.sqrt(2 * Math.PI));
+        for (let x = xMin; x <= xMax; x += step) {
+          let density = 0;
+          for (const d of data) {
+            const z = (x - d.wage) / bandwidth;
+            density += d.employment * norm * Math.exp(-0.5 * z * z);
+          }
+          density /= totalWeight;
+          points.push({ x, density });
+        }
+        return points;
+      }
+
+      // ===========================================
+      // TOOLTIP
+      // ===========================================
+      const tooltip = d3.select("#tooltip");
+
+      function showTooltip(event, html) {
+        tooltip
+          .style("display", "block")
+          .html(html)
+          .style("top", event.pageY - 10 + "px")
+          .style("left", event.pageX + 15 + "px");
+      }
+      function moveTooltip(event) {
+        tooltip
+          .style("top", event.pageY - 10 + "px")
+          .style("left", event.pageX + 15 + "px");
+      }
+      function hideTooltip() {
+        tooltip.style("display", "none");
+      }
+
+      // ===========================================
+      // OCCUPATION TREE SVG (for tooltip)
+      // Builds the 4-level SOC cascade — paths drawn first so they sit
+      // behind the circles. Matches the treemap dashboard's tree.
+      // ===========================================
+      function buildOccupationTreeSVG(major, minor, broad, detailed) {
+        const stripOcc = (s) => (s || "").replace(/\s+Occupations$/i, "");
+        const raw = [
+          stripOcc(major),
+          stripOcc(minor),
+          stripOcc(broad),
+          detailed || "",
+        ];
+        const valid = raw.filter((l) => l && l.length > 0);
+        if (valid.length === 0) return "";
+
+        const TREE_W = 290;
+        const INDENT = 20;
+        const OFFSET_X = 4;
+        const OFFSET_Y = 4;
+        const LINE_H = 16;
+        const CHAR_W = 7;
+        const TEXT_GAP = 10;
+        const MIN_ROW_GAP = 20;
+
+        const nodes = [];
+        let cy = 0;
+        for (let i = 0; i < valid.length; i++) {
+          const x = i * INDENT;
+          const textX = x + TEXT_GAP;
+          const availW = TREE_W - OFFSET_X - textX - 4;
+          const maxChars = Math.max(10, Math.floor(availW / CHAR_W));
+          const words = valid[i].split(/\s+/);
+          const lines = [];
+          let cur = "";
+          for (const w of words) {
+            const next = cur ? cur + " " + w : w;
+            if (next.length > maxChars && cur) {
+              lines.push(cur);
+              cur = w;
+            } else {
+              cur = next;
+            }
+          }
+          if (cur) lines.push(cur);
+          nodes.push({
+            x,
+            y: cy,
+            textX,
+            lines,
+            isLeaf: i === valid.length - 1,
+          });
+          cy += Math.max(MIN_ROW_GAP, lines.length * LINE_H + 4);
+        }
+
+        const last = nodes[nodes.length - 1];
+        const totalH =
+          last.y + last.lines.length * LINE_H + OFFSET_Y * 2;
+
+        const escape = (s) =>
+          String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+
+        let out =
+          `<svg class="gt-tree" width="${TREE_W}" height="${totalH}" viewBox="0 0 ${TREE_W} ${totalH}">` +
+          `<g transform="translate(${OFFSET_X}, ${OFFSET_Y})">`;
+
+        // Paths first (behind circles)
+        for (let i = 1; i < nodes.length; i++) {
+          const p = nodes[i - 1];
+          const c = nodes[i];
+          out += `<path class="svg-tree-path" d="M${p.x},${p.y + 4} V${c.y + 4} H${c.x}" />`;
+        }
+
+        // Circles + text
+        for (const n of nodes) {
+          const fill = n.isLeaf ? "#5a3e28" : "#e8dfc8";
+          const stroke = n.isLeaf ? "" : ' stroke="#5a3e28"';
+          out += `<circle cx="${n.x}" cy="${n.y + 4}" r="3" fill="${fill}"${stroke} />`;
+          const cls = n.isLeaf ? "svg-tree-text-current" : "svg-tree-text";
+          if (n.lines.length === 1) {
+            out += `<text x="${n.textX}" y="${n.y + 8}" class="${cls}">${escape(n.lines[0])}</text>`;
+          } else {
+            out += `<text x="${n.textX}" y="${n.y + 8}" class="${cls}">`;
+            for (let li = 0; li < n.lines.length; li++) {
+              out += `<tspan x="${n.textX}" dy="${li === 0 ? 0 : LINE_H}">${escape(n.lines[li])}</tspan>`;
+            }
+            out += `</text>`;
+          }
+        }
+
+        out += `</g></svg>`;
+        return out;
+      }
+
+      // ===========================================
+      // WAGE BOX COMPARISON SVG (for major-group tooltip)
+      // Two stacked horizontal box-and-whisker plots — the hovered major
+      // group on top (vermillion), all U.S. occupations below (dark ink),
+      // sharing a single x-axis. Replaces the wage-range and median-wage
+      // sections of the dot tooltip with a visual comparison.
+      // ===========================================
+      function buildWageBoxComparisonSVG(group, national) {
+        const W = 290;
+        const PAD = 4;
+        const plotX = PAD;
+        const plotW = W - PAD * 2;
+
+        const LABEL_H = 16;
+        const BOX_TOP = LABEL_H + 4;
+        const BOX_H = 14;
+        const ROW_PAD = 12;
+        const ROW_H = LABEL_H + 4 + BOX_H + ROW_PAD;
+        const AXIS_H = 22;
+        const totalH = ROW_H * 2 + AXIS_H;
+
+        const xMin = 20000;
+        const xMax = 260000;
+        const xScale = (v) => {
+          const clamped = Math.max(xMin, Math.min(xMax, v));
+          return plotX + ((clamped - xMin) / (xMax - xMin)) * plotW;
+        };
+
+        function drawRow(stats, color, fillColor, rowY, label) {
+          let s = "";
+          // Header line: label on left, median value on right
+          s += `<text x="${plotX}" y="${rowY + 11}" class="gt-box-row-label">${label}</text>`;
+          if (stats.median != null) {
+            s += `<text x="${plotX + plotW}" y="${rowY + 11}" text-anchor="end" class="gt-box-row-value">${formatCurrency(stats.median)}</text>`;
+          }
+
+          const boxY = rowY + BOX_TOP;
+          const centerY = boxY + BOX_H / 2;
+          const whiskerHalfH = 5;
+
+          if (stats.pct25 != null && stats.pct75 != null) {
+            const p25 = xScale(stats.pct25);
+            const p75 = xScale(stats.pct75);
+            if (stats.pct10 != null) {
+              const p10 = xScale(stats.pct10);
+              s += `<line x1="${p10}" y1="${centerY}" x2="${p25}" y2="${centerY}" stroke="${color}" stroke-width="1" />`;
+              s += `<line x1="${p10}" y1="${centerY - whiskerHalfH}" x2="${p10}" y2="${centerY + whiskerHalfH}" stroke="${color}" stroke-width="1" />`;
+            }
+            if (stats.pct90 != null) {
+              const p90 = xScale(stats.pct90);
+              s += `<line x1="${p75}" y1="${centerY}" x2="${p90}" y2="${centerY}" stroke="${color}" stroke-width="1" />`;
+              s += `<line x1="${p90}" y1="${centerY - whiskerHalfH}" x2="${p90}" y2="${centerY + whiskerHalfH}" stroke="${color}" stroke-width="1" />`;
+            }
+            s += `<rect x="${p25}" y="${boxY}" width="${p75 - p25}" height="${BOX_H}" fill="${fillColor}" stroke="${color}" stroke-width="1" />`;
+          }
+          if (stats.median != null) {
+            const med = xScale(stats.median);
+            s += `<line x1="${med}" y1="${boxY - 2}" x2="${med}" y2="${boxY + BOX_H + 2}" stroke="${color}" stroke-width="2" />`;
+          }
+          return s;
+        }
+
+        let out =
+          `<svg class="gt-box-compare" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}">`;
+        out += drawRow(
+          group,
+          "#b33a2b",
+          "rgba(179,58,43,0.18)",
+          0,
+          "this group",
+        );
+        out += drawRow(
+          national,
+          "#1a1408",
+          "rgba(26,20,8,0.15)",
+          ROW_H,
+          "U.S. all occupations",
+        );
+
+        const axisY = ROW_H * 2 + 4;
+        out += `<line x1="${plotX}" y1="${axisY}" x2="${plotX + plotW}" y2="${axisY}" stroke="#5a3e28" stroke-width="0.5" />`;
+        const ticks = [20000, 50000, 100000, 200000];
+        for (const t of ticks) {
+          const tx = xScale(t);
+          out += `<line x1="${tx}" y1="${axisY}" x2="${tx}" y2="${axisY + 3}" stroke="#5a3e28" stroke-width="0.5" />`;
+          out += `<text x="${tx}" y="${axisY + 14}" text-anchor="middle" class="gt-axis-tick">$${(t / 1000) | 0}K</text>`;
+        }
+
+        out += `</svg>`;
+        return out;
+      }
+
+      // ===========================================
+      // SLIDE 1: DUAL-DENSITY KDE
+      // ===========================================
+      function drawDualKDE(
+        allPoints,
+        underworldPoints,
+        nationalMedian,
+        underworldMedian,
+      ) {
+        const container = d3.select("#kde-container");
+        container.html("");
+
+        const containerWidth =
+          container.node().getBoundingClientRect().width || 1020;
+        const margin = { top: 20, right: 40, bottom: 55, left: 50 };
+        const width = containerWidth - margin.left - margin.right;
+        const height = 320;
+
+        const xMin = 15000,
+          xMax = 250000;
+
+        // Compute KDEs
+        const kdeAll = weightedKDE(allPoints, KDE_BANDWIDTH, xMin, xMax, 300);
+        const kdeUnderworld = weightedKDE(
+          underworldPoints,
+          KDE_BANDWIDTH,
+          xMin,
+          xMax,
+          300,
+        );
+
+        const maxDensity = Math.max(
+          d3.max(kdeAll, (d) => d.density),
+          d3.max(kdeUnderworld, (d) => d.density),
+        );
+
+        const x = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+        const y = d3
+          .scaleLinear()
+          .domain([0, maxDensity * 1.08])
+          .range([height, 0]);
+
+        const svg = container
+          .append("svg")
+          .attr("width", containerWidth)
+          .attr("height", height + margin.top + margin.bottom)
+          .attr("class", "viz-svg")
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Gridlines
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", COLOR.grid)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // National KDE area
+        const areaGen = d3
+          .area()
+          .x((d) => x(d.x))
+          .y0(height)
+          .y1((d) => y(d.density))
+          .curve(d3.curveBasis);
+
+        svg
+          .append("path")
+          .datum(kdeAll)
+          .attr("d", areaGen)
+          .attr("fill", COLOR.nationalFill)
+          .attr("stroke", COLOR.national)
+          .attr("stroke-width", 1.5)
+          .attr("filter", WOODCUT.handDrawn);
+
+        // Underworld KDE area
+        svg
+          .append("path")
+          .datum(kdeUnderworld)
+          .attr("d", areaGen)
+          .attr("fill", COLOR.underworldFill)
+          .attr("stroke", COLOR.underworld)
+          .attr("stroke-width", 2)
+          .attr("filter", WOODCUT.handDrawn);
+
+        // National median line
+        if (nationalMedian) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalMedian))
+            .attr("x2", x(nationalMedian))
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+
+          svg
+            .append("text")
+            .attr("x", x(nationalMedian) + 6)
+            .attr("y", 16)
+            .style("font-family", WOODCUT.scFont)
+            .style("font-size", "11px")
+            .style("fill", COLOR.national)
+            .style("letter-spacing", "0.04em")
+            .text("U.S. Median " + formatCurrency(nationalMedian));
+        }
+
+        // Underworld median line
+        if (underworldMedian) {
+          svg
+            .append("line")
+            .attr("x1", x(underworldMedian))
+            .attr("x2", x(underworldMedian))
+            .attr("y1", 0)
+            .attr("y2", height)
+            .attr("stroke", COLOR.underworld)
+            .attr("stroke-width", 2.5);
+
+          svg
+            .append("text")
+            .attr("x", x(underworldMedian) - 6)
+            .attr("y", 32)
+            .attr("text-anchor", "end")
+            .style("font-family", WOODCUT.scFont)
+            .style("font-size", "11px")
+            .style("fill", COLOR.underworld)
+            .style("font-weight", "700")
+            .style("letter-spacing", "0.04em")
+            .text("Underworld Median " + formatCurrency(underworldMedian));
+        }
+
+        // X Axis
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x).ticks(6).tickFormat(formatCurrency));
+
+        xAxis.attr("filter", WOODCUT.handDrawn);
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", COLOR.axis)
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll("text")
+          .style("font-family", WOODCUT.dataFont)
+          .style("font-size", "13px")
+          .style("fill", COLOR.axis);
+
+        // X axis label
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", height + 45)
+          .attr("text-anchor", "middle")
+          .style("font-family", WOODCUT.scFont)
+          .style("font-size", "11px")
+          .style("fill", "#5c5347")
+          .style("letter-spacing", "0.08em")
+          .text("ANNUAL WAGE");
+
+        // Y axis label
+        svg
+          .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("x", -height / 2)
+          .attr("y", -38)
+          .attr("text-anchor", "middle")
+          .style("font-family", WOODCUT.scFont)
+          .style("font-size", "10px")
+          .style("fill", "#7a7167")
+          .style("letter-spacing", "0.08em")
+          .text("DENSITY (EMPLOYMENT-WEIGHTED)");
+      }
+
+      // ===========================================
+      // SLIDE 2: MAJOR GROUPS + GHOSTS BEESWARM
+      // ===========================================
+      function drawMajorGroupStrip(
+        allMajorGroups,
+        underworldGroupNames,
+        nationalStats,
+        underworldOccs,
+        underworldMedian,
+      ) {
+        const container = d3.select("#major-strip-container");
+        container.html("");
+
+        const nationalMedian = nationalStats.median;
+
+        const groups = allMajorGroups
+          .filter((d) => d.median !== null)
+          .map((d) => ({
+            ...d,
+            isUnderworld: underworldGroupNames.has(d.name),
+          }))
+          .sort((a, b) => a.median - b.median);
+
+        if (groups.length === 0) {
+          container.html(
+            '<div class="error-msg">No major group data available</div>',
+          );
+          return;
+        }
+
+        const containerWidth =
+          container.node().getBoundingClientRect().width || 1020;
+        const margin = { top: 10, right: 40, bottom: 65, left: 50 };
+        const width = containerWidth - margin.left - margin.right;
+
+        // Layout zones — box plot sits in the middle as the shared
+        // baseline. Major groups stack UP into it; ghosts stack DOWN
+        // out of it.
+        const majorStripH = 110;
+        const majorToBoxGap = 10;
+        const boxPlotH = 28;
+        const boxToGhostGap = 10;
+        const ghostStripH = 310;
+        const ghostLabelH = 0;
+
+        const majorY0 = 0;
+        const boxY0 = majorY0 + majorStripH + majorToBoxGap;
+        const boxCenterY = boxY0 + boxPlotH / 2;
+        const ghostY0 = boxY0 + boxPlotH + boxToGhostGap;
+        const totalHeight = ghostY0 + ghostStripH;
+
+        const xMin = 20000,
+          xMax = 260000;
+        const x = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+
+        const dotR = 8; // Made dots smaller
+
+        const svg = container
+          .append("svg")
+          .attr("width", containerWidth)
+          .attr("height", totalHeight + margin.top + margin.bottom)
+          .attr("class", "viz-svg")
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Gridlines (full height)
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", totalHeight)
+            .attr("stroke", COLOR.grid)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // ── BOX PLOT: All U.S. Occupations (drawn in the middle) ──
+        const boxG = svg.append("g").attr("filter", WOODCUT.handDrawn);
+
+        if (nationalStats.pct10 !== null && nationalStats.pct25 !== null) {
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct25))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5);
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct10))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5);
+        }
+        if (nationalStats.pct75 !== null && nationalStats.pct90 !== null) {
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct75))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5);
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct90))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5);
+        }
+        if (nationalStats.pct25 !== null && nationalStats.pct75 !== null) {
+          const bx0 = x(nationalStats.pct25);
+          const bx1 = x(nationalStats.pct75);
+          boxG
+            .append("rect")
+            .attr("x", bx0)
+            .attr("y", boxCenterY - 10)
+            .attr("width", bx1 - bx0)
+            .attr("height", 20)
+            .attr("fill", COLOR.boxFill)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5);
+        }
+        // (The box's own median tick is intentionally omitted — a single
+        // full-height dashed line below provides the median mark.)
+
+        // ── US MEDIAN LINE (drawn here so it sits BEHIND dots/ghosts) ──
+        if (nationalMedian) {
+          svg
+            .append("line")
+            .attr("class", "us-median-line")
+            .attr("x1", x(nationalMedian))
+            .attr("x2", x(nationalMedian))
+            .attr("y1", majorY0)
+            .attr("y2", totalHeight)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+        }
+
+        // ── MAJOR GROUPS WHEAT PLOT ──
+        const majorCenterY = majorY0 + majorStripH / 2;
+
+        // Wheat plot for major group dots: each dot keeps its true x,
+        // and is bumped up to the lowest row where it does not horizontally
+        // overlap any previously placed dot. Stacks grow UP from the bottom
+        // of the strip so the divider reads as a shared baseline with the
+        // ghosts below.
+        const majorRowH = 17;
+        const majorFloorOffset = dotR + 1;
+        const majorCollisionDist = 2 * dotR + 1;
+
+        const sortedMajorDots = groups
+          .map((d) => ({ ...d, px: x(d.median), r: dotR }))
+          .sort((a, b) => a.px - b.px);
+
+        const majorStripBottom = majorY0 + majorStripH;
+        const placedMajor = [];
+        sortedMajorDots.forEach((d) => {
+          let row = 0;
+          while (
+            placedMajor.some(
+              (p) =>
+                p.row === row &&
+                Math.abs(p.px - d.px) < majorCollisionDist,
+            )
+          ) {
+            row++;
+          }
+          d.row = row;
+          d.y = majorStripBottom - majorFloorOffset - row * majorRowH;
+          placedMajor.push(d);
+        });
+
+        const DOT_FILL = "rgba(179,58,43,0.65)"; // Higher opacity red
+        const DOT_STROKE = "#1a1408"; // Black outline
+
+        // ── PROCEDURAL INK BLOB GENERATOR ──
+        function generateBlobPath(r) {
+          const numPoints = 7;
+          const points = [];
+          for (let i = 0; i < numPoints; i++) {
+            const angle = (i / numPoints) * Math.PI * 2;
+            // Randomly push the radius in or out to create wobble
+            const rad = r + (Math.random() * 3 - 1.5);
+            points.push([Math.cos(angle) * rad, Math.sin(angle) * rad]);
+          }
+          // Connect the random points smoothly
+          return d3.line().curve(d3.curveCatmullRomClosed)(points);
+        }
+
+        const majorDotGroups = svg
+          .selectAll("g.major-dot")
+          .data(sortedMajorDots)
+          .enter()
+          .append("g")
+          .attr("class", "major-dot")
+          .attr("transform", (d) => `translate(${d.px},${d.y})`);
+
+        majorDotGroups
+          .append("path")
+          .attr("class", "main-dot")
+          .attr("d", () => generateBlobPath(dotR))
+          .attr("fill", DOT_FILL)
+          .attr("stroke", DOT_STROKE)
+          .attr("stroke-width", 1.5)
+          .attr("filter", WOODCUT.filter)
+          .style("cursor", "pointer");
+
+        majorDotGroups
+          .on("mouseover", function (event, d) {
+            d3.select(this)
+              .select(".main-dot")
+              .attr("fill", COLOR.underworld)
+              .attr("fill-opacity", 0.9);
+            showTooltip(
+              event,
+              `<header class="gt-header"><span class="gt-name">${d.name}</span></header>
+            <div class="gt-section">
+              <span class="gt-label">Wage Distribution</span>
+              ${buildWageBoxComparisonSVG(d, nationalStats)}
+            </div>`,
+            );
+          })
+          .on("mousemove", moveTooltip)
+          .on("mouseout", function (event, d) {
+            d3.select(this)
+              .select(".main-dot")
+              .attr("fill", DOT_FILL)
+              .attr("fill-opacity", 1);
+            hideTooltip();
+          });
+
+        // ── GHOST WHEAT PLOT: Individual Rabelais Figures ──
+        // (the box plot above acts as the visual divider)
+        const ghostCenterY = ghostY0 + ghostLabelH + ghostStripH / 2;
+
+        // Classic Sheet White Ghost Drawing Function
+        function drawClassicWhite(g, idx) {
+          const group = g.append("g");
+          group
+            .append("path")
+            .attr("class", "ghost-body")
+            .attr(
+              "d",
+              "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+            )
+            .attr("stroke-linejoin", "round")
+            .attr("filter", WOODCUT.handDrawnLight);
+
+          // Classic round eyes
+          group
+            .append("ellipse")
+            .attr("cx", -2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+          group
+            .append("ellipse")
+            .attr("cx", 2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+
+          return {
+            defaultFill: "rgba(255, 250, 240, 0.65)",
+            hoverFill: "rgba(255, 250, 240, 0.95)",
+            stroke: "#1a1408",
+          };
+        }
+
+        // Wheat plot: each ghost keeps its true x-position, and is bumped
+        // down to the lowest row where it does not horizontally overlap any
+        // previously placed ghost. Stacks grow DOWN from the top of the
+        // strip so the divider reads as a ceiling.
+        const ghostCollisionR = 7;
+        const ghostRowH = 17; // ghost glyph height + small gap
+        const ghostHeadOffset = 8; // first row center below strip top
+        const ghostCollisionDist = 2 * ghostCollisionR + 1;
+
+        const ghostData = underworldOccs
+          .filter(
+            (d) => d.median !== null && d.median >= xMin && d.median <= xMax,
+          )
+          .map((d) => ({ ...d, px: x(d.median), r: ghostCollisionR }))
+          .sort((a, b) => a.px - b.px);
+
+        const ghostStripTop = ghostY0 + ghostLabelH;
+        const placedGhosts = [];
+        ghostData.forEach((d) => {
+          let row = 0;
+          while (
+            placedGhosts.some(
+              (p) =>
+                p.row === row &&
+                Math.abs(p.px - d.px) < ghostCollisionDist,
+            )
+          ) {
+            row++;
+          }
+          d.row = row;
+          d.y = ghostStripTop + ghostHeadOffset + row * ghostRowH;
+          placedGhosts.push(d);
+        });
+
+        const ghostDotGroups = svg
+          .selectAll("g.ghost-dot")
+          .data(ghostData)
+          .enter()
+          .append("g")
+          .attr("class", "ghost-dot")
+          .attr("transform", (d) => `translate(${d.px},${d.y})`)
+          .style("cursor", "pointer");
+
+        // Draw classic white sheet for each ghost
+        ghostDotGroups.each(function (d, i) {
+          const config = drawClassicWhite(d3.select(this), i);
+          d3.select(this)
+            .select(".ghost-body")
+            .attr("fill", config.defaultFill)
+            .attr("stroke", config.stroke)
+            .attr("stroke-width", 1.2);
+        });
+
+        ghostDotGroups
+          .on("mouseover", function (event, d) {
+            d3.select(this)
+              .select(".ghost-body")
+              .attr("fill", "rgba(255, 250, 240, 0.95)")
+              .attr("stroke-width", 1.5);
+
+            const diff = d.median - nationalMedian;
+            const pctAbs = Math.abs(
+              Math.round((diff / nationalMedian) * 100),
+            );
+            const isAbove = diff >= 0;
+            const arrow = isAbove ? "&uarr;" : "&darr;";
+            const direction = isAbove ? "above" : "below";
+            const deltaClass = isAbove ? " is-above" : "";
+            showTooltip(
+              event,
+              `<header class="gt-header"><span class="gt-name is-underworld">${d.characterName}</span>${d.lotInLife ? `<span class="gt-role">&mdash; ${d.lotInLife}</span>` : ""}</header>
+            <div class="gt-section">
+              <span class="gt-label">Underworld Labor</span>
+              <div class="gt-content"><em>&ldquo;&hellip; ${d.labor} &hellip;&rdquo;</em></div>
+            </div>
+            <div class="gt-section">
+              <span class="gt-label">Modern Equivalent</span>
+              ${buildOccupationTreeSVG(d.majorGroup, d.minorGroup, d.broadGroup, d.occTitle)}
+            </div>
+            <div class="gt-section">
+              <span class="gt-label">Median Wage</span>
+              <div class="gt-wage-line">
+                <span class="gt-wage-amount">${formatCurrency(d.median)}</span>
+                <span class="gt-wage-delta${deltaClass}"><span aria-hidden="true">${arrow}</span> ${pctAbs}% ${direction} U.S. median</span>
+              </div>
+            </div>`,
+            );
+          })
+          .on("mousemove", moveTooltip)
+          .on("mouseout", function () {
+            d3.select(this)
+              .select(".ghost-body")
+              .attr("fill", "rgba(255, 250, 240, 0.65)")
+              .attr("stroke-width", 1.2);
+            hideTooltip();
+          });
+
+        // ── X AXIS ──
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${totalHeight})`)
+          .call(d3.axisBottom(x).ticks(6).tickFormat(formatCurrency));
+
+        xAxis.attr("filter", WOODCUT.handDrawn);
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", COLOR.axis)
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll("text")
+          .style("font-family", WOODCUT.dataFont)
+          .style("font-size", "13px")
+          .style("fill", COLOR.axis);
+
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", totalHeight + 45)
+          .attr("text-anchor", "middle")
+          .style("font-family", WOODCUT.scFont)
+          .style("font-size", "11px")
+          .style("fill", "#5c5347")
+          .style("letter-spacing", "0.08em")
+          .text("MEDIAN ANNUAL WAGE");
+
+        // ── ANNOTATION LAYER FOR SPECIMEN TAGS ──
+        // Sit this on top of all the ghosts so labels don't get covered
+        const annotationLayer = svg
+          .append("g")
+          .attr("class", "annotation-layer");
+
+        // ── DYNAMIC MULTI-SELECT GHOST HIGHLIGHTING ──
+        const uniqueCharacters = Array.from(
+          new Set(underworldOccs.map((d) => d.characterName)),
+        ).sort();
+        const dropdown = d3.select("#ghost-selector-dropdown");
+        dropdown.html(""); // Clear existing if re-rendered
+
+        const btn = d3.select("#ghost-selector-btn");
+        btn.on("click", (e) => {
+          e.stopPropagation();
+          const isOpen = dropdown.classed("open");
+          dropdown.classed("open", !isOpen);
+        });
+
+        // Close dropdown when clicking outside
+        d3.select("body").on("click", () => {
+          dropdown.classed("open", false);
+        });
+
+        // Prevent body click from firing when interacting with the dropdown
+        dropdown.on("click", (e) => e.stopPropagation());
+
+        let selectedCharacters = new Set();
+        let selectedMajorGroups = new Set(); // Added tracker for selected major groups
+
+        const options = dropdown
+          .selectAll(".multi-select-option")
+          .data(uniqueCharacters)
+          .enter()
+          .append("label")
+          .attr("class", "multi-select-option");
+
+        options
+          .append("input")
+          .attr("type", "checkbox")
+          .attr("value", (d) => d)
+          .on("change", function (event, d) {
+            const charData = ghostData.find((g) => g.characterName === d);
+            const inSelectedGroup =
+              charData && selectedMajorGroups.has(charData.majorGroup);
+
+            if (this.checked) {
+              selectedCharacters.add(d);
+            } else {
+              // If unchecking a ghost that was selected via its major group,
+              // we break apart the group selection to retain the others while dropping this one.
+              if (inSelectedGroup) {
+                selectedMajorGroups.delete(charData.majorGroup);
+                ghostData.forEach((g) => {
+                  if (
+                    g.majorGroup === charData.majorGroup &&
+                    g.characterName !== d
+                  ) {
+                    selectedCharacters.add(g.characterName);
+                  }
+                });
+              } else {
+                selectedCharacters.delete(d);
+              }
+            }
+            updateHighlight();
+          });
+
+        options.append("span").text((d) => d);
+
+        function updateHighlight() {
+          const isAnySelected =
+            selectedCharacters.size > 0 || selectedMajorGroups.size > 0;
+          const selectedData = ghostData.filter(
+            (d) =>
+              selectedCharacters.has(d.characterName) ||
+              selectedMajorGroups.has(d.majorGroup),
+          );
+
+          const btnText = !isAnySelected
+            ? 'Highlight Underworld Figures <span style="font-size: 10px;">▼</span>'
+            : `Highlighting ${selectedData.length} Figure${selectedData.length !== 1 ? "s" : ""} <span style="font-size: 10px;">▼</span>`;
+          btn.html(btnText);
+
+          // Update ghosts
+          svg
+            .selectAll(".ghost-dot")
+            .transition()
+            .duration(300)
+            .style("opacity", (d) =>
+              !isAnySelected ||
+              selectedCharacters.has(d.characterName) ||
+              selectedMajorGroups.has(d.majorGroup)
+                ? 1
+                : 0.15,
+            );
+
+          // Update major dots
+          svg
+            .selectAll(".major-dot")
+            .transition()
+            .duration(300)
+            .style("opacity", (d) => {
+              if (!isAnySelected) return 1;
+              if (selectedMajorGroups.has(d.name)) return 1;
+              const hasSelectedGhost = ghostData.some(
+                (g) =>
+                  g.majorGroup === d.name &&
+                  selectedCharacters.has(g.characterName),
+              );
+              return hasSelectedGhost ? 1 : 0.15;
+            });
+
+          // Sync Dropdown checkboxes so they accurately reflect ghosts selected via major groups
+          options.select("input").property("checked", (char) => {
+            const charData = ghostData.find((g) => g.characterName === char);
+            return (
+              selectedCharacters.has(char) ||
+              (charData && selectedMajorGroups.has(charData.majorGroup))
+            );
+          });
+
+          // ── RENDER SPECIMEN TAGS ──
+          const tagData = [];
+
+          // Add only explicitly selected ghosts
+          const explicitlySelectedGhosts = ghostData.filter((d) =>
+            selectedCharacters.has(d.characterName),
+          );
+          explicitlySelectedGhosts.forEach((d) => {
+            tagData.push({
+              id: "ghost-" + d.characterName,
+              px: d.px,
+              y: d.y,
+              title: d.characterName,
+              italic: `"${d.labor}"`,
+              bodyToWrap: d.occTitle,
+              median: d.median,
+              defaultDy: d.y < ghostCenterY ? -45 : 45,
+            });
+          });
+
+          // Add selected major groups
+          sortedMajorDots
+            .filter((d) => selectedMajorGroups.has(d.name))
+            .forEach((d) => {
+              tagData.push({
+                id: "major-" + d.name.replace(/[^a-zA-Z]/g, ""),
+                px: d.px,
+                y: d.y,
+                title: null, // Removed "MAJOR GROUP" header
+                italic: null, // No italic quote needed for major groups
+                bodyToWrap: d.name,
+                median: d.median,
+                defaultDy: d.y < majorCenterY ? -45 : 45,
+              });
+            });
+
+          const tags = annotationLayer
+            .selectAll(".specimen-tag")
+            .data(tagData, (d) => d.id);
+
+          tags.exit().transition().duration(200).style("opacity", 0).remove();
+
+          function updateTagVisuals(selection) {
+            selection.each(function (d) {
+              const tagW = (d.textWidth || 0) + 16;
+              const padding = 4; // Keeps the pin slightly inside the rounded corners
+
+              // Adjusted virtual depth to account for the dynamic card height
+              const virtualDepth = d.tagHeight + 5;
+              const cy =
+                d.labelDy + (d.labelDy < 0 ? -virtualDepth : virtualDepth);
+
+              // Find where a line from the ghost to the virtual center intersects the edge
+              const intersectX = d.labelDx * (d.labelDy / cy);
+
+              const minX = d.labelDx - tagW / 2 + padding;
+              const maxX = d.labelDx + tagW / 2 - padding;
+
+              // Clamp to ensure the pin stays on the edge of the tag
+              d.targetX = Math.max(minX, Math.min(maxX, intersectX));
+              d.targetY = d.labelDy;
+
+              // Calculate starting point slightly off the ghost
+              const dist = Math.hypot(d.targetX, d.targetY);
+              d.startX = dist ? (d.targetX / dist) * 12 : 0;
+              d.startY = dist ? (d.targetY / dist) * 12 : 0;
+            });
+
+            // Dynamic line starting slightly off the ghost, ending at the dynamic pin
+            selection
+              .select(".tag-line")
+              .attr("x1", (d) => d.startX)
+              .attr("y1", (d) => d.startY)
+              .attr("x2", (d) => d.targetX)
+              .attr("y2", (d) => d.targetY);
+
+            selection
+              .select(".tag-label-group")
+              .attr("transform", (d) => `translate(${d.labelDx},${d.labelDy})`);
+
+            // Move the pin to match the dynamic connection point
+            selection
+              .select(".tag-label-group circle")
+              .attr("cx", (d) => d.targetX - d.labelDx)
+              .attr("cy", 0);
+
+            // Flip the rect and text to hang below the pin or sit above it
+            selection
+              .select("rect")
+              .attr("y", (d) => (d.labelDy < 0 ? -d.tagHeight : 0));
+
+            selection
+              .select("text")
+              .attr("y", (d) => (d.labelDy < 0 ? -(d.tagHeight - 14) : 14));
+          }
+
+          const tagsEnter = tags
+            .enter()
+            .append("g")
+            .attr("class", "specimen-tag")
+            .attr("transform", (d) => `translate(${d.px},${d.y})`)
+            .style("opacity", 0)
+            .each(function (d) {
+              // Initialize offset if not already set by a previous drag
+              if (d.labelDx === undefined) d.labelDx = 0;
+              if (d.labelDy === undefined) d.labelDy = d.defaultDy;
+
+              // Text wrapping logic for the body text
+              const maxChars = 28;
+              d.occLines = [];
+              if (d.bodyToWrap) {
+                const words = d.bodyToWrap.split(/\s+/);
+                let currentLine = words[0];
+                for (let i = 1; i < words.length; i++) {
+                  if (currentLine.length + words[i].length + 1 <= maxChars) {
+                    currentLine += " " + words[i];
+                  } else {
+                    d.occLines.push(currentLine);
+                    currentLine = words[i];
+                  }
+                }
+                d.occLines.push(currentLine);
+              }
+
+              // Calculate total height needed based on number of wrapped lines
+              let lines = d.title ? 1 : 0; // Title (optional)
+              if (d.italic) lines++; // Italic labor
+              lines += d.occLines.length; // Wrapped body
+              lines++; // Wage
+
+              // Base height math: 4 lines was 63px. (4 * 13) + 11 = 63.
+              d.tagHeight = lines * 13 + 11;
+            });
+
+          tagsEnter
+            .append("line")
+            .attr("class", "tag-line")
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "3,2");
+
+          const labelGroup = tagsEnter
+            .append("g")
+            .attr("class", "tag-label-group")
+            .style("cursor", "grab")
+            .call(
+              d3
+                .drag()
+                .on("start", function (event, d) {
+                  d3.select(this).style("cursor", "grabbing");
+                  d3.select(this.parentNode).raise(); // Bring dragged tag to front
+                })
+                .on("drag", function (event, d) {
+                  d.labelDx += event.dx;
+                  d.labelDy += event.dy;
+                  updateTagVisuals(d3.select(this.parentNode));
+                })
+                .on("end", function (event, d) {
+                  d3.select(this).style("cursor", "grab");
+                }),
+            );
+
+          labelGroup
+            .append("rect")
+            .attr("height", (d) => d.tagHeight)
+            .attr("fill", "#e4dac0")
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1)
+            .attr("rx", 2)
+            .attr("filter", WOODCUT.handDrawnLight);
+
+          labelGroup
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 2)
+            .attr("fill", "#b33a2b");
+
+          labelGroup
+            .append("text")
+            .attr("text-anchor", "start")
+            .style("fill", "#1a1408")
+            .each(function (d) {
+              const textNode = d3.select(this);
+              let isFirstLine = true;
+
+              if (d.title) {
+                textNode
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .style("font-family", WOODCUT.scFont)
+                  .style("font-size", "11px")
+                  .text(d.title);
+                isFirstLine = false;
+              }
+
+              if (d.italic) {
+                textNode
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .attr("dy", isFirstLine ? 0 : 13)
+                  .style("font-family", WOODCUT.fontFamily)
+                  .style("font-size", "11px")
+                  .style("font-style", "italic")
+                  .style("fill", "#5c5347")
+                  .text(d.italic);
+                isFirstLine = false;
+              }
+
+              d.occLines.forEach((line) => {
+                textNode
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .attr("dy", isFirstLine ? 0 : 13)
+                  .style("font-family", WOODCUT.fontFamily)
+                  .style("font-size", "11px")
+                  .style("fill", "#3d2b18")
+                  .text(line);
+                isFirstLine = false;
+              });
+
+              textNode
+                .append("tspan")
+                .attr("class", "tag-line-start")
+                .attr("x", 0)
+                .attr("dy", isFirstLine ? 0 : 14)
+                .style("font-family", WOODCUT.dataFont)
+                .style("font-size", "12px")
+                .style("font-weight", "600")
+                .style("fill", "#b33a2b")
+                .text(`Wage: ${formatCurrency(d.median)}`);
+
+              // Calculate text width dynamically so the tag fits perfectly
+              d.textWidth = this.getBBox().width;
+
+              // Shift only the starting tspans so the entire text block is left-aligned inside the centered tag
+              textNode
+                .selectAll("tspan.tag-line-start")
+                .attr("x", -d.textWidth / 2);
+            });
+
+          labelGroup
+            .selectAll("rect")
+            .attr("x", (d) => -(d.textWidth + 16) / 2)
+            .attr("width", (d) => d.textWidth + 16);
+
+          const allTags = tagsEnter.merge(tags);
+
+          allTags
+            .transition()
+            .duration(300)
+            .style("opacity", 1)
+            .attr("transform", (d) => `translate(${d.px},${d.y})`);
+
+          allTags.each(function (d) {
+            updateTagVisuals(d3.select(this));
+          });
+        }
+
+        d3.select("#ghost-selector-container").style("display", "block");
+
+        // ── CLICK INTERACTION ──
+        majorDotGroups.on("click", function (event, d) {
+          event.stopPropagation();
+
+          if (event.shiftKey) {
+            // Toggle selection
+            if (selectedMajorGroups.has(d.name)) {
+              selectedMajorGroups.delete(d.name);
+            } else {
+              selectedMajorGroups.add(d.name);
+            }
+          } else {
+            // Single selection override
+            selectedCharacters.clear();
+            selectedMajorGroups.clear();
+            selectedMajorGroups.add(d.name);
+          }
+
+          updateHighlight();
+        });
+
+        ghostDotGroups.on("click", function (event, d) {
+          event.stopPropagation(); // Prevent triggering SVG background click
+
+          if (event.shiftKey) {
+            // Toggle selection
+            if (selectedCharacters.has(d.characterName)) {
+              selectedCharacters.delete(d.characterName);
+            } else {
+              selectedCharacters.add(d.characterName);
+            }
+          } else {
+            // Single selection override
+            selectedCharacters.clear();
+            selectedMajorGroups.clear(); // Clear major groups when individually picking a ghost
+            selectedCharacters.add(d.characterName);
+          }
+
+          updateHighlight();
+        });
+
+        // Click background to clear selection (bound to root SVG instead of the <g> element)
+        container.select("svg").on("click", function (event) {
+          // Only clear if we didn't click on a ghost, a specimen tag, or a major dot
+          if (
+            !event.target.closest(".ghost-dot") &&
+            !event.target.closest(".specimen-tag") &&
+            !event.target.closest(".major-dot")
+          ) {
+            selectedCharacters.clear();
+            selectedMajorGroups.clear();
+            updateHighlight();
+          }
+        });
+
+        // ── US MEDIAN LABEL (drawn on top so it stays readable) ──
+        // Two-line stacked annotation with a small leader line pointing
+        // back to the dashed median line.
+        if (nationalMedian) {
+          const labelOffset = 10;
+          const lineX = x(nationalMedian);
+          const labelX = lineX + labelOffset;
+          const labelTopY = majorY0 + 4;
+          // Leader line connecting the label to the dashed median line.
+          svg
+            .append("line")
+            .attr("class", "us-median-leader")
+            .attr("x1", lineX)
+            .attr("x2", labelX - 2)
+            .attr("y1", labelTopY + 16)
+            .attr("y2", labelTopY + 16)
+            .attr("stroke", COLOR.national)
+            .attr("stroke-width", 1);
+          svg
+            .append("text")
+            .attr("class", "us-median-label-caption")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 9)
+            .style("font-family", WOODCUT.scFont)
+            .style("font-size", "10px")
+            .style("letter-spacing", "0.08em")
+            .style("fill", "#5c5347")
+            .text("U.S. MEDIAN (2024)");
+          svg
+            .append("text")
+            .attr("class", "us-median-label-value")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 24)
+            .style("font-family", WOODCUT.dataFont)
+            .style("font-size", "13px")
+            .style("font-weight", "600")
+            .style("fill", COLOR.national)
+            .text(formatCurrency(nationalMedian));
+        }
+
+        // Legend overlaid in the top-right of the chart area —
+        // identifies the two glyph types: major-group dots and ghosts.
+        const legendG = svg
+          .append("g")
+          .attr("transform", `translate(${width - 232}, 6)`);
+        legendG
+          .append("rect")
+          .attr("x", -6)
+          .attr("y", -2)
+          .attr("width", 236)
+          .attr("height", 50)
+          .attr("fill", "rgba(214, 201, 173, 0.85)")
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 0.5);
+
+        // Row 1: Major group dot
+        const legendDot = legendG
+          .append("g")
+          .attr("transform", "translate(14, 14)");
+        legendDot
+          .append("path")
+          .attr("d", generateBlobPath(6))
+          .attr("fill", DOT_FILL)
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 1);
+        legendG
+          .append("text")
+          .attr("x", 30)
+          .attr("y", 14)
+          .attr("dominant-baseline", "middle")
+          .style("font-family", WOODCUT.dataFont)
+          .style("font-size", "12px")
+          .style("fill", "#1a1408")
+          .text("Major Occupational Group");
+
+        // Row 2: Underworld ghost
+        const legendGhost = legendG
+          .append("g")
+          .attr("transform", "translate(14, 34)");
+        legendGhost
+          .append("path")
+          .attr(
+            "d",
+            "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+          )
+          .attr("fill", "rgba(255, 250, 240, 0.85)")
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 1.2);
+        legendGhost
+          .append("ellipse")
+          .attr("cx", -2)
+          .attr("cy", -3)
+          .attr("rx", 1)
+          .attr("ry", 1.5)
+          .attr("fill", "#1a1408");
+        legendGhost
+          .append("ellipse")
+          .attr("cx", 2)
+          .attr("cy", -3)
+          .attr("rx", 1)
+          .attr("ry", 1.5)
+          .attr("fill", "#1a1408");
+        legendG
+          .append("text")
+          .attr("x", 30)
+          .attr("y", 34)
+          .attr("dominant-baseline", "middle")
+          .style("font-family", WOODCUT.dataFont)
+          .style("font-size", "12px")
+          .style("fill", "#1a1408")
+          .text("Rabelais's Underworld Figure");
+      }
+
+      // ===========================================
+      // SLIDE 3: BOX PLOT BY MAJOR GROUP
+      // ===========================================
+      function drawBoxPlots(underworldByMajor, nationalStats) {
+        const container = d3.select("#box-container");
+        container.html("");
+
+        // Sort by median wage
+        const groups = underworldByMajor.sort(
+          (a, b) => (a.median || 0) - (b.median || 0),
+        );
+
+        const containerWidth =
+          container.node().getBoundingClientRect().width || 1020;
+        const margin = { top: 20, right: 40, bottom: 55, left: 260 };
+        const rowHeight = 42;
+        const width = containerWidth - margin.left - margin.right;
+        const height = groups.length * rowHeight;
+
+        const xMin = 20000,
+          xMax = 260000;
+        const x = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+
+        const svg = container
+          .append("svg")
+          .attr("width", containerWidth)
+          .attr("height", height + margin.top + margin.bottom)
+          .attr("class", "viz-svg")
+          .append("g")
+          .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Gridlines
+        x.ticks(5).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", -5)
+            .attr("y2", height + 5)
+            .attr("stroke", COLOR.grid)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // National median reference
+        if (nationalStats && nationalStats.median) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.median))
+            .attr("x2", x(nationalStats.median))
+            .attr("y1", -10)
+            .attr("y2", height + 10)
+            .attr("stroke", COLOR.median)
+            .attr("stroke-width", 2);
+
+          svg
+            .append("text")
+            .attr("x", x(nationalStats.median) + 6)
+            .attr("y", -3)
+            .style("font-family", WOODCUT.scFont)
+            .style("font-size", "10px")
+            .style("fill", COLOR.median)
+            .style("letter-spacing", "0.04em")
+            .text("U.S. Median");
+        }
+
+        // Draw each major group
+        groups.forEach((group, i) => {
+          const cy = i * rowHeight + rowHeight / 2;
+          const boxH = 16;
+
+          const pct10 =
+            group.pct10 !== null ? Math.max(group.pct10, xMin) : null;
+          const pct25 =
+            group.pct25 !== null ? Math.max(group.pct25, xMin) : null;
+          const pct75 =
+            group.pct75 !== null ? Math.min(group.pct75, xMax) : null;
+          const pct90 =
+            group.pct90 !== null ? Math.min(group.pct90, xMax) : null;
+          const median = group.median;
+
+          const g = svg.append("g").attr("filter", WOODCUT.handDrawn);
+
+          // Alternating row shading
+          if (i % 2 === 0) {
+            svg
+              .insert("rect", ":first-child")
+              .attr("x", -margin.left + 10)
+              .attr("y", i * rowHeight)
+              .attr("width", containerWidth - 20)
+              .attr("height", rowHeight)
+              .attr("fill", "rgba(90,62,40,0.04)")
+              .attr("stroke", "none");
+          }
+
+          // Whiskers
+          if (pct10 !== null && pct25 !== null) {
+            g.append("line")
+              .attr("x1", x(pct10))
+              .attr("x2", x(pct25))
+              .attr("y1", cy)
+              .attr("y2", cy)
+              .attr("stroke", COLOR.national)
+              .attr("stroke-width", 1.5);
+            g.append("line")
+              .attr("x1", x(pct10))
+              .attr("x2", x(pct10))
+              .attr("y1", cy - 5)
+              .attr("y2", cy + 5)
+              .attr("stroke", COLOR.national)
+              .attr("stroke-width", 1.5);
+          }
+          if (pct75 !== null && pct90 !== null) {
+            g.append("line")
+              .attr("x1", x(pct75))
+              .attr("x2", x(pct90))
+              .attr("y1", cy)
+              .attr("y2", cy)
+              .attr("stroke", COLOR.national)
+              .attr("stroke-width", 1.5);
+            g.append("line")
+              .attr("x1", x(pct90))
+              .attr("x2", x(pct90))
+              .attr("y1", cy - 5)
+              .attr("y2", cy + 5)
+              .attr("stroke", COLOR.national)
+              .attr("stroke-width", 1.5);
+          }
+
+          // IQR box
+          if (pct25 !== null && pct75 !== null) {
+            const boxW = x(pct75) - x(pct25);
+            g.append("rect")
+              .attr("x", x(pct25))
+              .attr("y", cy - boxH / 2)
+              .attr("width", Math.max(boxW, 2))
+              .attr("height", boxH)
+              .attr("fill", COLOR.boxUnderworldFill)
+              .attr("stroke", COLOR.national)
+              .attr("stroke-width", 1.5);
+          }
+
+          // Median tick — rubricated
+          if (median !== null) {
+            g.append("line")
+              .attr("x1", x(median))
+              .attr("x2", x(median))
+              .attr("y1", cy - boxH / 2 - 2)
+              .attr("y2", cy + boxH / 2 + 2)
+              .attr("stroke", COLOR.underworld)
+              .attr("stroke-width", 2.5);
+          }
+
+          // Row label
+          const cleanName = group.name.replace(" Occupations", "");
+          svg
+            .append("text")
+            .attr("x", -12)
+            .attr("y", cy + 4)
+            .attr("text-anchor", "end")
+            .style("font-family", WOODCUT.fontFamily)
+            .style("font-size", "12px")
+            .style("fill", "#3d2b18")
+            .text(cleanName);
+
+          // Employment count
+          svg
+            .append("text")
+            .attr("x", -12)
+            .attr("y", cy + 16)
+            .attr("text-anchor", "end")
+            .style("font-family", WOODCUT.dataFont)
+            .style("font-size", "10px")
+            .style("fill", "#7a7167")
+            .text(abbreviateNumber(group.employment) + " workers");
+        });
+
+        // X Axis
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${height})`)
+          .call(d3.axisBottom(x).ticks(5).tickFormat(formatCurrency));
+
+        xAxis.attr("filter", WOODCUT.handDrawn);
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", COLOR.axis)
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll("text")
+          .style("font-family", WOODCUT.dataFont)
+          .style("font-size", "13px")
+          .style("fill", COLOR.axis);
+
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", height + 45)
+          .attr("text-anchor", "middle")
+          .style("font-family", WOODCUT.scFont)
+          .style("font-size", "11px")
+          .style("fill", "#5c5347")
+          .style("letter-spacing", "0.08em")
+          .text("ANNUAL WAGE");
+      }
+
+      // ===========================================
+      // LEGEND BUILDER
+      // ===========================================
+      function buildLegend() {
+        const legend = d3.select("#kde-legend");
+        legend.html("");
+
+        const items = [
+          {
+            type: "fill",
+            color: COLOR.nationalFill,
+            stroke: COLOR.national,
+            label: "All U.S. Occupations",
+          },
+          {
+            type: "fill",
+            color: COLOR.underworldFill,
+            stroke: COLOR.underworld,
+            label: "Rabelais' Underworld Occupations",
+          },
+          {
+            type: "line",
+            color: COLOR.national,
+            dash: "6,3",
+            label: "U.S. Median",
+          },
+          {
+            type: "line",
+            color: COLOR.underworld,
+            dash: null,
+            label: "Underworld Median",
+          },
+        ];
+
+        items.forEach((item) => {
+          const el = legend.append("div").attr("class", "legend-item");
+          if (item.type === "fill") {
+            el.append("div")
+              .attr("class", "legend-swatch")
+              .style("background", item.color)
+              .style("border-color", item.stroke);
+          } else {
+            el.append("div")
+              .attr("class", "legend-line")
+              .style("border-color", item.color)
+              .style("border-style", item.dash ? "dashed" : "solid");
+          }
+          el.append("span").text(item.label);
+        });
+      }
+
+      // ===========================================
+      // STATS ROW BUILDER
+      // ===========================================
+      function buildStats(
+        nationalMedian,
+        underworldMedian,
+        underworldCount,
+        underworldEmp,
+      ) {
+        const statsRow = d3.select("#kde-stats");
+        statsRow.style("display", "flex");
+
+        const diff = underworldMedian - nationalMedian;
+        const pct = ((diff / nationalMedian) * 100).toFixed(0);
+        const diffClass = diff >= 0 ? "positive" : "negative";
+        const diffSign = diff >= 0 ? "+" : "";
+
+        statsRow.html(`
+        <div class="stat-cell">
+          <div class="stat-cell-label">U.S. Median Wage</div>
+          <div class="stat-cell-value">${formatCurrency(nationalMedian)}</div>
+          <div class="stat-cell-sub">all occupations</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Underworld Median Wage</div>
+          <div class="stat-cell-value rubricated">${formatCurrency(underworldMedian)}</div>
+          <div class="stat-cell-sub ${diffClass}">${diffSign}${pct}% vs. national</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Underworld Occupations</div>
+          <div class="stat-cell-value">${underworldCount}</div>
+          <div class="stat-cell-sub">distinct SOC codes</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-cell-label">Workers Represented</div>
+          <div class="stat-cell-value">${abbreviateNumber(underworldEmp)}</div>
+          <div class="stat-cell-sub">in mapped occupations</div>
+        </div>
+      `);
+      }
+
+      // ===========================================
+      // ARRANGEMENT SHOWCASE
+      // ===========================================
+      function drawArrangementShowcase(underworldOccs) {
+        const root = d3.select("#arrangement-showcase");
+        if (root.empty()) return;
+
+        const containerWidth = root.node().getBoundingClientRect().width - 64;
+        const margin = { top: 8, right: 32, bottom: 28, left: 40 };
+        const innerW = containerWidth - margin.left - margin.right;
+        const innerH = 70;
+        const dotR = 3.5;
+
+        const xMin = 20000,
+          xMax = 260000;
+        const x = d3.scaleLinear().domain([xMin, xMax]).range([0, innerW]);
+
+        const dataFiltered = underworldOccs.filter(
+          (d) => d.median !== null && d.median >= xMin && d.median <= xMax,
+        );
+
+        const variants = [
+          {
+            label: "Symmetric beeswarm",
+            sub: "current — gravity toward a center line",
+            render: renderSymmetricBeeswarm,
+          },
+          {
+            label: "One-sided beeswarm",
+            sub: "gravity toward a baseline; reads like a histogram",
+            render: renderOneSidedBeeswarm,
+          },
+          {
+            label: "Wilkinson dot plot",
+            sub: "x-axis binned; dots snap to bin centers",
+            render: renderWilkinson,
+          },
+          {
+            label: "Wheat plot",
+            sub: "stacked rows, but each dot keeps its true x-position",
+            render: renderWheat,
+          },
+          {
+            label: "Random vertical jitter",
+            sub: "smallest footprint; density readable via overlap",
+            render: renderJitter,
+          },
+        ];
+
+        variants.forEach((v) => {
+          const card = root.append("div").attr("class", "showcase-card");
+          card
+            .append("div")
+            .attr("class", "showcase-label")
+            .html(
+              v.label +
+                ' <span class="showcase-label-sub">— ' +
+                v.sub +
+                "</span>",
+            );
+
+          const svg = card
+            .append("svg")
+            .attr("width", containerWidth)
+            .attr("height", innerH + margin.top + margin.bottom)
+            .style("display", "block")
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+          // Gridlines
+          x.ticks(6).forEach((tick) => {
+            svg
+              .append("line")
+              .attr("x1", x(tick))
+              .attr("x2", x(tick))
+              .attr("y1", 0)
+              .attr("y2", innerH)
+              .attr("stroke", "rgba(44,26,8,0.12)")
+              .attr("stroke-width", 0.5)
+              .attr("stroke-dasharray", "3,3");
+          });
+
+          v.render(svg, x, innerW, innerH, dotR, dataFiltered);
+
+          // X-axis
+          const xAxis = d3
+            .axisBottom(x)
+            .tickValues([20000, 50000, 100000, 200000])
+            .tickFormat((d) => "$" + d / 1000 + "K");
+          svg
+            .append("g")
+            .attr("transform", `translate(0,${innerH})`)
+            .call(xAxis)
+            .call((g) => g.select(".domain").attr("stroke", "#1a1408"))
+            .call((g) => g.selectAll(".tick line").attr("stroke", "#1a1408"))
+            .call((g) =>
+              g
+                .selectAll(".tick text")
+                .style("font-family", "'Cormorant Garamond', Georgia, serif")
+                .style("font-size", "10px")
+                .style("fill", "#1a1408"),
+            );
+        });
+      }
+
+      function styleShowcaseDots(selection, dotR) {
+        return selection
+          .attr("r", dotR)
+          .attr("fill", "#f5e8c8")
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 0.8);
+      }
+
+      function renderSymmetricBeeswarm(svg, x, w, h, dotR, data) {
+        const items = data.map((d) => ({ ...d, fx: x(d.median) }));
+        const sim = d3
+          .forceSimulation(items)
+          .force("x", d3.forceX((d) => d.fx).strength(1))
+          .force("y", d3.forceY(h / 2).strength(0.04))
+          .force("collide", d3.forceCollide(dotR + 0.6))
+          .stop();
+        for (let i = 0; i < 200; i++) sim.tick();
+        styleShowcaseDots(
+          svg
+            .selectAll(".sc-dot")
+            .data(items)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => d.x)
+            .attr("cy", (d) =>
+              Math.max(dotR, Math.min(h - dotR, d.y)),
+            ),
+          dotR,
+        );
+      }
+
+      function renderOneSidedBeeswarm(svg, x, w, h, dotR, data) {
+        const baseline = h - dotR;
+        const items = data.map((d) => ({ ...d, fx: x(d.median) }));
+        const sim = d3
+          .forceSimulation(items)
+          .force("x", d3.forceX((d) => d.fx).strength(1))
+          .force("y", d3.forceY(baseline).strength(0.08))
+          .force("collide", d3.forceCollide(dotR + 0.6))
+          .stop();
+        for (let i = 0; i < 250; i++) sim.tick();
+        styleShowcaseDots(
+          svg
+            .selectAll(".sc-dot")
+            .data(items)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => d.x)
+            .attr("cy", (d) => Math.min(baseline, Math.max(dotR, d.y))),
+          dotR,
+        );
+        svg
+          .append("line")
+          .attr("x1", 0)
+          .attr("x2", w)
+          .attr("y1", baseline + dotR)
+          .attr("y2", baseline + dotR)
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 0.5);
+      }
+
+      function renderWilkinson(svg, x, w, h, dotR, data) {
+        const binW = dotR * 2 + 1;
+        const sorted = data.slice().sort((a, b) => a.median - b.median);
+        const bins = new Map();
+        sorted.forEach((d) => {
+          const px = x(d.median);
+          const key = Math.round(px / binW) * binW;
+          if (!bins.has(key)) bins.set(key, []);
+          bins.get(key).push(d);
+        });
+        const baseline = h - dotR;
+        const items = [];
+        bins.forEach((group, key) => {
+          group.forEach((d, i) => {
+            items.push({
+              ...d,
+              cx: key,
+              cy: baseline - i * (dotR * 2 + 1),
+            });
+          });
+        });
+        styleShowcaseDots(
+          svg
+            .selectAll(".sc-dot")
+            .data(items)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => d.cx)
+            .attr("cy", (d) => Math.max(dotR, d.cy)),
+          dotR,
+        );
+        svg
+          .append("line")
+          .attr("x1", 0)
+          .attr("x2", w)
+          .attr("y1", baseline + dotR)
+          .attr("y2", baseline + dotR)
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 0.5);
+      }
+
+      function renderWheat(svg, x, w, h, dotR, data) {
+        const baseline = h - dotR;
+        const rowH = dotR * 2 + 1;
+        const collisionDist = dotR * 2 + 1;
+        const sorted = data.slice().sort((a, b) => a.median - b.median);
+        const placed = [];
+        sorted.forEach((d) => {
+          const cx = x(d.median);
+          let row = 0;
+          while (
+            placed.some(
+              (p) => p.row === row && Math.abs(p.cx - cx) < collisionDist,
+            )
+          ) {
+            row++;
+          }
+          placed.push({ ...d, cx, row, cy: baseline - row * rowH });
+        });
+        styleShowcaseDots(
+          svg
+            .selectAll(".sc-dot")
+            .data(placed)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => d.cx)
+            .attr("cy", (d) => Math.max(dotR, d.cy)),
+          dotR,
+        );
+        svg
+          .append("line")
+          .attr("x1", 0)
+          .attr("x2", w)
+          .attr("y1", baseline + dotR)
+          .attr("y2", baseline + dotR)
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 0.5);
+      }
+
+      function renderJitter(svg, x, w, h, dotR, data) {
+        const items = data.map((d) => ({
+          ...d,
+          cx: x(d.median),
+          cy: dotR + Math.random() * (h - 2 * dotR),
+        }));
+        styleShowcaseDots(
+          svg
+            .selectAll(".sc-dot")
+            .data(items)
+            .enter()
+            .append("circle")
+            .attr("cx", (d) => d.cx)
+            .attr("cy", (d) => d.cy)
+            .attr("opacity", 0.75),
+          dotR,
+        );
+      }
+
+      // ===========================================
+      // DATA FETCH & ORCHESTRATION
+      // ===========================================
+      fetch(
+        "https://municipalsky.com/api/rabelais-annotations.php?v=" + Date.now(),
+      )
+        .then((response) => {
+          if (!response.ok) throw new Error("HTTP error: " + response.status);
+          return response.json();
+        })
+        .then((data) => {
+          if (!data || !data.success)
+            throw new Error(data?.error || "Server error");
+          if (!data.hierarchical_data || !data.characters)
+            throw new Error("Missing required data");
+
+          // ── Parse national stats ──
+          const nationalStats = {
+            median: safeFloat(data.national_stats?.A_MEDIAN),
+            pct10: safeFloat(data.national_stats?.A_PCT10),
+            pct25: safeFloat(data.national_stats?.A_PCT25),
+            pct75: safeFloat(data.national_stats?.A_PCT75),
+            pct90: safeFloat(data.national_stats?.A_PCT90),
+          };
+
+          // ── Build set of underworld occ codes ──
+          const underworldCodes = new Set();
+          const charactersByCode = new Map();
+          data.characters.forEach((c) => {
+            if (c.occ_code) {
+              underworldCodes.add(c.occ_code);
+              // Keep first character per code (some codes might have multiple)
+              if (!charactersByCode.has(c.occ_code)) {
+                charactersByCode.set(c.occ_code, c);
+              }
+            }
+          });
+
+          // ── Separate hierarchical data ──
+          const allHierarchical = data.hierarchical_data;
+          const underworldHierarchical = allHierarchical.filter((d) =>
+            underworldCodes.has(d.OCC_CODE),
+          );
+
+          // ── Expand to weighted points for KDE ──
+          const allPoints = expandToWeightedPoints(allHierarchical);
+          const underworldPoints = expandToWeightedPoints(
+            underworldHierarchical,
+          );
+
+          // ── Compute underworld weighted median ──
+          const underworldMedians = underworldHierarchical
+            .filter(
+              (d) => safeFloat(d.A_MEDIAN) !== null && safeFloat(d.TOT_EMP) > 0,
+            )
+            .map((d) => ({
+              median: safeFloat(d.A_MEDIAN),
+              emp: safeFloat(d.TOT_EMP),
+            }))
+            .sort((a, b) => a.median - b.median);
+
+          const totalUnderworldEmp = d3.sum(underworldMedians, (d) => d.emp);
+          let cumEmp = 0;
+          let underworldMedian = null;
+          for (const d of underworldMedians) {
+            cumEmp += d.emp;
+            if (cumEmp >= totalUnderworldEmp / 2) {
+              underworldMedian = d.median;
+              break;
+            }
+          }
+
+          // ── Build individual occupation list for strip plot ──
+          const underworldOccs = underworldHierarchical
+            .filter((d) => safeFloat(d.A_MEDIAN) !== null)
+            .map((d) => {
+              const char = charactersByCode.get(d.OCC_CODE);
+              return {
+                occCode: d.OCC_CODE,
+                occTitle: d.OCC_TITLE,
+                median: safeFloat(d.A_MEDIAN),
+                mean: safeFloat(d.A_MEAN),
+                pct10: safeFloat(d.A_PCT10),
+                pct25: safeFloat(d.A_PCT25),
+                pct75: safeFloat(d.A_PCT75),
+                pct90: safeFloat(d.A_PCT90),
+                employment: safeFloat(d.TOT_EMP) || 0,
+                characterName: char?.name || d.OCC_TITLE,
+                labor: char?.labor || "",
+                lotInLife: char?.lot_in_life || "",
+                description: char?.description || "",
+                majorGroup:
+                  d.major_group_title || char?.major_group_title || "",
+                minorGroup:
+                  d.minor_group_title || char?.minor_group_title || "",
+                broadGroup:
+                  d.broad_group_title || char?.broad_group_title || "",
+              };
+            });
+
+          // ── Build major group aggregates for box plots ──
+          // Underworld-only major groups (for box plot + highlighting)
+          const underworldMajorGroups = d3.group(
+            underworldHierarchical,
+            (d) => d.major_group_title,
+          );
+          const underworldByMajor = [];
+          const underworldGroupNames = new Set();
+          underworldMajorGroups.forEach((occs, name) => {
+            if (!name) return;
+            underworldGroupNames.add(name);
+            const first = occs[0];
+            const totalEmp = d3.sum(occs, (d) => safeFloat(d.TOT_EMP) || 0);
+            underworldByMajor.push({
+              name,
+              median: safeFloat(first.major_a_median),
+              pct10: safeFloat(first.major_a_pct10),
+              pct25: safeFloat(first.major_a_pct25),
+              pct75: safeFloat(first.major_a_pct75),
+              pct90: safeFloat(first.major_a_pct90),
+              employment: totalEmp,
+              occCount: occs.length,
+            });
+          });
+
+          // ALL major groups (for the Domains of the Dead strip)
+          const allMajorGroups_raw = d3.group(
+            allHierarchical,
+            (d) => d.major_group_title,
+          );
+          const allMajorGroups = [];
+          allMajorGroups_raw.forEach((occs, name) => {
+            if (!name) return;
+            const first = occs[0];
+            const totalEmp = d3.sum(occs, (d) => safeFloat(d.TOT_EMP) || 0);
+            const uwOccs = occs.filter((d) => underworldCodes.has(d.OCC_CODE));
+            allMajorGroups.push({
+              name,
+              median: safeFloat(first.major_a_median),
+              pct10: safeFloat(first.major_a_pct10),
+              pct25: safeFloat(first.major_a_pct25),
+              pct75: safeFloat(first.major_a_pct75),
+              pct90: safeFloat(first.major_a_pct90),
+              employment: totalEmp,
+              occCount: uwOccs.length,
+            });
+          });
+
+          // ── RENDER ──
+          drawMajorGroupStrip(
+            allMajorGroups,
+            underworldGroupNames,
+            nationalStats,
+            underworldOccs,
+            underworldMedian,
+          );
+          drawArrangementShowcase(underworldOccs);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          document.querySelectorAll(".loading-msg").forEach((el) => {
+            el.outerHTML = `<div class="error-msg"><strong>Error:</strong> ${error.message}</div>`;
+          });
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,1484 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Ambient Preview — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0a;
+        color: #997733;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 32px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 780px;
+        margin: 0 auto;
+        position: relative;
+      }
+      .container::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(0, 0, 0, 0.08) 2px,
+          rgba(0, 0, 0, 0.08) 4px
+        );
+        z-index: 10;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffaa00;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.5),
+          0 0 30px rgba(255, 170, 0, 0.15);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665520;
+        letter-spacing: 3px;
+        margin: 0 0 28px;
+        font-size: 18px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 22px;
+      }
+      .vol-label {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #554422;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: none;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+
+      .transport input[type="range"] {
+        flex: 1;
+      }
+
+      .transport-btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .transport-btn:hover {
+        border-color: #ffaa00;
+        color: #ffaa00;
+      }
+      .transport-btn.random:hover {
+        border-color: #00ccaa;
+        color: #00ccaa;
+      }
+
+      .event-card {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 16px 20px 18px;
+        margin-bottom: 16px;
+      }
+      .event-card .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4px;
+      }
+      .event-card h2 {
+        font-family: "VT323", monospace;
+        color: #ffaa00;
+        font-size: 22px;
+        letter-spacing: 2px;
+        margin: 0;
+      }
+      .event-card .weight {
+        color: #554422;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .event-card .desc {
+        font-size: 15px;
+        color: #776644;
+        line-height: 1.5;
+        margin: 0 0 12px;
+      }
+      .ctrl-row {
+        display: grid;
+        grid-template-columns: 88px 1fr 78px;
+        align-items: center;
+        gap: 12px;
+        margin: 5px 0;
+      }
+      .ctrl-row .label {
+        font-size: 14px;
+        color: #776644;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .ctrl-row .val {
+        text-align: right;
+        font-size: 15px;
+        color: #997733;
+        font-variant-numeric: tabular-nums;
+      }
+      .ctrl-row input[type="range"] {
+        width: 100%;
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 18px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      .btn:hover {
+        border-color: #ffaa00;
+        color: #ffaa00;
+      }
+      .btn.reset:hover {
+        border-color: #00ccaa;
+        color: #00ccaa;
+      }
+      .btn.copy:hover {
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .btn.copy.copied {
+        border-color: #66dd66;
+        color: #66dd66;
+      }
+
+      .footnote {
+        color: #443322;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 28px;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Library Ambient Preview</h1>
+      <p class="subtitle">~ chance events for Prospero's Library ~</p>
+
+      <div class="transport">
+        <span class="vol-label">MASTER</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button
+          class="transport-btn"
+          id="test-btn"
+          title="Plays a short 440Hz sine to verify audio is routing"
+        >
+          &#9835; TEST
+        </button>
+        <button class="transport-btn random" id="random-btn">
+          &#9862; RANDOM EVENT
+        </button>
+      </div>
+
+      <div id="events"></div>
+
+      <p class="footnote">
+        C DORIAN &middot; WARM LIBRARY REVERB &middot; EACH PLAY USES A FRESH
+        STEREO PAN
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // --- C Dorian upper octave for distant chime ---
+        var LIB_SCALE_5 = [523, 587, 622, 698, 784, 880, 932];
+        var LIB_SCALE_5_NAMES = ["C5", "D5", "Eb5", "F5", "G5", "A5", "Bb5"];
+
+        // --- Audio graph ---
+        var ctx, masterGain, compressor;
+        var reverbSend, reverbDry, reverbWet, reverbConv, reverbPreDelay;
+        var sharedNoiseBuf;
+        var NOISE_BUF_DURATION = 30;
+        // Preview master is louder than production (0.12) because single events are
+        // quiet in isolation without the drone/melody bed under them.
+        var masterVol = 0.6;
+
+        function buildReverbIR() {
+          var decay = 2.0,
+            hfDamp = 4.0;
+          var irLen = ctx.sampleRate * decay;
+          var buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var d = buf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decay);
+              var hf = Math.exp((-hfDamp * t) / decay);
+              d[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+          reverbConv.buffer = buf;
+          reverbPreDelay.delayTime.setValueAtTime(0.025, ctx.currentTime);
+          reverbWet.gain.setValueAtTime(0.35, ctx.currentTime);
+        }
+
+        function initAudio() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+          reverbSend = ctx.createGain();
+          reverbDry = ctx.createGain();
+          reverbWet = ctx.createGain();
+          reverbConv = ctx.createConvolver();
+          reverbPreDelay = ctx.createDelay(0.1);
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(reverbPreDelay);
+          reverbPreDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          reverbDry.connect(masterGain);
+          reverbWet.connect(masterGain);
+          masterGain.connect(compressor);
+          compressor.connect(ctx.destination);
+
+          buildReverbIR();
+
+          // Shared 30s noise buffer
+          var noiseSamples = ctx.sampleRate * NOISE_BUF_DURATION;
+          sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
+          var d = sharedNoiseBuf.getChannelData(0);
+          for (var i = 0; i < noiseSamples; i++) d[i] = Math.random() * 2 - 1;
+        }
+
+        function noiseSource(duration) {
+          var n = ctx.createBufferSource();
+          n.buffer = sharedNoiseBuf;
+          n._offset =
+            Math.random() * Math.max(0, NOISE_BUF_DURATION - duration);
+          n._duration = duration;
+          return n;
+        }
+        function startNoise(n, when) {
+          n.start(when, n._offset, n._duration);
+        }
+
+        function panner() {
+          var p = ctx.createStereoPanner();
+          p.pan.setValueAtTime((Math.random() * 2 - 1) * 0.7, ctx.currentTime);
+          p.connect(reverbSend);
+          return p;
+        }
+
+        // ==========================================================================
+        // EVENT SYNTH FUNCTIONS (parameterized)
+        // Each takes a `p` params object, routes to a fresh stereo panner → reverb.
+        // ==========================================================================
+
+        function evPageTurn(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "highpass";
+          f.frequency.setValueAtTime(p.cutoff, now);
+          f.frequency.linearRampToValueAtTime(
+            p.cutoff + 3000,
+            now + p.duration,
+          );
+          n.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.3);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        function evQuillScratch(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var s = 0; s < p.count; s++) {
+            var st = now + (s / p.count) * p.duration;
+            var sLen = 0.03 + Math.random() * 0.03;
+            var n = noiseSource(sLen);
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            f.type = "bandpass";
+            f.frequency.setValueAtTime(p.centerFreq + Math.random() * 1000, st);
+            f.Q.setValueAtTime(5, st);
+            n.connect(f);
+            f.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume, st);
+            g.gain.linearRampToValueAtTime(0, st + sLen);
+            startNoise(n, st);
+          }
+        }
+
+        function evClockCluster(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + (i / p.count) * p.duration;
+            var isTock = i % 2 === 1;
+            var pitchVar = 0.9 + Math.random() * 0.2;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime((isTock ? 1800 : 2200) * pitchVar, t);
+            o.frequency.exponentialRampToValueAtTime(
+              (isTock ? 1200 : 1600) * pitchVar,
+              t + 0.008,
+            );
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume * (isTock ? 0.67 : 1.0), t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+            o.start(t);
+            o.stop(t + 0.05);
+          }
+        }
+
+        function evDistantChime(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var freq = LIB_SCALE_5[p.note];
+
+          var o1 = c.createOscillator();
+          var g1 = c.createGain();
+          o1.type = "sine";
+          o1.frequency.setValueAtTime(freq, now);
+          o1.connect(g1);
+          g1.connect(out);
+          g1.gain.setValueAtTime(p.volume, now);
+          g1.gain.exponentialRampToValueAtTime(0.001, now + p.decay);
+          o1.start(now);
+          o1.stop(now + p.decay + 0.1);
+
+          var detune = Math.random() < 0.5 ? -3 : 3;
+          var o2 = c.createOscillator();
+          var g2 = c.createGain();
+          o2.type = "sine";
+          o2.frequency.setValueAtTime(freq + detune, now);
+          o2.connect(g2);
+          g2.connect(out);
+          g2.gain.setValueAtTime(p.volume * 0.8, now);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + p.decay);
+          o2.start(now);
+          o2.stop(now + p.decay + 0.1);
+        }
+
+        function evBookThud(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "lowpass";
+          f.frequency.setValueAtTime(p.cutoff, now);
+          n.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(p.volume, now);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        function evCreak(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var goUp =
+            p.direction === "up" ||
+            (p.direction === "random" && Math.random() < 0.5);
+          var startFreq = goUp ? p.baseFreq * 0.8 : p.baseFreq * 1.2;
+          var endFreq = goUp ? p.baseFreq * 1.2 : p.baseFreq * 0.8;
+
+          var o = c.createOscillator();
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          o.type = "sine";
+          o.frequency.setValueAtTime(startFreq, now);
+          o.frequency.linearRampToValueAtTime(endFreq, now + p.duration);
+          f.type = "bandpass";
+          f.frequency.setValueAtTime(p.baseFreq, now);
+          f.Q.setValueAtTime(3, now);
+          o.connect(f);
+          f.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(p.volume, now);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          o.start(now);
+          o.stop(now + p.duration + 0.01);
+        }
+
+        function evSpellWheeze(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+
+          var noise = noiseSource(p.duration);
+          var ng = c.createGain();
+          var nf = c.createBiquadFilter();
+          nf.type = "bandpass";
+          nf.frequency.setValueAtTime(600, now);
+          nf.frequency.linearRampToValueAtTime(1200, now + p.duration * 0.4);
+          nf.frequency.linearRampToValueAtTime(400, now + p.duration);
+          nf.Q.setValueAtTime(4, now);
+          noise.connect(nf);
+          nf.connect(ng);
+          ng.connect(out);
+          ng.gain.setValueAtTime(0, now);
+          ng.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.15);
+          ng.gain.setValueAtTime(p.volume * 0.83, now + p.duration * 0.5);
+          ng.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(noise, now);
+
+          var o = c.createOscillator();
+          var og = c.createGain();
+          o.type = "sine";
+          o.frequency.setValueAtTime(p.sparkleFreq, now);
+          o.frequency.linearRampToValueAtTime(
+            p.sparkleFreq * 1.5,
+            now + p.duration * 0.6,
+          );
+          o.frequency.linearRampToValueAtTime(
+            p.sparkleFreq * 0.7,
+            now + p.duration,
+          );
+          o.connect(og);
+          og.connect(out);
+          og.gain.setValueAtTime(0, now);
+          og.gain.linearRampToValueAtTime(
+            p.volume * 0.67,
+            now + p.duration * 0.2,
+          );
+          og.gain.linearRampToValueAtTime(0, now + p.duration);
+          o.start(now);
+          o.stop(now + p.duration + 0.01);
+
+          var o2 = c.createOscillator();
+          var og2 = c.createGain();
+          o2.type = "sine";
+          o2.frequency.setValueAtTime(p.sparkleFreq * 1.5 + 5, now);
+          o2.frequency.linearRampToValueAtTime(
+            p.sparkleFreq * 2,
+            now + p.duration,
+          );
+          o2.connect(og2);
+          og2.connect(out);
+          og2.gain.setValueAtTime(0, now);
+          og2.gain.linearRampToValueAtTime(
+            p.volume * 0.44,
+            now + p.duration * 0.3,
+          );
+          og2.gain.linearRampToValueAtTime(0, now + p.duration);
+          o2.start(now);
+          o2.stop(now + p.duration + 0.01);
+        }
+
+        function evOwlHoot(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + i * 0.45;
+            var hDur = 0.25;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            o.type = "sine";
+            o.frequency.setValueAtTime(p.baseFreq, t);
+            o.frequency.linearRampToValueAtTime(p.baseFreq * 0.85, t + hDur);
+            f.type = "lowpass";
+            f.frequency.setValueAtTime(500, t);
+            o.connect(f);
+            f.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(p.volume, t + 0.03);
+            g.gain.setValueAtTime(p.volume * 0.83, t + hDur * 0.6);
+            g.gain.linearRampToValueAtTime(0, t + hDur);
+            o.start(t);
+            o.stop(t + hDur + 0.01);
+
+            var h = c.createOscillator();
+            var hg = c.createGain();
+            h.type = "sine";
+            h.frequency.setValueAtTime(p.baseFreq * 2.02, t);
+            h.frequency.linearRampToValueAtTime(p.baseFreq * 1.7, t + hDur);
+            h.connect(hg);
+            hg.connect(out);
+            hg.gain.setValueAtTime(0, t);
+            hg.gain.linearRampToValueAtTime(p.volume * 0.28, t + 0.03);
+            hg.gain.linearRampToValueAtTime(0, t + hDur);
+            h.start(t);
+            h.stop(t + hDur + 0.01);
+          }
+        }
+
+        function evDistantWaves(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var lp = c.createBiquadFilter();
+          var hp = c.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.setValueAtTime(200, now);
+          lp.frequency.linearRampToValueAtTime(
+            p.filterPeak,
+            now + p.duration * 0.35,
+          );
+          lp.frequency.linearRampToValueAtTime(150, now + p.duration);
+          lp.Q.setValueAtTime(0.5, now);
+          hp.type = "highpass";
+          hp.frequency.setValueAtTime(80, now);
+          n.connect(lp);
+          lp.connect(hp);
+          hp.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.3);
+          g.gain.setValueAtTime(p.volume * 0.9, now + p.duration * 0.5);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        // --- NEW: Candle Sputter ---
+        function evCandleSputter(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+
+          // Base hiss bed
+          var baseN = noiseSource(p.duration);
+          var baseG = c.createGain();
+          var baseHP = c.createBiquadFilter();
+          baseHP.type = "highpass";
+          baseHP.frequency.setValueAtTime(2500, now);
+          baseN.connect(baseHP);
+          baseHP.connect(baseG);
+          baseG.connect(out);
+          baseG.gain.setValueAtTime(0, now);
+          baseG.gain.linearRampToValueAtTime(p.volume * 0.5, now + 0.08);
+          baseG.gain.setValueAtTime(p.volume * 0.5, now + p.duration - 0.15);
+          baseG.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(baseN, now);
+
+          // Random pops
+          for (var i = 0; i < p.pops; i++) {
+            var t = now + Math.random() * p.duration;
+            var popDur = 0.02 + Math.random() * 0.04;
+            var popN = noiseSource(popDur);
+            var popG = c.createGain();
+            var popBP = c.createBiquadFilter();
+            popBP.type = "bandpass";
+            popBP.frequency.setValueAtTime(
+              p.popFreq + (Math.random() - 0.5) * 600,
+              t,
+            );
+            popBP.Q.setValueAtTime(3 + Math.random() * 3, t);
+            popN.connect(popBP);
+            popBP.connect(popG);
+            popG.connect(out);
+            popG.gain.setValueAtTime(p.volume * (1.2 + Math.random() * 1.2), t);
+            popG.gain.exponentialRampToValueAtTime(0.0001, t + popDur);
+            startNoise(popN, t);
+          }
+        }
+
+        // --- NEW: Ink Drip (realistic drop into water) ---
+        // Models the physics of a water-drop: brief noise transient at impact,
+        // then a rising-pitch cavity resonance (the signature "plip"), plus
+        // 2–3 irregularly-spaced ripple drops following at slightly shifted pitch.
+        function evInkDrip(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+
+          function dropAt(t, pitch, vol) {
+            // 1. Surface-break transient (short bandpass noise click)
+            var transDur = 0.015;
+            var tn = noiseSource(transDur);
+            var tg = c.createGain();
+            var tbp = c.createBiquadFilter();
+            tbp.type = "bandpass";
+            tbp.frequency.setValueAtTime(pitch * 2.5, t);
+            tbp.Q.setValueAtTime(2, t);
+            tn.connect(tbp);
+            tbp.connect(tg);
+            tg.connect(out);
+            tg.gain.setValueAtTime(vol * 0.5, t);
+            tg.gain.exponentialRampToValueAtTime(0.0001, t + transDur);
+            startNoise(tn, t);
+
+            // 2. Rising-pitch cavity tone — the signature of a water drop
+            var dur = 0.2 + Math.random() * 0.1;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(pitch * 0.4, t);
+            o.frequency.exponentialRampToValueAtTime(pitch, t + 0.022);
+            o.frequency.exponentialRampToValueAtTime(pitch * 0.85, t + dur);
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(vol, t + 0.012);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+            o.start(t);
+            o.stop(t + dur + 0.01);
+          }
+
+          for (var i = 0; i < p.count; i++) {
+            var t = now + i * (0.15 + Math.random() * 0.15);
+            var dropPitch = p.pitch + (Math.random() - 0.5) * p.pitch * 0.15;
+            dropAt(t, dropPitch, p.volume);
+
+            // Surface ripples: irregular timing, shifting pitch, decaying volume
+            var rippleT = t;
+            var rippleVol = p.volume * 0.45;
+            var ripplePitch = dropPitch * 1.1;
+            for (var r = 0; r < p.ripples; r++) {
+              rippleT += 0.06 + Math.random() * 0.15;
+              ripplePitch *= 0.88 + Math.random() * 0.15;
+              if (rippleVol < 0.003) break;
+              dropAt(rippleT, ripplePitch, rippleVol);
+              rippleVol *= 0.6 + Math.random() * 0.15;
+            }
+          }
+        }
+
+        // --- NEW: Whispered Word ---
+        function evWhisperedWord(p) {
+          var c = ctx,
+            now = c.currentTime,
+            out = panner();
+          var dur = p.duration;
+          var n = noiseSource(dur);
+          var g = c.createGain();
+          var f1 = c.createBiquadFilter();
+          var f2 = c.createBiquadFilter();
+          f1.type = "bandpass";
+          f1.frequency.setValueAtTime(p.f1, now);
+          f1.frequency.linearRampToValueAtTime(
+            p.f1 * (0.9 + Math.random() * 0.2),
+            now + dur,
+          );
+          f1.Q.setValueAtTime(10, now);
+          f2.type = "bandpass";
+          f2.frequency.setValueAtTime(p.f2, now);
+          f2.frequency.linearRampToValueAtTime(
+            p.f2 * (0.9 + Math.random() * 0.2),
+            now + dur,
+          );
+          f2.Q.setValueAtTime(8, now);
+          n.connect(f1);
+          n.connect(f2);
+          var mix = c.createGain();
+          f1.connect(mix);
+          f2.connect(mix);
+          mix.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + dur * 0.2);
+          g.gain.setValueAtTime(p.volume * 0.85, now + dur * 0.6);
+          g.gain.linearRampToValueAtTime(0, now + dur);
+          startNoise(n, now);
+        }
+
+        // ==========================================================================
+        // EVENT CONFIGS
+        // ==========================================================================
+
+        function fmt(unit, val) {
+          if (unit === "s")
+            return (val < 1 ? val.toFixed(2) : val.toFixed(1)) + "s";
+          if (unit === "Hz") return Math.round(val) + "Hz";
+          if (unit === "note") return LIB_SCALE_5_NAMES[Math.round(val)];
+          if (unit === "") return val.toFixed(val < 0.1 ? 3 : 2);
+          return String(val);
+        }
+
+        var EVENTS = [
+          {
+            id: "page_turn",
+            name: "1. Page Turn",
+            weight: 30,
+            description:
+              "Quick paper rustle — highpass-filtered noise sweeping upward.",
+            fn: evPageTurn,
+            defaults: { duration: 0.5, cutoff: 5000, volume: 0.025 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.1,
+                max: 2.0,
+                step: 0.05,
+                unit: "s",
+              },
+              {
+                param: "cutoff",
+                label: "Cutoff",
+                min: 1000,
+                max: 10000,
+                step: 100,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.1,
+                step: 0.005,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "quill_scratch",
+            name: "2. Quill Scratch",
+            weight: 25,
+            description:
+              "Several short bandpass scratches — quill nib on parchment.",
+            fn: evQuillScratch,
+            defaults: {
+              duration: 0.8,
+              count: 5,
+              centerFreq: 5000,
+              volume: 0.015,
+            },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.2,
+                max: 3.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "count",
+                label: "Scratches",
+                min: 2,
+                max: 15,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "centerFreq",
+                label: "Sharpness",
+                min: 2000,
+                max: 10000,
+                step: 100,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.003,
+                max: 0.05,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "clock_cluster",
+            name: "3. Clock Cluster",
+            weight: 15,
+            description:
+              "Several rapid tick-tocks — as if the clock briefly went frantic.",
+            fn: evClockCluster,
+            defaults: { count: 4, duration: 0.45, volume: 0.015 },
+            controls: [
+              {
+                param: "count",
+                label: "Tick count",
+                min: 2,
+                max: 12,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.1,
+                max: 1.5,
+                step: 0.05,
+                unit: "s",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.003,
+                max: 0.04,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "distant_chime",
+            name: "4. Distant Chime",
+            weight: 15,
+            description:
+              "A lone bell tone with subtle detuning — distant church chime in the stacks.",
+            fn: evDistantChime,
+            defaults: { note: 3, decay: 2.5, volume: 0.025 },
+            controls: [
+              {
+                param: "note",
+                label: "Note",
+                min: 0,
+                max: 6,
+                step: 1,
+                unit: "note",
+              },
+              {
+                param: "decay",
+                label: "Decay",
+                min: 0.5,
+                max: 6.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "book_thud",
+            name: "5. Book Thud",
+            weight: 10,
+            description: "Low, dull thump — a heavy book hitting wood.",
+            fn: evBookThud,
+            defaults: { duration: 0.05, cutoff: 200, volume: 0.03 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.02,
+                max: 0.3,
+                step: 0.005,
+                unit: "s",
+              },
+              {
+                param: "cutoff",
+                label: "Heaviness",
+                min: 60,
+                max: 800,
+                step: 10,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.08,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "creak",
+            name: "6. Creak",
+            weight: 5,
+            description:
+              "Wooden floorboard or chair — sine sweep through bandpass resonance.",
+            fn: evCreak,
+            defaults: {
+              duration: 0.3,
+              baseFreq: 100,
+              direction: "random",
+              volume: 0.015,
+            },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.1,
+                max: 1.5,
+                step: 0.05,
+                unit: "s",
+              },
+              {
+                param: "baseFreq",
+                label: "Pitch",
+                min: 40,
+                max: 300,
+                step: 5,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.05,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "spell_wheeze",
+            name: "7. Spell Wheeze",
+            weight: 8,
+            description:
+              "Whispered incantation with sparkle — a magical exhalation.",
+            fn: evSpellWheeze,
+            defaults: { duration: 1.1, sparkleFreq: 1000, volume: 0.018 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.3,
+                max: 3.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "sparkleFreq",
+                label: "Shimmer",
+                min: 400,
+                max: 2500,
+                step: 50,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.05,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "owl_hoot",
+            name: "8. Owl Hoot",
+            weight: 10,
+            description:
+              "Low sine with falling pitch and a harmonic — library owl.",
+            fn: evOwlHoot,
+            defaults: { baseFreq: 300, count: 2, volume: 0.018 },
+            controls: [
+              {
+                param: "baseFreq",
+                label: "Pitch",
+                min: 180,
+                max: 450,
+                step: 5,
+                unit: "Hz",
+              },
+              {
+                param: "count",
+                label: "Hoots",
+                min: 1,
+                max: 5,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.05,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "distant_waves",
+            name: "9. Distant Waves",
+            weight: 8,
+            description:
+              "Slow filtered noise swell — faraway surf through a window.",
+            fn: evDistantWaves,
+            defaults: { duration: 3.25, filterPeak: 800, volume: 0.02 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 1.0,
+                max: 8.0,
+                step: 0.25,
+                unit: "s",
+              },
+              {
+                param: "filterPeak",
+                label: "Brightness",
+                min: 300,
+                max: 1500,
+                step: 25,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.05,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "candle_sputter",
+            name: "10. Candle Sputter",
+            weight: 12,
+            description:
+              "Flickering flame — continuous high-pass hiss bed with random crackling pops.",
+            fn: evCandleSputter,
+            defaults: { duration: 1.5, pops: 5, popFreq: 900, volume: 0.02 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.3,
+                max: 4.0,
+                step: 0.1,
+                unit: "s",
+              },
+              {
+                param: "pops",
+                label: "Pops",
+                min: 0,
+                max: 15,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "popFreq",
+                label: "Pop pitch",
+                min: 300,
+                max: 2500,
+                step: 50,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.06,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "ink_drip",
+            name: "11. Ink Drip",
+            weight: 8,
+            description:
+              "Water drop into a puddle &mdash; noise transient plus rising cavity resonance. Main app fires 1 drop or 2-at-once 30% of the time.",
+            fn: evInkDrip,
+            defaults: { count: 1, pitch: 275, ripples: 0, volume: 0.069 },
+            controls: [
+              {
+                param: "count",
+                label: "Drops",
+                min: 1,
+                max: 6,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "pitch",
+                label: "Pitch",
+                min: 100,
+                max: 2500,
+                step: 25,
+                unit: "Hz",
+              },
+              {
+                param: "ripples",
+                label: "Ripples",
+                min: 0,
+                max: 5,
+                step: 1,
+                unit: "",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.1,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+          {
+            id: "whispered_word",
+            name: "12. Whispered Word",
+            weight: 6,
+            description:
+              "A single short whispered syllable &mdash; formant-filtered noise with gentle drift.",
+            fn: evWhisperedWord,
+            defaults: { duration: 0.25, f1: 600, f2: 2500, volume: 0.04 },
+            controls: [
+              {
+                param: "duration",
+                label: "Duration",
+                min: 0.1,
+                max: 0.6,
+                step: 0.02,
+                unit: "s",
+              },
+              {
+                param: "f1",
+                label: "Formant 1",
+                min: 300,
+                max: 1000,
+                step: 25,
+                unit: "Hz",
+              },
+              {
+                param: "f2",
+                label: "Formant 2",
+                min: 1500,
+                max: 3500,
+                step: 50,
+                unit: "Hz",
+              },
+              {
+                param: "volume",
+                label: "Volume",
+                min: 0.005,
+                max: 0.1,
+                step: 0.002,
+                unit: "",
+              },
+            ],
+          },
+        ];
+
+        // Copy defaults into a mutable params object per event
+        EVENTS.forEach(function (ev) {
+          ev.params = {};
+          Object.keys(ev.defaults).forEach(function (k) {
+            ev.params[k] = ev.defaults[k];
+          });
+        });
+
+        function byId(id) {
+          for (var i = 0; i < EVENTS.length; i++)
+            if (EVENTS[i].id === id) return EVENTS[i];
+          return null;
+        }
+
+        // ==========================================================================
+        // UI CONSTRUCTION
+        // ==========================================================================
+
+        function buildCard(ev) {
+          var card = document.createElement("div");
+          card.className = "event-card";
+          card.setAttribute("data-id", ev.id);
+
+          var html = "";
+          html += '<div class="card-header">';
+          html += "<h2>" + ev.name + "</h2>";
+          html += '<span class="weight">pool weight: ' + ev.weight + "</span>";
+          html += "</div>";
+          html += '<p class="desc">' + ev.description + "</p>";
+
+          for (var i = 0; i < ev.controls.length; i++) {
+            var ctrl = ev.controls[i];
+            var curVal = ev.params[ctrl.param];
+            html += '<div class="ctrl-row">';
+            html += '<span class="label">' + ctrl.label + "</span>";
+            html +=
+              '<input type="range" data-param="' +
+              ctrl.param +
+              '" data-unit="' +
+              ctrl.unit +
+              '" ' +
+              'min="' +
+              ctrl.min +
+              '" max="' +
+              ctrl.max +
+              '" step="' +
+              ctrl.step +
+              '" value="' +
+              curVal +
+              '" />';
+            html +=
+              '<span class="val" data-for="' +
+              ctrl.param +
+              '">' +
+              fmt(ctrl.unit, curVal) +
+              "</span>";
+            html += "</div>";
+          }
+
+          html += '<div class="card-footer">';
+          html +=
+            '<button class="btn reset" data-action="reset">&#8635; reset</button>';
+          html +=
+            '<button class="btn copy" data-action="copy" title="Copy current parameters to clipboard">&#9112; copy params</button>';
+          html +=
+            '<button class="btn" data-action="play">&#9654; PLAY</button>';
+          html += "</div>";
+
+          card.innerHTML = html;
+          return card;
+        }
+
+        function attachCardHandlers(card, ev) {
+          var sliders = card.querySelectorAll('input[type="range"]');
+          sliders.forEach(function (slider) {
+            slider.addEventListener("input", function () {
+              var param = slider.getAttribute("data-param");
+              var unit = slider.getAttribute("data-unit");
+              var val = parseFloat(slider.value);
+              ev.params[param] = val;
+              var valEl = card.querySelector('.val[data-for="' + param + '"]');
+              if (valEl) valEl.textContent = fmt(unit, val);
+            });
+          });
+
+          card
+            .querySelector('[data-action="play"]')
+            .addEventListener("click", function () {
+              initAudio();
+              if (ctx.state === "suspended") ctx.resume();
+              console.log(
+                "[ambient preview] PLAY",
+                ev.id,
+                ev.params,
+                "ctx.state=",
+                ctx.state,
+              );
+              ev.fn(ev.params);
+            });
+
+          card
+            .querySelector('[data-action="reset"]')
+            .addEventListener("click", function () {
+              Object.keys(ev.defaults).forEach(function (k) {
+                ev.params[k] = ev.defaults[k];
+              });
+              // Reset slider values + displays
+              card
+                .querySelectorAll('input[type="range"]')
+                .forEach(function (slider) {
+                  var param = slider.getAttribute("data-param");
+                  if (ev.params[param] !== undefined) {
+                    slider.value = ev.params[param];
+                    var unit = slider.getAttribute("data-unit");
+                    var valEl = card.querySelector(
+                      '.val[data-for="' + param + '"]',
+                    );
+                    if (valEl) valEl.textContent = fmt(unit, ev.params[param]);
+                  }
+                });
+            });
+
+          card
+            .querySelector('[data-action="copy"]')
+            .addEventListener("click", function () {
+              var pairs = Object.keys(ev.params).map(function (k) {
+                var v = ev.params[k];
+                var s = Number.isInteger(v)
+                  ? String(v)
+                  : parseFloat(v.toFixed(4)).toString();
+                return k + ": " + s;
+              });
+              var text = ev.id + ": { " + pairs.join(", ") + " }";
+              var btn = card.querySelector('[data-action="copy"]');
+              var finish = function (ok) {
+                var orig = btn.innerHTML;
+                btn.innerHTML = ok ? "&#10003; copied!" : "&#10007; failed";
+                btn.classList.toggle("copied", ok);
+                setTimeout(function () {
+                  btn.innerHTML = orig;
+                  btn.classList.remove("copied");
+                }, 1400);
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(
+                  function () {
+                    finish(true);
+                  },
+                  function () {
+                    finish(false);
+                  },
+                );
+              } else {
+                // Fallback for older browsers
+                var ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.left = "-9999px";
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                  document.execCommand("copy");
+                  finish(true);
+                } catch (e) {
+                  finish(false);
+                }
+                document.body.removeChild(ta);
+              }
+            });
+        }
+
+        var eventsContainer = document.getElementById("events");
+        EVENTS.forEach(function (ev) {
+          var card = buildCard(ev);
+          eventsContainer.appendChild(card);
+          attachCardHandlers(card, ev);
+        });
+
+        // --- Master volume (linear 0–1) ---
+        var volInput = document.getElementById("vol");
+        volInput.addEventListener("input", function () {
+          masterVol = parseInt(volInput.value, 10) / 100;
+          if (masterGain)
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+        });
+
+        // --- Diagnostic test tone: bypasses entire graph, connects direct to destination ---
+        document
+          .getElementById("test-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            ctx.resume();
+            var now = ctx.currentTime;
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(440, now);
+            o.connect(g);
+            g.connect(ctx.destination); // bypass masterGain + compressor + reverb
+            g.gain.setValueAtTime(0.2, now);
+            g.gain.linearRampToValueAtTime(0, now + 0.35);
+            o.start(now);
+            o.stop(now + 0.4);
+            console.log(
+              "[ambient preview] TEST (direct-to-destination)",
+              "ctx.state=",
+              ctx.state,
+              "sampleRate=",
+              ctx.sampleRate,
+              "destination.channelCount=",
+              ctx.destination.channelCount,
+              "masterGain.gain.value=",
+              masterGain ? masterGain.gain.value : "n/a",
+            );
+          });
+
+        // --- Random event button (weighted by pool weights) ---
+        document
+          .getElementById("random-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            var total = 0;
+            for (var i = 0; i < EVENTS.length; i++) total += EVENTS[i].weight;
+            var r = Math.random() * total;
+            for (var j = 0; j < EVENTS.length; j++) {
+              r -= EVENTS[j].weight;
+              if (r <= 0) {
+                EVENTS[j].fn(EVENTS[j].params);
+                return;
+              }
+            }
+          });
+      })();
+    </script>
+  </body>
+</html>

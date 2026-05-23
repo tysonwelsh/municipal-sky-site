@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ariel Sound Enhancement Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0a;
+    color: #55ccff;
+    font-family: "VT323", monospace;
+    padding: 32px 24px;
+    max-width: 840px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow: 0 0 12px rgba(85, 204, 255, 0.4);
+  }
+  .subtitle {
+    text-align: center;
+    color: #1a4d66;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+  }
+
+  /* Global controls */
+  .global-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #0d0d14;
+    border: 2px solid #1a1a2a;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .global-controls label { color: #1a4d66; font-size: 14px; letter-spacing: 1px; }
+  .ctrl-range {
+    -webkit-appearance: none; appearance: none;
+    width: 110px; height: 6px; background: #1a1a2a; border-radius: 3px; cursor: pointer;
+  }
+  .ctrl-range::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: #55ccff; border: none; border-radius: 0; cursor: pointer;
+    box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+  }
+  .ctrl-range::-moz-range-thumb {
+    width: 14px; height: 14px;
+    background: #55ccff; border: none; border-radius: 0; cursor: pointer;
+  }
+
+  /* Section */
+  .section {
+    background: #0d0d14;
+    border: 2px solid #1a1a2a;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 22px;
+    color: #55ccff;
+    margin-bottom: 6px;
+    text-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+  }
+  .section-desc {
+    color: #2a6688;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  /* Button row */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .play-btn {
+    font-family: "VT323", monospace; font-size: 16px;
+    padding: 8px 18px; border: 2px solid #2a2a3a; border-radius: 3px;
+    background: #111118; color: #4499bb; cursor: pointer; letter-spacing: 1px;
+    transition: all 0.15s;
+  }
+  .play-btn:hover { border-color: #55ccff; color: #55ccff; }
+  .play-btn.active {
+    border-color: #55ccff; color: #55ccff;
+    text-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
+  }
+  .play-btn.stop { color: #1a4d66; }
+  .play-btn.stop:hover { border-color: #ff4444; color: #ff4444; }
+
+  /* Toggle row */
+  .toggle-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .toggle-item label { color: #4499bb; font-size: 15px; cursor: pointer; }
+  .toggle-cb {
+    appearance: none; -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border: 2px solid #2a2a3a; background: #0a0a0a;
+    cursor: pointer; position: relative;
+  }
+  .toggle-cb:hover { border-color: #55ccff; }
+  .toggle-cb:checked {
+    border-color: #55ccff; background: #55ccff;
+    box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+  }
+  .toggle-cb:checked::after {
+    content: ""; position: absolute; inset: 3px; background: #0a0a0a;
+  }
+
+  /* Slider rows within sections */
+  .param-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .param-label {
+    color: #1a4d66;
+    font-size: 13px;
+    letter-spacing: 1px;
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .param-val {
+    color: #2a6688;
+    font-size: 13px;
+    width: 40px;
+    flex-shrink: 0;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #1a1a2a;
+    margin: 20px 0;
+  }
+</style>
+</head>
+<body>
+
+<h1>Sound Enhancement Preview</h1>
+<p class="subtitle">~ hear each enhancement individually and combined ~</p>
+
+<div class="global-controls">
+  <label>VOL</label>
+  <input type="range" min="0" max="100" value="50" id="master-vol" class="ctrl-range" />
+  <button type="button" class="play-btn stop" id="stop-all">&#9632; STOP ALL</button>
+</div>
+
+<!-- Section 1: Dry baseline -->
+<div class="section">
+  <div class="section-title">1. Dry Baseline</div>
+  <div class="section-desc">
+    Current sound: two detuned sines, gain envelope, nothing else.
+    This is what the chimes sound like right now.
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="dry-single">&#9654; Single Note</button>
+    <button type="button" class="play-btn" data-demo="dry-burst">&#9654; Burst (3 notes)</button>
+    <button type="button" class="play-btn" data-demo="dry-sequence">&#9654; Full Sequence</button>
+  </div>
+</div>
+
+<!-- Section 2: Reverb -->
+<div class="section">
+  <div class="section-title">2. + Reverb</div>
+  <div class="section-desc">
+    A convolution reverb generated from filtered decaying noise.
+    Simulates the sound existing in a physical space. Adjustable decay time and wet/dry mix.
+  </div>
+  <div class="param-row">
+    <span class="param-label">DECAY</span>
+    <input type="range" min="10" max="100" value="50" id="reverb-decay" class="ctrl-range" />
+    <span class="param-val" id="reverb-decay-val">2.5s</span>
+  </div>
+  <div class="param-row">
+    <span class="param-label">WET MIX</span>
+    <input type="range" min="0" max="100" value="40" id="reverb-wet" class="ctrl-range" />
+    <span class="param-val" id="reverb-wet-val">40%</span>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="reverb-single">&#9654; Single Note</button>
+    <button type="button" class="play-btn" data-demo="reverb-burst">&#9654; Burst</button>
+    <button type="button" class="play-btn" data-demo="reverb-sequence">&#9654; Full Sequence</button>
+  </div>
+</div>
+
+<!-- Section 3: Stereo -->
+<div class="section">
+  <div class="section-title">3. + Stereo Panning</div>
+  <div class="section-desc">
+    Each note is randomly placed in the stereo field. Creates width
+    and the sensation of chimes scattered across a space. Best heard with headphones.
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="stereo-burst">&#9654; Burst</button>
+    <button type="button" class="play-btn" data-demo="stereo-sequence">&#9654; Full Sequence</button>
+  </div>
+</div>
+
+<!-- Section 4: Partials -->
+<div class="section">
+  <div class="section-title">4. + Inharmonic Partials</div>
+  <div class="section-desc">
+    Real metal tubes produce overtones at non-integer ratios (2.76x, 5.4x the fundamental)
+    rather than clean harmonics. This makes each note shimmer with a bell-like quality
+    instead of sounding like a pure electronic tone.
+  </div>
+  <div class="param-row">
+    <span class="param-label">PARTIALS</span>
+    <input type="range" min="0" max="100" value="50" id="partials-level" class="ctrl-range" />
+    <span class="param-val" id="partials-level-val">50%</span>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="partials-single">&#9654; Single Note</button>
+    <button type="button" class="play-btn" data-demo="partials-burst">&#9654; Burst</button>
+  </div>
+</div>
+
+<!-- Section 5: Transients -->
+<div class="section">
+  <div class="section-title">5. + Attack Transient</div>
+  <div class="section-desc">
+    A tiny burst of filtered noise (2-3ms) at the onset of each note, simulating the
+    metallic "tick" of a striker hitting a chime tube. Gives each note a physical presence
+    the ear can latch onto.
+  </div>
+  <div class="param-row">
+    <span class="param-label">TRANSIENT</span>
+    <input type="range" min="0" max="100" value="50" id="transient-level" class="ctrl-range" />
+    <span class="param-val" id="transient-level-val">50%</span>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="transient-single">&#9654; Single Note</button>
+    <button type="button" class="play-btn" data-demo="transient-burst">&#9654; Burst</button>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- Section 6: All combined -->
+<div class="section" style="border-color: #1a3d4d;">
+  <div class="section-title">All Combined</div>
+  <div class="section-desc">
+    Toggle each enhancement on/off to hear how they layer together.
+  </div>
+  <div class="toggle-row">
+    <div class="toggle-item">
+      <input type="checkbox" class="toggle-cb" id="combo-reverb" checked />
+      <label for="combo-reverb">Reverb</label>
+    </div>
+    <div class="toggle-item">
+      <input type="checkbox" class="toggle-cb" id="combo-stereo" checked />
+      <label for="combo-stereo">Stereo</label>
+    </div>
+    <div class="toggle-item">
+      <input type="checkbox" class="toggle-cb" id="combo-partials" checked />
+      <label for="combo-partials">Partials</label>
+    </div>
+    <div class="toggle-item">
+      <input type="checkbox" class="toggle-cb" id="combo-transient" checked />
+      <label for="combo-transient">Transient</label>
+    </div>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="play-btn" data-demo="combo-single">&#9654; Single Note</button>
+    <button type="button" class="play-btn" data-demo="combo-burst">&#9654; Burst</button>
+    <button type="button" class="play-btn" data-demo="combo-sequence">&#9654; Full Sequence</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var SCALE = [698, 784, 880, 988, 1047, 1175, 1319];
+  var CHIME_MATRIX = [
+    [0.03, 0.22, 0.25, 0.04, 0.25, 0.18, 0.03],
+    [0.22, 0.03, 0.25, 0.04, 0.22, 0.21, 0.03],
+    [0.20, 0.22, 0.03, 0.04, 0.25, 0.22, 0.04],
+    [0.20, 0.18, 0.20, 0.03, 0.20, 0.15, 0.04],
+    [0.22, 0.20, 0.22, 0.04, 0.03, 0.25, 0.04],
+    [0.20, 0.22, 0.20, 0.04, 0.25, 0.03, 0.06],
+    [0.25, 0.20, 0.20, 0.05, 0.20, 0.07, 0.03],
+  ];
+
+  // Inharmonic partial ratios — typical of metal tubes/bells
+  var PARTIAL_RATIOS = [2.76, 5.4, 8.93];
+  var PARTIAL_AMPS = [0.12, 0.06, 0.03]; // relative to fundamental
+
+  var ctx = null;
+  var masterGain = null;
+  var reverbConvolver = null;
+  var reverbWetGain = null;
+  var reverbDryGain = null;
+  var reverbSend = null; // node to connect sources to for reverb routing
+  var noiseBuf = null;
+  var activeTimers = [];
+  var markovIdx = Math.floor(Math.random() * SCALE.length);
+
+  // -----------------------------------------------------------------------
+  // INIT
+  // -----------------------------------------------------------------------
+
+  function init() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(0.10, ctx.currentTime);
+    masterGain.connect(ctx.destination);
+
+    // Pre-generate noise buffer for transients
+    var noiseDur = 1;
+    noiseBuf = ctx.createBuffer(1, ctx.sampleRate * noiseDur, ctx.sampleRate);
+    var nd = noiseBuf.getChannelData(0);
+    for (var i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+    buildReverb();
+  }
+
+  function buildReverb() {
+    var decaySlider = parseInt(document.getElementById("reverb-decay").value, 10);
+    var decayTime = 0.5 + (decaySlider / 100) * 4.5; // 0.5s to 5.0s
+
+    // Generate impulse response: exponentially decaying filtered noise
+    var irLen = ctx.sampleRate * decayTime;
+    var irBuf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var data = irBuf.getChannelData(ch);
+      for (var i = 0; i < irLen; i++) {
+        var t = i / ctx.sampleRate;
+        var envelope = Math.exp(-3.0 * t / decayTime);
+        // Slight high-frequency rolloff: reduce noise amplitude over time
+        var hfRolloff = Math.exp(-1.5 * t / decayTime);
+        data[i] = (Math.random() * 2 - 1) * envelope * hfRolloff;
+      }
+    }
+
+    // Build reverb graph: source -> dry + wet paths -> masterGain
+    if (reverbConvolver) {
+      // Rebuild: disconnect old nodes
+      try { reverbConvolver.disconnect(); } catch(e) {}
+      try { reverbWetGain.disconnect(); } catch(e) {}
+      try { reverbDryGain.disconnect(); } catch(e) {}
+      try { reverbSend.disconnect(); } catch(e) {}
+    }
+
+    reverbConvolver = ctx.createConvolver();
+    reverbConvolver.buffer = irBuf;
+
+    var wetVal = parseInt(document.getElementById("reverb-wet").value, 10) / 100;
+
+    reverbDryGain = ctx.createGain();
+    reverbDryGain.gain.setValueAtTime(1.0, ctx.currentTime);
+
+    reverbWetGain = ctx.createGain();
+    reverbWetGain.gain.setValueAtTime(wetVal, ctx.currentTime);
+
+    // Pre-delay for reverb (30ms)
+    var preDelay = ctx.createDelay(0.1);
+    preDelay.delayTime.setValueAtTime(0.03, ctx.currentTime);
+
+    // reverbSend is the node sources connect to
+    reverbSend = ctx.createGain();
+    reverbSend.gain.setValueAtTime(1.0, ctx.currentTime);
+
+    reverbSend.connect(reverbDryGain);
+    reverbSend.connect(preDelay);
+    preDelay.connect(reverbConvolver);
+    reverbConvolver.connect(reverbWetGain);
+    reverbDryGain.connect(masterGain);
+    reverbWetGain.connect(masterGain);
+  }
+
+  // -----------------------------------------------------------------------
+  // MARKOV
+  // -----------------------------------------------------------------------
+
+  function markovNext() {
+    var row = CHIME_MATRIX[markovIdx];
+    var r = Math.random();
+    var sum = 0;
+    for (var i = 0; i < row.length; i++) {
+      sum += row[i];
+      if (r < sum) { markovIdx = i; return SCALE[i]; }
+    }
+    markovIdx = row.length - 1;
+    return SCALE[markovIdx];
+  }
+
+  // -----------------------------------------------------------------------
+  // SINGLE CHIME NOTE with configurable enhancements
+  // -----------------------------------------------------------------------
+
+  function playNote(out, opts) {
+    var c = ctx;
+    var now = c.currentTime;
+    var freq = markovNext();
+    var decay = 1.5 + Math.random();
+    var detune = 2 + Math.random() * 2;
+
+    // Panner (stereo)
+    var panNode = null;
+    var noteOut = out;
+    if (opts.stereo) {
+      panNode = c.createStereoPanner();
+      panNode.pan.setValueAtTime(Math.random() * 1.6 - 0.8, now); // -0.8 to +0.8
+      panNode.connect(out);
+      noteOut = panNode;
+    }
+
+    // Fundamental: two detuned sines
+    for (var di = 0; di < 2; di++) {
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(freq + (di === 0 ? -detune : detune), now);
+      o.connect(g);
+      g.connect(noteOut);
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(0.03, now + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.001, now + decay);
+      o.start(now);
+      o.stop(now + decay + 0.1);
+    }
+
+    // Inharmonic partials
+    if (opts.partials) {
+      var pLevel = opts.partialsLevel || 0.5;
+      for (var pi = 0; pi < PARTIAL_RATIOS.length; pi++) {
+        var pFreq = freq * PARTIAL_RATIOS[pi];
+        if (pFreq > 10000) continue; // skip if above audible/useful range
+        var po = c.createOscillator();
+        var pg = c.createGain();
+        po.type = "sine";
+        // Slight random detune on partials for realism
+        po.frequency.setValueAtTime(pFreq + (Math.random() * 4 - 2), now);
+        po.connect(pg);
+        pg.connect(noteOut);
+        var pAmp = 0.03 * PARTIAL_AMPS[pi] * pLevel * 2;
+        // Partials decay faster than fundamental
+        var pDecay = decay * (0.3 + 0.2 * (1 - pi / PARTIAL_RATIOS.length));
+        pg.gain.setValueAtTime(0, now);
+        pg.gain.linearRampToValueAtTime(pAmp, now + 0.003);
+        pg.gain.exponentialRampToValueAtTime(0.001, now + pDecay);
+        po.start(now);
+        po.stop(now + pDecay + 0.1);
+      }
+    }
+
+    // Attack transient
+    if (opts.transient) {
+      var tLevel = opts.transientLevel || 0.5;
+      var tDur = 0.003;
+      var tSrc = c.createBufferSource();
+      tSrc.buffer = noiseBuf;
+      var tGain = c.createGain();
+      var tFilter = c.createBiquadFilter();
+      tFilter.type = "bandpass";
+      // Center the transient around the note frequency for a pitched click
+      tFilter.frequency.setValueAtTime(Math.min(freq * 4, 8000), now);
+      tFilter.Q.setValueAtTime(2, now);
+      tSrc.connect(tFilter);
+      tFilter.connect(tGain);
+      tGain.connect(noteOut);
+      tGain.gain.setValueAtTime(0.06 * tLevel * 2, now);
+      tGain.gain.exponentialRampToValueAtTime(0.001, now + tDur);
+      var tOffset = Math.random() * 0.5;
+      tSrc.start(now, tOffset, tDur + 0.01);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // DEMO SEQUENCES
+  // -----------------------------------------------------------------------
+
+  function stopAll() {
+    for (var i = 0; i < activeTimers.length; i++) clearTimeout(activeTimers[i]);
+    activeTimers = [];
+    var btns = document.querySelectorAll(".play-btn.active");
+    for (var j = 0; j < btns.length; j++) btns[j].classList.remove("active");
+  }
+
+  function playBurst(out, opts, count) {
+    count = count || 3;
+    for (var i = 0; i < count; i++) {
+      (function (delay) {
+        var tid = setTimeout(function () { playNote(out, opts); }, delay);
+        activeTimers.push(tid);
+      })(i * (80 + Math.random() * 40));
+    }
+  }
+
+  function playSequence(out, opts) {
+    // Burst & Breathe pattern: 12 notes
+    var t = 0;
+    var notesPlayed = 0;
+    var totalNotes = 12;
+
+    function scheduleBurst() {
+      if (notesPlayed >= totalNotes) return;
+      var burstLen = 2 + Math.floor(Math.random() * 3);
+      burstLen = Math.min(burstLen, totalNotes - notesPlayed);
+      for (var i = 0; i < burstLen; i++) {
+        (function (delay) {
+          var tid = setTimeout(function () { playNote(out, opts); }, t + delay);
+          activeTimers.push(tid);
+        })(i * (80 + Math.random() * 40));
+        notesPlayed++;
+      }
+      t += burstLen * 100 + 2000 + Math.random() * 1500;
+
+      // Lone ping 25% chance
+      if (Math.random() < 0.25 && notesPlayed < totalNotes) {
+        (function (delay) {
+          var tid = setTimeout(function () { playNote(out, opts); }, delay);
+          activeTimers.push(tid);
+        })(t - 800 - Math.random() * 600);
+        notesPlayed++;
+      }
+
+      var tid = setTimeout(scheduleBurst, t - Date.now());
+      activeTimers.push(tid);
+    }
+
+    // Use absolute times
+    var baseTime = Date.now();
+    function scheduleFromNow() {
+      if (notesPlayed >= totalNotes) return;
+      var burstLen = 2 + Math.floor(Math.random() * 3);
+      burstLen = Math.min(burstLen, totalNotes - notesPlayed);
+      for (var i = 0; i < burstLen; i++) {
+        var delay = t + i * (80 + Math.random() * 40);
+        (function (d) {
+          var tid = setTimeout(function () { playNote(out, opts); }, d);
+          activeTimers.push(tid);
+        })(delay);
+        notesPlayed++;
+      }
+      t += burstLen * 100 + 2000 + Math.random() * 1500;
+
+      if (Math.random() < 0.25 && notesPlayed < totalNotes) {
+        var pingT = t - 800 - Math.random() * 600;
+        (function (d) {
+          var tid = setTimeout(function () { playNote(out, opts); }, d);
+          activeTimers.push(tid);
+        })(pingT);
+        notesPlayed++;
+      }
+
+      if (notesPlayed < totalNotes) {
+        var tid = setTimeout(scheduleFromNow, 0);
+        activeTimers.push(tid);
+      }
+    }
+    scheduleFromNow();
+  }
+
+  // -----------------------------------------------------------------------
+  // DEMO DISPATCH
+  // -----------------------------------------------------------------------
+
+  function runDemo(name) {
+    init();
+    if (ctx.state === "suspended") ctx.resume();
+    stopAll();
+
+    // Parse demo name: "type-mode"
+    var parts = name.split("-");
+    var type = parts[0];
+    var mode = parts[1];
+
+    var useReverb = false;
+    var useStereo = false;
+    var usePartials = false;
+    var useTransient = false;
+
+    if (type === "reverb") useReverb = true;
+    if (type === "stereo") { useReverb = true; useStereo = true; }
+    if (type === "partials") { usePartials = true; }
+    if (type === "transient") { useTransient = true; }
+    if (type === "combo") {
+      useReverb = document.getElementById("combo-reverb").checked;
+      useStereo = document.getElementById("combo-stereo").checked;
+      usePartials = document.getElementById("combo-partials").checked;
+      useTransient = document.getElementById("combo-transient").checked;
+    }
+
+    // Rebuild reverb with current slider values
+    if (useReverb) buildReverb();
+
+    var out = useReverb ? reverbSend : masterGain;
+
+    var partialsLevel = parseInt(document.getElementById("partials-level").value, 10) / 100;
+    var transientLevel = parseInt(document.getElementById("transient-level").value, 10) / 100;
+
+    var opts = {
+      stereo: useStereo,
+      partials: usePartials,
+      partialsLevel: partialsLevel,
+      transient: useTransient,
+      transientLevel: transientLevel,
+    };
+
+    if (mode === "single") {
+      playNote(out, opts);
+    } else if (mode === "burst") {
+      playBurst(out, opts, 3);
+    } else if (mode === "sequence") {
+      playSequence(out, opts);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // EVENT WIRING
+  // -----------------------------------------------------------------------
+
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest(".play-btn");
+    if (!btn) return;
+    var demo = btn.getAttribute("data-demo");
+    if (demo) {
+      runDemo(demo);
+    }
+    if (btn.id === "stop-all") {
+      stopAll();
+    }
+  });
+
+  document.getElementById("master-vol").addEventListener("input", function () {
+    init();
+    var val = parseInt(this.value, 10) / 100;
+    masterGain.gain.setValueAtTime(val * 0.2, ctx.currentTime);
+  });
+
+  // Param display updates
+  document.getElementById("reverb-decay").addEventListener("input", function () {
+    var v = 0.5 + (parseInt(this.value, 10) / 100) * 4.5;
+    document.getElementById("reverb-decay-val").textContent = v.toFixed(1) + "s";
+  });
+  document.getElementById("reverb-wet").addEventListener("input", function () {
+    var v = parseInt(this.value, 10);
+    document.getElementById("reverb-wet-val").textContent = v + "%";
+    if (reverbWetGain && ctx) {
+      reverbWetGain.gain.setValueAtTime(v / 100, ctx.currentTime);
+    }
+  });
+  document.getElementById("partials-level").addEventListener("input", function () {
+    document.getElementById("partials-level-val").textContent = this.value + "%";
+  });
+  document.getElementById("transient-level").addEventListener("input", function () {
+    document.getElementById("transient-level-val").textContent = this.value + "%";
+  });
+
+})();
+</script>
+</body>
+</html>

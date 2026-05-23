@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ariel Chime Rhythm Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0a;
+    color: #55ccff;
+    font-family: "VT323", monospace;
+    padding: 32px 24px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 28px;
+    text-align: center;
+    margin-bottom: 6px;
+    text-shadow: 0 0 12px rgba(85, 204, 255, 0.4);
+  }
+  .subtitle {
+    text-align: center;
+    color: #1a4d66;
+    font-size: 16px;
+    letter-spacing: 2px;
+    margin-bottom: 28px;
+  }
+  .info {
+    text-align: center;
+    color: #2a6688;
+    font-size: 15px;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+    line-height: 1.6;
+  }
+  .info span { color: #4499bb; }
+
+  /* Transport */
+  .global-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #0d0d14;
+    border: 2px solid #1a1a2a;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .global-controls label { color: #1a4d66; font-size: 14px; letter-spacing: 1px; }
+  .global-controls input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 120px; height: 6px; background: #1a1a2a; border-radius: 3px; cursor: pointer;
+  }
+  .global-controls input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px;
+    background: #55ccff; border: none; border-radius: 0; cursor: pointer;
+    box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+  }
+  .stop-all-btn {
+    font-family: "VT323", monospace; font-size: 16px;
+    padding: 6px 14px; border: 2px solid #2a2a3a; border-radius: 3px;
+    background: #111118; color: #1a4d66; cursor: pointer; letter-spacing: 1px;
+  }
+  .stop-all-btn:hover { border-color: #ff4444; color: #ff4444; }
+
+  /* Rhythm card */
+  .rhythm-card {
+    background: #0d0d14;
+    border: 2px solid #1a1a2a;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .rhythm-card.is-playing { border-color: #55ccff; }
+  .rhythm-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .rhythm-name {
+    font-size: 22px;
+    color: #55ccff;
+    flex: 1;
+    text-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
+  }
+  .rhythm-play-btn {
+    font-family: "VT323", monospace; font-size: 16px;
+    padding: 6px 16px; border: 2px solid #2a2a3a; border-radius: 3px;
+    background: #111118; color: #4499bb; cursor: pointer; letter-spacing: 1px;
+  }
+  .rhythm-play-btn:hover { border-color: #55ccff; color: #55ccff; }
+  .rhythm-play-btn.active {
+    border-color: #55ccff; color: #55ccff;
+    text-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
+  }
+  .rhythm-desc {
+    color: #2a6688;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 12px;
+  }
+  .rhythm-detail {
+    color: #1a4d66;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 10px 12px;
+    background: #080810;
+    border: 1px solid #141420;
+    border-radius: 3px;
+  }
+  .rhythm-detail span { color: #2a6688; }
+
+  /* Rhythm visualization */
+  .rhythm-viz {
+    display: flex;
+    align-items: end;
+    gap: 2px;
+    height: 40px;
+    padding: 8px 0;
+    margin-bottom: 8px;
+  }
+  .rhythm-viz .beat {
+    flex: 1;
+    background: rgba(85, 204, 255, 0.15);
+    min-width: 3px;
+    border-radius: 1px 1px 0 0;
+  }
+  .rhythm-viz .beat.rest {
+    background: rgba(85, 204, 255, 0.04);
+  }
+</style>
+</head>
+<body>
+
+<h1>Ariel Chime Rhythm Preview</h1>
+<p class="subtitle">~ compare rhythmic patterns for pentatonic skip chimes ~</p>
+<p class="info">
+  All options use the <span>Pentatonic Skip</span> matrix (F Lydian, favoring F G A C D).<br>
+  Listen for how the <span>timing</span> and <span>grouping</span> of notes changes the feel.
+</p>
+
+<div class="global-controls">
+  <label>VOL</label>
+  <input type="range" min="0" max="100" value="50" id="master-vol" />
+  <label>SPEED</label>
+  <input type="range" min="0" max="100" value="50" id="speed" />
+  <label>LENGTH</label>
+  <input type="range" min="8" max="32" value="16" id="note-count" />
+  <button type="button" class="stop-all-btn" id="stop-all">&#9632; STOP ALL</button>
+</div>
+
+<div id="cards"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // F Lydian chime scale
+  var SCALE = [698, 784, 880, 988, 1047, 1175, 1319];
+
+  // Pentatonic Skip matrix (chosen from the pitch preview)
+  var CHIME_MATRIX = [
+    [0.03, 0.22, 0.25, 0.04, 0.25, 0.18, 0.03],
+    [0.22, 0.03, 0.25, 0.04, 0.22, 0.21, 0.03],
+    [0.20, 0.22, 0.03, 0.04, 0.25, 0.22, 0.04],
+    [0.20, 0.18, 0.20, 0.03, 0.20, 0.15, 0.04],
+    [0.22, 0.20, 0.22, 0.04, 0.03, 0.25, 0.04],
+    [0.20, 0.22, 0.20, 0.04, 0.25, 0.03, 0.06],
+    [0.25, 0.20, 0.20, 0.05, 0.20, 0.07, 0.03],
+  ];
+
+  // -----------------------------------------------------------------------
+  // RHYTHM DEFINITIONS
+  // Each rhythm is a function(baseUnit, noteCount) that returns an array
+  // of { dt: seconds-from-start, isRest: bool } objects.
+  // baseUnit is the fundamental time unit in seconds, scaled by the SPEED slider.
+  // -----------------------------------------------------------------------
+
+  var RHYTHMS = [
+    {
+      name: "Current (Flat Random)",
+      desc: "The existing approach: uniform random gaps with a flat 15% rest chance and 25% chance of a quick run. No rhythmic structure \u2014 events are equally likely at any moment.",
+      detail: "Gap: random <span>4\u20138s</span> (single) or <span>6\u201312s</span> (after run) | Rest: flat <span>15%</span> | Run: <span>25%</span> chance of 3\u20134 quick notes at <span>100ms</span> spacing",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        while (i < count) {
+          // 15% rest
+          if (Math.random() < 0.15) {
+            events.push({ dt: t, isRest: true });
+            t += (4 + Math.random() * 4) * baseUnit;
+            i++;
+            continue;
+          }
+          // 25% run
+          if (Math.random() < 0.25) {
+            var runLen = 3 + Math.floor(Math.random() * 2);
+            for (var ri = 0; ri < runLen && i < count; ri++) {
+              events.push({ dt: t, isRest: false });
+              t += 0.1 * baseUnit;
+              i++;
+            }
+            t += (6 + Math.random() * 6) * baseUnit;
+          } else {
+            events.push({ dt: t, isRest: false });
+            t += (4 + Math.random() * 4) * baseUnit;
+            i++;
+          }
+        }
+        return events;
+      },
+    },
+    {
+      name: "Swing Pulse",
+      desc: "Notes snap to a loose rhythmic grid with swing \u2014 alternating long-short gaps like a lazy shuffle. Humanized with small random drift so it breathes rather than ticks. Rests fall on downbeats for natural phrasing.",
+      detail: "Grid: <span>long-short</span> alternation (ratio ~<span>1.6:1</span>) | Drift: \u00b1<span>15%</span> humanize | Rest: <span>12%</span>, only on downbeats | Run: <span>20%</span> chance, 2\u20133 notes on offbeats",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        var beatIdx = 0;
+        while (i < count) {
+          var isDownbeat = beatIdx % 2 === 0;
+          var longGap = 1.6 * baseUnit;
+          var shortGap = 1.0 * baseUnit;
+          var gap = isDownbeat ? longGap : shortGap;
+          // Humanize drift
+          gap *= (0.85 + Math.random() * 0.30);
+
+          // Rests only on downbeats, 12% chance
+          if (isDownbeat && Math.random() < 0.12) {
+            events.push({ dt: t, isRest: true });
+            t += gap;
+            i++;
+            beatIdx++;
+            continue;
+          }
+
+          // 20% run chance on offbeats
+          if (!isDownbeat && Math.random() < 0.20) {
+            var runLen = 2 + Math.floor(Math.random() * 2);
+            for (var ri = 0; ri < runLen && i < count; ri++) {
+              events.push({ dt: t, isRest: false });
+              t += 0.08 * baseUnit;
+              i++;
+            }
+            t += gap * 0.5;
+            beatIdx++;
+          } else {
+            events.push({ dt: t, isRest: false });
+            t += gap;
+            i++;
+            beatIdx++;
+          }
+        }
+        return events;
+      },
+    },
+    {
+      name: "Burst & Breathe",
+      desc: "Clusters of 2\u20134 quick notes followed by longer silences. Creates a call-and-response feel \u2014 like wind chimes caught in gusts then settling. The contrast between dense bursts and space is the rhythm.",
+      detail: "Burst: <span>2\u20134</span> notes at <span>80\u2013120ms</span> spacing | Pause: <span>3\u20136x</span> base unit | Rest: built into structure (pauses after each burst) | Burst density varies randomly",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        while (i < count) {
+          // Burst phase: 2-4 quick notes
+          var burstLen = 2 + Math.floor(Math.random() * 3);
+          for (var bi = 0; bi < burstLen && i < count; bi++) {
+            events.push({ dt: t, isRest: false });
+            t += (0.08 + Math.random() * 0.04) * baseUnit;
+            i++;
+          }
+          // Breathe phase: longer pause
+          var pause = (3 + Math.random() * 3) * baseUnit;
+          // Occasionally add a lone ping in the silence
+          if (Math.random() < 0.25 && i < count) {
+            t += pause * 0.4;
+            events.push({ dt: t, isRest: false });
+            t += pause * 0.6;
+            i++;
+          } else {
+            t += pause;
+          }
+        }
+        return events;
+      },
+    },
+    {
+      name: "Dotted Lilt",
+      desc: "Uses dotted rhythms (long-short-short patterns) for a lilting, dance-like quality. Think of a music box waltz but looser. The uneven grouping of 3 creates forward momentum.",
+      detail: "Pattern: <span>long-short-short</span> repeating (ratio <span>3:1:1</span>) | Humanize: \u00b1<span>20%</span> per gap | Rest: <span>10%</span> replaces a long beat | Occasional <span>pair</span> on the long beat for emphasis",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        var phase = 0; // 0=long, 1=short, 2=short
+        var gaps = [3.0, 1.0, 1.0]; // relative durations
+        while (i < count) {
+          var relGap = gaps[phase % 3] * baseUnit;
+          relGap *= (0.80 + Math.random() * 0.40);
+
+          if (phase % 3 === 0 && Math.random() < 0.10) {
+            // Rest on the long beat
+            events.push({ dt: t, isRest: true });
+            t += relGap;
+            i++;
+            phase++;
+            continue;
+          }
+
+          // Occasional emphasis pair on the long beat
+          if (phase % 3 === 0 && Math.random() < 0.15) {
+            events.push({ dt: t, isRest: false });
+            events.push({ dt: t + 0.06 * baseUnit, isRest: false });
+            t += relGap;
+            i += 2;
+            phase++;
+          } else {
+            events.push({ dt: t, isRest: false });
+            t += relGap;
+            i++;
+            phase++;
+          }
+        }
+        return events;
+      },
+    },
+    {
+      name: "Cascading Pairs",
+      desc: "Notes arrive in pairs (ding-ding) with varying gaps between pairs. Mimics the sound of wind chimes where two tubes strike in quick succession, then silence until the next gust.",
+      detail: "Pair spacing: <span>60\u2013100ms</span> (tight) | Between pairs: <span>2\u20135x</span> base unit | Rest: <span>15%</span> chance of a single instead of pair | Occasional <span>triple</span> for variety",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        while (i < count) {
+          // 15% single note
+          if (Math.random() < 0.15) {
+            events.push({ dt: t, isRest: false });
+            t += (2 + Math.random() * 3) * baseUnit;
+            i++;
+            continue;
+          }
+          // 10% triple
+          var groupSize = Math.random() < 0.10 ? 3 : 2;
+          for (var gi = 0; gi < groupSize && i < count; gi++) {
+            events.push({ dt: t, isRest: false });
+            t += (0.06 + Math.random() * 0.04) * baseUnit;
+            i++;
+          }
+          // Gap between pairs
+          t += (2 + Math.random() * 3) * baseUnit;
+        }
+        return events;
+      },
+    },
+    {
+      name: "Accelerando Waves",
+      desc: "Notes start slow, gradually speed up to a peak density, then slow back down \u2014 repeating in waves. Like wind chimes in swelling and fading breeze. Each wave feels like a phrase.",
+      detail: "Wave: <span>6\u20138</span> notes per cycle | Gap shrinks from <span>3x</span> to <span>0.5x</span> base, then expands back | Inter-wave pause: <span>3\u20135x</span> base | Creates organic <span>swelling phrases</span>",
+      generate: function (baseUnit, count) {
+        var events = [];
+        var t = 0;
+        var i = 0;
+        while (i < count) {
+          // One wave: 6-8 notes
+          var waveLen = 6 + Math.floor(Math.random() * 3);
+          waveLen = Math.min(waveLen, count - i);
+          for (var wi = 0; wi < waveLen && i < count; wi++) {
+            events.push({ dt: t, isRest: false });
+            // Map position in wave to gap: starts wide, narrows at middle, widens again
+            var waveFrac = wi / (waveLen - 1); // 0 to 1
+            var curve = 1.0 - Math.sin(waveFrac * Math.PI); // 0 at edges, peaks at center... inverted
+            // Actually: we want fast in the middle, slow at edges
+            // sin peaks at 0.5 -> gap should be smallest there
+            var gapMult = 0.4 + 2.6 * (1.0 - Math.sin(waveFrac * Math.PI));
+            var gap = gapMult * baseUnit;
+            gap *= (0.85 + Math.random() * 0.30);
+            t += gap;
+            i++;
+          }
+          // Inter-wave pause
+          t += (3 + Math.random() * 2) * baseUnit;
+        }
+        return events;
+      },
+    },
+  ];
+
+  // -----------------------------------------------------------------------
+  // AUDIO ENGINE
+  // -----------------------------------------------------------------------
+
+  var audioCtx = null;
+  var masterGain = null;
+  var activePlayers = [];
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.10, audioCtx.currentTime);
+    masterGain.connect(audioCtx.destination);
+  }
+
+  function markovNext(row) {
+    var r = Math.random();
+    var sum = 0;
+    for (var i = 0; i < row.length; i++) {
+      sum += row[i];
+      if (r < sum) return i;
+    }
+    return row.length - 1;
+  }
+
+  function playRhythm(rhythmIdx, cardEl) {
+    initAudio();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    stopCard(cardEl);
+
+    var c = audioCtx;
+    var noteCount = parseInt(document.getElementById("note-count").value, 10);
+    var speedSlider = parseInt(document.getElementById("speed").value, 10);
+    // Speed: 0 = 1.4x base (slow), 50 = 1.0x (normal), 100 = 0.4x (fast)
+    var baseUnit = 1.4 - (speedSlider / 100) * 1.0;
+
+    var rhythm = RHYTHMS[rhythmIdx];
+    var events = rhythm.generate(baseUnit, noteCount);
+
+    var idx = Math.floor(Math.random() * SCALE.length);
+    var timers = [];
+
+    for (var ei = 0; ei < events.length; ei++) {
+      (function (ev, noteIdx) {
+        if (ev.isRest) return; // Skip rests (silence)
+        var timerId = setTimeout(function () {
+          if (!masterGain) return;
+          var cNow = c.currentTime;
+
+          idx = markovNext(CHIME_MATRIX[noteIdx]);
+          var freq = SCALE[idx];
+          var decay = 1.2 + Math.random() * 0.5;
+          var detune = 2 + Math.random() * 2;
+
+          for (var di = 0; di < 2; di++) {
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(freq + (di === 0 ? -detune : detune), cNow);
+            o.connect(g);
+            g.connect(masterGain);
+            g.gain.setValueAtTime(0, cNow);
+            g.gain.linearRampToValueAtTime(0.03, cNow + 0.003);
+            g.gain.exponentialRampToValueAtTime(0.001, cNow + decay);
+            o.start(cNow);
+            o.stop(cNow + decay + 0.1);
+          }
+        }, ev.dt * 1000);
+        timers.push(timerId);
+      })(events[ei], idx);
+    }
+
+    // Calculate total duration
+    var totalDur = 0;
+    for (var ti = 0; ti < events.length; ti++) {
+      if (events[ti].dt > totalDur) totalDur = events[ti].dt;
+    }
+
+    cardEl.classList.add("is-playing");
+    cardEl.querySelector(".rhythm-play-btn").classList.add("active");
+    cardEl.querySelector(".rhythm-play-btn").textContent = "\u25B6 PLAYING...";
+
+    var finishTimer = setTimeout(function () {
+      cardEl.classList.remove("is-playing");
+      cardEl.querySelector(".rhythm-play-btn").classList.remove("active");
+      cardEl.querySelector(".rhythm-play-btn").textContent = "\u25B6 PLAY";
+      for (var ai = activePlayers.length - 1; ai >= 0; ai--) {
+        if (activePlayers[ai].cardEl === cardEl) activePlayers.splice(ai, 1);
+      }
+    }, (totalDur + 2) * 1000);
+    timers.push(finishTimer);
+
+    activePlayers.push({ timers: timers, cardEl: cardEl });
+
+    // Render the rhythm visualization
+    renderViz(cardEl, events, totalDur);
+  }
+
+  function stopCard(cardEl) {
+    for (var ai = activePlayers.length - 1; ai >= 0; ai--) {
+      if (activePlayers[ai].cardEl === cardEl) {
+        var timers = activePlayers[ai].timers;
+        for (var ti = 0; ti < timers.length; ti++) clearTimeout(timers[ti]);
+        activePlayers.splice(ai, 1);
+      }
+    }
+    cardEl.classList.remove("is-playing");
+    cardEl.querySelector(".rhythm-play-btn").classList.remove("active");
+    cardEl.querySelector(".rhythm-play-btn").textContent = "\u25B6 PLAY";
+  }
+
+  function stopAll() {
+    for (var ai = 0; ai < activePlayers.length; ai++) {
+      var timers = activePlayers[ai].timers;
+      for (var ti = 0; ti < timers.length; ti++) clearTimeout(timers[ti]);
+      activePlayers[ai].cardEl.classList.remove("is-playing");
+      activePlayers[ai].cardEl.querySelector(".rhythm-play-btn").classList.remove("active");
+      activePlayers[ai].cardEl.querySelector(".rhythm-play-btn").textContent = "\u25B6 PLAY";
+    }
+    activePlayers = [];
+  }
+
+  // -----------------------------------------------------------------------
+  // RHYTHM VISUALIZATION
+  // -----------------------------------------------------------------------
+
+  function renderViz(cardEl, events, totalDur) {
+    var vizEl = cardEl.querySelector(".rhythm-viz");
+    if (!vizEl) return;
+    vizEl.innerHTML = "";
+    if (totalDur <= 0) return;
+
+    // Compute inter-onset intervals for bar heights
+    var intervals = [];
+    var lastT = 0;
+    for (var i = 0; i < events.length; i++) {
+      intervals.push(events[i].dt - lastT);
+      lastT = events[i].dt;
+    }
+    var maxInterval = 0;
+    for (var j = 0; j < intervals.length; j++) {
+      if (intervals[j] > maxInterval) maxInterval = intervals[j];
+    }
+    if (maxInterval <= 0) maxInterval = 1;
+
+    for (var k = 0; k < events.length; k++) {
+      var bar = document.createElement("div");
+      bar.className = "beat" + (events[k].isRest ? " rest" : "");
+      // Height inversely proportional to gap (shorter gap = taller bar = denser)
+      var density = 1.0 - (intervals[k] / maxInterval);
+      var height = 6 + density * 30; // 6px min, 36px max
+      bar.style.height = height + "px";
+      vizEl.appendChild(bar);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // UI
+  // -----------------------------------------------------------------------
+
+  function buildCards() {
+    var container = document.getElementById("cards");
+    var html = "";
+    for (var ri = 0; ri < RHYTHMS.length; ri++) {
+      var r = RHYTHMS[ri];
+      html +=
+        '<div class="rhythm-card" data-idx="' + ri + '">' +
+          '<div class="rhythm-header">' +
+            '<div class="rhythm-name">' + r.name + '</div>' +
+            '<button type="button" class="rhythm-play-btn" data-idx="' + ri + '">' +
+              '\u25B6 PLAY</button>' +
+          '</div>' +
+          '<div class="rhythm-desc">' + r.desc + '</div>' +
+          '<div class="rhythm-viz"></div>' +
+          '<div class="rhythm-detail">' + r.detail + '</div>' +
+        '</div>';
+    }
+    container.innerHTML = html;
+  }
+
+  buildCards();
+
+  document.getElementById("cards").addEventListener("click", function (e) {
+    var btn = e.target.closest(".rhythm-play-btn");
+    if (!btn) return;
+    var idx = parseInt(btn.getAttribute("data-idx"), 10);
+    var card = btn.closest(".rhythm-card");
+    if (card.classList.contains("is-playing")) {
+      stopCard(card);
+    } else {
+      playRhythm(idx, card);
+    }
+  });
+
+  document.getElementById("stop-all").addEventListener("click", stopAll);
+
+  document.getElementById("master-vol").addEventListener("input", function () {
+    initAudio();
+    var val = parseInt(this.value, 10) / 100;
+    masterGain.gain.setValueAtTime(val * 0.2, audioCtx.currentTime);
+  });
+
+})();
+</script>
+</body>
+</html>
