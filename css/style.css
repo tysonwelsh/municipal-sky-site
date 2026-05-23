@@ -719,6 +719,12 @@ pre code {
   content: "— ";
 }
 
+/* Poem attribution sits a touch smaller than the prose attributions so
+   the author/title line reads as a quiet footnote to the verse. */
+.poem-attribution {
+  font-size: 12px;
+}
+
 /* Convention: wrap the title of the work in <cite>. Render in the same mono
    register as the rest of the attribution. For poems we keep the cite
    inline alongside the author and italicize the title; for prose quotes
