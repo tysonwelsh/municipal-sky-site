@@ -719,19 +719,28 @@ pre code {
   content: "— ";
 }
 
+/* Poem attribution sits a touch smaller than the prose attributions so
+   the author/title line reads as a quiet footnote to the verse. */
+.poem-attribution {
+  font-size: 12px;
+}
+
 /* Convention: wrap the title of the work in <cite>. Render in the same mono
-   register as the rest of the attribution (overriding the browser default
-   italic). For poems we keep the cite inline alongside the author; for
-   prose quotes and passages it drops to its own line. */
+   register as the rest of the attribution. For poems we keep the cite
+   inline alongside the author and italicize the title; for prose quotes
+   and passages it drops to its own line and stays upright. */
 .poem-attribution cite,
 .quote-attribution cite,
 .passage-attribution cite {
-  font-style: normal;
   font-family: inherit;
 }
 .quote-attribution cite,
 .passage-attribution cite {
   display: block;
+  font-style: normal;
+}
+.poem-attribution cite {
+  font-style: italic;
 }
 
 blockquote {
@@ -1137,6 +1146,26 @@ blockquote {
   .literary-quote,
   .passage-excerpt {
     padding-left: var(--s-3);
+  }
+
+  /* On narrow viewports the poem stands on its own — no border, no
+     background, no inset — so the lines breathe at full width. */
+  .poem-excerpt {
+    padding: 0;
+    background: none;
+    border: 0;
+    width: 100%;
+  }
+  .poem-excerpt .poem-attribution {
+    border-top: 0;
+    padding-top: 0;
+    /* Single-line attribution on mobile: shrink to fit the viewport
+       rather than wrap. Size scales with viewport width so the full
+       "James Tate, Images of Little Compton, Rhode Island" line sits
+       on one row from iPhone SE (375px) up through tablet portrait,
+       capped at 11px so it never grows past the desktop size. */
+    font-size: clamp(9px, 2.7vw, 11px);
+    white-space: nowrap;
   }
 }
 
