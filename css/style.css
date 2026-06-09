@@ -598,6 +598,31 @@ pre code {
   white-space: nowrap;
 }
 
+/* Article dateline — small newspaper-style line beneath the page title.
+   Uses the same compact YYYY.MM.DD format as the index listings
+   (.entry-date), pulled up snug under the heading. */
+.post-date {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  color: #999999;
+  margin: var(--s-2) 0 var(--s-5);
+}
+/* When a title is directly followed by a dateline, drop the title's own
+   bottom margin so the gap above the date is controlled solely (and
+   consistently) by .post-date's margin-top. */
+h1:has(+ .post-date) {
+  margin-bottom: 0;
+}
+
+/* Page titles read left-aligned site-wide. */
+.display-heading,
+.section-title,
+.post-container > header h1,
+.post-container > header .post-date {
+  text-align: left;
+}
+
 .entry-content {
   display: flex;
   flex-direction: column;
@@ -678,6 +703,16 @@ pre code {
      gutter to the right of short lines. Width utilities (.width-75 etc.)
      still cap the upper bound for very long lines. */
   width: max-content;
+}
+
+/* Unframed variant: keep the serif typography and exact line breaks but
+   drop the bordered box, so the piece sits plainly on the page. */
+.poem-excerpt.unframed,
+.literary-quote.unframed,
+.passage-excerpt.unframed {
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 .literary-quote {

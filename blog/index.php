@@ -14,6 +14,13 @@ include '../includes/header.php';
             <!-- Entry List -->
             <div class="entry-list">
                 <div class="entry">
+                    <span class="entry-date">2026.06.09</span>
+                    <div class="entry-content">
+                        <a href="everlasting-life" class="entry-title">How I Came to Discover the Secret of Everlasting Life</a>
+                        <span class="entry-description">A personal account.</span>
+                    </div>
+                </div>
+                <div class="entry">
                     <span class="entry-date">2026.03.10</span>
                     <div class="entry-content">
                         <a href="natural-light" class="entry-title">Natural Light</a>

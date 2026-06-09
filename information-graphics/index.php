@@ -25,8 +25,8 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.03.13</span>
                     <div class="entry-content">
-                        <a href="gendered-pronouns" class="entry-title">The Distribution of He and She in Classic
-                            Novels</a>
+                        <a href="gendered-pronouns" class="entry-title">The Distribution of Pronouns by Gender
+                            Across Classic Novels</a>
                         <span class="entry-description">Mapping masculine and feminine third-person pronouns across
                             classic literature — and through every episode of Joyce's Ulysses.</span>
                     </div>

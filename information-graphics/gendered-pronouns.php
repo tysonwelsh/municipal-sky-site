@@ -1,5 +1,5 @@
 <?php
-$page_title = 'The Distribution of He and She in Classic Novels - Municipal Sky';
+$page_title = 'The Distribution of Pronouns by Gender Across Classic Novels - Municipal Sky';
 $page_description = 'Visualizing the distribution of masculine and feminine third-person pronouns across classic novels, with an episode-by-episode breakdown of James Joyce\'s Ulysses.';
 include '../includes/header.php';
 ?>
@@ -309,8 +309,9 @@ include '../includes/header.php';
 
     <!-- Page Header -->
     <div class="post-container">
-      <header class="text-center">
-        <h1>The Distribution of He and She in Classic Novels</h1>
+      <header>
+        <h1>The Distribution of Pronouns by Gender Across Classic Novels</h1>
+        <p class="post-date">2026.03.13</p>
       </header>
     </div>
 
@@ -385,12 +386,10 @@ include '../includes/header.php';
     <div class="post-container">
       <section class="prose-flow">
         <p>The <em>Nausicaa</em> episode stands out as having by far the largest share of feminine pronouns out of any
-          text I
-          looked at. Written in the pulp style of a fashion magazine, this episode follows a young woman who performs
-          for the gaze of the novel's protagonist Leopold Bloom, who watches her from the beach while masturbating. This
-          suggests that a count of gendered pronouns is more about narrative attention (who the text is looking
-          at),
-          and not necessarily a measure of how much empathy the text affords to its female characters.</p>
+          text I looked at. Written in the style of a pulp romance novel or fashion magazine, this episode features a
+          young woman who performs for the gaze of the novel's protagonist Leopold Bloom, who watches her from the beach
+          while masturbating. This suggests that a count of gendered pronouns is more about who the text is looking at or
+          narrative gaze, and not necessarily a measure of how much empathy the text affords to its female characters.</p>
       </section>
     </div>
 
