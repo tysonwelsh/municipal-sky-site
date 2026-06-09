@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bass Spiral Animation Prototype — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --accent: #55ccff;
+        --accent-bright: #99e0ff;
+        --ink: #99c8de;
+        --ink-dim: #4a7a8c;
+        --surface: #0d0d14;
+        --surface-border: #1a1a2a;
+        --glow: 150, 220, 255;
+      }
+      * { box-sizing: border-box; }
+      body {
+        background: #06090e; color: var(--ink); font-family: "VT323", monospace;
+        margin: 0; padding: 24px 20px 60px; min-height: 100vh; font-size: 16px;
+      }
+      .container { max-width: 880px; margin: 0 auto; }
+      h1 {
+        font-family: "Cinzel Decorative", serif; color: var(--accent-bright);
+        text-align: center; letter-spacing: 2px; margin: 0 0 4px; font-size: 26px;
+        text-shadow: 0 0 12px rgba(var(--glow), 0.5);
+      }
+      .subtitle { text-align: center; color: var(--ink-dim); letter-spacing: 3px; margin: 0 0 20px; font-size: 15px; }
+
+      .toolbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        padding: 12px 14px; background: var(--surface);
+        border: 2px solid var(--surface-border); border-radius: 4px; margin-bottom: 14px;
+      }
+      .group { display: flex; align-items: center; gap: 6px; }
+      .group-label { font-size: 12px; color: var(--ink-dim); letter-spacing: 1px; margin-right: 2px; }
+      .spacer { flex: 1; }
+      .btn {
+        font-family: "VT323", monospace; font-size: 15px; padding: 5px 12px;
+        background: #0a1820; color: var(--ink-dim); border: 2px solid #2a2a3a;
+        border-radius: 3px; cursor: pointer; letter-spacing: 1px;
+      }
+      .btn:hover { border-color: var(--accent); color: var(--accent); }
+      .btn.active { background: var(--accent); color: #06090e; border-color: var(--accent); }
+      .btn.fire { color: var(--accent-bright); border-color: #2e556a; }
+      input[type="range"] {
+        -webkit-appearance: none; appearance: none; height: 6px; width: 100px;
+        background: var(--surface-border); border-radius: 3px; outline: none; cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+        background: var(--accent); box-shadow: 0 0 6px rgba(var(--glow), 0.4); cursor: pointer;
+      }
+      .val { font-size: 13px; color: var(--accent); min-width: 30px; text-align: right; }
+
+      .stage-wrap {
+        position: relative; background: #050a10; border: 1px solid var(--surface-border);
+        border-radius: 6px; overflow: hidden;
+      }
+      canvas { display: block; width: 100%; height: 560px; cursor: grab; }
+      canvas.is-dragging { cursor: grabbing; }
+      .readout {
+        position: absolute; top: 10px; left: 14px; font-size: 14px; color: var(--ink-dim);
+        pointer-events: none; text-shadow: 0 0 6px #000;
+      }
+      .readout b { color: var(--accent-bright); font-weight: 400; }
+      .style-note {
+        margin-top: 14px; padding: 12px 16px; background: var(--surface);
+        border: 1px solid var(--surface-border); border-radius: 4px;
+        font-size: 14px; color: var(--ink); line-height: 1.45; min-height: 44px;
+      }
+      .style-note b { color: var(--accent-bright); font-weight: 400; }
+      .footnote { margin-top: 18px; font-size: 13px; color: var(--ink-dim); text-align: center; line-height: 1.5; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Bass Spiral Animation</h1>
+      <p class="subtitle">~ how should the bass set itself apart on the spiral? ~</p>
+
+      <div class="toolbar">
+        <span class="group-label">STYLE</span>
+        <div class="group" id="styleGroup">
+          <button type="button" class="btn active" data-style="shockwave">Shockwave</button>
+          <button type="button" class="btn" data-style="pillar">Light Pillar</button>
+          <button type="button" class="btn" data-style="throb">Base Throb</button>
+          <button type="button" class="btn" data-style="comet">Comet Node</button>
+        </div>
+        <div class="spacer"></div>
+        <button type="button" class="btn active" id="autoFireBtn">&#9654; AUTO-FIRE</button>
+        <button type="button" class="btn fire" id="fireBtn">&#10022; FIRE</button>
+        <div class="group">
+          <span class="group-label">ACTIVITY</span>
+          <input type="range" id="activity" min="0" max="1" step="0.01" value="0" />
+          <span class="val" id="activityVal">0</span>
+        </div>
+        <button type="button" class="btn active" id="rotBtn">&#8635; AUTO</button>
+        <button type="button" class="btn" id="viewBtn">&#8634; VIEW</button>
+      </div>
+
+      <div class="stage-wrap">
+        <canvas id="spiral"></canvas>
+        <div class="readout">
+          CENTRE <b id="centreOut">F</b> &middot; NOTE <b id="noteOut">—</b> &middot; INTENSITY <b id="intOut">—</b>
+        </div>
+      </div>
+
+      <div class="style-note" id="styleNote"></div>
+
+      <p class="footnote">
+        Faithful to the production spiral (7 octaves, F-anchored, same camera). The bass lives in the
+        bottom 1–2 turns. Drag to rotate. The aleatoric bass model drives it; ACTIVITY forces the
+        narrative arc upward so you can see denser firing. Pick the treatment that best reads as
+        <em>foundation</em> without fighting the chimes/whistle up top.
+      </p>
+    </div>
+
+    <script>
+      "use strict";
+
+      // ---------------------------------------------------------------------
+      // Spiral geometry — copied from prosperos-jukebox-viz.js so this mockup
+      // matches the real thing. F-anchored (Ariel).
+      // ---------------------------------------------------------------------
+      var OCTAVES = 7, BASE_OCTAVE = 1, SAMPLES_PER_TURN = 96;
+      var ANCHOR_PC = 5; // F
+      function anchorFreq(pc, oct) { return 16.35 * Math.pow(2, oct + pc / 12); }
+      var ROW_F_MIN = anchorFreq(ANCHOR_PC, BASE_OCTAVE); // F1 ≈ 43.65 Hz
+      var GLOW = "150, 220, 255";
+
+      var canvas = document.getElementById("spiral");
+      var ctx = canvas.getContext("2d");
+      var cx = 0, cy = 0, baseRadius = 0, octaveStep = 0, peakUp = 0, floorY = 0;
+
+      function resize() {
+        var rect = canvas.getBoundingClientRect();
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(rect.width * dpr);
+        canvas.height = Math.floor(rect.height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+      window.addEventListener("resize", resize);
+
+      // ---------- Camera ----------
+      var DEFAULT_YAW = 0.6, DEFAULT_PITCH = -0.5;
+      var camYaw = DEFAULT_YAW, camPitch = DEFAULT_PITCH, autoRotate = true;
+      var dragging = false, lastMx = 0, lastMy = 0;
+      canvas.addEventListener("mousedown", function (e) { dragging = true; lastMx = e.clientX; lastMy = e.clientY; canvas.classList.add("is-dragging"); });
+      window.addEventListener("mousemove", function (e) {
+        if (!dragging) return;
+        camYaw += (e.clientX - lastMx) * 0.01;
+        camPitch += (e.clientY - lastMy) * 0.01;
+        var lim = Math.PI / 2 - 0.05;
+        camPitch = Math.max(-lim, Math.min(lim, camPitch));
+        lastMx = e.clientX; lastMy = e.clientY;
+      });
+      window.addEventListener("mouseup", function () { dragging = false; canvas.classList.remove("is-dragging"); });
+
+      function project3(x, y, z) {
+        var cy1 = Math.cos(camYaw), sy1 = Math.sin(camYaw);
+        var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
+        var x1 = x * cy1 - z * sy1;
+        var z1 = x * sy1 + z * cy1;
+        var y1 = y * cp1 - z1 * sp1;
+        var z2 = y * sp1 + z1 * cp1;
+        return { sx: cx + x1, sy: cy - y1, z: z2 };
+      }
+
+      // ---------------------------------------------------------------------
+      // Bass note → spiral node. Offset is semitones above F1, so octaveFloat
+      // is just off/12 (the spiral is log2 from ROW_F_MIN).
+      // ---------------------------------------------------------------------
+      function noteToNode(off, vel) {
+        var octaveFloat = off / 12;
+        var theta = (octaveFloat - Math.floor(octaveFloat)) * 2 * Math.PI;
+        var yBase = (octaveFloat - (OCTAVES - 1) / 2) * octaveStep;
+        var yHead = yBase + (0.35 + 0.5 * vel) * peakUp * 0.6;
+        return { octaveFloat: octaveFloat, theta: theta, yBase: yBase, yHead: yHead };
+      }
+      var NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      function noteName(off) {
+        var midi = 29 + off; // F1 = midi 29
+        return NAMES[((midi % 12) + 12) % 12] + (Math.floor(midi / 12) - 1);
+      }
+
+      // ---------------------------------------------------------------------
+      // Aleatoric bass model (trimmed port of the engine's arielBass).
+      // ---------------------------------------------------------------------
+      var CENTER_SEMI = [0, 2, 4, 0];                 // F / G / A / F(Lydian) above F1
+      var CENTER_LABEL = ["F", "G", "A", "F Lydian"];
+      var centerIdx = 0, pendingArrival = false;
+      var driftOffset = 0, startClock = 0, clock = 0;
+      var activityBias = 0;                            // ACTIVITY slider
+
+      function intensity() {
+        var u = clock - startClock;
+        var a = Math.sin(2 * Math.PI * u / 47);
+        var b = Math.sin(2 * Math.PI * u / 73 + 1.3);
+        var base = ((a + b) / 2 + 1) / 2;
+        return Math.max(0, Math.min(1, base * 0.82 + driftOffset + 0.09 + activityBias));
+      }
+      function nudgeDrift() {
+        driftOffset += (Math.random() - 0.5) * 0.05;
+        driftOffset = Math.max(-0.25, Math.min(0.25, driftOffset));
+      }
+      function bassPitch(reach) {
+        var r = Math.random();
+        var off = r < 0.62 ? 0 : (r < 0.85 ? 7 : 4);
+        if (centerIdx === 3 && Math.random() < 0.15) off = 6;
+        if (Math.random() < reach) off += 12;
+        return Math.min(off, 19);
+      }
+
+      // ---------------------------------------------------------------------
+      // Events — each fired note becomes an animation. t0 may be in the future
+      // (figures stagger their notes). vel & kind drive the visuals.
+      // ---------------------------------------------------------------------
+      var events = [];
+      var throb = 0;            // accumulated base-throb energy
+      var noteOut = "—";
+      function fireBass(off, vel, kind, delay) {
+        var node = noteToNode(off, vel);
+        events.push({
+          t0: clock + (delay || 0), octaveFloat: node.octaveFloat,
+          theta: node.theta, yBase: node.yBase, yHead: node.yHead,
+          vel: vel, kind: kind || "note", off: off, throbbed: false,
+        });
+        noteOut = noteName(off);
+      }
+
+      // Auto-fire scheduler (self-timed, arc-scaled — like the engine).
+      var autoFiring = true, fireTimer = null, centerTimer = null;
+      function scheduleCenterDrift() {
+        centerTimer = setTimeout(function () {
+          centerIdx = Math.random() < 0.7 ? (centerIdx + 1) % 4 : Math.floor(Math.random() * 4);
+          pendingArrival = true;
+          scheduleCenterDrift();
+        }, 9000 + Math.random() * 7000);
+      }
+      function autoFire() {
+        if (!autoFiring) return;
+        var I = intensity();
+        var pace = 1 - I * 0.6;
+        var flourishP = Math.min(0.6, 0.2 * (0.35 + I * 1.6));
+        var reachEff = Math.min(1, 0.25 * (0.5 + I * 1.4));
+        var threeP = 0.25 + I * 0.45, gestureP = 0.22 + I * 0.18;
+        var cs = CENTER_SEMI[centerIdx];
+
+        if (pendingArrival) {
+          pendingArrival = false;
+          fireBass(cs, 1.0, "arrival");
+          nudgeDrift();
+          fireTimer = setTimeout(autoFire, (2600 + 0.6 * 5000 + Math.random() * 2500) * pace);
+          return;
+        }
+        var roll = Math.random();
+        if (roll < flourishP) {
+          var n = 2 + Math.floor(Math.random() * 2), t = 0;
+          for (var i = 0; i < n; i++) {
+            var fo = bassPitch(reachEff);
+            if (i === n - 1) fo = Math.random() < 0.6 ? 0 : 7;
+            fireBass(cs + fo, 0.85, "note", t);
+            t += 0.30 + Math.random() * 0.25;
+          }
+        } else if (roll < flourishP + gestureP) {
+          var gLen = Math.random() < threeP ? 3 : 2;
+          var choices = (Math.random() < reachEff) ? [0, 7, 12] : [0, 7];
+          var prev = Math.random() < 0.5 ? 0 : 7, gt = 0;
+          for (var g = 0; g < gLen; g++) {
+            var go = g === 0 ? prev : (g === gLen - 1 ? (Math.random() < 0.6 ? 0 : 7) : choices[Math.floor(Math.random() * choices.length)]);
+            fireBass(cs + go, 0.78 + I * 0.15, "note", gt);
+            gt += 0.45 + Math.random() * 0.4;
+          }
+        } else {
+          var off = Math.random() < 0.72 ? 0 : (Math.random() < reachEff ? 12 : 7);
+          fireBass(cs + off, 0.72 + I * 0.16, "anchor");
+        }
+        nudgeDrift();
+        fireTimer = setTimeout(autoFire, (3000 + 0.6 * 7000 + Math.random() * 4000) * pace);
+      }
+
+      // ---------------------------------------------------------------------
+      // Spiral backdrop — faint helix, low two octaves (the bass band) tinted
+      // brighter so you can see where the bass operates.
+      // ---------------------------------------------------------------------
+      function drawSpiral() {
+        var prev = null;
+        for (var o = 0; o < OCTAVES; o++) {
+          for (var b = 0; b <= SAMPLES_PER_TURN; b++) {
+            var bb = b % SAMPLES_PER_TURN;
+            var theta = (bb / SAMPLES_PER_TURN) * 2 * Math.PI;
+            var shimmer = Math.sin(bb * 0.3 + clock * 0.8 + o) * octaveStep * 0.03;
+            var yWorld = (o + bb / SAMPLES_PER_TURN - (OCTAVES - 1) / 2) * octaveStep + shimmer;
+            var p = project3(baseRadius * Math.cos(theta), yWorld, baseRadius * Math.sin(theta));
+            if (b > 0 && prev) {
+              var depth = (p.z + baseRadius * 2) / (baseRadius * 4); // ~0..1
+              depth = Math.max(0, Math.min(1, depth));
+              var bassBand = o < 2;
+              var alpha = (bassBand ? 0.30 : 0.13) * (0.45 + 0.55 * depth);
+              ctx.strokeStyle = "rgba(" + GLOW + "," + alpha.toFixed(3) + ")";
+              ctx.lineWidth = bassBand ? 1.6 : 1.0;
+              ctx.beginPath(); ctx.moveTo(prev.sx, prev.sy); ctx.lineTo(p.sx, p.sy); ctx.stroke();
+            }
+            prev = (b === SAMPLES_PER_TURN) ? null : p;
+          }
+        }
+        // F anchor seam (θ=0), floor to ceiling
+        var pa = project3(baseRadius, floorY, 0);
+        var pb = project3(baseRadius, -floorY, 0);
+        ctx.strokeStyle = "rgba(" + GLOW + ",0.10)";
+        ctx.setLineDash([4, 6]); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(pa.sx, pa.sy); ctx.lineTo(pb.sx, pb.sy); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // ---------------------------------------------------------------------
+      // Animation styles. Each consumes the active `events` list.
+      // ---------------------------------------------------------------------
+      var STYLE_NOTES = {
+        shockwave: "<b>Shockwave.</b> Each bass hit emits expanding rings from its node on the spiral surface — a percussive ripple that travels and fades. Reads as impact; very legible for sparse, stretched firing.",
+        pillar: "<b>Light Pillar.</b> A vertical beam of light rises from the spiral floor to the note's height and decays. Emphasises the bass as the structural <em>foundation</em> holding up everything above.",
+        throb: "<b>Base Throb.</b> The whole bottom turn breathes — a glowing ring + floor disc that swells with every hit and settles between them. The bass becomes the heartbeat under the scene rather than discrete events.",
+        comet: "<b>Comet Node.</b> A bright white-cyan head blooms at the note and rings down over its full sustain, trailing a short tail along the spiral. Distinct colour + persistence set it apart from the amber/cyan ribbon.",
+      };
+      var style = "shockwave";
+
+      function nodeWorld(ev, useHead) {
+        var y = useHead ? ev.yHead : ev.yBase;
+        return project3(baseRadius * Math.cos(ev.theta), y, baseRadius * Math.sin(ev.theta));
+      }
+
+      function drawShockwave(ev, age) {
+        var life = ev.kind === "arrival" ? 1.9 : 1.3;
+        if (age > life) return false;
+        var p = nodeWorld(ev, false);
+        var rings = ev.kind === "arrival" ? 3 : 2;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        for (var r = 0; r < rings; r++) {
+          var prog = (age - r * 0.18) / life;
+          if (prog < 0 || prog > 1) continue;
+          var R = prog * (ev.kind === "arrival" ? 95 : 64) * (0.6 + ev.vel * 0.6);
+          var a = (1 - prog) * 0.8 * ev.vel;
+          ctx.strokeStyle = "rgba(" + GLOW + "," + a.toFixed(3) + ")";
+          ctx.lineWidth = 2.2 * (1 - prog) + 0.4;
+          ctx.beginPath(); ctx.arc(p.sx, p.sy, R, 0, Math.PI * 2); ctx.stroke();
+        }
+        // bright core dot at the strike
+        var c = (1 - age / life) * ev.vel;
+        ctx.fillStyle = "rgba(" + GLOW + "," + (0.9 * c).toFixed(3) + ")";
+        ctx.beginPath(); ctx.arc(p.sx, p.sy, 3 + 2 * c, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        return true;
+      }
+
+      function drawPillar(ev, age) {
+        var life = ev.kind === "arrival" ? 2.2 : 1.6;
+        if (age > life) return false;
+        var bx = baseRadius * Math.cos(ev.theta), bz = baseRadius * Math.sin(ev.theta);
+        var pFloor = project3(bx, floorY, bz);
+        var rise = Math.min(1, age / 0.25);                  // grow up quickly
+        var topY = floorY + (ev.yHead - floorY) * rise;
+        var pTop = project3(bx, topY, bz);
+        var a = (1 - age / life) * (0.35 + 0.55 * ev.vel);
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        var grad = ctx.createLinearGradient(pFloor.sx, pFloor.sy, pTop.sx, pTop.sy);
+        grad.addColorStop(0, "rgba(" + GLOW + ",0)");
+        grad.addColorStop(1, "rgba(" + GLOW + "," + a.toFixed(3) + ")");
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = (ev.kind === "arrival" ? 7 : 4.5) * (0.5 + ev.vel * 0.5);
+        ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(pFloor.sx, pFloor.sy); ctx.lineTo(pTop.sx, pTop.sy); ctx.stroke();
+        // head bloom
+        var grad2 = ctx.createRadialGradient(pTop.sx, pTop.sy, 1, pTop.sx, pTop.sy, 14);
+        grad2.addColorStop(0, "rgba(" + GLOW + "," + (a * 1.1).toFixed(3) + ")");
+        grad2.addColorStop(1, "rgba(" + GLOW + ",0)");
+        ctx.fillStyle = grad2;
+        ctx.beginPath(); ctx.arc(pTop.sx, pTop.sy, 14, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        return true;
+      }
+
+      function drawThrobBase() {
+        // bottom turn ring + floor disc, brightness from accumulated `throb`
+        var glowAmt = Math.min(1.3, throb);
+        var ringR = baseRadius * (1 + 0.05 * glowAmt);
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        ctx.beginPath();
+        for (var b = 0; b <= SAMPLES_PER_TURN; b++) {
+          var theta = (b % SAMPLES_PER_TURN) / SAMPLES_PER_TURN * 2 * Math.PI;
+          var p = project3(ringR * Math.cos(theta), floorY, ringR * Math.sin(theta));
+          if (b === 0) ctx.moveTo(p.sx, p.sy); else ctx.lineTo(p.sx, p.sy);
+        }
+        ctx.strokeStyle = "rgba(" + GLOW + "," + (0.18 + 0.55 * glowAmt).toFixed(3) + ")";
+        ctx.lineWidth = 1.5 + 3 * glowAmt; ctx.stroke();
+        // floor disc glow at centre of the bottom turn
+        var pc = project3(0, floorY, 0);
+        var grad = ctx.createRadialGradient(pc.sx, pc.sy, 2, pc.sx, pc.sy, baseRadius * 0.9);
+        grad.addColorStop(0, "rgba(" + GLOW + "," + (0.10 + 0.22 * glowAmt).toFixed(3) + ")");
+        grad.addColorStop(1, "rgba(" + GLOW + ",0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(pc.sx, pc.sy, baseRadius * 0.9, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+      function drawThrobHit(ev, age) {
+        var life = 0.6; if (age > life) return false;
+        if (!ev.throbbed) { ev.throbbed = true; } // energy added on fire below
+        var p = nodeWorld(ev, false);
+        var a = (1 - age / life) * 0.7 * ev.vel;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        ctx.fillStyle = "rgba(" + GLOW + "," + a.toFixed(3) + ")";
+        ctx.beginPath(); ctx.arc(p.sx, p.sy, 3 + 3 * (1 - age / life), 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        return true;
+      }
+
+      function drawComet(ev, age) {
+        var life = ev.kind === "arrival" ? 3.0 : 2.4;
+        if (age > life) return false;
+        var p = nodeWorld(ev, true);
+        var decay = Math.exp(-age * 1.3) * ev.vel;
+        ctx.save(); ctx.globalCompositeOperation = "lighter";
+        // tail along the spiral (a few samples behind in theta)
+        for (var t = 1; t <= 6; t++) {
+          var th = ev.theta - t * 0.05;
+          var pt = project3(baseRadius * Math.cos(th), ev.yHead - t * octaveStep * 0.015, baseRadius * Math.sin(th));
+          var ta = decay * (1 - t / 7) * 0.5;
+          ctx.fillStyle = "rgba(" + GLOW + "," + ta.toFixed(3) + ")";
+          ctx.beginPath(); ctx.arc(pt.sx, pt.sy, 2.5 * (1 - t / 8), 0, Math.PI * 2); ctx.fill();
+        }
+        // one expanding halo ring early
+        if (age < 0.7) {
+          var prog = age / 0.7, R = prog * 30 * (0.6 + ev.vel * 0.6);
+          ctx.strokeStyle = "rgba(" + GLOW + "," + ((1 - prog) * 0.6 * ev.vel).toFixed(3) + ")";
+          ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(p.sx, p.sy, R, 0, Math.PI * 2); ctx.stroke();
+        }
+        // glowing head + white core that pulses through the ring-down
+        var pulse = 0.7 + 0.3 * Math.sin(age * 9);
+        var grad = ctx.createRadialGradient(p.sx, p.sy, 1, p.sx, p.sy, 18);
+        grad.addColorStop(0, "rgba(" + GLOW + "," + (decay * pulse).toFixed(3) + ")");
+        grad.addColorStop(1, "rgba(" + GLOW + ",0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(p.sx, p.sy, 18, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(220,245,255," + Math.min(1, decay * 1.2).toFixed(3) + ")";
+        ctx.beginPath(); ctx.arc(p.sx, p.sy, 3.2 + 1.5 * decay, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        return true;
+      }
+
+      // ---------------------------------------------------------------------
+      // Main loop
+      // ---------------------------------------------------------------------
+      var centreOut = document.getElementById("centreOut");
+      var noteOutEl = document.getElementById("noteOut");
+      var intOut = document.getElementById("intOut");
+
+      function tick(ts) {
+        requestAnimationFrame(tick);
+        clock = ts / 1000;
+        if (startClock === 0) startClock = clock;
+        if (autoRotate) camYaw += 0.0015;
+        throb *= 0.94; // decay base-throb energy each frame
+
+        var rect = canvas.getBoundingClientRect();
+        var w = rect.width, h = rect.height;
+        cx = w / 2; cy = h / 2;
+        baseRadius = Math.min(w, h) * 0.22;
+        octaveStep = baseRadius * 0.55;
+        peakUp = octaveStep * 1.5;
+        floorY = -((OCTAVES - 1) / 2) * octaveStep - octaveStep * 0.5;
+
+        ctx.fillStyle = "#06090e";
+        ctx.fillRect(0, 0, w, h);
+
+        drawSpiral();
+        if (style === "throb") drawThrobBase();
+
+        // draw + prune events
+        var keep = [];
+        for (var i = 0; i < events.length; i++) {
+          var ev = events[i];
+          var age = clock - ev.t0;
+          if (age < 0) { keep.push(ev); continue; }      // scheduled in the future
+          // add throb energy once, when the note actually sounds
+          if (style === "throb" && !ev.throbbed) { throb += ev.vel * 0.7; ev.throbbed = true; }
+          var alive;
+          if (style === "shockwave") alive = drawShockwave(ev, age);
+          else if (style === "pillar") alive = drawPillar(ev, age);
+          else if (style === "throb") alive = drawThrobHit(ev, age);
+          else alive = drawComet(ev, age);
+          if (alive) keep.push(ev);
+        }
+        events = keep;
+
+        centreOut.textContent = CENTER_LABEL[centerIdx];
+        noteOutEl.textContent = noteOut;
+        intOut.textContent = (autoFiring ? intensity() : 0).toFixed(2).replace(/^0/, "");
+      }
+
+      // ---------------------------------------------------------------------
+      // UI wiring
+      // ---------------------------------------------------------------------
+      document.getElementById("styleGroup").addEventListener("click", function (e) {
+        var b = e.target.closest(".btn"); if (!b) return;
+        style = b.dataset.style;
+        this.querySelectorAll(".btn").forEach(function (x) { x.classList.toggle("active", x === b); });
+        document.getElementById("styleNote").innerHTML = STYLE_NOTES[style];
+      });
+      var autoFireBtn = document.getElementById("autoFireBtn");
+      autoFireBtn.addEventListener("click", function () {
+        autoFiring = !autoFiring;
+        autoFireBtn.classList.toggle("active", autoFiring);
+        if (autoFiring) { autoFire(); }
+        else if (fireTimer) { clearTimeout(fireTimer); fireTimer = null; }
+      });
+      document.getElementById("fireBtn").addEventListener("click", function () {
+        var cs = CENTER_SEMI[centerIdx];
+        var off = Math.random() < 0.5 ? 0 : (Math.random() < 0.6 ? 7 : 12);
+        fireBass(cs + off, 0.9, "note");
+      });
+      var activity = document.getElementById("activity");
+      activity.addEventListener("input", function () {
+        activityBias = parseFloat(activity.value);
+        document.getElementById("activityVal").textContent = activityBias.toFixed(2).replace(/^0/, "");
+      });
+      var rotBtn = document.getElementById("rotBtn");
+      rotBtn.addEventListener("click", function () { autoRotate = !autoRotate; rotBtn.classList.toggle("active", autoRotate); });
+      document.getElementById("viewBtn").addEventListener("click", function () { camYaw = DEFAULT_YAW; camPitch = DEFAULT_PITCH; });
+
+      // ---------------------------------------------------------------------
+      // Boot
+      // ---------------------------------------------------------------------
+      resize();
+      document.getElementById("styleNote").innerHTML = STYLE_NOTES[style];
+      scheduleCenterDrift();
+      autoFire();
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>

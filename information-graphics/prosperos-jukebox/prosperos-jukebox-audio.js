@@ -82,18 +82,18 @@ window.ProsperoAudio = (function () {
 
   // Ambient event pool — [type, weight]
   var LIB_AMBIENT_POOL = [
-    ["page_turn", 30],
-    ["quill_scratch", 25],
-    ["clock_cluster", 15],
-    ["distant_chime", 15],
-    ["book_thud", 10],
-    ["creak", 5],
-    ["spell_wheeze", 8],
-    ["owl_hoot", 10],
-    ["distant_waves", 8],
-    ["candle_sputter", 12],
-    ["ink_drip", 8],
-    ["whispered_word", 6],
+    ["page_turn", 10],
+    ["quill_scratch", 20],
+    ["clock_cluster", 17],
+    ["book_thud", 12],
+    ["spell_wheeze", 11],
+    ["owl_hoot", 12],
+    ["distant_waves", 10],
+    ["candle_sputter", 14],
+    ["ink_drip", 11],
+    ["whispered_word", 9],
+    ["footsteps_distant", 12],
+    ["ember_pop", 14],
   ];
 
   // ==========================================================================
@@ -141,11 +141,10 @@ window.ProsperoAudio = (function () {
     ["distant_thunder", 12],
     ["glass_shatter", 8],
     ["raven_cry", 15],
-    ["dripping_water", 20],
     ["wind_howl", 18],
-    ["bone_crack", 10],
     ["spectral_moan", 12],
     ["cauldron_bubble", 10],
+    ["witch_cackle", 10],
   ];
 
   // ==========================================================================
@@ -201,12 +200,35 @@ window.ProsperoAudio = (function () {
   var ARIEL_AMBIENT_POOL = [
     ["giggle", 12],
     ["birdsong", 18],
-    ["splash", 10],
     ["breeze_gust", 20],
     ["sparkle", 15],
     ["leaf_rustle", 15],
     ["cricket", 10],
+    ["wind_chime", 14],
+    ["bumble_bee", 10],
+    ["bubble_pop", 12],
   ];
+
+  // F Lydian across six octaves (F2..A7). Used to snap pitched ambient events
+  // (wind_chime, bumble_bee, bubble_pop) onto the song's key so sustained
+  // tonal content aligns with the breeze drone instead of clashing with it.
+  var ARIEL_F_LYDIAN_HZ = [
+    87.31, 98, 110, 123.47, 130.81, 146.83, 164.81,
+    174.61, 196, 220, 246.94, 261.63, 293.66, 329.63,
+    349.23, 392, 440, 493.88, 523.25, 587.33, 659.26,
+    698.46, 783.99, 880, 987.77, 1046.5, 1174.66, 1318.51,
+    1396.91, 1567.98, 1760, 1975.53, 2093, 2349.32, 2637.02,
+    2793.83, 3135.96, 3520, 3951.07,
+  ];
+  function arielSnapToScale(hz) {
+    var best = ARIEL_F_LYDIAN_HZ[0];
+    var bestDiff = Math.abs(hz - best);
+    for (var i = 1; i < ARIEL_F_LYDIAN_HZ.length; i++) {
+      var d = Math.abs(hz - ARIEL_F_LYDIAN_HZ[i]);
+      if (d < bestDiff) { bestDiff = d; best = ARIEL_F_LYDIAN_HZ[i]; }
+    }
+    return best;
+  }
 
   // Whistle motif cluster weights — tuned in whistle-motifs-sandbox.html.
   // Renormalized internally. Phrase is the anchor; Lydian + Trill weighted
@@ -436,6 +458,22 @@ window.ProsperoAudio = (function () {
       if (r <= 0) return pool[i][0];
     }
     return pool[0][0];
+  }
+
+  // Variety-aware pool pick. Re-maps the pool's weights by a curve based on
+  // the variety key:
+  //   "uniform"  → every entry equally likely (flat distribution)
+  //   "default"  → engine pool weights as-is (current behavior)
+  //   "focused"  → each weight squared, so the common entries dominate even more
+  function weightedChoiceVariety(pool, variety) {
+    if (!variety || variety === "default") return weightedChoice(pool);
+    var remap = pool.map(function (entry) {
+      var w = entry[1];
+      if (variety === "uniform") w = 1;
+      else if (variety === "focused") w = w * w;
+      return [entry[0], w];
+    });
+    return weightedChoice(remap);
   }
 
   // ==========================================================================
@@ -705,12 +743,20 @@ window.ProsperoAudio = (function () {
   // Subscribers for layer events (visualization consumers). Each listener
   // receives the underlying generative data — frequencies, timings,
   // envelope — so visuals can be grounded in real signal structure.
-  var droneListener = null;
+  // Listener channels. Each is an array (multi-cast). setXListener appends;
+  // setXListener(null) clears all subscribers. Multi-cast lets the spiral
+  // viz, the event log, and any future consumer all subscribe simultaneously.
+  var droneListeners = [];
   // (event) => void. Event shapes:
   //   { type:'fire', track, layer, time, motifId, cluster, action, transform }
+  //   { type:'fire', track, layer, time, detail }   (simple non-motif events)
   //   { type:'clear', track }
-  // Single channel for all motif-bearing layers across all tracks.
-  var motifListener = null;
+  // Single channel for every motif-bearing or note-emitting layer.
+  var motifListeners = [];
+  // (event) => void. Fires whenever an ambient pool event is chosen, so a
+  // visualization or debug log can see which specific event played.
+  // Event shape: { type:'fire', track, layer:'ambient', event:'page_turn'|..., time }
+  var ambientListeners = [];
   var harmonicListener = null;   // (event) => void; event: {type:'change', track, harmonicIdx, chord, drone}
   var nextMotifId = 1;           // monotonic id assigned by captureMotif
   var harmonicIdx = 0;           // index of the drone pair currently sounding
@@ -718,7 +764,32 @@ window.ProsperoAudio = (function () {
   var previewEndTimer = null;   // setTimeout handle that ends the preview
   var previewTrack = null;      // track currently being previewed (for listener)
   var previewLayer = null;      // layer currently being previewed (for listener)
-  var previewListener = null;   // (track, layer, active) => void
+  var previewListeners = [];    // (track, layer, active) => void
+
+  // Generic multi-cast emit helper. Used by every listener fan-out point.
+  function emitMulticast(channel, args) {
+    for (var i = 0; i < channel.length; i++) {
+      try { channel[i].apply(null, args); }
+      catch (e) { console.error("listener threw:", e); }
+    }
+  }
+
+  // Per-track:layer most-recent fire timestamp. Used by silent layers
+  // (clock / heartbeat) to emit a single "start" log entry when they
+  // re-engage after a gap, rather than flooding the log per-tick.
+  var lastFireTime = {};
+  function maybeEmitSessionStart(track, layer, t) {
+    var key = track + ":" + layer;
+    var last = lastFireTime[key] || 0;
+    var gap = t - last;
+    lastFireTime[key] = t;
+    if (gap > 5) {
+      emitMotifEvent({
+        type: "fire", track: track, layer: layer, time: t,
+        detail: "start",
+      });
+    }
+  }
   var PREVIEW_DURATION_MS = 12000;
   var currentTrack = "library"; // 'library', 'sycorax', or 'ariel'
   var sharedNoiseBuf = null; // Pre-generated 30s noise buffer, reused everywhere
@@ -770,6 +841,7 @@ window.ProsperoAudio = (function () {
     },
     ariel: {
       breeze: null,
+      bass: null,
       chimes: null,
       flutter: null,
       bubbles: null,
@@ -785,10 +857,17 @@ window.ProsperoAudio = (function () {
   var layerVolumes = {
     library: {
       drone: DEFAULT_LAYER_VOL,
-      melody: DEFAULT_LAYER_VOL,
+      // Broadband Karplus-Strong + brief envelope means the harpsichord
+      // shows up much fainter on the spiral than the drone at the same
+      // slider position. Default slider sits higher to compensate.
+      melody: 1.0,
       musicBox: DEFAULT_LAYER_VOL,
       clock: DEFAULT_LAYER_VOL,
-      hum: DEFAULT_LAYER_VOL,
+      // Hum's bandpass-stack synthesis sits ~half as loud at source as the
+      // other layers, and its spectral footprint is two narrow formant
+      // peaks (not the note's fundamental), so a higher default slider
+      // pulls it back into the mix and onto the spiral.
+      hum: 1.0,
       ambient: DEFAULT_LAYER_VOL,
     },
     sycorax: {
@@ -802,6 +881,7 @@ window.ProsperoAudio = (function () {
     },
     ariel: {
       breeze: DEFAULT_LAYER_VOL,
+      bass: DEFAULT_LAYER_VOL,
       chimes: DEFAULT_LAYER_VOL,
       flutter: DEFAULT_LAYER_VOL,
       bubbles: DEFAULT_LAYER_VOL,
@@ -830,6 +910,7 @@ window.ProsperoAudio = (function () {
     },
     ariel: {
       breeze: false,
+      bass: false,
       chimes: false,
       flutter: false,
       bubbles: false,
@@ -843,7 +924,7 @@ window.ProsperoAudio = (function () {
   var layerRate = {
     library: { melody: 1, musicBox: 1, clock: 1, hum: 1, ambient: 1 },
     sycorax: { whispers: 1, ghost: 1, heartbeat: 1, scrape: 1, waterphone: 1, ambient: 1 },
-    ariel: { chimes: 1, flutter: 1, bubbles: 1, whistle: 1, ambient: 1 },
+    ariel: { bass: 1, chimes: 1, flutter: 1, bubbles: 1, whistle: 1, ambient: 1 },
   };
 
   // Per-layer volume trim applied on top of slider value (1.0 = no trim).
@@ -1200,9 +1281,34 @@ window.ProsperoAudio = (function () {
     emitHarmonicChange("library");
     droneIdx = (droneIdx + 1) % LIB_DRONE_PAIRS.length;
 
-    var duration = 17 + Math.random() * 6;
+    // Mixer-exposed knobs. CYCLE LENGTH is a min/max range — duration is
+    // picked uniformly within it. Clamp max >= min so swapping the sliders
+    // can't produce negative durations.
+    var cycleMin = getLayerParam("library", "drone", "cycleMin", 17);
+    var cycleMax = getLayerParam("library", "drone", "cycleMax", 23);
+    if (cycleMax < cycleMin) cycleMax = cycleMin;
+    var duration = cycleMin + Math.random() * (cycleMax - cycleMin);
     var fadeIn = 3;
     var fadeOut = 3;
+    var LIB_LP_CUTOFF = getLayerParam("library", "drone", "warmth", 240);
+    var LIB_TREM_DEPTH = getLayerParam("library", "drone", "movement", 0.19);
+    var LIB_TREM_RATE = getLayerParam("library", "drone", "tremoloRate", 0.7);
+
+    // Shared tremolo bus. Base = 1 - depth/2, LFO swings ±depth/2 →
+    // envelope ranges from (1 - depth) up to 1. Each partial and the
+    // sub-octave route through this bus so the modulation is coherent.
+    var tremBus = c.createGain();
+    tremBus.gain.setValueAtTime(1 - LIB_TREM_DEPTH / 2, now);
+    var tremLFO = c.createOscillator();
+    tremLFO.type = "sine";
+    tremLFO.frequency.setValueAtTime(LIB_TREM_RATE, now);
+    var tremDepth = c.createGain();
+    tremDepth.gain.setValueAtTime(LIB_TREM_DEPTH / 2, now);
+    tremLFO.connect(tremDepth);
+    tremDepth.connect(tremBus.gain);
+    tremBus.connect(out);
+    tremLFO.start(now);
+    tremLFO.stop(now + duration + 0.1);
 
     for (var fi = 0; fi < pair.length; fi++) {
       var freq = pair[fi];
@@ -1212,10 +1318,10 @@ window.ProsperoAudio = (function () {
       o.type = "triangle";
       o.frequency.setValueAtTime(freq, now);
       f.type = "lowpass";
-      f.frequency.setValueAtTime(180, now);
+      f.frequency.setValueAtTime(LIB_LP_CUTOFF, now);
       o.connect(f);
       f.connect(g);
-      g.connect(out);
+      g.connect(tremBus);
       g.gain.setValueAtTime(0, now);
       g.gain.linearRampToValueAtTime(0.09, now + fadeIn);
       g.gain.setValueAtTime(0.09, now + duration - fadeOut);
@@ -1224,8 +1330,9 @@ window.ProsperoAudio = (function () {
       o.stop(now + duration + 0.1);
     }
 
-    // 30% sub-octave sine for depth
-    var hasSub = Math.random() < 0.3;
+    // SUB CHANCE knob: probability that this cycle includes the sub-octave sine.
+    var subChance = getLayerParam("library", "drone", "subChance", 0.3);
+    var hasSub = Math.random() < subChance;
     var subFreq = hasSub ? pair[0] / 2 : null;
     if (hasSub) {
       var o2 = c.createOscillator();
@@ -1233,7 +1340,7 @@ window.ProsperoAudio = (function () {
       o2.type = "sine";
       o2.frequency.setValueAtTime(subFreq, now);
       o2.connect(g2);
-      g2.connect(out);
+      g2.connect(tremBus);
       g2.gain.setValueAtTime(0, now);
       g2.gain.linearRampToValueAtTime(0.03, now + fadeIn);
       g2.gain.setValueAtTime(0.03, now + duration - fadeOut);
@@ -1245,21 +1352,17 @@ window.ProsperoAudio = (function () {
     // Broadcast cycle data for visualizers. Listener receives the actual
     // generative state — frequencies, envelope shape, timing — so the viz
     // can be grounded in the real signal structure rather than guessed.
-    if (droneListener) {
-      try {
-        droneListener({
-          track: "library",
-          startTime: now,
-          duration: duration,
-          fadeIn: fadeIn,
-          fadeOut: fadeOut,
-          peakGain: 0.09,
-          frequencies: pair.slice(),
-          subFreq: subFreq,
-          subPeakGain: hasSub ? 0.03 : 0,
-        });
-      } catch (e) { console.error("droneListener threw:", e); }
-    }
+    emitDroneEvent({
+      track: "library",
+      startTime: now,
+      duration: duration,
+      fadeIn: fadeIn,
+      fadeOut: fadeOut,
+      peakGain: 0.09,
+      frequencies: pair.slice(),
+      subFreq: subFreq,
+      subPeakGain: hasSub ? 0.03 : 0,
+    });
 
     var overlap = 2 + Math.random() * 3;
     scheduleLib(libraryDrone, (duration - overlap) * 1000);
@@ -1279,30 +1382,41 @@ window.ProsperoAudio = (function () {
     n.buffer = buf;
     n.loop = true;
 
+    // BRIGHTNESS = pluck filter freq multiplier (sparklier vs mellower).
+    // RESONANCE = pluck filter Q (thumpy vs stringy).
+    var pluckBright = getLayerParam("library", "melody", "brightness", 3.0);
+    var pluckQ      = getLayerParam("library", "melody", "resonance", 0.5);
     var pf = c.createBiquadFilter();
     pf.type = "lowpass";
-    pf.frequency.setValueAtTime(freq * 3, startTime);
+    pf.frequency.setValueAtTime(freq * pluckBright, startTime);
     pf.frequency.exponentialRampToValueAtTime(freq * 0.8, startTime + duration * 0.8);
-    pf.Q.setValueAtTime(0.5, startTime);
+    pf.Q.setValueAtTime(pluckQ, startTime);
 
     var pg = c.createGain();
     n.connect(pf);
     pf.connect(pg);
     pg.connect(out);
-    pg.gain.setValueAtTime(0.09 * gainMult, startTime);
-    pg.gain.exponentialRampToValueAtTime(0.03 * gainMult, startTime + 0.15);
+    // Peak bumped from 0.09 → 0.14 so the pluck transient's spread-spectrum
+    // energy registers on the spiral. The harpsichord's per-bin magnitude
+    // is intrinsically ~10× lower than a drone partial (broadband Karplus-
+    // Strong vs single-bin triangle), and a 150 ms decay leaves it on
+    // screen only a few frames. Tail decay times unchanged so the note's
+    // shape and length still feel right.
+    pg.gain.setValueAtTime(0.14 * gainMult, startTime);
+    pg.gain.exponentialRampToValueAtTime(0.045 * gainMult, startTime + 0.15);
     pg.gain.linearRampToValueAtTime(0, startTime + duration);
     n.start(startTime);
     n.stop(startTime + duration + 0.01);
 
-    // Octave harmonic
+    // Octave harmonic — SPARKLE knob scales its gain (0 = pure fundamental).
+    var sparkle = getLayerParam("library", "melody", "sparkle", 0.03);
     var ho = c.createOscillator();
     var hg = c.createGain();
     ho.type = "sine";
     ho.frequency.setValueAtTime(freq * 2, startTime);
     ho.connect(hg);
     hg.connect(out);
-    hg.gain.setValueAtTime(0.03 * gainMult, startTime);
+    hg.gain.setValueAtTime(sparkle * gainMult, startTime);
     hg.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
     hg.gain.linearRampToValueAtTime(0, startTime + 0.4);
     ho.start(startTime);
@@ -1587,9 +1701,24 @@ window.ProsperoAudio = (function () {
   }
 
   function emitMotifEvent(ev) {
-    if (!motifListener) return;
-    try { motifListener(ev); }
-    catch (e) { console.error("motifListener threw:", e); }
+    if (motifListeners.length === 0) return;
+    emitMulticast(motifListeners, [ev]);
+  }
+  function emitDroneEvent(payload)   { emitMulticast(droneListeners,   [payload]); }
+  function emitAmbientEvent(payload) { emitMulticast(ambientListeners, [payload]); }
+  function emitPreviewEvent(track, layer, active) {
+    emitMulticast(previewListeners, [track, layer, active]);
+  }
+
+  // Convert a frequency in Hz to a scientific-pitch note name (e.g. C5).
+  // Used by silent-layer log emits so each row has a humanly meaningful detail.
+  var NOTE_NAMES_FLAT = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+  function freqToNoteName(hz) {
+    if (!hz || hz <= 0) return "";
+    var midi = 69 + 12 * Math.log2(hz / 440);
+    var rounded = Math.round(midi);
+    var octave = Math.floor(rounded / 12) - 1;
+    return NOTE_NAMES_FLAT[((rounded % 12) + 12) % 12] + octave;
   }
 
   // Total elapsed time of a motif: max(note.offset + note.dur) across notes.
@@ -1774,9 +1903,16 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("library", "musicBox");
 
-    var isRun = Math.random() < 0.2;
+    // CLUSTER = probability of a 2-3 note quick run vs a single ping.
+    // DECAY  = per-note duration scale.
+    // SHIMMER = 3rd-harmonic overtone gain (sparkly metallic character).
+    var clusterProb = getLayerParam("library", "musicBox", "cluster", 0.2);
+    var decayScale  = getLayerParam("library", "musicBox", "decay", 1.0);
+    var shimmerGain = getLayerParam("library", "musicBox", "shimmer", 0.006);
+    var isRun = Math.random() < clusterProb;
     var noteCount = isRun ? 2 + Math.floor(Math.random() * 2) : 1;
     var chordTones = getChordTonesFor("library", "musicBox");
+    var firstFreq = null;
 
     for (var ni = 0; ni < noteCount; ni++) {
       var offset = ni * 0.15;
@@ -1789,7 +1925,8 @@ window.ProsperoAudio = (function () {
         boxIdx = markovNextChordBiased(LIB_BOX_MARKOV[boxIdx], chordTones, HARMONIC_BIAS_BASE);
       }
       var freq = LIB_SCALE_5[boxIdx];
-      var dur = 0.6 + Math.random() * 0.4;
+      if (firstFreq === null) firstFreq = freq;
+      var dur = (0.6 + Math.random() * 0.4) * decayScale;
 
       var o = c.createOscillator();
       var g = c.createGain();
@@ -1804,18 +1941,26 @@ window.ProsperoAudio = (function () {
       o.start(t);
       o.stop(t + dur + 0.01);
 
-      // 3rd-harmonic overtone
+      // 3rd-harmonic overtone (gain controlled by SHIMMER knob)
       var h = c.createOscillator();
       var hg = c.createGain();
       h.type = "sine";
       h.frequency.setValueAtTime(freq * 3, t);
       h.connect(hg);
       hg.connect(out);
-      hg.gain.setValueAtTime(0.006, t);
+      hg.gain.setValueAtTime(shimmerGain, t);
       hg.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.5);
       hg.gain.linearRampToValueAtTime(0, t + dur * 0.6);
       h.start(t);
       h.stop(t + dur + 0.01);
+    }
+
+    if (firstFreq !== null) {
+      emitMotifEvent({
+        type: "fire", track: "library", layer: "musicBox", time: now,
+        detail: freqToNoteName(firstFreq) +
+                (noteCount > 1 ? " · " + noteCount + " notes" : ""),
+      });
     }
 
     var gap = isRun
@@ -1831,17 +1976,34 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lg("library", "clock");
 
+    // Emit a "start" log entry only when the clock re-engages after a
+    // gap (>5 s of silence), not every tick. Avoids flooding the log.
+    maybeEmitSessionStart("library", "clock", now);
+
+    // PITCH    = tick/tock frequency multiplier (grandfather → wristwatch).
+    // WANDER   = inter-tick drift range (ms), 0 = mechanical precision.
+    // MISCHIEF = combined probability of a skip or a double-tick (2/3 skip,
+    //            1/3 double — matches the original 10% / 5% split when
+    //            MISCHIEF = 0.15).
+    var clockPitch    = getLayerParam("library", "clock", "pitch", 1.0);
+    var clockWander   = getLayerParam("library", "clock", "wander", 60);
+    var clockMischief = getLayerParam("library", "clock", "mischief", 0.15);
+    var skipProb    = clockMischief * (2 / 3);
+    var doubleProb  = clockMischief * (1 / 3);
+
     var rnd = Math.random();
 
-    // 10% skip
-    if (rnd < 0.1) {
+    // Skip
+    if (rnd < skipProb) {
       tickState = !tickState;
-      scheduleWithRate(libraryClock, 800 + (Math.random() * 60 - 30), "library", "clock");
+      scheduleWithRate(libraryClock,
+        800 + (Math.random() * clockWander - clockWander / 2),
+        "library", "clock");
       return;
     }
 
-    // 5% double-tick
-    var doDouble = rnd >= 0.1 && rnd < 0.15;
+    // Double-tick
+    var doDouble = rnd >= skipProb && rnd < skipProb + doubleProb;
     var ticks = doDouble ? 2 : 1;
 
     for (var i = 0; i < ticks; i++) {
@@ -1849,11 +2011,13 @@ window.ProsperoAudio = (function () {
       var isTock = tickState;
       tickState = !tickState;
 
+      var fStart = (isTock ? 1800 : 2200) * clockPitch;
+      var fEnd   = (isTock ? 1200 : 1600) * clockPitch;
       var o = c.createOscillator();
       var g = c.createGain();
       o.type = "sine";
-      o.frequency.setValueAtTime(isTock ? 1800 : 2200, t);
-      o.frequency.exponentialRampToValueAtTime(isTock ? 1200 : 1600, t + 0.008);
+      o.frequency.setValueAtTime(fStart, t);
+      o.frequency.exponentialRampToValueAtTime(fEnd, t + 0.008);
       o.connect(g);
       g.connect(out);
       g.gain.setValueAtTime(isTock ? 0.0096 : 0.0144, t);
@@ -1862,7 +2026,7 @@ window.ProsperoAudio = (function () {
       o.stop(t + 0.05);
     }
 
-    var drift = Math.random() * 60 - 30;
+    var drift = Math.random() * clockWander - clockWander / 2;
     scheduleWithRate(libraryClock, 800 + drift, "library", "clock");
   }
 
@@ -1935,6 +2099,7 @@ window.ProsperoAudio = (function () {
     var phraseLen = Math.round(humRand("phraseLen"));
     var offset = 0;
     var chordTones = getChordTonesFor("library", "hum");
+    var humFirstFreq = null, humLastFreq = null;
 
     for (var ni = 0; ni < phraseLen; ni++) {
       // Phrase-internal notes: gentle pull toward chord tones (or vanilla
@@ -1946,13 +2111,19 @@ window.ProsperoAudio = (function () {
         humIdx = markovNextChordBiased(LIB_HUM_MARKOV[humIdx], chordTones, HARMONIC_BIAS_BASE);
       }
       var freq = LIB_HUM_SCALE[humIdx];
+      if (humFirstFreq === null) humFirstFreq = freq;
+      humLastFreq = freq;
       var noteDur = humRand("dur");
       var attack = humRand("attack");
-      var jitterDepth = humRand("jitterDepth");
+      // WAVER scales the slow-noise pitch-jitter depth.
+      // VIBRATO scales the vibrato LFO depth.
+      var humWaver = getLayerParam("library", "hum", "waver", 1.0);
+      var humVib   = getLayerParam("library", "hum", "vibrato", 1.0);
+      var jitterDepth = humRand("jitterDepth") * humWaver;
       var jitterRate = humRand("jitterRate");
       var shimmerDepth = humRand("shimmerDepth");
       var shimmerRate = humRand("shimmerRate");
-      var vibDepth = humRand("vibDepth");
+      var vibDepth = humRand("vibDepth") * humVib;
       var vibRate = humRand("vibRate");
       var t = now + offset;
       // Clamp attack/release so envelope times stay monotonically
@@ -1994,16 +2165,20 @@ window.ProsperoAudio = (function () {
       vib.connect(vibGain);
       vibGain.connect(voice.frequency);
 
-      // Formants — wider Q than original (3/3.5 vs 6/8) so each
-      // bandpass passes a band of harmonics; F2 attenuated 0.5x.
+      // Formants — OPENNESS knob scales bandpass width by dividing Q.
+      // openness=1.0 keeps the default vowel-y Q3/Q3.5; openness>1
+      // widens the passbands so more of the note's harmonics survive
+      // (the hum's pitch becomes visible on the spiral); openness<1
+      // tightens them for a more pronounced, isolated vowel.
+      var humOpenness = getLayerParam("library", "hum", "openness", 1.0);
       var f1 = c.createBiquadFilter();
       f1.type = "bandpass";
       f1.frequency.setValueAtTime(vowel.f1, t);
-      f1.Q.setValueAtTime(3, t);
+      f1.Q.setValueAtTime(3 / humOpenness, t);
       var f2 = c.createBiquadFilter();
       f2.type = "bandpass";
       f2.frequency.setValueAtTime(vowel.f2, t);
-      f2.Q.setValueAtTime(3.5, t);
+      f2.Q.setValueAtTime(3.5 / humOpenness, t);
       var f2Gain = c.createGain();
       f2Gain.gain.setValueAtTime(0.5, t);
 
@@ -2028,11 +2203,14 @@ window.ProsperoAudio = (function () {
       shimmerSrc.stop(t + noteDur + 0.1);
       voiceMix.connect(shimmerGain);
 
-      // Envelope — uses clamped safeAttack/safeRelease above
+      // Envelope — uses clamped safeAttack/safeRelease above.
+      // Peak gain bumped from 0.045 → 0.075 so the formant-filtered hum
+      // sits closer in level to drone/melody (its bandpass stack drops a
+      // lot of signal energy; the source needs to be louder to compensate).
       var env = c.createGain();
       env.gain.setValueAtTime(0, t);
-      env.gain.linearRampToValueAtTime(0.045, plateauStart);
-      env.gain.setValueAtTime(0.042, plateauEnd);
+      env.gain.linearRampToValueAtTime(0.075, plateauStart);
+      env.gain.setValueAtTime(0.072, plateauEnd);
       env.gain.linearRampToValueAtTime(0, noteEnd);
       shimmerGain.connect(env);
       env.connect(out);
@@ -2063,6 +2241,19 @@ window.ProsperoAudio = (function () {
     var minBaseDelay = (phraseDurationMs + 1500) * rate;
     var nextDelay = Math.max(baseDelay, minBaseDelay);
     scheduleWithRate(libraryHum, nextDelay, "library", "hum");
+
+    if (humFirstFreq !== null) {
+      var vowelLabel = LIB_HUM_VOWEL_POOL[humVowelIdx] || "";
+      var rangeLabel = freqToNoteName(humFirstFreq);
+      if (humLastFreq !== humFirstFreq) {
+        rangeLabel += "→" + freqToNoteName(humLastFreq);
+      }
+      emitMotifEvent({
+        type: "fire", track: "library", layer: "hum", time: now,
+        detail: (vowelLabel ? '"' + vowelLabel + '" · ' : "") +
+                rangeLabel + " · " + phraseLen + " notes",
+      });
+    }
   }
 
   // --- Cage-style weighted ambient event pool ---
@@ -2070,7 +2261,10 @@ window.ProsperoAudio = (function () {
     if (!playing || currentTrack !== "library") return;
     var out = lgp("library", "ambient");
 
-    var event = weightedChoice(LIB_AMBIENT_POOL);
+    // VARIETY = pool weighting mode (uniform / default / focused)
+    var variety = getLayerParam("library", "ambient", "variety", "default");
+    var event = weightedChoiceVariety(LIB_AMBIENT_POOL, variety);
+    emitAmbientEvent({ type: "fire", track: "library", layer: "ambient", event: event, time: ctx.currentTime });
     switch (event) {
       case "page_turn":
         libPageTurn(out);
@@ -2081,14 +2275,8 @@ window.ProsperoAudio = (function () {
       case "clock_cluster":
         libClockCluster(out);
         break;
-      case "distant_chime":
-        libDistantChime(out);
-        break;
       case "book_thud":
         libBookThud(out);
-        break;
-      case "creak":
-        libCreak(out);
         break;
       case "spell_wheeze":
         libSpellWheeze(out);
@@ -2108,9 +2296,20 @@ window.ProsperoAudio = (function () {
       case "whispered_word":
         libWhisperedWord(out);
         break;
+      case "footsteps_distant":
+        libFootstepsDistant(out);
+        break;
+      case "ember_pop":
+        libEmberPop(out);
+        break;
     }
 
-    scheduleWithRate(libraryAmbient, 14000 + Math.random() * 21000, "library", "ambient");
+    // DENSITY = inter-event interval scale. Lower = more frequent events.
+    var density = getLayerParam("library", "ambient", "density", 1.0);
+    if (density < 0.05) density = 0.05;
+    scheduleWithRate(libraryAmbient,
+      (14000 + Math.random() * 21000) / density,
+      "library", "ambient");
   }
 
   // --- Library ambient event synthesis ---
@@ -2185,36 +2384,6 @@ window.ProsperoAudio = (function () {
     }
   }
 
-  function libDistantChime(out) {
-    var c = ctx;
-    var now = c.currentTime;
-    var freq = LIB_SCALE_5[Math.floor(Math.random() * LIB_SCALE_5.length)];
-    var decay = 2 + Math.random();
-
-    var o1 = c.createOscillator();
-    var g1 = c.createGain();
-    o1.type = "sine";
-    o1.frequency.setValueAtTime(freq, now);
-    o1.connect(g1);
-    g1.connect(out);
-    g1.gain.setValueAtTime(0.025, now);
-    g1.gain.exponentialRampToValueAtTime(0.001, now + decay);
-    o1.start(now);
-    o1.stop(now + decay + 0.1);
-
-    var detune = Math.random() < 0.5 ? -3 : 3;
-    var o2 = c.createOscillator();
-    var g2 = c.createGain();
-    o2.type = "sine";
-    o2.frequency.setValueAtTime(freq + detune, now);
-    o2.connect(g2);
-    g2.connect(out);
-    g2.gain.setValueAtTime(0.02, now);
-    g2.gain.exponentialRampToValueAtTime(0.001, now + decay);
-    o2.start(now);
-    o2.stop(now + decay + 0.1);
-  }
-
   function libBookThud(out) {
     var c = ctx;
     var now = c.currentTime;
@@ -2227,35 +2396,9 @@ window.ProsperoAudio = (function () {
     n.connect(f);
     f.connect(g);
     g.connect(out);
-    g.gain.setValueAtTime(0.03, now);
+    g.gain.setValueAtTime(0.10, now);
     g.gain.linearRampToValueAtTime(0, now + dur);
     startNoise(n, now);
-  }
-
-  function libCreak(out) {
-    var c = ctx;
-    var now = c.currentTime;
-    var dur = 0.3;
-    var goUp = Math.random() < 0.5;
-    var startFreq = goUp ? 80 : 120;
-    var endFreq = goUp ? 120 : 80;
-
-    var o = c.createOscillator();
-    var g = c.createGain();
-    var f = c.createBiquadFilter();
-    o.type = "sine";
-    o.frequency.setValueAtTime(startFreq, now);
-    o.frequency.linearRampToValueAtTime(endFreq, now + dur);
-    f.type = "bandpass";
-    f.frequency.setValueAtTime(100, now);
-    f.Q.setValueAtTime(3, now);
-    o.connect(f);
-    f.connect(g);
-    g.connect(out);
-    g.gain.setValueAtTime(0.015, now);
-    g.gain.linearRampToValueAtTime(0, now + dur);
-    o.start(now);
-    o.stop(now + dur + 0.01);
   }
 
   function libSpellWheeze(out) {
@@ -2507,6 +2650,60 @@ window.ProsperoAudio = (function () {
     startNoise(n, now);
   }
 
+  function libFootstepsDistant(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    var count = 5;
+    var interval = 0.6;
+    var cutoff = 600;
+    var volume = 0.04;
+    for (var i = 0; i < count; i++) {
+      var t = now + i * interval * (0.9 + Math.random() * 0.2);
+      var stepLen = 0.08 + Math.random() * 0.04;
+      var n = noiseSource(stepLen);
+      var g = c.createGain();
+      var f = c.createBiquadFilter();
+      f.type = "lowpass";
+      var heavy = i % 2 === 0;
+      f.frequency.setValueAtTime(cutoff * (heavy ? 1.0 : 1.15), t);
+      f.Q.setValueAtTime(1.5, t);
+      n.connect(f);
+      f.connect(g);
+      g.connect(out);
+      var vol = volume * (heavy ? 1.0 : 0.7);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, t + stepLen);
+      startNoise(n, t);
+    }
+  }
+
+  function libEmberPop(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    var count = 6;
+    var duration = 0.7;
+    var brightness = 3500;
+    var volume = 0.025;
+    for (var i = 0; i < count; i++) {
+      var t = now + Math.random() * duration;
+      var popLen = 0.008 + Math.random() * 0.02;
+      var n = noiseSource(popLen);
+      var g = c.createGain();
+      var f = c.createBiquadFilter();
+      f.type = "bandpass";
+      f.frequency.setValueAtTime(brightness + Math.random() * 1500, t);
+      f.Q.setValueAtTime(3, t);
+      n.connect(f);
+      f.connect(g);
+      g.connect(out);
+      var vol = volume * (0.5 + Math.random() * 0.5);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + popLen);
+      startNoise(n, t);
+    }
+  }
+
   // ==========================================================================
   // TRACK 4: SYCORAX'S SPELL — LAYER METHODS
   // ==========================================================================
@@ -2543,10 +2740,16 @@ window.ProsperoAudio = (function () {
     emitHarmonicChange("sycorax");
     sycDroneIdx = (sycDroneIdx + 1) % SYC_DRONE_CLUSTERS.length;
 
-    var duration = 20 + Math.random() * 8;
+    // Mixer-exposed knobs. CYCLE LENGTH is a min/max range with clamping.
+    var cycleMin = getLayerParam("sycorax", "drone", "cycleMin", 20);
+    var cycleMax = getLayerParam("sycorax", "drone", "cycleMax", 28);
+    if (cycleMax < cycleMin) cycleMax = cycleMin;
+    var duration = cycleMin + Math.random() * (cycleMax - cycleMin);
     var fadeIn = 3 + Math.random() * 2;
     var fadeOut = 3 + Math.random() * 2;
-    var cutoffBase = 150 + Math.random() * 200;
+    var darknessScale = getLayerParam("sycorax", "drone", "darkness", 1.0);
+    var droneDrift   = getLayerParam("sycorax", "drone", "drift", 1.0);
+    var cutoffBase = (150 + Math.random() * 200) * darknessScale;
 
     for (var ci = 0; ci < cluster.length; ci++) {
       var freq = cluster[ci];
@@ -2555,8 +2758,11 @@ window.ProsperoAudio = (function () {
       var f = c.createBiquadFilter();
       o.type = "sawtooth";
       o.frequency.setValueAtTime(freq, now);
-      var driftAmt = 0.97 + Math.random() * 0.06;
-      var driftMid = 0.98 + Math.random() * 0.04;
+      // DRIFT knob scales the per-cluster pitch deviation. 0 = locked
+      // frequencies (more rigid dissonance); 1 = engine default (±3%);
+      // higher = warbling, less stable.
+      var driftAmt = 1 + ((Math.random() * 0.06) - 0.03) * droneDrift;
+      var driftMid = 1 + ((Math.random() * 0.04) - 0.02) * droneDrift;
       o.frequency.linearRampToValueAtTime(freq * driftMid, now + duration * 0.35);
       o.frequency.linearRampToValueAtTime(freq * driftAmt, now + duration * 0.7);
       o.frequency.linearRampToValueAtTime(freq, now + duration);
@@ -2575,8 +2781,9 @@ window.ProsperoAudio = (function () {
       o.stop(now + duration + 0.1);
     }
 
-    // 25% sub-bass sine rumble
-    var hasSub = Math.random() < 0.25;
+    // SUB CHANCE knob: sub-bass rumble probability.
+    var subChance = getLayerParam("sycorax", "drone", "subChance", 0.25);
+    var hasSub = Math.random() < subChance;
     var subFreq = cluster[0] / 2;
     if (hasSub) {
       var o2 = c.createOscillator();
@@ -2598,21 +2805,17 @@ window.ProsperoAudio = (function () {
     }
 
     // Publish to the drone viz the same way libraryDrone does.
-    if (droneListener) {
-      try {
-        droneListener({
-          track: "sycorax",
-          startTime: now,
-          duration: duration,
-          fadeIn: fadeIn,
-          fadeOut: fadeOut,
-          peakGain: 0.035,
-          frequencies: cluster.slice(),
-          subFreq: hasSub ? subFreq : null,
-          subPeakGain: hasSub ? 0.025 : 0,
-        });
-      } catch (e) { console.error("droneListener threw:", e); }
-    }
+    emitDroneEvent({
+      track: "sycorax",
+      startTime: now,
+      duration: duration,
+      fadeIn: fadeIn,
+      fadeOut: fadeOut,
+      peakGain: 0.035,
+      frequencies: cluster.slice(),
+      subFreq: hasSub ? subFreq : null,
+      subPeakGain: hasSub ? 0.025 : 0,
+    });
 
     var overlap = 3 + Math.random() * 2;
     scheduleSyc(sycoraxDrone, (duration - overlap) * 1000);
@@ -2631,12 +2834,19 @@ window.ProsperoAudio = (function () {
       return;
     }
 
+    // HUSHED scales the formant Qs (higher = vowel-y).
+    // DRIFT  scales the formant frequency morph range.
+    // LENGTH scales the per-whisper duration.
+    var hushed   = getLayerParam("sycorax", "whispers", "hushed", 1.0);
+    var wDrift   = getLayerParam("sycorax", "whispers", "drift", 1.0);
+    var wLength  = getLayerParam("sycorax", "whispers", "length", 1.0);
+
     var formant =
       SYC_WHISPER_FORMANTS[
         Math.floor(Math.random() * SYC_WHISPER_FORMANTS.length)
       ];
-    var dur = 1.5 + Math.random() * 2;
-    var qVal = 8 + Math.random() * 6;
+    var dur = (1.5 + Math.random() * 2) * wLength;
+    var qVal = (8 + Math.random() * 6) * hushed;
 
     // Primary whisper voice
     var t0 = now;
@@ -2646,18 +2856,19 @@ window.ProsperoAudio = (function () {
     var f2 = c.createBiquadFilter();
     f1.type = "bandpass";
     f1.frequency.setValueAtTime(formant[0], t0);
+    // Original drift: ±15% on F1, ±10% on F2. Centered at 1.0, scaled by wDrift.
     f1.frequency.linearRampToValueAtTime(
-      formant[0] * (0.85 + Math.random() * 0.3),
+      formant[0] * (1 + ((Math.random() * 0.3) - 0.15) * wDrift),
       t0 + dur
     );
     f1.Q.setValueAtTime(qVal, t0);
     f2.type = "bandpass";
     f2.frequency.setValueAtTime(formant[1], t0);
     f2.frequency.linearRampToValueAtTime(
-      formant[1] * (0.9 + Math.random() * 0.2),
+      formant[1] * (1 + ((Math.random() * 0.2) - 0.1) * wDrift),
       t0 + dur
     );
-    f2.Q.setValueAtTime(qVal - 2, t0);
+    f2.Q.setValueAtTime(qVal - 2 * hushed, t0);
     n.connect(f1);
     n.connect(f2);
     var mix = c.createGain();
@@ -2702,6 +2913,12 @@ window.ProsperoAudio = (function () {
       startNoise(n2, now + offset2);
     }
 
+    emitMotifEvent({
+      type: "fire", track: "sycorax", layer: "whispers", time: now,
+      detail: "[" + Math.round(formant[0]) + "/" + Math.round(formant[1]) +
+              "] · " + dur.toFixed(1) + "s",
+    });
+
     scheduleWithRate(sycoraxWhispers, 6000 + Math.random() * 10000, "sycorax", "whispers");
   }
 
@@ -2711,7 +2928,13 @@ window.ProsperoAudio = (function () {
   // "swell" = a more dramatic crescendo/decrescendo).
   function playSycGhostNote(out, t, freq, dur, peakGain, envelope) {
     var c = ctx;
-    var detunes = [-15, 0, 15];
+    // DETUNE scales the 3-voice cents spread (±15 cents → wide chorus / unison).
+    // VIBRATO scales the per-voice vib depth (4–10 cents at default).
+    // VIB RATE scales the per-voice vib LFO rate (0.2–0.8 Hz at default).
+    var ghDetune  = getLayerParam("sycorax", "ghost", "detune", 1.0);
+    var ghVibDep  = getLayerParam("sycorax", "ghost", "vibrato", 1.0);
+    var ghVibRate = getLayerParam("sycorax", "ghost", "vibRate", 1.0);
+    var detunes = [-15 * ghDetune, 0, 15 * ghDetune];
     for (var di = 0; di < detunes.length; di++) {
       var o = c.createOscillator();
       var g = c.createGain();
@@ -2721,8 +2944,8 @@ window.ProsperoAudio = (function () {
       var vib = c.createOscillator();
       var vibG = c.createGain();
       vib.type = "sine";
-      vib.frequency.setValueAtTime(0.2 + Math.random() * 0.6, t);
-      vibG.gain.setValueAtTime(4 + Math.random() * 6, t);
+      vib.frequency.setValueAtTime((0.2 + Math.random() * 0.6) * ghVibRate, t);
+      vibG.gain.setValueAtTime((4 + Math.random() * 6) * ghVibDep, t);
       vib.connect(vibG);
       vibG.connect(o.frequency);
       o.connect(g);
@@ -2952,6 +3175,14 @@ window.ProsperoAudio = (function () {
   function playSycWaterphoneNote(out, t, freq, dur, gainScale) {
     var c = ctx;
     var P = SYC_WATERPHONE_PARAMS;
+    // WAIL    scales the FM modulator depth (the screaming bell wash).
+    // BLOOM   scales the FM carrier level (how much bloom mixes in).
+    // SHIMMER scales the upper-partial tremolo depth.
+    // GLISS   scales the glissando downward drift (engine's "wail" param).
+    var wpWail    = getLayerParam("sycorax", "waterphone", "wail", 1.0);
+    var wpBloom   = getLayerParam("sycorax", "waterphone", "bloom", 1.0);
+    var wpShimmer = getLayerParam("sycorax", "waterphone", "shimmer", 1.0);
+    var wpGliss   = getLayerParam("sycorax", "waterphone", "gliss", 1.0);
     var env = c.createGain();
     env.connect(out);
     var peak = 0.04 * (gainScale == null ? 1 : gainScale);
@@ -2961,9 +3192,9 @@ window.ProsperoAudio = (function () {
     env.gain.setValueAtTime(peak, t + Math.max(dur - 2.2, dur * 0.6));
     env.gain.linearRampToValueAtTime(0, t + dur);
 
-    var glissEnd  = 1 - P.wail / 100;
+    var glissEnd  = 1 - (P.wail * wpGliss) / 100;
     var wobbleAmt = P.wobble / 100;
-    var shimmer   = P.shimmer;
+    var shimmer   = P.shimmer * wpShimmer;
     var stopAt    = t + dur + 0.5;
 
     // Shared body-wobble LFO drives every "body" component (lower three
@@ -3038,14 +3269,14 @@ window.ProsperoAudio = (function () {
     carrier.type = "sine";
     carrier.frequency.setValueAtTime(freq, t);
     carrier.frequency.linearRampToValueAtTime(freq * glissEnd, t + dur);
-    carrierGain.gain.setValueAtTime(P.bloomLevel, t);
+    carrierGain.gain.setValueAtTime(P.bloomLevel * wpBloom, t);
 
     var mod = c.createOscillator();
     var modG = c.createGain();
     mod.type = "sine";
     mod.frequency.setValueAtTime(freq * 1.41, t);
     mod.frequency.linearRampToValueAtTime(freq * 1.41 * glissEnd, t + dur);
-    var peakIdx = freq * P.bloomIntensity;
+    var peakIdx = freq * P.bloomIntensity * wpWail;
     modG.gain.setValueAtTime(0, t);
     modG.gain.linearRampToValueAtTime(peakIdx,        t + Math.min(1.5, dur * 0.25));
     modG.gain.linearRampToValueAtTime(peakIdx * 0.44, t + dur * 0.7);
@@ -3307,6 +3538,10 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lg("sycorax", "heartbeat");
 
+    // Emit one "start" log entry when the heartbeat re-engages after a
+    // gap (>5 s) — per-beat logging would flood the log.
+    maybeEmitSessionStart("sycorax", "heartbeat", now);
+
     sycHeartbeatIntensity += (Math.random() - 0.5) * 0.15;
     sycHeartbeatIntensity = Math.max(
       0.4,
@@ -3314,23 +3549,38 @@ window.ProsperoAudio = (function () {
     );
     var intensity = sycHeartbeatIntensity;
 
-    // 10% skip
-    if (Math.random() < 0.1) {
-      scheduleWithRate(sycoraxHeartbeat, 2500 + Math.random() * 2500, "sycorax", "heartbeat");
+    // TEMPO        scales inter-beat interval (lower = faster heartbeat).
+    // DEPTH        scales the freq dip range (deeper plunges).
+    // IRREGULARITY split 2/3 skip + 1/3 triple-beat (matches the 0.10/0.05 default).
+    var hbTempo  = getLayerParam("sycorax", "heartbeat", "tempo", 1.0);
+    var hbDepth  = getLayerParam("sycorax", "heartbeat", "depth", 1.0);
+    var hbIrreg  = getLayerParam("sycorax", "heartbeat", "irregularity", 0.15);
+    var skipProb   = hbIrreg * (2 / 3);
+    var tripleProb = hbIrreg * (1 / 3);
+
+    var rnd = Math.random();
+    if (rnd < skipProb) {
+      scheduleWithRate(sycoraxHeartbeat,
+        (2500 + Math.random() * 2500) * hbTempo,
+        "sycorax", "heartbeat");
       return;
     }
 
-    // 5% triple-beat
-    var beats = Math.random() < 0.05 ? 3 : 2;
+    var beats = (rnd < skipProb + tripleProb) ? 3 : 2;
 
     for (var i = 0; i < beats; i++) {
       var offset = i * (0.3 + Math.random() * 0.1);
       var t = now + offset;
       var isLub = i === 0;
-      var startFreq = isLub
-        ? 36 + Math.random() * 8
-        : 32 + Math.random() * 6;
-      var endFreq = 18 + Math.random() * 4;
+      // DEPTH scales the start→end frequency dip relative to a fixed midpoint.
+      // Default midpoint for lub: (40 + 20) / 2 = 30; for dub: (35 + 20) / 2 = 27.5.
+      var rawStart = isLub
+        ? 36 + Math.random() * 8     // 36–44
+        : 32 + Math.random() * 6;    // 32–38
+      var rawEnd = 18 + Math.random() * 4; // 18–22
+      var mid = (rawStart + rawEnd) / 2;
+      var startFreq = mid + (rawStart - mid) * hbDepth;
+      var endFreq   = Math.max(8, mid + (rawEnd - mid) * hbDepth);
       var o = c.createOscillator();
       var g = c.createGain();
       o.type = "sine";
@@ -3345,7 +3595,9 @@ window.ProsperoAudio = (function () {
       o.stop(t + 0.35);
     }
 
-    scheduleWithRate(sycoraxHeartbeat, 2500 + Math.random() * 2500, "sycorax", "heartbeat");
+    scheduleWithRate(sycoraxHeartbeat,
+      (2500 + Math.random() * 2500) * hbTempo,
+      "sycorax", "heartbeat");
   }
 
   // --- Metallic pitch sweeps ---
@@ -3361,10 +3613,17 @@ window.ProsperoAudio = (function () {
       return;
     }
 
+    // METAL     scales the bandpass Q (higher = piercing / metallic).
+    // RANGE     scales the starting frequency range (200–700 Hz default).
+    // DIRECTION forces sweep direction (up/down/dip) or leaves it random.
+    var scMetal     = getLayerParam("sycorax", "scrape", "metal", 1.0);
+    var scRange     = getLayerParam("sycorax", "scrape", "range", 1.0);
+    var scDirection = getLayerParam("sycorax", "scrape", "direction", "random");
+
     var makeScrape = function () {
       var dur = 0.8 + Math.random() * 1.2;
-      var startFreq = 200 + Math.random() * 500;
-      var qVal = 10 + Math.random() * 10;
+      var startFreq = (200 + Math.random() * 500) * scRange;
+      var qVal = (10 + Math.random() * 10) * scMetal;
       var o = c.createOscillator();
       var g = c.createGain();
       var f = c.createBiquadFilter();
@@ -3373,17 +3632,27 @@ window.ProsperoAudio = (function () {
       f.frequency.setValueAtTime(startFreq, now);
       f.Q.setValueAtTime(qVal, now);
 
-      var direction = Math.random();
-      if (direction < 0.33) {
+      // Pick direction: explicit value if set, otherwise uniform random
+      var directionPick = scDirection;
+      if (directionPick === "random") {
+        var r = Math.random();
+        directionPick = r < 0.33 ? "dip" : (r < 0.66 ? "down" : "up");
+      }
+      var sweepKind, fEnd;
+      if (directionPick === "dip") {
         o.frequency.setValueAtTime(startFreq, now);
         o.frequency.linearRampToValueAtTime(startFreq * 0.5, now + dur * 0.5);
         o.frequency.linearRampToValueAtTime(startFreq * 0.9, now + dur);
-      } else if (direction < 0.66) {
+        sweepKind = "dip"; fEnd = startFreq * 0.9;
+      } else if (directionPick === "down") {
         o.frequency.setValueAtTime(startFreq, now);
         o.frequency.linearRampToValueAtTime(startFreq * 0.4, now + dur);
+        sweepKind = "down"; fEnd = startFreq * 0.4;
       } else {
         o.frequency.setValueAtTime(startFreq * 0.5, now);
         o.frequency.linearRampToValueAtTime(startFreq, now + dur);
+        sweepKind = "up"; fEnd = startFreq;
+        startFreq = startFreq * 0.5;
       }
 
       o.connect(f);
@@ -3395,6 +3664,12 @@ window.ProsperoAudio = (function () {
       g.gain.linearRampToValueAtTime(0, now + dur);
       o.start(now);
       o.stop(now + dur + 0.1);
+
+      emitMotifEvent({
+        type: "fire", track: "sycorax", layer: "scrape", time: now,
+        detail: sweepKind + " · " + freqToNoteName(startFreq) +
+                "→" + freqToNoteName(fEnd),
+      });
     };
 
     makeScrape();
@@ -3408,7 +3683,9 @@ window.ProsperoAudio = (function () {
     if (!playing || currentTrack !== "sycorax") return;
     var out = lgp("sycorax", "ambient");
 
-    var event = weightedChoice(SYC_AMBIENT_POOL);
+    var variety = getLayerParam("sycorax", "ambient", "variety", "default");
+    var event = weightedChoiceVariety(SYC_AMBIENT_POOL, variety);
+    emitAmbientEvent({ type: "fire", track: "sycorax", layer: "ambient", event: event, time: ctx.currentTime });
     switch (event) {
       case "chains_rattle":
         sycChainsRattle(out);
@@ -3422,14 +3699,8 @@ window.ProsperoAudio = (function () {
       case "raven_cry":
         sycRavenCry(out);
         break;
-      case "dripping_water":
-        sycDrippingWater(out);
-        break;
       case "wind_howl":
         sycWindHowl(out);
-        break;
-      case "bone_crack":
-        sycBoneCrack(out);
         break;
       case "spectral_moan":
         sycSpectralMoan(out);
@@ -3437,9 +3708,16 @@ window.ProsperoAudio = (function () {
       case "cauldron_bubble":
         sycCauldronBubble(out);
         break;
+      case "witch_cackle":
+        sycWitchCackle(out);
+        break;
     }
 
-    scheduleWithRate(sycoraxAmbient, 12000 + Math.random() * 13000, "sycorax", "ambient");
+    var sycDensity = getLayerParam("sycorax", "ambient", "density", 1.0);
+    if (sycDensity < 0.05) sycDensity = 0.05;
+    scheduleWithRate(sycoraxAmbient,
+      (12000 + Math.random() * 13000) / sycDensity,
+      "sycorax", "ambient");
   }
 
   // --- Sycorax ambient event synthesis ---
@@ -3447,10 +3725,12 @@ window.ProsperoAudio = (function () {
   function sycChainsRattle(out) {
     var c = ctx;
     var now = c.currentTime;
-    var pings = 5 + Math.floor(Math.random() * 8);
-    var totalDur = 0.4 + Math.random() * 0.6;
+    // Sampled per-call to match the preview's defaults.
+    var pings = 6 + Math.floor(Math.random() * 5);          // 6–10
+    var rate = 10 + Math.random() * 6;                       // 10–16 Hz
+    var spacing = 1 / rate;
     for (var i = 0; i < pings; i++) {
-      var t = now + (i / pings) * totalDur;
+      var t = now + i * spacing;
       var pingDur = 0.02 + Math.random() * 0.03;
       var n = noiseSource(pingDur);
       var g = c.createGain();
@@ -3470,21 +3750,39 @@ window.ProsperoAudio = (function () {
   function sycDistantThunder(out) {
     var c = ctx;
     var now = c.currentTime;
-    var dur = 2 + Math.random() * 2;
+    // Center around the preview-tuned defaults with light natural variation.
+    var dur = 4.5 + Math.random() * 1.5;       // ~5.25 mean
+    var peakFreq = 280 + Math.random() * 80;   // ~320 mean
     var peakVol = 0.04;
 
-    // Boom — initial impact transient, sharp attack + quick LP sweep
-    var boomDur = 0.4 + Math.random() * 0.2;
+    // Boom — deep resonant impact: sub-bass sine "thump" + low-passed noise
+    // body. Slow attack so it rolls in (not a punchy thud).
+    var boomDur = 0.7 + Math.random() * 0.4;
+
+    // Sub-bass sine — drops in pitch as it decays, giving the "settling" feel.
+    var subO = c.createOscillator();
+    var subG = c.createGain();
+    subO.type = "sine";
+    subO.frequency.setValueAtTime(55, now);
+    subO.frequency.exponentialRampToValueAtTime(35, now + boomDur);
+    subO.connect(subG); subG.connect(out);
+    subG.gain.setValueAtTime(0, now);
+    subG.gain.linearRampToValueAtTime(peakVol * 2.4, now + 0.03);
+    subG.gain.exponentialRampToValueAtTime(0.0001, now + boomDur);
+    subO.start(now);
+    subO.stop(now + boomDur + 0.05);
+
+    // Noise body — focused resonant low band, dropping deeper into the sub.
     var bn = noiseSource(boomDur);
     var bg = c.createGain();
     var blp = c.createBiquadFilter();
     blp.type = "lowpass";
-    blp.frequency.setValueAtTime(500, now);
-    blp.frequency.exponentialRampToValueAtTime(80, now + boomDur);
-    blp.Q.setValueAtTime(1.2, now);
+    blp.frequency.setValueAtTime(180, now);
+    blp.frequency.exponentialRampToValueAtTime(50, now + boomDur);
+    blp.Q.setValueAtTime(5, now);
     bn.connect(blp); blp.connect(bg); bg.connect(out);
     bg.gain.setValueAtTime(0, now);
-    bg.gain.linearRampToValueAtTime(peakVol * 1.8, now + 0.008);
+    bg.gain.linearRampToValueAtTime(peakVol * 1.5, now + 0.04);
     bg.gain.exponentialRampToValueAtTime(0.0001, now + boomDur);
     startNoise(bn, now);
 
@@ -3494,7 +3792,7 @@ window.ProsperoAudio = (function () {
     var f = c.createBiquadFilter();
     f.type = "lowpass";
     f.frequency.setValueAtTime(60, now);
-    f.frequency.linearRampToValueAtTime(200, now + dur * 0.35);
+    f.frequency.linearRampToValueAtTime(peakFreq, now + dur * 0.35);
     f.frequency.linearRampToValueAtTime(40, now + dur);
     f.Q.setValueAtTime(1, now);
     n.connect(f);
@@ -3510,12 +3808,14 @@ window.ProsperoAudio = (function () {
   function sycGlassShatter(out) {
     var c = ctx;
     var now = c.currentTime;
+    // Center matches the preview-tuned defaults: pitch 1500, ~4 pings.
+    var pitch = 1500;
     var transDur = 0.03;
     var n = noiseSource(transDur);
     var tg = c.createGain();
     var hp = c.createBiquadFilter();
     hp.type = "highpass";
-    hp.frequency.setValueAtTime(4000, now);
+    hp.frequency.setValueAtTime(pitch, now);
     n.connect(hp);
     hp.connect(tg);
     tg.connect(out);
@@ -3523,10 +3823,10 @@ window.ProsperoAudio = (function () {
     tg.gain.exponentialRampToValueAtTime(0.001, now + transDur);
     startNoise(n, now);
 
-    var pingCount = 4 + Math.floor(Math.random() * 4);
+    var pingCount = 3 + Math.floor(Math.random() * 3); // ~4 mean
     for (var i = 0; i < pingCount; i++) {
       var t = now + 0.01 + Math.random() * 0.05;
-      var freq = 2000 + Math.random() * 6000;
+      var freq = pitch * 0.5 + Math.random() * pitch * 1.5;
       var decay = 0.2 + Math.random() * 0.3;
       var o = c.createOscillator();
       var g = c.createGain();
@@ -3576,31 +3876,6 @@ window.ProsperoAudio = (function () {
     }
   }
 
-  function sycDrippingWater(out) {
-    var c = ctx;
-    var now = c.currentTime;
-    var drops = 1 + Math.floor(Math.random() * 4);
-    for (var i = 0; i < drops; i++) {
-      var t = now + i * (0.15 + Math.random() * 0.2);
-      var startFreq = 1500 + Math.random() * 2000;
-      var dur = 0.08 + Math.random() * 0.06;
-      var o = c.createOscillator();
-      var g = c.createGain();
-      o.type = "sine";
-      o.frequency.setValueAtTime(startFreq, t);
-      o.frequency.exponentialRampToValueAtTime(
-        200 + Math.random() * 200,
-        t + dur
-      );
-      o.connect(g);
-      g.connect(out);
-      g.gain.setValueAtTime(0.025, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      o.start(t);
-      o.stop(t + dur + 0.01);
-    }
-  }
-
   function sycWindHowl(out) {
     var c = ctx;
     var now = c.currentTime;
@@ -3620,23 +3895,6 @@ window.ProsperoAudio = (function () {
     g.gain.linearRampToValueAtTime(0.03, now + dur * 0.2);
     g.gain.setValueAtTime(0.025, now + dur * 0.6);
     g.gain.linearRampToValueAtTime(0, now + dur);
-    startNoise(n, now);
-  }
-
-  function sycBoneCrack(out) {
-    var c = ctx;
-    var now = c.currentTime;
-    var dur = 0.02 + Math.random() * 0.02;
-    var n = noiseSource(dur);
-    var g = c.createGain();
-    var f = c.createBiquadFilter();
-    f.type = "highpass";
-    f.frequency.setValueAtTime(3000, now);
-    n.connect(f);
-    f.connect(g);
-    g.connect(out);
-    g.gain.setValueAtTime(0.04, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
     startNoise(n, now);
   }
 
@@ -3697,6 +3955,42 @@ window.ProsperoAudio = (function () {
       g.gain.exponentialRampToValueAtTime(0.001, t + popDur);
       o.start(t);
       o.stop(t + popDur + 0.01);
+    }
+  }
+
+  function sycWitchCackle(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    // Sampled per-call to match the preview's syllables range {min:3, max:7}.
+    var syllables = 3 + Math.floor(Math.random() * 5);
+    var basePitch = 220;
+    var peakVol = 0.04;
+    for (var i = 0; i < syllables; i++) {
+      var t = now + i * (0.08 + Math.random() * 0.06);
+      var sylLen = 0.06 + Math.random() * 0.05;
+      var pitch = basePitch * (0.85 + Math.random() * 0.5);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      var f1 = c.createBiquadFilter();
+      var f2 = c.createBiquadFilter();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(pitch, t);
+      o.frequency.exponentialRampToValueAtTime(pitch * 0.7, t + sylLen);
+      f1.type = "bandpass";
+      f1.frequency.setValueAtTime(700 + Math.random() * 400, t);
+      f1.Q.setValueAtTime(8, t);
+      f2.type = "bandpass";
+      f2.frequency.setValueAtTime(2400 + Math.random() * 600, t);
+      f2.Q.setValueAtTime(6, t);
+      o.connect(f1); o.connect(f2);
+      var mix = c.createGain();
+      f1.connect(mix); f2.connect(mix);
+      mix.connect(g); g.connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(peakVol * (0.7 + Math.random() * 0.5), t + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.001, t + sylLen);
+      o.start(t);
+      o.stop(t + sylLen + 0.01);
     }
   }
 
@@ -3906,6 +4200,147 @@ window.ProsperoAudio = (function () {
     }
   }
 
+  // Generic per-layer tunable parameter store. Synthesis code reads via
+  // getLayerParam(track, layer, key, fallback). The UI mixing desk sets
+  // values via setLayerParam(track, layer, key, val). Values are scalar.
+  // Per-layer defaults live in LAYER_PARAM_DEFAULTS.
+  var LAYER_PARAM_DEFAULTS = {
+    library: {
+      drone: {
+        warmth: 240,        // LP cutoff (Hz)
+        movement: 0.19,     // tremolo depth (0..1)
+        tremoloRate: 0.7,   // tremolo LFO rate (Hz)
+        subChance: 0.3,     // sub-octave probability per cycle
+        cycleMin: 17,       // shortest cycle (s)
+        cycleMax: 23,       // longest cycle (s)
+      },
+      melody: {
+        brightness: 3.0,    // pluck filter freq multiplier
+        resonance: 0.5,     // pluck filter Q
+        sparkle: 0.03,      // octave-harmonic gain
+      },
+      musicBox: {
+        shimmer: 0.006,     // 3rd-harmonic overtone gain
+        decay: 1.0,         // per-note duration scale
+        cluster: 0.2,       // probability of a run (2-3 notes)
+      },
+      clock: {
+        pitch: 1.0,         // tick/tock frequency multiplier
+        wander: 60,         // inter-tick drift range (ms)
+        mischief: 0.15,     // combined skip + double-tick probability
+      },
+      hum: {
+        openness: 1.0,      // formant Q scale (1/Q)
+        waver: 1.0,         // pitch-jitter depth scale
+        vibrato: 1.0,       // vibrato depth scale
+      },
+      ambient: {
+        density: 1.0,       // inter-event interval scale (lower = more frequent)
+        variety: "default", // pool weighting mode: uniform / default / focused
+      },
+    },
+    sycorax: {
+      drone: {
+        darkness: 1.0,       // LP cutoff scale
+        drift: 1.0,          // per-cluster pitch deviation scale
+        subChance: 0.25,     // sub-bass probability per cycle
+        cycleMin: 20,        // shortest cycle (s)
+        cycleMax: 28,        // longest cycle (s)
+      },
+      whispers: {
+        hushed: 1.0,         // bandpass Q scale
+        drift: 1.0,          // formant frequency morph range scale
+        length: 1.0,         // per-whisper duration scale
+      },
+      ghost: {
+        detune: 1.0,         // 3-voice cents spread scale
+        vibrato: 1.0,        // vibrato depth scale
+        vibRate: 1.0,        // vibrato rate scale
+      },
+      waterphone: {
+        wail: 1.0,           // FM modulator depth scale (bloomIntensity)
+        bloom: 1.0,          // FM carrier level scale (bloomLevel)
+        shimmer: 1.0,        // upper-partial tremolo scale
+        gliss: 1.0,          // glissando drift scale (the engine's "wail" param)
+      },
+      heartbeat: {
+        tempo: 1.0,          // inter-beat interval scale
+        depth: 1.0,          // freq dip scale
+        irregularity: 0.15,  // combined skip + triple-beat probability
+      },
+      scrape: {
+        metal: 1.0,          // bandpass Q scale
+        range: 1.0,          // starting frequency range scale
+        direction: "random", // up / down / dip / random
+      },
+      ambient: {
+        density: 1.0,        // inter-event interval scale
+        variety: "default",  // uniform / default / focused
+      },
+    },
+    ariel: {
+      breeze: {
+        breath: 1.0,         // air-noise gain scale
+        drift: 1.0,          // LFO rate scale
+        subChance: 0.4,      // sub-octave triangle probability per cycle
+        swell: 1.0,          // amplitude-LFO depth scale
+        cycleMin: 15,        // shortest cycle (s)
+        cycleMax: 20,        // longest cycle (s)
+      },
+      chimes: {
+        decay: 1.0,          // bell-decay time scale
+        detune: 1.0,         // 2-voice cents-spread scale
+        burst: 1.0,          // burst-length scale
+      },
+      flutter: {
+        speed: 1.0,          // inter-note interval scale
+        detune: 1.0,         // per-note random detune scale
+        rest: 0.2,           // rest-skip probability per fire
+      },
+      bubbles: {
+        reach: 1.0,          // glissando endMult scale
+        duration: 1.0,       // bubble length scale
+        cluster: 0.66,       // probability of multi-bubble cluster vs single
+      },
+      whistle: {
+        vibrato: 1.0,        // vibrato depth scale
+        vibRate: 1.0,        // vibrato LFO rate scale
+        breath: 1.0,         // breathy 1800 Hz noise scale
+      },
+      bass: {
+        space: 0.6,          // gap length between fires (higher = more stretched)
+        flourish: 0.2,       // probability of a remembered flourish vs a plain anchor
+        reach: 0.25,         // probability of lifting a note into octave 2
+      },
+      ambient: {
+        density: 1.0,        // inter-event interval scale
+        variety: "default",  // uniform / default / focused
+      },
+    },
+  };
+  // Deep clone defaults so live edits don't mutate the canonical map.
+  var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
+  function getLayerParam(track, layer, key, fallback) {
+    if (layerParams[track] && layerParams[track][layer] &&
+        layerParams[track][layer][key] != null) {
+      return layerParams[track][layer][key];
+    }
+    return fallback;
+  }
+  function setLayerParam(track, layer, key, val) {
+    if (!layerParams[track]) layerParams[track] = {};
+    if (!layerParams[track][layer]) layerParams[track][layer] = {};
+    layerParams[track][layer][key] = val;
+  }
+  function resetLayerParams(track, layer) {
+    var d = LAYER_PARAM_DEFAULTS[track] && LAYER_PARAM_DEFAULTS[track][layer];
+    if (!d) return;
+    if (!layerParams[track][layer]) layerParams[track][layer] = {};
+    Object.keys(d).forEach(function (k) {
+      layerParams[track][layer][k] = d[k];
+    });
+  }
+
   function setLayerRate(track, layer, rate) {
     if (layerRate[track]) {
       layerRate[track][layer] = rate;
@@ -3942,13 +4377,204 @@ window.ProsperoAudio = (function () {
     arielFlutterIdx = Math.floor(Math.random() * ARIEL_SCALE_4.length);
     arielWhistleIdx = Math.floor(Math.random() * ARIEL_SCALE_4.length);
     arielBreezeIdx = Math.floor(Math.random() * ARIEL_BREEZE_PAIRS.length);
+    // Reset the bass narrative-arc state before the breeze sets the first
+    // centre (which arms the opening arrival).
+    arielBassStart = ctx.currentTime;
+    arielBassDriftOffset = 0;
+    arielBassPendingArrival = false;
+    arielBassBuffer.length = 0;
     // Launch all independent generative layers
     arielBreeze();
     arielChimes();
     arielFlutter();
     arielBubbles();
+    arielBass();
     scheduleAri(arielWhistle, 8000 + Math.random() * 12000);
     scheduleAri(arielAmbient, 6000 + Math.random() * 10000);
+  }
+
+  // ==========================================================================
+  // ARIEL BASS — aleatoric low end with a narrative arc.
+  //
+  // Mostly long sustained roots in the bottom two octaves, with occasional
+  // 2–3 note gestures and rare remembered flourishes. Every choice is a
+  // weighted coin-flip biased to the breeze's current harmonic centre (read
+  // from harmonicIdx) — nothing is scripted. A slow intensity arc bends the
+  // odds over a long timescale (repose → rising action → settle), and each
+  // breeze centre change plants the new root (an "arrival"). Ported from
+  // ariel-bass-sandbox.html (Electric Bass voice + Stretched Anchor model).
+  // ==========================================================================
+  var arielBassPendingArrival = false; // armed by arielBreeze on each centre change
+  var arielBassDriftOffset = 0;        // bounded random walk on the intensity arc
+  var arielBassStart = 0;              // ctx time the layer started (arc phase origin)
+  var arielBassBuffer = [];            // remembered figures for flourishes
+
+  // Bass root for the current breeze centre, two octaves below the breeze
+  // pair so it sits in octaves 1–2 (~F1 = 43.7 Hz).
+  function arielBassRoot() {
+    var pair = ARIEL_BREEZE_PAIRS[harmonicIdx % ARIEL_BREEZE_PAIRS.length];
+    return pair[0] / 4;
+  }
+
+  // Narrative spine: slow intensity in ~0..1 — two long coprime-ish sines for
+  // the ebb/flow, plus a bounded random walk so it never settles into an
+  // obvious loop. Low = sparse low repose; high = busier, higher, flourishes.
+  function arielBassIntensity() {
+    var u = (ctx ? ctx.currentTime : 0) - arielBassStart;
+    var a = Math.sin(2 * Math.PI * u / 47);
+    var b = Math.sin(2 * Math.PI * u / 73 + 1.3);
+    var base = ((a + b) / 2 + 1) / 2;
+    return Math.max(0, Math.min(1, base * 0.82 + arielBassDriftOffset + 0.09));
+  }
+  function arielBassNudgeDrift() {
+    arielBassDriftOffset += (Math.random() - 0.5) * 0.05;
+    arielBassDriftOffset = Math.max(-0.25, Math.min(0.25, arielBassDriftOffset));
+  }
+
+  // Chance pitch within the bottom two octaves (semitone offset from root):
+  // root / fifth / third, occasionally lifted an octave by REACH, clamped to 19.
+  function arielBassPitch(reach) {
+    var r = Math.random();
+    var off = r < 0.62 ? 0 : (r < 0.85 ? 7 : 4);
+    if ((harmonicIdx % ARIEL_BREEZE_PAIRS.length) === 3 && Math.random() < 0.15) off = 6; // Lydian #4
+    if (Math.random() < reach) off += 12;
+    return Math.min(off, 19);
+  }
+
+  function arielBassCloneFig(f) {
+    return f.map(function (x) { return { off: x.off, dt: x.dt }; });
+  }
+
+  // Electric-bass voice — additive triangle partials (fundamental + 2nd + 3rd)
+  // that ring out, so the low pitch is unmistakable. Note peak stays in the
+  // engine's per-note range (~0.06) and the layer gain handles the rest.
+  function playArielBassNote(out, t, freq, dur, vel) {
+    var c = ctx;
+    var tone = 0.55;
+    var ring = Math.max(dur * 0.9, 0.4);
+    // Bass sits forward in the mix — low frequencies read quieter (equal-
+    // loudness), and the other Ariel layers peak ~0.05, so this runs hotter.
+    var peak = 0.14 * vel;
+    var g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(peak * 0.5, t + 0.1);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + ring);
+    g.connect(out);
+    var partials = [[1, 1.0], [2, 0.45 * tone + 0.15], [3, 0.32 * tone]];
+    for (var i = 0; i < partials.length; i++) {
+      var o = c.createOscillator();
+      o.type = "triangle";
+      o.frequency.value = freq * partials[i][0];
+      var og = c.createGain();
+      og.gain.value = partials[i][1];
+      o.connect(og); og.connect(g);
+      o.start(t); o.stop(t + ring + 0.05);
+    }
+  }
+
+  // A rationed flourish — a short remembered figure, replayed fresh / verbatim
+  // / transformed (retrograde or octave), following the harmonic drift.
+  function arielBassFlourish(out, now, root, reach) {
+    var roll = Math.random(), fig, tag;
+    if (arielBassBuffer.length && roll < 0.30) {
+      fig = arielBassCloneFig(arielBassBuffer[Math.floor(Math.random() * arielBassBuffer.length)]);
+      tag = "verbatim";
+    } else if (arielBassBuffer.length && roll < 0.50) {
+      var base = arielBassCloneFig(arielBassBuffer[Math.floor(Math.random() * arielBassBuffer.length)]);
+      if (Math.random() < 0.6) { fig = base.slice().reverse(); tag = "retrograde"; }
+      else { fig = base.map(function (x) { return { off: Math.min(19, x.off + 12), dt: x.dt }; }); tag = "octave"; }
+    } else {
+      var n = 2 + Math.floor(Math.random() * 2); // 2–3 notes
+      fig = [];
+      for (var i = 0; i < n; i++) fig.push({ off: arielBassPitch(reach), dt: 0.30 + Math.random() * 0.25 });
+      fig[fig.length - 1].off = Math.random() < 0.6 ? 0 : 7; // land grounded
+      arielBassBuffer.push(arielBassCloneFig(fig));
+      if (arielBassBuffer.length > 5) arielBassBuffer.shift();
+      tag = "fresh";
+    }
+    var t = now, names = [];
+    for (var k = 0; k < fig.length; k++) {
+      var freq = root * Math.pow(2, Math.min(19, fig[k].off) / 12);
+      playArielBassNote(out, t, freq, 1.0, 0.85);
+      names.push(freqToNoteName(freq));
+      t += fig[k].dt;
+    }
+    emitMotifEvent({
+      type: "fire", track: "ariel", layer: "bass", time: now,
+      detail: names.join(" ") + " · flourish (" + tag + ")",
+    });
+  }
+
+  // The bass generator — one fire, then self-reschedules (rate-aware).
+  function arielBass() {
+    if (!playing || currentTrack !== "ariel") return;
+    var now = ctx.currentTime;
+    var out = lgp("ariel", "bass");
+    var root = arielBassRoot();
+    var centerIdx = harmonicIdx % ARIEL_BREEZE_PAIRS.length;
+    var label = ARIEL_HARMONIC_LABELS[centerIdx] ? ARIEL_HARMONIC_LABELS[centerIdx].chord : "?";
+
+    var space    = getLayerParam("ariel", "bass", "space", 0.6);
+    var flourish = getLayerParam("ariel", "bass", "flourish", 0.2);
+    var reachKnob = getLayerParam("ariel", "bass", "reach", 0.25);
+
+    // Read the narrative arc and bend the odds around the knob baselines.
+    var I = arielBassIntensity();
+    var pace      = 1 - I * 0.6;                       // peak arc → up to ~2.5× faster
+    var flourishP = Math.min(0.6, flourish * (0.35 + I * 1.6));
+    var reachEff  = Math.min(1, reachKnob * (0.5 + I * 1.4));
+    var threeP    = 0.25 + I * 0.45;                   // more 3-note gestures when intense
+    var gestureP  = 0.22 + I * 0.18;
+
+    // Arrival — the breeze just changed centre. Plant the new root firmly.
+    if (arielBassPendingArrival) {
+      arielBassPendingArrival = false;
+      playArielBassNote(out, now, root, 4.0, 0.94);
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "bass", time: now,
+        detail: freqToNoteName(root) + " · arrival · " + label,
+      });
+      arielBassNudgeDrift();
+      scheduleWithRate(arielBass, (2600 + space * 5000 + Math.random() * 2500) * pace, "ariel", "bass", 800);
+      return;
+    }
+
+    var roll = Math.random();
+    if (roll < flourishP) {
+      arielBassFlourish(out, now, root, reachEff);
+    } else if (roll < flourishP + gestureP) {
+      // sustained gesture — 2 notes, sometimes 3 — among root / fifth / octave.
+      var gLen = Math.random() < threeP ? 3 : 2;
+      var choices = (Math.random() < reachEff) ? [0, 7, 12] : [0, 7];
+      var offs = [Math.random() < 0.5 ? 0 : 7];
+      for (var gi = 1; gi < gLen; gi++) offs.push(choices[Math.floor(Math.random() * choices.length)]);
+      offs[gLen - 1] = Math.random() < 0.6 ? 0 : 7; // land grounded
+      var gt = now, gnames = [];
+      for (var gj = 0; gj < offs.length; gj++) {
+        var gf = root * Math.pow(2, offs[gj] / 12);
+        playArielBassNote(out, gt, gf, 2.4 - gj * 0.2, (0.78 + I * 0.15) - gj * 0.04);
+        gnames.push(freqToNoteName(gf));
+        gt += 0.45 + Math.random() * 0.4;
+      }
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "bass", time: now,
+        detail: gnames.join(" ") + " · gesture",
+      });
+    } else {
+      // single long sustained anchor — primarily the root
+      var off = Math.random() < 0.72 ? 0 : (Math.random() < reachEff ? 12 : 7);
+      var freq = root * Math.pow(2, off / 12);
+      playArielBassNote(out, now, freq, 3.0 + Math.random() * 1.3, 0.72 + I * 0.16);
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "bass", time: now,
+        detail: freqToNoteName(freq) + " · anchor · " + label,
+      });
+    }
+
+    arielBassNudgeDrift();
+    var gap = (3000 + space * 7000 + Math.random() * 4000) * pace; // arc-scaled pacing
+    scheduleWithRate(arielBass, gap, "ariel", "bass", 800);
   }
 
   // --- Continuous airy breeze pad ---
@@ -3962,11 +4588,23 @@ window.ProsperoAudio = (function () {
     // before any melodic layer reads it, then notify listeners.
     harmonicIdx = arielBreezeIdx % ARIEL_BREEZE_PAIRS.length;
     emitHarmonicChange("ariel");
+    // Arm the bass: its next fire plants the new centre's root (an "arrival").
+    arielBassPendingArrival = true;
     arielBreezeIdx = (arielBreezeIdx + 1) % ARIEL_BREEZE_PAIRS.length;
 
-    var duration = 15 + Math.random() * 5; // 15-20s
+    // CYCLE MIN/MAX bounds the random cycle duration. Clamp max ≥ min.
+    var bzMin = getLayerParam("ariel", "breeze", "cycleMin", 15);
+    var bzMax = getLayerParam("ariel", "breeze", "cycleMax", 20);
+    if (bzMax < bzMin) bzMax = bzMin;
+    var duration = bzMin + Math.random() * (bzMax - bzMin);
     var fadeIn = 3;
     var fadeOut = 3;
+    // BREATH = air-noise gain scale; DRIFT = LFO rate scale;
+    // SWELL = amplitude-LFO depth scale; SUB CHANCE = sub-octave probability.
+    var breath  = getLayerParam("ariel", "breeze", "breath", 1.0);
+    var drift   = getLayerParam("ariel", "breeze", "drift", 1.0);
+    var swell   = getLayerParam("ariel", "breeze", "swell", 1.0);
+    var bzSubChance = getLayerParam("ariel", "breeze", "subChance", 0.4);
 
     // Two sine oscillators at a fifth
     for (var i = 0; i < pair.length; i++) {
@@ -3977,8 +4615,8 @@ window.ProsperoAudio = (function () {
       var lfo = c.createOscillator();
       var lfoG = c.createGain();
       lfo.type = "sine";
-      lfo.frequency.setValueAtTime(0.1 + Math.random() * 0.2, now);
-      lfoG.gain.setValueAtTime(0.03, now);
+      lfo.frequency.setValueAtTime((0.1 + Math.random() * 0.2) * drift, now);
+      lfoG.gain.setValueAtTime(0.03 * swell, now);
       lfo.connect(lfoG);
       lfoG.connect(g.gain);
       o.type = "sine";
@@ -3995,8 +4633,8 @@ window.ProsperoAudio = (function () {
       lfo.stop(now + duration + 0.1);
     }
 
-    // Sub-octave triangle for warmth (40% chance)
-    var hasSub = Math.random() < 0.4;
+    // Sub-octave triangle for warmth (SUB CHANCE knob).
+    var hasSub = Math.random() < bzSubChance;
     var subFreq = hasSub ? pair[0] / 2 : null;
     if (hasSub) {
       var subO = c.createOscillator();
@@ -4015,23 +4653,19 @@ window.ProsperoAudio = (function () {
 
     // Broadcast cycle data for the drone visualizer (same shape as
     // libraryDrone / sycoraxDrone emit).
-    if (droneListener) {
-      try {
-        droneListener({
-          track: "ariel",
-          startTime: now,
-          duration: duration,
-          fadeIn: fadeIn,
-          fadeOut: fadeOut,
-          peakGain: 0.06,
-          frequencies: pair.slice(),
-          subFreq: subFreq,
-          subPeakGain: hasSub ? 0.025 : 0,
-        });
-      } catch (e) { console.error("droneListener threw:", e); }
-    }
+    emitDroneEvent({
+      track: "ariel",
+      startTime: now,
+      duration: duration,
+      fadeIn: fadeIn,
+      fadeOut: fadeOut,
+      peakGain: 0.06,
+      frequencies: pair.slice(),
+      subFreq: subFreq,
+      subPeakGain: hasSub ? 0.025 : 0,
+    });
 
-    // Gentle air noise
+    // Gentle air noise (scaled by BREATH knob).
     var ns = noiseSource(duration);
     var nf = c.createBiquadFilter();
     nf.type = "highpass";
@@ -4040,9 +4674,10 @@ window.ProsperoAudio = (function () {
     ns.connect(nf);
     nf.connect(ng);
     ng.connect(out);
+    var airPeak = 0.008 * breath;
     ng.gain.setValueAtTime(0, now);
-    ng.gain.linearRampToValueAtTime(0.008, now + fadeIn);
-    ng.gain.setValueAtTime(0.008, now + duration - fadeOut);
+    ng.gain.linearRampToValueAtTime(airPeak, now + fadeIn);
+    ng.gain.setValueAtTime(airPeak, now + duration - fadeOut);
     ng.gain.linearRampToValueAtTime(0, now + duration);
     startNoise(ns, now);
 
@@ -4058,10 +4693,18 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("ariel", "chimes");
 
-    // Burst phase: 2-4 quick notes
-    var burstLen = 2 + Math.floor(Math.random() * 3);
+    // DECAY  scales the bell decay time (1.5–2.5 s default).
+    // DETUNE scales the 2-voice cents spread (±2–4 cents default).
+    // BURST  scales the burst length (2–4 notes default). Always ≥ 1.
+    var chDecay  = getLayerParam("ariel", "chimes", "decay", 1.0);
+    var chDetune = getLayerParam("ariel", "chimes", "detune", 1.0);
+    var chBurst  = getLayerParam("ariel", "chimes", "burst", 1.0);
+
+    // Burst phase: scaled by BURST. Floor at 1.
+    var burstLen = Math.max(1, Math.round((2 + Math.floor(Math.random() * 3)) * chBurst));
     var offset = 0;
     var chordTones = getChordTonesFor("ariel", "chimes");
+    var chimeFirstFreq = null;
 
     for (var ni = 0; ni < burstLen; ni++) {
       var t = now + offset;
@@ -4075,10 +4718,11 @@ window.ProsperoAudio = (function () {
         arielChimeIdx = markovNextChordBiased(ARIEL_CHIME_MARKOV[arielChimeIdx], chordTones, HARMONIC_BIAS_BASE);
       }
       var freq = ARIEL_SCALE_5[arielChimeIdx];
-      var decay = 1.5 + Math.random();
+      if (chimeFirstFreq === null) chimeFirstFreq = freq;
+      var decay = (1.5 + Math.random()) * chDecay;
 
       // Two detuned bell-wave oscillators for metallic shimmer
-      var detune = 2 + Math.random() * 2;
+      var detune = (2 + Math.random() * 2) * chDetune;
       for (var di = 0; di < 2; di++) {
         var o = c.createOscillator();
         var g = c.createGain();
@@ -4092,6 +4736,13 @@ window.ProsperoAudio = (function () {
         o.start(t);
         o.stop(t + decay + 0.1);
       }
+    }
+
+    if (chimeFirstFreq !== null) {
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "chimes", time: now,
+        detail: freqToNoteName(chimeFirstFreq) + " · " + burstLen + " notes",
+      });
     }
 
     // Breathe phase: longer pause, with 25% chance of a lone ping in the silence
@@ -4113,12 +4764,14 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("ariel", "chimes");
 
-    // The lone ping is the only note in this fire — treat it as a resolution.
+    // Lone ping reuses the same DECAY + DETUNE knobs as the burst.
+    var pingChDecay  = getLayerParam("ariel", "chimes", "decay", 1.0);
+    var pingChDetune = getLayerParam("ariel", "chimes", "detune", 1.0);
     var pingChordTones = getChordTonesFor("ariel", "chimes");
     arielChimeIdx = resolveDegree(arielChimeIdx, ARIEL_CHIME_MARKOV[arielChimeIdx], pingChordTones);
     var freq = ARIEL_SCALE_5[arielChimeIdx];
-    var decay = 1.5 + Math.random();
-    var detune = 2 + Math.random() * 2;
+    var decay = (1.5 + Math.random()) * pingChDecay;
+    var detune = (2 + Math.random() * 2) * pingChDetune;
 
     for (var di = 0; di < 2; di++) {
       var o = c.createOscillator();
@@ -4134,6 +4787,11 @@ window.ProsperoAudio = (function () {
       o.stop(now + decay + 0.1);
     }
 
+    emitMotifEvent({
+      type: "fire", track: "ariel", layer: "chimes", time: now,
+      detail: freqToNoteName(freq) + " · ping",
+    });
+
     // Resume with next burst after remaining breathe pause
     var remaining = 1800 + Math.random() * 1800;
     scheduleWithRate(arielChimes, remaining, "ariel", "chimes");
@@ -4146,17 +4804,24 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("ariel", "flutter");
 
-    // 20% rest
-    if (Math.random() < 0.2) {
+    // SPEED  scales inter-note interval (0.08 s default).
+    // DETUNE scales per-note random detune (±2 cents default).
+    // REST   probability of skipping this fire entirely.
+    var flSpeed  = getLayerParam("ariel", "flutter", "speed", 1.0);
+    var flDetune = getLayerParam("ariel", "flutter", "detune", 1.0);
+    var flRest   = getLayerParam("ariel", "flutter", "rest", 0.2);
+
+    if (Math.random() < flRest) {
       scheduleWithRate(arielFlutter, 3000 + Math.random() * 3000, "ariel", "flutter");
       return;
     }
 
     var noteCount = 2 + Math.floor(Math.random() * 3); // 2-4 notes
     var flutterChordTones = getChordTonesFor("ariel", "flutter");
+    var flutterFirstFreq = null, flutterLastFreq = null;
 
     for (var ni = 0; ni < noteCount; ni++) {
-      var t = now + ni * 0.08;
+      var t = now + ni * 0.08 * flSpeed;
 
       if (ni === noteCount - 1) {
         arielFlutterIdx = resolveDegree(arielFlutterIdx, ARIEL_FLUTTER_MARKOV[arielFlutterIdx], flutterChordTones);
@@ -4164,12 +4829,14 @@ window.ProsperoAudio = (function () {
         arielFlutterIdx = markovNextChordBiased(ARIEL_FLUTTER_MARKOV[arielFlutterIdx], flutterChordTones, HARMONIC_BIAS_BASE);
       }
       var freq = ARIEL_SCALE_4[arielFlutterIdx];
+      if (flutterFirstFreq === null) flutterFirstFreq = freq;
+      flutterLastFreq = freq;
       var dur = 0.15 + Math.random() * 0.1;
 
       var o = c.createOscillator();
       var g = c.createGain();
       o.type = "triangle";
-      o.frequency.setValueAtTime(freq + (Math.random() * 4 - 2), t); // slight detune
+      o.frequency.setValueAtTime(freq + (Math.random() * 4 - 2) * flDetune, t); // slight detune
       o.connect(g);
       g.connect(out);
       g.gain.setValueAtTime(0, t);
@@ -4178,6 +4845,17 @@ window.ProsperoAudio = (function () {
       g.gain.linearRampToValueAtTime(0, t + dur);
       o.start(t);
       o.stop(t + dur + 0.01);
+    }
+
+    if (flutterFirstFreq !== null) {
+      var flutterRange = freqToNoteName(flutterFirstFreq);
+      if (flutterLastFreq !== flutterFirstFreq) {
+        flutterRange += "→" + freqToNoteName(flutterLastFreq);
+      }
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "flutter", time: now,
+        detail: flutterRange + " · " + noteCount + " notes",
+      });
     }
 
     scheduleWithRate(arielFlutter, 3000 + Math.random() * 3000, "ariel", "flutter");
@@ -4190,13 +4868,28 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("ariel", "bubbles");
 
-    var bubbleCount = 1 + Math.floor(Math.random() * 3); // 1-3 bubbles
+    // REACH    scales the glissando endMult (how far each bubble climbs).
+    // DURATION scales the per-bubble length.
+    // CLUSTER  probability of 2-3 bubbles vs single (was 1 + floor(rand×3)
+    //          → 66% multi at default).
+    var bbReach    = getLayerParam("ariel", "bubbles", "reach", 1.0);
+    var bbDuration = getLayerParam("ariel", "bubbles", "duration", 1.0);
+    var bbCluster  = getLayerParam("ariel", "bubbles", "cluster", 0.66);
+    var bubbleCount = (Math.random() < bbCluster)
+      ? 2 + Math.floor(Math.random() * 2)   // 2-3 when clustering
+      : 1;                                  // single otherwise
+    var bubbleFirstStart = null, bubbleLastEnd = null;
 
     for (var bi = 0; bi < bubbleCount; bi++) {
       var t = now + bi * (0.2 + Math.random() * 0.3);
       var startFreq = 400 + Math.random() * 800;
-      var endMult = 1.5 + Math.random() * 1.5; // 1.5x to 3x
-      var dur = 0.3 + Math.random() * 1.2;
+      // endMult: range centered around 2.25 (the midpoint of 1.5–3) so
+      // REACH scales the *deviation*, never going below 1.0 (no down-gliss).
+      var endMultRaw = 1.5 + Math.random() * 1.5;
+      var endMult = Math.max(1.0, 1 + (endMultRaw - 1) * bbReach);
+      var dur = (0.3 + Math.random() * 1.2) * bbDuration;
+      if (bubbleFirstStart === null) bubbleFirstStart = startFreq;
+      bubbleLastEnd = startFreq * endMult;
 
       var o = c.createOscillator();
       var g = c.createGain();
@@ -4211,6 +4904,15 @@ window.ProsperoAudio = (function () {
       g.gain.linearRampToValueAtTime(0, t + dur);
       o.start(t);
       o.stop(t + dur + 0.1);
+    }
+
+    if (bubbleFirstStart !== null) {
+      emitMotifEvent({
+        type: "fire", track: "ariel", layer: "bubbles", time: now,
+        detail: freqToNoteName(bubbleFirstStart) + "→" +
+                freqToNoteName(bubbleLastEnd) +
+                (bubbleCount > 1 ? " · " + bubbleCount + "x" : ""),
+      });
     }
 
     scheduleWithRate(arielBubbles, 5000 + Math.random() * 5000, "ariel", "bubbles");
@@ -4228,8 +4930,15 @@ window.ProsperoAudio = (function () {
     var c = ctx;
     opts = opts || {};
     var gainScale = opts.gainScale != null ? opts.gainScale : 1;
-    var vibDepth  = opts.vibDepth  != null ? opts.vibDepth  : 2;
-    var vibRate   = opts.vibRate   != null ? opts.vibRate   : 5.5;
+    // Whistle knobs apply on top of any motif-supplied vibrato params.
+    // VIBRATO  scales the vibrato Hz depth.
+    // VIB RATE scales the vibrato LFO rate.
+    // BREATH   scales the breathy 1800 Hz bandpass noise mixed in.
+    var whVibScale  = getLayerParam("ariel", "whistle", "vibrato", 1.0);
+    var whVibRate   = getLayerParam("ariel", "whistle", "vibRate", 1.0);
+    var whBreath    = getLayerParam("ariel", "whistle", "breath", 1.0);
+    var vibDepth = (opts.vibDepth != null ? opts.vibDepth : 2)   * whVibScale;
+    var vibRate  = (opts.vibRate  != null ? opts.vibRate  : 5.5) * whVibRate;
     var peak = 0.035 * gainScale;
     var held = 0.03  * gainScale;
 
@@ -4258,17 +4967,35 @@ window.ProsperoAudio = (function () {
     nf.type = "bandpass";
     nf.frequency.setValueAtTime(1800, t);
     nf.Q.setValueAtTime(12, t);
+    // BREATH knob: gain stage between the bandpass-filtered noise and the
+    // mix bus. Default 1 keeps the original level; 0 = pure flute tone.
+    var breathGain = c.createGain();
+    breathGain.gain.setValueAtTime(whBreath, t);
 
     var mix = c.createGain();
     voice.connect(mix);
     ns.connect(nf);
-    nf.connect(mix);
+    nf.connect(breathGain);
+    breathGain.connect(mix);
     mix.connect(out);
 
+    // Attack-Sustain-Release envelope. The slow attack (~300ms capped) is
+    // what makes the lollipop visibly grow from the row baseline. The
+    // sustain phase holds the audio (and therefore the lollipop) at peak
+    // through ~60% of the note so it reads as "present and holding" rather
+    // than constantly in motion. The release ramps to silence over the
+    // remaining ~40%, which the lollipop also tracks as a visible shrink.
+    var attack = Math.min(0.35, noteDur * 0.28);
+    var sustainEnd = noteDur * 0.6;
+    // Guarantee at least 50ms of sustain even for very short notes so the
+    // peak moment is perceivable rather than a glance.
+    if (sustainEnd < attack + 0.05) sustainEnd = attack + 0.05;
     mix.gain.setValueAtTime(0, t);
-    mix.gain.linearRampToValueAtTime(peak, t + Math.min(0.12, noteDur * 0.2));
-    mix.gain.setValueAtTime(held, t + noteDur * 0.6);
+    mix.gain.linearRampToValueAtTime(peak, t + attack);
+    mix.gain.setValueAtTime(peak, t + sustainEnd);
     mix.gain.linearRampToValueAtTime(0, t + noteDur);
+    // `held` retained for compat — no longer referenced in the envelope.
+    void held;
 
     var stopAt = t + noteDur + 0.01;
     voice.start(t); voice.stop(stopAt);
@@ -4310,7 +5037,7 @@ window.ProsperoAudio = (function () {
       } else {
         arielWhistleIdx = markovNextChordBiased(ARIEL_WHISTLE_MARKOV[arielWhistleIdx], phraseChordTones, HARMONIC_BIAS_BASE);
       }
-      var dur = 0.6 + Math.random() * 0.5;
+      var dur = 0.85 + Math.random() * 0.55; // was 0.6 + r*0.5
       motifAddNote(motif, arielWhistleIdx, t, dur, 1, 1);
       t += dur + 0.08;
     }
@@ -4323,7 +5050,7 @@ window.ProsperoAudio = (function () {
   function buildArielWhistleLoneTone() {
     var motif = makeMotif("loneTone");
     motif.scaleLen = ARIEL_SCALE_4.length;
-    var dur = 2 + Math.random() * 3;
+    var dur = 2.5 + Math.random() * 3; // was 2 + r*3
     var note = {
       degree: arielWhistleIdx, offset: 0, dur: dur,
       gain: 1, octMult: 1, vibDepth: 4,
@@ -4347,7 +5074,8 @@ window.ProsperoAudio = (function () {
     var idx = arielWhistleIdx;
     for (var i = 0; i < count; i++) {
       var isLast = (i === count - 1);
-      var dur = isLast ? 1.5 + Math.random() : 0.4 + 0.18 * i;
+      // bumped: was 1.5 + r and 0.4 + 0.18*i
+      var dur = isLast ? 1.9 + Math.random() * 1.2 : 0.55 + 0.22 * i;
       motifAddNote(motif, idx, t, dur, 1, 1);
       t += dur + 0.05;
       if (!isLast) idx = stepDirectional(idx, +1, ARIEL_SCALE_4.length);
@@ -4366,7 +5094,8 @@ window.ProsperoAudio = (function () {
     var idx = arielWhistleIdx;
     for (var i = 0; i < count; i++) {
       var isLast = (i === count - 1);
-      var dur = isLast ? 1.8 + Math.random() : 0.7 + Math.random() * 0.3;
+      // bumped: was 1.8 + r and 0.7 + r*0.3
+      var dur = isLast ? 2.3 + Math.random() * 1.3 : 0.9 + Math.random() * 0.45;
       var gain = 1.0 - i * 0.15;
       motifAddNote(motif, idx, t, dur, gain, 1);
       t += dur + 0.05;
@@ -4382,9 +5111,9 @@ window.ProsperoAudio = (function () {
   function buildArielWhistleLydianGesture() {
     var motif = makeMotif("lydian");
     motif.scaleLen = ARIEL_SCALE_4.length;
-    var dur1 = 1.0 + Math.random() * 0.4;
+    var dur1 = 1.3 + Math.random() * 0.5;   // was 1.0 + r*0.4
     var gap  = 0.15;
-    var dur2 = 1.5 + Math.random() * 0.5;
+    var dur2 = 2.0 + Math.random() * 0.6;   // was 1.5 + r*0.5
     var t = 0;
     motifAddNote(motif, 0, t, dur1, 1, 1);          // F
     t += dur1 + gap;
@@ -4392,7 +5121,7 @@ window.ProsperoAudio = (function () {
     t += dur2 + 0.1;
     var endDeg;
     if (Math.random() < 0.5) {
-      var dur3 = 0.6 + Math.random() * 0.4;
+      var dur3 = 0.8 + Math.random() * 0.5;        // was 0.6 + r*0.4
       motifAddNote(motif, 0, t, dur3, 1, 1);        // resolve to F
       endDeg = 0;
     } else {
@@ -4418,7 +5147,7 @@ window.ProsperoAudio = (function () {
       var dir = Math.random() < 0.5 ? 1 : -1;
       var idx = startIdx;
       for (var i = 0; i < count; i++) {
-        var dur = 0.2 + Math.random() * 0.15;
+        var dur = 0.28 + Math.random() * 0.22; // was 0.2 + r*0.15; over lollipop fade threshold
         motifAddNote(motif, idx, t, dur, 1, 1);
         t += dur + 0.05;
         var leap = 3 + Math.floor(Math.random() * 3);
@@ -4444,12 +5173,12 @@ window.ProsperoAudio = (function () {
     var idxHigh = idxLow + interval;
     var t = 0;
     for (var i = 0; i < count; i++) {
-      var dur = 0.12 + Math.random() * 0.04;
+      var dur = 0.17 + Math.random() * 0.06; // was 0.12 + r*0.04; above lollipop fade
       var idx = i % 2 === 0 ? idxLow : idxHigh;
       motifAddNote(motif, idx, t, dur, 1, 1);
       t += dur + 0.02;
     }
-    var resDur = 1.0 + Math.random() * 0.5;
+    var resDur = 1.3 + Math.random() * 0.6; // was 1.0 + r*0.5
     motifAddNote(motif, idxLow, t, resDur, 1, 1);
     arielWhistleIdx = idxLow;
     motif.endDegree = idxLow;
@@ -4544,16 +5273,15 @@ window.ProsperoAudio = (function () {
     if (!playing || currentTrack !== "ariel") return;
     var out = lgp("ariel", "ambient");
 
-    var event = weightedChoice(ARIEL_AMBIENT_POOL);
+    var variety = getLayerParam("ariel", "ambient", "variety", "default");
+    var event = weightedChoiceVariety(ARIEL_AMBIENT_POOL, variety);
+    emitAmbientEvent({ type: "fire", track: "ariel", layer: "ambient", event: event, time: ctx.currentTime });
     switch (event) {
       case "giggle":
         arielGiggle(out);
         break;
       case "birdsong":
         arielBirdsong(out);
-        break;
-      case "splash":
-        arielSplash(out);
         break;
       case "breeze_gust":
         arielBreezeGust(out);
@@ -4567,9 +5295,22 @@ window.ProsperoAudio = (function () {
       case "cricket":
         arielCricket(out);
         break;
+      case "wind_chime":
+        arielWindChime(out);
+        break;
+      case "bumble_bee":
+        arielBumbleBee(out);
+        break;
+      case "bubble_pop":
+        arielBubblePop(out);
+        break;
     }
 
-    scheduleWithRate(arielAmbient, 10000 + Math.random() * 10000, "ariel", "ambient");
+    var ariDensity = getLayerParam("ariel", "ambient", "density", 1.0);
+    if (ariDensity < 0.05) ariDensity = 0.05;
+    scheduleWithRate(arielAmbient,
+      (10000 + Math.random() * 10000) / ariDensity,
+      "ariel", "ambient");
   }
 
   // --- Ariel ambient event synthesis ---
@@ -4577,15 +5318,16 @@ window.ProsperoAudio = (function () {
   function arielGiggle(out) {
     var c = ctx;
     var now = c.currentTime;
-    var bursts = 4 + Math.floor(Math.random() * 3); // 4-6
-    var totalDur = 0.4 + Math.random() * 0.2;
+    // Sampled per-call to match the preview defaults.
+    var bursts = 2 + Math.floor(Math.random() * 7); // 2–8
+    var totalDur = 0.35 + Math.random() * 0.4;      // 0.35–0.75
+    var vol = 0.065;
     var formants = [[600, 2200], [800, 1200]]; // eh, ah
 
     for (var i = 0; i < bursts; i++) {
       var t = now + (i / bursts) * totalDur;
       var burstDur = 0.04 + Math.random() * 0.02;
       var fm = formants[i % 2];
-      // Rising pitch through sequence
       var qShift = 1 + i * 0.15;
 
       var n = noiseSource(burstDur);
@@ -4605,8 +5347,9 @@ window.ProsperoAudio = (function () {
       f2.connect(mix);
       mix.connect(g);
       g.connect(out);
-      // Volume peaks in middle of sequence
-      var envVol = 0.02 + 0.015 * Math.sin(Math.PI * i / (bursts - 1));
+      // Volume peaks in middle of sequence (matches preview envelope shape)
+      var envScale = bursts > 1 ? Math.sin(Math.PI * i / (bursts - 1)) : 1;
+      var envVol = vol * (0.7 + 0.6 * envScale);
       g.gain.setValueAtTime(envVol, t);
       g.gain.linearRampToValueAtTime(0, t + burstDur);
       startNoise(n, t);
@@ -4616,60 +5359,48 @@ window.ProsperoAudio = (function () {
   function arielBirdsong(out) {
     var c = ctx;
     var now = c.currentTime;
-    var chirps = 2 + Math.floor(Math.random() * 2); // 2-3
+    var chirps = 2 + Math.floor(Math.random() * 4); // 2–5
+    var startFreqBase = 1050 + Math.random() * 1350; // 1050–2400
+    var glide = 2.3;
+    var vol = 0.025;
     for (var i = 0; i < chirps; i++) {
       var t = now + i * (0.12 + Math.random() * 0.08);
       var dur = 0.06 + Math.random() * 0.04;
-      var startFreq = 1500 + Math.random() * 500;
+      var startFreq = startFreqBase + Math.random() * 500;
       var o = c.createOscillator();
       var g = c.createGain();
       o.type = "sine";
       o.frequency.setValueAtTime(startFreq, t);
-      o.frequency.exponentialRampToValueAtTime(startFreq * 2, t + dur);
+      o.frequency.exponentialRampToValueAtTime(startFreq * glide, t + dur);
       o.connect(g);
       g.connect(out);
-      g.gain.setValueAtTime(0.025, t);
+      g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + dur);
       o.start(t);
       o.stop(t + dur + 0.01);
     }
   }
 
-  function arielSplash(out) {
-    var c = ctx;
-    var now = c.currentTime;
-    var dur = 0.1 + Math.random() * 0.1;
-    var n = noiseSource(dur);
-    var g = c.createGain();
-    var f = c.createBiquadFilter();
-    f.type = "bandpass";
-    f.frequency.setValueAtTime(800, now);
-    f.Q.setValueAtTime(3, now);
-    n.connect(f);
-    f.connect(g);
-    g.connect(out);
-    g.gain.setValueAtTime(0.03, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + dur);
-    startNoise(n, now);
-  }
-
   function arielBreezeGust(out) {
     var c = ctx;
     var now = c.currentTime;
-    var dur = 1 + Math.random() * 1;
+    var dur = 1 + Math.random() * 3;                   // 1–4
+    var startFreq = 130 + Math.random() * 220;         // 130–350
+    var peakFreq = 550 + Math.random() * 625;          // 550–1175
+    var vol = 0.02;
     var n = noiseSource(dur);
     var g = c.createGain();
     var f = c.createBiquadFilter();
     f.type = "bandpass";
-    f.frequency.setValueAtTime(200, now);
-    f.frequency.linearRampToValueAtTime(800, now + dur * 0.4);
-    f.frequency.linearRampToValueAtTime(300, now + dur);
+    f.frequency.setValueAtTime(startFreq, now);
+    f.frequency.linearRampToValueAtTime(peakFreq, now + dur * 0.4);
+    f.frequency.linearRampToValueAtTime(startFreq * 1.5, now + dur);
     f.Q.setValueAtTime(2, now);
     n.connect(f);
     f.connect(g);
     g.connect(out);
     g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.02, now + dur * 0.3);
+    g.gain.linearRampToValueAtTime(vol, now + dur * 0.3);
     g.gain.linearRampToValueAtTime(0, now + dur);
     startNoise(n, now);
   }
@@ -4677,11 +5408,15 @@ window.ProsperoAudio = (function () {
   function arielSparkle(out) {
     var c = ctx;
     var now = c.currentTime;
-    var pings = 5 + Math.floor(Math.random() * 4); // 5-8
-    var totalDur = 0.3 + Math.random() * 0.3;
+    var pings = 5 + Math.floor(Math.random() * 7);   // 5–11
+    var rate = 12 + Math.random() * 24;              // 12–36 Hz
+    var spacing = 1 / rate;
+    var minFreq = 1500 + Math.random() * 900;        // 1500–2400
+    var maxFreq = 4500 + Math.random() * 2850;       // 4500–7350
+    var vol = 0.012;
     for (var i = 0; i < pings; i++) {
-      var t = now + (i / pings) * totalDur;
-      var freq = 2000 + Math.random() * 4000;
+      var t = now + i * spacing;
+      var freq = minFreq + Math.random() * (maxFreq - minFreq);
       var decay = 0.15 + Math.random() * 0.2;
       var o = c.createOscillator();
       var g = c.createGain();
@@ -4689,7 +5424,7 @@ window.ProsperoAudio = (function () {
       o.frequency.setValueAtTime(freq, t);
       o.connect(g);
       g.connect(out);
-      g.gain.setValueAtTime(0.012, t);
+      g.gain.setValueAtTime(vol, t);
       g.gain.exponentialRampToValueAtTime(0.001, t + decay);
       o.start(t);
       o.stop(t + decay + 0.01);
@@ -4699,18 +5434,20 @@ window.ProsperoAudio = (function () {
   function arielLeafRustle(out) {
     var c = ctx;
     var now = c.currentTime;
-    var dur = 0.3 + Math.random() * 0.3;
+    var dur = 0.25 + Math.random() * 0.35;           // 0.25–0.6
+    var centerFreq = 2500 + Math.random() * 1500;    // 2500–4000
+    var vol = 0.012;
     var n = noiseSource(dur);
     var g = c.createGain();
     var f = c.createBiquadFilter();
     f.type = "bandpass";
-    f.frequency.setValueAtTime(3000, now);
+    f.frequency.setValueAtTime(centerFreq, now);
     f.Q.setValueAtTime(5, now);
     n.connect(f);
     f.connect(g);
     g.connect(out);
     g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.01, now + dur * 0.3);
+    g.gain.linearRampToValueAtTime(vol, now + dur * 0.3);
     g.gain.linearRampToValueAtTime(0, now + dur);
     startNoise(n, now);
   }
@@ -4718,29 +5455,139 @@ window.ProsperoAudio = (function () {
   function arielCricket(out) {
     var c = ctx;
     var now = c.currentTime;
-    var dur = 0.5 + Math.random() * 0.5;
-    // Carrier sine at 4000 Hz, amplitude modulated at 30 Hz
+    // Cricket cadence: event = N chirps, chirp = M short percussive pulses.
+    var chirps = 3 + Math.floor(Math.random() * 4);   // 3–6
+    var rate = 1.7 + Math.random() * 0.7;             // 1.7–2.4 Hz (chirp spacing)
+    var pulses = 3 + Math.floor(Math.random() * 3);   // 3–5 pulses per chirp
+    var chirpRate = 35;                               // fixed trill rate
+    var carrierFreq = 4100 + Math.random() * 1200;    // 4100–5300
+    var vol = 0.013;
+    var chirpSpacing = 1 / rate;
+    var pulseSpacing = 1 / chirpRate;
+    for (var k = 0; k < chirps; k++) {
+      var chirpStart = now + k * chirpSpacing;
+      // Per-chirp carrier + pulse duration so tics within one chirp are
+      // tonally identical; successive chirps vary slightly.
+      var cFreq = carrierFreq * (0.97 + Math.random() * 0.06);
+      var pulseDur = 0.014 + Math.random() * 0.008;
+      for (var i = 0; i < pulses; i++) {
+        var t = chirpStart + i * pulseSpacing;
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(cFreq, t);
+        o.connect(g);
+        g.connect(out);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol, t + 0.002);
+        g.gain.exponentialRampToValueAtTime(0.001, t + pulseDur);
+        o.start(t);
+        o.stop(t + pulseDur + 0.01);
+      }
+    }
+  }
+
+  function arielWindChime(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    var pings = 3 + Math.floor(Math.random() * 6); // 3–8
+    var rate = 2.5 + Math.random() * 2.5; // ~2.5–5 Hz
+    var spacing = 1 / rate;
+    var minFreq = 800 + Math.random() * 300;
+    var maxFreq = 1600 + Math.random() * 800;
+    var decay = 1.8;
+    var vol = 0.025;
+    for (var i = 0; i < pings; i++) {
+      var t = now + i * spacing * (0.85 + Math.random() * 0.3);
+      var fund = arielSnapToScale(minFreq + Math.random() * (maxFreq - minFreq));
+      // Glassy chime partials (inharmonic on purpose).
+      var partials = [
+        { ratio: 1.0, amp: 1.00, decay: decay },
+        { ratio: 2.4, amp: 0.50, decay: decay * 0.7 },
+        { ratio: 4.5, amp: 0.25, decay: decay * 0.45 },
+      ];
+      for (var j = 0; j < partials.length; j++) {
+        var pt = partials[j];
+        var o = c.createOscillator();
+        var g = c.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(fund * pt.ratio, t);
+        o.connect(g);
+        g.connect(out);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(vol * pt.amp, t + 0.005);
+        g.gain.exponentialRampToValueAtTime(0.001, t + pt.decay);
+        o.start(t);
+        o.stop(t + pt.decay + 0.05);
+      }
+    }
+  }
+
+  function arielBumbleBee(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    var dur = 1 + Math.random() * 1;                            // 1–2
+    var basePitch = arielSnapToScale(160 + Math.random() * 85); // 160–245 → F3-B3
+    var buzzRate = 22 + Math.random() * 22;                     // 22–44 Hz
+    var vol = 0.03;
     var carrier = c.createOscillator();
     var modulator = c.createOscillator();
     var modG = c.createGain();
     var g = c.createGain();
-    carrier.type = "sine";
-    carrier.frequency.setValueAtTime(4000 + Math.random() * 1000, now);
+    carrier.type = "sawtooth";
+    // Doppler glide: low → peak → low (approach / overhead / departure)
+    carrier.frequency.setValueAtTime(basePitch * 0.7, now);
+    carrier.frequency.linearRampToValueAtTime(basePitch, now + dur * 0.4);
+    carrier.frequency.linearRampToValueAtTime(basePitch * 0.55, now + dur);
     modulator.type = "sine";
-    modulator.frequency.setValueAtTime(28 + Math.random() * 8, now);
-    modG.gain.setValueAtTime(0.01, now);
+    modulator.frequency.setValueAtTime(buzzRate, now);
+    modG.gain.setValueAtTime(vol * 0.5, now);
     modulator.connect(modG);
     modG.connect(g.gain);
-    carrier.connect(g);
+    var lp = c.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(900, now);
+    lp.Q.setValueAtTime(0.7, now);
+    carrier.connect(lp);
+    lp.connect(g);
     g.connect(out);
     g.gain.setValueAtTime(0, now);
-    g.gain.linearRampToValueAtTime(0.015, now + 0.05);
-    g.gain.setValueAtTime(0.012, now + dur * 0.7);
+    g.gain.linearRampToValueAtTime(vol, now + dur * 0.25);
+    g.gain.linearRampToValueAtTime(vol * 0.6, now + dur * 0.75);
     g.gain.linearRampToValueAtTime(0, now + dur);
-    carrier.start(now);
-    carrier.stop(now + dur + 0.1);
-    modulator.start(now);
-    modulator.stop(now + dur + 0.1);
+    carrier.start(now); carrier.stop(now + dur + 0.1);
+    modulator.start(now); modulator.stop(now + dur + 0.1);
+  }
+
+  function arielBubblePop(out) {
+    var c = ctx;
+    var now = c.currentTime;
+    var pops = 1 + Math.floor(Math.random() * 4);    // 1–4
+    var rate = 1 + Math.random() * 3.5;              // 1–4.5 Hz
+    var spacing = 1 / rate;
+    var dur = 0.08 + Math.random() * 0.16;           // 0.08–0.24
+    var rawStartBase = 290 + Math.random() * 210;    // 290–500
+    var glide = 2.1;
+    var vol = 0.03;
+    for (var k = 0; k < pops; k++) {
+      var t = now + k * spacing;
+      // Per-pop pitch jitter so the cluster doesn't sound xeroxed.
+      var raw = rawStartBase * (0.92 + Math.random() * 0.16);
+      var startFreq = arielSnapToScale(raw);
+      var endFreq = arielSnapToScale(startFreq * glide);
+      var o = c.createOscillator();
+      var g = c.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(startFreq, t);
+      o.frequency.exponentialRampToValueAtTime(endFreq, t + dur * 0.7);
+      o.connect(g);
+      g.connect(out);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    }
   }
 
   // ==========================================================================
@@ -4769,6 +5616,7 @@ window.ProsperoAudio = (function () {
       if (layer === "ambient") return sycoraxAmbient;
     } else if (track === "ariel") {
       if (layer === "breeze") return arielBreeze;
+      if (layer === "bass") return arielBass;
       if (layer === "chimes") return arielChimes;
       if (layer === "flutter") return arielFlutter;
       if (layer === "bubbles") return arielBubbles;
@@ -4795,10 +5643,7 @@ window.ProsperoAudio = (function () {
     }
     clearAllTimers();
     if (ctx) silenceTrackLayers(currentTrack);
-    if (previewListener) {
-      try { previewListener(endedTrack, endedLayer, false); }
-      catch (e) { console.error("previewListener threw:", e); }
-    }
+    emitPreviewEvent(endedTrack, endedLayer, false);
   }
 
   function preview(track, layer) {
@@ -4838,14 +5683,12 @@ window.ProsperoAudio = (function () {
 
     previewEndTimer = setTimeout(endPreview, PREVIEW_DURATION_MS);
 
-    if (previewListener) {
-      try { previewListener(track, layer, true); }
-      catch (e) { console.error("previewListener threw:", e); }
-    }
+    emitPreviewEvent(track, layer, true);
   }
 
   function setPreviewListener(fn) {
-    previewListener = typeof fn === "function" ? fn : null;
+    if (typeof fn === "function") previewListeners.push(fn);
+    else previewListeners.length = 0;
   }
 
   // --- Library previews ---
@@ -5382,16 +6225,33 @@ window.ProsperoAudio = (function () {
     setMasterVolume: setMasterVolume,
     setLayerVolume: setLayerVolume,
     setLayerRate: setLayerRate,
+    setLayerParam: setLayerParam,
+    getLayerParam: getLayerParam,
+    resetLayerParams: resetLayerParams,
+    LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS,
     resetLayers: resetLayers,
     toggleLayer: toggleLayer,
     DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     preview: preview,
     stopPreview: endPreview,
     setPreviewListener: setPreviewListener,
-    setDroneListener: function (fn) { droneListener = typeof fn === "function" ? fn : null; },
-    setMotifListener: function (fn) { motifListener = typeof fn === "function" ? fn : null; },
+    setDroneListener: function (fn) {
+      if (typeof fn === "function") droneListeners.push(fn);
+      else droneListeners.length = 0;
+    },
+    setMotifListener: function (fn) {
+      if (typeof fn === "function") motifListeners.push(fn);
+      else motifListeners.length = 0;
+    },
     // Backward-compat alias for the previous melody-only name.
-    setMelodyListener: function (fn) { motifListener = typeof fn === "function" ? fn : null; },
+    setMelodyListener: function (fn) {
+      if (typeof fn === "function") motifListeners.push(fn);
+      else motifListeners.length = 0;
+    },
+    setAmbientListener: function (fn) {
+      if (typeof fn === "function") ambientListeners.push(fn);
+      else ambientListeners.length = 0;
+    },
     setHarmonicListener: function (fn) {
       harmonicListener = typeof fn === "function" ? fn : null;
       // Re-emit current state so a late subscriber gets initialized.
@@ -5402,5 +6262,21 @@ window.ProsperoAudio = (function () {
     getDensityRange: function () { return DENSITY_RANGE.slice(); },
     getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
     getState: getState,
+    // Analysis taps — return the engine's AudioContext and connect masterGain
+    // to an external node so visualizations (spectrograms, scopes, etc.) can
+    // observe the post-mix signal without disrupting the audio path.
+    getAudioContext: function () { return ctx; },
+    attachAnalyser: function (node) {
+      if (!masterGain || !node) return false;
+      try { masterGain.connect(node); return true; } catch (e) { return false; }
+    },
+    // Connect a specific layer's gain to an external node — lets a viz
+    // analyze just one layer's contribution (e.g. whistle in isolation
+    // for the lollipop overlay in the ridgeline prototype).
+    attachLayerAnalyser: function (track, layer, node) {
+      if (!layerGains[track] || !layerGains[track][layer] || !node) return false;
+      try { layerGains[track][layer].connect(node); return true; }
+      catch (e) { return false; }
+    },
   };
 })();

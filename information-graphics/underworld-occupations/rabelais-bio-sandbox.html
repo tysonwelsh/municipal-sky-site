@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Who Was Rabelais? — Letterpress</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:wght@400;500;600;700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --color-bg-parchment: #ddd0b3;
+        --color-bg-card: #e4dac0;
+        --color-bg-subtle: #d8cdb5;
+        --color-bg-frame-inset: #cfc2a0;
+        --color-border-light: rgba(90, 62, 40, 0.18);
+        --color-border-medium: #5a3e28;
+        --color-border-subtle: rgba(90, 62, 40, 0.15);
+        --color-text-primary: #1a1408;
+        --color-text-secondary: #2c2014;
+        --color-text-tertiary: #3d2b18;
+        --color-text-muted: #4a3a28;
+        --color-text-subtle: #5c5347;
+        --color-text-faint: #5c4a38;
+        --color-rubrication: #b33a2b;
+        --color-rubrication-light: rgba(179, 58, 43, 0.15);
+        --color-rubrication-border: rgba(179, 58, 43, 0.2);
+        --font-family: "Cormorant Garamond", Georgia, "Times New Roman",
+          serif;
+        --font-family-sc: "Cormorant SC", "Cormorant Garamond", Georgia,
+          serif;
+        --font-family-display: "IM Fell Great Primer SC",
+          "Cormorant SC", Georgia, serif;
+        --font-family-display-body: "IM Fell Great Primer",
+          "Cormorant Garamond", Georgia, serif;
+        --font-family-data: "Cormorant Garamond", Georgia, serif;
+        --font-size-sm: 12px;
+        --font-size-md: 14px;
+      }
+
+      body {
+        margin: 0;
+        background: #c8baa0;
+        min-height: 100vh;
+        padding: 40px 24px 80px;
+        box-sizing: border-box;
+        font-family: var(--font-family);
+        color: var(--color-text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-synthesis: none;
+      }
+      /* Match the real slide-container max-width so the sandbox card
+         is the exact footprint of a live deck slide. */
+      .sandbox-root {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .sandbox-banner {
+        font-family: var(--font-family-display);
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        color: var(--color-rubrication);
+        text-align: center;
+        margin: 0 0 24px;
+        text-transform: uppercase;
+      }
+      .sandbox-label {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--color-rubrication);
+        text-align: center;
+        margin: 36px 0 14px;
+      }
+      .sandbox-label span {
+        display: block;
+        font-family: var(--font-family-display-body);
+        font-size: 17px;
+        font-style: italic;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        text-transform: none;
+        color: var(--color-text-secondary);
+        margin-top: 4px;
+      }
+
+      /* ===== Slide-card chrome ===== */
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+        display: flex;
+        flex-direction: column;
+        height: 700px;
+        position: relative;
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0;
+        line-height: 1.2;
+      }
+      /* Uniform inset around all slide-body content; the explainer
+         lines up with the bio-row's left edge for a consistent
+         margin column on both sides. */
+      .slide-body {
+        padding: 22px 28px 22px 28px;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        gap: 18px;
+      }
+      /* Slide-footer chrome — matches the live deck verbatim so the
+         sandbox renders at the same total card height. */
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-top: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-nav-btn {
+        font-family: var(--font-family-sc);
+        font-size: var(--font-size-sm);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-primary);
+        background: transparent;
+        border: 1px solid var(--color-border-medium);
+        padding: 6px 14px;
+        cursor: pointer;
+        transition:
+          background-color 120ms ease,
+          color 120ms ease;
+      }
+      .slide-nav-btn:hover:not(:disabled) {
+        background: var(--color-rubrication);
+        color: var(--color-bg-parchment);
+        border-color: var(--color-rubrication);
+      }
+      .slide-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+      .slide-indicator {
+        font-family: var(--font-family-data);
+        font-size: var(--font-size-md);
+        color: var(--color-text-secondary);
+        letter-spacing: 0.05em;
+      }
+
+      /* ============================================================
+         Letterpress treatment
+         Image gets a thin sepia frame + soft inset shadow that reads
+         like a print pressed into the page. Name is set in large
+         display with a short sepia rule beneath; bullets are
+         prefixed with em-dash markers in rubric. Explainer is a
+         slightly darker beige panel framed by hairline sepia top +
+         bottom rules.
+         ============================================================ */
+      .bio-row {
+        display: flex;
+        gap: 32px;
+        align-items: flex-start;
+        flex-shrink: 0;
+      }
+      .bio-img-wrap {
+        flex: 0 0 260px;
+      }
+      .bio-img {
+        width: 100%;
+        height: auto;
+        max-height: 320px;
+        object-fit: contain;
+        display: block;
+        /* Just a hairline sepia outline — no cream matting. */
+        border: 1px solid var(--color-border-medium);
+      }
+      .bio-img-caption {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: 11px;
+        line-height: 1.4;
+        color: var(--color-text-subtle);
+        text-align: center;
+        margin: 8px 0 0;
+      }
+      .bio-img-caption a {
+        color: inherit;
+        text-decoration: none;
+        border-bottom: 1px dotted var(--color-text-subtle);
+      }
+      .bio-img-caption a:hover {
+        color: var(--color-rubrication);
+        border-bottom-color: var(--color-rubrication);
+      }
+      /* Right-column content gets its own left-padding so the name,
+         dates, and bullets sit indented from the image rather than
+         pressing against the column gap. */
+      .bio-content {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-left: 28px;
+      }
+      .bio-name {
+        font-family: var(--font-family-display);
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: var(--color-text-primary);
+        margin: 0 0 4px;
+      }
+      .bio-rule {
+        height: 1px;
+        background: var(--color-border-medium);
+        width: 64px;
+        margin: 0 0 10px;
+      }
+      .bio-dates {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        margin: 0 0 14px;
+      }
+      .bio-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+      .bio-list li {
+        position: relative;
+        padding-left: 22px;
+        margin: 0 0 10px;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      .bio-list li::before {
+        content: "\2014";
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--color-rubrication);
+        font-weight: 700;
+      }
+      /* Explainer panel — flex-grows to fill the bottom of the slide-
+         body so the bottom padding stays uniform with the surrounding
+         layout. Sits at the same left/right inset as the bio-row
+         above it (no negative margins, no full-bleed). */
+      .bio-explainer {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: flex-start;
+        background: var(--color-bg-card);
+        border-top: 1px solid var(--color-border-medium);
+        border-bottom: 1px solid var(--color-border-medium);
+        padding: 16px 22px;
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--color-text-secondary);
+      }
+      .bio-explainer p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sandbox-root">
+      <p class="sandbox-banner">
+        Sandbox &middot; Who Was Rabelais? &middot; Letterpress
+      </p>
+
+      <p class="sandbox-label">
+        Letterpress
+        <span>Reusable bio-slide treatment</span>
+      </p>
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">Who Was Rabelais?</h1>
+        </div>
+        <div class="slide-body">
+          <div class="bio-row">
+            <div class="bio-img-wrap">
+              <img
+                class="bio-img"
+                src="rabelais-portrait.jpg"
+                alt="Portrait of François Rabelais, anonymous oil on canvas, 16th century"
+              />
+              <p class="bio-img-caption">
+                Anonymous, 16th c. &middot; Palace of Versailles
+                <br />Public domain &middot;
+                <a
+                  href="https://commons.wikimedia.org/wiki/File:Francois_Rabelais_-_Portrait.jpg"
+                  rel="noopener"
+                  target="_blank"
+                  >Wikimedia Commons</a
+                >
+              </p>
+            </div>
+            <div class="bio-content">
+              <h2 class="bio-name">Fran&ccedil;ois Rabelais</h2>
+              <div class="bio-rule"></div>
+              <p class="bio-dates">
+                c. 1483/1494 &ndash; 1553 &middot; French Renaissance
+                humanist, physician, and satirist
+              </p>
+              <ul class="bio-list">
+                <li>
+                  A Franciscan friar who left the cloister to study
+                  medicine in Lyon and Montpellier.
+                </li>
+                <li>
+                  Practiced as a physician while writing under the
+                  anagrammatic pseudonym <em>Alcofribas Nasier</em>.
+                </li>
+                <li>
+                  Author of <em>Gargantua and Pantagruel</em>: a bawdy,
+                  encyclopedic, riotously satirical five-book cycle
+                  (1532&ndash;1564).
+                </li>
+                <li>
+                  Repeatedly condemned by the Sorbonne for obscenity
+                  and heresy; protected by powerful patrons including
+                  King Fran&ccedil;ois&nbsp;I.
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="bio-explainer">
+            <p>
+              Book&nbsp;2, Chapter&nbsp;30 of <em>Pantagruel</em> sends
+              the scholar Epistemon on a brief tour of Hades, where the
+              great men of antiquity have been reduced to menial trades.
+              The chapter is the data source for everything that follows.
+            </p>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <button
+            type="button"
+            class="slide-nav-btn"
+            aria-label="Previous slide"
+          >
+            &#9756; Prev
+          </button>
+          <div class="slide-indicator">
+            <span>2</span>
+            <span> / </span>
+            <span>14</span>
+          </div>
+          <button
+            type="button"
+            class="slide-nav-btn"
+            aria-label="Next slide"
+          >
+            Next &#9758;
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -15,6 +15,17 @@ $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $file = __DIR__ . $uri;
 
 if (file_exists($file)) {
+    // Directory without trailing slash: redirect to add it, so relative
+    // asset URLs inside the directory's index.php resolve against the
+    // directory rather than its parent. Apache does this automatically;
+    // the PHP built-in server does not.
+    if (is_dir($file) && substr($uri, -1) !== '/') {
+        $qs = isset($_SERVER['QUERY_STRING']) && $_SERVER['QUERY_STRING'] !== ''
+            ? '?' . $_SERVER['QUERY_STRING']
+            : '';
+        header('Location: ' . $uri . '/' . $qs, true, 301);
+        return true;
+    }
     if (is_file($file) && substr($file, -4) === '.php') {
         chdir(dirname($file));
     }

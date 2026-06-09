@@ -143,7 +143,7 @@
             "<p style=\"font-family: 'Cormorant Garamond', Georgia, serif; font-size: 14px; color: #2c2014; font-style: italic; line-height: 1.5; margin: 0;\">" +
             "Epistemon does not mention seeing any figures condemned to this occupation during his tour of the underworld." +
             "</p>" +
-            '<img src="assets/rabelais-clips/demons-with-decapitated-body.svg" alt="" style="display:block; margin:12px auto 0; max-width:150px; opacity:0.75;" />' +
+            '<img src="../assets/rabelais-clips/demons-with-decapitated-body.svg" alt="" style="display:block; margin:12px auto 0; max-width:150px; opacity:0.75;" />' +
             "</div>",
         );
       }, 100);
@@ -241,7 +241,7 @@
       // Bottom flame ornament
       const flameH = 240 * (1392 / 2302) * 0.95; // slightly reduced height
       const flameW = 260;
-      const flameSrc = "assets/rabelais-clips/flames-edited-2.svg";
+      const flameSrc = "../assets/rabelais-clips/flames-edited-2.svg";
       ghostGroup
         .append("image")
         .attr("href", flameSrc)
@@ -350,10 +350,10 @@
           gEl
             .append("text")
             .attr("x", ghostSize / 2)
-            .attr("y", ghostSize + 10 + i * 9)
+            .attr("y", ghostSize + 10 + i * 11)
             .attr("text-anchor", "middle")
             .attr("font-family", "'Cormorant Garamond', Georgia, serif")
-            .attr("font-size", "8px")
+            .attr("font-size", "10px")
             .attr("fill", "#3d2b18")
             .style("pointer-events", "none")
             .text(line);
@@ -364,7 +364,7 @@
         .on("mouseover", (event, d) => {
           d.frozen = true;
           g.tooltip
-            .attr("class", "tooltip")
+            .attr("class", "tooltip character-tooltip")
             .style("display", "block")
             .html(createUnderworldTooltipHTML(d.char))
             .style("top", event.pageY + 10 + "px")

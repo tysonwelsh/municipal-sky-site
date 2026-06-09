@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ariel Ambient Preview — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0a;
+        color: #66bbdd;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 32px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 780px;
+        margin: 0 auto;
+        position: relative;
+      }
+      .container::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(0, 0, 0, 0.08) 2px,
+          rgba(0, 0, 0, 0.08) 4px
+        );
+        z-index: 10;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #96dcff;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(150, 220, 255, 0.5),
+          0 0 30px rgba(150, 220, 255, 0.15);
+      }
+      .subtitle {
+        text-align: center;
+        color: #335577;
+        letter-spacing: 3px;
+        margin: 0 0 28px;
+        font-size: 18px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 22px;
+      }
+      .vol-label {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #335577;
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #96dcff;
+        box-shadow: 0 0 6px rgba(150, 220, 255, 0.3);
+        cursor: pointer;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #96dcff;
+        border: none;
+        box-shadow: 0 0 6px rgba(150, 220, 255, 0.3);
+        cursor: pointer;
+      }
+
+      .transport input[type="range"] {
+        flex: 1;
+      }
+
+      .transport-btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #111118;
+        color: #335577;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .transport-btn:hover {
+        border-color: #96dcff;
+        color: #96dcff;
+      }
+      .transport-btn.random:hover {
+        border-color: #ffaa66;
+        color: #ffaa66;
+      }
+
+      .event-card {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 16px 20px 18px;
+        margin-bottom: 16px;
+      }
+      .event-card .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 4px;
+      }
+      .event-card h2 {
+        font-family: "VT323", monospace;
+        color: #96dcff;
+        font-size: 22px;
+        letter-spacing: 2px;
+        margin: 0;
+      }
+      .event-card .weight {
+        color: #335577;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .event-card .desc {
+        font-size: 15px;
+        color: #5599bb;
+        line-height: 1.5;
+        margin: 0 0 12px;
+      }
+      .ctrl-row {
+        display: grid;
+        grid-template-columns: 95px 1fr 78px;
+        align-items: center;
+        gap: 12px;
+        margin: 5px 0;
+      }
+      .ctrl-row .label {
+        font-size: 14px;
+        color: #5599bb;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .ctrl-row .val {
+        text-align: right;
+        font-size: 15px;
+        color: #66bbdd;
+        font-variant-numeric: tabular-nums;
+      }
+      .ctrl-row input[type="range"] {
+        width: 100%;
+      }
+
+      .card-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 18px;
+        background: #111118;
+        color: #335577;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      .btn:hover {
+        border-color: #96dcff;
+        color: #96dcff;
+      }
+      .btn.reset:hover {
+        border-color: #ffaa66;
+        color: #ffaa66;
+      }
+      .btn.copy:hover {
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .btn.copy.copied {
+        border-color: #66dd66;
+        color: #66dd66;
+      }
+
+      .footnote {
+        color: #224455;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 28px;
+        letter-spacing: 1px;
+      }
+
+      /* --- Brainstorm section: visually distinct from committed events --- */
+      .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 36px 0 18px;
+      }
+      .section-divider::before,
+      .section-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: repeating-linear-gradient(
+          to right,
+          #2a2a3a 0,
+          #2a2a3a 4px,
+          transparent 4px,
+          transparent 8px
+        );
+      }
+      .section-divider h2 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffaa66;
+        letter-spacing: 3px;
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(255, 170, 102, 0.3);
+      }
+      .section-note {
+        text-align: center;
+        color: #664433;
+        font-size: 14px;
+        letter-spacing: 1px;
+        margin: 0 0 18px;
+      }
+      .event-card.brainstorm {
+        border-color: #3a2a1d;
+        border-style: dashed;
+      }
+      .event-card.brainstorm h2 {
+        color: #ffaa66;
+      }
+      .event-card.brainstorm .weight {
+        color: #664433;
+      }
+      .transport-btn.brainstorm:hover {
+        border-color: #ffaa66;
+        color: #ffaa66;
+      }
+
+      /* --- Dual-thumb range slider (for params declared with range: true) --- */
+      .range-slider {
+        position: relative;
+        width: 100%;
+        height: 18px;
+      }
+      .range-slider .track {
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 6px;
+        margin-top: -3px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        pointer-events: none;
+      }
+      .range-slider .fill {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        background: rgba(150, 220, 255, 0.55);
+        border-radius: 3px;
+      }
+      .range-slider input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 18px;
+        background: transparent;
+        margin: 0;
+        pointer-events: none;
+      }
+      .range-slider input[type="range"]::-webkit-slider-runnable-track {
+        background: transparent;
+        height: 6px;
+      }
+      .range-slider input[type="range"]::-moz-range-track {
+        background: transparent;
+        height: 6px;
+      }
+      .range-slider input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        pointer-events: auto;
+        width: 14px;
+        height: 14px;
+        margin-top: -4px;
+        border-radius: 50%;
+        background: #96dcff;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(150, 220, 255, 0.5);
+      }
+      .range-slider input[type="range"]::-moz-range-thumb {
+        pointer-events: auto;
+        width: 14px;
+        height: 14px;
+        border: none;
+        border-radius: 50%;
+        background: #96dcff;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(150, 220, 255, 0.5);
+      }
+      /* Brainstorm cards use the sage-green accent — match thumbs + fill */
+      .event-card.brainstorm .range-slider .fill {
+        background: rgba(255, 170, 102, 0.55);
+      }
+      .event-card.brainstorm .range-slider input[type="range"]::-webkit-slider-thumb {
+        background: #ffaa66;
+        box-shadow: 0 0 6px rgba(255, 170, 102, 0.5);
+      }
+      .event-card.brainstorm .range-slider input[type="range"]::-moz-range-thumb {
+        background: #ffaa66;
+        box-shadow: 0 0 6px rgba(255, 170, 102, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Ariel Ambient Preview</h1>
+      <p class="subtitle">~ airy chance events for Ariel's day off ~</p>
+
+      <div class="transport">
+        <span class="vol-label">MASTER</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button
+          class="transport-btn"
+          id="test-btn"
+          title="Plays a 440Hz sine to verify audio routing"
+        >
+          &#9835; TEST
+        </button>
+        <button class="transport-btn random" id="random-btn">
+          &#9862; RANDOM EVENT
+        </button>
+        <button class="transport-btn brainstorm" id="random-brainstorm-btn">
+          &#9862; RANDOM BRAINSTORM
+        </button>
+        <button class="transport-btn" id="copy-all-btn" title="Copy every event's current parameters to the clipboard">
+          &#9112; COPY ALL PARAMS
+        </button>
+      </div>
+
+      <div id="events"></div>
+
+      <div class="section-divider"><h2>BRAINSTORM</h2></div>
+      <p class="section-note">~ work-in-progress ideas for new dark ambient events ~</p>
+      <div id="brainstorm"></div>
+
+      <p class="footnote">
+        F LYDIAN &middot; BRIGHT AIRY REVERB &middot; EACH PLAY USES
+        A FRESH STEREO PAN
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // --- Audio graph ---
+        var ctx, masterGain, compressor;
+        var reverbSend, reverbDry, reverbWet, reverbConv, reverbPreDelay;
+        var sharedNoiseBuf;
+        var NOISE_BUF_DURATION = 30;
+        // Preview master is louder than production (0.12) because single events are
+        // quiet in isolation without the drone/whisper bed under them.
+        var masterVol = 0.6;
+
+        function buildReverbIR() {
+          // Ariel: bright airy space — moderate decay, fast HF damping, short pre-delay
+          var decay = 3.0,
+            hfDamp = 6.0;
+          var irLen = ctx.sampleRate * decay;
+          var buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var d = buf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decay);
+              var hf = Math.exp((-hfDamp * t) / decay);
+              d[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+          reverbConv.buffer = buf;
+          reverbPreDelay.delayTime.setValueAtTime(0.015, ctx.currentTime);
+          reverbWet.gain.setValueAtTime(0.35, ctx.currentTime);
+        }
+
+        function initAudio() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+          reverbSend = ctx.createGain();
+          reverbDry = ctx.createGain();
+          reverbWet = ctx.createGain();
+          reverbConv = ctx.createConvolver();
+          reverbPreDelay = ctx.createDelay(0.1);
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(reverbPreDelay);
+          reverbPreDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          reverbDry.connect(masterGain);
+          reverbWet.connect(masterGain);
+          masterGain.connect(compressor);
+          compressor.connect(ctx.destination);
+
+          buildReverbIR();
+
+          var noiseSamples = ctx.sampleRate * NOISE_BUF_DURATION;
+          sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
+          var d = sharedNoiseBuf.getChannelData(0);
+          for (var i = 0; i < noiseSamples; i++) d[i] = Math.random() * 2 - 1;
+        }
+
+        function noiseSource(duration) {
+          var n = ctx.createBufferSource();
+          n.buffer = sharedNoiseBuf;
+          n._offset =
+            Math.random() * Math.max(0, NOISE_BUF_DURATION - duration);
+          n._duration = duration;
+          return n;
+        }
+        function startNoise(n, when) {
+          n.start(when, n._offset, n._duration);
+        }
+
+        function panner() {
+          var p = ctx.createStereoPanner();
+          p.pan.setValueAtTime((Math.random() * 2 - 1) * 0.7, ctx.currentTime);
+          p.connect(reverbSend);
+          return p;
+        }
+
+        // ==========================================================================
+        // F LYDIAN SNAP — used by tonal events that need to sit in the key.
+        // Ariel's song is in F Lydian (F G A B C D E) with a breeze drone on
+        // F·G·A·B fifths/tritone. Events with sustained sine/sawtooth content
+        // (wind chime, bumble bee, bubble pop) snap their fundamental(s) to the
+        // nearest scale tone so they don't clash with the drone.
+        // ==========================================================================
+        var F_LYDIAN_HZ = [
+          // F2..B7 (six octaves; covers everything useful)
+          87.31, 98, 110, 123.47, 130.81, 146.83, 164.81,
+          174.61, 196, 220, 246.94, 261.63, 293.66, 329.63,
+          349.23, 392, 440, 493.88, 523.25, 587.33, 659.26,
+          698.46, 783.99, 880, 987.77, 1046.5, 1174.66, 1318.51,
+          1396.91, 1567.98, 1760, 1975.53, 2093, 2349.32, 2637.02,
+          2793.83, 3135.96, 3520, 3951.07,
+        ];
+        function snapToScale(hz) {
+          var best = F_LYDIAN_HZ[0];
+          var bestDiff = Math.abs(hz - best);
+          for (var i = 1; i < F_LYDIAN_HZ.length; i++) {
+            var d = Math.abs(hz - F_LYDIAN_HZ[i]);
+            if (d < bestDiff) { bestDiff = d; best = F_LYDIAN_HZ[i]; }
+          }
+          return best;
+        }
+
+        // ==========================================================================
+        // EVENT SYNTH FUNCTIONS (parameterized)
+        // ==========================================================================
+
+        function evGiggle(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var formants = [[600, 2200], [800, 1200]]; // eh, ah
+          var bursts = Math.max(1, p.bursts);
+          for (var i = 0; i < bursts; i++) {
+            var t = now + (i / bursts) * p.duration;
+            var burstDur = 0.04 + Math.random() * 0.02;
+            var fm = formants[i % 2];
+            var qShift = 1 + i * 0.15;
+            var n = noiseSource(burstDur);
+            var g = c.createGain();
+            var f1 = c.createBiquadFilter();
+            var f2 = c.createBiquadFilter();
+            f1.type = "bandpass";
+            f1.frequency.setValueAtTime(fm[0] * qShift, t);
+            f1.Q.setValueAtTime(10, t);
+            f2.type = "bandpass";
+            f2.frequency.setValueAtTime(fm[1] * qShift, t);
+            f2.Q.setValueAtTime(8, t);
+            n.connect(f1); n.connect(f2);
+            var mix = c.createGain();
+            f1.connect(mix); f2.connect(mix);
+            mix.connect(g); g.connect(out);
+            // Volume peaks in middle of sequence (matches engine envelope)
+            var envScale = bursts > 1 ? Math.sin(Math.PI * i / (bursts - 1)) : 1;
+            var envVol = p.volume * (0.7 + 0.6 * envScale);
+            g.gain.setValueAtTime(envVol, t);
+            g.gain.linearRampToValueAtTime(0, t + burstDur);
+            startNoise(n, t);
+          }
+        }
+
+        function evBirdsong(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          for (var i = 0; i < p.chirps; i++) {
+            var t = now + i * (0.12 + Math.random() * 0.08);
+            var dur = 0.06 + Math.random() * 0.04;
+            var startFreq = p.startFreq + Math.random() * 500;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(startFreq, t);
+            o.frequency.exponentialRampToValueAtTime(startFreq * p.glide, t + dur);
+            o.connect(g);
+            g.connect(out);
+            g.gain.setValueAtTime(p.volume, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+            o.start(t);
+            o.stop(t + dur + 0.01);
+          }
+        }
+
+        function evBreezeGust(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "bandpass";
+          f.frequency.setValueAtTime(p.startFreq, now);
+          f.frequency.linearRampToValueAtTime(p.peakFreq, now + p.duration * 0.4);
+          f.frequency.linearRampToValueAtTime(p.startFreq * 1.5, now + p.duration);
+          f.Q.setValueAtTime(2, now);
+          n.connect(f); f.connect(g); g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.3);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        function evSparkle(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var pings = Math.max(1, p.pings);
+          var spacing = 1 / p.rate;
+          for (var i = 0; i < pings; i++) {
+            var t = now + i * spacing;
+            var freq = p.minFreq + Math.random() * (p.maxFreq - p.minFreq);
+            var decay = 0.15 + Math.random() * 0.2;
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(freq, t);
+            o.connect(g); g.connect(out);
+            g.gain.setValueAtTime(p.volume, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+            o.start(t);
+            o.stop(t + decay + 0.01);
+          }
+        }
+
+        function evLeafRustle(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "bandpass";
+          f.frequency.setValueAtTime(p.centerFreq, now);
+          f.Q.setValueAtTime(5, now);
+          n.connect(f); f.connect(g); g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.3);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        // Cricket — hierarchical: event = N chirps, chirp = M short pulses.
+        // Each pulse is a brief percussive "tic" (~15ms) at a steady pitch;
+        // all pulses in a single chirp share the same carrier so the chirp
+        // reads as a uniform tit-tit-tit. Outer cadence: chirps grouped at
+        // `rate` Hz. Inner cadence: pulses at `chirpRate` Hz (trill rate).
+        function evCricket(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var chirps = Math.max(1, p.chirps);
+          var pulses = Math.max(1, p.pulses);
+          var chirpSpacing = 1 / p.rate;
+          var pulseSpacing = 1 / p.chirpRate;
+          for (var k = 0; k < chirps; k++) {
+            var chirpStart = now + k * chirpSpacing;
+            // Slight per-chirp variation in carrier so successive chirps feel
+            // like separate crickets in space; constant within a chirp.
+            var carrierFreq = p.carrier * (0.97 + Math.random() * 0.06);
+            // Pulse duration is per-chirp (not per-pulse) so the tics within
+            // one chirp are tonally identical.
+            var pulseDur = 0.014 + Math.random() * 0.008; // 14–22ms
+            for (var i = 0; i < pulses; i++) {
+              var t = chirpStart + i * pulseSpacing;
+              var o = c.createOscillator();
+              var g = c.createGain();
+              o.type = "sine";
+              o.frequency.setValueAtTime(carrierFreq, t);
+              o.connect(g);
+              g.connect(out);
+              // Sharp attack, fast exponential decay = percussive "tic"
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(p.volume, t + 0.002);
+              g.gain.exponentialRampToValueAtTime(0.001, t + pulseDur);
+              o.start(t);
+              o.stop(t + pulseDur + 0.01);
+            }
+          }
+        }
+
+        // ==========================================================================
+        // BRAINSTORM SYNTHESIS — work-in-progress event ideas.
+        // Iterate freely; promote keepers into EVENTS (below) and the engine's
+        // ARIEL_AMBIENT_POOL + arielAmbient() switch in prosperos-jukebox-audio.js.
+        // ==========================================================================
+
+        // Wind chime — slow random glassy pings with inharmonic overtones,
+        // longer decay than the sparkle event. Fundamental snaps to F Lydian
+        // so it sits in the song's key; the 2.4×/4.5× partials stay inharmonic
+        // (intentional for the glass-bell character).
+        function evWindChime(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var pings = Math.max(1, p.pings);
+          var spacing = 1 / p.rate;
+          for (var i = 0; i < pings; i++) {
+            var t = now + i * spacing * (0.85 + Math.random() * 0.3);
+            var rawFund = p.minFreq + Math.random() * (p.maxFreq - p.minFreq);
+            var fund = snapToScale(rawFund);
+            // Chime partials (close to glass): 1, 2.4, 4.5
+            var partials = [
+              { ratio: 1.0,  amp: 1.00, decay: p.decay },
+              { ratio: 2.4,  amp: 0.5,  decay: p.decay * 0.7 },
+              { ratio: 4.5,  amp: 0.25, decay: p.decay * 0.45 },
+            ];
+            for (var j = 0; j < partials.length; j++) {
+              var pt = partials[j];
+              var o = c.createOscillator();
+              var g = c.createGain();
+              o.type = "sine";
+              o.frequency.setValueAtTime(fund * pt.ratio, t);
+              o.connect(g); g.connect(out);
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(p.volume * pt.amp, t + 0.005);
+              g.gain.exponentialRampToValueAtTime(0.001, t + pt.decay);
+              o.start(t);
+              o.stop(t + pt.decay + 0.05);
+            }
+          }
+        }
+
+        // Bumble bee — buzzy fly-by with rapid AM and a slow doppler pitch glide.
+        // Base pitch snaps to F Lydian so the sawtooth's rich harmonics align
+        // with the drone; the doppler glide is left continuous (a bee's pitch
+        // slide isn't perceived as discrete notes).
+        function evBumbleBee(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var basePitch = snapToScale(p.basePitch);
+          var carrier = c.createOscillator();
+          var modulator = c.createOscillator();
+          var modG = c.createGain();
+          var g = c.createGain();
+          carrier.type = "sawtooth";
+          // Pitch glide: low → peak (approach) → low (departure)
+          carrier.frequency.setValueAtTime(basePitch * 0.7, now);
+          carrier.frequency.linearRampToValueAtTime(basePitch, now + p.duration * 0.4);
+          carrier.frequency.linearRampToValueAtTime(basePitch * 0.55, now + p.duration);
+          modulator.type = "sine";
+          modulator.frequency.setValueAtTime(p.buzzRate, now);
+          modG.gain.setValueAtTime(p.volume * 0.5, now);
+          modulator.connect(modG);
+          modG.connect(g.gain);
+          // Soft lowpass for warmth
+          var lp = c.createBiquadFilter();
+          lp.type = "lowpass";
+          lp.frequency.setValueAtTime(900, now);
+          lp.Q.setValueAtTime(0.7, now);
+          carrier.connect(lp);
+          lp.connect(g);
+          g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.25);
+          g.gain.linearRampToValueAtTime(p.volume * 0.6, now + p.duration * 0.75);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          carrier.start(now); carrier.stop(now + p.duration + 0.1);
+          modulator.start(now); modulator.stop(now + p.duration + 0.1);
+        }
+
+        // Bubble pop — wet sine "bloop(s)" with quick upward pitch arc.
+        // Both start and end pitches snap to F Lydian so each bloop lands on
+        // an in-key interval. Multiple pops per event create a bubbling cluster.
+        function evBubblePop(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var pops = Math.max(1, p.pops);
+          var spacing = 1 / p.rate;
+          for (var k = 0; k < pops; k++) {
+            var startT = now + k * spacing;
+            // Per-pop pitch jitter so the cluster doesn't sound xeroxed.
+            var raw = p.startFreq * (0.92 + Math.random() * 0.16);
+            var startFreq = snapToScale(raw);
+            var endFreq = snapToScale(startFreq * p.glide);
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(startFreq, startT);
+            o.frequency.exponentialRampToValueAtTime(endFreq, startT + p.duration * 0.7);
+            o.connect(g); g.connect(out);
+            g.gain.setValueAtTime(0, startT);
+            g.gain.linearRampToValueAtTime(p.volume, startT + 0.008);
+            g.gain.exponentialRampToValueAtTime(0.001, startT + p.duration);
+            o.start(startT);
+            o.stop(startT + p.duration + 0.05);
+          }
+        }
+
+
+                // ==========================================================================
+        // EVENT CONFIGS
+        // ==========================================================================
+
+        function fmt(unit, val) {
+          if (unit === "s")
+            return (val < 1 ? val.toFixed(2) : val.toFixed(1)) + "s";
+          if (unit === "Hz") return Math.round(val) + "Hz";
+          if (unit === "") return val.toFixed(val < 0.1 ? 3 : 2);
+          return String(val);
+        }
+
+        var EVENTS = [
+          {
+            id: "giggle",
+            name: "1. Giggle",
+            weight: 12,
+            description:
+              "Playful child-like giggle — formant-filtered noise bursts with rising pitch.",
+            fn: evGiggle,
+            defaults: {
+              bursts: { min: 2, max: 8 },
+              duration: { min: 0.35, max: 0.75 },
+              volume: 0.065,
+            },
+            controls: [
+              { param: "bursts",   label: "Bursts",   min: 2, max: 10, step: 1, unit: "", range: true },
+              { param: "duration", label: "Duration", min: 0.2, max: 1.2, step: 0.05, unit: "s", range: true },
+              { param: "volume",   label: "Volume",   min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "birdsong",
+            name: "2. Birdsong",
+            weight: 18,
+            description:
+              "Quick chirp sequence — sine sweeping upward, distant songbird.",
+            fn: evBirdsong,
+            defaults: {
+              chirps: { min: 2, max: 5 },
+              startFreq: { min: 1050, max: 2400 },
+              glide: 2.3,
+              volume: 0.025,
+            },
+            controls: [
+              { param: "chirps",    label: "Chirps",    min: 1, max: 8, step: 1, unit: "", range: true },
+              { param: "startFreq", label: "Start Hz",  min: 800, max: 3000, step: 50, unit: "Hz", range: true },
+              { param: "glide",     label: "Glide x",   min: 1.2, max: 4, step: 0.1, unit: "" },
+              { param: "volume",    label: "Volume",    min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "breeze_gust",
+            name: "3. Breeze Gust",
+            weight: 20,
+            description:
+              "Soft wind swell — bandpass noise rising and falling with a peak in the middle.",
+            fn: evBreezeGust,
+            defaults: {
+              duration: { min: 1, max: 4 },
+              startFreq: { min: 130, max: 350 },
+              peakFreq: { min: 550, max: 1175 },
+              volume: 0.02,
+            },
+            controls: [
+              { param: "duration",  label: "Duration",  min: 0.5, max: 4, step: 0.1, unit: "s", range: true },
+              { param: "startFreq", label: "Start Hz",  min: 100, max: 500, step: 10, unit: "Hz", range: true },
+              { param: "peakFreq",  label: "Peak Hz",   min: 400, max: 1500, step: 25, unit: "Hz", range: true },
+              { param: "volume",    label: "Volume",    min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "sparkle",
+            name: "4. Sparkle",
+            weight: 15,
+            description:
+              "Bright pure-sine pings scattered in a quick burst — fairy dust.",
+            fn: evSparkle,
+            defaults: {
+              pings: { min: 5, max: 11 },
+              rate: { min: 12, max: 36 },
+              minFreq: { min: 1500, max: 2400 },
+              maxFreq: { min: 4500, max: 7350 },
+              volume: 0.012,
+            },
+            controls: [
+              { param: "pings",   label: "Pings",   min: 2, max: 15, step: 1, unit: "", range: true },
+              { param: "rate",    label: "Rate",    min: 4, max: 40, step: 0.5, unit: "Hz", range: true },
+              { param: "minFreq", label: "Min Hz",  min: 800, max: 4000, step: 50, unit: "Hz", range: true },
+              { param: "maxFreq", label: "Max Hz",  min: 2000, max: 9000, step: 50, unit: "Hz", range: true },
+              { param: "volume",  label: "Volume",  min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "leaf_rustle",
+            name: "5. Leaf Rustle",
+            weight: 15,
+            description:
+              "High-bandpass noise with soft attack — wind through leaves.",
+            fn: evLeafRustle,
+            defaults: {
+              duration: { min: 0.25, max: 0.6 },
+              centerFreq: { min: 2500, max: 4000 },
+              volume: 0.012,
+            },
+            controls: [
+              { param: "duration",   label: "Duration", min: 0.1, max: 1.5, step: 0.05, unit: "s", range: true },
+              { param: "centerFreq", label: "Tone",     min: 1500, max: 6000, step: 100, unit: "Hz", range: true },
+              { param: "volume",     label: "Volume",   min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "cricket",
+            name: "6. Cricket",
+            weight: 10,
+            description:
+              "Hierarchical insect rhythm: groups of short ringing pulses. Chirps = how many groups; Pulses = tics per group; Rate = chirp spacing; Trill Hz = pulse rate within a chirp.",
+            fn: evCricket,
+            defaults: {
+              chirps: { min: 3, max: 6 },
+              rate: { min: 1.7, max: 2.4 },
+              pulses: { min: 3, max: 5 },
+              chirpRate: { min: 35, max: 35 },
+              carrier: { min: 4100, max: 5300 },
+              volume: 0.013,
+            },
+            controls: [
+              { param: "chirps",    label: "Chirps",    min: 1, max: 8,    step: 1,   unit: "",   range: true },
+              { param: "rate",      label: "Rate",      min: 0.3, max: 4,  step: 0.1, unit: "Hz", range: true },
+              { param: "pulses",    label: "Pulses",    min: 1, max: 10,   step: 1,   unit: "",   range: true },
+              { param: "chirpRate", label: "Trill Hz",  min: 15, max: 50,  step: 1,   unit: "Hz", range: true },
+              { param: "carrier",   label: "Carrier",   min: 2000, max: 7000, step: 50, unit: "Hz", range: true },
+              { param: "volume",    label: "Volume",    min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "wind_chime",
+            name: "7. Wind Chime",
+            weight: 14,
+            description:
+              "Slow glassy chime pings with inharmonic partials — longer decay than sparkle.",
+            fn: evWindChime,
+            defaults: {
+              pings: { min: 3, max: 8 },
+              rate: { min: 2.5, max: 5 },
+              minFreq: { min: 800, max: 1100 },
+              maxFreq: { min: 1600, max: 2400 },
+              decay: 1.8,
+              volume: 0.025,
+            },
+            controls: [
+              { param: "pings",   label: "Pings",   min: 1, max: 10, step: 1, unit: "", range: true },
+              { param: "rate",    label: "Rate",    min: 1, max: 10, step: 0.25, unit: "Hz", range: true },
+              { param: "minFreq", label: "Min Hz",  min: 400, max: 1500, step: 25, unit: "Hz", range: true },
+              { param: "maxFreq", label: "Max Hz",  min: 1200, max: 3500, step: 50, unit: "Hz", range: true },
+              { param: "decay",   label: "Decay",   min: 0.5, max: 4, step: 0.1, unit: "s" },
+              { param: "volume",  label: "Volume",  min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "bumble_bee",
+            name: "8. Bumble Bee",
+            weight: 10,
+            description:
+              "Buzzy fly-by — sawtooth with rapid AM and a doppler pitch glide.",
+            fn: evBumbleBee,
+            defaults: {
+              duration: { min: 1, max: 2 },
+              basePitch: { min: 160, max: 245 },
+              buzzRate: { min: 22, max: 44 },
+              volume: 0.03,
+            },
+            controls: [
+              { param: "duration",  label: "Duration",  min: 0.3, max: 2.5, step: 0.05, unit: "s", range: true },
+              { param: "basePitch", label: "Pitch",     min: 100, max: 400, step: 5, unit: "Hz", range: true },
+              { param: "buzzRate",  label: "Buzz Hz",   min: 10, max: 60, step: 1, unit: "Hz", range: true },
+              { param: "volume",    label: "Volume",    min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "bubble_pop",
+            name: "9. Bubble Pop",
+            weight: 12,
+            description:
+              "Wet sine 'bloop(s)' with quick upward pitch arc. Multiple pops form a bubbling cluster.",
+            fn: evBubblePop,
+            defaults: {
+              pops: { min: 1, max: 4 },
+              rate: { min: 1, max: 4.5 },
+              startFreq: { min: 290, max: 500 },
+              glide: 2.1,
+              duration: { min: 0.08, max: 0.24 },
+              volume: 0.03,
+            },
+            controls: [
+              { param: "pops",      label: "Pops",      min: 1, max: 12, step: 1, unit: "", range: true },
+              { param: "rate",      label: "Rate",      min: 1, max: 20, step: 0.5, unit: "Hz", range: true },
+              { param: "startFreq", label: "Start Hz",  min: 150, max: 1000, step: 10, unit: "Hz", range: true },
+              { param: "glide",     label: "Glide x",   min: 1.0, max: 3.5, step: 0.05, unit: "" },
+              { param: "duration",  label: "Duration",  min: 0.04, max: 0.4, step: 0.01, unit: "s", range: true },
+              { param: "volume",    label: "Volume",    min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+        ];
+
+        // ==========================================================================
+        // BRAINSTORM EVENT CONFIGS — same shape as EVENTS. Rendered separately.
+        // Not part of the weighted production pool. To promote one: move its
+        // entry into EVENTS above (with a real `weight`) and add the matching
+        // case to ARIEL_AMBIENT_POOL + the arielAmbient() switch in audio.js.
+        // ==========================================================================
+        var BRAINSTORM_EVENTS = [];
+
+        // --- Range param helpers ---
+        // A "range" param's value is { min, max }; at fire time we sample a
+        // scalar within [min, max]. Integer step (>= 1) samples integers.
+        function isRangeVal(v) {
+          return v && typeof v === "object" && "min" in v && "max" in v;
+        }
+        function cloneVal(v) {
+          return isRangeVal(v) ? { min: v.min, max: v.max } : v;
+        }
+        function sampleRange(r, step) {
+          var v = r.min + Math.random() * (r.max - r.min);
+          if (step >= 1) v = Math.floor(v + 0.5);
+          return v;
+        }
+        function resolveParams(ev) {
+          var byParam = {};
+          for (var i = 0; i < ev.controls.length; i++) {
+            byParam[ev.controls[i].param] = ev.controls[i];
+          }
+          var out = {};
+          Object.keys(ev.params).forEach(function (k) {
+            var v = ev.params[k];
+            if (isRangeVal(v)) {
+              var ctrl = byParam[k] || { step: 0 };
+              out[k] = sampleRange(v, ctrl.step);
+            } else {
+              out[k] = v;
+            }
+          });
+          return out;
+        }
+
+        EVENTS.concat(BRAINSTORM_EVENTS).forEach(function (ev) {
+          ev.params = {};
+          Object.keys(ev.defaults).forEach(function (k) {
+            ev.params[k] = cloneVal(ev.defaults[k]);
+          });
+        });
+
+        // ==========================================================================
+        // UI CONSTRUCTION
+        // ==========================================================================
+
+        function buildCard(ev) {
+          var card = document.createElement("div");
+          card.className = "event-card";
+          card.setAttribute("data-id", ev.id);
+
+          var html = "";
+          html += '<div class="card-header">';
+          html += "<h2>" + ev.name + "</h2>";
+          html += '<span class="weight">pool weight: ' + ev.weight + "</span>";
+          html += "</div>";
+          html += '<p class="desc">' + ev.description + "</p>";
+
+          for (var i = 0; i < ev.controls.length; i++) {
+            var ctrl = ev.controls[i];
+            var curVal = ev.params[ctrl.param];
+            html += '<div class="ctrl-row">';
+            html += '<span class="label">' + ctrl.label + "</span>";
+            if (ctrl.range) {
+              // Dual-thumb range slider — value is { min, max }.
+              html +=
+                '<div class="range-slider" data-param="' + ctrl.param + '">' +
+                '<div class="track"><div class="fill"></div></div>' +
+                '<input type="range" data-param="' + ctrl.param +
+                  '" data-end="lo" data-unit="' + ctrl.unit + '" ' +
+                  'min="' + ctrl.min + '" max="' + ctrl.max +
+                  '" step="' + ctrl.step + '" value="' + curVal.min + '" />' +
+                '<input type="range" data-param="' + ctrl.param +
+                  '" data-end="hi" data-unit="' + ctrl.unit + '" ' +
+                  'min="' + ctrl.min + '" max="' + ctrl.max +
+                  '" step="' + ctrl.step + '" value="' + curVal.max + '" />' +
+                '</div>';
+              html +=
+                '<span class="val" data-for="' + ctrl.param + '">' +
+                fmt(ctrl.unit, curVal.min) + "—" + fmt(ctrl.unit, curVal.max) +
+                "</span>";
+            } else {
+              html +=
+                '<input type="range" data-param="' +
+                ctrl.param +
+                '" data-unit="' +
+                ctrl.unit +
+                '" ' +
+                'min="' +
+                ctrl.min +
+                '" max="' +
+                ctrl.max +
+                '" step="' +
+                ctrl.step +
+                '" value="' +
+                curVal +
+                '" />';
+              html +=
+                '<span class="val" data-for="' +
+                ctrl.param +
+                '">' +
+                fmt(ctrl.unit, curVal) +
+                "</span>";
+            }
+            html += "</div>";
+          }
+
+          html += '<div class="card-footer">';
+          html +=
+            '<button class="btn reset" data-action="reset">&#8635; reset</button>';
+          html +=
+            '<button class="btn copy" data-action="copy" title="Copy current parameters to clipboard">&#9112; copy params</button>';
+          html +=
+            '<button class="btn" data-action="play">&#9654; PLAY</button>';
+          html += "</div>";
+
+          card.innerHTML = html;
+          return card;
+        }
+
+        function attachCardHandlers(card, ev) {
+          // Find the control definition for a given param.
+          function ctrlFor(param) {
+            for (var i = 0; i < ev.controls.length; i++) {
+              if (ev.controls[i].param === param) return ev.controls[i];
+            }
+            return null;
+          }
+
+          // --- Single-thumb sliders (direct child of .ctrl-row) ---
+          var singleSliders = card.querySelectorAll(
+            '.ctrl-row > input[type="range"]',
+          );
+          singleSliders.forEach(function (slider) {
+            slider.addEventListener("input", function () {
+              var param = slider.getAttribute("data-param");
+              var unit = slider.getAttribute("data-unit");
+              var val = parseFloat(slider.value);
+              ev.params[param] = val;
+              var valEl = card.querySelector('.val[data-for="' + param + '"]');
+              if (valEl) valEl.textContent = fmt(unit, val);
+            });
+          });
+
+          // --- Dual-thumb range sliders ---
+          var rangeWidgets = card.querySelectorAll(".range-slider");
+          rangeWidgets.forEach(function (widget) {
+            var param = widget.getAttribute("data-param");
+            var ctrl = ctrlFor(param);
+            var lo = widget.querySelector('input[data-end="lo"]');
+            var hi = widget.querySelector('input[data-end="hi"]');
+            var fill = widget.querySelector(".fill");
+
+            function refresh() {
+              var loV = parseFloat(lo.value);
+              var hiV = parseFloat(hi.value);
+              ev.params[param] = { min: loV, max: hiV };
+              var span = ctrl.max - ctrl.min;
+              fill.style.left = ((loV - ctrl.min) / span) * 100 + "%";
+              fill.style.right = (1 - (hiV - ctrl.min) / span) * 100 + "%";
+              var valEl = card.querySelector('.val[data-for="' + param + '"]');
+              if (valEl) {
+                valEl.textContent =
+                  fmt(ctrl.unit, loV) + "—" + fmt(ctrl.unit, hiV);
+              }
+            }
+            lo.addEventListener("input", function () {
+              if (parseFloat(lo.value) > parseFloat(hi.value)) {
+                hi.value = lo.value;
+              }
+              refresh();
+            });
+            hi.addEventListener("input", function () {
+              if (parseFloat(hi.value) < parseFloat(lo.value)) {
+                lo.value = hi.value;
+              }
+              refresh();
+            });
+            refresh(); // initialize fill position + params
+          });
+
+          card
+            .querySelector('[data-action="play"]')
+            .addEventListener("click", function () {
+              initAudio();
+              if (ctx.state === "suspended") ctx.resume();
+              var sampled = resolveParams(ev);
+              console.log(
+                "[ariel preview] PLAY",
+                ev.id,
+                "stored=",
+                ev.params,
+                "sampled=",
+                sampled,
+                "ctx.state=",
+                ctx.state,
+              );
+              ev.fn(sampled);
+            });
+
+          card
+            .querySelector('[data-action="reset"]')
+            .addEventListener("click", function () {
+              Object.keys(ev.defaults).forEach(function (k) {
+                ev.params[k] = cloneVal(ev.defaults[k]);
+              });
+              ev.controls.forEach(function (ctrl) {
+                var v = ev.params[ctrl.param];
+                if (ctrl.range) {
+                  var widget = card.querySelector(
+                    '.range-slider[data-param="' + ctrl.param + '"]',
+                  );
+                  if (!widget) return;
+                  var lo = widget.querySelector('input[data-end="lo"]');
+                  var hi = widget.querySelector('input[data-end="hi"]');
+                  lo.value = v.min;
+                  hi.value = v.max;
+                  lo.dispatchEvent(new Event("input"));
+                } else {
+                  var slider = card.querySelector(
+                    '.ctrl-row > input[type="range"][data-param="' +
+                      ctrl.param +
+                      '"]',
+                  );
+                  if (!slider) return;
+                  slider.value = v;
+                  var valEl = card.querySelector(
+                    '.val[data-for="' + ctrl.param + '"]',
+                  );
+                  if (valEl) valEl.textContent = fmt(ctrl.unit, v);
+                }
+              });
+            });
+
+          card
+            .querySelector('[data-action="copy"]')
+            .addEventListener("click", function () {
+              function fmtNum(v) {
+                return Number.isInteger(v)
+                  ? String(v)
+                  : parseFloat(v.toFixed(4)).toString();
+              }
+              var pairs = Object.keys(ev.params).map(function (k) {
+                var v = ev.params[k];
+                if (isRangeVal(v)) {
+                  return k + ": { min: " + fmtNum(v.min) + ", max: " + fmtNum(v.max) + " }";
+                }
+                return k + ": " + fmtNum(v);
+              });
+              var text = ev.id + ": { " + pairs.join(", ") + " }";
+              var btn = card.querySelector('[data-action="copy"]');
+              var finish = function (ok) {
+                var orig = btn.innerHTML;
+                btn.innerHTML = ok ? "&#10003; copied!" : "&#10007; failed";
+                btn.classList.toggle("copied", ok);
+                setTimeout(function () {
+                  btn.innerHTML = orig;
+                  btn.classList.remove("copied");
+                }, 1400);
+              };
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(
+                  function () {
+                    finish(true);
+                  },
+                  function () {
+                    finish(false);
+                  },
+                );
+              } else {
+                var ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.position = "fixed";
+                ta.style.left = "-9999px";
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                  document.execCommand("copy");
+                  finish(true);
+                } catch (e) {
+                  finish(false);
+                }
+                document.body.removeChild(ta);
+              }
+            });
+        }
+
+        var eventsContainer = document.getElementById("events");
+        EVENTS.forEach(function (ev) {
+          var card = buildCard(ev);
+          eventsContainer.appendChild(card);
+          attachCardHandlers(card, ev);
+        });
+
+        var brainstormContainer = document.getElementById("brainstorm");
+        BRAINSTORM_EVENTS.forEach(function (ev) {
+          var card = buildCard(ev);
+          card.classList.add("brainstorm");
+          var w = card.querySelector(".weight");
+          if (w) w.textContent = "draft";
+          brainstormContainer.appendChild(card);
+          attachCardHandlers(card, ev);
+        });
+
+        // --- Master volume (linear 0–1) ---
+        var volInput = document.getElementById("vol");
+        volInput.addEventListener("input", function () {
+          masterVol = parseInt(volInput.value, 10) / 100;
+          if (masterGain)
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+        });
+
+        // --- Diagnostic test tone (direct to destination, bypasses graph) ---
+        document
+          .getElementById("test-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            ctx.resume();
+            var now = ctx.currentTime;
+            var o = ctx.createOscillator();
+            var g = ctx.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(440, now);
+            o.connect(g);
+            g.connect(ctx.destination);
+            g.gain.setValueAtTime(0.2, now);
+            g.gain.linearRampToValueAtTime(0, now + 0.35);
+            o.start(now);
+            o.stop(now + 0.4);
+            console.log(
+              "[ariel preview] TEST tone fired. ctx.state=",
+              ctx.state,
+            );
+          });
+
+        // --- Random event button (weighted by pool weights) ---
+        document
+          .getElementById("random-btn")
+          .addEventListener("click", function () {
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            var total = 0;
+            for (var i = 0; i < EVENTS.length; i++) total += EVENTS[i].weight;
+            var r = Math.random() * total;
+            for (var j = 0; j < EVENTS.length; j++) {
+              r -= EVENTS[j].weight;
+              if (r <= 0) {
+                EVENTS[j].fn(resolveParams(EVENTS[j]));
+                return;
+              }
+            }
+          });
+
+        // --- Random brainstorm button (uniform pick across drafts) ---
+        document
+          .getElementById("random-brainstorm-btn")
+          .addEventListener("click", function () {
+            if (!BRAINSTORM_EVENTS.length) return;
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            var pick =
+              BRAINSTORM_EVENTS[
+                Math.floor(Math.random() * BRAINSTORM_EVENTS.length)
+              ];
+            pick.fn(resolveParams(pick));
+          });
+
+        // --- Hide brainstorm UI when the array is empty ---
+        if (BRAINSTORM_EVENTS.length === 0) {
+          var divider = document.querySelector(".section-divider");
+          var note = document.querySelector(".section-note");
+          var bbtn = document.getElementById("random-brainstorm-btn");
+          if (divider) divider.style.display = "none";
+          if (note) note.style.display = "none";
+          if (brainstormContainer) brainstormContainer.style.display = "none";
+          if (bbtn) bbtn.style.display = "none";
+        }
+
+        // --- Copy all params button: serialize every event's current params ---
+        document
+          .getElementById("copy-all-btn")
+          .addEventListener("click", function () {
+            function fmtNum(v) {
+              return Number.isInteger(v)
+                ? String(v)
+                : parseFloat(v.toFixed(4)).toString();
+            }
+            function fmtParam(k, v) {
+              if (isRangeVal(v)) {
+                return (
+                  k +
+                  ": { min: " +
+                  fmtNum(v.min) +
+                  ", max: " +
+                  fmtNum(v.max) +
+                  " }"
+                );
+              }
+              return k + ": " + fmtNum(v);
+            }
+            var all = EVENTS.concat(BRAINSTORM_EVENTS);
+            var lines = all.map(function (ev) {
+              var pairs = Object.keys(ev.params).map(function (k) {
+                return fmtParam(k, ev.params[k]);
+              });
+              return ev.id + ": { " + pairs.join(", ") + " }";
+            });
+            var text = lines.join("\n");
+            var btn = document.getElementById("copy-all-btn");
+            var orig = btn.innerHTML;
+            var finish = function (ok) {
+              btn.innerHTML = ok ? "&#10003; COPIED " + all.length : "&#10007; FAILED";
+              setTimeout(function () { btn.innerHTML = orig; }, 1600);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(
+                function () { finish(true); },
+                function () { finish(false); },
+              );
+            } else {
+              var ta = document.createElement("textarea");
+              ta.value = text;
+              ta.style.position = "fixed";
+              ta.style.left = "-9999px";
+              document.body.appendChild(ta);
+              ta.select();
+              try { document.execCommand("copy"); finish(true); }
+              catch (e) { finish(false); }
+              document.body.removeChild(ta);
+            }
+          });
+      })();
+    </script>
+  </body>
+</html>

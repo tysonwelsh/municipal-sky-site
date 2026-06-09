@@ -221,6 +221,57 @@
         margin-top: 28px;
         letter-spacing: 1px;
       }
+
+      /* --- Brainstorm section: visually distinct from committed events --- */
+      .section-divider {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin: 36px 0 18px;
+      }
+      .section-divider::before,
+      .section-divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: repeating-linear-gradient(
+          to right,
+          #2a2a3a 0,
+          #2a2a3a 4px,
+          transparent 4px,
+          transparent 8px
+        );
+      }
+      .section-divider h2 {
+        font-family: "Cinzel Decorative", serif;
+        color: #00ccaa;
+        letter-spacing: 3px;
+        font-size: 18px;
+        margin: 0;
+        font-weight: 700;
+        text-shadow: 0 0 8px rgba(0, 204, 170, 0.3);
+      }
+      .section-note {
+        text-align: center;
+        color: #557066;
+        font-size: 14px;
+        letter-spacing: 1px;
+        margin: 0 0 18px;
+      }
+      .event-card.brainstorm {
+        border-color: #1d3a35;
+        border-style: dashed;
+      }
+      .event-card.brainstorm h2 {
+        color: #00ccaa;
+      }
+      .event-card.brainstorm .weight {
+        color: #557066;
+      }
+      .transport-btn.brainstorm:hover {
+        border-color: #00ccaa;
+        color: #00ccaa;
+      }
     </style>
   </head>
   <body>
@@ -241,9 +292,16 @@
         <button class="transport-btn random" id="random-btn">
           &#9862; RANDOM EVENT
         </button>
+        <button class="transport-btn brainstorm" id="random-brainstorm-btn">
+          &#9862; RANDOM BRAINSTORM
+        </button>
       </div>
 
       <div id="events"></div>
+
+      <div class="section-divider"><h2>BRAINSTORM</h2></div>
+      <p class="section-note">~ work-in-progress ideas for new ambient events ~</p>
+      <div id="brainstorm"></div>
 
       <p class="footnote">
         C DORIAN &middot; WARM LIBRARY REVERB &middot; EACH PLAY USES A FRESH
@@ -417,36 +475,6 @@
           }
         }
 
-        function evDistantChime(p) {
-          var c = ctx,
-            now = c.currentTime,
-            out = panner();
-          var freq = LIB_SCALE_5[p.note];
-
-          var o1 = c.createOscillator();
-          var g1 = c.createGain();
-          o1.type = "sine";
-          o1.frequency.setValueAtTime(freq, now);
-          o1.connect(g1);
-          g1.connect(out);
-          g1.gain.setValueAtTime(p.volume, now);
-          g1.gain.exponentialRampToValueAtTime(0.001, now + p.decay);
-          o1.start(now);
-          o1.stop(now + p.decay + 0.1);
-
-          var detune = Math.random() < 0.5 ? -3 : 3;
-          var o2 = c.createOscillator();
-          var g2 = c.createGain();
-          o2.type = "sine";
-          o2.frequency.setValueAtTime(freq + detune, now);
-          o2.connect(g2);
-          g2.connect(out);
-          g2.gain.setValueAtTime(p.volume * 0.8, now);
-          g2.gain.exponentialRampToValueAtTime(0.001, now + p.decay);
-          o2.start(now);
-          o2.stop(now + p.decay + 0.1);
-        }
-
         function evBookThud(p) {
           var c = ctx,
             now = c.currentTime,
@@ -462,34 +490,6 @@
           g.gain.setValueAtTime(p.volume, now);
           g.gain.linearRampToValueAtTime(0, now + p.duration);
           startNoise(n, now);
-        }
-
-        function evCreak(p) {
-          var c = ctx,
-            now = c.currentTime,
-            out = panner();
-          var goUp =
-            p.direction === "up" ||
-            (p.direction === "random" && Math.random() < 0.5);
-          var startFreq = goUp ? p.baseFreq * 0.8 : p.baseFreq * 1.2;
-          var endFreq = goUp ? p.baseFreq * 1.2 : p.baseFreq * 0.8;
-
-          var o = c.createOscillator();
-          var g = c.createGain();
-          var f = c.createBiquadFilter();
-          o.type = "sine";
-          o.frequency.setValueAtTime(startFreq, now);
-          o.frequency.linearRampToValueAtTime(endFreq, now + p.duration);
-          f.type = "bandpass";
-          f.frequency.setValueAtTime(p.baseFreq, now);
-          f.Q.setValueAtTime(3, now);
-          o.connect(f);
-          f.connect(g);
-          g.connect(out);
-          g.gain.setValueAtTime(p.volume, now);
-          g.gain.linearRampToValueAtTime(0, now + p.duration);
-          o.start(now);
-          o.stop(now + p.duration + 0.01);
         }
 
         function evSpellWheeze(p) {
@@ -769,6 +769,101 @@
         }
 
         // ==========================================================================
+        // BRAINSTORM SYNTHESIS — work-in-progress event ideas.
+        // Iterate on these freely; promote a keeper into the EVENTS array (above)
+        // and into LIB_AMBIENT_POOL in prosperos-jukebox-audio.js when ready.
+        // ==========================================================================
+
+        // Slow soft footfalls on stone — lowpass noise pulses with subtle pitch
+        // variation between steps (left/right foot weight). Distant + reverberant.
+        function evFootstepsDistant(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + i * p.interval * (0.9 + Math.random() * 0.2);
+            var stepLen = 0.08 + Math.random() * 0.04;
+            var n = noiseSource(stepLen);
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            f.type = "lowpass";
+            // Heavier on odd steps, lighter on even (gait asymmetry)
+            var heavy = i % 2 === 0;
+            f.frequency.setValueAtTime(p.cutoff * (heavy ? 1.0 : 1.15), t);
+            f.Q.setValueAtTime(1.5, t);
+            n.connect(f); f.connect(g); g.connect(out);
+            var vol = p.volume * (heavy ? 1.0 : 0.7);
+            g.gain.setValueAtTime(0, t);
+            g.gain.linearRampToValueAtTime(vol, t + 0.01);
+            g.gain.exponentialRampToValueAtTime(0.001, t + stepLen);
+            startNoise(n, t);
+          }
+        }
+
+        // Fireplace ember crackle — a small cluster of sharp filtered-noise pops
+        // at random offsets. Brighter than book_thud, shorter than candle_sputter.
+        function evEmberPop(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          for (var i = 0; i < p.count; i++) {
+            var t = now + Math.random() * p.duration;
+            var popLen = 0.008 + Math.random() * 0.02;
+            var n = noiseSource(popLen);
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            f.type = "bandpass";
+            f.frequency.setValueAtTime(p.brightness + Math.random() * 1500, t);
+            f.Q.setValueAtTime(3, t);
+            n.connect(f); f.connect(g); g.connect(out);
+            var vol = p.volume * (0.5 + Math.random() * 0.5);
+            g.gain.setValueAtTime(vol, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + popLen);
+            startNoise(n, t);
+          }
+        }
+
+        // A small brass desk bell — fundamental + canonical bell partials
+        // (~2.76×, ~5.4×, ~8.93×), sharp attack, long inharmonic decay.
+        function evBrassBell(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var partials = [
+            { ratio: 1.0,  amp: 1.00, decay: p.decay         },
+            { ratio: 2.76, amp: 0.55, decay: p.decay * 0.75  },
+            { ratio: 5.40, amp: 0.30, decay: p.decay * 0.45  },
+            { ratio: 8.93, amp: 0.18, decay: p.decay * 0.30  },
+          ];
+          for (var i = 0; i < partials.length; i++) {
+            var pt = partials[i];
+            var o = c.createOscillator();
+            var g = c.createGain();
+            o.type = "sine";
+            o.frequency.setValueAtTime(p.fundamental * pt.ratio, now);
+            o.connect(g); g.connect(out);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(p.volume * pt.amp, now + 0.003);
+            g.gain.exponentialRampToValueAtTime(0.001, now + pt.decay);
+            o.start(now);
+            o.stop(now + pt.decay + 0.1);
+          }
+        }
+
+        // A map / scroll unfurling — sustained bandpass noise with rising
+        // cutoff and a soft tail. Longer + smoother than page_turn.
+        function evMapUnfurl(p) {
+          var c = ctx, now = c.currentTime, out = panner();
+          var n = noiseSource(p.duration);
+          var g = c.createGain();
+          var f = c.createBiquadFilter();
+          f.type = "bandpass";
+          f.Q.setValueAtTime(1.2, now);
+          f.frequency.setValueAtTime(p.startCutoff, now);
+          f.frequency.linearRampToValueAtTime(p.endCutoff, now + p.duration * 0.85);
+          n.connect(f); f.connect(g); g.connect(out);
+          g.gain.setValueAtTime(0, now);
+          g.gain.linearRampToValueAtTime(p.volume, now + p.duration * 0.2);
+          g.gain.setValueAtTime(p.volume, now + p.duration * 0.7);
+          g.gain.linearRampToValueAtTime(0, now + p.duration);
+          startNoise(n, now);
+        }
+
+        // ==========================================================================
         // EVENT CONFIGS
         // ==========================================================================
 
@@ -785,7 +880,7 @@
           {
             id: "page_turn",
             name: "1. Page Turn",
-            weight: 30,
+            weight: 10,
             description:
               "Quick paper rustle — highpass-filtered noise sweeping upward.",
             fn: evPageTurn,
@@ -811,7 +906,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.1,
+                max: 0.3,
                 step: 0.005,
                 unit: "",
               },
@@ -820,7 +915,7 @@
           {
             id: "quill_scratch",
             name: "2. Quill Scratch",
-            weight: 25,
+            weight: 20,
             description:
               "Several short bandpass scratches — quill nib on parchment.",
             fn: evQuillScratch,
@@ -859,7 +954,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.003,
-                max: 0.05,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -868,7 +963,7 @@
           {
             id: "clock_cluster",
             name: "3. Clock Cluster",
-            weight: 15,
+            weight: 17,
             description:
               "Several rapid tick-tocks — as if the clock briefly went frantic.",
             fn: evClockCluster,
@@ -894,42 +989,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.003,
-                max: 0.04,
-                step: 0.002,
-                unit: "",
-              },
-            ],
-          },
-          {
-            id: "distant_chime",
-            name: "4. Distant Chime",
-            weight: 15,
-            description:
-              "A lone bell tone with subtle detuning — distant church chime in the stacks.",
-            fn: evDistantChime,
-            defaults: { note: 3, decay: 2.5, volume: 0.025 },
-            controls: [
-              {
-                param: "note",
-                label: "Note",
-                min: 0,
-                max: 6,
-                step: 1,
-                unit: "note",
-              },
-              {
-                param: "decay",
-                label: "Decay",
-                min: 0.5,
-                max: 6.0,
-                step: 0.1,
-                unit: "s",
-              },
-              {
-                param: "volume",
-                label: "Volume",
-                min: 0.005,
-                max: 0.06,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -937,11 +997,11 @@
           },
           {
             id: "book_thud",
-            name: "5. Book Thud",
-            weight: 10,
+            name: "4. Book Thud",
+            weight: 12,
             description: "Low, dull thump — a heavy book hitting wood.",
             fn: evBookThud,
-            defaults: { duration: 0.05, cutoff: 200, volume: 0.03 },
+            defaults: { duration: 0.05, cutoff: 200, volume: 0.10 },
             controls: [
               {
                 param: "duration",
@@ -963,56 +1023,16 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.08,
-                step: 0.002,
-                unit: "",
-              },
-            ],
-          },
-          {
-            id: "creak",
-            name: "6. Creak",
-            weight: 5,
-            description:
-              "Wooden floorboard or chair — sine sweep through bandpass resonance.",
-            fn: evCreak,
-            defaults: {
-              duration: 0.3,
-              baseFreq: 100,
-              direction: "random",
-              volume: 0.015,
-            },
-            controls: [
-              {
-                param: "duration",
-                label: "Duration",
-                min: 0.1,
-                max: 1.5,
-                step: 0.05,
-                unit: "s",
-              },
-              {
-                param: "baseFreq",
-                label: "Pitch",
-                min: 40,
-                max: 300,
-                step: 5,
-                unit: "Hz",
-              },
-              {
-                param: "volume",
-                label: "Volume",
-                min: 0.005,
-                max: 0.05,
-                step: 0.002,
+                max: 0.3,
+                step: 0.005,
                 unit: "",
               },
             ],
           },
           {
             id: "spell_wheeze",
-            name: "7. Spell Wheeze",
-            weight: 8,
+            name: "5. Spell Wheeze",
+            weight: 11,
             description:
               "Whispered incantation with sparkle — a magical exhalation.",
             fn: evSpellWheeze,
@@ -1038,7 +1058,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.05,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -1046,8 +1066,8 @@
           },
           {
             id: "owl_hoot",
-            name: "8. Owl Hoot",
-            weight: 10,
+            name: "6. Owl Hoot",
+            weight: 12,
             description:
               "Low sine with falling pitch and a harmonic — library owl.",
             fn: evOwlHoot,
@@ -1073,7 +1093,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.05,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -1081,8 +1101,8 @@
           },
           {
             id: "distant_waves",
-            name: "9. Distant Waves",
-            weight: 8,
+            name: "7. Distant Waves",
+            weight: 10,
             description:
               "Slow filtered noise swell — faraway surf through a window.",
             fn: evDistantWaves,
@@ -1108,7 +1128,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.05,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -1116,8 +1136,8 @@
           },
           {
             id: "candle_sputter",
-            name: "10. Candle Sputter",
-            weight: 12,
+            name: "8. Candle Sputter",
+            weight: 14,
             description:
               "Flickering flame — continuous high-pass hiss bed with random crackling pops.",
             fn: evCandleSputter,
@@ -1151,7 +1171,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.06,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -1159,8 +1179,8 @@
           },
           {
             id: "ink_drip",
-            name: "11. Ink Drip",
-            weight: 8,
+            name: "9. Ink Drip",
+            weight: 11,
             description:
               "Water drop into a puddle &mdash; noise transient plus rising cavity resonance. Main app fires 1 drop or 2-at-once 30% of the time.",
             fn: evInkDrip,
@@ -1194,7 +1214,7 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.1,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
@@ -1202,8 +1222,8 @@
           },
           {
             id: "whispered_word",
-            name: "12. Whispered Word",
-            weight: 6,
+            name: "10. Whispered Word",
+            weight: 9,
             description:
               "A single short whispered syllable &mdash; formant-filtered noise with gentle drift.",
             fn: evWhisperedWord,
@@ -1237,16 +1257,84 @@
                 param: "volume",
                 label: "Volume",
                 min: 0.005,
-                max: 0.1,
+                max: 0.3,
                 step: 0.002,
                 unit: "",
               },
             ],
           },
+          {
+            id: "footsteps_distant",
+            name: "11. Footsteps Distant",
+            weight: 12,
+            description:
+              "Slow soft footfalls on stone — heavy/light gait, reverberant, faint.",
+            fn: evFootstepsDistant,
+            defaults: { count: 5, interval: 0.6, cutoff: 600, volume: 0.04 },
+            controls: [
+              { param: "count",    label: "Steps",    min: 2,   max: 12,   step: 1,    unit: ""   },
+              { param: "interval", label: "Cadence",  min: 0.3, max: 1.5,  step: 0.05, unit: "s"  },
+              { param: "cutoff",   label: "Tone",     min: 200, max: 1500, step: 25,   unit: "Hz" },
+              { param: "volume",   label: "Volume",   min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "ember_pop",
+            name: "12. Ember Pop",
+            weight: 14,
+            description:
+              "Small fireplace crackle — a cluster of sharp filtered-noise pops.",
+            fn: evEmberPop,
+            defaults: { count: 6, duration: 0.7, brightness: 3500, volume: 0.025 },
+            controls: [
+              { param: "count",      label: "Pops",       min: 2,    max: 20,    step: 1,    unit: ""   },
+              { param: "duration",   label: "Spread",     min: 0.2,  max: 2.0,   step: 0.05, unit: "s"  },
+              { param: "brightness", label: "Brightness", min: 1500, max: 8000,  step: 100,  unit: "Hz" },
+              { param: "volume",     label: "Volume",     min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+        ];
+
+        // ==========================================================================
+        // BRAINSTORM EVENT CONFIGS — same shape as EVENTS. Rendered separately.
+        // Not part of the weighted production pool. To promote one: move its
+        // entry into EVENTS above (with a real `weight`) and add the matching
+        // case to LIB_AMBIENT_POOL + the libraryAmbient() switch in audio.js.
+        // ==========================================================================
+        var BRAINSTORM_EVENTS = [
+          {
+            id: "brass_bell",
+            name: "C. Brass Bell",
+            weight: 0,
+            description:
+              "A small desk bell — fundamental plus canonical bell partials, long inharmonic decay.",
+            fn: evBrassBell,
+            defaults: { fundamental: 880, decay: 2.5, volume: 0.025 },
+            controls: [
+              { param: "fundamental", label: "Pitch",   min: 400, max: 1500, step: 10,  unit: "Hz" },
+              { param: "decay",       label: "Decay",   min: 0.5, max: 6.0,  step: 0.1, unit: "s"  },
+              { param: "volume",      label: "Volume",  min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
+          {
+            id: "map_unfurl",
+            name: "D. Map Unfurl",
+            weight: 0,
+            description:
+              "Parchment unrolling — sustained bandpass rustle with rising cutoff and a soft tail.",
+            fn: evMapUnfurl,
+            defaults: { duration: 1.4, startCutoff: 2500, endCutoff: 6500, volume: 0.03 },
+            controls: [
+              { param: "duration",    label: "Duration",   min: 0.4,  max: 3.5,   step: 0.05, unit: "s"  },
+              { param: "startCutoff", label: "Start tone", min: 800,  max: 6000,  step: 100,  unit: "Hz" },
+              { param: "endCutoff",   label: "End tone",   min: 2000, max: 10000, step: 100,  unit: "Hz" },
+              { param: "volume",      label: "Volume",     min: 0.005, max: 0.3, step: 0.005, unit: "" },
+            ],
+          },
         ];
 
         // Copy defaults into a mutable params object per event
-        EVENTS.forEach(function (ev) {
+        EVENTS.concat(BRAINSTORM_EVENTS).forEach(function (ev) {
           ev.params = {};
           Object.keys(ev.defaults).forEach(function (k) {
             ev.params[k] = ev.defaults[k];
@@ -1423,6 +1511,17 @@
           attachCardHandlers(card, ev);
         });
 
+        var brainstormContainer = document.getElementById("brainstorm");
+        BRAINSTORM_EVENTS.forEach(function (ev) {
+          var card = buildCard(ev);
+          card.classList.add("brainstorm");
+          // Replace the "pool weight" badge with a neutral "draft" label
+          var w = card.querySelector(".weight");
+          if (w) w.textContent = "draft";
+          brainstormContainer.appendChild(card);
+          attachCardHandlers(card, ev);
+        });
+
         // --- Master volume (linear 0–1) ---
         var volInput = document.getElementById("vol");
         volInput.addEventListener("input", function () {
@@ -1477,6 +1576,20 @@
                 return;
               }
             }
+          });
+
+        // --- Random brainstorm button (uniform pick across drafts) ---
+        document
+          .getElementById("random-brainstorm-btn")
+          .addEventListener("click", function () {
+            if (!BRAINSTORM_EVENTS.length) return;
+            initAudio();
+            if (ctx.state === "suspended") ctx.resume();
+            var pick =
+              BRAINSTORM_EVENTS[
+                Math.floor(Math.random() * BRAINSTORM_EVENTS.length)
+              ];
+            pick.fn(pick.params);
           });
       })();
     </script>

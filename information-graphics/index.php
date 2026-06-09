@@ -17,7 +17,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.04.13</span>
                     <div class="entry-content">
-                        <a href="prosperos-jukebox" class="entry-title">Prospero's Jukebox</a>
+                        <a href="prosperos-jukebox/" class="entry-title">Prospero's Jukebox</a>
                         <span class="entry-description">Two aleatoric soundscapes from Prospero's Pinball &mdash; toggle
                             and mix the generative layers of Prospero's Library and Sycorax's Spell.</span>
                     </div>

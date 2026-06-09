@@ -1,0 +1,968 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Drone Spiral Prototype — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0805;
+        color: #bb9966;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 28px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffcc66;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.45),
+          0 0 30px rgba(255, 170, 0, 0.12);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665033;
+        letter-spacing: 3px;
+        margin: 0 0 26px;
+        font-size: 17px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #1a120a;
+        color: #665033;
+        border: 2px solid #2a2010;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .btn:hover {
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .btn.active {
+        color: #66dd99;
+        border-color: #66dd99;
+      }
+      .vol-label {
+        font-size: 14px;
+        color: #665033;
+        letter-spacing: 1px;
+        margin-left: 4px;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #2a2010;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+        width: 140px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffcc66;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffcc66;
+        border: none;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .status {
+        font-size: 14px;
+        color: #665033;
+        letter-spacing: 1px;
+        margin-left: auto;
+      }
+      .status.is-playing {
+        color: #66dd99;
+      }
+
+      .scope {
+        background: #0a0805;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .canvas-wrap {
+        position: relative;
+        height: 700px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+        touch-action: none;
+      }
+      canvas.is-dragging {
+        cursor: grabbing;
+      }
+      .legend {
+        margin-top: 14px;
+        padding: 12px 16px;
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        font-size: 15px;
+        color: #bb9966;
+        line-height: 1.5;
+      }
+      .legend p {
+        margin: 0 0 6px;
+      }
+      .legend p:last-child {
+        margin-bottom: 0;
+      }
+      .legend strong {
+        color: #ffcc66;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Library Drone Spiral</h1>
+      <p class="subtitle">~ 3D pitch spiral &middot; live from the main engine ~</p>
+
+      <div class="transport">
+        <button class="btn" id="play-btn">&#9654; PLAY</button>
+        <button class="btn" id="stop-btn">&#9632; STOP</button>
+        <span class="vol-label">VOL</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button class="btn" id="auto-rotate-btn" title="Toggle slow auto-rotation of the spiral">&#8635; AUTO</button>
+        <button class="btn" id="reset-view-btn" title="Reset spiral camera view">&#8634; VIEW</button>
+        <span class="status" id="status">READY</span>
+      </div>
+
+      <div class="scope">
+        <div class="canvas-wrap">
+          <canvas id="ridge"></canvas>
+        </div>
+      </div>
+
+      <div class="legend">
+        <p>
+          <strong>Live engine tap.</strong> PLAY launches the actual
+          Library track from <code>prosperos-jukebox-audio.js</code>. The
+          spiral now taps the engine's <em>master</em> output, so every
+          audible event (drone, harpsichord, music box, hum, ambient
+          events) feeds the FFT and appears on the coil.
+        </p>
+        <p>
+          <strong>3D Pitch Spiral.</strong> One full turn per octave, 96
+          spectral samples per turn. The baseline traces a constant-radius
+          cylinder; each sample lifts upward by its current spectral
+          magnitude. Octave labels (C1–C7) are fixed on the left, anchored
+          to each octave's vertical range.
+        </p>
+        <p>
+          <strong>Honest mapping.</strong> Peak height is dB-normalized
+          linearly in the window <code>[-75 dB, -10 dB]</code>. No
+          per-octave tilt, no spectral blur, no gamma lift. Bins between
+          samples are linearly interpolated — no invented smoothness.
+          The drone will dominate visually because it dominates the
+          signal; quieter events stay short and brief because they are.
+        </p>
+        <p>
+          <strong>Pulse Constellation floor.</strong> Below the spiral,
+          on a horizontal plane, the constellation viz from the main app
+          is laid out. Each active drone partial sits at its
+          pitch-class angle (radius = octave) with a growing waveform
+          halo whose ring expands across the cycle and whose shape is
+          the actual sound wave slowed 60×. A connecting line shows the
+          interval between the two partials. Looking down through the
+          spiral (default view) lets you see the constellation as a
+          floor; spinning lets you walk around the whole structure.
+        </p>
+        <p>
+          <strong>Drag</strong> the canvas to rotate (horizontal = yaw,
+          vertical = pitch). <strong>AUTO</strong> toggles slow continuous
+          rotation; <strong>VIEW</strong> resets the camera.
+        </p>
+      </div>
+    </div>
+
+    <script src="prosperos-jukebox-audio.js?v=69"></script>
+    <script>
+      if (!window.ProsperoAudio) console.error("AUDIO ENGINE FAILED TO LOAD");
+    </script>
+    <script>
+      (function () {
+        "use strict";
+
+        // ===========================================================
+        // ENGINE TAP
+        // -----------------------------------------------------------
+        // We don't synthesize anything locally. ProsperoAudio runs the
+        // real Library track; we attach our own AnalyserNode to the
+        // engine's masterGain so the FFT sees every layer the engine is
+        // producing (drone, harpsichord, music box, hum, ambient events).
+        // The constellation overlay below the spiral specifically tracks
+        // drone cycles via setDroneListener.
+        // ===========================================================
+        var ctx = null;
+        var analyser = null;
+        var fftData = null;
+        var sampleRate = 48000;
+        var FFT_SIZE = 8192;
+        var isPlaying = false;
+        var analyserAttached = false;
+        var droneCycles = [];
+
+        function ensureAnalyser() {
+          if (!window.ProsperoAudio) return;
+          ProsperoAudio.init();
+          ctx = ProsperoAudio.getAudioContext();
+          if (!ctx) return;
+          sampleRate = ctx.sampleRate;
+          if (!analyser) {
+            analyser = ctx.createAnalyser();
+            analyser.fftSize = FFT_SIZE;
+            analyser.smoothingTimeConstant = 0.05;
+            analyser.minDecibels = -100;
+            analyser.maxDecibels = 0;
+            fftData = new Float32Array(analyser.frequencyBinCount);
+          }
+          // Listen for drone cycles to drive the constellation overlay.
+          // Replaces any previous listener — fine here since the prototype
+          // is standalone (no main app constellation viz loaded).
+          if (ProsperoAudio.setDroneListener) {
+            ProsperoAudio.setDroneListener(function (cycle) {
+              droneCycles.push(cycle);
+            });
+          }
+        }
+
+        function startEngine() {
+          if (!window.ProsperoAudio) return;
+          ensureAnalyser();
+          if (ctx && ctx.state === "suspended") ctx.resume();
+          ProsperoAudio.switchTrack("library");
+          ProsperoAudio.play("library");
+          if (!analyserAttached) {
+            var ok = ProsperoAudio.attachAnalyser(analyser);
+            if (ok) {
+              analyserAttached = true;
+            } else {
+              setTimeout(function () {
+                if (!analyserAttached && ProsperoAudio.attachAnalyser(analyser)) {
+                  analyserAttached = true;
+                }
+              }, 60);
+            }
+          }
+          rebuildSampleFftIdx();
+          isPlaying = true;
+          updateStatus();
+        }
+
+        function stopEngine() {
+          if (!window.ProsperoAudio) return;
+          ProsperoAudio.stop();
+          isPlaying = false;
+          updateStatus();
+        }
+
+        // ===========================================================
+        // 3D PITCH SPIRAL RENDER
+        // -----------------------------------------------------------
+        // Single continuous ribbon wrapping a vertical cylinder. One
+        // full turn per octave; pitch-class b ∈ [0,96) sets the angle
+        // θ = b/96 * 2π. Per-octave average energy drives the coil's
+        // radius (loud bulges outward); per-sample magnitude drives a
+        // vertical peak rising off the coil baseline. Quads are
+        // painter-sorted by mean projected z.
+        // ===========================================================
+        var OCTAVES = 7;
+        var BASE_OCTAVE = 1;
+        var SAMPLES_PER_TURN = 96;
+        var TOTAL_SAMPLES = OCTAVES * SAMPLES_PER_TURN;
+        // ---------- Honest preset ----------
+        // dB-normalized magnitude maps linearly to height. No perceptual
+        // tilt, no spectral blur, no gamma lift. What you see is exactly
+        // what the FFT measured in the [DB_FLOOR, DB_CEIL] window.
+        var DB_FLOOR = -75;
+        var DB_CEIL  = -10;
+        var DB_PER_OCTAVE_TILT = 0;
+        var BLUR_SIGMA = 0;
+        var PEAK_KNEE  = 1.0;
+        var PEAK_GAMMA = 1.0;
+        var ROW_F_MIN = 32.70; // C1
+        var PITCH_CLASSES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        var IN_KEY = { C: 1, D: 1, "D#": 1, F: 1, G: 1, A: 1, "A#": 1 }; // C Dorian
+        var PAL = {
+          bg: "#0a0805",
+          ribbonFill: [255, 170, 0],
+          ribbonStroke: [255, 220, 130],
+          baseStroke: [180, 130, 60],
+          inKeyLabel: [255, 220, 140],
+          outKeyLabel: [120, 95, 50],
+          octaveLabel: [255, 200, 120],
+        };
+
+        // ---------- Camera state ----------
+        var DEFAULT_YAW = 0.6;
+        var DEFAULT_PITCH = -0.5;
+        var camYaw = DEFAULT_YAW;
+        var camPitch = DEFAULT_PITCH;
+        var autoRotate = false;
+        var dragging = false;
+        var lastMx = 0, lastMy = 0;
+
+        var canvas = document.getElementById("ridge");
+        var ctx2d = canvas.getContext("2d");
+        function resizeCanvas() {
+          var rect = canvas.getBoundingClientRect();
+          var dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(rect.width * dpr);
+          canvas.height = Math.floor(rect.height * dpr);
+          ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        // ---------- Pointer / touch drag ----------
+        function startDrag(x, y) {
+          dragging = true; lastMx = x; lastMy = y;
+          canvas.classList.add("is-dragging");
+        }
+        function moveDrag(x, y) {
+          if (!dragging) return;
+          var dx = x - lastMx, dy = y - lastMy;
+          lastMx = x; lastMy = y;
+          camYaw += dx * 0.01;
+          camPitch += dy * 0.01;
+          var lim = Math.PI / 2 - 0.05;
+          if (camPitch > lim) camPitch = lim;
+          if (camPitch < -lim) camPitch = -lim;
+        }
+        function endDrag() {
+          dragging = false;
+          canvas.classList.remove("is-dragging");
+        }
+        canvas.addEventListener("mousedown", function (e) { startDrag(e.clientX, e.clientY); });
+        window.addEventListener("mousemove", function (e) { moveDrag(e.clientX, e.clientY); });
+        window.addEventListener("mouseup", endDrag);
+        canvas.addEventListener("touchstart", function (e) {
+          if (e.touches.length !== 1) return;
+          startDrag(e.touches[0].clientX, e.touches[0].clientY);
+          e.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener("touchmove", function (e) {
+          if (!dragging || e.touches.length !== 1) return;
+          moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+          e.preventDefault();
+        }, { passive: false });
+        canvas.addEventListener("touchend", endDrag);
+
+        document.getElementById("auto-rotate-btn").addEventListener("click", function () {
+          autoRotate = !autoRotate;
+          this.classList.toggle("active", autoRotate);
+        });
+        document.getElementById("reset-view-btn").addEventListener("click", function () {
+          camYaw = DEFAULT_YAW;
+          camPitch = DEFAULT_PITCH;
+        });
+
+        // ---------- FFT sampling ----------
+        var sampleFftIdx = null;
+        function rebuildSampleFftIdx() {
+          if (!ctx) return;
+          sampleFftIdx = new Float32Array(TOTAL_SAMPLES);
+          for (var o = 0; o < OCTAVES; o++) {
+            var rowF = ROW_F_MIN * Math.pow(2, o);
+            for (var b = 0; b < SAMPLES_PER_TURN; b++) {
+              var f = rowF * Math.pow(2, b / SAMPLES_PER_TURN);
+              sampleFftIdx[o * SAMPLES_PER_TURN + b] = f * FFT_SIZE / sampleRate;
+            }
+          }
+        }
+
+        var magnitudes = new Float32Array(TOTAL_SAMPLES);
+        function computeMagnitudes() {
+          if (!analyser || !sampleFftIdx) return;
+          analyser.getFloatFrequencyData(fftData);
+          for (var o = 0; o < OCTAVES; o++) {
+            var tilt = (o - (OCTAVES - 1) / 2) * DB_PER_OCTAVE_TILT;
+            for (var b = 0; b < SAMPLES_PER_TURN; b++) {
+              var idx = o * SAMPLES_PER_TURN + b;
+              var fi = sampleFftIdx[idx];
+              var lo = Math.floor(fi), t = fi - lo, hi = lo + 1;
+              if (lo < 0) lo = 0;
+              if (hi >= fftData.length) hi = fftData.length - 1;
+              magnitudes[idx] = fftData[lo] * (1 - t) + fftData[hi] * t + tilt;
+            }
+          }
+        }
+
+        var blurTempBuf = new Float32Array(SAMPLES_PER_TURN);
+        function applySpectralBlur(sigma) {
+          if (sigma <= 0) return;
+          var halfWidth = Math.max(1, Math.ceil(sigma * 3));
+          var kernelLen = halfWidth * 2 + 1;
+          var kernel = new Float32Array(kernelLen);
+          var twoSigmaSq = 2 * sigma * sigma;
+          var ksum = 0;
+          for (var k = 0; k < kernelLen; k++) {
+            var dx = k - halfWidth;
+            kernel[k] = Math.exp(-dx * dx / twoSigmaSq);
+            ksum += kernel[k];
+          }
+          for (var k2 = 0; k2 < kernelLen; k2++) kernel[k2] /= ksum;
+          for (var o = 0; o < OCTAVES; o++) {
+            var rowOffset = o * SAMPLES_PER_TURN;
+            for (var b = 0; b < SAMPLES_PER_TURN; b++) {
+              var acc = 0, wAcc = 0;
+              for (var k3 = 0; k3 < kernelLen; k3++) {
+                var src = b + (k3 - halfWidth);
+                if (src >= 0 && src < SAMPLES_PER_TURN) {
+                  acc += magnitudes[rowOffset + src] * kernel[k3];
+                  wAcc += kernel[k3];
+                }
+              }
+              blurTempBuf[b] = wAcc > 0 ? acc / wAcc : magnitudes[rowOffset + b];
+            }
+            for (var b2 = 0; b2 < SAMPLES_PER_TURN; b2++) {
+              magnitudes[rowOffset + b2] = blurTempBuf[b2];
+            }
+          }
+        }
+
+        function normDb(db) {
+          if (db < DB_FLOOR) return 0;
+          if (db > DB_CEIL) return 1;
+          return (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR);
+        }
+
+        // ---------- 3D math (orthographic) ----------
+        var innerProj = new Float32Array(TOTAL_SAMPLES * 3);
+        var outerProj = new Float32Array(TOTAL_SAMPLES * 3);
+        var quadOrder = new Int32Array(TOTAL_SAMPLES - 1);
+        var quadZ = new Float32Array(TOTAL_SAMPLES - 1);
+        for (var qi = 0; qi < quadOrder.length; qi++) quadOrder[qi] = qi;
+
+        // ---------- Constellation overlay (drone partials on floor plane) ----------
+        // Ported from prosperos-jukebox-viz.js — same partial layout, halo
+        // waveform, and intervals, but rendered onto a horizontal floor
+        // plane below the spiral and projected through the spiral's camera.
+        var CONST_PITCH_LABELS = ["C","C#","D","Eb","E","F","F#","G","Ab","A","Bb","B"];
+        var HALO_WAVE_POINTS = 96;       // fewer points than 2D viz (cheaper after projection)
+        var HALO_WAVE_AMP_FRAC = 0.2;
+        var LIBRARY_LOWPASS = 240;       // matches engine's updated drone cutoff
+        var HARMONIC_FREQ_CEILING = 800;
+        var SLOWDOWN = 60;
+        var HALO_LIB_WAVELENGTHS = 6;
+        function lowpassResponse(f) {
+          var r = f / LIBRARY_LOWPASS;
+          return 1 / Math.sqrt(1 + r * r);
+        }
+        function libraryTriangleHarmonics(fundamental, maxFreq) {
+          var result = [];
+          for (var n = 1; n <= 9; n += 2) {
+            var f = fundamental * n;
+            if (f > maxFreq) break;
+            var triAmp = 1 / (n * n);
+            result.push({ freq: f, relAmp: triAmp * lowpassResponse(f) });
+          }
+          return result;
+        }
+        function freqToMidi(f) { return 12 * Math.log2(f / 440) + 69; }
+        function pitchClassOf(f) { return ((freqToMidi(f) % 12) + 12) % 12; }
+        function intervalSemitones(f1, f2) {
+          var m = Math.abs(freqToMidi(f1) - freqToMidi(f2));
+          return Math.round(m) % 12;
+        }
+        var INTERVAL_NAMES = {
+          0: "unison", 1: "m2", 2: "M2", 3: "m3", 4: "M3",
+          5: "P4", 6: "tritone", 7: "P5", 8: "m6", 9: "M6",
+          10: "m7", 11: "M7",
+        };
+        function consonance(semitones) {
+          var C = { 0: 1.0, 7: 0.95, 5: 0.85, 4: 0.75, 3: 0.7,
+                    8: 0.55, 9: 0.55, 2: 0.4, 10: 0.4,
+                    1: 0.25, 11: 0.25, 6: 0.3 };
+          return C[semitones] != null ? C[semitones] : 0.5;
+        }
+        function envelopeAt(cycle, t) {
+          var rel = t - cycle.startTime;
+          if (rel < 0 || rel > cycle.duration) return 0;
+          if (rel < cycle.fadeIn) return (rel / cycle.fadeIn) * cycle.peakGain;
+          if (rel > cycle.duration - cycle.fadeOut) {
+            return ((cycle.duration - rel) / cycle.fadeOut) * cycle.peakGain;
+          }
+          return cycle.peakGain;
+        }
+        function buildPartialsForCycleTone(cycle, toneIdx, now) {
+          var result = [];
+          var fund = cycle.frequencies[toneIdx];
+          if (fund == null) return result;
+          var amp = envelopeAt(cycle, now);
+          if (amp === 0) return result;
+          var normAmp = amp / cycle.peakGain;
+          var harmonics = libraryTriangleHarmonics(fund, HARMONIC_FREQ_CEILING);
+          for (var i = 0; i < harmonics.length; i++) {
+            var h = harmonics[i];
+            result.push({ freq: h.freq, amp: normAmp * h.relAmp });
+          }
+          if (toneIdx === 0 && cycle.subFreq) {
+            result.push({
+              freq: cycle.subFreq,
+              amp: normAmp * (cycle.subPeakGain / cycle.peakGain) * 0.85,
+            });
+          }
+          return result;
+        }
+        // Place a frequency on the floor plane: angular = PC, radial = octave
+        // (matches the 2D constellation's nodePos but in xz world units).
+        function constNodeWorld(freq, constMaxR) {
+          var theta = (pitchClassOf(freq) / 12) * 2 * Math.PI;
+          var midi = freqToMidi(freq);
+          var oct = Math.floor(midi / 12) - 1;
+          var norm = Math.max(0, Math.min(1, (oct - 1) / 4));
+          var r = 0.25 * constMaxR + norm * 0.75 * constMaxR;
+          return { x: r * Math.cos(theta), z: r * Math.sin(theta), r: r, theta: theta };
+        }
+        // Project a world point through the camera, returning screen + z.
+        function projWorld(x, y, z, cx, cy, cy1, sy1, cp1, sp1) {
+          var x1 = x * cy1 - z * sy1;
+          var z1 = x * sy1 + z * cy1;
+          var y1 = y * cp1 - z1 * sp1;
+          var z2 = y * sp1 + z1 * cp1;
+          return { sx: cx + x1, sy: cy - y1, z: z2 };
+        }
+
+        function project(x, y, z, cy1, sy1, cp1, sp1, out, off) {
+          var x1 = x * cy1 - z * sy1;
+          var z1 = x * sy1 + z * cy1;
+          var y1 = y * cp1 - z1 * sp1;
+          var z2 = y * sp1 + z1 * cp1;
+          out[off]     = x1;
+          out[off + 1] = y1;
+          out[off + 2] = z2;
+        }
+
+        function tick() {
+          if (sampleFftIdx) {
+            computeMagnitudes();
+            applySpectralBlur(BLUR_SIGMA);
+          }
+          if (autoRotate) camYaw += 0.005;
+
+          var rect = canvas.getBoundingClientRect();
+          var w = rect.width, h = rect.height;
+          ctx2d.fillStyle = PAL.bg;
+          ctx2d.fillRect(0, 0, w, h);
+
+          var cx = w / 2, cy = h / 2;
+          var baseRadius = Math.min(w, h) * 0.20;
+          var octaveStep = baseRadius * 0.55;
+          var peakUp     = octaveStep * 1.5;
+
+          var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
+          var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
+
+          // Build inner + outer projected points for the spiral. Constant
+          // cylinder radius; spectral peak lifts the outer point vertically.
+          for (var o = 0; o < OCTAVES; o++) {
+            for (var b = 0; b < SAMPLES_PER_TURN; b++) {
+              var idx = o * SAMPLES_PER_TURN + b;
+              var theta = (b / SAMPLES_PER_TURN) * 2 * Math.PI;
+              var yWorld = (o + b / SAMPLES_PER_TURN - (OCTAVES - 1) / 2) * octaveStep;
+              var mag = normDb(magnitudes[idx]);
+              var peakMag = mag <= PEAK_KNEE
+                ? PEAK_KNEE * Math.pow(mag / PEAK_KNEE, PEAK_GAMMA)
+                : mag;
+              var ct = Math.cos(theta), st = Math.sin(theta);
+              var xW = baseRadius * ct, zW = baseRadius * st;
+              project(xW, yWorld,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
+              project(xW, yWorld + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
+            }
+          }
+
+          // ===========================================================
+          // CONSTELLATION FLOOR (drawn before spiral so spiral occludes
+          // overlapping pieces from above).
+          // ===========================================================
+          var floorY = -((OCTAVES - 1) / 2) * octaveStep - octaveStep * 0.55;
+          var constMaxR = baseRadius;            // matches cylinder footprint
+          var haloMaxR  = baseRadius * 0.20;     // world units for halo expansion
+          var nowAudio = (window.ProsperoAudio && ProsperoAudio.getAudioTime)
+            ? ProsperoAudio.getAudioTime()
+            : (performance.now() / 1000);
+
+          // Prune expired drone cycles
+          droneCycles = droneCycles.filter(function (c) {
+            return c.startTime + c.duration + 0.5 >= nowAudio;
+          });
+          var activeCycles = droneCycles.filter(function (c) {
+            return (!c.track || c.track === "library") &&
+                   nowAudio >= c.startTime &&
+                   nowAudio <= c.startTime + c.duration;
+          });
+
+          var palFg = "255, 170, 0";
+          var palSub = "255, 130, 40";
+
+          // 1) Chromatic spokes (12 radial lines from center to outer ring)
+          ctx2d.strokeStyle = "rgba(" + palFg + ", 0.13)";
+          ctx2d.lineWidth = 1;
+          var centerP = projWorld(0, floorY, 0, cx, cy, cy1, sy1, cp1, sp1);
+          for (var si = 0; si < 12; si++) {
+            var sa = (si / 12) * 2 * Math.PI;
+            var endP = projWorld(constMaxR * Math.cos(sa), floorY, constMaxR * Math.sin(sa),
+                                  cx, cy, cy1, sy1, cp1, sp1);
+            ctx2d.beginPath();
+            ctx2d.moveTo(centerP.sx, centerP.sy);
+            ctx2d.lineTo(endP.sx, endP.sy);
+            ctx2d.stroke();
+          }
+
+          // 2) Outer ring
+          ctx2d.strokeStyle = "rgba(" + palFg + ", 0.20)";
+          ctx2d.beginPath();
+          var ringSamples = 64;
+          for (var ri = 0; ri <= ringSamples; ri++) {
+            var ra = (ri / ringSamples) * 2 * Math.PI;
+            var rp = projWorld(constMaxR * Math.cos(ra), floorY, constMaxR * Math.sin(ra),
+                                cx, cy, cy1, sy1, cp1, sp1);
+            if (ri === 0) ctx2d.moveTo(rp.sx, rp.sy);
+            else ctx2d.lineTo(rp.sx, rp.sy);
+          }
+          ctx2d.stroke();
+
+          // 3) Halo waveform rings + 4) connecting line + 5) harmonic dots
+          //    + 6) partial nodes — all together so each cycle is self-contained.
+          ctx2d.globalCompositeOperation = "lighter";
+          for (var ci = 0; ci < activeCycles.length; ci++) {
+            var cycle = activeCycles[ci];
+            var amp = envelopeAt(cycle, nowAudio);
+            if (amp === 0) continue;
+            var intensity = amp / cycle.peakGain;
+            var visualIntensity = Math.min(1, intensity * 1.7);
+            var progress = (nowAudio - cycle.startTime) / cycle.duration;
+            var baseRingR = progress * haloMaxR;
+
+            for (var ti = 0; ti < cycle.frequencies.length; ti++) {
+              var freq = cycle.frequencies[ti];
+              var node = constNodeWorld(freq, constMaxR);
+              var partials = buildPartialsForCycleTone(cycle, ti, nowAudio);
+
+              // Halo waveform polygon (or circle if baseRingR is tiny)
+              ctx2d.strokeStyle = "rgba(" + palFg + ", " + (visualIntensity * 0.85).toFixed(3) + ")";
+              ctx2d.lineWidth = 0.5 + 0.8 * visualIntensity;
+
+              if (!partials.length || baseRingR < haloMaxR * 0.04) {
+                // Simple circle when there's no waveform info yet.
+                ctx2d.beginPath();
+                var circSamples = 48;
+                for (var cs = 0; cs <= circSamples; cs++) {
+                  var ca = (cs / circSamples) * 2 * Math.PI;
+                  var cp = projWorld(node.x + baseRingR * Math.cos(ca), floorY,
+                                      node.z + baseRingR * Math.sin(ca),
+                                      cx, cy, cy1, sy1, cp1, sp1);
+                  if (cs === 0) ctx2d.moveTo(cp.sx, cp.sy);
+                  else ctx2d.lineTo(cp.sx, cp.sy);
+                }
+                ctx2d.stroke();
+              } else {
+                var fMin = Infinity;
+                for (var pi2 = 0; pi2 < partials.length; pi2++) {
+                  if (partials[pi2].freq < fMin) fMin = partials[pi2].freq;
+                }
+                var waveAmp = baseRingR * HALO_WAVE_AMP_FRAC;
+                ctx2d.beginPath();
+                for (var kk = 0; kk <= HALO_WAVE_POINTS; kk++) {
+                  var hth = (kk / HALO_WAVE_POINTS) * 2 * Math.PI;
+                  var disp = 0;
+                  for (var pp = 0; pp < partials.length; pp++) {
+                    var part = partials[pp];
+                    var spatialK = HALO_LIB_WAVELENGTHS * part.freq / fMin;
+                    var omegaT = (2 * Math.PI * part.freq / SLOWDOWN) * nowAudio;
+                    disp += part.amp * Math.sin(spatialK * hth) * Math.cos(omegaT);
+                  }
+                  var hr = baseRingR + disp * waveAmp;
+                  var hp = projWorld(node.x + hr * Math.cos(hth), floorY,
+                                      node.z + hr * Math.sin(hth),
+                                      cx, cy, cy1, sy1, cp1, sp1);
+                  if (kk === 0) ctx2d.moveTo(hp.sx, hp.sy);
+                  else ctx2d.lineTo(hp.sx, hp.sy);
+                }
+                ctx2d.closePath();
+                ctx2d.stroke();
+              }
+            }
+          }
+          ctx2d.globalCompositeOperation = "source-over";
+
+          // Connecting line between the two partials of each cycle
+          for (var ci2 = 0; ci2 < activeCycles.length; ci2++) {
+            var cyc2 = activeCycles[ci2];
+            if (cyc2.frequencies.length < 2) continue;
+            var amp2 = envelopeAt(cyc2, nowAudio);
+            if (amp2 === 0) continue;
+            var intensity2 = amp2 / cyc2.peakGain;
+            var sem = intervalSemitones(cyc2.frequencies[0], cyc2.frequencies[1]);
+            var cons = consonance(sem);
+            var alpha = intensity2 * (0.6 + cons * 0.4);
+            if (alpha < 0.02) continue;
+            var nA = constNodeWorld(cyc2.frequencies[0], constMaxR);
+            var nB = constNodeWorld(cyc2.frequencies[1], constMaxR);
+            var pA = projWorld(nA.x, floorY, nA.z, cx, cy, cy1, sy1, cp1, sp1);
+            var pB = projWorld(nB.x, floorY, nB.z, cx, cy, cy1, sy1, cp1, sp1);
+            ctx2d.strokeStyle = "rgba(" + palFg + ", " + alpha.toFixed(3) + ")";
+            ctx2d.lineWidth = 0.5 + cons * 1.0;
+            ctx2d.beginPath();
+            ctx2d.moveTo(pA.sx, pA.sy);
+            ctx2d.lineTo(pB.sx, pB.sy);
+            ctx2d.stroke();
+          }
+
+          // Harmonic position dots (3f, 5f overtones)
+          for (var ci3 = 0; ci3 < activeCycles.length; ci3++) {
+            var cyc3 = activeCycles[ci3];
+            var amp3 = envelopeAt(cyc3, nowAudio);
+            if (amp3 === 0) continue;
+            var intensity3 = amp3 / cyc3.peakGain;
+            for (var fi3 = 0; fi3 < cyc3.frequencies.length; fi3++) {
+              var fundF = cyc3.frequencies[fi3];
+              var harms = libraryTriangleHarmonics(fundF, 4000);
+              for (var hi = 1; hi < Math.min(3, harms.length); hi++) {
+                var harm = harms[hi];
+                var hn = constNodeWorld(harm.freq, constMaxR);
+                var ha = intensity3 * harm.relAmp;
+                if (ha < 0.02) continue;
+                var hpp = projWorld(hn.x, floorY, hn.z, cx, cy, cy1, sy1, cp1, sp1);
+                ctx2d.fillStyle = "rgba(" + palFg + ", " + (ha * 0.55).toFixed(3) + ")";
+                ctx2d.beginPath();
+                ctx2d.arc(hpp.sx, hpp.sy, 1.5 + ha * 2, 0, Math.PI * 2);
+                ctx2d.fill();
+              }
+            }
+          }
+
+          // Partial nodes (small bright dots)
+          for (var ci4 = 0; ci4 < activeCycles.length; ci4++) {
+            var cyc4 = activeCycles[ci4];
+            var amp4 = envelopeAt(cyc4, nowAudio);
+            if (amp4 === 0) continue;
+            var intensity4 = amp4 / cyc4.peakGain;
+            for (var fi4 = 0; fi4 < cyc4.frequencies.length; fi4++) {
+              var pn = constNodeWorld(cyc4.frequencies[fi4], constMaxR);
+              var pnP = projWorld(pn.x, floorY, pn.z, cx, cy, cy1, sy1, cp1, sp1);
+              ctx2d.fillStyle = "rgba(" + palFg + ", " + intensity4.toFixed(3) + ")";
+              ctx2d.beginPath();
+              ctx2d.arc(pnP.sx, pnP.sy, 1.5 + intensity4 * 2, 0, Math.PI * 2);
+              ctx2d.fill();
+            }
+            if (cyc4.subFreq) {
+              var sn = constNodeWorld(cyc4.subFreq, constMaxR);
+              var snP = projWorld(sn.x, floorY, sn.z, cx, cy, cy1, sy1, cp1, sp1);
+              var subI = intensity4 * (cyc4.subPeakGain / cyc4.peakGain);
+              ctx2d.fillStyle = "rgba(" + palSub + ", " + subI.toFixed(3) + ")";
+              ctx2d.beginPath();
+              ctx2d.arc(snP.sx, snP.sy, 1.5 + subI * 2, 0, Math.PI * 2);
+              ctx2d.fill();
+            }
+          }
+
+          // ===========================================================
+          // SPIRAL — sort quads back-to-front and draw on top of the floor.
+          // ===========================================================
+          var nQuads = TOTAL_SAMPLES - 1;
+          for (var k = 0; k < nQuads; k++) {
+            quadOrder[k] = k;
+            quadZ[k] = (innerProj[k*3 + 2] + outerProj[k*3 + 2] +
+                        innerProj[(k+1)*3 + 2] + outerProj[(k+1)*3 + 2]) * 0.25;
+          }
+          var qzRef = quadZ;
+          Array.prototype.sort.call(quadOrder, function (a, b) { return qzRef[a] - qzRef[b]; });
+
+          var fillR = PAL.ribbonFill[0], fillG = PAL.ribbonFill[1], fillB = PAL.ribbonFill[2];
+          var strkR = PAL.ribbonStroke[0], strkG = PAL.ribbonStroke[1], strkB = PAL.ribbonStroke[2];
+          var baseR = PAL.baseStroke[0], baseG = PAL.baseStroke[1], baseB = PAL.baseStroke[2];
+          var depthDenom = baseRadius * 2;
+          for (var s = 0; s < nQuads; s++) {
+            var k2 = quadOrder[s];
+            var zAvg = quadZ[k2];
+            var depth = 0.35 + 0.65 * (zAvg + baseRadius) / depthDenom;
+            if (depth < 0.15) depth = 0.15;
+            if (depth > 1) depth = 1;
+
+            var x1i = cx + innerProj[k2*3],     y1i = cy - innerProj[k2*3 + 1];
+            var x1o = cx + outerProj[k2*3],     y1o = cy - outerProj[k2*3 + 1];
+            var x2o = cx + outerProj[(k2+1)*3], y2o = cy - outerProj[(k2+1)*3 + 1];
+            var x2i = cx + innerProj[(k2+1)*3], y2i = cy - innerProj[(k2+1)*3 + 1];
+
+            ctx2d.beginPath();
+            ctx2d.moveTo(x1i, y1i);
+            ctx2d.lineTo(x1o, y1o);
+            ctx2d.lineTo(x2o, y2o);
+            ctx2d.lineTo(x2i, y2i);
+            ctx2d.closePath();
+            ctx2d.fillStyle = "rgba(" + fillR + "," + fillG + "," + fillB + "," + (0.28 * depth).toFixed(3) + ")";
+            ctx2d.fill();
+
+            ctx2d.beginPath();
+            ctx2d.moveTo(x1o, y1o);
+            ctx2d.lineTo(x2o, y2o);
+            ctx2d.strokeStyle = "rgba(" + strkR + "," + strkG + "," + strkB + "," + (0.9 * depth).toFixed(3) + ")";
+            ctx2d.lineWidth = 1.2;
+            ctx2d.stroke();
+
+            ctx2d.beginPath();
+            ctx2d.moveTo(x1i, y1i);
+            ctx2d.lineTo(x2i, y2i);
+            ctx2d.strokeStyle = "rgba(" + baseR + "," + baseG + "," + baseB + "," + (0.30 * depth).toFixed(3) + ")";
+            ctx2d.lineWidth = 0.8;
+            ctx2d.stroke();
+          }
+
+          // ===========================================================
+          // CONSTELLATION LABELS (drawn AFTER spiral so they stay readable).
+          // ===========================================================
+          // 12 PC labels around the outer ring. Positions track the
+          // rotated floor plane, but alpha is constant — readability
+          // shouldn't drop just because a label happens to be on the
+          // far side of the camera.
+          var labelR = constMaxR * 1.10;
+          ctx2d.font = '12px "VT323", monospace';
+          ctx2d.textAlign = "center";
+          ctx2d.textBaseline = "middle";
+          ctx2d.fillStyle = "rgba(" + palFg + ", 0.85)";
+          for (var pli = 0; pli < 12; pli++) {
+            var pla = (pli / 12) * 2 * Math.PI;
+            var plp = projWorld(labelR * Math.cos(pla), floorY, labelR * Math.sin(pla),
+                                  cx, cy, cy1, sy1, cp1, sp1);
+            ctx2d.fillText(CONST_PITCH_LABELS[pli], plp.sx, plp.sy);
+          }
+
+          // Interval labels at the midpoint of each cycle's partial pair.
+          ctx2d.font = '12px "VT323", monospace';
+          for (var ci5 = 0; ci5 < activeCycles.length; ci5++) {
+            var cyc5 = activeCycles[ci5];
+            if (cyc5.frequencies.length < 2) continue;
+            var amp5 = envelopeAt(cyc5, nowAudio);
+            if (amp5 === 0) continue;
+            var intensity5 = amp5 / cyc5.peakGain;
+            if (intensity5 < 0.1) continue;
+            var sem5 = intervalSemitones(cyc5.frequencies[0], cyc5.frequencies[1]);
+            var lblTxt = INTERVAL_NAMES[sem5] || "";
+            if (!lblTxt) continue;
+            var nA2 = constNodeWorld(cyc5.frequencies[0], constMaxR);
+            var nB2 = constNodeWorld(cyc5.frequencies[1], constMaxR);
+            var mx = (nA2.x + nB2.x) * 0.5;
+            var mz = (nA2.z + nB2.z) * 0.5;
+            var mp = projWorld(mx, floorY, mz, cx, cy, cy1, sy1, cp1, sp1);
+            var tw = ctx2d.measureText(lblTxt).width;
+            ctx2d.fillStyle = "rgba(10, 8, 5, 0.85)";
+            ctx2d.fillRect(mp.sx - tw / 2 - 4, mp.sy - 9, tw + 8, 16);
+            ctx2d.fillStyle = "rgba(" + palFg + ", " + (0.55 + intensity5 * 0.35).toFixed(3) + ")";
+            ctx2d.fillText(lblTxt, mp.sx, mp.sy);
+          }
+
+          // ---------- Octave axis (fixed left margin) ----------
+          var tickX  = cx - baseRadius - 28;
+          var labelX = tickX - 8;
+          var capW   = 4;
+          var ocR = PAL.octaveLabel[0], ocG = PAL.octaveLabel[1], ocB = PAL.octaveLabel[2];
+          var tickStroke = "rgba(" + ocR + "," + ocG + "," + ocB + ",0.45)";
+          var labelFill  = "rgba(" + ocR + "," + ocG + "," + ocB + ",0.85)";
+
+          ctx2d.font = '13px "VT323", monospace';
+          ctx2d.textAlign = "right";
+          ctx2d.textBaseline = "middle";
+          ctx2d.strokeStyle = tickStroke;
+          ctx2d.lineWidth = 1;
+          ctx2d.fillStyle = labelFill;
+
+          for (var oi = 0; oi < OCTAVES; oi++) {
+            var yStart = (oi - (OCTAVES - 1) / 2) * octaveStep;
+            var yEnd   = (oi + 1 - (OCTAVES - 1) / 2) * octaveStep;
+            var yCenter = (yStart + yEnd) * 0.5;
+            var sStart  = cy - yStart  * cp1;
+            var sEnd    = cy - yEnd    * cp1;
+            var sCenter = cy - yCenter * cp1;
+
+            ctx2d.beginPath();
+            ctx2d.moveTo(tickX, sStart);
+            ctx2d.lineTo(tickX, sEnd);
+            ctx2d.moveTo(tickX - capW, sStart);
+            ctx2d.lineTo(tickX + capW, sStart);
+            ctx2d.moveTo(tickX - capW, sEnd);
+            ctx2d.lineTo(tickX + capW, sEnd);
+            ctx2d.stroke();
+
+            ctx2d.fillText("C" + (BASE_OCTAVE + oi), labelX, sCenter);
+          }
+
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+
+        // ===========================================================
+        // UI WIRING
+        // ===========================================================
+        function updateStatus() {
+          var s = document.getElementById("status");
+          if (isPlaying) {
+            s.textContent = "PLAYING";
+            s.classList.add("is-playing");
+          } else {
+            s.textContent = "STOPPED";
+            s.classList.remove("is-playing");
+          }
+        }
+
+        document.getElementById("play-btn").addEventListener("click", startEngine);
+        document.getElementById("stop-btn").addEventListener("click", stopEngine);
+        document.getElementById("vol").addEventListener("input", function (e) {
+          if (window.ProsperoAudio && ProsperoAudio.setMasterVolume) {
+            ProsperoAudio.setMasterVolume(parseInt(e.target.value, 10) / 100);
+          }
+        });
+
+        updateStatus();
+      })();
+    </script>
+  </body>
+</html>

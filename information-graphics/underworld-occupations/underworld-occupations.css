@@ -964,6 +964,18 @@ body {
   width: 200px;
 }
 
+.tooltip.riasec-tooltip {
+  width: 360px;
+}
+
+.tooltip.character-tooltip {
+  width: 360px;
+}
+
+.tooltip.character-tooltip-treemap {
+  width: 420px;
+}
+
 /* ===========================================
    14. BAN STYLES - Employment & Injury Stats
    Tabular two-column grid layout

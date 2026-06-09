@@ -1,0 +1,955 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Drone Sandbox — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0805;
+        color: #bb9966;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 28px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffcc66;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.45),
+          0 0 30px rgba(255, 170, 0, 0.12);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665033;
+        letter-spacing: 3px;
+        margin: 0 0 26px;
+        font-size: 17px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #1a120a;
+        color: #665033;
+        border: 2px solid #2a2010;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .btn:hover {
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .btn.active {
+        color: #66dd99;
+        border-color: #66dd99;
+      }
+      .vol-label {
+        font-size: 14px;
+        color: #665033;
+        letter-spacing: 1px;
+        margin-left: 4px;
+      }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #2a2010;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+        width: 140px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffcc66;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffcc66;
+        border: none;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      select {
+        font-family: "VT323", monospace;
+        font-size: 14px;
+        padding: 5px 10px;
+        background-color: #1a120a;
+        color: #bb9966;
+        border: 2px solid #2a2010;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .status {
+        font-size: 14px;
+        color: #665033;
+        letter-spacing: 1px;
+        margin-left: auto;
+      }
+      .status.is-playing {
+        color: #66dd99;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 24px;
+        padding: 14px 16px;
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        margin-bottom: 14px;
+      }
+      .ctrl {
+        display: grid;
+        grid-template-columns: 110px 1fr 78px;
+        align-items: center;
+        gap: 10px;
+      }
+      .ctrl label {
+        font-size: 14px;
+        color: #997755;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+      .ctrl .val {
+        text-align: right;
+        font-size: 15px;
+        color: #ffcc66;
+        font-variant-numeric: tabular-nums;
+      }
+      .ctrl input[type="range"] {
+        width: 100%;
+      }
+
+      .scope {
+        background: #0a0805;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .canvas-wrap {
+        position: relative;
+        height: 700px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .legend {
+        margin-top: 14px;
+        padding: 12px 16px;
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        font-size: 15px;
+        color: #bb9966;
+        line-height: 1.5;
+      }
+      .legend p {
+        margin: 0 0 6px;
+      }
+      .legend p:last-child {
+        margin-bottom: 0;
+      }
+      .legend strong {
+        color: #ffcc66;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Library Drone Sandbox</h1>
+      <p class="subtitle">~ explore Prospero's drone synthesis ~</p>
+
+      <div class="transport">
+        <button class="btn" id="play-btn">&#9654; PLAY</button>
+        <button class="btn" id="stop-btn">&#9632; STOP</button>
+        <span class="vol-label">VOL</span>
+        <input type="range" id="vol" min="0" max="100" value="50" />
+        <span class="vol-label">PAIR</span>
+        <select id="pair">
+          <option value="0" selected>C2 + G2 (open 5th)</option>
+          <option value="1">Bb1 + F2 (warm 4th)</option>
+          <option value="2">D2 + A2 (bright 5th)</option>
+          <option value="3">C2 + Eb2 (minor 3rd)</option>
+        </select>
+        <button class="btn" id="reset-btn" title="Reset all parameters back to the engine's current defaults">&#8635; RESET</button>
+        <button class="btn" id="copy-btn" title="Copy current parameter values to clipboard">&#9112; COPY PARAMS</button>
+        <span class="status" id="status">READY</span>
+      </div>
+
+      <div class="controls">
+        <div class="ctrl">
+          <label
+            title="0 = triangle (engine default — odd harmonics, 1/n² falloff). 100 = sawtooth (all harmonics, 1/n falloff — much richer spectrum)."
+            >Wave Mix</label
+          >
+          <input type="range" id="wave" min="0" max="100" value="0" />
+          <span class="val" id="wave-val">triangle</span>
+        </div>
+        <div class="ctrl">
+          <label
+            title="Drone is fed through a single biquad lowpass. Engine default is 180 Hz — very dark, kills nearly all harmonic content."
+            >LP Cutoff</label
+          >
+          <input type="range" id="cutoff" min="80" max="3000" step="20" value="180" />
+          <span class="val" id="cutoff-val">180 Hz</span>
+        </div>
+        <div class="ctrl">
+          <label title="Lowpass resonance. Higher = sharper peak at the cutoff frequency.">LP Q</label>
+          <input type="range" id="q" min="2" max="80" value="10" />
+          <span class="val" id="q-val">1.0</span>
+        </div>
+        <div class="ctrl">
+          <label title="Sub-octave sine for depth. Engine fires this ~30% of the time at 1/3 the gain.">Sub-octave</label>
+          <input type="range" id="sub" min="0" max="100" value="0" />
+          <span class="val" id="sub-val">0%</span>
+        </div>
+        <div class="ctrl">
+          <label
+            title="Slow LFO depth on the upper partial's frequency. Creates a continuous pitch wobble that the FFT tracks — visible movement without changing the underlying tones. Hz here = peak deviation."
+            >Wobble Depth</label
+          >
+          <input type="range" id="wobble-depth" min="0" max="100" step="1" value="0" />
+          <span class="val" id="wobble-depth-val">0 Hz</span>
+        </div>
+        <div class="ctrl">
+          <label title="Wobble LFO rate. Slow rates (~0.3-1 Hz) feel like a gentle breath; faster reads as vibrato.">Wobble Rate</label>
+          <input type="range" id="wobble-rate" min="1" max="40" step="1" value="7" />
+          <span class="val" id="wobble-rate-val">0.7 Hz</span>
+        </div>
+        <div class="ctrl">
+          <label
+            title="True beating — adds two detuned voices flanking each partial (offset = the Hz separation). Their sum creates amplitude modulation at the offset rate. This is what gives Sycorax much of its visible wobble."
+            >Beat Offset</label
+          >
+          <input type="range" id="beat-offset" min="0" max="80" step="1" value="0" />
+          <span class="val" id="beat-offset-val">0 Hz</span>
+        </div>
+        <div class="ctrl">
+          <label title="How much of each detuned voice mixes in alongside the main partial. 0 = off (single oscillator per partial). 100 = full chorus.">Beat Mix</label>
+          <input type="range" id="beat-mix" min="0" max="100" value="0" />
+          <span class="val" id="beat-mix-val">0%</span>
+        </div>
+        <div class="ctrl">
+          <label
+            title="Tremolo depth — amplitude LFO on the entire drone bus. 0 = steady, 100 = full ducking to silence at each cycle trough. Distinct from wobble (frequency) and beat (per-voice detuning); this modulates the post-mix loudness."
+            >Tremolo Depth</label
+          >
+          <input type="range" id="trem-depth" min="0" max="100" value="0" />
+          <span class="val" id="trem-depth-val">0%</span>
+        </div>
+        <div class="ctrl">
+          <label title="Tremolo LFO rate. Slow (~0.3-1 Hz) reads as a long breath; faster (3-8 Hz) sounds like a classic tremolo pulse.">Tremolo Rate</label>
+          <input type="range" id="trem-rate" min="1" max="120" step="1" value="5" />
+          <span class="val" id="trem-rate-val">0.5 Hz</span>
+        </div>
+      </div>
+
+      <div class="scope">
+        <div class="canvas-wrap">
+          <canvas id="ridge"></canvas>
+        </div>
+      </div>
+
+      <div class="legend">
+        <p>
+          <strong>Goal:</strong> find drone settings that make Prospero's
+          drone visibly modulate on the ridgeline without changing the
+          essential musical character. Each control isolates one knob you
+          could turn in the engine. Default values match the current engine
+          (triangle waves, 180 Hz cutoff, no wobble, no beating).
+        </p>
+        <p>
+          The fastest-impact changes are usually <strong>Wobble Depth</strong>
+          (1–5 Hz) and <strong>Beat Mix</strong> (with offset ~2–4 Hz). Both
+          create continuous modulation that the FFT shows as visible peak
+          movement. Raising the <strong>LP Cutoff</strong> (e.g., to
+          600–1000 Hz) exposes the partials' harmonic content; combined with
+          a <strong>sawtooth wave mix</strong> you'll see multiple peaks per
+          partial.
+        </p>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // ===========================================================
+        // ENGINE DRONE CONSTANTS (mirror of LIB_DRONE_PAIRS)
+        // ===========================================================
+        var DRONE_PAIRS = [
+          [65.41, 98],     // C2, G2
+          [58.27, 87.31],  // Bb1, F2
+          [73.42, 110],    // D2, A2
+          [65.41, 82.41],  // C2, Eb2
+        ];
+
+        // ===========================================================
+        // AUDIO GRAPH
+        // ===========================================================
+        // Per partial (2 partials per pair), we build:
+        //   - Main triangle osc + main sawtooth osc (frequency = partial Hz)
+        //   - Two flanking voice pairs (+offset / -offset, each tri+saw)
+        //     for true beating when Beat Mix > 0
+        //   - A Wobble LFO modulating the partial's frequency (depth slider)
+        // All voices sum into a Lowpass filter, then to masterGain.
+        //
+        // Persistent oscillators that can be started/stopped without
+        // glitching; gains are crossfaded for parameter changes.
+        // ===========================================================
+        var ctx = null;
+        var masterGain = null;
+        var analyser = null;
+        var lowpass = null;
+        var fftData = null;
+        var sampleRate = 48000;
+        var FFT_SIZE = 8192;
+
+        // Track per-partial voice nodes for live updates.
+        // partials[i] = {
+        //   freq, voices: [{ osc, gain, kind, side }, ...],
+        //   wobbleLFO, wobbleDepth
+        // }
+        // kind: 'tri' or 'saw'. side: 0 = main, -1 = lower flank, +1 = upper flank.
+        var partials = [];
+        var subOsc = null;
+        var subGain = null;
+        // Tremolo (amplitude LFO on the entire drone bus).
+        // tremGain is persistent. tremLFO + tremDepth are oscillator-bound,
+        // so they're created in start() and stopped in stop().
+        var tremGain = null;
+        var tremLFO = null;
+        var tremDepthGain = null;
+
+        var isPlaying = false;
+        var currentPair = 0;
+
+        // ===========================================================
+        // CONTROL STATE — slider IDs map to control keys + raw slider
+        // values (the integer the slider holds) so RESET and slider init
+        // share one source of truth.
+        // ===========================================================
+        var DEFAULTS = {
+          pair: 0,
+          vol: 50,
+          wave: 0,
+          cutoff: 180,
+          q: 10,
+          sub: 0,
+          "wobble-depth": 0,
+          "wobble-rate": 7,
+          "beat-offset": 0,
+          "beat-mix": 0,
+          "trem-depth": 0,
+          "trem-rate": 5,
+        };
+        var ctrl = {
+          vol: 0.5,
+          wave: 0,           // 0 = triangle, 1 = sawtooth
+          cutoff: 180,       // Hz
+          q: 1.0,            // unitless
+          sub: 0,            // 0..1 (mix of sub-octave sine)
+          wobbleDepth: 0,    // Hz (deviation)
+          wobbleRate: 0.7,   // Hz
+          beatOffset: 0,     // Hz
+          beatMix: 0,        // 0..1
+          tremDepth: 0,      // 0..1 (amplitude LFO depth)
+          tremRate: 0.5,     // Hz
+        };
+
+        function ensureContext() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          sampleRate = ctx.sampleRate;
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(0, ctx.currentTime);
+          lowpass = ctx.createBiquadFilter();
+          lowpass.type = "lowpass";
+          lowpass.frequency.setValueAtTime(ctrl.cutoff, ctx.currentTime);
+          lowpass.Q.setValueAtTime(ctrl.q, ctx.currentTime);
+          analyser = ctx.createAnalyser();
+          analyser.fftSize = FFT_SIZE;
+          analyser.smoothingTimeConstant = 0.05; // very responsive
+          analyser.minDecibels = -100;
+          analyser.maxDecibels = 0;
+          fftData = new Float32Array(analyser.frequencyBinCount);
+          // Tremolo bus: lowpass+sub feed masterGain, masterGain feeds
+          // tremGain, tremGain feeds analyser + destination. tremGain.gain
+          // is held at (1 - depth/2); the LFO adds ±(depth/2), so the
+          // resulting envelope swings between (1-depth) and 1.
+          tremGain = ctx.createGain();
+          tremGain.gain.setValueAtTime(1, ctx.currentTime);
+          lowpass.connect(masterGain);
+          masterGain.connect(tremGain);
+          tremGain.connect(analyser);
+          tremGain.connect(ctx.destination);
+        }
+
+        function start() {
+          ensureContext();
+          if (ctx.state === "suspended") ctx.resume();
+          if (isPlaying) return;
+
+          var now = ctx.currentTime;
+          var pair = DRONE_PAIRS[currentPair];
+
+          // Master gain ramp in (mirrors engine fade-in).
+          masterGain.gain.cancelScheduledValues(now);
+          masterGain.gain.setValueAtTime(0, now);
+          masterGain.gain.linearRampToValueAtTime(ctrl.vol * 0.4, now + 0.5);
+
+          partials = [];
+          for (var i = 0; i < pair.length; i++) {
+            var freq = pair[i];
+            var pInfo = { freq: freq, voices: [] };
+
+            // Wobble LFO (one per partial). Modulates each voice's freq.
+            var lfo = ctx.createOscillator();
+            lfo.type = "sine";
+            lfo.frequency.setValueAtTime(ctrl.wobbleRate, now);
+            var lfoDepth = ctx.createGain();
+            lfoDepth.gain.setValueAtTime(ctrl.wobbleDepth, now);
+            lfo.connect(lfoDepth);
+            lfo.start(now);
+            pInfo.wobbleLFO = lfo;
+            pInfo.wobbleDepth = lfoDepth;
+
+            // 3 voice positions: -1 = lower flank, 0 = main, +1 = upper flank
+            var sides = [-1, 0, 1];
+            for (var si = 0; si < sides.length; si++) {
+              var side = sides[si];
+              // For each side, build a triangle and a sawtooth oscillator
+              ["tri", "saw"].forEach(function (kind) {
+                var o = ctx.createOscillator();
+                o.type = kind === "tri" ? "triangle" : "sawtooth";
+                o.frequency.setValueAtTime(freq + side * ctrl.beatOffset, now);
+                lfoDepth.connect(o.frequency); // wobble modulates frequency
+                var g = ctx.createGain();
+                g.gain.setValueAtTime(0, now); // computed by applyGains below
+                o.connect(g);
+                g.connect(lowpass);
+                o.start(now);
+                pInfo.voices.push({ osc: o, gain: g, kind: kind, side: side });
+              });
+            }
+            partials.push(pInfo);
+          }
+
+          // Sub-octave sine
+          subOsc = ctx.createOscillator();
+          subOsc.type = "sine";
+          subOsc.frequency.setValueAtTime(pair[0] / 2, now);
+          subGain = ctx.createGain();
+          subGain.gain.setValueAtTime(0, now);
+          subOsc.connect(subGain);
+          subGain.connect(masterGain); // bypass lowpass, like the engine
+          subOsc.start(now);
+
+          // Tremolo LFO — sine into a depth gain summed into tremGain.gain.
+          tremLFO = ctx.createOscillator();
+          tremLFO.type = "sine";
+          tremLFO.frequency.setValueAtTime(ctrl.tremRate, now);
+          tremDepthGain = ctx.createGain();
+          tremDepthGain.gain.setValueAtTime(ctrl.tremDepth / 2, now);
+          tremLFO.connect(tremDepthGain);
+          tremDepthGain.connect(tremGain.gain);
+          tremLFO.start(now);
+
+          isPlaying = true;
+          applyGains();
+          applyTremolo();
+          updateStatus();
+        }
+
+        function stop() {
+          if (!isPlaying || !ctx) return;
+          var now = ctx.currentTime;
+          var fadeOut = 0.3;
+          masterGain.gain.cancelScheduledValues(now);
+          masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+          masterGain.gain.linearRampToValueAtTime(0, now + fadeOut);
+
+          var stopAt = now + fadeOut + 0.05;
+          partials.forEach(function (p) {
+            p.voices.forEach(function (v) {
+              try { v.osc.stop(stopAt); } catch (e) {}
+            });
+            try { p.wobbleLFO.stop(stopAt); } catch (e) {}
+          });
+          if (subOsc) try { subOsc.stop(stopAt); } catch (e) {}
+          if (tremLFO) {
+            try { tremLFO.stop(stopAt); } catch (e) {}
+            tremLFO = null;
+            tremDepthGain = null;
+          }
+          // Reset tremGain to unity so a future start() with depth=0 sounds correct.
+          tremGain.gain.cancelScheduledValues(now);
+          tremGain.gain.setValueAtTime(1, stopAt);
+
+          isPlaying = false;
+          updateStatus();
+        }
+
+        // Each voice's effective gain — combines main-vs-flank presence (Beat
+        // Mix), triangle-vs-sawtooth mix (Wave Mix), and per-partial scale.
+        function applyGains() {
+          if (!isPlaying || !ctx) return;
+          var now = ctx.currentTime;
+          var sideMain = 1.0;
+          var sideFlank = ctrl.beatMix * 0.7; // flanks scaled so total stays balanced
+          // Per-side weight (one main + two flanks)
+          var sideWeight = { 0: sideMain, "-1": sideFlank, "1": sideFlank };
+          var waveWeight = { tri: 1 - ctrl.wave, saw: ctrl.wave };
+          var perPartialBase = 0.09;
+          // Normalize across the partials so total isn't dominated by chorus
+          var sideSum = sideMain + 2 * sideFlank;
+          partials.forEach(function (p) {
+            p.voices.forEach(function (v) {
+              var g = perPartialBase * waveWeight[v.kind] * (sideWeight[v.side] / sideSum);
+              v.gain.gain.setValueAtTime(g, now);
+            });
+          });
+          // Sub-octave
+          if (subGain) subGain.gain.setValueAtTime(ctrl.sub * 0.05, now);
+          masterGain.gain.setValueAtTime(ctrl.vol * 0.4, now);
+        }
+
+        function applyFreqs() {
+          if (!isPlaying || !ctx) return;
+          var now = ctx.currentTime;
+          partials.forEach(function (p) {
+            p.voices.forEach(function (v) {
+              v.osc.frequency.setValueAtTime(
+                p.freq + v.side * ctrl.beatOffset,
+                now
+              );
+            });
+            p.wobbleDepth.gain.setValueAtTime(ctrl.wobbleDepth, now);
+            p.wobbleLFO.frequency.setValueAtTime(ctrl.wobbleRate, now);
+          });
+          if (subOsc) {
+            subOsc.frequency.setValueAtTime(DRONE_PAIRS[currentPair][0] / 2, now);
+          }
+        }
+
+        function applyFilter() {
+          if (!ctx) return;
+          var now = ctx.currentTime;
+          lowpass.frequency.setValueAtTime(ctrl.cutoff, now);
+          lowpass.Q.setValueAtTime(ctrl.q, now);
+        }
+
+        function applyTremolo() {
+          if (!isPlaying || !ctx || !tremLFO) return;
+          var now = ctx.currentTime;
+          // Base = 1 - depth/2 so peak stays at unity; LFO swings ±depth/2.
+          tremGain.gain.setValueAtTime(1 - ctrl.tremDepth / 2, now);
+          tremDepthGain.gain.setValueAtTime(ctrl.tremDepth / 2, now);
+          tremLFO.frequency.setValueAtTime(ctrl.tremRate, now);
+        }
+
+        // ===========================================================
+        // RIDGELINE RENDER (Library palette, C anchor, 7 octaves)
+        // ===========================================================
+        var OCTAVES = 7;
+        var BASE_OCTAVE = 1;
+        var BIN_COUNT_PER_ROW = 96;
+        var DB_FLOOR = -80;
+        var DB_CEIL = -15;
+        var DB_PER_OCTAVE_TILT = 4.0;
+        var BLUR_SIGMA = 0.8;
+        var ROW_F_MIN = 32.70 * Math.pow(2, 0 / 12); // C1
+        var ANCHOR_NAME = "C";
+        var PITCH_CLASSES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+        var IN_KEY = { C: 1, D: 1, "D#": 1, F: 1, G: 1, A: 1, "A#": 1 }; // C Dorian
+        var PAL = {
+          bg: "#0a0805",
+          ridgeStroke: "rgba(255, 220, 130, 0.88)",
+          ridgeGlow: "rgba(255, 170, 0, 0.30)",
+          baseline: "rgba(180, 130, 60, 0.18)",
+          octaveLabel: "rgba(255, 200, 120, 0.55)",
+          inKeyLabel: "rgba(255, 220, 140, 0.95)",
+          outKeyLabel: "rgba(120, 95, 50, 0.55)",
+          inKeyGrid: "rgba(255, 170, 0, 0.18)",
+          outKeyGrid: "rgba(120, 95, 50, 0.10)",
+        };
+
+        var canvas = document.getElementById("ridge");
+        var ctx2d = canvas.getContext("2d");
+        function resizeCanvas() {
+          var rect = canvas.getBoundingClientRect();
+          var dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(rect.width * dpr);
+          canvas.height = Math.floor(rect.height * dpr);
+          ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+
+        var sampleFftIdx = null;
+        function rebuildSampleFftIdx() {
+          if (!ctx) return;
+          sampleFftIdx = new Float32Array(OCTAVES * BIN_COUNT_PER_ROW);
+          for (var o = 0; o < OCTAVES; o++) {
+            var rowF = ROW_F_MIN * Math.pow(2, o);
+            for (var b = 0; b < BIN_COUNT_PER_ROW; b++) {
+              var f = rowF * Math.pow(2, b / BIN_COUNT_PER_ROW);
+              sampleFftIdx[o * BIN_COUNT_PER_ROW + b] = f * FFT_SIZE / sampleRate;
+            }
+          }
+        }
+
+        var ridgeMags = new Float32Array(OCTAVES * BIN_COUNT_PER_ROW);
+        function computeMagnitudes() {
+          if (!analyser || !sampleFftIdx) return;
+          analyser.getFloatFrequencyData(fftData);
+          for (var o = 0; o < OCTAVES; o++) {
+            var tilt = (o - (OCTAVES - 1) / 2) * DB_PER_OCTAVE_TILT;
+            for (var b = 0; b < BIN_COUNT_PER_ROW; b++) {
+              var idx = o * BIN_COUNT_PER_ROW + b;
+              var fi = sampleFftIdx[idx];
+              var lo = Math.floor(fi), t = fi - lo, hi = lo + 1;
+              if (lo < 0) lo = 0;
+              if (hi >= fftData.length) hi = fftData.length - 1;
+              ridgeMags[idx] = fftData[lo] * (1 - t) + fftData[hi] * t + tilt;
+            }
+          }
+        }
+
+        var blurTempBuf = new Float32Array(BIN_COUNT_PER_ROW);
+        function applySpectralBlur(sigma) {
+          if (sigma <= 0) return;
+          var halfWidth = Math.max(1, Math.ceil(sigma * 3));
+          var kernelLen = halfWidth * 2 + 1;
+          var kernel = new Float32Array(kernelLen);
+          var twoSigmaSq = 2 * sigma * sigma;
+          var ksum = 0;
+          for (var k = 0; k < kernelLen; k++) {
+            var dx = k - halfWidth;
+            kernel[k] = Math.exp(-dx * dx / twoSigmaSq);
+            ksum += kernel[k];
+          }
+          for (var k2 = 0; k2 < kernelLen; k2++) kernel[k2] /= ksum;
+          for (var o = 0; o < OCTAVES; o++) {
+            var rowOffset = o * BIN_COUNT_PER_ROW;
+            for (var b = 0; b < BIN_COUNT_PER_ROW; b++) {
+              var acc = 0, wAcc = 0;
+              for (var k3 = 0; k3 < kernelLen; k3++) {
+                var src = b + (k3 - halfWidth);
+                if (src >= 0 && src < BIN_COUNT_PER_ROW) {
+                  acc += ridgeMags[rowOffset + src] * kernel[k3];
+                  wAcc += kernel[k3];
+                }
+              }
+              blurTempBuf[b] = wAcc > 0 ? acc / wAcc : ridgeMags[rowOffset + b];
+            }
+            for (var b2 = 0; b2 < BIN_COUNT_PER_ROW; b2++) {
+              ridgeMags[rowOffset + b2] = blurTempBuf[b2];
+            }
+          }
+        }
+
+        function normDb(db) {
+          if (db < DB_FLOOR) return 0;
+          if (db > DB_CEIL) return 1;
+          return (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR);
+        }
+
+        function traceMonotone(pts) {
+          var n = pts.length;
+          if (n < 2) return;
+          var d = new Array(n - 1);
+          for (var i = 0; i < n - 1; i++) {
+            var dx = pts[i + 1].x - pts[i].x;
+            d[i] = dx === 0 ? 0 : (pts[i + 1].y - pts[i].y) / dx;
+          }
+          var tang = new Array(n);
+          tang[0] = d[0]; tang[n - 1] = d[n - 2];
+          for (var j = 1; j < n - 1; j++) {
+            if (d[j - 1] * d[j] <= 0) tang[j] = 0;
+            else tang[j] = (d[j - 1] + d[j]) / 2;
+          }
+          for (var k = 0; k < n - 1; k++) {
+            if (d[k] === 0) { tang[k] = 0; tang[k + 1] = 0; continue; }
+            var a = tang[k] / d[k], b = tang[k + 1] / d[k];
+            var sumSq = a * a + b * b;
+            if (sumSq > 9) {
+              var s = 3 / Math.sqrt(sumSq);
+              tang[k] = s * a * d[k];
+              tang[k + 1] = s * b * d[k];
+            }
+          }
+          for (var m = 0; m < n - 1; m++) {
+            var ddx = (pts[m + 1].x - pts[m].x) / 3;
+            ctx2d.bezierCurveTo(
+              pts[m].x + ddx, pts[m].y + tang[m] * ddx,
+              pts[m + 1].x - ddx, pts[m + 1].y - tang[m + 1] * ddx,
+              pts[m + 1].x, pts[m + 1].y
+            );
+          }
+        }
+
+        function tick() {
+          if (sampleFftIdx) {
+            computeMagnitudes();
+            applySpectralBlur(BLUR_SIGMA);
+          }
+          var rect = canvas.getBoundingClientRect();
+          var w = rect.width, h = rect.height;
+          ctx2d.fillStyle = PAL.bg;
+          ctx2d.fillRect(0, 0, w, h);
+
+          var leftPad = 56, rightPad = 12, topPad = 18, bottomPad = 30;
+          var plotW = w - leftPad - rightPad;
+          var plotH = h - topPad - bottomPad;
+          var rowSpacing = plotH / (OCTAVES - 1);
+          var peakHeight = rowSpacing * 1.9;
+
+          // Pitch-class grid
+          for (var i = 0; i < 12; i++) {
+            var x = leftPad + (i + 0.5) * (plotW / 12);
+            ctx2d.strokeStyle = IN_KEY[PITCH_CLASSES[i]] ? PAL.inKeyGrid : PAL.outKeyGrid;
+            ctx2d.lineWidth = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(x, topPad);
+            ctx2d.lineTo(x, h - bottomPad);
+            ctx2d.stroke();
+          }
+
+          for (var o2r = 0; o2r < OCTAVES; o2r++) {
+            var rowY = topPad + o2r * rowSpacing;
+            var oct = BASE_OCTAVE + (OCTAVES - 1 - o2r);
+            var dataRow = OCTAVES - 1 - o2r;
+            var pts = new Array(BIN_COUNT_PER_ROW);
+            for (var b2 = 0; b2 < BIN_COUNT_PER_ROW; b2++) {
+              var x2 = leftPad + (b2 / (BIN_COUNT_PER_ROW - 1)) * plotW;
+              var nv = sampleFftIdx
+                ? normDb(ridgeMags[dataRow * BIN_COUNT_PER_ROW + b2])
+                : 0;
+              pts[b2] = { x: x2, y: rowY - nv * peakHeight };
+            }
+            ctx2d.beginPath();
+            ctx2d.moveTo(leftPad, rowY);
+            ctx2d.lineTo(pts[0].x, pts[0].y);
+            traceMonotone(pts);
+            ctx2d.lineTo(leftPad + plotW, rowY);
+            ctx2d.closePath();
+            ctx2d.fillStyle = PAL.bg;
+            ctx2d.fill();
+            ctx2d.save();
+            ctx2d.globalCompositeOperation = "lighter";
+            ctx2d.fillStyle = PAL.ridgeGlow;
+            ctx2d.fill();
+            ctx2d.restore();
+            ctx2d.beginPath();
+            ctx2d.moveTo(pts[0].x, pts[0].y);
+            traceMonotone(pts);
+            ctx2d.strokeStyle = PAL.ridgeStroke;
+            ctx2d.lineWidth = 1.2;
+            ctx2d.stroke();
+            ctx2d.strokeStyle = PAL.baseline;
+            ctx2d.lineWidth = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(leftPad, rowY);
+            ctx2d.lineTo(leftPad + plotW, rowY);
+            ctx2d.stroke();
+            ctx2d.fillStyle = PAL.octaveLabel;
+            ctx2d.font = '13px "VT323", monospace';
+            ctx2d.textAlign = "right";
+            ctx2d.textBaseline = "middle";
+            ctx2d.fillText(ANCHOR_NAME + oct, leftPad - 8, rowY);
+          }
+
+          ctx2d.font = '13px "VT323", monospace';
+          ctx2d.textAlign = "center";
+          ctx2d.textBaseline = "top";
+          for (var i2 = 0; i2 < 12; i2++) {
+            var lblX = leftPad + (i2 + 0.5) * (plotW / 12);
+            ctx2d.fillStyle = IN_KEY[PITCH_CLASSES[i2]] ? PAL.inKeyLabel : PAL.outKeyLabel;
+            ctx2d.fillText(PITCH_CLASSES[i2], lblX, h - bottomPad + 4);
+          }
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+
+        // ===========================================================
+        // UI WIRING
+        // ===========================================================
+        function updateStatus() {
+          var s = document.getElementById("status");
+          if (isPlaying) {
+            s.textContent = "PLAYING";
+            s.classList.add("is-playing");
+          } else {
+            s.textContent = "STOPPED";
+            s.classList.remove("is-playing");
+          }
+        }
+
+        document.getElementById("play-btn").addEventListener("click", function () {
+          start();
+          rebuildSampleFftIdx();
+        });
+        document.getElementById("stop-btn").addEventListener("click", stop);
+
+        document.getElementById("vol").addEventListener("input", function (e) {
+          ctrl.vol = parseInt(e.target.value, 10) / 100;
+          if (isPlaying) applyGains();
+        });
+
+        document.getElementById("pair").addEventListener("change", function (e) {
+          currentPair = parseInt(e.target.value, 10);
+          if (isPlaying) {
+            // Re-seed partial frequencies and the sub-octave.
+            var pair = DRONE_PAIRS[currentPair];
+            partials.forEach(function (p, i) {
+              p.freq = pair[i];
+            });
+            applyFreqs();
+          }
+        });
+
+        function wireSlider(id, key, scale, fmt, after) {
+          var el = document.getElementById(id);
+          var valEl = document.getElementById(id + "-val");
+          el.addEventListener("input", function (e) {
+            var v = parseInt(e.target.value, 10) * scale;
+            ctrl[key] = v;
+            if (valEl) valEl.textContent = fmt(v);
+            if (isPlaying && after) after();
+          });
+          // Init label
+          if (valEl) valEl.textContent = fmt(parseInt(el.value, 10) * scale);
+        }
+
+        wireSlider("wave", "wave", 0.01,
+          function (v) {
+            if (v < 0.01) return "triangle";
+            if (v > 0.99) return "sawtooth";
+            return Math.round(v * 100) + "% saw";
+          }, applyGains);
+        wireSlider("cutoff", "cutoff", 1,
+          function (v) { return Math.round(v) + " Hz"; }, applyFilter);
+        wireSlider("q", "q", 0.1,
+          function (v) { return v.toFixed(1); }, applyFilter);
+        wireSlider("sub", "sub", 0.01,
+          function (v) { return Math.round(v * 100) + "%"; }, applyGains);
+        wireSlider("wobble-depth", "wobbleDepth", 0.1,
+          function (v) { return v.toFixed(1) + " Hz"; }, applyFreqs);
+        wireSlider("wobble-rate", "wobbleRate", 0.1,
+          function (v) { return v.toFixed(1) + " Hz"; }, applyFreqs);
+        wireSlider("beat-offset", "beatOffset", 0.1,
+          function (v) { return v.toFixed(1) + " Hz"; }, applyFreqs);
+        wireSlider("beat-mix", "beatMix", 0.01,
+          function (v) { return Math.round(v * 100) + "%"; }, applyGains);
+        wireSlider("trem-depth", "tremDepth", 0.01,
+          function (v) { return Math.round(v * 100) + "%"; }, applyTremolo);
+        wireSlider("trem-rate", "tremRate", 0.1,
+          function (v) { return v.toFixed(1) + " Hz"; }, applyTremolo);
+
+        // ---------- RESET ----------
+        document.getElementById("reset-btn").addEventListener("click", function () {
+          Object.keys(DEFAULTS).forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.value = DEFAULTS[id];
+            // Trigger the appropriate event so every wiring path runs.
+            var evt = (el.tagName === "SELECT") ? "change" : "input";
+            el.dispatchEvent(new Event(evt));
+          });
+        });
+
+        // ---------- COPY PARAMS ----------
+        document.getElementById("copy-btn").addEventListener("click", function () {
+          function fmtNum(v) {
+            if (Number.isInteger(v)) return String(v);
+            return parseFloat(v.toFixed(4)).toString();
+          }
+          var pairLabel = document.getElementById("pair").options[currentPair].text;
+          var text =
+            "library_drone: {\n" +
+            '  pair:        ' + currentPair + ',    // ' + pairLabel + '\n' +
+            "  vol:         " + fmtNum(ctrl.vol)         + ",\n" +
+            "  wave:        " + fmtNum(ctrl.wave)        + ",    // 0=triangle, 1=sawtooth\n" +
+            "  cutoff:      " + fmtNum(ctrl.cutoff)      + ",   // Hz\n" +
+            "  q:           " + fmtNum(ctrl.q)           + ",\n" +
+            "  sub:         " + fmtNum(ctrl.sub)         + ",    // 0..1 mix of sub-octave sine\n" +
+            "  wobbleDepth: " + fmtNum(ctrl.wobbleDepth) + ",    // Hz LFO depth\n" +
+            "  wobbleRate:  " + fmtNum(ctrl.wobbleRate)  + ",  // Hz LFO rate\n" +
+            "  beatOffset:  " + fmtNum(ctrl.beatOffset)  + ",    // Hz flank detune\n" +
+            "  beatMix:     " + fmtNum(ctrl.beatMix)     + ",    // 0..1 flank mix\n" +
+            "  tremDepth:   " + fmtNum(ctrl.tremDepth)   + ",    // 0..1 amplitude LFO depth\n" +
+            "  tremRate:    " + fmtNum(ctrl.tremRate)    + "     // Hz amplitude LFO rate\n" +
+            "}";
+          var btn = document.getElementById("copy-btn");
+          var orig = btn.innerHTML;
+          function finish(ok) {
+            btn.innerHTML = ok ? "&#10003; COPIED" : "&#10007; FAILED";
+            setTimeout(function () { btn.innerHTML = orig; }, 1600);
+          }
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(
+              function () { finish(true); },
+              function () { finish(false); }
+            );
+          } else {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand("copy"); finish(true); }
+            catch (e) { finish(false); }
+            document.body.removeChild(ta);
+          }
+        });
+
+        updateStatus();
+      })();
+    </script>
+  </body>
+</html>

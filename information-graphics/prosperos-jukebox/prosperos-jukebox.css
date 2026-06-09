@@ -3,6 +3,42 @@
    Dark background, amber glow, VT323 monospace, CRT scanline overlay
    ============================================================================ */
 
+/* ----------------------------------------------------------------------------
+   THEME TOKEN SYSTEM
+   ----------------------------------------------------------------------------
+   Theme colors / fonts / canvas palettes are owned by `prosperos-jukebox-
+   themes.js` (the JUKEBOX_THEMES object). On track switch, `applyJukebox-
+   Theme(track)` sets CSS custom properties on .jukebox-frame and
+   .jukebox-scene. Component rules below reference those vars rather than
+   hard-coded hex values. To retint, edit the JS theme registry — never
+   the CSS.
+
+   Canonical token names (preferred for new rules):
+     --color-primary           main accent
+     --color-primary-bright    brighter highlight
+     --color-primary-dim       dim version (idle states)
+     --color-glow-rgb          RGB triple for rgba(var(--color-glow-rgb), N)
+     --color-ink               body text
+     --color-ink-dim           secondary text
+     --color-ink-label         section labels
+     --color-surface           panel background
+     --color-surface-border    panel border
+     --color-surface-tint      faint themed background tint
+     --color-neutral-off       non-themed off-state gray
+     --type-heading            display font stack
+     --type-body               body font stack
+     --tab-{library|sycorax|ariel}-{primary|idle|hover|glow}
+                               per-tab colors (so tabs are multi-colored
+                               at the same time regardless of selection)
+
+   Deprecated aliases (still set for backward compat — migrate away):
+     --accent → --color-primary
+     --accent-bright → --color-primary-bright
+     --accent-dim → --color-primary-dim
+     --accent-glow → --color-glow-rgb
+     --neutral-off → --color-neutral-off
+---------------------------------------------------------------------------- */
+
 /* --- Scene wrapper: jukebox controls + visualization side by side --- */
 /* On viewports wide enough (~1500px+) the two cards sit next to each other.
    Otherwise they stack vertically. */
@@ -64,9 +100,9 @@
   font-family: "Cinzel Decorative", serif;
   font-size: 28px;
   font-weight: 700;
-  color: #ffaa00;
+  color: var(--color-primary);
   text-align: center;
-  text-shadow: 0 0 12px rgba(255, 170, 0, 0.5), 0 0 30px rgba(255, 170, 0, 0.15);
+  text-shadow: 0 0 12px rgba(var(--color-glow-rgb), 0.5), 0 0 30px rgba(var(--color-glow-rgb), 0.15);
   margin: 0 0 4px;
   letter-spacing: 2px;
 }
@@ -74,7 +110,7 @@
 .jukebox-subtitle {
   font-family: "VT323", monospace;
   font-size: 18px;
-  color: #665520;
+  color: var(--color-primary-dim);
   text-align: center;
   margin: 0 0 28px;
   letter-spacing: 3px;
@@ -94,7 +130,7 @@
   font-size: 20px;
   text-align: center;
   background: #0d0d14;
-  color: #554422;
+  color: var(--color-primary-dim);
   border: 2px solid #1a1a2a;
   border-bottom: 3px solid #1a1a2a;
   cursor: pointer;
@@ -115,16 +151,43 @@
   border-left: 1px solid #1a1a2a;
 }
 
+/* Per-tab colors — each tab tints itself by its data-track attribute
+   regardless of which song is currently active. Selectors use
+   `[data-track="..."]` so the three tabs read as a multi-colored row
+   even when only one is selected. */
 .jukebox-track-tab:hover {
-  color: #997733;
   background: #111118;
 }
-
 .jukebox-track-tab.active {
-  color: #ffaa00;
   background: #141420;
-  border-bottom-color: #ffaa00;
-  text-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+}
+
+/* Each tab tints itself by its data-track using vars set by
+   applyJukeboxTheme() in prosperos-jukebox-themes.js. The --tab-{track}-*
+   vars are set for ALL tracks on every theme apply so the three tabs
+   stay multi-colored regardless of selection. */
+.jukebox-track-tab[data-track="library"]         { color: var(--tab-library-idle); }
+.jukebox-track-tab[data-track="library"]:hover   { color: var(--tab-library-hover); }
+.jukebox-track-tab[data-track="library"].active {
+  color: var(--tab-library-primary);
+  border-bottom-color: var(--tab-library-primary);
+  text-shadow: 0 0 8px rgba(var(--tab-library-glow), 0.4);
+}
+
+.jukebox-track-tab[data-track="sycorax"]         { color: var(--tab-sycorax-idle); }
+.jukebox-track-tab[data-track="sycorax"]:hover   { color: var(--tab-sycorax-hover); }
+.jukebox-track-tab[data-track="sycorax"].active {
+  color: var(--tab-sycorax-primary);
+  border-bottom-color: var(--tab-sycorax-primary);
+  text-shadow: 0 0 8px rgba(var(--tab-sycorax-glow), 0.4);
+}
+
+.jukebox-track-tab[data-track="ariel"]           { color: var(--tab-ariel-idle); }
+.jukebox-track-tab[data-track="ariel"]:hover     { color: var(--tab-ariel-hover); }
+.jukebox-track-tab[data-track="ariel"].active {
+  color: var(--tab-ariel-primary);
+  border-bottom-color: var(--tab-ariel-primary);
+  text-shadow: 0 0 8px rgba(var(--tab-ariel-glow), 0.4);
 }
 
 /* --- Transport controls --- */
@@ -149,19 +212,19 @@
   transition: all 0.15s;
   letter-spacing: 1px;
   background: #111118;
-  color: #554422;
+  color: var(--color-primary-dim);
 }
 
 .jukebox-btn:hover {
-  border-color: #ffaa00;
-  color: #ffaa00;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   background: #1a1a24;
 }
 
 .jukebox-btn.active {
-  border-color: #ffaa00;
-  color: #ffaa00;
-  text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  text-shadow: 0 0 6px rgba(var(--color-glow-rgb), 0.4);
   background: #1a1820;
 }
 
@@ -183,12 +246,29 @@
 .jukebox-vol-label {
   font-family: "VT323", monospace;
   font-size: 14px;
-  color: #554422;
+  color: var(--color-primary-dim);
   letter-spacing: 1px;
 }
 
+/* Live numeric readout shown immediately to the LEFT of every slider's
+   track (after the tag, before the slider). Fixed width so the slider's
+   right edge doesn't shift as the number changes. */
+.jukebox-val-readout {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: var(--color-primary-bright);
+  width: 40px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+/* val-readout themes itself via var(--color-primary-bright). No overrides needed. */
+
 .jukebox-vol-slider {
-  width: clamp(80px, 20vw, 140px);
+  /* Wider than before — the master vol slider was visually cramped
+     compared to the per-layer ones inside the mixing desk. */
+  width: clamp(160px, 32vw, 260px);
 }
 
 /* --- Mixing desk --- */
@@ -203,7 +283,7 @@
 .jukebox-mixer-title {
   font-family: "VT323", monospace;
   font-size: 16px;
-  color: #554422;
+  color: var(--color-primary-dim);
   letter-spacing: 2px;
   text-transform: uppercase;
   margin-bottom: 14px;
@@ -211,16 +291,98 @@
   border-bottom: 1px solid #1a1a2a;
 }
 
+/* Each layer is now an expandable card: a header row always visible, an
+   optional body panel (description, sliders, reset) revealed on expand. */
 .jukebox-layer-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+  display: block;
   padding: 8px 0;
   border-bottom: 1px solid #0f0f1a;
 }
 
 .jukebox-layer-row:last-child {
   border-bottom: none;
+}
+
+.jukebox-layer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Compact VOL slider rides the right edge of the header, visible whether
+   the row is collapsed or expanded. Uses the same .vol-range class as
+   the prior slider so the existing handler picks up its input events. */
+.jukebox-layer-header .jukebox-layer-vol-wrap {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.jukebox-layer-header .jukebox-slider-tag.vol-tag {
+  width: auto;
+}
+
+/* Chevron button — rotates 90deg when its row is expanded.
+   Sized and tinted so it reads as the primary "click here to expand"
+   affordance rather than a subtle accent. */
+.jukebox-layer-expand {
+  appearance: none;
+  background: transparent;
+  border: none;
+  font-family: "VT323", monospace;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-ink-label);
+  cursor: pointer;
+  width: 20px;
+  flex-shrink: 0;
+  padding: 0;
+  text-align: center;
+  transition: color 0.15s, transform 0.2s;
+  text-shadow: 0 0 4px rgba(var(--color-glow-rgb), 0.25);
+}
+.jukebox-layer-expand:hover { color: var(--color-primary-bright); }
+.jukebox-layer-row.is-expanded .jukebox-layer-expand {
+  transform: rotate(90deg);
+  color: var(--color-primary-bright);
+}
+
+/* Body panel — hidden by default, revealed when the row is expanded.
+   Indented to align under the chevron so it reads as the row's child. */
+.jukebox-layer-body {
+  display: none;
+  padding: 10px 0 4px 28px;
+}
+.jukebox-layer-row.is-expanded .jukebox-layer-body {
+  display: block;
+}
+
+.jukebox-layer-desc {
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  color: var(--color-ink-dim);
+  margin: 0 0 10px 0;
+  letter-spacing: 0.5px;
+  font-style: italic;
+}
+
+.jukebox-layer-reset-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid #2a2a3a;
+  color: var(--color-primary-dim);
+  font-family: "VT323", monospace;
+  font-size: 12px;
+  padding: 3px 10px;
+  margin-top: 4px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  border-radius: 3px;
+}
+.jukebox-layer-reset-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }
 
 /* --- Preview button (small play triangle) --- */
@@ -230,7 +392,7 @@
   padding: 0;
   border: 2px solid #2a2a3a;
   background: #0a0a0a;
-  color: #554422;
+  color: var(--color-primary-dim);
   font-size: 10px;
   line-height: 18px;
   text-align: center;
@@ -252,10 +414,10 @@
 
 /* Illuminated while a preview is running on this layer */
 .jukebox-preview-btn.active {
-  border-color: #ffaa00;
-  color: #ffaa00;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
   background: #1a1820;
-  box-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+  box-shadow: 0 0 6px rgba(var(--color-glow-rgb), 0.4);
 }
 
 /* --- Per-layer preview stop button --- */
@@ -286,41 +448,54 @@
 }
 
 /* --- Toggle checkbox (pixel square) --- */
+/* --- Layer on/off switch ---
+   Slim pill with a CIRCULAR indicator that slides from left (off) to
+   right (on). The off-state thumb uses --neutral-off (a non-themed
+   gray), so an unchecked switch reads as truly off in every theme.
+   The on-state uses the theme's --accent so a checked switch matches
+   whatever song is active. No per-theme rules needed for this. */
 .jukebox-toggle {
   appearance: none;
   -webkit-appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 32px;
+  height: 16px;
   border: 2px solid #2a2a3a;
+  border-radius: 8px;
   background: #0a0a0a;
   cursor: pointer;
   flex-shrink: 0;
   position: relative;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
-
-.jukebox-toggle:hover {
-  border-color: #ffaa00;
-}
-
-.jukebox-toggle:checked {
-  border-color: #ffaa00;
-  background: #ffaa00;
-  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
-}
-
-.jukebox-toggle:checked::after {
+.jukebox-toggle::after {
   content: "";
   position: absolute;
-  inset: 3px;
-  background: #0a0a0a;
+  top: 1px;
+  left: 1px;
+  width: 10px;
+  height: 10px;
+  background: var(--neutral-off);
+  border-radius: 50%;
+  transition: transform 0.18s ease, background 0.15s, box-shadow 0.15s;
+}
+.jukebox-toggle:hover {
+  border-color: var(--accent);
+}
+.jukebox-toggle:checked {
+  border-color: var(--accent);
+  background: rgba(var(--accent-glow), 0.08);
+}
+.jukebox-toggle:checked::after {
+  background: var(--accent);
+  transform: translateX(16px);
+  box-shadow: 0 0 6px rgba(var(--accent-glow), 0.6);
 }
 
 /* --- Layer label --- */
 .jukebox-layer-label {
   font-family: "VT323", monospace;
   font-size: 18px;
-  color: #997733;
+  color: var(--color-ink-label);
   width: 140px;
   flex-shrink: 0;
   letter-spacing: 1px;
@@ -329,7 +504,7 @@
 }
 
 .jukebox-layer-row:hover .jukebox-layer-label {
-  color: #ffaa00;
+  color: var(--color-primary);
 }
 
 .jukebox-layer-label.muted {
@@ -338,19 +513,21 @@
   text-decoration-color: #442211;
 }
 
-/* --- Layer slider columns --- */
+/* --- Layer slider columns ---
+   In the expanded body the sliders are arranged as a 2-column grid so the
+   panel doesn't grow tall with many knobs. Each slider row is one grid cell. */
 .jukebox-layer-sliders {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 18px;
+  margin-bottom: 8px;
 }
 
 .jukebox-slider-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .jukebox-slider-tag {
@@ -363,11 +540,48 @@
 }
 
 .jukebox-slider-tag.vol-tag {
-  color: #997733;
+  color: var(--color-ink-label);
 }
 
 .jukebox-slider-tag.rate-tag {
   color: #338899;
+}
+
+.jukebox-slider-tag.param-tag {
+  color: var(--color-ink-label);
+  width: 60px;
+}
+
+/* Segmented pill group — fits into a grid cell next to other param sliders. */
+/* Segmented pill — everything themed via vars; no per-theme overrides
+   needed. Border + active background use --color-surface-tint which is
+   set per-theme in JUKEBOX_THEMES. */
+.jukebox-segmented {
+  display: inline-flex;
+  border: 1px solid var(--color-surface-tint);
+  border-radius: 3px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+}
+.jukebox-segmented-btn {
+  flex: 1;
+  background: transparent;
+  border: 0;
+  padding: 3px 4px;
+  color: var(--color-primary-dim);
+  font-family: "VT323", monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  cursor: pointer;
+  border-right: 1px solid var(--color-surface-tint);
+  text-align: center;
+}
+.jukebox-segmented-btn:last-child { border-right: 0; }
+.jukebox-segmented-btn:hover { color: var(--color-primary); }
+.jukebox-segmented-btn.active {
+  background: var(--color-surface-tint);
+  color: var(--color-primary-bright);
 }
 
 .jukebox-slider-wrap {
@@ -376,332 +590,205 @@
 }
 
 /* --- Custom range slider styling --- */
+/* Custom range slider — "segmented amber fill" style.
+   ---------------------------------------------------------------
+   The track is 6 px tall: amber fills from 0 → --val (the live
+   percentage set by JS on input events), then dark beyond.
+   A second gradient layer paints thin 1 px dark dividers every 5%
+   so the fill reads as 20 discrete segments lighting up as the
+   thumb moves right. The thumb is a 14 px square with margin-top
+   -4 px so it actually centers on the 6 px track (the old CSS
+   missed this — the thumb rode above the track).
+
+   Themes (Sycorax / Ariel) just override --slider-fill and
+   --slider-thumb at the .jukebox-range level. The rate-range
+   variant overrides --slider-fill + --slider-thumb to cyan. */
 .jukebox-range {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
-  background: #1a1a2a;
-  border-radius: 3px;
+  height: 14px;
+  background: transparent;
   outline: none;
   cursor: pointer;
+  /* JS keeps --val in sync with the slider's current value. */
+  --val: 50%;
+  --slider-fill:  var(--color-primary);
+  --slider-thumb: var(--color-primary);
+  --slider-edge:  var(--color-primary-bright);
 }
-
+.jukebox-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0 calc(10% - 1px),
+      rgba(0, 0, 0, 0.55) calc(10% - 1px) 10%),
+    linear-gradient(to right,
+      var(--slider-fill) 0 var(--val),
+      #1a1a2a var(--val) 100%);
+}
+.jukebox-range::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0 calc(10% - 1px),
+      rgba(0, 0, 0, 0.55) calc(10% - 1px) 10%),
+    linear-gradient(to right,
+      var(--slider-fill) 0 var(--val),
+      #1a1a2a var(--val) 100%);
+}
+.jukebox-range::-moz-range-progress {
+  height: 6px;
+  background: var(--slider-fill);
+  border-radius: 3px;
+}
 .jukebox-range::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
   width: 14px;
   height: 14px;
-  background: #ffaa00;
-  border: none;
+  margin-top: -4px;
+  background: var(--slider-thumb);
+  border: 1px solid var(--slider-edge);
   border-radius: 0;
   cursor: pointer;
-  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+  box-shadow: 0 0 6px rgba(var(--color-glow-rgb), 0.35);
 }
-
 .jukebox-range::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  background: #ffaa00;
-  border: none;
+  width: 12px;
+  height: 12px;
+  background: var(--slider-thumb);
+  border: 1px solid var(--slider-edge);
   border-radius: 0;
   cursor: pointer;
-  box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+  box-shadow: 0 0 6px rgba(var(--color-glow-rgb), 0.35);
+}
+.jukebox-range:hover::-webkit-slider-thumb,
+.jukebox-range:active::-webkit-slider-thumb {
+  background: var(--slider-edge);
+  box-shadow: 0 0 10px rgba(var(--color-glow-rgb), 0.55);
 }
 
-.jukebox-range::-webkit-slider-runnable-track {
-  height: 6px;
-  background: #1a1a2a;
-  border-radius: 3px;
+/* Rate slider — cyan accent (Library only — themes re-override). */
+.jukebox-range.rate-range {
+  --slider-fill:  #00ccaa;
+  --slider-thumb: #00ccaa;
+  --slider-edge:  #66e0c8;
+}
+.jukebox-range.rate-range:hover::-webkit-slider-thumb,
+.jukebox-range.rate-range:active::-webkit-slider-thumb {
+  box-shadow: 0 0 10px rgba(0, 224, 200, 0.55);
 }
 
-.jukebox-range::-moz-range-track {
-  height: 6px;
-  background: #1a1a2a;
-  border-radius: 3px;
-}
-
-/* Frequency slider — cyan/teal variant */
-.jukebox-range.rate-range::-webkit-slider-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-.jukebox-range.rate-range::-moz-range-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-/* --- Flavor text --- */
-.jukebox-flavor {
-  font-family: "VT323", monospace;
-  font-size: 15px;
-  color: #443322;
-  line-height: 1.6;
-  text-align: center;
-  padding: 16px;
+/* --- Flavor text + collapsible explainer --- */
+.jukebox-flavor-block {
   background: #0d0d14;
   border: 2px solid #1a1a2a;
   border-radius: 4px;
   margin-bottom: 20px;
 }
-
+/* Chrome's default disclosure triangle is hidden; we draw our own chevron. */
+.jukebox-flavor-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: "VT323", monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--color-ink-label);
+  user-select: none;
+}
+.jukebox-flavor-summary::-webkit-details-marker { display: none; }
+.jukebox-flavor-chevron {
+  font-size: 18px;
+  color: var(--color-ink-label);
+  text-shadow: 0 0 4px rgba(var(--color-glow-rgb), 0.25);
+  transition: transform 0.2s;
+}
+.jukebox-flavor-block[open] .jukebox-flavor-chevron { transform: rotate(90deg); }
+.jukebox-flavor-summary:hover { color: var(--color-primary-bright); }
+.jukebox-flavor-summary:hover .jukebox-flavor-chevron { color: var(--color-primary-bright); }
+.jukebox-flavor {
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  color: var(--color-ink);
+  line-height: 1.6;
+  padding: 4px 18px 18px;
+  border-top: 1px solid #1a1a2a;
+}
+/* Override the parent site's global `p { color: var(--ink); }` rule,
+   which would otherwise force the body paragraphs to the site's
+   dark-ink color and make them nearly invisible on the dark panel. */
+.jukebox-flavor p {
+  margin: 10px 0;
+  color: var(--color-ink);
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  line-height: 1.6;
+}
 .jukebox-flavor em {
-  color: #665520;
+  color: var(--color-primary-bright);
   font-style: normal;
+}
+.jukebox-flavor strong {
+  color: var(--color-primary-bright);
+  font-weight: 400;
+  letter-spacing: 1px;
 }
 
 /* --- Status indicator --- */
 .jukebox-status {
   font-family: "VT323", monospace;
   font-size: 14px;
-  color: #332211;
+  color: var(--color-primary-dim);
   text-align: center;
   letter-spacing: 2px;
   padding-top: 8px;
 }
 
 .jukebox-status.is-playing {
-  color: #ffaa00;
-  text-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+  color: var(--color-primary);
+  text-shadow: 0 0 6px rgba(var(--color-glow-rgb), 0.3);
 }
 
 /* ==========================================================================
-   SYCORAX PURPLE THEME — applied via .sycorax-theme on .jukebox-frame
-   Recolors all amber (#ffaa00) elements to Sycorax violet (#c896ff)
+   THEME OVERRIDES — minimal remainder.
+
+   Most components now retint automatically via the design tokens set by
+   prosperos-jukebox-themes.js. The handful of rules below are kept
+   because they need behavior that the tokens don't (yet) express:
+
+     - .jukebox-layer-label.muted: the "off" state for a layer name uses
+       an unusually dark tint that doesn't fall out of --color-primary-dim;
+       could be a future --color-ink-muted token but is rare enough that
+       per-theme overrides are still simpler.
+
+     - .jukebox-range.rate-range: RATE always stays teal regardless of
+       theme (it's a semantic accent for the time-density layer, not a
+       theme accent), so we override the --slider-* vars to teal in every
+       theme. This rule is theme-neutral and lives in the base slider
+       block above.
+
+   Everything else previously listed here (titles, transport buttons,
+   preview buttons, layer labels, hover states, flavor body, status, …)
+   now resolves correctly through var(--color-…). If you're adding a new
+   component, just use the vars — no theme rule needed.
    ========================================================================== */
-
-.sycorax-theme .jukebox-title {
-  color: #c896ff;
-  text-shadow: 0 0 12px rgba(200, 150, 255, 0.5), 0 0 30px rgba(200, 150, 255, 0.15);
-}
-
-.sycorax-theme .jukebox-subtitle {
-  color: #4a3566;
-}
-
-.sycorax-theme .jukebox-track-tab:hover {
-  color: #9966cc;
-}
-
-.sycorax-theme .jukebox-track-tab.active {
-  color: #c896ff;
-  border-bottom-color: #c896ff;
-  text-shadow: 0 0 8px rgba(200, 150, 255, 0.4);
-}
-
-.sycorax-theme .jukebox-btn:hover {
-  border-color: #c896ff;
-  color: #c896ff;
-}
-
-.sycorax-theme .jukebox-btn.active {
-  border-color: #c896ff;
-  color: #c896ff;
-  text-shadow: 0 0 6px rgba(200, 150, 255, 0.4);
-}
-
-.sycorax-theme .jukebox-btn.stop-btn.active {
-  border-color: #ff4444;
-  color: #ff4444;
-  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
-}
-
-.sycorax-theme .jukebox-preview-btn:hover,
-.sycorax-theme .jukebox-preview-btn.active {
-  border-color: #c896ff;
-  color: #c896ff;
-}
-
-.sycorax-theme .jukebox-preview-btn.active {
-  box-shadow: 0 0 6px rgba(200, 150, 255, 0.4);
-}
-
-.sycorax-theme .jukebox-vol-label {
-  color: #4a3566;
-}
-
-.sycorax-theme .jukebox-mixer-title {
-  color: #4a3566;
-}
-
-.sycorax-theme .jukebox-toggle:hover {
-  border-color: #c896ff;
-}
-
-.sycorax-theme .jukebox-toggle:checked {
-  border-color: #c896ff;
-  background: #c896ff;
-  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
-}
-
-.sycorax-theme .jukebox-layer-label {
-  color: #8866aa;
-}
-
-.sycorax-theme .jukebox-layer-row:hover .jukebox-layer-label {
-  color: #c896ff;
-}
 
 .sycorax-theme .jukebox-layer-label.muted {
   color: #2a1533;
   text-decoration-color: #3a2244;
 }
-
-.sycorax-theme .jukebox-slider-tag.vol-tag {
-  color: #8866aa;
-}
-
-.sycorax-theme .jukebox-range::-webkit-slider-thumb {
-  background: #c896ff;
-  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
-}
-
-.sycorax-theme .jukebox-range::-moz-range-thumb {
-  background: #c896ff;
-  box-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
-}
-
-/* Freq slider stays teal in both themes — keep its overrides last */
-.sycorax-theme .jukebox-range.rate-range::-webkit-slider-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-.sycorax-theme .jukebox-range.rate-range::-moz-range-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-.sycorax-theme .jukebox-flavor {
-  color: #3d2855;
-}
-
-.sycorax-theme .jukebox-flavor em {
-  color: #5a3d77;
-}
-
-.sycorax-theme .jukebox-status.is-playing {
-  color: #c896ff;
-  text-shadow: 0 0 6px rgba(200, 150, 255, 0.3);
-}
-
-/* ==========================================================================
-   ARIEL LIGHT BLUE THEME — applied via .ariel-theme on .jukebox-frame
-   ========================================================================== */
-
-.ariel-theme .jukebox-title {
-  color: #55ccff;
-  text-shadow: 0 0 12px rgba(85, 204, 255, 0.5), 0 0 30px rgba(85, 204, 255, 0.15);
-}
-
-.ariel-theme .jukebox-subtitle {
-  color: #1a4d66;
-}
-
-.ariel-theme .jukebox-track-tab:hover {
-  color: #4499bb;
-}
-
-.ariel-theme .jukebox-track-tab.active {
-  color: #55ccff;
-  border-bottom-color: #55ccff;
-  text-shadow: 0 0 8px rgba(85, 204, 255, 0.4);
-}
-
-.ariel-theme .jukebox-btn:hover {
-  border-color: #55ccff;
-  color: #55ccff;
-}
-
-.ariel-theme .jukebox-btn.active {
-  border-color: #55ccff;
-  color: #55ccff;
-  text-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
-}
-
-.ariel-theme .jukebox-btn.stop-btn.active {
-  border-color: #ff4444;
-  color: #ff4444;
-  text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
-}
-
-.ariel-theme .jukebox-preview-btn:hover,
-.ariel-theme .jukebox-preview-btn.active {
-  border-color: #55ccff;
-  color: #55ccff;
-}
-
-.ariel-theme .jukebox-preview-btn.active {
-  box-shadow: 0 0 6px rgba(85, 204, 255, 0.4);
-}
-
-.ariel-theme .jukebox-vol-label {
-  color: #1a4d66;
-}
-
-.ariel-theme .jukebox-mixer-title {
-  color: #1a4d66;
-}
-
-.ariel-theme .jukebox-toggle:hover {
-  border-color: #55ccff;
-}
-
-.ariel-theme .jukebox-toggle:checked {
-  border-color: #55ccff;
-  background: #55ccff;
-  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
-}
-
-.ariel-theme .jukebox-layer-label {
-  color: #4499bb;
-}
-
-.ariel-theme .jukebox-layer-row:hover .jukebox-layer-label {
-  color: #55ccff;
-}
-
 .ariel-theme .jukebox-layer-label.muted {
   color: #0f2a33;
   text-decoration-color: #1a3d4d;
-}
-
-.ariel-theme .jukebox-slider-tag.vol-tag {
-  color: #4499bb;
-}
-
-.ariel-theme .jukebox-range::-webkit-slider-thumb {
-  background: #55ccff;
-  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
-}
-
-.ariel-theme .jukebox-range::-moz-range-thumb {
-  background: #55ccff;
-  box-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
-}
-
-.ariel-theme .jukebox-range.rate-range::-webkit-slider-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-.ariel-theme .jukebox-range.rate-range::-moz-range-thumb {
-  background: #00ccaa;
-  box-shadow: 0 0 6px rgba(0, 204, 170, 0.3);
-}
-
-.ariel-theme .jukebox-flavor {
-  color: #1a4d66;
-}
-
-.ariel-theme .jukebox-flavor em {
-  color: #2a6688;
-}
-
-.ariel-theme .jukebox-status.is-playing {
-  color: #55ccff;
-  text-shadow: 0 0 6px rgba(85, 204, 255, 0.3);
 }
 
 /* --- Responsive --- */
@@ -766,9 +853,9 @@
   font-family: "Cinzel Decorative", serif;
   font-size: 24px;
   font-weight: 700;
-  color: #ffaa00;
+  color: var(--color-primary);
   text-align: center;
-  text-shadow: 0 0 10px rgba(255, 170, 0, 0.45), 0 0 24px rgba(255, 170, 0, 0.12);
+  text-shadow: 0 0 10px rgba(var(--color-glow-rgb), 0.45), 0 0 24px rgba(var(--color-glow-rgb), 0.12);
   margin: 0 0 4px;
   letter-spacing: 2px;
 }
@@ -776,7 +863,7 @@
 .jukebox-viz-subtitle {
   font-family: "VT323", monospace;
   font-size: 15px;
-  color: #665520;
+  color: var(--color-primary-dim);
   letter-spacing: 3px;
   text-align: center;
   margin: 0 0 22px;
@@ -790,7 +877,7 @@
 .jukebox-viz-label {
   font-family: "VT323", monospace;
   font-size: 14px;
-  color: #997733;
+  color: var(--color-ink-label);
   letter-spacing: 2px;
   text-transform: uppercase;
   padding-bottom: 8px;
@@ -807,6 +894,63 @@
   border-radius: 4px;
 }
 .jukebox-viz-canvas-short { height: 140px; }
+.jukebox-viz-canvas-ridgeline {
+  height: 560px;
+}
+.jukebox-viz-ridgeline-wrap {
+  position: relative;
+}
+/* Spiral viz: taller than the flat ridgeline so the coil has vertical room.
+   Canvas uses grab/grabbing cursors to telegraph drag-to-rotate. */
+.jukebox-viz-canvas-spiral {
+  height: 720px;
+  cursor: grab;
+  touch-action: none;
+}
+.jukebox-viz-canvas-spiral.is-dragging { cursor: grabbing; }
+.jukebox-viz-spiral-wrap {
+  position: relative;
+}
+/* Spiral label is a flex row so AUTO/VIEW buttons can ride the right edge. */
+.jukebox-viz-block:has(.jukebox-viz-spiral-controls) .jukebox-viz-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.jukebox-viz-spiral-controls {
+  display: inline-flex;
+  gap: 6px;
+}
+.jukebox-viz-spiral-btn {
+  font-family: "VT323", monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 2px 10px;
+  background: transparent;
+  color: var(--color-ink-label);
+  border: 1px solid #2a2010;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.jukebox-viz-spiral-btn:hover {
+  border-color: var(--color-primary-bright);
+  color: var(--color-primary-bright);
+}
+.jukebox-viz-spiral-btn.active {
+  color: var(--color-primary-bright);
+  border-color: var(--color-primary-bright);
+}
+.jukebox-event-log-block {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #1a1a2a;
+}
+.jukebox-event-log-block .jukebox-viz-label {
+  margin-bottom: 8px;
+}
+.jukebox-event-log-block .jukebox-log {
+  max-height: 320px;
+}
 
 /* ---------- Harmonic center indicator ---------- */
 .jukebox-harmonic {
@@ -828,7 +972,7 @@
 }
 .jukebox-harmonic-drone {
   font-size: 14px;
-  color: #997733;
+  color: var(--color-ink-label);
   letter-spacing: 2px;
   text-transform: uppercase;
 }
@@ -836,20 +980,10 @@
   color: #ffeab0;
 }
 
-/* Sycorax theme — cool purple palette for the viz panels */
-.sycorax-theme .jukebox-harmonic-chord       { color: #c4b5fd; }
-.sycorax-theme .jukebox-harmonic-chord.flash { color: #ede9fe; }
-.sycorax-theme .jukebox-harmonic-drone       { color: #7c6ec1; }
-.sycorax-theme .jukebox-log-id               { color: #b8a3e8; }
-.sycorax-theme .jukebox-log-layer            { color: #b8a3e8; }
+/* Sycorax theme — semantic per-theme accents that don't reduce to the
+   standard --color-* palette. Most components self-theme via vars; the
+   rules below are the ones genuinely intentional and not redundant. */
 .sycorax-theme .jukebox-log-layer[data-layer="waterphone"] { color: #80e0d0; }
-.sycorax-theme .jukebox-log-cluster          { color: #9b87d8; }
-.sycorax-theme .log-tag.fresh                { color: #9b87d8; background: rgba(155, 135, 216, 0.12); }
-.sycorax-theme .log-tag.verbatim             { color: #d4c0ff; background: rgba(212, 192, 255, 0.18); }
-.sycorax-theme .log-tag.transform            { color: #80e0d0; background: rgba(128, 224, 208, 0.15); }
-.sycorax-theme .jukebox-log-transform        { color: #80e0d0; }
-.sycorax-theme .jukebox-viz-readout          { color: #c4b5fd; }
-.sycorax-theme .jukebox-viz-label            { color: #7c6ec1; }
 
 .jukebox-viz-readout {
   font-family: "VT323", monospace;
@@ -863,7 +997,7 @@
 .jukebox-viz-caption {
   font-family: "VT323", monospace;
   font-size: 14px;
-  color: #554422;
+  color: var(--color-ink-dim);
   letter-spacing: 1px;
   line-height: 1.45;
   margin: 10px 0 0;
@@ -873,7 +1007,7 @@
 .jukebox-log {
   font-family: "VT323", monospace;
   font-size: 15px;
-  color: #997733;
+  color: var(--color-ink-label);
   background: #0a0a0a;
   border: 1px solid #1a1a2a;
   border-radius: 4px;
@@ -883,23 +1017,25 @@
   line-height: 1.55;
 }
 .jukebox-log-empty {
-  color: #554422;
+  color: var(--color-primary-dim);
   font-style: italic;
 }
 .jukebox-log-row {
   display: grid;
-  grid-template-columns: 64px 100px 56px 96px 1fr;
-  column-gap: 12px;
+  grid-template-columns: 56px 96px 1fr;
+  column-gap: 10px;
   align-items: baseline;
   border-bottom: 1px dotted #1a1a2a;
   padding: 2px 0;
 }
 .jukebox-log-row:last-child { border-bottom: 0; }
-.jukebox-log-time   { color: #554422; }
-.jukebox-log-layer  { color: #aa8844; text-transform: uppercase; letter-spacing: 1px; font-size: 13px; }
-.jukebox-log-id     { color: #aa8844; }
-.jukebox-log-cluster{ color: #997733; text-transform: uppercase; letter-spacing: 1px; }
-.jukebox-log-action { letter-spacing: 1px; }
+.jukebox-log-time   { color: var(--color-primary-dim); font-variant-numeric: tabular-nums; }
+.jukebox-log-layer  { color: var(--color-ink-label); text-transform: uppercase; letter-spacing: 1px; font-size: 13px; }
+.jukebox-log-detail { color: var(--color-ink-label); letter-spacing: 0.5px; }
+.jukebox-log-detail .meta { color: var(--color-ink-dim); font-size: 13px; margin-left: 4px; }
+.jukebox-log-detail .pitch { color: var(--color-primary-bright); font-variant-numeric: tabular-nums; }
+.jukebox-log-id     { color: var(--color-ink-label); font-variant-numeric: tabular-nums; }
+.jukebox-log-cluster{ color: var(--color-ink-label); text-transform: uppercase; letter-spacing: 1px; }
 
 /* Action badges. FRESH = neutral amber. VERBATIM = bright gold (the "ah, I
    recognize that" return). TRANSFORM = cool cyan (returning but changed). */
@@ -912,9 +1048,46 @@
   text-transform: uppercase;
   vertical-align: 1px;
 }
-.log-tag.fresh     { color: #997733; background: rgba(153, 119, 51, 0.12); }
+.log-tag.fresh     { color: var(--color-ink-label); background: rgba(153, 119, 51, 0.12); }
 .log-tag.verbatim  { color: #f4c95a; background: rgba(244, 201, 90, 0.18); }
 .log-tag.transform { color: #6fc9c9; background: rgba(111, 201, 201, 0.15); }
+.log-tag.drone     { color: #aaccdd; background: rgba(170, 204, 221, 0.12); }
+.log-tag.ambient   { color: #b08850; background: rgba(176, 136, 80, 0.10); }
+.log-tag.preview   { color: #cccccc; background: rgba(204, 204, 204, 0.10); }
+/* Generic note-style entry (music box, hum, chimes, flutter, bubbles,
+   scrape, whispers). Uses --color-primary so the note tag retints
+   automatically with the active theme. */
+.log-tag.note {
+  color: var(--color-primary);
+  background: rgba(var(--color-glow-rgb), 0.10);
+}
+/* Drone + ambient tags: theme-tinted so they stand out in the log row.
+   Library is the base above; Sycorax / Ariel use --color-primary which
+   they already share with the rest of the UI. */
+.sycorax-theme .log-tag.drone,
+.ariel-theme   .log-tag.drone {
+  color: var(--color-primary);
+  background: rgba(var(--color-glow-rgb), 0.13);
+}
+.sycorax-theme .log-tag.ambient,
+.ariel-theme   .log-tag.ambient {
+  color: var(--color-ink-label);
+  background: rgba(var(--color-glow-rgb), 0.10);
+}
+/* Motif action tags (fresh / verbatim / transform) on themed pages —
+   use theme tints. Library keeps its own base colors above so the
+   semantic gold/cyan reading is preserved for the original track. */
+.sycorax-theme .log-tag.fresh,
+.ariel-theme   .log-tag.fresh {
+  color: var(--color-ink-label);
+  background: rgba(var(--color-glow-rgb), 0.12);
+}
+.sycorax-theme .log-tag.verbatim,
+.ariel-theme   .log-tag.verbatim {
+  color: var(--color-primary-bright);
+  background: rgba(var(--color-glow-rgb), 0.18);
+}
+/* TRANSFORM stays cyan across themes ("returning but changed" semantic). */
 
 .jukebox-log-transform {
   color: #6fc9c9;

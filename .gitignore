@@ -51,3 +51,9 @@ local-dev/rabelais clips/
 # Local-only — not for the public repo
 # ─────────────────────────────────────────────────────────────
 information-graphics/Ulysses/
+
+# ─────────────────────────────────────────────────────────────
+# Generated debug/intermediate output and redundant local backups
+# ─────────────────────────────────────────────────────────────
+information-graphics/assets/rabelais-clips/svg_output/
+information-graphics/prosperos-jukebox-backup-*/

@@ -4,19 +4,16 @@ $current_page = basename($_SERVER['PHP_SELF']);
 $current_dir = basename(dirname($_SERVER['PHP_SELF']));
 $request_uri = $_SERVER['REQUEST_URI'];
 
-// Check if we're in a subdirectory
-$is_subdirectory = in_array($current_dir, ['blog', 'chatbots', 'information-graphics']);
-
-// Set up paths based on directory
-$css_path = $is_subdirectory ? '../css/style.css?v=4.0' : 'css/style.css?v=4.0';
-$home_link = $is_subdirectory ? '../' : '/';
-$blog_link = $is_subdirectory ? '../blog/' : 'blog/';
-$graphics_link = $is_subdirectory ? '../information-graphics/' : 'information-graphics/';
-$chatbots_link = $is_subdirectory ? '../chatbots/' : 'chatbots/';
-$about_link = $is_subdirectory ? '../about.php' : 'about.php';
+// Root-relative paths — work regardless of subdirectory depth.
+$css_path = '/css/style.css?v=4.0';
+$home_link = '/';
+$blog_link = '/blog/';
+$graphics_link = '/information-graphics/';
+$chatbots_link = '/chatbots/';
+$about_link = '/about.php';
 
 // Improved active page detection
-$is_home = ($current_page === 'index.php' && !$is_subdirectory) || $request_uri === '/' || $request_uri === '';
+$is_home = $request_uri === '/' || $request_uri === '' || $request_uri === '/index.php';
 $is_blog = $current_dir === 'blog' || strpos($request_uri, '/blog') !== false;
 $is_graphics = $current_dir === 'information-graphics' || strpos($request_uri, '/information-graphics') !== false;
 $is_chatbots = $current_dir === 'chatbots' || strpos($request_uri, '/chatbots') !== false;

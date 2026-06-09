@@ -1,4 +1,17 @@
 <?php
+// PHP's built-in dev server (`php -S`) doesn't auto-append a trailing
+// slash when a URL points at a directory the way Apache does. Without
+// the slash, the browser resolves relative <link>/<script> URLs against
+// the parent directory and silently 404s the CSS and JS, which kills
+// the dashboard and SOC-tree carousel. Force the slash here.
+$uri = $_SERVER['REQUEST_URI'] ?? '';
+$path = strtok($uri, '?');
+if ($path !== '' && substr($path, -1) !== '/') {
+    $qs = strstr($uri, '?');
+    header('Location: ' . $path . '/' . ($qs ?: ''), true, 301);
+    exit;
+}
+
 $page_title = 'Classifying Rabelais\'s Underworld With the Bureau of Labor Statistics - Municipal Sky';
 $page_description = 'A hierarchical treemap of U.S. occupations with wage distributions, RIASEC interest profiles, industry breakdowns, and employment projections — populated by the damned souls of Rabelais\'s underworld.';
 include '../../includes/header.php';
@@ -17,7 +30,7 @@ include '../../includes/header.php';
   href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
   rel="stylesheet"
 />
-<link rel="stylesheet" href="underworld-occupations.css?v=8.1" />
+<link rel="stylesheet" href="underworld-occupations.css?v=8.4" />
 
 <!-- Main Content -->
 <div class="main-wrapper">
@@ -54,31 +67,39 @@ function extract_body_content($path) {
 // Main page content (intro prose + treemap dashboard + works consulted).
 $pageBody = extract_body_content(__DIR__ . '/underworld-occupations.html');
 
-// The Underworld Labor Market chart — separate standalone file, injected
-// at the marker placed between the intro paragraphs and the closing
-// paragraph in underworld-occupations.html.
-$chartBody = extract_body_content(
-    __DIR__ . '/underworld-labor-market.html'
+// Inject the Underworld Labor Market slide deck at the marker. The deck
+// is authored as a standalone, browser-previewable file; its <body> +
+// <style> are pulled in by extract_body_content() and its IIFE script
+// isolates itself from the host page's globals.
+$deck = extract_body_content(__DIR__ . '/underworld-labor-market.html');
+// Strip the standalone-only "design panel" (every slide rendered a
+// second time). It's hidden on the host page anyway, but leaving it in
+// would make the chart JS render every visualization twice into hidden,
+// zero-width containers. The chart code guards on container existence,
+// so removing the panel is safe.
+$deck = preg_replace(
+    '/<!--UMLM_DESIGN_PANEL_START-->.*?<!--UMLM_DESIGN_PANEL_END-->/s',
+    '',
+    $deck
 );
 $pageBody = str_replace(
     '<!--__CHART_UNDERWORLD_LABOR_MARKET__-->',
-    $chartBody,
+    $deck,
     $pageBody
 );
 
-// Epistemon chapter (Book 2 Ch. 30, Urquhart 1693 translation), preprocessed
-// by scripts/build_epistemon_chapter.py to wrap each figure's sentence in a
-// <span data-figures="Name">. The carousel JS reads those spans as the
-// navigation order.
-$chapterPath = __DIR__ . '/../../data/epistemon-chapter.html';
-if (is_file($chapterPath)) {
-    $chapterBody = file_get_contents($chapterPath);
-    $pageBody = str_replace(
-        '<!--__EPISTEMON_CHAPTER__-->',
-        $chapterBody,
-        $pageBody
-    );
-}
+// Epistemon chapter injection is disabled along with the SOC-tree
+// carousel that consumed it — the carousel markup has been removed from
+// underworld-occupations.html while the viewer is being rebuilt
+// elsewhere. Re-enable by restoring the aside and uncommenting below.
+// $chapterPath = __DIR__ . '/../../data/epistemon-chapter.html';
+// if (is_file($chapterPath)) {
+//     $pageBody = str_replace(
+//         '<!--__EPISTEMON_CHAPTER__-->',
+//         file_get_contents($chapterPath),
+//         $pageBody
+//     );
+// }
 
 echo $pageBody;
 ?>

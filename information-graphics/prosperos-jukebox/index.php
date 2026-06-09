@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="prosperos-jukebox.css?v=9" />
+<link rel="stylesheet" href="prosperos-jukebox.css?v=32" />
 
 <div class="main-wrapper">
  <div class="jukebox-scene">
@@ -38,6 +38,7 @@ include '../../includes/header.php';
       <button type="button" class="jukebox-btn reset-btn" id="jukebox-reset">&#8635; RESET</button>
       <div class="jukebox-transport-spacer"></div>
       <span class="jukebox-vol-label">VOL</span>
+      <span class="jukebox-val-readout" id="jukebox-master-vol-val">60</span>
       <div class="jukebox-vol-slider">
         <input type="range" min="0" max="100" value="60" class="jukebox-range" id="jukebox-master-vol" />
       </div>
@@ -51,13 +52,38 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- Flavor text -->
-    <div class="jukebox-flavor" id="jukebox-flavor">
-      <!-- Populated by JS based on current track -->
-    </div>
+    <!-- Flavor text + consolidated track explainer. Starts expanded; click
+         summary to collapse. JS rewrites #jukebox-flavor body when the
+         track switches. -->
+    <details class="jukebox-flavor-block" id="jukebox-flavor-block">
+      <summary class="jukebox-flavor-summary">
+        <span class="jukebox-flavor-chevron">&#9656;</span>
+        <span class="jukebox-flavor-summary-label">About this song</span>
+      </summary>
+      <div class="jukebox-flavor" id="jukebox-flavor">
+        <!-- Populated by JS based on current track -->
+      </div>
+    </details>
 
-    <!-- Status -->
-    <div class="jukebox-status" id="jukebox-status">STOPPED</div>
+    <!-- Status sentinel kept hidden so existing UI handlers that read/write
+         it don't blow up. Strip removed from view per UX request. -->
+    <div class="jukebox-status" id="jukebox-status" hidden>STOPPED</div>
+
+    <!-- Event log: every audible event the engine emits, newest at top. -->
+    <div class="jukebox-event-log-block">
+      <div class="jukebox-viz-label" id="jukebox-log-label">EVENTS &middot; activity log</div>
+      <div id="jukebox-log" class="jukebox-log">
+        <div class="jukebox-log-empty">Press PLAY. Audio events will appear here as they fire.</div>
+      </div>
+      <p class="jukebox-viz-caption">
+        Every audible thing the engine emits, newest at top.
+        <span class="log-tag ambient">AMBIENT</span> = one of the track's ambient pool events (page turn, owl hoot, cricket, etc.).
+        Motif fires from the primary melodic layer (harpsichord / ghost / whistle) appear as
+        <span class="log-tag fresh">FRESH</span> (a newly generated phrase),
+        <span class="log-tag verbatim">VERBATIM</span> (a stored motif replayed exactly), or
+        <span class="log-tag transform">TRANSFORM</span> (a stored motif altered &mdash; transpose / retrograde / octave / stretch).
+      </p>
+    </div>
 
   </div>
 
@@ -66,25 +92,18 @@ include '../../includes/header.php';
        developer/control surface for now. -->
   <div class="content-frame jukebox-viz-frame">
     <h2 class="jukebox-viz-title">Scene</h2>
-    <p class="jukebox-viz-subtitle">~ what the song looks like ~</p>
 
     <div class="jukebox-viz-block">
-      <div class="jukebox-viz-label">DRONE &middot; pulse constellation</div>
-      <canvas id="jukebox-viz-drone" class="jukebox-viz-canvas"></canvas>
-      <p class="jukebox-viz-caption">
-        Each drone partial sits on a chromatic circle (C&ndash;B around the ring, octave-from-center via radius) and grows a waveform halo as its cycle progresses. The halo's radius tracks cycle progress; its shape is the actual sound wave of that tone, slowed 60&times; so the eye can track it. A connecting line shows the interval between the two partials, colored and thickened by consonance.
-      </p>
-    </div>
-
-    <div class="jukebox-viz-block">
-      <div class="jukebox-viz-label" id="jukebox-harmonic-label">HARMONIC &middot; current center</div>
-      <div class="jukebox-harmonic" id="jukebox-harmonic">
-        <span class="jukebox-harmonic-chord" id="jukebox-harmonic-chord">--</span>
-        <span class="jukebox-harmonic-drone" id="jukebox-harmonic-drone">drone --</span>
+      <div class="jukebox-viz-label">
+        SPECTRUM &middot; pitch spiral
+        <span class="jukebox-viz-spiral-controls">
+          <button type="button" class="jukebox-viz-spiral-btn" id="jukebox-viz-spiral-auto" title="Toggle slow auto-rotation">&#8635; AUTO</button>
+          <button type="button" class="jukebox-viz-spiral-btn" id="jukebox-viz-spiral-view" title="Reset camera">&#8634; VIEW</button>
+        </span>
       </div>
-      <p class="jukebox-viz-caption">
-        On Library, each drone pair implies a harmonic center; melody, music box, and hum bias their note picks toward that center's chord tones. On Sycorax, this shows the current "spell pose" — which dissonant cluster is sounding right now. When the drone rotates, the label flashes.
-      </p>
+      <div class="jukebox-viz-spiral-wrap">
+        <canvas id="jukebox-viz-spiral" class="jukebox-viz-canvas jukebox-viz-canvas-spiral"></canvas>
+      </div>
     </div>
 
     <div class="jukebox-viz-block">
@@ -98,25 +117,14 @@ include '../../includes/header.php';
       </p>
     </div>
 
-    <div class="jukebox-viz-block">
-      <div class="jukebox-viz-label" id="jukebox-log-label">HARPSICHORD &middot; motif log</div>
-      <div id="jukebox-log" class="jukebox-log">
-        <div class="jukebox-log-empty">Press PLAY. New motifs will appear here, with returns shown in gold.</div>
-      </div>
-      <p class="jukebox-viz-caption">
-        Each row is one motif fire from the track's primary melodic layer (harpsichord on Library, ghost tones on Sycorax).
-        <span class="log-tag fresh">FRESH</span> is a newly generated phrase (captured into memory).
-        <span class="log-tag verbatim">VERBATIM</span> is a stored motif played exactly as captured.
-        <span class="log-tag transform">TRANSFORM</span> is a stored motif altered (transpose / retrograde / octave / stretch).
-      </p>
-    </div>
   </div>
  </div>
 </div>
 
-<script src="prosperos-jukebox-audio.js?v=41"></script>
+<script src="prosperos-jukebox-themes.js?v=1"></script>
+<script src="prosperos-jukebox-audio.js?v=80"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
-<script src="prosperos-jukebox-ui.js?v=5"></script>
-<script src="prosperos-jukebox-viz.js?v=16"></script>
+<script src="prosperos-jukebox-ui.js?v=18"></script>
+<script src="prosperos-jukebox-viz.js?v=30"></script>
 
 <?php include '../../includes/footer.php'; ?>
