@@ -74,19 +74,15 @@ $L[] = sprintf("  Model preference (all-time): Claude %d · GPT %d · neutral %d
                (int)$pAll['a'], (int)$pAll['b'], (int)$pAll['n']);
 
 if ($onoCount > 0) {
-    $fmt = "  %-11s %-15s %-24s %-20s %-20s %-5s";
     $L[] = "";
-    $L[] = sprintf($fmt, "TIME", "LOCATION", "PROMPT", "A (CLAUDE)", "B (GPT)", "PREF");
     foreach ($rows as $r) {
         $rating = (int) $r['preference_rating'];
-        $pref = $rating <= 3 ? "A {$rating}/7" : ($rating >= 5 ? "B {$rating}/7" : "n {$rating}/7");
-        $L[] = sprintf($fmt,
-            substr($r['timestamp'], 5, 11),               // MM-DD HH:MM
-            trunc(geo($r['session_id']), 15),
-            trunc($r['user_message'], 24),
-            trunc($r['response_a'], 20),
-            trunc($r['response_b'], 20),
-            $pref);
+        $pref = $rating <= 3 ? "A {$rating}/7 (Claude)" : ($rating >= 5 ? "B {$rating}/7 (GPT)" : "neutral {$rating}/7");
+        $L[] = "  • " . substr($r['timestamp'], 5, 11) . " · " . geo($r['session_id']) . " · preference: " . $pref;
+        $L[] = "      prompt    : " . $r['user_message'];
+        $L[] = "      A (Claude): " . $r['response_a'];
+        $L[] = "      B (GPT)   : " . $r['response_b'];
+        $L[] = "";
     }
 }
 
