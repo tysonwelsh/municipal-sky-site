@@ -24,9 +24,8 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.02.23</span>
                     <div class="entry-content">
-                        <a href="underworld-occupations" class="entry-title">Underworld Occupations</a>
-                        <span class="entry-description">A treemap classifying the souls of Rabelais's underworld by
-                            occupation, wage, and interest profile.</span>
+                        <a href="underworld-occupations" class="entry-title">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</a>
+                        <span class="entry-description">Renaissance satire meets federal labor data.</span>
                     </div>
                 </div>
                 <div class="entry">
