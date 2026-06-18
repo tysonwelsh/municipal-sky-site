@@ -28,9 +28,10 @@ include 'includes/header.php';
     <div class="content-frame">
         <div class="post-container">
             <!-- Poetry Excerpt -->
-            <div class="poem-excerpt width-75 position-right bleed-right"><?= $tate_poem ?>
-                <div class="poem-attribution">James Tate, <cite>Images of Little Compton, Rhode Island</cite></div>
-            </div>
+            <!-- .poem-excerpt is white-space: pre, so any newline/indentation
+                 between the poem, the attribution, and the closing tag renders
+                 as a literal blank line. Keep them tight against each other. -->
+            <div class="poem-excerpt width-75 position-right bleed-right"><?= $tate_poem ?><div class="poem-attribution">James Tate, <cite>Images of Little Compton, Rhode Island</cite></div></div>
         </div>
     </div>
     <?php include 'includes/footer.php'; ?>
