@@ -1,10 +1,13 @@
 <?php
-// Onobot daily digest, emailed by a cPanel cron job.
+// Municipal Sky — comprehensive daily digest, emailed by a cPanel cron job.
 //
 // Runs on the Bluehost server where the database is local, so it reuses
 // database.php (localhost connection, production secrets) — no remote access
 // or credentials needed here. CLI-only: refuses web requests so the public
 // /api/ URL can't be used to trigger emails.
+//
+// Covers: onobot feedback (with model preference), page-view analytics for the
+// pronoun article / jukebox / underworld, and new email signups.
 
 if (php_sapi_name() !== 'cli') {
     http_response_code(403);
@@ -13,12 +16,12 @@ if (php_sapi_name() !== 'cli') {
 
 require __DIR__ . '/database.php';   // provides $pdo
 
-$HOURS = 24;
-$TO    = 'tysonwelsh@gmail.com';
-$FROM  = 'onobot@municipalsky.com';  // a domain address improves deliverability
+$H    = 24;                          // look-back window, hours
+$TO   = 'tysonwelsh@gmail.com';
+$FROM = 'onobot@municipalsky.com';   // a domain address improves deliverability
 
-// Best-effort geolocation of the visitor IP (stored in session_id). Never let
-// a slow/failed lookup hold up or break the digest.
+// Best-effort geolocation of a visitor IP. Never let a slow/failed lookup
+// hold up or break the digest.
 function geo($ip)
 {
     $ctx = stream_context_create(['http' => ['timeout' => 5]]);
@@ -26,53 +29,128 @@ function geo($ip)
     return ($r && trim($r) !== '') ? trim($r) : 'location unavailable';
 }
 
-$stmt = $pdo->prepare(
-    "SELECT timestamp, preference_rating, session_id, user_message,
-            model_a, response_a, model_b, response_b
-     FROM onomatopoeia_feedback
-     WHERE timestamp >= NOW() - INTERVAL :h HOUR
-     ORDER BY timestamp DESC"
-);
-$stmt->bindValue(':h', $HOURS, PDO::PARAM_INT);
-$stmt->execute();
-$rows  = $stmt->fetchAll();
-$count = count($rows);
-$total = $pdo->query("SELECT COUNT(*) FROM onomatopoeia_feedback")->fetchColumn();
+$q  = function ($sql) use ($pdo) { return $pdo->query($sql)->fetchAll(); };
+$q1 = function ($sql) use ($pdo) { return $pdo->query($sql)->fetch(); };
 
-$L   = [];
-$L[] = "Onobot digest — submissions in the last {$HOURS}h (server time)";
-$L[] = "All-time feedback rows: {$total}";
-$L[] = str_repeat('-', 64);
+$L    = [];
+$rule = str_repeat('=', 64);
+$L[]  = $rule;
+$L[]  = "MUNICIPAL SKY — DAILY DIGEST";
+$L[]  = "Last {$H}h (server time) · " . date('Y-m-d H:i');
+$L[]  = $rule;
 
-if ($count === 0) {
-    $L[] = "No new submissions in the last {$HOURS}h.";
-} else {
-    $L[] = "{$count} new submission(s):";
+// ─────────────────────────────────────────────────────────────
+// 1. ONOBOT (onomatopoeia machine)
+// ─────────────────────────────────────────────────────────────
+$rows = $q("SELECT timestamp, preference_rating, session_id, user_message,
+                   model_a, response_a, model_b, response_b
+            FROM onomatopoeia_feedback
+            WHERE timestamp >= NOW() - INTERVAL $H HOUR
+            ORDER BY timestamp DESC");
+$onoCount = count($rows);
+$onoTotal = $pdo->query("SELECT COUNT(*) FROM onomatopoeia_feedback")->fetchColumn();
+$p24 = $q1("SELECT SUM(preference_rating<=3) a, SUM(preference_rating>=5) b, SUM(preference_rating=4) n
+            FROM onomatopoeia_feedback WHERE timestamp >= NOW() - INTERVAL $H HOUR");
+$pAll = $q1("SELECT SUM(preference_rating<=3) a, SUM(preference_rating>=5) b, SUM(preference_rating=4) n
+             FROM onomatopoeia_feedback");
+
+$L[] = "";
+$L[] = "ONOBOT — onomatopoeia machine";
+$L[] = "  {$onoCount} new submission(s) in {$H}h  ·  all-time: {$onoTotal}";
+$L[] = sprintf("  Model preference (24h):      Claude %d · GPT %d · neutral %d",
+               (int)$p24['a'], (int)$p24['b'], (int)$p24['n']);
+$L[] = sprintf("  Model preference (all-time): Claude %d · GPT %d · neutral %d",
+               (int)$pAll['a'], (int)$pAll['b'], (int)$pAll['n']);
+
+if ($onoCount > 0) {
     $L[] = "";
-    $a = $b = $n = 0;
     foreach ($rows as $r) {
         $rating = (int) $r['preference_rating'];
-        if ($rating <= 3)      { $lean = "A — {$r['model_a']} (Claude)"; $a++; }
-        elseif ($rating >= 5)  { $lean = "B — {$r['model_b']} (GPT)";    $b++; }
-        else                   { $lean = "neutral";                       $n++; }
-
-        $L[] = "• {$r['timestamp']}   [{$r['session_id']} — " . geo($r['session_id']) . "]";
-        $L[] = "    prompt : {$r['user_message']}";
-        $L[] = "    A ({$r['model_a']}): {$r['response_a']}";
-        $L[] = "    B ({$r['model_b']}): {$r['response_b']}";
-        $L[] = "    rating : {$rating}/7 → leans {$lean}";
+        if ($rating <= 3)     { $lean = "A — {$r['model_a']} (Claude)"; }
+        elseif ($rating >= 5) { $lean = "B — {$r['model_b']} (GPT)"; }
+        else                  { $lean = "neutral"; }
+        $L[] = "  • {$r['timestamp']}   [{$r['session_id']} — " . geo($r['session_id']) . "]";
+        $L[] = "      prompt : {$r['user_message']}";
+        $L[] = "      A ({$r['model_a']}): {$r['response_a']}";
+        $L[] = "      B ({$r['model_b']}): {$r['response_b']}";
+        $L[] = "      rating : {$rating}/7 → leans {$lean}";
         $L[] = "";
     }
-    $L[] = str_repeat('-', 64);
-    $L[] = "Window tally: {$a} prefer A (Claude), {$b} prefer B (GPT), {$n} neutral";
 }
 
-$body    = implode("\n", $L) . "\n";
-$subject = $count > 0
-    ? "Onobot digest — {$count} new (" . date('Y-m-d') . ")"
-    : "Onobot digest — no new submissions (" . date('Y-m-d') . ")";
+// ─────────────────────────────────────────────────────────────
+// 2. PAGE ANALYTICS  (views · unique visitors · downloads/plays)
+// ─────────────────────────────────────────────────────────────
+// Pronoun article has its own table; jukebox + underworld share page_events.
+$pr24  = $q1("SELECT SUM(event_type='page_view') v,
+                     COUNT(DISTINCT CASE WHEN event_type='page_view' THEN visitor_hash END) u,
+                     SUM(event_type='png_download') d
+              FROM pronoun_viz_events WHERE created_at >= NOW() - INTERVAL $H HOUR");
+$prAll = $q1("SELECT SUM(event_type='page_view') v,
+                     COUNT(DISTINCT CASE WHEN event_type='page_view' THEN visitor_hash END) u,
+                     SUM(event_type='png_download') d
+              FROM pronoun_viz_events");
 
-$headers = "From: Onobot <{$FROM}>\r\n"
+$peSel = "SELECT page,
+                 SUM(event_type='page_view') v,
+                 COUNT(DISTINCT CASE WHEN event_type='page_view' THEN visitor_hash END) u,
+                 SUM(event_type='play') p,
+                 SUM(event_type='png_download') d
+          FROM page_events";
+$pe24 = []; foreach ($q("$peSel WHERE created_at >= NOW() - INTERVAL $H HOUR GROUP BY page") as $r) { $pe24[$r['page']] = $r; }
+$peAll = []; foreach ($q("$peSel GROUP BY page") as $r) { $peAll[$r['page']] = $r; }
+
+$i = function ($row, $k) { return (int) ($row[$k] ?? 0); };
+
+$L[] = $rule;
+$L[] = "PAGE ANALYTICS";
+$L[] = sprintf("  %-26s %d views (%d unique), %d downloads   [all-time: %d / %d / %d]",
+    "Pronoun distribution",
+    $i($pr24,'v'), $i($pr24,'u'), $i($pr24,'d'),
+    $i($prAll,'v'), $i($prAll,'u'), $i($prAll,'d'));
+
+$jk = $pe24['prosperos-jukebox'] ?? []; $jkA = $peAll['prosperos-jukebox'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique), %d plays   [all-time: %d / %d / %d]",
+    "Prospero's Jukebox",
+    $i($jk,'v'), $i($jk,'u'), $i($jk,'p'),
+    $i($jkA,'v'), $i($jkA,'u'), $i($jkA,'p'));
+
+$uw = $pe24['underworld-occupations'] ?? []; $uwA = $peAll['underworld-occupations'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
+    "Underworld Annotated",
+    $i($uw,'v'), $i($uw,'u'),
+    $i($uwA,'v'), $i($uwA,'u'));
+
+// ─────────────────────────────────────────────────────────────
+// 3. EMAIL SIGNUPS
+// ─────────────────────────────────────────────────────────────
+$L[] = $rule;
+$L[] = "EMAIL SIGNUPS";
+$subCount = 0;
+try {
+    $subTotal = $pdo->query("SELECT COUNT(*) FROM subscribers")->fetchColumn();
+    $newSubs  = $q("SELECT email, source, created_at FROM subscribers
+                    WHERE created_at >= NOW() - INTERVAL $H HOUR ORDER BY created_at DESC");
+    $subCount = count($newSubs);
+    $L[] = "  {$subCount} new in {$H}h  ·  total subscribers: {$subTotal}";
+    foreach ($newSubs as $s) {
+        $src = $s['source'] !== null && $s['source'] !== '' ? " (from {$s['source']})" : "";
+        $L[] = "  • {$s['created_at']}  {$s['email']}{$src}";
+    }
+} catch (PDOException $e) {
+    // subscribers table is created lazily on the first signup; absence = none yet.
+    $L[] = "  0 new — no signups yet (the subscribers table hasn't been created).";
+}
+
+$L[] = $rule;
+
+$body = implode("\n", $L) . "\n";
+
+$views24 = $i($pr24,'v') + $i($jk,'v') + $i($uw,'v');
+$subject = sprintf("Municipal Sky digest %s — %d onobot, %d views, %d new emails",
+    date('Y-m-d'), $onoCount, $views24, $subCount);
+
+$headers = "From: Municipal Sky <{$FROM}>\r\n"
          . "Reply-To: {$FROM}\r\n"
          . "Content-Type: text/plain; charset=utf-8\r\n";
 
