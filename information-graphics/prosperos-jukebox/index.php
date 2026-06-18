@@ -122,7 +122,7 @@ include '../../includes/header.php';
 </div>
 
 <script src="prosperos-jukebox-themes.js?v=1"></script>
-<script src="prosperos-jukebox-audio.js?v=80"></script>
+<script src="prosperos-jukebox-audio.js?v=81"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="prosperos-jukebox-ui.js?v=18"></script>
 <script src="prosperos-jukebox-viz.js?v=30"></script>

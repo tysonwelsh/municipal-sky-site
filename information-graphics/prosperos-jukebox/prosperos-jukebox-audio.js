@@ -933,7 +933,7 @@ window.ProsperoAudio = (function () {
   var LAYER_VOLUME_TRIM = {
     library: { drone: 0.3 },
     sycorax: { drone: 0.3 },
-    ariel: { breeze: 0.3 },
+    ariel: { breeze: 0.2 }, // breeze pad starts quieter (turned down from 0.3)
   };
 
   // Per-layer rate trim applied on top of slider-driven layerRate (1.0 = no trim).
@@ -4674,7 +4674,7 @@ window.ProsperoAudio = (function () {
     ns.connect(nf);
     nf.connect(ng);
     ng.connect(out);
-    var airPeak = 0.008 * breath;
+    var airPeak = 0.004 * breath; // high-passed "static mist" hiss — halved from 0.008
     ng.gain.setValueAtTime(0, now);
     ng.gain.linearRampToValueAtTime(airPeak, now + fadeIn);
     ng.gain.setValueAtTime(airPeak, now + duration - fadeOut);
