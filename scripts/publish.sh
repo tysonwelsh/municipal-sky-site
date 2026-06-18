@@ -27,8 +27,17 @@ PY
 # (.git*, *.md, *.backup-*) and local-dev/ (dev-only assets that shouldn't be
 # public). .vscode / node_modules / secrets are already gitignored, so they
 # never appear here.
+# NUL-delimited + quotePath=false so paths with spaces/non-ASCII are handled
+# correctly (and excluded reliably) rather than slipping through quoted.
 FILES=()
-while IFS= read -r f; do FILES+=("$f"); done < <(git ls-files | grep -vE '(^|/)\.git|\.md$|\.backup-|^local-dev/')
+while IFS= read -r -d '' f; do
+  case "$f" in
+    .git*|*/.git*) continue ;;   # .gitignore, .github/, etc.
+    *.md|*.backup-*) continue ;; # docs and backups (deploy.yml excludes)
+    local-dev/*) continue ;;     # dev-only assets, not for production
+  esac
+  FILES+=("$f")
+done < <(git -c core.quotePath=false ls-files -z)
 total=${#FILES[@]}
 [ "$total" -gt 0 ] || { echo "publish: no files to upload"; exit 1; }
 
@@ -36,8 +45,9 @@ echo "Publishing $total files → ftp://$HOST$RPATH/"
 ok=0; fail=0; i=0; failed=()
 for f in "${FILES[@]}"; do
   i=$((i+1))
+  rel="${f// /%20}"   # URL-encode spaces for the FTP path (other specials aren't present)
   if curl -s --connect-timeout 20 --ftp-create-dirs --ftp-pasv \
-       -u "$FUSER:$FPASS" -T "$f" "ftp://$HOST$RPATH/$f" >/dev/null 2>&1; then
+       -u "$FUSER:$FPASS" -T "$f" "ftp://$HOST$RPATH/$rel" >/dev/null 2>&1; then
     ok=$((ok+1))
   else
     fail=$((fail+1)); failed+=("$f"); echo "  ✗ FAILED: $f"
