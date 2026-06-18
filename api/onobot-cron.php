@@ -25,8 +25,19 @@ $FROM = 'onobot@municipalsky.com';   // a domain address improves deliverability
 function geo($ip)
 {
     $ctx = stream_context_create(['http' => ['timeout' => 5]]);
-    $r = @file_get_contents("http://ip-api.com/csv/{$ip}?fields=city,regionName,country", false, $ctx);
-    return ($r && trim($r) !== '') ? trim($r) : 'location unavailable';
+    $r = @file_get_contents("http://ip-api.com/json/{$ip}?fields=city,region", false, $ctx);
+    $d = $r ? json_decode($r, true) : null;
+    $city = $d['city'] ?? '';
+    $reg  = $d['region'] ?? '';
+    $loc  = trim($city . (($city !== '' && $reg !== '') ? ', ' : '') . $reg);
+    return $loc !== '' ? $loc : 'unknown';
+}
+
+// Collapse whitespace and truncate to N chars with a ".." marker.
+function trunc($s, $n)
+{
+    $s = trim(preg_replace('/\s+/', ' ', (string) $s));
+    return mb_strlen($s) > $n ? mb_substr($s, 0, $n - 2) . '..' : $s;
 }
 
 $q  = function ($sql) use ($pdo) { return $pdo->query($sql)->fetchAll(); };
@@ -63,18 +74,19 @@ $L[] = sprintf("  Model preference (all-time): Claude %d · GPT %d · neutral %d
                (int)$pAll['a'], (int)$pAll['b'], (int)$pAll['n']);
 
 if ($onoCount > 0) {
+    $fmt = "  %-11s %-15s %-24s %-20s %-20s %-5s";
     $L[] = "";
+    $L[] = sprintf($fmt, "TIME", "LOCATION", "PROMPT", "A (CLAUDE)", "B (GPT)", "PREF");
     foreach ($rows as $r) {
         $rating = (int) $r['preference_rating'];
-        if ($rating <= 3)     { $lean = "A — {$r['model_a']} (Claude)"; }
-        elseif ($rating >= 5) { $lean = "B — {$r['model_b']} (GPT)"; }
-        else                  { $lean = "neutral"; }
-        $L[] = "  • {$r['timestamp']}   [{$r['session_id']} — " . geo($r['session_id']) . "]";
-        $L[] = "      prompt : {$r['user_message']}";
-        $L[] = "      A ({$r['model_a']}): {$r['response_a']}";
-        $L[] = "      B ({$r['model_b']}): {$r['response_b']}";
-        $L[] = "      rating : {$rating}/7 → leans {$lean}";
-        $L[] = "";
+        $pref = $rating <= 3 ? "A {$rating}/7" : ($rating >= 5 ? "B {$rating}/7" : "n {$rating}/7");
+        $L[] = sprintf($fmt,
+            substr($r['timestamp'], 5, 11),               // MM-DD HH:MM
+            trunc(geo($r['session_id']), 15),
+            trunc($r['user_message'], 24),
+            trunc($r['response_a'], 20),
+            trunc($r['response_b'], 20),
+            $pref);
     }
 }
 
