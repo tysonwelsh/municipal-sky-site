@@ -85,34 +85,35 @@
   --shadow-inset-deep: inset 0 2px 4px rgba(0, 0, 0, 0.4);
   --shadow-depth-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-depth-md: 0 3px 6px rgba(0, 0, 0, 0.3);
-  --shadow-tv-inset: inset 0 2px 8px rgba(0, 0, 0, 0.4),
-    inset 0 -2px 8px rgba(0, 0, 0, 0.4);
+  --shadow-tv-inset:
+    inset 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 -2px 8px rgba(0, 0, 0, 0.4);
 
   /* Status light shadows */
-  --shadow-status-base: inset 0 2px 3px rgba(0, 0, 0, 0.8),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1), 0 1px 0 rgba(255, 255, 255, 0.2),
-    0 2px 3px rgba(0, 0, 0, 0.4);
-  --shadow-status-cyan: inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 0 10px var(--color-cyan), 0 0 20px rgba(0, 212, 255, 0.8),
-    0 0 30px rgba(0, 212, 255, 0.6);
-  --shadow-status-magenta: inset 0 -1px 2px rgba(0, 0, 0, 0.2),
-    0 0 10px var(--color-magenta), 0 0 20px rgba(255, 0, 212, 0.8),
-    0 0 30px rgba(255, 0, 212, 0.6);
+  --shadow-status-base:
+    inset 0 2px 3px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.1),
+    0 1px 0 rgba(255, 255, 255, 0.2), 0 2px 3px rgba(0, 0, 0, 0.4);
+  --shadow-status-cyan:
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2), 0 0 10px var(--color-cyan),
+    0 0 20px rgba(0, 212, 255, 0.8), 0 0 30px rgba(0, 212, 255, 0.6);
+  --shadow-status-magenta:
+    inset 0 -1px 2px rgba(0, 0, 0, 0.2), 0 0 10px var(--color-magenta),
+    0 0 20px rgba(255, 0, 212, 0.8), 0 0 30px rgba(255, 0, 212, 0.6);
 
   /* Display container shadow */
-  --shadow-display-container: inset 0 4px 8px rgba(0, 0, 0, 0.1),
-    inset 0 2px 4px rgba(0, 0, 0, 0.08), inset 4px 0 8px rgba(0, 0, 0, 0.1),
-    inset 2px 0 4px rgba(0, 0, 0, 0.06),
+  --shadow-display-container:
+    inset 0 4px 8px rgba(0, 0, 0, 0.1), inset 0 2px 4px rgba(0, 0, 0, 0.08),
+    inset 4px 0 8px rgba(0, 0, 0, 0.1), inset 2px 0 4px rgba(0, 0, 0, 0.06),
     inset 0 -2px 3px rgba(255, 255, 255, 0.3),
     inset 0 -1px 1px rgba(255, 255, 255, 0.5),
     inset -2px 0 3px rgba(255, 255, 255, 0.25),
     inset -1px 0 1px rgba(255, 255, 255, 0.4), 0 1px 2px rgba(0, 0, 0, 0.05);
 
   /* Button shadows */
-  --shadow-button-base: 0 1px 1px rgba(0, 0, 0, 0.2),
-    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+  --shadow-button-base:
+    0 1px 1px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1),
     inset 0 -2px 2px rgba(0, 0, 0, 0.3);
-  --shadow-button-face: inset 0 1px 1px rgba(255, 255, 255, 0.2),
+  --shadow-button-face:
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
     inset 0 -2px 2px rgba(0, 0, 0, 0.3);
   --shadow-button-active: inset 0 3px 5px rgba(0, 0, 0, 0.5);
 
@@ -156,7 +157,8 @@
   gap: var(--spacing-md);
   overflow: hidden;
   position: relative;
-  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.2),
+  box-shadow:
+    inset 0 0 15px rgba(0, 0, 0, 0.2),
     0px 0px 0px var(--color-charcoal);
 }
 
@@ -192,7 +194,8 @@
 /* Molded Plastic Display Container */
 .display-container {
   background: var(--color-display-bg);
-  background-image: radial-gradient(
+  background-image:
+    radial-gradient(
       ellipse at 50% 50%,
       rgba(255, 255, 255, 0.03) 0%,
       transparent 50%
@@ -235,12 +238,17 @@
   overflow: hidden;
   padding: 0 35px;
   box-sizing: border-box;
-  box-shadow: 0 0 0 2px var(--color-metallic-darker),
-    inset 0 2px 0 rgba(255, 255, 255, 0.7), inset 0 3px 5px rgba(0, 0, 0, 0.1),
-    inset 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 -1px 4px rgba(0, 0, 0, 0.1),
+  box-shadow:
+    0 0 0 2px var(--color-metallic-darker),
+    inset 0 2px 0 rgba(255, 255, 255, 0.7),
+    inset 0 3px 5px rgba(0, 0, 0, 0.1),
+    inset 0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 -1px 4px rgba(0, 0, 0, 0.1),
     inset 26px 0 8px -8px rgba(0, 0, 0, 0.08),
-    inset -26px 0 8px -8px rgba(0, 0, 0, 0.08), var(--shadow-depth-md);
-  background-image: radial-gradient(
+    inset -26px 0 8px -8px rgba(0, 0, 0, 0.08),
+    var(--shadow-depth-md);
+  background-image:
+    radial-gradient(
       circle at 12.5px 15px,
       var(--color-dark-grey) 4px,
       transparent 4px
@@ -276,11 +284,22 @@
       var(--color-paper-light) 0%,
       var(--color-paper-dark) 100%
     );
-  background-size: 30px 30px, 1px 100%, 30px 30px, 1px 100%, 100% 60px,
+  background-size:
+    30px 30px,
+    1px 100%,
+    30px 30px,
+    1px 100%,
+    100% 60px,
     100% 100%;
-  background-position: 0 -15px, 25px 0, right 0 top -15px, calc(100% - 26px) 0,
-    0 -15px, 0 0;
-  background-repeat: repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
+  background-position:
+    0 -15px,
+    25px 0,
+    right 0 top -15px,
+    calc(100% - 26px) 0,
+    0 -15px,
+    0 0;
+  background-repeat:
+    repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
 }
 
 /* Metallic shine effect */
@@ -304,12 +323,21 @@
 
 @keyframes paperScroll {
   from {
-    background-position: 0 -15px, 25px 0, right 0 top -15px, calc(100% - 26px) 0,
-      0 -15px, 0 0;
+    background-position:
+      0 -15px,
+      25px 0,
+      right 0 top -15px,
+      calc(100% - 26px) 0,
+      0 -15px,
+      0 0;
   }
   to {
-    background-position: 0 -375px, 25px var(--scroll-distance),
-      right 0 top -375px, calc(100% - 26px) var(--scroll-distance), 0 -375px,
+    background-position:
+      0 -375px,
+      25px var(--scroll-distance),
+      right 0 top -375px,
+      calc(100% - 26px) var(--scroll-distance),
+      0 -375px,
       0 0;
   }
 }
@@ -459,9 +487,12 @@
 .loader::after {
   content: "";
   grid-area: 1/1;
-  background: linear-gradient(currentColor 0 0) center,
+  background:
+    linear-gradient(currentColor 0 0) center,
     linear-gradient(currentColor 0 0) center;
-  background-size: 100% 8px, 8px 100%;
+  background-size:
+    100% 8px,
+    8px 100%;
   background-repeat: no-repeat;
 }
 
@@ -671,7 +702,9 @@
     var(--color-cyan) 0%,
     var(--color-cyan-dark) 100%
   );
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.8), 0 0 20px rgba(0, 212, 255, 0.4),
+  box-shadow:
+    0 0 12px rgba(0, 212, 255, 0.8),
+    0 0 20px rgba(0, 212, 255, 0.4),
     inset 0 0 4px rgba(255, 255, 255, 0.5);
   border-color: rgba(255, 255, 255, 0.5);
   opacity: 1;
@@ -684,7 +717,9 @@
     var(--color-magenta) 0%,
     var(--color-magenta-dark) 100%
   );
-  box-shadow: 0 0 12px rgba(255, 0, 212, 0.8), 0 0 20px rgba(255, 0, 212, 0.4),
+  box-shadow:
+    0 0 12px rgba(255, 0, 212, 0.8),
+    0 0 20px rgba(255, 0, 212, 0.4),
     inset 0 0 4px rgba(255, 255, 255, 0.5);
   border-color: rgba(255, 255, 255, 0.5);
   opacity: 1;
@@ -762,7 +797,8 @@
   background: var(--color-grey-darker);
   border-radius: 15px;
   border: 2px solid var(--color-black);
-  box-shadow: 0 0 0 1px #5a5a5a,
+  box-shadow:
+    0 0 0 1px #5a5a5a,
     /* Outer line */ inset 0 4px 8px rgba(0, 0, 0, 0.1),
     /* Top shadow */ inset 0 2px 4px rgba(0, 0, 0, 0.4),
     /* Top shadow */ inset 0 -4px 8px rgba(0, 0, 0, 0.6),
@@ -882,7 +918,8 @@ textarea {
   resize: none;
   background: var(--color-textarea-bg);
   color: var(--color-grey-dark);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3),
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.3),
     inset 0 -1px 0 rgba(255, 255, 255, 0.8);
   height: 124px;
   min-height: unset;
@@ -899,7 +936,8 @@ textarea:focus {
   outline: none;
   border-color: var(--color-charcoal);
   background: var(--color-textarea-bg-focus);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4),
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
     inset 0 -1px 0 rgba(255, 255, 255, 0.8);
 }
 
@@ -934,8 +972,11 @@ textarea:focus {
   height: 95%;
   background: #777;
   border-radius: 8px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 2px 0 3px rgba(0, 0, 0, 0.6),
-    -2px 0 3px rgba(0, 0, 0, 0.6), inset 1px 0 1px rgba(0, 0, 0, 0.3),
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.6),
+    2px 0 3px rgba(0, 0, 0, 0.6),
+    -2px 0 3px rgba(0, 0, 0, 0.6),
+    inset 1px 0 1px rgba(0, 0, 0, 0.3),
     inset -1px 0 1px rgba(0, 0, 0, 0.3);
   overflow: hidden;
 }
@@ -1003,7 +1044,8 @@ textarea:focus {
 /* Transmit Button: Bakelite Brown with Amber Glow Text */
 .send-btn .btn-illuminated-face {
   background:
-        /* Bakelite gradient */ radial-gradient(
+        /* Bakelite gradient */
+    radial-gradient(
       ellipse 200% 100% at 50% 50%,
       var(--color-bakelite-1) 0%,
       var(--color-bakelite-2) 30%,
@@ -1011,7 +1053,7 @@ textarea:focus {
       var(--color-bakelite-4) 100%
     ),
     /* Overall gradient for depth */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.05) 30%,
@@ -1020,18 +1062,23 @@ textarea:focus {
         rgba(0, 0, 0, 0.35) 100%
       ),
     /* Molded plastic texture */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       );
   color: var(--color-amber-glow);
-  text-shadow: 0 0 10px rgba(255, 204, 0, 0.8), 0 0 20px rgba(255, 204, 0, 0.5),
-    0 0 30px rgba(255, 204, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    0 0 10px rgba(255, 204, 0, 0.8),
+    0 0 20px rgba(255, 204, 0, 0.5),
+    0 0 30px rgba(255, 204, 0, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--color-bakelite-border);
   box-shadow:
-        /* Enhanced depth shadows */ 0 3px 5px rgba(0, 0, 0, 0.6),
-    /* Edge shadows for rounded effect */ inset 2px 0 3px -2px rgba(0, 0, 0, 0.3),
+        /* Enhanced depth shadows */
+    0 3px 5px rgba(0, 0, 0, 0.6),
+    /* Edge shadows for rounded effect */ inset 2px 0 3px -2px
+      rgba(0, 0, 0, 0.3),
     inset -2px 0 3px -2px rgba(0, 0, 0, 0.3),
     /* Top highlight */ inset 0 1px 0 rgba(255, 255, 255, 0.15),
     /* Bottom shadow for depth */ inset 0 -2px 3px rgba(0, 0, 0, 0.5);
@@ -1057,16 +1104,18 @@ textarea:focus {
 /* FINAL Illuminated (enabled) state for the random button */
 .random-btn:not(:disabled) .btn-illuminated-face {
   background-image:
-    /* 1. Dimmer highlight from the top */ radial-gradient(
+    /* 1. Dimmer highlight from the top */
+    radial-gradient(
       ellipse at 50% 0%,
       var(--color-mint-glow) 0%,
       transparent 60%
     ),
     /* 2. Solid Base Color Layer */
-      linear-gradient(var(--color-mint-base), var(--color-mint-base));
+    linear-gradient(var(--color-mint-base), var(--color-mint-base));
 
   box-shadow:
-    /* Softer Outer glow */ 0 0 6px rgba(160, 230, 175, 0.5),
+    /* Softer Outer glow */
+    0 0 6px rgba(160, 230, 175, 0.5),
     0 0 10px rgba(160, 230, 175, 0.3),
     /* Inner Bevel/Shadow (for depth) */ inset 0 1px 1px
       rgba(255, 255, 255, 0.25),
@@ -1082,7 +1131,8 @@ textarea:focus {
 /* FINAL Non-illuminated (disabled) state for the random button */
 .random-btn:disabled .btn-illuminated-face {
   background-image: 
-    /* 1. Dimmer Shading and Highlight Layer */ radial-gradient(
+    /* 1. Dimmer Shading and Highlight Layer */
+    radial-gradient(
       ellipse 200% 100% at 50% 50%,
       rgba(255, 255, 255, 0.1) 0%,
       /* Reduced highlight */ rgba(255, 255, 255, 0.03) 30%,
@@ -1090,19 +1140,21 @@ textarea:focus {
       rgba(0, 0, 0, 0.1) 100%
     ),
     /* 2. Molded Plastic Texture Layer */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       ),
     /* 3. Solid Base Color Layer */
-      linear-gradient(var(--color-mint-base), var(--color-mint-base));
+    linear-gradient(var(--color-mint-base), var(--color-mint-base));
 
   border: 1px solid var(--color-vintage-mint-border);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.6),
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.6),
     inset 2px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -2px 0 3px -2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.5);
 
   text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.1);
 
@@ -1246,7 +1298,8 @@ textarea:focus {
   border-radius: 10px;
   transition: none;
   padding-top: 15px;
-  background-image: radial-gradient(
+  background-image:
+    radial-gradient(
       circle at 12.5px 15px,
       var(--color-dark-grey) 4px,
       transparent 4px
@@ -1282,11 +1335,22 @@ textarea:focus {
       var(--color-paper-light) 0%,
       var(--color-paper-dark) 100%
     );
-  background-size: 30px 30px, 1px 100%, 30px 30px, 1px 100%, 100% 60px,
+  background-size:
+    30px 30px,
+    1px 100%,
+    30px 30px,
+    1px 100%,
+    100% 60px,
     100% 100%;
-  background-position: 0 -15px, 25px 0, right 0 top -15px, calc(100% - 26px) 0,
-    0 -15px, 0 0;
-  background-repeat: repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
+  background-position:
+    0 -15px,
+    25px 0,
+    right 0 top -15px,
+    calc(100% - 26px) 0,
+    0 -15px,
+    0 0;
+  background-repeat:
+    repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
 }
 
 .welcome-content {
@@ -1338,7 +1402,7 @@ textarea:focus {
 .welcome-epigraph p {
   font-family: var(--font-family-share-tech);
   font-size: 0.8rem;
-  line-height: 2.1;
+  line-height: 2.4;
   color: var(--color-charcoal);
   font-style: normal;
   margin: 0 0 0px 0;
@@ -1439,7 +1503,8 @@ textarea:focus {
   padding-top: var(--spacing-xs);
   background: transparent;
   margin: 0 9px;
-  background-image: linear-gradient(
+  background-image:
+    linear-gradient(
       to right,
       rgba(102, 102, 102, 0.2) 0%,
       rgba(102, 102, 102, 0.2) 100%
@@ -1459,8 +1524,16 @@ textarea:focus {
       rgba(102, 102, 102, 0.2) 0%,
       rgba(102, 102, 102, 0.2) 100%
     );
-  background-size: 100% 4px, 100% 4px, 4px 100%, 4px 100%;
-  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-size:
+    100% 4px,
+    100% 4px,
+    4px 100%,
+    4px 100%;
+  background-position:
+    0 0,
+    0 100%,
+    0 0,
+    100% 0;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
@@ -1671,7 +1744,8 @@ textarea:focus {
 
 /* Individual message border strip */
 .message-border-strip.bot-a {
-  background-image: linear-gradient(
+  background-image:
+    linear-gradient(
       to right,
       rgba(0, 139, 170, 0.3) 0%,
       rgba(0, 139, 170, 0.3) 100%
@@ -1691,13 +1765,22 @@ textarea:focus {
       rgba(0, 139, 170, 0.3) 0%,
       rgba(0, 139, 170, 0.3) 100%
     );
-  background-size: 100% 4px, 100% 4px, 4px 100%, 4px 100%;
-  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-size:
+    100% 4px,
+    100% 4px,
+    4px 100%,
+    4px 100%;
+  background-position:
+    0 0,
+    0 100%,
+    0 0,
+    100% 0;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
 .message-border-strip.bot-b {
-  background-image: linear-gradient(
+  background-image:
+    linear-gradient(
       to right,
       rgba(170, 0, 139, 0.3) 0%,
       rgba(170, 0, 139, 0.3) 100%
@@ -1717,8 +1800,16 @@ textarea:focus {
       rgba(170, 0, 139, 0.3) 0%,
       rgba(170, 0, 139, 0.3) 100%
     );
-  background-size: 100% 4px, 100% 4px, 4px 100%, 4px 100%;
-  background-position: 0 0, 0 100%, 0 0, 100% 0;
+  background-size:
+    100% 4px,
+    100% 4px,
+    4px 100%,
+    4px 100%;
+  background-position:
+    0 0,
+    0 100%,
+    0 0,
+    100% 0;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
 }
 
@@ -1897,7 +1988,8 @@ textarea:focus {
   width: 44px;
   height: 24px;
   background:
-        /* Triangle LED indicator */ linear-gradient(
+        /* Triangle LED indicator */
+    linear-gradient(
       135deg,
       transparent 0%,
       transparent 50%,
@@ -1912,14 +2004,14 @@ textarea:focus {
       rgba(255, 204, 0, 0.9) 100%
     ),
     /* LED glow effect */
-      radial-gradient(
+    radial-gradient(
         ellipse at 50% 45%,
         rgba(255, 204, 0, 0.5) 0%,
         rgba(255, 204, 0, 0.2) 30%,
         transparent 50%
       ),
     /* Bakelite gradient */
-      radial-gradient(
+    radial-gradient(
         ellipse 200% 100% at 50% 50%,
         var(--color-bakelite-1) 0%,
         var(--color-bakelite-2) 30%,
@@ -1927,7 +2019,7 @@ textarea:focus {
         var(--color-bakelite-4) 100%
       ),
     /* Overall gradient for depth */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.05) 30%,
@@ -1936,20 +2028,32 @@ textarea:focus {
         rgba(0, 0, 0, 0.35) 100%
       ),
     /* Molded plastic texture */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       );
-  background-size: 6px 6px, 6px 6px, 20px 20px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: calc(50% - 3px) 42%, calc(50% + 3px) 42%, center 45%,
-    center center, 0 0, 0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    20px 20px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% - 3px) 42%,
+    calc(50% + 3px) 42%,
+    center 45%,
+    center center,
+    0 0,
+    0 0;
   background-repeat: no-repeat;
   border: 1px solid var(--color-bakelite-border);
   border-radius: 4px;
   cursor: pointer;
   box-shadow:
-        /* Enhanced depth shadows */ 0 3px 5px rgba(0, 0, 0, 0.6),
+        /* Enhanced depth shadows */
+    0 3px 5px rgba(0, 0, 0, 0.6),
     /* Edge shadows for flared effect */ inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
     /* Top highlight */ inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -1963,7 +2067,8 @@ textarea:focus {
   width: 44px;
   height: 24px;
   background:
-        /* Triangle LED indicator */ linear-gradient(
+        /* Triangle LED indicator */
+    linear-gradient(
       135deg,
       transparent 0%,
       transparent 50%,
@@ -1978,14 +2083,14 @@ textarea:focus {
       rgba(255, 204, 0, 0.9) 100%
     ),
     /* LED glow effect */
-      radial-gradient(
+    radial-gradient(
         ellipse at 50% 45%,
         rgba(255, 204, 0, 0.5) 0%,
         rgba(255, 204, 0, 0.2) 30%,
         transparent 50%
       ),
     /* Bakelite gradient */
-      radial-gradient(
+    radial-gradient(
         ellipse 200% 100% at 50% 50%,
         var(--color-bakelite-1) 0%,
         var(--color-bakelite-2) 30%,
@@ -1993,7 +2098,7 @@ textarea:focus {
         var(--color-bakelite-4) 100%
       ),
     /* Overall gradient for depth */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.05) 30%,
@@ -2002,20 +2107,32 @@ textarea:focus {
         rgba(0, 0, 0, 0.35) 100%
       ),
     /* Molded plastic texture */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       );
-  background-size: 6px 6px, 6px 6px, 20px 20px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: calc(50% - 3px) 42%, calc(50% + 3px) 42%, center 45%,
-    center center, 0 0, 0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    20px 20px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% - 3px) 42%,
+    calc(50% + 3px) 42%,
+    center 45%,
+    center center,
+    0 0,
+    0 0;
   background-repeat: no-repeat;
   border: 1px solid var(--color-bakelite-border);
   border-radius: 4px;
   cursor: pointer;
   box-shadow:
-        /* Enhanced depth shadows */ 0 3px 5px rgba(0, 0, 0, 0.6),
+        /* Enhanced depth shadows */
+    0 3px 5px rgba(0, 0, 0, 0.6),
     /* Edge shadows for flared effect */ inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
     /* Top highlight */ inset 0 1px 0 rgba(255, 255, 255, 0.15),
@@ -2027,19 +2144,23 @@ textarea:focus {
 /* Active state for thumb */
 .feedback-slider:active::-webkit-slider-thumb {
   transform: translateY(1px);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.6),
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.6),
     inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.5),
     inset 0 0 12px rgba(255, 204, 0, 0.3);
 }
 
 .feedback-slider:active::-moz-range-thumb {
   transform: translateY(1px);
-  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.6),
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.6),
     inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.5),
     inset 0 0 12px rgba(255, 204, 0, 0.3);
 }
 
@@ -2047,7 +2168,8 @@ textarea:focus {
 .feedback-slider:disabled::-webkit-slider-thumb {
   cursor: not-allowed;
   background:
-        /* Triangle LED OFF - dark grey/black */ linear-gradient(
+        /* Triangle LED OFF - dark grey/black */
+    linear-gradient(
       135deg,
       transparent 0%,
       transparent 50%,
@@ -2062,7 +2184,7 @@ textarea:focus {
       rgba(0, 0, 0, 0.9) 100%
     ),
     /* No glow when disabled */ /* SAME bakelite gradient as enabled state */
-      radial-gradient(
+    radial-gradient(
         ellipse 200% 100% at 50% 50%,
         var(--color-bakelite-1) 0%,
         var(--color-bakelite-2) 30%,
@@ -2070,7 +2192,7 @@ textarea:focus {
         var(--color-bakelite-4) 100%
       ),
     /* SAME depth gradient as enabled state */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.05) 30%,
@@ -2079,30 +2201,41 @@ textarea:focus {
         rgba(0, 0, 0, 0.35) 100%
       ),
     /* SAME molded plastic texture */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       );
-  background-size: 6px 6px, 6px 6px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: calc(50% - 3px) 42%, calc(50% + 3px) 42%, center center,
-    0 0, 0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% - 3px) 42%,
+    calc(50% + 3px) 42%,
+    center center,
+    0 0,
+    0 0;
   background-repeat: no-repeat;
   border: 1px solid var(--color-bakelite-border);
   border-radius: 4px;
   box-shadow:
-        /* SAME shadows as enabled state */ 0 3px 5px
-      rgba(0, 0, 0, 0.6),
+        /* SAME shadows as enabled state */
+    0 3px 5px rgba(0, 0, 0, 0.6),
     inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.5);
   /* No LED glow when disabled */
 }
 
 .feedback-slider:disabled::-moz-range-thumb {
   cursor: not-allowed;
   background:
-        /* Triangle LED OFF - dark grey/black */ linear-gradient(
+        /* Triangle LED OFF - dark grey/black */
+    linear-gradient(
       135deg,
       transparent 0%,
       transparent 50%,
@@ -2117,7 +2250,7 @@ textarea:focus {
       rgba(42, 42, 42, 0.9) 100%
     ),
     /* No glow when disabled */ /* SAME bakelite gradient as enabled state */
-      radial-gradient(
+    radial-gradient(
         ellipse 200% 100% at 50% 50%,
         var(--color-bakelite-1) 0%,
         var(--color-bakelite-2) 30%,
@@ -2125,7 +2258,7 @@ textarea:focus {
         var(--color-bakelite-4) 100%
       ),
     /* SAME depth gradient as enabled state */
-      linear-gradient(
+    linear-gradient(
         180deg,
         rgba(255, 255, 255, 0.12) 0%,
         rgba(255, 255, 255, 0.05) 30%,
@@ -2134,23 +2267,33 @@ textarea:focus {
         rgba(0, 0, 0, 0.35) 100%
       ),
     /* SAME molded plastic texture */
-      radial-gradient(
+    radial-gradient(
         circle at 30% 30%,
         rgba(255, 255, 255, 0.08) 0%,
         transparent 30%
       );
-  background-size: 6px 6px, 6px 6px, 100% 100%, 100% 100%, 100% 100%;
-  background-position: calc(50% - 3px) 42%, calc(50% + 3px) 42%, center center,
-    0 0, 0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%,
+    100% 100%,
+    100% 100%;
+  background-position:
+    calc(50% - 3px) 42%,
+    calc(50% + 3px) 42%,
+    center center,
+    0 0,
+    0 0;
   background-repeat: no-repeat;
   border: 1px solid var(--color-bakelite-border);
   border-radius: 4px;
   box-shadow:
-        /* SAME shadows as enabled state */ 0 3px 5px
-      rgba(0, 0, 0, 0.6),
+        /* SAME shadows as enabled state */
+    0 3px 5px rgba(0, 0, 0, 0.6),
     inset 3px 0 3px -2px rgba(0, 0, 0, 0.3),
     inset -3px 0 3px -2px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -2px 3px rgba(0, 0, 0, 0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.5);
   /* No LED glow when disabled */
 }
 /* Desktop - hide mobile status container */
@@ -2203,7 +2346,8 @@ textarea:focus {
     max-width: 340px;
     padding: 30px 40px;
     background: var(--color-paper-light);
-    background-image: radial-gradient(
+    background-image:
+      radial-gradient(
         circle at 12.5px 15px,
         var(--color-dark-grey) 4px,
         transparent 4px
@@ -2239,17 +2383,30 @@ textarea:focus {
         var(--color-paper-light) 0%,
         var(--color-paper-dark) 100%
       );
-    background-size: 30px 30px, 1px 100%, 30px 30px, 1px 100%, 100% 60px,
+    background-size:
+      30px 30px,
+      1px 100%,
+      30px 30px,
+      1px 100%,
+      100% 60px,
       100% 100%;
-    background-position: 0 -15px, 30px 0, right 0 top -15px, calc(100% - 30px) 0,
-      0 -15px, 0 0;
-    background-repeat: repeat-y, repeat-y, repeat-y, repeat-y, repeat-y,
-      no-repeat;
+    background-position:
+      0 -15px,
+      30px 0,
+      right 0 top -15px,
+      calc(100% - 30px) 0,
+      0 -15px,
+      0 0;
+    background-repeat:
+      repeat-y, repeat-y, repeat-y, repeat-y, repeat-y, no-repeat;
     border-radius: 10px;
     border: 6px solid var(--color-metallic);
-    box-shadow: 0 0 0 2px var(--color-metallic-darker),
-      inset 0 2px 0 rgba(255, 255, 255, 0.7), inset 0 3px 5px rgba(0, 0, 0, 0.1),
-      inset 0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      0 0 0 2px var(--color-metallic-darker),
+      inset 0 2px 0 rgba(255, 255, 255, 0.7),
+      inset 0 3px 5px rgba(0, 0, 0, 0.1),
+      inset 0 2px 8px rgba(0, 0, 0, 0.2),
+      0 4px 12px rgba(0, 0, 0, 0.3);
     position: relative;
   }
 

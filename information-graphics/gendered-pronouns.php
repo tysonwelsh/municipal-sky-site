@@ -311,7 +311,7 @@ include '../includes/header.php';
     <div class="post-container">
       <header>
         <h1>The Distribution of Pronouns by Gender Across Classic Novels</h1>
-        <p class="post-date">2026.03.13</p>
+        <p class="post-date">2026.02.03</p>
       </header>
     </div>
 
@@ -545,6 +545,7 @@ include '../includes/header.php';
     section
       .append("div")
       .attr("class", "viz-controls")
+      .attr("data-html2canvas-ignore", "true")
       .html(
         '<label>Sort by: <select class="viz-sort-select">' +
         '<option value="masc">Masculine share</option>' +

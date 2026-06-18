@@ -10,8 +10,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/visitor-hash.php';
 
-// POST — log a page view or PNG download
+// POST — log a page view or PNG download.
+// Still stores NO raw personal data: no raw IP, no geolocation, no user agent,
+// no referrer. The only addition is `visitor_hash` — a salted, daily-rotating
+// SHA-256 of the IP (see visitor-hash.php) that lets us count UNIQUE visits
+// without keeping anything reversible to a person.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
     $eventType = $input['event_type'] ?? null;
@@ -23,36 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $chartName = $input['chart_name'] ?? null;
-
-    $ip = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'] ?? null;
-    $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? null;
-    $referer = $_SERVER['HTTP_REFERER'] ?? null;
-
-    // Geo lookup via ip-api.com
-    $country = null;
-    $city = null;
-    $region = null;
-    if ($ip) {
-        $lookupIp = explode(',', $ip)[0];
-        $geo = @json_decode(@file_get_contents("http://ip-api.com/json/" . urlencode(trim($lookupIp)) . "?fields=country,city,regionName"), true);
-        if ($geo) {
-            $country = $geo['country'] ?? null;
-            $city = $geo['city'] ?? null;
-            $region = $geo['regionName'] ?? null;
-        }
-    }
+    $visitorHash = msky_visitor_hash($secrets ?? []);
 
     try {
-        $stmt = $pdo->prepare("INSERT INTO pronoun_viz_events (event_type, chart_name, ip_address, country, city, region, user_agent, referer) VALUES (:event_type, :chart_name, :ip, :country, :city, :region, :ua, :ref)");
+        $stmt = $pdo->prepare("INSERT INTO pronoun_viz_events (event_type, chart_name, visitor_hash) VALUES (:event_type, :chart_name, :visitor_hash)");
         $stmt->execute([
             'event_type' => $eventType,
             'chart_name' => $chartName,
-            'ip' => $ip,
-            'country' => $country,
-            'city' => $city,
-            'region' => $region,
-            'ua' => $userAgent,
-            'ref' => $referer,
+            'visitor_hash' => $visitorHash,
         ]);
         echo json_encode(['success' => true]);
     } catch (PDOException $e) {
@@ -69,7 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $totals = $pdo->query("
             SELECT
                 SUM(event_type = 'page_view') as total_views,
-                SUM(event_type = 'png_download') as total_downloads
+                SUM(event_type = 'png_download') as total_downloads,
+                COUNT(DISTINCT IF(event_type = 'page_view', visitor_hash, NULL)) as unique_visitors
             FROM pronoun_viz_events
         ")->fetch();
 
@@ -81,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         ")->fetchAll();
 
         $recent = $pdo->query("
-            SELECT event_type, chart_name, ip_address, country, city, region, user_agent, referer, created_at
+            SELECT event_type, chart_name, created_at
             FROM pronoun_viz_events
             ORDER BY created_at DESC
             LIMIT 50
@@ -90,6 +74,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode([
             'total_views' => (int) ($totals['total_views'] ?? 0),
             'total_downloads' => (int) ($totals['total_downloads'] ?? 0),
+            'unique_visitors' => (int) ($totals['unique_visitors'] ?? 0),
             'downloads_by_chart' => $downloadsByChart,
             'recent' => $recent,
         ]);

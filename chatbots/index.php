@@ -16,7 +16,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2025.10.15</span>
                     <div class="entry-content">
-                        <a href="onomatopoeia-bot" class="entry-title">Onomatopoeia Machine</a>
+                        <a href="/chatbots/onomatopoeia-machine.php" class="entry-title">Onomatopoeia Machine</a>
                         <span class="entry-description">Experimental art exploring how machines and humans
                             interface. Describe a sound for chatbots to transcribe into text; provide valuable
                             feedback.</span>

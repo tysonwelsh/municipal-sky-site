@@ -1,0 +1,140 @@
+<?php
+$page_title = 'Privacy Policy - Municipal Sky';
+$page_description = 'How Municipal Sky collects and uses information, including the Onomatopoeia Bot.';
+include 'includes/header.php';
+?>
+
+<!-- Main Content -->
+<div class="main-wrapper">
+    <div class="content-frame">
+        <div class="post-container">
+            <h1 class="section-title">Privacy Policy</h1>
+            <div class="section-divider"></div>
+
+            <div class="prose-flow">
+                <p><strong>Effective date:</strong> June 16, 2026<br>
+                    <strong>Last updated:</strong> June 16, 2026
+                </p>
+
+                <p>This site, Municipal Sky (&ldquo;the site,&rdquo; &ldquo;I,&rdquo; &ldquo;me&rdquo;), is a
+                    personal project. This policy explains what information the site collects, why, and what choices
+                    you have. Questions or requests:
+                    <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>.
+                </p>
+
+                <p>The site is largely static. Two features collect personal information: the
+                    <strong>Onomatopoeia Bot</strong> and the <strong>email signup</strong> in the footer. A separate,
+                    anonymous usage counter is described below.
+                </p>
+
+                <h2>1. Information collected</h2>
+                <p><strong>When you use the Onomatopoeia Bot:</strong></p>
+                <ul>
+                    <li><strong>The text you submit</strong> &mdash; the word, sound, or description you type for the
+                        bot to transcribe.</li>
+                    <li><strong>The AI-generated responses</strong> shown to you.</li>
+                    <li><strong>Your feedback</strong> &mdash; if you rate the responses, your preference rating (a
+                        1&ndash;7 value).</li>
+                    <li><strong>Technical information</strong> &mdash; your <strong>IP address</strong> (stored as a
+                        session identifier to group activity from a single visit), a timestamp, and the model settings
+                        used (e.g., temperature).</li>
+                </ul>
+                <p>This information is stored in a database I control.</p>
+
+                <p><strong>When you sign up for email updates (the footer form):</strong></p>
+                <ul>
+                    <li><strong>Your email address.</strong></li>
+                    <li><strong>The date you signed up</strong> and <strong>which page you signed up from</strong> (a
+                        page path such as &ldquo;/chatbots/&rdquo; &mdash; not personal to you). I do not store your IP
+                        address or other identifying information with your signup.</li>
+                </ul>
+
+                <p><strong>Across the rest of the site:</strong></p>
+                <ul>
+                    <li><strong>Anonymous usage counts</strong> &mdash; some pages tally aggregate events (e.g., how
+                        many times a chart was viewed or downloaded). These counts contain <strong>no IP address,
+                            location, or other identifying information</strong> and cannot be linked to you.</li>
+                    <li><strong>Server logs</strong> &mdash; like most web hosts, my hosting provider may automatically
+                        log standard request data (including IP addresses) for security and operation. These are
+                        managed by the host and kept for a limited time.</li>
+                </ul>
+                <p><strong>The site does not use cookies or other tracking technologies, and there are no third-party
+                        advertising or analytics trackers.</strong></p>
+
+                <h2>2. How the information is used</h2>
+                <ul>
+                    <li>To <strong>operate the bot</strong> &mdash; generate and return onomatopoeia responses.</li>
+                    <li>To <strong>study and improve</strong> the bot &mdash; analyzing submissions and preference
+                        ratings to compare how different AI models perform. This is a creative/research project.</li>
+                    <li>To <strong>send occasional email updates</strong>, if you have signed up for them.</li>
+                    <li>To <strong>maintain and secure</strong> the site.</li>
+                </ul>
+                <p>I <strong>do not sell</strong> your information, and I do not use it for advertising.</p>
+
+                <h2>3. AI providers (third-party processing)</h2>
+                <p>To generate responses, the bot sends <strong>the text you submit</strong> to third-party AI
+                    services:</p>
+                <ul>
+                    <li><strong>Anthropic (Claude)</strong> &mdash;
+                        <a href="https://www.anthropic.com/legal/privacy" target="_blank" rel="noopener">privacy
+                            policy</a>.
+                    </li>
+                    <li><strong>OpenAI</strong> &mdash;
+                        <a href="https://openai.com/policies/privacy-policy" target="_blank" rel="noopener">privacy
+                            policy</a>.
+                    </li>
+                </ul>
+                <p>Your input is processed by these providers under their own privacy policies. <strong>Please
+                        don&rsquo;t
+                        enter personal, sensitive, or confidential information into the bot.</strong></p>
+                <p>I also rely on my <strong>hosting provider</strong> to store data and serve the site. I don&rsquo;t
+                    otherwise share your information with third parties, except where required by law.</p>
+
+                <h2>4. Legal basis (for EU/UK/EEA users)</h2>
+                <p>Where the GDPR or UK GDPR applies, I process this information on the basis of <strong>legitimate
+                        interests</strong> &mdash; operating and improving a small creative tool &mdash; balanced
+                    against your rights. For <strong>email updates</strong>, I rely on your <strong>consent</strong>,
+                    which you give by submitting the signup form and can withdraw at any time by unsubscribing.</p>
+
+                <h2>5. Data retention</h2>
+                <p>I keep bot submissions and feedback <strong>indefinitely</strong> for the project&rsquo;s research
+                    purposes. If you subscribe to email updates, I keep your email address until you unsubscribe.
+                    Anonymous usage counts may also be kept indefinitely, as they identify no one. You can ask me to
+                    delete data associated with you at any time (see &ldquo;Your rights&rdquo; below).</p>
+
+                <h2>6. Your rights</h2>
+                <p>Depending on where you live (e.g., the EU/UK under GDPR, or California under the CCPA), you may have
+                    the right to <strong>access, correct, delete, or restrict</strong> the information I hold about you,
+                    to <strong>object to</strong> processing, and to <strong>data portability</strong>. California
+                    residents also have the right to know what is collected and to deletion; <strong>I do not sell
+                        personal information</strong>.</p>
+                <p>To make a request, email <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>. Because the
+                    only identifier I store is an IP address tied to a session, I may need that information (e.g., the
+                    approximate date and time you used the bot) to locate your data. <strong>To unsubscribe from email
+                        updates</strong>, email me and I will remove your address promptly. EU/UK users also have the
+                    right to lodge a complaint with their local data protection authority.</p>
+
+                <h2>7. International users</h2>
+                <p>The site is operated in the United States and information is processed and stored there. If you use
+                    the site from outside the U.S., you consent to that transfer.</p>
+
+                <h2>8. Children</h2>
+                <p>The site is not directed to children under 13, and I do not knowingly collect information from
+                    them.</p>
+
+                <h2>9. &ldquo;Do Not Track&rdquo;</h2>
+                <p>The site does not track users across third-party websites, so it does not respond to browser
+                    &ldquo;Do Not Track&rdquo; signals.</p>
+
+                <h2>10. Changes to this policy</h2>
+                <p>I may update this policy from time to time. The &ldquo;Last updated&rdquo; date above reflects the
+                    latest version.</p>
+
+                <h2>11. Contact</h2>
+                <p>Municipal Sky &mdash; <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<?php include 'includes/footer.php'; ?>

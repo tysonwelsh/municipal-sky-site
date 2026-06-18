@@ -5,7 +5,7 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
 $request_uri = $_SERVER['REQUEST_URI'];
 
 // Root-relative paths — work regardless of subdirectory depth.
-$css_path = '/css/style.css?v=4.0';
+$css_path = '/css/style.css?v=4.1';
 $home_link = '/';
 $blog_link = '/blog/';
 $graphics_link = '/information-graphics/';
@@ -40,9 +40,43 @@ $is_about = $current_page === 'about.php' ||
         $page_title = 'Municipal Sky';
     if (!isset($page_description))
         $page_description = 'Creative explorations, digital experiments, and innovative projects';
+
+    // ── Social-share (Open Graph / Twitter Card) metadata ──────────────
+    // A page can override any of these before include'ing this header:
+    //   $page_title, $page_description  (already used above)
+    //   $page_image  — root-relative ("/images/foo.png") or a full URL
+    //   $page_type   — "article" for posts; defaults to "website"
+    $site_base = 'https://municipalsky.com';
+    $page_url = $site_base . strtok($_SERVER['REQUEST_URI'], '?'); // canonical, no query string
+    if (!isset($page_image))
+        $page_image = '/images/og-default.png';
+    $page_image_url = (strncmp($page_image, 'http', 4) === 0) ? $page_image : $site_base . $page_image;
+    if (!isset($page_type))
+        $page_type = 'website';
+
+    $og_title = htmlspecialchars($page_title, ENT_QUOTES, 'UTF-8');
+    $og_desc  = htmlspecialchars($page_description, ENT_QUOTES, 'UTF-8');
+    $og_url   = htmlspecialchars($page_url, ENT_QUOTES, 'UTF-8');
+    $og_img   = htmlspecialchars($page_image_url, ENT_QUOTES, 'UTF-8');
+    $og_type  = htmlspecialchars($page_type, ENT_QUOTES, 'UTF-8');
     ?>
     <title><?php echo $page_title; ?></title>
-    <meta name="description" content="<?php echo $page_description; ?>">
+    <meta name="description" content="<?php echo $og_desc; ?>">
+    <link rel="canonical" href="<?php echo $og_url; ?>">
+
+    <!-- Open Graph: Reddit, LinkedIn, Facebook, Discord, iMessage, Slack, etc. -->
+    <meta property="og:site_name" content="Municipal Sky">
+    <meta property="og:type" content="<?php echo $og_type; ?>">
+    <meta property="og:title" content="<?php echo $og_title; ?>">
+    <meta property="og:description" content="<?php echo $og_desc; ?>">
+    <meta property="og:url" content="<?php echo $og_url; ?>">
+    <meta property="og:image" content="<?php echo $og_img; ?>">
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="<?php echo $og_title; ?>">
+    <meta name="twitter:description" content="<?php echo $og_desc; ?>">
+    <meta name="twitter:image" content="<?php echo $og_img; ?>">
 </head>
 
 <body>

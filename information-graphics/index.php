@@ -18,26 +18,24 @@ include '../includes/header.php';
                     <span class="entry-date">2026.04.13</span>
                     <div class="entry-content">
                         <a href="prosperos-jukebox/" class="entry-title">Prospero's Jukebox</a>
-                        <span class="entry-description">Two aleatoric soundscapes from Prospero's Pinball &mdash; toggle
-                            and mix the generative layers of Prospero's Library and Sycorax's Spell.</span>
-                    </div>
-                </div>
-                <div class="entry">
-                    <span class="entry-date">2026.03.13</span>
-                    <div class="entry-content">
-                        <a href="gendered-pronouns" class="entry-title">The Distribution of Pronouns by Gender
-                            Across Classic Novels</a>
-                        <span class="entry-description">Mapping masculine and feminine third-person pronouns across
-                            classic literature — and through every episode of Joyce's Ulysses.</span>
+                        <span class="entry-description">Aleatoric soundscapes.</span>
                     </div>
                 </div>
                 <div class="entry">
                     <span class="entry-date">2026.02.23</span>
                     <div class="entry-content">
                         <a href="underworld-occupations" class="entry-title">Underworld Occupations</a>
-                        <span class="entry-description">A hierarchical treemap of U.S. occupations with wage
-                            distributions, RIASEC interest profiles, industry breakdowns, and employment
-                            projections — populated by the damned souls of Rabelais's underworld.</span>
+                        <span class="entry-description">A treemap classifying the souls of Rabelais's underworld by
+                            occupation, wage, and interest profile.</span>
+                    </div>
+                </div>
+                <div class="entry">
+                    <span class="entry-date">2026.02.03</span>
+                    <div class="entry-content">
+                        <a href="gendered-pronouns" class="entry-title">The Distribution of Pronouns by Gender
+                            Across Classic Novels</a>
+                        <span class="entry-description">Mapping masculine and feminine third-person pronouns across
+                            classic literature.</span>
                     </div>
                 </div>
             </div>

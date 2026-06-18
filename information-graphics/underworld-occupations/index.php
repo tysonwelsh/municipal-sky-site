@@ -107,4 +107,21 @@ echo $pageBody;
 </div>
 </div>
 
+<!-- Anonymous usage tracking. Logs a page view; no personal data leaves the
+     browser. The server records only a salted, daily-rotating visitor hash so
+     unique visits can be counted without storing a raw IP. -->
+<script>
+  (function () {
+    fetch("../../api/page-event-tracking.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page: "underworld-occupations",
+        event_type: "page_view",
+        label: null,
+      }),
+    }).catch(function () {});
+  })();
+</script>
+
 <?php include '../../includes/footer.php'; ?>

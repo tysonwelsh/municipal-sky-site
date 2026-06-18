@@ -127,4 +127,38 @@ include '../../includes/header.php';
 <script src="prosperos-jukebox-ui.js?v=18"></script>
 <script src="prosperos-jukebox-viz.js?v=30"></script>
 
+<!-- Anonymous usage tracking. Logs a page view, plus the first PLAY press as
+     an engagement signal (a raw view understates an audio page). No personal
+     data leaves the browser; the server records only a salted, daily-rotating
+     visitor hash for unique-visit counts. -->
+<script>
+  (function () {
+    function track(eventType, label) {
+      fetch("../../api/page-event-tracking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          page: "prosperos-jukebox",
+          event_type: eventType,
+          label: label || null,
+        }),
+      }).catch(function () {});
+    }
+
+    track("page_view", null);
+
+    // Count the first PLAY press only, tagged with the active track.
+    var played = false;
+    var playBtn = document.getElementById("jukebox-play");
+    if (playBtn) {
+      playBtn.addEventListener("click", function () {
+        if (played) return;
+        played = true;
+        var activeTab = document.querySelector(".jukebox-track-tab.active");
+        track("play", activeTab ? activeTab.getAttribute("data-track") : null);
+      });
+    }
+  })();
+</script>
+
 <?php include '../../includes/footer.php'; ?>

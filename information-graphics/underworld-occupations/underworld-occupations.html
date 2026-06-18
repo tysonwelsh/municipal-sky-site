@@ -30,86 +30,75 @@
         <p>
           One of the texts I had the most fun exploring with large language
           models is the 16th century novel <em>Gargantua and Pantagruel</em>
-          by French monk turned satirist, Fran&ccedil;ois Rabelais.
-          I&rsquo;ve found the translation of these books available on
-          Project Gutenberg to be a rich source of challenging prompts,
-          because they are full of elaborate wordplay, and a Renaissance
-          frame of reference that does not fit neatly into modern
-          categories.
+          by French satirist Fran&ccedil;ois Rabelais. I&rsquo;ve found the
+          translation of these books available on
+          <a href="https://www.gutenberg.org/ebooks/1200" target="_blank" rel="noopener"
+            >Project Gutenberg</a
+          >
+          to be a rich source of challenging prompts, because they are full of
+          elaborate wordplay, and a Renaissance frame of reference that does
+          not fit neatly into modern categories.
         </p>
         <p>
-          They are also really funny, with a vulgar sense of humor that
-          rivals the shock value of anything you might see on
-          <em>South Park</em>. For example, in a chapter titled
-          &ldquo;How Epistemon, who had his head cut off, was finely healed
-          by Panurge, and of the news which he brought from the devils, and
-          of the damned people in hell,&rdquo; the tutor Epistemon is
-          resurrected after another character stitches his decapitated head
-          back onto his body. The first sign that this medical procedure has
-          worked is when Epistemon &ldquo;lets a great household
-          fart.&rdquo; In Rabelais, it is the lower bodily stratum that is
-          the source of life (and most of his jokes).
+          In
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link22HCH0029" target="_blank" rel="noopener"
+            >one chapter</a
+          >
+          the scholar Epistemon recounts a brief tour of the underworld,
+          where he sees once great figures of history reduced to
+          performing menial occupations. For example, he describes Alexander
+          the Great as &ldquo;amending and patching on clouts upon old
+          breeches and stockings,&rdquo; or Cleopatra as &ldquo;a crier of
+          onions.&rdquo; Before the chapter is finished, Rabelais catalogs
+          the underworld labors of ninety figures, including Roman emperors,
+          popes, mythological heroes, and knights of medieval romance.
         </p>
         <p>
-          After this resurrection, Epistemon shares with his companions what
-          he saw during his brief tour of the underworld. He recounts a
-          procession of famous figures from history and mythology as being
-          assigned a variety of humble, menial occupations in the afterlife:
-        </p>
-        <blockquote class="rabelais-intro-quote">
-          <p>
-            &hellip;Their estate and condition of living is but only changed
-            after a very strange manner; for I saw Alexander the Great there
-            amending and patching on clouts upon old breeches and stockings,
-            whereby he got but a very poor living.
-          </p>
-          <p>
-            Xerxes was a crier of mustard. Romulus, a salter and patcher of
-            pattens. Numa, a nailsmith. Tarquin, a porter. Piso, a clownish
-            swain. Sylla, a ferryman. Cyrus, a cowherd. Themistocles, a
-            glass-maker. Epaminondas, a maker of mirrors or looking-glasses.
-            Brutus and Cassius, surveyors or measurers of land. Demosthenes,
-            a vine-dresser. Cicero, a fire-kindler..
-          </p>
-        </blockquote>
-        <p>
-          Epistomone goes on to name over 90 figures, including Roman
-          emperors, popes, mythological heroes, and knights of medieval
-          romance. Rabelais&rsquo;s novels are full of long, absurd lists
-          like this one, and in my work on RLHF projects, I&rsquo;ve found
-          they are great material for categorization prompts. For this
-          passage, I wanted to see how well LLMs could classify the figures
-          in Rabelais underworld using structured categories: specifically
-          the Standard Occupational Classification (SOC) from the U.S.
-          Bureau of Labor Statistics (BLS).
-        </p>
-        <p>
-          The SOC system is a statistical standard established by the U.S.
-          federal government for classifying all occupations in which work
-          is performed for pay or profit. I sent Rabelais&rsquo;s list of
-          underworld occupations to three large language models (Claude,
-          Gemini, and ChatGPT) and asked each to classify every
-          figure&rsquo;s job using the SOC system.
-        </p>
-        <p>
-          Using a federal statistical standard to classify this text allows
-          for a quantitative analysis of the workforce in Rabelais&rsquo;s
-          underworld. It also makes it possible to compare it to the U.S.
-          workforce in 2024 using data from the BLS and other sources that
-          use the SOC system.
-        </p>
-        <p>
-          The results show what you might expect: the workforce in
-          Rabelais&rsquo;s underworld is underpaid and overrepresented in
-          occupations with unpleasant working conditions. I created a slide
-          deck with interactive visualizations summarizing these results,
-          as well as a dashboard where you can explore the results (and BLS
-          data more broadly) for yourself.
+          Rabelais&rsquo;s novels are full of such long, absurd catalogs,
+          including
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link2HCH0022" target="_blank" rel="noopener"
+            >made-up children&rsquo;s games</a
+          >,
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link22HCH0007" target="_blank" rel="noopener"
+            >non-existent books</a
+          >, and
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link42HCH0059" target="_blank" rel="noopener"
+            >offerings to the ventripotent god</a
+          >
+          of a gluttonous cult. In my work
+          on RLHF projects I&rsquo;ve found they make great material for
+          categorization prompts. I sent the chapter listing the laborers of
+          the underworld to three large language models and asked each to
+          classify every figure&rsquo;s job using the
+          <a href="https://www.bls.gov/soc/2018/major_groups.htm" target="_blank" rel="noopener"
+            >Standard Occupational Classification (SOC)</a
+          >
+          system from the U.S. Bureau of Labor Statistics. This lets us
+          measure the labor conditions of
+          Rabelais&rsquo;s underworld and see how they compare to those of
+          the 2024 U.S. workforce. I created the slide deck below to share
+          the results.
         </p>
       </section>
     </div>
 
     <!--__CHART_UNDERWORLD_LABOR_MARKET__-->
+
+    <!-- Transition between slide deck and dashboard -->
+    <div class="post-container">
+      <section class="prose-flow">
+        <p>
+          In addition to the slide deck which tells the story of the data,
+          I also created an interactive dashboard you can use to explore it
+          yourself. It visualizes the BLS&rsquo;s categories as a treemap,
+          with each underworld figure depicted as a ghost in the
+          occupational category its underworld labor was classified under.
+          Click any group to drill down through the SOC hierarchy until you
+          reach an individual occupation, where the dashboard shows its
+          workplace injury rate, work context, wage distribution, and more.
+        </p>
+      </section>
+    </div>
 
     <div class="max-w-[1020px] mx-auto mt-16">
       <!-- Unified Dashboard Frame -->
@@ -225,11 +214,53 @@
     <!-- Works Consulted -->
     <div class="post-container works-consulted">
       <section class="prose-flow">
-        <h2>Works Consulted</h2>
+        <h3>Data Sources</h3>
         <p>
-          Bakhtin, Mikhail. <em>Rabelais and His World</em>. Translated by
-          H&eacute;l&egrave;ne Iswolsky. Bloomington: Indiana University
-          Press, 1984.
+          U.S. Bureau of Labor Statistics. <em>Occupational Employment and
+          Wage Statistics</em> (OEWS), May 2024. Wages and employment counts.
+          <a href="https://www.bls.gov/oes/" target="_blank" rel="noopener"
+            >bls.gov/oes</a
+          >.
+        </p>
+        <p>
+          U.S. Bureau of Labor Statistics. <em>Survey of Occupational
+          Injuries and Illnesses</em> (SOII). Workplace injury and illness
+          rates by occupation.
+          <a href="https://www.bls.gov/iif/" target="_blank" rel="noopener"
+            >bls.gov/iif</a
+          >.
+        </p>
+        <p>
+          U.S. Bureau of Labor Statistics. <em>Employment Projections</em>
+          &mdash; National Employment Matrix. Employment type and industry
+          breakdowns by occupation.
+          <a href="https://www.bls.gov/emp/" target="_blank" rel="noopener"
+            >bls.gov/emp</a
+          >.
+        </p>
+        <p>
+          Interest profiles (RIASEC) and work-context measures are from
+          <a href="https://www.onetonline.org/" target="_blank" rel="noopener"
+            >O*NET OnLine</a
+          >, by the U.S. Department of Labor,
+          <a href="https://www.dol.gov/agencies/eta" target="_blank" rel="noopener"
+            >Employment and Training Administration</a
+          >
+          (USDOL/ETA). For this project, occupation-level O*NET values were
+          aggregated to SOC groups and weighted by employment.
+        </p>
+        <p>
+          Text marked with &ldquo;&#x1F916;&rdquo; is AI generated, including
+          the biographical descriptions of underworld figures. Each
+          description has been reviewed for factual accuracy.
+        </p>
+
+        <h3>Image Credits</h3>
+        <p>
+          All illustrations are from Frank C. Pap&eacute;&rsquo;s
+          illustrations for <em>The Works of Rabelais</em>, trans. Urquhart
+          &amp; Motteux (London: John Lane / New York: Boni and Liveright,
+          1927). Public domain.
         </p>
       </section>
     </div>
@@ -2403,7 +2434,7 @@
         if (character.lot_in_life)
           html += '<div class="ct-epithet">' + character.lot_in_life + "</div>";
         if (character.description)
-          html += '<div class="ct-desc">' + character.description + "</div>";
+          html += '<div class="ct-desc">🤖: ' + character.description + "</div>";
         html += "</div>";
         // Underworld tier
         html += '<div class="ct-tier">';

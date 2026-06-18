@@ -587,6 +587,17 @@ body {
 .prose-flow p:last-child {
   margin-bottom: 0;
 }
+/* Inline prose links — match the rubricated, dotted-underline idiom used
+   by .soc-tree-card-footer a so links read as part of the parchment theme
+   rather than default browser blue. */
+.prose-flow a {
+  color: var(--color-rubrication);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-rubrication);
+}
+.prose-flow a:hover {
+  border-bottom-style: solid;
+}
 
 
 .detail-section-nav {
