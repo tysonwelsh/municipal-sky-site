@@ -766,9 +766,9 @@ function vizColors() {
     oh: { width: 1.0, height: 1.00, peak: -0.02, pointed: 0, round: 0.00 },
     ah: { width: 1.0, height: 1.00, peak:  0.04, pointed: 1, round: 0.00 },
   };
-  var HUM_BAR_HALF = 1.5;        // base half-width in samples (× vowel width)
+  var HUM_BAR_HALF = 1;          // base half-width in samples (× vowel width)
   var HUM_WSAMP = 520;           // waveform samples spanned along the bar's height
-  var HUM_RIPPLE_GAIN = 20;      // waveform → baseline-offset (samples) for the side ripple
+  var HUM_RIPPLE_GAIN = 16;      // waveform → baseline-offset (samples) for the side ripple
   var HUM_RIPPLE_SMOOTH = 30;    // moving-average radius — rounds the ripple's waves
   var humSmooth = new Float32Array(FFT_SIZE);   // smoothed hum waveform (ripple source)
   function smoothHumWave(src, dst, r, count) {
