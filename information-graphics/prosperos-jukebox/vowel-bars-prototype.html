@@ -50,20 +50,30 @@
     <div class="sliders">
       <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
       <label class="ctl">Base width <b id="baseWV">98</b><input id="baseW" type="range" min="20" max="160" step="2" value="98"></label>
-      <label class="ctl">Roundness <b id="roundV">1</b><input id="round" type="range" min="0" max="1.5" step="0.05" value="1"></label>
       <label class="ctl">Ripple <b id="rippleV">60</b><input id="ripple" type="range" min="0" max="240" step="5" value="60"></label>
       <label class="ctl">Wave smooth <b id="smoothV">14</b><input id="smooth" type="range" min="0" max="48" step="1" value="14"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
 
+  <!-- Per-vowel shape editor: pick a vowel, then tune just that bar. -->
+  <div class="controls">
+    <span class="vowels"><span class="lbl">Edit shape:</span><span id="editBtns"></span></span>
+    <div class="sliders">
+      <label class="ctl">Width <b id="vWidthV">—</b><input id="vWidth" type="range" min="0.30" max="2.0" step="0.05"></label>
+      <label class="ctl">Height <b id="vHeightV">—</b><input id="vHeight" type="range" min="0.40" max="1.4" step="0.05"></label>
+      <label class="ctl">Peak (+ point / − concave) <b id="vPeakV">—</b><input id="vPeak" type="range" min="-0.40" max="0.60" step="0.02"></label>
+      <label class="ctl">Pointed <b id="vPointedV">—</b><input id="vPointed" type="range" min="0" max="1" step="0.05"></label>
+      <label class="ctl" id="vRoundWrap">Roundness (oo) <b id="vRoundV">—</b><input id="vRound" type="range" min="0" max="1" step="0.05"></label>
+    </div>
+  </div>
+
   <div class="vowels" id="vowelBtns"><span class="lbl">Drop a bar:</span></div>
 
   <canvas id="cv"></canvas>
   <div class="legend">
-    Each vowel is a bar with its own <b>width</b>, <b>height</b>, top-corner <b>roundness</b>, and a top <b>peak</b> (raised = pointed, lowered = concave): <code>ng</code> slightly pointed, <code>oo</code> rounded dome, <code>uh</code> near-square, <code>oh</code> slightly concave, <code>ah</code> wide soft peak.
-    <b>Roundness</b> scales the corner rounding for all. The sides ripple with the live hum waveform (<b>Ripple</b>/<b>Wave smooth</b>).
-    Live mode taps the real hum and reads the vowel from each note event; the manual buttons drop one bar per vowel for side-by-side comparison.
+    Each vowel has its own <b>width</b>, <b>height</b>, <b>peak</b> (+ pointed / − concave, edge to edge) and <b>pointed</b> (sharp vs smooth). <b>Roundness</b> applies to <code>oo</code> only (its rounded/domed top); every other bar has square corners. The sides ripple with the live hum waveform (<b>Ripple</b>/<b>Wave smooth</b>).
+    Use <b>Edit shape</b> to pick a vowel and tune just that bar; <b>Copy params</b> dumps every vowel's values. Live mode taps the real hum; the manual buttons drop one bar per vowel.
   </div>
 </div>
 
@@ -124,7 +134,7 @@
   }
 
   // ----- Tunable params (bound to sliders) -----
-  var P = { maxH: 220, baseW: 98, round: 1.0, ripple: 60, smooth: 14 };
+  var P = { maxH: 220, baseW: 98, ripple: 60, smooth: 14 };
   var RIPPLE = true;      // sides ripple with the live hum waveform
   var WSAMP = 520;        // waveform samples spanned along a bar's height
 
@@ -235,8 +245,8 @@
     var H = lvl * P.maxH * v.height;
     var halfW = (P.baseW * v.width) / 2;
     var xc = PAD_L + b.x * laneW();
-    var roundFrac = Math.min(1, v.round * P.round);
-    var rad = roundFrac * Math.min(halfW, H * 0.95);
+    // Roundness applies to oo only; all other bars have square corners (rad 0).
+    var rad = (b.vowel === "oo") ? Math.min(1, v.round) * Math.min(halfW, H * 0.95) : 0;
 
     // Horizontal ripple at screen-y `y`: the live hum waveform, sampled along the
     // bar's height. Anchored at the baseline (×frac) and silent on visual-only
@@ -348,8 +358,41 @@
     function up() { P[key] = parseFloat(el.value); out.textContent = fmt ? fmt(P[key]) : el.value; }
     el.addEventListener("input", up); up();
   }
-  bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW"); bindSlider("round", "round");
+  bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW");
   bindSlider("ripple", "ripple"); bindSlider("smooth", "smooth");
+
+  // ----- Per-vowel shape editor -----
+  var editVowel = "oo";
+  var V_SLIDERS = [["vWidth", "width"], ["vHeight", "height"], ["vPeak", "peak"],
+                   ["vPointed", "pointed"], ["vRound", "round"]];
+  function refreshVowelSliders() {
+    V_SLIDERS.forEach(function (p) {
+      var el = document.getElementById(p[0]), out = document.getElementById(p[0] + "V");
+      el.value = VOWELS[editVowel][p[1]];
+      out.textContent = (+el.value).toFixed(2);
+    });
+    document.getElementById("vRoundWrap").style.display = (editVowel === "oo") ? "" : "none";
+  }
+  V_SLIDERS.forEach(function (p) {
+    var el = document.getElementById(p[0]), out = document.getElementById(p[0] + "V");
+    el.addEventListener("input", function () {
+      VOWELS[editVowel][p[1]] = parseFloat(el.value);
+      out.textContent = (+el.value).toFixed(2);
+    });
+  });
+  var editBtns = document.getElementById("editBtns");
+  VOWEL_ORDER.forEach(function (v) {
+    var b = document.createElement("button");
+    b.textContent = v; b.style.borderColor = vowelColor(v, 0.5);
+    if (v === editVowel) b.classList.add("on");
+    b.addEventListener("click", function () {
+      editVowel = v;
+      Array.prototype.forEach.call(editBtns.children, function (x) { x.classList.toggle("on", x === b); });
+      refreshVowelSliders();
+    });
+    editBtns.appendChild(b);
+  });
+  refreshVowelSliders();
 
   document.getElementById("rippleBtn").addEventListener("click", function () {
     RIPPLE = !RIPPLE; this.classList.toggle("on", RIPPLE);
@@ -406,8 +449,13 @@
     } catch (e) {}
   }
   document.getElementById("copyBtn").addEventListener("click", function () {
-    var s = "{ maxH: " + P.maxH + ", baseW: " + P.baseW + ", round: " + P.round +
-            ", ripple: " + P.ripple + ", smooth: " + P.smooth + " }";
+    var s = "globals { maxH: " + P.maxH + ", baseW: " + P.baseW +
+            ", ripple: " + P.ripple + ", smooth: " + P.smooth + " }\n";
+    VOWEL_ORDER.forEach(function (v) {
+      var x = VOWELS[v];
+      s += v + ": { width: " + x.width + ", height: " + x.height + ", peak: " + x.peak +
+           ", pointed: " + x.pointed + ", round: " + x.round + " }\n";
+    });
     var btn = this, orig = btn.textContent;
     function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
