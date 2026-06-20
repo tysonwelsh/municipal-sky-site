@@ -1141,7 +1141,7 @@ function vizColors() {
     // Cap by width so it can't overflow on very narrow screens.
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
-    harpRadial = baseRadius * (HARP_AMP / 800);   // world-unit scale for the pluck ripple
+    harpRadial = baseRadius * (HARP_AMP / 400);   // world-unit scale for the pluck ripple
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
