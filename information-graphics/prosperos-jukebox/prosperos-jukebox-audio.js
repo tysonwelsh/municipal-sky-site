@@ -2147,7 +2147,8 @@ window.ProsperoAudio = (function () {
       var plateauEnd   = t + noteDur - safeRelease;
       if (plateauEnd <= plateauStart) plateauEnd = plateauStart + 0.01;
       var noteEnd = t + noteDur;
-      emitNoteEvent({ track: "library", layer: "hum", freq: freq, startTime: t, duration: noteDur });
+      emitNoteEvent({ track: "library", layer: "hum", freq: freq, startTime: t, duration: noteDur,
+                      vowel: LIB_HUM_VOWEL_POOL[humVowelIdx] });
 
       // Voice
       var voice = c.createOscillator();

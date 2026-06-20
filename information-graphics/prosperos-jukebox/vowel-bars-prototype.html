@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hum Vowel Bars — Shape Prototype</title>
+<style>
+  :root { --bg:#0b0b0f; --panel:#15151c; --line:#2a2a38; --ink:#e8e4d8; --soft:#9a96a6; --accent:#e6b455; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:16px 20px 8px; }
+  h1 { margin:0; font-size:18px; letter-spacing:.3px; }
+  .sub { color:var(--soft); font-size:12px; margin-top:2px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 16px 48px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center;
+              background:var(--panel); border:1px solid var(--line); border-radius:10px;
+              padding:12px 14px; margin:8px 0 14px; }
+  button { background:#23232e; color:var(--ink); border:1px solid var(--line);
+           border-radius:7px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:#1a1407; border-color:var(--accent); }
+  .sliders { display:flex; flex-wrap:wrap; gap:14px; }
+  .ctl { display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--soft); }
+  .ctl input[type=range] { width:130px; accent-color:var(--accent); }
+  .ctl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .vowels { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  .vowels button { padding:6px 11px; font-size:13px; }
+  .vowels .lbl { color:var(--soft); font-size:11px; margin-right:2px; }
+  .status { color:var(--soft); font-size:12px; margin-left:auto; }
+  canvas { display:block; width:100%; height:440px; background:var(--bg);
+           border:1px solid var(--line); border-radius:10px; }
+  .legend { color:var(--soft); font-size:11px; margin-top:8px; }
+  code { color:var(--accent); }
+</style>
+</head>
+<body>
+<header class="wrap" style="padding-bottom:0">
+  <h1>Hum Vowel Bars — Shape Prototype</h1>
+  <div class="sub">Each Library hum note draws a bar at its pitch; the bar's <b>shape</b> is determined by the note's vowel (closed&rarr;open: ng &middot; oo &middot; uh &middot; oh &middot; ah). A sandbox for the Library track's hum bar.</div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <button id="audioBtn">&#9654; Live audio</button>
+    <button id="allBtn">Compare all vowels</button>
+    <button id="clearBtn">Clear</button>
+    <button id="copyBtn">Copy params</button>
+    <div class="sliders">
+      <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
+      <label class="ctl">Base width <b id="baseWV">70</b><input id="baseW" type="range" min="20" max="160" step="2" value="70"></label>
+      <label class="ctl">Shoulder (vertical sides) <b id="shoulderV">0.5</b><input id="shoulder" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+      <label class="ctl">Top detail <b id="topNV">28</b><input id="topN" type="range" min="2" max="60" step="1" value="28"></label>
+    </div>
+    <div class="status" id="status">idle</div>
+  </div>
+
+  <div class="vowels" id="vowelBtns"><span class="lbl">Drop a bar:</span></div>
+
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    Shapes (closed&rarr;open): <code>ng</code> spike &middot; <code>oo</code> dome &middot; <code>uh</code> flat &middot; <code>oh</code> arch &middot; <code>ah</code> twin-peak.
+    <b>Shoulder</b> sets how much straight vertical edge each bar keeps before its vowel top.
+    Live mode taps the real hum and reads the vowel from each note event; the manual buttons drop one bar per vowel for side-by-side comparison.
+  </div>
+</div>
+
+<script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
+<script src="prosperos-jukebox-audio.js?v=dc7debd0"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ----- Vowels (mirrors the engine's LIB_HUM_VOWELS). F1/F2 shown for
+  // reference; widthMul + the profile function below are what we're tuning. -----
+  var VOWELS = {
+    ng: { f1: 270, f2: 1500, widthMul: 0.55, hue: 286 },
+    oo: { f1: 300, f2: 870,  widthMul: 0.75, hue: 210 },
+    uh: { f1: 520, f2: 1190, widthMul: 1.00, hue: 150 },
+    oh: { f1: 570, f2: 840,  widthMul: 1.25, hue: 70  },
+    ah: { f1: 730, f2: 1090, widthMul: 1.50, hue: 38  },
+  };
+  var VOWEL_ORDER = ["ng", "oo", "uh", "oh", "ah"];   // closed -> open
+
+  // Top profile per vowel: u runs -1..1 across the bar; returns the top height
+  // as a fraction 0..1 of the bar height. THIS is the per-vowel shape — easy to
+  // tweak. (The "shoulder" knob later lifts a vertical-sided base under it.)
+  function vowelProfile(name, u) {
+    var a = u < 0 ? -u : u;
+    switch (name) {
+      case "ng": return 1 - a;                                   // spike: pointed apex (closed)
+      case "oo": return Math.sqrt(Math.max(0, 1 - u * u));       // dome: semicircle
+      case "uh": return 1;                                       // flat: clean rectangle
+      case "oh": return Math.cos(u * Math.PI / 2);               // arch: rounded, wider
+      case "ah":                                                 // twin: two peaks (open mouth)
+        var g = Math.exp(-Math.pow((u - 0.5) / 0.34, 2)) +
+                Math.exp(-Math.pow((u + 0.5) / 0.34, 2));
+        return 0.4 + 0.6 * Math.min(1, g);
+      default: return 1;
+    }
+  }
+  function vowelColor(name, a) { return "hsla(" + VOWELS[name].hue + ",68%,62%," + a + ")"; }
+
+  // ----- Tunable params (bound to sliders) -----
+  var P = { maxH: 220, baseW: 70, shoulder: 0.5, topN: 28 };
+
+  // ----- Clock: audio time when the engine is live (so live bars sync to the
+  // sound, which is scheduled ahead), else wall clock. -----
+  var audioOn = false;
+  function clock() {
+    return (audioOn && window.ProsperoAudio && ProsperoAudio.getAudioTime)
+      ? ProsperoAudio.getAudioTime() : performance.now() / 1000;
+  }
+
+  // ----- Bars: {x (0..1 across lane), vowel, t0, dur} -----
+  var bars = [];
+  function addBar(x, vowel, t0, dur) {
+    bars.push({ x: x, vowel: VOWELS[vowel] ? vowel : "uh", t0: t0, dur: dur || 1.2 });
+    if (bars.length > 48) bars.shift();
+  }
+  // Level envelope over a note's life: attack -> hold(for dur) -> release.
+  function envLevel(age, dur) {
+    var atk = 0.16, rel = 0.34;
+    if (age < 0) return 0;
+    if (age < atk) return age / atk;
+    if (age < dur) return 1;
+    if (age < dur + rel) return 1 - (age - dur) / rel;
+    return 0;
+  }
+
+  // Map a hum frequency to an x position (C3..G3 range, with margin).
+  function freqToX(f) {
+    var lo = Math.log2(120), hi = Math.log2(210);
+    var x = (Math.log2(f) - lo) / (hi - lo);
+    return x < 0.04 ? 0.04 : (x > 0.96 ? 0.96 : x);
+  }
+
+  // ----- Canvas -----
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+
+  var PAD_L = 24, PAD_R = 24, PAD_B = 64;
+  function laneW() { return W - PAD_L - PAD_R; }
+  function baseY() { return H - PAD_B; }
+
+  // Draw one bar: vertical left/right edges up to the vowel top profile, with no
+  // bottom edge (the baseline under it is skipped). shoulder lifts a vertical-
+  // sided base so even tapering tops keep straight sides if you want them.
+  function drawBar(b, t) {
+    var lvl = envLevel(t - b.t0, b.dur);
+    if (lvl <= 0.002) return null;
+    var v = VOWELS[b.vowel];
+    var Hbar = lvl * P.maxH;
+    var halfW = (P.baseW * v.widthMul) / 2;
+    var xc = PAD_L + b.x * laneW();
+    var by = baseY();
+    var sh = P.shoulder;
+    function topH(u) { return Hbar * (sh + (1 - sh) * vowelProfile(b.vowel, u)); }
+
+    ctx.beginPath();
+    ctx.moveTo(xc - halfW, by);                     // bottom-left, on the baseline
+    ctx.lineTo(xc - halfW, by - topH(-1));          // up the LEFT vertical edge
+    var N = P.topN;
+    for (var i = 0; i <= N; i++) {                  // across the top (the vowel shape)
+      var u = -1 + 2 * i / N;
+      ctx.lineTo(xc + u * halfW, by - topH(u));
+    }
+    ctx.lineTo(xc + halfW, by);                     // down the RIGHT vertical edge
+    ctx.strokeStyle = vowelColor(b.vowel, 0.4 + 0.6 * lvl);
+    ctx.lineWidth = 1.6;
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    return [xc - halfW, xc + halfW];                // span, for the baseline gap
+  }
+
+  function draw() {
+    var t = clock();
+    ctx.clearRect(0, 0, W, H);
+    var by = baseY();
+
+    // Prune dead bars, draw the live ones, collect their baseline gaps.
+    bars = bars.filter(function (b) { return envLevel(t - b.t0, b.dur) > 0.002; });
+    var gaps = [];
+    for (var i = 0; i < bars.length; i++) {
+      var span = drawBar(bars[i], t);
+      if (span) gaps.push(span);
+    }
+
+    // Baseline across the lane, skipping the stretch under each bar (so the bars
+    // read as the line rising up, with no flat bottom) — same idea as the spiral.
+    gaps.sort(function (a, b) { return a[0] - b[0]; });
+    ctx.strokeStyle = "rgba(232,228,216,0.6)";
+    ctx.lineWidth = 1.3;
+    var x = PAD_L, xEnd = W - PAD_R;
+    ctx.beginPath();
+    for (var g = 0; g < gaps.length; g++) {
+      var gl = Math.max(x, gaps[g][0]), gr = gaps[g][1];
+      if (gl > x) { ctx.moveTo(x, by); ctx.lineTo(gl, by); }
+      if (gr > x) x = gr;
+    }
+    if (x < xEnd) { ctx.moveTo(x, by); ctx.lineTo(xEnd, by); }
+    ctx.stroke();
+
+    // Vowel labels under the manual slots.
+    ctx.font = '12px "VT323", monospace';
+    ctx.textAlign = "center"; ctx.textBaseline = "top";
+    for (var k = 0; k < VOWEL_ORDER.length; k++) {
+      var vx = PAD_L + ((k + 0.5) / VOWEL_ORDER.length) * laneW();
+      ctx.fillStyle = vowelColor(VOWEL_ORDER[k], 0.5);
+      ctx.fillText(VOWEL_ORDER[k], vx, by + 10);
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ----- Live audio: tap the real hum, read vowel from each note event -----
+  var ctxA = null, noteHooked = false;
+  function startAudio() {
+    if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
+    try {
+      ProsperoAudio.init();
+      ctxA = ProsperoAudio.getAudioContext();
+      if (!ctxA) { setStatus("no audio context"); return; }
+      if (ctxA.state === "suspended") ctxA.resume();
+      ProsperoAudio.switchTrack("library");
+      ProsperoAudio.play("library");
+      audioOn = true;
+      if (!noteHooked && ProsperoAudio.setNoteListener) {
+        ProsperoAudio.setNoteListener(function (ev) {
+          if (ev.track === "library" && ev.layer === "hum") {
+            addBar(freqToX(ev.freq), ev.vowel || "uh", ev.startTime, ev.duration || 1.0);
+            setStatus("hum: " + (ev.vowel || "?") + " @ " + Math.round(ev.freq) + "Hz");
+          }
+        });
+        noteHooked = true;
+      }
+      setStatus("playing · ctx " + ctxA.state + " · listening for hum notes (every ~10–30s)");
+    } catch (e) {
+      setStatus("audio error: " + (e && e.message ? e.message : e));
+      if (window.console) console.error(e);
+    }
+  }
+  function stopAudio() {
+    if (window.ProsperoAudio && ProsperoAudio.stop) ProsperoAudio.stop();
+    audioOn = false; setStatus("stopped");
+  }
+
+  // ----- UI -----
+  function setStatus(s) { document.getElementById("status").textContent = s; }
+  function bindSlider(id, key, fmt) {
+    var el = document.getElementById(id), out = document.getElementById(id + "V");
+    function up() { P[key] = parseFloat(el.value); out.textContent = fmt ? fmt(P[key]) : el.value; }
+    el.addEventListener("input", up); up();
+  }
+  bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW");
+  bindSlider("shoulder", "shoulder"); bindSlider("topN", "topN");
+
+  document.getElementById("audioBtn").addEventListener("click", function () {
+    if (audioOn) { stopAudio(); this.classList.remove("on"); this.textContent = "▶ Live audio"; }
+    else { startAudio(); this.classList.add("on"); this.textContent = "■ Stop audio"; }
+  });
+  document.getElementById("clearBtn").addEventListener("click", function () { bars = []; });
+  document.getElementById("allBtn").addEventListener("click", function () {
+    var t = clock();
+    VOWEL_ORDER.forEach(function (v, k) {
+      addBar((k + 0.5) / VOWEL_ORDER.length, v, t, 2.2);
+    });
+    setStatus("comparing all 5 vowels");
+  });
+
+  // Manual vowel buttons — drop one bar of that vowel at its fixed slot.
+  var vb = document.getElementById("vowelBtns");
+  VOWEL_ORDER.forEach(function (v, k) {
+    var b = document.createElement("button");
+    b.textContent = v;
+    b.style.borderColor = vowelColor(v, 0.5);
+    b.addEventListener("click", function () {
+      addBar((k + 0.5) / VOWEL_ORDER.length, v, clock(), 1.8);
+      setStatus("dropped " + v + "  (F1 " + VOWELS[v].f1 + " · F2 " + VOWELS[v].f2 + ")");
+    });
+    vb.appendChild(b);
+  });
+
+  function fallbackCopy(s) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = s; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    } catch (e) {}
+  }
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var s = "{ maxH: " + P.maxH + ", baseW: " + P.baseW +
+            ", shoulder: " + P.shoulder + ", topN: " + P.topN + " }";
+    var btn = this, orig = btn.textContent;
+    function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s); }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(flash, function () { fallbackCopy(s); flash(); });
+    } else { fallbackCopy(s); flash(); }
+  });
+
+  // ----- Go -----
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
