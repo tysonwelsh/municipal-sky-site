@@ -1545,9 +1545,10 @@ function vizColors() {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
     }
 
-    // Hum bar (Library) — an OUTLINED bar that rises out of the baseline at the
-    // hum's pitch (bottom sits on the baseline, like the harpsichord line). The
-    // sides go up to the level height; width (theta span) = brightness.
+    // Hum bar (Library) — the baseline itself emerging upward into a bar at the
+    // hum's pitch. No bottom edge (it grows out of the line), same stroke as the
+    // baseline, and faded with depth so it reads as background on the back of
+    // the rotating spiral — just like that part of the spiral line.
     if (track === "library" && humLollipop) {
       var hOf = humLollipop.octaveFloat;
       var hBase = (hOf - (OCTAVES - 1) / 2) * octaveStep;
@@ -1560,9 +1561,13 @@ function vizColors() {
       var tl = projWorld(baseRadius * ctL, hyHead, baseRadius * stL, cx, cy, cy1, sy1, cp1, sp1);
       var tr = projWorld(baseRadius * ctR, hyHead, baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
       var br = projWorld(baseRadius * ctR, hBase,  baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
+      // Depth fade matched to the baseline (same formula as the spiral quads).
+      var hDepth = 0.35 + 0.65 * (((bl.z + br.z) / 2) + baseRadius) / (baseRadius * 2);
+      if (hDepth < 0.15) hDepth = 0.15; else if (hDepth > 1) hDepth = 1;
       ctx2d.save();
-      ctx2d.strokeStyle = fadeRgba(pal.lollipopHead, 0.95);
-      ctx2d.lineWidth = 1.5;
+      ctx2d.strokeStyle = "rgba(" + pal.ribbonStroke[0] + "," + pal.ribbonStroke[1] + "," +
+        pal.ribbonStroke[2] + "," + (0.9 * hDepth).toFixed(3) + ")";
+      ctx2d.lineWidth = 1.3;
       ctx2d.lineJoin = "round";
       ctx2d.beginPath();
       ctx2d.moveTo(bl.sx, bl.sy);   // up the left side from the baseline
