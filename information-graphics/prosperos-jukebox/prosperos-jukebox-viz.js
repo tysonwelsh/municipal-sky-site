@@ -752,8 +752,9 @@ function vizColors() {
     ? ProsperoAudio.attachLayerAnalyser("library", "hum", humAnalyser)
     : false;
   var humTime = new Float32Array(FFT_SIZE);
-  var humQueue = [], humLollipop = null, humLevel = 0;
-  var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head max-height multiplier (whistle + hum)
+  var humQueue = [], humLollipop = null, humLevel = 0, humWidth = 0;
+  var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head/bar max-height multiplier (whistle + hum)
+  var BRIGHT_GAIN = 30;                  // maps hum high-frequency content -> bar width
 
   // Drone cycles for the constellation floor
   var droneCycles = [];
@@ -1193,9 +1194,15 @@ function vizColors() {
     // it doesn't linger (unless the next note has already taken over).
     if (track === "library") {
       if (humTapOk) humAnalyser.getFloatTimeDomainData(humTime);
-      var hs = 0; for (var hn = 0; hn < humTime.length; hn++) hs += humTime[hn] * humTime[hn];
+      var hs = 0, hd = 0, hprev = humTime[0];
+      for (var hn = 1; hn < humTime.length; hn++) {
+        var hx = humTime[hn]; hs += hx * hx;
+        var hdd = hx - hprev; hd += hdd * hdd; hprev = hx;   // derivative energy ~ brightness
+      }
       var hlvl = Math.min(1, Math.sqrt(hs / humTime.length) * HUM_GAIN);
-      humLevel = humLevel * 0.55 + hlvl * 0.45;            // snappy follow
+      humLevel = humLevel * 0.55 + hlvl * 0.45;            // bar HEIGHT: snappy level follow
+      var bright = hs > 1e-9 ? Math.min(1, (hd / hs) * BRIGHT_GAIN) : 0;
+      humWidth = humWidth * 0.7 + bright * 0.3;            // bar WIDTH: hum brightness/openness
       var latest = null, keep = [];
       for (var hqi = 0; hqi < humQueue.length; hqi++) {
         var e = humQueue[hqi];
@@ -1533,15 +1540,29 @@ function vizColors() {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
     }
 
-    // Hum lollipop (Library) — drawn on top at the hum's pitch.
+    // Hum bar (Library) — a bar-graph bar at the hum's pitch: height = level,
+    // width = the hum's brightness/openness.
     if (track === "library" && humLollipop) {
       var hBase = (humLollipop.octaveFloat - (OCTAVES - 1) / 2) * octaveStep;
       var hFrac = humLollipop.octaveFloat - Math.floor(humLollipop.octaveFloat);
-      drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, 1, {
-        theta: hFrac * 2 * Math.PI,
-        yBase: hBase,
-        yHead: hBase + humLevel * peakUp * LOLLI_HEIGHT,
-      });
+      var hTheta = hFrac * 2 * Math.PI, hct = Math.cos(hTheta), hst = Math.sin(hTheta);
+      var hyHead = hBase + humLevel * peakUp * LOLLI_HEIGHT;
+      var pbH = projWorld(baseRadius * hct, hBase, baseRadius * hst, cx, cy, cy1, sy1, cp1, sp1);
+      var phH = projWorld(baseRadius * hct, hyHead, baseRadius * hst, cx, cy, cy1, sy1, cp1, sp1);
+      var bw = 4 + humWidth * 24;                           // bar width (px), brightness-driven
+      var sdx = phH.sx - pbH.sx, sdy = phH.sy - pbH.sy;
+      var slen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
+      var ppx = (-sdy / slen) * (bw / 2), ppy = (sdx / slen) * (bw / 2);
+      ctx2d.save();
+      ctx2d.fillStyle = fadeRgba(pal.lollipopHead, 0.85);
+      ctx2d.beginPath();
+      ctx2d.moveTo(pbH.sx - ppx, pbH.sy - ppy);
+      ctx2d.lineTo(pbH.sx + ppx, pbH.sy + ppy);
+      ctx2d.lineTo(phH.sx + ppx, phH.sy + ppy);
+      ctx2d.lineTo(phH.sx - ppx, phH.sy - ppy);
+      ctx2d.closePath();
+      ctx2d.fill();
+      ctx2d.restore();
     }
 
     // 5) Pitch-class labels on the constellation ring (full brightness,
