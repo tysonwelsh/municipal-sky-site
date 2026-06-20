@@ -102,7 +102,8 @@
   // ----- Tunable params (bound to sliders) -----
   var P = { amp: 28, tau: 1.1, vib: 7, wid: 4, sens: 6 };
   var STYLE = "smooth";   // "smooth" | "pixel" | "sharp"
-  var AUDIODRIVE = true;  // string amplitude follows the live audio envelope
+  var AUDIODRIVE = true;  // string SHAPE follows the live audio waveform (real multi-peak)
+  var WSAMP = 600, AUDIO_GAIN = 20;   // audio-waveform window (samples across a string) + visual gain
 
   // ----- State -----
   // Each row = one octave. plucks: {x, t0, fvib, amp} where x is fraction 0..1 of lane width.
@@ -220,8 +221,20 @@
       } else {                                           // gaussian: rounded hump
         shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
       }
-      var lvl = (AUDIODRIVE && vizTime) ? liveLevel : 1;   // amplitude follows live audio envelope
-      d += pk.amp * env * lvl * shape * Math.sin(2 * Math.PI * pk.fvib * age);
+      var osc;
+      if (AUDIODRIVE && vizTime) {
+        // The string's shape IS a windowed slice of the real audio waveform, so
+        // its multiple peaks genuinely depict the harpsichord signal (higher
+        // notes naturally show more peaks). `shape` windows it to the pitch.
+        var W = sigmaPx * 2.5;
+        var frac = (dxpx + W) / (2 * W);
+        frac = frac < 0 ? 0 : (frac > 1 ? 1 : frac);
+        osc = vizTime[(frac * (WSAMP - 1)) | 0] * AUDIO_GAIN;
+        if (osc > 2.6) osc = 2.6; else if (osc < -2.6) osc = -2.6;
+      } else {
+        osc = Math.sin(2 * Math.PI * pk.fvib * age);   // synthetic single-bump wobble
+      }
+      d += pk.amp * env * shape * osc;
     }
     return d;
   }
@@ -445,13 +458,7 @@
   // ----- Main loop -----
   resize();
   (function loop() {
-    if (analyser && vizTime) {
-      analyser.getFloatTimeDomainData(vizTime);
-      var s = 0; for (var n = 0; n < vizTime.length; n++) s += vizTime[n] * vizTime[n];
-      var target = Math.min(2.6, Math.sqrt(s / vizTime.length) * 60);   // live RMS -> visual level (louder = bigger)
-      liveLevel = target > liveLevel ? (liveLevel * 0.4 + target * 0.6)  // fast attack
-                                     : (liveLevel * 0.85 + target * 0.15); // slow release
-    }
+    if (analyser && vizTime) analyser.getFloatTimeDomainData(vizTime);   // live waveform
     analyzeLive();
     requestAnimationFrame(loop);
   })();
