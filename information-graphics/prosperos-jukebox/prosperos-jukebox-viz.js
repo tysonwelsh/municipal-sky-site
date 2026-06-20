@@ -756,19 +756,8 @@ function vizColors() {
   var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head/bar max-height multiplier (whistle + hum)
   var BRIGHT_GAIN = 30;                  // maps hum high-frequency content -> bar width
 
-  // Hum bar — the baseline ITSELF emerging upward into a bar at the hum's pitch
-  // (not a shape drawn on top of it). A flat-top displacement added to the
-  // baseline dy, so the spiral line rises into a bar with no flat bottom, and
-  // inherits the spiral's depth fade + coil occlusion. Refreshed each frame.
-  var humBarActive = false, humBarOf = 0, humBarHeight = 0, humBarHalf = 0.012;
-  var HUM_BAR_EDGE = 0.006;              // side-ramp half-width (octaves) — steep = bar-like
-  function humBarDr(o, b) {
-    if (!humBarActive) return 0;
-    var d = (o + b / SAMPLES_PER_TURN) - humBarOf; if (d < 0) d = -d;
-    if (d > humBarHalf + HUM_BAR_EDGE) return 0;
-    if (d <= humBarHalf) return humBarHeight;                       // flat top
-    return humBarHeight * (1 - (d - humBarHalf) / HUM_BAR_EDGE);    // ramp down the sides
-  }
+  // (Hum bar is drawn in the tick as an explicit vertical-edged bar at the hum's
+  // pitch, with the baseline beneath it skipped so there's no flat bottom.)
 
   // Drone cycles for the constellation floor
   var droneCycles = [];
@@ -1261,14 +1250,18 @@ function vizColors() {
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
 
-    // Hum bar: refresh the flat-top baseline lift for this frame from the live hum.
+    // Hum bar: the baseline samples it spans (sL..sR), its height, and its center
+    // sample — used to skip the baseline under it and to draw it as a vertical-
+    // edged bar (depth-sorted with the spiral). Width (sample span) = brightness.
+    var humBarSL = -1, humBarSR = -1, humBarHt = 0, humBarCenter = 0;
+    var humBarZ = 0, humBarDepth = 1;
     if (track === "library" && humLollipop) {
-      humBarActive = true;
-      humBarOf = humLollipop.octaveFloat;
-      humBarHeight = humLevel * peakUp * LOLLI_HEIGHT;   // height = level (same scale as before)
-      humBarHalf = 0.008 + humWidth * 0.014;             // flat-top half-width (octaves) = brightness
-    } else {
-      humBarActive = false;
+      humBarCenter = Math.round(humLollipop.octaveFloat * SAMPLES_PER_TURN);
+      var halfSamp = Math.max(1, Math.round(humWidth * 2));   // samples each side of center
+      humBarSL = Math.max(0, humBarCenter - halfSamp);
+      humBarSR = Math.min(TOTAL_SAMPLES - 1, humBarCenter + halfSamp);
+      humBarCenter = Math.max(0, Math.min(TOTAL_SAMPLES - 1, humBarCenter));
+      humBarHt = humLevel * peakUp * LOLLI_HEIGHT;            // height = level
     }
 
     // 1) Build spiral inner + outer projected points (no draw yet)
@@ -1283,10 +1276,49 @@ function vizColors() {
           : mag;
         var ct = Math.cos(theta), st = Math.sin(theta);
         var xW = baseRadius * ct, zW = baseRadius * st;
-        var dy = harpDr(o, b) + bassDr(o, b) + humBarDr(o, b);   // baseline vibrates (harpsichord/bass) and rises into a bar (hum)
+        var dy = harpDr(o, b) + bassDr(o, b);   // baseline vibrates vertically (harpsichord on Library, bass on Ariel)
         project(xW, yWorld + dy,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
         project(xW, yWorld + dy + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
       }
+    }
+
+    // Hum bar depth — from its center sample's projected z, so it depth-sorts
+    // into the quad pass and fades like the rest of the baseline. drawHumBar()
+    // strokes an explicit bar: vertical left/right edges (constant angle) and a
+    // top that follows the spiral; no bottom edge (the baseline under it is
+    // skipped), so it reads as the baseline rising straight up into a bar.
+    if (humBarSL >= 0) {
+      humBarZ = innerProj[humBarCenter * 3 + 2];
+      humBarDepth = 0.35 + 0.65 * (humBarZ + baseRadius) / (baseRadius * 2);
+      if (humBarDepth < 0.15) humBarDepth = 0.15; else if (humBarDepth > 1) humBarDepth = 1;
+    }
+    function drawHumBar() {
+      ctx2d.save();
+      ctx2d.strokeStyle = "rgba(" + pal.ribbonStroke[0] + "," + pal.ribbonStroke[1] + "," +
+        pal.ribbonStroke[2] + "," + (0.9 * humBarDepth).toFixed(3) + ")";
+      ctx2d.lineWidth = 1.3;
+      ctx2d.lineJoin = "round";
+      ctx2d.beginPath();
+      for (var i = humBarSL; i <= humBarSR; i++) {
+        var ofi = i / SAMPLES_PER_TURN;
+        var thi = (i % SAMPLES_PER_TURN) / SAMPLES_PER_TURN * 2 * Math.PI;
+        var byi = (ofi - (OCTAVES - 1) / 2) * octaveStep;
+        var cxi = baseRadius * Math.cos(thi), czi = baseRadius * Math.sin(thi);
+        var tp = projWorld(cxi, byi + humBarHt, czi, cx, cy, cy1, sy1, cp1, sp1);
+        if (i === humBarSL) {
+          var bp = projWorld(cxi, byi, czi, cx, cy, cy1, sy1, cp1, sp1);
+          ctx2d.moveTo(bp.sx, bp.sy);     // bottom-left, sitting on the baseline
+          ctx2d.lineTo(tp.sx, tp.sy);     // up the LEFT vertical edge
+        } else {
+          ctx2d.lineTo(tp.sx, tp.sy);     // across the top (follows the spiral)
+        }
+        if (i === humBarSR) {
+          var bp2 = projWorld(cxi, byi, czi, cx, cy, cy1, sy1, cp1, sp1);
+          ctx2d.lineTo(bp2.sx, bp2.sy);   // down the RIGHT vertical edge to the baseline
+        }
+      }
+      ctx2d.stroke();
+      ctx2d.restore();
     }
 
     // 2) Constellation floor (drawn before spiral; spiral occludes overlap)
@@ -1499,6 +1531,7 @@ function vizColors() {
       trackedLollipop = null;
     }
     var lollipopDrawn = false;
+    var barDrawn = false;
 
     var fR = pal.ribbonFill[0], fG = pal.ribbonFill[1], fB = pal.ribbonFill[2];
     var sR = pal.ribbonStroke[0], sG = pal.ribbonStroke[1], sB = pal.ribbonStroke[2];
@@ -1514,6 +1547,12 @@ function vizColors() {
       if (lollipopZ !== null && !lollipopDrawn && zAvg >= lollipopZ) {
         drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
         lollipopDrawn = true;
+      }
+      // Same for the hum bar: draw it before the first quad that sits in front,
+      // so coils nearer the camera paint over it.
+      if (humBarSL >= 0 && !barDrawn && zAvg >= humBarZ) {
+        drawHumBar();
+        barDrawn = true;
       }
 
       var depth = 0.35 + 0.65 * (zAvg + baseRadius) / depthDenom;
@@ -1544,13 +1583,17 @@ function vizColors() {
       ctx2d.stroke();
 
       // Fixed baseline along the bottom of the spiral — the emphasized line
-      // (constant radius/height; does not fluctuate with magnitude).
-      ctx2d.beginPath();
-      ctx2d.moveTo(x1i, y1i);
-      ctx2d.lineTo(x2i, y2i);
-      ctx2d.strokeStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
-      ctx2d.lineWidth = 1.3;
-      ctx2d.stroke();
+      // (constant radius/height; does not fluctuate with magnitude). Skipped on
+      // the stretch under the hum bar, whose vertical edges replace it so there
+      // is no flat bottom beneath the bar.
+      if (!(humBarSL >= 0 && k2 >= humBarSL && k2 < humBarSR)) {
+        ctx2d.beginPath();
+        ctx2d.moveTo(x1i, y1i);
+        ctx2d.lineTo(x2i, y2i);
+        ctx2d.strokeStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
+        ctx2d.lineWidth = 1.3;
+        ctx2d.stroke();
+      }
 
       // Subtle octave-boundary notch: a small dot on the fixed baseline
       // wherever one octave's turn ends and the next begins (every
@@ -1568,10 +1611,8 @@ function vizColors() {
     if (lollipopZ !== null && !lollipopDrawn) {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
     }
-
-    // (The hum bar is no longer drawn here — the baseline itself rises into the
-    // bar via humBarDr() in the build loop, so it's depth-sorted and occluded
-    // with the spiral and has no flat bottom.)
+    // Hum bar sat in front of every quad — draw it now.
+    if (humBarSL >= 0 && !barDrawn) drawHumBar();
 
     // 5) Pitch-class labels on the constellation ring (full brightness,
     //    in-key vs out-of-key tinted)
