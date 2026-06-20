@@ -1545,28 +1545,31 @@ function vizColors() {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
     }
 
-    // Hum bar (Library) — a bar-graph bar at the hum's pitch: height = level,
-    // width = the hum's brightness/openness.
+    // Hum bar (Library) — an OUTLINED bar that rises out of the baseline at the
+    // hum's pitch (bottom sits on the baseline, like the harpsichord line). The
+    // sides go up to the level height; width (theta span) = brightness.
     if (track === "library" && humLollipop) {
-      var hBase = (humLollipop.octaveFloat - (OCTAVES - 1) / 2) * octaveStep;
-      var hFrac = humLollipop.octaveFloat - Math.floor(humLollipop.octaveFloat);
-      var hTheta = hFrac * 2 * Math.PI, hct = Math.cos(hTheta), hst = Math.sin(hTheta);
+      var hOf = humLollipop.octaveFloat;
+      var hBase = (hOf - (OCTAVES - 1) / 2) * octaveStep;
       var hyHead = hBase + humLevel * peakUp * LOLLI_HEIGHT;
-      var pbH = projWorld(baseRadius * hct, hBase, baseRadius * hst, cx, cy, cy1, sy1, cp1, sp1);
-      var phH = projWorld(baseRadius * hct, hyHead, baseRadius * hst, cx, cy, cy1, sy1, cp1, sp1);
-      var bw = 4 + humWidth * 24;                           // bar width (px), brightness-driven
-      var sdx = phH.sx - pbH.sx, sdy = phH.sy - pbH.sy;
-      var slen = Math.sqrt(sdx * sdx + sdy * sdy) || 1;
-      var ppx = (-sdy / slen) * (bw / 2), ppy = (sdx / slen) * (bw / 2);
+      var hTheta = (hOf - Math.floor(hOf)) * 2 * Math.PI;
+      var hdT = (0.03 + humWidth * 0.16) / 2;              // half-width in theta (along the baseline)
+      var tL = hTheta - hdT, tR = hTheta + hdT;
+      var ctL = Math.cos(tL), stL = Math.sin(tL), ctR = Math.cos(tR), stR = Math.sin(tR);
+      var bl = projWorld(baseRadius * ctL, hBase,  baseRadius * stL, cx, cy, cy1, sy1, cp1, sp1);
+      var tl = projWorld(baseRadius * ctL, hyHead, baseRadius * stL, cx, cy, cy1, sy1, cp1, sp1);
+      var tr = projWorld(baseRadius * ctR, hyHead, baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
+      var br = projWorld(baseRadius * ctR, hBase,  baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
       ctx2d.save();
-      ctx2d.fillStyle = fadeRgba(pal.lollipopHead, 0.85);
+      ctx2d.strokeStyle = fadeRgba(pal.lollipopHead, 0.95);
+      ctx2d.lineWidth = 1.5;
+      ctx2d.lineJoin = "round";
       ctx2d.beginPath();
-      ctx2d.moveTo(pbH.sx - ppx, pbH.sy - ppy);
-      ctx2d.lineTo(pbH.sx + ppx, pbH.sy + ppy);
-      ctx2d.lineTo(phH.sx + ppx, phH.sy + ppy);
-      ctx2d.lineTo(phH.sx - ppx, phH.sy - ppy);
-      ctx2d.closePath();
-      ctx2d.fill();
+      ctx2d.moveTo(bl.sx, bl.sy);   // up the left side from the baseline
+      ctx2d.lineTo(tl.sx, tl.sy);
+      ctx2d.lineTo(tr.sx, tr.sy);   // across the top
+      ctx2d.lineTo(br.sx, br.sy);   // down the right side back to the baseline
+      ctx2d.stroke();
       ctx2d.restore();
     }
 
