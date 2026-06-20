@@ -1361,6 +1361,23 @@ function vizColors() {
       ctx2d.strokeStyle = "rgba(" + bR2 + "," + bG2 + "," + bB2 + "," + (0.30 * depth).toFixed(3) + ")";
       ctx2d.lineWidth = 0.8;
       ctx2d.stroke();
+
+      // Subtle octave-boundary notch: a short tick across the spiral's outer
+      // line wherever one octave's turn ends and the next begins (every
+      // SAMPLES_PER_TURN samples). Drawn perpendicular to the line in screen
+      // space, inside the depth sort so coils in front still occlude it.
+      if (k2 % SAMPLES_PER_TURN === 0 && k2 !== 0) {
+        var ntx = x2o - x1o, nty = y2o - y1o;
+        var nlen = Math.sqrt(ntx * ntx + nty * nty) || 1;
+        var nh = 4; // tick half-length in px (subtle)
+        var npx = (-nty / nlen) * nh, npy = (ntx / nlen) * nh;
+        ctx2d.beginPath();
+        ctx2d.moveTo(x1o - npx, y1o - npy);
+        ctx2d.lineTo(x1o + npx, y1o + npy);
+        ctx2d.strokeStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
+        ctx2d.lineWidth = 1.4;
+        ctx2d.stroke();
+      }
     }
 
     // Lollipop sat in front of every quad — draw it now.
