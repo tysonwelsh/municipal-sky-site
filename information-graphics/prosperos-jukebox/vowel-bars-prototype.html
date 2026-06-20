@@ -50,8 +50,7 @@
     <div class="sliders">
       <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
       <label class="ctl">Base width <b id="baseWV">98</b><input id="baseW" type="range" min="20" max="160" step="2" value="98"></label>
-      <label class="ctl">Shoulder (vertical sides) <b id="shoulderV">0.85</b><input id="shoulder" type="range" min="0" max="1" step="0.05" value="0.85"></label>
-      <label class="ctl">Top detail <b id="topNV">5</b><input id="topN" type="range" min="2" max="60" step="1" value="5"></label>
+      <label class="ctl">Roundness <b id="roundV">1</b><input id="round" type="range" min="0" max="1.5" step="0.05" value="1"></label>
       <label class="ctl">Ripple <b id="rippleV">60</b><input id="ripple" type="range" min="0" max="240" step="5" value="60"></label>
       <label class="ctl">Wave smooth <b id="smoothV">14</b><input id="smooth" type="range" min="0" max="48" step="1" value="14"></label>
     </div>
@@ -62,8 +61,8 @@
 
   <canvas id="cv"></canvas>
   <div class="legend">
-    Shapes (closed&rarr;open): <code>ng</code> spike &middot; <code>oo</code> dome &middot; <code>uh</code> flat &middot; <code>oh</code> arch &middot; <code>ah</code> twin-peak.
-    <b>Shoulder</b> sets how much straight vertical edge each bar keeps before its vowel top.
+    Each vowel is a bar with its own <b>width</b>, <b>height</b>, and top-corner <b>roundness</b> (0 = square top, 1 = full dome) — currently <code>oo</code> is the most rounded.
+    <b>Roundness</b> scales them all at once. The sides ripple with the live hum waveform (<b>Ripple</b>/<b>Wave smooth</b>).
     Live mode taps the real hum and reads the vowel from each note event; the manual buttons drop one bar per vowel for side-by-side comparison.
   </div>
 </div>
@@ -74,38 +73,42 @@
 (function () {
   "use strict";
 
-  // ----- Vowels (mirrors the engine's LIB_HUM_VOWELS). F1/F2 shown for
-  // reference; widthMul + the profile function below are what we're tuning. -----
+  // ----- Vowels (mirrors the engine's LIB_HUM_VOWELS). F1/F2 are for reference.
+  // Each bar is parametric: a width, a height, and a top-corner ROUNDNESS
+  // (0 = square corners / flat top, 1 = corners round all the way into a dome).
+  // These per-vowel values are the knobs we're tuning. -----
   var VOWELS = {
-    ng: { f1: 270, f2: 1500, widthMul: 0.55, hue: 286, freq: 131 },  // C3
-    oo: { f1: 300, f2: 870,  widthMul: 0.75, hue: 210, freq: 147 },  // D3
-    uh: { f1: 520, f2: 1190, widthMul: 1.00, hue: 150, freq: 156 },  // E♭3
-    oh: { f1: 570, f2: 840,  widthMul: 1.25, hue: 70,  freq: 175 },  // F3
-    ah: { f1: 730, f2: 1090, widthMul: 1.50, hue: 38,  freq: 196 },  // G3
+    ng: { f1: 270, f2: 1500, hue: 286, freq: 131, width: 0.60, height: 1.00, round: 0.18 },
+    oo: { f1: 300, f2: 870,  hue: 210, freq: 147, width: 0.85, height: 0.95, round: 0.85 },
+    uh: { f1: 520, f2: 1190, hue: 150, freq: 156, width: 1.00, height: 1.00, round: 0.10 },
+    oh: { f1: 570, f2: 840,  hue: 70,  freq: 175, width: 1.20, height: 0.95, round: 0.55 },
+    ah: { f1: 730, f2: 1090, hue: 38,  freq: 196, width: 1.45, height: 1.00, round: 0.30 },
   };
   var VOWEL_ORDER = ["ng", "oo", "uh", "oh", "ah"];   // closed -> open
-
-  // Top profile per vowel: u runs -1..1 across the bar; returns the top height
-  // as a fraction 0..1 of the bar height. THIS is the per-vowel shape — easy to
-  // tweak. (The "shoulder" knob later lifts a vertical-sided base under it.)
-  function vowelProfile(name, u) {
-    var a = u < 0 ? -u : u;
-    switch (name) {
-      case "ng": return 1 - a;                                   // spike: pointed apex (closed)
-      case "oo": return Math.sqrt(Math.max(0, 1 - u * u));       // dome: semicircle
-      case "uh": return 1;                                       // flat: clean rectangle
-      case "oh": return Math.cos(u * Math.PI / 2);               // arch: rounded, wider
-      case "ah":                                                 // twin: two peaks (open mouth)
-        var g = Math.exp(-Math.pow((u - 0.5) / 0.34, 2)) +
-                Math.exp(-Math.pow((u + 0.5) / 0.34, 2));
-        return 0.4 + 0.6 * Math.min(1, g);
-      default: return 1;
-    }
-  }
   function vowelColor(name, a) { return "hsla(" + VOWELS[name].hue + ",68%,62%," + a + ")"; }
 
+  // Quadratic point, and a rounded-top bar outline as a list of [x,y] points:
+  // up the left side, around the top with rounded corners (radius `rad`), down
+  // the right side. rad == halfW gives a full dome. Returned as points so the
+  // side ripple can displace each one.
+  function quad(p0, p1, p2, u) {
+    var v = 1 - u;
+    return [v * v * p0[0] + 2 * v * u * p1[0] + u * u * p2[0],
+            v * v * p0[1] + 2 * v * u * p1[1] + u * u * p2[1]];
+  }
+  function barOutline(xc, halfW, H, rad, by) {
+    var pts = [], ML = 16, CC = 12;
+    var yc = by - (H - rad), yTop = by - H;
+    for (var s = 0; s <= ML; s++) pts.push([xc - halfW, by + (yc - by) * (s / ML)]);        // left side
+    for (var c = 1; c <= CC; c++) pts.push(quad([xc - halfW, yc], [xc - halfW, yTop], [xc - halfW + rad, yTop], c / CC));
+    if (halfW - rad > 0.5) pts.push([xc + halfW - rad, yTop]);                               // flat top (if any)
+    for (var c2 = 1; c2 <= CC; c2++) pts.push(quad([xc + halfW - rad, yTop], [xc + halfW, yTop], [xc + halfW, yc], c2 / CC));
+    for (var s2 = 1; s2 <= ML; s2++) pts.push([xc + halfW, yc + (by - yc) * (s2 / ML)]);     // right side
+    return pts;
+  }
+
   // ----- Tunable params (bound to sliders) -----
-  var P = { maxH: 220, baseW: 98, shoulder: 0.85, topN: 5, ripple: 60, smooth: 14 };
+  var P = { maxH: 220, baseW: 98, round: 1.0, ripple: 60, smooth: 14 };
   var RIPPLE = true;      // sides ripple with the live hum waveform
   var WSAMP = 520;        // waveform samples spanned along a bar's height
 
@@ -212,38 +215,28 @@
     var lvl = envLevel(b, t);
     if (lvl <= 0.002) return null;
     var v = VOWELS[b.vowel];
-    var Hbar = lvl * P.maxH;
-    var halfW = (P.baseW * v.widthMul) / 2;
-    var xc = PAD_L + b.x * laneW();
     var by = baseY();
-    var sh = P.shoulder;
-    function topH(u) { return Hbar * (sh + (1 - sh) * vowelProfile(b.vowel, u)); }
+    var H = lvl * P.maxH * v.height;
+    var halfW = (P.baseW * v.width) / 2;
+    var xc = PAD_L + b.x * laneW();
+    var roundFrac = Math.min(1, v.round * P.round);
+    var rad = roundFrac * Math.min(halfW, H * 0.95);
 
     // Horizontal ripple at screen-y `y`: the live hum waveform, sampled along the
     // bar's height. Anchored at the baseline (×frac) and silent on visual-only
     // (Compare) bars — so it only moves when there's real hum audio.
     function disp(y) {
-      if (!RIPPLE || !vizSmooth || b.compare || Hbar < 1) return 0;
-      var frac = (by - y) / Hbar; if (frac < 0) frac = 0; else if (frac > 1) frac = 1;
+      if (!RIPPLE || !vizSmooth || b.compare || H < 1) return 0;
+      var frac = (by - y) / H; if (frac < 0) frac = 0; else if (frac > 1) frac = 1;
       var d = vizSmooth[(frac * (WSAMP - 1)) | 0] * P.ripple * frac;
       return d > 60 ? 60 : (d < -60 ? -60 : d);
     }
 
-    var N = P.topN, M = 22;
-    var yTopL = by - topH(-1), yTopR = by - topH(1);
+    var pts = barOutline(xc, halfW, H, rad, by);
     ctx.beginPath();
-    ctx.moveTo(xc - halfW, by);                     // bottom-left, anchored on the baseline
-    for (var s = 1; s <= M; s++) {                  // up the LEFT side (rippling)
-      var yl = by + (yTopL - by) * (s / M);
-      ctx.lineTo(xc - halfW + disp(yl), yl);
-    }
-    for (var i = 0; i <= N; i++) {                  // across the top (the vowel shape)
-      var u = -1 + 2 * i / N, yt = by - topH(u);
-      ctx.lineTo(xc + u * halfW + disp(yt), yt);
-    }
-    for (var s2 = 1; s2 <= M; s2++) {               // down the RIGHT side (rippling)
-      var yr = yTopR + (by - yTopR) * (s2 / M);
-      ctx.lineTo(xc + halfW + disp(yr), yr);
+    for (var i = 0; i < pts.length; i++) {
+      var px = pts[i][0] + disp(pts[i][1]), py = pts[i][1];
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
     }
     ctx.strokeStyle = vowelColor(b.vowel, 0.4 + 0.6 * lvl);
     ctx.lineWidth = 1.6;
@@ -339,8 +332,7 @@
     function up() { P[key] = parseFloat(el.value); out.textContent = fmt ? fmt(P[key]) : el.value; }
     el.addEventListener("input", up); up();
   }
-  bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW");
-  bindSlider("shoulder", "shoulder"); bindSlider("topN", "topN");
+  bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW"); bindSlider("round", "round");
   bindSlider("ripple", "ripple"); bindSlider("smooth", "smooth");
 
   document.getElementById("rippleBtn").addEventListener("click", function () {
@@ -398,8 +390,7 @@
     } catch (e) {}
   }
   document.getElementById("copyBtn").addEventListener("click", function () {
-    var s = "{ maxH: " + P.maxH + ", baseW: " + P.baseW +
-            ", shoulder: " + P.shoulder + ", topN: " + P.topN +
+    var s = "{ maxH: " + P.maxH + ", baseW: " + P.baseW + ", round: " + P.round +
             ", ripple: " + P.ripple + ", smooth: " + P.smooth + " }";
     var btn = this, orig = btn.textContent;
     function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s); }
