@@ -125,7 +125,7 @@ include '../../includes/header.php';
 <script src="prosperos-jukebox-audio.js?v=1c79e6e3"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="prosperos-jukebox-ui.js?v=bcbdd909"></script>
-<script src="prosperos-jukebox-viz.js?v=e9c1f583"></script>
+<script src="prosperos-jukebox-viz.js?v=1739288a"></script>
 
 <!-- Anonymous usage tracking. Logs a page view, plus the first PLAY press as
      an engagement signal (a raw view understates an audio page). No personal
