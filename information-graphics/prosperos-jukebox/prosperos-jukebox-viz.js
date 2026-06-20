@@ -1141,7 +1141,7 @@ function vizColors() {
     // Cap by width so it can't overflow on very narrow screens.
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
-    harpRadial = octaveStep * (HARP_AMP / 500);   // vertical scale (relative to octave spacing) for the pluck
+    harpRadial = octaveStep * (HARP_AMP / 350);   // vertical scale (relative to octave spacing) for the pluck
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
