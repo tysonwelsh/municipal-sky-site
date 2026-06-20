@@ -1348,27 +1348,31 @@ function vizColors() {
       ctx2d.fillStyle = "rgba(" + fR + "," + fG + "," + fB + "," + (0.28 * depth).toFixed(3) + ")";
       ctx2d.fill();
 
+      // Fluctuating top edge — thin and faint now. The peaks read from the
+      // ribbon fill; emphasis is on the fixed baseline below, not this edge.
       ctx2d.beginPath();
       ctx2d.moveTo(x1o, y1o);
       ctx2d.lineTo(x2o, y2o);
-      ctx2d.strokeStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
-      ctx2d.lineWidth = 1.2;
+      ctx2d.strokeStyle = "rgba(" + bR2 + "," + bG2 + "," + bB2 + "," + (0.25 * depth).toFixed(3) + ")";
+      ctx2d.lineWidth = 0.6;
       ctx2d.stroke();
 
+      // Fixed baseline along the bottom of the spiral — the emphasized line
+      // (constant radius/height; does not fluctuate with magnitude).
       ctx2d.beginPath();
       ctx2d.moveTo(x1i, y1i);
       ctx2d.lineTo(x2i, y2i);
-      ctx2d.strokeStyle = "rgba(" + bR2 + "," + bG2 + "," + bB2 + "," + (0.30 * depth).toFixed(3) + ")";
-      ctx2d.lineWidth = 0.8;
+      ctx2d.strokeStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
+      ctx2d.lineWidth = 1.3;
       ctx2d.stroke();
 
-      // Subtle octave-boundary notch: a small dot on the spiral's outer line
+      // Subtle octave-boundary notch: a small dot on the fixed baseline
       // wherever one octave's turn ends and the next begins (every
       // SAMPLES_PER_TURN samples). Inside the depth sort so coils in front
       // still occlude it.
       if (k2 % SAMPLES_PER_TURN === 0 && k2 !== 0) {
         ctx2d.beginPath();
-        ctx2d.arc(x1o, y1o, 2, 0, Math.PI * 2);
+        ctx2d.arc(x1i, y1i, 2, 0, Math.PI * 2);
         ctx2d.fillStyle = "rgba(" + sR + "," + sG + "," + sB + "," + (0.9 * depth).toFixed(3) + ")";
         ctx2d.fill();
       }
