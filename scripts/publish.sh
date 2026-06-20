@@ -38,7 +38,19 @@ else
 fi
 
 # Push to the remote (non-fatal — the FTP upload still proceeds if push fails).
-if git push -q 2>/dev/null; then echo "Git: pushed to remote."; else echo "publish: git push failed — push manually when ready."; fi
+# Capture the real error rather than swallowing it, so failures are actionable.
+if push_out="$(git push 2>&1)"; then
+  echo "Git: pushed to remote."
+else
+  echo "publish: git push failed — FTP upload still proceeds; sync Git manually."
+  printf '%s\n' "$push_out" | sed 's/^/  git: /'
+  if printf '%s' "$push_out" | grep -qi "workflow.*scope"; then
+    echo "  → Cause: this push touches .github/workflows/, but your Git credential"
+    echo "    lacks GitHub's 'workflow' scope. Grant it once (opens a browser):"
+    echo "      gh auth refresh -h github.com -s workflow && gh auth setup-git"
+    echo "    then re-run publish (or just: git push). After that it syncs every time."
+  fi
+fi
 
 # Build the publish list: tracked files, minus deploy.yml's excludes
 # (.git*, *.md, *.backup-*) and local-dev/ (dev-only assets that shouldn't be
@@ -52,24 +64,35 @@ while IFS= read -r -d '' f; do
     .git*|*/.git*) continue ;;   # .gitignore, .github/, etc.
     *.md|*.backup-*) continue ;; # docs and backups (deploy.yml excludes)
     local-dev/*) continue ;;     # dev-only assets, not for production
+    scripts/*) continue ;;       # dev tooling (publish.sh, bust-cache.py) — not web content
   esac
   FILES+=("$f")
 done < <(git -c core.quotePath=false ls-files -z)
 total=${#FILES[@]}
 [ "$total" -gt 0 ] || { echo "publish: no files to upload"; exit 1; }
 
-echo "Publishing $total files → ftp://$HOST$RPATH/"
+echo "Publishing $total files → ftp://$HOST$RPATH/ (verifying each upload)"
 ok=0; fail=0; i=0; failed=()
 for f in "${FILES[@]}"; do
   i=$((i+1))
   rel="${f// /%20}"   # URL-encode spaces for the FTP path (other specials aren't present)
-  if curl -s --connect-timeout 20 --ftp-create-dirs --ftp-pasv \
-       -u "$FUSER:$FPASS" -T "$f" "ftp://$HOST$RPATH/$rel" >/dev/null 2>&1; then
+  lmd5=$(md5 -q "$f")
+  uploaded=0
+  for try in 1 2 3; do
+    curl -s --connect-timeout 20 --ftp-create-dirs --ftp-pasv \
+      -u "$FUSER:$FPASS" -T "$f" "ftp://$HOST$RPATH/$rel" >/dev/null 2>&1 || continue
+    # Verify: FTP reports "transfer complete" even when bytes are mangled, and
+    # corruption can preserve the file size — so compare a content hash by
+    # downloading the file back. Retry on mismatch.
+    rmd5=$(curl -s --max-time 90 --ftp-pasv -u "$FUSER:$FPASS" "ftp://$HOST$RPATH/$rel" | md5)
+    [ "$rmd5" = "$lmd5" ] && { uploaded=1; break; }
+  done
+  if [ "$uploaded" = 1 ]; then
     ok=$((ok+1))
   else
-    fail=$((fail+1)); failed+=("$f"); echo "  ✗ FAILED: $f"
+    fail=$((fail+1)); failed+=("$f"); echo "  ✗ FAILED (unverified after 3 tries): $f"
   fi
-  if [ $((i % 25)) -eq 0 ]; then echo "  ...$i/$total uploaded"; fi
+  if [ $((i % 25)) -eq 0 ]; then echo "  ...$i/$total"; fi
 done
 
 echo "----------------------------------------"
