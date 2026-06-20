@@ -51,6 +51,7 @@
       <button class="styleBtn" data-style="pixel">Pixel</button>
       <button class="styleBtn" data-style="sharp">Sharp</button>
     </span>
+    <button id="audioDriveBtn" class="on" title="String amplitude follows the live audio envelope">Audio-driven</button>
     <div class="sliders">
       <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="70" value="28"></label>
       <label class="ctl">Decay (s) <b id="tauV">1.1</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.1"></label>
@@ -101,6 +102,7 @@
   // ----- Tunable params (bound to sliders) -----
   var P = { amp: 28, tau: 1.1, vib: 7, wid: 4, sens: 6 };
   var STYLE = "smooth";   // "smooth" | "pixel" | "sharp"
+  var AUDIODRIVE = true;  // string amplitude follows the live audio envelope
 
   // ----- State -----
   // Each row = one octave. plucks: {x, t0, fvib, amp} where x is fraction 0..1 of lane width.
@@ -143,7 +145,10 @@
         if (ac.state === "suspended") ac.resume();
         if (!protoOut || protoOut.context !== ac) {
           protoOut = ac.createGain(); protoOut.gain.value = 0.6; protoOut.connect(ac.destination);
+          protoTapped = false;
         }
+        ensureAnalyser(ac);
+        if (!protoTapped) { try { protoOut.connect(analyser); protoTapped = true; } catch (e) {} }
         ProsperoAudio.pluckLibraryInto(freq, 1.2, protoOut, 1);
         return;
       }
@@ -215,7 +220,8 @@
       } else {                                           // gaussian: rounded hump
         shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
       }
-      d += pk.amp * env * shape * Math.sin(2 * Math.PI * pk.fvib * age);
+      var lvl = (AUDIODRIVE && vizTime) ? liveLevel : 1;   // amplitude follows live audio envelope
+      d += pk.amp * env * lvl * shape * Math.sin(2 * Math.PI * pk.fvib * age);
     }
     return d;
   }
@@ -299,8 +305,19 @@
   }
 
   // ----- Live audio: tap the melody layer, detect onsets, snap pitch -----
-  var ctxA = null, analyser = null, fft = null, audioOn = false, tapOk = false;
-  var emaEnergy = 0, lastTrig = 0;
+  var ctxA = null, analyser = null, fft = null, vizTime = null, audioOn = false, tapOk = false, protoTapped = false;
+  var emaEnergy = 0, lastTrig = 0, liveLevel = 0;
+  // One analyser, fed by BOTH the live melody layer and the prototype's own
+  // pluck output, so its level reflects whatever harpsichord is sounding.
+  function ensureAnalyser(ac) {
+    if (analyser && analyser.context === ac) return;
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0;
+    fft = new Float32Array(analyser.frequencyBinCount);
+    vizTime = new Float32Array(analyser.fftSize);
+    protoTapped = false;
+  }
   function startAudio() {
     if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
     try {
@@ -314,11 +331,8 @@
       ProsperoAudio.play("library");
       audioOn = true;                       // audio is playing now (independent of the tap)
 
-      analyser = ctxA.createAnalyser();
-      analyser.fftSize = 8192;
-      analyser.smoothingTimeConstant = 0;
+      ensureAnalyser(ctxA);
       tapOk = ProsperoAudio.attachLayerAnalyser("library", "melody", analyser);
-      fft = new Float32Array(analyser.frequencyBinCount);
       setStatus("playing · ctx " + ctxA.state + (tapOk ? " · tapping harpsichord" : " · tap failed"));
     } catch (e) {
       setStatus("audio error: " + (e && e.message ? e.message : e));
@@ -410,6 +424,10 @@
       styleBtns.forEach(function (x) { x.classList.toggle("on", x === b); });
     });
   });
+  document.getElementById("audioDriveBtn").addEventListener("click", function () {
+    AUDIODRIVE = !AUDIODRIVE;
+    this.classList.toggle("on", AUDIODRIVE);
+  });
 
   // Manual note buttons: one per scale note in the middle octave (4), plus
   // octave-shift via shift/alt could be added later.
@@ -426,7 +444,17 @@
 
   // ----- Main loop -----
   resize();
-  (function loop() { analyzeLive(); requestAnimationFrame(loop); })();
+  (function loop() {
+    if (analyser && vizTime) {
+      analyser.getFloatTimeDomainData(vizTime);
+      var s = 0; for (var n = 0; n < vizTime.length; n++) s += vizTime[n] * vizTime[n];
+      var target = Math.min(1.4, Math.sqrt(s / vizTime.length) * 28);   // live RMS -> visual level
+      liveLevel = target > liveLevel ? (liveLevel * 0.4 + target * 0.6)  // fast attack
+                                     : (liveLevel * 0.85 + target * 0.15); // slow release
+    }
+    analyzeLive();
+    requestAnimationFrame(loop);
+  })();
   requestAnimationFrame(draw);
 })();
 </script>
