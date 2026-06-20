@@ -1141,7 +1141,7 @@ function vizColors() {
     // Cap by width so it can't overflow on very narrow screens.
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
-    harpRadial = baseRadius * (HARP_AMP / 400);   // world-unit scale for the pluck ripple
+    harpRadial = octaveStep * (HARP_AMP / 250);   // vertical scale (relative to octave spacing) for the pluck
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
@@ -1157,10 +1157,10 @@ function vizColors() {
           ? PEAK_KNEE * Math.pow(mag / PEAK_KNEE, PEAK_GAMMA)
           : mag;
         var ct = Math.cos(theta), st = Math.sin(theta);
-        var rr = baseRadius + harpDr(o, b);   // baseline ripples radially when a harpsichord note fires
-        var xW = rr * ct, zW = rr * st;
-        project(xW, yWorld,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
-        project(xW, yWorld + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
+        var xW = baseRadius * ct, zW = baseRadius * st;
+        var dy = harpDr(o, b);   // baseline vibrates vertically (up/down) when a harpsichord note fires
+        project(xW, yWorld + dy,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
+        project(xW, yWorld + dy + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
       }
     }
 
