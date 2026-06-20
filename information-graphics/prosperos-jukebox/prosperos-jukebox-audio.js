@@ -49,6 +49,10 @@ window.ProsperoAudio = (function () {
     [0.10, 0.15, 0.40, 0.05, 0.30],
     [0.08, 0.12, 0.25, 0.50, 0.05],
   ];
+  // Probability that a hum note (after the first in a phrase) shifts the vowel to
+  // a neighbor via the walk above — so the mouth shape changes occasionally
+  // mid-phrase instead of holding one vowel the whole time.
+  var HUM_VOWEL_CHANGE_PROB = 0.3;
 
   // Markov transition matrix for melody (7 notes, C Dorian)
   var LIB_MELODY_MARKOV = [
@@ -2178,8 +2182,11 @@ window.ProsperoAudio = (function () {
     var now = c.currentTime;
     var out = lgp("library", "hum");
 
-    // One vowel per phrase via neighbor walk
+    // Vowel: start from a neighbor-walk step, then (per note) occasionally step
+    // again within the phrase so the mouth shape shifts mid-hum. Steps follow
+    // LIB_HUM_VOWEL_WALK, so changes stay to adjacent vowels (linguistic logic).
     humVowelIdx = markovNext(LIB_HUM_VOWEL_WALK[humVowelIdx], Math.random());
+    var phraseStartVowelIdx = humVowelIdx;
     var vowel = LIB_HUM_VOWELS[LIB_HUM_VOWEL_POOL[humVowelIdx]];
 
     var phraseLen = pickHumPhraseLen();   // weighted toward 3–5 notes, 8+ rare
@@ -2188,6 +2195,11 @@ window.ProsperoAudio = (function () {
     var humFirstFreq = null, humLastFreq = null;
 
     for (var ni = 0; ni < phraseLen; ni++) {
+      // Occasionally shift the vowel to a neighbor mid-phrase (never on note 0).
+      if (ni > 0 && Math.random() < HUM_VOWEL_CHANGE_PROB) {
+        humVowelIdx = markovNext(LIB_HUM_VOWEL_WALK[humVowelIdx], Math.random());
+        vowel = LIB_HUM_VOWELS[LIB_HUM_VOWEL_POOL[humVowelIdx]];
+      }
       // Phrase-internal notes: gentle pull toward chord tones (or vanilla
       // Markov if harmonic state is disabled for hum). Final note: full
       // resolution — strong chord-tone bias + occasional force-snap.
@@ -2331,7 +2343,8 @@ window.ProsperoAudio = (function () {
     scheduleWithRate(libraryHum, nextDelay, "library", "hum");
 
     if (humFirstFreq !== null) {
-      var vowelLabel = LIB_HUM_VOWEL_POOL[humVowelIdx] || "";
+      var vowelLabel = LIB_HUM_VOWEL_POOL[phraseStartVowelIdx] || "";
+      if (humVowelIdx !== phraseStartVowelIdx) vowelLabel += "→" + (LIB_HUM_VOWEL_POOL[humVowelIdx] || "");
       var rangeLabel = freqToNoteName(humFirstFreq);
       if (humLastFreq !== humFirstFreq) {
         rangeLabel += "→" + freqToNoteName(humLastFreq);
