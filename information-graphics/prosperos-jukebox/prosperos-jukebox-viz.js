@@ -582,7 +582,7 @@ function vizColors() {
 
   // ---------- Camera ----------
   var DEFAULT_YAW = 0.6;
-  var DEFAULT_PITCH = -0.5;
+  var DEFAULT_PITCH = 0.3;   // look slightly DOWN on the spiral (negative looked up at its underside)
   var camYaw = DEFAULT_YAW, camPitch = DEFAULT_PITCH;
   var autoRotate = true;
   var dragging = false, lastMx = 0, lastMy = 0;
