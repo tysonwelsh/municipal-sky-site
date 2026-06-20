@@ -2063,8 +2063,8 @@ window.ProsperoAudio = (function () {
   // Per-fire scheduling stays at the legacy 25-50s sparseness so the
   // hum still feels rare in the overall track mix (the RATE slider
   // scales this base via scheduleWithRate).
-  var HUM_PHRASE_BASE_MS = 15000;
-  var HUM_PHRASE_JITTER_MS = 15000;
+  var HUM_PHRASE_BASE_MS = 10000;
+  var HUM_PHRASE_JITTER_MS = 20000;
 
   function humRand(rangeKey) {
     var r = HUM_TUNING[rangeKey];
