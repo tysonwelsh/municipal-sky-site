@@ -227,29 +227,38 @@
   }
 
   // ----- Live audio: tap the melody layer, detect onsets, snap pitch -----
-  var ctxA = null, analyser = null, fft = null, audioOn = false;
+  var ctxA = null, analyser = null, fft = null, audioOn = false, tapOk = false;
   var emaEnergy = 0, lastTrig = 0;
   function startAudio() {
     if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
-    ProsperoAudio.switchTrack("library");
-    ProsperoAudio.play("library");
-    ctxA = ProsperoAudio.getAudioContext && ProsperoAudio.getAudioContext();
-    if (!ctxA) { setStatus("no audio context"); return; }
-    if (ctxA.state === "suspended") ctxA.resume();
-    analyser = ctxA.createAnalyser();
-    analyser.fftSize = 8192;
-    analyser.smoothingTimeConstant = 0;
-    var ok = ProsperoAudio.attachLayerAnalyser("library", "melody", analyser);
-    fft = new Float32Array(analyser.frequencyBinCount);
-    audioOn = ok;
-    setStatus(ok ? "live: tapping harpsichord" : "tap failed");
+    try {
+      // Mirror the proven spiral-prototype bootstrap: create + resume the
+      // context within the click gesture, THEN switch track and play.
+      ProsperoAudio.init();
+      ctxA = ProsperoAudio.getAudioContext();
+      if (!ctxA) { setStatus("no audio context"); return; }
+      if (ctxA.state === "suspended") ctxA.resume();
+      ProsperoAudio.switchTrack("library");
+      ProsperoAudio.play("library");
+      audioOn = true;                       // audio is playing now (independent of the tap)
+
+      analyser = ctxA.createAnalyser();
+      analyser.fftSize = 8192;
+      analyser.smoothingTimeConstant = 0;
+      tapOk = ProsperoAudio.attachLayerAnalyser("library", "melody", analyser);
+      fft = new Float32Array(analyser.frequencyBinCount);
+      setStatus("playing · ctx " + ctxA.state + (tapOk ? " · tapping harpsichord" : " · tap failed"));
+    } catch (e) {
+      setStatus("audio error: " + (e && e.message ? e.message : e));
+      if (window.console) console.error(e);
+    }
   }
   function stopAudio() {
     if (window.ProsperoAudio) ProsperoAudio.stop && ProsperoAudio.stop();
-    audioOn = false; setStatus("stopped");
+    audioOn = false; tapOk = false; setStatus("stopped");
   }
   function analyzeLive() {
-    if (!audioOn || !analyser) return;
+    if (!tapOk || !analyser) return;
     analyser.getFloatFrequencyData(fft);
     var binHz = ctxA.sampleRate / analyser.fftSize;
     var lo = Math.max(1, Math.floor(110 / binHz)), hi = Math.ceil(1100 / binHz);
