@@ -58,7 +58,8 @@
 
   <!-- Per-vowel shape editor: pick a vowel, then tune just that bar. -->
   <div class="controls">
-    <span class="vowels"><span class="lbl">Edit shape:</span><span id="editBtns"></span></span>
+    <span class="vowels"><span class="lbl">Edit shape:</span><span id="editBtns"></span>
+      <button id="copyVowelBtn" title="Copy just this vowel's params">Copy shape</button></span>
     <div class="sliders">
       <label class="ctl">Width <b id="vWidthV">—</b><input id="vWidth" type="range" min="0.30" max="2.0" step="0.05"></label>
       <label class="ctl">Height <b id="vHeightV">—</b><input id="vHeight" type="range" min="0.40" max="1.4" step="0.05"></label>
@@ -448,19 +449,26 @@
       document.execCommand("copy"); document.body.removeChild(ta);
     } catch (e) {}
   }
-  document.getElementById("copyBtn").addEventListener("click", function () {
-    var s = "globals { maxH: " + P.maxH + ", baseW: " + P.baseW +
-            ", ripple: " + P.ripple + ", smooth: " + P.smooth + " }\n";
-    VOWEL_ORDER.forEach(function (v) {
-      var x = VOWELS[v];
-      s += v + ": { width: " + x.width + ", height: " + x.height + ", peak: " + x.peak +
-           ", pointed: " + x.pointed + ", round: " + x.round + " }\n";
-    });
-    var btn = this, orig = btn.textContent;
-    function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s); }
+  function copyText(s, btn) {
+    var orig = btn.textContent;
+    function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s.split("\n")[0]); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(s).then(flash, function () { fallbackCopy(s); flash(); });
     } else { fallbackCopy(s); flash(); }
+  }
+  function vowelParamStr(v) {
+    var x = VOWELS[v];
+    return v + ": { width: " + x.width + ", height: " + x.height + ", peak: " + x.peak +
+           ", pointed: " + x.pointed + ", round: " + x.round + " }";
+  }
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var s = "globals { maxH: " + P.maxH + ", baseW: " + P.baseW +
+            ", ripple: " + P.ripple + ", smooth: " + P.smooth + " }\n";
+    VOWEL_ORDER.forEach(function (v) { s += vowelParamStr(v) + "\n"; });
+    copyText(s, this);
+  });
+  document.getElementById("copyVowelBtn").addEventListener("click", function () {
+    copyText(vowelParamStr(editVowel), this);
   });
 
   // ----- Go -----
