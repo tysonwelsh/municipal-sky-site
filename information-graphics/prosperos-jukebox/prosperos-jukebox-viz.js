@@ -1115,15 +1115,20 @@ function vizColors() {
     var ph = projWorld(baseRadius * ct, lp.yHead, baseRadius * st, cx, cy, cy1, sy1, cp1, sp1);
     var head = fadeRgba(pal.lollipopHead, depthAlpha);
     ctx2d.save();
-    // Stem
+    ctx2d.globalCompositeOperation = "lighter";
+    var grad = ctx2d.createRadialGradient(ph.sx, ph.sy, 1, ph.sx, ph.sy, 16);
+    grad.addColorStop(0, head);
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx2d.fillStyle = grad;
+    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 16, 0, Math.PI * 2); ctx2d.fill();
+    ctx2d.globalCompositeOperation = "source-over";
     ctx2d.strokeStyle = head; ctx2d.lineWidth = 2;
     ctx2d.beginPath(); ctx2d.moveTo(pb.sx, pb.sy); ctx2d.lineTo(ph.sx, ph.sy); ctx2d.stroke();
-    // Base dot
     ctx2d.fillStyle = head;
     ctx2d.beginPath(); ctx2d.arc(pb.sx, pb.sy, 2.2, 0, Math.PI * 2); ctx2d.fill();
-    // Head — plain hollow circle (no glow / fill)
-    ctx2d.lineWidth = 1.6;
-    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 5, 0, Math.PI * 2); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 5, 0, Math.PI * 2); ctx2d.fill();
+    ctx2d.fillStyle = "rgba(255,255,255," + (0.85 * depthAlpha).toFixed(3) + ")";
+    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 1.6, 0, Math.PI * 2); ctx2d.fill();
     ctx2d.restore();
   }
 
@@ -1448,7 +1453,7 @@ function vizColors() {
     var lollipopDepthAlpha = 1;
     if (whistleOverlay) {
       var whistlePeaks = detectWhistlePeaks();
-      updateLollipop3D(whistlePeaks, octaveStep, peakUp * LOLLI_HEIGHT);
+      updateLollipop3D(whistlePeaks, octaveStep, peakUp);   // Ariel whistle: original height
       if (trackedLollipop) {
         // Use the head's projected z as the depth marker. The head is
         // the visually dominant decoration; ordering by it makes the
