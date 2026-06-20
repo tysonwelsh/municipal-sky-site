@@ -46,11 +46,13 @@
     <button id="allBtn">Compare all vowels</button>
     <button id="clearBtn">Clear</button>
     <button id="copyBtn">Copy params</button>
+    <button id="rippleBtn" class="on" title="Bar sides ripple with the hum's live waveform">Side ripple</button>
     <div class="sliders">
       <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
       <label class="ctl">Base width <b id="baseWV">98</b><input id="baseW" type="range" min="20" max="160" step="2" value="98"></label>
       <label class="ctl">Shoulder (vertical sides) <b id="shoulderV">0.85</b><input id="shoulder" type="range" min="0" max="1" step="0.05" value="0.85"></label>
       <label class="ctl">Top detail <b id="topNV">5</b><input id="topN" type="range" min="2" max="60" step="1" value="5"></label>
+      <label class="ctl">Ripple <b id="rippleV">60</b><input id="ripple" type="range" min="0" max="240" step="5" value="60"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
@@ -102,7 +104,23 @@
   function vowelColor(name, a) { return "hsla(" + VOWELS[name].hue + ",68%,62%," + a + ")"; }
 
   // ----- Tunable params (bound to sliders) -----
-  var P = { maxH: 220, baseW: 98, shoulder: 0.85, topN: 5 };
+  var P = { maxH: 220, baseW: 98, shoulder: 0.85, topN: 5, ripple: 60 };
+  var RIPPLE = true;      // sides ripple with the live hum waveform
+  var WSAMP = 520;        // waveform samples spanned along a bar's height
+
+  // ----- Analyser: the live hum waveform that drives the side ripple. Fed by
+  // both the prototype's own note output AND (in live mode) the real hum layer,
+  // so the ripple always depicts whatever hum is actually sounding. -----
+  var analyser = null, vizTime = null, protoTapped = false, liveTapped = false;
+  function ensureAnalyser(ac) {
+    if (analyser && analyser.context === ac) return analyser;
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0;
+    vizTime = new Float32Array(analyser.fftSize);
+    protoTapped = false; liveTapped = false;
+    return analyser;
+  }
 
   // ----- Clock: audio time when the engine is live (so live bars sync to the
   // sound, which is scheduled ahead), else wall clock. -----
@@ -123,7 +141,10 @@
     if (ac.state === "suspended") ac.resume();
     if (!protoOut || protoOut.context !== ac) {
       protoOut = ac.createGain(); protoOut.gain.value = 3.2; protoOut.connect(ac.destination);
+      protoTapped = false;
     }
+    ensureAnalyser(ac);
+    if (!protoTapped) { try { protoOut.connect(analyser); protoTapped = true; } catch (e) {} }
     ProsperoAudio.humNoteInto(freq, vowel, dur || 1.6, protoOut, 1);
   }
 
@@ -183,15 +204,32 @@
     var sh = P.shoulder;
     function topH(u) { return Hbar * (sh + (1 - sh) * vowelProfile(b.vowel, u)); }
 
-    ctx.beginPath();
-    ctx.moveTo(xc - halfW, by);                     // bottom-left, on the baseline
-    ctx.lineTo(xc - halfW, by - topH(-1));          // up the LEFT vertical edge
-    var N = P.topN;
-    for (var i = 0; i <= N; i++) {                  // across the top (the vowel shape)
-      var u = -1 + 2 * i / N;
-      ctx.lineTo(xc + u * halfW, by - topH(u));
+    // Horizontal ripple at screen-y `y`: the live hum waveform, sampled along the
+    // bar's height. Anchored at the baseline (×frac) and silent on visual-only
+    // (Compare) bars — so it only moves when there's real hum audio.
+    function disp(y) {
+      if (!RIPPLE || !vizTime || b.compare || Hbar < 1) return 0;
+      var frac = (by - y) / Hbar; if (frac < 0) frac = 0; else if (frac > 1) frac = 1;
+      var d = vizTime[(frac * (WSAMP - 1)) | 0] * P.ripple * frac;
+      return d > 60 ? 60 : (d < -60 ? -60 : d);
     }
-    ctx.lineTo(xc + halfW, by);                     // down the RIGHT vertical edge
+
+    var N = P.topN, M = 22;
+    var yTopL = by - topH(-1), yTopR = by - topH(1);
+    ctx.beginPath();
+    ctx.moveTo(xc - halfW, by);                     // bottom-left, anchored on the baseline
+    for (var s = 1; s <= M; s++) {                  // up the LEFT side (rippling)
+      var yl = by + (yTopL - by) * (s / M);
+      ctx.lineTo(xc - halfW + disp(yl), yl);
+    }
+    for (var i = 0; i <= N; i++) {                  // across the top (the vowel shape)
+      var u = -1 + 2 * i / N, yt = by - topH(u);
+      ctx.lineTo(xc + u * halfW + disp(yt), yt);
+    }
+    for (var s2 = 1; s2 <= M; s2++) {               // down the RIGHT side (rippling)
+      var yr = yTopR + (by - yTopR) * (s2 / M);
+      ctx.lineTo(xc + halfW + disp(yr), yr);
+    }
     ctx.strokeStyle = vowelColor(b.vowel, 0.4 + 0.6 * lvl);
     ctx.lineWidth = 1.6;
     ctx.lineJoin = "round";
@@ -201,6 +239,7 @@
 
   function draw() {
     var t = clock();
+    if (analyser && vizTime) analyser.getFloatTimeDomainData(vizTime);   // live hum waveform
     ctx.clearRect(0, 0, W, H);
     var by = baseY();
 
@@ -251,6 +290,10 @@
       ProsperoAudio.switchTrack("library");
       ProsperoAudio.play("library");
       audioOn = true;
+      ensureAnalyser(ctxA);
+      if (!liveTapped && ProsperoAudio.attachLayerAnalyser) {
+        liveTapped = ProsperoAudio.attachLayerAnalyser("library", "hum", analyser);
+      }
       if (!noteHooked && ProsperoAudio.setNoteListener) {
         ProsperoAudio.setNoteListener(function (ev) {
           if (ev.track === "library" && ev.layer === "hum") {
@@ -280,6 +323,11 @@
   }
   bindSlider("maxH", "maxH"); bindSlider("baseW", "baseW");
   bindSlider("shoulder", "shoulder"); bindSlider("topN", "topN");
+  bindSlider("ripple", "ripple");
+
+  document.getElementById("rippleBtn").addEventListener("click", function () {
+    RIPPLE = !RIPPLE; this.classList.toggle("on", RIPPLE);
+  });
 
   document.getElementById("audioBtn").addEventListener("click", function () {
     if (audioOn) { stopAudio(); this.classList.remove("on"); this.textContent = "▶ Live audio"; }
@@ -333,7 +381,7 @@
   }
   document.getElementById("copyBtn").addEventListener("click", function () {
     var s = "{ maxH: " + P.maxH + ", baseW: " + P.baseW +
-            ", shoulder: " + P.shoulder + ", topN: " + P.topN + " }";
+            ", shoulder: " + P.shoulder + ", topN: " + P.topN + ", ripple: " + P.ripple + " }";
     var btn = this, orig = btn.textContent;
     function flash() { btn.textContent = "Copied!"; setTimeout(function () { btn.textContent = orig; }, 1100); setStatus("copied " + s); }
     if (navigator.clipboard && navigator.clipboard.writeText) {
