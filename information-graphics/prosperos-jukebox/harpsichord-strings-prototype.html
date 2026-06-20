@@ -53,7 +53,7 @@
     </span>
     <button id="audioDriveBtn" class="on" title="String amplitude follows the live audio envelope">Audio-driven</button>
     <div class="sliders">
-      <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="70" value="28"></label>
+      <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="120" value="28"></label>
       <label class="ctl">Decay (s) <b id="tauV">1.1</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.1"></label>
       <label class="ctl">Vibration <b id="vibV">7</b><input id="vib" type="range" min="2" max="20" step="0.5" value="7"></label>
       <label class="ctl">String width <b id="widV">4</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="4"></label>
@@ -448,7 +448,7 @@
     if (analyser && vizTime) {
       analyser.getFloatTimeDomainData(vizTime);
       var s = 0; for (var n = 0; n < vizTime.length; n++) s += vizTime[n] * vizTime[n];
-      var target = Math.min(1.4, Math.sqrt(s / vizTime.length) * 28);   // live RMS -> visual level
+      var target = Math.min(2.6, Math.sqrt(s / vizTime.length) * 60);   // live RMS -> visual level (louder = bigger)
       liveLevel = target > liveLevel ? (liveLevel * 0.4 + target * 0.6)  // fast attack
                                      : (liveLevel * 0.85 + target * 0.15); // slow release
     }
