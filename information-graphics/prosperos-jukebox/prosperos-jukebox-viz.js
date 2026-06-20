@@ -686,7 +686,10 @@ function vizColors() {
   var harpQueue = [], harpPlucks = [];
   var harpActive = false, harpNow = 0, harpRadial = 0;
   if (ProsperoAudio.setNoteListener) {
-    ProsperoAudio.setNoteListener(function (ev) { harpQueue.push(ev); });
+    ProsperoAudio.setNoteListener(function (ev) {
+      if (ev.track === "library") harpQueue.push(ev);                       // harpsichord
+      else if (ev.track === "ariel" && ev.layer === "bass") bassQueue.push(ev); // Ariel bass
+    });
   }
   // Radial baseline displacement at sample (o,b) from all active plucks.
   function harpDr(o, b) {
@@ -703,6 +706,37 @@ function vizColors() {
       var wv = melodyTime[(frac * (HARP_WSAMP - 1)) | 0] * HARP_AUDIO_GAIN;
       if (wv > 2.6) wv = 2.6; else if (wv < -2.6) wv = -2.6;
       dr += harpRadial * decay * env * wv;
+    }
+    return dr;
+  }
+
+  // Ariel bass — same baseline-ripple mechanic, tuned to read SMOOTH (the bass
+  // is a low, mellow tone, and a wider window shows a single gentle wave).
+  var bassAnalyser = actx.createAnalyser();
+  bassAnalyser.fftSize = FFT_SIZE;
+  bassAnalyser.smoothingTimeConstant = 0;
+  var bassTapOk = ProsperoAudio.attachLayerAnalyser
+    ? ProsperoAudio.attachLayerAnalyser("ariel", "bass", bassAnalyser)
+    : false;
+  var bassTime = new Float32Array(FFT_SIZE);
+  var BASS_TAU = 2.5, BASS_SIGMA_OCT = 0.06, BASS_WSAMP = 300;
+  var BASS_AUDIO_GAIN = 20, BASS_AMP = 80, BASS_LIFETIME = 8;
+  var bassQueue = [], bassPlucks = [];
+  var bassActive = false, bassNow = 0, bassRadial = 0;
+  function bassDr(o, b) {
+    if (!bassActive) return 0;
+    var ofSample = o + b / SAMPLES_PER_TURN, dr = 0;
+    for (var i = 0; i < bassPlucks.length; i++) {
+      var pk = bassPlucks[i];
+      var dOct = ofSample - pk.octaveFloat;
+      if (dOct < -BASS_SIGMA_OCT * 3 || dOct > BASS_SIGMA_OCT * 3) continue;
+      var env = Math.exp(-(dOct * dOct) / (2 * BASS_SIGMA_OCT * BASS_SIGMA_OCT));
+      var decay = Math.exp(-(bassNow - pk.startTime) / BASS_TAU);
+      var frac = dOct / (2.5 * BASS_SIGMA_OCT) + 0.5;
+      if (frac < 0) frac = 0; else if (frac > 1) frac = 1;
+      var wv = bassTime[(frac * (BASS_WSAMP - 1)) | 0] * BASS_AUDIO_GAIN;
+      if (wv > 2.6) wv = 2.6; else if (wv < -2.6) wv = -2.6;
+      dr += bassRadial * decay * env * wv;
     }
     return dr;
   }
@@ -1125,6 +1159,26 @@ function vizColors() {
       harpPlucks.length = 0; harpQueue.length = 0;
     }
 
+    // Ariel bass baseline ripple (Ariel track only).
+    bassActive = false;
+    if (track === "ariel") {
+      if (bassTapOk) bassAnalyser.getFloatTimeDomainData(bassTime);
+      bassNow = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      for (var bqi = bassQueue.length - 1; bqi >= 0; bqi--) {
+        if (bassNow >= bassQueue[bqi].startTime) {
+          var bev = bassQueue.splice(bqi, 1)[0];
+          var bof = Math.log2(bev.freq / ROW_F_MIN);
+          if (bof < 0) bof = 0.001; else if (bof >= OCTAVES) bof = OCTAVES - 0.001;
+          bassPlucks.push({ octaveFloat: bof, startTime: bev.startTime });
+        }
+      }
+      if (bassQueue.length > 64) bassQueue.splice(0, bassQueue.length - 64);
+      bassPlucks = bassPlucks.filter(function (p) { return (bassNow - p.startTime) < BASS_LIFETIME; });
+      bassActive = bassTapOk && bassPlucks.length > 0;
+    } else {
+      bassPlucks.length = 0; bassQueue.length = 0;
+    }
+
     computeMagnitudes(whistleOverlay);
     applyAdaptiveBaseline();
     applySpectralBlur(BLUR_SIGMA);
@@ -1142,6 +1196,7 @@ function vizColors() {
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
     harpRadial = octaveStep * (HARP_AMP / 350);   // vertical scale (relative to octave spacing) for the pluck
+    bassRadial = octaveStep * (BASS_AMP / 350);
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
@@ -1158,7 +1213,7 @@ function vizColors() {
           : mag;
         var ct = Math.cos(theta), st = Math.sin(theta);
         var xW = baseRadius * ct, zW = baseRadius * st;
-        var dy = harpDr(o, b);   // baseline vibrates vertically (up/down) when a harpsichord note fires
+        var dy = harpDr(o, b) + bassDr(o, b);   // baseline vibrates vertically (harpsichord on Library, bass on Ariel)
         project(xW, yWorld + dy,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
         project(xW, yWorld + dy + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
       }

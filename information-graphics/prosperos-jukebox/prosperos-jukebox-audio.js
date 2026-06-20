@@ -1425,7 +1425,7 @@ window.ProsperoAudio = (function () {
     ho.start(startTime);
     ho.stop(startTime + 0.5);
 
-    emitNoteEvent({ freq: freq, startTime: startTime, duration: duration });
+    emitNoteEvent({ track: currentTrack, layer: "melody", freq: freq, startTime: startTime, duration: duration });
   }
 
   // --- Motif renderer ---
@@ -4480,6 +4480,7 @@ window.ProsperoAudio = (function () {
       o.connect(og); og.connect(g);
       o.start(t); o.stop(t + ring + 0.05);
     }
+    emitNoteEvent({ track: "ariel", layer: "bass", freq: freq, startTime: t, duration: ring });
   }
 
   // A rationed flourish — a short remembered figure, replayed fresh / verbatim

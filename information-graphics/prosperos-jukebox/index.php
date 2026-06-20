@@ -122,10 +122,10 @@ include '../../includes/header.php';
 </div>
 
 <script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
-<script src="prosperos-jukebox-audio.js?v=a14c2fc4"></script>
+<script src="prosperos-jukebox-audio.js?v=4287aa91"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="prosperos-jukebox-ui.js?v=bcbdd909"></script>
-<script src="prosperos-jukebox-viz.js?v=7b44ec7e"></script>
+<script src="prosperos-jukebox-viz.js?v=d6d8ab49"></script>
 
 <!-- Anonymous usage tracking. Logs a page view, plus the first PLAY press as
      an engagement signal (a raw view understates an audio page). No personal
