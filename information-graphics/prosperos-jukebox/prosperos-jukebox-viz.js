@@ -752,8 +752,8 @@ function vizColors() {
     ? ProsperoAudio.attachLayerAnalyser("library", "hum", humAnalyser)
     : false;
   var humTime = new Float32Array(FFT_SIZE);
-  var humQueue = [], humLollipop = null, humLevel = 0, humQuiet = 0;
-  var HUM_GAIN = 16;
+  var humQueue = [], humLollipop = null, humLevel = 0;
+  var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head max-height multiplier (whistle + hum)
 
   // Drone cycles for the constellation floor
   var droneCycles = [];
@@ -1114,20 +1114,15 @@ function vizColors() {
     var ph = projWorld(baseRadius * ct, lp.yHead, baseRadius * st, cx, cy, cy1, sy1, cp1, sp1);
     var head = fadeRgba(pal.lollipopHead, depthAlpha);
     ctx2d.save();
-    ctx2d.globalCompositeOperation = "lighter";
-    var grad = ctx2d.createRadialGradient(ph.sx, ph.sy, 1, ph.sx, ph.sy, 16);
-    grad.addColorStop(0, head);
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx2d.fillStyle = grad;
-    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 16, 0, Math.PI * 2); ctx2d.fill();
-    ctx2d.globalCompositeOperation = "source-over";
+    // Stem
     ctx2d.strokeStyle = head; ctx2d.lineWidth = 2;
     ctx2d.beginPath(); ctx2d.moveTo(pb.sx, pb.sy); ctx2d.lineTo(ph.sx, ph.sy); ctx2d.stroke();
+    // Base dot
     ctx2d.fillStyle = head;
     ctx2d.beginPath(); ctx2d.arc(pb.sx, pb.sy, 2.2, 0, Math.PI * 2); ctx2d.fill();
-    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 5, 0, Math.PI * 2); ctx2d.fill();
-    ctx2d.fillStyle = "rgba(255,255,255," + (0.85 * depthAlpha).toFixed(3) + ")";
-    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 1.6, 0, Math.PI * 2); ctx2d.fill();
+    // Head — plain hollow circle (no glow / fill)
+    ctx2d.lineWidth = 1.6;
+    ctx2d.beginPath(); ctx2d.arc(ph.sx, ph.sy, 5, 0, Math.PI * 2); ctx2d.stroke();
     ctx2d.restore();
   }
 
@@ -1193,23 +1188,27 @@ function vizColors() {
       bassPlucks.length = 0; bassQueue.length = 0;
     }
 
-    // Hum lollipop update (Library only): live level → head height; note events → pitch.
+    // Hum lollipop update (Library only): live level → head height; note events
+    // → pitch. Removed promptly when the current note's scheduled span ends, so
+    // it doesn't linger (unless the next note has already taken over).
     if (track === "library") {
       if (humTapOk) humAnalyser.getFloatTimeDomainData(humTime);
       var hs = 0; for (var hn = 0; hn < humTime.length; hn++) hs += humTime[hn] * humTime[hn];
       var hlvl = Math.min(1, Math.sqrt(hs / humTime.length) * HUM_GAIN);
-      humLevel = humLevel * 0.7 + hlvl * 0.3;
-      for (var hqi = humQueue.length - 1; hqi >= 0; hqi--) {
-        if (harpNow >= humQueue[hqi].startTime) {
-          var hev = humQueue.splice(hqi, 1)[0];
-          var hof = Math.log2(hev.freq / ROW_F_MIN);
-          if (hof < 0) hof = 0.001; else if (hof >= OCTAVES) hof = OCTAVES - 0.001;
-          humLollipop = { octaveFloat: hof, freq: hev.freq };
-          humQuiet = 0;
-        }
+      humLevel = humLevel * 0.55 + hlvl * 0.45;            // snappy follow
+      var latest = null, keep = [];
+      for (var hqi = 0; hqi < humQueue.length; hqi++) {
+        var e = humQueue[hqi];
+        if (harpNow >= e.startTime) { if (!latest || e.startTime > latest.startTime) latest = e; }
+        else keep.push(e);
       }
-      if (humQueue.length > 64) humQueue.splice(0, humQueue.length - 64);
-      if (humLevel < 0.04) { if (++humQuiet > 60) humLollipop = null; } else humQuiet = 0;
+      humQueue = keep.length > 64 ? keep.slice(keep.length - 64) : keep;
+      if (latest) {
+        var hof = Math.log2(latest.freq / ROW_F_MIN);
+        if (hof < 0) hof = 0.001; else if (hof >= OCTAVES) hof = OCTAVES - 0.001;
+        humLollipop = { octaveFloat: hof, freq: latest.freq, endTime: latest.startTime + (latest.duration || 1) };
+      }
+      if (humLollipop && harpNow > humLollipop.endTime + 0.15) humLollipop = null;
     } else {
       humQueue.length = 0; humLollipop = null; humLevel = 0;
     }
@@ -1442,7 +1441,7 @@ function vizColors() {
     var lollipopDepthAlpha = 1;
     if (whistleOverlay) {
       var whistlePeaks = detectWhistlePeaks();
-      updateLollipop3D(whistlePeaks, octaveStep, peakUp);
+      updateLollipop3D(whistlePeaks, octaveStep, peakUp * LOLLI_HEIGHT);
       if (trackedLollipop) {
         // Use the head's projected z as the depth marker. The head is
         // the visually dominant decoration; ordering by it makes the
@@ -1541,7 +1540,7 @@ function vizColors() {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, 1, {
         theta: hFrac * 2 * Math.PI,
         yBase: hBase,
-        yHead: hBase + humLevel * peakUp,
+        yHead: hBase + humLevel * peakUp * LOLLI_HEIGHT,
       });
     }
 
