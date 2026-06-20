@@ -61,8 +61,8 @@
 
   <canvas id="cv"></canvas>
   <div class="legend">
-    Each vowel is a bar with its own <b>width</b>, <b>height</b>, and top-corner <b>roundness</b> (0 = square top, 1 = full dome) — currently <code>oo</code> is the most rounded.
-    <b>Roundness</b> scales them all at once. The sides ripple with the live hum waveform (<b>Ripple</b>/<b>Wave smooth</b>).
+    Each vowel is a bar with its own <b>width</b>, <b>height</b>, top-corner <b>roundness</b>, and a top <b>peak</b> (raised = pointed, lowered = concave): <code>ng</code> slightly pointed, <code>oo</code> rounded dome, <code>uh</code> near-square, <code>oh</code> slightly concave, <code>ah</code> wide soft peak.
+    <b>Roundness</b> scales the corner rounding for all. The sides ripple with the live hum waveform (<b>Ripple</b>/<b>Wave smooth</b>).
     Live mode taps the real hum and reads the vowel from each note event; the manual buttons drop one bar per vowel for side-by-side comparison.
   </div>
 </div>
@@ -78,11 +78,11 @@
   // (0 = square corners / flat top, 1 = corners round all the way into a dome).
   // These per-vowel values are the knobs we're tuning. -----
   var VOWELS = {
-    ng: { f1: 270, f2: 1500, hue: 286, freq: 131, width: 0.60, height: 1.00, round: 0.18 },
-    oo: { f1: 300, f2: 870,  hue: 210, freq: 147, width: 0.85, height: 0.95, round: 0.85 },
-    uh: { f1: 520, f2: 1190, hue: 150, freq: 156, width: 1.00, height: 1.00, round: 0.10 },
-    oh: { f1: 570, f2: 840,  hue: 70,  freq: 175, width: 1.20, height: 0.95, round: 0.55 },
-    ah: { f1: 730, f2: 1090, hue: 38,  freq: 196, width: 1.45, height: 1.00, round: 0.30 },
+    ng: { f1: 270, f2: 1500, hue: 286, freq: 131, width: 0.55, height: 1.05, round: 0.12, peak:  0.18, pointed: 0.80 },  // narrow, slightly pointed
+    oo: { f1: 300, f2: 870,  hue: 210, freq: 147, width: 0.85, height: 0.92, round: 0.90, peak:  0.00, pointed: 0.00 },  // rounded dome top
+    uh: { f1: 520, f2: 1190, hue: 150, freq: 156, width: 1.00, height: 1.00, round: 0.08, peak:  0.00, pointed: 0.00 },  // near-square rectangle
+    oh: { f1: 570, f2: 840,  hue: 70,  freq: 175, width: 1.20, height: 0.92, round: 0.40, peak: -0.14, pointed: 0.00 },  // slightly concave top
+    ah: { f1: 730, f2: 1090, hue: 38,  freq: 196, width: 1.45, height: 1.00, round: 0.22, peak:  0.10, pointed: 0.25 },  // wide, soft peak
   };
   var VOWEL_ORDER = ["ng", "oo", "uh", "oh", "ah"];   // closed -> open
   function vowelColor(name, a) { return "hsla(" + VOWELS[name].hue + ",68%,62%," + a + ")"; }
@@ -96,13 +96,24 @@
     return [v * v * p0[0] + 2 * v * u * p1[0] + u * u * p2[0],
             v * v * p0[1] + 2 * v * u * p1[1] + u * u * p2[1]];
   }
-  function barOutline(xc, halfW, H, rad, by) {
-    var pts = [], ML = 16, CC = 12;
+  // peak: center of the top edge raised (+, pointed/peaked) or lowered (−,
+  // concave) by peak×H. pointed: 0 = smooth curve over the top, 1 = sharp apex.
+  function barOutline(xc, halfW, H, rad, peak, pointed, by) {
+    var pts = [], ML = 16, CC = 12, TT = 20;
     var yc = by - (H - rad), yTop = by - H;
+    var xL = xc - halfW + rad, xR = xc + halfW - rad;
     for (var s = 0; s <= ML; s++) pts.push([xc - halfW, by + (yc - by) * (s / ML)]);        // left side
-    for (var c = 1; c <= CC; c++) pts.push(quad([xc - halfW, yc], [xc - halfW, yTop], [xc - halfW + rad, yTop], c / CC));
-    if (halfW - rad > 0.5) pts.push([xc + halfW - rad, yTop]);                               // flat top (if any)
-    for (var c2 = 1; c2 <= CC; c2++) pts.push(quad([xc + halfW - rad, yTop], [xc + halfW, yTop], [xc + halfW, yc], c2 / CC));
+    for (var c = 1; c <= CC; c++) pts.push(quad([xc - halfW, yc], [xc - halfW, yTop], [xL, yTop], c / CC));  // left corner
+    // Top edge between the corners — apex/dip at the center.
+    var apexY = yTop - peak * H, ctrlY = yTop - 2 * peak * H;
+    for (var i = 1; i <= TT; i++) {
+      var u = i / TT, x = xL + (xR - xL) * u;
+      var sharpY = u < 0.5 ? yTop + (apexY - yTop) * (u / 0.5)
+                           : apexY + (yTop - apexY) * ((u - 0.5) / 0.5);
+      var smoothY = quad([xL, yTop], [xc, ctrlY], [xR, yTop], u)[1];
+      pts.push([x, smoothY * (1 - pointed) + sharpY * pointed]);
+    }
+    for (var c2 = 1; c2 <= CC; c2++) pts.push(quad([xR, yTop], [xc + halfW, yTop], [xc + halfW, yc], c2 / CC));  // right corner
     for (var s2 = 1; s2 <= ML; s2++) pts.push([xc + halfW, yc + (by - yc) * (s2 / ML)]);     // right side
     return pts;
   }
@@ -232,7 +243,7 @@
       return d > 60 ? 60 : (d < -60 ? -60 : d);
     }
 
-    var pts = barOutline(xc, halfW, H, rad, by);
+    var pts = barOutline(xc, halfW, H, rad, v.peak, v.pointed, by);
     ctx.beginPath();
     for (var i = 0; i < pts.length; i++) {
       var px = pts[i][0] + disp(pts[i][1]), py = pts[i][1];
