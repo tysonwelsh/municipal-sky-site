@@ -293,11 +293,10 @@
     compareOn = !compareOn;
     this.classList.toggle("on", compareOn);
     if (compareOn) {
-      // Drop a HELD bar per vowel (stays extended) and play a staggered ascent.
+      // Drop a HELD bar per vowel (stays extended). No sound — visual only.
       VOWEL_ORDER.forEach(function (v, k) {
         bars.push({ x: (k + 0.5) / VOWEL_ORDER.length, vowel: v, t0: clock(),
                     dur: 1e9, held: true, compare: true });
-        setTimeout(function () { soundHum(VOWELS[v].freq, v, 1.6); }, k * 320);
       });
       setStatus("comparing all 5 vowels (held)");
     } else {
