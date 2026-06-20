@@ -2063,16 +2063,26 @@ window.ProsperoAudio = (function () {
   // Per-fire scheduling stays at the legacy 25-50s sparseness so the
   // hum still feels rare in the overall track mix (the RATE slider
   // scales this base via scheduleWithRate).
-  // Bias phrase length toward the SHORT end of HUM_TUNING.phraseLen: the roll is
-  // raised to this power before scaling, so a few notes are common and 8+ are
-  // rare. 1 = uniform; higher = more skewed toward short phrases.
-  var HUM_PHRASE_SKEW = 4;
+  // Phrase-length distribution: relative weight per length, starting at
+  // HUM_TUNING.phraseLen[0] (= 2 notes). Tuned so the 3–5 range dominates and
+  // 8+ are rare.
+  //                          2   3   4   5   6  7  8  9  10   11   12
+  var HUM_PHRASE_WEIGHTS = [  8, 21, 23, 19, 12, 9, 4, 2,  1, 0.7, 0.3];
   var HUM_PHRASE_BASE_MS = 10000;
   var HUM_PHRASE_JITTER_MS = 20000;
 
   function humRand(rangeKey) {
     var r = HUM_TUNING[rangeKey];
     return r[0] + Math.random() * (r[1] - r[0]);
+  }
+
+  // Weighted pick of phrase length from HUM_PHRASE_WEIGHTS.
+  function pickHumPhraseLen() {
+    var w = HUM_PHRASE_WEIGHTS, base = HUM_TUNING.phraseLen[0], total = 0, i;
+    for (i = 0; i < w.length; i++) total += w[i];
+    var r = Math.random() * total;
+    for (i = 0; i < w.length; i++) { r -= w[i]; if (r < 0) return base + i; }
+    return base + w.length - 1;
   }
 
   // Slow-noise buffer used by jitter/shimmer. Linearly interpolated
@@ -2172,9 +2182,7 @@ window.ProsperoAudio = (function () {
     humVowelIdx = markovNext(LIB_HUM_VOWEL_WALK[humVowelIdx], Math.random());
     var vowel = LIB_HUM_VOWELS[LIB_HUM_VOWEL_POOL[humVowelIdx]];
 
-    // Skew toward short phrases (a few notes common, 8+ rare) — see HUM_PHRASE_SKEW.
-    var plRange = HUM_TUNING.phraseLen;
-    var phraseLen = Math.round(plRange[0] + Math.pow(Math.random(), HUM_PHRASE_SKEW) * (plRange[1] - plRange[0]));
+    var phraseLen = pickHumPhraseLen();   // weighted toward 3–5 notes, 8+ rare
     var offset = 0;
     var chordTones = getChordTonesFor("library", "hum");
     var humFirstFreq = null, humLastFreq = null;
