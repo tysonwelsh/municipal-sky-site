@@ -47,19 +47,19 @@
     <button id="copyBtn">Copy params</button>
     <span style="display:flex;gap:6px;align-items:center;">
       <span style="color:var(--soft);font-size:11px;">Style</span>
-      <button class="styleBtn on" data-style="smooth">Smooth</button>
+      <button class="styleBtn" data-style="smooth">Smooth</button>
       <button class="styleBtn" data-style="pixel">Pixel</button>
-      <button class="styleBtn" data-style="sharp">Sharp</button>
+      <button class="styleBtn on" data-style="sharp">Sharp</button>
     </span>
     <button id="audioDriveBtn" class="on" title="String shape follows the live audio waveform">Audio-driven</button>
     <button id="alignBtn" title="Snap the waveform read to a zero crossing so it holds steady">Steady</button>
     <div class="sliders">
-      <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="120" value="28"></label>
-      <label class="ctl">Decay (s) <b id="tauV">1.1</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.1"></label>
-      <label class="ctl">Vibration <b id="vibV">7</b><input id="vib" type="range" min="2" max="20" step="0.5" value="7"></label>
-      <label class="ctl">String width <b id="widV">4</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="4"></label>
-      <label class="ctl">Live sensitivity <b id="senV">6</b><input id="sen" type="range" min="2" max="14" step="0.5" value="6"></label>
-      <label class="ctl">Peaks <b id="wsampV">600</b><input id="wsamp" type="range" min="120" max="1600" step="40" value="600"></label>
+      <label class="ctl">Amplitude <b id="ampV">80</b><input id="amp" type="range" min="6" max="120" value="80"></label>
+      <label class="ctl">Decay (s) <b id="tauV">1.5</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.5"></label>
+      <label class="ctl">Vibration <b id="vibV">9.5</b><input id="vib" type="range" min="2" max="20" step="0.5" value="9.5"></label>
+      <label class="ctl">String width <b id="widV">5</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="5"></label>
+      <label class="ctl">Live sensitivity <b id="senV">8</b><input id="sen" type="range" min="2" max="14" step="0.5" value="8"></label>
+      <label class="ctl">Peaks <b id="wsampV">200</b><input id="wsamp" type="range" min="120" max="1600" step="40" value="200"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
@@ -102,10 +102,10 @@
   }
 
   // ----- Tunable params (bound to sliders) -----
-  var P = { amp: 28, tau: 1.1, vib: 7, wid: 4, sens: 6 };
-  var STYLE = "smooth";   // "smooth" | "pixel" | "sharp"
+  var P = { amp: 80, tau: 1.5, vib: 9.5, wid: 5, sens: 8 };
+  var STYLE = "sharp";    // "smooth" | "pixel" | "sharp"
   var AUDIODRIVE = true;  // string SHAPE follows the live audio waveform (real multi-peak)
-  var WSAMP = 600, AUDIO_GAIN = 20;   // audio-waveform window (samples across a string) + visual gain
+  var WSAMP = 200, AUDIO_GAIN = 20;   // audio-waveform window (samples across a string) + visual gain
   var ALIGN = false, wOffset = 0;     // "Steady": read from a zero crossing so the wave holds still
 
   // ----- State -----
