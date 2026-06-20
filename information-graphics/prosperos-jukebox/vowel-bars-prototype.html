@@ -66,7 +66,7 @@
 </div>
 
 <script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
-<script src="prosperos-jukebox-audio.js?v=dc7debd0"></script>
+<script src="prosperos-jukebox-audio.js?v=1c79e6e3"></script>
 <script>
 (function () {
   "use strict";
@@ -74,11 +74,11 @@
   // ----- Vowels (mirrors the engine's LIB_HUM_VOWELS). F1/F2 shown for
   // reference; widthMul + the profile function below are what we're tuning. -----
   var VOWELS = {
-    ng: { f1: 270, f2: 1500, widthMul: 0.55, hue: 286 },
-    oo: { f1: 300, f2: 870,  widthMul: 0.75, hue: 210 },
-    uh: { f1: 520, f2: 1190, widthMul: 1.00, hue: 150 },
-    oh: { f1: 570, f2: 840,  widthMul: 1.25, hue: 70  },
-    ah: { f1: 730, f2: 1090, widthMul: 1.50, hue: 38  },
+    ng: { f1: 270, f2: 1500, widthMul: 0.55, hue: 286, freq: 131 },  // C3
+    oo: { f1: 300, f2: 870,  widthMul: 0.75, hue: 210, freq: 147 },  // D3
+    uh: { f1: 520, f2: 1190, widthMul: 1.00, hue: 150, freq: 156 },  // E♭3
+    oh: { f1: 570, f2: 840,  widthMul: 1.25, hue: 70,  freq: 175 },  // F3
+    ah: { f1: 730, f2: 1090, widthMul: 1.50, hue: 38,  freq: 196 },  // G3
   };
   var VOWEL_ORDER = ["ng", "oo", "uh", "oh", "ah"];   // closed -> open
 
@@ -110,6 +110,21 @@
   function clock() {
     return (audioOn && window.ProsperoAudio && ProsperoAudio.getAudioTime)
       ? ProsperoAudio.getAudioTime() : performance.now() / 1000;
+  }
+
+  // ----- Audible hum note via the engine (real vowel voice), routed through a
+  // prototype-owned gain so it sounds without starting the engine's mix. -----
+  var protoOut = null;
+  function soundHum(freq, vowel, dur) {
+    if (!(window.ProsperoAudio && ProsperoAudio.humNoteInto)) return;
+    var ac = ProsperoAudio.getAudioContext && ProsperoAudio.getAudioContext();
+    if (!ac && ProsperoAudio.init) { ProsperoAudio.init(); ac = ProsperoAudio.getAudioContext(); }
+    if (!ac) return;
+    if (ac.state === "suspended") ac.resume();
+    if (!protoOut || protoOut.context !== ac) {
+      protoOut = ac.createGain(); protoOut.gain.value = 3.2; protoOut.connect(ac.destination);
+    }
+    ProsperoAudio.humNoteInto(freq, vowel, dur || 1.6, protoOut, 1);
   }
 
   // ----- Bars: {x (0..1 across lane), vowel, t0, dur} -----
@@ -269,9 +284,11 @@
   });
   document.getElementById("clearBtn").addEventListener("click", function () { bars = []; });
   document.getElementById("allBtn").addEventListener("click", function () {
-    var t = clock();
     VOWEL_ORDER.forEach(function (v, k) {
-      addBar((k + 0.5) / VOWEL_ORDER.length, v, t, 2.2);
+      setTimeout(function () {
+        soundHum(VOWELS[v].freq, v, 1.6);
+        addBar((k + 0.5) / VOWEL_ORDER.length, v, clock(), 1.8);
+      }, k * 320);   // stagger so it's a little ascent, not a chord
     });
     setStatus("comparing all 5 vowels");
   });
@@ -283,8 +300,9 @@
     b.textContent = v;
     b.style.borderColor = vowelColor(v, 0.5);
     b.addEventListener("click", function () {
-      addBar((k + 0.5) / VOWEL_ORDER.length, v, clock(), 1.8);
-      setStatus("dropped " + v + "  (F1 " + VOWELS[v].f1 + " · F2 " + VOWELS[v].f2 + ")");
+      soundHum(VOWELS[v].freq, v, 1.7);
+      addBar((k + 0.5) / VOWEL_ORDER.length, v, clock(), 1.7);
+      setStatus("dropped " + v + "  (" + VOWELS[v].freq + "Hz · F1 " + VOWELS[v].f1 + " · F2 " + VOWELS[v].f2 + ")");
     });
     vb.appendChild(b);
   });

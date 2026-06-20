@@ -2095,6 +2095,69 @@ window.ProsperoAudio = (function () {
     return buf;
   }
 
+  // Play ONE hum note with a given vowel into an arbitrary output node — the
+  // single-voice core of libraryHum (sawtooth → dual formants → shimmer →
+  // envelope), factored out so prototypes can sound a specific vowel on demand.
+  // Uses fixed, representative jitter/vibrato/shimmer values. gainMult scales
+  // the (intentionally low) peak level.
+  function playHumVowelNote(freq, vowelName, startTime, dur, out, gainMult) {
+    var c = ctx;
+    if (!c || !out) return;
+    var vowel = LIB_HUM_VOWELS[vowelName] || LIB_HUM_VOWELS.uh;
+    var t = startTime, noteDur = dur == null ? 1.4 : dur;
+    var gm = gainMult == null ? 1 : gainMult;
+    var safeAttack = Math.min(0.25, noteDur * 0.4);
+    var safeRelease = Math.min(Math.max(0.05, noteDur * 0.4), Math.max(0.05, noteDur - safeAttack - 0.05));
+    var plateauStart = t + safeAttack;
+    var plateauEnd = t + noteDur - safeRelease;
+    if (plateauEnd <= plateauStart) plateauEnd = plateauStart + 0.01;
+    var noteEnd = t + noteDur;
+
+    var voice = c.createOscillator();
+    voice.type = "sawtooth";
+    voice.frequency.setValueAtTime(freq, t);
+
+    var jitterSrc = c.createBufferSource();
+    jitterSrc.buffer = humSlowNoiseBuffer(noteDur + 0.4, 6);
+    var jitterGain = c.createGain();
+    jitterGain.gain.setValueAtTime(8, t);
+    jitterSrc.connect(jitterGain); jitterGain.connect(voice.detune);
+    jitterSrc.start(t); jitterSrc.stop(t + noteDur + 0.1);
+
+    var vib = c.createOscillator(), vibGain = c.createGain();
+    vib.type = "sine"; vib.frequency.setValueAtTime(5, t);
+    vibGain.gain.setValueAtTime(0, t);
+    vibGain.gain.linearRampToValueAtTime(3, t + 0.1);
+    vib.connect(vibGain); vibGain.connect(voice.frequency);
+
+    var f1 = c.createBiquadFilter();
+    f1.type = "bandpass"; f1.frequency.setValueAtTime(vowel.f1, t); f1.Q.setValueAtTime(3, t);
+    var f2 = c.createBiquadFilter();
+    f2.type = "bandpass"; f2.frequency.setValueAtTime(vowel.f2, t); f2.Q.setValueAtTime(3.5, t);
+    var f2Gain = c.createGain(); f2Gain.gain.setValueAtTime(0.5, t);
+    var voiceMix = c.createGain();
+    voice.connect(f1); voice.connect(f2);
+    f1.connect(voiceMix); f2.connect(f2Gain); f2Gain.connect(voiceMix);
+
+    var shimmerGain = c.createGain(); shimmerGain.gain.setValueAtTime(1.0, t);
+    var shimmerSrc = c.createBufferSource();
+    shimmerSrc.buffer = humSlowNoiseBuffer(noteDur + 0.4, 4);
+    var shimmerDepthGain = c.createGain(); shimmerDepthGain.gain.setValueAtTime(0.12, t);
+    shimmerSrc.connect(shimmerDepthGain); shimmerDepthGain.connect(shimmerGain.gain);
+    shimmerSrc.start(t); shimmerSrc.stop(t + noteDur + 0.1);
+    voiceMix.connect(shimmerGain);
+
+    var env = c.createGain();
+    env.gain.setValueAtTime(0, t);
+    env.gain.linearRampToValueAtTime(0.075 * gm, plateauStart);
+    env.gain.setValueAtTime(0.072 * gm, plateauEnd);
+    env.gain.linearRampToValueAtTime(0, noteEnd);
+    shimmerGain.connect(env); env.connect(out);
+
+    voice.start(t); voice.stop(t + noteDur + 0.05);
+    vib.start(t); vib.stop(t + noteDur + 0.05);
+  }
+
   function libraryHum() {
     if (!playing || currentTrack !== "library") return;
     var c = ctx;
@@ -6306,6 +6369,15 @@ window.ProsperoAudio = (function () {
     setNoteListener: function (fn) {
       if (typeof fn === "function") noteListeners.push(fn);
       else noteListeners.length = 0;
+    },
+    // Sound one hum note of a given vowel into outNode (for prototypes).
+    humNoteInto: function (freq, vowel, duration, outNode, gainMult) {
+      init();
+      if (!ctx || !outNode) return null;
+      if (ctx.state === "suspended") ctx.resume();
+      playHumVowelNote(freq, vowel, ctx.currentTime, duration == null ? 1.4 : duration,
+                       outNode, gainMult == null ? 1 : gainMult);
+      return ctx;
     },
   };
 })();
