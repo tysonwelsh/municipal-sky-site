@@ -681,7 +681,7 @@ function vizColors() {
 
   // Per-note events from the engine → active baseline plucks.
   // Defaults ported from the harpsichord-strings prototype.
-  var HARP_TAU = 1.5, HARP_SIGMA_OCT = 0.05, HARP_WSAMP = 200;
+  var HARP_TAU = 2, HARP_SIGMA_OCT = 0.05, HARP_WSAMP = 200;
   var HARP_AUDIO_GAIN = 20, HARP_AMP = 80, HARP_LIFETIME = 7;
   var harpQueue = [], harpPlucks = [];
   var harpActive = false, harpNow = 0, harpRadial = 0;
@@ -1141,7 +1141,7 @@ function vizColors() {
     // Cap by width so it can't overflow on very narrow screens.
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
-    harpRadial = octaveStep * (HARP_AMP / 250);   // vertical scale (relative to octave spacing) for the pluck
+    harpRadial = octaveStep * (HARP_AMP / 500);   // vertical scale (relative to octave spacing) for the pluck
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
