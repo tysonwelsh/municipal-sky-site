@@ -48,9 +48,9 @@
     <button id="copyBtn">Copy params</button>
     <div class="sliders">
       <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
-      <label class="ctl">Base width <b id="baseWV">70</b><input id="baseW" type="range" min="20" max="160" step="2" value="70"></label>
-      <label class="ctl">Shoulder (vertical sides) <b id="shoulderV">0.5</b><input id="shoulder" type="range" min="0" max="1" step="0.05" value="0.5"></label>
-      <label class="ctl">Top detail <b id="topNV">28</b><input id="topN" type="range" min="2" max="60" step="1" value="28"></label>
+      <label class="ctl">Base width <b id="baseWV">98</b><input id="baseW" type="range" min="20" max="160" step="2" value="98"></label>
+      <label class="ctl">Shoulder (vertical sides) <b id="shoulderV">0.85</b><input id="shoulder" type="range" min="0" max="1" step="0.05" value="0.85"></label>
+      <label class="ctl">Top detail <b id="topNV">5</b><input id="topN" type="range" min="2" max="60" step="1" value="5"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
@@ -102,7 +102,7 @@
   function vowelColor(name, a) { return "hsla(" + VOWELS[name].hue + ",68%,62%," + a + ")"; }
 
   // ----- Tunable params (bound to sliders) -----
-  var P = { maxH: 220, baseW: 70, shoulder: 0.5, topN: 28 };
+  var P = { maxH: 220, baseW: 98, shoulder: 0.85, topN: 5 };
 
   // ----- Clock: audio time when the engine is live (so live bars sync to the
   // sound, which is scheduled ahead), else wall clock. -----
