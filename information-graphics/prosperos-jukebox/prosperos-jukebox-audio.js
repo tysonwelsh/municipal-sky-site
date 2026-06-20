@@ -2063,6 +2063,10 @@ window.ProsperoAudio = (function () {
   // Per-fire scheduling stays at the legacy 25-50s sparseness so the
   // hum still feels rare in the overall track mix (the RATE slider
   // scales this base via scheduleWithRate).
+  // Bias phrase length toward the SHORT end of HUM_TUNING.phraseLen: the roll is
+  // raised to this power before scaling, so a few notes are common and 8+ are
+  // rare. 1 = uniform; higher = more skewed toward short phrases.
+  var HUM_PHRASE_SKEW = 4;
   var HUM_PHRASE_BASE_MS = 10000;
   var HUM_PHRASE_JITTER_MS = 20000;
 
@@ -2168,7 +2172,9 @@ window.ProsperoAudio = (function () {
     humVowelIdx = markovNext(LIB_HUM_VOWEL_WALK[humVowelIdx], Math.random());
     var vowel = LIB_HUM_VOWELS[LIB_HUM_VOWEL_POOL[humVowelIdx]];
 
-    var phraseLen = Math.round(humRand("phraseLen"));
+    // Skew toward short phrases (a few notes common, 8+ rare) — see HUM_PHRASE_SKEW.
+    var plRange = HUM_TUNING.phraseLen;
+    var phraseLen = Math.round(plRange[0] + Math.pow(Math.random(), HUM_PHRASE_SKEW) * (plRange[1] - plRange[0]));
     var offset = 0;
     var chordTones = getChordTonesFor("library", "hum");
     var humFirstFreq = null, humLastFreq = null;
