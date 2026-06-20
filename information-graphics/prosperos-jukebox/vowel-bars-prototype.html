@@ -50,8 +50,8 @@
     <div class="sliders">
       <label class="ctl">Max height <b id="maxHV">220</b><input id="maxH" type="range" min="60" max="320" step="10" value="220"></label>
       <label class="ctl">Base width <b id="baseWV">98</b><input id="baseW" type="range" min="20" max="160" step="2" value="98"></label>
-      <label class="ctl">Ripple <b id="rippleV">60</b><input id="ripple" type="range" min="0" max="240" step="5" value="60"></label>
-      <label class="ctl">Wave smooth <b id="smoothV">14</b><input id="smooth" type="range" min="0" max="48" step="1" value="14"></label>
+      <label class="ctl">Ripple <b id="rippleV">65</b><input id="ripple" type="range" min="0" max="240" step="5" value="65"></label>
+      <label class="ctl">Wave smooth <b id="smoothV">40</b><input id="smooth" type="range" min="0" max="48" step="1" value="40"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
@@ -135,7 +135,7 @@
   }
 
   // ----- Tunable params (bound to sliders) -----
-  var P = { maxH: 220, baseW: 98, ripple: 60, smooth: 14 };
+  var P = { maxH: 220, baseW: 98, ripple: 65, smooth: 40 };
   var RIPPLE = true;      // sides ripple with the live hum waveform
   var WSAMP = 520;        // waveform samples spanned along a bar's height
 
