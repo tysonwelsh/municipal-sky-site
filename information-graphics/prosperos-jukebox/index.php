@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="prosperos-jukebox.css?v=32" />
+<link rel="stylesheet" href="prosperos-jukebox.css?v=33" />
 
 <div class="main-wrapper">
  <div class="jukebox-scene">
@@ -125,7 +125,7 @@ include '../../includes/header.php';
 <script src="prosperos-jukebox-audio.js?v=81"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="prosperos-jukebox-ui.js?v=18"></script>
-<script src="prosperos-jukebox-viz.js?v=30"></script>
+<script src="prosperos-jukebox-viz.js?v=31"></script>
 
 <!-- Anonymous usage tracking. Logs a page view, plus the first PLAY press as
      an engagement signal (a raw view understates an audio page). No personal

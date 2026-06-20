@@ -1077,7 +1077,10 @@ function vizColors() {
     ctx2d.fillRect(0, 0, w, h);
 
     var cx = w / 2, cy = h / 2;
-    var baseRadius = Math.min(w, h) * 0.20;
+    // Size the spiral from the canvas HEIGHT (fixed 720px) so narrowing the viz
+    // pane just trims the empty space beside the spiral instead of shrinking it.
+    // Cap by width so it can't overflow on very narrow screens.
+    var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);

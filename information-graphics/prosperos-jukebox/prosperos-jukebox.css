@@ -59,8 +59,8 @@
    the .jukebox-scene wrapper so the side-by-side layout aligns cleanly. */
 .jukebox-frame {
   background: #0a0a0a;
-  flex: 0 1 720px;
-  max-width: 720px;
+  flex: 0 1 620px;
+  max-width: 620px;
   width: 100%;
   margin: 0;
   padding: 32px 24px 40px;
@@ -836,8 +836,8 @@
    ============================================================================ */
 .jukebox-viz-frame {
   background: #0a0a0a;
-  flex: 0 1 720px;
-  max-width: 720px;
+  flex: 0 1 620px;
+  max-width: 620px;
   width: 100%;
   margin: 0;
   padding: 28px 24px 32px;
