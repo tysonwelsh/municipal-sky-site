@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harpsichord Strings — Ridgeline Prototype</title>
+<style>
+  :root { --bg:#0b0b0f; --panel:#15151c; --line:#2a2a38; --ink:#e8e4d8; --soft:#9a96a6; --accent:#e6b455; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:16px 20px 8px; }
+  h1 { margin:0; font-size:18px; letter-spacing:.3px; }
+  .sub { color:var(--soft); font-size:12px; margin-top:2px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 16px 48px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center;
+              background:var(--panel); border:1px solid var(--line); border-radius:10px;
+              padding:12px 14px; margin:8px 0 14px; }
+  button { background:#23232e; color:var(--ink); border:1px solid var(--line);
+           border-radius:7px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:#1a1407; border-color:var(--accent); }
+  .sliders { display:flex; flex-wrap:wrap; gap:14px; }
+  .ctl { display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--soft); }
+  .ctl input[type=range] { width:130px; accent-color:var(--accent); }
+  .ctl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .notes { display:flex; gap:6px; flex-wrap:wrap; }
+  .notes button { padding:5px 9px; font-size:12px; }
+  .status { color:var(--soft); font-size:12px; margin-left:auto; }
+  canvas { display:block; width:100%; height:560px; background:var(--bg);
+           border:1px solid var(--line); border-radius:10px; }
+  .legend { color:var(--soft); font-size:11px; margin-top:8px; }
+  code { color:var(--accent); }
+</style>
+</head>
+<body>
+<header class="wrap" style="padding-bottom:0">
+  <h1>Harpsichord Strings — Ridgeline Prototype</h1>
+  <div class="sub">One row per octave. Each harpsichord note plucks a vibrating string at its pitch. A sandbox for the Library track's bespoke visualization.</div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <button id="audioBtn">▶ Live audio</button>
+    <button id="demoBtn">◆ Demo auto-pluck</button>
+    <button id="clearBtn">Clear</button>
+    <div class="sliders">
+      <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="70" value="28"></label>
+      <label class="ctl">Decay (s) <b id="tauV">1.1</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.1"></label>
+      <label class="ctl">Vibration <b id="vibV">7</b><input id="vib" type="range" min="2" max="20" step="0.5" value="7"></label>
+      <label class="ctl">String width <b id="widV">4</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="4"></label>
+      <label class="ctl">Live sensitivity <b id="senV">6</b><input id="sen" type="range" min="2" max="14" step="0.5" value="6"></label>
+    </div>
+    <div class="status" id="status">idle</div>
+  </div>
+
+  <div class="notes" id="noteBtns"></div>
+
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    Notes: C–D–E♭–F–G–A–B♭ (the harpsichord's C-minor set), octaves 3–5. Higher strings vibrate faster.
+    Live mode taps the real Library harpsichord; Demo plucks random notes; the buttons pluck specific notes.
+  </div>
+</div>
+
+<script src="prosperos-jukebox-themes.js?v=1"></script>
+<script src="prosperos-jukebox-audio.js?v=1"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ----- Harpsichord pitch model (from the engine: LIB_SCALE_4 * octMult) -----
+  var SCALE_C4 = [262, 294, 311, 349, 392, 440, 466];        // C4 D4 Eb4 F4 G4 A4 Bb4
+  var SCALE_NAMES = ["C", "D", "E♭", "F", "G", "A", "B♭"];
+  var OCT_MULTS = [0.5, 1, 2];                                // octaves 3, 4, 5
+  var OCTAVES = [5, 4, 3];                                    // drawn top -> bottom (high octave up top)
+
+  // All sounding harpsichord frequencies, for snapping detected pitch.
+  var NOTE_FREQS = [];
+  SCALE_C4.forEach(function (f) { OCT_MULTS.forEach(function (m) { NOTE_FREQS.push(f * m); }); });
+
+  function freqToMidi(f) { return 69 + 12 * Math.log2(f / 440); }
+  function midiOctave(m) { return Math.floor(m / 12) - 1; }   // C4=60 -> octave 4
+  function midiPitchClass(m) { return ((Math.round(m) % 12) + 12) % 12; }
+  function snapFreq(f) {
+    var best = NOTE_FREQS[0], bd = Infinity;
+    for (var i = 0; i < NOTE_FREQS.length; i++) {
+      var d = Math.abs(Math.log2(NOTE_FREQS[i] / f));
+      if (d < bd) { bd = d; best = NOTE_FREQS[i]; }
+    }
+    return best;
+  }
+
+  // ----- Tunable params (bound to sliders) -----
+  var P = { amp: 28, tau: 1.1, vib: 7, wid: 4, sens: 6 };
+
+  // ----- State -----
+  // Each row = one octave. plucks: {x, t0, fvib, amp} where x is fraction 0..1 of lane width.
+  var rows = OCTAVES.map(function (oct) { return { oct: oct, plucks: [] }; });
+  function rowForOctave(oct) {
+    var clamped = Math.max(OCTAVES[OCTAVES.length - 1], Math.min(OCTAVES[0], oct));
+    for (var i = 0; i < rows.length; i++) if (rows[i].oct === clamped) return rows[i];
+    return rows[Math.floor(rows.length / 2)];
+  }
+
+  var clock = function () { return performance.now() / 1000; };
+
+  // Pluck a string given an absolute frequency.
+  function pluck(freq, amp) {
+    var m = freqToMidi(freq);
+    var row = rowForOctave(midiOctave(m));
+    var x = midiPitchClass(m) / 12;                  // 0..1 across the octave lane
+    var fvib = P.vib * (freq / 262);                 // higher notes wobble faster
+    row.plucks.push({ x: x, t0: clock(), fvib: fvib, amp: (amp || P.amp) });
+    if (row.plucks.length > 16) row.plucks.shift();
+    lastNote = noteName(m);
+  }
+  function noteName(m) {
+    return SCALE_NAMES[[0,2,3,5,7,9,10].indexOf(midiPitchClass(m))] || "?";
+  }
+  var lastNote = "";
+
+  // ----- Canvas -----
+  var cv = document.getElementById("cv"), ctx2d = cv.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+
+  var PAD_L = 56, PAD_R = 20, PAD_T = 24, PAD_B = 24;
+  function laneW() { return W - PAD_L - PAD_R; }
+
+  function rowBaseline(i) {
+    // Evenly spaced rows; spacing intentionally < amplitude so tall plucks
+    // rise into the row above (the joyplot/ridgeline overlap).
+    var usable = H - PAD_T - PAD_B;
+    return PAD_T + (usable * (i + 0.5)) / rows.length;
+  }
+
+  function rowColor(i, a) {
+    var hue = 38 + (i / Math.max(1, rows.length - 1)) * 150;  // warm low -> cool high
+    return "hsla(" + hue.toFixed(0) + ",70%,62%," + a + ")";
+  }
+
+  function displacementAt(row, xFrac, t) {
+    var d = 0, lw = laneW();
+    var sigmaPx = (P.wid / 100) * lw;
+    for (var k = 0; k < row.plucks.length; k++) {
+      var pk = row.plucks[k];
+      var age = t - pk.t0;
+      if (age < 0) continue;
+      var env = Math.exp(-age / P.tau);
+      if (env < 0.003) continue;
+      var dxpx = (xFrac - pk.x) * lw;
+      var shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
+      d += pk.amp * env * shape * Math.sin(2 * Math.PI * pk.fvib * age);
+    }
+    return d;
+  }
+
+  function pruneRow(row, t) {
+    row.plucks = row.plucks.filter(function (pk) { return (t - pk.t0) / P.tau < 6; });
+  }
+
+  var SCALE_PC = [0, 2, 3, 5, 7, 9, 10];
+  function draw() {
+    var t = clock();
+    ctx2d.clearRect(0, 0, W, H);
+
+    var lw = laneW();
+    // Faint pitch-class gridlines + note labels (shared across rows).
+    ctx2d.font = '11px "VT323", monospace';
+    ctx2d.textAlign = "center"; ctx2d.textBaseline = "alphabetic";
+    for (var p = 0; p < SCALE_PC.length; p++) {
+      var gx = PAD_L + (SCALE_PC[p] / 12) * lw;
+      ctx2d.strokeStyle = "rgba(255,255,255,0.05)";
+      ctx2d.beginPath(); ctx2d.moveTo(gx, PAD_T - 8); ctx2d.lineTo(gx, H - PAD_B + 6); ctx2d.stroke();
+      ctx2d.fillStyle = "rgba(255,255,255,0.28)";
+      ctx2d.fillText(SCALE_NAMES[p], gx, PAD_T - 12);
+    }
+
+    // Draw rows top (back) -> bottom (front); fill under each so the row in
+    // front masks the one behind it (classic ridgeline overlap).
+    var step = Math.max(2, Math.floor(lw / 220));
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      pruneRow(row, t);
+      var base = rowBaseline(i);
+
+      // Build the displaced string path.
+      var pts = [];
+      for (var px = 0; px <= lw; px += step) {
+        var xFrac = px / lw;
+        pts.push([PAD_L + px, base - displacementAt(row, xFrac, t)]);
+      }
+
+      // Fill under (opaque bg) to occlude the row behind.
+      ctx2d.beginPath();
+      ctx2d.moveTo(pts[0][0], pts[0][1]);
+      for (var j = 1; j < pts.length; j++) ctx2d.lineTo(pts[j][0], pts[j][1]);
+      ctx2d.lineTo(PAD_L + lw, H); ctx2d.lineTo(PAD_L, H); ctx2d.closePath();
+      ctx2d.fillStyle = "#0b0b0f"; ctx2d.fill();
+
+      // Glow stroke for the string.
+      ctx2d.beginPath();
+      ctx2d.moveTo(pts[0][0], pts[0][1]);
+      for (var j2 = 1; j2 < pts.length; j2++) ctx2d.lineTo(pts[j2][0], pts[j2][1]);
+      ctx2d.strokeStyle = rowColor(i, 0.95);
+      ctx2d.lineWidth = 1.6;
+      ctx2d.shadowColor = rowColor(i, 0.6); ctx2d.shadowBlur = 8;
+      ctx2d.stroke();
+      ctx2d.shadowBlur = 0;
+
+      // Octave label.
+      ctx2d.fillStyle = rowColor(i, 0.9);
+      ctx2d.font = '12px "VT323", monospace';
+      ctx2d.textAlign = "right"; ctx2d.textBaseline = "middle";
+      ctx2d.fillText("C" + row.oct, PAD_L - 12, base);
+      ctx2d.textAlign = "center";
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // ----- Live audio: tap the melody layer, detect onsets, snap pitch -----
+  var ctxA = null, analyser = null, fft = null, audioOn = false;
+  var emaEnergy = 0, lastTrig = 0;
+  function startAudio() {
+    if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
+    ProsperoAudio.switchTrack("library");
+    ProsperoAudio.play("library");
+    ctxA = ProsperoAudio.getAudioContext && ProsperoAudio.getAudioContext();
+    if (!ctxA) { setStatus("no audio context"); return; }
+    if (ctxA.state === "suspended") ctxA.resume();
+    analyser = ctxA.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0;
+    var ok = ProsperoAudio.attachLayerAnalyser("library", "melody", analyser);
+    fft = new Float32Array(analyser.frequencyBinCount);
+    audioOn = ok;
+    setStatus(ok ? "live: tapping harpsichord" : "tap failed");
+  }
+  function stopAudio() {
+    if (window.ProsperoAudio) ProsperoAudio.stop && ProsperoAudio.stop();
+    audioOn = false; setStatus("stopped");
+  }
+  function analyzeLive() {
+    if (!audioOn || !analyser) return;
+    analyser.getFloatFrequencyData(fft);
+    var binHz = ctxA.sampleRate / analyser.fftSize;
+    var lo = Math.max(1, Math.floor(110 / binHz)), hi = Math.ceil(1100 / binHz);
+    var sum = 0, peakDb = -Infinity, peakBin = -1;
+    for (var i = lo; i <= hi; i++) {
+      var db = fft[i];
+      sum += Math.pow(10, db / 20);
+      if (db > peakDb) { peakDb = db; peakBin = i; }
+    }
+    var now = clock();
+    var threshold = emaEnergy * (1 + P.sens * 0.25);
+    if (sum > threshold && peakDb > -82 && (now - lastTrig) > 0.08) {
+      lastTrig = now;
+      pluck(snapFreq(peakBin * binHz));
+    }
+    emaEnergy = emaEnergy * 0.85 + sum * 0.15;
+  }
+
+  // ----- Demo auto-plucker -----
+  var demoOn = false, demoTimer = null;
+  function demoStep() {
+    if (!demoOn) return;
+    var f = NOTE_FREQS[Math.floor(Math.random() * NOTE_FREQS.length)];
+    pluck(f);
+    demoTimer = setTimeout(demoStep, 250 + Math.random() * 650);
+  }
+
+  // ----- UI -----
+  function setStatus(s) { document.getElementById("status").textContent = s + (lastNote ? "  ·  last: " + lastNote : ""); }
+  function bindSlider(id, key, fmt) {
+    var el = document.getElementById(id), out = document.getElementById(id + "V");
+    function up() { P[key] = parseFloat(el.value); out.textContent = fmt ? fmt(P[key]) : el.value; }
+    el.addEventListener("input", up); up();
+  }
+  bindSlider("amp", "amp"); bindSlider("tau", "tau"); bindSlider("vib", "vib");
+  bindSlider("wid", "wid"); bindSlider("sen", "sens");
+
+  document.getElementById("audioBtn").addEventListener("click", function () {
+    if (audioOn) { stopAudio(); this.classList.remove("on"); this.textContent = "▶ Live audio"; }
+    else { startAudio(); this.classList.add("on"); this.textContent = "■ Stop audio"; }
+  });
+  document.getElementById("demoBtn").addEventListener("click", function () {
+    demoOn = !demoOn; this.classList.toggle("on", demoOn);
+    if (demoOn) demoStep(); else if (demoTimer) clearTimeout(demoTimer);
+    setStatus(demoOn ? "demo auto-pluck" : "idle");
+  });
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    rows.forEach(function (r) { r.plucks = []; });
+  });
+
+  // Manual note buttons: one per scale note in the middle octave (4), plus
+  // octave-shift via shift/alt could be added later.
+  var nb = document.getElementById("noteBtns");
+  [3, 4, 5].forEach(function (oct) {
+    SCALE_C4.forEach(function (f, idx) {
+      var b = document.createElement("button");
+      b.textContent = SCALE_NAMES[idx] + oct;
+      var freq = f * Math.pow(2, oct - 4);
+      b.addEventListener("click", function () { pluck(freq); });
+      nb.appendChild(b);
+    });
+  });
+
+  // ----- Main loop -----
+  resize();
+  (function loop() { analyzeLive(); requestAnimationFrame(loop); })();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
