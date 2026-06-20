@@ -198,6 +198,7 @@
   }
 
   function displacementAt(row, xFrac, t) {
+    var sharp = (STYLE === "sharp");
     var d = 0, lw = laneW();
     var sigmaPx = (P.wid / 100) * lw;
     for (var k = 0; k < row.plucks.length; k++) {
@@ -207,7 +208,13 @@
       var env = Math.exp(-age / P.tau);
       if (env < 0.003) continue;
       var dxpx = (xFrac - pk.x) * lw;
-      var shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
+      var shape;
+      if (sharp) {                                       // tent: straight sides, pointy apex
+        var a = Math.abs(dxpx) / (sigmaPx * 1.8);
+        shape = a < 1 ? (1 - a) : 0;
+      } else {                                           // gaussian: rounded hump
+        shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
+      }
       d += pk.amp * env * shape * Math.sin(2 * Math.PI * pk.fvib * age);
     }
     return d;
@@ -221,7 +228,7 @@
 
   // Smooth (glow) or Sharp (crisp, angular, no glow) line styles.
   function drawRowLine(row, i, base, t, lw, sharp) {
-    var step = sharp ? Math.max(3, Math.floor(lw / 110)) : Math.max(2, Math.floor(lw / 220));
+    var step = Math.max(2, Math.floor(lw / 240));   // fine for both; Sharp's tent shape carries the look
     var pts = [];
     for (var px = 0; px <= lw; px += step) pts.push([PAD_L + px, base - displacementAt(row, px / lw, t)]);
     // Fill under (opaque bg) to occlude the row behind — the ridgeline overlap.
