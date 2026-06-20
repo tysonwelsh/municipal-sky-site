@@ -687,8 +687,9 @@ function vizColors() {
   var harpActive = false, harpNow = 0, harpRadial = 0;
   if (ProsperoAudio.setNoteListener) {
     ProsperoAudio.setNoteListener(function (ev) {
-      if (ev.track === "library") harpQueue.push(ev);                       // harpsichord
-      else if (ev.track === "ariel" && ev.layer === "bass") bassQueue.push(ev); // Ariel bass
+      if (ev.track === "library" && ev.layer === "melody") harpQueue.push(ev);  // harpsichord baseline
+      else if (ev.track === "library" && ev.layer === "hum") humQueue.push(ev);  // hum lollipop
+      else if (ev.track === "ariel" && ev.layer === "bass") bassQueue.push(ev);  // Ariel bass baseline
     });
   }
   // Radial baseline displacement at sample (o,b) from all active plucks.
@@ -740,6 +741,19 @@ function vizColors() {
     }
     return dr;
   }
+
+  // Hum lollipop (Library hum layer) — a tracked marker on the spiral at the
+  // hum's pitch, like the Ariel whistle. Pitch comes from note events; the head
+  // height follows the hum layer's live level.
+  var humAnalyser = actx.createAnalyser();
+  humAnalyser.fftSize = FFT_SIZE;
+  humAnalyser.smoothingTimeConstant = 0.1;
+  var humTapOk = ProsperoAudio.attachLayerAnalyser
+    ? ProsperoAudio.attachLayerAnalyser("library", "hum", humAnalyser)
+    : false;
+  var humTime = new Float32Array(FFT_SIZE);
+  var humQueue = [], humLollipop = null, humLevel = 0, humQuiet = 0;
+  var HUM_GAIN = 16;
 
   // Drone cycles for the constellation floor
   var droneCycles = [];
@@ -1091,10 +1105,10 @@ function vizColors() {
         return "rgba(" + r + "," + g + "," + b + "," + newA.toFixed(3) + ")";
       });
   }
-  function drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, depthAlpha) {
-    if (!trackedLollipop) return;
+  function drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, depthAlpha, lpOverride) {
+    var lp = lpOverride || trackedLollipop;
+    if (!lp) return;
     if (depthAlpha == null) depthAlpha = 1;
-    var lp = trackedLollipop;
     var ct = Math.cos(lp.theta), st = Math.sin(lp.theta);
     var pb = projWorld(baseRadius * ct, lp.yBase, baseRadius * st, cx, cy, cy1, sy1, cp1, sp1);
     var ph = projWorld(baseRadius * ct, lp.yHead, baseRadius * st, cx, cy, cy1, sy1, cp1, sp1);
@@ -1177,6 +1191,27 @@ function vizColors() {
       bassActive = bassTapOk && bassPlucks.length > 0;
     } else {
       bassPlucks.length = 0; bassQueue.length = 0;
+    }
+
+    // Hum lollipop update (Library only): live level → head height; note events → pitch.
+    if (track === "library") {
+      if (humTapOk) humAnalyser.getFloatTimeDomainData(humTime);
+      var hs = 0; for (var hn = 0; hn < humTime.length; hn++) hs += humTime[hn] * humTime[hn];
+      var hlvl = Math.min(1, Math.sqrt(hs / humTime.length) * HUM_GAIN);
+      humLevel = humLevel * 0.7 + hlvl * 0.3;
+      for (var hqi = humQueue.length - 1; hqi >= 0; hqi--) {
+        if (harpNow >= humQueue[hqi].startTime) {
+          var hev = humQueue.splice(hqi, 1)[0];
+          var hof = Math.log2(hev.freq / ROW_F_MIN);
+          if (hof < 0) hof = 0.001; else if (hof >= OCTAVES) hof = OCTAVES - 0.001;
+          humLollipop = { octaveFloat: hof, freq: hev.freq };
+          humQuiet = 0;
+        }
+      }
+      if (humQueue.length > 64) humQueue.splice(0, humQueue.length - 64);
+      if (humLevel < 0.04) { if (++humQuiet > 60) humLollipop = null; } else humQuiet = 0;
+    } else {
+      humQueue.length = 0; humLollipop = null; humLevel = 0;
     }
 
     computeMagnitudes(whistleOverlay);
@@ -1497,6 +1532,17 @@ function vizColors() {
     // Lollipop sat in front of every quad — draw it now.
     if (lollipopZ !== null && !lollipopDrawn) {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
+    }
+
+    // Hum lollipop (Library) — drawn on top at the hum's pitch.
+    if (track === "library" && humLollipop) {
+      var hBase = (humLollipop.octaveFloat - (OCTAVES - 1) / 2) * octaveStep;
+      var hFrac = humLollipop.octaveFloat - Math.floor(humLollipop.octaveFloat);
+      drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, 1, {
+        theta: hFrac * 2 * Math.PI,
+        yBase: hBase,
+        yHead: hBase + humLevel * peakUp,
+      });
     }
 
     // 5) Pitch-class labels on the constellation ring (full brightness,

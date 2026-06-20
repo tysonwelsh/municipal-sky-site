@@ -2147,6 +2147,7 @@ window.ProsperoAudio = (function () {
       var plateauEnd   = t + noteDur - safeRelease;
       if (plateauEnd <= plateauStart) plateauEnd = plateauStart + 0.01;
       var noteEnd = t + noteDur;
+      emitNoteEvent({ track: "library", layer: "hum", freq: freq, startTime: t, duration: noteDur });
 
       // Voice
       var voice = c.createOscillator();
