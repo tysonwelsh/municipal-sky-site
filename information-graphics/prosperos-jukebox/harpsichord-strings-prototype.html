@@ -51,13 +51,15 @@
       <button class="styleBtn" data-style="pixel">Pixel</button>
       <button class="styleBtn" data-style="sharp">Sharp</button>
     </span>
-    <button id="audioDriveBtn" class="on" title="String amplitude follows the live audio envelope">Audio-driven</button>
+    <button id="audioDriveBtn" class="on" title="String shape follows the live audio waveform">Audio-driven</button>
+    <button id="alignBtn" title="Snap the waveform read to a zero crossing so it holds steady">Steady</button>
     <div class="sliders">
       <label class="ctl">Amplitude <b id="ampV">28</b><input id="amp" type="range" min="6" max="120" value="28"></label>
       <label class="ctl">Decay (s) <b id="tauV">1.1</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.1"></label>
       <label class="ctl">Vibration <b id="vibV">7</b><input id="vib" type="range" min="2" max="20" step="0.5" value="7"></label>
       <label class="ctl">String width <b id="widV">4</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="4"></label>
       <label class="ctl">Live sensitivity <b id="senV">6</b><input id="sen" type="range" min="2" max="14" step="0.5" value="6"></label>
+      <label class="ctl">Peaks <b id="wsampV">600</b><input id="wsamp" type="range" min="120" max="1600" step="40" value="600"></label>
     </div>
     <div class="status" id="status">idle</div>
   </div>
@@ -104,6 +106,7 @@
   var STYLE = "smooth";   // "smooth" | "pixel" | "sharp"
   var AUDIODRIVE = true;  // string SHAPE follows the live audio waveform (real multi-peak)
   var WSAMP = 600, AUDIO_GAIN = 20;   // audio-waveform window (samples across a string) + visual gain
+  var ALIGN = false, wOffset = 0;     // "Steady": read from a zero crossing so the wave holds still
 
   // ----- State -----
   // Each row = one octave. plucks: {x, t0, fvib, amp} where x is fraction 0..1 of lane width.
@@ -229,7 +232,7 @@
         var W = sigmaPx * 2.5;
         var frac = (dxpx + W) / (2 * W);
         frac = frac < 0 ? 0 : (frac > 1 ? 1 : frac);
-        osc = vizTime[(frac * (WSAMP - 1)) | 0] * AUDIO_GAIN;
+        osc = vizTime[Math.min(vizTime.length - 1, wOffset + ((frac * (WSAMP - 1)) | 0))] * AUDIO_GAIN;
         if (osc > 2.6) osc = 2.6; else if (osc < -2.6) osc = -2.6;
       } else {
         osc = Math.sin(2 * Math.PI * pk.fvib * age);   // synthetic single-bump wobble
@@ -247,7 +250,10 @@
 
   // Smooth (glow) or Sharp (crisp, angular, no glow) line styles.
   function drawRowLine(row, i, base, t, lw, sharp) {
-    var step = Math.max(2, Math.floor(lw / 240));   // fine for both; Sharp's tent shape carries the look
+    // Sharp samples the waveform coarsely → faceted/angular; Smooth samples
+    // finely → rounded. (With the audio waveform as the shape, this is what
+    // visually separates the two styles.)
+    var step = sharp ? Math.max(5, Math.floor(lw / 90)) : Math.max(2, Math.floor(lw / 240));
     var pts = [];
     for (var px = 0; px <= lw; px += step) pts.push([PAD_L + px, base - displacementAt(row, px / lw, t)]);
     // Fill under (opaque bg) to occlude the row behind — the ridgeline overlap.
@@ -441,6 +447,15 @@
     AUDIODRIVE = !AUDIODRIVE;
     this.classList.toggle("on", AUDIODRIVE);
   });
+  var wsampEl = document.getElementById("wsamp");
+  wsampEl.addEventListener("input", function () {
+    WSAMP = parseInt(this.value, 10);
+    document.getElementById("wsampV").textContent = this.value;
+  });
+  document.getElementById("alignBtn").addEventListener("click", function () {
+    ALIGN = !ALIGN;
+    this.classList.toggle("on", ALIGN);
+  });
 
   // Manual note buttons: one per scale note in the middle octave (4), plus
   // octave-shift via shift/alt could be added later.
@@ -457,8 +472,16 @@
 
   // ----- Main loop -----
   resize();
+  function findTrigger(buf) {                       // first rising zero crossing
+    var limit = Math.min(buf.length - WSAMP - 1, buf.length >> 1);
+    for (var i = 1; i < limit; i++) if (buf[i - 1] <= 0 && buf[i] > 0) return i;
+    return 0;
+  }
   (function loop() {
-    if (analyser && vizTime) analyser.getFloatTimeDomainData(vizTime);   // live waveform
+    if (analyser && vizTime) {
+      analyser.getFloatTimeDomainData(vizTime);                          // live waveform
+      wOffset = ALIGN ? findTrigger(vizTime) : 0;
+    }
     analyzeLive();
     requestAnimationFrame(loop);
   })();
