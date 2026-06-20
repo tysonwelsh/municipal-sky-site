@@ -669,6 +669,44 @@ function vizColors() {
     : false;
   var whistleFft = new Float32Array(fftBins);
 
+  // Isolated Library melody (harpsichord) tap — waveform drives a vibrating
+  // ripple on the baseline spiral wherever a note fires.
+  var melodyAnalyser = actx.createAnalyser();
+  melodyAnalyser.fftSize = FFT_SIZE;
+  melodyAnalyser.smoothingTimeConstant = 0;
+  var melodyTapOk = ProsperoAudio.attachLayerAnalyser
+    ? ProsperoAudio.attachLayerAnalyser("library", "melody", melodyAnalyser)
+    : false;
+  var melodyTime = new Float32Array(FFT_SIZE);
+
+  // Per-note events from the engine → active baseline plucks.
+  // Defaults ported from the harpsichord-strings prototype.
+  var HARP_TAU = 1.5, HARP_SIGMA_OCT = 0.05, HARP_WSAMP = 200;
+  var HARP_AUDIO_GAIN = 20, HARP_AMP = 80, HARP_LIFETIME = 7;
+  var harpQueue = [], harpPlucks = [];
+  var harpActive = false, harpNow = 0, harpRadial = 0;
+  if (ProsperoAudio.setNoteListener) {
+    ProsperoAudio.setNoteListener(function (ev) { harpQueue.push(ev); });
+  }
+  // Radial baseline displacement at sample (o,b) from all active plucks.
+  function harpDr(o, b) {
+    if (!harpActive) return 0;
+    var ofSample = o + b / SAMPLES_PER_TURN, dr = 0;
+    for (var i = 0; i < harpPlucks.length; i++) {
+      var pk = harpPlucks[i];
+      var dOct = ofSample - pk.octaveFloat;
+      if (dOct < -HARP_SIGMA_OCT * 3 || dOct > HARP_SIGMA_OCT * 3) continue;
+      var env = Math.exp(-(dOct * dOct) / (2 * HARP_SIGMA_OCT * HARP_SIGMA_OCT));
+      var decay = Math.exp(-(harpNow - pk.startTime) / HARP_TAU);
+      var frac = dOct / (2.5 * HARP_SIGMA_OCT) + 0.5;
+      if (frac < 0) frac = 0; else if (frac > 1) frac = 1;
+      var wv = melodyTime[(frac * (HARP_WSAMP - 1)) | 0] * HARP_AUDIO_GAIN;
+      if (wv > 2.6) wv = 2.6; else if (wv < -2.6) wv = -2.6;
+      dr += harpRadial * decay * env * wv;
+    }
+    return dr;
+  }
+
   // Drone cycles for the constellation floor
   var droneCycles = [];
   if (ProsperoAudio.setDroneListener) {
@@ -1066,6 +1104,27 @@ function vizColors() {
 
     var whistleOverlay = (track === "ariel") && whistleTapOk;
     if (whistleOverlay) whistleAnalyser.getFloatFrequencyData(whistleFft);
+
+    // Harpsichord baseline plucks (Library only): read the melody waveform and
+    // activate scheduled notes whose start time has arrived.
+    harpActive = false;
+    if (track === "library") {
+      if (melodyTapOk) melodyAnalyser.getFloatTimeDomainData(melodyTime);
+      harpNow = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      for (var qi = harpQueue.length - 1; qi >= 0; qi--) {
+        if (harpNow >= harpQueue[qi].startTime) {
+          var ev = harpQueue.splice(qi, 1)[0];
+          var of = Math.log2(ev.freq / ROW_F_MIN);
+          if (of >= 0 && of < OCTAVES) harpPlucks.push({ octaveFloat: of, startTime: ev.startTime });
+        }
+      }
+      if (harpQueue.length > 64) harpQueue.splice(0, harpQueue.length - 64);
+      harpPlucks = harpPlucks.filter(function (p) { return (harpNow - p.startTime) < HARP_LIFETIME; });
+      harpActive = melodyTapOk && harpPlucks.length > 0;
+    } else {
+      harpPlucks.length = 0; harpQueue.length = 0;
+    }
+
     computeMagnitudes(whistleOverlay);
     applyAdaptiveBaseline();
     applySpectralBlur(BLUR_SIGMA);
@@ -1082,6 +1141,7 @@ function vizColors() {
     // Cap by width so it can't overflow on very narrow screens.
     var baseRadius = Math.min(h * 0.20, w * 0.45);
     var octaveStep = baseRadius * 0.55;
+    harpRadial = baseRadius * (HARP_AMP / 800);   // world-unit scale for the pluck ripple
     var peakUp     = octaveStep * 1.5;
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
@@ -1097,7 +1157,8 @@ function vizColors() {
           ? PEAK_KNEE * Math.pow(mag / PEAK_KNEE, PEAK_GAMMA)
           : mag;
         var ct = Math.cos(theta), st = Math.sin(theta);
-        var xW = baseRadius * ct, zW = baseRadius * st;
+        var rr = baseRadius + harpDr(o, b);   // baseline ripples radially when a harpsichord note fires
+        var xW = rr * ct, zW = rr * st;
         project(xW, yWorld,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
         project(xW, yWorld + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
       }

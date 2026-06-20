@@ -753,6 +753,9 @@ window.ProsperoAudio = (function () {
   //   { type:'clear', track }
   // Single channel for every motif-bearing or note-emitting layer.
   var motifListeners = [];
+  // Per-NOTE events for pitched plucks (exact freq + scheduled time), so a
+  // visualization can place an effect on each note. Shape: { freq, startTime, duration }
+  var noteListeners = [];
   // (event) => void. Fires whenever an ambient pool event is chosen, so a
   // visualization or debug log can see which specific event played.
   // Event shape: { type:'fire', track, layer:'ambient', event:'page_turn'|..., time }
@@ -1421,6 +1424,8 @@ window.ProsperoAudio = (function () {
     hg.gain.linearRampToValueAtTime(0, startTime + 0.4);
     ho.start(startTime);
     ho.stop(startTime + 0.5);
+
+    emitNoteEvent({ freq: freq, startTime: startTime, duration: duration });
   }
 
   // --- Motif renderer ---
@@ -1703,6 +1708,10 @@ window.ProsperoAudio = (function () {
   function emitMotifEvent(ev) {
     if (motifListeners.length === 0) return;
     emitMulticast(motifListeners, [ev]);
+  }
+  function emitNoteEvent(ev) {
+    if (noteListeners.length === 0) return;
+    emitMulticast(noteListeners, [ev]);
   }
   function emitDroneEvent(payload)   { emitMulticast(droneListeners,   [payload]); }
   function emitAmbientEvent(payload) { emitMulticast(ambientListeners, [payload]); }
@@ -6290,6 +6299,10 @@ window.ProsperoAudio = (function () {
       libPluckNote(freq, ctx.currentTime, duration == null ? 1.2 : duration,
                    outNode, gainMult == null ? 1 : gainMult);
       return ctx;
+    },
+    setNoteListener: function (fn) {
+      if (typeof fn === "function") noteListeners.push(fn);
+      else noteListeners.length = 0;
     },
   };
 })();
