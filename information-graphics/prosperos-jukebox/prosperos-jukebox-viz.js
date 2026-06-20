@@ -756,6 +756,20 @@ function vizColors() {
   var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head/bar max-height multiplier (whistle + hum)
   var BRIGHT_GAIN = 30;                  // maps hum high-frequency content -> bar width
 
+  // Hum bar — the baseline ITSELF emerging upward into a bar at the hum's pitch
+  // (not a shape drawn on top of it). A flat-top displacement added to the
+  // baseline dy, so the spiral line rises into a bar with no flat bottom, and
+  // inherits the spiral's depth fade + coil occlusion. Refreshed each frame.
+  var humBarActive = false, humBarOf = 0, humBarHeight = 0, humBarHalf = 0.012;
+  var HUM_BAR_EDGE = 0.006;              // side-ramp half-width (octaves) — steep = bar-like
+  function humBarDr(o, b) {
+    if (!humBarActive) return 0;
+    var d = (o + b / SAMPLES_PER_TURN) - humBarOf; if (d < 0) d = -d;
+    if (d > humBarHalf + HUM_BAR_EDGE) return 0;
+    if (d <= humBarHalf) return humBarHeight;                       // flat top
+    return humBarHeight * (1 - (d - humBarHalf) / HUM_BAR_EDGE);    // ramp down the sides
+  }
+
   // Drone cycles for the constellation floor
   var droneCycles = [];
   if (ProsperoAudio.setDroneListener) {
@@ -1247,6 +1261,16 @@ function vizColors() {
     var cy1 = Math.cos(camYaw),   sy1 = Math.sin(camYaw);
     var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
 
+    // Hum bar: refresh the flat-top baseline lift for this frame from the live hum.
+    if (track === "library" && humLollipop) {
+      humBarActive = true;
+      humBarOf = humLollipop.octaveFloat;
+      humBarHeight = humLevel * peakUp * LOLLI_HEIGHT;   // height = level (same scale as before)
+      humBarHalf = 0.008 + humWidth * 0.014;             // flat-top half-width (octaves) = brightness
+    } else {
+      humBarActive = false;
+    }
+
     // 1) Build spiral inner + outer projected points (no draw yet)
     for (var o = 0; o < OCTAVES; o++) {
       for (var b = 0; b < SAMPLES_PER_TURN; b++) {
@@ -1259,7 +1283,7 @@ function vizColors() {
           : mag;
         var ct = Math.cos(theta), st = Math.sin(theta);
         var xW = baseRadius * ct, zW = baseRadius * st;
-        var dy = harpDr(o, b) + bassDr(o, b);   // baseline vibrates vertically (harpsichord on Library, bass on Ariel)
+        var dy = harpDr(o, b) + bassDr(o, b) + humBarDr(o, b);   // baseline vibrates (harpsichord/bass) and rises into a bar (hum)
         project(xW, yWorld + dy,                     zW, cy1, sy1, cp1, sp1, innerProj, idx * 3);
         project(xW, yWorld + dy + peakMag * peakUp,  zW, cy1, sy1, cp1, sp1, outerProj, idx * 3);
       }
@@ -1545,38 +1569,9 @@ function vizColors() {
       drawLollipop3D(pal, baseRadius, cx, cy, cy1, sy1, cp1, sp1, lollipopDepthAlpha);
     }
 
-    // Hum bar (Library) — the baseline itself emerging upward into a bar at the
-    // hum's pitch. No bottom edge (it grows out of the line), same stroke as the
-    // baseline, and faded with depth so it reads as background on the back of
-    // the rotating spiral — just like that part of the spiral line.
-    if (track === "library" && humLollipop) {
-      var hOf = humLollipop.octaveFloat;
-      var hBase = (hOf - (OCTAVES - 1) / 2) * octaveStep;
-      var hyHead = hBase + humLevel * peakUp * LOLLI_HEIGHT;
-      var hTheta = (hOf - Math.floor(hOf)) * 2 * Math.PI;
-      var hdT = (0.03 + humWidth * 0.16) / 2;              // half-width in theta (along the baseline)
-      var tL = hTheta - hdT, tR = hTheta + hdT;
-      var ctL = Math.cos(tL), stL = Math.sin(tL), ctR = Math.cos(tR), stR = Math.sin(tR);
-      var bl = projWorld(baseRadius * ctL, hBase,  baseRadius * stL, cx, cy, cy1, sy1, cp1, sp1);
-      var tl = projWorld(baseRadius * ctL, hyHead, baseRadius * stL, cx, cy, cy1, sy1, cp1, sp1);
-      var tr = projWorld(baseRadius * ctR, hyHead, baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
-      var br = projWorld(baseRadius * ctR, hBase,  baseRadius * stR, cx, cy, cy1, sy1, cp1, sp1);
-      // Depth fade matched to the baseline (same formula as the spiral quads).
-      var hDepth = 0.35 + 0.65 * (((bl.z + br.z) / 2) + baseRadius) / (baseRadius * 2);
-      if (hDepth < 0.15) hDepth = 0.15; else if (hDepth > 1) hDepth = 1;
-      ctx2d.save();
-      ctx2d.strokeStyle = "rgba(" + pal.ribbonStroke[0] + "," + pal.ribbonStroke[1] + "," +
-        pal.ribbonStroke[2] + "," + (0.9 * hDepth).toFixed(3) + ")";
-      ctx2d.lineWidth = 1.3;
-      ctx2d.lineJoin = "round";
-      ctx2d.beginPath();
-      ctx2d.moveTo(bl.sx, bl.sy);   // up the left side from the baseline
-      ctx2d.lineTo(tl.sx, tl.sy);
-      ctx2d.lineTo(tr.sx, tr.sy);   // across the top
-      ctx2d.lineTo(br.sx, br.sy);   // down the right side back to the baseline
-      ctx2d.stroke();
-      ctx2d.restore();
-    }
+    // (The hum bar is no longer drawn here — the baseline itself rises into the
+    // bar via humBarDr() in the build loop, so it's depth-sorted and occluded
+    // with the spiral and has no flat bottom.)
 
     // 5) Pitch-class labels on the constellation ring (full brightness,
     //    in-key vs out-of-key tinted)
