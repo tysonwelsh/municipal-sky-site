@@ -756,6 +756,31 @@ function vizColors() {
   var HUM_GAIN = 16, LOLLI_HEIGHT = 2;   // head/bar max-height multiplier (whistle + hum)
   var BRIGHT_GAIN = 30;                  // maps hum high-frequency content -> bar width
 
+  // Per-vowel hum-bar shapes (from the vowel-bars prototype). Roundness applies
+  // to "oo" only; every other bar has square corners. peak +pointed = pointed
+  // top, −peak = concave, both edge to edge.
+  var HUM_VOWEL_SHAPES = {
+    ng: { width: 1.0, height: 0.95, peak:  0.08, pointed: 0, round: 0.10 },
+    oo: { width: 1.0, height: 1.00, peak:  0.00, pointed: 0, round: 0.60 },
+    uh: { width: 1.0, height: 1.00, peak:  0.00, pointed: 0, round: 0.08 },
+    oh: { width: 1.0, height: 1.00, peak: -0.02, pointed: 0, round: 0.00 },
+    ah: { width: 1.0, height: 1.00, peak:  0.04, pointed: 1, round: 0.00 },
+  };
+  var HUM_BAR_HALF = 3;          // base half-width in samples (× vowel width)
+  var HUM_WSAMP = 520;           // waveform samples spanned along the bar's height
+  var HUM_RIPPLE_GAIN = 5;       // waveform → baseline-offset (samples) for the side ripple
+  var HUM_RIPPLE_SMOOTH = 40;    // moving-average radius — rounds the ripple's waves
+  var humSmooth = new Float32Array(FFT_SIZE);   // smoothed hum waveform (ripple source)
+  function smoothHumWave(src, dst, r, count) {
+    if (r < 1) { for (var q = 0; q < count; q++) dst[q] = src[q]; return; }
+    var n = src.length, inv = 1 / (2 * r + 1);
+    for (var i = 0; i < count; i++) {
+      var sum = 0;
+      for (var k = -r; k <= r; k++) { var j = i + k; if (j < 0) j = 0; else if (j >= n) j = n - 1; sum += src[j]; }
+      dst[i] = sum * inv;
+    }
+  }
+
   // (Hum bar is drawn in the tick as an explicit vertical-edged bar at the hum's
   // pitch, with the baseline beneath it skipped so there's no flat bottom.)
 
@@ -1221,7 +1246,8 @@ function vizColors() {
       if (latest) {
         var hof = Math.log2(latest.freq / ROW_F_MIN);
         if (hof < 0) hof = 0.001; else if (hof >= OCTAVES) hof = OCTAVES - 0.001;
-        humLollipop = { octaveFloat: hof, freq: latest.freq, endTime: latest.startTime + (latest.duration || 1) };
+        humLollipop = { octaveFloat: hof, freq: latest.freq, vowel: latest.vowel || "uh",
+                        endTime: latest.startTime + (latest.duration || 1) };
       }
       if (humLollipop && harpNow > humLollipop.endTime + 0.15) humLollipop = null;
     } else {
@@ -1254,14 +1280,17 @@ function vizColors() {
     // sample — used to skip the baseline under it and to draw it as a vertical-
     // edged bar (depth-sorted with the spiral). Width (sample span) = brightness.
     var humBarSL = -1, humBarSR = -1, humBarHt = 0, humBarCenter = 0;
-    var humBarZ = 0, humBarDepth = 1;
+    var humBarZ = 0, humBarDepth = 1, humShape = null, humVowel = "uh";
     if (track === "library" && humLollipop) {
+      humVowel = humLollipop.vowel || "uh";
+      humShape = HUM_VOWEL_SHAPES[humVowel] || HUM_VOWEL_SHAPES.uh;
       humBarCenter = Math.round(humLollipop.octaveFloat * SAMPLES_PER_TURN);
-      var halfSamp = Math.max(1, Math.round(humWidth * 2));   // samples each side of center
+      var halfSamp = Math.max(1, Math.round(HUM_BAR_HALF * humShape.width));   // samples each side (vowel width)
       humBarSL = Math.max(0, humBarCenter - halfSamp);
       humBarSR = Math.min(TOTAL_SAMPLES - 1, humBarCenter + halfSamp);
       humBarCenter = Math.max(0, Math.min(TOTAL_SAMPLES - 1, humBarCenter));
-      humBarHt = humLevel * peakUp * LOLLI_HEIGHT;            // height = level
+      humBarHt = humLevel * peakUp * LOLLI_HEIGHT * humShape.height;           // height = level × vowel height
+      smoothHumWave(humTime, humSmooth, HUM_RIPPLE_SMOOTH, HUM_WSAMP + 1);     // side-ripple source
     }
 
     // 1) Build spiral inner + outer projected points (no draw yet)
@@ -1292,30 +1321,60 @@ function vizColors() {
       humBarDepth = 0.35 + 0.65 * (humBarZ + baseRadius) / (baseRadius * 2);
       if (humBarDepth < 0.15) humBarDepth = 0.15; else if (humBarDepth > 1) humBarDepth = 1;
     }
+    // Top of the bar (world-y above the baseline) at across-bar position u∈[-1,1],
+    // shaped by the current vowel: edge-to-edge peak/concave, or rounded corners
+    // for oo, else flat.
+    function humTopProfile(u, halfSpan) {
+      var pk = humShape.peak;
+      if (pk > 0.0001 || pk < -0.0001) {
+        var a = u < 0 ? -u : u;
+        var sh = (1 - u * u) * (1 - humShape.pointed) + (1 - a) * humShape.pointed;
+        return humBarHt * (1 + pk * sh);
+      }
+      if (humVowel === "oo" && humShape.round > 0.001 && halfSpan > 0) {
+        var halfWworld = halfSpan * (2 * Math.PI * baseRadius / SAMPLES_PER_TURN);
+        var rad = humShape.round * Math.min(halfWworld, humBarHt * 0.95);
+        var radFx = halfWworld > 0 ? rad / halfWworld : 0;
+        var au = u < 0 ? -u : u;
+        if (au <= 1 - radFx) return humBarHt;
+        var aa = (au - (1 - radFx)) / radFx;
+        return humBarHt - rad * (1 - Math.sqrt(Math.max(0, 1 - aa * aa)));
+      }
+      return humBarHt;
+    }
+    // Side ripple: shift along the baseline (in samples) by the smoothed hum
+    // waveform, sampled along the bar's height and anchored at the base.
+    function humRipple(hFrac) {
+      if (!humTapOk) return 0;
+      var f = hFrac < 0 ? 0 : (hFrac > 1 ? 1 : hFrac);
+      return humSmooth[(f * (HUM_WSAMP - 1)) | 0] * HUM_RIPPLE_GAIN * f;
+    }
     function drawHumBar() {
+      var halfSpan = (humBarSR - humBarSL) / 2;
+      if (halfSpan < 0.5) halfSpan = 0.5;
+      var pts = [], ML = 12, TT = 26;
+      var hL = humTopProfile(-1, halfSpan), hR = humTopProfile(1, halfSpan);
+      for (var s1 = 0; s1 <= ML; s1++) pts.push([humBarSL, hL * (s1 / ML)]);              // left side
+      for (var i = 0; i <= TT; i++) {                                                      // top (vowel shape)
+        var u = -1 + 2 * i / TT;
+        pts.push([humBarCenter + u * halfSpan, humTopProfile(u, halfSpan)]);
+      }
+      for (var s2 = 1; s2 <= ML; s2++) pts.push([humBarSR, hR * (1 - s2 / ML)]);           // right side
       ctx2d.save();
       ctx2d.strokeStyle = "rgba(" + pal.ribbonStroke[0] + "," + pal.ribbonStroke[1] + "," +
         pal.ribbonStroke[2] + "," + (0.9 * humBarDepth).toFixed(3) + ")";
       ctx2d.lineWidth = 1.3;
       ctx2d.lineJoin = "round";
       ctx2d.beginPath();
-      for (var i = humBarSL; i <= humBarSR; i++) {
-        var ofi = i / SAMPLES_PER_TURN;
-        var thi = (i % SAMPLES_PER_TURN) / SAMPLES_PER_TURN * 2 * Math.PI;
-        var byi = (ofi - (OCTAVES - 1) / 2) * octaveStep;
-        var cxi = baseRadius * Math.cos(thi), czi = baseRadius * Math.sin(thi);
-        var tp = projWorld(cxi, byi + humBarHt, czi, cx, cy, cy1, sy1, cp1, sp1);
-        if (i === humBarSL) {
-          var bp = projWorld(cxi, byi, czi, cx, cy, cy1, sy1, cp1, sp1);
-          ctx2d.moveTo(bp.sx, bp.sy);     // bottom-left, sitting on the baseline
-          ctx2d.lineTo(tp.sx, tp.sy);     // up the LEFT vertical edge
-        } else {
-          ctx2d.lineTo(tp.sx, tp.sy);     // across the top (follows the spiral)
-        }
-        if (i === humBarSR) {
-          var bp2 = projWorld(cxi, byi, czi, cx, cy, cy1, sy1, cp1, sp1);
-          ctx2d.lineTo(bp2.sx, bp2.sy);   // down the RIGHT vertical edge to the baseline
-        }
+      for (var p = 0; p < pts.length; p++) {
+        var hWorld = pts[p][1];
+        var sRip = pts[p][0] + humRipple(hWorld / (humBarHt || 1));   // ripple along the baseline
+        var of = sRip / SAMPLES_PER_TURN;
+        var th = (of - Math.floor(of)) * 2 * Math.PI;
+        var by2 = (of - (OCTAVES - 1) / 2) * octaveStep;
+        var pr = projWorld(baseRadius * Math.cos(th), by2 + hWorld, baseRadius * Math.sin(th),
+                           cx, cy, cy1, sy1, cp1, sp1);
+        if (p === 0) ctx2d.moveTo(pr.sx, pr.sy); else ctx2d.lineTo(pr.sx, pr.sy);
       }
       ctx2d.stroke();
       ctx2d.restore();
