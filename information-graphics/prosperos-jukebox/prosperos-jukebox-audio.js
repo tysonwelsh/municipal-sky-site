@@ -6278,5 +6278,18 @@ window.ProsperoAudio = (function () {
       try { layerGains[track][layer].connect(node); return true; }
       catch (e) { return false; }
     },
+    // Trigger one authentic Library harpsichord pluck (Karplus-Strong) into a
+    // caller-provided output node. libPluckNote is fully self-contained (routes
+    // only to `out`), so prototypes/visualizations can sound real notes on
+    // demand without touching the engine's mix or play state. Returns the
+    // AudioContext (so the caller can build its output node), or null.
+    pluckLibraryInto: function (freq, duration, outNode, gainMult) {
+      init();
+      if (!ctx || !outNode) return null;
+      if (ctx.state === "suspended") ctx.resume();
+      libPluckNote(freq, ctx.currentTime, duration == null ? 1.2 : duration,
+                   outNode, gainMult == null ? 1 : gainMult);
+      return ctx;
+    },
   };
 })();
