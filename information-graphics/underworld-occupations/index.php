@@ -30,7 +30,7 @@ include '../../includes/header.php';
   href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
   rel="stylesheet"
 />
-<link rel="stylesheet" href="underworld-occupations.css?v=8.4" />
+<link rel="stylesheet" href="underworld-occupations.css?v=6ec9b0ba" />
 
 <!-- Main Content -->
 <div class="main-wrapper">

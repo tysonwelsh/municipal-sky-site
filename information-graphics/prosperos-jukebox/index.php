@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="prosperos-jukebox.css?v=34" />
+<link rel="stylesheet" href="prosperos-jukebox.css?v=83823457" />
 
 <div class="main-wrapper">
  <div class="jukebox-scene">
@@ -121,11 +121,11 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="prosperos-jukebox-themes.js?v=1"></script>
-<script src="prosperos-jukebox-audio.js?v=81"></script>
+<script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
+<script src="prosperos-jukebox-audio.js?v=6017c215"></script>
 <script>if(!window.ProsperoAudio)console.error("AUDIO ENGINE FAILED TO LOAD");</script>
-<script src="prosperos-jukebox-ui.js?v=18"></script>
-<script src="prosperos-jukebox-viz.js?v=31"></script>
+<script src="prosperos-jukebox-ui.js?v=bcbdd909"></script>
+<script src="prosperos-jukebox-viz.js?v=12ff43d9"></script>
 
 <!-- Anonymous usage tracking. Logs a page view, plus the first PLAY press as
      an engagement signal (a raw view understates an audio page). No personal

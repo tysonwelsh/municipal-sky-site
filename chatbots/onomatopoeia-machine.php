@@ -4,7 +4,7 @@ $page_description = 'Experimental art at the human-machine interface: describe a
 $page_image = '/images/onomatopoeia-machine-share.png';
 include '../includes/header.php';
 ?>
-<link rel="stylesheet" href="onomatopoeia-bot.css?v=1">
+<link rel="stylesheet" href="onomatopoeia-bot.css?v=7534dd2e">
 <div class="main-wrapper">
     <div class="content-frame">
         <div class="post-container">

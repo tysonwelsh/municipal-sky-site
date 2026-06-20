@@ -5,7 +5,7 @@ $current_dir = basename(dirname($_SERVER['PHP_SELF']));
 $request_uri = $_SERVER['REQUEST_URI'];
 
 // Root-relative paths — work regardless of subdirectory depth.
-$css_path = '/css/style.css?v=4.1';
+$css_path = '/css/style.css?v=a1264b88';
 $home_link = '/';
 $blog_link = '/blog/';
 $graphics_link = '/information-graphics/';
