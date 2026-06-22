@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="zankyo.css?v=785b5a8f" />
+<link rel="stylesheet" href="zankyo.css?v=0765b7bf" />
 
 <div class="main-wrapper">
  <div class="zankyo-scene">
@@ -17,7 +17,7 @@ include '../../includes/header.php';
 
     <div class="zankyo-header">
       <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
-      <p class="zankyo-subtitle">// lingering reverberation · a japanese noise-engine · 3042 //</p>
+      <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a japanese noise-engine &middot; 3042 //</p>
     </div>
 
     <!-- Visualizer -->
@@ -72,7 +72,7 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="zankyo-audio.js?v=0e5777a0"></script>
+<script src="zankyo-audio.js?v=a0152440"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=82f84512"></script>
 <script src="zankyo-ui.js?v=c664bd86"></script>

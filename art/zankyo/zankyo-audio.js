@@ -128,6 +128,9 @@ window.ZankyoAudio = (function () {
 
   // Per-layer hidden trims (slider reads clean, effective value differs).
   var LAYER_RATE_TRIM = {};
+  // Volume trim: shakuhachi + koto sit ~10% louder than their slider implies, so
+  // they read more clearly in the mix without changing the displayed values.
+  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.1 };
 
   // ==========================================================================
   // LISTENERS / LOG
@@ -290,7 +293,8 @@ window.ZankyoAudio = (function () {
   function applyLayerGain(layer) {
     var node = layerGains[layer];
     if (!node) return;
-    node.gain.setValueAtTime(layerMuted[layer] ? 0 : layerVolumes[layer], ctx.currentTime);
+    var trim = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
+    node.gain.setValueAtTime(layerMuted[layer] ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
   }
   function noiseSource() {
     var n = ctx.createBufferSource();
@@ -1054,7 +1058,7 @@ window.ZankyoAudio = (function () {
     masterGain.gain.cancelScheduledValues(ctx.currentTime);
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     var node = layerGains[layer];
-    if (node) { node.gain.cancelScheduledValues(ctx.currentTime); node.gain.setValueAtTime(layerVolumes[layer] != null ? layerVolumes[layer] : DEFAULT_LAYER_VOL, ctx.currentTime); }
+    if (node) { var vt = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1; node.gain.cancelScheduledValues(ctx.currentTime); node.gain.setValueAtTime((layerVolumes[layer] != null ? layerVolumes[layer] : DEFAULT_LAYER_VOL) * vt, ctx.currentTime); }
     var t = ctx.currentTime + 0.05;
     switch (layer) {
       case "subDrone": sampleDrone(t); break;

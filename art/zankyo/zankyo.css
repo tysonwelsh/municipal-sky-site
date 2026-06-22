@@ -194,7 +194,19 @@
 .zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 2px 0; }
 .zankyo-note strong { color: var(--red); font-weight: 500; }
 
-/* ---------- Mobile: hide the console; activity log sits under the transport ---------- */
+/* ---------- Mobile ---------- */
 @media (max-width: 640px) {
+  /* hide the console; activity log sits under the transport */
   .zankyo-mixer { display: none; }
+  /* abbreviated subtitle (drop "lingering reverberation ·") */
+  .zankyo-sub-long { display: none; }
+  /* maximize content width + contain any sub-pixel/glitch overflow so the page
+     fits the viewport with no horizontal scroll */
+  .zankyo-scene { padding: 6px 8px 40px; overflow-x: hidden; }
+  .zankyo-frame { padding: 16px 13px 20px; }
+  /* let the transport wrap instead of pushing the VOL slider past the edge */
+  .zankyo-transport { flex-wrap: wrap; }
+  .zankyo-vol-slider { flex: 1 1 110px; width: auto; }
+  /* tighten the big title so its tracking can't overflow on narrow screens */
+  .zankyo-title { letter-spacing: 0.06em; }
 }
