@@ -689,7 +689,9 @@ function vizColors() {
     ProsperoAudio.setNoteListener(function (ev) {
       if (ev.track === "library" && ev.layer === "melody") harpQueue.push(ev);  // harpsichord baseline
       else if (ev.track === "library" && ev.layer === "hum") humQueue.push(ev);  // hum lollipop
+      else if (ev.track === "library" && ev.layer === "musicBox") boxQueue.push(ev);  // music-box glints
       else if (ev.track === "ariel" && ev.layer === "bass") bassQueue.push(ev);  // Ariel bass baseline
+      else if (ev.track === "ariel" && ev.layer === "bubbles") bubbleQueue.push(ev);  // rising bubbles
     });
   }
   // Radial baseline displacement at sample (o,b) from all active plucks.
@@ -783,6 +785,71 @@ function vizColors() {
 
   // (Hum bar is drawn in the tick as an explicit vertical-edged bar at the hum's
   // pitch, with the baseline beneath it skipped so there's no flat bottom.)
+
+  // Music-box glints (Library musicBox layer) — a lo-fi "soft glow star" at each
+  // ping's pitch on the spiral that drifts UP from the baseline over its life.
+  // Driven by note events: pitch sets where it sits, the note's VELOCITY
+  // (loudness) sets how high it rises (the spiral already encodes pitch as
+  // position, so height carries loudness instead). Tuned in the
+  // music-box-glint-prototype.html sandbox (style A). No analyser tap needed.
+  var BOX_GLINT_LIFE  = 1.5;     // seconds on screen
+  var BOX_GLINT_BLOOM = 0.08;    // seconds to reach full brightness
+  var BOX_GLINT_R     = 13;      // sparkle base radius (px)
+  var BOX_RISE_MIN    = 0.35;    // drift above baseline for the softest note (× peakUp)
+  var BOX_RISE_VAR    = 0.95;    // loudness adds up to this much more (× peakUp)
+  var BOX_SPIN        = 12 * Math.PI / 180;   // slow spin (rad/s)
+  var BOX_SHIM        = 0.4;     // shimmer / twinkle amount
+  var boxQueue = [], boxGlints = [];
+
+  // Lo-fi soft-glow-star sparkle in screen space at (sx0, sy0): posterized
+  // stepped-ring glow, 4 spinning tapered rays, flickering square specks, a
+  // bright core — all snapped to a 2px grid. `env` sizes it, `depth` fades the
+  // far side of the cylinder, `col` is the [r,g,b] glint color.
+  function drawGlintStar(sx0, sy0, age, env, depth, R, rot, seed, col) {
+    var shim = 1 + BOX_SHIM * 0.3 * Math.sin(age * 10 + seed * 4);   // subtle twinkle
+    var e = env * depth * (shim < 0 ? 0 : shim);
+    if (e <= 0.003) return;
+    var cr = col[0], cg = col[1], cb = col[2];
+    function ca(a) { a = a < 0 ? 0 : (a > 1 ? 1 : a); return "rgba(" + cr + "," + cg + "," + cb + "," + a.toFixed(3) + ")"; }
+    var GS = 2, sx = Math.round(sx0 / GS) * GS, sy = Math.round(sy0 / GS) * GS;
+    ctx2d.save();
+    ctx2d.globalCompositeOperation = "lighter";
+    var rings = 5, maxR = R * (0.9 + 0.7 * env);                     // posterized glow
+    for (var k = rings; k >= 1; k--) {
+      ctx2d.fillStyle = ca(0.15 * e * (1 - (k - 1) / rings));
+      ctx2d.beginPath(); ctx2d.arc(sx, sy, maxR * (k / rings), 0, Math.PI * 2); ctx2d.fill();
+    }
+    var len = R * 1.8 * (0.5 + 0.5 * env), wid = R * 0.22;           // 4 spinning rays
+    ctx2d.fillStyle = ca(0.85 * e);
+    for (var i = 0; i < 4; i++) {
+      ctx2d.save(); ctx2d.translate(sx, sy); ctx2d.rotate(rot + i * Math.PI / 2);
+      ctx2d.beginPath(); ctx2d.moveTo(0, -wid); ctx2d.lineTo(len, 0); ctx2d.lineTo(0, wid); ctx2d.closePath();
+      ctx2d.fill(); ctx2d.restore();
+    }
+    for (var s2 = 0; s2 < 4; s2++) {                                 // flickering square specks
+      var fl = Math.sin(age * (8 + s2 * 3) + seed * 5 + s2);
+      if (fl <= 0.55) continue;
+      var ang = seed * 2 + s2 * 1.9, dist = R * (1.1 + 0.5 * ((s2 * 7 + seed) % 1));
+      var px = Math.round((sx + Math.cos(ang) * dist) / GS) * GS;
+      var py = Math.round((sy + Math.sin(ang) * dist) / GS) * GS;
+      var fa = 0.7 * e * (fl - 0.55) / 0.45; fa = fa < 0 ? 0 : (fa > 1 ? 1 : fa);
+      ctx2d.fillStyle = "rgba(255,255,255," + fa.toFixed(3) + ")";
+      ctx2d.fillRect(px - 1, py - 1, GS, GS);
+    }
+    var coreA = 0.9 * e; if (coreA > 1) coreA = 1;                   // bright core
+    ctx2d.fillStyle = "rgba(255,255,255," + coreA.toFixed(3) + ")";
+    ctx2d.beginPath(); ctx2d.arc(sx, sy, R * 0.2 * (0.6 + env), 0, Math.PI * 2); ctx2d.fill();
+    ctx2d.restore();
+  }
+
+  // Rising bubbles (Ariel bubbles layer) — each gliss note spawns a bubble that
+  // floats up the cylinder (tracking its pitch glide), wobbles, then pops. Also
+  // note-event driven; no analyser tap.
+  var BUBBLE_RISE_EXTRA = 0.45;  // extra octaves of buoyant drift past the gliss end
+  var BUBBLE_AFTER      = 1.1;   // seconds of drift after the note ends, then pop
+  var BUBBLE_R          = 7;     // base bubble pixel radius
+  var BUBBLE_WOBBLE     = 0.06;  // theta wobble amplitude (radians)
+  var bubbleQueue = [], bubbles = [];
 
   // Drone cycles for the constellation floor
   var droneCycles = [];
@@ -1254,6 +1321,61 @@ function vizColors() {
       humQueue.length = 0; humLollipop = null; humLevel = 0;
     }
 
+    // Music-box glints (Library only): activate scheduled glints whose start
+    // time has arrived; expire by lifetime.
+    if (track === "library") {
+      var gNow = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      for (var gqi = boxQueue.length - 1; gqi >= 0; gqi--) {
+        if (gNow >= boxQueue[gqi].startTime) {
+          var gev = boxQueue.splice(gqi, 1)[0];
+          var gof = Math.log2(gev.freq / ROW_F_MIN);
+          if (gof >= 0 && gof < OCTAVES) {
+            // Loudness (velocity 0.45..1.0) → how high this glint drifts.
+            var gv = gev.velocity == null ? 0.8 : gev.velocity;
+            var gnorm = (gv - 0.45) / 0.55; if (gnorm < 0) gnorm = 0; else if (gnorm > 1) gnorm = 1;
+            boxGlints.push({
+              octaveFloat: gof, startTime: gev.startTime,
+              riseFrac: BOX_RISE_MIN + BOX_RISE_VAR * gnorm,
+              seed: Math.random() * 6.283,
+              dir: Math.random() < 0.5 ? -1 : 1,
+            });
+          }
+        }
+      }
+      if (boxQueue.length > 64) boxQueue.splice(0, boxQueue.length - 64);
+      boxGlints = boxGlints.filter(function (g) { return (gNow - g.startTime) < BOX_GLINT_LIFE; });
+    } else {
+      boxGlints.length = 0; boxQueue.length = 0;
+    }
+
+    // Rising bubbles (Ariel only): spawn at each gliss note's pitch, store the
+    // glide endpoints so the bubble climbs in step with the audio.
+    if (track === "ariel") {
+      var uNow = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      for (var uqi = bubbleQueue.length - 1; uqi >= 0; uqi--) {
+        if (uNow >= bubbleQueue[uqi].startTime) {
+          var uev = bubbleQueue.splice(uqi, 1)[0];
+          var sof = Math.log2(uev.freq / ROW_F_MIN);
+          var eof = uev.endFreq ? Math.log2(uev.endFreq / ROW_F_MIN) : sof;
+          if (sof >= 0 && sof < OCTAVES) {
+            bubbles.push({
+              startOct: sof,
+              glissEndOct: eof,
+              driftTo: Math.min(OCTAVES - 0.01, eof + BUBBLE_RISE_EXTRA),
+              startTime: uev.startTime,
+              dur: uev.duration || 1,
+              phase: Math.random() * Math.PI * 2,
+              r: BUBBLE_R * (0.8 + Math.random() * 0.5),
+            });
+          }
+        }
+      }
+      if (bubbleQueue.length > 64) bubbleQueue.splice(0, bubbleQueue.length - 64);
+      bubbles = bubbles.filter(function (bb) { return (uNow - bb.startTime) < (bb.dur + BUBBLE_AFTER); });
+    } else {
+      bubbles.length = 0; bubbleQueue.length = 0;
+    }
+
     computeMagnitudes(whistleOverlay);
     applyAdaptiveBaseline();
     applySpectralBlur(BLUR_SIGMA);
@@ -1673,6 +1795,85 @@ function vizColors() {
     }
     // Hum bar sat in front of every quad — draw it now.
     if (humBarSL >= 0 && !barDrawn) drawHumBar();
+
+    // ---- Music-box glints (Library): lo-fi soft glow stars that drift up from
+    //      the baseline. Pitch → position on the spiral; loudness → rise height;
+    //      each spins slowly and twinkles. Drawn over the spiral (additive);
+    //      depth alpha dims glints on the far side of the cylinder.
+    if (track === "library" && boxGlints.length) {
+      var gT = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      var gStr = pal.ribbonStroke;
+      for (var gi2 = 0; gi2 < boxGlints.length; gi2++) {
+        var gl = boxGlints[gi2];
+        var gAge = gT - gl.startTime;
+        // Bloom up fast, then ease out over the remaining lifetime.
+        var gEnv = gAge < BOX_GLINT_BLOOM
+          ? gAge / BOX_GLINT_BLOOM
+          : Math.pow(1 - (gAge - BOX_GLINT_BLOOM) / (BOX_GLINT_LIFE - BOX_GLINT_BLOOM), 1.8);
+        if (gEnv <= 0.001) continue;
+        var gTheta = (gl.octaveFloat - Math.floor(gl.octaveFloat)) * 2 * Math.PI;
+        // Drift UP from the baseline over its life (ease-out), to a loudness-set
+        // height. The spiral encodes pitch as position; height carries loudness.
+        var grt = gAge / BOX_GLINT_LIFE; if (grt > 1) grt = 1;
+        var gRise = gl.riseFrac * peakUp * (1 - Math.pow(1 - grt, 1.6));
+        var gY = (gl.octaveFloat - (OCTAVES - 1) / 2) * octaveStep + gRise;
+        var gp = projWorld(baseRadius * Math.cos(gTheta), gY, baseRadius * Math.sin(gTheta),
+                           cx, cy, cy1, sy1, cp1, sp1);
+        var gDepth = 0.3 + 0.7 * (gp.z + baseRadius) / (baseRadius * 2);
+        if (gDepth < 0.12) gDepth = 0.12; else if (gDepth > 1) gDepth = 1;
+        var gRot = gl.seed + gl.dir * BOX_SPIN * gAge;
+        drawGlintStar(gp.sx, gp.sy, gAge, gEnv, gDepth, BOX_GLINT_R, gRot, gl.seed, gStr);
+      }
+    }
+
+    // ---- Rising bubbles (Ariel): float up the cylinder tracking the gliss,
+    //      wobble side to side, then expand-and-pop at the end.
+    if (track === "ariel" && bubbles.length) {
+      var bT = ProsperoAudio.getAudioTime ? ProsperoAudio.getAudioTime() : (performance.now() / 1000);
+      ctx2d.save();
+      for (var bi2 = 0; bi2 < bubbles.length; bi2++) {
+        var bub = bubbles[bi2];
+        var bAge = bT - bub.startTime;
+        var bTotal = bub.dur + BUBBLE_AFTER;
+        var bT01 = bAge / bTotal; if (bT01 < 0) bT01 = 0; else if (bT01 > 1) bT01 = 1;
+        // Pitch: glide start→end during the note, then buoyant drift upward.
+        var bOf;
+        if (bAge < bub.dur) {
+          bOf = bub.startOct + (bub.glissEndOct - bub.startOct) * (bAge / bub.dur);
+        } else {
+          var bAft = (bAge - bub.dur) / BUBBLE_AFTER; if (bAft > 1) bAft = 1;
+          bOf = bub.glissEndOct + (bub.driftTo - bub.glissEndOct) * bAft;
+        }
+        if (bOf < 0) bOf = 0; else if (bOf >= OCTAVES) bOf = OCTAVES - 0.01;
+        var bWob = Math.sin(bAge * 3.2 + bub.phase) * BUBBLE_WOBBLE;
+        var bTheta = (bOf - Math.floor(bOf)) * 2 * Math.PI + bWob;
+        var bY = (bOf - (OCTAVES - 1) / 2) * octaveStep;
+        var bp = projWorld(baseRadius * Math.cos(bTheta), bY, baseRadius * Math.sin(bTheta),
+                           cx, cy, cy1, sy1, cp1, sp1);
+        var bDepth = 0.25 + 0.75 * (bp.z + baseRadius) / (baseRadius * 2);
+        if (bDepth < 0.12) bDepth = 0.12; else if (bDepth > 1) bDepth = 1;
+        // Fade in quickly; pop (expand + fade) over the last ~18% of life.
+        var bPop = bT01 > 0.82 ? (bT01 - 0.82) / 0.18 : 0;
+        var bFade = bT01 < 0.1 ? bT01 / 0.1 : (1 - bPop);
+        if (bFade <= 0.001) continue;
+        var bR = bub.r * (1 + 0.25 * Math.sin(bAge * 2.1 + bub.phase)) * (1 + bPop * 1.4);
+        var bA = bFade * bDepth;
+        var bFil = pal.ribbonFill;
+        ctx2d.strokeStyle = "rgba(" + bFil[0] + "," + bFil[1] + "," + bFil[2] + "," + (0.7 * bA).toFixed(3) + ")";
+        ctx2d.lineWidth = 1.2;
+        ctx2d.beginPath(); ctx2d.arc(bp.sx, bp.sy, bR, 0, Math.PI * 2); ctx2d.stroke();
+        ctx2d.fillStyle = "rgba(" + bFil[0] + "," + bFil[1] + "," + bFil[2] + "," + (0.10 * bA).toFixed(3) + ")";
+        ctx2d.fill();
+        // Specular highlight, upper-left (suppressed as it pops).
+        if (bPop < 0.5) {
+          ctx2d.fillStyle = "rgba(255,255,255," + (0.7 * bA * (1 - bPop * 2)).toFixed(3) + ")";
+          ctx2d.beginPath();
+          ctx2d.arc(bp.sx - bR * 0.33, bp.sy - bR * 0.33, Math.max(0.8, bR * 0.18), 0, Math.PI * 2);
+          ctx2d.fill();
+        }
+      }
+      ctx2d.restore();
+    }
 
     // 5) Pitch-class labels on the constellation ring (full brightness,
     //    in-key vs out-of-key tinted)

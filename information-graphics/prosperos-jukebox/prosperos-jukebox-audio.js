@@ -1940,6 +1940,11 @@ window.ProsperoAudio = (function () {
       var freq = LIB_SCALE_5[boxIdx];
       if (firstFreq === null) firstFreq = freq;
       var dur = (0.6 + Math.random() * 0.4) * decayScale;
+      // Per-note velocity (loudness): gives the music box dynamic variation and
+      // drives the glint overlay's rise height. Normalized 0..1; applied as a
+      // gain multiplier so even the softest ping (0.45) stays audible.
+      var velocity = 0.45 + Math.random() * 0.55;
+      var velGain = 0.4 + 0.6 * velocity;          // 0.67..1.0 audible range
 
       var o = c.createOscillator();
       var g = c.createGain();
@@ -1948,24 +1953,29 @@ window.ProsperoAudio = (function () {
       o.connect(g);
       g.connect(out);
       g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(0.045, t + 0.003);
-      g.gain.exponentialRampToValueAtTime(0.015, t + 0.1);
+      g.gain.linearRampToValueAtTime(0.045 * velGain, t + 0.003);
+      g.gain.exponentialRampToValueAtTime(0.015 * velGain, t + 0.1);
       g.gain.linearRampToValueAtTime(0, t + dur);
       o.start(t);
       o.stop(t + dur + 0.01);
 
-      // 3rd-harmonic overtone (gain controlled by SHIMMER knob)
+      // 3rd-harmonic overtone (gain controlled by SHIMMER knob; scaled by velocity)
       var h = c.createOscillator();
       var hg = c.createGain();
       h.type = "sine";
       h.frequency.setValueAtTime(freq * 3, t);
       h.connect(hg);
       hg.connect(out);
-      hg.gain.setValueAtTime(shimmerGain, t);
+      hg.gain.setValueAtTime(shimmerGain * velGain, t);
       hg.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.5);
       hg.gain.linearRampToValueAtTime(0, t + dur * 0.6);
       h.start(t);
       h.stop(t + dur + 0.01);
+
+      // Per-note event so the spiral viz can flash a sparkle at this ping's
+      // exact pitch and time (drives the music-box glint overlay). velocity →
+      // glint rise height.
+      emitNoteEvent({ track: "library", layer: "musicBox", freq: freq, startTime: t, duration: dur, velocity: velocity });
     }
 
     if (firstFreq !== null) {
@@ -5006,6 +5016,14 @@ window.ProsperoAudio = (function () {
       g.gain.linearRampToValueAtTime(0, t + dur);
       o.start(t);
       o.stop(t + dur + 0.1);
+
+      // Per-bubble event so the spiral viz can float a bubble that tracks this
+      // note's pitch glide (start → end) and pops when it ends.
+      emitNoteEvent({
+        track: "ariel", layer: "bubbles",
+        freq: startFreq, endFreq: startFreq * endMult,
+        startTime: t, duration: dur,
+      });
     }
 
     if (bubbleFirstStart !== null) {
