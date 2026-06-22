@@ -9,14 +9,22 @@ $css_path = '/css/style.css?v=a1264b88';
 $home_link = '/';
 $blog_link = '/blog/';
 $graphics_link = '/information-graphics/';
-$chatbots_link = '/chatbots/';
+$genart_link = '/generative-art/';
 $about_link = '/about.php';
+
+// "Generative Art" gathers the music engines (which keep their existing
+// /information-graphics/ URLs) and the Onomatopoeia Machine (which keeps its
+// /chatbots/ URL), so its active state spans those paths.
+$genart_apps = array('/information-graphics/prosperos-jukebox', '/information-graphics/antariksh', '/information-graphics/zankyo');
 
 // Improved active page detection
 $is_home = $request_uri === '/' || $request_uri === '' || $request_uri === '/index.php';
 $is_blog = $current_dir === 'blog' || strpos($request_uri, '/blog') !== false;
-$is_graphics = $current_dir === 'information-graphics' || strpos($request_uri, '/information-graphics') !== false;
-$is_chatbots = $current_dir === 'chatbots' || strpos($request_uri, '/chatbots') !== false;
+$is_genart = strpos($request_uri, '/generative-art') !== false || strpos($request_uri, '/chatbots') !== false;
+foreach ($genart_apps as $gp) {
+    if (strpos($request_uri, $gp) !== false) { $is_genart = true; break; }
+}
+$is_graphics = (strpos($request_uri, '/information-graphics') !== false) && !$is_genart;
 $is_about = $current_page === 'about.php' ||
     $current_page === 'about' ||
     strpos($request_uri, '/about') !== false ||
@@ -94,8 +102,8 @@ $is_about = $current_page === 'about.php' ||
                        echo ' active'; ?>">Blog</a>
                 <a href="<?php echo $graphics_link; ?>" class="nav-graphics<?php if ($is_graphics)
                        echo ' active'; ?>">Information Graphics</a>
-                <a href="<?php echo $chatbots_link; ?>" class="nav-chatbots<?php if ($is_chatbots)
-                       echo ' active'; ?>">Chatbots</a>
+                <a href="<?php echo $genart_link; ?>" class="nav-genart<?php if ($is_genart)
+                       echo ' active'; ?>">Generative Art</a>
                 <a href="<?php echo $about_link; ?>" class="nav-about<?php if ($is_about)
                        echo ' active'; ?>">About</a>
             </nav>

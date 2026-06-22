@@ -15,13 +15,6 @@ include '../includes/header.php';
             <!-- Entry List -->
             <div class="entry-list">
                 <div class="entry">
-                    <span class="entry-date">2026.04.13</span>
-                    <div class="entry-content">
-                        <a href="prosperos-jukebox/" class="entry-title">Prospero's Jukebox</a>
-                        <span class="entry-description">Aleatoric soundscapes.</span>
-                    </div>
-                </div>
-                <div class="entry">
                     <span class="entry-date">2026.02.23</span>
                     <div class="entry-content">
                         <a href="underworld-occupations" class="entry-title">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</a>
