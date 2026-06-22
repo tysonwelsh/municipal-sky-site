@@ -71,7 +71,7 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="zankyo-audio.js?v=8355cb3b"></script>
+<script src="zankyo-audio.js?v=0e5777a0"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=82f84512"></script>
 <script src="zankyo-ui.js?v=c664bd86"></script>

@@ -649,13 +649,13 @@ window.ZankyoAudio = (function () {
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * bright, t); f.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.6, 300), t + dur * 0.7); f.Q.setValueAtTime(3, t);
     var g = c.createGain(); o1.connect(f); o2.connect(f); f.connect(g); g.connect(out);
     var peak = 0.13 * (opts.gain == null ? 1 : opts.gain), dec = dur * sustain;
-    // Same fix as the shamisen: clamp the decay anchor inside the note so short
-    // koto notes (e.g. glissando runs) don't exp-ramp up from 0 after release.
-    var decA = Math.min(0.15 * sustain, dec * 0.6), atkK = Math.min(0.005, decA * 0.6);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + atkK);
+    // Click-safe: linear fades from/to true zero; anchors clamped inside the note.
+    var decA = Math.min(0.15 * sustain, dec * 0.6), atkK = Math.max(0.004, Math.min(0.006, decA * 0.5));
+    if (atkK >= decA) atkK = decA * 0.5;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + atkK);
     g.gain.exponentialRampToValueAtTime(peak * 0.3, t + decA);
-    g.gain.linearRampToValueAtTime(0.0001, t + dec);
+    g.gain.linearRampToValueAtTime(0, t + dec);
     o1.start(t); o1.stop(t + dec + 0.05); o2.start(t); o2.stop(t + dec + 0.05);
     var sh = c.createOscillator(), shg = c.createGain(); sh.type = "sine"; sh.frequency.setValueAtTime(freq * 2, t); sh.connect(shg); shg.connect(out);
     shg.gain.setValueAtTime(0.0001, t); shg.gain.exponentialRampToValueAtTime(0.015, t + 0.04); shg.gain.exponentialRampToValueAtTime(0.001, t + dec); sh.start(t); sh.stop(t + dec + 0.1);
@@ -704,21 +704,26 @@ window.ZankyoAudio = (function () {
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * 6, t); f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur * 0.6); f.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(f); f.connect(g); g.connect(out);
     var peak = 0.13 * (opts.gain == null ? 1 : opts.gain);
-    // Keep the attack + decay anchors strictly inside the note: short notes
-    // (hammer-ons, fast kyū beats) were shorter than the fixed 0.12s decay
-    // anchor, so the release ramp landed BEFORE it → an exponential ramp up
-    // from ~0 after silence = a broadband click. Clamping keeps events in order.
-    var decA = Math.min(0.12, dur * 0.6), atk = Math.min(0.002 + (1 - attack) * 0.02, decA * 0.6);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + atk);
+    // Click-safe envelope: LINEAR fades from/to TRUE zero with a ≥5ms minimum
+    // fade (a fast exp ramp from ~0 on a bright sawtooth still ticks). Anchors
+    // clamped inside the note so events stay in time order; exp is used only
+    // between non-zero values.
+    var decA = Math.min(0.12, dur * 0.6);
+    var atk = Math.max(0.005, Math.min(0.002 + (1 - attack) * 0.02, decA * 0.6));
+    if (atk >= decA) atk = decA * 0.5;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + atk);
     g.gain.exponentialRampToValueAtTime(peak * 0.2, t + decA);
-    g.gain.linearRampToValueAtTime(0.0001, t + dur);
-    o.start(t); o.stop(t + dur + 0.05);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
     if (sawari > 0.01) {                                   // sawari buzz — bright high resonance (grit)
       var bo = c.createOscillator(); bo.type = "sawtooth"; bo.frequency.setValueAtTime(freq * 1.005, t);
       var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(freq * 7, t); bp.Q.setValueAtTime(6, t);
       var bg = c.createGain(); bo.connect(bp); bp.connect(bg); bg.connect(out);
-      bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.05 * sawari, t + 0.01); bg.gain.exponentialRampToValueAtTime(0.005 * sawari, t + dur * 0.7); bg.gain.linearRampToValueAtTime(0, t + dur * 1.1);
+      bg.gain.setValueAtTime(0, t);                        // linear fade-in from true zero (no resonant onset tick)
+      bg.gain.linearRampToValueAtTime(0.05 * sawari, t + Math.min(0.014, dur * 0.4));
+      bg.gain.exponentialRampToValueAtTime(0.005 * sawari, t + dur * 0.7);
+      bg.gain.linearRampToValueAtTime(0, t + dur * 1.1);
       bo.start(t); bo.stop(t + dur * 1.2 + 0.05);
     }
     emitNote("shamisen", freq, t, dur);

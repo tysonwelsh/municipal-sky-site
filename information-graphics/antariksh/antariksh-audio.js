@@ -734,10 +734,11 @@ window.AntarikshAudio = (function () {
     // 0.18s decay anchor, so the release ramp landed first and the next ramp
     // climbed exponentially up from ~0 → a broadband click. Clamping fixes it.
     var decA = Math.min(0.18, dur * 0.5);
-    var atkA = Math.min(0.006, decA * 0.5);
+    var atkA = Math.max(0.005, Math.min(0.006, decA * 0.5));
+    if (atkA >= decA) atkA = decA * 0.5;
     var holdT = Math.min(Math.max(0.2, dur - 0.3), dur * 0.9);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + atkA);           // pluck attack
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(peak, t + atkA);                // linear fade-in from true zero (no onset tick)
     g.gain.exponentialRampToValueAtTime(peak * 0.35, t + decA);    // → ringing sustain
     if (holdT > decA + 0.001) g.gain.setValueAtTime(peak * 0.35, t + holdT);
     g.gain.linearRampToValueAtTime(0, t + dur);
