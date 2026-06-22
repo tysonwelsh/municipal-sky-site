@@ -5,6 +5,12 @@ DirectoryIndex index.php index.html
 <IfModule mod_rewrite.c>
 RewriteEngine On
 
+# The music engines moved from /information-graphics/ to /generative-art/.
+# 301-redirect the old paths (and any sub-asset) so previously shared links work.
+RewriteRule ^information-graphics/prosperos-jukebox(/.*)?$ /generative-art/prosperos-jukebox$1 [R=301,L]
+RewriteRule ^information-graphics/antariksh(/.*)?$ /generative-art/antariksh$1 [R=301,L]
+RewriteRule ^information-graphics/zankyo(/.*)?$ /generative-art/zankyo$1 [R=301,L]
+
 # Remove .php extension from URLs (basic version)
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-f

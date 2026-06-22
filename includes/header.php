@@ -12,19 +12,13 @@ $graphics_link = '/information-graphics/';
 $genart_link = '/generative-art/';
 $about_link = '/about.php';
 
-// "Generative Art" gathers the music engines (which keep their existing
-// /information-graphics/ URLs) and the Onomatopoeia Machine (which keeps its
-// /chatbots/ URL), so its active state spans those paths.
-$genart_apps = array('/information-graphics/prosperos-jukebox', '/information-graphics/antariksh', '/information-graphics/zankyo');
-
-// Improved active page detection
+// "Generative Art" holds the music engines (under /generative-art/) and the
+// Onomatopoeia Machine (which keeps its /chatbots/ URL), so its active state
+// spans both paths.
 $is_home = $request_uri === '/' || $request_uri === '' || $request_uri === '/index.php';
 $is_blog = $current_dir === 'blog' || strpos($request_uri, '/blog') !== false;
 $is_genart = strpos($request_uri, '/generative-art') !== false || strpos($request_uri, '/chatbots') !== false;
-foreach ($genart_apps as $gp) {
-    if (strpos($request_uri, $gp) !== false) { $is_genart = true; break; }
-}
-$is_graphics = (strpos($request_uri, '/information-graphics') !== false) && !$is_genart;
+$is_graphics = strpos($request_uri, '/information-graphics') !== false;
 $is_about = $current_page === 'about.php' ||
     $current_page === 'about' ||
     strpos($request_uri, '/about') !== false ||

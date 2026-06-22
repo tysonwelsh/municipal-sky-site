@@ -60,4 +60,4 @@ information-graphics/assets/rabelais-clips/svg_output/
 information-graphics/prosperos-jukebox-backup-*/
 
 # ZANKYŌ headless dev harness — not for production
-information-graphics/zankyo/_harness.js
+generative-art/zankyo/_harness.js
