@@ -116,10 +116,15 @@
 .zankyo-arc-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
 .zankyo-arc-label { font-size: 11px; letter-spacing: 0.14em; color: var(--ink-label); }
 .zankyo-arc-phase { font-size: 11px; letter-spacing: 0.16em; color: var(--amber); text-transform: uppercase; }
-.zankyo-arc-track { position: relative; height: 6px; border-radius: 2px; background: var(--grid); overflow: hidden; }
-.zankyo-arc-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%; border-radius: 2px;
+.zankyo-arc-track { position: relative; height: 12px; background: var(--grid); overflow: hidden; }
+.zankyo-arc-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
   background: linear-gradient(90deg, var(--cyan), var(--red), var(--magenta));
-  box-shadow: 0 0 12px rgba(var(--red-rgb), 0.5); transition: width 0.3s linear; }
+  box-shadow: 0 0 8px rgba(var(--red-rgb), 0.4); transition: width 0.2s linear; image-rendering: pixelated; }
+/* carve the fill into fine, subtle LED segments (digital readout feel) */
+.zankyo-arc-track::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2;
+  background: repeating-linear-gradient(90deg, rgba(0,0,0,0) 0, rgba(0,0,0,0) 4px, rgba(0,0,0,0.35) 4px, rgba(0,0,0,0.35) 5px);
+}
 .zankyo-arc-scale { display: flex; justify-content: space-between; margin-top: 5px; font-size: 9px; letter-spacing: 0.1em; color: var(--ink-dim); }
 
 /* ---------- Transport ---------- */
@@ -151,6 +156,9 @@
 .zankyo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 12px; margin-bottom: 9px; }
 .zankyo-layer-name { font-family: "Orbitron", sans-serif; font-size: 12px; letter-spacing: 0.08em; color: #fff; flex: 1; }
 .zankyo-layer-kana { font-family: "Shippori Mincho", serif; color: var(--red); margin-right: 6px; }
+.zankyo-layer-sample { padding: 6px 9px; border-radius: 2px; border: 1px solid rgba(var(--magenta-rgb), 0.4); background: rgba(var(--magenta-rgb), 0.06); color: var(--magenta); cursor: pointer; line-height: 0; }
+.zankyo-layer-sample:hover { border-color: var(--magenta); box-shadow: 0 0 8px rgba(var(--magenta-rgb), 0.3); }
+.zankyo-layer-sample .tri { display: inline-block; width: 0; height: 0; border-left: 8px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent; }
 .zankyo-layer-mute { font-size: 10px; letter-spacing: 0.08em; padding: 5px 10px; border-radius: 2px; border: 1px solid rgba(var(--cyan-rgb), 0.4); color: var(--cyan); background: rgba(var(--cyan-rgb), 0.05); cursor: pointer; }
 .zankyo-layer-mute.muted { border-color: var(--border); color: var(--ink-dim); background: transparent; }
 .zankyo-layer-vol, .zankyo-layer-rate { display: flex; align-items: center; gap: 9px; }

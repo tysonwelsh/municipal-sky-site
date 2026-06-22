@@ -106,7 +106,7 @@ window.ZankyoAudio = (function () {
   var GRIT_LAYERS = { subDrone: true, shamisen: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, koto: 0.55, shamisen: 0.5, taiko: 0.62, noise: 0.5, ambient: 0.55 };
+  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, koto: 0.6, shamisen: 0.5, taiko: 0.62, noise: 0.5, ambient: 0.55 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, koto: false, shamisen: false, taiko: false, noise: false, ambient: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, koto: 1, shamisen: 1, taiko: 1, noise: 1, ambient: 1 };
   var DEFAULT_LAYER_VOL = 0.7;
@@ -998,6 +998,59 @@ window.ZankyoAudio = (function () {
   }
 
   // ==========================================================================
+  // SAMPLE — audition one instrument in isolation (works while stopped)
+  // ==========================================================================
+  function samplePhrase(noteFn, t, degs, dur) {
+    var prev = null;
+    for (var i = 0; i < degs.length; i++) {
+      var f = SCALE[scaleIndexOf(degs[i])].freq;
+      noteFn(f, t, dur, { glideFrom: prev, gain: 1, breath: 0.5, bend: i === degs.length - 1 });
+      prev = f; t += dur * 0.9;
+    }
+  }
+  function sampleDrone(t) {
+    var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("subDrone", "cutoff", 220), t);
+    var bus = ctx.createGain(); lp.connect(bus); bus.connect(lg("subDrone"));
+    bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(1, t + 0.8); bus.gain.setValueAtTime(1, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
+    [degFreq(0, -1), degFreq(3, -1)].forEach(function (rf) {
+      [-7, 7].forEach(function (det) { var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(rf, t); o.detune.setValueAtTime(det, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.05, t); o.start(t); o.stop(t + dur + 0.1); });
+    });
+    var so = ctx.createOscillator(), sg = ctx.createGain(); so.type = "sine"; so.frequency.setValueAtTime(degFreq(0, -2), t); so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08, t); so.start(t); so.stop(t + dur + 0.1);
+  }
+  function sampleSho(t) {
+    var dur = 3, lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(getLayerParam("sho", "cutoff", 1400), t);
+    var bus = ctx.createGain(); lp.connect(bus); bus.connect(lg("sho"));
+    bus.gain.setValueAtTime(0, t); bus.gain.linearRampToValueAtTime(0.5, t + 0.8); bus.gain.setValueAtTime(0.5, t + dur - 1); bus.gain.linearRampToValueAtTime(0, t + dur);
+    var base = scaleIndexOf(6);
+    [0, 1, 2, 4, 5].forEach(function (off) { var f = SCALE[Math.min(SCALE.length - 1, base + off)].freq; var o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.setValueAtTime(f, t); o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, t); o.start(t); o.stop(t + dur + 0.1); });
+  }
+  function sampleNoise(t) {
+    var dur = 2.5, nz = noiseSource(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(800, t); bp.frequency.linearRampToValueAtTime(3000, t + dur); bp.Q.setValueAtTime(4, t);
+    var g = ctx.createGain(); nz.connect(bp); bp.connect(g); g.connect(lg("noise"));
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, Math.random() * 5); nz.stop(t + dur + 0.1);
+  }
+  function sample(layer) {
+    init();
+    if (ctx.state === "suspended") ctx.resume();
+    masterGain.gain.cancelScheduledValues(ctx.currentTime);
+    masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
+    var node = layerGains[layer];
+    if (node) { node.gain.cancelScheduledValues(ctx.currentTime); node.gain.setValueAtTime(layerVolumes[layer] != null ? layerVolumes[layer] : DEFAULT_LAYER_VOL, ctx.currentTime); }
+    var t = ctx.currentTime + 0.05;
+    switch (layer) {
+      case "subDrone": sampleDrone(t); break;
+      case "sho": sampleSho(t); break;
+      case "shakuhachi": samplePhrase(shakuhachiNote, t, [4, 2, 3, 0], 0.7); break;
+      case "koto": samplePhrase(kotoNote, t, [0, 2, 3, 4, 2, 0], 0.4); break;
+      case "shamisen": samplePhrase(shamisenNote, t, [0, 2, 0, 3, 0], 0.3); break;
+      case "taiko": for (var i = 0; i < 4; i++) taikoHit(t + i * 0.22, i === 0); break;
+      case "noise": sampleNoise(t); break;
+      case "ambient": var e = AMBIENT_POOL[Math.floor(Math.random() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
+    }
+    emitEvent({ cat: "mode", label: "♪ sample", detail: layer });
+  }
+
+  // ==========================================================================
   // MIXER API
   // ==========================================================================
   function setMasterVolume(val) {
@@ -1018,7 +1071,7 @@ window.ZankyoAudio = (function () {
     init: init, play: play, stop: stop,
     setMasterVolume: setMasterVolume, setLayerVolume: setLayerVolume, setLayerRate: setLayerRate,
     setLayerParam: setLayerParam, getLayerParam: getLayerParam, resetLayerParams: resetLayerParams,
-    toggleLayer: toggleLayer, getState: getState,
+    toggleLayer: toggleLayer, getState: getState, sample: sample,
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
     getArc: getArc, getArcInfo: arcInfo,

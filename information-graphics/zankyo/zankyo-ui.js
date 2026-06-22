@@ -61,6 +61,7 @@
       var head = document.createElement("div"); head.className = "zankyo-layer-head";
       head.innerHTML =
         '<span class="zankyo-layer-name"><span class="zankyo-layer-kana">' + meta.kana + '</span>' + meta.label + '</span>' +
+        '<button type="button" class="zankyo-layer-sample" data-sample="' + layer + '" title="sample this instrument"><span class="tri"></span></button>' +
         '<button type="button" class="zankyo-layer-mute" data-layer="' + layer + '">ON</button>' +
         '<span class="zankyo-layer-vol"><span class="zankyo-vol-label">VOL</span>' +
           '<span class="zankyo-val-readout" data-vol-val="' + layer + '">' + pct(vol) + '</span>' +
@@ -104,6 +105,9 @@
         el.classList.toggle("muted", muted); el.textContent = muted ? "OFF" : "ON";
       });
     });
+    document.querySelectorAll("[data-sample]").forEach(function (el) {
+      el.addEventListener("click", function () { if (Z.sample) Z.sample(el.getAttribute("data-sample")); });
+    });
     document.querySelectorAll("[data-param]").forEach(function (el) {
       el.addEventListener("input", function () {
         var p = el.getAttribute("data-param").split(":"), layer = p[0], key = p[1], v = parseFloat(el.value);
@@ -137,7 +141,8 @@
   function pollArc() {
     if (!Z.getArcInfo) return; var info = Z.getArcInfo();
     var fill = document.getElementById("zankyo-arc-fill"); var phase = document.getElementById("zankyo-arc-phase");
-    if (fill) fill.style.width = Math.round(info.level * 100) + "%";
+    // empty when idle; while playing, never fully empty — light a segment or two
+    if (fill) fill.style.width = (info.phase === "—" ? 0 : Math.max(2, Math.round(info.level * 100))) + "%";
     if (phase) phase.textContent = info.phase === "—" ? "idle" : info.phase;
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); if (m.name !== lastMode) { lastMode = m.name; renderScale(); } }   // live modal modulation

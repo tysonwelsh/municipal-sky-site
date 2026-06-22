@@ -7,7 +7,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="zankyo.css?v=78bc57f4" />
+<link rel="stylesheet" href="zankyo.css?v=e2780332" />
 
 <div class="main-wrapper">
  <div class="zankyo-scene">
@@ -39,8 +39,8 @@ include '../../includes/header.php';
 
     <!-- Transport -->
     <div class="zankyo-transport">
-      <button type="button" class="zankyo-btn play-btn" id="zankyo-play">&#9654; PLAY</button>
-      <button type="button" class="zankyo-btn stop-btn" id="zankyo-stop">&#9632; STOP</button>
+      <button type="button" class="zankyo-btn play-btn" id="zankyo-play">&#9654;&#xFE0E; PLAY</button>
+      <button type="button" class="zankyo-btn stop-btn" id="zankyo-stop">&#9632;&#xFE0E; STOP</button>
       <div class="zankyo-transport-spacer"></div>
       <span class="zankyo-vol-label">VOL</span>
       <span class="zankyo-val-readout" id="zankyo-master-vol-val">60</span>
@@ -71,9 +71,9 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="zankyo-audio.js?v=de5f2de0"></script>
+<script src="zankyo-audio.js?v=3c527b99"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=82f84512"></script>
-<script src="zankyo-ui.js?v=eaceedd9"></script>
+<script src="zankyo-ui.js?v=74d62e52"></script>
 
 <?php include '../../includes/footer.php'; ?>
