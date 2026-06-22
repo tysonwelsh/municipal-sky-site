@@ -17,25 +17,16 @@ include '../includes/header.php';
                     <span class="entry-date">2026.06.22</span>
                     <div class="entry-content">
                         <a href="/art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>
-                        <span class="entry-description">A Japanese aleatoric noise-engine &mdash; generative gagaku,
-                            koto, and shakuhachi eroded by Japanoise grit, structured by jo-ha-ky&#363;. A derelict
-                            orbital station, year 3042.</span>
-                    </div>
-                </div>
-                <div class="entry">
-                    <span class="entry-date">2026.06.22</span>
-                    <div class="entry-content">
-                        <a href="/art/antariksh/" class="entry-title">Antariksh &#2309;&#2306;&#2340;&#2352;&#2367;&#2325;&#2381;&#2359;</a>
-                        <span class="entry-description">An endless generative raga &mdash; free-rhythm alap in Raga
-                            Malkauns over a tanpura drone, with a futuristic sheen.</span>
+                        <span class="entry-description">Japanese aleatoric noise-engine. A derelict orbital station
+                            in the year 3042, eroded by Japanoise grit.</span>
                     </div>
                 </div>
                 <div class="entry">
                     <span class="entry-date">2026.04.13</span>
                     <div class="entry-content">
                         <a href="/art/prosperos-jukebox/" class="entry-title">Prospero&rsquo;s Jukebox</a>
-                        <span class="entry-description">Aleatoric soundscapes &mdash; three generative songs with
-                            per-layer mixing and a live pitch-spiral visualization.</span>
+                        <span class="entry-description">Aleatoric soundscapes. Three programmatically generated songs
+                            inspired by Shakespeare&rsquo;s Tempest.</span>
                     </div>
                 </div>
                 <div class="entry">
