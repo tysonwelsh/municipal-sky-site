@@ -97,7 +97,7 @@ $is_about = $current_page === 'about.php' ||
                 <a href="<?php echo $graphics_link; ?>" class="nav-graphics<?php if ($is_graphics)
                        echo ' active'; ?>">Information Graphics</a>
                 <a href="<?php echo $genart_link; ?>" class="nav-genart<?php if ($is_genart)
-                       echo ' active'; ?>">Generative Art</a>
+                       echo ' active'; ?>">Art</a>
                 <a href="<?php echo $about_link; ?>" class="nav-about<?php if ($is_about)
                        echo ' active'; ?>">About</a>
             </nav>

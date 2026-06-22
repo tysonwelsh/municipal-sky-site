@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Generative Art - Municipal Sky';
+$page_title = 'Art - Municipal Sky';
 $page_description = 'Generative and aleatoric art — music engines, machine-interface experiments, and other computational explorations.';
 include '../includes/header.php';
 ?>
@@ -8,7 +8,7 @@ include '../includes/header.php';
     <div class="content-frame">
         <div class="index-wrapper">
             <!-- Section Header -->
-            <h1 class="section-title">Generative Art</h1>
+            <h1 class="section-title">Art</h1>
             <div class="section-divider"></div>
 
             <!-- Entry List -->
