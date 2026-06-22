@@ -193,3 +193,8 @@
 
 .zankyo-note { font-size: 11px; line-height: 1.7; color: var(--ink-dim); margin: 18px 2px 0; }
 .zankyo-note strong { color: var(--red); font-weight: 500; }
+
+/* ---------- Mobile: hide the console; activity log sits under the transport ---------- */
+@media (max-width: 640px) {
+  .zankyo-mixer { display: none; }
+}
