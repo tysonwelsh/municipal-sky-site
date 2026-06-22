@@ -794,9 +794,9 @@ function vizColors() {
   // music-box-glint-prototype.html sandbox (style A). No analyser tap needed.
   var BOX_GLINT_LIFE  = 1.5;     // seconds on screen
   var BOX_GLINT_BLOOM = 0.08;    // seconds to reach full brightness
-  var BOX_GLINT_R     = 13;      // sparkle base radius (px)
-  var BOX_RISE_MIN    = 0.35;    // drift above baseline for the softest note (× peakUp)
-  var BOX_RISE_VAR    = 0.95;    // loudness adds up to this much more (× peakUp)
+  var BOX_GLINT_R     = 6.5;     // sparkle base radius (px)
+  var BOX_RISE_MIN    = 0.175;   // drift above baseline for the softest note (× peakUp)
+  var BOX_RISE_VAR    = 0.475;   // loudness adds up to this much more (× peakUp)
   var BOX_SPIN        = 12 * Math.PI / 180;   // slow spin (rad/s)
   var BOX_SHIM        = 0.4;     // shimmer / twinkle amount
   var boxQueue = [], boxGlints = [];
