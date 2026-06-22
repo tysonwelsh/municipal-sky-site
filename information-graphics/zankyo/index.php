@@ -7,7 +7,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Shippori+Mincho:wght@500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="zankyo.css?v=53056c86" />
+<link rel="stylesheet" href="zankyo.css?v=785b5a8f" />
 
 <div class="main-wrapper">
  <div class="zankyo-scene">
@@ -74,6 +74,6 @@ include '../../includes/header.php';
 <script src="zankyo-audio.js?v=3c527b99"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=82f84512"></script>
-<script src="zankyo-ui.js?v=74d62e52"></script>
+<script src="zankyo-ui.js?v=c664bd86"></script>
 
 <?php include '../../includes/footer.php'; ?>

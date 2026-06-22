@@ -141,8 +141,7 @@
   function pollArc() {
     if (!Z.getArcInfo) return; var info = Z.getArcInfo();
     var fill = document.getElementById("zankyo-arc-fill"); var phase = document.getElementById("zankyo-arc-phase");
-    // empty when idle; while playing, never fully empty — light a segment or two
-    if (fill) fill.style.width = (info.phase === "—" ? 0 : Math.max(2, Math.round(info.level * 100))) + "%";
+    if (fill) fill.style.width = Math.round(info.level * 100) + "%";
     if (phase) phase.textContent = info.phase === "—" ? "idle" : info.phase;
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); if (m.name !== lastMode) { lastMode = m.name; renderScale(); } }   // live modal modulation

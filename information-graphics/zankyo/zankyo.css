@@ -175,7 +175,7 @@
 /* ---------- Log ---------- */
 .zankyo-log-block { margin-top: 18px; }
 .zankyo-log-label { font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-label); margin-bottom: 7px; }
-.zankyo-log { background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px; max-height: 230px; overflow-y: auto; padding: 4px 0; }
+.zankyo-log { background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px; height: 230px; overflow-y: auto; padding: 4px 0; }
 .zankyo-log-empty { padding: 13px 16px; color: var(--ink-dim); font-size: 11px; }
 .zankyo-log-row { display: flex; align-items: center; gap: 10px; padding: 4px 14px; border-bottom: 1px solid rgba(var(--cyan-rgb), 0.04); font-size: 12px; animation: zk-logfade 0.3s ease; }
 .zankyo-log-row:last-child { border-bottom: none; }
