@@ -1410,7 +1410,9 @@ window.ProsperoAudio = (function () {
     // screen only a few frames. Tail decay times unchanged so the note's
     // shape and length still feel right.
     pg.gain.setValueAtTime(0.14 * gainMult, startTime);
-    pg.gain.exponentialRampToValueAtTime(0.045 * gainMult, startTime + 0.15);
+    // Clamp the decay anchor inside the note so a sub-0.15s grace/roll can't put
+    // the release ramp before it (which would exp-ramp up from ~0 → a click).
+    pg.gain.exponentialRampToValueAtTime(0.045 * gainMult, startTime + Math.min(0.15, duration * 0.5));
     pg.gain.linearRampToValueAtTime(0, startTime + duration);
     n.start(startTime);
     n.stop(startTime + duration + 0.01);

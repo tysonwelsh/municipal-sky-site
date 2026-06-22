@@ -649,7 +649,13 @@ window.ZankyoAudio = (function () {
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * bright, t); f.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.6, 300), t + dur * 0.7); f.Q.setValueAtTime(3, t);
     var g = c.createGain(); o1.connect(f); o2.connect(f); f.connect(g); g.connect(out);
     var peak = 0.13 * (opts.gain == null ? 1 : opts.gain), dec = dur * sustain;
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.005); g.gain.exponentialRampToValueAtTime(peak * 0.3, t + 0.15 * sustain); g.gain.linearRampToValueAtTime(0, t + dec);
+    // Same fix as the shamisen: clamp the decay anchor inside the note so short
+    // koto notes (e.g. glissando runs) don't exp-ramp up from 0 after release.
+    var decA = Math.min(0.15 * sustain, dec * 0.6), atkK = Math.min(0.005, decA * 0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + atkK);
+    g.gain.exponentialRampToValueAtTime(peak * 0.3, t + decA);
+    g.gain.linearRampToValueAtTime(0.0001, t + dec);
     o1.start(t); o1.stop(t + dec + 0.05); o2.start(t); o2.stop(t + dec + 0.05);
     var sh = c.createOscillator(), shg = c.createGain(); sh.type = "sine"; sh.frequency.setValueAtTime(freq * 2, t); sh.connect(shg); shg.connect(out);
     shg.gain.setValueAtTime(0.0001, t); shg.gain.exponentialRampToValueAtTime(0.015, t + 0.04); shg.gain.exponentialRampToValueAtTime(0.001, t + dec); sh.start(t); sh.stop(t + dec + 0.1);
@@ -697,8 +703,16 @@ window.ZankyoAudio = (function () {
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(freq, t);
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * 6, t); f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur * 0.6); f.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(f); f.connect(g); g.connect(out);
-    var peak = 0.13 * (opts.gain == null ? 1 : opts.gain), atk = 0.002 + (1 - attack) * 0.02;
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + atk); g.gain.exponentialRampToValueAtTime(peak * 0.2, t + 0.12); g.gain.linearRampToValueAtTime(0, t + dur);
+    var peak = 0.13 * (opts.gain == null ? 1 : opts.gain);
+    // Keep the attack + decay anchors strictly inside the note: short notes
+    // (hammer-ons, fast kyū beats) were shorter than the fixed 0.12s decay
+    // anchor, so the release ramp landed BEFORE it → an exponential ramp up
+    // from ~0 after silence = a broadband click. Clamping keeps events in order.
+    var decA = Math.min(0.12, dur * 0.6), atk = Math.min(0.002 + (1 - attack) * 0.02, decA * 0.6);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + atk);
+    g.gain.exponentialRampToValueAtTime(peak * 0.2, t + decA);
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
     o.start(t); o.stop(t + dur + 0.05);
     if (sawari > 0.01) {                                   // sawari buzz — bright high resonance (grit)
       var bo = c.createOscillator(); bo.type = "sawtooth"; bo.frequency.setValueAtTime(freq * 1.005, t);

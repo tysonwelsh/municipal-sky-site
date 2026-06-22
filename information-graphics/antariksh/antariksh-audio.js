@@ -729,10 +729,17 @@ window.AntarikshAudio = (function () {
     var g = c.createGain();
     o1.connect(f); o2.connect(f); f.connect(g); g.connect(out);
     var peak = 0.14 * gain;
+    // Keep the attack/decay/hold anchors strictly inside the note. Short
+    // ornament notes (murki ~0.1s, gamak ~0.19s) were shorter than the fixed
+    // 0.18s decay anchor, so the release ramp landed first and the next ramp
+    // climbed exponentially up from ~0 → a broadband click. Clamping fixes it.
+    var decA = Math.min(0.18, dur * 0.5);
+    var atkA = Math.min(0.006, decA * 0.5);
+    var holdT = Math.min(Math.max(0.2, dur - 0.3), dur * 0.9);
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + 0.006);          // pluck attack
-    g.gain.exponentialRampToValueAtTime(peak * 0.35, t + 0.18);    // → ringing sustain
-    g.gain.setValueAtTime(peak * 0.35, t + Math.max(0.2, dur - 0.3));
+    g.gain.exponentialRampToValueAtTime(peak, t + atkA);           // pluck attack
+    g.gain.exponentialRampToValueAtTime(peak * 0.35, t + decA);    // → ringing sustain
+    if (holdT > decA + 0.001) g.gain.setValueAtTime(peak * 0.35, t + holdT);
     g.gain.linearRampToValueAtTime(0, t + dur);
     o1.start(t); o1.stop(t + dur + 0.05);
     o2.start(t); o2.stop(t + dur + 0.05);
