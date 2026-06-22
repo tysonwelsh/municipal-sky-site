@@ -9,15 +9,15 @@ $css_path = '/css/style.css?v=a1264b88';
 $home_link = '/';
 $blog_link = '/blog/';
 $graphics_link = '/information-graphics/';
-$genart_link = '/generative-art/';
+$genart_link = '/art/';
 $about_link = '/about.php';
 
-// "Generative Art" holds the music engines (under /generative-art/) and the
+// "Generative Art" holds the music engines (under /art/) and the
 // Onomatopoeia Machine (which keeps its /chatbots/ URL), so its active state
 // spans both paths.
 $is_home = $request_uri === '/' || $request_uri === '' || $request_uri === '/index.php';
 $is_blog = $current_dir === 'blog' || strpos($request_uri, '/blog') !== false;
-$is_genart = strpos($request_uri, '/generative-art') !== false || strpos($request_uri, '/chatbots') !== false;
+$is_genart = strpos($request_uri, '/art/') === 0 || rtrim($request_uri, '/') === '/art' || strpos($request_uri, '/chatbots') !== false;
 $is_graphics = strpos($request_uri, '/information-graphics') !== false;
 $is_about = $current_page === 'about.php' ||
     $current_page === 'about' ||

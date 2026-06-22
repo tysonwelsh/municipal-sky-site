@@ -16,7 +16,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.06.22</span>
                     <div class="entry-content">
-                        <a href="/generative-art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>
+                        <a href="/art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>
                         <span class="entry-description">A Japanese aleatoric noise-engine &mdash; generative gagaku,
                             koto, and shakuhachi eroded by Japanoise grit, structured by jo-ha-ky&#363;. A derelict
                             orbital station, year 3042.</span>
@@ -25,7 +25,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.06.22</span>
                     <div class="entry-content">
-                        <a href="/generative-art/antariksh/" class="entry-title">Antariksh &#2309;&#2306;&#2340;&#2352;&#2367;&#2325;&#2381;&#2359;</a>
+                        <a href="/art/antariksh/" class="entry-title">Antariksh &#2309;&#2306;&#2340;&#2352;&#2367;&#2325;&#2381;&#2359;</a>
                         <span class="entry-description">An endless generative raga &mdash; free-rhythm alap in Raga
                             Malkauns over a tanpura drone, with a futuristic sheen.</span>
                     </div>
@@ -33,7 +33,7 @@ include '../includes/header.php';
                 <div class="entry">
                     <span class="entry-date">2026.04.13</span>
                     <div class="entry-content">
-                        <a href="/generative-art/prosperos-jukebox/" class="entry-title">Prospero&rsquo;s Jukebox</a>
+                        <a href="/art/prosperos-jukebox/" class="entry-title">Prospero&rsquo;s Jukebox</a>
                         <span class="entry-description">Aleatoric soundscapes &mdash; three generative songs with
                             per-layer mixing and a live pitch-spiral visualization.</span>
                     </div>
