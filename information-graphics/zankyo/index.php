@@ -1,6 +1,7 @@
 <?php
 $page_title = "ZANKYŌ 残響 - Municipal Sky";
 $page_description = "A Japanese aleatoric noise-engine: generative gagaku and koto eroded by Japanoise grit — a derelict orbital station, year 3042.";
+$page_image = "/images/zankyo-share.png";
 include '../../includes/header.php';
 ?>
 
