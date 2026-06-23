@@ -77,4 +77,30 @@ include '../../includes/header.php';
 <script src="zankyo-viz.js?v=82f84512"></script>
 <script src="zankyo-ui.js?v=c664bd86"></script>
 
+<!-- Anonymous usage tracking: a page view, plus the first PLAY press as an
+     engagement signal (a raw view understates an audio page). No personal data
+     leaves the browser; the server records only a salted, daily-rotating
+     visitor hash for unique-visit counts. -->
+<script>
+  (function () {
+    function track(eventType, label) {
+      fetch("../../api/page-event-tracking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: "zankyo", event_type: eventType, label: label || null }),
+      }).catch(function () {});
+    }
+    track("page_view", null);
+    var played = false;
+    var playBtn = document.getElementById("zankyo-play");
+    if (playBtn) {
+      playBtn.addEventListener("click", function () {
+        if (played) return;
+        played = true;
+        track("play", null);
+      });
+    }
+  })();
+</script>
+
 <?php include '../../includes/footer.php'; ?>
