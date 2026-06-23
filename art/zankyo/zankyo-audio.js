@@ -103,7 +103,10 @@ window.ZankyoAudio = (function () {
   // LAYERS + STATE
   // ==========================================================================
   var LAYERS = ["subDrone", "sho", "shakuhachi", "koto", "shamisen", "taiko", "noise", "ambient"];
-  var GRIT_LAYERS = { subDrone: true, shamisen: true, taiko: true, noise: true }; // route through distortion
+  // Shamisen is deliberately NOT routed through the grit bus: the grit curve's
+  // ~27x small-signal makeup spikes its plucked onset into an audible click.
+  // Its own sawari buzz + the master saturator keep it abrasive without that.
+  var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
   var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, koto: 0.6, shamisen: 0.5, taiko: 0.62, noise: 0.5, ambient: 0.55 };
@@ -167,13 +170,13 @@ window.ZankyoAudio = (function () {
     compressorNode.threshold.setValueAtTime(-20, ctx.currentTime);
     compressorNode.knee.setValueAtTime(14, ctx.currentTime);
     compressorNode.ratio.setValueAtTime(5, ctx.currentTime);
-    compressorNode.attack.setValueAtTime(0.008, ctx.currentTime);
+    compressorNode.attack.setValueAtTime(0.012, ctx.currentTime);
     compressorNode.release.setValueAtTime(0.2, ctx.currentTime);
     // Master saturator — glues the escalating wall into one cohesive distorted
     // mass and protects against clipping when grit + noise stack in the kyū.
     masterSat = ctx.createWaveShaper();
     var msc = new Float32Array(1024);
-    for (var mi = 0; mi < 1024; mi++) { var mx = (mi / 1023) * 2 - 1; msc[mi] = Math.tanh(mx * 1.4) / Math.tanh(1.4); }
+    for (var mi = 0; mi < 1024; mi++) { var mx = (mi / 1023) * 2 - 1; msc[mi] = Math.tanh(mx * 1.25) / Math.tanh(1.25); }
     masterSat.curve = msc; masterSat.oversample = "2x";
     masterGain.connect(masterSat);
     masterSat.connect(compressorNode);
@@ -197,11 +200,19 @@ window.ZankyoAudio = (function () {
       gritShaper = ctx.createWaveShaper();
       gritShaper.curve = buildGritCurve(0.6);
       gritShaper.oversample = "4x";
-      gritShaper.connect(reverbSend);
+      // Makeup-DOWN: the grit curve boosts small signals ~27x and rails the bus
+      // to full-scale under any real drone level, leaving the master zero
+      // headroom — so every new note onset (koto, taiko) clips into an audible
+      // click. Pull the gritty bus back to a sane level; the distortion timbre
+      // is baked into the waveshape and survives the attenuation.
+      var gritMakeup = ctx.createGain();
+      gritMakeup.gain.setValueAtTime(0.4, ctx.currentTime);
+      gritShaper.connect(gritMakeup);
+      gritMakeup.connect(reverbSend);
       // parallel dry path — crossfaded up by the arc so the kyū gets close + abrasive
       dryGritGain = ctx.createGain();
       dryGritGain.gain.setValueAtTime(0, ctx.currentTime);
-      gritShaper.connect(dryGritGain);
+      gritMakeup.connect(dryGritGain);
       dryGritGain.connect(masterGain);
 
       effectsReady = true;
