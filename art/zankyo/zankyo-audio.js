@@ -110,7 +110,7 @@ window.ZankyoAudio = (function () {
   var GRIT_LAYERS = { subDrone: true, taiko: true, noise: true }; // route through distortion
 
   var layerGains = {};
-  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, koto: 0.6, shamisen: 0.5, taiko: 0.62, noise: 0.5, ambient: 0.55 };
+  var layerVolumes = { subDrone: 0.6, sho: 0.62, shakuhachi: 0.85, koto: 0.6, shamisen: 0.75, taiko: 0.62, noise: 0.5, ambient: 0.55 };
   var layerMuted   = { subDrone: false, sho: false, shakuhachi: false, koto: false, shamisen: false, taiko: false, noise: false, ambient: false };
   var layerRate    = { subDrone: 1, sho: 1, shakuhachi: 1, koto: 1, shamisen: 1, taiko: 1, noise: 1, ambient: 1 };
   var DEFAULT_LAYER_VOL = 0.7;
