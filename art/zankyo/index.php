@@ -17,7 +17,7 @@ include '../../includes/header.php';
 
     <div class="zankyo-header">
       <h1 class="zankyo-title" data-glitch="ZANKYŌ">ZANKYŌ<span class="zankyo-kanji">残響</span></h1>
-      <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a japanese noise-engine &middot; 3042 //</p>
+      <p class="zankyo-subtitle">// <span class="zankyo-sub-long">lingering reverberation &middot; </span>a derelict noise-engine &middot; 3042 //</p>
     </div>
 
     <!-- Visualizer -->
