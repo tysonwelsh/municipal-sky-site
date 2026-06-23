@@ -25,6 +25,7 @@ window.ZankyoAudio = (function () {
   var masterGain = null, compressorNode = null;
   var reverbSend = null, reverbDry = null, reverbWet = null, reverbConv = null, reverbPreDelay = null;
   var gritShaper = null;           // distortion bus (gritty instruments route here)
+  var shamEdge = null;             // shamisen's own gentle saturator (bite without the grit-bus onset spike)
   var dryGritGain = null;          // parallel dry grit send, opened up toward the kyū climax
   var masterSat = null;
   var sharedNoiseBuf = null;
@@ -133,7 +134,9 @@ window.ZankyoAudio = (function () {
   var LAYER_RATE_TRIM = {};
   // Volume trim: shakuhachi + koto sit ~10% louder than their slider implies, so
   // they read more clearly in the mix without changing the displayed values.
-  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.1 };
+  // shamisen 2.2: makes up the level it lost coming off the grit bus (which was
+  // boosting it ~5-10x via the grit curve's makeup) so it sits in the mix again.
+  var LAYER_VOL_TRIM = { shakuhachi: 1.1, koto: 1.1, shamisen: 2.2 };
 
   // ==========================================================================
   // LISTENERS / LOG
@@ -215,6 +218,16 @@ window.ZankyoAudio = (function () {
       gritMakeup.connect(dryGritGain);
       dryGritGain.connect(masterGain);
 
+      // Shamisen's own saturator: a near-unity-makeup tanh that gives the
+      // shamisen back its abrasive bite (and the presence it lost when taken off
+      // the main grit bus) WITHOUT that bus's ~27x onset spike. Soft attack
+      // transient, not a click.
+      shamEdge = ctx.createWaveShaper();
+      var sec = new Float32Array(1024);
+      for (var si = 0; si < 1024; si++) { var sx = (si / 1023) * 2 - 1; sec[si] = Math.tanh(sx * 2.5) / Math.tanh(2.5); }
+      shamEdge.curve = sec; shamEdge.oversample = "2x";
+      shamEdge.connect(reverbSend);
+
       effectsReady = true;
     } catch (e) {
       reverbSend = ctx.createGain();
@@ -227,6 +240,7 @@ window.ZankyoAudio = (function () {
       var node = ctx.createGain();
       node.gain.setValueAtTime(1, ctx.currentTime);
       if (GRIT_LAYERS[layer] && effectsReady && gritShaper) node.connect(gritShaper);
+      else if (layer === "shamisen" && effectsReady && shamEdge) node.connect(shamEdge);
       else node.connect(reverbSend);
       layerGains[layer] = node;
     }
