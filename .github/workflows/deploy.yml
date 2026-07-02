@@ -1,0 +1,44 @@
+# Deploys the site to Bluehost over FTPS whenever main changes.
+#
+# Credentials live in GitHub repo secrets (Settings → Secrets and variables →
+# Actions): FTP_HOST, FTP_USERNAME, FTP_PASSWORD, FTP_SERVER_DIR.
+# Values come from .vscode/sftp.json (gitignored, local only).
+#
+# The FTP-Deploy-Action keeps a .ftp-deploy-sync-state.json on the server and
+# uploads only files that changed since the last run. It never deletes server
+# files it didn't upload itself, so server-side config (private_config/
+# secrets.php) and user data are untouched. The exclude list mirrors
+# scripts/publish.sh.
+name: Deploy to Bluehost
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # manual "Run workflow" button as a fallback
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync files over FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          exclude: |
+            **/.git*
+            **/.git*/**
+            .github/**
+            **/*.md
+            **/*.backup-*
+            local-dev/**
+            scripts/**
