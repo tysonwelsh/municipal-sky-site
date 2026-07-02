@@ -26,6 +26,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The deploy action requires server-dir to end with "/"; normalize the
+      # secret so a pasted path works with or without the trailing slash.
+      - name: Normalize server dir
+        env:
+          RAW_DIR: ${{ secrets.FTP_SERVER_DIR }}
+        run: |
+          dir="${RAW_DIR%/}/"
+          echo "::add-mask::$dir"
+          echo "SERVER_DIR=$dir" >> "$GITHUB_ENV"
+
       - name: Sync files over FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
@@ -33,7 +43,7 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
+          server-dir: ${{ env.SERVER_DIR }}
           exclude: |
             **/.git*
             **/.git*/**
