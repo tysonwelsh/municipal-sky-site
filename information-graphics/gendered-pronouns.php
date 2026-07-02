@@ -8,10 +8,10 @@ include '../includes/header.php';
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <!-- html2canvas for PNG export -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<!-- Jost font for viz-internal labels (chart axis labels, legend text) -->
+<!-- Chart-internal type: Jost for titles/labels, IBM Plex Sans for axis/figures -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;1,400&family=Jost:ital,wght@0,500;0,600;1,500&display=swap" rel="stylesheet" />
 
 <style>
   /* ── Visualization-specific styles (scoped to this page) ── */
@@ -22,24 +22,15 @@ include '../includes/header.php';
 
   .viz-title {
     font-family: "Jost", sans-serif;
-    font-size: 26px;
+    font-size: clamp(19px, 4.2vw, 26px);
+    line-height: 1.25;
     font-weight: 600;
     color: #1a1816;
     margin-bottom: 8px;
-    white-space: nowrap;
-  }
-
-  .viz-desc {
-    font-family: var(--font-family-body);
-    font-size: 15px;
-    color: rgba(0, 0, 0, 0.6);
-    max-width: 860px;
-    line-height: 1.6;
-    margin-bottom: 24px;
   }
 
   .viz-methodology {
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 12px;
     color: rgba(0, 0, 0, 0.45);
     margin-top: 20px;
@@ -57,28 +48,13 @@ include '../includes/header.php';
     padding: 48px 64px 24px 64px;
     border-radius: 4px;
     margin-top: 40px;
+    /* Safety net only — charts re-render to fit the container width. */
     overflow-x: auto;
-  }
-
-  .viz-rule {
-    height: 1px;
-    background: rgba(0, 0, 0, 0.1);
-    margin: 48px 0;
-  }
-
-  /* Treat plots like images — fixed pixel dimensions, so labels and titles
-     never rescale with viewport width. */
-  .viz-section svg {
-    display: block;
-    margin: 0 auto;
-    width: 780px;
-    height: auto;
-    max-width: none;
   }
 
   .viz-controls {
     margin-bottom: 16px;
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 13px;
     color: rgba(0, 0, 0, 0.7);
   }
@@ -92,10 +68,21 @@ include '../includes/header.php';
   .viz-controls select {
     font-family: inherit;
     font-size: 13px;
-    padding: 4px 6px;
+    padding: 6px 8px;
     background: #fff;
     border: 1px solid rgba(0, 0, 0, 0.2);
     cursor: pointer;
+  }
+
+  /* Charts are re-drawn at the container's width on resize: at desktop widths
+     they render at a fixed 940-unit composition (scaled to fit, as before);
+     below the mobile breakpoint they re-layout with labels above the bars. */
+  .viz-section svg {
+    display: block;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 940px;
+    height: auto;
   }
 
   svg {
@@ -104,7 +91,7 @@ include '../includes/header.php';
 
   .tooltip {
     position: absolute;
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     background: #fcfbf9;
     border: 1px solid rgba(0, 0, 0, 0.15);
     padding: 12px 16px;
@@ -113,7 +100,7 @@ include '../includes/header.php';
     line-height: 1.6;
     color: #2c2825;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    max-width: 300px;
+    max-width: min(300px, calc(100vw - 32px));
     z-index: 1000;
   }
 
@@ -136,7 +123,7 @@ include '../includes/header.php';
 
   .axis text {
     fill: rgba(0, 0, 0, 0.6);
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 12px;
   }
 
@@ -174,7 +161,7 @@ include '../includes/header.php';
 
   .label-sub-masc {
     fill: #385572;
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 12px;
     font-style: italic;
     opacity: 0.85;
@@ -182,26 +169,14 @@ include '../includes/header.php';
 
   .label-sub-fem {
     fill: #8c4651;
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 12px;
     font-style: italic;
     opacity: 0.85;
   }
 
-  /* Page subtitle */
-  .page-subtitle {
-    font-family: var(--font-family-body);
-    font-size: var(--font-size-base);
-    font-style: italic;
-    color: var(--color-text-light);
-    line-height: 1.6;
-    margin-top: var(--spacing-sm);
-    margin-bottom: var(--spacing-lg);
-  }
-
   /* Match text container width */
   .wide-container {
-    max-width: var(--max-width-content);
     margin-top: 32px;
     margin-bottom: 32px;
   }
@@ -241,7 +216,7 @@ include '../includes/header.php';
 
   .opening-lines .ol-quote::before {
     content: "\201C";
-    font-family: "IBM Plex Serif", serif;
+    font-family: var(--font-voice);
     font-size: 4rem;
     color: rgba(0, 0, 0, 0.15);
     position: absolute;
@@ -251,7 +226,7 @@ include '../includes/header.php';
   }
 
   .opening-lines .ol-quote .quote-text {
-    font-family: var(--font-family-literary-alt);
+    font-family: var(--font-voice);
     font-size: 1.1rem;
     line-height: 1.5;
     font-style: italic;
@@ -259,7 +234,7 @@ include '../includes/header.php';
   }
 
   .opening-lines .ol-quote .quote-attribution {
-    font-family: var(--font-family-literary);
+    font-family: var(--font-body);
     font-size: 0.85rem;
     font-style: normal;
     font-weight: 600;
@@ -282,7 +257,7 @@ include '../includes/header.php';
   .download-btn {
     padding: 6px 16px;
     margin-top: 16px;
-    font-family: var(--font-family-body);
+    font-family: "IBM Plex Sans", sans-serif;
     font-size: 13px;
     color: rgba(0, 0, 0, 0.5);
     background: none;
@@ -298,7 +273,19 @@ include '../includes/header.php';
 
   @media (max-width: 768px) {
     .viz-container {
-      padding: 24px 16px;
+      padding: 20px 14px 16px;
+      margin-top: 24px;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .opening-lines .ol-quotes {
+      flex-direction: column;
+    }
+
+    .opening-lines .ol-quote+.ol-quote {
+      border-left: none;
+      border-top: 1px solid rgba(0, 0, 0, 0.12);
     }
   }
 </style>
@@ -318,7 +305,7 @@ include '../includes/header.php';
     <!-- Introduction -->
     <div class="post-container">
       <section class="prose-flow">
-        <p>These plots look at the distribution of masculine vs. feminine first person pronouns across classic English
+        <p>These plots look at the distribution of masculine vs. feminine third-person pronouns across classic English
           language novels. </p>
       </section>
     </div>
@@ -432,22 +419,78 @@ include '../includes/header.php';
   const bgColor = "#fcfbf9";
   const borderColor = "rgba(0,0,0,0.15)";
   const textLight = "rgba(0,0,0,0.5)";
+  const inkDark = "#1a1816";
+  const jostFont = "'Jost', sans-serif";
+  const sansFont = "'IBM Plex Sans', sans-serif";
+
+  /* Below this container width the charts re-layout with row labels above
+     the bars instead of in a left gutter. */
+  const MOBILE_BREAK = 640;
+  const DESKTOP_WIDTH = 940;
+
+  // ===================================================================
+  // Tooltip — hover on mouse, tap-to-pin on touch
+  // ===================================================================
   const tip = d3.select("#tip");
+  let tipPinned = false;
+  let lastPointerType = "mouse";
+  document.addEventListener(
+    "pointerdown",
+    (e) => { lastPointerType = e.pointerType || "mouse"; },
+    true,
+  );
+
+  function placeTip(event) {
+    const node = tip.node();
+    const pad = 8;
+    const vw = document.documentElement.clientWidth;
+    const w = node.offsetWidth;
+    const h = node.offsetHeight;
+
+    let left = event.pageX + 15;
+    if (left + w > window.scrollX + vw - pad) left = event.pageX - w - 15;
+    left = Math.max(window.scrollX + pad, Math.min(left, window.scrollX + vw - w - pad));
+
+    let top = event.pageY - 10;
+    const maxTop = window.scrollY + window.innerHeight - h - pad;
+    if (top > maxTop) top = Math.max(window.scrollY + pad, event.pageY - h - 16);
+
+    tip.style("left", left + "px").style("top", top + "px");
+  }
 
   function showTip(event, html) {
-    tip
-      .style("display", "block")
-      .html(html)
-      .style("left", event.pageX + 15 + "px")
-      .style("top", event.pageY - 10 + "px");
+    tip.style("display", "block").html(html);
+    placeTip(event);
   }
+
   function hideTip() {
     tip.style("display", "none");
+    tipPinned = false;
+  }
+
+  // A tap anywhere that isn't a bar dismisses a pinned tooltip.
+  document.addEventListener("click", () => { if (tipPinned) hideTip(); });
+
+  function bindTip(selection) {
+    selection
+      .style("cursor", "pointer")
+      .on("pointermove", (e, d) => {
+        if (e.pointerType === "mouse") showTip(e, tipHtml(d));
+      })
+      .on("pointerleave", (e) => {
+        if (e.pointerType === "mouse") hideTip();
+      })
+      .on("click", (e, d) => {
+        if (lastPointerType === "mouse") return;
+        e.stopPropagation();
+        showTip(e, tipHtml(d));
+        tipPinned = true;
+      });
   }
 
   function tipHtml(d) {
     return `<span class="ep-name">${d.ch ? d.ch + ". " : ""}${d.name}</span><br>
-      <span class="meta">${d.scene ? d.scene + " \u00b7 " + d.symbol : d.author + " \u00b7 " + d.words.toLocaleString() + " words"}</span><br>
+      <span class="meta">${d.scene ? d.scene + " · " + d.symbol : d.author + " · " + d.words.toLocaleString() + " words"}</span><br>
       Masculine: <strong>${d.masc}</strong> (${d.mascPct.toFixed(1)}%)<br>
       Feminine: <strong>${d.fem}</strong> (${d.femPct.toFixed(1)}%)<br>
       Ratio: <strong>${d.ratio === Infinity ? "n/a" : d.ratio.toFixed(1) + ":1"}</strong>`;
@@ -467,44 +510,349 @@ include '../includes/header.php';
   // Log page view
   trackEvent("page_view", null);
 
-  // Helper for PNG Download
-  function downloadViz(selector, filename, btnElement) {
+  // ===================================================================
+  // Shared diverging-bar renderer
+  //
+  // Both charts are 100%-stacked masc/fem bars; they differ only in row
+  // labels, row height, and the Ulysses chart's Gilbert-schema columns.
+  // cfg = {
+  //   mode: "desktop" | "mobile",
+  //   width: container width in px (used by mobile mode),
+  //   desktop: { margin, rowHeight, pctFontSize, sepRightExtra,
+  //              drawYLabels(svg, rows, y), drawExtras(svg, rows, y, width)? },
+  //   mobile:  { labelHeight, drawLabel(svg, row, yTopOfLabel) },
+  // }
+  // ===================================================================
+
+  function renderDivergingBars(svgWrap, rows, cfg) {
+    hideTip();
+    svgWrap.selectAll("*").remove();
+    if (cfg.mode === "mobile") renderMobileBars(svgWrap, rows, cfg);
+    else renderDesktopBars(svgWrap, rows, cfg);
+  }
+
+  function drawBars(svg, rows, x, yOf, barH) {
+    const gap = 1;
+
+    // Solid paper backgrounds so the multiply blend below reads correctly.
+    svg.append("g").selectAll("rect").data(rows).enter().append("rect")
+      .attr("x", 0)
+      .attr("y", yOf)
+      .attr("width", (d) => x(d.mascPct))
+      .attr("height", barH)
+      .attr("fill", bgColor);
+
+    svg.append("g").selectAll("rect").data(rows).enter().append("rect")
+      .attr("x", (d) => x(d.mascPct) + gap)
+      .attr("y", yOf)
+      .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
+      .attr("height", barH)
+      .attr("fill", bgColor);
+
+    bindTip(
+      svg.append("g").selectAll("rect").data(rows).enter().append("rect")
+        .attr("x", 0)
+        .attr("y", yOf)
+        .attr("width", (d) => x(d.mascPct))
+        .attr("height", barH)
+        .attr("fill", mascColor)
+        .style("mix-blend-mode", "multiply"),
+    );
+
+    bindTip(
+      svg.append("g").selectAll("rect").data(rows).enter().append("rect")
+        .attr("x", (d) => x(d.mascPct) + gap)
+        .attr("y", yOf)
+        .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
+        .attr("height", barH)
+        .attr("fill", femColor)
+        .style("mix-blend-mode", "multiply"),
+    );
+  }
+
+  function drawPctLabels(svg, rows, x, yOf, barH, fontSize, pctMin) {
+    const gap = 1;
+    // Only the top row carries the "%" sign, as a legend for the rest.
+    const topName = rows[0].name;
+    const fmt = (d, v) => (d.name === topName ? v.toFixed(1) + "%" : v.toFixed(1));
+
+    svg.append("g").selectAll("text")
+      .data(rows.filter((d) => d.mascPct >= pctMin))
+      .enter().append("text")
+      .attr("x", (d) => x(d.mascPct) / 2)
+      .attr("y", (d) => yOf(d) + barH / 2)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", "middle")
+      .attr("fill", bgColor)
+      .attr("font-family", sansFont)
+      .attr("font-size", fontSize + "px")
+      .style("pointer-events", "none")
+      .text((d) => fmt(d, d.mascPct));
+
+    svg.append("g").selectAll("text")
+      .data(rows.filter((d) => d.femPct >= pctMin))
+      .enter().append("text")
+      .attr("x", (d) => x(d.mascPct) + gap + (x(d.femPct) - gap) / 2)
+      .attr("y", (d) => yOf(d) + barH / 2)
+      .attr("dy", "0.35em")
+      .attr("text-anchor", "middle")
+      .attr("fill", bgColor)
+      .attr("font-family", sansFont)
+      .attr("font-size", fontSize + "px")
+      .style("pointer-events", "none")
+      .text((d) => fmt(d, d.femPct));
+  }
+
+  function drawXAxis(svg, x, yPos) {
+    svg.append("g")
+      .attr("class", "axis")
+      .attr("transform", `translate(0,${yPos})`)
+      .call(
+        d3.axisBottom(x)
+          .tickValues([0, 25, 50, 75, 100])
+          .tickFormat((d) => d + "%"),
+      );
+  }
+
+  // ── Desktop layout: labels in a left gutter, fixed 940-unit composition ──
+  function renderDesktopBars(svgWrap, rows, cfg) {
+    const dt = cfg.desktop;
+    const margin = dt.margin;
+    const totalWidth = DESKTOP_WIDTH;
+    const width = totalWidth - margin.left - margin.right;
+    const height = rows.length * dt.rowHeight;
+
+    const svg = svgWrap
+      .append("svg")
+      .attr("viewBox", `0 0 ${totalWidth} ${height + margin.top + margin.bottom}`)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, 100]).range([0, width]);
+    const y = d3
+      .scaleBand()
+      .domain(rows.map((d) => d.name))
+      .range([0, height])
+      .padding(0.18);
+
+    svg.append("g")
+      .attr("class", "grid")
+      .call(d3.axisTop(x).tickSize(-height).tickValues([25, 75]).tickFormat(""))
+      .select(".domain")
+      .remove();
+
+    const names = rows.map((d) => d.name);
+    for (let i = 0; i < names.length - 1; i++) {
+      const lineY = y(names[i]) + y.bandwidth() + (y.step() - y.bandwidth()) / 2;
+      svg.append("line")
+        .attr("x1", -16)
+        .attr("x2", width + (dt.sepRightExtra || 16))
+        .attr("y1", lineY)
+        .attr("y2", lineY)
+        .attr("stroke", borderColor)
+        .attr("stroke-width", 0.5);
+    }
+
+    const yOf = (d) => y(d.name);
+    drawBars(svg, rows, x, yOf, y.bandwidth());
+
+    svg.append("line")
+      .attr("x1", x(50))
+      .attr("x2", x(50))
+      .attr("y1", 0)
+      .attr("y2", height)
+      .attr("stroke", "#ccc")
+      .attr("stroke-width", 1)
+      .attr("stroke-dasharray", "4, 4")
+      .style("pointer-events", "none");
+
+    drawPctLabels(svg, rows, x, yOf, y.bandwidth(), dt.pctFontSize, 6);
+
+    dt.drawYLabels(svg, rows, y);
+    if (dt.drawExtras) dt.drawExtras(svg, rows, y, width);
+
+    svg.append("text")
+      .attr("x", x(50) - 40)
+      .attr("y", -26)
+      .attr("text-anchor", "end")
+      .attr("class", "label-masc")
+      .text("Masculine Share");
+    svg.append("text")
+      .attr("x", x(50) - 40)
+      .attr("y", -8)
+      .attr("text-anchor", "end")
+      .attr("class", "label-sub-masc")
+      .text("(he/him/his)");
+
+    svg.append("text")
+      .attr("x", x(50) + 40)
+      .attr("y", -26)
+      .attr("text-anchor", "start")
+      .attr("class", "label-fem")
+      .text("Feminine Share");
+    svg.append("text")
+      .attr("x", x(50) + 40)
+      .attr("y", -8)
+      .attr("text-anchor", "start")
+      .attr("class", "label-sub-fem")
+      .text("(she/her/hers)");
+
+    drawXAxis(svg, x, height);
+  }
+
+  // ── Mobile layout: labels above full-width bars, rendered 1:1 at the
+  //    container's pixel width so type stays at true size ──
+  function renderMobileBars(svgWrap, rows, cfg) {
+    const mb = cfg.mobile;
+    const totalWidth = Math.max(260, Math.floor(cfg.width));
+    const margin = { top: 60, right: 2, bottom: 34, left: 2 };
+    const width = totalWidth - margin.left - margin.right;
+
+    const barH = 26;
+    const rowGap = 18;
+    const rowStep = mb.labelHeight + barH + rowGap;
+    const height = rows.length * rowStep - rowGap;
+
+    const svg = svgWrap
+      .append("svg")
+      .attr("viewBox", `0 0 ${totalWidth} ${height + margin.top + margin.bottom}`)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleLinear().domain([0, 100]).range([0, width]);
+    const yTop = new Map(rows.map((d, i) => [d.name, i * rowStep + mb.labelHeight]));
+    const yOf = (d) => yTop.get(d.name);
+
+    rows.forEach((d, i) => mb.drawLabel(svg, d, i * rowStep));
+
+    drawBars(svg, rows, x, yOf, barH);
+
+    // 50% marker as short per-bar ticks (a full-height line would cross the
+    // interleaved labels).
+    rows.forEach((d) => {
+      const yb = yOf(d);
+      svg.append("line")
+        .attr("x1", x(50))
+        .attr("x2", x(50))
+        .attr("y1", yb - 3)
+        .attr("y2", yb + barH + 3)
+        .attr("stroke", "#ccc")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", "3, 3")
+        .style("pointer-events", "none");
+    });
+
+    drawPctLabels(svg, rows, x, yOf, barH, 11, 8);
+
+    // Compact legend pinned to the chart edges; type shrinks a step on very
+    // narrow screens so the two halves can't collide.
+    const legendFs = (width < 300 ? 11 : 13) + "px";
+    const legendSubFs = (width < 300 ? 10 : 11) + "px";
+    svg.append("text")
+      .attr("x", 0).attr("y", -38)
+      .attr("class", "label-masc")
+      .style("font-size", legendFs)
+      .text("Masculine Share");
+    svg.append("text")
+      .attr("x", 0).attr("y", -22)
+      .attr("class", "label-sub-masc")
+      .style("font-size", legendSubFs)
+      .text("(he/him/his)");
+    svg.append("text")
+      .attr("x", width).attr("y", -38)
+      .attr("text-anchor", "end")
+      .attr("class", "label-fem")
+      .style("font-size", legendFs)
+      .text("Feminine Share");
+    svg.append("text")
+      .attr("x", width).attr("y", -22)
+      .attr("text-anchor", "end")
+      .attr("class", "label-sub-fem")
+      .style("font-size", legendSubFs)
+      .text("(she/her/hers)");
+
+    drawXAxis(svg, x, height + 8);
+  }
+
+  // Re-render a chart when its container's width or layout mode changes.
+  // Returns a function that forces a re-render (used by the sort control).
+  function responsiveViz(svgWrap, renderFn) {
+    const node = svgWrap.node();
+    let lastMode = null;
+    let lastW = -1;
+
+    function rerender(force) {
+      const w = node.getBoundingClientRect().width;
+      if (!w) return;
+      const mode = w < MOBILE_BREAK ? "mobile" : "desktop";
+      // Desktop renders a fixed composition scaled by CSS, so only a mode
+      // change matters there; mobile re-renders 1:1 on any width change.
+      if (!force && mode === lastMode && (mode === "desktop" || Math.abs(w - lastW) < 1)) return;
+      lastMode = mode;
+      lastW = w;
+      renderFn(mode, w);
+    }
+
+    rerender(true);
+
+    let debounce = null;
+    const ro = new ResizeObserver(() => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => rerender(false), 150);
+    });
+    ro.observe(node);
+
+    return () => rerender(true);
+  }
+
+  // ===================================================================
+  // PNG export — always renders the full desktop composition off-screen,
+  // so a phone download still gets the complete graphic.
+  // ===================================================================
+  function exportPng(titleHtml, renderInto, filename, btnElement) {
     const originalHtml = btnElement.innerHTML;
     btnElement.innerHTML = `Saving...`;
     btnElement.style.opacity = "0.7";
     btnElement.disabled = true;
 
-    const element = document.querySelector(selector);
+    const root = document.createElement("div");
+    root.style.cssText =
+      "position:absolute; left:-99999px; top:0; background:" + bgColor +
+      "; padding:40px 72px 48px 56px; display:inline-block;";
+    document.body.appendChild(root);
 
-    html2canvas(element, {
-      backgroundColor: "#fcfbf9",
+    const sel = d3.select(root);
+    sel.append("div")
+      .attr("class", "viz-title")
+      .style("font-size", "26px")
+      .style("white-space", "nowrap")
+      .style("margin-bottom", "24px")
+      .html(titleHtml);
+    const wrap = sel.append("div");
+    renderInto(wrap);
+    sel.append("div").attr("class", "viz-methodology").html(methodologyHtml);
+
+    // Expand the viewBox to the rendered content's measured bounding box so
+    // y-labels that overhang the SVG edge aren't clipped in the raster.
+    const svgNode = root.querySelector("svg");
+    const vb = svgNode.getAttribute("viewBox").split(" ").map(Number);
+    const bb = svgNode.getBBox();
+    const x0 = Math.min(vb[0], Math.floor(bb.x) - 8);
+    const x1 = Math.max(vb[2], Math.ceil(bb.x + bb.width) + 8);
+    svgNode.setAttribute("viewBox", `${x0} ${vb[1]} ${x1 - x0} ${vb[3]}`);
+    svgNode.style.width = `${x1 - x0}px`;
+    svgNode.style.height = `${vb[3]}px`;
+
+    const restoreBtn = () => {
+      btnElement.innerHTML = originalHtml;
+      btnElement.style.opacity = "1";
+      btnElement.disabled = false;
+    };
+
+    html2canvas(root, {
+      backgroundColor: bgColor,
       scale: 2,
       useCORS: true,
-      onclone: (clonedDoc) => {
-        const clonedEl = clonedDoc.querySelector(selector);
-        clonedEl.style.padding = "40px 72px 48px 96px";
-        clonedEl.style.display = "inline-block";
-        clonedEl.style.width = "auto";
-        clonedEl.style.maxWidth = "none";
-
-        const title = clonedEl.querySelector(".viz-title");
-        if (title) title.style.marginBottom = "24px";
-
-        const svg = clonedEl.querySelector("svg");
-        if (svg) {
-          const vb = svg.getAttribute("viewBox").split(" ").map(Number);
-          const expandLeft = 50;
-
-          svg.setAttribute(
-            "viewBox",
-            `${vb[0] - expandLeft} ${vb[1]} ${vb[2] + expandLeft} ${vb[3]}`,
-          );
-
-          svg.style.width = `${vb[2] + expandLeft}px`;
-          svg.style.height = `${vb[3]}px`;
-          svg.style.marginLeft = `-${expandLeft}px`;
-        }
-      },
     })
       .then((canvas) => {
         const a = document.createElement("a");
@@ -513,376 +861,19 @@ include '../includes/header.php';
         a.click();
 
         trackEvent("png_download", filename);
-
-        btnElement.innerHTML = originalHtml;
-        btnElement.style.opacity = "1";
-        btnElement.disabled = false;
+        root.remove();
+        restoreBtn();
       })
       .catch((err) => {
         console.error("Error generating PNG:", err);
+        root.remove();
         btnElement.innerHTML = `Error`;
-        setTimeout(() => {
-          btnElement.innerHTML = originalHtml;
-          btnElement.style.opacity = "1";
-          btnElement.disabled = false;
-        }, 2000);
+        setTimeout(restoreBtn, 2000);
       });
   }
 
   // =====================================================================
-  // Diverging Bar Chart: Gender Balance by Episode
-  // =====================================================================
-  (function () {
-    const section = d3.select("#viz1");
-
-    section
-      .append("div")
-      .attr("class", "viz-title")
-      .html(
-        "Distribution of Gendered Pronouns in James Joyce\u2019s <em>Ulysses</em>",
-      );
-
-    section
-      .append("div")
-      .attr("class", "viz-controls")
-      .attr("data-html2canvas-ignore", "true")
-      .html(
-        '<label>Sort by: <select class="viz-sort-select">' +
-        '<option value="masc">Masculine share</option>' +
-        '<option value="order">Order in novel</option>' +
-        '</select></label>'
-      );
-
-    const svgWrap = section.append("div").attr("class", "viz-svg-wrap");
-
-    function renderChart(sortMode) {
-      svgWrap.selectAll("*").remove();
-
-      const sorted = sortMode === "order"
-        ? [...data].sort((a, b) => a.ch - b.ch)
-        : [...data].sort((a, b) => b.mascPct - a.mascPct);
-
-      const rowHeight = 46;
-      const sceneColW = 100;
-      const symbolColW = 120;
-
-      const margin = { top: 65, right: 240, bottom: 30, left: 150 };
-      const totalWidth = 940;
-      const width = totalWidth - margin.left - margin.right;
-      const height = sorted.length * rowHeight;
-
-      const svg = svgWrap
-        .append("svg")
-        .attr(
-          "viewBox",
-          `0 0 ${totalWidth} ${height + margin.top + margin.bottom}`,
-        )
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-
-      const x = d3.scaleLinear().domain([0, 100]).range([0, width]);
-      const y = d3
-        .scaleBand()
-        .domain(sorted.map((d) => d.name))
-        .range([0, height])
-        .padding(0.18);
-
-      svg
-        .append("g")
-        .attr("class", "grid")
-        .call(
-          d3.axisTop(x).tickSize(-height).tickValues([25, 75]).tickFormat(""),
-        )
-        .select(".domain")
-        .remove();
-
-      const names = sorted.map((d) => d.name);
-      for (let i = 0; i < names.length - 1; i++) {
-        const lineY =
-          y(names[i]) + y.bandwidth() + (y.step() - y.bandwidth()) / 2;
-        svg
-          .append("line")
-          .attr("x1", -16)
-          .attr("x2", width + sceneColW + symbolColW + 16)
-          .attr("y1", lineY)
-          .attr("y2", lineY)
-          .attr("stroke", borderColor)
-          .attr("stroke-width", 0.5);
-      }
-
-      const gap = 1;
-
-      svg
-        .selectAll(".bar-bg-m")
-        .data(sorted)
-        .enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", (d) => y(d.name))
-        .attr("width", (d) => x(d.mascPct))
-        .attr("height", y.bandwidth())
-        .attr("fill", bgColor);
-
-      svg
-        .selectAll(".bar-bg-f")
-        .data(sorted)
-        .enter()
-        .append("rect")
-        .attr("x", (d) => x(d.mascPct) + gap)
-        .attr("y", (d) => y(d.name))
-        .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
-        .attr("height", y.bandwidth())
-        .attr("fill", bgColor);
-
-      svg
-        .selectAll(".bar-m")
-        .data(sorted)
-        .enter()
-        .append("rect")
-        .attr("x", 0)
-        .attr("y", (d) => y(d.name))
-        .attr("width", (d) => x(d.mascPct))
-        .attr("height", y.bandwidth())
-        .attr("fill", mascColor)
-        .style("mix-blend-mode", "multiply")
-        .on("mousemove", (e, d) => showTip(e, tipHtml(d)))
-        .on("mouseleave", hideTip);
-
-      svg
-        .selectAll(".bar-f")
-        .data(sorted)
-        .enter()
-        .append("rect")
-        .attr("x", (d) => x(d.mascPct) + gap)
-        .attr("y", (d) => y(d.name))
-        .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
-        .attr("height", y.bandwidth())
-        .attr("fill", femColor)
-        .style("mix-blend-mode", "multiply")
-        .on("mousemove", (e, d) => showTip(e, tipHtml(d)))
-        .on("mouseleave", hideTip);
-
-      svg
-        .append("line")
-        .attr("x1", x(50))
-        .attr("x2", x(50))
-        .attr("y1", 0)
-        .attr("y2", height)
-        .attr("stroke", "#ccc")
-        .attr("stroke-width", 1)
-        .attr("stroke-dasharray", "4, 4")
-        .style("pointer-events", "none");
-
-      const pctMin = 6;
-      svg
-        .selectAll(".pct-masc")
-        .data(sorted.filter((d) => d.mascPct >= pctMin))
-        .enter()
-        .append("text")
-        .attr("x", (d) => x(d.mascPct) / 2)
-        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-        .attr("dy", "0.35em")
-        .attr("text-anchor", "middle")
-        .attr("fill", bgColor)
-        .attr("font-family", "'IBM Plex Sans', sans-serif")
-        .attr("font-size", "12px")
-        .style("pointer-events", "none")
-        .text((d) => d.name === sorted[0].name ? d.mascPct.toFixed(1) + "%" : d.mascPct.toFixed(1));
-
-      svg
-        .selectAll(".pct-fem")
-        .data(sorted.filter((d) => d.femPct >= pctMin))
-        .enter()
-        .append("text")
-        .attr("x", (d) => x(d.mascPct) + gap + (x(d.femPct) - gap) / 2)
-        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-        .attr("dy", "0.35em")
-        .attr("text-anchor", "middle")
-        .attr("fill", bgColor)
-        .attr("font-family", "'IBM Plex Sans', sans-serif")
-        .attr("font-size", "12px")
-        .style("pointer-events", "none")
-        .text((d) => d.name === sorted[0].name ? d.femPct.toFixed(1) + "%" : d.femPct.toFixed(1));
-
-      const yLabels = svg
-        .selectAll(".y-label")
-        .data(sorted)
-        .enter()
-        .append("text")
-        .attr("x", -12)
-        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-        .attr("text-anchor", "end")
-        .attr("font-family", "'Jost', sans-serif");
-
-      yLabels
-        .append("tspan")
-        .attr("x", -12)
-        .attr("dy", "-0.25em")
-        .attr("fill", "#1a1816")
-        .attr("font-size", "16px")
-        .attr("font-weight", "600")
-        .text((d) => d.name);
-
-      yLabels
-        .append("tspan")
-        .attr("x", -12)
-        .attr("dy", "1.4em")
-        .attr("fill", textLight)
-        .attr("font-size", "11px")
-        .text((d) => d.time);
-
-      const sceneBraceX1 = width + 14;
-      const sceneBraceX2 = width + 10 + sceneColW - 4;
-      const symbolBraceX1 = width + 10 + sceneColW + 4;
-      const symbolBraceX2 = width + 4 + sceneColW + symbolColW;
-      const schemaCenterX = (sceneBraceX1 + symbolBraceX2) / 2;
-
-      svg
-        .append("text")
-        .attr("x", schemaCenterX)
-        .attr("y", -32)
-        .attr("text-anchor", "middle")
-        .attr("fill", "#1a1816")
-        .attr("font-family", "'Jost', sans-serif")
-        .attr("font-size", "13px")
-        .attr("font-weight", "600")
-        .attr("letter-spacing", "0.08em")
-        .text("GILBERT SCHEMA");
-
-      svg
-        .append("text")
-        .attr("x", (sceneBraceX1 + sceneBraceX2) / 2)
-        .attr("y", -10)
-        .attr("text-anchor", "middle")
-        .attr("fill", textLight)
-        .attr("font-family", "'Jost', sans-serif")
-        .attr("font-size", "11px")
-        .attr("letter-spacing", "0.05em")
-        .text("SCENE");
-
-      svg
-        .append("text")
-        .attr("x", (symbolBraceX1 + symbolBraceX2) / 2)
-        .attr("y", -10)
-        .attr("text-anchor", "middle")
-        .attr("fill", textLight)
-        .attr("font-family", "'Jost', sans-serif")
-        .attr("font-size", "11px")
-        .attr("letter-spacing", "0.05em")
-        .text("SYMBOL");
-
-      function braceDown(x1, x2, yPeak, yEnds) {
-        const mid = (x1 + x2) / 2;
-        return `M${x1},${yEnds} C${x1},${yPeak} ${mid},${yEnds} ${mid},${yPeak} C${mid},${yEnds} ${x2},${yPeak} ${x2},${yEnds}`;
-      }
-
-      svg
-        .append("path")
-        .attr("d", braceDown(sceneBraceX1, sceneBraceX2, -1, 8))
-        .attr("fill", "none")
-        .attr("stroke", textLight)
-        .attr("stroke-width", 1);
-
-      svg
-        .append("path")
-        .attr("d", braceDown(symbolBraceX1, symbolBraceX2, -1, 8))
-        .attr("fill", "none")
-        .attr("stroke", textLight)
-        .attr("stroke-width", 1);
-
-      svg
-        .selectAll(".scene-label")
-        .data(sorted)
-        .enter()
-        .append("text")
-        .attr("x", width + 16)
-        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-        .attr("dy", "0.35em")
-        .attr("fill", textLight)
-        .attr("font-family", "'IBM Plex Sans', sans-serif")
-        .attr("font-size", "13px")
-        .text((d) => d.scene);
-
-      svg
-        .selectAll(".symbol-label")
-        .data(sorted)
-        .enter()
-        .append("text")
-        .attr("x", width + 16 + sceneColW)
-        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-        .attr("dy", "0.35em")
-        .attr("fill", textLight)
-        .attr("font-family", "'IBM Plex Sans', sans-serif")
-        .attr("font-size", "13px")
-        .text((d) => d.symbol);
-
-      svg
-        .append("text")
-        .attr("x", x(50) - 40)
-        .attr("y", -26)
-        .attr("text-anchor", "end")
-        .attr("class", "label-masc")
-        .text("Masculine Share");
-      svg
-        .append("text")
-        .attr("x", x(50) - 40)
-        .attr("y", -8)
-        .attr("text-anchor", "end")
-        .attr("class", "label-sub-masc")
-        .text("(he/him/his)");
-
-      svg
-        .append("text")
-        .attr("x", x(50) + 40)
-        .attr("y", -26)
-        .attr("text-anchor", "start")
-        .attr("class", "label-fem")
-        .text("Feminine Share");
-      svg
-        .append("text")
-        .attr("x", x(50) + 40)
-        .attr("y", -8)
-        .attr("text-anchor", "start")
-        .attr("class", "label-sub-fem")
-        .text("(she/her/hers)");
-
-      svg
-        .append("g")
-        .attr("class", "axis")
-        .attr("transform", `translate(0,${height})`)
-        .call(
-          d3
-            .axisBottom(x)
-            .tickValues([0, 25, 50, 75, 100])
-            .tickFormat((d) => d + "%"),
-        );
-    }
-
-    renderChart("masc");
-
-    section.select(".viz-sort-select").on("change", function () {
-      renderChart(this.value);
-    });
-
-    section
-      .append("div")
-      .attr("class", "viz-methodology")
-      .html(methodologyHtml);
-
-    const btn1 = section
-      .append("button")
-      .attr("class", "download-btn")
-      .attr("data-html2canvas-ignore", "true")
-      .on("click", function () {
-        downloadViz("#viz1", "ulysses-pronouns.png", this);
-      });
-    btn1.html(
-      `Save PNG`,
-    );
-  })();
-
-  // =====================================================================
-  // VIZ 2: Comparative Bar Chart — Other Books
+  // Chart 1 (#viz2 on the page): Comparative Bar Chart — Classic Novels
   // =====================================================================
   (function () {
     const books = [
@@ -912,151 +903,6 @@ include '../includes/header.php';
 
     books.sort((a, b) => b.mascPct - a.mascPct);
 
-    const section = d3.select("#viz2");
-    section
-      .append("div")
-      .attr("class", "viz-title")
-      .text("Distribution of Gendered Pronouns Across Classic Novels");
-    const rowHeight = 66;
-
-    const margin = { top: 45, right: 40, bottom: 30, left: 190 };
-    const totalWidth = 940;
-    const width = totalWidth - margin.left - margin.right;
-    const height = books.length * rowHeight;
-
-    const svg = section
-      .append("svg")
-      .attr(
-        "viewBox",
-        `0 0 ${totalWidth} ${height + margin.top + margin.bottom}`,
-      )
-      .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
-
-    const y = d3
-      .scaleBand()
-      .domain(books.map((d) => d.name))
-      .range([0, height])
-      .padding(0.18);
-    const x = d3.scaleLinear().domain([0, 100]).range([0, width]);
-
-    svg
-      .append("g")
-      .attr("class", "grid")
-      .call(
-        d3.axisTop(x).tickSize(-height).tickValues([25, 75]).tickFormat(""),
-      )
-      .select(".domain")
-      .remove();
-
-    const bookNames = books.map((d) => d.name);
-    for (let i = 0; i < bookNames.length - 1; i++) {
-      const lineY =
-        y(bookNames[i]) + y.bandwidth() + (y.step() - y.bandwidth()) / 2;
-      svg
-        .append("line")
-        .attr("x1", -16)
-        .attr("x2", width + 16)
-        .attr("y1", lineY)
-        .attr("y2", lineY)
-        .attr("stroke", borderColor)
-        .attr("stroke-width", 0.5);
-    }
-
-    const gap = 1;
-
-    svg
-      .selectAll(".bar-bg-m")
-      .data(books)
-      .enter()
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", (d) => y(d.name))
-      .attr("width", (d) => x(d.mascPct))
-      .attr("height", y.bandwidth())
-      .attr("fill", bgColor);
-
-    svg
-      .selectAll(".bar-bg-f")
-      .data(books)
-      .enter()
-      .append("rect")
-      .attr("x", (d) => x(d.mascPct) + gap)
-      .attr("y", (d) => y(d.name))
-      .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
-      .attr("height", y.bandwidth())
-      .attr("fill", bgColor);
-
-    svg
-      .selectAll(".bar-m")
-      .data(books)
-      .enter()
-      .append("rect")
-      .attr("x", 0)
-      .attr("y", (d) => y(d.name))
-      .attr("width", (d) => x(d.mascPct))
-      .attr("height", y.bandwidth())
-      .attr("fill", mascColor)
-      .style("mix-blend-mode", "multiply")
-      .on("mousemove", (e, d) => showTip(e, tipHtml(d)))
-      .on("mouseleave", hideTip);
-
-    svg
-      .selectAll(".bar-f")
-      .data(books)
-      .enter()
-      .append("rect")
-      .attr("x", (d) => x(d.mascPct) + gap)
-      .attr("y", (d) => y(d.name))
-      .attr("width", (d) => Math.max(0, x(d.femPct) - gap))
-      .attr("height", y.bandwidth())
-      .attr("fill", femColor)
-      .style("mix-blend-mode", "multiply")
-      .on("mousemove", (e, d) => showTip(e, tipHtml(d)))
-      .on("mouseleave", hideTip);
-
-    svg
-      .append("line")
-      .attr("x1", x(50))
-      .attr("x2", x(50))
-      .attr("y1", 0)
-      .attr("y2", height)
-      .attr("stroke", "#ccc")
-      .attr("stroke-width", 1)
-      .attr("stroke-dasharray", "4, 4")
-      .style("pointer-events", "none");
-
-    const pctMin2 = 6;
-    svg
-      .selectAll(".pct-masc")
-      .data(books.filter((d) => d.mascPct >= pctMin2))
-      .enter()
-      .append("text")
-      .attr("x", (d) => x(d.mascPct) / 2)
-      .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "middle")
-      .attr("fill", bgColor)
-      .attr("font-family", "'IBM Plex Sans', sans-serif")
-      .attr("font-size", "15px")
-      .style("pointer-events", "none")
-      .text((d) => d.name === books[0].name ? d.mascPct.toFixed(1) + "%" : d.mascPct.toFixed(1));
-
-    svg
-      .selectAll(".pct-fem")
-      .data(books.filter((d) => d.femPct >= pctMin2))
-      .enter()
-      .append("text")
-      .attr("x", (d) => x(d.mascPct) + gap + (x(d.femPct) - gap) / 2)
-      .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "middle")
-      .attr("fill", bgColor)
-      .attr("font-family", "'IBM Plex Sans', sans-serif")
-      .attr("font-size", "15px")
-      .style("pointer-events", "none")
-      .text((d) => d.name === books[0].name ? d.femPct.toFixed(1) + "%" : d.femPct.toFixed(1));
-
     const maxTitleWidth = 22;
     function splitTitle(name) {
       if (name.length <= maxTitleWidth) return [name];
@@ -1075,101 +921,307 @@ include '../includes/header.php';
       return lines;
     }
 
-    svg
-      .selectAll(".y-label")
-      .data(books)
-      .enter()
-      .append("text")
-      .attr("x", -12)
-      .attr("text-anchor", "end")
-      .attr("fill", "#1a1816")
-      .attr("font-family", "'Jost', sans-serif")
-      .attr("font-weight", "600")
-      .each(function (d) {
-        const el = d3.select(this);
-        const lines = splitTitle(d.name);
-        const lineHeightPx = 22;
-        const totalLines = lines.length + 1;
-        const barCenter = y(d.name) + y.bandwidth() / 2;
-        const blockTop = barCenter - ((totalLines - 1) * lineHeightPx) / 2;
+    function drawBookLabels(svg, rows, y) {
+      svg.selectAll(".y-label")
+        .data(rows)
+        .enter()
+        .append("text")
+        .attr("x", -12)
+        .attr("text-anchor", "end")
+        .attr("fill", inkDark)
+        .attr("font-family", jostFont)
+        .attr("font-weight", "600")
+        .each(function (d) {
+          const el = d3.select(this);
+          const lines = splitTitle(d.name);
+          const lineHeightPx = 22;
+          const totalLines = lines.length + 1;
+          const barCenter = y(d.name) + y.bandwidth() / 2;
+          const blockTop = barCenter - ((totalLines - 1) * lineHeightPx) / 2;
 
-        lines.forEach((line, i) => {
+          lines.forEach((line, i) => {
+            el.append("tspan")
+              .attr("x", -12)
+              .attr("y", blockTop + i * lineHeightPx)
+              .attr("dominant-baseline", "central")
+              .attr("font-size", "18px")
+              .text(line);
+          });
+
           el.append("tspan")
             .attr("x", -12)
-            .attr("y", blockTop + i * lineHeightPx)
+            .attr("y", blockTop + lines.length * lineHeightPx)
             .attr("dominant-baseline", "central")
-            .attr("font-size", "18px")
-            .text(line);
+            .attr("fill", textLight)
+            .attr("font-family", sansFont)
+            .attr("font-size", "13px")
+            .attr("font-style", "italic")
+            .attr("font-weight", "400")
+            .text(d.author);
         });
+    }
 
-        el.append("tspan")
-          .attr("x", -12)
-          .attr("y", blockTop + lines.length * lineHeightPx)
-          .attr("dominant-baseline", "central")
-          .attr("fill", textLight)
-          .attr("font-family", "'IBM Plex Sans', sans-serif")
-          .attr("font-size", "13px")
-          .attr("font-style", "italic")
-          .attr("font-weight", "400")
-          .text(d.author);
-      });
+    function bookMobileLabel(svg, d, ly) {
+      svg.append("text")
+        .attr("x", 0)
+        .attr("y", ly + 15)
+        .attr("font-family", jostFont)
+        .attr("fill", inkDark)
+        .attr("font-size", "15px")
+        .attr("font-weight", "600")
+        .text(d.name);
+      svg.append("text")
+        .attr("x", 0)
+        .attr("y", ly + 31)
+        .attr("font-family", sansFont)
+        .attr("fill", textLight)
+        .attr("font-size", "11px")
+        .attr("font-style", "italic")
+        .text(d.author);
+    }
 
-    svg
-      .append("text")
-      .attr("x", x(50) - 40)
-      .attr("y", -26)
-      .attr("text-anchor", "end")
-      .attr("class", "label-masc")
-      .text("Masculine Share");
-    svg
-      .append("text")
-      .attr("x", x(50) - 40)
-      .attr("y", -8)
-      .attr("text-anchor", "end")
-      .attr("class", "label-sub-masc")
-      .text("(he/him/his)");
+    const cfg = {
+      desktop: {
+        margin: { top: 45, right: 40, bottom: 30, left: 190 },
+        rowHeight: 66,
+        pctFontSize: 15,
+        sepRightExtra: 16,
+        drawYLabels: drawBookLabels,
+      },
+      mobile: {
+        labelHeight: 40,
+        drawLabel: bookMobileLabel,
+      },
+    };
 
-    svg
-      .append("text")
-      .attr("x", x(50) + 40)
-      .attr("y", -26)
-      .attr("text-anchor", "start")
-      .attr("class", "label-fem")
-      .text("Feminine Share");
-    svg
-      .append("text")
-      .attr("x", x(50) + 40)
-      .attr("y", -8)
-      .attr("text-anchor", "start")
-      .attr("class", "label-sub-fem")
-      .text("(she/her/hers)");
+    const section = d3.select("#viz2");
+    const titleHtml = "Distribution of Gendered Pronouns Across Classic Novels";
+    section.append("div").attr("class", "viz-title").text(titleHtml);
 
-    svg
-      .append("g")
-      .attr("class", "axis")
-      .attr("transform", `translate(0,${height})`)
-      .call(
-        d3
-          .axisBottom(x)
-          .tickValues([0, 25, 50, 75, 100])
-          .tickFormat((d) => d + "%"),
-      );
+    const svgWrap = section.append("div").attr("class", "viz-svg-wrap");
+
+    responsiveViz(svgWrap, (mode, w) =>
+      renderDivergingBars(svgWrap, books, { mode, width: w, ...cfg }),
+    );
 
     section
       .append("div")
       .attr("class", "viz-methodology")
       .html(methodologyHtml);
 
-    const btn2 = section
+    section
       .append("button")
       .attr("class", "download-btn")
       .attr("data-html2canvas-ignore", "true")
+      .text("Save PNG")
       .on("click", function () {
-        downloadViz("#viz2", "comparative-literature-pronouns.png", this);
+        exportPng(
+          titleHtml,
+          (wrap) => renderDivergingBars(wrap, books, { mode: "desktop", width: DESKTOP_WIDTH, ...cfg }),
+          "comparative-literature-pronouns.png",
+          this,
+        );
       });
-    btn2.html(
-      `Save PNG`,
+  })();
+
+  // =====================================================================
+  // Chart 2 (#viz1 on the page): Ulysses Episode Breakdown
+  // =====================================================================
+  (function () {
+    function drawEpisodeLabels(svg, rows, y) {
+      const yLabels = svg.selectAll(".y-label")
+        .data(rows)
+        .enter()
+        .append("text")
+        .attr("x", -12)
+        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
+        .attr("text-anchor", "end")
+        .attr("font-family", jostFont);
+
+      yLabels.append("tspan")
+        .attr("x", -12)
+        .attr("dy", "-0.25em")
+        .attr("fill", inkDark)
+        .attr("font-size", "16px")
+        .attr("font-weight", "600")
+        .text((d) => d.name);
+
+      yLabels.append("tspan")
+        .attr("x", -12)
+        .attr("dy", "1.4em")
+        .attr("fill", textLight)
+        .attr("font-size", "11px")
+        .text((d) => d.time);
+    }
+
+    // Gilbert-schema scene/symbol columns — desktop only; on mobile the same
+    // data stays available in the tooltip.
+    function drawGilbertSchema(svg, rows, y, width) {
+      const sceneColW = 100;
+      const symbolColW = 120;
+
+      const sceneBraceX1 = width + 14;
+      const sceneBraceX2 = width + 10 + sceneColW - 4;
+      const symbolBraceX1 = width + 10 + sceneColW + 4;
+      const symbolBraceX2 = width + 4 + sceneColW + symbolColW;
+      const schemaCenterX = (sceneBraceX1 + symbolBraceX2) / 2;
+
+      svg.append("text")
+        .attr("x", schemaCenterX)
+        .attr("y", -32)
+        .attr("text-anchor", "middle")
+        .attr("fill", inkDark)
+        .attr("font-family", jostFont)
+        .attr("font-size", "13px")
+        .attr("font-weight", "600")
+        .attr("letter-spacing", "0.08em")
+        .text("GILBERT SCHEMA");
+
+      svg.append("text")
+        .attr("x", (sceneBraceX1 + sceneBraceX2) / 2)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .attr("fill", textLight)
+        .attr("font-family", jostFont)
+        .attr("font-size", "11px")
+        .attr("letter-spacing", "0.05em")
+        .text("SCENE");
+
+      svg.append("text")
+        .attr("x", (symbolBraceX1 + symbolBraceX2) / 2)
+        .attr("y", -10)
+        .attr("text-anchor", "middle")
+        .attr("fill", textLight)
+        .attr("font-family", jostFont)
+        .attr("font-size", "11px")
+        .attr("letter-spacing", "0.05em")
+        .text("SYMBOL");
+
+      function braceDown(x1, x2, yPeak, yEnds) {
+        const mid = (x1 + x2) / 2;
+        return `M${x1},${yEnds} C${x1},${yPeak} ${mid},${yEnds} ${mid},${yPeak} C${mid},${yEnds} ${x2},${yPeak} ${x2},${yEnds}`;
+      }
+
+      svg.append("path")
+        .attr("d", braceDown(sceneBraceX1, sceneBraceX2, -1, 8))
+        .attr("fill", "none")
+        .attr("stroke", textLight)
+        .attr("stroke-width", 1);
+
+      svg.append("path")
+        .attr("d", braceDown(symbolBraceX1, symbolBraceX2, -1, 8))
+        .attr("fill", "none")
+        .attr("stroke", textLight)
+        .attr("stroke-width", 1);
+
+      svg.selectAll(".scene-label")
+        .data(rows)
+        .enter()
+        .append("text")
+        .attr("x", width + 16)
+        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
+        .attr("dy", "0.35em")
+        .attr("fill", textLight)
+        .attr("font-family", sansFont)
+        .attr("font-size", "13px")
+        .text((d) => d.scene);
+
+      svg.selectAll(".symbol-label")
+        .data(rows)
+        .enter()
+        .append("text")
+        .attr("x", width + 16 + sceneColW)
+        .attr("y", (d) => y(d.name) + y.bandwidth() / 2)
+        .attr("dy", "0.35em")
+        .attr("fill", textLight)
+        .attr("font-family", sansFont)
+        .attr("font-size", "13px")
+        .text((d) => d.symbol);
+    }
+
+    function episodeMobileLabel(svg, d, ly) {
+      const label = svg.append("text").attr("x", 0).attr("y", ly + 15);
+      label.append("tspan")
+        .attr("font-family", jostFont)
+        .attr("fill", inkDark)
+        .attr("font-size", "14px")
+        .attr("font-weight", "600")
+        .text(d.name);
+      if (d.time && d.time !== "—") {
+        label.append("tspan")
+          .attr("font-family", sansFont)
+          .attr("fill", textLight)
+          .attr("font-size", "11px")
+          .text(" · " + d.time);
+      }
+    }
+
+    const cfg = {
+      desktop: {
+        margin: { top: 65, right: 240, bottom: 30, left: 150 },
+        rowHeight: 46,
+        pctFontSize: 12,
+        sepRightExtra: 236, // separators run under the schema columns
+        drawYLabels: drawEpisodeLabels,
+        drawExtras: drawGilbertSchema,
+      },
+      mobile: {
+        labelHeight: 24,
+        drawLabel: episodeMobileLabel,
+      },
+    };
+
+    const section = d3.select("#viz1");
+    const titleHtml =
+      "Distribution of Gendered Pronouns in James Joyce’s <em>Ulysses</em>";
+    section.append("div").attr("class", "viz-title").html(titleHtml);
+
+    section
+      .append("div")
+      .attr("class", "viz-controls")
+      .attr("data-html2canvas-ignore", "true")
+      .html(
+        '<label>Sort by: <select class="viz-sort-select">' +
+        '<option value="masc">Masculine share</option>' +
+        '<option value="order">Order in novel</option>' +
+        '</select></label>'
+      );
+
+    const svgWrap = section.append("div").attr("class", "viz-svg-wrap");
+
+    let sortMode = "masc";
+    const sortedRows = () =>
+      sortMode === "order"
+        ? [...data].sort((a, b) => a.ch - b.ch)
+        : [...data].sort((a, b) => b.mascPct - a.mascPct);
+
+    const rerender = responsiveViz(svgWrap, (mode, w) =>
+      renderDivergingBars(svgWrap, sortedRows(), { mode, width: w, ...cfg }),
     );
+
+    section.select(".viz-sort-select").on("change", function () {
+      sortMode = this.value;
+      rerender();
+    });
+
+    section
+      .append("div")
+      .attr("class", "viz-methodology")
+      .html(methodologyHtml);
+
+    section
+      .append("button")
+      .attr("class", "download-btn")
+      .attr("data-html2canvas-ignore", "true")
+      .text("Save PNG")
+      .on("click", function () {
+        exportPng(
+          titleHtml,
+          (wrap) => renderDivergingBars(wrap, sortedRows(), { mode: "desktop", width: DESKTOP_WIDTH, ...cfg }),
+          "ulysses-pronouns.png",
+          this,
+        );
+      });
   })();
 </script>
 
