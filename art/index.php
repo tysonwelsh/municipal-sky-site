@@ -14,6 +14,15 @@ include '../includes/header.php';
             <!-- Entry List -->
             <div class="entry-list">
                 <div class="entry">
+                    <span class="entry-date">2026.07.01</span>
+                    <div class="entry-content">
+                        <a href="/art/bardo/" class="entry-title">BARDO &#3926;&#3928;&#3921;&#3964;</a>
+                        <span class="entry-description">Tibetan aleatoric liturgy-engine. A monastery-ark adrift
+                            between worlds, its ritual machinery still performing the ceremony. Sibling vessel to
+                            ZANKY&#332;.</span>
+                    </div>
+                </div>
+                <div class="entry">
                     <span class="entry-date">2026.06.22</span>
                     <div class="entry-content">
                         <a href="/art/zankyo/" class="entry-title">ZANKY&#332; &#27531;&#38911;</a>

@@ -61,3 +61,6 @@ information-graphics/prosperos-jukebox-backup-*/
 
 # ZANKYŌ headless dev harness — not for production
 art/zankyo/_harness.js
+
+# BARDO headless dev harness — not for production
+art/bardo/_harness.js

@@ -1,0 +1,376 @@
+/* ===========================================================================
+   BARDO བར་དོ — derelict monastery-ark adrift between worlds
+   Luminous, spacious, minimal. Void black, bone, verdigris; gold sparingly;
+   thangka red only for wrathful states. Hairlines and circles, mostly empty.
+   No scanlines, no glitch — this vessel is quiet.
+   =========================================================================== */
+
+.bardo-scene {
+  --void:       #06070a;
+  --surface:    #090b0f;
+  --bone:       #e6e0d1;
+  --bone-rgb:   230, 224, 209;
+  --bone-dim:   #8b8779;
+  --bone-faint: #5c5a51;
+  --hairline:   rgba(230, 224, 209, 0.1);
+  --verd:       #4fa899;
+  --verd-rgb:   79, 168, 153;
+  --gold:       #b99a4e;
+  --gold-rgb:   185, 154, 78;
+  --red:        #9d2f33;
+  --red-rgb:    157, 47, 51;
+
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 18px 72px;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--bone);
+}
+
+.bardo-frame {
+  position: relative;
+  /* concentric-circle backdrop — mandala logic, barely there */
+  background:
+    repeating-radial-gradient(circle at 50% -18%,
+      rgba(var(--verd-rgb), 0.028) 0px, rgba(var(--verd-rgb), 0.028) 1px,
+      transparent 1px, transparent 110px),
+    var(--void);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 58px 46px 46px;
+  overflow: hidden;
+}
+/* static film grain (inline SVG fractal noise) — very low, no scanlines */
+.bardo-grain {
+  position: absolute; inset: 0; pointer-events: none; z-index: 6;
+  opacity: 0.035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+.bardo-frame > *:not(.bardo-grain) { position: relative; z-index: 1; }
+
+/* yig-mgo head-mark ornament for section labels */
+.bardo-sec-orn::before {
+  content: "\0F04 ";
+  font-family: "Noto Serif Tibetan", serif;
+  color: var(--verd);
+  font-size: 1.15em;
+}
+
+/* ---------- Header ---------- */
+.bardo-header { text-align: center; margin-bottom: 46px; }
+.bardo-title { margin: 0; }
+.bardo-uchen {
+  display: block;
+  font-family: "Noto Serif Tibetan", serif;
+  font-weight: 400;
+  font-size: clamp(46px, 10vw, 78px);
+  line-height: 1.2;
+  color: var(--bone);
+  text-shadow: 0 0 60px rgba(var(--verd-rgb), 0.14);
+}
+.bardo-latin {
+  display: block;
+  margin-top: 12px;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 500;
+  font-size: 15px;
+  letter-spacing: 0.8em;
+  margin-left: 0.8em; /* recenter the tracking */
+  color: var(--verd);
+}
+.bardo-subtitle {
+  margin: 16px 0 0;
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  color: var(--bone-dim);
+}
+
+/* ---------- Visualizer ---------- */
+.bardo-viz-wrap {
+  margin-bottom: 28px;
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  overflow: hidden;
+  background: #040508;
+}
+.bardo-viz { display: block; width: 100%; height: 300px; }
+
+/* ---------- Conductor telemetry (hero) ---------- */
+.bardo-conductor {
+  text-align: center;
+  padding: 20px 8px 18px;
+  margin-bottom: 26px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+.bardo-telemetry {
+  font-size: 12.5px;
+  letter-spacing: 0.14em;
+  line-height: 1.9;
+  color: var(--bone);
+}
+.bardo-telemetry .t-part { white-space: nowrap; }
+.bardo-telemetry .t-gold { color: var(--gold); }
+.bardo-telemetry .t-sep  { color: rgba(var(--verd-rgb), 0.75); padding: 0 0.35em; }
+.bardo-telemetry .t-flag { color: var(--gold); }
+.bardo-telemetry .t-flag.wrath { color: var(--red); }
+.bardo-motifline {
+  min-height: 15px;
+  margin-top: 6px;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--bone-dim);
+}
+.bardo-motifline b { color: var(--verd); font-weight: 500; }
+.bardo-seed-row {
+  display: flex; justify-content: center; align-items: center;
+  gap: 12px; flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 10px; letter-spacing: 0.2em;
+  color: var(--bone-dim);
+}
+#bardo-seed-current { color: var(--gold); letter-spacing: 0.1em; }
+.bardo-seed-input {
+  width: 120px;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--bone);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  padding: 6px 14px;
+  text-align: center;
+  outline: none;
+}
+.bardo-seed-input::placeholder { color: var(--bone-faint); }
+.bardo-seed-input:focus { border-color: rgba(var(--verd-rgb), 0.55); }
+
+/* ---------- Buttons (ghost outline, circular logic) ---------- */
+.bardo-btn {
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  padding: 10px 26px;
+  background: transparent;
+  color: var(--bone);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.bardo-btn:hover { border-color: rgba(var(--verd-rgb), 0.6); color: #fff; }
+.bardo-btn.play-btn.is-playing {
+  border-color: rgba(var(--gold-rgb), 0.7);
+  color: var(--gold);
+  box-shadow: inset 0 0 16px rgba(var(--gold-rgb), 0.07);
+}
+.bardo-btn-small { font-size: 9.5px; letter-spacing: 0.2em; padding: 6px 16px; color: var(--bone-dim); }
+.bardo-btn-small:hover { color: var(--gold); border-color: rgba(var(--gold-rgb), 0.5); }
+
+/* ---------- Transport ---------- */
+.bardo-transport { display: flex; align-items: center; gap: 12px; margin-bottom: 30px; }
+.bardo-transport-spacer { flex: 1; }
+.bardo-ctl-label { font-size: 10px; letter-spacing: 0.2em; color: var(--bone-dim); }
+.bardo-val-readout { font-size: 11.5px; color: var(--verd); min-width: 28px; text-align: right; }
+.bardo-vol-slider { width: 140px; }
+
+/* ---------- Ranges (thin hairline track, circular thumb) ---------- */
+.bardo-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 2px;
+  background: rgba(var(--bone-rgb), 0.14);
+  border-radius: 1px; outline: none; cursor: pointer;
+}
+.bardo-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--verd);
+  box-shadow: 0 0 0 3px rgba(var(--verd-rgb), 0.12);
+  cursor: pointer;
+}
+.bardo-range::-moz-range-thumb {
+  width: 12px; height: 12px; border: none; border-radius: 50%;
+  background: var(--verd);
+  box-shadow: 0 0 0 3px rgba(var(--verd-rgb), 0.12);
+  cursor: pointer;
+}
+
+/* ---------- Liturgy / section meter ---------- */
+.bardo-liturgy { margin-bottom: 34px; }
+.bardo-liturgy-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 10px;
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--bone-dim);
+}
+.bardo-liturgy-current { color: var(--verd); letter-spacing: 0.18em; }
+.bardo-scene.is-tutti .bardo-liturgy-current { color: var(--gold); }
+.bardo-scene.is-wrathful .bardo-liturgy-current { color: var(--red); }
+.bardo-liturgy-track { display: flex; gap: 6px; height: 7px; }
+.bardo-seg {
+  flex: 1; position: relative;
+  background: rgba(var(--bone-rgb), 0.06);
+  border-radius: 999px; overflow: hidden;
+}
+.bardo-seg.done { background: rgba(var(--verd-rgb), 0.26); }
+.bardo-seg-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+  background: var(--verd);
+  border-radius: 999px;
+  transition: width 0.3s linear;
+}
+.bardo-scene.is-tutti .bardo-seg-fill { background: var(--gold); }
+.bardo-scene.is-wrathful .bardo-seg-fill { background: var(--red); }
+.bardo-liturgy-labels {
+  display: flex; justify-content: space-between;
+  margin-top: 7px;
+  font-size: 9px; letter-spacing: 0.14em;
+  color: var(--bone-faint);
+}
+
+/* ---------- Console ---------- */
+.bardo-mixer { border-top: 1px solid var(--hairline); margin-bottom: 30px; }
+.bardo-mixer-title {
+  font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--bone-dim);
+  padding: 14px 2px 10px;
+}
+.bardo-layer { padding: 12px 2px; border-bottom: 1px solid rgba(var(--bone-rgb), 0.055); }
+.bardo-layer:last-child { border-bottom: none; }
+.bardo-layer-head { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 14px; }
+.bardo-layer-name {
+  flex: 1; min-width: 150px;
+  font-family: "Space Grotesk", sans-serif;
+  font-weight: 500; font-size: 12px; letter-spacing: 0.18em;
+  color: var(--bone);
+}
+.bardo-layer-tib {
+  margin-left: 9px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px; font-style: italic; letter-spacing: 0.06em;
+  color: var(--bone-dim); text-transform: none;
+}
+.bardo-layer-uchen {
+  font-family: "Noto Serif Tibetan", serif;
+  font-style: normal; font-size: 13px;
+  color: var(--verd);
+}
+.bardo-layer-sample {
+  width: 27px; height: 27px; padding: 0; line-height: 0;
+  border: 1px solid rgba(var(--gold-rgb), 0.4); border-radius: 50%;
+  background: transparent; color: var(--gold); cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.bardo-layer-sample:hover { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(var(--gold-rgb), 0.1); }
+.bardo-layer-sample .tri {
+  display: inline-block; width: 0; height: 0; margin-left: 2px;
+  border-left: 7px solid currentColor;
+  border-top: 4.5px solid transparent; border-bottom: 4.5px solid transparent;
+}
+.bardo-layer-toggle {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 9px; letter-spacing: 0.16em;
+  padding: 5px 13px;
+  border: 1px solid rgba(var(--verd-rgb), 0.45); border-radius: 999px;
+  color: var(--verd); background: transparent; cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.bardo-layer-toggle.off { border-color: var(--hairline); color: var(--bone-faint); }
+.bardo-layer-vol, .bardo-layer-rate { display: flex; align-items: center; gap: 9px; }
+/* rate-less layers carry an invisible twin so VOL columns align across rows */
+.bardo-layer-rate.bardo-rate-ghost { visibility: hidden; }
+.bardo-layer-vol .bardo-range { width: 110px; }
+.bardo-layer-rate .bardo-range { width: 96px; }
+.bardo-layer-rate .bardo-range::-webkit-slider-thumb { background: var(--bone); box-shadow: 0 0 0 3px rgba(var(--bone-rgb), 0.1); }
+.bardo-layer-rate .bardo-range::-moz-range-thumb { background: var(--bone); box-shadow: 0 0 0 3px rgba(var(--bone-rgb), 0.1); }
+.bardo-layer-rate .bardo-val-readout { color: var(--bone-dim); }
+.bardo-expand {
+  border: none; background: none; cursor: pointer;
+  color: var(--bone-faint);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 13px; letter-spacing: 0.1em;
+  padding: 2px 8px; border-radius: 999px;
+  transition: color 0.2s;
+}
+.bardo-expand:hover, .bardo-layer.is-open .bardo-expand { color: var(--verd); }
+.bardo-expand-ghost { visibility: hidden; }
+.bardo-params {
+  display: none;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 18px;
+  padding: 12px 2px 2px;
+}
+.bardo-layer.is-open .bardo-params { display: grid; }
+.bardo-param { display: flex; flex-direction: column; gap: 4px; }
+.bardo-param-label {
+  display: flex; justify-content: space-between;
+  font-size: 9.5px; letter-spacing: 0.08em;
+  color: var(--bone-dim);
+}
+.bardo-param-label b { color: var(--verd); font-weight: 500; }
+
+/* ---------- Activity log ---------- */
+.bardo-log-block { margin-bottom: 8px; }
+.bardo-log-label {
+  font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--bone-dim); margin-bottom: 8px;
+}
+.bardo-log {
+  border: 1px solid var(--hairline); border-radius: 3px;
+  background: var(--surface);
+  height: 240px; overflow-y: auto;
+  padding: 4px 0;
+}
+.bardo-log-empty { padding: 14px 16px; color: var(--bone-faint); font-size: 11px; letter-spacing: 0.06em; }
+.bardo-log-row {
+  display: flex; align-items: baseline; gap: 11px;
+  padding: 4px 14px;
+  border-bottom: 1px solid rgba(var(--bone-rgb), 0.04);
+  font-size: 11.5px;
+  animation: bardo-logfade 0.35s ease;
+}
+.bardo-log-row:last-child { border-bottom: none; }
+@keyframes bardo-logfade { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.bardo-log-time { color: var(--bone-faint); font-size: 10px; min-width: 38px; }
+.bardo-log-tag {
+  font-size: 8.5px; letter-spacing: 0.14em; text-transform: uppercase;
+  min-width: 70px; text-align: right;
+}
+.bardo-log-tag.motif     { color: var(--verd); }
+.bardo-log-tag.cadence   { color: var(--gold); }
+.bardo-log-tag.section   { color: var(--bone); }
+.bardo-log-tag.conductor { color: var(--bone-dim); }
+.bardo-log-tag.ceremony  { color: var(--gold); }
+.bardo-log-tag.transport { color: var(--bone-dim); }
+.bardo-log-text { color: var(--bone); }
+.bardo-log-row.cat-motif .bardo-log-text b { color: var(--verd); font-weight: 500; }
+.bardo-log-detail { color: var(--bone-dim); }
+
+/* ---------- About ---------- */
+.bardo-note {
+  margin: 26px 2px 0;
+  font-size: 11px; line-height: 1.8;
+  color: var(--bone-dim);
+}
+.bardo-note strong { color: var(--verd); font-weight: 500; }
+.bardo-note a { color: var(--bone); text-decoration: underline; text-decoration-color: rgba(var(--verd-rgb), 0.5); text-underline-offset: 3px; }
+.bardo-note a:hover { color: var(--verd); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 640px) {
+  .bardo-scene { padding: 8px 8px 44px; overflow-x: hidden; }
+  .bardo-frame { padding: 32px 16px 28px; }
+  .bardo-viz { height: 220px; }
+  .bardo-latin { letter-spacing: 0.5em; margin-left: 0.5em; }
+  /* keep transport + viz; hide the fine-params (and their expanders) */
+  .bardo-params, .bardo-expand { display: none !important; }
+  .bardo-layer-rate { display: none; }
+  .bardo-transport { flex-wrap: wrap; }
+  .bardo-vol-slider { flex: 1 1 110px; width: auto; }
+  .bardo-telemetry { font-size: 10.5px; letter-spacing: 0.1em; }
+  .bardo-liturgy-labels span:nth-child(even) { visibility: hidden; }
+  .bardo-log { height: 200px; }
+}
