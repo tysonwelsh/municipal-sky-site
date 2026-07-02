@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Space+Grotesk:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="antariksh.css?v=731898f3" />
+<link rel="stylesheet" href="antariksh.css?v=5a6fd670" />
 
 <div class="main-wrapper">
  <div class="antariksh-scene">
@@ -36,7 +36,7 @@ include '../../includes/header.php';
     <!-- Transport -->
     <div class="antariksh-transport">
       <button type="button" class="antariksh-btn play-btn" id="antariksh-play">&#9654; PLAY</button>
-      <button type="button" class="antariksh-btn stop-btn" id="antariksh-stop">&#9632; STOP</button>
+      <button type="button" class="antariksh-btn stop-btn" id="antariksh-stop"><span class="stop-square">&#9632;</span> STOP</button>
       <div class="antariksh-transport-spacer"></div>
       <span class="antariksh-vol-label">VOL</span>
       <span class="antariksh-val-readout" id="antariksh-master-vol-val">60</span>

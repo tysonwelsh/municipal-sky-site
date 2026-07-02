@@ -1,0 +1,140 @@
+<?php
+$page_title = "KOLOB 𐐗𐐄𐐢𐐉𐐒 - Municipal Sky";
+$page_description = "An American-utopian hymn engine: four-part harmony, fuging tunes, a Deseret-alphabet broadside and a still small voice, from a colony at the rim of Kolob's light. Nothing repeats; every meeting is one of a kind.";
+$page_image = "/images/kolob-share.png";
+// Cache-bust local assets with an md5 content hash (?v=xxxxxxxx). Computed at
+// request time so a changed file always ships a fresh URL.
+function kolob_v($file)
+{
+    $path = __DIR__ . '/' . $file;
+    return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
+}
+include '../../includes/header.php';
+?>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="kolob.css?v=<?php echo kolob_v('kolob.css'); ?>" />
+
+<div class="main-wrapper">
+ <div class="kolob-scene">
+  <div class="content-frame kolob-frame">
+
+    <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
+    <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="toggle latin script labels (development aid)">A</button>
+
+    <!-- Title page -->
+    <header class="kolob-header">
+      <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
+      <p class="kolob-subtitle">𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓</p>
+      <div class="kolob-rule" aria-hidden="true"></div>
+    </header>
+
+    <!-- The page (shape-note engraving) -->
+    <div class="kolob-viz-wrap">
+      <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
+    </div>
+
+    <!-- Running head + the Liahona -->
+    <div class="kolob-head-row">
+      <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
+      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
+    </div>
+
+    <!-- Transport -->
+    <div class="kolob-transport">
+      <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+      <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+      <div class="kolob-transport-spacer"></div>
+      <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+      <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
+    </div>
+
+    <!-- Order of service + hymn board -->
+    <div class="kolob-columns">
+      <div class="kolob-order-block">
+        <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
+        <div id="kolob-order" aria-label="order of service"></div>
+      </div>
+      <div class="kolob-board-block">
+        <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+        <div class="kolob-board">
+          <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
+          <div class="kolob-seed-row">
+            <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
+            <span class="kolob-seed-current" id="kolob-seed-current">—</span>
+            <input type="text" inputmode="numeric" class="kolob-seed-input" id="kolob-seed-input" aria-label="seed for a new gathering" />
+            <button type="button" class="kolob-btn kolob-btn-board" id="kolob-gather" aria-label="reseed and restart">𐐘𐐈𐐜𐐊𐐡</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The stops -->
+    <div class="kolob-stops-block">
+      <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
+      <div id="kolob-layers"></div>
+    </div>
+
+    <!-- The broadside -->
+    <div class="kolob-broadside-block">
+      <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+      <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
+    </div>
+
+    <!-- Clerk's minutes -->
+    <div class="kolob-log-block">
+      <div class="kolob-sec-head">𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝</div>
+      <div id="kolob-log" class="kolob-log" aria-label="the clerk's minutes">
+        <div class="kolob-log-empty">𐐑𐐡𐐇𐐝 𐐑𐐢𐐁</div>
+      </div>
+    </div>
+
+    <!-- Colophon -->
+    <p class="kolob-note">
+      <span id="kolob-colophon-line">𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤</span><br />
+      <a href="/art/" id="kolob-art-link" aria-label="the generative art series">𐐂𐐡𐐓</a>
+      &nbsp;·&nbsp;
+      <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>
+      &nbsp;·&nbsp;
+      <a href="/art/bardo/" aria-label="sibling engine BARDO">&#3926;&#3928;&#3921;&#3964;</a>
+    </p>
+
+  </div>
+ </div>
+</div>
+
+<script src="kolob-audio.js?v=<?php echo kolob_v('kolob-audio.js'); ?>"></script>
+<script>if(!window.KolobAudio)console.error("KOLOB AUDIO ENGINE FAILED TO LOAD");</script>
+<script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>
+<script src="kolob-viz.js?v=<?php echo kolob_v('kolob-viz.js'); ?>"></script>
+<script src="kolob-ui.js?v=<?php echo kolob_v('kolob-ui.js'); ?>"></script>
+
+<!-- Anonymous usage tracking: a page view, plus the first PLAY press as an
+     engagement signal (a raw view understates an audio page). No personal data
+     leaves the browser; the server records only a salted, daily-rotating
+     visitor hash for unique-visit counts. -->
+<script>
+  (function () {
+    function track(eventType, label) {
+      fetch("../../api/page-event-tracking.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ page: "kolob", event_type: eventType, label: label || null }),
+      }).catch(function () {});
+    }
+    track("page_view", null);
+    var played = false;
+    var playBtn = document.getElementById("kolob-play");
+    if (playBtn) {
+      playBtn.addEventListener("click", function () {
+        if (played) return;
+        played = true;
+        track("play", null);
+      });
+    }
+  })();
+</script>
+
+<?php include '../../includes/footer.php'; ?>

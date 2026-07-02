@@ -1094,3 +1094,6 @@
   margin-left: 8px;
   font-size: 13px;
 }
+
+/* The stop-square glyph renders undersized at text size everywhere — draw it at button-icon scale. */
+.stop-btn .stop-square { font-size: 1.55em; line-height: 0; vertical-align: -0.08em; }

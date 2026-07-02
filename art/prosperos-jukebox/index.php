@@ -8,7 +8,7 @@ include '../../includes/header.php';
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="prosperos-jukebox.css?v=83823457" />
+<link rel="stylesheet" href="prosperos-jukebox.css?v=f2e860db" />
 
 <div class="main-wrapper">
  <div class="jukebox-scene">
@@ -34,7 +34,7 @@ include '../../includes/header.php';
     <!-- Transport controls -->
     <div class="jukebox-transport">
       <button type="button" class="jukebox-btn play-btn" id="jukebox-play">&#9654; PLAY</button>
-      <button type="button" class="jukebox-btn stop-btn" id="jukebox-stop">&#9632; STOP</button>
+      <button type="button" class="jukebox-btn stop-btn" id="jukebox-stop"><span class="stop-square">&#9632;</span> STOP</button>
       <button type="button" class="jukebox-btn reset-btn" id="jukebox-reset">&#8635; RESET</button>
       <div class="jukebox-transport-spacer"></div>
       <span class="jukebox-vol-label">VOL</span>

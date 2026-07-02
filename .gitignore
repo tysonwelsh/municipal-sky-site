@@ -64,3 +64,5 @@ art/zankyo/_harness.js
 
 # BARDO headless dev harness — not for production
 art/bardo/_harness.js
+# KOLOB headless dev harness — not for production
+art/kolob/_harness.js

@@ -8,8 +8,15 @@
 // year 3042 — a punk noise band's idea of gagaku.
 //
 // Layers: subDrone, sho (cluster drone), shakuhachi (lead), koto, shamisen,
-// taiko, noise (japanoise), ambient (event pool). Multiple melodic voices with
-// motif memory + cross-voice call-and-response.
+// taiko, noise (japanoise), ambient (event pool). Multiple melodic voices work
+// a per-cycle motif genealogy (a theme + two subsidiaries, transform chains,
+// an identity tether) and talk through a dialogue ledger with deadlines;
+// everything musical is seeded (mulberry32, ?seed=) so a night is shareable.
+// Above the cycles, a META-ARC: each jo-ha-kyū draws its own length and a slow
+// meta-curve (~5–8 cycles per swing) drifts the mode lottery dark and back,
+// scales the KIRU's severity, and tilts global density — the loop is a
+// journey. Within a cycle, an ELASTIC PULSE: the taiko publishes its grid and
+// koto/shamisen onsets magnetize to it as the kyū builds (shakuhachi floats).
 //
 // Architecture mirrors the proven Antariksh engine: ctx → grit waveshaper →
 // reverb → master → compressor → destination; per-layer GainNodes; a rate-aware
@@ -35,6 +42,40 @@ window.ZankyoAudio = (function () {
   var masterVolume = 0.6;
 
   // ==========================================================================
+  // SEEDED RNG — every musical choice flows through rng(); a performance is
+  // reproducible and shareable (?seed=). Math.random survives only in init
+  // noise-buffer / reverb-IR generation, where it shapes texture, not music.
+  // ==========================================================================
+  var seed = (function () {
+    try {
+      if (typeof location !== "undefined" && location.search) {
+        var m = location.search.match(/[?&]seed=(\d+)/);
+        if (m) return (parseInt(m[1], 10) >>> 0) || 3042;
+      }
+    } catch (e) {}
+    return (Date.now() % 0xffffffff) >>> 0;
+  })();
+  var rngState = seed;
+  function mulberry32() {
+    rngState |= 0; rngState = (rngState + 0x6D2B79F5) | 0;
+    var t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function rng() { return mulberry32(); }
+  function rnd(a, b) { return a + rng() * (b - a); }
+  function rint(a, b) { return Math.floor(rnd(a, b + 1)); }
+  function chance(p) { return rng() < p; }
+  function pick(arr) { return arr[Math.floor(rng() * arr.length)]; }
+  function pickW(pool) {              // pool = [[value, weight], ...]
+    var total = 0, i;
+    for (i = 0; i < pool.length; i++) total += pool[i][1];
+    var r = rng() * total;
+    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
+    return pool[pool.length - 1][0];
+  }
+
+  // ==========================================================================
   // SCALE — HIRAJOSHI (平調子)
   // ==========================================================================
   // A dark koto pentatonic with two semitone steps (the haunting Japanese
@@ -49,7 +90,8 @@ window.ZankyoAudio = (function () {
     kumoi:     { offsets: [0, 2, 3, 7, 9],  name: "Kumoi",     kana: ["雲", "二", "三", "四", "五"] },
     iwato:     { offsets: [0, 1, 5, 6, 10], name: "Iwato",     kana: ["岩", "二", "三", "四", "五"] },
   };
-  var MODE_POOL = [["hirajoshi", 5], ["insen", 3], ["kumoi", 3], ["iwato", 2]];
+  // (mode-lottery weights live in metaModePool() below — they drift with the
+  // meta-arc: hirajoshi-dominant at the trough, in-sen/iwato at the peak)
   var currentMode = "hirajoshi";
   var CUR_OFFSETS = MODES.hirajoshi.offsets;
   function semis(i) { return CUR_OFFSETS[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5); }
@@ -64,17 +106,12 @@ window.ZankyoAudio = (function () {
     return arr;
   })();
   function rebuildScale() { for (var k = 0; k < SCALE.length; k++) SCALE[k].freq = degFreq(SCALE[k].idx, 0); }
-  function pickMode() {
-    var total = 0, i; for (i = 0; i < MODE_POOL.length; i++) total += MODE_POOL[i][1];
-    var r = Math.random() * total, name = MODE_POOL[0][0];
-    for (i = 0; i < MODE_POOL.length; i++) { r -= MODE_POOL[i][1]; if (r <= 0) { name = MODE_POOL[i][0]; break; } }
-    return name;
-  }
-  function setMode(name) {
+  function pickMode() { return pickW(metaModePool()); }
+  function setMode(name, extra) {
     if (!MODES[name]) return;
     currentMode = name; CUR_OFFSETS = MODES[name].offsets; rebuildScale();
     SCALE_INFO.name = MODES[name].name; SCALE_INFO.kana = MODES[name].kana.slice();
-    emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name });
+    emitEvent({ cat: "mode", label: "⟳ mode", detail: MODES[name].name + (extra ? " · " + extra : "") });
   }
   function scaleIndexOf(i) {                    // map a degree index i to SCALE array index
     for (var k = 0; k < SCALE.length; k++) if (SCALE[k].idx === i) return k;
@@ -131,7 +168,9 @@ window.ZankyoAudio = (function () {
   var REVERB = { decay: 6.5, preDelay: 60, wet: 0.34, hfDamp: 1.1 };
 
   // Per-layer hidden trims (slider reads clean, effective value differs).
-  var LAYER_RATE_TRIM = {};
+  // 0.9 on the main instruments: ~10% more air between phrases by default —
+  // ambient and noise keep their pace (they're the weather, not the band).
+  var LAYER_RATE_TRIM = { shakuhachi: 0.9, koto: 0.9, shamisen: 0.9, taiko: 0.9 };
   // Volume trim: shakuhachi + koto sit ~10% louder than their slider implies, so
   // they read more clearly in the mix without changing the displayed values.
   // shamisen 2.2: makes up the level it lost coming off the grit bus (which was
@@ -165,7 +204,7 @@ window.ZankyoAudio = (function () {
     var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
     sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
     var nd = sharedNoiseBuf.getChannelData(0);
-    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;
+    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;   // texture, not music — stays unseeded
 
     masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
@@ -183,7 +222,13 @@ window.ZankyoAudio = (function () {
     masterSat.curve = msc; masterSat.oversample = "2x";
     masterGain.connect(masterSat);
     masterSat.connect(compressorNode);
-    compressorNode.connect(ctx.destination);
+    // Output safety trim — measured (offline render): the kyū wall drives the
+    // compressor's auto-makeup to 1.05–1.10 peak (79 clipped samples / 450 s).
+    // −1.1 dB post-compressor keeps the DAC clean; the mix itself is untouched.
+    var outTrim = ctx.createGain();
+    outTrim.gain.setValueAtTime(0.88, ctx.currentTime);
+    compressorNode.connect(outTrim);
+    outTrim.connect(ctx.destination);
 
     var effectsReady = false;
     try {
@@ -251,7 +296,7 @@ window.ZankyoAudio = (function () {
     var buf = ctx.createBuffer(2, len, ctx.sampleRate);
     for (var ch = 0; ch < 2; ch++) {
       var data = buf.getChannelData(ch);
-      var ph1 = Math.random() * Math.PI * 2, ph2 = Math.random() * Math.PI * 2;  // per-channel phase → no comb
+      var ph1 = Math.random() * Math.PI * 2, ph2 = Math.random() * Math.PI * 2;  // per-channel phase → no comb (texture, unseeded)
       for (var i = 0; i < len; i++) {
         var t = i / ctx.sampleRate;
         var env = Math.exp(-2.0 * t / REVERB.decay);     // fuller tail
@@ -335,8 +380,8 @@ window.ZankyoAudio = (function () {
   // climax, the noise wall) → a short release back to stillness, then begins
   // again. Asymmetric, more directional than a sine swell. Derived from elapsed
   // play time so it's deterministic/resumable.
-  var ARC_PERIOD = 420;                          // ~7 min per full jo-ha-kyū cycle
-  var arcStartTime = 0;
+  var ARC_PERIOD = 420;                          // the CURRENT cycle's length — redrawn ~rnd(300,600)s at each boundary
+  var arcStartTime = 0;                          // start of the CURRENT cycle (advances by ARC_PERIOD at each boundary)
   function getArc() {
     if (!ctx || !playing) return 0;
     var ph = (((ctx.currentTime - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
@@ -350,9 +395,13 @@ window.ZankyoAudio = (function () {
     a *= vary;
     return a < 0 ? 0 : a > 1 ? 1 : a;
   }
+  function arcPos() {                            // raw 0..1 position within the cycle
+    if (!ctx || !playing) return 0;
+    return (((ctx.currentTime - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
+  }
   function arcPhase() {
     if (!ctx || !playing) return "—";
-    var ph = (((ctx.currentTime - arcStartTime) / ARC_PERIOD) % 1 + 1) % 1;
+    var ph = arcPos();
     return ph < 0.45 ? "jo" : ph < 0.82 ? "ha" : ph < 0.95 ? "kyū" : "release";
   }
   function arcInfo() {
@@ -361,60 +410,503 @@ window.ZankyoAudio = (function () {
   }
 
   // ==========================================================================
-  // SHARED MOTIF MEMORY (cross-voice call-and-response)
+  // META-ARC — the journey across cycles
   // ==========================================================================
-  // Melodic voices store and recall phrases; a phrase emitted by one voice can
-  // be "answered" by another (echoed, often transformed). Each phrase is an
-  // array of { deg (scale index), durBeats }.
-  var sharedMotifs = [];                          // recent phrases, any voice
-  var lastCall = null;                            // { phrase, voice } awaiting an answer
-  function rememberMotif(phrase, voice) {
-    if (phrase.length < 2) return;
-    var copy = phrase.map(function (n) { return { deg: n.deg, durBeats: n.durBeats }; });
-    sharedMotifs.push({ notes: copy, voice: voice });
-    if (sharedMotifs.length > 24) sharedMotifs.shift();
-    lastCall = { notes: copy, voice: voice };
-  }
-  function transformMotif(notes) {
-    var out = notes.map(function (n) { return { deg: n.deg, durBeats: n.durBeats }; });
-    var r = Math.random(), tag = "verbatim";
-    if (r < 0.3) { tag = "octave"; var o = Math.random() < 0.5 ? 5 : -5; out.forEach(function (n) { n.deg += o; }); }
-    else if (r < 0.55) { tag = "retro"; out.reverse(); }
-    else if (r < 0.78) { tag = "stretch"; var s = 1.3 + Math.random() * 0.6; out.forEach(function (n) { n.durBeats *= s; }); }
-    return { notes: out, tag: tag };
-  }
-  // Seed the shared memory with idiomatic Hirajoshi phrases (degree indices),
-  // so call-and-response recalls real Japanese gestures, not only random walks.
-  function seedMotifs() {
-    var seeds = [
-      [3, 2, 1, 0],          // Honkyoku descent → tonic (shakuhachi, jo)
-      [1, 2, 1],             // Sakura sigh (the most recognizably-Japanese turn)
-      [4, 3, 0],             // Kumoi cadence
-      [0, 1, 2, 3, 4],       // Tsugaru hammer run
-      [0, 4, 1, 3, 0],       // Midare scattered leaps (kyū)
-      [0, 1, 2],             // Kakegoe answer (retrograde-pairs with the Sakura sigh)
+  // Cycles used to be identical 420 s laps. Now each jo-ha-kyū draws its own
+  // length, and a slow seeded meta-curve (one swing ≈ 5–8 cycles) travels over
+  // them: at the meta-TROUGH the music rests at home — hirajoshi-dominant, a
+  // KIRU that is barely a breath; at the meta-PEAK it has migrated somewhere
+  // dark — in-sen/iwato-dominant, a devastating cut, the bell tolling twice —
+  // and then it returns. A long listen goes somewhere and comes back; the
+  // loop becomes a journey.
+  var metaCycle = -1;                            // current cycle index (-1 = not started)
+  var metaPeriod = 6;                            // cycles per meta-swing — redrawn each full swing
+  var metaPhase = 0;                             // meta position within the swing, 0..1 (wraps)
+  var metaPos = 0;                               // 0 = trough (home, light) … 1 = peak (dark)
+  function metaSeverity() { return metaPos; }    // KIRU severity rides the meta-curve directly
+  // Gentle global density tilt (±12% on melodic rest multipliers): the dark
+  // half of the journey crowds in a little; the return breathes out again.
+  function metaRestMul() { return 1 + 0.12 * (1 - 2 * metaPos); }
+  // Mode-lottery drift: the trough is all hirajoshi gravity; the peak hands
+  // the lottery to the two darkest modes (in-sen's flat 2nd, iwato's tritone).
+  function metaModePool() {
+    var d = metaPos;
+    return [
+      ["hirajoshi", 6 - 5 * d],
+      ["insen", 1 + 4 * d],
+      ["kumoi", 3 - 2.5 * d],
+      ["iwato", 0.5 + 4.5 * d],
     ];
-    seeds.forEach(function (degs) {
-      sharedMotifs.push({ notes: degs.map(function (d) { return { deg: scaleIndexOf(d), durBeats: 1 }; }), voice: "seed" });
-    });
   }
+  // Called once per cycle boundary (from updateDryGrit's watch): draw this
+  // cycle's length, advance the meta-curve, modulate the mode, refresh the
+  // motif working set. Everything here is seeded — a boundary is a downbeat
+  // of the long form, not a reset.
+  function beginCycle(n) {
+    metaCycle = n;
+    ARC_PERIOD = rnd(300, 600);                  // this cycle's own breadth
+    if (n === 0) { metaPeriod = rnd(5, 8); metaPhase = 0; }
+    else {
+      metaPhase += 1 / metaPeriod;
+      if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = rnd(5, 8); }   // a new swing, its own span
+    }
+    metaPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);
+    setMode(n <= 0 ? "hirajoshi" : pickMode(),
+      "cycle " + n + " · " + Math.round(ARC_PERIOD) + "s · meta " + metaPos.toFixed(2) +
+      (metaPhase < 0.5 ? " (drifting dark)" : " (returning light)"));
+    Motif.newCycle();
+  }
+  function getMetaInfo() {                       // read-only console/harness surface
+    return { cycle: metaCycle, metaPos: metaPos, period: ARC_PERIOD, severity: metaSeverity(), metaPeriod: metaPeriod };
+  }
+
+  // ==========================================================================
+  // ELASTIC SHARED PULSE — the ensemble locks as the climax builds
+  // ==========================================================================
+  // The taiko publishes its grid (bpm + anchor beat) whenever it schedules a
+  // pattern; koto and shamisen phrase-onsets MAGNETIZE toward the nearest
+  // upcoming beat with strength that rises with the arc — free-floating in the
+  // jo, audibly locked and DRIVING through the kyū, and free again the moment
+  // the KIRU gates the drums. The shakuhachi never locks: the soloist floats
+  // over the tightening ensemble.
+  var pulse = { bpm: 0, beat: 0, anchor: 0, active: false };
+  function pulseStrength(arc) {
+    if (!pulse.active || pulse.beat <= 0 || arc < 0.45) return 0;
+    var s = (arc - 0.45) / 0.5;                  // 0 at arc 0.45 → 1 at 0.95
+    if (s > 1) s = 1;
+    return s * 0.85;                             // never a hard snap — elastic, not sequenced
+  }
+  // Blend a freely-chosen onset toward the nearest UPCOMING taiko beat.
+  // Only ever delays (audio can't rewind), and never by more than one beat.
+  function pulseSnap(t, arc) {
+    var s = pulseStrength(arc);
+    if (s <= 0) return t;
+    var grid = pulse.anchor + Math.ceil((t - pulse.anchor) / pulse.beat) * pulse.beat;
+    if (grid - t > pulse.beat + 1e-6) return t;  // degenerate-grid guard
+    return t + (grid - t) * s;
+  }
+  // Light duration quantization above arc 0.7 — note lengths lean ~30% toward
+  // the nearest half-beat, so the locked phrases also SPEAK in the meter.
+  function pulseQuantDur(dur, arc) {
+    if (!pulse.active || pulse.beat <= 0 || arc < 0.7) return dur;
+    var half = pulse.beat * 0.5;
+    var q = Math.max(half * 0.5, Math.round(dur / half) * half);
+    return dur + (q - dur) * 0.3;
+  }
+
+  // ==========================================================================
+  // MOTIF ENGINE — working set, transform algebra, genealogy, dialogue ledger
+  // ==========================================================================
+  // Replaces the old 24-slot motif soup + single lastCall. Each jo-ha-kyū
+  // cycle works THREE ideas deeply — a theme and two subsidiaries, named by
+  // katakana iroha (イ ロ ハ), drawn from the six authentic seed gestures
+  // below (the cultural DNA). A motif carries identity + genealogy:
+  //   { name, gen, chain[], notes: [{ deg (SCALE index), durBeats }] }.
+  // Development ACCUMULATES: it continues from the most-developed living
+  // descendant instead of restarting from the seed; an identity tether grafts
+  // the ancestor's opening back every 3rd generation; the shakuhachi restates
+  // the theme verbatim once, late in the kyū — the last word before the KIRU;
+  // and a decomposed ghost of each cycle's deepest development opens the next
+  // cycle's jo, so the 7-minute cycles chain into a journey, not a loop.
+  // Call-and-response is a real obligation LEDGER with deadlines, not a
+  // fixed-probability echo of whoever spoke last.
+
+  // Register FOLDING, not clamping: out-of-range degrees fold back by octaves
+  // (5 scale steps), so a transposed motif keeps its contour instead of
+  // flattening against the rails.
+  function foldDeg(i) {
+    i = Math.round(i);
+    while (i < 0) i += 5;
+    while (i > SCALE.length - 1) i -= 5;
+    return i;
+  }
+  // Shift a motif into a voice's register by whole octaves (mean toward the
+  // voice's center), then fold stragglers — the intervals survive intact.
+  function fitToRegister(notes, center) {
+    if (!notes.length) return [];
+    var sum = 0, i;
+    for (i = 0; i < notes.length; i++) sum += notes[i].deg;
+    var shift = Math.round((center - sum / notes.length) / 5) * 5;
+    var out = [];
+    for (i = 0; i < notes.length; i++) out.push({ deg: foldDeg(notes[i].deg + shift), durBeats: notes[i].durBeats });
+    return out;
+  }
+
+  var Motif = (function () {
+    var NAMES = ["イ", "ロ", "ハ"];                // katakana iroha — the working set's names
+    var SEED_PHRASES = [                           // the six authentic gestures — the ancestor pool
+      { name: "honkyoku descent", degs: [3, 2, 1, 0], durs: [1, 1, 1, 2] },            // → tonic (shakuhachi, jo)
+      { name: "sakura sigh",      degs: [1, 2, 1],    durs: [1, 1.5, 2] },             // the most recognizably-Japanese turn
+      { name: "kumoi cadence",    degs: [4, 3, 0],    durs: [1, 1, 2] },
+      { name: "tsugaru run",      degs: [0, 1, 2, 3, 4], durs: [0.5, 0.5, 0.5, 0.5, 1.5] },  // hammer run
+      { name: "midare leaps",     degs: [0, 4, 1, 3, 0], durs: [1, 0.5, 1, 0.5, 2] },  // scattered (kyū)
+      { name: "kakegoe answer",   degs: [0, 1, 2],    durs: [0.5, 0.5, 1.5] },         // retrograde-pairs with the sigh
+    ];
+    var working = { theme: null, subs: [] };       // the whole cycle works ≤3 ideas
+    var ledger = [];                               // [{from, to, motif, type, deadline}]
+    var lineage = {};                              // most-developed living descendant per name
+    var ghost = null;                              // decomposed memory carried across the KIRU
+    var reprised = false;                          // the one verbatim kyū statement, per cycle
+    var plainCounts = {};                          // plain statements per motif per cycle (≤3 — learn it, then work it)
+    var stats = { developments: 0, answers: 0, transformsUsed: {} };
+
+    function clone(m) { return JSON.parse(JSON.stringify(m)); }
+    function fromSeed(i, name) {
+      var s = SEED_PHRASES[i], notes = [];
+      for (var k = 0; k < s.degs.length; k++) notes.push({ deg: scaleIndexOf(s.degs[k]), durBeats: s.durs[k] });
+      return { name: name, gen: 0, chain: [], notes: notes };
+    }
+
+    // ---- the transform algebra (each mutates a clone; chain appended by develop) ----
+    var TRANSFORMS = {
+      invert: function (m) {                       // mirror on the first degree
+        var axis = m.notes[0].deg;
+        m.notes.forEach(function (n) { n.deg = axis - (n.deg - axis); });
+        return m;
+      },
+      transpose: function (m) {                    // ±1–3 scale DEGREES — real pitch-content change, not octaves
+        var by = pickW([[1, 3], [2, 3], [-1, 3], [-2, 3], [3, 1], [-3, 1]]);
+        m.notes.forEach(function (n) { n.deg += by; });
+        return m;
+      },
+      fragmentHead: function (m) { m.notes = m.notes.slice(0, Math.max(2, Math.ceil(m.notes.length / 2))); return m; },
+      fragmentTail: function (m) { m.notes = m.notes.slice(-Math.max(2, Math.ceil(m.notes.length / 2))); return m; },
+      augment: function (m) {
+        var f = rnd(1.35, 1.9);
+        m.notes.forEach(function (n) { n.durBeats = Math.min(6, n.durBeats * f); });
+        return m;
+      },
+      diminish: function (m) {
+        var f = rnd(0.5, 0.72);
+        m.notes.forEach(function (n) { n.durBeats = Math.max(0.3, n.durBeats * f); });
+        return m;
+      },
+      retrograde: function (m) { m.notes.reverse(); return m; },
+      sequence: function (m) {                     // restate at a transposition — real sequencing
+        var step = pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
+        var rep = m.notes.map(function (n) { return { deg: n.deg + step, durBeats: n.durBeats }; });
+        m.notes = m.notes.concat(rep).slice(0, 12);            // runaway guard
+        return m;
+      },
+      ornament: function (m) {                     // neighbor-tone turns — koto kazashi / shakuhachi ornaments
+        var res = [];
+        for (var i = 0; i < m.notes.length; i++) {
+          var n = m.notes[i], nx = m.notes[i + 1];
+          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && chance(0.6)) {
+            res.push({ deg: n.deg, durBeats: n.durBeats * 0.65 });
+            res.push({ deg: n.deg + (nx.deg > n.deg ? 1 : -1), durBeats: Math.max(0.35, n.durBeats * 0.35) });
+          } else res.push({ deg: n.deg, durBeats: n.durBeats });
+        }
+        m.notes = res;
+        return m;
+      },
+    };
+
+    // ---- chain grammar: which transform, given VOICE + jo-ha-kyū phase ----
+    // Sophistication = context-sensitivity: the same motif is worked
+    // differently by each instrument, and differently in jo than in kyū.
+    var VOICE_WEIGHTS = {
+      // the shakuhachi works contour: ornament, augmentation, mirrors
+      shakuhachi: { ornament: 3.5, augment: 3, invert: 2.5, transpose: 2.5, fragmentTail: 1.5, fragmentHead: 1.5, retrograde: 1.5, sequence: 1, diminish: 1 },
+      // the koto sequences and fragments — danmono figuration
+      koto: { sequence: 3.5, fragmentHead: 2.5, fragmentTail: 2.5, transpose: 2.5, invert: 2, ornament: 2, diminish: 1.5, augment: 1.5, retrograde: 1.5 },
+      // the shamisen diminishes and splinters — fast Tsugaru fragmentation
+      shamisen: { diminish: 3.5, fragmentHead: 3, fragmentTail: 2.5, sequence: 2.5, transpose: 2, retrograde: 1.5, invert: 1.5, ornament: 1, augment: 0.5 },
+    };
+    var PHASE_TILT = {
+      jo:      { augment: 1.7, transpose: 1.4, ornament: 0.6, sequence: 0.4, fragmentHead: 0.5, fragmentTail: 0.5, diminish: 0.4 },   // state plainly, stretch
+      ha:      { invert: 1.4, sequence: 1.3, ornament: 1.4, transpose: 1.1 },                                                          // explore widely
+      "kyū":   { diminish: 1.8, fragmentHead: 1.5, fragmentTail: 1.4, sequence: 1.6, retrograde: 1.2, augment: 0.4 },                  // drive — stretto
+      release: { augment: 1.6, fragmentTail: 1.4, ornament: 0.4, sequence: 0.3, diminish: 0.4 },                                       // the ma decomposes
+    };
+    var AFFINITY = {                               // pairs that compose well lean into each other
+      fragmentHead: { sequence: 2.4, ornament: 1.6 },
+      fragmentTail: { sequence: 2.4, ornament: 1.6 },
+      invert:       { augment: 1.7, transpose: 1.5 },
+      sequence:     { diminish: 1.6 },
+      ornament:     { augment: 1.4 },
+    };
+    function beatsOf(m) { var b = 0; m.notes.forEach(function (n) { b += n.durBeats; }); return b; }
+    function isPalindromic(m) {
+      var s = m.notes.map(function (n) { return n.deg; });
+      for (var i = 0; i < s.length; i++) if (s[i] !== s[s.length - 1 - i]) return false;
+      return true;
+    }
+    function lastRealLink(chain) {
+      for (var i = chain.length - 1; i >= 0; i--)
+        if (chain[i] !== "tether" && chain[i] !== "dissolve" && chain[i] !== "ghost") return chain[i];
+      return null;
+    }
+    function allowedTransform(name, m, chain) {
+      var len = m.notes.length;
+      if (name === lastRealLink(chain)) return false;              // never twice running (invert∘invert is a no-op)
+      if (name === "fragmentHead" || name === "fragmentTail") {
+        if (len <= 4) return false;                                // fragmenting a fragment leaves 2 notes of nothing
+        var frags = 0;
+        for (var i = 0; i < chain.length; i++) if (chain[i].indexOf("fragment") === 0) frags++;
+        if (frags >= 1 && len <= 6) return false;
+      }
+      if (name === "sequence" && len >= 7) return false;
+      if (name === "ornament" && len >= 8) return false;
+      if (name === "retrograde" && isPalindromic(m)) return false; // no-op on palindromes (the sakura sigh!)
+      if (name === "augment" && beatsOf(m) > 18) return false;
+      if (name === "diminish" && beatsOf(m) < 2.5) return false;
+      return true;
+    }
+    function pickTransform(voice, m, chain) {
+      var w = VOICE_WEIGHTS[voice] || VOICE_WEIGHTS.koto;
+      var tilt = PHASE_TILT[arcPhase()] || {};
+      var last = lastRealLink(chain);
+      var pool = [];
+      for (var name in w) {
+        if (!allowedTransform(name, m, chain)) continue;
+        var wt = w[name] * (tilt[name] || 1);
+        if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
+        pool.push([name, wt]);
+      }
+      return pool.length ? pickW(pool) : null;
+    }
+    // Keep the motif's centre of mass in the singable mid-band by whole
+    // octaves — internal intervals untouched; voices re-register per phrase.
+    function recentre(m) {
+      if (!m.notes.length) return m;
+      var sum = 0; m.notes.forEach(function (n) { sum += n.deg; });
+      var mean = sum / m.notes.length;
+      while (mean > 13) { m.notes.forEach(function (n) { n.deg -= 5; }); mean -= 5; }
+      while (mean < 5) { m.notes.forEach(function (n) { n.deg += 5; }); mean += 5; }
+      return m;
+    }
+
+    // ---- genealogy: lineage, tether, development ----
+    function ancestorOf(name) {
+      if (working.theme && working.theme.name === name) return working.theme;
+      for (var i = 0; i < working.subs.length; i++) if (working.subs[i] && working.subs[i].name === name) return working.subs[i];
+      return working.theme;
+    }
+    function remember(m) {
+      var cur = lineage[m.name];
+      if (!cur || m.gen >= cur.gen) lineage[m.name] = clone(m);
+    }
+    // Identity tether: every 3rd generation, graft the ancestor's opening back
+    // onto the descendant — development may wander; the head-motive returns.
+    function tether(m) {
+      var anc = ancestorOf(m.name);
+      if (!anc) return m;
+      var src = clone(anc).notes;
+      var shift = Math.round((m.notes[0].deg - src[0].deg) / 5) * 5;   // meet the descendant's register
+      for (var i = 0; i < src.length; i++) src[i].deg += shift;
+      var k = Math.min(3, src.length, Math.max(1, m.notes.length - 1));
+      m.notes = src.slice(0, k).concat(m.notes.slice(k));
+      m.chain = m.chain.concat(["tether"]);
+      stats.transformsUsed.tether = (stats.transformsUsed.tether || 0) + 1;
+      return m;
+    }
+    function develop(voice, m, maxChain) {
+      // Renewal: after long development the line returns to its source —
+      // identity over archaeology (ledger ping-pong otherwise compounds
+      // generations into the twenties).
+      if (m.gen >= 9) { var anc = ancestorOf(m.name); if (anc) m = anc; }
+      var out = clone(m);
+      var links = rint(1, maxChain || 2);
+      var used = [];
+      for (var i = 0; i < links; i++) {
+        var name = pickTransform(voice, out, out.chain.concat(used));
+        if (!name) break;
+        out = TRANSFORMS[name](out);
+        used.push(name);
+        stats.transformsUsed[name] = (stats.transformsUsed[name] || 0) + 1;
+      }
+      if (!used.length) {                          // grammar cornered — a transposition always speaks
+        out = TRANSFORMS.transpose(out);
+        used.push("transpose");
+        stats.transformsUsed.transpose = (stats.transformsUsed.transpose || 0) + 1;
+      }
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat(used);
+      if (out.gen >= 3 && out.gen % 3 === 0) out = tether(out);
+      recentre(out);
+      stats.developments++;
+      remember(out);
+      emitEvent({ cat: voice, label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + arcPhase() });
+      return out;
+    }
+    // The ma decomposing a motif: notes released, time stretched.
+    function decompose(m, voice) {
+      var out = clone(m);
+      var keep = Math.max(2, Math.round(out.notes.length * rnd(0.4, 0.7)));
+      while (out.notes.length > keep) out.notes.splice(rint(1, out.notes.length - 1), 1);
+      out.notes.forEach(function (n) { n.durBeats = Math.min(6, n.durBeats * rnd(1.4, 2)); });
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat(["dissolve"]);
+      emitEvent({ cat: voice, label: "散 " + out.name + " decomposes", detail: "releasing notes into the ma" });
+      return out;
+    }
+    function makeGhost(m) {
+      var g = clone(m);
+      var keep = Math.max(2, Math.round(g.notes.length * 0.5));
+      while (g.notes.length > keep) g.notes.splice(rint(1, g.notes.length - 1), 1);
+      g.notes.forEach(function (n) { n.durBeats = Math.min(8, n.durBeats * rnd(2, 3)); });
+      g.chain = g.chain.concat(["ghost"]);
+      return g;
+    }
+
+    // ---- what should a voice play right now? ----
+    function request(voice) {
+      if (!working.theme) return null;
+      var phase = arcPhase();
+      // After the KIRU hush, the new jo opens with a decomposed ghost of the
+      // previous cycle's deepest development — the journey across the cut.
+      if (ghost && phase === "jo") {
+        var g = ghost; ghost = null;
+        emitEvent({ cat: voice, label: "残 ghost of " + g.name + "·g" + g.gen, detail: "the last cycle, decomposed — notes dropped, time stretched" });
+        return g;
+      }
+      // ONE guaranteed verbatim theme statement, late in the kyū — the last
+      // word before the cut. The shakuhachi speaks it.
+      if (voice === "shakuhachi" && !reprised && phase === "kyū" && arcPos() > 0.9) {
+        reprised = true;
+        emitEvent({ cat: "shakuhachi", label: "✸ reprise " + working.theme.name, detail: "the theme verbatim — the last word before the cut" });
+        return clone(working.theme);
+      }
+      var m;
+      if (phase === "jo") m = chance(0.7) ? working.theme : pick(working.subs);
+      else if (phase === "ha") m = pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]);
+      else m = chance(0.6) ? working.theme : pick(working.subs);   // kyū/release: the theme drives
+      if (!m) m = working.theme;
+      // Work what the cycle has BUILT: continue from the most-developed living
+      // descendant about half the time in ha/kyū (the tether keeps it honest).
+      if (phase === "ha" || phase === "kyū") {
+        var line = lineage[m.name];
+        if (line && line.gen > 0 && line.gen < 6 && chance(0.45)) m = line;
+      }
+      // jo states plainly first — an idea must be LEARNED before it is worked,
+      // but only a few times: after that, even the jo varies it
+      if (phase === "jo" && m.gen === 0 && (plainCounts[m.name] || 0) < 3 && chance(0.5)) {
+        plainCounts[m.name] = (plainCounts[m.name] || 0) + 1;
+        emitEvent({ cat: voice, label: "○ " + m.name + " stated plain", detail: m.notes.length + " notes · jo" });
+        return clone(m);
+      }
+      if (phase === "release") return decompose(m, voice);          // the ma after the cut
+      return develop(voice, m, phase === "kyū" ? 3 : 2);
+    }
+
+    // ---- dialogue ledger: real obligations between voices, with deadlines ----
+    var POST_P = { shakuhachi: 0.45, koto: 0.4, shamisen: 0.35 };   // ≈ the old per-voice answer densities
+    var POST_TO = {
+      shakuhachi: [["koto", 3], ["shamisen", 2]],
+      koto: [["shakuhachi", 3], ["shamisen", 2]],
+      shamisen: [["koto", 3], ["shakuhachi", 2]],
+    };
+    function post(fromVoice, toVoice, motif, type) {
+      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: ctx.currentTime + rnd(6, 16) });
+      if (ledger.length > 6) ledger.shift();
+    }
+    function postFrom(voice, motif) {
+      if (!working.theme || !chance(POST_P[voice] || 0.4)) return;
+      post(voice, pickW(POST_TO[voice]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+    }
+    function claim(voice) {
+      var i, ob = null;
+      for (i = 0; i < ledger.length; i++) if (ledger[i].to === voice) { ob = ledger.splice(i, 1)[0]; break; }
+      if (!ob) {
+        // Call-and-response must be AUDIBLE: an obligation past its deadline
+        // is taken up by whichever voice speaks next (never the caller itself).
+        for (i = 0; i < ledger.length; i++) {
+          if (ledger[i].from !== voice && ctx.currentTime > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
+        }
+      }
+      if (!ob) return null;
+      var m = ob.motif;
+      if (m.gen >= 9) { var anc = ancestorOf(m.name); if (anc) m = clone(anc); }   // renewal applies to answers too
+      var ans;
+      if (ob.type === "imitate") ans = develop(voice, m, 1);
+      else if (ob.type === "invert") {
+        // mirror the call — unless the call was itself a mirror (invert∘invert
+        // is a no-op): then answer with the crab, or a transposition.
+        var op = "invert";
+        if (lastRealLink(m.chain) === "invert") op = isPalindromic(m) ? "transpose" : "retrograde";
+        ans = TRANSFORMS[op](clone(m)); ans.gen = m.gen + 1; ans.chain = m.chain.concat([op]);
+        stats.transformsUsed[op] = (stats.transformsUsed[op] || 0) + 1;
+        recentre(ans); remember(ans);
+      }
+      else ans = develop(voice, m, 2);
+      stats.answers++;
+      emitEvent({ cat: voice, label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
+      return ans;
+    }
+    function overdueFor(voice) {
+      for (var i = 0; i < ledger.length; i++) {
+        if (ledger[i].to === voice) return true;
+        if (ledger[i].from !== voice && ctx && ctx.currentTime > ledger[i].deadline) return true;
+      }
+      return false;
+    }
+
+    // ---- cycle boundaries (called at each mode change) ----
+    function newCycle() {
+      // carry a decomposed memory of the deepest development across the cut
+      ghost = null;
+      var deepest = null, k;
+      for (k in lineage) if (lineage[k] && (!deepest || lineage[k].gen > deepest.gen)) deepest = lineage[k];
+      if (deepest && deepest.gen > 0) ghost = makeGhost(deepest);
+      // a fresh working set, drawn from the ancestral pool
+      var order = [0, 1, 2, 3, 4, 5], picks = [];
+      while (picks.length < 3) picks.push(order.splice(Math.floor(rng() * order.length), 1)[0]);
+      working.theme = fromSeed(picks[0], NAMES[0]);
+      working.subs = [fromSeed(picks[1], NAMES[1]), fromSeed(picks[2], NAMES[2])];
+      // subsidiaries may enter pre-transposed — pitch variety, not novelty churn
+      working.subs.forEach(function (s) {
+        if (chance(0.5)) { TRANSFORMS.transpose(s); s.chain = ["transpose"]; recentre(s); }
+      });
+      ledger.length = 0;
+      lineage = {};
+      reprised = false;
+      plainCounts = {};
+      emitEvent({
+        cat: "mode", label: "❁ working set",
+        detail: NAMES[0] + " " + SEED_PHRASES[picks[0]].name + " · " + NAMES[1] + " " + SEED_PHRASES[picks[1]].name + " · " + NAMES[2] + " " + SEED_PHRASES[picks[2]].name,
+      });
+    }
+    function reset() {
+      working.theme = null; working.subs = [];
+      ledger.length = 0; lineage = {}; ghost = null; reprised = false; plainCounts = {};
+    }
+
+    // The guaranteed kyū reprise outranks even ledger obligations — the voice
+    // asks this first so the theme's last word can never be talked over.
+    function wantsReprise() {
+      return !!working.theme && !reprised && arcPhase() === "kyū" && arcPos() > 0.9;
+    }
+
+    return {
+      reset: reset, newCycle: newCycle, wantsReprise: wantsReprise,
+      request: request, claim: claim, overdueFor: overdueFor, postFrom: postFrom,
+      stats: function () {
+        return {
+          developments: stats.developments, answers: stats.answers,
+          transforms: Object.keys(stats.transformsUsed),
+          working: { theme: working.theme && working.theme.name, themeGen: working.theme && working.theme.gen },
+        };
+      },
+    };
+  })();
 
   // A biased hirajoshi walk. state = { idx, dir, center }; returns phrase of
   // { deg, durBeats }. window widens / steps loosen with arc.
   function walk(state, len, windowR, arc) {
     var notes = [];
-    if (Math.random() < 0.4) state.dir = -state.dir;
+    if (rng() < 0.4) state.dir = -state.dir;
     for (var i = 0; i < len; i++) {
-      var step = Math.random() < (0.62 - arc * 0.18) ? 1 : Math.random() < 0.8 ? 2 : 3;
+      var step = rng() < (0.62 - arc * 0.18) ? 1 : rng() < 0.8 ? 2 : 3;
       state.idx += state.dir * step;
       if (state.idx < state.center - windowR) { state.idx = state.center - windowR; state.dir = 1; }
       if (state.idx > state.center + windowR) { state.idx = state.center + windowR; state.dir = -1; }
       if (state.idx < 0) state.idx = 0; else if (state.idx >= SCALE.length) state.idx = SCALE.length - 1;
-      if (Math.random() < 0.34) state.idx = pullTo(state.idx, IMPORTANT_DEG);
-      notes.push({ deg: state.idx, durBeats: 0.6 + Math.random() * 0.9 });
+      if (rng() < 0.34) state.idx = pullTo(state.idx, IMPORTANT_DEG);
+      notes.push({ deg: state.idx, durBeats: 0.6 + rng() * 0.9 });
     }
     state.idx = pullTo(state.idx, REST_DEG);
-    notes.push({ deg: state.idx, durBeats: 1.4 + Math.random() * 1.2 });
+    notes.push({ deg: state.idx, durBeats: 1.4 + rng() * 1.2 });
     return notes;
   }
   function pullTo(idx, flags) {
@@ -434,12 +926,12 @@ window.ZankyoAudio = (function () {
     var cutoff = getLayerParam("subDrone", "cutoff", 220);
     var movement = getLayerParam("subDrone", "movement", 0.18);
     var subAmt = getLayerParam("subDrone", "sub", 0.6);
-    var dur = 26 + Math.random() * 10, fadeIn = 7, fadeOut = 8;
+    var dur = 26 + rng() * 10, fadeIn = 7, fadeOut = 8;
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.8, now);
     var mlfo = c.createOscillator(), mg = c.createGain();
-    mlfo.type = "sine"; mlfo.frequency.setValueAtTime(0.02 + Math.random() * 0.03, now);
+    mlfo.type = "sine"; mlfo.frequency.setValueAtTime(0.02 + rng() * 0.03, now);
     mg.gain.setValueAtTime(cutoff * movement, now); mlfo.connect(mg); mg.connect(lp.frequency);
     mlfo.start(now); mlfo.stop(now + dur + 0.3);
     var bus = c.createGain();
@@ -465,7 +957,7 @@ window.ZankyoAudio = (function () {
       so.connect(sg); sg.connect(lp); sg.gain.setValueAtTime(0.08 * subAmt, now);
       so.start(now); so.stop(now + dur + 0.3);
     }
-    var overlap = 7 + Math.random() * 3;
+    var overlap = 7 + rng() * 3;
     scheduleLayer(subDroneCycle, (dur - overlap) * 1000, "subDrone");
   }
 
@@ -481,7 +973,7 @@ window.ZankyoAudio = (function () {
     var voices = Math.round(getLayerParam("sho", "voices", 5));
     var shimmer = getLayerParam("sho", "shimmer", 0.4);
     var drift = getLayerParam("sho", "drift", 0.5);
-    var dur = 14 + Math.random() * 8, fadeIn = 5, fadeOut = 6;
+    var dur = 14 + rng() * 8, fadeIn = 5, fadeOut = 6;
 
     var lp = c.createBiquadFilter();
     lp.type = "lowpass"; lp.frequency.setValueAtTime(cutoff, now); lp.Q.setValueAtTime(0.5, now);
@@ -494,7 +986,7 @@ window.ZankyoAudio = (function () {
 
     // a real aitake cluster: a CLOSE voicing (with a deliberate semitone rub),
     // sitting high (~A4–A5) so the bed shimmers above the drones.
-    var base = scaleIndexOf(6 + Math.floor(Math.random() * 2));
+    var base = scaleIndexOf(6 + Math.floor(rng() * 2));
     var used = {};
     for (var v = 0; v < voices; v++) {
       var idx = base + [0, 1, 2, 4, 5][v % 5];
@@ -504,9 +996,9 @@ window.ZankyoAudio = (function () {
       var f = SCALE[idx].freq;
       var o = c.createOscillator(), g = c.createGain();
       o.type = "sawtooth"; o.frequency.setValueAtTime(f, now);
-      o.detune.setValueAtTime((Math.random() * 2 - 1) * 6 * drift, now);
+      o.detune.setValueAtTime((rng() * 2 - 1) * 6 * drift, now);
       var dl = c.createOscillator(), dlg = c.createGain();
-      dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + Math.random() * 0.08, now);
+      dl.type = "sine"; dl.frequency.setValueAtTime(0.05 + rng() * 0.08, now);
       dlg.gain.setValueAtTime(5 * drift, now); dl.connect(dlg); dlg.connect(o.detune);
       dl.start(now); dl.stop(now + dur + 0.2);
       o.connect(g); g.connect(lp); g.gain.setValueAtTime(0.045, now);
@@ -526,7 +1018,7 @@ window.ZankyoAudio = (function () {
       }
       emitNote("sho", f, now);
     }
-    var overlap = 4 + Math.random() * 2;
+    var overlap = 4 + rng() * 2;
     scheduleLayer(shoCycle, (dur - overlap) * 1000, "sho");
   }
 
@@ -554,40 +1046,54 @@ window.ZankyoAudio = (function () {
 
     shakuState.center = Math.round(scaleIndexOf(5) + arc * 4);
 
-    // sometimes answer a call from another voice (call-and-response)
-    var phrase, action;
-    if (lastCall && lastCall.voice !== "shakuhachi" && Math.random() < 0.4) {
-      var tr = transformMotif(lastCall.notes); phrase = clampPhrase(tr.notes); action = "answer · " + tr.tag;
-    } else if (sharedMotifs.length && Math.random() < 0.25) {
-      var m = sharedMotifs[Math.floor(Math.random() * sharedMotifs.length)];
-      var tr2 = transformMotif(m.notes); phrase = clampPhrase(tr2.notes); action = "recall · " + tr2.tag;
+    // motif work — ledger obligations first, then the working set; free walks
+    // remain as the improvisatory glue between statements
+    var phrase, motif = null;
+    if (Motif.wantsReprise()) motif = Motif.request("shakuhachi");
+    if (!motif && Motif.overdueFor("shakuhachi")) motif = Motif.claim("shakuhachi");
+    if (!motif && chance(0.6)) motif = Motif.request("shakuhachi");
+    if (motif) {
+      phrase = fitToRegister(motif.notes, shakuState.center);
+      Motif.postFrom("shakuhachi", motif);
     } else {
-      phrase = walk(shakuState, 2 + Math.floor(Math.random() * 3) + Math.floor(arc * 2), 6 + Math.round(arc * 2), arc);
-      action = "fresh";
+      phrase = walk(shakuState, 2 + Math.floor(rng() * 3) + Math.floor(arc * 2), 6 + Math.round(arc * 2), arc);
+      emitEvent({ cat: "shakuhachi", label: "fresh", detail: phrase.length + " notes · " + arcPhase() });
     }
-    rememberMotif(phrase, "shakuhachi");
-    emitEvent({ cat: "shakuhachi", label: action, detail: phrase.length + " notes · " + arcPhase() });
+    if (phrase.length) shakuState.idx = phrase[phrase.length - 1].deg;   // melodic continuity for the next walk
 
-    var beat = 0.62 / pace, t = now + 0.05, prev = null;
+    var beat = 0.62 / pace, t = now + 0.05, prev = null, sched = [];
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], dur = Math.max(0.25, n.durBeats * beat);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      var glideFrom = (prev && Math.random() < glideAmt) ? prev : null;
-      var mur = (i === 0 && Math.random() < muraiki * (0.4 + arc * 0.6));
-      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: Math.random() < ornament });
+      var glideFrom = (prev && rng() < glideAmt) ? prev : null;
+      var mur = (i === 0 && rng() < muraiki * (0.4 + arc * 0.6));
+      shakuhachiNote(f, t, dur, { glideFrom: glideFrom, breath: breath, muraiki: mur ? muraiki : 0, bend: rng() < ornament });
+      sched.push({ f: f, t: t, dur: dur });
       prev = f;
-      t += dur + Math.random() * 0.05;
+      t += dur + rng() * 0.05;
     }
-    // MA — breathing space between phrases (more in jo, less in kyū)
-    var ma = (1.8 + Math.random() * 4) * (1 - arc * 0.55) / getRate("shakuhachi");
+    // 〰 SANKYOKU HETEROPHONY — in the ha especially, the koto sometimes reads
+    // the same phrase a breath behind (jiuta ensemble texture): the same note
+    // list, its own ornament choices, a hair sharp.
+    if (sched.length >= 3 && chance(arcPhase() === "ha" ? 0.22 : 0.08)) {
+      var lag = rnd(0.15, 0.4), sharp = Math.pow(2, rnd(2, 3.5) / 1200), sprev = null;
+      for (var sh = 0; sh < sched.length; sh++) {
+        var sn = sched[sh];
+        kotoNote(sn.f * sharp, sn.t + lag + rnd(0, 0.05), Math.max(0.12, sn.dur * 0.8),
+          { gain: 0.65, glideFrom: (sprev && chance(0.3)) ? sprev * sharp : null, bend: chance(0.2) });
+        sprev = sn.f;
+      }
+      emitEvent({ cat: "koto", label: "〰 koto shadows shakuhachi", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") + " · " + sched.length + " notes" });
+    }
+    // MA — breathing space between phrases (more in jo, less in kyū; the meta
+    // journey tilts overall density ±12% — the shakuhachi stays UNLOCKED from
+    // the pulse but still breathes with the long form)
+    var ma = (1.8 + rng() * 4) * (1 - arc * 0.55) * metaRestMul() / getRate("shakuhachi");
     scheduleRaw(shakuhachiPhrase, (t - now + ma) * 1000);
-  }
-  function clampPhrase(notes) {
-    return notes.map(function (n) { return { deg: Math.max(0, Math.min(SCALE.length - 1, n.deg)), durBeats: n.durBeats }; });
   }
   function shakuhachiNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
-    var out = panAt("shakuhachi", (Math.random() * 2 - 1) * 0.25);
+    var out = panAt("shakuhachi", (rng() * 2 - 1) * 0.25);
     var o = c.createOscillator(), o2 = c.createOscillator();
     o.type = "sine"; o2.type = "triangle";
     if (opts.glideFrom) {                          // meri-kari slide
@@ -621,7 +1127,7 @@ window.ZankyoAudio = (function () {
       ng.gain.setValueAtTime(0.0001, t);
       ng.gain.exponentialRampToValueAtTime(bpeak, t + (opts.muraiki ? 0.015 : 0.09));
       ng.gain.exponentialRampToValueAtTime(0.0001, t + (opts.muraiki ? Math.min(dur, 0.5) : dur));
-      nz.start(t, Math.random() * 20); nz.stop(t + dur + 0.1);
+      nz.start(t, rng() * 20); nz.stop(t + dur + 0.1);
     }
     emitNote("shakuhachi", freq, t, dur);
   }
@@ -641,35 +1147,50 @@ window.ZankyoAudio = (function () {
     var pace = getLayerParam("koto", "pace", 1.0) * (1 + arc * 0.7);
     var glissAmt = getLayerParam("koto", "gliss", 0.4);
     kotoState.center = Math.round(scaleIndexOf(4) + arc * 3);
-    var phrase, action;
-    if (lastCall && lastCall.voice !== "koto" && Math.random() < 0.35) { var tr = transformMotif(lastCall.notes); phrase = clampPhrase(tr.notes); action = "answer · " + tr.tag; }
-    else if (sharedMotifs.length && Math.random() < 0.25) { var m = sharedMotifs[Math.floor(Math.random() * sharedMotifs.length)]; var tr2 = transformMotif(m.notes); phrase = clampPhrase(tr2.notes); action = "recall · " + tr2.tag; }
-    else { phrase = walk(kotoState, 3 + Math.floor(Math.random() * 3) + Math.floor(arc * 2), 7 + Math.round(arc * 2), arc); action = "fresh"; }
-    rememberMotif(phrase, "koto");
-    emitEvent({ cat: "koto", label: action, detail: phrase.length + " notes" });
-    var beat = 0.4 / pace, t = now + 0.05, prev = null;
+    var phrase, motif = null;
+    if (Motif.overdueFor("koto")) motif = Motif.claim("koto");
+    if (!motif && chance(0.55)) motif = Motif.request("koto");
+    if (motif) { phrase = fitToRegister(motif.notes, kotoState.center); Motif.postFrom("koto", motif); }
+    else {
+      phrase = walk(kotoState, 3 + Math.floor(rng() * 3) + Math.floor(arc * 2), 7 + Math.round(arc * 2), arc);
+      emitEvent({ cat: "koto", label: "fresh", detail: phrase.length + " notes" });
+    }
+    if (phrase.length) kotoState.idx = phrase[phrase.length - 1].deg;
+    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
+    var beat = 0.4 / pace, t = pulseSnap(now + 0.05, arc), prev = null, sched = [];
     for (var i = 0; i < phrase.length; i++) {
-      var n = phrase[i], dur = Math.max(0.12, n.durBeats * beat);
+      var n = phrase[i], dur = pulseQuantDur(Math.max(0.12, n.durBeats * beat), arc);
       var f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      kotoNote(f, t, dur, { glideFrom: (prev && Math.random() < 0.3) ? prev : null, bend: Math.random() < 0.2 });
-      prev = f; t += dur + Math.random() * 0.03;
+      kotoNote(f, t, dur, { glideFrom: (prev && rng() < 0.3) ? prev : null, bend: rng() < 0.2 });
+      sched.push({ f: f, t: t, dur: dur });
+      prev = f; t += dur + rng() * 0.03;
+    }
+    // 〰 sankyoku heterophony downward: the shamisen sometimes shadows the koto
+    // a breath behind — same page, its own accents, a hair sharp.
+    if (sched.length >= 3 && chance(arcPhase() === "ha" ? 0.2 : 0.07)) {
+      var lag = rnd(0.15, 0.4), sharp = Math.pow(2, rnd(2, 3.5) / 1200);
+      for (var sh = 0; sh < sched.length; sh++) {
+        var sn = sched[sh];
+        shamisenNote(sn.f * sharp, sn.t + lag + rnd(0, 0.04), Math.max(0.1, Math.min(sn.dur, 0.3)), { gain: sh % 2 === 0 ? 0.6 : 0.4 });
+      }
+      emitEvent({ cat: "shamisen", label: "〰 shamisen shadows koto", detail: (motif ? motif.name + "·g" + motif.gen : "fresh") + " · " + sched.length + " notes" });
     }
     // glissando flourish — a rapid run up/down the scale (more in ha/kyū)
-    if (Math.random() < glissAmt * (0.3 + arc)) {
-      var up = Math.random() < 0.5, start = kotoState.idx, gn = 4 + Math.floor(Math.random() * 5), gt = t;
+    if (rng() < glissAmt * (0.3 + arc)) {
+      var up = rng() < 0.5, start = kotoState.idx, gn = 4 + Math.floor(rng() * 5), gt = t;
       for (var k = 0; k < gn; k++) {
         var gi = Math.max(0, Math.min(SCALE.length - 1, start + (up ? k : -k)));
-        kotoNote(SCALE[gi].freq, gt, 0.14, { gain: 0.7 }); gt += 0.05 + Math.random() * 0.03;
+        kotoNote(SCALE[gi].freq, gt, 0.14, { gain: 0.7 }); gt += 0.05 + rng() * 0.03;
       }
       t = gt; emitEvent({ cat: "koto", label: "gliss", detail: (up ? "↑" : "↓") + gn });
     }
-    var rest = (1.6 + Math.random() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) / getRate("koto");  // sparse in jo
+    var rest = (1.6 + rng() * 3.2) * (1 - arc * 0.5) * (arc < 0.15 ? 4 : 1) * metaRestMul() / getRate("koto");  // sparse in jo; meta tilts density ±12%
     scheduleRaw(kotoPhrase, (t - now + rest) * 1000);
   }
   function kotoNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
     var bright = getLayerParam("koto", "brightness", 7), sustain = getLayerParam("koto", "sustain", 1.0);
-    var out = panAt("koto", (Math.random() * 2 - 1) * 0.35);
+    var out = panAt("koto", (rng() * 2 - 1) * 0.35);
     var o1 = c.createOscillator(), o2 = c.createOscillator();
     o1.type = "sawtooth"; o2.type = "triangle"; o2.detune.setValueAtTime(4, t);
     if (opts.glideFrom) { var gt = Math.min(dur * 0.35, 0.18); o1.frequency.setValueAtTime(opts.glideFrom, t); o1.frequency.exponentialRampToValueAtTime(freq, t + gt); o2.frequency.setValueAtTime(opts.glideFrom, t); o2.frequency.exponentialRampToValueAtTime(freq, t + gt); }
@@ -705,30 +1226,35 @@ window.ZankyoAudio = (function () {
     var now = ctx.currentTime, arc = getArc();
     var pace = getLayerParam("shamisen", "pace", 1.0) * (1 + arc * 1.0);   // comes alive in ha/kyū
     shamiState.center = Math.round(scaleIndexOf(3) + arc * 3);
-    var phrase, action;
-    if (lastCall && lastCall.voice !== "shamisen" && Math.random() < 0.3) { var tr = transformMotif(lastCall.notes); phrase = clampPhrase(tr.notes); action = "answer · " + tr.tag; }
-    else { phrase = walk(shamiState, 3 + Math.floor(Math.random() * 4) + Math.floor(arc * 3), 6 + Math.round(arc * 2), arc); action = "fresh"; }
-    rememberMotif(phrase, "shamisen");
-    emitEvent({ cat: "shamisen", label: action, detail: phrase.length + " notes · " + arcPhase() });
-    var beat = 0.28 / pace, t = now + 0.05;
+    var phrase, motif = null;
+    if (Motif.overdueFor("shamisen")) motif = Motif.claim("shamisen");
+    if (!motif && chance(0.45)) motif = Motif.request("shamisen");
+    if (motif) { phrase = fitToRegister(motif.notes, shamiState.center); Motif.postFrom("shamisen", motif); }
+    else {
+      phrase = walk(shamiState, 3 + Math.floor(rng() * 4) + Math.floor(arc * 3), 6 + Math.round(arc * 2), arc);
+      emitEvent({ cat: "shamisen", label: "fresh", detail: phrase.length + " notes · " + arcPhase() });
+    }
+    if (phrase.length) shamiState.idx = phrase[phrase.length - 1].deg;
+    // phrase ONSET magnetizes toward the taiko grid as the kyū builds (elastic pulse)
+    var beat = 0.28 / pace, t = pulseSnap(now + 0.05, arc);
     for (var i = 0; i < phrase.length; i++) {
       var n = phrase[i], f = SCALE[Math.max(0, Math.min(SCALE.length - 1, n.deg))].freq;
-      var dur = Math.max(0.1, Math.min(n.durBeats, 1) * beat);
+      var dur = pulseQuantDur(Math.max(0.1, Math.min(n.durBeats, 1) * beat), arc);
       // tsugaru hammer-on: a quick lower-neighbor grace before the beat
-      if (Math.random() < 0.25 + arc * 0.3) {
+      if (rng() < 0.25 + arc * 0.3) {
         shamisenNote(SCALE[Math.max(0, n.deg - 1)].freq, t, 0.05, { gain: 0.55 });
         t += 0.05;
       }
       shamisenNote(f, t, dur, { gain: (i % 2 === 0 ? 1.0 : 0.6) });
       t += dur + 0.01;
     }
-    var rest = (2.2 + Math.random() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) / getRate("shamisen");  // mostly absent in jo
+    var rest = (2.2 + rng() * 3.5) * (1 - arc * 0.6) * (arc < 0.3 ? 5 : 1) * metaRestMul() / getRate("shamisen");  // mostly absent in jo; meta tilts density ±12%
     scheduleRaw(shamisenPhrase, (t - now + rest) * 1000);
   }
   function shamisenNote(freq, t, dur, opts) {
     var c = ctx; opts = opts || {};
     var sawari = getLayerParam("shamisen", "sawari", 0.6), attack = getLayerParam("shamisen", "attack", 0.5);
-    var out = panAt("shamisen", (Math.random() * 2 - 1) * 0.3);
+    var out = panAt("shamisen", (rng() * 2 - 1) * 0.3);
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(freq, t);
     var f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(freq * 6, t); f.frequency.exponentialRampToValueAtTime(freq * 2, t + dur * 0.6); f.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(f); f.connect(g); g.connect(out);
@@ -763,7 +1289,7 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   function startTaiko() { if (playing) taikoPulse(); }
   function taikoHit(t, accent) {
-    var c = ctx, out = panAt("taiko", (Math.random() * 2 - 1) * 0.2);
+    var c = ctx, out = panAt("taiko", (rng() * 2 - 1) * 0.2);
     var lowTune = getLayerParam("taiko", "lowTune", 1.0), punch = getLayerParam("taiko", "punch", 0.6);
     var o = c.createOscillator(), g = c.createGain(); o.type = "sine";
     o.frequency.setValueAtTime(95 * lowTune, t); o.frequency.exponentialRampToValueAtTime(45 * lowTune, t + 0.16);
@@ -775,17 +1301,18 @@ window.ZankyoAudio = (function () {
       var nz = noiseSource(); var bp = c.createBiquadFilter(); bp.type = "lowpass"; bp.frequency.setValueAtTime(800, t);
       var ng = c.createGain(); nz.connect(bp); bp.connect(ng); ng.connect(out);
       ng.gain.setValueAtTime(0.06 * (accent ? 1.2 : 0.8), t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-      nz.start(t, Math.random() * 10); nz.stop(t + 0.2);
+      nz.start(t, rng() * 10); nz.stop(t + 0.2);
     }
   }
   function taikoPulse() {
     if (!playing) return;
     var now = ctx.currentTime, arc = getArc();
-    if (arc < 0.3) { scheduleRaw(taikoPulse, (3 + Math.random() * 3) * 1000); return; }   // silent in jo
+    if (arc < 0.3) { pulse.active = false; scheduleRaw(taikoPulse, (3 + rng() * 3) * 1000); return; }   // silent in jo — no grid to lock to
     var bpm = 50 + arc * 90, beat = 60 / bpm, beats = 2 + Math.floor(arc * 8), t = now + 0.05;
-    for (var i = 0; i < beats; i++) { if (Math.random() < 0.5 + arc * 0.45) taikoHit(t, i % 4 === 0); t += beat * (Math.random() < 0.3 ? 0.5 : 1); }
+    pulse.bpm = bpm; pulse.beat = beat; pulse.anchor = t; pulse.active = true;   // publish the grid — the ensemble magnetizes to this
+    for (var i = 0; i < beats; i++) { if (rng() < 0.5 + arc * 0.45) taikoHit(t, i % 4 === 0); t += beat * (rng() < 0.3 ? 0.5 : 1); }
     emitEvent({ cat: "taiko", label: "pattern", detail: beats + " beats · " + Math.round(bpm) + "bpm" });
-    var rest = (2 + Math.random() * 4) * (1 - arc * 0.7) / getRate("taiko");
+    var rest = (2 + rng() * 4) * (1 - arc * 0.7) / getRate("taiko");
     scheduleRaw(taikoPulse, (t - now + rest) * 1000);
   }
 
@@ -802,23 +1329,23 @@ window.ZankyoAudio = (function () {
     var color = getLayerParam("noise", "color", 0.5);
     var crush = getLayerParam("noise", "crush", 0.4);
 
-    var dur = 2 + Math.random() * 5 + arc * 4;
+    var dur = 2 + rng() * 5 + arc * 4;
     var nz = noiseSource();
     var bp = c.createBiquadFilter();
     bp.type = arc > 0.6 ? "bandpass" : "lowpass";
     var fc = 200 + color * 3000 + arc * 2500;
     bp.frequency.setValueAtTime(fc, now); bp.Q.setValueAtTime(0.5 + crush * 8 + arc * 6, now);
     // sweep the filter for a scraping motion
-    bp.frequency.linearRampToValueAtTime(fc * (0.5 + Math.random()), now + dur);
+    bp.frequency.linearRampToValueAtTime(fc * (0.5 + rng()), now + dur);
     var g = c.createGain(); nz.connect(bp); bp.connect(g); g.connect(out);
     var peak = (0.05 + arc * 0.22) * (0.4 + density);
     g.gain.setValueAtTime(0.0001, now);
     g.gain.exponentialRampToValueAtTime(peak, now + dur * 0.4);
     g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-    nz.start(now, Math.random() * 10); nz.stop(now + dur + 0.1);
+    nz.start(now, rng() * 10); nz.stop(now + dur + 0.1);
     if (arc > 0.4) emitEvent({ cat: "noise", label: "wall", detail: arcPhase() });
 
-    var gap = (6 + Math.random() * 10) * (1 - arc * 0.6) / (0.4 + density);
+    var gap = (6 + rng() * 10) * (1 - arc * 0.6) / (0.4 + density);
     scheduleLayer(noiseEvent, gap * 1000, "noise");
   }
 
@@ -826,12 +1353,12 @@ window.ZankyoAudio = (function () {
   // AMBIENT — quirky events (derelict orbital station incidentals)
   // ==========================================================================
   function ambBonsho(t) {                          // temple bell (bonshō) — deep, long, inharmonic
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.3);
-    var base = degFreq(0, -1) * (Math.random() < 0.5 ? 1 : Math.pow(2, 7 / 12));
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.3);
+    var base = degFreq(0, -1) * (rng() < 0.5 ? 1 : Math.pow(2, 7 / 12));
     var partials = [{ m: 1, a: 0.08, d: 6 }, { m: 2.7, a: 0.04, d: 4 }, { m: 5.2, a: 0.02, d: 2.4 }, { m: 8.1, a: 0.012, d: 1.5 }];
     partials.forEach(function (p) {
       var o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = "sine"; o.frequency.setValueAtTime(base * p.m, t); o.detune.setValueAtTime((Math.random() * 2 - 1) * 5, t);
+      o.type = "sine"; o.frequency.setValueAtTime(base * p.m, t); o.detune.setValueAtTime((rng() * 2 - 1) * 5, t);
       o.connect(g); g.connect(out);
       g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(p.a, t + 0.01);
       g.gain.exponentialRampToValueAtTime(0.0001, t + p.d);
@@ -839,21 +1366,21 @@ window.ZankyoAudio = (function () {
     });
   }
   function ambFurin(t) {                            // wind-chime (fūrin) — a few tiny high pings
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.6);
-    var n = 2 + Math.floor(Math.random() * 3), tt = t;
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.6);
+    var n = 2 + Math.floor(rng() * 3), tt = t;
     for (var i = 0; i < n; i++) {
-      var idx = Math.min(SCALE.length - 1, scaleIndexOf(8) + Math.floor(Math.random() * 4));
+      var idx = Math.min(SCALE.length - 1, scaleIndexOf(8) + Math.floor(rng() * 4));
       var o = ctx.createOscillator(), g = ctx.createGain();
       o.type = "triangle"; o.frequency.setValueAtTime(SCALE[idx].freq * 2, tt);
       o.connect(g); g.connect(out);
       g.gain.setValueAtTime(0.0001, tt); g.gain.exponentialRampToValueAtTime(0.035, tt + 0.004);
       g.gain.exponentialRampToValueAtTime(0.0001, tt + 1.4);
-      o.start(tt); o.stop(tt + 1.5); tt += 0.12 + Math.random() * 0.2;
+      o.start(tt); o.stop(tt + 1.5); tt += 0.12 + rng() * 0.2;
     }
   }
   function ambSuikinkutsu(t) {                      // water drip resonance (suikinkutsu)
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.5);
-    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(7) + Math.floor(Math.random() * 5))].freq * 2;
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.5);
+    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(7) + Math.floor(rng() * 5))].freq * 2;
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine"; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.06);
     o.connect(g); g.connect(out);
@@ -863,19 +1390,19 @@ window.ZankyoAudio = (function () {
   }
   function ambGlitch(t) {                           // digital glitch / static burst (the 3042 grit)
     if (!sharedNoiseBuf) return;
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.8);
-    var n = 3 + Math.floor(Math.random() * 6), tt = t;
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.8);
+    var n = 3 + Math.floor(rng() * 6), tt = t;
     for (var i = 0; i < n; i++) {
       var nz = noiseSource();
-      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(800 + Math.random() * 4000, tt);
+      var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(800 + rng() * 4000, tt);
       var g = ctx.createGain(); nz.connect(hp); hp.connect(g); g.connect(out);
-      var d = 0.02 + Math.random() * 0.05;
+      var d = 0.02 + rng() * 0.05;
       g.gain.setValueAtTime(0.05, tt); g.gain.setValueAtTime(0.0001, tt + d);
-      nz.start(tt, Math.random() * 10); nz.stop(tt + d + 0.02); tt += d + Math.random() * 0.06;
+      nz.start(tt, rng() * 10); nz.stop(tt + d + 0.02); tt += d + rng() * 0.06;
     }
   }
   function ambDistantTaiko(t) {                     // a lone distant drum hit
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.4);
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.4);
     var o = ctx.createOscillator(), g = ctx.createGain();
     o.type = "sine"; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(48, t + 0.18);
     o.connect(g); g.connect(out);
@@ -886,11 +1413,11 @@ window.ZankyoAudio = (function () {
       var nz = noiseSource(); var bp = ctx.createBiquadFilter(); bp.type = "lowpass"; bp.frequency.setValueAtTime(400, t);
       var ng = ctx.createGain(); nz.connect(bp); bp.connect(ng); ng.connect(out);
       ng.gain.setValueAtTime(0.06, t); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-      nz.start(t, Math.random() * 10); nz.stop(t + 0.2);
+      nz.start(t, rng() * 10); nz.stop(t + 0.2);
     }
   }
   function ambKotoSweep(t) {                        // a fast koto-ish glissando flourish
-    var out = panAt("ambient", (Math.random() * 2 - 1) * 0.5);
+    var out = panAt("ambient", (rng() * 2 - 1) * 0.5);
     var start = scaleIndexOf(3), n = 6, tt = t;
     for (var i = 0; i < n; i++) {
       var idx = Math.min(SCALE.length - 1, start + i);
@@ -903,8 +1430,8 @@ window.ZankyoAudio = (function () {
     }
   }
   function ambBiwa(t) {                            // plucked lute with sawari buzz
-    var c = ctx, out = panAt("ambient", (Math.random() * 2 - 1) * 0.4);
-    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(0) + Math.floor(Math.random() * 5))].freq, dec = 1.6 + Math.random() * 1.2;
+    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.4);
+    var f = SCALE[Math.min(SCALE.length - 1, scaleIndexOf(0) + Math.floor(rng() * 5))].freq, dec = 1.6 + rng() * 1.2;
     var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(f * 1.5, t); o.frequency.exponentialRampToValueAtTime(f, t + 0.04);
     var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f * 6, t); lp.frequency.exponentialRampToValueAtTime(f * 2, t + dec * 0.7); lp.Q.setValueAtTime(2, t);
     var g = c.createGain(); o.connect(lp); lp.connect(g); g.connect(out);
@@ -917,22 +1444,22 @@ window.ZankyoAudio = (function () {
     bo.start(t); bo.stop(t + dec * 1.3);
   }
   function ambCommsVox(t) {                         // malfunctioning comms — stuttered vowel-formant glitch
-    var c = ctx, out = panAt("ambient", (Math.random() * 2 - 1) * 0.6);
+    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.6);
     var carrier = c.createOscillator(); carrier.type = "sawtooth"; carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(2)].freq * 2, t);
     var vca = c.createGain(); vca.connect(out); vca.gain.setValueAtTime(0.0001, t);
     [700, 1100, 2600].forEach(function (ff) { var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(ff, t); bp.Q.setValueAtTime(8, t); carrier.connect(bp); bp.connect(vca); });
-    var syl = 3 + Math.floor(Math.random() * 4), tt = t;
+    var syl = 3 + Math.floor(rng() * 4), tt = t;
     for (var i = 0; i < syl; i++) {
-      var d = 0.05 + Math.random() * 0.12;
-      carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(Math.floor(Math.random() * 5))].freq * 2, tt);
+      var d = 0.05 + rng() * 0.12;
+      carrier.frequency.setValueAtTime(SCALE[scaleIndexOf(Math.floor(rng() * 5))].freq * 2, tt);
       vca.gain.setValueAtTime(0.05, tt); vca.gain.setValueAtTime(0.0001, tt + d);
-      tt += d + 0.04 + Math.random() * 0.08;
+      tt += d + 0.04 + rng() * 0.08;
     }
     carrier.start(t); carrier.stop(tt + 0.1);
-    if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, Math.random() * 10); nz.stop(tt + 0.1); }
+    if (sharedNoiseBuf) { var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(2000, t); var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out); ng.gain.setValueAtTime(0.02, t); ng.gain.exponentialRampToValueAtTime(0.0001, tt); nz.start(t, rng() * 10); nz.stop(tt + 0.1); }
   }
   function ambGeigerHum(t) {                        // dying machinery — sagging drone + thinning radiation clicks
-    var c = ctx, out = panAt("ambient", (Math.random() * 2 - 1) * 0.3), dur = 3 + Math.random() * 3, base = degFreq(0, -2);
+    var c = ctx, out = panAt("ambient", (rng() * 2 - 1) * 0.3), dur = 3 + rng() * 3, base = degFreq(0, -2);
     [-8, 8].forEach(function (det) {
       var o = c.createOscillator(); o.type = "sawtooth"; o.frequency.setValueAtTime(base, t); o.detune.setValueAtTime(det, t); o.frequency.exponentialRampToValueAtTime(base * 0.94, t + dur);
       var g = c.createGain(); o.connect(g); g.connect(out);
@@ -945,8 +1472,8 @@ window.ZankyoAudio = (function () {
         var nz = noiseSource(); var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.setValueAtTime(3000, tt);
         var ng = c.createGain(); nz.connect(hp); hp.connect(ng); ng.connect(out);
         ng.gain.setValueAtTime(0.04, tt); ng.gain.setValueAtTime(0.0001, tt + 0.01);
-        nz.start(tt, Math.random() * 10); nz.stop(tt + 0.03);
-        tt += 0.05 + Math.random() * 0.3 * (1 + ((tt - t) / dur) * 3);   // clicks thin out as it dies
+        nz.start(tt, rng() * 10); nz.stop(tt + 0.03);
+        tt += 0.05 + rng() * 0.3 * (1 + ((tt - t) / dur) * 3);   // clicks thin out as it dies
       }
     }
   }
@@ -966,11 +1493,11 @@ window.ZankyoAudio = (function () {
     if (!playing) return;
     var now = ctx.currentTime, total = 0, i;
     for (i = 0; i < AMBIENT_POOL.length; i++) total += AMBIENT_POOL[i].w;
-    var r = Math.random() * total, entry = AMBIENT_POOL[0];
+    var r = rng() * total, entry = AMBIENT_POOL[0];
     for (i = 0; i < AMBIENT_POOL.length; i++) { r -= AMBIENT_POOL[i].w; if (r <= 0) { entry = AMBIENT_POOL[i]; break; } }
     try { entry.fn(now + 0.05); } catch (e) {}
     emitEvent({ cat: "ambient", label: entry.name });
-    var gap = (12 + Math.random() * 22) * (1 - getArc() * 0.35);
+    var gap = (12 + rng() * 22) * (1 - getArc() * 0.35);
     scheduleLayer(ambientEvent, gap * 1000, "ambient");
   }
 
@@ -983,9 +1510,10 @@ window.ZankyoAudio = (function () {
     if (playing) return;
     playing = true;
     arcStartTime = ctx.currentTime;
-    lastCycle = -1; lastPhase = "";
-    sharedMotifs.length = 0; lastCall = null;
-    seedMotifs();
+    metaCycle = -1; lastPhase = "";
+    pulse.active = false;                        // no grid until the taiko speaks
+    Motif.reset();                               // updateDryGrit() below builds cycle 0's working set
+    emitEvent({ cat: "mode", label: "▶ play", detail: "seed " + seed });
     masterGain.gain.cancelScheduledValues(ctx.currentTime);
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     for (var i = 0; i < LAYERS.length; i++) applyLayerGain(LAYERS[i]);
@@ -1001,14 +1529,15 @@ window.ZankyoAudio = (function () {
     updateDryGrit();
   }
   // Crossfade the dry-grit send up as the arc rises — kyū gets close + abrasive.
-  // Modulates the MODE at each cycle boundary, and fires the KIRU (斬 — the cut)
+  // Watches for the cycle boundary (each cycle its own seeded length → the
+  // meta-arc advances, the mode modulates), and fires the KIRU (斬 — the cut)
   // at the kyū → release transition: the climax's payoff.
-  var lastCycle = -1, lastPhase = "";
+  var lastPhase = "";
   function updateDryGrit() {
     if (!playing) return;
     if (dryGritGain) dryGritGain.gain.setTargetAtTime(getArc() * 0.7, ctx.currentTime, 0.5);
-    var cyc = Math.floor((ctx.currentTime - arcStartTime) / ARC_PERIOD);
-    if (cyc !== lastCycle) { lastCycle = cyc; setMode(cyc <= 0 ? "hirajoshi" : pickMode()); }
+    if (metaCycle < 0) beginCycle(0);
+    else if (ctx.currentTime - arcStartTime >= ARC_PERIOD) { arcStartTime += ARC_PERIOD; beginCycle(metaCycle + 1); }
     var phase = arcPhase();
     if (lastPhase === "kyū" && phase === "release") kiru();
     lastPhase = phase;
@@ -1016,9 +1545,16 @@ window.ZankyoAudio = (function () {
   }
   // 斬 KIRU — a final taiko roll + noise swell, then a sudden cut to a hush; a
   // lone temple bell rings in the silence (ma); the voices return as a new jo.
+  // Severity rides the meta-curve: at the trough a passing hush (shallow dip,
+  // ~3 s of ma, one bell); at the peak a devastating cut (down to 0.08 of
+  // master, up to ~9 s of held silence, the bell tolling twice).
   function kiru() {
     if (!ctx || !masterGain || !playing) return;
     var t = ctx.currentTime;
+    var sev = metaSeverity();
+    var dip = 0.3 - 0.22 * sev;                                           // hush depth: 0.3 → 0.08 of master
+    var hold = 3 + 6 * sev;                                               // held silence: ~3 s → ~9 s
+    var twice = sev > 0.45 && chance(0.4 + sev * 0.5);                    // the bell tolls again near the peak
     for (var i = 0; i < 6; i++) taikoHit(t + i * 0.08, i === 5);          // final roll
     var nz = noiseSource(), bp = ctx.createBiquadFilter();
     bp.type = "bandpass"; bp.frequency.setValueAtTime(1200, t); bp.frequency.linearRampToValueAtTime(4500, t + 0.5); bp.Q.setValueAtTime(2, t);
@@ -1027,11 +1563,12 @@ window.ZankyoAudio = (function () {
     nz.start(t); nz.stop(t + 0.6);
     masterGain.gain.cancelScheduledValues(t);                            // the cut
     masterGain.gain.setValueAtTime(masterVolume, t + 0.52);
-    masterGain.gain.linearRampToValueAtTime(masterVolume * 0.12, t + 0.58);
+    masterGain.gain.linearRampToValueAtTime(masterVolume * dip, t + 0.58);
     ambBonsho(t + 0.78);                                                  // a lone bell in the ma
-    masterGain.gain.setValueAtTime(masterVolume * 0.12, t + 6);          // hold the silence
-    masterGain.gain.linearRampToValueAtTime(masterVolume, t + 7.5);     // voices return
-    emitEvent({ cat: "noise", label: "斬 KIRU", detail: "the cut" });
+    if (twice) ambBonsho(t + 0.78 + hold * rnd(0.4, 0.6));                // … and again, deeper into the silence
+    masterGain.gain.setValueAtTime(masterVolume * dip, t + 0.6 + hold);  // hold the silence
+    masterGain.gain.linearRampToValueAtTime(masterVolume, t + 0.6 + hold + 1.5);  // voices return
+    emitEvent({ cat: "noise", label: "斬 KIRU", detail: "the cut · severity " + sev.toFixed(2) + " · hush " + dip.toFixed(2) + " · ma " + hold.toFixed(1) + "s" + (twice ? " · the bell twice" : "") });
   }
   function stop() {
     if (!playing) return;
@@ -1075,7 +1612,7 @@ window.ZankyoAudio = (function () {
   function sampleNoise(t) {
     var dur = 2.5, nz = noiseSource(), bp = ctx.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.setValueAtTime(800, t); bp.frequency.linearRampToValueAtTime(3000, t + dur); bp.Q.setValueAtTime(4, t);
     var g = ctx.createGain(); nz.connect(bp); bp.connect(g); g.connect(lg("noise"));
-    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, Math.random() * 5); nz.stop(t + dur + 0.1);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + dur * 0.5); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); nz.start(t, rng() * 5); nz.stop(t + dur + 0.1);
   }
   function sample(layer) {
     init();
@@ -1093,7 +1630,7 @@ window.ZankyoAudio = (function () {
       case "shamisen": samplePhrase(shamisenNote, t, [0, 2, 0, 3, 0], 0.3); break;
       case "taiko": for (var i = 0; i < 4; i++) taikoHit(t + i * 0.22, i === 0); break;
       case "noise": sampleNoise(t); break;
-      case "ambient": var e = AMBIENT_POOL[Math.floor(Math.random() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
+      case "ambient": var e = AMBIENT_POOL[Math.floor(rng() * AMBIENT_POOL.length)]; try { e.fn(t); } catch (x) {} break;
     }
     emitEvent({ cat: "mode", label: "♪ sample", detail: layer });
   }
@@ -1122,7 +1659,10 @@ window.ZankyoAudio = (function () {
     toggleLayer: toggleLayer, getState: getState, sample: sample,
     LAYERS: LAYERS.slice(), LAYER_PARAM_DEFAULTS: LAYER_PARAM_DEFAULTS, DEFAULT_LAYER_VOL: DEFAULT_LAYER_VOL,
     SCALE_INFO: SCALE_INFO,
-    getArc: getArc, getArcInfo: arcInfo,
+    getArc: getArc, getArcInfo: arcInfo, getMetaInfo: getMetaInfo,
+    getSeed: function () { return seed; },
+    reseed: function (s) { seed = (s >>> 0) || 3042; rngState = seed; },
+    getMotifStats: function () { return Motif.stats(); },
     getMode: function () { return { key: currentMode, name: MODES[currentMode].name, kana: MODES[currentMode].kana.slice() }; },
     setNoteListener: function (fn) { if (typeof fn === "function") { if (noteListeners.indexOf(fn) < 0) noteListeners.push(fn); } else noteListeners.length = 0; },
     setEventListener: function (fn) { if (typeof fn === "function") { if (eventListeners.indexOf(fn) < 0) eventListeners.push(fn); } else eventListeners.length = 0; },

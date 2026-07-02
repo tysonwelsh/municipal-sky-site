@@ -52,7 +52,7 @@ include '../../includes/header.php';
     <!-- Transport -->
     <div class="bardo-transport">
       <button type="button" class="bardo-btn play-btn" id="bardo-play">&#9654;&#xFE0E;&nbsp; PLAY</button>
-      <button type="button" class="bardo-btn stop-btn" id="bardo-stop">&#9632;&#xFE0E;&nbsp; STOP</button>
+      <button type="button" class="bardo-btn stop-btn" id="bardo-stop"><span class="stop-square">&#9632;&#xFE0E;</span>&nbsp;STOP</button>
       <div class="bardo-transport-spacer"></div>
       <span class="bardo-ctl-label">VOL</span>
       <span class="bardo-val-readout" id="bardo-master-vol-val">60</span>

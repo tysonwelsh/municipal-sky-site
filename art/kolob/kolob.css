@@ -1,0 +1,518 @@
+/* ============================================================================
+   KOLOB 𐐗𐐄𐐢𐐉𐐒 — ink and paper
+   The 1985 hymnbook: cream stock, deep green ink, letterpress rules, cloth
+   cover. Green academia — classical sheet music, liner notes, a chapel
+   library. Airy, open, minimal. NO neon, NO chrome, NO CRT. The one glow in
+   the whole interface lives in the Liahona dial (drawn by the canvas).
+   ========================================================================== */
+
+.kolob-scene {
+  /* the book */
+  --cover: #14382c;          /* cloth cover green */
+  --cover-hi: #1a4536;
+  --paper: #f5f0e4;          /* cream stock */
+  --paper-lo: #ece5d3;
+  --ink: #1e4d3b;            /* hymnbook green ink */
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;           /* restrained gold, the page-edge gilding */
+
+  background:
+    radial-gradient(120% 90% at 50% 0%, var(--cover-hi) 0%, var(--cover) 55%, #0e2a21 100%);
+  padding: 3.2rem 1rem 4rem;
+  min-height: 100vh;
+  font-family: "EB Garamond", Georgia, serif;
+}
+
+/* the page on the cover */
+.kolob-scene .content-frame.kolob-frame {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto;
+  background:
+    linear-gradient(178deg, var(--paper) 0%, var(--paper) 82%, var(--paper-lo) 100%);
+  color: var(--ink);
+  border: none;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 0 rgba(255, 250, 235, 0.12) inset,
+    0 14px 40px rgba(0, 0, 0, 0.45),
+    0 3px 10px rgba(0, 0, 0, 0.3);
+  padding: 3.4rem 3.2rem 3rem;
+}
+/* gilded page edge */
+.kolob-scene .content-frame.kolob-frame::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gilt) 18%, var(--gilt) 82%, transparent);
+  opacity: 0.55;
+}
+/* paper grain */
+.kolob-scene .content-frame.kolob-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.kolob-frame > * { position: relative; z-index: 1; }
+
+/* dev script toggle — deliberately faint; a development aid, not a feature */
+.kolob-latin-toggle {
+  position: absolute;
+  top: 0.7rem; right: 0.9rem;
+  z-index: 2;
+  width: 1.7rem; height: 1.7rem;
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.5;
+}
+.kolob-latin-toggle:hover { opacity: 1; border-color: var(--ink-faint); }
+
+/* dev mode: the order of service becomes a jump menu */
+.kolob-scene.is-dev .kolob-order-row { cursor: pointer; }
+.kolob-scene.is-dev .kolob-order-row:hover .kolob-order-name { color: var(--gilt); }
+
+/* the hush: the page holds its breath with the music */
+.kolob-scene.is-hush .kolob-viz-wrap { opacity: 0.7; transition: opacity 2.5s ease; }
+.kolob-scene .kolob-viz-wrap { transition: opacity 2.5s ease; }
+
+/* ============================== title page ============================== */
+.kolob-header {
+  text-align: center;
+  margin: 0 0 2.6rem;
+}
+.kolob-title {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+.kolob-subtitle {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+  margin: 0 0 1.4rem;
+}
+/* the double letterpress rule with a small star */
+.kolob-rule {
+  position: relative;
+  height: 9px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 0 8%;
+}
+.kolob-rule::after {
+  content: "✧";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -52%);
+  background: var(--paper);
+  padding: 0 0.7em;
+  color: var(--gilt);
+  font-size: 0.72rem;
+}
+
+/* ============================== the page (viz) =========================== */
+.kolob-viz-wrap {
+  position: relative;
+  height: 220px;
+  margin: 0 0 1.6rem;
+  /* the printed staff: five rules, a wide margin line at left */
+  background:
+    linear-gradient(90deg, var(--ink-faint) 0, var(--ink-faint) 1px, transparent 1px) no-repeat 14px 0 / 1px 100%,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 31% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 41% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 51% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 61% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 71% / 100% 1px;
+}
+.kolob-viz {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ======================= running head + liahona ========================= */
+.kolob-head-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  margin: 0 0 1.8rem;
+}
+.kolob-telemetry {
+  flex: 1;
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  line-height: 1.9;
+}
+.kolob-telemetry .t-sep { margin: 0 0.55em; color: var(--ink-faint); }
+.kolob-telemetry .t-flag {
+  color: var(--gilt);
+}
+.kolob-dial {
+  width: 92px;
+  height: 92px;
+  flex: 0 0 auto;
+}
+
+/* ============================== transport ================================ */
+.kolob-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0 0 2.4rem;
+}
+.kolob-btn {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 1.5px 0 var(--ink-faint);
+  transition: box-shadow 120ms, transform 120ms, background 300ms;
+}
+.kolob-btn:hover { background: #faf6ec; }
+/* transport glyphs render tiny in text fonts — size them like real controls */
+.kolob-btn-glyph {
+  display: inline-block;
+  font-family: Georgia, serif;
+  font-size: 1.15em;
+  line-height: 0;
+  vertical-align: -0.06em;
+}
+.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
+.kolob-btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink-faint); }
+.kolob-btn.play-btn.is-playing {
+  background: var(--ink);
+  color: var(--paper);
+}
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+/* sliders — a hairline and a small round bead */
+.kolob-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 130px;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+}
+.kolob-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--ink-soft);
+}
+.kolob-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  margin-top: -5.5px;
+}
+.kolob-range::-moz-range-track { height: 1px; background: var(--ink-soft); }
+.kolob-range::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+/* ===================== order of service + hymn board ==================== */
+.kolob-columns {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 2.6rem;
+  margin: 0 0 2.6rem;
+}
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.45rem;
+  margin: 0 0 1rem;
+}
+
+.kolob-order-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.34rem 0;
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  transition: color 600ms;
+}
+.kolob-order-row.current { color: var(--ink); }
+.kolob-order-row.done { color: var(--ink-faint); }
+.kolob-order-hand {
+  width: 1.3em;
+  opacity: 0;
+  transition: opacity 600ms;
+  font-family: Georgia, serif;
+}
+.kolob-order-row.current .kolob-order-hand { opacity: 1; }
+.kolob-order-fill {
+  flex: 1;
+  height: 1px;
+  align-self: center;
+  background: transparent;
+  border-bottom: 1px dotted var(--ink-faint);
+  position: relative;
+}
+.kolob-order-fill span {
+  position: absolute;
+  left: 0; bottom: -1px;
+  height: 1px;
+  width: 0;
+  background: var(--ink);
+  transition: width 900ms linear;
+}
+
+/* the hymn board: dark green board, ivory number cards */
+.kolob-board {
+  background: linear-gradient(175deg, var(--cover-hi), var(--cover));
+  border-radius: 3px;
+  padding: 1.1rem 1.1rem 1.2rem;
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+.kolob-board .kolob-ctl-label { color: rgba(245, 240, 228, 0.6); }
+.kolob-board-nums {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.7rem 0 0.9rem;
+  min-height: 2.1rem;
+}
+.kolob-board-card {
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  background: var(--paper);
+  color: var(--cover);
+  padding: 0.22rem 0.6rem;
+  border-radius: 1px;
+  font-size: 1.02rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.kolob-seed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.kolob-seed-current {
+  font-family: "EB Garamond", serif;
+  color: var(--paper);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+.kolob-seed-input {
+  width: 7.5em;
+  font-family: "EB Garamond", serif;
+  font-size: 0.85rem;
+  color: var(--paper);
+  background: rgba(245, 240, 228, 0.08);
+  border: 1px solid rgba(245, 240, 228, 0.3);
+  border-radius: 2px;
+  padding: 0.3rem 0.5rem;
+}
+.kolob-seed-input:focus { outline: 1px solid var(--gilt); }
+.kolob-btn.kolob-btn-board {
+  background: transparent;
+  color: var(--paper);
+  border-color: rgba(245, 240, 228, 0.45);
+  box-shadow: none;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+}
+.kolob-btn.kolob-btn-board:hover { border-color: var(--paper); background: rgba(245, 240, 228, 0.06); }
+
+/* ============================== the stops ================================ */
+.kolob-stops-block { margin: 0 0 2.6rem; }
+#kolob-layers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem 2.4rem;
+}
+.kolob-stop {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.28rem 0;
+}
+/* the drawknob: pulled = on (stands proud); pushed = off (sunk, pale) */
+.kolob-drawknob {
+  width: 20px; height: 20px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--ink-soft);
+  background: radial-gradient(circle at 36% 32%, #fbf7ed, var(--paper) 55%, var(--paper-lo));
+  box-shadow: 0 2px 3px rgba(30, 77, 59, 0.35), inset 0 -1px 1px rgba(30, 77, 59, 0.2);
+  cursor: pointer;
+  transition: box-shadow 150ms, transform 150ms, opacity 150ms;
+}
+.kolob-drawknob.is-off {
+  box-shadow: inset 0 1px 3px rgba(30, 77, 59, 0.4);
+  transform: scale(0.92);
+  opacity: 0.55;
+}
+.kolob-stop-name {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 7.5em;
+  text-align: left;
+}
+.kolob-stop-name:hover { color: var(--gilt); }
+.kolob-stop .kolob-range { flex: 1; width: auto; }
+.kolob-stop:has(.kolob-drawknob.is-off) .kolob-stop-name { color: var(--ink-faint); }
+
+/* ============================== broadside ================================ */
+.kolob-broadside-block {
+  margin: 0 0 2.6rem;
+  text-align: center;
+}
+.kolob-broadside-block .kolob-sec-head { text-align: left; }
+.kolob-broadside-line {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 1.06rem;
+  line-height: 2;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  min-height: 2.2rem;
+  opacity: 0.25;
+}
+.kolob-broadside-line.is-set {
+  animation: kolob-ink-set 2.8s ease-out forwards;
+}
+@keyframes kolob-ink-set {
+  from { opacity: 0; filter: blur(1.5px); }
+  30%  { opacity: 0.9; filter: blur(0.3px); }
+  to   { opacity: 0.82; filter: blur(0); }
+}
+
+/* ============================ clerk's minutes ============================ */
+.kolob-log-block { margin: 0 0 2.4rem; }
+.kolob-log {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-faint) transparent;
+}
+.kolob-log-empty {
+  font-family: "Noto Sans Deseret", serif;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  padding: 0.6rem 0;
+}
+.kolob-log-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.32rem 0.1rem;
+  border-bottom: 1px solid rgba(30, 77, 59, 0.12);
+  font-size: 0.9rem;
+}
+.kolob-log-time {
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  width: 3.2em;
+  flex: 0 0 auto;
+}
+.kolob-log-glyph {
+  width: 1.4em;
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font-family: Georgia, serif;
+}
+.kolob-log-row.cat-liahona .kolob-log-glyph,
+.kolob-log-row.cat-fuging .kolob-log-glyph,
+.kolob-log-row.cat-meeting .kolob-log-glyph { color: var(--gilt); }
+.kolob-log-text {
+  font-family: "Noto Sans Deseret", serif;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.kolob-log-row.cat-motif .kolob-log-text { color: var(--ink); }
+
+/* ============================== colophon ================================= */
+.kolob-note {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.86rem;
+  line-height: 2.1;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.6rem;
+  margin: 0;
+}
+.kolob-note a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ink-soft);
+}
+.kolob-note a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
+
+/* ====================== the sacrament dims the page ===================== */
+.kolob-scene.is-sacrament .kolob-log-block,
+.kolob-scene.is-sacrament .kolob-broadside-block,
+.kolob-scene.is-sacrament .kolob-stops-block,
+.kolob-scene.is-sacrament .kolob-columns {
+  opacity: 0.55;
+  transition: opacity 4s ease;
+}
+.kolob-scene .kolob-log-block,
+.kolob-scene .kolob-broadside-block,
+.kolob-scene .kolob-stops-block,
+.kolob-scene .kolob-columns {
+  transition: opacity 4s ease;
+}
+
+/* ============================== small pages ============================== */
+@media (max-width: 700px) {
+  .kolob-scene { padding: 1.2rem 0.4rem 2.4rem; }
+  .kolob-scene .content-frame.kolob-frame { padding: 2.2rem 1.3rem 2rem; }
+  .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
+  #kolob-layers { grid-template-columns: 1fr; }
+  .kolob-head-row { flex-direction: column; align-items: stretch; }
+  .kolob-dial { align-self: center; }
+  .kolob-viz-wrap { height: 170px; }
+  .kolob-transport { flex-wrap: wrap; }
+  .kolob-transport-spacer { flex-basis: 100%; height: 0; }
+}

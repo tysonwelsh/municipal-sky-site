@@ -374,3 +374,6 @@
   .bardo-liturgy-labels span:nth-child(even) { visibility: hidden; }
   .bardo-log { height: 200px; }
 }
+
+/* The stop-square glyph renders undersized at text size everywhere — draw it at button-icon scale. */
+.stop-btn .stop-square { font-size: 1.55em; line-height: 0; vertical-align: -0.08em; }

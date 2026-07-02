@@ -14,6 +14,15 @@ include '../includes/header.php';
             <!-- Entry List -->
             <div class="entry-list">
                 <div class="entry">
+                    <span class="entry-date">2026.07.02</span>
+                    <div class="entry-content">
+                        <a href="/art/kolob/" class="entry-title">KOLOB &#x10417;&#x10404;&#x10422;&#x10409;&#x10412;</a>
+                        <span class="entry-description">An American-utopian hymn engine: four-part dispersed harmony,
+                            fuging tunes, a Deseret-alphabet broadside, and a still small voice — from a colony at the
+                            rim of Kolob's light. Bright where its siblings are dark.</span>
+                    </div>
+                </div>
+                <div class="entry">
                     <span class="entry-date">2026.07.01</span>
                     <div class="entry-content">
                         <a href="/art/bardo/" class="entry-title">BARDO &#3926;&#3928;&#3921;&#3964;</a>

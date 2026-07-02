@@ -321,3 +321,6 @@
   margin: 20px 2px 0;
 }
 .antariksh-note strong { color: var(--violet); font-weight: 500; }
+
+/* The stop-square glyph renders undersized at text size everywhere — draw it at button-icon scale. */
+.stop-btn .stop-square { font-size: 1.55em; line-height: 0; vertical-align: -0.08em; }
