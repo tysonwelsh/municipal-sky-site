@@ -135,6 +135,12 @@ $L[] = sprintf("  %-26s %d views (%d unique), %d plays   [all-time: %d / %d / %d
     $i($bd,'v'), $i($bd,'u'), $i($bd,'p'),
     $i($bdA,'v'), $i($bdA,'u'), $i($bdA,'p'));
 
+$kb = $pe24['kolob'] ?? []; $kbA = $peAll['kolob'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique), %d plays   [all-time: %d / %d / %d]",
+    "KOLOB",
+    $i($kb,'v'), $i($kb,'u'), $i($kb,'p'),
+    $i($kbA,'v'), $i($kbA,'u'), $i($kbA,'p'));
+
 $uw = $pe24['underworld-occupations'] ?? []; $uwA = $peAll['underworld-occupations'] ?? [];
 $L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
     "Underworld Annotated",
