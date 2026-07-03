@@ -68,6 +68,19 @@ include '../../includes/header.php';
 .bpl-vol-wrap { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-soft); }
 .bpl-vol-wrap input[type=range] { width: 120px; }
 
+/* Audition context bar */
+.bpl-context {
+  display: flex; flex-wrap: wrap; gap: 1.1rem 1.5rem; align-items: flex-end;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+  padding: 0.85rem 1rem; margin-bottom: 1.4rem;
+}
+.bpl-context-item { display: flex; flex-direction: column; gap: 0.3rem; }
+.bpl-context-item.bpl-context-grow { flex: 1 1 260px; }
+.bpl-context-item label { font-size: 0.85rem; font-weight: 500; color: var(--ink); }
+.bpl-context-val { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bpl-context select { min-width: 200px; }
+.bpl-context input[type=range] { width: 100%; accent-color: var(--accent); }
+
 /* Presets */
 .bpl-presets { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.4rem; }
 .bpl-preset {
@@ -130,19 +143,24 @@ include '../../includes/header.php';
     <header class="bpl-head">
       <p class="bpl-kicker">Kolob · voice workbench · unlisted</p>
       <h1 class="bpl-title">Bagpipe Lab</h1>
-      <p class="bpl-lede">A reedy, textured voice to sit against Kolob&rsquo;s smooth organs and
-        drones. Start the reed, walk the chanter, dial the timbre, then copy the patch.</p>
-      <p class="bpl-note-tip">The reed is <em>continuous</em>, like a real pipe &mdash; press
-        <strong>Start reed</strong>, then click the chanter notes to change pitch over the held drones.
-        Everything below updates live while it plays. When a sound is dialed in, name it and hit
-        <strong>Copy patch</strong> &mdash; then paste it back to me.</p>
+      <p class="bpl-lede">Tuning the <em>sound</em> of a bagpipe &mdash; a reedy, textured, buzzing
+        voice for the grain Kolob&rsquo;s smooth organs and drones lack. Not the Highland idiom:
+        here the reed plays Kolob&rsquo;s own modes and harmony in just intonation.</p>
+      <p class="bpl-note-tip">Press <strong>Start reed</strong>, then click the degree keys, or let it
+        play a <strong>hymn line</strong> or sound a <strong>chord</strong> (a plagal IV&nbsp;&rarr;&nbsp;I
+        &ldquo;amen&rdquo;). Pick a <strong>mode</strong> and <strong>tonic</strong> to hear it in
+        different musical light. The Highland-pipe grace flick is off by default. Everything updates
+        live; when a timbre is dialed in, name it and hit <strong>Copy patch</strong> &mdash; the copied
+        JSON is pure instrument sound (mode/tonic are noted only as the context you heard it in), so
+        paste it back and I can build it into Kolob.</p>
     </header>
 
     <!-- Transport -->
     <div class="bpl-transport">
       <button type="button" class="bpl-btn" id="bpl-reed">Start reed</button>
-      <button type="button" class="bpl-btn" id="bpl-drone">Drones: on</button>
-      <button type="button" class="bpl-btn" id="bpl-scale">Play a phrase</button>
+      <button type="button" class="bpl-btn" id="bpl-drone">Drone: on</button>
+      <button type="button" class="bpl-btn" id="bpl-line">Play a hymn line</button>
+      <button type="button" class="bpl-btn" id="bpl-chord">Sound a chord</button>
       <div class="bpl-transport-spacer"></div>
       <div class="bpl-vol-wrap">
         <label for="bpl-master">Volume</label>
@@ -150,13 +168,25 @@ include '../../includes/header.php';
       </div>
     </div>
 
+    <!-- Audition context -->
+    <div class="bpl-context">
+      <div class="bpl-context-item">
+        <label for="bpl-mode">Mode (Kolob&rsquo;s collections)</label>
+        <select id="bpl-mode"></select>
+      </div>
+      <div class="bpl-context-item bpl-context-grow">
+        <label for="bpl-tonic">Tonic <span class="bpl-context-val" id="bpl-tonic-val"></span></label>
+        <input type="range" id="bpl-tonic" min="52" max="84" step="1" value="65" />
+      </div>
+    </div>
+
     <!-- Presets -->
-    <p class="bpl-sec-title">Starting points &mdash; four bagpipe characters</p>
+    <p class="bpl-sec-title">Starting points &mdash; four reed characters</p>
     <div class="bpl-presets" id="bpl-presets"></div>
 
-    <!-- Chanter keys -->
+    <!-- Degree keys -->
     <div class="bpl-keys-block">
-      <p class="bpl-sec-title">The chanter &mdash; nine notes (A&nbsp;Mixolydian)</p>
+      <p class="bpl-sec-title">The reed &mdash; degrees of the mode (just intonation)</p>
       <div class="bpl-keys" id="bpl-keys"></div>
     </div>
 
