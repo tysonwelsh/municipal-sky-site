@@ -44,6 +44,7 @@ window.KolobAudio = (function () {
   // ----- Core audio graph -----
   var ctx = null;
   var masterGain = null, compressorNode = null, masterSat = null;
+  var bg = null;                   // background-audio handle (lock-screen survival)
   // voicesBus sits between every layer path and the master. STOP silences it
   // and LEAVES it silent — long drone cycles keep their oscillators running
   // for up to 90s after a stop, and the siblings' pattern of restoring the
@@ -226,7 +227,19 @@ window.KolobAudio = (function () {
     masterSat.curve = msc; masterSat.oversample = "2x";
     masterGain.connect(masterSat);
     masterSat.connect(compressorNode);
-    compressorNode.connect(ctx.destination);
+    // Final hop: prefer the background-audio route (a MediaStreamDestination
+    // feeding a real <audio> element — survives screen lock / backgrounding
+    // and carries lock-screen controls). Identical signal either way.
+    bg = window.MskyBackgroundAudio ? window.MskyBackgroundAudio.create({
+      context: ctx,
+      source: compressorNode,
+      title: "KOLOB 𐐗𐐄𐐢𐐉𐐒",
+      artist: "Municipal Sky",
+      artwork: "/images/kolob-share.png",
+      onPlay: play,
+      onPause: stop,
+    }) : null;
+    if (!bg || !bg.routed) compressorNode.connect(ctx.destination);
 
     var effectsReady = false;
     try {
@@ -2335,7 +2348,8 @@ window.KolobAudio = (function () {
   function sample(layer) {
     init();
     if (!SCALE.length) rebuildScale();
-    if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
     if (!playing && voicesBus) {
       // stopped: reopen the bus and only this layer's gain, so the audition
       // sounds alone
@@ -2423,8 +2437,9 @@ window.KolobAudio = (function () {
   function play() {
     init();
     if (playing) return;
-    if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     playing = true;
+    if (bg) bg.started();
     air.busyUntil = 0; air.holders = 0;
     if (voicesBus) {
       voicesBus.gain.cancelScheduledValues(ctx.currentTime);
@@ -2449,6 +2464,7 @@ window.KolobAudio = (function () {
   }
   function stop() {
     playing = false;
+    if (bg) bg.stopped();
     clearAllTimers();
     if (voicesBus && ctx) {
       var t = ctx.currentTime;
