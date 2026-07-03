@@ -601,6 +601,12 @@ pre code {
   white-space: nowrap;
 }
 
+/* Undated listings (e.g. the Art index) — no date column, so the
+   entry collapses to a single full-width column. */
+.entry-list--undated .entry {
+  grid-template-columns: 1fr;
+}
+
 /* Article dateline — small newspaper-style line beneath the page title.
    Uses the same compact YYYY.MM.DD format as the index listings
    (.entry-date), pulled up snug under the heading. */
