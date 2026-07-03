@@ -35,6 +35,7 @@ window.ZankyoAudio = (function () {
   var shamEdge = null;             // shamisen's own gentle saturator (bite without the grit-bus onset spike)
   var dryGritGain = null;          // parallel dry grit send, opened up toward the kyū climax
   var masterSat = null;
+  var bg = null;                   // background-audio handle (lock-screen survival)
   var sharedNoiseBuf = null;
   var NOISE_BUF_DURATION = 30;
 
@@ -228,7 +229,19 @@ window.ZankyoAudio = (function () {
     var outTrim = ctx.createGain();
     outTrim.gain.setValueAtTime(0.88, ctx.currentTime);
     compressorNode.connect(outTrim);
-    outTrim.connect(ctx.destination);
+    // Final hop: prefer the background-audio route (a MediaStreamDestination
+    // feeding a real <audio> element — survives screen lock / backgrounding
+    // and carries lock-screen controls). Identical signal either way.
+    bg = window.MskyBackgroundAudio ? window.MskyBackgroundAudio.create({
+      context: ctx,
+      source: outTrim,
+      title: "ZANKYŌ 残響",
+      artist: "Municipal Sky",
+      artwork: "/images/zankyo-share.png",
+      onPlay: play,
+      onPause: stop,
+    }) : null;
+    if (!bg || !bg.routed) outTrim.connect(ctx.destination);
 
     var effectsReady = false;
     try {
@@ -1511,9 +1524,10 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   function play() {
     init();
-    if (ctx.state === "suspended") ctx.resume();
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     if (playing) return;
     playing = true;
+    if (bg) bg.started();
     arcStartTime = ctx.currentTime;
     metaCycle = -1; lastPhase = "";
     pulse.active = false;                        // no grid until the taiko speaks
@@ -1578,6 +1592,7 @@ window.ZankyoAudio = (function () {
   function stop() {
     if (!playing) return;
     playing = false;
+    if (bg) bg.stopped();
     clearAllTimers();
     if (ctx) {
       for (var i = 0; i < LAYERS.length; i++) {
@@ -1621,7 +1636,8 @@ window.ZankyoAudio = (function () {
   }
   function sample(layer) {
     init();
-    if (ctx.state === "suspended") ctx.resume();
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
     masterGain.gain.cancelScheduledValues(ctx.currentTime);
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     var node = layerGains[layer];

@@ -97,6 +97,7 @@ include '../../includes/header.php';
  </div>
 </div>
 
+<script src="../background-audio.js?v=<?php echo bardo_v('../background-audio.js'); ?>"></script>
 <script src="bardo-audio.js?v=<?php echo bardo_v('bardo-audio.js'); ?>"></script>
 <script>if(!window.BardoAudio)console.error("BARDO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="bardo-viz.js?v=<?php echo bardo_v('bardo-viz.js'); ?>"></script>

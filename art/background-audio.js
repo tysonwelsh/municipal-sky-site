@@ -21,8 +21,7 @@
 //      engine's own STOP — it tracks the engine's intent via started()/
 //      stopped().
 //
-// Generic on purpose: KOLOB is the first consumer; ZANKYŌ and BARDO can
-// adopt this file unchanged.
+// Shared by the engines under art/ — KOLOB, ZANKYŌ, BARDO.
 //
 // Usage, from the engine's init(), INSTEAD of finalNode.connect(ctx.destination):
 //   bg = window.MskyBackgroundAudio.create({

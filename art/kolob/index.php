@@ -105,7 +105,7 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="background-audio.js?v=<?php echo kolob_v('background-audio.js'); ?>"></script>
+<script src="../background-audio.js?v=<?php echo kolob_v('../background-audio.js'); ?>"></script>
 <script src="kolob-audio.js?v=<?php echo kolob_v('kolob-audio.js'); ?>"></script>
 <script>if(!window.KolobAudio)console.error("KOLOB AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="kolob-text.js?v=<?php echo kolob_v('kolob-text.js'); ?>"></script>

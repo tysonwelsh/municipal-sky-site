@@ -410,6 +410,14 @@
     if (barSegs.length) setBar(info.level, Date.now());
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); if (m.name !== lastMode) { lastMode = m.name; renderScale(); } }   // live modal modulation
+    // transport state can change outside the buttons (lock-screen pause via
+    // the media session) — keep the arcade button and power LED honest
+    if (Z.getState) {
+      var on = !!Z.getState().playing;
+      var pb = document.getElementById("zankyo-play");
+      if (pb) pb.classList.toggle("is-playing", on);
+      if (sceneEl) sceneEl.classList.toggle("is-on", on);
+    }
   }
   setInterval(pollArc, 280);
 
