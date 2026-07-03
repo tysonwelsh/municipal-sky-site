@@ -91,7 +91,7 @@ window.ZankyoAudio = (function () {
     iwato:     { offsets: [0, 1, 5, 6, 10], name: "Iwato",     kana: ["岩", "二", "三", "四", "五"] },
   };
   // (mode-lottery weights live in metaModePool() below — they drift with the
-  // meta-arc: hirajoshi-dominant at the trough, in-sen/iwato at the peak)
+  // meta-arc: home-leaning at the trough, in-sen/iwato-leaning at the peak)
   var currentMode = "hirajoshi";
   var CUR_OFFSETS = MODES.hirajoshi.offsets;
   function semis(i) { return CUR_OFFSETS[((i % 5) + 5) % 5] + 12 * Math.floor(i / 5); }
@@ -414,9 +414,9 @@ window.ZankyoAudio = (function () {
   // ==========================================================================
   // Cycles used to be identical 420 s laps. Now each jo-ha-kyū draws its own
   // length, and a slow seeded meta-curve (one swing ≈ 5–8 cycles) travels over
-  // them: at the meta-TROUGH the music rests at home — hirajoshi-dominant, a
-  // KIRU that is barely a breath; at the meta-PEAK it has migrated somewhere
-  // dark — in-sen/iwato-dominant, a devastating cut, the bell tolling twice —
+  // them: at the meta-TROUGH the music rests at home — hirajoshi/kumoi-leaning,
+  // a KIRU that is barely a breath; at the meta-PEAK it has migrated somewhere
+  // dark — in-sen/iwato-leaning, a devastating cut, the bell tolling twice —
   // and then it returns. A long listen goes somewhere and comes back; the
   // loop becomes a journey.
   var metaCycle = -1;                            // current cycle index (-1 = not started)
@@ -427,15 +427,17 @@ window.ZankyoAudio = (function () {
   // Gentle global density tilt (±12% on melodic rest multipliers): the dark
   // half of the journey crowds in a little; the return breathes out again.
   function metaRestMul() { return 1 + 0.12 * (1 - 2 * metaPos); }
-  // Mode-lottery drift: the trough is all hirajoshi gravity; the peak hands
-  // the lottery to the two darkest modes (in-sen's flat 2nd, iwato's tritone).
+  // Mode-lottery drift: the trough leans home (hirajoshi/kumoi); the peak
+  // leans toward the two darkest modes (in-sen's flat 2nd, iwato's tritone).
+  // Deliberately flat-ish — every mode stays in play at every meta position;
+  // the journey is a lean, not a lockout.
   function metaModePool() {
     var d = metaPos;
     return [
-      ["hirajoshi", 6 - 5 * d],
-      ["insen", 1 + 4 * d],
-      ["kumoi", 3 - 2.5 * d],
-      ["iwato", 0.5 + 4.5 * d],
+      ["hirajoshi", 4 - 2 * d],
+      ["insen", 2 + 2 * d],
+      ["kumoi", 3 - 1.5 * d],
+      ["iwato", 1.5 + 2.5 * d],
     ];
   }
   // Called once per cycle boundary (from updateDryGrit's watch): draw this
@@ -451,7 +453,10 @@ window.ZankyoAudio = (function () {
       if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = rnd(5, 8); }   // a new swing, its own span
     }
     metaPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);
-    setMode(n <= 0 ? "hirajoshi" : pickMode(),
+    // Cycle 0 draws from the same lottery as every other boundary (at the
+    // trough, so home-leaning) — a performance can open in any mode, and the
+    // draw is seeded, so a shared ?seed= still opens identically.
+    setMode(pickMode(),
       "cycle " + n + " · " + Math.round(ARC_PERIOD) + "s · meta " + metaPos.toFixed(2) +
       (metaPhase < 0.5 ? " (drifting dark)" : " (returning light)"));
     Motif.newCycle();
