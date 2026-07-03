@@ -121,7 +121,7 @@ include '../../includes/header.php';
     </div>
 
     <p class="zankyo-note">
-      Generative <strong>Hirajoshi</strong> over a distorted hull-drone, structured by
+      Generative dark pentatonics — <strong>Hirajoshi</strong>, In-sen, Kumoi, Iwato — over a distorted hull-drone, structured by
       <strong>jo-ha-kyū</strong> (序破急) — a slow spacious opening that accelerates into a noise-wall climax,
       then dissolves. Nothing repeats; the voices answer one another.
     </p>
