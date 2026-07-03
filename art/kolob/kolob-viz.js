@@ -76,7 +76,7 @@ window.KolobViz = (function () {
 
   // ---- note intake -----------------------------------------------------------
   var pending = [];                                // notes waiting for their startTime
-  var MELODIC = { clarinet: 1, choir: 1, bells: 1, harmonium: 1, ambient: 0 };
+  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, ambient: 0 };
   function onNote(n) {
     if (!n || !n.freq || n.freq < 20) return;
     if (!MELODIC[n.layer]) return;
@@ -120,7 +120,7 @@ window.KolobViz = (function () {
     var shape = shapes[d.deg] || "sol";
     var x = W - 26;
     var y = yOf(n.freq);
-    var s = n.layer === "clarinet" ? 6.5 : n.layer === "bells" ? 4.5 : 5.5;
+    var s = n.layer === "clarinet" ? 6.5 : n.layer === "bagpipe" ? 7 : n.layer === "bells" ? 4.5 : 5.5;
     var filled = (n.duration || 1) < 1.6;          // long notes print hollow
     var alpha = n.layer === "choir" ? 0.68 : n.layer === "harmonium" ? 0.45 : n.layer === "bells" ? 0.72 : 0.95;
     var wear = Math.min(0.5, curGen * 0.07);       // engraving wear: deep descendants double-strike

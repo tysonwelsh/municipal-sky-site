@@ -77,6 +77,7 @@
     drone: "𐐔𐐡𐐄𐐤",
     choir: "𐐗𐐎𐐌𐐊𐐡",
     clarinet: "𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓",
+    bagpipe: "𐐒𐐈𐐘𐐑𐐌𐐑",
     harmonium: "𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣",
     strings: "𐐝𐐓𐐡𐐆𐐥𐐞",
     bells: "𐐒𐐇𐐢𐐞",
@@ -119,8 +120,8 @@
   var MODES_EN = { ionian: "IONIAN", mixolydian: "MIXOLYDIAN", dorian: "DORIAN", aeolian: "AEOLIAN", penta: "PENTATONIC", hexa: "HEXATONIC" };
   var LAYERS_EN = {
     organ: "ORGAN", drone: "DRONE", choir: "CHOIR", clarinet: "CLARINET",
-    harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS", voice: "VOICE",
-    telegraph: "TELEGRAPH", ambient: "FIELD",
+    bagpipe: "BAGPIPE", harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
+    voice: "VOICE", telegraph: "TELEGRAPH", ambient: "FIELD",
   };
   var MOTIF_EN = { "𐐀": "A", "𐐁": "B", "𐐂": "C" };
 
