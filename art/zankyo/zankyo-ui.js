@@ -374,8 +374,13 @@
     barPeakShown = i;
     if (i >= 0) barSegs[i].classList.add("is-peak");
   }
-  function setBar(level, now) {
+  function setBar(level, now, alive) {
     var lit = barDead ? 0 : Math.max(0, Math.min(BAR_N, Math.round(level * BAR_N)));
+    // While playing (and not in the KIRU hush), never fully dark: hold at least
+    // one lit segment so the machine reads as ALIVE through the slow jo opening,
+    // where the arc level rounds to zero for the first ~40 s. Restores the old
+    // "never fully empty while playing" floor lost when the dev bar was rebuilt.
+    if (alive && !barDead && lit < 1) lit = 1;
     var i;
     if (lit !== barLit) {
       if (lit > barLit) { for (i = barLit; i < lit; i++) barSegs[i].classList.add("on"); }
@@ -407,7 +412,7 @@
       barDead = false;
       if (barEl) barEl.classList.remove("is-dead");
     }
-    if (barSegs.length) setBar(info.level, Date.now());
+    if (barSegs.length) setBar(info.level, Date.now(), info.phase !== "—");
     if (sceneEl) sceneEl.classList.toggle("is-kyu", info.phase === "kyū");   // climax destabilization
     if (Z.getMode) { var m = Z.getMode(); if (m.name !== lastMode) { lastMode = m.name; renderScale(); } }   // live modal modulation
     // transport state can change outside the buttons (lock-screen pause via
