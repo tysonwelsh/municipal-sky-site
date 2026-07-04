@@ -1,0 +1,44 @@
+/* HOLLER ROLLER — page framing.
+ * The room around the machine: near-black blue, no distractions.
+ * The canvas letterboxes inside .skeeball-stage at a crisp integer scale.
+ */
+
+.skeeball-page {
+    background: #07060d;
+    margin: 0 calc(50% - 50vw);
+    /* full-bleed out of any content frame */
+    padding: 0 0 2rem;
+}
+
+.skeeball-stage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: calc(100dvh - 64px);
+    /* room for the site banner */
+    min-height: 420px;
+    overflow: hidden;
+    touch-action: none;
+}
+
+.skeeball-canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #07060d;
+}
+
+.skeeball-blurb {
+    max-width: 34rem;
+    margin: 1.5rem auto 0;
+    padding: 0 1.25rem;
+    color: #6f5d95;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.skeeball-blurb em {
+    color: #a63a70;
+    font-style: normal;
+}
