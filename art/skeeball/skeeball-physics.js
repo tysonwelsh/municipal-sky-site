@@ -32,6 +32,12 @@ window.SkeeBallPhysics = (function () {
     bedHalfW: 1.05,   // bed width beyond which it's the side wall
     rimBounceOut: 0.62, // chance a rim hit rattles outward (vs inward)
     vzMin: 1.4, vzMax: 8.6, vxMax: 1.6,   // input clamps
+    spinMax: 1.3,     // input clamp on english
+    spinCurve: 1.9,   // lateral accel per unit spin while rolling (units/s²)
+    spinAir: 0.8,     // lateral accel per unit spin in flight (units/s²)
+    rollDownG: 2.8,   // net down-slope accel of a miss rolling back (units/s²)
+    bedLateralFric: 1.2, // lateral drag on the roll-back
+    gutterDepth: 0.34, // slope-distance past the bed lip before the gutter swallows it
     settleT: 0.55     // sink animation, s
   };
 
@@ -79,9 +85,12 @@ window.SkeeBallPhysics = (function () {
     return { kind: 'ring', score: 50 };
   }
 
-  /* Solve the flight at takeoff: where does the parabola meet the bed? */
-  function solveFlight(x, vz, vx, seed) {
+  /* Solve the flight at takeoff: where does the parabola meet the bed?
+   * spin adds a subtle lateral curve to the airborne arc (english carries
+   * over the hop). */
+  function solveFlight(x, vz, vx, seed, spin) {
     var T = TUNE;
+    spin = spin || 0;
     var v0 = vz * T.hopK;
     var vzc = v0 * Math.cos(T.hopAngle);  // horizontal carry speed
     var vy = v0 * Math.sin(T.hopAngle);   // vertical
@@ -91,22 +100,29 @@ window.SkeeBallPhysics = (function () {
     var yG = vy * tG - 0.5 * T.g * tG * tG;
     if (yG < -0.05) { // never made the far side
       var tPit = (vy + Math.sqrt(vy * vy + 2 * T.g * 0.35)) / T.g; // fall ~pit depth
-      return { T: tPit, apex: vy * vy / (2 * T.g), vzc: vzc, vy: vy,
-               outcome: { kind: 'pit', score: 0 }, u: x + vx * tPit, v: 0 };
+      return { T: tPit, apex: vy * vy / (2 * T.g), vzc: vzc, vy: vy, spin: spin,
+               outcome: { kind: 'pit', score: 0 },
+               u: x + vx * tPit + 0.5 * spin * T.spinAir * tPit * tPit, v: 0 };
     }
     // intersect parabola with the inclined bed: ½gt² + t(vzc·tanB − vy) − G·tanB = 0
     var a = 0.5 * T.g, b = vzc * tanB - vy, c = -T.pitGap * tanB;
     var t1 = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
     var s = vzc * t1;
     var v = (s - T.pitGap) / cosB;
-    var u = x + vx * t1;
+    var u = x + vx * t1 + 0.5 * spin * T.spinAir * t1 * t1;
+    var outcome = resolveLanding(u, v, seed);
+    // A wall miss decided beyond the bed edge would send the flight arc (and
+    // the '0' toast, and the rolldown seed) off the cabinet, then snap back
+    // when rolldown clamps ru. Clamp AFTER scoring so the kind decision and
+    // determinism are untouched, but the arc terminates AT the side wall.
+    if (outcome.kind === 'wall') u = (u < 0 ? -1 : 1) * Math.min(Math.abs(u), T.bedHalfW);
     return {
-      T: t1, apex: vy * vy / (2 * T.g), vzc: vzc, vy: vy,
-      u: u, v: v, outcome: resolveLanding(u, v, seed)
+      T: t1, apex: vy * vy / (2 * T.g), vzc: vzc, vy: vy, spin: spin,
+      u: u, v: v, outcome: outcome
     };
   }
 
-  function createThrow(x0, vz, vx, seed) {
+  function createThrow(x0, vz, vx, seed, spin) {
     var T = TUNE;
     return {
       phase: 'roll',
@@ -114,8 +130,11 @@ window.SkeeBallPhysics = (function () {
       z: 0,
       vz: Math.max(T.vzMin, Math.min(T.vzMax, vz)),
       vx: Math.max(-T.vxMax, Math.min(T.vxMax, vx)),
+      spin: Math.max(-T.spinMax, Math.min(T.spinMax, spin || 0)),
       seed: seed | 0,
       ft: 0, st: 0, flight: null,
+      // roll-back-down-the-bed state (populated when a miss lands)
+      ru: 0, rv: 0, rvu: 0, rvv: 0, gut: false,
       events: [], trail: []
     };
   }
@@ -126,12 +145,14 @@ window.SkeeBallPhysics = (function () {
       st.z += st.vz * dt;
       st.x += st.vx * dt;
       st.vz -= T.laneDecel * dt;
+      // english: spin bends the roll, more so the longer it acts
+      st.vx += st.spin * T.spinCurve * dt;
       var lim = 1 - T.ballR;
-      if (st.x > lim) { st.x = lim; st.vx = -Math.abs(st.vx) * T.wallBounce; st.events.push({ type: 'wall' }); }
-      if (st.x < -lim) { st.x = -lim; st.vx = Math.abs(st.vx) * T.wallBounce; st.events.push({ type: 'wall' }); }
+      if (st.x > lim) { st.x = lim; st.vx = -Math.abs(st.vx) * T.wallBounce; st.spin *= T.wallBounce; st.events.push({ type: 'wall' }); }
+      if (st.x < -lim) { st.x = -lim; st.vx = Math.abs(st.vx) * T.wallBounce; st.spin *= T.wallBounce; st.events.push({ type: 'wall' }); }
       st.trail.push({ s: 'lane', x: st.x, z: st.z });
       if (st.z >= T.L) {
-        st.flight = solveFlight(st.x, st.vz, st.vx, st.seed);
+        st.flight = solveFlight(st.x, st.vz, st.vx, st.seed, st.spin);
         st.phase = 'flight'; st.ft = 0;
         st.events.push({ type: 'launch', speed: st.vz });
       } else if (st.vz <= 0) {
@@ -148,13 +169,42 @@ window.SkeeBallPhysics = (function () {
       var f = st.flight;
       st.trail.push({ s: 'air', fr: Math.min(1, st.ft / f.T) });
       if (st.ft >= f.T) {
-        st.phase = 'settle'; st.st = 0;
         st.events.push({
           type: 'land', kind: f.outcome.kind,
           score: f.outcome.score, rattle: !!f.outcome.rattle,
           u: f.u, v: f.v
         });
+        if (f.outcome.score > 0) {
+          // scored: sink into the hole/ring where it stuck
+          st.phase = 'settle'; st.st = 0;
+        } else if (f.outcome.kind === 'pit') {
+          // fell into the pit short of the bed — straight down the gutter
+          st.phase = 'rolldown';
+          st.ru = f.u; st.rv = 0; st.rvu = f.spin * 0.1; st.rvv = -0.7;
+          st.gut = false;
+        } else {
+          // short / backstop / wall: landed on the wood, now rolls back down
+          st.phase = 'rolldown';
+          st.ru = f.u; st.rv = Math.max(0.02, f.v);
+          // a little residual lateral drift, biased by any leftover english
+          st.rvu = st.vx * 0.12 + f.spin * 0.12;
+          st.rvv = -0.2;   // just tipped over the top, gravity takes it
+          st.gut = false;
+        }
       }
+    } else if (st.phase === 'rolldown') {
+      // accelerate down the inclined bed (rvv < 0 = moving toward the lip),
+      // lateral position preserved with mild drag; drop over the lip into
+      // the dark pit mouth (the gutter) and vanish
+      st.rvv -= T.rollDownG * dt;
+      st.rv += st.rvv * dt;
+      st.ru += st.rvu * dt;
+      st.rvu -= st.rvu * T.bedLateralFric * dt;
+      if (st.ru > T.bedHalfW) { st.ru = T.bedHalfW; st.rvu = -Math.abs(st.rvu) * 0.4; }
+      if (st.ru < -T.bedHalfW) { st.ru = -T.bedHalfW; st.rvu = Math.abs(st.rvu) * 0.4; }
+      st.trail.push({ s: 'bed', u: st.ru, v: st.rv });
+      if (st.rv <= 0 && !st.gut) { st.gut = true; st.events.push({ type: 'gutter', u: st.ru }); }
+      if (st.rv <= -T.gutterDepth) { st.phase = 'done'; st.events.push({ type: 'done' }); }
     } else if (st.phase === 'settle') {
       st.st += dt;
       if (st.st >= T.settleT) { st.phase = 'done'; st.events.push({ type: 'done' }); }
@@ -173,6 +223,9 @@ window.SkeeBallPhysics = (function () {
       return { space: 'air', fr: fr, u: f.u, v: f.v, y: Math.max(0, y),
                apex: f.apex, outcome: f.outcome.kind };
     }
+    if (st.phase === 'rolldown')
+      return { space: 'rolldown', u: st.ru, v: st.rv,
+               outcome: f.outcome.kind };
     if (st.phase === 'settle')
       return { space: 'bed', u: f.u, v: f.v, sink: st.st / TUNE.settleT,
                outcome: f.outcome.kind };
