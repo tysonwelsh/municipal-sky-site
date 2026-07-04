@@ -5,12 +5,23 @@
  * the bed is an inclined plane across a pit gap, with the ring stack
  * centered one outer-radius up the bed (the tangency the art enforces).
  *
- * Three phases: ROLL (friction + incline, wall bounces, can roll back),
+ * Phases: ROLL (friction + incline, wall bounces, can roll back),
  * FLIGHT (launch off the hop resolved analytically at takeoff — carry,
- * apex, landing point, and ring/hole/rim outcome are all known the moment
- * the ball leaves the crest), SETTLE (sink-into-hole animation window).
+ * apex, landing point, and ring/hole/divider outcome are all known the
+ * moment the ball leaves the crest), ROLLOFF (a ball that came down on a
+ * thin cork DIVIDER rolls radially off the ridge into an adjacent trough),
+ * SETTLE (sink-into-hole animation window).
  *
- * Deterministic: rim rattles use a seed passed per throw.
+ * The ring bed is concentric scoring TROUGHS (the wide dark 10/20/30/40
+ * gaps + the 50 hole) separated by slim raised cork DIVIDERS. A ball can
+ * never rest on a divider: it rolls off into the trough on one side and
+ * scores THAT trough — biased outward (down-bed) because up-bed momentum
+ * stalls against the ridge and drops the ball back into the trough it
+ * climbed from.
+ *
+ * Deterministic: the roll-off side is chosen from where on the ridge the
+ * ball landed + its incoming radial momentum, with a tiny seeded jitter
+ * (hash01) so the split is not a razor line. No Math.random/Date.now.
  */
 window.SkeeBallPhysics = (function () {
   'use strict';
@@ -35,8 +46,11 @@ window.SkeeBallPhysics = (function () {
     pitGap: 0.55,     // crest → bed bottom edge, horizontal units
     bedAngle: 0.72,   // bed incline, rad (~41°)
     R10: 0.93,        // outer ring radius in units (internal bed-space scale)
-    // ring radii fractions, must match the renderer's RING_FR
-    ringFr: [1, 0.85, 0.70, 0.57, 0.45, 0.34, 0.24, 0.14, 0.075],
+    // ring radii fractions, outside→in; MUST match the renderer's RING_FR.
+    // Even indices are the scoring TROUGHS (10/20/30/40 gaps + the 50 hole),
+    // odd indices are the slim raised cork DIVIDERS. Troughs (~0.175 wide)
+    // dominate; dividers (~0.05 wide) are thin ridges the ball rolls off.
+    ringFr: [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.10],
     // The two 100 holes. Position and size are DERIVED from the drawn holes
     // (GEO.holes100 / GEO.holeR) by syncGeometry() so scoring matches the
     // pixels exactly; these defaults already equal the shipping 'grand'
@@ -44,7 +58,15 @@ window.SkeeBallPhysics = (function () {
     holeU: 0.7512, holeV: 2.2965,  // bed coords of the drawn 100 holes
     holeRu: 0.143, holeRv: 0.114,  // elliptical mouth, matches the drawn ellipse
     bedHalfW: 1.05,   // bed width beyond which it's the side wall
-    rimBounceOut: 0.62, // chance a rim hit rattles outward (vs inward)
+    // DIVIDER roll-off model. A landing on a cork ridge resolves to an
+    // adjacent trough. ridgePos is where on the ridge (0 = inner/up-bed
+    // edge, 1 = outer/down-bed edge); below the threshold the ball tips
+    // inward (higher score), above it rolls outward (lower). The threshold
+    // starts neutral (0.5) and momentum shifts it: inward (up-bed) approach
+    // stalls against the ridge → outward bias.
+    ridgeMomentumK: 0.05,  // threshold shift per unit radial speed (units/s)
+    ridgeJitter: 0.06,     // seeded ± spread on the split so it isn't a razor line
+    rolloffT: 0.24,        // roll-off-into-trough animation, s
     vzMin: 1.4, vzMax: 7.65, vxMax: 1.6,  // input clamps: max power lands a
                       // straight ball at v≈2.33 (just above the rings → backstop),
                       // right at the 100-hole band; the 100 holes then need
@@ -103,16 +125,20 @@ window.SkeeBallPhysics = (function () {
   }
 
   /* Given a landing point on the bed (u lateral, v up-slope from the
-   * bottom edge), decide what the ball actually did. */
-  function resolveLanding(u, v, seed) {
+   * bottom edge), decide what the ball actually did. du,dv are the ball's
+   * velocity components in bed (u,v) space at the moment of landing; they
+   * are optional (a bare resolveLanding(u,v,seed) still works, momentum
+   * treated as zero) and only nudge the divider roll-off. */
+  function resolveLanding(u, v, seed, du, dv) {
     var T = TUNE;
+    seed = seed | 0;
     // the 100 holes first — they sit above the ring stack near the top of
     // the bed. Test the ball centre against the DRAWN hole ellipse (mouth
     // radii from syncGeometry), so a 100 scores only when the ball is
     // visibly inside the pink hole — never below it.
     for (var s = -1; s <= 1; s += 2) {
-      var du = (u - s * T.holeU) / T.holeRu, dv = (v - T.holeV) / T.holeRv;
-      if (du * du + dv * dv < 1) return { kind: 'hole', score: 100 };
+      var hu = (u - s * T.holeU) / T.holeRu, hv = (v - T.holeV) / T.holeRv;
+      if (hu * hu + hv * hv < 1) return { kind: 'hole', score: 100 };
     }
     if (Math.abs(u) > T.bedHalfW) return { kind: 'wall', score: 0 };
     var d = Math.hypot(u, v - T.R10); // distance from ring center
@@ -121,23 +147,42 @@ window.SkeeBallPhysics = (function () {
       // outside all rings: low = dribbles back into the pit, high = backstop
       return { kind: v > R ? 'backstop' : 'short', score: 0 };
     }
-    // walk the bands: even = scoring gap, odd = raised cork rim
+    // walk the bands: even index = scoring trough, odd index = cork divider
     var scores = [10, 20, 30, 40, 50];
     for (var i = 0; i < fr.length; i++) {
       var inner = (i + 1 < fr.length) ? fr[i + 1] * R : 0;
-      if (d > inner) {
-        if (i % 2 === 0) return { kind: 'ring', score: scores[i / 2] };
-        // on a cork rim — but only a dead-center hit actually rattles;
-        // clipping a rim edge just drops the ball into the nearer gap
-        var outer = fr[i] * R, mid = (outer + inner) / 2, half = (outer - inner) / 2;
-        if (Math.abs(d - mid) > half * 0.45)
-          return { kind: 'ring', score: scores[(i - 1) / 2 + (d > mid ? 0 : 1)] };
-        var out = hash01(seed + i) < T.rimBounceOut;
-        return {
-          kind: 'rim', rattle: true,
-          score: scores[(i - 1) / 2 + (out ? 0 : 1)]
-        };
+      if (d <= inner) continue;
+      if (i % 2 === 0) {
+        // landed in a trough annulus: it sinks in and scores this ring
+        return { kind: 'ring', score: scores[i / 2] };
       }
+      // landed on a slim cork DIVIDER ridge → it cannot rest here; it rolls
+      // off into an adjacent trough. Pick the side from where on the ridge
+      // it hit (ridgePos 0 = inner/up-bed edge, 1 = outer/down-bed edge).
+      var outer = fr[i] * R;
+      var ridgePos = outer > inner ? (d - inner) / (outer - inner) : 0.5;
+      var thresh = 0.5;
+      // incoming radial momentum: project velocity onto the outward radial.
+      // Approaching up-bed (toward centre) is inward (negative) → the ridge
+      // stalls it and it drops back OUTWARD, so lower the inward threshold.
+      if (du || dv) {
+        var uh = u / d, vh = (v - R) / d;
+        var radialV = du * uh + dv * vh; // + outward, − inward
+        thresh += Math.max(-0.22, Math.min(0.22, radialV * T.ridgeMomentumK));
+      }
+      // a hair of seeded variation so the boundary is not a hard pixel line
+      thresh += (hash01(seed + i) - 0.5) * T.ridgeJitter;
+      thresh = Math.max(0.12, Math.min(0.88, thresh));
+      var rollInward = ridgePos < thresh;
+      var gapIdx = rollInward ? (i + 1) : (i - 1); // even index of target trough
+      var gOuter = fr[gapIdx] * R, gInner = (gapIdx + 1 < fr.length) ? fr[gapIdx + 1] * R : 0;
+      var tD = (gOuter + gInner) / 2;             // radius of the target trough's centre
+      var ang = Math.atan2(v - R, u);             // radial bearing of the landing
+      return {
+        kind: 'divider', score: scores[gapIdx / 2], rollInward: rollInward,
+        fromU: u, fromV: v,                       // where it hit the ridge
+        u: tD * Math.cos(ang), v: R + tD * Math.sin(ang) // where it comes to rest
+      };
     }
     return { kind: 'ring', score: 50 };
   }
@@ -167,7 +212,11 @@ window.SkeeBallPhysics = (function () {
     var s = vzc * t1;
     var v = (s - T.pitGap) / cosB;
     var u = x + vx * t1 + 0.5 * spin * T.spinAir * t1 * t1;
-    var outcome = resolveLanding(u, v, seed);
+    // velocity in bed (u,v) space at touchdown, for the divider roll-off:
+    // up-bed carry along the incline, plus lateral drift + curved english
+    var dvBed = vzc / cosB;
+    var duBed = vx + spin * T.spinAir * t1;
+    var outcome = resolveLanding(u, v, seed, duBed, dvBed);
     // A wall miss decided beyond the bed edge would send the flight arc (and
     // the '0' toast, and the rolldown seed) off the cabinet, then snap back
     // when rolldown clamps ru. Clamp AFTER scoring so the kind decision and
@@ -197,6 +246,8 @@ window.SkeeBallPhysics = (function () {
       ft: 0, st: 0, flight: null,
       // roll-back-down-the-bed state (populated when a miss lands)
       ru: 0, rv: 0, rvu: 0, rvv: 0, gut: false,
+      // divider roll-off start point (ridge landing), populated on landing
+      roU0: 0, roV0: 0,
       events: [], trail: []
     };
   }
@@ -234,12 +285,21 @@ window.SkeeBallPhysics = (function () {
       var f = st.flight;
       st.trail.push({ s: 'air', fr: Math.min(1, st.ft / f.T) });
       if (st.ft >= f.T) {
+        // a divider outcome scores the trough it rolls INTO; report the toast
+        // at the resting point (the trough), not the ridge it first touched
+        var lu = f.u, lv = f.v;
+        if (f.outcome.kind === 'divider') { lu = f.outcome.u; lv = f.outcome.v; }
         st.events.push({
           type: 'land', kind: f.outcome.kind,
           score: f.outcome.score, rattle: !!f.outcome.rattle,
-          u: f.u, v: f.v
+          u: lu, v: lv
         });
-        if (f.outcome.score > 0) {
+        if (f.outcome.kind === 'divider') {
+          // came down on a cork ridge: roll radially off into the trough,
+          // then sink. It never rests on the ridge.
+          st.phase = 'rolloff'; st.st = 0;
+          st.roU0 = f.u; st.roV0 = f.v;
+        } else if (f.outcome.score > 0) {
           // scored: sink into the hole/ring where it stuck
           st.phase = 'settle'; st.st = 0;
         } else if (f.outcome.kind === 'pit') {
@@ -270,6 +330,14 @@ window.SkeeBallPhysics = (function () {
       st.trail.push({ s: 'bed', u: st.ru, v: st.rv });
       if (st.rv <= 0 && !st.gut) { st.gut = true; st.events.push({ type: 'gutter', u: st.ru }); }
       if (st.rv <= -T.gutterDepth) { st.phase = 'done'; st.events.push({ type: 'done' }); }
+    } else if (st.phase === 'rolloff') {
+      // ball tips off the cork divider and rolls radially into the adjacent
+      // trough, then hands off to the sink animation. Short + deterministic.
+      st.st += dt;
+      var fo = st.flight.outcome;
+      var k = Math.min(1, st.st / T.rolloffT); k = 1 - (1 - k) * (1 - k); // ease-out
+      st.trail.push({ s: 'bed', u: st.roU0 + (fo.u - st.roU0) * k, v: st.roV0 + (fo.v - st.roV0) * k });
+      if (st.st >= T.rolloffT) { st.phase = 'settle'; st.st = 0; }
     } else if (st.phase === 'settle') {
       st.st += dt;
       if (st.st >= T.settleT) { st.phase = 'done'; st.events.push({ type: 'done' }); }
@@ -291,9 +359,20 @@ window.SkeeBallPhysics = (function () {
     if (st.phase === 'rolldown')
       return { space: 'rolldown', u: st.ru, v: st.rv,
                outcome: f.outcome.kind };
-    if (st.phase === 'settle')
-      return { space: 'bed', u: f.u, v: f.v, sink: st.st / TUNE.settleT,
+    if (st.phase === 'rolloff') {
+      // rolling radially off the cork ridge into the trough (no sink yet)
+      var o = f.outcome;
+      var k = Math.min(1, st.st / TUNE.rolloffT); k = 1 - (1 - k) * (1 - k);
+      return { space: 'bed', sink: 0, outcome: 'divider',
+               u: st.roU0 + (o.u - st.roU0) * k, v: st.roV0 + (o.v - st.roV0) * k };
+    }
+    if (st.phase === 'settle') {
+      // dividers come to rest in the trough they rolled into, not the ridge
+      var su = f.u, sv = f.v;
+      if (f.outcome.kind === 'divider') { su = f.outcome.u; sv = f.outcome.v; }
+      return { space: 'bed', u: su, v: sv, sink: st.st / TUNE.settleT,
                outcome: f.outcome.kind };
+    }
     return null;
   }
 
