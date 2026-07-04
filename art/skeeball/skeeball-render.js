@@ -128,11 +128,33 @@ window.SkeeBallRender = (function () {
   }
 
   /* ── cabinet geometry (shared with future physics/render mapping) ──── */
-  // The cabinet tapers toward the top: one-point perspective, player at the
-  // bottom edge. left/right outer edge x at a given y:
+  // One-point perspective, player at the bottom edge. For pit layouts the
+  // machine is one continuous body: the alley's side rails ARE its outer
+  // edges, so above the junction (the bed's lip) the body is exactly the
+  // alley's far width plus the rail shell, receding gently toward the top
+  // (the inclined bed rises away only slowly, so it barely narrows).
+  // Below the junction the body follows the alley's flare toward the
+  // player. Legacy (tangent) variants keep the old straight taper.
   var CAB_TOP = 50, CAB_BOT = 372;
-  function cabL(y) { var t = (y - CAB_TOP) / (CAB_BOT - CAB_TOP); return Math.round(30 - 22 * t); }
-  function cabR(y) { var t = (y - CAB_TOP) / (CAB_BOT - CAB_TOP); return Math.round(186 + 22 * t); }
+  var SHELL = 7; // rail + outer shell thickness beyond the lane edge
+  function cabHalf(y) {
+    if (!GEO || !GEO.pit) { // legacy taper
+      var t = (y - CAB_TOP) / (CAB_BOT - CAB_TOP);
+      return 78 + 22 * t;
+    }
+    var ln = GEO.lane;
+    function laneHalf(yy) {
+      var tt = (yy - ln.y0) / (ln.y1 - ln.y0);
+      return (108 - ln.xt0) + ((108 - ln.xb0) - (108 - ln.xt0)) * tt;
+    }
+    var jy = GEO.pit.y0;
+    if (y > ln.y1) return laneHalf(ln.y1) + SHELL;      // front box, constant
+    if (y > jy) return laneHalf(y) + SHELL;             // alley flare
+    var jw = laneHalf(jy) + SHELL;
+    return jw - 6 * (jy - y) / (jy - CAB_TOP);          // upper body recede
+  }
+  function cabL(y) { return Math.round(108 - cabHalf(y)); }
+  function cabR(y) { return Math.round(108 + cabHalf(y)); }
 
   /* Camera-attitude variants. The playfield band (y 122..332) is generated
    * from a small spec; everything above (marquee, score) and below (rail,
@@ -155,15 +177,15 @@ window.SkeeBallRender = (function () {
     // bottom lip sits at ringCy + maxRx*ratio, the pit yawns below it, the
     // hop is a lane-width bump at the top of the runway.
     hybrid: {
-      ringCy: 170, maxRx: 62, ratio: 0.78,
-      pitH: 14, hopH: 12, laneTopW: 36, hump: 2,
-      holeDx: 58, holeY: 130, holeLabelBelow: true
+      ringCy: 170, maxRx: 42, ratio: 0.85,
+      pitH: 14, hopH: 12, laneTopW: 56, laneBotW: 89, hump: 2,
+      holeDx: 34, holeY: 131, holeRx: 8, holeLabelBelow: true
     }
   };
 
   // ring radii as fractions of maxRx, outside → in; even indexes are the
   // dark score gaps (10/20/30/40 + the 50 hole), odd are cork rims
-  var RING_FR = [1, 0.85, 0.716, 0.583, 0.466, 0.35, 0.25, 0.133, 0.066];
+  var RING_FR = [1, 0.85, 0.70, 0.57, 0.45, 0.34, 0.24, 0.14, 0.075];
   var GAP_LABELS = { 0: '10', 2: '20', 4: '30', 6: '40' };
 
   function makeGeo(spec) {
@@ -186,7 +208,9 @@ window.SkeeBallRender = (function () {
     var rampY1 = pit ? pit.y1 + spec.hopH : spec.rampY1;
     return {
       spec: spec,
-      marquee: { x0: 36, x1: 180, y0: 56, y1: 94 },
+      // pit layouts: the marquee is a topper just wider than the body;
+      // legacy layouts keep the old wide header
+      marquee: spec.pitH ? { x0: 50, x1: 166, y0: 56, y1: 94 } : { x0: 36, x1: 180, y0: 56, y1: 94 },
       score: { y0: 94, y1: 122 },
       target: { y0: 122, y1: pit ? pit.y0 : spec.rampY0, cx: 108, cy: spec.ringCy },
       pit: pit,
@@ -199,16 +223,19 @@ window.SkeeBallRender = (function () {
         { x: 108 + (spec.holeDx || 54), y: spec.holeY || 136 }
       ],
       ramp: { y0: rampY0, y1: rampY1 },
+      holeR: spec.holeRx || 10,
       lane: {
         y0: rampY1, y1: 332,
         xt0: 108 - spec.laneTopW, xt1: 108 + spec.laneTopW,
-        xb0: 36, xb1: 180
+        xb0: 108 - (spec.laneBotW || 72), xb1: 108 + (spec.laneBotW || 72)
       },
       rail: { y0: 332, y1: 352 },
       front: { y0: 352, y1: 372 },
       window: { x0: 22, x1: 88, y0: 4, y1: 44 },
       possum: { cx: 108, top: 18 },
-      drums: { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
+      drums: spec.pitH
+        ? { x0: 80, y0: 104, cells: 4, cw: 14, ch: 15 }
+        : { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
     };
   }
 
@@ -322,8 +349,7 @@ window.SkeeBallRender = (function () {
       dither(g, sx, p.y0, 2, p.y1 - p.y0, PAL.LIT_D, 0.5);
     }
     // lettering (dark on lit panel); the dying bulb cell is drawn dynamically
-    textC(g, 'HOLLER', 76, m.y0 + 13, PAL.WOOD1, 2);
-    textC(g, 'ROLLER', 146, m.y0 + 13, PAL.WOOD1, 2);
+    textC(g, 'HOLLER ROLLER', 108, m.y0 + 13, PAL.WOOD1, 2);
     // pink neon tube along the marquee bottom
     hline(g, m.x0 + 4, m.x1 - 5, m.y1 - 1, PAL.PINK);
     hline(g, m.x0 + 4, m.x1 - 5, m.y1, PAL.PINK_D);
@@ -387,9 +413,10 @@ window.SkeeBallRender = (function () {
     rect(g, x0, s.y0, x1 - x0, s.y1 - s.y0, PAL.WOOD2);
     hline(g, x0, x1 - 1, s.y0, PAL.WOOD4);
     hline(g, x0, x1 - 1, s.y1 - 1, PAL.WOOD1);
+    var compact = !!GEO.pit; // narrow body: two stacked rows
     // hand-painted SCORE, slightly crooked
-    text(g, 'SCORE', x0 + 8, s.y0 + 8, PAL.BONE_D, 1);
-    px(g, x0 + 8, s.y0 + 13, PAL.WOOD2); // paint flaking off the S
+    text(g, 'SCORE', x0 + 4, s.y0 + (compact ? 2 : 8), PAL.BONE_D, 1);
+    px(g, x0 + 4, s.y0 + (compact ? 7 : 13), PAL.WOOD2); // paint flaking off the S
     // drum counter window
     var d = GEO.drums;
     rect(g, d.x0 - 2, d.y0 - 2, d.cells * d.cw + 4, d.ch + 4, PAL.WOOD1);
@@ -402,11 +429,11 @@ window.SkeeBallRender = (function () {
     }
     // 9 ball lamps, dim pink — these light per remaining ball in play
     for (i = 0; i < 9; i++) {
-      var lx = x1 - 42 + i * 4;
-      px(g, lx, s.y0 + 9, PAL.PINK_DK);
-      px(g, lx, s.y0 + 10, PAL.PINK_DK);
+      var lx = x1 - 40 + i * 4;
+      px(g, lx, s.y0 + (compact ? 4 : 9), PAL.PINK_DK);
+      px(g, lx, s.y0 + (compact ? 5 : 10), PAL.PINK_DK);
     }
-    text(g, 'BALLS', x1 - 42, s.y0 + 14, PAL.BONE_D, 1);
+    if (!compact) text(g, 'BALLS', x1 - 42, s.y0 + 14, PAL.BONE_D, 1);
   }
 
   function drawTarget(g, R) {
@@ -432,9 +459,10 @@ window.SkeeBallRender = (function () {
       }
     }
     // scuffed cork: ball burns on the rims
+    var srx = GEO.spec.maxRx, sry = Math.round(srx * GEO.spec.ratio);
     for (var s = 0; s < 26; s++) {
       var a = R() * Math.PI * 2, rr = 0.3 + R() * 0.65;
-      var sx = t.cx + Math.cos(a) * 60 * rr, sy = t.cy + Math.sin(a) * 44 * rr;
+      var sx = t.cx + Math.cos(a) * srx * rr, sy = t.cy + Math.sin(a) * sry * rr;
       px(g, Math.round(sx), Math.round(sy), R() < 0.5 ? PAL.CORK2 : PAL.WOOD2);
     }
     // the dent in the 40 ring's rim (flat spot, upper right) — this is
@@ -464,16 +492,17 @@ window.SkeeBallRender = (function () {
     }
 
     // the two 100 holes, dark mouths with pink light way down inside
+    var hr = GEO.holeR;
     for (i = 0; i < GEO.holes100.length; i++) {
       var h = GEO.holes100[i];
-      ellipse(g, h.x, h.y - 1, 10, 6, PAL.WOOD4);   // raised surround, lit top
-      ellipse(g, h.x, h.y, 10, 6, PAL.WOOD1);
-      ellipse(g, h.x, h.y, 8, 4, PAL.GAP);          // the hole
-      ellipse(g, h.x, h.y + 2, 4, 1, PAL.PINK_DK);  // glow from below
-      px(g, h.x, h.y + 2, PAL.PINK_D);
+      ellipse(g, h.x, h.y - 1, hr, Math.round(hr * 0.7), PAL.WOOD4); // surround, lit top
+      ellipse(g, h.x, h.y, hr, Math.round(hr * 0.7), PAL.WOOD1);
+      ellipse(g, h.x, h.y, hr - 2, Math.round(hr * 0.7) - 1, PAL.GAP); // the hole
+      ellipse(g, h.x, h.y + 2, hr - 5, 1, PAL.PINK_DK);  // glow from below
+      px(g, h.x, h.y + 1, PAL.PINK_D);
       // label sits fully inside the target panel (score bar owns y < 122);
       // when the rings crowd the top corners it moves below the hole
-      textC(g, '100', h.x, h.y + (GEO.spec.holeLabelBelow ? 9 : -13), PAL.PINK, 1);
+      textC(g, '100', h.x, h.y + (GEO.spec.holeLabelBelow ? 7 : -13), PAL.PINK, 1);
     }
   }
 
@@ -799,25 +828,26 @@ window.SkeeBallRender = (function () {
     g.restore();
 
     // ── the dying marquee bulb behind ROLLER's final R
-    // ROLLER is centered at 146, scale 2 → glyphs advance 8px from x=123;
-    // the last R occupies x 163..169. Its backlight cell: x 161..172.
+    // 'HOLLER ROLLER' is centered at 108, scale 2 → glyphs advance 8px
+    // from x=57; the last R occupies x 153..159. Backlight cell: 151..162.
     var f = flickerAt(t, 7, 13);
     var dying = f < 0.25 ? 0.9 : (f < 0.45 ? 0.5 : 0.1); // mostly dark, stutters lit
     if (dying > 0.05) {
       g.globalAlpha = dying;
-      rect(g, 161, GEO.marquee.y0 + 8, 12, GEO.marquee.y1 - GEO.marquee.y0 - 16, '#3c2814');
+      rect(g, 151, GEO.marquee.y0 + 8, 12, GEO.marquee.y1 - GEO.marquee.y0 - 16, '#3c2814');
       g.globalAlpha = 1;
-      if (dying > 0.5) textC(g, 'R', 166, GEO.marquee.y0 + 13, PAL.WOOD2, 2);
+      if (dying > 0.5) textC(g, 'R', 156, GEO.marquee.y0 + 13, PAL.WOOD2, 2);
     }
 
     // ── neon breathing on the 100 holes
     var breathe = 0.25 + 0.25 * (0.5 + 0.5 * Math.sin(t * 1.4));
+    var hr = GEO.holeR;
     for (i = 0; i < GEO.holes100.length; i++) {
       var h = GEO.holes100[i];
-      glowRing(g, h.x, h.y, 9, 5, 4, PAL.PINK_DK, breathe);
+      glowRing(g, h.x, h.y, hr - 1, Math.round(hr * 0.6) - 1, 4, PAL.PINK_DK, breathe);
       if (flickerAt(t, 2.3, i * 7) > 0.2) { // pink core, rarely gutters out
-        ellipse(g, h.x, h.y + 2, 3, 1, PAL.PINK_D);
-        px(g, h.x, h.y + 2, PAL.PINK);
+        ellipse(g, h.x, h.y + 1, 2, 1, PAL.PINK_D);
+        px(g, h.x, h.y + 1, PAL.PINK);
       }
     }
 
