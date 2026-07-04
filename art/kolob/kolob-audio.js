@@ -1142,12 +1142,25 @@ window.KolobAudio = (function () {
     };
 
     // ---- chain grammar: which transform, given voice + section + chain ----
+    // INSTRUMENT PERSONALITIES. Every voice works the SAME motifs (the day's
+    // theme + subs) — but each has its own temperament for HOW it develops
+    // them, so you can tell who is speaking by their habits alone. These are
+    // only probability weights over the same random development: the piece
+    // stays aleatoric, the players just have characters.
+    //   · clarinet  — the deacon: agile, decorative, conversational
+    //   · choir     — the congregation: broad, grand, opens tunes out
+    //   · bells      — the peal: terse, bright, fragmentary, clipped
+    //   · telegraph — the wire: pure rhythm, syncopated code, no filigree
+    //   · harmonium — the parlor organ: warm, sustained, draws tunes inward
+    //   · bagpipe   — the piper on the bluff: bold, wide leaps, long-held,
+    //                 a march-snap — its OWN profile now, not the clarinet's
     var VOICE_WEIGHTS = {
-      clarinet:  { sequence: 3, ornament: 3, transpose: 2.5, fragmentHead: 2, invert: 2, diminish: 1.5, augment: 1.5, retrograde: 1, fragmentTail: 1.5, rotate: 1.5, intervalExpand: 1.3, intervalCompress: 1.3, syncopate: 2, mordent: 2.5 },
-      choir:     { augment: 3.5, invert: 2.5, transpose: 2.5, retrograde: 1.5, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, fragmentHead: 1, rotate: 1, intervalExpand: 1.4, intervalCompress: 1, syncopate: 0.8, mordent: 0.6 },
-      bells:     { fragmentHead: 3.5, diminish: 3, transpose: 2, retrograde: 1.5, sequence: 1.5, invert: 1, augment: 0.3, ornament: 0.3, fragmentTail: 2, rotate: 1.5, intervalExpand: 0.8, intervalCompress: 1.4, syncopate: 2, mordent: 1 },
-      telegraph: { diminish: 3, fragmentHead: 3, retrograde: 2, sequence: 2, transpose: 1, invert: 0.5, augment: 0.2, ornament: 0.2, fragmentTail: 1.5, rotate: 1.5, intervalExpand: 0.4, intervalCompress: 1.4, syncopate: 2.5, mordent: 0.4 },
-      harmonium: { augment: 3, transpose: 2.5, invert: 2, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, retrograde: 1, fragmentHead: 1, rotate: 1, intervalExpand: 1.4, intervalCompress: 1, syncopate: 1, mordent: 0.8 },
+      clarinet:  { ornament: 3.5, mordent: 3, sequence: 3, syncopate: 2.5, transpose: 2, rotate: 2, fragmentHead: 2, invert: 1.5, fragmentTail: 1.5, diminish: 1.5, intervalExpand: 1.2, intervalCompress: 1, retrograde: 1, augment: 0.6 },
+      choir:     { augment: 4, invert: 3, transpose: 2.5, intervalExpand: 2, retrograde: 1.5, sequence: 1, rotate: 1, fragmentTail: 1, intervalCompress: 0.8, fragmentHead: 0.6, diminish: 0.4, syncopate: 0.4, ornament: 0.3, mordent: 0.3 },
+      bells:     { fragmentHead: 4, diminish: 3.5, fragmentTail: 2.5, syncopate: 2.5, rotate: 2, transpose: 2, retrograde: 1.5, sequence: 1.5, intervalCompress: 1.5, invert: 1, mordent: 0.6, intervalExpand: 0.5, ornament: 0.2, augment: 0.2 },
+      telegraph: { syncopate: 3.5, diminish: 3, fragmentHead: 3, retrograde: 2.5, rotate: 2, sequence: 2, intervalCompress: 1.5, fragmentTail: 1.5, transpose: 1, invert: 0.5, mordent: 0.3, intervalExpand: 0.3, augment: 0.2, ornament: 0.15 },
+      harmonium: { augment: 3.5, transpose: 2.5, invert: 2, intervalCompress: 2, sequence: 1.5, intervalExpand: 1.2, rotate: 1, retrograde: 1, fragmentTail: 1, mordent: 0.6, ornament: 0.6, fragmentHead: 0.6, syncopate: 0.5, diminish: 0.4 },
+      bagpipe:   { intervalExpand: 3, augment: 3, sequence: 2.5, transpose: 2.5, rotate: 2, invert: 1.8, syncopate: 1.8, retrograde: 1.5, fragmentTail: 1, mordent: 0.8, fragmentHead: 0.8, diminish: 0.6, ornament: 0.6, intervalCompress: 0.5 },
     };
     var SECTION_TILT = {
       prelude:    { augment: 1.6, transpose: 1.4, ornament: 0.4, diminish: 0.4, sequence: 0.6 },
