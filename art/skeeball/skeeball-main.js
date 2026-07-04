@@ -13,7 +13,7 @@ window.SkeeBall = (function () {
 
   // Bump on every deployed change so on-device testing is unambiguous.
   // Shown in the canvas corner, the page blurb, and the console.
-  var VERSION = 'V0.32';
+  var VERSION = 'V0.34';
 
   function mount(container, opts) {
     opts = opts || {};
@@ -40,6 +40,11 @@ window.SkeeBall = (function () {
     fit();
     window.addEventListener('resize', fit);
     R.buildStatic();
+    // Bind the physics scoring geometry to the geometry the renderer draws,
+    // so a scored 100 lands inside the visible pink hole and every ring score
+    // matches the ring the ball rests in. (Falls back to TUNE defaults, which
+    // already match 'grand', if the physics build predates syncGeometry.)
+    if (P.syncGeometry) P.syncGeometry(R.GEO);
 
     var state = {
       score: 0,
@@ -117,12 +122,14 @@ window.SkeeBall = (function () {
     });
     // power mapping tuning — a heavy waxed ball: a soft flick barely
     // moves it; full power wants a genuinely long AND fast thumb swipe.
-    var SPEED_CEIL = 1900;   // px/s that saturates the speed term
-    var LEN_CEIL = 135;      // px of upward reach that saturates the length term
-    var LEN_SPEED_GATE = 500; // px/s of release speed to earn full length credit
+    var SPEED_CEIL = 1400;   // px/s that saturates the speed term
+    var LEN_CEIL = 100;      // px of upward reach that saturates the length term
+    var LEN_SPEED_GATE = 400; // px/s of release speed to earn full length credit
     var W_SPEED = 0.45, W_LEN = 0.55;  // blend (length-dominant = "push it")
-    var POWER_GAMMA = 1.42;  // easing: soft inputs stay soft
-    var SIDE_DIV = 300;      // px/s of sideways drift per unit vx (angled shots)
+    var POWER_GAMMA = 1.20;  // easing: soft inputs stay soft, but a moderate
+                             // swipe already reaches the rings/50
+    var SIDE_DIV = 420;      // px/s of sideways drift per unit vx (angled shots);
+                             // gentle enough that aim lands on the bed, not the rail
     var SPIN_ANG_K = 1.3;    // spin per radian of heading curl over the gesture
 
     function endSwipe(ev) {
@@ -197,7 +204,8 @@ window.SkeeBall = (function () {
       // hand it a head start; subtract the roll energy it would have spent
       // reaching z0 so the OUTCOME depends only on the flick, not where you
       // let go. (A weak flick from high up thus rolls back, as it should.)
-      var vz0 = Math.sqrt(Math.max(0, vz * vz - 2 * T.laneDecel * z0));
+      var work = P.rollWork ? P.rollWork(z0) : 1.15 * z0;
+      var vz0 = Math.sqrt(Math.max(0, vz * vz - 2 * work));
       throwBall(x0, vz0, vx, spin, z0);
     }
     canvas.addEventListener('pointerup', endSwipe);

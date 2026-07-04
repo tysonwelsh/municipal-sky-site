@@ -17,21 +17,39 @@ window.SkeeBallPhysics = (function () {
 
   var TUNE = {
     L: 4.2,           // lane length, units
-    g: 6.0,           // gravity, units/s² (tuned: full swipe sweeps the whole bed)
-    laneDecel: 1.15,  // incline + rolling friction, units/s²
+    g: 6.0,           // gravity, units/s²
+    // The lane is a near-level waxed runup that ramps up into the ball-hop
+    // crest. Deceleration is a real gravity component + rolling friction,
+    // evaluated per section (rollDecelAt): the ball coasts down the flat and
+    // visibly BITES climbing the ramp — a heavy waxed ball, not a glider.
+    kneeZ: 3.0,       // flat runup 0..kneeZ, then the hop ramp kneeZ..L
+    flatAngle: 0.0,   // runup incline, rad (essentially level)
+    rampAngle: 0.55,  // hop-ramp incline, rad (~31.5°) up to the crest
+    muRoll: 0.05,     // rolling friction coefficient (heavy waxed ball)
+    rollbackA: 1.7,   // downhill accel of a stalled ball returning to the player
     wallBounce: 0.55, // lateral restitution off the side rails
     ballR: 0.11,      // ball radius (3" ball on a 28" lane)
-    hopAngle: 0.675,  // ball-hop launch angle, rad (~39°, a real ski-jump loft)
+    hopAngle: 0.80,   // ball-hop launch angle, rad (~46°): a real ski-jump loft,
+                      // near range-optimal for lobbing onto the inclined bed
     hopK: 0.90,       // speed kept through the hop
     pitGap: 0.55,     // crest → bed bottom edge, horizontal units
     bedAngle: 0.72,   // bed incline, rad (~41°)
-    R10: 0.93,        // outer ring radius in units
+    R10: 0.93,        // outer ring radius in units (internal bed-space scale)
     // ring radii fractions, must match the renderer's RING_FR
     ringFr: [1, 0.85, 0.70, 0.57, 0.45, 0.34, 0.24, 0.14, 0.075],
-    holeU: 0.75, holeV: 1.37, holeR: 0.16, // the 100 holes on the bed
+    // The two 100 holes. Position and size are DERIVED from the drawn holes
+    // (GEO.holes100 / GEO.holeR) by syncGeometry() so scoring matches the
+    // pixels exactly; these defaults already equal the shipping 'grand'
+    // variant so headless sims agree with the renderer without a sync.
+    holeU: 0.7512, holeV: 2.2965,  // bed coords of the drawn 100 holes
+    holeRu: 0.143, holeRv: 0.114,  // elliptical mouth, matches the drawn ellipse
     bedHalfW: 1.05,   // bed width beyond which it's the side wall
     rimBounceOut: 0.62, // chance a rim hit rattles outward (vs inward)
-    vzMin: 1.4, vzMax: 8.6, vxMax: 1.6,   // input clamps
+    vzMin: 1.4, vzMax: 7.65, vxMax: 1.6,  // input clamps: max power lands a
+                      // straight ball at v≈2.33 (just above the rings → backstop),
+                      // right at the 100-hole band; the 100 holes then need
+                      // near-full power PLUS lateral aim — hard, but no
+                      // knife-edge power modulation
     spinMax: 1.3,     // input clamp on english
     spinCurve: 2.3,   // lateral accel per unit spin while rolling (units/s²)
     spinAir: 0.8,     // lateral accel per unit spin in flight (units/s²)
@@ -40,6 +58,42 @@ window.SkeeBallPhysics = (function () {
     gutterDepth: 0.34, // slope-distance past the bed lip before the gutter swallows it
     settleT: 0.55     // sink animation, s
   };
+
+  // deceleration climbing the lane at position z (gravity along-slope +
+  // rolling friction). Flat runup barely slows the ball; the ramp bites hard.
+  function rollDecelAt(z) {
+    var T = TUNE, g = T.g;
+    var ang = z < T.kneeZ ? T.flatAngle : T.rampAngle;
+    return g * Math.sin(ang) + T.muRoll * g * Math.cos(ang);
+  }
+  // ∫ rollDecelAt dz from 0..z — the roll energy spent reaching z. Used to
+  // energy-compensate a mid-lane release so the outcome tracks the flick,
+  // not where the thumb let go.
+  function rollWork(z) {
+    var T = TUNE, g = T.g;
+    var aFlat = g * Math.sin(T.flatAngle) + T.muRoll * g * Math.cos(T.flatAngle);
+    var aRamp = g * Math.sin(T.rampAngle) + T.muRoll * g * Math.cos(T.rampAngle);
+    z = Math.max(0, z);
+    return z <= T.kneeZ ? aFlat * z : aFlat * T.kneeZ + aRamp * (z - T.kneeZ);
+  }
+
+  // Bind the physics scoring geometry to what the renderer actually DRAWS.
+  // Inverts render.bedPoint: given the drawn 100-hole screen positions and
+  // the outer ring ellipse, recover the hole's bed coords + mouth radii so a
+  // scored 100 lands exactly inside the visible pink hole. Optional — safe to
+  // skip in headless sims (the TUNE defaults already match 'grand').
+  function syncGeometry(geo) {
+    if (!geo || !geo.rings || !geo.holes100) return null;
+    var T = TUNE, r0 = geo.rings[0], cy = geo.target.cy;
+    var h = geo.holes100[geo.holes100.length - 1]; // right-side hole
+    T.holeU = (h.x - 108) * T.R10 / r0.rx;
+    T.holeV = (cy + r0.ry - h.y) * T.R10 / r0.ry;
+    var hr = geo.holeR;
+    // drawn mouth is an ellipse ~ (hr-2) × (round(hr*0.7)-1) pixels
+    T.holeRu = (hr - 2) * T.R10 / r0.rx;
+    T.holeRv = Math.max(1, Math.round(hr * 0.7) - 1) * T.R10 / r0.ry;
+    return { holeU: T.holeU, holeV: T.holeV, holeRu: T.holeRu, holeRv: T.holeRv };
+  }
 
   // tiny deterministic hash → [0,1), for rim rattles
   function hash01(seed) {
@@ -52,10 +106,13 @@ window.SkeeBallPhysics = (function () {
    * bottom edge), decide what the ball actually did. */
   function resolveLanding(u, v, seed) {
     var T = TUNE;
-    // the 100 holes first — they're proud of the rings
+    // the 100 holes first — they sit above the ring stack near the top of
+    // the bed. Test the ball centre against the DRAWN hole ellipse (mouth
+    // radii from syncGeometry), so a 100 scores only when the ball is
+    // visibly inside the pink hole — never below it.
     for (var s = -1; s <= 1; s += 2) {
-      var dh = Math.hypot(u - s * T.holeU, v - T.holeV);
-      if (dh < T.holeR + T.ballR * 0.3) return { kind: 'hole', score: 100 };
+      var du = (u - s * T.holeU) / T.holeRu, dv = (v - T.holeV) / T.holeRv;
+      if (du * du + dv * dv < 1) return { kind: 'hole', score: 100 };
     }
     if (Math.abs(u) > T.bedHalfW) return { kind: 'wall', score: 0 };
     var d = Math.hypot(u, v - T.R10); // distance from ring center
@@ -149,7 +206,7 @@ window.SkeeBallPhysics = (function () {
     if (st.phase === 'roll') {
       st.z += st.vz * dt;
       st.x += st.vx * dt;
-      st.vz -= T.laneDecel * dt;
+      st.vz -= rollDecelAt(st.z) * dt;   // coasts on the flat, bites on the ramp
       // english: the hook blooms late, like a bowling ball gripping the
       // lane as it slows — barely bends off the throw line, turns hard
       // in the final third. Reads as a curve instead of a diagonal.
@@ -169,7 +226,7 @@ window.SkeeBallPhysics = (function () {
       }
     } else if (st.phase === 'rollback') {
       st.z += st.vz * dt;
-      st.vz -= T.laneDecel * dt * 0.8; // gravity wins, friction argues
+      st.vz -= T.rollbackA * dt; // gravity walks the stalled ball back to the player
       st.trail.push({ s: 'lane', x: st.x, z: st.z });
       if (st.z <= 0) { st.phase = 'done'; st.events.push({ type: 'return' }); }
     } else if (st.phase === 'flight') {
@@ -241,5 +298,6 @@ window.SkeeBallPhysics = (function () {
   }
 
   return { TUNE: TUNE, createThrow: createThrow, step: step, pose: pose,
-           solveFlight: solveFlight, resolveLanding: resolveLanding };
+           solveFlight: solveFlight, resolveLanding: resolveLanding,
+           rollWork: rollWork, rollDecelAt: rollDecelAt, syncGeometry: syncGeometry };
 })();

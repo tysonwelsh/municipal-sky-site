@@ -38,7 +38,9 @@ window.SkeeBallRender = (function () {
     // faded hand-painted trim
     RED1: '#5f222c', RED2: '#8a3340',
     // marquee backlight
-    LIT: '#eeddA4', LIT_D: '#c6b075',
+    // faded parchment tan — an old treasure-map beige-brown, so the pale
+    // possum head reads in contrast against it (was a bright cream #eeddA4)
+    LIT: '#c2a06a', LIT_D: '#8f7340',
     // possum
     FUR1: '#928da0', FUR2: '#625d70', FUR3: '#3b3745'
   };
