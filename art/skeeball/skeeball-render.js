@@ -916,6 +916,13 @@ window.SkeeBallRender = (function () {
     return y1 - (y1 - y0) * t;
   }
   function laneHalfAtRow(y) { return 108 - laneL(y); } // linear, extrapolates
+  // inverse of laneRowAt: screen row → zn (0 throw line, 1 crest)
+  function laneZAt(row) {
+    var y1 = GEO.lane.y1, y0 = GEO.ramp.y0 + 1;
+    var T = Math.max(0, Math.min(1, (y1 - row) / (y1 - y0)));
+    var q = 0.45;
+    return T / ((1 + q) - q * T);
+  }
   // lane point (x in [-1,1], zn in [0,1]) → screen pos + perspective scale
   function laneBall(x, zn) {
     var y = laneRowAt(zn), hw = laneHalfAtRow(y);
@@ -963,7 +970,7 @@ window.SkeeBallRender = (function () {
     setVariant: setVariant,
     buildStatic: buildStatic,
     drawFrame: drawFrame,
-    laneBall: laneBall, bedPoint: bedPoint,
+    laneBall: laneBall, laneZAt: laneZAt, bedPoint: bedPoint,
     drawBall: drawBall, drawBallShadow: drawBallShadow,
     drawDrumDigits: drawDrumDigits,
     text: text, textC: textC

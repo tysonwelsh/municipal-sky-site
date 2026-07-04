@@ -122,13 +122,18 @@ window.SkeeBallPhysics = (function () {
     };
   }
 
-  function createThrow(x0, vz, vx, seed, spin) {
+  function createThrow(x0, vz, vx, seed, spin, z0) {
     var T = TUNE;
+    z0 = z0 || 0;
+    // A ball handed off from a mid-lane carry may legitimately have too
+    // little forward speed to reach the crest — it should roll back. Only
+    // throws from the throw line (z0≈0) get the vzMin liveliness floor.
+    var floor = z0 > 0.01 ? 0 : T.vzMin;
     return {
       phase: 'roll',
       x: Math.max(-0.8, Math.min(0.8, x0)),
-      z: 0,
-      vz: Math.max(T.vzMin, Math.min(T.vzMax, vz)),
+      z: Math.max(0, Math.min(T.L - 0.01, z0)),
+      vz: Math.max(floor, Math.min(T.vzMax, vz)),
       vx: Math.max(-T.vxMax, Math.min(T.vxMax, vx)),
       spin: Math.max(-T.spinMax, Math.min(T.spinMax, spin || 0)),
       seed: seed | 0,

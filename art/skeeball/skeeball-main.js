@@ -13,7 +13,7 @@ window.SkeeBall = (function () {
 
   // Bump on every deployed change so on-device testing is unambiguous.
   // Shown in the canvas corner, the page blurb, and the console.
-  var VERSION = 'V0.31';
+  var VERSION = 'V0.32';
 
   function mount(container, opts) {
     opts = opts || {};
@@ -57,12 +57,23 @@ window.SkeeBall = (function () {
     }
 
     /* ── throwing ─────────────────────────────────────────────────── */
-    function throwBall(x0, vz, vx, spin) {
+    function throwBall(x0, vz, vx, spin, z0) {
       if (state.ball && state.ball.phase !== 'done') return false;
-      state.ball = P.createThrow(x0, vz, vx, state.seed++, spin || 0);
+      state.ball = P.createThrow(x0, vz, vx, state.seed++, spin || 0, z0 || 0);
       state.ghost = [];
-      emit({ type: 'throw', x0: x0, vz: vz, vx: vx, spin: spin || 0 });
+      emit({ type: 'throw', x0: x0, vz: vz, vx: vx, spin: spin || 0, z0: z0 || 0 });
       return true;
+    }
+
+    // Map a canvas point to a lane position (lateral in [-1,1], zn in [0,1]).
+    function laneAt(cx, cy) {
+      var g = R.GEO;
+      var row = Math.max(g.ramp.y0 + 2, Math.min(g.lane.y1, cy));
+      var zn = R.laneZAt(row);
+      var center = R.laneBall(0, zn).x;
+      var hw = R.laneBall(1, zn).x - center;
+      var lat = Math.max(-0.92, Math.min(0.92, (cx - center) / hw));
+      return { lat: lat, zn: zn };
     }
 
     // orbiting scuff mark: makes english visible on the ball itself,
@@ -86,15 +97,21 @@ window.SkeeBall = (function () {
       };
     }
     canvas.addEventListener('pointerdown', function (ev) {
+      if (state.ball && state.ball.phase !== 'done') return; // one ball at a time
       var p = canvasPos(ev);
       if (p.y < R.GEO.lane.y0 - 16) return;          // swipe zone: the lane
-      swipe = { pts: [{ t: performance.now(), x: p.x, y: p.y }] };
+      // a ball appears under the thumb the instant it touches the lane
+      swipe = { pts: [{ t: performance.now(), x: p.x, y: p.y }], roll: 0 };
       try { canvas.setPointerCapture(ev.pointerId); } catch (e) { }
       ev.preventDefault();
     });
     canvas.addEventListener('pointermove', function (ev) {
       if (!swipe) return;
-      swipe.pts.push({ t: performance.now(), x: canvasPos(ev).x, y: canvasPos(ev).y });
+      var q = { t: performance.now(), x: canvasPos(ev).x, y: canvasPos(ev).y };
+      var prev = swipe.pts[swipe.pts.length - 1];
+      // accumulate rolled distance so the carried ball's scuff tumbles
+      swipe.roll += Math.hypot(q.x - prev.x, q.y - prev.y) * 0.11;
+      swipe.pts.push(q);
       if (swipe.pts.length > 48) swipe.pts.shift();
       ev.preventDefault();
     });
@@ -111,16 +128,32 @@ window.SkeeBall = (function () {
     function endSwipe(ev) {
       if (!swipe) return;
       var pts = swipe.pts;
+      var lastPt = pts[pts.length - 1];
       swipe = null;
+      var T = P.TUNE;
       var now = performance.now();
       // judge the throw from the final ~130ms of the gesture
       var recent = pts.filter(function (q) { return now - q.t <= 130; });
-      if (recent.length < 2) return;
+
+      // Where the ball actually is when released → its lane start (z0) and
+      // lateral position. The throw launches from here, not the throw line.
+      var rel = laneAt(lastPt.x, lastPt.y);
+      var z0 = rel.zn * T.L;
+      var x0 = rel.lat;
+
+      if (recent.length < 2) {
+        // held still and lifted: if it was carried up the lane, let it roll
+        // back down dead; a mere tap at the bottom does nothing.
+        if (z0 > 0.4) throwBall(x0, 0, 0, 0, z0);
+        return;
+      }
       var a = recent[0], b = recent[recent.length - 1];
       var dt = Math.max(0.016, (b.t - a.t) / 1000);
       var upSpeed = (a.y - b.y) / dt;                // canvas px/s, up = throw
-      if (upSpeed < 120) return;                     // a nudge, not a throw
-      var T = P.TUNE;
+      if (upSpeed < 120) {                           // released without a flick
+        if (z0 > 0.4) throwBall(x0, 0, 0, 0, z0);    // roll back down dead
+        return;
+      }
 
       // POWER: blend swipe speed with how far up the lane the whole gesture
       // reached, then ease so feather-touches stay feathery.
@@ -159,10 +192,13 @@ window.SkeeBall = (function () {
         }
       }
 
-      // ball starts where the swipe started, clamped to the lane
-      var hw = 108 - R.GEO.lane.xb0;
-      var x0 = Math.max(-0.8, Math.min(0.8, (pts[0].x - 108) / hw));
-      throwBall(x0, vz, vx, spin);
+      // Energy compensation: vz above is the intended speed as if from the
+      // throw line. Releasing the ball part-way up the lane would otherwise
+      // hand it a head start; subtract the roll energy it would have spent
+      // reaching z0 so the OUTCOME depends only on the flick, not where you
+      // let go. (A weak flick from high up thus rolls back, as it should.)
+      var vz0 = Math.sqrt(Math.max(0, vz * vz - 2 * T.laneDecel * z0));
+      throwBall(x0, vz0, vx, spin, z0);
     }
     canvas.addEventListener('pointerup', endSwipe);
     canvas.addEventListener('pointercancel', function () { swipe = null; });
@@ -180,6 +216,26 @@ window.SkeeBall = (function () {
       }
       if (ev.type === 'launch') state.launchX = state.ball.x;
       emit(ev);
+    }
+
+    // the ball riding under the thumb during a swipe (before release)
+    function drawCarry() {
+      if (!swipe) return;
+      if (state.ball && state.ball.phase !== 'done') return;
+      var last = swipe.pts[swipe.pts.length - 1];
+      var rel = laneAt(last.x, last.y);
+      var pt = R.laneBall(rel.lat, rel.zn);
+      var r = 2.2 + 4.6 * pt.s;
+      var by = pt.y - r * 0.65;
+      R.drawBallShadow(ctx, pt.x, pt.y, r * 0.9);
+      R.drawBall(ctx, pt.x, by, r);
+      // scuff mark tumbling with the rolled distance → reads as rolling
+      if (r >= 3) {
+        var ox = Math.round(Math.cos(swipe.roll) * (r - 1.5));
+        var oy = Math.round(Math.sin(swipe.roll * 0.6) * (r - 2));
+        ctx.fillStyle = '#6e5335';
+        ctx.fillRect(Math.round(pt.x + ox), Math.round(by + oy), 1, 2);
+      }
     }
 
     /* ── ball drawing ─────────────────────────────────────────────── */
@@ -303,6 +359,7 @@ window.SkeeBall = (function () {
         }
       }
       R.drawFrame(ctx, tNow, { score: state.score });
+      drawCarry();
       drawBallLayer();
       if (state.debug) drawDebug();
       R.text(ctx, VERSION, 3, R.H - 8, '#453567', 1); // build stamp, bottom-left
