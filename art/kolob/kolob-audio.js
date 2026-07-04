@@ -43,7 +43,7 @@ window.KolobAudio = (function () {
 
   // ----- Core audio graph -----
   var ctx = null;
-  var masterGain = null, compressorNode = null, masterSat = null;
+  var masterGain = null, compressorNode = null, masterSat = null, glueComp = null;
   var bg = null;                   // background-audio handle (lock-screen survival)
   // voicesBus sits between every layer path and the master. STOP silences it
   // and LEAVES it silent — long drone cycles keep their oscillators running
@@ -151,7 +151,7 @@ window.KolobAudio = (function () {
   var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
 
   var layerGains = {};
-  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.55, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, ambient: 0.5 };
+  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.42, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
@@ -176,8 +176,10 @@ window.KolobAudio = (function () {
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
-  var TAB_REVERB = { decay: 7.6, preDelay: 55, wet: 0.34, hfDamp: 0.8 };
-  var PAR_REVERB = { decay: 1.6, preDelay: 18, wet: 0.22, hfDamp: 1.6 };
+  // The wet is up from the pin-drop original: a fuller shared tail is the main
+  // glue that seats every voice in ONE room instead of side by side in the dry.
+  var TAB_REVERB = { decay: 7.6, preDelay: 55, wet: 0.44, hfDamp: 0.8 };
+  var PAR_REVERB = { decay: 1.6, preDelay: 18, wet: 0.30, hfDamp: 1.6 };
 
   // ==========================================================================
   // LISTENERS / LOG
@@ -215,7 +217,18 @@ window.KolobAudio = (function () {
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
     voicesBus = ctx.createGain();
     voicesBus.gain.setValueAtTime(1, ctx.currentTime);
-    voicesBus.connect(masterGain);
+    // A gentle shared "glue" compressor across the whole ensemble, before the
+    // master chain. Low ratio, wide knee, slow-ish attack: it lets the voices
+    // breathe together as one body of sound rather than a stack of separate
+    // tracks, without audibly pumping. The blend, not the level, is the point.
+    glueComp = ctx.createDynamicsCompressor();
+    glueComp.threshold.setValueAtTime(-20, ctx.currentTime);
+    glueComp.knee.setValueAtTime(22, ctx.currentTime);
+    glueComp.ratio.setValueAtTime(1.7, ctx.currentTime);
+    glueComp.attack.setValueAtTime(0.025, ctx.currentTime);
+    glueComp.release.setValueAtTime(0.22, ctx.currentTime);
+    voicesBus.connect(glueComp);
+    glueComp.connect(masterGain);
     compressorNode = ctx.createDynamicsCompressor();
     compressorNode.threshold.setValueAtTime(-18, ctx.currentTime);
     compressorNode.knee.setValueAtTime(16, ctx.currentTime);
@@ -318,8 +331,10 @@ window.KolobAudio = (function () {
   function panAt(layer, p) {
     var pool = panPool[layer];
     if (!pool) {
-      // Wider positions than the siblings: the frontier is broad.
-      pool = panPool[layer] = [-0.65, 0, 0.65].map(function (pp) {
+      // Some width for the open air, but pulled in from the old hard ±0.65
+      // slots: voices panned to the far edges read as separate tracks. Closer
+      // in, they share the centre and blend into one ensemble.
+      pool = panPool[layer] = [-0.42, 0, 0.42].map(function (pp) {
         var sp = ctx.createStereoPanner(); sp.pan.setValueAtTime(pp, ctx.currentTime); sp.connect(layerGains[layer]); return sp;
       });
     }
