@@ -151,8 +151,11 @@ window.SkeeBallRender = (function () {
     if (y > ln.y1) return laneHalf(ln.y1) + SHELL;      // front box, constant
     if (y > jy) return laneHalf(y) + SHELL;             // alley flare
     var jw = laneHalf(jy) + SHELL;
-    return jw - 6 * (jy - y) / (jy - CAB_TOP);          // upper body recede
+    var top = GEO.marquee.y0 - 6;                       // body starts under the topper
+    return jw - 6 * (jy - y) / (jy - top);              // upper body recede
   }
+  // where the cabinet body begins (below the marquee for pit layouts)
+  function cabTop() { return GEO && GEO.pit ? GEO.marquee.y0 - 6 : CAB_TOP; }
   function cabL(y) { return Math.round(108 - cabHalf(y)); }
   function cabR(y) { return Math.round(108 + cabHalf(y)); }
 
@@ -180,6 +183,15 @@ window.SkeeBallRender = (function () {
       ringCy: 170, maxRx: 42, ratio: 0.85,
       pitH: 14, hopH: 12, laneTopW: 56, laneBotW: 89, hump: 2,
       holeDx: 34, holeY: 131, holeRx: 8, holeLabelBelow: true
+    },
+    // F — grand bed: no window or PRIZES sign; the marquee rides the top of
+    // the frame and the freed headroom goes to a much larger, near-circular
+    // ring bed. The alley's far end widens to match the junction.
+    grand: {
+      marqueeY0: 42, bareRoom: true,
+      ringCy: 176, maxRx: 48, ratio: 0.95,
+      pitH: 14, hopH: 12, laneTopW: 62, laneBotW: 93, hump: 2,
+      holeDx: 40, holeY: 120, holeRx: 9, holeLabelBelow: true
     }
   };
 
@@ -206,13 +218,18 @@ window.SkeeBallRender = (function () {
     var pit = spec.pitH ? { y0: bedBottom + 2, y1: bedBottom + 2 + spec.pitH } : null;
     var rampY0 = pit ? pit.y1 : spec.rampY0;
     var rampY1 = pit ? pit.y1 + spec.hopH : spec.rampY1;
+    // the header stack is chained: marquee → score bar → bed top. Pit
+    // layouts may raise the marquee (marqueeY0) to buy the bed height.
+    var mqY0 = spec.marqueeY0 || 56;
+    var marquee = spec.pitH
+      ? { x0: 50, x1: 166, y0: mqY0, y1: mqY0 + 38 }  // topper, body-width-ish
+      : { x0: 36, x1: 180, y0: 56, y1: 94 };          // legacy wide header
+    var score = { y0: marquee.y1, y1: marquee.y1 + 28 };
     return {
       spec: spec,
-      // pit layouts: the marquee is a topper just wider than the body;
-      // legacy layouts keep the old wide header
-      marquee: spec.pitH ? { x0: 50, x1: 166, y0: 56, y1: 94 } : { x0: 36, x1: 180, y0: 56, y1: 94 },
-      score: { y0: 94, y1: 122 },
-      target: { y0: 122, y1: pit ? pit.y0 : spec.rampY0, cx: 108, cy: spec.ringCy },
+      marquee: marquee,
+      score: score,
+      target: { y0: score.y1, y1: pit ? pit.y0 : spec.rampY0, cx: 108, cy: spec.ringCy },
       pit: pit,
       rings: rings,
       // flat ring beds have no room for labels inside; paint them in a
@@ -231,16 +248,16 @@ window.SkeeBallRender = (function () {
       },
       rail: { y0: 332, y1: 352 },
       front: { y0: 352, y1: 372 },
-      window: { x0: 22, x1: 88, y0: 4, y1: 44 },
-      possum: { cx: 108, top: 18 },
+      window: spec.bareRoom ? null : { x0: 22, x1: 88, y0: 4, y1: 44 },
+      possum: { cx: 108, top: marquee.y0 - 38 },
       drums: spec.pitH
-        ? { x0: 80, y0: 104, cells: 4, cw: 14, ch: 15 }
+        ? { x0: 80, y0: score.y0 + 10, cells: 4, cw: 14, ch: 15 }
         : { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
     };
   }
 
-  // default: the hybrid picked by the perspective critique (2026-07)
-  var GEO = makeGeo(VARIANTS.hybrid);
+  // default: the grand bed (bigger rings, bare room; 2026-07)
+  var GEO = makeGeo(VARIANTS.grand);
 
   function setVariant(key) {
     GEO = makeGeo(VARIANTS[key] || VARIANTS.hybrid);
@@ -271,6 +288,7 @@ window.SkeeBallRender = (function () {
 
   function drawWindow(g, R) {
     var w = GEO.window;
+    if (!w) return;
     // frame
     rect(g, w.x0 - 3, w.y0 - 3, (w.x1 - w.x0) + 6, (w.y1 - w.y0) + 6, PAL.WOOD2);
     rect(g, w.x0, w.y0, w.x1 - w.x0, w.y1 - w.y0, PAL.NIGHT2);
@@ -316,14 +334,15 @@ window.SkeeBallRender = (function () {
   }
 
   function drawCabinetBody(g, R) {
+    var top = cabTop();
     // silhouette shadow on the wall
-    for (var y = CAB_TOP; y < CAB_BOT; y++) {
+    for (var y = top; y < CAB_BOT; y++) {
       hline(g, cabL(y) - 2, cabR(y) + 2, y, PAL.NIGHT0);
     }
     // side rails (everything between outer edge and playfield interior)
-    woodBand(g, R, CAB_TOP, CAB_BOT, cabL, cabR, PAL.WOOD3, PAL.WOOD2, PAL.WOOD4);
+    woodBand(g, R, top, CAB_BOT, cabL, cabR, PAL.WOOD3, PAL.WOOD2, PAL.WOOD4);
     // outer edge highlights / shadows
-    for (y = CAB_TOP; y < CAB_BOT; y++) {
+    for (y = top; y < CAB_BOT; y++) {
       px(g, cabL(y), y, PAL.WOOD5);
       px(g, cabR(y), y, PAL.WOOD1);
     }
@@ -747,7 +766,7 @@ window.SkeeBallRender = (function () {
 
   function drawCobwebsAndGrime(g, R) {
     // cobweb in the top-right cabinet corner
-    var cx = cabR(CAB_TOP) - 1, cy = CAB_TOP + 2;
+    var cx = cabR(cabTop()) - 1, cy = cabTop() + 2;
     g.fillStyle = PAL.FOG;
     for (var i = 0; i < 3; i++) {
       var rr = 5 + i * 4;
@@ -792,7 +811,7 @@ window.SkeeBallRender = (function () {
     drawFrontPanel(g, R);
     drawBaseAndStain(g, R);
     drawCobwebsAndGrime(g, R);
-    drawPrizesSign(g, R, true);
+    if (!GEO.spec.bareRoom) drawPrizesSign(g, R, true);
     drawPossum(g, R);
     return staticLayer;
   }
@@ -812,20 +831,22 @@ window.SkeeBallRender = (function () {
     ctx.drawImage(staticLayer, 0, 0);
     var g = ctx;
 
-    // ── fog drifting past the window panes
+    // ── fog drifting past the window panes (bare rooms have no window)
     var w = GEO.window;
-    g.save();
-    g.beginPath();
-    g.rect(w.x0, w.y0, w.x1 - w.x0, w.y1 - w.y0);
-    g.clip();
-    var span = (w.x1 - w.x0) + 60;
-    for (var i = 0; i < 3; i++) {
-      var fx = w.x0 - 30 + (((t * (3 + i * 2.1)) + i * 47) % span);
-      var fy = w.y0 + 8 + i * 11;
-      dither(g, Math.round(fx), fy, 34, 5, PAL.FOG, 0.3);
-      dither(g, Math.round(fx) - 8, fy + 2, 22, 3, PAL.PUR2, 0.4);
+    if (w) {
+      g.save();
+      g.beginPath();
+      g.rect(w.x0, w.y0, w.x1 - w.x0, w.y1 - w.y0);
+      g.clip();
+      var span = (w.x1 - w.x0) + 60;
+      for (var i = 0; i < 3; i++) {
+        var fx = w.x0 - 30 + (((t * (3 + i * 2.1)) + i * 47) % span);
+        var fy = w.y0 + 8 + i * 11;
+        dither(g, Math.round(fx), fy, 34, 5, PAL.FOG, 0.3);
+        dither(g, Math.round(fx) - 8, fy + 2, 22, 3, PAL.PUR2, 0.4);
+      }
+      g.restore();
     }
-    g.restore();
 
     // ── the dying marquee bulb behind ROLLER's final R
     // 'HOLLER ROLLER' is centered at 108, scale 2 → glyphs advance 8px
@@ -860,7 +881,7 @@ window.SkeeBallRender = (function () {
       rect(g, cx + EYES.R.x, top + EYES.R.y, EYES.R.w, EYES.R.h, PAL.FUR2);
 
     // ── the PRIZES sign shorts out now and then
-    if (flickerAt(t, 1.6, 21) < 0.13) {
+    if (!GEO.spec.bareRoom && flickerAt(t, 1.6, 21) < 0.13) {
       var R0 = rng(1); // deterministic redraw, unlit
       drawPrizesSign(g, R0, false);
     }
