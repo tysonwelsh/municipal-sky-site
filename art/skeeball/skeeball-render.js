@@ -840,10 +840,11 @@ window.SkeeBallRender = (function () {
     return (b >>> 0) / 4294967296;
   }
 
-  function drawFrame(ctx, t) {
+  function drawFrame(ctx, t, opts) {
     if (!staticLayer) buildStatic();
     ctx.drawImage(staticLayer, 0, 0);
     var g = ctx;
+    if (opts && typeof opts.score === 'number') drawDrumDigits(g, opts.score);
 
     // ── fog drifting past the window panes (bare rooms have no window)
     var w = GEO.window;
@@ -905,12 +906,66 @@ window.SkeeBallRender = (function () {
       dither(g, 98, GEO.ramp.y0, 20, 1, PAL.PINK_D, 0.12);
   }
 
+  /* ══ gameplay projection & sprites ════════════════════════════════ */
+
+  // z (0 throw line → 1 crest) to a screen row, with mild foreshortening
+  // so equal distances compress as they recede
+  function laneRowAt(zn) {
+    var y1 = GEO.lane.y1, y0 = GEO.ramp.y0 + 1;
+    var q = 0.45, t = zn * (1 + q) / (1 + q * zn);
+    return y1 - (y1 - y0) * t;
+  }
+  function laneHalfAtRow(y) { return 108 - laneL(y); } // linear, extrapolates
+  // lane point (x in [-1,1], zn in [0,1]) → screen pos + perspective scale
+  function laneBall(x, zn) {
+    var y = laneRowAt(zn), hw = laneHalfAtRow(y);
+    return { x: 108 + x * hw, y: y, s: hw / laneHalfAtRow(GEO.lane.y1) };
+  }
+  // bed point (u lateral, v up-slope from the bottom edge, in units of
+  // R10) → screen, anchored to the drawn ring ellipses
+  function bedPoint(u, v, R10) {
+    var r0 = GEO.rings[0];
+    return {
+      x: 108 + u * (r0.rx / R10),
+      y: (GEO.target.cy + r0.ry) - v * (r0.ry / R10),
+      ky: r0.ry / R10
+    };
+  }
+
+  function drawBall(g, x, y, r) {
+    x = Math.round(x); y = Math.round(y); r = Math.max(1, Math.round(r));
+    ellipse(g, x, y, r, r, PAL.BONE);
+    if (r >= 3) {
+      dither(g, x - r + 1, y + (r >> 1) - 1, r * 2 - 1, Math.max(1, r - (r >> 1)), PAL.BONE_D, 0.55);
+      px(g, x - (r >> 1), y - (r >> 1), PAL.MOON);
+    }
+  }
+  function drawBallShadow(g, x, y, r) {
+    ellipse(g, Math.round(x), Math.round(y), Math.max(1, Math.round(r)),
+      Math.max(1, Math.round(r * 0.4)), PAL.LANE3);
+  }
+  // live score on the drum counter (drawn over the static zeros)
+  function drawDrumDigits(g, value) {
+    var d = GEO.drums;
+    var s = String(Math.max(0, Math.min(9999, value | 0)));
+    while (s.length < 4) s = '0' + s;
+    for (var i = 0; i < 4; i++) {
+      var dx = d.x0 + i * d.cw;
+      rect(g, dx, d.y0 + 2, d.cw - 2, d.ch - 4, PAL.BONE);
+      textC(g, s[i], dx + (d.cw - 2) / 2, d.y0 + 5, PAL.NIGHT0, 1);
+    }
+  }
+
   return {
     W: W, H: H, PAL: PAL,
     get GEO() { return GEO; },
     VARIANTS: VARIANTS,
     setVariant: setVariant,
     buildStatic: buildStatic,
-    drawFrame: drawFrame
+    drawFrame: drawFrame,
+    laneBall: laneBall, bedPoint: bedPoint,
+    drawBall: drawBall, drawBallShadow: drawBallShadow,
+    drawDrumDigits: drawDrumDigits,
+    text: text, textC: textC
   };
 })();
