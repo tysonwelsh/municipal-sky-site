@@ -154,7 +154,7 @@ window.SkeeBallRender = (function () {
     // ramp whose trough flares out to meet the bed's flanks (crestW).
     hybrid: {
       rampY0: 218, rampY1: 246, ringCy: 170, maxRx: 62, ratio: 0.78,
-      laneTopW: 34, crestW: 46, hump: 12,
+      laneTopW: 34, crestW: 37, hump: 3,
       holeDx: 58, holeY: 130, holeLabelBelow: true
     }
   };
@@ -508,12 +508,12 @@ window.SkeeBallRender = (function () {
           c = (BAYER[(y % 4) * 4 + (x % 4)] < 8) ? PAL.LANE2 : c;
         px(g, x, y, c);
       }
-      px(g, x, yTop, PAL.WOOD2);                 // crest edge against the bed
+      px(g, x, yTop, PAL.LANE1);                 // polished lip catching the light
+      px(g, x, yTop + 1, PAL.LANE3);             // then the surface falls away
       px(g, x, yBot - 1, PAL.LANE1);             // bright near shoulder
     }
-    // wax glint where the fluorescent catches the crest apex
-    dither(g, 92, rp.y0 + 1, 32, 2, PAL.LANE1, 0.45);
-    dither(g, 100, rp.y0 + 1, 16, 1, PAL.BONE, 0.2);
+    // wax sparkle where the fluorescent catches the crest apex
+    dither(g, 100, rp.y0, 16, 1, PAL.BONE, 0.3);
   }
 
   function drawLane(g, R) {
@@ -737,9 +737,9 @@ window.SkeeBallRender = (function () {
       drawPrizesSign(g, R0, false);
     }
 
-    // ── marquee neon reflection shimmer on the wax crown of the ramp
+    // ── neon reflection shimmer along the ramp's polished lip
     if (flickerAt(t, 9, 5) < 0.5)
-      dither(g, 96, GEO.ramp.y0 + 1, 24, 2, PAL.PINK_DK, 0.2);
+      dither(g, 98, GEO.ramp.y0, 20, 1, PAL.PINK_D, 0.12);
   }
 
   return {
