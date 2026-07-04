@@ -188,10 +188,13 @@ window.SkeeBallRender = (function () {
     // the frame and the freed headroom goes to a much larger, near-circular
     // ring bed. The alley's far end widens to match the junction.
     grand: {
-      marqueeY0: 42, bareRoom: true,
-      ringCy: 176, maxRx: 48, ratio: 0.95,
-      pitH: 14, hopH: 12, laneTopW: 62, laneBotW: 93, hump: 2,
-      holeDx: 40, holeY: 120, holeRx: 9, holeLabelBelow: true
+      marqueeY0: 24, marqueeX0: 44, marqueeX1: 172, bareRoom: true,
+      snoutOver: true,      // possum head sits low, snout over the title
+      noScoreLabel: true,   // drums are self-evident; no SCORE text, no lamps
+      scoreH: 22,
+      ringCy: 172, maxRx: 52, ratio: 0.95,
+      pitH: 14, hopH: 12, laneTopW: 66, laneBotW: 96, hump: 2,
+      holeDx: 42, holeY: 100, holeRx: 10, holeLabelBelow: true
     }
   };
 
@@ -222,9 +225,9 @@ window.SkeeBallRender = (function () {
     // layouts may raise the marquee (marqueeY0) to buy the bed height.
     var mqY0 = spec.marqueeY0 || 56;
     var marquee = spec.pitH
-      ? { x0: 50, x1: 166, y0: mqY0, y1: mqY0 + 38 }  // topper, body-width-ish
+      ? { x0: spec.marqueeX0 || 50, x1: spec.marqueeX1 || 166, y0: mqY0, y1: mqY0 + 38 }
       : { x0: 36, x1: 180, y0: 56, y1: 94 };          // legacy wide header
-    var score = { y0: marquee.y1, y1: marquee.y1 + 28 };
+    var score = { y0: marquee.y1, y1: marquee.y1 + (spec.scoreH || 28) };
     return {
       spec: spec,
       marquee: marquee,
@@ -249,9 +252,10 @@ window.SkeeBallRender = (function () {
       rail: { y0: 332, y1: 352 },
       front: { y0: 352, y1: 372 },
       window: spec.bareRoom ? null : { x0: 22, x1: 88, y0: 4, y1: 44 },
-      possum: { cx: 108, top: marquee.y0 - 38 },
+      // snoutOver drops the head so the snout overhangs the marquee title
+      possum: { cx: 108, top: marquee.y0 - (spec.snoutOver ? 18 : 38) },
       drums: spec.pitH
-        ? { x0: 80, y0: score.y0 + 10, cells: 4, cw: 14, ch: 15 }
+        ? { x0: 80, y0: score.y0 + (spec.noScoreLabel ? 3 : 10), cells: 4, cw: 14, ch: 15 }
         : { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
     };
   }
@@ -383,10 +387,14 @@ window.SkeeBallRender = (function () {
 
   function drawPossum(g, R) {
     var cx = GEO.possum.cx, top = GEO.possum.top;
-    // steel mounting pole down into the marquee (drawn first, behind the head)
-    rect(g, cx - 2, top + 28, 5, GEO.marquee.y0 - (top + 28), PAL.STEEL1);
-    vline(g, cx - 2, top + 28, GEO.marquee.y0 - 1, PAL.STEEL2);
-    px(g, cx, top + 36, PAL.STEEL2); px(g, cx, top + 40, PAL.STEEL2); // bolts
+    // steel mounting pole down into the marquee (drawn first, behind the
+    // head; when the head overhangs the marquee there's no pole to see)
+    var poleH = GEO.marquee.y0 - (top + 28);
+    if (poleH > 0) {
+      rect(g, cx - 2, top + 28, 5, poleH, PAL.STEEL1);
+      vline(g, cx - 2, top + 28, GEO.marquee.y0 - 1, PAL.STEEL2);
+      px(g, cx, top + 36, PAL.STEEL2); px(g, cx, top + 40, PAL.STEEL2); // bolts
+    }
     // ears: big, round, chewed
     ellipse(g, cx - 12, top + 5, 7, 7, PAL.FUR3);
     ellipse(g, cx + 12, top + 5, 7, 7, PAL.FUR3);
@@ -433,9 +441,12 @@ window.SkeeBallRender = (function () {
     hline(g, x0, x1 - 1, s.y0, PAL.WOOD4);
     hline(g, x0, x1 - 1, s.y1 - 1, PAL.WOOD1);
     var compact = !!GEO.pit; // narrow body: two stacked rows
-    // hand-painted SCORE, slightly crooked
-    text(g, 'SCORE', x0 + 4, s.y0 + (compact ? 2 : 8), PAL.BONE_D, 1);
-    px(g, x0 + 4, s.y0 + (compact ? 7 : 13), PAL.WOOD2); // paint flaking off the S
+    // hand-painted SCORE, slightly crooked (dropped entirely when the
+    // spec says the drums speak for themselves)
+    if (!GEO.spec.noScoreLabel) {
+      text(g, 'SCORE', x0 + 4, s.y0 + (compact ? 2 : 8), PAL.BONE_D, 1);
+      px(g, x0 + 4, s.y0 + (compact ? 7 : 13), PAL.WOOD2); // paint flaking off the S
+    }
     // drum counter window
     var d = GEO.drums;
     rect(g, d.x0 - 2, d.y0 - 2, d.cells * d.cw + 4, d.ch + 4, PAL.WOOD1);
@@ -446,13 +457,16 @@ window.SkeeBallRender = (function () {
       dither(g, dx, d.y0 + d.ch - 2, d.cw - 2, 2, PAL.BONE_D, 0.6);
       textC(g, '0', dx + (d.cw - 2) / 2, d.y0 + 5, PAL.NIGHT0, 1);
     }
-    // 9 ball lamps, dim pink — these light per remaining ball in play
-    for (i = 0; i < 9; i++) {
-      var lx = x1 - 40 + i * 4;
-      px(g, lx, s.y0 + (compact ? 4 : 9), PAL.PINK_DK);
-      px(g, lx, s.y0 + (compact ? 5 : 10), PAL.PINK_DK);
+    // 9 ball lamps, dim pink — these light per remaining ball in play.
+    // noScoreLabel machines rely on the racked balls themselves instead.
+    if (!GEO.spec.noScoreLabel) {
+      for (i = 0; i < 9; i++) {
+        var lx = x1 - 40 + i * 4;
+        px(g, lx, s.y0 + (compact ? 4 : 9), PAL.PINK_DK);
+        px(g, lx, s.y0 + (compact ? 5 : 10), PAL.PINK_DK);
+      }
+      if (!compact) text(g, 'BALLS', x1 - 42, s.y0 + 14, PAL.BONE_D, 1);
     }
-    if (!compact) text(g, 'BALLS', x1 - 42, s.y0 + 14, PAL.BONE_D, 1);
   }
 
   function drawTarget(g, R) {
