@@ -147,7 +147,16 @@ window.SkeeBallRender = (function () {
     // C — long throw: small distant target, most of the frame is lane
     longThrow: { rampY0: 208, rampY1: 228, ringCy: 168, maxRx: 46, ratio: 0.62, laneTopW: 34, hump: 3 },
     // D — target face: near-circular rings dominate, lane is just a runway
-    targetFace: { rampY0: 244, rampY1: 262, ringCy: 182, maxRx: 57, ratio: 0.92, laneTopW: 44, hump: 5 }
+    targetFace: { rampY0: 244, rampY1: 262, ringCy: 182, maxRx: 57, ratio: 0.92, laneTopW: 44, hump: 5 },
+    // E — hybrid picked by the perspective critique: B's ring-to-ramp
+    // tangency (ringCy + maxRx*ratio === rampY0, by construction), a longer
+    // C-ish lane, D-adjacent gap legibility, and a wide soft-shouldered
+    // ramp whose trough flares out to meet the bed's flanks (crestW).
+    hybrid: {
+      rampY0: 218, rampY1: 246, ringCy: 170, maxRx: 62, ratio: 0.78,
+      laneTopW: 34, crestW: 46, hump: 12,
+      holeDx: 58, holeY: 130, holeLabelBelow: true
+    }
   };
 
   // ring radii as fractions of maxRx, outside → in; even indexes are the
@@ -176,7 +185,10 @@ window.SkeeBallRender = (function () {
       // flat ring beds have no room for labels inside; paint them in a
       // column beside the rings instead
       labelsInside: spec.ratio >= 0.7,
-      holes100: [{ x: 54, y: 136 }, { x: 162, y: 136 }],
+      holes100: [
+        { x: 108 - (spec.holeDx || 54), y: spec.holeY || 136 },
+        { x: 108 + (spec.holeDx || 54), y: spec.holeY || 136 }
+      ],
       ramp: { y0: spec.rampY0, y1: spec.rampY1 },
       lane: {
         y0: spec.rampY1, y1: 332,
@@ -191,10 +203,11 @@ window.SkeeBallRender = (function () {
     };
   }
 
-  var GEO = makeGeo(VARIANTS.headOn);
+  // default: the hybrid picked by the perspective critique (2026-07)
+  var GEO = makeGeo(VARIANTS.hybrid);
 
   function setVariant(key) {
-    GEO = makeGeo(VARIANTS[key] || VARIANTS.headOn);
+    GEO = makeGeo(VARIANTS[key] || VARIANTS.hybrid);
     staticLayer = null; // force a rebuild
   }
   function laneL(y) { var t = (y - GEO.lane.y0) / (GEO.lane.y1 - GEO.lane.y0); return Math.round(GEO.lane.xt0 + (GEO.lane.xb0 - GEO.lane.xt0) * t); }
@@ -449,38 +462,58 @@ window.SkeeBallRender = (function () {
       ellipse(g, h.x, h.y, 8, 4, PAL.GAP);          // the hole
       ellipse(g, h.x, h.y + 2, 4, 1, PAL.PINK_DK);  // glow from below
       px(g, h.x, h.y + 2, PAL.PINK_D);
-      // label sits fully inside the target panel (score bar owns y < 122)
-      textC(g, '100', h.x, h.y - 13, PAL.PINK, 1);
+      // label sits fully inside the target panel (score bar owns y < 122);
+      // when the rings crowd the top corners it moves below the hole
+      textC(g, '100', h.x, h.y + (GEO.spec.holeLabelBelow ? 9 : -13), PAL.PINK, 1);
     }
   }
 
   function drawRamp(g, R) {
-    var rp = GEO.ramp, hump = GEO.spec.hump;
-    var h = rp.y1 - rp.y0;
-    // the hump: a gradual swell, not a cliff. Crown is brightest (it faces
-    // the light and the player); shading rolls off smoothly toward the
-    // lane so the curvature reads as curvature.
-    for (var x = laneL(rp.y1); x <= laneR(rp.y1); x++) {
-      var n = Math.abs(x - 108) / (laneR(rp.y1) - 108);
-      var top = rp.y0 + Math.round(hump * n * n); // crest dips at the sides
-      vline(g, x, top, rp.y1, PAL.LANE2);
-      px(g, x, top, PAL.LANE1);                       // bright crest
-      px(g, x, top + 1, PAL.LANE1);
-      if ((x + BAYER[x % 4]) % 2) px(g, x, top + 2, PAL.LANE1);   // dithered rolloff
-      if ((x + 1) % 3) px(g, x, top + Math.round(h * 0.45), PAL.LANE2);
-      if ((x + BAYER[(x + 2) % 4]) % 2) px(g, x, rp.y1 - 2, PAL.LANE3);
-      px(g, x, rp.y1 - 1, PAL.LANE3);                 // contact shadow at the lane
-      // side gutters continue up and over the ramp
-      if (x <= laneL(rp.y1) + 1 || x >= laneR(rp.y1) - 1) vline(g, x, top, rp.y1, PAL.WOOD1);
+    var rp = GEO.ramp, spec = GEO.spec;
+    var hump = spec.hump, h = rp.y1 - rp.y0;
+    // trough half-width: crestW at the top (flaring out toward the bed's
+    // flanks), laneTopW at the bottom where it meets the lane
+    var cw = spec.crestW || spec.laneTopW, lw = spec.laneTopW;
+    function halfW(y) { return cw + (lw - cw) * (y - rp.y0) / h; }
+
+    // dark trough underfill across the whole band: everything the ramp
+    // surface doesn't cover reads as shadowed wall (the sides flanking the
+    // channel, and the gap behind the crest where it dips at the edges)
+    for (var y = rp.y0; y < rp.y1; y++) {
+      hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.WOOD2);
+      px(g, cabL(y) + 5, y, PAL.WOOD1); px(g, cabR(y) - 5, y, PAL.WOOD5);
     }
-    // two faint contour lines following the crest curve, hinting the barrel
-    for (x = laneL(rp.y1) + 3; x <= laneR(rp.y1) - 3; x += 2) {
-      var n2 = Math.abs(x - 108) / (laneR(rp.y1) - 108);
-      var top2 = rp.y0 + Math.round(hump * n2 * n2);
-      px(g, x, top2 + Math.round(h * 0.28), PAL.LANE3);
+
+    // the ramp surface, column by column. Crest dips at the sides
+    // (hump px of curvature) and the shading runs top-dark: the surface
+    // tilts away from the player toward the bed, so the far edge sits in
+    // shade and the near edge catches the room light.
+    var maxHW = Math.max(cw, lw);
+    for (var x = 108 - maxHW; x <= 108 + maxHW; x++) {
+      var dx = Math.abs(x - 108);
+      // column exists from the crest curve down to where the flare edge
+      // narrows past it (or the lane, whichever comes first)
+      var yTop = rp.y0 + Math.round(hump * (dx / maxHW) * (dx / maxHW));
+      var yBot = rp.y1;
+      if (dx > Math.min(cw, lw) && cw !== lw) {
+        var t = (dx - cw) / (lw - cw);           // where |x| crosses halfW
+        if (t >= 0 && t <= 1) yBot = Math.round(rp.y0 + t * h);
+      }
+      if (yBot <= yTop) continue;
+      for (y = yTop; y < yBot; y++) {
+        var f = (y - yTop) / (rp.y1 - yTop);     // 0 at crest, 1 at lane
+        var c = f < 0.3 ? PAL.LANE3 : (f < 0.62 ? PAL.LANE2 : PAL.LANE1);
+        // dithered seams between the gradient steps
+        if ((f > 0.24 && f < 0.36) || (f > 0.56 && f < 0.68))
+          c = (BAYER[(y % 4) * 4 + (x % 4)] < 8) ? PAL.LANE2 : c;
+        px(g, x, y, c);
+      }
+      px(g, x, yTop, PAL.WOOD2);                 // crest edge against the bed
+      px(g, x, yBot - 1, PAL.LANE1);             // bright near shoulder
     }
-    // wax gleam streak on the crown
-    dither(g, 88, rp.y0 + 1, 40, 2, PAL.BONE, 0.25);
+    // wax glint where the fluorescent catches the crest apex
+    dither(g, 92, rp.y0 + 1, 32, 2, PAL.LANE1, 0.45);
+    dither(g, 100, rp.y0 + 1, 16, 1, PAL.BONE, 0.2);
   }
 
   function drawLane(g, R) {
