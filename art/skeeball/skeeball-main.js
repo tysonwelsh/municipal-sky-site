@@ -13,7 +13,7 @@ window.SkeeBall = (function () {
 
   // Bump on every deployed change so on-device testing is unambiguous.
   // Shown in the canvas corner, the page blurb, and the console.
-  var VERSION = 'V0.30';
+  var VERSION = 'V0.31';
 
   function mount(container, opts) {
     opts = opts || {};
@@ -47,6 +47,7 @@ window.SkeeBall = (function () {
       launchX: 0,          // lateral position when the ball left the crest
       seed: 1,
       toast: null,         // {x, y, text, t0, pink} floating score
+      ghost: [],           // recent lane positions, drawn as a fading trail
       debug: /[?&]debug=1/.test(location.search)
     };
     var listeners = opts.onEvent ? [opts.onEvent] : [];
@@ -59,8 +60,19 @@ window.SkeeBall = (function () {
     function throwBall(x0, vz, vx, spin) {
       if (state.ball && state.ball.phase !== 'done') return false;
       state.ball = P.createThrow(x0, vz, vx, state.seed++, spin || 0);
+      state.ghost = [];
       emit({ type: 'throw', x0: x0, vz: vz, vx: vx, spin: spin || 0 });
       return true;
+    }
+
+    // orbiting scuff mark: makes english visible on the ball itself,
+    // spinning faster (and the other way) with stronger spin
+    function drawSpinMark(bx, by, r, spin) {
+      if (Math.abs(spin) < 0.08 || r < 3) return;
+      var phase = tNow * (2.5 + 8 * Math.abs(spin)) * (spin > 0 ? 1 : -1);
+      var ox = Math.round(Math.cos(phase) * (r - 1.5));
+      ctx.fillStyle = '#6e5335';
+      ctx.fillRect(Math.round(bx + ox), Math.round(by), 1, 2);
     }
 
     /* ── swipe input ──────────────────────────────────────────────── */
@@ -88,13 +100,13 @@ window.SkeeBall = (function () {
     });
     // power mapping tuning — a heavy waxed ball: a soft flick barely
     // moves it; full power wants a genuinely long AND fast thumb swipe.
-    var SPEED_CEIL = 2200;   // px/s that saturates the speed term
-    var LEN_CEIL = 150;      // px of upward reach that saturates the length term
+    var SPEED_CEIL = 1900;   // px/s that saturates the speed term
+    var LEN_CEIL = 135;      // px of upward reach that saturates the length term
     var LEN_SPEED_GATE = 500; // px/s of release speed to earn full length credit
     var W_SPEED = 0.45, W_LEN = 0.55;  // blend (length-dominant = "push it")
-    var POWER_GAMMA = 1.5;   // easing: soft inputs stay soft
+    var POWER_GAMMA = 1.42;  // easing: soft inputs stay soft
     var SIDE_DIV = 300;      // px/s of sideways drift per unit vx (angled shots)
-    var SPIN_DIV = 2.6;      // px/ms of lateral curl per unit spin (curve/hook)
+    var SPIN_ANG_K = 1.3;    // spin per radian of heading curl over the gesture
 
     function endSwipe(ev) {
       if (!swipe) return;
@@ -130,16 +142,21 @@ window.SkeeBall = (function () {
       var sideSpeed = (b.x - a.x) / dt;
       var vx = Math.max(-T.vxMax, Math.min(T.vxMax, sideSpeed / SIDE_DIV));
 
-      // ENGLISH: curl of the swipe path — change in lateral velocity between
-      // the start and end of the recent gesture. A straight (even diagonal)
-      // swipe has ~constant lateral velocity → no spin; a hook curls.
-      var n = recent.length, spin = 0;
-      if (n >= 4) {
-        var i1 = Math.max(1, Math.floor(n / 3));
-        var i2 = Math.min(n - 2, Math.ceil(2 * n / 3));
-        var evx = (recent[i1].x - recent[0].x) / Math.max(1, recent[i1].t - recent[0].t);
-        var lvx = (recent[n - 1].x - recent[i2].x) / Math.max(1, recent[n - 1].t - recent[i2].t);
-        spin = Math.max(-T.spinMax, Math.min(T.spinMax, (lvx - evx) / SPIN_DIV));
+      // ENGLISH: curl of the WHOLE gesture, not just the release. Compare
+      // the thumb's heading over the first third of the path against the
+      // last third: the signed angle between them is how much the stroke
+      // rotated. A J-hook is a big curl; a straight diagonal is none.
+      var n = pts.length, spin = 0;
+      if (n >= 6) {
+        var i3 = Math.max(2, Math.floor(n / 3));
+        var ex = pts[i3].x - pts[0].x, ey = pts[i3].y - pts[0].y;
+        var lx = pts[n - 1].x - pts[n - 1 - i3].x, ly = pts[n - 1].y - pts[n - 1 - i3].y;
+        var eLen = Math.hypot(ex, ey), lLen = Math.hypot(lx, ly);
+        if (eLen > 8 && lLen > 8) {
+          // screen y is down: positive angle = clockwise curl = hook right
+          var curl = Math.atan2(ex * ly - ey * lx, ex * lx + ey * ly);
+          spin = Math.max(-T.spinMax, Math.min(T.spinMax, curl * SPIN_ANG_K));
+        }
       }
 
       // ball starts where the swipe started, clamped to the lane
@@ -176,8 +193,18 @@ window.SkeeBall = (function () {
         var zn = Math.min(1, Math.max(0, pose.z / T.L));
         var pt = R.laneBall(pose.x, zn);
         var r = 2.2 + 4.6 * pt.s;
+        // short fading trail so a hooking path reads as a curve at speed
+        var by = pt.y - r * 0.65;
+        state.ghost.push({ x: pt.x, y: by, t: tNow });
+        while (state.ghost.length && tNow - state.ghost[0].t > 0.22) state.ghost.shift();
+        ctx.fillStyle = '#93743f';
+        for (var gi = 0; gi < state.ghost.length; gi += 2) {
+          var gp = state.ghost[gi];
+          ctx.fillRect(Math.round(gp.x), Math.round(gp.y), 1, 1);
+        }
         R.drawBallShadow(ctx, pt.x, pt.y, r * 0.9);
-        R.drawBall(ctx, pt.x, pt.y - r * 0.65, r);
+        R.drawBall(ctx, pt.x, by, r);
+        drawSpinMark(pt.x, by, r, b.spin);
       } else if (pose.space === 'air') {
         var p0 = R.laneBall(state.launchX, 1);
         var p1;
@@ -191,7 +218,9 @@ window.SkeeBall = (function () {
         var sx = p0.x + (p1.x - p0.x) * pose.fr;
         var sy = p0.y + (p1.y - p0.y) * pose.fr - pose.y * 24; // height cue, damped
         var r0 = 2.2 + 4.6 * p0.s, r1 = 3.2;
-        R.drawBall(ctx, sx, sy, r0 + (r1 - r0) * pose.fr);
+        var fr2 = r0 + (r1 - r0) * pose.fr;
+        R.drawBall(ctx, sx, sy, fr2);
+        drawSpinMark(sx, sy, fr2, b.spin);
       } else if (pose.space === 'rolldown') {
         // a miss rolling back down the waxed wood and over the lip into the
         // dark pit mouth (the gutter). bedPoint carries continuously below
