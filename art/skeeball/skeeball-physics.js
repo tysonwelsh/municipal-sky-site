@@ -144,8 +144,22 @@ window.SkeeBallPhysics = (function () {
     var d = Math.hypot(u, v - T.R10); // distance from ring center
     var fr = T.ringFr, R = T.R10;
     if (d > fr[0] * R) {
-      // outside all rings: low = dribbles back into the pit, high = backstop
-      return { kind: v > R ? 'backstop' : 'short', score: 0 };
+      // outside all rings. BELOW the stack (short, v < centre) → dribbles
+      // forward into the pit, a real 0. ABOVE the stack (backstop) → the
+      // ball rolling down the bed is STOPPED by the raised outer ring wall
+      // and drops into the outermost (10) trough — it does not roll over
+      // the ring tops. Route it through the same roll-off as a divider,
+      // targeting the 10 trough centre along its radial bearing.
+      if (v > R) {
+        var oD = (fr[0] * R + fr[1] * R) / 2;   // centre radius of the 10 trough
+        var oAng = Math.atan2(v - R, u);
+        return {
+          kind: 'divider', score: 10, rollInward: true,
+          fromU: u, fromV: v,
+          u: oD * Math.cos(oAng), v: R + oD * Math.sin(oAng)
+        };
+      }
+      return { kind: 'short', score: 0 };
     }
     // walk the bands: even index = scoring trough, odd index = cork divider
     var scores = [10, 20, 30, 40, 50];
