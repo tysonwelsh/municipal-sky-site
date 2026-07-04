@@ -983,9 +983,9 @@ window.KolobAudio = (function () {
   var Motif = (function () {
     var NAMES = ["𐐀", "𐐁", "𐐂"];               // the first three letters of the Deseret alphabet
     // THE GESTURE POOL — cultural DNA, abstracted from the tradition's
-    // rhetoric, never quoted. Twelve gestures; each meeting draws only three,
-    // so most sessions never hear most of them. That is the diversity: no two
-    // visits work the same material.
+    // rhetoric, never quoted. Nearly thirty gestures; each meeting draws only
+    // three, so most sessions never hear most of them. That is the diversity:
+    // no two visits work the same material.
     var GESTURES = [
       { name: "gathering",   notes: [[-3, 1], [0, 2], [1, 1], [0, 3]] },                            // the rising-fourth call
       { name: "kolob arch",  notes: [[0, 1], [2, 1], [4, 1], [5, 2], [4, 1], [2, 1], [0, 3]] },     // arch litany, KINGSFOLD-shaped
@@ -1004,10 +1004,37 @@ window.KolobAudio = (function () {
       { name: "ensign peak", notes: [[0, 1], [4, 1], [7, 2], [5, 1], [4, 3]] },                     // the wide climb, held high
       { name: "lullaby",     notes: [[0, 2], [-2, 1], [0, 1], [-1, 2], [0, 3]] },                   // low rocking, evening
       { name: "sego road",   notes: [[0, 1.5], [1, 0.5], [3, 1.5], [2, 0.5], [1, 1], [0, 3]] },     // dotted walking figure
+      { name: "seagull",     notes: [[4, 1], [6, 1], [4, 1], [2, 2], [4, 1], [0, 3]] },            // a wheeling gull, the miracle
+      { name: "north star",  notes: [[0, 1], [7, 3], [6, 1], [4, 2]] },                            // a bold leap of a seventh, held
+      { name: "far water",   notes: [[2, 3], [1, 1], [2, 1], [0, 4]] },                            // long tones over great spaces
+      { name: "quail",       notes: [[4, 0.5], [3, 0.5], [4, 0.5], [2, 0.5], [0, 2]] },            // a quick clipped call
+      { name: "meridian",    notes: [[0, 1], [2, 1], [4, 1], [6, 1], [7, 2], [5, 1], [4, 3]] },    // the long ascent to the octave
+      { name: "the ferry",   notes: [[0, 2], [1, 1], [0, 1], [-2, 2], [0, 3]] },                   // rocking across, dipping under
+      { name: "sunstone",    notes: [[0, 1], [3, 1], [2, 1], [5, 1], [4, 1], [7, 2], [0, 3]] },    // a climbing zigzag, then home
+      { name: "watchfire",   notes: [[0, 1], [1, 2], [0, 1], [2, 2], [0, 1], [3, 3]] },            // patient tending, slowly rising
+      { name: "saltflat",    notes: [[4, 4], [4, 1], [3, 1], [2, 4]] },                            // very still, barely moving
+      { name: "cottonwood",  notes: [[0, 2], [2, 1], [1, 1], [3, 2], [2, 1], [0, 3]] },            // a gentle sway in the wind
     ];
     var working = { theme: null, subs: [] };      // the whole meeting works ≤3 ideas
     var ledger = [];                              // [{from, to, motif, deadline, type}]
     var stats = { developments: 0, answers: 0, transformsUsed: {}, gestures: [] };
+
+    // THE DAY'S TEMPER — a seeded dialect chosen per meeting that tilts HOW all
+    // the voices develop their material (not WHAT they play — the gestures are
+    // still drawn at random). One Sunday runs plain and psalmodic; another runs
+    // florid, or restless, or opens everything out into great expansive leaps.
+    // A meeting-level colour, layered over the per-voice and per-section tilts,
+    // so no two visits merely feel different moment to moment — they feel like
+    // different Sundays. Still fully aleatoric: it is only another bias.
+    var DIALECTS = {
+      plain:     { ornament: 0.35, mordent: 0.3, sequence: 0.7, syncopate: 0.5, intervalExpand: 0.7 },
+      psalmodic: { intervalCompress: 1.9, augment: 1.4, ornament: 0.5, mordent: 0.4, rotate: 1.3 },
+      florid:    { ornament: 2.1, mordent: 2.3, sequence: 1.5, syncopate: 1.4 },
+      expansive: { augment: 1.9, intervalExpand: 2.1, transpose: 1.4, diminish: 0.5, intervalCompress: 0.4 },
+      terse:     { diminish: 1.9, fragmentHead: 1.8, fragmentTail: 1.6, intervalCompress: 1.6, augment: 0.5 },
+      restless:  { sequence: 1.8, rotate: 2.0, syncopate: 1.9, retrograde: 1.5, invert: 1.4 },
+    };
+    var meetingDialect = null, dialectName = "plain";
 
     function clone(m) { return JSON.parse(JSON.stringify(m)); }
     function fromGesture(g, name) {
@@ -1069,15 +1096,58 @@ window.KolobAudio = (function () {
         m.notes = res;
         return m;
       },
+      rotate: function (m) {                       // start the cell from a later note — the same
+        var len = m.notes.length;                  // pitches, a fresh angle of approach (modal turn)
+        if (len < 3) return m;
+        var k = 1 + Math.floor(rng() * (len - 1));
+        m.notes = m.notes.slice(k).concat(m.notes.slice(0, k));
+        return m;
+      },
+      intervalExpand: function (m) {               // widen every interval about the head — the same
+        var axis = m.notes[0].deg, f = rnd(1.4, 1.9);  // shape, opened out into bolder leaps
+        m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
+        return recentre(m);
+      },
+      intervalCompress: function (m) {             // narrow every interval — the shape drawn in
+        var axis = m.notes[0].deg, f = rnd(0.4, 0.65);  // toward chant, close to the reciting tone
+        m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
+        return m;
+      },
+      syncopate: function (m) {                    // lilt: lengthen a strong note and clip the next
+        for (var i = 0; i < m.notes.length - 1; i++) {  // — a dotted / snap displacement of the pulse
+          if (m.notes[i].durBeats >= 1 && chance(0.5)) {
+            var take = m.notes[i].durBeats * 0.4;
+            m.notes[i].durBeats += take;
+            m.notes[i + 1].durBeats = Math.max(0.3, m.notes[i + 1].durBeats - take * 0.6);
+            i++;
+          }
+        }
+        return m;
+      },
+      mordent: function (m) {                      // a quick neighbor flick on one held note — the
+        var res = [], did = false;                 // reed's shake, distinct from filling a leap
+        for (var i = 0; i < m.notes.length; i++) {
+          var n = m.notes[i];
+          if (!did && n.durBeats >= 1.5 && res.length < 8 && chance(0.7)) {
+            var dir = chance(0.5) ? 1 : -1;
+            res.push({ deg: n.deg, durBeats: Math.max(0.3, n.durBeats * 0.3) });
+            res.push({ deg: n.deg + dir, durBeats: 0.3 });
+            res.push({ deg: n.deg, durBeats: Math.max(0.4, n.durBeats * 0.4) });
+            did = true;
+          } else res.push({ deg: n.deg, durBeats: n.durBeats });
+        }
+        m.notes = res;
+        return m;
+      },
     };
 
     // ---- chain grammar: which transform, given voice + section + chain ----
     var VOICE_WEIGHTS = {
-      clarinet:  { sequence: 3, ornament: 3, transpose: 2.5, fragmentHead: 2, invert: 2, diminish: 1.5, augment: 1.5, retrograde: 1, fragmentTail: 1.5 },
-      choir:     { augment: 3.5, invert: 2.5, transpose: 2.5, retrograde: 1.5, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, fragmentHead: 1 },
-      bells:     { fragmentHead: 3.5, diminish: 3, transpose: 2, retrograde: 1.5, sequence: 1.5, invert: 1, augment: 0.3, ornament: 0.3, fragmentTail: 2 },
-      telegraph: { diminish: 3, fragmentHead: 3, retrograde: 2, sequence: 2, transpose: 1, invert: 0.5, augment: 0.2, ornament: 0.2, fragmentTail: 1.5 },
-      harmonium: { augment: 3, transpose: 2.5, invert: 2, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, retrograde: 1, fragmentHead: 1 },
+      clarinet:  { sequence: 3, ornament: 3, transpose: 2.5, fragmentHead: 2, invert: 2, diminish: 1.5, augment: 1.5, retrograde: 1, fragmentTail: 1.5, rotate: 1.5, intervalExpand: 1.3, intervalCompress: 1.3, syncopate: 2, mordent: 2.5 },
+      choir:     { augment: 3.5, invert: 2.5, transpose: 2.5, retrograde: 1.5, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, fragmentHead: 1, rotate: 1, intervalExpand: 1.4, intervalCompress: 1, syncopate: 0.8, mordent: 0.6 },
+      bells:     { fragmentHead: 3.5, diminish: 3, transpose: 2, retrograde: 1.5, sequence: 1.5, invert: 1, augment: 0.3, ornament: 0.3, fragmentTail: 2, rotate: 1.5, intervalExpand: 0.8, intervalCompress: 1.4, syncopate: 2, mordent: 1 },
+      telegraph: { diminish: 3, fragmentHead: 3, retrograde: 2, sequence: 2, transpose: 1, invert: 0.5, augment: 0.2, ornament: 0.2, fragmentTail: 1.5, rotate: 1.5, intervalExpand: 0.4, intervalCompress: 1.4, syncopate: 2.5, mordent: 0.4 },
+      harmonium: { augment: 3, transpose: 2.5, invert: 2, fragmentTail: 1.5, sequence: 1, ornament: 0.5, diminish: 0.5, retrograde: 1, fragmentHead: 1, rotate: 1, intervalExpand: 1.4, intervalCompress: 1, syncopate: 1, mordent: 0.8 },
     };
     var SECTION_TILT = {
       prelude:    { augment: 1.6, transpose: 1.4, ornament: 0.4, diminish: 0.4, sequence: 0.6 },
@@ -1120,16 +1190,26 @@ window.KolobAudio = (function () {
       if (name === "ornament" && len >= 8) return false;
       if (name === "retrograde" && isPalindromic(m)) return false;
       if (name === "augment" && beatsOf(m) > 20) return false;
+      if ((name === "rotate" || name === "syncopate") && len < 3) return false;
+      if (name === "mordent" && len >= 8) return false;
+      if (name === "intervalExpand" || name === "intervalCompress") {
+        var lo = 1e9, hi = -1e9;
+        for (var k = 0; k < m.notes.length; k++) { lo = Math.min(lo, m.notes[k].deg); hi = Math.max(hi, m.notes[k].deg); }
+        var span = hi - lo;
+        if (name === "intervalExpand" && span >= 8) return false;    // already wide — don't run away
+        if (name === "intervalCompress" && span <= 2) return false;  // already narrow — nothing to draw in
+      }
       return true;
     }
     function pickTransform(voice, m, chain) {
       var w = VOICE_WEIGHTS[voice] || VOICE_WEIGHTS.clarinet;
       var tilt = SECTION_TILT[C.section] || {};
+      var dia = meetingDialect || {};
       var last = lastRealLink(chain);
       var pool = [];
       for (var name in w) {
         if (!allowedTransform(name, m, chain)) continue;
-        var wt = w[name] * (tilt[name] || 1);
+        var wt = w[name] * (tilt[name] || 1) * (dia[name] || 1);   // voice · section · the day's temper
         if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
         pool.push([name, wt]);
       }
@@ -1315,6 +1395,19 @@ window.KolobAudio = (function () {
     }
 
     function newMeeting() {
+      // THE DAY'S TEMPER — the developmental dialect for the whole meeting.
+      // Tilted by the kind of Sunday and the season: fast days run plain and
+      // terse, festivals run florid and expansive, but any temper can surface.
+      var act = C.meeting ? C.meeting.activity : "ordinary";
+      dialectName = pickW([
+        ["plain",     2 + 2.5 * (1 - seasonPos) + (act === "fast" ? 1.5 : 0)],
+        ["psalmodic", 1.8 + (act === "fast" ? 1 : 0)],
+        ["terse",     1.2 + (act === "fast" ? 2 : 0)],
+        ["florid",    0.8 + 2.4 * seasonPos + (act === "jubilee" ? 1.5 : 0)],
+        ["expansive", 1 + 2 * seasonPos + (act === "conference" ? 1.2 : 0)],
+        ["restless",  1.2 + seasonPos + (act === "conference" ? 1 : 0)],
+      ]);
+      meetingDialect = DIALECTS[dialectName];
       // Draw DISTINCT gestures from the pool. Most stay home today — and a
       // lean fast Sunday sometimes carries only two hymns in its pocket.
       var draw = (C.meeting && C.meeting.activity === "fast" && chance(0.5)) ? 2 : 3;
@@ -1337,7 +1430,7 @@ window.KolobAudio = (function () {
       stats.gestures = idxs.map(function (g2) { return GESTURES[g2].name; });
       emitEvent({
         cat: "motif", label: "❁ the day's hymns",
-        detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · "),
+        detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · ") + " · temper: " + dialectName,
       });
     }
     function onSection(type) {
@@ -1356,7 +1449,7 @@ window.KolobAudio = (function () {
         return {
           developments: stats.developments, answers: stats.answers,
           transforms: Object.keys(stats.transformsUsed),
-          gestures: stats.gestures.slice(),
+          gestures: stats.gestures.slice(), dialect: dialectName,
           working: { theme: working.theme && working.theme.name, gen: working.theme && working.theme.gen },
         };
       },
