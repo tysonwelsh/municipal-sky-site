@@ -11,6 +11,10 @@
 window.SkeeBall = (function () {
   'use strict';
 
+  // Bump on every deployed change so on-device testing is unambiguous.
+  // Shown in the canvas corner, the page blurb, and the console.
+  var VERSION = 'V0.30';
+
   function mount(container, opts) {
     opts = opts || {};
     var R = window.SkeeBallRender;
@@ -272,6 +276,7 @@ window.SkeeBall = (function () {
       R.drawFrame(ctx, tNow, { score: state.score });
       drawBallLayer();
       if (state.debug) drawDebug();
+      R.text(ctx, VERSION, 3, R.H - 8, '#453567', 1); // build stamp, bottom-left
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
@@ -290,10 +295,13 @@ window.SkeeBall = (function () {
     return handle;
   }
 
-  return { mount: mount };
+  return { mount: mount, VERSION: VERSION };
 })();
 
 document.addEventListener('DOMContentLoaded', function () {
   var el = document.getElementById('skeeball-mount');
   if (el) window.__skeeMount = window.SkeeBall.mount(el);
+  var v = document.getElementById('skeeball-version');
+  if (v) v.textContent = window.SkeeBall.VERSION;
+  console.log('HOLLER ROLLER ' + window.SkeeBall.VERSION);
 });

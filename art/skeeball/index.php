@@ -1,4 +1,9 @@
 <?php
+// Never let the browser cache this page's HTML: the script tags below carry
+// content-hashed ?v= URLs, but a cached copy of the HTML would keep pointing
+// at old hashes for up to an hour (the site header's meta max-age).
+header('Cache-Control: no-cache, must-revalidate, max-age=0');
+
 $page_title = "HOLLER ROLLER - Municipal Sky";
 $page_description = "A deranged skee ball machine from a nickel arcade deep in the Appalachian fog. Nine balls a nickel. The possum is watching.";
 include '../../includes/header.php';
@@ -11,7 +16,7 @@ include '../../includes/header.php';
     <p class="skeeball-blurb">
         <em>HOLLER ROLLER</em> &mdash; a skee ball machine from a nickel arcade somewhere
         in the Appalachian fog. Swipe up the lane to roll. Physics prototype:
-        endless balls, no nickels needed yet.
+        endless balls, no nickels needed yet. <span id="skeeball-version"></span>
     </p>
 </div>
 
