@@ -201,8 +201,11 @@ window.SkeeBallRender = (function () {
   };
 
   // ring radii as fractions of maxRx, outside → in; even indexes are the
-  // dark score gaps (10/20/30/40 + the 50 hole), odd are cork rims
-  var RING_FR = [1, 0.85, 0.70, 0.57, 0.45, 0.34, 0.24, 0.14, 0.075];
+  // wide dark score TROUGHS (10/20/30/40 + the 50 hole), odd are the slim
+  // raised cork DIVIDERS between them. MUST match physics TUNE.ringFr.
+  // Troughs (~0.175 wide) dominate; dividers (~0.05) are thin ridges — a
+  // ball can't rest on one, it rolls off into an adjacent trough (physics).
+  var RING_FR = [1, 0.825, 0.775, 0.60, 0.55, 0.375, 0.325, 0.15, 0.10];
   var GAP_LABELS = { 0: '10', 2: '20', 4: '30', 6: '40' };
 
   function makeGeo(spec) {
