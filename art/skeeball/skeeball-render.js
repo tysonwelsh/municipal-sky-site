@@ -194,7 +194,7 @@ window.SkeeBallRender = (function () {
       snoutOver: true,      // possum head sits low, snout over the title
       noScoreLabel: true,   // drums are self-evident; no SCORE text, no lamps
       scoreH: 22,
-      ringCy: 172, maxRx: 52, ratio: 0.95,
+      ringCy: 158, maxRx: 52, ratio: 0.95,
       pitH: 14, hopH: 12, laneTopW: 66, laneBotW: 96, hump: 2,
       holeDx: 42, holeY: 100, holeRx: 10, holeLabelBelow: true
     }

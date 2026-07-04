@@ -13,7 +13,7 @@ window.SkeeBall = (function () {
 
   // Bump on every deployed change so on-device testing is unambiguous.
   // Shown in the canvas corner, the page blurb, and the console.
-  var VERSION = 'V0.36';
+  var VERSION = 'V0.37';
 
   function mount(container, opts) {
     opts = opts || {};
