@@ -33,7 +33,7 @@ window.SkeeBallPhysics = (function () {
     rimBounceOut: 0.62, // chance a rim hit rattles outward (vs inward)
     vzMin: 1.4, vzMax: 8.6, vxMax: 1.6,   // input clamps
     spinMax: 1.3,     // input clamp on english
-    spinCurve: 1.9,   // lateral accel per unit spin while rolling (units/s²)
+    spinCurve: 2.3,   // lateral accel per unit spin while rolling (units/s²)
     spinAir: 0.8,     // lateral accel per unit spin in flight (units/s²)
     rollDownG: 2.8,   // net down-slope accel of a miss rolling back (units/s²)
     bedLateralFric: 1.2, // lateral drag on the roll-back
@@ -145,8 +145,11 @@ window.SkeeBallPhysics = (function () {
       st.z += st.vz * dt;
       st.x += st.vx * dt;
       st.vz -= T.laneDecel * dt;
-      // english: spin bends the roll, more so the longer it acts
-      st.vx += st.spin * T.spinCurve * dt;
+      // english: the hook blooms late, like a bowling ball gripping the
+      // lane as it slows — barely bends off the throw line, turns hard
+      // in the final third. Reads as a curve instead of a diagonal.
+      var grip = 0.3 + 1.4 * Math.min(1, st.z / T.L);
+      st.vx += st.spin * T.spinCurve * grip * dt;
       var lim = 1 - T.ballR;
       if (st.x > lim) { st.x = lim; st.vx = -Math.abs(st.vx) * T.wallBounce; st.spin *= T.wallBounce; st.events.push({ type: 'wall' }); }
       if (st.x < -lim) { st.x = -lim; st.vx = Math.abs(st.vx) * T.wallBounce; st.spin *= T.wallBounce; st.events.push({ type: 'wall' }); }
