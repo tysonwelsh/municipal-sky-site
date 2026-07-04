@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOLLER ROLLER — ramp &amp; perspective variants</title>
+    <style>
+        body {
+            background: #07060d;
+            color: #6f5d95;
+            font-family: monospace;
+            margin: 0;
+            padding: 16px;
+        }
+
+        h1 {
+            font-size: 14px;
+            color: #a63a70;
+            text-align: center;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        figure {
+            margin: 0;
+            text-align: center;
+        }
+
+        canvas {
+            image-rendering: pixelated;
+            width: 324px;
+            height: 576px;
+            display: block;
+        }
+
+        figcaption {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #e8dfc8;
+        }
+
+        figcaption small {
+            display: block;
+            color: #6f5d95;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HOLLER ROLLER — ramp &amp; perspective variants</h1>
+    <div class="row" id="row"></div>
+    <script src="skeeball-render.js"></script>
+    <script>
+        var R = window.SkeeBallRender;
+        var CASES = [
+            { key: 'headOn', name: 'A — HEAD-ON (current)', note: 'low camera, tall backstop, squashed rings' },
+            { key: 'raised', name: 'B — RAISED CAMERA', note: 'rounder rings meet the ramp, longer lane' },
+            { key: 'longThrow', name: 'C — LONG THROW', note: 'small distant target, lane dominates' },
+            { key: 'targetFace', name: 'D — TARGET FACE', note: 'near-circular rings dominate, short runway' }
+        ];
+        // ?v=key shows a single variant animated (for on-device judging)
+        var single = new URLSearchParams(location.search).get('v');
+        if (single) CASES = CASES.filter(function (c) { return c.key === single; });
+
+        CASES.forEach(function (c) {
+            var fig = document.createElement('figure');
+            var cv = document.createElement('canvas');
+            cv.width = R.W; cv.height = R.H;
+            cv.id = 'v-' + c.key;
+            var cap = document.createElement('figcaption');
+            cap.innerHTML = c.name + '<small>' + c.note + '</small>';
+            fig.appendChild(cv); fig.appendChild(cap);
+            document.getElementById('row').appendChild(fig);
+        });
+
+        function renderAll(t) {
+            CASES.forEach(function (c) {
+                R.setVariant(c.key);
+                R.buildStatic();
+                var g = document.getElementById('v-' + c.key).getContext('2d');
+                g.imageSmoothingEnabled = false;
+                R.drawFrame(g, t);
+            });
+        }
+        if (single) {
+            (function loop(now) {
+                renderAll(now / 1000);
+                requestAnimationFrame(loop);
+            })(0);
+        } else {
+            renderAll(0.6); // still frame is enough for side-by-side judging
+        }
+    </script>
+</body>
+
+</html>

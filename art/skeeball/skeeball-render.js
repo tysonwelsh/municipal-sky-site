@@ -134,32 +134,69 @@ window.SkeeBallRender = (function () {
   function cabL(y) { var t = (y - CAB_TOP) / (CAB_BOT - CAB_TOP); return Math.round(30 - 22 * t); }
   function cabR(y) { var t = (y - CAB_TOP) / (CAB_BOT - CAB_TOP); return Math.round(186 + 22 * t); }
 
-  var GEO = {
-    marquee: { x0: 36, x1: 180, y0: 56, y1: 94 },
-    score: { y0: 94, y1: 122 },
-    target: { y0: 122, y1: 232, cx: 108, cy: 180 },
-    // ring stack: alternating dark gaps and cork rims, outside → in.
-    // Painted point labels sit in the dark gaps at bottom-center.
-    rings: [
-      { rx: 60, ry: 44, c: 'GAP', label: '10', ly: 218 },
-      { rx: 51, ry: 37, c: 'CORK' },
-      { rx: 43, ry: 30, c: 'GAP', label: '20', ly: 205 },
-      { rx: 35, ry: 24, c: 'CORK' },
-      { rx: 28, ry: 18, c: 'GAP', label: '30', ly: 193 },
-      { rx: 21, ry: 13, c: 'CORK' },
-      { rx: 15, ry: 9, c: 'GAP', label: '40', ly: 184 },
-      { rx: 8, ry: 4, c: 'CORK' },
-      { rx: 4, ry: 2, c: 'GAP' } // the 50 hole
-    ],
-    holes100: [{ x: 54, y: 136 }, { x: 162, y: 136 }],
-    ramp: { y0: 232, y1: 256 },
-    lane: { y0: 256, y1: 332, xt0: 66, xt1: 150, xb0: 36, xb1: 180 },
-    rail: { y0: 332, y1: 352 },
-    front: { y0: 352, y1: 372 },
-    window: { x0: 22, x1: 88, y0: 4, y1: 44 },
-    possum: { cx: 108, top: 18 },
-    drums: { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
+  /* Camera-attitude variants. The playfield band (y 122..332) is generated
+   * from a small spec; everything above (marquee, score) and below (rail,
+   * coin door) is fixed furniture. `ratio` is ring ry/rx: higher = the
+   * camera looks more squarely down onto the inclined ring bed.
+   */
+  var VARIANTS = {
+    // A — the original: low camera, rings squashed against a tall backstop
+    headOn: { rampY0: 232, rampY1: 256, ringCy: 180, maxRx: 60, ratio: 0.733, laneTopW: 42, hump: 4 },
+    // B — raised camera: rounder rings meeting the ramp, longer lane
+    raised: { rampY0: 226, rampY1: 250, ringCy: 176, maxRx: 54, ratio: 0.85, laneTopW: 40, hump: 3 },
+    // C — long throw: small distant target, most of the frame is lane
+    longThrow: { rampY0: 208, rampY1: 228, ringCy: 168, maxRx: 46, ratio: 0.62, laneTopW: 34, hump: 3 },
+    // D — target face: near-circular rings dominate, lane is just a runway
+    targetFace: { rampY0: 244, rampY1: 262, ringCy: 182, maxRx: 57, ratio: 0.92, laneTopW: 44, hump: 5 }
   };
+
+  // ring radii as fractions of maxRx, outside → in; even indexes are the
+  // dark score gaps (10/20/30/40 + the 50 hole), odd are cork rims
+  var RING_FR = [1, 0.85, 0.716, 0.583, 0.466, 0.35, 0.25, 0.133, 0.066];
+  var GAP_LABELS = { 0: '10', 2: '20', 4: '30', 6: '40' };
+
+  function makeGeo(spec) {
+    var rings = [];
+    for (var i = 0; i < RING_FR.length; i++) {
+      var rx = Math.round(spec.maxRx * RING_FR[i]);
+      var ry = Math.round(spec.maxRx * spec.ratio * RING_FR[i]);
+      var r = { rx: rx, ry: Math.max(1, ry), c: (i % 2 === 0) ? 'GAP' : 'CORK' };
+      if (GAP_LABELS[i]) {
+        r.label = GAP_LABELS[i];
+        r.ly = spec.ringCy + r.ry - 6; // bottom of the dark gap band
+      }
+      rings.push(r);
+    }
+    return {
+      spec: spec,
+      marquee: { x0: 36, x1: 180, y0: 56, y1: 94 },
+      score: { y0: 94, y1: 122 },
+      target: { y0: 122, y1: spec.rampY0, cx: 108, cy: spec.ringCy },
+      rings: rings,
+      // flat ring beds have no room for labels inside; paint them in a
+      // column beside the rings instead
+      labelsInside: spec.ratio >= 0.7,
+      holes100: [{ x: 54, y: 136 }, { x: 162, y: 136 }],
+      ramp: { y0: spec.rampY0, y1: spec.rampY1 },
+      lane: {
+        y0: spec.rampY1, y1: 332,
+        xt0: 108 - spec.laneTopW, xt1: 108 + spec.laneTopW,
+        xb0: 36, xb1: 180
+      },
+      rail: { y0: 332, y1: 352 },
+      front: { y0: 352, y1: 372 },
+      window: { x0: 22, x1: 88, y0: 4, y1: 44 },
+      possum: { cx: 108, top: 18 },
+      drums: { x0: 80, y0: 100, cells: 4, cw: 14, ch: 16 }
+    };
+  }
+
+  var GEO = makeGeo(VARIANTS.headOn);
+
+  function setVariant(key) {
+    GEO = makeGeo(VARIANTS[key] || VARIANTS.headOn);
+    staticLayer = null; // force a rebuild
+  }
   function laneL(y) { var t = (y - GEO.lane.y0) / (GEO.lane.y1 - GEO.lane.y0); return Math.round(GEO.lane.xt0 + (GEO.lane.xb0 - GEO.lane.xt0) * t); }
   function laneR(y) { var t = (y - GEO.lane.y0) / (GEO.lane.y1 - GEO.lane.y0); return Math.round(GEO.lane.xt1 + (GEO.lane.xb1 - GEO.lane.xt1) * t); }
 
@@ -380,14 +417,28 @@ window.SkeeBallRender = (function () {
     }
     // the dent in the 40 ring's rim (flat spot, upper right) — this is
     // load-bearing later: balls that catch it can rattle out into the 30
-    rect(g, t.cx + 6, t.cy - 10, 5, 2, PAL.CORK2);
-    px(g, t.cx + 7, t.cy - 11, PAL.WOOD1);
-    px(g, t.cx + 9, t.cy - 10, PAL.GAP);
+    var dentY = t.cy - GEO.rings[7].ry - 6;
+    rect(g, t.cx + 6, dentY, 5, 2, PAL.CORK2);
+    px(g, t.cx + 7, dentY - 1, PAL.WOOD1);
+    px(g, t.cx + 9, dentY, PAL.GAP);
 
-    // painted point values in the dark gaps
-    for (i = 0; i < GEO.rings.length; i++) {
-      var rg = GEO.rings[i];
-      if (rg.label) textC(g, rg.label, t.cx, rg.ly, PAL.BONE, 1);
+    // painted point values: in the dark gaps when the bands are thick
+    // enough, otherwise in a hand-painted column beside the rings
+    if (GEO.labelsInside) {
+      for (i = 0; i < GEO.rings.length; i++) {
+        var rg = GEO.rings[i];
+        if (rg.label) textC(g, rg.label, t.cx, rg.ly, PAL.BONE, 1);
+      }
+    } else {
+      var lx = t.cx - GEO.spec.maxRx - 16;
+      var lyy = t.cy + Math.round(GEO.spec.maxRx * GEO.spec.ratio) - 4;
+      for (i = 0; i < GEO.rings.length; i++) {
+        var rg2 = GEO.rings[i];
+        if (!rg2.label) continue;
+        text(g, rg2.label, lx, lyy, PAL.BONE_D, 1);
+        hline(g, lx + 8, t.cx - rg2.rx + 2, lyy + 2, PAL.WOOD4); // pointer tick
+        lyy -= 7;
+      }
     }
 
     // the two 100 holes, dark mouths with pink light way down inside
@@ -404,19 +455,32 @@ window.SkeeBallRender = (function () {
   }
 
   function drawRamp(g, R) {
-    var rp = GEO.ramp;
-    // the hump: top edge dips at the sides, glossy wax on the crown
+    var rp = GEO.ramp, hump = GEO.spec.hump;
+    var h = rp.y1 - rp.y0;
+    // the hump: a gradual swell, not a cliff. Crown is brightest (it faces
+    // the light and the player); shading rolls off smoothly toward the
+    // lane so the curvature reads as curvature.
     for (var x = laneL(rp.y1); x <= laneR(rp.y1); x++) {
       var n = Math.abs(x - 108) / (laneR(rp.y1) - 108);
-      var top = rp.y0 + Math.round(4 * n * n);
+      var top = rp.y0 + Math.round(hump * n * n); // crest dips at the sides
       vline(g, x, top, rp.y1, PAL.LANE2);
-      px(g, x, top, PAL.WOOD2);            // lip
-      px(g, x, top + 1, PAL.LANE1);        // crown highlight
-      if ((x + 2) % 5 === 0) px(g, x, top + 2 + ((x * 7) % 3), PAL.LANE1);
-      px(g, x, rp.y1 - 1, PAL.LANE3);      // base shadow
+      px(g, x, top, PAL.LANE1);                       // bright crest
+      px(g, x, top + 1, PAL.LANE1);
+      if ((x + BAYER[x % 4]) % 2) px(g, x, top + 2, PAL.LANE1);   // dithered rolloff
+      if ((x + 1) % 3) px(g, x, top + Math.round(h * 0.45), PAL.LANE2);
+      if ((x + BAYER[(x + 2) % 4]) % 2) px(g, x, rp.y1 - 2, PAL.LANE3);
+      px(g, x, rp.y1 - 1, PAL.LANE3);                 // contact shadow at the lane
+      // side gutters continue up and over the ramp
+      if (x <= laneL(rp.y1) + 1 || x >= laneR(rp.y1) - 1) vline(g, x, top, rp.y1, PAL.WOOD1);
     }
-    // wax gleam streak
-    dither(g, 88, rp.y0 + 2, 40, 3, PAL.BONE, 0.25);
+    // two faint contour lines following the crest curve, hinting the barrel
+    for (x = laneL(rp.y1) + 3; x <= laneR(rp.y1) - 3; x += 2) {
+      var n2 = Math.abs(x - 108) / (laneR(rp.y1) - 108);
+      var top2 = rp.y0 + Math.round(hump * n2 * n2);
+      px(g, x, top2 + Math.round(h * 0.28), PAL.LANE3);
+    }
+    // wax gleam streak on the crown
+    dither(g, 88, rp.y0 + 1, 40, 2, PAL.BONE, 0.25);
   }
 
   function drawLane(g, R) {
@@ -646,7 +710,10 @@ window.SkeeBallRender = (function () {
   }
 
   return {
-    W: W, H: H, PAL: PAL, GEO: GEO,
+    W: W, H: H, PAL: PAL,
+    get GEO() { return GEO; },
+    VARIANTS: VARIANTS,
+    setVariant: setVariant,
     buildStatic: buildStatic,
     drawFrame: drawFrame
   };
