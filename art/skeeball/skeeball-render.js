@@ -478,22 +478,76 @@ window.SkeeBallRender = (function () {
   }
 
   // the machine's open mouth: the shadowed cavity between the bed's bottom
-  // lip and the ball-hop, where thrown balls disappear and roll home
+  // lip and the ball-hop. It spans the alley's width (between the side
+  // rails), not the whole cabinet — the bed hangs over it.
   function drawPit(g, R) {
     var p = GEO.pit;
     if (!p) return;
-    // the bed's bottom lip, catching the light above the dark
+    // the bed's bottom lip, catching the light above the dark (full bed width)
     hline(g, cabL(p.y0 - 2) + 5, cabR(p.y0 - 2) - 5, p.y0 - 2, PAL.WOOD5);
     hline(g, cabL(p.y0 - 1) + 5, cabR(p.y0 - 1) - 5, p.y0 - 1, PAL.WOOD3);
-    // the cavity, full cabinet width
     for (var y = p.y0; y < p.y1; y++) {
-      hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.NIGHT0);
-      px(g, cabL(y) + 5, y, PAL.WOOD1); px(g, cabR(y) - 5, y, PAL.WOOD1);
+      // shadowed shelf corners where the bed meets the side walls…
+      hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.WOOD2);
+      // …and the mouth itself, alley-wide
+      hline(g, laneL(y) - 3, laneR(y) + 3, y, PAL.NIGHT0);
     }
     // faint pink breathing way down inside (same light as the 100 holes)
     dither(g, 84, p.y0 + Math.round((p.y1 - p.y0) / 2), 48, 2, PAL.PINK_DK, 0.15);
     // dusty reflected light on the cavity's near edge
-    dither(g, cabL(p.y1) + 8, p.y1 - 2, cabR(p.y1) - cabL(p.y1) - 16, 2, PAL.WOOD2, 0.35);
+    dither(g, laneL(p.y1) + 2, p.y1 - 2, laneR(p.y1) - laneL(p.y1) - 4, 2, PAL.WOOD2, 0.35);
+  }
+
+  // the alley's side rails, running continuously from the bed's lip past
+  // the pit and hop down to the player. Two visible surfaces each: a lit
+  // top edge converging on the vanishing point, and a shadowed inner face
+  // dropping to the lane floor — tall and wide near the player, thin far
+  // away. This is what makes the sides read as walls instead of filler.
+  function drawSideRails(g, R) {
+    var yTop = GEO.pit ? GEO.pit.y0 : GEO.ramp.y0;
+    var yBot = GEO.lane.y1;
+    // Each rail is three straight lines in screen space, filled between:
+    //   foot  F — where the wall meets the lane floor (the lane edge)
+    //   crest C — the wall's top inner edge: F shifted up-and-out, more so
+    //             near the player (constant real height, perspective scale)
+    //   outer O — the top edge's far side: C shifted further out
+    // Inner face (C..F) is a vertical surface: shadowed. Top (O..C) is a
+    // horizontal surface: lit.
+    function lineAt(x0, y0, x1, y1, y) {
+      if (y <= y0) return x0;
+      if (y >= y1) return x1;
+      return x0 + (x1 - x0) * (y - y0) / (y1 - y0);
+    }
+    for (var side = 0; side < 2; side++) {
+      var dir = side === 0 ? -1 : 1;
+      var footT = side === 0 ? laneL(yTop) : laneR(yTop);
+      var footB = side === 0 ? laneL(yBot) : laneR(yBot);
+      var cT = { x: footT + dir * 2, y: yTop - 3 }, cB = { x: footB + dir * 7, y: yBot - 9 };
+      var oT = { x: cT.x + dir * 3, y: cT.y }, oB = { x: cB.x + dir * 8, y: cB.y };
+      for (var y = cT.y; y <= yBot; y++) {
+        var xF = Math.round(lineAt(footT, yTop, footB, yBot, y));
+        var xC = Math.round(lineAt(cT.x, cT.y, cB.x, cB.y, y));
+        var xO = Math.round(lineAt(oT.x, oT.y, oB.x, oB.y, y));
+        // inner face: crest line to foot, shadowed with sparse grain
+        for (var x = xC; (x - xF) * dir >= 0; x += -dir) {
+          px(g, x, y, ((x * 13 + y * 7) % 19 === 0) ? PAL.WOOD1 : PAL.WOOD2);
+        }
+        px(g, xF, y, PAL.WOOD1);             // gutter shadow at the foot
+        // top edge: outer line to crest, lit, with a bright inner arris
+        if (y <= cB.y) {
+          for (x = xO; (x - xC) * dir >= 0; x += -dir) px(g, x, y, PAL.WOOD5);
+          px(g, xC, y, PAL.WOOD6);
+          px(g, xO + dir, y, PAL.WOOD2);     // drop-off past the outer edge
+        }
+      }
+      // front end-grain cap where the rail meets the ball-return shelf
+      for (y = cB.y; y <= yBot; y++) {
+        var xC2 = Math.round(lineAt(cT.x, cT.y, cB.x, cB.y, Math.min(y, cB.y)));
+        var xO2 = Math.round(lineAt(oT.x, oT.y, oB.x, oB.y, Math.min(y, cB.y)));
+        for (x = xO2; (x - xC2) * dir >= 0; x += -dir) px(g, x, y, PAL.WOOD3);
+        px(g, xO2, y, PAL.WOOD2);
+      }
+    }
   }
 
   function drawRamp(g, R) {
@@ -703,6 +757,7 @@ window.SkeeBallRender = (function () {
     drawPit(g, R);
     drawRamp(g, R);
     drawLane(g, R);
+    drawSideRails(g, R);
     drawScoreBar(g, R);
     drawMarquee(g, R);
     drawFrontPanel(g, R);
