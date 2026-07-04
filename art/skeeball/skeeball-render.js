@@ -148,13 +148,15 @@ window.SkeeBallRender = (function () {
     longThrow: { rampY0: 208, rampY1: 228, ringCy: 168, maxRx: 46, ratio: 0.62, laneTopW: 34, hump: 3 },
     // D — target face: near-circular rings dominate, lane is just a runway
     targetFace: { rampY0: 244, rampY1: 262, ringCy: 182, maxRx: 57, ratio: 0.92, laneTopW: 44, hump: 5 },
-    // E — hybrid picked by the perspective critique: B's ring-to-ramp
-    // tangency (ringCy + maxRx*ratio === rampY0, by construction), a longer
-    // C-ish lane, D-adjacent gap legibility, and a wide soft-shouldered
-    // ramp whose trough flares out to meet the bed's flanks (crestW).
+    // E — true-to-machine anatomy (per the real thing: an alley ending in a
+    // small "ball-hop" ski-jump bump, an open pit mouth, and the inclined
+    // ring bed rising behind it — the ball flies the gap, the surfaces
+    // never touch). pitH/hopH replace the old single ramp band: the bed's
+    // bottom lip sits at ringCy + maxRx*ratio, the pit yawns below it, the
+    // hop is a lane-width bump at the top of the runway.
     hybrid: {
-      rampY0: 218, rampY1: 246, ringCy: 170, maxRx: 62, ratio: 0.78,
-      laneTopW: 34, crestW: 37, hump: 3,
+      ringCy: 170, maxRx: 62, ratio: 0.78,
+      pitH: 14, hopH: 12, laneTopW: 36, hump: 2,
       holeDx: 58, holeY: 130, holeLabelBelow: true
     }
   };
@@ -176,11 +178,18 @@ window.SkeeBallRender = (function () {
       }
       rings.push(r);
     }
+    // pit layouts derive their bands from the bed's bottom edge; tangent
+    // layouts (the A-D explorations) keep their explicit rampY0/rampY1
+    var bedBottom = spec.ringCy + Math.round(spec.maxRx * spec.ratio);
+    var pit = spec.pitH ? { y0: bedBottom + 2, y1: bedBottom + 2 + spec.pitH } : null;
+    var rampY0 = pit ? pit.y1 : spec.rampY0;
+    var rampY1 = pit ? pit.y1 + spec.hopH : spec.rampY1;
     return {
       spec: spec,
       marquee: { x0: 36, x1: 180, y0: 56, y1: 94 },
       score: { y0: 94, y1: 122 },
-      target: { y0: 122, y1: spec.rampY0, cx: 108, cy: spec.ringCy },
+      target: { y0: 122, y1: pit ? pit.y0 : spec.rampY0, cx: 108, cy: spec.ringCy },
+      pit: pit,
       rings: rings,
       // flat ring beds have no room for labels inside; paint them in a
       // column beside the rings instead
@@ -189,9 +198,9 @@ window.SkeeBallRender = (function () {
         { x: 108 - (spec.holeDx || 54), y: spec.holeY || 136 },
         { x: 108 + (spec.holeDx || 54), y: spec.holeY || 136 }
       ],
-      ramp: { y0: spec.rampY0, y1: spec.rampY1 },
+      ramp: { y0: rampY0, y1: rampY1 },
       lane: {
-        y0: spec.rampY1, y1: 332,
+        y0: rampY1, y1: 332,
         xt0: 108 - spec.laneTopW, xt1: 108 + spec.laneTopW,
         xb0: 36, xb1: 180
       },
@@ -468,6 +477,25 @@ window.SkeeBallRender = (function () {
     }
   }
 
+  // the machine's open mouth: the shadowed cavity between the bed's bottom
+  // lip and the ball-hop, where thrown balls disappear and roll home
+  function drawPit(g, R) {
+    var p = GEO.pit;
+    if (!p) return;
+    // the bed's bottom lip, catching the light above the dark
+    hline(g, cabL(p.y0 - 2) + 5, cabR(p.y0 - 2) - 5, p.y0 - 2, PAL.WOOD5);
+    hline(g, cabL(p.y0 - 1) + 5, cabR(p.y0 - 1) - 5, p.y0 - 1, PAL.WOOD3);
+    // the cavity, full cabinet width
+    for (var y = p.y0; y < p.y1; y++) {
+      hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.NIGHT0);
+      px(g, cabL(y) + 5, y, PAL.WOOD1); px(g, cabR(y) - 5, y, PAL.WOOD1);
+    }
+    // faint pink breathing way down inside (same light as the 100 holes)
+    dither(g, 84, p.y0 + Math.round((p.y1 - p.y0) / 2), 48, 2, PAL.PINK_DK, 0.15);
+    // dusty reflected light on the cavity's near edge
+    dither(g, cabL(p.y1) + 8, p.y1 - 2, cabR(p.y1) - cabL(p.y1) - 16, 2, PAL.WOOD2, 0.35);
+  }
+
   function drawRamp(g, R) {
     var rp = GEO.ramp, spec = GEO.spec;
     var hump = spec.hump, h = rp.y1 - rp.y0;
@@ -480,7 +508,7 @@ window.SkeeBallRender = (function () {
     // surface doesn't cover reads as shadowed wall (the sides flanking the
     // channel, and the gap behind the crest where it dips at the edges)
     for (var y = rp.y0; y < rp.y1; y++) {
-      hline(g, cabL(y) + 5, cabR(y) - 5, y, PAL.WOOD2);
+      hline(g, cabL(y) + 5, cabR(y) - 5, y, GEO.pit ? PAL.WOOD1 : PAL.WOOD2);
       px(g, cabL(y) + 5, y, PAL.WOOD1); px(g, cabR(y) - 5, y, PAL.WOOD5);
     }
 
@@ -502,15 +530,29 @@ window.SkeeBallRender = (function () {
       if (yBot <= yTop) continue;
       for (y = yTop; y < yBot; y++) {
         var f = (y - yTop) / (rp.y1 - yTop);     // 0 at crest, 1 at lane
-        var c = f < 0.3 ? PAL.LANE3 : (f < 0.62 ? PAL.LANE2 : PAL.LANE1);
-        // dithered seams between the gradient steps
-        if ((f > 0.24 && f < 0.36) || (f > 0.56 && f < 0.68))
-          c = (BAYER[(y % 4) * 4 + (x % 4)] < 8) ? PAL.LANE2 : c;
+        var c;
+        if (GEO.pit) {
+          // small ball-hop: its face tilts toward the player and the
+          // light — bright crest blending down into the lane's wax
+          c = f < 0.45 ? PAL.LANE1 : PAL.LANE2;
+          if (f > 0.35 && f < 0.55)
+            c = (BAYER[(y % 4) * 4 + (x % 4)] < 8) ? PAL.LANE1 : PAL.LANE2;
+        } else {
+          // long tangent ramp: surface tilts away, shaded top-dark
+          c = f < 0.3 ? PAL.LANE3 : (f < 0.62 ? PAL.LANE2 : PAL.LANE1);
+          if ((f > 0.24 && f < 0.36) || (f > 0.56 && f < 0.68))
+            c = (BAYER[(y % 4) * 4 + (x % 4)] < 8) ? PAL.LANE2 : c;
+        }
         px(g, x, y, c);
       }
-      px(g, x, yTop, PAL.LANE1);                 // polished lip catching the light
-      px(g, x, yTop + 1, PAL.LANE3);             // then the surface falls away
-      px(g, x, yBot - 1, PAL.LANE1);             // bright near shoulder
+      if (GEO.pit) {
+        px(g, x, yTop, PAL.BONE);                // hard bright crest edge
+        if ((x + BAYER[x % 4]) % 2) px(g, x, yBot - 1, PAL.LANE3); // contact shadow
+      } else {
+        px(g, x, yTop, PAL.LANE1);               // polished lip catching the light
+        px(g, x, yTop + 1, PAL.LANE3);           // then the surface falls away
+        px(g, x, yBot - 1, PAL.LANE1);           // bright near shoulder
+      }
     }
     // wax sparkle where the fluorescent catches the crest apex
     dither(g, 100, rp.y0, 16, 1, PAL.BONE, 0.3);
@@ -658,6 +700,7 @@ window.SkeeBallRender = (function () {
     drawWindow(g, R);
     drawCabinetBody(g, R);
     drawTarget(g, R);
+    drawPit(g, R);
     drawRamp(g, R);
     drawLane(g, R);
     drawScoreBar(g, R);
