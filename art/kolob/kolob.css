@@ -67,17 +67,31 @@
   position: absolute;
   top: 0.7rem; right: 0.9rem;
   z-index: 2;
-  width: 1.7rem; height: 1.7rem;
-  font-family: "Noto Sans Deseret", "EB Garamond", serif;
-  font-size: 0.72rem;
-  color: var(--ink-faint);
-  background: none;
-  border: 1px solid transparent;
-  border-radius: 50%;
+  padding: 0.22rem 0.66rem;
+  font-family: "EB Garamond", serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
   cursor: pointer;
-  opacity: 0.5;
+  opacity: 0.72;
+  transition: opacity 150ms, color 150ms, border-color 150ms;
 }
-.kolob-latin-toggle:hover { opacity: 1; border-color: var(--ink-faint); }
+/* the Deseret label wants its own face and reads a touch small — nudge it up */
+.kolob-latin-toggle.is-deseret {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+.kolob-latin-toggle:hover,
+.kolob-latin-toggle:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
 
 /* dev mode: the order of service becomes a jump menu */
 .kolob-scene.is-dev .kolob-order-row { cursor: pointer; }

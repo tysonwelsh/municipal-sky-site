@@ -464,7 +464,14 @@
     if (lastBroadside) setBroadside(lastBroadside, false);
     else setText("#kolob-broadside-line", ST.placeholder);
     var tog = document.getElementById("kolob-latin");
-    if (tog) tog.textContent = latinMode ? "𐐁" : "A";
+    if (tog) {
+      // The toggle names the OTHER script, written in that script: in Deseret
+      // mode it offers "Latin" (Latin letters); in Latin mode it offers the
+      // Deseret word for Deseret (𐐔𐐇𐐞𐐊𐐡𐐇𐐓). Each alphabet names itself.
+      tog.textContent = latinMode ? "𐐔𐐇𐐞𐐊𐐡𐐇𐐓" : "Latin";
+      tog.setAttribute("aria-label", latinMode ? "switch to the Deseret alphabet" : "switch to the Latin alphabet");
+      tog.classList.toggle("is-deseret", latinMode);
+    }
   }
   // Dev aid: with the Latin toggle on, the printed program becomes a jump
   // menu — click a line of the order of service to skip the meeting there.

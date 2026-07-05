@@ -40,7 +40,7 @@ include '../../includes/header.php';
   <div class="content-frame kolob-frame">
 
     <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
-    <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="toggle latin script labels (development aid)">A</button>
+    <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
 
     <!-- Title page -->
     <header class="kolob-header">
