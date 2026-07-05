@@ -503,6 +503,20 @@
 }
 .kolob-note a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
 
+/* build stamp — dev/ops furniture, deliberately quiet: version · fingerprint ·
+   deploy time. Latin + monospace on purpose; it is a marginer's note, not part
+   of the piece. */
+.kolob-build {
+  margin: 1.3rem 0 0;
+  text-align: center;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  user-select: all;                 /* one tap/click selects it all to copy */
+}
+.kolob-build-sep { margin: 0 0.5em; opacity: 0.5; }
+
 /* ====================== the sacrament dims the page ===================== */
 .kolob-scene.is-sacrament .kolob-log-block,
 .kolob-scene.is-sacrament .kolob-broadside-block,

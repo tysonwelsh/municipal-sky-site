@@ -9,6 +9,24 @@ function kolob_v($file)
     $path = __DIR__ . '/' . $file;
     return file_exists($path) ? substr(md5_file($path), 0, 8) : '00000000';
 }
+
+// Build/version stamp (printed small at the foot of the page) — a way to tell
+// at a glance whether the page being served is the latest deploy:
+//   · VERSION  — a hand-set marker, bumped when the app changes (v0.01, v0.02…)
+//   · build    — derived from the ACTUAL bytes of the served assets, so it
+//                shifts the instant any JS/CSS/markup ships, with no upkeep
+//   · deployed — the newest asset's mtime; the server stamps this at upload,
+//                so it reads as the moment the live files landed (UTC)
+$kolob_assets  = ['kolob-audio.js', 'kolob-ui.js', 'kolob-viz.js', 'kolob-text.js', 'kolob.css', 'index.php'];
+$kolob_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
+$kolob_build   = substr(md5(implode('', array_map('kolob_v', $kolob_assets))), 0, 6);
+$kolob_mtime   = 0;
+foreach ($kolob_assets as $kolob_a) {
+    $kolob_p = __DIR__ . '/' . $kolob_a;
+    if (is_file($kolob_p)) { $kolob_m = filemtime($kolob_p); if ($kolob_m > $kolob_mtime) $kolob_mtime = $kolob_m; }
+}
+$kolob_deployed = $kolob_mtime ? gmdate('Y-m-d H:i', $kolob_mtime) . ' UTC' : '';
+
 include '../../includes/header.php';
 ?>
 
@@ -99,6 +117,12 @@ include '../../includes/header.php';
       <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>
       &nbsp;·&nbsp;
       <a href="/art/bardo/" aria-label="sibling engine BARDO">&#3926;&#3928;&#3921;&#3964;</a>
+    </p>
+
+    <!-- Build stamp: version · content fingerprint · deploy time. A quiet way
+         to confirm which build is actually live. -->
+    <p class="kolob-build" aria-label="build version">
+      <?php echo htmlspecialchars($kolob_version); ?><span class="kolob-build-sep">·</span><?php echo $kolob_build; ?><?php if ($kolob_deployed): ?><span class="kolob-build-sep">·</span><?php echo $kolob_deployed; ?><?php endif; ?>
     </p>
 
   </div>
