@@ -13,7 +13,7 @@ window.SkeeBall = (function () {
 
   // Bump on every deployed change so on-device testing is unambiguous.
   // Shown in the canvas corner, the page blurb, and the console.
-  var VERSION = 'V0.37';
+  var VERSION = 'V0.38';
 
   function mount(container, opts) {
     opts = opts || {};
@@ -275,7 +275,7 @@ window.SkeeBall = (function () {
         if (pose.outcome === 'pit') {
           // aim the arc at the bed's bottom lip; the roll-down phase then
           // carries it on into the dark pit mouth
-          p1 = R.bedPoint(pose.u, 0, T.R10);
+          p1 = R.bedPoint(pose.u, T.bedLipV, T.R10);
         } else {
           p1 = R.bedPoint(pose.u, pose.v, T.R10);
         }
