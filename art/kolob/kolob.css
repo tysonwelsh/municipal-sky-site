@@ -224,6 +224,9 @@
   height: 18px;
   background: transparent;
   cursor: pointer;
+  /* horizontal drags work the slider; vertical still scrolls the page. Without
+     this the browser can claim a touch as a scroll and the thumb never grabs. */
+  touch-action: pan-y;
 }
 .kolob-range::-webkit-slider-runnable-track {
   height: 1px;
@@ -243,6 +246,17 @@
   border-radius: 50%;
   background: var(--paper);
   border: 1px solid var(--ink);
+}
+
+/* On touch (coarse pointers) the hairline-and-bead is too small to hit: the
+   thumb is 11px and the input only 18px tall, so a fingertip lands beside it.
+   Keep the desktop look, but give touch a full-height target and a bigger bead.
+   The track stays a hairline (it's vertically centred), so only the invisible
+   hit area and the thumb grow. */
+@media (pointer: coarse) {
+  .kolob-range { height: 44px; }
+  .kolob-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -8.5px; }
+  .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
 }
 
 /* ===================== order of service + hymn board ==================== */
