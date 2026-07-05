@@ -172,7 +172,10 @@ window.KolobAudio = (function () {
   // telegraph 0.5: the wire should be an occasional visitor, not a speaker —
   // half the event density while its RATE slider still reads a clean 1.00x.
   var LAYER_RATE_TRIM = { telegraph: 0.5, bells: 0.7 };
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 0.9, bagpipe: 0.9 };
+  // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
+  // in the room without moving its slider (the slider reads layerVolumes, this
+  // trim rides on top).
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.9 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
