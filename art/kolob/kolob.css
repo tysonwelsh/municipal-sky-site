@@ -117,16 +117,21 @@
   border-color: var(--ink-soft);
 }
 
-/* the Ives switch — sits beside the script toggle; gilt when armed */
+/* the Ives switch — sits beside the script toggle. Armed = a solid gilt pill
+   (gold-stamped, unmistakable); disarmed = the same faint outline as its
+   neighbor. The state must read at a glance. */
 .kolob-ives-toggle.is-on {
   opacity: 1;
-  color: var(--gilt);
+  background: var(--gilt);
   border-color: var(--gilt);
+  color: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 .kolob-ives-toggle.is-on:hover,
 .kolob-ives-toggle.is-on:focus-visible {
-  color: var(--gilt);
-  border-color: var(--gilt);
+  background: #9a8950;
+  border-color: #9a8950;
+  color: var(--paper);
 }
 
 /* dev mode: the order of service becomes a jump menu */
