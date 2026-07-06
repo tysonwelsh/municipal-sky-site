@@ -112,6 +112,13 @@ $i = function ($row, $k) { return (int) ($row[$k] ?? 0); };
 
 $L[] = $rule;
 $L[] = "PAGE ANALYTICS";
+
+$hp = $pe24['homepage'] ?? []; $hpA = $peAll['homepage'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
+    "Homepage",
+    $i($hp,'v'), $i($hp,'u'),
+    $i($hpA,'v'), $i($hpA,'u'));
+
 $L[] = sprintf("  %-26s %d views (%d unique), %d downloads   [all-time: %d / %d / %d]",
     "Pronoun distribution",
     $i($pr24,'v'), $i($pr24,'u'), $i($pr24,'d'),
@@ -172,7 +179,7 @@ $L[] = $rule;
 
 $body = implode("\n", $L) . "\n";
 
-$views24 = $i($pr24,'v') + $i($jk,'v') + $i($uw,'v');
+$views24 = $i($hp,'v') + $i($pr24,'v') + $i($jk,'v') + $i($uw,'v');
 $subject = sprintf("Municipal Sky digest %s — %d onobot, %d views, %d new emails",
     date('Y-m-d'), $onoCount, $views24, $subCount);
 

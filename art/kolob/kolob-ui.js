@@ -40,6 +40,13 @@
     hymnsOfDay: "𐐜 𐐔𐐁𐐞 𐐐𐐆𐐣𐐞",          // THE DAY'S HYMNS
     amen: "𐐁𐐣𐐇𐐤",                        // AMEN
     verse: "𐐚𐐊𐐡𐐝",                       // VERSE
+    speaks: "𐐝𐐑𐐀𐐗𐐝",                    // SPEAKS
+    theQuestion: "𐐜 𐐗𐐎𐐇𐐝𐐕𐐊𐐤",          // THE QUESTION
+    unanswered: "𐐊𐐤𐐈𐐤𐐝𐐊𐐡𐐔",            // UNANSWERED
+    twoBands: "𐐓𐐅 𐐒𐐈𐐤𐐔𐐞",              // TWO BANDS
+    bandNears: "𐐊 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐇𐐞",     // A BAND APPROACHES
+    bandsCross: "𐐜 𐐒𐐈𐐤𐐔𐐞 𐐗𐐡𐐉𐐝",       // THE BANDS CROSS
+    bandPasses: "𐐑𐐈𐐝𐐇𐐞 𐐉𐐤",            // PASSES ON
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -108,7 +115,10 @@
     reprise: "REPRISE", develops: "DEVELOPS", disperses: "DISPERSES",
     answers: "ANSWERS", linesOut: "LINES OUT", shadows: "SHADOWS",
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
-    verse: "VERSE", liahona: "LIAHONA", sample: "SAMPLE",
+    verse: "VERSE", speaks: "SPEAKS", liahona: "LIAHONA", sample: "SAMPLE",
+    theQuestion: "THE QUESTION", unanswered: "UNANSWERED",
+    twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
+    bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
@@ -159,6 +169,16 @@
     if (cat === "cadence") return { glyph: "∴", text: TT(STR, STR_EN).amen };
     if (cat === "fuging") return { glyph: "⁂", text: TT(STR, STR_EN).fuging };
     if (cat === "telegraph") return { glyph: "⌁", text: LAYERS_DS.telegraph };
+    if (cat === "phrase") return { glyph: "♮", text: (TT(LAYERS_DS, LAYERS_EN)[label] || label) + " " + TT(STR, STR_EN).speaks };
+    if (cat === "visitation") {
+      var SV = TT(STR, STR_EN);
+      if (label.indexOf("unanswered") >= 0) return { glyph: "?", text: SV.unanswered };
+      if (label.indexOf("question") >= 0) return { glyph: "?", text: SV.theQuestion };
+      if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
+      if (label.indexOf("cross") >= 0) return { glyph: "⇋", text: SV.bandsCross };
+      if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
+      return { glyph: "⇋", text: SV.twoBands };
+    }
     if (cat === "verse") {
       if (label.indexOf("lines out") >= 0) return { glyph: "☞", text: LAYERS_DS.clarinet + " " + TT(STR, STR_EN).linesOut };
       var lm = /line (\d+)/.exec(label);
@@ -264,6 +284,41 @@
   if (K.setEventListener) K.setEventListener(logEvent);
 
   // ==========================================================================
+  // Phrase log — every instrument that starts speaking gets a minutes row, so
+  // a listener can always look down and see who they are hearing. The engine
+  // emits notes at SCHEDULING time (often seconds early), so rows queue until
+  // the audio clock reaches them; a "new phrase" is a note that starts after
+  // a real gap in that layer's sound.
+  // ==========================================================================
+  var PHRASE_GAP_S = 3.0;                       // this much quiet = a fresh phrase
+  var phraseLast = {};                          // layer -> when its last note ends
+  var phraseQueue = [];                         // rows waiting for their startTime
+  // the drone is the constant ground; the field and the wire already write
+  // their own minutes (ambient + telegraph events) — don't double-book them
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1 };
+  function onNoteForLog(n) {
+    if (!n || !n.layer || PHRASE_SKIP[n.layer]) return;
+    var end = n.startTime + (n.duration || 0);
+    var last = phraseLast[n.layer] != null ? phraseLast[n.layer] : -1e9;
+    if (n.startTime > last + PHRASE_GAP_S) {
+      if (phraseQueue.length > 80) phraseQueue.shift();
+      phraseQueue.push({ layer: n.layer, at: n.startTime });
+      phraseQueue.sort(function (a, b) { return a.at - b.at; });
+    }
+    if (end > last) phraseLast[n.layer] = end;
+  }
+  function flushPhraseLog() {
+    if (!K.getAudioTime) return;
+    if (!(K.isPlaying && K.isPlaying())) { phraseQueue.length = 0; return; }
+    var now = K.getAudioTime();
+    while (phraseQueue.length && phraseQueue[0].at <= now + 0.05) {
+      var p = phraseQueue.shift();
+      if (p.at > now - 3) logEvent({ cat: "phrase", t: p.at, label: p.layer });
+    }
+  }
+  if (K.setNoteListener) K.setNoteListener(onNoteForLog);
+
+  // ==========================================================================
   // The broadside — one Whitman line at long intervals, letterpress fade.
   // ==========================================================================
   var broadsideTimer = null;
@@ -309,6 +364,7 @@
     if (c.section === "hymn" && c.meter) parts.splice(2, 0, metersDots(c.meter));
     if (c.hush) parts.push('<span class="t-flag">' + TT(STR, STR_EN).stillness + '</span>');
     else if (c.fuging) parts.push('<span class="t-flag">' + TT(STR, STR_EN).fuging + '</span>');
+    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[c.visit === "question" ? "theQuestion" : "twoBands"] + '</span>');
     el.innerHTML = parts.filter(Boolean).map(function (p) { return '<span class="t-part">' + p + '</span>'; }).join(SEP);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
@@ -375,6 +431,7 @@
     updateTelemetry(c, playing);
     updateOrder(c, playing);
     updateBoard(c, playing);
+    flushPhraseLog();
     if (window.KolobViz && window.KolobViz.setConductor) window.KolobViz.setConductor(c, playing);
   }
   setInterval(poll, 300);
@@ -427,7 +484,7 @@
   var STATIC_DS = {
     title: "𐐗𐐄𐐢𐐉𐐒",
     subtitle: "𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓",
-    colophon: "𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤",
+    ives: "𐐌𐐚𐐞",
     art: "𐐂𐐡𐐓",
     placeholder: "𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊",
     pressPlay: "𐐑𐐡𐐇𐐝 𐐑𐐢𐐁",
@@ -435,7 +492,7 @@
   var STATIC_EN = {
     title: "KOLOB",
     subtitle: "a hymn engine at the rim of the light",
-    colophon: "nothing repeats · every meeting is its own",
+    ives: "Ives",
     art: "art",
     placeholder: "the valley is still",
     pressPlay: "PRESS PLAY",
@@ -450,8 +507,9 @@
     setText(".kolob-stops-block .kolob-sec-head", S.theStops);
     setText(".kolob-broadside-block .kolob-sec-head", S.broadside);
     setText(".kolob-log-block .kolob-sec-head", S.minutes);
-    setText("#kolob-colophon-line", ST.colophon);
     setText("#kolob-art-link", ST.art);
+    var ivesBtn = document.getElementById("kolob-ives");
+    if (ivesBtn) { ivesBtn.textContent = ST.ives; ivesBtn.classList.toggle("is-deseret", !latinMode); }
     setText("#kolob-gather", S.gather);
     setText(".kolob-transport .kolob-ctl-label", S.vol);
     setText(".kolob-board .kolob-ctl-label", S.seed);
@@ -514,9 +572,38 @@
     }
   }
 
+  // ==========================================================================
+  // The Ives switch — while armed, every meeting is guaranteed one visitation
+  // (the unanswered question or the two bands). Arming it mid-meeting
+  // restarts the meeting so the guarantee begins counting immediately.
+  // ==========================================================================
+  function wireIvesToggle() {
+    var btn = document.getElementById("kolob-ives"); if (!btn) return;
+    var on = false;
+    try { on = localStorage.getItem("kolobIves") === "1"; } catch (e) {}
+    function apply() {
+      btn.classList.toggle("is-on", on);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+      if (K.setForceVisitation) K.setForceVisitation(on);
+    }
+    apply();
+    btn.addEventListener("click", function () {
+      on = !on;
+      try { localStorage.setItem("kolobIves", on ? "1" : "0"); } catch (e) {}
+      apply();
+      if (on && K.isPlaying && K.isPlaying()) {
+        // restart: stop fully settles (its 800ms layer-zeroing included),
+        // then the meeting is called again with the guarantee armed
+        K.stop();
+        setTimeout(function () { K.play(); }, 900);
+      }
+    });
+  }
+
   renderMixer();
   wireTransport();
   wireLatinToggle();
+  wireIvesToggle();
   wireOrderSkip();
   applyScript();
   initViz();

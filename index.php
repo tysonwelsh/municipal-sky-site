@@ -34,4 +34,16 @@ include 'includes/header.php';
             <div class="poem-excerpt width-75 position-right bleed-right"><?= $tate_poem ?><div class="poem-attribution">James Tate, <cite>Images of Little Compton, Rhode Island</cite></div></div>
         </div>
     </div>
+    <!-- Anonymous homepage view tracking. No personal data leaves the browser;
+         the server records only a salted, daily-rotating visitor hash for
+         unique-visit counts (see api/page-event-tracking.php). -->
+    <script>
+      (function () {
+        fetch("/api/page-event-tracking.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ page: "homepage", event_type: "page_view", label: null }),
+        }).catch(function () {});
+      })();
+    </script>
     <?php include 'includes/footer.php'; ?>

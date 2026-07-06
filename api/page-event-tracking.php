@@ -18,7 +18,7 @@ require_once __DIR__ . '/visitor-hash.php';
 
 // Allowlists — keep this endpoint from being used to write arbitrary rows
 // (CORS is open). Add new pages / event types here as they're wired up.
-$ALLOWED_PAGES = ['prosperos-jukebox', 'underworld-occupations', 'zankyo', 'bardo', 'kolob'];
+$ALLOWED_PAGES = ['homepage', 'prosperos-jukebox', 'underworld-occupations', 'zankyo', 'bardo', 'kolob'];
 $ALLOWED_EVENTS = ['page_view', 'play', 'png_download'];
 
 // POST — log an event.

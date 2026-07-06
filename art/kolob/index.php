@@ -42,6 +42,11 @@ include '../../includes/header.php';
     <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
     <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
 
+    <!-- The Ives switch: while on, every meeting is guaranteed a visitation
+         (the unanswered question or the two bands). Checking it restarts the
+         meeting so the guarantee begins at once. -->
+    <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
+
     <!-- Title page -->
     <header class="kolob-header">
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
@@ -116,7 +121,6 @@ include '../../includes/header.php';
 
     <!-- Colophon -->
     <p class="kolob-note">
-      <span id="kolob-colophon-line">𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤</span><br />
       <a href="/art/" id="kolob-art-link" aria-label="the generative art series">𐐂𐐡𐐓</a>
       &nbsp;·&nbsp;
       <a href="/art/zankyo/" aria-label="sibling engine ZANKYO">&#27531;&#38911;</a>

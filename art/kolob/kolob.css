@@ -110,6 +110,21 @@
   border-color: var(--ink-soft);
 }
 
+/* the Ives switch — sits beside the script toggle; gilt when armed */
+.kolob-ives-toggle {
+  right: 4.9rem;
+}
+.kolob-ives-toggle.is-on {
+  opacity: 1;
+  color: var(--gilt);
+  border-color: var(--gilt);
+}
+.kolob-ives-toggle.is-on:hover,
+.kolob-ives-toggle.is-on:focus-visible {
+  color: var(--gilt);
+  border-color: var(--gilt);
+}
+
 /* dev mode: the order of service becomes a jump menu */
 .kolob-scene.is-dev .kolob-order-row { cursor: pointer; }
 .kolob-scene.is-dev .kolob-order-row:hover .kolob-order-name { color: var(--gilt); }
@@ -526,6 +541,7 @@
 }
 .kolob-log-row.cat-liahona .kolob-log-glyph,
 .kolob-log-row.cat-fuging .kolob-log-glyph,
+.kolob-log-row.cat-visitation .kolob-log-glyph,
 .kolob-log-row.cat-meeting .kolob-log-glyph { color: var(--gilt); }
 .kolob-log-text {
   font-family: "Noto Sans Deseret", serif;

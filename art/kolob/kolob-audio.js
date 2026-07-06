@@ -45,6 +45,10 @@ window.KolobAudio = (function () {
   var ctx = null;
   var masterGain = null, compressorNode = null, masterSat = null, glueComp = null;
   var bg = null;                   // background-audio handle (lock-screen survival)
+  // droneDuck sits between the drone layer and the hall: the stillness pulls
+  // ONLY the drone's ground away (the volume slider owns layerGains.drone, so
+  // the automation lives on its own node and the two never fight)
+  var droneDuck = null;
   // voicesBus sits between every layer path and the master. STOP silences it
   // and LEAVES it silent — long drone cycles keep their oscillators running
   // for up to 90s after a stop, and the siblings' pattern of restoring the
@@ -175,7 +179,9 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.9 };
+  // clarinet 0.8 / bagpipe 0.72: both sat ~20% too loud in the mix — the trim
+  // seats them lower while the sliders still read their usual positions
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.72, clarinet: 0.8 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -282,7 +288,13 @@ window.KolobAudio = (function () {
       var layer = LAYERS[li];
       var node = ctx.createGain();
       node.gain.setValueAtTime(1, ctx.currentTime);
-      if (DRY_CLOSE[layer] && effectsReady) {
+      if (layer === "drone") {
+        droneDuck = ctx.createGain();
+        droneDuck.gain.setValueAtTime(1, ctx.currentTime);
+        node.connect(droneDuck);
+        droneDuck.connect(tabSend);
+      }
+      else if (DRY_CLOSE[layer] && effectsReady) {
         node.connect(voicesBus);                               // intimate: mostly dry…
         var whisper = ctx.createGain();
         whisper.gain.setValueAtTime(0.3, ctx.currentTime);
@@ -730,7 +742,11 @@ window.KolobAudio = (function () {
     fugingUntil: 0,
     hushUntil: 0,
     verseLine: 0,
+    visitations: [],             // Ives guests drawn for this meeting
+    visitUntil: 0,
+    visitType: null,
   };
+  var forceVisitation = false;   // the 𐐌𐐚𐐞 switch: guarantee a guest next meeting
   // META-SEASONS — the journey across meetings. A slow seeded cosine swings
   // the colony from quiet fast-day troughs to conference/jubilee peaks over
   // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
@@ -799,6 +815,34 @@ window.KolobAudio = (function () {
     }
     C.plan = plan;
     C.si = 0;
+    // IVES VISITATIONS — rare guests in the meeting. Each rolls its OWN dice
+    // (18% apiece → roughly 3 meetings in 10 carry one; both on the same
+    // Sunday is a rare occasion, ~1 in 31). The question favors the
+    // invocation; the bands favor the doxology. The 𐐌𐐚𐐞 switch forces one
+    // guaranteed guest, seated early enough that the guarantee is heard.
+    C.visitations = [];
+    C.visitUntil = 0;
+    C.visitType = null;
+    var haveSec = {};
+    for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
+    function seatIn(prefs) {
+      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
+      return null;
+    }
+    var forcedType = forceVisitation ? (chance(0.5) ? "question" : "bands") : null;
+    if (forcedType === "question" || chance(0.18)) {
+      var qSeat = (forcedType === "question" || chance(0.7))
+        ? seatIn(["invocation", "testimony", "hymn"])
+        : seatIn(["testimony", "interlude", "invocation"]);
+      if (qSeat) C.visitations.push({ type: "question", section: qSeat, fired: false });
+    }
+    if (forcedType === "bands" || chance(0.18)) {
+      var bSeat = forcedType === "bands"
+        ? seatIn(["hymn", "doxology", "postlude"])
+        : (chance(0.7) ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
+      if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
+    }
+    if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
     Motif.newMeeting();
     enterSection(0);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
@@ -870,6 +914,10 @@ window.KolobAudio = (function () {
   function smooth(z) { z = Math.max(0, Math.min(1, z)); return z * z * (3 - 2 * z); }
   function inHush() { return ctx && ctx.currentTime < C.hushUntil; }
   function inFuging() { return ctx && ctx.currentTime < C.fugingUntil; }
+  function inVisit() { return ctx && ctx.currentTime < C.visitUntil; }
+  // the question is a scored passage — its performers' free cycles sit out;
+  // the bands are a COLLISION — nobody sits out, that is the piece
+  function inQuestion() { return inVisit() && C.visitType === "question"; }
   function silenceMul() { return C.meeting ? MEETINGS[C.meeting.activity].silenceMul : 1; }
   // The airy multiplier applied to every phrase gap: wide at rest, still wide
   // at the peaks. The frontier never crowds.
@@ -881,7 +929,20 @@ window.KolobAudio = (function () {
     var x = localArc();
     // Fuging entry: once per hymn, past the shoulder — the voices go their
     // ways and gather again. A stillness follows the convergence.
-    if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush()) {
+    // Ives visitations: fire once, past the section's first quarter, never
+    // over a hush, a fuging gathering, a joint, or each other.
+    for (var vv = 0; vv < C.visitations.length; vv++) {
+      var V = C.visitations[vv];
+      if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
+          !C.jointing && !inHush() && !inFuging() && !inVisit()) {
+        V.fired = true;
+        var vdur = V.type === "question" ? unansweredQuestion() : twoBandsCross();
+        C.visitType = V.type;
+        C.visitUntil = ctx.currentTime + vdur;
+        break;
+      }
+    }
+    if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
       C.fugingFired = true;
       var fugDur = fugingEntry();
       C.fugingUntil = ctx.currentTime + fugDur;
@@ -919,29 +980,30 @@ window.KolobAudio = (function () {
     if (idx < 0) return false;
     C.hushUntil = 0;
     air.busyUntil = 0; air.holders = 0;
-    if (masterGain && ctx) {
+    if (droneDuck && ctx) {
       // release any stillness dip that was in flight
-      masterGain.gain.cancelScheduledValues(ctx.currentTime);
-      masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
+      droneDuck.gain.cancelScheduledValues(ctx.currentTime);
+      droneDuck.gain.setValueAtTime(1, ctx.currentTime);
     }
     enterSection(idx);
     emitEvent({ cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
     return true;
   }
 
-  // The stillness — the still small voice's room. Master dips low and holds;
-  // sometimes a tuning fork rings alone in it; voices breathe back after.
+  // The stillness — the ground falls away. Only the DRONE recedes; the other
+  // voices keep speaking and stand exposed in the open air. Sometimes a
+  // tuning fork rings in it; the ground breathes back after.
   function stillness(why) {
-    if (!playing) return;
+    if (!playing || !droneDuck) return;
     var t = ctx.currentTime;
     var holdS = rnd(10, 22) * silenceMul();
     C.hushUntil = t + holdS + 2.5;
-    masterGain.gain.cancelScheduledValues(t);
-    masterGain.gain.setValueAtTime(masterGain.gain.value || masterVolume, t);
-    masterGain.gain.linearRampToValueAtTime(masterVolume * 0.18, t + 1.4);
+    droneDuck.gain.cancelScheduledValues(t);
+    droneDuck.gain.setValueAtTime(droneDuck.gain.value || 1, t);
+    droneDuck.gain.linearRampToValueAtTime(0.12, t + 1.4);
     if (chance(0.5)) evTuningFork(t + rnd(2, holdS * 0.5));
-    masterGain.gain.setValueAtTime(masterVolume * 0.18, t + 1.4 + holdS);
-    masterGain.gain.linearRampToValueAtTime(masterVolume, t + 1.4 + holdS + 3);
+    droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
+    droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
     emitEvent({ cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
   }
 
@@ -1533,14 +1595,14 @@ window.KolobAudio = (function () {
     var s = C.section;
     if (s === "invocation" || s === "testimony" || s === "interlude") {
       // mostly tacet — a rare soft open chord, like the organist resting hands
-      if (chance(0.25) && !inHush()) {
+      if (chance(0.25)) {
         var ch = Harmony.advance({ open: true });
         organChord(ctx.currentTime + 0.1, rnd(10, 16), ch, 0.35);
       }
       scheduleLayer(organCycle, rnd(20, 36) * 1000 * silenceMul(), "organ");
       return;
     }
-    if (s === "sacrament" || inHush()) { scheduleRaw(organCycle, 6000); return; }
+    if (s === "sacrament") { scheduleRaw(organCycle, 6000); return; }
     // The organ is an INSTRUMENT here, never a bed. In the prelude and the
     // postlude the organist plays phrases — a chord, a breath, a chord —
     // with real silence between. In the singing sections it only punctuates,
@@ -1691,7 +1753,7 @@ window.KolobAudio = (function () {
     if (!playing) return;
     var s = C.section;
     var sings = s === "hymn" || s === "doxology";
-    if (!sings || inHush() || inFuging()) { scheduleRaw(choirVerse, 6000); return; }
+    if (!sings || inFuging() || inQuestion()) { scheduleRaw(choirVerse, 6000); return; }
     if (!airFree()) { scheduleRaw(choirVerse, rnd(4, 9) * 1000); return; }
 
     var t = ctx.currentTime + 0.15;
@@ -1798,6 +1860,150 @@ window.KolobAudio = (function () {
   }
 
   // ==========================================================================
+  // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
+  //
+  // THE UNANSWERED QUESTION (after Ives, 1908): the drone is the eternal
+  // ground and never changes; the clarinet asks ONE fixed phrase over and
+  // over — it refuses the motif engine's development, which is the point;
+  // the harmonium answers, each time faster, denser, higher, more scattered.
+  // The last asking gets no answer. The air is claimed, so the meeting holds
+  // back and the drone is left alone with it.
+  // ==========================================================================
+  function unansweredQuestion() {
+    var t = ctx.currentTime + 0.5;
+    var beat = rnd(0.8, 0.95);
+    // the perennial question: rising, angular, ending high and unresolved
+    // (a 9th above the root — a step past the octave, asking)
+    var QDEGS = [[4, 1.3], [5, 0.9], [8, 1.0], [6, 0.8], [8, 2.8]];
+    var qNotes = QDEGS.map(function (q) {
+      return { f: degFreq(projDeg(q[0]) + colN()), dur: q[1] * beat };
+    });
+    var qdur = 0;
+    for (var qq = 0; qq < qNotes.length; qq++) qdur += qNotes[qq].dur;
+    var N = rint(4, 5);
+    var cursor = t;
+    for (var k = 0; k < N; k++) {
+      renderClarinetLine(cursor, qNotes, 0.9);
+      var afterQ = cursor + qdur;
+      if (k < N - 1) {
+        // the answer: more notes, quicker, higher, less patient each time
+        var aAt = afterQ + rnd(1.2, 2.2);
+        var count = 3 + k * 2;
+        var abeat = 1.25 * Math.pow(0.75, k);
+        var lift = k >= 2 ? colN() : 0;
+        var adeg = 2, anotes = [];
+        for (var an = 0; an < count; an++) {
+          adeg += rint(-(1 + k), 1 + k) || 1;
+          adeg = Math.max(0, Math.min(9 + k, adeg));
+          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * rnd(0.7, 1.2)) });
+        }
+        var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
+        emitNote("harmonium", anotes[0].f, aAt, adur);
+        // from the third answer the answerers argue among themselves
+        if (k >= 2) {
+          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * rnd(0.8, 1) }; });
+          renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
+        }
+        cursor = aAt + adur + rnd(2.5, 4.5) * Math.pow(0.85, k);
+      } else {
+        cursor = afterQ;                       // the last asking hangs
+      }
+    }
+    var tail = 10;                             // the drone alone — no answer comes
+    var total = (cursor - t) + tail;
+    claimAir(total - 4, 6);
+    emitEvent({ cat: "visitation", label: "? the question", detail: "×" + N + " askings · " + Math.round(total) + "s" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "? unanswered", detail: "the drone alone" });
+    }, (cursor - t + 1.5) * 1000);
+    return total;
+  }
+
+  // ==========================================================================
+  // TWO BANDS CROSSING (after the Danbury green; Putnam's Camp): a visiting
+  // band enters from one side of the valley in ITS OWN key and ITS OWN
+  // marching tempo, swells as it approaches, crosses the meeting, and
+  // recedes. It claims no air and defers to no one; the resident voices
+  // carry on exactly as they were. The collision is the piece. The visitor
+  // is never engraved on the page — it is not one of ours.
+  // ==========================================================================
+  function twoBandsCross() {
+    var theme = Motif.theme();
+    var t = ctx.currentTime + 0.4;
+    var dur = rnd(45, 65);
+    var beat = rnd(0.4, 0.52);                 // quickstep — unrelated to the meeting's time
+    var trans = pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
+    var fromLeft = chance(0.5);
+
+    // the visiting band's own wire into the hall
+    var bus = ctx.createGain();
+    bus.gain.setValueAtTime(0.0001, t);
+    var pan = ctx.createStereoPanner();
+    pan.pan.setValueAtTime(fromLeft ? -0.95 : 0.95, t);
+    pan.pan.linearRampToValueAtTime(fromLeft ? 0.95 : -0.95, t + dur);
+    bus.connect(pan);
+    pan.connect(tabSend || voicesBus);
+    // approach — cross — recede
+    bus.gain.linearRampToValueAtTime(0.4, t + dur * 0.45);
+    bus.gain.setValueAtTime(0.4, t + dur * 0.6);
+    bus.gain.linearRampToValueAtTime(0.0001, t + dur);
+
+    // the tune: the day's theme as a quickstep, or a jaunty default
+    var degs = theme && theme.notes.length >= 4
+      ? theme.notes.map(function (n) { return n.deg; })
+      : [0, 2, 4, 4, 5, 4, 2, 0, 2, 4, 5, 7, 5, 4, 2, 1];
+
+    // fife: one continuous reed, tongued with the gain gate
+    var fife = ctx.createOscillator();
+    fife.type = "sawtooth";
+    var flp = ctx.createBiquadFilter();
+    flp.type = "lowpass";
+    flp.frequency.setValueAtTime(2000, t);
+    var fart = ctx.createGain();
+    fart.gain.setValueAtTime(0, t);
+    fife.connect(flp); flp.connect(fart); fart.connect(bus);
+    // bass: the oom and the pah
+    var oom = ctx.createOscillator();
+    oom.type = "sine";
+    var og = ctx.createGain();
+    og.gain.setValueAtTime(0, t);
+    oom.connect(og); og.connect(bus);
+
+    var tt = t, di = 0;
+    while (tt < t + dur - beat) {
+      var deg = degs[di % degs.length];
+      var nd = Math.min(2, 0.9 + (di % 4 === 0 ? 0.5 : 0)) * beat;
+      var f = degFreq(projDeg(deg)) * trans * 2;               // fife register
+      fife.frequency.setValueAtTime(f, tt);
+      fart.gain.setValueAtTime(0.0001, tt);
+      fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
+      fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
+      fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
+      tt += nd; di++;
+    }
+    var bt = t, bar = 0;
+    while (bt < t + dur - beat) {
+      var bf = degFreq(projDeg(bar % 2 === 0 ? 0 : 4)) * trans / 2;   // oom on the root, pah on the fifth
+      oom.frequency.setValueAtTime(bf, bt);
+      og.gain.setValueAtTime(0.0001, bt);
+      og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
+      og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
+      bt += beat * 2; bar++;
+    }
+    fife.start(t); fife.stop(t + dur + 0.5);
+    oom.start(t); oom.stop(t + dur + 0.5);
+
+    emitEvent({ cat: "visitation", label: "⇋ a band approaches", detail: (fromLeft ? "from the west" : "from the east") + " · its own key" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "⇋ the bands cross", detail: "two times at once" });
+    }, dur * 0.5 * 1000);
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "⇋ passes on", detail: "" });
+    }, dur * 1000);
+    return dur;
+  }
+
+  // ==========================================================================
   // VOICE: CLARINET — the deacon. Copland clarity: triangle + one soft octave
   // sine through a gentle fixed lowpass; delayed shallow vibrato; single
   // grace notes, no trills. Lines out the hymn for the choir; speaks alone
@@ -1873,7 +2079,7 @@ window.KolobAudio = (function () {
     if (!playing) return;
     var s = C.section;
     var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
-    if (!speaks || inHush() || inFuging()) { scheduleRaw(clarinetPhrase, 6000); return; }
+    if (!speaks || inFuging() || inQuestion()) { scheduleRaw(clarinetPhrase, 6000); return; }
     if (!airFree()) { scheduleRaw(clarinetPhrase, rnd(5, 11) * 1000); return; }
     // in the prelude the deacon only occasionally tries a line over the organ
     if (s === "prelude" && chance(0.55)) { scheduleRaw(clarinetPhrase, rnd(10, 18) * 1000); return; }
@@ -2007,7 +2213,7 @@ window.KolobAudio = (function () {
     if (!playing) return;
     var s = C.section;
     var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
-    if (!plays || inHush()) { scheduleRaw(harmoniumCycle, 8000); return; }
+    if (!plays || inQuestion()) { scheduleRaw(harmoniumCycle, 8000); return; }
     // the parlor ANSWERS the deacon when an obligation stands — a fourth
     // conversational timbre, close and warm
     if (Motif.overdueFor("harmonium") && airFree()) {
@@ -2082,7 +2288,7 @@ window.KolobAudio = (function () {
   function stringsCycle() {
     if (!playing) return;
     var s = C.section;
-    if (s === "invocation" || s === "sacrament" || s === "interlude" || inHush()) { scheduleRaw(stringsCycle, 8000); return; }
+    if (s === "invocation" || s === "sacrament" || s === "interlude") { scheduleRaw(stringsCycle, 8000); return; }
     var dur = rnd(22, 34);
     var overlap = 8;
     stringsPad(ctx.currentTime + 0.1, dur, s === "doxology" ? 1 : 0.75, chance(0.7));
@@ -2227,7 +2433,7 @@ window.KolobAudio = (function () {
   function bagpipeCycle() {
     if (!playing) return;
     var pres = bagpipePresence();
-    if (pres <= 0.001 || inHush() || C.section === "sacrament") {
+    if (pres <= 0.001 || C.section === "sacrament") {
       scheduleLayer(bagpipeCycle, rnd(6, 12) * 1000, "bagpipe"); return;
     }
     // gate by presence: some turns the piper simply stays his hand, and comes
@@ -2319,7 +2525,7 @@ window.KolobAudio = (function () {
   function tineCycle() {
     if (!playing) return;
     var s = C.section;
-    if (s === "invocation" || s === "sacrament" || inHush() || inFuging()) { scheduleRaw(tineCycle, 9000); return; }
+    if (s === "invocation" || s === "sacrament" || inFuging()) { scheduleRaw(tineCycle, 9000); return; }
     if (!airFree()) { scheduleRaw(tineCycle, rnd(6, 12) * 1000); return; }
     var tineAmt = getLayerParam("bells", "tine", 0.5);
     var motif = Motif.overdueFor("bells") ? Motif.claim("bells") : Motif.request("bells");
@@ -2403,7 +2609,7 @@ window.KolobAudio = (function () {
     if (!playing) return;
     var s = C.section;
     var speaks = s === "invocation" || s === "sacrament" || (s === "testimony" && chance(0.3));
-    if (!speaks || inHush()) { scheduleRaw(stillVoicePhrase, 7000); return; }
+    if (!speaks) { scheduleRaw(stillVoicePhrase, 7000); return; }
     var dur = rnd(7, 15);
     stillVoiceRender(ctx.currentTime + 0.05, dur);
     scheduleLayer(stillVoicePhrase, (dur + rnd(6, 16) * silenceMul()) * 1000, "voice");
@@ -2418,7 +2624,7 @@ window.KolobAudio = (function () {
     if (!playing) return;
     var s = C.section;
     var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
-    if (!taps || inHush() || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
+    if (!taps || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
     var clack = getLayerParam("telegraph", "clack", 0.5);
     var theme = chance(0.7) ? Motif.theme() : Motif.anyWorking();
     if (!theme) { scheduleRaw(telegraphCycle, 15000); return; }
@@ -2569,7 +2775,7 @@ window.KolobAudio = (function () {
     var sg = ctx.createGain();
     st.connect(sf); sf.connect(sg); sg.connect(panAt("ambient", side));
     var span = head.length * 0.5 + 1.5;
-    env(sg, t, [[0.4, 0.014], [span, 0.011], [0.6, 0]]);
+    env(sg, t, [[0.4, 0.022], [span, 0.018], [0.6, 0]]);
     st.start(t, noiseOffset()); st.stop(t + span + 1.2);
     var tt = t + 0.5;
     for (var i = 0; i < head.length; i++) {
@@ -2581,7 +2787,7 @@ window.KolobAudio = (function () {
       o.type = "sine"; o.frequency.setValueAtTime(f, tt);
       var g = ctx.createGain();
       o.connect(g); g.connect(panAt("ambient", side));
-      env(g, tt, [[0.01, 0.028], [isDah ? 0.3 : 0.1, 0.024], [0.05, 0]]);
+      env(g, tt, [[0.01, 0.045], [isDah ? 0.3 : 0.1, 0.038], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
       tt += (isDah ? 0.42 : 0.22) + rnd(0.05, 0.12);
@@ -2627,7 +2833,7 @@ window.KolobAudio = (function () {
   function ambientEvent() {
     if (!playing) return;
     var s = C.section;
-    if (s === "sacrament" || inHush()) { scheduleRaw(ambientEvent, 9000); return; }
+    if (s === "sacrament") { scheduleRaw(ambientEvent, 9000); return; }
     var pool = s === "invocation"
       ? [[evWind, 4], [evCrickets, 3], [evTuningFork, 2]]
       : [[evWind, 4], [evCrickets, 3], [evClock, 3], [evTuningFork, 2], [evFarBell, 3], [evBeacon, 2.5], [evRain, 0.3], [evCoyote, 0.3]];
@@ -2750,6 +2956,11 @@ window.KolobAudio = (function () {
       voicesBus.gain.setValueAtTime(1, ctx.currentTime);
     }
     masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
+    if (droneDuck) {
+      // a stop mid-stillness must not strand the next meeting on a low drone
+      droneDuck.gain.cancelScheduledValues(ctx.currentTime);
+      droneDuck.gain.setValueAtTime(1, ctx.currentTime);
+    }
     LAYERS.forEach(applyLayerGain);
     planMeeting();
     // staggered assembly — the valley wakes the way a Sunday begins
@@ -2824,6 +3035,7 @@ window.KolobAudio = (function () {
         section: C.section, meter: C.meter, mode: mode,
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),
+        visit: inVisit() ? C.visitType : null,
         f0: F0, season: seasonPos,
         sectionIndex: C.si, planLength: C.plan.length,
         fifths: Harmony.fifthCount(),
@@ -2835,6 +3047,8 @@ window.KolobAudio = (function () {
     getMotifStats: function () { return Motif.stats(); },
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
+    setForceVisitation: function (on) { forceVisitation = !!on; },
+    isForceVisitation: function () { return forceVisitation; },
     attachAnalyser: function () {
       if (!ctx || !masterGain) return null;
       var an = ctx.createAnalyser(); an.fftSize = 1024;
