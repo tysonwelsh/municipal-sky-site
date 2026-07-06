@@ -829,7 +829,7 @@ window.KolobAudio = (function () {
       for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
       return null;
     }
-    var forcedType = forceVisitation ? (chance(0.5) ? "question" : "bands") : null;
+    var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1]]) : null;
     if (forcedType === "question" || chance(0.18)) {
       var qSeat = (forcedType === "question" || chance(0.7))
         ? seatIn(["invocation", "testimony", "hymn"])
@@ -841,6 +841,12 @@ window.KolobAudio = (function () {
         ? seatIn(["hymn", "doxology", "postlude"])
         : (chance(0.7) ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
       if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
+    }
+    // the steeples: bells at the meeting's edges — the framing sections where
+    // a bell has civic meaning (calling the valley in, ringing it home)
+    if (forcedType === "steeples" || chance(0.075)) {
+      var stSeat = forcedType === "steeples" ? "prelude" : (chance(0.55) ? "prelude" : "postlude");
+      C.visitations.push({ type: "steeples", section: stSeat, fired: false });
     }
     if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
     Motif.newMeeting();
@@ -936,7 +942,8 @@ window.KolobAudio = (function () {
       if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit()) {
         V.fired = true;
-        var vdur = V.type === "question" ? unansweredQuestion() : twoBandsCross();
+        var vfn = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer }[V.type];
+        var vdur = vfn();
         C.visitType = V.type;
         C.visitUntil = ctx.currentTime + vdur;
         break;
@@ -2004,6 +2011,93 @@ window.KolobAudio = (function () {
   }
 
   // ==========================================================================
+  // FROM THE STEEPLES (after Ives, 'From the Steeples and the Mountains'):
+  // the meetinghouse bell rings, and two or three far steeples answer from
+  // the edges of the valley — each in ITS OWN key, each keeping its one fixed
+  // pitch on its own slow period, phasing against the home bell for a minute.
+  // Bells are landscape, not conversation: no air is claimed, the meeting
+  // carries on beneath them, and the visitors are never engraved on the page
+  // (not one of ours). The home bell has the first word and the last.
+  // ==========================================================================
+  function steeplesAnswer() {
+    var t = ctx.currentTime + 0.3;
+    var remaining = Math.max(20, C.sectionDur * (1 - localArc()));
+    var dur = Math.min(rnd(45, 75), remaining + 12);
+
+    // the home steeple — center field, the same bell the joints ring
+    var homeBase = harm(pick([4, 5, 6]));
+    while (homeBase > 700) homeBase /= 2;
+    while (homeBase < 300) homeBase *= 2;
+    var ringAmt = getLayerParam("bells", "ring", 0.55);
+    var homeGain = 0.6 * ringAmt;
+
+    // the visitors: fixed transposed bases drawn without replacement — a bell
+    // keeps its key; a festive Sunday wakes a third steeple
+    var pool = [9 / 8, 4 / 3, 16 / 9, 6 / 5];
+    var nVis = MEETINGS[C.meeting.activity].bells >= 0.8 && chance(0.7) ? 3 : 2;
+    var visitors = [];
+    for (var v = 0; v < nVis; v++) {
+      var trans = pool.splice(rint(0, pool.length - 1), 1)[0];
+      var base = homeBase * trans;
+      while (base > 700) base /= 2;
+      while (base < 300) base *= 2;
+      // its own wire: the haze of distance, one fixed seat at a field edge
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(1, t);
+      var lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(2400, t);
+      var pan = ctx.createStereoPanner();
+      pan.pan.setValueAtTime((v % 2 === 0 ? 1 : -1) * rnd(0.7, 0.95), t);
+      g.connect(lp); lp.connect(pan); pan.connect(tabSend || voicesBus);
+      visitors.push({ base: base, dest: g, period: rnd(5.5, 11), gain: homeGain * rnd(0.35, 0.5) });
+    }
+
+    // every strike scheduled upfront at absolute times (the bands precedent)
+    var all = [];
+    // the home steeple: first word, steady period, and the last bell alone
+    var homeTimes = [t];
+    var ht = t + rnd(7, 9);
+    while (ht < t + dur - 6) { homeTimes.push(ht + rnd(-0.4, 0.4)); ht += rnd(7, 9); }
+    homeTimes.push(t + dur - rnd(0.5, 1.5));
+    for (var h = 0; h < homeTimes.length; h++) {
+      all.push({ at: homeTimes[h], base: homeBase, home: true, gain: homeGain * (h === homeTimes.length - 1 ? 0.9 : 1) });
+    }
+    for (var v2 = 0; v2 < visitors.length; v2++) {
+      var vis = visitors[v2];
+      var times = [];
+      var vt = t + 3.5 + v2 * rnd(2, 4);                       // each answers in turn
+      var lastAt = t + dur * rnd(0.72, 0.85);                  // gone before the last bell
+      while (vt < lastAt) { times.push(vt + rnd(-0.4, 0.4)); vt += vis.period; }
+      for (var k = 0; k < times.length; k++) {
+        // ring in over the first two strikes, taper over the final two
+        var m = k === 0 ? 0.55 : k === 1 ? 0.85 : k >= times.length - 1 ? 0.45 : k >= times.length - 2 ? 0.75 : 1;
+        all.push({ at: times[k], base: vis.base, home: false, dest: vis.dest, gain: vis.gain * m });
+      }
+    }
+    // sparse overlap is the texture; simultaneity is clangor — nudge collisions
+    all.sort(function (a, b) { return a.at - b.at; });
+    for (var s2 = 1; s2 < all.length; s2++) {
+      if (all[s2].at - all[s2 - 1].at < 0.6) all[s2].at = all[s2 - 1].at + 0.7;
+    }
+    for (var s3 = 0; s3 < all.length; s3++) {
+      var st = all[s3];
+      if (st.home) {
+        bellStrike(st.at, st.gain, st.base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
+        emitNote("bells", 0, st.at, 7);
+      } else {
+        bellStrike(st.at, st.gain, st.base, st.dest, { hum: false });
+      }
+    }
+
+    emitEvent({ cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "◎ the last bell", detail: "" });
+    }, dur * 1000);
+    return dur;
+  }
+
+  // ==========================================================================
   // VOICE: CLARINET — the deacon. Copland clarity: triangle + one soft octave
   // sine through a gentle fixed lowpass; delayed shallow vibrato; single
   // grace notes, no trills. Lines out the hymn for the choir; speaks alone
@@ -2472,15 +2566,14 @@ window.KolobAudio = (function () {
   // the muted TINE (the Cage nod: a prepared, damped, music-box tone that
   // taps motif heads between speeches, quantized to the sounding chord).
   // ==========================================================================
-  function meetinghouseBell(t, gainMul) {
-    if (!ctx) return;
-    var ringAmt = getLayerParam("bells", "ring", 0.55);
-    var dest = panAt("bells", rnd(-0.2, 0.2));
-    var base = harm(pick([4, 5, 6]));
-    while (base > 700) base /= 2;
-    while (base < 300) base *= 2;
+  // One bell, one strike — extracted so far steeples can ring the same KIND
+  // of bell at their own bases and down their own wires. The partial stack
+  // and beating doublets are the meetinghouse bell's, untouched. opts.hum
+  // adds the 0.5× hum partial (the home bell keeps its hum; visitors don't,
+  // so transposed hums never pile up under the drone).
+  function bellStrike(t, gainMul, base, dest, opts) {
     var ratios = [1, 2.0, 2.76, 3.98, 5.4];
-    var g0 = (gainMul || 0.6) * ringAmt * 0.55;
+    var g0 = (gainMul || 0.6) * 0.55;
     for (var i = 0; i < ratios.length; i++) {
       for (var d = 0; d < 2; d++) {                            // beating doublets — a real bell shimmers
         var o = ctx.createOscillator();
@@ -2493,12 +2586,22 @@ window.KolobAudio = (function () {
         o.start(t); o.stop(t + 10);
       }
     }
-    var hum = ctx.createOscillator();
-    hum.type = "sine"; hum.frequency.setValueAtTime(base * 0.5, t);
-    var hg = ctx.createGain();
-    hum.connect(hg); hg.connect(dest);
-    env(hg, t, [[0.012, g0 * 0.28], [rnd(5, 9), 0]]);
-    hum.start(t); hum.stop(t + 10);
+    if (opts && opts.hum) {
+      var hum = ctx.createOscillator();
+      hum.type = "sine"; hum.frequency.setValueAtTime(base * 0.5, t);
+      var hg = ctx.createGain();
+      hum.connect(hg); hg.connect(dest);
+      env(hg, t, [[0.012, g0 * 0.28], [rnd(5, 9), 0]]);
+      hum.start(t); hum.stop(t + 10);
+    }
+  }
+  function meetinghouseBell(t, gainMul) {
+    if (!ctx) return;
+    var ringAmt = getLayerParam("bells", "ring", 0.55);
+    var base = harm(pick([4, 5, 6]));
+    while (base > 700) base /= 2;
+    while (base < 300) base *= 2;
+    bellStrike(t, (gainMul || 0.6) * ringAmt, base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
     emitNote("bells", 0, t, 7);
   }
   function tineTap(t, f, amp) {
