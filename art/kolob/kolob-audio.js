@@ -150,12 +150,13 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // LAYERS + STATE
   // ==========================================================================
-  var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "ambient"];
+  // NOTE: "tuba" is RESERVED FOR THE RASPBERRY AMEN ONLY — see tubaBlat().
+  var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
   var PARLOR_SPACE = { harmonium: true, telegraph: true };  // close and warm; the rest sing in the tabernacle
   var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
 
   var layerGains = {};
-  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.42, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, ambient: 0.5 };
+  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.42, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
@@ -745,8 +746,10 @@ window.KolobAudio = (function () {
     visitations: [],             // Ives guests drawn for this meeting
     visitUntil: 0,
     visitType: null,
+    raspberry: false,            // this meeting ends on the organist's own amen
   };
   var forceVisitation = false;   // the 𐐌𐐚𐐞 switch: guarantee a guest next meeting
+  var forceRaspberry = false;    // dev/test hook only — never part of the 𐐌𐐚𐐞 pool
   // META-SEASONS — the journey across meetings. A slow seeded cosine swings
   // the colony from quiet fast-day troughs to conference/jubilee peaks over
   // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
@@ -843,6 +846,10 @@ window.KolobAudio = (function () {
       if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
     }
     if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
+    // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
+    // section, only the meeting's final cadence. Never on a fast Sunday; a
+    // solemn meeting does not end on a joke.
+    C.raspberry = forceRaspberry || (activity !== "fast" && chance(0.05));
     Motif.newMeeting();
     enterSection(0);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
@@ -1010,6 +1017,47 @@ window.KolobAudio = (function () {
   // ==========================================================================
   // SECTION JOINTS — an organ cadence and a single bell. No cymbals in Zion.
   // ==========================================================================
+  // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
+  // tone a collection ratio, so the wrongness is spelled in the meeting's
+  // own tuning. Warm JI beating, not a smear: dissonant, never broken.
+  function razzCluster() {
+    var n = colN();
+    var idxs = [-1, 0, 1, n + 1, n + 2, n + 4];
+    return { freqs: idxs.map(function (i) { return degFreq(i); }) };
+  }
+  // ==========================================================================
+  // VOICE: TUBA — the visiting brass.
+  //
+  // THE TUBA IS RESERVED FOR THE RASPBERRY AMEN ONLY. It has a stop in the
+  // rail and a sample blat, but NO cycle — it must never be given a
+  // scheduled voice in ordinary sections; the whole joke is that the stop
+  // sits there doing nothing, meeting after meeting, until the amen goes
+  // wrong. (Maintainers: do not "fix" this by wiring it into play().)
+  //
+  // His one entrance: a low committed blat — a scoop from under the note
+  // that settles nearly on it, held beneath the cluster, released with the
+  // organist's hands.
+  // ==========================================================================
+  function tubaBlat(t, gainMul) {
+    var target = degFreq(1 - colN() * 2);          // the second, two octaves down
+    var o = ctx.createOscillator();
+    o.type = "sawtooth";
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(target * 6, t);    // brassy at the attack…
+    lp.frequency.linearRampToValueAtTime(target * 3, t + 0.35);   // …then dark
+    // the blat: in from below, past the note, settling almost on it
+    o.frequency.setValueAtTime(target * 0.86, t);
+    o.frequency.linearRampToValueAtTime(target * 1.02, t + 0.12);
+    o.frequency.linearRampToValueAtTime(target, t + 0.3);
+    var g = ctx.createGain();
+    o.connect(lp); lp.connect(g); g.connect(panAt("tuba", 0));
+    var peak = 0.22 * (gainMul || 1);
+    env(g, t, [[0.05, peak], [2.4, peak * 0.77], [0.7, 0]]);
+    o.start(t); o.stop(t + 3.6);
+    emitNote("tuba", target, t, 3.0);
+  }
+
   function runJoint(isLast) {
     var t = ctx.currentTime + 0.2;
     var dur = 4;
@@ -1018,6 +1066,30 @@ window.KolobAudio = (function () {
       // fade into (or out of) the quietest room through pure drone — no chord
       dur = rnd(4, 7);
       emitEvent({ cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
+    } else if (isLast && C.raspberry) {
+      // THE RASPBERRY AMEN (after the close of Ives's Second Symphony): the
+      // cadence sets up in earnest — the IV played perfectly straight — and
+      // the organist's hands land a quiet fistful of seconds where the tonic
+      // should be. The tuba player commits to it. Held long enough to be
+      // unmistakably on purpose; the bell rings anyway, unbothered; the
+      // clerk's pen stops mid-word.
+      var rChords = Harmony.cadence("plagal");
+      var rDur = rnd(2.6, 3.6);
+      organChord(t, rDur * 1.02, rChords[0], 0.6);             // the setup, in earnest
+      organChord(t + rDur, 3.2, razzCluster(), 0.5);           // the resolution that isn't
+      tubaBlat(t + rDur);
+      dur = rDur + 3.2 + 1.5;
+      // the sexton usually didn't notice — the ritual visibly continues
+      if (chance(Math.max(MEETINGS[C.meeting.activity].bells, 0.6))) {
+        meetinghouseBell(t + dur * 0.75, 1.0);
+      }
+      var razzWait = (t + rDur) - ctx.currentTime;
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
+      }, (razzWait + 0.15) * 1000);
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
+      }, (razzWait + 0.9) * 1000);
     } else {
       var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
       var chords = Harmony.cadence(kind);
@@ -2862,6 +2934,12 @@ window.KolobAudio = (function () {
     }
     var t = ctx.currentTime + 0.08;
     switch (layer) {
+      case "tuba": {
+        // auditioning the tuba from the rail is part of the gag:
+        // one dignified solo blat, then silence until an amen goes wrong
+        tubaBlat(t, 1);
+        break;
+      }
       case "organ": {
         var ch = Harmony.voice(0, { open: false });
         organChord(t, 6, ch, 0.85);
@@ -3048,6 +3126,7 @@ window.KolobAudio = (function () {
     setNoteListener: function (fn) { noteListeners.push(fn); },
     setEventListener: function (fn) { eventListeners.push(fn); },
     setForceVisitation: function (on) { forceVisitation = !!on; },
+    setForceRaspberry: function (on) { forceRaspberry = !!on; },
     isForceVisitation: function () { return forceVisitation; },
     attachAnalyser: function () {
       if (!ctx || !masterGain) return null;

@@ -43,6 +43,8 @@
     speaks: "𐐝𐐑𐐀𐐗𐐝",                    // SPEAKS
     theQuestion: "𐐜 𐐗𐐎𐐇𐐝𐐕𐐊𐐤",          // THE QUESTION
     unanswered: "𐐊𐐤𐐈𐐤𐐝𐐊𐐡𐐔",            // UNANSWERED
+    raspberry: "𐐡𐐈𐐞𐐒𐐇𐐡𐐆",              // RASPBERRY
+    amenDash: "𐐁𐐣𐐇𐐤—",                  // AMEN—
     twoBands: "𐐓𐐅 𐐒𐐈𐐤𐐔𐐞",              // TWO BANDS
     bandNears: "𐐊 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐇𐐞",     // A BAND APPROACHES
     bandsCross: "𐐜 𐐒𐐈𐐤𐐔𐐞 𐐗𐐡𐐉𐐝",       // THE BANDS CROSS
@@ -90,6 +92,7 @@
     bells: "𐐒𐐇𐐢𐐞",
     voice: "𐐚𐐦𐐝",
     telegraph: "𐐓𐐇𐐢𐐊𐐘𐐡𐐈𐐙",
+    tuba: "𐐓𐐅𐐒𐐊",                       // TUBA (raspberry amen only)
     ambient: "𐐙𐐀𐐢𐐔",                    // FIELD
   };
   var AMBIENT_DS = [
@@ -117,6 +120,7 @@
     theme: "THEME", hymnsOfDay: "THE DAY'S HYMNS", amen: "AMEN",
     verse: "VERSE", speaks: "SPEAKS", liahona: "LIAHONA", sample: "SAMPLE",
     theQuestion: "THE QUESTION", unanswered: "UNANSWERED",
+    raspberry: "RASPBERRY", amenDash: "AMEN—",
     twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
@@ -131,7 +135,7 @@
   var LAYERS_EN = {
     organ: "ORGAN", drone: "DRONE", choir: "CHOIR", clarinet: "CLARINET",
     bagpipe: "BAGPIPE", harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
-    voice: "VOICE", telegraph: "TELEGRAPH", ambient: "FIELD",
+    voice: "VOICE", telegraph: "TELEGRAPH", tuba: "TUBA", ambient: "FIELD",
   };
   var MOTIF_EN = { "𐐀": "A", "𐐁": "B", "𐐂": "C" };
 
@@ -172,6 +176,8 @@
     if (cat === "phrase") return { glyph: "♮", text: (TT(LAYERS_DS, LAYERS_EN)[label] || label) + " " + TT(STR, STR_EN).speaks };
     if (cat === "visitation") {
       var SV = TT(STR, STR_EN);
+      if (label.indexOf("raspberry") >= 0) return { glyph: "∴", text: SV.raspberry };
+      if (label.indexOf("amen—") >= 0) return { glyph: "∴", text: SV.amenDash };
       if (label.indexOf("unanswered") >= 0) return { glyph: "?", text: SV.unanswered };
       if (label.indexOf("question") >= 0) return { glyph: "?", text: SV.theQuestion };
       if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
@@ -295,7 +301,8 @@
   var phraseQueue = [];                         // rows waiting for their startTime
   // the drone is the constant ground; the field and the wire already write
   // their own minutes (ambient + telegraph events) — don't double-book them
-  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1 };
+  // the tuba is never named here: his moment is logged as RASPBERRY instead
+  var PHRASE_SKIP = { drone: 1, ambient: 1, telegraph: 1, tuba: 1 };
   function onNoteForLog(n) {
     if (!n || !n.layer || PHRASE_SKIP[n.layer]) return;
     var end = n.startTime + (n.duration || 0);
