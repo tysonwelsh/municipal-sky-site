@@ -39,13 +39,16 @@ include '../../includes/header.php';
  <div class="kolob-scene">
   <div class="content-frame kolob-frame">
 
-    <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
-    <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
-
-    <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-         (the unanswered question or the two bands). Checking it restarts the
-         meeting so the guarantee begins at once. -->
-    <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
+    <!-- Corner toggles: a flex row, so the buttons space themselves however
+         wide their labels render (the script toggle grows in Deseret). -->
+    <div class="kolob-toggles">
+      <!-- The Ives switch: while on, every meeting is guaranteed a visitation
+           (the unanswered question or the two bands). Checking it restarts the
+           meeting so the guarantee begins at once. -->
+      <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
+      <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
+      <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
+    </div>
 
     <!-- Title page -->
     <header class="kolob-header">

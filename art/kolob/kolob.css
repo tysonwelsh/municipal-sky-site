@@ -79,11 +79,18 @@
 }
 .kolob-frame > * { position: relative; z-index: 1; }
 
-/* dev script toggle — deliberately faint; a development aid, not a feature */
-.kolob-latin-toggle {
+/* corner toggles — one flex row, top right; the buttons space themselves so a
+   wider label (the Deseret script name) never overlaps its neighbor */
+.kolob-toggles {
   position: absolute;
   top: 0.7rem; right: 0.9rem;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+/* dev script toggle — deliberately faint; a development aid, not a feature */
+.kolob-latin-toggle {
   padding: 0.22rem 0.66rem;
   font-family: "EB Garamond", serif;
   font-size: 0.82rem;
@@ -111,9 +118,6 @@
 }
 
 /* the Ives switch — sits beside the script toggle; gilt when armed */
-.kolob-ives-toggle {
-  right: 4.9rem;
-}
 .kolob-ives-toggle.is-on {
   opacity: 1;
   color: var(--gilt);
