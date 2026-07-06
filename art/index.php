@@ -16,9 +16,8 @@ include '../includes/header.php';
                 <div class="entry">
                     <div class="entry-content">
                         <a href="/art/kolob/" class="entry-title">KOLOB &#x10417;&#x10404;&#x10422;&#x10409;&#x10412;</a>
-                        <span class="entry-description">An American-utopian hymn engine: four-part dispersed harmony,
-                            fuging tunes, a Deseret-alphabet broadside, and a still small voice — from a colony at the
-                            rim of Kolob's light. Bright where its siblings are dark.</span>
+                        <span class="entry-description">An aleatoric hymn engine serving a colony of saints at the rim
+                            of Kolob's light.</span>
                     </div>
                 </div>
                 <div class="entry">
