@@ -52,6 +52,8 @@
     theSteeples: "𐐜 𐐝𐐓𐐀𐐑𐐊𐐢𐐞 𐐈𐐤𐐝𐐊𐐡",  // THE STEEPLES ANSWER
     lastBell: "𐐜 𐐢𐐈𐐝𐐓 𐐒𐐇𐐢",           // THE LAST BELL
     steeplesFlag: "𐐝𐐓𐐀𐐑𐐊𐐢𐐞",           // STEEPLES
+    oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
+    memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -127,6 +129,7 @@
     twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
+    oldTune: "AN OLD TUNE REMEMBERED", memoryOut: "THE MEMORY GIVES OUT",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
@@ -189,6 +192,8 @@
       if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
       if (label.indexOf("steeples") >= 0) return { glyph: "◎", text: SV.theSteeples };
       if (label.indexOf("last bell") >= 0) return { glyph: "◎", text: SV.lastBell };
+      if (label.indexOf("old tune") >= 0) return { glyph: "✧", text: SV.oldTune };
+      if (label.indexOf("memory gives out") >= 0) return { glyph: "✧", text: SV.memoryOut };
       return { glyph: "⇋", text: SV.twoBands };
     }
     if (cat === "verse") {

@@ -832,7 +832,7 @@ window.KolobAudio = (function () {
       for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
       return null;
     }
-    var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1]]) : null;
+    var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
     if (forcedType === "question" || chance(0.18)) {
       var qSeat = (forcedType === "question" || chance(0.7))
         ? seatIn(["invocation", "testimony", "hymn"])
@@ -850,6 +850,17 @@ window.KolobAudio = (function () {
     if (forcedType === "steeples" || chance(0.075)) {
       var stSeat = forcedType === "steeples" ? "prelude" : (chance(0.55) ? "prelude" : "postlude");
       C.visitations.push({ type: "steeples", section: stSeat, fired: false });
+    }
+    // THE OLD TUNE — its own die, gated by the mode law (tuneFitsMode): major
+    // memories on major-ish Sundays; on dark Sundays the gate OPENS for
+    // KINGSFOLD alone. Seats where remembering belongs: the prelude's
+    // pre-gathering reverie, or testimony. Never the sacrament.
+    var oldPool = oldTuneCandidates();
+    if (oldPool.length && (forcedType === "oldtune" || chance(0.09))) {
+      var oSeat = forcedType === "oldtune"
+        ? seatIn(["prelude", "testimony", "hymn"])
+        : (chance(0.65) ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
+      if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickW(oldPool) });
     }
     if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
@@ -949,8 +960,9 @@ window.KolobAudio = (function () {
       if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
           !C.jointing && !inHush() && !inFuging() && !inVisit()) {
         V.fired = true;
-        var vfn = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer }[V.type];
-        var vdur = vfn();
+        // type → set piece; the old tune receives its visitation record (the drawn tune)
+        var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered };
+        var vdur = (VISIT_FN[V.type] || twoBandsCross)(V);
         C.visitType = V.type;
         C.visitUntil = ctx.currentTime + vdur;
         break;
@@ -2167,6 +2179,123 @@ window.KolobAudio = (function () {
       emitEvent({ cat: "visitation", label: "◎ the last bell", detail: "" });
     }, dur * 1000);
     return dur;
+  }
+
+  // ==========================================================================
+  // THE OLD TUNE, HALF-REMEMBERED (after Ives's borrowings): once in a great
+  // while, far off at the edge of the field, a REAL hymn — one the colony
+  // would carry — surfaces for one worn phrase and maybe a fainter second
+  // try, then is gone. The engine's only quotation of pre-existing music.
+  //
+  // The pool: public-domain melodies (all 19th-century or older) that live in
+  // BOTH the LDS hymnal and the shared American congregational tradition.
+  // Each entry is the tune's opening incipit only, in 7-degree space (deg 0 =
+  // tonic; negatives below), verified against hymnary.org incipit indices.
+  // Unengraved: the memory is never emitNoted — it comes from outside the
+  // valley (or outside the present); the clerk's row is the only record.
+  //
+  // MODE LAW (the inversion rule): major memories surface only on major-ish
+  // Sundays. KINGSFOLD — the house hymn, "If You Could Hie to Kolob" (LDS
+  // #284), the traditional English tune of the Dives-and-Lazarus family —
+  // is modal MINOR, so the rule inverts for it alone: it is the ONLY tune
+  // that may surface on aeolian/dorian Sundays, and it never appears on
+  // bright ones (a minor tune recolored major is the wrong tune, and so is
+  // the reverse). On penta/hexa Sundays a tune is quotable only if its
+  // degree classes survive the collection's fold (penta folds classes 3 and
+  // 6; hexa folds 6) — computed, not hand-flagged.
+  // ==========================================================================
+  var OLD_TUNES = [
+    { name: "all is well",     w: 3,   minor: false, notes: [[0, 1], [0, 1], [1, 1], [2, 1], [0, 2], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 2]] },
+    { name: "kingsfold",       w: 3,   minor: true,  notes: [[2, 1], [1, 1], [0, 1], [0, 1], [0, 2], [-1, 1], [2, 1], [2, 1], [3, 1], [2, 3]] },
+    { name: "bethany",         w: 2.5, minor: false, notes: [[2, 1.5], [1, 0.5], [0, 1], [0, 1], [-2, 2], [-2, 1.5], [-3, 0.5], [0, 1], [2, 1], [1, 3]] },
+    { name: "foundation",      w: 2,   minor: false, notes: [[-3, 1], [-2, 0.5], [0, 0.5], [-2, 1], [0, 1], [-3, 1], [0, 0.5], [0, 0.5], [2, 1], [0, 2]] },
+    { name: "nettleton",       w: 1,   minor: false, notes: [[2, 1], [1, 0.5], [0, 0.5], [0, 1], [2, 1], [4, 1], [1, 0.5], [1, 0.5], [2, 1], [4, 2]] },
+    { name: "sweet hour",      w: 1,   minor: false, notes: [[0, 1], [2, 0.5], [3, 0.5], [4, 1], [4, 1.5], [5, 0.5], [6, 0.5], [7, 1], [5, 1], [4, 2]] },
+    { name: "god be with you", w: 1,   minor: false, notes: [[2, 1], [2, 0.5], [2, 0.5], [2, 1], [2, 0.5], [2, 0.5], [4, 1], [1, 1], [2, 1], [5, 2]] },
+  ];
+  function tuneFitsMode(tn) {
+    if (mode === "aeolian" || mode === "dorian") return !!tn.minor;  // dark Sundays: only the house hymn
+    if (tn.minor) return false;                                      // and never elsewhere
+    if (mode === "penta" || mode === "hexa") {
+      for (var ci = 0; ci < tn.notes.length; ci++) {
+        var cls = ((tn.notes[ci][0] % 7) + 7) % 7;
+        if (cls === 6 || (mode === "penta" && cls === 3)) return false;
+      }
+    }
+    return true;
+  }
+  function oldTuneCandidates() {
+    var pool = [];
+    for (var i = 0; i < OLD_TUNES.length; i++) if (tuneFitsMode(OLD_TUNES[i])) pool.push([OLD_TUNES[i], OLD_TUNES[i].w]);
+    return pool;
+  }
+
+  // the far voice — a self-contained carrier for the memory: soft triangle
+  // with a breath of octave, dulled by distance, at the field's edge, all
+  // tail. Not one of the console's instruments; it has no stop.
+  function farVoice(t, notes, gainMul, side, det) {
+    var o = ctx.createOscillator(); o.type = "triangle";
+    var o2 = ctx.createOscillator(); o2.type = "sine";
+    var g2 = ctx.createGain(); g2.gain.setValueAtTime(0.1, t);
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(1200, t);
+    var g = ctx.createGain();
+    var pn = ctx.createStereoPanner(); pn.pan.setValueAtTime(side, t);
+    o.connect(lp); o2.connect(g2); g2.connect(lp);
+    lp.connect(g); g.connect(pn); pn.connect(tabSend || voicesBus);
+    var tt = t, total = 0, prevF = 0;
+    for (var i = 0; i < notes.length; i++) {
+      var f = degFreq(projDeg(notes[i].deg) + colN()) * det;
+      if (i === 0) {
+        o.frequency.setValueAtTime(f, t);
+        o2.frequency.setValueAtTime(f * 2, t);
+      } else {
+        var port = Math.min(0.15, notes[i].dur * 0.2);
+        o.frequency.setValueAtTime(prevF, tt);
+        o.frequency.linearRampToValueAtTime(f, tt + port);
+        o2.frequency.setValueAtTime(prevF * 2, tt);
+        o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
+      }
+      prevF = f;
+      tt += notes[i].dur;
+      total += notes[i].dur;
+    }
+    var peak = 0.14 * (gainMul || 1);
+    env(g, t, [[1.2, peak], [Math.max(0.4, total - 2.6), peak * 0.85], [1.6, 0]]);
+    o.start(t); o.stop(t + total + 2);
+    o2.start(t); o2.stop(t + total + 2);
+    return total;
+  }
+
+  function oldTuneRemembered(V) {
+    var tune = (V && V.tune) || OLD_TUNES[0];
+    var t = ctx.currentTime + 0.6;
+    var beat = rnd(1.1, 1.4);                    // its own remembered tempo
+    var side = pick([-0.85, 0.85]);
+    var det = Math.pow(2, 8 / 1200);             // 8 cents sharp of true — worn
+    var notes = tune.notes.map(function (n) { return { deg: n[0], dur: n[1] * beat }; });
+    // seeded wear — never the first two notes; recognition lives in the head
+    if (chance(0.5) && notes.length > 4) {
+      var di = rint(2, notes.length - 2);
+      notes[di - 1].dur += notes[di].dur;        // a note dropped, its neighbor held wrong in its place
+      notes.splice(di, 1);
+    }
+    if (chance(0.4)) notes[rint(2, notes.length - 1)].dur *= 1.6;
+    var dur1 = farVoice(t, notes, 1.0, side, det);
+    var total = dur1;
+    emitEvent({ cat: "visitation", label: "✧ an old tune remembered", detail: tune.name + " · " + C.section });
+    if (chance(0.6)) {
+      // a fainter second try — the head only, trailing off
+      var gap = rnd(6, 10);
+      var head = notes.slice(0, Math.min(5, notes.length - 1));
+      var t2 = t + dur1 + gap;
+      var dur2 = farVoice(t2, head, 0.6, side, det);
+      total = dur1 + gap + dur2;
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "✧ the memory gives out", detail: tune.name });
+      }, (t2 - ctx.currentTime + dur2) * 1000);
+    }
+    return total + 4;
   }
 
   // ==========================================================================
