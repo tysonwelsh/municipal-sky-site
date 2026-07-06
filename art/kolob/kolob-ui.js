@@ -47,6 +47,9 @@
     bandNears: "𐐊 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐇𐐞",     // A BAND APPROACHES
     bandsCross: "𐐜 𐐒𐐈𐐤𐐔𐐞 𐐗𐐡𐐉𐐝",       // THE BANDS CROSS
     bandPasses: "𐐑𐐈𐐝𐐇𐐞 𐐉𐐤",            // PASSES ON
+    theSteeples: "𐐜 𐐝𐐓𐐀𐐑𐐊𐐢𐐞 𐐈𐐤𐐝𐐊𐐡",  // THE STEEPLES ANSWER
+    lastBell: "𐐜 𐐢𐐈𐐝𐐓 𐐒𐐇𐐢",           // THE LAST BELL
+    steeplesFlag: "𐐝𐐓𐐀𐐑𐐊𐐢𐐞",           // STEEPLES
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -119,6 +122,7 @@
     theQuestion: "THE QUESTION", unanswered: "UNANSWERED",
     twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
+    theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
@@ -177,6 +181,8 @@
       if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
       if (label.indexOf("cross") >= 0) return { glyph: "⇋", text: SV.bandsCross };
       if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
+      if (label.indexOf("steeples") >= 0) return { glyph: "◎", text: SV.theSteeples };
+      if (label.indexOf("last bell") >= 0) return { glyph: "◎", text: SV.lastBell };
       return { glyph: "⇋", text: SV.twoBands };
     }
     if (cat === "verse") {
@@ -364,7 +370,7 @@
     if (c.section === "hymn" && c.meter) parts.splice(2, 0, metersDots(c.meter));
     if (c.hush) parts.push('<span class="t-flag">' + TT(STR, STR_EN).stillness + '</span>');
     else if (c.fuging) parts.push('<span class="t-flag">' + TT(STR, STR_EN).fuging + '</span>');
-    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[c.visit === "question" ? "theQuestion" : "twoBands"] + '</span>');
+    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[{ question: "theQuestion", bands: "twoBands", steeples: "steeplesFlag" }[c.visit] || "twoBands"] + '</span>');
     el.innerHTML = parts.filter(Boolean).map(function (p) { return '<span class="t-part">' + p + '</span>'; }).join(SEP);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
