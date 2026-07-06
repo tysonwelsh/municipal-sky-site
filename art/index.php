@@ -20,6 +20,8 @@ include '../includes/header.php';
                             of Kolob's light.</span>
                     </div>
                 </div>
+                <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
+                <!--
                 <div class="entry">
 <div class="entry-content">
                         <a href="/art/bardo/" class="entry-title">BARDO &#3926;&#3928;&#3921;&#3964;</a>
@@ -42,6 +44,8 @@ include '../includes/header.php';
                             inspired by Shakespeare&rsquo;s Tempest.</span>
                     </div>
                 </div>
+                -->
+                <!-- END HIDDEN -->
                 <div class="entry">
 <div class="entry-content">
                         <a href="/chatbots/onomatopoeia-machine.php" class="entry-title">Onomatopoeia Machine</a>
