@@ -149,7 +149,7 @@
     bagpipe: "BAGPIPE", harmonium: "HARMONIUM", strings: "STRINGS", bells: "BELLS",
     voice: "VOICE", telegraph: "TELEGRAPH", tuba: "TUBA", ambient: "FIELD",
   };
-  var MOTIF_EN = { "𐐀": "A", "𐐁": "B", "𐐂": "C" };
+  var MOTIF_EN = { "Ⅰ": "I", "Ⅱ": "II", "Ⅲ": "III" };   // roman numerals in both scripts; ASCII in latin mode
 
   var latinMode = false;
   try {
@@ -157,11 +157,16 @@
   } catch (e) {}
   function TT(dsTable, enTable) { return latinMode ? enTable : dsTable; }
   function ambientName(entry) { return latinMode ? entry[2] : entry[1]; }
+  // gesture ciphers run 𐐀..𐐚 (the Deseret alphabet from its first letter);
+  // the Latin equivalents run A..Z then & — the schoolroom's own 27th letter
+  function gestureLatin(ds) {
+    if (!ds) return "—";
+    var i = ds.codePointAt(0) - 0x10400;
+    return i >= 0 && i < 27 ? "ABCDEFGHIJKLMNOPQRSTUVWXYZ&".charAt(i) : ds;
+  }
   function motifName(n) {
     if (!latinMode) return n;
-    // 'u' flag: these are astral-plane code points; without it the character
-    // class degenerates into unmatched surrogate halves
-    return String(n).replace(/[𐐀𐐁𐐂]/gu, function (ch) { return MOTIF_EN[ch] || ch; });
+    return String(n).replace(/[ⅠⅡⅢ]/g, function (ch) { return MOTIF_EN[ch] || ch; });
   }
 
   // ==========================================================================
@@ -224,7 +229,7 @@
       if (label.indexOf("shadows") >= 0) return { glyph: "〰", text: LAYERS_DS.harmonium + " " + TT(STR, STR_EN).shadows };
       if (label.indexOf("disperses") >= 0) return { glyph: "࿙", text: TT(STR, STR_EN).disperses };
       if (label.indexOf("❁") >= 0) return { glyph: "❁", text: TT(STR, STR_EN).hymnsOfDay };
-      var gm = /(𐐀|𐐁|𐐂)·g(\d+)/.exec(label);
+      var gm = /(Ⅰ|Ⅱ|Ⅲ)·g(\d+)/.exec(label);
       if (gm) return { glyph: "◆", text: motifName(gm[1]) + "·" + gm[2] + " " + TT(STR, STR_EN).develops };
       return { glyph: "◆", text: TT(STR, STR_EN).develops };
     }
@@ -432,8 +437,14 @@
       if (playing && K.getMotifStats) {
         var ms = K.getMotifStats() || {};
         var w = ms.working || {};
+        // the first card is the day's theme as its GESTURE cipher — a letter
+        // that is permanently that tune-shape's, so it changes meeting to
+        // meeting. Latin mode uses the matching Latin letter; the 27th
+        // gesture takes "&", the schoolroom's own 27th letter (the alphabet
+        // was recited "...X, Y, Z, and per se and" in the pioneers' day).
+        var themeCard = latinMode ? gestureLatin(w.letter) : (w.letter || "—");
         numsEl.innerHTML =
-          '<span class="kolob-board-card">' + motifName(w.theme || "𐐀") + (w.gen ? "·" + w.gen : "") + '</span>' +
+          '<span class="kolob-board-card" title="' + (w.gesture || "") + '">' + themeCard + (w.gen ? "·" + w.gen : "") + '</span>' +
           '<span class="kolob-board-card">' + (ms.developments || 0) + '</span>' +
           '<span class="kolob-board-card">' + (ms.answers || 0) + '</span>';
       } else {

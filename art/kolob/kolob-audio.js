@@ -180,9 +180,10 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix — the trim
-  // seats them lower while the sliders still read their usual positions
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.49, clarinet: 0.72 };
+  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix; voice 2.7:
+  // the still small voice doubled by owner request (was 1.35). The trim
+  // seats each while the sliders still read their usual positions.
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 2.7, bagpipe: 0.49, clarinet: 0.72 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -1174,40 +1175,51 @@ window.KolobAudio = (function () {
   // the meeting's collection only at render time — one gesture pool serves
   // every mode. Identity + genealogy: { name, gen, chain[] }.
   var Motif = (function () {
-    var NAMES = ["𐐀", "𐐁", "𐐂"];               // the first three letters of the Deseret alphabet
+    // The working motifs are numbered, not lettered: Ⅰ is the day's theme,
+    // Ⅱ and Ⅲ the subsidiary ideas. Roman numerals read in both scripts
+    // (numerals stay Latin by the app's own rule) and leave the WHOLE
+    // alphabet free for the gesture ciphers below.
+    var NAMES = ["Ⅰ", "Ⅱ", "Ⅲ"];
     // THE GESTURE POOL — cultural DNA, abstracted from the tradition's
     // rhetoric, never quoted. Nearly thirty gestures; each meeting draws only
     // three, so most sessions never hear most of them. That is the diversity:
     // no two visits work the same material.
+    // Every gesture carries a PERMANENT Deseret letter (its cipher on the hymn
+    // board): the alphabet in order from 𐐀, twenty-seven letters for
+    // twenty-seven shapes. The letters are stable across meetings, so a
+    // returning listener can learn that a given letter is a given tune-shape.
+    // (The working motifs are Roman-numbered Ⅰ/Ⅱ/Ⅲ, so no collision.)
     var GESTURES = [
-      { name: "gathering",   notes: [[-3, 1], [0, 2], [1, 1], [0, 3]] },                            // the rising-fourth call
-      { name: "kolob arch",  notes: [[0, 1], [2, 1], [4, 1], [5, 2], [4, 1], [2, 1], [0, 3]] },     // arch litany, KINGSFOLD-shaped
-      { name: "amen",        notes: [[3, 2], [2, 1], [0, 4]] },                                     // the plagal fall
-      { name: "revival",     notes: [[0, 1], [2, 1], [4, 1], [7, 3]] },                             // gapped camp-meeting ascent
-      { name: "sweet hour",  notes: [[4, 2], [3, 1], [2, 1], [1, 1], [0, 3]] },                     // stepwise evening descent
-      { name: "fuging",      notes: [[0, 1], [4, 1], [3, 0.5], [2, 0.5], [1, 1], [0, 2]] },         // the imitative subject
-      { name: "handcart",    notes: [[0, 1], [1, 1], [2, 2], [1, 1], [0, 1], [-1, 1], [0, 3]] },    // walking, patient
-      { name: "wayfarer",    notes: [[5, 1], [4, 1], [2, 2], [3, 1], [1, 1], [0, 3]] },             // the lonesome stranger
-      { name: "sego lily",   notes: [[2, 1], [4, 0.5], [2, 0.5], [1, 1], [2, 1], [0, 2]] },         // a light gapped lilt
-      { name: "bells of Zion", notes: [[6, 1], [4, 1], [5, 1], [3, 1], [4, 1], [2, 1], [0, 2]] },   // falling thirds, pealing
-      { name: "morning star", notes: [[0, 1], [5, 2], [4, 1], [3, 1], [4, 3]] },                    // the upward sixth, held
-      { name: "still small", notes: [[1, 2], [0, 1], [1, 1], [2, 2], [1, 1], [0, 3]] },             // a narrow murmur
-      { name: "cumorah",     notes: [[7, 2], [4, 1], [2, 1], [0, 3]] },                             // the falling-octave call
-      { name: "beehive",     notes: [[2, 1], [2, 1], [2, 0.5], [3, 0.5], [2, 1], [0, 3]] },         // repeated-note industry
-      { name: "ensign peak", notes: [[0, 1], [4, 1], [7, 2], [5, 1], [4, 3]] },                     // the wide climb, held high
-      { name: "lullaby",     notes: [[0, 2], [-2, 1], [0, 1], [-1, 2], [0, 3]] },                   // low rocking, evening
-      { name: "sego road",   notes: [[0, 1.5], [1, 0.5], [3, 1.5], [2, 0.5], [1, 1], [0, 3]] },     // dotted walking figure
-      { name: "seagull",     notes: [[4, 1], [6, 1], [4, 1], [2, 2], [4, 1], [0, 3]] },            // a wheeling gull, the miracle
-      { name: "north star",  notes: [[0, 1], [7, 3], [6, 1], [4, 2]] },                            // a bold leap of a seventh, held
-      { name: "far water",   notes: [[2, 3], [1, 1], [2, 1], [0, 4]] },                            // long tones over great spaces
-      { name: "quail",       notes: [[4, 0.5], [3, 0.5], [4, 0.5], [2, 0.5], [0, 2]] },            // a quick clipped call
-      { name: "meridian",    notes: [[0, 1], [2, 1], [4, 1], [6, 1], [7, 2], [5, 1], [4, 3]] },    // the long ascent to the octave
-      { name: "the ferry",   notes: [[0, 2], [1, 1], [0, 1], [-2, 2], [0, 3]] },                   // rocking across, dipping under
-      { name: "sunstone",    notes: [[0, 1], [3, 1], [2, 1], [5, 1], [4, 1], [7, 2], [0, 3]] },    // a climbing zigzag, then home
-      { name: "watchfire",   notes: [[0, 1], [1, 2], [0, 1], [2, 2], [0, 1], [3, 3]] },            // patient tending, slowly rising
-      { name: "saltflat",    notes: [[4, 4], [4, 1], [3, 1], [2, 4]] },                            // very still, barely moving
-      { name: "cottonwood",  notes: [[0, 2], [2, 1], [1, 1], [3, 2], [2, 1], [0, 3]] },            // a gentle sway in the wind
+      { letter: "𐐀", name: "gathering",   notes: [[-3, 1], [0, 2], [1, 1], [0, 3]] },                            // the rising-fourth call
+      { letter: "𐐁", name: "kolob arch",  notes: [[0, 1], [2, 1], [4, 1], [5, 2], [4, 1], [2, 1], [0, 3]] },     // arch litany, KINGSFOLD-shaped
+      { letter: "𐐂", name: "amen",        notes: [[3, 2], [2, 1], [0, 4]] },                                     // the plagal fall
+      { letter: "𐐃", name: "revival",     notes: [[0, 1], [2, 1], [4, 1], [7, 3]] },                             // gapped camp-meeting ascent
+      { letter: "𐐄", name: "sweet hour",  notes: [[4, 2], [3, 1], [2, 1], [1, 1], [0, 3]] },                     // stepwise evening descent
+      { letter: "𐐅", name: "fuging",      notes: [[0, 1], [4, 1], [3, 0.5], [2, 0.5], [1, 1], [0, 2]] },         // the imitative subject
+      { letter: "𐐆", name: "handcart",    notes: [[0, 1], [1, 1], [2, 2], [1, 1], [0, 1], [-1, 1], [0, 3]] },    // walking, patient
+      { letter: "𐐇", name: "wayfarer",    notes: [[5, 1], [4, 1], [2, 2], [3, 1], [1, 1], [0, 3]] },             // the lonesome stranger
+      { letter: "𐐈", name: "sego lily",   notes: [[2, 1], [4, 0.5], [2, 0.5], [1, 1], [2, 1], [0, 2]] },         // a light gapped lilt
+      { letter: "𐐉", name: "bells of Zion", notes: [[6, 1], [4, 1], [5, 1], [3, 1], [4, 1], [2, 1], [0, 2]] },   // falling thirds, pealing
+      { letter: "𐐊", name: "morning star", notes: [[0, 1], [5, 2], [4, 1], [3, 1], [4, 3]] },                    // the upward sixth, held
+      { letter: "𐐋", name: "still small", notes: [[1, 2], [0, 1], [1, 1], [2, 2], [1, 1], [0, 3]] },             // a narrow murmur
+      { letter: "𐐌", name: "cumorah",     notes: [[7, 2], [4, 1], [2, 1], [0, 3]] },                             // the falling-octave call
+      { letter: "𐐍", name: "beehive",     notes: [[2, 1], [2, 1], [2, 0.5], [3, 0.5], [2, 1], [0, 3]] },         // repeated-note industry
+      { letter: "𐐎", name: "ensign peak", notes: [[0, 1], [4, 1], [7, 2], [5, 1], [4, 3]] },                     // the wide climb, held high
+      { letter: "𐐏", name: "lullaby",     notes: [[0, 2], [-2, 1], [0, 1], [-1, 2], [0, 3]] },                   // low rocking, evening
+      { letter: "𐐐", name: "sego road",   notes: [[0, 1.5], [1, 0.5], [3, 1.5], [2, 0.5], [1, 1], [0, 3]] },     // dotted walking figure
+      { letter: "𐐑", name: "seagull",     notes: [[4, 1], [6, 1], [4, 1], [2, 2], [4, 1], [0, 3]] },            // a wheeling gull, the miracle
+      { letter: "𐐒", name: "north star",  notes: [[0, 1], [7, 3], [6, 1], [4, 2]] },                            // a bold leap of a seventh, held
+      { letter: "𐐓", name: "far water",   notes: [[2, 3], [1, 1], [2, 1], [0, 4]] },                            // long tones over great spaces
+      { letter: "𐐔", name: "quail",       notes: [[4, 0.5], [3, 0.5], [4, 0.5], [2, 0.5], [0, 2]] },            // a quick clipped call
+      { letter: "𐐕", name: "meridian",    notes: [[0, 1], [2, 1], [4, 1], [6, 1], [7, 2], [5, 1], [4, 3]] },    // the long ascent to the octave
+      { letter: "𐐖", name: "the ferry",   notes: [[0, 2], [1, 1], [0, 1], [-2, 2], [0, 3]] },                   // rocking across, dipping under
+      { letter: "𐐗", name: "sunstone",    notes: [[0, 1], [3, 1], [2, 1], [5, 1], [4, 1], [7, 2], [0, 3]] },    // a climbing zigzag, then home
+      { letter: "𐐘", name: "watchfire",   notes: [[0, 1], [1, 2], [0, 1], [2, 2], [0, 1], [3, 3]] },            // patient tending, slowly rising
+      { letter: "𐐙", name: "saltflat",    notes: [[4, 4], [4, 1], [3, 1], [2, 4]] },                            // very still, barely moving
+      { letter: "𐐚", name: "cottonwood",  notes: [[0, 2], [2, 1], [1, 1], [3, 2], [2, 1], [0, 3]] },            // a gentle sway in the wind
     ];
+    var GESTURE_LETTER = {};
+    for (var gl = 0; gl < GESTURES.length; gl++) GESTURE_LETTER[GESTURES[gl].name] = GESTURES[gl].letter;
     var working = { theme: null, subs: [] };      // the whole meeting works ≤3 ideas
     var ledger = [];                              // [{from, to, motif, deadline, type}]
     var stats = { developments: 0, answers: 0, transformsUsed: {}, gestures: [] };
@@ -1726,7 +1738,13 @@ window.KolobAudio = (function () {
           developments: stats.developments, answers: stats.answers,
           transforms: Object.keys(stats.transformsUsed),
           gestures: stats.gestures.slice(), dialect: dialectName,
-          working: { theme: working.theme && working.theme.name, gen: working.theme && working.theme.gen },
+          working: {
+            theme: working.theme && working.theme.name,
+            gen: working.theme && working.theme.gen,
+            // the day's theme as its GESTURE cipher — the hymn board's letter
+            gesture: working.theme && working.theme.gesture,
+            letter: (working.theme && GESTURE_LETTER[working.theme.gesture]) || null,
+          },
         };
       },
     };
