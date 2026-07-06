@@ -417,11 +417,13 @@
   box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 .kolob-board .kolob-ctl-label { color: rgba(245, 240, 228, 0.6); }
+/* the number cards ride the seed row now (right of GATHER), one line tall */
 .kolob-board-nums {
   display: flex;
-  gap: 0.5rem;
-  margin: 0.7rem 0 0.9rem;
+  gap: 0.4rem;
+  margin: 0 0 0 auto;              /* pushed to the row's right edge */
   min-height: 2.1rem;
+  align-items: center;
 }
 .kolob-board-card {
   font-family: "Noto Sans Deseret", "EB Garamond", serif;
@@ -510,8 +512,9 @@
 .kolob-stop:has(.kolob-drawknob.is-off) .kolob-stop-name { color: var(--ink-faint); }
 
 /* ============================== broadside ================================ */
+/* seated in the right column beneath the hymn board */
 .kolob-broadside-block {
-  margin: 0 0 2.2rem;
+  margin: 1.6rem 0 0;
   text-align: center;
 }
 .kolob-broadside-block .kolob-sec-head { text-align: left; }

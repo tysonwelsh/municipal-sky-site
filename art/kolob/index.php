@@ -95,13 +95,18 @@ include '../../includes/header.php';
       <div class="kolob-board-block">
         <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
         <div class="kolob-board">
-          <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
           <div class="kolob-seed-row">
             <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
             <span class="kolob-seed-current" id="kolob-seed-current">—</span>
             <input type="text" inputmode="numeric" class="kolob-seed-input" id="kolob-seed-input" aria-label="seed for a new gathering" />
             <button type="button" class="kolob-btn kolob-btn-board" id="kolob-gather" aria-label="reseed and restart">𐐘𐐈𐐜𐐊𐐡</button>
+            <div class="kolob-board-nums" id="kolob-board-nums"><span class="kolob-board-card">—</span></div>
           </div>
+        </div>
+        <!-- The broadside — seated beneath the board to keep the page short -->
+        <div class="kolob-broadside-block">
+          <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+          <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
         </div>
       </div>
     </div>
@@ -110,12 +115,6 @@ include '../../includes/header.php';
     <div class="kolob-stops-block">
       <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
       <div id="kolob-layers"></div>
-    </div>
-
-    <!-- The broadside -->
-    <div class="kolob-broadside-block">
-      <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
-      <div class="kolob-broadside-line" id="kolob-broadside-line" aria-label="the broadside verse">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊</div>
     </div>
 
     <!-- Clerk's minutes -->

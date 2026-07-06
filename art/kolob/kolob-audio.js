@@ -180,9 +180,9 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.65: both sat too loud in the mix — the trim
+  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix — the trim
   // seats them lower while the sliders still read their usual positions
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.65, clarinet: 0.72 };
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 1.35, bagpipe: 0.49, clarinet: 0.72 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -1108,7 +1108,7 @@ window.KolobAudio = (function () {
     o.frequency.linearRampToValueAtTime(target, t + 0.3);
     var g = ctx.createGain();
     o.connect(lp); lp.connect(g); g.connect(panAt("tuba", 0));
-    var peak = 0.22 * (gainMul || 1);
+    var peak = 0.32 * (gainMul || 1);              // up from 0.22 — the blat should be heard
     env(g, t, [[0.05, peak], [2.4, peak * 0.77], [0.7, 0]]);
     o.start(t); o.stop(t + 3.6);
     emitNote("tuba", target, t, 3.0);
