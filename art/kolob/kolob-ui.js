@@ -47,6 +47,8 @@
     bandNears: "𐐊 𐐒𐐈𐐤𐐔 𐐊𐐑𐐡𐐄𐐕𐐇𐐞",     // A BAND APPROACHES
     bandsCross: "𐐜 𐐒𐐈𐐤𐐔𐐞 𐐗𐐡𐐉𐐝",       // THE BANDS CROSS
     bandPasses: "𐐑𐐈𐐝𐐇𐐞 𐐉𐐤",            // PASSES ON
+    oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
+    memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -119,6 +121,7 @@
     theQuestion: "THE QUESTION", unanswered: "UNANSWERED",
     twoBands: "TWO BANDS", bandNears: "A BAND APPROACHES",
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
+    oldTune: "AN OLD TUNE REMEMBERED", memoryOut: "THE MEMORY GIVES OUT",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
@@ -177,6 +180,8 @@
       if (label.indexOf("approaches") >= 0) return { glyph: "⇋", text: SV.bandNears };
       if (label.indexOf("cross") >= 0) return { glyph: "⇋", text: SV.bandsCross };
       if (label.indexOf("passes") >= 0) return { glyph: "⇋", text: SV.bandPasses };
+      if (label.indexOf("old tune") >= 0) return { glyph: "✧", text: SV.oldTune };
+      if (label.indexOf("memory gives out") >= 0) return { glyph: "✧", text: SV.memoryOut };
       return { glyph: "⇋", text: SV.twoBands };
     }
     if (cat === "verse") {
