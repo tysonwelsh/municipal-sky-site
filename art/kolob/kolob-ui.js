@@ -54,6 +54,9 @@
     steeplesFlag: "𐐝𐐓𐐀𐐑𐐊𐐢𐐞",           // STEEPLES
     oldTune: "𐐊𐐤 𐐄𐐢𐐔 𐐓𐐅𐐤 𐐡𐐆𐐣𐐇𐐣𐐒𐐊𐐡𐐔", // AN OLD TUNE REMEMBERED
     memoryOut: "𐐜 𐐣𐐇𐐣𐐊𐐡𐐆 𐐘𐐆𐐚𐐞 𐐍𐐓",   // THE MEMORY GIVES OUT
+    tuneWithheld: "𐐜 𐐓𐐅𐐤 𐐆𐐞 𐐎𐐆𐐛𐐐𐐇𐐢𐐔", // THE TUNE IS WITHHELD
+    wholeTune: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤 𐐈𐐓 𐐢𐐈𐐝𐐓",  // THE WHOLE TUNE, AT LAST
+    wholeFlag: "𐐜 𐐐𐐄𐐢 𐐓𐐅𐐤",            // THE WHOLE TUNE (telemetry)
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
@@ -130,6 +133,8 @@
     bandsCross: "THE BANDS CROSS", bandPasses: "PASSES ON",
     theSteeples: "THE STEEPLES ANSWER", lastBell: "THE LAST BELL", steeplesFlag: "STEEPLES",
     oldTune: "AN OLD TUNE REMEMBERED", memoryOut: "THE MEMORY GIVES OUT",
+    tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
+    wholeFlag: "THE WHOLE TUNE",
     orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
@@ -194,6 +199,8 @@
       if (label.indexOf("last bell") >= 0) return { glyph: "◎", text: SV.lastBell };
       if (label.indexOf("old tune") >= 0) return { glyph: "✧", text: SV.oldTune };
       if (label.indexOf("memory gives out") >= 0) return { glyph: "✧", text: SV.memoryOut };
+      if (label.indexOf("withheld") >= 0) return { glyph: "◌", text: SV.tuneWithheld };
+      if (label.indexOf("whole tune") >= 0) return { glyph: "✶", text: SV.wholeTune };
       return { glyph: "⇋", text: SV.twoBands };
     }
     if (cat === "verse") {
@@ -382,7 +389,7 @@
     if (c.section === "hymn" && c.meter) parts.splice(2, 0, metersDots(c.meter));
     if (c.hush) parts.push('<span class="t-flag">' + TT(STR, STR_EN).stillness + '</span>');
     else if (c.fuging) parts.push('<span class="t-flag">' + TT(STR, STR_EN).fuging + '</span>');
-    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[{ question: "theQuestion", bands: "twoBands", steeples: "steeplesFlag" }[c.visit] || "twoBands"] + '</span>');
+    else if (c.visit) parts.push('<span class="t-flag">' + TT(STR, STR_EN)[{ question: "theQuestion", bands: "twoBands", steeples: "steeplesFlag", assembly: "wholeFlag" }[c.visit] || "twoBands"] + '</span>');
     el.innerHTML = parts.filter(Boolean).map(function (p) { return '<span class="t-part">' + p + '</span>'; }).join(SEP);
   }
   var METER_DOTS = { CM: "8.6.8.6", LM: "8.8.8.8", SM: "6.6.8.6", "87.87": "8.7.8.7", CMD: "8.6.8.6 ×2" };
@@ -503,6 +510,7 @@
     title: "𐐗𐐄𐐢𐐉𐐒",
     subtitle: "𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓",
     ives: "𐐌𐐚𐐞",
+    whole: "𐐐𐐄𐐢",
     art: "𐐂𐐡𐐓",
     placeholder: "𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊",
     pressPlay: "𐐑𐐡𐐇𐐝 𐐑𐐢𐐁",
@@ -511,6 +519,7 @@
     title: "KOLOB",
     subtitle: "a hymn engine at the rim of the light",
     ives: "Ives",
+    whole: "Whole",
     art: "art",
     placeholder: "the valley is still",
     pressPlay: "PRESS PLAY",
@@ -528,6 +537,8 @@
     setText("#kolob-art-link", ST.art);
     var ivesBtn = document.getElementById("kolob-ives");
     if (ivesBtn) { ivesBtn.textContent = ST.ives; ivesBtn.classList.toggle("is-deseret", !latinMode); }
+    var cumBtn = document.getElementById("kolob-cumulative");
+    if (cumBtn) { cumBtn.textContent = ST.whole; cumBtn.classList.toggle("is-deseret", !latinMode); }
     setText("#kolob-gather", S.gather);
     setText(".kolob-transport .kolob-ctl-label", S.vol);
     setText(".kolob-board .kolob-ctl-label", S.seed);
@@ -618,10 +629,49 @@
     });
   }
 
+  // ==========================================================================
+  // The Whole switch — the cumulative-form governor. Cycles on click:
+  // guaranteed (solid gilt) → natural 4% (outline) → never (struck) → …
+  // Switching TO guaranteed restarts the meeting (the Ives-switch pattern);
+  // the other states take effect at the next meeting without a restart.
+  // ==========================================================================
+  function wireCumulativeToggle() {
+    var btn = document.getElementById("kolob-cumulative"); if (!btn) return;
+    var mode = "natural";
+    try {
+      if (/[?&]kolobCumulative=1/.test(location.search)) mode = "always";
+      else mode = localStorage.getItem("kolobCumulative") || "natural";
+    } catch (e) {}
+    if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
+    var LABELS = {
+      always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
+      natural: "the tune withheld until the doxology — about one meeting in twenty-five",
+      never: "the tune withheld until the doxology — off",
+    };
+    function apply() {
+      btn.classList.toggle("is-always", mode === "always");
+      btn.classList.toggle("is-never", mode === "never");
+      btn.setAttribute("aria-pressed", mode === "always" ? "true" : "false");
+      btn.setAttribute("aria-label", LABELS[mode]);
+      if (K.setCumulativeMode) K.setCumulativeMode(mode);
+    }
+    apply();
+    btn.addEventListener("click", function () {
+      mode = mode === "always" ? "natural" : mode === "natural" ? "never" : "always";
+      try { localStorage.setItem("kolobCumulative", mode); } catch (e) {}
+      apply();
+      if (mode === "always" && K.isPlaying && K.isPlaying()) {
+        K.stop();
+        setTimeout(function () { K.play(); }, 900);
+      }
+    });
+  }
+
   renderMixer();
   wireTransport();
   wireLatinToggle();
   wireIvesToggle();
+  wireCumulativeToggle();
   wireOrderSkip();
   applyScript();
   initViz();

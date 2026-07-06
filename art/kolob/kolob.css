@@ -134,6 +134,27 @@
   color: var(--paper);
 }
 
+/* the Whole switch — three states, read at a glance: solid gilt = every
+   meeting withholds the tune; plain outline = the natural 4%; struck = never */
+.kolob-cumulative-toggle.is-always {
+  opacity: 1;
+  background: var(--gilt);
+  border-color: var(--gilt);
+  color: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.kolob-cumulative-toggle.is-always:hover,
+.kolob-cumulative-toggle.is-always:focus-visible {
+  background: #9a8950;
+  border-color: #9a8950;
+  color: var(--paper);
+}
+.kolob-cumulative-toggle.is-never {
+  opacity: 0.45;
+  text-decoration: line-through;
+  border-style: dashed;
+}
+
 /* dev mode: the order of service becomes a jump menu */
 .kolob-scene.is-dev .kolob-order-row { cursor: pointer; }
 .kolob-scene.is-dev .kolob-order-row:hover .kolob-order-name { color: var(--gilt); }

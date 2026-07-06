@@ -747,9 +747,14 @@ window.KolobAudio = (function () {
     visitUntil: 0,
     visitType: null,
     raspberry: false,            // this meeting ends on the organist's own amen
+    cumulative: false,           // the tune is withheld until the doxology
+    assemblyFired: false,
+    assemblyUntil: 0,
   };
   var forceVisitation = false;   // the 𐐌𐐚𐐞 switch: guarantee a guest next meeting
   var forceRaspberry = false;    // dev/test hook only — never part of the 𐐌𐐚𐐞 pool
+  // CUMULATIVE FORM's governor — the 𐐐𐐄𐐢 pill: "always" | "natural" | "never"
+  var cumulativeMode = "natural";
   // META-SEASONS — the journey across meetings. A slow seeded cosine swings
   // the colony from quiet fast-day troughs to conference/jubilee peaks over
   // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
@@ -818,11 +823,12 @@ window.KolobAudio = (function () {
     }
     C.plan = plan;
     C.si = 0;
-    // IVES VISITATIONS — rare guests in the meeting. Each rolls its OWN dice
-    // (18% apiece → roughly 3 meetings in 10 carry one; both on the same
-    // Sunday is a rare occasion, ~1 in 31). The question favors the
-    // invocation; the bands favor the doxology. The 𐐌𐐚𐐞 switch forces one
-    // guaranteed guest, seated early enough that the guarantee is heard.
+    // IVES VISITATIONS — guests in the meeting. Each rolls its OWN dice
+    // (bands 36%, question 29%, per the owner's taste — roughly half of
+    // meetings carry one of the pair; a double bill lands ~1 in 10). The
+    // question favors the invocation; the bands favor the doxology. The
+    // 𐐌𐐚𐐞 switch forces one guaranteed guest, seated early enough that the
+    // guarantee is heard.
     C.visitations = [];
     C.visitUntil = 0;
     C.visitType = null;
@@ -833,13 +839,13 @@ window.KolobAudio = (function () {
       return null;
     }
     var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
-    if (forcedType === "question" || chance(0.18)) {
+    if (forcedType === "question" || chance(0.29)) {
       var qSeat = (forcedType === "question" || chance(0.7))
         ? seatIn(["invocation", "testimony", "hymn"])
         : seatIn(["testimony", "interlude", "invocation"]);
       if (qSeat) C.visitations.push({ type: "question", section: qSeat, fired: false });
     }
-    if (forcedType === "bands" || chance(0.18)) {
+    if (forcedType === "bands" || chance(0.36)) {
       var bSeat = forcedType === "bands"
         ? seatIn(["hymn", "doxology", "postlude"])
         : (chance(0.7) ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
@@ -862,12 +868,33 @@ window.KolobAudio = (function () {
         : (chance(0.65) ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
       if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickW(oldPool) });
     }
+    // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
+    // WITHHELD — only its fragments circulate, endings first — until the
+    // doxology sings it whole for the first time. Rarest of the guests
+    // (~1 meeting in 25) because it is a meeting-SHAPE, not an event.
+    // Governed by the 𐐐𐐄𐐢 pill: always / natural 4% / never. Set BEFORE
+    // Motif.newMeeting() — the theme-length guard there reads the flag.
+    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && chance(0.04));
+    C.assemblyFired = false;
+    C.assemblyUntil = 0;
+    if (C.cumulative) {
+      // a marching band may still call, but never over the assembly
+      for (var cvi = 0; cvi < C.visitations.length; cvi++) {
+        if (C.visitations[cvi].type === "bands" && C.visitations[cvi].section === "doxology") {
+          C.visitations[cvi].section = haveSec.hymn ? "hymn" : "postlude";
+        }
+      }
+    }
     if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
     // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
     // section, only the meeting's final cadence. Never on a fast Sunday; a
     // solemn meeting does not end on a joke.
     C.raspberry = forceRaspberry || (activity !== "fast" && chance(0.05));
     Motif.newMeeting();
+    if (C.cumulative) {
+      var wTheme = Motif.theme();
+      emitEvent({ cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology" });
+    }
     enterSection(0);
     // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
     emitEvent({
@@ -967,6 +994,16 @@ window.KolobAudio = (function () {
         C.visitUntil = ctx.currentTime + vdur;
         break;
       }
+    }
+    // The cumulative assembly: the withheld tune arrives in the doxology. A
+    // hush or a guest may delay it; past x 0.7 the fallback fires regardless
+    // (compressed) — the payoff is never skipped.
+    if (C.cumulative && !C.assemblyFired && C.section === "doxology" &&
+        ((x > 0.35 && !C.jointing && !inHush() && !inFuging() && !inVisit()) ||
+         (x > 0.7 && !C.jointing))) {
+      C.assemblyFired = true;
+      var adur = cumulativeAssembly();
+      C.assemblyUntil = ctx.currentTime + adur;
     }
     if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
       C.fugingFired = true;
@@ -1407,12 +1444,53 @@ window.KolobAudio = (function () {
       var cur = lineage[m.name];
       if (!cur || m.gen >= cur.gen) lineage[m.name] = clone(m);
     }
+    // CUMULATIVE FORM — is this motif the withheld theme? While the flag
+    // holds, the theme family may circulate only as fragments (endings
+    // first); the whole tune waits for the doxology assembly.
+    function withheld(m) {
+      return C.cumulative && !C.assemblyFired && working.theme && m && m.name === working.theme.name;
+    }
+    // Ives's staging, endings before beginnings: what fragment family each
+    // section may work while the tune is withheld.
+    var CUMULATIVE_STAGE = {
+      prelude:    ["fragmentTail", "augment"],
+      invocation: ["fragmentTail", "intervalCompress"],
+      interlude:  ["fragmentTail", "intervalCompress"],
+      hymn:       ["fragmentHead", "sequence"],
+      testimony:  ["retrograde", "invert"],
+      sacrament:  ["fragmentTail", "augment"],
+      doxology:   ["fragmentHead", "sequence"],
+      postlude:   ["fragmentTail", "augment"],
+    };
+    function developWithheld(voice, m) {
+      var fam = CUMULATIVE_STAGE[C.section] || ["fragmentTail"];
+      var out = clone(m);
+      var forced = null;
+      for (var fi = 0; fi < fam.length; fi++) {
+        if (allowedTransform(fam[fi], out, out.chain)) { forced = fam[fi]; break; }
+      }
+      if (!forced) return develop(voice, out, 1);  // guards refused; one gentle link
+      out = TRANSFORMS[forced](out);
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat([forced]);
+      stats.transformsUsed[forced] = (stats.transformsUsed[forced] || 0) + 1;
+      recentre(out);
+      stats.developments++;
+      remember(out);
+      emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
+      // occasionally one more free link — but only one, and never verbatim
+      if (chance(0.4)) out = develop(voice, out, 1);
+      return out;
+    }
     // Identity tether: every 3rd generation, the ancestor's opening is grafted
     // back on — development may wander the valley, but the head returns.
     function tether(m) {
       var anc = ancestorOf(m.name);
       if (!anc) return m;
-      var k = Math.min(3, anc.notes.length, Math.max(1, m.notes.length - 1));
+      // under the withholding the graft is capped at 2 — the head may haunt,
+      // never announce
+      var kCap = withheld(m) ? 2 : 3;
+      var k = Math.min(kCap, anc.notes.length, Math.max(1, m.notes.length - 1));
       m.notes = clone(anc).notes.slice(0, k).concat(m.notes.slice(k));
       m.chain = m.chain.concat(["tether"]);
       stats.transformsUsed.tether = (stats.transformsUsed.tether || 0) + 1;
@@ -1463,6 +1541,9 @@ window.KolobAudio = (function () {
           m = working.theme;
       }
       if (!m) m = working.theme;
+      // CUMULATIVE: MORE of the theme's parts than usual — the form is
+      // presence of the fragments, absence of the whole
+      if (withheld(working.theme) && m !== working.theme && chance(0.33)) m = working.theme;
       // Work the LINEAGE (what the meeting has built) about half the time in
       // the singing sections; the tether keeps it recognizable.
       if (C.section === "hymn" || C.section === "doxology") {
@@ -1470,8 +1551,8 @@ window.KolobAudio = (function () {
         if (line && line.gen > 0 && line.gen < 6 && chance(0.45)) m = line;
       }
       // State it plainly first — the tradition trusts its tunes.
-      if ((C.section === "prelude" || C.section === "invocation") && m.gen === 0 && chance(0.5)) return clone(m);
-      if (C.section === "doxology" && !climaxReprised && localArc() > 0.55) {
+      if ((C.section === "prelude" || C.section === "invocation") && m.gen === 0 && chance(0.5) && !withheld(m)) return clone(m);
+      if (C.section === "doxology" && !climaxReprised && localArc() > 0.55 && !(C.cumulative && !C.assemblyFired)) {
         // THE reprise: once per meeting, at the doxology's height, something
         // returns whole — usually the literal theme, sometimes its deepest
         // descendant, sometimes the lesser hymn. Recognition, varied.
@@ -1494,6 +1575,8 @@ window.KolobAudio = (function () {
         var deep = lineage[m.name];
         return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m));
       }
+      // the withheld theme develops only through its section's fragment family
+      if (withheld(m)) return developWithheld(voice, m);
       return develop(voice, m, C.section === "doxology" ? 3 : 2);
     }
     // Postlude: the motif releases its notes one at a time into the evening.
@@ -1593,6 +1676,25 @@ window.KolobAudio = (function () {
         var op = pickW([["transpose", 3], ["augment", 2], ["ornament", 1], ["diminish", 1]]);
         if (allowedTransform(op, m, [])) { TRANSFORMS[op](m); m.chain = ["seed"]; }
       });
+      // CUMULATIVE: a 3-note theme withheld and finally assembled is an
+      // anticlimax — seat the day's longest hymn in the theme's chair (the
+      // chair keeps its name; the tune changes hands)
+      if (C.cumulative && working.theme.notes.length < 5) {
+        var best = -1;
+        for (var wi = 0; wi < working.subs.length; wi++) {
+          var cand = working.subs[wi].notes.length;
+          var cur2 = best < 0 ? working.theme.notes.length : working.subs[best].notes.length;
+          if (cand > cur2) best = wi;
+        }
+        if (best >= 0 && working.subs[best].notes.length >= 5) {
+          var swap = working.theme;
+          working.theme = working.subs[best];
+          working.subs[best] = swap;
+          var chairName = swap.name;
+          swap.name = working.theme.name;
+          working.theme.name = chairName;
+        }
+      }
       ledger.length = 0;
       lineage = {};
       climaxReprised = false;
@@ -1607,6 +1709,11 @@ window.KolobAudio = (function () {
     }
     function theme() { return working.theme; }
     function anyWorking() {
+      // under the withholding, casual callers never receive the raw theme
+      if (C.cumulative && !C.assemblyFired) {
+        if (working.subs.length) return pick(working.subs);
+        return developWithheld("choir", working.theme);
+      }
       return (chance(0.7) || !working.subs.length) ? working.theme : pick(working.subs);
     }
 
@@ -1911,7 +2018,10 @@ window.KolobAudio = (function () {
   function fugingEntry() {
     var theme = Motif.theme();
     if (!theme) return 4;
-    var head = theme.notes.slice(0, Math.min(6, theme.notes.length));
+    // under the withholding a fuging head may quote at most 3 notes — the
+    // imitation foreshadows, it must not announce
+    var headCap = C.cumulative && !C.assemblyFired ? 3 : 6;
+    var head = theme.notes.slice(0, Math.min(headCap, theme.notes.length));
     var t = ctx.currentTime + 0.3;
     var beat = rnd(1.0, 1.3);
     var vis = [3, 2, 1, 0];                                    // B, T, A, S — bottom up
@@ -1948,6 +2058,51 @@ window.KolobAudio = (function () {
     claimAir(totalDur, 4);
     emitEvent({ cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
     return totalDur;
+  }
+
+  // ==========================================================================
+  // CUMULATIVE ASSEMBLY — the payoff of a withheld meeting. After twenty
+  // minutes of tails, heads, and mirrors, the whole tune arrives for the
+  // first time: a breath, then the theme VERBATIM in four parts — never
+  // poured through the meter; this is a tune-statement, not a verse —
+  // clarinet doubling above, organ beneath, strings holding the fifth,
+  // closed with the plagal amen. The withholding lifts when it ends.
+  // ==========================================================================
+  function cumulativeAssembly() {
+    var theme = Motif.theme();
+    if (!theme) return 8;
+    var t = ctx.currentTime + 0.4;
+    var breath = rnd(2, 3);                        // the room inhales
+    // if the hour is late (the x>0.7 fallback), the statement compresses
+    var beat = localArc() > 0.7 ? rnd(0.95, 1.15) : rnd(1.3, 1.6);
+    var line = theme.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
+    var hz = Harmony.harmonize(line);
+    var at = t + breath;
+    var total = choirHarmonizedLine(at, hz, beat, 0.95);
+    // the deacon doubles the melody an octave above the sopranos
+    var cnotes = theme.notes.map(function (n) {
+      return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, Math.min(beat * 3.5, n.durBeats * beat)) };
+    });
+    renderClarinetLine(at + 0.1, cnotes, 0.8);
+    // the ground beneath the arrival
+    if (hz.length) organChord(at, Math.max(6, total * 0.55), hz[0].chord, 0.5);
+    var chDur = rnd(2.8, 3.4);
+    stringsPad(at, total + chDur * 2 + 2, 0.85, true);
+    // the plagal amen — every voice lands together
+    var cadAt = at + total + rnd(0.4, 0.9);
+    var chords = Harmony.cadence("plagal");
+    var avs = activeVoices();
+    for (var ci = 0; ci < chords.length; ci++) {
+      for (var v = 0; v < avs.length; v++) {
+        var vi = avs[v];
+        choirVoiceLine(cadAt + ci * chDur, [{ f: chords[ci].freqs[VI_TO_CHORDPOS[vi]], dur: chDur * (ci ? 1.7 : 1.02) }], vi, 0.9);
+      }
+    }
+    organChord(cadAt, chDur * 2.2, chords[chords.length - 1], 0.55);
+    var dur = (cadAt + chDur * 2.2) - t;
+    claimAir(dur, 6);
+    emitEvent({ cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
+    return dur;
   }
 
   // ==========================================================================
@@ -2019,7 +2174,9 @@ window.KolobAudio = (function () {
   // is never engraved on the page — it is not one of ours.
   // ==========================================================================
   function twoBandsCross() {
-    var theme = Motif.theme();
+    // under the withholding the visiting band gets a lesser hymn — even a
+    // stranger's quickstep must not give the tune away
+    var theme = (C.cumulative && !C.assemblyFired) ? Motif.anyWorking() : Motif.theme();
     var t = ctx.currentTime + 0.4;
     var dur = rnd(45, 65);
     var beat = rnd(0.4, 0.52);                 // quickstep — unrelated to the meeting's time
@@ -2203,6 +2360,16 @@ window.KolobAudio = (function () {
   // the reverse). On penta/hexa Sundays a tune is quotable only if its
   // degree classes survive the collection's fold (penta folds classes 3 and
   // 6; hexa folds 6) — computed, not hand-flagged.
+  //
+  // TODO (owner, 2026-07-06): ALL SEVEN INCIPITS NEED A TUNING PASS. The
+  // owner ear-checked the pool in the tune lab (/art/kolob/tune-lab) and
+  // judged every transcription off to some degree — these were drafted from
+  // hymnary.org incipit digit indices with reconstructed rhythms, which is
+  // not enough. Plan: re-transcribe each opening phrase against public-
+  // domain sheet music of these tunes (all melodies predate 1900), degree by
+  // degree and duration by duration, then re-verify in the lab's "plain"
+  // mode. Only the OLD_TUNES arrays below should need to change; the lab
+  // reads this table live via KolobAudio.getOldTunes().
   // ==========================================================================
   var OLD_TUNES = [
     { name: "all is well",     w: 3,   minor: false, notes: [[0, 1], [0, 1], [1, 1], [2, 1], [0, 2], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 2]] },
@@ -3345,7 +3512,7 @@ window.KolobAudio = (function () {
         section: C.section, meter: C.meter, mode: mode,
         local: localArc(), intensity: intensity(),
         hush: inHush(), fuging: inFuging(),
-        visit: inVisit() ? C.visitType : null,
+        visit: (ctx && ctx.currentTime < C.assemblyUntil) ? "assembly" : (inVisit() ? C.visitType : null),
         f0: F0, season: seasonPos,
         sectionIndex: C.si, planLength: C.plan.length,
         fifths: Harmony.fifthCount(),
@@ -3359,6 +3526,11 @@ window.KolobAudio = (function () {
     setEventListener: function (fn) { eventListeners.push(fn); },
     setForceVisitation: function (on) { forceVisitation = !!on; },
     setForceRaspberry: function (on) { forceRaspberry = !!on; },
+    setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") cumulativeMode = s; },
+    getCumulativeMode: function () { return cumulativeMode; },
+    // dev accessor for the tune lab — the pool lives HERE and only here, so
+    // lab and engine can never drift apart
+    getOldTunes: function () { return JSON.parse(JSON.stringify(OLD_TUNES)); },
     isForceVisitation: function () { return forceVisitation; },
     attachAnalyser: function () {
       if (!ctx || !masterGain) return null;
