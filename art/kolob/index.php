@@ -43,9 +43,9 @@ include '../../includes/header.php';
          wide their labels render (the script toggle grows in Deseret). -->
     <div class="kolob-toggles">
       <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
-           (solid gilt) / natural 4% (outline) / never (struck). A cumulative
+           (solid gilt) / natural 8% (outline) / never (struck). A cumulative
            meeting withholds the tune until the doxology sings it whole. -->
-      <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twenty-five" aria-pressed="false">𐐐𐐄𐐢</button>
+      <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
       <!-- The Ives switch: while on, every meeting is guaranteed a visitation
            (the unanswered question or the two bands). Checking it restarts the
            meeting so the guarantee begins at once. -->

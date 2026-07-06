@@ -156,7 +156,7 @@ window.KolobAudio = (function () {
   var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
 
   var layerGains = {};
-  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.42, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.4, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
@@ -183,7 +183,7 @@ window.KolobAudio = (function () {
   // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix; voice 2.7:
   // the still small voice doubled by owner request (was 1.35). The trim
   // seats each while the sliders still read their usual positions.
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 2.7, bagpipe: 0.49, clarinet: 0.72 };
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 3.5, bagpipe: 0.44, clarinet: 0.72 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -863,7 +863,7 @@ window.KolobAudio = (function () {
     // KINGSFOLD alone. Seats where remembering belongs: the prelude's
     // pre-gathering reverie, or testimony. Never the sacrament.
     var oldPool = oldTuneCandidates();
-    if (oldPool.length && (forcedType === "oldtune" || chance(0.09))) {
+    if (oldPool.length && (forcedType === "oldtune" || chance(0.15))) {
       var oSeat = forcedType === "oldtune"
         ? seatIn(["prelude", "testimony", "hymn"])
         : (chance(0.65) ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
@@ -872,10 +872,10 @@ window.KolobAudio = (function () {
     // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
     // WITHHELD — only its fragments circulate, endings first — until the
     // doxology sings it whole for the first time. Rarest of the guests
-    // (~1 meeting in 25) because it is a meeting-SHAPE, not an event.
-    // Governed by the 𐐐𐐄𐐢 pill: always / natural 4% / never. Set BEFORE
+    // (~1 meeting in 12) because it is a meeting-SHAPE, not an event.
+    // Governed by the 𐐐𐐄𐐢 pill: always / natural 8% / never. Set BEFORE
     // Motif.newMeeting() — the theme-length guard there reads the flag.
-    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && chance(0.04));
+    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && chance(0.08));
     C.assemblyFired = false;
     C.assemblyUntil = 0;
     if (C.cumulative) {
@@ -1109,7 +1109,7 @@ window.KolobAudio = (function () {
     o.frequency.linearRampToValueAtTime(target, t + 0.3);
     var g = ctx.createGain();
     o.connect(lp); lp.connect(g); g.connect(panAt("tuba", 0));
-    var peak = 0.32 * (gainMul || 1);              // up from 0.22 — the blat should be heard
+    var peak = 0.64 * (gainMul || 1);              // doubled again by owner request — the blat WILL be heard
     env(g, t, [[0.05, peak], [2.4, peak * 0.77], [0.7, 0]]);
     o.start(t); o.stop(t + 3.6);
     emitNote("tuba", target, t, 3.0);

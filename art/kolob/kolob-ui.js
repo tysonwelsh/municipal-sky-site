@@ -656,7 +656,7 @@
     if (mode !== "always" && mode !== "natural" && mode !== "never") mode = "natural";
     var LABELS = {
       always: "the tune withheld until the doxology — every meeting (restarts the meeting)",
-      natural: "the tune withheld until the doxology — about one meeting in twenty-five",
+      natural: "the tune withheld until the doxology — about one meeting in twelve",
       never: "the tune withheld until the doxology — off",
     };
     function apply() {
