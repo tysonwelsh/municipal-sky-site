@@ -1,18 +1,25 @@
 // ============================================================================
 // KOLOB — the open hymnal (visualizer)
 //
-// Two instruments of seeing, both printed things:
+// Three instruments of seeing, all printed things:
+//  · THE ORGAN — the black pipe silhouettes of the tabernacle facade, standing
+//    on their impost line, breathing with the actual sound: a spectrum
+//    analyzer racked the way real pipes are racked (gravest in the middle,
+//    alternating outward), each with the paper-colored mouth near its foot.
+//    Fed by an AnalyserNode on the master bus; at rest it settles into the
+//    quiet stepped skyline of the hymnbook cover.
 //  · THE PAGE — a scrolling engraving. Melodic notes print as 4-shape
 //    SHAPE-NOTE heads (fa △, sol ○, la ▭, mi ◇) in green ink over the ruled
 //    paper (the rules themselves are CSS; the canvas holds only ink). Deeper
 //    motif generations print worn — double-struck, spread. The ink dries and
 //    pales as the page scrolls on. In the sacrament the page goes almost
 //    blank; ink returns with the doxology.
-//  · THE LIAHONA — a small engraved dial. One needle walks the section, a
-//    second leans with the intensity; it glints when the oracle points.
+//  · THE LIAHONA — a small engraved dial in a hexagonal case. One needle
+//    walks the section, a second leans with the intensity; it glints when
+//    the oracle points.
 //
 // No neon, no glitch, no CRT. A printed thing with one soft glow in it.
-// Public surface: window.KolobViz = { init(canvas, dialCanvas), setConductor }
+// Public surface: window.KolobViz = { init(canvas, dialCanvas, organCanvas), setConductor }
 // ============================================================================
 
 window.KolobViz = (function () {
@@ -22,7 +29,8 @@ window.KolobViz = (function () {
   var canvas = null, ctx2d = null;
   var page = null, pctx = null;                    // offscreen ink layer
   var dial = null, dctx = null;
-  var W = 0, H = 0, DW = 0, DH = 0, dpr = 1;
+  var organ = null, octx = null;                   // the facade
+  var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, dpr = 1;
   var running = false;
 
   var cond = { section: null, local: 0, intensity: 0, f0: 65, mode: "ionian", hush: false, fuging: false };
@@ -33,6 +41,114 @@ window.KolobViz = (function () {
   var INK = "#1e4d3b";                             // hymnbook green
   var INK_SOFT = "rgba(30, 77, 59, 0.55)";
   var GOLD = "#8a7a45";                            // a restrained gilt for the dial
+  var PIPE = "#17201a";                            // the black of the facade
+  var PAPER = "#f5f0e4";                           // cream, for the pipe mouths
+
+  // ---- the organ: spectrum → facade ------------------------------------------
+  // Band k is seated the way real pipes are racked: the gravest pipe in the
+  // middle, then alternating left/right outward, so the facade breathes from
+  // its center. An AnalyserNode taps the master bus once audio exists.
+  var NPIPES = 27;
+  var analyser = null, freqData = null, bandBins = null;
+  var bands = [], seatOf = [];
+  (function () {
+    var c = Math.floor(NPIPES / 2);
+    for (var k = 0; k < NPIPES; k++) {
+      bands.push(0);
+      seatOf.push(c + Math.ceil(k / 2) * (k % 2 === 1 ? -1 : 1));
+    }
+  })();
+
+  function ensureAnalyser() {
+    if (analyser || !K || !K.attachAnalyser) return;
+    analyser = K.attachAnalyser();                 // null until the audio ctx exists
+    if (!analyser) return;
+    analyser.smoothingTimeConstant = 0.82;
+    freqData = new Uint8Array(analyser.frequencyBinCount);
+    // log-spaced bands, ~55 Hz to ~3.6 kHz — the world the meeting sounds in
+    var nyquist = analyser.context.sampleRate / 2;
+    var perBin = nyquist / analyser.frequencyBinCount;
+    bandBins = [];
+    for (var k = 0; k < NPIPES; k++) {
+      var lo = 55 * Math.pow(3600 / 55, k / NPIPES);
+      var hi = 55 * Math.pow(3600 / 55, (k + 1) / NPIPES);
+      var b0 = Math.max(1, Math.floor(lo / perBin));
+      var b1 = Math.max(b0, Math.floor(hi / perBin));
+      bandBins.push([b0, b1]);
+    }
+  }
+
+  function drawPipe(c, cx, baseY, w, h) {
+    var R = w / 2, r = w * 0.4;
+    var topY = baseY - h;
+    // body — a gentle taper to a domed cap
+    c.beginPath();
+    c.moveTo(cx - R, baseY);
+    c.lineTo(cx - r, topY + r);
+    c.quadraticCurveTo(cx - r, topY, cx, topY);
+    c.quadraticCurveTo(cx + r, topY, cx + r, topY + r);
+    c.lineTo(cx + R, baseY);
+    c.closePath();
+    c.fillStyle = PIPE;
+    c.fill();
+    // the mouth — a paper-colored pointed arch near the foot, the one detail
+    // that says "organ pipe" and not "bar graph"
+    var mh = Math.min(w * 0.85, h * 0.3);
+    var mw = w * 0.58;
+    var my = baseY - Math.max(10, h * 0.13);
+    c.beginPath();
+    c.moveTo(cx - mw / 2, my);
+    c.quadraticCurveTo(cx - mw * 0.18, my - mh * 0.55, cx, my - mh);
+    c.quadraticCurveTo(cx + mw * 0.18, my - mh * 0.55, cx + mw / 2, my);
+    c.closePath();
+    c.fillStyle = PAPER;
+    c.fill();
+  }
+
+  function drawOrgan(dt) {
+    if (!octx) return;
+    if (playing) ensureAnalyser();
+    var live = playing && analyser;
+    if (live) analyser.getByteFrequencyData(freqData);
+    for (var k = 0; k < NPIPES; k++) {
+      var target = 0;
+      if (live) {
+        var span = bandBins[k], peak = 0;
+        for (var b = span[0]; b <= span[1] && b < freqData.length; b++) {
+          if (freqData[b] > peak) peak = freqData[b];
+        }
+        target = Math.pow(peak / 255, 1.3);
+      }
+      // analyzer feel: quick to rise, slower to fall
+      bands[k] += (target - bands[k]) * Math.min(1, dt * (target > bands[k] ? 9 : 2.4));
+    }
+
+    octx.clearRect(0, 0, OW, OH);
+    var baseY = OH - 16;
+    var span2 = Math.min(OW * 0.86, 640);
+    var step = span2 / NPIPES;
+    var x0 = (OW - span2) / 2 + step / 2;
+    for (var k2 = 0; k2 < NPIPES; k2++) {
+      var seat = seatOf[k2];
+      // wider, graver pipes toward the center of the facade; at rest the
+      // minimum heights alone draw the stepped skyline of the hymnbook cover
+      var centerness = 1 - Math.abs(seat - (NPIPES - 1) / 2) / ((NPIPES - 1) / 2);
+      var w = step * (0.5 + centerness * 0.34);
+      var minH = 20 + centerness * 22;
+      var maxH = OH - 10;
+      var h = minH + bands[k2] * (maxH - minH) * (0.55 + centerness * 0.45);
+      drawPipe(octx, x0 + seat * step, baseY, w, h);
+    }
+    // the impost — the case line the pipes stand on
+    octx.strokeStyle = INK;
+    octx.globalAlpha = 0.6;
+    octx.lineWidth = 1.4;
+    octx.beginPath(); octx.moveTo(OW * 0.04, baseY + 1); octx.lineTo(OW * 0.96, baseY + 1); octx.stroke();
+    octx.globalAlpha = 0.3;
+    octx.lineWidth = 1;
+    octx.beginPath(); octx.moveTo(OW * 0.07, baseY + 5); octx.lineTo(OW * 0.93, baseY + 5); octx.stroke();
+    octx.globalAlpha = 1;
+  }
 
   // ---- pitch → staff position -----------------------------------------------
   var COLLECTIONS = {
@@ -153,7 +269,7 @@ window.KolobViz = (function () {
     pctx.save();
     pctx.globalAlpha = 0.5;
     pctx.fillStyle = INK;
-    pctx.font = "italic " + Math.round(H * 0.06) + "px serif";
+    pctx.font = "italic " + Math.max(13, Math.round(H * 0.06)) + "px serif";
     pctx.fillText("⁂", W - 34, H * 0.16);
     pctx.restore();
   }
@@ -203,28 +319,45 @@ window.KolobViz = (function () {
     ctx2d.clearRect(0, 0, W, H);
     ctx2d.drawImage(page, 0, 0);
 
+    drawOrgan(dt);
     drawDial(dt);
   }
 
-  // ---- the Liahona dial ------------------------------------------------------
+  // ---- the Liahona dial — a hexagonal case -----------------------------------
+  function hexPathAt(c, x, y, s) {
+    c.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i - 90);       // pointy-top
+      c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * s, y + Math.sin(a) * s);
+    }
+    c.closePath();
+  }
+  // radius of that hexagon's boundary at angle a — so the section ticks land
+  // exactly on the case, corner or edge alike
+  function hexR(a, s) {
+    var deg = (a * 180 / Math.PI % 60 + 60) % 60;  // fold to one 60° sector
+    if (deg > 30) deg = 60 - deg;                  // distance to nearest edge-center
+    return s * Math.cos(Math.PI / 6) / Math.cos(deg * Math.PI / 180);
+  }
   function drawDial(dt) {
     if (!dctx) return;
     var w = DW, h = DH;
-    var cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.42;
+    var cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.44;
     dctx.clearRect(0, 0, w, h);
     dctx.save();
     dctx.translate(0.5, 0.5);
     // engraved rim, double rule
     dctx.strokeStyle = INK_SOFT;
     dctx.lineWidth = 1;
-    dctx.beginPath(); dctx.arc(cx, cy, R, 0, Math.PI * 2); dctx.stroke();
-    dctx.beginPath(); dctx.arc(cx, cy, R * 0.88, 0, Math.PI * 2); dctx.stroke();
-    // ticks — seven, one per section of the order
+    hexPathAt(dctx, cx, cy, R); dctx.stroke();
+    hexPathAt(dctx, cx, cy, R * 0.86); dctx.stroke();
+    // ticks — seven, one per section of the order, rim to rim
     for (var i = 0; i < 7; i++) {
       var a = -Math.PI / 2 + (i / 7) * Math.PI * 2;
+      var tr0 = hexR(a, R * 0.86), tr1 = hexR(a, R);
       dctx.beginPath();
-      dctx.moveTo(cx + Math.cos(a) * R * 0.88, cy + Math.sin(a) * R * 0.88);
-      dctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      dctx.moveTo(cx + Math.cos(a) * tr0, cy + Math.sin(a) * tr0);
+      dctx.lineTo(cx + Math.cos(a) * tr1, cy + Math.sin(a) * tr1);
       dctx.stroke();
     }
     if (playing) {
@@ -284,12 +417,21 @@ window.KolobViz = (function () {
       dctx = dial.getContext("2d");
       dctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+    if (organ) {
+      var or = organ.getBoundingClientRect();
+      OW = Math.max(60, Math.round(or.width));
+      OH = Math.max(60, Math.round(or.height));
+      organ.width = OW * dpr; organ.height = OH * dpr;
+      octx = organ.getContext("2d");
+      octx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
   }
 
-  function init(mainCanvas, dialCanvas) {
+  function init(mainCanvas, dialCanvas, organCanvas) {
     canvas = mainCanvas || null;
     dial = dialCanvas || null;
-    if (!canvas && !dial) return;
+    organ = organCanvas || null;
+    if (!canvas && !dial && !organ) return;
     resize();
     window.addEventListener("resize", resize);
     if (K) {

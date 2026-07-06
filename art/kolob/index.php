@@ -49,6 +49,11 @@ include '../../includes/header.php';
       <div class="kolob-rule" aria-hidden="true"></div>
     </header>
 
+    <!-- The organ: the tabernacle facade as a spectrum analyzer -->
+    <div class="kolob-organ-wrap">
+      <canvas id="kolob-organ" class="kolob-organ" aria-label="the tabernacle organ pipes, breathing with the music"></canvas>
+    </div>
+
     <!-- The page (shape-note engraving) -->
     <div class="kolob-viz-wrap">
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>

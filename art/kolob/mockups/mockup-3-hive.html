@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB mockup 3 — THE HIVE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — MOCKUP 3 · THE HIVE
+   Deseret, which is, by interpretation, a honey bee. The score becomes COMB:
+   notes fill hexagonal cells with amber (pitch = row), the wax cures pale as
+   it ages, and the whole comb drifts leftward in prairie time. Bee-marks
+   wander the lattice — the voices at their work. Hex drawknobs; the hymn
+   board becomes the skep. Green mat, thin gold rule, cream page throughout.
+   ========================================================================== */
+:root {
+  --cover: #14382c;
+  --cover-hi: #1a4536;
+  --paper: #f5f0e4;
+  --paper-lo: #ece5d3;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+  --honey: #c09a3e;              /* fresh amber */
+  --wax: #e6dcbd;                /* cured, capped cells */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding: 2.6rem 1rem 4rem; }
+.mock-label {
+  max-width: 860px; margin: 0 auto 1rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ---------------- the mat + gold rule + page ---------------- */
+.kolob-mat {
+  position: relative; max-width: 860px; margin: 0 auto; padding: 34px; border-radius: 3px;
+  background: radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+}
+.kolob-mat::after {
+  content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.kolob-mat::before {
+  content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1;
+  border: 1px solid var(--gilt); opacity: 0.75;
+}
+.kolob-page {
+  position: relative; z-index: 2;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink); border-radius: 1px;
+  padding: 2.4rem 2.8rem 2.2rem;
+  box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.kolob-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.kolob-page > * { position: relative; z-index: 1; }
+
+/* ---------------- title ---------------- */
+.kolob-header { text-align: center; margin: 0 0 1.6rem; }
+.kolob-title {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: clamp(2.2rem, 6vw, 3.2rem); font-weight: 400;
+  letter-spacing: 0.22em; margin: 0 0 0.35rem; color: var(--ink);
+}
+.kolob-subtitle {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.92rem;
+  letter-spacing: 0.14em; color: var(--ink-soft); margin: 0 0 1.1rem;
+}
+/* the letterpress rule, its star now a cell */
+.kolob-rule { position: relative; height: 9px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 8%; }
+.kolob-rule::after {
+  content: "⬡"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-52%);
+  background: var(--paper); padding: 0 0.7em; color: var(--gilt); font-size: 0.8rem;
+}
+
+/* ---------------- the comb (score) ---------------- */
+.kolob-comb-wrap { position: relative; height: 250px; margin: 0 0 0.4rem; }
+.kolob-comb { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.kolob-comb-caption {
+  text-align: center; font-style: italic; font-size: 0.85rem;
+  color: var(--ink-soft); margin: 0 0 1.6rem;
+}
+.kolob-comb-caption .ds { font-family: "Noto Sans Deseret", serif; font-style: normal; letter-spacing: 0.1em; }
+
+/* ---------------- running head + dial ---------------- */
+.kolob-head-row { display: flex; align-items: center; gap: 1.2rem; margin: 0 0 1.4rem; }
+.kolob-telemetry {
+  flex: 1; font-family: "Noto Sans Deseret", serif; font-size: 0.82rem;
+  letter-spacing: 0.1em; color: var(--ink-soft); line-height: 1.9;
+}
+.kolob-telemetry .t-sep { margin: 0 0.55em; color: var(--ink-faint); }
+.kolob-telemetry .t-flag { color: var(--gilt); }
+.kolob-dial { width: 76px; height: 76px; flex: 0 0 auto; }
+
+/* ---------------- transport ---------------- */
+.kolob-transport { display: flex; align-items: center; gap: 0.9rem; margin: 0 0 2rem; }
+.kolob-btn {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.95rem; letter-spacing: 0.16em;
+  color: var(--ink); background: var(--paper);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.55rem 1.4rem; cursor: pointer; box-shadow: 0 1.5px 0 var(--ink-faint);
+}
+.kolob-btn.is-playing { background: var(--ink); color: var(--paper); }
+.kolob-btn-glyph { display: inline-block; font-family: Georgia, serif; font-size: 1.15em; line-height: 0; vertical-align: -0.06em; }
+.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-soft); }
+.kolob-range { -webkit-appearance: none; appearance: none; width: 130px; height: 18px; background: transparent; cursor: pointer; }
+.kolob-range::-webkit-slider-runnable-track { height: 1px; background: var(--ink-soft); }
+.kolob-range::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); margin-top: -5.5px; }
+
+/* ---------------- columns ---------------- */
+.kolob-columns { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; margin: 0 0 2.2rem; }
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em;
+  color: var(--ink-soft); border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.45rem; margin: 0 0 0.9rem;
+}
+.kolob-sec-head::before { content: "⬡ "; color: var(--gilt); font-size: 0.85em; }
+.kolob-order-row {
+  display: flex; align-items: baseline; gap: 0.6rem; padding: 0.3rem 0;
+  font-family: "Noto Sans Deseret", serif; font-size: 0.92rem; letter-spacing: 0.1em; color: var(--ink-soft);
+}
+.kolob-order-row.current { color: var(--ink); }
+.kolob-order-row.done { color: var(--ink-faint); }
+.kolob-order-hand { width: 1.3em; opacity: 0; font-family: Georgia, serif; color: var(--honey); }
+.kolob-order-row.current .kolob-order-hand { opacity: 1; }
+.kolob-order-fill { flex: 1; align-self: center; border-bottom: 1px dotted var(--ink-faint); }
+
+/* the skep — the hymn board as a coiled straw hive */
+.kolob-board {
+  background: linear-gradient(175deg, var(--cover-hi), var(--cover));
+  border-radius: 3px; padding: 1rem 1.1rem 1.1rem;
+  box-shadow: inset 0 1px 6px rgba(0,0,0,0.4);
+  /* straw coils: soft horizontal banding, barely there */
+  background-image:
+    repeating-linear-gradient(180deg, rgba(245,240,228,0.05) 0 2px, transparent 2px 11px),
+    linear-gradient(175deg, var(--cover-hi), var(--cover));
+}
+.kolob-board .kolob-ctl-label { color: rgba(245,240,228,0.6); }
+.kolob-board-nums { display: flex; gap: 0.5rem; margin: 0.6rem 0 0.85rem; min-height: 2.1rem; }
+.kolob-board-card {
+  font-family: "Noto Sans Deseret", serif; background: var(--paper); color: var(--cover);
+  padding: 0.26rem 0.62rem; font-size: 1.02rem; box-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+}
+.kolob-seed-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+.kolob-seed-current { color: var(--paper); font-size: 0.95rem; }
+.kolob-seed-input { width: 6.5em; font-family: "EB Garamond", serif; font-size: 0.85rem; color: var(--paper); background: rgba(245,240,228,0.08); border: 1px solid rgba(245,240,228,0.3); border-radius: 2px; padding: 0.3rem 0.5rem; }
+.kolob-btn-board { background: transparent; color: var(--paper); border-color: rgba(245,240,228,0.45); box-shadow: none; font-size: 0.82rem; padding: 0.35rem 0.9rem; }
+
+/* ---------------- stops: hexagonal drawknobs ---------------- */
+.kolob-stops-block { margin: 0 0 2.2rem; }
+.kolob-layers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 2.4rem; }
+.kolob-stop { display: flex; align-items: center; gap: 0.8rem; padding: 0.24rem 0; }
+.kolob-drawknob {
+  width: 21px; height: 21px; flex: 0 0 auto;
+  border: none;
+  clip-path: polygon(25% 3%, 75% 3%, 98% 50%, 75% 97%, 25% 97%, 2% 50%);
+  background:
+    radial-gradient(circle at 36% 32%, #f4e3b2, var(--honey) 60%, #9a7a2e);
+  box-shadow: inset 0 -2px 3px rgba(30,77,59,0.35);
+  cursor: pointer;
+}
+.kolob-drawknob.is-off {
+  background: radial-gradient(circle at 36% 32%, #fbf7ed, var(--paper) 55%, var(--paper-lo));
+  opacity: 0.55;
+}
+.kolob-stop-name { font-family: "Noto Sans Deseret", serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--ink); min-width: 7.5em; }
+.kolob-stop .kolob-range { flex: 1; width: auto; }
+
+/* ---------------- broadside + minutes + colophon ---------------- */
+.kolob-broadside-block { margin: 0 0 2.2rem; text-align: center; }
+.kolob-broadside-block .kolob-sec-head { text-align: left; }
+.kolob-broadside-line { font-family: "Noto Sans Deseret", serif; font-size: 1.06rem; line-height: 2; letter-spacing: 0.06em; color: var(--ink); opacity: 0.82; }
+.kolob-log-block { margin: 0 0 2rem; }
+.kolob-log-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.3rem 0.1rem; border-bottom: 1px solid rgba(30,77,59,0.12); font-size: 0.9rem; }
+.kolob-log-time { font-style: italic; font-size: 0.78rem; color: var(--ink-faint); width: 3.2em; flex: 0 0 auto; }
+.kolob-log-glyph { width: 1.4em; flex: 0 0 auto; color: var(--ink-soft); font-family: Georgia, serif; }
+.kolob-log-glyph.gilt { color: var(--honey); }
+.kolob-log-text { font-family: "Noto Sans Deseret", serif; letter-spacing: 0.08em; color: var(--ink-soft); }
+.kolob-note {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.86rem; line-height: 2.1;
+  letter-spacing: 0.08em; color: var(--ink-soft); text-align: center;
+  border-top: 1px solid var(--rule); padding-top: 1.4rem;
+}
+.kolob-note a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; } .kolob-mat::before { inset: 8px; }
+  .kolob-page { padding: 1.8rem 1.2rem 1.6rem; }
+  .kolob-columns, .kolob-layers { grid-template-columns: 1fr; }
+  .kolob-comb-wrap { height: 190px; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label">mockup 3 of 3 · the hive — the score as honeycomb</p>
+
+<div class="kolob-mat">
+ <div class="kolob-page">
+
+  <header class="kolob-header">
+    <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
+    <p class="kolob-subtitle">𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓</p>
+    <div class="kolob-rule" aria-hidden="true"></div>
+  </header>
+
+  <!-- THE COMB: the score built as wax. Fresh notes are amber; old notes cure
+       and cap over; the comb drifts leftward in prairie time. -->
+  <div class="kolob-comb-wrap">
+    <canvas id="comb" class="kolob-comb" aria-label="the comb — the music built as honeycomb"></canvas>
+  </div>
+  <p class="kolob-comb-caption"><span class="ds">𐐔𐐇𐐞𐐊𐐡𐐇𐐓</span> — <em>which is, by interpretation, a honey bee</em></p>
+
+  <div class="kolob-head-row">
+    <div class="kolob-telemetry">𐐐𐐆𐐣<span class="t-sep">·</span>𐐌𐐄𐐤𐐆𐐊𐐤<span class="t-sep">·</span><span class="t-flag">𐐙𐐧𐐘𐐆𐐥</span><span class="t-sep">·</span>𐐣𐐀𐐓𐐆𐐥 4931</div>
+    <canvas id="dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
+  </div>
+
+  <div class="kolob-transport">
+    <button type="button" class="kolob-btn is-playing"><span class="kolob-btn-glyph">▶&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+    <button type="button" class="kolob-btn"><span class="kolob-btn-glyph kolob-glyph-stop">■&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+    <div class="kolob-transport-spacer"></div>
+    <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+    <input type="range" min="0" max="100" value="60" class="kolob-range" />
+  </div>
+
+  <div class="kolob-columns">
+    <div>
+      <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
+      <div class="kolob-order-row done"><span class="kolob-order-hand">⬢</span>𐐑𐐡𐐇𐐢𐐧𐐔<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row done"><span class="kolob-order-hand">⬢</span>𐐆𐐤𐐚𐐄𐐗𐐁𐐟𐐊𐐤<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row current"><span class="kolob-order-hand">⬢</span>𐐐𐐆𐐣<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">⬢</span>𐐓𐐇𐐝𐐓𐐆𐐣𐐄𐐤𐐆<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">⬢</span>𐐝𐐈𐐗𐐡𐐊𐐣𐐇𐐤𐐓<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">⬢</span>𐐐𐐆𐐣<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">⬢</span>𐐑𐐄𐐝𐐓𐐢𐐅𐐔<span class="kolob-order-fill"></span></div>
+    </div>
+    <div>
+      <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+      <div class="kolob-board">
+        <div class="kolob-board-nums"><span class="kolob-board-card">𐑉𐑈</span><span class="kolob-board-card">𐑃𐑁</span><span class="kolob-board-card">𐑄𐑀</span></div>
+        <div class="kolob-seed-row">
+          <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
+          <span class="kolob-seed-current">738294</span>
+          <input type="text" class="kolob-seed-input" />
+          <button type="button" class="kolob-btn kolob-btn-board">𐐘𐐈𐐜𐐊𐐡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kolob-stops-block">
+    <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
+    <div class="kolob-layers">
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐃𐐡𐐘𐐊𐐤</span><input type="range" class="kolob-range" value="45" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓</span><input type="range" class="kolob-range" value="70" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐎𐐌𐐊𐐡</span><input type="range" class="kolob-range" value="60" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob is-off"></button><span class="kolob-stop-name">𐐒𐐈𐐘𐐑𐐌𐐑</span><input type="range" class="kolob-range" value="50" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣</span><input type="range" class="kolob-range" value="40" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐙𐐀𐐢𐐔</span><input type="range" class="kolob-range" value="55" /></div>
+    </div>
+  </div>
+
+  <div class="kolob-broadside-block">
+    <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+    <div class="kolob-broadside-line">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊 · 𐑄 𐑊𐐴𐐻 𐐮𐑆 𐐬𐑌 𐑄 𐑉𐐮𐑋</div>
+  </div>
+
+  <div class="kolob-log-block">
+    <div class="kolob-sec-head">𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝</div>
+    <div class="kolob-log-row"><span class="kolob-log-time">4·12</span><span class="kolob-log-glyph gilt">✸</span><span class="kolob-log-text">𐐙𐐧𐐘𐐆𐐥 𐐇𐐤𐐓𐐡𐐆</span></div>
+    <div class="kolob-log-row"><span class="kolob-log-time">3·41</span><span class="kolob-log-glyph">☞</span><span class="kolob-log-text">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓 𐐢𐐌𐐤𐐞 𐐍𐐓</span></div>
+    <div class="kolob-log-row"><span class="kolob-log-time">2·58</span><span class="kolob-log-glyph gilt">◉</span><span class="kolob-log-text">𐐜 𐐢𐐆𐐊𐐐𐐄𐐤𐐊 𐐑𐐌𐐤𐐓𐐝</span></div>
+  </div>
+
+  <p class="kolob-note">𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤<br /><a href="#">𐐂𐐡𐐓</a></p>
+
+ </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var INK = "#1e4d3b", GILT = "#8a7a45";
+  var HONEY = { r: 192, g: 154, b: 62 };         // fresh amber
+  var WAX = { r: 230, g: 220, b: 189 };          // cured, capped
+
+  // ---- the comb ---------------------------------------------------------------
+  // Pointy-top hexes in offset columns. The lattice is fixed; a pixel offset
+  // drifts it leftward and columns recycle. Cells hold an age; fresh = amber,
+  // curing = wax, old = empty lattice again.
+  var HEX = 11;                                   // circumradius
+  var COLW = HEX * 1.5;
+  var ROWH = HEX * Math.sqrt(3);
+  var cells = {};                                 // "c,r" -> age (s since filled)
+  var drift = 0;                                  // total leftward travel, px
+  var voices = [
+    { row: 4, clock: 0, rate: 0.55 },             // treble — busiest
+    { row: 8, clock: 0, rate: 1.1 },
+    { row: 12, clock: 0, rate: 1.9 },             // bass — slowest
+  ];
+  var bees = [
+    { x: 120, y: 80, a: 0, turn: 0 },
+    { x: 300, y: 140, a: 2, turn: 0 },
+    { x: 480, y: 60, a: 4, turn: 0 },
+  ];
+
+  function hexPath(c, x, y, s) {
+    c.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i);
+      c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * s, y + Math.sin(a) * s);
+    }
+    c.closePath();
+  }
+  function cellXY(col, r) {
+    return { x: col * COLW - drift, y: r * ROWH + (col % 2 ? ROWH / 2 : 0) + 4 };
+  }
+
+  var t = 0;
+  function drawComb(ctx, W, H, dt) {
+    t += dt;
+    drift += 7 * dt;                              // prairie time
+    var rows = Math.floor((H - 8) / ROWH);
+
+    // voices lay wax at the comb's leading edge (right side)
+    var leadCol = Math.floor((drift + W - 30) / COLW);
+    for (var v = 0; v < voices.length; v++) {
+      var vo = voices[v];
+      vo.clock -= dt;
+      if (vo.clock <= 0) {
+        vo.clock = vo.rate * (0.6 + Math.random() * 1.3);
+        vo.row += Math.round((Math.random() - 0.5) * 2.4);           // the melody wanders
+        vo.row = Math.max(0, Math.min(rows - 1, vo.row));
+        cells[leadCol + "," + vo.row] = 0.0001;
+        // a chord, sometimes — the harmony fills adjacent cells
+        if (Math.random() < 0.3) cells[(leadCol) + "," + Math.max(0, vo.row - 2)] = 0.0001;
+      }
+    }
+
+    ctx.clearRect(0, 0, W, H);
+
+    // the skep watermark, right of center — stacked coils, barely there
+    ctx.save();
+    ctx.globalAlpha = 0.055;
+    ctx.fillStyle = INK;
+    var skx = W * 0.82, sky = H * 0.62, skw = 90;
+    for (var co = 0; co < 5; co++) {
+      var cw = skw * (1 - co * 0.13), ch = 26 - co * 2;
+      ctx.beginPath();
+      ctx.ellipse(skx, sky - co * (ch * 0.72), cw / 2, ch / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    // the lattice + the filled cells
+    var c0 = Math.floor(drift / COLW) - 1;
+    var c1 = c0 + Math.ceil(W / COLW) + 2;
+    for (var col = c0; col <= c1; col++) {
+      for (var r = 0; r < rows; r++) {
+        var p = cellXY(col, r);
+        if (p.x < -HEX || p.x > W + HEX) continue;
+        var key = col + "," + r;
+        var age = cells[key];
+        // empty lattice
+        ctx.strokeStyle = INK;
+        ctx.globalAlpha = 0.13;
+        ctx.lineWidth = 0.8;
+        hexPath(ctx, p.x, p.y, HEX - 0.8);
+        ctx.stroke();
+        if (age !== undefined) {
+          cells[key] = age + dt;
+          // amber → wax over ~26 s, then the cap thins away
+          var cure = Math.min(1, age / 26);
+          var fade = age > 40 ? Math.max(0, 1 - (age - 40) / 18) : 1;
+          if (fade <= 0) { delete cells[key]; continue; }
+          var cr = HONEY.r + (WAX.r - HONEY.r) * cure;
+          var cg = HONEY.g + (WAX.g - HONEY.g) * cure;
+          var cb = HONEY.b + (WAX.b - HONEY.b) * cure;
+          ctx.fillStyle = "rgb(" + cr.toFixed(0) + "," + cg.toFixed(0) + "," + cb.toFixed(0) + ")";
+          ctx.globalAlpha = (0.9 - cure * 0.35) * fade;
+          hexPath(ctx, p.x, p.y, HEX - 1.6);
+          ctx.fill();
+          // a fresh cell glistens for its first moment
+          if (age < 1.2) {
+            ctx.globalAlpha = (1.2 - age) * 0.5 * fade;
+            ctx.strokeStyle = "#d8b458";
+            ctx.lineWidth = 1.2;
+            hexPath(ctx, p.x, p.y, HEX + 0.6);
+            ctx.stroke();
+          }
+          // cured cells get the capped-wax dot
+          if (cure > 0.75) {
+            ctx.globalAlpha = 0.3 * fade;
+            ctx.fillStyle = INK;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2); ctx.fill();
+          }
+        }
+      }
+    }
+
+    // the bees — the voices at their work, jittery purposeful wander
+    for (var b = 0; b < bees.length; b++) {
+      var bee = bees[b];
+      bee.turn += (Math.random() - 0.5) * 3 * dt;
+      bee.turn *= 0.94;
+      bee.a += bee.turn;
+      bee.x += Math.cos(bee.a) * 34 * dt;
+      bee.y += Math.sin(bee.a) * 34 * dt;
+      if (bee.x < 10) { bee.x = 10; bee.a = 0; }
+      if (bee.x > W - 10) { bee.x = W - 10; bee.a = Math.PI; }
+      if (bee.y < 10) { bee.y = 10; bee.a = Math.PI / 2; }
+      if (bee.y > H - 10) { bee.y = H - 10; bee.a = -Math.PI / 2; }
+      ctx.save();
+      ctx.translate(bee.x, bee.y);
+      ctx.rotate(bee.a);
+      ctx.fillStyle = "#17201a";
+      ctx.globalAlpha = 0.85;
+      ctx.beginPath(); ctx.ellipse(0, 0, 3.2, 1.9, 0, 0, Math.PI * 2); ctx.fill();
+      // wing flicker
+      ctx.globalAlpha = 0.35 + 0.3 * Math.sin(t * 40 + b * 9);
+      ctx.strokeStyle = INK; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(-0.5, -1.5); ctx.lineTo(-2.5, -4.5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-0.5, 1.5); ctx.lineTo(-2.5, 4.5); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- the Liahona ------------------------------------------------------------
+  function drawDial(ctx, W, H) {
+    var cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.42;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(30,77,59,0.55)"; ctx.lineWidth = 1;
+    // the dial rim is a cell here — a hexagon, not a circle
+    hexPathAt(ctx, cx, cy, R); ctx.stroke();
+    hexPathAt(ctx, cx, cy, R * 0.86); ctx.stroke();
+    var na = -Math.PI / 2 + (0.32 + 0.03 * Math.sin(t * 0.2)) * Math.PI * 2;
+    ctx.save();
+    ctx.shadowColor = "rgba(138,160,90,0.4)"; ctx.shadowBlur = 5;
+    ctx.strokeStyle = GILT; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.cos(na) * R * 0.14, cy - Math.sin(na) * R * 0.14);
+    ctx.lineTo(cx + Math.cos(na) * R * 0.74, cy + Math.sin(na) * R * 0.74);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+  function hexPathAt(c, x, y, s) {
+    c.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i - 90);
+      c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * s, y + Math.sin(a) * s);
+    }
+    c.closePath();
+  }
+
+  // ---- plumbing ---------------------------------------------------------------
+  function fit(cv) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var r = cv.getBoundingClientRect();
+    cv.width = r.width * dpr; cv.height = r.height * dpr;
+    var c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: r.width, h: r.height };
+  }
+  var C, D;
+  function refit() { C = fit(document.getElementById("comb")); D = fit(document.getElementById("dial")); }
+  refit();
+  window.addEventListener("resize", refit);
+
+  var last = 0;
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0.016;
+    last = ts;
+    drawComb(C.c, C.w, C.h, dt);
+    drawDial(D.c, D.w, D.h);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

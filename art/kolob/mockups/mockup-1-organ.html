@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB mockup 1 — THE ORGAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — MOCKUP 1 · THE ORGAN
+   The green cloth cover becomes a MAT (a bounded frame on the site's white
+   page) with a thin gold rule stamped inside it, hymnbook-style. The
+   centerpiece is a spectrum analyzer whose bars are the black organ-pipe
+   silhouettes of the Salt Lake Tabernacle facade. Staff strip tightened.
+   ========================================================================== */
+:root {
+  --cover: #14382c;
+  --cover-hi: #1a4536;
+  --paper: #f5f0e4;
+  --paper-lo: #ece5d3;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+  --gilt-bright: #b09a55;
+  --pipe: #17201a;              /* the black of the facade silhouette */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #ffffff;          /* the site page shows around the mat */
+  font-family: "EB Garamond", Georgia, serif;
+  padding: 2.6rem 1rem 4rem;
+}
+/* mockup caption — not part of the design, just a curator's label */
+.mock-label {
+  max-width: 860px; margin: 0 auto 1rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ---------------- the mat: green cloth, gold rule, cream page ------------- */
+.kolob-mat {
+  position: relative;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 34px;
+  border-radius: 3px;
+  background:
+    radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+}
+/* cloth grain on the mat */
+.kolob-mat::after {
+  content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+/* the thin gold rule stamped into the cloth, inside the mat edge */
+.kolob-mat::before {
+  content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1;
+  border: 1px solid var(--gilt);
+  opacity: 0.75;
+}
+/* the cream page */
+.kolob-page {
+  position: relative; z-index: 2;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink);
+  border-radius: 1px;
+  padding: 2.4rem 2.8rem 2.2rem;
+  box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.kolob-page::after { /* paper grain */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.kolob-page > * { position: relative; z-index: 1; }
+
+/* ---------------- title ---------------- */
+.kolob-header { text-align: center; margin: 0 0 1.7rem; }
+.kolob-title {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: clamp(2.2rem, 6vw, 3.2rem); font-weight: 400;
+  letter-spacing: 0.22em; margin: 0 0 0.35rem; color: var(--ink);
+}
+.kolob-subtitle {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.92rem;
+  letter-spacing: 0.14em; color: var(--ink-soft); margin: 0 0 1.1rem;
+}
+.kolob-rule { position: relative; height: 9px; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); margin: 0 8%; }
+.kolob-rule::after {
+  content: "✧"; position: absolute; left: 50%; top: 50%; transform: translate(-50%,-52%);
+  background: var(--paper); padding: 0 0.7em; color: var(--gilt); font-size: 0.72rem;
+}
+
+/* ---------------- the organ (spectrum facade) ---------------- */
+.kolob-organ-wrap {
+  position: relative; height: 175px; margin: 0 0 0.9rem;
+}
+.kolob-organ { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------------- the page strip (tightened staff) ---------------- */
+/* Rules now span nearly the whole strip — 10%..90% instead of 31%..71% —
+   and the strip is shorter. The dead cream above/below the lines is gone. */
+.kolob-staff-wrap {
+  position: relative; height: 88px; margin: 0 0 1.4rem;
+  background:
+    linear-gradient(90deg, var(--ink-faint) 0, var(--ink-faint) 1px, transparent 1px) no-repeat 14px 0 / 1px 100%,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 10% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 30% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 50% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 70% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 90% / 100% 1px;
+}
+.kolob-staff { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------------- running head + dial ---------------- */
+.kolob-head-row { display: flex; align-items: center; gap: 1.2rem; margin: 0 0 1.4rem; }
+.kolob-telemetry {
+  flex: 1; font-family: "Noto Sans Deseret", serif; font-size: 0.82rem;
+  letter-spacing: 0.1em; color: var(--ink-soft); line-height: 1.9;
+}
+.kolob-telemetry .t-sep { margin: 0 0.55em; color: var(--ink-faint); }
+.kolob-telemetry .t-flag { color: var(--gilt); }
+.kolob-dial { width: 76px; height: 76px; flex: 0 0 auto; }
+
+/* ---------------- transport: stop-tab buttons ---------------- */
+.kolob-transport { display: flex; align-items: center; gap: 0.9rem; margin: 0 0 2rem; }
+.kolob-btn {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.95rem; letter-spacing: 0.16em;
+  color: var(--ink); background: var(--paper);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.55rem 1.4rem; cursor: pointer;
+  box-shadow: 0 1.5px 0 var(--ink-faint);
+}
+.kolob-btn:hover { background: #faf6ec; }
+.kolob-btn.is-playing { background: var(--ink); color: var(--paper); }
+.kolob-btn-glyph { display: inline-block; font-family: Georgia, serif; font-size: 1.15em; line-height: 0; vertical-align: -0.06em; }
+.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-soft); }
+.kolob-range { -webkit-appearance: none; appearance: none; width: 130px; height: 18px; background: transparent; cursor: pointer; }
+.kolob-range::-webkit-slider-runnable-track { height: 1px; background: var(--ink-soft); }
+.kolob-range::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); margin-top: -5.5px; }
+
+/* ---------------- columns ---------------- */
+.kolob-columns { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.4rem; margin: 0 0 2.2rem; }
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em;
+  color: var(--ink-soft); border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.45rem; margin: 0 0 0.9rem;
+}
+.kolob-order-row {
+  display: flex; align-items: baseline; gap: 0.6rem; padding: 0.3rem 0;
+  font-family: "Noto Sans Deseret", serif; font-size: 0.92rem; letter-spacing: 0.1em; color: var(--ink-soft);
+}
+.kolob-order-row.current { color: var(--ink); }
+.kolob-order-row.done { color: var(--ink-faint); }
+.kolob-order-hand { width: 1.3em; opacity: 0; font-family: Georgia, serif; }
+.kolob-order-row.current .kolob-order-hand { opacity: 1; }
+.kolob-order-fill { flex: 1; align-self: center; border-bottom: 1px dotted var(--ink-faint); }
+
+.kolob-board { background: linear-gradient(175deg, var(--cover-hi), var(--cover)); border-radius: 3px; padding: 1rem 1.1rem 1.1rem; box-shadow: inset 0 1px 6px rgba(0,0,0,0.4); }
+.kolob-board .kolob-ctl-label { color: rgba(245,240,228,0.6); }
+.kolob-board-nums { display: flex; gap: 0.5rem; margin: 0.6rem 0 0.85rem; min-height: 2.1rem; }
+.kolob-board-card { font-family: "Noto Sans Deseret", serif; background: var(--paper); color: var(--cover); padding: 0.22rem 0.6rem; border-radius: 1px; font-size: 1.02rem; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.kolob-seed-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+.kolob-seed-current { color: var(--paper); font-size: 0.95rem; letter-spacing: 0.06em; }
+.kolob-seed-input { width: 6.5em; font-family: "EB Garamond", serif; font-size: 0.85rem; color: var(--paper); background: rgba(245,240,228,0.08); border: 1px solid rgba(245,240,228,0.3); border-radius: 2px; padding: 0.3rem 0.5rem; }
+.kolob-btn-board { background: transparent; color: var(--paper); border-color: rgba(245,240,228,0.45); box-shadow: none; font-size: 0.82rem; padding: 0.35rem 0.9rem; }
+
+/* ---------------- stops ---------------- */
+.kolob-stops-block { margin: 0 0 2.2rem; }
+.kolob-layers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 2.4rem; }
+.kolob-stop { display: flex; align-items: center; gap: 0.8rem; padding: 0.24rem 0; }
+/* hexagonal drawknob — a plain engraved outline, no dimensional effects. The
+   hexagon is an SVG background, so the stroke stays an even hairline all the
+   way around (a clip-path border can't do that). Square box: as tall as wide. */
+.kolob-drawknob {
+  width: 20px; height: 20px; flex: 0 0 auto;
+  border: none; padding: 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpolygon points='0.7,10 5.35,1 14.65,1 19.3,10 14.65,19 5.35,19' fill='%23f5f0e4' stroke='%231e4d3b' stroke-opacity='0.75' stroke-width='1.3'/%3E%3C/svg%3E") center / contain no-repeat;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.kolob-drawknob.is-off { opacity: 0.4; }
+.kolob-stop-name { font-family: "Noto Sans Deseret", serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--ink); min-width: 7.5em; }
+.kolob-stop .kolob-range { flex: 1; width: auto; }
+
+/* ---------------- broadside + minutes + colophon ---------------- */
+.kolob-broadside-block { margin: 0 0 2.2rem; text-align: center; }
+.kolob-broadside-block .kolob-sec-head { text-align: left; }
+.kolob-broadside-line { font-family: "Noto Sans Deseret", serif; font-size: 1.06rem; line-height: 2; letter-spacing: 0.06em; color: var(--ink); opacity: 0.82; }
+.kolob-log-block { margin: 0 0 2rem; }
+.kolob-log-row { display: flex; align-items: baseline; gap: 0.8rem; padding: 0.3rem 0.1rem; border-bottom: 1px solid rgba(30,77,59,0.12); font-size: 0.9rem; }
+.kolob-log-time { font-style: italic; font-size: 0.78rem; color: var(--ink-faint); width: 3.2em; flex: 0 0 auto; }
+.kolob-log-glyph { width: 1.4em; flex: 0 0 auto; color: var(--ink-soft); font-family: Georgia, serif; }
+.kolob-log-glyph.gilt { color: var(--gilt); }
+.kolob-log-text { font-family: "Noto Sans Deseret", serif; letter-spacing: 0.08em; color: var(--ink-soft); }
+.kolob-note {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.86rem; line-height: 2.1;
+  letter-spacing: 0.08em; color: var(--ink-soft); text-align: center;
+  border-top: 1px solid var(--rule); padding-top: 1.4rem;
+}
+.kolob-note a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; }
+  .kolob-mat::before { inset: 8px; }
+  .kolob-page { padding: 1.8rem 1.2rem 1.6rem; }
+  .kolob-columns, .kolob-layers { grid-template-columns: 1fr; }
+  .kolob-organ-wrap { height: 135px; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label">mockup 1 of 3 · the organ — tabernacle-pipe spectrum analyzer</p>
+
+<div class="kolob-mat">
+ <div class="kolob-page">
+
+  <header class="kolob-header">
+    <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
+    <p class="kolob-subtitle">𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓</p>
+    <div class="kolob-rule" aria-hidden="true"></div>
+  </header>
+
+  <!-- THE ORGAN: black facade silhouettes breathing as a spectrum analyzer -->
+  <div class="kolob-organ-wrap">
+    <canvas id="organ" class="kolob-organ" aria-label="the tabernacle organ, breathing with the music"></canvas>
+  </div>
+
+  <!-- the page — tightened staff -->
+  <div class="kolob-staff-wrap">
+    <canvas id="staff" class="kolob-staff" aria-label="shape-note engraving"></canvas>
+  </div>
+
+  <div class="kolob-head-row">
+    <div class="kolob-telemetry">𐐐𐐆𐐣<span class="t-sep">·</span>𐐌𐐄𐐤𐐆𐐊𐐤<span class="t-sep">·</span><span class="t-flag">𐐙𐐧𐐘𐐆𐐥</span><span class="t-sep">·</span>𐐣𐐀𐐓𐐆𐐥 4931</div>
+    <canvas id="dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
+  </div>
+
+  <div class="kolob-transport">
+    <button type="button" class="kolob-btn is-playing"><span class="kolob-btn-glyph">▶&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+    <button type="button" class="kolob-btn"><span class="kolob-btn-glyph kolob-glyph-stop">■&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+    <div class="kolob-transport-spacer"></div>
+    <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+    <input type="range" min="0" max="100" value="60" class="kolob-range" />
+  </div>
+
+  <div class="kolob-columns">
+    <div>
+      <div class="kolob-sec-head">𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝</div>
+      <div class="kolob-order-row done"><span class="kolob-order-hand">☞</span>𐐑𐐡𐐇𐐢𐐧𐐔<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row done"><span class="kolob-order-hand">☞</span>𐐆𐐤𐐚𐐄𐐗𐐁𐐟𐐊𐐤<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row current"><span class="kolob-order-hand">☞</span>𐐐𐐆𐐣<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">☞</span>𐐓𐐇𐐝𐐓𐐆𐐣𐐄𐐤𐐆<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">☞</span>𐐝𐐈𐐗𐐡𐐊𐐣𐐇𐐤𐐓<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">☞</span>𐐐𐐆𐐣<span class="kolob-order-fill"></span></div>
+      <div class="kolob-order-row"><span class="kolob-order-hand">☞</span>𐐑𐐄𐐝𐐓𐐢𐐅𐐔<span class="kolob-order-fill"></span></div>
+    </div>
+    <div>
+      <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+      <div class="kolob-board">
+        <div class="kolob-board-nums"><span class="kolob-board-card">𐑉𐑈</span><span class="kolob-board-card">𐑃𐑁</span><span class="kolob-board-card">𐑄𐑀</span></div>
+        <div class="kolob-seed-row">
+          <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
+          <span class="kolob-seed-current">738294</span>
+          <input type="text" class="kolob-seed-input" />
+          <button type="button" class="kolob-btn kolob-btn-board">𐐘𐐈𐐜𐐊𐐡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kolob-stops-block">
+    <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
+    <div class="kolob-layers">
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐃𐐡𐐘𐐊𐐤</span><input type="range" class="kolob-range" value="45" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓</span><input type="range" class="kolob-range" value="70" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐎𐐌𐐊𐐡</span><input type="range" class="kolob-range" value="60" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob is-off"></button><span class="kolob-stop-name">𐐒𐐈𐐘𐐑𐐌𐐑</span><input type="range" class="kolob-range" value="50" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣</span><input type="range" class="kolob-range" value="40" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐙𐐀𐐢𐐔</span><input type="range" class="kolob-range" value="55" /></div>
+    </div>
+  </div>
+
+  <div class="kolob-broadside-block">
+    <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+    <div class="kolob-broadside-line">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊 · 𐑄 𐑊𐐴𐐻 𐐮𐑆 𐐬𐑌 𐑄 𐑉𐐮𐑋</div>
+  </div>
+
+  <div class="kolob-log-block">
+    <div class="kolob-sec-head">𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝</div>
+    <div class="kolob-log-row"><span class="kolob-log-time">4·12</span><span class="kolob-log-glyph gilt">✸</span><span class="kolob-log-text">𐐙𐐧𐐘𐐆𐐥 𐐇𐐤𐐓𐐡𐐆</span></div>
+    <div class="kolob-log-row"><span class="kolob-log-time">3·41</span><span class="kolob-log-glyph">☞</span><span class="kolob-log-text">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓 𐐢𐐌𐐤𐐞 𐐍𐐓</span></div>
+    <div class="kolob-log-row"><span class="kolob-log-time">2·58</span><span class="kolob-log-glyph gilt">◉</span><span class="kolob-log-text">𐐜 𐐢𐐆𐐊𐐐𐐄𐐤𐐊 𐐑𐐌𐐤𐐓𐐝</span></div>
+  </div>
+
+  <p class="kolob-note">𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤<br /><a href="#">𐐂𐐡𐐓</a></p>
+
+ </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var PIPE = "#17201a", PAPER = "#f5f0e4", INK = "#1e4d3b", GILT = "#8a7a45";
+
+  // ---- the organ: spectrum → facade -----------------------------------------
+  // Bands are seated the way real pipes are racked: the gravest pipe in the
+  // middle, then alternating left/right outward — so the facade breathes from
+  // its center, exactly like the hymnbook cover come to life.
+  var organ = document.getElementById("organ");
+  var N = 27;
+  var bands = [], targets = [];
+  for (var i = 0; i < N; i++) { bands.push(0.2); targets.push(0.2); }
+  var seatOf = [];                       // band k -> x position index
+  (function () {
+    var c = Math.floor(N / 2);
+    for (var k = 0; k < N; k++) {
+      var off = Math.ceil(k / 2) * (k % 2 === 1 ? -1 : 1);
+      seatOf.push(c + off);
+    }
+  })();
+
+  function drawPipe(c, cx, baseY, w, h) {
+    var R = w / 2, r = w * 0.4;
+    var topY = baseY - h;
+    // body — a gentle taper to a domed cap
+    c.beginPath();
+    c.moveTo(cx - R, baseY);
+    c.lineTo(cx - r, topY + r);
+    c.quadraticCurveTo(cx - r, topY, cx, topY);
+    c.quadraticCurveTo(cx + r, topY, cx + r, topY + r);
+    c.lineTo(cx + R, baseY);
+    c.closePath();
+    c.fillStyle = PIPE;
+    c.fill();
+    // the mouth — a paper-colored pointed arch near the foot, the one detail
+    // that says "organ pipe" and not "bar graph"
+    var mh = Math.min(w * 0.85, h * 0.3);
+    var mw = w * 0.58;
+    var my = baseY - Math.max(10, h * 0.13);
+    c.beginPath();
+    c.moveTo(cx - mw / 2, my);
+    c.quadraticCurveTo(cx - mw * 0.18, my - mh * 0.55, cx, my - mh);
+    c.quadraticCurveTo(cx + mw * 0.18, my - mh * 0.55, cx + mw / 2, my);
+    c.closePath();
+    c.fillStyle = PAPER;
+    c.fill();
+  }
+
+  var t = 0;
+  function drawOrgan(ctx, W, H, dt) {
+    t += dt;
+    // wander the spectrum: slow targets, quick approach — organic, not jittery
+    for (var k = 0; k < N; k++) {
+      if (Math.random() < 0.02) targets[k] = Math.random();
+      var swell = 0.5 + 0.5 * Math.sin(t * 0.4 + k * 0.9);
+      var v = targets[k] * 0.6 + swell * 0.4;
+      v *= 1 - k / N * 0.55;                        // treble quieter, like the music
+      bands[k] += (v - bands[k]) * Math.min(1, dt * 5);
+    }
+    ctx.clearRect(0, 0, W, H);
+
+    var baseY = H - 16;
+
+    // the pipes
+    var span = Math.min(W * 0.86, 640);
+    var step = span / N;
+    var x0 = (W - span) / 2 + step / 2;
+    for (var k2 = 0; k2 < N; k2++) {
+      var seat = seatOf[k2];
+      var cx = x0 + seat * step;
+      // wider, graver pipes toward the center of the facade
+      var centerness = 1 - Math.abs(seat - (N - 1) / 2) / ((N - 1) / 2);
+      var w = step * (0.5 + centerness * 0.34);
+      var minH = 20 + centerness * 22;              // pipes never vanish
+      var maxH = H - 10;                            // no arch above — use the room
+      var h = minH + bands[k2] * (maxH - minH) * (0.55 + centerness * 0.45);
+      drawPipe(ctx, cx, baseY, w, h);
+    }
+
+    // the impost — the case line the pipes stand on
+    ctx.strokeStyle = INK;
+    ctx.globalAlpha = 0.6;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(W * 0.04, baseY + 1); ctx.lineTo(W * 0.96, baseY + 1); ctx.stroke();
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(W * 0.07, baseY + 5); ctx.lineTo(W * 0.93, baseY + 5); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- the tightened staff: demo shape notes --------------------------------
+  var SHAPES = ["fa", "sol", "la", "mi"];
+  var notes = [];
+  var noteClock = 0;
+  function drawShape(c, shape, x, y, s) {
+    c.beginPath();
+    if (shape === "fa") { c.moveTo(x - s, y + s * 0.8); c.lineTo(x + s, y + s * 0.8); c.lineTo(x - s, y - s * 0.8); c.closePath(); }
+    else if (shape === "la") { c.rect(x - s, y - s * 0.7, s * 2, s * 1.4); }
+    else if (shape === "mi") { c.moveTo(x, y - s * 0.9); c.lineTo(x + s, y); c.lineTo(x, y + s * 0.9); c.lineTo(x - s, y); c.closePath(); }
+    else { c.ellipse(x, y, s, s * 0.72, -0.22, 0, Math.PI * 2); }
+  }
+  function drawStaff(ctx, W, H, dt) {
+    noteClock -= dt;
+    if (noteClock <= 0) {
+      noteClock = 0.4 + Math.random() * 1.4;
+      notes.push({ x: W - 20, y: H * (0.1 + Math.round(Math.random() * 8) / 8 * 0.8), shape: SHAPES[Math.floor(Math.random() * 4)], a: 0.95, filled: Math.random() < 0.6 });
+    }
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth = 1.2;
+    for (var i = notes.length - 1; i >= 0; i--) {
+      var n = notes[i];
+      n.x -= 11 * dt;                              // prairie time
+      n.a -= 0.012 * dt;
+      if (n.x < -10 || n.a <= 0) { notes.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, n.a);
+      drawShape(ctx, n.shape, n.x, n.y, 5.5);
+      if (n.filled) ctx.fill(); else ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(n.x + 5.5, n.y - 1); ctx.lineTo(n.x + 5.5, n.y - 14); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- the Liahona — hexagonal case, borrowed from THE HIVE ------------------
+  function hexPathAt(c, x, y, s) {
+    c.beginPath();
+    for (var i = 0; i < 6; i++) {
+      var a = Math.PI / 180 * (60 * i - 90);        // pointy-top
+      c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * s, y + Math.sin(a) * s);
+    }
+    c.closePath();
+  }
+  // radius of that hexagon's boundary at angle a — so the section ticks can
+  // land exactly on the case, corner or edge alike
+  function hexR(a, s) {
+    var deg = (a * 180 / Math.PI % 60 + 60) % 60;   // fold to one 60° sector
+    if (deg > 30) deg = 60 - deg;                    // distance to nearest edge-center
+    return s * Math.cos(Math.PI / 6) / Math.cos(deg * Math.PI / 180);
+  }
+  function drawDial(ctx, W, H) {
+    var cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.44;
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = "rgba(30,77,59,0.55)"; ctx.lineWidth = 1;
+    hexPathAt(ctx, cx, cy, R); ctx.stroke();
+    hexPathAt(ctx, cx, cy, R * 0.86); ctx.stroke();
+    for (var i = 0; i < 7; i++) {
+      var a = -Math.PI / 2 + i / 7 * Math.PI * 2;
+      var r1 = hexR(a, R), r0 = hexR(a, R * 0.86);
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0);
+      ctx.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+      ctx.stroke();
+    }
+    var na = -Math.PI / 2 + (0.32 + 0.03 * Math.sin(t * 0.2)) * Math.PI * 2;
+    ctx.save();
+    ctx.shadowColor = "rgba(138,160,90,0.4)"; ctx.shadowBlur = 5;
+    ctx.strokeStyle = GILT; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - Math.cos(na) * R * 0.14, cy - Math.sin(na) * R * 0.14);
+    ctx.lineTo(cx + Math.cos(na) * R * 0.78, cy + Math.sin(na) * R * 0.78);
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = INK;
+    ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ---- plumbing ---------------------------------------------------------------
+  function fit(cv) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var r = cv.getBoundingClientRect();
+    cv.width = r.width * dpr; cv.height = r.height * dpr;
+    var c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: r.width, h: r.height };
+  }
+  var O, S, D;
+  function refit() { O = fit(organ); S = fit(document.getElementById("staff")); D = fit(document.getElementById("dial")); }
+  refit();
+  window.addEventListener("resize", refit);
+
+  var last = 0;
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0.016;
+    last = ts;
+    drawOrgan(O.c, O.w, O.h, dt);
+    drawStaff(S.c, S.w, S.h, dt);
+    drawDial(D.c, D.w, D.h);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

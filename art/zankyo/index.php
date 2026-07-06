@@ -134,7 +134,7 @@ include '../../includes/header.php';
 <script src="zankyo-audio.js?v=4161392f"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=f8b989f1"></script>
-<script src="zankyo-ui.js?v=cd9afffe"></script>
+<script src="zankyo-ui.js?v=40536d6a"></script>
 
 <!-- Anonymous usage tracking: a page view, plus the first PLAY press as an
      engagement signal (a raw view understates an audio page). No personal data

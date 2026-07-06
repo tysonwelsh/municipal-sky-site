@@ -507,8 +507,9 @@
   function initViz() {
     var canvas = document.getElementById("kolob-viz");
     var dial = document.getElementById("kolob-dial");
+    var organ = document.getElementById("kolob-organ");
     if (window.KolobViz && typeof window.KolobViz.init === "function") {
-      try { window.KolobViz.init(canvas, dial); }
+      try { window.KolobViz.init(canvas, dial, organ); }
       catch (e) { if (window.console) console.error("Kolob viz init failed", e); }
     }
   }
