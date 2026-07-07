@@ -2576,9 +2576,14 @@ function p3InspectDelay(d) {
     var n = c._nodes[i];
     if (n._kind === "Gain" && ins && n._targets.indexOf(ins.delayNode.delayTime) >= 0) driftV = n.gain.value;
   }
-  check("FX delay hard caps clamp in the NODES (fb<=0.55, wet<=0.4, drift<=0.01s, loop Q 0.5)",
+  // Q expectation updated 2026-07-07: WebAudio lowpass/highpass .Q is IN
+  // DECIBELS — the original 0.5 meant +0.5 dB of RESONANCE (|H|peak ≈ ×1.2),
+  // which pushed the sympathetic bank's true loop gain past 1 and NaN'd the
+  // graph in real renders (caught by render-soak.html, invisible to these
+  // mocks). −6 dB is the over-damped intent; the check now pins that.
+  check("FX delay hard caps clamp in the NODES (fb<=0.55, wet<=0.4, drift<=0.01s, loop Q -6dB)",
     !!ins && ins.fb != null && ins.fb <= 0.55 && ins.wet != null && ins.wet <= 0.4 &&
-    driftV != null && driftV <= 0.01 && ins.q === 0.5,
+    driftV != null && driftV <= 0.01 && ins.q === -6,
     ins ? "fb " + ins.fb + " wet " + ins.wet + " drift " + driftV + " Q " + ins.q : "no delay node built");
 
   var s = P.Fx.sympathetic(c, { nStrings: 6, freqs: [220, 262, 330, 392, 440, 524],
@@ -2599,7 +2604,7 @@ function p3InspectDelay(d) {
   var live = (P3.delays.length === 1) ? p3InspectDelay(P3.delays[0].d) : null;
   check("FX live far-wall delay: ONE instance at the owner dose (0.42s / fb .22 / wet .18)",
     !!live && Math.abs(live.timeS - 0.42) < 1e-9 && Math.abs(live.fb - 0.22) < 1e-9 &&
-    Math.abs(live.wet - 0.18) < 1e-9 && live.q === 0.5,
+    Math.abs(live.wet - 0.18) < 1e-9 && live.q === -6, // Q in dB; see cap check above
     live ? "t " + live.timeS + " fb " + live.fb + " wet " + live.wet
          : P3.delays.length + " delay instance(s) tapped");
   var liveSym = P3.sympas.length === 1 ? P3.sympas[0] : null;

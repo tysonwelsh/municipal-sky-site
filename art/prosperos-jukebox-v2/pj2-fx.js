@@ -193,7 +193,16 @@
         thinHp = ctx.createBiquadFilter();
         try { thinHp.type = "highpass"; } catch (eT) {}
         setP(thinHp.frequency, thinHz, t0);
-        setP(thinHp.Q, 0.5, t0); // |H| ≤ 1: the feedback cap stays honest
+        // Q = −6 dB, NOT 0.5: WebAudio interprets lowpass/highpass .Q IN
+        // DECIBELS (a resonance amount, unlike the traditional Q every other
+        // filter type uses). "0.5" here would mean +0.5 dB of peaking —
+        // |H|max ≈ ×1.2 near cutoff — quietly RAISING the loop gain above
+        // the printed feedback and, in a hot loop, past 1 into runaway (the
+        // render soak caught exactly this in the sympathetic bank; symbolic
+        // mocks cannot). −6 dB is the traditional q ≈ 0.5 this file's
+        // loop-gain lesson intended: over-damped, |H| ≤ 1 everywhere, the
+        // feedback cap stays the true loop gain.
+        setP(thinHp.Q, -6, t0);
         delay.connect(thinHp);
         tail = thinHp;
       }
@@ -201,9 +210,14 @@
         var lp = ctx.createBiquadFilter();
         try { lp.type = "lowpass"; } catch (e0) {}
         setP(lp.frequency, damp, t0);
-        // Q = 0.5, NOT the default 1: over-damped ⇒ |H| ≤ 1 everywhere, so
-        // the feedback cap is the true loop gain (header lesson #1).
-        setP(lp.Q, 0.5, t0);
+        // Q = −6 dB, NOT 0.5: WebAudio lowpass/highpass .Q is IN DECIBELS
+        // of resonance (unlike every other filter type's traditional Q).
+        // The original "0.5" here meant +0.5 dB of peaking — |H|max ≈ ×1.2
+        // near cutoff — so the true loop gain ran ×1.2 above the printed
+        // feedback. Stable in this delay (0.55×1.2 = 0.66) but the margin
+        // claim in header lesson #1 was wrong; −6 dB is the over-damped
+        // q ≈ 0.5 that lesson intended, |H| ≤ 1 everywhere.
+        setP(lp.Q, -6, t0);
         tail.connect(lp);
         tail = lp;
       }
@@ -367,7 +381,13 @@
           lp = ctx.createBiquadFilter();
           try { lp.type = "lowpass"; } catch (e0) {}
           setP(lp.frequency, damp, t0);
-          setP(lp.Q, 0.5, t0); // loop-gain honesty again (lesson #1)
+          // −6 dB, NOT 0.5: .Q on lowpass is IN DECIBELS — "0.5" was +0.5 dB
+          // of resonance, |H|peak ≈ ×1.2, true loop gain 0.95×1.2 ≈ 1.14 →
+          // exponential runaway to NaN ~10s after excitation. THE bug that
+          // hurt the owner's ears (Sycorax throat, and the Library halo in
+          // every Phase 3 browser render). −6 dB = the over-damped q ≈ 0.5
+          // lesson #1 intended; |H| ≤ 1, the fb cap is the true loop gain.
+          setP(lp.Q, -6, t0);
           d.connect(lp);
           tail = lp;
         }

@@ -353,6 +353,15 @@ PJ2.Motif = (function () {
   //     sceneTilt: { <sceneType>: { transformName: multiplier, ... } },
   //       // Development-weather overlay over SCENE_TILT (unknown scenes:
   //       // no tilt), so custom scene names shape transforms too.
+  //     transformTilt: fn(ropts) -> { transformName: multiplier, ... } | null,
+  //       // DYNAMIC transform weather, composed multiplicatively AFTER
+  //       // sceneTilt × affinity. Called once per request() with the raw
+  //       // request opts (whatever extra fields the caller passed — e.g.
+  //       // the Library hands opusPos, its 0..1 evening progress, so the
+  //       // alchemical refinement arc can bias dark operations early and
+  //       // luminous ones late). MUST be pure (no rng, no clock): it runs
+  //       // inside the seeded stream and consumes NO draws — pickW costs
+  //       // one draw regardless of weights, so determinism is untouched.
   //     postP: { <sceneType>: p },
   //       // maybePost probability overlay over POST_P (unknown scenes 0.15).
   //     postKinds: [["imitate"|"invert"|"develop", w], ...],
@@ -488,6 +497,7 @@ PJ2.Motif = (function () {
     // ------------------------------------------------------------------
     var working = { theme: null, subs: [] };  // ≤ 3 ideas, always (kolob's discipline)
     var lineage = {};       // name → deepest living descendant (a clone)
+    var reqTilt = null;     // per-request dynamic transform weather (policy.transformTilt)
     var ledger = [];        // [{from, to:"any", kind, motif, deadlineS}]
     var walkCls = freshWalkState();           // improviser walk state
     var usedNames = {};     // per-performance name uniqueness
@@ -758,6 +768,10 @@ PJ2.Motif = (function () {
         if (!allowedTransform(name, m, chain)) continue;
         var wt = w[name] * (tilt[name] || 1);
         if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
+        // Dynamic weather from policy.transformTilt (set per-request) — the
+        // refinement arc: the same idea is worked with heavier hands early
+        // in the evening and lighter ones late. Zero extra draws.
+        if (reqTilt && reqTilt[name]) wt *= reqTilt[name];
         pool.push([name, wt]);
       }
       return pool.length ? rng.pickW(pool) : null;
@@ -1190,6 +1204,13 @@ PJ2.Motif = (function () {
     function request(voiceName, ropts) {
       voiceName = String(voiceName || "pluck");
       ropts = ropts || {};
+      // Dynamic transform weather for this request (see policy doc). Pure
+      // function of the caller's opts; never draws. Cleared implicitly by
+      // being recomputed at every request.
+      reqTilt = null;
+      if (policy && typeof policy.transformTilt === "function") {
+        try { reqTilt = policy.transformTilt(ropts) || null; } catch (eT) { reqTilt = null; }
+      }
       var sceneType = effPools[ropts.sceneType] ? ropts.sceneType : "chapter";
       var nowS = (typeof ropts.nowS === "number" && isFinite(ropts.nowS)) ? ropts.nowS : 0;
       var out, kind;
@@ -1310,6 +1331,19 @@ PJ2.Motif = (function () {
       newPerformance: newPerformance,
       extractGhost: extractGhost,
       seedGhost: seedGhost,
+      // The theme, whole. ancestor:true (default) returns the gen-0 seed as
+      // improvised at newPerformance — the "prima materia"; ancestor:false
+      // returns the deepest living descendant from the lineage instead.
+      // Always a sanitized deep clone; null before the first performance.
+      // Added for solve et coagula: the candle-out's one quiet verbatim
+      // statement of the theme in its original form. Consumes NO draws.
+      theme: function (topts) {
+        if (!working.theme) return null;
+        var anc = !topts || topts.ancestor !== false;
+        var src = anc ? working.theme
+                      : (lineage[working.theme.name] || working.theme);
+        return sanitize(clone(src));
+      },
       // telemetry
       stats: getStats,
     };
