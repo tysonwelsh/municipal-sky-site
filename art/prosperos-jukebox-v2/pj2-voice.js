@@ -1,0 +1,472 @@
+// ============================================================================
+// PJ2.Voice — graph plumbing for Prospero's Jukebox v2 (Phase 0, module 4)
+//
+// The other Phase 0 modules decide WHAT to play (Rand), at WHAT pitch (Pitch),
+// and WHEN (Clock). This module owns HOW sound reaches the speakers: the
+// master bus, the rooms (generated-IR reverbs), the stereo field (a pooled
+// panner rack), click-safe envelopes, and the polyphony budget that keeps
+// fugal moments from ballooning the node graph — the one flaw every sibling
+// review found.
+//
+// Everything here is LAZY: no AudioContext is created in this module; every
+// function takes a ctx (real or a harness mock whose nodes merely record
+// connections). No DOM access, no wall-clock reads.
+//
+// DSP lessons inherited from the siblings (zankyo → bardo → kolob):
+//   1. WAVESHAPER SMALL-SIGNAL GAIN — a normalized tanh curve
+//      tanh(x*k)/tanh(k) is NOT unity at small signals: its slope at zero is
+//      k/tanh(k) (~1.66x at k=1.5, a free +4.4 dB). Budget for it in the
+//      master level and never stack saturators casually.
+//   2. PRE-ATTENUATE BEFORE RESONANT FILTERS — a high-Q biquad can ring far
+//      above its input level; feed it quiet and make the level up AFTER, or
+//      the onset transient slams the compressor (bardo's grit-bus lesson).
+//   3. RAMPS FROM TRUE ZERO — every gain envelope anchors with
+//      setValueAtTime and starts/ends at actual 0 via linearRamp;
+//      exponentialRamp only between two strictly positive endpoints (it can
+//      never pass through zero and throws or clicks if asked to).
+//   4. NEVER setTargetAtTime ON FILTER FREQUENCIES MID-NOTE — the murmur
+//      formants in bardo zippered; anchored linear ramps do not.
+//   5. PAN SLOTS PULLED IN FROM THE EDGES — hard ±1 pans read as separate
+//      tracks, not one ensemble; kolob settled on gentle spread (±0.42..0.66)
+//      so voices share the centre of the room.
+// ============================================================================
+(function () {
+  "use strict";
+
+  window.PJ2 = window.PJ2 || {};
+  var Voice = window.PJ2.Voice = {};
+
+  // --------------------------------------------------------------------------
+  // Small helpers — every AudioParam write goes through setP so a harness mock
+  // that only records calls (or lacks a param entirely) never crashes us.
+  // --------------------------------------------------------------------------
+  function setP(param, v, t) {
+    if (!param) return;
+    if (typeof param.setValueAtTime === "function") param.setValueAtTime(v, t || 0);
+    else param.value = v;
+  }
+  function now(ctx) {
+    return (ctx && typeof ctx.currentTime === "number") ? ctx.currentTime : 0;
+  }
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+
+  // Gentle tanh saturator curve, kolob-style (kolob-audio.js:249). Normalized
+  // so full-scale maps to full-scale — which is exactly why lesson #1 above
+  // matters: small-signal gain = amount/tanh(amount).
+  function buildSatCurve(amount) {
+    var n = 1024, curve = new Float32Array(n);
+    for (var i = 0; i < n; i++) {
+      var x = (i / (n - 1)) * 2 - 1;
+      curve[i] = Math.tanh(x * amount) / Math.tanh(amount);
+    }
+    return curve;
+  }
+
+  // ==========================================================================
+  // buildBus — the master chain, matched to kolob's (the family's best):
+  //
+  //   voicesBus → glue compressor (1.7:1, knee 30 — a blend, not a level;
+  //   lets the ensemble breathe as one body of sound) → masterGain →
+  //   tanh saturator (amount 1.5, gentle warmth; see lesson #1 for its
+  //   hidden +4.4 dB) → limiter compressor (-18 dB, 3:1 — the actual
+  //   safety net) → out.
+  //
+  // "Out" prefers window.MskyBackgroundAudio when present (kolob-audio.js:258
+  // pattern): a MediaStreamDestination feeding a real <audio> element, which
+  // survives screen lock / backgrounding and carries lock-screen controls.
+  // Identical signal either way. Everything guarded so a mocked ctx works.
+  // ==========================================================================
+  Voice.buildBus = function (ctx, opts) {
+    opts = opts || {};
+    var t0 = now(ctx);
+
+    var voicesBus = ctx.createGain();
+    setP(voicesBus.gain, 1, t0);
+
+    var glue = ctx.createDynamicsCompressor();
+    setP(glue.threshold, -20, t0);
+    setP(glue.knee, 30, t0);
+    setP(glue.ratio, 1.7, t0);
+    setP(glue.attack, 0.025, t0);
+    setP(glue.release, 0.22, t0);
+
+    var masterGain = ctx.createGain();
+    // Default 0.6, not 1.0 — headroom for the saturator's small-signal gain
+    // (lesson #1) plus tutti moments, so the limiter idles instead of pumping.
+    var curVol = (opts.volume != null) ? opts.volume : 0.6;
+    setP(masterGain.gain, curVol, t0);
+
+    var sat = ctx.createWaveShaper();
+    try { sat.curve = buildSatCurve(1.5); sat.oversample = "2x"; } catch (e) {}
+
+    var limiter = ctx.createDynamicsCompressor();
+    setP(limiter.threshold, -18, t0);
+    setP(limiter.knee, 16, t0);
+    setP(limiter.ratio, 3, t0);
+    setP(limiter.attack, 0.015, t0);
+    setP(limiter.release, 0.25, t0);
+
+    voicesBus.connect(glue);
+    glue.connect(masterGain);
+    masterGain.connect(sat);
+    sat.connect(limiter);
+
+    // Final hop: prefer the background-audio route if the site helper is
+    // loaded AND actually manages to route (bg.routed). Fully guarded — in
+    // the harness there is no MskyBackgroundAudio and we fall through to
+    // ctx.destination (which a mock supplies as a plain recording node).
+    var bg = null;
+    try {
+      if (typeof window !== "undefined" && window.MskyBackgroundAudio &&
+          typeof window.MskyBackgroundAudio.create === "function") {
+        bg = window.MskyBackgroundAudio.create({
+          context: ctx,
+          source: limiter,
+          title: opts.title || "Prospero's Jukebox v2",
+          artist: opts.artist || "Municipal Sky",
+          artwork: opts.artwork,
+          onPlay: opts.onPlay,
+          onPause: opts.onPause,
+        });
+      }
+    } catch (e) { bg = null; }
+    if (!bg || !bg.routed) {
+      if (ctx.destination && typeof limiter.connect === "function") limiter.connect(ctx.destination);
+    }
+
+    return {
+      input: voicesBus,          // layers/reverb outputs connect here
+      masterGain: masterGain,    // volume control + analyser taps
+      output: limiter,           // last node before out (for tests/telemetry)
+      bg: bg,                    // background-audio handle or null
+      setMasterVolume: function (v) {
+        curVol = v;
+        setP(masterGain.gain, v, now(ctx));
+      },
+      fadeTo: function (v, s) {
+        var g = masterGain.gain, t = now(ctx);
+        if (!g) return;
+        // Anchor at the CURRENT value before ramping (lesson #3) — a ramp
+        // without a preceding event ramps from the last event, wherever
+        // that was, and jumps audibly.
+        var from = (typeof g.value === "number") ? g.value : curVol;
+        if (typeof g.cancelScheduledValues === "function") g.cancelScheduledValues(t);
+        setP(g, from, t);
+        if (typeof g.linearRampToValueAtTime === "function") g.linearRampToValueAtTime(v, t + (s || 0));
+        else setP(g, v, t);
+        curVol = v;
+      },
+      attachAnalyser: function (analyser) {
+        if (typeof masterGain.connect === "function") masterGain.connect(analyser);
+      },
+    };
+  };
+
+  // ==========================================================================
+  // reverb — one generated-IR room (kolob-audio.js:312 / bardo-audio.js:278
+  // lineage). Multiple instances = multiple spaces; v2 wants per-track rooms.
+  //
+  //   send ─→ dry(1.0) ────────────────────→ output   (connect output to Bus.input)
+  //     └──→ preDelay → convolver → wet(w) ─↗
+  //
+  // spec: { decayS, preDelayS, wet, brightness, ripple? }
+  //   brightness — the HF-damping envelope's exponent (kolob's hfDamp):
+  //                LOWER = brighter tail (0.8 was the tabernacle, 1.6 the
+  //                parlor). The damping runs on its own exponential so the
+  //                room darkens as it decays, like air absorption.
+  //   ripple     — depth (0..~0.1) of a slow amplitude swell on the tail
+  //                ("the hall inhaling", kolob's tabernacle at 0.5 Hz), or
+  //                {depth, hz} to pick the breathing rate.
+  // ==========================================================================
+  Voice.reverb = function (ctx, spec) {
+    spec = spec || {};
+    var decayS = spec.decayS || 2.0;
+    var preDelayS = spec.preDelayS || 0.02;
+    var wet = (spec.wet != null) ? spec.wet : 0.35;
+    var brightness = (spec.brightness != null) ? spec.brightness : 1.0;
+    var rippleDepth = 0, rippleHz = 0.5;
+    if (typeof spec.ripple === "number") rippleDepth = spec.ripple;
+    else if (spec.ripple) { rippleDepth = spec.ripple.depth || 0; rippleHz = spec.ripple.hz || 0.5; }
+
+    var t0 = now(ctx);
+    var send = ctx.createGain();
+    var output = ctx.createGain();
+    setP(send.gain, 1, t0);
+    setP(output.gain, 1, t0);
+    var wetGain = null;
+
+    try {
+      var dry = ctx.createGain();
+      setP(dry.gain, 1, t0);
+      wetGain = ctx.createGain();
+      setP(wetGain.gain, wet, t0);
+      var pre = ctx.createDelay(Math.max(0.25, preDelayS));
+      setP(pre.delayTime, preDelayS, t0);
+      var conv = ctx.createConvolver();
+
+      // ---- generated stereo IR ------------------------------------------
+      // Unseeded Math.random is permitted HERE ONLY: it shapes texture, not
+      // music (the zankyo-audio.js:45 rule) — the performance stays
+      // reproducible from its seed even though every room is a fresh pour
+      // of noise. Two independently-poured channels + independent ripple
+      // phases = decorrelated L/R, which is what makes it read as a SPACE
+      // rather than a mono echo in the middle of the head.
+      var sr = ctx.sampleRate || 44100;
+      var len = Math.max(2, Math.floor(sr * decayS));
+      var buf = ctx.createBuffer(2, len, sr);
+      var fadeStart = Math.floor(len * 0.95); // kill the truncation click at
+                                              // the buffer edge (kolob cuts at
+                                              // ~-19 dB; we fade the last 5%)
+      for (var ch = 0; ch < 2; ch++) {
+        var data = buf.getChannelData(ch);
+        var ph = Math.random() * Math.PI * 2;
+        for (var i = 0; i < len; i++) {
+          var t = i / sr;
+          var env = Math.exp(-2.2 * t / decayS);              // amplitude tail
+          var hf = Math.exp(-(brightness * 2.6) * t / decayS); // HF darkening
+          var color = rippleDepth
+            ? 1 + rippleDepth * Math.sin(2 * Math.PI * rippleHz * t + ph)
+            : 1;
+          var edge = i >= fadeStart ? (len - i) / (len - fadeStart) : 1;
+          data[i] = (Math.random() * 2 - 1) * env * hf * color * edge;
+        }
+      }
+      conv.buffer = buf;
+      // --------------------------------------------------------------------
+
+      send.connect(dry);
+      dry.connect(output);
+      send.connect(pre);
+      pre.connect(conv);
+      conv.connect(wetGain);
+      wetGain.connect(output);
+    } catch (e) {
+      // A ctx without buffer/convolver support (or a very lean mock): degrade
+      // to a dry pass-through rather than dying — same spirit as kolob's
+      // effects-init fallback (kolob-audio.js:284).
+      send.connect(output);
+    }
+
+    return {
+      send: send,
+      output: output,
+      setWet: function (v) { if (wetGain) setP(wetGain.gain, v, now(ctx)); },
+    };
+  };
+
+  // ==========================================================================
+  // pannerPool — exactly `slots` StereoPanners at fixed, evenly spread pans,
+  // each fed by a persistent input gain. v1 allocated one panner PER NOTE;
+  // the pool is the zankyo/kolob optimization: the stereo image quantizes to
+  // a few seats in the room and the node count stays constant forever.
+  //
+  // Spread is ±0.66, not ±1 (lesson #5): hard-panned slots read as separate
+  // tracks; pulled in, the voices share the centre and blend.
+  // ==========================================================================
+  Voice.pannerPool = function (ctx, destNode, slots) {
+    slots = slots || 3;
+    var WIDTH = 0.66;
+    var hasPanner = typeof ctx.createStereoPanner === "function";
+    var pans = [], inputs = [];
+    for (var i = 0; i < slots; i++) {
+      var p = slots === 1 ? 0 : WIDTH * ((2 * i / (slots - 1)) - 1);
+      var input = ctx.createGain();
+      setP(input.gain, 1, now(ctx));
+      if (hasPanner) {
+        var sp = ctx.createStereoPanner();
+        setP(sp.pan, p, now(ctx));
+        input.connect(sp);
+        sp.connect(destNode);
+      } else {
+        // Harness mocks (and ancient Safari) may lack StereoPanner: mono
+        // fallback, the input gain feeds the destination directly.
+        input.connect(destNode);
+      }
+      pans.push(p);
+      inputs.push(input);
+    }
+    return {
+      at: function (pan) {
+        var v = clamp(pan || 0, -1, 1), best = 0, bestD = Infinity;
+        for (var j = 0; j < pans.length; j++) {
+          var d = Math.abs(pans[j] - v);
+          if (d < bestD) { bestD = d; best = j; }
+        }
+        return inputs[best];
+      },
+      slots: slots,
+      pans: pans, // exposed for tests/telemetry
+    };
+  };
+
+  // ==========================================================================
+  // env — the click-safe envelope writer (bardo-audio.js:360 lineage,
+  // lesson #3 codified). segments = [[dt, value], ...] cumulative from t0.
+  //
+  //   - ALWAYS anchors with setValueAtTime(0, t0) before any ramp: a ramp
+  //     with no prior event ramps from wherever the last event left the
+  //     param — an audible jump.
+  //   - exponentialRamp ONLY when both the previous and target values are
+  //     strictly positive (it cannot pass through zero); otherwise linear.
+  //   - `base` is the floor for exponential targets: pass base as a segment
+  //     value to decay "to silence" exponentially, then follow with a short
+  //     [dt, 0] linear tail to land at TRUE zero.
+  //
+  // Returns the end time so callers can stop sources / release budget there.
+  // ==========================================================================
+  Voice.env = function (param, t0, segments, base) {
+    if (base == null) base = 0.0001;
+    param.setValueAtTime(0, t0); // the anchor — from true zero, every time
+    var t = t0, prev = 0;
+    for (var i = 0; i < segments.length; i++) {
+      t += segments[i][0];
+      var v = segments[i][1];
+      if (prev > 0 && v > 0) {
+        param.exponentialRampToValueAtTime(Math.max(v, base), t);
+      } else {
+        param.linearRampToValueAtTime(Math.max(v, 0), t);
+      }
+      prev = v;
+    }
+    return t;
+  };
+
+  // ==========================================================================
+  // adsr — convenience over env(). {a, d, s, r, peak, durS}: attack/decay/
+  // release in seconds, s = sustain LEVEL AS A FRACTION of peak, durS = total
+  // intended note length (release begins at durS - r). If durS is shorter
+  // than a+d+r the hold collapses to zero and the note simply runs a+d+r —
+  // we never truncate a release, that is where the click lives.
+  // ==========================================================================
+  Voice.adsr = function (param, t0, o) {
+    o = o || {};
+    var a = (o.a != null) ? o.a : 0.01;
+    var d = (o.d != null) ? o.d : 0.05;
+    var s = (o.s != null) ? o.s : 0.7;
+    var r = (o.r != null) ? o.r : 0.1;
+    var peak = (o.peak != null) ? o.peak : 1;
+    var durS = (o.durS != null) ? o.durS : (a + d + r);
+    var sus = peak * s;
+    var hold = Math.max(0, durS - a - d - r);
+    var segs = [[a, peak]];
+    if (d > 0) segs.push([d, sus]);
+    if (hold > 0) segs.push([hold, sus]); // ramp-to-same-value = flat hold
+    segs.push([r, 0]);                    // land at true zero, linearly
+    return Voice.env(param, t0, segs);
+  };
+
+  // ==========================================================================
+  // budget — the polyphony ceiling. Claims count VOICES (one claim = one
+  // voice, however many nodes it spends — nNodes is recorded for telemetry
+  // only). Over budget → null, NEVER a throw: the caller skips the note.
+  // Graceful thinning, no voice stealing — in an aleatoric texture a missing
+  // note is unremarkable; a stolen one clicks.
+  //
+  // Auto-release needs a clock: call .bindClock(clock) with a PJ2.Clock (or
+  // anything exposing .at(timeS, fn)/.cancel(id)). Unbound, the budget falls
+  // back to requiring explicit release(token) — forgetting then leaks the
+  // slot, so bind the clock in real engines.
+  // ==========================================================================
+  Voice.budget = function (maxVoices) {
+    var max = maxVoices || 24;
+    var AUTO_GRACE = 0.05; // release a hair AFTER endTime, never before
+    var active = {};
+    var count = 0, totalNodes = 0, nextId = 1;
+    var clock = null;
+
+    function release(token) {
+      if (!token || !active[token.id]) return;
+      delete active[token.id];
+      count--;
+      totalNodes -= token.nNodes || 0;
+      if (clock && token.__autoId != null && typeof clock.cancel === "function") {
+        try { clock.cancel(token.__autoId); } catch (e) {}
+      }
+      token.__autoId = null;
+    }
+
+    var api = {
+      claim: function (nNodes, endTimeS) {
+        if (count >= max) return null; // graceful thinning — never throw
+        var token = {
+          id: nextId++,
+          nNodes: nNodes || 0,
+          endTimeS: (endTimeS != null) ? endTimeS : null,
+          __autoId: null,
+        };
+        active[token.id] = token;
+        count++;
+        totalNodes += token.nNodes;
+        if (clock && token.endTimeS != null && typeof clock.at === "function") {
+          try {
+            // The lookahead clock fires callbacks up to aheadS EARLY — that is
+            // its whole job (callers place audio at the passed t). But a budget
+            // slot must not free before the note actually ends, or a tutti can
+            // over-admit past max during the lookahead window (~0.25s, ~1.6s in
+            // hidden tabs). On an early fire, re-arm with a DOUBLING grace so
+            // the re-arm time escapes the current lookahead horizon in a few
+            // steps (the clock picks up same-horizon reschedules within one
+            // tick, during which the audio clock does not advance — re-arming
+            // at the same time would spin forever). Capped: past 8 attempts,
+            // release anyway rather than risk leaking the slot.
+            var arm = function (attempt) {
+              var when = token.endTimeS + AUTO_GRACE * Math.pow(2, attempt);
+              token.__autoId = clock.at(when, function () {
+                token.__autoId = null; // consumed — nothing left to cancel
+                if (attempt < 8 && typeof clock.now === "function" &&
+                    clock.now() < token.endTimeS) { arm(attempt + 1); return; }
+                release(token);
+              });
+            };
+            arm(0);
+          } catch (e) { token.__autoId = null; }
+        }
+        return token;
+      },
+      release: release,
+      active: function () { return count; },
+      stats: function () { return { voices: count, nodes: totalNodes, max: max }; },
+      bindClock: function (c) { clock = c; return api; },
+    };
+    api.bind = api.bindClock; // spec §4 names it .bind; caller convention is .bindClock
+    return api;
+  };
+
+  // ==========================================================================
+  // noiseBuffer — one shared white-noise buffer per ctx (zankyo/kolob
+  // pattern: 30 seconds, mono, looped by every consumer). Cached ON the ctx
+  // so the harness's fresh mock contexts each get their own.
+  //
+  // Unseeded Math.random is permitted here: texture, not music
+  // (zankyo-audio.js:45 rule) — noise is noise regardless of the seed.
+  // ==========================================================================
+  Voice.noiseBuffer = function (ctx, seconds) {
+    seconds = seconds || 30;
+    var cache = ctx.__pj2NoiseBuf;
+    if (cache && cache.seconds >= seconds) return cache.buf;
+    var sr = ctx.sampleRate || 44100;
+    var n = Math.max(1, Math.floor(sr * seconds));
+    var buf = ctx.createBuffer(1, n, sr);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < n; i++) data[i] = Math.random() * 2 - 1;
+    ctx.__pj2NoiseBuf = { seconds: seconds, buf: buf };
+    return buf;
+  };
+
+  // Helper: a looping BufferSource over the shared buffer with a random read
+  // offset (so simultaneous consumers don't phase against each other —
+  // texture, not music, again). Caller connects it and calls
+  // src.start(t, src.randomOffset).
+  Voice.noiseBuffer.source = function (ctx, seconds) {
+    seconds = seconds || 30;
+    var buf = Voice.noiseBuffer(ctx, seconds);
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.loopStart = 0;
+    src.loopEnd = buf.duration || seconds;
+    src.randomOffset = Math.random() * Math.max(0, seconds - 1);
+    return src;
+  };
+
+})();
