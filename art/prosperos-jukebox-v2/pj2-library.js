@@ -213,6 +213,7 @@
     events: {
       "seachange": "Transmutatio",
       "ghost": "Caput Mortuum",
+      "coagula": "Solve et Coagula",  // the candle-out's one whole-theme settling
     },
     cadences: {
       "plagal": "Ablutio",
@@ -810,12 +811,61 @@
       return 0;
     }
 
+    // ---- the opus position --------------------------------------------------
+    // 0..1 progress through the CURRENT evening — the refinement arc's clock.
+    // Pure read of conductor telemetry; no draws, no state.
+    function curOpusPos() {
+      if (run && run.conductor) {
+        try {
+          var i = run.conductor.info();
+          if (i && typeof i.elapsedS === "number" && i.durS > 0) {
+            return Math.max(0, Math.min(1, i.elapsedS / i.durS));
+          }
+        } catch (e) {}
+      }
+      return 0;
+    }
+    // The alchemical operation underway (display label of the current scene),
+    // and the one that matters musically: Conjunctio, the chemical wedding —
+    // the third chapter, when an evening has one.
+    function curOperation() {
+      if (!run || !run.conductor) return null;
+      try {
+        var i = run.conductor.info();
+        return sceneLabelFor(i.sceneType, i.sceneIdx, run.perfScenes);
+      } catch (e) { return null; }
+    }
+    function inConjunctio() { return curOperation() === "Conjunctio"; }
+
     // The context object every motif.request receives. The motif engine has
     // no clock of its own (pure module); nowS is how time reaches its ledger
     // — the exact audio time of the phrase, so obligation deadlines mean
     // real seconds on the honest clock.
     function reqCtx(t) {
-      return { sceneType: curSceneType(), x: curSceneX(), tidePos: curTidePos(), nowS: t };
+      return { sceneType: curSceneType(), x: curSceneX(), tidePos: curTidePos(),
+               nowS: t, opusPos: curOpusPos() };
+    }
+
+    // ---- THE REFINEMENT ARC (alchemical touch a) ------------------------------
+    // The magnum opus enacted on the theme itself: early in the evening the
+    // idea is broken down — the coming-apart operations (fragments,
+    // retrograde) run heavy — and late it is burnished and raised — ornament,
+    // sequence, transpose run light-fingered and bright. A pure multiplier
+    // handed to the motif engine per request (policy.transformTilt): no
+    // draws, gentle slopes (1.6× → 0.4× across the evening), composed ON TOP
+    // of the scene tilts, so reverie still dilates and the seizure still
+    // splinters — the arc is weather over their climate, not a replacement.
+    // Augment/diminish/invert are deliberately NOT in either set: augment
+    // belongs to Distillatio's own tilt, and the mirror is neither base nor
+    // noble — it is just the other side of the glass.
+    function refinementTilt(ropts) {
+      var p = (ropts && typeof ropts.opusPos === "number") ? ropts.opusPos : 0.5;
+      var dark = 1.6 - 1.2 * p;   // 1.6 at the calcining, 0.4 by the coagula
+      var lum  = 0.4 + 1.2 * p;   // and the mirror image
+      return {
+        fragmentHead: dark, fragmentTail: dark, retrograde: dark,
+        ornament: lum, sequence: lum, transpose: lum,
+      };
     }
 
     // ---- narration ----------------------------------------------------------
@@ -836,6 +886,11 @@
           type: "ghost", voice: voiceName, name: m.name, t: t,
           label: LABELS.events.ghost, // Caput Mortuum — display only
         });
+      } else if (res.kind === "coagula") {
+        emitEvent({
+          type: "coagula", voice: voiceName, name: m.name, t: t,
+          label: LABELS.events.coagula, // Solve et Coagula — display only
+        });
       }
     }
 
@@ -849,6 +904,20 @@
     // statements post nothing. A memory is not an opening bid.
     function maybePost(voiceName, res, sceneType, t) {
       if (res.kind === "ghost") return;
+      if (res.kind === "coagula") return; // the settling closes the work; it asks nothing
+      // Conjunctio, the chemical wedding (alchemical touch b): during the
+      // third chapter a statement is likelier to DEMAND its echo — an
+      // explicit imitate obligation on a short fuse, so the answer lands
+      // while the two voices still share the air (the raised overlap in
+      // airOverlapChance is the other half of the rite). Drawn on the
+      // dedicated "alchemy" fork so the motif stream never feels the coin.
+      if (inConjunctio() && run.streams.alchemy.chance(0.5)) {
+        try {
+          run.motif.post(voiceName, "imitate", res.motif,
+                         t + run.streams.alchemy.rnd(8, 16));
+        } catch (e) {}
+        return;
+      }
       try { run.motif.maybePost(voiceName, res.motif, { sceneType: sceneType, nowS: t }); } catch (e) {}
     }
 
@@ -1260,6 +1329,7 @@
         } else if (evt.type === "performance" && evt.phase === "begin") {
           run.perfScenes = evt.scenes ? evt.scenes.slice() : null;
           run.roomSeaBonus = 0; // the room's sea-change memory lasts one evening
+          run.coagulaDone = false; // each evening earns its own settling
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
             try { run.motif.seedGhost(run.pendingGhost); } catch (e) {}
@@ -1584,6 +1654,20 @@
         // busy moment erase the memory. Anything else denied simply passes.
         var res = run.heldUtterance.pluck;
         run.heldUtterance.pluck = null;
+        // SOLVE ET COAGULA (alchemical touch c): Fermentatio splintered the
+        // theme — that was the solve. Once per evening, a little way into
+        // Coagulatio, the pluck states the theme WHOLE and in its original
+        // form (the prima materia, not the deepest descendant), quietly —
+        // the work settling into what it was always becoming. Once only;
+        // denied the air, it is held like a ghost, never dropped.
+        if (!res && st === "candle-out" && !run.coagulaDone && curSceneX() >= 0.2) {
+          var th = null;
+          try { th = run.motif.theme({ ancestor: true }); } catch (e) {}
+          if (th && th.notes && th.notes.length) {
+            run.coagulaDone = true;
+            res = { motif: th, kind: "coagula" };
+          }
+        }
         if (!res) {
           try { res = run.motif.request("pluck", reqCtx(t)); } catch (e) { res = null; }
         }
@@ -1599,7 +1683,7 @@
         var tok = null;
         try { tok = run.air.tryClaim("pluck", tm.spanS, margin); } catch (e) {}
         if (!tok) {
-          if (res.kind === "ghost") run.heldUtterance.pluck = res;
+          if (res.kind === "ghost" || res.kind === "coagula") run.heldUtterance.pluck = res;
           lane.at(t + rng.rnd(2.5, 5) * gmAt(t), phrase); // ask again later
           return;
         }
@@ -1612,7 +1696,8 @@
         // degree shift keeps every degree class, so chord-tone endings
         // survive the lift). Concentration = height + density, never loud.
         var lift = (st === "seizure") ? run.field.size : 0;
-        var velScale = (res.kind === "ghost") ? 0.6 : 1; // the ghost speaks quietly
+        var velScale = (res.kind === "ghost") ? 0.6
+                     : (res.kind === "coagula") ? 0.6 : 1; // memories and settlings speak quietly
         var out = run.poolMel.at(rng.rnd(-0.6, 0.6));
         // The far-wall draw, ONCE per phrase (spec: p ~0.3) — on its own
         // "delaySend" fork so the pluck's musical stream never feels it.
@@ -2180,6 +2265,9 @@
         // far-wall coin per phrase, "rooms" draws the 12-20s balance ramps.
         weather: master.fork("weather"),
         fx: master.fork("fx"),
+        // Phase "solve et coagula": the wedding coin and the settling's
+        // placement jitter live here so no existing stream feels them.
+        alchemy: master.fork("alchemy"),
         vowels: master.fork("vowels"),
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
@@ -2290,6 +2378,11 @@
         rng: streams.motif,
         field: field,
         harmony: harmony,
+        // The refinement arc rides the dynamic-tilt hook. This is the ONLY
+        // policy key passed: kind pools, posting, seeding all stay on the
+        // default (bit-identical) path — the tilt changes which transform
+        // pickW favors, never how many draws anything costs.
+        policy: { transformTilt: refinementTilt },
       });
 
       run = {
@@ -2305,6 +2398,7 @@
         seaChange: null,                   // {atSceneIdx, target, done} or null
         pendingGhost: null,                // extracted at performance end, seeded at the next begin
         heldUtterance: { pluck: null, musicbox: null, hum: null }, // ghosts denied the air wait here
+        coagulaDone: false,                // one whole-theme settling per evening (touch c)
         // ---- Phase 3 sound state ----
         roomClose: roomClose, roomWide: roomWide, roomBlend: roomBlend,
         roomBalance: 0.15,                 // telemetry shadow of the blend's aim
@@ -2335,11 +2429,20 @@
         return sc ? sc.airLimit : 1;
       };
       var airOverlapChance = function () {
+        var base;
         if (run.conductor && typeof run.conductor.overlapChance === "function") {
-          try { return run.conductor.overlapChance(); } catch (e) {}
+          try { base = run.conductor.overlapChance(); } catch (e) {}
         }
-        var sc = dram.scenes[curSceneType()];
-        return sc ? sc.overlapChance : 0.1;
+        if (base == null) {
+          var sc = dram.scenes[curSceneType()];
+          base = sc ? sc.overlapChance : 0.1;
+        }
+        // Conjunctio, the chemical wedding (alchemical touch b): in the third
+        // chapter the voices are MEANT to join — overlap runs twice as
+        // willing, capped well below "duet as norm" (the aesthetic constants
+        // still bind; this is one chapter of some evenings, not a new law).
+        if (inConjunctio()) base = Math.min(0.5, base * 2);
+        return base;
       };
 
       // The air first (the conductor takes it as opts.air for telemetry).
