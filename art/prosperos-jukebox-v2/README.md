@@ -69,11 +69,10 @@ published to the live site — publishing waits for the owner):
    pj2-ariel.js (per PLAN-ARIEL.md, all recommendations incl. the
    Fx.delay "thin"/ascending-echo option) + per-track demo pages +
    harness sections + gates.
-3. Phase 4 apparitions (SPEC-PHASE4 to be drafted): per-track seeded
-   visitations — Library: storm-crossing + cross-track bleed (Ariel
-   haunting the Library) + gated Robert Johnson 1612 "Full Fathom Five"
-   quotation (flag transcription as unverified, KOLOB-style); Sycorax and
-   Ariel visitations per their plans' hooks. Rare, subtle, seeded.
+3. Consolidated track harness (owner, 2026-07-07: orchestrator-built,
+   no agents): pj2-sycorax.js + pj2-ariel.js loaded and driven by
+   _harness.js with per-track regression sections + an ALCHEMY section
+   for the three Library touches.
 4. The app itself: index.php + pj2-ui.js + pj2-viz.js — the three-track
    jukebox (track tabs switching engines, transport, master volume, seed,
    per-layer mixer via a small facade extension, form/harmony/motif
@@ -93,3 +92,18 @@ Standing rules for the run: owner's aesthetic constants bind everywhere;
 all recommendations in the two PLAN docs are pre-approved; the
 tonic-ratchet quirk stays (owner's call); v1 stays frozen; commit
 checkpoints per gate; never publish/deploy.
+
+## TODO / future ideas (backburner — owner-deprioritized)
+
+- **Phase 4 apparitions** (owner, 2026-07-07: "not a priority" — parked):
+  per-track seeded visitations. Library: storm-crossing, cross-track
+  bleed (Ariel's silver feather haunting the Library margin), gated
+  Robert Johnson 1612 "Full Fathom Five" quotation (transcription would
+  need an ear pass — flag unverified, KOLOB-style). Sycorax/Ariel hooks
+  sketched in their PLAN docs. Rare, subtle, seeded. The graphics plan
+  already reserves emblems for these (pearls on the coil, the feather).
+- Library tonic-ratchet fix (fold TRUE sea-change tonic into an octave
+  window around home) — owner chose to ship with the quirk.
+- Ghost-promotion door in pj2-motif (seedGhost asTheme:true) so Ariel's
+  signature-promotion is literal instead of ledger-emulated.
+- Alchemical tide labels (kept the plain weather words for now).

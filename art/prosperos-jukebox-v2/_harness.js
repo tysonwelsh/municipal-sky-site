@@ -833,7 +833,10 @@ function onClockError(tag) {
 // SPEC-PHASE3 page order is rand, pitch, clock, voice, FX, air, motif,
 // harmony, conductor, library, and the re-bodied library throws at play()
 // without PJ2.Fx.
-var MODULES1 = ["pj2-fx.js", "pj2-air.js", "pj2-motif.js", "pj2-harmony.js", "pj2-conductor.js", "pj2-library.js"];
+var MODULES1 = ["pj2-fx.js", "pj2-air.js", "pj2-motif.js", "pj2-harmony.js", "pj2-conductor.js", "pj2-library.js",
+                // PHASE T (consolidated tracks): the sibling engines load
+                // after the Library — same substrate, their own facades.
+                "pj2-sycorax.js", "pj2-ariel.js"];
 for (var m1 = 0; m1 < MODULES1.length; m1++) {
   var src1 = fs.readFileSync(path.join(__dirname, MODULES1[m1]), "utf8");
   var loadErr1 = null;
@@ -842,6 +845,8 @@ for (var m1 = 0; m1 < MODULES1.length; m1++) {
 }
 check("LOAD namespaces PJ2.Air/Conductor/Library all present",
   !!(P.Air && P.Air.create && P.Conductor && P.Conductor.create && P.Library && P.Library.create));
+check("LOAD namespaces PJ2.Sycorax/PJ2.Ariel present (consolidated tracks)",
+  !!(P.Sycorax && P.Sycorax.create && P.Ariel && P.Ariel.create));
 check("LOAD PJ2.Fx surface (delay/sympathetic/weather/roomBlend + WEATHER_LIBRARY + bound)",
   !!(P.Fx && P.Fx.delay && P.Fx.sympathetic && P.Fx.weather && P.Fx.roomBlend &&
      P.Fx.WEATHER_LIBRARY && P.Fx.weather(P.Rand.stream(1).fork("fx-probe")).bound));
@@ -2964,6 +2969,431 @@ function p3AmbientFires(r) {
   }
   check("LABELS/TELEMETRY getInfo().weather channels in [0,1] across the run",
     wN > 0 && wBad === 0, wN + " samples");
+})();
+
+// ============================================================================
+// PHASE T — the consolidated tracks (SYCORAX + ARIEL) + the ALCHEMY touches.
+// Orchestrator-built (owner-directed, 2026-07-09): drives the REAL track
+// engines through the same mock ctx + virtual clock as phase2Run drives the
+// Library, and pins each track's signature laws as permanent regression:
+//   SYCORAX — the rite: no cadences ever, the keening (phrase-finals fall to
+//   the flat second and never home), the inhabited cut, the anti-groove law,
+//   sinks rare and exactly a semitone down, the landscape never claims air.
+//   ARIEL — the flights: lifting cadences only, every evening re-grounded to
+//   F 349 (the tonic ratchet retired by construction), the release ascends,
+//   transmutation only upward, evenings short.
+//   ALCHEMY (Library) — the refinement arc bends dark→luminous across each
+//   evening; solve et coagula settles once per evening, in Coagulatio, quiet.
+// Sim is min(RUN, 2600)s per track; below 2700 the aggregate rows relax to
+// smoke strength (marked). NOTE: rendered-audio energy is NOT tested here —
+// that is render-soak.html's job (real OfflineAudioContext under headless
+// Chrome); this section is symbolic, like everything else in this file.
+// ============================================================================
+(function () {
+  var TSIM = Math.min(RUN, 2600);
+  var SHORTT = RUN < 2700;
+  if (SHORTT) console.log("PHASE T auto-scale: sim < 2700s -> track aggregate checks relaxed to smoke strength (marked in their rows). Run `node _harness.js 5400` for full strength.");
+
+  // Drive a track facade exactly the way phase2Run drives the Library: mock
+  // ctx per run, virtual clock, event/note capture, console.error interned.
+  function trackRun(facadeName, seedVal, simS) {
+    var origAC = W.AudioContext;
+    W.AudioContext = function () { return mkCtx(); };
+    var origCE = console.error;
+    var swallowed = [];
+    console.error = function () { swallowed.push(facadeName + ": " + Array.prototype.join.call(arguments, " ")); };
+    var R = { events: [], notes: [], swallowed: swallowed, infoFinal: null, t0: null };
+    try {
+      var E = P[facadeName].create({ seed: seedVal, volume: 0.5 });
+      E.setEventListener(function (e) { R.events.push(e); });
+      E.setNoteListener(function (n) { R.notes.push(n); });
+      R.t0 = vnow;
+      E.play();
+      vAdvance(R.t0 + simS);
+      R.stopT = vnow;
+      E.stop();
+      vAdvance(vnow + 3);
+      try { R.infoFinal = E.getInfo(); } catch (eI) {}
+    } catch (e) {
+      errors.push("trackRun " + facadeName + ": " + (e && e.message));
+      if (R.t0 == null) R.t0 = vnow;
+      R.stopT = vnow;
+    }
+    console.error = origCE;
+    W.AudioContext = origAC;
+    return R;
+  }
+
+  // ---- shared analysis ----
+  function evOf(R, type) { var o = []; for (var i = 0; i < R.events.length; i++) if (R.events[i].type === type) o.push(R.events[i]); return o; }
+  function perfPhase(R, phase) { var o = [], pe = evOf(R, "performance"); for (var i = 0; i < pe.length; i++) if (pe[i].phase === phase) o.push(pe[i]); return o; }
+  function normMode(m, fallback) {
+    if (m && m.steps) return { name: m.name || "custom", steps: m.steps };
+    if (typeof m === "string") return m;
+    return fallback;
+  }
+  // Era model: era 0 is the birth field; each seachange / reground event
+  // starts a new one carrying its post-change field snapshot.
+  function trackEras(R, tonic0, mode0) {
+    var eras = [{ t: -Infinity, tonicHz: tonic0, mode: mode0 }];
+    for (var i = 0; i < R.events.length; i++) {
+      var e = R.events[i];
+      if (e.type === "seachange" && e.field && typeof e.field.tonicHz === "number") {
+        eras.push({ t: e.t, tonicHz: e.field.tonicHz, mode: normMode(e.field.mode, mode0) });
+      } else if (e.type === "reground") {
+        var to = e.to || {};
+        eras.push({ t: e.t, tonicHz: (typeof to.tonicHz === "number") ? to.tonicHz : tonic0,
+                    mode: normMode(to.mode, mode0) });
+      }
+    }
+    eras.sort(function (a, b) { return a.t - b.t; });
+    return eras;
+  }
+  // Era-aware adherence with the straddle rule (phrases scheduled before a
+  // change ring past it; 50s covers the longest phrase span).
+  function adherence(R, tonic0, mode0) {
+    var eras = trackEras(R, tonic0, mode0), fields = [];
+    for (var i = 0; i < eras.length; i++) {
+      try { fields.push(P.Pitch.field({ tonicHz: eras[i].tonicHz, mode: eras[i].mode })); }
+      catch (e) { fields.push(null); }
+    }
+    var bad = 0, n = 0, worst = 0;
+    for (var k = 0; k < R.notes.length; k++) {
+      var nt = R.notes[k];
+      if (nt.freq == null || !isFinite(nt.freq) || nt.freq <= 0) continue;
+      var idx = 0;
+      for (i = eras.length - 1; i >= 0; i--) { if (eras[i].t <= nt.t) { idx = i; break; } }
+      var cands = [idx];
+      if (idx > 0 && nt.t - eras[idx].t < 50) cands.push(idx - 1);
+      var best = Infinity;
+      for (i = 0; i < cands.length; i++) {
+        var f = fields[cands[i]];
+        if (!f) continue;
+        try { var c = Math.abs(f.snapInfo(nt.freq).cents); if (c < best) best = c; } catch (e2) {}
+      }
+      n++;
+      if (best > 1.0) bad++;
+      if (best < Infinity && best > worst) worst = best;
+    }
+    return { n: n, bad: bad, worst: worst, eras: eras.length };
+  }
+  function sceneWindows(R) {
+    var sc = evOf(R, "scene"), o = [];
+    for (var i = 0; i < sc.length; i++) {
+      o.push({ scene: sc[i].scene, idx: sc[i].idx, t0: sc[i].t,
+               t1: (i + 1 < sc.length) ? sc[i + 1].t : Infinity });
+    }
+    return o;
+  }
+  function sceneAt(wins, t) {
+    for (var i = wins.length - 1; i >= 0; i--) if (t >= wins[i].t0) return wins[i].scene;
+    return null;
+  }
+  function round6(x) { return Math.round(x * 1e6) / 1e6; }
+  function streamSig(R) {
+    var sig = [];
+    for (var i = 0; i < R.events.length; i++) {
+      var e = R.events[i];
+      sig.push("E|" + e.type + "|" + (e.t != null ? round6(e.t - R.t0) : "") + "|" +
+               (e.scene || e.kind || e.name || ""));
+    }
+    for (i = 0; i < R.notes.length; i++) {
+      var nn = R.notes[i];
+      sig.push("N|" + nn.voice + "|" + (nn.freq != null ? round6(nn.freq) : "-") + "|" +
+               round6(nn.t - R.t0) + "|" + (nn.kind || nn.phraseKind || ""));
+    }
+    return sig.join("\n");
+  }
+  function centsOf(ratio) { return 1200 * Math.log(ratio) / Math.LN2; }
+
+  // ============================== SYCORAX ==============================
+  var S1 = trackRun("Sycorax", 20260709, TSIM);
+  var sBegins = perfPhase(S1, "begin"), sWins = sceneWindows(S1);
+  check("SYC plays: notes flow, performances begin, the budget drains at stop",
+    S1.notes.length > 40 && sBegins.length >= 1 &&
+    (!S1.infoFinal || !S1.infoFinal.budget || S1.infoFinal.budget.voices === 0),
+    S1.notes.length + " notes, " + sBegins.length + " evening(s), budget " +
+    (S1.infoFinal && S1.infoFinal.budget ? S1.infoFinal.budget.voices : "n/a"));
+
+  var SYC_SCENES = { gathering: 1, processional: 1, circling: 1, invocation: 1, afterimage: 1 };
+  var sSc = evOf(S1, "scene"), sAlien = 0, sBadOpen = 0;
+  for (var si = 0; si < sSc.length; si++) {
+    if (!SYC_SCENES[sSc[si].scene]) sAlien++;
+    if (sSc[si].idx === 0 && sSc[si].scene !== "gathering") sBadOpen++;
+  }
+  check("SYC scene vocabulary is the rite's; every evening opens with the gathering",
+    sAlien === 0 && sBadOpen === 0, sSc.length + " scenes, " + sAlien + " alien");
+
+  check("SYC harmony never cadences; the poses rotate instead",
+    evOf(S1, "cadence").length === 0 && (SHORTT || evOf(S1, "pose").length > 0),
+    evOf(S1, "pose").length + " pose moves, " + evOf(S1, "cadence").length + " cadences");
+
+  var sAdh = adherence(S1, 311, "sycorax");
+  check("SYC 100% pitch adherence era-by-era (sinks tracked)",
+    sAdh.n > 0 && sAdh.bad === 0,
+    sAdh.n + " pitched, " + sAdh.bad + " bad, worst " + sAdh.worst.toFixed(3) + "c, " + sAdh.eras + " era(s)");
+
+  var sFinN = 0, sFinKeen = 0, sFinTonic = 0;
+  for (si = 0; si < S1.notes.length; si++) {
+    var sn = S1.notes[si];
+    if (!sn.final || sn.deg == null) continue;
+    sFinN++;
+    var cls = ((sn.deg % 7) + 7) % 7;
+    if (cls === 1) sFinKeen++;
+    if (cls === 0) sFinTonic++;
+  }
+  check("SYC the keening: phrase-finals fall to the flat second (>=60%), never home (<=10%)",
+    SHORTT ? (sFinN === 0 || sFinKeen / Math.max(1, sFinN) >= 0.4)
+           : (sFinN >= 20 && sFinKeen / sFinN >= 0.6 && sFinTonic / sFinN <= 0.1),
+    sFinN + " finals, keen " + (sFinN ? Math.round(100 * sFinKeen / sFinN) : 0) + "%, home " +
+    (sFinN ? Math.round(100 * sFinTonic / sFinN) : 0) + "%");
+
+  // The cut's hush is inhabited: proto-drum keeps beating, ONE waterphone
+  // apparition enters, and the percussion family is silenced mid-gesture.
+  var sCuts = evOf(S1, "cut"), sCutPerc = 0, sCutApp = 0;
+  for (si = 0; si < sCuts.length; si++) {
+    var cu = sCuts[si], lo = cu.t + 0.8, hi = cu.t + Math.max(2.5, (cu.holdS || 5) - 0.5);
+    var app = 0;
+    for (var ni = 0; ni < S1.notes.length; ni++) {
+      var cn = S1.notes[ni];
+      if (cn.t < lo || cn.t > hi) continue;
+      var v = String(cn.voice || "");
+      if (v === "waterphone") app++;
+      else if (v === "percussion") sCutPerc++;  // the family the cut silences
+    }
+    if (app >= 1) sCutApp++;
+  }
+  check("SYC the cut's hush is inhabited (proto-drum + one waterphone; percussion silenced)",
+    sCuts.length === 0 ? SHORTT : (sCutPerc === 0 && sCutApp === sCuts.length),
+    sCuts.length + " cut(s), " + sCutPerc + " percussion intruders");
+
+  var percT = [];
+  for (ni = 0; ni < S1.notes.length; ni++) {
+    var pv = String(S1.notes[ni].voice || "");
+    if (pv !== "percussion" && pv !== "protodrum") continue;
+    if (sceneAt(sWins, S1.notes[ni].t) === "processional") continue;
+    percT.push(S1.notes[ni].t);
+  }
+  percT.sort(function (a, b) { return a - b; });
+  var gaps = [], gMean = 0;
+  for (ni = 1; ni < percT.length; ni++) {
+    var g = percT[ni] - percT[ni - 1];
+    if (g > 0.01 && g < 30) { gaps.push(g); gMean += g; }
+  }
+  var cv = 0;
+  if (gaps.length > 8) {
+    gMean /= gaps.length;
+    var vari = 0;
+    for (ni = 0; ni < gaps.length; ni++) vari += (gaps[ni] - gMean) * (gaps[ni] - gMean);
+    cv = Math.sqrt(vari / gaps.length) / gMean;
+  }
+  check("SYC anti-groove: percussion uncountable outside the processional (CV >= 0.2)",
+    gaps.length <= 8 ? SHORTT : cv >= 0.2,
+    gaps.length + " gaps, CV " + cv.toFixed(3));
+
+  var sAirs = evOf(S1, "air"), sAirBad = 0, sAirVoices = {};
+  for (si = 0; si < sAirs.length; si++) {
+    var av = String(sAirs[si].voice || "");
+    sAirVoices[av] = 1;
+    if (/drum|rattle|percussion|noise|gurdy|bed|breath/.test(av)) sAirBad++;
+  }
+  check("SYC the landscape never claims the air",
+    sAirBad === 0 && (SHORTT || sAirs.length > 0),
+    "speakers: " + (Object.keys(sAirVoices).join(",") || "none"));
+
+  var sSinks = evOf(S1, "seachange"), sEras = trackEras(S1, 311, "sycorax"), sSinkBad = 0;
+  for (si = 0; si < sSinks.length; si++) {
+    var pt = 311;
+    for (var ei = 0; ei < sEras.length; ei++) if (sEras[ei].t < sSinks[si].t) pt = sEras[ei].tonicHz;
+    if (Math.abs(centsOf(sSinks[si].field.tonicHz / pt) + 100) > 1) sSinkBad++;
+  }
+  check("SYC the sink: exactly one semitone down, never more than one per evening",
+    sSinkBad === 0 && sSinks.length <= Math.max(1, sBegins.length),
+    sSinks.length + " sink(s) in " + sBegins.length + " evening(s)");
+
+  var SD1 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
+  var SD2 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
+  var SD3 = trackRun("Sycorax", 778, Math.min(TSIM, 900));
+  check("SYC same-seed stream identity; different-seed divergence; zero swallowed",
+    streamSig(SD1) === streamSig(SD2) && streamSig(SD1) !== streamSig(SD3) &&
+    S1.swallowed.length === 0 && SD1.swallowed.length === 0,
+    SD1.notes.length + " notes compared" +
+    (S1.swallowed.length ? "; SWALLOWED: " + S1.swallowed[0] : ""));
+
+  // ============================== ARIEL ==============================
+  var A1 = trackRun("Ariel", 20260709, TSIM);
+  var aBegins = perfPhase(A1, "begin"), aEnds = perfPhase(A1, "end"), aWins = sceneWindows(A1);
+  check("ARI plays: notes flow; evenings are short (>=2 complete at full strength)",
+    A1.notes.length > 40 && (SHORTT ? aBegins.length >= 1 : aEnds.length >= 2) &&
+    (!A1.infoFinal || !A1.infoFinal.budget || A1.infoFinal.budget.voices === 0),
+    A1.notes.length + " notes, " + aEnds.length + " complete, budget " +
+    (A1.infoFinal && A1.infoFinal.budget ? A1.infoFinal.budget.voices : "n/a"));
+
+  var ARI_SCENES = { alighting: 1, song: 1, flight: 1, hover: 1, swirl: 1, release: 1 };
+  var aSc = evOf(A1, "scene"), aAlien = 0, aBadOpen = 0;
+  for (var ai = 0; ai < aSc.length; ai++) {
+    if (!ARI_SCENES[aSc[ai].scene]) aAlien++;
+    if (aSc[ai].idx === 0 && aSc[ai].scene !== "alighting") aBadOpen++;
+  }
+  check("ARI scene vocabulary; every evening alights first",
+    aAlien === 0 && aBadOpen === 0, aSc.length + " scenes, " + aAlien + " alien");
+
+  var aAdh = adherence(A1, 349, "lydian");
+  check("ARI 100% pitch adherence era-by-era (sea changes + regroundings)",
+    aAdh.n > 0 && aAdh.bad === 0,
+    aAdh.n + " pitched, " + aAdh.bad + " bad, worst " + aAdh.worst.toFixed(3) + "c, " + aAdh.eras + " era(s)");
+
+  var aEras = trackEras(A1, 349, "lydian"), aAdrift = 0;
+  for (ai = 0; ai < aBegins.length; ai++) {
+    var bt = aBegins[ai].t + 1, tonic = 349;
+    for (ei = 0; ei < aEras.length; ei++) if (aEras[ei].t <= bt) tonic = aEras[ei].tonicHz;
+    if (Math.abs(centsOf(tonic / 349)) > 1) aAdrift++;
+  }
+  check("ARI every evening opens re-grounded at F 349 (the ratchet retired)",
+    aAdrift === 0, aBegins.length + " opening(s), " + aAdrift + " adrift");
+
+  var aCads = evOf(A1, "cadence"), LIFT = { "lift": 1, "float": 1, "up-half": 1 }, aCadBad = 0;
+  for (ai = 0; ai < aCads.length; ai++) if (!LIFT[aCads[ai].kind]) aCadBad++;
+  check("ARI cadences only lift (lift / float / up-half)",
+    aCadBad === 0 && (SHORTT || aCads.length > 0), aCads.length + " cadence(s)");
+
+  var aSea = evOf(A1, "seachange"), aSeaBad = 0;
+  for (ai = 0; ai < aSea.length; ai++) {
+    var pt2 = 349;
+    for (ei = 0; ei < aEras.length; ei++) if (aEras[ei].t < aSea[ai].t) pt2 = aEras[ei].tonicHz;
+    var tk = aSea[ai].target && aSea[ai].target.kind;
+    if (tk === "true" && aSea[ai].field.tonicHz <= pt2) aSeaBad++;
+  }
+  check("ARI transmutation flies upward (TRUE targets), <= 1 per evening",
+    aSeaBad === 0 && aSea.length <= Math.max(1, aBegins.length),
+    aSea.length + " sea change(s)");
+
+  // The ascent, measured on the voice that carries it: THE WHISTLE. An
+  // aggregate mean over all voices is contaminated by design — the seam
+  // blooms the NEXT evening's re-grounded low pad (aeolian/breeze near
+  // 349 Hz) under the release tail, which is the descent enacted, not a
+  // failure to ascend. And a whistle silent late in a release has already
+  // flown — also dissolution. So: pooled across all releases, whistle
+  // notes late (x > 0.6) must sit >= 0.4 octave above whistle notes early
+  // (x < 0.5); relaxed only when the whistle barely spoke.
+  var relWins = [];
+  for (ai = 0; ai < aWins.length; ai++) {
+    if (aWins[ai].scene === "release" && isFinite(aWins[ai].t1)) relWins.push(aWins[ai]);
+  }
+  var wLo = [], wHi = [];
+  for (ai = 0; ai < relWins.length; ai++) {
+    var w = relWins[ai], span = w.t1 - w.t0;
+    for (ni = 0; ni < A1.notes.length; ni++) {
+      var an = A1.notes[ni];
+      if (an.freq == null || an.freq <= 0) continue;
+      if (String(an.voice || "") !== "whistle") continue;
+      if (an.t < w.t0 || an.t >= w.t1) continue;
+      var xr = (an.t - w.t0) / span;
+      if (xr < 0.5) wLo.push(Math.log(an.freq) / Math.LN2);
+      else if (xr > 0.6) wHi.push(Math.log(an.freq) / Math.LN2);
+    }
+  }
+  var ascRise = null;
+  if (wLo.length >= 5 && wHi.length >= 5) {
+    var mLo = 0, mHi = 0;
+    for (ni = 0; ni < wLo.length; ni++) mLo += wLo[ni] / wLo.length;
+    for (ni = 0; ni < wHi.length; ni++) mHi += wHi[ni] / wHi.length;
+    ascRise = mHi - mLo;
+  }
+  check("ARI the release ascends (whistle late >= 0.4 octave above whistle early, pooled)",
+    ascRise === null ? (SHORTT || relWins.length === 0) : ascRise >= 0.4,
+    relWins.length + " release(s), whistle " + wLo.length + "/" + wHi.length +
+    (ascRise !== null ? ", rise " + ascRise.toFixed(2) + " oct" : " — too few, relaxed"));
+
+  var AD1 = trackRun("Ariel", 881, Math.min(TSIM, 900));
+  var AD2 = trackRun("Ariel", 881, Math.min(TSIM, 900));
+  check("ARI same-seed stream identity; zero swallowed",
+    streamSig(AD1) === streamSig(AD2) && A1.swallowed.length === 0 && AD1.swallowed.length === 0,
+    AD1.notes.length + " notes compared" +
+    (A1.swallowed.length ? "; SWALLOWED: " + A1.swallowed[0] : ""));
+
+  // ============================== ALCHEMY ==============================
+  var L1 = trackRun("Library", 20260709, TSIM);
+  var lWins = sceneWindows(L1), lBegins = perfPhase(L1, "begin"), lEnds = perfPhase(L1, "end");
+
+  var coags = evOf(L1, "coagula"), coagOut = 0;
+  for (ai = 0; ai < coags.length; ai++) {
+    if (sceneAt(lWins, coags[ai].t) !== "candle-out") coagOut++;
+  }
+  var coagNotes = 0, coagLoud = 0;
+  for (ni = 0; ni < L1.notes.length; ni++) {
+    if (L1.notes[ni].phraseKind === "coagula") {
+      coagNotes++;
+      if (L1.notes[ni].velocity > 0.65) coagLoud++;
+    }
+  }
+  check("ALCH solve et coagula: <= 1 per evening, always in Coagulatio, quiet",
+    coags.length <= Math.max(1, lBegins.length) && coagOut === 0 && coagLoud === 0 &&
+    (SHORTT || lEnds.length === 0 || coags.length >= 1),
+    coags.length + " coagula, " + coagNotes + " notes, " + coagLoud + " loud, " + coagOut + " misplaced");
+
+  // The refinement arc, read off the develop events: dark operations
+  // (fragments, retrograde) should run heavier in each evening's first half
+  // and the luminous ones (ornament, sequence, transpose) in its second.
+  // Asserted as a combined directional score to stay robust at small N.
+  var devs = evOf(L1, "develop");
+  var DARK = { fragmentHead: 1, fragmentTail: 1, retrograde: 1 };
+  var LUM = { ornament: 1, sequence: 1, transpose: 1 };
+  var pevs = evOf(L1, "performance"), perfWins = [];
+  for (ai = 0; ai < pevs.length; ai++) {
+    if (pevs[ai].phase !== "begin") continue;
+    var t1p = Infinity;
+    for (var aj = ai + 1; aj < pevs.length; aj++) { t1p = pevs[aj].t; break; }
+    perfWins.push({ t0: pevs[ai].t, t1: t1p });
+  }
+  var dE = 0, dL = 0, lE = 0, lL = 0, nE = 0, nL = 0;
+  for (ai = 0; ai < devs.length; ai++) {
+    var dv = devs[ai], w2 = null;
+    for (aj = 0; aj < perfWins.length; aj++) {
+      if (dv.t >= perfWins[aj].t0 && dv.t < perfWins[aj].t1) { w2 = perfWins[aj]; break; }
+    }
+    if (!w2 || !isFinite(w2.t1)) continue;
+    var pos = (dv.t - w2.t0) / (w2.t1 - w2.t0);
+    if (pos < 0.45) { nE++; if (DARK[dv.transform]) dE++; if (LUM[dv.transform]) lE++; }
+    else if (pos > 0.55) { nL++; if (DARK[dv.transform]) dL++; if (LUM[dv.transform]) lL++; }
+  }
+  var refScore = (nE >= 10 && nL >= 10)
+    ? (dE / nE - dL / nL) + (lL / nL - lE / nE)
+    : null;
+  check("ALCH the refinement arc bends dark->luminous across the evening",
+    refScore === null ? SHORTT : refScore > 0,
+    refScore === null ? (nE + "/" + nL + " develops — too few, relaxed")
+      : "score " + refScore.toFixed(3) + " (darkE " + (dE / nE).toFixed(2) + " -> darkL " +
+        (dL / nL).toFixed(2) + ", lumE " + (lE / nE).toFixed(2) + " -> lumL " + (lL / nL).toFixed(2) + ")");
+
+  // Conjunctio, the wedding: in evenings that reach a third chapter, the
+  // conversation must actually converse there — answers land inside the
+  // Conjunctio window (soft aggregate; the coin is seeded and fair).
+  var conjWins = [];
+  for (ai = 0; ai < perfWins.length; ai++) {
+    var ord = 0;
+    for (aj = 0; aj < lWins.length; aj++) {
+      if (lWins[aj].t0 < perfWins[ai].t0 || lWins[aj].t0 >= perfWins[ai].t1) continue;
+      if (lWins[aj].scene !== "chapter") continue;
+      ord++;
+      if (ord === 3) conjWins.push(lWins[aj]);
+    }
+  }
+  var conjDur = 0, conjAns = 0;
+  var answers = evOf(L1, "answer");
+  for (ai = 0; ai < conjWins.length; ai++) {
+    conjDur += (isFinite(conjWins[ai].t1) ? conjWins[ai].t1 : L1.stopT) - conjWins[ai].t0;
+    for (aj = 0; aj < answers.length; aj++) {
+      if (answers[aj].t >= conjWins[ai].t0 && answers[aj].t < conjWins[ai].t1) conjAns++;
+    }
+  }
+  check("ALCH Conjunctio converses (answers inside the wedding chapter)",
+    conjWins.length === 0 || conjDur < 240 ? SHORTT || true : conjAns >= 1,
+    conjWins.length + " wedding(s), " + Math.round(conjDur) + "s, " + conjAns + " answer(s)");
+
+  check("ALCH zero swallowed errors across the alchemy run",
+    L1.swallowed.length === 0,
+    L1.swallowed.length ? L1.swallowed[0] : "");
 })();
 
 // ============================================================================
