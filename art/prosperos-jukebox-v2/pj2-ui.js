@@ -7,10 +7,11 @@
 // (PJ2.Viz — plate / margin / footer canvases). This file owns:
 //
 //   · ENGINE LIFECYCLE — all three engines are created lazily on ONE shared
-//     AudioContext, and ONLY ONE ever plays at a time. The three book spines
-//     are the tabs: switching while playing stops the current engine (its
-//     own 1.5 s fade) and starts the new book after the fade; switching
-//     while stopped just re-skins the desk. The active book lies open (§5).
+//     AudioContext, and ONLY ONE ever plays at a time. The tracks are v1's
+//     horizontal tabs above the folio (owner ruling, overriding §5's shelf):
+//     switching while playing stops the current engine (its own 1.5 s fade)
+//     and starts the new book after the fade; switching while stopped just
+//     re-skins the desk. The active tab reads raised/open.
 //
 //   · THE SHARED-CONTEXT ARRANGEMENT — each facade builds its own lazy
 //     AudioContext via `new (window.AudioContext)()`. Rather than modify the
@@ -88,7 +89,9 @@
   var TRACK = {
     library: {
       ns: "Library",
-      title: { pre: "Prospero’s Jukebox · ", init: "L", rest: "iber Primus — The Library" },
+      // the original v1 song titles, verbatim (owner ruling) — the kicker
+      // "Prospero's Jukebox · " stays small; the title is the display text
+      title: { pre: "Prospero’s Jukebox · ", init: "P", rest: "rospero’s Library" },
       folioNo: "c dorian · tonic 262",
       logHead: "annotationes · the scribal log",
       sigils: {
@@ -100,7 +103,7 @@
     },
     sycorax: {
       ns: "Sycorax",
-      title: { pre: "Prospero’s Jukebox · ", init: "L", rest: "iber Niger — Sycorax" },
+      title: { pre: "Prospero’s Jukebox · ", init: "S", rest: "ycorax’s Spell" },
       folioNo: "the ghost world · tonic 311",
       logHead: "the black book’s margins · scribal log",
       sigils: {
@@ -114,7 +117,7 @@
     },
     ariel: {
       ns: "Ariel",
-      title: { pre: "Prospero’s Jukebox · ", init: "A", rest: "tlas Aereus — Ariel" },
+      title: { pre: "Prospero’s Jukebox · ", init: "A", rest: "riel’s Day Off" },
       folioNo: "f lydian · tonic 349",
       logHead: "chart annotations · the scribal log",
       sigils: {
@@ -162,7 +165,7 @@
     if (window.location && window.location.search) {
       var m = /[?&]seed=([0-9]+)/.exec(window.location.search);
       if (m) urlSeed = (+m[1]) >>> 0;
-      // deep link to a book: ?track=library|sycorax|ariel opens that spine
+      // deep link to a book: ?track=library|sycorax|ariel opens that tab
       var tm = /[?&]track=(library|sycorax|ariel)/.exec(window.location.search);
       if (tm) activeKey = tm[1];
     }
@@ -323,9 +326,10 @@
   }
 
   // --------------------------------------------------------------------------
-  // TAB SWITCHING — the shelf. Switching while playing: the closing book gets
-  // its own 1.5 s fade, the opening book starts after it (requestStart waits
-  // out busyUntil). Switching while stopped: pure re-skin, nothing sounds.
+  // TAB SWITCHING — the tab row above the folio. Switching while playing: the
+  // closing book gets its own 1.5 s fade, the opening book starts after it
+  // (requestStart waits out busyUntil). Switching while stopped: pure re-skin,
+  // nothing sounds.
   // --------------------------------------------------------------------------
   function selectTrack(key) {
     if (!TRACK[key] || key === activeKey) return;
@@ -353,16 +357,19 @@
 
     for (var i = 0; i < TRACKS.length; i++) {
       var k = TRACKS[i];
-      var sp = $("pj2-spine-" + k);
-      if (!sp) continue;
-      if (k === activeKey) sp.classList.add("is-open"); else sp.classList.remove("is-open");
-      sp.setAttribute("aria-selected", k === activeKey ? "true" : "false");
+      var tab = $("pj2-tab-" + k);
+      if (!tab) continue;
+      if (k === activeKey) tab.classList.add("is-active"); else tab.classList.remove("is-active");
+      tab.setAttribute("aria-selected", k === activeKey ? "true" : "false");
     }
 
     var title = $("pj2-title");
     if (title) {
       title.textContent = "";
-      title.appendChild(document.createTextNode(def.title.pre));
+      var pre = document.createElement("span");
+      pre.className = "pj2-title-pre";
+      pre.textContent = def.title.pre;
+      title.appendChild(pre);
       var init = document.createElement("span");
       init.className = "pj2-init";
       init.textContent = def.title.init;
@@ -943,11 +950,11 @@
       if (!RealAC) return;
     }
 
-    // the shelf
+    // the tab row above the folio
     for (var i = 0; i < TRACKS.length; i++) {
       (function (k) {
-        var sp = $("pj2-spine-" + k);
-        if (sp) sp.addEventListener("click", function () { selectTrack(k); });
+        var tab = $("pj2-tab-" + k);
+        if (tab) tab.addEventListener("click", function () { selectTrack(k); });
       })(TRACKS[i]);
     }
 

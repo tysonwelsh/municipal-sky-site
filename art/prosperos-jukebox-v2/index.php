@@ -56,12 +56,25 @@ include '../../includes/header.php';
 
   <div class="pj2-app" id="pj2-app" data-track="library">
 
+    <!-- THE TABS — v1's horizontal track row restored above the folio (owner
+         ruling: tabs, not book spines). Three side-by-side buttons; each tab
+         keeps its own track palette even while idle (v1's multi-colored tab
+         rule); the active tab reads raised/open against the folio below. -->
+    <div class="pj2-tabs" role="tablist" aria-label="the three books">
+      <button type="button" class="pj2-tab is-active" id="pj2-tab-library" data-track="library"
+              role="tab" aria-selected="true" aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
+      <button type="button" class="pj2-tab" id="pj2-tab-sycorax" data-track="sycorax"
+              role="tab" aria-selected="false" aria-label="Sycorax's Spell — the woodcut grimoire">Sycorax&rsquo;s Spell</button>
+      <button type="button" class="pj2-tab" id="pj2-tab-ariel" data-track="ariel"
+              role="tab" aria-selected="false" aria-label="Ariel's Day Off — the celestial atlas">Ariel&rsquo;s Day Off</button>
+    </div>
+
     <!-- THE FOLIO — the open book: plate, margin apparatus, annotations, footer rule -->
     <div class="pj2-folio-wrap">
       <div class="pj2-folio">
 
         <header class="pj2-folio-head">
-          <h1 class="pj2-title" id="pj2-title">Prospero&rsquo;s Jukebox &middot; <span class="pj2-init">L</span>iber Primus &mdash; The Library</h1>
+          <h1 class="pj2-title" id="pj2-title"><span class="pj2-title-pre">Prospero&rsquo;s Jukebox &middot; </span><span class="pj2-init">P</span>rospero&rsquo;s Library</h1>
           <div class="pj2-folio-no" id="pj2-folio-no">c dorian &middot; tonic 262</div>
         </header>
 
@@ -93,34 +106,10 @@ include '../../includes/header.php';
       </div><!-- /pj2-folio -->
     </div><!-- /pj2-folio-wrap -->
 
-    <!-- THE CABINET — one shared frame, track-skinned inserts (§5) -->
+    <!-- THE CABINET — one shared frame, track-skinned inserts (§5); the
+         track tabs live ABOVE the folio now, so the cabinet is transport,
+         seal, lamp and legend only -->
     <div class="pj2-cabinet">
-
-      <div class="pj2-shelf-wrap">
-        <span class="pj2-cab-cap" id="pj2-shelf-cap">the shelf</span>
-        <div class="pj2-shelf" role="tablist" aria-labelledby="pj2-shelf-cap">
-          <button type="button" class="pj2-spine is-open" id="pj2-spine-library" data-track="library"
-                  role="tab" aria-selected="true" aria-label="The Library — the alchemical codex">
-            <span class="pj2-spine-label">LIBRARY</span>
-            <span class="pj2-spine-open-title">The Library</span>
-            <span class="pj2-spine-open-sub">lies open &middot; the codex</span>
-          </button>
-          <button type="button" class="pj2-spine" id="pj2-spine-sycorax" data-track="sycorax"
-                  role="tab" aria-selected="false" aria-label="Sycorax — the woodcut grimoire">
-            <span class="pj2-spine-label">SYCORAX</span>
-            <span class="pj2-spine-open-title">Sycorax</span>
-            <span class="pj2-spine-open-sub">lies open &middot; the grimoire</span>
-          </button>
-          <button type="button" class="pj2-spine" id="pj2-spine-ariel" data-track="ariel"
-                  role="tab" aria-selected="false" aria-label="Ariel — the celestial atlas">
-            <span class="pj2-spine-label">ARIEL</span>
-            <span class="pj2-spine-open-title">Ariel</span>
-            <span class="pj2-spine-open-sub">lies open &middot; the atlas</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="pj2-cab-spacer"></div>
 
       <div class="pj2-transport" role="group" aria-label="transport">
         <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>

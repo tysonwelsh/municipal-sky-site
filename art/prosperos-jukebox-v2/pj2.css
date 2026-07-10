@@ -2,8 +2,10 @@
    PROSPERO'S JUKEBOX v2 — pj2.css · the reading desk and the conjurer's cabinet
    ----------------------------------------------------------------------------
    PLAN-GRAPHICS §5: ONE shared frame (dark wood-and-brass, grid-snapped pixel
-   art, 1U borders and stepped corners) with track-skinned inserts. The three
-   book spines are the tabs; the active book lies open. §4: the event log is
+   art, 1U borders and stepped corners) with track-skinned inserts. OWNER
+   RULING overriding §5's shelf: the tracks are v1-style horizontal TABS above
+   the folio, each in its own track palette; the active tab reads raised/open.
+   §4: the event log is
    scribal annotation — VT323 body, rubricated tags, illuminated capitals in
    Jacquard 12, three steps of ink aging. §8 Q1: NO CRT/scanline effects —
    the retro carrier is paper and pixels, not phosphor.
@@ -65,12 +67,6 @@
   --pj2-age0: #2e2114;         /* INK_AGE.library, all three steps          */
   --pj2-age1: #4a3620;
   --pj2-age2: #6e5638;
-  --pj2-spine-bg: linear-gradient(90deg, #4a3620, #2e2114 70%);
-  --pj2-spine-ink: #c9a227;
-  --pj2-spine-edge: #6e5638;
-  --pj2-open-bg: linear-gradient(180deg, #efe3c0, #e3d3a8 75%);
-  --pj2-open-ink: #2e2114;
-  --pj2-open-sub: #6e5638;
   --pj2-fill-a: #c9a227;       /* legend slider dither stripe pair          */
   --pj2-fill-b: #4d3c10;
   --pj2-mute-on: #c7b795;      /* the pixel mute square, filled = audible   */
@@ -96,12 +92,6 @@
   --pj2-age0: #d8cfc0;         /* INK_AGE.sycorax                            */
   --pj2-age1: #b3a68e;
   --pj2-age2: #7d715c;
-  --pj2-spine-bg: linear-gradient(90deg, #322820, #241d17 70%);
-  --pj2-spine-ink: #b3a68e;
-  --pj2-spine-edge: #453729;
-  --pj2-open-bg: linear-gradient(180deg, #322820, #241d17 75%);
-  --pj2-open-ink: #d8cfc0;
-  --pj2-open-sub: #7d715c;
   --pj2-fill-a: #9b87b8;
   --pj2-fill-b: #2a2433;
   --pj2-mute-on: #b3a68e;
@@ -127,12 +117,6 @@
   --pj2-age0: #d8e4ec;         /* INK_AGE.ariel                              */
   --pj2-age1: #a8c0d4;
   --pj2-age2: #6e8aa4;
-  --pj2-spine-bg: linear-gradient(90deg, #22345a, #101a30 70%);
-  --pj2-spine-ink: #a8c0d4;
-  --pj2-spine-edge: #2e4a7a;
-  --pj2-open-bg: linear-gradient(180deg, #22345a, #16233f 75%);
-  --pj2-open-ink: #d8e4ec;
-  --pj2-open-sub: #6e8aa4;
   --pj2-fill-a: #d4af5f;
   --pj2-fill-b: #4a3d22;
   --pj2-mute-on: #a04838;      /* registry rule: "rose: chrome accent (mute square) only" */
@@ -156,6 +140,80 @@
 }
 .pj2-unsupported { display: none; }
 .pj2-unsupported.is-shown { display: block; }
+
+/* ---------------------------------------------------------------------------
+   THE TABS — v1's horizontal track row, restored above the folio (owner
+   ruling). Three side-by-side buttons; each tab tints itself by its OWN
+   data-track regardless of which book is open (v1's multi-colored tab rule —
+   hexes verbatim from pj2-skin.js's registry, same values the skin blocks
+   carry). The active tab is raised (taller against a flex-end baseline) and
+   wears its book's paper. Pixel discipline kept: 1U (2px) borders, stepped
+   1U top corners via clip-path, no glow anywhere.
+   ------------------------------------------------------------------------- */
+.pj2-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 0 2px;
+}
+.pj2-tab {
+  flex: 1 1 0;
+  min-width: 0;
+  font-family: "VT323", monospace;
+  font-size: 21px;
+  line-height: 1.1;
+  letter-spacing: 0.1em;
+  text-align: center;
+  padding: 8px 8px 7px;
+  background: var(--tb-bg, #241d17);
+  color: var(--tb-ink, #b3a68e);
+  border: 2px solid var(--pj2c-wood-edge);
+  box-shadow: inset 0 2px 0 var(--tb-edge, #453729);
+  cursor: pointer;
+  clip-path: polygon(
+    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
+    100% 100%, 0 100%
+  );
+}
+.pj2-tab:hover { color: var(--pj2c-bone); }
+/* clip-path would swallow an outer outline — focus draws inside the border */
+.pj2-tab:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: -6px; }
+
+/* each tab keeps its own palette even while idle (v1's multi-colored tab rule) */
+.pj2-tab[data-track="library"] {
+  --tb-bg: linear-gradient(180deg, #4a3620, #2e2114 70%);
+  --tb-ink: #c9a227;
+  --tb-edge: #6e5638;
+  --tb-open-bg: linear-gradient(180deg, #efe3c0, #e3d3a8 75%);
+  --tb-open-ink: #2e2114;
+}
+.pj2-tab[data-track="sycorax"] {
+  --tb-bg: linear-gradient(180deg, #322820, #0d0b09 70%);
+  --tb-ink: #b3a68e;
+  --tb-edge: #453729;
+  --tb-open-bg: linear-gradient(180deg, #322820, #241d17 75%);
+  --tb-open-ink: #d8cfc0;
+}
+.pj2-tab[data-track="ariel"] {
+  --tb-bg: linear-gradient(180deg, #22345a, #101a30 70%);
+  --tb-ink: #a8c0d4;
+  --tb-edge: #2e4a7a;
+  --tb-open-bg: linear-gradient(180deg, #22345a, #16233f 75%);
+  --tb-open-ink: #d8e4ec;
+}
+
+/* the active tab: raised/open — taller, in its book's paper, no hover shift */
+.pj2-tab.is-active {
+  padding: 14px 8px 9px;
+  font-size: 23px;
+  background: var(--tb-open-bg);
+  color: var(--tb-open-ink);
+  box-shadow: inset 0 2px 0 var(--tb-edge);
+  cursor: default;
+}
+.pj2-tab.is-active:hover { color: var(--tb-open-ink); }
 
 /* ---------------------------------------------------------------------------
    THE FOLIO — the open book: plate + margin + annotation column + footer rule.
@@ -199,6 +257,16 @@
   letter-spacing: var(--pj2-head-spacing);
 }
 .pj2-title .pj2-init { color: var(--pj2-accent); }
+/* the running-head kicker: "Prospero's Jukebox ·" small and quiet, so the
+   original song title (the owner's ruling) stays dominant */
+.pj2-title .pj2-title-pre {
+  font-family: "VT323", monospace;
+  font-size: 16px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pj2-ink2);
+  margin-right: 4px;
+}
 .pj2-folio-no {
   font-size: 17px;
   color: var(--pj2-ink2);
@@ -370,69 +438,8 @@
 }
 .pj2-cab-spacer { flex: 1 1 auto; }
 
-/* --- the shelf: three book spines; the active book lies open --------------- */
-.pj2-shelf-wrap { display: flex; flex-direction: column; gap: 3px; justify-content: flex-end; }
-.pj2-shelf { display: flex; align-items: flex-end; gap: 6px; }
-
-.pj2-spine {
-  position: relative;
-  width: 44px;
-  height: 92px;
-  border: 2px solid var(--pj2c-wood-edge);
-  background: var(--sp-bg, #241d17);
-  color: var(--sp-ink, #b3a68e);
-  box-shadow: inset 2px 0 0 var(--sp-edge, #453729);
-  font-family: "VT323", monospace;
-  font-size: 15px;
-  letter-spacing: 0.2em;
-  cursor: pointer;
-  padding: 0;
-  writing-mode: vertical-rl;
-  text-orientation: mixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.pj2-spine:hover { color: var(--pj2c-bone); }
-.pj2-spine:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
-
-/* each spine keeps its own palette even while idle (v1's multi-colored tab rule) */
-.pj2-spine[data-track="library"] { --sp-bg: linear-gradient(0deg, #2e2114, #4a3620); --sp-ink: #c9a227; --sp-edge: #6e5638; }
-.pj2-spine[data-track="sycorax"] { --sp-bg: linear-gradient(0deg, #0d0b09, #241d17); --sp-ink: #b3a68e; --sp-edge: #453729; }
-.pj2-spine[data-track="ariel"]   { --sp-bg: linear-gradient(0deg, #101a30, #22345a); --sp-ink: #a8c0d4; --sp-edge: #2e4a7a; }
-
-.pj2-spine .pj2-spine-open-title,
-.pj2-spine .pj2-spine-open-sub { display: none; }
-
-/* the active book lies open: the spine unfolds into a small open folio */
-.pj2-spine.is-open {
-  width: 178px;
-  height: 92px;
-  writing-mode: horizontal-tb;
-  flex-direction: column;
-  gap: 2px;
-  background: var(--pj2-open-bg);
-  color: var(--pj2-open-ink);
-  box-shadow: inset 0 2px 0 var(--sp-edge), 0 0 0 2px var(--pj2c-wood-edge);
-  cursor: default;
-}
-.pj2-spine.is-open .pj2-spine-label { display: none; }
-.pj2-spine.is-open .pj2-spine-open-title {
-  display: block;
-  font-family: var(--pj2-head-font);
-  font-weight: 400;
-  font-size: 26px;
-  line-height: 1;
-  letter-spacing: var(--pj2-head-spacing);
-  text-transform: var(--pj2-head-transform);
-}
-.pj2-spine.is-open .pj2-spine-open-sub {
-  display: block;
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--pj2-open-sub);
-}
+/* (the shelf/book-spine tab rules lived here; owner ruling moved the tracks
+   to the .pj2-tabs row above the folio) */
 
 /* --- transport: brass pushplates, 1U bevels, pressed = 1U inset ------------ */
 .pj2-transport { display: flex; align-items: center; gap: 8px; }
@@ -633,7 +640,11 @@
   .pj2-desk { padding: 14px 6px 32px; }
   .pj2-folio { padding: 12px 10px 8px; }
   #pj2-plate { height: 360px; }
+  .pj2-tabs { gap: 4px; }
+  .pj2-tab { font-size: 16px; letter-spacing: 0.04em; padding: 7px 4px 6px; }
+  .pj2-tab.is-active { font-size: 17px; padding: 11px 4px 7px; }
   .pj2-title { font-size: 24px; }
+  .pj2-title .pj2-title-pre { font-size: 13px; }
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
   .pj2-legend { width: 100%; }
   .pj2-cab-spacer { display: none; }
