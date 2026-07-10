@@ -174,6 +174,48 @@
     return x * x * (3 - 2 * x);
   }
 
+  // --------------------------------------------------------------------------
+  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute contract,
+  // uniform with PJ2.Library/PJ2.Sycorax (getLayers / setLayerVolume /
+  // getLayerVolumes / toggleLayer; full design note in pj2-library.js).
+  // STRICTLY GAIN-SIDE: mixer gains (tagged _pj2Mix) are inserted into — or
+  // cleanly reused from — each layer's chain; no randomness, no event-time
+  // effects, and never a shared param with the follower or the joints
+  // (breezeLevel/aeoLevel/breezeBreath keep their one writer; the mixer
+  // gets its OWN stage beside them).
+  //
+  // Layer -> params (design values in parens):
+  //   breeze   mixBreeze (1) inserted breezeLevel -> rooms (pad, sub, hiss
+  //            and the release gusts all live upstream of it)
+  //   whistle  per-seat wraps (1) over the shared pool + delaySendWhistle
+  //            (.35) + haloSendWhistle (1, its private feed into the string
+  //            send) — mute the song and the walls and strings let it go
+  //   chime    per-seat wraps (1) + delaySendChime (.5) + haloSendChime (1)
+  //            (the feather rides these too — it IS a chime)
+  //   flutter  per-seat wraps (1) + delaySendFlutter (.4)
+  //   bass     layBass (1)
+  //   aeolian  layAeo (1) — bed and singer share the layer by wiring
+  //   ambient  layAmb (1)
+  //   halo     layHalo (1) — the RETURN side; sends follow their exciters
+  //            (haloDelayTap stays with the echo path it taps)
+  //
+  // The two walls' returns stay unowned: every feed into wall A is
+  // mixer-scaled at its source, so muted voices stop being echoed without
+  // orphaning the echo of anything still sounding.
+  // --------------------------------------------------------------------------
+  var MIX_LAYERS = [
+    { key: "breeze",  label: "Breeze",       kind: "landscape" },
+    { key: "whistle", label: "Whistle",      kind: "melodic" },
+    { key: "chime",   label: "Chimes",       kind: "melodic" },
+    { key: "flutter", label: "Flutter",      kind: "melodic" },
+    { key: "bass",    label: "Bass",         kind: "melodic" },
+    { key: "aeolian", label: "Aeolian Harp", kind: "landscape" },
+    { key: "ambient", label: "Ambient",      kind: "ambient" },
+    { key: "halo",    label: "Halo",         kind: "fx" },
+  ];
+  var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
+  var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
+
   // Default seed when neither create({seed}) nor ?seed= supplies one — a
   // fixed constant ("ARIE" as a 32-bit word), never Date.now (house rule).
   var DEFAULT_SEED = 1095911749;
@@ -483,6 +525,54 @@
         } catch (e) {}
       }
       return 0;
+    }
+
+    // ----------------------------------------------------------------------
+    // THE MIXER (see MIX_LAYERS above; mechanics identical to pj2-library —
+    // the design note there is authoritative). mixState outlives runs;
+    // run.mix[key] entries are {p, design, v0,t0,v1,t1} where the segment is
+    // our own last write, so the anchor value at any time is arithmetic (the
+    // mixer is the only writer on its params — never read .value mid-ramp).
+    // ----------------------------------------------------------------------
+    var mixState = {};
+    for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
+      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false };
+    }
+    function mixEff(key) {
+      var st = mixState[key];
+      return st ? (st.muted ? 0 : st.volume) : 1;
+    }
+    function mixValAt(e, t) {
+      if (t >= e.t1) return e.v1;
+      if (t <= e.t0) return e.v0;
+      return e.v0 + (e.v1 - e.v0) * ((t - e.t0) / (e.t1 - e.t0));
+    }
+    function mixApply(key, rampS) {
+      if (!run || !run.live || !run.mix || !run.mix[key]) return;
+      var t = run.clock.now();
+      var eff = mixEff(key);
+      var list = run.mix[key];
+      for (var i = 0; i < list.length; i++) {
+        var e = list[i];
+        var cur = mixValAt(e, t);
+        var target = e.design * eff;
+        try {
+          var g = e.p;
+          if (typeof g.cancelScheduledValues === "function") g.cancelScheduledValues(t);
+          g.setValueAtTime(cur, t);     // anchor (click-safe rule)
+          g.linearRampToValueAtTime(target, t + rampS);
+        } catch (err) {}
+        e.v0 = cur; e.t0 = t; e.v1 = target; e.t1 = t + rampS;
+      }
+    }
+    // Melodic voices route pool seats through their layer's per-seat wrap;
+    // unknown key or missing wrap falls back to the bare seat (a mixer
+    // wiring gap must never silence a note).
+    function mixOut(key, slotIn) {
+      var w = run && run.mixWraps && run.mixWraps[key];
+      if (!w) return slotIn;
+      var i = w.slots.indexOf(slotIn);
+      return (i >= 0) ? w.wraps[i] : slotIn;
     }
 
     // Weather reads: schedule-time t, RUN-RELATIVE (the Library's hard-won
@@ -1396,7 +1486,7 @@
       o.connect(mix);
       bg.connect(mix);
       mix.connect(out);
-      mix.connect(run.haloSend);                     // the strings hear the song
+      mix.connect(run.haloSendWhistle);              // the strings hear the song (via its mixer stage)
       if (art && art.farWall) mix.connect(run.delaySendWhistle);
       // v1's A-S-R: slow attack (≤0.35 s), hold to 60%, release the rest.
       var peak = 0.028 * vel;
@@ -1482,7 +1572,7 @@
         var art = whistleArticulation(m, rng);
         var promoted = !!(run.signature && run.signature.promoted && run.signature.name === m.name);
         var velScale = (res.kind === "ghost") ? (promoted ? 0.85 : 0.6) : 1;
-        var out = run.poolMel.at(rng.rnd(-0.6, 0.6));
+        var out = mixOut("whistle", run.poolMel.at(rng.rnd(-0.6, 0.6)));
         var farWall = run.streams.delaySend.chance(0.5); // per phrase, own fork
         var wx = wxAt(t);
         for (var i = 0; i < m.notes.length; i++) {
@@ -1532,8 +1622,8 @@
         o.detune.setValueAtTime(di === 0 ? -detuneCents : detuneCents, t);
         var g = c.createGain();
         o.connect(g); g.connect(out);
-        g.connect(run.delaySendChime); // the wall ALWAYS answers the bell
-        g.connect(run.haloSend);       // and the strings hear it
+        g.connect(run.delaySendChime);  // the wall ALWAYS answers the bell
+        g.connect(run.haloSendChime);   // and the strings hear it (via its mixer stage)
         PJ2.Voice.env(g.gain, t, [[0.003, 0.026 * vel], [decayS, 0.001], [0.1, 0]]);
         o.start(t);
         o.stop(t + decayS + 0.15);
@@ -1565,7 +1655,7 @@
             if (fBtok) {
               run.tokens.push(fBtok);
               var fFreq = run.field.degFreq(fDeg, 0);
-              renderChime(run.poolMel.at(rng.rnd(-0.5, 0.5)), fFreq, t, 0.8, rng.rnd(1.8, 2.4), rng.rnd(2, 4));
+              renderChime(mixOut("chime", run.poolMel.at(rng.rnd(-0.5, 0.5))), fFreq, t, 0.8, rng.rnd(1.8, 2.4), rng.rnd(2, 4));
               emitNote({ voice: "chime", kind: "feather", freq: fFreq, t: t, durS: 2.2, deg: fDeg, oct: 0 });
               emitEvent({ type: "feather", deg: fDeg, t: t });
             }
@@ -1640,7 +1730,7 @@
         lift = releaseClimb(m, lift);
         var promoted = !!(run.signature && run.signature.promoted && run.signature.name === m.name);
         var velScale = (res.kind === "ghost") ? (promoted ? 0.85 : 0.6) : 1;
-        var out = run.poolMel.at(rng.rnd(-0.55, 0.55));
+        var out = mixOut("chime", run.poolMel.at(rng.rnd(-0.55, 0.55)));
         var lastDeg = 0;
         for (i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.65, 1) * velScale;
@@ -1743,7 +1833,7 @@
                                       // others must then climb past
         var promoted = !!(run.signature && run.signature.promoted && run.signature.name === m.name);
         var velScale = (res.kind === "ghost") ? (promoted ? 0.85 : 0.6) : 1;
-        var out = run.poolMel.at(rng.rnd(-0.5, 0.5));
+        var out = mixOut("flutter", run.poolMel.at(rng.rnd(-0.5, 0.5)));
         var c = ctx;
         for (i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.6, 1) * velScale;
@@ -2493,30 +2583,58 @@
       var budget = PJ2.Voice.budget(32).bindClock(clock);
       var field = PJ2.Pitch.field({ tonicHz: 349, mode: "lydian", tuning: "et" }); // v1 Ariel's world
 
+      // MIXER WIRING HELPERS (see MIX_LAYERS / pj2-library's design note):
+      // mAttach registers one gain param under a user layer, tags the node,
+      // and stamps design x the user's CURRENT setting as its initial value
+      // (stop/play persistence; at the defaults every value is the design
+      // value exactly). mSlotWraps builds a melodic voice's per-seat wraps
+      // over the shared panner pool.
+      var mix = {};
+      for (var mki = 0; mki < MIX_LAYERS.length; mki++) mix[MIX_LAYERS[mki].key] = [];
+      function mAttach(key, node, design) {
+        var v0 = design * mixEff(key);
+        node.gain.setValueAtTime(v0, clock.now());
+        node._pj2Mix = key;
+        mix[key].push({ p: node.gain, design: design, v0: v0, t0: clock.now(), v1: v0, t1: clock.now() });
+        return node;
+      }
+      function mSlotWraps(key, pool) {
+        var slots = [], wraps = [];
+        for (var swi = 0; swi < pool.pans.length; swi++) {
+          var seat = pool.at(pool.pans[swi]);
+          var wg = mAttach(key, c.createGain(), 1);
+          wg.connect(seat);
+          slots.push(seat);
+          wraps.push(wg);
+        }
+        return { slots: slots, wraps: wraps };
+      }
+
       // LAYER SOURCES — registered with the blender; speakers forward, the
       // ambient sky and the halo deeper, the bass nearly dry (low end in a
       // 5 s tail is mud, not air).
       var layMel = c.createGain();
-      layMel.gain.setValueAtTime(1, clock.now());
-      var layAeo = c.createGain();
-      layAeo.gain.setValueAtTime(1, clock.now());
-      var layAmb = c.createGain();
-      layAmb.gain.setValueAtTime(1, clock.now());
-      var layHalo = c.createGain();
-      layHalo.gain.setValueAtTime(1, clock.now());
-      var layBass = c.createGain();
-      layBass.gain.setValueAtTime(1, clock.now());
+      layMel.gain.setValueAtTime(1, clock.now()); // NOT mixer-owned: the per-seat wraps split the voices upstream
+      var layAeo = mAttach("aeolian", c.createGain(), 1);
+      var layAmb = mAttach("ambient", c.createGain(), 1);
+      var layHalo = mAttach("halo", c.createGain(), 1);
+      var layBass = mAttach("bass", c.createGain(), 1);
 
+      // Landscape chain: sources → breezeBreath (joints only) → breezeLevel
+      // (follower only) → mixBreeze (mixer only) → the room pair. One
+      // writer per param, ever.
       var breezeBreath = c.createGain();
       breezeBreath.gain.setValueAtTime(1, clock.now());
       var breezeLevel = c.createGain();
       breezeLevel.gain.setValueAtTime(0.12, clock.now());
       breezeBreath.connect(breezeLevel);
+      var mixBreeze = mAttach("breeze", c.createGain(), 1);
+      breezeLevel.connect(mixBreeze);
       var aeoLevel = c.createGain();
       aeoLevel.gain.setValueAtTime(0, clock.now());
       aeoLevel.connect(layAeo); // the bed reaches the room through the singer's layer
 
-      roomBlend.register("breeze", breezeLevel, 0.05);
+      roomBlend.register("breeze", mixBreeze, 0.05);
       roomBlend.register("melody", layMel, -0.06);
       roomBlend.register("aeolian", layAeo, 0.0);
       roomBlend.register("ambient", layAmb, 0.12);
@@ -2524,6 +2642,11 @@
       roomBlend.register("bass", layBass, -0.15);
 
       var poolMel = PJ2.Voice.pannerPool(c, layMel, 3);
+      var mixWraps = {
+        whistle: mSlotWraps("whistle", poolMel),
+        chime: mSlotWraps("chime", poolMel),
+        flutter: mSlotWraps("flutter", poolMel),
+      };
 
       // THE WEATHER ALOFT — Ariel's own channels (build-time draws only).
       var weather = PJ2.Fx.weather(streams.weather, WEATHER_ARIEL);
@@ -2564,14 +2687,13 @@
       delayA.output.connect(roomSky.send);
       delayA.output.connect(delayB.send);   // the second wall hears the first
       delayB.output.connect(roomSky.send);
-      var delaySendChime = c.createGain();
-      delaySendChime.gain.setValueAtTime(0.5, clock.now());   // the bell always speaks to the wall
+      // Per-voice sends are mixer-owned (each voice's user layer scales its
+      // own echo feed — a muted bell stops being answered by either wall).
+      var delaySendChime = mAttach("chime", c.createGain(), 0.5);   // the bell always speaks to the wall
       delaySendChime.connect(delayA.send);
-      var delaySendFlutter = c.createGain();
-      delaySendFlutter.gain.setValueAtTime(0.4, clock.now()); // so does the cloud
+      var delaySendFlutter = mAttach("flutter", c.createGain(), 0.4); // so does the cloud
       delaySendFlutter.connect(delayA.send);
-      var delaySendWhistle = c.createGain();
-      delaySendWhistle.gain.setValueAtTime(0.35, clock.now()); // the song, when the coin says
+      var delaySendWhistle = mAttach("whistle", c.createGain(), 0.35); // the song, when the coin says
       delaySendWhistle.connect(delayA.send);
 
       // THE HALO — six strings on {0,1,3,4} + two octave tonics (the #4
@@ -2618,6 +2740,14 @@
       var haloSend = c.createGain();
       haloSend.gain.setValueAtTime(0.12, clock.now());
       haloSend.connect(halo.input);
+      // The string send is SHARED by chime and whistle, so each exciter gets
+      // its own mixer stage ahead of it — mute the song and the strings stop
+      // hearing it, while the bell still rings them (and vice versa). The
+      // halo layer itself owns only the RETURN (layHalo).
+      var haloSendWhistle = mAttach("whistle", c.createGain(), 1);
+      haloSendWhistle.connect(haloSend);
+      var haloSendChime = mAttach("chime", c.createGain(), 1);
+      haloSendChime.connect(haloSend);
       var haloDelayTap = c.createGain();
       haloDelayTap.gain.setValueAtTime(0.1, clock.now());
       delayA.output.connect(haloDelayTap);
@@ -2660,11 +2790,13 @@
         roomClose: roomClose, roomSky: roomSky, roomBlend: roomBlend,
         roomBalance: 0.25,
         layMel: layMel, layAeo: layAeo, layAmb: layAmb, layHalo: layHalo, layBass: layBass,
+        mix: mix, mixWraps: mixWraps,
         weather: weather,
         delayA: delayA, delayB: delayB,
         delaySendChime: delaySendChime, delaySendFlutter: delaySendFlutter,
         delaySendWhistle: delaySendWhistle,
         halo: halo, haloSend: haloSend, haloDelayTap: haloDelayTap,
+        haloSendWhistle: haloSendWhistle, haloSendChime: haloSendChime,
         haloRetuneAt: null,
         haloLevelCur: 0.04,
         t0: clock.now() + 0.08,
@@ -2761,6 +2893,46 @@
         }
       },
 
+      // ---- the per-layer mixer (MIX_LAYERS; uniform across the tracks) ----
+      // Gain-side only: none of these consume randomness or move events —
+      // a run with mixer calls emits the identical note/event streams.
+      getLayers: function () {
+        var out = [];
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out.push({ key: MIX_LAYERS[i].key, label: MIX_LAYERS[i].label, kind: MIX_LAYERS[i].kind });
+        }
+        return out;
+      },
+      // v multiplies the layer's design gain (1 = as-composed). Persists
+      // across performances and stop/play; a muted layer keeps the setting
+      // and hears it again on unmute.
+      setLayerVolume: function (key, v) {
+        var st = mixState[key];
+        if (!st) return;
+        st.volume = clamp(+v || 0, 0, 1);
+        if (!st.muted) mixApply(key, MIX_VOL_S);
+      },
+      getLayerVolumes: function () {
+        var out = {};
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out[MIX_LAYERS[i].key] = mixState[MIX_LAYERS[i].key].volume;
+        }
+        return out;
+      },
+      // toggleLayer(key)      — flip; toggleLayer(key, on) — set (on=true
+      // means AUDIBLE). Returns the muted-state boolean. Mute is a ~0.3s
+      // ramp to true silence; unmute restores design x volume the same way.
+      toggleLayer: function (key, on) {
+        var st = mixState[key];
+        if (!st) return false;
+        var muted = (on == null) ? !st.muted : !on;
+        if (muted !== st.muted) {
+          st.muted = muted;
+          mixApply(key, MIX_MUTE_S);
+        }
+        return st.muted;
+      },
+
       getInfo: function () {
         var info = {};
         if (run && run.conductor) {
@@ -2794,6 +2966,13 @@
           info.haloLevel = run.haloLevelCur;
           info.tonicHz = run.field ? run.field.tonicHz : null;
           info.mode = run.field ? run.field.mode : null;
+        }
+        // The mixer snapshot rides along even between runs — the UI's
+        // sliders are facade state, not run state.
+        info.layers = {};
+        for (var li = 0; li < MIX_LAYERS.length; li++) {
+          var lk = MIX_LAYERS[li].key;
+          info.layers[lk] = { volume: mixState[lk].volume, muted: mixState[lk].muted };
         }
         info.playing = playing;
         info.seed = seed;

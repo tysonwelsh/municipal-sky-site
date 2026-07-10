@@ -84,6 +84,53 @@
     return x * x * (3 - 2 * x);
   }
 
+  // --------------------------------------------------------------------------
+  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute contract,
+  // uniform with PJ2.Library/PJ2.Ariel (getLayers / setLayerVolume /
+  // getLayerVolumes / toggleLayer; full design note in pj2-library.js).
+  // STRICTLY GAIN-SIDE: mixer gains (tagged _pj2Mix) are inserted into — or
+  // cleanly reused from — each layer's chain; no randomness, no event-time
+  // effects, never a shared param with the followers or the cut (cutGain,
+  // gurdyLevel, noiseLevel, breathLevel, gritBlend, gritSendTromp keep
+  // their one writer; the mixer gets its OWN stage beside each).
+  //
+  // Layer -> params (design values in parens):
+  //   gurdy       mixGurdy (1) inserted gurdyLevel -> cutGain, + mixGritGurdy
+  //               (1) inserted between the gurdy/trompette grit sends and the
+  //               shaper — mute the gurdy and its saturated shadow dies too
+  //   noise       mixNoise (1) inserted noiseLevel -> cutGain, + mixBreath (1)
+  //               inserted breathLevel -> cutGain (ember-smoke, ruin-wind and
+  //               the treeline murmur are one user-facing murk), +
+  //               gritSendNoise (.25) — the bed's grit share follows the bed
+  //   chant       per-seat wraps (1) over the shared pool + delaySendChant (.4)
+  //   rebec       per-seat wraps (1) + delaySendRebec (.35)
+  //   waterphone  per-seat wraps (1) + delaySendWater (.5) + throatSendWater
+  //               (.10) — the apparition rides these too (it IS a waterphone)
+  //   boneflute   per-seat wraps (1) — the flute has no sends
+  //   percussion  layPerc (1) + layProto (1) + throatSendPerc (.06) — skins,
+  //               wood, the proto-heartbeat, and the cave's answer to them
+  //   ambient     layAmb (1)
+  //
+  // The throat's RETURN (layThroat) stays unowned: its exciters are all
+  // mixer-scaled at their sends, so a muted source stops ringing the cavern
+  // without orphaning a resonance the room still owes other voices. Same
+  // for the seasick delay's return. Grit note: the shaper is nonlinear, so
+  // intermediate volumes change the DRIVE (texture darkens as it fades) —
+  // fine for a texture bus; 0 is still exactly silent and 1 exactly stock.
+  // --------------------------------------------------------------------------
+  var MIX_LAYERS = [
+    { key: "gurdy",      label: "Hurdy-Gurdy", kind: "landscape" },
+    { key: "noise",      label: "Noise Bed",   kind: "landscape" },
+    { key: "chant",      label: "Chant",       kind: "melodic" },
+    { key: "rebec",      label: "Rebec",       kind: "melodic" },
+    { key: "waterphone", label: "Waterphone",  kind: "melodic" },
+    { key: "boneflute",  label: "Bone Flute",  kind: "melodic" },
+    { key: "percussion", label: "Percussion",  kind: "percussion" },
+    { key: "ambient",    label: "Ambient",     kind: "ambient" },
+  ];
+  var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
+  var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
+
   var DEFAULT_SEED = 1400137155; // "SYCX" as a 32-bit word, near enough
 
   function resolveSeed(opts) {
@@ -404,6 +451,54 @@
         } catch (e) {}
       }
       return "far-off";
+    }
+
+    // ----------------------------------------------------------------------
+    // THE MIXER (see MIX_LAYERS above; mechanics identical to pj2-library —
+    // the design note there is authoritative). mixState outlives runs;
+    // run.mix[key] entries are {p, design, v0,t0,v1,t1} where the segment is
+    // our own last write, so the anchor value at any time is arithmetic (the
+    // mixer is the only writer on its params — never read .value mid-ramp).
+    // ----------------------------------------------------------------------
+    var mixState = {};
+    for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
+      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false };
+    }
+    function mixEff(key) {
+      var st = mixState[key];
+      return st ? (st.muted ? 0 : st.volume) : 1;
+    }
+    function mixValAt(e, t) {
+      if (t >= e.t1) return e.v1;
+      if (t <= e.t0) return e.v0;
+      return e.v0 + (e.v1 - e.v0) * ((t - e.t0) / (e.t1 - e.t0));
+    }
+    function mixApply(key, rampS) {
+      if (!run || !run.live || !run.mix || !run.mix[key]) return;
+      var t = run.clock.now();
+      var eff = mixEff(key);
+      var list = run.mix[key];
+      for (var i = 0; i < list.length; i++) {
+        var e = list[i];
+        var cur = mixValAt(e, t);
+        var target = e.design * eff;
+        try {
+          var g = e.p;
+          if (typeof g.cancelScheduledValues === "function") g.cancelScheduledValues(t);
+          g.setValueAtTime(cur, t);     // anchor (click-safe rule)
+          g.linearRampToValueAtTime(target, t + rampS);
+        } catch (err) {}
+        e.v0 = cur; e.t0 = t; e.v1 = target; e.t1 = t + rampS;
+      }
+    }
+    // Melodic voices route pool seats through their layer's per-seat wrap;
+    // unknown key or missing wrap falls back to the bare seat (a mixer
+    // wiring gap must never silence a note).
+    function mixOut(key, slotIn) {
+      var w = run && run.mixWraps && run.mixWraps[key];
+      if (!w) return slotIn;
+      var i = w.slots.indexOf(slotIn);
+      return (i >= 0) ? w.wraps[i] : slotIn;
     }
 
     function degClass(d) {
@@ -1576,7 +1671,7 @@
         mean /= m.notes.length;
         var off = (mean > 2.5 ? -run.field.size : 0) + (st === "invocation" ? run.field.size : 0);
         var velScale = (res.kind === "ghost") ? 0.6 : 1; // the half-remembered line, quiet
-        var out = run.poolMel.at(rng.rnd(-0.4, 0.4));
+        var out = mixOut("chant", run.poolMel.at(rng.rnd(-0.4, 0.4)));
         // The clearing answers the cantor about half the time (seasick
         // delay send, per line, on the delaySend fork).
         var echoed = run.streams.delaySend.chance(0.5);
@@ -1687,7 +1782,7 @@
         });
         narrate(res, "rebec", t);
         var velScale = (res.kind === "ghost") ? 0.6 : 1;
-        var out = run.poolMel.at(rng.rnd(-0.55, 0.55));
+        var out = mixOut("rebec", run.poolMel.at(rng.rnd(-0.55, 0.55)));
         var echoed = run.streams.delaySend.chance(0.3);
         var dblRoll = rng.chance(0.2); // the open-fifth double stop, occasional
         for (var i = 0; i < m.notes.length; i++) {
@@ -1754,7 +1849,7 @@
         });
         narrate(res, "waterphone", t);
         var velScale = (res.kind === "ghost") ? 0.6 : 1;
-        var out = run.poolMel.at(rng.rnd(-0.5, 0.5));
+        var out = mixOut("waterphone", run.poolMel.at(rng.rnd(-0.5, 0.5)));
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.6, 0.95) * velScale;
           var nt = t + tm.offs[i], nd = tm.durs[i];
@@ -1811,7 +1906,7 @@
           limit: run.airLimit(), overlap: !!(tok && tok.overlap),
         });
         narrate(res, "boneflute", t);
-        var out = run.poolMel.at(rng.rnd(-0.3, 0.3));
+        var out = mixOut("boneflute", run.poolMel.at(rng.rnd(-0.3, 0.3)));
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.6, 0.9);
           var nt = t + tm.offs[i], nd = tm.durs[i];
@@ -2258,7 +2353,7 @@
         if (!tok) return;
         run.tokens.push(tok);
         var freq = run.field.degFreq(cut.appDeg, 0); // post-sink field, if any
-        var env = renderWaterphoneNote(run.poolMel.at(0), freq, ta, appDur, 0.55, run.streams.cut, run.delaySendWater);
+        var env = renderWaterphoneNote(mixOut("waterphone", run.poolMel.at(0)), freq, ta, appDur, 0.55, run.streams.cut, run.delaySendWater);
         try { env.connect(run.throatSendWater); } catch (e2) {}
         emitNote({
           voice: "waterphone", kind: "apparition", freq: freq, t: ta,
@@ -2597,6 +2692,33 @@
       // param. The proto-drum (layProto) routes AROUND it (the hush keeps
       // its heart); percussion is silenced by scheduling, not gain, so it
       // sits beside the cut too; melody was never the landscape's to duck.
+      // MIXER WIRING HELPERS (see MIX_LAYERS / pj2-library's design note):
+      // mAttach registers one gain param under a user layer, tags the node,
+      // and stamps design x the user's CURRENT setting as its initial value
+      // (stop/play persistence; at the defaults every value is the design
+      // value exactly). mSlotWraps builds a melodic voice's per-seat wraps
+      // over the shared panner pool.
+      var mix = {};
+      for (var mki = 0; mki < MIX_LAYERS.length; mki++) mix[MIX_LAYERS[mki].key] = [];
+      function mAttach(key, node, design) {
+        var v0 = design * mixEff(key);
+        node.gain.setValueAtTime(v0, clock.now());
+        node._pj2Mix = key;
+        mix[key].push({ p: node.gain, design: design, v0: v0, t0: clock.now(), v1: v0, t1: clock.now() });
+        return node;
+      }
+      function mSlotWraps(key, pool) {
+        var slots = [], wraps = [];
+        for (var swi = 0; swi < pool.pans.length; swi++) {
+          var seat = pool.at(pool.pans[swi]);
+          var wg = mAttach(key, c.createGain(), 1);
+          wg.connect(seat);
+          slots.push(seat);
+          wraps.push(wg);
+        }
+        return { slots: slots, wraps: wraps };
+      }
+
       var cutGain = c.createGain();
       cutGain.gain.setValueAtTime(1, clock.now());
       cutGain._pj2Tag = "cutGain"; // harness handle: param inspection
@@ -2605,25 +2727,28 @@
       var gurdyLevel = c.createGain();
       gurdyLevel.gain.setValueAtTime(0.10, clock.now());
       gurdyBreath.connect(gurdyLevel);
-      gurdyLevel.connect(cutGain);
+      var mixGurdy = mAttach("gurdy", c.createGain(), 1); // the mixer's own stage, beside the follower's
+      gurdyLevel.connect(mixGurdy);
+      mixGurdy.connect(cutGain);
       var noiseLevel = c.createGain();
       noiseLevel.gain.setValueAtTime(0, clock.now());
       noiseLevel._pj2Tag = "noiseLevel"; // harness handle: per-source peak inspection
-      noiseLevel.connect(cutGain);
+      var mixNoise = mAttach("noise", c.createGain(), 1);
+      noiseLevel.connect(mixNoise);
+      mixNoise.connect(cutGain);
       var breathLevel = c.createGain();
       breathLevel.gain.setValueAtTime(0, clock.now());
-      breathLevel.connect(cutGain);
-      var layAmb = c.createGain();
-      layAmb.gain.setValueAtTime(1, clock.now());
+      var mixBreath = mAttach("noise", c.createGain(), 1); // the murk is ONE user layer
+      breathLevel.connect(mixBreath);
+      mixBreath.connect(cutGain);
+      var layAmb = mAttach("ambient", c.createGain(), 1);
       layAmb.connect(cutGain);
-      var layPerc = c.createGain();
-      layPerc.gain.setValueAtTime(1, clock.now());
-      var layProto = c.createGain();
-      layProto.gain.setValueAtTime(1, clock.now());
+      var layPerc = mAttach("percussion", c.createGain(), 1);
+      var layProto = mAttach("percussion", c.createGain(), 1); // the heartbeat is percussion to the user
       var layMel = c.createGain();
-      layMel.gain.setValueAtTime(1, clock.now());
+      layMel.gain.setValueAtTime(1, clock.now()); // NOT mixer-owned: the per-seat wraps split the voices upstream
       var layThroat = c.createGain();
-      layThroat.gain.setValueAtTime(1, clock.now());
+      layThroat.gain.setValueAtTime(1, clock.now()); // unowned return — see the MIX_LAYERS note
 
       // THE GRIT BUS (landscape-only, tagged for graph inspection):
       //   gurdy lowpass ââ gritSendGurdy(0.10) ââ
@@ -2651,18 +2776,23 @@
       gritShaper.connect(gritMakeup);
       gritMakeup.connect(gritBlend);
       gritBlend.connect(cutGain);
+      // The gurdy-family grit shares (bed + trompette) converge through ONE
+      // mixer stage before the shaper — gritSendTromp's own param stays the
+      // drum pulses' (one writer per param, ever), so the gurdy layer's
+      // scaling gets its own node instead of a share of a pulsed send.
+      var mixGritGurdy = mAttach("gurdy", c.createGain(), 1);
+      mixGritGurdy.connect(gritShaper);
       var gritSendGurdy = c.createGain();
       gritSendGurdy.gain.setValueAtTime(0.10, clock.now());
       gritSendGurdy._pj2Grit = "gurdy";
-      gritSendGurdy.connect(gritShaper);
-      var gritSendNoise = c.createGain();
-      gritSendNoise.gain.setValueAtTime(0.25, clock.now());
+      gritSendGurdy.connect(mixGritGurdy);
+      var gritSendNoise = mAttach("noise", c.createGain(), 0.25); // static send: clean mixer reuse
       gritSendNoise._pj2Grit = "noisebed";
       gritSendNoise.connect(gritShaper);
       var gritSendTromp = c.createGain();
       gritSendTromp.gain.setValueAtTime(TROMP_BASE, clock.now());
       gritSendTromp._pj2Grit = "trompette";
-      gritSendTromp.connect(gritShaper);
+      gritSendTromp.connect(mixGritGurdy);
       noiseLevel.connect(gritSendNoise); // the bed's grit share (partial)
 
       roomBlend.register("landscape", cutGain, 0.08);
@@ -2672,6 +2802,12 @@
       roomBlend.register("throat", layThroat, 0.2);     // the throat is deep
 
       var poolMel = PJ2.Voice.pannerPool(c, layMel, 3);
+      var mixWraps = {
+        chant: mSlotWraps("chant", poolMel),
+        rebec: mSlotWraps("rebec", poolMel),
+        waterphone: mSlotWraps("waterphone", poolMel),
+        boneflute: mSlotWraps("boneflute", poolMel),
+      };
 
       // THE WEATHER â five channels (murk / breath / gapMul / wetTilt /
       // gritTilt), primes 120â600 s, all draws at build, pure math after.
@@ -2687,14 +2823,13 @@
         rng: streams.fx,
       });
       delay.output.connect(roomWide.send);
-      var delaySendWater = c.createGain();
-      delaySendWater.gain.setValueAtTime(0.5, clock.now()); // the metal, always
+      // Per-voice sends are mixer-owned (each voice's user layer scales its
+      // own echo feed; a muted cantor stops being answered by the clearing).
+      var delaySendWater = mAttach("waterphone", c.createGain(), 0.5);
       delaySendWater.connect(delay.send);
-      var delaySendChant = c.createGain();
-      delaySendChant.gain.setValueAtTime(0.4, clock.now()); // the cantor, p â 0.5 per line
+      var delaySendChant = mAttach("chant", c.createGain(), 0.4);
       delaySendChant.connect(delay.send);
-      var delaySendRebec = c.createGain();
-      delaySendRebec.gain.setValueAtTime(0.35, clock.now()); // the fiddle, p â 0.3
+      var delaySendRebec = mAttach("rebec", c.createGain(), 0.35);
       delaySendRebec.connect(delay.send);
 
       // THE CAVERN'S THROAT â Fx.sympathetic as a dark resonance bank: 4
@@ -2739,11 +2874,11 @@
       throatDC.frequency.setValueAtTime(55, clock.now());
       throatDC.Q.setValueAtTime(-6, clock.now()); // dB — over-damped, flat
       throatDC.connect(throat.input);
-      var throatSendWater = c.createGain();
-      throatSendWater.gain.setValueAtTime(0.10, clock.now());
+      // Mixer-owned under their EXCITERS (the throat's return stays free):
+      // a muted strike must not keep waking the cavern.
+      var throatSendWater = mAttach("waterphone", c.createGain(), 0.10);
       throatSendWater.connect(throatDC);
-      var throatSendPerc = c.createGain();
-      throatSendPerc.gain.setValueAtTime(0.06, clock.now());
+      var throatSendPerc = mAttach("percussion", c.createGain(), 0.06);
       throatSendPerc.connect(throatDC);
       var throatCeil = c.createWaveShaper();
       try { throatCeil.curve = buildSoftCeil(2.5); throatCeil.oversample = "2x"; } catch (eTc) {}
@@ -2812,6 +2947,7 @@
         gurdyCur: 0.10, noiseCur: 0, breathCur: 0, gritCur: 0,
         layAmb: layAmb, layPerc: layPerc, layProto: layProto,
         layMel: layMel, layThroat: layThroat,
+        mix: mix, mixWraps: mixWraps,
         // grit
         gritShaper: gritShaper, gritMakeup: gritMakeup, gritBlend: gritBlend,
         gritSendGurdy: gritSendGurdy, gritSendNoise: gritSendNoise,
@@ -2929,6 +3065,46 @@
         }
       },
 
+      // ---- the per-layer mixer (MIX_LAYERS; uniform across the tracks) ----
+      // Gain-side only: none of these consume randomness or move events —
+      // a run with mixer calls emits the identical note/event streams.
+      getLayers: function () {
+        var out = [];
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out.push({ key: MIX_LAYERS[i].key, label: MIX_LAYERS[i].label, kind: MIX_LAYERS[i].kind });
+        }
+        return out;
+      },
+      // v multiplies the layer's design gain (1 = as-composed). Persists
+      // across performances and stop/play; a muted layer keeps the setting
+      // and hears it again on unmute.
+      setLayerVolume: function (key, v) {
+        var st = mixState[key];
+        if (!st) return;
+        st.volume = clamp(+v || 0, 0, 1);
+        if (!st.muted) mixApply(key, MIX_VOL_S);
+      },
+      getLayerVolumes: function () {
+        var out = {};
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out[MIX_LAYERS[i].key] = mixState[MIX_LAYERS[i].key].volume;
+        }
+        return out;
+      },
+      // toggleLayer(key)      — flip; toggleLayer(key, on) — set (on=true
+      // means AUDIBLE). Returns the muted-state boolean. Mute is a ~0.3s
+      // ramp to true silence; unmute restores design x volume the same way.
+      toggleLayer: function (key, on) {
+        var st = mixState[key];
+        if (!st) return false;
+        var muted = (on == null) ? !st.muted : !on;
+        if (muted !== st.muted) {
+          st.muted = muted;
+          mixApply(key, MIX_MUTE_S);
+        }
+        return st.muted;
+      },
+
       getInfo: function () {
         var info = {};
         if (run && run.conductor) {
@@ -2967,6 +3143,13 @@
           };
           info.sink = run.seaChange ? { planned: true, done: !!run.seaChange.done } : { planned: false, done: false };
           info.tonicHz = run.field.tonicHz;
+        }
+        // The mixer snapshot rides along even between runs — the UI's
+        // sliders are facade state, not run state.
+        info.layers = {};
+        for (var li = 0; li < MIX_LAYERS.length; li++) {
+          var lk = MIX_LAYERS[li].key;
+          info.layers[lk] = { volume: mixState[lk].volume, muted: mixState[lk].muted };
         }
         info.playing = playing;
         info.seed = seed;

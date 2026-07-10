@@ -239,6 +239,47 @@
     return entry[ord % entry.length];
   }
 
+  // --------------------------------------------------------------------------
+  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute contract
+  // (getLayers / setLayerVolume / getLayerVolumes / toggleLayer, uniform
+  // across the three tracks). STRICTLY GAIN-SIDE: the mixer owns one small
+  // set of user gain nodes (tagged _pj2Mix, the _pj2Tag convention) inserted
+  // into — or cleanly reused from — each layer's existing chain, draws NO
+  // randomness, moves NO event times, and never shares a param with another
+  // writer (the followers keep droneLevel/humLevel; the mixer gets its own
+  // stage beside them). With every layer at volume 1 unmuted, every mixer
+  // gain sits at its design value and the audio is bit-identical to the
+  // unmixed engine.
+  //
+  // Layer -> params (design values in parens):
+  //   drone       mixDrone (1) inserted droneLevel -> rooms
+  //   hum         mixHumBed (1) inserted humLevel -> rooms, + layHum (1)
+  //               (bed, singer AND cadence consort — one reader's voice)
+  //   harpsichord per-seat wraps (1) ahead of the shared panner pool, +
+  //               delaySendPluck (.35) + haloSend (.12) — mute the pluck and
+  //               the far wall and the strings stop hearing it too
+  //   musicbox    per-seat wraps (1) + delaySendBox (.5)
+  //   ambient     layAmb (1) — one-shots and the joint gestures alike
+  //   halo        layHalo (1) — the RETURN side; the send follows its exciter
+  //
+  // The pool problem, solved without restructuring: both melodic voices
+  // share the 3-seat panner pool, so a single post-pool gain can't split
+  // them. Instead each voice gets one whisper-thin wrap gain per SEAT
+  // (3 nodes, constant forever), inserted between the note's gain and the
+  // seat it chose — the seat quantization, the pans, the pool node count
+  // and the note graphs are all untouched.
+  // --------------------------------------------------------------------------
+  var MIX_LAYERS = [
+    { key: "drone",       label: "Drone",       kind: "landscape" },
+    { key: "hum",         label: "Hum",         kind: "landscape" },
+    { key: "harpsichord", label: "Harpsichord", kind: "melodic" },
+    { key: "musicbox",    label: "Music Box",   kind: "melodic" },
+    { key: "ambient",     label: "Ambient",     kind: "ambient" },
+    { key: "halo",        label: "Halo",        kind: "fx" },
+  ];
+  var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
+  var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
+
   // Default seed when neither create({seed}) nor ?seed= supplies one. A fixed
   // constant, NOT Date.now() — house rule: no wall-clock in musical paths.
   // Pages that want a different evening per visit pass their own seed.
@@ -336,6 +377,57 @@
         } catch (e) {}
       }
       return 0;
+    }
+
+    // ----------------------------------------------------------------------
+    // THE MIXER (see MIX_LAYERS above). mixState outlives runs — settings
+    // persist across performances AND across stop/play; each fresh world is
+    // born already mixed (mAttach in play() stamps design x current setting
+    // as every mixer gain's initial value). run.mix[key] is the live param
+    // list: {p, design, v0,t0,v1,t1} — the (v0,t0)->(v1,t1) segment is our
+    // own last write, so the anchor value at any time is pure arithmetic
+    // (the mixer is the ONLY writer on these params; reading .value mid-ramp
+    // is exactly the browser-lazy trap the follower's shadows avoid).
+    // ----------------------------------------------------------------------
+    var mixState = {};
+    for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
+      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false };
+    }
+    function mixEff(key) {
+      var st = mixState[key];
+      return st ? (st.muted ? 0 : st.volume) : 1;
+    }
+    function mixValAt(e, t) {
+      if (t >= e.t1) return e.v1;
+      if (t <= e.t0) return e.v0;
+      return e.v0 + (e.v1 - e.v0) * ((t - e.t0) / (e.t1 - e.t0));
+    }
+    function mixApply(key, rampS) {
+      if (!run || !run.live || !run.mix || !run.mix[key]) return;
+      var t = run.clock.now();
+      var eff = mixEff(key);
+      var list = run.mix[key];
+      for (var i = 0; i < list.length; i++) {
+        var e = list[i];
+        var cur = mixValAt(e, t);       // where our own last ramp has it NOW
+        var target = e.design * eff;
+        try {
+          var g = e.p;
+          if (typeof g.cancelScheduledValues === "function") g.cancelScheduledValues(t);
+          g.setValueAtTime(cur, t);     // anchor (click-safe rule)
+          g.linearRampToValueAtTime(target, t + rampS);
+        } catch (err) {}
+        e.v0 = cur; e.t0 = t; e.v1 = target; e.t1 = t + rampS;
+      }
+    }
+    // Voices route pool seats through their layer's per-seat wrap (the pool
+    // problem, see the MIX_LAYERS note). Unknown key or missing wrap falls
+    // back to the bare seat — a mixer wiring gap must never silence a note.
+    function mixOut(key, slotIn) {
+      var w = run && run.mixWraps && run.mixWraps[key];
+      if (!w) return slotIn;
+      var i = w.slots.indexOf(slotIn);
+      return (i >= 0) ? w.wraps[i] : slotIn;
     }
 
     // ========================================================================
@@ -1698,7 +1790,7 @@
         var lift = (st === "seizure") ? run.field.size : 0;
         var velScale = (res.kind === "ghost") ? 0.6
                      : (res.kind === "coagula") ? 0.6 : 1; // memories and settlings speak quietly
-        var out = run.poolMel.at(rng.rnd(-0.6, 0.6));
+        var out = mixOut("harpsichord", run.poolMel.at(rng.rnd(-0.6, 0.6)));
         // The far-wall draw, ONCE per phrase (spec: p ~0.3) — on its own
         // "delaySend" fork so the pluck's musical stream never feels it.
         var farWall = run.streams.delaySend.chance(0.3);
@@ -1779,7 +1871,7 @@
         bxMean /= m.notes.length;
         var lift = (bxMean > 2.5 + run.field.size / 2) ? 0 : run.field.size;
         var velScale = (res.kind === "ghost") ? 0.6 : 1;
-        var out = run.poolMel.at(rng.rnd(-0.55, 0.55));
+        var out = mixOut("musicbox", run.poolMel.at(rng.rnd(-0.55, 0.55)));
         var c = ctx;
         // Weather read once per phrase (schedule time): brightness breathes
         // v1's SHIMMER knob instead of a fixed constant (contract item 5).
@@ -2300,38 +2392,72 @@
       var budget = PJ2.Voice.budget(32).bindClock(clock);
       var field = PJ2.Pitch.field({ tonicHz: 262, mode: "dorian", tuning: "et" }); // v1 Library
 
+      // MIXER WIRING HELPERS (see MIX_LAYERS): mAttach registers one gain
+      // param under a user layer, tags the node for param inspection, and
+      // stamps design x the user's CURRENT setting as its initial value —
+      // stop/play persistence by construction, and with everything at the
+      // default (1, unmuted) every value below is exactly the design value.
+      // mSlotWraps builds a melodic voice's per-seat wraps over the shared
+      // panner pool (the pool problem, documented at MIX_LAYERS).
+      var mix = {};
+      for (var mki = 0; mki < MIX_LAYERS.length; mki++) mix[MIX_LAYERS[mki].key] = [];
+      function mAttach(key, node, design) {
+        var v0 = design * mixEff(key);
+        node.gain.setValueAtTime(v0, clock.now());
+        node._pj2Mix = key;
+        mix[key].push({ p: node.gain, design: design, v0: v0, t0: clock.now(), v1: v0, t1: clock.now() });
+        return node;
+      }
+      function mSlotWraps(key, pool) {
+        var slots = [], wraps = [];
+        for (var swi = 0; swi < pool.pans.length; swi++) {
+          var seat = pool.at(pool.pans[swi]);
+          var wg = mAttach(key, c.createGain(), 1);
+          wg.connect(seat);
+          slots.push(seat);
+          wraps.push(wg);
+        }
+        return { slots: slots, wraps: wraps };
+      }
+
       // LAYER SOURCES — one gain per layer, registered with the blender
       // (which owns a close/wide send pair for each). baseBias places a
       // layer a step deeper or nearer than the scene balance: the speakers
       // sit forward, the ambient room and the halo live toward the stacks.
       var layMel = c.createGain();
-      layMel.gain.setValueAtTime(1, clock.now());
-      var layHum = c.createGain();
-      layHum.gain.setValueAtTime(1, clock.now());
-      var layAmb = c.createGain();
-      layAmb.gain.setValueAtTime(1, clock.now());
-      var layHalo = c.createGain();
-      layHalo.gain.setValueAtTime(1, clock.now());
+      layMel.gain.setValueAtTime(1, clock.now()); // NOT mixer-owned: the per-seat wraps split pluck/box upstream
+      var layHum = mAttach("hum", c.createGain(), 1);
+      var layAmb = mAttach("ambient", c.createGain(), 1);
+      var layHalo = mAttach("halo", c.createGain(), 1);
 
       // Landscape chain: cycles → droneBreath (joints only) → droneLevel
-      // (intensity follower only) → the drone's room pair. One writer per
-      // param, ever.
+      // (intensity follower only) → mixDrone (mixer only) → the drone's
+      // room pair. One writer per param, ever — the mixer gets its OWN
+      // stage rather than a share of the follower's.
       var droneBreath = c.createGain();
       droneBreath.gain.setValueAtTime(1, clock.now());
       var droneLevel = c.createGain();
       droneLevel.gain.setValueAtTime(0.12, clock.now());
       droneBreath.connect(droneLevel);
+      var mixDrone = mAttach("drone", c.createGain(), 1);
+      droneLevel.connect(mixDrone);
       var humLevel = c.createGain();
       humLevel.gain.setValueAtTime(0, clock.now());
+      var mixHumBed = mAttach("hum", c.createGain(), 1); // same stage-beside-the-follower move
+      humLevel.connect(mixHumBed);
 
-      roomBlend.register("drone", droneLevel, 0.05);
-      roomBlend.register("humBed", humLevel, 0.0);
+      roomBlend.register("drone", mixDrone, 0.05);
+      roomBlend.register("humBed", mixHumBed, 0.0);
       roomBlend.register("hum", layHum, 0.0);
       roomBlend.register("melody", layMel, -0.06);
       roomBlend.register("ambient", layAmb, 0.12);
       roomBlend.register("halo", layHalo, 0.18);
 
       var poolMel = PJ2.Voice.pannerPool(c, layMel, 3);
+      var mixWraps = {
+        harpsichord: mSlotWraps("harpsichord", poolMel),
+        musicbox: mSlotWraps("musicbox", poolMel),
+      };
 
       // THE WEATHER — built from its own fork (all draws at build time; at()
       // is pure math), spec'd by Fx.WEATHER_LIBRARY (primes 120-600s, depths
@@ -2349,11 +2475,12 @@
         rng: streams.fx,
       });
       delay.output.connect(roomWide.send);
-      var delaySendBox = c.createGain();
-      delaySendBox.gain.setValueAtTime(0.5, clock.now());  // the box always speaks to the wall
+      // The per-voice sends are mixer-owned (each voice's user layer scales
+      // its OWN echo feed): mute the music box and the far wall stops
+      // answering it, rather than answering a silence forever.
+      var delaySendBox = mAttach("musicbox", c.createGain(), 0.5);  // the box always speaks to the wall
       delaySendBox.connect(delay.send);
-      var delaySendPluck = c.createGain();
-      delaySendPluck.gain.setValueAtTime(0.35, clock.now()); // the pluck, only when the coin says
+      var delaySendPluck = mAttach("harpsichord", c.createGain(), 0.35); // the pluck, only when the coin says
       delaySendPluck.connect(delay.send);
 
       // THE HALO — six sympathetic strings on the field's resonant frame
@@ -2365,8 +2492,10 @@
         nStrings: 6, freqs: haloFreqs(field),
         out: layHalo, level: 0.04, feedback: 0.95, damp: 3000,
       });
-      var haloSend = c.createGain();
-      haloSend.gain.setValueAtTime(0.12, clock.now());
+      // Mixer-owned under HARPSICHORD (the exciter, not the halo): a muted
+      // pluck must not keep ringing the strings from beyond the grave. The
+      // halo layer itself owns the RETURN (layHalo).
+      var haloSend = mAttach("harpsichord", c.createGain(), 0.12);
       haloSend.connect(halo.input);
 
       var harmony = PJ2.Harmony.create({
@@ -2404,6 +2533,7 @@
         roomBalance: 0.15,                 // telemetry shadow of the blend's aim
         roomSeaBonus: 0,                   // +0.08 after a sea change, reset each evening
         layMel: layMel, layHum: layHum, layAmb: layAmb, layHalo: layHalo,
+        mix: mix, mixWraps: mixWraps,
         weather: weather,
         delay: delay, delaySendBox: delaySendBox, delaySendPluck: delaySendPluck,
         halo: halo, haloSend: haloSend,
@@ -2537,6 +2667,46 @@
         }
       },
 
+      // ---- the per-layer mixer (MIX_LAYERS; uniform across the tracks) ----
+      // Gain-side only: none of these consume randomness or move events —
+      // a run with mixer calls emits the identical note/event streams.
+      getLayers: function () {
+        var out = [];
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out.push({ key: MIX_LAYERS[i].key, label: MIX_LAYERS[i].label, kind: MIX_LAYERS[i].kind });
+        }
+        return out;
+      },
+      // v multiplies the layer's design gain (1 = as-composed). Persists
+      // across performances and stop/play; a muted layer keeps the setting
+      // and hears it again on unmute.
+      setLayerVolume: function (key, v) {
+        var st = mixState[key];
+        if (!st) return;
+        st.volume = clamp(+v || 0, 0, 1);
+        if (!st.muted) mixApply(key, MIX_VOL_S);
+      },
+      getLayerVolumes: function () {
+        var out = {};
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          out[MIX_LAYERS[i].key] = mixState[MIX_LAYERS[i].key].volume;
+        }
+        return out;
+      },
+      // toggleLayer(key)      — flip; toggleLayer(key, on) — set (on=true
+      // means AUDIBLE). Returns the muted-state boolean. Mute is a ~0.3s
+      // ramp to true silence; unmute restores design x volume the same way.
+      toggleLayer: function (key, on) {
+        var st = mixState[key];
+        if (!st) return false;
+        var muted = (on == null) ? !st.muted : !on;
+        if (muted !== st.muted) {
+          st.muted = muted;
+          mixApply(key, MIX_MUTE_S);
+        }
+        return st.muted;
+      },
+
       // conductor.info() + air holders + budget stats + the Phase 2 brains'
       // telemetry (current chord name, motif stats summary), one flat snapshot.
       getInfo: function () {
@@ -2563,6 +2733,13 @@
           // The scene's alchemical display label (shared vocabulary — see
           // LABELS). tideLabel stays the conductor's human weather-word.
           try { info.sceneLabel = sceneLabelFor(info.sceneType, info.sceneIdx, run.perfScenes); } catch (e) {}
+        }
+        // The mixer snapshot rides along even between runs — the UI's
+        // sliders are facade state, not run state.
+        info.layers = {};
+        for (var li = 0; li < MIX_LAYERS.length; li++) {
+          var lk = MIX_LAYERS[li].key;
+          info.layers[lk] = { volume: mixState[lk].volume, muted: mixState[lk].muted };
         }
         info.playing = playing;
         info.seed = seed;
