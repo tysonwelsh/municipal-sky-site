@@ -1,0 +1,640 @@
+/* ============================================================================
+   PROSPERO'S JUKEBOX v2 — pj2.css · the reading desk and the conjurer's cabinet
+   ----------------------------------------------------------------------------
+   PLAN-GRAPHICS §5: ONE shared frame (dark wood-and-brass, grid-snapped pixel
+   art, 1U borders and stepped corners) with track-skinned inserts. The three
+   book spines are the tabs; the active book lies open. §4: the event log is
+   scribal annotation — VT323 body, rubricated tags, illuminated capitals in
+   Jacquard 12, three steps of ink aging. §8 Q1: NO CRT/scanline effects —
+   the retro carrier is paper and pixels, not phosphor.
+
+   THE SKINNING CONTRACT: every per-track custom property below is set by a
+   [data-track="…"] block on .pj2-app, and every hex in those blocks is
+   VERBATIM from pj2-skin.js's palette registry (PALETTES / INK_AGE — §2's
+   locked ramps). Cabinet chrome (wood, brass, captions) is the CONSTANT
+   frame and keeps its own small inventory, inherited from the mockups'
+   proven chrome strips. The art-pixel unit U = 2 CSS px: all chrome borders,
+   bevels and dither stripes are multiples of 2px.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   THE DESK — the site's near-black void; the folio floats on it
+   ------------------------------------------------------------------------- */
+.pj2-desk {
+  background: #0b0a08;
+  padding: 26px 12px 48px;
+  font-family: "VT323", monospace;
+}
+
+.pj2-app {
+  max-width: 1392px;
+  margin: 0 auto;
+
+  /* chrome constants — the cabinet's own wood-and-brass inventory */
+  --pj2c-wood-hi: #201613;
+  --pj2c-wood: #17120b;
+  --pj2c-wood-lo: #120c09;
+  --pj2c-wood-edge: #0b0705;
+  --pj2c-wood-bevel: #2e211a;
+  --pj2c-brass: #3a2d18;
+  --pj2c-brass-hi: #6e5626;
+  --pj2c-brass-lo: #1d1509;
+  --pj2c-caption: #6b6252;
+  --pj2c-bone: #c7b795;
+  --pj2c-slot: #0f0c07;
+  --pj2c-wax-rim: #5e2018;
+}
+
+/* ---------------------------------------------------------------------------
+   PER-TRACK SKINS — hexes verbatim from pj2-skin.js PALETTES / INK_AGE
+   ------------------------------------------------------------------------- */
+.pj2-app[data-track="library"] {
+  --pj2-void: #0b0a08;
+  --pj2-paper: #e3d3a8;        /* paper-1: the folio's working tone        */
+  --pj2-paper-lite: #efe3c0;   /* paper-0                                  */
+  --pj2-paper-deep: #d0bc8c;   /* paper-2                                  */
+  --pj2-paper-edge: #8a704a;   /* paper-4: the deckle                      */
+  --pj2-ink0: #2e2114;
+  --pj2-ink1: #4a3620;
+  --pj2-ink2: #6e5638;
+  --pj2-ink3: #93794f;
+  --pj2-accent: #8e3b2c;       /* rubric-0: body-size rubric duty           */
+  --pj2-accent2: #b0553c;      /* rubric-1: aged tags, display accents      */
+  --pj2-gilt: #c9a227;
+  --pj2-gilt2: #e8c95a;
+  --pj2-age0: #2e2114;         /* INK_AGE.library, all three steps          */
+  --pj2-age1: #4a3620;
+  --pj2-age2: #6e5638;
+  --pj2-spine-bg: linear-gradient(90deg, #4a3620, #2e2114 70%);
+  --pj2-spine-ink: #c9a227;
+  --pj2-spine-edge: #6e5638;
+  --pj2-open-bg: linear-gradient(180deg, #efe3c0, #e3d3a8 75%);
+  --pj2-open-ink: #2e2114;
+  --pj2-open-sub: #6e5638;
+  --pj2-fill-a: #c9a227;       /* legend slider dither stripe pair          */
+  --pj2-fill-b: #4d3c10;
+  --pj2-mute-on: #c7b795;      /* the pixel mute square, filled = audible   */
+  --pj2-head-font: "Jacquard 12", "VT323", monospace; /* §2: blackletter    */
+  --pj2-head-transform: none;
+  --pj2-head-spacing: 0.02em;
+}
+
+.pj2-app[data-track="sycorax"] {
+  --pj2-void: #070605;
+  --pj2-paper: #241d17;        /* paper-0: soot rag — the dark book          */
+  --pj2-paper-lite: #322820;
+  --pj2-paper-deep: #1a1512;   /* ink-1: weight and depth, never data        */
+  --pj2-paper-edge: #0d0b09;
+  --pj2-ink0: #d8cfc0;         /* bone carries ALL the data on soot          */
+  --pj2-ink1: #b3a68e;
+  --pj2-ink2: #7d715c;
+  --pj2-ink3: #7d715c;
+  --pj2-accent: #c4b5fd;       /* bright witch-light: the data-legal accent  */
+  --pj2-accent2: #9b87b8;
+  --pj2-gilt: #93392b;         /* blood: rubrication BESIDE bone only        */
+  --pj2-gilt2: #6e2a22;
+  --pj2-age0: #d8cfc0;         /* INK_AGE.sycorax                            */
+  --pj2-age1: #b3a68e;
+  --pj2-age2: #7d715c;
+  --pj2-spine-bg: linear-gradient(90deg, #322820, #241d17 70%);
+  --pj2-spine-ink: #b3a68e;
+  --pj2-spine-edge: #453729;
+  --pj2-open-bg: linear-gradient(180deg, #322820, #241d17 75%);
+  --pj2-open-ink: #d8cfc0;
+  --pj2-open-sub: #7d715c;
+  --pj2-fill-a: #9b87b8;
+  --pj2-fill-b: #2a2433;
+  --pj2-mute-on: #b3a68e;
+  --pj2-head-font: "Jacquard 12", "VT323", monospace; /* bone-on-soot caps  */
+  --pj2-head-transform: none;
+  --pj2-head-spacing: 0.02em;
+}
+
+.pj2-app[data-track="ariel"] {
+  --pj2-void: #05070c;
+  --pj2-paper: #16233f;        /* plate-1: the engraved night-blue plate     */
+  --pj2-paper-lite: #22345a;
+  --pj2-paper-deep: #101a30;
+  --pj2-paper-edge: #05070c;
+  --pj2-ink0: #d8e4ec;         /* silver ink                                 */
+  --pj2-ink1: #a8c0d4;
+  --pj2-ink2: #6e8aa4;
+  --pj2-ink3: #6e8aa4;
+  --pj2-accent: #ecd28a;       /* gilt-1: data-legal on plate                */
+  --pj2-accent2: #d4af5f;
+  --pj2-gilt: #d4af5f;
+  --pj2-gilt2: #ecd28a;
+  --pj2-age0: #d8e4ec;         /* INK_AGE.ariel                              */
+  --pj2-age1: #a8c0d4;
+  --pj2-age2: #6e8aa4;
+  --pj2-spine-bg: linear-gradient(90deg, #22345a, #101a30 70%);
+  --pj2-spine-ink: #a8c0d4;
+  --pj2-spine-edge: #2e4a7a;
+  --pj2-open-bg: linear-gradient(180deg, #22345a, #16233f 75%);
+  --pj2-open-ink: #d8e4ec;
+  --pj2-open-sub: #6e8aa4;
+  --pj2-fill-a: #d4af5f;
+  --pj2-fill-b: #4a3d22;
+  --pj2-mute-on: #a04838;      /* registry rule: "rose: chrome accent (mute square) only" */
+  --pj2-head-font: "VT323", monospace; /* §2: engraved small caps, not blackletter */
+  --pj2-head-transform: uppercase;
+  --pj2-head-spacing: 0.18em;
+}
+
+/* ---------------------------------------------------------------------------
+   Fallback / unsupported lines
+   ------------------------------------------------------------------------- */
+.pj2-nojs {
+  display: block;
+  max-width: 1392px;
+  margin: 0 auto 14px;
+  padding: 10px 14px;
+  border: 2px solid #3a2d18;
+  color: #c7b795;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+}
+.pj2-unsupported { display: none; }
+.pj2-unsupported.is-shown { display: block; }
+
+/* ---------------------------------------------------------------------------
+   THE FOLIO — the open book: plate + margin + annotation column + footer rule.
+   Stepped pixel corners (2-step, 1U each) via clip-path; the floating shadow
+   rides a wrapper so drop-shadow follows the stepped outline.
+   ------------------------------------------------------------------------- */
+.pj2-folio-wrap {
+  filter: drop-shadow(0 26px 40px rgba(0, 0, 0, 0.8)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+}
+.pj2-folio {
+  background: var(--pj2-paper);
+  border: 2px solid var(--pj2-paper-edge);
+  clip-path: polygon(
+    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  padding: 18px 20px 12px;
+}
+
+/* running head */
+.pj2-folio-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--pj2-ink2);
+  padding: 0 4px 6px;
+  margin-bottom: 10px;
+}
+.pj2-title {
+  font-family: var(--pj2-head-font);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1;
+  color: var(--pj2-ink0);
+  text-transform: var(--pj2-head-transform);
+  letter-spacing: var(--pj2-head-spacing);
+}
+.pj2-title .pj2-init { color: var(--pj2-accent); }
+.pj2-folio-no {
+  font-size: 17px;
+  color: var(--pj2-ink2);
+  letter-spacing: 0.12em;
+}
+
+/* the reading-desk grid: plate column + margin column */
+.pj2-folio-grid {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+}
+.pj2-plate-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+#pj2-plate {
+  display: block;
+  width: 100%;
+  height: 660px;
+}
+.pj2-margin-col {
+  flex: 0 0 402px;
+  width: 402px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+#pj2-margin {
+  display: block;
+  width: 100%;
+  height: 330px;
+}
+
+/* footer rule — the density envelope's home */
+.pj2-footer-strip { margin-top: 10px; padding: 0 4px; }
+#pj2-footer {
+  display: block;
+  width: 100%;
+  height: 64px;
+}
+
+/* ---------------------------------------------------------------------------
+   THE SCRIBAL LOG (§4) — DOM, precision backstop. VT323 body, rubricated
+   tags, illuminated capitals (Jacquard 12), 3-step ink aging from the
+   registry's INK_AGE ramps. Newest entries on top.
+   ------------------------------------------------------------------------- */
+.pj2-log-block {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.pj2-log-head {
+  font-family: "VT323", monospace;
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--pj2-ink2);
+  border-bottom: 1px solid var(--pj2-ink3);
+  padding: 0 2px 2px;
+  margin: 0 0 4px;
+}
+.pj2-log {
+  flex: 1 1 auto;
+  min-height: 240px;
+  max-height: 330px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--pj2-ink3) transparent;
+}
+.pj2-log-empty {
+  font-size: 16.5px;
+  color: var(--pj2-ink2);
+  letter-spacing: 0.08em;
+  padding: 4px 0;
+}
+.pj2-log-row {
+  display: flex;
+  gap: 7px;
+  font-size: 16.5px;
+  line-height: 1.25;
+  align-items: baseline;
+}
+.pj2-log-t { flex: 0 0 44px; color: var(--pj2-ink3); }
+.pj2-log-tag {
+  flex: 0 0 86px;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  color: var(--pj2-accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pj2-log-tag.pj2-tag-plain { color: var(--pj2-ink2); }
+.pj2-log-body { flex: 1 1 auto; min-width: 0; overflow-wrap: break-word; }
+
+/* the three steps of ink aging — palette steps, never alpha */
+.pj2-age-0 .pj2-log-body { color: var(--pj2-age0); }
+.pj2-age-1 .pj2-log-body { color: var(--pj2-age1); }
+.pj2-age-2 .pj2-log-body { color: var(--pj2-age2); }
+.pj2-age-1 .pj2-log-tag:not(.pj2-tag-plain) { color: var(--pj2-accent2); }
+.pj2-age-2 .pj2-log-tag:not(.pj2-tag-plain) { color: var(--pj2-accent2); }
+.pj2-age-1 .pj2-log-t, .pj2-age-2 .pj2-log-t { color: var(--pj2-ink3); }
+
+/* the illuminated capital on scene headings */
+.pj2-log-body .pj2-cap {
+  font-family: "Jacquard 12", "VT323", monospace;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 0.8;
+  color: var(--pj2-accent);
+}
+.pj2-age-1 .pj2-log-body .pj2-cap,
+.pj2-age-2 .pj2-log-body .pj2-cap { color: var(--pj2-accent2); }
+.pj2-log-body .pj2-gd { color: var(--pj2-gilt); }
+
+/* ---------------------------------------------------------------------------
+   TELEMETRY STRIP (§6 degradation): the margin apparatus collapsed into one
+   horizontal line of readouts below the plate — sigil-less VT323 numbers.
+   Hidden on desktop where the margin canvas carries the same data as dials.
+   ------------------------------------------------------------------------- */
+.pj2-telemetry {
+  display: none;
+  font-size: 16px;
+  color: var(--pj2-ink1);
+  letter-spacing: 0.05em;
+  padding: 6px 4px 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.pj2-telemetry .pj2-v { color: var(--pj2-ink0); }
+.pj2-telemetry .pj2-rb { color: var(--pj2-accent); }
+
+/* ---------------------------------------------------------------------------
+   THE CABINET (§5) — dark wood-and-brass, constant across tracks. 1U borders,
+   stepped corners, inset bevels. No glow anywhere; a lit state is gilt fill.
+   ------------------------------------------------------------------------- */
+.pj2-cabinet {
+  margin-top: 14px;
+  background: linear-gradient(180deg, var(--pj2c-wood-hi) 0%, var(--pj2c-wood) 55%, var(--pj2c-wood-lo) 100%);
+  border: 2px solid var(--pj2c-wood-edge);
+  box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel), inset 0 -2px 0 var(--pj2c-wood-edge);
+  clip-path: polygon(
+    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
+    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
+    100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%,
+    4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px)
+  );
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  padding: 10px 16px 12px;
+  flex-wrap: wrap;
+}
+.pj2-cab-cap {
+  font-size: 13px;
+  color: var(--pj2c-caption);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.pj2-cab-spacer { flex: 1 1 auto; }
+
+/* --- the shelf: three book spines; the active book lies open --------------- */
+.pj2-shelf-wrap { display: flex; flex-direction: column; gap: 3px; justify-content: flex-end; }
+.pj2-shelf { display: flex; align-items: flex-end; gap: 6px; }
+
+.pj2-spine {
+  position: relative;
+  width: 44px;
+  height: 92px;
+  border: 2px solid var(--pj2c-wood-edge);
+  background: var(--sp-bg, #241d17);
+  color: var(--sp-ink, #b3a68e);
+  box-shadow: inset 2px 0 0 var(--sp-edge, #453729);
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  padding: 0;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pj2-spine:hover { color: var(--pj2c-bone); }
+.pj2-spine:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+
+/* each spine keeps its own palette even while idle (v1's multi-colored tab rule) */
+.pj2-spine[data-track="library"] { --sp-bg: linear-gradient(0deg, #2e2114, #4a3620); --sp-ink: #c9a227; --sp-edge: #6e5638; }
+.pj2-spine[data-track="sycorax"] { --sp-bg: linear-gradient(0deg, #0d0b09, #241d17); --sp-ink: #b3a68e; --sp-edge: #453729; }
+.pj2-spine[data-track="ariel"]   { --sp-bg: linear-gradient(0deg, #101a30, #22345a); --sp-ink: #a8c0d4; --sp-edge: #2e4a7a; }
+
+.pj2-spine .pj2-spine-open-title,
+.pj2-spine .pj2-spine-open-sub { display: none; }
+
+/* the active book lies open: the spine unfolds into a small open folio */
+.pj2-spine.is-open {
+  width: 178px;
+  height: 92px;
+  writing-mode: horizontal-tb;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--pj2-open-bg);
+  color: var(--pj2-open-ink);
+  box-shadow: inset 0 2px 0 var(--sp-edge), 0 0 0 2px var(--pj2c-wood-edge);
+  cursor: default;
+}
+.pj2-spine.is-open .pj2-spine-label { display: none; }
+.pj2-spine.is-open .pj2-spine-open-title {
+  display: block;
+  font-family: var(--pj2-head-font);
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1;
+  letter-spacing: var(--pj2-head-spacing);
+  text-transform: var(--pj2-head-transform);
+}
+.pj2-spine.is-open .pj2-spine-open-sub {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--pj2-open-sub);
+}
+
+/* --- transport: brass pushplates, 1U bevels, pressed = 1U inset ------------ */
+.pj2-transport { display: flex; align-items: center; gap: 8px; }
+.pj2-pushplate {
+  font-family: "VT323", monospace;
+  font-size: 18px;
+  letter-spacing: 0.08em;
+  background: var(--pj2c-brass);
+  color: #e8c95a;
+  border: 0;
+  padding: 10px 14px;
+  cursor: pointer;
+  box-shadow: inset -2px -2px 0 var(--pj2c-brass-lo), inset 2px 2px 0 var(--pj2c-brass-hi);
+}
+.pj2-pushplate:active,
+.pj2-pushplate.is-pressed { box-shadow: inset 2px 2px 0 var(--pj2c-brass-lo); }
+.pj2-pushplate.is-lit {
+  background: #c9a227;
+  color: #2e2114;
+  box-shadow: inset -2px -2px 0 #8a6a14, inset 2px 2px 0 #f0daa0;
+}
+.pj2-pushplate:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+
+/* --- the wax seal: typed seed + re-stamp ----------------------------------- */
+.pj2-seal-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  justify-content: center;
+}
+.pj2-seal-stack { position: relative; width: 84px; height: 84px; }
+#pj2-seal { display: block; width: 84px; height: 84px; }
+.pj2-seal-num {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 76px;
+  text-align: center;
+  font-family: "VT323", monospace;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  color: #f0d9c8;
+  text-shadow: 1px 1px 0 var(--pj2c-wax-rim);
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.pj2-seal-num:focus { outline: 1px dotted #f0d9c8; outline-offset: 2px; }
+.pj2-seal-stack.is-stamping { animation: pj2-stamp 280ms steps(4, end); }
+@keyframes pj2-stamp {
+  0%   { transform: translateY(-6px) scale(1.12); }
+  55%  { transform: translateY(2px) scale(0.94); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* --- the lamp: master volume as the wick gauge ----------------------------- */
+.pj2-lamp {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 136px;
+}
+.pj2-lamp-track {
+  position: relative;
+  height: 14px;
+  border: 2px solid var(--pj2c-brass);
+  background: var(--pj2c-slot);
+}
+.pj2-lamp-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 60%;
+  background: repeating-linear-gradient(90deg, #c9a227 0 2px, #7a6216 2px 4px);
+  pointer-events: none;
+}
+.pj2-lamp-thumb {
+  position: absolute;
+  top: -4px;
+  left: calc(60% - 3px);
+  width: 6px;
+  height: 18px;
+  background: #e8c95a;
+  pointer-events: none;
+}
+.pj2-lamp-track input[type="range"] {
+  position: absolute;
+  inset: -6px 0;
+  width: 100%;
+  height: calc(100% + 12px);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* --- the plate's legend: per-layer mixer ----------------------------------- */
+.pj2-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  justify-content: center;
+  width: 318px;
+}
+.pj2-legend-row { display: flex; align-items: center; gap: 8px; }
+.pj2-legend-sigil {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pj2-legend-sigil canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  display: block;
+}
+.pj2-legend-name {
+  flex: 0 0 104px;
+  font-size: 16px;
+  color: var(--pj2c-bone);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pj2-legend-slider {
+  position: relative;
+  flex: 1 1 auto;
+  height: 12px;
+  border: 2px solid var(--pj2c-brass);
+  background: var(--pj2c-slot);
+}
+.pj2-legend-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: repeating-linear-gradient(90deg, var(--pj2-fill-a) 0 2px, var(--pj2-fill-b) 2px 4px);
+  pointer-events: none;
+}
+.pj2-legend-thumb {
+  position: absolute;
+  top: -3px;
+  width: 4px;
+  height: 14px;
+  background: var(--pj2c-bone);
+  pointer-events: none; /* thumb position is unquantized — left set in % by JS */
+}
+.pj2-legend-slider input[type="range"] {
+  position: absolute;
+  inset: -5px 0;
+  width: 100%;
+  height: calc(100% + 10px);
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+/* v1's pixel mute square, kept verbatim: filled = audible */
+.pj2-legend-mute {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--pj2c-caption);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.pj2-legend-mute.is-on { background: var(--pj2-mute-on); }
+.pj2-legend-mute:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+
+/* --- build stamp ------------------------------------------------------------ */
+.pj2-build {
+  max-width: 1392px;
+  margin: 10px auto 0;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: #3f3628;
+}
+.pj2-build-sep { margin: 0 0.5em; }
+
+/* ---------------------------------------------------------------------------
+   DEGRADATION (§6): small screens — the margin canvas yields, the telemetry
+   strip carries the data, the log keeps its precision below the plate.
+   ------------------------------------------------------------------------- */
+@media (max-width: 1080px) {
+  .pj2-folio-grid { flex-direction: column; }
+  .pj2-margin-col { flex: 1 1 auto; width: auto; }
+  #pj2-plate { height: 480px; }
+  #pj2-margin { display: none; }
+  .pj2-telemetry { display: block; }
+  .pj2-log { max-height: 240px; }
+}
+
+@media (max-width: 700px) {
+  .pj2-desk { padding: 14px 6px 32px; }
+  .pj2-folio { padding: 12px 10px 8px; }
+  #pj2-plate { height: 360px; }
+  .pj2-title { font-size: 24px; }
+  .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
+  .pj2-legend { width: 100%; }
+  .pj2-cab-spacer { display: none; }
+}

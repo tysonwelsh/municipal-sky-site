@@ -105,11 +105,14 @@ Scandinavian black-book (svartebok) sigils; charcoal, bone, soot.
   is visible: phrase-final notes on the flat second tick a bone-white
   notch at degree 1's angle.
 - **THE CUT** is the block gouged: at tB a white slash crosses the plate,
-  the print "skips" (ink layer drops to ~25% for the hold, matching
-  cutGain), only the proto-drum's pulse mark keeps printing, and the one
-  waterphone apparition stamps its emblem in the hush. The slash heals as
-  a visible scar (a pale line) through the afterimage. Severity = slash
-  length.
+  the print "skips" (ink layer drops for the hold, carried by live/hush
+  print CONTRAST per the mockup finding — a literal 25% multiplier is
+  invisible on soot), only the proto-drum's pulse mark keeps printing, and
+  the one waterphone apparition stamps its emblem in the hush. Severity =
+  slash length. The slash FADES OUT COMPLETELY with the cut's return ramp
+  — OWNER RULING (2026-07-09): no healed scar, no persistent mark on the
+  plate. (The carried bruise stays audible-only; at most the treeline
+  margin may darken slightly next gathering.)
 
 ### 1c. ARIEL — the celestial atlas
 
@@ -171,7 +174,7 @@ Precise definition, in implementation terms:
   darkening, ring shading, dial faces — its regular crosshatch reads as
   engraving), and a precomputed **64×64 blue-noise tile** for organic
   fields (stains, mottling, soot, plate burnish — no visible pattern).
-  Event illustrations that fade (emblems, the scar) fade by re-thresholding
+  Event illustrations that fade (emblems, the cut's gouge) fade by re-thresholding
   their own baked dither mask, so decay looks like ink absorbing, not
   alpha-blending.
 - **Palette discipline.** Each track gets a locked ramp (12–14 colors);
@@ -278,7 +281,7 @@ authored emblem — the skin never re-labels:
 | sea change | **Transmutatio** rubric + emblem; ink re-oxidizes over ~10 s | the rare semitone **sink**: the whole plate's print drops one visible line lower, once | plate re-gilds star by star toward the new tonic |
 | ghost | faint branch in an earlier hand on the genealogy tree | the chant intones it: a worn, double-struck print of last night's line | the returning bird: prior evening's flight-line ghosted under tonight's |
 | develop/answer | branch/answer-limb grows on the margin tree (gen in roman numerals) | knot added to a cord-and-bone tally | migration line extends; answers as a paired wingbeat mark |
-| the cut | — | white gouge across the plate; print skips; proto-drum alone keeps its pulse mark; scar remains | — |
+| the cut | — | white gouge across the plate; print skips; proto-drum alone keeps its pulse mark; gouge fades fully at the return (owner: no scar) | — |
 | storm crossing (P4) | ink lines waver, stains bloom at the leeward edge for the crossing's span | thunder tick in the margin (already in its pool) | the wind-rose swings hard; chart hatching densifies |
 | cross-track bleed (P4) | **a feather in the margin, drawn in Ariel's silver** — a foreign pigment in this book | — | — |
 | Full Fathom Five (P4) | a sunken emblem: pearls appear on the coil at the quotation's sounded pitches; "of his bones are coral made" as a rubricated scroll | — | — |
