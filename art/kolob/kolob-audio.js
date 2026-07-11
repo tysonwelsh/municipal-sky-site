@@ -180,10 +180,10 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix; voice 2.7:
-  // the still small voice doubled by owner request (was 1.35). The trim
+  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix; voice 7.0:
+  // the still small voice doubled again by owner request (was 3.5). The trim
   // seats each while the sliders still read their usual positions.
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 3.5, bagpipe: 0.44, clarinet: 0.72 };
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 7.0, bagpipe: 0.44, clarinet: 0.72 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -3264,7 +3264,9 @@ window.KolobAudio = (function () {
     var sg = ctx.createGain();
     st.connect(sf); sf.connect(sg); sg.connect(panAt("ambient", side));
     var span = head.length * 0.5 + 1.5;
-    env(sg, t, [[0.4, 0.022], [span, 0.018], [0.6, 0]]);
+    // beacon lifted +60% by owner request (static bed and Morse tones scaled
+    // together so the flash keeps its internal balance)
+    env(sg, t, [[0.4, 0.0352], [span, 0.0288], [0.6, 0]]);
     st.start(t, noiseOffset()); st.stop(t + span + 1.2);
     var tt = t + 0.5;
     for (var i = 0; i < head.length; i++) {
@@ -3276,7 +3278,7 @@ window.KolobAudio = (function () {
       o.type = "sine"; o.frequency.setValueAtTime(f, tt);
       var g = ctx.createGain();
       o.connect(g); g.connect(panAt("ambient", side));
-      env(g, tt, [[0.01, 0.045], [isDah ? 0.3 : 0.1, 0.038], [0.05, 0]]);
+      env(g, tt, [[0.01, 0.072], [isDah ? 0.3 : 0.1, 0.0608], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
       tt += (isDah ? 0.42 : 0.22) + rnd(0.05, 0.12);
