@@ -3271,9 +3271,13 @@ window.KolobAudio = (function () {
     var sg = ctx.createGain();
     st.connect(sf); sf.connect(sg); sg.connect(panAt("ambient", side));
     var span = head.length * 0.5 + 1.5;
-    // beacon lifted +60% by owner request (static bed and Morse tones scaled
-    // together so the flash keeps its internal balance)
-    env(sg, t, [[0.4, 0.0352], [span, 0.0288], [0.6, 0]]);
+    // The beacon is quiet by design — it rides the shared ambient layer (gain
+    // 0.5) and is washed into the tabernacle reverb, so it reads as far-off.
+    // No hidden cap here (unlike the voice): these envelope values ARE the
+    // source gain. Pushed hard by owner request, weighting the Morse tones
+    // (the signal) over the static bed (the hiss) so it carries without the
+    // hiss swelling.
+    env(sg, t, [[0.4, 0.05], [span, 0.041], [0.6, 0]]);
     st.start(t, noiseOffset()); st.stop(t + span + 1.2);
     var tt = t + 0.5;
     for (var i = 0; i < head.length; i++) {
@@ -3285,7 +3289,7 @@ window.KolobAudio = (function () {
       o.type = "sine"; o.frequency.setValueAtTime(f, tt);
       var g = ctx.createGain();
       o.connect(g); g.connect(panAt("ambient", side));
-      env(g, tt, [[0.01, 0.072], [isDah ? 0.3 : 0.1, 0.0608], [0.05, 0]]);
+      env(g, tt, [[0.01, 0.15], [isDah ? 0.3 : 0.1, 0.127], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
       tt += (isDah ? 0.42 : 0.22) + rnd(0.05, 0.12);
