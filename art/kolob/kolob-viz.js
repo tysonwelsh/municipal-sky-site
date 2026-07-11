@@ -79,12 +79,12 @@ window.KolobViz = (function () {
   }
 
   function drawPipe(c, cx, baseY, w, h) {
-    // Rb: the foot — thinner at the base, flaring up to the shoulder (r) and a
-    // domed cap. A narrow foot reads as a real pipe standing on the case, not a
-    // bar rising off the floor.
-    var r = w * 0.4, Rb = w * 0.28;
+    // Rb: the foot — trimmed narrower than it used to be (0.5w) for a lighter
+    // stance, but kept a touch wider than the shoulder (r) so the base never
+    // reads as thinner than the top of the pipe.
+    var r = w * 0.4, Rb = w * 0.44;
     var topY = baseY - h;
-    // body — a thin foot flaring out to the shoulders, then a domed cap
+    // body — a slightly narrowed foot up to the shoulders, then a domed cap
     c.beginPath();
     c.moveTo(cx - Rb, baseY);
     c.lineTo(cx - r, topY + r);
@@ -97,7 +97,7 @@ window.KolobViz = (function () {
     // the mouth — a paper-colored pointed arch near the foot, the one detail
     // that says "organ pipe" and not "bar graph"
     var mh = Math.min(w * 0.85, h * 0.3);
-    var mw = w * 0.5;                                // sits within the thinner foot
+    var mw = w * 0.58;
     var my = baseY - Math.max(10, h * 0.13);
     c.beginPath();
     c.moveTo(cx - mw / 2, my);

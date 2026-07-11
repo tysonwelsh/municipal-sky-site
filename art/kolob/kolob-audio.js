@@ -180,10 +180,13 @@ window.KolobAudio = (function () {
   // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
   // in the room without moving its slider (the slider reads layerVolumes, this
   // trim rides on top).
-  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix; voice 7.0:
-  // the still small voice doubled again by owner request (was 3.5). The trim
-  // seats each while the sliders still read their usual positions.
-  var LAYER_VOL_TRIM = { choir: 1.1, voice: 7.0, bagpipe: 0.44, clarinet: 0.72 };
+  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix. voice 9.0:
+  // lifted further by owner request — but the trim was never the reason the
+  // voice stayed faint (see the source peak in stillVoiceRender); this rides on
+  // top of that source lift. bells 0.8: pulled down 20% by owner request.
+  // telegraph 1.5: the wire lifted 50% so its taps carry. The trims seat each
+  // while the sliders still read their usual positions.
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, bagpipe: 0.44, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
 
   // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
   // breathes slowly; the parlor is small, warm, and quick to forgive.
@@ -3088,7 +3091,11 @@ window.KolobAudio = (function () {
       gate.gain.linearRampToValueAtTime(0, st + on + hold);
       st += syl + (chance(0.2) ? rnd(0.3, 1.1) : 0);           // long breath commas
     }
-    var peak = 0.24 * presence;                                // truly near-threshold
+    // The real governor of the voice's loudness. It was pinned near-threshold
+    // here (0.24), so raising only the layer trim doubled a near-silent source
+    // and read as no change. Lifted at the source by owner request so the still
+    // small voice actually sits in the room.
+    var peak = 0.55 * presence;
     env(og, t, [[1.6, peak], [Math.max(0.4, dur - 3.4), peak * 0.9], [1.8, 0]]);
     o.start(t); o.stop(t + dur + 0.3);
     emitNote("voice", 0, t, dur);
