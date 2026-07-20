@@ -9,10 +9,20 @@
 // (PJ2.Library / PJ2.Sycorax / PJ2.Ariel — attachAnalyser, note/event
 // listeners, getInfo). It owns the spiral (v1's honest FFT coil — 7 octaves
 // × 96 samples, one turn per octave, dB floor −75 / ceil −10, adaptive
-// baseline, drag + auto-rotate camera), the per-track quad-pass costume
-// (codex Bayer ink-wash / grimoire woodcut band / atlas engraver's
-// hatching), the margin apparatus (§4 diegetic telemetry), the §4 per-event
-// illustrations on the L3 alive-list, and the density footer.
+// baseline, drag + auto-rotate camera), the margin apparatus (§4 diegetic
+// telemetry), the §4 per-event illustrations on the L3 alive-list, and the
+// density footer.
+//
+// SPIRAL REVERT (PLAN-SPIRAL-REVERT, owner 2026-07-20): the coil renders
+// v1's phosphor treatment for ALL THREE tracks — translucent colored
+// ribbon fills with a bright fixed baseline, depth as alpha fade, on the
+// track's near-black night ground. The paper page and deckle frame stay;
+// only the plate-zone ellipse is painted night (paperPlate override).
+// The alchemy-sigil dial is gone; beneath the coil sits v1's constellation
+// floor — the drones charted by pitch-class angle / octave radius, with
+// consonance-weighted interval lines, triangle-harmonic halo ripples, and
+// note-name ring labels. The v2 coil theatrics (pen wobble, ink oxidation,
+// hush step, Cut slash, re-gild, roman seam numerals) are removed with it.
 //
 // THE INTERFACE CONTRACT (pj2-ui.js builds against exactly this):
 //   PJ2.Viz.create({ plateCanvas, marginCanvas, footerCanvas })
@@ -72,7 +82,7 @@ PJ2.Viz = (function () {
   var DB_FLOOR = -75, DB_CEIL = -10;
   var BASELINE_ALPHA = 0.005;        // ~3.3 s EMA at 60 fps
   var BASELINE_RETAIN = 0.30;        // sustained content kept at ~30%
-  var YAW_RATE = 2 * Math.PI / 60;   // 1 rpm auto-rotate (mockup-1's read)
+  var YAW_RATE = 0.09;               // rad/s — v1's felt speed (0.0015 rad/frame at 60 fps)
   var POLL_MS = 300;
   var DENSITY_KEEP = 1200;           // ~6 min of poll samples
 
@@ -82,17 +92,20 @@ PJ2.Viz = (function () {
     library: {
       anchorPc: 0, anchorName: "C",
       homeTonicHz: 262, steps: [0, 2, 3, 5, 7, 9, 10], modeName: "dorian",
-      caption: "figura I · the coil of pitches — seven turns, one per octave · in-key degrees bear their metal",
+      scaleLabel: "C dorian",
+      caption: "figura I · the coil of pitches — seven turns, one per octave · the floor charts the drones",
     },
     sycorax: {
       anchorPc: 3, anchorName: "Eb",
       homeTonicHz: 311, steps: [0, 1, 3, 4, 5, 7, 8], modeName: "sycorax",
-      caption: "the block · seven turns cut in relief · the keening notch at the flat second",
+      scaleLabel: "Eb chromatic-locrian",
+      caption: "the block · seven turns, one per octave · the floor charts the drones",
     },
     ariel: {
       anchorPc: 5, anchorName: "F",
       homeTonicHz: 349, steps: [0, 2, 4, 6, 7, 9, 11], modeName: "lydian",
-      caption: "carta caelestis · seven turns engraved · the tonic bears the gilt star",
+      scaleLabel: "F lydian",
+      caption: "carta caelestis · seven turns, one per octave · the floor charts the drones",
     },
   };
 
@@ -168,22 +181,12 @@ PJ2.Viz = (function () {
     var sampleFftIdx = new Float32Array(TOTAL);
     var rowFMin = 0, sampleRate = 44100;
 
-    // the pen's authored wobble on the baseline coil (furniture flavor —
-    // deterministic, identical every frame; never touches the data contour)
-    var wobble = new Float32Array(TOTAL + 1);
-    (function () {
-      for (var i = 0; i <= TOTAL; i++) {
-        wobble[i] = (Skin.noise.vnoise((i / SPT) * 24.7, 3.1) - 0.5) * 2.4;
-      }
-    })();
-
     // projection scratch (reused every frame — no per-frame allocation)
     var innerX = new Float32Array(TOTAL + 1), innerY = new Float32Array(TOTAL + 1), innerZ = new Float32Array(TOTAL + 1);
     var outerX = new Float32Array(TOTAL + 1), outerY = new Float32Array(TOTAL + 1), outerZ = new Float32Array(TOTAL + 1);
-    var order = new Int32Array(TOTAL + 12);   // quads 0..TOTAL-1, dial items TOTAL..
-    var orderZ = new Float32Array(TOTAL + 12);
+    var orderZ = new Float32Array(TOTAL);     // quad mean depths
     var orderArr = [];                        // Array mirror for .sort
-    (function () { for (var i = 0; i < TOTAL + 12; i++) orderArr.push(i); })();
+    (function () { for (var i = 0; i < TOTAL; i++) orderArr.push(i); })();
 
     // per-run visual state (reset on setTrack / engine play / reseed)
     var era = { tonicPc: pcFromHz(cfg.homeTonicHz), steps: cfg.steps };
@@ -192,16 +195,13 @@ PJ2.Viz = (function () {
       era = { tonicPc: pcFromHz(cfg.homeTonicHz), steps: cfg.steps.slice() };
       st = {
         marks: [],            // note-driven overlay marks
-        droneSet: [],         // library lower-schema nodes {deg, oct, until}
+        droneSet: [],         // active drones {deg, freq, oct, sub, t0, until} — the floor's ledger
         whistle: null,        // ariel plumb-bob {of, until}
         pulseAt: -1e9,        // sycorax proto-drum last lub (audio t)
-        keenAt: -1e9,         // sycorax keening flash (audio t)
         tallies: 0,           // sycorax percussion strokes this evening
         tallyKinds: [],       // recent percussion kinds (margin readout)
         tree: [],             // library genealogy nodes {gen, name, ghost, answer, coagula}
         migration: [],        // ariel develop/answer gens
-        inkShift: null,       // library re-oxidation {t0 (wall s), warm}
-        regild: null,         // ariel plate re-gild {t0 (wall s), fromPc}
         sinkPx: 0,            // sycorax print-drop offset (CSS px)
         cut: null,            // sycorax {tB, sev, dip, ret:{t,s}|null} (audio t)
         ghostLineUntil: -1e9, // ariel prior-evening flight-line (wall s)
@@ -238,7 +238,7 @@ PJ2.Viz = (function () {
     // ------------------------------------------------------------- the stacks
     // one Skin.stack per canvas; zone objects are mutated in place on resize
     // (the stack closes over them and reads at bake time).
-    var plateZones = { plateZone: { cx: 0, cy: 0, rx: 1, ry: 1 } };
+    var plateZones = { plateZone: { shape: "rrect", cx: 0, cy: 0, rx: 1, ry: 1, r: 0 } };
     var marginZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
     var footerZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
 
@@ -246,7 +246,7 @@ PJ2.Viz = (function () {
       seed: seed, w: opts.plateW || 900, h: opts.plateH || 860,
       dpr: opts.dpr, zones: plateZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { furniture: drawPlateFurniture, data: drawPlateData },
+      renderers: { paper: paperPlate, furniture: drawPlateFurniture, data: drawPlateData },
     });
     // margin/footer papers are quiet apparatus pages: no deckle, no star
     // field, texture calmed everywhere ink writes (function declarations
@@ -271,6 +271,37 @@ PJ2.Viz = (function () {
       footerStack.invalidate("furniture");
     }
 
+    // the plate page (owner 2026-07-20, both rulings): the night window is a
+    // SLIM ROUNDED SQUARE, and the paper around it must run seamlessly into
+    // the folio, margin, and footer — so the plate bakes the same calm,
+    // deckle-less paper the margin/footer pages use (no torn edge, no star
+    // field; the folio's CSS paper shows through the gaps and everything
+    // reads as one continuous page). The window edge keeps a short dithered
+    // feather so it prints, not peels. Bake-time only — off the hot path.
+    function paperPlate(G, tr, sd, zones) {
+      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
+        u: G.u, plateZone: zones.plateZone,
+        // full-bleed quiet — even the outermost cells stay calm so the
+        // canvas edge leaves no seam ring against the folio
+        quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
+        deckle: false, stars: false,
+      });
+      var pz = zones.plateZone;
+      if (!pz || !pz.rx || !pz.ry) return;
+      var c = G.ctx, u = G.u || 2;
+      c.fillStyle = Skin.palette(tr).spiral.bg;
+      var cols = Math.ceil(G.w / u), rows = Math.ceil(G.h / u);
+      for (var gy = 0; gy < rows; gy++) {
+        for (var gx = 0; gx < cols; gx++) {
+          var px = gx * u, py = gy * u;
+          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, pz);
+          if (d < 0) { c.fillRect(px, py, u, u); continue; }
+          if (d < 7 && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / 7) * 0.4) {
+            c.fillRect(px, py, u, u);   // the feather speckle onto the paper
+          }
+        }
+      }
+    }
     function paperMargin(G, tr, sd, zones) {
       Skin.paper(G.ctx, G.w, G.h, tr, sd, {
         u: G.u, quietRects: [{ x: 4, y: 4, w: G.w - 8, h: G.h - 8 }],
@@ -437,15 +468,16 @@ PJ2.Viz = (function () {
       }
       st.lastCadence = { kind: ev.kind, label: ev.label || ev.kind, rootStep: rootStep, at: wallS };
       if (track === "library") {
-        // rubricated line + the arrival root's metal sigil, stamped (§4)
+        // gilt line + the arrival root's metal sigil, stamped (§4) — gilt,
+        // not rubric, now that the emblem column sits on the night window
         var sig = rootStep != null ? Skin.DEGREE_SIGIL[rootStep] : null;
         addPlateIllustration(20, function (G, age, x, y) {
           var life = 1 - age;
           var c = G.ctx;
-          c.strokeStyle = pal.rubric[0]; c.lineWidth = 1.4;
+          c.strokeStyle = pal.gilt[1]; c.lineWidth = 1.4;
           c.beginPath(); c.moveTo(x - 22, y + 14); c.lineTo(x + 22, y + 14); c.stroke();
-          if (sig) at.stamp(c, "sigil-" + sig, x, y - 2, { u: G.u, scale: 2, tint: pal.rubric[0], fade: life, seed: seed + 7 });
-          if (fontsReady) Skin.Type.smallCaps(c, ev.label || ev.kind, x, y + 26, 13, pal.rubric[0], 1, "center");
+          if (sig) at.stamp(c, "sigil-" + sig, x, y - 2, { u: G.u, scale: 2, tint: pal.gilt[0], fade: life, seed: seed + 7 });
+          if (fontsReady) Skin.Type.smallCaps(c, ev.label || ev.kind, x, y + 26, 13, pal.gilt[1], 1, "center");
         });
       } else if (track === "ariel") {
         var glyph = ev.kind === "float" ? "feather" : "glyph-lift";
@@ -462,13 +494,10 @@ PJ2.Viz = (function () {
 
     function handleSeachange(ev, wallS) {
       if (ev.field && ev.field.tonicHz) {
-        var newPc = pcFromHz(ev.field.tonicHz);
-        var reroot = !!(ev.field.mode && ev.field.mode !== cfg.modeName);
-        var fromPc = era.tonicPc;
-        era.tonicPc = newPc;
+        era.tonicPc = pcFromHz(ev.field.tonicHz);
         // (mode steps stay the track's — engines modulate within family)
-        if (track === "library") st.inkShift = { t0: wallS, warm: reroot };
-        if (track === "ariel") st.regild = { t0: wallS, fromPc: fromPc };
+        // the coil itself takes no theatric — the floor's in-key labels and
+        // the margin carry the modulation (PLAN-SPIRAL-REVERT D1)
       }
       if (track === "sycorax") {
         // the rare semitone SINK: the whole plate's print drops one visible
@@ -485,7 +514,6 @@ PJ2.Viz = (function () {
     function handleReground(ev, wallS) {
       // ariel's seam: the tonic ratchets home
       era.tonicPc = pcFromHz(cfg.homeTonicHz);
-      st.regild = { t0: wallS, fromPc: era.tonicPc };
       plateStack.invalidate("furniture");
     }
 
@@ -546,24 +574,15 @@ PJ2.Viz = (function () {
       // residue is the treeline margin darkening slightly (drawTreeline).
       if (st.cut) st.cut.ret = { t: ev.t, s: ev.returnS || 4 };
     }
+    // the cut is an AUDIO event again — no slash, no hush on the coil
+    // (owner 2026-07-20; sycorax spiral dramaturgy waits for that track's
+    // planned rework). cutActive still gates the waterphone apparition.
     function cutActive(audioT) {
       var c = st.cut;
       if (!c) return false;
       if (audioT < c.tB) return false;
-      if (c.ret && audioT > c.ret.t + c.ret.s) return false;
+      if (c.ret && audioT > c.ret.t + c.ret.s) { st.cut = null; return false; }
       return true;
-    }
-    // ink presence during the cut: print drops to ~25% for the hold, ramps
-    // home over the return (matching cutGain's shape)
-    function hushStep(audioT) {
-      var c = st.cut;
-      if (!c || audioT < c.tB) return 1;
-      var floor = 0.25;
-      if (!c.ret) return floor;
-      if (audioT <= c.ret.t) return floor;
-      var p = clamp01((audioT - c.ret.t) / Math.max(0.001, c.ret.s));
-      if (p >= 1) { st.cut = null; return 1; }
-      return floor + (1 - floor) * p;
     }
 
     function handleArrival(ev, wallS) {
@@ -633,7 +652,9 @@ PJ2.Viz = (function () {
       addPlateIllustration(ttl, function (G, age, x, y) {
         at.stamp(G.ctx, name, x, y, {
           u: G.u, scale: 2, fade: 1 - age, seed: seed + 31,
-          tint: o.witch ? (pal.witch ? pal.witch[1] : pal.primary) : undefined,
+          // library emblems gild on the night window (ink is invisible there)
+          tint: o.witch ? (pal.witch ? pal.witch[1] : pal.primary)
+            : (track === "library" ? pal.gilt[0] : undefined),
           tint2: o.tint2,
         });
       });
@@ -661,23 +682,17 @@ PJ2.Viz = (function () {
         } else if (ev.voice === "hum" && of != null) {
           pushMark({ kind: "column", of: of, t: t, life: Math.min(ev.durS || 4, 10) });
         } else if (ev.voice === "drone" && ev.deg != null) {
-          upsertDrone(ev.deg, t + (ev.durS || 8));
+          upsertDrone(ev, t);
         }
       } else if (track === "sycorax") {
         if ((ev.voice === "chant" || ev.voice === "rebec" || ev.voice === "boneflute") && of != null) {
           pushMark({ kind: "cutline", of: of, t: t, life: Math.min(ev.durS || 1.5, 4), vel: ev.velocity || 0.6 });
-          // the keening law made visible: phrase-final notes on the flat
-          // second tick a bone notch at degree 1's angle (§1b)
-          if (ev.final && ev.freq) {
-            var off = ((pcFromHz(ev.freq) - era.tonicPc) % 12 + 12) % 12;
-            if (off === 1) st.keenAt = t;
-          }
         } else if (ev.voice === "protodrum") {
           if (ev.kind === "lub" || ev.kind === "dub") st.pulseAt = t;
         } else if (ev.voice === "waterphone" && of != null) {
           pushMark({ kind: "tine", of: of, t: t, life: Math.min(ev.durS || 3, 6) });
         } else if (ev.voice === "gurdy" && ev.deg != null) {
-          upsertDrone(ev.deg, t + (ev.durS || 8));
+          upsertDrone(ev, t);
         }
       } else { // ariel
         if (ev.voice === "whistle" && of != null) {
@@ -689,7 +704,7 @@ PJ2.Viz = (function () {
         } else if (ev.voice === "bass" && of != null) {
           pushMark({ kind: "bassmark", of: of, t: t, life: Math.min(ev.durS || 2, 5) });
         } else if (ev.voice === "breeze" && ev.deg != null) {
-          upsertDrone(ev.deg, t + (ev.durS || 8));
+          upsertDrone(ev, t);
         }
       }
     }
@@ -697,12 +712,23 @@ PJ2.Viz = (function () {
       st.marks.push(m);
       if (st.marks.length > 160) st.marks.shift();
     }
-    function upsertDrone(deg, until) {
+    // the drone ledger feeds the constellation floor (freq → node). Each
+    // re-emission of a degree is a fresh cycle: t0/until restart so the
+    // floor's halo rings breathe per cycle, v1-style. Sub-octave tones
+    // (kind "sub") keep their own row.
+    function upsertDrone(ev, t) {
+      var until = t + (ev.durS || 8);
+      var sub = ev.kind === "sub";
       for (var i = 0; i < st.droneSet.length; i++) {
-        if (st.droneSet[i].deg === deg) { st.droneSet[i].until = until; return; }
+        var d = st.droneSet[i];
+        if (d.deg === ev.deg && d.sub === sub) {
+          d.freq = ev.freq || d.freq; d.oct = ev.oct;
+          d.t0 = t; d.until = until;
+          return;
+        }
       }
-      st.droneSet.push({ deg: deg, until: until });
-      if (st.droneSet.length > 6) st.droneSet.shift();
+      st.droneSet.push({ deg: ev.deg, freq: ev.freq || 0, oct: ev.oct, sub: sub, t0: t, until: until });
+      if (st.droneSet.length > 8) st.droneSet.shift();
     }
 
     // ============================================================ PLATE L1 ==
@@ -712,48 +738,29 @@ PJ2.Viz = (function () {
       return {
         CX: CX, CY: CY,
         R: baseRadius,
-        oct: baseRadius * 0.46,
-        peak: baseRadius * 0.46 * 1.3,
+        // v1's coil proportions (prosperos-jukebox-viz.js:1394–1397)
+        oct: baseRadius * 0.55,
+        peak: baseRadius * 0.55 * 1.5,
       };
     }
 
     function drawPlateFurniture(G) {
       var c = G.ctx;
       var M = plateMetrics(G);
-      // caption — engraved / inked plate caption, per-track voice
-      var capCol = track === "library" ? pal.ink[2] : (track === "sycorax" ? pal.bone[2] : pal.silver[1]);
+      // caption — inside the night window's bottom edge, in the track's dim
+      // phosphor (the slim seamless border leaves no paper line for it)
       if (fontsReady) {
-        Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, G.h - 10, 13, capCol, 1, "center");
+        var capY = plateZones.plateZone.cy + plateZones.plateZone.ry - 10;
+        Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, capY, 13,
+          spRGBA(pal.spiral.octaveLabel, 0.65), 1, "center");
       }
-      if (track === "library") {
-        drawSchemaBase(G, M);
-      } else if (track === "ariel") {
+      if (track === "ariel") {
         drawHorizon(G);
       }
-      // sycorax plate furniture: caption only — the block carries no
-      // persistent marks (owner ruling: no scar)
-    }
-
-    // library lower schema (§3 marginalia): 12-spoke horoscope square-in-circle
-    function schemaGeom(G) {
-      return { sx: G.w * 0.165, sy: G.h * 0.845, sr: Math.min(G.w, G.h) * 0.085 };
-    }
-    function drawSchemaBase(G, M) {
-      var c = G.ctx, S = schemaGeom(G);
-      c.strokeStyle = pal.ink[2]; c.lineWidth = 1;
-      c.beginPath(); c.arc(S.sx, S.sy, S.sr, 0, Math.PI * 2); c.stroke();
-      c.strokeStyle = pal.ink[3];
-      c.strokeRect(S.sx - S.sr * 0.707, S.sy - S.sr * 0.707, S.sr * 1.414, S.sr * 1.414);
-      for (var k = 0; k < 12; k++) {
-        var a = k * Math.PI / 6 - Math.PI / 2;
-        c.beginPath();
-        c.moveTo(S.sx + Math.cos(a) * S.sr * 0.28, S.sy + Math.sin(a) * S.sr * 0.28);
-        c.lineTo(S.sx + Math.cos(a) * S.sr, S.sy + Math.sin(a) * S.sr);
-        c.stroke();
-      }
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, "schema inferius · the drone", S.sx, S.sy + S.sr + 16, 13, pal.ink[2], 1, "center");
-      }
+      // library + sycorax plate furniture: caption only — the corner
+      // "schema inferius" is gone (owner 2026-07-20: the constellation
+      // floor charts the drones now), and the block carries no persistent
+      // marks (owner ruling: no scar)
     }
 
     function drawHorizon(G) {
@@ -769,46 +776,85 @@ PJ2.Viz = (function () {
       c.beginPath(); c.moveTo(G.w * 0.08, hy); c.lineTo(G.w * 0.92, hy); c.stroke();
       c.restore();
       if (fontsReady) {
-        Skin.Type.smallCaps(c, "horizon — sinks through the release", G.w * 0.24, hy - 6, 12, pal.silver[1], 2);
+        // label lives on the plate ring, left of the night window — the
+        // dashed line itself passes honestly behind the floor
+        Skin.Type.smallCaps(c, "horizon — sinks through the release", G.w * 0.075, hy - 6, 12, pal.silver[1], 2);
       }
     }
 
     // ============================================================ PLATE L2 ==
-    var patCache = {};
-    function washPattern(ctx, color, level, u) {
-      var k = color + "/" + level + "/" + u;
-      if (!patCache[k]) patCache[k] = ctx.createPattern(Skin.Dither.tile(color, level, u), "repeat");
-      return patCache[k];
+    // v1 constellation-floor helpers (prosperos-jukebox-viz.js:989–1062):
+    // the drones' chromatic star-map beneath the coil.
+    var HALO_WAVE_POINTS = 96;
+    var HALO_WAVE_AMP_FRAC = 0.2;
+    var FLOOR_LOWPASS = 240;
+    var HARMONIC_FREQ_CEILING = 800;
+    var HALO_SLOWDOWN = 60;
+    var HALO_WAVELENGTHS = 6;
+    var CONST_PITCH_LABELS = ["C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+    var INTERVAL_NAMES = {
+      0: "unison", 1: "m2", 2: "M2", 3: "m3", 4: "M3",
+      5: "P4", 6: "tritone", 7: "P5", 8: "m6", 9: "M6",
+      10: "m7", 11: "M7",
+    };
+    var CONSONANCE = { 0: 1.0, 7: 0.95, 5: 0.85, 4: 0.75, 3: 0.7,
+                       8: 0.55, 9: 0.55, 2: 0.4, 10: 0.4,
+                       1: 0.25, 11: 0.25, 6: 0.3 };
+    function lowpassResponse(f) {
+      var r = f / FLOOR_LOWPASS;
+      return 1 / Math.sqrt(1 + r * r);
     }
-
-    // era geometry: pitch-class offset (from the track anchor) of degree step d
-    function eraTheta(step) {
-      var pcOff = ((era.tonicPc - cfg.anchorPc + step) % 12 + 12) % 12;
-      return (pcOff / 12) * 2 * Math.PI;
+    function triangleHarmonics(fundamental, maxFreq) {
+      var result = [];
+      for (var n = 1; n <= 9; n += 2) {
+        var f = fundamental * n;
+        if (f > maxFreq) break;
+        result.push({ freq: f, relAmp: (1 / (n * n)) * lowpassResponse(f) });
+      }
+      return result;
     }
-    function inKeyPcOffsets() {
-      // map pc-offset-from-anchor → step (or undefined)
+    function freqToMidi(f) { return 12 * (Math.log(f / 440) / Math.LN2) + 69; }
+    function pitchClassF(f) { return ((freqToMidi(f) % 12) + 12) % 12; }  // fractional — no rounding
+    function intervalSemitones(f1, f2) {
+      return Math.round(Math.abs(freqToMidi(f1) - freqToMidi(f2))) % 12;
+    }
+    // pitch class → clock angle, octave → distance from center (v1 verbatim)
+    function constNodeWorld(freq, constMaxR) {
+      var theta = (pitchClassF(freq) / 12) * 2 * Math.PI;
+      var oct = Math.floor(freqToMidi(freq) / 12) - 1;
+      var norm = clamp01((oct - 1) / 4);
+      var r = 0.25 * constMaxR + norm * 0.75 * constMaxR;
+      return { x: r * Math.cos(theta), z: r * Math.sin(theta) };
+    }
+    // drone-cycle envelope, approximated: the events carry t/durS but not
+    // v1's fadeIn/fadeOut/peakGain — a fixed fade fraction stands in
+    // (PLAN-SPIRAL-REVERT D4; extend the events additively if this reads flat)
+    function droneIntensity(d, t) {
+      var dur = d.until - d.t0;
+      if (dur <= 0 || t < d.t0 || t > d.until) return 0;
+      var fadeS = Math.min(2.5, dur * 0.25);
+      return clamp01(Math.min((t - d.t0) / fadeS, (d.until - t) / fadeS));
+    }
+    function liveDrones(t) {
+      var live = [];
+      for (var i = 0; i < st.droneSet.length; i++) {
+        if (st.droneSet[i].until > t) live.push(st.droneSet[i]);
+      }
+      st.droneSet = live;
+      return live;
+    }
+    function spRGBA(triple, a) {
+      a = a < 0 ? 0 : a > 1 ? 1 : a;
+      return "rgba(" + triple[0] + "," + triple[1] + "," + triple[2] + "," + a.toFixed(3) + ")";
+    }
+    // in-key membership by ABSOLUTE pitch class — the floor is a fixed clock
+    // face, C at angle 0 (v1's layout); tracks the era's live modulation
+    function inKeyAbsPc() {
       var out = {};
       for (var i = 0; i < era.steps.length; i++) {
-        var pcOff = ((era.tonicPc - cfg.anchorPc + era.steps[i]) % 12 + 12) % 12;
-        out[pcOff] = era.steps[i];
+        out[(era.tonicPc + era.steps[i]) % 12] = true;
       }
       return out;
-    }
-
-    // the library re-oxidation: per-sample ink substitution in blue-noise
-    // order — chemistry, not alpha (§1a / Skin discipline 4)
-    function oxidized(i, baseCol, wallS) {
-      var sh = st.inkShift;
-      if (!sh) return baseCol;
-      var e = wallS - sh.t0;
-      var p = e < 10 ? e / 10 : (e < 20 ? 1 : (e < 30 ? (30 - e) / 10 : -1));
-      if (p < 0) { st.inkShift = null; return baseCol; }
-      var bn = Skin.Dither.blueNoise(seed);
-      if (bn.at(i & 63, (i >> 3) & 63) < p) {
-        return sh.warm ? pal.rubric[0] : pal.ink[2]; // both data-legal
-      }
-      return baseCol;
     }
 
     function drawPlateData(G, tr, tNow) {
@@ -827,50 +873,31 @@ PJ2.Viz = (function () {
         return { sx: M.CX + x1, sy: M.CY - y1, z: z2 };
       }
 
-      // ---- project the coil (inner baseline+wobble, outer contour) --------
-      var i, o, b, th, yW, m;
+      // ---- project the coil (inner baseline, outer FFT contour — v1: same
+      // radius, magnitude extrudes the outer point straight up) ------------
+      var i, th, yW, m;
       for (i = 0; i <= TOTAL; i++) {
         var ii = i < TOTAL ? i : TOTAL - 1;
         var frac = i / SPT;
         th = (frac % 1) * 2 * Math.PI;
         yW = (frac - (OCTAVES - 1) / 2) * M.oct;
         m = magnitudes[ii];
-        var rr = M.R + wobble[i];
-        var ct = Math.cos(th), s2 = Math.sin(th);
-        var xw = rr * ct, zw = rr * s2;
-        // inner
+        var xw = M.R * Math.cos(th), zw = M.R * Math.sin(th);
         var x1 = xw * cy1 - zw * sy1, z1 = xw * sy1 + zw * cy1;
         innerX[i] = x1; innerY[i] = yW * cp1 - z1 * sp1; innerZ[i] = yW * sp1 + z1 * cp1;
-        // outer — contour, full resolution (wobble-free radius: data, not pen)
-        var xo = M.R * ct, zo = M.R * s2, yo = yW + m * M.peak;
-        var x2 = xo * cy1 - zo * sy1, z2 = xo * sy1 + zo * cy1;
-        outerX[i] = x2; outerY[i] = yo * cp1 - z2 * sp1; outerZ[i] = yo * sp1 + z2 * cp1;
+        var yo = yW + m * M.peak;
+        outerX[i] = x1; outerY[i] = yo * cp1 - z1 * sp1; outerZ[i] = yo * sp1 + z1 * cp1;
       }
 
-      if (track === "ariel") {
-        drawAtlasCoil(G, M, proj, wallS);
-      } else {
-        drawSortedCoil(G, M, proj, wallS, audioT);
-      }
-
-      // ---- octave numerals at each turn's seam ----------------------------
-      if (fontsReady) {
-        var numCol = track === "library" ? [pal.ink[1], pal.ink[3]]
-          : (track === "sycorax" ? [pal.bone[1], pal.bone[2]] : [pal.silver[1], pal.silver[2]]);
-        for (o = 0; o < OCTAVES; o++) {
-          var yO = (o - (OCTAVES - 1) / 2) * M.oct;
-          var pN = proj(M.R * 1.12, yO, 0);
-          Skin.Type.smallCaps(c, ROMAN_LO[o], pN.sx + 6, pN.sy + 4, 15, pN.z > 0 ? numCol[0] : numCol[1], 0, "left");
-        }
-      }
+      // v1 draw order: floor first (the coil occludes it), then the coil,
+      // then the axis text
+      drawConstellationFloor(G, M, proj, audioT);
+      drawPhosphorCoil(G, M);
+      drawOctaveAxisAndScale(G, M);
 
       // ---- per-track live extras ------------------------------------------
       drawNoteMarks(G, M, proj, audioT);
-      if (track === "library") drawSchemaLive(G, M);
-      if (track === "sycorax") {
-        drawPulseMark(G, M, audioT);
-        if (st.cut && cutActive(audioT)) drawSlash(G, M, audioT);
-      }
+      if (track === "sycorax") drawPulseMark(G, M, audioT);
       if (track === "ariel") {
         if (wallS < st.ghostLineUntil) drawFlightLine(G, M, proj, true);
         if (st.flightScenes > 0) drawFlightLine(G, M, proj, false);
@@ -878,269 +905,256 @@ PJ2.Viz = (function () {
       }
     }
 
-    // ---- codex + grimoire: the depth-sorted quad pass WITH the dial sigils
-    // sorted in (mockup-1's flagged fix: the sigils must occlude correctly
-    // against the coil, so they enter the same far→near ordering).
-    function drawSortedCoil(G, M, proj, wallS, audioT) {
+    // ---- the v1 phosphor coil (prosperos-jukebox-viz.js:1677–1790): quads
+    // z-sorted back-to-front; translucent colored ribbon fill, faint
+    // fluctuating top edge, bright fixed baseline, octave notch dots.
+    // Depth is alpha fade — the revert's one sanctioned departure from the
+    // ink-weight law (owner 2026-07-20: the coil is v1's, verbatim).
+    function drawPhosphorCoil(G, M) {
       var c = G.ctx;
-      var i, k;
-      var yDial = -((OCTAVES - 1) / 2) * M.oct - M.oct * 0.8;
-      var inKey = inKeyPcOffsets();
-
-      // dial item positions (12 pc offsets from the anchor)
-      var dial = [];
-      for (k = 0; k < 12; k++) {
-        var thD = (k / 12) * 2 * Math.PI;
-        var ctd = Math.cos(thD), std = Math.sin(thD);
-        dial.push({
-          pcOff: k, step: inKey[k],
-          pIn: proj(M.R * 1.04 * ctd, yDial, M.R * 1.04 * std),
-          pOut: proj(M.R * 1.16 * ctd, yDial, M.R * 1.16 * std),
-          pSig: proj(M.R * 1.38 * ctd, yDial, M.R * 1.38 * std),
-        });
-      }
-
-      // the dial's compass rim draws first (always behind — it sits below
-      // the coil and encircles it; drawing it under everything is honest)
-      c.save();
-      c.setLineDash([3, 4]);
-      c.strokeStyle = track === "library" ? pal.ink[3] : rgba(pal.bone[1], 0.75);
-      c.lineWidth = track === "library" ? 1 : 1.4;
-      c.beginPath();
-      for (var rp = 0; rp <= 72; rp++) {
-        var thR = (rp / 72) * 2 * Math.PI;
-        var wob = track === "sycorax" ? 1 + 0.008 * Math.sin(rp * 1.7 + 2) : 1;
-        var pR = proj(M.R * 1.16 * wob * Math.cos(thR), yDial, M.R * 1.16 * wob * Math.sin(thR));
-        if (rp === 0) c.moveTo(pR.sx, pR.sy); else c.lineTo(pR.sx, pR.sy);
-      }
-      c.stroke();
-      c.restore();
-
-      // ---- build the combined far→near order: quads + dial items ----------
-      var n = 0;
-      for (i = 0; i < TOTAL; i++) { orderZ[i] = (innerZ[i] + innerZ[i + 1]) * 0.5; }
-      for (k = 0; k < 12; k++) { orderZ[TOTAL + k] = dial[k].pSig.z; }
+      var sp = pal.spiral;
+      var f = sp.ribbonFill, s = sp.ribbonStroke, b = sp.baseStroke;
+      var i;
+      for (i = 0; i < TOTAL; i++) orderZ[i] = (innerZ[i] + innerZ[i + 1]) * 0.5;
       orderArr.sort(function (a, b2) { return orderZ[a] - orderZ[b2]; });
-
-      var hush = track === "sycorax" ? hushStep(audioT) : 1;
-      var keenFlash = track === "sycorax" && (audioT - st.keenAt) < 2.5;
-
-      for (var s = 0; s < orderArr.length; s++) {
-        var id = orderArr[s];
-        if (id >= TOTAL) {
-          drawDialItem(G, M, dial[id - TOTAL], keenFlash);
-          continue;
-        }
-        i = id;
+      var denom = M.R * 2;
+      for (var q = 0; q < TOTAL; q++) {
+        i = orderArr[q];
+        var depth = 0.35 + 0.65 * (orderZ[i] + M.R) / denom;
+        if (depth < 0.15) depth = 0.15; else if (depth > 1) depth = 1;
         var ix0 = innerX[i] + M.CX, iy0 = M.CY - innerY[i];
         var ix1 = innerX[i + 1] + M.CX, iy1 = M.CY - innerY[i + 1];
         var ox0 = outerX[i] + M.CX, oy0 = M.CY - outerY[i];
         var ox1 = outerX[i + 1] + M.CX, oy1 = M.CY - outerY[i + 1];
-        var zMid = orderZ[i];
-        var m0 = magnitudes[i], m1 = magnitudes[i + 1];
-        var mm = (m0 + m1) * 0.5;
-
-        if (track === "library") {
-          // Bayer ink-wash fill under the contour (chunky allowed; §3)
-          if (mm > 0.10) {
-            var lvl = mm < 0.28 ? 3 : (mm < 0.46 ? 6 : (mm < 0.68 ? 9 : 13));
-            var tone = zMid > 0 ? pal.ink[1] : pal.ink[2];
-            c.fillStyle = washPattern(c, tone, lvl, G.u);
-            c.beginPath();
-            c.moveTo(ix0, iy0); c.lineTo(ix1, iy1);
-            c.lineTo(ox1, oy1); c.lineTo(ox0, oy0);
-            c.closePath(); c.fill();
-          }
-          // depth → ink weight, never alpha: near dark & wide, far pale hairline
-          var t = zMid / M.R;
-          var col, wd;
-          if (t > 0.30) { col = pal.ink[0]; wd = 2.2; }
-          else if (t > -0.30) { col = pal.ink[1]; wd = 1.4; }
-          else { col = pal.ink[3]; wd = 0.85; } // documented depth-cue exception
-          col = oxidized(i, col, wallS);
-          c.strokeStyle = col; c.lineWidth = Math.max(1, wd - 0.4);
-          c.beginPath(); c.moveTo(ix0, iy0); c.lineTo(ix1, iy1); c.stroke();
-          // the FFT contour — full resolution, never quantized (§2)
-          c.strokeStyle = col; c.lineWidth = wd;
-          c.beginPath(); c.moveTo(ox0, oy0); c.lineTo(ox1, oy1); c.stroke();
-        } else {
-          // GRIMOIRE (mockup-2's proven recipe): the woodcut coil line —
-          // irregular width, ink squash at pressure peaks — plus the ink
-          // band up to the contour, relief gouges, bone data contour.
-          var dep = clamp01((zMid + M.R) / (2 * M.R));
-          var bandPx = Math.abs(oy0 - iy0) + Math.abs(oy1 - iy1);
-          var wob0 = wobble[i] * 0.6, wob1 = wobble[i + 1] * 0.6;
-          c.strokeStyle = rgba(pal.ink[0], (0.62 + 0.38 * dep) * hush);
-          c.lineWidth = 2.6 + mm * 7 + wob0 * 0.9;
-          c.beginPath(); c.moveTo(ix0, iy0 + wob0); c.lineTo(ix1, iy1 + wob1); c.stroke();
-          if (bandPx > 2.2) {
-            c.fillStyle = rgba(pal.ink[0], (0.68 + 0.32 * dep) * hush);
-            c.beginPath();
-            c.moveTo(ix0, iy0 + 1.5); c.lineTo(ix1, iy1 + 1.5);
-            c.lineTo(ox1, oy1); c.lineTo(ox0, oy0);
-            c.closePath(); c.fill();
-            if (mm > 0.4) { // ink squash past the contour
-              c.strokeStyle = rgba(pal.ink[0], 0.5 * hush);
-              c.lineWidth = 1.5 + mm * 4.5 * dep;
-              c.beginPath(); c.moveTo(ox0, oy0); c.lineTo(ox1, oy1); c.stroke();
-            }
-          }
-          // relief gouges — short white cuts inside the band
-          if (bandPx > 8 && Skin.noise.hash2(i, 88) < 0.58) {
-            var gl = 0.45 + Skin.noise.hash2(i, 55) * 0.4;
-            var gx0 = ix0 + (ox0 - ix0) * 0.12, gy0 = iy0 + (oy0 - iy0) * 0.12;
-            var gx1 = ix0 + (ox0 - ix0) * gl, gy1 = iy0 + (oy0 - iy0) * gl;
-            c.strokeStyle = rgba(hush > 0.6 ? pal.bone[0] : pal.bone[1], (0.35 + 0.5 * dep) * (hush > 0.6 ? 0.95 : 0.7));
-            c.lineWidth = 1.7 * dep + 0.5;
-            c.beginPath(); c.moveTo(gx0, gy0); c.lineTo(gx1, gy1); c.stroke();
-          }
-          // THE DATA CONTOUR — the longest gouge on the block. Hush = one
-          // bone ramp step down, never an alpha fade (§1b / risk 4).
-          var loud = Math.min(1, mm * 3.2);
-          var nearBone = hush > 0.6 ? pal.bone[0] : pal.bone[1];
-          var cA = dep > 0.45 ? (0.42 + 0.58 * loud) : (0.3 + 0.3 * loud);
-          c.strokeStyle = rgba(dep > 0.45 ? nearBone : pal.bone[2], hush > 0.6 ? Math.max(cA, 0.75) : cA);
-          c.lineWidth = (hush > 0.6 ? 1.3 + 2.6 * mm : 0.8 + 2.0 * mm) * (0.3 + 0.7 * dep);
-          c.beginPath(); c.moveTo(ox0, oy0); c.lineTo(ox1, oy1); c.stroke();
+        // ribbon fill
+        c.beginPath();
+        c.moveTo(ix0, iy0); c.lineTo(ox0, oy0); c.lineTo(ox1, oy1); c.lineTo(ix1, iy1);
+        c.closePath();
+        c.fillStyle = spRGBA(f, 0.28 * depth);
+        c.fill();
+        // fluctuating top edge — thin and faint; the emphasis is the baseline
+        c.beginPath(); c.moveTo(ox0, oy0); c.lineTo(ox1, oy1);
+        c.strokeStyle = spRGBA(b, 0.25 * depth); c.lineWidth = 0.6; c.stroke();
+        // the fixed baseline — the emphasized line (constant radius/height)
+        c.beginPath(); c.moveTo(ix0, iy0); c.lineTo(ix1, iy1);
+        c.strokeStyle = spRGBA(s, 0.9 * depth); c.lineWidth = 1.3; c.stroke();
+        // octave-boundary notch dot, inside the depth sort
+        if (i % SPT === 0 && i !== 0) {
+          c.beginPath(); c.arc(ix0, iy0, 2, 0, Math.PI * 2);
+          c.fillStyle = spRGBA(s, 0.9 * depth); c.fill();
         }
       }
     }
 
-    function drawDialItem(G, M, d, keenFlash) {
+    // ---- the v1 constellation floor (prosperos-jukebox-viz.js:1506–1675 +
+    // 1878–1915): the drones charted on a clock-face plane beneath the coil
+    // — chromatic spokes, outer ring, per-drone standing-wave halo rings,
+    // consonance-weighted interval lines + labels, harmonic dots, sub dots,
+    // and note-name ring labels tinted by live in-key membership. Fed by
+    // the engines' drone-class note events (freq/oct/durS — D4).
+    function drawConstellationFloor(G, M, proj, audioT) {
       var c = G.ctx;
-      var near = d.pSig.z > 0;
-      if (track === "library") {
-        var colN = near ? pal.ink[0] : pal.ink[3];
-        if (d.step !== undefined) {
-          var sig = Skin.DEGREE_SIGIL[d.step];
-          c.strokeStyle = colN; c.lineWidth = near ? 1.6 : 1;
-          c.beginPath(); c.moveTo(d.pIn.sx, d.pIn.sy); c.lineTo(d.pOut.sx, d.pOut.sy); c.stroke();
-          if (sig) {
-            at.stamp(c, "sigil-" + sig, d.pSig.sx, d.pSig.sy, { u: G.u, tint: colN });
-            if (d.step === 0) { // the tonic's sigil is rubricated — Sol regnant
-              at.stamp(c, "sigil-" + sig, d.pSig.sx, d.pSig.sy, { u: G.u, tint: near ? pal.rubric[0] : pal.ink[3] });
+      var sp = pal.spiral;
+      // v1 hung the floor 0.55 oct below the coil; the windowed plate is
+      // tighter vertically, so it rides a touch higher here
+      var floorY = -((OCTAVES - 1) / 2) * M.oct - M.oct * 0.45;
+      var constMaxR = M.R;
+      var haloMaxR = M.R * 0.20;
+      var live = liveDrones(audioT);
+      var mains = [], subs = [], i, j, d;
+      for (i = 0; i < live.length; i++) {
+        d = live[i];
+        if (!d.freq) continue;
+        if (d.sub) subs.push(d); else mains.push(d);
+      }
+
+      // chromatic spokes
+      c.strokeStyle = "rgba(" + sp.constFg + ",0.13)";
+      c.lineWidth = 1;
+      var centerP = proj(0, floorY, 0);
+      for (var si = 0; si < 12; si++) {
+        var sa = (si / 12) * 2 * Math.PI;
+        var endP = proj(constMaxR * Math.cos(sa), floorY, constMaxR * Math.sin(sa));
+        c.beginPath(); c.moveTo(centerP.sx, centerP.sy); c.lineTo(endP.sx, endP.sy); c.stroke();
+      }
+      // outer ring
+      c.strokeStyle = "rgba(" + sp.constFg + ",0.20)";
+      c.beginPath();
+      for (var ri = 0; ri <= 64; ri++) {
+        var ra = (ri / 64) * 2 * Math.PI;
+        var rp = proj(constMaxR * Math.cos(ra), floorY, constMaxR * Math.sin(ra));
+        if (ri === 0) c.moveTo(rp.sx, rp.sy); else c.lineTo(rp.sx, rp.sy);
+      }
+      c.stroke();
+
+      // halo waveforms per drone — additive; expanding rings that morph into
+      // standing waves shaped by the drone's triangle-harmonic partials
+      c.globalCompositeOperation = "lighter";
+      for (i = 0; i < mains.length; i++) {
+        d = mains[i];
+        var intensity = droneIntensity(d, audioT);
+        if (intensity === 0) continue;
+        var visI = Math.min(1, intensity * 1.7);
+        var progress = clamp01((audioT - d.t0) / Math.max(0.001, d.until - d.t0));
+        var baseRingR = progress * haloMaxR;
+        var node = constNodeWorld(d.freq, constMaxR);
+        var partials = triangleHarmonics(d.freq, HARMONIC_FREQ_CEILING);
+        c.strokeStyle = "rgba(" + sp.constFg + "," + (visI * 0.85).toFixed(3) + ")";
+        c.lineWidth = 0.5 + 0.8 * visI;
+        if (!partials.length || baseRingR < haloMaxR * 0.04) {
+          c.beginPath();
+          for (var cs = 0; cs <= 48; cs++) {
+            var ca = (cs / 48) * 2 * Math.PI;
+            var cp = proj(node.x + baseRingR * Math.cos(ca), floorY, node.z + baseRingR * Math.sin(ca));
+            if (cs === 0) c.moveTo(cp.sx, cp.sy); else c.lineTo(cp.sx, cp.sy);
+          }
+          c.stroke();
+        } else {
+          var fMin = partials[0].freq;
+          var waveAmp = baseRingR * HALO_WAVE_AMP_FRAC;
+          c.beginPath();
+          for (var kk = 0; kk <= HALO_WAVE_POINTS; kk++) {
+            var hth = (kk / HALO_WAVE_POINTS) * 2 * Math.PI;
+            var disp = 0;
+            for (var pp = 0; pp < partials.length; pp++) {
+              var part = partials[pp];
+              var spatialK = HALO_WAVELENGTHS * part.freq / fMin;
+              var omegaT = (2 * Math.PI * part.freq / HALO_SLOWDOWN) * audioT;
+              disp += intensity * part.relAmp * Math.sin(spatialK * hth) * Math.cos(omegaT);
             }
+            var hr = baseRingR + disp * waveAmp;
+            var hp = proj(node.x + hr * Math.cos(hth), floorY, node.z + hr * Math.sin(hth));
+            if (kk === 0) c.moveTo(hp.sx, hp.sy); else c.lineTo(hp.sx, hp.sy);
           }
-        } else {
-          // out-of-key: bare pale tick — in-key tinting lives in symbol weight
-          c.strokeStyle = pal.ink[3]; c.lineWidth = 1;
-          c.beginPath(); c.moveTo(d.pIn.sx, d.pIn.sy); c.lineTo(d.pOut.sx, d.pOut.sy); c.stroke();
-        }
-      } else {
-        // grimoire floor ring ticks + the keening notch at degree 1
-        var dep = clamp01((d.pSig.z + M.R) / (2 * M.R));
-        var isKeen = d.step === 1;
-        if (isKeen) {
-          // the bone V-cut — the plate's one double-struck tick
-          var flash = keenFlash ? 1 : 0.8;
-          c.fillStyle = rgba(pal.bone[0], flash);
-          c.beginPath();
-          c.moveTo(d.pSig.sx - 5, d.pSig.sy - 6); c.lineTo(d.pSig.sx + 5, d.pSig.sy - 6);
-          c.lineTo(d.pIn.sx, d.pIn.sy);
-          c.closePath(); c.fill();
-          if (keenFlash) {
-            c.strokeStyle = pal.bone[0]; c.lineWidth = 1.4;
-            c.beginPath(); c.moveTo(d.pSig.sx, d.pSig.sy - 6); c.lineTo(d.pSig.sx, d.pSig.sy - 14); c.stroke();
-          }
-        } else if (d.step !== undefined) {
-          c.strokeStyle = rgba(pal.bone[1], 0.55 + 0.45 * dep); c.lineWidth = 2;
-          c.beginPath(); c.moveTo(d.pIn.sx, d.pIn.sy); c.lineTo(d.pOut.sx, d.pOut.sy); c.stroke();
-          c.fillStyle = rgba(pal.bone[1], 0.5 + 0.5 * dep);
-          c.beginPath();
-          c.moveTo(d.pOut.sx, d.pOut.sy - 3); c.lineTo(d.pOut.sx + 3, d.pOut.sy);
-          c.lineTo(d.pOut.sx, d.pOut.sy + 3); c.lineTo(d.pOut.sx - 3, d.pOut.sy);
-          c.closePath(); c.fill();
-        } else {
-          c.strokeStyle = rgba(pal.bone[2], 0.35 + 0.35 * dep); c.lineWidth = 1;
-          c.beginPath(); c.moveTo(d.pIn.sx, d.pIn.sy); c.lineTo(d.pOut.sx, d.pOut.sy); c.stroke();
+          c.closePath();
+          c.stroke();
         }
       }
+      c.globalCompositeOperation = "source-over";
+
+      // consonance-weighted interval lines between concurrent drones
+      for (i = 0; i < mains.length; i++) {
+        for (j = i + 1; j < mains.length; j++) {
+          var pairI = Math.min(droneIntensity(mains[i], audioT), droneIntensity(mains[j], audioT));
+          if (pairI === 0) continue;
+          var sem = intervalSemitones(mains[i].freq, mains[j].freq);
+          var cons = CONSONANCE[sem] != null ? CONSONANCE[sem] : 0.5;
+          var alpha = pairI * (0.6 + cons * 0.4);
+          if (alpha < 0.02) continue;
+          var nA = constNodeWorld(mains[i].freq, constMaxR);
+          var nB = constNodeWorld(mains[j].freq, constMaxR);
+          var pA = proj(nA.x, floorY, nA.z), pB = proj(nB.x, floorY, nB.z);
+          c.strokeStyle = "rgba(" + sp.constFg + "," + alpha.toFixed(3) + ")";
+          c.lineWidth = 0.5 + cons * 1.0;
+          c.beginPath(); c.moveTo(pA.sx, pA.sy); c.lineTo(pB.sx, pB.sy); c.stroke();
+        }
+      }
+
+      // harmonic dots (2nd/3rd partials of each drone)
+      for (i = 0; i < mains.length; i++) {
+        var hInt = droneIntensity(mains[i], audioT);
+        if (hInt === 0) continue;
+        var harms = triangleHarmonics(mains[i].freq, 4000);
+        for (var hi = 1; hi < Math.min(3, harms.length); hi++) {
+          var ha = hInt * harms[hi].relAmp;
+          if (ha < 0.02) continue;
+          var hn = constNodeWorld(harms[hi].freq, constMaxR);
+          var hpp = proj(hn.x, floorY, hn.z);
+          c.fillStyle = "rgba(" + sp.constFg + "," + (ha * 0.55).toFixed(3) + ")";
+          c.beginPath(); c.arc(hpp.sx, hpp.sy, 1.5 + ha * 2, 0, Math.PI * 2); c.fill();
+        }
+      }
+
+      // drone nodes + sub-octave dots
+      for (i = 0; i < mains.length; i++) {
+        var nInt = droneIntensity(mains[i], audioT);
+        if (nInt === 0) continue;
+        var pn = constNodeWorld(mains[i].freq, constMaxR);
+        var pnP = proj(pn.x, floorY, pn.z);
+        c.fillStyle = "rgba(" + sp.constFg + "," + nInt.toFixed(3) + ")";
+        c.beginPath(); c.arc(pnP.sx, pnP.sy, 1.5 + nInt * 2, 0, Math.PI * 2); c.fill();
+      }
+      for (i = 0; i < subs.length; i++) {
+        var sInt = droneIntensity(subs[i], audioT) * 0.85;
+        if (sInt === 0) continue;
+        var sn = constNodeWorld(subs[i].freq, constMaxR);
+        var snP = proj(sn.x, floorY, sn.z);
+        c.fillStyle = "rgba(" + sp.constSub + "," + sInt.toFixed(3) + ")";
+        c.beginPath(); c.arc(snP.sx, snP.sy, 1.5 + sInt * 2, 0, Math.PI * 2); c.fill();
+      }
+
+      if (!fontsReady) return;
+
+      // pitch-class ring labels — v1's flats, in-key vs out-of-key tinted
+      var labelR = constMaxR * 1.10;
+      var inKey = inKeyAbsPc();
+      c.font = '12px "VT323", monospace';
+      c.textAlign = "center";
+      c.textBaseline = "middle";
+      for (var pli = 0; pli < 12; pli++) {
+        var pla = (pli / 12) * 2 * Math.PI;
+        var plp = proj(labelR * Math.cos(pla), floorY, labelR * Math.sin(pla));
+        c.fillStyle = spRGBA(inKey[pli] ? sp.inKeyLabel : sp.outKeyLabel, 0.95);
+        c.fillText(CONST_PITCH_LABELS[pli], plp.sx, plp.sy);
+      }
+
+      // interval labels at pair midpoints, on a dark backing
+      for (i = 0; i < mains.length; i++) {
+        for (j = i + 1; j < mains.length; j++) {
+          var lI = Math.min(droneIntensity(mains[i], audioT), droneIntensity(mains[j], audioT));
+          if (lI < 0.1) continue;
+          var lbl = INTERVAL_NAMES[intervalSemitones(mains[i].freq, mains[j].freq)] || "";
+          if (!lbl) continue;
+          var nA2 = constNodeWorld(mains[i].freq, constMaxR);
+          var nB2 = constNodeWorld(mains[j].freq, constMaxR);
+          var mp = proj((nA2.x + nB2.x) * 0.5, floorY, (nA2.z + nB2.z) * 0.5);
+          var tw = c.measureText(lbl).width;
+          c.fillStyle = "rgba(5,6,10,0.85)";
+          c.fillRect(mp.sx - tw / 2 - 4, mp.sy - 9, tw + 8, 16);
+          c.fillStyle = "rgba(" + sp.constFg + "," + (0.55 + lI * 0.35).toFixed(3) + ")";
+          c.fillText(lbl, mp.sx, mp.sy);
+        }
+      }
+      c.textAlign = "left";
+      c.textBaseline = "alphabetic";
     }
 
-    // ---- atlas (ariel): the engraved passes — hatch, baseline, contour,
-    // ticks + seam stars (mockup-3's mid-silver-baseline hierarchy: the
-    // scaffold never brighter than mid silver; the bright data contour owns
-    // the eye). Strokes only — no fills — so painter's order suffices; the
-    // far side lets go (its ticks/labels drop) which is this skin's honest
-    // occlusion story.
-    function drawAtlasCoil(G, M, proj, wallS) {
+    // ---- the v1 octave axis + scale caption (prosperos-jukebox-viz.js:
+    // 1917–1950): C1…C7 ticks on the left, billboarded (tracks camera pitch
+    // only, never yaw), and the scale name at the coil's top-right — both
+    // inside the night window. Replaces the roman seam numerals (owner
+    // 2026-07-20: no roman numerals for now).
+    function drawOctaveAxisAndScale(G, M) {
+      if (!fontsReady) return;
       var c = G.ctx;
-      var i, o, b, th, yW, pt;
-      // pass 1 — engraver's hatching: radial burin strokes, density = magnitude
-      for (i = 0; i < TOTAL; i += 1) {
-        var m = magnitudes[i];
-        if (m < 0.09) continue;
-        var p0x = innerX[i] + M.CX, p0y = M.CY - innerY[i];
-        var p1x = outerX[i] + M.CX, p1y = M.CY - outerY[i];
-        c.strokeStyle = (innerZ[i] / M.R > -0.1) ? pal.silver[2] : pal.plate[2];
-        c.lineWidth = 1;
-        c.beginPath(); c.moveTo(p0x, p0y); c.lineTo(p1x, p1y); c.stroke();
+      var sp = pal.spiral;
+      var o = sp.octaveLabel;
+      var cp1 = Math.cos(camPitch);
+      var tickX = M.CX - M.R - 28, labelX = tickX - 8, capW = 4;
+      c.font = '13px "VT323", monospace';
+      c.textAlign = "right";
+      c.textBaseline = "middle";
+      c.strokeStyle = spRGBA(o, 0.45);
+      c.lineWidth = 1;
+      c.fillStyle = spRGBA(o, 0.85);
+      for (var oi = 0; oi < OCTAVES; oi++) {
+        var yStart = (oi - (OCTAVES - 1) / 2) * M.oct;
+        var yEnd = (oi + 1 - (OCTAVES - 1) / 2) * M.oct;
+        var sStart = M.CY - yStart * cp1;
+        var sEnd = M.CY - yEnd * cp1;
+        c.beginPath();
+        c.moveTo(tickX, sStart); c.lineTo(tickX, sEnd);
+        c.moveTo(tickX - capW, sStart); c.lineTo(tickX + capW, sStart);
+        c.moveTo(tickX - capW, sEnd); c.lineTo(tickX + capW, sEnd);
+        c.stroke();
+        c.fillText(cfg.anchorName + (BASE_OCTAVE + oi), labelX, M.CY - (yStart + yEnd) * 0.5 * cp1);
       }
-      // pass 2 — the baseline helix, scaffold recessive
-      var prevX = 0, prevY = 0, prevZ = 0, has = false;
-      for (i = 0; i <= TOTAL; i++) {
-        var sx = innerX[i] + M.CX, sy = M.CY - innerY[i], zz = innerZ[i];
-        if (has) {
-          var zAvg = (zz + prevZ) / 2 / M.R;
-          c.strokeStyle = zAvg > 0.1 ? pal.silver[1] : pal.silver[2];
-          c.lineWidth = zAvg > 0.1 ? 1 : 0.7;
-          c.beginPath(); c.moveTo(prevX, prevY); c.lineTo(sx, sy); c.stroke();
-        }
-        prevX = sx; prevY = sy; prevZ = zz; has = true;
-      }
-      // pass 3 — the FFT contour: drawn only where there is data
-      var FLOOR = 0.085;
-      var pm = 0;
-      has = false;
-      for (i = 0; i < TOTAL; i++) {
-        b = i % SPT;
-        var cx2 = outerX[i] + M.CX, cy2 = M.CY - outerY[i], cz2 = outerZ[i];
-        if (has && b !== 0 && (magnitudes[i] > FLOOR || pm > FLOOR)) {
-          var t = (cz2 + prevZ) / 2 / M.R;
-          var col, wd;
-          if (t > 0.25) { col = pal.silver[0]; wd = 2; }
-          else if (t > -0.35) { col = pal.silver[1]; wd = 1.4; }
-          else { col = pal.silver[2]; wd = 0.9; } // documented depth-cue exception
-          c.strokeStyle = col; c.lineWidth = wd;
-          c.beginPath(); c.moveTo(prevX, prevY); c.lineTo(cx2, cy2); c.stroke();
-        }
-        prevX = cx2; prevY = cy2; prevZ = cz2; pm = magnitudes[i]; has = true;
-      }
-      // pass 4 — degree ticks per turn + gilt seam stars; the re-gilding
-      // after a sea change lights the stars one by one over ~8 s (§1c)
-      var inKey = inKeyPcOffsets();
-      var regildP = -1;
-      if (st.regild) {
-        regildP = (wallS - st.regild.t0) / 8;
-        if (regildP >= 1) { st.regild = null; regildP = -1; }
-      }
-      for (o = 0; o < OCTAVES; o++) {
-        for (var pc = 0; pc < 12; pc++) {
-          th = (pc / 12) * 2 * Math.PI;
-          yW = (o + pc / 12 - (OCTAVES - 1) / 2) * M.oct;
-          var step = inKey[pc];
-          var inK = step !== undefined;
-          var r1 = M.R - (inK ? 7 : 4);
-          var q0 = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
-          if (q0.z / M.R < -0.55) continue; // far side: let it go
-          var q1 = proj(r1 * Math.cos(th), yW, r1 * Math.sin(th));
-          var gilding = regildP >= 0 && inK && (pc / 12) < regildP;
-          c.strokeStyle = gilding ? pal.gilt[0] : (inK ? pal.silver[1] : pal.silver[2]);
-          c.lineWidth = 1;
-          c.beginPath(); c.moveTo(q0.sx, q0.sy); c.lineTo(q1.sx, q1.sy); c.stroke();
-          // the tonic rings as the gilt star on every turn
-          if (inK && step === 0) {
-            Skin.star4(c, q0.sx, q0.sy, q0.z / M.R > 0 ? 3.4 : 2.4,
-              q0.z / M.R > -0.15 ? pal.gilt[0] : pal.gilt[1]);
-          }
-        }
-        // octave seam: gilt star + numeral
-        yW = (o - (OCTAVES - 1) / 2) * M.oct;
-        var sPt = proj(M.R * 1.05, yW, 0);
-        if (sPt.z / M.R > -0.6) {
-          Skin.star4(c, sPt.sx, sPt.sy, 3.4, sPt.z / M.R > -0.15 ? pal.gilt[0] : pal.gilt[1]);
-        }
-      }
+      // the scale caption, top-right inside the window
+      c.font = '12px "VT323", monospace';
+      c.fillStyle = spRGBA(o, 0.55);
+      c.fillText(cfg.scaleLabel, M.CX + M.R + 10, M.CY - M.oct * 3.2 * cp1);
+      c.textAlign = "left";
+      c.textBaseline = "alphabetic";
     }
 
     // ---- note-driven overlay marks (positions/magnitudes at full res) -----
@@ -1159,24 +1173,24 @@ PJ2.Viz = (function () {
         var iC = Math.min(TOTAL - 1, Math.max(0, Math.round(mk.of * SPT)));
         var pt, dep;
         if (mk.kind === "flick") {
-          // quill flick off the baseline (library harpsichord)
+          // quill flick off the baseline (library harpsichord) — phosphor
+          // amber on the night ground; far limb steps down the ramp
           pt = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
           dep = pt.z / M.R;
           var len = 10 + 14 * (mk.vel || 0.6);
-          c.strokeStyle = dataCol(dep > -0.3 ? pal.ink[0] : "#93794f", "quill flick");
+          c.strokeStyle = dataCol(dep > -0.3 ? "#ffdc82" : "#b4823c", "quill flick");
           c.lineWidth = 1.4 * (1 - p01 * 0.5);
           c.beginPath();
           c.moveTo(pt.sx, pt.sy);
           c.quadraticCurveTo(pt.sx + len * 0.4, pt.sy - len * 0.9, pt.sx + len * 0.85, pt.sy - len * 1.4 * (1 - p01 * 0.4));
           c.stroke();
         } else if (mk.kind === "glint") {
-          // gilt-leaf fleck rising by loudness — 2 px-snapped (the one v1
-          // mark already ahead of the plan). Ink core carries the datum;
-          // gilt illuminates beside it (gilt never a sole carrier).
+          // music-box glint: bright phosphor core (the datum), gilt flecks
+          // illuminating beside it — v1's soft star, px-snapped
           var rise = (0.18 + 0.45 * (mk.vel || 0.5)) * M.peak * Math.min(1, age / 0.4);
           pt = proj(M.R * Math.cos(th), yW + rise, M.R * Math.sin(th));
           var gx = Math.round(pt.sx / 2) * 2, gy = Math.round(pt.sy / 2) * 2;
-          c.fillStyle = dataCol(pal.ink[0], "music-box glint core");
+          c.fillStyle = dataCol("#ffdc82", "music-box glint core");
           c.fillRect(gx - 1, gy - 1, 2, 2);
           if (p01 < 0.8) {
             c.fillStyle = pal.gilt[1];
@@ -1184,14 +1198,14 @@ PJ2.Viz = (function () {
             c.fillRect(gx - 1, gy - 3, 2, 2); c.fillRect(gx - 1, gy + 1, 2, 2);
           }
         } else if (mk.kind === "column") {
-          // the hum's illuminated column: Bayer body, inked edges
+          // the hum's column, v1-voiced: translucent amber body, bright edges
           var pB = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
           var hCol = magnitudes[iC] * M.peak;
           var pT = proj(M.R * Math.cos(th), yW + Math.max(hCol, M.peak * 0.14), M.R * Math.sin(th));
-          c.fillStyle = washPattern(c, pal.ink[2], 6, G.u);
           var wCol = 7;
+          c.fillStyle = spRGBA(pal.spiral.ribbonFill, 0.18);
           c.fillRect(Math.min(pB.sx, pT.sx) - wCol / 2, Math.min(pB.sy, pT.sy), wCol, Math.abs(pB.sy - pT.sy));
-          c.strokeStyle = dataCol(pal.ink[1], "hum column");
+          c.strokeStyle = dataCol("#ffdc82", "hum column");
           c.lineWidth = 1.2;
           c.beginPath(); c.moveTo(pB.sx - wCol / 2, pB.sy); c.lineTo(pT.sx - wCol / 2, pT.sy); c.stroke();
           c.beginPath(); c.moveTo(pB.sx + wCol / 2, pB.sy); c.lineTo(pT.sx + wCol / 2, pT.sy); c.stroke();
@@ -1233,48 +1247,6 @@ PJ2.Viz = (function () {
       st.marks = keep;
     }
 
-    // library lower schema, live: drone tones as inked nodes, interval rules
-    // weighted by consonance (single/double), labeled
-    function drawSchemaLive(G, M) {
-      var c = G.ctx, S = schemaGeom(G);
-      var t = aNow();
-      var live = [];
-      for (var i = 0; i < st.droneSet.length; i++) {
-        if (st.droneSet[i].until > t) live.push(st.droneSet[i]);
-      }
-      st.droneSet = live;
-      var pts = [];
-      for (i = 0; i < live.length; i++) {
-        var step = ((live[i].deg % 7) + 7) % 7;
-        var semis = era.steps[step];
-        var a = (semis / 12) * 2 * Math.PI - Math.PI / 2;
-        pts.push({ x: S.sx + Math.cos(a) * S.sr * 0.8, y: S.sy + Math.sin(a) * S.sr * 0.8, semis: semis });
-      }
-      // interval rules
-      var CONS = { 0: 1, 7: 0.95, 5: 0.85, 4: 0.75, 3: 0.7, 8: 0.55, 9: 0.55, 2: 0.4, 10: 0.4, 1: 0.2, 11: 0.2, 6: 0.15 };
-      for (i = 0; i < pts.length; i++) {
-        for (var j = i + 1; j < pts.length; j++) {
-          var iv = Math.abs(pts[i].semis - pts[j].semis) % 12;
-          var cons = CONS[iv] || 0.3;
-          c.strokeStyle = pal.ink[1]; c.lineWidth = 1.2;
-          if (cons > 0.8) { // double rule for the perfect intervals
-            c.beginPath(); c.moveTo(pts[i].x - 1.5, pts[i].y); c.lineTo(pts[j].x - 1.5, pts[j].y); c.stroke();
-            c.beginPath(); c.moveTo(pts[i].x + 1.5, pts[i].y); c.lineTo(pts[j].x + 1.5, pts[j].y); c.stroke();
-          } else if (cons > 0.5) {
-            c.beginPath(); c.moveTo(pts[i].x, pts[i].y); c.lineTo(pts[j].x, pts[j].y); c.stroke();
-          } else {
-            c.save(); c.setLineDash([2, 3]);
-            c.beginPath(); c.moveTo(pts[i].x, pts[i].y); c.lineTo(pts[j].x, pts[j].y); c.stroke();
-            c.restore();
-          }
-        }
-      }
-      for (i = 0; i < pts.length; i++) {
-        c.fillStyle = dataCol(pal.ink[0], "schema drone node");
-        c.beginPath(); c.arc(pts[i].x, pts[i].y, 3.4, 0, Math.PI * 2); c.fill();
-      }
-    }
-
     // sycorax: the proto-drum's lone pulse mark — keeps printing in the hush
     function drawPulseMark(G, M, audioT) {
       var c = G.ctx;
@@ -1304,46 +1276,6 @@ PJ2.Viz = (function () {
           c.stroke();
         }
       }
-    }
-
-    // THE CUT — the white slash across the plate at tB (severity = length),
-    // fading out COMPLETELY as the return ramps home (owner ruling: no scar)
-    function drawSlash(G, M, audioT) {
-      var c = G.ctx;
-      var cut = st.cut;
-      var sev = cut.sev;
-      var heal = cut.ret ? clamp01((audioT - cut.ret.t) / Math.max(0.001, cut.ret.s)) : 0;
-      var vis = 1 - heal;
-      if (vis <= 0.01) return;
-      var w = G.w, h = G.h;
-      var x0 = w * 0.5 - w * 0.30 * sev, y0 = M.CY - h * 0.30 * sev;
-      var x1 = w * 0.5 + w * 0.28 * sev, y1 = M.CY + h * 0.24 * sev;
-      var dx = x1 - x0, dy = y1 - y0;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var nx = -dy / len, ny = dx / len;
-      var N = 26;
-      c.strokeStyle = rgba(pal.ink[0], 0.55 * vis); c.lineWidth = 2.5;
-      c.beginPath();
-      var b;
-      for (var i2 = 0; i2 <= N; i2++) {
-        var t = i2 / N;
-        var pxS = x0 + dx * t, pyS = y0 + dy * t;
-        var hw = (5.5 * Math.pow(Math.sin(Math.PI * t), 0.65) + 0.4) * vis;
-        var jag = (Skin.noise.hash2(i2, 5) - 0.5) * 3.2;
-        var tx = pxS + nx * (hw + jag), ty = pyS + ny * (hw + jag);
-        if (i2 === 0) c.moveTo(tx, ty); else c.lineTo(tx, ty);
-      }
-      for (b = N; b >= 0; b--) {
-        var t2 = b / N;
-        var pxS2 = x0 + dx * t2, pyS2 = y0 + dy * t2;
-        var hw2 = (5.5 * Math.pow(Math.sin(Math.PI * t2), 0.65) + 0.4) * vis;
-        var jag2 = (Skin.noise.hash2(b, 5) - 0.5) * 3.2;
-        c.lineTo(pxS2 - nx * (hw2 - jag2 * 0.6), pyS2 - ny * (hw2 - jag2 * 0.6));
-      }
-      c.closePath();
-      c.stroke();
-      c.fillStyle = rgba(pal.bone[0], vis);
-      c.fill();
     }
 
     // ariel: dotted flight-line arcing up the coil; tonight gilt, the ghost
@@ -2166,10 +2098,14 @@ PJ2.Viz = (function () {
       var p = measure(plateCanvas, opts.plateW || 900, opts.plateH || 860);
       var m = measure(marginCanvas, opts.marginW || 402, opts.marginH || 640);
       var f = measure(footerCanvas, opts.footerW || 900, opts.footerH || 64);
+      // the night window: a slim, even rounded-square border (owner
+      // 2026-07-20 — "square frame with rounded corners", less frame)
+      var pad = Math.max(16, Math.round(Math.min(p.w, p.h) * 0.03));
       plateZones.plateZone.cx = p.w * 0.5;
-      plateZones.plateZone.cy = p.h * 0.485;
-      plateZones.plateZone.rx = p.w * 0.42;
-      plateZones.plateZone.ry = p.h * 0.46;
+      plateZones.plateZone.cy = p.h * 0.5;
+      plateZones.plateZone.rx = p.w * 0.5 - pad;
+      plateZones.plateZone.ry = p.h * 0.5 - pad;
+      plateZones.plateZone.r = Math.max(14, Math.round(Math.min(p.w, p.h) * 0.045));
       function apply(stack, s) {
         var G = stack.G();
         if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return;
@@ -2188,7 +2124,6 @@ PJ2.Viz = (function () {
         if (t === track) return;
         track = t; cfg = TRACK_CFG[t];
         pal = Skin.palette(t); at = Skin.atlas(t);
-        patCache = {};
         plateStack.setTrack(t); marginStack.setTrack(t); footerStack.setTrack(t);
         resetRunState();
         clearIllustrations();
@@ -2272,6 +2207,7 @@ PJ2.Viz = (function () {
         return {
           track: track, running: running, attached: !!engine,
           fftPeak: peak, marks: st.marks.length, tree: st.tree.length,
+          drones: st.droneSet.length,
           era: { tonicPc: era.tonicPc },
           plateMs: plateStack.lastCompositeMs(),
           illustrations: plateStack.illustrations.length,

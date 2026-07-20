@@ -130,6 +130,15 @@ PJ2.Skin = (function () {
   // design-notes prose into API-enforced facts. `worstBg` is the darkest
   // (light papers) / lightest (dark papers) tone a data mark can land on
   // inside a plate/text zone — the zones clamp the bake, so this is exact.
+  //
+  // `spiral` (PLAN-SPIRAL-REVERT, owner 2026-07-20): the v1 phosphor coil
+  // palette, verbatim from prosperos-jukebox-themes.js → canvas. The plate
+  // window is painted `spiral.bg` (the track's near-black night ground);
+  // the coil, constellation floor, and note marks inside the window draw in
+  // these colors. RGB triples are kept triple-form because the v1 renderer
+  // composes them with computed alpha; `spiral.data` lists the hex forms
+  // that are legal SOLE data carriers on the night ground (all clear 4.5:1
+  // against bg by a wide margin — light ink on near-black).
   var PALETTES = {
     library: {
       void_:  "#0b0a08",
@@ -148,6 +157,16 @@ PJ2.Skin = (function () {
         "#b0553c": "rubric-1: aged tags and display-size accents only; body-size rubric duty is rubric-0",
         "#c9a227": "gilt: illumination and chrome, never a sole data carrier on paper",
         "#e8c95a": "gilt: illumination and chrome, never a sole data carrier on paper",
+      },
+      spiral: {
+        bg: "#0a0805",
+        ribbonStroke: [255, 220, 130], ribbonFill: [255, 170, 0],
+        baseStroke:   [180, 130, 60],
+        inKeyLabel:   [255, 220, 140], outKeyLabel: [120, 95, 50],
+        octaveLabel:  [255, 200, 120],
+        constFg: "255,170,0", constSub: "255,130,40",
+        // #b4823c = baseStroke hex: the far-limb depth step for marks
+        data: ["#ffdc82", "#ffaa00", "#ffdc8c", "#ffc878", "#b4823c"],
       },
     },
     sycorax: {
@@ -172,6 +191,15 @@ PJ2.Skin = (function () {
         "#0d0b09": "ink carries weight and depth on soot, never data — the block prints in negative",
         "#1a1512": "ink carries weight and depth on soot, never data — the block prints in negative",
       },
+      spiral: {
+        bg: "#08070f",
+        ribbonStroke: [220, 200, 255], ribbonFill: [200, 150, 255],
+        baseStroke:   [140, 100, 200],
+        inKeyLabel:   [220, 200, 255], outKeyLabel: [95, 80, 130],
+        octaveLabel:  [200, 170, 240],
+        constFg: "196,181,253", constSub: "155,135,216",
+        data: ["#dcc8ff", "#c896ff", "#c8aaf0"],
+      },
     },
     ariel: {
       void_:  "#05070c",
@@ -188,6 +216,15 @@ PJ2.Skin = (function () {
       },
       rules: {
         "#a04838": "rose: chrome accent (mute square) only — 2.0:1 on plate",
+      },
+      spiral: {
+        bg: "#06090e",
+        ribbonStroke: [216, 240, 255], ribbonFill: [150, 220, 255],
+        baseStroke:   [100, 160, 200],
+        inKeyLabel:   [216, 240, 255], outKeyLabel: [85, 110, 130],
+        octaveLabel:  [170, 220, 240],
+        constFg: "150,220,255", constSub: "100,200,220",
+        data: ["#d8f0ff", "#96dcff", "#aadcf0"],
       },
     },
   };
@@ -226,6 +263,7 @@ PJ2.Skin = (function () {
     if (!api || !api.dev) return true;
     var p = palette(track);
     if (p.data.indexOf(hex) !== -1) return true;
+    if (p.spiral && p.spiral.data.indexOf(hex) !== -1) return true; // phosphor ink on the night window
     if (p.exceptions && p.exceptions[hex]) return true; // documented depth cues
     throw new Error("PJ2.Skin: '" + hex + "' is not data-legal on " + track
       + (context ? " (" + context + ")" : "")
@@ -1385,13 +1423,28 @@ PJ2.Skin = (function () {
   //     opts.deckle     — worn border (default true; ignored by ariel)
   //     opts.stars      — ariel only: sparse engraved star-field (default true)
   // ==========================================================================
+  // signed distance to a rounded rect {cx, cy, rx, ry, r} (half-extents +
+  // corner radius, CSS px). Negative = inside. Shared by the zone test and
+  // the viz's night-window fill/feather.
+  function rrectDist(px, py, pz) {
+    var r = pz.r || 0;
+    var qx = Math.abs(px - pz.cx) - (pz.rx - r);
+    var qy = Math.abs(py - pz.cy) - (pz.ry - r);
+    var ax = qx > 0 ? qx : 0, ay = qy > 0 ? qy : 0;
+    return Math.sqrt(ax * ax + ay * ay) + Math.min(Math.max(qx, qy), 0) - r;
+  }
+
   function zoneTester(opts) {
     var pz = opts.plateZone || null;
     var qr = opts.quietRects || [];
     return function (px, py) {
       if (pz) {
-        var zx = (px - pz.cx) / pz.rx, zy = (py - pz.cy) / pz.ry;
-        if (zx * zx + zy * zy < 1) return true;
+        if (pz.shape === "rrect") {
+          if (rrectDist(px, py, pz) < 0) return true;
+        } else {
+          var zx = (px - pz.cx) / pz.rx, zy = (py - pz.cy) / pz.ry;
+          if (zx * zx + zy * zy < 1) return true;
+        }
       }
       for (var i = 0; i < qr.length; i++) {
         var q = qr[i];
@@ -1964,8 +2017,9 @@ PJ2.Skin = (function () {
     // dithers + the re-threshold fade
     Dither: Dither,
 
-    // paper generators (L0)
+    // paper generators (L0) + zone geometry helper
     paper: paper,
+    rrectDist: rrectDist,
 
     // the sprite atlas + vector furniture vocabulary
     atlas: atlas,
