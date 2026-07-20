@@ -216,6 +216,17 @@ Pixel-art-leaning upgrades that keep "v1 colored-on-black" as the base:
 
 Resolved (owner, 2026-07-20):
 
+- **O5 — RESOLVED** (post-implementation review): the night window is a
+  **slim rounded-square**, not the ellipse — "too much frame". Window
+  inset ≈3% of the plate's short side, corner radius ≈4.5%.
+- **O6 — RESOLVED** (same review): the plate's frame must **connect
+  seamlessly** with the margin panel and footer — so the plate bakes the
+  same calm, deckle-less, full-bleed-quiet paper the margin/footer pages
+  use (no torn edge, no star field on the plate), and the folio reads as
+  one continuous page. Furniture that now sits on the window moved to
+  night-legible ink: the caption and Library corner schema in dim
+  phosphor, Library emblems/cadence stamps in gilt.
+
 - **O1 — RESOLVED**: no roman numerals at the octave seams for now.
   Octave orientation via v1's left-edge `C1…C7` axis + scale caption.
 - **O2 — RESOLVED**: the Cut slash is out. Sycorax coil stays bare/minimal

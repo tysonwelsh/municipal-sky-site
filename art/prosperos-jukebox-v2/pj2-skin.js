@@ -1423,13 +1423,28 @@ PJ2.Skin = (function () {
   //     opts.deckle     — worn border (default true; ignored by ariel)
   //     opts.stars      — ariel only: sparse engraved star-field (default true)
   // ==========================================================================
+  // signed distance to a rounded rect {cx, cy, rx, ry, r} (half-extents +
+  // corner radius, CSS px). Negative = inside. Shared by the zone test and
+  // the viz's night-window fill/feather.
+  function rrectDist(px, py, pz) {
+    var r = pz.r || 0;
+    var qx = Math.abs(px - pz.cx) - (pz.rx - r);
+    var qy = Math.abs(py - pz.cy) - (pz.ry - r);
+    var ax = qx > 0 ? qx : 0, ay = qy > 0 ? qy : 0;
+    return Math.sqrt(ax * ax + ay * ay) + Math.min(Math.max(qx, qy), 0) - r;
+  }
+
   function zoneTester(opts) {
     var pz = opts.plateZone || null;
     var qr = opts.quietRects || [];
     return function (px, py) {
       if (pz) {
-        var zx = (px - pz.cx) / pz.rx, zy = (py - pz.cy) / pz.ry;
-        if (zx * zx + zy * zy < 1) return true;
+        if (pz.shape === "rrect") {
+          if (rrectDist(px, py, pz) < 0) return true;
+        } else {
+          var zx = (px - pz.cx) / pz.rx, zy = (py - pz.cy) / pz.ry;
+          if (zx * zx + zy * zy < 1) return true;
+        }
       }
       for (var i = 0; i < qr.length; i++) {
         var q = qr[i];
@@ -2002,8 +2017,9 @@ PJ2.Skin = (function () {
     // dithers + the re-threshold fade
     Dither: Dither,
 
-    // paper generators (L0)
+    // paper generators (L0) + zone geometry helper
     paper: paper,
+    rrectDist: rrectDist,
 
     // the sprite atlas + vector furniture vocabulary
     atlas: atlas,

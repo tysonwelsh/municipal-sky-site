@@ -238,7 +238,7 @@ PJ2.Viz = (function () {
     // ------------------------------------------------------------- the stacks
     // one Skin.stack per canvas; zone objects are mutated in place on resize
     // (the stack closes over them and reads at bake time).
-    var plateZones = { plateZone: { cx: 0, cy: 0, rx: 1, ry: 1 } };
+    var plateZones = { plateZone: { shape: "rrect", cx: 0, cy: 0, rx: 1, ry: 1, r: 0 } };
     var marginZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
     var footerZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
 
@@ -271,14 +271,20 @@ PJ2.Viz = (function () {
       footerStack.invalidate("furniture");
     }
 
-    // the plate page: the track's paper + deckle exactly as before, then the
-    // plate-zone ellipse painted the v1 night ground (owner 2026-07-20 — the
-    // coil is phosphor-on-black again; the page and its frame stay). The
-    // edge gets a short dithered feather so the window reads as a printed
-    // plate edge, not a sticker. Bake-time only — never on the hot path.
+    // the plate page (owner 2026-07-20, both rulings): the night window is a
+    // SLIM ROUNDED SQUARE, and the paper around it must run seamlessly into
+    // the folio, margin, and footer — so the plate bakes the same calm,
+    // deckle-less paper the margin/footer pages use (no torn edge, no star
+    // field; the folio's CSS paper shows through the gaps and everything
+    // reads as one continuous page). The window edge keeps a short dithered
+    // feather so it prints, not peels. Bake-time only — off the hot path.
     function paperPlate(G, tr, sd, zones) {
       Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, plateZone: zones.plateZone, quietRects: zones.quietRects,
+        u: G.u, plateZone: zones.plateZone,
+        // full-bleed quiet — even the outermost cells stay calm so the
+        // canvas edge leaves no seam ring against the folio
+        quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
+        deckle: false, stars: false,
       });
       var pz = zones.plateZone;
       if (!pz || !pz.rx || !pz.ry) return;
@@ -288,11 +294,9 @@ PJ2.Viz = (function () {
       for (var gy = 0; gy < rows; gy++) {
         for (var gx = 0; gx < cols; gx++) {
           var px = gx * u, py = gy * u;
-          var zx = (px + u * 0.5 - pz.cx) / pz.rx;
-          var zy = (py + u * 0.5 - pz.cy) / pz.ry;
-          var d = zx * zx + zy * zy;
-          if (d < 1) { c.fillRect(px, py, u, u); continue; }
-          if (d < 1.06 && Skin.noise.hash2(gx + (sd & 255), gy) < ((1.06 - d) / 0.06) * 0.4) {
+          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, pz);
+          if (d < 0) { c.fillRect(px, py, u, u); continue; }
+          if (d < 7 && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / 7) * 0.4) {
             c.fillRect(px, py, u, u);   // the feather speckle onto the paper
           }
         }
@@ -464,15 +468,16 @@ PJ2.Viz = (function () {
       }
       st.lastCadence = { kind: ev.kind, label: ev.label || ev.kind, rootStep: rootStep, at: wallS };
       if (track === "library") {
-        // rubricated line + the arrival root's metal sigil, stamped (§4)
+        // gilt line + the arrival root's metal sigil, stamped (§4) — gilt,
+        // not rubric, now that the emblem column sits on the night window
         var sig = rootStep != null ? Skin.DEGREE_SIGIL[rootStep] : null;
         addPlateIllustration(20, function (G, age, x, y) {
           var life = 1 - age;
           var c = G.ctx;
-          c.strokeStyle = pal.rubric[0]; c.lineWidth = 1.4;
+          c.strokeStyle = pal.gilt[1]; c.lineWidth = 1.4;
           c.beginPath(); c.moveTo(x - 22, y + 14); c.lineTo(x + 22, y + 14); c.stroke();
-          if (sig) at.stamp(c, "sigil-" + sig, x, y - 2, { u: G.u, scale: 2, tint: pal.rubric[0], fade: life, seed: seed + 7 });
-          if (fontsReady) Skin.Type.smallCaps(c, ev.label || ev.kind, x, y + 26, 13, pal.rubric[0], 1, "center");
+          if (sig) at.stamp(c, "sigil-" + sig, x, y - 2, { u: G.u, scale: 2, tint: pal.gilt[0], fade: life, seed: seed + 7 });
+          if (fontsReady) Skin.Type.smallCaps(c, ev.label || ev.kind, x, y + 26, 13, pal.gilt[1], 1, "center");
         });
       } else if (track === "ariel") {
         var glyph = ev.kind === "float" ? "feather" : "glyph-lift";
@@ -647,7 +652,9 @@ PJ2.Viz = (function () {
       addPlateIllustration(ttl, function (G, age, x, y) {
         at.stamp(G.ctx, name, x, y, {
           u: G.u, scale: 2, fade: 1 - age, seed: seed + 31,
-          tint: o.witch ? (pal.witch ? pal.witch[1] : pal.primary) : undefined,
+          // library emblems gild on the night window (ink is invisible there)
+          tint: o.witch ? (pal.witch ? pal.witch[1] : pal.primary)
+            : (track === "library" ? pal.gilt[0] : undefined),
           tint2: o.tint2,
         });
       });
@@ -740,10 +747,12 @@ PJ2.Viz = (function () {
     function drawPlateFurniture(G) {
       var c = G.ctx;
       var M = plateMetrics(G);
-      // caption — engraved / inked plate caption, per-track voice
-      var capCol = track === "library" ? pal.ink[2] : (track === "sycorax" ? pal.bone[2] : pal.silver[1]);
+      // caption — inside the night window's bottom edge, in the track's dim
+      // phosphor (the slim seamless border leaves no paper line for it)
       if (fontsReady) {
-        Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, G.h - 10, 13, capCol, 1, "center");
+        var capY = plateZones.plateZone.cy + plateZones.plateZone.ry - 10;
+        Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, capY, 13,
+          spRGBA(pal.spiral.octaveLabel, 0.65), 1, "center");
       }
       if (track === "library") {
         drawSchemaBase(G, M);
@@ -756,13 +765,17 @@ PJ2.Viz = (function () {
 
     // library lower schema (§3 marginalia): 12-spoke horoscope square-in-circle
     function schemaGeom(G) {
-      return { sx: G.w * 0.165, sy: G.h * 0.845, sr: Math.min(G.w, G.h) * 0.085 };
+      // rides above the plate caption's line (the two shared a baseline
+      // when the window went full-bleed)
+      return { sx: G.w * 0.165, sy: G.h * 0.79, sr: Math.min(G.w, G.h) * 0.085 };
     }
     function drawSchemaBase(G, M) {
+      // phosphor-voiced now — the schema sits inside the night window
       var c = G.ctx, S = schemaGeom(G);
-      c.strokeStyle = pal.ink[2]; c.lineWidth = 1;
+      var sp = pal.spiral;
+      c.strokeStyle = spRGBA(sp.baseStroke, 0.9); c.lineWidth = 1;
       c.beginPath(); c.arc(S.sx, S.sy, S.sr, 0, Math.PI * 2); c.stroke();
-      c.strokeStyle = pal.ink[3];
+      c.strokeStyle = spRGBA(sp.baseStroke, 0.5);
       c.strokeRect(S.sx - S.sr * 0.707, S.sy - S.sr * 0.707, S.sr * 1.414, S.sr * 1.414);
       for (var k = 0; k < 12; k++) {
         var a = k * Math.PI / 6 - Math.PI / 2;
@@ -772,7 +785,8 @@ PJ2.Viz = (function () {
         c.stroke();
       }
       if (fontsReady) {
-        Skin.Type.smallCaps(c, "schema inferius · the drone", S.sx, S.sy + S.sr + 16, 13, pal.ink[2], 1, "center");
+        Skin.Type.smallCaps(c, "schema inferius · the drone", S.sx, S.sy + S.sr + 16, 13,
+          spRGBA(sp.octaveLabel, 0.7), 1, "center");
       }
     }
 
@@ -1284,7 +1298,7 @@ PJ2.Viz = (function () {
         for (var j = i + 1; j < pts.length; j++) {
           var iv = Math.abs(pts[i].semis - pts[j].semis) % 12;
           var cons = CONS[iv] || 0.3;
-          c.strokeStyle = pal.ink[1]; c.lineWidth = 1.2;
+          c.strokeStyle = spRGBA(pal.spiral.baseStroke, 0.85); c.lineWidth = 1.2;
           if (cons > 0.8) { // double rule for the perfect intervals
             c.beginPath(); c.moveTo(pts[i].x - 1.5, pts[i].y); c.lineTo(pts[j].x - 1.5, pts[j].y); c.stroke();
             c.beginPath(); c.moveTo(pts[i].x + 1.5, pts[i].y); c.lineTo(pts[j].x + 1.5, pts[j].y); c.stroke();
@@ -1298,7 +1312,7 @@ PJ2.Viz = (function () {
         }
       }
       for (i = 0; i < pts.length; i++) {
-        c.fillStyle = dataCol(pal.ink[0], "schema drone node");
+        c.fillStyle = dataCol("#ffdc82", "schema drone node");
         c.beginPath(); c.arc(pts[i].x, pts[i].y, 3.4, 0, Math.PI * 2); c.fill();
       }
     }
@@ -2154,10 +2168,14 @@ PJ2.Viz = (function () {
       var p = measure(plateCanvas, opts.plateW || 900, opts.plateH || 860);
       var m = measure(marginCanvas, opts.marginW || 402, opts.marginH || 640);
       var f = measure(footerCanvas, opts.footerW || 900, opts.footerH || 64);
+      // the night window: a slim, even rounded-square border (owner
+      // 2026-07-20 — "square frame with rounded corners", less frame)
+      var pad = Math.max(16, Math.round(Math.min(p.w, p.h) * 0.03));
       plateZones.plateZone.cx = p.w * 0.5;
-      plateZones.plateZone.cy = p.h * 0.485;
-      plateZones.plateZone.rx = p.w * 0.42;
-      plateZones.plateZone.ry = p.h * 0.46;
+      plateZones.plateZone.cy = p.h * 0.5;
+      plateZones.plateZone.rx = p.w * 0.5 - pad;
+      plateZones.plateZone.ry = p.h * 0.5 - pad;
+      plateZones.plateZone.r = Math.max(14, Math.round(Math.min(p.w, p.h) * 0.045));
       function apply(stack, s) {
         var G = stack.G();
         if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return;
