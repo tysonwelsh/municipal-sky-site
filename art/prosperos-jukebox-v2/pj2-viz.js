@@ -198,7 +198,7 @@ PJ2.Viz = (function () {
       st = {
         marks: [],            // note-driven overlay marks
         droneSet: [],         // active drones {deg, freq, oct, sub, t0, until} — the floor's ledger
-        whistle: null,        // ariel whistle note tracker {of, freq, until} → lollipop
+        whistleQ: [],         // ariel whistle notes {of, freq, t, until} — time-gated → lollipop
         lolli: null,          // v1 tracked lollipop {theta, yBase, yHead, octIdx, framesQuiet}
         harpPlucks: [],       // library harpsichord baseline ripples {of, t, vel}
         bassPlucks: [],       // ariel bass baseline ripples {of, t, vel, freq}
@@ -737,9 +737,13 @@ PJ2.Viz = (function () {
         }
       } else { // ariel
         if (ev.voice === "whistle" && of != null) {
-          // v1: the whistle IS the lollipop (viz.js:1137–1228) — tracked
-          // pitch, stem off the baseline, glowing head riding the crest
-          st.whistle = { of: of, freq: ev.freq, until: t + (ev.durS || 2) + 0.4 };
+          // v1: the whistle IS the lollipop (viz.js:1137–1228). Notes are
+          // QUEUED and gated by their scheduled time — the engines emit a
+          // whole phrase ahead of the sound, and the tracker must strike
+          // each note as it actually plays (owner 2026-07-20: one lollipop
+          // per note, gliding between neighbors, not one per phrase).
+          st.whistleQ.push({ of: of, freq: ev.freq, t: t, until: t + (ev.durS || 2) + 0.4 });
+          if (st.whistleQ.length > 24) st.whistleQ.shift();
           pushNotch(of, t, ev.durS || 2);
         } else if (ev.voice === "chime" && of != null) {
           // the chime is the music box's sibling: same glint-star voice
@@ -1036,29 +1040,69 @@ PJ2.Viz = (function () {
       return dr;
     }
 
-    // the whistle lollipop tracker — v1's updateLollipop3D (viz.js:1137),
-    // event-tracked pitch, head height from the live display magnitude
+    // the whistle lollipop tracker — v1's updateLollipop3D (viz.js:1137).
+    // v1 peak-tracked the isolated whistle analyser every frame, which is
+    // what made the head SLIDE through glissandi and QUIVER with vibrato.
+    // Reproduced here without a per-voice tap: the note queue gates WHICH
+    // note is sounding (the engines schedule phrases ahead), and the
+    // sounding pitch is refined every frame by locating the spectral peak
+    // in rawMag near the note — the whistle's 5.5 Hz vibrato and bends
+    // live in the spectrum, so the head follows them.
+    var LOLLI_REFINE_SAMPLES = 8;      // ± search window (1 semitone)
+    function refineWhistleOf(of) {
+      var c0 = clamp(Math.round(of * SPT), 0, TOTAL - 1);
+      var i0 = Math.max(1, c0 - LOLLI_REFINE_SAMPLES);
+      var i1 = Math.min(TOTAL - 2, c0 + LOLLI_REFINE_SAMPLES);
+      var best = c0, bv = rawMag[c0];
+      for (var i = i0; i <= i1; i++) {
+        if (rawMag[i] > bv) { bv = rawMag[i]; best = i; }
+      }
+      if (bv < 0.04) return of;        // near-silence: hold the note's pitch
+      // parabolic refinement between neighboring samples (v1 viz.js:1093)
+      var y0 = rawMag[best - 1], y1 = rawMag[best], y2 = rawMag[best + 1];
+      var den = y0 - 2 * y1 + y2;
+      var off = Math.abs(den) < 1e-6 ? 0 : clamp(0.5 * (y0 - y2) / den, -0.5, 0.5);
+      return clamp((best + off) / SPT, 0, OCTAVES - 0.001);
+    }
     function updateLollipop(M, audioT) {
-      var wn = st.whistle;
-      if (wn && audioT > wn.until) { st.whistle = wn = null; }
+      // prune, then gate: the sounding note is the latest-STARTED live one
+      var live = [], wn = null, i;
+      for (i = 0; i < st.whistleQ.length; i++) {
+        var q = st.whistleQ[i];
+        if (audioT > q.until) continue;
+        live.push(q);
+        if (audioT >= q.t && (!wn || q.t > wn.t)) wn = q;
+      }
+      st.whistleQ = live;
       var lp = st.lolli;
       if (wn) {
-        var octIdx = Math.floor(wn.of);
-        if (lp && lp.framesQuiet <= 3) octIdx = lp.octIdx;
-        var fracIn = clamp(wn.of - octIdx, 0, 0.999);
-        var iB = clamp(Math.round(wn.of * SPT), 0, TOTAL - 1);
+        var of = refineWhistleOf(wn.of);
+        var afterSilence = !lp || lp.framesQuiet > 3;
+        var noteChanged = !afterSilence && lp.noteT !== wn.t;
+        // the turn anchor: vibrato stays on its turn mid-note; a new note
+        // (or a fresh strike) re-anchors so octave leaps land correctly
+        var octIdx = (afterSilence || noteChanged) ? Math.floor(of) : lp.octIdx;
+        var fracIn = clamp(of - octIdx, 0, 0.999);
+        var iB = clamp(Math.round(of * SPT), 0, TOTAL - 1);
         var theta = fracIn * 2 * Math.PI;
         var yBase = (octIdx + fracIn - (OCTAVES - 1) / 2) * M.oct;
         var yHead = yBase + rawMag[iB] * M.peak;
-        if (!lp || lp.framesQuiet > 3) {
-          st.lolli = { theta: theta, yBase: yBase, yHead: yHead, octIdx: Math.floor(wn.of), framesQuiet: 0 };
+        // a step to a NEARBY note glides (the slide the owner remembers);
+        // a leap past ~2.5 semitones strikes a fresh lollipop at the new
+        // pitch — one lollipop per note, as in v1's note-start snap
+        var strike = afterSilence ||
+          (noteChanged && Math.abs(of - lp.lastOf) > 0.21);
+        if (strike) {
+          st.lolli = { theta: theta, yBase: yBase, yHead: yHead,
+                       octIdx: octIdx, noteT: wn.t, lastOf: of, framesQuiet: 0 };
         } else {
           var dT = theta - lp.theta;
           while (dT > Math.PI) dT -= 2 * Math.PI;
           while (dT < -Math.PI) dT += 2 * Math.PI;
           lp.theta += dT * HEAD_SMOOTH;
           lp.yHead += (yHead - lp.yHead) * HEAD_SMOOTH;
-          lp.yBase = yBase; lp.framesQuiet = 0;
+          lp.yBase = yBase; lp.octIdx = octIdx;
+          lp.noteT = wn.t; lp.lastOf = of; lp.framesQuiet = 0;
         }
       } else if (lp) {
         // note over: the head sinks home, then the lollipop leaves (v1)
@@ -2642,6 +2686,7 @@ PJ2.Viz = (function () {
           glints: st.boxGlints.length + st.chimeGlints.length,
           bubbles: st.bubbles.length,
           lolli: !!st.lolli,
+          lolliOf: st.lolli ? st.lolli.lastOf : null,
           era: { tonicPc: era.tonicPc },
           plateMs: plateStack.lastCompositeMs(),
           illustrations: plateStack.illustrations.length,

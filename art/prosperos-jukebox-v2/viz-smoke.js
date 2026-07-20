@@ -336,6 +336,15 @@ TRACKS.forEach(function (tr) {
     check("ariel: reground brought the tonic home (F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
     check("ariel: floor plots the breeze drone", dbg.drones >= 1, "drones=" + dbg.drones);
     check("ariel: whistle drives the lollipop", dbg.lolli === true, "lolli=" + dbg.lolli);
+    // time-gating: a phrase note scheduled far ahead must NOT yank the
+    // tracker off the currently-sounding note (the one-lollipop-per-phrase
+    // bug the owner reported)
+    var ofBefore = dbg.lolliOf;
+    eng.emitNote({ voice: "whistle", freq: 2000, t: vnow / 1000 + 100, durS: 2, velocity: 0.8 });
+    runFrames(5, 33);
+    var dbgGate = viz.debug();
+    check("ariel: future whistle note is gated", dbgGate.lolliOf != null && Math.abs(dbgGate.lolliOf - ofBefore) < 0.3,
+      "of " + ofBefore + " -> " + dbgGate.lolliOf);
     check("ariel: bass ripples the baseline", dbg.plucks >= 1, "plucks=" + dbg.plucks);
     check("ariel: bubbles rising", dbg.bubbles >= 1, "bubbles=" + dbg.bubbles);
   }
