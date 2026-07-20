@@ -1,28 +1,28 @@
 // ============================================================================
-// Prospero's Jukebox v2 â pj2-sycorax.js
-// PJ2.Sycorax: the dark track â a rite observed from the treeline.
+// Prospero's Jukebox v2 — pj2-sycorax.js
+// PJ2.Sycorax: the dark track — a rite observed from the treeline.
 //
 // Built per PLAN-SYCORAX.md (rev 2, all recommendations adopted: wordless
 // chant drifting syllabic only in the processional; heartbeat-only
 // gatherings; the bone-flute kept, rare; the downward semitone sink at
 // p â 0.12, at-the-treeline evenings only; the 0.8Ã-gurdy noise ceiling
 // everywhere; the far-field keen in the pool). Facade-shaped like
-// pj2-library.js â create/play/stop/reseed/getInfo/listeners/
+// pj2-library.js — create/play/stop/reseed/getInfo/listeners/
 // attachAnalyser/setMasterVolume, one lazy AudioContext, a fresh seeded
 // "run" per play, stop restarts the whole seeded lineage.
 //
 // The binding constants hold unchanged: floor 0.04, ceiling 0.65, nothing
 // startles, ambient first. Darkness and noise are spent in SPECTRUM,
-// REGISTER, INTERVAL, TEXTURE and CEREMONY â never in level, never in
+// REGISTER, INTERVAL, TEXTURE and CEREMONY — never in level, never in
 // surprise.
 //
 // THE DRAMATURGY is the encirclement: gathering â (processional, p rising
 // with the tide) â circling Ã1â3 â (invocation) â afterimage. It never
-// resolves â the harmony's root is PINNED to i forever (pose mode on the
+// resolves — the harmony's root is PINNED to i forever (pose mode on the
 // PJ2.Harmony profile door), color comes from rotating authored degree-set
 // poses, cadence() is never called (zero cadence events, by construction),
 // and boundary arrivals DARKEN instead of closing: the pose is forced to
-// "sting" ({0,1,5} â the flat second against the fifth), the gurdy sinks
+// "sting" ({0,1,5} — the flat second against the fifth), the gurdy sinks
 // its sub-octave in, the lowpass closes ~15%, and a two-part ORGANUM pad
 // ({0,5} under the keening line) breathes across the seam.
 //
@@ -30,40 +30,40 @@
 // exists, at the invocationâafterimage boundary, severity 0.4 + 0.6Â·tide:
 // an indrawn breath 0.6 s out, percussion cut off MID-GESTURE at tB, a
 // dedicated cutGain on the landscape sum ramping to 0.28 â 0.14Â·sev over
-// 0.25 s (ramped, never touching master, one writer), the hush INHABITED â
+// 0.25 s (ramped, never touching master, one writer), the hush INHABITED —
 // the proto-drum routes around cutGain and beats alone, one waterphone
-// apparition enters ~1.2 s in â held 3 + 5Â·sev seconds, then a 2.5â4 s
+// apparition enters ~1.2 s in — held 3 + 5Â·sev seconds, then a 2.5â4 s
 // return into the afterimage. Conductor intensity remains continuous
 // throughout; the cut lives entirely in gain-land.
 //
 // THE VOICES: the hurdy-gurdy drone (v1's sycorax cluster ~2844, voiced
 // from the live pose, with a trompette partial on the grit bus whose send
-// pulses with drum strokes); the CHANT (primary speaker â whisper-formant
+// pulses with drum strokes); the CHANT (primary speaker — whisper-formant
 // DNA matured into a pitched low voice, reciting-tone Markov, keening
 // phrase-finals on the flat second, an unresolving after-tone body
 // gesture); the REBEC (SYC_GHOST_MARKOV's tritone wander on a bowed body);
-// the WATERPHONE (v1 ~3288, verbatim port â six inharmonic partials, FM
+// the WATERPHONE (v1 ~3288, verbatim port — six inharmonic partials, FM
 // bloom, shared body wobble, downward gliss); the BONE-FLUTE (rare, high,
-// lonely â processional and invocation only, ~2â3 utterances an evening).
+// lonely — processional and invocation only, ~2â3 utterances an evening).
 // Percussion is a LANDSCAPE family (never claims the air): proto-drum
-// (v1's heartbeat), frame drum, log drum, bone rattle â ceremonially
+// (v1's heartbeat), frame drum, log drum, bone rattle — ceremonially
 // paced under the anti-groove law (breath-distributed gaps outside the
 // processional; a Â±20%-jittered walk inside it; accelerating clusters in
 // the invocation whose SPEED rises while their level never does).
 //
 // ACROSS EVENINGS the rite remembers: the standard motif ghost (intoned by
-// the chant in the next gathering, quiet), and THE BRUISE â last evening's
+// the chant in the next gathering, quiet), and THE BRUISE — last evening's
 // cut severity carried as one scalar (murkier opening, earlier heartbeat,
 // a "sting" first pose past 0.5). Pose state persists across the seam
 // anyway; the rite resumes mid-gesture for free.
 //
 // Discipline inherited whole from pj2-library.js: every pitched note reads
-// the PitchField AT SCHEDULE TIME (era-aware through the rare sink â no
+// the PitchField AT SCHEDULE TIME (era-aware through the rare sink — no
 // cached Hz, ever); every envelope through PJ2.Voice.env or anchored ramp
 // pairs; everything musical from forked seeded streams (Math.random only
 // inside noise/IR texture); melodic voices claim THE AIR, landscape never
 // does; refusal means silence this cycle, never a throw; when in doubt,
-// quieter â and here, when in doubt about "louder?", the answer is
+// quieter — and here, when in doubt about "louder?", the answer is
 // "darker instead".
 // ============================================================================
 
@@ -147,25 +147,25 @@
   }
 
   // ==========================================================================
-  // THE POSES â color without motion. Root pinned to i forever; these five
+  // THE POSES — color without motion. Root pinned to i forever; these five
   // rotations of the sycorax degrees (0=Eb 1=E 2=F# 3=G 4=Ab 5=Bb 6=B) are
   // the whole harmonic vocabulary, stepped by a no-repeat pose-Markov on a
-  // slow lane (22â40 s). "afterimage" ({0,5}, the bare open fifth â the
+  // slow lane (22â40 s). "afterimage" ({0,5}, the bare open fifth — the
   // night's only consonance) has NO markov row and appears in no row's
   // pool: it is reachable only by setPose at the afterimage's entry, and
   // holds (drawlessly) until the next evening's opening pose replaces it.
   // The markov rows are authored with no self-weights (no consecutive
-  // repeats, asserted) and a mild gravity back toward "coil" and "sting" â
+  // repeats, asserted) and a mild gravity back toward "coil" and "sting" —
   // the rite circles its two home postures the way the drum circles the
   // fire.
   // ==========================================================================
   var POSE_TABLE = {
-    "coil":       [0, 2, 4],    // stacked-third default â already a cluster
+    "coil":       [0, 2, 4],    // stacked-third default — already a cluster
     "sting":      [0, 1, 5],    // the flat second against the fifth; the keen's ground
     "hollow":     [0, 3, 6],    // augmented shell (Eb G B)
     "veil":       [0, 2, 5],    // the one near-minor-triad; the lure
     "smoke":      [0, 4, 6],    // root, Ab, B
-    "afterimage": [0, 5],       // the bare fifth â residue, not resolution
+    "afterimage": [0, 5],       // the bare fifth — residue, not resolution
   };
   var POSE_MARKOV = {
     "coil":   [["sting", 3], ["veil", 2.5], ["hollow", 2], ["smoke", 1.5]],
@@ -176,7 +176,7 @@
   };
 
   // --------------------------------------------------------------------------
-  // THE ORGANUM DOUBLING TABLE â authored per degree class of the top line,
+  // THE ORGANUM DOUBLING TABLE — authored per degree class of the top line,
   // lower = top + offset (offsets negative, in scale degrees). Prefer the
   // in-scale perfect fifth below, fall back to the perfect fourth where the
   // mode denies a fifth, and take the third-below shell where it denies
@@ -197,10 +197,10 @@
   var ORGANUM_DOUBLING = { 0: -3, 1: -2, 2: -3, 3: -3, 4: -4, 5: -5, 6: -5 };
 
   // ==========================================================================
-  // THE CHANT'S MARKOV â authored, not ported (the plan's one deliberate
+  // THE CHANT'S MARKOV — authored, not ported (the plan's one deliberate
   // break with the family's "no self-weight" instinct). Plainchant conduct:
   // heavy stepwise gravity, a narrow ambitus, a real 0.25 self-weight on
-  // degree 5 (Bb â the reciting tone a fifth above the final; recitation
+  // degree 5 (Bb — the reciting tone a fifth above the final; recitation
   // REPETITION is the point), and row endings that fall through 1 (the
   // flat second) toward 0. Degree order: Eb E F# G Ab Bb B.
   // ==========================================================================
@@ -215,7 +215,7 @@
   ];
 
   // The rebec inherits SYC_GHOST_MARKOV verbatim (prosperos-jukebox-audio.js
-  // :121) â the tritone/minor-2nd wander that made v1's ghost tones ghosts
+  // :121) — the tritone/minor-2nd wander that made v1's ghost tones ghosts
   // is exactly a wyrd fiddle's hand.
   var REBEC_MARKOV = [
     [0.05, 0.25, 0.15, 0.10, 0.20, 0.10, 0.15],
@@ -253,7 +253,7 @@
   // maps onto one of the Library's five before any motif lookup, so the
   // motif engine's kind pools / scene tilts / ghost window / focus scenes
   // all apply unmodified. This is also why the "chapter-normalization
-  // gotcha" never bites here â no custom scene name is ever handed down.
+  // gotcha" never bites here — no custom scene name is ever handed down.
   var SCENE_ALIAS = {
     "gathering": "settling",
     "processional": "chapter",
@@ -262,7 +262,7 @@
     "afterimage": "candle-out",
   };
 
-  // Chant vowel shapes â the dark end of the mouth (the whisper DNA pitched).
+  // Chant vowel shapes — the dark end of the mouth (the whisper DNA pitched).
   // F1/F2 pairs; the walk drifts between neighbors on the closedâopen axis.
   var CHANT_VOWELS = {
     mm: { f1: 270, f2: 1200 },
@@ -280,7 +280,7 @@
     [0.08, 0.12, 0.30, 0.45, 0.05],
   ];
 
-  // v1's whisper formant pairs (prosperos-jukebox-audio.js:132) â the
+  // v1's whisper formant pairs (prosperos-jukebox-audio.js:132) — the
   // breath-bed keeps the ancestor's exact spectra, only quieter.
   var WHISPER_FORMANTS = [
     [700, 2500], [400, 2000], [900, 2800], [500, 3200],
@@ -319,19 +319,19 @@
   var WX_NEUTRAL = { murk: 0.5, breath: 0.5, gapMul: 0.5, wetTilt: 0.5, gritTilt: 0.5 };
 
   // --------------------------------------------------------------------------
-  // THE GRIT CURVE â ZANKYÅ's asymmetric soft-clip (zankyo-audio.js:327) at
+  // THE GRIT CURVE — ZANKYÅ's asymmetric soft-clip (zankyo-audio.js:327) at
   // 0.75Ã its amount (0.6 â 0.45, k = 2 + 0.45Â·40 = 20): v1's sycorax
   // already saturated its drone hotter than the Library's (26 vs 12), so
   // the dose is inherited instinct, dialed to this room. Two documented
   // lessons ride with it (zankyo-audio.js:262-288):
-  //   1. MAKEUP-DOWN 0.4 â this curve boosts small signals ~21Ã and rails
+  //   1. MAKEUP-DOWN 0.4 — this curve boosts small signals ~21Ã and rails
   //      the bus under any real drone level, clipping every onset into an
   //      audible click; the distortion timbre is baked into the waveshape
   //      and survives the attenuation, so pull the bus back down.
-  //   2. TRANSIENT VOICES NEVER TOUCH THE BUS (the shamEdge lesson) â a
+  //   2. TRANSIENT VOICES NEVER TOUCH THE BUS (the shamEdge lesson) — a
   //      voice needing bite gets its own near-unity tanh. Here nothing
   //      transient needs one; the bus is LANDSCAPE-ONLY by wiring (gurdy
-  //      send, noise-bed send, trompette pulses â three tagged feeders,
+  //      send, noise-bed send, trompette pulses — three tagged feeders,
   //      asserted by graph inspection).
   // --------------------------------------------------------------------------
   function buildGritCurve(amount) {
@@ -350,11 +350,11 @@
   var TROMP_BASE = 0.10;    // trompette send at rest
   var TROMP_PULSE_MAX = 0.1;// pulses add at most this (60 ms+ ramps)
 
-  // A normalized tanh soft-ceiling (the pj2-voice saturator's shape) â
+  // A normalized tanh soft-ceiling (the pj2-voice saturator's shape) —
   // used as INSURANCE after the cavern's-throat bank: |output| â¤ 1 by
   // construction whatever a feedback loop does upstream, and at whisper
   // level (the bank's honest range, â¤ ~0.02) the curve is identity to
-  // within 0.1% â tone-free until the day it saves the room.
+  // within 0.1% — tone-free until the day it saves the room.
   function buildSoftCeil(amount) {
     var n = 1024, curve = new Float32Array(n);
     for (var i = 0; i < n; i++) {
@@ -514,7 +514,7 @@
       }
       return WX_NEUTRAL;
     }
-    // gapMul: the ONE channel allowed to move event times â Â±15% hard by
+    // gapMul: the ONE channel allowed to move event times — Â±15% hard by
     // construction, neutral weather = exactly 1.0.
     function gmAt(t) {
       return 0.85 + 0.3 * wxAt(t).gapMul;
@@ -522,7 +522,7 @@
 
     // The hush window: [tB, tB + hold] whenever a cut is planned or live.
     // Melodic bodies and non-proto percussion skip any note whose ONSET
-    // falls inside it â a chant line cut off mid-word, a cluster cut off
+    // falls inside it — a chant line cut off mid-word, a cluster cut off
     // unfinished: the interruption IS the gesture. The one waterphone
     // apparition (scheduled by the cut itself) bypasses this gate.
     function inHush(t) {
@@ -531,7 +531,7 @@
       return t > c.tB + 0.001 && t < c.end - 0.001;
     }
 
-    // Motif request context â sceneType ALIASED to the Library five (see
+    // Motif request context — sceneType ALIASED to the Library five (see
     // SCENE_ALIAS), nowS = the exact audio time of the phrase.
     function reqCtx(t) {
       return {
@@ -585,7 +585,7 @@
     }
 
     // One vowel walk state serves the chant, its organum double, and the
-    // keen â it is one throat. Draws ride the "vowels" fork only.
+    // keen — it is one throat. Draws ride the "vowels" fork only.
     function walkVowel() {
       var row = CHANT_VOWEL_WALK[run.vowelIdx] || CHANT_VOWEL_WALK[0];
       var r = run.streams.vowels.next();
@@ -599,7 +599,7 @@
     }
 
     // Pose bookkeeping: setPose/step only narrate when the pose actually
-    // changed (the no-consecutive-repeats law is held here â a forced
+    // changed (the no-consecutive-repeats law is held here — a forced
     // "sting" arriving onto "sting" is a held posture, not a repeat).
     function setPoseIfNew(name, t, via) {
       try {
@@ -611,9 +611,9 @@
     }
 
     // ========================================================================
-    // THE DRAMATURGY â the encirclement (Conductor contract).
+    // THE DRAMATURGY — the encirclement (Conductor contract).
     //
-    // plan(): durS = 360 + 600Â·(0.65Â·u + 0.35Â·tide) â 6â16 min (dread
+    // plan(): durS = 360 + 600Â·(0.65Â·u + 0.35Â·tide) — 6â16 min (dread
     // sustains less than coziness), the tide biasing long and near.
     // gathering â processional (p = 0.45 + 0.3Â·tide) â circling Ã1â3 â
     // invocation (p = 0.5 + 0.3Â·tide) â afterimage. The circling count is
@@ -659,9 +659,9 @@
         return scenes;
       },
 
-      // Intensity curves â PLAN-SYCORAX Â§2 verbatim. Invocation
+      // Intensity curves — PLAN-SYCORAX Â§2 verbatim. Invocation
       // CONCENTRATES BY HOLLOWING: peak 0.62 is density and register, not
-      // loudness. The afterimage opens ~0.18 and sinks â the rite dispersed.
+      // loudness. The afterimage opens ~0.18 and sinks — the rite dispersed.
       scenes: {
         "gathering": {
           intensity: function (x, tp) {
@@ -702,10 +702,10 @@
       },
 
       // ----------------------------------------------------------------
-      // JOINTS â pickW nothing 36 / drone-breath 30 / deadened drum stroke
+      // JOINTS — pickW nothing 36 / drone-breath 30 / deadened drum stroke
       // 16 / water-drip 10 / far-thunder 8. Far-thunder is reserved for
       // entering the invocation (anywhere else it degrades to a breath);
-      // the invocationâafterimage boundary ALWAYS resolves to nothing â
+      // the invocationâafterimage boundary ALWAYS resolves to nothing —
       // the cut is that joint, and it needs no ornament. All draws happen
       // unconditionally (stream discipline), then the overrides apply.
       // ----------------------------------------------------------------
@@ -723,7 +723,7 @@
           else if (draw === "drum") frameDrum(t, run.streams.joints, { deadened: true, peak: 0.028, mode: "joint", who: "joint" });
           else if (draw === "drip") waterDrip(t);
           else if (draw === "far-thunder") farThunder(t, run.streams.joints, 0.5, "joint");
-        } catch (e) { return null; /* a failed joint is silence â a valid joint */ }
+        } catch (e) { return null; /* a failed joint is silence — a valid joint */ }
         return draw;
       },
 
@@ -737,11 +737,11 @@
     };
 
     // ========================================================================
-    // JOINT GESTURE BODIES â the whole vocabulary is QUIET (â¤ ambient peaks).
+    // JOINT GESTURE BODIES — the whole vocabulary is QUIET (â¤ ambient peaks).
     // ========================================================================
 
     // (a) drone-breath: the gurdy bed dips ~2 dB over 4 s and re-blooms, on
-    // its DEDICATED gain stage (gurdyBreath, normally 1) â one writer per
+    // its DEDICATED gain stage (gurdyBreath, normally 1) — one writer per
     // param, always.
     function jointBreath(t) {
       var g = run.gurdyBreath.gain;
@@ -751,7 +751,7 @@
       g.linearRampToValueAtTime(1, t + 4);
     }
 
-    // (b) water-drip: one drop in the cavern â a tiny sine blip falling an
+    // (b) water-drip: one drop in the cavern — a tiny sine blip falling an
     // octave-ish, unpitched texture (freq null; it is water, not music).
     function waterDrip(t) {
       var tok = run.budget.claim(2, t + 0.4);
@@ -770,9 +770,9 @@
       emitNote({ voice: "joint", kind: "drip", freq: null, t: t, durS: 0.15 });
     }
 
-    // (c) far thunder â v1's sycDistantThunder (~3863) at a dose scale
+    // (c) far thunder — v1's sycDistantThunder (~3863) at a dose scale
     // (0.5 for the joint, 1.0 when the ambient pool draws it). Sub thump +
-    // resonant low boom (pre-attenuated 0.4 BEFORE the Q 5 filter â
+    // resonant low boom (pre-attenuated 0.4 BEFORE the Q 5 filter —
     // pj2-voice lesson #2) + a rolling rumble cresting mid-way.
     function farThunder(t, rng, dose, who) {
       var durS = rng.rnd(4.5, 6);
@@ -821,11 +821,11 @@
     }
 
     // ========================================================================
-    // THE GRIT PULSE â the trompette's buzzing bridge. Drum strokes pulse
+    // THE GRIT PULSE — the trompette's buzzing bridge. Drum strokes pulse
     // the trompette's grit send by â¤ +0.1 with 60 ms+ ramps (never a step:
     // a stepped send through a waveshaper is a click with a beard). One
     // writer on the param, pulses spaced â¥ 0.5 s (an overlapping pulse is
-    // skipped â the bridge can only buzz so fast), always returning to
+    // skipped — the bridge can only buzz so fast), always returning to
     // TROMP_BASE.
     // ========================================================================
     function pulseTrompette(t) {
@@ -847,7 +847,7 @@
 
     // ---- the chant (whisper DNA matured: pitched, principal) ---------------
     // Soft saw + detuned pulse-ish square pair â dual F1/F2 vowel bandpasses
-    // (set once per note â the bardo formant lesson) with a breath-noise
+    // (set once per note — the bardo formant lesson) with a breath-noise
     // thread mixed in pre-formant, seconds-long attacks, slight sine
     // vibrato blooming late. Peak ~0.032 pre-formant-loss compensation
     // (formants eat energy; the v1 hum precedent). Returns the env gain so
@@ -865,11 +865,11 @@
       o2.detune.setValueAtTime(5, t);
       var o2g = c.createGain();
       o2g.gain.setValueAtTime(0.35, t);      // the square is color, not body
-      // breath thread â unvoiced air under the tone, pre-formant
+      // breath thread — unvoiced air under the tone, pre-formant
       var br = PJ2.Voice.noiseBuffer.source(c, 30);
       var brg = c.createGain();
       brg.gain.setValueAtTime(0.010 + 0.014 * wx.breath, t);
-      // vibrato â blooms in over the first third, never cold
+      // vibrato — blooms in over the first third, never cold
       var vib = c.createOscillator();
       vib.type = "sine";
       vib.frequency.setValueAtTime(3.6 + 1.1 * wx.breath, t);
@@ -879,7 +879,7 @@
       vib.connect(vg);
       try { vg.connect(o1.frequency); } catch (e0) {}
       try { vg.connect(o2.frequency); } catch (e1) {}
-      // the mouth â F1/F2, Q divided by openness, set once per note
+      // the mouth — F1/F2, Q divided by openness, set once per note
       var f1 = c.createBiquadFilter();
       f1.type = "bandpass";
       f1.frequency.setValueAtTime(vowel.f1, t);
@@ -914,7 +914,7 @@
 
     // ---- the rebec (bowed wyrd fiddle) --------------------------------------
     // Sawtooth through two fixed body-resonance bandpasses (set ONCE per
-    // note â the bardo murmur-formant lesson: automate a formant mid-note
+    // note — the bardo murmur-formant lesson: automate a formant mid-note
     // and it zippers), a bow-noise thread on the attack, slow bow edges.
     var REBEC_BODY = [[285, 2.2], [610, 2.8], [1150, 3.2], [1900, 2.4]]; // [Hz, Q]
     function renderRebecNote(dest, freq, t, durS, vel, rng, extraSend) {
@@ -940,7 +940,7 @@
         pre.connect(bp);
         bp.connect(mix);
       }
-      // bow noise â a breath of rosin on the attack only
+      // bow noise — a breath of rosin on the attack only
       var bn = PJ2.Voice.noiseBuffer.source(c, 30);
       var bf = c.createBiquadFilter();
       bf.type = "bandpass";
@@ -969,7 +969,7 @@
     // LFO; upper partials tremolo; everything glisses down by wail% over
     // the note. The only changes from v1: the field supplies the
     // fundamental (era-aware), the injected rng supplies the tremolo rates
-    // (texture-adjacent but musical state â seeded), and the master
+    // (texture-adjacent but musical state — seeded), and the master
     // envelope goes through Voice.env for the anchor discipline. ~30 nodes.
     function renderWaterphoneNote(dest, freq, t, durS, gainScale, rng, extraSend) {
       var c = ctx;
@@ -1033,7 +1033,7 @@
         lfo.stop(stopAt);
       }
 
-      // FM bloom â carrier + â2-ratio modulator, index swelling in the sustain
+      // FM bloom — carrier + â2-ratio modulator, index swelling in the sustain
       var carrier = c.createOscillator();
       var carrierGain = c.createGain();
       carrier.type = "sine";
@@ -1067,7 +1067,7 @@
 
     // ---- the bone-flute (rare, high, lonely) --------------------------------
     // Triangle + breath noise + a whisper of overblown octave; short
-    // breath-length notes, register +1 â the one color above the chest in
+    // breath-length notes, register +1 — the one color above the chest in
     // this track.
     function renderBoneFluteNote(dest, freq, t, durS, vel) {
       var c = ctx;
@@ -1104,15 +1104,15 @@
     }
 
     // ========================================================================
-    // PERCUSSION BODIES â all cheap, all budget-claimed, all landscape.
-    // Peaks â¤ 0.05 (the plan's ceiling); level NEVER carries intensity â
+    // PERCUSSION BODIES — all cheap, all budget-claimed, all landscape.
+    // Peaks â¤ 0.05 (the plan's ceiling); level NEVER carries intensity —
     // pacing does.
     // ========================================================================
 
     // ---- proto-drum (v1's heartbeat ~3648, verbatim spirit) -----------------
     // Sine lub-dub, 36â20 Hz-ish exponential dips, a random-walked
-    // intensity, skip and triple irregularities. Routes to layProto â
-    // AROUND cutGain â so the hush keeps its pulse.
+    // intensity, skip and triple irregularities. Routes to layProto —
+    // AROUND cutGain — so the hush keeps its pulse.
     function protoBeat(t, rng) {
       run.hbIntensity += (rng.next() - 0.5) * 0.15;
       run.hbIntensity = clamp(run.hbIntensity, 0.4, 1.3);
@@ -1145,7 +1145,7 @@
     // ---- frame drum: dull skin stroke -----------------------------------------
     // Filtered sine burst (70â110 Hz, fast exponential decay) + a
     // band-passed skin transient â¤ 30 ms. The deadened variant is the
-    // muffled palm â shorter, duller, quieter.
+    // muffled palm — shorter, duller, quieter.
     function frameDrum(t, rng, o2) {
       o2 = o2 || {};
       var peak = (o2.peak != null) ? o2.peak : 0.045;
@@ -1189,7 +1189,7 @@
     }
 
     // ---- log drum: resonant wooden tone, two pitches a fourth apart ----------
-    // Field degrees 0 and 4 (semitones 0 and 5 â a true fourth in this
+    // Field degrees 0 and 4 (semitones 0 and 5 — a true fourth in this
     // mode) at oct â2. Pitched, so it keeps the key like everything else.
     function logDrum(t, rng, o2) {
       o2 = o2 || {};
@@ -1223,7 +1223,7 @@
     }
 
     // ---- bone rattle: 3â7 tiny ticks on ONE gain chain ------------------------
-    // The crackle pattern â one source, one filter, however many ticks. A
+    // The crackle pattern — one source, one filter, however many ticks. A
     // dry shimmer OVER drum strokes, never alone in the dark.
     function boneRattle(t, rng, o2) {
       o2 = o2 || {};
@@ -1260,7 +1260,7 @@
     // THE LANDSCAPE LANES
     // ========================================================================
 
-    // ---- the gurdy (landscape â THE SEAM) -----------------------------------
+    // ---- the gurdy (landscape — THE SEAM) -----------------------------------
     // v1's sycorax drone cluster (~2844) re-voiced from the LIVE POSE: each
     // 20â28 s cycle reads harmony.current() at its own start and voices the
     // pose's degrees as detuned saws at oct â2 (46â124 Hz territory, v1's
@@ -1268,14 +1268,14 @@
     // moving lowpass (150â350 Hz band, murk- and darkening-scaled), all
     // through the shared drift ramps (Â±3%, v1's warble). A cycle keeps its
     // frequencies for its whole life; the NEXT cycle reads the pose (and
-    // the field â era-aware through the sink) again. The lane is NEVER
+    // the field — era-aware through the sink) again. The lane is NEVER
     // cancelled by scenes, performances, or the cut: it is the seam.
     //
     // THE TROMPETTE: one extra saw at the root, oct â1, whose ONLY route is
-    // the grit bus (gritSendTromp) â the buzzing bridge. Its send gain is
+    // the grit bus (gritSendTromp) — the buzzing bridge. Its send gain is
     // pulsed by drum strokes (pulseTrompette, 60 ms+ ramps, â¤ +0.1).
     //
-    // THE SUB: sine at the root, oct â3, chance 0.3 normally â FORCED in
+    // THE SUB: sine at the root, oct â3, chance 0.3 normally — FORCED in
     // the invocation and inside a darkening window (the arrival gesture
     // "sinks the sub-octave in").
     function startGurdy() {
@@ -1342,7 +1342,7 @@
           o.stop(t + durS + 0.1);
           emitNote({ voice: "gurdy", freq: freq, t: t, durS: durS, deg: p.deg, oct: p.oct });
         }
-        // the trompette â grit-only, always present, pulsed elsewhere
+        // the trompette — grit-only, always present, pulsed elsewhere
         var tf = run.field.degFreq(degs[0], -1);
         var to = c.createOscillator();
         to.type = "sawtooth";
@@ -1370,14 +1370,14 @@
       lane.at(run.t0, cycle);
     }
 
-    // ---- the ritual noise bed (landscape â "darker and noisier") -------------
-    // Two slow sources into ONE slaved level gain (noiseLevel â the
+    // ---- the ritual noise bed (landscape — "darker and noisier") -------------
+    // Two slow sources into ONE slaved level gain (noiseLevel — the
     // follower holds it â¤ 0.8Ã the gurdy's level, always; that ceiling is
     // the whole meaning of "not too noisy"):
-    //   EMBER-SMOKE â band-limited noise whose center drifts over minutes
+    //   EMBER-SMOKE — band-limited noise whose center drifts over minutes
     //   (each 24â40 s cycle ramps from the last center to a newly drawn one
     //   in 200â1200 Hz; the drift is the slow burn).
-    //   RUIN-WIND â bandpassed gusts with 8â20 s envelopes, the filter
+    //   RUIN-WIND — bandpassed gusts with 8â20 s envelopes, the filter
     //   swooping with each gust.
     // Per-source scheduled peaks â¤ 0.030 (asserted); murk breathes Â±20%.
     function startNoiseBed() {
@@ -1436,10 +1436,10 @@
       lane.at(run.t0 + rng.rnd(3, 9), windGust);
     }
 
-    // ---- the breath-bed (landscape â the treeline murmur) ---------------------
+    // ---- the breath-bed (landscape — the treeline murmur) ---------------------
     // v1's whispers (~2938) reduced: same formant pairs, much quieter,
     // slower, and in the afterimage it sinks toward the unvoiced (half
-    // peak, looser Q â air, not voices).
+    // peak, looser Q — air, not voices).
     function startBreathBed() {
       var lane = run.clock.lane("breath");
       var rng = run.streams.breath;
@@ -1491,7 +1491,7 @@
     // ---- the proto-drum lane (the pulse before the rite) ----------------------
     // Always polling, beating only where the scene map allows: gathering
     // (after the bruise-advanced gate), the afterimage (slowing with the
-    // scene's own progress), and INSIDE THE HUSH â where it quickens and
+    // scene's own progress), and INSIDE THE HUSH — where it quickens and
     // beats alone. Poll gaps stay â¤ 3.2 s so the hush (â¥ 5 s) can never
     // slip between two polls unheard.
     function startProtoDrum() {
@@ -1511,7 +1511,7 @@
           beats = true;
           gap = rng.rnd(3.2, 5.5) * (1 + 0.8 * curSceneX()); // slowing as it disperses
         } else {
-          gap = rng.rnd(2.0, 3.0); // silent poll â the pulse waits in the trees
+          gap = rng.rnd(2.0, 3.0); // silent poll — the pulse waits in the trees
         }
         if (beats) protoBeat(t, rng);
         lane.at(t + Math.min(gap, 3.2) * (beats ? 1 : 1) , pulse);
@@ -1521,23 +1521,23 @@
 
     // ---- the percussion lane (the anti-groove law) -----------------------------
     // ONE lane, ONE stream, strokes at exact times, coordinating with the
-    // conductor by READING scene + intensity at each stroke â never by
+    // conductor by READING scene + intensity at each stroke — never by
     // being scheduled by it. Modes:
-    //   circling      â loose strokes at breath gaps (3â10 s, intensity-
+    //   circling      — loose strokes at breath gaps (3â10 s, intensity-
     //                   scaled: no grid exists to find), occasional pairs
     //                   (the lub-dub inheritance), rattle shimmer on some.
-    //   processional  â the WALK (scheduled from the scene event, see
+    //   processional  — the WALK (scheduled from the scene event, see
     //                   handleConductorEvent): a barely-gridded period
     //                   drawn per scene (2.4â3.4 s), Â±20% jitter per
     //                   stroke, rattle accents.
-    //   invocation    â CLUSTERS (also scheduled from the scene event):
+    //   invocation    — CLUSTERS (also scheduled from the scene event):
     //                   5â9 strokes whose spacing shrinks geometrically
-    //                   2.0 â 0.7 s, gains flat â speed rises, level never
+    //                   2.0 â 0.7 s, gains flat — speed rises, level never
     //                   does. Log drum between clusters.
-    //   elsewhere     â the loop idles (gathering and afterimage belong to
+    //   elsewhere     — the loop idles (gathering and afterimage belong to
     //                   the proto-drum alone).
-    // The cut cancels this whole lane at tB â a cluster cut off unfinished
-    // is the gesture â and re-arms the idle pulse after the hush.
+    // The cut cancels this whole lane at tB — a cluster cut off unfinished
+    // is the gesture — and re-arms the idle pulse after the hush.
     function percPulse(t) {
       var lane = run.clock.lane("percussion");
       var rng = run.streams.percussion;
@@ -1565,7 +1565,7 @@
       run.clock.lane("percussion").at(run.t0 + 2, percPulse);
     }
 
-    // The processional walk â armed by the scene event with its drawn
+    // The processional walk — armed by the scene event with its drawn
     // period; strokes re-check the scene at each fire and let the walk die
     // when the processional ends.
     function walkStroke(t) {
@@ -1583,7 +1583,7 @@
 
     // One accelerating cluster: n strokes, spacing shrinking geometrically
     // from ~2.0 s to ~0.7 s (strictly monotone, floor 0.65), gains FLAT.
-    // Followed sometimes by a log drum tone â the wooden answer.
+    // Followed sometimes by a log drum tone — the wooden answer.
     function fireCluster(t) {
       var rng = run.streams.percussion;
       var lane = run.clock.lane("percussion");
@@ -1612,10 +1612,10 @@
     }
 
     // ========================================================================
-    // THE MELODIC LANES â all claim THE AIR, all speak in motif phrases.
+    // THE MELODIC LANES — all claim THE AIR, all speak in motif phrases.
     // Presence order (the plan's): chant > rebec > waterphone > bone-flute.
     // Gathering is CHANT-ONLY among the speakers (the others' scene
-    // chances are 0 there) â which is also what guarantees the ghost is
+    // chances are 0 there) — which is also what guarantees the ghost is
     // always intoned by the cantor.
     // ========================================================================
     var SPEAK_P = {
@@ -1627,8 +1627,8 @@
 
     // Shared attempt scaffold: draw-first discipline, ghost-holding on a
     // denied air (a memory must not be erased by a busy moment), the hush
-    // gate on note onsets, whole-octave re-registration (degree classes â
-    // and therefore the keening law â survive).
+    // gate on note onsets, whole-octave re-registration (degree classes —
+    // and therefore the keening law — survive).
     function startChant() {
       var lane = run.clock.lane("chant");
       var rng = run.streams.chant;
@@ -1665,7 +1665,7 @@
         // Register: chant-fresh material is born in the chest (motif home
         // register â1); shared material recentres near 0 and drops an
         // octave to stay there. The invocation lifts the whole line one
-        // octave â concentration by REGISTER, never level.
+        // octave — concentration by REGISTER, never level.
         var mean = 0;
         for (var mi = 0; mi < m.notes.length; mi++) mean += m.notes[mi].deg;
         mean /= m.notes.length;
@@ -1687,7 +1687,7 @@
           var vel = rng.rnd(0.7, 1) * velScale;
           var nt = t + tm.offs[i], nd = tm.durs[i];
           if (syllabic && i > 0 && run.streams.vowels.chance(0.6)) vowel = walkVowel();
-          if (inHush(nt)) continue;          // the cut swallows the word â the gesture
+          if (inHush(nt)) continue;          // the cut swallows the word — the gesture
           var btok = run.budget.claim(doubled ? 22 : 11, nt + nd + 0.2);
           if (!btok) continue;
           run.tokens.push(btok);
@@ -1702,7 +1702,7 @@
           });
           if (doubled) {
             // Parallel organum: the lower voice doubles THIS line at the
-            // authored interval (P5 / P4 / occursus third â see
+            // authored interval (P5 / P4 / occursus third — see
             // ORGANUM_DOUBLING). Drawless, stateless, exactly 2 parts.
             var duo = null;
             try { duo = run.harmony.voiceConsort(2, { top: abs }); } catch (e2) { duo = null; }
@@ -1721,7 +1721,7 @@
           lastEnd = nt + nd;
         }
         // THE AFTER-TONE (~40%, never on the ghost): a quiet body gesture
-        // on the final BELOW the keen â degree class 0, half the phrase's
+        // on the final BELOW the keen — degree class 0, half the phrase's
         // last velocity, NOT a motif note. The abstract music stays
         // honestly unresolved; the ear hears the keen sag home and fail to
         // mean it.
@@ -1802,7 +1802,7 @@
             final: isFinal,
           });
           if (isFinal && dblRoll) {
-            // double stop: the authored organum interval below the final â
+            // double stop: the authored organum interval below the final —
             // in-scale by construction, so adherence survives.
             var duo2 = null;
             try { duo2 = run.harmony.voiceConsort(2, { top: abs }); } catch (e3) { duo2 = null; }
@@ -1882,7 +1882,7 @@
         var st = curSceneType();
         var plays = rng.chance(SPEAK_P.boneflute[st] != null ? SPEAK_P.boneflute[st] : 0);
         // 2â3 utterances an evening, HARD (the counter resets at each
-        // performance begin) â the one high lonely color stays lonely.
+        // performance begin) — the one high lonely color stays lonely.
         if (!plays || iv < 0.12 || run.fluteCount >= run.fluteMax) {
           lane.at(t + rng.rnd(14, 24) * gmAt(t), attempt);
           return;
@@ -1929,9 +1929,9 @@
     }
 
     // ========================================================================
-    // THE AMBIENT POOL (landscape â the dark outside the circle). Weighted,
+    // THE AMBIENT POOL (landscape — the dark outside the circle). Weighted,
     // weather/tide-gated, at the LIBRARY's density (same gap law: 20â60 s
-    // scaled by intensity and tide, gapMul Â±15%, floor 8 s â the roster is
+    // scaled by intensity and tide, gapMul Â±15%, floor 8 s — the roster is
     // strange, the room is no busier). Dropped from v1: cackle, glass,
     // cauldron (startle/comedy risks).
     // ========================================================================
@@ -1962,7 +1962,7 @@
         emitNote({ voice: "ambient", kind: "gust", freq: null, t: t, durS: durS });
       }
 
-      // -- ember pops (the fire spitting â crackle pattern, one gain chain)
+      // -- ember pops (the fire spitting — crackle pattern, one gain chain)
       function emberPops(t) {
         var n = rng.rint(2, 5);
         var tok = run.budget.claim(3, t + 1.4);
@@ -2030,7 +2030,7 @@
       }
 
       // -- chains (v1 ~3838, node-economy port: ONE noise + ONE bandpass,
-      // retuned between pings at true-zero gain â the cricket lesson)
+      // retuned between pings at true-zero gain — the cricket lesson)
       function chains(t) {
         var pings = rng.rint(5, 9);
         var rate = rng.rnd(10, 16);
@@ -2062,7 +2062,7 @@
       }
 
       // -- raven (v1 ~3957: sawtooth squawks through two formant bands,
-      // pitch falling â unpitched texture, far-field dose)
+      // pitch falling — unpitched texture, far-field dose)
       function raven(t) {
         var squawks = rng.rint(1, 3);
         var tok = run.budget.claim(5 * squawks, t + squawks * 0.3 + 0.4);
@@ -2100,7 +2100,7 @@
       }
 
       // -- cracked iron bell (tide-near): one struck tone + an inharmonic
-      // hum partial â the fundamental SNAPS TO THE FIELD (era-aware; even
+      // hum partial — the fundamental SNAPS TO THE FIELD (era-aware; even
       // the derelict bell keeps the key).
       function ironBell(t) {
         var info = run.field.snapInfo(360 + rng.rnd(0, 190)); // draw, then snap
@@ -2131,7 +2131,7 @@
       }
 
       // -- THE KEEN (weight 6, far-field): one distant wordless cry on the
-      // chant's own body â the human trace that makes the rite a rite. The
+      // chant's own body — the human trace that makes the rite a rite. The
       // witch_cackle's dignified descendant. Field degree 1 or 5 an octave
       // up, steady tone + vibrato (no gliss: even grief keeps the key).
       function keen(t) {
@@ -2175,7 +2175,7 @@
           else if (what === "bell") ironBell(t);
           else if (what === "keen") keen(t);
         } catch (e) { /* a missing one-shot is just a darker treeline */ }
-        // THE GAP LAW â the Library's, verbatim: density within the family
+        // THE GAP LAW — the Library's, verbatim: density within the family
         // contract by construction.
         var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t);
         lane.at(t + Math.max(8, next), oneShot);
@@ -2184,7 +2184,7 @@
     }
 
     // ========================================================================
-    // THE HARMONY LANE â the pose rotation's pulse: 22â40 s, slower at the
+    // THE HARMONY LANE — the pose rotation's pulse: 22â40 s, slower at the
     // evening's edges, quicker under concentration (band never escaped).
     // One pickW per step (pose mode's contract); a step that lands on the
     // same pose (impossible with these no-self rows, but guarded) or on
@@ -2217,11 +2217,11 @@
     }
 
     // ========================================================================
-    // DARKENING ARRIVALS â where a Library boundary would cadence, a
+    // DARKENING ARRIVALS — where a Library boundary would cadence, a
     // Sycorax boundary DARKENS: pose forced to "sting" at the exact tB, the
     // gurdy's sub-octave sunk in and its lowpass closed ~15% for a window,
-    // and (drawn ~0.7) a two-part ORGANUM pad â the open fifth {0,5} under
-    // whatever line is keening â breathing across the seam on the chant's
+    // and (drawn ~0.7) a two-part ORGANUM pad — the open fifth {0,5} under
+    // whatever line is keening — breathing across the seam on the chant's
     // own throat, at joint level. No flourishes, no lifts: an arrival that
     // makes the room slightly worse.
     // ========================================================================
@@ -2265,7 +2265,7 @@
     }
 
     // ========================================================================
-    // THE CUT â the moment the observer is noticed. Lives entirely in
+    // THE CUT — the moment the observer is noticed. Lives entirely in
     // gain-land on the DEDICATED cutGain over the landscape sum (gurdy +
     // noise bed + breath-bed + ambient + grit); never touches master; one
     // writer on the param; conductor intensity stays continuous throughout
@@ -2273,7 +2273,7 @@
     // ========================================================================
 
     // The indrawn breath, tB â 0.6: reverse-enveloped bandpass noise at
-    // ambient level â the treeline inhaling before the eyes turn.
+    // ambient level — the treeline inhaling before the eyes turn.
     function indrawnBreath(t) {
       var tok = run.budget.claim(3, t + 0.8);
       if (!tok) return;
@@ -2283,7 +2283,7 @@
       var bp = c.createBiquadFilter();
       bp.type = "bandpass";
       bp.frequency.setValueAtTime(700, t);
-      bp.frequency.linearRampToValueAtTime(1600, t + 0.55); // rising â inhaled
+      bp.frequency.linearRampToValueAtTime(1600, t + 0.55); // rising — inhaled
       bp.Q.setValueAtTime(1.4, t);
       var g = c.createGain();
       n.connect(bp); bp.connect(g); g.connect(run.layAmb);
@@ -2318,18 +2318,18 @@
       var cut = run.cut;
       cut.fired = true;
       run.lastCutSeverity = cut.sev; // the bruise the next evening inherits
-      // The sink, if this evening drew one, executes AT the cut â the rite
+      // The sink, if this evening drew one, executes AT the cut — the rite
       // resumes a half-step lower on the far side of the hush.
       if (run.seaChange && !run.seaChange.done && run.seaChange.atCutT === cut.tB) {
         executeSinkAt(t);
       }
       // Percussion stops MID-GESTURE: the lane's pending strokes (a cluster
       // half-spent, a pair half-answered) die where they stand. The idle
-      // pulse re-arms after the hush; the proto-drum lane is untouched â
+      // pulse re-arms after the hush; the proto-drum lane is untouched —
       // the hush keeps its heart.
       try { run.clock.lane("percussion").cancelAll(); } catch (e) {}
       run.clock.lane("cut").at(cut.end + 1, percPulse);
-      // The gain move: one writer, one schedule â anchored at 1, down to
+      // The gain move: one writer, one schedule — anchored at 1, down to
       // the dip in 0.25 s, held, returned over 2.5â4 s into the afterimage.
       var g = run.cutGain.gain;
       if (typeof g.cancelScheduledValues === "function") g.cancelScheduledValues(t);
@@ -2342,7 +2342,7 @@
         holdS: cut.holdS, returnS: cut.retS,
       });
       // THE HUSH IS INHABITED: ~1.2 s in, ONE waterphone apparition (v1's
-      // long 0.55-gain shape) â the only melodic sound allowed inside; it
+      // long 0.55-gain shape) — the only melodic sound allowed inside; it
       // bypasses the air (the cut suspends the parliament) and the hush
       // gate (it IS the exception the gate protects).
       var appT = t + 1.2;
@@ -2367,7 +2367,7 @@
 
     // ---- the sink (the rare sea change: stasis getting worse) ----------------
     // Pure tonic multiply (Ã2^(â1/12), same mode) through the profile's
-    // ratio target â the accepted reroot-ratchet quirk (pj2-harmony.js:508)
+    // ratio target — the accepted reroot-ratchet quirk (pj2-harmony.js:508)
     // is never on this path. Carried degrees just sound lower; the pose
     // persists (harmony keeps it); the cavern's throat retunes HERE and
     // only here, inside the hush where its 0.3 s fade-swap-fade can never
@@ -2387,7 +2387,7 @@
       });
     }
 
-    // The cavern's throat tuning: dark combs at degrees {0, 1, 5, 0+oct} â
+    // The cavern's throat tuning: dark combs at degrees {0, 1, 5, 0+oct} —
     // the final, the flat second, the fifth, the octave: the keen's own
     // skeleton, read from the LIVE field at (re)tune time.
     function throatFreqs(field) {
@@ -2398,7 +2398,7 @@
     }
 
     // ========================================================================
-    // ROOMS â balances lean wide (the cavern): gathering 0.45, processional
+    // ROOMS — balances lean wide (the cavern): gathering 0.45, processional
     // 0.55, circling 0.5, invocation 0.65, afterimage 0.75; ramped 12â20 s,
     // wetTilt nudging Â±0.05. Percussion registers close-biased (a drum is
     // HERE; everything else is THERE).
@@ -2417,17 +2417,17 @@
     }
 
     // ========================================================================
-    // THE FOLLOWER â every 0.5 s, anchored short ramps, shadowed values
+    // THE FOLLOWER — every 0.5 s, anchored short ramps, shadowed values
     // (never read .value mid-ramp):
-    //   gurdyLevel  â the bed breathes with intensity (never zero: the seam)
-    //   noiseLevel  â HARD-SLAVED â¤ 0.8 Ã gurdyLevel at every endpoint
+    //   gurdyLevel  — the bed breathes with intensity (never zero: the seam)
+    //   noiseLevel  — HARD-SLAVED â¤ 0.8 Ã gurdyLevel at every endpoint
     //                 (both ramp linearly over the same half-second, so the
-    //                 inequality holds at every instant in between â that
+    //                 inequality holds at every instant in between — that
     //                 is the noise ceiling, assertable);
     //                 rides murk Â±20%, intensity, and the bruise's murky
     //                 opening (fading over the gathering)
-    //   breathLevel â treeline murmur above intensity 0.06
-    //   gritBlend   â intensity Ã gritTilt, â¤ 0.15 in gathering/afterimage,
+    //   breathLevel — treeline murmur above intensity 0.06
+    //   gritBlend   — intensity Ã gritTilt, â¤ 0.15 in gathering/afterimage,
     //                 hard cap 0.5 at the invocation peak
     // Plus token hygiene (the family housekeeping beat).
     // ========================================================================
@@ -2478,7 +2478,7 @@
     }
 
     // ========================================================================
-    // CONDUCTOR-EVENT WIRING â the seam carries the ghost AND the bruise;
+    // CONDUCTOR-EVENT WIRING — the seam carries the ghost AND the bruise;
     // each plan draws its rare sink; each scene entry re-aims the rooms,
     // arms the boundary it will end on (arrival darkening / the cut), and
     // starts the scene's own percussion figure (walk / clusters).
@@ -2499,7 +2499,7 @@
       }
       if (evt.scene === "invocation") {
         // 1â3 accelerating clusters, placed across the scene (a cluster
-        // straddling the cut is cut off unfinished â the gesture).
+        // straddling the cut is cut off unfinished — the gesture).
         var rngC = run.streams.cluster;
         var nC = rngC.rint(1, 3);
         for (var i = 0; i < nC; i++) {
@@ -2515,12 +2515,12 @@
         planCut(tB, evt.tidePos != null ? evt.tidePos : curTidePos());
       }
       if (evt.scene === "afterimage") {
-        // The evening's only consonance â the bare {0,5} fifth, used
+        // The evening's only consonance — the bare {0,5} fifth, used
         // nowhere else. Nothing moves ONTO it: residue, not resolution.
         setPoseIfNew("afterimage", evt.t, "afterimage");
       }
       // Darkening arrivals at boundaries into the rite's active scenes.
-      // Never into the afterimage (the cut â or plain dispersal â owns that
+      // Never into the afterimage (the cut — or plain dispersal — owns that
       // boundary) and never at the seam (the joint machinery owns seams).
       if (!isSeam && (toType === "processional" || toType === "circling" || toType === "invocation")) {
         scheduleArrival(tB, toType);
@@ -2541,9 +2541,9 @@
           run.cut = null;
           emitEvent({ type: "bruise", value: run.bruise, t: evt.t });
           // The proto-drum's gate: a deep cut leaves the next evening
-          // warier â the heartbeat gates in bruiseÂ·0.3 earlier.
+          // warier — the heartbeat gates in bruiseÂ·0.3 earlier.
           run.protoGateT = evt.t + run.streams.protodrum.rnd(6, 14) * (1 - 0.3 * run.bruise);
-          // Exit the afterimage pose (it has no markov row â it would hold
+          // Exit the afterimage pose (it has no markov row — it would hold
           // forever): a bruised evening opens on "sting", else on "coil".
           setPoseIfNew(run.bruise > 0.5 ? "sting" : "coil", evt.t, "opening");
           run.fluteCount = 0;
@@ -2554,10 +2554,10 @@
             run.pendingGhost = null;
           }
           // THE SINK's coin: p â 0.12, "at-the-treeline" evenings only.
-          // The profile's p is a function of the tidePos we pass â and we
+          // The profile's p is a function of the tidePos we pass — and we
           // pass the LABEL GATE (1 when the tide stands at the treeline,
           // else 0), so the profile reads p(1) = 0.12 or p(0) = 0. The
-          // chance draw happens every evening either way â stream
+          // chance draw happens every evening either way — stream
           // discipline (rng.chance(0) still spends its draw).
           run.seaChange = null;
           try {
@@ -2584,10 +2584,10 @@
     }
 
     // ========================================================================
-    // PLAY / STOP â the Library's semantics, verbatim: stop fades the bus
+    // PLAY / STOP — the Library's semantics, verbatim: stop fades the bus
     // ~1.5 s, cancels the lanes, settles the budget's books, suspends the
     // ctx; play after stop RESTARTS THE WHOLE SEEDED RUN from evening 1
-    // (reproducibility over tide continuity â the documented family choice).
+    // (reproducibility over tide continuity — the documented family choice).
     // ========================================================================
     function ensureCtx() {
       if (ctx) return ctx;
@@ -2634,7 +2634,7 @@
       // ---- one fresh world per play, all of it derived from the seed ----
       var master = PJ2.Rand.stream(seed);
       var clock = PJ2.Clock.create(c, { tickMs: 25, aheadS: 0.25 });
-      var bus = PJ2.Voice.buildBus(c, { volume: masterVol, title: "Prospero's Jukebox v2 â Sycorax" });
+      var bus = PJ2.Voice.buildBus(c, { volume: masterVol, title: "Prospero's Jukebox v2 — Sycorax" });
       for (var ai = 0; ai < analysers.length; ai++) {
         try { bus.attachAnalyser(analysers[ai]); } catch (e) {}
       }
@@ -2676,7 +2676,7 @@
       }
 
       // TWO ROOMS: close = the fireside stone (dark, 2.6 s); wide = THE
-      // CAVERN â v1's decay 4.5 plus a breath (4.8 s), preDelay 0.04, a
+      // CAVERN — v1's decay 4.5 plus a breath (4.8 s), preDelay 0.04, a
       // dark brightness exponent and water-on-stone ripple (~0.08).
       var roomClose = PJ2.Voice.reverb(c, { decayS: 2.6, preDelayS: 0.02, wet: 0.3, brightness: 1.6, ripple: 0.03 });
       var roomWide = PJ2.Voice.reverb(c, { decayS: 4.8, preDelayS: 0.04, wet: 0.35, brightness: 2.1, ripple: { depth: 0.08, hz: 0.4 } });
@@ -2688,7 +2688,7 @@
       var field = PJ2.Pitch.field({ tonicHz: 311, mode: "sycorax", tuning: "et" }); // v1's Eb ghost world
 
       // LAYERS. The landscape sum (gurdy + noise bed + breath-bed + ambient
-      // + grit) flows through THE CUTGAIN â the cut's one writer-owned
+      // + grit) flows through THE CUTGAIN — the cut's one writer-owned
       // param. The proto-drum (layProto) routes AROUND it (the hush keeps
       // its heart); percussion is silenced by scheduling, not gain, so it
       // sits beside the cut too; melody was never the landscape's to duck.
@@ -2756,12 +2756,12 @@
       //   trompette    ââ gritSendTromp(0.10,  â   â makeup(0.4, DOWN)
       //                    pulsed â¤ +0.1)           â gritBlend(â¤ 0.5) â cutGain
       //
-      // SEND-LEVEL ENERGY MATH (the rendered-audio soak's second lesson â
+      // SEND-LEVEL ENERGY MATH (the rendered-audio soak's second lesson —
       // the k=20 curve saturates hard above ~0.05 input, and a RAILED
       // sustained buzz louder than the drone is "feedback noise" to any
       // honest ear): worst sustained gurdy into the shaper = cluster
       // ~0.14 Ã 2 (cycle overlap) Ã 0.10 send = 0.028 â curve â 0.38 â
-      // Ã 0.4 makeup Ã blend â¤ 0.5 â â¤ 0.075 at the bus â grit sits WITH
+      // Ã 0.4 makeup Ã blend â¤ 0.5 â â¤ 0.075 at the bus — grit sits WITH
       // the 0.06â0.13 drone bed, textural, never on top of it. The
       // trompette pulse (0.02 env Ã â¤0.2 send = 0.004) still bites: the
       // curve's small-signal slope is ~21Ã, which is the whole point.
@@ -2809,12 +2809,12 @@
         boneflute: mSlotWraps("boneflute", poolMel),
       };
 
-      // THE WEATHER â five channels (murk / breath / gapMul / wetTilt /
+      // THE WEATHER — five channels (murk / breath / gapMul / wetTilt /
       // gritTilt), primes 120â600 s, all draws at build, pure math after.
       var weather = PJ2.Fx.weather(streams.weather, WEATHER_SYCORAX);
 
-      // THE SEASICK DELAY â the clearing answers: 0.62 s, dark (damp 900),
-      // feedback 0.30, drift 0.05 Hz at depth 0.008 â NEAR THE WOBBLE CAP,
+      // THE SEASICK DELAY — the clearing answers: 0.62 s, dark (damp 900),
+      // feedback 0.30, drift 0.05 Hz at depth 0.008 — NEAR THE WOBBLE CAP,
       // audibly seasick by design (all inside pj2-fx's hard caps: fb â¤
       // 0.55, wet â¤ 0.4, depth â¤ 0.01). Return feeds the CAVERN's send.
       var delay = PJ2.Fx.delay(c, {
@@ -2832,7 +2832,7 @@
       var delaySendRebec = mAttach("rebec", c.createGain(), 0.35);
       delaySendRebec.connect(delay.send);
 
-      // THE CAVERN'S THROAT â Fx.sympathetic as a dark resonance bank: 4
+      // THE CAVERN'S THROAT — Fx.sympathetic as a dark resonance bank: 4
       // combs at degrees {0, 1, 5, 0+oct}, lowpass 1200 (vs the Library
       // halo's 3000), retuned ONLY after the rare sink, at the cut.
       //
@@ -2885,7 +2885,7 @@
       throat.output.connect(throatCeil);
       throatCeil.connect(layThroat);
 
-      // THE BRAINS â harmony in POSE MODE (root pinned to i forever, the
+      // THE BRAINS — harmony in POSE MODE (root pinned to i forever, the
       // five rotation poses + the setPose-only afterimage fifth, keening
       // resolution pinned to [1], organum consort with the authored
       // doubling table, anti-cadence hard-off, the sink as the only
@@ -2897,7 +2897,7 @@
         dramaturgyName: "sycorax",
         profile: {
           poses: { table: POSE_TABLE, markov: POSE_MARKOV, initial: "coil" },
-          resolutionDegs: [1],   // THE KEENING LAW â every ending pulled to the flat second
+          resolutionDegs: [1],   // THE KEENING LAW — every ending pulled to the flat second
           cadences: {},          // anti-cadence hard-off: zero events, zero draws
           consort: { mode: "organum", doubling: ORGANUM_DOUBLING },
           seaChange: {
@@ -2922,7 +2922,7 @@
         },
         policy: {
           // Responsorial, not conversational: the cantor posts (postP by
-          // ALIASED scene â processional and circling are both "chapter"),
+          // ALIASED scene — processional and circling are both "chapter"),
           // imitate-heavy, and the answers arrive LATE (18â40 s deadlines)
           // and near-verbatim, like a congregation across a clearing.
           postKinds: [["imitate", 6], ["invert", 2], ["develop", 2]],
@@ -2941,7 +2941,7 @@
         perfScenes: null, perfN: 0,
         pendingGhost: null,
         heldUtterance: { chant: null, rebec: null },
-        // levels (follower shadows â telemetry + the assertable ceiling)
+        // levels (follower shadows — telemetry + the assertable ceiling)
         cutGain: cutGain, gurdyBreath: gurdyBreath,
         gurdyLevel: gurdyLevel, noiseLevel: noiseLevel, breathLevel: breathLevel,
         gurdyCur: 0.10, noiseCur: 0, breathCur: 0, gritCur: 0,

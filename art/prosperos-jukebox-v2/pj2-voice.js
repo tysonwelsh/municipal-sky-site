@@ -36,6 +36,21 @@
   window.PJ2 = window.PJ2 || {};
   var Voice = window.PJ2.Voice = {};
 
+  // shared background-audio state (see buildBus's final hop): one helper
+  // handle + rail per AudioContext, mutable lock-screen transport handlers
+  var bgShared = null;
+  var bgHandlers = { onPlay: null, onPause: null };
+  Voice.background = {
+    setHandlers: function (h) {
+      bgHandlers.onPlay = (h && h.onPlay) || null;
+      bgHandlers.onPause = (h && h.onPause) || null;
+    },
+    started: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.started(); } catch (e) {} } },
+    stopped: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.stopped(); } catch (e) {} } },
+    poke: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.poke(); } catch (e) {} } },
+    handle: function () { return bgShared ? bgShared.bg : null; },
+  };
+
   // --------------------------------------------------------------------------
   // Small helpers — every AudioParam write goes through setP so a harness mock
   // that only records calls (or lacks a param entirely) never crashes us.
@@ -112,22 +127,40 @@
     sat.connect(limiter);
 
     // Final hop: prefer the background-audio route if the site helper is
-    // loaded AND actually manages to route (bg.routed). Fully guarded — in
-    // the harness there is no MskyBackgroundAudio and we fall through to
+    // loaded AND actually manages to route (bg.routed). ONE shared handle
+    // per AudioContext: buses are per-run, but the helper's hidden <audio>
+    // element + listeners must not multiply — so the handle wires a
+    // persistent RAIL gain once, and every new bus's limiter feeds the
+    // rail. Lock-screen transport routes through mutable handlers the UI
+    // registers (Voice.background.setHandlers). Fully guarded — in the
+    // harness there is no MskyBackgroundAudio and we fall through to
     // ctx.destination (which a mock supplies as a plain recording node).
     var bg = null;
     try {
       if (typeof window !== "undefined" && window.MskyBackgroundAudio &&
           typeof window.MskyBackgroundAudio.create === "function") {
-        bg = window.MskyBackgroundAudio.create({
-          context: ctx,
-          source: limiter,
-          title: opts.title || "Prospero's Jukebox v2",
-          artist: opts.artist || "Municipal Sky",
-          artwork: opts.artwork,
-          onPlay: opts.onPlay,
-          onPause: opts.onPause,
-        });
+        if (!bgShared || bgShared.ctx !== ctx) {
+          var rail = ctx.createGain();
+          bgShared = {
+            ctx: ctx, rail: rail,
+            bg: window.MskyBackgroundAudio.create({
+              context: ctx,
+              source: rail,
+              title: opts.title || "Prospero's Jukebox v2",
+              artist: opts.artist || "Municipal Sky",
+              artwork: opts.artwork,
+              onPlay: function () { if (bgHandlers.onPlay) bgHandlers.onPlay(); },
+              onPause: function () { if (bgHandlers.onPause) bgHandlers.onPause(); },
+            }),
+          };
+        }
+        bg = bgShared.bg;
+        if (bg && bg.routed) {
+          limiter.connect(bgShared.rail);
+          // a bus is only ever built to sound RIGHT NOW — declare intent so
+          // the media element runs and the lock-screen session is live
+          if (typeof bg.started === "function") bg.started();
+        }
       }
     } catch (e) { bg = null; }
     if (!bg || !bg.routed) {
