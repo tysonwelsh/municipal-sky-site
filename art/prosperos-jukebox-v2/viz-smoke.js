@@ -317,6 +317,7 @@ TRACKS.forEach(function (tr) {
     check("library: genealogy grew from events", dbg.tree >= 3, "tree=" + dbg.tree);
     check("library: era moved with Transmutatio (C→F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
     check("library: illustrations alive (emblems)", dbg.illustrations > 0, "n=" + dbg.illustrations);
+    check("library: floor plots the drones", dbg.drones >= 2, "drones=" + dbg.drones);
   }
   if (tr === "sycorax") {
     // the hush is live now; return then heal fully — and nothing persists
@@ -329,6 +330,7 @@ TRACKS.forEach(function (tr) {
   }
   if (tr === "ariel") {
     check("ariel: reground brought the tonic home (F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
+    check("ariel: floor plots the breeze drone", dbg.drones >= 1, "drones=" + dbg.drones);
   }
 
   check(tr + ": frames drew to all three canvases",
