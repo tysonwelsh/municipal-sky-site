@@ -193,7 +193,15 @@ PJ2.Viz = (function () {
       st = {
         marks: [],            // note-driven overlay marks
         droneSet: [],         // active drones {deg, freq, oct, sub, t0, until} — the floor's ledger
-        whistle: null,        // ariel plumb-bob {of, until}
+        whistle: null,        // ariel whistle note tracker {of, freq, until} → lollipop
+        lolli: null,          // v1 tracked lollipop {theta, yBase, yHead, octIdx, framesQuiet}
+        harpPlucks: [],       // library harpsichord baseline ripples {of, t, vel}
+        bassPlucks: [],       // ariel bass baseline ripples {of, t, vel, freq}
+        boxGlints: [],        // library music-box glint stars {of, t, riseFrac, seed, dir}
+        chimeGlints: [],      // ariel chime glints (music-box's sibling voice)
+        bubbles: [],          // ariel ambient gliss bubbles {startOct, glissEndOct, driftTo, t, dur, phase, r}
+        humNote: null,        // library hum bar {of, freq, vowel, endTime}
+        humLevel: 0,          // smoothed hum level (bar height)
         pulseAt: -1e9,        // sycorax proto-drum last lub (audio t)
         tallies: 0,           // sycorax percussion strokes this evening
         tallyKinds: [],       // recent percussion kinds (margin readout)
@@ -673,11 +681,25 @@ PJ2.Viz = (function () {
       var t = ev.t || 0;
       if (track === "library") {
         if (ev.voice === "pluck" && of != null) {
-          pushMark({ kind: "flick", of: of, t: t, life: 2.2, vel: ev.velocity || 0.7 });
+          // v1: the harpsichord vibrates the baseline itself (viz.js:698)
+          st.harpPlucks.push({ of: of, t: t, vel: ev.velocity || 0.7, freq: ev.freq });
+          if (st.harpPlucks.length > 24) st.harpPlucks.shift();
         } else if (ev.voice === "musicbox" && of != null) {
-          pushMark({ kind: "glint", of: of, t: t, life: 1.6, vel: ev.velocity || 0.5 });
+          // v1: soft-glow glint star, loudness → rise (viz.js:1326–1346)
+          var gv = ev.velocity == null ? 0.8 : ev.velocity;
+          var gn = clamp01((gv - 0.45) / 0.55);
+          st.boxGlints.push({
+            of: of, t: t,
+            riseFrac: BOX_RISE_MIN + BOX_RISE_VAR * gn,
+            seed: Skin.noise.hash2(ev.freq || 1, t) * 6.283,
+            dir: Skin.noise.hash2(t, 3.7) < 0.5 ? -1 : 1,
+          });
+          if (st.boxGlints.length > 32) st.boxGlints.shift();
         } else if (ev.voice === "hum" && of != null) {
-          pushMark({ kind: "column", of: of, t: t, life: Math.min(ev.durS || 4, 10) });
+          // v1: the vowel-shaped hum bar (viz.js:1292–1319). The v2 events
+          // don't carry the mouth's vowel — neutral "uh" until the engine
+          // emits it (additive event change, flagged in PLAN-NIGHT-FOLIO).
+          st.humNote = { of: of, freq: ev.freq, vowel: ev.vowel || "uh", endTime: t + (ev.durS || 1) };
         } else if (ev.voice === "drone" && ev.deg != null) {
           upsertDrone(ev, t);
         }
@@ -693,13 +715,37 @@ PJ2.Viz = (function () {
         }
       } else { // ariel
         if (ev.voice === "whistle" && of != null) {
-          st.whistle = { of: of, until: t + (ev.durS || 2) + 0.4 };
+          // v1: the whistle IS the lollipop (viz.js:1137–1228) — tracked
+          // pitch, stem off the baseline, glowing head riding the crest
+          st.whistle = { of: of, freq: ev.freq, until: t + (ev.durS || 2) + 0.4 };
         } else if (ev.voice === "chime" && of != null) {
-          pushMark({ kind: "bubble", of: of, t: t, life: 2.6, vel: ev.velocity || 0.5 });
+          // the chime is the music box's sibling: same glint-star voice
+          var cv = ev.velocity == null ? 0.7 : ev.velocity;
+          st.chimeGlints.push({
+            of: of, t: t,
+            riseFrac: BOX_RISE_MIN + BOX_RISE_VAR * clamp01((cv - 0.45) / 0.55),
+            seed: Skin.noise.hash2(ev.freq || 1, t) * 6.283,
+            dir: Skin.noise.hash2(t, 5.1) < 0.5 ? -1 : 1,
+          });
+          if (st.chimeGlints.length > 32) st.chimeGlints.shift();
         } else if (ev.voice === "flutter" && of != null) {
           pushMark({ kind: "wing", of: of, t: t, life: 1.4 });
         } else if (ev.voice === "bass" && of != null) {
-          pushMark({ kind: "bassmark", of: of, t: t, life: Math.min(ev.durS || 2, 5) });
+          // v1: the bass ripples the baseline (viz.js:729) — no diamond mark
+          st.bassPlucks.push({ of: of, t: t, vel: ev.velocity || 0.8, freq: ev.freq });
+          if (st.bassPlucks.length > 24) st.bassPlucks.shift();
+        } else if (ev.voice === "ambient" && ev.kind === "bubble" && of != null) {
+          // v1's rising bubbles (viz.js:1353–1374): gliss → climb, drift, pop
+          var eof = ev.endFreq ? ofOf(ev.endFreq) : of;
+          if (eof == null) eof = of;
+          st.bubbles.push({
+            startOct: of, glissEndOct: eof,
+            driftTo: Math.min(OCTAVES - 0.01, eof + BUBBLE_RISE_EXTRA),
+            t: t, dur: ev.durS || 1,
+            phase: Skin.noise.hash2(ev.freq || 1, t) * Math.PI * 2,
+            r: BUBBLE_R * (0.8 + Skin.noise.hash2(t, 9.2) * 0.5),
+          });
+          if (st.bubbles.length > 24) st.bubbles.shift();
         } else if (ev.voice === "breeze" && ev.deg != null) {
           upsertDrone(ev, t);
         }
@@ -844,6 +890,296 @@ PJ2.Viz = (function () {
       return out;
     }
 
+    // ---- v1 overlay animations (prosperos-jukebox-viz.js:684–852 +
+    // 1088–1228): harpsichord/bass baseline ripples, music-box glint stars,
+    // rising bubbles, the vowel hum bar, the whistle lollipop. v1 drove the
+    // ripple/hum waveforms and whistle tracking from per-layer analyser
+    // taps; the v2 facades expose no per-voice taps, so pitch comes from
+    // the note events and the ripple wave is a slowed traveling sine at
+    // the note's own frequency (the floor halos' SLOWDOWN convention).
+    // Same shapes, same envelopes, same lifetimes as v1.
+    var HARP_TAU = 2, HARP_SIGMA_OCT = 0.05, HARP_LIFETIME = 7, HARP_AMP = 80;
+    var BASS_TAU = 2.5, BASS_SIGMA_OCT = 0.06, BASS_LIFETIME = 8, BASS_AMP = 80;
+    var LOLLI_HEIGHT = 2;          // hum-bar max-height multiplier (v1)
+    var HEAD_SMOOTH = 0.30;        // lollipop pitch/height easing
+    var HUM_VOWEL_SHAPES = {
+      ng: { width: 1.0, height: 0.95, peak:  0.08, pointed: 0, round: 0.10 },
+      oo: { width: 1.0, height: 1.00, peak:  0.00, pointed: 0, round: 0.60 },
+      uh: { width: 1.0, height: 1.00, peak:  0.00, pointed: 0, round: 0.08 },
+      oh: { width: 1.0, height: 1.00, peak: -0.02, pointed: 0, round: 0.00 },
+      ah: { width: 1.0, height: 1.00, peak:  0.04, pointed: 1, round: 0.00 },
+    };
+    var HUM_BAR_HALF = 1;          // base half-width in samples (× vowel width)
+    var BOX_GLINT_LIFE = 1.5, BOX_GLINT_BLOOM = 0.08, BOX_GLINT_R = 6.5;
+    var BOX_RISE_MIN = 0.175, BOX_RISE_VAR = 0.475;
+    var BOX_SPIN = 12 * Math.PI / 180, BOX_SHIM = 0.4;
+    var BUBBLE_RISE_EXTRA = 0.45, BUBBLE_AFTER = 1.1, BUBBLE_R = 7, BUBBLE_WOBBLE = 0.06;
+
+    // baseline ripple displacement at coil position `frac` (octave float) —
+    // v1's harpDr/bassDr (viz.js:698/729) with the synthesized wave
+    function rippleDr(plucks, sigma, tau, radial, frac, t) {
+      var dr = 0;
+      for (var i = 0; i < plucks.length; i++) {
+        var pk = plucks[i];
+        if (t < pk.t) continue;
+        var dOct = frac - pk.of;
+        if (dOct < -sigma * 3 || dOct > sigma * 3) continue;
+        var env = Math.exp(-(dOct * dOct) / (2 * sigma * sigma));
+        var decay = Math.exp(-(t - pk.t) / tau);
+        var winFrac = clamp01(dOct / (2.5 * sigma) + 0.5);
+        var cycles = 1.5 + (pk.freq ? Math.min(6, pk.freq / 180) : 2);
+        var wv = Math.sin(winFrac * cycles * 2 * Math.PI
+          + ((pk.freq || 200) / HALO_SLOWDOWN) * 2 * Math.PI * t) * 2.4 * (pk.vel || 0.7);
+        if (wv > 2.6) wv = 2.6; else if (wv < -2.6) wv = -2.6;
+        dr += radial * decay * env * wv;
+      }
+      return dr;
+    }
+
+    // the whistle lollipop tracker — v1's updateLollipop3D (viz.js:1137),
+    // event-tracked pitch, head height from the live display magnitude
+    function updateLollipop(M, audioT) {
+      var wn = st.whistle;
+      if (wn && audioT > wn.until) { st.whistle = wn = null; }
+      var lp = st.lolli;
+      if (wn) {
+        var octIdx = Math.floor(wn.of);
+        if (lp && lp.framesQuiet <= 3) octIdx = lp.octIdx;
+        var fracIn = clamp(wn.of - octIdx, 0, 0.999);
+        var iB = clamp(Math.round(wn.of * SPT), 0, TOTAL - 1);
+        var theta = fracIn * 2 * Math.PI;
+        var yBase = (octIdx + fracIn - (OCTAVES - 1) / 2) * M.oct;
+        var yHead = yBase + magnitudes[iB] * M.peak;
+        if (!lp || lp.framesQuiet > 3) {
+          st.lolli = { theta: theta, yBase: yBase, yHead: yHead, octIdx: Math.floor(wn.of), framesQuiet: 0 };
+        } else {
+          var dT = theta - lp.theta;
+          while (dT > Math.PI) dT -= 2 * Math.PI;
+          while (dT < -Math.PI) dT += 2 * Math.PI;
+          lp.theta += dT * HEAD_SMOOTH;
+          lp.yHead += (yHead - lp.yHead) * HEAD_SMOOTH;
+          lp.yBase = yBase; lp.framesQuiet = 0;
+        }
+      } else if (lp) {
+        // note over: the head sinks home, then the lollipop leaves (v1)
+        lp.framesQuiet++;
+        lp.yHead += (lp.yBase - lp.yHead) * 0.3;
+        if ((lp.yHead - lp.yBase) < M.oct * 0.03 || lp.framesQuiet > 12) st.lolli = null;
+      }
+    }
+
+    // scale an "rgba(r,g,b,a)" template's alpha (v1's fadeRgba)
+    function fadeRgba(rgbaStr, mult) {
+      return rgbaStr.replace(/rgba\(([^,]+),([^,]+),([^,]+),([^)]+)\)/,
+        function (_, r, g, b, a) {
+          var na = Math.max(0, Math.min(1, parseFloat(a) * mult));
+          return "rgba(" + r + "," + g + "," + b + "," + na.toFixed(3) + ")";
+        });
+    }
+
+    // v1's drawLollipop3D (viz.js:1204): glowing head, stem to the baseline
+    function drawLollipop(G, M, proj, depthAlpha) {
+      var lp = st.lolli;
+      if (!lp) return;
+      var c = G.ctx;
+      var ct = Math.cos(lp.theta), sn = Math.sin(lp.theta);
+      var pb = proj(M.R * ct, lp.yBase, M.R * sn);
+      var ph = proj(M.R * ct, lp.yHead, M.R * sn);
+      var head = fadeRgba(pal.spiral.lollipopHead, depthAlpha);
+      c.save();
+      c.globalCompositeOperation = "lighter";
+      var grad = c.createRadialGradient(ph.sx, ph.sy, 1, ph.sx, ph.sy, 16);
+      grad.addColorStop(0, head);
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      c.fillStyle = grad;
+      c.beginPath(); c.arc(ph.sx, ph.sy, 16, 0, Math.PI * 2); c.fill();
+      c.globalCompositeOperation = "source-over";
+      c.strokeStyle = head; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(pb.sx, pb.sy); c.lineTo(ph.sx, ph.sy); c.stroke();
+      c.fillStyle = head;
+      c.beginPath(); c.arc(pb.sx, pb.sy, 2.2, 0, Math.PI * 2); c.fill();
+      c.beginPath(); c.arc(ph.sx, ph.sy, 5, 0, Math.PI * 2); c.fill();
+      c.fillStyle = "rgba(255,255,255," + (0.85 * depthAlpha).toFixed(3) + ")";
+      c.beginPath(); c.arc(ph.sx, ph.sy, 1.6, 0, Math.PI * 2); c.fill();
+      c.restore();
+    }
+
+    // the hum bar's per-frame parameters (v1 viz.js:1292–1319, tap-less
+    // path: level from the display magnitude, no side ripple — v1's own
+    // humTapOk=false degradation)
+    function updateHumBar(M, audioT) {
+      if (st.humNote && audioT > st.humNote.endTime + 0.15) st.humNote = null;
+      if (track !== "library" || !st.humNote) { st.humLevel = 0; return null; }
+      var hn = st.humNote;
+      var center = clamp(Math.round(hn.of * SPT), 0, TOTAL - 1);
+      st.humLevel = st.humLevel * 0.55 + magnitudes[center] * 0.45;
+      var shape = HUM_VOWEL_SHAPES[hn.vowel] || HUM_VOWEL_SHAPES.uh;
+      var halfSamp = Math.max(1, Math.round(HUM_BAR_HALF * shape.width));
+      return {
+        sL: Math.max(0, center - halfSamp),
+        sR: Math.min(TOTAL - 1, center + halfSamp),
+        center: center,
+        ht: st.humLevel * M.peak * LOLLI_HEIGHT * shape.height,
+        shape: shape, vowel: hn.vowel,
+      };
+    }
+
+    // v1's drawHumBar (viz.js:1475): vertical-edged bar, vowel-shaped top,
+    // no bottom edge (the baseline under it is skipped in the quad pass)
+    function drawHumBar(G, M, proj, bar, depth) {
+      var c = G.ctx;
+      var halfSpan = (bar.sR - bar.sL) / 2;
+      if (halfSpan < 0.5) halfSpan = 0.5;
+      function top(u) {
+        var sh2 = bar.shape, pk = sh2.peak;
+        if (pk > 0.0001 || pk < -0.0001) {
+          var a = u < 0 ? -u : u;
+          var s3 = (1 - u * u) * (1 - sh2.pointed) + (1 - a) * sh2.pointed;
+          return bar.ht * (1 + pk * s3);
+        }
+        if (bar.vowel === "oo" && sh2.round > 0.001 && halfSpan > 0) {
+          var halfW = halfSpan * (2 * Math.PI * M.R / SPT);
+          var rad = sh2.round * Math.min(halfW, bar.ht * 0.95);
+          var rFx = halfW > 0 ? rad / halfW : 0;
+          var au = u < 0 ? -u : u;
+          if (au <= 1 - rFx) return bar.ht;
+          var aa = (au - (1 - rFx)) / rFx;
+          return bar.ht - rad * (1 - Math.sqrt(Math.max(0, 1 - aa * aa)));
+        }
+        return bar.ht;
+      }
+      var pts = [], ML = 12, TT = 26;
+      var hL = top(-1), hR = top(1);
+      for (var s1 = 0; s1 <= ML; s1++) pts.push([bar.sL, hL * (s1 / ML)]);
+      for (var i2 = 0; i2 <= TT; i2++) {
+        var u = -1 + 2 * i2 / TT;
+        pts.push([bar.center + u * halfSpan, top(u)]);
+      }
+      for (var s2 = 1; s2 <= ML; s2++) pts.push([bar.sR, hR * (1 - s2 / ML)]);
+      c.save();
+      c.strokeStyle = spRGBA(pal.spiral.ribbonStroke, 0.9 * depth);
+      c.lineWidth = 1.3;
+      c.lineJoin = "round";
+      c.beginPath();
+      for (var p = 0; p < pts.length; p++) {
+        var ofr = pts[p][0] / SPT;
+        var th = (ofr - Math.floor(ofr)) * 2 * Math.PI;
+        var by = (ofr - (OCTAVES - 1) / 2) * M.oct;
+        var pr = proj(M.R * Math.cos(th), by + pts[p][1], M.R * Math.sin(th));
+        if (p === 0) c.moveTo(pr.sx, pr.sy); else c.lineTo(pr.sx, pr.sy);
+      }
+      c.stroke();
+      c.restore();
+    }
+
+    // v1's lo-fi soft-glow star (viz.js:808): posterized rings, 4 spinning
+    // rays, flickering specks, bright core — snapped to a 2px grid
+    function drawGlintStar(c, sx0, sy0, age, env, depth, R2, rot, sd2, col) {
+      var shim = 1 + BOX_SHIM * 0.3 * Math.sin(age * 10 + sd2 * 4);
+      var e = env * depth * (shim < 0 ? 0 : shim);
+      if (e <= 0.003) return;
+      function ca(a) { a = a < 0 ? 0 : (a > 1 ? 1 : a); return "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + a.toFixed(3) + ")"; }
+      var GS = 2, sx = Math.round(sx0 / GS) * GS, sy = Math.round(sy0 / GS) * GS;
+      c.save();
+      c.globalCompositeOperation = "lighter";
+      var rings = 5, maxR = R2 * (0.9 + 0.7 * env);
+      for (var k = rings; k >= 1; k--) {
+        c.fillStyle = ca(0.15 * e * (1 - (k - 1) / rings));
+        c.beginPath(); c.arc(sx, sy, maxR * (k / rings), 0, Math.PI * 2); c.fill();
+      }
+      var len = R2 * 1.8 * (0.5 + 0.5 * env), wid = R2 * 0.22;
+      c.fillStyle = ca(0.85 * e);
+      for (var i = 0; i < 4; i++) {
+        c.save(); c.translate(sx, sy); c.rotate(rot + i * Math.PI / 2);
+        c.beginPath(); c.moveTo(0, -wid); c.lineTo(len, 0); c.lineTo(0, wid); c.closePath();
+        c.fill(); c.restore();
+      }
+      for (var s4 = 0; s4 < 4; s4++) {
+        var fl = Math.sin(age * (8 + s4 * 3) + sd2 * 5 + s4);
+        if (fl <= 0.55) continue;
+        var ang = sd2 * 2 + s4 * 1.9, dist = R2 * (1.1 + 0.5 * ((s4 * 7 + sd2) % 1));
+        var px = Math.round((sx + Math.cos(ang) * dist) / GS) * GS;
+        var py = Math.round((sy + Math.sin(ang) * dist) / GS) * GS;
+        var fa = clamp01(0.7 * e * (fl - 0.55) / 0.45);
+        c.fillStyle = "rgba(255,255,255," + fa.toFixed(3) + ")";
+        c.fillRect(px - 1, py - 1, GS, GS);
+      }
+      var coreA = Math.min(1, 0.9 * e);
+      c.fillStyle = "rgba(255,255,255," + coreA.toFixed(3) + ")";
+      c.beginPath(); c.arc(sx, sy, R2 * 0.2 * (0.6 + env), 0, Math.PI * 2); c.fill();
+      c.restore();
+    }
+
+    // glint lifecycle + draw (v1 viz.js:1803–1827): bloom, ease-out decay,
+    // loudness-set rise off the baseline, depth fade
+    function drawGlints(G, M, proj, audioT, list) {
+      var col = pal.spiral.ribbonStroke;
+      for (var i = list.length - 1; i >= 0; i--) {
+        var gl = list[i];
+        var age = audioT - gl.t;
+        if (age > BOX_GLINT_LIFE) { list.splice(i, 1); continue; }
+        if (age < 0) continue;
+        var env = age < BOX_GLINT_BLOOM
+          ? age / BOX_GLINT_BLOOM
+          : Math.pow(1 - (age - BOX_GLINT_BLOOM) / (BOX_GLINT_LIFE - BOX_GLINT_BLOOM), 1.8);
+        if (env <= 0.001) continue;
+        var th = (gl.of - Math.floor(gl.of)) * 2 * Math.PI;
+        var rt = clamp01(age / BOX_GLINT_LIFE);
+        var rise = gl.riseFrac * M.peak * (1 - Math.pow(1 - rt, 1.6));
+        var gy = (gl.of - (OCTAVES - 1) / 2) * M.oct + rise;
+        var gp = proj(M.R * Math.cos(th), gy, M.R * Math.sin(th));
+        var dep = clamp(0.3 + 0.7 * (gp.z + M.R) / (2 * M.R), 0.12, 1);
+        drawGlintStar(G.ctx, gp.sx, gp.sy, age, env, dep, BOX_GLINT_R,
+          gl.seed + gl.dir * BOX_SPIN * age, gl.seed, col);
+      }
+    }
+
+    // v1's rising bubbles (viz.js:1831–1876): climb with the gliss, buoyant
+    // drift after the note, wobble, expand-and-pop
+    function drawBubbles(G, M, proj, audioT) {
+      var c = G.ctx;
+      var col = pal.spiral.ribbonFill;
+      c.save();
+      for (var i = st.bubbles.length - 1; i >= 0; i--) {
+        var bub = st.bubbles[i];
+        var age = audioT - bub.t;
+        var total = bub.dur + BUBBLE_AFTER;
+        if (age > total) { st.bubbles.splice(i, 1); continue; }
+        if (age < 0) continue;
+        var t01 = clamp01(age / total);
+        var bOf;
+        if (age < bub.dur) {
+          bOf = bub.startOct + (bub.glissEndOct - bub.startOct) * (age / bub.dur);
+        } else {
+          var aft = clamp01((age - bub.dur) / BUBBLE_AFTER);
+          bOf = bub.glissEndOct + (bub.driftTo - bub.glissEndOct) * aft;
+        }
+        bOf = clamp(bOf, 0, OCTAVES - 0.01);
+        var wob = Math.sin(age * 3.2 + bub.phase) * BUBBLE_WOBBLE;
+        var th = (bOf - Math.floor(bOf)) * 2 * Math.PI + wob;
+        var yB = (bOf - (OCTAVES - 1) / 2) * M.oct;
+        var bp = proj(M.R * Math.cos(th), yB, M.R * Math.sin(th));
+        var dep = clamp(0.25 + 0.75 * (bp.z + M.R) / (2 * M.R), 0.12, 1);
+        var pop = t01 > 0.82 ? (t01 - 0.82) / 0.18 : 0;
+        var fade = t01 < 0.1 ? t01 / 0.1 : (1 - pop);
+        if (fade <= 0.001) continue;
+        var r = bub.r * (1 + 0.25 * Math.sin(age * 2.1 + bub.phase)) * (1 + pop * 1.4);
+        var a = fade * dep;
+        c.strokeStyle = spRGBA(col, 0.7 * a);
+        c.lineWidth = 1.2;
+        c.beginPath(); c.arc(bp.sx, bp.sy, r, 0, Math.PI * 2); c.stroke();
+        c.fillStyle = spRGBA(col, 0.10 * a);
+        c.fill();
+        if (pop < 0.5) {
+          c.fillStyle = "rgba(255,255,255," + (0.7 * a * (1 - pop * 2)).toFixed(3) + ")";
+          c.beginPath();
+          c.arc(bp.sx - r * 0.33, bp.sy - r * 0.33, Math.max(0.8, r * 0.18), 0, Math.PI * 2);
+          c.fill();
+        }
+      }
+      c.restore();
+    }
+
     function drawPlateData(G, tr, tNow) {
       var c = G.ctx;
       var M = plateMetrics(G);
@@ -860,14 +1196,31 @@ PJ2.Viz = (function () {
         return { sx: M.CX + x1, sy: M.CY - y1, z: z2 };
       }
 
+      // ---- v1 overlay lifecycles (viz.js:1252–1322) -----------------------
+      var harpOn = false, bassOn = false, harpRadial = 0, bassRadial = 0;
+      if (track === "library") {
+        st.harpPlucks = st.harpPlucks.filter(function (p) { return audioT - p.t < HARP_LIFETIME; });
+        harpOn = st.harpPlucks.length > 0;
+        harpRadial = M.oct * (HARP_AMP / 350);   // v1 viz.js:1395
+      } else if (track === "ariel") {
+        st.bassPlucks = st.bassPlucks.filter(function (p) { return audioT - p.t < BASS_LIFETIME; });
+        bassOn = st.bassPlucks.length > 0;
+        bassRadial = M.oct * (BASS_AMP / 350);   // v1 viz.js:1396
+        updateLollipop(M, audioT);
+      }
+      var humBar = updateHumBar(M, audioT);
+
       // ---- project the coil (inner baseline, outer FFT contour — v1: same
-      // radius, magnitude extrudes the outer point straight up) ------------
+      // radius, magnitude extrudes the outer point straight up; the
+      // baseline itself vibrates with the harpsichord/bass ripples) --------
       var i, th, yW, m;
       for (i = 0; i <= TOTAL; i++) {
         var ii = i < TOTAL ? i : TOTAL - 1;
         var frac = i / SPT;
         th = (frac % 1) * 2 * Math.PI;
         yW = (frac - (OCTAVES - 1) / 2) * M.oct;
+        if (harpOn) yW += rippleDr(st.harpPlucks, HARP_SIGMA_OCT, HARP_TAU, harpRadial, frac, audioT);
+        else if (bassOn) yW += rippleDr(st.bassPlucks, BASS_SIGMA_OCT, BASS_TAU, bassRadial, frac, audioT);
         m = magnitudes[ii];
         var xw = M.R * Math.cos(th), zw = M.R * Math.sin(th);
         var x1 = xw * cy1 - zw * sy1, z1 = xw * sy1 + zw * cy1;
@@ -876,19 +1229,22 @@ PJ2.Viz = (function () {
         outerX[i] = x1; outerY[i] = yo * cp1 - z1 * sp1; outerZ[i] = yo * sp1 + z1 * cp1;
       }
 
-      // v1 draw order: floor first (the coil occludes it), then the coil,
-      // then the axis text
+      // v1 draw order: floor first (the coil occludes it), then the coil
+      // with the lollipop + hum bar interleaved at their own depths, then
+      // axis text, then the over-the-coil decorations
       drawConstellationFloor(G, M, proj, audioT);
-      drawPhosphorCoil(G, M);
+      drawPhosphorCoil(G, M, proj, humBar);
       drawOctaveAxisAndScale(G, M);
 
       // ---- per-track live extras ------------------------------------------
       drawNoteMarks(G, M, proj, audioT);
+      if (track === "library") drawGlints(G, M, proj, audioT, st.boxGlints);
       if (track === "sycorax") drawPulseMark(G, M, audioT);
       if (track === "ariel") {
+        drawGlints(G, M, proj, audioT, st.chimeGlints);
+        drawBubbles(G, M, proj, audioT);
         if (wallS < st.ghostLineUntil) drawFlightLine(G, M, proj, true);
         if (st.flightScenes > 0) drawFlightLine(G, M, proj, false);
-        drawPlumbBob(G, M, proj, audioT);
       }
     }
 
@@ -897,7 +1253,9 @@ PJ2.Viz = (function () {
     // fluctuating top edge, bright fixed baseline, octave notch dots.
     // Depth is alpha fade — the revert's one sanctioned departure from the
     // ink-weight law (owner 2026-07-20: the coil is v1's, verbatim).
-    function drawPhosphorCoil(G, M) {
+    // The whistle lollipop and hum bar interleave into the same depth sort
+    // (v1 viz.js:1689–1738) so front coils occlude them correctly.
+    function drawPhosphorCoil(G, M, proj, humBar) {
       var c = G.ctx;
       var sp = pal.spiral;
       var f = sp.ribbonFill, s = sp.ribbonStroke, b = sp.baseStroke;
@@ -905,9 +1263,32 @@ PJ2.Viz = (function () {
       for (i = 0; i < TOTAL; i++) orderZ[i] = (innerZ[i] + innerZ[i + 1]) * 0.5;
       orderArr.sort(function (a, b2) { return orderZ[a] - orderZ[b2]; });
       var denom = M.R * 2;
+
+      // depth markers for the interleaved overlays
+      var lolliZ = null, lolliDepth = 1, lolliDrawn = false;
+      if (track === "ariel" && st.lolli) {
+        var lph = proj(M.R * Math.cos(st.lolli.theta), st.lolli.yHead, M.R * Math.sin(st.lolli.theta));
+        lolliZ = lph.z;
+        lolliDepth = clamp(0.20 + 0.80 * (lolliZ + M.R) / denom, 0.10, 1);
+      }
+      var barZ = null, barDepth = 1, barDrawn = false;
+      if (humBar) {
+        barZ = innerZ[humBar.center];
+        barDepth = clamp(0.35 + 0.65 * (barZ + M.R) / denom, 0.15, 1);
+      }
+
       for (var q = 0; q < TOTAL; q++) {
         i = orderArr[q];
-        var depth = 0.35 + 0.65 * (orderZ[i] + M.R) / denom;
+        var zAvg = orderZ[i];
+        if (lolliZ !== null && !lolliDrawn && zAvg >= lolliZ) {
+          drawLollipop(G, M, proj, lolliDepth);
+          lolliDrawn = true;
+        }
+        if (barZ !== null && !barDrawn && zAvg >= barZ) {
+          drawHumBar(G, M, proj, humBar, barDepth);
+          barDrawn = true;
+        }
+        var depth = 0.35 + 0.65 * (zAvg + M.R) / denom;
         if (depth < 0.15) depth = 0.15; else if (depth > 1) depth = 1;
         var ix0 = innerX[i] + M.CX, iy0 = M.CY - innerY[i];
         var ix1 = innerX[i + 1] + M.CX, iy1 = M.CY - innerY[i + 1];
@@ -922,15 +1303,21 @@ PJ2.Viz = (function () {
         // fluctuating top edge — thin and faint; the emphasis is the baseline
         c.beginPath(); c.moveTo(ox0, oy0); c.lineTo(ox1, oy1);
         c.strokeStyle = spRGBA(b, 0.25 * depth); c.lineWidth = 0.6; c.stroke();
-        // the fixed baseline — the emphasized line (constant radius/height)
-        c.beginPath(); c.moveTo(ix0, iy0); c.lineTo(ix1, iy1);
-        c.strokeStyle = spRGBA(s, 0.9 * depth); c.lineWidth = 1.3; c.stroke();
+        // the fixed baseline — the emphasized line, skipped under the hum
+        // bar (its vertical edges replace it; v1 viz.js:1771)
+        if (!(humBar && i >= humBar.sL && i < humBar.sR)) {
+          c.beginPath(); c.moveTo(ix0, iy0); c.lineTo(ix1, iy1);
+          c.strokeStyle = spRGBA(s, 0.9 * depth); c.lineWidth = 1.3; c.stroke();
+        }
         // octave-boundary notch dot, inside the depth sort
         if (i % SPT === 0 && i !== 0) {
           c.beginPath(); c.arc(ix0, iy0, 2, 0, Math.PI * 2);
           c.fillStyle = spRGBA(s, 0.9 * depth); c.fill();
         }
       }
+      // overlays that sat in front of every quad
+      if (lolliZ !== null && !lolliDrawn) drawLollipop(G, M, proj, lolliDepth);
+      if (barZ !== null && !barDrawn) drawHumBar(G, M, proj, humBar, barDepth);
     }
 
     // ---- the v1 constellation floor (prosperos-jukebox-viz.js:1506–1675 +
@@ -1159,44 +1546,7 @@ PJ2.Viz = (function () {
         var yW = (mk.of - (OCTAVES - 1) / 2) * M.oct;
         var iC = Math.min(TOTAL - 1, Math.max(0, Math.round(mk.of * SPT)));
         var pt, dep;
-        if (mk.kind === "flick") {
-          // quill flick off the baseline (library harpsichord) — phosphor
-          // amber on the night ground; far limb steps down the ramp
-          pt = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
-          dep = pt.z / M.R;
-          var len = 10 + 14 * (mk.vel || 0.6);
-          c.strokeStyle = dataCol(dep > -0.3 ? "#ffdc82" : "#b4823c", "quill flick");
-          c.lineWidth = 1.4 * (1 - p01 * 0.5);
-          c.beginPath();
-          c.moveTo(pt.sx, pt.sy);
-          c.quadraticCurveTo(pt.sx + len * 0.4, pt.sy - len * 0.9, pt.sx + len * 0.85, pt.sy - len * 1.4 * (1 - p01 * 0.4));
-          c.stroke();
-        } else if (mk.kind === "glint") {
-          // music-box glint: bright phosphor core (the datum), gilt flecks
-          // illuminating beside it — v1's soft star, px-snapped
-          var rise = (0.18 + 0.45 * (mk.vel || 0.5)) * M.peak * Math.min(1, age / 0.4);
-          pt = proj(M.R * Math.cos(th), yW + rise, M.R * Math.sin(th));
-          var gx = Math.round(pt.sx / 2) * 2, gy = Math.round(pt.sy / 2) * 2;
-          c.fillStyle = dataCol("#ffdc82", "music-box glint core");
-          c.fillRect(gx - 1, gy - 1, 2, 2);
-          if (p01 < 0.8) {
-            c.fillStyle = pal.gilt[1];
-            c.fillRect(gx - 3, gy - 1, 2, 2); c.fillRect(gx + 1, gy - 1, 2, 2);
-            c.fillRect(gx - 1, gy - 3, 2, 2); c.fillRect(gx - 1, gy + 1, 2, 2);
-          }
-        } else if (mk.kind === "column") {
-          // the hum's column, v1-voiced: translucent amber body, bright edges
-          var pB = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
-          var hCol = magnitudes[iC] * M.peak;
-          var pT = proj(M.R * Math.cos(th), yW + Math.max(hCol, M.peak * 0.14), M.R * Math.sin(th));
-          var wCol = 7;
-          c.fillStyle = spRGBA(pal.spiral.ribbonFill, 0.18);
-          c.fillRect(Math.min(pB.sx, pT.sx) - wCol / 2, Math.min(pB.sy, pT.sy), wCol, Math.abs(pB.sy - pT.sy));
-          c.strokeStyle = dataCol("#ffdc82", "hum column");
-          c.lineWidth = 1.2;
-          c.beginPath(); c.moveTo(pB.sx - wCol / 2, pB.sy); c.lineTo(pT.sx - wCol / 2, pT.sy); c.stroke();
-          c.beginPath(); c.moveTo(pB.sx + wCol / 2, pB.sy); c.lineTo(pT.sx + wCol / 2, pT.sy); c.stroke();
-        } else if (mk.kind === "cutline") {
+        if (mk.kind === "cutline") {
           // the chant/rebec/boneflute cut — the block's living mark: a bone
           // stroke riding the contour at the note's pitch
           var yC = yW + magnitudes[iC] * M.peak;
@@ -1209,13 +1559,6 @@ PJ2.Viz = (function () {
           c.strokeStyle = dataCol(pal.witch ? pal.witch[1] : pal.bone[0], "waterphone tine");
           c.lineWidth = 1;
           c.beginPath(); c.arc(pt.sx, pt.sy, 3 + 4 * p01, 0, Math.PI * 2); c.stroke();
-        } else if (mk.kind === "bubble") {
-          // engraved rising circle (ariel chime)
-          var riseB = M.peak * (0.2 + 0.8 * p01);
-          pt = proj(M.R * Math.cos(th), yW + riseB, M.R * Math.sin(th));
-          c.strokeStyle = dataCol(pt.z / M.R > -0.3 ? pal.silver[0] : pal.silver[1], "chime bubble");
-          c.lineWidth = 1;
-          c.beginPath(); c.arc(pt.sx, pt.sy, 2.5 + 2.5 * (1 - p01), 0, Math.PI * 2); c.stroke();
         } else if (mk.kind === "wing") {
           pt = proj(M.R * Math.cos(th), yW + M.peak * 0.3, M.R * Math.sin(th));
           c.strokeStyle = dataCol(pal.sky[1], "flutter wing");
@@ -1223,12 +1566,6 @@ PJ2.Viz = (function () {
           c.beginPath();
           c.moveTo(pt.sx - 5, pt.sy + 3); c.lineTo(pt.sx, pt.sy - 2); c.lineTo(pt.sx + 5, pt.sy + 3);
           c.stroke();
-        } else if (mk.kind === "bassmark") {
-          pt = proj(M.R * Math.cos(th), yW, M.R * Math.sin(th));
-          c.fillStyle = dataCol(pal.silver[0], "bass mark");
-          c.beginPath();
-          c.moveTo(pt.sx, pt.sy - 4); c.lineTo(pt.sx + 4, pt.sy); c.lineTo(pt.sx, pt.sy + 4); c.lineTo(pt.sx - 4, pt.sy);
-          c.closePath(); c.fill();
         }
       }
       st.marks = keep;
@@ -1293,31 +1630,6 @@ PJ2.Viz = (function () {
           }
         }
       }
-    }
-
-    // ariel: the whistle's silver plumb-bob at the tracked pitch
-    function drawPlumbBob(G, M, proj, audioT) {
-      var wl = st.whistle;
-      if (!wl || audioT > wl.until) return;
-      var c = G.ctx;
-      var of = wl.of;
-      var th = (of % 1) * 2 * Math.PI;
-      var yB = (of - (OCTAVES - 1) / 2) * M.oct;
-      var i0 = Math.min(TOTAL - 1, Math.max(0, Math.round(of * SPT)));
-      var yH = yB + magnitudes[i0] * M.peak + 14;
-      var xw = M.R * Math.cos(th), zw = M.R * Math.sin(th);
-      var pb = proj(xw, yB, zw);
-      var ph = proj(xw, yH, zw);
-      c.strokeStyle = dataCol(pal.silver[0], "plumb-bob stem"); c.lineWidth = 1.4;
-      c.beginPath(); c.moveTo(pb.sx, pb.sy); c.lineTo(ph.sx, ph.sy); c.stroke();
-      c.fillStyle = pal.silver[0];
-      c.beginPath();
-      c.moveTo(ph.sx, ph.sy + 9);
-      c.lineTo(ph.sx - 5, ph.sy - 1); c.lineTo(ph.sx - 3, ph.sy - 7);
-      c.lineTo(ph.sx + 3, ph.sy - 7); c.lineTo(ph.sx + 5, ph.sy - 1);
-      c.closePath(); c.fill();
-      c.strokeStyle = pal.silver[0]; c.lineWidth = 1;
-      c.beginPath(); c.arc(pb.sx, pb.sy, 3, 0, Math.PI * 2); c.stroke();
     }
 
     // ============================================================== MARGIN ==
@@ -2195,6 +2507,10 @@ PJ2.Viz = (function () {
           track: track, running: running, attached: !!engine,
           fftPeak: peak, marks: st.marks.length, tree: st.tree.length,
           drones: st.droneSet.length,
+          plucks: st.harpPlucks.length + st.bassPlucks.length,
+          glints: st.boxGlints.length + st.chimeGlints.length,
+          bubbles: st.bubbles.length,
+          lolli: !!st.lolli,
           era: { tonicPc: era.tonicPc },
           plateMs: plateStack.lastCompositeMs(),
           illustrations: plateStack.illustrations.length,

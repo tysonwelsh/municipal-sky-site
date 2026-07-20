@@ -165,6 +165,7 @@ PJ2.Skin = (function () {
         inKeyLabel:   [255, 220, 140], outKeyLabel: [120, 95, 50],
         octaveLabel:  [255, 200, 120],
         constFg: "255,170,0", constSub: "255,130,40",
+        lollipopHead: "rgba(255,220,130,1)",
         // #b4823c = baseStroke hex: the far-limb depth step for marks
         data: ["#ffdc82", "#ffaa00", "#ffdc8c", "#ffc878", "#b4823c"],
       },
@@ -198,6 +199,7 @@ PJ2.Skin = (function () {
         inKeyLabel:   [220, 200, 255], outKeyLabel: [95, 80, 130],
         octaveLabel:  [200, 170, 240],
         constFg: "196,181,253", constSub: "155,135,216",
+        lollipopHead: "rgba(220,200,255,1)",
         data: ["#dcc8ff", "#c896ff", "#c8aaf0"],
       },
     },
@@ -224,6 +226,7 @@ PJ2.Skin = (function () {
         inKeyLabel:   [216, 240, 255], outKeyLabel: [85, 110, 130],
         octaveLabel:  [170, 220, 240],
         constFg: "150,220,255", constSub: "100,200,220",
+        lollipopHead: "rgba(216,240,255,1)",
         data: ["#d8f0ff", "#96dcff", "#aadcf0"],
       },
     },
