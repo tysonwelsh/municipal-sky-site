@@ -139,24 +139,30 @@ PJ2.Skin = (function () {
   // composes them with computed alpha; `spiral.data` lists the hex forms
   // that are legal SOLE data carriers on the night ground (all clear 4.5:1
   // against bg by a wide margin — light ink on near-black).
+  // NIGHT FOLIO (PLAN-NIGHT-FOLIO §C, owner 2026-07-20): the panels all
+  // sit on the track's night ground now — the ramps below are the night
+  // values. Library's apparatus ink flipped from iron-gall-on-parchment to
+  // the amber phosphor ramp; measured on #0a0805: 15.1 / 11.2 / 5.9 / 3.3.
+  // Rubric fails as data on night (4.0:1 / 2.7:1) and demotes to
+  // display-size accent duty — gilt (8.3:1) carries its data-side jobs.
+  // The parchment ramp lives on only in the folio frame + tabs (CSS).
   var PALETTES = {
     library: {
       void_:  "#0b0a08",
-      paper:  ["#efe3c0", "#e3d3a8", "#d0bc8c", "#b49a68", "#8a704a"],
-      ink:    ["#2e2114", "#4a3620", "#6e5638", "#93794f"],
+      paper:  ["#0a0805", "#120d07", "#1a130a", "#241a0d", "#2e2114"],
+      ink:    ["#ffdc82", "#ffc878", "#b4823c", "#785f32"],
       rubric: ["#8e3b2c", "#b0553c"],
       gilt:   ["#c9a227", "#e8c95a"],
-      // data-legal ink on parchment (codex mockup, measured vs paper-1):
-      data:   ["#2e2114", "#4a3620", "#6e5638", "#8e3b2c"],
-      worstBg: "#e3d3a8", // plate + text zones clamp to the two lightest tones
-      primary: "#2e2114", accent: "#8e3b2c",
+      // data-legal ink on the night ground (grain tone = worst case):
+      data:   ["#ffdc82", "#ffc878", "#b4823c", "#c9a227"],
+      worstBg: "#120d07",
+      primary: "#ffdc82", accent: "#c9a227",
       exceptions: {
-        "#93794f": "far-limb depth-cue hairline — the same datum returns at full contrast every half revolution",
+        "#785f32": "faintest amber step: depth cues and aged log lines only, never the sole carrier (3.3:1)",
       },
       rules: {
-        "#b0553c": "rubric-1: aged tags and display-size accents only; body-size rubric duty is rubric-0",
-        "#c9a227": "gilt: illumination and chrome, never a sole data carrier on paper",
-        "#e8c95a": "gilt: illumination and chrome, never a sole data carrier on paper",
+        "#8e3b2c": "rubric: display-size accents only on night (2.7:1) — gilt carries rubric's data-side jobs",
+        "#b0553c": "rubric-1: display-size accents only on night (4.0:1) — gilt carries rubric's data-side jobs",
       },
       spiral: {
         bg: "#0a0805",
@@ -172,15 +178,15 @@ PJ2.Skin = (function () {
     },
     sycorax: {
       void_:  "#070605",
-      paper:  ["#241d17", "#322820", "#453729"],
+      paper:  ["#08070f", "#0e0c17", "#151220"],
       ink:    ["#0d0b09", "#1a1512"],
       bone:   ["#d8cfc0", "#b3a68e", "#7d715c"],
       blood:  ["#6e2a22", "#93392b"],
       witch:  ["#9b87b8", "#c4b5fd"],
-      // bone carries ALL the data on soot (grimoire mockup); the hush is a
+      // bone carries ALL the data on the night ground; the hush is a
       // palette step bone-0 → bone-1, never an alpha fade.
       data:   ["#d8cfc0", "#b3a68e", "#c4b5fd"],
-      worstBg: "#453729", // lightest paper tone = worst case for light marks
+      worstBg: "#151220", // lightest night tone = worst case for light marks
       primary: "#d8cfc0", accent: "#c4b5fd",
       exceptions: {
         "#7d715c": "dim bone: depth-cue far limb + oldest ink-age step, never the sole carrier",
@@ -205,13 +211,13 @@ PJ2.Skin = (function () {
     },
     ariel: {
       void_:  "#05070c",
-      plate:  ["#101a30", "#16233f", "#22345a"],
+      plate:  ["#06090e", "#0b1119", "#121b2a"],
       silver: ["#d8e4ec", "#a8c0d4", "#6e8aa4"],
       gilt:   ["#d4af5f", "#ecd28a"],
       rose:   ["#a04838"],
       sky:    ["#bfe0f4", "#8fc4e4"],
       data:   ["#d8e4ec", "#a8c0d4", "#ecd28a", "#d4af5f", "#bfe0f4", "#8fc4e4"],
-      worstBg: "#22345a", // lightest plate tone
+      worstBg: "#121b2a", // lightest night tone
       primary: "#d8e4ec", accent: "#ecd28a",
       exceptions: {
         "#6e8aa4": "deep silver: depth-cue hairlines, hatch shading, aged-ink log lines — never the sole carrier (3.4:1, atlas mockup)",
@@ -1898,7 +1904,7 @@ PJ2.Skin = (function () {
 
   // the three steps of ink aging per track (log entries pale as they age)
   var INK_AGE = {
-    library: ["#2e2114", "#4a3620", "#6e5638"],
+    library: ["#ffdc82", "#ffc878", "#b4823c"],   // amber on night (C-flip)
     sycorax: ["#d8cfc0", "#b3a68e", "#7d715c"],
     ariel:   ["#d8e4ec", "#a8c0d4", "#6e8aa4"],
   };

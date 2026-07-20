@@ -50,23 +50,26 @@
 /* ---------------------------------------------------------------------------
    PER-TRACK SKINS — hexes verbatim from pj2-skin.js PALETTES / INK_AGE
    ------------------------------------------------------------------------- */
+/* NIGHT FOLIO (PLAN-NIGHT-FOLIO §C): the folio interior is the track's
+   night ground; parchment survives only in the thin frame + the tabs.
+   Library's apparatus ink is the amber phosphor ramp. */
 .pj2-app[data-track="library"] {
   --pj2-void: #0b0a08;
-  --pj2-paper: #e3d3a8;        /* paper-1: the folio's working tone        */
-  --pj2-paper-lite: #efe3c0;   /* paper-0                                  */
-  --pj2-paper-deep: #d0bc8c;   /* paper-2                                  */
-  --pj2-paper-edge: #8a704a;   /* paper-4: the deckle                      */
-  --pj2-ink0: #2e2114;
-  --pj2-ink1: #4a3620;
-  --pj2-ink2: #6e5638;
-  --pj2-ink3: #93794f;
-  --pj2-accent: #8e3b2c;       /* rubric-0: body-size rubric duty           */
-  --pj2-accent2: #b0553c;      /* rubric-1: aged tags, display accents      */
+  --pj2-paper: #0a0805;        /* the night ground — one surface everywhere */
+  --pj2-paper-lite: #120d07;   /* the grain lift                            */
+  --pj2-paper-deep: #060402;
+  --pj2-paper-edge: #b49a68;   /* the thin parchment FRAME tone             */
+  --pj2-ink0: #ffdc82;
+  --pj2-ink1: #ffc878;
+  --pj2-ink2: #b4823c;
+  --pj2-ink3: #785f32;
+  --pj2-accent: #c9a227;       /* gilt carries rubric's body-size duty on night */
+  --pj2-accent2: #b0553c;      /* rubric-1: display-size accents only       */
   --pj2-gilt: #c9a227;
   --pj2-gilt2: #e8c95a;
-  --pj2-age0: #2e2114;         /* INK_AGE.library, all three steps          */
-  --pj2-age1: #4a3620;
-  --pj2-age2: #6e5638;
+  --pj2-age0: #ffdc82;         /* INK_AGE.library, all three steps          */
+  --pj2-age1: #ffc878;
+  --pj2-age2: #b4823c;
   --pj2-fill-a: #c9a227;       /* legend slider dither stripe pair          */
   --pj2-fill-b: #4d3c10;
   --pj2-mute-on: #c7b795;      /* the pixel mute square, filled = audible   */
@@ -77,10 +80,10 @@
 
 .pj2-app[data-track="sycorax"] {
   --pj2-void: #070605;
-  --pj2-paper: #241d17;        /* paper-0: soot rag — the dark book          */
-  --pj2-paper-lite: #322820;
-  --pj2-paper-deep: #1a1512;   /* ink-1: weight and depth, never data        */
-  --pj2-paper-edge: #0d0b09;
+  --pj2-paper: #08070f;        /* the night ground                           */
+  --pj2-paper-lite: #0e0c17;
+  --pj2-paper-deep: #060509;
+  --pj2-paper-edge: #453729;   /* the thin soot-rag FRAME tone               */
   --pj2-ink0: #d8cfc0;         /* bone carries ALL the data on soot          */
   --pj2-ink1: #b3a68e;
   --pj2-ink2: #7d715c;
@@ -102,10 +105,10 @@
 
 .pj2-app[data-track="ariel"] {
   --pj2-void: #05070c;
-  --pj2-paper: #16233f;        /* plate-1: the engraved night-blue plate     */
-  --pj2-paper-lite: #22345a;
-  --pj2-paper-deep: #101a30;
-  --pj2-paper-edge: #05070c;
+  --pj2-paper: #06090e;        /* the night ground                           */
+  --pj2-paper-lite: #0b1119;
+  --pj2-paper-deep: #04060a;
+  --pj2-paper-edge: #22345a;   /* the thin engraved-plate FRAME tone         */
   --pj2-ink0: #d8e4ec;         /* silver ink                                 */
   --pj2-ink1: #a8c0d4;
   --pj2-ink2: #6e8aa4;
@@ -223,17 +226,14 @@
 .pj2-folio-wrap {
   filter: drop-shadow(0 26px 40px rgba(0, 0, 0, 0.8)) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
 }
+/* NIGHT FOLIO: one continuous night interior inside a single thin
+   rounded-square frame (owner rulings O5/O6 + G1/G2 defaults). The
+   stepped-pixel clip-path yielded to the rounded corners. */
 .pj2-folio {
   background: var(--pj2-paper);
-  border: 2px solid var(--pj2-paper-edge);
-  clip-path: polygon(
-    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px),
-    calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px)
-  );
-  padding: 18px 20px 12px;
+  border: 10px solid var(--pj2-paper-edge);
+  border-radius: 16px;
+  padding: 10px 12px 8px;
 }
 
 /* running head */
@@ -273,10 +273,11 @@
   letter-spacing: 0.12em;
 }
 
-/* the reading-desk grid: plate column + margin column */
+/* the reading-desk grid: plate column + margin column (gaps are night-on-
+   night now — invisible; kept small for layout breathing) */
 .pj2-folio-grid {
   display: flex;
-  gap: 20px;
+  gap: 12px;
   align-items: stretch;
 }
 .pj2-plate-col {

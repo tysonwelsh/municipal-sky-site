@@ -137,7 +137,21 @@ vertical budget with ½-peak headroom, CY recentered for the top-heavy
 coil, hard rounded-rect clip on the whole data pass). Shipped alongside:
 caption removal, and the v1 overlay-animation port (lollipop, baseline
 ripples, glint stars, hum bar, bubbles — owner-reported Ariel/Library
-animation issues). B–E remain.
+animation issues).
+
+**Status 2026-07-20 (later): B–D are DONE** — one shared night ground
+baked by all three panels (paperNight), the paper frame moved to the
+folio's CSS border (10px, rounded — G1/G2 defaults; the stepped
+clip-path yielded), PALETTES + INK_AGE + the CSS [data-track] blocks
+flipped to night (Library apparatus in the amber ramp; rubric demoted
+per the measured contrast rulings; gilt carries its data-side jobs),
+tabs kept parchment (G3 default), log kept full (G4 default). Also in
+the same pass, two owner-reported animation fixes: harpsichord/bass
+ripple sustain shortened (the synthesized wave lacked the tap's own
+string decay), and SPECTRAL NOTCHES — every overlay-carrying voice is
+lifted out of the coil's displayed spectrum while it sounds (gaussian
+notch at pitch + 2nd/3rd harmonics; overlays read pre-notch rawMag), so
+the coil's waves belong to the drones alone.
 
 ## 4. What does NOT change
 

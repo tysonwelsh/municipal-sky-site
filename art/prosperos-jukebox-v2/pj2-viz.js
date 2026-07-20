@@ -13,16 +13,16 @@
 // telemetry), the §4 per-event illustrations on the L3 alive-list, and the
 // density footer.
 //
-// SPIRAL REVERT (PLAN-SPIRAL-REVERT, owner 2026-07-20): the coil renders
-// v1's phosphor treatment for ALL THREE tracks — translucent colored
-// ribbon fills with a bright fixed baseline, depth as alpha fade, on the
-// track's near-black night ground. The paper page and deckle frame stay;
-// only the plate-zone ellipse is painted night (paperPlate override).
-// The alchemy-sigil dial is gone; beneath the coil sits v1's constellation
-// floor — the drones charted by pitch-class angle / octave radius, with
-// consonance-weighted interval lines, triangle-harmonic halo ripples, and
-// note-name ring labels. The v2 coil theatrics (pen wobble, ink oxidation,
-// hush step, Cut slash, re-gild, roman seam numerals) are removed with it.
+// SPIRAL REVERT + NIGHT FOLIO (PLAN-SPIRAL-REVERT / PLAN-NIGHT-FOLIO,
+// owner 2026-07-20): the coil renders v1's phosphor treatment for ALL
+// THREE tracks — translucent colored ribbon fills with a bright fixed
+// baseline, depth as alpha fade. Every panel (plate, margin, footer)
+// bakes ONE shared night ground (paperNight); the paper frame is the
+// folio's CSS border. The alchemy-sigil dial is gone; beneath the coil
+// sits v1's constellation floor. v1's overlay animations are ported
+// (lollipop, baseline ripples, glint stars, hum bar, bubbles), and every
+// overlay voice is spectrally NOTCHED out of the coil's display — the
+// coil's waves belong to the drones alone (applyOverlayNotches).
 //
 // THE INTERFACE CONTRACT (pj2-ui.js builds against exactly this):
 //   PJ2.Viz.create({ plateCanvas, marginCanvas, footerCanvas })
@@ -174,6 +174,7 @@ PJ2.Viz = (function () {
     // FFT machinery
     var fftData = null;              // sized on attach (frequencyBinCount)
     var magnitudes = new Float32Array(TOTAL);
+    var rawMag = new Float32Array(TOTAL);   // pre-notch copy — overlays read this
     var baselineLin = new Float32Array(TOTAL);
     var sampleFftIdx = new Float32Array(TOTAL);
     var rowFMin = 0, sampleRate = 44100;
@@ -202,6 +203,7 @@ PJ2.Viz = (function () {
         bubbles: [],          // ariel ambient gliss bubbles {startOct, glissEndOct, driftTo, t, dur, phase, r}
         humNote: null,        // library hum bar {of, freq, vowel, endTime}
         humLevel: 0,          // smoothed hum level (bar height)
+        notches: [],          // active spectral notches {of, t0, until} — see applyOverlayNotches
         pulseAt: -1e9,        // sycorax proto-drum last lub (audio t)
         tallies: 0,           // sycorax percussion strokes this evening
         tallyKinds: [],       // recent percussion kinds (margin readout)
@@ -251,22 +253,21 @@ PJ2.Viz = (function () {
       seed: seed, w: opts.plateW || 900, h: opts.plateH || 860,
       dpr: opts.dpr, zones: plateZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperPlate, furniture: drawPlateFurniture, data: drawPlateData },
+      renderers: { paper: paperNight, furniture: drawPlateFurniture, data: drawPlateData },
     });
-    // margin/footer papers are quiet apparatus pages: no deckle, no star
-    // field, texture calmed everywhere ink writes (function declarations
+    // all three panels share the one night ground (function declarations
     // below are hoisted — safe to reference here)
     var marginStack = Skin.stack(marginCanvas, track, {
       seed: seed, w: opts.marginW || 402, h: opts.marginH || 640,
       dpr: opts.dpr, zones: marginZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperMargin, furniture: drawMarginFurniture, data: drawMarginData },
+      renderers: { paper: paperNight, furniture: drawMarginFurniture, data: drawMarginData },
     });
     var footerStack = Skin.stack(footerCanvas, track, {
       seed: seed, w: opts.footerW || 900, h: opts.footerH || 64,
       dpr: opts.dpr, zones: footerZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperFooter, furniture: drawFooterFurniture, data: drawFooterData },
+      renderers: { paper: paperNight, furniture: drawFooterFurniture, data: drawFooterData },
     });
     plateStack.bindVisibility();
 
@@ -276,48 +277,25 @@ PJ2.Viz = (function () {
       footerStack.invalidate("furniture");
     }
 
-    // the plate page (owner 2026-07-20, both rulings): the night window is a
-    // SLIM ROUNDED SQUARE, and the paper around it must run seamlessly into
-    // the folio, margin, and footer — so the plate bakes the same calm,
-    // deckle-less paper the margin/footer pages use (no torn edge, no star
-    // field; the folio's CSS paper shows through the gaps and everything
-    // reads as one continuous page). The window edge keeps a short dithered
-    // feather so it prints, not peels. Bake-time only — off the hot path.
-    function paperPlate(G, tr, sd, zones) {
-      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, plateZone: zones.plateZone,
-        // full-bleed quiet — even the outermost cells stay calm so the
-        // canvas edge leaves no seam ring against the folio
-        quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
-        deckle: false, stars: false,
-      });
-      var pz = zones.plateZone;
-      if (!pz || !pz.rx || !pz.ry) return;
+    // THE NIGHT SURFACE (PLAN-NIGHT-FOLIO §B, owner 2026-07-20): every
+    // panel — plate, margin, footer — bakes the same flat night ground
+    // with a near-subliminal art-pixel grain (one tone step, blue-noise
+    // placed). No parchment, no windows, no texture boundaries: the folio
+    // is one continuous surface and seams are impossible by construction.
+    // The paper frame lives at the folio's CSS border now.
+    function paperNight(G, tr, sd, zones) {
       var c = G.ctx, u = G.u || 2;
-      c.fillStyle = Skin.palette(tr).spiral.bg;
+      var p = Skin.palette(tr);
+      c.fillStyle = p.spiral.bg;
+      c.fillRect(0, 0, G.w, G.h);
+      var bn = Skin.Dither.blueNoise(sd >>> 0);
+      c.fillStyle = (p.paper || p.plate)[1];   // ariel's ramp is named "plate"
       var cols = Math.ceil(G.w / u), rows = Math.ceil(G.h / u);
       for (var gy = 0; gy < rows; gy++) {
         for (var gx = 0; gx < cols; gx++) {
-          var px = gx * u, py = gy * u;
-          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, pz);
-          if (d < 0) { c.fillRect(px, py, u, u); continue; }
-          if (d < 7 && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / 7) * 0.4) {
-            c.fillRect(px, py, u, u);   // the feather speckle onto the paper
-          }
+          if (bn.at(gx & 63, gy & 63) > 0.94) c.fillRect(gx * u, gy * u, u, u);
         }
       }
-    }
-    function paperMargin(G, tr, sd, zones) {
-      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, quietRects: [{ x: 4, y: 4, w: G.w - 8, h: G.h - 8 }],
-        deckle: false, stars: false,
-      });
-    }
-    function paperFooter(G, tr, sd, zones) {
-      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, quietRects: [{ x: 2, y: 2, w: G.w - 4, h: G.h - 4 }],
-        deckle: false, stars: false,
-      });
     }
 
     // ---------------------------------------------------------------- camera
@@ -684,6 +662,7 @@ PJ2.Viz = (function () {
           // v1: the harpsichord vibrates the baseline itself (viz.js:698)
           st.harpPlucks.push({ of: of, t: t, vel: ev.velocity || 0.7, freq: ev.freq });
           if (st.harpPlucks.length > 24) st.harpPlucks.shift();
+          pushNotch(of, t, Math.max(ev.durS || 1, 2));
         } else if (ev.voice === "musicbox" && of != null) {
           // v1: soft-glow glint star, loudness → rise (viz.js:1326–1346)
           var gv = ev.velocity == null ? 0.8 : ev.velocity;
@@ -695,21 +674,25 @@ PJ2.Viz = (function () {
             dir: Skin.noise.hash2(t, 3.7) < 0.5 ? -1 : 1,
           });
           if (st.boxGlints.length > 32) st.boxGlints.shift();
+          pushNotch(of, t, ev.durS || 1);
         } else if (ev.voice === "hum" && of != null) {
           // v1: the vowel-shaped hum bar (viz.js:1292–1319). The v2 events
           // don't carry the mouth's vowel — neutral "uh" until the engine
           // emits it (additive event change, flagged in PLAN-NIGHT-FOLIO).
           st.humNote = { of: of, freq: ev.freq, vowel: ev.vowel || "uh", endTime: t + (ev.durS || 1) };
+          pushNotch(of, t, ev.durS || 1);
         } else if (ev.voice === "drone" && ev.deg != null) {
           upsertDrone(ev, t);
         }
       } else if (track === "sycorax") {
         if ((ev.voice === "chant" || ev.voice === "rebec" || ev.voice === "boneflute") && of != null) {
           pushMark({ kind: "cutline", of: of, t: t, life: Math.min(ev.durS || 1.5, 4), vel: ev.velocity || 0.6 });
+          pushNotch(of, t, ev.durS || 1.5);
         } else if (ev.voice === "protodrum") {
           if (ev.kind === "lub" || ev.kind === "dub") st.pulseAt = t;
         } else if (ev.voice === "waterphone" && of != null) {
           pushMark({ kind: "tine", of: of, t: t, life: Math.min(ev.durS || 3, 6) });
+          pushNotch(of, t, ev.durS || 3);
         } else if (ev.voice === "gurdy" && ev.deg != null) {
           upsertDrone(ev, t);
         }
@@ -718,6 +701,7 @@ PJ2.Viz = (function () {
           // v1: the whistle IS the lollipop (viz.js:1137–1228) — tracked
           // pitch, stem off the baseline, glowing head riding the crest
           st.whistle = { of: of, freq: ev.freq, until: t + (ev.durS || 2) + 0.4 };
+          pushNotch(of, t, ev.durS || 2);
         } else if (ev.voice === "chime" && of != null) {
           // the chime is the music box's sibling: same glint-star voice
           var cv = ev.velocity == null ? 0.7 : ev.velocity;
@@ -728,12 +712,15 @@ PJ2.Viz = (function () {
             dir: Skin.noise.hash2(t, 5.1) < 0.5 ? -1 : 1,
           });
           if (st.chimeGlints.length > 32) st.chimeGlints.shift();
+          pushNotch(of, t, ev.durS || 2);
         } else if (ev.voice === "flutter" && of != null) {
           pushMark({ kind: "wing", of: of, t: t, life: 1.4 });
+          pushNotch(of, t, ev.durS || 1);
         } else if (ev.voice === "bass" && of != null) {
           // v1: the bass ripples the baseline (viz.js:729) — no diamond mark
           st.bassPlucks.push({ of: of, t: t, vel: ev.velocity || 0.8, freq: ev.freq });
           if (st.bassPlucks.length > 24) st.bassPlucks.shift();
+          pushNotch(of, t, Math.max(ev.durS || 1, 2));
         } else if (ev.voice === "ambient" && ev.kind === "bubble" && of != null) {
           // v1's rising bubbles (viz.js:1353–1374): gliss → climb, drift, pop
           var eof = ev.endFreq ? ofOf(ev.endFreq) : of;
@@ -746,6 +733,7 @@ PJ2.Viz = (function () {
             r: BUBBLE_R * (0.8 + Skin.noise.hash2(t, 9.2) * 0.5),
           });
           if (st.bubbles.length > 24) st.bubbles.shift();
+          pushNotch(of, t, ev.durS || 1);
         } else if (ev.voice === "breeze" && ev.deg != null) {
           upsertDrone(ev, t);
         }
@@ -931,8 +919,12 @@ PJ2.Viz = (function () {
     // the note events and the ripple wave is a slowed traveling sine at
     // the note's own frequency (the floor halos' SLOWDOWN convention).
     // Same shapes, same envelopes, same lifetimes as v1.
-    var HARP_TAU = 2, HARP_SIGMA_OCT = 0.05, HARP_LIFETIME = 7, HARP_AMP = 80;
-    var BASS_TAU = 2.5, BASS_SIGMA_OCT = 0.06, BASS_LIFETIME = 8, BASS_AMP = 80;
+    // v1's HARP_TAU=2 / LIFETIME=7 assumed the tap's own decaying waveform
+    // multiplied in (a plucked string dies fast); the synthesized sine
+    // doesn't decay, so those constants read as endless sustain (owner
+    // 2026-07-20). The effective envelope is folded into shorter values.
+    var HARP_TAU = 0.7, HARP_SIGMA_OCT = 0.05, HARP_LIFETIME = 3, HARP_AMP = 80;
+    var BASS_TAU = 1.6, BASS_SIGMA_OCT = 0.06, BASS_LIFETIME = 5.5, BASS_AMP = 80;
     var LOLLI_HEIGHT = 2;          // hum-bar max-height multiplier (v1)
     var HEAD_SMOOTH = 0.30;        // lollipop pitch/height easing
     var HUM_VOWEL_SHAPES = {
@@ -947,6 +939,42 @@ PJ2.Viz = (function () {
     var BOX_RISE_MIN = 0.175, BOX_RISE_VAR = 0.475;
     var BOX_SPIN = 12 * Math.PI / 180, BOX_SHIM = 0.4;
     var BUBBLE_RISE_EXTRA = 0.45, BUBBLE_AFTER = 1.1, BUBBLE_R = 7, BUBBLE_WOBBLE = 0.06;
+
+    // ---- spectral notches (owner 2026-07-20: "I just want the lollipop").
+    // Every voice with a DEDICATED overlay (lollipop, ripple, glint, bar,
+    // bubble, cutline, tine, wing) is lifted OUT of the coil's displayed
+    // spectrum while it sounds: a gaussian notch at its pitch and 2nd/3rd
+    // harmonics. The coil's waves belong to the drones alone. Overlays
+    // read their heights from the pre-notch rawMag so nothing lies.
+    var NOTCH_SIGMA = 2.6;                       // samples
+    var LOG2H = [0, 1, Math.log(3) / Math.LN2];  // harmonic offsets in octaves
+    var NOTCH_DEPTH = [0.92, 0.6, 0.4];
+    function pushNotch(of, t, durS) {
+      if (of == null) return;
+      st.notches.push({ of: of, t0: t, until: t + (durS || 1) + 0.5 });
+      if (st.notches.length > 48) st.notches.shift();
+    }
+    function applyOverlayNotches(t) {
+      var live = [];
+      for (var n = 0; n < st.notches.length; n++) {
+        if (t <= st.notches[n].until) live.push(st.notches[n]);
+      }
+      st.notches = live;
+      for (n = 0; n < live.length; n++) {
+        var nc = live[n];
+        if (t < nc.t0) continue;
+        for (var h = 0; h < 3; h++) {
+          var cS = (nc.of + LOG2H[h]) * SPT;
+          if (cS >= TOTAL + NOTCH_SIGMA * 3) continue;
+          var i0 = Math.max(0, Math.floor(cS - NOTCH_SIGMA * 3));
+          var i1 = Math.min(TOTAL - 1, Math.ceil(cS + NOTCH_SIGMA * 3));
+          for (var b2 = i0; b2 <= i1; b2++) {
+            var d = (b2 - cS) / NOTCH_SIGMA;
+            magnitudes[b2] *= 1 - NOTCH_DEPTH[h] * Math.exp(-0.5 * d * d);
+          }
+        }
+      }
+    }
 
     // baseline ripple displacement at coil position `frac` (octave float) —
     // v1's harpDr/bassDr (viz.js:698/729) with the synthesized wave
@@ -982,7 +1010,7 @@ PJ2.Viz = (function () {
         var iB = clamp(Math.round(wn.of * SPT), 0, TOTAL - 1);
         var theta = fracIn * 2 * Math.PI;
         var yBase = (octIdx + fracIn - (OCTAVES - 1) / 2) * M.oct;
-        var yHead = yBase + magnitudes[iB] * M.peak;
+        var yHead = yBase + rawMag[iB] * M.peak;
         if (!lp || lp.framesQuiet > 3) {
           st.lolli = { theta: theta, yBase: yBase, yHead: yHead, octIdx: Math.floor(wn.of), framesQuiet: 0 };
         } else {
@@ -1045,7 +1073,7 @@ PJ2.Viz = (function () {
       if (track !== "library" || !st.humNote) { st.humLevel = 0; return null; }
       var hn = st.humNote;
       var center = clamp(Math.round(hn.of * SPT), 0, TOTAL - 1);
-      st.humLevel = st.humLevel * 0.55 + magnitudes[center] * 0.45;
+      st.humLevel = st.humLevel * 0.55 + rawMag[center] * 0.45;
       var shape = HUM_VOWEL_SHAPES[hn.vowel] || HUM_VOWEL_SHAPES.uh;
       var halfSamp = Math.max(1, Math.round(HUM_BAR_HALF * shape.width));
       return {
@@ -1228,6 +1256,12 @@ PJ2.Viz = (function () {
         var z2 = y * sp1 + z1 * cp1;
         return { sx: M.CX + x1, sy: M.CY - y1, z: z2 };
       }
+
+      // snapshot the honest spectrum, then notch the overlay voices out of
+      // the coil's display — the waves belong to the drones alone
+      var i0n;
+      for (i0n = 0; i0n < TOTAL; i0n++) rawMag[i0n] = magnitudes[i0n];
+      applyOverlayNotches(audioT);
 
       // ---- v1 overlay lifecycles (viz.js:1252–1322) -----------------------
       var harpOn = false, bassOn = false, harpRadial = 0, bassRadial = 0;
@@ -1585,7 +1619,7 @@ PJ2.Viz = (function () {
         if (mk.kind === "cutline") {
           // the chant/rebec/boneflute cut — the block's living mark: a bone
           // stroke riding the contour at the note's pitch
-          var yC = yW + magnitudes[iC] * M.peak;
+          var yC = yW + rawMag[iC] * M.peak;
           pt = proj(M.R * Math.cos(th), yC, M.R * Math.sin(th));
           c.strokeStyle = dataCol(pal.bone[0], "grimoire living line");
           c.lineWidth = 2.2 * (1 - p01 * 0.6);
@@ -1928,7 +1962,7 @@ PJ2.Viz = (function () {
       if (inten != null) {
         var fillH = frac * (gBot - gTop);
         Skin.Dither.fill(c, gx + 2, gBot - fillH, gw - 4, fillH, pal.rubric[0], 0.5, { u: G.u });
-        c.fillStyle = dataCol(pal.rubric[0], "athanor gauge line");
+        c.fillStyle = dataCol(pal.gilt[0], "athanor gauge line"); // gilt carries rubric's data jobs on night
         c.fillRect(gx, gBot - fillH - 1, gw, 2);
       }
       readoutLine(G, r, "fire " + fmt2(inten) + " · gradus " + (inten == null ? "—" : ROMAN_HI[gradus - 1]), pal.ink[1]);
@@ -2433,14 +2467,15 @@ PJ2.Viz = (function () {
       var p = measure(plateCanvas, opts.plateW || 900, opts.plateH || 860);
       var m = measure(marginCanvas, opts.marginW || 402, opts.marginH || 640);
       var f = measure(footerCanvas, opts.footerW || 900, opts.footerH || 64);
-      // the night window: a slim, even rounded-square border (owner
-      // 2026-07-20 — "square frame with rounded corners", less frame)
-      var pad = Math.max(16, Math.round(Math.min(p.w, p.h) * 0.03));
+      // NIGHT FOLIO: the whole plate canvas is night — the "window" is the
+      // canvas itself minus a small courtesy inset (the A2 clip + the coil
+      // sizing budget still read from this zone)
+      var pad = 6;
       plateZones.plateZone.cx = p.w * 0.5;
       plateZones.plateZone.cy = p.h * 0.5;
       plateZones.plateZone.rx = p.w * 0.5 - pad;
       plateZones.plateZone.ry = p.h * 0.5 - pad;
-      plateZones.plateZone.r = Math.max(14, Math.round(Math.min(p.w, p.h) * 0.045));
+      plateZones.plateZone.r = 12;
       function apply(stack, s) {
         var G = stack.G();
         if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return;
