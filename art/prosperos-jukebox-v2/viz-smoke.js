@@ -59,7 +59,7 @@ function tickTimers() {
 // ----------------------------------------------------------------------------
 var CTX_METHODS = [
   "fillRect", "clearRect", "strokeRect", "beginPath", "closePath", "moveTo",
-  "lineTo", "arc", "ellipse", "stroke", "fill", "save", "restore",
+  "lineTo", "arc", "arcTo", "ellipse", "stroke", "fill", "save", "restore",
   "setTransform", "translate", "rotate", "scale", "setLineDash", "clip",
   "quadraticCurveTo", "bezierCurveTo", "fillText", "strokeText", "drawImage",
 ];
@@ -72,6 +72,7 @@ function mockCtx(canvas) {
     letterSpacing: "0px", globalCompositeOperation: "source-over",
     calls: 0,
     createPattern: function () { ctx.calls++; return { __pattern: true }; },
+    createRadialGradient: function () { ctx.calls++; return { addColorStop: function () {} }; },
     measureText: function (s) { return { width: String(s).length * 7 }; },
     getImageData: function () { throw new Error("mock ctx: getImageData not supported (viz must not use it)"); },
   };
@@ -272,6 +273,7 @@ var SCRIPTS = {
     eng.emitNote({ voice: "chime", freq: 1397, t: vnow / 1000 + 0.1, durS: 2, velocity: 0.5 });
     eng.emitNote({ voice: "flutter", freq: 698, t: vnow / 1000 + 0.1, durS: 1 });
     eng.emitNote({ voice: "bass", freq: 87.3, t: vnow / 1000, durS: 3 });
+    eng.emitNote({ voice: "ambient", kind: "bubble", freq: 700, endFreq: 1100, t: vnow / 1000, durS: 2 });
     eng.emitEvent({ type: "cadence", kind: "lift", arrivalAbove: true, t: vnow / 1000, startT: vnow / 1000 - 3, chords: ["II", "I"] });
     eng.emitEvent({ type: "cadence", kind: "float", t: vnow / 1000, startT: vnow / 1000 - 2, chords: ["I"] });
     eng.emitEvent({ type: "feather", deg: 4, t: vnow / 1000 });
@@ -318,6 +320,8 @@ TRACKS.forEach(function (tr) {
     check("library: era moved with Transmutatio (C→F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
     check("library: illustrations alive (emblems)", dbg.illustrations > 0, "n=" + dbg.illustrations);
     check("library: floor plots the drones", dbg.drones >= 2, "drones=" + dbg.drones);
+    check("library: harpsichord ripples the baseline", dbg.plucks >= 1, "plucks=" + dbg.plucks);
+    check("library: music-box glints alive", dbg.glints >= 1, "glints=" + dbg.glints);
   }
   if (tr === "sycorax") {
     // the hush is live now; return then heal fully — and nothing persists
@@ -331,6 +335,9 @@ TRACKS.forEach(function (tr) {
   if (tr === "ariel") {
     check("ariel: reground brought the tonic home (F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
     check("ariel: floor plots the breeze drone", dbg.drones >= 1, "drones=" + dbg.drones);
+    check("ariel: whistle drives the lollipop", dbg.lolli === true, "lolli=" + dbg.lolli);
+    check("ariel: bass ripples the baseline", dbg.plucks >= 1, "plucks=" + dbg.plucks);
+    check("ariel: bubbles rising", dbg.bubbles >= 1, "bubbles=" + dbg.bubbles);
   }
 
   check(tr + ": frames drew to all three canvases",
