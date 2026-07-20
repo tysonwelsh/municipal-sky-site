@@ -155,6 +155,10 @@ include '../../includes/header.php';
 <!-- Engine + graphics modules, in the REQUIRED order: substrate (rand, pitch,
      clock, voice), sound tools (fx), form (air, motif, harmony, conductor),
      the three tracks, then skin → viz → ui. -->
+<!-- shared site helper: keeps the engine sounding under a locked screen /
+     backgrounded mobile browser, with lock-screen media controls (the
+     kolob/zankyo/bardo pattern). Must load before pj2-voice.js builds a bus. -->
+<script src="../background-audio.js?v=<?php echo pj2v('../background-audio.js'); ?>"></script>
 <script src="pj2-rand.js?v=<?php echo pj2v('pj2-rand.js'); ?>"></script>
 <script src="pj2-pitch.js?v=<?php echo pj2v('pj2-pitch.js'); ?>"></script>
 <script src="pj2-clock.js?v=<?php echo pj2v('pj2-clock.js'); ?>"></script>

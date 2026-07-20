@@ -201,6 +201,11 @@
       try { eng.stop(); } catch (e) { /* already down */ }
       busyUntil = Math.max(busyUntil, nowMs() + FADE_MS);
     }
+    // background-audio: the lock-screen session pauses with the engine
+    // (buildBus re-declares "playing" itself on the next run's bus)
+    try {
+      if (window.PJ2 && PJ2.Voice && PJ2.Voice.background) PJ2.Voice.background.stopped();
+    } catch (e) {}
   }
 
   function cancelPending() {
@@ -1024,6 +1029,14 @@
       if (e.preventDefault) e.preventDefault();
       if (playIntent) doStop(); else doPlay();
     });
+
+    // background-audio (lock-screen survival, kolob pattern): the helper's
+    // media-session transport drives the cabinet's own play/stop
+    try {
+      if (window.PJ2 && PJ2.Voice && PJ2.Voice.background) {
+        PJ2.Voice.background.setHandlers({ onPlay: doPlay, onPause: doStop });
+      }
+    } catch (e) {}
 
     // viz lifecycle
     viz = makeViz();
