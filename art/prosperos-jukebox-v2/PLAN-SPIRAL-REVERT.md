@@ -237,8 +237,8 @@ Resolved (owner, 2026-07-20):
 - **O3 — RESOLVED** (owner, 2026-07-20): the Library corner "schema
   inferius" square is **removed** — the constellation floor charts the
   drones now.
+- **O4 — RESOLVED** (owner, 2026-07-20): v1's per-track near-blacks
+  (`#0a0805` / `#08070f` / `#06090e`) confirmed as the window grounds.
 
-Still open (default chosen, flag to change):
-
-- **O4** Black backdrop shade: v1 per-track near-blacks (default) or one
-  uniform `#0b0a08` void for all three?
+No open questions remain — the revert is complete; the §6 enhancement
+track stays available as future owner-gated work.
