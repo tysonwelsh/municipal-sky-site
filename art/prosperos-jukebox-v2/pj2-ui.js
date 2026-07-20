@@ -400,6 +400,7 @@
     playIntent = true;
     requestStart(activeKey);
     updateTransport();
+    startLockArt();
   }
 
   function doStop() {
@@ -408,6 +409,63 @@
     stopEngine(activeKey);
     vizDetach();
     updateTransport();
+    stopLockArt();
+  }
+
+  // LIVE LOCK-SCREEN ART (owner 2026-07-20): while playing, the now-playing
+  // artwork is a periodic square snapshot of the actual plate, so the lock
+  // screen slowly follows the music. The static spiral emblem is the
+  // create-time fallback — platforms that ignore metadata updates keep it.
+  // While the page is hidden the rAF loop is stopped, so a fresh frame is
+  // rendered on demand before each snapshot.
+  var LOCK_ART_MS = 12000;
+  var lockArtTimer = null, lockArtUrl = null;
+  var LOCK_ART_TITLES = {
+    library: "Prospero's Library",
+    sycorax: "Sycorax's Spell",
+    ariel: "Ariel's Day Off",
+  };
+  function refreshLockArt() {
+    if (!playIntent) return;
+    var bgApi = window.PJ2 && PJ2.Voice && PJ2.Voice.background;
+    if (!bgApi || !bgApi.updateMetadata) return;
+    var plate = $("pj2-plate");
+    if (!plate || !plate.width || !plate.getContext) return;
+    try {
+      if (document.visibilityState === "hidden" && viz && viz.frameOnce) viz.frameOnce();
+      var side = Math.min(plate.width, plate.height);
+      var cv = document.createElement("canvas");
+      cv.width = 512; cv.height = 512;
+      var c2 = cv.getContext("2d");
+      c2.drawImage(plate, (plate.width - side) / 2, (plate.height - side) / 2, side, side, 0, 0, 512, 512);
+      cv.toBlob(function (blob) {
+        if (!blob || !playIntent) return;
+        var url = URL.createObjectURL(blob);
+        var old = lockArtUrl;
+        lockArtUrl = url;
+        bgApi.updateMetadata({
+          title: LOCK_ART_TITLES[activeKey] || "Prospero's Jukebox v2",
+          artist: "Municipal Sky · Prospero's Jukebox v2",
+          artwork: [{ src: url, sizes: "512x512", type: "image/png" }],
+        });
+        // revoke the superseded frame once the OS has had time to fetch it
+        if (old) setTimeout(function () { try { URL.revokeObjectURL(old); } catch (e) {} }, 4000);
+      }, "image/png");
+    } catch (e) {}
+  }
+  function startLockArt() {
+    if (lockArtTimer == null) lockArtTimer = setInterval(refreshLockArt, LOCK_ART_MS);
+    setTimeout(refreshLockArt, 1500);
+  }
+  function stopLockArt() {
+    if (lockArtTimer != null) { clearInterval(lockArtTimer); lockArtTimer = null; }
+    try {
+      if (window.PJ2 && PJ2.Voice && PJ2.Voice.background && PJ2.Voice.background.updateMetadata) {
+        PJ2.Voice.background.updateMetadata({
+          artwork: [{ src: "/images/prosperos-jukebox-v2-art.png", sizes: "656x656", type: "image/png" }],
+        });
+      }
+    } catch (e) {}
   }
 
   // RESET — reseed the open book with a fresh random seed. The facade's

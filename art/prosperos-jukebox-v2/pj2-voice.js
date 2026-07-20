@@ -48,6 +48,11 @@
     started: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.started(); } catch (e) {} } },
     stopped: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.stopped(); } catch (e) {} } },
     poke: function () { if (bgShared && bgShared.bg) { try { bgShared.bg.poke(); } catch (e) {} } },
+    updateMetadata: function (meta) {
+      if (bgShared && bgShared.bg && bgShared.bg.updateMetadata) {
+        try { bgShared.bg.updateMetadata(meta); } catch (e) {}
+      }
+    },
     handle: function () { return bgShared ? bgShared.bg : null; },
   };
 
@@ -148,7 +153,7 @@
               source: rail,
               title: opts.title || "Prospero's Jukebox v2",
               artist: opts.artist || "Municipal Sky",
-              artwork: opts.artwork,
+              artwork: opts.artwork || "/images/prosperos-jukebox-v2-art.png",
               onPlay: function () { if (bgHandlers.onPlay) bgHandlers.onPlay(); },
               onPause: function () { if (bgHandlers.onPause) bgHandlers.onPause(); },
             }),
