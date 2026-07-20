@@ -112,7 +112,8 @@ window.MskyBackgroundAudio = (function () {
           title: opts.title || document.title,
           artist: opts.artist || "",
           album: opts.album || "",
-          artwork: opts.artwork ? [{ src: opts.artwork, type: "image/png" }] : [],
+          artwork: opts.artworkList ? opts.artworkList
+            : (opts.artwork ? [{ src: opts.artwork, type: "image/png" }] : []),
         });
       } catch (e) {}
       var wire = function (action, fn) { try { ms.setActionHandler(action, fn); } catch (e) {} };
@@ -145,6 +146,18 @@ window.MskyBackgroundAudio = (function () {
       },
       // one-shot auditions while stopped still need the element live
       poke: playElement,
+      // live now-playing updates (title / artwork) — additive; engines that
+      // never call this behave exactly as before. Values merge into opts so
+      // a later started()/setSession() keeps the latest.
+      updateMetadata: function (meta) {
+        if (meta) {
+          if (meta.title !== undefined) opts.title = meta.title;
+          if (meta.artist !== undefined) opts.artist = meta.artist;
+          if (meta.album !== undefined) opts.album = meta.album;
+          if (meta.artwork !== undefined) opts.artworkList = meta.artwork;
+        }
+        setSession();
+      },
     };
   }
 
