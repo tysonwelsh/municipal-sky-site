@@ -115,6 +115,7 @@ include '../../includes/header.php';
         <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
         <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
         <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
+        <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
       </div>
 
       <div class="pj2-cab-spacer"></div>

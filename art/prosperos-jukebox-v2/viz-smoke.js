@@ -384,6 +384,24 @@ tryStep("second attach/detach cycle", function () {
   if (eng2._noteLs.length || eng2._eventLs.length) throw new Error("second cycle leaked listeners");
 });
 
+// the binding switch: a parchment round-trip with the tripwire armed —
+// every dataCol in the codex dress must be parchment-legal too
+tryStep("binding switch: parchment frames clean", function () {
+  var eng3 = mockEngine("library");
+  viz.setTrack("library");
+  var u3 = viz.attach(eng3, mockAudioCtx());
+  viz.start();
+  viz.setBinding("parchment");
+  SCRIPTS.library(eng3);
+  runFrames(15, 33);
+  if (viz.getBinding() !== "parchment") throw new Error("binding not applied");
+  if (PJ2.Skin.getMode() !== "parchment") throw new Error("skin mode not applied");
+  viz.setBinding("night");
+  runFrames(5, 33);
+  u3(); viz.stop();
+});
+check("binding restored to night", viz.getBinding() === "night" && PJ2.Skin.getMode() === "night", "");
+
 check("dataInk assertion mode was armed all run", PJ2.Skin.dev === true, "");
 
 // ----------------------------------------------------------------------------

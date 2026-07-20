@@ -153,6 +153,16 @@ lifted out of the coil's displayed spectrum while it sounds (gaussian
 notch at pitch + 2nd/3rd harmonics; overlays read pre-notch rawMag), so
 the coil's waves belong to the drones alone.
 
+## 3b. THE BINDING SWITCH (owner, 2026-07-20 — undecided between dresses)
+
+The owner liked the windowed parchment page too. Both compositions are
+kept alive behind a persisted UI switch (transport button, NIGHT ☽ /
+PARCH ☰): `PJ2.Skin.setMode` swaps the palette registry / atlas inks /
+ink-age ramps, `viz.setBinding` swaps papers + window geometry live, and
+a `data-binding` attribute swaps the CSS vars + folio chrome. The
+spiral, floor, and animations are identical in both. Night is the
+default; the choice persists in localStorage.
+
 ## 4. What does NOT change
 
 - The coil renderer, constellation floor, octave axis, note marks —
