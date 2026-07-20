@@ -129,6 +129,45 @@
 }
 
 /* ---------------------------------------------------------------------------
+   THE BINDING SWITCH — data-binding="parchment" on .pj2-app restores the
+   windowed codex page (PR #24's dress): parchment vars + the old slim
+   folio chrome. The default (night) lives in the base blocks above.
+   ------------------------------------------------------------------------- */
+.pj2-app[data-binding="parchment"][data-track="library"] {
+  --pj2-paper: #e3d3a8;
+  --pj2-paper-lite: #efe3c0;
+  --pj2-paper-deep: #d0bc8c;
+  --pj2-paper-edge: #8a704a;
+  --pj2-ink0: #2e2114;
+  --pj2-ink1: #4a3620;
+  --pj2-ink2: #6e5638;
+  --pj2-ink3: #93794f;
+  --pj2-accent: #8e3b2c;
+  --pj2-accent2: #b0553c;
+  --pj2-age0: #2e2114;
+  --pj2-age1: #4a3620;
+  --pj2-age2: #6e5638;
+}
+.pj2-app[data-binding="parchment"][data-track="sycorax"] {
+  --pj2-paper: #241d17;
+  --pj2-paper-lite: #322820;
+  --pj2-paper-deep: #1a1512;
+  --pj2-paper-edge: #0d0b09;
+}
+.pj2-app[data-binding="parchment"][data-track="ariel"] {
+  --pj2-paper: #16233f;
+  --pj2-paper-lite: #22345a;
+  --pj2-paper-deep: #101a30;
+  --pj2-paper-edge: #05070c;
+}
+.pj2-app[data-binding="parchment"] .pj2-folio {
+  border: 2px solid var(--pj2-paper-edge);
+  border-radius: 6px;
+  padding: 18px 20px 12px;
+}
+.pj2-app[data-binding="parchment"] .pj2-folio-grid { gap: 20px; }
+
+/* ---------------------------------------------------------------------------
    Fallback / unsupported lines
    ------------------------------------------------------------------------- */
 .pj2-nojs {

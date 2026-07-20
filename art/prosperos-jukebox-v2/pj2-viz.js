@@ -167,6 +167,10 @@ PJ2.Viz = (function () {
     var running = false, rafId = null, lastFrameT = 0;
     var fontsReady = false;
 
+    // the binding: "night" (night folio) | "parchment" (the windowed codex
+    // page) — owner 2026-07-20, switchable, both kept alive
+    var binding = "night";
+
     // camera (v1 verbatim behavior)
     var camYaw = 0.55, camPitch = 0.30, autoRotate = true;
     var dragging = false, lastMx = 0, lastMy = 0;
@@ -253,7 +257,7 @@ PJ2.Viz = (function () {
       seed: seed, w: opts.plateW || 900, h: opts.plateH || 860,
       dpr: opts.dpr, zones: plateZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperNight, furniture: drawPlateFurniture, data: drawPlateData },
+      renderers: { paper: paperPlatePanel, furniture: drawPlateFurniture, data: drawPlateData },
     });
     // all three panels share the one night ground (function declarations
     // below are hoisted — safe to reference here)
@@ -261,13 +265,13 @@ PJ2.Viz = (function () {
       seed: seed, w: opts.marginW || 402, h: opts.marginH || 640,
       dpr: opts.dpr, zones: marginZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperNight, furniture: drawMarginFurniture, data: drawMarginData },
+      renderers: { paper: paperSidePanel, furniture: drawMarginFurniture, data: drawMarginData },
     });
     var footerStack = Skin.stack(footerCanvas, track, {
       seed: seed, w: opts.footerW || 900, h: opts.footerH || 64,
       dpr: opts.dpr, zones: footerZones,
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperNight, furniture: drawFooterFurniture, data: drawFooterData },
+      renderers: { paper: paperSidePanel, furniture: drawFooterFurniture, data: drawFooterData },
     });
     plateStack.bindVisibility();
 
@@ -296,6 +300,41 @@ PJ2.Viz = (function () {
           if (bn.at(gx & 63, gy & 63) > 0.94) c.fillRect(gx * u, gy * u, u, u);
         }
       }
+    }
+    // parchment binding: the calm codex page with the spiral's rounded
+    // monitor window (the PR #24 look, kept alive behind the switch)
+    function paperParchPlate(G, tr, sd, zones) {
+      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
+        u: G.u, plateZone: zones.plateZone,
+        quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
+        deckle: false, stars: false,
+      });
+      var pz = zones.plateZone;
+      if (!pz || !pz.rx || !pz.ry) return;
+      var c = G.ctx, u = G.u || 2;
+      c.fillStyle = Skin.palette(tr).spiral.bg;
+      var cols = Math.ceil(G.w / u), rows = Math.ceil(G.h / u);
+      for (var gy = 0; gy < rows; gy++) {
+        for (var gx = 0; gx < cols; gx++) {
+          var px = gx * u, py = gy * u;
+          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, pz);
+          if (d < 0) { c.fillRect(px, py, u, u); continue; }
+          if (d < 7 && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / 7) * 0.4) {
+            c.fillRect(px, py, u, u);   // the feather speckle onto the paper
+          }
+        }
+      }
+    }
+    function paperPlatePanel(G, tr, sd, zones) {
+      if (binding === "night") return paperNight(G, tr, sd, zones);
+      return paperParchPlate(G, tr, sd, zones);
+    }
+    function paperSidePanel(G, tr, sd, zones) {
+      if (binding === "night") return paperNight(G, tr, sd, zones);
+      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
+        u: G.u, quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
+        deckle: false, stars: false,
+      });
     }
 
     // ---------------------------------------------------------------- camera
@@ -1962,7 +2001,7 @@ PJ2.Viz = (function () {
       if (inten != null) {
         var fillH = frac * (gBot - gTop);
         Skin.Dither.fill(c, gx + 2, gBot - fillH, gw - 4, fillH, pal.rubric[0], 0.5, { u: G.u });
-        c.fillStyle = dataCol(pal.gilt[0], "athanor gauge line"); // gilt carries rubric's data jobs on night
+        c.fillStyle = dataCol(binding === "night" ? pal.gilt[0] : pal.rubric[0], "athanor gauge line");
         c.fillRect(gx, gBot - fillH - 1, gw, 2);
       }
       readoutLine(G, r, "fire " + fmt2(inten) + " · gradus " + (inten == null ? "—" : ROMAN_HI[gradus - 1]), pal.ink[1]);
@@ -2467,15 +2506,16 @@ PJ2.Viz = (function () {
       var p = measure(plateCanvas, opts.plateW || 900, opts.plateH || 860);
       var m = measure(marginCanvas, opts.marginW || 402, opts.marginH || 640);
       var f = measure(footerCanvas, opts.footerW || 900, opts.footerH || 64);
-      // NIGHT FOLIO: the whole plate canvas is night — the "window" is the
-      // canvas itself minus a small courtesy inset (the A2 clip + the coil
-      // sizing budget still read from this zone)
-      var pad = 6;
+      // the window zone (A2 clip + coil sizing budget both read this):
+      // night — the whole canvas minus a courtesy inset; parchment — the
+      // slim rounded monitor window inside the page
+      var pad = binding === "night" ? 6 : Math.max(16, Math.round(Math.min(p.w, p.h) * 0.03));
       plateZones.plateZone.cx = p.w * 0.5;
       plateZones.plateZone.cy = p.h * 0.5;
       plateZones.plateZone.rx = p.w * 0.5 - pad;
       plateZones.plateZone.ry = p.h * 0.5 - pad;
-      plateZones.plateZone.r = 12;
+      plateZones.plateZone.r = binding === "night" ? 12
+        : Math.max(14, Math.round(Math.min(p.w, p.h) * 0.045));
       function apply(stack, s) {
         var G = stack.G();
         if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return;
@@ -2504,6 +2544,26 @@ PJ2.Viz = (function () {
         invalidateFurniture();
       },
       getTrack: function () { return track; },
+
+      // the binding switch (owner 2026-07-20): swaps the whole dress —
+      // palettes, atlas inks, papers, window geometry — between the night
+      // folio and the windowed parchment page. The spiral, floor, and
+      // animations are identical in both.
+      setBinding: function (b) {
+        if (b !== "night" && b !== "parchment") {
+          throw new Error("PJ2.Viz.setBinding: unknown binding '" + b + "'");
+        }
+        if (b === binding) return;
+        binding = b;
+        if (Skin.setMode) Skin.setMode(b);
+        pal = Skin.palette(track);
+        at = Skin.atlas(track);
+        plateStack.invalidate("paper"); plateStack.invalidate("furniture");
+        marginStack.invalidate("paper"); marginStack.invalidate("furniture");
+        footerStack.invalidate("paper"); footerStack.invalidate("furniture");
+        measureAll(true);
+      },
+      getBinding: function () { return binding; },
 
       attach: function (eng, audioCtx) {
         if (engine) viz.detach();

@@ -239,8 +239,59 @@ PJ2.Skin = (function () {
   };
   var TRACKS = ["library", "sycorax", "ariel"];
 
+  // ==========================================================================
+  // THE BINDING (owner 2026-07-20, undecided between the two): "night" is
+  // the night-folio registry above; "parchment" restores the codex-page
+  // values (PR #24's look — parchment panels, the spiral in its windowed
+  // monitor, iron-gall apparatus ink). palette()/atlas()/inkAge() are all
+  // mode-aware; the viz + CSS carry the rest of the switch.
+  // ==========================================================================
+  var MODE = "night";
+  var PARCH_OVERRIDES = {
+    library: {
+      paper:  ["#efe3c0", "#e3d3a8", "#d0bc8c", "#b49a68", "#8a704a"],
+      ink:    ["#2e2114", "#4a3620", "#6e5638", "#93794f"],
+      data:   ["#2e2114", "#4a3620", "#6e5638", "#8e3b2c"],
+      worstBg: "#e3d3a8",
+      primary: "#2e2114", accent: "#8e3b2c",
+      exceptions: {
+        "#93794f": "far-limb depth-cue hairline — the same datum returns at full contrast every half revolution",
+      },
+      rules: {
+        "#b0553c": "rubric-1: aged tags and display-size accents only; body-size rubric duty is rubric-0",
+        "#c9a227": "gilt: illumination and chrome, never a sole data carrier on paper",
+        "#e8c95a": "gilt: illumination and chrome, never a sole data carrier on paper",
+      },
+    },
+    sycorax: {
+      paper:  ["#241d17", "#322820", "#453729"],
+      worstBg: "#453729",
+    },
+    ariel: {
+      plate:  ["#101a30", "#16233f", "#22345a"],
+      worstBg: "#22345a",
+    },
+  };
+  var PALETTES_P = {};
+  (function () {
+    for (var t = 0; t < TRACKS.length; t++) {
+      var tr = TRACKS[t], out = {}, k;
+      for (k in PALETTES[tr]) out[k] = PALETTES[tr][k];
+      var ov = PARCH_OVERRIDES[tr] || {};
+      for (k in ov) out[k] = ov[k];
+      PALETTES_P[tr] = out;
+    }
+  })();
+  function setMode(m) {
+    if (m !== "night" && m !== "parchment") {
+      throw new Error("PJ2.Skin.setMode: unknown mode '" + m + "'");
+    }
+    MODE = m;
+  }
+  function getMode() { return MODE; }
+
   function palette(track) {
-    var p = PALETTES[track];
+    var p = (MODE === "night" ? PALETTES : PALETTES_P)[track];
     if (!p) throw new Error("PJ2.Skin: unknown track '" + track + "'");
     return p;
   }
@@ -1414,8 +1465,9 @@ PJ2.Skin = (function () {
   }
 
   function atlas(track) {
-    if (!atlasCache[track]) atlasCache[track] = buildAtlas(track);
-    return atlasCache[track];
+    var key = track + "/" + MODE;
+    if (!atlasCache[key]) atlasCache[key] = buildAtlas(track);
+    return atlasCache[key];
   }
 
   // ==========================================================================
@@ -1465,7 +1517,7 @@ PJ2.Skin = (function () {
 
   // --- LIBRARY: procedural parchment (§1a) ---------------------------------
   function paperParchment(ctx, w, h, seed, opts) {
-    var pal = PALETTES.library;
+    var pal = palette("library");
     var u = opts.u || U;
     var rs = PJ2.Rand.stream(seed >>> 0).fork("paper:library");
     var bn = blueNoise(seed);
@@ -1536,7 +1588,7 @@ PJ2.Skin = (function () {
   // The quiet zones COMPRESS the grain toward its middle tone rather than
   // clamping (the grimoire lesson: soot must stay soot, just calmer).
   function paperSootRag(ctx, w, h, seed, opts) {
-    var pal = PALETTES.sycorax;
+    var pal = palette("sycorax");
     var u = opts.u || U;
     var rs = PJ2.Rand.stream(seed >>> 0).fork("paper:sycorax");
     var bn = blueNoise(seed);
@@ -1604,7 +1656,7 @@ PJ2.Skin = (function () {
   // --- ARIEL: the engraved plate (§1c) — burnish and scratches, not stains.
   // Quiet zones reduce the dither jitter and bar scratches/glints/stars.
   function paperEngravedPlate(ctx, w, h, seed, opts) {
-    var pal = PALETTES.ariel;
+    var pal = palette("ariel");
     var u = opts.u || U;
     var rs = PJ2.Rand.stream(seed >>> 0).fork("paper:ariel");
     var bn = blueNoise(seed);
@@ -1908,8 +1960,13 @@ PJ2.Skin = (function () {
     sycorax: ["#d8cfc0", "#b3a68e", "#7d715c"],
     ariel:   ["#d8e4ec", "#a8c0d4", "#6e8aa4"],
   };
+  var INK_AGE_P = {
+    library: ["#2e2114", "#4a3620", "#6e5638"],   // iron-gall on parchment
+    sycorax: INK_AGE.sycorax,
+    ariel:   INK_AGE.ariel,
+  };
   function inkAge(track, step) {
-    var ramp = INK_AGE[track];
+    var ramp = (MODE === "night" ? INK_AGE : INK_AGE_P)[track];
     if (!ramp) throw new Error("PJ2.Skin.Type.inkAge: unknown track '" + track + "'");
     return ramp[Math.max(0, Math.min(2, step | 0))];
   }
@@ -1919,17 +1976,17 @@ PJ2.Skin = (function () {
     if (track === "library") return {
       font: FONT_BLACKLETTER, transform: "none", letterSpacing: 0,
       treatment: "rubricated-initial", // first letter in rubric-0, +~15% size
-      color: PALETTES.library.ink[0], initialColor: PALETTES.library.rubric[0],
+      color: palette("library").ink[0], initialColor: palette("library").rubric[0],
     };
     if (track === "sycorax") return {
       font: FONT_BLACKLETTER, transform: "none", letterSpacing: 0,
       treatment: "woodcut-offset",     // bone over a 1U ink offset (rough caps)
-      color: PALETTES.sycorax.bone[0], offsetColor: PALETTES.sycorax.ink[0],
+      color: palette("sycorax").bone[0], offsetColor: palette("sycorax").ink[0],
     };
     if (track === "ariel") return {
       font: FONT_MONO, transform: "uppercase", letterSpacing: 3,
       treatment: "star-interpuncts",   // words joined by gilt ✦
-      color: PALETTES.ariel.silver[0], interpunctColor: PALETTES.ariel.gilt[0],
+      color: palette("ariel").silver[0], interpunctColor: palette("ariel").gilt[0],
     };
     throw new Error("PJ2.Skin.Type.header: unknown track '" + track + "'");
   }
@@ -2018,6 +2075,8 @@ PJ2.Skin = (function () {
     relLum: relLum,
     assertDataInk: assertDataInk,
     checkContrast: checkContrast,
+    setMode: setMode,
+    getMode: getMode,
     dev: false, // set true in development: illegal data ink throws
 
     // deterministic noise (seeds enter as domain offsets)

@@ -964,6 +964,36 @@
     if (stopBtn) stopBtn.addEventListener("click", doStop);
     if (resetBtn) resetBtn.addEventListener("click", doReset);
 
+    // the binding switch (owner 2026-07-20, undecided between the two
+    // dresses): NIGHT = the night folio; PARCH = the windowed codex page.
+    // Persisted; the viz swaps palettes/papers/window live.
+    var bindingBtn = $("pj2-binding");
+    function applyBinding(b, persist) {
+      var app = $("pj2-app");
+      if (app) app.setAttribute("data-binding", b);
+      if (viz && viz.setBinding) { try { viz.setBinding(b); } catch (e) {} }
+      if (bindingBtn) {
+        bindingBtn.textContent = b === "night" ? "NIGHT ☽︎" : "PARCH ☰︎";
+        bindingBtn.setAttribute("aria-label",
+          "binding — showing the " + (b === "night" ? "night folio" : "parchment page")
+          + "; press to switch");
+      }
+      if (persist) { try { localStorage.setItem("pj2.binding", b); } catch (e) {} }
+    }
+    function storedBinding() {
+      try {
+        var b = localStorage.getItem("pj2.binding");
+        return b === "parchment" ? "parchment" : "night";
+      } catch (e) { return "night"; }
+    }
+    if (bindingBtn) {
+      bindingBtn.addEventListener("click", function () {
+        var cur = (viz && viz.getBinding) ? viz.getBinding()
+          : (($("pj2-app") || {}).getAttribute ? $("pj2-app").getAttribute("data-binding") : "night");
+        applyBinding(cur === "night" ? "parchment" : "night", true);
+      });
+    }
+
     // the seal
     var seedInput = $("pj2-seed");
     if (seedInput) {
@@ -998,6 +1028,7 @@
     // viz lifecycle
     viz = makeViz();
     try { viz.setTrack(activeKey); } catch (e) {}
+    applyBinding(storedBinding(), false);
     document.addEventListener("visibilitychange", function () {
       if (!viz) return;
       if (document.visibilityState === "hidden") {
