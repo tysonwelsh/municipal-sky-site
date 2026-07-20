@@ -81,8 +81,8 @@ include '../../includes/header.php';
         <div class="pj2-folio-grid">
 
           <div class="pj2-plate-col">
-            <!-- pj2-viz draws its own figura caption inside the plate; no DOM caption -->
-            <canvas id="pj2-plate" aria-label="the pitch spiral — the live spectrum drawn as an ink diagram, one turn per octave, rotating over the plate"></canvas>
+            <!-- no caption anywhere (owner 2026-07-20): the spiral explains itself -->
+            <canvas id="pj2-plate" aria-label="the pitch spiral — the live spectrum drawn as a glowing coil, one turn per octave, rotating over the night ground"></canvas>
             <!-- §6 degradation: the margin apparatus collapsed to one strip (small screens) -->
             <div class="pj2-telemetry" id="pj2-telemetry" aria-label="performance telemetry"></div>
           </div>

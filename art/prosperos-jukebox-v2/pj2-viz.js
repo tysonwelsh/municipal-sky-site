@@ -93,19 +93,16 @@ PJ2.Viz = (function () {
       anchorPc: 0, anchorName: "C",
       homeTonicHz: 262, steps: [0, 2, 3, 5, 7, 9, 10], modeName: "dorian",
       scaleLabel: "C dorian",
-      caption: "figura I · the coil of pitches — seven turns, one per octave · the floor charts the drones",
     },
     sycorax: {
       anchorPc: 3, anchorName: "Eb",
       homeTonicHz: 311, steps: [0, 1, 3, 4, 5, 7, 8], modeName: "sycorax",
       scaleLabel: "Eb chromatic-locrian",
-      caption: "the block · seven turns, one per octave · the floor charts the drones",
     },
     ariel: {
       anchorPc: 5, anchorName: "F",
       homeTonicHz: 349, steps: [0, 2, 4, 6, 7, 9, 11], modeName: "lydian",
       scaleLabel: "F lydian",
-      caption: "carta caelestis · seven turns, one per octave · the floor charts the drones",
     },
   };
 
@@ -745,22 +742,12 @@ PJ2.Viz = (function () {
     }
 
     function drawPlateFurniture(G) {
-      var c = G.ctx;
-      var M = plateMetrics(G);
-      // caption — inside the night window's bottom edge, in the track's dim
-      // phosphor (the slim seamless border leaves no paper line for it)
-      if (fontsReady) {
-        var capY = plateZones.plateZone.cy + plateZones.plateZone.ry - 10;
-        Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, capY, 13,
-          spRGBA(pal.spiral.octaveLabel, 0.65), 1, "center");
-      }
+      // no caption (owner 2026-07-20: the explanatory line under the
+      // spiral is gone), no corner schema, no persistent marks (no-scar
+      // ruling) — the plate's only furniture is Ariel's horizon
       if (track === "ariel") {
         drawHorizon(G);
       }
-      // library + sycorax plate furniture: caption only — the corner
-      // "schema inferius" is gone (owner 2026-07-20: the constellation
-      // floor charts the drones now), and the block carries no persistent
-      // marks (owner ruling: no scar)
     }
 
     function drawHorizon(G) {
