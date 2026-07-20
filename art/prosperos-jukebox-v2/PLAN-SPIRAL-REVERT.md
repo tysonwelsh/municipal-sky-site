@@ -51,9 +51,8 @@ notch dots, v1 palettes from `prosperos-jukebox-themes.js`) replaces both
 `drawSortedCoil` and `drawAtlasCoil` at the `pj2-viz.js:850–854` dispatch.
 v1 animation semantics: auto-rotate, FFT bulge, adaptive baseline —
 nothing else. The v2 coil theatrics (pen wobble, ink oxidation, hush
-palette-step **on the coil**, re-gild stars **on the coil**) are removed
-with it. (Sycorax's Cut slash and other *event* dramaturgy can survive as
-overlays drawn in v1's visual language — see D5/O2.)
+palette-step **on the coil**, re-gild stars **on the coil**, and the Cut
+slash — owner call, 2026-07-20) are removed with it.
 
 **D2 — Black plate zone, kept frames, all three tracks.** The paper
 generators keep painting the page (parchment / soot-rag / engraved plate)
@@ -126,10 +125,10 @@ then the coil, then the floor, then taste passes.
   vs v2's 1 rpm — close; nudge to 0.09 rad/s for fidelity).
 - Remove from the coil path: `washPattern` ink fills, `oxidized()` color
   substitution, hush bone-step, atlas hatch/engraving passes, re-gild
-  stars. Keep the octave roman numerals at the seams for now (they sit
-  outside the coil and match the kept frame) — owner taste call at review
-  (v1 alternative: left-edge octave axis `C1…C7` + scale name,
-  `viz.js:1917–1950`).
+  stars, **and the roman numerals at the octave seams** (owner call,
+  2026-07-20: no roman numerals for now). Octave orientation comes back
+  via v1's left-edge octave axis `C1…C7` + scale-name caption
+  (`viz.js:1917–1950`), ported with the floor in Step 3.
 
 ### Step 3 — Port the constellation floor (the disk)
 - New `drawConstellationFloor(G, M, proj)` from `viz.js:1506–1675` +
@@ -162,10 +161,13 @@ then the coil, then the floor, then taste passes.
   equivalents: harpsichord baseline ripple, music-box glint stars, hum bar
   (`viz.js:1254–1349`). Port v1's forms where cheap; keep v2's event
   wiring.
-- Sycorax: lavender coil on black inside the soot-rag page. v1 had a bare
-  spiral here; v2's cutline/tine marks and The-Cut slash are dramaturgy
-  worth keeping — recolor to the lavender family, slash stays white
-  (owner gate O2).
+- Sycorax: lavender coil on black inside the soot-rag page, and keep this
+  track **minimal**: v1 had a bare spiral here, and the owner has flagged
+  (2026-07-20) that a more substantial Sycorax rework is coming — so no
+  Cut slash (removed per D1), and don't invest in restyling the v2
+  cutline/tine marks beyond making them legible against black (or simply
+  drop them to v1's bare spiral if restyling isn't trivial). Sycorax
+  spiral dramaturgy gets redesigned in that future rework, not here.
 - Ariel: ice-blue coil on black inside the kept engraved plate ("frosted"
   frame). Whistle mark upgrades to v1's lollipop tracker
   (`viz.js:1137–1228`) if cheap; bubbles/wings recolor to ice.
@@ -204,18 +206,25 @@ Pixel-art-leaning upgrades that keep "v1 colored-on-black" as the base:
   `kind:"art"` layer (nearest-neighbor) so the disk reads like a bitmap
   instrument dial; drone nodes stay smooth.
 - **E4 Event theatrics, v1-native**: sea-change = brief hue shift of the
-  whole coil (not oxidation); The Cut keeps its white slash; Ariel re-gild
-  becomes glint stars on the coil seam in ice/gilt.
+  whole coil (not oxidation); Ariel re-gild becomes glint stars on the
+  coil seam in ice/gilt. (Sycorax theatrics excluded — deferred to the
+  future Sycorax rework, see §7.)
 - **E5 Halo quantization**: constellation halo ripples rendered at art-cell
   resolution — CRT-oscilloscope look, cheap perf win.
 
-## 7. Open questions for the owner (defaults chosen, flag to change)
+## 7. Owner decisions & open questions
 
-- **O1** Octave marks: keep v2 roman numerals at the seams (default) or
-  revert to v1's left-edge `C1…C7` axis + scale-name caption?
-- **O2** Sycorax/Ariel v2 event theatrics on the coil (The Cut slash,
-  re-gild): keep in recolored v1 language (default) or strip to v1's bare
-  spiral?
+Resolved (owner, 2026-07-20):
+
+- **O1 — RESOLVED**: no roman numerals at the octave seams for now.
+  Octave orientation via v1's left-edge `C1…C7` axis + scale caption.
+- **O2 — RESOLVED**: the Cut slash is out. Sycorax coil stays bare/minimal
+  here because **a more substantial Sycorax track rework is planned** —
+  treat every Sycorax-specific spiral flourish as deferred to that rework
+  rather than ported/restyled in this one.
+
+Still open (defaults chosen, flag to change):
+
 - **O3** Library corner "schema inferius" drone square: keep as furniture
   (default) or remove now that the floor plots drones?
 - **O4** Black backdrop shade: v1 per-track near-blacks (default) or one
