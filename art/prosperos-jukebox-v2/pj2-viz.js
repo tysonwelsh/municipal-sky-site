@@ -195,7 +195,7 @@ PJ2.Viz = (function () {
       era = { tonicPc: pcFromHz(cfg.homeTonicHz), steps: cfg.steps.slice() };
       st = {
         marks: [],            // note-driven overlay marks
-        droneSet: [],         // active drones {deg, freq, oct, sub, t0, until} — floor + schema
+        droneSet: [],         // active drones {deg, freq, oct, sub, t0, until} — the floor's ledger
         whistle: null,        // ariel plumb-bob {of, until}
         pulseAt: -1e9,        // sycorax proto-drum last lub (audio t)
         tallies: 0,           // sycorax percussion strokes this evening
@@ -712,10 +712,10 @@ PJ2.Viz = (function () {
       st.marks.push(m);
       if (st.marks.length > 160) st.marks.shift();
     }
-    // the drone ledger feeds BOTH the constellation floor (freq → node) and
-    // the library corner schema (deg → spoke). Each re-emission of a degree
-    // is a fresh cycle: t0/until restart so the floor's halo rings breathe
-    // per cycle, v1-style. Sub-octave tones (kind "sub") keep their own row.
+    // the drone ledger feeds the constellation floor (freq → node). Each
+    // re-emission of a degree is a fresh cycle: t0/until restart so the
+    // floor's halo rings breathe per cycle, v1-style. Sub-octave tones
+    // (kind "sub") keep their own row.
     function upsertDrone(ev, t) {
       var until = t + (ev.durS || 8);
       var sub = ev.kind === "sub";
@@ -754,40 +754,13 @@ PJ2.Viz = (function () {
         Skin.Type.smallCaps(c, cfg.caption, G.w * 0.5, capY, 13,
           spRGBA(pal.spiral.octaveLabel, 0.65), 1, "center");
       }
-      if (track === "library") {
-        drawSchemaBase(G, M);
-      } else if (track === "ariel") {
+      if (track === "ariel") {
         drawHorizon(G);
       }
-      // sycorax plate furniture: caption only — the block carries no
-      // persistent marks (owner ruling: no scar)
-    }
-
-    // library lower schema (§3 marginalia): 12-spoke horoscope square-in-circle
-    function schemaGeom(G) {
-      // rides above the plate caption's line (the two shared a baseline
-      // when the window went full-bleed)
-      return { sx: G.w * 0.165, sy: G.h * 0.79, sr: Math.min(G.w, G.h) * 0.085 };
-    }
-    function drawSchemaBase(G, M) {
-      // phosphor-voiced now — the schema sits inside the night window
-      var c = G.ctx, S = schemaGeom(G);
-      var sp = pal.spiral;
-      c.strokeStyle = spRGBA(sp.baseStroke, 0.9); c.lineWidth = 1;
-      c.beginPath(); c.arc(S.sx, S.sy, S.sr, 0, Math.PI * 2); c.stroke();
-      c.strokeStyle = spRGBA(sp.baseStroke, 0.5);
-      c.strokeRect(S.sx - S.sr * 0.707, S.sy - S.sr * 0.707, S.sr * 1.414, S.sr * 1.414);
-      for (var k = 0; k < 12; k++) {
-        var a = k * Math.PI / 6 - Math.PI / 2;
-        c.beginPath();
-        c.moveTo(S.sx + Math.cos(a) * S.sr * 0.28, S.sy + Math.sin(a) * S.sr * 0.28);
-        c.lineTo(S.sx + Math.cos(a) * S.sr, S.sy + Math.sin(a) * S.sr);
-        c.stroke();
-      }
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, "schema inferius · the drone", S.sx, S.sy + S.sr + 16, 13,
-          spRGBA(sp.octaveLabel, 0.7), 1, "center");
-      }
+      // library + sycorax plate furniture: caption only — the corner
+      // "schema inferius" is gone (owner 2026-07-20: the constellation
+      // floor charts the drones now), and the block carries no persistent
+      // marks (owner ruling: no scar)
     }
 
     function drawHorizon(G) {
@@ -924,7 +897,6 @@ PJ2.Viz = (function () {
 
       // ---- per-track live extras ------------------------------------------
       drawNoteMarks(G, M, proj, audioT);
-      if (track === "library") drawSchemaLive(G, M);
       if (track === "sycorax") drawPulseMark(G, M, audioT);
       if (track === "ariel") {
         if (wallS < st.ghostLineUntil) drawFlightLine(G, M, proj, true);
@@ -1273,48 +1245,6 @@ PJ2.Viz = (function () {
         }
       }
       st.marks = keep;
-    }
-
-    // library lower schema, live: drone tones as inked nodes, interval rules
-    // weighted by consonance (single/double), labeled
-    function drawSchemaLive(G, M) {
-      var c = G.ctx, S = schemaGeom(G);
-      var t = aNow();
-      var live = [];
-      for (var i = 0; i < st.droneSet.length; i++) {
-        if (st.droneSet[i].until > t) live.push(st.droneSet[i]);
-      }
-      st.droneSet = live;
-      var pts = [];
-      for (i = 0; i < live.length; i++) {
-        var step = ((live[i].deg % 7) + 7) % 7;
-        var semis = era.steps[step];
-        var a = (semis / 12) * 2 * Math.PI - Math.PI / 2;
-        pts.push({ x: S.sx + Math.cos(a) * S.sr * 0.8, y: S.sy + Math.sin(a) * S.sr * 0.8, semis: semis });
-      }
-      // interval rules
-      var CONS = { 0: 1, 7: 0.95, 5: 0.85, 4: 0.75, 3: 0.7, 8: 0.55, 9: 0.55, 2: 0.4, 10: 0.4, 1: 0.2, 11: 0.2, 6: 0.15 };
-      for (i = 0; i < pts.length; i++) {
-        for (var j = i + 1; j < pts.length; j++) {
-          var iv = Math.abs(pts[i].semis - pts[j].semis) % 12;
-          var cons = CONS[iv] || 0.3;
-          c.strokeStyle = spRGBA(pal.spiral.baseStroke, 0.85); c.lineWidth = 1.2;
-          if (cons > 0.8) { // double rule for the perfect intervals
-            c.beginPath(); c.moveTo(pts[i].x - 1.5, pts[i].y); c.lineTo(pts[j].x - 1.5, pts[j].y); c.stroke();
-            c.beginPath(); c.moveTo(pts[i].x + 1.5, pts[i].y); c.lineTo(pts[j].x + 1.5, pts[j].y); c.stroke();
-          } else if (cons > 0.5) {
-            c.beginPath(); c.moveTo(pts[i].x, pts[i].y); c.lineTo(pts[j].x, pts[j].y); c.stroke();
-          } else {
-            c.save(); c.setLineDash([2, 3]);
-            c.beginPath(); c.moveTo(pts[i].x, pts[i].y); c.lineTo(pts[j].x, pts[j].y); c.stroke();
-            c.restore();
-          }
-        }
-      }
-      for (i = 0; i < pts.length; i++) {
-        c.fillStyle = dataCol("#ffdc82", "schema drone node");
-        c.beginPath(); c.arc(pts[i].x, pts[i].y, 3.4, 0, Math.PI * 2); c.fill();
-      }
     }
 
     // sycorax: the proto-drum's lone pulse mark — keeps printing in the hush

@@ -234,9 +234,11 @@ Resolved (owner, 2026-07-20):
   treat every Sycorax-specific spiral flourish as deferred to that rework
   rather than ported/restyled in this one.
 
-Still open (defaults chosen, flag to change):
+- **O3 — RESOLVED** (owner, 2026-07-20): the Library corner "schema
+  inferius" square is **removed** — the constellation floor charts the
+  drones now.
 
-- **O3** Library corner "schema inferius" drone square: keep as furniture
-  (default) or remove now that the floor plots drones?
+Still open (default chosen, flag to change):
+
 - **O4** Black backdrop shade: v1 per-track near-blacks (default) or one
   uniform `#0b0a08` void for all three?
