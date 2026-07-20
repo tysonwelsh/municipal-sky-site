@@ -59,7 +59,7 @@ function tickTimers() {
 // ----------------------------------------------------------------------------
 var CTX_METHODS = [
   "fillRect", "clearRect", "strokeRect", "beginPath", "closePath", "moveTo",
-  "lineTo", "arc", "ellipse", "stroke", "fill", "save", "restore",
+  "lineTo", "arc", "arcTo", "ellipse", "stroke", "fill", "save", "restore",
   "setTransform", "translate", "rotate", "scale", "setLineDash", "clip",
   "quadraticCurveTo", "bezierCurveTo", "fillText", "strokeText", "drawImage",
 ];

@@ -132,6 +132,13 @@ Order: A (ship-worthy alone, fixes the live overhang fast) → B → C →
 D → E. B–D land together as the rework proper; A can go out the moment
 it's ready.
 
+**Status 2026-07-20: A is DONE and shipped** (R solved from the window's
+vertical budget with ½-peak headroom, CY recentered for the top-heavy
+coil, hard rounded-rect clip on the whole data pass). Shipped alongside:
+caption removal, and the v1 overlay-animation port (lollipop, baseline
+ripples, glint stars, hum bar, bubbles — owner-reported Ariel/Library
+animation issues). B–E remain.
+
 ## 4. What does NOT change
 
 - The coil renderer, constellation floor, octave axis, note marks —

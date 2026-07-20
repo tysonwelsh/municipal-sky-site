@@ -775,9 +775,23 @@ PJ2.Viz = (function () {
     }
 
     // ============================================================ PLATE L1 ==
+    // PLAN-NIGHT-FOLIO A1: the coil is top-heavy — its turns span −3…+4
+    // octave-steps around the center and the FFT contour extrudes a further
+    // `peak` above the top turn — so R is solved from the night window's
+    // real vertical budget at the DEFAULT camera pitch (drag never resizes;
+    // the A2 clip guarantees the frame regardless). Headroom covers half
+    // the worst-case top peak; a rare fortissimo top-octave crest crops at
+    // the window edge instead of painting the paper.
+    var FIT_CP = Math.cos(0.30), FIT_SP = Math.sin(0.30);   // default pitch
+    var FIT_TOP = (4 * 0.55 + 0.825 * 0.5) * FIT_CP;        // turns + ½ peak
+    var FIT_BOT = (3.45 * 0.55) * FIT_CP + 1.10 * FIT_SP;   // floor + label ring
     function plateMetrics(G) {
-      var CX = G.w * 0.5, CY = G.h * 0.485 + st.sinkPx;
-      var baseRadius = Math.min(G.h * 0.21, G.w * 0.27);
+      var CX = G.w * 0.5;
+      var pz = plateZones.plateZone;
+      var ry = pz.ry > 10 ? pz.ry : G.h * 0.46;
+      var inner = 10;                                        // breathing room inside the window
+      var baseRadius = Math.min((2 * ry - 2 * inner) / (FIT_TOP + FIT_BOT), G.w * 0.27);
+      var CY = (pz.ry > 10 ? pz.cy - pz.ry : G.h * 0.04) + inner + FIT_TOP * baseRadius + st.sinkPx;
       return {
         CX: CX, CY: CY,
         R: baseRadius,
@@ -785,6 +799,25 @@ PJ2.Viz = (function () {
         oct: baseRadius * 0.55,
         peak: baseRadius * 0.55 * 1.5,
       };
+    }
+
+    // PLAN-NIGHT-FOLIO A2: the hard clip — nothing on the data pass may
+    // paint outside the night window, at any camera angle or FFT extreme
+    function clipToWindow(c) {
+      var pz = plateZones.plateZone;
+      if (!pz || pz.rx <= 1) return false;
+      var x0 = pz.cx - pz.rx, y0 = pz.cy - pz.ry;
+      var w = pz.rx * 2, h = pz.ry * 2, r = Math.min(pz.r || 0, pz.rx, pz.ry);
+      c.save();
+      c.beginPath();
+      c.moveTo(x0 + r, y0);
+      c.lineTo(x0 + w - r, y0); c.arcTo(x0 + w, y0, x0 + w, y0 + r, r);
+      c.lineTo(x0 + w, y0 + h - r); c.arcTo(x0 + w, y0 + h, x0 + w - r, y0 + h, r);
+      c.lineTo(x0 + r, y0 + h); c.arcTo(x0, y0 + h, x0, y0 + h - r, r);
+      c.lineTo(x0, y0 + r); c.arcTo(x0, y0, x0 + r, y0, r);
+      c.closePath();
+      c.clip();
+      return true;
     }
 
     function drawPlateFurniture(G) {
@@ -1231,7 +1264,9 @@ PJ2.Viz = (function () {
 
       // v1 draw order: floor first (the coil occludes it), then the coil
       // with the lollipop + hum bar interleaved at their own depths, then
-      // axis text, then the over-the-coil decorations
+      // axis text, then the over-the-coil decorations — the whole pass
+      // clipped to the night window (A2: the frame is unpaintable)
+      var clipped = clipToWindow(c);
       drawConstellationFloor(G, M, proj, audioT);
       drawPhosphorCoil(G, M, proj, humBar);
       drawOctaveAxisAndScale(G, M);
@@ -1246,6 +1281,7 @@ PJ2.Viz = (function () {
         if (wallS < st.ghostLineUntil) drawFlightLine(G, M, proj, true);
         if (st.flightScenes > 0) drawFlightLine(G, M, proj, false);
       }
+      if (clipped) c.restore();
     }
 
     // ---- the v1 phosphor coil (prosperos-jukebox-viz.js:1677–1790): quads
