@@ -1307,6 +1307,12 @@ PJ2.Motif = (function () {
         working: {
           theme: working.theme ? working.theme.name : null,
           themeGen: themeLine ? themeLine.gen : (working.theme ? 0 : null),
+          // the deepest living variant's actual notes (degree/beat pairs) —
+          // additive telemetry for the viz's theme staff (owner 2026-07-20).
+          // Degrees, not Hz: the staff survives the sea change like the
+          // motifs themselves do.
+          themeNotes: themeLine ? themeLine.notes.slice()
+            : (working.theme ? working.theme.notes.slice() : null),
           subs: subs,
           count: (working.theme ? 1 : 0) + subs.length,
         },
