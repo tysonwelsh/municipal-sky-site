@@ -150,7 +150,10 @@ function mockEngine(track) {
   var info = {
     running: true, sceneType: "settling", sceneIdx: 0, sceneCount: 3,
     x: 0.3, intensity: 0.22, tidePos: 0.55, tideLabel: "candlelit",
-    airHolders: 2, harmony: "IV", motif: { working: { theme: "#b2", themeGen: 3 }, maxGen: 5 },
+    airHolders: 2, harmony: "IV",
+    motif: { working: { theme: "#b2", themeGen: 3,
+      themeNotes: [{ deg: 0, durBeats: 1 }, { deg: 2, durBeats: 0.5 }, { deg: 4, durBeats: 1.5 },
+                   { deg: 3, durBeats: 1 }, { deg: 0, durBeats: 2 }] }, maxGen: 5 },
     weather: { haloLevel: 0.5 }, roomBalance: 0.2, haloLevel: 0.04,
     playing: true, seed: 7,
     layers: {},

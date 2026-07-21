@@ -1387,6 +1387,7 @@ PJ2.Viz = (function () {
       drawConstellationFloor(G, M, proj, audioT);
       drawPhosphorCoil(G, M, proj, humBar);
       drawOctaveAxisAndScale(G, M);
+      drawThemeStaff(G, M);
 
       // ---- per-track live extras ------------------------------------------
       drawNoteMarks(G, M, proj, audioT);
@@ -1644,6 +1645,80 @@ PJ2.Viz = (function () {
       }
       c.textAlign = "left";
       c.textBaseline = "alphabetic";
+    }
+
+    // ---- THE THEME STAFF (owner 2026-07-20): the working theme written
+    // out as sheet music in the night window's top-left corner (above the
+    // emblem column, left of the octave axis — free in both bindings).
+    // Motif notes are SCALE DEGREES, so they map 1:1 onto diatonic staff
+    // steps: degree 0 (the tonic) always sits on the emphasized line, and
+    // the staff survives a sea change exactly like the motifs do. Note
+    // lengths render mensural-style: filled head + flag = half-beat,
+    // filled + stem = one beat, a dot adds half, open head = two beats,
+    // open headless = longer (the augmented breves). Library only.
+    var STAFF_ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
+    function drawThemeStaff(G, M) {
+      if (track !== "library" || !fontsReady) return;
+      var mo = lastInfo && lastInfo.motif && lastInfo.motif.working;
+      var notes = mo && mo.themeNotes;
+      if (!notes || !notes.length) return;
+      var c = G.ctx;
+      var sp = pal.spiral;
+      var pz = plateZones.plateZone;
+      var x0 = (pz.rx > 1 ? pz.cx - pz.rx : 0) + 20;
+      var y0 = (pz.ry > 1 ? pz.cy - pz.ry : 0) + 18;
+      var wMax = Math.max(120, Math.min(210, M.CX - M.R - 60 - x0));
+      var gap = 7;                                   // px per staff half-step
+      // caption: name + generation
+      var gen = mo.themeGen || 0;
+      var cap = "the theme · " + (mo.theme || "—")
+        + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "");
+      Skin.Type.smallCaps(c, cap, x0, y0, 12, spRGBA(sp.octaveLabel, 0.7), 1);
+      // degree range → vertical placement; each degree step = one half-step
+      // (HALF px), staff lines on even degrees so the tonic sits on a line
+      var HALF = gap / 2 + 1.5;   // ≈5 px per degree step
+      var dMin = notes[0].deg, dMax = notes[0].deg, i;
+      for (i = 1; i < notes.length; i++) {
+        if (notes[i].deg < dMin) dMin = notes[i].deg;
+        if (notes[i].deg > dMax) dMax = notes[i].deg;
+      }
+      var staffTop = y0 + 12;
+      function yFor(deg) { return staffTop + (dMax + 1 - deg) * HALF; }
+      var noteW = Math.min(16, Math.floor(wMax / notes.length));
+      var lineW = notes.length * noteW + 12;
+      for (var degAt = dMax + 1; degAt >= dMin - 1; degAt--) {
+        if (((degAt % 2) + 2) % 2 !== 0) continue;   // lines on even degrees
+        var tonicLine = ((degAt % 7) + 7) % 7 === 0;
+        c.strokeStyle = spRGBA(sp.baseStroke, tonicLine ? 0.85 : 0.4);
+        c.lineWidth = 1;
+        c.beginPath(); c.moveTo(x0, yFor(degAt)); c.lineTo(x0 + lineW, yFor(degAt)); c.stroke();
+      }
+      // the notes, mensural pixel heads
+      for (i = 0; i < notes.length; i++) {
+        var nx = x0 + 8 + i * noteW;
+        var ny = yFor(notes[i].deg);
+        var b = notes[i].durBeats || 1;
+        var open = b >= 2;
+        var head = spRGBA(sp.ribbonStroke, 0.95);
+        if (open) {
+          c.strokeStyle = head; c.lineWidth = 1.5;
+          c.strokeRect(nx - 3, ny - 2.5, 6, 5);
+        } else {
+          c.fillStyle = head;
+          c.fillRect(nx - 3, ny - 2.5, 6, 5);
+        }
+        if (b < 3) {                                   // stem
+          c.strokeStyle = head; c.lineWidth = 1;
+          c.beginPath(); c.moveTo(nx + 3, ny - 2); c.lineTo(nx + 3, ny - 12); c.stroke();
+          if (b <= 0.5) {                              // flag for the half-beat
+            c.beginPath(); c.moveTo(nx + 3, ny - 12); c.lineTo(nx + 7, ny - 8); c.stroke();
+          }
+        }
+        if (b === 1.5 || b === 3) {                    // the dot
+          c.fillStyle = head;
+          c.fillRect(nx + 6, ny - 1, 2, 2);
+        }
+      }
     }
 
     // ---- the v1 octave axis + scale caption (prosperos-jukebox-viz.js:
