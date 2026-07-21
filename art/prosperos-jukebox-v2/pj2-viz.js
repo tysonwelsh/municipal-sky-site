@@ -1658,7 +1658,7 @@ PJ2.Viz = (function () {
     // open headless = longer (the augmented breves). Library only.
     var STAFF_ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
     function drawThemeStaff(G, M) {
-      if (track !== "library" || !fontsReady) return;
+      if ((track !== "library" && track !== "ariel") || !fontsReady) return;
       var mo = lastInfo && lastInfo.motif && lastInfo.motif.working;
       var notes = mo && mo.themeNotes;
       if (!notes || !notes.length) return;
@@ -1669,10 +1669,14 @@ PJ2.Viz = (function () {
       var y0 = (pz.ry > 1 ? pz.cy - pz.ry : 0) + 18;
       var wMax = Math.max(120, Math.min(210, M.CX - M.R - 60 - x0));
       var gap = 7;                                   // px per staff half-step
-      // caption: name + generation
+      // caption: name + generation. Ariel's fiction calls it the song, and
+      // a promoted signature (the ghost that won the coin) is flagged.
       var gen = mo.themeGen || 0;
-      var cap = "the theme · " + (mo.theme || "—")
-        + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "");
+      var sig = track === "ariel" && lastInfo.signature;
+      var name = (sig && sig.promoted && sig.name) ? sig.name : (mo.theme || "—");
+      var cap = (track === "ariel" ? "the song · " : "the theme · ") + name
+        + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "")
+        + (sig && sig.promoted ? " · signature" : "");
       Skin.Type.smallCaps(c, cap, x0, y0, 12, spRGBA(sp.octaveLabel, 0.7), 1);
       // degree range → vertical placement; each degree step = one half-step
       // (HALF px), staff lines on even degrees so the tonic sits on a line
