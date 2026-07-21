@@ -162,7 +162,10 @@ function mockEngine(track) {
   if (track === "sycorax") { info.pose = "coil"; info.rootDeg = 0; info.tonicHz = 311; }
   if (track === "ariel") {
     info.tonicHz = 349; info.mode = "lydian";
-    info.signature = { name: "#a4", promoted: false, themeGen: 2, maxGen: 4 };
+    info.signature = { name: "#a4", promoted: true, themeGen: 2, maxGen: 4 };
+    info.motif = { working: { theme: "#a4", themeGen: 2,
+      themeNotes: [{ deg: 0, durBeats: 0.5 }, { deg: 3, durBeats: 1 }, { deg: 6, durBeats: 1 },
+                   { deg: 4, durBeats: 2 }] }, maxGen: 4 };
     info.tideLabel = "rising-thermals";
   }
   return {
