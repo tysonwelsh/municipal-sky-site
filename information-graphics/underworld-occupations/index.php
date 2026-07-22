@@ -66,12 +66,10 @@ include '../../includes/header.php';
     <p class="uo-mobile-eyebrow">A Note to the Reader</p>
     <h1 class="uo-mobile-title">This Exhibit Wants a Wider Page</h1>
     <p class="uo-mobile-body">
-      The interactive treemap of the damned and the Underworld
-      Labor&#8209;Market slide deck are drawn for the broad desk of a
-      laptop or desktop display.
+      Its charts are built for a laptop or desktop screen.
     </p>
     <p class="uo-mobile-note">
-      Return upon a larger screen to walk the full exhibit.
+      Return on a larger display to see it whole.
     </p>
   </div>
 </div>
