@@ -64,12 +64,12 @@ include '../../includes/header.php';
       aria-hidden="true"
     />
     <p class="uo-mobile-eyebrow">A Note to the Reader</p>
-    <h1 class="uo-mobile-title">This Exhibit Wants a Wider Page</h1>
+    <h1 class="uo-mobile-title">Your Screen Is Too Small for This Exhibit</h1>
     <p class="uo-mobile-body">
-      Its charts are built for a laptop or desktop screen.
+      These interactive visualizations were built for a larger display.
     </p>
     <p class="uo-mobile-note">
-      Return on a larger display to see it whole.
+      Come back on a desktop or laptop to see it whole.
     </p>
   </div>
 </div>
