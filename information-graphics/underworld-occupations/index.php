@@ -30,11 +30,53 @@ include '../../includes/header.php';
   href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
   rel="stylesheet"
 />
-<link rel="stylesheet" href="underworld-occupations.css?v=6ec9b0ba" />
+<link rel="stylesheet" href="underworld-occupations.css?v=be8afbb3" />
 
 <!-- Main Content -->
 <div class="main-wrapper">
 <div class="content-frame">
+
+<!--
+  Mobile visitors are shown a themed "return on a wider screen" notice
+  instead of the interactive exhibit. The treemap dashboard and the
+  Underworld Labor-Market slide deck are both authored for a desktop-width
+  viewport and don't reflow to a phone — mirroring how the Onomatopoeia
+  Machine turns away small screens.
+
+  The panel borrows the slide deck's title-card chrome — parchment ground,
+  sepia L-bracket corners, and rubric ❦ fleurons — so the turn-away still
+  reads as part of the exhibit rather than a generic error. Hidden on
+  desktop; revealed (and .uo-desktop-only hidden) under the same 768px
+  breakpoint the rest of the site treats as mobile. See
+  underworld-occupations.css → "MOBILE — EXHIBIT UNAVAILABLE".
+-->
+<div class="uo-mobile-unavailable" role="alert">
+  <div class="uo-mobile-card">
+    <div class="uo-mobile-frame" aria-hidden="true"></div>
+    <span class="uo-mobile-fleuron uo-mobile-fleuron--tl" aria-hidden="true">&#10086;</span>
+    <span class="uo-mobile-fleuron uo-mobile-fleuron--tr" aria-hidden="true">&#10086;</span>
+    <span class="uo-mobile-fleuron uo-mobile-fleuron--bl" aria-hidden="true">&#10086;</span>
+    <span class="uo-mobile-fleuron uo-mobile-fleuron--br" aria-hidden="true">&#10086;</span>
+    <img
+      class="uo-mobile-image"
+      src="../assets/rabelais-clips/legs-ascending-from-underworld.svg"
+      alt=""
+      aria-hidden="true"
+    />
+    <p class="uo-mobile-eyebrow">A Note to the Reader</p>
+    <h1 class="uo-mobile-title">This Exhibit Wants a Wider Page</h1>
+    <p class="uo-mobile-body">
+      The interactive treemap of the damned and the Underworld
+      Labor&#8209;Market slide deck are drawn for the broad desk of a
+      laptop or desktop display.
+    </p>
+    <p class="uo-mobile-note">
+      Return upon a larger screen to walk the full exhibit.
+    </p>
+  </div>
+</div>
+
+<div class="uo-desktop-only">
 
 <?php
 // Helper: pull the <body>…</body> content from a standalone HTML file,
@@ -103,6 +145,8 @@ $pageBody = str_replace(
 
 echo $pageBody;
 ?>
+
+</div><!-- /.uo-desktop-only -->
 
 </div>
 </div>
