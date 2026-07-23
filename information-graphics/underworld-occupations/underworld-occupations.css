@@ -1850,7 +1850,7 @@ body {
    authored for a desktop-width viewport and do not reflow to a phone.
    Below the site's 768px mobile breakpoint we hide the interactive
    exhibit (.uo-desktop-only) and show a themed notice instead — the
-   parchment card, sepia L-bracket corners, and rubric ❦ fleurons echo
+   parchment card and sepia L-bracket corners echo
    the slide deck's title card so the turn-away stays in character.
    Markup lives in information-graphics/underworld-occupations/index.php. */
 
@@ -1936,21 +1936,6 @@ body {
       bottom left, bottom left,
       bottom right, bottom right;
   }
-
-  /* Rubric ❦ fleurons pinned just inside each corner bracket. */
-  .uo-mobile-fleuron {
-    position: absolute;
-    z-index: 1;
-    font-family: "Cormorant Garamond", Georgia, serif;
-    font-size: 16px;
-    line-height: 1;
-    color: var(--color-rubrication);
-    pointer-events: none;
-  }
-  .uo-mobile-fleuron--tl { top: 10px; left: 10px; }
-  .uo-mobile-fleuron--tr { top: 10px; right: 10px; }
-  .uo-mobile-fleuron--bl { bottom: 10px; left: 10px; }
-  .uo-mobile-fleuron--br { bottom: 10px; right: 10px; }
 
   /* A Rabelais woodcut clip (the wine-bearing demon emblem) — one of
      the underworld figures, chosen to be distinct from the slide deck's

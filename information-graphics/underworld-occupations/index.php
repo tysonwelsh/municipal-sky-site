@@ -43,8 +43,8 @@ include '../../includes/header.php';
   viewport and don't reflow to a phone — mirroring how the Onomatopoeia
   Machine turns away small screens.
 
-  The panel borrows the slide deck's title-card chrome — parchment ground,
-  sepia L-bracket corners, and rubric ❦ fleurons — so the turn-away still
+  The panel borrows the slide deck's title-card chrome — parchment ground
+  and sepia L-bracket corners — so the turn-away still
   reads as part of the exhibit rather than a generic error. Hidden on
   desktop; revealed (and .uo-desktop-only hidden) under the same 768px
   breakpoint the rest of the site treats as mobile. See
@@ -53,10 +53,6 @@ include '../../includes/header.php';
 <div class="uo-mobile-unavailable" role="alert">
   <div class="uo-mobile-card">
     <div class="uo-mobile-frame" aria-hidden="true"></div>
-    <span class="uo-mobile-fleuron uo-mobile-fleuron--tl" aria-hidden="true">&#10086;</span>
-    <span class="uo-mobile-fleuron uo-mobile-fleuron--tr" aria-hidden="true">&#10086;</span>
-    <span class="uo-mobile-fleuron uo-mobile-fleuron--bl" aria-hidden="true">&#10086;</span>
-    <span class="uo-mobile-fleuron uo-mobile-fleuron--br" aria-hidden="true">&#10086;</span>
     <img
       class="uo-mobile-image"
       src="../assets/rabelais-clips/demon-wine-ornament-owl.svg"
