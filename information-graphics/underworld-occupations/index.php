@@ -63,9 +63,7 @@ include '../../includes/header.php';
     <h1 class="uo-mobile-title">Your Screen Is Too Small for This Exhibit</h1>
     <p class="uo-mobile-body">
       These interactive visualizations were built for a larger display.
-    </p>
-    <p class="uo-mobile-note">
-      Come back on a desktop or laptop to see it whole.
+      Please come back on a desktop or laptop.
     </p>
   </div>
 </div>
