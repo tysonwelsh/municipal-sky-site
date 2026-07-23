@@ -8,13 +8,15 @@
 //    alternating outward), each with the paper-colored mouth near its foot.
 //    Fed by an AnalyserNode on the master bus; at rest it settles into the
 //    quiet stepped skyline of the hymnbook cover.
-//  · THE PAGE — a scrolling engraving. Melodic notes print as 4-shape
-//    SHAPE-NOTE heads (fa △, sol ○, la ▭, mi ◇) in green ink on a REAL diatonic
-//    staff: each head snaps to the line or space of its scale-degree, with
-//    ledger lines above and below, so the printed contour is the sung one (the
-//    rules themselves are CSS; the canvas holds only ink). Deeper
-//    motif generations print worn — double-struck, spread. The ink dries and
-//    pales as the page scrolls on. In the sacrament the page goes almost
+//  · THE PAGE — a scrolling engraving on a GRAND STAFF: two five-line staves
+//    joined by a brace, a treble clef and a bass clef (baked as outlines, no
+//    font needed). Melodic notes print as 4-shape SHAPE-NOTE heads (fa △, sol ○,
+//    la ▭, mi ◇) in green ink, each snapped to the line or space of its pitch —
+//    the tonic-root sits at middle C, so the choir bass fills the bass staff and
+//    the soprano the treble, with ledger lines (middle C included) for the
+//    excursions. The staves and clefs are a static layer; only the ink scrolls.
+//    Deeper motif generations print worn — double-struck, spread. The ink dries
+//    and pales as the page scrolls on. In the sacrament the page goes almost
 //    blank; ink returns with the doxology.
 //  · THE LIAHONA — a small engraved dial in a hexagonal case. One needle
 //    walks the section, a second leans with the intensity; it glints when
@@ -29,7 +31,8 @@ window.KolobViz = (function () {
   var K = window.KolobAudio;
 
   var canvas = null, ctx2d = null;
-  var page = null, pctx = null;                    // offscreen ink layer
+  var page = null, pctx = null;                    // offscreen ink layer (scrolls)
+  var staffLayer = null;                           // static: the staves + clefs
   var dial = null, dctx = null;
   var organ = null, octx = null;                   // the facade
   var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, dpr = 1;
@@ -42,6 +45,7 @@ window.KolobViz = (function () {
 
   var INK = "#1e4d3b";                             // hymnbook green
   var INK_SOFT = "rgba(30, 77, 59, 0.55)";
+  var RULE = "rgba(30, 77, 59, 0.42)";            // the printed staff rules
   var GOLD = "#8a7a45";                            // a restrained gilt for the dial
   var PIPE = "#17201a";                            // the black of the facade
   var PAPER = "#f5f0e4";                           // cream, for the pipe mouths
@@ -190,11 +194,16 @@ window.KolobViz = (function () {
     }
     return { deg: best, oct: oct, n: ratios.length };
   }
-  // The five printed rules are a REAL diatonic staff: a note snaps to a line or
-  // space by its scale-degree letter, one diatonic step = half a staff-space.
+  // ==========================================================================
+  // THE GRAND STAFF — two five-line staves joined by a brace.
+  // q is a diatonic-step lattice spanning BOTH staves: bass rules at
+  // q=0,2,4,6,8; the middle-C gap (q=10, a shared ledger, undrawn); treble
+  // rules at q=12,14,16,18,20. The tonic-root (~middle C, F0·4) is anchored at
+  // q=10, so the melody rides the gap and lower treble, the choir bass fills the
+  // bass staff, and high doublings the upper treble — the ~4-octave range that
+  // used to pile onto ledger lines now sits on its proper staff.
   // STAFFPOS gives the diatonic letter (0..6) of each collection degree, so the
-  // gapped folk scales (penta/hexa) simply leave their missing letters empty —
-  // as a shape-note tunebook would.
+  // gapped folk scales (penta/hexa) simply leave their missing letters empty.
   var STAFFPOS = {
     ionian:     [0, 1, 2, 3, 4, 5, 6],
     mixolydian: [0, 1, 2, 3, 4, 5, 6],
@@ -203,32 +212,53 @@ window.KolobViz = (function () {
     penta:      [0, 1, 2, 4, 5],
     hexa:       [0, 1, 2, 3, 4, 5],
   };
-  // The staff window, measured in diatonic steps p (p=0 is the bottom rule, p=8
-  // the top rule). Two octaves are allowed — from 3 steps below the staff to 3
-  // above — so the melody rides the rules with at most a couple of ledger lines.
-  // Only the rarer-than-two-octave extremes (a deep bass, an octave doubling up
-  // top) fold back in by whole octaves: the letter (hence the shape) survives,
-  // just the register wraps, the way a small staff quietly gathers stray voices.
-  var STAFF_LO = -3, STAFF_HI = 11;
-  // Geometry MIRRORS kolob.css .kolob-viz-wrap: bottom rule at 76% of the strip,
-  // 6% of the strip per diatonic step (so rule-to-rule = 12%). Keep these in sync
-  // with the CSS background-position percentages.
-  var STAFF_BOT = 0.76, STAFF_STEP = 0.06;
-  function staffP(freq) {
+  var Q_MID = 10;                                  // middle C / the meeting's tonic-root
+  var BASS_RULES = [0, 2, 4, 6, 8], TREBLE_RULES = [12, 14, 16, 18, 20];
+  var STAFF_LO = -4, STAFF_HI = 24;                // fold only beyond ~4 octaves
+  // Vertical lattice: q0..q20 fill the central 70% of the strip; 15% of clear
+  // paper above and below carries the ledger lines.
+  function stepFrac() { return 0.70 / 20; }        // fraction of H per diatonic step
+  function stepPx() { return H * stepFrac(); }
+  function yOfQ(q) { return H * (0.85 - stepFrac() * q); }   // q0 at 85%, q20 at 15%
+  function staffQ(freq) {
     var d = degOf(freq);
     var letters = STAFFPOS[cond.mode] || STAFFPOS.ionian;
     var pos = letters[d.deg];
     if (pos == null) pos = d.deg;
-    var p = pos + 7 * d.oct;                        // diatonic letter from the tonic-root
-    while (p < STAFF_LO) p += 7;                    // fold only the >2-octave extremes
-    while (p > STAFF_HI) p -= 7;
-    return p;
+    var q = Q_MID + pos + 7 * d.oct;               // diatonic letter from the tonic-root
+    while (q < STAFF_LO) q += 7;                    // fold only the rare >4-octave extremes
+    while (q > STAFF_HI) q -= 7;
+    return q;
   }
-  function yOfP(p) { return H * (STAFF_BOT - p * STAFF_STEP); }
+  // ledger positions for a note at q: middle C in the gap, plus each staff line
+  // the note has climbed beyond its own staff (never on the drawn rules).
+  function ledgersForQ(q) {
+    var out = [], l;
+    if (q === Q_MID) out.push(Q_MID);
+    for (l = 22; l <= q; l += 2) out.push(l);      // above the treble staff
+    for (l = -2; l >= q; l -= 2) out.push(l);      // below the bass staff
+    return out;
+  }
+
+  // The two clefs, baked as self-contained outlines (traced from a serif music
+  // glyph) so they render identically for every visitor — no font dependency.
+  // Coordinates are font units (y-up, 1000 upm); drawClef flips and scales them.
+  var CLEF_TREBLE = { bbox: [120, -291, 542, 900], d: "M434 2Q464 -103 464 -170Q464 -223 427.0 -257.0Q390 -291 337 -291Q287 -291 250.0 -261.5Q213 -232 213 -190Q213 -160 233.5 -133.5Q254 -107 283.5 -107.0Q313 -107 331.5 -128.5Q350 -150 350 -178Q350 -240 280 -240Q298 -268 338 -268Q353 -268 368.5 -263.5Q384 -259 401.0 -248.0Q418 -237 428.5 -213.5Q439 -190 439 -157Q439 -136 411 -6Q389 -12 356 -12Q259 -12 189.5 60.0Q120 132 120 232Q120 267 131.5 303.0Q143 339 157.5 366.5Q172 394 200.5 428.5Q229 463 248.5 483.5Q268 504 303 539Q280 621 280 689Q280 779 313.0 839.5Q346 900 379 900Q389 900 401.5 887.0Q414 874 426.0 851.0Q438 828 446.5 790.5Q455 753 455 710Q455 551 342 447L368 329Q384 332 397 332Q458 332 500.0 282.5Q542 233 542 162Q542 44 434 2ZM426 746Q426 801 394 801Q358 801 333.0 748.0Q308 695 308 630Q308 588 321 557Q359 580 392.5 639.5Q426 699 426 746ZM498 128Q498 183 466.0 216.0Q434 249 383 249L428 23Q498 52 498 128ZM407 17 361 247Q334 241 311.5 214.0Q289 187 289 158Q289 143 295.0 128.5Q301 114 309.5 104.0Q318 94 327.0 86.0Q336 78 342.0 74.5Q348 71 348 71L340 66Q307 75 277.5 106.0Q248 137 248 184Q248 231 277.5 270.5Q307 310 343 323L325 430Q168 299 168 177Q168 104 223.0 55.0Q278 6 348 6Q365 6 407 17Z" };
+  var CLEF_BASS   = { bbox: [75, 166, 607, 757],   d: "M564 704Q582 704 594.5 691.0Q607 678 607.0 661.0Q607 644 593.0 631.0Q579 618 563 618Q521 618 521 663Q521 681 534.0 692.5Q547 704 564 704ZM607 469Q607 450 594.0 437.0Q581 424 564 424Q521 424 521 469Q521 485 533.5 498.0Q546 511 564.0 511.0Q582 511 594.5 497.0Q607 483 607 469ZM285 757Q366 757 421.0 701.5Q476 646 476 569Q476 531 465.5 495.0Q455 459 432.0 426.5Q409 394 386.0 367.0Q363 340 326.0 313.0Q289 286 264.0 267.5Q239 249 196.5 226.0Q154 203 135.5 193.5Q117 184 80 166L75 182Q76 183 102.0 200.0Q128 217 144.0 227.5Q160 238 191.5 263.0Q223 288 244.0 309.5Q265 331 291.5 363.5Q318 396 334.0 427.0Q350 458 361.5 498.0Q373 538 373 578Q373 735 262 735Q225 735 199.0 725.5Q173 716 161.5 702.0Q150 688 145.0 677.5Q140 667 140 659Q140 644 160 644Q168 644 179.0 647.5Q190 651 194 651Q221 651 239.0 634.0Q257 617 257 592Q257 563 235.0 544.0Q213 525 183 525Q144 525 119.0 548.0Q94 571 94 607Q94 673 150.5 715.0Q207 757 285 757Z" };
+  var trebPath = null, bassPath = null;            // Path2D, built on first resize
+  function drawClef(c, clef, path, leftX, targetTop, targetH) {
+    var bb = clef.bbox, gh = bb[3] - bb[1], s = targetH / gh;
+    c.save();
+    c.translate(leftX - bb[0] * s, targetTop + bb[3] * s);
+    c.scale(s, -s);                                // font units are y-up
+    c.fillStyle = INK;
+    c.fill(path);
+    c.restore();
+  }
 
   // ---- note intake -----------------------------------------------------------
   var pending = [];                                // notes waiting for their startTime
-  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, ambient: 0 };
+  var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, ambient: 0 };
   function onNote(n) {
     if (!n || !n.freq || n.freq < 20) return;
     if (!MELODIC[n.layer]) return;
@@ -266,26 +296,31 @@ window.KolobViz = (function () {
       c.ellipse(x, y, s, s * 0.72, -0.22, 0, Math.PI * 2);
     }
   }
-  // the short strokes that carry a note above or below the five printed rules —
-  // drawn only for the outermost octave-edges, one per line the note has climbed
-  function drawLedgers(x, p, s, alpha) {
+  // the short strokes that carry a note above/below its staff — middle C in the
+  // gap, and one per staff line the note has climbed past the treble/bass edge
+  function drawLedgers(x, q, s, alpha) {
+    var ls = ledgersForQ(q);
+    if (!ls.length) return;
     pctx.save();
     pctx.globalAlpha = alpha * 0.72;
     pctx.strokeStyle = INK;
     pctx.lineWidth = 1;
-    var half = s * 2.0, lp, ly;
-    if (p > 8) for (lp = 10; lp <= p; lp += 2) { ly = yOfP(lp); pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke(); }
-    if (p < 0) for (lp = -2; lp >= p; lp -= 2) { ly = yOfP(lp); pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke(); }
+    var half = s * 2.0;
+    for (var i = 0; i < ls.length; i++) {
+      var ly = yOfQ(ls[i]);
+      pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke();
+    }
     pctx.restore();
   }
   function printNote(n) {
     var d = degOf(n.freq);
     var shapes = SHAPES[cond.mode] || SHAPES.ionian;
     var shape = shapes[d.deg] || "sol";
-    var p = staffP(n.freq);                        // the diatonic line/space
+    var q = staffQ(n.freq);                        // the grand-staff line/space
     var x = W - 26;
-    var y = yOfP(p);
-    var s = n.layer === "clarinet" ? 6.5 : n.layer === "bagpipe" ? 7 : n.layer === "bells" ? 4.5 : 5.5;
+    var y = yOfQ(q);
+    var sp = stepPx();
+    var s = sp * (n.layer === "clarinet" ? 0.85 : n.layer === "bagpipe" ? 0.92 : n.layer === "bells" ? 0.6 : 0.74);
     var filled = (n.duration || 1) < 1.6;          // long notes print hollow
     var alpha = n.layer === "choir" ? 0.68 : n.layer === "harmonium" ? 0.45 : n.layer === "bells" ? 0.72 : 0.95;
     var wear = Math.min(0.5, curGen * 0.07);       // engraving wear: deep descendants double-strike
@@ -296,7 +331,7 @@ window.KolobViz = (function () {
     pctx.fillStyle = INK;
     pctx.lineWidth = 1.2;
     pctx.globalAlpha = alpha;
-    if (p < 0 || p > 8) drawLedgers(x, p, s, alpha);
+    drawLedgers(x, q, s, alpha);
     if (wear > 0.06) {                             // the worn plate: a pale offset strike
       pctx.save();
       pctx.globalAlpha = alpha * wear;
@@ -306,14 +341,54 @@ window.KolobViz = (function () {
     }
     shapePath(pctx, shape, x, y, s);
     if (filled) pctx.fill(); else pctx.stroke();
-    // the stem — flips at the middle rule (p=4) the way engraved notation does,
-    // so high notes hang their stems down and nothing shoots off the strip
+    // the stem points away from the middle line of the note's own staff
+    // (treble middle = q16, bass middle = q4), the way engraved notation sets it
+    var pivot = q >= Q_MID ? 16 : 4;
+    var stemLen = 2.2 * sp;
     pctx.globalAlpha = alpha * 0.8;
     pctx.beginPath();
-    if (p > 4) { pctx.moveTo(x - s, y + 1); pctx.lineTo(x - s, y + 16); }
-    else { pctx.moveTo(x + s, y - 1); pctx.lineTo(x + s, y - 16); }
+    if (q < pivot) { pctx.moveTo(x + s, y - 1); pctx.lineTo(x + s, y - stemLen); }
+    else { pctx.moveTo(x - s, y + 1); pctx.lineTo(x - s, y + stemLen); }
     pctx.stroke();
     pctx.restore();
+  }
+  // ---- the static staff layer: two staves, a brace, and the two clefs --------
+  // Drawn once per resize onto its own canvas, then composited under the
+  // scrolling ink each frame (so the rules and clefs hold still while notes
+  // travel).
+  function buildStaffLayer(c) {
+    c.clearRect(0, 0, W, H);
+    var xL = 22, xR = W;                            // rules run from the barline to the right edge
+    var sp = stepPx(), staffH = 8 * sp;
+    // the ten rules
+    c.strokeStyle = RULE; c.lineWidth = 1;
+    var rules = BASS_RULES.concat(TREBLE_RULES);
+    for (var i = 0; i < rules.length; i++) {
+      var yy = yOfQ(rules[i]) + 0.5;
+      c.beginPath(); c.moveTo(xL, yy); c.lineTo(xR, yy); c.stroke();
+    }
+    // the left barline joining the staves through the gap
+    c.strokeStyle = INK_SOFT; c.lineWidth = 1.2;
+    c.beginPath(); c.moveTo(xL + 0.5, yOfQ(20)); c.lineTo(xL + 0.5, yOfQ(0)); c.stroke();
+    // the brace
+    var bx = 12, yt = yOfQ(20), yb = yOfQ(0), mid = (yt + yb) / 2;
+    c.strokeStyle = INK; c.lineWidth = 1.6; c.lineCap = "round";
+    c.beginPath();
+    c.moveTo(bx + 6, yt);
+    c.quadraticCurveTo(bx - 3, yt, bx + 1, (yt + mid) / 2);
+    c.quadraticCurveTo(bx + 5, mid - 3, bx - 4, mid);
+    c.quadraticCurveTo(bx + 5, mid + 3, bx + 1, (yb + mid) / 2);
+    c.quadraticCurveTo(bx - 3, yb, bx + 6, yb);
+    c.stroke();
+    // the two clefs — treble curl on the G line (q14), bass dots on the F line (q6)
+    if (!trebPath && typeof Path2D === "function") {
+      trebPath = new Path2D(CLEF_TREBLE.d);
+      bassPath = new Path2D(CLEF_BASS.d);
+    }
+    if (trebPath) {
+      drawClef(c, CLEF_TREBLE, trebPath, 30, yOfQ(20) - 1.0 * sp, 1.5 * staffH);
+      drawClef(c, CLEF_BASS,   bassPath, 30, yOfQ(8) + 0.2 * sp, 0.95 * staffH);
+    }
   }
   function stampFuging() {
     if (!pctx) return;
@@ -366,8 +441,9 @@ window.KolobViz = (function () {
       }
     }
 
-    // composite to screen
+    // composite to screen: the static staves + clefs under the scrolling ink
     ctx2d.clearRect(0, 0, W, H);
+    if (staffLayer) ctx2d.drawImage(staffLayer, 0, 0, W, H);
     ctx2d.drawImage(page, 0, 0);
 
     drawOrgan(dt);
@@ -460,6 +536,12 @@ window.KolobViz = (function () {
     page.width = W; page.height = H;
     pctx = page.getContext("2d");
     if (old) pctx.drawImage(old, 0, 0, W, H);
+    // rebuild the static staff layer (staves, brace, clefs) at device resolution
+    staffLayer = document.createElement("canvas");
+    staffLayer.width = W * dpr; staffLayer.height = H * dpr;
+    var sctx = staffLayer.getContext("2d");
+    sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildStaffLayer(sctx);
     if (dial) {
       var dr = dial.getBoundingClientRect();
       DW = Math.max(40, Math.round(dr.width));

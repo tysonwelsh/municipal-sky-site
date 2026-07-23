@@ -1964,7 +1964,14 @@ window.KolobAudio = (function () {
     }
     for (var i2 = 0; i2 < harmonized.length; i2++) {
       var at = t; for (var k = 0; k < i2; k++) at += harmonized[k].dur * beat;
-      emitNote("choir", harmonized[i2].chord.freqs[3], at, harmonized[i2].dur * beat);
+      var ch2 = harmonized[i2].chord, dur2 = harmonized[i2].dur * beat;
+      // report EVERY singing voice to the visualizer (not just the soprano), so
+      // the grand staff shows the full four-part harmony — the bass voice fills
+      // the bass staff, the soprano the treble. emitNote is view-only; the sound
+      // is unchanged (the voices already sang above).
+      for (var vv = 0; vv < vis.length; vv++) {
+        emitNote("choir", ch2.freqs[VI_TO_CHORDPOS[vis[vv]]], at, dur2);
+      }
     }
     return total;
   }
@@ -2019,9 +2026,10 @@ window.KolobAudio = (function () {
         var vis = activeVoices();
         for (var v = 0; v < vis.length; v++) {
           var vi = vis[v];
-          choirVoiceLine(lineStart + ci * cd, [{ f: cadChords[ci].freqs[VI_TO_CHORDPOS[vi]], dur: cd * (ci ? 1.6 : 1.02) }], vi, 0.9);
+          var vf = cadChords[ci].freqs[VI_TO_CHORDPOS[vi]];
+          choirVoiceLine(lineStart + ci * cd, [{ f: vf, dur: cd * (ci ? 1.6 : 1.02) }], vi, 0.9);
+          emitNote("choir", vf, lineStart + ci * cd, cd);       // print every voice of the amen
         }
-        emitNote("choir", cadChords[ci].freqs[3], lineStart + ci * cd, cd);
       }
       sungTotal += cd * 2 + 1;
     }
