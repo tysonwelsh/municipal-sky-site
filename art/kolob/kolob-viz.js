@@ -48,7 +48,10 @@ window.KolobViz = (function () {
   // Band k is seated the way real pipes are racked: the gravest pipe in the
   // middle, then alternating left/right outward, so the facade breathes from
   // its center. An AnalyserNode taps the master bus once audio exists.
-  var NPIPES = 27;
+  // Kept ODD so the seating below places the gravest pipe dead-center and pairs
+  // the rest symmetrically outward; fewer pipes also widen `step`, so the bars
+  // and the gaps between them both grow with the count.
+  var NPIPES = 21;
   var analyser = null, freqData = null, bandBins = null;
   var bands = [], seatOf = [];
   (function () {
