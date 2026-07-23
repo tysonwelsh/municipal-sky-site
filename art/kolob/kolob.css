@@ -224,16 +224,19 @@
    is short — no dead cream above or below the staff */
 .kolob-viz-wrap {
   position: relative;
-  height: 88px;
+  height: 140px;
   margin: 0 0 1.4rem;
-  /* the printed staff: five rules, a wide margin line at left */
+  /* the printed staff: five rules seated in the middle of the strip, with clear
+     paper above and below for ledger lines. The rule percentages are mirrored
+     in kolob-viz.js (STAFF_BOT 0.76, STAFF_STEP 0.06) — keep the two in sync.
+     A wide margin line runs full height at left. */
   background:
     linear-gradient(90deg, var(--ink-faint) 0, var(--ink-faint) 1px, transparent 1px) no-repeat 14px 0 / 1px 100%,
-    linear-gradient(var(--rule), var(--rule)) no-repeat 0 10% / 100% 1px,
-    linear-gradient(var(--rule), var(--rule)) no-repeat 0 30% / 100% 1px,
-    linear-gradient(var(--rule), var(--rule)) no-repeat 0 50% / 100% 1px,
-    linear-gradient(var(--rule), var(--rule)) no-repeat 0 70% / 100% 1px,
-    linear-gradient(var(--rule), var(--rule)) no-repeat 0 90% / 100% 1px;
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 28% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 40% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 52% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 64% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 76% / 100% 1px;
 }
 .kolob-viz {
   position: absolute;
@@ -640,7 +643,7 @@
   .kolob-head-row { flex-direction: column; align-items: stretch; }
   .kolob-dial { align-self: center; }
   .kolob-organ-wrap { height: 135px; }
-  .kolob-viz-wrap { height: 74px; }
+  .kolob-viz-wrap { height: 118px; }
   .kolob-transport { flex-wrap: wrap; }
   .kolob-transport-spacer { flex-basis: 100%; height: 0; }
 }
