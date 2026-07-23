@@ -1952,8 +1952,9 @@ body {
   .uo-mobile-fleuron--bl { bottom: 10px; left: 10px; }
   .uo-mobile-fleuron--br { bottom: 10px; right: 10px; }
 
-  /* Illustration lifted from the deck's title slide, so the mobile
-     notice and the exhibit's opening frame share the same figure. */
+  /* A Rabelais woodcut clip (the wine-bearing demon emblem) — one of
+     the underworld figures, chosen to be distinct from the slide deck's
+     own title illustration. */
   .uo-mobile-image {
     position: relative;
     z-index: 1;
