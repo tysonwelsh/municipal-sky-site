@@ -9,8 +9,10 @@
 //    Fed by an AnalyserNode on the master bus; at rest it settles into the
 //    quiet stepped skyline of the hymnbook cover.
 //  · THE PAGE — a scrolling engraving. Melodic notes print as 4-shape
-//    SHAPE-NOTE heads (fa △, sol ○, la ▭, mi ◇) in green ink over the ruled
-//    paper (the rules themselves are CSS; the canvas holds only ink). Deeper
+//    SHAPE-NOTE heads (fa △, sol ○, la ▭, mi ◇) in green ink on a REAL diatonic
+//    staff: each head snaps to the line or space of its scale-degree, with
+//    ledger lines above and below, so the printed contour is the sung one (the
+//    rules themselves are CSS; the canvas holds only ink). Deeper
 //    motif generations print worn — double-struck, spread. The ink dries and
 //    pales as the page scrolls on. In the sacrament the page goes almost
 //    blank; ink returns with the doxology.
@@ -188,13 +190,41 @@ window.KolobViz = (function () {
     }
     return { deg: best, oct: oct, n: ratios.length };
   }
-  function yOf(freq) {
-    // log-pitch mapping across ~4 octaves of the meeting's world
-    var root = (cond.f0 || 65) * 2;
-    var pos = Math.log2(freq / root);              // 0..~4
-    var frac = Math.max(0, Math.min(1, pos / 4.2));
-    return H * (0.88 - frac * 0.76);
+  // The five printed rules are a REAL diatonic staff: a note snaps to a line or
+  // space by its scale-degree letter, one diatonic step = half a staff-space.
+  // STAFFPOS gives the diatonic letter (0..6) of each collection degree, so the
+  // gapped folk scales (penta/hexa) simply leave their missing letters empty —
+  // as a shape-note tunebook would.
+  var STAFFPOS = {
+    ionian:     [0, 1, 2, 3, 4, 5, 6],
+    mixolydian: [0, 1, 2, 3, 4, 5, 6],
+    dorian:     [0, 1, 2, 3, 4, 5, 6],
+    aeolian:    [0, 1, 2, 3, 4, 5, 6],
+    penta:      [0, 1, 2, 4, 5],
+    hexa:       [0, 1, 2, 3, 4, 5],
+  };
+  // The staff window, measured in diatonic steps p (p=0 is the bottom rule, p=8
+  // the top rule). Two octaves are allowed — from 3 steps below the staff to 3
+  // above — so the melody rides the rules with at most a couple of ledger lines.
+  // Only the rarer-than-two-octave extremes (a deep bass, an octave doubling up
+  // top) fold back in by whole octaves: the letter (hence the shape) survives,
+  // just the register wraps, the way a small staff quietly gathers stray voices.
+  var STAFF_LO = -3, STAFF_HI = 11;
+  // Geometry MIRRORS kolob.css .kolob-viz-wrap: bottom rule at 76% of the strip,
+  // 6% of the strip per diatonic step (so rule-to-rule = 12%). Keep these in sync
+  // with the CSS background-position percentages.
+  var STAFF_BOT = 0.76, STAFF_STEP = 0.06;
+  function staffP(freq) {
+    var d = degOf(freq);
+    var letters = STAFFPOS[cond.mode] || STAFFPOS.ionian;
+    var pos = letters[d.deg];
+    if (pos == null) pos = d.deg;
+    var p = pos + 7 * d.oct;                        // diatonic letter from the tonic-root
+    while (p < STAFF_LO) p += 7;                    // fold only the >2-octave extremes
+    while (p > STAFF_HI) p -= 7;
+    return p;
   }
+  function yOfP(p) { return H * (STAFF_BOT - p * STAFF_STEP); }
 
   // ---- note intake -----------------------------------------------------------
   var pending = [];                                // notes waiting for their startTime
@@ -236,12 +266,25 @@ window.KolobViz = (function () {
       c.ellipse(x, y, s, s * 0.72, -0.22, 0, Math.PI * 2);
     }
   }
+  // the short strokes that carry a note above or below the five printed rules —
+  // drawn only for the outermost octave-edges, one per line the note has climbed
+  function drawLedgers(x, p, s, alpha) {
+    pctx.save();
+    pctx.globalAlpha = alpha * 0.72;
+    pctx.strokeStyle = INK;
+    pctx.lineWidth = 1;
+    var half = s * 2.0, lp, ly;
+    if (p > 8) for (lp = 10; lp <= p; lp += 2) { ly = yOfP(lp); pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke(); }
+    if (p < 0) for (lp = -2; lp >= p; lp -= 2) { ly = yOfP(lp); pctx.beginPath(); pctx.moveTo(x - half, ly); pctx.lineTo(x + half, ly); pctx.stroke(); }
+    pctx.restore();
+  }
   function printNote(n) {
     var d = degOf(n.freq);
     var shapes = SHAPES[cond.mode] || SHAPES.ionian;
     var shape = shapes[d.deg] || "sol";
+    var p = staffP(n.freq);                        // the diatonic line/space
     var x = W - 26;
-    var y = yOf(n.freq);
+    var y = yOfP(p);
     var s = n.layer === "clarinet" ? 6.5 : n.layer === "bagpipe" ? 7 : n.layer === "bells" ? 4.5 : 5.5;
     var filled = (n.duration || 1) < 1.6;          // long notes print hollow
     var alpha = n.layer === "choir" ? 0.68 : n.layer === "harmonium" ? 0.45 : n.layer === "bells" ? 0.72 : 0.95;
@@ -253,6 +296,7 @@ window.KolobViz = (function () {
     pctx.fillStyle = INK;
     pctx.lineWidth = 1.2;
     pctx.globalAlpha = alpha;
+    if (p < 0 || p > 8) drawLedgers(x, p, s, alpha);
     if (wear > 0.06) {                             // the worn plate: a pale offset strike
       pctx.save();
       pctx.globalAlpha = alpha * wear;
@@ -262,11 +306,12 @@ window.KolobViz = (function () {
     }
     shapePath(pctx, shape, x, y, s);
     if (filled) pctx.fill(); else pctx.stroke();
-    // the stem
+    // the stem — flips at the middle rule (p=4) the way engraved notation does,
+    // so high notes hang their stems down and nothing shoots off the strip
     pctx.globalAlpha = alpha * 0.8;
     pctx.beginPath();
-    pctx.moveTo(x + s, y - 1);
-    pctx.lineTo(x + s, y - 16);
+    if (p > 4) { pctx.moveTo(x - s, y + 1); pctx.lineTo(x - s, y + 16); }
+    else { pctx.moveTo(x + s, y - 1); pctx.lineTo(x + s, y - 16); }
     pctx.stroke();
     pctx.restore();
   }
