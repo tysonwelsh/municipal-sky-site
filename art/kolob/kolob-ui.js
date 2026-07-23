@@ -519,7 +519,6 @@
   // ==========================================================================
   var STATIC_DS = {
     title: "𐐗𐐄𐐢𐐉𐐒",
-    subtitle: "𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓",
     ives: "𐐌𐐚𐐞",
     whole: "𐐐𐐄𐐢",
     art: "𐐂𐐡𐐓",
@@ -528,7 +527,6 @@
   };
   var STATIC_EN = {
     title: "KOLOB",
-    subtitle: "a hymn engine at the rim of the light",
     ives: "Ives",
     whole: "Whole",
     art: "art",
@@ -539,7 +537,6 @@
     var S = TT(STR, STR_EN), ST = TT(STATIC_DS, STATIC_EN);
     function setText(sel, txt) { var el = document.querySelector(sel); if (el) el.textContent = txt; }
     setText(".kolob-title", ST.title);
-    setText(".kolob-subtitle", ST.subtitle);
     setText(".kolob-order-block .kolob-sec-head", S.orderOfService);
     setText(".kolob-board-block .kolob-sec-head", S.hymnBoard);
     setText(".kolob-stops-block .kolob-sec-head", S.theStops);

@@ -39,25 +39,29 @@ include '../../includes/header.php';
  <div class="kolob-scene">
   <div class="content-frame kolob-frame">
 
-    <!-- Corner toggles: a flex row, so the buttons space themselves however
-         wide their labels render (the script toggle grows in Deseret). -->
-    <div class="kolob-toggles">
-      <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
-           (solid gilt) / natural 8% (outline) / never (struck). A cumulative
-           meeting withholds the tune until the doxology sings it whole. -->
-      <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
-      <!-- The Ives switch: while on, every meeting is guaranteed a visitation
-           (the unanswered question or the two bands). Checking it restarts the
-           meeting so the guarantee begins at once. -->
-      <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
-      <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
-      <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
-    </div>
-
-    <!-- Title page -->
+    <!-- Title page. The edition controls ride a masthead at the head of the
+         page — a ruled band in the flow, not pinned to a corner — so they read
+         as page furniture the title page was set around, then the title and
+         its double rule below. -->
     <header class="kolob-header">
+
+      <!-- The masthead: the three edition switches, right-justified on their
+           own ruled band. A flex row, so each button spaces itself however
+           wide its label renders (the script toggle grows in Deseret). -->
+      <div class="kolob-toggles">
+        <!-- The Whole switch: cycles the cumulative-form governor — guaranteed
+             (solid gilt) / natural 8% (outline) / never (struck). A cumulative
+             meeting withholds the tune until the doxology sings it whole. -->
+        <button type="button" class="kolob-latin-toggle kolob-cumulative-toggle is-deseret" id="kolob-cumulative" aria-label="the tune withheld until the doxology — about one meeting in twelve" aria-pressed="false">𐐐𐐄𐐢</button>
+        <!-- The Ives switch: while on, every meeting is guaranteed a visitation
+             (the unanswered question or the two bands). Checking it restarts the
+             meeting so the guarantee begins at once. -->
+        <button type="button" class="kolob-latin-toggle kolob-ives-toggle is-deseret" id="kolob-ives" aria-label="guarantee an Ives visitation (restarts the meeting)" aria-pressed="false">𐐌𐐚𐐞</button>
+        <!-- Dev script toggle: Deseret <-> Latin labels (development aid) -->
+        <button type="button" class="kolob-latin-toggle" id="kolob-latin" aria-label="switch to the Latin alphabet">Latin</button>
+      </div>
+
       <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
-      <p class="kolob-subtitle">𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓</p>
       <div class="kolob-rule" aria-hidden="true"></div>
     </header>
 
