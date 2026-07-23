@@ -1977,21 +1977,10 @@ body {
   .uo-mobile-body {
     position: relative;
     z-index: 1;
-    margin: 0 0 14px;
+    margin: 0;
     font-family: var(--font-family);
     font-size: 17px;
     line-height: 1.5;
     color: var(--color-text-secondary);
-  }
-
-  .uo-mobile-note {
-    position: relative;
-    z-index: 1;
-    margin: 0;
-    font-family: var(--font-family);
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.45;
-    color: var(--color-text-muted);
   }
 }
