@@ -79,15 +79,21 @@
 }
 .kolob-frame > * { position: relative; z-index: 1; }
 
-/* corner toggles — one flex row, top right; the buttons space themselves so a
-   wider label (the Deseret script name) never overlaps its neighbor */
+/* the masthead — the three edition switches on a ruled band at the head of the
+   title page. In the flow now (no longer pinned to a corner overlapping the
+   title), right-justified, with a letterpress hairline beneath that answers the
+   double rule under the title, so the controls read as page furniture the title
+   page was set around. The buttons space themselves so a wider label (the
+   Deseret script name) never overlaps its neighbor; they wrap on a narrow page. */
 .kolob-toggles {
-  position: absolute;
-  top: 0.7rem; right: 0.9rem;
-  z-index: 2;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  margin: 0 0 1.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--rule);
 }
 /* dev script toggle — deliberately faint; a development aid, not a feature */
 .kolob-latin-toggle {
@@ -175,15 +181,8 @@
   font-size: clamp(2.4rem, 7vw, 3.6rem);
   font-weight: 400;
   letter-spacing: 0.22em;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.6rem;
   color: var(--ink);
-}
-.kolob-subtitle {
-  font-family: "Noto Sans Deseret", serif;
-  font-size: 0.95rem;
-  letter-spacing: 0.14em;
-  color: var(--ink-soft);
-  margin: 0 0 1.4rem;
 }
 /* the double letterpress rule with a small star */
 .kolob-rule {
