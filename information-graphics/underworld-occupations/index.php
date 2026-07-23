@@ -59,7 +59,7 @@ include '../../includes/header.php';
     <span class="uo-mobile-fleuron uo-mobile-fleuron--br" aria-hidden="true">&#10086;</span>
     <img
       class="uo-mobile-image"
-      src="../assets/rabelais-clips/legs-ascending-from-underworld.svg"
+      src="../assets/rabelais-clips/demon-wine-ornament-owl.svg"
       alt=""
       aria-hidden="true"
     />
