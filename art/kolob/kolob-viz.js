@@ -260,9 +260,17 @@ window.KolobViz = (function () {
 
   // ---- note intake -----------------------------------------------------------
   var pending = [];                                // notes waiting for their startTime
+  var pendingTelegraph = [];                        // telegraph runs waiting to stamp
   var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, ambient: 0 };
   function onNote(n) {
-    if (!n || !n.freq || n.freq < 20) return;
+    if (!n) return;
+    // the wire is not a voice: it carries a Morse run to lay down as tape
+    if (n.layer === "telegraph" && n.marks && n.marks.length) {
+      if (pendingTelegraph.length > 20) pendingTelegraph.shift();
+      pendingTelegraph.push(n);
+      return;
+    }
+    if (!n.freq || n.freq < 20) return;
     if (!MELODIC[n.layer]) return;
     if (pending.length > 240) pending.shift();
     pending.push(n);
@@ -352,6 +360,43 @@ window.KolobViz = (function () {
     if (q < pivot) { pctx.moveTo(x + s, y - 1); pctx.lineTo(x + s, y - stemLen); }
     else { pctx.moveTo(x - s, y + 1); pctx.lineTo(x - s, y + stemLen); }
     pctx.stroke();
+    pctx.restore();
+  }
+  // ---- the wire's Morse, as telegraph tape -----------------------------------
+  // The telegraph is not a voice, so it is not engraved as note-heads. Its run
+  // of dits (dots) and dahs (short bars) is laid on a faint wire through the
+  // middle of the grand staff — the way a telegraph register inked a paper tape.
+  // The taps are far too quick to space out by scroll time, so the whole run is
+  // stamped at once, then travels and fades with the rest of the ink.
+  function stampTelegraph(n) {
+    if (!pctx || !n.marks || !n.marks.length) return;
+    var sp = stepPx();
+    var rd = Math.max(1.4, sp * 0.26);             // dit radius
+    var dahLen = sp * 1.7, dahThick = Math.max(2, sp * 0.44);
+    var gap = sp * 0.72, lgap = sp * 1.5;          // unit gap, letter gap
+    var y = yOfQ(Q_MID);                           // the middle-C line, dead centre
+    var xR = W - 26, i, total = 0;
+    for (i = 0; i < n.marks.length; i++) {
+      total += (n.marks[i].dah ? dahLen : 2 * rd) + gap + (n.marks[i].space ? lgap : 0);
+    }
+    total -= gap;                                  // no trailing gap
+    var x = xR - total;
+    pctx.save();
+    pctx.translate(0.5, 0.5);
+    // the wire
+    pctx.globalAlpha = 0.3;
+    pctx.strokeStyle = INK;
+    pctx.lineWidth = 1;
+    pctx.beginPath(); pctx.moveTo(x - rd, y); pctx.lineTo(xR, y); pctx.stroke();
+    // the marks
+    pctx.fillStyle = INK;
+    pctx.globalAlpha = 0.72;
+    for (i = 0; i < n.marks.length; i++) {
+      var m = n.marks[i];
+      if (m.dah) { pctx.fillRect(x, y - dahThick / 2, dahLen, dahThick); x += dahLen; }
+      else { pctx.beginPath(); pctx.arc(x + rd, y, rd, 0, Math.PI * 2); pctx.fill(); x += 2 * rd; }
+      x += gap + (m.space ? lgap : 0);
+    }
     pctx.restore();
   }
   // ---- the static staff layer: two staves, a brace, and the two clefs --------
@@ -451,6 +496,13 @@ window.KolobViz = (function () {
           if (pending[i].startTime > now - 2) printNote(pending[i]);
           pending.splice(i, 1);
         } else i++;
+      }
+      var j = 0;
+      while (j < pendingTelegraph.length) {
+        if (pendingTelegraph[j].startTime <= now + 0.03) {
+          if (pendingTelegraph[j].startTime > now - 3) stampTelegraph(pendingTelegraph[j]);
+          pendingTelegraph.splice(j, 1);
+        } else j++;
       }
     }
 
