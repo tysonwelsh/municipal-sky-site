@@ -386,8 +386,12 @@ window.KolobViz = (function () {
       bassPath = new Path2D(CLEF_BASS.d);
     }
     if (trebPath) {
-      drawClef(c, CLEF_TREBLE, trebPath, 30, yOfQ(20) - 1.0 * sp, 1.5 * staffH);
-      drawClef(c, CLEF_BASS,   bassPath, 30, yOfQ(8) + 0.2 * sp, 0.95 * staffH);
+      // Seat each clef by its reference line so size can change without shifting
+      // the seating: the treble curl (0.58 down its glyph) rides the G line
+      // (q14); the bass dots (0.24 down) straddle the F line (q6).
+      var trebH = 1.28 * staffH, bassH = 0.80 * staffH;
+      drawClef(c, CLEF_TREBLE, trebPath, 30, yOfQ(14) - 0.583 * trebH, trebH);
+      drawClef(c, CLEF_BASS,   bassPath, 30, yOfQ(6)  - 0.237 * bassH, bassH);
     }
   }
   function stampFuging() {
