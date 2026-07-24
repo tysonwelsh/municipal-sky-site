@@ -373,13 +373,15 @@ window.KolobViz = (function () {
     var sp = stepPx();
     var rd = Math.max(1.4, sp * 0.26);             // dit radius
     var dahLen = sp * 1.7, dahThick = Math.max(2, sp * 0.44);
-    var gap = sp * 0.72, lgap = sp * 1.5;          // unit gap, letter gap
+    // the gap AFTER each mark tells the tape how to group: tight within a letter,
+    // wider between letters, wider still between words (matches the keyed timing)
+    var gi = sp * 0.5, gl = sp * 1.5, gw = sp * 2.8;
+    function gapW(g) { return g === "w" ? gw : g === "l" ? gl : g === "e" ? 0 : gi; }
     var y = yOfQ(Q_MID);                           // the middle-C line, dead centre
     var xR = W - 26, i, total = 0;
     for (i = 0; i < n.marks.length; i++) {
-      total += (n.marks[i].dah ? dahLen : 2 * rd) + gap + (n.marks[i].space ? lgap : 0);
+      total += (n.marks[i].dah ? dahLen : 2 * rd) + gapW(n.marks[i].gap);
     }
-    total -= gap;                                  // no trailing gap
     var x = xR - total;
     pctx.save();
     pctx.translate(0.5, 0.5);
@@ -395,7 +397,7 @@ window.KolobViz = (function () {
       var m = n.marks[i];
       if (m.dah) { pctx.fillRect(x, y - dahThick / 2, dahLen, dahThick); x += dahLen; }
       else { pctx.beginPath(); pctx.arc(x + rd, y, rd, 0, Math.PI * 2); pctx.fill(); x += 2 * rd; }
-      x += gap + (m.space ? lgap : 0);
+      x += gapW(m.gap);
     }
     pctx.restore();
   }
