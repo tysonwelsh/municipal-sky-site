@@ -631,20 +631,34 @@
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
   #kolob-layers { grid-template-columns: 1fr; }
-  /* the running head stays beside the Liahona dial, but its items stack into a
-     vertical list (dial to the right of the column) instead of a wrapping run */
-  .kolob-head-row { align-items: center; gap: 0.9rem; }
+  /* the running head + transport collapse into ONE row: the telemetry stacks
+     into a vertical list, the Liahona dial sits to its right, and the play/stop/
+     volume controls form a column to the right of the dial. */
+  .kolob-console { display: flex; align-items: flex-start; gap: 0.7rem; }
+  .kolob-head-row { align-items: center; gap: 0.6rem; margin: 0; flex: 0 0 auto; }
   .kolob-telemetry {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.12rem;
     line-height: 1.5;
+    flex: 0 0 auto;
   }
   .kolob-telemetry .t-sep { display: none; }
-  .kolob-dial { flex: 0 0 auto; }
+  .kolob-dial { flex: 0 0 auto; width: 64px; height: 64px; }
+  /* the transport becomes the right-hand column */
+  .kolob-transport {
+    flex: 1;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    margin: 0;
+  }
+  .kolob-transport-spacer { display: none; }
+  .kolob-transport .kolob-btn { padding: 0.5rem 0.6rem; text-align: center; }
+  .kolob-transport .kolob-ctl-label { margin-top: 0.1rem; }
+  .kolob-transport .kolob-range { width: 100%; }
   .kolob-organ-wrap { height: 135px; }
   .kolob-viz-wrap { height: 184px; }
-  .kolob-transport { flex-wrap: wrap; }
-  .kolob-transport-spacer { flex-basis: 100%; height: 0; }
 }
