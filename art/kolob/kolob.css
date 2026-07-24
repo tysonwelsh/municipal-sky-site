@@ -470,8 +470,53 @@
 }
 .kolob-btn.kolob-btn-board:hover { border-color: var(--paper); background: rgba(245, 240, 228, 0.06); }
 
-/* ============================== the stops ================================ */
+/* ========================= the instruments console ====================== */
 .kolob-stops-block { margin: 0 0 2.2rem; }
+/* the section head is now a collapse toggle (a caret + the label) */
+.kolob-instruments-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.kolob-instruments-head .kolob-sec-head-label { flex: 1; text-align: left; transition: color 150ms; }
+.kolob-instruments-head:hover .kolob-sec-head-label,
+.kolob-instruments-head:focus-visible .kolob-sec-head-label { color: var(--ink); }
+/* a CSS chevron: down when open, right when collapsed */
+.kolob-collapse-caret {
+  width: 0.5em; height: 0.5em;
+  flex: 0 0 auto;
+  border-right: 1.5px solid var(--ink-soft);
+  border-bottom: 1.5px solid var(--ink-soft);
+  transform: translateY(-0.12em) rotate(45deg);
+  transition: transform 160ms;
+}
+.kolob-instruments-head[aria-expanded="false"] .kolob-collapse-caret {
+  transform: translateY(0) rotate(-45deg);
+}
+.kolob-instruments-body[hidden] { display: none; }
+/* the FIELD subheading inside the console grid */
+.kolob-field-head {
+  grid-column: 1 / -1;
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 0.7rem;
+  margin-top: 0.35rem;
+}
+/* the copy-parameters button, seated under the console */
+.kolob-copy-btn {
+  margin-top: 1.2rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  padding: 0.45rem 1rem;
+}
 #kolob-layers {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

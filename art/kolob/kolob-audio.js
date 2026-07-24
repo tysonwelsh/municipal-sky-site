@@ -160,6 +160,14 @@ window.KolobAudio = (function () {
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
+  // FIELD — the ambient layer is one bus, but each of its events (wind, crickets,
+  // …) now rides its own gain so they can be balanced individually. The event's
+  // gain × the ambient bus gives its level; defaults preserve the old sound.
+  var FIELD_KEYS = ["wind", "crickets", "clock", "fork", "rain", "coyote", "bell", "beacon"];
+  var fieldVolumes = { wind: 1, crickets: 1, clock: 1, fork: 1, rain: 1, coyote: 1, bell: 1, beacon: 1 };
+  var fieldMuted = {};
+  var fieldGains = {};                            // key -> GainNode (lazily built)
+
   var LAYER_PARAM_DEFAULTS = {
     organ:     { stops: 0.5, tremulant: 0.15, pedal: 0.6 },
     drone:     { presence: 0.5, fifth: 0.4 },
@@ -377,6 +385,25 @@ window.KolobAudio = (function () {
     if (!node) return;
     var trim = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
     node.gain.setValueAtTime(layerMuted[layer] ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
+  }
+  function applyFieldGain(key) {
+    var fg = fieldGains[key];
+    if (fg && ctx) fg.gain.setValueAtTime(fieldMuted[key] ? 0 : fieldVolumes[key], ctx.currentTime);
+  }
+  // a per-event destination on the FIELD bus: <event gain> -> ambient layer gain,
+  // so every field sound keeps the ambient routing (reverb) but its own level.
+  function fieldDest(key, pan) {
+    var fg = fieldGains[key];
+    if (!fg) {
+      fg = ctx.createGain();
+      fg.connect(layerGains.ambient);
+      fieldGains[key] = fg;
+      applyFieldGain(key);
+    }
+    var sp = ctx.createStereoPanner();
+    sp.pan.setValueAtTime(pan < -1 ? -1 : pan > 1 ? 1 : pan, ctx.currentTime);
+    sp.connect(fg);
+    return sp;
   }
   function noiseSource() {
     var n = ctx.createBufferSource();
@@ -3232,7 +3259,7 @@ window.KolobAudio = (function () {
     var f = ctx.createBiquadFilter();
     f.type = "lowpass"; f.frequency.setValueAtTime(rnd(260, 520), t);
     var g = ctx.createGain();
-    n.connect(f); f.connect(g); g.connect(panAt("ambient", rnd(-0.5, 0.5)));
+    n.connect(f); f.connect(g); g.connect(fieldDest("wind", rnd(-0.5, 0.5)));
     env(g, t, [[dur * 0.45, 0.055], [dur * 0.55, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     emitNote("ambient", 0, t, dur);
@@ -3249,7 +3276,7 @@ window.KolobAudio = (function () {
         var o = ctx.createOscillator();
         o.type = "sine"; o.frequency.setValueAtTime(f, tt + c * 0.045);
         var g = ctx.createGain();
-        o.connect(g); g.connect(panAt("ambient", 0.5));
+        o.connect(g); g.connect(fieldDest("crickets", 0.5));
         env(g, tt + c * 0.045, [[0.004, 0.016], [0.035, 0]]);
         o.start(tt + c * 0.045); o.stop(tt + c * 0.045 + 0.08);
       }
@@ -3265,7 +3292,7 @@ window.KolobAudio = (function () {
       var o = ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(i % 2 ? 430 : 480, tt);
       var g = ctx.createGain();
-      o.connect(g); g.connect(panAt("ambient", -0.55));
+      o.connect(g); g.connect(fieldDest("clock", -0.55));
       env(g, tt, [[0.002, 0.03], [0.06, 0]]);
       o.start(tt); o.stop(tt + 0.12);
     }
@@ -3278,7 +3305,7 @@ window.KolobAudio = (function () {
     var o = ctx.createOscillator();
     o.type = "sine"; o.frequency.setValueAtTime(f, t);
     var g = ctx.createGain();
-    o.connect(g); g.connect(panAt("ambient", 0));
+    o.connect(g); g.connect(fieldDest("fork", 0));
     env(g, t, [[0.01, 0.05], [rnd(6, 10), 0]]);
     o.start(t); o.stop(t + 11);
     emitNote("ambient", f, t, 8);
@@ -3292,7 +3319,7 @@ window.KolobAudio = (function () {
       var o = ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(base * ratios[i] + (i ? rnd(0.3, 1.4) : 0), t);
       var g = ctx.createGain();
-      o.connect(g); g.connect(panAt("ambient", pick([-0.6, 0.6])));
+      o.connect(g); g.connect(fieldDest("bell", pick([-0.6, 0.6])));
       env(g, t, [[0.02, 0.035 / (1 + i * 0.8)], [rnd(6, 11) / (1 + i * 0.5), 0]]);
       o.start(t); o.stop(t + 12);
     }
@@ -3309,7 +3336,7 @@ window.KolobAudio = (function () {
     var sf = ctx.createBiquadFilter();
     sf.type = "bandpass"; sf.frequency.setValueAtTime(rnd(950, 1200), t); sf.Q.setValueAtTime(14, t);
     var sg = ctx.createGain();
-    st.connect(sf); sf.connect(sg); sg.connect(panAt("ambient", side));
+    st.connect(sf); sf.connect(sg); sg.connect(fieldDest("beacon", side));
     var span = head.length * 0.5 + 1.5;
     // The beacon is quiet by design — it rides the shared ambient layer (gain
     // 0.5) and is washed into the tabernacle reverb, so it reads as far-off.
@@ -3328,7 +3355,7 @@ window.KolobAudio = (function () {
       var o = ctx.createOscillator();
       o.type = "sine"; o.frequency.setValueAtTime(f, tt);
       var g = ctx.createGain();
-      o.connect(g); g.connect(panAt("ambient", side));
+      o.connect(g); g.connect(fieldDest("beacon", side));
       env(g, tt, [[0.01, 0.15], [isDah ? 0.3 : 0.1, 0.127], [0.05, 0]]);
       o.start(tt); o.stop(tt + 0.6);
       emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
@@ -3348,7 +3375,7 @@ window.KolobAudio = (function () {
     var lg = ctx.createGain(); lg.gain.setValueAtTime(0.3, t);
     lfo.connect(lg); lg.connect(patter.gain);
     var g = ctx.createGain();
-    n.connect(f); f.connect(patter); patter.connect(g); g.connect(panAt("ambient", 0));
+    n.connect(f); f.connect(patter); patter.connect(g); g.connect(fieldDest("rain", 0));
     env(g, t, [[dur * 0.35, 0.04], [dur * 0.65, 0]]);
     n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
     lfo.start(t); lfo.stop(t + dur + 0.3);
@@ -3366,12 +3393,13 @@ window.KolobAudio = (function () {
     o.frequency.linearRampToValueAtTime(f * 1.5, t + 0.25);
     o.frequency.linearRampToValueAtTime(f, t + rnd(1.2, 1.8));
     var g = ctx.createGain();
-    o.connect(g); g.connect(panAt("ambient", pick([-0.7, 0.7])));
+    o.connect(g); g.connect(fieldDest("coyote", pick([-0.7, 0.7])));
     env(g, t, [[0.2, 0.02], [1.2, 0.014], [0.5, 0]]);
     o.start(t); o.stop(t + 2.4);
     emitNote("ambient", 0, t, 2);                              // a gliss owns no single pitch
     return "a far coyote";
   }
+  var FIELD_FNS = { wind: evWind, crickets: evCrickets, clock: evClock, fork: evTuningFork, rain: evRain, coyote: evCoyote, bell: evFarBell, beacon: evBeacon };
   function ambientEvent() {
     if (!playing) return;
     var s = C.section;
@@ -3395,14 +3423,20 @@ window.KolobAudio = (function () {
     if (!SCALE.length) rebuildScale();
     if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
     if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
+    var isField = layer.indexOf("field:") === 0;
     if (!playing && voicesBus) {
       // stopped: reopen the bus and only this layer's gain, so the audition
       // sounds alone
       voicesBus.gain.cancelScheduledValues(ctx.currentTime);
       voicesBus.gain.setValueAtTime(1, ctx.currentTime);
-      applyLayerGain(layer);
+      applyLayerGain(isField ? "ambient" : layer);   // field events ride the ambient bus
     }
     var t = ctx.currentTime + 0.08;
+    if (isField) {
+      var ffn = FIELD_FNS[layer.slice(6)];
+      if (ffn) { applyFieldGain(layer.slice(6)); ffn(t); }
+      return;
+    }
     switch (layer) {
       case "tuba": {
         // auditioning the tuba from the rail is part of the gag:
@@ -3562,6 +3596,10 @@ window.KolobAudio = (function () {
     getLayerDefaults: function () { return JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS)); },
     getLayers: function () { return LAYERS.slice(); },
     getVolumes: function () { return JSON.parse(JSON.stringify(layerVolumes)); },
+    getFieldKeys: function () { return FIELD_KEYS.slice(); },
+    getFieldVolumes: function () { return JSON.parse(JSON.stringify(fieldVolumes)); },
+    setFieldVolume: function (key, v) { fieldVolumes[key] = v; applyFieldGain(key); },
+    toggleField: function (key) { fieldMuted[key] = !fieldMuted[key]; applyFieldGain(key); return !fieldMuted[key]; },
     getSeed: function () { return seed; },
     reseed: function (s) { seed = (s >>> 0) || 1847; rngState = seed; },
     getConductor: function () {

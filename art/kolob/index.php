@@ -121,10 +121,18 @@ include '../../includes/header.php';
       </div>
     </div>
 
-    <!-- The stops -->
+    <!-- The instruments — a collapsible console with a copy-parameters button -->
     <div class="kolob-stops-block">
-      <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
-      <div id="kolob-layers"></div>
+      <button type="button" class="kolob-sec-head kolob-instruments-head" id="kolob-instruments-head" aria-expanded="true" aria-controls="kolob-instruments-body">
+        <span class="kolob-collapse-caret" aria-hidden="true"></span>
+        <span class="kolob-sec-head-label">𐐜 𐐆𐐤𐐝𐐓𐐡𐐊𐐣𐐊𐐤𐐓𐐝</span>
+      </button>
+      <div class="kolob-instruments-body" id="kolob-instruments-body">
+        <div id="kolob-layers"></div>
+        <button type="button" class="kolob-btn kolob-copy-btn" id="kolob-copy-params" aria-label="copy current volume parameters">
+          <span class="kolob-copy-label">𐐗𐐃𐐑𐐆 𐐑𐐊𐐡𐐈𐐣𐐊𐐓𐐊𐐡𐐞</span>
+        </button>
+      </div>
     </div>
 
     <!-- Clerk's minutes -->
