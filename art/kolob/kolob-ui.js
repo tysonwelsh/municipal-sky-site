@@ -60,7 +60,9 @@
     liahona: "𐐢𐐀𐐊𐐐𐐄𐐤𐐊",                // LIAHONA
     sample: "𐐝𐐈𐐣𐐑𐐊𐐢",                   // SAMPLE
     orderOfService: "𐐃𐐡𐐔𐐊𐐡 𐐊𐐚 𐐝𐐊𐐡𐐚𐐆𐐝", // ORDER OF SERVICE
-    theStops: "𐐜 𐐝𐐓𐐉𐐑𐐝",               // THE STOPS
+    theStops: "𐐜 𐐆𐐤𐐝𐐓𐐡𐐊𐐣𐐊𐐤𐐓𐐝",         // THE INSTRUMENTS
+    copyParams: "𐐗𐐃𐐑𐐆 𐐑𐐊𐐡𐐈𐐣𐐊𐐓𐐊𐐡𐐞",     // COPY PARAMETERS
+    copied: "𐐗𐐃𐐑𐐆𐐔 ✓",                   // COPIED
     minutes: "𐐗𐐢𐐊𐐡𐐗𐐝 𐐣𐐆𐐤𐐆𐐓𐐝",         // CLERK'S MINUTES
     broadside: "𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔",            // THE BROADSIDE
     hymnBoard: "𐐐𐐆𐐣 𐐒𐐄𐐡𐐔",             // HYMN BOARD
@@ -103,6 +105,9 @@
     tuba: "𐐓𐐅𐐒𐐊",                       // TUBA (raspberry amen only)
     ambient: "𐐙𐐀𐐢𐐔",                    // FIELD
   };
+  // per-event FIELD labels, keyed to the audio engine's field keys
+  var FIELD_DS = { wind: "𐐎𐐆𐐤𐐔", crickets: "𐐗𐐡𐐆𐐗𐐇𐐓𐐝", clock: "𐐗𐐢𐐉𐐗", fork: "𐐓𐐅𐐤𐐆𐐥 𐐙𐐃𐐡𐐗", rain: "𐐡𐐁𐐤", coyote: "𐐗𐐌𐐄𐐓𐐆", bell: "𐐒𐐇𐐢", beacon: "𐐒𐐀𐐗𐐊𐐤" };
+  var FIELD_EN = { wind: "WIND", crickets: "CRICKETS", clock: "CLOCK", fork: "TUNING FORK", rain: "RAIN", coyote: "COYOTE", bell: "BELL", beacon: "BEACON" };
   var AMBIENT_DS = [
     [/wind/i, "𐐎𐐆𐐤𐐔", "WIND"],
     [/cricket/i, "𐐗𐐡𐐆𐐗𐐇𐐓𐐝", "CRICKETS"],
@@ -135,7 +140,8 @@
     oldTune: "AN OLD TUNE REMEMBERED", memoryOut: "THE MEMORY GIVES OUT",
     tuneWithheld: "THE TUNE IS WITHHELD", wholeTune: "THE WHOLE TUNE, AT LAST",
     wholeFlag: "THE WHOLE TUNE",
-    orderOfService: "ORDER OF SERVICE", theStops: "THE STOPS",
+    orderOfService: "ORDER OF SERVICE", theStops: "THE INSTRUMENTS",
+    copyParams: "COPY PARAMETERS", copied: "COPIED ✓",
     minutes: "CLERK'S MINUTES", broadside: "THE BROADSIDE", hymnBoard: "HYMN BOARD",
   };
   var SECTIONS_EN = {
@@ -249,35 +255,100 @@
   // The stops (mixer) — one drawknob + one slider per layer. Nothing more.
   // The airy console: no rate sliders, no parameter drawers.
   // ==========================================================================
+  // one control row: a drawknob (mute), a name (audition), and a volume slider.
+  function mixerRow(name, label, vol, kind) {
+    // kind: "layer" or "field" — chooses which engine call the controls drive
+    return '<div class="kolob-stop">' +
+      '<button type="button" class="kolob-drawknob" data-' + kind + '="' + name + '" aria-label="' + name + ' on or off" aria-pressed="true"></button>' +
+      '<button type="button" class="kolob-stop-name" data-sample-' + kind + '="' + name + '" aria-label="audition ' + name + '">' + label + '</button>' +
+      '<input type="range" class="kolob-range" min="0" max="100" value="' + Math.round(vol * 100) + '" data-vol-' + kind + '="' + name + '" aria-label="' + name + ' volume" />' +
+      '</div>';
+  }
   function renderMixer() {
     var host = document.getElementById("kolob-layers"); if (!host) return;
     var layers = K.getLayers ? K.getLayers() : [];
     var volumes = K.getVolumes ? K.getVolumes() : {};
-    host.innerHTML = "";
+    var fieldKeys = K.getFieldKeys ? K.getFieldKeys() : [];
+    var fieldVols = K.getFieldVolumes ? K.getFieldVolumes() : {};
+    var html = "";
+    // the instruments (every layer but the FIELD bus, which splits into events)
     layers.forEach(function (layer) {
+      if (layer === "ambient") return;
       var vol = volumes[layer] != null ? volumes[layer] : 0.5;
-      var row = document.createElement("div"); row.className = "kolob-stop";
-      row.innerHTML =
-        '<button type="button" class="kolob-drawknob" data-layer="' + layer + '" aria-label="' + layer + ' on or off" aria-pressed="true"></button>' +
-        '<button type="button" class="kolob-stop-name" data-sample="' + layer + '" aria-label="audition ' + layer + '">' + (TT(LAYERS_DS, LAYERS_EN)[layer] || layer) + '</button>' +
-        '<input type="range" class="kolob-range" min="0" max="100" value="' + Math.round(vol * 100) + '" data-vol="' + layer + '" aria-label="' + layer + ' volume" />';
-      host.appendChild(row);
+      html += mixerRow(layer, TT(LAYERS_DS, LAYERS_EN)[layer] || layer, vol, "layer");
     });
-    host.querySelectorAll("[data-vol]").forEach(function (el) {
-      el.addEventListener("input", function () {
-        K.setLayerVolume(el.getAttribute("data-vol"), parseInt(el.value, 10) / 100);
+    // the FIELD, now one control per event
+    if (fieldKeys.length) {
+      html += '<div class="kolob-field-head">' + (TT(LAYERS_DS, LAYERS_EN).ambient || "FIELD") + '</div>';
+      fieldKeys.forEach(function (key) {
+        var vol = fieldVols[key] != null ? fieldVols[key] : 1;
+        html += mixerRow(key, TT(FIELD_DS, FIELD_EN)[key] || key, vol, "field");
       });
+    }
+    host.innerHTML = html;
+
+    host.querySelectorAll("[data-vol-layer]").forEach(function (el) {
+      el.addEventListener("input", function () { K.setLayerVolume(el.getAttribute("data-vol-layer"), parseInt(el.value, 10) / 100); });
+    });
+    host.querySelectorAll("[data-vol-field]").forEach(function (el) {
+      el.addEventListener("input", function () { K.setFieldVolume(el.getAttribute("data-vol-field"), parseInt(el.value, 10) / 100); });
     });
     host.querySelectorAll("[data-layer]").forEach(function (el) {
       el.addEventListener("click", function () {
         var on = K.toggleLayer(el.getAttribute("data-layer"));
-        el.classList.toggle("is-off", !on);
-        el.setAttribute("aria-pressed", on ? "true" : "false");
+        el.classList.toggle("is-off", !on); el.setAttribute("aria-pressed", on ? "true" : "false");
       });
     });
-    host.querySelectorAll("[data-sample]").forEach(function (el) {
-      el.addEventListener("click", function () { if (K.sample) K.sample(el.getAttribute("data-sample")); });
+    host.querySelectorAll("[data-field]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        var on = K.toggleField(el.getAttribute("data-field"));
+        el.classList.toggle("is-off", !on); el.setAttribute("aria-pressed", on ? "true" : "false");
+      });
     });
+    host.querySelectorAll("[data-sample-layer]").forEach(function (el) {
+      el.addEventListener("click", function () { if (K.sample) K.sample(el.getAttribute("data-sample-layer")); });
+    });
+    host.querySelectorAll("[data-sample-field]").forEach(function (el) {
+      el.addEventListener("click", function () { if (K.sample) K.sample("field:" + el.getAttribute("data-sample-field")); });
+    });
+  }
+  // ---- the copy-parameters button + the collapsible panel --------------------
+  function currentParamsText() {
+    var vols = K.getVolumes ? K.getVolumes() : {};
+    var fvols = K.getFieldVolumes ? K.getFieldVolumes() : {};
+    function fmt(o) {
+      return Object.keys(o).map(function (k) { return k + ": " + Math.round(o[k] * 100) / 100; }).join(", ");
+    }
+    return "layerVolumes = { " + fmt(vols) + " };\nfieldVolumes = { " + fmt(fvols) + " };";
+  }
+  function wireInstrumentsPanel() {
+    var head = document.getElementById("kolob-instruments-head");
+    var body = document.getElementById("kolob-instruments-body");
+    if (head && body) {
+      head.addEventListener("click", function () {
+        var open = head.getAttribute("aria-expanded") !== "false";
+        head.setAttribute("aria-expanded", open ? "false" : "true");
+        body.hidden = open;
+      });
+    }
+    var copy = document.getElementById("kolob-copy-params");
+    if (copy) {
+      copy.addEventListener("click", function () {
+        var text = currentParamsText();
+        var done = function () {
+          var label = copy.querySelector(".kolob-copy-label") || copy;
+          var prev = label.textContent;
+          label.textContent = TT(STR, STR_EN).copied;
+          setTimeout(function () { label.textContent = prev; }, 1400);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, done);
+        } else {
+          try { var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); } catch (e) {}
+          done();
+        }
+      });
+    }
   }
 
   // ==========================================================================
@@ -539,7 +610,8 @@
     setText(".kolob-title", ST.title);
     setText(".kolob-order-block .kolob-sec-head", S.orderOfService);
     setText(".kolob-board-block .kolob-sec-head", S.hymnBoard);
-    setText(".kolob-stops-block .kolob-sec-head", S.theStops);
+    setText(".kolob-stops-block .kolob-sec-head-label", S.theStops);
+    setText("#kolob-copy-params .kolob-copy-label", S.copyParams);
     setText(".kolob-broadside-block .kolob-sec-head", S.broadside);
     setText(".kolob-log-block .kolob-sec-head", S.minutes);
     setText("#kolob-art-link", ST.art);
@@ -676,6 +748,7 @@
   }
 
   renderMixer();
+  wireInstrumentsPanel();
   wireTransport();
   wireLatinToggle();
   wireIvesToggle();
