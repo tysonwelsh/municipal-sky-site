@@ -3122,42 +3122,79 @@ window.KolobAudio = (function () {
   }
 
   // ==========================================================================
-  // VOICE: TELEGRAPH — the Deseret wire. The current theme's RHYTHM tapped as
-  // dits and dahs on a soft keyed tone, panned far to one side, in the parlor.
-  // Historical and interstellar at once. Rhythm only — no pitch risk.
+  // VOICE: TELEGRAPH — the Deseret wire. It flashes a real word or two toward
+  // home in International Morse: dits and dahs on a soft keyed tone, panned far
+  // to one side, in the parlor. Historical and interstellar at once. The same
+  // mark run drives the keyed audio and the tape drawn on the page. No pitch.
   // ==========================================================================
-  function telegraphCycle() {
-    if (!playing) return;
-    var s = C.section;
-    var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
-    if (!taps || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
-    var clack = getLayerParam("telegraph", "clack", 0.5);
-    var theme = chance(0.7) ? Motif.theme() : Motif.anyWorking();
-    if (!theme) { scheduleRaw(telegraphCycle, 15000); return; }
-    var t = ctx.currentTime + 0.1;
+  var MORSE = {
+    A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.",
+    H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--", N: "-.",
+    O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-",
+    V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--..",
+  };
+  // short messages a colony at the rim of Kolob might wire home — faith, place,
+  // and the refrains of the pioneer hymn ("Come, Come, Ye Saints … all is well")
+  var TELEGRAPH_WORDS = [
+    "HOME", "ZION", "KOLOB", "AMEN", "DESERET", "SEGO", "GLORY", "GRACE",
+    "LIGHT", "HOLY", "WEST", "SNOW", "SAFE", "SOON", "WELL", "HOPE", "DAWN",
+    "PRAY", "SING", "STAR", "ALL IS WELL", "COME HOME", "GONE WEST",
+    "HOME SOON", "O ZION",
+  ];
+  var TEL_DIT = 0.07;                                // one Morse unit, in seconds
+  // Encode a word into a mark run: each mark is { dah, gap }, where gap is the
+  // space AFTER it — 'i' intra-letter (1 unit), 'l' between letters (3), 'w'
+  // between words (7), 'e' end (none). Both the audio and the tape read this.
+  function telegraphMessage(word) {
+    var chars = word.toUpperCase().split(""), seq = [];
+    for (var ci = 0; ci < chars.length; ci++) {
+      var code = MORSE[chars[ci]];
+      if (!code) continue;                            // spaces / unknowns → 'w' gaps below
+      for (var mi = 0; mi < code.length; mi++) {
+        var gap = "i";
+        if (mi === code.length - 1) {                 // last element of this letter
+          var rest = chars.slice(ci + 1).join("").replace(/[^A-Z]/g, "");
+          gap = !rest ? "e" : (chars[ci + 1] === " " ? "w" : "l");
+        }
+        seq.push({ dah: code.charAt(mi) === "-", gap: gap });
+      }
+    }
+    return seq;
+  }
+  // Key a mark run as audio from time t, panned to `side`; returns the end time.
+  function keyMorse(t, seq, side, peak) {
     var carrier = F0 * 8;
     while (carrier > 720) carrier /= 2;
     while (carrier < 480) carrier *= 2;
-    var side = pick([-0.8, 0.8]);
     var tt = t;
-    var beats = theme.notes.slice(0, rint(4, 6));
-    var telMarks = [];                                          // the dit/dah run, for the tape
-    for (var i = 0; i < beats.length; i++) {
-      var isDah = beats[i].durBeats >= 1;
-      var len = isDah ? 0.19 : 0.07;
+    for (var i = 0; i < seq.length; i++) {
+      var len = seq[i].dah ? TEL_DIT * 3 : TEL_DIT;
       var o = ctx.createOscillator();
       o.type = "square"; o.frequency.setValueAtTime(carrier, tt);
       var lp = ctx.createBiquadFilter();
       lp.type = "lowpass"; lp.frequency.setValueAtTime(carrier * 2.5, tt);
       var g = ctx.createGain();
       o.connect(lp); lp.connect(g); g.connect(panAt("telegraph", side));
-      env(g, tt, [[0.004, 0.055], [len, 0.05], [0.02, 0]]);
+      env(g, tt, [[0.004, peak], [len, peak * 0.9], [0.02, 0]]);
       o.start(tt); o.stop(tt + len + 0.1);
-      tt += len + rnd(0.08, 0.14);
-      var telSpace = chance(0.25);
-      if (telSpace) tt += 0.22;                                // letter space
-      telMarks.push({ dah: isDah, space: telSpace });
+      tt += len;
+      var gp = seq[i].gap;
+      if (gp !== "e") tt += gp === "w" ? TEL_DIT * 7 : gp === "l" ? TEL_DIT * 3 : TEL_DIT;
     }
+    return tt;
+  }
+  function telegraphCycle() {
+    if (!playing) return;
+    var s = C.section;
+    var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
+    if (!taps || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
+    var clack = getLayerParam("telegraph", "clack", 0.5);
+    var t = ctx.currentTime + 0.1;
+    var word = pick(TELEGRAPH_WORDS);
+    var seq = telegraphMessage(word);
+    if (!seq.length) { scheduleRaw(telegraphCycle, 15000); return; }
+    var side = pick([-0.8, 0.8]);
+    var tt = keyMorse(t, seq, side, 0.055);
     // the relay clack — the instrument's wooden body speaking
     if (chance(clack)) {
       var n = noiseSource();
@@ -3168,28 +3205,14 @@ window.KolobAudio = (function () {
       env(ng, tt, [[0.003, 0.04], [0.05, 0]]);
       n.start(tt, noiseOffset()); n.stop(tt + 0.12);
     }
-    // once in a long while, a REPLY comes from home — the same marks,
-    // fainter, from the other side of the sky
+    // once in a long while, a REPLY comes from home — the same word, fainter,
+    // from the other side of the sky
     if (chance(0.1)) {
-      var rt = tt + rnd(1.5, 2.5);
-      for (var ri = 0; ri < beats.length; ri++) {
-        var rDah = beats[ri].durBeats >= 1;
-        var rLen = rDah ? 0.19 : 0.07;
-        var ro = ctx.createOscillator();
-        ro.type = "square"; ro.frequency.setValueAtTime(carrier, rt);
-        var rlp = ctx.createBiquadFilter();
-        rlp.type = "lowpass"; rlp.frequency.setValueAtTime(carrier * 2.5, rt);
-        var rg = ctx.createGain();
-        ro.connect(rlp); rlp.connect(rg); rg.connect(panAt("telegraph", -side));
-        env(rg, rt, [[0.004, 0.033], [rLen, 0.03], [0.02, 0]]);
-        ro.start(rt); ro.stop(rt + rLen + 0.1);
-        rt += rLen + rnd(0.08, 0.14);
-      }
-      tt = rt;
-      emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: theme.name });
+      tt = keyMorse(tt + rnd(1.5, 2.5), seq, -side, 0.033);
+      emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: word });
     }
-    emitNote("telegraph", 0, t, tt - t, { marks: telMarks });
-    emitEvent({ cat: "telegraph", label: "⌁ the wire taps the theme", detail: theme.name + " · " + beats.length + " marks" });
+    emitNote("telegraph", 0, t, tt - t, { marks: seq });
+    emitEvent({ cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
     scheduleLayer(telegraphCycle, (tt - t + rnd(45, 90) * gapMul()) * 1000, "telegraph");
   }
 
@@ -3436,25 +3459,11 @@ window.KolobAudio = (function () {
         break;
       case "voice": stillVoiceRender(t, 4.5); break;
       case "telegraph": {
-        var tt = t, marks = [1, 0.5, 1, 2], telMarks = [];
-        var carrier = F0 * 8;
-        while (carrier > 720) carrier /= 2;
-        while (carrier < 480) carrier *= 2;
-        marks.forEach(function (mLen) {
-          var isDah = mLen >= 1;
-          var len = isDah ? 0.19 : 0.07;
-          var o = ctx.createOscillator();
-          o.type = "square"; o.frequency.setValueAtTime(carrier, tt);
-          var lp = ctx.createBiquadFilter();
-          lp.type = "lowpass"; lp.frequency.setValueAtTime(carrier * 2.5, tt);
-          var g = ctx.createGain();
-          o.connect(lp); lp.connect(g); g.connect(panAt("telegraph", 0.6));
-          env(g, tt, [[0.004, 0.055], [len, 0.05], [0.02, 0]]);
-          o.start(tt); o.stop(tt + len + 0.1);
-          tt += len + 0.11;
-          telMarks.push({ dah: isDah, space: false });
-        });
-        emitNote("telegraph", 0, t, tt - t, { marks: telMarks });
+        // a visitation flashes a word home, keyed like the wire
+        var telWord = pick(TELEGRAPH_WORDS);
+        var telSeq = telegraphMessage(telWord);
+        var telEnd = keyMorse(t, telSeq, 0.6, 0.055);
+        emitNote("telegraph", 0, t, telEnd - t, { marks: telSeq });
         break;
       }
       case "ambient": evFarBell(t); break;
