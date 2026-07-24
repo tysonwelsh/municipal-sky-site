@@ -256,17 +256,20 @@
   // The airy console: no rate sliders, no parameter drawers.
   // ==========================================================================
   // one control row: a drawknob (mute), a name (audition), and a volume slider.
-  function mixerRow(name, label, vol, kind, max) {
+  function mixerRow(name, label, vol, kind, maxGain) {
     // kind: "layer" or "field" — chooses which engine call the controls drive.
-    // max: slider ceiling in percent (default 100). The field events default to
-    // full (100%) yet want room to be turned UP past their current level, so
-    // they ride a 0–200% scale — the default sits mid-travel, free to go either
-    // way — while the layers keep a plain 0–100%.
-    max = max || 100;
+    // maxGain: the gain the slider's full travel (100%) maps to (default 1.0).
+    // Every slider stays an ordinary 0–100%; maxGain just sets what "full" means
+    // for that row. The field events author at unity yet want room to be turned
+    // UP, so they pass maxGain 2.0 — full reaches twice the default, which
+    // therefore rests at the midpoint, free to move either way. The scale rides
+    // along in data-scale so the input handler can convert back to a gain.
+    maxGain = maxGain || 1;
+    var pct = Math.max(0, Math.min(100, Math.round(vol / maxGain * 100)));
     return '<div class="kolob-stop">' +
       '<button type="button" class="kolob-drawknob" data-' + kind + '="' + name + '" aria-label="' + name + ' on or off" aria-pressed="true"></button>' +
       '<button type="button" class="kolob-stop-name" data-sample-' + kind + '="' + name + '" aria-label="audition ' + name + '">' + label + '</button>' +
-      '<input type="range" class="kolob-range" min="0" max="' + max + '" value="' + Math.round(vol * 100) + '" data-vol-' + kind + '="' + name + '" aria-label="' + name + ' volume" />' +
+      '<input type="range" class="kolob-range" min="0" max="100" value="' + pct + '" data-vol-' + kind + '="' + name + '" data-scale="' + maxGain + '" aria-label="' + name + ' volume" />' +
       '</div>';
   }
   function renderMixer() {
@@ -287,16 +290,16 @@
       html += '<div class="kolob-field-head">' + (TT(LAYERS_DS, LAYERS_EN).ambient || "FIELD") + '</div>';
       fieldKeys.forEach(function (key) {
         var vol = fieldVols[key] != null ? fieldVols[key] : 1;
-        html += mixerRow(key, TT(FIELD_DS, FIELD_EN)[key] || key, vol, "field", 200);
+        html += mixerRow(key, TT(FIELD_DS, FIELD_EN)[key] || key, vol, "field", 2);
       });
     }
     host.innerHTML = html;
 
     host.querySelectorAll("[data-vol-layer]").forEach(function (el) {
-      el.addEventListener("input", function () { K.setLayerVolume(el.getAttribute("data-vol-layer"), parseInt(el.value, 10) / 100); });
+      el.addEventListener("input", function () { K.setLayerVolume(el.getAttribute("data-vol-layer"), parseInt(el.value, 10) / 100 * (parseFloat(el.getAttribute("data-scale")) || 1)); });
     });
     host.querySelectorAll("[data-vol-field]").forEach(function (el) {
-      el.addEventListener("input", function () { K.setFieldVolume(el.getAttribute("data-vol-field"), parseInt(el.value, 10) / 100); });
+      el.addEventListener("input", function () { K.setFieldVolume(el.getAttribute("data-vol-field"), parseInt(el.value, 10) / 100 * (parseFloat(el.getAttribute("data-scale")) || 1)); });
     });
     host.querySelectorAll("[data-layer]").forEach(function (el) {
       el.addEventListener("click", function () {
