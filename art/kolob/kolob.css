@@ -657,7 +657,9 @@
   }
   .kolob-transport-spacer { display: none; }
   .kolob-transport .kolob-btn { padding: 0.5rem 0.6rem; text-align: center; }
-  .kolob-transport .kolob-ctl-label { margin-top: 0.1rem; }
+  /* the slider is self-evident (and keeps its aria-label) — drop the stacked
+     "VOL" caption above it in the column */
+  .kolob-transport .kolob-ctl-label { display: none; }
   .kolob-transport .kolob-range { width: 100%; }
   .kolob-organ-wrap { height: 135px; }
   .kolob-viz-wrap { height: 184px; }
