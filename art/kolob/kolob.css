@@ -237,15 +237,25 @@
   display: block;
 }
 
-/* ======================= running head + liahona ========================= */
-.kolob-head-row {
-  display: flex;
+/* ================== running head + transport + liahona =================== */
+/* the console is a grid: the running head and dial share the top row, the
+   transport spans the row beneath. (Small screens re-lay these areas — see the
+   media query.) */
+.kolob-console {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "info dial"
+    "controls controls";
+  column-gap: 1.2rem;
+  row-gap: 1.4rem;
   align-items: center;
-  gap: 1.2rem;
-  margin: 0 0 1.4rem;
+  margin: 0 0 2rem;
 }
+.kolob-telemetry { grid-area: info; }
+.kolob-dial { grid-area: dial; }
+.kolob-transport { grid-area: controls; }
 .kolob-telemetry {
-  flex: 1;
   font-family: "Noto Sans Deseret", serif;
   font-size: 0.82rem;
   letter-spacing: 0.1em;
@@ -267,7 +277,7 @@
   display: flex;
   align-items: center;
   gap: 0.9rem;
-  margin: 0 0 2rem;
+  margin: 0;                        /* the console grid owns the outer spacing */
 }
 .kolob-btn {
   font-family: "Noto Sans Deseret", serif;
@@ -631,29 +641,32 @@
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
   #kolob-layers { grid-template-columns: 1fr; }
-  /* the running head + transport collapse into ONE row: the telemetry stacks
-     into a vertical list, the Liahona dial sits to its right, and the play/stop/
-     volume controls form a column to the right of the dial. */
-  .kolob-console { display: flex; align-items: flex-start; gap: 0.7rem; }
-  .kolob-head-row { align-items: center; gap: 0.6rem; margin: 0; flex: 0 0 auto; }
+  /* re-lay the console: the info column beside the buttons & slider on top, and
+     the Liahona dial on its own row below (room to its right for a companion) */
+  .kolob-console {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "info controls"
+      "dial dial";
+    column-gap: 0.7rem;
+    row-gap: 1rem;
+    align-items: start;
+  }
+  /* the running head becomes a vertical list */
   .kolob-telemetry {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.12rem;
     line-height: 1.5;
-    flex: 0 0 auto;
   }
   .kolob-telemetry .t-sep { display: none; }
-  .kolob-dial { flex: 0 0 auto; width: 64px; height: 64px; }
-  /* the transport becomes the right-hand column */
+  .kolob-dial { justify-self: start; width: 64px; height: 64px; }
+  /* the transport becomes a column of controls beside the info */
   .kolob-transport {
-    flex: 1;
-    min-width: 0;
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
-    margin: 0;
   }
   .kolob-transport-spacer { display: none; }
   .kolob-transport .kolob-btn { padding: 0.5rem 0.6rem; text-align: center; }

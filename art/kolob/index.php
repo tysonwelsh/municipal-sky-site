@@ -75,15 +75,13 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- Running head + the Liahona + transport. On wide pages these stack as
-         two rows (the running head over the transport); on small pages the
-         wrapper turns into a single row: the telemetry column, the Liahona dial,
-         then the play/stop/volume controls as a column to the dial's right. -->
+    <!-- The console: the running head (telemetry), the transport, and the
+         Liahona dial. A grid — on wide pages the telemetry and dial share the
+         top row with the transport beneath; on small pages the telemetry sits
+         beside the buttons & slider and the dial drops to its own row below
+         (with room to its right for a future companion). -->
     <div class="kolob-console">
-      <div class="kolob-head-row">
-        <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
-        <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
-      </div>
+      <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
 
       <!-- Transport -->
       <div class="kolob-transport">
@@ -93,6 +91,9 @@ include '../../includes/header.php';
         <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
         <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
       </div>
+
+      <!-- The Liahona dial — its own row on small screens -->
+      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
     </div>
 
     <!-- Order of service + hymn board -->
