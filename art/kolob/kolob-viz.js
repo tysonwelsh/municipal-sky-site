@@ -260,7 +260,8 @@ window.KolobViz = (function () {
 
   // ---- note intake -----------------------------------------------------------
   var pending = [];                                // notes waiting for their startTime
-  var pendingTelegraph = [];                        // telegraph runs waiting to stamp
+  var pendingTelegraph = [];                        // telegraph runs waiting to start
+  var activeTelegraph = [];                          // runs keying out mark-by-mark
   var MELODIC = { clarinet: 1, bagpipe: 1, choir: 1, bells: 1, harmonium: 1, strings: 1, ambient: 0 };
   function onNote(n) {
     if (!n) return;
@@ -368,37 +369,43 @@ window.KolobViz = (function () {
   // middle of the grand staff — the way a telegraph register inked a paper tape.
   // The taps are far too quick to space out by scroll time, so the whole run is
   // stamped at once, then travels and fades with the rest of the ink.
-  function stampTelegraph(n) {
-    if (!pctx || !n.marks || !n.marks.length) return;
+  // The final layout of a mark run: each mark's resting x (left edge) once the
+  // whole tape has been keyed out, with the band's right edge at the engraving
+  // point. The gap AFTER each mark groups the tape: tight within a letter, wider
+  // between letters, wider still between words (matching the keyed timing).
+  function telegraphLayout(marks) {
     var sp = stepPx();
-    var rd = Math.max(1.4, sp * 0.26);             // dit radius
-    var dahLen = sp * 1.7, dahThick = Math.max(2, sp * 0.44);
-    // the gap AFTER each mark tells the tape how to group: tight within a letter,
-    // wider between letters, wider still between words (matches the keyed timing)
+    var rd = Math.max(1.4, sp * 0.26), dahLen = sp * 1.7, dahThick = Math.max(2, sp * 0.44);
     var gi = sp * 0.5, gl = sp * 1.5, gw = sp * 2.8;
     function gapW(g) { return g === "w" ? gw : g === "l" ? gl : g === "e" ? 0 : gi; }
-    var y = yOfQ(Q_MID);                           // the middle-C line, dead centre
-    var xR = W - 26, i, total = 0;
-    for (i = 0; i < n.marks.length; i++) {
-      total += (n.marks[i].dah ? dahLen : 2 * rd) + gapW(n.marks[i].gap);
+    var xs = [], gapAfter = [], total = 0, i;
+    for (i = 0; i < marks.length; i++) {
+      xs[i] = total;
+      gapAfter[i] = gapW(marks[i].gap);
+      total += (marks[i].dah ? dahLen : 2 * rd) + gapAfter[i];
     }
-    var x = xR - total;
+    var last = marks[marks.length - 1];
+    var fxLeft = (W - 26) - total;                 // band left edge, once complete
+    var fx = xs.map(function (x) { return fxLeft + x; });
+    return { fx: fx, gapAfter: gapAfter, rd: rd, dahLen: dahLen, dahThick: dahThick,
+             Tt: last.at + last.len };
+  }
+  // Stamp ONE dit/dah (with its leading run of wire) onto the scrolling page.
+  function stampMark(mark, x, lay, leadGap) {
+    var y = yOfQ(Q_MID);                            // the middle-C line, dead centre
+    var mw = mark.dah ? lay.dahLen : 2 * lay.rd;
     pctx.save();
     pctx.translate(0.5, 0.5);
-    // the wire
+    // the wire, continuing from the previous mark
     pctx.globalAlpha = 0.3;
     pctx.strokeStyle = INK;
     pctx.lineWidth = 1;
-    pctx.beginPath(); pctx.moveTo(x - rd, y); pctx.lineTo(xR, y); pctx.stroke();
-    // the marks
+    pctx.beginPath(); pctx.moveTo(x - leadGap, y); pctx.lineTo(x + mw, y); pctx.stroke();
+    // the mark
     pctx.fillStyle = INK;
     pctx.globalAlpha = 0.72;
-    for (i = 0; i < n.marks.length; i++) {
-      var m = n.marks[i];
-      if (m.dah) { pctx.fillRect(x, y - dahThick / 2, dahLen, dahThick); x += dahLen; }
-      else { pctx.beginPath(); pctx.arc(x + rd, y, rd, 0, Math.PI * 2); pctx.fill(); x += 2 * rd; }
-      x += gapW(m.gap);
-    }
+    if (mark.dah) pctx.fillRect(x, y - lay.dahThick / 2, lay.dahLen, lay.dahThick);
+    else { pctx.beginPath(); pctx.arc(x + lay.rd, y, lay.rd, 0, Math.PI * 2); pctx.fill(); }
     pctx.restore();
   }
   // ---- the static staff layer: two staves, a brace, and the two clefs --------
@@ -499,12 +506,31 @@ window.KolobViz = (function () {
           pending.splice(i, 1);
         } else i++;
       }
+      // telegraph: a message that has begun moves to the active list; there each
+      // mark is stamped at the instant it is keyed. To land at readable spacing
+      // despite the slow scroll, a mark is stamped to the RIGHT of its resting
+      // place by exactly the scroll still to come before the message ends — so
+      // by the last tap the whole run has drifted into its proper tape.
       var j = 0;
       while (j < pendingTelegraph.length) {
-        if (pendingTelegraph[j].startTime <= now + 0.03) {
-          if (pendingTelegraph[j].startTime > now - 3) stampTelegraph(pendingTelegraph[j]);
+        var pt = pendingTelegraph[j];
+        if (pt.startTime <= now + 0.03) {
+          if (pt.startTime > now - 3 && pt.marks && pt.marks.length) {
+            activeTelegraph.push({ marks: pt.marks, t0: pt.startTime, count: 0, lay: telegraphLayout(pt.marks) });
+          }
           pendingTelegraph.splice(j, 1);
         } else j++;
+      }
+      var a = 0;
+      while (a < activeTelegraph.length) {
+        var msg = activeTelegraph[a];
+        while (msg.count < msg.marks.length && msg.t0 + msg.marks[msg.count].at <= now + 0.02) {
+          var mi = msg.count, mk = msg.marks[mi];
+          var mx = msg.lay.fx[mi] + SCROLL_PX_S * (msg.lay.Tt - mk.at);
+          stampMark(mk, mx, msg.lay, mi > 0 ? msg.lay.gapAfter[mi - 1] : msg.lay.rd);
+          msg.count++;
+        }
+        if (msg.count >= msg.marks.length) activeTelegraph.splice(a, 1); else a++;
       }
     }
 
