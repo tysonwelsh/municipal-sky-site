@@ -75,19 +75,24 @@ include '../../includes/header.php';
       <canvas id="kolob-viz" class="kolob-viz" aria-label="shape-note engraving of the music as it plays"></canvas>
     </div>
 
-    <!-- Running head + the Liahona -->
-    <div class="kolob-head-row">
-      <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
-      <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
-    </div>
+    <!-- Running head + the Liahona + transport. On wide pages these stack as
+         two rows (the running head over the transport); on small pages the
+         wrapper turns into a single row: the telemetry column, the Liahona dial,
+         then the play/stop/volume controls as a column to the dial's right. -->
+    <div class="kolob-console">
+      <div class="kolob-head-row">
+        <div class="kolob-telemetry" id="kolob-telemetry" aria-label="meeting telemetry">𐐜 𐐚𐐈𐐢𐐆 𐐆𐐞 𐐝𐐓𐐆𐐢</div>
+        <canvas id="kolob-dial" class="kolob-dial" aria-label="the Liahona dial"></canvas>
+      </div>
 
-    <!-- Transport -->
-    <div class="kolob-transport">
-      <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
-      <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
-      <div class="kolob-transport-spacer"></div>
-      <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
-      <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
+      <!-- Transport -->
+      <div class="kolob-transport">
+        <button type="button" class="kolob-btn play-btn" id="kolob-play" aria-label="play"><span class="kolob-btn-glyph">&#9654;&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+        <button type="button" class="kolob-btn stop-btn" id="kolob-stop" aria-label="stop"><span class="kolob-btn-glyph kolob-glyph-stop">&#9632;&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+        <div class="kolob-transport-spacer"></div>
+        <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+        <input type="range" min="0" max="100" value="60" class="kolob-range" id="kolob-master-vol" aria-label="master volume" />
+      </div>
     </div>
 
     <!-- Order of service + hymn board -->
