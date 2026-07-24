@@ -631,8 +631,18 @@
   .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
   .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
   #kolob-layers { grid-template-columns: 1fr; }
-  .kolob-head-row { flex-direction: column; align-items: stretch; }
-  .kolob-dial { align-self: center; }
+  /* the running head stays beside the Liahona dial, but its items stack into a
+     vertical list (dial to the right of the column) instead of a wrapping run */
+  .kolob-head-row { align-items: center; gap: 0.9rem; }
+  .kolob-telemetry {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.12rem;
+    line-height: 1.5;
+  }
+  .kolob-telemetry .t-sep { display: none; }
+  .kolob-dial { flex: 0 0 auto; }
   .kolob-organ-wrap { height: 135px; }
   .kolob-viz-wrap { height: 184px; }
   .kolob-transport { flex-wrap: wrap; }
