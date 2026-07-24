@@ -199,9 +199,11 @@ window.KolobAudio = (function () {
   // LISTENERS / LOG
   // ==========================================================================
   var noteListeners = [], eventListeners = [];
-  function emitNote(layer, freq, startTime, duration) {
+  function emitNote(layer, freq, startTime, duration, extra) {
     for (var i = 0; i < noteListeners.length; i++) {
-      try { noteListeners[i]({ layer: layer, freq: freq, startTime: startTime, duration: duration || 0 }); } catch (e) {}
+      var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
+      if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
+      try { noteListeners[i](n); } catch (e) {}
     }
   }
   function emitEvent(ev) {
@@ -3139,6 +3141,7 @@ window.KolobAudio = (function () {
     var side = pick([-0.8, 0.8]);
     var tt = t;
     var beats = theme.notes.slice(0, rint(4, 6));
+    var telMarks = [];                                          // the dit/dah run, for the tape
     for (var i = 0; i < beats.length; i++) {
       var isDah = beats[i].durBeats >= 1;
       var len = isDah ? 0.19 : 0.07;
@@ -3151,7 +3154,9 @@ window.KolobAudio = (function () {
       env(g, tt, [[0.004, 0.055], [len, 0.05], [0.02, 0]]);
       o.start(tt); o.stop(tt + len + 0.1);
       tt += len + rnd(0.08, 0.14);
-      if (chance(0.25)) tt += 0.22;                            // letter space
+      var telSpace = chance(0.25);
+      if (telSpace) tt += 0.22;                                // letter space
+      telMarks.push({ dah: isDah, space: telSpace });
     }
     // the relay clack — the instrument's wooden body speaking
     if (chance(clack)) {
@@ -3183,7 +3188,7 @@ window.KolobAudio = (function () {
       tt = rt;
       emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: theme.name });
     }
-    emitNote("telegraph", 0, t, tt - t);
+    emitNote("telegraph", 0, t, tt - t, { marks: telMarks });
     emitEvent({ cat: "telegraph", label: "⌁ the wire taps the theme", detail: theme.name + " · " + beats.length + " marks" });
     scheduleLayer(telegraphCycle, (tt - t + rnd(45, 90) * gapMul()) * 1000, "telegraph");
   }
@@ -3431,7 +3436,7 @@ window.KolobAudio = (function () {
         break;
       case "voice": stillVoiceRender(t, 4.5); break;
       case "telegraph": {
-        var tt = t, marks = [1, 0.5, 1, 2];
+        var tt = t, marks = [1, 0.5, 1, 2], telMarks = [];
         var carrier = F0 * 8;
         while (carrier > 720) carrier /= 2;
         while (carrier < 480) carrier *= 2;
@@ -3447,8 +3452,9 @@ window.KolobAudio = (function () {
           env(g, tt, [[0.004, 0.055], [len, 0.05], [0.02, 0]]);
           o.start(tt); o.stop(tt + len + 0.1);
           tt += len + 0.11;
+          telMarks.push({ dah: isDah, space: false });
         });
-        emitNote("telegraph", 0, t, tt - t);
+        emitNote("telegraph", 0, t, tt - t, { marks: telMarks });
         break;
       }
       case "ambient": evFarBell(t); break;
