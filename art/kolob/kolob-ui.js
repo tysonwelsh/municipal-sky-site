@@ -256,12 +256,17 @@
   // The airy console: no rate sliders, no parameter drawers.
   // ==========================================================================
   // one control row: a drawknob (mute), a name (audition), and a volume slider.
-  function mixerRow(name, label, vol, kind) {
-    // kind: "layer" or "field" — chooses which engine call the controls drive
+  function mixerRow(name, label, vol, kind, max) {
+    // kind: "layer" or "field" — chooses which engine call the controls drive.
+    // max: slider ceiling in percent (default 100). The field events default to
+    // full (100%) yet want room to be turned UP past their current level, so
+    // they ride a 0–200% scale — the default sits mid-travel, free to go either
+    // way — while the layers keep a plain 0–100%.
+    max = max || 100;
     return '<div class="kolob-stop">' +
       '<button type="button" class="kolob-drawknob" data-' + kind + '="' + name + '" aria-label="' + name + ' on or off" aria-pressed="true"></button>' +
       '<button type="button" class="kolob-stop-name" data-sample-' + kind + '="' + name + '" aria-label="audition ' + name + '">' + label + '</button>' +
-      '<input type="range" class="kolob-range" min="0" max="100" value="' + Math.round(vol * 100) + '" data-vol-' + kind + '="' + name + '" aria-label="' + name + ' volume" />' +
+      '<input type="range" class="kolob-range" min="0" max="' + max + '" value="' + Math.round(vol * 100) + '" data-vol-' + kind + '="' + name + '" aria-label="' + name + ' volume" />' +
       '</div>';
   }
   function renderMixer() {
@@ -282,7 +287,7 @@
       html += '<div class="kolob-field-head">' + (TT(LAYERS_DS, LAYERS_EN).ambient || "FIELD") + '</div>';
       fieldKeys.forEach(function (key) {
         var vol = fieldVols[key] != null ? fieldVols[key] : 1;
-        html += mixerRow(key, TT(FIELD_DS, FIELD_EN)[key] || key, vol, "field");
+        html += mixerRow(key, TT(FIELD_DS, FIELD_EN)[key] || key, vol, "field", 200);
       });
     }
     host.innerHTML = html;
