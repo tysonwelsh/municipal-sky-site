@@ -33,6 +33,8 @@ window.KolobViz = (function () {
   var canvas = null, ctx2d = null;
   var page = null, pctx = null;                    // offscreen ink layer (scrolls)
   var staffLayer = null;                           // static: the staves + clefs
+  var fadeCanvas = null, fadeCtx = null, fadeGrad = null;  // left-edge ink fade
+  var fadeX0 = 90, fadeX1 = 150;                    // ink: ~0 at x≤fadeX0, full at x≥fadeX1
   var dial = null, dctx = null;
   var organ = null, octx = null;                   // the facade
   var W = 0, H = 0, DW = 0, DH = 0, OW = 0, OH = 0, dpr = 1;
@@ -385,14 +387,21 @@ window.KolobViz = (function () {
       trebPath = new Path2D(CLEF_TREBLE.d);
       bassPath = new Path2D(CLEF_BASS.d);
     }
+    var bassH = 0.80 * staffH;
     if (trebPath) {
       // Seat each clef by its reference line so size can change without shifting
       // the seating: the treble curl (0.58 down its glyph) rides the G line
       // (q14); the bass dots (0.24 down) straddle the F line (q6).
-      var trebH = 1.28 * staffH, bassH = 0.80 * staffH;
+      var trebH = 1.28 * staffH;
       drawClef(c, CLEF_TREBLE, trebPath, 30, yOfQ(14) - 0.583 * trebH, trebH);
       drawClef(c, CLEF_BASS,   bassPath, 30, yOfQ(6)  - 0.237 * bassH, bassH);
     }
+    // The scrolling ink must be gone by the time it reaches the clefs. Compute
+    // the right edge of the (wider) bass clef, and fade the ink to nothing just
+    // before it — so notes never cross the clefs or the brace.
+    var bassW = bassH * (CLEF_BASS.bbox[2] - CLEF_BASS.bbox[0]) / (CLEF_BASS.bbox[3] - CLEF_BASS.bbox[1]);
+    fadeX0 = 30 + bassW + 4;                        // ink ≈ 0 here (just past the clefs)
+    fadeX1 = fadeX0 + 58;                           // ink at full strength here
   }
   function stampFuging() {
     if (!pctx) return;
@@ -445,10 +454,22 @@ window.KolobViz = (function () {
       }
     }
 
-    // composite to screen: the static staves + clefs under the scrolling ink
+    // composite to screen: the static staves + clefs, then the scrolling ink —
+    // but the ink is first pulled through a left-edge fade so notes dissolve to
+    // nothing just before the clefs and brace instead of sliding across them.
     ctx2d.clearRect(0, 0, W, H);
     if (staffLayer) ctx2d.drawImage(staffLayer, 0, 0, W, H);
-    ctx2d.drawImage(page, 0, 0);
+    if (fadeCtx && fadeGrad) {
+      fadeCtx.globalCompositeOperation = "source-over";
+      fadeCtx.clearRect(0, 0, W, H);
+      fadeCtx.drawImage(page, 0, 0);
+      fadeCtx.globalCompositeOperation = "destination-in";   // keep ink only where the mask is opaque
+      fadeCtx.fillStyle = fadeGrad;
+      fadeCtx.fillRect(0, 0, W, H);
+      ctx2d.drawImage(fadeCanvas, 0, 0);
+    } else {
+      ctx2d.drawImage(page, 0, 0);
+    }
 
     drawOrgan(dt);
     drawDial(dt);
@@ -545,7 +566,16 @@ window.KolobViz = (function () {
     staffLayer.width = W * dpr; staffLayer.height = H * dpr;
     var sctx = staffLayer.getContext("2d");
     sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    buildStaffLayer(sctx);
+    buildStaffLayer(sctx);                          // also sets fadeX0 / fadeX1
+    // a same-size layer used to fade the scrolling ink toward the left (built
+    // fresh so it tracks W/H); the gradient is the fade mask, transparent under
+    // the clefs and opaque out where the notes are engraved.
+    fadeCanvas = document.createElement("canvas");
+    fadeCanvas.width = W; fadeCanvas.height = H;
+    fadeCtx = fadeCanvas.getContext("2d");
+    fadeGrad = fadeCtx.createLinearGradient(fadeX0, 0, fadeX1, 0);
+    fadeGrad.addColorStop(0, "rgba(0,0,0,0)");
+    fadeGrad.addColorStop(1, "rgba(0,0,0,1)");
     if (dial) {
       var dr = dial.getBoundingClientRect();
       DW = Math.max(40, Math.round(dr.width));
