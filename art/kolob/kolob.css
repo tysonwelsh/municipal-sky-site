@@ -643,8 +643,10 @@
   #kolob-layers { grid-template-columns: 1fr; }
   /* re-lay the console: the info text spans the top as TWO columns, and the
      Liahona dial shares the row beneath with the transport (buttons + slider). */
+  /* fixed first track (the dial's width) so long info text can't stretch the
+     grid columns; the info area is therefore always the full width. */
   .kolob-console {
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 64px 1fr;
     grid-template-areas:
       "info info"
       "dial controls";
@@ -652,17 +654,21 @@
     row-gap: 1rem;
     align-items: center;
   }
-  /* the running head breaks into two side-by-side columns. A min-height reserves
-     room for the worst case (6 info parts + the event flag that sometimes
-     appears at the end = 4 lines) so the dial/transport row below never shifts
-     when that flag comes and goes. */
+  /* the running head breaks into two side-by-side columns of FIXED width: with
+     column-count over a full-width, min-width:0 box each column is exactly half,
+     independent of the text — long words wrap inside their column instead of
+     widening it. A min-height reserves room for the worst case (6 info parts +
+     the event flag that sometimes appears at the end = 4 lines) so the dial/
+     transport row below never shifts when that flag comes and goes. */
   .kolob-telemetry {
     column-count: 2;
     column-gap: 1rem;
     line-height: 1.5;
     min-height: 5.2rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
-  .kolob-telemetry .t-part { display: block; break-inside: avoid; }
+  .kolob-telemetry .t-part { display: block; break-inside: avoid; overflow-wrap: anywhere; }
   .kolob-telemetry .t-sep { display: none; }
   .kolob-dial { justify-self: start; width: 64px; height: 64px; }
   /* the transport sits beside the dial: buttons and slider on one line */
