@@ -3145,8 +3145,11 @@ window.KolobAudio = (function () {
   // Encode a word into a mark run: each mark is { dah, gap }, where gap is the
   // space AFTER it — 'i' intra-letter (1 unit), 'l' between letters (3), 'w'
   // between words (7), 'e' end (none). Both the audio and the tape read this.
+  // Each mark also carries its timing: `at` (start offset from the message's
+  // start, in seconds) and `len` (its own length). The tape uses these to key
+  // itself out mark-by-mark in step with the sound.
   function telegraphMessage(word) {
-    var chars = word.toUpperCase().split(""), seq = [];
+    var chars = word.toUpperCase().split(""), seq = [], t = 0;
     for (var ci = 0; ci < chars.length; ci++) {
       var code = MORSE[chars[ci]];
       if (!code) continue;                            // spaces / unknowns → 'w' gaps below
@@ -3156,7 +3159,10 @@ window.KolobAudio = (function () {
           var rest = chars.slice(ci + 1).join("").replace(/[^A-Z]/g, "");
           gap = !rest ? "e" : (chars[ci + 1] === " " ? "w" : "l");
         }
-        seq.push({ dah: code.charAt(mi) === "-", gap: gap });
+        var dah = code.charAt(mi) === "-";
+        var len = dah ? TEL_DIT * 3 : TEL_DIT;
+        seq.push({ dah: dah, gap: gap, at: t, len: len });
+        t += len + (gap === "e" ? 0 : gap === "w" ? TEL_DIT * 7 : gap === "l" ? TEL_DIT * 3 : TEL_DIT);
       }
     }
     return seq;
@@ -3166,22 +3172,20 @@ window.KolobAudio = (function () {
     var carrier = F0 * 8;
     while (carrier > 720) carrier /= 2;
     while (carrier < 480) carrier *= 2;
-    var tt = t;
+    var end = t;
     for (var i = 0; i < seq.length; i++) {
-      var len = seq[i].dah ? TEL_DIT * 3 : TEL_DIT;
+      var mt = t + seq[i].at, len = seq[i].len;
       var o = ctx.createOscillator();
-      o.type = "square"; o.frequency.setValueAtTime(carrier, tt);
+      o.type = "square"; o.frequency.setValueAtTime(carrier, mt);
       var lp = ctx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.setValueAtTime(carrier * 2.5, tt);
+      lp.type = "lowpass"; lp.frequency.setValueAtTime(carrier * 2.5, mt);
       var g = ctx.createGain();
       o.connect(lp); lp.connect(g); g.connect(panAt("telegraph", side));
-      env(g, tt, [[0.004, peak], [len, peak * 0.9], [0.02, 0]]);
-      o.start(tt); o.stop(tt + len + 0.1);
-      tt += len;
-      var gp = seq[i].gap;
-      if (gp !== "e") tt += gp === "w" ? TEL_DIT * 7 : gp === "l" ? TEL_DIT * 3 : TEL_DIT;
+      env(g, mt, [[0.004, peak], [len, peak * 0.9], [0.02, 0]]);
+      o.start(mt); o.stop(mt + len + 0.1);
+      if (mt + len > end) end = mt + len;
     }
-    return tt;
+    return end;
   }
   function telegraphCycle() {
     if (!playing) return;
