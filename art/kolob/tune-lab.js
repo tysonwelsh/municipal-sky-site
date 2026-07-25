@@ -87,43 +87,69 @@ window.TuneLab = (function () {
     var lp = ctx.createBiquadFilter();
     lp.type = "lowpass";
     lp.frequency.setValueAtTime(opts.far ? 1200 : 4200, t);
-    var g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t);
+    var g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t);       // the line swell
+    var artic = ctx.createGain(); artic.gain.setValueAtTime(0.0001, t); // per-note gate
     var pan = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
-    o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g);
+    o.connect(lp); o2.connect(g2); g2.connect(lp); lp.connect(g); g.connect(artic);
     if (pan) {
       pan.pan.setValueAtTime(opts.far ? (Math.random() < 0.5 ? -0.85 : 0.85) : 0, t);
-      g.connect(pan); pan.connect(master);
-    } else g.connect(master);
+      artic.connect(pan); pan.connect(master);
+    } else artic.connect(master);
 
     var det = opts.far ? Math.pow(2, 8 / 1200) : 1;  // the +8¢ of memory
     var peak = opts.far ? 0.14 : 0.3;
-    // note transitions mirror farVoice exactly: pin BOTH oscillators to the
-    // previous pitch at the boundary, then glide — reading .value instead
-    // chirps every note back toward the opening pitch, and an unpinned
-    // octave layer slides slowly and beats against the fundamental
+
+    // Articulation: every note gets its own quick attack and a short gap
+    // before the next, so a run of same-pitch notes reads as separate strikes
+    // instead of one held tone. The gap is a near-silence in the PLAIN
+    // transcription voice (so repeats are unmistakable) and a gentler dip in
+    // the REMEMBERED voice, which keeps its worn legato glide between pitches.
+    // PLAIN also steps discretely between pitches (no portamento) so each
+    // degree is heard cleanly; REMEMBERED keeps the farVoice glide — pinning
+    // BOTH oscillators to the previous pitch at the boundary, then ramping, so
+    // no note chirps back toward the opening pitch.
+    var floor = opts.far ? 0.22 : 0.0008;  // between-note level
+    var atkBase = 0.014;
     var tt = t, prevF = 0;
     for (var i = 0; i < notes.length; i++) {
       var f = degFreq(projDeg(notes[i].deg)) * det;
       var d = notes[i].dur;
-      if (i === 0) {
-        o.frequency.setValueAtTime(f, t);
-        o2.frequency.setValueAtTime(f * 2, t);
-      } else {
+
+      // pitch: discrete step (plain) or pinned glide (remembered)
+      if (opts.far && i > 0) {
         var port = Math.min(0.15, d * 0.2);
         o.frequency.setValueAtTime(prevF, tt);
         o.frequency.linearRampToValueAtTime(f, tt + port);
         o2.frequency.setValueAtTime(prevF * 2, tt);
         o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
+      } else {
+        o.frequency.setValueAtTime(f, tt);
+        o2.frequency.setValueAtTime(f * 2, tt);
       }
+
+      // per-note amplitude gate: attack, hold, then a gap before the next note
+      var gap = Math.min(opts.far ? 0.05 : 0.1, d * 0.35);
+      gap = Math.max(0.02, Math.min(gap, d - atkBase - 0.02));  // leave room for attack
+      var atk = Math.min(atkBase, d * 0.25);
+      artic.gain.setValueAtTime(floor, tt);
+      artic.gain.linearRampToValueAtTime(1, tt + atk);
+      artic.gain.setValueAtTime(1, tt + d - gap);
+      artic.gain.linearRampToValueAtTime(floor, tt + d);
+
       prevF = f;
       tt += d;
     }
     var total = tt - t;
-    g.gain.linearRampToValueAtTime(peak, t + 0.9);
-    g.gain.setValueAtTime(peak, t + Math.max(1, total - 1.2));
-    g.gain.linearRampToValueAtTime(0.0001, t + total + 1.4);
-    o.start(t); o.stop(t + total + 1.6);
-    o2.start(t); o2.stop(t + total + 1.6);
+
+    // the line swell: crisp for the plain check, slow and worn for remembered
+    var swellIn = opts.far ? 0.9 : 0.1;
+    var swellLead = opts.far ? 1.2 : 0.12;
+    var tail = opts.far ? 1.4 : 0.18;
+    g.gain.linearRampToValueAtTime(peak, t + swellIn);
+    g.gain.setValueAtTime(peak, t + Math.max(swellIn, total - swellLead));
+    g.gain.linearRampToValueAtTime(0.0001, t + total + tail);
+    o.start(t); o.stop(t + total + tail + 0.2);
+    o2.start(t); o2.stop(t + total + tail + 0.2);
     live.push(o, o2);
     return total;
   }
