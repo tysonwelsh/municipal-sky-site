@@ -177,7 +177,7 @@ window.TuneLab = (function () {
     "bethany": "Nearer, My God, to Thee",
     "foundation": "How Firm a Foundation",
     "nettleton": "Come, Thou Fount",
-    "sweet hour": "Sweet Hour of Prayer (⚠ verify by ear)",
+    "simple gifts": "'Tis the Gift to Be Simple — Shaker; Copland (⚠ verify by ear)",
     "god be with you": "God Be with You Till We Meet Again",
   };
 
