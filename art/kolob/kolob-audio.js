@@ -2435,7 +2435,7 @@ window.KolobAudio = (function () {
     { name: "bethany",         w: 2.5, minor: false, notes: [[2, 1.5], [1, 0.5], [0, 1], [0, 1], [-2, 2], [-2, 1.5], [-3, 0.5], [0, 1], [2, 1], [1, 3]] },
     { name: "foundation",      w: 2,   minor: false, notes: [[-3, 1], [-2, 0.5], [0, 0.5], [-2, 1], [0, 1], [-3, 1], [0, 0.5], [0, 0.5], [2, 1], [0, 2]] },
     { name: "nettleton",       w: 1,   minor: false, notes: [[2, 1], [1, 0.5], [0, 0.5], [0, 1], [2, 1], [4, 1], [1, 0.5], [1, 0.5], [2, 1], [4, 2]] },
-    { name: "sweet hour",      w: 1,   minor: false, notes: [[0, 1], [2, 0.5], [3, 0.5], [4, 1], [4, 1.5], [5, 0.5], [6, 0.5], [7, 1], [5, 1], [4, 2]] },
+    { name: "simple gifts",    w: 2,   minor: false, notes: [[-3, 1], [-3, 1], [0, 1], [0, 0.5], [1, 0.5], [2, 0.5], [0, 0.5], [2, 0.5], [3, 0.5], [4, 1], [4, 0.5], [4, 0.5], [2, 1], [1, 0.5], [0, 0.5]] },  // Shaker; the Copland tune. From the Traditional Tune Archive incipit (C major): G G | c cd ec ef | g gg e dc — "'Tis the gift to be simple, 'tis the gift to be free"
     { name: "god be with you", w: 1,   minor: false, notes: [[2, 1], [2, 0.5], [2, 0.5], [2, 1], [2, 0.5], [2, 0.5], [4, 1], [1, 1], [2, 1], [5, 2]] },
   ];
   function tuneFitsMode(tn) {
