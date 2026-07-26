@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 130" role="img" aria-label="rubber band">
+        <path fill-rule="evenodd" fill="#b5573f" d="M95 12 C150 8 178 38 172 66 C166 96 128 118 88 116 C48 114 14 96 16 64 C18 34 48 16 95 12 Z M95 30 C140 27 158 44 154 64 C150 88 120 100 88 98 C56 96 34 84 35 63 C36 44 58 32 95 30 Z"/>
+        <path d="M40 46 C50 34 70 26 95 24" fill="none" stroke="#d98d6f" stroke-width="2.5" opacity="0.6" stroke-linecap="round"/>
+      </svg>

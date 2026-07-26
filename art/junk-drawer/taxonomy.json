@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "version": 1,
+  "updated": "2026-07-26",
+
+  "grades": [
+    { "id": "prime", "rank": 5, "label": "Prime", "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
+    { "id": "choice", "rank": 4, "label": "Choice", "description": "Strong result with minor blemishes a careful eye can find." },
+    { "id": "select", "rank": 3, "label": "Select", "description": "Competent and recognizable; noticeable flaws on one or more axes." },
+    { "id": "standard", "rank": 2, "label": "Standard", "description": "Gets the idea across despite significant defects." },
+    { "id": "utility", "rank": 1, "label": "Utility Grade", "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
+  ],
+
+  "axes": [
+    {
+      "id": "prompt-fidelity",
+      "label": "Prompt fidelity",
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
+      "values": [
+        { "id": "faithful", "label": "Faithful", "description": "All requested elements present as specified." },
+        { "id": "partial", "label": "Partial", "description": "Some requested elements missing, extra, or misread." },
+        { "id": "off-brief", "label": "Off-brief", "description": "Substantially not the thing that was asked for." }
+      ]
+    },
+    {
+      "id": "geometry",
+      "label": "Geometry & topology",
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "No visible construction errors." },
+        { "id": "minor", "label": "Minor defects", "description": "Small misalignments or overlaps visible on inspection." },
+        { "id": "major", "label": "Major defects", "description": "Structural errors that dominate the read of the image." }
+      ]
+    },
+    {
+      "id": "color",
+      "label": "Color & rendering",
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Palette and rendering read as intended." },
+        { "id": "minor", "label": "Minor defects", "description": "Off colors, banding, or stacking slips that don't break the image." },
+        { "id": "major", "label": "Major defects", "description": "Rendering errors that break the image." }
+      ]
+    },
+    {
+      "id": "composition",
+      "label": "Composition",
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Well-composed within its viewBox." },
+        { "id": "minor", "label": "Minor defects", "description": "Awkward margins, crowding, or scale oddities." },
+        { "id": "major", "label": "Major defects", "description": "Subject clipped, marooned, or scaled absurdly." }
+      ]
+    }
+  ],
+
+  "models": [
+    { "id": "claude-fable-5", "label": "Claude Fable 5", "vendor": "Anthropic" },
+    { "id": "claude-sonnet-5", "label": "Claude Sonnet 5", "vendor": "Anthropic" },
+    { "id": "claude-opus-4-1", "label": "Claude Opus 4.1", "vendor": "Anthropic" },
+    { "id": "claude-sonnet-4-5", "label": "Claude Sonnet 4.5", "vendor": "Anthropic" },
+    { "id": "gpt-5", "label": "GPT-5", "vendor": "OpenAI" },
+    { "id": "gemini-2-5-pro", "label": "Gemini 2.5 Pro", "vendor": "Google" }
+  ],
+
+  "changelog": [
+    { "date": "2026-07-26", "version": 1, "note": "Initial taxonomy: 5-tier grade scale, 4 axes, starter model registry." }
+  ]
+}

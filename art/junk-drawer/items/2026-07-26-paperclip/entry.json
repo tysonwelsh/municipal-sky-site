@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "id": "2026-07-26-paperclip",
+  "title": "Paperclip",
+  "prompt": "A standard silver wire paperclip viewed from above, ultra-minimal style: a single continuous rounded-end stroke tracing the classic double loop. Transparent background.",
+  "created": "2026-07-26",
+  "tags": [
+    "office",
+    "metal"
+  ],
+  "primary": "r1",
+  "sizeClass": "s",
+  "placement": {
+    "x": 0.668,
+    "y": 0.68,
+    "rotation": 104,
+    "scale": 0.889,
+    "z": 1
+  },
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": "choice",
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "clean",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace."
+    }
+  ]
+}

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en" data-craq="subtle">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER mockup 2 — THE FRAME KIT</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 2 · THE FRAME KIT
+   The responsive border-image drawer (PLAN-FRONTEND §1, PLAN-MOBILE §1).
+   Everything procedural: the painted drawer frame does not exist yet, so the
+   walls are a placeholder SVG (feTurbulence wood) served as a data-URI and
+   sliced with real `border-image` — production swaps --jd-frame-url for the
+   painted frame-2000.webp and nothing else changes. One global light source,
+   upper-left: top/left inner wall faces in shade, bottom/right lit; floor
+   contact-shadow bands along top/left; every item drop-shadows down-right.
+   Layer stack (G2 RESOLVED): craquelure is the DRAWER's own aging — frame
+   bands + well floor — and sits UNDER the items, so the items read as objects
+   lying in an aged drawer, not as figures painted into one. Above the items,
+   only light: varnish sheen, then vignette. Top-down view — items lie flat,
+   no perspective.
+   ========================================================================== */
+:root {
+  --banner-h: 56px;
+  --wall: clamp(28px, 9vw, 64px);
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* production: swap for url(../assets/frame-2000.webp) — see PLAN-MOBILE §1 */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding-top: var(--banner-h);
+}
+
+/* ---------------- placeholder site banner (stands in for includes/header.php) */
+.mock-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--banner-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1rem;
+  background: #faf8f2;
+  border-bottom: 1px solid #ddd6c6;
+  font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+}
+.mock-banner .mb-note { color: #b0a890; letter-spacing: 0.1em; font-size: 0.62rem; }
+
+.mock-label {
+  max-width: 860px; margin: 0.9rem auto 0.6rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ---------------- the stage: drawer as object on the page ---------------- */
+.jd-stage {
+  position: relative;
+  width: min(1060px, 92vw);
+  height: min(74vh, 720px);
+  min-height: 420px;
+  margin: 0.4rem auto 3rem;
+  /* own compositing layer: stabilizes Safari's rasterization of the
+     turbulence-heavy textures (tile-seam lines otherwise blink in as
+     items move and regions re-raster) */
+  transform: translateZ(0);
+  /* the drawer sits on the page; its own cast shadow obeys the same
+     upper-left light — offset down-right */
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+
+/* ---------------- the frame kit: four wall bands via border-image -------- */
+.jd-frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+
+/* ---------------- the well: drawer floor; positioning context for items -- */
+/* child of .jd-frame, so inset:0 = the frame's padding box = inside the walls.
+   container-type: size makes the well a CONTAINER: item sizes are in cqmin
+   (1% of the well's min dimension), so an item's footprint scales with the
+   drawer. Placements arrive from the DATA LAYER — each entry.json carries a
+   "placement" {x, y, rotation, scale, z} with x/y as fractions of the well
+   (item centre; PLAN-BACKEND §7) — and are applied inline by the pile
+   loader script below. */
+.jd-well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+
+/* ---------------- the pile: one stacking context for all ten items ------- */
+/* every item lives in here. Because .jd-pile is positioned WITH a z-index it
+   opens its own stacking context, so the items' z values — including the
+   drag script's ever-climbing zTop counter and the 999 on hover/held — only
+   ever compete with EACH OTHER and can never climb out past the layers that
+   sit above the pile (wall shade, varnish, vignette) or below it
+   (craquelure). Without this, the first tap on any item lifted it clean out
+   of the drawer's light and aging. */
+.jd-pile {
+  position: absolute; inset: 0;
+  z-index: 2;                  /* above .jd-craquelure (1), below the rest */
+}
+
+/* ---------------- items ------------------------------------------------- */
+/* rotation lives on the inner svg, the drop-shadow on the outer div, so
+   shadows always fall down-right in SCREEN space no matter the rotation */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  /* drag moves ride on --dx/--dy (transform-only motion — layout moves of a
+     filtered element leave stale drop-shadow trails in Blink) */
+  transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px));
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  cursor: grab;
+  transition: filter 0.15s ease-out;      /* lift/settle ease, mouse AND touch */
+  touch-action: pan-y;   /* items only: vertical swipes still scroll the page */
+  -webkit-user-select: none; user-select: none;
+  /* silhouette hit-testing: the wrapper's box (and the svg root's box) must
+     never take the hit — only painted ink may. Shapes re-enable below, and
+     their events still bubble up to this element's listeners. This is also
+     what makes hit areas follow ROTATED geometry correctly. Caveat, accepted:
+     SVG masks aren't consulted (the key's masked clover holes still hit). */
+  pointer-events: none;
+}
+.jd-item svg {
+  display: block; width: 100%; height: auto;
+  transform: rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
+}
+.jd-item svg * { pointer-events: visiblePainted; }
+/* the LIFT shadow (hover / pinned / held). Its blur must stay well under its
+   OFFSET, or the penumbra outruns the displacement and the shadow haloes on
+   every side instead of falling down-right — on a long item rotated near the
+   light axis the offset projects to only a few px across the short ends, so a
+   fat blur pools there as an unanchored blot with no visible caster. 8px blur
+   (~+/-12px penumbra) against a 16/22 offset keeps it attached and directional. */
+@media (hover: hover) {
+  .jd-item:hover {
+    filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+    z-index: 999 !important;
+  }
+  .jd-item:hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+}
+/* .is-lifted: the lifted grammar as a class. No longer statically pinned on
+   any item (a permanently floating object read as a shadow anomaly at rest —
+   removed 2026-07-26); hover and .is-held demonstrate the grammar live. */
+.jd-item.is-lifted {
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  z-index: 40;
+}
+.jd-item.is-lifted svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+/* held while dragging: same lifted grammar, above everything. will-change
+   promotes the moving filtered element to its own compositor layer so the
+   drag repaints cleanly (no shadow trails). */
+.jd-item.is-held {
+  will-change: transform, filter;
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  cursor: grabbing;
+  z-index: 999 !important;
+}
+.jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+
+/* ---------------- placements ----------------------------------------------
+   No per-item CSS: every placement (left/top as % of the well, --rot,
+   z-index, --w = sizeClass base × scale) is applied INLINE by the pile
+   loader from entry.json "placement" data served by ../data.php. */
+
+/* fallback note: shown when data.php is unreachable (file:// open, no PHP) */
+.jd-fallback {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  transform: translate(-50%, -50%);
+  max-width: 38ch; padding: 0.5em 1em;
+  font-family: var(--mono); font-size: 0.66rem; line-height: 1.8;
+  letter-spacing: 0.06em; text-align: center;
+  color: rgba(52, 33, 12, 0.78);
+}
+.jd-fallback code { font-family: inherit; color: rgba(38, 23, 8, 0.85); }
+
+/* ---------------- lighting stack over the items -------------------------- */
+/* wall shade cast onto the floor AND onto items lying near the top/left
+   walls (the walls rise toward the viewer; these two face away from the
+   light); only a thin crevice line bottom/right */
+.jd-wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+/* craquelure = the DRAWER's aging. It runs over the frame bands and the well
+   floor and stops there: z-index 1 puts it UNDER .jd-pile, so no crack ever
+   crosses an item. (G2 resolved that way — the items are objects IN the
+   drawer, not painted into it.) Item drop-shadows therefore fall ON the
+   cracked wood and dim the cracks beneath them, which is what we want.
+   G2 gate now sets the strength of that aging: three strengths. */
+.jd-craquelure {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  /* tile scales with the viewport so crack spacing reads the same on a
+     320px phone well as on desktop (fixed 260px = scribble-scale there) */
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  /* NO mix-blend-mode: blended full-stage layers over per-item filter layers
+     produce rasterization-seam lines in Safari (visible as faint horizontal/
+     vertical breaks at item layer bounds, blinking on hover re-compositing).
+     At these opacities plain alpha is visually identical. */
+  opacity: 0.08;                                   /* G2 default: subtle */
+}
+html[data-craq="full"] .jd-craquelure { opacity: 0.17; }
+html[data-craq="off"]  .jd-craquelure { opacity: 0; }
+/* varnish sheen: soft diagonal highlight, upper-left biased */
+.jd-varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  /* no mix-blend-mode — see craquelure note (Safari seam bug); plain alpha
+     at this opacity reads the same */
+  opacity: 0.13;
+}
+/* vignette, over everything, centre biased toward the light */
+.jd-vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+
+/* ---------------- the FIELD NOTES manila tag on the bottom band ---------- */
+/* the tag hangs from a brass tack pinned into the bottom rim: a short string
+   runs tack → grommet, so the tag's attachment to the drawer is stated */
+.jd-tag {
+  position: absolute; left: 50%; bottom: calc(var(--wall) * 0.5); z-index: 55;
+  transform: translate(-50%, 50%) rotate(-2deg);
+  text-decoration: none;
+  filter: drop-shadow(2px 3px 3px rgba(20, 10, 4, 0.45));
+}
+.jd-tag-body {
+  display: inline-block;
+  padding: 0.4em 0.9em 0.4em 1.7em;
+  background: linear-gradient(105deg, #e3d0a0, #d3bd85);
+  border: 1px solid #a8925f;
+  clip-path: polygon(11% 0, 100% 0, 100% 100%, 11% 100%, 0 50%);
+  font-size: 0.72rem; letter-spacing: 0.22em; color: #4a3a18;
+  white-space: nowrap; position: relative;
+}
+.jd-tag-body::before {
+  content: ""; position: absolute; left: 7%; top: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #6e5a30, #43350f);
+  box-shadow: inset 0 0 0 1.5px #b8a26b;
+}
+.jd-tag-string {
+  position: absolute; left: -18px; top: -14px;
+  width: 44px; height: 34px; pointer-events: none;
+}
+
+/* ---------------- below the drawer: field notes stub --------------------- */
+/* the fixed banner would otherwise cover the anchor target on arrival */
+#notes { scroll-margin-top: calc(var(--banner-h, 48px) + 0.75rem); }
+.jd-notes {
+  max-width: 600px; margin: 0 auto; padding: 1rem 1.2rem 3rem;
+}
+.jd-notes h2 {
+  font-size: 0.95rem; letter-spacing: 0.3em; text-transform: uppercase;
+  border-bottom: 1px solid #c9c2ae; padding-bottom: 0.5rem; margin: 1.2rem 0 1rem;
+}
+.jd-notes p { font-size: 0.82rem; line-height: 1.65; margin: 0 0 1rem; }
+
+/* ---------------- curator caption --------------------------------------- */
+.mock-caption {
+  border: 1px solid #c9c2ae; padding: 1rem 1.1rem; margin: 1.8rem 0 1.4rem;
+  background: #faf8f2;
+}
+.mock-caption p { font-size: 0.72rem; line-height: 1.7; margin: 0 0 0.7rem; }
+.mock-caption p:last-child { margin-bottom: 0; }
+.mc-head { letter-spacing: 0.22em; text-transform: uppercase; color: #6b6353; }
+.mc-gate b, .mc-legend b { color: var(--plot-red); font-weight: 700; }
+.craq-btn {
+  font-family: var(--mono); font-size: 0.66rem; letter-spacing: 0.14em;
+  padding: 0.25em 0.8em; margin: 0 0.15em;
+  background: #f6f3ec; color: var(--ink);
+  border: 1px solid #a89f88; border-radius: 2px; cursor: pointer;
+}
+.craq-btn.is-on { background: var(--ink); color: #f6f3ec; border-color: var(--ink); }
+#copy-layout { color: var(--plot-red); }
+
+/* ---------------- mobile: full-viewport drawer (PLAN-MOBILE §1) ---------- */
+@media (max-width: 768px) {
+  :root { --banner-h: 48px; }
+  .mock-label.top { display: none; }
+  .mock-banner .mb-note { display: none; }
+  .jd-stage {
+    width: 100%; margin: 0;
+    height: calc(100vh - var(--banner-h));    /* fallback */
+    height: calc(100svh - var(--banner-h));
+    min-height: 420px;
+    box-shadow: none;
+  }
+  /* sizes shift up a band on small wells (PLAN-MOBILE §4 form-factor size
+     bands): same cqmin ruler, ×1.2. Portrait POSITIONS are re-seated by the
+     pile loader (MOBILE_POUR map), not by CSS. */
+  .jd-item { width: calc(var(--w) * 1.2cqmin); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<div class="mock-banner" aria-hidden="true">
+  <span>Municipal Sky</span>
+  <span class="mb-note">(site banner placeholder — 56px / 48px mobile)</span>
+</div>
+
+<p class="mock-label top">junk drawer &middot; mockup 2 of 3 &middot; the frame kit &mdash; border-image responsive drawer</p>
+
+<div class="jd-stage">
+  <div class="jd-frame">
+  <div class="jd-well">
+
+    <!-- ============ THE PILE — built from the live data layer =========
+         The ten items are no longer inlined here: the pile loader script
+         fetches ../data.php ({taxonomy, items[]}, PLAN-BACKEND §7), inlines
+         each item's PRIMARY response SVG from items/<id>/, and applies its
+         entry.json "placement" {x, y, rotation, scale, z} inline —
+         left/top as % of the well (item centre), --rot, z-index, and
+         --w = sizeClass base (s 9 / m 15.5 / l 22) × scale, in cqmin.
+         The composition itself is unchanged: crammed-but-composed, the
+         back-right cluster 5 deep, the enlarged playing card centre-right
+         with the skeleton key lying across it (Peto), only the front-centre
+         patch left open ============ -->
+
+    <div class="jd-pile"></div>
+
+    <div class="jd-wallshade"></div>
+  </div>
+  </div>
+
+  <div class="jd-craquelure"></div>
+  <div class="jd-varnish"></div>
+  <div class="jd-vignette"></div>
+
+  <a class="jd-tag" href="#notes"><svg class="jd-tag-string" viewBox="0 0 44 34" aria-hidden="true"><circle cx="8" cy="6" r="3.4" fill="#8a713c" stroke="#4a3a12" stroke-width="1"/><circle cx="7" cy="5" r="1.2" fill="#d8c288"/><path d="M8 8 C 5 18, 15 25, 30 27" fill="none" stroke="#8a7648" stroke-width="1.6" stroke-linecap="round"/></svg><span class="jd-tag-body">FIELD NOTES &#8595;</span></a>
+</div>
+
+<section class="jd-notes" id="notes">
+  <h2>Field Notes</h2>
+  <p>Stub section — in production this column carries the wall label, the
+  intro, the taxonomy legend rendered from <code>data.php</code>, the
+  inventory list, and the colophon (PLAN-MOBILE &sect;3). It exists in this
+  mockup so the scroll relationship &mdash; drawer above, notes below,
+  manila tag as the bridge &mdash; is visible.</p>
+
+  <div class="mock-caption">
+    <p class="mc-head">Mockup 2 of 3 &middot; The Frame Kit</p>
+    <p>The responsive drawer: four wall bands + mitered corners as a CSS
+    <code>border-image</code> (wall width <code>clamp(28px, 9vw, 64px)</code>)
+    around a plain DOM well. The walls here are a <b>procedural placeholder</b>
+    &mdash; feTurbulence wood served as a data-URI &mdash; structured exactly as
+    production: swapping in the painted frame is one
+    <code>--jd-frame-url</code> change. Desktop: drawer as centered stage.
+    &le;768px: full-viewport drawer, <code>calc(100svh &minus; 48px)</code>
+    under the placeholder banner, the pile hand-re-seated for portrait. Ten
+    items, deliberately mixed styles (line-art, flat geometric, glossy
+    gradient, naive hand, print, engraved &mdash; the real skeleton key from
+    the collection lies across the playing card, Peto-style). Item sizes in
+    <code>cqmin</code> of the well (container queries); placements arrive
+    from the data layer as fractions of the well.</p>
+    <p class="mc-gate"><b>GATE G2 &mdash; RESOLVED</b> (owner): the craquelure
+    is the <i>drawer&rsquo;s</i> aging &mdash; frame bands and well floor only,
+    never over the items. The items stay crisp: objects sitting IN an aged
+    drawer, not painted into it. The toggle now sets the strength of that
+    aging on the wood:
+      <button class="craq-btn" data-v="full">FULL</button><button
+        class="craq-btn is-on" data-v="subtle">SUBTLE</button><button
+        class="craq-btn" data-v="off">OFF</button>
+    (default: subtle. Item shadows fall on the cracked wood and dim the
+    cracks beneath them.)</p>
+    <p class="mc-gate"><b>GATE G3</b> (card register: stamps vs typed grades)
+    &mdash; not this mockup&rsquo;s concern; see mockup 3.</p>
+    <p class="mc-gate"><b>ARRANGE</b> &mdash; the pile now loads LIVE from
+    the data layer: <code>../data.php</code> assembles
+    <code>items/*/entry.json</code> and the loader inlines each item&rsquo;s
+    primary response SVG from <code>items/</code>, applying its
+    <code>placement</code> (centre x/y as fractions of the well, rotation,
+    scale, z). Every item is draggable
+    (mouse: press and drag; touch: hold ~180&thinsp;ms to grip &mdash; the
+    lift is the acknowledgment &mdash; while quick swipes still scroll).
+    Dropped items settle with a &plusmn;2&ndash;3&deg; impulse; positions are
+    session-only. <b>Rotate</b> while holding: mouse wheel or
+    <code>[</code>&thinsp;/&thinsp;<code>]</code>; on touch, a second finger
+    twists the gripped item around the gripping finger.
+    <a href="#" id="copy-layout">copy layout</a> copies every
+    item&rsquo;s current placement as an entry.json-ready block &mdash;
+    JSON keyed by item id, each value a <code>placement</code> object
+    (<code>{x, y, rotation, scale, z}</code>, x/y as 0&ndash;1 fractions)
+    ready to paste straight into that entry&rsquo;s
+    <code>"placement"</code> field. Hit-testing follows the painted
+    silhouette &mdash; transparent corners pass through to whatever is
+    visible beneath. (One caveat: SVG masks aren&rsquo;t consulted, so the
+    key&rsquo;s clover cutouts still register as key.)</p>
+    <p class="mc-legend"><b>LIGHT</b> &mdash; one source, upper-left. The walls
+    rise toward the viewer, so the top + left inner faces turn away from the
+    light and sit in shade; the bottom + right faces are lit. The floor takes
+    soft contact-shadow bands along its top/left edges. Every item drop-shadows
+    down-right, silhouette-shaped; settled items tight (3px 4px 3px). Hover
+    or hold an item to see the lifted grammar (16px 22px 8px, scaled 1.06,
+    the shadow lengthening away as it rises).
+    Top-down view: no perspective on the items.</p>
+  </div>
+
+  <p class="mock-label">junk drawer &middot; mockup 2 of 3 &middot; the frame kit &mdash; border-image responsive drawer</p>
+</section>
+
+<script>
+document.querySelectorAll('.craq-btn').forEach(function (b) {
+  b.addEventListener('click', function () {
+    document.documentElement.dataset.craq = b.dataset.v;
+    document.querySelectorAll('.craq-btn').forEach(function (x) {
+      x.classList.toggle('is-on', x === b);
+    });
+  });
+});
+
+/* ---- the pile loader — build the pile from the live data layer ----------
+   One request to ../data.php ({taxonomy, items[]}, PLAN-BACKEND §7; the
+   server already excludes retired items), then each item's PRIMARY response
+   SVG is fetched as text and inlined into a .jd-item wrapper. Placement is
+   applied inline from entry.json "placement": left/top as % of the well
+   (x/y are 0..1 fractions, item centre), --rot, z-index, and
+   --w = sizeClass base × scale (the CSS sizes items as
+   width: calc(var(--w) * 1cqmin); the ≤768px rule multiplies by 1.2).
+   When the pile is built the drag script's wiring is invoked
+   (window.JD_wirePile). If fetch fails — file:// open, no PHP — a quiet
+   mono note in the well says how to serve the mockup. */
+(function () {
+  var pile = document.querySelector('.jd-pile');
+  var BASE = { s: 9, m: 15.5, l: 22 };   /* --w per sizeClass, in cqmin */
+
+  /* MOBILE_POUR — the hand-tuned PORTRAIT re-seat, keyed by item id.
+     This mockup carries the previously hand-tuned portrait pour as a
+     constant; PRODUCTION computes portrait pours instead (a deterministic
+     re-seat from the same placement data — PLAN-MOBILE). Values override
+     left/top/--rot on wells ≤768px wide. */
+  var MOBILE_POUR = {
+    '2026-07-26-three-of-hearts': { x: 0.6,  y: 0.38,   rot: -13 },
+    '2026-07-26-pocket-mirror':   { x: 0.33, y: 0.15,   rot: -7 },
+    '2026-07-26-matchbook':       { x: 0.53, y: 0.1206, rot: 26 },
+    '2026-07-26-button':          { x: 0.59, y: 0.1752, rot: -21 },
+    '2026-07-26-scissors':        { x: 0.47, y: 0.46,   rot: -34 },
+    '2026-07-26-skeleton-key':    { x: 0.57, y: 0.3737, rot: 76 },
+    '2026-07-26-ticket-stub':     { x: 0.39, y: 0.2424, rot: -49 },
+    '2026-07-26-pencil-stub':     { x: 0.66, y: 0.8,    rot: 118 },
+    '2026-07-26-rubber-band':     { x: 0.67, y: 0.821,  rot: 9 },
+    '2026-07-26-paperclip':       { x: 0.24, y: 0.3096, rot: 104 }
+  };
+
+  function fallbackNote() {
+    var note = document.createElement('p');
+    note.className = 'jd-fallback';
+    note.innerHTML = 'the drawer loads its collection from data.php ' +
+      '&mdash; serve over http: <code>php -S localhost:8123 router.php</code> ' +
+      '(repo root), then open ' +
+      '<code>/art/junk-drawer/mockups/mockup-2-frame-kit.html</code>';
+    pile.appendChild(note);
+  }
+
+  fetch('../data.php')
+    .then(function (r) {
+      if (!r.ok) throw new Error('data.php ' + r.status);
+      return r.json();
+    })
+    .then(function (data) {
+      /* resolve + fetch every primary response SVG (contract: primary
+         always resolves; every response has a ready same-origin url) */
+      return Promise.all(data.items.map(function (item) {
+        var primary = item.responses.filter(function (r) {
+          return r.rid === item.primary;
+        })[0] || item.responses[0];
+        return fetch(primary.url).then(function (r) {
+          if (!r.ok) throw new Error(primary.url + ' ' + r.status);
+          return r.text();
+        }).then(function (svg) { return { item: item, svg: svg }; });
+      }));
+    })
+    .then(function (loaded) {
+      var mobile = window.matchMedia('(max-width: 768px)').matches;
+      loaded.forEach(function (rec) {
+        var item = rec.item;
+        /* placement is optional in the contract; a centred default keeps a
+           placement-less entry visible (production computes a seeded
+           placement instead — PLAN-BACKEND §7.4) */
+        var p = item.placement || { x: 0.5, y: 0.5, rotation: 0, scale: 1, z: 1 };
+        var el = document.createElement('div');
+        el.className = 'jd-item';
+        el.dataset.id = item.id;
+        el.dataset.scale = p.scale;              /* copy-layout passthrough */
+        el.setAttribute('role', 'img');
+        el.setAttribute('aria-label', item.title);
+        el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+        el.style.left = (p.x * 100) + '%';
+        el.style.top = (p.y * 100) + '%';
+        el.style.setProperty('--rot', p.rotation + 'deg');
+        el.style.zIndex = p.z;
+        el.style.setProperty('--w',
+          +((BASE[item.sizeClass] || BASE.m) * p.scale).toFixed(2));
+        var pour = mobile && MOBILE_POUR[item.id];
+        if (pour) {
+          el.style.left = (pour.x * 100) + '%';
+          el.style.top = (pour.y * 100) + '%';
+          el.style.setProperty('--rot', pour.rot + 'deg');
+        }
+        pile.appendChild(el);
+      });
+      if (window.JD_wirePile) window.JD_wirePile();
+    })
+    .catch(function (err) {
+      fallbackNote();
+      if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
+    });
+})();
+
+/* ---- dragging the pile — Pointer Events, one code path (PLAN-FRONTEND §3,
+   PLAN-MOBILE §2). Mouse: press-and-drag immediately; click without drag
+   (≤8px slop) just brings the item to front. Touch: items are
+   touch-action: pan-y, so a quick swipe scrolls the page (we get
+   pointercancel and release cleanly); holding ~180ms without moving >10px
+   grips the item — the lift animation is the acknowledgment — and a
+   non-passive touchmove preventDefault() keeps the drag from panning.
+   On settle the item's rendered centre is baked back into its inline
+   left/top in % of the well (the same coordinate space the loader applied
+   from placement data). Drops clamp to the well minus a clearance margin
+   (the overflow guillotine). Session-only; no persistence. Rotation
+   while held: mouse wheel, [ / ] keys, or a second finger twisting
+   around the gripping finger on touch — all mutate --rot, which the
+   settle impulse and copy-layout already speak. Hit-testing is
+   silhouette-accurate (shapes are pointer-events: visiblePainted, the
+   wrapper and svg root none), so events target inner SVG shapes and
+   bubble up to these item listeners. */
+(function () {
+  var well = document.querySelector('.jd-well');
+  var SLOP = 8, HOLDSLOP = 10, HOLD = 180, CLEAR = 6;
+  var zTop = 100;
+  var pend = null, held = null, drag = false, timer = 0;
+  var sx = 0, sy = 0, ox = 0, oy = 0;
+  var pid = -1, fx = 0, fy = 0, twist = null;
+
+  function grip(item) {
+    held = item;
+    item.classList.remove('is-lifted');          /* releases the demo pin */
+    item.classList.add('is-held');
+  }
+  var dropX = 0, dropY = 0;
+  /* drag moves are TRANSFORM-only (--dx/--dy): moving a filtered element via
+     left/top forces layout repaints, and Blink leaves stale drop-shadow
+     trails behind the old positions. The final spot is baked into left/top
+     once, at settle, when the element is at rest. */
+  function place(item, x, y) {
+    var w = well.getBoundingClientRect();
+    var mx = item.offsetWidth / 2 + CLEAR, my = item.offsetHeight / 2 + CLEAR;
+    x = Math.max(mx, Math.min(w.width - mx, x));
+    y = Math.max(my, Math.min(w.height - my, y));
+    dropX = x; dropY = y;
+    item.style.setProperty('--dx', (x - ox).toFixed(1) + 'px');
+    item.style.setProperty('--dy', (y - oy).toFixed(1) + 'px');
+  }
+  function settle(item, moved) {
+    item.classList.remove('is-held');
+    item.style.zIndex = ++zTop;                  /* stays on top of the pile */
+    if (moved) {                                 /* bake position, then rest */
+      var w = well.getBoundingClientRect();
+      item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
+      item.style.top = (dropY / w.height * 100).toFixed(2) + '%';
+      var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
+      rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
+      item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+    }
+    item.style.removeProperty('--dx');
+    item.style.removeProperty('--dy');
+  }
+
+  /* per-item wiring is deferred: the pile is BUILT by the loader above, so
+     the loader calls window.JD_wirePile() once the items exist in the DOM.
+     Gesture behavior is unchanged. */
+  function wireItem(item) {
+    item.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (held && e.pointerId !== pid) return;   /* second finger: twist owns it */
+      pend = item; drag = false;
+      pid = e.pointerId;
+      sx = fx = e.clientX; sy = fy = e.clientY;
+      var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+      ox = r.left + r.width / 2 - w.left;
+      oy = r.top + r.height / 2 - w.top;
+      try { item.setPointerCapture(e.pointerId); } catch (_) {}
+      if (e.pointerType === 'mouse') { e.preventDefault(); grip(item); }
+      else {
+        clearTimeout(timer);
+        timer = setTimeout(function () { if (pend === item) grip(item); }, HOLD);
+      }
+    });
+    item.addEventListener('pointermove', function (e) {
+      if (pend !== item || e.pointerId !== pid) return;
+      fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
+      var dx = e.clientX - sx, dy = e.clientY - sy;
+      if (held === item) {
+        if (!drag && dx * dx + dy * dy > SLOP * SLOP) drag = true;
+        if (drag) place(item, ox + dx, oy + dy);
+      } else if (dx * dx + dy * dy > HOLDSLOP * HOLDSLOP) {
+        clearTimeout(timer); pend = null;        /* swipe before hold: scroll */
+      }
+    });
+    item.addEventListener('touchmove', function (e) {
+      if (held === item) e.preventDefault();     /* non-passive: stop the pan */
+    }, { passive: false });
+    item.addEventListener('pointerup', function (e) {
+      if (e.pointerId !== pid) return;           /* second finger up ≠ release */
+      clearTimeout(timer);
+      if (held === item) settle(item, drag);
+      else if (pend === item) item.style.zIndex = ++zTop;   /* tap: to front */
+      pend = held = null; drag = false; twist = null;
+    });
+    item.addEventListener('pointercancel', function (e) {
+      if (e.pointerId !== pid) return;
+      clearTimeout(timer);
+      if (held === item) settle(item, drag);
+      pend = held = null; drag = false; twist = null;
+    });
+  }
+  window.JD_wirePile = function () {
+    well.querySelectorAll('.jd-item').forEach(wireItem);
+  };
+
+  /* ---- rotating the held item ------------------------------------------ */
+  function rotOf(item) { return parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0; }
+  function spin(item, d) { item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg'); }
+
+  window.addEventListener('wheel', function (e) {
+    if (!held) return;
+    e.preventDefault();                          /* no page scroll mid-hold */
+    /* both axes: on macOS trackpads two-finger swipes arrive as wheel
+       deltas in x AND y, so any two-finger stroke direction rotates */
+    spin(held, Math.max(-30, Math.min(30, e.deltaY + e.deltaX)) * 0.2);
+  }, { passive: false });
+
+  /* macOS Safari exposes the trackpad two-finger ROTATE gesture as
+     non-standard gesture events carrying a cumulative rotation angle.
+     Chrome never fires these (its trackpad path is the wheel handler
+     above). Only engaged while holding, so page pinch-zoom is untouched
+     otherwise. */
+  var gBase = 0;
+  window.addEventListener('gesturestart', function (e) {
+    if (!held) return;
+    e.preventDefault(); gBase = rotOf(held);
+  });
+  window.addEventListener('gesturechange', function (e) {
+    if (!held) return;
+    e.preventDefault();
+    held.style.setProperty('--rot', (gBase + e.rotation).toFixed(1) + 'deg');
+  });
+  window.addEventListener('gestureend', function (e) { if (held) e.preventDefault(); });
+
+  window.addEventListener('keydown', function (e) {
+    if (!held) return;
+    if (e.key === '[') { e.preventDefault(); spin(held, -5); }
+    else if (e.key === ']') { e.preventDefault(); spin(held, 5); }
+  });
+
+  /* second finger, anywhere: twist around the gripping finger */
+  document.addEventListener('pointerdown', function (e) {
+    if (!held || twist || e.pointerId === pid) return;
+    twist = { id: e.pointerId,
+              a0: Math.atan2(e.clientY - fy, e.clientX - fx),
+              r0: rotOf(held) };
+    e.stopPropagation(); e.preventDefault();
+  }, true);
+  document.addEventListener('pointermove', function (e) {
+    if (!twist || !held || e.pointerId !== twist.id) return;
+    var a = Math.atan2(e.clientY - fy, e.clientX - fx);
+    held.style.setProperty('--rot',
+      (twist.r0 + (a - twist.a0) * 180 / Math.PI).toFixed(1) + 'deg');
+  }, true);
+  function endTwist(e) { if (twist && e.pointerId === twist.id) twist = null; }
+  document.addEventListener('pointerup', endTwist, true);
+  document.addEventListener('pointercancel', endTwist, true);
+
+  /* while gripping, two fingers must never pinch-zoom the page */
+  document.addEventListener('touchmove', function (e) {
+    if (held) e.preventDefault();
+  }, { passive: false });
+
+  /* arrange-mode: copy the pile's current placements as entry.json-shaped
+     blocks — keyed by full item id, each value ready to paste straight into
+     that entry's "placement" field (x/y 0..1 fractions of the well, item
+     centre; scale passed through from the loaded entry) */
+  var copy = document.getElementById('copy-layout');
+  if (copy) copy.addEventListener('click', function (e) {
+    e.preventDefault();
+    var w = well.getBoundingClientRect(), out = {};
+    well.querySelectorAll('.jd-item').forEach(function (item) {
+      var r = item.getBoundingClientRect();
+      out[item.dataset.id || 'item'] = {
+        x: +(((r.left + r.width / 2 - w.left) / w.width).toFixed(4)),
+        y: +(((r.top + r.height / 2 - w.top) / w.height).toFixed(4)),
+        rotation: +(parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0).toFixed(1),
+        scale: parseFloat(item.dataset.scale) || 1,
+        z: parseInt(getComputedStyle(item).zIndex, 10) || 0
+      };
+    });
+    var json = JSON.stringify(out, null, 2), a = e.target, label = a.textContent;
+    function done(ok) {
+      a.textContent = ok ? 'copied ✓' : 'clipboard blocked — see prompt';
+      setTimeout(function () { a.textContent = label; }, 1200);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(
+        function () { done(true); },
+        function () { window.prompt('layout JSON:', json); done(false); });
+    } else { window.prompt('layout JSON:', json); done(false); }
+  });
+})();
+</script>
+
+</body>
+</html>

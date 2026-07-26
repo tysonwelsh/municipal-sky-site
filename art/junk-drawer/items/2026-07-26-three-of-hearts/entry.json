@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "2026-07-26-three-of-hearts",
+  "title": "Three of hearts",
+  "prompt": "A three of hearts playing card from a standard deck, viewed exactly top-down, slightly aged white stock with softly rounded corners. Flat print style, true red pips, correct corner indices (one inverted). Transparent background.",
+  "created": "2026-07-26",
+  "tags": [
+    "paper",
+    "game"
+  ],
+  "primary": "r1",
+  "sizeClass": "l",
+  "placement": {
+    "x": 0.56,
+    "y": 0.49,
+    "rotation": -13,
+    "scale": 1.409,
+    "z": 4
+  },
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": "choice",
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "clean",
+        "color": "clean",
+        "composition": {
+          "value": "minor",
+          "note": "Pip spacing runs slightly wide against a real Bicycle layout; the card reads a touch tall."
+        }
+      },
+      "transcript": null,
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace."
+    }
+  ]
+}

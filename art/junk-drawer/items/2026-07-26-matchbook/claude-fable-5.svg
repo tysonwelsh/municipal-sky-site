@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 195" role="img" aria-label="matchbook">
+        <rect x="10" y="8" width="130" height="156" rx="7" fill="#b23a2a"/>
+        <circle cx="75" cy="72" r="36" fill="#f3c53c"/>
+        <path d="M75 42 C64 58 60 66 60 76 A15 15 0 0 0 90 76 C90 66 86 58 75 42 Z" fill="#e2731f"/>
+        <path d="M75 58 C70 66 68 70 68 76 A7 7 0 0 0 82 76 C82 70 80 66 75 58 Z" fill="#fdeec9"/>
+        <text x="75" y="146" text-anchor="middle" font-family="Courier, monospace" font-weight="bold" font-size="15" letter-spacing="3" fill="#f6e3c2">MATCHES</text>
+        <rect x="10" y="152" width="130" height="26" rx="3" fill="#8a3f2c"/>
+        <rect x="68" y="160" width="14" height="4" rx="1" fill="#c9c9c9"/>
+        <rect x="10" y="180" width="130" height="9" rx="2" fill="#6e5a4d"/>
+      </svg>
