@@ -38,7 +38,6 @@ include '../../includes/header.php';
 
   <!-- Desktop dek: one line above the drawer. Hidden ≤768px — on a phone
        every explanatory word lives below the drawer (PLAN-MOBILE §3). -->
-  <p class="jd-dek">A drawer of machine-made objects, graded like model output</p>
 
   <!-- ============ THE DRAWER STAGE (transplanted from Phase 0) ============
        Layer stack, bottom to top: craquelure (the DRAWER's own aging, under

@@ -22,21 +22,6 @@
 
 html { scroll-behavior: smooth; }
 
-/* ---------------- desktop dek: one quiet line above the drawer ----------- */
-/* hidden ≤768px — on a phone every explanatory word lives below the drawer
-   (PLAN-MOBILE §3); the wall label at the head of the notes repeats it */
-.jd-dek {
-  max-width: 860px;
-  margin: 1.1rem auto 0.6rem;
-  padding: 0 var(--s-2);
-  font-family: var(--font-mono);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--ink-mute);
-}
-
 /* ---------------- the stage: drawer as object on the page ---------------- */
 .jd-stage {
   --wall: clamp(28px, 9vw, 64px);
@@ -55,7 +40,7 @@ html { scroll-behavior: smooth; }
      site's widest content column (--max-wide) and caps there. The three
      wishes (column-width, deeper-than-wide, fits-the-window) can't all
      bind at once on a normal screen; fits-the-window wins. */
-  height: min(calc(100vh - 120px), calc(var(--max-wide) * 1.25));
+  height: min(calc(100vh - 90px), calc(var(--max-wide) * 1.25));
   aspect-ratio: 4 / 5;
   width: auto;
   max-width: min(var(--max-wide), 92vw);
@@ -465,7 +450,6 @@ html { scroll-behavior: smooth; }
 
 /* ================= mobile: full-viewport drawer (PLAN-MOBILE §1) ========= */
 @media (max-width: 768px) {
-  .jd-dek { display: none; }
 
   /* "peering down into a drawer" on load: the stage fills the viewport under
      the REAL fixed banner. svh, not dvh — the small-viewport unit is stable
