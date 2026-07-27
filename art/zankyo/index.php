@@ -130,7 +130,7 @@ include '../../includes/header.php';
  </div>
 </div>
 
-<script src="../background-audio.js?v=98cd6909"></script>
+<script src="../background-audio.js?v=fc868a9e"></script>
 <script src="zankyo-audio.js?v=4161392f"></script>
 <script>if(!window.ZankyoAudio)console.error("ZANKYO AUDIO ENGINE FAILED TO LOAD");</script>
 <script src="zankyo-viz.js?v=f8b989f1"></script>
