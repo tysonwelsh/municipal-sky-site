@@ -58,6 +58,11 @@ window.SkeeBallPhysics = (function () {
     holeU: 0.7512, holeV: 2.2965,  // bed coords of the drawn 100 holes
     holeRu: 0.143, holeRv: 0.114,  // elliptical mouth, matches the drawn ellipse
     bedHalfW: 1.05,   // bed width beyond which it's the side wall
+    bedLipV: 0,       // bed v of the bottom lip (the gutter edge). 0 = lip at
+                      // the outer ring's bottom (tangent). Negative when the
+                      // renderer draws a bed apron below the rings (bedExtend):
+                      // a miss then rolls DOWN across that apron to the real
+                      // lip before dropping into the pit. Set by syncGeometry.
     // DIVIDER roll-off model. A landing on a cork ridge resolves to an
     // adjacent trough. ridgePos is where on the ridge (0 = inner/up-bed
     // edge, 1 = outer/down-bed edge); below the threshold the ball tips
@@ -114,7 +119,10 @@ window.SkeeBallPhysics = (function () {
     // drawn mouth is an ellipse ~ (hr-2) × (round(hr*0.7)-1) pixels
     T.holeRu = (hr - 2) * T.R10 / r0.rx;
     T.holeRv = Math.max(1, Math.round(hr * 0.7) - 1) * T.R10 / r0.ry;
-    return { holeU: T.holeU, holeV: T.holeV, holeRu: T.holeRu, holeRv: T.holeRv };
+    // the bed apron below the rings pushes the gutter lip to a negative v:
+    // bedExtend screen-px ÷ (px per v-unit = r0.ry / R10).
+    T.bedLipV = -(geo.bedExtend || 0) * T.R10 / r0.ry;
+    return { holeU: T.holeU, holeV: T.holeV, holeRu: T.holeRu, holeRv: T.holeRv, bedLipV: T.bedLipV };
   }
 
   // tiny deterministic hash → [0,1), for rim rattles
@@ -319,7 +327,7 @@ window.SkeeBallPhysics = (function () {
         } else if (f.outcome.kind === 'pit') {
           // fell into the pit short of the bed — straight down the gutter
           st.phase = 'rolldown';
-          st.ru = f.u; st.rv = 0; st.rvu = f.spin * 0.1; st.rvv = -0.7;
+          st.ru = f.u; st.rv = T.bedLipV; st.rvu = f.spin * 0.1; st.rvv = -0.7;
           st.gut = false;
         } else {
           // short / backstop / wall: landed on the wood, now rolls back down
@@ -342,8 +350,8 @@ window.SkeeBallPhysics = (function () {
       if (st.ru > T.bedHalfW) { st.ru = T.bedHalfW; st.rvu = -Math.abs(st.rvu) * 0.4; }
       if (st.ru < -T.bedHalfW) { st.ru = -T.bedHalfW; st.rvu = Math.abs(st.rvu) * 0.4; }
       st.trail.push({ s: 'bed', u: st.ru, v: st.rv });
-      if (st.rv <= 0 && !st.gut) { st.gut = true; st.events.push({ type: 'gutter', u: st.ru }); }
-      if (st.rv <= -T.gutterDepth) { st.phase = 'done'; st.events.push({ type: 'done' }); }
+      if (st.rv <= T.bedLipV && !st.gut) { st.gut = true; st.events.push({ type: 'gutter', u: st.ru }); }
+      if (st.rv <= T.bedLipV - T.gutterDepth) { st.phase = 'done'; st.events.push({ type: 'done' }); }
     } else if (st.phase === 'rolloff') {
       // ball tips off the cork divider and rolls radially into the adjacent
       // trough, then hands off to the sink animation. Short + deterministic.

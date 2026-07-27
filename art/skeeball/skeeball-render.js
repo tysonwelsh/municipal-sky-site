@@ -194,7 +194,7 @@ window.SkeeBallRender = (function () {
       snoutOver: true,      // possum head sits low, snout over the title
       noScoreLabel: true,   // drums are self-evident; no SCORE text, no lamps
       scoreH: 22,
-      ringCy: 158, maxRx: 52, ratio: 0.95,
+      ringCy: 158, maxRx: 52, ratio: 0.95, bedExtend: 14,
       pitH: 14, hopH: 12, laneTopW: 66, laneBotW: 96, hump: 2,
       holeDx: 42, holeY: 100, holeRx: 10, holeLabelBelow: true
     }
@@ -221,8 +221,12 @@ window.SkeeBallRender = (function () {
       rings.push(r);
     }
     // pit layouts derive their bands from the bed's bottom edge; tangent
-    // layouts (the A-D explorations) keep their explicit rampY0/rampY1
-    var bedBottom = spec.ringCy + Math.round(spec.maxRx * spec.ratio);
+    // layouts (the A-D explorations) keep their explicit rampY0/rampY1.
+    // bedExtend adds an apron of bed BELOW the ring stack so the rings can
+    // sit high (near the 100 holes) without dragging the pit/lip up with
+    // them — the ring stack no longer has to be tangent to the lip.
+    var bedExtend = spec.bedExtend || 0;
+    var bedBottom = spec.ringCy + Math.round(spec.maxRx * spec.ratio) + bedExtend;
     var pit = spec.pitH ? { y0: bedBottom + 2, y1: bedBottom + 2 + spec.pitH } : null;
     var rampY0 = pit ? pit.y1 : spec.rampY0;
     var rampY1 = pit ? pit.y1 + spec.hopH : spec.rampY1;
@@ -239,6 +243,7 @@ window.SkeeBallRender = (function () {
       score: score,
       target: { y0: score.y1, y1: pit ? pit.y0 : spec.rampY0, cx: 108, cy: spec.ringCy },
       pit: pit,
+      bedExtend: bedExtend, // px of bed apron below the ring stack (for bedLipV)
       rings: rings,
       // flat ring beds have no room for labels inside; paint them in a
       // column beside the rings instead
