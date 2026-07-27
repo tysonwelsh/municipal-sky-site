@@ -423,7 +423,10 @@
 
   function pick(item) {
     item.style.zIndex = ++zTop;
-    if (picked && picked !== item) picked.classList.remove('is-picked');
+    if (picked && picked !== item) {
+      picked.classList.remove('is-picked');
+      returnToPile(picked);
+    }
     picked = item;
     item.classList.add('is-picked');       /* persists: selected = lifted */
     well.classList.add('jd-has-pick');     /* the rest of the pile dims */
