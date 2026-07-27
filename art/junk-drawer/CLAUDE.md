@@ -25,6 +25,13 @@ data files are `.json`, art is `.svg`.
 
 ## Procedure: add a NEW item
 
+> To GENERATE the SVG (rather than file one the owner pastes), use the
+> **`/junk-drawer-item` skill** (`.claude/skills/junk-drawer-item/`) — it
+> owns the generation discipline: clean-context subagent generation, the
+> standard technical appendix, honest one-shot/refined counting, and
+> multi-model alternatives. The steps below remain the file-mechanics
+> ground truth either way.
+
 1. **Elicit from the owner** (ask only for what wasn't provided; never invent):
    - The prompt, VERBATIM. Do not trim, fix typos, or reformat it.
    - The SVG source (pasted), or a request for you to generate it.
