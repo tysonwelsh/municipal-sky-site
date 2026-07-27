@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER · MOCKUP 5 · THE PULL · PLAN VIEW</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 5 · THE PULL — PLAN-VIEW REVISION
+   Owner correction: the first pass drew the handles as FRONT ELEVATIONS —
+   head-on, as if facing the drawer. The whole project is strict PLAN VIEW
+   (looking straight down from above), so hardware mounted on the drawer's
+   VERTICAL front face must be drawn as seen from directly overhead: you see
+   the TOPS of things, protruding "south" past the band's outer edge and
+   hanging over the page background. This file is that redraw.
+   Each candidate still mounts on a full-width strip that reproduces the
+   production band: a sliver of well floor above, then the front frame band
+   rendered from the SAME border-image wood as the live drawer
+   (--jd-frame-url copied VERBATIM from junk-drawer.css — the feTurbulence
+   filters are stitch-tuned; never regenerate). Close-up: the band renders
+   ~2× its production height so the hardware reads at gallery distance.
+   Plan-view lighting law, unchanged: ONE light source, upper-left. A
+   horizontal form seen from above is bright on its LEFT flank, carries its
+   core shadow on the RIGHT flank, takes a small specular on upper-left
+   curvature; its cast shadow falls DOWN-RIGHT — but here it drops past the
+   drawer's edge to the floor beyond, so it lands on the PAGE BACKGROUND,
+   slightly longer and softer than the in-drawer shadows. The stage clips
+   nothing (overflow: visible) so the overhang renders outside the band.
+   Aged, worn metal in the skeleton key's brass family
+   (#d9b25f / #b3873a / #7a5a22 / #4a3512) — muted, never mirror-chrome.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the three procedural textures, VERBATIM from junk-drawer.css ---------- */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0 2.5rem;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center; color: var(--ink);
+}
+.mock-intro {
+  max-width: 1060px; margin: 0 auto 1.1rem;
+  font-size: 0.68rem; letter-spacing: 0.12em; color: #999;
+  text-align: center;
+}
+.mock-label {
+  max-width: 980px; margin: 0.55rem auto 1.5rem;
+  font-size: 0.7rem; line-height: 1.8; letter-spacing: 0.16em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.22em; }
+
+/* ---------------- the band strip: bottom front band, close up ------------ */
+.band-stage {
+  position: relative;
+  width: min(1060px, 94vw);
+  height: 220px;
+  margin: 0 auto;
+  /* plan view: the hardware overhangs the outer (south) edge — the stage
+     must NOT clip it. Production .jd-stage also leaves overflow visible. */
+  overflow: visible;
+  transform: translateZ(0);        /* own layer — Safari raster stability */
+  /* the strip sits on the page under the same upper-left light: cast
+     shadow down-right, like the drawer stage */
+  box-shadow: 10px 14px 30px -12px rgba(30, 18, 8, 0.45),
+              3px 5px 12px -5px rgba(30, 18, 8, 0.3);
+}
+/* sliver of the well floor above the band */
+.band-floor {
+  position: absolute; left: 0; right: 0; top: 0; height: 90px;
+  background: #8d6537 var(--jd-floor-url) center bottom / cover no-repeat;
+}
+/* thin crevice at the floor/front-wall junction (production wallshade's
+   bottom line) */
+.band-floor::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(0deg, rgba(24,12,4,0.16) 0, rgba(24,12,4,0) 26px);
+}
+/* the front band itself: REAL border-image, bottom edge only — same source,
+   same slice 150, same stretch as .jd-frame, so the crevice line, warm lit
+   inner face, bright arris and rim arrive from the production art */
+.band-frame {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 130px;
+  border-style: solid; border-color: transparent;
+  border-width: 0 0 130px 0;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+/* the drawer's aging, over the wood, under the hardware (production z:1) */
+.band-craq {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+/* varnish + vignette, over hardware and tag, exactly as the stage stacks
+   them (tag 55 < varnish 61 < vignette 62) */
+.band-varnish {
+  position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.band-vignette {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(130% 190% at 42% 24%,
+    rgba(0, 0, 0, 0) 58%, rgba(20, 10, 4, 0.26) 100%);
+}
+
+/* ---------------- the hardware ------------------------------------------- */
+/* Every SVG is drawn with the drawer's FRONT FACE PLANE as a horizontal
+   line in its own coordinates; the .hw top offset aligns that line with the
+   stage's bottom edge (y = 220px), so everything south of the face line
+   overhangs the page background. Widths equal viewBox widths (scale 1). */
+.hw { position: absolute; left: 50%; transform: translateX(-50%); pointer-events: none; }
+.opt-a  .hw { width: 260px; top: 210px; }   /* face line at svg y=10 */
+.opt-b  .hw { width: 260px; top: 210px; }   /* face line at svg y=10 */
+.opt-c  .hw { width: 300px; top: 210px; }   /* face line at svg y=10 */
+.opt-d  .hw { width: 300px; top: 210px; }   /* face line at svg y=10 */
+.opt-d2 .hw { width: 300px; top: 130px; }   /* face line at svg y=90 —
+                                               the flat label frame lies on
+                                               the band's rim ABOVE it */
+
+/* per-option clearance: the caption steps below the deepest overhang */
+.opt-a  .mock-label { margin-top: 9.2rem; }
+.opt-b  .mock-label { margin-top: 7.4rem; }
+.opt-c  .mock-label { margin-top: 3.4rem; }
+.opt-d  .mock-label { margin-top: 5rem; }
+.opt-d2 .mock-label { margin-top: 5.6rem; }
+
+/* ---------------- the FIELD NOTES manila tag (copied from junk-drawer.css,
+     re-seated per option; absent in option D — the label absorbs it) ------ */
+.jd-tag {
+  position: absolute; z-index: 5;
+  transform: rotate(-2deg);
+  text-decoration: none;
+  filter: drop-shadow(2px 3px 3px rgba(20, 10, 4, 0.45));
+}
+.opt-a .jd-tag { left: calc(50% + 78px);  top: 140px; }
+.opt-b .jd-tag { left: calc(50% + 122px); top: 140px; }
+.opt-c .jd-tag { left: calc(50% + 138px); top: 140px; }
+.jd-tag-body {
+  display: inline-block;
+  padding: 0.4em 0.9em 0.4em 1.7em;
+  background: linear-gradient(105deg, #e3d0a0, #d3bd85);
+  border: 1px solid #a8925f;
+  clip-path: polygon(11% 0, 100% 0, 100% 100%, 11% 100%, 0 50%);
+  font-family: var(--mono);
+  font-size: 0.72rem; letter-spacing: 0.22em; color: #4a3a18;
+  white-space: nowrap; position: relative;
+}
+.jd-tag-body::before {
+  content: ""; position: absolute; left: 7%; top: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #6e5a30, #43350f);
+  box-shadow: inset 0 0 0 1.5px #b8a26b;
+}
+.jd-tag-string {
+  position: absolute; left: -18px; top: -14px;
+  width: 44px; height: 34px; pointer-events: none;
+}
+
+/* ---------------- considerations (mono, quiet) --------------------------- */
+.considerations {
+  max-width: 860px; margin: 2.2rem auto 0;
+  border: 1px solid #c9c2ae; background: #faf8f2;
+  padding: 0.9rem 1.1rem;
+}
+.considerations p {
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.06em;
+  color: #6b6353; margin: 0 0 0.45rem;
+}
+.considerations p:last-child { margin-bottom: 0; }
+.considerations .mc-head {
+  letter-spacing: 0.22em; text-transform: uppercase; color: #6b6353;
+  margin-bottom: 0.6rem;
+}
+.considerations b { color: var(--plot-red); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 5 &middot; The Pull &middot; Plan-View Revision</p>
+<p class="mock-intro">plan-view-corrected revision (owner correction: the drawer is seen from directly ABOVE, so face-mounted hardware shows only its top, overhanging the front edge) &mdash; four candidates redrawn overhead + one convention-bend (D2) &middot; close up (~2&times; production band height) on the real border-image wood &middot; one light, upper-left &middot; pick one</p>
+
+<!-- ======================= A · TURNED BRASS KNOB ======================= -->
+<section class="opt opt-a">
+  <div class="band-stage">
+    <div class="band-floor"></div>
+    <div class="band-frame"></div>
+    <div class="band-craq"></div>
+
+    <svg class="hw" viewBox="0 0 260 170" aria-label="turned brass knob, plan view: mushroom silhouette overhanging the front edge">
+      <defs>
+        <!-- horizontal solid of revolution seen from above: bright LEFT
+             flank, core shadow RIGHT flank -->
+        <linearGradient id="a-flank" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e8c777"/>
+          <stop offset="0.42" stop-color="#c99a48"/>
+          <stop offset="0.75" stop-color="#8a6427"/>
+          <stop offset="1" stop-color="#4a3512"/>
+        </linearGradient>
+        <radialGradient id="a-head" cx="0.38" cy="0.34" r="0.9">
+          <stop offset="0" stop-color="#f2dc9b"/>
+          <stop offset="0.32" stop-color="#d9b25f"/>
+          <stop offset="0.66" stop-color="#a87c30"/>
+          <stop offset="1" stop-color="#5c421a"/>
+        </radialGradient>
+        <filter id="a-sh" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <filter id="a-sh2" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="1.8"/>
+        </filter>
+      </defs>
+      <!-- cast shadow dropped past the drawer edge to the floor beyond:
+           down-right, longer + softer than the in-drawer shadows -->
+      <g transform="translate(12,16)" filter="url(#a-sh)" opacity="0.42" fill="#1c0e05">
+        <rect x="88" y="10" width="84" height="7" rx="2"/>
+        <path d="M 114 16 C 113 26, 117 31, 121 37 L 139 37 C 143 31, 147 26, 146 16 Z"/>
+        <circle cx="130" cy="76" r="40"/>
+      </g>
+      <!-- rosette: the circular backplate is edge-on from above — only its
+           turned thickness shows as a sliver at the face -->
+      <rect x="88" y="10" width="84" height="7" rx="2" fill="url(#a-flank)" stroke="#3a280e" stroke-width="0.8" stroke-opacity="0.55"/>
+      <line x1="92" y1="11.3" x2="146" y2="11.3" stroke="#f0d795" stroke-width="1" opacity="0.45"/>
+      <!-- neck: the turned waist between rosette and head -->
+      <path d="M 114 16.6 C 113 26, 117 31, 121 37 L 139 37 C 143 31, 147 26, 146 16.6 Z" fill="url(#a-flank)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.5"/>
+      <path d="M 115.4 18 C 114.6 25, 117.6 29.6, 121 34" fill="none" stroke="#f0d795" stroke-width="1.1" opacity="0.5"/>
+      <path d="M 144.6 18 C 145.4 25, 142.4 29.6, 139.4 34" fill="none" stroke="#2e1e08" stroke-width="1.2" opacity="0.45"/>
+      <!-- the head: top of the turned ball, hanging over the page -->
+      <circle cx="130" cy="76" r="40" fill="url(#a-head)" stroke="#3a280e" stroke-width="0.8" stroke-opacity="0.5"/>
+      <!-- contact shade where the neck turns into the head -->
+      <path d="M 119 40 Q 130 36.5 141 40" fill="none" stroke="#2e1e08" stroke-width="2" opacity="0.3" filter="url(#a-sh2)"/>
+      <!-- turning rings: latitude lines bowing toward the tip -->
+      <path d="M 96 62 Q 130 74 164 62" fill="none" stroke="#52380f" stroke-width="1" opacity="0.32"/>
+      <path d="M 95.4 60.8 Q 130 72.6 164.6 60.8" fill="none" stroke="#ecd28c" stroke-width="0.9" opacity="0.28"/>
+      <path d="M 104 96 Q 130 106 156 96" fill="none" stroke="#52380f" stroke-width="0.9" opacity="0.3"/>
+      <!-- bright left flank / core shadow right flank -->
+      <path d="M 95.2 88.7 A 37 37 0 0 1 103.8 49.8" fill="none" stroke="#f0d795" stroke-width="2.4" opacity="0.42" filter="url(#a-sh2)"/>
+      <path d="M 153.8 47.7 A 37 37 0 0 1 148.5 108" fill="none" stroke="#2e1e08" stroke-width="5" opacity="0.34" filter="url(#a-sh2)"/>
+      <!-- bounce off the paper floor along the south rim -->
+      <path d="M 117.2 111.2 A 37.5 37.5 0 0 0 142.8 111.2" fill="none" stroke="#d8b96b" stroke-width="1.4" opacity="0.3"/>
+      <!-- specular near the tip's upper-left -->
+      <ellipse cx="113" cy="58" rx="8" ry="6.5" fill="#ffedb8" opacity="0.5" filter="url(#a-sh2)"/>
+      <ellipse cx="112.5" cy="57.5" rx="4" ry="3.2" fill="#fff8dd" opacity="0.95"/>
+      <!-- wear -->
+      <path d="M 152 100 q 6 -4 9 -9" fill="none" stroke="#402c10" stroke-width="0.8" opacity="0.35"/>
+      <path d="M 103 66 q 2 -5 6 -8" fill="none" stroke="#f0d795" stroke-width="0.7" opacity="0.35"/>
+    </svg>
+
+    <a class="jd-tag" href="#"><svg class="jd-tag-string" viewBox="0 0 44 34" aria-hidden="true"><circle cx="8" cy="6" r="3.4" fill="#8a713c" stroke="#4a3a12" stroke-width="1"/><circle cx="7" cy="5" r="1.2" fill="#d8c288"/><path d="M8 8 C 5 18, 15 25, 30 27" fill="none" stroke="#8a7648" stroke-width="1.6" stroke-linecap="round"/></svg><span class="jd-tag-body">FIELD NOTES &#8595;</span></a>
+
+    <div class="band-varnish"></div>
+    <div class="band-vignette"></div>
+  </div>
+  <p class="mock-label"><b>A &middot; turned brass knob</b> &mdash; plan view: a mushroom silhouette overhanging the front edge &mdash; rosette sliver at the face, turned neck, round head &middot; bright left flank, core shadow right, shadow dropped to the floor beyond the drawer &middot; chest-of-drawers vernacular c.&thinsp;1840&ndash;80 &middot; the tag keeps the band</p>
+</section>
+
+<!-- ======================= B · CUP PULL ================================ -->
+<section class="opt opt-b">
+  <div class="band-stage">
+    <div class="band-floor"></div>
+    <div class="band-frame"></div>
+    <div class="band-craq"></div>
+
+    <svg class="hw" viewBox="0 0 260 150" aria-label="cup pull, plan view: looking down into the upward-opening cup">
+      <defs>
+        <!-- rolled lip seen from above: bright left limb, dark right limb -->
+        <linearGradient id="b-lip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e2c176"/>
+          <stop offset="0.45" stop-color="#b3873a"/>
+          <stop offset="0.8" stop-color="#6e5020"/>
+          <stop offset="1" stop-color="#43300f"/>
+        </linearGradient>
+        <linearGradient id="b-strip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.6" stop-color="#b3873a"/>
+          <stop offset="1" stop-color="#6e4f1e"/>
+        </linearGradient>
+        <!-- the face-side inner wall descending into the hollow, catching
+             bounce light -->
+        <linearGradient id="b-bounce" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a6a34"/>
+          <stop offset="1" stop-color="#170c04" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="b-int" cx="0.5" cy="0.2" r="0.95">
+          <stop offset="0" stop-color="#241408"/>
+          <stop offset="1" stop-color="#100902"/>
+        </radialGradient>
+        <radialGradient id="b-scr" cx="0.35" cy="0.35" r="0.8">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.6" stop-color="#8a6427"/>
+          <stop offset="1" stop-color="#4a3512"/>
+        </radialGradient>
+        <filter id="b-sh" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <filter id="b-sh2" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="1.6"/>
+        </filter>
+      </defs>
+      <!-- cast shadow on the page floor beyond the drawer, down-right -->
+      <g transform="translate(12,16)" filter="url(#b-sh)" opacity="0.42" fill="#1c0e05">
+        <rect x="55" y="10" width="150" height="6.5" rx="2"/>
+        <path d="M 82 16 C 84 54, 100 84, 130 84 C 160 84, 176 54, 178 16 Z"/>
+        <circle cx="66" cy="16.5" r="4.8"/>
+        <circle cx="194" cy="16.5" r="4.8"/>
+      </g>
+      <!-- mounting flange: a vertical plate from above = a thin brass strip
+           along the band's outer edge -->
+      <rect x="55" y="10" width="150" height="6.5" rx="2" fill="url(#b-strip)" stroke="#241505" stroke-width="0.8" stroke-opacity="0.6"/>
+      <line x1="59" y1="11.2" x2="150" y2="11.2" stroke="#f0d795" stroke-width="1" opacity="0.5"/>
+      <!-- the rolled outer lip: a crescent arc bulging south -->
+      <path d="M 82 16 C 84 54, 100 84, 130 84 C 160 84, 176 54, 178 16 Z" fill="url(#b-lip)" stroke="#241505" stroke-width="0.9" stroke-opacity="0.6"/>
+      <!-- the hollow: you look INTO the cup -->
+      <path d="M 91 16 C 93 46, 106 72, 130 72 C 154 72, 167 46, 169 16 Z" fill="url(#b-int)"/>
+      <!-- face-side inner wall catching bounce light -->
+      <path d="M 91 16 C 93 32, 108 38, 130 38 C 152 38, 167 32, 169 16 Z" fill="url(#b-bounce)" opacity="0.7"/>
+      <!-- lip shadow thrown into the hollow from the light side (west) -->
+      <path d="M 94 24 C 96 42, 103 58, 114 66" fill="none" stroke="#0b0602" stroke-width="5" opacity="0.5" filter="url(#b-sh2)"/>
+      <!-- edge where the lip rolls into the hollow -->
+      <path d="M 91 16 C 93 46, 106 72, 130 72 C 154 72, 167 46, 169 16" fill="none" stroke="#0e0702" stroke-width="1" opacity="0.6"/>
+      <!-- grazing light on the inner face of the south lip -->
+      <path d="M 108 68 C 119 72.5, 141 72.5, 152 68" fill="none" stroke="#a87c30" stroke-width="1.8" opacity="0.42"/>
+      <!-- lip highlights: bright left limb, specular; dark right limb -->
+      <path d="M 84.5 20 C 86.5 48, 98 71, 118 78.5" fill="none" stroke="#f4df9e" stroke-width="1.8" opacity="0.55"/>
+      <ellipse cx="88" cy="36" rx="2.2" ry="4.5" fill="#fff6d8" opacity="0.8" filter="url(#b-sh2)"/>
+      <path d="M 175.5 20 C 173.5 49, 162 72, 143 79.5" fill="none" stroke="#241505" stroke-width="2" opacity="0.5"/>
+      <!-- bounce off the paper along the outer south edge -->
+      <path d="M 108 81.5 C 118 83.8, 142 83.8, 152 81.5" fill="none" stroke="#d8b96b" stroke-width="1.2" opacity="0.35"/>
+      <!-- screw heads proud of the flange's top edge, slots at varied angles -->
+      <circle cx="66" cy="16.5" r="4.8" fill="url(#b-scr)" stroke="#241505" stroke-width="0.7" stroke-opacity="0.6"/>
+      <line x1="62.8" y1="14.6" x2="69.2" y2="18.4" stroke="#241505" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="64.4" cy="14.8" r="0.9" fill="#f0d795" opacity="0.7"/>
+      <circle cx="194" cy="16.5" r="4.8" fill="url(#b-scr)" stroke="#241505" stroke-width="0.7" stroke-opacity="0.6"/>
+      <line x1="192.3" y1="19.5" x2="195.7" y2="13.5" stroke="#241505" stroke-width="1.3" stroke-linecap="round"/>
+      <circle cx="192.4" cy="14.8" r="0.9" fill="#f0d795" opacity="0.7"/>
+    </svg>
+
+    <a class="jd-tag" href="#"><svg class="jd-tag-string" viewBox="0 0 44 34" aria-hidden="true"><circle cx="8" cy="6" r="3.4" fill="#8a713c" stroke="#4a3a12" stroke-width="1"/><circle cx="7" cy="5" r="1.2" fill="#d8c288"/><path d="M8 8 C 5 18, 15 25, 30 27" fill="none" stroke="#8a7648" stroke-width="1.6" stroke-linecap="round"/></svg><span class="jd-tag-body">FIELD NOTES &#8595;</span></a>
+
+    <div class="band-varnish"></div>
+    <div class="band-vignette"></div>
+  </div>
+  <p class="mock-label"><b>B &middot; cup pull</b> &mdash; the plan-view showpiece: the bin cup opens UPWARD, so from above you look straight INTO it &mdash; crescent of rolled lip, dark hollow, bounce light on the face-side wall &middot; the flange reads as a thin brass strip with two screw heads &middot; shop-fitting register c.&thinsp;1870&ndash;1910 &middot; tag keeps the band</p>
+</section>
+
+<!-- ======================= C · VICTORIAN BAIL PULL ===================== -->
+<section class="opt opt-c">
+  <div class="band-stage">
+    <div class="band-floor"></div>
+    <div class="band-frame"></div>
+    <div class="band-craq"></div>
+
+    <svg class="hw" viewBox="0 0 300 70" aria-label="victorian bail pull, plan view: thin backplate strip, two post finials, a sliver of bail">
+      <defs>
+        <linearGradient id="c-strip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#dcb768"/>
+          <stop offset="0.5" stop-color="#b3873a"/>
+          <stop offset="1" stop-color="#6e4f1e"/>
+        </linearGradient>
+        <linearGradient id="c-bail" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#e0bc6d"/>
+          <stop offset="0.55" stop-color="#a87c30"/>
+          <stop offset="1" stop-color="#4f3814"/>
+        </linearGradient>
+        <radialGradient id="c-post" cx="0.35" cy="0.32" r="0.85">
+          <stop offset="0" stop-color="#f2dc9b"/>
+          <stop offset="0.55" stop-color="#c1913c"/>
+          <stop offset="1" stop-color="#5c421a"/>
+        </radialGradient>
+        <filter id="c-sh" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="4"/>
+        </filter>
+      </defs>
+      <!-- cast shadow on the page floor, down-right; small — little overhangs -->
+      <g transform="translate(11,13)" filter="url(#c-sh)" opacity="0.38">
+        <rect x="40" y="10" width="220" height="3.8" rx="1.5" fill="#1c0e05"/>
+        <path d="M 95 20 C 115 32.5, 185 32.5, 205 20" fill="none" stroke="#1c0e05" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="95" cy="24" r="7" fill="#1c0e05"/>
+        <circle cx="205" cy="24" r="7" fill="#1c0e05"/>
+      </g>
+      <!-- the stamped backplate is VERTICAL: from above, only its thin top
+           edge survives as a brass strip along the outer edge -->
+      <rect x="40" y="10" width="220" height="3.8" rx="1.5" fill="url(#c-strip)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.5"/>
+      <line x1="46" y1="11" x2="110" y2="11" stroke="#f0d795" stroke-width="0.8" opacity="0.45"/>
+      <!-- the central embossed cartouche peeks 2px past the plate's thickness -->
+      <path d="M 128 13.6 C 138 16.2, 162 16.2, 172 13.6 Z" fill="url(#c-strip)" stroke="#3a280e" stroke-width="0.6" stroke-opacity="0.5"/>
+      <!-- the hanging bail all but disappears: a sliver of curve peeking
+           past the strip between the posts -->
+      <path d="M 95 20 C 115 32.5, 185 32.5, 205 20" fill="none" stroke="url(#c-bail)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M 96.5 19 C 116 30.5, 184 30.5, 203.5 19" fill="none" stroke="#f4df9e" stroke-width="1" opacity="0.5"/>
+      <!-- the two posts read as two small domes -->
+      <rect x="91.5" y="13" width="7" height="6" fill="#8a6427" stroke="#3a280e" stroke-width="0.6" stroke-opacity="0.5"/>
+      <rect x="201.5" y="13" width="7" height="6" fill="#8a6427" stroke="#3a280e" stroke-width="0.6" stroke-opacity="0.5"/>
+      <circle cx="95" cy="24" r="7" fill="url(#c-post)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.55"/>
+      <ellipse cx="92.2" cy="21.4" rx="1.9" ry="1.6" fill="#fff6d8" opacity="0.85"/>
+      <circle cx="205" cy="24" r="7" fill="url(#c-post)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.55"/>
+      <ellipse cx="202.2" cy="21.4" rx="1.9" ry="1.6" fill="#fff6d8" opacity="0.85"/>
+    </svg>
+
+    <a class="jd-tag" href="#"><svg class="jd-tag-string" viewBox="0 0 44 34" aria-hidden="true"><circle cx="8" cy="6" r="3.4" fill="#8a713c" stroke="#4a3a12" stroke-width="1"/><circle cx="7" cy="5" r="1.2" fill="#d8c288"/><path d="M8 8 C 5 18, 15 25, 30 27" fill="none" stroke="#8a7648" stroke-width="1.6" stroke-linecap="round"/></svg><span class="jd-tag-body">FIELD NOTES &#8595;</span></a>
+
+    <div class="band-varnish"></div>
+    <div class="band-vignette"></div>
+  </div>
+  <p class="mock-label"><b>C &middot; victorian bail pull</b> &mdash; honest casualty: plan view nearly erases this option &mdash; the stamped backplate is a 4px brass strip, the hanging bail a sliver of curve past it, the posts two small domes &middot; its charm (the ornate plate, the swinging bail) lives entirely on a face the camera cannot see &middot; parlor-desk register c.&thinsp;1880 &middot; tag keeps the band</p>
+</section>
+
+<!-- ======================= D · CARD-CATALOG PULL ======================= -->
+<section class="opt opt-d">
+  <div class="band-stage">
+    <div class="band-floor"></div>
+    <div class="band-frame"></div>
+    <div class="band-craq"></div>
+
+    <svg class="hw" viewBox="0 0 300 110" aria-label="card-catalog pull, strict plan view: thin frame strip, card unreadable, small cup">
+      <defs>
+        <linearGradient id="d-strip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.55" stop-color="#b3873a"/>
+          <stop offset="1" stop-color="#6e4f1e"/>
+        </linearGradient>
+        <linearGradient id="d-lip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#dcb96c"/>
+          <stop offset="0.5" stop-color="#a87c30"/>
+          <stop offset="1" stop-color="#43300f"/>
+        </linearGradient>
+        <linearGradient id="d-bounce" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a6a34"/>
+          <stop offset="1" stop-color="#170c04" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="d-int" cx="0.5" cy="0.2" r="0.95">
+          <stop offset="0" stop-color="#241408"/>
+          <stop offset="1" stop-color="#100902"/>
+        </radialGradient>
+        <radialGradient id="d-scr" cx="0.35" cy="0.35" r="0.8">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.6" stop-color="#8a6427"/>
+          <stop offset="1" stop-color="#4a3512"/>
+        </radialGradient>
+        <filter id="d-sh" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+      </defs>
+      <!-- cast shadow on the page floor, down-right -->
+      <g transform="translate(11,14)" filter="url(#d-sh)" opacity="0.42" fill="#1c0e05">
+        <rect x="60" y="10" width="180" height="5" rx="1.5"/>
+        <path d="M 118 14.5 C 120 44, 132 58, 150 58 C 168 58, 180 44, 182 14.5 Z"/>
+      </g>
+      <!-- the label frame is VERTICAL: from above it is a thin top-edge strip -->
+      <rect x="60" y="10" width="180" height="5" rx="1.5" fill="url(#d-strip)" stroke="#241505" stroke-width="0.7" stroke-opacity="0.55"/>
+      <line x1="64" y1="11" x2="140" y2="11" stroke="#f0d795" stroke-width="0.9" opacity="0.45"/>
+      <!-- the card survives only as a paper hairline in the frame's top slot -->
+      <line x1="78" y1="12.4" x2="222" y2="12.4" stroke="#e9d8ac" stroke-width="1.1" opacity="0.75"/>
+      <!-- screw-head domes barely proud of the strip -->
+      <path d="M 65 14.9 A 3.2 2.9 0 0 0 71.4 14.9 Z" fill="url(#d-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.5"/>
+      <path d="M 228.6 14.9 A 3.2 2.9 0 0 0 235 14.9 Z" fill="url(#d-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.5"/>
+      <!-- the small plan-view cup protruding below the frame -->
+      <path d="M 118 14.5 C 120 44, 132 58, 150 58 C 168 58, 180 44, 182 14.5 Z" fill="url(#d-lip)" stroke="#241505" stroke-width="0.8" stroke-opacity="0.6"/>
+      <path d="M 125 14.5 C 127 39, 137 50, 150 50 C 163 50, 173 39, 175 14.5 Z" fill="url(#d-int)"/>
+      <path d="M 125 14.5 C 127 24, 138 28, 150 28 C 162 28, 173 24, 175 14.5 Z" fill="url(#d-bounce)" opacity="0.5"/>
+      <path d="M 125 14.5 C 127 39, 137 50, 150 50 C 163 50, 173 39, 175 14.5" fill="none" stroke="#0e0702" stroke-width="0.9" opacity="0.6"/>
+      <path d="M 120.5 18 C 122.5 40, 131 52, 143 55.5" fill="none" stroke="#f4df9e" stroke-width="1.4" opacity="0.5"/>
+      <path d="M 179.5 18 C 177.5 41, 168 53, 156 56" fill="none" stroke="#241505" stroke-width="1.6" opacity="0.5"/>
+      <path d="M 132 47 C 140 50.6, 160 50.6, 168 47" fill="none" stroke="#a87c30" stroke-width="1.2" opacity="0.3"/>
+      <path d="M 138 57.2 C 144 58.6, 156 58.6, 162 57.2" fill="none" stroke="#d8b96b" stroke-width="1" opacity="0.3"/>
+    </svg>
+
+    <div class="band-varnish"></div>
+    <div class="band-vignette"></div>
+  </div>
+  <p class="mock-label"><b>D &middot; card-catalog pull, strict</b> &mdash; same vertical-face problem, rendered truthfully: the label frame is a thin top-edge strip, the card survives only as a paper hairline &mdash; unreadable &mdash; and the small plan-view cup protrudes below &middot; library register c.&thinsp;1890&ndash;1930 &middot; the label can no longer absorb the tag; strict D ships with nothing to read &mdash; no separate tag shown</p>
+</section>
+
+<!-- ============== D2 · CARD-CATALOG PULL, RIM-MOUNTED ================== -->
+<!-- The defensible convention-bend: the brass label frame lies FLAT ON TOP
+     of the front band's rim — exactly the way the manila FIELD NOTES tag
+     already lies on the band in production — so the card is fully readable
+     from above. The plan-view cup still protrudes from the outer edge. -->
+<section class="opt opt-d2">
+  <div class="band-stage">
+    <div class="band-floor"></div>
+    <div class="band-frame"></div>
+    <div class="band-craq"></div>
+
+    <svg class="hw" viewBox="0 0 300 190" aria-label="card-catalog pull, rim-mounted: label frame flat on the rim reading FIELD NOTES, plan-view cup below">
+      <defs>
+        <linearGradient id="d2-pl" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.55" stop-color="#b3873a"/>
+          <stop offset="1" stop-color="#6e4f1e"/>
+        </linearGradient>
+        <linearGradient id="d2-lip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#dcb96c"/>
+          <stop offset="0.5" stop-color="#a87c30"/>
+          <stop offset="1" stop-color="#43300f"/>
+        </linearGradient>
+        <linearGradient id="d2-bounce" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#8a6a34"/>
+          <stop offset="1" stop-color="#170c04" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="d2-int" cx="0.5" cy="0.2" r="0.95">
+          <stop offset="0" stop-color="#241408"/>
+          <stop offset="1" stop-color="#100902"/>
+        </radialGradient>
+        <linearGradient id="d2-card" x1="0" y1="0" x2="1" y2="0.35">
+          <stop offset="0" stop-color="#e9d8ac"/>
+          <stop offset="1" stop-color="#d3bd85"/>
+        </linearGradient>
+        <linearGradient id="d2-cardsh" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#281908" stop-opacity="0.35"/>
+          <stop offset="1" stop-color="#281908" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="d2-cardshx" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#281908" stop-opacity="0.3"/>
+          <stop offset="1" stop-color="#281908" stop-opacity="0"/>
+        </linearGradient>
+        <radialGradient id="d2-scr" cx="0.35" cy="0.35" r="0.8">
+          <stop offset="0" stop-color="#d9b25f"/>
+          <stop offset="0.6" stop-color="#8a6427"/>
+          <stop offset="1" stop-color="#4a3512"/>
+        </radialGradient>
+        <filter id="d2-sh" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5"/>
+        </filter>
+        <filter id="d2-sh2" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.5"/>
+        </filter>
+      </defs>
+      <!-- == the cup: still on the vertical face, overhanging the edge == -->
+      <!-- its cast shadow drops past the drawer to the page floor -->
+      <g transform="translate(11,14)" filter="url(#d2-sh)" opacity="0.42" fill="#1c0e05">
+        <rect x="112" y="90" width="76" height="4.5" rx="1.5"/>
+        <path d="M 118 94 C 120 124, 132 138, 150 138 C 168 138, 180 124, 182 94 Z"/>
+      </g>
+      <rect x="112" y="90" width="76" height="4.5" rx="1.5" fill="url(#d2-pl)" stroke="#241505" stroke-width="0.7" stroke-opacity="0.55"/>
+      <path d="M 118 94 C 120 124, 132 138, 150 138 C 168 138, 180 124, 182 94 Z" fill="url(#d2-lip)" stroke="#241505" stroke-width="0.8" stroke-opacity="0.6"/>
+      <path d="M 125 94 C 127 119, 137 130, 150 130 C 163 130, 173 119, 175 94 Z" fill="url(#d2-int)"/>
+      <path d="M 125 94 C 127 104, 138 108, 150 108 C 162 108, 173 104, 175 94 Z" fill="url(#d2-bounce)" opacity="0.5"/>
+      <path d="M 125 94 C 127 119, 137 130, 150 130 C 163 130, 173 119, 175 94" fill="none" stroke="#0e0702" stroke-width="0.9" opacity="0.6"/>
+      <path d="M 120.5 97.5 C 122.5 120, 131 132, 143 135.5" fill="none" stroke="#f4df9e" stroke-width="1.4" opacity="0.5"/>
+      <path d="M 179.5 97.5 C 177.5 121, 168 133, 156 136" fill="none" stroke="#241505" stroke-width="1.6" opacity="0.5"/>
+      <path d="M 132 127 C 140 130.6, 160 130.6, 168 127" fill="none" stroke="#a87c30" stroke-width="1.2" opacity="0.3"/>
+      <path d="M 138 137.2 C 144 138.6, 156 138.6, 162 137.2" fill="none" stroke="#d8b96b" stroke-width="1" opacity="0.3"/>
+      <!-- == the label frame: FLAT ON THE RIM'S TOP FACE, readable == -->
+      <g transform="rotate(-1.6 150 58)">
+        <!-- tight cast shadow onto the wood, like the tag's -->
+        <rect x="73" y="34" width="160" height="58" rx="4" fill="#140903" opacity="0.4" filter="url(#d2-sh2)"/>
+        <rect x="70" y="30" width="160" height="58" rx="4" fill="url(#d2-pl)" stroke="#3a280e" stroke-width="1" stroke-opacity="0.55"/>
+        <path d="M 72 84 L 72 36 Q 72 32 76 32 L 224 32" fill="none" stroke="#eed08d" stroke-width="1.3" opacity="0.45"/>
+        <path d="M 228 36 L 228 82 Q 228 86 224 86 L 96 86" fill="none" stroke="#33220c" stroke-width="1.3" opacity="0.45"/>
+        <!-- recessed window, aged card -->
+        <rect x="82" y="44" width="136" height="30" fill="#241505"/>
+        <rect x="84" y="46" width="132" height="26" fill="url(#d2-card)"/>
+        <rect x="84" y="46" width="132" height="7" fill="url(#d2-cardsh)"/>
+        <rect x="84" y="46" width="6" height="26" fill="url(#d2-cardshx)"/>
+        <path d="M 83 73 L 83 45 L 219 45" fill="none" stroke="#33220c" stroke-width="1.6" opacity="0.6"/>
+        <path d="M 83.5 74 L 219.5 74 L 219.5 45" fill="none" stroke="#ecd28c" stroke-width="1.2" opacity="0.5"/>
+        <!-- the card reads as the production tag does: FIELD NOTES + arrow -->
+        <text x="146" y="63.5" text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace" font-size="12" letter-spacing="2.6" fill="#4a3a18">FIELD NOTES</text>
+        <g stroke="#4a3a18" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 206 53.5 L 206 64.5"/>
+          <path d="M 202.6 61.1 L 206 64.5 L 209.4 61.1"/>
+        </g>
+        <!-- four screws — honest circles-with-slots: this plate is HORIZONTAL -->
+        <circle cx="76" cy="39" r="3.8" fill="url(#d2-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.6"/>
+        <line x1="73.4" y1="38.1" x2="78.6" y2="39.9" stroke="#241505" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="224" cy="39" r="3.8" fill="url(#d2-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.6"/>
+        <line x1="223" y1="41.7" x2="225" y2="36.3" stroke="#241505" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="76" cy="79" r="3.8" fill="url(#d2-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.6"/>
+        <line x1="74.2" y1="76.8" x2="77.8" y2="81.2" stroke="#241505" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="224" cy="79" r="3.8" fill="url(#d2-scr)" stroke="#241505" stroke-width="0.6" stroke-opacity="0.6"/>
+        <line x1="221.5" y1="80.4" x2="226.5" y2="77.6" stroke="#241505" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+    </svg>
+
+    <div class="band-varnish"></div>
+    <div class="band-vignette"></div>
+  </div>
+  <p class="mock-label"><b>D2 &middot; card-catalog pull, rim-mounted</b> &mdash; the defensible convention-bend: the brass label frame lies FLAT on the rim&rsquo;s top face &mdash; bending strict plan exactly the way the production manila tag already does (an object on the rim, not the front face) &mdash; so the aged card reads FIELD NOTES &#8595; from above &middot; the plan-view cup still protrudes from the outer edge below &middot; the label absorbs the tag &mdash; no separate tag</p>
+</section>
+
+<!-- ======================= CONSIDERATIONS ============================== -->
+<div class="considerations">
+  <p class="mc-head">Considerations &middot; plan view, drag &amp; scroll</p>
+  <p><b>Plan view</b> &mdash; all face-mounted hardware overhangs the stage&rsquo;s outer edge: it renders OUTSIDE the band (the stage keeps <code>overflow: visible</code>; production <code>.jd-stage</code> already does), and its cast shadow drops past the drawer to the floor beyond &mdash; landing on the page background, slightly longer and softer than the in-drawer shadows.</p>
+  <p><b>A</b> &mdash; decorative only: <code>pointer-events: none</code>; taps and swipes pass through (page scroll); the manila tag stays the FIELD NOTES link on the band.</p>
+  <p><b>B</b> &mdash; decorative only, same pass-through; the overhanging cup never traps a gesture; tag keeps link duty just right of it.</p>
+  <p><b>C</b> &mdash; decorative only; costs nothing on mobile &mdash; but its entire case for existing is invisible from above; tag keeps the link.</p>
+  <p><b>D</b> &mdash; strict plan makes the card unreadable, so the label can NO longer carry the FIELD NOTES affordance; choosing strict D means bringing the manila tag back beside it.</p>
+  <p><b>D2</b> &mdash; the rim-mounted card doubles as the FIELD NOTES link: the label frame is the anchor (<code>#notes</code>) with the tag&rsquo;s &ge;44px coarse-pointer hit inset; only the cup below stays <code>pointer-events: none</code>.</p>
+  <p>The chosen pull ships as part of the stage markup (a sibling of <code>.jd-tag</code>), positioned relative to the bottom band in <code>--wall</code> units exactly as mocked, overhanging the drawer&rsquo;s outer edge, under the varnish/vignette light where it crosses the band; the drag/scroll wiring is unchanged.</p>
+</div>
+
+</body>
+</html>

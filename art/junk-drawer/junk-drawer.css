@@ -264,8 +264,22 @@ html { scroll-behavior: smooth; }
 /* ---------------- the FIELD NOTES manila tag on the bottom band ---------- */
 /* the tag hangs from a brass tack pinned into the bottom rim: a short string
    runs tack → grommet, so the tag's attachment to the drawer is stated */
+/* the pull: plan-view victorian bail (owner's pick, mockup-5), centered on
+   the front band, face-plane line (svg y=10) seated on the stage's outer
+   edge so the hardware overhangs onto the page. Decorative only. */
+.jd-pull {
+  position: absolute;
+  left: 50%;
+  bottom: -44px;              /* 220px-wide svg: y=10 face line lands on the edge */
+  width: 220px;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 55;
+}
+
 .jd-tag {
-  position: absolute; left: 50%; bottom: calc(var(--wall) * 0.5); z-index: 55;
+  position: absolute; left: calc(50% + 148px); bottom: calc(var(--wall) * 0.5); z-index: 55;
   transform: translate(-50%, 50%) rotate(-2deg);
   text-decoration: none;
   filter: drop-shadow(2px 3px 3px rgba(20, 10, 4, 0.45));
@@ -469,6 +483,10 @@ html { scroll-behavior: smooth; }
     min-height: 420px;
     box-shadow: none;
   }
+  /* the pull is desktop-only for now (its overhang would collide with the
+     immersive viewport-bottom band); the tag returns to center */
+  .jd-pull { display: none; }
+  .jd-tag { left: 50%; }
   /* IMMERSIVE MODE (owner request, G5 revision 4, 2026-07-26): on this
      page only, the fixed site banner slides away while the drawer is in
      view and returns when the visitor scrolls to the notes. Page-scoped
