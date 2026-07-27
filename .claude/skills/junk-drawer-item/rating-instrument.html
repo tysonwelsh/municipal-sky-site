@@ -1,0 +1,320 @@
+<title>Junk Drawer — Rate</title>
+<!--
+  Rating instrument template for the junk-drawer-item skill.
+
+  TO USE: read this file, then replace the four __INJECT_*__ markers
+  with live JSON data before publishing as an Artifact.
+
+  __INJECT_GRADES__    → taxonomy.json `grades` array
+  __INJECT_AXES__      → taxonomy.json `axes` array
+  __INJECT_SIZES__     → taxonomy.json `sizeTiers` array
+  __INJECT_RESPONSES__ → array of {key, label, svg} objects, one per
+                         model response being graded. `key` is the
+                         model slug, `label` is the display name,
+                         `svg` is the FULL SVG markup (id-prefixed
+                         to avoid collisions when multiple SVGs share
+                         a page — prefix every id/href in each SVG
+                         with a short unique string per model, e.g.
+                         "f_", "s_", "o_").
+-->
+<style>
+:root {
+  --bg: #1b1a22;
+  --card: #24232e;
+  --border: #3a3648;
+  --text: #d8d4de;
+  --dim: #8a84a0;
+  --accent: #a78bfa;
+  --accent-bg: rgba(167,139,250,0.12);
+  --accent-border: rgba(167,139,250,0.4);
+  --pill-bg: #2e2d3a;
+  --check-a: #222228;
+  --check-b: #2c2c34;
+  --green: #6ee7b7;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  padding: 0 0 6rem;
+  -webkit-text-size-adjust: 100%;
+}
+h1 {
+  font-size: 1rem; font-weight: 600; letter-spacing: 0.04em;
+  text-align: center; padding: 1.2rem 1rem 0.4rem;
+  color: var(--dim); text-transform: uppercase;
+}
+.tabs {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg); z-index: 10;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.tab {
+  flex: 1; min-width: 0; text-align: center;
+  padding: 0.7rem 0.4rem; font-size: 0.82rem; font-weight: 500;
+  color: var(--dim); cursor: pointer;
+  border-bottom: 2px solid transparent; transition: all 0.15s;
+  -webkit-tap-highlight-color: transparent; white-space: nowrap;
+}
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tab .check { display: none; color: var(--green); margin-left: 0.3em; }
+.tab.done .check { display: inline; }
+
+.panel { display: none; padding: 1rem; }
+.panel.active { display: block; }
+
+.svg-frame {
+  background-image:
+    linear-gradient(45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(-45deg, var(--check-a) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, var(--check-a) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--check-a) 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-color: var(--check-b);
+  border-radius: 8px; padding: 0.75rem; margin-bottom: 1.2rem;
+  display: flex; align-items: center; justify-content: center;
+  max-height: 52vh; overflow: hidden;
+}
+.svg-frame svg { max-width: 100%; max-height: 48vh; display: block; }
+
+.axis-group { margin-bottom: 1.1rem; }
+.axis-label {
+  font-size: 0.8rem; font-weight: 600; color: var(--dim);
+  margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.axis-desc {
+  font-size: 0.75rem; color: var(--dim); opacity: 0.7; margin-bottom: 0.5rem;
+}
+.pills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pill {
+  padding: 0.55rem 0.9rem; border-radius: 20px; font-size: 0.82rem;
+  background: var(--pill-bg); color: var(--text);
+  border: 1.5px solid transparent; cursor: pointer;
+  transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.pill:active { transform: scale(0.96); }
+.pill.selected {
+  background: var(--accent-bg); border-color: var(--accent-border);
+  color: var(--accent);
+}
+.note-toggle {
+  font-size: 0.75rem; color: var(--dim); margin-top: 0.3rem;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.note-input {
+  display: none; margin-top: 0.4rem; width: 100%;
+  background: var(--pill-bg); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 0.82rem;
+  padding: 0.5rem 0.7rem; font-family: inherit;
+  resize: vertical; min-height: 2.4rem;
+}
+.note-input.open { display: block; }
+
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
+
+.output-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 1rem; font-family: 'SF Mono','Menlo','Consolas', monospace;
+  font-size: 0.72rem; line-height: 1.5; white-space: pre-wrap;
+  word-break: break-all; max-height: 50vh; overflow-y: auto; color: var(--text);
+}
+.copy-btn {
+  display: block; width: 100%; margin-top: 0.8rem; padding: 0.9rem;
+  border-radius: 10px; border: none; background: var(--accent);
+  color: #111; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.copy-btn:active { opacity: 0.85; }
+.copy-btn.copied { background: var(--green); }
+.incomplete { color: #f59e0b; font-size: 0.82rem; margin-bottom: 0.8rem; }
+</style>
+
+<h1 id="page-title">Rate</h1>
+<div class="tabs" id="tabs"></div>
+<div id="panels"></div>
+
+<script>
+// ── Injected data (replace markers before publishing) ─────────────
+const GRADES    = /* __INJECT_GRADES__ */ [];
+const AXES      = /* __INJECT_AXES__ */ [];
+const SIZES     = /* __INJECT_SIZES__ */ [];
+const RESPONSES = /* __INJECT_RESPONSES__ */ [];
+// ──────────────────────────────────────────────────────────────────
+
+const state = {};
+RESPONSES.forEach(r => { state[r.key] = { grade: null, axes: {}, notes: {} }; });
+let sizeClass = null;
+
+function init() {
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+
+  RESPONSES.forEach((r, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (i === 0 ? ' active' : '');
+    tab.dataset.panel = 'p-' + r.key;
+    tab.innerHTML = r.label + '<span class="check"> &#10003;</span>';
+    tabsEl.appendChild(tab);
+
+    const panel = document.createElement('div');
+    panel.id = 'p-' + r.key;
+    panel.className = 'panel' + (i === 0 ? ' active' : '');
+    panel.innerHTML = buildModelPanel(r, i === 0);
+    panelsEl.appendChild(panel);
+  });
+
+  // Results tab
+  const rTab = document.createElement('div');
+  rTab.className = 'tab';
+  rTab.dataset.panel = 'p-output';
+  rTab.innerHTML = 'Results<span class="check"> &#10003;</span>';
+  tabsEl.appendChild(rTab);
+
+  const rPanel = document.createElement('div');
+  rPanel.id = 'p-output';
+  rPanel.className = 'panel';
+  rPanel.innerHTML = '<div class="incomplete" id="incomplete-msg"></div>' +
+    '<div class="output-box" id="output-box"></div>' +
+    '<button class="copy-btn" id="copy-btn">Copy to clipboard</button>';
+  panelsEl.appendChild(rPanel);
+
+  document.getElementById('copy-btn').addEventListener('click', copyOutput);
+  tabsEl.addEventListener('click', onTabClick);
+  updateOutput();
+}
+
+function buildModelPanel(r, showSize) {
+  let h = '<div class="svg-frame">' + r.svg + '</div>';
+
+  // Overall grade
+  const gid = r.key + '__grade';
+  h += '<div class="axis-group"><div class="axis-label">Overall grade</div>';
+  h += '<div class="pills">';
+  GRADES.forEach(g => {
+    h += '<div class="pill" data-group="' + gid + '" data-value="' + g.id + '" onclick="pick(this)">'
+      + g.label + ' <span style="opacity:0.45;font-size:0.7rem">' + g.description.split('.')[0] + '</span></div>';
+  });
+  h += '</div></div>';
+
+  // Annotation axes
+  AXES.forEach(ax => {
+    const aid = r.key + '__' + ax.id;
+    h += '<div class="axis-group">';
+    h += '<div class="axis-label">' + ax.label + '</div>';
+    h += '<div class="axis-desc">' + ax.description + '</div>';
+    h += '<div class="pills">';
+    ax.values.forEach(v => {
+      h += '<div class="pill" data-group="' + aid + '" data-value="' + v.id + '" onclick="pick(this)">' + v.label + '</div>';
+    });
+    h += '<div class="pill" data-group="' + aid + '" data-value="__skip" onclick="pick(this)" style="opacity:0.55">Skip</div>';
+    h += '</div>';
+    h += '<div class="note-toggle" onclick="toggleNote(\'' + aid + '\')">+ add note</div>';
+    h += '<textarea class="note-input" id="note-' + aid + '" placeholder="Optional note..." oninput="saveNote(\'' + r.key + '\',\'' + ax.id + '\',this.value)"></textarea>';
+    h += '</div>';
+  });
+
+  // Size picker on the first model tab
+  if (showSize) {
+    h += '<hr class="divider"><div class="axis-group">';
+    h += '<div class="axis-label">Size in the drawer</div>';
+    h += '<div class="axis-desc">How big should this item read among the junk? (Applies to all responses.)</div>';
+    h += '<div class="pills">';
+    SIZES.forEach(s => {
+      h += '<div class="pill" data-group="size" data-value="' + s.id + '" onclick="pick(this)">'
+        + s.id.toUpperCase() + ' <span style="opacity:0.5;font-size:0.72rem">' + s.description + '</span></div>';
+    });
+    h += '</div></div>';
+  }
+  return h;
+}
+
+function pick(el) {
+  const g = el.dataset.group, v = el.dataset.value;
+  document.querySelectorAll('[data-group="' + g + '"]').forEach(p => p.classList.remove('selected'));
+  el.classList.add('selected');
+
+  if (g === 'size') {
+    sizeClass = v;
+  } else if (g.endsWith('__grade')) {
+    state[g.split('__')[0]].grade = v;
+  } else {
+    const [model, axis] = g.split('__');
+    if (v === '__skip') delete state[model].axes[axis];
+    else state[model].axes[axis] = v;
+  }
+  updateTabs();
+  updateOutput();
+}
+
+function toggleNote(gid) {
+  const n = document.getElementById('note-' + gid);
+  n.classList.toggle('open');
+  if (n.classList.contains('open')) n.focus();
+}
+
+function saveNote(model, axis, val) {
+  if (val.trim()) state[model].notes[axis] = val.trim();
+  else delete state[model].notes[axis];
+  updateOutput();
+}
+
+function updateTabs() {
+  RESPONSES.forEach(r => {
+    const tab = document.querySelector('[data-panel="p-' + r.key + '"]');
+    const hasGrade = !!state[r.key].grade;
+    const axisCount = Object.keys(state[r.key].axes).length;
+    const skipped = document.querySelectorAll('[data-group^="' + r.key + '__"][data-value="__skip"].selected').length;
+    if (hasGrade && axisCount + skipped >= AXES.length) tab.classList.add('done');
+    else tab.classList.remove('done');
+  });
+}
+
+function updateOutput() {
+  const out = { sizeClass, models: {} };
+  RESPONSES.forEach(r => {
+    const o = { grade: state[r.key].grade, annotations: {} };
+    Object.entries(state[r.key].axes).forEach(([ax, val]) => {
+      const note = state[r.key].notes[ax];
+      o.annotations[ax] = note ? { value: val, note } : val;
+    });
+    out.models[r.key] = o;
+  });
+  document.getElementById('output-box').textContent = JSON.stringify(out, null, 2);
+
+  const missing = [];
+  if (!sizeClass) missing.push('size');
+  RESPONSES.forEach(r => {
+    if (!state[r.key].grade) missing.push(r.label + ' grade');
+    const filled = Object.keys(state[r.key].axes).length;
+    const skipped = document.querySelectorAll('[data-group^="' + r.key + '__"][data-value="__skip"].selected').length;
+    if (filled + skipped < AXES.length) missing.push(r.label + ' axes');
+  });
+  const msg = document.getElementById('incomplete-msg');
+  msg.textContent = missing.length ? 'Still need: ' + missing.join(', ') : 'All set — copy and paste back into the chat.';
+}
+
+function copyOutput() {
+  const text = document.getElementById('output-box').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy to clipboard'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+function onTabClick(e) {
+  const tab = e.target.closest('.tab');
+  if (!tab) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  tab.classList.add('active');
+  document.getElementById(tab.dataset.panel).classList.add('active');
+  if (tab.dataset.panel === 'p-output') updateOutput();
+}
+
+init();
+</script>
