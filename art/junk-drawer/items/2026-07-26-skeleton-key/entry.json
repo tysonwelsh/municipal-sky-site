@@ -42,12 +42,5 @@
       "transcript": null,
       "notes": "Schema fixture: first item, added while scaffolding the backend. Grade and annotations are a provisional self-assessment by the generating model — owner to regrade. viewBox normalized 2026-07-26: tightened from \"0 0 240 480\" to measured ink bounds (framing metadata only; artwork bytes untouched)."
     }
-  ],
-  "placement": {
-    "x": 0.5509,
-    "y": 0.2947,
-    "rotation": 76,
-    "scale": 0.845,
-    "z": 5
-  }
+  ]
 }

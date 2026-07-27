@@ -20,27 +20,93 @@
   var pile = document.querySelector('.jd-pile');
   var BASE = { s: 9, m: 15.5, l: 22 };   /* --w per sizeClass, in cqmin */
 
-  /* MOBILE_POUR — the hand-tuned PORTRAIT re-seat, keyed by item id;
-     values override left/top/--rot on wells ≤768px wide. Interim: a later
-     phase replaces this constant with a deterministic portrait re-seat
-     computed from the same placement data (PLAN-MOBILE §2). */
-  var MOBILE_POUR = {
-    '2026-07-26-three-of-hearts': { x: 0.6,  y: 0.38,   rot: -13 },
-    '2026-07-26-pocket-mirror':   { x: 0.33, y: 0.15,   rot: -7 },
-    '2026-07-26-matchbook':       { x: 0.5292, y: 0.1211, rot: 26 },
-    '2026-07-26-button':          { x: 0.59, y: 0.1752, rot: -21 },
-    '2026-07-26-scissors':        { x: 0.508, y: 0.449, rot: -34 },
-    '2026-07-26-skeleton-key':    { x: 0.575, y: 0.3692, rot: 76 },
-    '2026-07-26-ticket-stub':     { x: 0.39, y: 0.2424, rot: -49 },
-    '2026-07-26-pencil-stub':     { x: 0.6585, y: 0.8023,    rot: 118 },
-    '2026-07-26-rubber-band':     { x: 0.6691, y: 0.8201,  rot: 9 },
-    '2026-07-26-paperclip':       { x: 0.2409, y: 0.3109, rot: 104 }
+  /* ---- procedural scatter -------------------------------------------------
+     Item positions are COMPUTED at load, never authored. Each browsing
+     session gets ONE scatter, persisted in sessionStorage, so the layout is
+     stable across refreshes but fresh on the next visit. An adaptive jittered
+     grid (cell count tracks the item count) keeps things spread as the
+     collection grows; generous jitter plus a wide rotation range give the
+     loose, overlapping "junk pile" read. This retires both the hand-authored
+     entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
+     now share one computed layout, and nobody hand-places items. */
+  var SCATTER = {
+    key: 'jd-scatter-v1',
+    jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
+                       neighbours cross and cluster → the looser pile */
+    rotMax: 34,     /* rotation range, ± degrees */
+    inset: 0.012    /* keep item centres at least this far off the well edge */
   };
 
+  function shuffle(a) {
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1)), t = a[i];
+      a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  function seq(n) { var a = [], i; for (i = 0; i < n; i++) { a.push(i); } return a; }
+
+  /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
+     that tall, so it tells us how much room the item claims for clamping */
+  function svgAspect(el) {
+    var svg = el.querySelector('svg'), vb = svg && svg.getAttribute('viewBox');
+    if (vb) {
+      var n = vb.split(/[\s,]+/).map(Number);
+      if (n.length === 4 && n[2] > 0 && n[3] > 0) { return n[2] / n[3]; }
+    }
+    return 1;
+  }
+
+  /* fresh scatter for every element in `els` (each already sized + in the DOM,
+     so its footprint and aspect are measurable). Returns id -> {x,y,rot,z},
+     x/y as 0..1 fractions of the well (resize-safe). */
+  function computeScatter(els) {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    var N = els.length;
+    var cols = Math.max(1, Math.round(Math.sqrt(N * (W / H))));
+    var rows = Math.max(1, Math.ceil(N / cols));
+    var cells = shuffle(seq(rows * cols));   /* random item -> cell mapping */
+    var zs = shuffle(seq(N));                /* random, distinct stack order */
+    var cellW = 1 / cols, cellH = 1 / rows, out = {};
+    els.forEach(function (el, i) {
+      var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * MIN;
+      var hpx = wpx / svgAspect(el);
+      var hw = Math.min(0.5, wpx / 2 / W), hh = Math.min(0.5, hpx / 2 / H);
+      var cell = cells[i], cc = cell % cols, cr = Math.floor(cell / cols);
+      var x = (cc + 0.5) * cellW + (Math.random() * 2 - 1) * SCATTER.jitter * cellW;
+      var y = (cr + 0.5) * cellH + (Math.random() * 2 - 1) * SCATTER.jitter * cellH;
+      var loX = hw + SCATTER.inset, hiX = 1 - hw - SCATTER.inset;
+      var loY = hh + SCATTER.inset, hiY = 1 - hh - SCATTER.inset;
+      out[el.dataset.id] = {
+        x: +(hiX > loX ? Math.max(loX, Math.min(hiX, x)) : 0.5).toFixed(4),
+        y: +(hiY > loY ? Math.max(loY, Math.min(hiY, y)) : 0.5).toFixed(4),
+        rot: +((Math.random() * 2 - 1) * SCATTER.rotMax).toFixed(1),
+        z: zs[i] + 1
+      };
+    });
+    return out;
+  }
+
+  /* stable-per-session: reuse the stored scatter iff it covers exactly the
+     items on the page; otherwise recompute and persist. sessionStorage may be
+     unavailable (private mode) — degrade to a fresh scatter each load. */
+  function layoutFor(els) {
+    var ids = els.map(function (e) { return e.dataset.id; }), stored = null;
+    try { stored = JSON.parse(sessionStorage.getItem(SCATTER.key) || 'null'); }
+    catch (e) { stored = null; }
+    var covers = stored && ids.every(function (id) { return stored[id]; });
+    if (covers) { return stored; }
+    var fresh = computeScatter(els);
+    try { sessionStorage.setItem(SCATTER.key, JSON.stringify(fresh)); } catch (e) {}
+    return fresh;
+  }
+
   /* arrange mode: the copy-layout link renders ONLY under ?arrange=1 (a dev
-     affordance for hand-tuning placements; the gesture script binds it by id
-     when present). Inserted before the gesture IIFE runs, so the binding
-     below always sees it. */
+     affordance; the gesture script binds it by id when present). Since items
+     are now auto-scattered (no entry.placement), this is a debug readout of
+     the live/dragged positions, not an authoring step. Inserted before the
+     gesture IIFE runs, so the binding below always sees it. */
   if (location.search.indexOf('arrange=1') !== -1) {
     var stage = document.querySelector('.jd-stage');
     var arr = document.createElement('p');
@@ -212,17 +278,13 @@
       }));
     })
     .then(function (loaded) {
-      var mobile = window.matchMedia('(max-width: 768px)').matches;
-      loaded.forEach(function (rec) {
+      /* build + size every item first (sizeClass only; positions come next) */
+      var els = loaded.map(function (rec) {
         var item = rec.item;
-        /* placement is optional in the contract; a centred default keeps a
-           placement-less entry visible (a computed seeded placement is the
-           eventual fallback — PLAN-BACKEND §7.4) */
-        var p = item.placement || { x: 0.5, y: 0.5, rotation: 0, scale: 1, z: 1 };
         var el = document.createElement('div');
         el.className = 'jd-item';
         el.dataset.id = item.id;
-        el.dataset.scale = p.scale;              /* copy-layout passthrough */
+        el.dataset.scale = 1;                    /* copy-layout passthrough */
         el.dataset.title = item.title;
         el.dataset.model = item._modelLabel;
         el.dataset.grade = item._gradeLabel;
@@ -234,19 +296,20 @@
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
         el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+        el.style.setProperty('--w',
+          +(BASE[item.sizeClass] || BASE.m).toFixed(2));
+        pile.appendChild(el);
+        return el;
+      });
+      /* positions are computed, never authored — see SCATTER above. One layout
+         per session; applied in the same tick so nothing paints un-placed. */
+      var layout = layoutFor(els);
+      els.forEach(function (el) {
+        var p = layout[el.dataset.id];
         el.style.left = (p.x * 100) + '%';
         el.style.top = (p.y * 100) + '%';
-        el.style.setProperty('--rot', p.rotation + 'deg');
+        el.style.setProperty('--rot', p.rot + 'deg');
         el.style.zIndex = p.z;
-        el.style.setProperty('--w',
-          +((BASE[item.sizeClass] || BASE.m) * p.scale).toFixed(2));
-        var pour = mobile && MOBILE_POUR[item.id];
-        if (pour) {
-          el.style.left = (pour.x * 100) + '%';
-          el.style.top = (pour.y * 100) + '%';
-          el.style.setProperty('--rot', pour.rot + 'deg');
-        }
-        pile.appendChild(el);
       });
       if (window.JD_wirePile) window.JD_wirePile();
     })
@@ -552,10 +615,10 @@
     if (held) e.preventDefault();
   }, { passive: false });
 
-  /* arrange-mode: copy the pile's current placements as entry.json-shaped
-     blocks — keyed by full item id, each value ready to paste straight into
-     that entry's "placement" field (x/y 0..1 fractions of the well, item
-     centre; scale passed through from the loaded entry) */
+  /* arrange-mode: dump the pile's current positions (x/y 0..1 fractions of the
+     well, item centre), keyed by full item id. Debug readout only — items are
+     auto-scattered now, so this is for inspecting a layout, not authoring one;
+     nothing consumes a pasted-back block. */
   var copy = document.getElementById('copy-layout');
   if (copy) copy.addEventListener('click', function (e) {
     e.preventDefault();

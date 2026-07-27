@@ -10,13 +10,6 @@
   ],
   "primary": "r1",
   "sizeClass": "l",
-  "placement": {
-    "x": 0.0846,
-    "y": 0.2,
-    "rotation": 118,
-    "scale": 0.886,
-    "z": 1
-  },
   "responses": [
     {
       "rid": "r1",
