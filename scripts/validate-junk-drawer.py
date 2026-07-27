@@ -28,7 +28,7 @@ SLUG_RE = re.compile(r"^[a-z0-9-]+$")
 
 ENTRY_FIELDS = {
     "schema", "id", "title", "prompt", "created", "tags", "primary",
-    "placement", "retired", "sizeClass", "responses",
+    "placement", "retired", "sizeClass", "sizeScale", "responses",
 }
 RESPONSE_FIELDS = {
     "rid", "file", "model", "model_version", "date", "generation",
@@ -204,6 +204,10 @@ def validate_entry(item_dir, tax_ids):
         check_date(path, entry["created"], "created")
     if "sizeClass" in entry and entry["sizeClass"] not in ("s", "m", "l"):
         err(path, f"sizeClass must be 's', 'm', or 'l', got {entry['sizeClass']!r}")
+    if "sizeScale" in entry:
+        ss = entry["sizeScale"]
+        if not isinstance(ss, (int, float)) or isinstance(ss, bool) or ss <= 0:
+            err(path, f"sizeScale must be a positive number, got {entry['sizeScale']!r}")
     if "retired" in entry and not isinstance(entry["retired"], bool):
         err(path, f"retired must be a boolean, got {entry['retired']!r}")
     if "tags" in entry:

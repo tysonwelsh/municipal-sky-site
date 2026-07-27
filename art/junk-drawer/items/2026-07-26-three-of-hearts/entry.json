@@ -10,6 +10,7 @@
   ],
   "primary": "r1",
   "sizeClass": "l",
+  "sizeScale": 1.003,
   "responses": [
     {
       "rid": "r1",

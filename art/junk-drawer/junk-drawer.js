@@ -296,8 +296,14 @@
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
         el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+        /* size = coarse sizeClass tier × optional per-item fine scale. The
+           per-item sizeScale is the continuous dial (formerly carried by the
+           retired placement.scale) that the tiers alone can't express — e.g.
+           the paperclip sits well below the smallest tier. */
+        var fine = (typeof item.sizeScale === 'number' && item.sizeScale > 0)
+          ? item.sizeScale : 1;
         el.style.setProperty('--w',
-          +(BASE[item.sizeClass] || BASE.m).toFixed(2));
+          +((BASE[item.sizeClass] || BASE.m) * fine).toFixed(2));
         pile.appendChild(el);
         return el;
       });
