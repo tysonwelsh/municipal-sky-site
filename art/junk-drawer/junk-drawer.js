@@ -295,7 +295,8 @@
      specimen tag tethered to the picked object by a red elastic through its
      grommet (owner design, mockup-6). Persists until dismissed: tap wood /
      Esc / pick another item / drag the picked item. */
-  var tag = null, rope = null, picked = null;
+  var tag = null, rope = null, picked = null, pendingReturn = null;
+  var pileEl = well.querySelector('.jd-pile');
 
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2;
@@ -324,9 +325,22 @@
     well.appendChild(tag);
   }
 
+  function returnToPile(item) {
+    if (item.parentNode === well && pileEl) {
+      pileEl.appendChild(item);
+      item.style.zIndex = ++zTop;
+    }
+  }
   function hideTag() {
     if (tag) { tag.classList.remove('is-on'); rope.classList.remove('is-on'); }
-    if (picked) { picked.classList.remove('is-picked'); picked = null; }
+    if (picked) {
+      picked.classList.remove('is-picked');
+      /* mid-drag dismissal: moving the node now would break pointer
+         capture — settle() performs the return instead */
+      if (held === picked) pendingReturn = picked;
+      else returnToPile(picked);
+      picked = null;
+    }
     well.classList.remove('jd-has-pick');
   }
 
@@ -336,6 +350,11 @@
     picked = item;
     item.classList.add('is-picked');       /* persists: selected = lifted */
     well.classList.add('jd-has-pick');     /* the rest of the pile dims */
+    /* hoist the object out of the pile's stacking context so it renders
+       ABOVE the elastic (tag 70 < rope 71 < item 72). Same positioning
+       box — the pile is inset:0 of the well. Returned on dismissal. */
+    if (item.parentNode !== well) well.appendChild(item);
+    item.style.zIndex = 72;
     if (!tag) buildTag();
 
     var d = item.dataset;
@@ -345,12 +364,12 @@
       '<span class="sep">·</span>' + (d.model || '').toUpperCase() +
       '<span class="sep">·</span>' + (d.process || '') +
       '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></div>' +
-      '<div class="l2"><span class="gradelabel"><span class="glabel">GRADE:</span>' +
-      '<span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
+      '<div class="l2"><span class="gradecol">' +
+      '<span class="gradelabel">GRADE: <span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
       meterSVG(+d.rank || 1, +d.steps || 5) +
-      '<span class="btns">' +
+      '</span><span class="btns">' +
       '<a class="btn" href="' + d.url + '" download="' + d.id + '.svg" ' +
-      'title="download the SVG as generated">SVG ⤓</a>' +
+      'title="download the SVG as generated">DOWNLOAD<br>SVG ⤓</a>' +
       '<a class="btn jd-fullrecord" href="#" title="the full record is the next build">FULL RECORD →</a>' +
       '</span></div>';
     var fr = tag.querySelector('.jd-fullrecord');
@@ -408,6 +427,7 @@
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
+    if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
     item.style.zIndex = ++zTop;                  /* stays on top of the pile */
     if (moved) {                                 /* bake position, then rest */
       var w = well.getBoundingClientRect();

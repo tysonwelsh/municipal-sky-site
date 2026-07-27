@@ -179,7 +179,7 @@ html { scroll-behavior: smooth; }
    persists until dismissed. */
 .jd-itemtag {
   position: absolute;
-  z-index: 70;              /* above the varnish/vignette overlays */
+  z-index: 70;              /* sandwich: tag 70 < elastic 71 < picked item 72 */
   background: #e8d9a8;
   color: #3a2a12;
   padding: 0.7rem 0.95rem 0.65rem 1.55rem;
@@ -201,24 +201,26 @@ html { scroll-behavior: smooth; }
 .jd-itemtag .l1 { font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .jd-itemtag .sep { opacity: 0.45; padding: 0 0.32em; }
 .jd-itemtag .dim { color: rgba(58, 42, 18, 0.62); }
-.jd-itemtag .l2 { display: flex; align-items: center; gap: 0.85rem; margin-top: 0.42rem; }
-/* the grade as a stacked column: small dim GRADE: over the bold value */
-.jd-itemtag .gradelabel { display: flex; flex-direction: column; line-height: 1.35; }
-.jd-itemtag .glabel { font-size: 0.56rem; letter-spacing: 0.14em; color: rgba(58, 42, 18, 0.62); }
-.jd-itemtag .gradelabel .g { font-size: 0.72rem; letter-spacing: 0.12em; color: #3a2a12; font-weight: 700; }
+.jd-itemtag .l2 { display: flex; align-items: center; gap: 0.95rem; margin-top: 0.42rem; }
+/* the grade column: "GRADE: VALUE" on one line, the ruler/manicule below */
+.jd-itemtag .gradecol { display: flex; flex-direction: column; gap: 1px; }
+.jd-itemtag .gradelabel { font-size: 0.66rem; letter-spacing: 0.11em; }
+.jd-itemtag .gradelabel .g { color: #3a2a12; font-weight: 700; }
 .jd-itemtag svg { overflow: visible; vertical-align: middle; }
 .jd-itemtag .btns { margin-left: auto; display: flex; gap: 0.4rem; }
+.jd-itemtag .btns { align-items: stretch; }
 .jd-itemtag .btn {
   font-size: 0.58rem; letter-spacing: 0.13em; color: #3a2a12;
-  border: 1px solid rgba(74, 53, 18, 0.6); padding: 0.14rem 0.45rem;
-  text-decoration: none;
+  border: 1px solid rgba(74, 53, 18, 0.6); padding: 0.3rem 0.55rem;
+  text-decoration: none; text-align: center; line-height: 1.5;
+  display: flex; flex-direction: column; justify-content: center;
 }
 .jd-itemtag .btn:hover { background: rgba(255, 252, 240, 0.55); }
 
 /* the red elastic: drawn across the whole well, above items, under the tag */
 .jd-rope {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  z-index: 69; pointer-events: none;
+  z-index: 71; pointer-events: none;   /* over the tag, under the object */
   opacity: 0; transition: opacity 0.16s ease-out;
 }
 .jd-rope.is-on { opacity: 1; }
