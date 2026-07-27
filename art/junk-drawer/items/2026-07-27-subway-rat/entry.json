@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "id": "2026-07-27-subway-rat",
+  "title": "Sneaky subway rat",
+  "prompt": "I'd like a sneaky stealthy subway rat. It should have googly eyes and be showing in profile as though it is a scampering off somewhere. Let's give it a cartoony style like from the looney tunes or something",
+  "created": "2026-07-27",
+  "tags": [],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "major",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "major",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2,
+  "version": 3,
   "updated": "2026-07-27",
   "grades": [
     {
@@ -136,6 +136,11 @@
       "vendor": "Anthropic"
     },
     {
+      "id": "claude-opus-5",
+      "label": "Claude Opus 5",
+      "vendor": "Anthropic"
+    },
+    {
       "id": "claude-opus-4-1",
       "label": "Claude Opus 4.1",
       "vendor": "Anthropic"
@@ -166,6 +171,11 @@
       "date": "2026-07-27",
       "version": 2,
       "note": "Relabel utility: \"Utility Grade\" -> \"Utility\" (the display context already says Grade:)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 3,
+      "note": "Register model claude-opus-5 (Claude Opus 5)."
     }
   ]
 }
