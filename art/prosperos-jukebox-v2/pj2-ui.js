@@ -4,7 +4,7 @@
 // The chrome layer between the page (index.php + pj2.css) and everything
 // beneath it: the three engine facades (PJ2.Library / Sycorax / Ariel), the
 // skin toolkit (PJ2.Skin — palettes, atlas sigils), and the visualization
-// (PJ2.Viz — plate / margin / footer canvases). This file owns:
+// (PJ2.Viz — plate / margin canvases). This file owns:
 //
 //   · ENGINE LIFECYCLE — all three engines are created lazily on ONE shared
 //     AudioContext, and ONLY ONE ever plays at a time. The tracks are v1's
@@ -312,10 +312,10 @@
   }
 
   function makeViz() {
-    var plate = $("pj2-plate"), margin = $("pj2-margin"), footer = $("pj2-footer");
+    var plate = $("pj2-plate"), margin = $("pj2-margin");
     if (window.PJ2 && PJ2.Viz && typeof PJ2.Viz.create === "function") {
       try {
-        return PJ2.Viz.create({ plateCanvas: plate, marginCanvas: margin, footerCanvas: footer });
+        return PJ2.Viz.create({ plateCanvas: plate, marginCanvas: margin });
       } catch (err) {
         try { console.error("PJ2 UI: PJ2.Viz.create failed — placeholder plates", err); } catch (e) {}
       }

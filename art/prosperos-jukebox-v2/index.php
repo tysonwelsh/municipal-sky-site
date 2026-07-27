@@ -75,7 +75,14 @@ include '../../includes/header.php';
 
         <header class="pj2-folio-head">
           <h1 class="pj2-title" id="pj2-title"><span class="pj2-title-pre">Prospero&rsquo;s Jukebox &middot; </span><span class="pj2-init">P</span>rospero&rsquo;s Library</h1>
-          <div class="pj2-folio-no" id="pj2-folio-no">c dorian &middot; tonic 262</div>
+          <!-- TRANSPORT — play/stop/reset ride the running head so they are
+               reachable without scrolling past the plate (owner 2026-07-27).
+               The binding toggle and the mixer stay down in the cabinet. -->
+          <div class="pj2-transport pj2-transport-head" role="group" aria-label="transport">
+            <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
+            <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
+            <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
+          </div>
         </header>
 
         <div class="pj2-folio-grid">
@@ -88,6 +95,10 @@ include '../../includes/header.php';
           </div>
 
           <div class="pj2-margin-col">
+            <!-- the folio number — the mode and its tonic. Moved out of the
+                 running head (owner 2026-07-27) to sit with the rest of the
+                 apparatus captions, beside the plate. -->
+            <div class="pj2-folio-no" id="pj2-folio-no">c dorian &middot; tonic 262</div>
             <canvas id="pj2-margin" aria-label="the margin apparatus — tide, intensity, the air, the chord, and the motif genealogy as diagram furniture"></canvas>
             <section class="pj2-log-block">
               <h2 class="pj2-log-head" id="pj2-log-head">annotationes &middot; the scribal log</h2>
@@ -99,10 +110,6 @@ include '../../includes/header.php';
 
         </div><!-- /pj2-folio-grid -->
 
-        <div class="pj2-footer-strip">
-          <canvas id="pj2-footer" aria-label="the density envelope — solid ink past, pricked forecast"></canvas>
-        </div>
-
       </div><!-- /pj2-folio -->
     </div><!-- /pj2-folio-wrap -->
 
@@ -111,10 +118,7 @@ include '../../includes/header.php';
          seal, lamp and legend only -->
     <div class="pj2-cabinet">
 
-      <div class="pj2-transport" role="group" aria-label="transport">
-        <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
-        <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
-        <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
+      <div class="pj2-transport" role="group" aria-label="binding">
         <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
       </div>
 

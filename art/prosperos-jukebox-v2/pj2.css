@@ -275,16 +275,23 @@
   padding: 10px 12px 8px;
 }
 
-/* running head */
+/* running head — title, folio number, and the transport (owner 2026-07-27:
+   play/stop/reset sit above the plate so they need no scrolling) */
 .pj2-folio-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   border-bottom: 2px solid var(--pj2-ink2);
   padding: 0 4px 6px;
   margin-bottom: 10px;
+}
+/* the head's transport rides the right edge, a size down from the cabinet's */
+.pj2-transport-head { margin-left: auto; }
+.pj2-transport-head .pj2-pushplate {
+  font-size: 16px;
+  padding: 7px 12px;
 }
 .pj2-title {
   font-family: var(--pj2-head-font);
@@ -306,10 +313,17 @@
   color: var(--pj2-ink2);
   margin-right: 4px;
 }
+/* the folio number — rehomed from the running head into the margin column
+   (owner 2026-07-27), so it reads as one of the apparatus captions */
 .pj2-folio-no {
-  font-size: 17px;
+  font-family: "VT323", monospace;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--pj2-ink2);
-  letter-spacing: 0.12em;
+  border-bottom: 1px solid var(--pj2-ink3);
+  padding: 0 2px 2px;
+  margin: 0;
 }
 
 /* the reading-desk grid: plate column + margin column (gaps are night-on-
@@ -340,14 +354,6 @@
   display: block;
   width: 100%;
   height: 330px;
-}
-
-/* footer rule — the density envelope's home */
-.pj2-footer-strip { margin-top: 10px; padding: 0 4px; }
-#pj2-footer {
-  display: block;
-  width: 100%;
-  height: 64px;
 }
 
 /* ---------------------------------------------------------------------------
@@ -688,4 +694,17 @@
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
   .pj2-legend { width: 100%; }
   .pj2-cab-spacer { display: none; }
+  /* the head transport drops to its own full-width row, three equal thumb
+     targets — still above the plate, so play is reachable on open */
+  .pj2-transport-head {
+    width: 100%;
+    margin-left: 0;
+    gap: 6px;
+  }
+  .pj2-transport-head .pj2-pushplate {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    padding: 10px 4px;
+  }
 }

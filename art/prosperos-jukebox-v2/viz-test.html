@@ -21,7 +21,6 @@ input { width: 90px; cursor: text; }
 .stage { display: flex; gap: 14px; align-items: flex-start; }
 .plate-col { flex: 1 1 auto; min-width: 0; }
 #plate { display: block; width: 100%; height: 760px; }
-#footer { display: block; width: 100%; height: 64px; margin-top: 6px; }
 .margin-col { flex: 0 0 402px; }
 #margin { display: block; width: 402px; height: 640px; }
 .devbox {
@@ -58,7 +57,6 @@ input { width: 90px; cursor: text; }
 <div class="stage">
   <div class="plate-col">
     <canvas id="plate"></canvas>
-    <canvas id="footer"></canvas>
   </div>
   <div class="margin-col">
     <canvas id="margin"></canvas>
@@ -164,7 +162,6 @@ function boot() {
   viz = PJ2.Viz.create({
     plateCanvas: document.getElementById("plate"),
     marginCanvas: document.getElementById("margin"),
-    footerCanvas: document.getElementById("footer"),
     seed: parseInt(elSeed.value, 10) || 1,
   });
   window.__viz = viz; // console access for art direction

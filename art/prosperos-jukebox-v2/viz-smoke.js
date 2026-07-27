@@ -204,14 +204,13 @@ function tryStep(name, fn) {
 
 var plate = mockCanvas(900, 860); plate._cssW = 900; plate._cssH = 860;
 var margin = mockCanvas(402, 640); margin._cssW = 402; margin._cssH = 640;
-var footer = mockCanvas(900, 64); footer._cssW = 900; footer._cssH = 64;
 
 var pendingRaf = null, rafCount = 0, cafCount = 0;
 var viz = null;
 
 tryStep("create()", function () {
   viz = PJ2.Viz.create({
-    plateCanvas: plate, marginCanvas: margin, footerCanvas: footer,
+    plateCanvas: plate, marginCanvas: margin,
     seed: 451049,
     dpr: 2,
     raf: function (cb) { pendingRaf = cb; return ++rafCount; },
@@ -355,9 +354,9 @@ TRACKS.forEach(function (tr) {
     check("ariel: bubbles rising", dbg.bubbles >= 1, "bubbles=" + dbg.bubbles);
   }
 
-  check(tr + ": frames drew to all three canvases",
-    plate._ctx.calls > 0 && margin._ctx.calls > 0 && footer._ctx.calls > 0,
-    "plate=" + plate._ctx.calls + " margin=" + margin._ctx.calls + " footer=" + footer._ctx.calls);
+  check(tr + ": frames drew to both canvases",
+    plate._ctx.calls > 0 && margin._ctx.calls > 0,
+    "plate=" + plate._ctx.calls + " margin=" + margin._ctx.calls);
 
   tryStep(tr + ": detach via returned unsubscribe", function () { unsub(); });
   check(tr + ": listener unhook verified (no leaks)",

@@ -10,14 +10,13 @@
 // listeners, getInfo). It owns the spiral (v1's honest FFT coil — 7 octaves
 // × 96 samples, one turn per octave, dB floor −75 / ceil −10, adaptive
 // baseline, drag + auto-rotate camera), the margin apparatus (§4 diegetic
-// telemetry), the §4 per-event illustrations on the L3 alive-list, and the
-// density footer.
+// telemetry), and the §4 per-event illustrations on the L3 alive-list.
 //
 // SPIRAL REVERT + NIGHT FOLIO (PLAN-SPIRAL-REVERT / PLAN-NIGHT-FOLIO,
 // owner 2026-07-20): the coil renders v1's phosphor treatment for ALL
 // THREE tracks — translucent colored ribbon fills with a bright fixed
-// baseline, depth as alpha fade. Every panel (plate, margin, footer)
-// bakes ONE shared night ground (paperNight); the paper frame is the
+// baseline, depth as alpha fade. Both panels (plate, margin)
+// bake ONE shared night ground (paperNight); the paper frame is the
 // folio's CSS border. The alchemy-sigil dial is gone; beneath the coil
 // sits v1's constellation floor. v1's overlay animations are ported
 // (lollipop, baseline ripples, glint stars, hum bar, bubbles), and every
@@ -25,7 +24,7 @@
 // coil's waves belong to the drones alone (applyOverlayNotches).
 //
 // THE INTERFACE CONTRACT (pj2-ui.js builds against exactly this):
-//   PJ2.Viz.create({ plateCanvas, marginCanvas, footerCanvas })
+//   PJ2.Viz.create({ plateCanvas, marginCanvas })
 //   viz.setTrack(name)      — "library"|"sycorax"|"ariel"; swaps skins,
 //                             rebuilds furniture, resets per-run visual state
 //   viz.attach(engine, audioCtx) — wires an analyser
@@ -44,14 +43,12 @@
 //                             L0 bake is 150–300 ms and must stay off the
 //                             hot path)
 //
-// DOCUMENTED SUBSTITUTION — the density footer: the plan's envelope keeps
-// "past solid / forecast pricked", but the v2 engines expose no
-// getDensityAt(t) (v1 did). The footer therefore plots the RECENT MEASURED
-// intensity (sampled from the ~300 ms getInfo() poll — real telemetry, not
-// a synthetic curve) as the solid past, and prints the forecast as a
-// pricked continuation held at the current level with the conductor's tide
-// slope applied. When an engine grows a density-forecast surface the
-// pricked half can go honest without touching the axes.
+// REMOVED (owner 2026-07-27): the densitas footer — the density envelope
+// strip that sat below the folio grid ("past solid / forecast pricked").
+// Its canvas, stack, renderers and the poll's intensity history are gone;
+// create() no longer takes a footerCanvas. Intensity telemetry still
+// reaches the margin apparatus (the quadrant/altitude panel), so nothing
+// else lost its datum.
 //
 // Precision rules, binding (§2): data marks are never quantized coarser
 // than 1 device px (contour, marks, needle angles all draw at full
@@ -84,7 +81,6 @@ PJ2.Viz = (function () {
   var BASELINE_RETAIN = 0.30;        // sustained content kept at ~30%
   var YAW_RATE = 0.09;               // rad/s — v1's felt speed (0.0015 rad/frame at 60 fps)
   var POLL_MS = 300;
-  var DENSITY_KEEP = 1200;           // ~6 min of poll samples
 
   // per-track configuration: the FFT anchor (v1's table), the field's home
   // era (tonic + mode steps), and display strings.
@@ -92,17 +88,14 @@ PJ2.Viz = (function () {
     library: {
       anchorPc: 0, anchorName: "C",
       homeTonicHz: 262, steps: [0, 2, 3, 5, 7, 9, 10], modeName: "dorian",
-      scaleLabel: "C dorian",
     },
     sycorax: {
       anchorPc: 3, anchorName: "Eb",
       homeTonicHz: 311, steps: [0, 1, 3, 4, 5, 7, 8], modeName: "sycorax",
-      scaleLabel: "Eb chromatic-locrian",
     },
     ariel: {
       anchorPc: 5, anchorName: "F",
       homeTonicHz: 349, steps: [0, 2, 4, 6, 7, 9, 11], modeName: "lydian",
-      scaleLabel: "F lydian",
     },
   };
 
@@ -129,7 +122,7 @@ PJ2.Viz = (function () {
   }
 
   // ==========================================================================
-  // create({ plateCanvas, marginCanvas, footerCanvas, ... })
+  // create({ plateCanvas, marginCanvas, ... })
   // ==========================================================================
   function create(opts) {
     opts = opts || {};
@@ -137,9 +130,9 @@ PJ2.Viz = (function () {
     if (!PJ2.Rand) throw new Error("PJ2.Viz: pj2-rand.js must load first");
     var Skin = PJ2.Skin;
 
-    var plateCanvas = opts.plateCanvas, marginCanvas = opts.marginCanvas, footerCanvas = opts.footerCanvas;
-    if (!plateCanvas || !marginCanvas || !footerCanvas) {
-      throw new Error("PJ2.Viz.create: needs plateCanvas, marginCanvas, footerCanvas");
+    var plateCanvas = opts.plateCanvas, marginCanvas = opts.marginCanvas;
+    if (!plateCanvas || !marginCanvas) {
+      throw new Error("PJ2.Viz.create: needs plateCanvas, marginCanvas");
     }
 
     // injectable environment (harness plumbing — the node smoke passes mocks)
@@ -251,7 +244,6 @@ PJ2.Viz = (function () {
     // (the stack closes over them and reads at bake time).
     var plateZones = { plateZone: { shape: "rrect", cx: 0, cy: 0, rx: 1, ry: 1, r: 0 } };
     var marginZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
-    var footerZones = { quietRects: [{ x: 0, y: 0, w: 4000, h: 4000 }] };
 
     var plateStack = Skin.stack(plateCanvas, track, {
       seed: seed, w: opts.plateW || 900, h: opts.plateH || 860,
@@ -259,7 +251,7 @@ PJ2.Viz = (function () {
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
       renderers: { paper: paperPlatePanel, furniture: drawPlateFurniture, data: drawPlateData },
     });
-    // all three panels share the one night ground (function declarations
+    // both panels share the one night ground (function declarations
     // below are hoisted — safe to reference here)
     var marginStack = Skin.stack(marginCanvas, track, {
       seed: seed, w: opts.marginW || 402, h: opts.marginH || 640,
@@ -267,22 +259,15 @@ PJ2.Viz = (function () {
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
       renderers: { paper: paperSidePanel, furniture: drawMarginFurniture, data: drawMarginData },
     });
-    var footerStack = Skin.stack(footerCanvas, track, {
-      seed: seed, w: opts.footerW || 900, h: opts.footerH || 64,
-      dpr: opts.dpr, zones: footerZones,
-      setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
-      renderers: { paper: paperSidePanel, furniture: drawFooterFurniture, data: drawFooterData },
-    });
     plateStack.bindVisibility();
 
     function invalidateFurniture() {
       plateStack.invalidate("furniture");
       marginStack.invalidate("furniture");
-      footerStack.invalidate("furniture");
     }
 
     // THE NIGHT SURFACE (PLAN-NIGHT-FOLIO §B, owner 2026-07-20): every
-    // panel — plate, margin, footer — bakes the same flat night ground
+    // panel — plate and margin — bakes the same flat night ground
     // with a near-subliminal art-pixel grain (one tone step, blue-noise
     // placed). No parchment, no windows, no texture boundaries: the folio
     // is one continuous surface and seams are impossible by construction.
@@ -1755,10 +1740,8 @@ PJ2.Viz = (function () {
         c.stroke();
         c.fillText(cfg.anchorName + (BASE_OCTAVE + oi), labelX, M.CY - (yStart + yEnd) * 0.5 * cp1);
       }
-      // the scale caption, top-right inside the window
-      c.font = '12px "VT323", monospace';
-      c.fillStyle = spRGBA(o, 0.55);
-      c.fillText(cfg.scaleLabel, M.CX + M.R + 10, M.CY - M.oct * 3.2 * cp1);
+      // (the scale caption — "C dorian" et al — was removed here, owner
+      // 2026-07-27; the octave ticks above still name the anchor pitch)
       c.textAlign = "left";
       c.textBaseline = "alphabetic";
     }
@@ -2504,68 +2487,6 @@ PJ2.Viz = (function () {
       }
     }
 
-    // ============================================================== FOOTER ==
-    var densityHist = []; // {t: audio time, v: intensity}
-    function drawFooterFurniture(G) {
-      var c = G.ctx;
-      var lead = track === "library" ? pal.ink[3] : (track === "sycorax" ? pal.bone[2] : pal.silver[2]);
-      var capCol = track === "library" ? pal.ink[2] : (track === "sycorax" ? pal.bone[2] : pal.silver[1]);
-      c.strokeStyle = lead; c.lineWidth = 1;
-      c.beginPath(); c.moveTo(0, G.h * 0.86); c.lineTo(G.w, G.h * 0.86); c.stroke();
-      c.save(); c.setLineDash([1, 5]);
-      c.beginPath(); c.moveTo(0, G.h * 0.18); c.lineTo(G.w, G.h * 0.18); c.stroke();
-      c.restore();
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, "0.04", 3, G.h * 0.84, 12, capCol, 0);
-        Skin.Type.smallCaps(c, "0.65", 3, G.h * 0.18 + 11, 12, capCol, 0);
-        Skin.Type.smallCaps(c, "densitas · measured intensity in ink, forecast pricked for pouncing", 44, 13, 13, capCol, 1);
-      }
-    }
-    function drawFooterData(G, tr, tNow) {
-      var c = G.ctx;
-      var t = aNow();
-      var lead = track === "library" ? pal.ink[0] : (track === "sycorax" ? pal.bone[0] : pal.silver[0]);
-      var dot = track === "library" ? pal.ink[1] : (track === "sycorax" ? pal.bone[1] : pal.silver[1]);
-      var accent = track === "library" ? pal.rubric[0] : (track === "sycorax" ? pal.witch[1] : pal.gilt[0]);
-      var SPAN_PAST = 150, SPAN_FUT = 45;
-      var nowX = G.w * (SPAN_PAST / (SPAN_PAST + SPAN_FUT));
-      function yOf(v) {
-        var frac = clamp01((v - 0.04) / (0.65 - 0.04));
-        return G.h * 0.86 - frac * (G.h * 0.86 - G.h * 0.18);
-      }
-      // past: solid ink from the poll history (real telemetry)
-      c.strokeStyle = dataCol(lead, "density past");
-      c.lineWidth = 2;
-      c.beginPath();
-      var started = false;
-      for (var i = 0; i < densityHist.length; i++) {
-        var s = densityHist[i];
-        var x = nowX - (t - s.t) / SPAN_PAST * nowX;
-        if (x < 0) continue;
-        var y = yOf(s.v);
-        if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y);
-      }
-      if (started) c.stroke();
-      // forecast: pricked pounce-holes — the documented substitution (no
-      // engine getDensityAt): held at the current level, tide slope applied
-      var last = densityHist.length ? densityHist[densityHist.length - 1].v : 0.2;
-      var slope = 0;
-      if (densityHist.length > 20) {
-        var a20 = densityHist[densityHist.length - 20];
-        slope = (last - a20.v) / Math.max(0.1, t - a20.t);
-      }
-      c.fillStyle = dot;
-      for (var x2 = nowX + 6; x2 < G.w - 2; x2 += 7) {
-        var dt = (x2 - nowX) / (G.w - nowX) * SPAN_FUT;
-        var v = clamp(last + slope * dt * 0.5, 0.04, 0.65);
-        c.beginPath(); c.arc(x2, yOf(v), 1.3, 0, Math.PI * 2); c.fill();
-      }
-      // NOW
-      c.strokeStyle = accent; c.lineWidth = 1.4;
-      c.beginPath(); c.moveTo(nowX, 4); c.lineTo(nowX, G.h - 4); c.stroke();
-      if (fontsReady) Skin.Type.smallCaps(c, "nunc", nowX + 5, 13, 13, accent, 1);
-    }
-
     // ============================================================ LIFECYCLE ==
     function pollInfo() {
       if (!engine) return;
@@ -2573,10 +2494,6 @@ PJ2.Viz = (function () {
       try { info = engine.getInfo(); } catch (e) { return; }
       if (!info) return;
       lastInfo = info;
-      if (info.intensity != null) {
-        densityHist.push({ t: aNow(), v: info.intensity });
-        if (densityHist.length > DENSITY_KEEP) densityHist.shift();
-      }
       if (info.sceneLabel && info.sceneLabel !== st.sceneLabel) {
         st.sceneLabel = info.sceneLabel; st.sceneType = info.sceneType;
         marginStack.invalidate("furniture");
@@ -2611,7 +2528,6 @@ PJ2.Viz = (function () {
       computeMagnitudes();
       plateStack.composite(tNow);
       marginStack.composite(tNow);
-      footerStack.composite(tNow);
     }
 
     function measure(canvas, defW, defH) {
@@ -2628,7 +2544,6 @@ PJ2.Viz = (function () {
     function measureAll(immediate) {
       var p = measure(plateCanvas, opts.plateW || 900, opts.plateH || 860);
       var m = measure(marginCanvas, opts.marginW || 402, opts.marginH || 640);
-      var f = measure(footerCanvas, opts.footerW || 900, opts.footerH || 64);
       // the window zone (A2 clip + coil sizing budget both read this):
       // night — the whole canvas minus a courtesy inset; parchment — the
       // slim rounded monitor window inside the page
@@ -2647,7 +2562,6 @@ PJ2.Viz = (function () {
       }
       apply(plateStack, p);
       apply(marginStack, m);
-      apply(footerStack, f);
     }
 
     var viz = {
@@ -2657,10 +2571,9 @@ PJ2.Viz = (function () {
         if (t === track) return;
         track = t; cfg = TRACK_CFG[t];
         pal = Skin.palette(t); at = Skin.atlas(t);
-        plateStack.setTrack(t); marginStack.setTrack(t); footerStack.setTrack(t);
+        plateStack.setTrack(t); marginStack.setTrack(t);
         resetRunState();
         clearIllustrations();
-        densityHist.length = 0;
         for (var i = 0; i < TOTAL; i++) { baselineLin[i] = 0; magnitudes[i] = 0; }
         rebuildSampleIdx();
         lastInfo = {};
@@ -2683,7 +2596,6 @@ PJ2.Viz = (function () {
         at = Skin.atlas(track);
         plateStack.invalidate("paper"); plateStack.invalidate("furniture");
         marginStack.invalidate("paper"); marginStack.invalidate("furniture");
-        footerStack.invalidate("paper"); footerStack.invalidate("furniture");
         measureAll(true);
       },
       getBinding: function () { return binding; },
@@ -2750,7 +2662,7 @@ PJ2.Viz = (function () {
       frameOnce: function (tNow) { // harness: one composite without rAF
         computeMagnitudes();
         var t = tNow === undefined ? nowFn() / 1000 : tNow;
-        plateStack.composite(t); marginStack.composite(t); footerStack.composite(t);
+        plateStack.composite(t); marginStack.composite(t);
       },
       _injectEvent: onEvent,   // bench-only: art-direct §4 illustrations on demand
       _injectNote: onNote,
@@ -2772,7 +2684,7 @@ PJ2.Viz = (function () {
           info: lastInfo,
         };
       },
-      _stacks: { plate: plateStack, margin: marginStack, footer: footerStack },
+      _stacks: { plate: plateStack, margin: marginStack },
     };
 
     return viz;
