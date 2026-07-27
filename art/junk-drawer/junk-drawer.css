@@ -182,7 +182,7 @@ html { scroll-behavior: smooth; }
   z-index: 70;              /* above the varnish/vignette overlays */
   background: #e8d9a8;
   color: #3a2a12;
-  padding: 0.5rem 0.9rem 0.4rem 1.5rem;
+  padding: 0.7rem 0.95rem 0.65rem 1.55rem;
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
   filter: drop-shadow(2px 3px 4px rgba(22, 11, 4, 0.4));
   border: 1px solid rgba(74, 53, 18, 0.4);
@@ -201,9 +201,11 @@ html { scroll-behavior: smooth; }
 .jd-itemtag .l1 { font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .jd-itemtag .sep { opacity: 0.45; padding: 0 0.32em; }
 .jd-itemtag .dim { color: rgba(58, 42, 18, 0.62); }
-.jd-itemtag .l2 { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.24rem; }
-.jd-itemtag .gradelabel { font-size: 0.66rem; letter-spacing: 0.11em; }
-.jd-itemtag .gradelabel .g { color: #3a2a12; font-weight: 700; }
+.jd-itemtag .l2 { display: flex; align-items: center; gap: 0.85rem; margin-top: 0.42rem; }
+/* the grade as a stacked column: small dim GRADE: over the bold value */
+.jd-itemtag .gradelabel { display: flex; flex-direction: column; line-height: 1.35; }
+.jd-itemtag .glabel { font-size: 0.56rem; letter-spacing: 0.14em; color: rgba(58, 42, 18, 0.62); }
+.jd-itemtag .gradelabel .g { font-size: 0.72rem; letter-spacing: 0.12em; color: #3a2a12; font-weight: 700; }
 .jd-itemtag svg { overflow: visible; vertical-align: middle; }
 .jd-itemtag .btns { margin-left: auto; display: flex; gap: 0.4rem; }
 .jd-itemtag .btn {

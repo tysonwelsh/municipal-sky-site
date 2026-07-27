@@ -345,8 +345,8 @@
       '<span class="sep">·</span>' + (d.model || '').toUpperCase() +
       '<span class="sep">·</span>' + (d.process || '') +
       '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></div>' +
-      '<div class="l2"><span class="gradelabel">GRADE: <span class="g">' +
-      (d.grade || '').toUpperCase() + '</span></span>' +
+      '<div class="l2"><span class="gradelabel"><span class="glabel">GRADE:</span>' +
+      '<span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
       meterSVG(+d.rank || 1, +d.steps || 5) +
       '<span class="btns">' +
       '<a class="btn" href="' + d.url + '" download="' + d.id + '.svg" ' +
