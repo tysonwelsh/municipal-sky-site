@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 512 400">
+  <defs>
+    <path id="strUp" d="M212 252 C188 204 182 142 202 102 C214 78 238 72 251 88 C262 102 258 130 250 160 C242 192 250 222 268 246 Z"/>
+    <path id="strL" d="M254 232 C186 216 104 222 40 252 C12 264 6 285 30 295 C62 310 142 300 202 281 C234 271 254 258 262 248 Z"/>
+    <path id="strR" d="M258 236 C330 218 414 222 470 248 C500 260 506 283 478 294 C443 309 356 300 298 282 C272 274 256 258 252 248 Z"/>
+    <path id="strF" d="M238 250 C214 292 206 342 228 374 C242 393 278 393 292 370 C306 344 300 300 284 256 Z"/>
+    <clipPath id="cUp"><use href="#strUp" xlink:href="#strUp"/></clipPath>
+    <clipPath id="cL"><use href="#strL" xlink:href="#strL"/></clipPath>
+    <clipPath id="cR"><use href="#strR" xlink:href="#strR"/></clipPath>
+    <clipPath id="cF"><use href="#strF" xlink:href="#strF"/></clipPath>
+  </defs>
+
+  <g stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- flat comic ground shadow -->
+    <path d="M46 318 C70 296 150 288 256 288 C370 288 452 298 470 320 C480 334 452 348 396 354 C300 364 170 362 96 350 C50 342 36 330 46 318 Z" fill="#2E2A5E"/>
+
+    <!-- upright strip -->
+    <use href="#strUp" xlink:href="#strUp" fill="#FFD22B" stroke="#131313" stroke-width="7"/>
+    <g clip-path="url(#cUp)">
+      <path d="M250 70 Q272 160 272 252 L310 252 L310 70 Z" fill="#EFA11D"/>
+      <path d="M212 230 Q196 160 212 104" stroke="#FFF2C0" stroke-width="14" fill="none"/>
+      <ellipse cx="234" cy="152" rx="6" ry="11" fill="#6B4218" transform="rotate(-10 234 152)"/>
+    </g>
+
+    <!-- stem -->
+    <path d="M204 106 C192 80 200 52 224 42 C246 34 262 46 257 64 C252 84 238 98 220 106 Z" fill="#8A5A2B" stroke="#131313" stroke-width="6"/>
+    <path d="M214 88 C208 70 218 54 234 48" stroke="#A97B45" stroke-width="5" fill="none"/>
+
+    <!-- left strip -->
+    <use href="#strL" xlink:href="#strL" fill="#FFD22B" stroke="#131313" stroke-width="7"/>
+    <g clip-path="url(#cL)">
+      <path d="M20 300 Q140 314 272 252 L282 306 L20 326 Z" fill="#EFA11D"/>
+      <path d="M56 260 Q150 228 248 240" stroke="#FFF2C0" stroke-width="16" fill="none"/>
+      <ellipse cx="120" cy="272" rx="15" ry="7" fill="#6B4218" transform="rotate(6 120 272)"/>
+    </g>
+
+    <!-- right strip -->
+    <use href="#strR" xlink:href="#strR" fill="#FFD22B" stroke="#131313" stroke-width="7"/>
+    <g clip-path="url(#cR)">
+      <path d="M492 300 Q370 314 240 252 L232 306 L500 326 Z" fill="#EFA11D"/>
+      <path d="M456 258 Q362 228 262 240" stroke="#FFF2C0" stroke-width="16" fill="none"/>
+      <ellipse cx="400" cy="268" rx="16" ry="8" fill="#6B4218" transform="rotate(-8 400 268)"/>
+    </g>
+
+    <!-- front strip -->
+    <use href="#strF" xlink:href="#strF" fill="#FFD22B" stroke="#131313" stroke-width="7"/>
+    <g clip-path="url(#cF)">
+      <path d="M200 344 Q262 322 312 340 L312 400 L200 400 Z" fill="#EFA11D"/>
+      <path d="M240 268 Q228 320 240 362" stroke="#FFF2C0" stroke-width="14" fill="none"/>
+      <ellipse cx="266" cy="316" rx="7" ry="12" fill="#6B4218" transform="rotate(8 266 316)"/>
+    </g>
+
+    <!-- pith hub where the strips meet -->
+    <path d="M228 228 C242 214 272 214 286 228 C298 240 292 258 274 264 C254 270 232 262 226 246 Z" fill="#FFF2C0" stroke="#131313" stroke-width="6"/>
+
+    <!-- glossy comic highlights -->
+    <path d="M96 246 Q140 234 176 235" stroke="#FFFFFF" stroke-width="7" fill="none"/>
+    <path d="M416 246 Q372 234 336 235" stroke="#FFFFFF" stroke-width="7" fill="none"/>
+    <path d="M250 296 Q246 326 253 350" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+    <path d="M220 120 Q214 152 218 182" stroke="#FFFFFF" stroke-width="6" fill="none"/>
+
+    <!-- comic stink squiggles -->
+    <g stroke="#131313" stroke-width="7" fill="none">
+      <path d="M138 132 C126 110 148 98 136 76 C124 54 146 42 134 14"/>
+      <path d="M330 122 C320 100 342 88 330 64 C318 42 340 30 328 10"/>
+      <path d="M398 152 C388 132 410 120 398 96 C388 76 406 66 398 48"/>
+    </g>
+
+    <!-- little flies -->
+    <g fill="#131313">
+      <ellipse cx="372" cy="44" rx="6" ry="4"/>
+      <path d="M368 39 Q360 28 353 34 M377 39 Q383 26 391 32" stroke="#131313" stroke-width="3" fill="none"/>
+      <ellipse cx="168" cy="34" rx="5" ry="3.5"/>
+      <path d="M164 30 Q157 20 151 25 M172 30 Q178 18 185 24" stroke="#131313" stroke-width="3" fill="none"/>
+    </g>
+
+  </g>
+</svg>
