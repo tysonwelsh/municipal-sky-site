@@ -196,6 +196,15 @@
         var grade = byId(tax.grades, primary.grade);
         item._modelLabel = model ? model.label : (primary.model || '');
         item._gradeLabel = grade ? grade.label : (primary.grade || '');
+        /* the item tag also needs: process, date, the grade's rank on the
+           scale (manicule position), the scale size, and the file url */
+        var gen = primary.generation || {};
+        item._process = gen.mode === 'refined'
+          ? 'REFINED ×' + (gen.prompt_count || '?') : 'ONE-SHOT';
+        item._date = primary.date || '';
+        item._rank = grade ? grade.rank : 0;
+        item._steps = (tax.grades || []).length || 5;
+        item._url = primary.url;
         return fetch(primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
           return r.text();
@@ -217,6 +226,11 @@
         el.dataset.title = item.title;
         el.dataset.model = item._modelLabel;
         el.dataset.grade = item._gradeLabel;
+        el.dataset.process = item._process;
+        el.dataset.date = item._date;
+        el.dataset.rank = item._rank;
+        el.dataset.steps = item._steps;
+        el.dataset.url = item._url;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
         el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
@@ -277,41 +291,107 @@
     item.classList.add('is-held');
   }
 
-  /* tap = pick: pop to front, brief lift pulse, and an interim info chip
-     (title · model · grade) at the drawer's front edge — visible feedback
-     until the specimen card (Phase 3) replaces it */
-  var chip = null, chipTimer = 0, pickTimer = 0, picked = null;
+  /* tap = pick: pop to front, brief lift pulse, and the ITEM TAG — a manila
+     specimen tag tethered to the picked object by a red elastic through its
+     grommet (owner design, mockup-6). Persists until dismissed: tap wood /
+     Esc / pick another item / drag the picked item. */
+  var tag = null, rope = null, pickTimer = 0, picked = null;
+
+  function meterSVG(rank, steps) {
+    var span = 66, x0 = 2;
+    var ticks = '', gap = span / (steps - 1);
+    for (var i = 0; i < steps; i++) {
+      var tx = x0 + i * gap, end = (i === 0 || i === steps - 1);
+      ticks += '<line x1="' + tx + '" y1="' + (end ? 3.5 : 5) + '" x2="' + tx +
+        '" y2="10" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>';
+    }
+    var mx = x0 + (rank - 1) * gap;
+    return '<svg width="88" height="26" viewBox="-9 0 88 26" role="img" ' +
+      'aria-label="grade ' + rank + ' of ' + steps + '">' +
+      '<line x1="2" y1="7.5" x2="68" y2="7.5" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>' +
+      ticks +
+      '<text x="' + mx + '" y="24" text-anchor="middle" font-size="15" ' +
+      'fill="#3a2a12" font-family="inherit">☝︎</text></svg>';
+  }
+
+  function buildTag() {
+    tag = document.createElement('div');
+    tag.className = 'jd-itemtag';
+    tag.setAttribute('role', 'group');
+    rope = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    rope.setAttribute('class', 'jd-rope');
+    well.appendChild(rope);
+    well.appendChild(tag);
+  }
+
+  function hideTag() {
+    if (tag) { tag.classList.remove('is-on'); rope.classList.remove('is-on'); }
+    if (picked) { picked.classList.remove('is-picked'); picked = null; }
+  }
+
   function pick(item) {
     item.style.zIndex = ++zTop;
-    if (picked) picked.classList.remove('is-picked');
+    if (picked && picked !== item) picked.classList.remove('is-picked');
     picked = item;
     item.classList.add('is-picked');
     clearTimeout(pickTimer);
-    pickTimer = setTimeout(function () {
-      item.classList.remove('is-picked');
-      if (picked === item) picked = null;
-    }, 700);
-    if (!chip) {
-      chip = document.createElement('div');
-      chip.className = 'jd-picktip';
-      chip.setAttribute('aria-live', 'polite');
-      var stage = document.querySelector('.jd-stage');
-      if (stage) stage.appendChild(chip);
-    }
-    chip.textContent = '';
-    var t = document.createElement('span');
-    t.textContent = item.dataset.title || '';
-    var m = document.createElement('span');
-    m.className = 'jd-picktip-model';
-    m.textContent = ' · ' + (item.dataset.model || '');
-    var g = document.createElement('span');
-    g.className = 'jd-picktip-grade';
-    g.textContent = ' · ' + (item.dataset.grade || '');
-    chip.appendChild(t); chip.appendChild(m); chip.appendChild(g);
-    chip.classList.add('is-on');
-    clearTimeout(chipTimer);
-    chipTimer = setTimeout(function () { chip.classList.remove('is-on'); }, 2600);
+    pickTimer = setTimeout(function () { item.classList.remove('is-picked'); }, 700);
+    if (!tag) buildTag();
+
+    var d = item.dataset;
+    tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));
+    tag.innerHTML =
+      '<div class="l1">' + (d.title || '').toUpperCase() +
+      '<span class="sep">·</span>' + (d.model || '').toUpperCase() +
+      '<span class="sep">·</span>' + (d.process || '') +
+      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></div>' +
+      '<div class="l2"><span class="gradelabel">GRADE: <span class="g">' +
+      (d.grade || '').toUpperCase() + '</span></span>' +
+      meterSVG(+d.rank || 1, +d.steps || 5) +
+      '<span class="btns">' +
+      '<a class="btn" href="' + d.url + '" download="' + d.id + '.svg" ' +
+      'title="download the SVG as generated">SVG ⤓</a>' +
+      '<a class="btn jd-fullrecord" href="#" title="the full record is the next build">FULL RECORD →</a>' +
+      '</span></div>';
+    var fr = tag.querySelector('.jd-fullrecord');
+    fr.addEventListener('click', function (e) { e.preventDefault(); });
+
+    /* seat the tag just below the item, grommet toward it, clamped to the
+       well; if there's no room below, it hangs above instead */
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    var ax = r.left + r.width / 2 - w.left;      /* anchor: item bottom centre */
+    var ay = r.bottom - w.top - 6;
+    tag.classList.add('is-on');                  /* measurable before placing */
+    var tw = tag.offsetWidth, th = tag.offsetHeight;
+    var below = ay + 26 + th < w.height - 8;
+    var ty = below ? ay + 26 : (r.top - w.top - 20 - th);
+    var tx = Math.max(8, Math.min(w.width - tw - 8, ax + 4));
+    tag.style.left = tx + 'px';
+    tag.style.top = ty + 'px';
+
+    /* the red elastic: item anchor -> a loop through the grommet (which
+       sits at the tag's left edge, vertically centred) */
+    var gx = tx + 10, gy = ty + th / 2;
+    var sag = below ? 10 : -10;
+    rope.setAttribute('class', 'jd-rope is-on');
+    rope.innerHTML =
+      '<path d="M ' + ax + ' ' + (below ? ay : r.top - w.top + 6) +
+      ' Q ' + ((ax + gx) / 2 + 6) + ' ' + ((ay + gy) / 2 + sag) +
+      ', ' + gx + ' ' + gy + '" fill="none" stroke="#b3402f" ' +
+      'stroke-width="2" stroke-linecap="round"/>' +
+      '<circle cx="' + gx + '" cy="' + gy + '" r="4.5" fill="none" ' +
+      'stroke="#b3402f" stroke-width="2"/>';
   }
+
+  /* dismissal: any press that isn't the item or the tag — wood, page,
+     notes, anywhere — plus Escape and resize (positions go stale) */
+  document.addEventListener('pointerdown', function (e) {
+    if (!e.target.closest || !e.target.closest('.jd-item, .jd-itemtag')) hideTag();
+  });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') hideTag();
+  });
+  window.addEventListener('resize', hideTag);
   var dropX = 0, dropY = 0;
   /* drag moves are TRANSFORM-only (--dx/--dy): moving a filtered element via
      left/top forces layout repaints, and Blink leaves stale drop-shadow
@@ -367,7 +447,10 @@
       fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
       var dx = e.clientX - sx, dy = e.clientY - sy;
       if (held === item) {
-        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
+          drag = true;
+          if (picked === item) hideTag();   /* the elastic lets go */
+        }
         if (drag) place(item, ox + dx, oy + dy);
       }
     });

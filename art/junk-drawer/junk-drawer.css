@@ -162,38 +162,54 @@ html { scroll-behavior: smooth; }
 }
 .jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 
-/* the pick chip: title · model · grade on a small paper slip at the
-   drawer's front edge */
-.jd-picktip {
+/* ---------------- the item tag ------------------------------------------
+   The manila specimen tag (owner design, mockup-6): two lines, tethered to
+   the picked item by a red elastic through the grommet on its left end.
+   Seated just below the item (above it when the drawer floor runs out),
+   persists until dismissed. */
+.jd-itemtag {
   position: absolute;
-  left: 50%;
-  bottom: clamp(34px, 10vw, 72px);
-  transform: translateX(-50%) translateY(6px);
-  padding: 0.3rem 0.7rem;
-  background: #efe3c2;
-  border: 1px solid rgba(74, 53, 18, 0.55);
-  border-radius: 2px;
-  box-shadow: 2px 3px 6px rgba(22, 11, 4, 0.35);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #3a2a12;
-  white-space: nowrap;
-  max-width: 92%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
   z-index: 70;              /* above the varnish/vignette overlays */
+  background: #e8d9a8;
+  color: #3a2a12;
+  padding: 0.5rem 0.9rem 0.4rem 1.5rem;
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  filter: drop-shadow(2px 3px 4px rgba(22, 11, 4, 0.4));
+  border: 1px solid rgba(74, 53, 18, 0.4);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease-out;
 }
-.jd-picktip.is-on {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.jd-itemtag.is-on { opacity: 1; pointer-events: auto; }
+.jd-itemtag::before {         /* the grommet the elastic loops through */
+  content: ""; position: absolute; left: 6px; top: 50%; width: 7px; height: 7px;
+  transform: translateY(-50%); border-radius: 50%; background: #b39a5e;
+  box-shadow: inset 0 0 0 2px #8a713c;
 }
-.jd-picktip-model { color: rgba(58, 42, 18, 0.65); }
-.jd-picktip-grade { color: var(--plot-red); }
+.jd-itemtag .l1 { font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.jd-itemtag .sep { opacity: 0.45; padding: 0 0.32em; }
+.jd-itemtag .dim { color: rgba(58, 42, 18, 0.62); }
+.jd-itemtag .l2 { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.24rem; }
+.jd-itemtag .gradelabel { font-size: 0.66rem; letter-spacing: 0.11em; }
+.jd-itemtag .gradelabel .g { color: #3a2a12; font-weight: 700; }
+.jd-itemtag svg { overflow: visible; vertical-align: middle; }
+.jd-itemtag .btns { margin-left: auto; display: flex; gap: 0.4rem; }
+.jd-itemtag .btn {
+  font-size: 0.58rem; letter-spacing: 0.13em; color: #3a2a12;
+  border: 1px solid rgba(74, 53, 18, 0.6); padding: 0.14rem 0.45rem;
+  text-decoration: none;
+}
+.jd-itemtag .btn:hover { background: rgba(255, 252, 240, 0.55); }
+
+/* the red elastic: drawn across the whole well, above items, under the tag */
+.jd-rope {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 69; pointer-events: none;
+  opacity: 0; transition: opacity 0.16s ease-out;
+}
+.jd-rope.is-on { opacity: 1; }
 
 /* ---------------- placements ----------------------------------------------
    No per-item CSS: every placement (left/top as % of the well, --rot,
@@ -487,6 +503,11 @@ html { scroll-behavior: smooth; }
      immersive viewport-bottom band); the tag returns to center */
   .jd-pull { display: none; }
   .jd-tag { left: 50%; }
+  /* item tag compacts for small wells */
+  .jd-itemtag { padding: 0.42rem 0.7rem 0.34rem 1.3rem; }
+  .jd-itemtag .l1 { font-size: 0.56rem; }
+  .jd-itemtag .gradelabel { font-size: 0.6rem; }
+  .jd-itemtag .btn { font-size: 0.52rem; padding: 0.12rem 0.38rem; }
   /* IMMERSIVE MODE (owner request, G5 revision 4, 2026-07-26): on this
      page only, the fixed site banner slides away while the drawer is in
      view and returns when the visitor scrolls to the notes. Page-scoped
