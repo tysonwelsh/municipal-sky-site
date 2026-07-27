@@ -93,13 +93,18 @@ taxonomy. Its reply is the artifact.
    (script/handlers/foreignObject) go back to the owner: regenerate
    (counts as a new one-shot or a refinement turn — owner's call) or
    record as a failed sample.
-3. **Ink-bounds check**: `scripts/check-svg-ink.sh <file>` (Mac + Chrome
-   only). Worst-side dead margin ≤ ~6% passes. If PADDED: tighten the
-   viewBox to the tool's suggestion — permitted normalization (reframes,
-   never redraws) — and disclose it in the response's `notes`. Consider
-   grading composition against the ORIGINAL framing first. In sandboxed
-   or phone sessions the tool can't run: say so, file the item anyway,
-   and flag it for an ink check at the owner's next desktop session.
+3. **Ink-bounds check**: `scripts/check-svg-ink.sh <file>` — run it at
+   ingest. The tool is cross-platform: it finds a browser via `$CHROME_BIN`,
+   the macOS Chrome app, `chromium`/`google-chrome` on PATH, or a
+   Playwright-managed Chromium under `/opt/pw-browsers`, so it works on a
+   desktop, in CI, and in most sandboxed sessions. Worst-side dead margin
+   ≤ ~6% passes; record the result in the response's `notes` (e.g.
+   "ink-bounds check passed … worst dead margin N%"). If PADDED: tighten
+   the viewBox to the tool's suggestion — permitted normalization
+   (reframes, never redraws) — disclose it in `notes`, and consider grading
+   composition against the ORIGINAL framing. Only if NO browser is
+   reachable (a truly headless phone session): say so, file anyway, and
+   flag it for an ink check next session.
 
 ## 5. Show the owner the artwork — BEFORE asking for grades
 

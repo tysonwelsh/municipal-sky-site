@@ -64,8 +64,9 @@ data files are `.json`, art is `.svg`.
    that to the owner rather than silently editing the art.
    **Tight viewBox check**: the drawer's drag-clamping and size math trust
    the viewBox rectangle, so dead transparent margin makes an item bump
-   invisible walls. On a Mac run `scripts/check-svg-ink.sh <file>` — the
-   worst-side dead margin should be ≤ ~6%. If it's padded, TIGHTENING THE
+   invisible walls. Run `scripts/check-svg-ink.sh <file>` (cross-platform —
+   finds Chrome/Chromium via `$CHROME_BIN`, macOS, PATH, or Playwright) —
+   the worst-side dead margin should be ≤ ~6%. If it's padded, TIGHTENING THE
    VIEWBOX IS PERMITTED normalization (it reframes; it never redraws a
    path) — apply the tool's suggested viewBox and record the change in the
    response's `notes` (e.g. `viewBox normalized: tightened from "..." to

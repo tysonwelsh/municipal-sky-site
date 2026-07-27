@@ -28,7 +28,7 @@
         "composition": "clean"
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated."
     },
     {
       "rid": "r2",
@@ -50,7 +50,7 @@
         "composition": "major"
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated."
     },
     {
       "rid": "r3",
@@ -72,7 +72,7 @@
         "composition": "major"
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check not run (Linux sandbox — check-svg-ink.sh is Mac + Chrome only); flagged for an ink check at the owner's next desktop session; viewBox left exactly as generated."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated."
     }
   ]
 }
