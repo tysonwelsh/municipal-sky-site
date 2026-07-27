@@ -157,10 +157,20 @@ html { scroll-behavior: smooth; }
 
 /* tap-picked: the lift grammar as a brief pulse — visible acknowledgment
    that the tap landed (interim until the Phase 3 specimen card) */
+/* picked = SELECTED: the lift persists for as long as the tag is attached
+   (not a pulse — the object stays raised off the pile while inspected) */
 .jd-item.is-picked {
   filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
 }
 .jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+
+/* while something is picked, the REST of the pile falls back into shade —
+   selection as stage light. Held/hovered items step back out of the dim
+   (hover exempt via :not(:hover); a drag exempt via :not(.is-held)). */
+.jd-well.jd-has-pick .jd-item:not(.is-picked):not(.is-held):not(:hover) {
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62))
+          brightness(0.68) saturate(0.8);
+}
 
 /* ---------------- the item tag ------------------------------------------
    The manila specimen tag (owner design, mockup-6): two lines, tethered to

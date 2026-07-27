@@ -295,7 +295,7 @@
      specimen tag tethered to the picked object by a red elastic through its
      grommet (owner design, mockup-6). Persists until dismissed: tap wood /
      Esc / pick another item / drag the picked item. */
-  var tag = null, rope = null, pickTimer = 0, picked = null;
+  var tag = null, rope = null, picked = null;
 
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2;
@@ -327,15 +327,15 @@
   function hideTag() {
     if (tag) { tag.classList.remove('is-on'); rope.classList.remove('is-on'); }
     if (picked) { picked.classList.remove('is-picked'); picked = null; }
+    well.classList.remove('jd-has-pick');
   }
 
   function pick(item) {
     item.style.zIndex = ++zTop;
     if (picked && picked !== item) picked.classList.remove('is-picked');
     picked = item;
-    item.classList.add('is-picked');
-    clearTimeout(pickTimer);
-    pickTimer = setTimeout(function () { item.classList.remove('is-picked'); }, 700);
+    item.classList.add('is-picked');       /* persists: selected = lifted */
+    well.classList.add('jd-has-pick');     /* the rest of the pile dims */
     if (!tag) buildTag();
 
     var d = item.dataset;
