@@ -182,10 +182,20 @@
       renderNotes(data);
       /* resolve + fetch every primary response SVG (contract: primary
          always resolves; every response has a ready same-origin url) */
+      var tax = data.taxonomy || {};
+      function byId(list, id) {
+        return (list || []).filter(function (x) { return x.id === id; })[0];
+      }
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
           return r.rid === item.primary;
         })[0] || item.responses[0];
+        /* display labels for the tap pick-chip, resolved while the
+           taxonomy is in scope */
+        var model = byId(tax.models, primary.model);
+        var grade = byId(tax.grades, primary.grade);
+        item._modelLabel = model ? model.label : (primary.model || '');
+        item._gradeLabel = grade ? grade.label : (primary.grade || '');
         return fetch(primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
           return r.text();
@@ -204,6 +214,9 @@
         el.className = 'jd-item';
         el.dataset.id = item.id;
         el.dataset.scale = p.scale;              /* copy-layout passthrough */
+        el.dataset.title = item.title;
+        el.dataset.model = item._modelLabel;
+        el.dataset.grade = item._gradeLabel;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
         el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
@@ -248,7 +261,11 @@
    bubble up to these item listeners. */
 (function () {
   var well = document.querySelector('.jd-well');
-  var SLOP = 8, HOLDSLOP = 10, HOLD = 180, CLEAR = 6;
+  /* touch slops are wider than mouse: real thumbs jitter well past the
+     10px that works in a simulator, and every misread press became a
+     scroll (then a page-flip) on device — owner report, 2026-07-26 */
+  var SLOP = 8, TOUCH_SLOP = 14, HOLDSLOP = 20, HOLD = 180, CLEAR = 6;
+  var tapSlop = SLOP;
   var zTop = 100;
   var pend = null, held = null, drag = false, timer = 0;
   var sx = 0, sy = 0, ox = 0, oy = 0;
@@ -258,6 +275,42 @@
     held = item;
     item.classList.remove('is-lifted');          /* releases the demo pin */
     item.classList.add('is-held');
+  }
+
+  /* tap = pick: pop to front, brief lift pulse, and an interim info chip
+     (title · model · grade) at the drawer's front edge — visible feedback
+     until the specimen card (Phase 3) replaces it */
+  var chip = null, chipTimer = 0, pickTimer = 0, picked = null;
+  function pick(item) {
+    item.style.zIndex = ++zTop;
+    if (picked) picked.classList.remove('is-picked');
+    picked = item;
+    item.classList.add('is-picked');
+    clearTimeout(pickTimer);
+    pickTimer = setTimeout(function () {
+      item.classList.remove('is-picked');
+      if (picked === item) picked = null;
+    }, 700);
+    if (!chip) {
+      chip = document.createElement('div');
+      chip.className = 'jd-picktip';
+      chip.setAttribute('aria-live', 'polite');
+      var stage = document.querySelector('.jd-stage');
+      if (stage) stage.appendChild(chip);
+    }
+    chip.textContent = '';
+    var t = document.createElement('span');
+    t.textContent = item.dataset.title || '';
+    var m = document.createElement('span');
+    m.className = 'jd-picktip-model';
+    m.textContent = ' · ' + (item.dataset.model || '');
+    var g = document.createElement('span');
+    g.className = 'jd-picktip-grade';
+    g.textContent = ' · ' + (item.dataset.grade || '');
+    chip.appendChild(t); chip.appendChild(m); chip.appendChild(g);
+    chip.classList.add('is-on');
+    clearTimeout(chipTimer);
+    chipTimer = setTimeout(function () { chip.classList.remove('is-on'); }, 2600);
   }
   var dropX = 0, dropY = 0;
   /* drag moves are TRANSFORM-only (--dx/--dy): moving a filtered element via
@@ -297,6 +350,7 @@
       if (held && e.pointerId !== pid) return;   /* second finger: twist owns it */
       pend = item; drag = false;
       pid = e.pointerId;
+      tapSlop = e.pointerType === 'touch' ? TOUCH_SLOP : SLOP;
       sx = fx = e.clientX; sy = fy = e.clientY;
       var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
       ox = r.left + r.width / 2 - w.left;
@@ -313,7 +367,7 @@
       fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
       var dx = e.clientX - sx, dy = e.clientY - sy;
       if (held === item) {
-        if (!drag && dx * dx + dy * dy > SLOP * SLOP) drag = true;
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
         if (drag) place(item, ox + dx, oy + dy);
       } else if (dx * dx + dy * dy > HOLDSLOP * HOLDSLOP) {
         clearTimeout(timer); pend = null;        /* swipe before hold: scroll */
@@ -326,7 +380,7 @@
       if (e.pointerId !== pid) return;           /* second finger up ≠ release */
       clearTimeout(timer);
       if (held === item) settle(item, drag);
-      else if (pend === item) item.style.zIndex = ++zTop;   /* tap: to front */
+      else if (pend === item) pick(item);        /* tap: to front + pick chip */
       pend = held = null; drag = false; twist = null;
     });
     item.addEventListener('pointercancel', function (e) {

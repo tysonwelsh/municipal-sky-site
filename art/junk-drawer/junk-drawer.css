@@ -154,6 +154,46 @@ html { scroll-behavior: smooth; }
 }
 .jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 
+/* tap-picked: the lift grammar as a brief pulse — visible acknowledgment
+   that the tap landed (interim until the Phase 3 specimen card) */
+.jd-item.is-picked {
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+}
+.jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+
+/* the pick chip: title · model · grade on a small paper slip at the
+   drawer's front edge */
+.jd-picktip {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(34px, 10vw, 72px);
+  transform: translateX(-50%) translateY(6px);
+  padding: 0.3rem 0.7rem;
+  background: #efe3c2;
+  border: 1px solid rgba(74, 53, 18, 0.55);
+  border-radius: 2px;
+  box-shadow: 2px 3px 6px rgba(22, 11, 4, 0.35);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #3a2a12;
+  white-space: nowrap;
+  max-width: 92%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s ease-out, transform 0.18s ease-out;
+  z-index: 70;              /* above the varnish/vignette overlays */
+}
+.jd-picktip.is-on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.jd-picktip-model { color: rgba(58, 42, 18, 0.65); }
+.jd-picktip-grade { color: var(--plot-red); }
+
 /* ---------------- placements ----------------------------------------------
    No per-item CSS: every placement (left/top as % of the well, --rot,
    z-index, --w = sizeClass base × scale) is applied INLINE by the pile
@@ -228,6 +268,11 @@ html { scroll-behavior: smooth; }
   transform: translate(-50%, 50%) rotate(-2deg);
   text-decoration: none;
   filter: drop-shadow(2px 3px 3px rgba(20, 10, 4, 0.45));
+}
+@media (pointer: coarse) {
+  /* the tag is the guaranteed route to the notes — give thumbs a ≥44px
+     target without changing its drawn size */
+  .jd-tag::after { content: ''; position: absolute; inset: -12px; }
 }
 .jd-tag-body {
   display: inline-block;
@@ -429,7 +474,14 @@ html { scroll-behavior: smooth; }
      itself per spec (a snap area taller than the snapport permits any
      scroll position while it covers the viewport). Desktop gets NO snap. */
   html {
-    scroll-snap-type: y mandatory;
+    /* PROXIMITY, not mandatory (owner on-device report, 2026-07-26):
+       with the drawer exactly one viewport tall, mandatory made ANY
+       registered swipe commit a full page-flip — hair-trigger. The two
+       snap points are one viewport apart, so proximity still lands every
+       release on one or the other (all-or-nothing preserved) but a flip
+       now requires crossing the midpoint; accidental drifts spring BACK
+       to the drawer. */
+    scroll-snap-type: y proximity;
     scroll-padding-top: var(--banner-h);
   }
   .jd-stage {

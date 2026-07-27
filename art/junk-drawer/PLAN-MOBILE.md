@@ -79,6 +79,19 @@ Required companions on items (this also matters for the hold gesture itself): `-
 
 ### Page structure: all-or-nothing full-page snap (owner directive, 2026-07-26)
 
+> **G5 on-device revision (owner, Phase 1 live test, same date)**: `mandatory`
+> proved hair-trigger on iOS — with a one-viewport drawer, any registered
+> swipe committed a full flip. Production uses **`scroll-snap-type: y
+> proximity`**: the two snap points sit exactly one viewport apart, so every
+> release still lands on one or the other (all-or-nothing preserved) but a
+> flip requires crossing the midpoint; accidental drifts spring back to the
+> drawer. The same test set on-device touch slops — tap-vs-drag 14px and
+> pre-hold scroll-cancel 20px on touch (10px read thumb jitter as scroll) —
+> and added an interim tap "pick chip" (title · model · grade on a paper
+> slip at the drawer's front edge) so taps have visible payoff until the
+> Phase 3 specimen card. Where the CSS below says `mandatory`, read
+> `proximity`.
+
 **The owner's call, superseding the earlier proximity-snap sketch**: the page
 never rests half-on/half-off the drawer. Either the drawer fills the
 viewport in its entirety, or a swipe slides it up altogether and you are
