@@ -106,51 +106,62 @@ taxonomy. Its reply is the artifact.
    reachable (a truly headless phone session): say so, file anyway, and
    flag it for an ink check next session.
 
-## 5. Show the owner the artwork — BEFORE asking for grades
+## 5–6. Show artwork and annotate — the rating instrument
 
-The owner must be able to SEE the SVG before the annotation
-walk-through. Pick the channel that fits the session:
+The owner must SEE the artwork AND rate it in one place. Do not use
+AskUserQuestion for grades or axes — use the interactive rating
+instrument instead.
 
-- **Desktop session (Mac with Chrome)**: render a PNG to the scratchpad
-  with headless Chrome
-  (`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-  --headless --disable-gpu --screenshot=<out.png> --window-size=768,600
-  --default-background-color=FFFFFFFF file://<abs-path>.svg`)
-  and Read the PNG so it displays inline in the conversation.
-- **Remote / phone / sandboxed session** (remote control, web, or
-  anywhere headless Chrome isn't available): publish a preview with the
-  Artifact tool so the owner can open it on their phone — a minimal
-  self-contained HTML page with the SVG inlined (it's already
-  self-contained by the appendix rules; no external references, so the
-  CSP is satisfied). Put it on a neutral checkerboard or both-theme
-  background so transparent regions read correctly. Artifacts are
-  private by default; this previews, it does not publish the drawer.
-  Reuse the same artifact file/URL for later items in the session
-  rather than minting new pages.
+### Build the instrument
 
-Either way, share the preview and wait — grading unseen art defeats
-the collection.
+1. Read the template at
+   `.claude/skills/junk-drawer-item/rating-instrument.html`.
+2. Read `taxonomy.json` for the live `grades`, `axes`, and `sizeTiers`.
+3. For each SVG being graded, **prefix every `id` and every
+   `href`/`url(#…)` reference** in the markup with a short unique
+   string per model (e.g. `f_`, `s_`, `o_`) so multiple SVGs on one
+   page don't collide.
+4. Replace the four `__INJECT_*__` markers in the template JS:
+   - `__INJECT_GRADES__` → the `grades` array from taxonomy.json
+   - `__INJECT_AXES__` → the `axes` array from taxonomy.json
+   - `__INJECT_SIZES__` → the `sizeTiers` array from taxonomy.json
+   - `__INJECT_RESPONSES__` → an array of `{key, label, svg}` objects,
+     one per model response (key = model slug, label = display name,
+     svg = id-prefixed SVG markup string)
+5. Write the populated HTML to the scratchpad and publish it with the
+   Artifact tool. Reuse the same file path / URL for later items in the
+   session rather than minting new pages.
 
-## 6. Annotate
+### What the instrument collects (per response)
 
-Walk the owner through the rubric from `taxonomy.json` (never hardcode):
-overall grade (show the scale with descriptions), then each axis (offer
-value ids + descriptions, or "skip" — skipped axes are OMITTED). Owner
-remarks become `{"value": ..., "note": ...}`. If the owner defers, a
-provisional self-assessment is allowed but must be labeled as such in
-`notes` ("provisional self-assessment — owner to regrade").
+- **Overall grade** — the full scale from taxonomy.json, with
+  descriptions. This is on each model's tab, not asked separately.
+- **Annotation axes** — each axis from taxonomy.json, with values +
+  skip option. Optional per-axis notes.
+- **Size** — the `sizeTiers` picker appears on the FIRST model's tab
+  (size is per-item, not per-response).
 
-Then the **size**, in the same survey (this is where sizeClass is
-elicited — not §2). Show the `sizeTiers` from `taxonomy.json`
-(`xs`/`s`/`m`/`l`/`xl` with their descriptions) and have the owner pick
-ONE tier. Size is **per-item**, not per-response: the one `sizeClass`
-governs every response to the prompt (only the primary renders anyway).
-Optionally a per-item `sizeScale` (a positive multiplier, default 1) for
-sizes between or below tiers — the continuous fine dial that the coarse
-tiers can't reach (e.g. the paperclip is `s` × 0.36). sizeClass is the
-owner's call every time; write `m` only on an EXPLICIT defer, never on
-silence. (Automating size from the artwork is the eventual goal — these
-picks are the training signal, so record them faithfully.)
+### The flow
+
+Share the artifact link and WAIT. The owner taps through the tabs,
+rates each image (they can see it right there), then hits "Results →
+Copy to clipboard" and pastes the JSON back into the chat. Parse the
+pasted JSON to extract grades, annotations, and sizeClass.
+
+If the owner defers grading entirely, a provisional self-assessment is
+allowed but must be labeled in `notes` ("provisional self-assessment —
+owner to regrade").
+
+sizeClass is the owner's call every time; write `m` only on an EXPLICIT
+defer, never on silence. Optionally a per-item `sizeScale` (a positive
+multiplier, default 1) for sizes between or below tiers.
+
+### Desktop fallback
+
+On a **desktop session with Chrome** where the owner prefers inline
+previews, you may still render PNGs to the scratchpad with headless
+Chrome and Read them inline — but still use the rating instrument
+artifact for annotation rather than AskUserQuestion.
 
 ## 7. File, validate, publish
 

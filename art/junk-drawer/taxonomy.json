@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 4,
+  "version": 5,
   "updated": "2026-07-27",
   "grades": [
     {
@@ -141,6 +141,11 @@
       "vendor": "Anthropic"
     },
     {
+      "id": "claude-opus-4-6",
+      "label": "Claude Opus 4.6",
+      "vendor": "Anthropic"
+    },
+    {
       "id": "claude-opus-4-1",
       "label": "Claude Opus 4.1",
       "vendor": "Anthropic"
@@ -213,6 +218,11 @@
       "date": "2026-07-27",
       "version": 4,
       "note": "Add sizeTiers: 5-tier curatorial size scale (xs/s/m/l/xl) as data. Per-item sizeScale remains the continuous fine dial on top of the tier."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 5,
+      "note": "Register model claude-opus-4-6 (Claude Opus 4.6)."
     }
   ]
 }

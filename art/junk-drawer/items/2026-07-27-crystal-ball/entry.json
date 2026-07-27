@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "2026-07-27-crystal-ball",
+  "title": "Cracked crystal ball",
+  "prompt": "A crystal ball the kind a fortune teller might have but only the ball not the stand, by which I mean it is an orb without a pedestal. Also it has a crack in the glass and the insides are a vague swirling cloudy myst as a result. I'd like it to look like it is painted in water colors with a sort of bohemian style like you might see on a carton of incense in a new agey headshop at the mall",
+  "created": "2026-07-27",
+  "tags": [
+    "mystical",
+    "bohemian",
+    "watercolor"
+  ],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "utility",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Model produced a full incense-box illustration (sunburst rays, crescent moons, leaves, stars, mala bead borders) rather than the orb alone."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-opus-4-6.svg",
+      "model": "claude-opus-4-6",
+      "model_version": "claude-opus-4-6",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 6.0%. Includes a shadow beneath the orb and mist wisping out of the crack."
+    }
+  ]
+}
