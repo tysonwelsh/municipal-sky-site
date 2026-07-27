@@ -36,6 +36,16 @@ Bonus behavior, free: once the user scrolls and the URL bar collapses, the visua
 
 ### Header chrome: keep it, exactly as-is
 
+> **OVERRIDDEN — G5 revision 4 (owner, 2026-07-26, on-device)**: on mobile
+> the banner now YIELDS to the drawer ("immersive mode"): the drawer owns
+> the true 100svh at y=0; the fixed banner slides away while the drawer is
+> in view and returns once the visitor scrolls past half the stage toward
+> the notes. Page-scoped via junk-drawer.css (no header.php changes; other
+> pages untouched). Snap offsets rebalanced accordingly: drawer snaps to
+> true top, `#notes` carries the banner offset via `scroll-margin-top`.
+> Desktop keeps the banner as-is. The reasoning below stands for desktop
+> and for any page without a full-viewport hero.
+
 Options considered: overlay the drawer under a transparent banner (fights the paper-white fixed banner's design), auto-scroll the banner away on load (it's `position: fixed` — it doesn't scroll away; faking it is maximal hack), suppress the banner on this page (breaks the one inviolable site convention). **Decision: the banner stays untouched**; the drawer starts at y = 48 px. That costs ~7% of a phone viewport and buys total consistency — the drawer sits under the site masthead like a painting under a gallery's wall text. Offset with `var(--banner-h)`, never a pixel literal.
 
 ### The drawer's aspect: frame kit confirmed — and mobile decides gate G1
