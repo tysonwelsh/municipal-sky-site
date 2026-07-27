@@ -370,7 +370,10 @@
         if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
         if (drag) place(item, ox + dx, oy + dy);
       } else if (dx * dx + dy * dy > HOLDSLOP * HOLDSLOP) {
-        clearTimeout(timer); pend = null;        /* swipe before hold: scroll */
+        /* fast move before the hold fires: not a tap, not a grip — the
+           gesture just ends (item ink is touch-action:none, so there is
+           no browser scroll to hand off to; page-flips start from wood) */
+        clearTimeout(timer); pend = null;
       }
     });
     item.addEventListener('touchmove', function (e) {

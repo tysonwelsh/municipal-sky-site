@@ -113,7 +113,14 @@ html { scroll-behavior: smooth; }
   filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
   cursor: grab;
   transition: filter 0.15s ease-out;      /* lift/settle ease, mouse AND touch */
-  touch-action: pan-y;   /* items only: vertical swipes still scroll the page */
+  /* item INK owns the gesture (G5 on-device revision #2, 2026-07-26):
+     with pan-y, iOS's own ~8px pan threshold stole taps as micro-scrolls
+     before our slop values were ever consulted. touch-action: none makes
+     touches on painted silhouettes always mean select/drag — the page
+     scrolls from wood, frame, tag, and notes (plenty of surface, since
+     silhouette hit-testing keeps transparent regions pass-through).
+     Bonus: kills double-tap zoom on items. */
+  touch-action: none;
   -webkit-user-select: none; user-select: none;
   /* silhouette hit-testing: the wrapper's box (and the svg root's box) must
      never take the hit — only painted ink may. Shapes re-enable below, and

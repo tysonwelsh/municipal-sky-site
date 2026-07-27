@@ -91,6 +91,16 @@ Required companions on items (this also matters for the hold gesture itself): `-
 > slip at the drawer's front edge) so taps have visible payoff until the
 > Phase 3 specimen card. Where the CSS below says `mandatory`, read
 > `proximity`.
+>
+> **Revision #2 (same session)**: even with wide slops, taps still lost to
+> scrolling — iOS's own ~8px pan threshold starts the native pan (and
+> cancels our pointer stream) before JS slop values are ever consulted.
+> Items are now **`touch-action: none`**: painted ink always means
+> select/drag; the page scrolls from wood, frame, tag, and notes. The
+> §2 "swipe-on-ink scrolls" premise below is superseded — it predates
+> silhouette hit-testing, which is what makes ink-owns-the-gesture viable
+> (transparent regions pass through, so the drawer never becomes a
+> scroll-trap).
 
 **The owner's call, superseding the earlier proximity-snap sketch**: the page
 never rests half-on/half-off the drawer. Either the drawer fills the
