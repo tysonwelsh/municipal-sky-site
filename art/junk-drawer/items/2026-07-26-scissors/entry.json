@@ -11,10 +11,10 @@
   "primary": "r1",
   "sizeClass": "l",
   "placement": {
-    "x": 0.3579,
-    "y": 0.41,
+    "x": 0.3804,
+    "y": 0.3961,
     "rotation": -21,
-    "scale": 3.136,
+    "scale": 2.664,
     "z": 2
   },
   "responses": [
@@ -41,7 +41,7 @@
         "composition": "clean"
       },
       "transcript": null,
-      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace."
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. viewBox normalized 2026-07-26: tightened from \"0 0 340 150\" to the measured ink bounds \"44.3 21.5 288.8 106.8\" (framing metadata only; artwork bytes untouched) — the padded box was clamping drags early."
     }
   ]
 }

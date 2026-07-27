@@ -47,6 +47,17 @@ data files are `.json`, art is `.svg`.
    "clean it up" — imperfections are the point of this collection. Exception:
    if the validator rejects it (script/event-handler/foreignObject), report
    that to the owner rather than silently editing the art.
+   **Tight viewBox check**: the drawer's drag-clamping and size math trust
+   the viewBox rectangle, so dead transparent margin makes an item bump
+   invisible walls. On a Mac run `scripts/check-svg-ink.sh <file>` — the
+   worst-side dead margin should be ≤ ~6%. If it's padded, TIGHTENING THE
+   VIEWBOX IS PERMITTED normalization (it reframes; it never redraws a
+   path) — apply the tool's suggested viewBox and record the change in the
+   response's `notes` (e.g. `viewBox normalized: tightened from "..." to
+   ink bounds`). Grade composition against the ORIGINAL framing if it was
+   meaningfully off. Prevention beats repair: when a prompt is being
+   written, ask the generating model for artwork that "fills the viewBox
+   edge to edge, ≤2% margin, no surrounding empty space."
 4. **Write `entry.json`** following the schema in `PLAN-BACKEND.md` §2.2
    (or copy `items/2026-07-26-skeleton-key/entry.json` as a template).
    Required: schema, id, title, prompt, created,

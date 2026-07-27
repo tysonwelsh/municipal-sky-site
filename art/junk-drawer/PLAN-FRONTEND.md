@@ -243,6 +243,7 @@ The frontend needs exactly two things from the backend: **one manifest** at a st
 **Hard requirements on the SVGs** (the frontend loads them via `<img>` — see performance rationale in §6 — so):
 
 - every SVG **must have a `viewBox`** (footprint normalization depends on it; `width`/`height` attributes optional);
+- the viewBox must be **tight to the ink** (worst-side dead margin ≤ ~6%): drag clamping and size math trust the box rectangle, so transparent padding makes items bump invisible walls before their visible edges reach the drawer sides (found live 2026-07-26 — the scissors carried 14–16% dead margin; five of the first ten items needed normalizing). Measure with `scripts/check-svg-ink.sh` (canvas alpha-scan, counts stroke widths); tightening the viewBox is framing metadata, not an artwork edit;
 - SVGs must be **fully self-contained**: no external references (fonts, images, CSS, `<use href>` to other files) — `<img>` will silently drop them;
 - scripts inside SVGs never execute in `<img>` (free sanitization), but the backend should still strip them;
 - transparent backgrounds (no opaque white rects) — items must silhouette against the wood for the drop-shadows to work. If a piece *needs* a background (a "painting within the painting"), that's fine — it just casts a rectangular shadow, honestly.

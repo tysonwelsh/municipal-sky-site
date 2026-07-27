@@ -27,14 +27,14 @@
   var MOBILE_POUR = {
     '2026-07-26-three-of-hearts': { x: 0.6,  y: 0.38,   rot: -13 },
     '2026-07-26-pocket-mirror':   { x: 0.33, y: 0.15,   rot: -7 },
-    '2026-07-26-matchbook':       { x: 0.53, y: 0.1206, rot: 26 },
+    '2026-07-26-matchbook':       { x: 0.5292, y: 0.1211, rot: 26 },
     '2026-07-26-button':          { x: 0.59, y: 0.1752, rot: -21 },
-    '2026-07-26-scissors':        { x: 0.47, y: 0.46,   rot: -34 },
-    '2026-07-26-skeleton-key':    { x: 0.57, y: 0.3737, rot: 76 },
+    '2026-07-26-scissors':        { x: 0.508, y: 0.449, rot: -34 },
+    '2026-07-26-skeleton-key':    { x: 0.575, y: 0.3692, rot: 76 },
     '2026-07-26-ticket-stub':     { x: 0.39, y: 0.2424, rot: -49 },
-    '2026-07-26-pencil-stub':     { x: 0.66, y: 0.8,    rot: 118 },
-    '2026-07-26-rubber-band':     { x: 0.67, y: 0.821,  rot: 9 },
-    '2026-07-26-paperclip':       { x: 0.24, y: 0.3096, rot: 104 }
+    '2026-07-26-pencil-stub':     { x: 0.6585, y: 0.8023,    rot: 118 },
+    '2026-07-26-rubber-band':     { x: 0.6691, y: 0.8201,  rot: 9 },
+    '2026-07-26-paperclip':       { x: 0.2409, y: 0.3109, rot: 104 }
   };
 
   /* arrange mode: the copy-layout link renders ONLY under ?arrange=1 (a dev

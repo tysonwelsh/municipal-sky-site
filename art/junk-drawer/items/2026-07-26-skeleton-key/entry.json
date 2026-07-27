@@ -40,14 +40,14 @@
         "composition": "clean"
       },
       "transcript": null,
-      "notes": "Schema fixture: first item, added while scaffolding the backend. Grade and annotations are a provisional self-assessment by the generating model — owner to regrade."
+      "notes": "Schema fixture: first item, added while scaffolding the backend. Grade and annotations are a provisional self-assessment by the generating model — owner to regrade. viewBox normalized 2026-07-26: tightened from \"0 0 240 480\" to measured ink bounds (framing metadata only; artwork bytes untouched)."
     }
   ],
   "placement": {
-    "x": 0.5427,
-    "y": 0.475,
+    "x": 0.5454,
+    "y": 0.466,
     "rotation": 76,
-    "scale": 1.806,
+    "scale": 1.187,
     "z": 5
   }
 }
