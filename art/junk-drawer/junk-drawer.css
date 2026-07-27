@@ -182,7 +182,7 @@ html { scroll-behavior: smooth; }
   z-index: 70;              /* sandwich: tag 70 < elastic 71 < picked item 72 */
   background: #e8d9a8;
   color: #3a2a12;
-  padding: 0.7rem 0.95rem 0.65rem 1.55rem;
+  padding: 0.7rem 0.95rem 0.65rem 2rem;   /* extra room right of the grommet */
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
   filter: drop-shadow(2px 3px 4px rgba(22, 11, 4, 0.4));
   border: 1px solid rgba(74, 53, 18, 0.4);

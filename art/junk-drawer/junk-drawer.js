@@ -362,7 +362,6 @@
     tag.innerHTML =
       '<div class="l1">' + (d.title || '').toUpperCase() +
       '<span class="sep">·</span>' + (d.model || '').toUpperCase() +
-      '<span class="sep">·</span>' + (d.process || '') +
       '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></div>' +
       '<div class="l2"><span class="gradecol">' +
       '<span class="gradelabel">GRADE: <span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
