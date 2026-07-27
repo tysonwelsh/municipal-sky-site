@@ -464,11 +464,23 @@ html { scroll-behavior: smooth; }
      shifts mid-scroll or mid-drag; 100vh line is the pre-svh fallback. */
   .jd-stage {
     width: 100%; margin: 0;
-    height: calc(100vh - var(--banner-h));    /* fallback */
-    height: calc(100svh - var(--banner-h));
+    height: 100vh;                            /* fallback */
+    height: 100svh;                           /* TRUE full viewport: the
+       banner is hidden while the drawer is in view (immersive mode,
+       below) — the drawer owns the whole screen on load */
     min-height: 420px;
     box-shadow: none;
   }
+  /* IMMERSIVE MODE (owner request, G5 revision 4, 2026-07-26): on this
+     page only, the fixed site banner slides away while the drawer is in
+     view and returns when the visitor scrolls to the notes. Page-scoped
+     by construction — these rules live in junk-drawer.css. */
+  body { padding-top: 0; }                    /* drawer starts at y=0 */
+  .site-banner {
+    transform: translateY(-100%);
+    transition: transform 0.25s ease;
+  }
+  html.jd-chrome .site-banner { transform: translateY(0); }
   /* sizes shift up a band on small wells (PLAN-MOBILE §4 form-factor size
      bands): same cqmin ruler, ×1.2. Portrait POSITIONS are re-seated by the
      pile loader (MOBILE_POUR map), not by CSS. */
@@ -489,7 +501,10 @@ html { scroll-behavior: smooth; }
        now requires crossing the midpoint; accidental drifts spring BACK
        to the drawer. */
     scroll-snap-type: y proximity;
-    scroll-padding-top: var(--banner-h);
+    /* no global snap offset: the drawer snaps to the TRUE top (banner is
+       hidden there — immersive mode); the notes carry their own
+       banner-height offset via scroll-margin-top below */
+    scroll-padding-top: 0;
   }
   .jd-stage {
     scroll-snap-align: start;
@@ -497,10 +512,10 @@ html { scroll-behavior: smooth; }
   }
   #notes {
     scroll-snap-align: start;
-    /* fully all-or-nothing: html's scroll-padding-top already clears the
-       banner at the snap rest, so the extra anchor margin would leave a
-       sliver of drawer peeking above the notes — zero it on mobile */
-    scroll-margin-top: 0;
+    /* the banner is VISIBLE at the notes rest (immersive mode restores
+       chrome once you leave the drawer), so the notes offset themselves
+       by exactly the banner height — no drawer sliver, no hidden title */
+    scroll-margin-top: var(--banner-h);
   }
   /* the inherited site footer (includes/footer.php renders
      <footer class="site-footer">) sits after the notes in the DOM; without
@@ -511,5 +526,5 @@ html { scroll-behavior: smooth; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .jd-item, .jd-item svg, .jd-tag { transition: none !important; }
+  .jd-item, .jd-item svg, .jd-tag, .site-banner { transition: none !important; }
 }

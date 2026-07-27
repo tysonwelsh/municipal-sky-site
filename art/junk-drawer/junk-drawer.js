@@ -480,3 +480,26 @@
     } else { window.prompt('layout JSON:', json); done(false); }
   });
 })();
+
+/* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
+   Mobile only: the fixed site banner hides while the drawer is in view
+   (the drawer owns the full 100svh on load) and slides back once the
+   visitor scrolls toward the notes. The CSS lives in junk-drawer.css, so
+   the behavior is scoped to this page; every other page's banner is
+   untouched. */
+(function () {
+  var mq = window.matchMedia('(max-width: 768px)');
+  var stage = document.querySelector('.jd-stage');
+  if (!stage) return;
+  function update() {
+    /* one scrollY read + an idempotent class toggle: cheap enough to run
+       unthrottled on scroll (rAF-gating proved unreliable in throttled/
+       background contexts) */
+    var show = !mq.matches || window.scrollY > stage.offsetHeight * 0.5;
+    document.documentElement.classList.toggle('jd-chrome', show);
+  }
+  window.addEventListener('scroll', update, { passive: true });
+  if (mq.addEventListener) mq.addEventListener('change', update);
+  else if (mq.addListener) mq.addListener(update);
+  update();
+})();
