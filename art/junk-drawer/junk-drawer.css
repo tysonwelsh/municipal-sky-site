@@ -1,0 +1,456 @@
+/* ============================================================================
+   THE JUNK DRAWER — Phase 1 drawer + field-notes styles.
+   Promoted from mockups/mockup-2-frame-kit.html (the proven Phase 0 build).
+   Plans: PLAN-FRONTEND §1/§3/§6, PLAN-MOBILE §§1–3; data contract
+   PLAN-BACKEND §7. Site tokens (css/style.css) supply --banner-h (56px /
+   48px ≤768px), --font-mono, --plot-red, --max-narrow, --ink/--paper, the
+   8px --s-* grid and the 768px breakpoint — none are redefined here.
+
+   Safari lessons carried over intact from Phase 0 — do not regress:
+     · the three procedural textures below are data-URI SVGs whose
+       feTurbulence filters use stitchTiles="stitch"; they are copied
+       VERBATIM from the mockup — never regenerate them (a reseed breaks
+       the stitched tile seams)
+     · NO mix-blend-mode anywhere: full-stage blended layers over per-item
+       filter layers rasterize with visible seam lines in Safari; at these
+       opacities plain alpha is visually identical
+     · the stage keeps its own compositing layer (translateZ(0)) so Safari's
+       rasterization of the turbulence-heavy textures stays stable
+     · drag motion is transform-only (--dx/--dy) — layout moves of a
+       filtered element leave stale drop-shadow trails in Blink
+   ========================================================================== */
+
+html { scroll-behavior: smooth; }
+
+/* ---------------- desktop dek: one quiet line above the drawer ----------- */
+/* hidden ≤768px — on a phone every explanatory word lives below the drawer
+   (PLAN-MOBILE §3); the wall label at the head of the notes repeats it */
+.jd-dek {
+  max-width: 860px;
+  margin: 1.1rem auto 0.6rem;
+  padding: 0 var(--s-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--ink-mute);
+}
+
+/* ---------------- the stage: drawer as object on the page ---------------- */
+.jd-stage {
+  --wall: clamp(28px, 9vw, 64px);
+  /* the painted drawer frame does not exist yet; the walls are a procedural
+     feTurbulence-wood placeholder served as a data-URI and sliced with real
+     border-image — production art later swaps --jd-frame-url for the painted
+     frame-2000.webp and nothing else changes (PLAN-MOBILE §1) */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  position: relative;
+  width: min(1060px, 92vw);
+  height: min(74vh, 720px);
+  min-height: 420px;
+  margin: 0.4rem auto 3rem;
+  /* the ↑ back-link and any anchor arrival must land below the fixed banner */
+  scroll-margin-top: calc(var(--banner-h) + 0.5rem);
+  /* own compositing layer: stabilizes Safari's rasterization of the
+     turbulence-heavy textures (tile-seam lines otherwise blink in as
+     items move and regions re-raster) */
+  transform: translateZ(0);
+  /* the drawer sits on the page; its own cast shadow obeys the same
+     upper-left light — offset down-right */
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+
+/* ---------------- the frame kit: four wall bands via border-image -------- */
+.jd-frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+
+/* ---------------- the well: drawer floor; positioning context for items -- */
+/* child of .jd-frame, so inset:0 = the frame's padding box = inside the walls.
+   container-type: size makes the well a CONTAINER: item sizes are in cqmin
+   (1% of the well's min dimension), so an item's footprint scales with the
+   drawer. Placements arrive from the DATA LAYER — each entry.json carries a
+   "placement" {x, y, rotation, scale, z} with x/y as fractions of the well
+   (item centre; PLAN-BACKEND §7) — and are applied inline by the pile
+   loader in junk-drawer.js. */
+.jd-well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+
+/* ---------------- the pile: one stacking context for all items ----------- */
+/* every item lives in here. Because .jd-pile is positioned WITH a z-index it
+   opens its own stacking context, so the items' z values — including the
+   drag script's ever-climbing zTop counter and the 999 on hover/held — only
+   ever compete with EACH OTHER and can never climb out past the layers that
+   sit above the pile (wall shade, varnish, vignette) or below it
+   (craquelure). Without this, the first tap on any item lifted it clean out
+   of the drawer's light and aging. */
+.jd-pile {
+  position: absolute; inset: 0;
+  z-index: 2;                  /* above .jd-craquelure (1), below the rest */
+}
+
+/* ---------------- items ------------------------------------------------- */
+/* rotation lives on the inner svg, the drop-shadow on the outer div, so
+   shadows always fall down-right in SCREEN space no matter the rotation */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  /* drag moves ride on --dx/--dy (transform-only motion — layout moves of a
+     filtered element leave stale drop-shadow trails in Blink) */
+  transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px));
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  cursor: grab;
+  transition: filter 0.15s ease-out;      /* lift/settle ease, mouse AND touch */
+  touch-action: pan-y;   /* items only: vertical swipes still scroll the page */
+  -webkit-user-select: none; user-select: none;
+  /* silhouette hit-testing: the wrapper's box (and the svg root's box) must
+     never take the hit — only painted ink may. Shapes re-enable below, and
+     their events still bubble up to this element's listeners. This is also
+     what makes hit areas follow ROTATED geometry correctly. Caveat, accepted:
+     SVG masks aren't consulted (the key's masked clover holes still hit). */
+  pointer-events: none;
+}
+.jd-item svg {
+  display: block; width: 100%; height: auto;
+  transform: rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
+}
+.jd-item svg * { pointer-events: visiblePainted; }
+/* the LIFT shadow (hover / held). Its blur must stay well under its OFFSET,
+   or the penumbra outruns the displacement and the shadow haloes on every
+   side instead of falling down-right — on a long item rotated near the
+   light axis the offset projects to only a few px across the short ends, so
+   a fat blur pools there as an unanchored blot with no visible caster. 8px
+   blur (~±12px penumbra) against a 16/22 offset keeps it attached and
+   directional. */
+@media (hover: hover) {
+  .jd-item:hover {
+    filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+    z-index: 999 !important;
+  }
+  .jd-item:hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+}
+/* held while dragging: same lifted grammar, above everything. will-change
+   promotes the moving filtered element to its own compositor layer so the
+   drag repaints cleanly (no shadow trails). */
+.jd-item.is-held {
+  will-change: transform, filter;
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  cursor: grabbing;
+  z-index: 999 !important;
+}
+.jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+
+/* ---------------- placements ----------------------------------------------
+   No per-item CSS: every placement (left/top as % of the well, --rot,
+   z-index, --w = sizeClass base × scale) is applied INLINE by the pile
+   loader from entry.json "placement" data served by data.php. */
+
+/* fallback note: shown in the well when data.php is unreachable */
+.jd-fallback {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  transform: translate(-50%, -50%);
+  max-width: 38ch; padding: 0.5em 1em;
+  font-family: var(--font-mono); font-size: 0.66rem; line-height: 1.8;
+  letter-spacing: 0.06em; text-align: center;
+  color: rgba(52, 33, 12, 0.78);
+}
+.jd-fallback code { font-family: inherit; color: rgba(38, 23, 8, 0.85); }
+.jd-fallback a { color: rgba(38, 23, 8, 0.85); }
+
+/* ---------------- lighting stack over the items -------------------------- */
+/* wall shade cast onto the floor AND onto items lying near the top/left
+   walls (the walls rise toward the viewer; these two face away from the
+   light); only a thin crevice line bottom/right */
+.jd-wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+/* craquelure = the DRAWER's aging. It runs over the frame bands and the well
+   floor and stops there: z-index 1 puts it UNDER .jd-pile, so no crack ever
+   crosses an item (G2 resolved — the items are objects IN the drawer, not
+   painted into it). Item drop-shadows therefore fall ON the cracked wood and
+   dim the cracks beneath them, which is what we want. The G2 strength toggle
+   was a dev-only affordance: production fixes the "subtle" value. */
+.jd-craquelure {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  /* tile scales with the viewport so crack spacing reads the same on a
+     320px phone well as on desktop (fixed 260px = scribble-scale there) */
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  /* NO mix-blend-mode: blended full-stage layers over per-item filter layers
+     produce rasterization-seam lines in Safari (visible as faint horizontal/
+     vertical breaks at item layer bounds, blinking on hover re-compositing).
+     At these opacities plain alpha is visually identical. */
+  opacity: 0.08;                                   /* G2: subtle, fixed */
+}
+/* varnish sheen: soft diagonal highlight, upper-left biased */
+.jd-varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  /* no mix-blend-mode — see craquelure note (Safari seam bug); plain alpha
+     at this opacity reads the same */
+  opacity: 0.13;
+}
+/* vignette, over everything, centre biased toward the light */
+.jd-vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+
+/* ---------------- the FIELD NOTES manila tag on the bottom band ---------- */
+/* the tag hangs from a brass tack pinned into the bottom rim: a short string
+   runs tack → grommet, so the tag's attachment to the drawer is stated */
+.jd-tag {
+  position: absolute; left: 50%; bottom: calc(var(--wall) * 0.5); z-index: 55;
+  transform: translate(-50%, 50%) rotate(-2deg);
+  text-decoration: none;
+  filter: drop-shadow(2px 3px 3px rgba(20, 10, 4, 0.45));
+}
+.jd-tag-body {
+  display: inline-block;
+  padding: 0.4em 0.9em 0.4em 1.7em;
+  background: linear-gradient(105deg, #e3d0a0, #d3bd85);
+  border: 1px solid #a8925f;
+  clip-path: polygon(11% 0, 100% 0, 100% 100%, 11% 100%, 0 50%);
+  font-family: var(--font-mono);
+  font-size: 0.72rem; letter-spacing: 0.22em; color: #4a3a18;
+  white-space: nowrap; position: relative;
+}
+.jd-tag-body::before {
+  content: ""; position: absolute; left: 7%; top: 50%;
+  width: 7px; height: 7px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 35%, #6e5a30, #43350f);
+  box-shadow: inset 0 0 0 1.5px #b8a26b;
+}
+.jd-tag-string {
+  position: absolute; left: -18px; top: -14px;
+  width: 44px; height: 34px; pointer-events: none;
+}
+
+/* ---------------- arrange mode (?arrange=1, dev affordance) --------------- */
+.jd-arrange {
+  margin: -2.2rem auto 2.2rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--ink-mute);
+}
+#copy-layout { color: var(--plot-red); }
+
+/* ======================= below the drawer: field notes ====================
+   One narrow column in the site voice: Courier Prime chrome, hairline rules,
+   --plot-red reserved for the grade marks (PLAN-MOBILE §3). */
+
+/* the fixed banner would otherwise cover the anchor target on arrival */
+#notes { scroll-margin-top: calc(var(--banner-h) + 0.75rem); }
+
+.jd-notes {
+  max-width: var(--max-narrow);
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-2) var(--s-6);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-loose);
+  color: var(--ink);
+}
+.jd-notes h1,
+.jd-notes h2,
+.jd-notes h3 {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.jd-notes h2 {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.24em;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: var(--s-1);
+  margin: var(--s-5) 0 var(--s-2);
+}
+.jd-notes h3 {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.2em;
+  margin: var(--s-3) 0 var(--s-2);
+}
+/* the site's global p rule sets Spectral at --fs-base; the notes column is
+   mono throughout (the field-notes voice — style.css chrome tokens) */
+.jd-notes p {
+  margin: 0 0 var(--s-2);
+  font-family: inherit;
+  font-size: inherit;
+}
+.jd-notes code {
+  font-family: inherit;
+  font-size: inherit;
+  background: var(--paper-pure);
+  padding: 0 0.25em;
+}
+
+/* the wall label */
+.jd-wall-label {
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: var(--s-2);
+}
+.jd-title {
+  font-size: var(--fs-lg);
+  letter-spacing: 0.3em;
+  margin: 0 0 var(--s-1);
+}
+.jd-label-dek {
+  margin: 0 0 var(--s-1);
+  color: var(--ink-soft);
+}
+.jd-count {
+  margin: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+}
+
+/* the grade legend — rendered from the taxonomy block, never hardcoded */
+.jd-grade-row {
+  display: grid;
+  grid-template-columns: 9em 1fr;
+  gap: 2px var(--s-2);
+  margin: 0 0 var(--s-1);
+}
+.jd-grade-mark {
+  color: var(--plot-red);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.jd-grade-desc { color: var(--ink-soft); }
+@media (max-width: 480px) {
+  .jd-grade-row { grid-template-columns: 1fr; gap: 0; margin-bottom: var(--s-2); }
+}
+
+/* the axes */
+.jd-axis-row { margin: 0 0 var(--s-2); }
+.jd-axis-label {
+  display: block;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.jd-axis-desc { color: var(--ink-soft); }
+
+/* the inventory — one mono line per item; plain text (the specimen card and
+   its links are Phase 3) */
+.jd-inventory { list-style: none; margin: 0; padding: 0; }
+.jd-inventory li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-2);
+  padding: 0.35em 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.jd-inventory li:last-child { border-bottom: 0; }
+.jd-inv-title { flex: 1 1 auto; }
+.jd-inv-model { color: var(--ink-mute); white-space: nowrap; }
+.jd-inv-grade {
+  color: var(--plot-red);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* the colophon + build stamp (kolob's convention) */
+.jd-build {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+}
+.jd-build-sep { margin: 0 0.5em; opacity: 0.5; }
+
+/* the ↑ twin of the manila tag */
+.jd-back {
+  margin: var(--s-4) 0 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ================= mobile: full-viewport drawer (PLAN-MOBILE §1) ========= */
+@media (max-width: 768px) {
+  .jd-dek { display: none; }
+
+  /* "peering down into a drawer" on load: the stage fills the viewport under
+     the REAL fixed banner. svh, not dvh — the small-viewport unit is stable
+     (never mutates as the URL bar collapses), so the well's geometry never
+     shifts mid-scroll or mid-drag; 100vh line is the pre-svh fallback. */
+  .jd-stage {
+    width: 100%; margin: 0;
+    height: calc(100vh - var(--banner-h));    /* fallback */
+    height: calc(100svh - var(--banner-h));
+    min-height: 420px;
+    box-shadow: none;
+  }
+  /* sizes shift up a band on small wells (PLAN-MOBILE §4 form-factor size
+     bands): same cqmin ruler, ×1.2. Portrait POSITIONS are re-seated by the
+     pile loader (MOBILE_POUR map), not by CSS. */
+  .jd-item { width: calc(var(--w) * 1.2cqmin); }
+
+  /* ALL-OR-NOTHING page snap (owner directive, PLAN-MOBILE §2): the page
+     never rests half-on/half-off the drawer — either the drawer fills the
+     viewport or a swipe flips you to the notes. Native mandatory snapping,
+     no scroll-jacking JS; the tall notes section scrolls freely inside
+     itself per spec (a snap area taller than the snapport permits any
+     scroll position while it covers the viewport). Desktop gets NO snap. */
+  html {
+    scroll-snap-type: y mandatory;
+    scroll-padding-top: var(--banner-h);
+  }
+  .jd-stage {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
+  }
+  #notes {
+    scroll-snap-align: start;
+    /* fully all-or-nothing: html's scroll-padding-top already clears the
+       banner at the snap rest, so the extra anchor margin would leave a
+       sliver of drawer peeking above the notes — zero it on mobile */
+    scroll-margin-top: 0;
+  }
+  /* the inherited site footer (includes/footer.php renders
+     <footer class="site-footer">) sits after the notes in the DOM; without
+     its own rest position, mandatory snapping could make the subscribe form
+     unreachable. End-alignment gives the document end a valid stop. */
+  .site-footer { scroll-snap-align: end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .jd-item, .jd-item svg, .jd-tag { transition: none !important; }
+}
