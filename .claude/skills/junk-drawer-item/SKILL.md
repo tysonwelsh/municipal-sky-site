@@ -11,12 +11,21 @@ at every decision point. Read `art/junk-drawer/CLAUDE.md` first — it owns
 the file mechanics (directory naming, entry.json schema, taxonomy rules,
 commit conventions). This skill adds the GENERATION discipline on top.
 
-## 1. Elicit (ask only for what wasn't provided)
+## 1. Elicit (operational facts only — NEVER prompt-improvement questions)
 
-- **The creative prompt**, verbatim — or a subject ("a wine cork", "a AAA
-  battery") from which you draft a prompt and confirm it with the owner
-  BEFORE generating. The confirmed text is frozen: it goes in entry.json
-  exactly as sent.
+- **The creative prompt**, verbatim. If the owner gives a prompt, it is
+  FROZEN AS GIVEN — do not ask about style, palette, detail level,
+  composition, realism, or anything else that would sharpen it. An
+  under-specified prompt is a valid benchmark input: how the model
+  resolves the ambiguity is part of what gets graded. Send it as-is.
+- If the owner gives only a subject ("a wine cork"), draft the prompt
+  yourself, DECISIVELY — make every creative choice silently, show the
+  finished draft once, and generate on their go-ahead. Do not interview
+  them about preferences; if they want changes they will edit the draft.
+  The go-ahead text is frozen: it goes in entry.json exactly as sent.
+- The only questions this skill ever asks are operational: which
+  model(s), new item vs alternative, sizeClass/tags, and the annotation
+  walk-through in §4.
 - **Which model(s)**: default is one response from this session's model
   family via subagent. The owner may request several tiers in one run
   (each becomes a response to the same prompt — the alternatives system).
@@ -96,6 +105,9 @@ entry afterward.
 
 ## Never
 
+- Never ask the owner to specify style or detail beyond what they
+  volunteered — prompt ambiguity is the model's problem to solve, and its
+  solution is gradeable. "Helpful" prompt-sharpening biases the sample.
 - Never give the generating subagent context beyond prompt + appendix.
 - Never edit artwork bytes (viewBox tightening is the sole permitted
   normalization, always disclosed).
