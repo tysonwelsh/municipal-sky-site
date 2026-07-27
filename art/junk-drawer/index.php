@@ -42,9 +42,8 @@ include '../../includes/header.php';
   <!-- ============ THE DRAWER STAGE (transplanted from Phase 0) ============
        Layer stack, bottom to top: craquelure (the DRAWER's own aging, under
        the items — G2), the pile (its own stacking context), wall shade,
-       varnish sheen, vignette, the manila FIELD NOTES tag. The pile is built
-       by junk-drawer.js from data.php; placements arrive from each
-       entry.json (PLAN-BACKEND §7). -->
+       varnish sheen, vignette. The pile is built by junk-drawer.js from
+       data.php; placements arrive from each entry.json (PLAN-BACKEND §7). -->
   <div class="jd-stage" id="drawer">
     <div class="jd-frame">
       <div class="jd-well">
@@ -103,7 +102,6 @@ include '../../includes/header.php';
       <circle cx="205" cy="24" r="7" fill="url(#jdp-post)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.55"/>
       <ellipse cx="202.2" cy="21.4" rx="1.9" ry="1.6" fill="#fff6d8" opacity="0.85"/>
     </svg>
-    <a class="jd-tag" href="#notes"><svg class="jd-tag-string" viewBox="0 0 44 34" aria-hidden="true"><circle cx="8" cy="6" r="3.4" fill="#8a713c" stroke="#4a3a12" stroke-width="1"/><circle cx="7" cy="5" r="1.2" fill="#d8c288"/><path d="M8 8 C 5 18, 15 25, 30 27" fill="none" stroke="#8a7648" stroke-width="1.6" stroke-linecap="round"/></svg><span class="jd-tag-body">FIELD NOTES &#8595;</span></a>
   </div>
 
   <!-- ============ FIELD NOTES ============
