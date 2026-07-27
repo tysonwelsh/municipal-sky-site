@@ -166,11 +166,15 @@ artifact for annotation rather than AskUserQuestion.
 ## 7. File, validate, publish
 
 Per CLAUDE.md: entry.json (or appended response), model registered in
-`taxonomy.json` if new, validator green, then commit and push to `main`
-with the conventional message — the push IS publication. Positions are
-auto-scattered at load — there is NO `placement` to author. A new item
-just needs its `sizeClass` (+ optional `sizeScale`); it scatters into the
-pile with everything else.
+`taxonomy.json` if new, validator green, then commit and push with the
+conventional message. Positions are auto-scattered at load — there is
+NO `placement` to author. A new item just needs its `sizeClass`
+(+ optional `sizeScale`); it scatters into the pile with everything else.
+
+**Go live immediately.** A push to `main` auto-deploys. After the
+commit, create a PR from the working branch to `main` and merge it
+(squash) so the item is live on the site. Do not leave it sitting on
+a feature branch — the item is not published until it reaches `main`.
 
 ## Never
 
