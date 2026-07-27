@@ -45,8 +45,10 @@ data files are `.json`, art is `.svg`.
      value (offer the value ids + descriptions) OR "skip". Skipped axes are
      OMITTED from the annotations object — never write null/empty for them.
      Attach the owner's remarks as `{"value": ..., "note": ...}`.
-   - Optionally, a `sizeClass` — how big the item should read in the
-     drawer: `"s"`, `"m"`, or `"l"` (default `"m"` if the owner shrugs).
+   - A `sizeClass` — how big the item should read in the drawer: `"s"`,
+     `"m"`, or `"l"`. This is the owner's call: ask, and write `"m"` only
+     if they EXPLICITLY defer ("default"/"whatever"). Silence is not a
+     shrug — never file a size the owner didn't choose.
 2. **Create the directory**: `items/<YYYY-MM-DD>-<slug>/` where slug is a
    short kebab-case name for the subject (e.g. `rubber-duck`), NOT the full
    prompt. Check it doesn't already exist.

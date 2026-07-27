@@ -11,35 +11,55 @@ at every decision point. Read `art/junk-drawer/CLAUDE.md` first — it owns
 the file mechanics (directory naming, entry.json schema, taxonomy rules,
 commit conventions). This skill adds the GENERATION discipline on top.
 
-## 1. Elicit (operational facts only — NEVER prompt-improvement questions)
+## 1. Stand by for the prompt
 
-- **The creative prompt**, verbatim. If the owner gives a prompt, it is
-  FROZEN AS GIVEN — do not ask about style, palette, detail level,
-  composition, realism, or anything else that would sharpen it. An
-  under-specified prompt is a valid benchmark input: how the model
-  resolves the ambiguity is part of what gets graded. Send it as-is.
+On invocation, read CLAUDE.md, then STOP: reply that you're standing by
+for the creative prompt (or a subject), and END YOUR TURN. Do not ask the
+operational questions yet, do not pull a prompt out of earlier
+conversation, and do not proceed on any default. Exception: if the
+invocation itself carried the prompt as arguments, treat it as entered
+and go straight to §2.
+
+- **The creative prompt** is FROZEN AS GIVEN, verbatim — typos and all.
+  Do not ask about style, palette, detail level, composition, realism,
+  or anything else that would sharpen it. An under-specified prompt is a
+  valid benchmark input: how the model resolves the ambiguity is part of
+  what gets graded. Send it as-is.
 - If the owner gives only a subject ("a wine cork"), draft the prompt
   yourself, DECISIVELY — make every creative choice silently, show the
   finished draft once, and generate on their go-ahead. Do not interview
   them about preferences; if they want changes they will edit the draft.
   The go-ahead text is frozen: it goes in entry.json exactly as sent.
-- The only questions this skill ever asks are operational: which
-  model(s), new item vs alternative, sizeClass/tags, and the annotation
-  walk-through in §4.
-- **Which model(s)**: default is one response from this session's model
-  family via subagent. The owner may request several tiers in one run
-  (each becomes a response to the same prompt — the alternatives system).
-  Model-id mapping for the registry (verify against the current
-  environment if models have moved on):
+
+## 2. The operational questions — ask, don't assume
+
+After the prompt arrives, follow up with the operational questions in
+ONE batch (AskUserQuestion works well) and WAIT for the answers before
+generating. These are the only questions this skill ever asks besides
+the annotation walk-through in §6 — never prompt-improvement questions.
+
+- **Which model(s)**: offer one response from this session's model
+  family via subagent as the suggested default. The owner may request
+  several tiers in one run (each becomes a response to the same prompt —
+  the alternatives system). Model-id mapping for the registry (verify
+  against the current environment if models have moved on):
   `fable → claude-fable-5 · opus → claude-opus-5 · sonnet → claude-sonnet-5 · haiku → claude-haiku-4-5`
   Non-Claude models: the owner runs the prompt elsewhere and pastes the
   SVG; file it byte-exact as that model's response.
 - **New item or alternative?** An alternative appends a response (next
   `rid`) to an existing entry; the prompt MUST be that entry's prompt,
-  re-sent verbatim.
-- **sizeClass** (`s`/`m`/`l`, default `m`) and any tags.
+  re-sent verbatim. (Skip this question when the answer is unambiguous —
+  e.g. the prompt matches an existing entry, or plainly matches nothing.)
+- **sizeClass** (`s`/`m`/`l`) and any tags. sizeClass is the owner's
+  call, every time — never write one they didn't pick. `m` may be filed
+  only if the owner EXPLICITLY defers ("default", "whatever", "you
+  pick"); silence or a skipped question is not a shrug.
 
-## 2. Generate — clean context, honest counts
+A default is a suggestion to show in the question, never a substitute
+for the answer. If any of these went unanswered, ask again before
+filing — do not commit an entry containing values the owner never chose.
+
+## 3. Generate — clean context, honest counts
 
 Spawn a FRESH subagent (general-purpose; `model:` per the owner's choice)
 whose entire prompt is:
@@ -70,7 +90,7 @@ taxonomy. Its reply is the artifact.
   `prompt` field holds the creative prompt only — the appendix is harness,
   documented here, constant across the collection.
 
-## 3. Verify the artifact
+## 4. Verify the artifact
 
 1. Write the SVG byte-exact to the item directory per CLAUDE.md naming.
 2. `python3 scripts/validate-junk-drawer.py` — hygiene rejections
@@ -85,7 +105,32 @@ taxonomy. Its reply is the artifact.
    or phone sessions the tool can't run: say so, file the item anyway,
    and flag it for an ink check at the owner's next desktop session.
 
-## 4. Annotate
+## 5. Show the owner the artwork — BEFORE asking for grades
+
+The owner must be able to SEE the SVG before the annotation
+walk-through. Pick the channel that fits the session:
+
+- **Desktop session (Mac with Chrome)**: render a PNG to the scratchpad
+  with headless Chrome
+  (`"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+  --headless --disable-gpu --screenshot=<out.png> --window-size=768,600
+  --default-background-color=FFFFFFFF file://<abs-path>.svg`)
+  and Read the PNG so it displays inline in the conversation.
+- **Remote / phone / sandboxed session** (remote control, web, or
+  anywhere headless Chrome isn't available): publish a preview with the
+  Artifact tool so the owner can open it on their phone — a minimal
+  self-contained HTML page with the SVG inlined (it's already
+  self-contained by the appendix rules; no external references, so the
+  CSP is satisfied). Put it on a neutral checkerboard or both-theme
+  background so transparent regions read correctly. Artifacts are
+  private by default; this previews, it does not publish the drawer.
+  Reuse the same artifact file/URL for later items in the session
+  rather than minting new pages.
+
+Either way, share the preview and wait — grading unseen art defeats
+the collection.
+
+## 6. Annotate
 
 Walk the owner through the rubric from `taxonomy.json` (never hardcode):
 overall grade (show the scale with descriptions), then each axis (offer
@@ -94,7 +139,7 @@ remarks become `{"value": ..., "note": ...}`. If the owner defers, a
 provisional self-assessment is allowed but must be labeled as such in
 `notes` ("provisional self-assessment — owner to regrade").
 
-## 5. File, validate, publish
+## 7. File, validate, publish
 
 Per CLAUDE.md: entry.json (or appended response), model registered in
 `taxonomy.json` if new, validator green, then commit and push to `main`
@@ -108,6 +153,9 @@ entry afterward.
 - Never ask the owner to specify style or detail beyond what they
   volunteered — prompt ambiguity is the model's problem to solve, and its
   solution is gradeable. "Helpful" prompt-sharpening biases the sample.
+- Never generate before the §2 operational answers are in, and never
+  file owner-choice fields (sizeClass, grade, annotations) the owner
+  didn't actually choose or explicitly defer.
 - Never give the generating subagent context beyond prompt + appendix.
 - Never edit artwork bytes (viewBox tightening is the sole permitted
   normalization, always disclosed).
