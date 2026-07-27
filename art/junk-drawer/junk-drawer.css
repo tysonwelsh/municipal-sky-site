@@ -457,6 +457,11 @@ html { scroll-behavior: smooth; }
      shifts mid-scroll or mid-drag; 100vh line is the pre-svh fallback. */
   .jd-stage {
     width: 100%; margin: 0;
+    /* the desktop base rules now carry max-width (content column) and
+       aspect-ratio — both must yield on mobile or the full-bleed drawer
+       gets clamped to 92vw (regression caught by the owner on-device) */
+    max-width: none;
+    aspect-ratio: auto;
     height: 100vh;                            /* fallback */
     height: 100svh;                           /* TRUE full viewport: the
        banner is hidden while the drawer is in view (immersive mode,
