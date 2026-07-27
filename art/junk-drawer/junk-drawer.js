@@ -264,10 +264,10 @@
   /* touch slops are wider than mouse: real thumbs jitter well past the
      10px that works in a simulator, and every misread press became a
      scroll (then a page-flip) on device — owner report, 2026-07-26 */
-  var SLOP = 8, TOUCH_SLOP = 14, HOLDSLOP = 20, HOLD = 180, CLEAR = 6;
+  var SLOP = 8, TOUCH_SLOP = 14, CLEAR = 6;
   var tapSlop = SLOP;
   var zTop = 100;
-  var pend = null, held = null, drag = false, timer = 0;
+  var pend = null, held = null, drag = false;
   var sx = 0, sy = 0, ox = 0, oy = 0;
   var pid = -1, fx = 0, fy = 0, twist = null;
 
@@ -343,7 +343,10 @@
 
   /* per-item wiring is deferred: the pile is BUILT by the loader above, so
      the loader calls window.JD_wirePile() once the items exist in the DOM.
-     Gesture behavior is unchanged. */
+     Touch grips IMMEDIATELY, same as mouse (G5 revision 3, 2026-07-26):
+     the old ~180ms hold existed only to prove a touch wasn't a page-scroll
+     starting — moot now that item ink is touch-action:none. Touch-and-move
+     drags right away; press-and-release within the slop is a tap/pick. */
   function wireItem(item) {
     item.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -356,11 +359,8 @@
       ox = r.left + r.width / 2 - w.left;
       oy = r.top + r.height / 2 - w.top;
       try { item.setPointerCapture(e.pointerId); } catch (_) {}
-      if (e.pointerType === 'mouse') { e.preventDefault(); grip(item); }
-      else {
-        clearTimeout(timer);
-        timer = setTimeout(function () { if (pend === item) grip(item); }, HOLD);
-      }
+      if (e.pointerType === 'mouse') e.preventDefault();
+      grip(item);
     });
     item.addEventListener('pointermove', function (e) {
       if (pend !== item || e.pointerId !== pid) return;
@@ -369,11 +369,6 @@
       if (held === item) {
         if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
         if (drag) place(item, ox + dx, oy + dy);
-      } else if (dx * dx + dy * dy > HOLDSLOP * HOLDSLOP) {
-        /* fast move before the hold fires: not a tap, not a grip — the
-           gesture just ends (item ink is touch-action:none, so there is
-           no browser scroll to hand off to; page-flips start from wood) */
-        clearTimeout(timer); pend = null;
       }
     });
     item.addEventListener('touchmove', function (e) {
@@ -381,14 +376,14 @@
     }, { passive: false });
     item.addEventListener('pointerup', function (e) {
       if (e.pointerId !== pid) return;           /* second finger up ≠ release */
-      clearTimeout(timer);
-      if (held === item) settle(item, drag);
-      else if (pend === item) pick(item);        /* tap: to front + pick chip */
+      if (held === item) {
+        settle(item, drag);
+        if (!drag) pick(item);                   /* press-release = tap/pick */
+      }
       pend = held = null; drag = false; twist = null;
     });
     item.addEventListener('pointercancel', function (e) {
       if (e.pointerId !== pid) return;
-      clearTimeout(timer);
       if (held === item) settle(item, drag);
       pend = held = null; drag = false; twist = null;
     });
