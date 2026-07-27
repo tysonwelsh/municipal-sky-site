@@ -10,10 +10,10 @@
   "primary": "r1",
   "sizeClass": "l",
   "placement": {
-    "x": 0.1353,
-    "y": 0.3383,
+    "x": 0.0915,
+    "y": 0.2241,
     "rotation": 9,
-    "scale": 0.923,
+    "scale": 0.657,
     "z": 3
   },
   "responses": [
