@@ -14,22 +14,19 @@ commit conventions). This skill adds the GENERATION discipline on top.
 ## 1. Stand by for the prompt
 
 On invocation, read CLAUDE.md, then STOP: reply that you're standing by
-for the creative prompt (or a subject), and END YOUR TURN. Do not ask the
-operational questions yet, do not pull a prompt out of earlier
-conversation, and do not proceed on any default. Exception: if the
-invocation itself carried the prompt as arguments, treat it as entered
-and go straight to §2.
+for the creative prompt, and END YOUR TURN. Do not ask the operational
+questions yet, do not pull a prompt out of earlier conversation, and do
+not proceed on any default. Exception: if the invocation itself carried
+the prompt as arguments, treat it as entered and go straight to §2.
 
-- **The creative prompt** is FROZEN AS GIVEN, verbatim — typos and all.
-  Do not ask about style, palette, detail level, composition, realism,
-  or anything else that would sharpen it. An under-specified prompt is a
-  valid benchmark input: how the model resolves the ambiguity is part of
-  what gets graded. Send it as-is.
-- If the owner gives only a subject ("a wine cork"), draft the prompt
-  yourself, DECISIVELY — make every creative choice silently, show the
-  finished draft once, and generate on their go-ahead. Do not interview
-  them about preferences; if they want changes they will edit the draft.
-  The go-ahead text is frozen: it goes in entry.json exactly as sent.
+- **Whatever the owner sends IS the creative prompt**, FROZEN AS GIVEN,
+  verbatim — typos and all. A single word ("hairball") is a complete,
+  valid prompt. Never treat terse input as a mere "subject" to expand
+  into a drafted prompt — there is no drafting step in this skill. Do
+  not ask about style, palette, detail level, composition, realism, or
+  anything else that would sharpen it. An under-specified prompt is a
+  valid benchmark input: how the model resolves the ambiguity is part
+  of what gets graded. Send it as-is.
 
 ## 2. The operational questions — ask, don't assume
 
