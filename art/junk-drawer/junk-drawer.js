@@ -18,7 +18,9 @@
 /* ---- the pile loader + field-notes renderer ------------------------------ */
 (function () {
   var pile = document.querySelector('.jd-pile');
-  var BASE = { s: 9, m: 15.5, l: 22 };   /* --w per sizeClass, in cqmin */
+  /* --w per sizeClass, in cqmin. Fallback only — the live boxes come from
+     taxonomy.sizeTiers at load (see sizeBoxes), so the scale is data-driven. */
+  var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
 
   /* ---- procedural scatter -------------------------------------------------
      Item positions are COMPUTED at load, never authored. Each browsing
@@ -252,6 +254,11 @@
       function byId(list, id) {
         return (list || []).filter(function (x) { return x.id === id; })[0];
       }
+      /* tier boxes are data: taxonomy.sizeTiers is the source of truth, with
+         the hardcoded BASE as fallback if an id is missing */
+      var tiers = {};
+      (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
+      function boxFor(sc) { return tiers[sc] || BASE[sc] || BASE.m; }
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
           return r.rid === item.primary;
@@ -270,6 +277,7 @@
         item._date = primary.date || '';
         item._rank = grade ? grade.rank : 0;
         item._steps = (tax.grades || []).length || 5;
+        item._box = boxFor(item.sizeClass);   /* tier box in cqmin, from taxonomy */
         item._url = primary.url;
         return fetch(primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
@@ -303,7 +311,7 @@
         var fine = (typeof item.sizeScale === 'number' && item.sizeScale > 0)
           ? item.sizeScale : 1;
         el.style.setProperty('--w',
-          +((BASE[item.sizeClass] || BASE.m) * fine).toFixed(2));
+          +((item._box || BASE.m) * fine).toFixed(2));
         pile.appendChild(el);
         return el;
       });

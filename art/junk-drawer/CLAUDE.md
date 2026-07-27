@@ -45,10 +45,16 @@ data files are `.json`, art is `.svg`.
      value (offer the value ids + descriptions) OR "skip". Skipped axes are
      OMITTED from the annotations object — never write null/empty for them.
      Attach the owner's remarks as `{"value": ..., "note": ...}`.
-   - A `sizeClass` — how big the item should read in the drawer: `"s"`,
-     `"m"`, or `"l"`. This is the owner's call: ask, and write `"m"` only
-     if they EXPLICITLY defer ("default"/"whatever"). Silence is not a
-     shrug — never file a size the owner didn't choose.
+   - A `sizeClass` — how big the item reads in the drawer. Read the tiers
+     from `taxonomy.json` `sizeTiers` (`"xs"`/`"s"`/`"m"`/`"l"`/`"xl"`,
+     each with a description). This is the owner's call: ask, and write
+     `"m"` only if they EXPLICITLY defer ("default"/"whatever"). Silence
+     is not a shrug — never file a size the owner didn't choose.
+   - Optional `sizeScale` — a positive multiplier on the tier box (default
+     1) for sizes between or below tiers; the continuous fine dial the
+     coarse tiers can't reach (e.g. paperclip = `"s"` × 0.364). Rendered
+     size is `sizeTiers[sizeClass].box × (sizeScale || 1)`. Omit it (or 1)
+     unless a tier alone doesn't land the size the owner wants.
 2. **Create the directory**: `items/<YYYY-MM-DD>-<slug>/` where slug is a
    short kebab-case name for the subject (e.g. `rubber-duck`), NOT the full
    prompt. Check it doesn't already exist.

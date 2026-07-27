@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 3,
+  "version": 4,
   "updated": "2026-07-27",
   "grades": [
     {
@@ -161,6 +161,38 @@
       "vendor": "Google"
     }
   ],
+  "sizeTiers": [
+    {
+      "id": "xs",
+      "label": "Extra small",
+      "box": 6,
+      "description": "Tiny — a fleck or trinket, easily lost among the larger junk."
+    },
+    {
+      "id": "s",
+      "label": "Small",
+      "box": 9,
+      "description": "A minor curio; reads small but distinct."
+    },
+    {
+      "id": "m",
+      "label": "Medium",
+      "box": 15.5,
+      "description": "The default; a middling object in the drawer."
+    },
+    {
+      "id": "l",
+      "label": "Large",
+      "box": 22,
+      "description": "Prominent; claims real space in the well."
+    },
+    {
+      "id": "xl",
+      "label": "Extra large",
+      "box": 30,
+      "description": "A centerpiece — dominates the drawer."
+    }
+  ],
   "changelog": [
     {
       "date": "2026-07-26",
@@ -176,6 +208,11 @@
       "date": "2026-07-27",
       "version": 3,
       "note": "Register model claude-opus-5 (Claude Opus 5)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 4,
+      "note": "Add sizeTiers: 5-tier curatorial size scale (xs/s/m/l/xl) as data. Per-item sizeScale remains the continuous fine dial on top of the tier."
     }
   ]
 }

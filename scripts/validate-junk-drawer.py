@@ -202,8 +202,8 @@ def validate_entry(item_dir, tax_ids):
         err(path, f"id {entry['id']!r} must be YYYY-MM-DD-<kebab-slug>")
     if "created" in entry:
         check_date(path, entry["created"], "created")
-    if "sizeClass" in entry and entry["sizeClass"] not in ("s", "m", "l"):
-        err(path, f"sizeClass must be 's', 'm', or 'l', got {entry['sizeClass']!r}")
+    if "sizeClass" in entry and entry["sizeClass"] not in ("xs", "s", "m", "l", "xl"):
+        err(path, f"sizeClass must be one of xs/s/m/l/xl, got {entry['sizeClass']!r}")
     if "sizeScale" in entry:
         ss = entry["sizeScale"]
         if not isinstance(ss, (int, float)) or isinstance(ss, bool) or ss <= 0:

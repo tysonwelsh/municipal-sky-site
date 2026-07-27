@@ -47,10 +47,9 @@ the annotation walk-through in §6 — never prompt-improvement questions.
   `rid`) to an existing entry; the prompt MUST be that entry's prompt,
   re-sent verbatim. (Skip this question when the answer is unambiguous —
   e.g. the prompt matches an existing entry, or plainly matches nothing.)
-- **sizeClass** (`s`/`m`/`l`) and any tags. sizeClass is the owner's
-  call, every time — never write one they didn't pick. `m` may be filed
-  only if the owner EXPLICITLY defers ("default", "whatever", "you
-  pick"); silence or a skipped question is not a shrug.
+- **Any tags** (optional). Note: **sizeClass is NOT asked here** — it moved
+  into the §6 annotation survey, because an item is sized best once you can
+  see it in context. Don't ask for size upfront.
 
 A default is a suggestion to show in the question, never a substitute
 for the answer. If any of these went unanswered, ask again before
@@ -136,14 +135,26 @@ remarks become `{"value": ..., "note": ...}`. If the owner defers, a
 provisional self-assessment is allowed but must be labeled as such in
 `notes` ("provisional self-assessment — owner to regrade").
 
+Then the **size**, in the same survey (this is where sizeClass is
+elicited — not §2). Show the `sizeTiers` from `taxonomy.json`
+(`xs`/`s`/`m`/`l`/`xl` with their descriptions) and have the owner pick
+ONE tier. Size is **per-item**, not per-response: the one `sizeClass`
+governs every response to the prompt (only the primary renders anyway).
+Optionally a per-item `sizeScale` (a positive multiplier, default 1) for
+sizes between or below tiers — the continuous fine dial that the coarse
+tiers can't reach (e.g. the paperclip is `s` × 0.36). sizeClass is the
+owner's call every time; write `m` only on an EXPLICIT defer, never on
+silence. (Automating size from the artwork is the eventual goal — these
+picks are the training signal, so record them faithfully.)
+
 ## 7. File, validate, publish
 
 Per CLAUDE.md: entry.json (or appended response), model registered in
 `taxonomy.json` if new, validator green, then commit and push to `main`
-with the conventional message — the push IS publication. A new item with
-no `placement` lands centered in the drawer; the owner can arrange it
-live via `?arrange=1` and paste the copied placement block into the
-entry afterward.
+with the conventional message — the push IS publication. Positions are
+auto-scattered at load — there is NO `placement` to author. A new item
+just needs its `sizeClass` (+ optional `sizeScale`); it scatters into the
+pile with everything else.
 
 ## Never
 
