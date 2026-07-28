@@ -1,0 +1,1703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER mockup 7d — THE PAPERWORK</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 7d · THE PAPERWORK (full record, style D)
+   PLAN-RECORD §3 D + §4 (the shared build contract).
+
+   The record IS the item tag's file: a manila folder in the tag's exact
+   palette (--slip-paper family, --slip-ink, --slip-line), a typed pasted-on
+   label on the tab, the grommet at the tab corner with the red elastic now
+   running item -> folder, and a string-and-button closure that visibly
+   unwinds as the folder opens.
+
+   Standalone: inline CSS/JS/SVG, no fetch, no PHP, no webfonts, file:// safe.
+   Every rubric string renders from the baked taxonomy object.
+   Any feTurbulence carries stitchTiles="stitch"; no full-stage blend modes.
+   ========================================================================== */
+:root{
+  --paper:#f6f3ec;
+  --ink:#262420;
+  --plot-red:#b22222;
+  --slip-paper:#efe3c2;
+  --slip-ink:#2c1f0c;
+  --slip-line:rgba(74,53,18,0.55);
+  --manila:#e8d9a8;
+  --manila-hi:#f0e2b6;
+  --manila-lo:#d8c48b;
+  --elastic:#b3402f;
+  --stamp-red:#b3402f;
+  --stamp-violet:#5b4e70;
+  --sheet:#f8f5ea;
+  --sheet-rule:rgba(104,138,170,0.34);
+  --font-mono:"Courier Prime","Courier New",Courier,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--paper); color:var(--ink);
+  font-family:var(--font-mono);
+  padding-bottom:2.6rem;
+  -webkit-text-size-adjust:100%;
+}
+.mock-label{
+  max-width:900px; margin:0.7rem auto 0.5rem;
+  font-size:0.68rem; letter-spacing:0.24em; color:#999;
+  text-transform:uppercase; text-align:center;
+}
+
+/* ================= the stage (simplified — NOT the drawer) =============== */
+.stage{
+  position:relative; overflow:hidden;
+  height:min(824px, calc(100vh - 78px));
+  background:
+    radial-gradient(90% 80% at 30% 24%, rgba(150,101,48,0.42) 0%, rgba(80,48,20,0.16) 45%, rgba(0,0,0,0) 74%),
+    radial-gradient(140% 130% at 48% 46%, #33230f 0%, #1d1207 56%, #0c0602 100%);
+}
+.stage::after{                       /* vignette (plain alpha, no blend mode) */
+  content:""; position:absolute; inset:0; z-index:9; pointer-events:none;
+  background:radial-gradient(118% 118% at 42% 36%, rgba(0,0,0,0) 50%, rgba(9,4,1,0.62) 100%);
+}
+.stage-inner{
+  position:relative; z-index:3; height:100%;
+  display:flex; align-items:center; gap:clamp(14px,2.6vw,40px);
+  padding:clamp(14px,2.2vw,30px);
+}
+.art-zone{
+  flex:0 0 55%; max-width:55%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+.art-box{
+  width:93%; height:min(76%,540px); display:flex; margin:0 auto;
+  background:radial-gradient(56% 56% at 50% 48%, rgba(255,224,164,0.15), rgba(255,224,164,0) 72%);
+}
+.art-box svg{
+  width:100%; height:100%; display:block;
+  filter:drop-shadow(26px 34px 26px rgba(0,0,0,0.58)) drop-shadow(3px 6px 6px rgba(0,0,0,0.45));
+}
+.rec-zone{
+  flex:1 1 auto; min-width:0; height:100%;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* the red elastic: grommet -> the lifted item (drawn in px by JS) */
+.elastic{ position:absolute; inset:0; z-index:4; pointer-events:none; }
+.elastic path.cord{ fill:none; stroke:var(--elastic); stroke-width:3.4; stroke-linecap:round; }
+.elastic path.cord-lo{ fill:none; stroke:rgba(40,10,4,0.5); stroke-width:6; stroke-linecap:round; }
+.elastic circle.knot{ fill:var(--elastic); stroke:rgba(40,10,4,0.45); stroke-width:1.5; }
+
+/* ============================ the folder ================================= */
+.folder{
+  position:relative; width:100%; max-width:472px;
+  perspective:1500px; transform:rotate(-0.5deg);
+}
+.fold-tab{
+  position:relative; z-index:6;
+  width:68%; min-height:34px; margin-left:18px;
+  display:flex; align-items:center; padding:4px 12px 4px 28px;
+  background:linear-gradient(180deg,var(--manila-hi) 0%, var(--manila) 100%);
+  border:1px solid rgba(74,53,18,0.42); border-bottom:none;
+  border-radius:8px 12px 0 0;
+  box-shadow:0 -1px 0 rgba(255,250,226,0.6) inset;
+  cursor:default;
+}
+.grommet{                              /* the elastic loops through this */
+  position:absolute; left:9px; top:50%; transform:translateY(-50%);
+  width:12px; height:12px; border-radius:50%;
+  background:#241708;
+  box-shadow:inset 0 0 0 3px #b39a5e, 0 0 0 1px #8a713c, 0 1px 1px rgba(0,0,0,0.4);
+}
+.tab-label{                            /* the typed, pasted-on label */
+  display:block; max-width:100%;
+  background:var(--slip-paper);
+  border:1px solid rgba(74,53,18,0.28);
+  padding:3px 9px 2px; transform:rotate(-0.8deg);
+  box-shadow:0 1px 2px rgba(58,38,10,0.28);
+  font-size:0.6rem; letter-spacing:0.15em; text-transform:uppercase;
+  color:var(--slip-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.tab-label .acc{ color:rgba(44,31,12,0.55); }
+.handle-bar{ display:none; }
+
+.fold-wrap{ position:relative; z-index:5; }
+.fold-body{
+  position:relative;
+  background:linear-gradient(176deg,#efe1b2 0%, #e8d8a4 44%, #dfcd96 100%);
+  border:1px solid rgba(74,53,18,0.42); border-radius:0 6px 6px 6px;
+  box-shadow:
+    26px 32px 46px -18px rgba(0,0,0,0.78),
+    4px 9px 16px -6px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,251,228,0.55);
+  padding:13px 15px 18px 27px;
+  overflow:hidden;
+}
+.fold-spine{                            /* the crease: the front cover, folded back */
+  position:absolute; left:0; top:0; bottom:0; width:15px; z-index:2;
+  background:linear-gradient(90deg,#c6ae72 0%, #d9c48c 46%, #e6d59f 100%);
+  box-shadow:inset -1px 0 0 rgba(112,86,36,0.4), inset 1px 0 0 rgba(255,248,214,0.3);
+}
+.fold-spine i{
+  position:absolute; left:4px; top:0; bottom:0; width:1px;
+  background:rgba(112,86,36,0.35);
+}
+.grain{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+.fold-inner{ position:relative; z-index:3; display:flex; flex-direction:column; }
+
+/* --------- the inside cover: typed provenance + RECEIVED stamp ----------- */
+.cover-block{ position:relative; padding:0 0 10px 2px; }
+.cb-head{
+  font-size:0.55rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:rgba(44,31,12,0.58); margin-bottom:5px;
+  border-bottom:1px solid var(--slip-line); padding-bottom:3px;
+  max-width:58%;
+}
+.typed{ font-size:0.62rem; line-height:1.62; color:var(--slip-ink); max-width:64%; }
+.typed .k{
+  display:inline-block; width:9.2em; letter-spacing:0.13em;
+  color:rgba(44,31,12,0.62); text-transform:uppercase;
+}
+.typed .v{ letter-spacing:0.02em; }
+.cb-stamp{
+  position:absolute; right:0; top:0; width:152px;
+  transform:rotate(6.5deg); opacity:0.86;
+}
+.cb-links{ margin-top:8px; display:flex; gap:10px; flex-wrap:wrap; }
+.cb-links a{
+  font-size:0.55rem; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--slip-ink); text-decoration:none;
+  border:1px solid rgba(74,53,18,0.5); padding:3px 8px 2px;
+  background:rgba(255,252,236,0.35);
+}
+.cb-links a:hover{ background:var(--slip-ink); color:var(--slip-paper); }
+
+/* ------------------------- the loose sheets ----------------------------- */
+.slot{ position:relative; }
+.sheet{
+  position:relative;
+  background:var(--sheet);
+  border:1px solid rgba(92,70,30,0.28);
+  box-shadow:2px 4px 7px rgba(52,34,10,0.34), inset 0 0 0 1px rgba(255,255,255,0.45);
+  padding:11px 14px 12px;
+}
+.sh-head{
+  font-size:0.52rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:rgba(44,31,12,0.6);
+  border-bottom:1px solid rgba(74,53,18,0.3);
+  padding-bottom:3px; margin-bottom:7px;
+}
+/* the PROMPT sheet — near-white, mono, held by a paperclip */
+.sheet.prompt{ margin:0 20px 0 -8px; transform:rotate(-0.65deg); background:#fbf9f2; }
+.sheet.prompt .sh-head{ padding-left:44px; }
+.prompt-txt{
+  font-size:0.66rem; line-height:1.62; color:#2b2822;
+  white-space:pre-wrap; word-break:break-word;
+  max-height:9.8em; overflow-y:auto; overscroll-behavior:contain;
+}
+.prompt-txt .q{ color:rgba(43,40,34,0.42); }
+.clip{
+  position:absolute; left:22px; top:-19px; width:23px; z-index:4;
+  transform:rotate(-7deg);
+  filter:drop-shadow(1.5px 2.5px 1.6px rgba(40,26,6,0.45));
+}
+/* the RUBRIC sheet — ruled paper, verdicts, the big diagonal stamp */
+.sheet.rubric{
+  margin:-7px -6px 0 10px; transform:rotate(0.5deg);
+  background:
+    repeating-linear-gradient(180deg, rgba(0,0,0,0) 0 25px, var(--sheet-rule) 25px 26px),
+    linear-gradient(90deg, rgba(0,0,0,0) 0 26px, rgba(178,64,47,0.3) 26px 27px, rgba(0,0,0,0) 27px),
+    linear-gradient(180deg,#fcf9f0,#f5f1e1);
+  background-position:0 34px, 0 0, 0 0;
+  padding-left:34px;
+}
+.rb-row{
+  display:flex; align-items:baseline; height:26px;
+  font-size:0.63rem; color:var(--slip-ink);
+}
+.rb-axis{ letter-spacing:0.04em; white-space:nowrap; }
+.rb-dots{ flex:1 1 auto; border-bottom:1px dotted rgba(80,60,20,0.42); margin:0 6px 4px; }
+.rb-val{ letter-spacing:0.14em; text-transform:uppercase; white-space:nowrap; font-weight:700; }
+.rb-val.muted{ color:rgba(44,31,12,0.42); font-weight:400; letter-spacing:0.1em; }
+.rb-note{
+  font-size:0.57rem; line-height:26px; color:rgba(44,31,12,0.66);
+  padding-left:1.4em; margin-top:-2px;
+}
+.rb-stampzone{ position:relative; margin:6px 0 0; min-height:96px; }
+.rb-stamp{
+  position:relative; z-index:3; display:block; width:88%; margin:8px auto 0;
+  transform:rotate(-8.5deg);
+}
+.rb-stamp.ghost{                    /* the superseded grade, restamped over */
+  position:absolute; left:-1%; top:30px; width:76%; z-index:2;
+  transform:rotate(-2deg); opacity:0.42; filter:saturate(0.4);
+}
+.rb-desc{
+  position:relative; z-index:4;
+  font-size:0.57rem; line-height:1.65; color:rgba(44,31,12,0.78);
+  margin-top:12px; padding-top:5px; border-top:1px solid rgba(74,53,18,0.18);
+}
+.rb-graded{
+  font-size:0.53rem; letter-spacing:0.11em; text-transform:uppercase;
+  color:rgba(44,31,12,0.55); margin-top:4px;
+}
+.rb-graded .sup{ color:rgba(140,52,38,0.8); }
+
+/* -------------------- provenance, typed on the manila ------------------- */
+.notes-block{ padding:9px 4px 0 2px; }
+.nb-head{
+  font-size:0.52rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:rgba(44,31,12,0.58); margin-bottom:3px;
+}
+.nb-body{ font-size:0.55rem; line-height:1.66; color:rgba(44,31,12,0.74); }
+
+/* ------------------------- ALSO IN THE FILE ----------------------------- */
+.strip{ padding:9px 2px 0; }
+.strip-head{
+  font-size:0.52rem; letter-spacing:0.24em; text-transform:uppercase;
+  color:rgba(44,31,12,0.58); margin-bottom:6px;
+  display:flex; align-items:center; gap:8px;
+}
+.strip-head::after{ content:""; flex:1 1 auto; border-bottom:1px solid var(--slip-line); }
+.strip-row{ display:flex; gap:7px; flex-wrap:wrap; margin-top:14px; }
+.fchip{
+  position:relative; font-family:var(--font-mono); text-align:left; cursor:pointer;
+  background:linear-gradient(180deg,#f2e6bd,#e6d6a2);
+  border:1px solid rgba(74,53,18,0.42); border-radius:0 4px 3px 3px;
+  padding:5px 8px 4px; color:var(--slip-ink);
+  box-shadow:1px 2px 3px rgba(52,34,10,0.28);
+}
+.fchip::before{                    /* each alternative is another tabbed paper */
+  content:""; position:absolute; left:-1px; top:-6px; width:34%; height:6px;
+  background:linear-gradient(180deg,#f2e6bd,#eddfb2);
+  border:1px solid rgba(74,53,18,0.42); border-bottom:none; border-radius:4px 5px 0 0;
+}
+.fchip b{ display:block; font-size:0.56rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; }
+.fchip em{ display:block; font-style:normal; font-size:0.5rem; letter-spacing:0.1em; color:rgba(44,31,12,0.62); margin-top:2px; text-transform:uppercase; }
+.fchip.is-on{ background:linear-gradient(180deg,#fbf3d6,#f3e7bd); box-shadow:0 0 0 1px rgba(44,31,12,0.5), 1px 2px 3px rgba(52,34,10,0.3); }
+.fchip.is-on::after{                /* the curator's tick: this one is out */
+  content:"✓"; position:absolute; right:6px; top:3px; line-height:1;
+  font-size:0.66rem; color:var(--stamp-red);
+}
+.fchip:hover{ background:linear-gradient(180deg,#fdf6de,#f2e6bd); }
+
+/* --------------------- mobile-only peek header -------------------------- */
+.peek-head{ display:none; }
+
+/* =========================== the closure ================================= */
+/* string-and-button: a figure-eight wind between two brass buttons; the wind
+   unwinds (stroke-dashoffset) and a slack end drops as the folder opens. */
+.closure{ position:absolute; right:-19px; top:24%; width:64px; height:auto; z-index:8;
+  filter:drop-shadow(1px 2px 1.5px rgba(30,16,2,0.45)); }
+.cl-wind, .cl-slack{ fill:none; stroke:#efe0ae; stroke-width:2.4; stroke-linecap:round; }
+.cl-wind-lo, .cl-slack-lo{ fill:none; stroke:rgba(52,34,6,0.62); stroke-width:4; stroke-linecap:round; }
+.cl-btn circle.b{ fill:#c2a869; stroke:#7d6432; stroke-width:1.6; }
+.cl-btn circle.h{ fill:#5e4a1e; }
+
+/* =========================== the front cover ============================= */
+.fold-cover{
+  position:absolute; inset:0; z-index:7;
+  background:linear-gradient(122deg,#f2e5ba 0%, #e8d8a4 44%, #d7c489 100%);
+  border:1px solid rgba(74,53,18,0.45); border-radius:0 6px 6px 6px;
+  box-shadow:12px 14px 26px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,251,228,0.5);
+  transform-origin:left center; backface-visibility:hidden;
+  padding:16px 18px;
+}
+.fc-mark{
+  font-size:0.5rem; letter-spacing:0.3em; text-transform:uppercase;
+  color:rgba(44,31,12,0.42);
+}
+.fc-rule{ margin-top:6px; border-top:1px solid rgba(74,53,18,0.22); width:52%; }
+
+/* ============================ animation ================================== */
+/* opening: the string unwinds, the cover swings, the sheets settle — <1s */
+@keyframes unwind{ to{ stroke-dashoffset:100; } }
+@keyframes slackIn{ from{ stroke-dashoffset:100; } to{ stroke-dashoffset:0; } }
+@keyframes coverOpen{
+  0%{ transform:rotateY(0deg); opacity:1; }
+  62%{ opacity:1; }
+  100%{ transform:rotateY(-114deg); opacity:0; }
+}
+@keyframes btnGo{ 0%,60%{opacity:1} 100%{opacity:0} }
+@keyframes settle{
+  from{ opacity:0; transform:translateY(11px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+@keyframes tabIn{ from{opacity:0; transform:translateY(-6px)} to{opacity:1; transform:none} }
+
+.cl-wind{ stroke-dasharray:100; stroke-dashoffset:0; animation:unwind .34s ease-in .06s forwards; }
+.cl-wind-lo{ stroke-dasharray:100; stroke-dashoffset:0; animation:unwind .34s ease-in .06s forwards; }
+.cl-wind.w2, .cl-wind-lo.w2{ animation-delay:.14s; }
+.cl-slack, .cl-slack-lo{ stroke-dasharray:100; stroke-dashoffset:100; animation:slackIn .3s ease-out .3s forwards; }
+.cl-btn-a{ animation:btnGo .46s linear .3s forwards; }
+.fold-cover{ animation:coverOpen .44s cubic-bezier(.42,0,.24,1) .3s forwards; }
+.slot{ opacity:0; animation:settle .34s cubic-bezier(.3,0,.2,1) forwards; }
+.cover-slot{ animation-delay:.58s; }
+.prompt-slot{ animation-delay:.64s; }
+.rubric-slot{ animation-delay:.7s; }
+.notes-slot{ animation-delay:.76s; }
+.strip-slot{ animation-delay:.8s; }
+.peek-slot{ animation-delay:.56s; }
+.fold-tab{ animation:tabIn .3s ease-out both; }
+
+/* flip-through: per-response sheets re-render without re-opening the folder */
+.is-flip .slot{ animation-duration:.22s; animation-delay:0s; }
+.is-flip .fold-cover{ display:none; }
+.is-flip .closure .cl-wind, .is-flip .closure .cl-wind-lo{ display:none; }
+.is-flip .cl-slack, .is-flip .cl-slack-lo{ animation:none; stroke-dashoffset:0; }
+.is-flip .cl-btn-a{ animation:none; opacity:0; }
+.is-flip .fold-tab{ animation:none; }
+
+/* ============================== mobile =================================== */
+@media (max-width:768px){
+  .stage{ height:100svh; }
+  .stage-inner{ flex-direction:column; align-items:stretch; padding:0; gap:0; }
+  .art-zone{
+    flex:0 0 60svh; max-width:none; padding:14px 16px 4px;
+    transition:flex-basis .34s cubic-bezier(.4,0,.24,1);
+  }
+  .stage.is-full .art-zone{ flex-basis:24svh; }
+  .art-box{ width:100%; height:100%; }
+  .art-box svg{ filter:drop-shadow(14px 20px 16px rgba(0,0,0,0.55)); }
+  .elastic{ display:none; }
+
+  .rec-zone{
+    position:absolute; left:0; right:0; bottom:0; z-index:8;
+    height:84svh; padding:0; display:block;
+    transform:translateY(calc(100% - 322px));
+    transition:transform .34s cubic-bezier(.4,0,.24,1);
+  }
+  .stage.is-full .rec-zone{ transform:translateY(0); }
+  .folder{ width:100%; max-width:none; height:100%; transform:none; display:flex; flex-direction:column; }
+  .fold-tab{
+    width:100%; margin:0; min-height:52px; padding:5px 14px 6px 30px;
+    border-radius:14px 14px 0 0; flex-direction:column; align-items:stretch; gap:4px;
+    cursor:pointer;
+  }
+  .handle-bar{
+    display:block; width:42px; height:4px; border-radius:3px; margin:0 auto;
+    background:rgba(74,53,18,0.42);
+  }
+  .grommet{ top:auto; bottom:12px; transform:none; }
+  .tab-label{ font-size:0.63rem; padding:4px 10px 3px; }
+  .fold-wrap{ flex:1 1 auto; min-height:0; }
+  .fold-body{
+    height:100%; border-radius:0; padding:11px 14px 0 24px;
+    display:flex; flex-direction:column;
+    box-shadow:0 -10px 26px -8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,251,228,0.5);
+  }
+  .fold-inner{ flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding-bottom:26px; }
+  .stage:not(.is-full) .fold-inner{ overflow:hidden; }
+  .fold-cover{ border-radius:0; }
+  .closure{ right:8px; top:-4px; width:30px; }
+
+  /* the folder compresses: peek shows the tab, the grade, the file strip */
+  .peek-head{ display:block; order:1; padding:0 0 8px 2px; }
+  .strip-slot{ order:2; }
+  .prompt-slot{ order:3; margin-top:6px; }
+  .rubric-slot{ order:4; }
+  .cover-slot{ order:5; margin-top:10px; }
+  .notes-slot{ order:6; }
+  .sheet.prompt{ margin:0 12px 0 -6px; }
+  .sheet.rubric{ margin:-7px -4px 0 8px; }
+  .typed, .cb-head{ max-width:100%; }
+  .cb-stamp{ position:relative; right:auto; top:auto; margin:8px 0 0 auto; }
+  .prompt-txt{ max-height:none; }
+}
+.ph-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+.ph-chips span{
+  font-size:0.52rem; letter-spacing:0.13em; text-transform:uppercase;
+  border:1px solid rgba(74,53,18,0.45); padding:3px 7px 2px;
+  color:rgba(44,31,12,0.78); background:rgba(255,252,236,0.4);
+}
+.ph-grade{ display:flex; align-items:center; gap:10px; }
+.ph-grade .lbl{ font-size:0.5rem; letter-spacing:0.2em; color:rgba(44,31,12,0.55); }
+.ph-stamp{ width:150px; transform:rotate(-3.5deg); }
+
+/* =========================== page furniture ============================== */
+.mock-switch{
+  max-width:900px; margin:1rem auto 0; text-align:center;
+  font-size:0.6rem; letter-spacing:0.16em; text-transform:uppercase; color:#8d8574;
+}
+.mock-switch button{
+  font-family:var(--font-mono); font-size:0.62rem; letter-spacing:0.14em;
+  text-transform:uppercase; padding:0.28em 0.85em; margin:0 0.18em;
+  background:#f6f3ec; color:var(--ink); border:1px solid #a89f88;
+  border-radius:2px; cursor:pointer;
+}
+.mock-switch button.is-on{ background:var(--ink); color:#f6f3ec; border-color:var(--ink); }
+.mock-nav{
+  font-size:0.58rem; letter-spacing:0.12em; text-transform:uppercase;
+  color:#8d8574; margin-bottom:0.85rem; padding-bottom:0.6rem;
+  border-bottom:1px solid #ddd6c6; line-height:2;
+}
+.mock-nav a{ color:#6b6353; text-decoration:none; border-bottom:1px dotted #b9b09a; }
+.mock-nav a:hover{ color:var(--plot-red); }
+.mock-nav .cur{ color:var(--plot-red); font-weight:700; border-bottom:none; }
+.mock-nav .sep{ color:#c3bbaa; padding:0 0.35em; }
+.mock-caption{
+  max-width:780px; border:1px solid #c9c2ae; padding:1rem 1.1rem;
+  margin:1.2rem auto 1.2rem; background:#faf8f2;
+}
+.mock-caption p{ font-size:0.72rem; line-height:1.72; margin:0 0 0.72rem; }
+.mock-caption p:last-child{ margin-bottom:0; }
+.mc-head{ letter-spacing:0.2em; text-transform:uppercase; color:#6b6353; }
+.mock-caption b.r{ color:var(--plot-red); }
+.mock-caption code{ font-family:var(--font-mono); background:#f1ece0; padding:0 0.25em; }
+
+@media (prefers-reduced-motion: reduce){
+  .fold-cover{ display:none !important; }
+  .slot, .fold-tab{ animation:none !important; opacity:1 !important; transform:none !important; }
+  .cl-wind, .cl-wind-lo{ display:none !important; }
+  .cl-slack, .cl-slack-lo{ animation:none !important; stroke-dashoffset:0 !important; }
+  .cl-btn-a{ animation:none !important; opacity:0 !important; }
+  .rec-zone{ transition:none !important; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label top">junk drawer &middot; mockup 7d &middot; the paperwork &mdash; full record style D</p>
+
+<div class="stage" id="stage">
+  <div class="stage-inner">
+    <div class="art-zone">
+      <div class="art-box" id="artBox"></div>
+    </div>
+    <div class="rec-zone">
+      <div class="folder" id="folder"></div>
+    </div>
+  </div>
+  <svg class="elastic" id="elastic" aria-hidden="true"></svg>
+</div>
+
+<div class="mock-switch">
+  <span>item:</span>
+  <button type="button" data-item="2026-07-27-subway-rat" class="is-on">subway rat &mdash; 3 responses</button><button
+          type="button" data-item="2026-07-27-hairball">hairball &mdash; 1 response</button>
+</div>
+
+<div class="mock-caption">
+  <nav class="mock-nav">
+    the full record, five styles:
+    <a href="mockup-7a-report-card.html">A &middot; report card</a><span class="sep">/</span><a href="mockup-7b-accession-card.html">B &middot; accession record</a><span class="sep">/</span><a href="mockup-7c-condition-report.html">C &middot; condition report</a><span class="sep">/</span><span class="cur">D &middot; the paperwork</span><span class="sep">/</span><a href="mockup-7e-catalog-card.html">E &middot; catalog card</a>
+  </nav>
+
+  <p class="mc-head">Mockup 7d &middot; THE PAPERWORK &mdash; the manila evidence wrapper</p>
+
+  <p>The record is the item tag&rsquo;s <i>file</i>: the same manila stock
+  (<code>--slip-paper</code> family, <code>--slip-ink</code>,
+  <code>--slip-line</code>), the same brass grommet, the same
+  <b class="r">red elastic</b> &mdash; except the elastic now runs
+  <i>item &rarr; folder</i> instead of item &rarr; tag. A typed label is
+  pasted on the tab; a string-and-button closure holds it shut and
+  <b>visibly unwinds</b> as the folder opens (string 0.06&ndash;0.40s, cover
+  swing 0.30&ndash;0.74s, sheets settling 0.58&ndash;0.94s &mdash; under a
+  second, and fully skipped under <code>prefers-reduced-motion</code>).</p>
+
+  <p><b class="mc-head">Legible at once</b> &mdash; the spec allowed either
+  click-to-shuffle or a stagger wide enough to read everything; this mockup
+  takes the second. The contents sit as three distinct papers: the
+  <b>inside cover</b> (typed provenance block + the violet <code>RECEIVED</code>
+  stamp, printed straight onto the manila), the <b>PROMPT sheet</b> (near-white,
+  mono, verbatim, under a paperclip &mdash; it never changes when you flip),
+  and the <b>RUBRIC sheet</b> (ruled paper, one row per axis in taxonomy order,
+  the overall grade struck across the lower half as a big diagonal rubber
+  stamp with the taxonomy&rsquo;s own description typed beneath). Each sheet
+  is offset and canted a fraction of a degree so its neighbours&rsquo; edges
+  stay visible &mdash; folder contents, not a stack of cards.</p>
+
+  <p><b class="mc-head">Two synthetic overlays</b>, per the build contract, and
+  they exist <i>only</i> in this mockup &mdash; neither is in the filed record:
+  (1) subway rat <code>r1</code> carries a grafted
+  <code>grade_history</code> entry (<code>choice</code>, 2026-07-27,
+  &ldquo;mock &mdash; for layout&rdquo;) so supersession renders &mdash; the
+  old stamp sits part-visible <i>beneath</i> the new one, offset and faded,
+  the way restamped paperwork actually looks; (2) subway rat <code>r3</code>
+  has its <code>color</code> axis treated as skipped so
+  <code>&mdash; &middot; NOT ASSESSED</code> renders. Everything else &mdash;
+  prompts, grades, dates, notes, model labels, axis and value labels, grade
+  descriptions &mdash; is baked verbatim from <code>taxonomy.json</code> and
+  the two <code>entry.json</code> files. No rubric string is hardcoded;
+  unknown axes and object-form annotations (<code>{value, note}</code>)
+  render generically.</p>
+
+  <p><b class="mc-head">Also in the file</b> &mdash; the alternatives strip is
+  worded <code>ALSO IN THE FILE</code> and drawn as further tabbed papers.
+  Choosing one swaps the lifted SVG in place at the same scale and re-renders
+  only the per-response papers; the PROMPT sheet is untouched. Hairball has a
+  single response, so the strip is absent entirely (switch items above to see
+  it collapse). Each response&rsquo;s inline SVG has every <code>id</code> and
+  <code>url(#&hellip;)</code> reference prefixed (<code>o_</code>,
+  <code>f_</code>, <code>s_</code>, <code>h_</code>) so four artworks can share
+  one page; no path was altered.</p>
+
+  <p><b class="mc-head">Mobile</b> (&le;768px) &mdash; the folder compresses:
+  <b>the sheet is the folder</b>. The bottom sheet is cut from the same manila,
+  its drag handle <i>is</i> the tab (typed label and grommet included), and the
+  closure hangs at the tab&rsquo;s right corner. <b>Peek</b> shows the tab, the
+  model/process chips, the grade stamp and the file strip; <b>full</b> raises
+  the sheet over the papers &mdash; prompt, rubric, inside cover, provenance
+  &mdash; in an inner scroll region (<code>overscroll-behavior:contain</code>).
+  Tapping the tab toggles the detents, and
+  <code>?mock-state=peek|full</code> drives them for screenshots;
+  <code>?item=2026-07-27-hairball</code> picks the item and
+  <code>?rid=r3</code> picks the response (the same states the flip-through
+  and the item switcher reach by hand).</p>
+</div>
+
+<p class="mock-label">junk drawer &middot; mockup 7d &middot; the paperwork &mdash; full record style D</p>
+
+<script>
+/* ==========================================================================
+   DATA — baked verbatim from the repo (taxonomy.json, two entry.json files,
+   four SVGs). No fetch anywhere on this page.
+   ========================================================================== */
+var TAXONOMY = {
+  "schema": 1,
+  "version": 5,
+  "updated": "2026-07-27",
+  "grades": [
+    {
+      "id": "prime",
+      "rank": 5,
+      "label": "Prime",
+      "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is."
+    },
+    {
+      "id": "choice",
+      "rank": 4,
+      "label": "Choice",
+      "description": "Strong result with minor blemishes a careful eye can find."
+    },
+    {
+      "id": "select",
+      "rank": 3,
+      "label": "Select",
+      "description": "Competent and recognizable; noticeable flaws on one or more axes."
+    },
+    {
+      "id": "standard",
+      "rank": 2,
+      "label": "Standard",
+      "description": "Gets the idea across despite significant defects."
+    },
+    {
+      "id": "utility",
+      "rank": 1,
+      "label": "Utility",
+      "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)."
+    }
+  ],
+  "axes": [
+    {
+      "id": "prompt-fidelity",
+      "label": "Prompt fidelity",
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
+      "values": [
+        {
+          "id": "faithful",
+          "label": "Faithful",
+          "description": "All requested elements present as specified."
+        },
+        {
+          "id": "partial",
+          "label": "Partial",
+          "description": "Some requested elements missing, extra, or misread."
+        },
+        {
+          "id": "off-brief",
+          "label": "Off-brief",
+          "description": "Substantially not the thing that was asked for."
+        }
+      ]
+    },
+    {
+      "id": "geometry",
+      "label": "Geometry & topology",
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
+      "values": [
+        {
+          "id": "clean",
+          "label": "Clean",
+          "description": "No visible construction errors."
+        },
+        {
+          "id": "minor",
+          "label": "Minor defects",
+          "description": "Small misalignments or overlaps visible on inspection."
+        },
+        {
+          "id": "major",
+          "label": "Major defects",
+          "description": "Structural errors that dominate the read of the image."
+        }
+      ]
+    },
+    {
+      "id": "color",
+      "label": "Color & rendering",
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
+      "values": [
+        {
+          "id": "clean",
+          "label": "Clean",
+          "description": "Palette and rendering read as intended."
+        },
+        {
+          "id": "minor",
+          "label": "Minor defects",
+          "description": "Off colors, banding, or stacking slips that don't break the image."
+        },
+        {
+          "id": "major",
+          "label": "Major defects",
+          "description": "Rendering errors that break the image."
+        }
+      ]
+    },
+    {
+      "id": "composition",
+      "label": "Composition",
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
+      "values": [
+        {
+          "id": "clean",
+          "label": "Clean",
+          "description": "Well-composed within its viewBox."
+        },
+        {
+          "id": "minor",
+          "label": "Minor defects",
+          "description": "Awkward margins, crowding, or scale oddities."
+        },
+        {
+          "id": "major",
+          "label": "Major defects",
+          "description": "Subject clipped, marooned, or scaled absurdly."
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "id": "claude-fable-5",
+      "label": "Claude Fable 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-sonnet-5",
+      "label": "Claude Sonnet 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-5",
+      "label": "Claude Opus 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-4-6",
+      "label": "Claude Opus 4.6",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-4-1",
+      "label": "Claude Opus 4.1",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "label": "Claude Sonnet 4.5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "gpt-5",
+      "label": "GPT-5",
+      "vendor": "OpenAI"
+    },
+    {
+      "id": "gemini-2-5-pro",
+      "label": "Gemini 2.5 Pro",
+      "vendor": "Google"
+    }
+  ],
+  "sizeTiers": [
+    {
+      "id": "xs",
+      "label": "Extra small",
+      "box": 6,
+      "description": "Tiny — a fleck or trinket, easily lost among the larger junk."
+    },
+    {
+      "id": "s",
+      "label": "Small",
+      "box": 9,
+      "description": "A minor curio; reads small but distinct."
+    },
+    {
+      "id": "m",
+      "label": "Medium",
+      "box": 15.5,
+      "description": "The default; a middling object in the drawer."
+    },
+    {
+      "id": "l",
+      "label": "Large",
+      "box": 22,
+      "description": "Prominent; claims real space in the well."
+    },
+    {
+      "id": "xl",
+      "label": "Extra large",
+      "box": 30,
+      "description": "A centerpiece — dominates the drawer."
+    }
+  ],
+  "changelog": [
+    {
+      "date": "2026-07-26",
+      "version": 1,
+      "note": "Initial taxonomy: 5-tier grade scale, 4 axes, starter model registry."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 2,
+      "note": "Relabel utility: \"Utility Grade\" -> \"Utility\" (the display context already says Grade:)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 3,
+      "note": "Register model claude-opus-5 (Claude Opus 5)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 4,
+      "note": "Add sizeTiers: 5-tier curatorial size scale (xs/s/m/l/xl) as data. Per-item sizeScale remains the continuous fine dial on top of the tier."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 5,
+      "note": "Register model claude-opus-4-6 (Claude Opus 4.6)."
+    }
+  ]
+};
+
+var ITEMS = {
+  '2026-07-27-subway-rat': {
+  "schema": 1,
+  "id": "2026-07-27-subway-rat",
+  "title": "Sneaky subway rat",
+  "prompt": "I'd like a sneaky stealthy subway rat. It should have googly eyes and be showing in profile as though it is a scampering off somewhere. Let's give it a cartoony style like from the looney tunes or something",
+  "created": "2026-07-27",
+  "tags": [],
+  "primary": "r1",
+  "sizeClass": "l",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "major",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "major",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated."
+    }
+  ]
+},
+  '2026-07-27-hairball': {
+  "schema": 1,
+  "id": "2026-07-27-hairball",
+  "title": "Hairball",
+  "prompt": "hairball",
+  "created": "2026-07-27",
+  "tags": [],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "minor",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 1.8%); no viewBox normalization. Source contains a self-correction fossil: a strand emitted with invalid stroke=\"#a2first\" was zeroed out (stroke-width 0, opacity 0) and immediately re-emitted corrected as #a28457 — invisible in the render, preserved byte-exact."
+    }
+  ]
+}
+};
+
+var ART = {
+  '2026-07-27-subway-rat': {
+    r1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 526" role="img" aria-label="A sneaky cartoon subway rat with big googly eyes scampering off in profile, dragging a slice of pizza">
+  <defs>
+    <linearGradient id="o_fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ca4ad"/>
+      <stop offset="1" stop-color="#7d848d"/>
+    </linearGradient>
+    <linearGradient id="o_tailg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8a3b5"/>
+      <stop offset="1" stop-color="#d885a0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- TAIL (behind) -->
+  <path d="M700,296 C800,300 856,250 842,168 C833,108 796,54 762,20 C752,30 748,30 738,38 C770,80 810,124 818,174 C830,248 782,274 704,266 Z"
+        fill="url(#o_tailg)" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- FAR HIND LEG + FOOT -->
+  <path d="M690,332 C706,378 690,420 660,448 C636,470 618,486 606,504 C634,508 660,500 666,478 C704,446 726,394 716,344 Z"
+        fill="#6f767e" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M600,488 C588,498 586,510 598,514 C608,518 620,512 622,502 C634,497 648,496 656,500 C650,486 632,480 614,482 Z"
+        fill="#d885a0" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- SCAMPER DUST PUFFS -->
+  <g fill="#e2e6ea" stroke="#23262b" stroke-width="4">
+    <circle cx="770" cy="474" r="17"/>
+    <circle cx="800" cy="452" r="12"/>
+    <circle cx="742" cy="492" r="11"/>
+  </g>
+
+  <!-- BODY -->
+  <path d="M45,315 C70,283 92,268 132,256 C176,244 202,238 246,232 C300,224 332,172 472,162 C602,153 682,188 732,250 C772,296 766,352 714,378 C640,408 560,408 470,402 C360,395 250,398 168,370 C122,354 62,338 45,315 Z"
+        fill="url(#o_fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- BELLY HIGHLIGHT -->
+  <path d="M118,342 C210,306 400,306 548,332 C528,392 360,404 206,386 C158,378 130,360 118,342 Z"
+        fill="#bcc2ca" opacity="0.7"/>
+
+  <!-- NEAR HIND LEG + FOOT -->
+  <path d="M622,346 C662,352 704,372 712,414 C718,450 706,480 694,502 C726,506 754,496 752,466 C758,410 744,356 700,332 C672,324 640,330 622,346 Z"
+        fill="url(#o_fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M652,482 C638,494 636,508 648,512 C659,516 671,510 674,499 C686,494 700,492 710,496 C704,482 686,474 666,476 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M666,486 L668,506"/><path d="M684,486 L690,502"/>
+  </g>
+
+  <!-- NEAR FRONT LEG + FOOT (tiptoe) -->
+  <path d="M242,366 C214,392 190,414 172,440 C156,462 150,478 160,490 C172,496 186,484 194,466 C214,436 246,410 264,384 Z"
+        fill="url(#o_fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M158,466 C142,478 134,494 144,502 C154,509 168,502 172,490 C182,483 194,480 204,484 C198,468 180,460 160,462 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M164,470 L156,492"/><path d="M182,474 L182,490"/>
+  </g>
+
+  <!-- EAR -->
+  <path d="M232,205 C210,150 245,120 290,132 C328,142 335,190 310,220 C285,245 250,240 232,205 Z"
+        fill="url(#o_fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M250,200 C240,165 262,148 292,158 C315,166 318,196 302,214 C285,230 262,225 250,200 Z"
+        fill="#e8a3b5"/>
+
+  <!-- PIZZA SLICE (the loot) -->
+  <path d="M112,428 L176,450 L74,500 Z" fill="#f2c14e" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M106,420 Q142,430 178,444 L180,458 Q144,444 110,434 Z" fill="#d69a4a" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <g fill="#c0392b" stroke="#8f2a20" stroke-width="2">
+    <circle cx="122" cy="452" r="8"/><circle cx="142" cy="463" r="7"/><circle cx="104" cy="470" r="6"/>
+  </g>
+
+  <!-- LIFTED FRONT PAW grabbing crust -->
+  <path d="M150,424 C138,428 132,440 140,448 C148,455 160,452 166,442 C172,432 168,424 158,422 C154,421 152,422 150,424 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="4" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M144,438 L138,446"/><path d="M154,442 L150,450"/>
+  </g>
+
+  <!-- NOSE -->
+  <path d="M40,312 C26,308 22,321 34,328 C46,335 60,330 60,318 C58,309 48,308 40,312 Z"
+        fill="#d16a86" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="35" cy="320" r="3.5" fill="#23262b"/>
+
+  <!-- MOUTH / SLY GRIN -->
+  <path d="M54,330 C92,354 132,358 166,347 C176,344 181,337 179,330"
+        fill="none" stroke="#23262b" stroke-width="6" stroke-linecap="round"/>
+  <!-- BUCK TEETH -->
+  <rect x="55" y="336" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+  <rect x="68" y="338" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+
+  <!-- WHISKERS -->
+  <g stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M80,323 C55,316 32,310 12,312"/>
+    <path d="M84,334 C58,334 34,339 14,347"/>
+    <path d="M86,344 C62,349 42,359 26,371"/>
+  </g>
+
+  <!-- GOOGLY EYES -->
+  <circle cx="250" cy="230" r="46" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="150" cy="222" r="52" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="232" cy="246" r="19" fill="#1a1a1a"/>
+  <circle cx="225" cy="239" r="5" fill="#ffffff"/>
+  <circle cx="132" cy="238" r="22" fill="#1a1a1a"/>
+  <circle cx="124" cy="230" r="6" fill="#ffffff"/>
+  <!-- heavy sneaky lids -->
+  <path d="M206,220 Q250,204 294,226" fill="none" stroke="#23262b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100,210 Q150,192 200,214" fill="none" stroke="#23262b" stroke-width="9" stroke-linecap="round"/>
+  <!-- scheming brows -->
+  <path d="M205,180 Q250,154 292,158" fill="none" stroke="#23262b" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96,188 Q140,160 182,158" fill="none" stroke="#23262b" stroke-width="11" stroke-linecap="round"/>
+</svg>`,
+    r2: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- speed lines -->
+    <g stroke="#2a2430" stroke-width="7" opacity="0.7" fill="none">
+      <path d="M472 262 L634 254"/>
+      <path d="M462 298 L618 300"/>
+      <path d="M478 334 L600 338"/>
+    </g>
+    <!-- dust puffs -->
+    <g fill="#c3c4cf" opacity="0.95">
+      <circle cx="486" cy="374" r="15"/>
+      <circle cx="510" cy="382" r="10"/>
+      <circle cx="463" cy="385" r="9"/>
+      <circle cx="306" cy="377" r="9"/>
+      <circle cx="326" cy="383" r="6"/>
+    </g>
+    <!-- tail -->
+    <path d="M388 212 C468 218 538 206 570 156 C592 122 590 90 620 58 C626 52 636 60 631 68 C604 98 606 128 582 166 C548 220 466 246 386 240 Z" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- far ear -->
+    <circle cx="262" cy="80" r="38" fill="#6f6f7a" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="264" cy="84" r="22" fill="#d68a9e"/>
+    <!-- body -->
+    <path d="M32 208 C55 150 105 92 180 86 C245 80 290 95 330 120 C372 146 402 185 398 232 C394 275 350 300 300 302 C240 304 170 290 120 262 C90 246 60 232 32 208 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <!-- belly -->
+    <path d="M135 258 C190 278 250 286 300 284 C340 281 368 262 384 236 C388 272 348 297 298 298 C240 299 176 286 132 260 Z" fill="#ded8ca"/>
+    <!-- muzzle patch -->
+    <path d="M42 206 C60 190 92 186 114 198 C132 210 134 230 118 240 C96 250 62 240 42 210 Z" fill="#ded8ca"/>
+    <!-- haunch -->
+    <ellipse cx="345" cy="255" rx="48" ry="40" fill="#82828e" stroke="#2a2430" stroke-width="5"/>
+    <!-- kicked-back hind leg -->
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#2a2430" stroke-width="24" fill="none"/>
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#82828e" stroke-width="13" fill="none"/>
+    <ellipse cx="465" cy="352" rx="27" ry="12" transform="rotate(18 465 352)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M479 346 L492 352"/>
+      <path d="M478 360 L492 356"/>
+    </g>
+    <!-- tiptoe hind leg -->
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#2a2430" stroke-width="22" fill="none"/>
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#8e8e98" stroke-width="12" fill="none"/>
+    <ellipse cx="248" cy="366" rx="22" ry="10" transform="rotate(-8 248 366)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M238 361 L226 363"/>
+      <path d="M238 372 L226 369"/>
+    </g>
+    <!-- tucked front paw -->
+    <circle cx="172" cy="290" r="11" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- reaching front arm -->
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#2a2430" stroke-width="20" fill="none"/>
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#8e8e98" stroke-width="11" fill="none"/>
+    <ellipse cx="58" cy="336" rx="15" ry="11" transform="rotate(-35 58 336)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M52 344 L44 350"/>
+      <path d="M60 347 L56 355"/>
+    </g>
+    <!-- near ear -->
+    <circle cx="200" cy="58" r="48" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="202" cy="62" r="30" fill="#f2a9b8"/>
+    <!-- back googly eye -->
+    <circle cx="205" cy="150" r="26" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="195" cy="160" r="10" fill="#2a2430"/>
+    <circle cx="191" cy="156" r="3" fill="#ffffff"/>
+    <path d="M179 150 A26 26 0 0 1 231 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- front googly eye -->
+    <circle cx="150" cy="150" r="32" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="137" cy="163" r="12" fill="#2a2430"/>
+    <circle cx="132" cy="157" r="3.5" fill="#ffffff"/>
+    <path d="M118 150 A32 32 0 0 1 182 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- sneaky brows -->
+    <path d="M112 130 C136 121 162 119 182 126" stroke="#2a2430" stroke-width="7" fill="none"/>
+    <path d="M190 128 C204 123 220 124 230 130" stroke="#2a2430" stroke-width="6" fill="none"/>
+    <!-- smirk -->
+    <path d="M48 214 C74 230 100 236 124 229 C132 226 136 219 132 213" stroke="#2a2430" stroke-width="5" fill="none"/>
+    <!-- buck teeth -->
+    <path d="M58 222 L76 222 L76 234 Q76 240 71 240 L63 240 Q58 240 58 234 Z" fill="#ffffff" stroke="#2a2430" stroke-width="4"/>
+    <path d="M67 222 L67 240" stroke="#2a2430" stroke-width="3"/>
+    <!-- nose -->
+    <circle cx="34" cy="205" r="12" fill="#e06f8b" stroke="#2a2430" stroke-width="5"/>
+    <!-- whiskers -->
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M74 208 L10 188"/>
+      <path d="M74 214 L8 214"/>
+      <path d="M76 222 L14 244"/>
+    </g>
+  </g>
+</svg>`,
+    r3: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+<g transform="matrix(1,0,0,1.07658,0,-41.829)">
+  <!-- shadow -->
+  <ellipse cx="470" cy="478" rx="340" ry="16" fill="#000000" opacity="0.18"/>
+
+  <!-- motion lines -->
+  <g fill="none" stroke="#3a3a42" stroke-linecap="round" opacity="0.5">
+    <path d="M35 150 Q 110 140 175 158" stroke-width="7"/>
+    <path d="M25 205 Q 100 200 165 212" stroke-width="6"/>
+    <path d="M45 258 Q 110 256 168 262" stroke-width="5"/>
+  </g>
+
+  <!-- tail -->
+  <path d="M275 230 C 190 190 140 140 90 110 C 65 96 45 90 25 78
+           L 30 86 C 50 98 75 108 100 128 C 150 160 200 205 275 270 Z"
+        fill="#a98a8f" stroke="#000000" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- back (far) leg -->
+  <g>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#000000" stroke-width="52" stroke-linecap="round"/>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#4d4d57" stroke-width="42" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#000000" stroke-width="40" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#4d4d57" stroke-width="30" stroke-linecap="round"/>
+    <ellipse cx="248" cy="432" rx="40" ry="22" transform="rotate(-15 248 432)" fill="#4d4d57" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="215" y1="435" x2="195" y2="425"/>
+      <line x1="218" y1="448" x2="198" y2="448"/>
+      <line x1="222" y1="460" x2="204" y2="466"/>
+    </g>
+  </g>
+
+  <!-- body -->
+  <path d="M560 235 C 520 150 500 90 460 65 C 420 45 370 55 330 90
+           C 290 125 275 175 285 225 C 260 260 250 300 290 340
+           C 330 380 380 385 430 375 C 470 368 500 350 520 320
+           C 545 300 555 265 560 235 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- belly patch -->
+  <ellipse cx="425" cy="322" rx="88" ry="44" fill="#9a9aa4" opacity="0.85"/>
+
+  <!-- grime spots -->
+  <g fill="#2f2f36" opacity="0.2">
+    <ellipse cx="360" cy="150" rx="14" ry="10"/>
+    <ellipse cx="430" cy="120" rx="10" ry="8"/>
+    <ellipse cx="500" cy="200" rx="12" ry="9"/>
+  </g>
+
+  <!-- front (near) leg, tiptoe -->
+  <g>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#000000" stroke-width="50" stroke-linecap="round"/>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#6b6b76" stroke-width="40" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#000000" stroke-width="38" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#6b6b76" stroke-width="28" stroke-linecap="round"/>
+    <ellipse cx="638" cy="452" rx="32" ry="16" transform="rotate(-25 638 452)" fill="#c99aa0" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="660" y1="445" x2="678" y2="435"/>
+      <line x1="663" y1="456" x2="682" y2="452"/>
+      <line x1="660" y1="466" x2="676" y2="468"/>
+    </g>
+  </g>
+
+  <!-- head -->
+  <path d="M555 230 C 620 195 700 195 745 225 C 800 250 845 270 880 300
+           C 850 315 810 325 770 330 C 730 335 690 330 655 322
+           C 630 316 610 310 590 295 C 575 280 563 255 555 230 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- far ear -->
+  <ellipse cx="612" cy="178" rx="32" ry="42" transform="rotate(-20 612 178)" fill="#4a4a54" stroke="#000000" stroke-width="6"/>
+
+  <!-- near ear -->
+  <ellipse cx="668" cy="163" rx="40" ry="52" transform="rotate(-15 668 163)" fill="#5c5c66" stroke="#000000" stroke-width="7"/>
+  <ellipse cx="668" cy="170" rx="22" ry="32" transform="rotate(-15 668 170)" fill="#d99aa3"/>
+
+  <!-- small second googly eye peeking above -->
+  <circle cx="633" cy="196" r="22" fill="#ffffff" stroke="#000000" stroke-width="5"/>
+  <circle cx="626" cy="201" r="10" fill="#000000"/>
+  <circle cx="622" cy="197" r="3" fill="#ffffff"/>
+
+  <!-- main googly eye -->
+  <circle cx="702" cy="248" r="42" fill="#ffffff" stroke="#000000" stroke-width="6"/>
+  <circle cx="686" cy="254" r="19" fill="#000000"/>
+  <circle cx="679" cy="246" r="6" fill="#ffffff"/>
+
+  <!-- nose -->
+  <ellipse cx="876" cy="298" rx="10" ry="8" fill="#000000"/>
+
+  <!-- whiskers -->
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round">
+    <path d="M845 282 L 893 258" fill="none"/>
+    <path d="M852 294 L 897 290" fill="none"/>
+    <path d="M847 305 L 892 320" fill="none"/>
+  </g>
+
+  <!-- mouth -->
+  <path d="M858 308 Q 815 330 772 326" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <!-- buck tooth -->
+  <rect x="700" y="320" width="13" height="20" rx="4" fill="#f5f0e6" stroke="#000000" stroke-width="4"/>
+
+  <!-- pizza slice held near mouth -->
+  <g>
+    <path d="M765 322 L 700 292 L 690 405 Z" fill="#f4b942" stroke="#000000" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M753 322 L 705 302 L 700 385 Z" fill="#c0392b" stroke="none"/>
+    <path d="M700 292 Q 693 350 690 405" fill="none" stroke="#e8d9a0" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="725" cy="330" r="7" fill="#7a2020"/>
+    <circle cx="715" cy="360" r="6" fill="#7a2020"/>
+    <circle cx="735" cy="365" r="6" fill="#7a2020"/>
+  </g>
+</g>
+</svg>`,
+  },
+  '2026-07-27-hairball': {
+    r1: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <radialGradient id="h_hbCore" cx="50%" cy="48%" r="60%">
+      <stop offset="0%" stop-color="#4a3826" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#3a2c1e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#2b2015" stop-opacity="0.05"/>
+    </radialGradient>
+  </defs>
+
+  <!-- soft matted core -->
+  <path d="M200,45 C265,40 320,75 335,120 C352,160 340,205 300,235 C260,262 175,268 125,245 C82,225 55,190 60,145 C65,98 130,50 200,45 Z" fill="url(#h_hbCore)"/>
+  <path d="M205,75 C255,72 295,100 305,132 C316,164 300,198 268,218 C235,238 170,240 133,222 C100,205 84,178 90,145 C97,110 150,78 205,75 Z" fill="#33271a" opacity="0.45"/>
+
+  <g fill="none" stroke-linecap="round">
+    <!-- deep shadow strands -->
+    <path d="M75,160 C60,110 120,60 190,62 C270,64 330,110 328,160 C326,215 255,250 185,246 C120,242 88,205 96,165 C104,125 160,100 215,108 C265,116 292,150 280,185 C268,218 210,232 165,218 C130,207 115,180 128,155" stroke="#241a10" stroke-width="4.5" opacity="0.9"/>
+    <path d="M120,220 C80,195 70,140 105,100 C145,55 235,48 285,85 C330,118 340,175 305,212 C270,248 190,258 140,235 C105,218 95,185 115,158 C140,125 205,118 245,140 C280,160 285,198 255,215" stroke="#2b2013" stroke-width="4" opacity="0.85"/>
+    <path d="M310,120 C330,165 300,215 245,232 C185,250 115,235 90,190 C68,150 90,100 140,80 C195,58 260,68 290,105 C315,138 305,180 265,198 C225,215 165,208 145,178 C128,150 148,120 185,115" stroke="#1f1710" stroke-width="3.8" opacity="0.85"/>
+
+    <!-- mid-tone tangle -->
+    <path d="M95,130 C130,75 230,55 295,90 C345,118 350,180 310,215 C265,252 160,255 110,220 C70,190 75,140 120,115 C170,88 250,95 280,130 C305,160 290,200 245,212" stroke="#4d3a24" stroke-width="3.5" opacity="0.9"/>
+    <path d="M160,60 C230,45 305,80 320,135 C333,185 295,230 235,242 C170,255 100,230 85,180 C72,135 110,92 165,85 C225,78 275,105 278,148 C280,190 230,215 185,205 C150,197 135,168 152,145" stroke="#5a4530" stroke-width="3.2" opacity="0.9"/>
+    <path d="M85,190 C70,145 100,95 155,78 C220,58 300,80 322,130 C342,178 310,228 250,240 C195,251 130,238 108,200 C90,168 108,132 150,122 C200,110 250,128 258,162 C265,192 232,214 195,208" stroke="#66502f" stroke-width="3" opacity="0.85"/>
+    <path d="M300,90 C335,130 335,190 292,222 C248,254 155,255 112,222 C72,192 70,135 108,105 C150,72 235,68 275,98 C310,124 312,168 278,192 C243,216 180,212 158,182" stroke="#584327" stroke-width="3" opacity="0.8"/>
+    <path d="M140,240 C95,222 72,175 92,132 C115,84 195,62 255,78 C312,93 340,145 322,190 C305,232 240,252 185,242 C140,234 118,202 132,172 C148,138 205,128 240,148" stroke="#6e5638" stroke-width="2.8" opacity="0.85"/>
+
+    <!-- looping knots -->
+    <path d="M170,120 C210,95 260,110 262,145 C264,178 220,195 185,182 C155,171 150,138 178,128 C205,118 235,132 232,155 C229,176 198,182 182,168" stroke="#3c2d1b" stroke-width="2.8" opacity="0.9"/>
+    <path d="M225,105 C185,118 165,155 185,185 C205,214 255,212 272,182 C288,155 270,120 238,118 C210,116 195,140 205,160 C215,180 245,178 250,158" stroke="#523e26" stroke-width="2.5" opacity="0.85"/>
+    <path d="M130,155 C118,190 145,222 185,225 C228,228 258,200 250,168 C243,140 205,128 178,142 C155,154 155,182 178,192" stroke="#493623" stroke-width="2.5" opacity="0.8"/>
+    <path d="M245,195 C280,180 292,145 270,118 C246,90 195,88 168,112 C142,135 148,172 180,188" stroke="#2f2416" stroke-width="2.6" opacity="0.85"/>
+    <path d="M150,100 C195,80 255,88 278,120 C300,150 288,190 250,205" stroke="#5f4a2e" stroke-width="2.4" opacity="0.8"/>
+    <path d="M110,175 C105,140 135,108 180,100 C230,91 280,110 292,145" stroke="#403019" stroke-width="2.4" opacity="0.8"/>
+    <path d="M205,230 C160,228 125,205 122,170 C119,135 155,110 200,110" stroke="#6a5233" stroke-width="2.2" opacity="0.75"/>
+    <path d="M175,145 C200,132 230,140 235,160 C240,180 218,193 197,187 C178,182 172,163 185,153" stroke="#2a1f12" stroke-width="2.2" opacity="0.9"/>
+
+    <!-- gray interloper strands -->
+    <path d="M100,120 C150,70 250,62 305,102 C345,132 348,185 312,215" stroke="#7d7468" stroke-width="1.8" opacity="0.75"/>
+    <path d="M320,160 C315,205 265,238 205,240 C145,242 95,215 88,175 C82,140 118,108 165,102" stroke="#8a8072" stroke-width="1.6" opacity="0.7"/>
+    <path d="M155,215 C120,200 105,168 122,140 C142,108 200,98 240,115 C275,130 285,165 262,188" stroke="#6f6759" stroke-width="1.5" opacity="0.7"/>
+
+    <!-- light highlight strands -->
+    <path d="M120,140 C150,95 230,80 285,105 C325,124 335,168 305,198" stroke="#8f7350" stroke-width="1.8" opacity="0.85"/>
+    <path d="M280,210 C235,240 160,240 125,210 C95,185 95,145 128,124" stroke="#9a7d57" stroke-width="1.6" opacity="0.8"/>
+    <path d="M165,90 C220,72 280,88 300,125 C318,158 302,198 265,215" stroke="#a98a60" stroke-width="1.4" opacity="0.8"/>
+    <path d="M145,190 C130,162 145,130 180,120 C220,109 262,124 270,152" stroke="#b3925f" stroke-width="1.2" opacity="0.75"/>
+    <path d="M190,205 C158,196 142,172 152,150 C163,126 200,118 228,130" stroke="#9c8058" stroke-width="1.2" opacity="0.7"/>
+    <path d="M235,95 C275,105 300,135 295,168 C290,200 255,220 218,218" stroke="#8a6d47" stroke-width="1.4" opacity="0.75"/>
+
+    <!-- escaping wisps: left -->
+    <path d="M95,150 C60,140 30,150 6,132 C22,150 45,158 70,162" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>
+    <path d="M100,185 C70,198 40,196 8,214 C40,210 72,214 98,202" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>
+    <path d="M92,120 C65,102 40,100 12,80 C38,104 62,112 88,128" stroke="#5f4a2e" stroke-width="1.5" opacity="0.8"/>
+    <path d="M105,205 C80,225 55,228 30,248 C60,238 88,232 110,215" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>
+
+    <!-- escaping wisps: right -->
+    <path d="M310,140 C340,128 365,132 394,112 C368,136 342,144 315,150" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>
+    <path d="M312,180 C345,188 368,184 395,200 C365,196 338,198 310,192" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>
+    <path d="M305,115 C332,98 358,96 388,74 C360,100 335,110 308,124" stroke="#7d7468" stroke-width="1.4" opacity="0.75"/>
+    <path d="M300,210 C328,228 355,232 382,252 C352,242 322,236 298,220" stroke="#5a4530" stroke-width="1.4" opacity="0.8"/>
+
+    <!-- escaping wisps: top -->
+    <path d="M180,70 C165,45 150,30 128,8 C150,32 168,52 182,75" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>
+    <path d="M215,65 C222,42 235,25 240,6 C230,28 220,46 212,68" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>
+    <path d="M255,75 C275,52 295,40 318,20 C295,44 275,64 258,80" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>
+    <path d="M150,80 C135,58 112,44 85,30 C112,50 132,68 148,85" stroke="#8a8072" stroke-width="1.2" opacity="0.7"/>
+
+    <!-- escaping wisps: bottom -->
+    <path d="M170,242 C155,262 135,275 108,292 C138,275 158,260 175,244" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>
+    <path d="M215,246 C218,266 230,280 245,294 C232,278 222,262 218,246" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>
+    <path d="M255,238 C275,255 295,262 322,272 C296,260 275,250 258,236" stroke="#5f4a2e" stroke-width="1.4" opacity="0.75"/>
+    <path d="M135,232 C118,248 100,256 78,264 C100,254 120,244 138,230" stroke="#7d7468" stroke-width="1.2" opacity="0.7"/>
+
+    <!-- fine surface fuzz -->
+    <path d="M160,110 C185,102 212,104 230,115" stroke="#261c10" stroke-width="1" opacity="0.8"/>
+    <path d="M145,170 C160,185 185,192 210,188" stroke="#261c10" stroke-width="1" opacity="0.8"/>
+    <path d="M235,170 C252,158 258,140 250,124" stroke="#261c10" stroke-width="1" opacity="0.75"/>
+    <path d="M175,155 C190,148 208,150 218,160" stroke="#b89a6b" stroke-width="0.9" opacity="0.7"/>
+    <path d="M195,125 C212,120 228,124 238,135" stroke="#b89a6b" stroke-width="0.9" opacity="0.65"/>
+    <path d="M150,135 C160,125 175,120 190,122" stroke="#a2first" stroke-width="0" opacity="0"/>
+    <path d="M152,138 C162,127 177,122 192,124" stroke="#a28457" stroke-width="0.9" opacity="0.65"/>
+  </g>
+</svg>`,
+  },
+};
+
+
+/* SYNTHETIC OVERLAYS — exactly two, disclosed in the caption, applied here
+   and NOWHERE inside the record's own text. Neither is in the filed data. */
+(function(){
+  var sr = ITEMS['2026-07-27-subway-rat'];
+  sr.responses[0].grade_history = [
+    { grade:"choice", date:"2026-07-27", taxonomy_version:4, note:"mock — for layout" }
+  ];
+  delete sr.responses[2].annotations.color;   /* r3 color axis: treated as skipped */
+})();
+
+/* ------------------------------ helpers --------------------------------- */
+var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+function fmtDate(s){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  if (!m) return String(s || '').toUpperCase();
+  return (+m[3]) + ' ' + MON[+m[2] - 1] + ' ' + m[1];
+}
+function byId(list, id){
+  for (var i = 0; i < (list || []).length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+function gradeOf(id){ return byId(TAXONOMY.grades, id); }
+function modelOf(id){ return byId(TAXONOMY.models, id); }
+function axisOf(id){ return byId(TAXONOMY.axes, id); }
+function valueOf(axis, id){ return axis ? byId(axis.values, id) : null; }
+function humanize(id){
+  return String(id || '').replace(/[-_]/g, ' ').replace(/^./, function(c){ return c.toUpperCase(); });
+}
+/* annotation may be a bare value id or {value, note} — handle both */
+function annOf(resp, axisId){
+  var a = (resp && resp.annotations) || {};
+  if (!Object.prototype.hasOwnProperty.call(a, axisId)) return null;
+  var v = a[axisId];
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'object') return { value: v.value, note: v.note || '' };
+  return { value: v, note: '' };
+}
+function processOf(resp){
+  var g = resp.generation || {};
+  if (g.mode === 'one-shot') return 'ONE-SHOT';
+  var n = g.prompt_count || 0;
+  return 'REFINED ×' + n;
+}
+function modelLabel(resp){
+  var m = modelOf(resp.model);
+  return m ? m.label : humanize(resp.model);
+}
+function modelVendor(resp){
+  var m = modelOf(resp.model);
+  return m ? m.label + ' · ' + m.vendor : humanize(resp.model);
+}
+
+/* --------------------------- the rubber stamp ---------------------------- */
+/* An inked stamp: double rule + letterspaced caps, run through a turbulence
+   displacement (the rubber rocks) and masked by a second turbulence (the pad
+   inks unevenly). Every feTurbulence carries stitchTiles="stitch". */
+var _sid = 0;
+function stampSVG(word, sub, opt){
+  opt = opt || {};
+  _sid++;
+  var fid = 'jd7d_st' + _sid;
+  var w = String(word || '').toUpperCase();
+  var s = sub ? String(sub).toUpperCase() : '';
+  var fs = opt.fs || 46, ls = opt.ls || 8;
+  var tw = w.length * (fs * 0.62 + ls);
+  var sw = s ? s.length * (fs * 0.34 + 4) : 0;
+  var vbw = Math.round(Math.max(tw, sw) + 78);
+  var vbh = s ? 128 : 100;
+  var col = opt.color || 'var(--stamp-red)';
+  var seed = (_sid * 17) % 89;
+  var ty = s ? 60 : (vbh / 2 + 16);
+  var out =
+    '<svg class="' + (opt.cls || '') + '" viewBox="0 0 ' + vbw + ' ' + vbh + '" ' +
+      'preserveAspectRatio="xMidYMid meet" role="img" aria-label="' + esc(w + (s ? ' ' + s : '')) + '">' +
+    '<defs><filter id="' + fid + '" x="-14%" y="-22%" width="128%" height="144%" ' +
+      'color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="3" seed="' + seed +
+        '" stitchTiles="stitch" result="t"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="t" scale="5" xChannelSelector="R" ' +
+        'yChannelSelector="G" result="d"/>' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.42" numOctaves="4" seed="' + (seed + 11) +
+        '" stitchTiles="stitch" result="m"/>' +
+      '<feColorMatrix in="m" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.5 -0.2" result="ma"/>' +
+      '<feComposite in="d" in2="ma" operator="in"/>' +
+    '</filter></defs>' +
+    '<g filter="url(#' + fid + ')" fill="none" stroke="' + col + '" opacity="0.9">' +
+      '<rect x="7" y="7" width="' + (vbw - 14) + '" height="' + (vbh - 14) + '" rx="7" stroke-width="5.5"/>' +
+      '<rect x="16" y="16" width="' + (vbw - 32) + '" height="' + (vbh - 32) + '" rx="4" stroke-width="2"/>' +
+      '<text x="' + (vbw / 2 + ls / 2) + '" y="' + ty + '" text-anchor="middle" stroke="none" fill="' + col + '" ' +
+        'font-family="Courier Prime, Courier New, Courier, monospace" font-size="' + fs +
+        '" font-weight="700" letter-spacing="' + ls + '">' + esc(w) + '</text>';
+  if (s) {
+    out += '<text x="' + (vbw / 2 + 2) + '" y="' + (vbh - 30) + '" text-anchor="middle" stroke="none" fill="' + col + '" ' +
+      'font-family="Courier Prime, Courier New, Courier, monospace" font-size="' + Math.round(fs * 0.5) +
+      '" font-weight="700" letter-spacing="4">' + esc(s) + '</text>';
+  }
+  return out + '</g></svg>';
+}
+
+/* ------------------------------ paper grain ------------------------------ */
+var _gid = 0;
+function grainSVG(freq, alpha){
+  _gid++;
+  var id = 'jd7d_gr' + _gid;
+  return '<svg class="grain" aria-hidden="true" preserveAspectRatio="none" ' +
+    'width="100%" height="100%" style="opacity:' + alpha + '">' +
+    '<filter id="' + id + '" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="' + freq + '" numOctaves="4" seed="21" ' +
+      'stitchTiles="stitch" result="t"/>' +
+    '<feColorMatrix in="t" type="matrix" values="0 0 0 0 0.34  0 0 0 0 0.24  0 0 0 0 0.08  0.7 0.5 0 0 -0.42"/>' +
+    '</filter><rect width="100%" height="100%" filter="url(#' + id + ')"/></svg>';
+}
+
+/* ------------------------------- pieces ---------------------------------- */
+function paperclipSVG(){
+  return '<svg class="clip" viewBox="0 0 40 104" aria-hidden="true">' +
+    '<g fill="none" stroke-linecap="round">' +
+      '<path d="M13 84 L13 26 C13 11 29 11 29 26 L29 74 C29 88 9 88 9 74 L9 32" ' +
+        'stroke="#7f8388" stroke-width="6.5"/>' +
+      '<path d="M13 84 L13 26 C13 11 29 11 29 26 L29 74 C29 88 9 88 9 74 L9 32" ' +
+        'stroke="#c9ced4" stroke-width="2.6"/>' +
+    '</g></svg>';
+}
+function closureSVG(){
+  var wind1 = 'M32 59 C 8 46, 8 12, 32 14 C 56 12, 56 46, 32 59 C 8 72, 8 106, 32 104 C 56 106, 56 72, 32 59';
+  var wind2 = 'M35 60 C 11 44, 11 9, 31 11 C 58 9, 58 44, 35 60 C 11 75, 11 110, 31 108 C 58 110, 58 75, 35 60';
+  var slack = 'M32 92 C 41 106, 24 118, 30 132 C 34 142, 28 148, 24 152';
+  function btn(cy, cls){
+    return '<g class="cl-btn ' + cls + '">' +
+      '<circle class="b" cx="32" cy="' + cy + '" r="9"/>' +
+      '<circle class="h" cx="29" cy="' + cy + '" r="1.5"/>' +
+      '<circle class="h" cx="35" cy="' + cy + '" r="1.5"/></g>';
+  }
+  return '<svg class="closure" viewBox="0 0 64 156" aria-hidden="true">' +
+    '<path class="cl-slack-lo" d="' + slack + '" pathLength="100"/>' +
+    '<path class="cl-slack" d="' + slack + '" pathLength="100"/>' +
+    '<path class="cl-wind-lo w1" d="' + wind1 + '" pathLength="100"/>' +
+    '<path class="cl-wind w1" d="' + wind1 + '" pathLength="100"/>' +
+    '<path class="cl-wind-lo w2" d="' + wind2 + '" pathLength="100"/>' +
+    '<path class="cl-wind w2" d="' + wind2 + '" pathLength="100"/>' +
+    btn(92, 'cl-btn-b') + btn(26, 'cl-btn-a') +
+    '</svg>';
+}
+
+/* ---------------------------- the record --------------------------------- */
+var state = { item: '2026-07-27-subway-rat', rid: null, full: false };
+
+function currentItem(){ return ITEMS[state.item]; }
+function currentResp(){
+  var it = currentItem();
+  for (var i = 0; i < it.responses.length; i++) if (it.responses[i].rid === state.rid) return it.responses[i];
+  return it.responses[0];
+}
+function svgFor(itemId, rid){ return (ART[itemId] || {})[rid] || ''; }
+function fileHref(item, resp){ return '../items/' + item.id + '/' + resp.file; }
+
+/* the inside cover — typed provenance block + the RECEIVED stamp */
+function coverBlock(item, resp){
+  var rows = [
+    ['Accession', item.id],
+    ['Object', item.title],
+    ['Maker', modelVendor(resp)],
+    ['Method', processOf(resp)],
+    ['Drawn', fmtDate(resp.date)],
+    ['Filed', fmtDate(item.created)],
+    ['Graded', fmtDate(resp.graded)]
+  ];
+  if (item.tags && item.tags.length) rows.push(['Tags', item.tags.join(', ')]);
+  var h = '<div class="cover-block">' +
+    '<div class="cb-stamp">' +
+      stampSVG('Received', fmtDate(item.created), { color:'var(--stamp-violet)', fs:40, ls:6 }) +
+    '</div>' +
+    '<p class="cb-head">Inside cover &mdash; file record</p><div class="typed">';
+  for (var i = 0; i < rows.length; i++) {
+    h += '<div><span class="k">' + esc(rows[i][0]) + '</span><span class="v">' + esc(rows[i][1]) + '</span></div>';
+  }
+  h += '</div><div class="cb-links">' +
+    '<a href="' + esc(fileHref(item, resp)) + '" download>Download SVG ⤓</a>';
+  if (resp.transcript_url || resp.transcript) {
+    h += '<a href="' + esc(resp.transcript_url || resp.transcript) + '">Transcript →</a>';
+  }
+  return h + '</div></div>';
+}
+
+/* the PROMPT sheet — never changes with the flip-through */
+function promptSheet(item){
+  return '<div class="sheet prompt">' + paperclipSVG() +
+    '<p class="sh-head">Verbatim prompt &mdash; as received</p>' +
+    '<div class="prompt-txt"><span class="q">&ldquo;</span>' + esc(item.prompt) +
+    '<span class="q">&rdquo;</span></div></div>';
+}
+
+/* the RUBRIC sheet — ruled paper, taxonomy order, the big diagonal stamp */
+function rubricSheet(resp){
+  var h = '<div class="sheet rubric"><p class="sh-head">Rubric &mdash; annotator’s sheet</p>';
+  var seen = {};
+  for (var i = 0; i < TAXONOMY.axes.length; i++) {
+    var ax = TAXONOMY.axes[i];
+    seen[ax.id] = true;
+    var a = annOf(resp, ax.id);
+    var vlab, cls = 'rb-val';
+    if (!a) { vlab = '— · NOT ASSESSED'; cls += ' muted'; }
+    else {
+      var v = valueOf(ax, a.value);
+      vlab = v ? v.label : humanize(a.value);
+    }
+    h += '<div class="rb-row"><span class="rb-axis">' + esc(ax.label) + '</span>' +
+      '<span class="rb-dots"></span><span class="' + cls + '">' + esc(vlab) + '</span></div>';
+    if (a && a.note) h += '<div class="rb-note">' + esc(a.note) + '</div>';
+  }
+  /* unknown / newly-added axes still render (the taxonomy grows) */
+  var anns = resp.annotations || {};
+  for (var k in anns) {
+    if (!Object.prototype.hasOwnProperty.call(anns, k) || seen[k]) continue;
+    var uv = annOf(resp, k);
+    h += '<div class="rb-row"><span class="rb-axis">' + esc(humanize(k)) + '</span>' +
+      '<span class="rb-dots"></span><span class="rb-val">' + esc(humanize(uv && uv.value)) + '</span></div>';
+    if (uv && uv.note) h += '<div class="rb-note">' + esc(uv.note) + '</div>';
+  }
+
+  var g = gradeOf(resp.grade);
+  var hist = (resp.grade_history || []);
+  var prior = hist.length ? hist[hist.length - 1] : null;
+  var pg = prior ? gradeOf(prior.grade) : null;
+
+  h += '<div class="rb-stampzone">';
+  if (pg) h += '<div class="rb-stamp ghost">' + stampSVG(pg.label, null, {}) + '</div>';
+  h += '<div class="rb-stamp">' + stampSVG(g ? g.label : resp.grade, null, {}) + '</div>';
+  h += '<p class="rb-desc">' + esc(g ? g.description : '') + '</p>';
+  h += '<p class="rb-graded">Graded ' + esc(fmtDate(resp.graded)) +
+       ' · rank ' + esc(g ? g.rank : '?') + ' of ' + TAXONOMY.grades.length;
+  if (pg) {
+    h += '<br><span class="sup">Supersedes ' + esc(pg.label.toUpperCase()) +
+         ', stamped ' + esc(fmtDate(prior.date)) + '</span>';
+  }
+  h += '</p></div></div>';
+  return h;
+}
+
+function notesBlock(resp){
+  if (!resp.notes) return '';
+  return '<div class="notes-block"><p class="nb-head">Notes — chain of custody</p>' +
+    '<p class="nb-body">' + esc(resp.notes) + '</p></div>';
+}
+
+function stripBlock(item, resp){
+  if (item.responses.length < 2) return '';           /* hairball: strip absent */
+  var h = '<div class="strip"><p class="strip-head">Also in the file &mdash; ' +
+    item.responses.length + ' responses</p><div class="strip-row">';
+  for (var i = 0; i < item.responses.length; i++) {
+    var r = item.responses[i], g = gradeOf(r.grade);
+    h += '<button type="button" class="fchip' + (r.rid === resp.rid ? ' is-on' : '') +
+      '" data-rid="' + esc(r.rid) + '"><b>' + esc(modelLabel(r)) + '</b>' +
+      '<em>' + esc(g ? g.label : r.grade) + ' · ' + esc(processOf(r)) + '</em></button>';
+  }
+  return h + '</div></div>';
+}
+
+/* mobile peek header — the folder compressed to its first fact */
+function peekHead(item, resp){
+  var g = gradeOf(resp.grade);
+  return '<div class="peek-head">' +
+    '<div class="ph-chips"><span>' + esc(modelVendor(resp)) + '</span><span>' +
+      esc(processOf(resp)) + '</span></div>' +
+    '<div class="ph-grade"><span class="lbl">Grade</span>' +
+      '<span class="ph-stamp">' + stampSVG(g ? g.label : resp.grade, null, {}) + '</span></div>' +
+    '</div>';
+}
+
+function renderFolder(mode){
+  var item = currentItem(), resp = currentResp();
+  var folder = document.getElementById('folder');
+  folder.className = 'folder' + (mode === 'flip' ? ' is-flip' : '');
+  folder.innerHTML =
+    '<div class="fold-tab" id="foldTab">' +
+      '<span class="grommet" id="grommet"></span>' +
+      '<span class="handle-bar"></span>' +
+      '<span class="tab-label">' + esc(item.title) +
+        ' <span class="acc">&middot; ' + esc(fmtDate(item.created)) + '</span></span>' +
+    '</div>' +
+    '<div class="fold-wrap">' +
+      '<div class="fold-body">' +
+        '<div class="fold-spine"><i></i></div>' +
+        grainSVG('0.85', 0.5) +
+        '<div class="fold-inner">' +
+          '<div class="slot peek-slot">' + peekHead(item, resp) + '</div>' +
+          '<div class="slot cover-slot">' + coverBlock(item, resp) + '</div>' +
+          '<div class="slot prompt-slot">' + promptSheet(item) + '</div>' +
+          '<div class="slot rubric-slot">' + rubricSheet(resp) + '</div>' +
+          '<div class="slot notes-slot">' + notesBlock(resp) + '</div>' +
+          '<div class="slot strip-slot">' + stripBlock(item, resp) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="fold-cover"><p class="fc-mark">The Junk Drawer &middot; file</p>' +
+        '<div class="fc-rule"></div></div>' +
+    '</div>' +
+    closureSVG();
+
+  document.getElementById('artBox').innerHTML = svgFor(item.id, resp.rid);
+  wireFolder();
+  drawElastic();
+}
+
+/* ----------------------------- the elastic ------------------------------- */
+function drawElastic(){
+  var stage = document.getElementById('stage');
+  var el = document.getElementById('elastic');
+  var gr = document.getElementById('grommet');
+  var art = document.getElementById('artBox');
+  if (!el || !gr || !art) return;
+  if (window.matchMedia('(max-width:768px)').matches) { el.innerHTML = ''; return; }
+  var sb = stage.getBoundingClientRect(),
+      gb = gr.getBoundingClientRect();
+  var a = artAnchor(art);
+  var x1 = gb.left + gb.width / 2 - sb.left, y1 = gb.top + gb.height / 2 - sb.top;
+  var x2 = a.x - sb.left, y2 = a.y - sb.top;
+  var dist = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+  var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2 + Math.max(28, dist * 0.1);
+  var d = 'M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + ' Q' + cx.toFixed(1) + ' ' + cy.toFixed(1) +
+          ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1);
+  el.setAttribute('viewBox', '0 0 ' + Math.round(sb.width) + ' ' + Math.round(sb.height));
+  el.setAttribute('width', Math.round(sb.width));
+  el.setAttribute('height', Math.round(sb.height));
+  el.innerHTML = '<path class="cord-lo" d="' + d + '"/><path class="cord" d="' + d + '"/>' +
+    '<circle class="knot" cx="' + x2.toFixed(1) + '" cy="' + y2.toFixed(1) + '" r="4.4"/>';
+}
+/* where the elastic grips the object: mapped from the artwork's own ink
+   bounding box through its viewBox (the artwork itself is never altered) */
+function artAnchor(art){
+  var ab = art.getBoundingClientRect();
+  var fb = { x: ab.left + ab.width * 0.74, y: ab.top + ab.height * 0.30 };
+  var svg = art.querySelector('svg');
+  if (!svg || !svg.viewBox || !svg.viewBox.baseVal) return fb;
+  var vb = svg.viewBox.baseVal, bb;
+  if (!vb.width || !vb.height) return fb;
+  try { bb = svg.getBBox(); } catch (e) { return fb; }
+  if (!bb || !bb.width) return fb;
+  var sc = Math.min(ab.width / vb.width, ab.height / vb.height);
+  var ox = ab.left + (ab.width - vb.width * sc) / 2 - vb.x * sc;
+  var oy = ab.top + (ab.height - vb.height * sc) / 2 - vb.y * sc;
+  return { x: ox + (bb.x + bb.width * 0.72) * sc, y: oy + (bb.y + bb.height * 0.45) * sc };
+}
+
+/* ------------------------------- wiring ---------------------------------- */
+function wireFolder(){
+  var chips = document.querySelectorAll('.fchip');
+  for (var i = 0; i < chips.length; i++) {
+    chips[i].addEventListener('click', function(){
+      var rid = this.getAttribute('data-rid');
+      if (rid === state.rid) return;
+      state.rid = rid;
+      renderFolder('flip');
+    });
+  }
+  var tab = document.getElementById('foldTab');
+  if (tab) tab.addEventListener('click', function(){
+    if (!window.matchMedia('(max-width:768px)').matches) return;
+    setDetent(!state.full);
+  });
+}
+function setDetent(full){
+  state.full = !!full;
+  document.getElementById('stage').classList.toggle('is-full', state.full);
+}
+function setItem(id){
+  if (!ITEMS[id]) return;
+  state.item = id;
+  state.rid = ITEMS[id].primary || ITEMS[id].responses[0].rid;
+  var btns = document.querySelectorAll('.mock-switch button');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('is-on', btns[i].getAttribute('data-item') === id);
+  }
+  renderFolder('open');                       /* the folder re-opens on switch */
+}
+
+(function init(){
+  var q = new URLSearchParams(location.search);
+  var it = q.get('item');
+  if (it && ITEMS[it]) state.item = it;
+  state.rid = currentItem().primary || currentItem().responses[0].rid;
+  var rq = q.get('rid');                       /* screenshot driver for the flip */
+  if (rq) {
+    var rr = currentItem().responses;
+    for (var j = 0; j < rr.length; j++) if (rr[j].rid === rq) state.rid = rq;
+  }
+  var ms = q.get('mock-state');
+  state.full = (ms === 'full');
+
+  var btns = document.querySelectorAll('.mock-switch button');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('is-on', btns[i].getAttribute('data-item') === state.item);
+    btns[i].addEventListener('click', function(){ setItem(this.getAttribute('data-item')); });
+  }
+  setDetent(state.full);
+  renderFolder('open');
+  window.addEventListener('resize', drawElastic);
+  setTimeout(drawElastic, 60);
+  setTimeout(drawElastic, 400);
+})();
+</script>
+</body>
+</html>

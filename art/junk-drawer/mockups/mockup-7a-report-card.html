@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER mockup 7a — THE REPORT CARD</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 7a · THE REPORT CARD (full record, style A)
+   PLAN-RECORD §3 A + the shared build contract in §4.
+
+   The conceit: the model is the pupil, the taxonomy axes are the subjects,
+   the curator is the teacher. Register — a letterpress-printed public-school
+   report of progress, roughly 1900s–1930s: manila-cream stock, double
+   hairline border, faded blue-black form matter, a fold crease down the
+   middle, and the teacher's red pencil doing all the judging.
+
+   Standalone: inline CSS/JS/SVG. No fetch, no PHP, no webfonts, no external
+   requests — works from file://.
+
+   The stage here is the SIMPLIFIED scrim of §4 (warm dark backdrop standing
+   in for the dimmed drawer), NOT the production drawer chrome. Every rubric
+   string renders from the baked TAXONOMY object; nothing is hardcoded.
+   Any feTurbulence carries stitchTiles="stitch" (the standing Safari lesson);
+   there are no full-stage blend-mode layers.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;              /* the surrounding mockup page             */
+  --ink: #262420;
+  --plot-red: #b22222;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+
+  /* --- the report card's own stock ------------------------------------- */
+  --card: #efe4c6;               /* aged manila-cream card stock            */
+  --card-hi: #f7efd8;
+  --card-lo: #e2d3ad;
+  --form-ink: #37414f;           /* faded blue-black letterpress            */
+  --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42);
+  --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428;              /* the filled-in (typed) values            */
+  --red: #b02a24;                /* the teacher's red pencil                */
+
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, "Times New Roman", serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard",
+          "Comic Sans MS", cursive;
+
+  /* paper grain — feTurbulence, stitchTiles="stitch", baked as a data URI */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* slow mottle — the uneven yellowing of stored card stock */
+  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  padding-bottom: 3rem;
+  -webkit-text-size-adjust: 100%;
+}
+
+.mock-label {
+  max-width: 900px; margin: 0.9rem auto 0.6rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ===================== THE STAGE (simplified scrim, §4) ==================== */
+.rc-stage {
+  position: relative;
+  width: min(1240px, 96vw);
+  height: min(920px, calc(100vh - 96px));
+  min-height: 600px;
+  margin: 0 auto;
+  display: flex; align-items: center;
+  gap: clamp(1rem, 2.6vw, 2.4rem);
+  padding: clamp(0.7rem, 1.8vh, 1.4rem) clamp(1rem, 2.4vw, 2.2rem);
+  overflow: hidden;
+  background:
+    radial-gradient(115% 92% at 42% 34%, #5c4023 0%, #33210f 46%, #190f06 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 226, 168, 0.06);
+  transform: translateZ(0);
+}
+/* vignette — a plain overlay, no blend modes (Safari lesson) */
+.rc-stage::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 5;
+  background: radial-gradient(112% 96% at 44% 40%,
+              rgba(0,0,0,0) 38%, rgba(12,6,2,0.34) 74%, rgba(8,4,1,0.66) 100%);
+}
+
+/* ---- the lifted item, with the other pupils lined up beneath it --------- */
+.rc-artcol {
+  position: relative; z-index: 2;
+  flex: 1 1 55%; min-width: 0; height: 100%;
+  display: flex; flex-direction: column;
+}
+.rc-art {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.5% 1%;
+}
+.rc-strip { flex: 0 0 auto; padding: 0.2rem 1% 0.3rem; }
+.rc-strip:empty { display: none; }
+.rc-strip-cap {
+  font-family: var(--form); font-size: 0.56rem; letter-spacing: 0.3em;
+  text-transform: uppercase; color: rgba(240, 226, 196, 0.6);
+  text-align: center; margin-bottom: 0.55rem;
+}
+.rc-strip .rc-alts { justify-content: center; gap: 12px; margin: 0; }
+.rc-strip .rc-alt {
+  flex: 0 1 138px;
+  background: var(--card) var(--grain);
+  border-color: rgba(48, 38, 20, 0.5);
+  box-shadow: 4px 7px 13px -3px rgba(0, 0, 0, 0.62);
+}
+.rc-strip .rc-alt:hover { background: var(--card-hi) var(--grain); }
+.rc-strip .rc-alt.is-cur { background: var(--card-hi) var(--grain); }
+.rc-art-frame { width: 100%; height: 100%; }
+.rc-art-frame svg {
+  display: block; width: 100%; height: 100%;
+  /* "held above the drawer" — a long, soft, silhouette-following shadow */
+  filter: drop-shadow(26px 40px 26px rgba(6, 3, 0, 0.62))
+          drop-shadow(6px 11px 9px rgba(6, 3, 0, 0.42));
+}
+
+/* ======================= THE REPORT CARD ITSELF =========================== */
+.rc-card {
+  position: relative; z-index: 3;
+  flex: 0 0 auto;
+  /* back to 560 (owner, 2026-07-28) — the NOTES column is gone, so the
+     narrower card keeps every row on one line anyway */
+  width: min(560px, 46%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--form-ink);
+  background: var(--card) var(--grain);
+  background-blend-mode: normal;
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the inner hairline of the double border */
+.rc-card::before {
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  border: 1px solid rgba(55, 65, 79, 0.42);
+}
+/* mottle only — the fold crease is gone (owner, 2026-07-28) */
+.rc-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: var(--mottle);
+  background-size: 420px 420px;
+}
+.rc-scroll {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  padding: 14px 18px 9px;
+  scrollbar-width: thin;
+}
+.rc-scroll::-webkit-scrollbar { width: 7px; }
+.rc-scroll::-webkit-scrollbar-thumb { background: rgba(55,65,79,0.30); }
+
+.rc-block { flex: 0 0 auto; }
+
+/* ---- masthead ----------------------------------------------------------- */
+.rc-masthead { text-align: center; padding-bottom: 2px; }
+.rc-sup {
+  font-family: var(--form); font-size: 0.56rem; letter-spacing: 0.42em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  text-indent: 0.42em;
+}
+.rc-title {
+  font-family: var(--form); font-weight: 700;
+  font-size: clamp(1.2rem, 2.2vw, 1.46rem);
+  letter-spacing: 0.19em; text-transform: uppercase;
+  line-height: 1.06; margin: 0.3em 0 0.26em;
+  color: var(--form-ink);
+  transform: scale(0.965, 1.2); transform-origin: 50% 60%;
+  text-shadow: 0 0.6px 0 rgba(255, 252, 235, 0.55);
+}
+.rc-rule2 { border-top: 2px solid var(--form-rule); margin-top: 0.55em; }
+.rc-rule2::after {
+  content: ""; display: block; border-top: 1px solid var(--form-rule); margin-top: 2px;
+}
+.rc-item {
+  font-family: var(--form); font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.19em; text-transform: uppercase;
+  margin-top: 0.5em; color: #2f3846;
+}
+.rc-item-sub {
+  font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--form-ink-2); margin-top: 0.36em;
+}
+
+/* ---- printed fill-in lines --------------------------------------------- */
+.rc-fills { margin-top: 0.7rem; display: flex; flex-wrap: wrap; gap: 0 14px; }
+.rc-fill { flex: 1 1 100%; display: flex; align-items: baseline; gap: 0.5em;
+  border-bottom: 1px solid var(--form-rule-2); padding: 0.26em 0 0.14em; }
+.rc-fill.half { flex: 1 1 calc(50% - 7px); }
+.rc-fill-l {
+  font-family: var(--form); font-size: 0.53rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.rc-fill-v {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.7rem; color: var(--typed); letter-spacing: 0.01em;
+}
+.rc-fill-v .v-dim { color: #6f6754; }
+
+/* ---- section heading ---------------------------------------------------- */
+.rc-head {
+  display: flex; align-items: center; gap: 0.7em;
+  font-family: var(--form); font-size: 0.55rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  margin: 0.62rem 0 0.3rem;
+}
+.rc-head::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+
+/* ---- THE ASSIGNMENT (the verbatim prompt) ------------------------------- */
+.rc-assign {
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.48rem 0.1rem 0.5rem;
+  max-height: 7.4em; overflow-y: auto; overscroll-behavior: contain;
+}
+.rc-assign p {
+  font-family: var(--font-mono); font-size: 0.665rem; line-height: 1.5;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+}
+
+/* ---- the info line + artwork plate (owner, 2026-07-28): the three info
+   pairs sit on ONE line below the title; the art gets the full card width
+   in its own black container beneath them ---------------------------------- */
+.rc-fillsline {
+  margin-top: 0.5rem;
+  display: flex; flex-wrap: wrap; gap: 0 12px;
+  justify-content: space-between;
+}
+.rc-fillsline .rc-fill { flex: 0 1 auto; }
+/* squeezed so all three pairs hold one line at the 560px card width */
+.rc-fillsline .rc-fill-l { font-size: 0.5rem; letter-spacing: 0.13em; }
+.rc-fillsline .rc-fill-v { font-size: 0.66rem; }
+.rc-plate {
+  position: relative; overflow: hidden;
+  margin-top: 0.55rem;
+  height: 224px;
+  padding: 10px 12px;
+  background: #101010;
+  border: 1px solid var(--form-rule);
+}
+/* the vaporwave floor — a perspective checkerboard receding to the horizon,
+   behind the artwork (surrealist exhibit staging; owner, 2026-07-28) */
+.rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rc-plate-art { position: relative; height: 100%; }
+.rc-plate-art svg { display: block; width: 100%; height: 100%; }
+
+/* ---- the subjects table ------------------------------------------------- */
+table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rc-subj th {
+  font-family: var(--form); font-weight: 400;
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); text-align: left;
+  padding: 0.3em 0.5em; background: rgba(55, 65, 79, 0.055);
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+}
+table.rc-subj th + th, table.rc-subj td + td { border-left: 1px solid var(--form-rule-2); }
+table.rc-subj td {
+  padding: 0.24em 0.5em 0.28em;
+  border-bottom: 1px solid var(--form-rule-2);
+  vertical-align: middle;
+}
+table.rc-subj tr:last-child td { border-bottom: 1px solid var(--form-rule); }
+/* the OVERALL GRADE footer row — heavier rule above, closes the table;
+   same padding/height as the axis rows */
+table.rc-subj tfoot td {
+  border-top: 2px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.24em 0.5em 0.28em;
+  background: rgba(55, 65, 79, 0.03);
+}
+table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
+.rc-subj-name {
+  font-family: var(--form); font-size: 0.62rem; letter-spacing: 0.05em;
+  line-height: 1.26; color: #2f3846;
+}
+.rc-remark {
+  font-family: var(--form); font-style: italic;
+  font-size: 0.575rem; line-height: 1.3; color: #5b6270;
+}
+.rc-remark.is-note { font-style: normal; }
+.rc-skip {
+  font-family: var(--font-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  color: #8c8676; text-transform: uppercase; line-height: 1.4;
+}
+
+/* ---- the red pencil ----------------------------------------------------- */
+.rc-mark {
+  position: relative; display: inline-block;
+  font-family: var(--hand); color: var(--red);
+  line-height: 1.12; letter-spacing: 0.005em;
+  transform: rotate(var(--jit, -1.2deg));
+  transform-origin: 12% 70%;
+}
+.rc-mark.sm { font-size: 0.84rem; }
+.rc-mark.lg { font-size: 1.5rem; padding-bottom: 0.1em; }
+.rc-mark-word { position: relative; display: inline-block; }
+.rc-underline {
+  position: absolute; left: -4%; bottom: -0.30em;
+  width: 108%; height: 0.42em; overflow: visible;
+}
+.rc-underline path {
+  fill: none; stroke: var(--red); stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+.rc-mark.old { color: rgba(176, 42, 36, 0.66); font-size: 0.96rem; margin-right: 0.75em; }
+.rc-strike {
+  position: absolute; left: -6%; top: 38%; width: 112%; height: 0.5em; overflow: visible;
+}
+.rc-strike path {
+  fill: none; stroke: var(--red); stroke-width: 1.7; stroke-linecap: round;
+  vector-effect: non-scaling-stroke; opacity: 0.85;
+}
+
+/* ---- GENERAL AVERAGE ---------------------------------------------------- */
+.rc-avg {
+  display: grid; grid-template-columns: 32% 1fr; gap: 0 0.5em;
+  padding: 0.46rem 0.5em 0.4rem;
+}
+.rc-avg-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2); padding-top: 0.42em;
+}
+.rc-avg-r { min-width: 0; }
+.rc-avg-rank {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  margin: 0.5em 0 0.2em;
+}
+.rc-avg-desc {
+  font-family: var(--form); font-size: 0.6rem; line-height: 1.38; color: #4d5462;
+}
+.rc-avg-date {
+  font-size: 0.52rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #857f6c; margin-top: 0.4em;
+}
+.rc-avg-date.rc-super { color: #9a5f56; margin-top: 0.14em; }
+
+/* ---- promotion + signature --------------------------------------------- */
+.rc-foot-line {
+  font-family: var(--form); font-size: 0.64rem; letter-spacing: 0.06em;
+  color: #3d4652; margin: 0.44rem 0 0;
+}
+.rc-sigrow { display: flex; align-items: flex-end; gap: 0.8em; margin-top: 0.4rem; }
+.rc-sigbox { flex: 1 1 auto; min-width: 0; }
+.rc-sig { display: block; width: 100%; height: 32px; overflow: visible; }
+.rc-sig path {
+  fill: none; stroke: var(--red); stroke-linecap: round; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.rc-sigrule { border-top: 1px solid var(--form-rule); margin-top: -6px; }
+.rc-sigcap {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--form-ink-2); padding-top: 0.32em;
+}
+.rc-datebox { flex: 0 0 34%; }
+.rc-dateval {
+  font-size: 0.62rem; color: var(--typed); text-align: center; padding-bottom: 0.2em;
+}
+
+/* ---- alternatives strip — OTHER PUPILS, SAME ASSIGNMENT ----------------- */
+.rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; }
+.rc-alt {
+  flex: 1 1 0; min-width: 0;
+  font: inherit; text-align: center; cursor: pointer;
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+  padding: 5px 4px 6px;
+}
+.rc-alt:hover { background: rgba(255, 250, 232, 0.85); border-color: var(--form-rule); }
+.rc-alt.is-cur { border-color: rgba(176, 42, 36, 0.75); background: rgba(255, 250, 232, 0.92); }
+.rc-alt-art { display: block; height: 46px; }
+.rc-alt-art svg { display: block; width: 100%; height: 100%; }
+.rc-alt-cap {
+  display: block; margin-top: 4px;
+  font-family: var(--form); font-size: 0.505rem; letter-spacing: 0.09em;
+  line-height: 1.3; color: #4d5462; text-transform: uppercase;
+}
+.rc-alt-grade {
+  display: block; margin-top: 2px;
+  font-family: var(--hand); font-size: 0.66rem; color: var(--red);
+  text-transform: none; letter-spacing: 0;
+}
+.rc-alt.is-cur .rc-alt-cap { color: #2f3846; }
+.rc-alt-here {
+  display: block; font-family: var(--font-mono); font-size: 0.44rem;
+  letter-spacing: 0.16em; color: var(--red); margin-top: 1px;
+}
+
+/* ---- provenance foot ---------------------------------------------------- */
+.rc-prov {
+  margin-top: 0.52rem; padding-top: 0.34rem;
+  border-top: 1px solid var(--form-rule-2);
+}
+.rc-prov p {
+  font-family: var(--form); font-size: 0.51rem; line-height: 1.42; color: #6a7280;
+}
+.rc-formline {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.8em; margin-top: 0.42rem;
+  font-family: var(--font-mono); font-size: 0.48rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: #918a76;
+}
+.rc-formline .rc-formno { text-align: right; line-height: 1.5; }
+.rc-dl {
+  display: inline-block;
+  font-family: var(--font-mono); font-size: 0.545rem; letter-spacing: 0.15em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e; border: 1px solid var(--form-rule);
+  padding: 0.34em 0.8em;
+  background: rgba(255, 250, 232, 0.5);
+}
+.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+
+/* ---- the drag handle (mobile only) ------------------------------------- */
+.rc-handle {
+  display: none;
+  flex: 0 0 auto; width: 100%; border: 0; background: none;
+  padding: 9px 0 5px; cursor: pointer;
+}
+.rc-handle i {
+  display: block; width: 46px; height: 4px; margin: 0 auto;
+  background: rgba(55, 65, 79, 0.34); border-radius: 2px;
+}
+.rc-handle b {
+  display: block; margin-top: 5px;
+  font-family: var(--font-mono); font-weight: 400;
+  font-size: 0.46rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #97907c;
+}
+
+/* ---- entrance ----------------------------------------------------------- */
+@keyframes rcEnter {
+  from { opacity: 0; transform: translateY(16px) rotate(-0.5deg); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rcFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rcArt {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+.rc-art-frame.is-enter { animation: rcArt 0.5s cubic-bezier(.2,.8,.25,1) both; }
+@media (min-width: 769px) {
+  .rc-card.is-enter { animation: rcEnter 0.48s cubic-bezier(.2,.8,.25,1) both; }
+}
+@media (max-width: 768px) {
+  .rc-card.is-enter .rc-scroll { animation: rcFade 0.42s ease-out both; }
+}
+
+/* ========================= MOBILE — THE BOTTOM SHEET ====================== */
+@media (max-width: 768px) {
+  .rc-stage {
+    display: block; width: 100%; height: 100svh; max-height: none;
+    min-height: 520px; padding: 0;
+  }
+  .rc-artcol {
+    position: absolute; inset: 0 0 auto 0; height: 45svh; flex: none;
+  }
+  .rc-art { padding: 3.4svh 7vw 1.5svh; }
+  /* on mobile the strip belongs to the sheet's peek detent, not the stage */
+  .rc-strip { display: none; }
+  .rc-card {
+    position: absolute; left: 0; right: 0; bottom: 0; top: auto;
+    width: auto; height: 90svh; max-height: 90svh;
+    border-left: 0; border-right: 0; border-bottom: 0;
+    transform: translateY(calc(100% - var(--peek, 380px)));
+    transition: transform 0.34s cubic-bezier(.2,.75,.2,1);
+    box-shadow: 0 -10px 34px -6px rgba(6, 3, 0, 0.7);
+  }
+  .rc-card.is-full { transform: translateY(0); }
+  .rc-card::before { inset: 5px 5px -1px; border-bottom: 0; }
+  .rc-handle { display: block; }
+  .rc-scroll { padding: 6px 18px 26px; }
+  .rc-card.is-peek .rc-scroll { overflow: hidden; }
+
+  /* peek shows: masthead · pupil fill-ins · the strip. full adds:
+     assignment · subjects (incl. the GENERAL AVERAGE footer row). */
+  .rc-masthead   { order: 1; }
+  /* the info line shows on mobile; the black art container is hidden — the
+     lifted art already fills the stage above the sheet */
+  .rc-o-fills    { order: 2; }
+  .rc-o-plate    { display: none; }
+  .rc-o-altshead { order: 5; }
+  .rc-o-alts     { order: 6; }
+  .rc-o-asnhead  { order: 7; }
+  .rc-o-asn      { order: 8; }
+  .rc-o-subjhead { order: 9; }
+  .rc-o-subj     { order: 10; }
+  .rc-o-foot     { order: 11; }
+  .rc-o-prov     { order: 12; }
+
+  .rc-title { font-size: 1.34rem; }
+  .rc-alt-art { height: 52px; }
+}
+
+/* ============================ mockup chrome ============================== */
+.rc-hint {
+  max-width: 900px; margin: 0.85rem auto 0.2rem;
+  font-size: 0.58rem; letter-spacing: 0.14em; color: #a49a82;
+  text-transform: uppercase; text-align: center;
+}
+.mock-switch {
+  max-width: 900px; margin: 1.3rem auto 0.4rem; text-align: center;
+  font-size: 0.6rem; letter-spacing: 0.18em; color: #8d8570; text-transform: uppercase;
+}
+.mock-switch button {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.14em;
+  padding: 0.3em 0.85em; margin: 0 0.12em;
+  background: #f6f3ec; color: var(--ink);
+  border: 1px solid #a89f88; border-radius: 2px; cursor: pointer;
+  text-transform: uppercase;
+}
+.mock-switch button.is-on { background: var(--ink); color: #f6f3ec; border-color: var(--ink); }
+.mock-nav {
+  max-width: 760px; margin: 1.5rem auto 0; padding: 0 0 0.55rem;
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 0.15rem 0.4rem;
+  font-size: 0.575rem; letter-spacing: 0.13em; text-transform: uppercase;
+  border-bottom: 1px solid #ded7c5;
+}
+.mock-nav a { color: #8d8570; text-decoration: none; padding: 0.1em 0.15em; }
+.mock-nav a:hover { color: var(--plot-red); }
+.mock-nav .is-here { color: var(--plot-red); font-weight: 700; }
+.mock-nav .sep { color: #cdc6b2; }
+.mock-caption {
+  max-width: 760px;
+  border: 1px solid #c9c2ae; border-top: 0; padding: 1rem 1.1rem;
+  margin: 0 auto 1.4rem; background: #faf8f2;
+}
+.mock-caption p { font-size: 0.72rem; line-height: 1.7; margin: 0 0 0.7rem; }
+.mock-caption p:last-child { margin-bottom: 0; }
+.mc-head { letter-spacing: 0.22em; text-transform: uppercase; color: #6b6353; }
+.mock-caption b { color: var(--plot-red); font-weight: 700; }
+.mock-caption b.mc-head { color: #6b6353; }
+.mock-caption code { font-size: 0.95em; background: #f0ece0; padding: 0 0.25em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label top">junk drawer &middot; mockup 7a &middot; the report card &mdash; full record style A</p>
+
+<!-- red-pencil waver filters: every hand mark picks one, so no two marks
+     sit identically. stitchTiles="stitch" per the standing Safari lesson. -->
+<svg width="0" height="0" aria-hidden="true" focusable="false"
+     style="position:absolute;pointer-events:none">
+  <defs>
+    <filter id="rcWv0" x="-8%" y="-18%" width="116%" height="136%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.052 0.14" numOctaves="2" seed="3" stitchTiles="stitch" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="1.5" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rcWv1" x="-8%" y="-18%" width="116%" height="136%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.061 0.12" numOctaves="2" seed="11" stitchTiles="stitch" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="1.3" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rcWv2" x="-8%" y="-18%" width="116%" height="136%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.047 0.16" numOctaves="2" seed="19" stitchTiles="stitch" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="1.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rcWv3" x="-8%" y="-18%" width="116%" height="136%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.058 0.13" numOctaves="2" seed="29" stitchTiles="stitch" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="1.4" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </defs>
+</svg>
+
+<div class="rc-stage" id="stage">
+  <div class="rc-artcol">
+    <div class="rc-art" id="art"></div>
+    <!-- desktop home of OTHER PUPILS, SAME ASSIGNMENT — the other responses
+         lined up under the lifted item. On ≤768px the strip moves into the
+         sheet's peek detent instead (rendered into one place at a time, so
+         no duplicate SVG ids ever coexist). -->
+    <div class="rc-strip" id="strip"></div>
+  </div>
+  <section class="rc-card" id="card" aria-label="report of progress">
+    <button type="button" class="rc-handle" id="handle" aria-label="expand or collapse the report">
+      <i></i><b id="handle-cap">pull up for the full report</b>
+    </button>
+    <div class="rc-scroll" id="scroll"></div>
+  </section>
+</div>
+
+<p class="rc-hint" id="hint">click another model in the strip to flip the report &mdash; the prompt never changes</p>
+
+<div class="mock-switch" id="switch">
+  item:
+  <button type="button" data-i="0" class="is-on">sneaky subway rat</button><button
+          type="button" data-i="1">hairball</button>
+</div>
+
+<nav class="mock-nav" aria-label="mockup 7 siblings">
+  <a href="mockup-7a-report-card.html" class="is-here">7a &middot; report card</a><span class="sep">/</span>
+  <a href="mockup-7b-accession-card.html">7b &middot; accession record</a><span class="sep">/</span>
+  <a href="mockup-7c-condition-report.html">7c &middot; condition report</a><span class="sep">/</span>
+  <a href="mockup-7d-dossier.html">7d &middot; the paperwork</a><span class="sep">/</span>
+  <a href="mockup-7e-catalog-card.html">7e &middot; catalog card</a>
+</nav>
+
+<div class="mock-caption">
+  <p class="mc-head">Mockup 7a &middot; The Report Card &mdash; the full record, style A</p>
+
+  <p>PLAN-RECORD &sect;3 A, revised per owner (2026-07-28): <b>the visual
+  theme stays; the wording doesn't.</b> The register is still a
+  letterpress-printed report card, roughly 1900s&ndash;1930s &mdash;
+  manila-cream stock, a double hairline border with squared corners, faded
+  blue-black form matter, paper grain and a fold crease &mdash; but every
+  label describes what is actually depicted: <code>MODEL</code> (+ vendor),
+  <code>GENERATED</code> (the response date), <code>CREATED</code> (the
+  item's date) and <code>PROCESS</code> (the honest turn count &mdash;
+  &ldquo;one-shot (1 prompt)&rdquo;). <b>THE PROMPT</b> is verbatim, always
+  monospace, quoted as received; it is the item-level constant and it never
+  changes when you flip responses. The ANNOTATIONS table prints one row per
+  axis in taxonomy order &mdash; AXIS, VERDICT, NOTES &mdash; and closes with
+  <code>OVERALL GRADE</code> as its footer row (heavier rule above).
+  <i>Removed for now (owner, 2026-07-28): the school-district masthead and
+  its rule, the promotion line + curator's signature, the provenance notes
+  paragraph, and all grade-history / marked-date / superseded rendering
+  &mdash; freeing vertical room to bring the artwork and the alternatives
+  onto the card itself (next revision).</i></p>
+
+  <p><b class="mc-head">The red pencil.</b> Only the curator's own judgments
+  are hand-inked: the axis VERDICTs and the OVERALL GRADE (large,
+  double-underlined). Each mark takes its
+  own rotation jitter and its own feTurbulence displacement filter (all with
+  <code>stitchTiles="stitch"</code>) so no two sit identically. Everything else
+  on the card is printed form matter. <b>Every rubric string</b> &mdash; grade
+  labels, ranks, descriptions, axis labels, value labels, model labels &mdash;
+  renders from the baked <code>taxonomy.json</code> object. Nothing is hardcoded.</p>
+
+  <p><b class="mc-head">One synthetic overlay</b> (no real entry has this
+  state yet; disclosed here and never inside the card):
+  subway-rat <code>r3</code>'s
+  <code>color</code> axis is treated as skipped, so the VERDICT cell renders the
+  muted typed <code>&mdash; &middot; NOT ASSESSED</code>. (The earlier mock
+  grade-history graft is gone &mdash; supersession is no longer rendered at
+  all.) Everything else &mdash;
+  prompts, grades, annotations, dates, provenance notes, the artwork &mdash; is
+  baked verbatim from <code>items/2026-07-27-subway-rat/</code> and
+  <code>items/2026-07-27-hairball/</code>.</p>
+
+  <p><b class="mc-head">Notes column.</b> No response in the data carries an
+  annotator <code>note</code> yet (annotations are bare value ids). Where a note
+  exists the NOTES cell prints it; where it doesn't, the cell falls back to
+  the taxonomy value's own <code>description</code>, set in printed italic
+  rather than the hand &mdash; so the red pencil never claims a remark the
+  curator didn't write. Add a note to an annotation and it appears in roman,
+  in the same cell.</p>
+
+  <p><b class="mc-head">Flip-through.</b> The strip is captioned
+  <b>OTHER MODELS, SAME PROMPT</b>; choosing a model swaps the lifted SVG
+  in place (same box, same scale) and re-renders every per-response field
+  &mdash; the prompt block is untouched. <b>Hairball</b> has one response,
+  so the strip is absent entirely (that's the state it's baked in for). Both
+  entries' SVGs share this one page, so every <code>id</code> and every
+  <code>url(#&hellip;)</code>/<code>href</code> reference is prefixed per
+  response (<code>o_</code>, <code>f_</code>, <code>s_</code>, <code>h_</code>;
+  strip thumbnails take <code>&hellip;t_</code>) exactly as the rating
+  instrument does. The artwork paths are never altered.</p>
+
+  <p><b class="mc-head">Mobile</b> (&le;768px) &mdash; the PLAN-MOBILE
+  &sect;4 bottom sheet: lifted SVG in the top 45svh, the card as the sheet.
+  <b>Peek</b> shows the title, the fill-in lines and
+  the strip; <b>full</b> adds the prompt, the annotations table (with the
+  OVERALL GRADE footer row) and the card foot, with an inner scroll region
+  (<code>overflow-y:auto; overscroll-behavior:contain</code>). The detents are
+  a CSS <code>order</code> reshuffle of the same blocks &mdash; one DOM, two
+  readings. Tapping the handle toggles; the peek height is measured from the
+  strip, not guessed. <code>?mock-state=peek</code> and
+  <code>?mock-state=full</code> drive it (that's how the verification
+  screenshots were taken).</p>
+
+  <p><b class="mc-head">Natural name</b> &mdash; REPORT CARD (gate G7). The
+  stage here is the simplified scrim of &sect;4, not the production drawer:
+  a warm radial backdrop with a vignette, the item lifted at ~55% with a long
+  soft shadow. No blend-mode layers anywhere on the stage.</p>
+</div>
+
+<p class="mock-label">junk drawer &middot; mockup 7a &middot; the report card &mdash; full record style A</p>
+
+<script>
+/* ==========================================================================
+   DATA — baked from the repo, VERBATIM. No fetch anywhere on this page.
+   TAXONOMY is taxonomy.json (schema 1, version 5). Every grade label, grade
+   description, grade rank, axis label, value label, value description and
+   model label rendered on this page resolves through this object.
+   ========================================================================== */
+var TAXONOMY = {
+  "schema": 1,
+  "version": 5,
+  "updated": "2026-07-27",
+  "grades": [
+    { "id": "prime", "rank": 5, "label": "Prime",
+      "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
+    { "id": "choice", "rank": 4, "label": "Choice",
+      "description": "Strong result with minor blemishes a careful eye can find." },
+    { "id": "select", "rank": 3, "label": "Select",
+      "description": "Competent and recognizable; noticeable flaws on one or more axes." },
+    { "id": "standard", "rank": 2, "label": "Standard",
+      "description": "Gets the idea across despite significant defects." },
+    { "id": "utility", "rank": 1, "label": "Utility",
+      "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
+  ],
+  "axes": [
+    { "id": "prompt-fidelity", "label": "Prompt fidelity",
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
+      "values": [
+        { "id": "faithful", "label": "Faithful", "description": "All requested elements present as specified." },
+        { "id": "partial", "label": "Partial", "description": "Some requested elements missing, extra, or misread." },
+        { "id": "off-brief", "label": "Off-brief", "description": "Substantially not the thing that was asked for." }
+      ] },
+    { "id": "geometry", "label": "Geometry & topology",
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "No visible construction errors." },
+        { "id": "minor", "label": "Minor defects", "description": "Small misalignments or overlaps visible on inspection." },
+        { "id": "major", "label": "Major defects", "description": "Structural errors that dominate the read of the image." }
+      ] },
+    { "id": "color", "label": "Color & rendering",
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Palette and rendering read as intended." },
+        { "id": "minor", "label": "Minor defects", "description": "Off colors, banding, or stacking slips that don't break the image." },
+        { "id": "major", "label": "Major defects", "description": "Rendering errors that break the image." }
+      ] },
+    { "id": "composition", "label": "Composition",
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Well-composed within its viewBox." },
+        { "id": "minor", "label": "Minor defects", "description": "Awkward margins, crowding, or scale oddities." },
+        { "id": "major", "label": "Major defects", "description": "Subject clipped, marooned, or scaled absurdly." }
+      ] }
+  ],
+  "models": [
+    { "id": "claude-fable-5",  "label": "Claude Fable 5",  "vendor": "Anthropic" },
+    { "id": "claude-sonnet-5", "label": "Claude Sonnet 5", "vendor": "Anthropic" },
+    { "id": "claude-opus-5",   "label": "Claude Opus 5",   "vendor": "Anthropic" },
+    { "id": "claude-opus-4-6", "label": "Claude Opus 4.6", "vendor": "Anthropic" },
+    { "id": "claude-opus-4-1", "label": "Claude Opus 4.1", "vendor": "Anthropic" },
+    { "id": "claude-sonnet-4-5", "label": "Claude Sonnet 4.5", "vendor": "Anthropic" },
+    { "id": "gpt-5", "label": "GPT-5", "vendor": "OpenAI" },
+    { "id": "gemini-2-5-pro", "label": "Gemini 2.5 Pro", "vendor": "Google" }
+  ]
+};
+
+/* entry.json, verbatim, for the two baked items ------------------------- */
+var ENTRIES = [
+{
+  "schema": 1,
+  "id": "2026-07-27-subway-rat",
+  "title": "Sneaky subway rat",
+  "prompt": "I'd like a sneaky stealthy subway rat. It should have googly eyes and be showing in profile as though it is a scampering off somewhere. Let's give it a cartoony style like from the looney tunes or something",
+  "created": "2026-07-27",
+  "tags": [],
+  "primary": "r1",
+  "sizeClass": "l",
+  "responses": [
+    { "rid": "r1", "file": "claude-opus-5.svg", "model": "claude-opus-5",
+      "model_version": "claude-opus-5", "date": "2026-07-27",
+      "generation": { "mode": "one-shot", "prompt_count": 1 },
+      "grade": "select", "graded": "2026-07-27", "grade_history": [],
+      "annotations": { "prompt-fidelity": "partial", "geometry": "minor", "color": "clean", "composition": "clean" },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated." },
+    { "rid": "r2", "file": "claude-fable-5.svg", "model": "claude-fable-5",
+      "model_version": "claude-fable-5", "date": "2026-07-27",
+      "generation": { "mode": "one-shot", "prompt_count": 1 },
+      "grade": "standard", "graded": "2026-07-27", "grade_history": [],
+      "annotations": { "prompt-fidelity": "faithful", "geometry": "major", "color": "clean", "composition": "major" },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated." },
+    { "rid": "r3", "file": "claude-sonnet-5.svg", "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5", "date": "2026-07-27",
+      "generation": { "mode": "one-shot", "prompt_count": 1 },
+      "grade": "standard", "graded": "2026-07-27", "grade_history": [],
+      "annotations": { "prompt-fidelity": "partial", "geometry": "major", "color": "clean", "composition": "major" },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated." }
+  ]
+},
+{
+  "schema": 1,
+  "id": "2026-07-27-hairball",
+  "title": "Hairball",
+  "prompt": "hairball",
+  "created": "2026-07-27",
+  "tags": [],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    { "rid": "r1", "file": "claude-fable-5.svg", "model": "claude-fable-5",
+      "model_version": "claude-fable-5", "date": "2026-07-27",
+      "generation": { "mode": "one-shot", "prompt_count": 1 },
+      "grade": "standard", "graded": "2026-07-27", "grade_history": [],
+      "annotations": { "prompt-fidelity": "faithful", "geometry": "minor", "color": "minor", "composition": "clean" },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 1.8%); no viewBox normalization. Source contains a self-correction fossil: a strand emitted with invalid stroke=\"#a2first\" was zeroed out (stroke-width 0, opacity 0) and immediately re-emitted corrected as #a28457 — invisible in the render, preserved byte-exact." }
+  ]
+}
+];
+
+/* ==========================================================================
+   SYNTHETIC OVERLAYS — exactly two, per PLAN-RECORD §4. Both are disclosed
+   in the .mock-caption below the stage and NOWHERE on the card itself. No
+   real entry carries these states yet; they exist so the layouts render.
+   ========================================================================== */
+/* (1) supersession graft REMOVED (owner, 2026-07-28) — grade_history is no
+   longer rendered on the card at all */
+/* (2) a skipped axis: treat subway-rat r3's color axis as never assessed
+   (the data convention for "skipped" is that the key is simply absent) */
+delete ENTRIES[0].responses[2].annotations["color"];
+
+/* ==========================================================================
+   ARTWORK — the .svg files inlined byte-for-byte (XML prologs stripped; none
+   of these four had one). Paths are NEVER altered; ids are namespaced per
+   instance at render time by svgInst().
+   ========================================================================== */
+var SVGS = {};
+SVGS["2026-07-27-subway-rat/claude-opus-5.svg"] =
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 526" role="img" aria-label="A sneaky cartoon subway rat with big googly eyes scampering off in profile, dragging a slice of pizza">\n\
+  <defs>\n\
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">\n\
+      <stop offset="0" stop-color="#9ca4ad"/>\n\
+      <stop offset="1" stop-color="#7d848d"/>\n\
+    </linearGradient>\n\
+    <linearGradient id="tailg" x1="0" y1="1" x2="1" y2="0">\n\
+      <stop offset="0" stop-color="#e8a3b5"/>\n\
+      <stop offset="1" stop-color="#d885a0"/>\n\
+    </linearGradient>\n\
+  </defs>\n\
+\n\
+  <!-- TAIL (behind) -->\n\
+  <path d="M700,296 C800,300 856,250 842,168 C833,108 796,54 762,20 C752,30 748,30 738,38 C770,80 810,124 818,174 C830,248 782,274 704,266 Z"\n\
+        fill="url(#tailg)" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>\n\
+\n\
+  <!-- FAR HIND LEG + FOOT -->\n\
+  <path d="M690,332 C706,378 690,420 660,448 C636,470 618,486 606,504 C634,508 660,500 666,478 C704,446 726,394 716,344 Z"\n\
+        fill="#6f767e" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>\n\
+  <path d="M600,488 C588,498 586,510 598,514 C608,518 620,512 622,502 C634,497 648,496 656,500 C650,486 632,480 614,482 Z"\n\
+        fill="#d885a0" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>\n\
+\n\
+  <!-- SCAMPER DUST PUFFS -->\n\
+  <g fill="#e2e6ea" stroke="#23262b" stroke-width="4">\n\
+    <circle cx="770" cy="474" r="17"/>\n\
+    <circle cx="800" cy="452" r="12"/>\n\
+    <circle cx="742" cy="492" r="11"/>\n\
+  </g>\n\
+\n\
+  <!-- BODY -->\n\
+  <path d="M45,315 C70,283 92,268 132,256 C176,244 202,238 246,232 C300,224 332,172 472,162 C602,153 682,188 732,250 C772,296 766,352 714,378 C640,408 560,408 470,402 C360,395 250,398 168,370 C122,354 62,338 45,315 Z"\n\
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>\n\
+\n\
+  <!-- BELLY HIGHLIGHT -->\n\
+  <path d="M118,342 C210,306 400,306 548,332 C528,392 360,404 206,386 C158,378 130,360 118,342 Z"\n\
+        fill="#bcc2ca" opacity="0.7"/>\n\
+\n\
+  <!-- NEAR HIND LEG + FOOT -->\n\
+  <path d="M622,346 C662,352 704,372 712,414 C718,450 706,480 694,502 C726,506 754,496 752,466 C758,410 744,356 700,332 C672,324 640,330 622,346 Z"\n\
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>\n\
+  <path d="M652,482 C638,494 636,508 648,512 C659,516 671,510 674,499 C686,494 700,492 710,496 C704,482 686,474 666,476 Z"\n\
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>\n\
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">\n\
+    <path d="M666,486 L668,506"/><path d="M684,486 L690,502"/>\n\
+  </g>\n\
+\n\
+  <!-- NEAR FRONT LEG + FOOT (tiptoe) -->\n\
+  <path d="M242,366 C214,392 190,414 172,440 C156,462 150,478 160,490 C172,496 186,484 194,466 C214,436 246,410 264,384 Z"\n\
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>\n\
+  <path d="M158,466 C142,478 134,494 144,502 C154,509 168,502 172,490 C182,483 194,480 204,484 C198,468 180,460 160,462 Z"\n\
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>\n\
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">\n\
+    <path d="M164,470 L156,492"/><path d="M182,474 L182,490"/>\n\
+  </g>\n\
+\n\
+  <!-- EAR -->\n\
+  <path d="M232,205 C210,150 245,120 290,132 C328,142 335,190 310,220 C285,245 250,240 232,205 Z"\n\
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>\n\
+  <path d="M250,200 C240,165 262,148 292,158 C315,166 318,196 302,214 C285,230 262,225 250,200 Z"\n\
+        fill="#e8a3b5"/>\n\
+\n\
+  <!-- PIZZA SLICE (the loot) -->\n\
+  <path d="M112,428 L176,450 L74,500 Z" fill="#f2c14e" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>\n\
+  <path d="M106,420 Q142,430 178,444 L180,458 Q144,444 110,434 Z" fill="#d69a4a" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>\n\
+  <g fill="#c0392b" stroke="#8f2a20" stroke-width="2">\n\
+    <circle cx="122" cy="452" r="8"/><circle cx="142" cy="463" r="7"/><circle cx="104" cy="470" r="6"/>\n\
+  </g>\n\
+\n\
+  <!-- LIFTED FRONT PAW grabbing crust -->\n\
+  <path d="M150,424 C138,428 132,440 140,448 C148,455 160,452 166,442 C172,432 168,424 158,422 C154,421 152,422 150,424 Z"\n\
+        fill="#e8a3b5" stroke="#23262b" stroke-width="4" stroke-linejoin="round"/>\n\
+  <g stroke="#23262b" stroke-width="2.5" stroke-linecap="round" fill="none">\n\
+    <path d="M144,438 L138,446"/><path d="M154,442 L150,450"/>\n\
+  </g>\n\
+\n\
+  <!-- NOSE -->\n\
+  <path d="M40,312 C26,308 22,321 34,328 C46,335 60,330 60,318 C58,309 48,308 40,312 Z"\n\
+        fill="#d16a86" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>\n\
+  <circle cx="35" cy="320" r="3.5" fill="#23262b"/>\n\
+\n\
+  <!-- MOUTH / SLY GRIN -->\n\
+  <path d="M54,330 C92,354 132,358 166,347 C176,344 181,337 179,330"\n\
+        fill="none" stroke="#23262b" stroke-width="6" stroke-linecap="round"/>\n\
+  <!-- BUCK TEETH -->\n\
+  <rect x="55" y="336" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>\n\
+  <rect x="68" y="338" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>\n\
+\n\
+  <!-- WHISKERS -->\n\
+  <g stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" fill="none">\n\
+    <path d="M80,323 C55,316 32,310 12,312"/>\n\
+    <path d="M84,334 C58,334 34,339 14,347"/>\n\
+    <path d="M86,344 C62,349 42,359 26,371"/>\n\
+  </g>\n\
+\n\
+  <!-- GOOGLY EYES -->\n\
+  <circle cx="250" cy="230" r="46" fill="#ffffff" stroke="#23262b" stroke-width="6"/>\n\
+  <circle cx="150" cy="222" r="52" fill="#ffffff" stroke="#23262b" stroke-width="6"/>\n\
+  <circle cx="232" cy="246" r="19" fill="#1a1a1a"/>\n\
+  <circle cx="225" cy="239" r="5" fill="#ffffff"/>\n\
+  <circle cx="132" cy="238" r="22" fill="#1a1a1a"/>\n\
+  <circle cx="124" cy="230" r="6" fill="#ffffff"/>\n\
+  <!-- heavy sneaky lids -->\n\
+  <path d="M206,220 Q250,204 294,226" fill="none" stroke="#23262b" stroke-width="8" stroke-linecap="round"/>\n\
+  <path d="M100,210 Q150,192 200,214" fill="none" stroke="#23262b" stroke-width="9" stroke-linecap="round"/>\n\
+  <!-- scheming brows -->\n\
+  <path d="M205,180 Q250,154 292,158" fill="none" stroke="#23262b" stroke-width="10" stroke-linecap="round"/>\n\
+  <path d="M96,188 Q140,160 182,158" fill="none" stroke="#23262b" stroke-width="11" stroke-linecap="round"/>\n\
+</svg>';
+
+SVGS["2026-07-27-subway-rat/claude-fable-5.svg"] =
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">\n\
+  <g stroke-linecap="round" stroke-linejoin="round">\n\
+    <!-- speed lines -->\n\
+    <g stroke="#2a2430" stroke-width="7" opacity="0.7" fill="none">\n\
+      <path d="M472 262 L634 254"/>\n\
+      <path d="M462 298 L618 300"/>\n\
+      <path d="M478 334 L600 338"/>\n\
+    </g>\n\
+    <!-- dust puffs -->\n\
+    <g fill="#c3c4cf" opacity="0.95">\n\
+      <circle cx="486" cy="374" r="15"/>\n\
+      <circle cx="510" cy="382" r="10"/>\n\
+      <circle cx="463" cy="385" r="9"/>\n\
+      <circle cx="306" cy="377" r="9"/>\n\
+      <circle cx="326" cy="383" r="6"/>\n\
+    </g>\n\
+    <!-- tail -->\n\
+    <path d="M388 212 C468 218 538 206 570 156 C592 122 590 90 620 58 C626 52 636 60 631 68 C604 98 606 128 582 166 C548 220 466 246 386 240 Z" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- far ear -->\n\
+    <circle cx="262" cy="80" r="38" fill="#6f6f7a" stroke="#2a2430" stroke-width="6"/>\n\
+    <circle cx="264" cy="84" r="22" fill="#d68a9e"/>\n\
+    <!-- body -->\n\
+    <path d="M32 208 C55 150 105 92 180 86 C245 80 290 95 330 120 C372 146 402 185 398 232 C394 275 350 300 300 302 C240 304 170 290 120 262 C90 246 60 232 32 208 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>\n\
+    <!-- belly -->\n\
+    <path d="M135 258 C190 278 250 286 300 284 C340 281 368 262 384 236 C388 272 348 297 298 298 C240 299 176 286 132 260 Z" fill="#ded8ca"/>\n\
+    <!-- muzzle patch -->\n\
+    <path d="M42 206 C60 190 92 186 114 198 C132 210 134 230 118 240 C96 250 62 240 42 210 Z" fill="#ded8ca"/>\n\
+    <!-- haunch -->\n\
+    <ellipse cx="345" cy="255" rx="48" ry="40" fill="#82828e" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- kicked-back hind leg -->\n\
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#2a2430" stroke-width="24" fill="none"/>\n\
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#82828e" stroke-width="13" fill="none"/>\n\
+    <ellipse cx="465" cy="352" rx="27" ry="12" transform="rotate(18 465 352)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>\n\
+    <g stroke="#2a2430" stroke-width="4" fill="none">\n\
+      <path d="M479 346 L492 352"/>\n\
+      <path d="M478 360 L492 356"/>\n\
+    </g>\n\
+    <!-- tiptoe hind leg -->\n\
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#2a2430" stroke-width="22" fill="none"/>\n\
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#8e8e98" stroke-width="12" fill="none"/>\n\
+    <ellipse cx="248" cy="366" rx="22" ry="10" transform="rotate(-8 248 366)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>\n\
+    <g stroke="#2a2430" stroke-width="4" fill="none">\n\
+      <path d="M238 361 L226 363"/>\n\
+      <path d="M238 372 L226 369"/>\n\
+    </g>\n\
+    <!-- tucked front paw -->\n\
+    <circle cx="172" cy="290" r="11" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- reaching front arm -->\n\
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#2a2430" stroke-width="20" fill="none"/>\n\
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#8e8e98" stroke-width="11" fill="none"/>\n\
+    <ellipse cx="58" cy="336" rx="15" ry="11" transform="rotate(-35 58 336)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>\n\
+    <g stroke="#2a2430" stroke-width="4" fill="none">\n\
+      <path d="M52 344 L44 350"/>\n\
+      <path d="M60 347 L56 355"/>\n\
+    </g>\n\
+    <!-- near ear -->\n\
+    <circle cx="200" cy="58" r="48" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>\n\
+    <circle cx="202" cy="62" r="30" fill="#f2a9b8"/>\n\
+    <!-- back googly eye -->\n\
+    <circle cx="205" cy="150" r="26" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>\n\
+    <circle cx="195" cy="160" r="10" fill="#2a2430"/>\n\
+    <circle cx="191" cy="156" r="3" fill="#ffffff"/>\n\
+    <path d="M179 150 A26 26 0 0 1 231 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- front googly eye -->\n\
+    <circle cx="150" cy="150" r="32" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>\n\
+    <circle cx="137" cy="163" r="12" fill="#2a2430"/>\n\
+    <circle cx="132" cy="157" r="3.5" fill="#ffffff"/>\n\
+    <path d="M118 150 A32 32 0 0 1 182 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- sneaky brows -->\n\
+    <path d="M112 130 C136 121 162 119 182 126" stroke="#2a2430" stroke-width="7" fill="none"/>\n\
+    <path d="M190 128 C204 123 220 124 230 130" stroke="#2a2430" stroke-width="6" fill="none"/>\n\
+    <!-- smirk -->\n\
+    <path d="M48 214 C74 230 100 236 124 229 C132 226 136 219 132 213" stroke="#2a2430" stroke-width="5" fill="none"/>\n\
+    <!-- buck teeth -->\n\
+    <path d="M58 222 L76 222 L76 234 Q76 240 71 240 L63 240 Q58 240 58 234 Z" fill="#ffffff" stroke="#2a2430" stroke-width="4"/>\n\
+    <path d="M67 222 L67 240" stroke="#2a2430" stroke-width="3"/>\n\
+    <!-- nose -->\n\
+    <circle cx="34" cy="205" r="12" fill="#e06f8b" stroke="#2a2430" stroke-width="5"/>\n\
+    <!-- whiskers -->\n\
+    <g stroke="#2a2430" stroke-width="4" fill="none">\n\
+      <path d="M74 208 L10 188"/>\n\
+      <path d="M74 214 L8 214"/>\n\
+      <path d="M76 222 L14 244"/>\n\
+    </g>\n\
+  </g>\n\
+</svg>';
+
+SVGS["2026-07-27-subway-rat/claude-sonnet-5.svg"] =
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">\n\
+<g transform="matrix(1,0,0,1.07658,0,-41.829)">\n\
+  <!-- shadow -->\n\
+  <ellipse cx="470" cy="478" rx="340" ry="16" fill="#000000" opacity="0.18"/>\n\
+\n\
+  <!-- motion lines -->\n\
+  <g fill="none" stroke="#3a3a42" stroke-linecap="round" opacity="0.5">\n\
+    <path d="M35 150 Q 110 140 175 158" stroke-width="7"/>\n\
+    <path d="M25 205 Q 100 200 165 212" stroke-width="6"/>\n\
+    <path d="M45 258 Q 110 256 168 262" stroke-width="5"/>\n\
+  </g>\n\
+\n\
+  <!-- tail -->\n\
+  <path d="M275 230 C 190 190 140 140 90 110 C 65 96 45 90 25 78\n\
+           L 30 86 C 50 98 75 108 100 128 C 150 160 200 205 275 270 Z"\n\
+        fill="#a98a8f" stroke="#000000" stroke-width="7" stroke-linejoin="round"/>\n\
+\n\
+  <!-- back (far) leg -->\n\
+  <g>\n\
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#000000" stroke-width="52" stroke-linecap="round"/>\n\
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#4d4d57" stroke-width="42" stroke-linecap="round"/>\n\
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#000000" stroke-width="40" stroke-linecap="round"/>\n\
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#4d4d57" stroke-width="30" stroke-linecap="round"/>\n\
+    <ellipse cx="248" cy="432" rx="40" ry="22" transform="rotate(-15 248 432)" fill="#4d4d57" stroke="#000000" stroke-width="6"/>\n\
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">\n\
+      <line x1="215" y1="435" x2="195" y2="425"/>\n\
+      <line x1="218" y1="448" x2="198" y2="448"/>\n\
+      <line x1="222" y1="460" x2="204" y2="466"/>\n\
+    </g>\n\
+  </g>\n\
+\n\
+  <!-- body -->\n\
+  <path d="M560 235 C 520 150 500 90 460 65 C 420 45 370 55 330 90\n\
+           C 290 125 275 175 285 225 C 260 260 250 300 290 340\n\
+           C 330 380 380 385 430 375 C 470 368 500 350 520 320\n\
+           C 545 300 555 265 560 235 Z"\n\
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>\n\
+\n\
+  <!-- belly patch -->\n\
+  <ellipse cx="425" cy="322" rx="88" ry="44" fill="#9a9aa4" opacity="0.85"/>\n\
+\n\
+  <!-- grime spots -->\n\
+  <g fill="#2f2f36" opacity="0.2">\n\
+    <ellipse cx="360" cy="150" rx="14" ry="10"/>\n\
+    <ellipse cx="430" cy="120" rx="10" ry="8"/>\n\
+    <ellipse cx="500" cy="200" rx="12" ry="9"/>\n\
+  </g>\n\
+\n\
+  <!-- front (near) leg, tiptoe -->\n\
+  <g>\n\
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#000000" stroke-width="50" stroke-linecap="round"/>\n\
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#6b6b76" stroke-width="40" stroke-linecap="round"/>\n\
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#000000" stroke-width="38" stroke-linecap="round"/>\n\
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#6b6b76" stroke-width="28" stroke-linecap="round"/>\n\
+    <ellipse cx="638" cy="452" rx="32" ry="16" transform="rotate(-25 638 452)" fill="#c99aa0" stroke="#000000" stroke-width="6"/>\n\
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">\n\
+      <line x1="660" y1="445" x2="678" y2="435"/>\n\
+      <line x1="663" y1="456" x2="682" y2="452"/>\n\
+      <line x1="660" y1="466" x2="676" y2="468"/>\n\
+    </g>\n\
+  </g>\n\
+\n\
+  <!-- head -->\n\
+  <path d="M555 230 C 620 195 700 195 745 225 C 800 250 845 270 880 300\n\
+           C 850 315 810 325 770 330 C 730 335 690 330 655 322\n\
+           C 630 316 610 310 590 295 C 575 280 563 255 555 230 Z"\n\
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>\n\
+\n\
+  <!-- far ear -->\n\
+  <ellipse cx="612" cy="178" rx="32" ry="42" transform="rotate(-20 612 178)" fill="#4a4a54" stroke="#000000" stroke-width="6"/>\n\
+\n\
+  <!-- near ear -->\n\
+  <ellipse cx="668" cy="163" rx="40" ry="52" transform="rotate(-15 668 163)" fill="#5c5c66" stroke="#000000" stroke-width="7"/>\n\
+  <ellipse cx="668" cy="170" rx="22" ry="32" transform="rotate(-15 668 170)" fill="#d99aa3"/>\n\
+\n\
+  <!-- small second googly eye peeking above -->\n\
+  <circle cx="633" cy="196" r="22" fill="#ffffff" stroke="#000000" stroke-width="5"/>\n\
+  <circle cx="626" cy="201" r="10" fill="#000000"/>\n\
+  <circle cx="622" cy="197" r="3" fill="#ffffff"/>\n\
+\n\
+  <!-- main googly eye -->\n\
+  <circle cx="702" cy="248" r="42" fill="#ffffff" stroke="#000000" stroke-width="6"/>\n\
+  <circle cx="686" cy="254" r="19" fill="#000000"/>\n\
+  <circle cx="679" cy="246" r="6" fill="#ffffff"/>\n\
+\n\
+  <!-- nose -->\n\
+  <ellipse cx="876" cy="298" rx="10" ry="8" fill="#000000"/>\n\
+\n\
+  <!-- whiskers -->\n\
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round">\n\
+    <path d="M845 282 L 893 258" fill="none"/>\n\
+    <path d="M852 294 L 897 290" fill="none"/>\n\
+    <path d="M847 305 L 892 320" fill="none"/>\n\
+  </g>\n\
+\n\
+  <!-- mouth -->\n\
+  <path d="M858 308 Q 815 330 772 326" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round"/>\n\
+  <!-- buck tooth -->\n\
+  <rect x="700" y="320" width="13" height="20" rx="4" fill="#f5f0e6" stroke="#000000" stroke-width="4"/>\n\
+\n\
+  <!-- pizza slice held near mouth -->\n\
+  <g>\n\
+    <path d="M765 322 L 700 292 L 690 405 Z" fill="#f4b942" stroke="#000000" stroke-width="6" stroke-linejoin="round"/>\n\
+    <path d="M753 322 L 705 302 L 700 385 Z" fill="#c0392b" stroke="none"/>\n\
+    <path d="M700 292 Q 693 350 690 405" fill="none" stroke="#e8d9a0" stroke-width="8" stroke-linecap="round"/>\n\
+    <circle cx="725" cy="330" r="7" fill="#7a2020"/>\n\
+    <circle cx="715" cy="360" r="6" fill="#7a2020"/>\n\
+    <circle cx="735" cy="365" r="6" fill="#7a2020"/>\n\
+  </g>\n\
+</g>\n\
+</svg>';
+
+SVGS["2026-07-27-hairball/claude-fable-5.svg"] =
+'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">\n\
+  <defs>\n\
+    <radialGradient id="hbCore" cx="50%" cy="48%" r="60%">\n\
+      <stop offset="0%" stop-color="#4a3826" stop-opacity="0.55"/>\n\
+      <stop offset="60%" stop-color="#3a2c1e" stop-opacity="0.4"/>\n\
+      <stop offset="100%" stop-color="#2b2015" stop-opacity="0.05"/>\n\
+    </radialGradient>\n\
+  </defs>\n\
+\n\
+  <!-- soft matted core -->\n\
+  <path d="M200,45 C265,40 320,75 335,120 C352,160 340,205 300,235 C260,262 175,268 125,245 C82,225 55,190 60,145 C65,98 130,50 200,45 Z" fill="url(#hbCore)"/>\n\
+  <path d="M205,75 C255,72 295,100 305,132 C316,164 300,198 268,218 C235,238 170,240 133,222 C100,205 84,178 90,145 C97,110 150,78 205,75 Z" fill="#33271a" opacity="0.45"/>\n\
+\n\
+  <g fill="none" stroke-linecap="round">\n\
+    <!-- deep shadow strands -->\n\
+    <path d="M75,160 C60,110 120,60 190,62 C270,64 330,110 328,160 C326,215 255,250 185,246 C120,242 88,205 96,165 C104,125 160,100 215,108 C265,116 292,150 280,185 C268,218 210,232 165,218 C130,207 115,180 128,155" stroke="#241a10" stroke-width="4.5" opacity="0.9"/>\n\
+    <path d="M120,220 C80,195 70,140 105,100 C145,55 235,48 285,85 C330,118 340,175 305,212 C270,248 190,258 140,235 C105,218 95,185 115,158 C140,125 205,118 245,140 C280,160 285,198 255,215" stroke="#2b2013" stroke-width="4" opacity="0.85"/>\n\
+    <path d="M310,120 C330,165 300,215 245,232 C185,250 115,235 90,190 C68,150 90,100 140,80 C195,58 260,68 290,105 C315,138 305,180 265,198 C225,215 165,208 145,178 C128,150 148,120 185,115" stroke="#1f1710" stroke-width="3.8" opacity="0.85"/>\n\
+\n\
+    <!-- mid-tone tangle -->\n\
+    <path d="M95,130 C130,75 230,55 295,90 C345,118 350,180 310,215 C265,252 160,255 110,220 C70,190 75,140 120,115 C170,88 250,95 280,130 C305,160 290,200 245,212" stroke="#4d3a24" stroke-width="3.5" opacity="0.9"/>\n\
+    <path d="M160,60 C230,45 305,80 320,135 C333,185 295,230 235,242 C170,255 100,230 85,180 C72,135 110,92 165,85 C225,78 275,105 278,148 C280,190 230,215 185,205 C150,197 135,168 152,145" stroke="#5a4530" stroke-width="3.2" opacity="0.9"/>\n\
+    <path d="M85,190 C70,145 100,95 155,78 C220,58 300,80 322,130 C342,178 310,228 250,240 C195,251 130,238 108,200 C90,168 108,132 150,122 C200,110 250,128 258,162 C265,192 232,214 195,208" stroke="#66502f" stroke-width="3" opacity="0.85"/>\n\
+    <path d="M300,90 C335,130 335,190 292,222 C248,254 155,255 112,222 C72,192 70,135 108,105 C150,72 235,68 275,98 C310,124 312,168 278,192 C243,216 180,212 158,182" stroke="#584327" stroke-width="3" opacity="0.8"/>\n\
+    <path d="M140,240 C95,222 72,175 92,132 C115,84 195,62 255,78 C312,93 340,145 322,190 C305,232 240,252 185,242 C140,234 118,202 132,172 C148,138 205,128 240,148" stroke="#6e5638" stroke-width="2.8" opacity="0.85"/>\n\
+\n\
+    <!-- looping knots -->\n\
+    <path d="M170,120 C210,95 260,110 262,145 C264,178 220,195 185,182 C155,171 150,138 178,128 C205,118 235,132 232,155 C229,176 198,182 182,168" stroke="#3c2d1b" stroke-width="2.8" opacity="0.9"/>\n\
+    <path d="M225,105 C185,118 165,155 185,185 C205,214 255,212 272,182 C288,155 270,120 238,118 C210,116 195,140 205,160 C215,180 245,178 250,158" stroke="#523e26" stroke-width="2.5" opacity="0.85"/>\n\
+    <path d="M130,155 C118,190 145,222 185,225 C228,228 258,200 250,168 C243,140 205,128 178,142 C155,154 155,182 178,192" stroke="#493623" stroke-width="2.5" opacity="0.8"/>\n\
+    <path d="M245,195 C280,180 292,145 270,118 C246,90 195,88 168,112 C142,135 148,172 180,188" stroke="#2f2416" stroke-width="2.6" opacity="0.85"/>\n\
+    <path d="M150,100 C195,80 255,88 278,120 C300,150 288,190 250,205" stroke="#5f4a2e" stroke-width="2.4" opacity="0.8"/>\n\
+    <path d="M110,175 C105,140 135,108 180,100 C230,91 280,110 292,145" stroke="#403019" stroke-width="2.4" opacity="0.8"/>\n\
+    <path d="M205,230 C160,228 125,205 122,170 C119,135 155,110 200,110" stroke="#6a5233" stroke-width="2.2" opacity="0.75"/>\n\
+    <path d="M175,145 C200,132 230,140 235,160 C240,180 218,193 197,187 C178,182 172,163 185,153" stroke="#2a1f12" stroke-width="2.2" opacity="0.9"/>\n\
+\n\
+    <!-- gray interloper strands -->\n\
+    <path d="M100,120 C150,70 250,62 305,102 C345,132 348,185 312,215" stroke="#7d7468" stroke-width="1.8" opacity="0.75"/>\n\
+    <path d="M320,160 C315,205 265,238 205,240 C145,242 95,215 88,175 C82,140 118,108 165,102" stroke="#8a8072" stroke-width="1.6" opacity="0.7"/>\n\
+    <path d="M155,215 C120,200 105,168 122,140 C142,108 200,98 240,115 C275,130 285,165 262,188" stroke="#6f6759" stroke-width="1.5" opacity="0.7"/>\n\
+\n\
+    <!-- light highlight strands -->\n\
+    <path d="M120,140 C150,95 230,80 285,105 C325,124 335,168 305,198" stroke="#8f7350" stroke-width="1.8" opacity="0.85"/>\n\
+    <path d="M280,210 C235,240 160,240 125,210 C95,185 95,145 128,124" stroke="#9a7d57" stroke-width="1.6" opacity="0.8"/>\n\
+    <path d="M165,90 C220,72 280,88 300,125 C318,158 302,198 265,215" stroke="#a98a60" stroke-width="1.4" opacity="0.8"/>\n\
+    <path d="M145,190 C130,162 145,130 180,120 C220,109 262,124 270,152" stroke="#b3925f" stroke-width="1.2" opacity="0.75"/>\n\
+    <path d="M190,205 C158,196 142,172 152,150 C163,126 200,118 228,130" stroke="#9c8058" stroke-width="1.2" opacity="0.7"/>\n\
+    <path d="M235,95 C275,105 300,135 295,168 C290,200 255,220 218,218" stroke="#8a6d47" stroke-width="1.4" opacity="0.75"/>\n\
+\n\
+    <!-- escaping wisps: left -->\n\
+    <path d="M95,150 C60,140 30,150 6,132 C22,150 45,158 70,162" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>\n\
+    <path d="M100,185 C70,198 40,196 8,214 C40,210 72,214 98,202" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>\n\
+    <path d="M92,120 C65,102 40,100 12,80 C38,104 62,112 88,128" stroke="#5f4a2e" stroke-width="1.5" opacity="0.8"/>\n\
+    <path d="M105,205 C80,225 55,228 30,248 C60,238 88,232 110,215" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>\n\
+\n\
+    <!-- escaping wisps: right -->\n\
+    <path d="M310,140 C340,128 365,132 394,112 C368,136 342,144 315,150" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>\n\
+    <path d="M312,180 C345,188 368,184 395,200 C365,196 338,198 310,192" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>\n\
+    <path d="M305,115 C332,98 358,96 388,74 C360,100 335,110 308,124" stroke="#7d7468" stroke-width="1.4" opacity="0.75"/>\n\
+    <path d="M300,210 C328,228 355,232 382,252 C352,242 322,236 298,220" stroke="#5a4530" stroke-width="1.4" opacity="0.8"/>\n\
+\n\
+    <!-- escaping wisps: top -->\n\
+    <path d="M180,70 C165,45 150,30 128,8 C150,32 168,52 182,75" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>\n\
+    <path d="M215,65 C222,42 235,25 240,6 C230,28 220,46 212,68" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>\n\
+    <path d="M255,75 C275,52 295,40 318,20 C295,44 275,64 258,80" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>\n\
+    <path d="M150,80 C135,58 112,44 85,30 C112,50 132,68 148,85" stroke="#8a8072" stroke-width="1.2" opacity="0.7"/>\n\
+\n\
+    <!-- escaping wisps: bottom -->\n\
+    <path d="M170,242 C155,262 135,275 108,292 C138,275 158,260 175,244" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>\n\
+    <path d="M215,246 C218,266 230,280 245,294 C232,278 222,262 218,246" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>\n\
+    <path d="M255,238 C275,255 295,262 322,272 C296,260 275,250 258,236" stroke="#5f4a2e" stroke-width="1.4" opacity="0.75"/>\n\
+    <path d="M135,232 C118,248 100,256 78,264 C100,254 120,244 138,230" stroke="#7d7468" stroke-width="1.2" opacity="0.7"/>\n\
+\n\
+    <!-- fine surface fuzz -->\n\
+    <path d="M160,110 C185,102 212,104 230,115" stroke="#261c10" stroke-width="1" opacity="0.8"/>\n\
+    <path d="M145,170 C160,185 185,192 210,188" stroke="#261c10" stroke-width="1" opacity="0.8"/>\n\
+    <path d="M235,170 C252,158 258,140 250,124" stroke="#261c10" stroke-width="1" opacity="0.75"/>\n\
+    <path d="M175,155 C190,148 208,150 218,160" stroke="#b89a6b" stroke-width="0.9" opacity="0.7"/>\n\
+    <path d="M195,125 C212,120 228,124 238,135" stroke="#b89a6b" stroke-width="0.9" opacity="0.65"/>\n\
+    <path d="M150,135 C160,125 175,120 190,122" stroke="#a2first" stroke-width="0" opacity="0"/>\n\
+    <path d="M152,138 C162,127 177,122 192,124" stroke="#a28457" stroke-width="0.9" opacity="0.65"/>\n\
+  </g>\n\
+</svg>';
+
+/* ==========================================================================
+   HELPERS
+   ========================================================================== */
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function byId(list, id) {
+  for (var i = 0; i < (list || []).length; i++) if (list[i].id === id) return list[i];
+  return null;
+}
+function gradeOf(id) { return byId(TAXONOMY.grades, id) || { label: id, description: '', rank: null }; }
+function modelOf(id) { return byId(TAXONOMY.models, id) || { label: id, vendor: '' }; }
+function maxRank() {
+  var m = 0; TAXONOMY.grades.forEach(function (g) { if (g.rank > m) m = g.rank; }); return m;
+}
+var MONTHS = ['January','February','March','April','May','June',
+              'July','August','September','October','November','December'];
+/* "2026-07-27" -> "27 July 2026" (the period register) */
+function fmtDate(iso) {
+  if (!iso) return '';
+  var p = String(iso).split('-');
+  if (p.length !== 3) return iso;
+  return String(parseInt(p[2], 10)) + ' ' + (MONTHS[parseInt(p[1], 10) - 1] || p[1]) + ' ' + p[0];
+}
+/* PROCESS, plainly stated, from the honest turn count (de-themed from the
+   "attendance" idiom — owner, 2026-07-28: labels describe what is depicted) */
+function attendance(gen) {
+  if (!gen) return '—';
+  if (gen.mode === 'refined') {
+    var n = gen.prompt_count || 2;
+    return 'refined (' + n + ' prompt' + (n === 1 ? '' : 's') + ')';
+  }
+  return 'one-shot (1 prompt)';
+}
+/* an annotation is a bare value id or {value, note}; absent = skipped */
+function annOf(resp, axisId) {
+  var a = (resp.annotations || {})[axisId];
+  if (a == null) return null;
+  return typeof a === 'string' ? { value: a } : a;
+}
+
+/* Every inlined copy of an SVG gets its ids namespaced, per PLAN-RECORD §4:
+   the lifted art takes o_ / f_ / s_ / h_ by response, the strip thumbnails
+   take the same prefix + t_. Artwork paths are never touched. */
+function svgInst(svg, pfx) {
+  return svg
+    .replace(/^\s*<\?xml[^>]*\?>\s*/i, '')          /* strip any XML prolog */
+    .replace(/\sid="([^"]+)"/g, ' id="' + pfx + '$1"')
+    .replace(/url\(#([^)]+)\)/g, 'url(#' + pfx + '$1)')
+    .replace(/(\sxlink:href="|\shref=")#([^"]+)"/g, '$1#' + pfx + '$2"');
+}
+var PFX = { 'claude-opus-5': 'o_', 'claude-fable-5': 'f_', 'claude-sonnet-5': 's_' };
+function prefixFor(entry, resp) {
+  return entry.id === '2026-07-27-hairball' ? 'h_' : (PFX[resp.model] || 'x_');
+}
+
+/* ---- the red pencil ------------------------------------------------------
+   Each mark takes its own rotation jitter and one of four feTurbulence
+   displacement filters, so no two marks sit identically. */
+var markSeq = 0;
+var JITTER = [-1.7, 1.3, -0.8, 2.0, -1.4, 0.9, -2.1, 1.6];
+function mark(word, size, extra) {
+  markSeq++;
+  var jit = JITTER[markSeq % JITTER.length];
+  var wv = 'rcWv' + (markSeq % 4);
+  return '<span class="rc-mark ' + (size || 'sm') + (extra ? ' ' + extra : '') +
+    '" style="--jit:' + jit + 'deg; filter:url(#' + wv + ')">' +
+    '<span class="rc-mark-word">' + esc(word) + '</span></span>';
+}
+/* the GENERAL AVERAGE mark: large, with the teacher's double underline */
+/* underlines removed from the big mark (owner, 2026-07-28) — the grade
+   stands alone in the footer row */
+function markBig(word) {
+  markSeq++;
+  var jit = JITTER[markSeq % JITTER.length] * 0.7;
+  var wv = 'rcWv' + (markSeq % 4);
+  return '<span class="rc-mark lg" style="--jit:' + jit + 'deg; filter:url(#' + wv + ')">' +
+    '<span class="rc-mark-word">' + esc(word) + '</span></span>';
+}
+/* the superseded mark: struck through in the same red pencil */
+function markStruck(word) {
+  markSeq++;
+  var jit = JITTER[markSeq % JITTER.length];
+  var wv = 'rcWv' + (markSeq % 4);
+  return '<span class="rc-mark old" style="--jit:' + jit + 'deg; filter:url(#' + wv + ')">' +
+    '<span class="rc-mark-word">' + esc(word) +
+    '<svg class="rc-strike" viewBox="0 0 120 10" preserveAspectRatio="none" aria-hidden="true">' +
+    '<path d="M1.5 6.4 C 36 3.2, 82 8.2, 118.5 4.4"/>' +
+    '</svg></span></span>';
+}
+
+/* ==========================================================================
+   THE CARD
+   ========================================================================== */
+/* the vaporwave floor: a black-and-white checkerboard projected in
+   perspective toward a center vanishing point. Rows are spaced on a
+   geometric progression (each ~0.7× the previous), which is what sells the
+   "extending off into the horizon" read; a black fade swallows the last
+   rows so the horizon dissolves instead of aliasing. White cells only —
+   the plate's black IS the black squares. */
+function floorSVG() {
+  var W = 600, H = 240;            /* viewBox; slice-cropped to the plate */
+  var VPX = W / 2, HOR = 96;       /* vanishing point x, horizon y (40%) */
+  var ROWS = 9, R = 0.7, CW = 104; /* rows, row shrink ratio, bottom cell width
+                                      (widened 68 → 104: squarer tiles) */
+  var ts = [1];
+  for (var i = 1; i <= ROWS; i++) ts.push(ts[i - 1] * R);
+  function px(j, t) { return (VPX + j * CW * t).toFixed(1); }
+  function py(t) { return (HOR + t * (H - HOR)).toFixed(1); }
+  var cells = '';
+  for (var r = 0; r < ROWS; r++) {
+    for (var j = -8; j < 8; j++) {
+      if (((r + j) % 2 + 2) % 2 === 0) continue;   /* black cells = the void */
+      var t0 = ts[r], t1 = ts[r + 1];
+      cells += '<polygon points="' +
+        px(j, t0) + ',' + py(t0) + ' ' + px(j + 1, t0) + ',' + py(t0) + ' ' +
+        px(j + 1, t1) + ',' + py(t1) + ' ' + px(j, t1) + ',' + py(t1) +
+        '" fill="#e2ded2"/>';
+    }
+  }
+  return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+    'preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+    '<defs>' +
+    /* the sky: deep vaporwave navy, darkest at the top, warming faintly
+       toward the horizon line */
+    '<linearGradient id="rcFloorSky" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#0a0e24"/>' +
+    '<stop offset="0.8" stop-color="#141b44"/>' +
+    '<stop offset="1" stop-color="#1c2456"/>' +
+    '</linearGradient>' +
+    /* the distance fade: far rows dissolve into the horizon's navy */
+    '<linearGradient id="rcFloorFade" x1="0" y1="0" x2="0" y2="1">' +
+    '<stop offset="0" stop-color="#1c2456"/>' +
+    '<stop offset="0.55" stop-color="#151b40" stop-opacity="0.55"/>' +
+    '<stop offset="1" stop-color="#101010" stop-opacity="0"/>' +
+    '</linearGradient></defs>' +
+    '<rect x="0" y="0" width="' + W + '" height="' + HOR + '" fill="url(#rcFloorSky)"/>' +
+    cells +
+    '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" fill="url(#rcFloorFade)"/>' +
+    '</svg>';
+}
+
+function fillHTML(label, value, half) {
+  return '<div class="rc-fill' + (half ? ' half' : '') + '">' +
+    '<span class="rc-fill-l">' + esc(label) + '</span>' +
+    '<span class="rc-fill-v">' + value + '</span></div>';
+}
+
+function subjectsHTML(resp) {
+  var rows = '';
+  TAXONOMY.axes.forEach(function (axis) {
+    var a = annOf(resp, axis.id);
+    var markCell, remark;
+    if (!a) {
+      /* skipped axis — printed, muted, never in the hand */
+      markCell = '<span class="rc-skip">&mdash; &middot; not assessed</span>';
+      remark = '<span class="rc-skip" style="letter-spacing:.06em">&nbsp;</span>';
+    } else {
+      var v = byId(axis.values, a.value);
+      var vLabel = v ? v.label : a.value;           /* unknown values still render */
+      markCell = mark(vLabel, 'sm');
+      /* the annotator's note when present; otherwise the taxonomy value's own
+         description, set in printed italic — the hand never claims a remark
+         the curator didn't write. */
+      remark = a.note
+        ? '<span class="rc-remark is-note">' + esc(a.note) + '</span>'
+        : '<span class="rc-remark">' + esc(v ? v.description : '') + '</span>';
+    }
+    rows += '<tr>' +
+      '<td><span class="rc-subj-name">' + esc(axis.label) + '</span></td>' +
+      '<td>' + markCell + '</td></tr>';
+  });
+  /* NOTES column removed (owner, 2026-07-28) — two columns: axis, verdict */
+  return '<table class="rc-subj"><thead><tr>' +
+    '<th style="width:52%">Axis</th>' +
+    '<th style="width:48%">Verdict</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody>' + averageFootHTML(resp) + '</table>';
+}
+
+/* the overall grade as the table's footer row (was a separate STANDING
+   block). grade_history and the marked/superseded lines are NOT rendered —
+   owner, 2026-07-28. */
+function averageFootHTML(resp) {
+  var g = gradeOf(resp.grade);
+  /* same mark size and row height as the axis rows (owner, 2026-07-28) */
+  return '<tfoot><tr>' +
+    '<td><span class="rc-avg-l">Overall grade</span></td>' +
+    '<td>' + mark(g.label, 'sm') + '</td>' +
+    '</tr></tfoot>';
+}
+
+function altsHTML(entry, curIdx) {
+  if (!entry.responses || entry.responses.length < 2) return '';   /* strip absent */
+  var h = '<div class="rc-alts">';
+  entry.responses.forEach(function (r, i) {
+    var m = modelOf(r.model);
+    var g = gradeOf(r.grade);
+    h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
+      '" data-resp="' + i + '">' +
+      '<span class="rc-alt-art">' +
+        svgInst(SVGS[entry.id + '/' + r.file], prefixFor(entry, r) + 't_') +
+      '</span>' +
+      '<span class="rc-alt-cap">' + esc(m.label) +
+        '<span class="rc-alt-grade">' + esc(g.label) + '</span>' +
+      '</span></button>';
+  });
+  return h + '</div>';
+}
+
+function cardHTML(entry, resp, curIdx, withStrip) {
+  var m = modelOf(resp.model);
+  var h = '';
+
+  /* --- masthead (school-district title + rule removed for now — owner,
+     2026-07-28; the item title leads the card) -------------------------- */
+  h += '<header class="rc-block rc-masthead">' +
+    '<div class="rc-item">' + esc(entry.title) + '</div></header>';
+
+  /* --- the artwork plate — the selected response on black, with the info
+     lines as a single column INSIDE the plate (owner, 2026-07-28; frees
+     vertical room for the art). Three lines only — the entry's created
+     date is dropped as the less relevant one; PROMPTED is the date the
+     prompt was sent (the response date). Art keeps its own prefix (c_…)
+     so it never collides with the stage copy or the strip thumbnails. ---- */
+  h += '<div class="rc-block rc-o-fills rc-fillsline">' +
+      fillHTML('Model', esc(m.label)) +
+      fillHTML('Prompted', esc(fmtDate(resp.date))) +
+      fillHTML('Process', esc(attendance(resp.generation))) +
+    '</div>' +
+    '<div class="rc-block rc-o-plate rc-plate">' +
+      floorSVG() +
+      '<div class="rc-plate-art">' +
+        svgInst(SVGS[entry.id + '/' + resp.file], 'c_' + prefixFor(entry, resp)) +
+      '</div>' +
+    '</div>';
+
+  /* --- THE PROMPT — verbatim (item constant) ----------------------------- */
+  h += '<div class="rc-block rc-o-asnhead rc-head">The prompt</div>' +
+    '<div class="rc-block rc-o-asn rc-assign"><p>&ldquo;' + esc(entry.prompt) + '&rdquo;</p></div>';
+
+  /* --- the subjects (GENERAL AVERAGE folded in as the table's footer row —
+     the separate STANDING section removed; owner, 2026-07-28) ------------ */
+  h += '<div class="rc-block rc-o-subjhead rc-head">Annotations</div>' +
+    '<div class="rc-block rc-o-subj">' + subjectsHTML(resp) + '</div>';
+
+  /* --- promotion + curator's signature removed for now (owner, 2026-07-28) */
+
+  /* --- OTHER PUPILS, SAME ASSIGNMENT (mobile: inside the peek detent) ---- */
+  if (withStrip) {
+    var alts = altsHTML(entry, curIdx);
+    if (alts) {
+      h += '<div class="rc-block rc-o-altshead rc-head">Other models, same prompt</div>' +
+        '<div class="rc-block rc-o-alts">' + alts + '</div>';
+    }
+  }
+
+  /* --- provenance fine print along the bottom edge ---------------------- */
+  var dl = '../items/' + entry.id + '/' + resp.file;
+  var transcript = resp.transcript_url || resp.transcript;
+  /* provenance notes paragraph removed for now (owner, 2026-07-28) —
+     the download link + form number keep the bottom edge */
+  h += '<div class="rc-block rc-o-prov rc-prov">' +
+    '<div class="rc-formline">' +
+      '<span><a class="rc-dl" href="' + esc(dl) + '" download>Download SVG &#10515;</a>' +
+      (transcript ? ' <a class="rc-dl" href="' + esc(transcript) + '">Transcript &rarr;</a>' : '') +
+      '</span>' +
+      '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
+    '</div></div>';
+
+  return h;
+}
+
+/* ==========================================================================
+   STATE + WIRING
+   ========================================================================== */
+var stageEl  = document.getElementById('stage');
+var artEl    = document.getElementById('art');
+var stripEl  = document.getElementById('strip');
+var cardEl   = document.getElementById('card');
+var scrollEl = document.getElementById('scroll');
+var handleEl = document.getElementById('handle');
+var handleCap = document.getElementById('handle-cap');
+var hintEl   = document.getElementById('hint');
+
+var curEntry = 0, curResp = 0, detent = 'peek';
+
+function isMobile() { return window.matchMedia('(max-width: 768px)').matches; }
+
+function render(animate) {
+  var entry = ENTRIES[curEntry];
+  var resp  = entry.responses[curResp];
+  var mob   = isMobile();
+  markSeq = 0;
+
+  artEl.innerHTML = '<div class="rc-art-frame">' +
+    svgInst(SVGS[entry.id + '/' + resp.file], prefixFor(entry, resp)) + '</div>';
+  /* the strip lives INSIDE the card on every form factor now (owner,
+     2026-07-28): on desktop it sits below the annotations table, above the
+     download/no. foot (DOM order); on mobile the order reshuffle still
+     lifts it into the peek detent. The old stage strip stays empty. */
+  scrollEl.innerHTML = cardHTML(entry, resp, curResp, true);
+  stripEl.innerHTML = '';
+
+  hintEl.innerHTML = entry.responses.length > 1
+    ? 'click another model in the strip &mdash; the prompt never changes'
+    : 'one response to this prompt &mdash; the strip is absent';
+
+  if (animate !== false) {
+    cardEl.classList.remove('is-enter');
+    void cardEl.offsetWidth;
+    cardEl.classList.add('is-enter');
+    var f = artEl.firstChild;
+    f.classList.remove('is-enter'); void f.offsetWidth; f.classList.add('is-enter');
+  }
+  fitStage();
+  measurePeek();
+}
+
+/* the phone stage is the viewport MINUS whatever mockup chrome sits above it,
+   so the sheet's peek detent always lands inside the fold */
+function fitStage() {
+  if (!isMobile()) { stageEl.style.height = ''; return; }
+  stageEl.style.height = '';
+  var top = stageEl.getBoundingClientRect().top + window.pageYOffset;
+  stageEl.style.height = Math.max(480, window.innerHeight - top - 4) + 'px';
+}
+
+/* the peek detent is MEASURED from the alternatives strip (or the fill-in
+   lines when the strip is absent — STANDING is a table row now, full-only),
+   never guessed */
+function measurePeek() {
+  if (!isMobile()) return;
+  var anchor = scrollEl.querySelector('.rc-o-alts') || scrollEl.querySelector('.rc-o-fills');
+  if (!anchor) return;
+  var top = cardEl.getBoundingClientRect().top;
+  var h = anchor.getBoundingClientRect().bottom - top + 22;
+  cardEl.style.setProperty('--peek', Math.round(h) + 'px');
+}
+
+function setDetent(d, quiet) {
+  detent = d;
+  cardEl.classList.toggle('is-full', d === 'full');
+  cardEl.classList.toggle('is-peek', d !== 'full');
+  handleCap.textContent = d === 'full' ? 'tap to collapse' : 'pull up for the full report';
+  if (!quiet && d === 'peek') scrollEl.scrollTop = 0;
+}
+
+handleEl.addEventListener('click', function () {
+  setDetent(detent === 'full' ? 'peek' : 'full');
+});
+
+/* flip-through: the strip swaps the lifted SVG in place and re-renders the
+   per-response fields. The assignment block is rebuilt identically. */
+function flipHandler(e) {
+  var b = e.target.closest ? e.target.closest('.rc-alt') : null;
+  if (!b) return;
+  var i = parseInt(b.getAttribute('data-resp'), 10);
+  if (isNaN(i) || i === curResp) return;
+  curResp = i;
+  render(true);
+}
+scrollEl.addEventListener('click', flipHandler);
+stripEl.addEventListener('click', flipHandler);
+
+/* horizontal swipe on the art zone (mobile), ≥40px */
+(function () {
+  var x0 = null, y0 = null;
+  artEl.addEventListener('touchstart', function (e) {
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+  }, { passive: true });
+  artEl.addEventListener('touchend', function (e) {
+    if (x0 == null) return;
+    var t = e.changedTouches[0];
+    var dx = t.clientX - x0, dy = t.clientY - y0;
+    x0 = null;
+    if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+    var n = ENTRIES[curEntry].responses.length;
+    if (n < 2) return;
+    curResp = (curResp + (dx < 0 ? 1 : n - 1)) % n;
+    render(true);
+  }, { passive: true });
+})();
+
+/* the item switcher */
+document.getElementById('switch').addEventListener('click', function (e) {
+  var b = e.target.closest ? e.target.closest('button') : null;
+  if (!b) return;
+  var i = parseInt(b.getAttribute('data-i'), 10);
+  if (isNaN(i) || i === curEntry) return;
+  curEntry = i; curResp = 0;
+  Array.prototype.forEach.call(this.querySelectorAll('button'), function (x) {
+    x.classList.toggle('is-on', x === b);
+  });
+  render(true);
+});
+
+/* crossing the 768px breakpoint moves the strip between stage and sheet */
+var wasMobile = isMobile();
+window.addEventListener('resize', function () {
+  var now = isMobile();
+  if (now !== wasMobile) { wasMobile = now; render(false); setDetent(detent, true); }
+  else { fitStage(); measurePeek(); }
+});
+
+/* ?mock-state=peek|full — honored on load, and how the verification
+   screenshots drive the two mobile detents */
+(function boot() {
+  var q = (location.search || '').match(/mock-state=(peek|full)/);
+  render(true);
+  setDetent(q ? q[1] : 'peek', true);
+})();
+</script>
+</body>
+</html>

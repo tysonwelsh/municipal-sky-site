@@ -1,0 +1,1494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER mockup 7b — THE ACCESSION CARD</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 7b · THE ACCESSION CARD (full record, style B)
+   PLAN-RECORD §3 B + the §4 build contract. Standalone: inline CSS/JS/SVG,
+   no fetch, no webfonts, no PHP — works from file://.
+
+   The register: a museum registrar's object card. Buff index stock, pale-blue
+   feint rules, ONE red vertical margin rule, printed letterpress field labels
+   in small caps with dotted fill-in rules, everything else TYPED in Courier
+   on the rules. The overall grade is a red rubber stamp (mockup-3's
+   turbulence-displacement technique, re-registered from red pencil to rubber).
+   The verbatim prompt lives where a cataloguer would actually put it: on the
+   CARD'S REVERSE, reached by a dog-eared corner and a 3-D flip.
+
+   Every rubric string on this page — grade labels, grade descriptions, ranks,
+   axis labels, value labels, value descriptions, model labels and vendors —
+   resolves through the baked TAXONOMY object. Nothing is hardcoded.
+
+   Texture rule: the one feTurbulence on this page (the card's paper grain,
+   a data-URI) carries stitchTiles="stitch". No full-stage blend-mode layers.
+   ========================================================================== */
+:root {
+  --banner-h: 56px;
+
+  /* container palette (shared with the drawer) */
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --font-form: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+
+  /* the accession card's own stock */
+  --card-buff: #e7dcbe;
+  --card-buff-2: #efe6cc;
+  --card-edge: rgba(122, 100, 58, 0.55);
+  /* pale-blue horizontal feint rules, as a tiled data-URI rather than a
+     repeating-linear-gradient: Chrome drops a repeating gradient background
+     layer across the content area of a backface-visibility:hidden face once
+     it is rotated, so the card's REVERSE came up unruled. A tiled image
+     paints the whole box. (rule sits at 14.6px of each 18px band, i.e. just
+     under the typed baseline.) */
+  --feint-rules: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='8'%20height='18'%3E%3Crect%20x='0'%20y='14.6'%20width='8'%20height='0.9'%20fill='%236c92ba'%20fill-opacity='0.46'/%3E%3C/svg%3E");
+  --margin-red: rgba(178, 54, 42, 0.62);   /* the one red vertical rule */
+  --form-ink: #3d4a5b;                     /* letterpress printed form matter */
+  --type-ink: #2a241c;                     /* the typewriter's ink */
+  --type-ink-2: #4a4133;                   /* second-carbon / weaker strike */
+  --type-muted: #8b8271;
+  --stamp-red: #ae2c1e;
+
+  --rule: 18px;                            /* the card's ruling unit */
+
+  --grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='200'%20height='200'%3E%3Cfilter%20id='n'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.85'%20numOctaves='4'%20seed='17'%20stitchTiles='stitch'/%3E%3CfeColorMatrix%20type='matrix'%20values='0%200%200%200%200.32%200%200%200%200%200.26%200%200%200%200%200.15%200%200%200%200.26%200'/%3E%3C/filter%3E%3Crect%20width='200'%20height='200'%20filter='url(%23n)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  padding-top: var(--banner-h);
+  padding-bottom: 2.4rem;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------------- placeholder site banner (stands in for header.php) ------ */
+.mock-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--banner-h);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1rem;
+  background: #faf8f2;
+  border-bottom: 1px solid #ddd6c6;
+  font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+}
+.mock-banner .mb-note { color: #b0a890; letter-spacing: 0.1em; font-size: 0.62rem; }
+
+.mock-label {
+  max-width: 900px; margin: 0.85rem auto 0.6rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ==========================================================================
+   THE STAGE — simplified stand-in for the dimmed drawer (PLAN-RECORD §4).
+   Warm radial brown + vignette; the item is held ABOVE it, the card beside.
+   ========================================================================== */
+.ac-stage {
+  position: relative;
+  width: min(1180px, 96vw);
+  margin: 0.4rem auto 1rem;
+  min-height: min(760px, calc(100vh - var(--banner-h) - 96px));
+  display: flex; align-items: center;
+  gap: clamp(1rem, 3vw, 2.6rem);
+  padding: clamp(18px, 2.4vw, 30px);
+  overflow: hidden;
+  background:
+    radial-gradient(115% 85% at 32% 22%, rgba(255, 214, 150, 0.10) 0%, rgba(255, 214, 150, 0) 62%),
+    radial-gradient(120% 110% at 50% 45%, #3b2a17 0%, #23180c 52%, #120b04 100%);
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+.ac-stage::after {           /* vignette — a plain gradient, no blend modes */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 100% at 50% 45%, rgba(0,0,0,0) 42%, rgba(0,0,0,0.42) 100%);
+}
+
+/* the lifted item — held high above the drawer, long soft shadow */
+.ac-art {
+  flex: 1 1 55%; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1;
+}
+.ac-art svg {
+  max-width: 100%; max-height: min(560px, 62vh);
+  width: auto; height: auto; display: block;
+  filter: drop-shadow(26px 40px 30px rgba(6, 3, 1, 0.62))
+          drop-shadow(4px 8px 8px rgba(6, 3, 1, 0.4));
+  animation: ac-lift 460ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+@keyframes ac-lift {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   THE CARD — buff index stock, ruled, with a 3-D flip to its reverse
+   ========================================================================== */
+.ac-sheet {
+  flex: 0 0 460px; max-width: 460px;
+  position: relative; z-index: 2;
+  perspective: 1800px;
+}
+.ac-handle { display: none; }
+.ac-scroll {
+  position: relative;
+  animation: ac-file 460ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+@keyframes ac-file {              /* the entrance — NEVER on .ac-flip itself:
+                                     a filled animation would outrank the
+                                     flip's own transform in the cascade. */
+  from { opacity: 0; transform: translateY(16px) rotate(-0.7deg); }
+  to   { opacity: 1; transform: none; }
+}
+.ac-flip {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 720ms cubic-bezier(0.24, 0.72, 0.2, 1);
+}
+.ac-flip.is-flipped { transform: rotateY(180deg); }
+.ac-noanim, .ac-noanim * { transition: none !important; animation: none !important; }
+
+.ac-face {
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  padding: 18px 24px 28px 54px;
+  border: 1px solid var(--card-edge);
+  border-radius: 2px;
+  color: var(--type-ink);
+  background:
+    var(--grain),
+    radial-gradient(28px 20px at 84% 16%, rgba(150, 120, 60, 0.10), rgba(150,120,60,0) 70%),
+    radial-gradient(20px 16px at 18% 74%, rgba(150, 120, 60, 0.09), rgba(150,120,60,0) 70%),
+    var(--feint-rules),
+    linear-gradient(160deg, var(--card-buff-2) 0%, var(--card-buff) 46%, #ded2b2 100%);
+  box-shadow: 0 26px 44px -18px rgba(0, 0, 0, 0.78),
+              0 3px 10px rgba(0, 0, 0, 0.34),
+              inset 0 0 0 1px rgba(255, 250, 232, 0.5);
+}
+.ac-front { position: relative; }
+.ac-back  { position: absolute; inset: 0; transform: rotateY(180deg); overflow: auto; }
+
+/* the ONE red vertical margin rule (mirrored to the right on the reverse) */
+.ac-front::before, .ac-back::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 1px;
+  background: var(--margin-red);
+}
+.ac-front::before { left: 44px; }
+.ac-back::before  { right: 44px; }
+.ac-back { padding: 18px 54px 28px 24px; }   /* the same stock, mirrored */
+
+/* ---------------- printed form matter ------------------------------------ */
+.ac-masthead {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; height: var(--rule);
+  font-family: var(--font-form); color: var(--form-ink);
+}
+.ac-mh-l { font-size: 8.5px; letter-spacing: 0.30em; text-transform: uppercase; }
+.ac-mh-r { font-size: 8.5px; letter-spacing: 0.20em; text-transform: uppercase; opacity: 0.72; }
+.ac-mh-title {
+  font-family: var(--font-form); color: var(--form-ink);
+  font-size: 15px; line-height: calc(var(--rule) * 1.2); letter-spacing: 0.20em;
+  text-transform: uppercase;
+}
+.ac-mh-rules {
+  height: 4px; margin-bottom: calc(var(--rule) * 0.8 - 4px);
+  border-top: 1.5px solid rgba(61, 74, 91, 0.62);
+  border-bottom: 0.5px solid rgba(61, 74, 91, 0.42);
+}
+
+.ac-lab {
+  font-family: var(--font-form); color: var(--form-ink);
+  font-size: 8.5px; letter-spacing: 0.20em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.ac-sec {
+  height: var(--rule);
+  display: flex; align-items: baseline; gap: 8px;
+}
+.ac-sec .ac-rule-fill {
+  flex: 1 1 auto; height: 1px; margin-bottom: 4px;
+  background: rgba(61, 74, 91, 0.34);
+}
+
+/* ---------------- the fields: printed label + dotted fill-in + typed value */
+.ac-f {
+  display: grid; grid-template-columns: 92px 1fr;
+  align-items: baseline; column-gap: 6px;
+  min-height: var(--rule);
+}
+.ac-f.pair { grid-template-columns: 92px max-content 58px 1fr; column-gap: 9px; }
+.ac-f.pair .ac-f-v { white-space: nowrap; }
+.ac-f > .ac-lab { line-height: var(--rule); }
+.ac-f-v {
+  font-family: var(--font-mono);
+  font-size: 12px; line-height: var(--rule);
+  color: var(--type-ink);
+  /* the dotted fill-in rule, printed exactly where the feint rule falls */
+  background-image: radial-gradient(circle, rgba(61, 74, 91, 0.55) 0.5px, rgba(0,0,0,0) 0.55px);
+  background-size: 4px var(--rule);
+  background-position: 0 14.6px;
+  background-repeat: repeat-x;
+  padding-left: 2px;
+  text-shadow: 0 0 0.5px rgba(42, 36, 28, 0.35);
+}
+
+/* typed ink jitter — no two keys strike identically */
+.j0 { }
+.j1 { transform: translateY(0.35px) rotate(0.1deg); }
+.j2 { transform: translateY(-0.3px); color: var(--type-ink-2); }
+.j3 { transform: rotate(-0.12deg); }
+.j4 { transform: translateY(0.25px); color: var(--type-ink-2); }
+
+/* ---------------- the grade: red rubber stamp ---------------------------- */
+.ac-grade { display: grid; grid-template-columns: 1fr 172px; gap: 8px; align-items: start; }
+.ac-g-desc {
+  font-family: var(--font-mono); font-size: 10.5px; line-height: var(--rule);
+  color: var(--type-ink);
+}
+.ac-g-date {
+  font-family: var(--font-mono); font-size: 10.5px; line-height: var(--rule);
+  color: var(--type-ink-2); letter-spacing: 0.02em;
+}
+.ac-stamp { display: block; width: 172px; height: 62px; transform: rotate(-4.6deg); margin-top: 1px; }
+.ac-stamp svg { width: 100%; height: 100%; overflow: visible; }
+
+/* grade history — the typewriter correction */
+.ac-corr {
+  font-family: var(--font-mono); font-size: 10px; line-height: var(--rule);
+  color: var(--type-ink-2); white-space: nowrap;
+}
+.ac-struck { position: relative; display: inline-block; white-space: nowrap; }
+.ac-struck .w { position: relative; letter-spacing: 0.08em; }
+.ac-struck .x {
+  position: absolute; left: -0.5px; top: 0.6px; right: 0;
+  color: var(--type-ink); letter-spacing: 0.08em;
+  overflow: hidden; white-space: nowrap;
+}
+
+/* ---------------- condition block ---------------------------------------- */
+.ac-cond-e {
+  font-family: var(--font-mono);
+  font-size: 11px; line-height: var(--rule);
+  color: var(--type-ink);
+  padding-left: 2px;
+}
+.ac-cond-e i { font-style: normal; }
+.ac-cond-e.is-skipped { color: var(--type-muted); }
+
+/* ---------------- related accessions strip ------------------------------- */
+.ac-alts { display: flex; gap: 9px; height: calc(var(--rule) * 4); padding-top: 2px; }
+.ac-alt {
+  font: inherit; cursor: pointer; padding: 3px 3px 0;
+  background: rgba(255, 252, 240, 0.42);
+  border: 1px solid rgba(122, 100, 58, 0.42);
+  border-radius: 1px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 78px;
+  box-shadow: 1px 2px 3px rgba(60, 44, 16, 0.16);
+}
+.ac-alt-art {
+  width: 70px; height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fbf7ea; border: 1px solid rgba(122, 100, 58, 0.3);
+  overflow: hidden;
+}
+.ac-alt-art svg { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+.ac-alt-cap {
+  font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em;
+  color: var(--type-ink); text-transform: uppercase; text-align: center;
+  line-height: 1.35; padding-bottom: 2px;
+}
+.ac-alt-cap em { font-style: normal; color: var(--type-muted); }
+.ac-alt.is-cur { border-color: var(--stamp-red); box-shadow: 0 0 0 1px rgba(174, 44, 30, 0.5); }
+.ac-alt.is-cur .ac-alt-cap b { color: var(--stamp-red); font-weight: 400; }
+
+/* ---------------- remarks + foot ----------------------------------------- */
+.ac-remarks {
+  font-family: var(--font-mono); font-size: 10px; line-height: var(--rule);
+  color: var(--type-ink-2);
+}
+.ac-foot {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 10px; padding-right: 74px; min-height: var(--rule);
+  font-family: var(--font-mono); font-size: 9px; line-height: var(--rule);
+  color: var(--type-muted); letter-spacing: 0.04em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.ac-dl {
+  color: var(--type-ink); text-decoration: none;
+  border-bottom: 1px dotted rgba(42, 36, 28, 0.5);
+}
+.ac-dl:hover { color: var(--stamp-red); border-bottom-color: var(--stamp-red); }
+
+/* ---------------- the dog-eared corner (the flip affordance) ------------- */
+.ac-dogear {
+  position: absolute; right: 0; bottom: 0;
+  width: 116px; height: 52px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font: inherit;
+}
+/* on the reverse the fold is at the bottom LEFT — the corner you turned
+   arrives on the other side — but only the paper is mirrored, never the type */
+.ac-back .ac-dogear { right: auto; left: 0; }
+.ac-back .ac-de-fold, .ac-back .ac-de-crease { right: auto; left: 0; transform: scaleX(-1); }
+.ac-back .ac-de-word { right: auto; left: 46px; }
+.ac-de-word {
+  position: absolute; right: 46px; bottom: 15px;
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.2em;
+  color: var(--type-ink); text-transform: uppercase; white-space: nowrap;
+  text-shadow: 0 0 0.5px rgba(42, 36, 28, 0.4);
+}
+.ac-de-fold {
+  position: absolute; right: 0; bottom: 0; width: 42px; height: 42px;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  background: linear-gradient(225deg, #cfc099 0%, #e2d7b8 40%, #f2ead2 100%);
+  box-shadow: -3px -3px 6px rgba(60, 44, 16, 0.28);
+  border-bottom-right-radius: 2px;
+}
+.ac-de-crease {
+  position: absolute; right: 0; bottom: 0; width: 42px; height: 42px;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+  background: linear-gradient(225deg, rgba(90, 70, 30, 0.28) 0 1.4px, rgba(0,0,0,0) 1.4px);
+}
+.ac-dogear:hover .ac-de-fold { background: linear-gradient(225deg, #c8b78c 0%, #ded1ae 40%, #f5eed8 100%); }
+.ac-dogear:hover .ac-de-word { color: var(--stamp-red); }
+
+/* ---------------- the reverse -------------------------------------------- */
+.ac-prompt {
+  font-family: var(--font-mono);
+  font-size: 13px; line-height: var(--rule);
+  color: var(--type-ink);
+  white-space: pre-wrap; word-break: break-word;
+  text-shadow: 0 0 0.5px rgba(42, 36, 28, 0.35);
+  max-height: calc(var(--rule) * 16); overflow: auto;
+}
+.ac-fine {
+  font-family: var(--font-mono); font-size: 10px; line-height: var(--rule);
+  color: var(--type-ink-2); letter-spacing: 0.02em;
+}
+
+.mt1 { margin-top: var(--rule); }
+.mt0 { margin-top: 0; }
+
+/* ==========================================================================
+   MOBILE — the PLAN-MOBILE bottom sheet, peek + full detents
+   ========================================================================== */
+@media (max-width: 768px) {
+  .ac-stage {
+    /* the stage is the phone screen: it fits under the banner + label so the
+       sheet's peek detent is never below the fold */
+    display: block; padding: 0;
+    width: 100%; margin: 0.4rem 0 1rem;
+    min-height: 0;
+    height: calc(100vh - 118px); height: calc(100svh - 118px);
+    max-height: 820px;
+  }
+  .ac-art {
+    position: absolute; left: 0; right: 0; top: 0;
+    height: 42%;
+    padding: 14px 18px 8px;
+  }
+  .ac-art svg { max-height: 100%; }
+  .ac-sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 3;
+    flex: none; max-width: none;
+    height: min(432px, 58%);
+    transition: height 320ms cubic-bezier(0.24, 0.72, 0.2, 1);
+    background: transparent;
+  }
+  .ac-stage[data-state="full"] .ac-sheet { height: 85%; }
+  .ac-scroll {
+    height: 100%; overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -14px 34px -10px rgba(0, 0, 0, 0.7);
+  }
+  .ac-stage[data-state="full"] .ac-scroll {
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  }
+  .ac-handle {
+    display: block; position: absolute; left: 0; right: 0; top: 0; z-index: 4;
+    height: 26px; border: 0; background: transparent; cursor: pointer; padding: 0;
+  }
+  .ac-handle span {
+    display: block; width: 46px; height: 4px; margin: 9px auto 0;
+    border-radius: 2px; background: rgba(70, 54, 24, 0.42);
+  }
+  .ac-face {
+    border-radius: 12px 12px 0 0;
+    padding: 30px 22px 24px 46px;
+    min-height: 100%;
+  }
+  .ac-back { padding: 30px 46px 24px 22px; }
+  .ac-front::before { left: 34px; }
+  .ac-back::before  { right: 34px; }
+  .ac-stage[data-state="peek"] .ac-peekhide { display: none; }
+  .ac-stage[data-state="peek"] .ac-flip { animation: none; }
+  .ac-grade { grid-template-columns: 1fr 152px; }
+  .ac-stamp { width: 152px; height: 55px; }
+  .ac-f { grid-template-columns: 88px 1fr; }
+  .ac-f.pair { grid-template-columns: 88px max-content 52px 1fr; }
+  .mock-banner .mb-note { display: none; }
+}
+
+/* ==========================================================================
+   mockup chrome — switcher, sibling nav, caption
+   ========================================================================== */
+.mock-tools {
+  max-width: 900px; margin: 1.2rem auto 0.4rem;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 0.4rem 0.6rem;
+  font-size: 0.64rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8d846e;
+}
+.mk-btn {
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.14em;
+  padding: 0.28em 0.85em;
+  background: #f6f3ec; color: var(--ink);
+  border: 1px solid #a89f88; border-radius: 2px; cursor: pointer;
+  text-transform: uppercase;
+}
+.mk-btn.is-on { background: var(--ink); color: #f6f3ec; border-color: var(--ink); }
+
+.mock-nav {
+  max-width: 900px; margin: 0.9rem auto 0.2rem;
+  text-align: center; font-size: 0.62rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #a49a82; line-height: 2.1;
+}
+.mock-nav a { color: #6b6353; text-decoration: none; border-bottom: 1px dotted #bdb5a0; }
+.mock-nav a:hover { color: var(--plot-red); border-bottom-color: var(--plot-red); }
+.mock-nav .is-cur { color: var(--plot-red); border-bottom: 1px solid var(--plot-red); }
+.mock-nav .nav-head { display: block; color: #bdb5a0; letter-spacing: 0.24em; }
+
+.mock-caption {
+  max-width: 780px;
+  border: 1px solid #c9c2ae; padding: 1rem 1.1rem; margin: 1rem auto 1.4rem;
+  background: #faf8f2;
+}
+.mock-caption p { font-size: 0.72rem; line-height: 1.7; margin: 0 0 0.7rem; }
+.mock-caption p:last-child { margin-bottom: 0; }
+.mc-head { letter-spacing: 0.22em; text-transform: uppercase; color: #6b6353; }
+.mock-caption b.red { color: var(--plot-red); font-weight: 700; }
+.mock-caption code { background: #f1ede0; padding: 0 0.25em; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="mock-banner" aria-hidden="true">
+  <span>Municipal Sky</span>
+  <span class="mb-note">(site banner placeholder — 56px)</span>
+</div>
+
+<p class="mock-label top">junk drawer &middot; mockup 7b &middot; the accession card &mdash; full record style B</p>
+
+<div class="ac-stage" id="stage" data-state="full">
+  <div class="ac-art" id="art"></div>
+  <div class="ac-sheet" id="sheet">
+    <button type="button" class="ac-handle" id="handle" aria-label="expand or collapse the card"><span></span></button>
+    <div class="ac-scroll" id="scroll">
+      <div class="ac-flip" id="flip">
+        <div class="ac-face ac-front" id="front"></div>
+        <div class="ac-face ac-back" id="back" aria-hidden="true"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mock-tools">
+  <span>item:</span>
+  <button type="button" class="mk-btn is-on" data-item="2026-07-27-subway-rat">subway rat &middot; 3 responses</button>
+  <button type="button" class="mk-btn" data-item="2026-07-27-hairball">hairball &middot; 1 response</button>
+  <span style="margin-left:0.6rem">card:</span>
+  <button type="button" class="mk-btn" id="flip-btn">turn over &rarr;</button>
+</div>
+
+<nav class="mock-nav">
+  <span class="nav-head">mockup 7 &mdash; the full record, five costumes</span>
+  <a href="mockup-7a-report-card.html">A &middot; report card</a> &nbsp;&middot;&nbsp;
+  <span class="is-cur">B &middot; accession record</span> &nbsp;&middot;&nbsp;
+  <a href="mockup-7c-condition-report.html">C &middot; condition report</a> &nbsp;&middot;&nbsp;
+  <a href="mockup-7d-dossier.html">D &middot; the paperwork</a> &nbsp;&middot;&nbsp;
+  <a href="mockup-7e-catalog-card.html">E &middot; catalog card</a>
+</nav>
+
+<div class="mock-caption">
+  <p class="mc-head">Mockup 7b &middot; The Accession Card &mdash; PLAN-RECORD §3 B</p>
+
+  <p><b class="red">THE REGISTRAR'S OBJECT CARD.</b> Buff index stock with
+  pale-blue feint rules and one red vertical margin rule; the form matter is
+  letterpress-printed in tiny small caps with dotted fill-in rules, and every
+  value is <i>typed</i> in Courier on the rules. <code>ACCESSION NO.</code> is
+  promoted to the top line &mdash; this style's flourish. The overall grade is
+  a <b class="red">red rubber stamp</b>, canted a few degrees, with uneven ink
+  (mockup-3's turbulence-displacement technique, re-registered from red pencil
+  to rubber: edge displacement plus a second noise field eroding the ink so
+  the strike is patchy). The taxonomy's own description for that grade is
+  typed beside it; the graded date sits beneath.</p>
+
+  <p><b class="mc-head">THE FLIP</b> &mdash; the verbatim prompt is not on the
+  face of the card. It is typed on the <b>reverse</b>, under a printed
+  <code>VERBATIM PROMPT</code> heading, where a cataloguer would actually put
+  it. The dog-eared bottom-right corner and the typed <code>OVER &rarr;</code>
+  are the affordance; clicking either turns the card in 3-D. The reverse
+  carries the same stock mirrored &mdash; the red margin rule now runs down
+  the right edge &mdash; and its own dog-ear at the bottom left turns it back.
+  <b>The prompt never changes when you switch responses</b>; it belongs to the
+  item, not the model. <b>On mobile the flip works as-is in the full detent</b>
+  (the sheet's card turns in place); in the peek detent the dog-ear is hidden
+  and turning over first expands the sheet &mdash; a card you can't read the
+  back of isn't worth turning.</p>
+
+  <p><b class="mc-head">FLIP-THROUGH</b> &mdash; the strip is captioned
+  <code>RELATED ACCESSIONS, SAME PROMPT</code> and lists every response filed
+  against this prompt, each with its model and its own grade. Choosing one
+  swaps the lifted SVG in place at identical scale and re-types the card's
+  per-response fields (MAKER, RECEIVED, METHOD, CONDITION, the grade stamp,
+  REMARKS). The shown one is bracketed in red. <b>Hairball has a single
+  response, so the strip is absent entirely</b> &mdash; switch items above to
+  see the card close up around it.</p>
+
+  <p><b class="red">TWO SYNTHETIC OVERLAYS</b>, and only two &mdash; stated
+  here because they are never disclosed inside the card itself. (1) The
+  subway rat's <b>first response carries a mock <code>grade_history</code>
+  entry</b> (<code>choice</code>, 2026-07-27) so supersession renders: the
+  typewriter correction, the old grade struck through with a row of
+  <code>xxxx</code> overtypes, the new stamp beside it. No real entry has been
+  regraded yet. (2) The subway rat's <b>third response is treated as though
+  its <code>color</code> axis were skipped</b> &mdash; the real entry grades
+  it <i>clean</i> &mdash; so the muted typed <code>&mdash; not assessed</code>
+  rendering is demonstrable. Everything else on this page is baked verbatim
+  from <code>items/2026-07-27-subway-rat/entry.json</code>,
+  <code>items/2026-07-27-hairball/entry.json</code>, their SVG files, and
+  <code>taxonomy.json</code> (schema 1, version 5). Every grade label, rank,
+  description, axis label, value label, value description, model label and
+  vendor is resolved through the baked taxonomy object at render time &mdash;
+  no rubric string is hardcoded, and an unknown axis or value still renders.</p>
+
+  <p><b class="mc-head">SVG HYGIENE</b> &mdash; four artworks share this one
+  page, so every <code>id</code> and every <code>url(#…)</code> /
+  <code>href="#…"</code> reference is prefixed per response
+  (<code>o_</code> opus, <code>f_</code> fable, <code>s_</code> sonnet,
+  <code>h_</code> hairball; the strip's thumbnail of the same response is a
+  second instance, <code>o_t_</code> …), exactly as the rating instrument
+  does. The artwork paths themselves are untouched. The
+  page's only <code>feTurbulence</code> outside the stamps is the card's paper
+  grain, and it carries <code>stitchTiles="stitch"</code>. No full-stage
+  blend-mode layers.</p>
+
+  <p><b class="mc-head">MOBILE &amp; SCREENSHOT DRIVERS</b> &mdash; at ≤768px
+  the stage becomes the PLAN-MOBILE §4 bottom sheet: lifted SVG in the top
+  45svh, the card as a sheet at <b>peek</b> (accession no., object, maker,
+  method, the grade stamp, the strip) expanding to <b>full</b> (adds
+  condition, remarks, foot, dog-ear, inner scroll with
+  <code>overscroll-behavior: contain</code>). <b>Tapping the handle toggles
+  the detents.</b> The mockup honours <code>?mock-state=peek|full</code>,
+  <code>?mock-flip=1</code> and <code>?mock-item=hairball</code> &mdash; which
+  is how the verification screenshots drive it.</p>
+
+  <p><b class="mc-head">NOT SHOWN, DELIBERATELY</b> &mdash;
+  <code>schema</code>, <code>rid</code>, <code>sizeClass</code>/<code>sizeScale</code>,
+  <code>model_version</code>. <code>tags</code> is empty on both items so no
+  TAGS line prints; <code>transcript</code> is null on all four responses and
+  the layout reserves no space for it. <code>DOWNLOAD SVG ⤓</code> lives on the
+  card foot and serves the byte-exact source as generated.</p>
+
+  <p><b class="mc-head">Natural name</b> &mdash; <b>ACCESSION RECORD</b>
+  (gate G7). The style and the name are separable: this card's look can win
+  while its name loses.</p>
+</div>
+
+<p class="mock-label">junk drawer &middot; mockup 7b &middot; the accession card &mdash; full record style B</p>
+
+<!-- ==========================================================================
+     ARTWORK — baked verbatim from items/. Held as inert text so the source is
+     byte-exact; ids are prefixed per response at render time.
+     ========================================================================== -->
+<script type="text/plain" id="svg-claude-opus-5--subway-rat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 526" role="img" aria-label="A sneaky cartoon subway rat with big googly eyes scampering off in profile, dragging a slice of pizza">
+  <defs>
+    <linearGradient id="fur" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9ca4ad"/>
+      <stop offset="1" stop-color="#7d848d"/>
+    </linearGradient>
+    <linearGradient id="tailg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#e8a3b5"/>
+      <stop offset="1" stop-color="#d885a0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- TAIL (behind) -->
+  <path d="M700,296 C800,300 856,250 842,168 C833,108 796,54 762,20 C752,30 748,30 738,38 C770,80 810,124 818,174 C830,248 782,274 704,266 Z"
+        fill="url(#tailg)" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+
+  <!-- FAR HIND LEG + FOOT -->
+  <path d="M690,332 C706,378 690,420 660,448 C636,470 618,486 606,504 C634,508 660,500 666,478 C704,446 726,394 716,344 Z"
+        fill="#6f767e" stroke="#23262b" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M600,488 C588,498 586,510 598,514 C608,518 620,512 622,502 C634,497 648,496 656,500 C650,486 632,480 614,482 Z"
+        fill="#d885a0" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- SCAMPER DUST PUFFS -->
+  <g fill="#e2e6ea" stroke="#23262b" stroke-width="4">
+    <circle cx="770" cy="474" r="17"/>
+    <circle cx="800" cy="452" r="12"/>
+    <circle cx="742" cy="492" r="11"/>
+  </g>
+
+  <!-- BODY -->
+  <path d="M45,315 C70,283 92,268 132,256 C176,244 202,238 246,232 C300,224 332,172 472,162 C602,153 682,188 732,250 C772,296 766,352 714,378 C640,408 560,408 470,402 C360,395 250,398 168,370 C122,354 62,338 45,315 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- BELLY HIGHLIGHT -->
+  <path d="M118,342 C210,306 400,306 548,332 C528,392 360,404 206,386 C158,378 130,360 118,342 Z"
+        fill="#bcc2ca" opacity="0.7"/>
+
+  <!-- NEAR HIND LEG + FOOT -->
+  <path d="M622,346 C662,352 704,372 712,414 C718,450 706,480 694,502 C726,506 754,496 752,466 C758,410 744,356 700,332 C672,324 640,330 622,346 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M652,482 C638,494 636,508 648,512 C659,516 671,510 674,499 C686,494 700,492 710,496 C704,482 686,474 666,476 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M666,486 L668,506"/><path d="M684,486 L690,502"/>
+  </g>
+
+  <!-- NEAR FRONT LEG + FOOT (tiptoe) -->
+  <path d="M242,366 C214,392 190,414 172,440 C156,462 150,478 160,490 C172,496 186,484 194,466 C214,436 246,410 264,384 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M158,466 C142,478 134,494 144,502 C154,509 168,502 172,490 C182,483 194,480 204,484 C198,468 180,460 160,462 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M164,470 L156,492"/><path d="M182,474 L182,490"/>
+  </g>
+
+  <!-- EAR -->
+  <path d="M232,205 C210,150 245,120 290,132 C328,142 335,190 310,220 C285,245 250,240 232,205 Z"
+        fill="url(#fur)" stroke="#23262b" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M250,200 C240,165 262,148 292,158 C315,166 318,196 302,214 C285,230 262,225 250,200 Z"
+        fill="#e8a3b5"/>
+
+  <!-- PIZZA SLICE (the loot) -->
+  <path d="M112,428 L176,450 L74,500 Z" fill="#f2c14e" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M106,420 Q142,430 178,444 L180,458 Q144,444 110,434 Z" fill="#d69a4a" stroke="#a9762f" stroke-width="5" stroke-linejoin="round"/>
+  <g fill="#c0392b" stroke="#8f2a20" stroke-width="2">
+    <circle cx="122" cy="452" r="8"/><circle cx="142" cy="463" r="7"/><circle cx="104" cy="470" r="6"/>
+  </g>
+
+  <!-- LIFTED FRONT PAW grabbing crust -->
+  <path d="M150,424 C138,428 132,440 140,448 C148,455 160,452 166,442 C172,432 168,424 158,422 C154,421 152,422 150,424 Z"
+        fill="#e8a3b5" stroke="#23262b" stroke-width="4" stroke-linejoin="round"/>
+  <g stroke="#23262b" stroke-width="2.5" stroke-linecap="round" fill="none">
+    <path d="M144,438 L138,446"/><path d="M154,442 L150,450"/>
+  </g>
+
+  <!-- NOSE -->
+  <path d="M40,312 C26,308 22,321 34,328 C46,335 60,330 60,318 C58,309 48,308 40,312 Z"
+        fill="#d16a86" stroke="#23262b" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="35" cy="320" r="3.5" fill="#23262b"/>
+
+  <!-- MOUTH / SLY GRIN -->
+  <path d="M54,330 C92,354 132,358 166,347 C176,344 181,337 179,330"
+        fill="none" stroke="#23262b" stroke-width="6" stroke-linecap="round"/>
+  <!-- BUCK TEETH -->
+  <rect x="55" y="336" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+  <rect x="68" y="338" width="12" height="20" rx="4" fill="#ffffff" stroke="#23262b" stroke-width="3"/>
+
+  <!-- WHISKERS -->
+  <g stroke="#3a3a3a" stroke-width="3" stroke-linecap="round" fill="none">
+    <path d="M80,323 C55,316 32,310 12,312"/>
+    <path d="M84,334 C58,334 34,339 14,347"/>
+    <path d="M86,344 C62,349 42,359 26,371"/>
+  </g>
+
+  <!-- GOOGLY EYES -->
+  <circle cx="250" cy="230" r="46" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="150" cy="222" r="52" fill="#ffffff" stroke="#23262b" stroke-width="6"/>
+  <circle cx="232" cy="246" r="19" fill="#1a1a1a"/>
+  <circle cx="225" cy="239" r="5" fill="#ffffff"/>
+  <circle cx="132" cy="238" r="22" fill="#1a1a1a"/>
+  <circle cx="124" cy="230" r="6" fill="#ffffff"/>
+  <!-- heavy sneaky lids -->
+  <path d="M206,220 Q250,204 294,226" fill="none" stroke="#23262b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100,210 Q150,192 200,214" fill="none" stroke="#23262b" stroke-width="9" stroke-linecap="round"/>
+  <!-- scheming brows -->
+  <path d="M205,180 Q250,154 292,158" fill="none" stroke="#23262b" stroke-width="10" stroke-linecap="round"/>
+  <path d="M96,188 Q140,160 182,158" fill="none" stroke="#23262b" stroke-width="11" stroke-linecap="round"/>
+</svg></script>
+
+<script type="text/plain" id="svg-claude-fable-5--subway-rat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400">
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- speed lines -->
+    <g stroke="#2a2430" stroke-width="7" opacity="0.7" fill="none">
+      <path d="M472 262 L634 254"/>
+      <path d="M462 298 L618 300"/>
+      <path d="M478 334 L600 338"/>
+    </g>
+    <!-- dust puffs -->
+    <g fill="#c3c4cf" opacity="0.95">
+      <circle cx="486" cy="374" r="15"/>
+      <circle cx="510" cy="382" r="10"/>
+      <circle cx="463" cy="385" r="9"/>
+      <circle cx="306" cy="377" r="9"/>
+      <circle cx="326" cy="383" r="6"/>
+    </g>
+    <!-- tail -->
+    <path d="M388 212 C468 218 538 206 570 156 C592 122 590 90 620 58 C626 52 636 60 631 68 C604 98 606 128 582 166 C548 220 466 246 386 240 Z" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- far ear -->
+    <circle cx="262" cy="80" r="38" fill="#6f6f7a" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="264" cy="84" r="22" fill="#d68a9e"/>
+    <!-- body -->
+    <path d="M32 208 C55 150 105 92 180 86 C245 80 290 95 330 120 C372 146 402 185 398 232 C394 275 350 300 300 302 C240 304 170 290 120 262 C90 246 60 232 32 208 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <!-- belly -->
+    <path d="M135 258 C190 278 250 286 300 284 C340 281 368 262 384 236 C388 272 348 297 298 298 C240 299 176 286 132 260 Z" fill="#ded8ca"/>
+    <!-- muzzle patch -->
+    <path d="M42 206 C60 190 92 186 114 198 C132 210 134 230 118 240 C96 250 62 240 42 210 Z" fill="#ded8ca"/>
+    <!-- haunch -->
+    <ellipse cx="345" cy="255" rx="48" ry="40" fill="#82828e" stroke="#2a2430" stroke-width="5"/>
+    <!-- kicked-back hind leg -->
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#2a2430" stroke-width="24" fill="none"/>
+    <path d="M352 268 C390 290 420 318 448 348" stroke="#82828e" stroke-width="13" fill="none"/>
+    <ellipse cx="465" cy="352" rx="27" ry="12" transform="rotate(18 465 352)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M479 346 L492 352"/>
+      <path d="M478 360 L492 356"/>
+    </g>
+    <!-- tiptoe hind leg -->
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#2a2430" stroke-width="22" fill="none"/>
+    <path d="M272 290 C265 318 258 340 252 360" stroke="#8e8e98" stroke-width="12" fill="none"/>
+    <ellipse cx="248" cy="366" rx="22" ry="10" transform="rotate(-8 248 366)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M238 361 L226 363"/>
+      <path d="M238 372 L226 369"/>
+    </g>
+    <!-- tucked front paw -->
+    <circle cx="172" cy="290" r="11" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <!-- reaching front arm -->
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#2a2430" stroke-width="20" fill="none"/>
+    <path d="M148 262 C118 292 92 312 68 330" stroke="#8e8e98" stroke-width="11" fill="none"/>
+    <ellipse cx="58" cy="336" rx="15" ry="11" transform="rotate(-35 58 336)" fill="#f2a9b8" stroke="#2a2430" stroke-width="5"/>
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M52 344 L44 350"/>
+      <path d="M60 347 L56 355"/>
+    </g>
+    <!-- near ear -->
+    <circle cx="200" cy="58" r="48" fill="#8e8e98" stroke="#2a2430" stroke-width="6"/>
+    <circle cx="202" cy="62" r="30" fill="#f2a9b8"/>
+    <!-- back googly eye -->
+    <circle cx="205" cy="150" r="26" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="195" cy="160" r="10" fill="#2a2430"/>
+    <circle cx="191" cy="156" r="3" fill="#ffffff"/>
+    <path d="M179 150 A26 26 0 0 1 231 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- front googly eye -->
+    <circle cx="150" cy="150" r="32" fill="#ffffff" stroke="#2a2430" stroke-width="5"/>
+    <circle cx="137" cy="163" r="12" fill="#2a2430"/>
+    <circle cx="132" cy="157" r="3.5" fill="#ffffff"/>
+    <path d="M118 150 A32 32 0 0 1 182 150 Z" fill="#8e8e98" stroke="#2a2430" stroke-width="5"/>
+    <!-- sneaky brows -->
+    <path d="M112 130 C136 121 162 119 182 126" stroke="#2a2430" stroke-width="7" fill="none"/>
+    <path d="M190 128 C204 123 220 124 230 130" stroke="#2a2430" stroke-width="6" fill="none"/>
+    <!-- smirk -->
+    <path d="M48 214 C74 230 100 236 124 229 C132 226 136 219 132 213" stroke="#2a2430" stroke-width="5" fill="none"/>
+    <!-- buck teeth -->
+    <path d="M58 222 L76 222 L76 234 Q76 240 71 240 L63 240 Q58 240 58 234 Z" fill="#ffffff" stroke="#2a2430" stroke-width="4"/>
+    <path d="M67 222 L67 240" stroke="#2a2430" stroke-width="3"/>
+    <!-- nose -->
+    <circle cx="34" cy="205" r="12" fill="#e06f8b" stroke="#2a2430" stroke-width="5"/>
+    <!-- whiskers -->
+    <g stroke="#2a2430" stroke-width="4" fill="none">
+      <path d="M74 208 L10 188"/>
+      <path d="M74 214 L8 214"/>
+      <path d="M76 222 L14 244"/>
+    </g>
+  </g>
+</svg></script>
+
+<script type="text/plain" id="svg-claude-sonnet-5--subway-rat"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+<g transform="matrix(1,0,0,1.07658,0,-41.829)">
+  <!-- shadow -->
+  <ellipse cx="470" cy="478" rx="340" ry="16" fill="#000000" opacity="0.18"/>
+
+  <!-- motion lines -->
+  <g fill="none" stroke="#3a3a42" stroke-linecap="round" opacity="0.5">
+    <path d="M35 150 Q 110 140 175 158" stroke-width="7"/>
+    <path d="M25 205 Q 100 200 165 212" stroke-width="6"/>
+    <path d="M45 258 Q 110 256 168 262" stroke-width="5"/>
+  </g>
+
+  <!-- tail -->
+  <path d="M275 230 C 190 190 140 140 90 110 C 65 96 45 90 25 78
+           L 30 86 C 50 98 75 108 100 128 C 150 160 200 205 275 270 Z"
+        fill="#a98a8f" stroke="#000000" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- back (far) leg -->
+  <g>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#000000" stroke-width="52" stroke-linecap="round"/>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#4d4d57" stroke-width="42" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#000000" stroke-width="40" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#4d4d57" stroke-width="30" stroke-linecap="round"/>
+    <ellipse cx="248" cy="432" rx="40" ry="22" transform="rotate(-15 248 432)" fill="#4d4d57" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="215" y1="435" x2="195" y2="425"/>
+      <line x1="218" y1="448" x2="198" y2="448"/>
+      <line x1="222" y1="460" x2="204" y2="466"/>
+    </g>
+  </g>
+
+  <!-- body -->
+  <path d="M560 235 C 520 150 500 90 460 65 C 420 45 370 55 330 90
+           C 290 125 275 175 285 225 C 260 260 250 300 290 340
+           C 330 380 380 385 430 375 C 470 368 500 350 520 320
+           C 545 300 555 265 560 235 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- belly patch -->
+  <ellipse cx="425" cy="322" rx="88" ry="44" fill="#9a9aa4" opacity="0.85"/>
+
+  <!-- grime spots -->
+  <g fill="#2f2f36" opacity="0.2">
+    <ellipse cx="360" cy="150" rx="14" ry="10"/>
+    <ellipse cx="430" cy="120" rx="10" ry="8"/>
+    <ellipse cx="500" cy="200" rx="12" ry="9"/>
+  </g>
+
+  <!-- front (near) leg, tiptoe -->
+  <g>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#000000" stroke-width="50" stroke-linecap="round"/>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#6b6b76" stroke-width="40" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#000000" stroke-width="38" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#6b6b76" stroke-width="28" stroke-linecap="round"/>
+    <ellipse cx="638" cy="452" rx="32" ry="16" transform="rotate(-25 638 452)" fill="#c99aa0" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="660" y1="445" x2="678" y2="435"/>
+      <line x1="663" y1="456" x2="682" y2="452"/>
+      <line x1="660" y1="466" x2="676" y2="468"/>
+    </g>
+  </g>
+
+  <!-- head -->
+  <path d="M555 230 C 620 195 700 195 745 225 C 800 250 845 270 880 300
+           C 850 315 810 325 770 330 C 730 335 690 330 655 322
+           C 630 316 610 310 590 295 C 575 280 563 255 555 230 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- far ear -->
+  <ellipse cx="612" cy="178" rx="32" ry="42" transform="rotate(-20 612 178)" fill="#4a4a54" stroke="#000000" stroke-width="6"/>
+
+  <!-- near ear -->
+  <ellipse cx="668" cy="163" rx="40" ry="52" transform="rotate(-15 668 163)" fill="#5c5c66" stroke="#000000" stroke-width="7"/>
+  <ellipse cx="668" cy="170" rx="22" ry="32" transform="rotate(-15 668 170)" fill="#d99aa3"/>
+
+  <!-- small second googly eye peeking above -->
+  <circle cx="633" cy="196" r="22" fill="#ffffff" stroke="#000000" stroke-width="5"/>
+  <circle cx="626" cy="201" r="10" fill="#000000"/>
+  <circle cx="622" cy="197" r="3" fill="#ffffff"/>
+
+  <!-- main googly eye -->
+  <circle cx="702" cy="248" r="42" fill="#ffffff" stroke="#000000" stroke-width="6"/>
+  <circle cx="686" cy="254" r="19" fill="#000000"/>
+  <circle cx="679" cy="246" r="6" fill="#ffffff"/>
+
+  <!-- nose -->
+  <ellipse cx="876" cy="298" rx="10" ry="8" fill="#000000"/>
+
+  <!-- whiskers -->
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round">
+    <path d="M845 282 L 893 258" fill="none"/>
+    <path d="M852 294 L 897 290" fill="none"/>
+    <path d="M847 305 L 892 320" fill="none"/>
+  </g>
+
+  <!-- mouth -->
+  <path d="M858 308 Q 815 330 772 326" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <!-- buck tooth -->
+  <rect x="700" y="320" width="13" height="20" rx="4" fill="#f5f0e6" stroke="#000000" stroke-width="4"/>
+
+  <!-- pizza slice held near mouth -->
+  <g>
+    <path d="M765 322 L 700 292 L 690 405 Z" fill="#f4b942" stroke="#000000" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M753 322 L 705 302 L 700 385 Z" fill="#c0392b" stroke="none"/>
+    <path d="M700 292 Q 693 350 690 405" fill="none" stroke="#e8d9a0" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="725" cy="330" r="7" fill="#7a2020"/>
+    <circle cx="715" cy="360" r="6" fill="#7a2020"/>
+    <circle cx="735" cy="365" r="6" fill="#7a2020"/>
+  </g>
+</g>
+</svg></script>
+
+<script type="text/plain" id="svg-claude-fable-5--hairball"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+  <defs>
+    <radialGradient id="hbCore" cx="50%" cy="48%" r="60%">
+      <stop offset="0%" stop-color="#4a3826" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#3a2c1e" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#2b2015" stop-opacity="0.05"/>
+    </radialGradient>
+  </defs>
+
+  <!-- soft matted core -->
+  <path d="M200,45 C265,40 320,75 335,120 C352,160 340,205 300,235 C260,262 175,268 125,245 C82,225 55,190 60,145 C65,98 130,50 200,45 Z" fill="url(#hbCore)"/>
+  <path d="M205,75 C255,72 295,100 305,132 C316,164 300,198 268,218 C235,238 170,240 133,222 C100,205 84,178 90,145 C97,110 150,78 205,75 Z" fill="#33271a" opacity="0.45"/>
+
+  <g fill="none" stroke-linecap="round">
+    <!-- deep shadow strands -->
+    <path d="M75,160 C60,110 120,60 190,62 C270,64 330,110 328,160 C326,215 255,250 185,246 C120,242 88,205 96,165 C104,125 160,100 215,108 C265,116 292,150 280,185 C268,218 210,232 165,218 C130,207 115,180 128,155" stroke="#241a10" stroke-width="4.5" opacity="0.9"/>
+    <path d="M120,220 C80,195 70,140 105,100 C145,55 235,48 285,85 C330,118 340,175 305,212 C270,248 190,258 140,235 C105,218 95,185 115,158 C140,125 205,118 245,140 C280,160 285,198 255,215" stroke="#2b2013" stroke-width="4" opacity="0.85"/>
+    <path d="M310,120 C330,165 300,215 245,232 C185,250 115,235 90,190 C68,150 90,100 140,80 C195,58 260,68 290,105 C315,138 305,180 265,198 C225,215 165,208 145,178 C128,150 148,120 185,115" stroke="#1f1710" stroke-width="3.8" opacity="0.85"/>
+
+    <!-- mid-tone tangle -->
+    <path d="M95,130 C130,75 230,55 295,90 C345,118 350,180 310,215 C265,252 160,255 110,220 C70,190 75,140 120,115 C170,88 250,95 280,130 C305,160 290,200 245,212" stroke="#4d3a24" stroke-width="3.5" opacity="0.9"/>
+    <path d="M160,60 C230,45 305,80 320,135 C333,185 295,230 235,242 C170,255 100,230 85,180 C72,135 110,92 165,85 C225,78 275,105 278,148 C280,190 230,215 185,205 C150,197 135,168 152,145" stroke="#5a4530" stroke-width="3.2" opacity="0.9"/>
+    <path d="M85,190 C70,145 100,95 155,78 C220,58 300,80 322,130 C342,178 310,228 250,240 C195,251 130,238 108,200 C90,168 108,132 150,122 C200,110 250,128 258,162 C265,192 232,214 195,208" stroke="#66502f" stroke-width="3" opacity="0.85"/>
+    <path d="M300,90 C335,130 335,190 292,222 C248,254 155,255 112,222 C72,192 70,135 108,105 C150,72 235,68 275,98 C310,124 312,168 278,192 C243,216 180,212 158,182" stroke="#584327" stroke-width="3" opacity="0.8"/>
+    <path d="M140,240 C95,222 72,175 92,132 C115,84 195,62 255,78 C312,93 340,145 322,190 C305,232 240,252 185,242 C140,234 118,202 132,172 C148,138 205,128 240,148" stroke="#6e5638" stroke-width="2.8" opacity="0.85"/>
+
+    <!-- looping knots -->
+    <path d="M170,120 C210,95 260,110 262,145 C264,178 220,195 185,182 C155,171 150,138 178,128 C205,118 235,132 232,155 C229,176 198,182 182,168" stroke="#3c2d1b" stroke-width="2.8" opacity="0.9"/>
+    <path d="M225,105 C185,118 165,155 185,185 C205,214 255,212 272,182 C288,155 270,120 238,118 C210,116 195,140 205,160 C215,180 245,178 250,158" stroke="#523e26" stroke-width="2.5" opacity="0.85"/>
+    <path d="M130,155 C118,190 145,222 185,225 C228,228 258,200 250,168 C243,140 205,128 178,142 C155,154 155,182 178,192" stroke="#493623" stroke-width="2.5" opacity="0.8"/>
+    <path d="M245,195 C280,180 292,145 270,118 C246,90 195,88 168,112 C142,135 148,172 180,188" stroke="#2f2416" stroke-width="2.6" opacity="0.85"/>
+    <path d="M150,100 C195,80 255,88 278,120 C300,150 288,190 250,205" stroke="#5f4a2e" stroke-width="2.4" opacity="0.8"/>
+    <path d="M110,175 C105,140 135,108 180,100 C230,91 280,110 292,145" stroke="#403019" stroke-width="2.4" opacity="0.8"/>
+    <path d="M205,230 C160,228 125,205 122,170 C119,135 155,110 200,110" stroke="#6a5233" stroke-width="2.2" opacity="0.75"/>
+    <path d="M175,145 C200,132 230,140 235,160 C240,180 218,193 197,187 C178,182 172,163 185,153" stroke="#2a1f12" stroke-width="2.2" opacity="0.9"/>
+
+    <!-- gray interloper strands -->
+    <path d="M100,120 C150,70 250,62 305,102 C345,132 348,185 312,215" stroke="#7d7468" stroke-width="1.8" opacity="0.75"/>
+    <path d="M320,160 C315,205 265,238 205,240 C145,242 95,215 88,175 C82,140 118,108 165,102" stroke="#8a8072" stroke-width="1.6" opacity="0.7"/>
+    <path d="M155,215 C120,200 105,168 122,140 C142,108 200,98 240,115 C275,130 285,165 262,188" stroke="#6f6759" stroke-width="1.5" opacity="0.7"/>
+
+    <!-- light highlight strands -->
+    <path d="M120,140 C150,95 230,80 285,105 C325,124 335,168 305,198" stroke="#8f7350" stroke-width="1.8" opacity="0.85"/>
+    <path d="M280,210 C235,240 160,240 125,210 C95,185 95,145 128,124" stroke="#9a7d57" stroke-width="1.6" opacity="0.8"/>
+    <path d="M165,90 C220,72 280,88 300,125 C318,158 302,198 265,215" stroke="#a98a60" stroke-width="1.4" opacity="0.8"/>
+    <path d="M145,190 C130,162 145,130 180,120 C220,109 262,124 270,152" stroke="#b3925f" stroke-width="1.2" opacity="0.75"/>
+    <path d="M190,205 C158,196 142,172 152,150 C163,126 200,118 228,130" stroke="#9c8058" stroke-width="1.2" opacity="0.7"/>
+    <path d="M235,95 C275,105 300,135 295,168 C290,200 255,220 218,218" stroke="#8a6d47" stroke-width="1.4" opacity="0.75"/>
+
+    <!-- escaping wisps: left -->
+    <path d="M95,150 C60,140 30,150 6,132 C22,150 45,158 70,162" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>
+    <path d="M100,185 C70,198 40,196 8,214 C40,210 72,214 98,202" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>
+    <path d="M92,120 C65,102 40,100 12,80 C38,104 62,112 88,128" stroke="#5f4a2e" stroke-width="1.5" opacity="0.8"/>
+    <path d="M105,205 C80,225 55,228 30,248 C60,238 88,232 110,215" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>
+
+    <!-- escaping wisps: right -->
+    <path d="M310,140 C340,128 365,132 394,112 C368,136 342,144 315,150" stroke="#4d3a24" stroke-width="1.8" opacity="0.9"/>
+    <path d="M312,180 C345,188 368,184 395,200 C365,196 338,198 310,192" stroke="#3c2d1b" stroke-width="1.6" opacity="0.85"/>
+    <path d="M305,115 C332,98 358,96 388,74 C360,100 335,110 308,124" stroke="#7d7468" stroke-width="1.4" opacity="0.75"/>
+    <path d="M300,210 C328,228 355,232 382,252 C352,242 322,236 298,220" stroke="#5a4530" stroke-width="1.4" opacity="0.8"/>
+
+    <!-- escaping wisps: top -->
+    <path d="M180,70 C165,45 150,30 128,8 C150,32 168,52 182,75" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>
+    <path d="M215,65 C222,42 235,25 240,6 C230,28 220,46 212,68" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>
+    <path d="M255,75 C275,52 295,40 318,20 C295,44 275,64 258,80" stroke="#6a5233" stroke-width="1.4" opacity="0.75"/>
+    <path d="M150,80 C135,58 112,44 85,30 C112,50 132,68 148,85" stroke="#8a8072" stroke-width="1.2" opacity="0.7"/>
+
+    <!-- escaping wisps: bottom -->
+    <path d="M170,242 C155,262 135,275 108,292 C138,275 158,260 175,244" stroke="#4d3a24" stroke-width="1.6" opacity="0.85"/>
+    <path d="M215,246 C218,266 230,280 245,294 C232,278 222,262 218,246" stroke="#3c2d1b" stroke-width="1.5" opacity="0.85"/>
+    <path d="M255,238 C275,255 295,262 322,272 C296,260 275,250 258,236" stroke="#5f4a2e" stroke-width="1.4" opacity="0.75"/>
+    <path d="M135,232 C118,248 100,256 78,264 C100,254 120,244 138,230" stroke="#7d7468" stroke-width="1.2" opacity="0.7"/>
+
+    <!-- fine surface fuzz -->
+    <path d="M160,110 C185,102 212,104 230,115" stroke="#261c10" stroke-width="1" opacity="0.8"/>
+    <path d="M145,170 C160,185 185,192 210,188" stroke="#261c10" stroke-width="1" opacity="0.8"/>
+    <path d="M235,170 C252,158 258,140 250,124" stroke="#261c10" stroke-width="1" opacity="0.75"/>
+    <path d="M175,155 C190,148 208,150 218,160" stroke="#b89a6b" stroke-width="0.9" opacity="0.7"/>
+    <path d="M195,125 C212,120 228,124 238,135" stroke="#b89a6b" stroke-width="0.9" opacity="0.65"/>
+    <path d="M150,135 C160,125 175,120 190,122" stroke="#a2first" stroke-width="0" opacity="0"/>
+    <path d="M152,138 C162,127 177,122 192,124" stroke="#a28457" stroke-width="0.9" opacity="0.65"/>
+  </g>
+</svg></script>
+
+<script>
+/* ==========================================================================
+   DATA — baked from the repo, verbatim.
+   TAXONOMY is taxonomy.json (schema 1, version 5). Every grade label, grade
+   rank, grade description, axis label, value label, value description, model
+   label and vendor rendered anywhere on this page resolves through it.
+   ========================================================================== */
+var TAXONOMY = {
+  "schema": 1,
+  "version": 5,
+  "updated": "2026-07-27",
+  "grades": [
+    { "id": "prime", "rank": 5, "label": "Prime",
+      "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
+    { "id": "choice", "rank": 4, "label": "Choice",
+      "description": "Strong result with minor blemishes a careful eye can find." },
+    { "id": "select", "rank": 3, "label": "Select",
+      "description": "Competent and recognizable; noticeable flaws on one or more axes." },
+    { "id": "standard", "rank": 2, "label": "Standard",
+      "description": "Gets the idea across despite significant defects." },
+    { "id": "utility", "rank": 1, "label": "Utility",
+      "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
+  ],
+  "axes": [
+    { "id": "prompt-fidelity", "label": "Prompt fidelity",
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
+      "values": [
+        { "id": "faithful", "label": "Faithful", "description": "All requested elements present as specified." },
+        { "id": "partial", "label": "Partial", "description": "Some requested elements missing, extra, or misread." },
+        { "id": "off-brief", "label": "Off-brief", "description": "Substantially not the thing that was asked for." }
+      ] },
+    { "id": "geometry", "label": "Geometry & topology",
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "No visible construction errors." },
+        { "id": "minor", "label": "Minor defects", "description": "Small misalignments or overlaps visible on inspection." },
+        { "id": "major", "label": "Major defects", "description": "Structural errors that dominate the read of the image." }
+      ] },
+    { "id": "color", "label": "Color & rendering",
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Palette and rendering read as intended." },
+        { "id": "minor", "label": "Minor defects", "description": "Off colors, banding, or stacking slips that don't break the image." },
+        { "id": "major", "label": "Major defects", "description": "Rendering errors that break the image." }
+      ] },
+    { "id": "composition", "label": "Composition",
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
+      "values": [
+        { "id": "clean", "label": "Clean", "description": "Well-composed within its viewBox." },
+        { "id": "minor", "label": "Minor defects", "description": "Awkward margins, crowding, or scale oddities." },
+        { "id": "major", "label": "Major defects", "description": "Subject clipped, marooned, or scaled absurdly." }
+      ] }
+  ],
+  "models": [
+    { "id": "claude-fable-5",  "label": "Claude Fable 5",  "vendor": "Anthropic" },
+    { "id": "claude-sonnet-5", "label": "Claude Sonnet 5", "vendor": "Anthropic" },
+    { "id": "claude-opus-5",   "label": "Claude Opus 5",   "vendor": "Anthropic" },
+    { "id": "claude-opus-4-6", "label": "Claude Opus 4.6", "vendor": "Anthropic" },
+    { "id": "claude-opus-4-1", "label": "Claude Opus 4.1", "vendor": "Anthropic" },
+    { "id": "claude-sonnet-4-5", "label": "Claude Sonnet 4.5", "vendor": "Anthropic" },
+    { "id": "gpt-5", "label": "GPT-5", "vendor": "OpenAI" },
+    { "id": "gemini-2-5-pro", "label": "Gemini 2.5 Pro", "vendor": "Google" }
+  ]
+};
+
+/* items/2026-07-27-subway-rat/entry.json + items/2026-07-27-hairball/entry.json,
+   verbatim except for the two synthetic overlays flagged below (both are
+   disclosed in the mockup caption and NEVER inside the card). */
+var ENTRIES = [
+  {
+    "schema": 1,
+    "id": "2026-07-27-subway-rat",
+    "title": "Sneaky subway rat",
+    "prompt": "I'd like a sneaky stealthy subway rat. It should have googly eyes and be showing in profile as though it is a scampering off somewhere. Let's give it a cartoony style like from the looney tunes or something",
+    "created": "2026-07-27",
+    "tags": [],
+    "primary": "r1",
+    "sizeClass": "l",
+    "responses": [
+      {
+        "rid": "r1", "file": "claude-opus-5.svg", "svgKey": "claude-opus-5--subway-rat", "prefix": "o_",
+        "model": "claude-opus-5", "model_version": "claude-opus-5", "date": "2026-07-27",
+        "generation": { "mode": "one-shot", "prompt_count": 1 },
+        "grade": "select", "graded": "2026-07-27",
+        /* SYNTHETIC OVERLAY 1 of 2 — no real entry has been regraded yet. */
+        "grade_history": [
+          { "grade": "choice", "date": "2026-07-27", "taxonomy_version": 4, "note": "mock — for layout" }
+        ],
+        "annotations": {
+          "prompt-fidelity": "partial",
+          "geometry": "minor",
+          "color": "clean",
+          "composition": "clean"
+        },
+        "transcript": null,
+        "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated."
+      },
+      {
+        "rid": "r2", "file": "claude-fable-5.svg", "svgKey": "claude-fable-5--subway-rat", "prefix": "f_",
+        "model": "claude-fable-5", "model_version": "claude-fable-5", "date": "2026-07-27",
+        "generation": { "mode": "one-shot", "prompt_count": 1 },
+        "grade": "standard", "graded": "2026-07-27",
+        "grade_history": [],
+        "annotations": {
+          "prompt-fidelity": "faithful",
+          "geometry": "major",
+          "color": "clean",
+          "composition": "major"
+        },
+        "transcript": null,
+        "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated."
+      },
+      {
+        "rid": "r3", "file": "claude-sonnet-5.svg", "svgKey": "claude-sonnet-5--subway-rat", "prefix": "s_",
+        "model": "claude-sonnet-5", "model_version": "claude-sonnet-5", "date": "2026-07-27",
+        "generation": { "mode": "one-shot", "prompt_count": 1 },
+        "grade": "standard", "graded": "2026-07-27",
+        "grade_history": [],
+        /* SYNTHETIC OVERLAY 2 of 2 — the real entry grades color as "clean";
+           it is omitted here so a skipped axis renders. */
+        "annotations": {
+          "prompt-fidelity": "partial",
+          "geometry": "major",
+          "composition": "major"
+        },
+        "transcript": null,
+        "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated."
+      }
+    ]
+  },
+  {
+    "schema": 1,
+    "id": "2026-07-27-hairball",
+    "title": "Hairball",
+    "prompt": "hairball",
+    "created": "2026-07-27",
+    "tags": [],
+    "primary": "r1",
+    "sizeClass": "m",
+    "responses": [
+      {
+        "rid": "r1", "file": "claude-fable-5.svg", "svgKey": "claude-fable-5--hairball", "prefix": "h_",
+        "model": "claude-fable-5", "model_version": "claude-fable-5", "date": "2026-07-27",
+        "generation": { "mode": "one-shot", "prompt_count": 1 },
+        "grade": "standard", "graded": "2026-07-27",
+        "grade_history": [],
+        "annotations": {
+          "prompt-fidelity": "faithful",
+          "geometry": "minor",
+          "color": "minor",
+          "composition": "clean"
+        },
+        "transcript": null,
+        "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 1.8%); no viewBox normalization. Source contains a self-correction fossil: a strand emitted with invalid stroke=\"#a2first\" was zeroed out (stroke-width 0, opacity 0) and immediately re-emitted corrected as #a28457 — invisible in the render, preserved byte-exact."
+      }
+    ]
+  }
+];
+
+/* ==========================================================================
+   TAXONOMY LOOKUPS — generic; an unknown id still renders something honest.
+   ========================================================================== */
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+function gradeOf(id) {
+  for (var i = 0; i < TAXONOMY.grades.length; i++) if (TAXONOMY.grades[i].id === id) return TAXONOMY.grades[i];
+  return { id: id, rank: null, label: String(id || '—'), description: '' };
+}
+function modelOf(id) {
+  for (var i = 0; i < TAXONOMY.models.length; i++) if (TAXONOMY.models[i].id === id) return TAXONOMY.models[i];
+  return { id: id, label: String(id || '—'), vendor: '' };
+}
+function valueOf(axis, id) {
+  var vs = (axis && axis.values) || [];
+  for (var i = 0; i < vs.length; i++) if (vs[i].id === id) return vs[i];
+  return { id: id, label: String(id || '—'), description: '' };
+}
+function gradeScaleSize() { return TAXONOMY.grades.length; }
+function shortModel(label) { return String(label).replace(/^Claude\s+/i, '').toUpperCase(); }
+function methodLine(gen) {
+  if (!gen) return '—';
+  var n = gen.prompt_count;
+  if (gen.mode === 'one-shot') return 'ONE-SHOT';
+  return 'REFINED ×' + (n || '?');
+}
+/* annotations accept either "value-id" or {value, note} */
+function annValue(a) { return (a && typeof a === 'object') ? a.value : a; }
+function annNote(a)  { return (a && typeof a === 'object') ? a.note  : null; }
+
+/* ==========================================================================
+   SVG INSTANCING — every id and every url(#…) / href="#…" reference is
+   prefixed per response so four artworks can share one page. The artwork
+   itself is never altered.
+   ========================================================================== */
+var SVG_CACHE = {};
+function rawSVG(key) {
+  if (!(key in SVG_CACHE)) {
+    var el = document.getElementById('svg-' + key);
+    SVG_CACHE[key] = el ? el.textContent.replace(/^\s*<\?xml[\s\S]*?\?>\s*/, '') : '';
+  }
+  return SVG_CACHE[key];
+}
+function svgInst(key, prefix) {
+  var s = rawSVG(key);
+  s = s.replace(/(\s)id="([^"]+)"/g, function (m, sp, id) { return sp + 'id="' + prefix + id + '"'; });
+  s = s.replace(/url\(#([^)"']+)\)/g, function (m, id) { return 'url(#' + prefix + id + ')'; });
+  s = s.replace(/((?:xlink:)?href)="#([^"]+)"/g, function (m, at, id) { return at + '="#' + prefix + id + '"'; });
+  return s;
+}
+var BLOBS = {};
+function svgBlobURL(key) {
+  if (!(key in BLOBS)) {
+    try { BLOBS[key] = URL.createObjectURL(new Blob([rawSVG(key)], { type: 'image/svg+xml' })); }
+    catch (e) { BLOBS[key] = ''; }
+  }
+  return BLOBS[key];
+}
+
+/* ==========================================================================
+   THE RUBBER STAMP — mockup-3's turbulence technique, re-registered from red
+   pencil to rubber: the whole mark is displaced at its edges by one noise
+   field, then eroded by a second so the ink strikes unevenly. Each instance
+   gets its own seeds; no two impressions are identical.
+   ========================================================================== */
+var stampSeq = 0;
+function gradeStamp(grade) {
+  stampSeq++;
+  var f = 'ink' + stampSeq, s1 = (stampSeq * 7) % 13 + 2, s2 = (stampSeq * 11) % 17 + 3;
+  var word = String(grade.label).toUpperCase();
+  var rank = grade.rank == null ? '' : ('RANK ' + grade.rank + ' OF ' + gradeScaleSize());
+  var size = word.length > 7 ? 27 : 31;
+  return '<span class="ac-stamp" role="img" aria-label="graded ' + esc(grade.label) + '">' +
+    '<svg viewBox="0 0 300 108" preserveAspectRatio="xMidYMid meet">' +
+    '<defs><filter id="' + f + '" x="-12%" y="-18%" width="124%" height="136%" color-interpolation-filters="sRGB">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.09 0.14" numOctaves="3" seed="' + s1 + '" stitchTiles="stitch" result="warp"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="warp" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="disp"/>' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.22" numOctaves="3" seed="' + s2 + '" stitchTiles="stitch" result="blot"/>' +
+      '<feColorMatrix in="blot" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.1 1.1 0 0 -0.30" result="mask"/>' +
+      '<feComposite in="disp" in2="mask" operator="in"/>' +
+    '</filter></defs>' +
+    '<g filter="url(#' + f + ')" fill="none" stroke="#ae2c1e" opacity="0.92">' +
+      '<rect x="5" y="5" width="290" height="98" rx="7" stroke-width="5"/>' +
+      '<rect x="15" y="15" width="270" height="78" rx="3" stroke-width="1.6"/>' +
+      '<text x="150" y="35" fill="#ae2c1e" stroke="none" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-size="11.5" letter-spacing="3">THE JUNK DRAWER</text>' +
+      '<line x1="52" y1="41" x2="248" y2="41" stroke-width="1"/>' +
+      '<text x="150" y="72" fill="#ae2c1e" stroke="none" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-weight="bold" font-size="' + size + '" letter-spacing="4.5">' + esc(word) + '</text>' +
+      '<text x="150" y="88" fill="#ae2c1e" stroke="none" text-anchor="middle" font-family="Georgia, \'Times New Roman\', serif" font-size="10.5" letter-spacing="2.4">' + esc(rank) + '</text>' +
+    '</g></svg></span>';
+}
+
+/* ==========================================================================
+   RENDER — the card front (per-response) and the card reverse (per-item)
+   ========================================================================== */
+var jSeq = 0;
+function jit() { jSeq++; return 'j' + (jSeq % 5); }
+
+function fieldRow(label, value) {
+  return '<div class="ac-f"><span class="ac-lab">' + esc(label) + '</span>' +
+    '<span class="ac-f-v ' + jit() + '">' + esc(value) + '</span></div>';
+}
+function fieldPair(l1, v1, l2, v2) {
+  return '<div class="ac-f pair"><span class="ac-lab">' + esc(l1) + '</span>' +
+    '<span class="ac-f-v ' + jit() + '">' + esc(v1) + '</span>' +
+    '<span class="ac-lab">' + esc(l2) + '</span>' +
+    '<span class="ac-f-v ' + jit() + '">' + esc(v2) + '</span></div>';
+}
+function sectionRule(label) {
+  return '<div class="ac-sec"><span class="ac-lab">' + esc(label) + '</span>' +
+    '<span class="ac-rule-fill"></span></div>';
+}
+
+/* CONDITION — one terse typed entry per axis, IN TAXONOMY ORDER; the
+   annotator's note runs on after the em dash when present, otherwise the
+   taxonomy's own description for that value does. Skipped axes are typed
+   muted. Unknown axes present in the data still render. */
+function conditionHTML(resp) {
+  var ann = resp.annotations || {}, seen = {}, h = '';
+  function line(axisLabel, valueLabel, run, skipped) {
+    return '<div class="ac-cond-e ' + (skipped ? 'is-skipped ' : '') + jit() + '">' +
+      '<i>' + esc(String(axisLabel).toLowerCase()) + '</i> — ' + esc(valueLabel) +
+      (run ? '; ' + esc(String(run).charAt(0).toLowerCase() + String(run).slice(1)) : '') + '</div>';
+  }
+  TAXONOMY.axes.forEach(function (axis) {
+    seen[axis.id] = 1;
+    if (!(axis.id in ann)) { h += line(axis.label, 'not assessed', '', true); return; }
+    var v = valueOf(axis, annValue(ann[axis.id]));
+    h += line(axis.label, String(v.label).toLowerCase(), annNote(ann[axis.id]) || v.description, false);
+  });
+  Object.keys(ann).forEach(function (k) {          /* axes the taxonomy hasn't met yet */
+    if (seen[k]) return;
+    h += line(k.replace(/-/g, ' '), String(annValue(ann[k])).toLowerCase(), annNote(ann[k]) || '', false);
+  });
+  return h;
+}
+
+function gradeHTML(resp) {
+  var g = gradeOf(resp.grade);
+  var h = '<div class="ac-grade">';
+  h += '<div><div class="ac-g-desc ' + jit() + '">' + esc(g.description) + '</div>' +
+       '<div class="ac-g-date ' + jit() + '">graded ' + esc(resp.graded || '—') + '</div>';
+  var hist = resp.grade_history || [];
+  if (hist.length) {
+    hist.forEach(function (hh) {
+      var og = gradeOf(hh.grade), w = String(og.label).toUpperCase();
+      var xs = new Array(w.length + 1).join('x');
+      h += '<div class="ac-corr">supersedes <span class="ac-struck">' +
+        '<span class="w">' + esc(w) + '</span>' +
+        '<span class="x" aria-hidden="true">' + esc(xs) + '</span>' +
+        '</span> ' + esc(hh.date || '') + '</div>';
+    });
+  }
+  h += '</div>' + gradeStamp(g) + '</div>';
+  return h;
+}
+
+function altsHTML(entry, cur) {
+  if (entry.responses.length < 2) return '';
+  var h = sectionRule('Related accessions, same prompt') + '<div class="ac-alts">';
+  entry.responses.forEach(function (r) {
+    var m = modelOf(r.model), g = gradeOf(r.grade), isCur = r.rid === cur;
+    h += '<button type="button" class="ac-alt' + (isCur ? ' is-cur' : '') + '" data-rid="' + esc(r.rid) + '">' +
+      '<span class="ac-alt-art">' + svgInst(r.svgKey, r.prefix + 't_') + '</span>' +
+      '<span class="ac-alt-cap"><b>' + esc(shortModel(m.label)) + '</b><br>' +
+      '<em>' + esc(g.label) + '</em></span></button>';
+  });
+  return h + '</div>';
+}
+
+function frontHTML(entry, resp) {
+  var m = modelOf(resp.model);
+  var n = entry.responses.length;
+  var h = '';
+  h += '<div class="ac-masthead"><span class="ac-mh-l">The Junk Drawer</span>' +
+       '<span class="ac-mh-r">Form JD-2 &middot; registrar’s copy</span></div>';
+  h += '<div class="ac-mh-title">Accession Record</div><div class="ac-mh-rules"></div>';
+
+  h += fieldRow('Accession no.', entry.id);
+  h += fieldRow('Object', entry.title);
+  h += fieldRow('Maker', m.label + (m.vendor ? ' · ' + m.vendor : ''));
+  h += fieldPair('Received', resp.date, 'Method', methodLine(resp.generation));
+  if (entry.tags && entry.tags.length) h += fieldRow('Tags', entry.tags.join(', '));
+
+  h += '<div class="mt1">' + sectionRule('Grade') + gradeHTML(resp) + '</div>';
+
+  var alts = altsHTML(entry, resp.rid);
+  if (alts) h += '<div class="mt1">' + alts + '</div>';
+
+  h += '<div class="mt1 ac-peekhide">' + sectionRule('Condition') + conditionHTML(resp) + '</div>';
+
+  h += '<div class="ac-peekhide">' + sectionRule('Remarks') +
+       '<div class="ac-remarks ' + jit() + '">' + esc(resp.notes || '—') + '</div></div>';
+
+  h += '<div class="mt1 ac-peekhide"><div class="ac-foot">' +
+       '<span>accessioned ' + esc(entry.created) + ' &middot; ' + n + ' on file</span>' +
+       '<a class="ac-dl" href="' + esc(svgBlobURL(resp.svgKey)) + '" download="' + esc(resp.file) + '">download svg &#10515;</a>' +
+       '</div></div>';
+  if (resp.transcript) {
+    h += '<div class="ac-foot ac-peekhide"><a class="ac-dl" href="' + esc(resp.transcript) + '">transcript &rarr;</a></div>';
+  }
+
+  h += '<button type="button" class="ac-dogear ac-peekhide" data-flip="1" aria-label="turn the card over to the verbatim prompt">' +
+       '<span class="ac-de-word">Over &rarr;</span><span class="ac-de-fold"></span><span class="ac-de-crease"></span></button>';
+  return h;
+}
+
+function backHTML(entry) {
+  var h = '';
+  h += '<div class="ac-masthead"><span class="ac-mh-l">Reverse</span>' +
+       '<span class="ac-mh-r">' + esc(entry.id) + '</span></div>';
+  h += '<div class="ac-mh-title">Verbatim Prompt</div><div class="ac-mh-rules"></div>';
+  h += '<div class="ac-prompt ' + jit() + '">“' + esc(entry.prompt) + '”</div>';
+  h += '<div class="mt1">' + sectionRule('Note') +
+       '<div class="ac-fine">Transcribed exactly as received into the drawer on ' +
+       esc(entry.created) + '. Spelling, casing and punctuation are the depositor’s ' +
+       'and have not been corrected. The prompt belongs to the object, not to any one ' +
+       'maker: it is identical on every accession filed against it.</div></div>';
+  h += '<button type="button" class="ac-dogear" data-flip="1" aria-label="turn the card back to the front">' +
+       '<span class="ac-de-word">&larr; Over</span><span class="ac-de-fold"></span><span class="ac-de-crease"></span></button>';
+  return h;
+}
+
+/* ==========================================================================
+   STATE
+   ========================================================================== */
+var stage = document.getElementById('stage'),
+    artEl = document.getElementById('art'),
+    frontEl = document.getElementById('front'),
+    backEl = document.getElementById('back'),
+    flipEl = document.getElementById('flip'),
+    sheetEl = document.getElementById('sheet'),
+    scrollEl = document.getElementById('scroll'),
+    handleEl = document.getElementById('handle'),
+    flipBtn = document.getElementById('flip-btn');
+
+var params = new URLSearchParams(location.search);
+function paramItem() {
+  var want = params.get('mock-item');
+  if (!want) return ENTRIES[0].id;
+  for (var i = 0; i < ENTRIES.length; i++) {
+    if (ENTRIES[i].id === want || ENTRIES[i].id.indexOf(want) > -1) return ENTRIES[i].id;
+  }
+  return ENTRIES[0].id;
+}
+var S = {
+  itemId: paramItem(),
+  rid: ENTRIES[0].primary,
+  flipped: params.get('mock-flip') === '1',
+  detent: params.get('mock-state') === 'peek' ? 'peek' : 'full'
+};
+
+function entry() { for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].id === S.itemId) return ENTRIES[i]; }
+function resp(e) { for (var i = 0; i < e.responses.length; i++) if (e.responses[i].rid === S.rid) return e.responses[i]; return e.responses[0]; }
+
+function render(swapArt) {
+  var e = entry(), r = resp(e);
+  if (swapArt !== false) artEl.innerHTML = svgInst(r.svgKey, r.prefix);
+  frontEl.innerHTML = frontHTML(e, r);
+  backEl.innerHTML = backHTML(e);
+  stage.setAttribute('data-state', S.detent);
+  flipEl.classList.toggle('is-flipped', S.flipped);
+  backEl.setAttribute('aria-hidden', S.flipped ? 'false' : 'true');
+  frontEl.setAttribute('aria-hidden', S.flipped ? 'true' : 'false');
+  flipBtn.textContent = S.flipped ? '← turn back' : 'turn over →';
+  if (scrollEl) scrollEl.scrollTop = 0;
+}
+
+function setFlip(v) {
+  /* a card you can't read the back of isn't worth turning: on mobile the
+     peek detent expands first, then turns. */
+  if (v && S.detent === 'peek' && window.matchMedia('(max-width: 768px)').matches) {
+    S.detent = 'full';
+    stage.setAttribute('data-state', 'full');
+  }
+  S.flipped = v;
+  flipEl.classList.toggle('is-flipped', S.flipped);
+  backEl.setAttribute('aria-hidden', S.flipped ? 'false' : 'true');
+  frontEl.setAttribute('aria-hidden', S.flipped ? 'true' : 'false');
+  flipBtn.textContent = S.flipped ? '← turn back' : 'turn over →';
+}
+
+/* --- events -------------------------------------------------------------- */
+document.addEventListener('click', function (ev) {
+  var alt = ev.target.closest && ev.target.closest('.ac-alt');
+  if (alt) { S.rid = alt.getAttribute('data-rid'); render(true); return; }
+  var de = ev.target.closest && ev.target.closest('[data-flip]');
+  if (de) { setFlip(!S.flipped); return; }
+  var mk = ev.target.closest && ev.target.closest('.mk-btn[data-item]');
+  if (mk) {
+    S.itemId = mk.getAttribute('data-item');
+    S.rid = entry().primary;
+    S.flipped = false;
+    Array.prototype.forEach.call(document.querySelectorAll('.mk-btn[data-item]'), function (b) {
+      b.classList.toggle('is-on', b === mk);
+    });
+    render(true);
+    return;
+  }
+  if (ev.target === flipBtn) { setFlip(!S.flipped); return; }
+});
+handleEl.addEventListener('click', function () {
+  S.detent = S.detent === 'full' ? 'peek' : 'full';
+  if (S.detent === 'peek' && S.flipped) setFlip(false);
+  stage.setAttribute('data-state', S.detent);
+});
+
+/* screenshot drivers: ?mock-state=peek|full, ?mock-flip=1, ?mock-item=<id> —
+   applied without animation so a headless capture never lands mid-transition. */
+S.rid = (function () {
+  var e = entry(), want = params.get('mock-rid');
+  for (var i = 0; want && i < e.responses.length; i++) if (e.responses[i].rid === want) return want;
+  return e.primary;
+})();
+Array.prototype.forEach.call(document.querySelectorAll('.mk-btn[data-item]'), function (b) {
+  b.classList.toggle('is-on', b.getAttribute('data-item') === S.itemId);
+});
+if (params.has('mock-flip') || params.has('mock-state') || params.has('mock-item') || params.has('mock-rid')) {
+  document.body.classList.add('ac-noanim');
+  render(true);
+  requestAnimationFrame(function () {
+    setTimeout(function () { document.body.classList.remove('ac-noanim'); }, 60);
+  });
+} else {
+  render(true);
+}
+</script>
+</body>
+</html>
