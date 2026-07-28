@@ -1,0 +1,81 @@
+{
+  "schema": 1,
+  "id": "2026-07-28-desktop-succulent",
+  "title": "Desktop succulent",
+  "prompt": "A desktop succulent in a tastefully designed pot. The pot should be clay influenced by Scandinavian interior design.",
+  "created": "2026-07-28",
+  "tags": [
+    "plant",
+    "home-decor"
+  ],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "choice",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "clean",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 4.0%)."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "utility",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "off-brief",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 3.2%)."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-opus-4-6.svg",
+      "model": "claude-opus-4-6",
+      "model_version": "claude-opus-4-6",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "major",
+        "color": "minor",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. viewBox normalized: tightened from \"88 178 224 328\" to \"104.2 183.8 191.2 315.2\" (was 8.3% padded). Ink-bounds check passed after normalization."
+    }
+  ]
+}
