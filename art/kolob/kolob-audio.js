@@ -1042,15 +1042,15 @@ window.KolobAudio = (function () {
       C.fugingFired = true;
       var fugDur = fugingEntry();
       C.fugingUntil = ctx.currentTime + fugDur;
-      if (chance(0.6)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
+      if (chance(0.3)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
     }
     // Testimony: the Cage silences — rare, long, authoritative.
-    if (C.section === "testimony" && !inHush() && chance(0.015)) {
+    if (C.section === "testimony" && !inHush() && chance(0.008)) {
       stillness("testimony");
     }
     // And once in a great while a silence falls where none was scheduled —
     // about once a meeting, somewhere, unannounced.
-    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0008)) {
+    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0004)) {
       stillness("unbidden");
     }
     // Section end → joint → advance.
@@ -1092,7 +1092,7 @@ window.KolobAudio = (function () {
   function stillness(why) {
     if (!playing || !droneDuck) return;
     var t = ctx.currentTime;
-    var holdS = rnd(10, 22) * silenceMul();
+    var holdS = rnd(6, 14) * silenceMul();
     C.hushUntil = t + holdS + 2.5;
     droneDuck.gain.cancelScheduledValues(t);
     droneDuck.gain.setValueAtTime(droneDuck.gain.value || 1, t);
