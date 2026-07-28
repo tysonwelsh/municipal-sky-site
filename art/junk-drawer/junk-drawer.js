@@ -18,6 +18,7 @@
 /* ---- the pile loader + field-notes renderer ------------------------------ */
 (function () {
   var pile = document.querySelector('.jd-pile');
+  var payloadRef = null;   /* the data.php payload, handed to JD_record */
   /* --w per sizeClass, in cqmin. Fallback only — the live boxes come from
      taxonomy.sizeTiers at load (see sizeBoxes), so the scale is data-driven. */
   var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
@@ -248,6 +249,7 @@
         console.warn('junk drawer: data.php skipped entries', data.errors);
       }
       renderNotes(data);
+      payloadRef = data;   /* the record module renders from this payload */
       /* resolve + fetch every primary response SVG (contract: primary
          always resolves; every response has a ready same-origin url) */
       var tax = data.taxonomy || {};
@@ -326,6 +328,21 @@
         el.style.zIndex = p.z;
       });
       if (window.JD_wirePile) window.JD_wirePile();
+      /* hand the record module the payload + the primary SVG texts (so a
+         record opens with zero extra requests), then honor a #<id> deep
+         link — loading with a hash opens that item's report card */
+      if (window.JD_record) {
+        var primaries = {};
+        loaded.forEach(function (rec) {
+          var it = rec.item;
+          var pr = it.responses.filter(function (r) {
+            return r.rid === it.primary;
+          })[0] || it.responses[0];
+          primaries[it.id + '/' + pr.file] = rec.svg;
+        });
+        window.JD_record.setData(payloadRef, primaries);
+        if (location.hash.length > 1) window.JD_record.openFromHash();
+      }
     })
     .catch(function (err) {
       fallbackNote();
@@ -449,10 +466,13 @@
       '</span><span class="btns">' +
       '<a class="btn" href="' + d.url + '" download="' + d.id + '.svg" ' +
       'title="download the SVG as generated">DOWNLOAD<br>SVG ⤓</a>' +
-      '<a class="btn jd-fullrecord" href="#" title="the full record is the next build">FULL RECORD →</a>' +
+      '<a class="btn jd-fullrecord" href="#' + d.id + '" title="open the report card">REPORT<br>CARD →</a>' +
       '</span></div>';
     var fr = tag.querySelector('.jd-fullrecord');
-    fr.addEventListener('click', function (e) { e.preventDefault(); });
+    fr.addEventListener('click', function (e) {
+      e.preventDefault();
+      if (window.JD_record) window.JD_record.open(d.id);
+    });
 
     /* seat the tag just below the item, grommet toward it, clamped to the
        well; if there's no room below, it hangs above instead */
@@ -483,13 +503,20 @@
 
   /* dismissal: any press that isn't the item or the tag — wood, page,
      notes, anywhere — plus Escape and resize (positions go stale) */
+  /* every dismissal path stands down while the report card is open — the
+     record owns Esc/scrim then, and the selection must survive its close */
   document.addEventListener('pointerdown', function (e) {
+    if (window.JD_record && window.JD_record.isOpen()) return;
     if (!e.target.closest || !e.target.closest('.jd-item, .jd-itemtag')) hideTag();
   });
   window.addEventListener('keydown', function (e) {
+    if (window.JD_record && window.JD_record.isOpen()) return;
     if (e.key === 'Escape') hideTag();
   });
-  window.addEventListener('resize', hideTag);
+  window.addEventListener('resize', function () {
+    if (window.JD_record && window.JD_record.isOpen()) return;
+    hideTag();
+  });
   var dropX = 0, dropY = 0;
   /* drag moves are TRANSFORM-only (--dx/--dy): moving a filtered element via
      left/top forces layout repaints, and Blink leaves stale drop-shadow
@@ -684,4 +711,344 @@
   if (mq.addEventListener) mq.addEventListener('change', update);
   else if (mq.addListener) mq.addListener(update);
   update();
+})();
+
+/* ---- THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a).
+   Self-contained module: the pile loader hands it the data.php payload and
+   the already-fetched primary SVG texts via JD_record.setData(); the item
+   tag's REPORT CARD button calls JD_record.open(id). The card is built
+   entirely from the payload (taxonomy-driven — unknown axes render, nothing
+   hardcoded), alternatives' SVGs are fetched lazily on first open, opening
+   sets #<id> via pushState (deep links; popstate closes — Android back
+   closes the card, not the site), and an item_open event is tracked.
+   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_) so they can
+   never collide with the pile's inlined primaries or each other. */
+(function () {
+  var payload = null, svgCache = {};
+  var scrim = null, cardEl = null, scrollEl = null;
+  var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  var markSeq = 0;
+  var JITTER = [-1.7, 1.3, -0.8, 2.0, -1.4, 0.9, -2.1, 1.6];
+  var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'];
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function byId(list, id) {
+    list = list || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  function fmtDate(iso) {
+    if (!iso) return '';
+    var p = String(iso).split('-');
+    if (p.length !== 3) return iso;
+    return String(parseInt(p[2], 10)) + ' ' +
+      (MONTHS[parseInt(p[1], 10) - 1] || p[1]) + ' ' + p[0];
+  }
+  /* PROCESS, plainly stated, from the honest turn count */
+  function processLabel(gen) {
+    if (!gen) return '—';
+    if (gen.mode === 'refined') {
+      var n = gen.prompt_count || 2;
+      return 'refined (' + n + ' prompt' + (n === 1 ? '' : 's') + ')';
+    }
+    return 'one-shot (1 prompt)';
+  }
+  /* prefix every id and url(#)/href reference so inlined copies never
+     collide (same discipline as the rating instrument) */
+  function svgInst(svg, pfx) {
+    return String(svg)
+      .replace(/^\s*<\?xml[^>]*\?>\s*/i, '')
+      .replace(/\sid="([^"]+)"/g, ' id="' + pfx + '$1"')
+      .replace(/url\(#([^)]+)\)/g, 'url(#' + pfx + '$1)')
+      .replace(/(\sxlink:href="|\shref=")#([^"]+)"/g, '$1#' + pfx + '$2"');
+  }
+  /* a red-pencil hand mark; each takes its own rotation jitter + waver
+     filter so no two sit identically */
+  function mark(word) {
+    markSeq++;
+    var jit = JITTER[markSeq % JITTER.length];
+    return '<span class="rc-mark sm" style="--jit:' + jit +
+      'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
+      '<span class="rc-mark-word">' + esc(word) + '</span></span>';
+  }
+  function annOf(resp, axisId) {
+    var a = (resp.annotations || {})[axisId];
+    if (a == null) return null;
+    return typeof a === 'string' ? { value: a } : a;
+  }
+  function fillHTML(label, value) {
+    return '<div class="rc-fill">' +
+      '<span class="rc-fill-l">' + esc(label) + '</span>' +
+      '<span class="rc-fill-v">' + value + '</span></div>';
+  }
+
+  /* the vaporwave floor: black-and-white checkerboard projected toward a
+     center vanishing point; far rows dissolve into the navy horizon */
+  function floorSVG() {
+    var W = 600, H = 240, VPX = W / 2, HOR = 96;
+    var ROWS = 9, R = 0.7, CW = 104;
+    var ts = [1];
+    for (var i = 1; i <= ROWS; i++) ts.push(ts[i - 1] * R);
+    function px(j, t) { return (VPX + j * CW * t).toFixed(1); }
+    function py(t) { return (HOR + t * (H - HOR)).toFixed(1); }
+    var cells = '';
+    for (var r = 0; r < ROWS; r++) {
+      for (var j = -8; j < 8; j++) {
+        if (((r + j) % 2 + 2) % 2 === 0) continue;
+        var t0 = ts[r], t1 = ts[r + 1];
+        cells += '<polygon points="' +
+          px(j, t0) + ',' + py(t0) + ' ' + px(j + 1, t0) + ',' + py(t0) + ' ' +
+          px(j + 1, t1) + ',' + py(t1) + ' ' + px(j, t1) + ',' + py(t1) +
+          '" fill="#e2ded2"/>';
+      }
+    }
+    return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0a0e24"/>' +
+      '<stop offset="0.8" stop-color="#141b44"/>' +
+      '<stop offset="1" stop-color="#1c2456"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#1c2456"/>' +
+      '<stop offset="0.55" stop-color="#151b40" stop-opacity="0.55"/>' +
+      '<stop offset="1" stop-color="#101010" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + HOR + '" fill="url(#jdRcSky)"/>' +
+      cells +
+      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" fill="url(#jdRcFade)"/>' +
+      '</svg>';
+  }
+
+  function gradeOf(id) {
+    return byId((payload.taxonomy || {}).grades, id) || { label: id || '', rank: 0 };
+  }
+  function modelOf(id) {
+    return byId((payload.taxonomy || {}).models, id) || { label: id || '', vendor: '' };
+  }
+
+  function subjectsHTML(resp) {
+    var rows = '';
+    ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
+      var a = annOf(resp, axis.id);
+      var cell;
+      if (!a) {
+        cell = '<span class="rc-skip">— · not assessed</span>';
+      } else {
+        var v = byId(axis.values, a.value);
+        cell = mark(v ? v.label : a.value);
+      }
+      rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
+        '</span></td><td>' + cell + '</td></tr>';
+    });
+    var g = gradeOf(resp.grade);
+    return '<table class="rc-subj"><thead><tr>' +
+      '<th style="width:52%">Axis</th><th style="width:48%">Verdict</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody>' +
+      '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
+      '<td>' + mark(g.label) + '</td></tr></tfoot></table>';
+  }
+
+  function altsHTML(entry, curIdx) {
+    if (!entry.responses || entry.responses.length < 2) return '';
+    var h = '<div class="rc-alts">';
+    entry.responses.forEach(function (r, i) {
+      var m = modelOf(r.model), g = gradeOf(r.grade);
+      h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
+        '" data-resp="' + i + '">' +
+        '<span class="rc-alt-art">' +
+        svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
+        '</span>' +
+        '<span class="rc-alt-cap">' + esc(m.label) +
+        '<span class="rc-alt-grade">' + esc(g.label) + '</span>' +
+        '</span></button>';
+    });
+    return h + '</div>';
+  }
+
+  function cardHTML(entry, resp, curIdx) {
+    var m = modelOf(resp.model);
+    var h = '';
+    h += '<header class="rc-block rc-masthead">' +
+      '<div class="rc-item">' + esc(entry.title) + '</div></header>';
+    h += '<div class="rc-block rc-fillsline">' +
+      fillHTML('Model', esc(m.label)) +
+      fillHTML('Prompted', esc(fmtDate(resp.date))) +
+      fillHTML('Process', esc(processLabel(resp.generation))) +
+      '</div>';
+    h += '<div class="rc-block rc-plate">' + floorSVG() +
+      '<div class="rc-plate-art">' +
+      svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jr' + curIdx + '_') +
+      '</div></div>';
+    h += '<div class="rc-block rc-head">The prompt</div>' +
+      '<div class="rc-block rc-assign"><p>“' + esc(entry.prompt) + '”</p></div>';
+    h += '<div class="rc-block rc-head">Annotations</div>' +
+      '<div class="rc-block">' + subjectsHTML(resp) + '</div>';
+    var alts = altsHTML(entry, curIdx);
+    if (alts) {
+      h += '<div class="rc-block rc-head">Other models, same prompt</div>' +
+        '<div class="rc-block">' + alts + '</div>';
+    }
+    h += '<div class="rc-block rc-prov"><div class="rc-formline">' +
+      '<span><a class="rc-dl" href="' + esc(resp.url) + '" download="' +
+      esc(entry.id) + '.svg" title="download the SVG as generated">' +
+      'Download SVG ⤓</a></span>' +
+      '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
+      '</div></div>';
+    return h;
+  }
+
+  /* red-pencil waver filters, injected once (stitchTiles="stitch") */
+  function injectDefs() {
+    if (document.getElementById('jdRcWv0')) return;
+    var host = document.createElement('div');
+    host.setAttribute('aria-hidden', 'true');
+    host.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+    var f = '';
+    [[0.052, 0.14, 3, 1.5], [0.061, 0.12, 11, 1.3],
+     [0.047, 0.16, 19, 1.6], [0.058, 0.13, 29, 1.4]].forEach(function (p, i) {
+      f += '<filter id="jdRcWv' + i + '" x="-8%" y="-18%" width="116%" height="136%" ' +
+        'color-interpolation-filters="sRGB">' +
+        '<feTurbulence type="fractalNoise" baseFrequency="' + p[0] + ' ' + p[1] +
+        '" numOctaves="2" seed="' + p[2] + '" stitchTiles="stitch" result="t"/>' +
+        '<feDisplacementMap in="SourceGraphic" in2="t" scale="' + p[3] +
+        '" xChannelSelector="R" yChannelSelector="G"/></filter>';
+    });
+    host.innerHTML = '<svg width="0" height="0" focusable="false"><defs>' + f + '</defs></svg>';
+    document.body.appendChild(host);
+  }
+
+  function track(type, label) {
+    try {
+      fetch('../../api/page-event-tracking.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ page: 'junk-drawer', event_type: type, label: label || null })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
+  /* fetch any response SVGs not yet cached (primaries arrive from the pile
+     loader; alternatives load lazily on first open) */
+  function ensureSVGs(entry) {
+    return Promise.all(entry.responses.map(function (r) {
+      var key = entry.id + '/' + r.file;
+      if (svgCache[key]) return null;
+      return fetch(r.url).then(function (res) {
+        if (!res.ok) throw new Error(r.url + ' ' + res.status);
+        return res.text();
+      }).then(function (t) { svgCache[key] = t; })
+        .catch(function () { svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>'; });
+    }));
+  }
+
+  function build() {
+    if (scrim) return;
+    scrim = document.createElement('div');
+    scrim.className = 'jd-record-scrim';
+    scrim.innerHTML = '<div class="jd-record" role="dialog" aria-modal="true" ' +
+      'aria-label="report card">' +
+      '<button type="button" class="jd-record-close" aria-label="close">✕</button>' +
+      '<div class="rc-scroll"></div></div>';
+    document.body.appendChild(scrim);
+    cardEl = scrim.querySelector('.jd-record');
+    scrollEl = scrim.querySelector('.rc-scroll');
+    scrim.addEventListener('pointerdown', function (e) {
+      if (e.target === scrim) close();
+    });
+    scrim.querySelector('.jd-record-close').addEventListener('click', close);
+    scrollEl.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('.rc-alt') : null;
+      if (!b) return;
+      var i = parseInt(b.getAttribute('data-resp'), 10);
+      if (isNaN(i) || i === curResp) return;
+      curResp = i;
+      render(false);
+    });
+  }
+
+  function render(animate) {
+    markSeq = 0;
+    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    scrollEl.innerHTML = cardHTML(curEntry, resp, curResp);
+    if (animate) {
+      cardEl.classList.remove('is-enter');
+      void cardEl.offsetWidth;
+      cardEl.classList.add('is-enter');
+    }
+  }
+
+  function open(id, viaHistory) {
+    if (!payload || isOpen) return;
+    var entry = byId(payload.items, id);
+    if (!entry) return;
+    curEntry = entry;
+    curResp = 0;
+    for (var i = 0; i < entry.responses.length; i++) {
+      if (entry.responses[i].rid === entry.primary) curResp = i;
+    }
+    injectDefs();
+    build();
+    isOpen = true;
+    scrim.classList.add('is-on');
+    document.documentElement.classList.add('jd-record-open');
+    /* render immediately with what's cached (the primary always is); the
+       strip thumbnails fill in when the lazy fetches land */
+    render(true);
+    ensureSVGs(entry).then(function () { if (isOpen) render(false); });
+    if (!viaHistory) {
+      try { history.pushState({ jdRecord: id }, '', '#' + id); pushed = true; }
+      catch (e) { pushed = false; }
+    } else { pushed = false; }
+    track('item_open', id);
+  }
+
+  function teardown() {
+    if (!isOpen) return;
+    isOpen = false;
+    if (scrim) scrim.classList.remove('is-on');
+    document.documentElement.classList.remove('jd-record-open');
+  }
+
+  /* UI close goes through history when we pushed (Android back symmetry);
+     popstate performs the actual teardown */
+  function close() {
+    if (!isOpen) return;
+    if (pushed) { history.back(); }
+    else {
+      teardown();
+      try { history.replaceState(null, '', location.pathname + location.search); }
+      catch (e) {}
+    }
+  }
+
+  window.addEventListener('popstate', function () {
+    var h = decodeURIComponent(location.hash.slice(1));
+    if (isOpen && (!h || !curEntry || h !== curEntry.id)) { teardown(); }
+    else if (!isOpen && h && payload && byId(payload.items, h)) { open(h, true); }
+  });
+  window.addEventListener('keydown', function (e) {
+    if (isOpen && e.key === 'Escape') close();
+  });
+
+  window.JD_record = {
+    setData: function (data, primaries) {
+      payload = data;
+      var k;
+      for (k in (primaries || {})) svgCache[k] = primaries[k];
+    },
+    open: open,
+    close: close,
+    isOpen: function () { return isOpen; },
+    openFromHash: function () {
+      var h = decodeURIComponent(location.hash.slice(1));
+      if (h && payload && byId(payload.items, h)) open(h, true);
+    }
+  };
 })();

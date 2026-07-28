@@ -546,3 +546,255 @@ html { scroll-behavior: smooth; }
   html { scroll-behavior: auto; }
   .jd-item, .jd-item svg, .site-banner { transition: none !important; }
 }
+
+/* ============================================================================
+   THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a)
+   Opens from the item tag's REPORT CARD button over a scrim; the card is
+   self-contained (info line, artwork plate on the vaporwave floor, verbatim
+   prompt, annotations table with the overall grade as its footer row, the
+   alternatives strip, download + accession no.). Markup is built by
+   junk-drawer.js from the data.php payload — nothing here is hardcoded.
+   All rc-* classes exist only inside .jd-record-scrim, and the paper tokens
+   are scoped to it. feTurbulence textures carry stitchTiles="stitch"
+   (the standing Safari lesson).
+   ========================================================================== */
+.jd-record-scrim {
+  /* the report card's paper + ink, scoped */
+  --card: #efe4c6;
+  --card-hi: #f7efd8;
+  --form-ink: #37414f;
+  --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42);
+  --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428;
+  --red: #b02a24;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  position: fixed; inset: 0; z-index: 320;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: max(14px, 2.2vh) 14px;
+  background: rgba(10, 5, 1, 0.55);
+}
+.jd-record-scrim.is-on { display: flex; }
+html.jd-record-open { overflow: hidden; }
+
+/* ---- the card ------------------------------------------------------------ */
+.jd-record {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--form-ink);
+  background: var(--card) var(--grain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the inner hairline of the double border */
+.jd-record::before {
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  border: 1px solid rgba(55, 65, 79, 0.42);
+}
+/* paper mottle (no fold crease — owner call, 2026-07-28) */
+.jd-record::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: var(--mottle);
+  background-size: 420px 420px;
+}
+@keyframes jdRecEnter {
+  from { opacity: 0; transform: translateY(16px) rotate(-0.5deg); }
+  to   { opacity: 1; transform: none; }
+}
+.jd-record.is-enter { animation: jdRecEnter 0.44s cubic-bezier(.2,.8,.25,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .jd-record.is-enter { animation: none; }
+}
+.jd-record-close {
+  position: absolute; top: 9px; right: 9px; z-index: 5;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.72rem; line-height: 1;
+  color: var(--form-ink-2); padding: 5px 7px;
+}
+.jd-record-close:hover { color: var(--red); }
+.rc-scroll {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  padding: 14px 18px 12px;
+  scrollbar-width: thin;
+}
+.rc-scroll::-webkit-scrollbar { width: 7px; }
+.rc-scroll::-webkit-scrollbar-thumb { background: rgba(55, 65, 79, 0.30); }
+.rc-block { flex: 0 0 auto; }
+
+/* ---- masthead: the item title ------------------------------------------- */
+.rc-masthead { text-align: center; padding-bottom: 2px; }
+.rc-item {
+  font-family: var(--form); font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.19em; text-transform: uppercase;
+  margin-top: 0.5em; color: #2f3846;
+}
+
+/* ---- the info line: MODEL · PROMPTED · PROCESS on one row --------------- */
+.rc-fillsline {
+  margin-top: 0.5rem;
+  display: flex; flex-wrap: wrap; gap: 0 12px;
+  justify-content: space-between;
+}
+.rc-fill {
+  flex: 0 1 auto; display: flex; align-items: baseline; gap: 0.5em;
+  border-bottom: 1px solid var(--form-rule-2); padding: 0.26em 0 0.14em;
+}
+.rc-fill-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.rc-fill-v {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--rc-mono);
+  font-size: 0.66rem; color: var(--typed); letter-spacing: 0.01em;
+}
+
+/* ---- section heading ---------------------------------------------------- */
+.rc-head {
+  display: flex; align-items: center; gap: 0.7em;
+  font-family: var(--form); font-size: 0.55rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  margin: 0.62rem 0 0.3rem;
+}
+.rc-head::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+
+/* ---- the artwork plate on the vaporwave floor --------------------------- */
+.rc-plate {
+  position: relative; overflow: hidden;
+  margin-top: 0.55rem;
+  height: 224px;
+  padding: 10px 12px;
+  background: #101010;
+  border: 1px solid var(--form-rule);
+}
+.rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
+.rc-plate-art { position: relative; height: 100%; }
+.rc-plate-art svg { display: block; width: 100%; height: 100%; }
+
+/* ---- THE PROMPT (verbatim) ---------------------------------------------- */
+.rc-assign {
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.48rem 0.1rem 0.5rem;
+  max-height: 7.4em; overflow-y: auto; overscroll-behavior: contain;
+}
+.rc-assign p {
+  font-family: var(--rc-mono); font-size: 0.665rem; line-height: 1.5;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+}
+
+/* ---- the annotations table (AXIS | VERDICT + OVERALL GRADE footer) ------ */
+table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rc-subj th {
+  font-family: var(--form); font-weight: 400;
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); text-align: left;
+  padding: 0.3em 0.5em; background: rgba(55, 65, 79, 0.055);
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+}
+table.rc-subj th + th, table.rc-subj td + td { border-left: 1px solid var(--form-rule-2); }
+table.rc-subj td {
+  padding: 0.24em 0.5em 0.28em;
+  border-bottom: 1px solid var(--form-rule-2);
+  vertical-align: middle;
+}
+table.rc-subj tr:last-child td { border-bottom: 1px solid var(--form-rule); }
+table.rc-subj tfoot td {
+  border-top: 2px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.24em 0.5em 0.28em;
+  background: rgba(55, 65, 79, 0.03);
+}
+table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
+.rc-subj-name {
+  font-family: var(--form); font-size: 0.62rem; letter-spacing: 0.05em;
+  line-height: 1.26; color: #2f3846;
+}
+.rc-skip {
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  color: #8c8676; text-transform: uppercase; line-height: 1.4;
+}
+.rc-avg-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2);
+}
+
+/* ---- the red pencil ------------------------------------------------------ */
+.rc-mark {
+  position: relative; display: inline-block;
+  font-family: var(--hand); color: var(--red);
+  line-height: 1.12; letter-spacing: 0.005em;
+  transform: rotate(var(--jit, -1.2deg));
+  transform-origin: 12% 70%;
+}
+.rc-mark.sm { font-size: 0.84rem; }
+.rc-mark-word { position: relative; display: inline-block; }
+
+/* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
+.rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; }
+.rc-alt {
+  flex: 1 1 0; min-width: 0;
+  font: inherit; text-align: center; cursor: pointer;
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+  padding: 5px 4px 6px;
+}
+.rc-alt:hover { background: rgba(255, 250, 232, 0.85); border-color: var(--form-rule); }
+.rc-alt.is-cur { border-color: rgba(176, 42, 36, 0.75); background: rgba(255, 250, 232, 0.92); }
+.rc-alt-art { display: block; height: 46px; }
+.rc-alt-art svg { display: block; width: 100%; height: 100%; }
+.rc-alt-cap {
+  display: block; margin-top: 4px;
+  font-family: var(--form); font-size: 0.505rem; letter-spacing: 0.09em;
+  line-height: 1.3; color: #4d5462; text-transform: uppercase;
+}
+.rc-alt.is-cur .rc-alt-cap { color: #2f3846; }
+.rc-alt-grade {
+  display: block; margin-top: 2px;
+  font-family: var(--hand); font-size: 0.66rem; color: var(--red);
+  text-transform: none; letter-spacing: 0;
+}
+
+/* ---- the card foot: download + accession no. ---------------------------- */
+.rc-prov {
+  margin-top: 0.52rem; padding-top: 0.34rem;
+  border-top: 1px solid var(--form-rule-2);
+}
+.rc-formline {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.8em;
+  font-family: var(--rc-mono); font-size: 0.48rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: #918a76;
+}
+.rc-formline .rc-formno { text-align: right; line-height: 1.5; }
+.rc-dl {
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.15em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e; border: 1px solid var(--form-rule);
+  padding: 0.34em 0.8em;
+  background: rgba(255, 250, 232, 0.5);
+}
+.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+
+/* ---- small screens ------------------------------------------------------- */
+@media (max-width: 480px) {
+  .jd-record-scrim { padding: 10px 8px; }
+  .rc-scroll { padding: 12px 12px 10px; }
+  .rc-plate { height: 170px; }
+}
