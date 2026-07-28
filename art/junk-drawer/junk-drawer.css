@@ -481,9 +481,12 @@ html { scroll-behavior: smooth; }
     min-height: 420px;
     box-shadow: none;
   }
-  /* the pull is desktop-only for now (its overhang would collide with the
-     immersive viewport-bottom band); the tag returns to center */
-  .jd-pull { display: none; }
+  /* pull repositioned inside the stage on mobile (no overhang past the
+     viewport-bottom edge); scaled down to suit the smaller well */
+  .jd-pull {
+    bottom: 4px;
+    width: 160px;
+  }
     /* item tag compacts for small wells */
   .jd-itemtag { padding: 0.42rem 0.7rem 0.34rem 1.3rem; }
   .jd-itemtag .l1 { font-size: 0.56rem; }
