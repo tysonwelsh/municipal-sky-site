@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "2026-07-28-grecian-urn",
+  "title": "Vaporwave grecian urn",
+  "prompt": "a vaporwave grecian urn",
+  "created": "2026-07-28",
+  "tags": [
+    "vaporwave",
+    "greek",
+    "pottery"
+  ],
+  "primary": "r1",
+  "sizeClass": "l",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "choice",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.3%. Amphora silhouette with a chrome rim and foot, meander bands, and an inset panel scene (slatted sun, neon grid, palms) inside the body."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "utility",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "partial",
+        "geometry": "major",
+        "color": "clean",
+        "composition": "major"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 3.3%. Output-format disobedience: the model wrapped the SVG in a ```svg code fence, which was stripped before filing (bytes otherwise unaltered). Urn sits inside a full vaporwave backdrop rather than standing alone."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.3%. Urn silhouette used as a window onto the vaporwave scene, with a neon double-stroke outline and Greek text (ΑΙΣΘΗΤΙΚΗ) on the horizon."
+    }
+  ]
+}

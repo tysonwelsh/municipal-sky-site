@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 560">
+  <defs>
+    <path id="urn" d="M128,12 L272,12 C277,12 280,15 280,19 L280,28 C280,34 274,38 265,40 L246,44 L246,116 C246,127 252,135 263,140 C317,166 351,205 351,262 C351,352 301,404 262,430 L262,464 C262,471 266,475 273,479 C287,487 297,501 297,515 L297,536 C297,544 289,550 279,550 L121,550 C111,550 103,544 103,536 L103,515 C103,501 113,487 127,479 C134,475 138,471 138,464 L138,430 C99,404 49,352 49,262 C49,205 83,166 137,140 C148,135 154,127 154,116 L154,44 L135,40 C126,38 120,34 120,28 L120,19 C120,15 123,12 128,12 Z"/>
+    <clipPath id="uc"><use href="#urn"/></clipPath>
+    <linearGradient id="sky" gradientUnits="userSpaceOnUse" x1="0" y1="12" x2="0" y2="348">
+      <stop offset="0" stop-color="#1a1042"/>
+      <stop offset="0.35" stop-color="#3c1e7e"/>
+      <stop offset="0.6" stop-color="#7b2fa5"/>
+      <stop offset="0.8" stop-color="#d43fae"/>
+      <stop offset="1" stop-color="#ff8a5f"/>
+    </linearGradient>
+    <linearGradient id="sun" gradientUnits="userSpaceOnUse" x1="0" y1="148" x2="0" y2="348">
+      <stop offset="0" stop-color="#fff7ae"/>
+      <stop offset="0.3" stop-color="#ffd166"/>
+      <stop offset="0.55" stop-color="#ff8fab"/>
+      <stop offset="1" stop-color="#ff3fa4"/>
+    </linearGradient>
+    <linearGradient id="chrome" gradientUnits="userSpaceOnUse" x1="0" y1="12" x2="0" y2="44">
+      <stop offset="0" stop-color="#d8fbff"/>
+      <stop offset="0.45" stop-color="#8ee8ff"/>
+      <stop offset="0.6" stop-color="#5a5adf"/>
+      <stop offset="1" stop-color="#2a1660"/>
+    </linearGradient>
+    <linearGradient id="hg" gradientUnits="userSpaceOnUse" x1="0" y1="54" x2="0" y2="200">
+      <stop offset="0" stop-color="#34e5ff"/>
+      <stop offset="1" stop-color="#ff5ecb"/>
+    </linearGradient>
+    <pattern id="key" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="translate(2 159)">
+      <path d="M-1,21 H3 V3 H21 V15 H9 V9 H15 M21,21 H25" fill="none" stroke="#49f2e4" stroke-width="3"/>
+    </pattern>
+    <pattern id="scan" width="4" height="6" patternUnits="userSpaceOnUse">
+      <rect width="4" height="2" fill="#ffffff" opacity="0.06"/>
+    </pattern>
+    <mask id="sunmask" maskUnits="userSpaceOnUse">
+      <rect x="90" y="140" width="220" height="215" fill="#ffffff"/>
+      <g fill="#000000">
+        <rect x="90" y="246" width="220" height="3"/>
+        <rect x="90" y="257" width="220" height="5"/>
+        <rect x="90" y="271" width="220" height="7"/>
+        <rect x="90" y="288" width="220" height="9"/>
+        <rect x="90" y="308" width="220" height="11"/>
+        <rect x="90" y="330" width="220" height="13"/>
+      </g>
+    </mask>
+    <g id="palm" fill="none" stroke="#140a33" stroke-linecap="round">
+      <path d="M124,350 C120,330 116,312 106,296" stroke-width="6"/>
+      <g stroke-width="5">
+        <path d="M106,296 C92,282 76,276 62,278"/>
+        <path d="M106,296 C98,278 86,268 72,264"/>
+        <path d="M106,296 C112,278 122,268 136,266"/>
+        <path d="M106,296 C120,282 134,278 146,284"/>
+        <path d="M106,296 C104,312 96,320 84,324"/>
+      </g>
+    </g>
+  </defs>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M152,64 C64,54 12,92 14,148 C16,192 44,198 84,184" stroke="#12082e" stroke-width="22"/>
+    <path d="M152,64 C64,54 12,92 14,148 C16,192 44,198 84,184" stroke="url(#hg)" stroke-width="14"/>
+    <g transform="translate(400 0) scale(-1 1)">
+      <path d="M152,64 C64,54 12,92 14,148 C16,192 44,198 84,184" stroke="#12082e" stroke-width="22"/>
+      <path d="M152,64 C64,54 12,92 14,148 C16,192 44,198 84,184" stroke="url(#hg)" stroke-width="14"/>
+    </g>
+  </g>
+
+  <g clip-path="url(#uc)">
+    <rect x="0" y="0" width="400" height="560" fill="url(#sky)"/>
+    <g fill="#ffffff" opacity="0.9">
+      <circle cx="165" cy="70" r="1.4"/>
+      <circle cx="232" cy="58" r="1.1"/>
+      <circle cx="205" cy="95" r="1.6"/>
+      <circle cx="178" cy="125" r="1.1"/>
+      <circle cx="300" cy="180" r="1.4"/>
+      <circle cx="90" cy="190" r="1.2"/>
+      <circle cx="72" cy="300" r="1.3"/>
+      <circle cx="338" cy="300" r="1.2"/>
+    </g>
+    <g stroke="#6a3fb5" stroke-width="3" opacity="0.5">
+      <line x1="170" y1="48" x2="170" y2="112"/>
+      <line x1="185" y1="48" x2="185" y2="112"/>
+      <line x1="200" y1="48" x2="200" y2="112"/>
+      <line x1="215" y1="48" x2="215" y2="112"/>
+      <line x1="230" y1="48" x2="230" y2="112"/>
+    </g>
+    <line x1="148" y1="118" x2="252" y2="118" stroke="#34e5ff" stroke-width="2" opacity="0.7"/>
+    <circle cx="200" cy="248" r="100" fill="url(#sun)" mask="url(#sunmask)"/>
+    <rect x="0" y="154" width="400" height="34" fill="#12082e"/>
+    <rect x="0" y="159" width="400" height="24" fill="url(#key)"/>
+    <line x1="0" y1="155" x2="400" y2="155" stroke="#ff5ecb" stroke-width="2"/>
+    <line x1="0" y1="187" x2="400" y2="187" stroke="#ff5ecb" stroke-width="2"/>
+    <rect x="0" y="348" width="400" height="204" fill="#170b3c"/>
+    <line x1="0" y1="347" x2="400" y2="347" stroke="#ff9de2" stroke-width="3"/>
+    <g stroke="#37f0e6" stroke-width="2" opacity="0.85" fill="none">
+      <path d="M0,356 H400 M0,366 H400 M0,379 H400 M0,396 H400 M0,418 H400 M0,446 H400 M0,482 H400 M0,526 H400"/>
+      <path d="M200,348 L-260,552 M200,348 L-120,552 M200,348 L-20,552 M200,348 L60,552 M200,348 L135,552 M200,348 L200,552 M200,348 L265,552 M200,348 L340,552 M200,348 L420,552 M200,348 L520,552 M200,348 L660,552"/>
+    </g>
+    <use href="#palm"/>
+    <use href="#palm" transform="translate(400 0) scale(-1 1)"/>
+    <text x="200" y="332" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="21" letter-spacing="5" fill="#ffffff" opacity="0.92">ΑΙΣΘΗΤΙΚΗ</text>
+    <rect x="0" y="534" width="400" height="18" fill="#12082e"/>
+    <line x1="0" y1="534" x2="400" y2="534" stroke="#37f0e6" stroke-width="2"/>
+    <line x1="0" y1="546" x2="400" y2="546" stroke="#ff5ecb" stroke-width="2" opacity="0.8"/>
+    <rect x="112" y="12" width="176" height="32" fill="url(#chrome)"/>
+    <line x1="118" y1="44" x2="282" y2="44" stroke="#34e5ff" stroke-width="2" opacity="0.8"/>
+    <ellipse cx="138" cy="235" rx="42" ry="72" fill="#ffffff" opacity="0.1" transform="rotate(-12 138 235)"/>
+    <rect x="0" y="0" width="400" height="560" fill="url(#scan)"/>
+  </g>
+
+  <use href="#urn" fill="none" stroke="#ff5ecb" stroke-width="9" opacity="0.25"/>
+  <use href="#urn" fill="none" stroke="#27e9f7" stroke-width="4" opacity="0.85" transform="translate(-2.5 2)"/>
+  <use href="#urn" fill="none" stroke="#ff5ecb" stroke-width="4"/>
+</svg>
