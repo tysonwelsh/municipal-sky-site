@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "2026-07-28-saturn-fadograph",
+  "title": "Fadograph of a yestern Saturn",
+  "prompt": "A  fadograph of a yestern scene depicting the planet Saturn from a reasonable distance",
+  "created": "2026-07-28",
+  "tags": [
+    "astronomy",
+    "finnegans-wake",
+    "literary-prompt"
+  ],
+  "primary": "r1",
+  "sizeClass": "l",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Named ring divisions (A/B/C/D/E/F paths with a Cassini-like gap), globe shadow thrown across the far rings, three attendant moons, and heavy emulsion treatment: two turbulence grain layers, foxing blots, light leak, scratches, vignette. Two `<use>` elements carry invalid fill tokens — `fill=\"#e2c housing\"` and `fill=\"#dbc characteristics\"` — apparently corrupted mid-generation; both sit at opacity 0 so nothing renders from them, and the bytes were left exactly as returned. The `sky` backdrop rect is translucent but reaches 0.88 alpha at the corners, so the 'transparent background' instruction is only partly honored."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "minor",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Square 800×800 frame; two-band rings split front/back by a rectangular clip, banded globe, single distant moon, film scratches and grain. The near-side ring clip is a plain rectangle cut at the planet's equator, so the ring passes in front along a hard horizontal seam rather than following the ellipse. Defines a `radialGradient` (`edgeFade`) outside `<defs>`, in document flow — legal SVG, but unusual construction."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "prime",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "clean",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Landscape 800×600 print: four concentric ring bands, limb darkening, ring shadow across the globe, foxing spots in both bleach and stain colors, and a luminance mask over the whole scene that fades the print toward its corners. Blur filters do the fadograph work rather than grain alone. The `sky` backdrop rect reaches 0.95 alpha at center, so the 'transparent background' instruction is only partly honored."
+    }
+  ]
+}
