@@ -156,7 +156,7 @@ window.KolobAudio = (function () {
   var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
 
   var layerGains = {};
-  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.28, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
   var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
   var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
 
@@ -164,7 +164,7 @@ window.KolobAudio = (function () {
   // …) now rides its own gain so they can be balanced individually. The event's
   // gain × the ambient bus gives its level; defaults preserve the old sound.
   var FIELD_KEYS = ["wind", "crickets", "clock", "fork", "rain", "coyote", "bell", "beacon"];
-  var fieldVolumes = { wind: 1, crickets: 1, clock: 1, fork: 1, rain: 1, coyote: 1, bell: 1, beacon: 1 };
+  var fieldVolumes = { wind: 2, crickets: 1.52, clock: 1, fork: 1, rain: 2, coyote: 2, bell: 1.56, beacon: 1.38 };
   var fieldMuted = {};
   var fieldGains = {};                            // key -> GainNode (lazily built)
 
@@ -1042,15 +1042,15 @@ window.KolobAudio = (function () {
       C.fugingFired = true;
       var fugDur = fugingEntry();
       C.fugingUntil = ctx.currentTime + fugDur;
-      if (chance(0.6)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
+      if (chance(0.3)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
     }
     // Testimony: the Cage silences — rare, long, authoritative.
-    if (C.section === "testimony" && !inHush() && chance(0.015)) {
+    if (C.section === "testimony" && !inHush() && chance(0.008)) {
       stillness("testimony");
     }
     // And once in a great while a silence falls where none was scheduled —
     // about once a meeting, somewhere, unannounced.
-    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0008)) {
+    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0004)) {
       stillness("unbidden");
     }
     // Section end → joint → advance.
@@ -1092,7 +1092,7 @@ window.KolobAudio = (function () {
   function stillness(why) {
     if (!playing || !droneDuck) return;
     var t = ctx.currentTime;
-    var holdS = rnd(10, 22) * silenceMul();
+    var holdS = rnd(6, 14) * silenceMul();
     C.hushUntil = t + holdS + 2.5;
     droneDuck.gain.cancelScheduledValues(t);
     droneDuck.gain.setValueAtTime(droneDuck.gain.value || 1, t);
