@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "2026-07-28-popsicle-stick",
+  "title": "Snapped popsicle stick",
+  "prompt": "a popcicle stick that has been snapped in half",
+  "created": "2026-07-28",
+  "tags": [
+    "everyday-object",
+    "wood",
+    "broken"
+  ],
+  "primary": "r1",
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 1.2%); no viewBox normalization."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Format disobedience: the model wrapped its answer in a ```svg code fence despite the appendix's \"no code fences\" instruction; the fence was stripped and the SVG filed byte-exact otherwise. Ink-bounds check passed (worst dead margin 1.3%); no viewBox normalization."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-28",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-28",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "minor",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 1.7%); no viewBox normalization."
+    }
+  ]
+}
