@@ -21,11 +21,18 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": "prime",
       "graded": "2026-07-28",
-      "grade_history": [],
+      "grade_history": [
+        {
+          "grade": "choice",
+          "date": "2026-07-28",
+          "taxonomy_version": 5,
+          "note": "Owner regrade: bumped to prime, prompt-fidelity changed from partial to faithful."
+        }
+      ],
       "annotations": {
-        "prompt-fidelity": "partial",
+        "prompt-fidelity": "faithful",
         "geometry": "clean",
         "color": "clean",
         "composition": "clean"
