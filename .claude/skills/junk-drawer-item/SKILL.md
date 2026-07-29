@@ -114,23 +114,30 @@ instrument instead.
 
 ### Build the instrument
 
-1. Read the template at
-   `.claude/skills/junk-drawer-item/rating-instrument.html`.
-2. Read `taxonomy.json` for the live `grades`, `axes`, and `sizeTiers`.
-3. For each SVG being graded, **prefix every `id` and every
-   `href`/`url(#…)` reference** in the markup with a short unique
-   string per model (e.g. `f_`, `s_`, `o_`) so multiple SVGs on one
-   page don't collide.
-4. Replace the four `__INJECT_*__` markers in the template JS:
-   - `__INJECT_GRADES__` → the `grades` array from taxonomy.json
-   - `__INJECT_AXES__` → the `axes` array from taxonomy.json
-   - `__INJECT_SIZES__` → the `sizeTiers` array from taxonomy.json
-   - `__INJECT_RESPONSES__` → an array of `{key, label, svg}` objects,
-     one per model response (key = model slug, label = display name,
-     svg = id-prefixed SVG markup string)
-5. Write the populated HTML to the scratchpad and publish it with the
-   Artifact tool. Reuse the same file path / URL for later items in the
-   session rather than minting new pages.
+Run the builder — do NOT hand-assemble the page, and do not edit the
+template to inject data:
+
+```
+python3 .claude/skills/junk-drawer-item/build-instrument.py \
+  --out <scratchpad>/rate.html \
+  --heading "Rate — <short item name>" \
+  <model-id>=<path to svg> [<model-id>=<path to svg> ...]
+```
+
+One `MODEL=SVG` pair per response, in rid order (first pair = r1). The
+script reads `taxonomy.json` for the live `grades`, `axes` and
+`sizeTiers`, looks each model's display label up in the registry,
+namespaces every `id` and every `url(#…)`/`href="#…"` per response
+(`m1_`, `m2_`, …) so three SVGs can share one page, fills the four
+`__INJECT_*__` markers, and writes the populated HTML. It reads the
+artwork; it never writes to it. Two things it prints to stderr are worth
+acting on: a model id missing from `taxonomy.json` (register it before
+filing) and an SVG referencing ids it doesn't define (a broken
+reference in the artwork — gradeable, not something to fix).
+
+Then publish the written file with the Artifact tool. Reuse the same
+file path / URL for later items in the session rather than minting new
+pages.
 
 ### What the instrument collects (per response)
 
