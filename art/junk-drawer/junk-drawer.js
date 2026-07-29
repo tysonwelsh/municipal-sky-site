@@ -847,10 +847,11 @@
   function subjectsHTML(resp) {
     var rows = '';
     ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
+      /* defunct axes never appear on the report card (owner, 2026-07-29);
+         their filed gradings live on in the data and the legend still
+         lists them dimmed for the record */
+      if (axis.defunct) return;
       var a = annOf(resp, axis.id);
-      /* defunct axes appear only where a grade was actually filed under
-         them; they are never shown as not-assessed and never surveyed */
-      if (!a && axis.defunct) return;
       var cell;
       if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
@@ -859,7 +860,6 @@
         cell = mark(v ? v.label : a.value);
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
-        (axis.defunct ? ' <span class="rc-defunct">defunct</span>' : '') +
         '</span></td><td>' + cell + '</td></tr>';
     });
     var g = gradeOf(resp.grade);

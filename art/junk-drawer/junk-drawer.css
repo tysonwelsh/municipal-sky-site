@@ -814,8 +814,8 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   .rc-plate { height: 170px; }
 }
 
-/* ---- defunct axes (taxonomy v6): dimmed in the legend, tagged on the
-   report card where an old grading still shows ---------------------------- */
+/* ---- defunct axes (taxonomy v6): dimmed in the legend; excluded from the
+   report card entirely (owner, 2026-07-29 — filed gradings live in data) -- */
 .jd-axis-row.is-defunct { opacity: 0.55; }
 .jd-axis-flag {
   margin-left: 0.6em;
@@ -823,11 +823,4 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   color: var(--plot-red, #b22222);
   border: 1px solid currentColor; border-radius: 2px;
   padding: 0.05em 0.4em;
-}
-.rc-defunct {
-  margin-left: 0.5em;
-  font-family: var(--rc-mono); font-size: 0.44rem; letter-spacing: 0.16em;
-  text-transform: uppercase; color: #9a6a4f;
-  border: 1px solid rgba(154, 106, 79, 0.55); border-radius: 2px;
-  padding: 0.08em 0.4em; vertical-align: 0.12em;
 }
