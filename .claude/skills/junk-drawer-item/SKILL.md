@@ -43,10 +43,6 @@ the annotation walk-through in §6 — never prompt-improvement questions.
   `fable → claude-fable-5 · opus → claude-opus-5 · sonnet → claude-sonnet-5 · haiku → claude-haiku-4-5`
   Non-Claude models: the owner runs the prompt elsewhere and pastes the
   SVG; file it byte-exact as that model's response.
-- **New item or alternative?** An alternative appends a response (next
-  `rid`) to an existing entry; the prompt MUST be that entry's prompt,
-  re-sent verbatim. (Skip this question when the answer is unambiguous —
-  e.g. the prompt matches an existing entry, or plainly matches nothing.)
 - **Any tags** (optional). Note: **sizeClass is NOT asked here** — it moved
   into the §6 annotation survey, because an item is sized best once you can
   see it in context. Don't ask for size upfront.
