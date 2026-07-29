@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 468">
+  <defs>
+    <path id="card" d="M10 40 Q10 12 38 12 L482 12 Q510 12 510 40 L510 405 L480 436 L455 412 L430 448 L402 420 L372 454 L345 424 L315 450 L288 418 L258 452 L230 424 L200 455 L172 428 L145 456 L118 430 L90 452 L62 424 L35 446 L10 428 Z"/>
+    <clipPath id="clip"><use href="#card"/></clipPath>
+    <g id="rose" fill="#fff" stroke="#000" stroke-width="3.5">
+      <circle cx="0" cy="-12" r="8.5"/>
+      <circle cx="11.4" cy="-3.7" r="8.5"/>
+      <circle cx="7.1" cy="9.7" r="8.5"/>
+      <circle cx="-7.1" cy="9.7" r="8.5"/>
+      <circle cx="-11.4" cy="-3.7" r="8.5"/>
+      <circle cx="0" cy="0" r="5.5"/>
+    </g>
+    <path id="star" d="M0 -11 L2.6 -2.6 L11 0 L2.6 2.6 L0 11 L-2.6 2.6 L-11 0 L-2.6 -2.6 Z"/>
+    <path id="leaf" d="M-11 0 Q0 -8 11 0 Q0 8 -11 0 Z"/>
+  </defs>
+
+  <use href="#card" fill="#fff" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+
+  <g clip-path="url(#clip)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 470 L32 56 Q32 34 54 34 L466 34 Q488 34 488 56 L488 470" stroke-width="4"/>
+    <path d="M246 52 L274 52 M260 52 L260 88 M246 88 L274 88" stroke-width="5.5"/>
+    <path d="M34 118 C100 150 175 102 260 126 C345 102 420 150 486 118" stroke-width="4"/>
+    <use href="#leaf" transform="translate(170 113) rotate(-18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#leaf" transform="translate(350 113) rotate(18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#rose" transform="translate(100 131)"/>
+    <use href="#rose" transform="translate(260 124)"/>
+    <use href="#rose" transform="translate(420 131)"/>
+    <path d="M260 166 C248 148 222 148 222 166 C222 184 248 184 260 166 C272 148 298 148 298 166 C298 184 272 184 260 166" stroke-width="5"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(110 100) scale(0.8)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(190 78) scale(0.6)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(95 200) scale(0.9)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(72 305) scale(0.7)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(108 385) scale(0.75)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(415 210) scale(1.1)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(448 300) scale(0.75)"/>
+    <use href="#star" fill="#fff" stroke-width="3.5" transform="translate(385 398) scale(0.7)"/>
+    <path d="M230 256 Q260 244 290 256 L335 470 L205 470 Z" fill="#fff" stroke-width="5"/>
+    <path d="M244 262 L236 470 M276 262 L284 470" stroke-width="4"/>
+    <path d="M248 258 L260 274 L272 258" stroke-width="4"/>
+    <circle cx="260" cy="372" r="17" fill="#fff" stroke-width="4.5"/>
+    <circle cx="272" cy="360" r="5.5" fill="#fff" stroke-width="3.5"/>
+    <circle cx="273.5" cy="359" r="1.4" fill="#000" stroke="none"/>
+    <rect x="143.5" y="96" width="13" height="108" rx="6.5" fill="#fff" stroke-width="4.5"/>
+    <path d="M243 252 L168 140 L152 158 L225 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M176 152 L160 170" stroke-width="4"/>
+    <circle cx="158" cy="150" r="13" fill="#fff" stroke-width="4.5"/>
+    <path d="M300 252 L358 344 L340 358 L283 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M350 332 L333 346" stroke-width="4"/>
+    <path d="M352 350 L352 392" stroke-width="5"/>
+    <circle cx="352" cy="356" r="11" fill="#fff" stroke-width="4.5"/>
+    <circle cx="260" cy="218" r="31" fill="#fff" stroke-width="5"/>
+    <path d="M231 206 Q260 196 289 206 M236 199 Q260 190 284 199" stroke-width="3.5"/>
+    <path d="M231 206 Q220 213 226 224 M289 206 Q300 213 294 224" stroke-width="3.5"/>
+    <circle cx="247" cy="216" r="3" fill="#000" stroke="none"/>
+    <circle cx="273" cy="216" r="3" fill="#000" stroke="none"/>
+    <path d="M246 231 Q260 242 274 231" stroke-width="4"/>
+    <circle cx="238" cy="227" r="3.2" stroke-width="2.5"/>
+    <circle cx="282" cy="227" r="3.2" stroke-width="2.5"/>
+  </g>
+
+  <use href="#card" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+</svg>
