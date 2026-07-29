@@ -32,6 +32,9 @@
   --check-a: #222228;
   --check-b: #2c2c34;
   --green: #6ee7b7;
+  /* Height of the sticky tab bar; measured at runtime so the pinned
+     artwork parks directly beneath it. */
+  --tabs-h: 40px;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
@@ -62,7 +65,7 @@ h1 {
 .tab .check { display: none; color: var(--green); margin-left: 0.3em; }
 .tab.done .check { display: inline; }
 
-.panel { display: none; padding: 1rem; }
+.panel { display: none; padding: 0.75rem 1rem 1rem; }
 .panel.active { display: block; }
 
 .svg-frame {
@@ -77,8 +80,34 @@ h1 {
   border-radius: 8px; padding: 0.75rem; margin-bottom: 1.2rem;
   display: flex; align-items: center; justify-content: center;
   max-height: 52vh; overflow: hidden;
+  /* Pinned: the artwork stays visible under the tab bar while the axes
+     below it scroll past. */
+  position: sticky; top: var(--tabs-h); z-index: 9;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: max-height 0.22s ease, padding 0.22s ease, box-shadow 0.22s ease;
 }
-.svg-frame svg { max-width: 100%; max-height: 48vh; display: block; }
+.svg-frame svg {
+  max-width: 100%; max-height: 48vh; display: block;
+  transition: max-height 0.22s ease;
+}
+/* Once the page is scrolled, the pinned artwork gives most of the screen
+   back to the questions. */
+.svg-frame.compact {
+  max-height: 26vh; padding: 0.4rem;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+}
+.svg-frame.compact svg { max-height: 22vh; }
+/* Tapping the pinned artwork restores full size without scrolling back up. */
+.svg-frame.compact.expanded { max-height: 52vh; padding: 0.75rem; }
+.svg-frame.compact.expanded svg { max-height: 48vh; }
+.svg-hint {
+  position: absolute; right: 0.5rem; bottom: 0.35rem;
+  font-size: 0.62rem; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--dim); background: rgba(27,26,34,0.72);
+  border-radius: 10px; padding: 0.1rem 0.45rem;
+  opacity: 0; transition: opacity 0.22s ease; pointer-events: none;
+}
+.svg-frame.compact .svg-hint { opacity: 0.85; }
 
 .axis-group { margin-bottom: 1.1rem; }
 .axis-label {
@@ -185,11 +214,49 @@ function init() {
 
   document.getElementById('copy-btn').addEventListener('click', copyOutput);
   tabsEl.addEventListener('click', onTabClick);
+  initPinnedArtwork(tabsEl);
   updateOutput();
 }
 
+// ── Pinned artwork ────────────────────────────────────────────────
+// The .svg-frame is sticky under the tab bar. Two things keep it usable:
+// its offset tracks the real tab-bar height, and it collapses to a strip
+// as soon as the page scrolls so the axes aren't squeezed off-screen.
+function initPinnedArtwork(tabsEl) {
+  const setTabsHeight = () => {
+    const h = Math.round(tabsEl.getBoundingClientRect().height);
+    if (h) document.documentElement.style.setProperty('--tabs-h', h + 'px');
+  };
+  setTabsHeight();
+  if (window.ResizeObserver) new ResizeObserver(setTabsHeight).observe(tabsEl);
+  window.addEventListener('resize', setTabsHeight);
+  window.addEventListener('orientationchange', setTabsHeight);
+
+  let queued = false;
+  const onScroll = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      const compact = y > 32;
+      document.querySelectorAll('.svg-frame').forEach(f => {
+        f.classList.toggle('compact', compact);
+        if (!compact) f.classList.remove('expanded');
+      });
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
+function toggleFrame(el) {
+  if (el.classList.contains('compact')) el.classList.toggle('expanded');
+}
+
 function buildModelPanel(r, showSize) {
-  let h = '<div class="svg-frame">' + r.svg + '</div>';
+  let h = '<div class="svg-frame" onclick="toggleFrame(this)">' + r.svg
+    + '<div class="svg-hint">tap to resize</div></div>';
 
   // Overall grade
   const gid = r.key + '__grade';
@@ -328,6 +395,11 @@ function onTabClick(e) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   tab.classList.add('active');
   document.getElementById(tab.dataset.panel).classList.add('active');
+  // Land at the top of the new panel so its artwork starts full-size.
+  window.scrollTo(0, 0);
+  document.querySelectorAll('.svg-frame').forEach(f => {
+    f.classList.remove('compact', 'expanded');
+  });
   if (tab.dataset.panel === 'p-output') updateOutput();
 }
 

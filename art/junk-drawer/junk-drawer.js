@@ -49,6 +49,33 @@
   }
   function seq(n) { var a = [], i; for (i = 0; i < n; i++) { a.push(i); } return a; }
 
+  /* Namespace one inlined copy of an SVG: prefix every id it declares and
+     every reference to one (url(#), href, xlink:href), so copies sharing a
+     document can't bind to each other's defs.
+
+     This is not optional hygiene. Item SVGs are authored independently and
+     nothing stops two of them choosing the same id — `leaf`, `glow`, `grain`
+     and `soft` are all declared by more than one item. A `<use href="#leaf">`
+     resolves to the FIRST match in the document, so unprefixed copies fight
+     over one definition and the winner depends on DOM order — which pick()
+     and returnToPile() change every time an item is selected and dismissed.
+     Prefixing per copy makes ids unique whatever a future item declares, and
+     makes DOM order irrelevant.
+
+     Both quote styles are matched: models emit double quotes today, but the
+     guarantee shouldn't rest on that. (Not handled, because nothing in the
+     collection uses them: `#id` selectors inside an SVG <style> block, and
+     id references that aren't url(#)/href form — aria-labelledby, SMIL
+     begin="other.click". Check before filing an item that uses one.) */
+  function svgInst(svg, pfx) {
+    return String(svg)
+      .replace(/^\s*<\?xml[^>]*\?>\s*/i, '')
+      .replace(/\sid=(["'])([^"']+)\1/g, ' id=$1' + pfx + '$2$1')
+      .replace(/url\((["']?)#([^)"']+)\1\)/g, 'url($1#' + pfx + '$2$1)')
+      .replace(/(\s(?:xlink:)?href=)(["'])#([^"']+)\2/g, '$1$2#' + pfx + '$3$2');
+  }
+  window.JD_svgInst = svgInst;   /* the record card inlines copies too */
+
   /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
      that tall, so it tells us how much room the item claims for clamping */
   function svgAspect(el) {
@@ -300,7 +327,7 @@
     })
     .then(function (loaded) {
       /* build + size every item first (sizeClass only; positions come next) */
-      var els = loaded.map(function (rec) {
+      var els = loaded.map(function (rec, i) {
         var item = rec.item;
         var el = document.createElement('div');
         el.className = 'jd-item';
@@ -316,7 +343,9 @@
         el.dataset.url = item._url;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
-        el.innerHTML = rec.svg.replace(/^\s*<\?xml[^>]*\?>\s*/i, '');
+        /* per-item prefix: the pile is many independently-authored SVGs in
+           one document, so each copy gets its own id namespace */
+        el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
         /* size = coarse sizeClass tier × optional per-item fine scale. The
            per-item sizeScale is the continuous dial (formerly carried by the
            retired placement.scale) that the tiers alone can't express — e.g.
@@ -770,14 +799,9 @@
     return 'one-shot (1 prompt)';
   }
   /* prefix every id and url(#)/href reference so inlined copies never
-     collide (same discipline as the rating instrument) */
-  function svgInst(svg, pfx) {
-    return String(svg)
-      .replace(/^\s*<\?xml[^>]*\?>\s*/i, '')
-      .replace(/\sid="([^"]+)"/g, ' id="' + pfx + '$1"')
-      .replace(/url\(#([^)]+)\)/g, 'url(#' + pfx + '$1)')
-      .replace(/(\sxlink:href="|\shref=")#([^"]+)"/g, '$1#' + pfx + '$2"');
-  }
+     collide (same discipline as the rating instrument). One implementation,
+     shared with the pile — see JD_svgInst at the top of this file. */
+  var svgInst = window.JD_svgInst;
   /* a red-pencil hand mark; each takes its own rotation jitter + waver
      filter so no two sit identically */
   function mark(word) {
