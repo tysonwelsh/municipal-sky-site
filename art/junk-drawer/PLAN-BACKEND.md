@@ -27,7 +27,7 @@ The workflow requirement decides this. A phone/Claude-Code-web session can only 
 The README is explicit that alternatives are "responses from other LLMs to **the same prompt**." The prompt is the natural grouping key, so it is the entity:
 
 - **Prompt entry** = one directory, one `entry.json`, N SVG files.
-- **Response** = an object in the entry's `responses` array + its SVG file. The *response* is the graded/annotated unit (grade, axes, generation mode are per-response). One response is the `primary` — the object that appears in the drawer; the rest are "other models' takes."
+- **Response** = an object in the entry's `responses` array + its SVG file. The *response* is the graded/annotated unit (grade, axes, generation mode are per-response). One response is the *primary* — the object that appears in the drawer; the rest are "other models' takes." Which one that is follows the grade unless the entry pins a `rid` in `primary`.
 
 Item-as-entity with an `alternatives` array was considered and rejected: it makes one response structurally privileged, duplicates the prompt across siblings or forces cross-references, and makes "regrade the alternative" a second-class edit. Prompt-as-entity keeps the prompt verbatim in exactly one place and makes adding an alternative a pure append.
 
@@ -217,7 +217,7 @@ Rules baked into the design:
 | `prompt` | R | **Verbatim**, whitespace preserved. The one canonical copy. |
 | `created` | R | `YYYY-MM-DD`. |
 | `tags` | O | Free-form kebab-case strings; future browsing facet. |
-| `primary` | O | `rid` shown in the drawer; defaults to the first response. |
+| `primary` | O | Pins the `rid` shown in the drawer, overriding grade. Absent (the norm) = server resolves to the best-graded response. |
 | `placement` | O | Drawer coordinates — see §7. Absent = frontend computes deterministically. |
 | `retired` | O | `true` hides the item from the drawer without deleting history. Default `false`. |
 | `responses[]` | R | ≥ 1 response. |
@@ -457,7 +457,7 @@ The frontend gets everything from **one request**; SVGs are plain static files.
 **Contract guarantees** (what the frontend may rely on):
 
 1. `taxonomy` is always present and is the *only* source for grade/axis/model display strings, descriptions, and grade ordering (`rank`, higher = better; `"utility"` is the floor). Render the rubric from data; hardcode nothing.
-2. `items` is sorted `created` descending and excludes `retired` items. Every item has ≥ 1 response; `primary` always resolves (server defaults it to the first response's `rid`). The primary response is the object in the drawer; other responses are the "other models' takes."
+2. `items` is sorted `created` descending and excludes `retired` items. Every item has ≥ 1 response; `primary` always resolves. An entry MAY pin one response by setting `primary`, which wins outright; with no pin the server resolves to the **best-graded** response (`rank` off the taxonomy, ties breaking to the earliest `rid`, falling back to the first response when no grade is recognized) — so a regrade re-points the drawer with no entry edit. The primary response is the object in the drawer; other responses are the "other models' takes."
 3. Every response has a ready `url` (same-origin static SVG, safe to `fetch` and inline — commit-time validation guarantees `viewBox` present, no scripts/handlers/foreignObject) and `transcript_url` (string or `null`).
 4. **`placement` is the designated home for coordinates** and is optional: `x`,`y` ∈ [0,1] (fraction of drawer floor, item center), `rotation` in degrees, `scale` relative multiplier (1.0 = default sizing), `z` integer stacking hint (higher = nearer the viewer). **When absent, the frontend computes a deterministic placement seeded by the item `id` hash** — same layout every visit, no coordination needed. If the frontend later wants to persist a hand-arranged layout, it writes `placement` back into `entry.json` via a normal commit (it has a home; nothing changes shape).
 5. **Sparseness rule**: `annotations` may be missing keys for any axis (esp. axes added after the entry). Absent axis = "not assessed" — render differently from an explicit clean/defect value. Annotation values are either a value-id string or `{value, note}`; handle both. Ignore unknown fields anywhere (forward compatibility).

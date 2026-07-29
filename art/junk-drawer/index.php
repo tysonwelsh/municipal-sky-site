@@ -133,8 +133,8 @@ include '../../includes/header.php';
 
       <p>The collection accumulates. New prompts add objects; old prompts
       collect alternative takes from other models, filed with the original.
-      For now the drawer shows each item&rsquo;s primary response &mdash; the
-      per-item paperwork and the alternatives surface in a later phase.</p>
+      For now the drawer shows each item&rsquo;s best-graded response &mdash;
+      the per-item paperwork and the alternatives surface in a later phase.</p>
     </div>
 
     <section class="jd-legend" aria-label="how to read the grades">
