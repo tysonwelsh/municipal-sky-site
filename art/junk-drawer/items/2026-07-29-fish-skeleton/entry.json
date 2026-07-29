@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "id": "2026-07-29-fish-skeleton",
+  "title": "Fish skeleton",
+  "prompt": "A cartoony fish skeleton, but one of the ones where it is all bones except for the head which is still a fish head. I’m think if the kind that you might see in a comic book depiction of a trash can or a cartoon cat playing with or something. It should be slightly curved and the fish should have Xs for eyes to convey that it is dead lol",
+  "created": "2026-07-29",
+  "tags": [
+    "cartoon",
+    "animal"
+  ],
+  "sizeClass": "m",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "choice",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "followed",
+        "restraint": "disciplined",
+        "integrity": "strained",
+        "style": "unified",
+        "je-ne-sais-quoi": "trace"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.9%. The most illustrated of the three and the only one to give the head interior anatomy: a blue head with a dark red open mouth, three cream teeth, a lighter throat wedge, a bubble, and a separate white eyeball disc with the X struck over it rather than the X floating on bare skin. Ribs are drawn as full pairs above and below the spine so it reads as a ribcage rather than a comb, and each rib is stroked twice (dark then cream) to fake an outlined bone. Small tick marks mark where each rib meets the spine. Declares role, aria-label and a title element."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "drifted",
+        "restraint": "embellished",
+        "integrity": "strained",
+        "style": "unified",
+        "je-ne-sais-quoi": "trace"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 3.0%. The only response to build ribs as tapered solids rather than strokes: each is a filled quadratic wedge narrowing to a point, seven pairs shrinking toward the tail, placed by per-rib translate/rotate transforms, with a four-bone fan for the tail fin. Added two stink squiggles rising off the head that the prompt did not ask for. The head is filled with the same cream as the bones, so \"all bones except the head\" is carried by silhouette alone with no colour contrast to separate flesh from skeleton."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "followed",
+        "restraint": "disciplined",
+        "integrity": "strained",
+        "style": "unified",
+        "je-ne-sais-quoi": "none-detected"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.2%. By far the smallest artifact in the drawer at 1,654 bytes, and produced with no tool calls at all — a single pass. Five single ribs hang off one curved spine, every bone stroked twice (dark #23211f under cream #f6f1e3) so the thinner light stroke reads as the bone body inside its own outline. Teal head and matching teal tail fin, three short gill strokes, and an X eye made of two crossed segments. The flattest and least detailed of the three: no mouth, no teeth, no interior anatomy."
+    }
+  ]
+}
