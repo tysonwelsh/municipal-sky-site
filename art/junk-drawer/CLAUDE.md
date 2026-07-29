@@ -120,8 +120,11 @@ the owner asks to pin it.
 Append the new axis/value/grade/model to `taxonomy.json` with a real
 human-readable description (the frontend displays it), add a `changelog`
 line, bump `version`. NEVER rename or delete an id that any entry
-references — the validator will fail if you do. Commit:
-`junk-drawer: taxonomy — add axis "<label>"`.
+references — the validator will fail if you do. To RETIRE an axis, set
+`"defunct": true` on it instead (v6 precedent, 2026-07-29): defunct axes
+stay for the responses already graded under them, render dimmed/tagged,
+and are never surveyed again — annotate new responses ONLY on axes
+without the flag. Commit: `junk-drawer: taxonomy — add axis "<label>"`.
 
 ## Never
 

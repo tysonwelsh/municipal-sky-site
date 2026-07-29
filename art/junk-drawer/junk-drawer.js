@@ -181,12 +181,23 @@
         });
     }
     if (axesEl) {
-      (tax.axes || []).forEach(function (ax) {
+      /* live axes first, then defunct ones dimmed at the foot — retired
+         axes stay listed because old responses still carry their grades */
+      var axes = (tax.axes || []).slice().sort(function (a, b) {
+        return (a.defunct ? 1 : 0) - (b.defunct ? 1 : 0);
+      });
+      axes.forEach(function (ax) {
         var row = document.createElement('div');
-        row.className = 'jd-axis-row';
+        row.className = 'jd-axis-row' + (ax.defunct ? ' is-defunct' : '');
         var label = document.createElement('span');
         label.className = 'jd-axis-label';
         label.textContent = ax.label || ax.id;
+        if (ax.defunct) {
+          var flag = document.createElement('span');
+          flag.className = 'jd-axis-flag';
+          flag.textContent = 'defunct';
+          label.appendChild(flag);
+        }
         var desc = document.createElement('span');
         desc.className = 'jd-axis-desc';
         desc.textContent = ax.description || '';
@@ -837,6 +848,9 @@
     var rows = '';
     ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
       var a = annOf(resp, axis.id);
+      /* defunct axes appear only where a grade was actually filed under
+         them; they are never shown as not-assessed and never surveyed */
+      if (!a && axis.defunct) return;
       var cell;
       if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
@@ -845,6 +859,7 @@
         cell = mark(v ? v.label : a.value);
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
+        (axis.defunct ? ' <span class="rc-defunct">defunct</span>' : '') +
         '</span></td><td>' + cell + '</td></tr>';
     });
     var g = gradeOf(resp.grade);

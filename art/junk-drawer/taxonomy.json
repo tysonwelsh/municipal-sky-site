@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 5,
-  "updated": "2026-07-27",
+  "version": 6,
+  "updated": "2026-07-29",
   "grades": [
     {
       "id": "prime",
@@ -38,7 +38,8 @@
     {
       "id": "prompt-fidelity",
       "label": "Prompt fidelity",
-      "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
+      "defunct": true,
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings. (Defunct as of v6, 2026-07-29 — superseded by Instruction following; kept for responses graded under it.)",
       "values": [
         {
           "id": "faithful",
@@ -60,7 +61,8 @@
     {
       "id": "geometry",
       "label": "Geometry & topology",
-      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
+      "defunct": true,
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy. (Defunct as of v6, 2026-07-29 — superseded by Integrity; kept for responses graded under it.)",
       "values": [
         {
           "id": "clean",
@@ -82,7 +84,8 @@
     {
       "id": "color",
       "label": "Color & rendering",
-      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
+      "defunct": true,
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes. (Defunct as of v6, 2026-07-29 — kept for responses graded under it.)",
       "values": [
         {
           "id": "clean",
@@ -104,7 +107,8 @@
     {
       "id": "composition",
       "label": "Composition",
-      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
+      "defunct": true,
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled? (Defunct as of v6, 2026-07-29 — kept for responses graded under it.)",
       "values": [
         {
           "id": "clean",
@@ -120,6 +124,116 @@
           "id": "major",
           "label": "Major defects",
           "description": "Subject clipped, marooned, or scaled absurdly."
+        }
+      ]
+    },
+    {
+      "id": "instruction-following",
+      "label": "Instruction following",
+      "description": "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?",
+      "values": [
+        {
+          "id": "followed",
+          "label": "Followed",
+          "description": "Every explicit ask is honored as specified."
+        },
+        {
+          "id": "drifted",
+          "label": "Drifted",
+          "description": "Some asks bent, missed, or quietly replaced."
+        },
+        {
+          "id": "ignored",
+          "label": "Ignored",
+          "description": "Explicit asks are disregarded outright."
+        }
+      ]
+    },
+    {
+      "id": "restraint",
+      "label": "Restraint",
+      "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
+      "values": [
+        {
+          "id": "disciplined",
+          "label": "Disciplined",
+          "description": "Nothing appears that the prompt didn't call for."
+        },
+        {
+          "id": "embellished",
+          "label": "Embellished",
+          "description": "Unrequested extras crept in without taking over."
+        },
+        {
+          "id": "overgrown",
+          "label": "Overgrown",
+          "description": "Additions crowd or upstage what was actually asked for."
+        }
+      ]
+    },
+    {
+      "id": "integrity",
+      "label": "Integrity",
+      "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
+      "values": [
+        {
+          "id": "sound",
+          "label": "Sound",
+          "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
+        },
+        {
+          "id": "strained",
+          "label": "Strained",
+          "description": "Visible seams — small breaks, misalignments, or spatial slips."
+        },
+        {
+          "id": "broken",
+          "label": "Broken",
+          "description": "Structural or spatial failures dominate the read."
+        }
+      ]
+    },
+    {
+      "id": "style",
+      "label": "Style",
+      "description": "Is the image one consistent visual language, well executed — whatever language it chose?",
+      "values": [
+        {
+          "id": "unified",
+          "label": "Unified",
+          "description": "One coherent visual language throughout."
+        },
+        {
+          "id": "mixed",
+          "label": "Mixed",
+          "description": "Registers collide — parts of the image speak different styles."
+        },
+        {
+          "id": "incoherent",
+          "label": "Incoherent",
+          "description": "No governing style survives the image."
+        }
+      ]
+    },
+    {
+      "id": "je-ne-sais-quoi",
+      "label": "Je ne sais quoi",
+      "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
+      "values": [
+        {
+          "id": "abundant",
+          "label": "Abundant",
+          "description": "The piece has it — undeniable, unaccountable appeal."
+        },
+        {
+          "id": "trace",
+          "label": "Trace",
+          "description": "A glimmer of something beyond competence."
+        },
+        {
+          "id": "none-detected",
+          "label": "None detected",
+          "description": "Technically present, spiritually absent."
         }
       ]
     }
@@ -223,6 +337,11 @@
       "date": "2026-07-27",
       "version": 5,
       "note": "Register model claude-opus-4-6 (Claude Opus 4.6)."
+    },
+    {
+      "date": "2026-07-29",
+      "version": 6,
+      "note": "Axes reworked: prompt-fidelity, geometry, color, composition marked defunct (kept — filed responses reference them; never surveyed again). Five new axes: instruction-following, restraint, integrity, style, je-ne-sais-quoi."
     }
   ]
 }

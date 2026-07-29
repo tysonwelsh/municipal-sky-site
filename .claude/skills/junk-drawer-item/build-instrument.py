@@ -90,7 +90,12 @@ def main():
     for key, marker in MARKERS.items():
         if marker not in html:
             sys.exit("template marker missing: %s" % marker)
-        html = html.replace(marker, json.dumps(taxonomy[key]))
+        payload = taxonomy[key]
+        if key == "axes":
+            # defunct axes stay in taxonomy.json for responses already
+            # graded under them, but they are never surveyed again
+            payload = [a for a in payload if not a.get("defunct")]
+        html = html.replace(marker, json.dumps(payload))
     html = html.replace("/* __INJECT_RESPONSES__ */ []", json.dumps(responses))
     html = html.replace('<h1 id="page-title">Rate</h1>',
                         '<h1 id="page-title">%s</h1>' % args.heading)
