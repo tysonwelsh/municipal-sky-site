@@ -60,9 +60,10 @@ include '../../includes/header.php';
          "for now"). The vertical backplate survives as a thin brass strip
          along the outer edge; the bail is a sliver past it; the posts two
          domes. Decorative only (pointer-events: none); overhangs the
-         stage's bottom edge, shadow falling to the page floor. Desktop
-         only for now — hidden ≤768px (would collide with the immersive
-         viewport-bottom band). -->
+         stage's bottom edge, shadow falling to the page floor. Shown at
+         every width: on mobile the immersive stage gives back exactly the
+         overhang so the hardware still seats on the outer edge and stays
+         above the fold (see --jd-pull-drop in junk-drawer.css). -->
     <svg class="jd-pull" viewBox="0 0 300 70" aria-hidden="true">
       <defs>
         <linearGradient id="jdp-strip" x1="0" y1="0" x2="1" y2="0">

@@ -25,6 +25,17 @@ html { scroll-behavior: smooth; }
 /* ---------------- the stage: drawer as object on the page ---------------- */
 .jd-stage {
   --wall: clamp(28px, 9vw, 64px);
+  /* the pull's seating, as one invariant both breakpoints derive from. The
+     bail is drawn in PLAN VIEW in a 0 0 300 70 viewBox whose y=10 line is the
+     drawer's FACE PLANE: the backplate sits on it, everything below it (bail,
+     posts) hangs past the drawer onto the page. Seating that line on the
+     stage's OUTER bottom edge means dropping the svg box below the edge by
+     its own height minus the face line, which for a pull of width W is
+     (70 - 10)/300 * W = 0.2 * W — independent of the pull's size, so scaling
+     the hardware never unseats it. Anything less and the backplate creeps up
+     onto the inner arris and the bail points into the well instead of out. */
+  --jd-pull-w: 220px;
+  --jd-pull-drop: calc(var(--jd-pull-w) * 0.2);
   /* the painted drawer frame does not exist yet; the walls are a procedural
      feTurbulence-wood placeholder served as a data-URI and sliced with real
      border-image — production art later swaps --jd-frame-url for the painted
@@ -300,8 +311,8 @@ html { scroll-behavior: smooth; }
 .jd-pull {
   position: absolute;
   left: 50%;
-  bottom: -44px;              /* 220px-wide svg: y=10 face line lands on the edge */
-  width: 220px;
+  bottom: calc(var(--jd-pull-drop) * -1);   /* face line on the outer edge */
+  width: var(--jd-pull-w);
   height: auto;
   transform: translateX(-50%);
   pointer-events: none;
@@ -474,18 +485,19 @@ html { scroll-behavior: smooth; }
        gets clamped to 92vw (regression caught by the owner on-device) */
     max-width: none;
     aspect-ratio: auto;
-    height: 100vh;                            /* fallback */
-    height: 100svh;                           /* TRUE full viewport: the
-       banner is hidden while the drawer is in view (immersive mode,
-       below) — the drawer owns the whole screen on load */
+    /* smaller hardware suits the smaller well; the drop follows it */
+    --jd-pull-w: 160px;
+    /* the stage gives back exactly the pull's overhang, so the drawer AND
+       its handle both land inside the first screen. Without this the stage
+       ends at the viewport bottom and the overhang falls below the fold —
+       which is why the pull used to be tucked inside the stage instead,
+       seating the backplate on the bottom wall's INNER arris. */
+    height: calc(100vh - var(--jd-pull-drop));    /* fallback */
+    height: calc(100svh - var(--jd-pull-drop));   /* TRUE full viewport minus
+       the hardware: the banner is hidden while the drawer is in view
+       (immersive mode, below) — the drawer owns the whole screen on load */
     min-height: 420px;
     box-shadow: none;
-  }
-  /* pull repositioned inside the stage on mobile (no overhang past the
-     viewport-bottom edge); scaled down to suit the smaller well */
-  .jd-pull {
-    bottom: 4px;
-    width: 160px;
   }
     /* item tag compacts for small wells */
   .jd-itemtag { padding: 0.42rem 0.7rem 0.34rem 1.3rem; }
