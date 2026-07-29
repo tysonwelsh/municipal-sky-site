@@ -147,6 +147,7 @@ const RESPONSES = /* __INJECT_RESPONSES__ */ [];
 const state = {};
 RESPONSES.forEach(r => { state[r.key] = { grade: null, axes: {}, notes: {} }; });
 let sizeClass = null;
+let pinned = null;
 
 function init() {
   const tabsEl = document.getElementById('tabs');
@@ -227,6 +228,17 @@ function buildModelPanel(r, showSize) {
         + s.id.toUpperCase() + ' <span style="opacity:0.5;font-size:0.72rem">' + s.description + '</span></div>';
     });
     h += '</div></div>';
+
+    // Display pin, also per-item. Optional: no pin means the grade decides.
+    h += '<div class="axis-group">';
+    h += '<div class="axis-label">Pin for display</div>';
+    h += '<div class="axis-desc">Which response the drawer shows. Leave it on the grade and the best-graded response wins, now and after any regrade. Pin one to override that.</div>';
+    h += '<div class="pills">';
+    h += '<div class="pill selected" data-group="pin" data-value="__none" onclick="pick(this)">Let the grade decide</div>';
+    RESPONSES.forEach(x => {
+      h += '<div class="pill" data-group="pin" data-value="' + x.key + '" onclick="pick(this)">Pin ' + x.label + '</div>';
+    });
+    h += '</div></div>';
   }
   return h;
 }
@@ -238,6 +250,8 @@ function pick(el) {
 
   if (g === 'size') {
     sizeClass = v;
+  } else if (g === 'pin') {
+    pinned = v === '__none' ? null : v;
   } else if (g.endsWith('__grade')) {
     state[g.split('__')[0]].grade = v;
   } else {
@@ -273,7 +287,7 @@ function updateTabs() {
 }
 
 function updateOutput() {
-  const out = { sizeClass, models: {} };
+  const out = { sizeClass, pinned, models: {} };
   RESPONSES.forEach(r => {
     const o = { grade: state[r.key].grade, annotations: {} };
     Object.entries(state[r.key].axes).forEach(([ax, val]) => {

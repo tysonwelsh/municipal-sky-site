@@ -140,13 +140,16 @@ instrument instead.
   skip option. Optional per-axis notes.
 - **Size** — the `sizeTiers` picker appears on the FIRST model's tab
   (size is per-item, not per-response).
+- **Display pin** — also on the FIRST model's tab, also per-item, and
+  OPTIONAL. Defaults to "Let the grade decide"; the owner may instead
+  pin one response as the one the drawer shows.
 
 ### The flow
 
 Share the artifact link and WAIT. The owner taps through the tabs,
 rates each image (they can see it right there), then hits "Results →
 Copy to clipboard" and pastes the JSON back into the chat. Parse the
-pasted JSON to extract grades, annotations, and sizeClass.
+pasted JSON to extract grades, annotations, sizeClass, and `pinned`.
 
 If the owner defers grading entirely, a provisional self-assessment is
 allowed but must be labeled in `notes` ("provisional self-assessment —
@@ -155,6 +158,12 @@ owner to regrade").
 sizeClass is the owner's call every time; write `m` only on an EXPLICIT
 defer, never on silence. Optionally a per-item `sizeScale` (a positive
 multiplier, default 1) for sizes between or below tiers.
+
+The pin is the ONLY thing that writes `primary`. If `pinned` names a
+model, write that response's `rid` as the entry's `primary`; if it is
+null, OMIT `primary` entirely — `data.php` then shows the best-graded
+response (ties break to the earliest `rid`) and follows later regrades
+on its own. Never write `primary` to record filing order.
 
 ### Desktop fallback
 

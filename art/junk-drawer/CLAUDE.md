@@ -50,6 +50,12 @@ data files are `.json`, art is `.svg`.
      each with a description). This is the owner's call: ask, and write
      `"m"` only if they EXPLICITLY defer ("default"/"whatever"). Silence
      is not a shrug — never file a size the owner didn't choose.
+   - Whether to PIN a response for display (optional). The drawer shows one
+     response per item, and by default that is the **best-graded** one —
+     `data.php` resolves it at request time, ties breaking to the earliest
+     `rid`, so a regrade re-points the drawer on its own. Write the entry's
+     `primary` ONLY when the owner explicitly pins a response; it is an
+     override flag, not a record of filing order. No pin ⇒ omit `primary`.
    - Optional `sizeScale` — a positive multiplier on the tier box (default
      1) for sizes between or below tiers; the continuous fine dial the
      coarse tiers can't reach (e.g. paperclip = `"s"` × 0.364). Rendered
@@ -102,6 +108,12 @@ Push the old grade into `grade_history` as
 `{"grade": <old>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
 then set the new `grade` and `graded`. Adding annotations on new axes to old
 entries is just adding keys. Commit: `junk-drawer: regrade "<title>" <rid> <old>→<new>`.
+
+A regrade can change which response the drawer shows — that is intended, and
+needs no edit: `primary` is absent on unpinned entries and the best grade
+wins at request time. Mention it in the commit body when the displayed
+response changes. Do not add a `primary` to "lock in" the old artwork unless
+the owner asks to pin it.
 
 ## Procedure: extend the taxonomy
 
