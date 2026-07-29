@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="iceGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#EAF9FF"/>
+      <stop offset="0.5" stop-color="#BCE4FA"/>
+      <stop offset="1" stop-color="#7FC4EF"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ice cube back tint -->
+  <rect x="8" y="8" width="496" height="496" rx="48" fill="#DFF4FF" opacity="0.32"/>
+
+  <!-- ears -->
+  <ellipse cx="130" cy="182" rx="38" ry="48" fill="#8A5A3B" transform="rotate(-18 130 182)"/>
+  <ellipse cx="382" cy="182" rx="38" ry="48" fill="#8A5A3B" transform="rotate(18 382 182)"/>
+  <ellipse cx="126" cy="184" rx="22" ry="30" fill="#C4917F" transform="rotate(-18 126 184)"/>
+  <ellipse cx="386" cy="184" rx="22" ry="30" fill="#C4917F" transform="rotate(18 386 184)"/>
+
+  <!-- body -->
+  <ellipse cx="256" cy="350" rx="150" ry="115" fill="#A9744F"/>
+
+  <!-- feet -->
+  <ellipse cx="190" cy="470" rx="36" ry="22" fill="#6E4830"/>
+  <ellipse cx="322" cy="470" rx="36" ry="22" fill="#6E4830"/>
+  <ellipse cx="174" cy="480" rx="9" ry="7" fill="#F2E7D5"/>
+  <ellipse cx="196" cy="483" rx="9" ry="7" fill="#F2E7D5"/>
+  <ellipse cx="306" cy="483" rx="9" ry="7" fill="#F2E7D5"/>
+  <ellipse cx="328" cy="480" rx="9" ry="7" fill="#F2E7D5"/>
+
+  <!-- shaggy fur fringe -->
+  <circle cx="132" cy="440" r="28" fill="#8A5A3B"/>
+  <circle cx="172" cy="450" r="28" fill="#8A5A3B"/>
+  <circle cx="214" cy="455" r="28" fill="#8A5A3B"/>
+  <circle cx="256" cy="457" r="28" fill="#8A5A3B"/>
+  <circle cx="298" cy="455" r="28" fill="#8A5A3B"/>
+  <circle cx="340" cy="450" r="28" fill="#8A5A3B"/>
+  <circle cx="380" cy="440" r="28" fill="#8A5A3B"/>
+
+  <!-- tusks (emerge from behind head) -->
+  <path d="M 208 318 C 182 356 142 354 128 312" fill="none" stroke="#F2E7D5" stroke-width="17" stroke-linecap="round"/>
+  <path d="M 304 318 C 330 356 370 354 384 312" fill="none" stroke="#F2E7D5" stroke-width="17" stroke-linecap="round"/>
+
+  <!-- hair tuft -->
+  <circle cx="230" cy="114" r="21" fill="#BE8A5F"/>
+  <circle cx="256" cy="101" r="25" fill="#BE8A5F"/>
+  <circle cx="282" cy="114" r="21" fill="#BE8A5F"/>
+  <path d="M 254 82 q 8 -14 22 -8" fill="none" stroke="#8A5A3B" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- head -->
+  <ellipse cx="256" cy="225" rx="125" ry="110" fill="#B57F55"/>
+
+  <!-- eyeshadow -->
+  <path d="M 179 210 Q 207 180 235 210 Q 207 197 179 210 Z" fill="#C08FE0" opacity="0.9"/>
+  <path d="M 277 210 Q 305 180 333 210 Q 305 197 277 210 Z" fill="#C08FE0" opacity="0.9"/>
+
+  <!-- closed eyes -->
+  <path d="M 182 212 Q 207 236 232 212" fill="none" stroke="#3A2416" stroke-width="6" stroke-linecap="round"/>
+  <path d="M 280 212 Q 305 236 330 212" fill="none" stroke="#3A2416" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- long luscious eyelashes -->
+  <path d="M 184 215 L 164 224" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 190 222 L 174 235" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 199 228 L 188 243" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 328 215 L 348 224" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 322 222 L 338 235" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 313 228 L 324 243" stroke="#3A2416" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- cheeks -->
+  <ellipse cx="170" cy="254" rx="22" ry="14" fill="#E8909E" opacity="0.55"/>
+  <ellipse cx="342" cy="254" rx="22" ry="14" fill="#E8909E" opacity="0.55"/>
+
+  <!-- trunk -->
+  <path d="M 256 260 C 260 312 248 348 228 375 C 214 395 216 414 236 417" fill="none" stroke="#B57F55" stroke-width="38" stroke-linecap="round"/>
+  <path d="M 236 417 C 258 420 264 401 250 394" fill="none" stroke="#B57F55" stroke-width="26" stroke-linecap="round"/>
+  <path d="M 240 300 Q 257 308 272 300" fill="none" stroke="#8A5A3B" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 234 335 Q 250 343 264 333" fill="none" stroke="#8A5A3B" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+  <path d="M 222 366 Q 236 374 250 364" fill="none" stroke="#8A5A3B" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+
+  <!-- ice cube front -->
+  <rect x="8" y="8" width="496" height="496" rx="48" fill="url(#iceGrad)" opacity="0.38"/>
+  <rect x="26" y="26" width="460" height="460" rx="38" fill="none" stroke="#FFFFFF" stroke-width="4" opacity="0.45"/>
+  <rect x="8" y="8" width="496" height="496" rx="48" fill="none" stroke="#8ED0F4" stroke-width="8"/>
+
+  <!-- shine streaks -->
+  <rect x="66" y="42" width="34" height="160" rx="17" fill="#FFFFFF" opacity="0.55" transform="rotate(24 83 122)"/>
+  <rect x="118" y="40" width="16" height="100" rx="8" fill="#FFFFFF" opacity="0.5" transform="rotate(24 126 90)"/>
+  <rect x="410" y="360" width="18" height="96" rx="9" fill="#FFFFFF" opacity="0.4" transform="rotate(24 419 408)"/>
+
+  <!-- cracks -->
+  <path d="M 468 62 L 444 86 L 458 112" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+  <path d="M 46 458 L 70 438 L 60 414" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+
+  <!-- bubbles and sparkles -->
+  <circle cx="402" cy="122" r="8" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="426" cy="152" r="5" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="94" cy="336" r="7" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="76" cy="298" r="4" fill="#FFFFFF" opacity="0.5"/>
+  <path d="M 434 306 l 4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" fill="#FFFFFF" opacity="0.7"/>
+  <path d="M 88 96 l 3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3 z" fill="#FFFFFF" opacity="0.7"/>
+</svg>
