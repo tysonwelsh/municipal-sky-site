@@ -1,0 +1,82 @@
+{
+  "schema": 1,
+  "id": "2026-07-29-mammoth-ice-cube",
+  "title": "Mammoth in an ice cube",
+  "prompt": "I’d like a cartoony wooly mammoth frozen in a giant ice cube. Its eyes should be closed and it should have long luscious eyelashes. In fact, let’s go ahead and give it some eye shadow too so that it is a female wooly mammoth.",
+  "created": "2026-07-29",
+  "tags": [
+    "animal",
+    "cartoon",
+    "prehistoric"
+  ],
+  "primary": "r1",
+  "sizeClass": "xl",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "choice",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "clean",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.6%. The only response to build the cube in three dimensions: separate front, top, and right faces, each with its own gradient, cracks, bubbles, and clip path, with the mammoth clipped into the front face and a blurred brown smear on the right face standing in for the body seen through the ice. Six lashes per eye and a pink-to-violet gradient lid with a lighter crease highlight. Fur is drawn as scalloped silhouettes plus strand strokes clipped to body, head, and trunk."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "minor",
+        "color": "minor",
+        "composition": "clean"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.5%. Isometric cube with top and right faces plus chipped shards around the base and a meltwater puddle below. Mammoth built from a reusable `<use href=\"#tuft\">` fur symbol repeated fourteen times. The trunk curls back on itself and reads as flat against the body, and the tusks emerge from behind the trunk rather than the mouth line."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "select",
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": "faithful",
+        "geometry": "clean",
+        "color": "clean",
+        "composition": "minor"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.8%. Flat, front-facing cartoon in the simplest construction of the three: the cube is a single rounded square with a tinted back layer and a translucent front layer sandwiching the mammoth, rather than a 3D solid. Head and body are plain overlapping ellipses with a fringe of circles for shag; three lashes per eye and a lavender lid. The mammoth fills the frame corner to corner, so the ice reads more as a tinted pane than as a giant cube around it."
+    }
+  ]
+}
