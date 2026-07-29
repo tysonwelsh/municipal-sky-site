@@ -50,13 +50,13 @@
       "grade_history": [],
       "annotations": {
         "instruction-following": "ignored",
-        "restraint": "disciplined",
+        "restraint": "overgrown",
         "integrity": "strained",
         "style": "mixed",
         "je-ne-sais-quoi": "trace"
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.1%. Drew the whole bird rather than the single feather that was asked for — body, neck, crest, beak, legs and feet, with a thirteen-feather tail fan behind it. The \"curve ever so slightly to the left\" instruction landed on the neck instead of the shaft. Notably it did not add anything beyond the subject it chose: no ground, background, or scenery. The tail is one `<g id=\"feather\">` reused via `<use>` with per-copy rotate and scale, and each copy carries its own eye and barbs, so the requested object exists thirteen times over at small scale. Colour-pencil texture is a real feTurbulence + feDisplacementMap filter pair rather than drawn-in jitter."
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.1%. Drew the whole bird rather than the single feather that was asked for — body, neck, crest, beak, legs and feet, with a thirteen-feather tail fan behind it. The \"curve ever so slightly to the left\" instruction landed on the neck instead of the shaft. It added no scenery or background, but the bird itself is the unrequested addition, and it upstages the feather completely — the object actually asked for survives only as thirteen small copies in the tail. The tail is one `<g id=\"feather\">` reused via `<use>` with per-copy rotate and scale, and each copy carries its own eye and barbs, so the requested object exists thirteen times over at small scale. Colour-pencil texture is a real feTurbulence + feDisplacementMap filter pair rather than drawn-in jitter."
     },
     {
       "rid": "r3",
