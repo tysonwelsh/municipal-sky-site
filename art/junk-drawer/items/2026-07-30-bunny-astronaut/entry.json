@@ -11,6 +11,7 @@
   ],
   "sizeClass": "m",
   "primary": "r3",
+  "retired": true,
   "responses": [
     {
       "rid": "r1",
