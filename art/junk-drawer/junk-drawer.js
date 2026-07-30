@@ -497,9 +497,12 @@
     var d = item.dataset;
     tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));
     tag.innerHTML =
-      '<div class="l1">' + (d.title || '').toUpperCase() +
-      '<span class="sep">·</span>' + (d.model || '').toUpperCase() +
-      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></div>' +
+      /* name on its own line(s) — the tag has a fixed width, so a long
+         specimen name wraps to a second line instead of stretching the tag
+         past the well's edge; model · date sit under it */
+      '<div class="l1"><span class="name">' + (d.title || '').toUpperCase() +
+      '</span><span class="meta">' + (d.model || '').toUpperCase() +
+      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></span></div>' +
       '<div class="l2"><span class="gradecol">' +
       '<span class="gradelabel">GRADE: <span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
       meterSVG(+d.rank || 1, +d.steps || 5) +
