@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "id": "2026-07-30-smashed-alarm-clock",
+  "title": "Smashed alarm clock",
+  "prompt": "A key-wound, mechanical spring-powered alarm clock that has been smashed by a wooden mallet (but generate just the clock not the mallet, I only mention the mallet so you get a sense of the sort of forensics of the impact of smash I have in mind). Give it a pop-art style, but no ben-day dots, I just mean in terms of colors and lines and such",
+  "created": "2026-07-30",
+  "tags": [
+    "clock",
+    "pop-art"
+  ],
+  "sizeClass": "m",
+  "primary": "r3",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "drifted",
+        "restraint": "embellished",
+        "integrity": "sound",
+        "style": "unified",
+        "je-ne-sais-quoi": "none-detected"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.0%; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The smallest of the three at 9.6KB and 108 elements, and the flattest — 8 hex colors, zero gradients and zero filters, everything a solid fill inside a uniform #111111 keyline, which is the most literal reading of \"colors and lines and such\". Carries the highest rect count of the three (27) while still honoring the appendix's no-backdrop rule: every rect is a gear tooth or a key shaft, none is a full-bleed backdrop. What it did add is two canvas-filling starburst polygons in yellow and orange behind the clock — a pop-art ground the prompt didn't ask for, and the main thing the embellished mark records. The forensics are staged as a scatter rather than a single impact: the top of the case is caved into a zigzag with a darker crush shading beneath it, one bell stays attached and tilted while the other flies off at 38°, and a mainspring escapes a side crack as a doubled path (black stroke-width 13 under blue 5). Three gears, a winding key, glass shards, sparks and two loose screws are flung to the margins. The dial cracks radiate from roughly (428,337) but the case dent and the flying debris don't share that origin, so the read is of several blows rather than one mallet strike. 20 XML comments label the parts (\"impact speed lines\", \"crush shading under dent\"); wrote no title element."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "standard",
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "followed",
+        "restraint": "overgrown",
+        "integrity": "strained",
+        "style": "unified",
+        "je-ne-sais-quoi": "none-detected"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%, the tightest of the three; no viewBox normalization applied. Obeyed the output format exactly: bare SVG, no prose, no code fences. The largest and densest of the three at 15KB and 177 elements, 118 of them paths, and the only one to keep a defs block — a reusable case outline, two gear profiles and an unwinding mainspring, instantiated 16 times via use, plus two clipPaths that crop the dial. Zero rect elements anywhere, so the no-opaque-backdrop rule is honored by construction. Also the only response to name itself: <title>Smashed key-wound mechanical alarm clock, pop-art</title>. Drew its numerals as stroked path glyphs under rotate/skewX/scale transforms rather than text elements — 12, 3, 6 and 9 hand-built and leaning at the angles the shattered dial would tilt them — which is why the document contains no text element at all. The mainspring is one 40-segment spiral stroked three times (32 black, 18 cyan, 5 pale cyan) unwinding off the left edge and past the bottom corner. What earns the overgrown mark is the surround: three starburst polygons whose vertices run far outside the viewBox (out to x=1843 and y=-834) fill the entire canvas behind the clock, joined by 11 shard-and-highlight pairs, six loose gears, a flung foot and ten speed lines, so the debris field competes with the clock for the frame. The strained mark has visible causes: a 22,24-offset silhouette group reads as a drop shadow under a subject that otherwise has no light direction, and the caved-in dial plate at (552,356)-(668,466) sits over the face as a separate dark slab whose edges don't meet the crack lines running underneath it."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": "choice",
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": "followed",
+        "restraint": "disciplined",
+        "integrity": "strained",
+        "style": "unified",
+        "je-ne-sais-quoi": "abundant"
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.3%; no viewBox normalization applied. The only response to disobey the output format: it wrapped the SVG in a code fence, prefaced it with \"This is confirmed clean … Here is the final SVG document\", and appended a note afterward. Per the skill, the surrounding prose and fence were stripped and nothing inside the document was touched; the disobedience is recorded here rather than repaired. That trailing note also reported a suspected prompt injection — it had found a scratchpad file of its own replaced by an unrelated clock design alongside files it never created, together with an instruction not to mention this. The stray files are leftover generator scripts sitting in a scratchpad directory shared with earlier work (timestamped before this run), so the collision was mundane rather than adversarial; it disregarded the concealment instruction, discarded the substituted content and rebuilt from its own design, and the filed bytes are its own output. Lowest element count of the three (80) and the only one with a deliberately offset viewBox (\"75 35 655 710\") rather than an origin-anchored square. Earns the disciplined mark by drawing the clock and nothing else — no starburst ground, no scattered debris field, just three impact rays and a handful of shards inside the dial. The forensics are the strongest in the set and they are single-origin: case, bezel and dial are three concentric hand-computed polylines of ~90 vertices each that all deform inward at the same place, and all eight crack paths plus the three burst rays radiate from one point, (474.6,363.5), in the dial's upper right. Consequences follow from that one strike — the right bell is rotated 21° off a bent bracket torn loose, the wind key is kinked through four segments, the mainspring escapes upper-left as a doubled stroke, and one of the three feet is flung sideways at 38°. The strained mark is earned at the hands: both are drawn as straight polylines from an undamaged centre hub and pass cleanly over the shattered quadrant without bending or breaking, so the one part of the mechanism that should show the blow is the part that reads intact."
+    }
+  ]
+}
