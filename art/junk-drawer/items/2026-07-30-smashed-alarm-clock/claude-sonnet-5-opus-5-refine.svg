@@ -1,0 +1,167 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="75 35 655 710">
+  <g>
+    <!-- ===================== IMPACT BURST RAYS (behind everything) =====================
+         All three wedges spring from the single impact origin 474.6,363.5, which is
+         also the deepest point of the crushed rim. -->
+    <g>
+      <path d="M 474.6,363.5 L 505,45 L 605,55 Z" fill="#FFDD22" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M 474.6,363.5 L 700,262 L 718,345 Z" fill="#FFFFFF" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M 474.6,363.5 L 648,425 L 702,478 Z" fill="#FFDD22" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+    </g>
+
+    <!-- ===================== EXPOSED GEAR TRAIN =====================
+         Drawn BEFORE the case so the crushed rim genuinely clips it: the gear only
+         shows where the mallet opened the case, and its lower edge disappears behind
+         the torn lip. Steel grey matches the sprung mainspring. -->
+    <g>
+      <path d="M 608.7,376.5 L 617.0,381.4 L 615.0,388.3 L 605.4,388.0 L 601.5,394.3 L 606.3,402.7 L 601.1,407.6 L 592.9,402.5 L 586.5,406.1 L 586.4,415.7 L 579.4,417.4 L 574.8,408.9 L 567.5,408.7 L 562.6,417.0 L 555.7,415.0 L 556.0,405.4 L 549.7,401.5 L 541.3,406.3 L 536.4,401.1 L 541.5,392.9 L 537.9,386.5 L 528.3,386.4 L 526.6,379.4 L 535.1,374.8 L 535.3,367.5 L 527.0,362.6 L 529.0,355.7 L 538.6,356.0 L 542.5,349.7 L 537.7,341.3 L 542.9,336.4 L 551.1,341.5 L 557.5,337.9 L 557.6,328.3 L 564.6,326.6 L 569.2,335.1 L 576.5,335.3 L 581.4,327.0 L 588.3,329.0 L 588.0,338.6 L 594.3,342.5 L 602.7,337.7 L 607.6,342.9 L 602.5,351.1 L 606.1,357.5 L 615.7,357.6 L 617.4,364.6 L 608.9,369.2 Z" fill="#CBD5DA" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+      <circle cx="572" cy="372" r="17" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="6"/>
+      <circle cx="572" cy="372" r="6" fill="#CBD5DA" stroke="#0a0a0a" stroke-width="4"/>
+    </g>
+
+    <!-- ===================== MAINSPRING (drawn before the case so the rim overlaps its base) ===================== -->
+    <path d="M 226.9,378.0 L 216.9,350.0 L 187.7,355.3 L 181.6,326.2 L 151.9,327.4 L 150.0,297.7 L 120.4,294.7 L 122.6,265.1 L 93.7,258.0"
+          fill="none" stroke="#0a0a0a" stroke-width="19" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 226.9,378.0 L 216.9,350.0 L 187.7,355.3 L 181.6,326.2 L 151.9,327.4 L 150.0,297.7 L 120.4,294.7 L 122.6,265.1 L 93.7,258.0"
+          fill="none" stroke="#CBD5DA" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="93.7" cy="258.0" r="9" fill="#CBD5DA" stroke="#0a0a0a" stroke-width="5"/>
+
+    <!-- ===================== WIND KEY (behind the case, as a key-wound clock's is) ===================== -->
+    <path d="M 588,555 L 618,588 L 636,615 L 652,645" fill="none" stroke="#0a0a0a" stroke-width="21" stroke-linecap="round"/>
+    <path d="M 588,555 L 618,588 L 636,615 L 652,645" fill="none" stroke="#FF7A1A" stroke-width="13" stroke-linecap="round"/>
+    <circle cx="666" cy="665" r="30" fill="#FF7A1A" stroke="#0a0a0a" stroke-width="9"/>
+    <circle cx="666" cy="665" r="11" fill="#FFF3D6" stroke="#0a0a0a" stroke-width="6"/>
+
+    <!-- ===================== CASE BODY =====================
+         Round everywhere except the upper-right sector, which is a crushed crater:
+         alternating creases and buckled folds deepening to the impact origin. -->
+    <path d="M 617.7,470.0 L 617.9,484.3 L 618.7,498.8 L 613.6,512.5 L 610.6,526.4 L 606.9,540.2 L 599.7,552.7 L 595.6,566.5 L 589.5,579.4 L 582.7,592.1 L 571.0,601.2 L 563.0,613.0 L 552.4,622.4 L 545.0,635.3 L 533.4,643.9 L 519.6,649.0 L 510.4,661.3 L 497.7,668.0 L 483.8,672.3 L 470.3,677.1 L 455.9,678.6 L 442.0,681.0 L 428.5,686.3 L 414.1,684.9 L 400.0,686.1 L 385.8,686.0 L 371.9,683.3 L 357.5,683.6 L 343.7,680.2 L 329.3,678.4 L 316.5,671.5 L 303.2,666.3 L 291.0,658.8 L 278.3,652.1 L 267.4,642.7 L 257.1,632.9 L 243.7,626.3 L 233.9,615.7 L 225.4,604.0 L 217.7,591.8 L 212.2,578.4 L 205.9,565.7 L 199.8,552.9 L 196.0,539.2 L 187.9,526.8 L 186.8,512.4 L 181.8,498.7 L 183.1,484.2 L 179.3,470.0 L 180.4,455.6 L 186.8,441.9 L 187.9,427.8 L 187.1,412.9 L 193.7,400.0 L 195.9,385.5 L 205.0,373.9 L 213.4,362.3 L 218.1,348.5 L 225.7,336.3 L 237.1,327.2 L 247.6,317.6 L 256.9,306.9 L 265.6,294.8 L 278.0,287.5 L 292.1,283.2 L 304.3,275.8 L 317.5,270.8 L 319.8,271.6 L 353.3,282.7 L 378.8,268.1 L 405.9,301.1 L 431.1,293.7 L 444.8,332.1 L 465.8,335.2 L 474.6,363.5 L 493.2,362.8 L 513.0,368.3 L 511.6,388.9 L 547.2,385.0 L 544.3,405.7 L 582.6,410.7 L 576.1,432.6 L 596.5,438.9 L 612.8,447.6 L 616.0,456.0 Z"
+          fill="#E23B2E" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+
+    <!-- torn tongue of case metal peeled up in FRONT of the gear's teeth, so the
+         cogwheel is sandwiched by case metal on both sides of the tear -->
+    <path d="M 544.3,405.7 L 582.6,410.7 L 568.0,384.0 Z"
+          fill="#E23B2E" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+
+    <!-- ===================== BEZEL RING (crushed in with the case) ===================== -->
+    <path d="M 591.4,470.0 L 592.9,482.6 L 590.3,495.1 L 589.7,507.7 L 585.9,519.8 L 582.6,532.0 L 580.0,544.6 L 573.0,555.3 L 567.4,566.6 L 561.7,578.0 L 552.1,586.7 L 544.1,596.3 L 537.6,607.6 L 528.1,616.1 L 516.9,622.3 L 506.5,629.4 L 497.0,638.0 L 486.1,644.7 L 473.4,647.2 L 462.6,654.5 L 450.3,657.9 L 437.7,659.7 L 425.2,661.0 L 412.5,661.0 L 400.0,661.2 L 387.3,664.4 L 374.9,660.3 L 362.2,660.1 L 350.3,655.5 L 337.5,654.0 L 326.0,648.7 L 315.0,642.4 L 304.1,636.0 L 292.3,631.2 L 283.6,621.7 L 273.5,614.3 L 263.4,606.6 L 253.8,598.2 L 246.5,587.8 L 240.3,576.7 L 231.4,567.3 L 228.0,554.8 L 223.5,543.1 L 218.1,531.7 L 213.8,519.9 L 212.4,507.3 L 209.9,495.0 L 207.9,482.6 L 206.7,470.0 L 208.9,457.5 L 209.2,444.9 L 209.2,432.0 L 211.7,419.6 L 216.6,407.8 L 221.0,395.8 L 226.6,384.5 L 234.1,374.2 L 241.1,363.8 L 248.4,353.7 L 253.7,341.7 L 263.0,333.0 L 271.5,323.5 L 283.7,318.4 L 292.5,309.1 L 303.5,302.9 L 314.2,296.1 L 326.4,292.4 L 328.5,292.9 L 358.8,304.7 L 381.1,290.3 L 405.1,323.1 L 427.3,315.1 L 438.2,352.4 L 456.5,354.1 L 462.7,380.5 L 479.4,378.7 L 497.1,382.6 L 494.2,401.6 L 528.3,395.9 L 524.1,414.8 L 561.2,417.6 L 553.8,437.3 L 573.9,442.5 L 590.0,450.0 L 593.1,457.5 Z"
+          fill="#FFC81A" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+
+    <!-- ===================== FACE / DIAL (crushed in with the case) ===================== -->
+    <path d="M 567.9,470.0 L 568.3,481.0 L 565.7,491.8 L 565.3,502.9 L 561.4,513.2 L 559.3,524.1 L 555.2,534.3 L 550.2,544.1 L 545.8,554.2 L 539.7,563.3 L 533.5,572.4 L 526.9,581.3 L 518.4,588.4 L 510.1,595.6 L 502.0,603.0 L 493.5,610.0 L 483.7,615.0 L 474.0,620.1 L 464.6,626.0 L 454.1,629.4 L 443.5,632.2 L 432.9,635.5 L 421.9,636.2 L 411.0,638.0 L 400.0,637.4 L 389.0,637.5 L 378.0,637.2 L 367.1,635.6 L 356.3,633.0 L 346.1,628.9 L 335.6,625.4 L 325.9,620.3 L 316.4,614.9 L 306.7,609.7 L 297.3,603.8 L 288.8,596.8 L 280.9,589.1 L 273.0,581.4 L 267.1,572.0 L 260.9,563.0 L 254.6,554.0 L 249.7,544.1 L 245.3,534.1 L 241.1,523.9 L 237.5,513.5 L 235.2,502.8 L 233.8,491.9 L 231.7,481.0 L 231.0,470.0 L 232.5,459.0 L 234.3,448.2 L 236.1,437.4 L 237.0,426.3 L 241.8,416.3 L 244.4,405.5 L 249.2,395.6 L 254.8,386.2 L 259.8,376.3 L 267.5,368.3 L 274.2,359.7 L 281.3,351.3 L 289.9,344.4 L 297.3,336.2 L 307.0,330.7 L 316.4,325.1 L 326.1,320.1 L 335.6,314.5 L 337.8,316.1 L 364.8,328.7 L 383.7,314.5 L 404.3,347.1 L 423.2,338.3 L 431.0,374.5 L 446.5,374.7 L 449.8,398.9 L 464.4,395.9 L 479.9,398.1 L 475.2,415.4 L 507.6,407.8 L 502.0,424.6 L 538.0,425.2 L 529.6,442.5 L 549.3,446.3 L 565.1,452.6 L 568.1,459.1 Z"
+          fill="#FFF3D6" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+
+    <!-- ===================== HOUR TICKS (1 and 2 destroyed by the blow) ===================== -->
+    <g stroke="#0a0a0a" stroke-width="9" stroke-linecap="square">
+      <line x1="400.0" y1="328.0" x2="400.0" y2="346.0"/>
+      <line x1="558.0" y1="470.0" x2="538.0" y2="470.0"/>
+      <line x1="536.8" y1="549.0" x2="519.5" y2="539.0"/>
+      <line x1="400.0" y1="628.0" x2="400.0" y2="608.0"/>
+      <line x1="321.0" y1="606.8" x2="331.0" y2="589.5"/>
+      <line x1="263.2" y1="549.0" x2="280.5" y2="539.0"/>
+      <line x1="242.0" y1="470.0" x2="262.0" y2="470.0"/>
+      <line x1="263.2" y1="391.0" x2="280.5" y2="401.0"/>
+      <line x1="321.0" y1="333.2" x2="331.0" y2="350.5"/>
+    </g>
+
+    <!-- ===================== NUMERALS (12 pushed in with the caved dial) ===================== -->
+    <g font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="46" fill="#0a0a0a" text-anchor="middle">
+      <text x="400.0" y="382">12</text>
+      <text x="522.0" y="486">3</text>
+      <text x="400.0" y="608">6</text>
+      <text x="278.0" y="486">9</text>
+    </g>
+
+    <!-- ===================== HANDS (both buckled by the strike; the hour hand,
+         which lay across the impact quadrant, is folded right back) ===================== -->
+    <g stroke="#0a0a0a" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M 400,470 L 398,534 L 378,562 L 355,610" stroke-width="16"/>
+      <path d="M 400,470 L 445,434 L 452,455 L 471,447" stroke-width="14"/>
+    </g>
+    <g stroke="#E23B2E" stroke-linecap="round" fill="none">
+      <path d="M 400,470 L 398,532" stroke-width="5"/>
+      <path d="M 400,470 L 442,436" stroke-width="5"/>
+    </g>
+
+    <!-- ===================== CENTER HUB ===================== -->
+    <circle cx="400" cy="470" r="20" fill="#0a0a0a"/>
+    <circle cx="400" cy="470" r="8" fill="#E23B2E"/>
+
+    <!-- ===================== TORN BELL BRACKET =====================
+         Hinged on two points of the crushed rim, so the right bell still hangs off
+         the clock instead of floating. -->
+    <path d="M 493.2,362.8 L 513.0,368.3 L 516.0,340.0 L 486.0,328.0 Z"
+          fill="#3a3a3a" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+
+    <!-- ===================== BELL BRIDGE + STRIKER =====================
+         Ends land exactly on each bell's crown boss; the bosses are drawn after, so
+         the bridge tucks under them. -->
+    <path d="M 290,194 C 322,138 366,120 410,128 C 460,138 506,180 533.7,231.4"
+          fill="none" stroke="#0a0a0a" stroke-width="11" stroke-linecap="round"/>
+    <line x1="403" y1="118" x2="392" y2="102" stroke="#0a0a0a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="427" y1="118" x2="438" y2="103" stroke="#0a0a0a" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="415" cy="131" r="16" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="7"/>
+
+    <!-- ===================== BELLS =====================
+         Shallow wide caps on crimped flanges, each bolted down by a crown boss.
+         Left bell still seated; right bell knocked askew on its torn bracket. -->
+    <!-- left bell -->
+    <path d="M 274,264 L 308,264 L 304,304 L 278,304 Z" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+    <path d="M 216,250 L 364,250 L 372,272 L 208,272 Z" fill="#0D5BA6" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M 214,250 C 214,208 244,192 290,192 C 336,192 366,208 366,250 Z" fill="#1C7ED6" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M 232,234 Q 248,208 278,203" fill="none" stroke="#69B3F0" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="290" cy="194" r="13" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="6"/>
+
+    <!-- right bell, knocked askew off its torn bracket -->
+    <g transform="rotate(20 478 326)">
+      <path d="M 482,288 L 516,288 L 512,328 L 486,328 Z" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M 424,274 L 572,274 L 580,296 L 416,296 Z" fill="#0D5BA6" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M 422,274 C 422,232 452,216 498,216 C 544,216 574,232 574,274 Z" fill="#1C7ED6" stroke="#0a0a0a" stroke-width="10" stroke-linejoin="round"/>
+      <path d="M 440,258 Q 456,232 486,227" fill="none" stroke="#69B3F0" stroke-width="7" stroke-linecap="round"/>
+      <circle cx="498" cy="218" r="13" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="6"/>
+    </g>
+
+    <!-- ===================== IMPACT CRACKS + CRUMPLE CREASES =====================
+         Every line starts at the impact origin or runs back toward it, and every
+         line lies on metal or dial - none of them cross the open tear. -->
+    <g fill="none" stroke="#0a0a0a" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 474.6,363.5 L 424.0,326.0 L 378.0,300.0"/>
+      <path d="M 474.6,363.5 L 393.8,401.9 L 323.5,436.0"/>
+      <path d="M 474.6,363.5 L 478.5,428.3 L 470.2,491.4"/>
+      <path d="M 474.6,363.5 L 516.0,404.0 L 562.0,428.0"/>
+    </g>
+    <g fill="none" stroke="#0a0a0a" stroke-width="6" stroke-linecap="round">
+      <path d="M 405.9,301.1 L 437.5,329.8"/>
+      <path d="M 444.8,332.1 L 461.2,349.4"/>
+      <path d="M 511.6,388.9 L 496.1,378.2"/>
+    </g>
+
+    <!-- ===================== GLASS SHARDS ===================== -->
+    <g fill="#B9E8FB" stroke="#0a0a0a" stroke-width="5" stroke-linejoin="round">
+      <path d="M 433.9,458.8 L 452.0,468.3 L 444.9,455.8 L 445.7,442.1 Z"/>
+      <path d="M 270.9,451.4 L 251.9,431.9 L 256.4,447.2 L 247.8,465.8 Z"/>
+      <path d="M 434.1,596.9 L 415.9,627.2 L 441.0,615.7 L 465.6,612.9 Z"/>
+      <path d="M 299.4,468.0 L 292.3,453.0 L 290.3,466.9 L 287.6,479.6 Z"/>
+      <path d="M 320.3,436.8 L 301.2,413.8 L 305.0,428.1 L 293.0,448.8 Z"/>
+      <path d="M 452.0,442.9 L 477.4,444.0 L 465.0,438.2 L 460.7,418.9 Z"/>
+      <path d="M 336.0,479.5 L 321.1,466.4 L 325.6,480.0 L 329.4,498.2 Z"/>
+      <path d="M 448.8,477.0 L 458.8,494.9 L 460.0,479.1 L 466.6,466.9 Z"/>
+      <path d="M 492.0,541.3 L 494.2,559.6 L 500.6,547.6 L 510.4,542.1 Z"/>
+    </g>
+
+    <!-- small flung nut/bolt debris -->
+    <g fill="#FFC81A" stroke="#0a0a0a" stroke-width="5" stroke-linejoin="round">
+      <path d="M 640,320 L 651,314 L 662,320 L 662,333 L 651,339 L 640,333 Z"/>
+      <path d="M 700,395 L 709,390 L 718,395 L 718,405 L 709,410 L 700,405 Z"/>
+    </g>
+    <circle cx="150" cy="220" r="10" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="5"/>
+
+    <!-- ===================== FEET ===================== -->
+    <path d="M 350,684 L 386,684 L 382,724 L 354,724 Z" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M 414,685 L 450,685 L 448,725 L 416,725 Z" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+    <!-- broken/knocked foot flung to the side -->
+    <g transform="rotate(38 505 705)">
+      <path d="M 487,690 L 523,690 L 520,730 L 490,730 Z" fill="#3a3a3a" stroke="#0a0a0a" stroke-width="8" stroke-linejoin="round"/>
+    </g>
+  </g>
+</svg>

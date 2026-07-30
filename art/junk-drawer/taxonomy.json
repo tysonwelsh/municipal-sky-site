@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 6,
-  "updated": "2026-07-29",
+  "version": 7,
+  "updated": "2026-07-30",
   "grades": [
     {
       "id": "prime",
@@ -270,6 +270,11 @@
       "vendor": "Anthropic"
     },
     {
+      "id": "claude-sonnet-5-opus-5-refine",
+      "label": "Claude Sonnet 5 → Opus 5 refine",
+      "vendor": "Anthropic"
+    },
+    {
       "id": "gpt-5",
       "label": "GPT-5",
       "vendor": "OpenAI"
@@ -342,6 +347,11 @@
       "date": "2026-07-29",
       "version": 6,
       "note": "Axes reworked: prompt-fidelity, geometry, color, composition marked defunct (kept — filed responses reference them; never surveyed again). Five new axes: instruction-following, restraint, integrity, style, je-ne-sais-quoi."
+    },
+    {
+      "date": "2026-07-30",
+      "version": 7,
+      "note": "Register model claude-sonnet-5-opus-5-refine (Claude Sonnet 5 → Opus 5 refine) — the first cross-model lineage id: one model's composition refined by another, given the base SVG as context. Filed under its own id rather than either parent's so neither model's record implies a clean-context one-shot sample it did not produce."
     }
   ]
 }
