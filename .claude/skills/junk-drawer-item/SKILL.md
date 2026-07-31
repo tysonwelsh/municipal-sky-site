@@ -87,15 +87,38 @@ in one session:
   filed, it would have been a fake independent sample.
 
 Both come from one root cause: repo access. The `svg-specimen` agent
-(`.claude/agents/svg-specimen.md`) is defined with **no tools**, which
-closes both — no Skill tool means no skills listing to match against, and
-no file tools means no sibling artwork to read.
+(`.claude/agents/svg-specimen.md`) restricts the generator to a **single
+tool that cannot read file contents and is not `Skill`**, which closes
+both — no Skill tool means no skills listing to match against, and no
+read tools means no sibling artwork to read.
 
-**The agent registry loads at session start**, so a fresh clone or a
-just-edited definition may not resolve mid-session. That is why the
-preamble exists too: it is the same guard expressed in the prompt, and it
-works with any agent type. Belt and braces — always send the preamble,
-even to `svg-specimen`.
+**Write the allowlist explicitly.** `tools: []` was tried first and the
+loader granted **all tools** — an empty list reads as "inherit
+everything", the exact opposite of what it looks like. The frontmatter
+therefore names one deliberately useless tool (`Glob`: universally
+present, lists paths but cannot open them, and is not `Skill`). If you
+ever edit that line, re-verify: spawn the agent and confirm the tool
+listing is restricted, rather than trusting the spelling.
+
+The preamble stays as a second layer, because the tool restriction is the
+only *load-bearing* guard and it can silently regress (as above). Always
+send the preamble, even to `svg-specimen`.
+
+**What the preamble does and does not do** (measured 2026-07-31, one run
+each, `general-purpose` + preamble):
+
+- sonnet: obeyed — no skill invocation, no questions, **0 tool uses**. It
+  did wrap the SVG in a ```` ```svg ```` fence, which is ordinary
+  gradeable disobedience; strip the fence per §3.
+- opus: produced artwork, but used **27 tool uses** — it read the repo
+  despite being told not to. The output was independent of its siblings
+  on inspection, so nothing was contaminated that time, but the
+  instruction plainly did not bind.
+
+Read that honestly: the preamble reliably stops the *skill-invocation*
+failure, and does **not** reliably stop repo reading. Prose asks a model
+to ignore what it can still see; only the tool restriction removes the
+capability. Never rely on the preamble alone to keep a sample clean.
 
 ### The harness preamble (verbatim, constant across the collection)
 
@@ -122,14 +145,12 @@ If `subagent_type: svg-specimen` fails to resolve, fall back to
 `general-purpose` **with the preamble** and say so in the response's
 `notes`.
 
-**Unverified, verify on first use:** `svg-specimen` was authored in a
-session whose agent registry had already loaded, so it has never actually
-been spawned. The first time it resolves, check the subagent's reported
-tool-use count: **0 means the no-tools restriction took**. If it comes
-back non-zero, the `tools: []` frontmatter is not being honoured as "no
-tools" — the preamble is then the only guard, so say so in `notes` and fix
-the frontmatter (naming one harmless tool is a safer spelling of "minimal"
-than an empty list if the loader reads empty as "inherit all").
+**Check the tool-use count on every generation.** It is the cheapest
+contamination detector there is: a generator that never opened a file
+cannot have copied one. A count of 0 (or Glob-only) is clean. A high
+count means the restriction is not in force in that environment — treat
+the output as suspect, diff it against the siblings, and record the count
+in `notes`.
 
 ### Confirm independence before filing
 

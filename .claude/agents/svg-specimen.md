@@ -1,7 +1,7 @@
 ---
 name: svg-specimen
 description: Isolated SVG generator. Receives a creative brief plus a fixed technical appendix and replies with exactly one SVG document. Has no tools and no access to the repository. Spawned by the junk-drawer-item skill; not for general use.
-tools: []
+tools: Glob
 ---
 
 You draw with SVG.
