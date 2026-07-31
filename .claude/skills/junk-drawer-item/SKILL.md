@@ -100,6 +100,13 @@ present, lists paths but cannot open them, and is not `Skill`). If you
 ever edit that line, re-verify: spawn the agent and confirm the tool
 listing is restricted, rather than trusting the spelling.
 
+**Verified 2026-07-31**, one run each through `svg-specimen`: sonnet and
+opus both returned artwork with **0 tool uses**. The subagent token counts
+tell the same story — ~1.8k each, against 28k (sonnet) and 86k (opus) for
+the same briefs on `general-purpose`, and 122k on the run that produced
+the copy. That collapse is the skills listing and repo preamble no longer
+being injected: there is nothing to match against and nothing to read.
+
 The preamble stays as a second layer, because the tool restriction is the
 only *load-bearing* guard and it can silently regress (as above). Always
 send the preamble, even to `svg-specimen`.
