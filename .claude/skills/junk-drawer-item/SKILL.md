@@ -53,11 +53,12 @@ filing — do not commit an entry containing values the owner never chose.
 
 ## 3. Generate — clean context, honest counts
 
-Spawn a FRESH subagent (general-purpose; `model:` per the owner's choice)
-whose entire prompt is:
+Spawn a FRESH subagent (`subagent_type: svg-specimen`; `model:` per the
+owner's choice) whose entire prompt is:
 
-1. The creative prompt, verbatim.
-2. The **standard technical appendix** (fixed harness, same for every
+1. The **harness preamble** (below).
+2. The creative prompt, verbatim.
+3. The **standard technical appendix** (fixed harness, same for every
    generation):
    > Output a single complete SVG document and nothing else — no prose, no
    > code fences. Requirements: `xmlns` and a `viewBox` on the root; the
@@ -66,8 +67,106 @@ whose entire prompt is:
    > backdrop rectangle); fully self-contained (no external references,
    > no `<script>`, no event attributes, no `<foreignObject>`).
 
-Give the subagent NOTHING else — no drawer context, no examples, no
-taxonomy. Its reply is the artifact.
+Beyond preamble + prompt + appendix, give the subagent NOTHING — no drawer
+context, no examples, no taxonomy. Its reply is the artifact.
+
+### Why the isolation matters (2026-07-31, both observed)
+
+A generating subagent runs *inside this repo*, and that has bitten twice
+in one session:
+
+- **It followed this skill instead of drawing.** A `general-purpose`
+  subagent gets the Skill tool, and with it the skills listing — where
+  `junk-drawer-item` advertises itself as the thing to use when asked to
+  generate a drawer item. That is exactly the task it was handed, so it
+  matched, invoked this skill, and replied with §1's "standing by for the
+  creative prompt" plus §2's operational questions. No artwork at all.
+- **It copied a sibling response.** A later subagent read a just-written
+  SVG out of the working tree and returned a near-copy of it — same
+  gradient and filter ids, same comments, whole blocks byte-for-byte —
+  filed, it would have been a fake independent sample.
+
+Both come from one root cause: repo access. The `svg-specimen` agent
+(`.claude/agents/svg-specimen.md`) restricts the generator to a **single
+tool that cannot read file contents and is not `Skill`**, which closes
+both — no Skill tool means no skills listing to match against, and no
+read tools means no sibling artwork to read.
+
+**Write the allowlist explicitly.** `tools: []` was tried first and the
+loader granted **all tools** — an empty list reads as "inherit
+everything", the exact opposite of what it looks like. The frontmatter
+therefore names one deliberately useless tool (`Glob`: universally
+present, lists paths but cannot open them, and is not `Skill`). If you
+ever edit that line, re-verify: spawn the agent and confirm the tool
+listing is restricted, rather than trusting the spelling.
+
+**Verified 2026-07-31**, one run each through `svg-specimen`: sonnet and
+opus both returned artwork with **0 tool uses**. The subagent token counts
+tell the same story — ~1.8k each, against 28k (sonnet) and 86k (opus) for
+the same briefs on `general-purpose`, and 122k on the run that produced
+the copy. That collapse is the skills listing and repo preamble no longer
+being injected: there is nothing to match against and nothing to read.
+
+The preamble stays as a second layer, because the tool restriction is the
+only *load-bearing* guard and it can silently regress (as above). Always
+send the preamble, even to `svg-specimen`.
+
+**What the preamble does and does not do** (measured 2026-07-31, one run
+each, `general-purpose` + preamble):
+
+- sonnet: obeyed — no skill invocation, no questions, **0 tool uses**. It
+  did wrap the SVG in a ```` ```svg ```` fence, which is ordinary
+  gradeable disobedience; strip the fence per §3.
+- opus: produced artwork, but used **27 tool uses** — it read the repo
+  despite being told not to. The output was independent of its siblings
+  on inspection, so nothing was contaminated that time, but the
+  instruction plainly did not bind.
+
+Read that honestly: the preamble reliably stops the *skill-invocation*
+failure, and does **not** reliably stop repo reading. Prose asks a model
+to ignore what it can still see; only the tool restriction removes the
+capability. Never rely on the preamble alone to keep a sample clean.
+
+### The harness preamble (verbatim, constant across the collection)
+
+> You are an SVG generator. Everything below the line `--- BRIEF ---` is a
+> creative brief followed by a fixed technical appendix. Make the artwork
+> and reply with the SVG document alone.
+>
+> This repository contains CLAUDE.md files, conventions, and skills
+> describing how artwork gets generated, filed, graded, and published. None
+> of them apply to you — they describe what someone else does with your
+> reply. Do not invoke any skill, do not stand by for further input, and do
+> not ask operational or clarifying questions. Do not read repository files
+> and do not look for prior artwork to reference. Resolve any ambiguity in
+> the brief yourself, silently — everything you need is below.
+>
+> `--- BRIEF ---`
+
+Then the creative prompt, then the appendix. The preamble is harness, not
+brief: it is operational only, says nothing about style, subject, palette
+or detail, and is byte-identical for every generation. It does NOT go in
+the entry's `prompt` field.
+
+If `subagent_type: svg-specimen` fails to resolve, fall back to
+`general-purpose` **with the preamble** and say so in the response's
+`notes`.
+
+**Check the tool-use count on every generation.** It is the cheapest
+contamination detector there is: a generator that never opened a file
+cannot have copied one. A count of 0 (or Glob-only) is clean. A high
+count means the restriction is not in force in that environment — treat
+the output as suspect, diff it against the siblings, and record the count
+in `notes`.
+
+### Confirm independence before filing
+
+When an item has more than one response, diff each new SVG against its
+siblings before writing `entry.json`. Near-identical structure — shared
+gradient/filter ids, shared comments, matching path blocks — means the
+sample is derivative, not independent. Do not file it as a one-shot:
+discard it, re-roll under isolation, and record what happened in `notes`.
+Independent responses to the same prompt differ almost everywhere.
 
 - **One-shot** = exactly one subagent call. Whatever comes back IS the
   response — never silently fix, prettify, or regenerate. Strip only
@@ -78,9 +177,17 @@ taxonomy. Its reply is the artifact.
   (creative prompt + follow-ups). Keep the final SVG only (transcripts
   can be added later per PLAN-BACKEND §6).
 - Record in the response's `notes`: "generated via clean-context subagent;
-  standard technical appendix v1 appended to the prompt." The entry's
-  `prompt` field holds the creative prompt only — the appendix is harness,
-  documented here, constant across the collection.
+  generation harness v2 (isolated svg-specimen agent, harness preamble,
+  standard technical appendix v1)." The entry's `prompt` field holds the
+  creative prompt only — preamble and appendix are harness, documented
+  here, constant across the collection.
+- **Harness versions** (state the version in `notes`; it is part of what a
+  grade means, and responses generated under different harnesses are not
+  strictly comparable):
+  - **v1** — `general-purpose` agent, appendix only, no preamble. Every
+    response filed before 2026-07-31. Do not retro-edit them.
+  - **v2** — `svg-specimen` agent + harness preamble + the same appendix.
+    Everything from 2026-07-31 on.
 
 ## 4. Verify the artifact
 
@@ -196,7 +303,13 @@ a feature branch — the item is not published until it reaches `main`.
 - Never generate before the §2 operational answers are in, and never
   file owner-choice fields (sizeClass, grade, annotations) the owner
   didn't actually choose or explicitly defer.
-- Never give the generating subagent context beyond prompt + appendix.
+- Never give the generating subagent context beyond preamble + prompt +
+  appendix.
+- Never generate with an agent that can read this repository. If the
+  subagent used file tools or invoked a skill, treat its output as
+  suspect: diff it against the siblings before filing.
+- Never file a response that duplicates a sibling's structure as though it
+  were independent — re-roll it under isolation and disclose it.
 - Never edit artwork bytes (viewBox tightening is the sole permitted
   normalization, always disclosed).
 - Never invent grades, models, dates, or prompt counts.

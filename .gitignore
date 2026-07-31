@@ -20,10 +20,12 @@ secrets.php
 # ─────────────────────────────────────────────────────────────
 # Claude Code session state
 # ─────────────────────────────────────────────────────────────
-# .claude is local EXCEPT skills/, which travel with the repo (phone
-# sessions need them — e.g. the junk-drawer-item generation skill)
+# .claude is local EXCEPT skills/ and agents/, which travel with the repo
+# (phone sessions need them — e.g. the junk-drawer-item generation skill,
+# and the svg-specimen agent it spawns to generate artwork in isolation)
 .claude/*
 !.claude/skills/
+!.claude/agents/
 
 # ─────────────────────────────────────────────────────────────
 # Backup file patterns
