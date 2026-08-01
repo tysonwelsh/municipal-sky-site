@@ -1,0 +1,210 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="gSclera" cx="0.38" cy="0.30" r="0.80" fx="0.33" fy="0.24">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="0.14" stop-color="#fbf3e0"/>
+      <stop offset="0.30" stop-color="#f3e6c9"/>
+      <stop offset="0.45" stop-color="#e8d3a8"/>
+      <stop offset="0.58" stop-color="#d7ba88"/>
+      <stop offset="0.70" stop-color="#bd996a"/>
+      <stop offset="0.80" stop-color="#9d7549"/>
+      <stop offset="0.89" stop-color="#77522f"/>
+      <stop offset="0.955" stop-color="#4c3018"/>
+      <stop offset="1" stop-color="#2e1c0b"/>
+    </radialGradient>
+
+    <radialGradient id="gWarmCore" cx="0.36" cy="0.30" r="0.42">
+      <stop offset="0" stop-color="#fffdf6" stop-opacity="0.85"/>
+      <stop offset="0.55" stop-color="#fdf0d6" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#f2dcb0" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="gTerminator" cx="0.72" cy="0.74" r="0.60">
+      <stop offset="0" stop-color="#3d2611" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#5a3c1d" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#7a5730" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="gPupil" cx="0.38" cy="0.34" r="0.76">
+      <stop offset="0" stop-color="#2a231b"/>
+      <stop offset="0.35" stop-color="#181310"/>
+      <stop offset="0.68" stop-color="#0c0907"/>
+      <stop offset="0.88" stop-color="#0a0705"/>
+      <stop offset="1" stop-color="#241609"/>
+    </radialGradient>
+
+    <linearGradient id="gGlint" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.16" stop-color="#fff8e8" stop-opacity="0.45"/>
+      <stop offset="0.44" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="0.72" stop-color="#fff6e2" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ffeecd" stop-opacity="0"/>
+    </linearGradient>
+
+    <linearGradient id="gGlintCore" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.55"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.80" stop-color="#ffffff" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <filter id="fBrush" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.013 0.021" numOctaves="3" seed="11" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="fBrushFine" x="-14%" y="-14%" width="128%" height="128%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035 0.045" numOctaves="3" seed="4" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="fGrain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.95" numOctaves="4" seed="21" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 0.20  0 0 0 0 0.14  0 0 0 0 0.07  0 0 0.85 0 -0.12"/>
+    </filter>
+
+    <filter id="fWeave" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="turbulence" baseFrequency="0.30 0.02" numOctaves="2" seed="3" result="n"/>
+      <feColorMatrix in="n" type="matrix"
+        values="0 0 0 0 0.28  0 0 0 0 0.20  0 0 0 0 0.10  0 0 0.5 0 -0.10"/>
+    </filter>
+
+    <filter id="bSoft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="9"/>
+    </filter>
+    <filter id="bMed" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="bTiny" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <filter id="bHair" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="1.4"/>
+    </filter>
+
+    <clipPath id="cBall">
+      <circle cx="256" cy="256" r="250"/>
+    </clipPath>
+    <clipPath id="cPupil">
+      <ellipse cx="0" cy="0" rx="101" ry="94"/>
+    </clipPath>
+  </defs>
+
+  <g transform="rotate(-6 256 256)">
+
+    <!-- the body of the eyeball -->
+    <g filter="url(#fBrush)">
+      <circle cx="256" cy="256" r="252" fill="url(#gSclera)"/>
+    </g>
+
+    <g clip-path="url(#cBall)">
+
+      <!-- broad modelling glazes -->
+      <ellipse cx="256" cy="256" rx="250" ry="250" fill="url(#gTerminator)"/>
+      <ellipse cx="188" cy="168" rx="150" ry="132" fill="url(#gWarmCore)" filter="url(#bMed)"/>
+
+      <!-- scumbled brushwork across the ivory dome -->
+      <g opacity="0.30" filter="url(#bSoft)" fill="none" stroke-linecap="round">
+        <path d="M52 214 C120 138 214 96 322 92" stroke="#fdf4de" stroke-width="26"/>
+        <path d="M70 268 C132 190 226 146 336 142" stroke="#f6e7c6" stroke-width="20"/>
+        <path d="M96 330 C158 258 244 214 348 208" stroke="#e6cfa4" stroke-width="22"/>
+        <path d="M136 392 C196 330 272 292 366 282" stroke="#cfae7e" stroke-width="24"/>
+        <path d="M196 444 C252 396 320 362 404 348" stroke="#b28f60" stroke-width="26"/>
+        <path d="M282 476 C334 436 388 404 452 380" stroke="#8f6c42" stroke-width="26"/>
+      </g>
+      <g opacity="0.22" filter="url(#bSoft)" fill="none" stroke-linecap="round">
+        <path d="M120 96 C182 60 258 42 340 50" stroke="#fffbf0" stroke-width="16"/>
+        <path d="M44 300 C60 214 108 140 178 88" stroke="#fdf6e6" stroke-width="14"/>
+        <path d="M418 156 C462 216 480 288 470 356" stroke="#6f4d29" stroke-width="30"/>
+        <path d="M348 432 C404 398 444 348 466 292" stroke="#5d3f21" stroke-width="26"/>
+      </g>
+
+      <!-- deep umber rim glaze -->
+      <circle cx="256" cy="256" r="232" fill="none" stroke="#3a2410" stroke-width="46" opacity="0.42" filter="url(#bMed)"/>
+      <circle cx="256" cy="256" r="246" fill="none" stroke="#201205" stroke-width="20" opacity="0.55" filter="url(#bSoft)"/>
+
+      <!-- reflected bounce light along the shadow rim -->
+      <path d="M485.8 317.6 A238 238 0 0 1 119.5 451" fill="none" stroke="#d3a466" stroke-width="26" opacity="0.5" filter="url(#bSoft)"/>
+      <path d="M470 330 A226 226 0 0 1 160 442" fill="none" stroke="#eec994" stroke-width="10" opacity="0.35" filter="url(#bSoft)"/>
+
+      <!-- faint seam of the moulded lens -->
+      <circle cx="256" cy="256" r="222" fill="none" stroke="#fff2d6" stroke-width="2.4" opacity="0.22" filter="url(#bHair)"/>
+
+      <!-- the pupil disc, rolled off centre -->
+      <g transform="translate(310 302) rotate(-19)">
+        <ellipse cx="10" cy="14" rx="112" ry="104" fill="#2a1a0a" opacity="0.5" filter="url(#bMed)"/>
+        <g filter="url(#fBrushFine)">
+          <ellipse cx="0" cy="0" rx="102" ry="95" fill="url(#gPupil)"/>
+        </g>
+        <g clip-path="url(#cPupil)">
+          <ellipse cx="-26" cy="-30" rx="58" ry="48" fill="#3a3026" opacity="0.35" filter="url(#bSoft)"/>
+          <path d="M-86 40 A96 96 0 0 0 74 62" fill="none" stroke="#6b4c2a" stroke-width="14" opacity="0.4" filter="url(#bSoft)"/>
+          <path d="M-92 -18 A96 96 0 0 1 6 -94" fill="none" stroke="#0a0705" stroke-width="26" opacity="0.6" filter="url(#bSoft)"/>
+        </g>
+        <ellipse cx="0" cy="0" rx="99" ry="92" fill="none" stroke="#4a3018" stroke-width="7" opacity="0.45" filter="url(#bTiny)"/>
+        <!-- bright fleck, impasto -->
+        <ellipse cx="-38" cy="-40" rx="26" ry="21" fill="#fff4d8" opacity="0.22" filter="url(#bSoft)"/>
+        <ellipse cx="-38" cy="-40" rx="15" ry="12" fill="#fff8e6" opacity="0.62" filter="url(#bTiny)"/>
+        <ellipse cx="-41" cy="-44" rx="8.5" ry="6.6" fill="#fffdf6" opacity="0.97"/>
+        <ellipse cx="-45" cy="-48" rx="3.4" ry="2.6" fill="#ffffff"/>
+        <path d="M-50 -32 A16 13 0 0 0 -26 -33" fill="none" stroke="#0b0806" stroke-width="2.6" opacity="0.5"/>
+        <!-- second tiny catchlight -->
+        <ellipse cx="44" cy="46" rx="9" ry="7" fill="#e8c48c" opacity="0.3" filter="url(#bTiny)"/>
+      </g>
+
+      <!-- the great curved glint sweeping the upper edge -->
+      <g filter="url(#bSoft)" opacity="0.85">
+        <path d="M35.8 197 A228 228 0 0 1 326.5 39.2 L317.2 67.7 A198 198 0 0 0 64.8 204.8 Z" fill="url(#gGlint)"/>
+      </g>
+      <g filter="url(#bTiny)" opacity="0.95">
+        <path d="M48 190 A222 222 0 0 1 318 50 L313 66 A206 206 0 0 0 64 200 Z" fill="url(#gGlintCore)"/>
+      </g>
+      <path d="M74 176 A214 214 0 0 1 268 56" fill="none" stroke="#ffffff" stroke-width="5" opacity="0.55" filter="url(#bHair)"/>
+
+      <!-- faint mullioned window reflected in the dome -->
+      <g opacity="0.16" filter="url(#bTiny)">
+        <path d="M132 128 L188 100 L200 132 L144 160 Z" fill="#fffaee"/>
+        <path d="M154 172 L210 144 L220 172 L164 200 Z" fill="#fffaee"/>
+      </g>
+
+      <!-- ageing: craquelure -->
+      <g stroke="#221506" fill="none" opacity="0.17" stroke-width="1.2" stroke-linecap="round">
+        <path d="M70 150 L110 168 L138 150 L176 176"/>
+        <path d="M120 330 L152 352 L184 340 L214 368"/>
+        <path d="M300 90 L330 110 L352 96 L388 120"/>
+        <path d="M400 220 L424 250 L410 282 L432 310"/>
+        <path d="M180 80 L196 110 L184 140"/>
+        <path d="M60 260 L92 276 L84 306 L112 330"/>
+        <path d="M250 430 L286 442 L318 428"/>
+        <path d="M356 360 L382 386 L372 414"/>
+        <path d="M96 196 L84 228 L104 254"/>
+        <path d="M420 150 L442 178 L430 204"/>
+        <path d="M230 60 L246 86 L272 74"/>
+        <path d="M148 420 L172 446 L206 438"/>
+      </g>
+      <g stroke="#f2e2c2" fill="none" opacity="0.10" stroke-width="0.8" stroke-linecap="round">
+        <path d="M72 152 L112 170 L140 152"/>
+        <path d="M302 92 L332 112 L354 98"/>
+        <path d="M62 262 L94 278 L86 308"/>
+        <path d="M358 362 L384 388"/>
+      </g>
+
+      <!-- canvas tooth and varnish grain -->
+      <rect x="0" y="0" width="512" height="512" filter="url(#fWeave)" opacity="0.16"/>
+      <rect x="0" y="0" width="512" height="512" filter="url(#fGrain)" opacity="0.20"/>
+
+      <!-- final warm varnish glaze -->
+      <ellipse cx="300" cy="316" rx="240" ry="236" fill="#4a2f13" opacity="0.16" filter="url(#bMed)"/>
+    </g>
+
+    <!-- brushy contour, laid over the rim -->
+    <g filter="url(#fBrush)" opacity="0.5">
+      <circle cx="256" cy="256" r="248" fill="none" stroke="#1d1105" stroke-width="7"/>
+    </g>
+    <g filter="url(#fBrushFine)" opacity="0.3">
+      <path d="M60 132 A238 238 0 0 1 300 20" fill="none" stroke="#f6e6c4" stroke-width="4"/>
+    </g>
+  </g>
+</svg>
