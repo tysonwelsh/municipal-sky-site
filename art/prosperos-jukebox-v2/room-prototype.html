@@ -60,9 +60,23 @@
     Tier&nbsp;1 of the sound rework, offered for approval before anything touches the engine.
     The voices below are faithful ports of the real Library patches from <code>pj2-library.js</code> &mdash;
     same oscillators, same envelopes, same formants. <b>The only variable is the room.</b>
-    Room&nbsp;A is exactly what <code>pj2-voice.js</code> builds today. Room&nbsp;B is the proposed
-    replacement. Both convolvers run in parallel and are always fed, so switching is
-    instant and the comparison is honest &mdash; you can flip mid-tail.
+    Room&nbsp;A is the IR generator <code>pj2-voice.js</code> ships today, transcribed verbatim.
+    Room&nbsp;B is the proposed replacement. Both run in parallel and are always fed, so
+    switching is instant and the comparison is honest &mdash; you can flip mid-tail.
+  </div>
+  <div class="sub" style="margin-top:9px; border-left:2px solid var(--warn); padding-left:10px">
+    <b>Read this before trusting your ears.</b> Everything here is <b>v2</b>. &ldquo;A&rdquo; is the
+    IR generator <code>pj2-voice.js</code> ships today &mdash; but an IR on its own is not what the
+    Library sounds like, so two caveats:
+    <b>(1)</b>&nbsp;the real Library never runs one room. It blends <code>roomClose</code> and
+    <code>roomWide</code> continuously (equal-power, balance 0.15), and much of its space comes
+    from the far-wall delay and the sympathetic halo rather than the convolvers. Leave
+    <b>Engine chain</b> ON to hear the apparatus the engine actually builds; switch it off only
+    to isolate the convolver as a variable.
+    <b>(2)</b>&nbsp;the engine never sets <code>convolver.normalize</code>, so it runs at the browser
+    default <code>true</code>. The toggle below defaults to matching that. It is not cosmetic:
+    normalization gives back much of the high-frequency energy room B removes on purpose, so
+    the two settings are genuinely different experiments and only ON describes the engine.
   </div>
 </header>
 
@@ -86,9 +100,19 @@
   <div class="panel">
     <div class="row" style="margin-bottom:10px">
       <button class="roomBtn" id="roomDry">DRY<small>no room at all</small></button>
-      <button class="roomBtn a on" id="roomA">A &middot; CURRENT<small>what ships today</small></button>
+      <button class="roomBtn a on" id="roomA">A &middot; SHIPPING IR<small>pj2-voice.js today</small></button>
       <button class="roomBtn b" id="roomB">B &middot; PROPOSED<small>banded + early refl.</small></button>
       <span class="status" id="roomStatus">Room A</span>
+    </div>
+    <div class="row" style="margin-bottom:10px; border-top:1px solid var(--line); padding-top:10px">
+      <button id="chainBtn" class="on">Engine chain: ON</button>
+      <button id="normBtn" class="on">convolver.normalize: TRUE</button>
+      <span class="legend" style="margin:0">
+        <b>Engine chain</b> adds what the real Library puts around its convolvers &mdash;
+        two rooms blended (close/wide at 0.15), the far-wall delay, the sympathetic halo, and
+        the master bus. Off = bare IR, which isolates the variable but is not how anything
+        actually sounds. <b>normalize TRUE</b> matches the engine.
+      </span>
     </div>
     <div class="sliders">
       <label class="ctl">Preset
@@ -209,7 +233,10 @@
 
   var ctx = null, master = null, dryBus = null;
   var rooms = { dry: null, a: null, b: null };
+  var hub = null;                 // shared voice fan-out (see makeHub)
   var current = "a";
+  var chainOn = true;             // engine chain (2 rooms + delay + halo)
+  var normalizeOn = true;         // matches the engine, which never sets it
   var loopTimer = null, lastSource = null;
   var slowNoiseCache = {};
 
@@ -421,25 +448,119 @@
   }
 
   // --------------------------------------------------------------------------
-  // A room chain: send → [preDelay → convolver] → wet → output.
-  // The dry path lives outside, shared, so the two rooms are compared on their
-  // wet contribution alone.
+  // One convolver room: send → preDelay → convolver → wet → blend → dest.
+  //
+  // `normalize` is a TOGGLE, defaulting to the browser's true — because that
+  // is what the engine gets, having never set the property. It is not a
+  // cosmetic level control: with normalize on, the browser scales the IR to
+  // roughly unity gain, which quietly gives back much of the high-frequency
+  // energy room B removes on purpose. Comparing a banded IR against a flat one
+  // with normalization ON is a different experiment from comparing them with it
+  // OFF, and only the ON case describes the engine.
   // --------------------------------------------------------------------------
-  function makeRoom(irBuf, preDelayS) {
+  function makeRoom(irBuf, preDelayS, wetV, dest) {
     var send = ctx.createGain();
-    var out = ctx.createGain();
-    out.gain.setValueAtTime(0, ctx.currentTime);
     var pre = ctx.createDelay(0.25);
     pre.delayTime.setValueAtTime(preDelayS, ctx.currentTime);
     var conv = ctx.createConvolver();
-    conv.normalize = false;   // we manage level ourselves; normalize would
-                              // undo the banded decay's honest loss of HF energy
+    conv.normalize = normalizeOn;
     conv.buffer = irBuf;
     var wet = ctx.createGain();
-    wet.gain.setValueAtTime(parseFloat($("wet").value), ctx.currentTime);
-    send.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(out);
+    wet.gain.setValueAtTime(wetV, ctx.currentTime);
+    var blend = ctx.createGain();
+    blend.gain.setValueAtTime(1, ctx.currentTime);
+    send.connect(pre); pre.connect(conv); conv.connect(wet);
+    wet.connect(blend); blend.connect(dest);
+    return { send: send, wet: wet, blend: blend, conv: conv, buffer: irBuf, preDelayS: preDelayS };
+  }
+
+  // --------------------------------------------------------------------------
+  // THE FAR-WALL DELAY — pj2-fx.js Fx.delay, at the Library's settings
+  // (pj2-library.js:2472): timeS 0.42, feedback 0.22, damp 1600, wet 0.18.
+  // Topology from the module header:
+  //   send → delay → lowpass(damp, Q .5) → feedbackGain → delay
+  //                                      └→ wetGain → output
+  // The wet tap is post-filter, so even the first answer wears the room's
+  // damping. Q is pinned at 0.5 so the passband gain never exceeds 1 and the
+  // printed feedback number IS the true loop gain.
+  // --------------------------------------------------------------------------
+  function makeDelay(dest) {
+    var send = ctx.createGain();
+    var d = ctx.createDelay(1.0);
+    d.delayTime.setValueAtTime(0.42, ctx.currentTime);
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(1600, ctx.currentTime);
+    lp.Q.setValueAtTime(0.5, ctx.currentTime);
+    var fb = ctx.createGain();
+    fb.gain.setValueAtTime(0.22, ctx.currentTime);
+    var wet = ctx.createGain();
+    wet.gain.setValueAtTime(0.18, ctx.currentTime);
+    send.connect(d); d.connect(lp); lp.connect(fb); fb.connect(d);
+    lp.connect(wet); wet.connect(dest);
+    return { send: send, wet: wet };
+  }
+
+  // --------------------------------------------------------------------------
+  // THE SYMPATHETIC HALO — pj2-fx.js Fx.sympathetic at the Library's settings
+  // (pj2-library.js:2491): six strings, feedback 0.95, damp 3000, level 0.04,
+  // excited only by a 0.12 whisper send off the pluck. Each string is a tuned
+  // feedback comb (delay 1/f → lowpass → gain → back), so it rings when
+  // something in the music grazes its pitch and stays silent otherwise.
+  // Tuned to HALO_DEGS {0,2,4,5,6} + the octave tonic — dorian's resonant
+  // frame, deliberately skipping the passing tones (pj2-library.js:838).
+  // --------------------------------------------------------------------------
+  function makeHalo(dest) {
+    var input = ctx.createGain();
+    var sum = ctx.createGain();
+    var level = ctx.createGain();
+    level.gain.setValueAtTime(0.04, ctx.currentTime);
+    sum.connect(level); level.connect(dest);
+    var freqs = [SCALE4[0], SCALE4[2], SCALE4[4], SCALE4[5], SCALE4[6], SCALE4[0] * 2];
+    for (var i = 0; i < freqs.length; i++) {
+      var d = ctx.createDelay(1.0);
+      d.delayTime.setValueAtTime(1 / freqs[i], ctx.currentTime);
+      var lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(3000, ctx.currentTime);
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0.95, ctx.currentTime);
+      input.connect(d); d.connect(lp); lp.connect(g); g.connect(d);
+      lp.connect(sum);
+    }
+    return { input: input, level: level };
+  }
+
+  // --------------------------------------------------------------------------
+  // A STYLE = everything the Library wraps around one IR generator: both
+  // rooms, the blend, the delay, the halo. Building the whole apparatus twice
+  // (once per generator) is the only way an A/B answers the question the owner
+  // actually asked — "is this what the jukebox sounds like" — rather than the
+  // narrower "what does this convolver do".
+  //
+  // Equal-power blend at the Library's default balance 0.15: close = cos(b·π/2),
+  // wide = sin(b·π/2), so total power stays flat through any morph.
+  // --------------------------------------------------------------------------
+  function makeStyle(irClose, irWide) {
+    var out = ctx.createGain();
+    out.gain.setValueAtTime(0, ctx.currentTime);
     out.connect(master);
-    return { send: send, out: out, wet: wet, conv: conv, buffer: irBuf };
+    var wetV = parseFloat($("wet").value);
+    var close = makeRoom(irClose, 0.020, wetV, out);
+    var wide = makeRoom(irWide, 0.045, wetV * 1.13, out); // 0.30 → 0.34, as shipped
+    var b = 0.15 * Math.PI / 2;
+    close.blend.gain.setValueAtTime(Math.cos(b), ctx.currentTime);
+    wide.blend.gain.setValueAtTime(Math.sin(b), ctx.currentTime);
+    // The delay speaks into the WIDE room only — the far wall is in the
+    // stacks (pj2-library.js:2477).
+    var delay = makeDelay(wide.send);
+    var halo = makeHalo(out);
+    var voiceIn = ctx.createGain();
+    voiceIn.connect(close.send); voiceIn.connect(wide.send);
+    return {
+      out: out, voiceIn: voiceIn, close: close, wide: wide,
+      delay: delay, halo: halo, buffer: irClose
+    };
   }
 
   function currentBSpec() {
@@ -452,29 +573,78 @@
     };
   }
 
+  // The voice fan-out. Every voice connects to these four gains, and each of
+  // them feeds the SAME point in every style — so one note excites room A's
+  // apparatus and room B's identically and simultaneously. Aux sends carry the
+  // Library's own send levels (pj2-library.js:2481-2499).
+  function makeHub() {
+    var h = {
+      main: ctx.createGain(),
+      delayBox: ctx.createGain(),   // 0.5  — the box always speaks to the wall
+      delayPluck: ctx.createGain(), // 0.35 — the pluck, when the coin says
+      halo: ctx.createGain()        // 0.12 — the strings hear every pluck
+    };
+    h.delayBox.gain.setValueAtTime(0.5, ctx.currentTime);
+    h.delayPluck.gain.setValueAtTime(0.35, ctx.currentTime);
+    h.halo.gain.setValueAtTime(0.12, ctx.currentTime);
+    h.main.connect(dryBus);
+    ["a", "b"].forEach(function (k) {
+      h.main.connect(rooms[k].voiceIn);
+      h.delayBox.connect(rooms[k].delay.send);
+      h.delayPluck.connect(rooms[k].delay.send);
+      h.halo.connect(rooms[k].halo.input);
+    });
+    return h;
+  }
+
   function rebuildRooms() {
     var preset = PRESETS[$("preset").value];
     var decayS = parseFloat($("dec").value);
-    var preDelayS = preset.preDelayS;
+    var bSpec = currentBSpec();
 
-    var irA = buildIR_A(decayS, preset.brightness, preset.ripple, 0.4);
-    var irB = buildIR_B(currentBSpec());
+    // A's two rooms use the shipping spec pairs; B's use the same geometry
+    // with the proposed generator, so the pair structure is never the variable.
+    var irAClose = buildIR_A(decayS, preset.brightness, preset.ripple, 0.4);
+    var irAWide = buildIR_A(decayS * 2.4, 1.9, 0.04, 0.4);
+    var wideSpec = {};
+    for (var k in bSpec) wideSpec[k] = bSpec[k];
+    wideSpec.decayS = decayS * 2.4;
+    var irBClose = buildIR_B(bSpec);
+    var irBWide = buildIR_B(wideSpec);
 
-    // Rebuild in place where possible so a live tail is not cut off mid-ring.
-    if (rooms.a) { rooms.a.conv.buffer = irA; rooms.a.buffer = irA; }
-    else rooms.a = makeRoom(irA, preDelayS);
-    if (rooms.b) { rooms.b.conv.buffer = irB; rooms.b.buffer = irB; }
-    else rooms.b = makeRoom(irB, preDelayS);
-
-    if (!rooms.dry) {
-      rooms.dry = { send: ctx.createGain(), out: ctx.createGain() };
-      rooms.dry.send.connect(rooms.dry.out);
+    if (rooms.a) {
+      rooms.a.close.conv.buffer = irAClose; rooms.a.wide.conv.buffer = irAWide;
+      rooms.a.buffer = irAClose;
+      rooms.b.close.conv.buffer = irBClose; rooms.b.wide.conv.buffer = irBWide;
+      rooms.b.buffer = irBClose;
+    } else {
+      rooms.a = makeStyle(irAClose, irAWide);
+      rooms.b = makeStyle(irBClose, irBWide);
+      rooms.dry = { out: ctx.createGain() };
       rooms.dry.out.gain.setValueAtTime(0, ctx.currentTime);
       rooms.dry.out.connect(master);
+      hub = makeHub();
     }
+    applyChain();
     applyRoom(true);
     drawIRs();
     writeSpec();
+  }
+
+  // Engine chain on/off. OFF collapses each style to its close room alone and
+  // shuts the aux sends, which isolates the convolver but is explicitly NOT
+  // how the Library sounds — the button label says so.
+  function applyChain() {
+    if (!rooms.a || !hub) return;
+    var t = ctx.currentTime, r = 0.03;
+    var b = 0.15 * Math.PI / 2;
+    ["a", "b"].forEach(function (k) {
+      var st = rooms[k];
+      st.close.blend.gain.linearRampToValueAtTime(chainOn ? Math.cos(b) : 1, t + r);
+      st.wide.blend.gain.linearRampToValueAtTime(chainOn ? Math.sin(b) : 0, t + r);
+      st.delay.wet.gain.linearRampToValueAtTime(chainOn ? 0.18 : 0, t + r);
+      st.halo.level.gain.linearRampToValueAtTime(chainOn ? 0.04 : 0, t + r);
+    });
   }
 
   // Crossfade between room outputs. Everything stays connected and fed; only
@@ -491,23 +661,18 @@
       g.linearRampToValueAtTime(k === current ? 1 : 0, t + r);
     });
     $("roomStatus").textContent =
-      current === "dry" ? "Dry — no room" : current === "a" ? "Room A · current" : "Room B · proposed";
+      current === "dry" ? "Dry — no room"
+      : (current === "a" ? "Room A · shipping IR" : "Room B · proposed") +
+        (chainOn ? " + engine chain" : " (bare IR)");
     $("roomDry").className = "roomBtn" + (current === "dry" ? " on" : "");
     $("roomA").className = "roomBtn a" + (current === "a" ? " on" : "");
     $("roomB").className = "roomBtn b" + (current === "b" ? " on" : "");
   }
 
-  // Every voice sends here: dry path plus both room sends, always.
-  function tapPoint() {
-    var g = ctx.createGain();
-    g.connect(rooms.dry.send);
-    g.connect(rooms.a.send);
-    g.connect(rooms.b.send);
-    // The dry component is shared by all three chains; muting it for the
-    // DRY button would be wrong, so dry level is a global trim instead.
-    g.connect(dryBus);
-    return g;
-  }
+  // Every voice's main path lands on hub.main, which fans out to the dry bus
+  // and to BOTH styles' apparatus at once. The aux sends (halo, far wall) are
+  // reached directly by the voices that own them, exactly as in the engine.
+  function tapPoint() { return hub.main; }
 
   // ==========================================================================
   // THE VOICES — ports of pj2-library.js, structurally unchanged.
@@ -517,7 +682,7 @@
   // pj2-library.js:1694 renderPluck — v1's harpsichord (libPluckNote ~1380):
   // a looped 30 ms noise burst through a lowpass that tracks the pitch and
   // ramps DOWN as the string dies, plus an octave sine sparkle.
-  function pluck(out, freq, t, durS, vel) {
+  function pluck(out, freq, t, durS, vel, farWall) {
     var wxBright = 0.5;
     var n = Math.max(2, Math.round(ctx.sampleRate * 0.03));
     var buf = ctx.createBuffer(1, n, ctx.sampleRate);
@@ -533,6 +698,8 @@
     lp.Q.setValueAtTime(0.5, t);
     var g = ctx.createGain();
     src.connect(lp); lp.connect(g); g.connect(out);
+    g.connect(hub.halo);                        // the strings hear every pluck
+    if (farWall) g.connect(hub.delayPluck);     // some phrases reach the far wall
     var knee = Math.min(0.15, durS * 0.5);
     env(g.gain, t, [[0.004, 0.055 * vel], [knee - 0.004, 0.018 * vel], [durS - knee, 0]]);
     src.start(t); src.stop(t + durS + 0.02);
@@ -555,6 +722,7 @@
     o.frequency.setValueAtTime(freq, t);
     var g = ctx.createGain();
     o.connect(g); g.connect(out);
+    g.connect(hub.delayBox);   // the far wall ALWAYS answers the box
     env(g.gain, t, [[0.003, 0.030 * velG], [0.097, 0.010 * velG], [durS - 0.1, 0]]);
     o.start(t); o.stop(t + durS + 0.02);
     var h = ctx.createOscillator();
@@ -562,6 +730,7 @@
     h.frequency.setValueAtTime(freq * 3, t);
     var hg = ctx.createGain();
     h.connect(hg); hg.connect(out);
+    hg.connect(hub.delayBox);
     env(hg.gain, t, [[0.003, shimmerG * velG], [durS * 0.5, 0.0008], [0.06, 0]]);
     h.start(t); h.stop(t + durS + 0.02);
   }
@@ -670,10 +839,11 @@
   // ==========================================================================
   var SOURCES = {
     pluck: function (out, t) {
-      // A short C-Dorian figure, the harpsichord's ordinary gait.
-      var degs = [0, 2, 4, 3, 0], off = 0;
+      // A short C-Dorian figure, the harpsichord's ordinary gait. The far-wall
+      // send is a per-PHRASE coin at p≈0.3, as in the engine — not per note.
+      var degs = [0, 2, 4, 3, 0], off = 0, far = Math.random() < 0.3;
       for (var i = 0; i < degs.length; i++) {
-        pluck(out, SCALE4[degs[i]], t + off, 0.9, 0.75 + Math.random() * 0.25);
+        pluck(out, SCALE4[degs[i]], t + off, 0.9, 0.75 + Math.random() * 0.25, far);
         off += 0.34 + Math.random() * 0.1;
       }
       return off + 1.2;
@@ -716,16 +886,35 @@
   function ensureCtx() {
     if (ctx) return;
     ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // The master chain, matching PJ2.Voice.buildBus (SPEC.md §4): glue
+    // compressor → masterGain → tanh saturator → limiter. Worth having here
+    // rather than a bare limiter, because the saturator's small-signal gain
+    // and the glue compressor both colour how a wet tail sits against a dry
+    // source — leaving them out flatters whichever room is quieter.
     master = ctx.createGain();
-    master.gain.setValueAtTime(0.9, ctx.currentTime);
-    // A gentle limiter so a hot room cannot slam the output during A/B.
+    var glue = ctx.createDynamicsCompressor();
+    glue.threshold.setValueAtTime(-20, ctx.currentTime);
+    glue.knee.setValueAtTime(30, ctx.currentTime);
+    glue.ratio.setValueAtTime(1.7, ctx.currentTime);
+    glue.attack.setValueAtTime(0.01, ctx.currentTime);
+    glue.release.setValueAtTime(0.25, ctx.currentTime);
+    var post = ctx.createGain();
+    post.gain.setValueAtTime(0.9, ctx.currentTime);
+    var sat = ctx.createWaveShaper();
+    var curve = new Float32Array(256);
+    for (var ci = 0; ci < 256; ci++) {
+      var xv = (ci / 255) * 2 - 1;
+      curve[ci] = Math.tanh(xv * 1.5) / Math.tanh(1.5);
+    }
+    sat.curve = curve; sat.oversample = "2x";
     var lim = ctx.createDynamicsCompressor();
-    lim.threshold.setValueAtTime(-14, ctx.currentTime);
+    lim.threshold.setValueAtTime(-18, ctx.currentTime);
     lim.knee.setValueAtTime(6, ctx.currentTime);
-    lim.ratio.setValueAtTime(6, ctx.currentTime);
+    lim.ratio.setValueAtTime(3, ctx.currentTime);
     lim.attack.setValueAtTime(0.004, ctx.currentTime);
     lim.release.setValueAtTime(0.2, ctx.currentTime);
-    master.connect(lim); lim.connect(ctx.destination);
+    master.connect(glue); glue.connect(post); post.connect(sat);
+    sat.connect(lim); lim.connect(ctx.destination);
     dryBus = ctx.createGain();
     dryBus.gain.setValueAtTime(parseFloat($("dry").value), ctx.currentTime);
     dryBus.connect(master);
@@ -861,7 +1050,9 @@
   bindSlider("wet", "wetV", function (v) { return v.toFixed(2); }, function (v) {
     if (!ctx) return;
     ["a", "b"].forEach(function (k) {
-      if (rooms[k]) rooms[k].wet.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
+      if (!rooms[k]) return;
+      rooms[k].close.wet.gain.setTargetAtTime(v, ctx.currentTime, 0.02);
+      rooms[k].wide.wet.gain.setTargetAtTime(v * 1.13, ctx.currentTime, 0.02);
     });
   });
   bindSlider("dry", "dryV", function (v) { return v.toFixed(2); }, function (v) {
@@ -908,6 +1099,29 @@
     if (loopTimer) { clearInterval(loopTimer); loopTimer = null; $("loopBtn").className = ""; }
     if (ctx) { ctx.close(); ctx = null; rooms = { dry: null, a: null, b: null }; slowNoiseCache = {}; }
     setStatus("stopped");
+  });
+
+  $("chainBtn").addEventListener("click", function () {
+    chainOn = !chainOn;
+    this.className = chainOn ? "on" : "";
+    this.textContent = "Engine chain: " + (chainOn ? "ON" : "OFF");
+    applyChain();
+    applyRoom(true);
+  });
+
+  // Changing normalize means new ConvolverNodes, so this rebuilds the graph.
+  $("normBtn").addEventListener("click", function () {
+    normalizeOn = !normalizeOn;
+    this.className = normalizeOn ? "on" : "";
+    this.textContent = "convolver.normalize: " + (normalizeOn ? "TRUE" : "FALSE");
+    if (!ctx) return;
+    ["a", "b"].forEach(function (k) {
+      if (!rooms[k]) return;
+      [rooms[k].close, rooms[k].wide].forEach(function (rm) {
+        rm.conv.normalize = normalizeOn;
+        rm.conv.buffer = rm.conv.buffer;   // re-assign so the flag takes effect
+      });
+    });
   });
 
   $("roomDry").addEventListener("click", function () { current = "dry"; applyRoom(); });
