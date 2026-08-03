@@ -200,7 +200,7 @@ html { scroll-behavior: smooth; }
      wraps inside it (two lines, reserved below) — the tag grows downward, not
      sideways. max-width is the hard guarantee: whatever the tier, the tag can
      never be wider than the well it is clamped into by pick(). */
-  width: var(--jd-tag-w, 19.5rem);
+  width: var(--jd-tag-w, 20.5rem);
   max-width: calc(100% - 16px);
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
   filter: drop-shadow(2px 3px 4px rgba(22, 11, 4, 0.4));
