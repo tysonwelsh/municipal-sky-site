@@ -1,0 +1,233 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+  <defs>
+    <linearGradient id="gStoneVert" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8efd9"/>
+      <stop offset="0.5" stop-color="#e6d2a3"/>
+      <stop offset="1" stop-color="#c7a96e"/>
+    </linearGradient>
+    <linearGradient id="gCorniceTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdf6e6"/>
+      <stop offset="1" stop-color="#dcc088"/>
+    </linearGradient>
+    <linearGradient id="gStoneShadowEdge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8a734a"/>
+      <stop offset="1" stop-color="#4c3c24"/>
+    </linearGradient>
+    <linearGradient id="gRecess" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4a3a26"/>
+      <stop offset="1" stop-color="#130d07"/>
+    </linearGradient>
+    <linearGradient id="gFluteCurve" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7a6440"/>
+      <stop offset="0.5" stop-color="#f7edd4"/>
+      <stop offset="1" stop-color="#7a6440"/>
+    </linearGradient>
+    <linearGradient id="gShaftShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.4"/>
+    </linearGradient>
+    <linearGradient id="gLeaf" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#8f7548"/>
+      <stop offset="1" stop-color="#f3e6bf"/>
+    </linearGradient>
+    <linearGradient id="gGraffiti" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff2f92"/>
+      <stop offset="0.35" stop-color="#ff7a1a"/>
+      <stop offset="0.65" stop-color="#ffd23f"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <radialGradient id="gMistPink" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ff2f92" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#ff2f92" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gMistCyan" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gMistYellow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffd23f" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#ffd23f" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gSheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0.47" stop-color="#ffffff" stop-opacity="0.4"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="gVig" cx="50%" cy="42%" r="75%">
+      <stop offset="0" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+
+    <filter id="fDrop" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="9" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="fDropSmall" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="fBlur14" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="fGrain" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.85 0 0 0 0"/>
+    </filter>
+
+    <pattern id="pDentil" width="26" height="34" patternUnits="userSpaceOnUse">
+      <rect x="2" y="0" width="16" height="30" fill="url(#gStoneVert)" stroke="#7a6540" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="pEgg" width="46" height="30" patternUnits="userSpaceOnUse">
+      <ellipse cx="12" cy="15" rx="10" ry="12" fill="url(#gStoneVert)" stroke="#7a6540" stroke-width="0.6"/>
+      <rect x="30" y="4" width="4" height="22" rx="2" fill="#6b5738"/>
+    </pattern>
+    <pattern id="pAntefix" width="80" height="46" patternUnits="userSpaceOnUse">
+      <path d="M40,46 L20,6 Q40,-6 60,6 Z" fill="url(#gStoneVert)" stroke="#7a6540" stroke-width="1"/>
+    </pattern>
+
+    <path id="leaf" d="M0,0 C-13,-10 -17,-30 -8,-50 C-4,-58 4,-58 8,-50 C17,-30 13,-10 0,0 Z" fill="url(#gLeaf)" stroke="#6b5738" stroke-width="1"/>
+    <g id="volute">
+      <path d="M0,0 C16,-3 24,-16 17,-27 C10,-38 -6,-37 -10,-25 C-13,-16 -5,-8 3,-11" fill="none" stroke="#5c4a2e" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="4" cy="-15" r="2.5" fill="#5c4a2e"/>
+    </g>
+    <g id="modillion">
+      <rect x="-9" y="-46" width="18" height="46" rx="3" fill="url(#gStoneVert)" stroke="#7a6540" stroke-width="1"/>
+      <use href="#volute" transform="scale(0.6) rotate(95)"/>
+    </g>
+
+    <g id="columnUnit">
+      <rect x="-70" y="190" width="140" height="190" fill="url(#gRecess)"/>
+      <rect x="-70" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="-52.5" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="-35" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="-17.5" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="0" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="17.5" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="35" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="52.5" y="190" width="15" height="190" fill="url(#gFluteCurve)"/>
+      <rect x="-70" y="190" width="140" height="190" fill="url(#gShaftShade)"/>
+      <rect x="-72" y="170" width="144" height="20" rx="2" fill="url(#gStoneShadowEdge)"/>
+      <path d="M-65,32 C-60,80 -55,130 -50,170 L50,170 C55,130 60,80 65,32 Z" fill="url(#gStoneVert)" stroke="#7a6540" stroke-width="1"/>
+      <use href="#leaf" transform="translate(0,170) rotate(-55)"/>
+      <use href="#leaf" transform="translate(0,170) rotate(-27)"/>
+      <use href="#leaf" transform="translate(0,170) rotate(0)"/>
+      <use href="#leaf" transform="translate(0,170) rotate(27)"/>
+      <use href="#leaf" transform="translate(0,170) rotate(55)"/>
+      <use href="#leaf" transform="translate(0,120) rotate(-40) scale(0.72)"/>
+      <use href="#leaf" transform="translate(0,120) rotate(-13) scale(0.72)"/>
+      <use href="#leaf" transform="translate(0,120) rotate(13) scale(0.72)"/>
+      <use href="#leaf" transform="translate(0,120) rotate(40) scale(0.72)"/>
+      <use href="#volute" transform="translate(-72,50) rotate(-15)"/>
+      <use href="#volute" transform="translate(72,50) scale(-1,1) rotate(-15)"/>
+      <path d="M-85,0 Q-55,16 -65,32 L65,32 Q55,16 85,0 Z" fill="url(#gCorniceTop)" stroke="#7a6540" stroke-width="1.5"/>
+      <circle cx="0" cy="16" r="9" fill="url(#gLeaf)" stroke="#6b5738" stroke-width="1"/>
+    </g>
+  </defs>
+
+  <!-- TOP SIMA / CREST -->
+  <rect x="0" y="0" width="1600" height="50" fill="url(#gCorniceTop)"/>
+  <rect x="0" y="-10" width="1600" height="50" fill="url(#pAntefix)"/>
+
+  <!-- CYMA ogee -->
+  <rect x="0" y="50" width="1600" height="10" fill="#fbf3e0"/>
+  <rect x="0" y="60" width="1600" height="10" fill="#f0e2c2"/>
+  <rect x="0" y="70" width="1600" height="10" fill="#e0cda0"/>
+  <rect x="0" y="80" width="1600" height="10" fill="#cfb37e"/>
+
+  <!-- CORONA -->
+  <rect x="0" y="90" width="1600" height="70" fill="url(#gCorniceTop)" filter="url(#fDrop)"/>
+  <rect x="0" y="92" width="1600" height="8" fill="url(#gSheen)" opacity="0.6" style="mix-blend-mode:screen"/>
+  <rect x="0" y="150" width="1600" height="10" fill="url(#gStoneShadowEdge)"/>
+
+  <!-- DENTILS -->
+  <rect x="0" y="158" width="1600" height="34" fill="url(#gRecess)" opacity="0.55"/>
+  <rect x="0" y="160" width="1600" height="30" fill="url(#pDentil)"/>
+
+  <!-- EGG AND DART -->
+  <rect x="0" y="190" width="1600" height="30" fill="url(#gRecess)" opacity="0.5"/>
+  <rect x="0" y="192" width="1600" height="26" fill="url(#pEgg)"/>
+
+  <!-- MODILLIONS -->
+  <use href="#modillion" transform="translate(100,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(300,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(500,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(700,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(900,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(1100,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(1300,215)" filter="url(#fDropSmall)"/>
+  <use href="#modillion" transform="translate(1500,215)" filter="url(#fDropSmall)"/>
+
+  <!-- FRIEZE -->
+  <rect x="0" y="220" width="1600" height="240" fill="url(#gStoneVert)"/>
+  <rect x="0" y="220" width="1600" height="36" fill="url(#gRecess)" opacity="0.28"/>
+  <path d="M40,300 C420,260 900,340 1560,290" stroke="#ffffff" stroke-opacity="0.08" stroke-width="4" fill="none"/>
+  <path d="M0,410 C500,440 1100,380 1600,420" stroke="#6b5738" stroke-opacity="0.12" stroke-width="3" fill="none"/>
+  <ellipse cx="260" cy="390" rx="120" ry="40" fill="#5c4a2e" opacity="0.08" filter="url(#fBlur14)"/>
+  <ellipse cx="1200" cy="270" rx="150" ry="45" fill="#5c4a2e" opacity="0.07" filter="url(#fBlur14)"/>
+
+  <!-- GRAFFITI TAG -->
+  <g transform="translate(800,368) rotate(-5)">
+    <ellipse cx="-430" cy="-10" rx="240" ry="150" fill="url(#gMistPink)" opacity="0.35" filter="url(#fBlur14)"/>
+    <ellipse cx="70" cy="-35" rx="270" ry="165" fill="url(#gMistCyan)" opacity="0.3" filter="url(#fBlur14)"/>
+    <ellipse cx="480" cy="15" rx="230" ry="150" fill="url(#gMistYellow)" opacity="0.3" filter="url(#fBlur14)"/>
+
+    <g transform="skewX(-8)">
+      <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black','Arial',sans-serif" font-weight="900" font-size="150" letter-spacing="2" textLength="1380" lengthAdjust="spacingAndGlyphs" fill="#0a0a0a" stroke="#0a0a0a" stroke-width="30" stroke-linejoin="round">MUNICIPAL SKY</text>
+      <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black','Arial',sans-serif" font-weight="900" font-size="150" letter-spacing="2" textLength="1380" lengthAdjust="spacingAndGlyphs" fill="#ffffff" stroke="#ffffff" stroke-width="16" stroke-linejoin="round">MUNICIPAL SKY</text>
+      <text x="0" y="0" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black','Arial',sans-serif" font-weight="900" font-size="150" letter-spacing="2" textLength="1380" lengthAdjust="spacingAndGlyphs" fill="url(#gGraffiti)" stroke="#0a0a0a" stroke-width="2" stroke-linejoin="round">MUNICIPAL SKY</text>
+      <text x="-5" y="-8" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black','Arial',sans-serif" font-weight="900" font-size="150" letter-spacing="2" textLength="1380" lengthAdjust="spacingAndGlyphs" fill="none" stroke="#ffffff" stroke-width="5" stroke-opacity="0.5">MUNICIPAL SKY</text>
+    </g>
+
+    <path d="M-531,55 C-533,105 -529,150 -526,190 C-524,205 -516,205 -514,190 C-511,150 -507,105 -509,55 Z" fill="#ff2f92" stroke="#0a0a0a" stroke-width="2"/>
+    <circle cx="-520" cy="205" r="9" fill="#ff2f92" stroke="#0a0a0a" stroke-width="2"/>
+    <path d="M-191,60 C-193,100 -189,140 -186,170 C-184,183 -176,183 -174,170 C-171,140 -167,100 -169,60 Z" fill="#ff7a1a" stroke="#0a0a0a" stroke-width="2"/>
+    <circle cx="-180" cy="185" r="8" fill="#ff7a1a" stroke="#0a0a0a" stroke-width="2"/>
+    <path d="M139,58 C137,105 141,155 144,195 C146,210 154,210 156,195 C159,155 155,105 157,58 Z" fill="#ffd23f" stroke="#0a0a0a" stroke-width="2"/>
+    <circle cx="150" cy="210" r="9" fill="#ffd23f" stroke="#0a0a0a" stroke-width="2"/>
+    <path d="M469,56 C467,95 471,130 474,160 C476,172 484,172 486,160 C489,130 485,95 487,56 Z" fill="#22d3ee" stroke="#0a0a0a" stroke-width="2"/>
+    <circle cx="480" cy="175" r="7.5" fill="#22d3ee" stroke="#0a0a0a" stroke-width="2"/>
+
+    <circle cx="-640" cy="-90" r="3" fill="#ff2f92" opacity="0.7"/>
+    <circle cx="-610" cy="30" r="2" fill="#22d3ee" opacity="0.6"/>
+    <circle cx="-680" cy="-40" r="2.5" fill="#ffd23f" opacity="0.6"/>
+    <circle cx="-590" cy="-120" r="1.8" fill="#ffffff" opacity="0.5"/>
+    <circle cx="-330" cy="120" r="2.5" fill="#ff7a1a" opacity="0.6"/>
+    <circle cx="-40" cy="-140" r="2.2" fill="#22d3ee" opacity="0.55"/>
+    <circle cx="20" cy="140" r="3" fill="#ff2f92" opacity="0.5"/>
+    <circle cx="220" cy="-130" r="2" fill="#ffd23f" opacity="0.6"/>
+    <circle cx="350" cy="130" r="2.6" fill="#22d3ee" opacity="0.55"/>
+    <circle cx="600" cy="-90" r="3" fill="#ff7a1a" opacity="0.6"/>
+    <circle cx="650" cy="40" r="2" fill="#ff2f92" opacity="0.6"/>
+    <circle cx="690" cy="-30" r="2.4" fill="#ffffff" opacity="0.45"/>
+    <circle cx="-460" cy="-170" r="1.6" fill="#ffd23f" opacity="0.5"/>
+    <circle cx="120" cy="-160" r="1.8" fill="#ff2f92" opacity="0.45"/>
+    <circle cx="-150" cy="150" r="2.2" fill="#22d3ee" opacity="0.5"/>
+    <circle cx="500" cy="150" r="2" fill="#ffd23f" opacity="0.5"/>
+  </g>
+
+  <!-- ARCHITRAVE -->
+  <rect x="0" y="460" width="1600" height="12" fill="url(#gStoneShadowEdge)"/>
+  <rect x="0" y="472" width="1600" height="68" fill="url(#gStoneVert)"/>
+  <rect x="0" y="536" width="1600" height="6" fill="#4c3c24"/>
+  <rect x="0" y="542" width="1600" height="53" fill="url(#gStoneVert)"/>
+  <rect x="0" y="542" width="1600" height="53" fill="#000000" opacity="0.06"/>
+  <rect x="0" y="593" width="1600" height="6" fill="#4c3c24"/>
+  <rect x="0" y="599" width="1600" height="41" fill="url(#gStoneVert)"/>
+  <rect x="0" y="599" width="1600" height="41" fill="#000000" opacity="0.12"/>
+  <path d="M30,505 C520,480 1080,530 1580,495" stroke="#ffffff" stroke-opacity="0.07" stroke-width="3" fill="none"/>
+
+  <!-- RECESS BEHIND COLUMNS -->
+  <rect x="0" y="640" width="1600" height="360" fill="url(#gRecess)"/>
+
+  <!-- COLUMNS -->
+  <use href="#columnUnit" transform="translate(200,640)" filter="url(#fDropSmall)"/>
+  <use href="#columnUnit" transform="translate(600,640)" filter="url(#fDropSmall)"/>
+  <use href="#columnUnit" transform="translate(1000,640)" filter="url(#fDropSmall)"/>
+  <use href="#columnUnit" transform="translate(1400,640)" filter="url(#fDropSmall)"/>
+
+  <!-- PHOTOGRAPHIC FINISH -->
+  <rect x="-400" y="380" width="2400" height="240" fill="url(#gSheen)" transform="rotate(-18 800 500)" opacity="0.5" style="mix-blend-mode:screen"/>
+  <rect x="0" y="0" width="1600" height="1000" fill="url(#gVig)"/>
+  <rect x="0" y="0" width="1600" height="1000" fill="#ffffff" filter="url(#fGrain)" opacity="0.05" style="mix-blend-mode:overlay"/>
+  <rect x="0" y="0" width="1600" height="1000" fill="#ff8a3d" opacity="0.04" style="mix-blend-mode:overlay"/>
+</svg>

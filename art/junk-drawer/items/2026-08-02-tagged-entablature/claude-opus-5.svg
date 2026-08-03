@@ -1,0 +1,421 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 800" width="1200" height="800">
+<defs>
+  <linearGradient id="gCrown" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#c9bda2"/><stop offset="0.14" stop-color="#f8f3e6"/>
+    <stop offset="0.42" stop-color="#e2d8c2"/><stop offset="0.74" stop-color="#a2967a"/>
+    <stop offset="1" stop-color="#cec2a8"/>
+  </linearGradient>
+  <linearGradient id="gCorona" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fffdf5"/><stop offset="0.14" stop-color="#f5efe1"/>
+    <stop offset="0.78" stop-color="#dcd3bd"/><stop offset="1" stop-color="#b0a488"/>
+  </linearGradient>
+  <linearGradient id="gFillet" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fffef8"/><stop offset="1" stop-color="#cfc4a9"/>
+  </linearGradient>
+  <linearGradient id="gFrieze" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e7dfcd"/><stop offset="0.45" stop-color="#e2d9c4"/>
+    <stop offset="1" stop-color="#c9bda1"/>
+  </linearGradient>
+  <linearGradient id="gFasciaA" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f4eede"/><stop offset="0.7" stop-color="#ddd3bc"/>
+    <stop offset="1" stop-color="#b8ac90"/>
+  </linearGradient>
+  <linearGradient id="gFasciaB" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#ece5d3"/><stop offset="0.7" stop-color="#d4cab2"/>
+    <stop offset="1" stop-color="#ada284"/>
+  </linearGradient>
+  <linearGradient id="gFasciaC" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#e2dac6"/><stop offset="0.7" stop-color="#c9bfa5"/>
+    <stop offset="1" stop-color="#9d927777"/>
+  </linearGradient>
+  <linearGradient id="gDentil" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#fdf8ec"/><stop offset="0.55" stop-color="#e0d6bf"/>
+    <stop offset="1" stop-color="#b3a88c"/>
+  </linearGradient>
+  <linearGradient id="gEgg" x1="0" y1="0" x2="0.7" y2="1">
+    <stop offset="0" stop-color="#fefaf0"/><stop offset="0.5" stop-color="#e7ddc7"/>
+    <stop offset="1" stop-color="#9b8f73"/>
+  </linearGradient>
+  <linearGradient id="gDart" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0" stop-color="#f6f0e1"/><stop offset="0.6" stop-color="#d3c9b0"/>
+    <stop offset="1" stop-color="#8d8266"/>
+  </linearGradient>
+  <linearGradient id="gBead" x1="0" y1="0" x2="0.6" y2="1">
+    <stop offset="0" stop-color="#fffcf3"/><stop offset="0.55" stop-color="#e0d6bf"/>
+    <stop offset="1" stop-color="#9a8e72"/>
+  </linearGradient>
+  <linearGradient id="gMod" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#f7f1e2"/><stop offset="0.5" stop-color="#d9cfb7"/>
+    <stop offset="1" stop-color="#a1957a"/>
+  </linearGradient>
+  <linearGradient id="gTopShade" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#241d10" stop-opacity="0.62"/>
+    <stop offset="0.55" stop-color="#3b3220" stop-opacity="0.22"/>
+    <stop offset="1" stop-color="#3b3220" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="gUnderShade" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#2a2314" stop-opacity="0"/>
+    <stop offset="1" stop-color="#241d10" stop-opacity="0.5"/>
+  </linearGradient>
+  <linearGradient id="gDeep" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#3a3120"/><stop offset="1" stop-color="#16120a"/>
+  </linearGradient>
+  <linearGradient id="gAbacus" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#efe8d6"/><stop offset="0.28" stop-color="#d6cbb2"/>
+    <stop offset="1" stop-color="#8b8065"/>
+  </linearGradient>
+  <linearGradient id="gPaint" x1="0" y1="0" x2="0.25" y2="1">
+    <stop offset="0" stop-color="#63f6ff"/><stop offset="0.38" stop-color="#22a2ff"/>
+    <stop offset="0.72" stop-color="#2f52f0"/><stop offset="1" stop-color="#7a25d8"/>
+  </linearGradient>
+  <linearGradient id="gPaint2" x1="0" y1="0" x2="0.2" y2="1">
+    <stop offset="0" stop-color="#c8ffff"/><stop offset="0.45" stop-color="#54c2ff"/>
+    <stop offset="1" stop-color="#8f5cf5"/>
+  </linearGradient>
+  <linearGradient id="gSheen" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
+    <stop offset="0.14" stop-color="#ffffff" stop-opacity="0.30"/>
+    <stop offset="0.30" stop-color="#ffffff" stop-opacity="0.04"/>
+    <stop offset="0.62" stop-color="#ffffff" stop-opacity="0.16"/>
+    <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+  <linearGradient id="gRust" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#8a6a3a" stop-opacity="0.42"/>
+    <stop offset="1" stop-color="#8a6a3a" stop-opacity="0"/>
+  </linearGradient>
+  <radialGradient id="gVig" cx="0.5" cy="0.44" r="0.78">
+    <stop offset="0.45" stop-color="#000000" stop-opacity="0"/>
+    <stop offset="0.82" stop-color="#0d0a05" stop-opacity="0.18"/>
+    <stop offset="1" stop-color="#0d0a05" stop-opacity="0.42"/>
+  </radialGradient>
+
+  <filter id="fVeins" x="0" y="0" width="1" height="1">
+    <feTurbulence type="fractalNoise" baseFrequency="0.0055 0.05" numOctaves="5" seed="9"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.34  0 0 0 0 0.30  0 0 0 0 0.23  0 0 0.85 0 -0.30"/>
+  </filter>
+  <filter id="fGrain" x="0" y="0" width="1" height="1">
+    <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0.5  0 0 0 0 0.48  0 0 0 0 0.44  0 0 0 0.5 0"/>
+  </filter>
+  <filter id="fBlur2"><feGaussianBlur stdDeviation="2.2"/></filter>
+  <filter id="fBlur4"><feGaussianBlur stdDeviation="4.5"/></filter>
+  <filter id="fBlur8"><feGaussianBlur stdDeviation="8"/></filter>
+  <filter id="fBlur16"><feGaussianBlur stdDeviation="16"/></filter>
+  <filter id="fSpeck" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="turbulence" baseFrequency="0.09" numOctaves="2" seed="5" result="t"/>
+    <feDisplacementMap in="SourceGraphic" in2="t" scale="9" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+
+  <pattern id="patMod" patternUnits="userSpaceOnUse" x="0" y="114" width="120" height="44">
+    <rect width="120" height="44" fill="#5c5239"/>
+    <rect x="8" y="5" width="80" height="34" rx="3" fill="#6f6448"/>
+    <rect x="8" y="5" width="80" height="3" fill="#3f3626" opacity="0.8"/>
+    <rect x="8" y="36" width="80" height="3" fill="#9c9074" opacity="0.55"/>
+    <circle cx="48" cy="22" r="9" fill="#8d8265"/>
+    <circle cx="48" cy="21" r="5.5" fill="#b8ac8e"/>
+    <circle cx="48" cy="21" r="2" fill="#5f5540"/>
+    <path d="M92 0 L96 0 L96 44 L92 44 Z" fill="#38301f" opacity="0.85"/>
+    <path d="M96 0 L120 0 L120 44 L110 44 Q96 42 96 26 Z" fill="url(#gMod)"/>
+    <path d="M96 0 L120 0 L120 4 L96 4 Z" fill="#fffbf0" opacity="0.6"/>
+    <path d="M99 27 Q99 38 108 39" fill="none" stroke="#8e8266" stroke-width="3"/>
+    <circle cx="107" cy="33" r="5.5" fill="#cfc4a8"/>
+    <circle cx="107" cy="33" r="2.4" fill="#7c7157"/>
+  </pattern>
+
+  <pattern id="patEgg" patternUnits="userSpaceOnUse" x="0" y="158" width="60" height="26">
+    <rect width="60" height="26" fill="#786d53"/>
+    <path d="M1 0 L1 9 Q1 26 15 26 Q29 26 29 9 L29 0 Z" fill="#b6a986"/>
+    <path d="M4 0 L4 9 Q4 23 15 23 Q26 23 26 9 L26 0 Z" fill="#6b6046"/>
+    <path d="M6.5 0 L6.5 9 Q6.5 21 15 21 Q23.5 21 23.5 9 L23.5 0 Z" fill="url(#gEgg)"/>
+    <path d="M9 2 Q8.5 13 13 18.5" fill="none" stroke="#fffaee" stroke-width="2" opacity="0.55"/>
+    <path d="M44 26 L38.5 5 L44 0 L49.5 5 Z" fill="url(#gDart)"/>
+    <path d="M44 24 L41.5 6 L44 3 Z" fill="#fff9ea" opacity="0.4"/>
+    <path d="M33 0 Q35 12 38 22" fill="none" stroke="#4f4633" stroke-width="2" opacity="0.6"/>
+    <path d="M55 0 Q53 12 50 22" fill="none" stroke="#4f4633" stroke-width="2" opacity="0.6"/>
+  </pattern>
+
+  <pattern id="patDentil" patternUnits="userSpaceOnUse" x="0" y="184" width="30" height="38">
+    <rect width="30" height="38" fill="#655a41"/>
+    <rect x="0" y="0" width="18" height="38" fill="url(#gDentil)"/>
+    <rect x="18" y="0" width="4.5" height="38" fill="#443b29" opacity="0.9"/>
+    <rect x="0" y="0" width="18" height="3" fill="#fffbf1" opacity="0.75"/>
+    <rect x="0" y="32" width="18" height="6" fill="#8c8164" opacity="0.55"/>
+  </pattern>
+
+  <pattern id="patBead" patternUnits="userSpaceOnUse" x="0" y="222" width="30" height="14">
+    <rect width="30" height="14" fill="#796f55"/>
+    <circle cx="8" cy="7" r="6.6" fill="url(#gBead)"/>
+    <circle cx="6" cy="5" r="2.2" fill="#fffdf5" opacity="0.6"/>
+    <ellipse cx="18.5" cy="7" rx="2.6" ry="6.2" fill="url(#gBead)"/>
+    <ellipse cx="24.5" cy="7" rx="2.6" ry="6.2" fill="url(#gBead)"/>
+  </pattern>
+
+  <pattern id="patCymaRev" patternUnits="userSpaceOnUse" x="0" y="236" width="30" height="14">
+    <rect width="30" height="14" fill="#6d6248"/>
+    <path d="M0 0 Q8 1 15 6 Q22 12 30 13 L30 14 L0 14 Z" fill="#3a3121" opacity="0.7"/>
+    <path d="M0 0 Q8 0 15 4 Q22 9 30 10 L30 12 Q22 11 15 6 Q8 1 0 2 Z" fill="#cfc4a7"/>
+  </pattern>
+
+  <pattern id="patRinceau" patternUnits="userSpaceOnUse" x="-30" y="250" width="300" height="250">
+    <g fill="none" stroke-linecap="round">
+      <g stroke="#a89c80" opacity="0.5" transform="translate(0,4)">
+        <path d="M0 170 C 25 172 48 150 55 118" stroke-width="9"/>
+        <path d="M55 118 C 62 84 44 62 28 70 C 13 78 17 100 33 101 C 45 102 51 93 49 85" stroke-width="8"/>
+        <path d="M55 118 C 70 155 110 172 150 172 C 190 172 230 155 245 118" stroke-width="9"/>
+        <path d="M245 118 C 252 84 234 62 218 70 C 203 78 207 100 223 101 C 235 102 241 93 239 85" stroke-width="8"/>
+        <path d="M245 118 C 252 150 275 172 300 170" stroke-width="9"/>
+      </g>
+      <g stroke="#cabe9f" opacity="0.85">
+        <path d="M0 170 C 25 172 48 150 55 118" stroke-width="8"/>
+        <path d="M55 118 C 62 84 44 62 28 70 C 13 78 17 100 33 101 C 45 102 51 93 49 85" stroke-width="7"/>
+        <path d="M55 118 C 70 155 110 172 150 172 C 190 172 230 155 245 118" stroke-width="8"/>
+        <path d="M245 118 C 252 84 234 62 218 70 C 203 78 207 100 223 101 C 235 102 241 93 239 85" stroke-width="7"/>
+        <path d="M245 118 C 252 150 275 172 300 170" stroke-width="8"/>
+      </g>
+      <g stroke="#f4eddc" opacity="0.75" transform="translate(-1,-2)">
+        <path d="M0 170 C 25 172 48 150 55 118" stroke-width="3"/>
+        <path d="M55 118 C 62 84 44 62 28 70 C 13 78 17 100 33 101 C 45 102 51 93 49 85" stroke-width="2.6"/>
+        <path d="M55 118 C 70 155 110 172 150 172 C 190 172 230 155 245 118" stroke-width="3"/>
+        <path d="M245 118 C 252 84 234 62 218 70 C 203 78 207 100 223 101 C 235 102 241 93 239 85" stroke-width="2.6"/>
+        <path d="M245 118 C 252 150 275 172 300 170" stroke-width="3"/>
+      </g>
+      <g stroke="#bdb094" stroke-width="6" opacity="0.6">
+        <path d="M150 172 C 142 150 150 132 165 128"/>
+        <path d="M150 172 C 158 150 150 132 135 128"/>
+        <path d="M150 168 C 150 148 150 138 150 124"/>
+        <path d="M92 150 C 96 132 112 126 124 132"/>
+        <path d="M208 150 C 204 132 188 126 176 132"/>
+      </g>
+      <g stroke="#f2ebd9" stroke-width="2" opacity="0.5" transform="translate(-1,-2)">
+        <path d="M150 172 C 142 150 150 132 165 128"/>
+        <path d="M150 172 C 158 150 150 132 135 128"/>
+        <path d="M92 150 C 96 132 112 126 124 132"/>
+        <path d="M208 150 C 204 132 188 126 176 132"/>
+      </g>
+    </g>
+    <circle cx="38" cy="88" r="5" fill="#c6b99b"/><circle cx="38" cy="87" r="2.2" fill="#f3ecdb"/>
+    <circle cx="228" cy="88" r="5" fill="#c6b99b"/><circle cx="228" cy="87" r="2.2" fill="#f3ecdb"/>
+  </pattern>
+
+  <pattern id="patHtC" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(15)">
+    <circle cx="3" cy="3" r="1.5" fill="#00b7ff"/>
+  </pattern>
+  <pattern id="patHtM" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(75)">
+    <circle cx="3" cy="3" r="1.5" fill="#ff008c"/>
+  </pattern>
+  <pattern id="patHtY" patternUnits="userSpaceOnUse" width="6" height="6">
+    <circle cx="3" cy="3" r="1.4" fill="#ffe000"/>
+  </pattern>
+  <pattern id="patSpeck" patternUnits="userSpaceOnUse" width="9" height="9" patternTransform="rotate(23)">
+    <circle cx="2" cy="2" r="1.1" fill="#2ea8ff"/>
+    <circle cx="6.5" cy="6" r="0.8" fill="#5ad2ff"/>
+  </pattern>
+
+  <g id="tagGeom" fill="none">
+    <path d="M54 430L54 310L106 374L158 310L158 430"/>
+    <path d="M172 310L172 386Q172 430 214 430Q256 430 256 386L256 310"/>
+    <path d="M270 430L270 310L354 430L354 310"/>
+    <path d="M383 310L383 430"/>
+    <path d="M492 340Q492 310 452 310Q412 310 412 370Q412 430 452 430Q492 430 492 400"/>
+    <path d="M521 310L521 430"/>
+    <path d="M550 430L550 310L590 310Q628 310 628 344Q628 378 590 378L550 378"/>
+    <path d="M642 430L684 310L728 430M660 392L710 392"/>
+    <path d="M742 310L742 430L812 430"/>
+    <path d="M930 338Q930 310 894 310Q858 310 858 344Q858 370 894 370Q934 370 934 400Q934 430 896 430Q858 430 858 402"/>
+    <path d="M948 310L948 430M948 374L1022 310M976 392L1030 430"/>
+    <path d="M1044 310L1086 372L1128 310M1086 372L1086 430"/>
+  </g>
+  <g id="dripGeom" fill="none">
+    <path d="M75 420L75 506"/>
+    <path d="M214 424L214 472"/>
+    <path d="M452 424L452 466"/>
+    <path d="M560 424L560 500"/>
+    <path d="M894 424L894 552"/>
+    <path d="M1086 424L1086 490"/>
+    <path d="M330 420L330 452"/>
+  </g>
+  <g id="tagAll">
+    <use xlink:href="#dripGeom" href="#dripGeom"/>
+    <use xlink:href="#tagGeom" href="#tagGeom"/>
+  </g>
+
+  <mask id="mHalo">
+    <rect width="1200" height="800" fill="#000"/>
+    <g stroke="#ffffff" fill="none" stroke-linecap="round" stroke-linejoin="round"
+       stroke-width="120" filter="url(#fBlur16)" transform="rotate(-1.5 600 370)">
+      <use xlink:href="#tagAll" href="#tagAll"/>
+    </g>
+  </mask>
+</defs>
+
+<!-- ================= CORNICE ================= -->
+<g>
+  <!-- crown cyma recta -->
+  <rect x="0" y="0" width="1200" height="46" fill="url(#gCrown)"/>
+  <rect x="0" y="0" width="1200" height="4" fill="#fffdf6" opacity="0.85"/>
+  <rect x="0" y="41" width="1200" height="5" fill="#8a7f64" opacity="0.5"/>
+  <!-- fillet -->
+  <rect x="0" y="46" width="1200" height="8" fill="url(#gFillet)"/>
+  <rect x="0" y="53" width="1200" height="2" fill="#7d7358" opacity="0.6"/>
+  <!-- corona -->
+  <rect x="0" y="54" width="1200" height="50" fill="url(#gCorona)"/>
+  <rect x="0" y="54" width="1200" height="3.5" fill="#fffef8" opacity="0.9"/>
+  <!-- corona soffit -->
+  <rect x="0" y="104" width="1200" height="10" fill="#463c28"/>
+  <rect x="0" y="104" width="1200" height="4" fill="#2d2617"/>
+  <!-- modillions -->
+  <rect x="0" y="114" width="1200" height="44" fill="url(#patMod)"/>
+  <rect x="0" y="114" width="1200" height="44" fill="url(#gTopShade)" opacity="0.55"/>
+  <!-- ovolo egg &amp; dart -->
+  <rect x="0" y="158" width="1200" height="26" fill="url(#patEgg)"/>
+  <rect x="0" y="156" width="1200" height="3" fill="#3d3423" opacity="0.75"/>
+  <!-- dentils -->
+  <rect x="0" y="184" width="1200" height="38" fill="url(#patDentil)"/>
+  <rect x="0" y="184" width="1200" height="5" fill="#312a1b" opacity="0.65"/>
+  <!-- astragal bead &amp; reel -->
+  <rect x="0" y="222" width="1200" height="14" fill="url(#patBead)"/>
+  <!-- cyma reversa bed mould -->
+  <rect x="0" y="236" width="1200" height="14" fill="url(#patCymaRev)"/>
+</g>
+
+<!-- ================= FRIEZE ================= -->
+<g>
+  <rect x="0" y="250" width="1200" height="250" fill="url(#gFrieze)"/>
+  <rect x="0" y="250" width="1200" height="250" fill="url(#patRinceau)" opacity="0.62"/>
+  <rect x="0" y="250" width="1200" height="52" fill="url(#gTopShade)"/>
+  <rect x="0" y="462" width="1200" height="38" fill="url(#gUnderShade)" opacity="0.6"/>
+  <!-- weather streaks -->
+  <g opacity="0.5">
+    <rect x="118" y="250" width="26" height="150" fill="url(#gRust)"/>
+    <rect x="470" y="250" width="16" height="200" fill="url(#gRust)"/>
+    <rect x="712" y="250" width="34" height="120" fill="url(#gRust)"/>
+    <rect x="1042" y="250" width="20" height="175" fill="url(#gRust)"/>
+  </g>
+  <!-- chips -->
+  <g fill="#9b8f73" opacity="0.55">
+    <path d="M212 250 l18 0 -6 13 -14 -4 z"/>
+    <path d="M968 250 l24 0 -9 16 -18 -6 z"/>
+    <path d="M604 492 l22 8 -26 0 z"/>
+  </g>
+</g>
+
+<!-- ================= GRAFFITI ================= -->
+<g transform="rotate(-1.5 600 370)">
+  <!-- cast shadow of paint bulk / drop shadow -->
+  <g stroke="#2a1c33" stroke-opacity="0.42" fill="none" stroke-linecap="round" stroke-linejoin="round"
+     transform="translate(11,15)" filter="url(#fBlur4)">
+    <use xlink:href="#dripGeom" href="#dripGeom" stroke-width="30"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke-width="62"/>
+  </g>
+  <!-- magenta throw glow -->
+  <g stroke="#ff2d95" stroke-opacity="0.42" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#fBlur4)">
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke-width="76"/>
+    <use xlink:href="#dripGeom" href="#dripGeom" stroke-width="40"/>
+  </g>
+  <!-- drips -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <use xlink:href="#dripGeom" href="#dripGeom" stroke="#15101b" stroke-width="30"/>
+    <use xlink:href="#dripGeom" href="#dripGeom" stroke="url(#gPaint)" stroke-width="18"/>
+    <use xlink:href="#dripGeom" href="#dripGeom" stroke="#ffffff" stroke-width="5" stroke-opacity="0.4" transform="translate(-4,0)"/>
+  </g>
+  <!-- letters -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="#15101b" stroke-width="62"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="url(#gPaint)" stroke-width="46"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="url(#gPaint2)" stroke-width="28" stroke-opacity="0.75"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="#ffffff" stroke-width="11" stroke-opacity="0.45"
+         transform="translate(-7,-10)" filter="url(#fBlur2)"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="#ffffff" stroke-width="4" stroke-opacity="0.55"
+         transform="translate(-9,-13)"/>
+    <use xlink:href="#tagGeom" href="#tagGeom" stroke="#0a2f8c" stroke-width="6" stroke-opacity="0.3"
+         transform="translate(8,11)"/>
+  </g>
+</g>
+<!-- overspray mist -->
+<rect x="0" y="200" width="1200" height="420" fill="url(#patSpeck)" mask="url(#mHalo)" opacity="0.5" filter="url(#fSpeck)"/>
+<g fill="#2ea8ff" opacity="0.45">
+  <circle cx="36" cy="286" r="3"/><circle cx="120" cy="264" r="2"/><circle cx="248" cy="470" r="3.4"/>
+  <circle cx="332" cy="272" r="2.4"/><circle cx="470" cy="286" r="2"/><circle cx="600" cy="466" r="3"/>
+  <circle cx="690" cy="272" r="2.6"/><circle cx="806" cy="470" r="2.2"/><circle cx="852" cy="292" r="3"/>
+  <circle cx="1000" cy="278" r="2"/><circle cx="1152" cy="392" r="3.2"/><circle cx="1168" cy="330" r="2"/>
+  <circle cx="18" cy="404" r="2.4"/><circle cx="540" cy="252" r="2"/><circle cx="960" cy="486" r="2.6"/>
+</g>
+
+<!-- ================= ARCHITRAVE ================= -->
+<g>
+  <!-- taenia fillet -->
+  <rect x="0" y="500" width="1200" height="16" fill="url(#gFillet)"/>
+  <rect x="0" y="500" width="1200" height="3" fill="#fffef9" opacity="0.9"/>
+  <!-- cyma reversa -->
+  <rect x="0" y="516" width="1200" height="14" fill="url(#patCymaRev)"/>
+  <!-- fascia III -->
+  <rect x="0" y="530" width="1200" height="66" fill="url(#gFasciaA)"/>
+  <rect x="0" y="530" width="1200" height="16" fill="url(#gTopShade)" opacity="0.7"/>
+  <!-- astragal -->
+  <rect x="0" y="596" width="1200" height="12" fill="url(#patBead)"/>
+  <!-- fascia II -->
+  <rect x="0" y="608" width="1200" height="60" fill="url(#gFasciaB)"/>
+  <rect x="0" y="608" width="1200" height="14" fill="url(#gTopShade)" opacity="0.7"/>
+  <!-- astragal -->
+  <rect x="0" y="668" width="1200" height="10" fill="url(#patBead)"/>
+  <!-- fascia I -->
+  <rect x="0" y="678" width="1200" height="46" fill="url(#gFasciaC)"/>
+  <rect x="0" y="678" width="1200" height="1200" fill="none"/>
+  <rect x="0" y="678" width="1200" height="46" fill="url(#gFasciaC)"/>
+  <rect x="0" y="678" width="1200" height="12" fill="url(#gTopShade)" opacity="0.7"/>
+  <rect x="0" y="724" width="1200" height="8" fill="#3b3221"/>
+</g>
+
+<!-- ================= CAPITAL / SHADOW ================= -->
+<g>
+  <rect x="0" y="730" width="1200" height="70" fill="url(#gDeep)"/>
+  <g>
+    <rect x="-230" y="752" width="460" height="48" fill="url(#gAbacus)"/>
+    <rect x="370" y="752" width="460" height="48" fill="url(#gAbacus)"/>
+    <rect x="970" y="752" width="460" height="48" fill="url(#gAbacus)"/>
+    <g fill="#fffbef" opacity="0.55">
+      <rect x="-230" y="752" width="460" height="3"/>
+      <rect x="370" y="752" width="460" height="3"/>
+      <rect x="970" y="752" width="460" height="3"/>
+    </g>
+    <g fill="#2a2315" opacity="0.55">
+      <rect x="-230" y="764" width="460" height="4"/>
+      <rect x="370" y="764" width="460" height="4"/>
+      <rect x="970" y="764" width="460" height="4"/>
+    </g>
+    <g>
+      <circle cx="0" cy="748" r="20" fill="#cbc0a4"/><circle cx="0" cy="746" r="10" fill="#efe8d6"/><circle cx="0" cy="746" r="4" fill="#7d7258"/>
+      <circle cx="600" cy="748" r="20" fill="#cbc0a4"/><circle cx="600" cy="746" r="10" fill="#efe8d6"/><circle cx="600" cy="746" r="4" fill="#7d7258"/>
+      <circle cx="1200" cy="748" r="20" fill="#cbc0a4"/><circle cx="1200" cy="746" r="10" fill="#efe8d6"/><circle cx="1200" cy="746" r="4" fill="#7d7258"/>
+    </g>
+    <g fill="none" stroke="#6e6349" stroke-width="6" opacity="0.7">
+      <path d="M258 800 C 268 782 292 776 306 786"/>
+      <path d="M342 800 C 332 782 318 778 306 786"/>
+      <path d="M858 800 C 868 782 892 776 906 786"/>
+      <path d="M942 800 C 932 782 918 778 906 786"/>
+    </g>
+  </g>
+  <rect x="0" y="730" width="1200" height="16" fill="#100d07" opacity="0.75"/>
+</g>
+
+<!-- ================= STONE JOINTS ================= -->
+<g opacity="0.32">
+  <rect x="394" y="0" width="2.5" height="730" fill="#6d6349"/>
+  <rect x="396.5" y="0" width="2" height="730" fill="#fbf5e6" opacity="0.55"/>
+  <rect x="804" y="0" width="2.5" height="730" fill="#6d6349"/>
+  <rect x="806.5" y="0" width="2" height="730" fill="#fbf5e6" opacity="0.55"/>
+</g>
+
+<!-- ================= MARBLE / PRINT FINISH ================= -->
+<rect x="0" y="0" width="1200" height="800" filter="url(#fVeins)" opacity="0.3"/>
+<rect x="0" y="0" width="1200" height="800" fill="url(#patHtC)" opacity="0.045"/>
+<rect x="0" y="0" width="1200" height="800" fill="url(#patHtM)" opacity="0.04"/>
+<rect x="0" y="0" width="1200" height="800" fill="url(#patHtY)" opacity="0.035"/>
+<rect x="0" y="0" width="1200" height="800" filter="url(#fGrain)" opacity="0.1"/>
+<rect x="0" y="0" width="1200" height="800" fill="url(#gSheen)" opacity="0.55"/>
+<g opacity="0.16" filter="url(#fBlur16)">
+  <path d="M-120 800 L300 -60 L470 -60 L50 800 Z" fill="#ffffff"/>
+  <path d="M540 800 L960 -60 L1010 -60 L590 800 Z" fill="#ffffff"/>
+</g>
+<rect x="0" y="0" width="1200" height="800" fill="url(#gVig)"/>
+</svg>
