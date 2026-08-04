@@ -27,6 +27,9 @@ $pj2_assets = [
     'pj2-skin.js', 'pj2-viz.js', 'pj2-ui.js', 'pj2.css', 'index.php',
 ];
 $pj2_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
+// The footer shows only the version NUMBER (owner, 2026-08-04); the "— summary"
+// tail in VERSION stays for git history and the CLAUDE.md bump rule.
+$pj2_version = trim(explode('—', $pj2_version)[0]);
 $pj2_build = substr(md5(implode('', array_map('pj2v', $pj2_assets))), 0, 6);
 $pj2_mtime = 0;
 foreach ($pj2_assets as $pj2_a) {
