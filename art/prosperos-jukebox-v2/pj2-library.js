@@ -2384,7 +2384,14 @@
       // roomBlend crossfader below; scenes set the balance (see ROOM_BALANCE)
       // and the equal-power law keeps total power flat through every morph.
       var roomClose = PJ2.Voice.reverb(c, { decayS: 2.0, preDelayS: 0.02, wet: 0.3, brightness: 1.15, ripple: 0.03 });
-      var roomWide = PJ2.Voice.reverb(c, { decayS: 4.8, preDelayS: 0.045, wet: 0.34, brightness: 1.9, ripple: { depth: 0.04, hz: 0.4 } });
+      // The wide hall is a REAL room (owner, 2026-08-03, chosen by ear in
+      // room-mockup.html): St Margaret's Church, York — the National Centre
+      // for Early Music's hall, measured 11 m back in the nave (OpenAIR,
+      // AudioLab University of York, CC BY-SA 3.0; provenance in
+      // ir/README.md). The generated-noise spec below is the FALLBACK pour
+      // if the measured file can't load — decayS 4.8 keeps that fallback
+      // sounding like the hall the scenes were voiced against.
+      var roomWide = PJ2.Voice.reverb(c, { decayS: 4.8, preDelayS: 0.045, wet: 0.34, brightness: 1.9, ripple: { depth: 0.04, hz: 0.4 }, irUrl: "ir/rooms/library-wide-st-margarets.wav" });
       roomClose.output.connect(bus.input);
       roomWide.output.connect(bus.input);
       var roomBlend = PJ2.Fx.roomBlend(c, { close: roomClose, wide: roomWide, balance: 0.15 });

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>IR audition — OpenAIR spaces</title>
+<style>
+  body { font-family: monospace; background: #14120f; color: #d8cdb4; max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.1rem; } h2 { font-size: 0.95rem; margin: 1.6rem 0 0.4rem; color: #b8a87f; }
+  p { color: #8f866f; font-size: 0.85rem; }
+  button { font-family: inherit; background: #2a251d; color: #d8cdb4; border: 1px solid #4a4335; padding: 0.35rem 0.7rem; margin: 0.15rem; cursor: pointer; }
+  button:hover { background: #3a3225; }
+  .row { margin: 0.2rem 0; }
+  .name { display: inline-block; width: 16rem; color: #d8cdb4; }
+  #status { color: #7a9c6e; min-height: 1.2em; }
+  label { font-size: 0.85rem; color: #8f866f; }
+</style>
+</head>
+<body>
+<h1>IR audition — the three OpenAIR spaces</h1>
+<p>Dev-only listening page; nothing here touches the engines. Each button
+convolves a synthesized test sound through the real impulse response.
+<b>raw</b> plays the IR itself (a balloon-pop's-eye view of the room).</p>
+<div class="row"><label>wet <input type="range" id="wet" min="0" max="1" step="0.01" value="0.5"> dry <span id="wetv">0.50</span> wet</label></div>
+<div id="rooms"></div>
+<h2>reference</h2>
+<div class="row"><span class="name">no room (dry)</span>
+  <button data-dry="pluck">pluck</button>
+  <button data-dry="chord">chord</button></div>
+<p id="status">loading impulse responses…</p>
+<script>
+(function () {
+  var IRS = [
+    ["gill-heads-mine/mine_site1_1way_mono.wav", "mine — site 1, single source"],
+    ["gill-heads-mine/mine_site1_2way_mono.wav", "mine — site 1, omni pair"],
+    ["gill-heads-mine/mine_site2_1way_mono.wav", "mine — site 2, single source"],
+    ["gill-heads-mine/mine_site2_2way_mono.wav", "mine — site 2, omni pair"],
+    ["maes-howe/mh3_000_ortf_48k.wav", "maes howe — tomb chamber"],
+    ["r1-nuclear-reactor-hall/r1_omni_48k.wav", "r1 reactor hall — mono omni"],
+    ["r1-nuclear-reactor-hall/r1_ortf-48k.wav", "r1 reactor hall — stereo"]
+  ];
+  var ctx = null, buffers = {}, status = document.getElementById("status");
+  var wetSlider = document.getElementById("wet"), wetv = document.getElementById("wetv");
+  wetSlider.oninput = function () { wetv.textContent = Number(wetSlider.value).toFixed(2); };
+
+  // Safari rule: the AudioContext must be born INSIDE a user gesture, or
+  // WebKit silently discards its output forever (state still says
+  // "running"). So: fetch bytes at load, create ctx + unlock + decode on
+  // the first click.
+  function ac() { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); return ctx; }
+
+  var raw = {};
+  function loadAll() {
+    var left = IRS.length;
+    IRS.forEach(function (ir) {
+      fetch(ir[0]).then(function (r) { return r.arrayBuffer(); })
+        .then(function (ab) { raw[ir[0]] = ab; if (--left === 0) status.textContent = "fetched — click a button."; })
+        .catch(function (e) { status.textContent = "FAILED " + ir[0] + " — " + e; });
+    });
+  }
+
+  function decodeOne(c, ab) {
+    return new Promise(function (res, rej) {
+      var done = false;
+      function ok(b) { if (!done) { done = true; res(b); } }
+      function bad(e) { if (!done) { done = true; rej(e || new Error("decode failed")); } }
+      try {
+        var p = c.decodeAudioData(ab, ok, bad);
+        if (p && p.then) p.then(ok, bad);
+      } catch (e) { bad(e); }
+    });
+  }
+
+  var ready = null;
+  function ensureAudio() { // call from gesture handlers only
+    if (ready) return ready;
+    var c = ac();
+    if (c.state === "suspended") c.resume();
+    try {
+      var ub = c.createBuffer(1, 1, 22050);
+      var us = c.createBufferSource(); us.buffer = ub;
+      us.connect(c.destination); us.start(0);
+    } catch (e) {}
+    ready = Promise.all(Object.keys(raw).map(function (k) {
+      return decodeOne(c, raw[k].slice(0)).then(
+        function (buf) { buffers[k] = buf; },
+        function (e) { status.textContent = "decode FAILED " + k + " — " + e; }
+      );
+    })).then(function () {
+      if (!/FAILED/.test(status.textContent)) status.textContent = "ready.";
+    });
+    return ready;
+  }
+
+  // --- test sounds (schedule into an arbitrary destination node at time t) ---
+  function pluck(dest, t) {
+    var c = ac(), n = 4;
+    for (var i = 0; i < n; i++) {
+      var f = 262 * Math.pow(2, [0, 3, 7, 12][i] / 12), t0 = t + i * 0.45;
+      var sr = c.sampleRate, len = Math.floor(sr * 0.03);
+      var nb = c.createBuffer(1, len, sr), d = nb.getChannelData(0);
+      for (var j = 0; j < len; j++) d[j] = Math.random() * 2 - 1;
+      var src = c.createBufferSource(); src.buffer = nb; src.loop = true;
+      var lp = c.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(f * 3, t0);
+      lp.frequency.exponentialRampToValueAtTime(f * 0.8, t0 + 1.6); lp.Q.value = 0.5;
+      var g = c.createGain(); g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.25, t0 + 0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.8);
+      g.gain.linearRampToValueAtTime(0, t0 + 1.9);
+      src.connect(lp); lp.connect(g); g.connect(dest);
+      src.start(t0); src.stop(t0 + 2.0);
+    }
+    return t + n * 0.45 + 2.0;
+  }
+  function chord(dest, t) {
+    var c = ac(), degs = [0, 3, 7, 10], end = t + 4.5;
+    degs.forEach(function (s, i) {
+      var o = c.createOscillator(); o.type = "triangle";
+      o.frequency.value = 131 * Math.pow(2, s / 12);
+      var g = c.createGain(); g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(0.07, t + 1.2);
+      g.gain.setValueAtTime(0.07, end - 1.5);
+      g.gain.linearRampToValueAtTime(0, end);
+      o.connect(g); g.connect(dest); o.start(t); o.stop(end + 0.1);
+    });
+    return end;
+  }
+
+  function playThrough(irPath, kind) {
+    var c = ac(); c.resume();
+    var buf = buffers[irPath];
+    if (!buf) { status.textContent = "still loading " + irPath; return; }
+    var t = c.currentTime + 0.1;
+    if (kind === "raw") {
+      var s = c.createBufferSource(); s.buffer = buf;
+      var g0 = c.createGain(); g0.gain.value = 0.8;
+      s.connect(g0); g0.connect(c.destination); s.start(t);
+      return;
+    }
+    var conv = c.createConvolver(); conv.buffer = buf;
+    var wet = c.createGain(), dry = c.createGain(), inG = c.createGain();
+    var w = Number(wetSlider.value);
+    wet.gain.value = w; dry.gain.value = 1 - w;
+    inG.connect(conv); conv.connect(wet); inG.connect(dry);
+    wet.connect(c.destination); dry.connect(c.destination);
+    (kind === "pluck" ? pluck : chord)(inG, t);
+  }
+
+  var roomsDiv = document.getElementById("rooms");
+  IRS.forEach(function (ir) {
+    var row = document.createElement("div"); row.className = "row";
+    var nm = document.createElement("span"); nm.className = "name"; nm.textContent = ir[1];
+    row.appendChild(nm);
+    ["raw", "pluck", "chord"].forEach(function (kind) {
+      var b = document.createElement("button"); b.textContent = kind;
+      b.onclick = function () { ensureAudio().then(function () { playThrough(ir[0], kind); }); };
+      row.appendChild(b);
+    });
+    roomsDiv.appendChild(row);
+  });
+  document.querySelectorAll("[data-dry]").forEach(function (b) {
+    b.onclick = function () {
+      ensureAudio().then(function () {
+        var c = ac();
+        (b.getAttribute("data-dry") === "pluck" ? pluck : chord)(c.destination, c.currentTime + 0.1);
+      });
+    };
+  });
+  status.textContent = "click anywhere first if audio is blocked — loading…";
+  loadAll();
+})();
+</script>
+</body>
+</html>

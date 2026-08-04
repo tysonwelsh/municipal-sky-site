@@ -2575,7 +2575,16 @@
       // Library's hall: open air, not a dark hall — brightness exponent 1.2
       // vs the hall's 1.9, with a slow tail swell).
       var roomClose = PJ2.Voice.reverb(c, { decayS: 1.8, preDelayS: 0.015, wet: 0.3, brightness: 0.95, ripple: 0.02 });
-      var roomSky = PJ2.Voice.reverb(c, { decayS: 5.2, preDelayS: 0.04, wet: 0.34, brightness: 1.2, ripple: { depth: 0.04, hz: 0.3 } });
+      // The sky is a REAL space (owner, 2026-08-04, chosen by ear in
+      // room-mockup-ariel.html at wet ×1.2 — hence 0.41, not the old 0.34):
+      // Tvísöngur, the tuned concrete singing-dome sound sculpture above
+      // Seyðisfjörður, Iceland (OpenAIR model measurement, AudioLab
+      // University of York, CC BY-SA; provenance in ir/README.md). Resonant
+      // domes for a spirit of the air. The generated-noise spec below is
+      // the FALLBACK pour if the measured file can't load — decayS 5.2
+      // keeps that fallback sounding like the sky the scenes were voiced
+      // against.
+      var roomSky = PJ2.Voice.reverb(c, { decayS: 5.2, preDelayS: 0.04, wet: 0.41, brightness: 1.2, ripple: { depth: 0.04, hz: 0.3 }, irUrl: "ir/rooms/ariel-sky-tvisongur.wav" });
       roomClose.output.connect(bus.input);
       roomSky.output.connect(bus.input);
       var roomBlend = PJ2.Fx.roomBlend(c, { close: roomClose, wide: roomSky, balance: 0.25 });

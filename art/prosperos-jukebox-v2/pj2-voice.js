@@ -207,7 +207,7 @@
   //   send ─→ dry(1.0) ────────────────────→ output   (connect output to Bus.input)
   //     └──→ preDelay → convolver → wet(w) ─↗
   //
-  // spec: { decayS, preDelayS, wet, brightness, ripple? }
+  // spec: { decayS, preDelayS, wet, brightness, ripple?, irUrl? }
   //   brightness — the HF-damping envelope's exponent (kolob's hfDamp):
   //                LOWER = brighter tail (0.8 was the tabernacle, 1.6 the
   //                parlor). The damping runs on its own exponential so the
@@ -215,7 +215,48 @@
   //   ripple     — depth (0..~0.1) of a slow amplitude swell on the tail
   //                ("the hall inhaling", kolob's tabernacle at 0.5 Hz), or
   //                {depth, hz} to pick the breathing rate.
+  //   irUrl      — Phase 5 groundwork (owner, 2026-08-03): a MEASURED
+  //                impulse response replaces the generated pour. Loading is
+  //                async by nature, so the graph goes up immediately with
+  //                an empty convolver (wet path silent, dry path live) and
+  //                the real room arrives when decode lands — milliseconds
+  //                on a local fetch, under the near-silent opening every
+  //                track composes anyway. On ANY failure — no fetch/decode
+  //                in the harness mock, missing file, undecodable bytes —
+  //                the generated pour fills the convolver instead: the
+  //                engine can never lose its room to a network hiccup.
+  //                Bytes cache per URL (module), decoded buffers per ctx.
   // ==========================================================================
+  var irBytesCache = {}; // url -> Promise<ArrayBuffer>, failures evicted
+  function loadIRBytes(url) {
+    if (!irBytesCache[url]) {
+      irBytesCache[url] = fetch(url).then(function (r) {
+        if (!r || !r.ok) throw new Error("HTTP " + (r && r.status));
+        return r.arrayBuffer();
+      }).catch(function (e) { delete irBytesCache[url]; throw e; });
+    }
+    return irBytesCache[url];
+  }
+  function decodeIR(ctx, url) {
+    var store = ctx.__pj2IrBufs || (ctx.__pj2IrBufs = {});
+    if (!store[url]) {
+      store[url] = loadIRBytes(url).then(function (ab) {
+        return new Promise(function (res, rej) {
+          // callback form first — old Safari has no promise decodeAudioData;
+          // slice() because decode detaches the buffer and the cache keeps it
+          var done = false;
+          function ok(b) { if (!done) { done = true; res(b); } }
+          function bad(e) { if (!done) { done = true; rej(e || new Error("decode failed")); } }
+          try {
+            var p = ctx.decodeAudioData(ab.slice(0), ok, bad);
+            if (p && p.then) p.then(ok, bad);
+          } catch (e) { bad(e); }
+        });
+      }).catch(function (e) { delete store[url]; throw e; });
+    }
+    return store[url];
+  }
+
   Voice.reverb = function (ctx, spec) {
     spec = spec || {};
     var decayS = spec.decayS || 2.0;
@@ -249,27 +290,40 @@
       // of noise. Two independently-poured channels + independent ripple
       // phases = decorrelated L/R, which is what makes it read as a SPACE
       // rather than a mono echo in the middle of the head.
-      var sr = ctx.sampleRate || 44100;
-      var len = Math.max(2, Math.floor(sr * decayS));
-      var buf = ctx.createBuffer(2, len, sr);
-      var fadeStart = Math.floor(len * 0.95); // kill the truncation click at
-                                              // the buffer edge (kolob cuts at
-                                              // ~-19 dB; we fade the last 5%)
-      for (var ch = 0; ch < 2; ch++) {
-        var data = buf.getChannelData(ch);
-        var ph = Math.random() * Math.PI * 2;
-        for (var i = 0; i < len; i++) {
-          var t = i / sr;
-          var env = Math.exp(-2.2 * t / decayS);              // amplitude tail
-          var hf = Math.exp(-(brightness * 2.6) * t / decayS); // HF darkening
-          var color = rippleDepth
-            ? 1 + rippleDepth * Math.sin(2 * Math.PI * rippleHz * t + ph)
-            : 1;
-          var edge = i >= fadeStart ? (len - i) / (len - fadeStart) : 1;
-          data[i] = (Math.random() * 2 - 1) * env * hf * color * edge;
+      var poured = false;
+      function pourGenerated() {
+        if (poured) return;
+        poured = true;
+        var sr = ctx.sampleRate || 44100;
+        var len = Math.max(2, Math.floor(sr * decayS));
+        var buf = ctx.createBuffer(2, len, sr);
+        var fadeStart = Math.floor(len * 0.95); // kill the truncation click at
+                                                // the buffer edge (kolob cuts at
+                                                // ~-19 dB; we fade the last 5%)
+        for (var ch = 0; ch < 2; ch++) {
+          var data = buf.getChannelData(ch);
+          var ph = Math.random() * Math.PI * 2;
+          for (var i = 0; i < len; i++) {
+            var t = i / sr;
+            var env = Math.exp(-2.2 * t / decayS);              // amplitude tail
+            var hf = Math.exp(-(brightness * 2.6) * t / decayS); // HF darkening
+            var color = rippleDepth
+              ? 1 + rippleDepth * Math.sin(2 * Math.PI * rippleHz * t + ph)
+              : 1;
+            var edge = i >= fadeStart ? (len - i) / (len - fadeStart) : 1;
+            data[i] = (Math.random() * 2 - 1) * env * hf * color * edge;
+          }
         }
+        conv.buffer = buf;
       }
-      conv.buffer = buf;
+      if (spec.irUrl && typeof fetch === "function" &&
+          typeof ctx.decodeAudioData === "function") {
+        decodeIR(ctx, spec.irUrl).then(function (b) {
+          if (!poured) { poured = true; conv.buffer = b; }
+        }).catch(function () { pourGenerated(); });
+      } else {
+        pourGenerated();
+      }
       // --------------------------------------------------------------------
 
       send.connect(dry);
