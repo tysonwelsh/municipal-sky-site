@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.8"/>
+    </filter>
+    <filter id="vintage" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="6" result="paperNoise"/>
+      <feColorMatrix in="paperNoise" type="saturate" values="0" result="paperNoiseGray"/>
+      <feComponentTransfer in="paperNoiseGray" result="paperNoiseAdj">
+        <feFuncR type="linear" slope="0.28" intercept="0.72"/>
+        <feFuncG type="linear" slope="0.28" intercept="0.72"/>
+        <feFuncB type="linear" slope="0.28" intercept="0.72"/>
+      </feComponentTransfer>
+      <feColorMatrix in="SourceGraphic" type="saturate" values="0.6" result="desat"/>
+      <feComponentTransfer in="desat" result="lifted">
+        <feFuncR type="linear" slope="0.85" intercept="0.09"/>
+        <feFuncG type="linear" slope="0.85" intercept="0.07"/>
+        <feFuncB type="linear" slope="0.8" intercept="0.06"/>
+      </feComponentTransfer>
+      <feBlend in="lifted" in2="paperNoiseAdj" mode="multiply" result="grained"/>
+      <feComposite in="grained" in2="SourceAlpha" operator="in"/>
+    </filter>
+  </defs>
+
+  <g filter="url(#vintage)">
+    <g filter="url(#soft)">
+      <path transform="translate(-5,-4)" fill="#b23a2e" opacity="0.30"
+        d="M400,20 C480,20 535,90 560,170 C600,280 625,400 632,490 C638,560 632,610 615,650 L726,705 L784,790 L16,790 L74,705 L185,650 C168,610 162,560 168,490 C175,400 200,280 240,170 C265,90 320,20 400,20 Z"/>
+      <path transform="translate(5,4)" fill="#3a6f7a" opacity="0.30"
+        d="M400,20 C480,20 535,90 560,170 C600,280 625,400 632,490 C638,560 632,610 615,650 L726,705 L784,790 L16,790 L74,705 L185,650 C168,610 162,560 168,490 C175,400 200,280 240,170 C265,90 320,20 400,20 Z"/>
+    </g>
+
+    <g>
+      <!-- ground shadow -->
+      <ellipse cx="400" cy="793" rx="350" ry="12" fill="#241609" opacity="0.22"/>
+
+      <!-- plinth -->
+      <path d="M74,712 L726,712 L784,790 L16,790 Z" fill="#6f4a2b" stroke="#3a2716" stroke-width="4"/>
+      <path d="M84,715 L716,715" fill="none" stroke="#a3794c" stroke-width="3" opacity="0.5"/>
+
+      <!-- ledge -->
+      <rect x="60" y="698" width="680" height="14" fill="#8a5f39" stroke="#45301c" stroke-width="2"/>
+
+      <!-- hive body tiers, bottom to top -->
+      <path d="M74,627 A326,84 0 0 1 726,627 A326,84 0 0 1 74,627 Z" fill="#96633a" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M94,627 A306,42 0 0 1 706,627" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M106,516 A294,78 0 0 1 694,516 A294,78 0 0 1 106,516 Z" fill="#a4713f" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M126,516 A274,39 0 0 1 674,516" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M143,411 A257,73 0 0 1 657,411 A257,73 0 0 1 143,411 Z" fill="#b17e47" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M163,411 A237,36.5 0 0 1 637,411" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M186,311 A214,67 0 0 1 614,311 A214,67 0 0 1 186,311 Z" fill="#bd8c52" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M206,311 A194,33.5 0 0 1 594,311" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M233,217 A167,60 0 0 1 567,217 A167,60 0 0 1 233,217 Z" fill="#c89a5e" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M253,217 A147,30 0 0 1 547,217" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M283,131 A117,50 0 0 1 517,131 A117,50 0 0 1 283,131 Z" fill="#d2a86e" stroke="#4a3018" stroke-width="3" stroke-opacity="0.55"/>
+      <path d="M303,131 A97,25 0 0 1 497,131" fill="none" stroke="#4a3018" stroke-width="2.5" opacity="0.35"/>
+
+      <path d="M340,60 A60,37 0 0 1 460,60 A60,37 0 0 1 340,60 Z" fill="#dbb47c" stroke="#4a3018" stroke-width="2.5" stroke-opacity="0.55"/>
+
+      <!-- finial -->
+      <circle cx="400" cy="26" r="14" fill="#e6c48d" stroke="#4a3018" stroke-width="3"/>
+
+      <!-- soft highlight for dimension -->
+      <ellipse cx="300" cy="380" rx="70" ry="220" fill="#f5e6bd" opacity="0.15" transform="rotate(-12 300 380)"/>
+
+      <!-- entrance arch -->
+      <path d="M365,705 L365,655 A35,35 0 0 1 435,655 L435,705 Z" fill="#2e1e10" opacity="0.9"/>
+    </g>
+  </g>
+</svg>
