@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef6f8"/>
+      <stop offset="55%" stop-color="#e2edf1"/>
+      <stop offset="100%" stop-color="#cfe0e6"/>
+    </linearGradient>
+    <radialGradient id="smearGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#eeb9d4" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#dca0c4" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#dca0c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fieldGrad" cx="45%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#f8dcea"/>
+      <stop offset="45%" stop-color="#ecbcd6"/>
+      <stop offset="75%" stop-color="#c98bb0"/>
+      <stop offset="100%" stop-color="#3a0f24"/>
+    </radialGradient>
+    <radialGradient id="rodGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffb0cc"/>
+      <stop offset="50%" stop-color="#e0537f"/>
+      <stop offset="100%" stop-color="#82203f"/>
+    </radialGradient>
+    <radialGradient id="coccusGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#cdb0ff"/>
+      <stop offset="55%" stop-color="#7c4bb5"/>
+      <stop offset="100%" stop-color="#3c1861"/>
+    </radialGradient>
+    <radialGradient id="spiralGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffcf8f"/>
+      <stop offset="55%" stop-color="#df8536"/>
+      <stop offset="100%" stop-color="#7a3d0f"/>
+    </radialGradient>
+    <radialGradient id="nucleusGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#7568e6"/>
+      <stop offset="60%" stop-color="#453191"/>
+      <stop offset="100%" stop-color="#221a4d"/>
+    </radialGradient>
+    <radialGradient id="cytoGrad" cx="42%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#faeef4"/>
+      <stop offset="70%" stop-color="#eccbdc"/>
+      <stop offset="100%" stop-color="#cf9fb9"/>
+    </radialGradient>
+    <radialGradient id="rbcGrad" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#f1a9b8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#df7c92" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#c85c73" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef0f2"/>
+      <stop offset="45%" stop-color="#9598a0"/>
+      <stop offset="55%" stop-color="#5c5e66"/>
+      <stop offset="100%" stop-color="#232327"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="55%">
+      <stop offset="55%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <clipPath id="fieldClip">
+      <circle cx="500" cy="500" r="478"/>
+    </clipPath>
+    <filter id="softBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+    </filter>
+
+    <g id="coccus">
+      <circle r="13" fill="url(#coccusGrad)" stroke="#241238" stroke-width="1.3"/>
+      <ellipse cx="-4" cy="-5" rx="4" ry="3" fill="#ffffff" opacity="0.45"/>
+    </g>
+
+    <g id="rod">
+      <path d="M -21,-11 L 21,-11 A 11 11 0 0 1 21,11 L -21,11 A 11 11 0 0 1 -21,-11 Z" fill="url(#rodGrad)" stroke="#5c1230" stroke-width="1.3"/>
+      <ellipse cx="-8" cy="-4" rx="11" ry="3.6" fill="#ffffff" opacity="0.32"/>
+      <path d="M -18 1 Q 0 -3 18 1" stroke="#5c1230" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M -32,-3 Q -55,-16 -76,-6 Q -92,2 -103,-9" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M -32,4 Q -50,18 -70,10" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+      <path d="M 32,3 Q 55,16 76,5 Q 91,-3 101,10" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M 32,-4 Q 50,-18 68,-9" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+    </g>
+
+    <g id="rodSpore">
+      <use href="#rod"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="#f7e6ee" stroke="#5c1230" stroke-width="1" opacity="0.95"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.5"/>
+    </g>
+
+    <g id="spiral">
+      <path d="M -70 0 C -55 -24, -25 24, 0 0 C 25 -24, 55 24, 70 0" stroke="url(#spiralGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M -70 -3 C -55 -27, -25 21, 0 -3 C 25 -27, 55 21, 70 -3" stroke="#ffe3b0" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.4"/>
+      <path d="M 70,0 Q 88,-10 98,2 Q 84,4 92,14" stroke="#df8536" stroke-width="1.3" fill="none" opacity="0.5"/>
+    </g>
+
+    <g id="rbc">
+      <ellipse rx="34" ry="30" fill="url(#rbcGrad)"/>
+      <ellipse rx="13" ry="11" fill="#c85c73" opacity="0.5"/>
+    </g>
+  </defs>
+
+  <!-- glass slide base -->
+  <rect x="8" y="8" width="984" height="984" rx="44" ry="44" fill="url(#glassGrad)"/>
+  <ellipse cx="500" cy="500" rx="530" ry="440" transform="rotate(18 500 500)" fill="url(#smearGrad)"/>
+
+  <!-- corner: specimen label -->
+  <g>
+    <rect x="20" y="20" width="188" height="74" rx="6" fill="#faf6ec" stroke="#c8c1a9" stroke-width="2"/>
+    <circle cx="36" cy="37" r="6" fill="#bd3b2c"/>
+    <text x="50" y="41" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#3a3428">SAMPLE 04</text>
+    <text x="30" y="60" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Mixed bacterial flora</text>
+    <text x="30" y="76" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Gram stain · 400×</text>
+  </g>
+
+  <!-- corner: tape -->
+  <g transform="translate(880,50) rotate(8)">
+    <rect x="-95" y="-20" width="190" height="42" fill="#e9dcb5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#5a4b2c" opacity="0.75">smear #4</text>
+  </g>
+
+  <!-- corner: biohazard trefoil -->
+  <g transform="translate(95,905)" opacity="0.4">
+    <circle cx="0" cy="-16" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="-14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="0" cy="0" r="6" fill="#555"/>
+  </g>
+
+  <!-- corner: crack -->
+  <path d="M 900,905 L 918,918 L 912,932 L 930,945 L 922,958" fill="none" stroke="#8f9aa0" stroke-width="1.4" opacity="0.5"/>
+
+  <!-- glass shine streaks -->
+  <polygon points="640,20 700,20 480,300 420,300" fill="#ffffff" opacity="0.1"/>
+  <polygon points="120,760 165,760 60,970 15,970" fill="#ffffff" opacity="0.08"/>
+
+  <!-- drop shadow of viewport -->
+  <ellipse cx="512" cy="514" rx="478" ry="478" fill="#000000" opacity="0.22" filter="url(#softBlur)"/>
+
+  <!-- magnified field -->
+  <g clip-path="url(#fieldClip)">
+    <circle cx="500" cy="500" r="478" fill="url(#fieldGrad)"/>
+    <rect x="20" y="20" width="960" height="960" filter="url(#grain)" opacity="0.4"/>
+
+    <line x1="14" y1="500" x2="986" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <line x1="500" y1="14" x2="500" y2="986" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <circle cx="500" cy="500" r="150" fill="none" stroke="#ffffff" opacity="0.07" stroke-width="1"/>
+    <circle cx="500" cy="500" r="300" fill="none" stroke="#ffffff" opacity="0.06" stroke-width="1"/>
+    <circle cx="500" cy="500" r="450" fill="none" stroke="#ffffff" opacity="0.05" stroke-width="1"/>
+
+    <g filter="url(#softBlur)" opacity="0.35">
+      <use href="#rbc" x="110" y="140"/>
+      <use href="#rbc" x="890" y="190"/>
+      <use href="#rbc" x="140" y="890"/>
+      <use href="#rbc" x="860" y="860"/>
+      <use href="#rbc" x="500" y="880"/>
+      <use href="#rbc" x="500" y="120"/>
+      <use href="#rbc" x="280" y="650"/>
+      <use href="#rbc" x="730" y="340"/>
+    </g>
+
+    <!-- stain debris -->
+    <g fill="#7a2d52" opacity="0.35">
+      <circle cx="120" cy="350" r="2.2"/><circle cx="300" cy="250" r="2.6"/><circle cx="430" cy="480" r="2"/>
+      <circle cx="600" cy="350" r="2.4"/><circle cx="780" cy="300" r="2"/><circle cx="880" cy="500" r="2.6"/>
+      <circle cx="750" cy="700" r="2.2"/><circle cx="600" cy="850" r="2"/><circle cx="430" cy="650" r="2.4"/>
+      <circle cx="250" cy="480" r="2"/><circle cx="160" cy="700" r="2.6"/><circle cx="350" cy="900" r="2"/>
+      <circle cx="700" cy="900" r="2.2"/><circle cx="900" cy="700" r="2"/><circle cx="500" cy="650" r="2.4"/>
+      <circle cx="650" cy="450" r="2"/><circle cx="200" cy="200" r="2.4"/><circle cx="850" cy="200" r="2"/>
+    </g>
+
+    <!-- Staphylococcus clusters -->
+    <g>
+      <use href="#coccus" x="190" y="650"/><use href="#coccus" x="210" y="642"/><use href="#coccus" x="174" y="636"/>
+      <use href="#coccus" x="212" y="664"/><use href="#coccus" x="168" y="660"/><use href="#coccus" x="194" y="626"/>
+      <use href="#coccus" x="184" y="674"/><use href="#coccus" x="164" y="646"/><use href="#coccus" x="216" y="652"/>
+      <use href="#coccus" x="198" y="670"/><use href="#coccus" x="180" y="628"/>
+    </g>
+    <g>
+      <use href="#coccus" x="760" y="290"/><use href="#coccus" x="780" y="282"/><use href="#coccus" x="744" y="276"/>
+      <use href="#coccus" x="782" y="304"/><use href="#coccus" x="738" y="300"/><use href="#coccus" x="764" y="266"/>
+      <use href="#coccus" x="754" y="314"/><use href="#coccus" x="734" y="286"/><use href="#coccus" x="786" y="292"/>
+      <use href="#coccus" x="768" y="310"/><use href="#coccus" x="750" y="268"/>
+    </g>
+    <g>
+      <use href="#coccus" x="540" y="140"/><use href="#coccus" x="560" y="132"/><use href="#coccus" x="524" y="126"/>
+      <use href="#coccus" x="562" y="154"/><use href="#coccus" x="518" y="150"/><use href="#coccus" x="544" y="116"/>
+      <use href="#coccus" x="534" y="164"/><use href="#coccus" x="514" y="136"/><use href="#coccus" x="566" y="142"/>
+      <use href="#coccus" x="548" y="160"/><use href="#coccus" x="530" y="118"/>
+    </g>
+
+    <!-- Streptococcus chains -->
+    <g>
+      <use href="#coccus" x="430" y="240"/><use href="#coccus" x="452" y="246"/><use href="#coccus" x="474" y="253"/>
+      <use href="#coccus" x="496" y="259"/><use href="#coccus" x="518" y="266"/><use href="#coccus" x="540" y="272"/>
+      <use href="#coccus" x="562" y="279"/>
+    </g>
+    <g>
+      <use href="#coccus" x="140" y="760"/><use href="#coccus" x="163" y="755"/><use href="#coccus" x="187" y="751"/>
+      <use href="#coccus" x="210" y="746"/><use href="#coccus" x="234" y="742"/><use href="#coccus" x="258" y="737"/>
+    </g>
+
+    <!-- E. coli rods -->
+    <use href="#rod" transform="translate(230,200) rotate(-15)"/>
+    <use href="#rod" transform="translate(680,150) rotate(20)"/>
+    <use href="#rod" transform="translate(830,420) rotate(95)"/>
+    <use href="#rod" transform="translate(140,480) rotate(55)"/>
+    <use href="#rod" transform="translate(550,760) rotate(-40)"/>
+    <use href="#rod" transform="translate(350,800) rotate(5)"/>
+    <use href="#rod" transform="translate(760,830) rotate(140)"/>
+    <use href="#rod" transform="translate(300,380) rotate(160)"/>
+    <use href="#rod" transform="translate(345,400) rotate(160)"/>
+
+    <!-- Bacillus with endospore -->
+    <use href="#rodSpore" transform="translate(410,560) rotate(-25)"/>
+    <use href="#rodSpore" transform="translate(210,300) rotate(75)"/>
+
+    <!-- Spiral bacteria -->
+    <use href="#spiral" transform="translate(520,400) rotate(10)"/>
+    <use href="#spiral" transform="translate(850,640) rotate(-25)"/>
+
+    <!-- Neutrophil (white blood cell) phagocytosing bacteria -->
+    <g transform="translate(650,600)">
+      <circle r="95" fill="url(#cytoGrad)" stroke="#b98aa5" stroke-width="2"/>
+      <g fill="#d98cae" opacity="0.4">
+        <circle cx="-40" cy="-50" r="2.4"/><circle cx="20" cy="-60" r="2"/><circle cx="55" cy="-20" r="2.4"/>
+        <circle cx="60" cy="30" r="2"/><circle cx="20" cy="60" r="2.4"/><circle cx="-30" cy="55" r="2"/>
+        <circle cx="-60" cy="10" r="2.4"/><circle cx="-10" cy="-10" r="2"/><circle cx="35" cy="5" r="2"/>
+      </g>
+      <use href="#rod" transform="translate(-62,52) rotate(30) scale(0.6)"/>
+      <use href="#rod" transform="translate(58,-45) rotate(-60) scale(0.55)"/>
+      <path d="M -40,-30 C -55,-45 -20,-55 -5,-40 C 10,-55 40,-45 35,-25 C 55,-15 50,15 30,20 C 40,40 10,55 -5,40 C -20,55 -50,40 -40,20 C -60,10 -55,-15 -40,-30 Z"
+            fill="url(#nucleusGrad)" stroke="#1c1440" stroke-width="1.5"/>
+      <path d="M -25,-25 Q -10,-15 -20,0 M 10,-30 Q 20,-15 10,0 M -10,20 Q 5,30 20,15" stroke="#8a7de0" stroke-width="1.2" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- vignette overlay -->
+    <circle cx="500" cy="500" r="478" fill="url(#vignette)"/>
+
+    <!-- reticle center -->
+    <circle cx="500" cy="500" r="3" fill="#ffffff" opacity="0.5"/>
+
+    <!-- scale bar -->
+    <g transform="translate(500,915)">
+      <line x1="-60" y1="0" x2="60" y2="0" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="-60" y1="-6" x2="-60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="60" y1="-6" x2="60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <text x="0" y="-13" text-anchor="middle" font-family="'Courier New', monospace" font-size="16" fill="#ffffff" opacity="0.85">10 µm</text>
+    </g>
+
+    <text x="500" y="70" text-anchor="middle" font-family="'Courier New', monospace" font-size="21" fill="#ffffff" opacity="0.55">400×  MIXED BACTERIAL FLORA</text>
+  </g>
+
+  <!-- viewport bezel -->
+  <circle cx="500" cy="500" r="483" fill="none" stroke="url(#bezelGrad)" stroke-width="13"/>
+  <circle cx="500" cy="500" r="475" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.35"/>
+  <path d="M 39.5,332.4 A 483 483 0 0 1 414.9,17.4" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.32" stroke-linecap="round"/>
+</svg>
