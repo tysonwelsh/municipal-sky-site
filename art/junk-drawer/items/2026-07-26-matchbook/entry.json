@@ -10,6 +10,7 @@
   ],
   "sizeClass": "l",
   "sizeScale": 0.606,
+  "retired": true,
   "responses": [
     {
       "rid": "r1",
