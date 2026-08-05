@@ -76,6 +76,31 @@
   }
   window.JD_svgInst = svgInst;   /* the record card inlines copies too */
 
+  /* SIZE, as filed — the one display string for how big an item reads in the
+     drawer, shown on the specimen tag and the report card. Taxonomy-driven:
+     the tier's own label, never a hardcoded name, falling back to the raw
+     sizeClass id if the tier isn't registered. The per-item sizeScale is part
+     of the size the owner chose, so it is stated too rather than hidden — an
+     item filed as "s" × 0.364 reads "Small ×0.36", not "Small". */
+  function sizeLabel(tax, item) {
+    var tiers = (tax || {}).sizeTiers || [], t = null;
+    for (var i = 0; i < tiers.length; i++) {
+      if (tiers[i].id === item.sizeClass) { t = tiers[i]; break; }
+    }
+    var label = t ? t.label : (item.sizeClass || '');
+    if (!label) return '';
+    /* round FIRST, then decide: a scale of 1.003 displays as ×1, which says
+       nothing the tier hasn't already said — so it is dropped rather than
+       printed as a distinction the reader can't see */
+    var fine = item.sizeScale;
+    if (typeof fine === 'number' && fine > 0) {
+      var shown = +fine.toFixed(2);
+      if (shown !== 1) label += ' ×' + String(shown);
+    }
+    return label;
+  }
+  window.JD_sizeLabel = sizeLabel;   /* the record card states it too */
+
   /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
      that tall, so it tells us how much room the item claims for clamping */
   function svgAspect(el) {
@@ -318,6 +343,10 @@
         item._rank = grade ? grade.rank : 0;
         item._steps = (tax.grades || []).length || 5;
         item._box = boxFor(item.sizeClass);   /* tier box in cqmin, from taxonomy */
+        /* SIZE, as filed: the owner's sizeClass tier read back as its
+           taxonomy label, with the fine multiplier appended when one is set
+           (so "Small ×0.36" states the whole size, not just the tier) */
+        item._sizeLabel = sizeLabel(tax, item);
         item._url = primary.url;
         return fetch(primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
@@ -340,6 +369,7 @@
         el.dataset.date = item._date;
         el.dataset.rank = item._rank;
         el.dataset.steps = item._steps;
+        el.dataset.size = item._sizeLabel;
         el.dataset.url = item._url;
         el.setAttribute('role', 'img');
         el.setAttribute('aria-label', item.title);
@@ -499,10 +529,18 @@
     tag.innerHTML =
       /* name on its own line(s) — the tag has a fixed width, so a long
          specimen name wraps to a second line instead of stretching the tag
-         past the well's edge; model · date sit under it */
+         past the well's edge; model · date · size sit under it. SIZE is
+         per-ITEM (the tier the owner picked), not per-response, so it belongs
+         on this identifying line rather than in the grade column below. */
       '<div class="l1"><span class="name">' + (d.title || '').toUpperCase() +
       '</span><span class="meta">' + (d.model || '').toUpperCase() +
-      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span></span></div>' +
+      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span>' +
+      (d.size
+        ? '<span class="szwrap"><span class="sep">·</span>' +
+          '<span class="dim">SIZE: <span class="sz">' + d.size.toUpperCase() +
+          '</span></span></span>'
+        : '') +
+      '</span></div>' +
       '<div class="l2"><span class="gradecol">' +
       '<span class="gradelabel">GRADE: <span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
       meterSVG(+d.rank || 1, +d.steps || 5) +
@@ -805,6 +843,8 @@
      collide (same discipline as the rating instrument). One implementation,
      shared with the pile — see JD_svgInst at the top of this file. */
   var svgInst = window.JD_svgInst;
+  /* the filed size, rendered the same way here as on the specimen tag */
+  var sizeLabel = window.JD_sizeLabel;
   /* a red-pencil hand mark; each takes its own rotation jitter + waver
      filter so no two sit identically */
   function mark(word) {
@@ -919,10 +959,14 @@
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
       '<div class="rc-item">' + esc(entry.title) + '</div></header>';
+    /* Model/Prompted/Process describe the RESPONSE; Size describes the ITEM
+       (one tier per entry, shared by every response), so it holds steady as
+       the alternatives are stepped through. */
     h += '<div class="rc-block rc-fillsline">' +
       fillHTML('Model', esc(m.label)) +
       fillHTML('Prompted', esc(fmtDate(resp.date))) +
       fillHTML('Process', esc(processLabel(resp.generation))) +
+      fillHTML('Size', esc(sizeLabel(payload.taxonomy, entry) || '—')) +
       '</div>';
     h += '<div class="rc-block rc-plate">' + floorSVG() +
       '<div class="rc-plate-art">' +
