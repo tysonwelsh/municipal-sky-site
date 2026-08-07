@@ -16,17 +16,16 @@ include '../includes/header.php';
                 <div class="entry">
                     <div class="entry-content">
                         <a href="/art/kolob/" class="entry-title">KOLOB &#x10417;&#x10404;&#x10422;&#x10409;&#x10412;</a>
-                        <span class="entry-description">An aleatoric hymn engine serving a colony of saints at the rim
-                            of Kolob's light.</span>
+                        <span class="entry-description">An aleatoric hymn engine serving a colony of saints on the
+                            frontier of eternity.</span>
                     </div>
                 </div>
                 <div class="entry">
                     <div class="entry-content">
                         <a href="/art/prosperos-jukebox-v2/" class="entry-title">Prospero&rsquo;s Jukebox</a>
-                        <span class="entry-description">An aleatoric jukebox of three books &mdash; the
-                            Library&rsquo;s alchemical codex, Sycorax&rsquo;s woodcut grimoire, and Ariel&rsquo;s
-                            celestial atlas. Generative chamber music that never repeats, drawn as living manuscript
-                            plates.</span>
+                        <span class="entry-description">An aleatoric music generator inspired by John Cage and Brian
+                            Eno. Generative chamber music that never repeats. Three different tracks, each loosely
+                            based on a character from Shakespeare&rsquo;s Tempest.</span>
                     </div>
                 </div>
                 <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
