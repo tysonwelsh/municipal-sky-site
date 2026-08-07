@@ -20,6 +20,15 @@ include '../includes/header.php';
                             of Kolob's light.</span>
                     </div>
                 </div>
+                <div class="entry">
+                    <div class="entry-content">
+                        <a href="/art/prosperos-jukebox-v2/" class="entry-title">Prospero&rsquo;s Jukebox</a>
+                        <span class="entry-description">An aleatoric jukebox of three books &mdash; the
+                            Library&rsquo;s alchemical codex, Sycorax&rsquo;s woodcut grimoire, and Ariel&rsquo;s
+                            celestial atlas. Generative chamber music that never repeats, drawn as living manuscript
+                            plates.</span>
+                    </div>
+                </div>
                 <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
                 <!--
                 <div class="entry">
