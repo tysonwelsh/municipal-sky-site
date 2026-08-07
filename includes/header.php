@@ -92,8 +92,12 @@ $is_about = $current_page === 'about.php' ||
                 <span></span>
             </label>
             <nav class="site-navigation">
+                <!-- HIDDEN (temporarily commented out — un-comment to restore) -->
+                <!--
                 <a href="<?php echo $blog_link; ?>" class="nav-blog<?php if ($is_blog)
                        echo ' active'; ?>">Blog</a>
+                -->
+                <!-- END HIDDEN -->
                 <a href="<?php echo $graphics_link; ?>" class="nav-graphics<?php if ($is_graphics)
                        echo ' active'; ?>">Information Graphics</a>
                 <a href="<?php echo $genart_link; ?>" class="nav-genart<?php if ($is_genart)
