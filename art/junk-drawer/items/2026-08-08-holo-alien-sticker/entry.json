@@ -44,7 +44,7 @@
       "date": "2026-08-08",
       "generation": {
         "mode": "refined",
-        "prompt_count": 3
+        "prompt_count": 4
       },
       "grade": "choice",
       "graded": "2026-08-08",
@@ -57,7 +57,7 @@
         "je-ne-sais-quoi": "trace"
       },
       "transcript": null,
-      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Owner-directed refinement turns to the same subagent (1: pointier eyes, slightly more prominent rainbow accents; 2: eye point flipped to the inner end, brow arc removed); final SVG only is kept. ink-bounds check run at ingest; viewBox normalized: tightened to measured ink bounds (reframe only, artwork bytes untouched). Grade and annotations were given on the pre-refinement one-shot — owner to confirm or regrade against the refined artwork."
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Owner-directed refinement turns to the same subagent (1: pointier eyes, slightly more prominent rainbow accents; 2: eye point flipped to the inner end, brow arc removed; 3: darker silver foil with a whiter sticker border); final SVG only is kept. ink-bounds check run at ingest; viewBox normalized: tightened to measured ink bounds (reframe only, artwork bytes untouched). Grade and annotations were given on the pre-refinement one-shot — owner to confirm or regrade against the refined artwork."
     },
     {
       "rid": "r3",

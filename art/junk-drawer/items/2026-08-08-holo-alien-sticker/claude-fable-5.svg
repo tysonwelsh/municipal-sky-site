@@ -5,54 +5,54 @@
     </clipPath>
 
     <linearGradient id="foilBase" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#aebfc9"/>
-      <stop offset="0.18" stop-color="#8fd8c8"/>
-      <stop offset="0.36" stop-color="#9db4de"/>
-      <stop offset="0.52" stop-color="#c8d6d2"/>
-      <stop offset="0.66" stop-color="#7fc9b4"/>
-      <stop offset="0.82" stop-color="#8aa3c9"/>
-      <stop offset="1" stop-color="#b9c9c4"/>
+      <stop offset="0" stop-color="#7e8b94"/>
+      <stop offset="0.18" stop-color="#6fa89b"/>
+      <stop offset="0.36" stop-color="#7286a8"/>
+      <stop offset="0.52" stop-color="#98a4a6"/>
+      <stop offset="0.66" stop-color="#5f9585"/>
+      <stop offset="0.82" stop-color="#66799a"/>
+      <stop offset="1" stop-color="#84918f"/>
     </linearGradient>
 
     <linearGradient id="foilStreak1" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="0.28" stop-color="#ffd9ec" stop-opacity="0.55"/>
-      <stop offset="0.40" stop-color="#a0e8ff" stop-opacity="0.8"/>
-      <stop offset="0.52" stop-color="#e8ffd8" stop-opacity="0.6"/>
-      <stop offset="0.66" stop-color="#d0b8ff" stop-opacity="0.55"/>
-      <stop offset="0.80" stop-color="#ffe9c4" stop-opacity="0.4"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0" stop-color="#dfe6ea" stop-opacity="0"/>
+      <stop offset="0.28" stop-color="#f2bcd8" stop-opacity="0.5"/>
+      <stop offset="0.40" stop-color="#8fd2ee" stop-opacity="0.75"/>
+      <stop offset="0.52" stop-color="#d4ecc4" stop-opacity="0.55"/>
+      <stop offset="0.66" stop-color="#baa4ec" stop-opacity="0.5"/>
+      <stop offset="0.80" stop-color="#ecd6ae" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#dfe6ea" stop-opacity="0"/>
     </linearGradient>
 
     <linearGradient id="foilStreak2" x1="1" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0"/>
-      <stop offset="0.22" stop-color="#b6ffe4" stop-opacity="0.6"/>
-      <stop offset="0.40" stop-color="#ffd6f2" stop-opacity="0.55"/>
-      <stop offset="0.52" stop-color="#ffffff" stop-opacity="0.7"/>
-      <stop offset="0.64" stop-color="#9fd0ff" stop-opacity="0.6"/>
-      <stop offset="0.80" stop-color="#fff3b8" stop-opacity="0.45"/>
-      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="0" stop-color="#e8eef0" stop-opacity="0"/>
+      <stop offset="0.22" stop-color="#a2ecd2" stop-opacity="0.55"/>
+      <stop offset="0.40" stop-color="#f0c0de" stop-opacity="0.5"/>
+      <stop offset="0.52" stop-color="#e9eff0" stop-opacity="0.65"/>
+      <stop offset="0.64" stop-color="#8cbcec" stop-opacity="0.55"/>
+      <stop offset="0.80" stop-color="#ecdca4" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#e8eef0" stop-opacity="0"/>
     </linearGradient>
 
     <linearGradient id="rimFoil" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f2f7f5"/>
-      <stop offset="0.2" stop-color="#bfe9dd"/>
-      <stop offset="0.4" stop-color="#ffd9ee"/>
+      <stop offset="0" stop-color="#fdfefd"/>
+      <stop offset="0.2" stop-color="#eef8f4"/>
+      <stop offset="0.4" stop-color="#fbeef5"/>
       <stop offset="0.55" stop-color="#ffffff"/>
-      <stop offset="0.75" stop-color="#b3c6e6"/>
-      <stop offset="1" stop-color="#e8f2ec"/>
+      <stop offset="0.75" stop-color="#eaf0f8"/>
+      <stop offset="1" stop-color="#f8fbf9"/>
     </linearGradient>
 
     <radialGradient id="domeGlow" cx="0.38" cy="0.28" r="0.75">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
-      <stop offset="0.35" stop-color="#ffffff" stop-opacity="0.25"/>
+      <stop offset="0" stop-color="#f2f7f8" stop-opacity="0.65"/>
+      <stop offset="0.35" stop-color="#e6eef0" stop-opacity="0.2"/>
       <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
 
     <radialGradient id="edgeShade" cx="0.5" cy="0.45" r="0.68">
-      <stop offset="0" stop-color="#22343a" stop-opacity="0"/>
-      <stop offset="0.75" stop-color="#22343a" stop-opacity="0"/>
-      <stop offset="1" stop-color="#1f3a44" stop-opacity="0.45"/>
+      <stop offset="0" stop-color="#1d2c33" stop-opacity="0"/>
+      <stop offset="0.72" stop-color="#1d2c33" stop-opacity="0"/>
+      <stop offset="1" stop-color="#17282f" stop-opacity="0.55"/>
     </radialGradient>
 
     <linearGradient id="eyeGrad" x1="0" y1="0" x2="0.7" y2="1">
@@ -68,13 +68,13 @@
     </linearGradient>
   </defs>
 
-  <!-- die-cut sticker rim -->
+  <!-- die-cut sticker rim: white border -->
   <path d="M200,38 C102,38 52,118 52,208 C52,318 138,388 176,452 C186,469 214,469 224,452 C262,388 348,318 348,208 C348,118 298,38 200,38 Z"
         fill="none" stroke="#ffffff" stroke-width="30" stroke-linejoin="round"/>
   <path d="M200,38 C102,38 52,118 52,208 C52,318 138,388 176,452 C186,469 214,469 224,452 C262,388 348,318 348,208 C348,118 298,38 200,38 Z"
         fill="none" stroke="url(#rimFoil)" stroke-width="22" stroke-linejoin="round"/>
   <path d="M200,38 C102,38 52,118 52,208 C52,318 138,388 176,452 C186,469 214,469 224,452 C262,388 348,318 348,208 C348,118 298,38 200,38 Z"
-        fill="none" stroke="#7fa0a8" stroke-width="2" stroke-opacity="0.5" stroke-linejoin="round"/>
+        fill="none" stroke="#93a4ab" stroke-width="2" stroke-opacity="0.55" stroke-linejoin="round"/>
 
   <!-- alien head foil -->
   <path d="M200,38 C102,38 52,118 52,208 C52,318 138,388 176,452 C186,469 214,469 224,452 C262,388 348,318 348,208 C348,118 298,38 200,38 Z"
@@ -83,26 +83,26 @@
   <g clip-path="url(#headClip)">
     <!-- diagonal holo bands -->
     <rect x="0" y="0" width="400" height="500" fill="url(#foilStreak1)"/>
-    <g opacity="0.7">
+    <g opacity="0.65">
       <polygon points="-60,500 40,500 300,0 200,0" fill="url(#foilStreak2)"/>
-      <polygon points="120,500 175,500 430,0 375,0" fill="#dffff0" opacity="0.5"/>
-      <polygon points="176,500 200,500 455,0 431,0" fill="#ffc9ea" opacity="0.45"/>
-      <polygon points="230,500 265,500 520,0 485,0" fill="#b9d4ff" opacity="0.45"/>
-      <polygon points="-140,500 -95,500 165,0 120,0" fill="#c4fff3" opacity="0.45"/>
-      <polygon points="-95,500 -75,500 185,0 165,0" fill="#ffe6b8" opacity="0.4"/>
+      <polygon points="120,500 175,500 430,0 375,0" fill="#c8ecdc" opacity="0.45"/>
+      <polygon points="176,500 200,500 455,0 431,0" fill="#eeaed8" opacity="0.42"/>
+      <polygon points="230,500 265,500 520,0 485,0" fill="#9cbcee" opacity="0.45"/>
+      <polygon points="-140,500 -95,500 165,0 120,0" fill="#a8ecdc" opacity="0.42"/>
+      <polygon points="-95,500 -75,500 185,0 165,0" fill="#ecd2a0" opacity="0.38"/>
     </g>
     <!-- prismatic burst lines -->
-    <g stroke-linecap="round" opacity="0.6">
-      <line x1="200" y1="235" x2="30" y2="60" stroke="#e6fff6" stroke-width="7"/>
-      <line x1="200" y1="235" x2="120" y2="10" stroke="#aee3ff" stroke-width="5"/>
-      <line x1="200" y1="235" x2="250" y2="8" stroke="#ffc7e8" stroke-width="4"/>
-      <line x1="200" y1="235" x2="290" y2="15" stroke="#d2ffe2" stroke-width="6"/>
-      <line x1="200" y1="235" x2="372" y2="90" stroke="#c3cfff" stroke-width="5"/>
-      <line x1="200" y1="235" x2="378" y2="190" stroke="#ffe3b0" stroke-width="4"/>
-      <line x1="200" y1="235" x2="368" y2="290" stroke="#bdfbe7" stroke-width="6"/>
-      <line x1="200" y1="235" x2="45" y2="310" stroke="#b8d9f2" stroke-width="6"/>
-      <line x1="200" y1="235" x2="30" y2="200" stroke="#f6c9f2" stroke-width="4"/>
-      <line x1="200" y1="235" x2="200" y2="470" stroke="#defff4" stroke-width="5"/>
+    <g stroke-linecap="round" opacity="0.55">
+      <line x1="200" y1="235" x2="30" y2="60" stroke="#cfeee4" stroke-width="7"/>
+      <line x1="200" y1="235" x2="120" y2="10" stroke="#94ccee" stroke-width="5"/>
+      <line x1="200" y1="235" x2="250" y2="8" stroke="#eeaad4" stroke-width="4"/>
+      <line x1="200" y1="235" x2="290" y2="15" stroke="#b6ecc8" stroke-width="6"/>
+      <line x1="200" y1="235" x2="372" y2="90" stroke="#a8b6ee" stroke-width="5"/>
+      <line x1="200" y1="235" x2="378" y2="190" stroke="#eecf98" stroke-width="4"/>
+      <line x1="200" y1="235" x2="368" y2="290" stroke="#9ce4cc" stroke-width="6"/>
+      <line x1="200" y1="235" x2="45" y2="310" stroke="#9cc2e2" stroke-width="6"/>
+      <line x1="200" y1="235" x2="30" y2="200" stroke="#e2aade" stroke-width="4"/>
+      <line x1="200" y1="235" x2="200" y2="470" stroke="#c4ecdc" stroke-width="5"/>
     </g>
     <!-- dome highlight & vignette -->
     <rect x="0" y="0" width="400" height="500" fill="url(#domeGlow)"/>
@@ -122,10 +122,10 @@
   </g>
 
   <!-- nostrils & mouth -->
-  <ellipse cx="190" cy="330" rx="4" ry="7" fill="#2c4b52" opacity="0.8" transform="rotate(-12 190 330)"/>
-  <ellipse cx="210" cy="330" rx="4" ry="7" fill="#2c4b52" opacity="0.8" transform="rotate(12 210 330)"/>
-  <path d="M172,372 Q200,388 228,372" fill="none" stroke="#274349" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
-  <path d="M176,370 Q200,382 224,370" fill="none" stroke="#9fe6d6" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <ellipse cx="190" cy="330" rx="4" ry="7" fill="#233c42" opacity="0.85" transform="rotate(-12 190 330)"/>
+  <ellipse cx="210" cy="330" rx="4" ry="7" fill="#233c42" opacity="0.85" transform="rotate(12 210 330)"/>
+  <path d="M172,372 Q200,388 228,372" fill="none" stroke="#1f363c" stroke-width="6" stroke-linecap="round" opacity="0.85"/>
+  <path d="M176,370 Q200,382 224,370" fill="none" stroke="#8fd6c6" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
 
   <!-- sparkles -->
   <g fill="#ffffff">
