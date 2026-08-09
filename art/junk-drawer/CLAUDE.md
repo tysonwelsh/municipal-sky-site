@@ -22,6 +22,14 @@ data files are `.json`, art is `.svg`.
 - `items/<...>/<model-slug>.svg` — one file per response.
 - `data.php` — read-only serving endpoint. Do not modify during content adds.
 - `scripts/validate-junk-drawer.py` (repo root `scripts/`) — the validator.
+- `sizing-desk.html` — owner-only curatorial harness (unlinked, noindex):it
+  steps through the items previewing size tiers with the live pile math and
+  exports decisions as JSON (`{sizingDesk: 1, changes: {id: {sizeClass,
+  sizeScale?}}}`). When the owner hands you such an export ("apply this
+  sizing-desk export"), edit each listed entry.json to the given sizeClass,
+  set/remove sizeScale accordingly (omit the key when absent or 1), validate,
+  and commit: `junk-drawer: re-tier sizes (sizing desk, N items)`. The desk
+  writes nothing itself.
 
 ## Procedure: add a NEW item
 
