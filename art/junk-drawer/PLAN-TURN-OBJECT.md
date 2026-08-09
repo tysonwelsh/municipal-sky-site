@@ -55,6 +55,15 @@ not a flat UI widget. Each is drawn as a self-contained SVG (viewBox,
 transparent background) so the winner drops straight into the pile
 pipeline as production art.
 
+**Plan view is binding (owner, 2026-08-09, mockup round 1):** the drawer
+is seen from directly above, so every candidate is drawn TOP-DOWN — the
+object lying flat on the floor, seen from the top. No horizon, no side
+elevation, no ¾ tilt. Depth comes from concentric geometry, radial
+shading, and cast shadow pooling around the footprint; a press reads as
+*travel* via radius/shadow change (8b demonstrated the technique in
+round 1 and is the reference). Round 1's 8a/8c/8d elevation drawings
+were redrawn to plan view under this rule.
+
 ### 8a — The Face-Off Buzzer
 The archetype: a fat glossy **red plunger dome on a squat brass-and-
 bakelite base**, the thing two contestants slap on a quiz stand. Brass
