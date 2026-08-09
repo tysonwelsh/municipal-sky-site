@@ -103,6 +103,20 @@ include '../../includes/header.php';
       <circle cx="205" cy="24" r="7" fill="url(#jdp-post)" stroke="#3a280e" stroke-width="0.7" stroke-opacity="0.55"/>
       <ellipse cx="202.2" cy="21.4" rx="1.9" ry="1.6" fill="#fff6d8" opacity="0.85"/>
     </svg>
+
+    <!-- TAKE A TURN: the visitor's own commission (PLAN-USER-PROMPTS §4.1).
+         A brass card-holder screwed to the front band, bottom-left, in the
+         same hardware language as the pull — the one piece of chrome on this
+         stage that is a real control. Static markup like the rest of the
+         stage; everything it opens is built in JS from JSON (APP §4.10).
+         The label is set from JD_STRINGS.turnButton at init so the constant
+         stays the single source, and the button only reveals itself once the
+         script that answers it is running (see .jd-turn-btn in the CSS). -->
+    <button type="button" class="jd-turn-btn" id="jd-turn-btn" aria-haspopup="dialog">
+      <span class="jd-turn-brass">
+        <span class="jd-turn-slip"></span>
+      </span>
+    </button>
   </div>
 
   <!-- ============ FIELD NOTES ============
@@ -175,19 +189,12 @@ include '../../includes/header.php';
 
 <!-- Anonymous usage tracking: a page view. No personal data leaves the
      browser; the server records only a salted, daily-rotating visitor hash
-     for unique-visit counts. Item-open engagement events arrive with the
-     specimen card (Phase 3). -->
+     for unique-visit counts. The request itself is built by JD_track in
+     junk-drawer.js (loaded above, synchronously) so every call on this page
+     goes through the one JD_API base — no relative path here may assume the
+     page and the API share a directory (APP §4.1). -->
 <script>
-  (function () {
-    function track(eventType, label) {
-      fetch("../../api/page-event-tracking.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ page: "junk-drawer", event_type: eventType, label: label || null }),
-      }).catch(function () {});
-    }
-    track("page_view", null);
-  })();
+  if (window.JD_track) JD_track("page_view", null);
 </script>
 
 <?php include '../../includes/footer.php'; ?>

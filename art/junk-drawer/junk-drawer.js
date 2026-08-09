@@ -15,6 +15,99 @@
    not commentary — do not regress them.
    ========================================================================== */
 
+/* ---- named constants, storage, and shims (contract C5.1/C5.3/C5.6/C5.7) ---
+   File scope, above every module below, so all of them share one copy. This
+   is the whole list of things the packaged-app stage has to re-point: an API
+   base, a client name, the consent record, and the visible strings. */
+
+/* API base; '' = same origin. EVERY fetch in this file is JD_API + an
+   ABSOLUTE path — nothing may assume the page and the API share a directory
+   (APP constraint 1). Item urls arrive from data.php already root-absolute,
+   so they are prefixed at their call sites too. */
+var JD_API = '';
+
+/* sent in every POST body and validated server-side against a small enum;
+   never sniffed from User-Agent, which in a webview reads as web forever */
+var JD_CLIENT = 'web';
+
+/* The third-party-AI disclosure, recorded per submission. This copy is
+   canonical: privacy.php quotes the same words, and drift between the two is
+   a blocking review finding (APP §4.5). */
+var JD_CONSENT = {
+  version: 'jd-consent-1',
+  text: 'When you take a turn, the words you type are sent to two AI ' +
+    'providers — Anthropic (Claude) and OpenAI (GPT) — which each draw an ' +
+    'object from them. Your prompt, the drawings that come back, your ' +
+    'ratings, and an anonymous daily-rotating visitor code are stored so ' +
+    'the results can be studied and the feature kept honest. Nothing you ' +
+    'type here is shown to other visitors.',
+  check: 'I understand — send my words to Anthropic and OpenAI'
+};
+
+var JD_STRINGS = {
+  turnButton: 'TAKE A TURN',   /* PLACEHOLDER pending owner name-tasting. */
+  // Candidates (ship commented, PLAN-RECORD style, for on-device tasting):
+  // turnButton: 'COMMISSION AN OBJECT',
+  // turnButton: 'FEED THE DRAWER',
+  visitorTag: 'YOURS'          /* the paper tag on an item the visitor won */
+};
+
+/* One storage accessor (APP constraint 7) — sessionStorage, JSON both ways,
+   every call wrapped: private mode throws on write and a null read is the
+   contract, not an error. Keys must be 'jd-' prefixed; anything else is
+   refused rather than silently creating a second namespace. Session scope is
+   deliberate (the won items are session-local by design, master plan §4.5);
+   it is also the one place the app swaps in Capacitor Preferences. */
+var JD_store = (function () {
+  function ours(key) { return typeof key === 'string' && key.indexOf('jd-') === 0; }
+  return {
+    get: function (key) {
+      if (!ours(key)) return null;
+      try {
+        var raw = sessionStorage.getItem(key);
+        return raw == null ? null : JSON.parse(raw);
+      } catch (e) { return null; }
+    },
+    set: function (key, value) {
+      if (!ours(key)) return false;
+      try { sessionStorage.setItem(key, JSON.stringify(value)); return true; }
+      catch (e) { return false; }
+    },
+    remove: function (key) {
+      if (!ours(key)) return false;
+      try { sessionStorage.removeItem(key); return true; } catch (e) { return false; }
+    }
+  };
+})();
+
+/* the haptics shim (APP constraint 8): one site to route through, silent
+   where the API is absent (iOS Safari has no vibrate at all) */
+function JD_haptic(kind) {
+  var ms = { grip: 8, settle: 12, drop: 16, select: 8 }[kind];
+  if (!ms || !navigator.vibrate) return;
+  try { navigator.vibrate(ms); } catch (e) {}
+}
+
+/* anonymous usage events, fire-and-forget. Every caller on the page goes
+   through this one function so the endpoint has exactly one URL. */
+function JD_track(type, label) {
+  try {
+    fetch(JD_API + '/api/page-event-tracking.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ page: 'junk-drawer', event_type: type, label: label || null })
+    }).catch(function () {});
+  } catch (e) {}
+}
+
+/* is a modal layer holding the page? The pile's dismissal paths (pointerdown,
+   Escape, resize) stand down while one is up, so Esc peels the top layer and
+   never reaches through it to the selection underneath. */
+function JD_layerOpen() {
+  return !!((window.JD_record && window.JD_record.isOpen()) ||
+            (window.JD_turn && window.JD_turn.isOpen()));
+}
+
 /* ---- the pile loader + field-notes renderer ------------------------------ */
 (function () {
   var pile = document.querySelector('.jd-pile');
@@ -149,6 +242,20 @@
   }
   window.JD_gradeOf = gradeOf;   /* the record card resolves grades too */
 
+  /* the tier box → the element's --w, area-normalized (see SIZE above):
+       w = box·√aspect  →  h = w/aspect = box/√aspect  →  w·h = box².
+     Elongation past SIZE.elong shrinks the whole item so the long side stops
+     at box×elong; then the owner's fine dial and the id-hashed jitter. The
+     aspect is read from the copy already inlined into `el`. Shared, because a
+     visitor's won item is filed on the same ruler as a curated one (C5.3). */
+  function applySize(el, box, id, fine) {
+    var sq = Math.sqrt(svgAspect(el));
+    var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
+    el.style.setProperty('--w',
+      +((box || BASE.m) * sq * shape * (fine || 1) * sizeJitter(id)).toFixed(2));
+  }
+  window.JD_applySize = applySize;
+
   /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
      that tall, so it tells us how much room the item claims for clamping */
   function svgAspect(el) {
@@ -195,13 +302,15 @@
      items on the page; otherwise recompute and persist. sessionStorage may be
      unavailable (private mode) — degrade to a fresh scatter each load. */
   function layoutFor(els) {
-    var ids = els.map(function (e) { return e.dataset.id; }), stored = null;
-    try { stored = JSON.parse(sessionStorage.getItem(SCATTER.key) || 'null'); }
-    catch (e) { stored = null; }
+    var ids = els.map(function (e) { return e.dataset.id; });
+    var stored = JD_store.get(SCATTER.key);
     var covers = stored && ids.every(function (id) { return stored[id]; });
     if (covers) { return stored; }
     var fresh = computeScatter(els);
-    try { sessionStorage.setItem(SCATTER.key, JSON.stringify(fresh)); } catch (e) {}
+    /* a visitor's won items are merged into this same map under their gen_id
+       (C5.3), so the merge base is whatever is already stored */
+    if (stored) { Object.keys(stored).forEach(function (k) { if (!fresh[k]) fresh[k] = stored[k]; }); }
+    JD_store.set(SCATTER.key, fresh);
     return fresh;
   }
 
@@ -348,7 +457,7 @@
   }
 
   /* ---------- one request, then the pile ---------------------------------- */
-  fetch('data.php')
+  fetch(JD_API + '/art/junk-drawer/data.php')
     .then(function (r) {
       if (!r.ok) throw new Error('data.php ' + r.status);
       return r.json();
@@ -397,7 +506,7 @@
            (so "Small ×0.36" states the whole size, not just the tier) */
         item._sizeLabel = sizeLabel(tax, item);
         item._url = primary.url;
-        return fetch(primary.url).then(function (r) {
+        return fetch(JD_API + primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
           return r.text();
         }).then(function (svg) { return { item: item, svg: svg }; });
@@ -425,19 +534,10 @@
         /* per-item prefix: the pile is many independently-authored SVGs in
            one document, so each copy gets its own id namespace */
         el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
-        /* size: area-normalized (see SIZE above). --w still carries WIDTH
-           (the CSS contract is unchanged); width is chosen so the footprint
-           lands on the tier's area whatever the viewBox proportions:
-             w = box·√aspect  →  h = w/aspect = box/√aspect  →  w·h = box².
-           Elongation past SIZE.elong shrinks the whole item to keep the long
-           side at box×elong. Then the owner's fine dial and the id-hash
-           jitter. The aspect is read from the copy just inlined above. */
-        var fine = (typeof item.sizeScale === 'number' && item.sizeScale > 0)
-          ? item.sizeScale : 1;
-        var sq = Math.sqrt(svgAspect(el));
-        var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
-        el.style.setProperty('--w',
-          +((item._box || BASE.m) * sq * shape * fine * sizeJitter(item.id)).toFixed(2));
+        /* size: area-normalized on the shared ruler (--w still carries WIDTH;
+           the CSS contract is unchanged) — see applySize above */
+        applySize(el, item._box, item.id,
+          (typeof item.sizeScale === 'number' && item.sizeScale > 0) ? item.sizeScale : 1);
         pile.appendChild(el);
         return el;
       });
@@ -467,6 +567,10 @@
         window.JD_record.setData(payloadRef, primaries);
         if (location.hash.length > 1) window.JD_record.openFromHash();
       }
+      /* the turn modal renders its survey from this same taxonomy, and
+         restores any items this visitor has already won into the pile now
+         that the curated items are placed and wired (C5.4 step 8) */
+      if (window.JD_turn) window.JD_turn.setData(payloadRef);
     })
     .catch(function (err) {
       fallbackNote();
@@ -507,6 +611,7 @@
     held = item;
     item.classList.remove('is-lifted');          /* releases the demo pin */
     item.classList.add('is-held');
+    JD_haptic('grip');       /* Android only; a silent no-op everywhere else */
   }
 
   /* tap = pick: pop to front, brief lift pulse, and the ITEM TAG — a manila
@@ -519,6 +624,16 @@
      rotation gestures stand down until it is put back — see spin(). */
   var tag = null, rope = null, picked = null, pendingReturn = null;
   var pileEl = well.querySelector('.jd-pile');
+
+  /* The tag is built with innerHTML, and since C5 a pile item's dataset can
+     carry a VISITOR's own words (their prompt is the specimen name of an item
+     they won). Everything interpolated below is therefore escaped — the
+     dataset is no longer repo-controlled. */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
 
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2;
@@ -1129,22 +1244,22 @@
          past the well's edge; model · date · size sit under it. SIZE is
          per-ITEM (the tier the owner picked), not per-response, so it belongs
          on this identifying line rather than in the grade column below. */
-      '<div class="l1"><span class="name">' + (d.title || '').toUpperCase() +
-      '</span><span class="meta">' + (d.model || '').toUpperCase() +
-      '<span class="sep">·</span><span class="dim">' + (d.date || '') + '</span>' +
+      '<div class="l1"><span class="name">' + esc((d.title || '').toUpperCase()) +
+      '</span><span class="meta">' + esc((d.model || '').toUpperCase()) +
+      '<span class="sep">·</span><span class="dim">' + esc(d.date || '') + '</span>' +
       (d.size
         ? '<span class="szwrap"><span class="sep">·</span>' +
-          '<span class="dim">SIZE: <span class="sz">' + d.size.toUpperCase() +
+          '<span class="dim">SIZE: <span class="sz">' + esc(d.size.toUpperCase()) +
           '</span></span></span>'
         : '') +
       '</span></div>' +
       '<div class="l2"><span class="gradecol">' +
-      '<span class="gradelabel">GRADE: <span class="g">' + (d.grade || '').toUpperCase() + '</span></span>' +
+      '<span class="gradelabel">GRADE: <span class="g">' + esc((d.grade || '').toUpperCase()) + '</span></span>' +
       meterSVG(+d.rank || 1, +d.steps || 5) +
       '</span><span class="btns">' +
-      '<a class="btn" href="' + d.url + '" download="' + d.id + '.svg" ' +
+      '<a class="btn" href="' + esc(d.url || '') + '" download="' + esc(d.id || '') + '.svg" ' +
       'title="download the SVG as generated">DOWNLOAD<br>SVG ⤓</a>' +
-      '<a class="btn jd-fullrecord" href="#' + d.id + '" title="open the report card">REPORT<br>CARD →</a>' +
+      '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT<br>CARD →</a>' +
       '</span></div>';
     var fr = tag.querySelector('.jd-fullrecord');
     fr.addEventListener('click', function (e) {
@@ -1228,15 +1343,15 @@
   /* every dismissal path stands down while the report card is open — the
      record owns Esc/scrim then, and the selection must survive its close */
   document.addEventListener('pointerdown', function (e) {
-    if (window.JD_record && window.JD_record.isOpen()) return;
+    if (JD_layerOpen()) return;
     if (!e.target.closest || !e.target.closest('.jd-item, .jd-itemtag')) hideTag();
   });
   window.addEventListener('keydown', function (e) {
-    if (window.JD_record && window.JD_record.isOpen()) return;
+    if (JD_layerOpen()) return;
     if (e.key === 'Escape') hideTag();
   });
   window.addEventListener('resize', function () {
-    if (window.JD_record && window.JD_record.isOpen()) return;
+    if (JD_layerOpen()) return;
     hideTag();
   });
   var dropX = 0, dropY = 0;
@@ -1338,8 +1453,14 @@
       pend = held = null; drag = false; twist = null;
     });
   }
+  /* idempotent: a won item is appended to the pile long after load and calls
+     this again, so already-wired items must not collect a second set of
+     listeners (which would grip and pick twice per press) */
   window.JD_wirePile = function () {
-    well.querySelectorAll('.jd-item').forEach(wireItem);
+    well.querySelectorAll('.jd-item:not([data-wired])').forEach(function (item) {
+      item.setAttribute('data-wired', '');
+      wireItem(item);
+    });
   };
 
   /* ---- rotating the held item ------------------------------------------ */
@@ -1733,23 +1854,20 @@
     document.body.appendChild(host);
   }
 
-  function track(type, label) {
-    try {
-      fetch('../../api/page-event-tracking.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ page: 'junk-drawer', event_type: type, label: label || null })
-      }).catch(function () {});
-    } catch (e) {}
-  }
-
   /* fetch any response SVGs not yet cached (primaries arrive from the pile
      loader; alternatives load lazily on first open) */
   function ensureSVGs(entry) {
     return Promise.all(entry.responses.map(function (r) {
       var key = entry.id + '/' + r.file;
       if (svgCache[key]) return null;
-      return fetch(r.url).then(function (res) {
+      /* a visitor's own won item has no file on the server: its SVG is primed
+         into the cache when the entry is filed, and its `url` is a data: URL
+         for the download link only — never a path to join to JD_API */
+      if (entry.visitor) {
+        svgCache[key] = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"></svg>';
+        return null;
+      }
+      return fetch(JD_API + r.url).then(function (res) {
         if (!res.ok) throw new Error(r.url + ' ' + res.status);
         return res.text();
       }).then(function (t) { svgCache[key] = t; })
@@ -1883,6 +2001,9 @@
 
   function open(id, viaHistory) {
     if (!payload || isOpen) return;
+    /* one modal at a time: the turn modal owns Esc and the scrim while it is
+       up, and two aria-modal dialogs on one page is a trap (C5.4) */
+    if (window.JD_turn && window.JD_turn.isOpen()) return;
     var entry = byId(payload.items, id);
     if (!entry) return;
     curEntry = entry;
@@ -1903,7 +2024,7 @@
       try { history.pushState({ jdRecord: id }, '', '#' + id); pushed = true; }
       catch (e) { pushed = false; }
     } else { pushed = false; }
-    track('item_open', id);
+    JD_track('item_open', id);
   }
 
   function teardown() {
@@ -1955,5 +2076,1059 @@
       var h = decodeURIComponent(location.hash.slice(1));
       if (h && payload && byId(payload.items, h)) open(h, true);
     }
+  };
+})();
+
+/* ---- TAKE A TURN — the visitor commissions an object (contract C5) -------
+   One modal, one state machine: consent → prompt → generating → reveal →
+   rate → compare → unveil. Two providers draw the same prompt in parallel
+   and are labelled only A and B until the ratings are in — blindness is
+   enforced by the server (jd-generate never names a model), and this module
+   never learns an identity before jd-rate answers.
+
+   Conventions borrowed wholesale from JD_record, deliberately: scrim + card,
+   role="dialog" aria-modal="true", Escape peels ONE layer (the abandon
+   confirm before the modal), scrim-press closes the top layer, focus returns
+   to the button. The two dialogs refuse to open over each other.
+
+   Nothing here is hardcoded from the rubric: every grade, axis, value and
+   size label is resolved from the taxonomy in the data.php payload the pile
+   loader already fetched, exactly as the legend and the report card are. */
+(function () {
+  var btn = document.getElementById('jd-turn-btn');
+  if (!btn) return;
+
+  var API_GEN = '/api/jd-generate.php';
+  var API_RATE = '/api/jd-rate.php';
+  var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
+  var K_ITEMS = 'jd-user-items-v1', K_SCATTER = 'jd-scatter-v2';
+  var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
+  var SLOW_MS = 60000;      /* past a minute the wait earns its own line */
+  var VISITOR_TIER = 'm';   /* every won item is filed "m" (C5.3) */
+  var ROT_MAX = 34;         /* the pile's scatter rotation range, ± degrees */
+
+  var payload = null;       /* the data.php payload — the survey renders from it */
+  var scrim = null, card = null, bodyEl = null, confirmEl = null;
+  var state = '', isOpen = false, confirmOn = false, restored = false;
+  var turn = null;          /* the persisted in-flight record (C5.3) */
+  var work = null;          /* the working copy: svgs, ratings, comparison */
+  var token = 0;            /* per-turn token — a settling fetch from an
+                               abandoned turn must not touch the live one */
+  var lastFocus = null, instSeq = 0, slowTimer = 0;
+  var stateTitle = '';      /* the current state's heading — also the dialog's
+                               accessible name, so the name changes with the
+                               step instead of naming the whole flow once */
+
+  /* ---------- small helpers ---------------------------------------------- */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function byId(list, id) {
+    list = list || [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
+    return null;
+  }
+  /* crypto.randomUUID is present at the iOS 16 floor but only in a secure
+     context, so the harness on a bare IP gets the getRandomValues path and
+     Math.random is the last resort — the ref only has to be unique per
+     visitor, the server never trusts it for anything but convergence */
+  function uuid() {
+    try {
+      if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+      if (window.crypto && crypto.getRandomValues) {
+        var b = new Uint8Array(16);
+        crypto.getRandomValues(b);
+        b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+        var h = [], i;
+        for (i = 0; i < 16; i++) h.push((b[i] + 0x100).toString(16).slice(1));
+        return h.slice(0, 4).join('') + '-' + h.slice(4, 6).join('') + '-' +
+          h.slice(6, 8).join('') + '-' + h.slice(8, 10).join('') + '-' +
+          h.slice(10, 16).join('');
+      }
+    } catch (e) {}
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+  }
+  /* retry_after, in words a person can act on */
+  function humanWait(sec) {
+    sec = Math.max(0, parseInt(sec, 10) || 0);
+    if (!sec) return 'a little while';
+    if (sec < 90) return 'a minute';
+    if (sec < 3600) return Math.round(sec / 60) + ' minutes';
+    if (sec < 5400) return 'an hour';
+    if (sec < 86400) return Math.round(sec / 3600) + ' hours';
+    return 'a day';
+  }
+  function svgDataUrl(svg) {
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  /* a specimen name for a won item: the visitor's own words, cut to
+     something a manila tag can carry (the full prompt is kept verbatim and
+     shown on the report card) */
+  function shortTitle(prompt) {
+    var s = String(prompt || '').replace(/\s+/g, ' ').trim();
+    return s.length > 52 ? s.slice(0, 51).replace(/\s+\S*$/, '') + '…' : s;
+  }
+  function tax() { return (payload || {}).taxonomy || {}; }
+  function liveAxes() {
+    return ((tax().axes) || []).filter(function (a) { return !a.defunct; });
+  }
+  function byRankDesc(list) {
+    return (list || []).slice().sort(function (a, b) {
+      return (b.rank || 0) - (a.rank || 0);
+    });
+  }
+  function tierBox(id) {
+    var tiers = tax().sizeTiers || [];
+    for (var i = 0; i < tiers.length; i++) if (tiers[i].id === id) return tiers[i].box;
+    return null;
+  }
+
+  /* ---------- payload ----------------------------------------------------- */
+  /* The visitor's own items are restored WITHOUT this (see the init block at
+     the foot of the module): they are stored whole, and a drawer that failed
+     to load is exactly the moment not to lose them too. The payload, when it
+     turns up, only supplies the taxonomy strings on their specimen tags and
+     the entries behind their report cards. */
+  function setData(data) {
+    payload = data;
+    if (!restored) { restored = true; restoreWon(); }
+    else hydrateWon();
+  }
+  /* the pile loader hands the payload over on success; if the drawer itself
+     failed to load, the survey fetches its own copy rather than inventing a
+     rubric (C5.4 step 5) */
+  function ensurePayload() {
+    if (payload) return Promise.resolve(payload);
+    return fetch(JD_API + '/art/junk-drawer/data.php')
+      .then(function (r) {
+        if (!r.ok) throw new Error('data.php ' + r.status);
+        return r.json();
+      })
+      .then(function (d) { setData(d); return payload; });
+  }
+
+  /* ---------- the persisted turn (C5.3) ----------------------------------- */
+  function persist() {
+    if (turn) JD_store.set(K_TURN, turn);
+  }
+  /* discarding the turn also retires its token: the generate/rate calls are
+     never aborted (the server finishes either way), so an answer that arrives
+     after this point must find no turn to attach itself to */
+  function clearTurn() {
+    token++;
+    turn = null; work = null;
+    JD_store.remove(K_TURN);
+  }
+  function hasConsent() {
+    var c = JD_store.get(K_CONSENT);
+    return !!(c && c.version === JD_CONSENT.version);
+  }
+
+  /* ---------- the modal shell -------------------------------------------- */
+  function build() {
+    if (scrim) return;
+    scrim = document.createElement('div');
+    scrim.className = 'jd-turn-scrim';
+    scrim.innerHTML =
+      '<div class="jd-turn" role="dialog" aria-modal="true" ' +
+      'aria-label="take a turn">' +
+      '<button type="button" class="jd-turn-close" aria-label="close">✕</button>' +
+      '<div class="jd-turn-scroll"></div></div>';
+    document.body.appendChild(scrim);
+    card = scrim.querySelector('.jd-turn');
+    bodyEl = scrim.querySelector('.jd-turn-scroll');
+    scrim.addEventListener('pointerdown', function (e) {
+      if (e.target === scrim) requestClose();
+    });
+    scrim.querySelector('.jd-turn-close').addEventListener('click', requestClose);
+    bodyEl.addEventListener('click', onClick);
+    bodyEl.addEventListener('change', onChange);
+    bodyEl.addEventListener('input', onInput);
+    /* the trap: Tab cycles inside whichever layer is on top */
+    card.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var scope = confirmOn && confirmEl ? confirmEl : card;
+      var f = focusables(scope);
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault(); last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault(); first.focus();
+      } else if (scope.contains(document.activeElement)) {
+        return;
+      } else {
+        e.preventDefault(); first.focus();
+      }
+    });
+  }
+  /* the honeypot carries tabindex="-1" and is excluded here by construction —
+     a bot filling every input is the point, a keyboard visitor reaching it is
+     not */
+  function focusables(root) {
+    var sel = 'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), ' +
+      'input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), ' +
+      'select:not([disabled]):not([tabindex="-1"]), [tabindex="0"]';
+    return Array.prototype.filter.call(root.querySelectorAll(sel), function (el) {
+      return el.offsetParent !== null || el === document.activeElement;
+    });
+  }
+  function focusFirst() {
+    var f = focusables(confirmOn && confirmEl ? confirmEl : card);
+    var pref = (confirmOn && confirmEl ? confirmEl : bodyEl)
+      .querySelector('[data-autofocus]');
+    var target = pref || f[0];
+    if (target) { try { target.focus(); } catch (e) {} }
+  }
+
+  /* ---------- open / close ------------------------------------------------ */
+  function open() {
+    if (isOpen) return;
+    /* one modal at a time (C5.4): the record card owns Escape while it is up */
+    if (window.JD_record && window.JD_record.isOpen()) return;
+    build();
+    lastFocus = document.activeElement;
+    isOpen = true;
+    confirmOn = false;
+    scrim.classList.add('is-on');
+    document.documentElement.classList.add('jd-turn-open');
+    /* a turn from a previous page life was already discarded at init */
+    go(!turn ? (hasConsent() ? 'prompt' : 'consent') : state || 'prompt');
+    JD_track('turn_open', null);
+  }
+  /* close paths that are free to leave: nothing is in flight or unfiled */
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    confirmOn = false;
+    dismissConfirm();
+    stopSlowTimer();
+    scrim.classList.remove('is-on');
+    document.documentElement.classList.remove('jd-turn-open');
+    bodyEl.innerHTML = '';
+    if (lastFocus && document.contains(lastFocus)) {
+      try { lastFocus.focus(); } catch (e) {}
+    }
+    lastFocus = null;
+  }
+  /* Escape / scrim / ✕. Mid-flow states cost something to leave, so they ask
+     once; the in-flight fetches are NOT aborted — the server finishes and
+     records the generations, and an unrated submission is itself the
+     abandonment datum (C5.4). */
+  function requestClose() {
+    if (!isOpen) return;
+    if (confirmOn) { dismissConfirm(); return; }
+    if (state === 'generating' || state === 'reveal' || state === 'rate' ||
+        state === 'compare') {
+      showConfirm();
+      return;
+    }
+    if (state === 'unveil' || state === 'apology') clearTurn();
+    close();
+  }
+  function showConfirm() {
+    if (confirmOn) return;
+    confirmOn = true;
+    confirmEl = document.createElement('div');
+    confirmEl.className = 'jd-turn-confirm';
+    confirmEl.setAttribute('role', 'alertdialog');
+    confirmEl.setAttribute('aria-modal', 'true');
+    confirmEl.setAttribute('aria-label', 'abandon this turn?');
+    confirmEl.innerHTML =
+      '<div class="jd-turn-confirm-card">' +
+      '<p>abandon this turn? the machines finish either way — the drawing ' +
+      'just goes unrated.</p>' +
+      '<div class="jd-turn-actions">' +
+      '<button type="button" class="jd-turn-go" data-act="stay" data-autofocus>keep going</button>' +
+      '<button type="button" class="jd-turn-alt" data-act="abandon">abandon</button>' +
+      '</div></div>';
+    confirmEl.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-act]') : null;
+      if (!b) return;
+      if (b.getAttribute('data-act') === 'stay') { dismissConfirm(); focusFirst(); }
+      else { clearTurn(); confirmOn = false; dismissConfirm(); close(); }
+    });
+    card.appendChild(confirmEl);
+    focusFirst();
+  }
+  function dismissConfirm() {
+    confirmOn = false;
+    if (confirmEl && confirmEl.parentNode) confirmEl.parentNode.removeChild(confirmEl);
+    confirmEl = null;
+  }
+
+  /* Escape peels ONE layer per press: the abandon confirm first, the modal
+     second, and never the page (the pile's own Escape handler stands down
+     for as long as this dialog is up — see JD_layerOpen). */
+  window.addEventListener('keydown', function (e) {
+    if (!isOpen || e.key !== 'Escape') return;
+    e.preventDefault();
+    requestClose();
+  });
+
+  /* ---------- the state machine ------------------------------------------- */
+  function go(next) {
+    state = next;
+    if (turn) { turn.state = next; persist(); }
+    render();
+  }
+  function render() {
+    if (!isOpen) return;
+    var h = '';
+    if (state === 'consent') h = viewConsent();
+    else if (state === 'prompt') h = viewPrompt();
+    else if (state === 'generating') h = viewGenerating();
+    else if (state === 'reveal') h = viewReveal();
+    else if (state === 'rate') h = viewRate();
+    else if (state === 'compare') h = viewCompare();
+    else if (state === 'unveil') h = viewUnveil();
+    else if (state === 'apology') h = viewApology();
+    paint(h);
+    bodyEl.scrollTop = 0;
+    focusFirst();
+  }
+  /* every write to the body goes through here: the dialog's accessible name is
+     the heading that was just built (see head) */
+  function paint(h) {
+    bodyEl.innerHTML = h;
+    card.setAttribute('aria-label', stateTitle || 'take a turn');
+  }
+
+  /* ---------- 1. consent (C5.2) ------------------------------------------- */
+  function viewConsent() {
+    return head('Before the machines draw', true) +
+      '<p class="jd-turn-copy">' + esc(JD_CONSENT.text) + '</p>' +
+      '<label class="jd-turn-check">' +
+      '<input type="checkbox" data-role="consent" data-autofocus' +
+      (work && work.consented ? ' checked' : '') + '>' +
+      '<span>' + esc(JD_CONSENT.check) + '</span></label>' +
+      actions(
+        '<button type="button" class="jd-turn-go" data-act="consent"' +
+        (work && work.consented ? '' : ' disabled') + '>continue</button>');
+  }
+
+  /* ---------- 2. prompt ---------------------------------------------------- */
+  function viewPrompt() {
+    var draft = (work && work.prompt) || '';
+    var msg = work && work.notice
+      ? '<p class="jd-turn-notice" role="status">' + esc(work.notice) + '</p>' : '';
+    var n = draft.length;
+    return head('Describe an object for the drawer', true) +
+      msg +
+      '<p class="jd-turn-copy">Two machines get your words, verbatim, and each ' +
+      'draws the thing. You grade what comes back and keep the one you like.</p>' +
+      '<label class="jd-turn-label" for="jd-turn-prompt">the brief</label>' +
+      '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="3" ' +
+      'data-role="prompt" data-autofocus spellcheck="true" ' +
+      'placeholder="a brass fish that is also a whistle">' + esc(draft) + '</textarea>' +
+      '<p class="jd-turn-count' + (n > MAX_PROMPT ? ' is-over' : '') +
+      '" aria-live="polite">' + n + ' / ' + MAX_PROMPT + '</p>' +
+      /* the honeypot: off-screen rather than display:none (which most bots
+         skip), never in the tab order, never announced */
+      '<div class="jd-turn-hp" aria-hidden="true">' +
+      '<label for="jd-turn-website">leave this empty</label>' +
+      '<input type="text" id="jd-turn-website" name="website" data-role="hp" ' +
+      'tabindex="-1" autocomplete="off" value=""></div>' +
+      actions(
+        '<button type="button" class="jd-turn-go" data-act="generate"' +
+        (draft.trim().length && n <= MAX_PROMPT ? '' : ' disabled') +
+        '>send it</button>');
+  }
+
+  /* ---------- 3. generating ------------------------------------------------ */
+  function slotLine(slot) {
+    var s = work.slots[slot];
+    var name = slot.toUpperCase();
+    if (s.status === 'ok') return 'response ' + name + ' — arrived';
+    if (s.status === 'pending') return 'response ' + name + ' — still drawing…';
+    return 'response ' + name + ' — didn’t survive';
+  }
+  function viewGenerating() {
+    return head('Two machines are drawing…') +
+      '<p class="jd-turn-copy">The same words went to both. It can take a ' +
+      'minute or two — leave this open.</p>' +
+      '<ul class="jd-turn-slots" aria-live="polite">' +
+      '<li data-slotline="a">' + esc(slotLine('a')) + '</li>' +
+      '<li data-slotline="b">' + esc(slotLine('b')) + '</li>' +
+      '</ul>' +
+      '<p class="jd-turn-copy jd-turn-slow" data-slow' +
+      (work.slow ? '' : ' hidden') + '>Still going. The drawing is long ' +
+      'because it is being written line by line.</p>';
+  }
+  function paintSlots() {
+    if (!isOpen || state !== 'generating') return;
+    ['a', 'b'].forEach(function (slot) {
+      var li = bodyEl.querySelector('[data-slotline="' + slot + '"]');
+      if (li) li.textContent = slotLine(slot);
+    });
+    var slow = bodyEl.querySelector('[data-slow]');
+    if (slow && work.slow) slow.removeAttribute('hidden');
+  }
+  function startSlowTimer() {
+    stopSlowTimer();
+    slowTimer = setTimeout(function () {
+      slowTimer = 0;
+      if (!work) return;
+      work.slow = true;
+      paintSlots();
+    }, SLOW_MS);
+  }
+  function stopSlowTimer() {
+    if (slowTimer) clearTimeout(slowTimer);
+    slowTimer = 0;
+  }
+
+  /* ---------- 4. reveal (blind: A and B, nothing else) --------------------- */
+  function plate(slot, opts) {
+    var s = work.slots[slot];
+    if (!s || s.status !== 'ok') return '';
+    opts = opts || {};
+    return '<figure class="jd-turn-plate' + (opts.small ? ' is-small' : '') + '">' +
+      '<div class="jd-turn-art" role="img" aria-label="response ' +
+      slot.toUpperCase() + '">' +
+      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
+      '<figcaption>' + slot.toUpperCase() + '</figcaption></figure>';
+  }
+  function okSlots() {
+    return ['a', 'b'].filter(function (s) { return work.slots[s].status === 'ok'; });
+  }
+  function viewReveal() {
+    var ok = okSlots();
+    var lost = ok.length === 1
+      ? '<p class="jd-turn-notice" role="status">the other machine’s ' +
+        'drawing didn’t survive — you’ll grade this one alone.</p>' : '';
+    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back') +
+      lost +
+      '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
+      '</div>' +
+      '<p class="jd-turn-copy">No names yet. Who drew which is withheld until ' +
+      'your grades are filed.</p>' +
+      actions('<button type="button" class="jd-turn-go" data-act="rate">grade them</button>');
+  }
+
+  /* ---------- 5. rate — the survey, rendered from the taxonomy ------------- */
+  function pillRow(name, label, options, chosen, meta) {
+    var h = '<div class="jd-pillrow" role="radiogroup" aria-label="' + esc(label) + '">';
+    options.forEach(function (o) {
+      var on = String(chosen == null ? '' : chosen) === String(o.value);
+      h += '<label class="jd-pill' + (on ? ' is-on' : '') + '">' +
+        '<input type="radio" name="' + esc(name) + '" value="' + esc(o.value) + '"' +
+        meta + (on ? ' checked' : '') + '>' +
+        '<span class="jd-pill-tick" aria-hidden="true">✓</span>' +
+        '<span class="jd-pill-l">' + esc(o.label) + '</span>' +
+        (o.description
+          ? '<span class="jd-pill-d">' + esc(o.description) + '</span>' : '') +
+        '</label>';
+    });
+    return h + '</div>';
+  }
+  function ratePanel(slot) {
+    var r = work.ratings[slot];
+    var grades = byRankDesc(tax().grades).map(function (g) {
+      return { value: g.rank, label: g.label || g.id, description: g.description };
+    });
+    grades.push({ value: '', label: 'skip' });
+    var h = '<section class="jd-turn-panel">' +
+      '<h3 class="jd-turn-sub">Response ' + slot.toUpperCase() + '</h3>' +
+      plate(slot, { small: true }) +
+      '<p class="jd-turn-label">overall grade</p>' +
+      pillRow('jd-g-' + slot, 'overall grade for response ' + slot.toUpperCase(),
+        grades, r.grade, ' data-role="grade" data-slot="' + slot + '"');
+    liveAxes().forEach(function (ax) {
+      var opts = byRankDesc(ax.values).map(function (v) {
+        return { value: v.rank, label: v.label || v.id, description: v.description };
+      });
+      opts.push({ value: '', label: 'skip' });
+      h += '<p class="jd-turn-label" title="' + esc(ax.description || '') + '">' +
+        esc(ax.label || ax.id) + '</p>' +
+        pillRow('jd-a-' + slot + '-' + ax.id,
+          (ax.label || ax.id) + ' for response ' + slot.toUpperCase(),
+          opts, r.axes[ax.id], ' data-role="axis" data-slot="' + slot +
+          '" data-axis="' + esc(ax.id) + '"') +
+        '<input type="text" class="jd-turn-input jd-turn-note" ' +
+        'maxlength="' + MAX_NOTE + '" placeholder="a note, if you have one" ' +
+        'aria-label="note on ' + esc(ax.label || ax.id) + ' for response ' +
+        slot.toUpperCase() + '" data-role="note" data-slot="' + slot +
+        '" data-axis="' + esc(ax.id) + '" value="' + esc(r.notes[ax.id] || '') + '">';
+    });
+    /* the report path (APP §4.6), at its smallest honest size. The note is in
+       the DOM from the start and merely hidden: rate is the one long scrolling
+       state, and re-rendering it to reveal a field would throw the visitor
+       back to the top of the survey with focus on the close button. `hidden`
+       also keeps it out of focusables(), so the tab order matches what is
+       actually on screen. */
+    h += '<label class="jd-turn-check jd-turn-flag">' +
+      '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
+      (r.flag ? ' checked' : '') + '>' +
+      '<span>this response is broken or offensive</span></label>' +
+      '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
+      '<input type="text" class="jd-turn-input jd-turn-note" maxlength="' +
+      MAX_NOTE + '" placeholder="what is wrong with it?" ' +
+      'aria-label="note on the report for response ' + slot.toUpperCase() +
+      '" data-role="flagnote" data-slot="' + slot + '" value="' +
+      esc(r.flagNote || '') + '"></div>';
+    return h + '</section>';
+  }
+  function viewRate() {
+    var ok = okSlots();
+    var two = ok.length > 1;
+    return head('Grade what came back') +
+      '<p class="jd-turn-copy">All of it is optional — skip anything that ' +
+      'doesn’t apply. The scale is the drawer’s own.</p>' +
+      ok.map(ratePanel).join('') +
+      actions('<button type="button" class="jd-turn-go" data-act="' +
+        (two ? 'compare' : 'file') + '">' +
+        (two ? 'next' : 'file the grades') + '</button>');
+  }
+
+  /* ---------- 6. compare --------------------------------------------------- */
+  function viewCompare() {
+    var opts = [
+      { value: 'a', label: 'A' },
+      { value: 'b', label: 'B' },
+      { value: 'tie', label: 'a tie' }
+    ];
+    return head('Which belongs in the drawer?') +
+      '<div class="jd-turn-plates">' +
+      okSlots().map(function (s) { return plate(s); }).join('') + '</div>' +
+      pillRow('jd-winner', 'which response belongs in the drawer', opts,
+        work.winner, ' data-role="winner"') +
+      actions('<button type="button" class="jd-turn-go" data-act="file"' +
+        (work.winner ? '' : ' disabled') + '>file it</button>');
+  }
+
+  /* ---------- 7. unveil ---------------------------------------------------- */
+  function revealFor(slot) {
+    var list = (work.reveal || []);
+    for (var i = 0; i < list.length; i++) if (list[i].slot === slot) return list[i];
+    return null;
+  }
+  function viewUnveil() {
+    var lines = (work.reveal || []).map(function (r) {
+      var who = esc(r.label || r.model_id || '');
+      var vendor = r.vendor ? ' <span class="jd-turn-dim">(' + esc(r.vendor) + ')</span>' : '';
+      var fate = r.status && r.status !== 'ok'
+        ? ' <span class="jd-turn-dim">— didn’t survive</span>' : '';
+      return '<li><b>' + esc((r.slot || '').toUpperCase()) + '</b> was ' +
+        who + vendor + fate + '</li>';
+    }).join('');
+    var h = head('Who drew what') + '<ul class="jd-turn-reveal">' + lines + '</ul>';
+    if (work.winner === 'tie' && !work.kept) {
+      h += '<p class="jd-turn-copy">A tie is filed as a tie. Keep one for your ' +
+        'own drawer anyway?</p>' +
+        pillRow('jd-keep', 'which drawing to keep', [
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+          { value: '', label: 'neither' }
+        ], work.keep, ' data-role="keep"') +
+        actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
+    } else {
+      h += '<p class="jd-turn-copy">' + (work.placed
+        ? 'It’s in the drawer — yours only, tagged as such. Dig it out ' +
+          'and the specimen tag knows whose it is.'
+        : 'Nothing kept. The grades are filed all the same.') + '</p>' +
+        actions('<button type="button" class="jd-turn-go" data-act="done">done</button>');
+    }
+    return h;
+  }
+
+  /* ---------- the failure end ---------------------------------------------- */
+  function viewApology() {
+    return head('Nothing came back') +
+      '<p class="jd-turn-copy">' + esc(work && work.notice
+        ? work.notice
+        : 'Both machines failed. This cost you nothing — the drawer will try ' +
+          'again whenever you like.') + '</p>' +
+      actions('<button type="button" class="jd-turn-go" data-act="again">try again</button>' +
+        '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
+  }
+
+  /* The heading is the landing place for every state that has no field of its
+     own to fill in (C5.8): moving through the flow should read as the step you
+     just reached, not as the dismiss control that happens to come first in the
+     DOM. tabindex="-1" makes it focusable without adding a tab stop. States
+     that DO have a field (consent, prompt) pass noFocus and keep it. */
+  function head(t, noFocus) {
+    stateTitle = t;
+    return '<h2 class="jd-turn-title" tabindex="-1"' +
+      (noFocus ? '' : ' data-autofocus') + '>' + esc(t) + '</h2>';
+  }
+  function actions(inner) { return '<div class="jd-turn-actions">' + inner + '</div>'; }
+
+  /* ---------- input plumbing ---------------------------------------------- */
+  function onChange(e) {
+    var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
+    if (!role) return;
+    if (t.type === 'radio') {
+      var row = t.closest('.jd-pillrow');
+      if (row) {
+        Array.prototype.forEach.call(row.querySelectorAll('.jd-pill'), function (p) {
+          var input = p.querySelector('input');
+          p.classList.toggle('is-on', !!(input && input.checked));
+        });
+      }
+      JD_haptic('select');
+    }
+    var slot = t.getAttribute('data-slot');
+    var val = t.value === '' ? null : t.value;
+    if (role === 'consent') {
+      work = work || blankWork();
+      work.consented = t.checked;
+      setDisabled('[data-act="consent"]', !t.checked);
+    } else if (role === 'grade') {
+      work.ratings[slot].grade = val == null ? null : Number(val);
+    } else if (role === 'axis') {
+      work.ratings[slot].axes[t.getAttribute('data-axis')] =
+        val == null ? null : Number(val);
+    } else if (role === 'flag') {
+      work.ratings[slot].flag = t.checked;
+      /* mutate in place — see ratePanel */
+      var fn = bodyEl.querySelector('[data-flagnote="' + slot + '"]');
+      if (fn) fn.hidden = !t.checked;
+    } else if (role === 'winner') {
+      work.winner = val;
+      setDisabled('[data-act="file"]', !val);
+    } else if (role === 'keep') {
+      work.keep = val;
+    }
+  }
+  function onInput(e) {
+    var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
+    if (!role) return;
+    if (role === 'prompt') {
+      work = work || blankWork();
+      work.prompt = t.value;
+      var n = t.value.length;
+      var c = bodyEl.querySelector('.jd-turn-count');
+      if (c) {
+        c.textContent = n + ' / ' + MAX_PROMPT;
+        c.classList.toggle('is-over', n > MAX_PROMPT);
+      }
+      setDisabled('[data-act="generate"]',
+        !(t.value.trim().length && n <= MAX_PROMPT));
+    } else if (role === 'note') {
+      work.ratings[t.getAttribute('data-slot')].notes[t.getAttribute('data-axis')] =
+        t.value.slice(0, MAX_NOTE);
+    } else if (role === 'flagnote') {
+      work.ratings[t.getAttribute('data-slot')].flagNote = t.value.slice(0, MAX_NOTE);
+    }
+  }
+  function setDisabled(sel, off) {
+    var b = bodyEl.querySelector(sel);
+    if (b) b.disabled = !!off;
+  }
+  function onClick(e) {
+    var b = e.target.closest ? e.target.closest('[data-act]') : null;
+    if (!b || b.disabled) return;
+    var act = b.getAttribute('data-act');
+    if (act === 'consent') {
+      JD_store.set(K_CONSENT, {
+        version: JD_CONSENT.version, at: new Date().toISOString()
+      });
+      go('prompt');
+    } else if (act === 'generate') {
+      startTurn();
+    } else if (act === 'rate') {
+      ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
+    } else if (act === 'compare') {
+      go('compare');
+    } else if (act === 'file') {
+      submitRatings();
+    } else if (act === 'keep') {
+      if (work.keep) placeWinner(work.keep);
+      work.kept = true;
+      render();
+    } else if (act === 'again') {
+      clearTurn();
+      work = blankWork();
+      go('prompt');
+    } else if (act === 'done') {
+      clearTurn();
+      close();
+    } else if (act === 'retry-file') {
+      submitRatings();
+    }
+  }
+
+  function blankWork() {
+    return {
+      prompt: '', consented: hasConsent(), notice: '', slow: false,
+      slots: { a: { status: 'pending' }, b: { status: 'pending' } },
+      ratings: { a: blankRating(), b: blankRating() },
+      winner: null, keep: null, kept: false, placed: false, reveal: null
+    };
+  }
+  function blankRating() {
+    return { grade: null, axes: {}, notes: {}, flag: false, flagNote: '' };
+  }
+
+  /* ---------- generating: two parallel calls, one shared client_ref -------- */
+  function startTurn() {
+    var text = (work && work.prompt) || '';
+    if (!text.trim().length || text.length > MAX_PROMPT) return;
+    var hp = bodyEl.querySelector('[data-role="hp"]');
+    var honey = hp ? hp.value : '';
+    var mine = ++token;
+    /* the recoverability handle is minted and PERSISTED before either fetch
+       leaves (APP §4.11): PHP cannot stream a partial answer, so a killed
+       request is recovered by re-sending the same ref, never by a server id
+       we never received */
+    turn = {
+      client_ref: uuid(), state: 'generating', submission_id: null,
+      slots: { a: { status: 'pending' }, b: { status: 'pending' } }
+    };
+    persist();
+    work.slow = false;
+    work.notice = '';
+    work.slots = { a: { status: 'pending' }, b: { status: 'pending' } };
+    go('generating');
+    startSlowTimer();
+    JD_track('turn_submit', null);
+    ['a', 'b'].forEach(function (slot) {
+      /* NO client abort and NO client timeout — the server owns the 90s
+         budget, and a fetch cancelled here would abandon a generation the
+         server is still paying for (C5.4) */
+      fetch(JD_API + API_GEN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_ref: turn.client_ref,
+          slot: slot,
+          prompt: text,
+          client: JD_CLIENT,
+          consent: { version: JD_CONSENT.version },
+          website: honey
+        })
+      }).then(function (r) {
+        return r.json().then(function (j) { return j; },
+          function () { return { ok: false, error: { code: 'server_error' } }; });
+      }).then(function (j) {
+        settleSlot(mine, slot, j);
+      }, function () {
+        settleSlot(mine, slot, { ok: false, error: { code: 'network' } });
+      });
+    });
+  }
+
+  /* each slot lands on its own — the UI never waits for the pair */
+  function settleSlot(mine, slot, res) {
+    if (mine !== token || !work || !turn) return;
+    if (res && res.ok && res.svg) {
+      work.slots[slot] = { status: 'ok', gen_id: res.gen_id, svg: res.svg };
+      turn.slots[slot] = { status: 'ok', gen_id: res.gen_id };
+      if (res.submission_id) turn.submission_id = res.submission_id;
+    } else {
+      var err = (res && res.error) || {};
+      work.slots[slot] = {
+        status: 'failed', code: err.code || 'server_error',
+        message: err.message || '', retry_after: res && res.retry_after
+      };
+      turn.slots[slot] = { status: 'failed' };
+      if (res && res.submission_id) turn.submission_id = res.submission_id;
+      JD_track('turn_error', err.code || 'server_error');
+    }
+    persist();
+    paintSlots();
+    if (work.slots.a.status === 'pending' || work.slots.b.status === 'pending') return;
+    stopSlowTimer();
+    if (okSlots().length) { go('reveal'); return; }
+    /* nothing survived: a limit refusal goes back to the brief with honest
+       copy (no submission was created), anything else is an apology */
+    var codes = ['a', 'b'].map(function (s) { return work.slots[s].code; });
+    var limited = codes.filter(function (c) {
+      return c === 'rate_limited' || c === 'drawer_resting';
+    })[0];
+    if (limited) {
+      var wait = work.slots.a.retry_after || work.slots.b.retry_after;
+      var notice = limited === 'drawer_resting'
+        ? 'the drawer is resting — it has drawn all it can today. come back ' +
+          'tomorrow.'
+        : 'you’ve had a few turns already. the drawer will take another ' +
+          'in about ' + humanWait(wait) + '.';
+      var draft = work.prompt;
+      clearTurn();                 /* no submission was created — nothing to keep */
+      work = blankWork();
+      work.prompt = draft;
+      work.notice = notice;
+      go('prompt');
+      return;
+    }
+    work.notice = codes.indexOf('sanitizer_rejected') !== -1
+      ? 'both machines answered with something the drawer wouldn’t accept ' +
+        '— it rejects rather than repairs. This cost you nothing.'
+      : 'Both machines failed. This cost you nothing — the drawer will try ' +
+        'again whenever you like.';
+    turn.state = 'apology';
+    persist();
+    go('apology');
+  }
+
+  /* ---------- filing: one batch, then the only unveil ---------------------- */
+  function submitRatings() {
+    if (!turn || !turn.submission_id) { go('apology'); return; }
+    var ratings = [];
+    okSlots().forEach(function (slot) {
+      var gen = work.slots[slot].gen_id, r = work.ratings[slot];
+      if (!gen) return;
+      if (r.grade != null) ratings.push({ gen_id: gen, kind: 'grade', value: r.grade });
+      Object.keys(r.axes).forEach(function (axisId) {
+        if (r.axes[axisId] == null) return;
+        var row = { gen_id: gen, kind: 'axis', axis_id: axisId, value: r.axes[axisId] };
+        if (r.notes[axisId]) row.note = r.notes[axisId].slice(0, MAX_NOTE);
+        ratings.push(row);
+      });
+      if (r.flag) {
+        var f = { gen_id: gen, kind: 'flag' };
+        if (r.flagNote) f.note = r.flagNote.slice(0, MAX_NOTE);
+        ratings.push(f);
+      }
+    });
+    /* a comparison is legal as null ONLY in the degraded one-slot path */
+    var body = {
+      submission_id: turn.submission_id,
+      client: JD_CLIENT,
+      ratings: ratings,
+      comparison: okSlots().length > 1 ? { winner: work.winner } : null
+    };
+    setDisabled('[data-act="file"]', true);
+    setDisabled('[data-act="retry-file"]', true);
+    /* same guard as a generation (C5.4): the filing is not aborted when the
+       turn is abandoned, so its answer has to identify the turn it belongs
+       to or it lands on whatever turn is live when it arrives */
+    var mine = token;
+    fetch(JD_API + API_RATE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().then(function (j) { return j; },
+        function () { return { ok: false, error: { code: 'server_error' } }; });
+    }).then(function (j) { onFiled(mine, j); }, function () {
+      onFiled(mine, { ok: false, error: { code: 'network' } });
+    });
+  }
+  function onFiled(mine, res) {
+    if (mine !== token || !isOpen || !work) return;
+    if (!res || !res.ok) {
+      var code = ((res || {}).error || {}).code || 'server_error';
+      JD_track('turn_error', code);
+      paint(head('The grades didn’t file') +
+        '<p class="jd-turn-copy">The drawer couldn’t record them ' +
+        '(' + esc(code) + '). Nothing was written — the whole batch goes ' +
+        'together or not at all.</p>' +
+        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
+          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
+      focusFirst();
+      return;
+    }
+    work.reveal = res.reveal || [];
+    var ok = okSlots();
+    JD_track('turn_complete', ok.length > 1 ? (work.winner || 'tie') : 'degraded');
+    /* the winner is placed from the reveal payload — a degraded turn keeps
+       its survivor, a tie asks the visitor (a purely local choice) */
+    if (ok.length === 1) placeWinner(ok[0]);
+    else if (work.winner === 'a' || work.winner === 'b') placeWinner(work.winner);
+    go('unveil');
+  }
+
+  /* ---------- the won item joins the pile (C5.3 / C5.4 step 7) ------------- */
+  function placeWinner(slot) {
+    var s = work.slots[slot];
+    if (!s || s.status !== 'ok' || !s.svg) return;
+    var rv = revealFor(slot) || {};
+    var r = work.ratings[slot];
+    var annotations = {};
+    Object.keys(r.axes).forEach(function (axisId) {
+      if (r.axes[axisId] == null) return;
+      annotations[axisId] = r.notes[axisId]
+        ? { value: r.axes[axisId], note: r.notes[axisId] }
+        : r.axes[axisId];
+    });
+    var rec = {
+      gen_id: s.gen_id,
+      submission_id: turn.submission_id,
+      svg: s.svg,
+      prompt: work.prompt,
+      model_id: rv.model_id || '',
+      label: rv.label || '',
+      won_at: new Date().toISOString(),
+      /* additive to the C5.3 shape: the visitor's own filing, so a restored
+         item's specimen tag and report card still state what they graded */
+      grade: r.grade,
+      annotations: annotations
+    };
+    var list = JD_store.get(K_ITEMS) || [];
+    list = [rec].concat(list.filter(function (x) { return x.gen_id !== rec.gen_id; }));
+    if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
+    /* one 300KB SVG × 5 is the worst case; on a quota refusal drop the oldest
+       and try once more, then give up — the item still shows this page-load */
+    if (!JD_store.set(K_ITEMS, list) && list.length > 1) {
+      JD_store.set(K_ITEMS, list.slice(0, list.length - 1));
+    }
+    work.placed = !!dropIntoPile(rec, true);
+  }
+
+  /* the taxonomy-derived half of a won item's specimen tag. Split out because
+     a restored item may exist before the payload does: it is placed with these
+     fields blank and they are filled in when the drawer's data arrives. */
+  function labelItem(el, rec) {
+    var grade = window.JD_gradeOf(tax(), rec.grade);
+    el.dataset.grade = grade ? grade.label : '';
+    el.dataset.rank = grade ? grade.rank : '';
+    el.dataset.steps = (tax().grades || []).length || 5;
+    el.dataset.size = window.JD_sizeLabel(tax(), { sizeClass: VISITOR_TIER }) || '';
+  }
+
+  function dropIntoPile(rec, animate) {
+    var pile = document.querySelector('.jd-pile');
+    if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
+    if (pile.querySelector('[data-id="' + rec.gen_id + '"]')) return null;
+    var title = shortTitle(rec.prompt);
+    var el = document.createElement('div');
+    el.className = 'jd-item jd-item--visitor';
+    el.dataset.id = rec.gen_id;
+    el.dataset.scale = 1;
+    el.dataset.title = title;
+    el.dataset.model = rec.label || '';
+    el.dataset.process = 'ONE-SHOT';
+    el.dataset.date = String(rec.won_at || '').slice(0, 10);
+    el.dataset.url = svgDataUrl(rec.svg);
+    el.dataset.visitor = JD_STRINGS.visitorTag;
+    el.setAttribute('role', 'img');
+    el.setAttribute('aria-label', title);
+    labelItem(el, rec);
+    /* the same id-namespacing discipline as a curated item — non-negotiable
+       for any SVG that did not come from this repo (APP §4.12) */
+    el.innerHTML = window.JD_svgInst(rec.svg, 'juw' + (instSeq++) + '_');
+    pile.appendChild(el);
+    if (window.JD_applySize) {
+      window.JD_applySize(el, tierBox(VISITOR_TIER), rec.gen_id, 1);
+    }
+    /* position: the visitor's own scatter entry, reused across reloads the
+       way every other item's is */
+    var map = JD_store.get(K_SCATTER) || {};
+    var p = map[rec.gen_id];
+    if (!p) {
+      p = freshSpot(el, pile);
+      map[rec.gen_id] = p;
+      JD_store.set(K_SCATTER, map);
+    }
+    el.style.left = (p.x * 100) + '%';
+    el.style.top = (p.y * 100) + '%';
+    el.style.setProperty('--rot', p.rot + 'deg');
+    el.style.zIndex = p.z || 100;
+    if (animate) {
+      el.classList.add('is-dropped');
+      JD_haptic('drop');
+    }
+    /* it is a standard .jd-item from here: drag, rotate, tap-to-pick and the
+       specimen tag all bind through the ordinary wiring, no special case */
+    if (window.JD_wirePile) window.JD_wirePile();
+    registerRecord(rec, title);
+    return el;
+  }
+
+  function freshSpot(el, pile) {
+    var host = pile.getBoundingClientRect(), r = el.getBoundingClientRect();
+    var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
+    var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
+    function inside(half) {
+      var lo = half + 0.012, span = Math.max(0, 1 - 2 * lo);
+      return +(lo + Math.random() * span).toFixed(4);
+    }
+    return {
+      x: inside(hw), y: inside(hh),
+      rot: +((Math.random() * 2 - 1) * ROT_MAX).toFixed(1),
+      z: 100
+    };
+  }
+
+  /* The report card renders entirely from the payload, so a won item earns a
+     real one by being filed as an entry: its own prompt, its model, and the
+     grades the visitor just gave it. Without this the specimen tag's REPORT
+     CARD button would be a dead control on visitor items — and the tag is
+     shared gesture code we are not allowed to special-case. */
+  function registerRecord(rec, title) {
+    if (!payload || !payload.items || !window.JD_record) return;
+    if (byId(payload.items, rec.gen_id)) return;
+    var file = rec.gen_id + '.svg';
+    var day = String(rec.won_at || '').slice(0, 10);
+    payload.items.unshift({
+      id: rec.gen_id, title: title, prompt: rec.prompt, created: day,
+      visitor: true, sizeClass: VISITOR_TIER, primary: 'r1',
+      responses: [{
+        rid: 'r1', file: file, model: rec.model_id, date: day,
+        generation: { mode: 'one-shot', prompt_count: 1 },
+        grade: rec.grade, annotations: rec.annotations || {},
+        /* a data: URL, and the ONLY thing the card may do with it is hang it
+           off the download link — `visitor: true` above stops ensureSVGs from
+           ever treating it as a path to join to JD_API (APP §4.1); the SVG
+           text itself is primed into the cache below */
+        url: svgDataUrl(rec.svg), transcript_url: null
+      }]
+    });
+    var primed = {};
+    primed[rec.gen_id + '/' + file] = rec.svg;
+    window.JD_record.setData(payload, primed);
+  }
+
+  /* page load: the visitor's won items go back where they were (C5.4 step 8).
+     Stored records carry their own SVG, so this needs nothing from the server
+     — it runs whether or not data.php answered. */
+  function storedWon() {
+    var list = JD_store.get(K_ITEMS);
+    return (list && list.length) ? list : [];
+  }
+  function restoreWon() {
+    /* oldest first, so the newest ends up nearest the top of the pile */
+    storedWon().slice().reverse().forEach(function (rec) {
+      if (rec && rec.gen_id && rec.svg) dropIntoPile(rec, false);
+    });
+  }
+  /* the payload arrived after the items were already down: fill in the tag
+     strings that only the taxonomy can supply, and file the report cards */
+  function hydrateWon() {
+    var pile = document.querySelector('.jd-pile');
+    storedWon().forEach(function (rec) {
+      if (!rec || !rec.gen_id) return;
+      var el = pile && pile.querySelector('[data-id="' + rec.gen_id + '"]');
+      if (!el) return;                /* not in the drawer, so no card for it */
+      labelItem(el, rec);
+      registerRecord(rec, shortTitle(rec.prompt));
+    });
+  }
+
+  /* ---------- the button --------------------------------------------------- */
+  var label = btn.querySelector('.jd-turn-slip');
+  if (label) label.textContent = JD_STRINGS.turnButton;
+  btn.setAttribute('aria-label', JD_STRINGS.turnButton);
+  btn.classList.add('is-ready');
+  btn.addEventListener('click', function () {
+    JD_haptic('select');
+    if (!work) work = blankWork();
+    open();
+  });
+
+  /* ---------- init (C5.4 step 8) ------------------------------------------ */
+  /* A turn left in flight by a PREVIOUS page life is discarded here rather
+     than at first open: it is dead the moment the page it belonged to went
+     away, and a visitor who never opens the modal should not be carrying it.
+     (The reserved read endpoint, C1.4, is the future recovery path.) */
+  JD_store.remove(K_TURN);
+  /* the won items go back into the drawer now, on the visitor's own stored
+     copies — the payload is not a precondition (see setData) */
+  restored = true;
+  restoreWon();
+
+  window.JD_turn = {
+    setData: setData,
+    open: open,
+    close: close,
+    isOpen: function () { return isOpen; }
   };
 })();

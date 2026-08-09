@@ -13,7 +13,7 @@ include 'includes/header.php';
 
             <div class="prose-flow">
                 <p><strong>Effective date:</strong> June 16, 2026<br>
-                    <strong>Last updated:</strong> June 16, 2026
+                    <strong>Last updated:</strong> August 9, 2026
                 </p>
 
                 <p>This site, Municipal Sky (&ldquo;the site,&rdquo; &ldquo;I,&rdquo; &ldquo;me&rdquo;), is a
@@ -22,8 +22,9 @@ include 'includes/header.php';
                     <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>.
                 </p>
 
-                <p>The site is largely static. Two features collect personal information: the
-                    <strong>Onomatopoeia Bot</strong> and the <strong>email signup</strong> in the footer. A separate,
+                <p>The site is largely static. Three features collect personal information: the
+                    <strong>Onomatopoeia Bot</strong>, the <strong>email signup</strong> in the footer, and
+                    <strong>The Junk Drawer</strong> when you take a turn and describe an object for it. A separate,
                     anonymous usage counter is described below.
                 </p>
 
@@ -90,19 +91,69 @@ include 'includes/header.php';
                 <p>I also rely on my <strong>hosting provider</strong> to store data and serve the site. I don&rsquo;t
                     otherwise share your information with third parties, except where required by law.</p>
 
-                <h2>4. Legal basis (for EU/UK/EEA users)</h2>
+                <h2>4. The Junk Drawer &mdash; taking a turn</h2>
+                <p>The Junk Drawer lets you describe an object and have two different AI models each draw it. Before
+                    your first turn, the page shows you this and asks you to agree to it:</p>
+                <blockquote>
+                    <p>When you take a turn, the words you type are sent to two AI providers &mdash; Anthropic (Claude)
+                        and OpenAI (GPT) &mdash; which each draw an object from them. Your prompt, the drawings that come
+                        back, your ratings, and an anonymous daily-rotating visitor code are stored so the results can be
+                        studied and the feature kept honest. Nothing you type here is shown to other visitors.</p>
+                </blockquote>
+
+                <p><strong>What is stored, in the categories app stores use:</strong></p>
+                <ul>
+                    <li><strong>User Content</strong> &mdash; the prompt text you type, stored exactly as you wrote it,
+                        and the SVG drawings the two models return.</li>
+                    <li><strong>Usage Data</strong> &mdash; your ratings: the overall grade and any per-axis annotations
+                        you choose to give each drawing, any short notes you attach, whether you flagged a drawing as
+                        broken or offensive, and which of the two drawings you preferred (or that you called it a tie).
+                    </li>
+                    <li><strong>Identifiers</strong> &mdash; an <strong>anonymous, daily-rotating visitor code</strong>.
+                        It is a one-way hash of your IP address mixed with a secret value and today&rsquo;s date. Your
+                        raw IP address is <strong>not</strong> stored with your turn. Because the date is part of it,
+                        the code changes every day at midnight UTC: it can group one visitor&rsquo;s turns within a
+                        single day &mdash; which is how the daily limits work &mdash; and it cannot be used to follow
+                        you from one day to the next.</li>
+                    <li><strong>Diagnostics</strong> &mdash; which model drew which side, the exact model version and
+                        settings used, how long each drawing took, the provider&rsquo;s token counts, and whether the
+                        drawing arrived cleanly, failed, or was refused by the site&rsquo;s safety check on generated
+                        images.</li>
+                </ul>
+
+                <p><strong>Who receives your prompt:</strong> the words you type are sent to
+                    <strong>Anthropic (Claude)</strong> and <strong>OpenAI (GPT)</strong> &mdash; both named in section 3
+                    above, with links to their privacy policies &mdash; and to nobody else. As with the bot,
+                    <strong>please don&rsquo;t type personal, sensitive, or confidential information into it.</strong>
+                </p>
+
+                <p><strong>What stays on your device:</strong> your agreement to the disclosure above, the turn you have
+                    in progress, and the drawings you keep are held in your browser&rsquo;s own session storage. That is
+                    local to your device and is not sent to me. <strong>Drawings made from visitor prompts are never
+                        shown to other visitors</strong> &mdash; the ones you keep appear only in your own copy of the
+                    drawer.</p>
+
+                <p><strong>Why it is kept and for how long:</strong> the point of the feature is comparing how different
+                    AI models draw the same brief, so prompts, drawings, ratings, and preferences are kept
+                    <strong>indefinitely</strong> as research data, including the ones where a model failed or produced
+                    something unusable. To ask for yours to be deleted, email
+                    <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a>; because no account and no lasting
+                    identifier is stored, please include the approximate date and time you took the turn and roughly
+                    what you typed, so I can find it.</p>
+
+                <h2>5. Legal basis (for EU/UK/EEA users)</h2>
                 <p>Where the GDPR or UK GDPR applies, I process this information on the basis of <strong>legitimate
                         interests</strong> &mdash; operating and improving a small creative tool &mdash; balanced
                     against your rights. For <strong>email updates</strong>, I rely on your <strong>consent</strong>,
                     which you give by submitting the signup form and can withdraw at any time by unsubscribing.</p>
 
-                <h2>5. Data retention</h2>
+                <h2>6. Data retention</h2>
                 <p>I keep bot submissions and feedback <strong>indefinitely</strong> for the project&rsquo;s research
                     purposes. If you subscribe to email updates, I keep your email address until you unsubscribe.
                     Anonymous usage counts may also be kept indefinitely, as they identify no one. You can ask me to
                     delete data associated with you at any time (see &ldquo;Your rights&rdquo; below).</p>
 
-                <h2>6. Your rights</h2>
+                <h2>7. Your rights</h2>
                 <p>Depending on where you live (e.g., the EU/UK under GDPR, or California under the CCPA), you may have
                     the right to <strong>access, correct, delete, or restrict</strong> the information I hold about you,
                     to <strong>object to</strong> processing, and to <strong>data portability</strong>. California
@@ -114,23 +165,23 @@ include 'includes/header.php';
                         updates</strong>, email me and I will remove your address promptly. EU/UK users also have the
                     right to lodge a complaint with their local data protection authority.</p>
 
-                <h2>7. International users</h2>
+                <h2>8. International users</h2>
                 <p>The site is operated in the United States and information is processed and stored there. If you use
                     the site from outside the U.S., you consent to that transfer.</p>
 
-                <h2>8. Children</h2>
+                <h2>9. Children</h2>
                 <p>The site is not directed to children under 13, and I do not knowingly collect information from
                     them.</p>
 
-                <h2>9. &ldquo;Do Not Track&rdquo;</h2>
+                <h2>10. &ldquo;Do Not Track&rdquo;</h2>
                 <p>The site does not track users across third-party websites, so it does not respond to browser
                     &ldquo;Do Not Track&rdquo; signals.</p>
 
-                <h2>10. Changes to this policy</h2>
+                <h2>11. Changes to this policy</h2>
                 <p>I may update this policy from time to time. The &ldquo;Last updated&rdquo; date above reflects the
                     latest version.</p>
 
-                <h2>11. Contact</h2>
+                <h2>12. Contact</h2>
                 <p>Municipal Sky &mdash; <a href="mailto:tysonwelsh@gmail.com">tysonwelsh@gmail.com</a></p>
             </div>
         </div>
