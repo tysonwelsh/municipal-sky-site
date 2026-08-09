@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="Orange poppy in a mason jar, corporate Memphis style">
+  <!-- background abstract blobs (transparent canvas, shapes reach edges) -->
+  <path d="M-10 120 C 80 20, 220 -10, 300 60 C 380 130, 300 220, 190 230 C 80 240, -60 220, -10 120 Z" fill="#FDE7C8"/>
+  <path d="M610 640 C 520 560, 380 580, 360 680 C 340 780, 460 820, 560 800 C 640 780, 660 690, 610 640 Z" fill="#D9E8F5"/>
+  <path d="M610 60 C 560 10, 460 0, 430 70 C 400 140, 470 200, 550 180 C 620 160, 650 100, 610 60 Z" fill="#CDEBDD"/>
+  <path d="M-20 700 C 40 630, 170 640, 190 720 C 210 800, 90 830, 10 800 C -50 775, -60 745, -20 700 Z" fill="#FBD9D3"/>
+
+  <!-- squiggles and confetti -->
+  <path d="M40 300 q 25 -30 50 0 t 50 0 t 50 0" fill="none" stroke="#F2A65A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M470 340 q 22 -26 44 0 t 44 0" fill="none" stroke="#6FB98F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M420 760 q 22 -26 44 0 t 44 0" fill="none" stroke="#E8846B" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="60" cy="480" r="16" fill="#F5B841"/>
+  <circle cx="540" cy="470" r="14" fill="#7BAFD4"/>
+  <circle cx="510" cy="240" r="10" fill="#E8846B"/>
+  <circle cx="90" cy="620" r="12" fill="#6FB98F"/>
+  <circle cx="330" cy="30" r="12" fill="#F2A65A"/>
+  <rect x="500" y="560" width="26" height="26" rx="7" fill="#F5B841" transform="rotate(20 513 573)"/>
+  <rect x="40" y="60" width="24" height="24" rx="7" fill="#7BAFD4" transform="rotate(-15 52 72)"/>
+  <path d="M120 760 l14 -26 l14 26 Z" fill="#7BAFD4"/>
+  <path d="M470 100 l13 -24 l13 24 Z" fill="#6FB98F"/>
+  <path d="M20 380 a10 10 0 1 1 0.1 0" fill="none" stroke="#E8846B" stroke-width="6"/>
+  <path d="M566 380 a9 9 0 1 1 0.1 0" fill="none" stroke="#F5B841" stroke-width="6"/>
+
+  <!-- big soft arc behind subject -->
+  <circle cx="300" cy="380" r="235" fill="#FFF3E2"/>
+
+  <!-- stem and leaves -->
+  <path d="M300 300 C 292 380, 306 440, 298 520" fill="none" stroke="#4E9B6E" stroke-width="14" stroke-linecap="round"/>
+  <path d="M298 420 C 250 400, 218 410, 196 446 C 232 462, 276 452, 298 420 Z" fill="#6FB98F"/>
+  <path d="M300 470 C 344 452, 378 460, 398 494 C 364 510, 322 500, 300 470 Z" fill="#4E9B6E"/>
+  <!-- side bud -->
+  <path d="M300 360 C 350 340, 388 320, 408 282" fill="none" stroke="#4E9B6E" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="414" cy="270" rx="22" ry="30" fill="#E8846B" transform="rotate(20 414 270)"/>
+  <path d="M400 292 q 14 12 28 0 l -6 -18 q -8 6 -16 0 Z" fill="#6FB98F"/>
+
+  <!-- poppy flower -->
+  <g>
+    <path d="M300 118 C 360 100, 420 130, 428 190 C 434 240, 402 268, 366 272 C 400 296, 404 348, 366 374 C 330 398, 288 386, 270 356 C 246 390, 196 392, 168 360 C 140 328, 150 286, 182 266 C 148 252, 130 210, 148 172 C 168 130, 224 118, 258 140 C 264 126, 280 118, 300 118 Z" fill="#F2662B"/>
+    <path d="M300 150 C 344 140, 384 162, 388 206 C 391 240, 368 260, 340 264 C 366 284, 368 320, 340 338 C 314 354, 284 346, 270 324 C 252 348, 216 348, 196 326 C 176 302, 184 272, 208 258 C 184 246, 172 216, 186 190 C 200 162, 240 154, 264 170 C 268 158, 284 152, 300 150 Z" fill="#F58A4B"/>
+    <!-- dark center -->
+    <circle cx="286" cy="252" r="46" fill="#3B2B45"/>
+    <circle cx="286" cy="252" r="18" fill="#F5B841"/>
+    <!-- stamens -->
+    <g stroke="#3B2B45" stroke-width="5" stroke-linecap="round">
+      <line x1="286" y1="196" x2="286" y2="212"/>
+      <line x1="332" y1="220" x2="320" y2="230"/>
+      <line x1="342" y1="262" x2="326" y2="258"/>
+      <line x1="320" y1="298" x2="312" y2="286"/>
+      <line x1="252" y1="296" x2="260" y2="284"/>
+      <line x1="232" y1="258" x2="248" y2="256"/>
+      <line x1="244" y1="216" x2="254" y2="228"/>
+    </g>
+    <circle cx="286" cy="196" r="6" fill="#F5B841"/>
+    <circle cx="334" cy="218" r="6" fill="#F5B841"/>
+    <circle cx="344" cy="264" r="6" fill="#F5B841"/>
+    <circle cx="322" cy="300" r="6" fill="#F5B841"/>
+    <circle cx="250" cy="298" r="6" fill="#F5B841"/>
+    <circle cx="230" cy="258" r="6" fill="#F5B841"/>
+    <circle cx="242" cy="214" r="6" fill="#F5B841"/>
+  </g>
+
+  <!-- mason jar -->
+  <g>
+    <!-- water -->
+    <path d="M212 560 L388 560 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="#BFE0F0"/>
+    <!-- glass body -->
+    <path d="M212 512 L388 512 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="#DDEFF9" opacity="0.75"/>
+    <path d="M212 512 L388 512 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="none" stroke="#7BAFD4" stroke-width="10" stroke-linejoin="round"/>
+    <!-- lid band -->
+    <rect x="200" y="474" width="200" height="44" rx="14" fill="#F5B841"/>
+    <rect x="200" y="474" width="200" height="44" rx="14" fill="none" stroke="#D99A2B" stroke-width="6"/>
+    <!-- band threads -->
+    <line x1="222" y1="486" x2="378" y2="486" stroke="#D99A2B" stroke-width="5" stroke-linecap="round"/>
+    <line x1="222" y1="504" x2="378" y2="504" stroke="#D99A2B" stroke-width="5" stroke-linecap="round"/>
+    <!-- stem inside jar -->
+    <path d="M298 520 C 294 570, 302 620, 296 668" fill="none" stroke="#4E9B6E" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <!-- glass highlight -->
+    <path d="M240 548 C 236 590, 236 640, 244 686" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+    <!-- water line -->
+    <path d="M220 560 q 20 -10 40 0 t 40 0 t 40 0 t 40 0" fill="none" stroke="#8FCBE8" stroke-width="7" stroke-linecap="round"/>
+    <!-- embossed oval like a mason label -->
+    <ellipse cx="300" cy="632" rx="46" ry="56" fill="none" stroke="#9CC8E4" stroke-width="6"/>
+  </g>
+
+  <!-- ground shadow blob -->
+  <ellipse cx="300" cy="748" rx="150" ry="26" fill="#E7D7C4"/>
+
+  <!-- floating petals -->
+  <path d="M120 180 c 20 -6 34 8 30 26 c -18 8 -34 -6 -30 -26 Z" fill="#F58A4B"/>
+  <path d="M460 420 c 18 -6 32 6 28 24 c -16 8 -32 -6 -28 -24 Z" fill="#F2662B"/>
+  <path d="M96 520 c 16 -6 30 6 26 22 c -16 8 -30 -4 -26 -22 Z" fill="#F58A4B"/>
+</svg>
