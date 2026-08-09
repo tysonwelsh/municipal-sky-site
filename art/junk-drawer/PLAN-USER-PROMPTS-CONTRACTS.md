@@ -970,3 +970,51 @@ moderation queue/admin UI, public display of visitor items, the C1.4
 read endpoint, async/cron generation fallback (schema already supports
 it via `status` if QA's latency measurements force it — that decision
 escalates to the owner, it is not a coder call).
+
+---
+
+## Amendments (post-review, 2026-08-09)
+
+Both critic reviews of the shipped implementation passed with ADVISORY
+findings only. The findings below were adjudicated **ACCEPTED AS IS** —
+they are recorded here so a future reader does not re-litigate them as
+oversights. (The findings that were fixed in code are not listed; they
+are in the diff.)
+
+- **(a) Rate-limit COUNT-then-INSERT TOCTOU** (C1.2 step 7). Two
+  concurrent submissions can both read a count under the limit and both
+  insert. Accepted for v1: the measured overshoot is small and bounded —
+  it costs at most one extra submission per racing pair, and it is
+  bounded the same way in both windows (the per-visitor hourly/daily
+  counts and the global `JD_LIMIT_GLOBAL_DAILY` breaker), so the day's
+  spend cannot run away. A transaction or a counter table is the fix if
+  abuse is ever observed; until then it is not worth the write contention
+  on shared hosting. Revisit only on evidence.
+- **(b) A passing `<style>` element is a document stylesheet** (C3.2 /
+  C3.4). The sanitizer permits `<style>`, and the SVG is inlined into the
+  page, so sanitizer-legal CSS can restyle the visitor's own view of the
+  drawer. Accepted for v1: this is self-defacement and nothing more —
+  C3.4 already denies every fetch (`@import`, `url()`, `image-set()`,
+  `cross-fade()`, bare-string and protocol-relative URLs, backslash
+  escapes), no script can execute, the effect is display-only, and it is
+  session-local to the one visitor who commissioned it (visitor items are
+  never shown to anyone else — see Deferred). Dropping `<style>` would
+  cost real drawings their styling for no attacker gain.
+- **(c) Mobile reveal ships stacked WITHOUT A/B tabs** — an approved
+  deviation from C5.4 step 4, which specified "stacked with A/B tabs".
+  The whole question the state asks is "which of these two", and a tab
+  that hides one of them asks the visitor to hold it in their head; the
+  side-by-side comparison works better stacked. The CSS says so at
+  `@media (max-width: 600px)`.
+- **(d) `xml:base` — closed in code**, not accepted. It is now in
+  `JD_SVG_REF_ATTRS`, so C3.3 rule 4 runs on it and an absolute or
+  protocol-relative base is rejected `external_url`; regression fixture
+  `reject-external_url-xml-base.svg`. Listed here only because it was
+  raised alongside (b).
+- **(e) Stranded `pending` rows have no reaper, by design in v1.** A
+  fatal mid-generation (OOM, timeout kill) leaves a `jd_generations` row
+  at `status='pending'` forever: it counts against the daily budget until
+  UTC midnight rolls the window, and its slot answers `409
+  slot_in_progress` to any retry (C1.2 step 8). No cron, no sweeper — the
+  owner clears it by hand. See the "Clearing a wedged day" note in
+  PLAN-USER-PROMPTS.md §7.

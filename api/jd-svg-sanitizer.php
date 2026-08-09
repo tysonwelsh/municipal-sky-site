@@ -45,7 +45,10 @@ const JD_SVG_ALLOWED_ELEMENTS = [
 
 // C3.3 rule 4 — attributes whose values may legitimately hold a reference,
 // and which therefore must not hold an absolute or protocol-relative one.
-const JD_SVG_REF_ATTRS = ['href', 'src', 'style', 'values', 'from', 'to', 'by'];
+// `base` is xml:base reduced to its local name by jd_svg_attr_name(): it
+// re-roots the resolution of every relative reference in its subtree, so a
+// same-document `#fragment` that passed rule 2 would resolve off-origin.
+const JD_SVG_REF_ATTRS = ['href', 'src', 'style', 'values', 'from', 'to', 'by', 'base'];
 
 // Allowlisted elements whose contents the HTML parser reads as raw text.
 // The stored SVG is inlined with innerHTML, and inside an HTML integration

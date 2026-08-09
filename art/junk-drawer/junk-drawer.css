@@ -1154,7 +1154,18 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   position: fixed; inset: 0; z-index: 322;
   display: none;
   align-items: center; justify-content: center;
-  padding: max(12px, 2vh) 12px;
+  /* The TOP inset reserves the fixed site banner's band. The banner carries
+     z-index 1000 (css/style.css) and this scrim is a stacking context at 322,
+     so the banner paints OVER the card — the same standing condition the
+     record card lives with. It only bites here because `rate` is tall enough
+     to grow the card to the full scrim height: at 1280×900 the card started
+     at y=18 and its ✕ (27–71) sat behind the banner (0–56), where a press
+     reached .site-navigation instead of the close control — the ✕ was dead
+     and a few px either way navigated the visitor off the page mid-turn.
+     Reserving the band keeps the card under the banner without ever putting
+     its chrome there. Bottom keeps the old value, so the card is centred in
+     the space that is actually free. */
+  padding: max(12px, 2vh, calc(var(--banner-h) + 8px)) 12px max(12px, 2vh);
   background: rgba(10, 5, 1, 0.58);
 }
 .jd-turn-scrim.is-on { display: flex; }
@@ -1416,7 +1427,11 @@ html.jd-turn-open { overflow: hidden; }
   /* 16px kills iOS's focus zoom, which would otherwise leave this fixed
      layer parked half off-screen */
   .jd-turn-input { font-size: 16px; }
+  /* immersive mode has slid the banner off the top (see .site-banner above),
+     so the reserved band comes back as ordinary padding — and returns only
+     while the chrome is actually showing */
   .jd-turn-scrim { padding: 10px 8px; }
+  html.jd-chrome .jd-turn-scrim { padding-top: calc(var(--banner-h) + 8px); }
   .jd-turn-scroll { padding: 14px 12px 16px; }
   .jd-turn-title { font-size: 0.74rem; }
   .jd-turn-actions .jd-turn-go, .jd-turn-actions .jd-turn-alt { flex: 1 1 auto; }
@@ -1425,6 +1440,15 @@ html.jd-turn-open { overflow: hidden; }
   /* no room for the screw heads next to the label at this width */
   .jd-turn-brass::before, .jd-turn-brass::after { display: none; }
   .jd-turn-brass { padding: 3px; }
+  /* …and at the 320px floor, no room for the full 6px gutter either. The
+     max-width cap is the pull-collision guarantee and does not bend, so the
+     box gives up padding instead: at 320 the cap computes 93.27px while the
+     plate's min-content border box is 94.78px, and the plate would spill
+     1.5px past the content box into the right gutter. Trimming to 4px buys
+     the 4px the plate is short: the box now shrink-wraps at 90.78px, 2.5px
+     inside its own cap, and the plate's right edge stands 4.5px clear of the
+     bail's ink (was 2.0px). Still far above the 44px touch floor. */
+  .jd-turn-btn { padding: 0 4px; }
 }
 
 /* ---- the visitor's own item, in the pile --------------------------------

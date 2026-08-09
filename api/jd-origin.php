@@ -40,6 +40,9 @@ function jd_require_allowed_origin(): void
         header('Access-Control-Allow-Headers: Content-Type');
         header('Access-Control-Max-Age: 86400');
         header('Vary: Origin');
+        // C1 — Content-Type: application/json on every response, preflight
+        // included, even though a 204 carries no body.
+        header('Content-Type: application/json');
         http_response_code(204);
         exit;
     }

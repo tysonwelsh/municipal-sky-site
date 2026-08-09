@@ -552,9 +552,8 @@ function JD_layerOpen() {
         el.style.zIndex = p.z;
       });
       if (window.JD_wirePile) window.JD_wirePile();
-      /* hand the record module the payload + the primary SVG texts (so a
-         record opens with zero extra requests), then honor a #<id> deep
-         link — loading with a hash opens that item's report card */
+      /* hand the record module the payload + the primary SVG texts, so a
+         record opens with zero extra requests */
       if (window.JD_record) {
         var primaries = {};
         loaded.forEach(function (rec) {
@@ -565,12 +564,21 @@ function JD_layerOpen() {
           primaries[it.id + '/' + pr.file] = rec.svg;
         });
         window.JD_record.setData(payloadRef, primaries);
-        if (location.hash.length > 1) window.JD_record.openFromHash();
       }
       /* the turn modal renders its survey from this same taxonomy, and
          restores any items this visitor has already won into the pile now
          that the curated items are placed and wired (C5.4 step 8) */
       if (window.JD_turn) window.JD_turn.setData(payloadRef);
+      /* ONLY NOW the #<id> deep link. openFromHash resolves the id against
+         payload.items and silently does nothing if it isn't there yet, and
+         the visitor's own won items are appended to that list by the call
+         above — so checking the hash first meant a reload on #<gen_id> never
+         opened the card and left the stale hash sitting in the URL. Curated
+         ids are in the payload from the fetch and are unaffected by the
+         move; JD_turn.setData is synchronous, so nothing else changes. */
+      if (window.JD_record && location.hash.length > 1) {
+        window.JD_record.openFromHash();
+      }
     })
     .catch(function (err) {
       fallbackNote();
@@ -635,6 +643,12 @@ function JD_layerOpen() {
       .replace(/"/g, '&quot;');
   }
 
+  /* rank === null draws the ruler with NO manicule: an abstention, not a
+     verdict. The needle has to be absent rather than parked, because a
+     manicule at the first tick is a legible reading — "graded, and graded
+     worst" — and that is the one thing an ungraded specimen must not say.
+     Height and width are unchanged either way so the tag's layout doesn't
+     shift between a graded and an ungraded specimen. */
   function meterSVG(rank, steps) {
     var span = 66, x0 = 2;
     var ticks = '', gap = span / (steps - 1);
@@ -643,13 +657,17 @@ function JD_layerOpen() {
       ticks += '<line x1="' + tx + '" y1="' + (end ? 3.5 : 5) + '" x2="' + tx +
         '" y2="10" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>';
     }
-    var mx = x0 + (rank - 1) * gap;
+    var needle = '';
+    if (rank !== null) {
+      var mx = x0 + (rank - 1) * gap;
+      needle = '<text x="' + mx + '" y="24" text-anchor="middle" font-size="15" ' +
+        'fill="#3a2a12" font-family="inherit">☝︎</text>';
+    }
     return '<svg width="88" height="26" viewBox="-9 0 88 26" role="img" ' +
-      'aria-label="grade ' + rank + ' of ' + steps + '">' +
+      'aria-label="' + (rank === null ? 'not graded'
+        : 'grade ' + rank + ' of ' + steps) + '">' +
       '<line x1="2" y1="7.5" x2="68" y2="7.5" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>' +
-      ticks +
-      '<text x="' + mx + '" y="24" text-anchor="middle" font-size="15" ' +
-      'fill="#3a2a12" font-family="inherit">☝︎</text></svg>';
+      ticks + needle + '</svg>';
   }
 
   /* ---- the red elastic, as an actual elastic (owner request, 2026-08-09) ---
@@ -1237,6 +1255,16 @@ function JD_layerOpen() {
     if (!tag) buildTag();
 
     var d = item.dataset;
+    /* GRADE, three states, read straight off the dataset — one code path for
+       every specimen in the well:
+       · data-rank a number → filed grade, ruler with the manicule on it.
+         Curated items ALWAYS land here: the loader writes a number (0 when
+         the grade doesn't resolve), so their reading is untouched.
+       · data-rank empty → the visitor skipped the grade step, and there is
+         no verdict to show. Blank label + a needle parked at rank 1 read as
+         a filed worst-grade, so it says UNGRADED against a bare ruler.
+       data-card="none" is the other dataset switch: see dropIntoPile. */
+    var ranked = !!d.rank;
     tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));
     tag.innerHTML =
       /* name on its own line(s) — the tag has a fixed width, so a long
@@ -1254,15 +1282,17 @@ function JD_layerOpen() {
         : '') +
       '</span></div>' +
       '<div class="l2"><span class="gradecol">' +
-      '<span class="gradelabel">GRADE: <span class="g">' + esc((d.grade || '').toUpperCase()) + '</span></span>' +
-      meterSVG(+d.rank || 1, +d.steps || 5) +
+      '<span class="gradelabel">GRADE: <span class="g">' +
+      (ranked ? esc((d.grade || '').toUpperCase()) : 'UNGRADED') + '</span></span>' +
+      meterSVG(ranked ? (+d.rank || 1) : null, +d.steps || 5) +
       '</span><span class="btns">' +
       '<a class="btn" href="' + esc(d.url || '') + '" download="' + esc(d.id || '') + '.svg" ' +
       'title="download the SVG as generated">DOWNLOAD<br>SVG ⤓</a>' +
-      '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT<br>CARD →</a>' +
+      (d.card === 'none' ? '' :
+        '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT<br>CARD →</a>') +
       '</span></div>';
     var fr = tag.querySelector('.jd-fullrecord');
-    fr.addEventListener('click', function (e) {
+    if (fr) fr.addEventListener('click', function (e) {
       e.preventDefault();
       if (window.JD_record) window.JD_record.open(d.id);
     });
@@ -2979,7 +3009,14 @@ function JD_layerOpen() {
   function labelItem(el, rec) {
     var grade = window.JD_gradeOf(tax(), rec.grade);
     el.dataset.grade = grade ? grade.label : '';
-    el.dataset.rank = grade ? grade.rank : '';
+    /* data-rank is the tag's graded/ungraded switch (see pick()), so it may
+       be empty ONLY when no grade was filed. Until the taxonomy arrives the
+       grade cannot be NAMED, but grades are filed as the rank number itself,
+       so the raw value stands in — the same fallback the pile loader and the
+       report card already use. Without it a graded item would read UNGRADED
+       for as long as data.php is late, and forever if it never answers. */
+    el.dataset.rank = grade ? grade.rank
+      : (rec.grade == null ? '' : (+rec.grade || ''));
     el.dataset.steps = (tax().grades || []).length || 5;
     el.dataset.size = window.JD_sizeLabel(tax(), { sizeClass: VISITOR_TIER }) || '';
   }
@@ -3029,7 +3066,7 @@ function JD_layerOpen() {
     /* it is a standard .jd-item from here: drag, rotate, tap-to-pick and the
        specimen tag all bind through the ordinary wiring, no special case */
     if (window.JD_wirePile) window.JD_wirePile();
-    registerRecord(rec, title);
+    markCard(el, registerRecord(rec, title));
     return el;
   }
 
@@ -3054,8 +3091,8 @@ function JD_layerOpen() {
      CARD button would be a dead control on visitor items — and the tag is
      shared gesture code we are not allowed to special-case. */
   function registerRecord(rec, title) {
-    if (!payload || !payload.items || !window.JD_record) return;
-    if (byId(payload.items, rec.gen_id)) return;
+    if (!payload || !payload.items || !window.JD_record) return false;
+    if (byId(payload.items, rec.gen_id)) return true;   /* already filed */
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
     payload.items.unshift({
@@ -3075,6 +3112,21 @@ function JD_layerOpen() {
     var primed = {};
     primed[rec.gen_id + '/' + file] = rec.svg;
     window.JD_record.setData(payload, primed);
+    return true;
+  }
+
+  /* …and the tag reads the answer off the item. When data.php never answered
+     there is no entry to render a card from, so REPORT CARD would be a dead
+     control — the tag builder omits the button on data-card="none" and shows
+     DOWNLOAD SVG alone (the stored SVG needs no payload). This is the same
+     declarative dataset switch the tag already uses for SIZE and GRADE: the
+     shared gesture code stays one path with no visitor branch in it. The flag
+     is cleared when a late payload files the entry, so the button appears the
+     next time the item is picked. */
+  function markCard(el, filed) {
+    if (!el) return;
+    if (filed) delete el.dataset.card;
+    else el.dataset.card = 'none';
   }
 
   /* page load: the visitor's won items go back where they were (C5.4 step 8).
@@ -3099,7 +3151,7 @@ function JD_layerOpen() {
       var el = pile && pile.querySelector('[data-id="' + rec.gen_id + '"]');
       if (!el) return;                /* not in the drawer, so no card for it */
       labelItem(el, rec);
-      registerRecord(rec, shortTitle(rec.prompt));
+      markCard(el, registerRecord(rec, shortTitle(rec.prompt)));
     });
   }
 

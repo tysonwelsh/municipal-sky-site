@@ -42,6 +42,15 @@ if ($taxonomy === null) {
     jd_fail(500, 'server_error', 'The rubric could not be read.');
 }
 
+// taxonomy_version is what makes an old rating still mean something, so a
+// taxonomy that cannot say which version it is must not produce rows: a
+// silent 0 in the column would be indistinguishable from a real version.
+$taxonomyVersion = (int) ($taxonomy['version'] ?? 0);
+if ($taxonomyVersion < 1) {
+    error_log('jd-rate: taxonomy.json has no usable version field');
+    jd_fail(500, 'server_error', 'The rubric could not be read.');
+}
+
 $db = null;
 
 try {
@@ -102,8 +111,8 @@ try {
             if (array_key_exists('axis_id', $rating) && $rating['axis_id'] !== null) {
                 jd_fail(400, 'rating_invalid', 'A grade cannot carry an axis_id.');
             }
-            $value = jd_numeric_value($rating['value'] ?? null);
-            if ($value === null || !jd_rank_allowed($value, $gradeRanks)) {
+            $value = jd_rank_on_scale(jd_numeric_value($rating['value'] ?? null), $gradeRanks);
+            if ($value === null) {
                 jd_fail(400, 'rating_invalid', 'That grade is not on the scale.');
             }
             if (isset($seenGrades[$genId])) {
@@ -120,8 +129,8 @@ try {
             if (!is_string($axisId) || !isset($axisRanks[$axisId])) {
                 jd_fail(400, 'rating_invalid', 'That axis is not open for annotation.');
             }
-            $value = jd_numeric_value($rating['value'] ?? null);
-            if ($value === null || !jd_rank_allowed($value, $axisRanks[$axisId])) {
+            $value = jd_rank_on_scale(jd_numeric_value($rating['value'] ?? null), $axisRanks[$axisId]);
+            if ($value === null) {
                 jd_fail(400, 'rating_invalid', 'That value is not on the axis.');
             }
             $seenKey = $genId . '|' . $axisId;
@@ -169,8 +178,8 @@ try {
     }
 
     // --- 5/6. Write the batch atomically ----------------------------------
-    // taxonomy_version is stamped server-side; the client never sends it.
-    $taxonomyVersion = (int) ($taxonomy['version'] ?? 0);
+    // taxonomy_version was read from the server's own copy above; the client
+    // never sends it.
     $visitorHash = msky_visitor_hash(jd_secrets());
     $ratedAt = jd_now();
 
@@ -275,16 +284,21 @@ function jd_numeric_value(mixed $value): ?float
     return null;
 }
 
-// Ranks are filed as decimals; compare on the DECIMAL(3,1) grid the column
-// stores rather than on exact float equality.
-function jd_rank_allowed(float $value, array $ranks): bool
+// Ranks are filed as decimals; match on the DECIMAL(3,1) grid the column
+// stores rather than on exact float equality, and return the TAXONOMY's rank
+// rather than the client's near-miss — what is stored has to sit exactly on
+// the published scale, or a GROUP BY value in the export splits a rank in two.
+function jd_rank_on_scale(?float $value, array $ranks): ?float
 {
+    if ($value === null) {
+        return null;
+    }
     foreach ($ranks as $rank) {
         if (abs($rank - $value) < 0.05) {
-            return true;
+            return $rank;
         }
     }
-    return false;
+    return null;
 }
 
 function jd_clean_note(mixed $note): ?string

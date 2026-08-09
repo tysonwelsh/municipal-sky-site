@@ -106,6 +106,14 @@ comparable, per the skill's own rule):
 
 ---
 
+> **Superseded in detail (2026-08-09):** §§2–4 below are the planning
+> sketch that ARCH consumed. The frozen, binding versions of everything
+> here — endpoint shapes, DDL, sanitizer rules, harness text, modal
+> states — live in **PLAN-USER-PROMPTS-CONTRACTS.md**, and where the two
+> differ the contracts win (e.g. no `temperature` is sent at all, the
+> sanitizer's exact allowlist/reason enum, the consent columns). Kept
+> unrewritten as the record of how the design was reached.
+
 ## 2. Backend design
 
 ### 2.1 Placement and files
@@ -343,6 +351,10 @@ Decisions that cost nothing today and keep the iOS door open:
 
 ## 6. The agent team — roster, models, effort, order
 
+*(Executed as planned, 2026-08-09 — all nine stages ran; both critic
+rounds converged with zero blocking findings; accepted advisories are
+recorded in PLAN-USER-PROMPTS-CONTRACTS.md's Amendments section.)*
+
 Ground rules for every pair: the **coder** implements against this
 plan's contracts; the **critic** reviews the actual diff (not the
 coder's summary), files findings as blocking/non-blocking, and the
@@ -415,12 +427,33 @@ the integrated whole; FINAL reviews everything including the documents.
    (`jd_claude_key`, `jd_openai_key` or second provider of choice) and
    set provider-side spend caps. Until then code falls back to the
    existing keys.
-2. Run `api/setup-jd-tables.php` once on production (then remove or
-   gate it, same as the existing setup scripts).
+2. Add `jd_setup_key` (any long random string) to the same
+   `secrets.php`, then run
+   `https://municipalsky.com/api/setup-jd-tables.php?key=<that value>`
+   once — the script refuses production requests without a matching
+   key. Delete the script after it reports all four tables ok (its
+   header says so too).
 3. Decide the §8 open questions.
 4. Merge to `main` when satisfied — push is deploy.
 5. After launch: watch the provider spend dashboard for the first days;
    the global daily cap (§2.3) is the circuit breaker.
+6. **Clearing a wedged day.** A generation that dies mid-flight (PHP
+   fatal, OOM, the host killing a long request) leaves its
+   `jd_generations` row at `status='pending'` forever — nothing reaps it
+   in v1, by design. Two visible symptoms: the row keeps counting against
+   the day's global budget until UTC midnight rolls the window, and its
+   slot answers `409 slot_in_progress` to every retry, so that one
+   visitor's turn can never finish. If the drawer is "resting" with no
+   spend to show for it, settle the stragglers by hand — anything older
+   than the 90 s provider budget is dead, so a generous cutoff is safe:
+
+   ```sql
+   UPDATE jd_generations SET status = 'failed'
+    WHERE status = 'pending' AND created < '2026-08-09 00:00:00';  -- UTC cutoff, e.g. now − 1h
+   ```
+
+   (Settle to `failed`, never delete: the row is the audit trail, and
+   C1.2 step 8 then re-returns the stored failure instead of the 409.)
 
 ## 8. Owner decisions — DECIDED (2026-08-09, pre-launch)
 
