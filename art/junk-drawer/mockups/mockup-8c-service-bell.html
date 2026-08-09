@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER · MOCKUP 8C · THE SERVICE BELL</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 8C · THE SERVICE BELL
+   Candidate for PLAN-TURN-OBJECT §2 (8c). The turn control becomes a pile
+   item: a chubby chrome counter bell with its plunger, wearing a manila
+   string tag that reads TAKE A TURN in the drawer's own specimen-tag
+   language (aged manila, red cord, typewriter caps).
+
+   THE OBJECT is ONE inline SVG (viewBox 0 0 300 244, transparent, no
+   <script>, no on* handlers, no foreignObject, no external refs, no SMIL).
+   It is written to be lifted straight out of this file as the production
+   pile asset. Every moving part is a NAMED GROUP that the page's CSS drives:
+       .sb-plunger      — taps down and squashes (origin 134,74 = collar)
+       .sb-dome         — the shiver, rotating about its seat (134,204)
+       .sb-tag          — lags/swings about the grommet (its own 12.7%,50%)
+       .sb-base         — a token squash, origin (134,240) = the felt line
+       .sb-ring--near   — inner ding line   (origin 134,120 = the bell's heart)
+       .sb-ring--far    — outer ding line, later and wider
+   The press interaction lives in page JS; the idle tell is page CSS, NOT
+   SMIL — precisely so `prefers-reduced-motion` can switch it off. A SMIL
+   animation baked into the asset could not be. (Same call 8a made.)
+
+   DRAWER CONTEXT is honest: the floor / frame / craquelure textures are the
+   --jd-frame-url, --jd-floor-url and --jd-craq-url data-URIs copied VERBATIM
+   from junk-drawer.css, the walls use the same border-image slicing, the
+   varnish + vignette are the same gradients, and item widths use the real
+   production ruler from junk-drawer.js:
+       w = tierBox · √aspect · elongationCap   (in cqmin of the well, ×1.2
+   under 768px). So a "medium" on this page is a medium in the drawer.
+
+   STYLE: deliberately un-harmonized with the painterly specimens. Chunky,
+   saturated, candy-gloss, thick cartoon ink line — a Saturday-morning prop
+   that fell in among the trompe-l'oeil. The style break is the camouflage
+   (PLAN-TURN-OBJECT, top of file). 8c spends the least game-show energy of
+   the five and buys it back with the tag.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the three procedural textures, VERBATIM from junk-drawer.css ---------- */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0 3rem;
+  overflow-x: hidden;
+}
+.wrap { max-width: 1060px; margin: 0 auto; padding: 0 14px; }
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center; margin-bottom: 0.4rem;
+}
+.mock-intro {
+  font-size: 0.7rem; line-height: 1.85; letter-spacing: 0.09em; color: #7c7566;
+  text-align: center; max-width: 46rem; margin: 0 auto 0.5rem;
+}
+.mock-meta {
+  font-size: 0.62rem; letter-spacing: 0.2em; color: #a9a293;
+  text-align: center; text-transform: uppercase; margin-bottom: 1.6rem;
+}
+.sec-head {
+  margin: 2.6rem auto 0.2rem;
+  font-size: 0.7rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: var(--plot-red);
+}
+.sec-sub {
+  margin: 0 auto 1.1rem; max-width: 44rem;
+  font-size: 0.66rem; line-height: 1.8; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.rule { border: 0; border-top: 1px solid #ddd7c8; margin: 2.4rem 0 0; }
+
+/* ---------------- HERO ---------------------------------------------------- */
+/* a neutral slab, not the drawer: this view is about the object alone */
+.hero-slab {
+  position: relative;
+  background:
+    radial-gradient(120% 120% at 30% 18%, #fffdf6 0%, #efeade 62%, #ded7c6 100%);
+  border: 1px solid #ddd7c8;
+  padding: 3.2rem 4% 2.4rem;
+  display: flex; flex-direction: column; align-items: center;
+  overflow: visible;             /* the ding lines leave the box — see notes */
+}
+.hero-host {
+  width: min(540px, 88%);
+  display: block;
+  cursor: pointer;
+  outline: none;
+  /* the drawer gives every item this shadow; the hero borrows it so the
+     object is judged sitting on something rather than floating */
+  filter: drop-shadow(6px 9px 7px rgba(22, 11, 4, 0.32));
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.hero-host:focus-visible { outline: 3px dashed var(--plot-red); outline-offset: 18px; }
+.hero-hint {
+  margin-top: 1.7rem;
+  font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: #8a8272; text-align: center; line-height: 2;
+}
+.hero-hint b { color: var(--plot-red); }
+.counter { font-variant-numeric: tabular-nums; color: #3a2a12; font-weight: 700; }
+
+/* ---------------- the object's own moving parts -------------------------- */
+/* One behaviour spec, applied to EVERY copy of the SVG on the page (hero,
+   drawer, variants). The asset carries the structure; the page carries the
+   motion. */
+.sb { display: block; width: 100%; height: auto; overflow: visible; }
+.sb-plunger, .sb-dome, .sb-base, .sb-ring { transform-box: view-box; }
+.sb-plunger { transform-origin: 134px 74px; }    /* the collar it sinks into */
+.sb-dome    { transform-origin: 134px 204px; }   /* the skirt's seat line */
+.sb-base    { transform-origin: 134px 240px; }   /* the felt line */
+.sb-ring    { transform-origin: 134px 120px; }   /* the bell's heart */
+/* The tag is the one part carrying a placement `transform` ATTRIBUTE, and a
+   CSS transform would replace it outright — so the attribute lives on a
+   static seat group and .sb-tag is the empty child inside it, swinging in
+   its own local space. fill-box + a percentage origin puts that swing on the
+   grommet (local 16,32 of a 110×64 box) without any viewBox arithmetic. */
+.sb-tag     { transform-box: fill-box; transform-origin: 12.7% 50%; }
+
+/* PRESS — the plunger taps, the dome shivers side to side, two ding lines
+   go out. Slower and softer than a buzzer's slam: this is a counter bell,
+   the whole point of the candidate is that it is the gentle one. */
+@keyframes sbPlunger {
+  0%   { transform: translateY(0)    scale(1, 1); }
+  9%   { transform: translateY(14px) scale(1.10, 0.82); }
+  26%  { transform: translateY(11px) scale(1.06, 0.90); }
+  52%  { transform: translateY(0)    scale(0.97, 1.05); }
+  72%  { transform: translateY(2px)  scale(1.02, 0.98); }
+  100% { transform: translateY(0)    scale(1, 1); }
+}
+@keyframes sbShiver {
+  0%   { transform: rotate(0deg)    scale(1, 1); }
+  9%   { transform: rotate(0.4deg)  scale(1.035, 0.965); }
+  20%  { transform: rotate(3.1deg)  scale(1.01, 0.99); }
+  34%  { transform: rotate(-2.4deg); }
+  47%  { transform: rotate(1.7deg); }
+  60%  { transform: rotate(-1.1deg); }
+  73%  { transform: rotate(0.6deg); }
+  86%  { transform: rotate(-0.25deg); }
+  100% { transform: rotate(0deg)    scale(1, 1); }
+}
+@keyframes sbTagSwing {
+  0%   { transform: rotate(0deg); }
+  16%  { transform: rotate(-3.6deg); }
+  36%  { transform: rotate(2.6deg); }
+  56%  { transform: rotate(-1.5deg); }
+  76%  { transform: rotate(0.7deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes sbBaseSquash {
+  0%   { transform: scale(1, 1); }
+  9%   { transform: scale(1.028, 0.972); }
+  40%  { transform: scale(0.994, 1.008); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes sbRingNear {
+  0%   { opacity: 0;    transform: scale(0.58); }
+  10%  { opacity: 1;    transform: scale(0.95); }
+  46%  { opacity: 0;    transform: scale(1.16); }
+  100% { opacity: 0;    transform: scale(1.16); }
+}
+@keyframes sbRingFar {
+  0%,  14% { opacity: 0;    transform: scale(0.66); }
+  30%      { opacity: 0.92; transform: scale(1); }
+  70%      { opacity: 0;    transform: scale(1.2); }
+  100%     { opacity: 0;    transform: scale(1.2); }
+}
+.is-pressed .sb-plunger { animation: sbPlunger    0.66s cubic-bezier(.28,.86,.36,1); }
+.is-pressed .sb-dome    { animation: sbShiver     0.66s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .sb-tag     { animation: sbTagSwing   0.66s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .sb-base    { animation: sbBaseSquash 0.66s cubic-bezier(.28,.86,.36,1); }
+.is-pressed .sb-ring--near { animation: sbRingNear 0.66s ease-out; }
+.is-pressed .sb-ring--far  { animation: sbRingFar  0.66s ease-out; }
+
+/* IDLE TELL — one faint ding line, on its own, every ~9s. The quietest of
+   the five idle tells by design; it is the same near ring the press uses,
+   run at a third of the opacity and half the speed, so the vocabulary is
+   consistent: this object's only language is "ring". */
+@keyframes sbIdlePing {
+  0%,  88%  { opacity: 0;    transform: scale(0.62); }
+  92%       { opacity: 0.42; transform: scale(0.92); }
+  99%       { opacity: 0;    transform: scale(1.12); }
+  100%      { opacity: 0;    transform: scale(1.12); }
+}
+.sb-ring--near { animation: sbIdlePing 9s linear infinite; }
+/* instances offset so the page does not ping in unison */
+.ctx-item--turn .sb-ring--near { animation-delay: 3.4s; }
+.var-cell:nth-child(2) .sb-ring--near { animation-delay: 1.6s; }
+.var-cell:nth-child(3) .sb-ring--near { animation-delay: 5.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no ping at all, and the press becomes a DISCRETE state (held ~320ms by
+     the JS, then dropped) rather than a spring — motion reduced, feedback
+     kept: a press must still be unmistakably acknowledged. */
+  .sb-ring--near { animation: none; opacity: 0; }
+  .is-pressed .sb-plunger,
+  .is-pressed .sb-dome,
+  .is-pressed .sb-tag,
+  .is-pressed .sb-base,
+  .is-pressed .sb-ring--near,
+  .is-pressed .sb-ring--far { animation: none; }
+  .is-pressed .sb-plunger    { transform: translateY(12px) scale(1.06, 0.88); }
+  .is-pressed .sb-dome       { transform: scale(1.02, 0.98); }
+  .is-pressed .sb-ring--near { opacity: 1; }
+  .is-pressed .sb-ring--far  { opacity: 0.85; }
+}
+
+/* ---------------- IN-CONTEXT: the real drawer, the real ruler ------------ */
+.ctx-stage {
+  position: relative;
+  width: min(980px, 100%);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  --wall: clamp(28px, 9vw, 64px);          /* production value, verbatim */
+  box-shadow: 10px 14px 30px -12px rgba(30, 18, 8, 0.45),
+              3px 5px 12px -5px rgba(30, 18, 8, 0.3);
+}
+.ctx-frame {                                /* = production .jd-frame */
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+.ctx-well {                                 /* = production .jd-well */
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;                     /* items size in cqmin, as live */
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+.ctx-craq {                                 /* = production .jd-craquelure */
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+.ctx-pile { position: absolute; inset: 0; z-index: 2; }
+.ctx-varnish {                              /* = production .jd-varnish */
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.ctx-vignette {                             /* = production .jd-vignette */
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+/* = production .jd-item: cqmin width, rotation on the svg, shadow on the box */
+.ctx-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  pointer-events: none;                     /* the neighbours are scenery */
+}
+.ctx-item > svg { display: block; width: 100%; height: auto; transform: rotate(var(--rot)); }
+.ctx-item--turn {
+  pointer-events: auto; cursor: pointer; outline: none;
+  z-index: 40;                              /* the first-visit z-boost, §1 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.ctx-item--turn:focus-visible { outline: 3px dashed #ffe6a3; outline-offset: 8px; }
+.ctx-cap {
+  margin: 0.75rem auto 0; max-width: 44rem;
+  font-size: 0.62rem; letter-spacing: 0.16em; line-height: 2;
+  color: #8a8272; text-align: center; text-transform: uppercase;
+}
+.ctx-cap b { color: var(--plot-red); }
+@media (max-width: 768px) {
+  /* production shifts item sizes up a band on small wells (×1.2) and the
+     drawer goes tall — both mirrored, so the phone read is honest */
+  .ctx-item { width: calc(var(--w) * 1.2cqmin); }
+  .ctx-stage { aspect-ratio: 3 / 4.4; }
+  .hero-slab { padding: 2.4rem 3% 1.6rem; }
+  .hero-host { width: 94%; }
+}
+
+/* ---------------- VARIANT ROW -------------------------------------------- */
+.var-row {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: clamp(0.7rem, 4vw, 2.4rem);
+}
+.var-cell { width: min(200px, 27%); text-align: center; }
+.var-host {
+  display: block; width: 100%; cursor: pointer; outline: none;
+  filter: drop-shadow(4px 6px 5px rgba(22, 11, 4, 0.3));
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.var-host:focus-visible { outline: 3px dashed var(--plot-red); outline-offset: 8px; }
+.var-cap {
+  margin-top: 0.6rem;
+  font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: #8a8272;
+}
+/* The asset ships CHROME (stop-color presentation attributes). These rules
+   are page CSS overriding those attributes — the SVG file is untouched, so a
+   variant is a handful of stop-colors at implementation time. */
+.var--brass .sb-c0 { stop-color: #fffaea; }
+.var--brass .sb-c1 { stop-color: #f8e7ae; }
+.var--brass .sb-c2 { stop-color: #e0c163; }
+.var--brass .sb-c3 { stop-color: #a98526; }
+.var--brass .sb-c4 { stop-color: #d3ad4b; }
+.var--brass .sb-c5 { stop-color: #8f6c1a; }
+.var--brass .sb-c6 { stop-color: #5f460f; }
+.var--brass .sb-d0 { stop-color: #fbeec2; }
+.var--brass .sb-d1 { stop-color: #cfae5c; }
+.var--brass .sb-d2 { stop-color: #7c5c14; }
+.var--brass .sb-f0 { stop-color: #fdf3d2; }
+.var--brass .sb-f1 { stop-color: #d9bd75; }
+/* cherry keeps the chrome base — a red enamel dome on a chrome plinth is
+   the actual object, not an invention */
+.var--cherry .sb-c0 { stop-color: #fff1ee; }
+.var--cherry .sb-c1 { stop-color: #ffb8ad; }
+.var--cherry .sb-c2 { stop-color: #f4635a; }
+.var--cherry .sb-c3 { stop-color: #c22a22; }
+.var--cherry .sb-c4 { stop-color: #e8564b; }
+.var--cherry .sb-c5 { stop-color: #a81c16; }
+.var--cherry .sb-c6 { stop-color: #74100c; }
+
+/* ---------------- NOTES --------------------------------------------------- */
+.notes { max-width: 40rem; margin: 0 auto; }
+.notes li {
+  font-size: 0.7rem; line-height: 2; letter-spacing: 0.055em;
+  color: #4a463d; margin-bottom: 0.85rem; list-style: none;
+  padding-left: 1.5rem; position: relative;
+}
+.notes li::before {
+  content: "▸"; position: absolute; left: 0; top: 0; color: var(--plot-red);
+}
+.notes b { color: #262420; }
+.notes code {
+  font-family: var(--mono); font-size: 0.95em;
+  background: #ece7da; padding: 0 0.28em; border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1 class="mock-title">Junk Drawer · Mockup 8c · The Service Bell</h1>
+  <p class="mock-intro">
+    A chrome counter bell with its plunger, wearing a manila string tag that
+    reads TAKE A TURN — the drawer's own specimen-tag language, tied to
+    hardware instead of art.
+  </p>
+  <p class="mock-meta">PLAN-TURN-OBJECT §2 · candidate 8c · label placeholder: TAKE A TURN</p>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">1 · The object</h2>
+  <p class="sec-sub">
+    Click, tap, or focus it and press Enter or Space. The plunger taps, the
+    dome shivers, two ding lines go out. Left alone it lets one faint ring
+    line off every nine seconds.
+  </p>
+</div>
+<div class="wrap">
+  <div class="hero-slab">
+    <div class="hero-host sb-host" role="button" tabindex="0" aria-label="Take a turn">
+
+<!-- ===================================================================== -->
+<!-- THE ASSET. Lift from here to the closing </svg> and it is the pile     -->
+<!-- item: viewBox, transparent, ink edge-to-edge (≤2% margin on all four   -->
+<!-- sides at rest), no script / on* / foreignObject / external ref / SMIL. -->
+<!-- ids are prefixed sb_ so the page's copier can re-prefix each instance. -->
+<!-- ===================================================================== -->
+<svg id="sb-master" class="sb" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 300 244" role="img"
+     aria-label="A chrome counter bell with a manila tag reading TAKE A TURN">
+  <defs>
+    <!-- the chrome ramp: white, sky, the dark horizon band, bounce, floor.
+         objectBoundingBox units, so dome / knob / collar each get their own
+         vertical ramp from one definition. Stop classes are the variant
+         hooks (see the var-brass / var-cherry rules in the page CSS). -->
+    <linearGradient id="sb_metal" x1="0.16" y1="0" x2="0.46" y2="1">
+      <stop class="sb-c0" offset="0"    stop-color="#ffffff"/>
+      <stop class="sb-c1" offset="0.16" stop-color="#dcebf5"/>
+      <stop class="sb-c2" offset="0.40" stop-color="#a8bfd0"/>
+      <stop class="sb-c3" offset="0.56" stop-color="#5d7488"/>
+      <stop class="sb-c4" offset="0.66" stop-color="#8fa7b9"/>
+      <stop class="sb-c5" offset="0.84" stop-color="#6e8598"/>
+      <stop class="sb-c6" offset="1"    stop-color="#445769"/>
+    </linearGradient>
+    <linearGradient id="sb_plinth" x1="0.2" y1="0" x2="0.5" y2="1">
+      <stop class="sb-d0" offset="0"    stop-color="#eaf2f8"/>
+      <stop class="sb-d1" offset="0.5"  stop-color="#9db2c3"/>
+      <stop class="sb-d2" offset="1"    stop-color="#4f6577"/>
+    </linearGradient>
+    <linearGradient id="sb_face" x1="0.1" y1="0" x2="0.7" y2="1">
+      <stop class="sb-f0" offset="0" stop-color="#f4f9fd"/>
+      <stop class="sb-f1" offset="1" stop-color="#b7c8d6"/>
+    </linearGradient>
+    <linearGradient id="sb_paper" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0" stop-color="#f3e7c0"/>
+      <stop offset="1" stop-color="#d9c58e"/>
+    </linearGradient>
+    <clipPath id="sb_domeclip">
+      <path d="M32 202 C32 130 68 64 134 64 C200 64 236 130 236 202
+               C236 217 32 217 32 202 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- the DING. Behind the bell, opacity 0 at rest as a presentation
+       attribute so the asset is correct even with no stylesheet at all.
+       Two rings: near (r 120, inside the box) and far (r 148, which leaves
+       the box at the top — see notes). Each arc is inked dark and capped
+       with warm cream so it reads on the wood as well as on paper. -->
+  <g class="sb-rings" pointer-events="none" fill="none" stroke-linecap="round">
+    <g class="sb-ring sb-ring--near" opacity="0">
+      <path d="M18.7 86.9 A120 120 0 0 1 75.8 15.1"  stroke="#26333f" stroke-width="13"/>
+      <path d="M249.3 86.9 A120 120 0 0 0 192.2 15.1" stroke="#26333f" stroke-width="13"/>
+      <path d="M18.7 86.9 A120 120 0 0 1 75.8 15.1"  stroke="#ffdd7a" stroke-width="6.5"/>
+      <path d="M249.3 86.9 A120 120 0 0 0 192.2 15.1" stroke="#ffdd7a" stroke-width="6.5"/>
+    </g>
+    <g class="sb-ring sb-ring--far" opacity="0">
+      <path d="M-5.1 69.4 A148 148 0 0 1 64.5 -10.7"  stroke="#26333f" stroke-width="11"/>
+      <path d="M273.1 69.4 A148 148 0 0 0 203.5 -10.7" stroke="#26333f" stroke-width="11"/>
+      <path d="M-5.1 69.4 A148 148 0 0 1 64.5 -10.7"  stroke="#ffe9a6" stroke-width="5"/>
+      <path d="M273.1 69.4 A148 148 0 0 0 203.5 -10.7" stroke="#ffe9a6" stroke-width="5"/>
+    </g>
+  </g>
+
+  <!-- the plinth: squat chrome cylinder. Drawn as one silhouette
+       (back half of the top ellipse, sides, front half of the bottom
+       ellipse) so the ink line never doubles on itself. -->
+  <g class="sb-base">
+    <path d="M4 196 a130 22 0 0 1 260 0 v22 a130 22 0 0 1 -260 0 z"
+          fill="url(#sb_plinth)" stroke="#26333f" stroke-width="4" stroke-linejoin="round"/>
+    <ellipse cx="134" cy="196" rx="130" ry="22" fill="url(#sb_face)"
+             stroke="#26333f" stroke-width="4"/>
+    <!-- rim bevel + the warm bounce the wood throws back up at it -->
+    <ellipse cx="134" cy="196" rx="118" ry="17" fill="none"
+             stroke="#ffffff" stroke-width="3" opacity="0.5"/>
+    <path d="M18 214 C50 236 218 236 250 214" fill="none"
+          stroke="#e3ae63" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
+    <path d="M22 200 C34 214 42 218 54 222" fill="none"
+          stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.72"/>
+  </g>
+
+  <!-- the bell itself. Everything that shivers lives in here,
+       including the cord and the tag, so the tag can never detach from
+       the collar it is tied to. -->
+  <g class="sb-dome">
+    <path d="M32 202 C32 130 68 64 134 64 C200 64 236 130 236 202
+             C236 217 32 217 32 202 Z"
+          fill="url(#sb_metal)" stroke="#26333f" stroke-width="4.5" stroke-linejoin="round"/>
+    <g clip-path="url(#sb_domeclip)">
+      <!-- the big soft reflection: the window, cartooned into one blob -->
+      <ellipse cx="84" cy="126" rx="24" ry="41" transform="rotate(-25 84 126)"
+               fill="#ffffff" opacity="0.85"/>
+      <ellipse cx="108" cy="98" rx="9" ry="15" transform="rotate(-25 108 98)"
+               fill="#ffffff" opacity="0.6"/>
+      <!-- rim light down the shaded side -->
+      <path d="M219 172 C231 142 222 106 203 84" fill="none"
+            stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.45"/>
+      <!-- the drawer's warm bounce along the skirt -->
+      <path d="M48 189 C80 207 188 207 220 189" fill="none"
+            stroke="#e3ae63" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+      <!-- the horizon: what makes chrome read as chrome -->
+      <path d="M38 152 C76 168 192 168 230 152" fill="none"
+            stroke="#2b4155" stroke-width="9" stroke-linecap="round" opacity="0.2"/>
+    </g>
+    <!-- the collar the plunger sinks into, and the cord's anchor -->
+    <ellipse cx="134" cy="73" rx="27" ry="9" fill="url(#sb_metal)"
+             stroke="#26333f" stroke-width="4"/>
+
+    <!-- the plunger: taps down, squashes, comes back -->
+    <g class="sb-plunger">
+      <rect x="120" y="30" width="28" height="42" rx="9"
+            fill="url(#sb_metal)" stroke="#26333f" stroke-width="4"/>
+      <rect x="98" y="4" width="72" height="40" rx="20"
+            fill="url(#sb_metal)" stroke="#26333f" stroke-width="4.5"/>
+      <ellipse cx="120" cy="16" rx="15" ry="7" transform="rotate(-12 120 16)"
+               fill="#ffffff" opacity="0.85"/>
+      <path d="M110 36 C124 42 148 42 160 35" fill="none"
+            stroke="#2b4155" stroke-width="5" stroke-linecap="round" opacity="0.25"/>
+    </g>
+
+    <!-- the red cord: knotted round the collar, over the shoulder,
+         through the grommet. Same #b3402f the drawer's elastic uses. -->
+    <ellipse cx="134" cy="73" rx="31" ry="11" fill="none"
+             stroke="#8d2b1e" stroke-width="6"/>
+    <ellipse cx="134" cy="73" rx="31" ry="11" fill="none"
+             stroke="#b3402f" stroke-width="4"/>
+    <path d="M163 77 C190 98 175 140 195 181" fill="none"
+          stroke="#8d2b1e" stroke-width="8" stroke-linecap="round"/>
+    <path d="M163 77 C190 98 175 140 195 181" fill="none"
+          stroke="#b3402f" stroke-width="5" stroke-linecap="round"/>
+    <path d="M167 82 C186 100 178 132 190 158" fill="none"
+          stroke="#e08575" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
+
+    <!-- the specimen tag: aged manila, punched grommet, typewriter
+         caps. This is the whole argument for 8c — it says what the object
+         is in the drawer's own handwriting. -->
+    <g transform="translate(188 148) rotate(15)">
+     <g class="sb-tag">
+      <path d="M30 0 H106 q6 0 6 6 V58 q0 6 -6 6 H30 L2 40 V24 Z
+               M16 32 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0"
+            fill-rule="evenodd" fill="url(#sb_paper)"
+            stroke="#7c5f2c" stroke-width="3.2" stroke-linejoin="round"/>
+      <circle cx="16" cy="32" r="7" fill="none" stroke="#a98436" stroke-width="3"/>
+      <!-- foxing + a crease, so the manila is aged, not just beige -->
+      <path d="M34 6 L104 6" stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
+      <path d="M34 58 L104 58" stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
+      <ellipse cx="96" cy="16" rx="9" ry="5" fill="#c7a869" opacity="0.28"/>
+      <ellipse cx="42" cy="52" rx="7" ry="4" fill="#c7a869" opacity="0.22"/>
+      <text x="69" y="30" text-anchor="middle" fill="#3a2a12"
+            font-family="Courier New, Courier, monospace" font-weight="bold"
+            font-size="18" letter-spacing="1.4">TAKE A</text>
+      <text x="69" y="52" text-anchor="middle" fill="#3a2a12"
+            font-family="Courier New, Courier, monospace" font-weight="bold"
+            font-size="18" letter-spacing="1.4">TURN</text>
+     </g>
+    </g>
+  </g>
+</svg>
+<!-- ======================= END OF ASSET ======================= -->
+
+    </div>
+    <p class="hero-hint">
+      Presses so far: <span class="counter" id="press-count">0</span><br />
+      <b>Enter</b> and <b>Space</b> work when it has focus · tab to it to see the focus ring
+    </p>
+  </div>
+</div>
+
+<!-- ======================= IN CONTEXT ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">2 · In the drawer, at drawer scale</h2>
+  <p class="sec-sub">
+    Real floor, frame, craquelure, varnish and vignette from
+    <code>junk-drawer.css</code>; real neighbours from <code>items/</code> at
+    their filed size tiers; real size ruler from <code>junk-drawer.js</code>.
+    The bell is filed medium and presses here too — this is the view where
+    "does it read as pressable at 90px" gets decided.
+  </p>
+  <div class="ctx-stage">
+    <div class="ctx-frame">
+      <div class="ctx-well">
+        <div class="ctx-craq"></div>
+        <div class="ctx-pile">
+
+          <!-- NEIGHBOUR 1 — Three of hearts (filed "m", aspect 140/196):
+               w = 15.5 · √0.714 = 13.10 cqmin. ids prefixed c1_ -->
+          <div class="ctx-item" style="--w: 13.10; --rot: 12deg; left: 68%; top: 30%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 196" aria-hidden="true">
+              <defs>
+                <path id="c1_pc-heart" d="M10 17 C4.5 11.5 0 8.4 0 4.6 A4.4 4.4 0 0 1 8.6 3.1 L10 4.6 L11.4 3.1 A4.4 4.4 0 0 1 20 4.6 C20 8.4 15.5 11.5 10 17 Z" fill="#c0392b"/>
+              </defs>
+              <rect x="2" y="2" width="136" height="192" rx="10" fill="#fbf8ef" stroke="#b9b2a2" stroke-width="1.5"/>
+              <rect x="8" y="8" width="124" height="180" rx="6" fill="none" stroke="#e4ddcb" stroke-width="1"/>
+              <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+              <use href="#c1_pc-heart" transform="translate(11 36) scale(0.7)"/>
+              <g transform="rotate(180 70 98)">
+                <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                <use href="#c1_pc-heart" transform="translate(11 36) scale(0.7)"/>
+              </g>
+              <use href="#c1_pc-heart" transform="translate(54 34) scale(1.6)"/>
+              <use href="#c1_pc-heart" transform="translate(54 84) scale(1.6)"/>
+              <use href="#c1_pc-heart" transform="translate(86 162) scale(1.6) rotate(180)"/>
+            </svg>
+          </div>
+
+          <!-- NEIGHBOUR 2 — Pocket mirror (filed "s", square):
+               w = 9 · √1 = 9.00 cqmin. ids prefixed c2_ -->
+          <div class="ctx-item" style="--w: 9.00; --rot: -21deg; left: 58%; top: 74%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" aria-hidden="true">
+              <defs>
+                <linearGradient id="c2_mr-metal" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#f0f1f3"/>
+                  <stop offset="0.45" stop-color="#b9bdc4"/>
+                  <stop offset="1" stop-color="#7c828c"/>
+                </linearGradient>
+                <linearGradient id="c2_mr-glass" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#e9f1f7"/>
+                  <stop offset="1" stop-color="#b0c0cf"/>
+                </linearGradient>
+                <clipPath id="c2_mr-clip"><circle cx="75" cy="75" r="56"/></clipPath>
+              </defs>
+              <circle cx="75" cy="75" r="70" fill="url(#c2_mr-metal)"/>
+              <circle cx="75" cy="75" r="70" fill="none" stroke="#5c626c" stroke-width="2"/>
+              <circle cx="75" cy="75" r="56" fill="url(#c2_mr-glass)"/>
+              <g clip-path="url(#c2_mr-clip)">
+                <polygon points="30,150 74,0 96,0 52,150" fill="#ffffff" opacity="0.5"/>
+                <polygon points="62,150 106,0 116,0 72,150" fill="#ffffff" opacity="0.28"/>
+              </g>
+              <circle cx="75" cy="75" r="56" fill="none" stroke="#878e98" stroke-width="1.5"/>
+              <path d="M18 100 A60 60 0 0 1 50 21" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.6"/>
+              <path d="M132 52 A60 60 0 0 1 99 130" fill="none" stroke="#3f444d" stroke-width="2.5" opacity="0.45"/>
+            </svg>
+          </div>
+
+          <!-- NEIGHBOUR 3 — Ticket stub (filed "m" × 0.7, aspect 270/112):
+               w = 15.5 · √2.411 · 0.7 = 16.85 cqmin. ids prefixed c3_ -->
+          <div class="ctx-item" style="--w: 16.85; --rot: -8deg; left: 24%; top: 24%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 112" aria-hidden="true">
+              <defs>
+                <linearGradient id="c3_tk-g" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#efe0b4"/>
+                  <stop offset="1" stop-color="#dcc48e"/>
+                </linearGradient>
+              </defs>
+              <rect x="3" y="3" width="264" height="106" rx="5" fill="url(#c3_tk-g)"/>
+              <rect x="3" y="3" width="264" height="106" rx="5" fill="none" stroke="#a8894f" stroke-width="1.5"/>
+              <rect x="12" y="12" width="182" height="88" fill="none" stroke="#8a6a33" stroke-width="1.5"/>
+              <rect x="16" y="16" width="174" height="80" fill="none" stroke="#8a6a33" stroke-width="0.5" opacity="0.6"/>
+              <line x1="206" y1="8" x2="206" y2="104" stroke="#8a6a33" stroke-width="1.5" stroke-dasharray="2 5" opacity="0.7"/>
+              <text x="103" y="52" text-anchor="middle" font-family="Courier, monospace" font-weight="bold" font-size="20" letter-spacing="5" fill="#6b4a1f">ADMIT ONE</text>
+              <text x="103" y="76" text-anchor="middle" font-family="Courier, monospace" font-size="11" letter-spacing="2" fill="#8a6a33">No. 000847</text>
+              <text x="236" y="63" text-anchor="middle" font-family="Georgia, serif" font-size="22" fill="#8a6a33">&#10038;</text>
+              <ellipse cx="42" cy="92" rx="18" ry="7" fill="#c9a96a" opacity="0.3"/>
+            </svg>
+          </div>
+
+          <!-- THE BELL — filed medium (box 15.5), aspect 300/244 = 1.2295
+               → w = 15.5 · √1.2295 = 17.19 cqmin. Scattered lower-left and
+               boosted to the top of the z-order per §1. The SVG is cloned
+               from the hero at load with its ids re-prefixed. -->
+          <div class="ctx-item ctx-item--turn sb-host" id="ctx-turn"
+               role="button" tabindex="0" aria-label="Take a turn"
+               style="--w: 17.19; --rot: -6deg; left: 33%; top: 64%;"></div>
+
+        </div>
+        <div class="ctx-varnish"></div>
+        <div class="ctx-vignette"></div>
+      </div>
+    </div>
+  </div>
+  <p class="ctx-cap">
+    Bell rendered width right now: <b id="ctx-px">—</b> ·
+    hit box: <b id="ctx-box">—</b> ·
+    tag ink alone: <b id="ctx-tag">—</b>
+  </p>
+</div>
+
+<!-- ======================= VARIANTS ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">3 · Finish variants</h2>
+  <p class="sec-sub">
+    Same asset, same tag; only the gradient stop-colors are overridden. Each
+    of these presses too.
+  </p>
+  <div class="var-row" id="var-row">
+    <div class="var-cell">
+      <div class="var-host sb-host" role="button" tabindex="0" aria-label="Take a turn, chrome finish"></div>
+      <p class="var-cap">Chrome — the lobby default</p>
+    </div>
+    <div class="var-cell">
+      <div class="var-host sb-host var--brass" role="button" tabindex="0" aria-label="Take a turn, brass finish"></div>
+      <p class="var-cap">Brass — sits into the wood</p>
+    </div>
+    <div class="var-cell">
+      <div class="var-host sb-host var--cherry" role="button" tabindex="0" aria-label="Take a turn, cherry enamel finish"></div>
+      <p class="var-cap">Cherry enamel on chrome</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= NOTES ======================= -->
+<div class="wrap">
+  <hr class="rule" />
+  <h2 class="sec-head">4 · Notes</h2>
+  <ul class="notes">
+    <li><b>What I committed to.</b> The tag is the candidate, not the bell.
+      8c only earns its place if the manila reads as the <i>drawer's</i>
+      manila — so the paper is <code>#f3e7c0→#d9c58e</code> against the
+      tag's <code>#e8d9a8</code>, the ink is the tag's <code>#3a2a12</code>
+      in typewriter caps, and the cord is the exact <code>#b3402f</code> the
+      picked-item elastic uses in <code>junk-drawer.js</code>. Everything
+      above the cord is confidently cartoon (4.5px ink line, one big soft
+      window reflection, a squat 204×138 dome on a 260-wide plinth). The
+      seam between the two registers is the joke: someone tied a museum tag
+      to a Saturday-morning prop.</li>
+    <li><b>The tag is tied to the collar, not the plunger.</b> The cord
+      knots round the fixed collar at the base of the stem and the whole
+      cord + tag group lives <i>inside</i> <code>.sb-dome</code>, so the
+      knot can never drift off its anchor when the plunger drops 14px. The
+      tag then counter-swings about its own grommet, which is what makes it
+      lag the shiver instead of riding it rigidly. Watch the mechanism there:
+      the tag is the one part with a placement <code>transform</code>
+      attribute, and a CSS <code>transform</code> replaces an attribute
+      rather than composing with it — so the attribute sits on a static seat
+      group and the animated <code>.sb-tag</code> is the child inside it,
+      swinging in its own local space via
+      <code>transform-box: fill-box</code>. If implementation reparents or
+      flattens the tag, that is the thing that breaks.</li>
+    <li><b>Tap target at drawer scale.</b> The live readout above states it.
+      On a desktop well (~980 stage, 64px walls) the bell lands near
+      <b>90px</b> wide — well past the 44px floor. On a 375px phone the same
+      ruler gives roughly <b>62px</b>. Production hit-testing is ink-only
+      (<code>pointer-events: visiblePainted</code>), and the bell's ink is a
+      near-solid 300×244 silhouette plus the tag, so almost the whole box is
+      live — the best hit-area-per-footprint of the five, because nothing
+      here is a thin rim. Do not let the plunger become the only "obvious"
+      target: the dome is the target.</li>
+    <li><b>Label legibility — the honest bit.</b> At a 90px-wide bell the tag ink
+      is about <b>33×19px</b> and TAKE A / TURN sits right on the edge — two
+      lines of caps that a reader who already knows the words can read and a
+      cold reader probably cannot. At the ~62px a phone gives, it is texture:
+      "there is writing on that tag". So the tag buys <i>affordance</i> in the pile ("this
+      one is labelled, it must be for something") and delivers the words
+      only on the hero / picked zoom. If the owner wants the words legible
+      in the pile, 8c needs a large tier or a two-word label — TAKE A TURN
+      is four words' worth of characters on a 112×64 tag.</li>
+    <li><b>The far ding line leaves the viewBox.</b> The near ring (r 120)
+      stays inside; the far ring (r 148) crosses the top edge by ~11 user
+      units on purpose, so the flare feels like it escapes the object. The
+      resting art still fills the box edge-to-edge (≤2% margin on all four
+      sides: plinth at x 4, tag at x 296 and y 239, plunger cap at y 4), so
+      the ink-bounds check passes. Implementation must give the turn item's
+      svg <code>overflow: visible</code> — production
+      <code>.jd-item svg</code> does not set it and the UA default clips. If
+      that is forgotten, only the outer ring's tips get trimmed; the press
+      still reads. Both ring groups carry <code>opacity="0"</code> and
+      <code>pointer-events="none"</code> as attributes in the asset, so the
+      file is correct with no stylesheet at all and an invisible shape never
+      steals a hit test.</li>
+    <li><b>Idle tell is page CSS, not SMIL, and it is quiet.</b> One faint
+      ring at 42% opacity for ~0.6s every 9s. Doubt worth the owner's
+      attention: this is the gentlest idle tell of the five, and §1 leans on
+      the idle tell to keep a control buried in clutter discoverable. At
+      ~62px in a busy pile it may simply be too polite to do that job. Two
+      cheap escalations if it tests weak on-device: warm the ring to the
+      cream stroke only (drop the dark ink underlay so it reads as light,
+      not line), or add a slow specular sweep across the dome — the chrome
+      is begging for one. Under
+      <code>prefers-reduced-motion</code> the ping is off entirely and the
+      press becomes a discrete held state (plunger down, both rings on) for
+      ~320ms: motion reduced, acknowledgement kept.</li>
+    <li><b>Z-order and the wood.</b> The bell sits at the top of the pile's
+      z-order here (the first-visit boost) and under the varnish + vignette,
+      exactly as production stacks them; both are
+      <code>pointer-events: none</code> so they tint it without stealing the
+      press. Chrome is the risk in that corner — it takes its colour from
+      whatever is behind it, and against dark wood a real chrome bell would
+      go brown. I cheated it cool on purpose (the horizon band stays blue)
+      so the object stays legible as hardware, and added the warm
+      <code>#e3ae63</code> bounce along the skirt so it does not look
+      pasted on. The brass variant is the answer if the owner wants it to
+      belong more; the cherry variant is the answer if it needs to shout.</li>
+  </ul>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * Copies of the object. The asset's ids are all prefixed sb_ ; every
+   * copy gets its own prefix so inlined SVGs never fight over defs.
+   * ------------------------------------------------------------------ */
+  var master = document.getElementById('sb-master');
+  var copyN = 0;
+
+  function copyObject() {
+    copyN += 1;
+    var markup = master.outerHTML.split('sb_').join('k' + copyN + '_');
+    var shell = document.createElement('div');
+    shell.innerHTML = markup;
+    var svg = shell.querySelector('svg');
+    svg.removeAttribute('id');
+    svg.removeAttribute('role');
+    svg.removeAttribute('aria-label');
+    svg.setAttribute('aria-hidden', 'true');
+    return svg;
+  }
+
+  var ctxHost = document.getElementById('ctx-turn');
+  ctxHost.appendChild(copyObject());
+
+  var varHosts = document.querySelectorAll('.var-host');
+  for (var i = 0; i < varHosts.length; i++) {
+    varHosts[i].appendChild(copyObject());
+  }
+
+  /* the hero's own copy is the master; the host div is the button, so the
+     svg must not also announce itself */
+  master.removeAttribute('role');
+  master.removeAttribute('aria-label');
+  master.setAttribute('aria-hidden', 'true');
+
+  /* ------------------------------------------------------------------ *
+   * The press. Page JS, never baked into the asset: it toggles one class
+   * on the host and the CSS above owns every frame of it.
+   * ------------------------------------------------------------------ */
+  var DUR = 680;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  var count = 0;
+  var readout = document.getElementById('press-count');
+
+  function press(host) {
+    var now = (window.performance && window.performance.now)
+      ? window.performance.now() : Date.now();
+    /* pointerdown and click both fire on a tap; one press per gesture */
+    if (now - (host.pressedAt || -1e9) < 150) { return; }
+    host.pressedAt = now;
+
+    host.classList.remove('is-pressed');
+    void host.offsetWidth;                    /* restart the keyframes */
+    host.classList.add('is-pressed');
+    window.clearTimeout(host.pressTimer);
+    host.pressTimer = window.setTimeout(function () {
+      host.classList.remove('is-pressed');
+    }, (reduce && reduce.matches) ? 320 : DUR);
+
+    count += 1;
+    readout.textContent = String(count);
+  }
+
+  var hosts = document.querySelectorAll('.sb-host');
+  for (var h = 0; h < hosts.length; h++) {
+    (function (host) {
+      host.addEventListener('pointerdown', function () { press(host); });
+      host.addEventListener('click', function () { press(host); });
+      host.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    })(hosts[h]);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The honest ruler: what the bell actually measures in the drawer.
+   * ------------------------------------------------------------------ */
+  var pxOut = document.getElementById('ctx-px');
+  var boxOut = document.getElementById('ctx-box');
+  var tagOut = document.getElementById('ctx-tag');
+
+  function measure() {
+    var r = ctxHost.getBoundingClientRect();
+    var w = Math.round(r.width);
+    var hgt = Math.round(r.height);
+    if (!w) { return; }
+    pxOut.textContent = w + ' px wide';
+    boxOut.textContent = w + ' × ' + hgt + ' px';
+    /* the tag's printed area spans ~110 of 300 user units across and
+       ~64 of 244 down, before its 15 degrees of rotation */
+    tagOut.textContent = Math.round(w * 110 / 300) + ' × ' +
+                         Math.round(hgt * 64 / 244) + ' px';
+  }
+
+  measure();
+  window.addEventListener('resize', measure);
+  if (window.ResizeObserver) {
+    new window.ResizeObserver(measure).observe(ctxHost);
+  }
+})();
+</script>
+
+</body>
+</html>
