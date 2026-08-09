@@ -10,6 +10,7 @@
     "one-word-prompt"
   ],
   "sizeClass": "xs",
+  "sizeScale": 0.89,
   "primary": "r1",
   "responses": [
     {

@@ -8,8 +8,8 @@
     "office",
     "metal"
   ],
-  "sizeClass": "s",
-  "sizeScale": 0.686,
+  "sizeClass": "xs",
+  "sizeScale": 0.8,
   "responses": [
     {
       "rid": "r1",
