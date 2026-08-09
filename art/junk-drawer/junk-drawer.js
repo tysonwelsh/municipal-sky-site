@@ -631,9 +631,11 @@
          remainder ran dead straight and the elastic read as taut.
 
      Both are fixed by grabbing the NEAR EDGE of the silhouette instead:
-     march from the grommet toward the centre and stop at the first painted
-     pixel. The tip is then on ink by construction, whatever shape the item
-     is, and almost the whole chain hangs in the open where its sag shows.
+     march from the grommet toward the item and stop at the first painted
+     pixel (ropeAnchor below, which fans several rays so a concave object
+     can't hide behind its own hole). The tip is then on ink by construction,
+     whatever shape the item is, and almost the whole chain hangs in the open
+     where its sag can be seen.
 
      Hit testing does the shape reading, because the shape is the SVG's own
      and nothing else can answer for it: item ink is pointer-events
@@ -771,16 +773,7 @@
       hit = ray(ANCHOR_FAN[i]);
       if (hit) { ropeOffX = hit.x; ropeOffY = hit.y; return; }
     }
-    if (graze) {
-      /* nothing but grazes anywhere: creep the tip a little further in
-         toward the centre before giving up. On the wispy items that end up
-         here the ink that IS present runs inward — a feather's barbs thicken
-         into its quill — so a couple of px that way buys real coverage,
-         and on anything else it is a nudge too small to see. */
-      var gl = Math.sqrt(graze.v.x * graze.v.x + graze.v.y * graze.v.y);
-      var pull = gl > ANCHOR_BITE ? (gl - ANCHOR_BITE / 2) / gl : 1;
-      ropeOffX = graze.v.x * pull; ropeOffY = graze.v.y * pull;
-    }
+    if (graze) { ropeOffX = graze.v.x; ropeOffY = graze.v.y; }
   }
 
   /* pick() probes while the 0.15s zoom is still in flight, and the matrix
@@ -1078,6 +1071,40 @@
     well.classList.remove('jd-has-pick');
   }
 
+  /* An item lying against a wall zooms straight into the well's
+     overflow:hidden and gets a slice shaved off it — the skeleton key lost
+     the end of its shaft, the succulent the top of its leaves (testing
+     report, 2026-08-09). Selecting a specimen is picking it UP to look at
+     it, so before the zoom runs, slide it just far enough off the wall that
+     its enlarged self fits. Done once, as a baked left/top in % exactly like
+     settle()'s, so it costs one layout move and nothing downstream knows the
+     difference; the item keeps the new spot after dismissal, the way an
+     object you moved to see better stays where you put it.
+     Two limits: an item too big for the well in a given axis is left alone
+     in that axis (there is no position that helps), and the slide is capped,
+     because the move is instant while the zoom eases — a tap must never fling
+     an object across the drawer out from under the finger that chose it. The
+     cap is generous next to the shaves it was written for (~14px), but one of
+     the XL items jammed into a corner can still keep a sliver behind the
+     wall; that is the deliberate trade. */
+  var NUDGE_MAX = 48;
+  function nudgeIntoWell(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var hw = zoom * r.width / 2 + 2, hh = zoom * r.height / 2 + 2;
+    var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
+    var dx = hw * 2 > w.width ? 0
+      : Math.max(hw, Math.min(w.width - hw, cx)) - cx;
+    var dy = hh * 2 > w.height ? 0
+      : Math.max(hh, Math.min(w.height - hh, cy)) - cy;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    dx = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dx));
+    dy = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dy));
+    item.style.left = ((cx + dx) / w.width * 100).toFixed(2) + '%';
+    item.style.top = ((cy + dy) / w.height * 100).toFixed(2) + '%';
+  }
+
   function pick(item) {
     item.style.zIndex = ++zTop;
     if (picked && picked !== item) {
@@ -1137,6 +1164,7 @@
        layout box IS the extent. One fewer approximation, one less seat
        error — the old projection over-estimated the height of any rotated
        item and pushed its tag further down the well than it needed to go. */
+    nudgeIntoWell(item);      /* before measuring — it may move the item */
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
     var zoom = parseFloat(getComputedStyle(item)
       .getPropertyValue('--pick-scale')) || 1;
