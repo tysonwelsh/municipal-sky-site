@@ -512,7 +512,11 @@
   /* tap = pick: pop to front, brief lift pulse, and the ITEM TAG — a manila
      specimen tag tethered to the picked object by a red elastic through its
      grommet (owner design, mockup-6). Persists until dismissed: tap wood /
-     Esc / pick another item / drag the picked item. */
+     Esc / pick another item. Dragging the picked item NO LONGER lets go —
+     the elastic has real physics now and follows (owner request,
+     2026-08-09); the tag itself can be dragged around too. The picked
+     specimen is also turned UPRIGHT for inspection (0deg, CSS) and its
+     rotation gestures stand down until it is put back — see spin(). */
   var tag = null, rope = null, picked = null, pendingReturn = null;
   var pileEl = well.querySelector('.jd-pile');
 
@@ -533,14 +537,512 @@
       'fill="#3a2a12" font-family="inherit">☝︎</text></svg>';
   }
 
+  /* ---- the red elastic, as an actual elastic (owner request, 2026-08-09) ---
+     The tether used to be ONE static quadratic path, drawn once at pick time
+     and then frozen. It could not dangle, could not stretch, and the instant
+     anything moved it was a lie — which is why dragging a picked item used to
+     dismiss the tag outright rather than admit the string had stopped
+     following. It is a Verlet chain now: SEGMENTS point masses pinned at both
+     ends, gravity plus distance constraints, resimulated per frame while the
+     tag is up.
+
+     Four decisions carry the behavior, and each is load-bearing:
+
+     · REST LENGTH IS FIXED AT PIN TIME, not recomputed per frame. The chain
+       is handed SLACK× the endpoint distance the moment it is pinned (floored
+       at MIN_REST, so a tag seated almost on top of its item still gets a
+       visible loop of string rather than a taut hyphen). That fixed length IS
+       the physics: drag the item away and the same piece of string runs out
+       of slack and pulls straight; bring it back and the slack returns as
+       dangle. Re-measuring the rest length every frame would give a rope that
+       is always equally slack — i.e. no stretch at all.
+
+     · THE ITEM END ANCHORS AT THE ITEM'S CENTRE, never at an edge. The
+       z-sandwich (tag 70 < rope 71 < picked item 72) means the rope passes
+       UNDER the artwork, so an anchor at the centre is always buried in ink
+       and can never show a gap. The old anchor was the edge-centre of the
+       item's PREDICTED rotated/zoomed bounding box, and for a rotated or
+       elongated item that point floats well off the drawn shape — the string
+       visibly ended in mid-air. Centre anchoring is the fix.
+
+     · THE LOOP SLEEPS. rAF runs only while the tag is on AND something is
+       still moving; once every point settles below EPS with both endpoints
+       unchanged, the frame cancels itself and an endpoint move wakes it
+       again. A picked item sitting still costs exactly nothing.
+
+     · THE STEP IS PER-FRAME, NOT PER-MILLISECOND. Verlet stores velocity as
+       (position − previous position), so feeding it a variable dt rescales
+       that velocity mid-flight and a single dropped frame launches the chain
+       across the well. A fixed step is stable; the cost is that the sag falls
+       a little faster on a 120Hz display, which nobody can see. */
+  var ROPE = {
+    SEGMENTS: 16,     /* point masses in the chain, both ends included */
+    SLACK: 1.25,      /* rest length as a multiple of the span at pin time */
+    MIN_REST: 60,     /* px — the shortest string we will ever hang */
+    GRAVITY: 0.55,    /* px per frame², ~60fps */
+    DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
+    ITER: 4,          /* constraint relaxation passes per frame (alternating) */
+    STIFF: 0.09,      /* bending resistance, 0..1 — see ropeStep */
+    EPS: 0.05         /* px moved per frame under which the chain is at rest */
+  };
+  var ropePts = null;         /* the chain: [{x,y,px,py}], 0 = item, last = grommet */
+  var ropeSeg = 0;            /* per-segment rest length, frozen at pin time */
+  var ropeAx = 0, ropeAy = 0; /* live item-end endpoint, well coords */
+  var ropeBx = 0, ropeBy = 0; /* live grommet endpoint, well coords */
+  var ropeRAF = 0;
+  var ropePath = null, ropeGrom = null;
+  /* the tag's height, measured when it is seated. The grommet sits at its
+     vertical middle, and we refuse to read offsetHeight inside the rAF loop —
+     a forced layout per frame on a drop-shadowed element is exactly the
+     repaint stall the drag path already goes out of its way to avoid. */
+  var ropeTagH = 0;
+  var ropeCalm = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
+  function r1(v) { return Math.round(v * 10) / 10; }
+
+  /* the item's layout-box CENTRE in well coords. The rotation and the picked
+     zoom both live on the INNER svg, so the wrapper's rect centre is the
+     visual centre whatever the item is doing — this is the one point about an
+     item that never needs a transform correction. */
+  function ropeCentre(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top };
+  }
+  /* The tag endpoint is the GROMMET: 10px in from the tag's left edge,
+     vertically centred — the same spot the ::before brass ring is painted at
+     in the stylesheet. Both places that move the tag (pick's seating and the
+     tag drag) already hold its left/top as numbers, so they pass the grommet
+     straight to ropeSetTagEnd rather than reading it back off the element. */
+
+  /* ---- where the elastic grabs the object (testing report, 2026-08-09) ----
+     Anchoring at the item's CENTRE cured the old bounding-box disconnect, but
+     it bought two defects of its own, both caused by the same thing — half
+     the string living underneath the artwork:
+
+       · on HOLLOW silhouettes the centre is not ink at all. A rubber band's
+         centre is the hole; the toilet's is the notch between seat and tank;
+         the fish skeleton's is the gap between two ribs. The tip came to
+         rest on bare wood INSIDE the item's own box, which reads as exactly
+         the disconnected string we set out to fix.
+       · the DANGLE went missing. The belly of a slack rope sits near the
+         middle of its span, and with one pin buried at the centre, up to
+         55% of the chain was hidden under the artwork — so the visible
+         remainder ran dead straight and the elastic read as taut.
+
+     Both are fixed by grabbing the NEAR EDGE of the silhouette instead:
+     march from the grommet toward the item and stop at the first painted
+     pixel (ropeAnchor below, which fans several rays so a concave object
+     can't hide behind its own hole). The tip is then on ink by construction,
+     whatever shape the item is, and almost the whole chain hangs in the open
+     where its sag can be seen.
+
+     Hit testing does the shape reading, because the shape is the SVG's own
+     and nothing else can answer for it: item ink is pointer-events
+     visiblePainted, the picked item is the topmost hit-testable thing in the
+     well (z 72; every overlay above the pile is pointer-events:none), and
+     the rope overlay cannot hit itself. A probe is only accepted when it
+     lands on THIS item, so the tag, neighbours and wood are all rejected.
+
+     THE MATRIX CORRECTION IS THE SUBTLE PART. pick() runs at the START of
+     the 0.15s zoom-and-straighten transition, so the artwork on screen is
+     part-way between its scattered pose and its picked one — probing it
+     naively would find ink at coordinates that mean something else once the
+     transition lands. So probes are authored in the SETTLED pose (upright,
+     ×--pick-scale) as offsets from the centre, then pushed through the svg's
+     CURRENT matrix to ask "where is this point right now?" before the hit
+     test. getComputedStyle and hit testing read the same in-flight animation
+     value, so the two always agree. The anchor is stored as that settled-pose
+     offset, which is why it survives drags untouched: a picked item is rigid
+     (upright, fixed scale), so centre + offset is the live tip forever. */
+  var ANCHOR_STEP = 2;    /* px between probes along the ray */
+  var ANCHOR_BITE = 6;    /* px to sink past the first ink, so antialiasing at
+                             the silhouette edge can't leave a hairline of
+                             wood showing at the tip — but never deeper than
+                             the ink runs, or a thin ring's far side is the
+                             hole again */
+  var ANCHOR_MIN_RUN = 3; /* px of ink along the ray that count as a real
+                             purchase rather than a grazed corner */
+  /* aim points for the probe fan, as fractions of the item's half-short-side
+     either side of the centre. Centre first — it is right for most items and
+     costs one ray; the rest only run when the object is concave enough to
+     have swallowed the centre line. */
+  var ANCHOR_FAN = [0, -0.3, 0.3, -0.6, 0.6, -0.85, 0.85];
+  var ropeOffX = 0, ropeOffY = 0;   /* the anchor, as a settled-pose offset */
+
+  function ropeMatrix(el) {
+    var m = /matrix\(([^)]+)\)/.exec(getComputedStyle(el).transform || '');
+    if (!m) return [1, 0, 0, 1];
+    var n = m[1].split(',');
+    return [parseFloat(n[0]) || 0, parseFloat(n[1]) || 0,
+            parseFloat(n[2]) || 0, parseFloat(n[3]) || 0];
+  }
+
+  /* resolve the anchor for `item`, given its centre and the grommet (both in
+     well coords). Sets ropeOffX/ropeOffY; falls back to the centre (0,0) if
+     nothing is found at all, so the worst case is the old behavior.
+
+     A SINGLE ray at the centre is not enough, because plenty of these
+     objects are concave and the centre line runs through the hole. The line
+     from a tag up-left of the toilet to the toilet's centre passes over the
+     empty air above the bowl, through the notch between bowl and tank, and
+     arrives at a centre that is itself unpainted — it never touches the
+     toilet at all. So the probe FANS: the centre ray first (cheap, and right
+     for the great majority), then progressively wider rays aimed either side
+     of the centre, until one finds ink. The elastic ends up hooked on
+     whatever part of the object actually faces the tag, which is what a
+     string tied round a real object does. */
+  function ropeAnchor(item, cx, cy, gx, gy) {
+    ropeOffX = 0; ropeOffY = 0;
+    var svg = item.querySelector('svg');
+    if (!svg || !document.elementFromPoint) return;
+    var w = well.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var m = ropeMatrix(svg);
+    var r = item.getBoundingClientRect();
+    var dx = cx - gx, dy = cy - gy;
+    var len0 = Math.sqrt(dx * dx + dy * dy);
+    if (len0 < 1) return;
+    /* how far off the centre line the widest fan rays aim. The SHORT side of
+       the item bounds it, so an aim point stays inside the artwork however
+       elongated it is. */
+    var spread = zoom * Math.min(r.width, r.height) / 2;
+    var nx = -dy / len0 * spread, ny = dx / len0 * spread;
+    /* only the stretch of ray that can be inside the item is worth probing —
+       start where it enters the settled pose's bounding circle */
+    var reach = zoom * Math.sqrt(r.width * r.width + r.height * r.height) / 2;
+
+    /* is the settled-pose offset (vx,vy) from the centre on this item's ink
+       as things stand right now? (see the matrix note above) */
+    function inkAt(vx, vy) {
+      var el = document.elementFromPoint(
+        w.left + cx + (m[0] * vx + m[2] * vy) / zoom,
+        w.top + cy + (m[1] * vx + m[3] * vy) / zoom);
+      return !!(el && el.closest && el.closest('.jd-item') === item);
+    }
+
+    var graze = null;
+    /* one ray, grommet -> (centre + perpendicular·f). Returns the offset to
+       grab, or null when this ray finds no real purchase. */
+    function ray(f) {
+      var ex = cx + nx * f - gx, ey = cy + ny * f - gy;
+      var len = Math.sqrt(ex * ex + ey * ey);
+      if (len < 1) return null;
+      var ux = ex / len, uy = ey / len;
+      var from = Math.max(0, len - reach);
+      function at(s) { return inkAt(gx + ux * s - cx, gy + uy * s - cy); }
+      var s, a, b, deep, v;
+      for (s = from; s <= len; s += ANCHOR_STEP) {
+        if (!at(s)) continue;
+        /* Found an edge. Measure how far the ink RUNS from here, refining
+           both ends at sub-step resolution, and settle in the middle of that
+           run — capped at ANCHOR_BITE so a solid body is still gripped near
+           its edge (which is what keeps the sag out in the open) while a
+           SLIVER is gripped down its spine. Biting a flat few px into a
+           popsicle stick crossed near-lengthwise put the tip back out in the
+           antialiasing on the far side; centring in the run cannot. */
+        a = s; b = s;
+        while (a - 0.5 >= from && at(a - 0.5)) { a -= 0.5; }
+        while (b + ANCHOR_STEP <= len && b - a < ANCHOR_BITE * 2 && at(b + ANCHOR_STEP)) {
+          b += ANCHOR_STEP;
+        }
+        while (b + 0.5 <= len && b - a < ANCHOR_BITE * 2 && at(b + 0.5)) { b += 0.5; }
+        deep = Math.min(a + ANCHOR_BITE, (a + b) / 2);
+        v = { x: gx + ux * deep - cx, y: gy + uy * deep - cy };
+        /* a GRAZE — the ray clipping a corner or a rounded end, a run barely
+           a pixel thick — has no interior to sit in, so even its midpoint is
+           within antialiasing of bare wood. Remember it and keep looking for
+           ink thick enough to hold a knot; the graze is only used if nothing
+           better turns up on any ray. */
+        if (b - a < ANCHOR_MIN_RUN) {
+          /* keep the THICKEST graze seen, not the first: on a wispy item —
+             a peacock feather is all barbs — every crossing is a graze, and
+             the fattest one (a quill rather than a barb) is the only place
+             with enough ink to hide a rope end in */
+          if (!graze || b - a > graze.run) { graze = { v: v, run: b - a }; }
+          s = b; continue;
+        }
+        return v;
+      }
+      return null;
+    }
+
+    var i, hit;
+    for (i = 0; i < ANCHOR_FAN.length; i++) {
+      hit = ray(ANCHOR_FAN[i]);
+      if (hit) { ropeOffX = hit.x; ropeOffY = hit.y; return; }
+    }
+    if (graze) { ropeOffX = graze.v.x; ropeOffY = graze.v.y; }
+  }
+
+  /* pick() probes while the 0.15s zoom is still in flight, and the matrix
+     correction above is only as good as a hit test on part-grown artwork:
+     a 3px rim in the settled pose is under 2px while the item is still
+     small, which is thin enough for antialiasing to answer "wood" on a
+     probe that will land on ink a moment later. So the anchor is CONFIRMED
+     once, right after the transition lands, against the real geometry. The
+     chain is still swinging into its sag at that point, so moving a pinned
+     end is invisible — it is the same thing an item drag does. */
+  var ZOOM_SETTLE = 200;    /* ms: the 0.15s transform ease, plus slack */
+  var ropeArm = 0;
+  function ropeConfirmAnchor(item) {
+    if (ropeArm) clearTimeout(ropeArm);
+    ropeArm = setTimeout(function () {
+      ropeArm = 0;
+      if (picked === item) ropeReanchor(item);
+    }, ZOOM_SETTLE);
+  }
+
+  /* the live item endpoint: the anchor, carried by the centre */
+  function ropeItemEnd(item) {
+    var c = ropeCentre(item);
+    return { x: c.x + ropeOffX, y: c.y + ropeOffY };
+  }
+  /* re-read the anchor against the CURRENT grommet direction and move the
+     endpoint to match. Called at the two moments the geometry has just
+     changed and everything is at rest — an item drop and a tag drop — because
+     the near edge of a silhouette depends on which way the string is pulling.
+     Deliberately does NOT re-pin: the rest length stays frozen from pick, so
+     a dragged-away item keeps its hard-won tautness. */
+  function ropeReanchor(item) {
+    if (!ropePts || item !== picked) return;
+    var c = ropeCentre(item);
+    ropeAnchor(item, c.x, c.y, ropeBx, ropeBy);
+    ropeSetItemEnd(c.x + ropeOffX, c.y + ropeOffY);
+  }
+
+  /* (re)string the elastic between two points: freeze the rest length, then
+     lay the chain out ALREADY BOWED by the slack, at zero velocity. Called at
+     every pick — a re-pick gets a fresh string, not a stretched one.
+
+     The bow is not decoration, it is the difference between string and
+     squiggle. Laid out dead straight, the extra length has nowhere to go: the
+     tag is seated directly below its item most of the time, so the span is
+     near-vertical, gravity points along it, and the surplus buckles into a
+     little kink near one pin instead of hanging. Seeding a half-sine bow of
+     the right amplitude spends the surplus sideways from the first frame —
+     for y = A·sin(πt) the arc runs π²A²/4L longer than the chord, so
+     A = (2/π)·√(L·(rest−L)) puts exactly the slack we froze into the curve.
+     The bow leans DOWNWARD (leftward when the span is perfectly vertical,
+     which keeps it off the manila, whose grommet is on its left edge), so
+     gravity finishes the shape rather than fighting it. */
+  function ropePin(ax, ay, bx, by) {
+    var n = ROPE.SEGMENTS, i, t;
+    var dx = bx - ax, dy = by - ay;
+    var span = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    var rest = Math.max(ROPE.MIN_REST, span * ROPE.SLACK);
+    ropeSeg = rest / (n - 1);
+    ropeAx = ax; ropeAy = ay; ropeBx = bx; ropeBy = by;
+    var amp = 2 / Math.PI * Math.sqrt(span * Math.max(0, rest - span));
+    var nx = -dy / span, ny = dx / span;            /* unit perpendicular */
+    if (ny < 0) { nx = -nx; ny = -ny; }             /* always bow downward */
+    ropePts = [];
+    for (i = 0; i < n; i++) {
+      t = i / (n - 1);
+      var bow = amp * Math.sin(Math.PI * t);
+      var x = ax + dx * t + nx * bow, y = ay + dy * t + ny * bow;
+      ropePts.push({ x: x, y: y, px: x, py: y });
+    }
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else { ropeDraw(); ropeWake(); }
+  }
+  /* endpoint setters — the ONLY things that wake the loop */
+  function ropeSetItemEnd(x, y) {
+    if (!ropePts || (x === ropeAx && y === ropeAy)) return;
+    ropeAx = x; ropeAy = y; ropeKick();
+  }
+  function ropeSetTagEnd(x, y) {
+    if (!ropePts || (x === ropeBx && y === ropeBy)) return;
+    ropeBx = x; ropeBy = y; ropeKick();
+  }
+  /* reduced motion: no swinging, ever. Run the same constraints to
+     convergence in one synchronous pass and draw the settled shape, so the
+     string is still correctly slack or taut — it just never sways there. */
+  function ropeKick() {
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else ropeWake();
+  }
+
+  /* one physics frame. Returns the largest distance any point travelled, so
+     the caller can decide whether the chain has come to rest. */
+  function ropeStep() {
+    var n = ropePts.length, i, k, p, moved = 0;
+    for (i = 1; i < n - 1; i++) {          /* verlet integrate the free points */
+      p = ropePts[i];
+      var vx = (p.x - p.px) * ROPE.DAMPING, vy = (p.y - p.py) * ROPE.DAMPING;
+      p.px = p.x; p.py = p.y;
+      p.x += vx; p.y += vy + ROPE.GRAVITY;
+    }
+    p = ropePts[0]; p.x = p.px = ropeAx; p.y = p.py = ropeAy;      /* pinned */
+    p = ropePts[n - 1]; p.x = p.px = ropeBx; p.y = p.py = ropeBy;  /* pinned */
+    /* Gauss-Seidel relaxation, ALTERNATING DIRECTION each pass. A one-way
+       sweep resolves each link using the already-corrected point behind it,
+       so the leftover error is pushed steadily toward the far end: the chain
+       coils up against whichever pin the sweep finishes on and takes seconds
+       of visible creep to even out. Reversing every other pass sends the
+       error back the other way and the slack distributes evenly — the shape
+       is symmetric and the chain reaches rest (and therefore sleeps) in a
+       fraction of the frames. */
+    for (k = 0; k < ROPE.ITER; k++) {
+      var back = (k & 1) === 1;
+      for (var j = 0; j < n - 1; j++) {
+        i = back ? n - 2 - j : j;
+        var a = ropePts[i], b = ropePts[i + 1];
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        /* half the error each when both ends are free; the whole of it when
+           one end is a pin and cannot absorb its share */
+        var f = (d - ropeSeg) / d * 0.5;
+        var af = i > 0, bf = i + 1 < n - 1;
+        if (af && bf) {
+          a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
+        } else if (af) { a.x += dx * f * 2; a.y += dy * f * 2; }
+        else if (bf) { b.x -= dx * f * 2; b.y -= dy * f * 2; }
+      }
+    }
+    /* BENDING RESISTANCE — the thing that makes this an elastic band and not
+       a bead chain, and the fix for the last of the "reads taut" cases
+       (testing report, 2026-08-09).
+
+       A perfectly limp chain hung between two points that are vertically in
+       line has one lowest-energy shape: fold the surplus into a hairpin and
+       let it hang straight down as a narrow bight. That is genuinely what a
+       bead chain does — and on a tag seated directly above its item it put
+       the entire fold inside the artwork, leaving a dead-straight line on
+       screen. Correct physics, useless picture, and untrue to the object:
+       red elastic cord resists being folded double. It bows.
+
+       Each interior point is nudged toward the midpoint of its neighbours,
+       which is a curvature penalty: negligible along a broad sag (the
+       neighbours nearly are its midpoint) and strong in a hairpin (where the
+       midpoint is far away). So the surplus stops folding and spends itself
+       sideways instead, which is both what the real cord does and the shape
+       that shows. Applied after the distance constraints and kept small, so
+       it shapes the sag without straightening it. */
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      p.x += ((ropePts[i - 1].x + ropePts[i + 1].x) / 2 - p.x) * ROPE.STIFF;
+      p.y += ((ropePts[i - 1].y + ropePts[i + 1].y) / 2 - p.y) * ROPE.STIFF;
+    }
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      var mx = p.x - p.px, my = p.y - p.py, m = Math.sqrt(mx * mx + my * my);
+      if (m > moved) moved = m;
+    }
+    return moved;
+  }
+  /* run to rest (reduced motion, and any time a settled shape is wanted
+     without animating toward it). Capped so a pathological configuration
+     can never spin the main thread. */
+  function ropeSettle() {
+    for (var i = 0; i < 400; i++) { if (ropeStep() < ROPE.EPS) return; }
+  }
+
+  /* one <path> for the whole chain, midpoint-quadratic smoothed so 16 points
+     read as string rather than as a surveyor's polyline, plus the grommet
+     ring at the tag end. Attributes are written on nodes built once in
+     buildTag() — re-parsing innerHTML 60×/second is the one avoidable cost
+     here. */
+  function ropeDraw() {
+    if (!ropePts || !ropePath) return;
+    var n = ropePts.length, i;
+    var d = 'M ' + r1(ropePts[0].x) + ' ' + r1(ropePts[0].y);
+    for (i = 1; i < n - 1; i++) {
+      d += ' Q ' + r1(ropePts[i].x) + ' ' + r1(ropePts[i].y) + ' ' +
+        r1((ropePts[i].x + ropePts[i + 1].x) / 2) + ' ' +
+        r1((ropePts[i].y + ropePts[i + 1].y) / 2);
+    }
+    d += ' L ' + r1(ropePts[n - 1].x) + ' ' + r1(ropePts[n - 1].y);
+    ropePath.setAttribute('d', d);
+    ropeGrom.setAttribute('cx', r1(ropeBx));
+    ropeGrom.setAttribute('cy', r1(ropeBy));
+  }
+
+  function ropeTick() {
+    ropeRAF = 0;
+    if (!ropePts) return;
+    var moved = ropeStep();
+    ropeDraw();
+    if (moved > ROPE.EPS) ropeWake();     /* still swinging → another frame */
+  }
+  function ropeWake() {
+    if (!ropeRAF && ropePts && !ropeReduced()) {
+      ropeRAF = requestAnimationFrame(ropeTick);
+    }
+  }
+  function ropeStop() {
+    if (ropeRAF) cancelAnimationFrame(ropeRAF);
+    ropeRAF = 0; ropePts = null;
+    ropeOffX = 0; ropeOffY = 0;
+  }
+
+  /* ---- dragging the tag itself (owner request, 2026-08-09) ---------------
+     The tag is furniture now: press anywhere on the manila and it moves,
+     clamped to the well with the same 8px margin pick() seats against, with
+     the grommet endpoint feeding the rope every frame. Two guards make it
+     coexist with what is already on the tag:
+       · the two <a class="btn"> links are exempt — a press that starts on one
+         never becomes a drag, so DOWNLOAD SVG and REPORT CARD still click;
+       · a ~4px slop before the press counts as a drag, so an imprecise tap on
+         the manila doesn't shift the tag a pixel under the finger.
+     Pointer capture keeps the drag alive off the tag's edge; the document
+     dismissal handler already ignores presses inside .jd-itemtag. */
+  var TAG_SLOP = 4;
+  var tdrag = null;
+  function wireTagDrag() {
+    tag.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest && e.target.closest('.btn')) return;
+      tdrag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, on: false,
+                l0: parseFloat(tag.style.left) || 0,
+                t0: parseFloat(tag.style.top) || 0 };
+      try { tag.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault();          /* no text selection dragging the manila */
+    });
+    tag.addEventListener('pointermove', function (e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      var dx = e.clientX - tdrag.sx, dy = e.clientY - tdrag.sy;
+      if (!tdrag.on) {
+        if (dx * dx + dy * dy < TAG_SLOP * TAG_SLOP) return;
+        tdrag.on = true;
+        tag.classList.add('is-dragging');
+      }
+      var w = well.getBoundingClientRect();
+      var l = Math.max(8, Math.min(w.width - tag.offsetWidth - 8, tdrag.l0 + dx));
+      var t = Math.max(8, Math.min(w.height - ropeTagH - 8, tdrag.t0 + dy));
+      tag.style.left = l + 'px';
+      tag.style.top = t + 'px';
+      ropeSetTagEnd(l + 10, t + ropeTagH / 2);
+    });
+    function endTagDrag(e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      var moved = tdrag.on;
+      tag.classList.remove('is-dragging');
+      tdrag = null;
+      /* the tag has landed somewhere new, so the string pulls on the object
+         from a new direction — re-read which edge it grips */
+      if (moved && picked) ropeReanchor(picked);
+    }
+    tag.addEventListener('pointerup', endTagDrag);
+    tag.addEventListener('pointercancel', endTagDrag);
+  }
+
   function buildTag() {
     tag = document.createElement('div');
     tag.className = 'jd-itemtag';
     tag.setAttribute('role', 'group');
     rope = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     rope.setAttribute('class', 'jd-rope');
+    /* built once, then only ever given new attribute values — see ropeDraw */
+    rope.innerHTML =
+      '<path fill="none" stroke="#b3402f" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle r="4.5" fill="none" stroke="#b3402f" stroke-width="2"/>';
+    ropePath = rope.querySelector('path');
+    ropeGrom = rope.querySelector('circle');
     well.appendChild(rope);
     well.appendChild(tag);
+    wireTagDrag();
   }
 
   function returnToPile(item) {
@@ -550,7 +1052,14 @@
     }
   }
   function hideTag() {
-    if (tag) { tag.classList.remove('is-on'); rope.classList.remove('is-on'); }
+    if (tag) {
+      tag.classList.remove('is-on');
+      tag.classList.remove('is-dragging');
+      rope.classList.remove('is-on');
+    }
+    tdrag = null;
+    if (ropeArm) { clearTimeout(ropeArm); ropeArm = 0; }
+    ropeStop();          /* the chain stops simulating the moment it's gone */
     if (picked) {
       picked.classList.remove('is-picked');
       /* mid-drag dismissal: moving the node now would break pointer
@@ -560,6 +1069,40 @@
       picked = null;
     }
     well.classList.remove('jd-has-pick');
+  }
+
+  /* An item lying against a wall zooms straight into the well's
+     overflow:hidden and gets a slice shaved off it — the skeleton key lost
+     the end of its shaft, the succulent the top of its leaves (testing
+     report, 2026-08-09). Selecting a specimen is picking it UP to look at
+     it, so before the zoom runs, slide it just far enough off the wall that
+     its enlarged self fits. Done once, as a baked left/top in % exactly like
+     settle()'s, so it costs one layout move and nothing downstream knows the
+     difference; the item keeps the new spot after dismissal, the way an
+     object you moved to see better stays where you put it.
+     Two limits: an item too big for the well in a given axis is left alone
+     in that axis (there is no position that helps), and the slide is capped,
+     because the move is instant while the zoom eases — a tap must never fling
+     an object across the drawer out from under the finger that chose it. The
+     cap is generous next to the shaves it was written for (~14px), but one of
+     the XL items jammed into a corner can still keep a sliver behind the
+     wall; that is the deliberate trade. */
+  var NUDGE_MAX = 48;
+  function nudgeIntoWell(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var hw = zoom * r.width / 2 + 2, hh = zoom * r.height / 2 + 2;
+    var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
+    var dx = hw * 2 > w.width ? 0
+      : Math.max(hw, Math.min(w.width - hw, cx)) - cx;
+    var dy = hh * 2 > w.height ? 0
+      : Math.max(hh, Math.min(w.height - hh, cy)) - cy;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    dx = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dx));
+    dy = Math.max(-NUDGE_MAX, Math.min(NUDGE_MAX, dy));
+    item.style.left = ((cx + dx) / w.width * 100).toFixed(2) + '%';
+    item.style.top = ((cy + dy) / w.height * 100).toFixed(2) + '%';
   }
 
   function pick(item) {
@@ -611,44 +1154,77 @@
 
     /* seat the tag just below the item, grommet toward it, clamped to the
        well; if there's no room below, it hangs above instead. The wrapper
-       div's rect knows nothing of the inner svg's rotate/scale (and the
-       picked zoom is still transitioning at this point anyway), so the
-       enlarged extent is PREDICTED: rotate the layout box by the settled
-       rotation, scale by --pick-scale, and seat against that — otherwise
-       the zoomed artwork lands on top of its own tag. */
+       div's rect knows nothing of the inner svg's scale (and the picked zoom
+       is still transitioning at this point anyway), so the enlarged extent is
+       PREDICTED: --pick-scale × the layout height, seated against that —
+       otherwise the zoomed artwork lands on top of its own tag.
+       This used to also rotate the layout box by --rot × 0.94 to find the
+       swept height. It no longer has to: a picked specimen stands UPRIGHT
+       (see .jd-item.is-picked svg), so the displayed angle is 0 and the
+       layout box IS the extent. One fewer approximation, one less seat
+       error — the old projection over-estimated the height of any rotated
+       item and pushed its tag further down the well than it needed to go. */
+    nudgeIntoWell(item);      /* before measuring — it may move the item */
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
-    var cs = getComputedStyle(item);
-    var zoom = parseFloat(cs.getPropertyValue('--pick-scale')) || 1;
-    var ang = (parseFloat(cs.getPropertyValue('--rot')) || 0) * 0.94 * Math.PI / 180;
-    var vh = zoom * (r.width * Math.abs(Math.sin(ang)) + r.height * Math.abs(Math.cos(ang)));
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var vh = zoom * r.height;
     var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
     var vTop = cy - vh / 2, vBottom = cy + vh / 2;
-    var ax = cx;                                 /* anchor: item bottom centre */
-    var ay = vBottom - 6;
+    var ay = vBottom - 6;                        /* foot of the predicted extent */
     tag.classList.add('is-on');                  /* measurable before placing */
     var tw = tag.offsetWidth, th = tag.offsetHeight;
     var below = ay + 26 + th < w.height - 8;
     var ty = below ? ay + 26 : (vTop - 20 - th);
-    var tx = Math.max(8, Math.min(w.width - tw - 8, ax + 4));
+    function clampX(v) { return Math.max(8, Math.min(w.width - tw - 8, v)); }
+    var tx;
+    if (below) {
+      tx = clampX(cx + 4);
+    } else {
+      /* SEATED ABOVE — LEAN IT TO ONE SIDE (testing report, 2026-08-09).
+         A tag hung straight above its item puts both ends of the elastic on
+         one vertical line, and a slack cord between two such points has
+         nowhere to put its surplus except a fold hanging straight down —
+         i.e. straight into the artwork, where none of it can be seen. The
+         string then reads bone-taut however much slack it actually has.
+         Leaning the tag sideways by a good fraction of the drop gives the
+         sag somewhere to be, and the elastic hangs in an arc the way it
+         already does in the (far commoner) seated-below case.
+         HOW FAR: the belly of the sag hangs around the midpoint of the two
+         ends, so the lean has to be wide enough to swing that midpoint clear
+         of the artwork — a lean of half the item's width just parks the
+         belly back on top of it. Hence the item's own ZOOMED width (plus a
+         margin) as the floor, alongside a fraction of the drop.
+         Lean LEFT by preference: the grommet is on the tag's left edge, so
+         leaning left slides the body back over ground the tag already
+         covered and can't push it off the right wall. If the well runs out
+         that way — item hard against the left edge — lean right instead;
+         whichever survives clamping with more offset wins. */
+      var lean = Math.max(110, 0.62 * (cy - (ty + th / 2)), zoom * r.width + 40);
+      var lx = clampX(cx - lean - 10), rx = clampX(cx + lean - 10);
+      tx = Math.abs(lx + 10 - cx) >= Math.abs(rx + 10 - cx) ? lx : rx;
+    }
     tag.style.left = tx + 'px';
     tag.style.top = ty + 'px';
 
-    /* the red elastic: item anchor -> a loop through the grommet (which
-       sits at the tag's left edge, vertically centred) */
+    /* string the elastic: the item's NEAR EDGE -> the grommet at the tag's
+       left edge. The predicted extent above still decides where the tag is
+       SEATED (so the zoomed artwork never lands on its own tag); it has no
+       say in where the rope starts, because that is read off the silhouette
+       itself — see ropeAnchor. Rest length is frozen here — see ROPE. */
+    ropeTagH = th;
     var gx = tx + 10, gy = ty + th / 2;
-    var sag = below ? 10 : -10;
+    ropeAnchor(item, cx, cy, gx, gy);
     rope.setAttribute('class', 'jd-rope is-on');
-    rope.innerHTML =
-      '<path d="M ' + ax + ' ' + (below ? ay : vTop + 6) +
-      ' Q ' + ((ax + gx) / 2 + 6) + ' ' + ((ay + gy) / 2 + sag) +
-      ', ' + gx + ' ' + gy + '" fill="none" stroke="#b3402f" ' +
-      'stroke-width="2" stroke-linecap="round"/>' +
-      '<circle cx="' + gx + '" cy="' + gy + '" r="4.5" fill="none" ' +
-      'stroke="#b3402f" stroke-width="2"/>';
+    ropePin(cx + ropeOffX, cy + ropeOffY, gx, gy);
+    ropeConfirmAnchor(item);
   }
 
   /* dismissal: any press that isn't the item or the tag — wood, page,
-     notes, anywhere — plus Escape and resize (positions go stale) */
+     notes, anywhere — plus Escape and resize (positions go stale). Note what
+     is NOT on this list any more: dragging the picked item. The elastic
+     stretches and follows now (2026-08-09), so a drag is inspection, not
+     dismissal — only a press on something else lets go. */
   /* every dismissal path stands down while the report card is open — the
      record owns Esc/scrim then, and the selection must survive its close */
   document.addEventListener('pointerdown', function (e) {
@@ -676,21 +1252,41 @@
     dropX = x; dropY = y;
     item.style.setProperty('--dx', (x - ox).toFixed(1) + 'px');
     item.style.setProperty('--dy', (y - oy).toFixed(1) + 'px');
+    /* the clamped x,y IS the item's live centre in well coords — exactly the
+       rope's item endpoint, handed over for free. Measuring the element per
+       frame instead would force a layout on a filtered, compositor-promoted
+       node mid-drag, which is the whole reason this path is transform-only. */
+    if (item === picked) ropeSetItemEnd(x + ropeOffX, y + ropeOffY);
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
     if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
-    item.style.zIndex = ++zTop;                  /* stays on top of the pile */
+    /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
+       item 72) instead of riding the zTop counter — it is still selected and
+       the elastic must still pass under it */
+    item.style.zIndex = item === picked ? 72 : ++zTop;
     if (moved) {                                 /* bake position, then rest */
       var w = well.getBoundingClientRect();
       item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
       item.style.top = (dropY / w.height * 100).toFixed(2) + '%';
-      var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
-      rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
-      item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      /* the landing jostle — skipped for a picked item for the same reason
+         rotation input is (see spin): it stands upright, so the nudge would
+         not be seen now and would only show up as an unexplained kick when
+         the tag is dismissed */
+      if (item !== picked) {
+        var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
+        rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
+        item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      }
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
+    /* one authoritative pass once the position is baked into left/top: the %
+       round-trip moves the centre by a fraction of a pixel, and the drop has
+       changed which way the string pulls, so the near edge it should be
+       gripping has moved too. Both are settled here in one go — a handful of
+       hit tests on a stationary item, never per frame. */
+    ropeReanchor(item);
   }
 
   /* per-item wiring is deferred: the pile is BUILT by the loader above, so
@@ -719,10 +1315,9 @@
       fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
       var dx = e.clientX - sx, dy = e.clientY - sy;
       if (held === item) {
-        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
-          drag = true;
-          if (picked === item) hideTag();   /* the elastic lets go */
-        }
+        /* the elastic used to let go here; it holds on now (2026-08-09) —
+           place() feeds the rope the same clamped centre it clamps to */
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
         if (drag) place(item, ox + dx, oy + dy);
       }
     });
@@ -748,8 +1343,21 @@
   };
 
   /* ---- rotating the held item ------------------------------------------ */
+  /* ROTATION IS INHIBITED WHILE PICKED (owner request, 2026-08-09). A picked
+     specimen displays upright at 0deg, so every rotation gesture would mutate
+     a --rot nothing is currently drawing — invisible until dismissal, at
+     which point the item would drop back to the pile at an angle the owner
+     never saw it take. Silently banking the change was the alternative and it
+     is worse: a gesture with no feedback and a delayed surprise. So the input
+     is simply refused while the item is picked; dismiss it and the pile
+     gesture works exactly as before. The events are still consumed by the
+     handlers below (preventDefault stays), because a wheel or pinch over a
+     held item must never scroll or zoom the page out from under it. */
   function rotOf(item) { return parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0; }
-  function spin(item, d) { item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg'); }
+  function spin(item, d) {
+    if (item === picked) return;
+    item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg');
+  }
 
   window.addEventListener('wheel', function (e) {
     if (!held) return;
@@ -772,6 +1380,7 @@
   window.addEventListener('gesturechange', function (e) {
     if (!held) return;
     e.preventDefault();
+    if (held === picked) return;              /* upright while picked */
     held.style.setProperty('--rot', (gBase + e.rotation).toFixed(1) + 'deg');
   });
   window.addEventListener('gestureend', function (e) { if (held) e.preventDefault(); });
@@ -792,6 +1401,10 @@
   }, true);
   document.addEventListener('pointermove', function (e) {
     if (!twist || !held || e.pointerId !== twist.id) return;
+    /* the second finger is still SWALLOWED while picked (the twist object
+       exists, so it can't grab a neighbour or dismiss the tag) — it just
+       doesn't turn an upright specimen */
+    if (held === picked) return;
     var a = Math.atan2(e.clientY - fy, e.clientX - fx);
     held.style.setProperty('--rot',
       (twist.r0 + (a - twist.a0) * 180 / Math.PI).toFixed(1) + 'deg');
@@ -867,12 +1480,21 @@
    hardcoded), alternatives' SVGs are fetched lazily on first open, opening
    sets #<id> via pushState (deep links; popstate closes — Android back
    closes the card, not the site), and an item_open event is tracked.
-   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_) so they can
-   never collide with the pile's inlined primaries or each other. */
+   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_, enlargement
+   jzN_) so they can never collide with the pile's inlined primaries or each
+   other. Pressing the artwork plate ENLARGES it over the card; that layer is
+   a second dismissable thing inside one dialog, so Escape peels the
+   enlargement before the card (see the keydown handler at the foot). */
 (function () {
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
+     to be, the card is a form and the art is one field on it — so pressing
+     the plate lifts the same artwork onto a full-viewport layer where it can
+     actually be read. State lives here rather than in the DOM because Esc
+     has to know which layer it is peeling: enlargement first, card second. */
+  var zoomEl = null, zoomOn = false, zoomFrom = null;
   var markSeq = 0;
   var JITTER = [-1.7, 1.3, -0.8, 2.0, -1.4, 0.9, -2.1, 1.6];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -932,8 +1554,13 @@
   }
 
   /* the vaporwave floor: black-and-white checkerboard projected toward a
-     center vanishing point; far rows dissolve into the navy horizon */
-  function floorSVG() {
+     center vanishing point; far rows dissolve into the navy horizon.
+     `pfx` namespaces the two gradient ids: the plate and the enlargement can
+     be in the document at the same time, and while their gradients happen to
+     be identical today, two copies fighting over one id is exactly the bug
+     svgInst exists to prevent — so the floor prefixes its own defs too. */
+  function floorSVG(pfx) {
+    pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
     var ROWS = 9, R = 0.7, CW = 104;
     var ts = [1];
@@ -954,19 +1581,21 @@
     return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
       'preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
       '<defs>' +
-      '<linearGradient id="jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
+      '<linearGradient id="' + pfx + 'jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#0a0e24"/>' +
       '<stop offset="0.8" stop-color="#141b44"/>' +
       '<stop offset="1" stop-color="#1c2456"/>' +
       '</linearGradient>' +
-      '<linearGradient id="jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
+      '<linearGradient id="' + pfx + 'jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#1c2456"/>' +
       '<stop offset="0.55" stop-color="#151b40" stop-opacity="0.55"/>' +
       '<stop offset="1" stop-color="#101010" stop-opacity="0"/>' +
       '</linearGradient></defs>' +
-      '<rect x="0" y="0" width="' + W + '" height="' + HOR + '" fill="url(#jdRcSky)"/>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + HOR +
+      '" fill="url(#' + pfx + 'jdRcSky)"/>' +
       cells +
-      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" fill="url(#jdRcFade)"/>' +
+      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" ' +
+      'fill="url(#' + pfx + 'jdRcFade)"/>' +
       '</svg>';
   }
 
@@ -1036,10 +1665,18 @@
       fillHTML('Process', esc(processLabel(resp.generation))) +
       fillHTML('Size', esc(sizeLabel(payload.taxonomy, entry) || '—')) +
       '</div>';
-    h += '<div class="rc-block rc-plate">' + floorSVG() +
+    /* the plate is the enlargement's handle: role/tabindex make it a real
+       button for keyboard and screen readers without wrapping the artwork in
+       a <button>, whose UA box model would fight the absolutely-positioned
+       floor. The corner hint is there for touch, where there is no hover to
+       discover the affordance with. */
+    h += '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
+      'aria-label="Enlarge the artwork">' + floorSVG() +
       '<div class="rc-plate-art">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jr' + curIdx + '_') +
-      '</div></div>';
+      '</div>' +
+      '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
+      '</div>';
     h += '<div class="rc-block rc-head">The prompt</div>' +
       '<div class="rc-block rc-assign"><p>“' + esc(entry.prompt) + '”</p></div>';
     h += '<div class="rc-block rc-head">Annotations</div>' +
@@ -1056,6 +1693,24 @@
       '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
       '</div></div>';
     return h;
+  }
+
+  /* the enlargement's contents: the SAME response the card is showing, on the
+     same black plate over the same vaporwave floor, so it reads as the plate
+     grown rather than a different picture. Its inlined copy takes a `jz`
+     prefix — the `jr` copy is still in the card underneath it. */
+  function zoomHTML(entry, resp, curIdx) {
+    var m = modelOf(resp.model);
+    return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+      'aria-label="Shrink the artwork">' + floorSVG('z') +
+      '<div class="rc-zoom-art">' +
+      svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
+      '</div></div>' +
+      '<div class="rc-zoom-cap">' +
+      '<span class="rc-zoom-cap-t">' + esc(entry.title) + ' · ' + esc(m.label) +
+      '</span>' +
+      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
+      '</div>';
   }
 
   /* red-pencil waver filters, injected once (stitchTiles="stitch") */
@@ -1118,6 +1773,10 @@
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
     scrollEl.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.rc-plate')) {
+        openZoom(e.target.closest('.rc-plate'));
+        return;
+      }
       var b = e.target.closest ? e.target.closest('.rc-alt') : null;
       if (!b) return;
       var i = parseInt(b.getAttribute('data-resp'), 10);
@@ -1125,12 +1784,96 @@
       curResp = i;
       render(false);
     });
+    /* the plate answers Enter/Space like the button it claims to be; Space is
+       preventDefault'd or the card scrolls out from under the enlargement */
+    scrollEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      var p = e.target.closest ? e.target.closest('.rc-plate') : null;
+      if (!p) return;
+      e.preventDefault();
+      openZoom(p);
+    });
+  }
+
+  /* The layer hangs off <body>, not off the scrim. The scrim's z-index makes
+     it a stacking context, so a child of it can never paint above the fixed
+     site banner however high its own z-index — and the enlargement has to
+     cover the whole viewport to be worth doing (see junk-drawer.css). Being
+     outside the scrim also keeps these presses away from the scrim's
+     click-to-close-the-card: the card stays put underneath. */
+  function buildZoom() {
+    if (zoomEl) return;
+    zoomEl = document.createElement('div');
+    zoomEl.className = 'jd-record-zoom';
+    /* it must be a dialog in its own right: the card carries aria-modal, so
+       assistive tech ignores everything outside the card — and this layer,
+       living on <body>, is outside it. Focus moves in here on open, which is
+       what scopes AT to this dialog rather than the card behind it. */
+    zoomEl.setAttribute('role', 'dialog');
+    zoomEl.setAttribute('aria-modal', 'true');
+    zoomEl.setAttribute('aria-label', 'enlarged artwork');
+    document.body.appendChild(zoomEl);
+    /* one dismissal path for every press inside the layer — the artwork
+       itself ("click it again"), the caption, or the dark surround
+       ("click outside it"). All three mean: put it back. */
+    zoomEl.addEventListener('click', function () { closeZoom(); });
+    zoomEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      closeZoom();
+    });
+  }
+
+  /* fill (or refill) the layer from whatever response the card is showing —
+     called on open and again whenever the card re-renders under it, so the
+     enlargement can never drift onto a stale response */
+  function syncZoom() {
+    if (!zoomOn || !zoomEl || !curEntry) return;
+    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    zoomEl.innerHTML = zoomHTML(curEntry, resp, curResp);
+  }
+
+  function openZoom(from) {
+    if (!isOpen || zoomOn || !curEntry) return;
+    buildZoom();
+    zoomOn = true;
+    zoomFrom = from || null;
+    syncZoom();
+    zoomEl.classList.add('is-on');
+    /* focus follows the artwork so Space/Enter/Esc all land here, and so a
+       keyboard visitor isn't left tabbing the card hidden behind the layer */
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (fig) { try { fig.focus(); } catch (e) {} }
+    /* deliberately NOT tracked: the enlargement is a toggle, and the events
+       endpoint's allowlist doesn't carry this page anyway (item_open above
+       is the one call the module makes, and it is already the exception) */
+  }
+
+  /* `silent` closes without handing focus back — used when the whole card is
+     going away and the plate we came from is about to be hidden anyway */
+  function closeZoom(silent) {
+    if (!zoomOn) return;
+    zoomOn = false;
+    if (zoomEl) { zoomEl.classList.remove('is-on'); zoomEl.innerHTML = ''; }
+    var back = zoomFrom;
+    zoomFrom = null;
+    if (!silent && back && document.contains(back)) {
+      try { back.focus(); } catch (e) {}
+    }
   }
 
   function render(animate) {
     markSeq = 0;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     scrollEl.innerHTML = cardHTML(curEntry, resp, curResp);
+    /* a re-render replaces the plate node, so an open enlargement re-syncs to
+       the new response and re-points its way home (the lazy alternative SVGs
+       landing is the common case; switching response while enlarged is the
+       other) */
+    if (zoomOn) {
+      syncZoom();
+      zoomFrom = scrollEl.querySelector('.rc-plate');
+    }
     if (animate) {
       cardEl.classList.remove('is-enter');
       void cardEl.offsetWidth;
@@ -1165,6 +1908,7 @@
 
   function teardown() {
     if (!isOpen) return;
+    closeZoom(true);
     isOpen = false;
     if (scrim) scrim.classList.remove('is-on');
     document.documentElement.classList.remove('jd-record-open');
@@ -1187,8 +1931,15 @@
     if (isOpen && (!h || !curEntry || h !== curEntry.id)) { teardown(); }
     else if (!isOpen && h && payload && byId(payload.items, h)) { open(h, true); }
   });
+  /* Escape peels ONE layer per press: the enlargement first, the card only
+     once the artwork is back down on its plate. (The pile's own Esc handler
+     is already standing down for the whole time the record is open, so this
+     is the only claim on the key here — no capture-phase interception
+     needed, just the order of these two branches.) */
   window.addEventListener('keydown', function (e) {
-    if (isOpen && e.key === 'Escape') close();
+    if (!isOpen || e.key !== 'Escape') return;
+    if (zoomOn) { closeZoom(); return; }
+    close();
   });
 
   window.JD_record = {
