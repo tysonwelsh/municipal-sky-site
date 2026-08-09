@@ -9,6 +9,7 @@
     "metal"
   ],
   "sizeClass": "s",
+  "retired": true,
   "responses": [
     {
       "rid": "r1",
