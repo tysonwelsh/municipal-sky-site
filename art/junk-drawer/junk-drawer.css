@@ -173,11 +173,22 @@ html { scroll-behavior: smooth; }
    (not a pulse — the object stays raised off the pile while inspected),
    and the specimen zooms up to --pick-scale so it can actually be SEEN
    (owner request, 2026-08-09). The zoom is transform-only: layout, drop
-   clamps, and neighbours are untouched; it may overhang the well edge. */
+   clamps, and neighbours are untouched; it may overhang the well edge.
+   A picked specimen also STANDS UPRIGHT (owner request, 2026-08-09): the
+   scatter angle is how the thing happens to be LYING in the drawer, and
+   picking it up is precisely the act of turning it the right way round —
+   so it shows at 0deg, exactly as the SVG reads in an editor, and drops
+   back to its scattered angle on dismissal. The rotate() function is kept
+   with an explicit 0deg rather than dropped: transform interpolates
+   function-by-function, so both directions animate on the 0.15s ease below
+   only while the same function list is present on either side.
+   Rule ORDER is load-bearing — :hover svg, .is-held svg and this rule all
+   score (0,2,1), so the last one written wins. This must stay last, or a
+   hovered/dragged picked item would snap back to its scatter angle. */
 .jd-item.is-picked {
   filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
 }
-.jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(var(--pick-scale)); }
+.jd-item.is-picked svg { transform: rotate(0deg) scale(var(--pick-scale)); }
 
 /* while something is picked, the REST of the pile falls back into shade —
    selection as stage light. Held/hovered items step back out of the dim

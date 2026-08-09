@@ -514,7 +514,9 @@
      grommet (owner design, mockup-6). Persists until dismissed: tap wood /
      Esc / pick another item. Dragging the picked item NO LONGER lets go —
      the elastic has real physics now and follows (owner request,
-     2026-08-09); the tag itself can be dragged around too. */
+     2026-08-09); the tag itself can be dragged around too. The picked
+     specimen is also turned UPRIGHT for inspection (0deg, CSS) and its
+     rotation gestures stand down until it is put back — see spin(). */
   var tag = null, rope = null, picked = null, pendingReturn = null;
   var pileEl = well.querySelector('.jd-pile');
 
@@ -605,27 +607,42 @@
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
     return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top };
   }
-  /* the grommet: 10px in from the tag's left edge, vertically centred — the
-     same spot the ::before brass ring is painted at in the stylesheet */
-  function ropeTagEnd() {
-    return { x: (parseFloat(tag.style.left) || 0) + 10,
-             y: (parseFloat(tag.style.top) || 0) + ropeTagH / 2 };
-  }
+  /* The tag endpoint is the GROMMET: 10px in from the tag's left edge,
+     vertically centred — the same spot the ::before brass ring is painted at
+     in the stylesheet. Both places that move the tag (pick's seating and the
+     tag drag) already hold its left/top as numbers, so they pass the grommet
+     straight to ropeSetTagEnd rather than reading it back off the element. */
 
-  /* (re)string the elastic between two points: lay the chain along the
-     straight line between them at zero velocity and freeze the rest length.
-     Called at every pick — a re-pick gets a fresh string, not a stretched
-     one. Starting straight means the first second of animation IS the string
-     dropping into its sag, which reads as the tag being hung. */
+  /* (re)string the elastic between two points: freeze the rest length, then
+     lay the chain out ALREADY BOWED by the slack, at zero velocity. Called at
+     every pick — a re-pick gets a fresh string, not a stretched one.
+
+     The bow is not decoration, it is the difference between string and
+     squiggle. Laid out dead straight, the extra length has nowhere to go: the
+     tag is seated directly below its item most of the time, so the span is
+     near-vertical, gravity points along it, and the surplus buckles into a
+     little kink near one pin instead of hanging. Seeding a half-sine bow of
+     the right amplitude spends the surplus sideways from the first frame —
+     for y = A·sin(πt) the arc runs π²A²/4L longer than the chord, so
+     A = (2/π)·√(L·(rest−L)) puts exactly the slack we froze into the curve.
+     The bow leans DOWNWARD (leftward when the span is perfectly vertical,
+     which keeps it off the manila, whose grommet is on its left edge), so
+     gravity finishes the shape rather than fighting it. */
   function ropePin(ax, ay, bx, by) {
     var n = ROPE.SEGMENTS, i, t;
-    var span = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
-    ropeSeg = Math.max(ROPE.MIN_REST, span * ROPE.SLACK) / (n - 1);
+    var dx = bx - ax, dy = by - ay;
+    var span = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    var rest = Math.max(ROPE.MIN_REST, span * ROPE.SLACK);
+    ropeSeg = rest / (n - 1);
     ropeAx = ax; ropeAy = ay; ropeBx = bx; ropeBy = by;
+    var amp = 2 / Math.PI * Math.sqrt(span * Math.max(0, rest - span));
+    var nx = -dy / span, ny = dx / span;            /* unit perpendicular */
+    if (ny < 0) { nx = -nx; ny = -ny; }             /* always bow downward */
     ropePts = [];
     for (i = 0; i < n; i++) {
       t = i / (n - 1);
-      var x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+      var bow = amp * Math.sin(Math.PI * t);
+      var x = ax + dx * t + nx * bow, y = ay + dy * t + ny * bow;
       ropePts.push({ x: x, y: y, px: x, py: y });
     }
     if (ropeReduced()) { ropeSettle(); ropeDraw(); }
@@ -874,16 +891,20 @@
 
     /* seat the tag just below the item, grommet toward it, clamped to the
        well; if there's no room below, it hangs above instead. The wrapper
-       div's rect knows nothing of the inner svg's rotate/scale (and the
-       picked zoom is still transitioning at this point anyway), so the
-       enlarged extent is PREDICTED: rotate the layout box by the settled
-       rotation, scale by --pick-scale, and seat against that — otherwise
-       the zoomed artwork lands on top of its own tag. */
+       div's rect knows nothing of the inner svg's scale (and the picked zoom
+       is still transitioning at this point anyway), so the enlarged extent is
+       PREDICTED: --pick-scale × the layout height, seated against that —
+       otherwise the zoomed artwork lands on top of its own tag.
+       This used to also rotate the layout box by --rot × 0.94 to find the
+       swept height. It no longer has to: a picked specimen stands UPRIGHT
+       (see .jd-item.is-picked svg), so the displayed angle is 0 and the
+       layout box IS the extent. One fewer approximation, one less seat
+       error — the old projection over-estimated the height of any rotated
+       item and pushed its tag further down the well than it needed to go. */
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
-    var cs = getComputedStyle(item);
-    var zoom = parseFloat(cs.getPropertyValue('--pick-scale')) || 1;
-    var ang = (parseFloat(cs.getPropertyValue('--rot')) || 0) * 0.94 * Math.PI / 180;
-    var vh = zoom * (r.width * Math.abs(Math.sin(ang)) + r.height * Math.abs(Math.cos(ang)));
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var vh = zoom * r.height;
     var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
     var vTop = cy - vh / 2, vBottom = cy + vh / 2;
     var ay = vBottom - 6;                        /* foot of the predicted extent */
@@ -954,9 +975,15 @@
       var w = well.getBoundingClientRect();
       item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
       item.style.top = (dropY / w.height * 100).toFixed(2) + '%';
-      var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
-      rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
-      item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      /* the landing jostle — skipped for a picked item for the same reason
+         rotation input is (see spin): it stands upright, so the nudge would
+         not be seen now and would only show up as an unexplained kick when
+         the tag is dismissed */
+      if (item !== picked) {
+        var rot = parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0;
+        rot += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random());  /* impulse */
+        item.style.setProperty('--rot', rot.toFixed(1) + 'deg');
+      }
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
@@ -1024,8 +1051,21 @@
   };
 
   /* ---- rotating the held item ------------------------------------------ */
+  /* ROTATION IS INHIBITED WHILE PICKED (owner request, 2026-08-09). A picked
+     specimen displays upright at 0deg, so every rotation gesture would mutate
+     a --rot nothing is currently drawing — invisible until dismissal, at
+     which point the item would drop back to the pile at an angle the owner
+     never saw it take. Silently banking the change was the alternative and it
+     is worse: a gesture with no feedback and a delayed surprise. So the input
+     is simply refused while the item is picked; dismiss it and the pile
+     gesture works exactly as before. The events are still consumed by the
+     handlers below (preventDefault stays), because a wheel or pinch over a
+     held item must never scroll or zoom the page out from under it. */
   function rotOf(item) { return parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0; }
-  function spin(item, d) { item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg'); }
+  function spin(item, d) {
+    if (item === picked) return;
+    item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg');
+  }
 
   window.addEventListener('wheel', function (e) {
     if (!held) return;
@@ -1048,6 +1088,7 @@
   window.addEventListener('gesturechange', function (e) {
     if (!held) return;
     e.preventDefault();
+    if (held === picked) return;              /* upright while picked */
     held.style.setProperty('--rot', (gBase + e.rotation).toFixed(1) + 'deg');
   });
   window.addEventListener('gestureend', function (e) { if (held) e.preventDefault(); });
@@ -1068,6 +1109,10 @@
   }, true);
   document.addEventListener('pointermove', function (e) {
     if (!twist || !held || e.pointerId !== twist.id) return;
+    /* the second finger is still SWALLOWED while picked (the twist object
+       exists, so it can't grab a neighbour or dismiss the tag) — it just
+       doesn't turn an upright specimen */
+    if (held === picked) return;
     var a = Math.atan2(e.clientY - fy, e.clientX - fx);
     held.style.setProperty('--rot',
       (twist.r0 + (a - twist.a0) * 180 / Math.PI).toFixed(1) + 'deg');
