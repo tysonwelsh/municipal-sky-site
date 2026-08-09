@@ -1,28 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="18.0 38.0 753.8 693.8">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="275 88 250 614">
   <defs>
     <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#cfe8ec"/>
       <stop offset="100%" stop-color="#a9d6dd"/>
     </linearGradient>
   </defs>
-
-  <!-- decorative Memphis confetti background shapes -->
-  <circle cx="90" cy="110" r="18" fill="#ffd23f"/>
-  <circle cx="700" cy="90" r="12" fill="#ff6f59"/>
-  <circle cx="740" cy="620" r="22" fill="#3fb8af"/>
-  <circle cx="60" cy="640" r="14" fill="#ffd23f"/>
-  <rect x="640" y="180" width="30" height="30" rx="8" fill="#ff6f59" transform="rotate(20 655 195)"/>
-  <rect x="70" y="330" width="26" height="26" rx="7" fill="#3fb8af" transform="rotate(-15 83 343)"/>
-  <polygon points="740,340 765,385 715,385" fill="#ffd23f"/>
-  <polygon points="45,470 70,515 20,515" fill="#ff6f59"/>
-  <path d="M620 700 Q650 680 680 700 Q710 720 740 700" stroke="#3fb8af" stroke-width="10" fill="none" stroke-linecap="round"/>
-  <path d="M40 220 Q70 200 100 220 Q130 240 160 220" stroke="#ffd23f" stroke-width="10" fill="none" stroke-linecap="round"/>
-  <circle cx="400" cy="50" r="10" fill="#ff6f59"/>
-  <circle cx="760" cy="460" r="10" fill="#ffd23f"/>
-  <circle cx="30" cy="380" r="9" fill="#ff6f59"/>
-
-  <!-- ground shadow -->
-  <ellipse cx="400" cy="700" rx="220" ry="30" fill="#e7dccb" opacity="0.6"/>
 
   <!-- mason jar -->
   <g>
@@ -82,8 +64,4 @@
     <!-- stamen ring -->
     <circle cx="400" cy="250" r="55" fill="none" stroke="#3b2b2b" stroke-width="6" stroke-dasharray="4 10" opacity="0.8"/>
   </g>
-
-  <!-- small Memphis squiggle near flower -->
-  <path d="M480 150 Q500 130 520 150 Q540 170 560 150" stroke="#ffd23f" stroke-width="8" fill="none" stroke-linecap="round"/>
-  <circle cx="250" cy="150" r="8" fill="#3fb8af"/>
 </svg>
