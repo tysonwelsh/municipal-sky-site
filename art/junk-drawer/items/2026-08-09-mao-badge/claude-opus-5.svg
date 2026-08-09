@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600">
+<defs>
+<linearGradient id="silver" x1="0.05" y1="0" x2="0.95" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="0.12" stop-color="#e2e9f0"/>
+<stop offset="0.30" stop-color="#98a3b1"/>
+<stop offset="0.45" stop-color="#f4f8fb"/>
+<stop offset="0.60" stop-color="#7c8794"/>
+<stop offset="0.78" stop-color="#ccd5df"/>
+<stop offset="1" stop-color="#5c6774"/>
+</linearGradient>
+<linearGradient id="relief" x1="0.12" y1="0" x2="0.88" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="0.18" stop-color="#e8eef5"/>
+<stop offset="0.40" stop-color="#b4bfcb"/>
+<stop offset="0.56" stop-color="#8c97a5"/>
+<stop offset="0.74" stop-color="#dfe6ee"/>
+<stop offset="1" stop-color="#68717f"/>
+</linearGradient>
+<linearGradient id="bevel" x1="0" y1="0" x2="1" y2="1">
+<stop offset="0" stop-color="#ffffff"/>
+<stop offset="0.45" stop-color="#aab4c0"/>
+<stop offset="1" stop-color="#414a57"/>
+</linearGradient>
+<radialGradient id="enamel" cx="0.42" cy="0.34" r="0.76">
+<stop offset="0" stop-color="#f0292c"/>
+<stop offset="0.5" stop-color="#cf1218"/>
+<stop offset="1" stop-color="#7a090f"/>
+</radialGradient>
+<radialGradient id="vig" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0.55" stop-color="#000000" stop-opacity="0"/>
+<stop offset="1" stop-color="#3a0206" stop-opacity="0.62"/>
+</radialGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+<stop offset="0" stop-color="#ffd98a" stop-opacity="0.75"/>
+<stop offset="0.45" stop-color="#ff8a4a" stop-opacity="0.18"/>
+<stop offset="1" stop-color="#ff8a4a" stop-opacity="0"/>
+</radialGradient>
+<filter id="b8" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="9"/></filter>
+<filter id="b4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+<filter id="b2" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="2"/></filter>
+<clipPath id="enamelClip"><circle cx="300" cy="300" r="251"/></clipPath>
+<path id="ray" d="M300,300 L286.91,0.29 A300,300 0 0 1 313.09,0.29 Z"/>
+<path id="tray" d="M300,300 L295.3,0.04 A300,300 0 0 1 304.7,0.04 Z"/>
+<path id="star" d="M0,-1 L0.2245,-0.309 L0.951,-0.309 L0.3633,0.1181 L0.588,0.809 L0,0.382 L-0.588,0.809 L-0.3633,0.1181 L-0.951,-0.309 L-0.2245,-0.309 Z"/>
+<path id="maoBust" d="M300,102 C256,102 212,142 190,198 C184,214 178,224 170,232 C160,244 146,258 132,272 C126,278 132,286 146,288 C154,290 152,296 148,300 C144,304 150,308 152,312 C156,318 158,322 164,326 C170,331 172,336 180,342 C190,350 206,358 224,364 C242,370 256,378 262,390 C266,396 264,404 262,414 C258,424 240,430 216,438 C170,455 128,500 106,572 L500,572 C486,498 456,440 408,414 C392,405 382,398 378,374 C400,364 420,336 426,296 C434,236 400,150 356,120 C338,108 318,102 300,102 Z"/>
+<g id="maoDetails" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M186,196 C214,158 268,132 322,138"/>
+<path d="M228,152 C266,128 320,124 362,144"/>
+<path d="M358,152 C392,186 410,232 412,282"/>
+<path d="M166,232 C184,220 210,218 230,226"/>
+<path d="M178,252 C188,242 208,240 218,250 C208,258 188,260 178,252 Z"/>
+<path d="M194,246 C200,246 202,252 198,256 C194,258 190,252 194,246 Z"/>
+<path d="M138,282 C146,277 153,280 155,287"/>
+<path d="M152,290 C166,306 172,322 178,338"/>
+<path d="M150,304 C168,300 188,302 203,308"/>
+<path d="M170,328 C174,326 177,328 176,332 C175,335 170,335 170,328 Z"/>
+<path d="M300,246 C318,240 329,254 324,274 C320,292 308,298 297,292"/>
+<path d="M306,258 C314,258 317,268 312,278"/>
+<path d="M296,292 C288,318 272,338 244,352"/>
+<path d="M262,414 C300,398 350,396 396,412"/>
+<path d="M256,432 C300,414 356,412 404,430"/>
+<path d="M186,470 C182,510 180,540 180,572"/>
+<path d="M368,432 C400,472 414,520 420,572"/>
+</g>
+</defs>
+
+<circle cx="300" cy="300" r="296" fill="url(#silver)"/>
+<circle cx="300" cy="300" r="296" fill="none" stroke="#39424e" stroke-width="3"/>
+<circle cx="300" cy="300" r="283" fill="none" stroke="#79838f" stroke-width="18" stroke-dasharray="5 7.4" opacity="0.45"/>
+<circle cx="300" cy="300" r="283" fill="none" stroke="#ffffff" stroke-width="18" stroke-dasharray="2.2 10.2" stroke-dashoffset="2" opacity="0.35"/>
+<circle cx="300" cy="300" r="266" fill="none" stroke="#4c5561" stroke-width="4" opacity="0.55"/>
+<circle cx="300" cy="300" r="261" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.55"/>
+
+<path d="M42.5,206.3 A274,274 0 0 1 252.4,30.1" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.75" filter="url(#b8)"/>
+<path d="M557.5,393.7 A274,274 0 0 1 347.6,569.9" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" opacity="0.5" filter="url(#b8)"/>
+
+<circle cx="300" cy="300" r="254" fill="url(#enamel)"/>
+
+<g clip-path="url(#enamelClip)">
+<g fill="#ff5c46" opacity="0.5">
+<use href="#ray" transform="rotate(0,300,300)"/><use href="#ray" transform="rotate(10,300,300)"/><use href="#ray" transform="rotate(20,300,300)"/><use href="#ray" transform="rotate(30,300,300)"/><use href="#ray" transform="rotate(40,300,300)"/><use href="#ray" transform="rotate(50,300,300)"/><use href="#ray" transform="rotate(60,300,300)"/><use href="#ray" transform="rotate(70,300,300)"/><use href="#ray" transform="rotate(80,300,300)"/><use href="#ray" transform="rotate(90,300,300)"/><use href="#ray" transform="rotate(100,300,300)"/><use href="#ray" transform="rotate(110,300,300)"/><use href="#ray" transform="rotate(120,300,300)"/><use href="#ray" transform="rotate(130,300,300)"/><use href="#ray" transform="rotate(140,300,300)"/><use href="#ray" transform="rotate(150,300,300)"/><use href="#ray" transform="rotate(160,300,300)"/><use href="#ray" transform="rotate(170,300,300)"/><use href="#ray" transform="rotate(180,300,300)"/><use href="#ray" transform="rotate(190,300,300)"/><use href="#ray" transform="rotate(200,300,300)"/><use href="#ray" transform="rotate(210,300,300)"/><use href="#ray" transform="rotate(220,300,300)"/><use href="#ray" transform="rotate(230,300,300)"/><use href="#ray" transform="rotate(240,300,300)"/><use href="#ray" transform="rotate(250,300,300)"/><use href="#ray" transform="rotate(260,300,300)"/><use href="#ray" transform="rotate(270,300,300)"/><use href="#ray" transform="rotate(280,300,300)"/><use href="#ray" transform="rotate(290,300,300)"/><use href="#ray" transform="rotate(300,300,300)"/><use href="#ray" transform="rotate(310,300,300)"/><use href="#ray" transform="rotate(320,300,300)"/><use href="#ray" transform="rotate(330,300,300)"/><use href="#ray" transform="rotate(340,300,300)"/><use href="#ray" transform="rotate(350,300,300)"/>
+</g>
+<g fill="#ffd977" opacity="0.34">
+<use href="#tray" transform="rotate(5,300,300)"/><use href="#tray" transform="rotate(15,300,300)"/><use href="#tray" transform="rotate(25,300,300)"/><use href="#tray" transform="rotate(35,300,300)"/><use href="#tray" transform="rotate(45,300,300)"/><use href="#tray" transform="rotate(55,300,300)"/><use href="#tray" transform="rotate(65,300,300)"/><use href="#tray" transform="rotate(75,300,300)"/><use href="#tray" transform="rotate(85,300,300)"/><use href="#tray" transform="rotate(95,300,300)"/><use href="#tray" transform="rotate(105,300,300)"/><use href="#tray" transform="rotate(115,300,300)"/><use href="#tray" transform="rotate(125,300,300)"/><use href="#tray" transform="rotate(135,300,300)"/><use href="#tray" transform="rotate(145,300,300)"/><use href="#tray" transform="rotate(155,300,300)"/><use href="#tray" transform="rotate(165,300,300)"/><use href="#tray" transform="rotate(175,300,300)"/><use href="#tray" transform="rotate(185,300,300)"/><use href="#tray" transform="rotate(195,300,300)"/><use href="#tray" transform="rotate(205,300,300)"/><use href="#tray" transform="rotate(215,300,300)"/><use href="#tray" transform="rotate(225,300,300)"/><use href="#tray" transform="rotate(235,300,300)"/><use href="#tray" transform="rotate(245,300,300)"/><use href="#tray" transform="rotate(255,300,300)"/><use href="#tray" transform="rotate(265,300,300)"/><use href="#tray" transform="rotate(275,300,300)"/><use href="#tray" transform="rotate(285,300,300)"/><use href="#tray" transform="rotate(295,300,300)"/><use href="#tray" transform="rotate(305,300,300)"/><use href="#tray" transform="rotate(315,300,300)"/><use href="#tray" transform="rotate(325,300,300)"/><use href="#tray" transform="rotate(335,300,300)"/><use href="#tray" transform="rotate(345,300,300)"/><use href="#tray" transform="rotate(355,300,300)"/>
+</g>
+<circle cx="300" cy="290" r="180" fill="url(#glow)"/>
+<circle cx="300" cy="300" r="254" fill="url(#vig)"/>
+
+<g fill="#ffffff" opacity="0.8">
+<use href="#star" transform="translate(108,196) scale(23)"/>
+<use href="#star" transform="translate(492,196) scale(23)"/>
+</g>
+<g fill="none" stroke="#4d5764" stroke-width="2" opacity="0.55">
+<use href="#star" transform="translate(108,196) scale(23)"/>
+<use href="#star" transform="translate(492,196) scale(23)"/>
+</g>
+
+<g transform="translate(4,-14)">
+<use href="#maoBust" fill="#5a060b" opacity="0.55" transform="translate(9,11)" filter="url(#b4)"/>
+<use href="#maoBust" fill="url(#relief)"/>
+<use href="#maoBust" fill="none" stroke="url(#bevel)" stroke-width="6"/>
+<use href="#maoBust" fill="none" stroke="#2f3742" stroke-width="2" opacity="0.7"/>
+<use href="#maoDetails" stroke="#ffffff" opacity="0.55" transform="translate(-3,-3.5)"/>
+<use href="#maoDetails" stroke="#3c4552" opacity="0.85"/>
+</g>
+
+<path d="M120,168 C190,72 330,44 430,84 C340,74 226,110 168,206 Z" fill="#ffffff" opacity="0.16" filter="url(#b8)"/>
+<path d="M74,300 C74,180 150,92 258,62 C168,110 108,196 110,300 C112,392 160,466 236,510 C138,478 74,398 74,300 Z" fill="#ffffff" opacity="0.13" filter="url(#b8)"/>
+<circle cx="300" cy="300" r="252" fill="none" stroke="#2a1013" stroke-width="8" opacity="0.5" filter="url(#b2)"/>
+</g>
+
+<circle cx="300" cy="300" r="254" fill="none" stroke="#2b323b" stroke-width="3.5"/>
+<circle cx="300" cy="300" r="256.5" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.45"/>
+</svg>
