@@ -802,12 +802,21 @@
    hardcoded), alternatives' SVGs are fetched lazily on first open, opening
    sets #<id> via pushState (deep links; popstate closes — Android back
    closes the card, not the site), and an item_open event is tracked.
-   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_) so they can
-   never collide with the pile's inlined primaries or each other. */
+   Inlined SVG copies are id-prefixed (plate jrN_, thumbs jtN_, enlargement
+   jzN_) so they can never collide with the pile's inlined primaries or each
+   other. Pressing the artwork plate ENLARGES it over the card; that layer is
+   a second dismissable thing inside one dialog, so Escape peels the
+   enlargement before the card (see the keydown handler at the foot). */
 (function () {
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
+     to be, the card is a form and the art is one field on it — so pressing
+     the plate lifts the same artwork onto a full-viewport layer where it can
+     actually be read. State lives here rather than in the DOM because Esc
+     has to know which layer it is peeling: enlargement first, card second. */
+  var zoomEl = null, zoomOn = false, zoomFrom = null;
   var markSeq = 0;
   var JITTER = [-1.7, 1.3, -0.8, 2.0, -1.4, 0.9, -2.1, 1.6];
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
@@ -866,8 +875,13 @@
   }
 
   /* the vaporwave floor: black-and-white checkerboard projected toward a
-     center vanishing point; far rows dissolve into the navy horizon */
-  function floorSVG() {
+     center vanishing point; far rows dissolve into the navy horizon.
+     `pfx` namespaces the two gradient ids: the plate and the enlargement can
+     be in the document at the same time, and while their gradients happen to
+     be identical today, two copies fighting over one id is exactly the bug
+     svgInst exists to prevent — so the floor prefixes its own defs too. */
+  function floorSVG(pfx) {
+    pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
     var ROWS = 9, R = 0.7, CW = 104;
     var ts = [1];
@@ -888,19 +902,21 @@
     return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
       'preserveAspectRatio="xMidYMax slice" aria-hidden="true">' +
       '<defs>' +
-      '<linearGradient id="jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
+      '<linearGradient id="' + pfx + 'jdRcSky" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#0a0e24"/>' +
       '<stop offset="0.8" stop-color="#141b44"/>' +
       '<stop offset="1" stop-color="#1c2456"/>' +
       '</linearGradient>' +
-      '<linearGradient id="jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
+      '<linearGradient id="' + pfx + 'jdRcFade" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#1c2456"/>' +
       '<stop offset="0.55" stop-color="#151b40" stop-opacity="0.55"/>' +
       '<stop offset="1" stop-color="#101010" stop-opacity="0"/>' +
       '</linearGradient></defs>' +
-      '<rect x="0" y="0" width="' + W + '" height="' + HOR + '" fill="url(#jdRcSky)"/>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + HOR +
+      '" fill="url(#' + pfx + 'jdRcSky)"/>' +
       cells +
-      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" fill="url(#jdRcFade)"/>' +
+      '<rect x="0" y="' + HOR + '" width="' + W + '" height="72" ' +
+      'fill="url(#' + pfx + 'jdRcFade)"/>' +
       '</svg>';
   }
 
@@ -968,10 +984,18 @@
       fillHTML('Process', esc(processLabel(resp.generation))) +
       fillHTML('Size', esc(sizeLabel(payload.taxonomy, entry) || '—')) +
       '</div>';
-    h += '<div class="rc-block rc-plate">' + floorSVG() +
+    /* the plate is the enlargement's handle: role/tabindex make it a real
+       button for keyboard and screen readers without wrapping the artwork in
+       a <button>, whose UA box model would fight the absolutely-positioned
+       floor. The corner hint is there for touch, where there is no hover to
+       discover the affordance with. */
+    h += '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
+      'aria-label="Enlarge the artwork">' + floorSVG() +
       '<div class="rc-plate-art">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jr' + curIdx + '_') +
-      '</div></div>';
+      '</div>' +
+      '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
+      '</div>';
     h += '<div class="rc-block rc-head">The prompt</div>' +
       '<div class="rc-block rc-assign"><p>“' + esc(entry.prompt) + '”</p></div>';
     h += '<div class="rc-block rc-head">Annotations</div>' +
@@ -988,6 +1012,24 @@
       '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
       '</div></div>';
     return h;
+  }
+
+  /* the enlargement's contents: the SAME response the card is showing, on the
+     same black plate over the same vaporwave floor, so it reads as the plate
+     grown rather than a different picture. Its inlined copy takes a `jz`
+     prefix — the `jr` copy is still in the card underneath it. */
+  function zoomHTML(entry, resp, curIdx) {
+    var m = modelOf(resp.model);
+    return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+      'aria-label="Shrink the artwork">' + floorSVG('z') +
+      '<div class="rc-zoom-art">' +
+      svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
+      '</div></div>' +
+      '<div class="rc-zoom-cap">' +
+      '<span class="rc-zoom-cap-t">' + esc(entry.title) + ' · ' + esc(m.label) +
+      '</span>' +
+      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
+      '</div>';
   }
 
   /* red-pencil waver filters, injected once (stitchTiles="stitch") */
@@ -1050,6 +1092,10 @@
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
     scrollEl.addEventListener('click', function (e) {
+      if (e.target.closest && e.target.closest('.rc-plate')) {
+        openZoom(e.target.closest('.rc-plate'));
+        return;
+      }
       var b = e.target.closest ? e.target.closest('.rc-alt') : null;
       if (!b) return;
       var i = parseInt(b.getAttribute('data-resp'), 10);
@@ -1057,12 +1103,96 @@
       curResp = i;
       render(false);
     });
+    /* the plate answers Enter/Space like the button it claims to be; Space is
+       preventDefault'd or the card scrolls out from under the enlargement */
+    scrollEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      var p = e.target.closest ? e.target.closest('.rc-plate') : null;
+      if (!p) return;
+      e.preventDefault();
+      openZoom(p);
+    });
+  }
+
+  /* The layer hangs off <body>, not off the scrim. The scrim's z-index makes
+     it a stacking context, so a child of it can never paint above the fixed
+     site banner however high its own z-index — and the enlargement has to
+     cover the whole viewport to be worth doing (see junk-drawer.css). Being
+     outside the scrim also keeps these presses away from the scrim's
+     click-to-close-the-card: the card stays put underneath. */
+  function buildZoom() {
+    if (zoomEl) return;
+    zoomEl = document.createElement('div');
+    zoomEl.className = 'jd-record-zoom';
+    /* it must be a dialog in its own right: the card carries aria-modal, so
+       assistive tech ignores everything outside the card — and this layer,
+       living on <body>, is outside it. Focus moves in here on open, which is
+       what scopes AT to this dialog rather than the card behind it. */
+    zoomEl.setAttribute('role', 'dialog');
+    zoomEl.setAttribute('aria-modal', 'true');
+    zoomEl.setAttribute('aria-label', 'enlarged artwork');
+    document.body.appendChild(zoomEl);
+    /* one dismissal path for every press inside the layer — the artwork
+       itself ("click it again"), the caption, or the dark surround
+       ("click outside it"). All three mean: put it back. */
+    zoomEl.addEventListener('click', function () { closeZoom(); });
+    zoomEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      closeZoom();
+    });
+  }
+
+  /* fill (or refill) the layer from whatever response the card is showing —
+     called on open and again whenever the card re-renders under it, so the
+     enlargement can never drift onto a stale response */
+  function syncZoom() {
+    if (!zoomOn || !zoomEl || !curEntry) return;
+    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    zoomEl.innerHTML = zoomHTML(curEntry, resp, curResp);
+  }
+
+  function openZoom(from) {
+    if (!isOpen || zoomOn || !curEntry) return;
+    buildZoom();
+    zoomOn = true;
+    zoomFrom = from || null;
+    syncZoom();
+    zoomEl.classList.add('is-on');
+    /* focus follows the artwork so Space/Enter/Esc all land here, and so a
+       keyboard visitor isn't left tabbing the card hidden behind the layer */
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (fig) { try { fig.focus(); } catch (e) {} }
+    /* deliberately NOT tracked: the enlargement is a toggle, and the events
+       endpoint's allowlist doesn't carry this page anyway (item_open above
+       is the one call the module makes, and it is already the exception) */
+  }
+
+  /* `silent` closes without handing focus back — used when the whole card is
+     going away and the plate we came from is about to be hidden anyway */
+  function closeZoom(silent) {
+    if (!zoomOn) return;
+    zoomOn = false;
+    if (zoomEl) { zoomEl.classList.remove('is-on'); zoomEl.innerHTML = ''; }
+    var back = zoomFrom;
+    zoomFrom = null;
+    if (!silent && back && document.contains(back)) {
+      try { back.focus(); } catch (e) {}
+    }
   }
 
   function render(animate) {
     markSeq = 0;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     scrollEl.innerHTML = cardHTML(curEntry, resp, curResp);
+    /* a re-render replaces the plate node, so an open enlargement re-syncs to
+       the new response and re-points its way home (the lazy alternative SVGs
+       landing is the common case; switching response while enlarged is the
+       other) */
+    if (zoomOn) {
+      syncZoom();
+      zoomFrom = scrollEl.querySelector('.rc-plate');
+    }
     if (animate) {
       cardEl.classList.remove('is-enter');
       void cardEl.offsetWidth;
@@ -1097,6 +1227,7 @@
 
   function teardown() {
     if (!isOpen) return;
+    closeZoom(true);
     isOpen = false;
     if (scrim) scrim.classList.remove('is-on');
     document.documentElement.classList.remove('jd-record-open');
@@ -1119,8 +1250,15 @@
     if (isOpen && (!h || !curEntry || h !== curEntry.id)) { teardown(); }
     else if (!isOpen && h && payload && byId(payload.items, h)) { open(h, true); }
   });
+  /* Escape peels ONE layer per press: the enlargement first, the card only
+     once the artwork is back down on its plate. (The pile's own Esc handler
+     is already standing down for the whole time the record is open, so this
+     is the only claim on the key here — no capture-phase interception
+     needed, just the order of these two branches.) */
   window.addEventListener('keydown', function (e) {
-    if (isOpen && e.key === 'Escape') close();
+    if (!isOpen || e.key !== 'Escape') return;
+    if (zoomOn) { closeZoom(); return; }
+    close();
   });
 
   window.JD_record = {

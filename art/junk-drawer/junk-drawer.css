@@ -749,6 +749,100 @@ html.jd-record-open { overflow: hidden; }
 .rc-plate-art { position: relative; height: 100%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
 
+/* ---- the enlargement (owner, 2026-08-09) --------------------------------
+   The plate is a small field on a form; press it and the same artwork comes
+   up full-viewport, on the same black plate over the same vaporwave floor,
+   so it reads as the plate grown rather than a second picture. Out again by
+   pressing anywhere on the layer (the art, the caption, the surround) or by
+   Escape — which peels this layer before it peels the card (junk-drawer.js).
+   The corner hint carries the affordance on touch, where nothing hovers. */
+.rc-plate { cursor: zoom-in; }
+.rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-plate-hint {
+  position: absolute; right: 8px; bottom: 6px; z-index: 2;
+  pointer-events: none;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: rgba(239, 228, 198, 0.46);
+  transition: color 0.18s ease;
+}
+.rc-plate:hover .rc-plate-hint,
+.rc-plate:focus-visible .rc-plate-hint { color: rgba(239, 228, 198, 0.92); }
+
+/* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
+   the scrim carries z-index 320, which makes it a stacking context, so
+   anything inside it is capped below the fixed site banner (z 1000,
+   css/style.css) no matter what z-index it asks for. The card has always
+   lived under the banner; the enlargement can't, because "easier to see"
+   means the whole viewport and because a press on that top strip has to
+   dismiss like every other press. Being outside the scrim also puts it out
+   of reach of the scrim's click-to-close-the-card entirely.
+   Its paper/ink tokens are declared here for the same reason — the scrim's
+   copies are scoped to the scrim, and this layer is no longer inside it. */
+.jd-record-zoom {
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --red: #b02a24;
+
+  position: fixed; inset: 0; z-index: 1100;
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 9px;
+  padding: max(14px, 3vh) max(12px, 2.6vw);
+  /* not fully opaque — the card stays faintly present underneath, so the
+     enlargement reads as a thing held up off the record rather than a
+     separate screen you navigated to */
+  background: rgba(6, 4, 1, 0.93);
+  cursor: zoom-out;
+}
+.jd-record-zoom.is-on { display: flex; }
+/* the box takes the room the viewport has; the SVG inside keeps its aspect
+   (preserveAspectRatio meet), so tall art and wide art both simply fit */
+.rc-zoom-fig {
+  position: relative; overflow: hidden;
+  flex: 0 1 auto; min-height: 0;
+  width: min(1040px, 100%); height: 100%;
+  padding: 16px 18px;
+  background: #101010;
+  /* a paper-tinted hairline, not the card's ink rule: that rule is meant to
+     read against the card's paper, and would vanish on the dark veil */
+  border: 1px solid rgba(231, 221, 194, 0.22);
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.8);
+  cursor: zoom-out;
+}
+.rc-zoom-fig:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.rc-zoom-art { position: relative; height: 100%; }
+.rc-zoom-art svg { display: block; width: 100%; height: 100%; }
+.rc-zoom-cap {
+  flex: 0 0 auto; text-align: center;
+  display: flex; flex-direction: column; gap: 3px;
+  /* the card's own type shows faintly through the veil right here; the
+     shadow keeps the caption legible over whatever it happens to land on */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.rc-zoom-cap-t {
+  font-family: var(--form); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: #e7ddc2;
+}
+.rc-zoom-cap-h {
+  font-family: var(--rc-mono); font-size: 0.48rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(231, 221, 194, 0.48);
+}
+@keyframes jdZoomIn {
+  from { opacity: 0; transform: scale(0.955); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes jdZoomVeil { from { opacity: 0; } to { opacity: 1; } }
+.jd-record-zoom.is-on { animation: jdZoomVeil 0.2s ease both; }
+.jd-record-zoom.is-on .rc-zoom-fig {
+  animation: jdZoomIn 0.26s cubic-bezier(.2,.8,.25,1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-record-zoom.is-on,
+  .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
+  .rc-plate-hint { transition: none; }
+}
+
 /* ---- THE PROMPT (verbatim) ---------------------------------------------- */
 .rc-assign {
   border-top: 1px solid var(--form-rule);
@@ -862,6 +956,11 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   .jd-record-scrim { padding: 10px 8px; }
   .rc-scroll { padding: 12px 12px 10px; }
   .rc-plate { height: 170px; }
+  /* on a phone the enlargement IS the point — give it nearly the whole
+     screen and keep only enough chrome to say what it is and how to leave */
+  .jd-record-zoom { padding: 10px 8px; gap: 7px; }
+  .rc-zoom-fig { padding: 9px 10px; }
+  .rc-zoom-cap-t { font-size: 0.55rem; letter-spacing: 0.16em; }
 }
 
 /* ---- defunct axes (taxonomy v6): dimmed in the legend; excluded from the
