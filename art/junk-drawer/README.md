@@ -60,6 +60,18 @@ great on a phone. See PLAN-MOBILE.md.
 
 ## Status
 
+**Live drawer + visitor turns (2026-08-09, v0.5.0)**: the pile, drag /
+dig / pick gestures, specimen tags, and report cards shipped through
+v0.4.x (PLAN-FRONTEND / PLAN-MOBILE / PLAN-RECORD). The "TAKE A TURN"
+visitor-prompt feature is implemented per PLAN-USER-PROMPTS.md and the
+frozen contracts in PLAN-USER-PROMPTS-CONTRACTS.md: two blind
+server-side generations (Claude Sonnet 5 vs GPT-5), taxonomy-driven
+rating + pairwise comparison, session-local winner in the pile, MySQL
+eval tables (`api/setup-jd-tables.php`), runtime SVG sanitizer with a
+fixture harness (`scripts/test-jd-sanitizer.php`), and an owner-run
+JSONL exporter (`scripts/export-jd-evals.py`). Launch steps that only
+the owner can do are in PLAN-USER-PROMPTS.md §7.
+
 **Backend scaffolding built (2026-07-26)**: `taxonomy.json`,
 `scripts/validate-junk-drawer.py` (repo root), `data.php`, `CLAUDE.md`
 (the add-an-item procedure), and a first item
@@ -68,8 +80,8 @@ generating model — owner to regrade). The CI validation workflow
 (`.github/workflows/validate-junk-drawer.yml`) is NOT yet added — it
 must be committed from the owner's machine (needs `workflow` scope).
 
-Frontend not started. See PLAN-FRONTEND.md, PLAN-BACKEND.md, and
-PLAN-MOBILE.md; Phase 0 mockups are next.
+(Frontend was not started at that point; see PLAN-FRONTEND.md,
+PLAN-BACKEND.md, and PLAN-MOBILE.md for how it was subsequently built.)
 
 **Plan reconciliation (binding):** where PLAN-FRONTEND.md §5 sketches a
 static `data/items.json` manifest with an item/`alternatives` shape,
