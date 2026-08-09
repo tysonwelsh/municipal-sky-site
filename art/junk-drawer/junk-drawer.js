@@ -130,17 +130,22 @@
   }
   window.JD_sizeLabel = sizeLabel;   /* the record card states it too */
 
-  /* GRADE, as filed — entries store a grade as a NUMBER: the taxonomy
-     grade's `rank` (5.0 … 1.0, entry schema 2), never the id or label, so
-     the scale's wording can change without touching filed data. Resolve the
-     number back to its grade object here; display strings still come only
-     from the taxonomy. */
-  function gradeOf(tax, value) {
-    var grades = (tax || {}).grades || [];
-    for (var i = 0; i < grades.length; i++) {
-      if (Number(grades[i].rank) === Number(value)) return grades[i];
+  /* RATINGS, as filed — entries store every rating as a NUMBER: a grade is
+     the taxonomy grade's `rank` (5.0 … 1.0) and an annotation is the axis
+     value's `rank` (3.0 … 1.0), never the id or label (entry schema 2), so
+     the scales' wording can change without touching filed data. Resolve the
+     number back to its taxonomy object here; display strings still come
+     only from the taxonomy. */
+  function byRank(list, value) {
+    list = list || [];
+    for (var i = 0; i < list.length; i++) {
+      if (Number(list[i].rank) === Number(value)) return list[i];
     }
     return null;
+  }
+  window.JD_byRank = byRank;     /* the record card resolves axis values */
+  function gradeOf(tax, value) {
+    return byRank((tax || {}).grades, value);
   }
   window.JD_gradeOf = gradeOf;   /* the record card resolves grades too */
 
@@ -903,10 +908,11 @@
       'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
       '<span class="rc-mark-word">' + esc(word) + '</span></span>';
   }
+  /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
     if (a == null) return null;
-    return typeof a === 'string' ? { value: a } : a;
+    return typeof a === 'object' ? a : { value: a };
   }
   function fillHTML(label, value) {
     return '<div class="rc-fill">' +
@@ -974,8 +980,8 @@
       if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
-        var v = byId(axis.values, a.value);
-        cell = mark(v ? v.label : a.value);
+        var v = window.JD_byRank(axis.values, a.value);
+        cell = mark(v ? v.label : String(a.value));
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';

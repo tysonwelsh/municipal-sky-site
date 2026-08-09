@@ -276,8 +276,9 @@ function buildModelPanel(r, showSize) {
     h += '<div class="axis-label">' + ax.label + '</div>';
     h += '<div class="axis-desc">' + ax.description + '</div>';
     h += '<div class="pills">';
+    // like the grade pills, axis pills export the value's numeric rank
     ax.values.forEach(v => {
-      h += '<div class="pill" data-group="' + aid + '" data-value="' + v.id + '" onclick="pick(this)">' + v.label + '</div>';
+      h += '<div class="pill" data-group="' + aid + '" data-value="' + v.rank + '" onclick="pick(this)">' + v.label + '</div>';
     });
     h += '<div class="pill" data-group="' + aid + '" data-value="__skip" onclick="pick(this)" style="opacity:0.55">Skip</div>';
     h += '</div>';
@@ -326,7 +327,7 @@ function pick(el) {
   } else {
     const [model, axis] = g.split('__');
     if (v === '__skip') delete state[model].axes[axis];
-    else state[model].axes[axis] = v;
+    else state[model].axes[axis] = parseFloat(v);   // filed as a number
   }
   updateTabs();
   updateOutput();

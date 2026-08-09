@@ -102,9 +102,9 @@ Everything the frontend renders about grades/axes/models comes from this file, s
       "label": "Prompt fidelity",
       "description": "Did the model draw what was asked? Omissions, additions, misreadings.",
       "values": [
-        { "id": "faithful", "label": "Faithful", "description": "All requested elements present as specified." },
-        { "id": "partial",  "label": "Partial",  "description": "Some requested elements missing, extra, or misread." },
-        { "id": "off-brief","label": "Off-brief","description": "Substantially not the thing that was asked for." }
+        { "id": "faithful", "rank": 3, "label": "Faithful", "description": "All requested elements present as specified." },
+        { "id": "partial", "rank": 2, "label": "Partial",  "description": "Some requested elements missing, extra, or misread." },
+        { "id": "off-brief", "rank": 1, "label": "Off-brief","description": "Substantially not the thing that was asked for." }
       ]
     },
     {
@@ -112,9 +112,9 @@ Everything the frontend renders about grades/axes/models comes from this file, s
       "label": "Geometry & topology",
       "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy.",
       "values": [
-        { "id": "clean", "label": "Clean", "description": "No visible construction errors." },
-        { "id": "minor", "label": "Minor defects", "description": "Small misalignments or overlaps visible on inspection." },
-        { "id": "major", "label": "Major defects", "description": "Structural errors that dominate the read of the image." }
+        { "id": "clean", "rank": 3, "label": "Clean", "description": "No visible construction errors." },
+        { "id": "minor", "rank": 2, "label": "Minor defects", "description": "Small misalignments or overlaps visible on inspection." },
+        { "id": "major", "rank": 1, "label": "Major defects", "description": "Structural errors that dominate the read of the image." }
       ]
     },
     {
@@ -122,9 +122,9 @@ Everything the frontend renders about grades/axes/models comes from this file, s
       "label": "Color & rendering",
       "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes.",
       "values": [
-        { "id": "clean", "label": "Clean", "description": "Palette and rendering read as intended." },
-        { "id": "minor", "label": "Minor defects", "description": "Off colors, banding, or stacking slips that don't break the image." },
-        { "id": "major", "label": "Major defects", "description": "Rendering errors that break the image." }
+        { "id": "clean", "rank": 3, "label": "Clean", "description": "Palette and rendering read as intended." },
+        { "id": "minor", "rank": 2, "label": "Minor defects", "description": "Off colors, banding, or stacking slips that don't break the image." },
+        { "id": "major", "rank": 1, "label": "Major defects", "description": "Rendering errors that break the image." }
       ]
     },
     {
@@ -132,9 +132,9 @@ Everything the frontend renders about grades/axes/models comes from this file, s
       "label": "Composition",
       "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled?",
       "values": [
-        { "id": "clean", "label": "Clean", "description": "Well-composed within its viewBox." },
-        { "id": "minor", "label": "Minor defects", "description": "Awkward margins, crowding, or scale oddities." },
-        { "id": "major", "label": "Major defects", "description": "Subject clipped, marooned, or scaled absurdly." }
+        { "id": "clean", "rank": 3, "label": "Clean", "description": "Well-composed within its viewBox." },
+        { "id": "minor", "rank": 2, "label": "Minor defects", "description": "Awkward margins, crowding, or scale oddities." },
+        { "id": "major", "rank": 1, "label": "Major defects", "description": "Subject clipped, marooned, or scaled absurdly." }
       ]
     }
   ],
@@ -155,7 +155,7 @@ Everything the frontend renders about grades/axes/models comes from this file, s
 Rules baked into the design:
 
 - **Adding an axis, value, grade, or model = append to this file** (+ a changelog line, bump `version`). Old entries simply lack the new axis key — that is the sparse representation, not an error.
-- **Ids are permanent.** Labels and descriptions may be reworded; ids may never be renamed or deleted while any entry references them (the validator enforces referential integrity, so a violation is caught immediately). Exception since taxonomy v8: entries reference **grades by numeric `rank`** (see §2.2), not by id, so the grade scale's ids/labels may be reworded freely — the `rank` numbers are the permanent part of the scale.
+- **Ids are permanent.** Labels and descriptions may be reworded; ids may never be renamed or deleted while any entry references them (the validator enforces referential integrity, so a violation is caught immediately). Exception since taxonomy v8/v9: entries reference **grades and axis values by numeric `rank`** (see §2.2), not by id, so those ids/labels may be reworded freely — the `rank` numbers are the permanent part of both scales. Axis ids themselves are still referenced (as annotation keys) and stay permanent.
 - The starter grade scale and axes above are seed content, not law — they're data the owner edits.
 - The `models` registry is what makes "grades by model" stats trivial later: every response's `model` field must match a registry id, so model naming can't drift ("GPT-5" vs "gpt5" vs "OpenAI GPT-5"). Registering a new model is one appended object.
 
@@ -184,9 +184,9 @@ Rules baked into the design:
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
-        "color": { "value": "minor", "note": "Gradient banding on the beak highlight." }
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": { "value": 2.0, "note": "Gradient banding on the beak highlight." }
       },
       "transcript": null,
       "notes": "First one-shot attempt; kept as primary."
@@ -199,8 +199,8 @@ Rules baked into the design:
       "generation": { "mode": "refined", "prompt_count": 3 },
       "grade": 2.0,
       "annotations": {
-        "prompt-fidelity": "partial",
-        "geometry": { "value": "major", "note": "Wing path self-intersects; ripple 2 detached from the duck." }
+        "prompt-fidelity": 2.0,
+        "geometry": { "value": 1.0, "note": "Wing path self-intersects; ripple 2 detached from the duck." }
       }
     }
   ]
@@ -230,7 +230,7 @@ Rules baked into the design:
 | — `grade` | R | Current grade **as a number**: the `rank` of a taxonomy grade, written as a decimal (`5.0` … `1.0`). Never the id/label string — display strings resolve through the taxonomy at render time, so the scale can be relabeled without touching entries. |
 | — `graded` | O | Date of current grade. |
 | — `grade_history` | O | Array of `{ "grade", "date", "taxonomy_version", "note" }` — prior grades (numeric, same rule as `grade`), oldest first (see §6). |
-| — `annotations` | O | Object keyed by **axis id**. Each value is either a bare value-id string or `{ "value": "<value-id>", "note": "<free text>" }`. **A missing axis key means "not annotated on this axis"** — the normal state for entries older than an axis. An axis's explicit "clean"/"faithful" value means "examined and found clean," which is different from absent; the frontend should render absent axes as "not assessed." |
+| — `annotations` | O | Object keyed by **axis id**. Each value is **a number**: the `rank` of one of that axis's values written as a decimal (best = `3.0` … worst = `1.0`), either bare or as `{ "value": <rank>, "note": "<free text>" }` — never the value id/label string. **A missing axis key means "not annotated on this axis"** — the normal state for entries older than an axis. An explicit top-rank value means "examined and found clean," which is different from absent; the frontend should render absent axes as "not assessed." |
 | — `transcript` | O | Filename of a refinement transcript in the same directory (see §6), or `null`. |
 | — `notes` | O | Free-form curator commentary. |
 
@@ -266,12 +266,12 @@ Works identically under `php -S localhost:8000 router.php` for local dev.
 
 Python 3, **stdlib only** (`json`, `pathlib`, `re`, `xml.etree`), so it runs on the owner's Mac and inside a Claude Code web sandbox with no installs. Lives in `scripts/` so it never deploys. Run: `python3 scripts/validate-junk-drawer.py` (add `--strict` to promote warnings to failures). Exit 0 = clean; nonzero with a readable per-file error list otherwise.
 
-**Taxonomy checks**: parses; unique ids across grades/axes/axis-values/models; every axis value has a description; `rank` values unique.
+**Taxonomy checks**: parses; unique ids across grades/axes/axis-values/models; every axis value has a description; `rank` values present and unique (across grades, and within each axis's values).
 
 **Entry checks (every `items/*/entry.json`)**:
 - parses as JSON; required fields present with correct types; `id` == directory name
 - dates are `YYYY-MM-DD`; `rid`s unique within entry; `primary` (if set) refers to an existing `rid`
-- `grade` is a number matching a taxonomy grade `rank`; every `annotations` key ∈ taxonomy axes; every annotation value ∈ that axis's values; `model` ∈ taxonomy models
+- `grade` is a number matching a taxonomy grade `rank`; every `annotations` key ∈ taxonomy axes; every annotation value is a number matching one of that axis's value `rank`s; `model` ∈ taxonomy models
 - `generation.mode` valid; `prompt_count` consistent with mode
 - every `file` and `transcript` exists on disk; **warn** on orphan `.svg` files no response references
 - `placement` values in range (`x`,`y` ∈ [0,1]) when present
@@ -342,9 +342,10 @@ data files are `.json`, art is `.svg`.
      owner the label + description list to pick from; filed as the grade's
      numeric `rank`, e.g. `4.0`).
    - Annotations: read `taxonomy.json` `axes`; for each axis, ask for a
-     value (offer the value ids + descriptions) OR "skip". Skipped axes are
-     OMITTED from the annotations object — never write null/empty for them.
-     Attach the owner's remarks as `{"value": ..., "note": ...}`.
+     value (offer the value labels + descriptions) OR "skip"; filed as the
+     value's numeric `rank`, e.g. `2.0`. Skipped axes are OMITTED from the
+     annotations object — never write null/empty for them. Attach the
+     owner's remarks as `{"value": <rank>, "note": ...}`.
 2. **Create the directory**: `items/<YYYY-MM-DD>-<slug>/` where slug is a
    short kebab-case name for the subject (e.g. `rubber-duck`), NOT the full
    prompt. Check it doesn't already exist.
@@ -444,7 +445,7 @@ The frontend gets everything from **one request**; SVGs are plain static files.
           "grade": 4.0,
           "graded": "2026-07-26",
           "grade_history": [],
-          "annotations": { "geometry": "clean", "color": { "value": "minor", "note": "…" } },
+          "annotations": { "geometry": 3.0, "color": { "value": 2.0, "note": "…" } },
           "transcript_url": null,
           "notes": "…"
         }
@@ -461,7 +462,7 @@ The frontend gets everything from **one request**; SVGs are plain static files.
 2. `items` is sorted `created` descending and excludes `retired` items. Every item has ≥ 1 response; `primary` always resolves. An entry MAY pin one response by setting `primary`, which wins outright; with no pin the server resolves to the **best-graded** response (highest numeric grade, ties breaking to the earliest `rid`, falling back to the first response when no numeric grade is present) — so a regrade re-points the drawer with no entry edit. The primary response is the object in the drawer; other responses are the "other models' takes."
 3. Every response has a ready `url` (same-origin static SVG, safe to `fetch` and inline — commit-time validation guarantees `viewBox` present, no scripts/handlers/foreignObject) and `transcript_url` (string or `null`).
 4. **`placement` is the designated home for coordinates** and is optional: `x`,`y` ∈ [0,1] (fraction of drawer floor, item center), `rotation` in degrees, `scale` relative multiplier (1.0 = default sizing), `z` integer stacking hint (higher = nearer the viewer). **When absent, the frontend computes a deterministic placement seeded by the item `id` hash** — same layout every visit, no coordination needed. If the frontend later wants to persist a hand-arranged layout, it writes `placement` back into `entry.json` via a normal commit (it has a home; nothing changes shape).
-5. **Sparseness rule**: `annotations` may be missing keys for any axis (esp. axes added after the entry). Absent axis = "not assessed" — render differently from an explicit clean/defect value. Annotation values are either a value-id string or `{value, note}`; handle both. Ignore unknown fields anywhere (forward compatibility).
+5. **Sparseness rule**: `annotations` may be missing keys for any axis (esp. axes added after the entry). Absent axis = "not assessed" — render differently from an explicit clean/defect value. An annotation value is a **number equal to one of that axis's value `rank`s**, either bare or as `{value, note}`; handle both, and resolve display strings by rank off the taxonomy. Ignore unknown fields anywhere (forward compatibility).
 6. `errors` lists any skipped/malformed entries (path + reason) — log to console, never render.
 7. Optional: `GET /art/junk-drawer/data.php?item=<id>` returns `{ "taxonomy": …, "item": {…} }` for a single entry.
 

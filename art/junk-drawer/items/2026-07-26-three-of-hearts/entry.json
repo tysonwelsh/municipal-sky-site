@@ -24,11 +24,11 @@
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
-        "color": "clean",
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
         "composition": {
-          "value": "minor",
+          "value": 2.0,
           "note": "Pip spacing runs slightly wide against a real Bicycle layout; the card reads a touch tall."
         }
       },

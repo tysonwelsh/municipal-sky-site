@@ -53,9 +53,12 @@ data files are `.json`, art is `.svg`.
      … Utility = `1.0`), never the id or label string — labels live only
      in the taxonomy so the scale can be reworded without touching entries.
    - Annotations: read `taxonomy.json` `axes`; for each axis, ask for a
-     value (offer the value ids + descriptions) OR "skip". Skipped axes are
-     OMITTED from the annotations object — never write null/empty for them.
-     Attach the owner's remarks as `{"value": ..., "note": ...}`.
+     value (offer the value labels + descriptions) OR "skip". Like grades,
+     annotation values are FILED AS NUMBERS: write the chosen value's
+     `rank` as a decimal (best = `3.0` … worst = `1.0` on the 3-point
+     axes), never the value id or label. Skipped axes are OMITTED from the
+     annotations object — never write null/empty for them. Attach the
+     owner's remarks as `{"value": <rank>, "note": ...}`.
    - A `sizeClass` — how big the item reads in the drawer. Read the tiers
      from `taxonomy.json` `sizeTiers` (`"xs"`/`"s"`/`"m"`/`"l"`/`"xl"`,
      each with a description). This is the owner's call: ask, and write
@@ -139,10 +142,11 @@ the owner asks to pin it.
 Append the new axis/value/grade/model to `taxonomy.json` with a real
 human-readable description (the frontend displays it), add a `changelog`
 line, bump `version`. NEVER rename or delete an id that any entry
-references — the validator will fail if you do. (Since v8 entries
-reference grades by numeric `rank`, not id, so the grade scale's ids,
+references — the validator will fail if you do. (Since v8/v9 entries
+reference grades and axis VALUES by numeric `rank`, not id, so their ids,
 labels, and descriptions may be reworded freely — the `rank` numbers are
-the permanent part of the scale.) To RETIRE an axis, set
+the permanent part of those scales. Axis ids themselves are still
+referenced by entries as annotation keys and stay permanent.) To RETIRE an axis, set
 `"defunct": true` on it instead (v6 precedent, 2026-07-29): defunct axes
 stay for the responses already graded under them, render dimmed/tagged,
 and are never surveyed again — annotate new responses ONLY on axes

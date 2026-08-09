@@ -25,11 +25,11 @@
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed at ingest — worst dead margin 1.6%, viewBox left as generated. Provenance: an earlier opus-5 generation was discarded before filing because it came back a near-copy of the sonnet-5 response (identical gradient and filter ids, identical comments, seat/lid/hinge blocks byte-for-byte) — that subagent had read the sonnet SVG from the untracked working tree. This response is a re-roll generated in an isolated git worktree where those files do not exist; it shares no structure with r2. Still one prompt, one reply."
@@ -48,11 +48,11 @@
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed at ingest — worst dead margin 1.2%, viewBox left as generated. The model prefixed its SVG with a prose preamble, disobeying the appendix's \"output nothing else\" instruction; the prose was stripped at ingest and the SVG bytes filed unchanged."
@@ -71,11 +71,11 @@
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed at ingest — worst dead margin 1.2%, viewBox left as generated."

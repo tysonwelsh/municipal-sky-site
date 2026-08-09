@@ -21,10 +21,10 @@
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "minor",
-        "composition": "clean"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 2.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 1.8%); no viewBox normalization. Source contains a self-correction fossil: a strand emitted with invalid stroke=\"#a2first\" was zeroed out (stroke-width 0, opacity 0) and immediately re-emitted corrected as #a28457 — invisible in the render, preserved byte-exact."

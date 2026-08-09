@@ -31,10 +31,10 @@
         }
       ],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
-        "color": "clean",
-        "composition": "clean"
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 4.0%)."
@@ -53,10 +53,10 @@
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "off-brief",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 1.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 3.2%)."
@@ -75,10 +75,10 @@
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "major",
-        "color": "minor",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 1.0,
+        "color": 2.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. viewBox normalized: tightened from \"88 178 224 328\" to \"104.2 183.8 191.2 315.2\" (was 8.3% padded). Ink-bounds check passed after normalization."

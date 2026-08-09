@@ -25,10 +25,10 @@
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%."
@@ -47,10 +47,10 @@
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "partial",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "major"
+        "prompt-fidelity": 2.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 1.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Model produced a full incense-box illustration (sunburst rays, crescent moons, leaves, stars, mala bead borders) rather than the orb alone."
@@ -69,10 +69,10 @@
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 6.0%. Includes a shadow beneath the orb and mist wisping out of the crack."

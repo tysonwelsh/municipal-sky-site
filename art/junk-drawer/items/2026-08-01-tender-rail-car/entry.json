@@ -22,11 +22,11 @@
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "abundant"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Contains one malformed attribute in the bear symbol (stroke=\"#e3b briefly\" with no stroke-width) — browsers drop it; filed byte-exact."
@@ -45,11 +45,11 @@
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "embellished",
-        "integrity": "broken",
-        "style": "mixed",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 1.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Disobeyed the transparent-background requirement with a full opaque landscape (sky, tree line, ballast); added invented text (cartouche \"TENDER · ANIMÆ / ANNO · M · DC · LVII\" and signature \"tender · animæ · f. 1657\"). Contains one malformed self-closing element (<g stroke=\"#b8literal\" />) in the sewing-machine symbol — filed byte-exact. The truncated-word attribute artifact parallels r1's independently (different strings, different elements; structures otherwise unrelated)."
@@ -68,11 +68,11 @@
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "incoherent",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 1.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's \"no code fences\" instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Also used an opaque background rectangle despite the transparent-background requirement."

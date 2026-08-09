@@ -22,11 +22,11 @@
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings (only overlap with Opus is the generic id NAME 'dia', which is a gradient here and a facet group there). Ink-bounds check passed at ingest — worst dead margin 2.1%, viewBox left as generated. The leanest build of the three at 5.6 KB: one reusable brilliant-cut <g> stamped fourteen times around a dashed-stroke gold rim, with the ruby's facets drawn as eight straight highlight spokes. The halo circles overlap the bezel rather than seating outside it, so the diamonds read as floating on the gold face instead of inlaid in it."
@@ -45,11 +45,11 @@
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "embellished",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 2.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 1.9%, viewBox left as generated. The heaviest build of the three (15.6 KB) and the only one to model the ruby as a real cut: sixteen kite-and-star facet polygons in alternating light/dark reds around a separately-gradiented table, crossed by two full sets of facet-junction lines. Milgrain is dashed strokes on nested ellipses, the halo stones are each rotated a few degrees off true so the ring reads hand-set, and six claw prongs overlap the girdle. Owner pinned this response for display."
@@ -68,11 +68,11 @@
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "overgrown",
-        "integrity": "broken",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 2.0,
+        "restraint": 1.0,
+        "integrity": 1.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 5.2%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's 'no code fences' instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Grows well past the brief: two filigree wings, a second ruby in a pendant drop with its own six-stone halo, a third gold bud below it, and a tail wire ending in a bead — none of it asked for. The halo <use> elements are placed by corner rather than centre, so the ring of diamonds sits offset from the bezel it is meant to surround."

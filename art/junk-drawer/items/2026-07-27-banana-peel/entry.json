@@ -22,10 +22,10 @@
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "partial",
-        "geometry": "major",
-        "color": "minor",
-        "composition": "minor"
+        "prompt-fidelity": 2.0,
+        "geometry": 1.0,
+        "color": 2.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst-side margin 2.4%); no viewBox normalization."

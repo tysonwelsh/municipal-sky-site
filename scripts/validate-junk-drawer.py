@@ -92,9 +92,10 @@ def validate_taxonomy(path):
         if not values:
             err(path, f"axis {a.get('id')!r} has no values")
         check_unique(path, f"axis {a.get('id')!r} value", [v.get("id") for v in values])
+        check_unique(path, f"axis {a.get('id')!r} value rank", [v.get("rank") for v in values])
         for v in values:
-            for key in ("id", "label", "description"):
-                if not v.get(key):
+            for key in ("id", "rank", "label", "description"):
+                if not v.get(key) and v.get(key) != 0:
                     err(path, f"axis {a.get('id')!r} value {v.get('id')!r} missing {key}")
     models = tax.get("models", [])
     check_unique(path, "model", [m.get("id") for m in models])
@@ -112,7 +113,7 @@ def check_date(path, value, label):
         err(path, f"{label} must be YYYY-MM-DD, got {value!r}")
 
 
-def is_grade_number(value, ranks):
+def is_rank_number(value, ranks):
     return (isinstance(value, (int, float)) and not isinstance(value, bool)
             and value in ranks)
 
@@ -126,14 +127,16 @@ def validate_annotations(path, rid, annotations, axis_values):
             err(path, f"{rid}: unknown annotation axis {axis_id!r}")
             continue
         if isinstance(val, dict):
-            value_id = val.get("value")
+            value = val.get("value")
             unknown = set(val) - {"value", "note"}
             if unknown:
                 warn(path, f"{rid}: annotation {axis_id!r} has unknown keys {sorted(unknown)}")
         else:
-            value_id = val
-        if value_id not in axis_values[axis_id]:
-            err(path, f"{rid}: annotation {axis_id!r} has unknown value {value_id!r}")
+            value = val
+        # annotation values are stored numerically (entry schema 2): the
+        # number IS the axis value's rank, never the value id string
+        if not is_rank_number(value, axis_values[axis_id]):
+            err(path, f"{rid}: annotation {axis_id!r} value {value!r} must be a number matching a value rank")
 
 
 def validate_response(path, item_dir, resp, tax_ids):
@@ -154,7 +157,7 @@ def validate_response(path, item_dir, resp, tax_ids):
         err(path, f"{rid}: model {resp.get('model')!r} not in taxonomy models registry")
     # grades are stored numerically (entry schema 2): the number IS the
     # taxonomy grade's rank (5.0 … 1.0), never the id/label string
-    if not is_grade_number(resp.get("grade"), tax_ids["grade_ranks"]):
+    if not is_rank_number(resp.get("grade"), tax_ids["grade_ranks"]):
         err(path, f"{rid}: grade {resp.get('grade')!r} must be a number matching a taxonomy grade rank")
     gen = resp.get("generation")
     if isinstance(gen, dict):
@@ -172,7 +175,7 @@ def validate_response(path, item_dir, resp, tax_ids):
         for req in ("grade", "date"):
             if req not in h:
                 err(path, f"{rid}: grade_history entry missing {req!r}")
-        if h.get("grade") is not None and not is_grade_number(h["grade"], tax_ids["grade_ranks"]):
+        if h.get("grade") is not None and not is_rank_number(h["grade"], tax_ids["grade_ranks"]):
             err(path, f"{rid}: grade_history grade {h['grade']!r} must be a number matching a taxonomy grade rank")
         if "date" in h:
             check_date(path, h["date"], f"{rid}: grade_history date")
@@ -382,7 +385,7 @@ def main():
         "grade_ranks": {g.get("rank") for g in (tax or {}).get("grades", [])},
         "models": {m.get("id") for m in (tax or {}).get("models", [])},
         "axis_values": {
-            a.get("id"): {v.get("id") for v in a.get("values", [])}
+            a.get("id"): {v.get("rank") for v in a.get("values", [])}
             for a in (tax or {}).get("axes", [])
         },
     }

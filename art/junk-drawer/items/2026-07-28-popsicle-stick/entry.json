@@ -25,10 +25,10 @@
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "clean"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 1.2%); no viewBox normalization."
@@ -47,10 +47,10 @@
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Format disobedience: the model wrapped its answer in a ```svg code fence despite the appendix's \"no code fences\" instruction; the fence was stripped and the SVG filed byte-exact otherwise. Ink-bounds check passed (worst dead margin 1.3%); no viewBox normalization."
@@ -69,10 +69,10 @@
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "minor",
-        "composition": "clean"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 2.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed (worst dead margin 1.7%); no viewBox normalization."

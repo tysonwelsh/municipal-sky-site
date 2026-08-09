@@ -26,11 +26,11 @@
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
-        "color": "clean",
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
         "composition": {
-          "value": "minor",
+          "value": 2.0,
           "note": "The striker band crowds the wordmark; the flame emblem sits a hair off the cover’s optical center."
         }
       },

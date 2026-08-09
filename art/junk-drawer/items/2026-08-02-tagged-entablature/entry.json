@@ -22,11 +22,11 @@
       "graded": "2026-08-02",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "mixed",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Renders the tag as a layered <text> element ('Municipal Sky' in Arial Black) rather than drawn bubble-letter geometry."
@@ -45,11 +45,11 @@
       "graded": "2026-08-02",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "broken",
-        "style": "mixed",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 1.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Hand-drew every letter as raw path geometry (no <text>); includes a malformed 8-digit hex gradient stop ('#9d927777') and a stray 1200px-tall no-op rect in the architrave, filed as generated."
@@ -68,11 +68,11 @@
       "graded": "2026-08-02",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "embellished",
-        "integrity": "strained",
-        "style": "mixed",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's 'no code fences' instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Rendered the tag as all-caps 'MUNICIPAL SKY' skewed <text> and added a colonnade of capitals below the entablature that the prompt did not request."

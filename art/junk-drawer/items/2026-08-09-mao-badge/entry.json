@@ -27,11 +27,11 @@
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "ignored",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "mixed",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 1.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.4%)."
@@ -57,11 +57,11 @@
         }
       ],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed (worst dead margin 0.5%)."
@@ -80,11 +80,11 @@
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "ignored",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "incoherent",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 1.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 1.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Model disobeyed the output format: wrapped the SVG in a ```svg code fence, stripped at ingest per skill rule (gradeable disobedience). ink-bounds check passed (worst dead margin 0.9%)."

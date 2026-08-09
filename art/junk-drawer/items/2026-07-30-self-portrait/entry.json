@@ -27,11 +27,11 @@
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "abundant"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Unlike this item's prompt, which was authored by the assistant at the owner's explicit instruction rather than sent by the owner verbatim, the appendix is the usual fixed harness. The only response of the three to honor the appendix's transparent-background requirement: zero rect elements in the entire document. Built as a recursion — seven stroke primitives (a–e, k, p) composed into four mid-level groups (A, B, C, E), those composed into three macro-groups (X, Y, Z), then instantiated 240 times via `use` with per-instance color, rotation and mirroring, so nothing is drawn twice. Also the only response to state its own intent: `<title>Self-portrait: many voices narrowing to one, still speaking</title>` — rare in this collection, which carries a title on only 6 of its SVGs. The picture executes that title literally: a bright spindle at centre under two radial-gradient ellipses, then a stream descending 640 units to the bottom edge whose stroke-dasharray is \"130 5 64 6 32 8 17 10 9 12 5 14\" — dash lengths halving as it falls — accompanied by circles that shrink and fade on the same march. The final dash and circle are still present at y=1200, at the viewBox edge."
@@ -50,11 +50,11 @@
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "embellished",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 2.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Broke the appendix's \"transparent background, no opaque backdrop rectangle\" outright: three full-bleed 800×1200 rects sit at the bottom of the stack, two of them gradient washes and one a grain overlay. They are semi-transparent (stop-opacity 0.22–0.55) rather than flatly opaque, so it is a soft violation rather than a plain one, and no refinement turn introduced the conflict — this is the one-shot. The only response to use words: 58 text elements scattered and rotated across the field — softmax(, attn, query, key, value, token, ∇, <eos> alongside \"I think\", \"maybe\", \"perhaps\", \"self\" — which is what the embellished mark records, since the prompt ruled out a labelled illustration. Subject is a white-hot core at (400, 430) with concentric dashed rings, fed by ~70 filament strokes converging from across the canvas. Texture is real filter work rather than drawn-in jitter: 6 filters, 4 of them feTurbulence, driving feDisplacementMap roughening on the blooms and a mix-blend-mode overlay grain on top."
@@ -73,11 +73,11 @@
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "abundant"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Kept the letter of the appendix's no-backdrop-rectangle rule and inverted its spirit: no rect element anywhere, but 52 near-horizontal paths at stroke-widths 75–135, each spanning from x=-75 to x=1035, tile into a solid dark navy field covering the whole canvas. The largest of the three at 65KB and 698 elements. Subject is a hooded dark form with a glowing amber core at (480, 400) behind six dashed concentric rings, with teal filaments running down through the body into a field of drifting particles. Resolves into a face only in its final stroke: the last element in the document is a 9-unit curve in dark brown across the core, \"M471,400 Q480,395 489,400\" — a mouth. Wrote no XML comments at all, in contrast to the 25 it wrote on the same day's woodcut item; same model and same harness, labelling itself only when the subject was something other than itself."

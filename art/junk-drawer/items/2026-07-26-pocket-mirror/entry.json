@@ -25,13 +25,13 @@
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
         "color": {
-          "value": "minor",
+          "value": 2.0,
           "note": "The glass reflection reads as two hard diagonal bars rather than a continuous window catch."
         },
-        "composition": "clean"
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace."
