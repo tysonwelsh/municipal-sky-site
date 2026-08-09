@@ -19,9 +19,37 @@
 (function () {
   var pile = document.querySelector('.jd-pile');
   var payloadRef = null;   /* the data.php payload, handed to JD_record */
-  /* --w per sizeClass, in cqmin. Fallback only — the live boxes come from
-     taxonomy.sizeTiers at load (see sizeBoxes), so the scale is data-driven. */
+  /* tier box per sizeClass, in cqmin. Fallback only — the live boxes come
+     from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
+     data-driven. */
   var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
+
+  /* ---- size normalization (owner decision, 2026-08-09) -------------------
+     Tiers are AREA classes. The tier box is the side of the square every
+     item's footprint matches: w·h = box² whatever the artwork's proportions,
+     so a tall column and a wide fish filed "m" carry the same visual weight.
+     (Before this, --w set the tier box as the WIDTH and height followed the
+     viewBox freely — a 0.38-aspect "m" rendered 2.7× the area of a square
+     "m" and outgrew every "l".) Two dials ride on top:
+       · sizeScale — the owner's per-item fine multiplier, applied AFTER
+         normalization so it means the same thing at every aspect;
+       · a small deterministic jitter hashed from the item id — stable
+         natural variation, so a tier reads as a family of near-sizes, never
+         as ranks of uniform boxes. Hashed, not random: an item's size is
+         part of its identity, identical on every visit. */
+  var SIZE = {
+    elong: 1.8,    /* long-side cap, × the tier box: past this elongation the
+                      long side stops growing and the item pays in area
+                      instead, so slivers (pencil, popsicle) read a touch
+                      lighter than tier-mates rather than spanning the well */
+    jitter: 0.09   /* ± fraction of linear size (≈ ±18% of area) */
+  };
+
+  function sizeJitter(id) {
+    var s = String(id), h = 5381, i;
+    for (i = 0; i < s.length; i++) { h = ((h * 33) ^ s.charCodeAt(i)) >>> 0; }
+    return 1 - SIZE.jitter + (h % 1000) / 999 * 2 * SIZE.jitter;
+  }
 
   /* ---- procedural scatter -------------------------------------------------
      Item positions are COMPUTED at load, never authored. Each browsing
@@ -33,7 +61,8 @@
      entry.placement blocks and the old MOBILE_POUR table — desktop and mobile
      now share one computed layout, and nobody hand-places items. */
   var SCATTER = {
-    key: 'jd-scatter-v1',
+    key: 'jd-scatter-v2',   /* v2: area-normalized sizes — v1 positions were
+                               clamped against the old width-only footprints */
     jitter: 0.62,   /* random offset as a fraction of the cell; >0.5 lets
                        neighbours cross and cluster → the looser pile */
     rotMax: 34,     /* rotation range, ± degrees */
@@ -376,14 +405,19 @@
         /* per-item prefix: the pile is many independently-authored SVGs in
            one document, so each copy gets its own id namespace */
         el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
-        /* size = coarse sizeClass tier × optional per-item fine scale. The
-           per-item sizeScale is the continuous dial (formerly carried by the
-           retired placement.scale) that the tiers alone can't express — e.g.
-           the paperclip sits well below the smallest tier. */
+        /* size: area-normalized (see SIZE above). --w still carries WIDTH
+           (the CSS contract is unchanged); width is chosen so the footprint
+           lands on the tier's area whatever the viewBox proportions:
+             w = box·√aspect  →  h = w/aspect = box/√aspect  →  w·h = box².
+           Elongation past SIZE.elong shrinks the whole item to keep the long
+           side at box×elong. Then the owner's fine dial and the id-hash
+           jitter. The aspect is read from the copy just inlined above. */
         var fine = (typeof item.sizeScale === 'number' && item.sizeScale > 0)
           ? item.sizeScale : 1;
+        var sq = Math.sqrt(svgAspect(el));
+        var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
         el.style.setProperty('--w',
-          +((item._box || BASE.m) * fine).toFixed(2));
+          +((item._box || BASE.m) * sq * shape * fine * sizeJitter(item.id)).toFixed(2));
         pile.appendChild(el);
         return el;
       });

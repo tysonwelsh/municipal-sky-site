@@ -7,14 +7,16 @@ SVG hygiene. Stdlib only, so it runs anywhere (including Claude Code web
 sandboxes) with no installs.
 
 Usage:
-    python3 scripts/validate-junk-drawer.py [--strict]
+    python3 scripts/validate-junk-drawer.py [--strict] [--sizes]
 
 Exit 0 = clean (warnings allowed unless --strict). Nonzero = problems,
-listed per file.
+listed per file. --sizes additionally prints every item's rendered drawer
+footprint so a new filing can be eyeballed against its tier-mates.
 """
 
 import argparse
 import json
+import math
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -294,9 +296,72 @@ def validate_svg(path):
                     warn(path, "embedded raster data: URI — a bitmap in an 'SVG' defeats the premise")
 
 
+# Long-side cap of the pile loader's area normalization — keep in step with
+# SIZE.elong in art/junk-drawer/junk-drawer.js.
+SIZE_ELONG = 1.8
+
+
+def size_report():
+    """Print the drawer footprint every item renders at, per the pile
+    loader's area-normalization rule (SIZE in junk-drawer.js): the tier box
+    is an AREA class — w·h = (box × sizeScale)² — with the artwork's aspect
+    deciding the proportions and the long side capped at box × SIZE_ELONG
+    (before sizeScale). The loader's id-hashed jitter (±9% linear) is
+    excluded: this is the filed size, not one roll of it. Largest first."""
+    try:
+        with open(ROOT / "taxonomy.json", encoding="utf-8") as f:
+            tax = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return
+    boxes = {t.get("id"): t.get("box") for t in tax.get("sizeTiers", [])}
+    ranks = {g.get("id"): g.get("rank", 0) for g in tax.get("grades", [])}
+    items_dir = ROOT / "items"
+    if not items_dir.is_dir():
+        return
+    rows = []
+    for item_dir in sorted(p for p in items_dir.iterdir() if p.is_dir()):
+        try:
+            with open(item_dir / "entry.json", encoding="utf-8") as f:
+                entry = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            continue
+        responses = [r for r in entry.get("responses", []) if isinstance(r, dict)]
+        if not responses:
+            continue
+        # the response the drawer shows: the pinned primary, else the best
+        # grade, ties to the earliest response (same resolution as data.php)
+        prim = next((r for r in responses if r.get("rid") == entry.get("primary")), None)
+        if prim is None:
+            prim = max(responses, key=lambda r: ranks.get(r.get("grade"), -1))
+        aspect = 1.0
+        try:
+            root = ET.parse(item_dir / (prim.get("file") or "")).getroot()
+            vb = [float(x) for x in re.split(r"[\s,]+", root.attrib.get("viewBox", "").strip()) if x]
+            if len(vb) == 4 and vb[2] > 0 and vb[3] > 0:
+                aspect = vb[2] / vb[3]
+        except (OSError, ET.ParseError, ValueError):
+            pass
+        box = boxes.get(entry.get("sizeClass")) or 15.5
+        scale = entry.get("sizeScale")
+        if not isinstance(scale, (int, float)) or isinstance(scale, bool) or scale <= 0:
+            scale = 1
+        sq = math.sqrt(aspect)
+        shape = min(1.0, SIZE_ELONG / max(sq, 1 / sq))
+        w = box * sq * shape * scale
+        rows.append((entry.get("id", item_dir.name), entry.get("sizeClass") or "-",
+                     scale, aspect, w, w / aspect))
+    rows.sort(key=lambda r: -(r[4] * r[5]))
+    print("\nrendered footprints (cqmin; jitter excluded), largest first:")
+    print(f"{'item':<38} {'tier':<4} {'scale':>6} {'aspect':>6} {'w':>6} {'h':>6} {'area':>6}")
+    for id_, sc, scale, aspect, w, h in rows:
+        print(f"{id_:<38} {sc:<4} {scale:>6g} {aspect:>6.2f} {w:>6.1f} {h:>6.1f} {w * h:>6.0f}")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--strict", action="store_true", help="treat warnings as failures")
+    parser.add_argument("--sizes", action="store_true",
+                        help="print every item's rendered drawer footprint")
     args = parser.parse_args()
 
     if not ROOT.is_dir():
@@ -328,6 +393,9 @@ def main():
         print(f"ERROR   {Path(path).relative_to(ROOT.parent.parent) if str(path).startswith(str(ROOT.parent.parent)) else path}: {msg}")
     for path, msg in warnings:
         print(f"warning {Path(path).relative_to(ROOT.parent.parent) if str(path).startswith(str(ROOT.parent.parent)) else path}: {msg}")
+
+    if args.sizes:
+        size_report()
 
     n_items = len(list(items_dir.iterdir())) if items_dir.is_dir() else 0
     print(f"\n{n_items} item(s) checked · {len(errors)} error(s) · {len(warnings)} warning(s)")
