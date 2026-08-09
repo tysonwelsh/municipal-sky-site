@@ -582,6 +582,7 @@
     GRAVITY: 0.55,    /* px per frame², ~60fps */
     DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
     ITER: 4,          /* constraint relaxation passes per frame (alternating) */
+    STIFF: 0.09,      /* bending resistance, 0..1 — see ropeStep */
     EPS: 0.05         /* px moved per frame under which the chain is at rest */
   };
   var ropePts = null;         /* the chain: [{x,y,px,py}], 0 = item, last = grommet */
@@ -600,10 +601,11 @@
   function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
   function r1(v) { return Math.round(v * 10) / 10; }
 
-  /* the item endpoint: the wrapper's layout-box centre in well coords. The
-     rotation and the picked zoom both live on the INNER svg, so the wrapper's
-     rect centre is the visual centre whatever the item is doing. */
-  function ropeItemEnd(item) {
+  /* the item's layout-box CENTRE in well coords. The rotation and the picked
+     zoom both live on the INNER svg, so the wrapper's rect centre is the
+     visual centre whatever the item is doing — this is the one point about an
+     item that never needs a transform correction. */
+  function ropeCentre(item) {
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
     return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top };
   }
@@ -612,6 +614,210 @@
      in the stylesheet. Both places that move the tag (pick's seating and the
      tag drag) already hold its left/top as numbers, so they pass the grommet
      straight to ropeSetTagEnd rather than reading it back off the element. */
+
+  /* ---- where the elastic grabs the object (testing report, 2026-08-09) ----
+     Anchoring at the item's CENTRE cured the old bounding-box disconnect, but
+     it bought two defects of its own, both caused by the same thing — half
+     the string living underneath the artwork:
+
+       · on HOLLOW silhouettes the centre is not ink at all. A rubber band's
+         centre is the hole; the toilet's is the notch between seat and tank;
+         the fish skeleton's is the gap between two ribs. The tip came to
+         rest on bare wood INSIDE the item's own box, which reads as exactly
+         the disconnected string we set out to fix.
+       · the DANGLE went missing. The belly of a slack rope sits near the
+         middle of its span, and with one pin buried at the centre, up to
+         55% of the chain was hidden under the artwork — so the visible
+         remainder ran dead straight and the elastic read as taut.
+
+     Both are fixed by grabbing the NEAR EDGE of the silhouette instead:
+     march from the grommet toward the centre and stop at the first painted
+     pixel. The tip is then on ink by construction, whatever shape the item
+     is, and almost the whole chain hangs in the open where its sag shows.
+
+     Hit testing does the shape reading, because the shape is the SVG's own
+     and nothing else can answer for it: item ink is pointer-events
+     visiblePainted, the picked item is the topmost hit-testable thing in the
+     well (z 72; every overlay above the pile is pointer-events:none), and
+     the rope overlay cannot hit itself. A probe is only accepted when it
+     lands on THIS item, so the tag, neighbours and wood are all rejected.
+
+     THE MATRIX CORRECTION IS THE SUBTLE PART. pick() runs at the START of
+     the 0.15s zoom-and-straighten transition, so the artwork on screen is
+     part-way between its scattered pose and its picked one — probing it
+     naively would find ink at coordinates that mean something else once the
+     transition lands. So probes are authored in the SETTLED pose (upright,
+     ×--pick-scale) as offsets from the centre, then pushed through the svg's
+     CURRENT matrix to ask "where is this point right now?" before the hit
+     test. getComputedStyle and hit testing read the same in-flight animation
+     value, so the two always agree. The anchor is stored as that settled-pose
+     offset, which is why it survives drags untouched: a picked item is rigid
+     (upright, fixed scale), so centre + offset is the live tip forever. */
+  var ANCHOR_STEP = 2;    /* px between probes along the ray */
+  var ANCHOR_BITE = 6;    /* px to sink past the first ink, so antialiasing at
+                             the silhouette edge can't leave a hairline of
+                             wood showing at the tip — but never deeper than
+                             the ink runs, or a thin ring's far side is the
+                             hole again */
+  var ANCHOR_MIN_RUN = 3; /* px of ink along the ray that count as a real
+                             purchase rather than a grazed corner */
+  /* aim points for the probe fan, as fractions of the item's half-short-side
+     either side of the centre. Centre first — it is right for most items and
+     costs one ray; the rest only run when the object is concave enough to
+     have swallowed the centre line. */
+  var ANCHOR_FAN = [0, -0.3, 0.3, -0.6, 0.6, -0.85, 0.85];
+  var ropeOffX = 0, ropeOffY = 0;   /* the anchor, as a settled-pose offset */
+
+  function ropeMatrix(el) {
+    var m = /matrix\(([^)]+)\)/.exec(getComputedStyle(el).transform || '');
+    if (!m) return [1, 0, 0, 1];
+    var n = m[1].split(',');
+    return [parseFloat(n[0]) || 0, parseFloat(n[1]) || 0,
+            parseFloat(n[2]) || 0, parseFloat(n[3]) || 0];
+  }
+
+  /* resolve the anchor for `item`, given its centre and the grommet (both in
+     well coords). Sets ropeOffX/ropeOffY; falls back to the centre (0,0) if
+     nothing is found at all, so the worst case is the old behavior.
+
+     A SINGLE ray at the centre is not enough, because plenty of these
+     objects are concave and the centre line runs through the hole. The line
+     from a tag up-left of the toilet to the toilet's centre passes over the
+     empty air above the bowl, through the notch between bowl and tank, and
+     arrives at a centre that is itself unpainted — it never touches the
+     toilet at all. So the probe FANS: the centre ray first (cheap, and right
+     for the great majority), then progressively wider rays aimed either side
+     of the centre, until one finds ink. The elastic ends up hooked on
+     whatever part of the object actually faces the tag, which is what a
+     string tied round a real object does. */
+  function ropeAnchor(item, cx, cy, gx, gy) {
+    ropeOffX = 0; ropeOffY = 0;
+    var svg = item.querySelector('svg');
+    if (!svg || !document.elementFromPoint) return;
+    var w = well.getBoundingClientRect();
+    var zoom = parseFloat(getComputedStyle(item)
+      .getPropertyValue('--pick-scale')) || 1;
+    var m = ropeMatrix(svg);
+    var r = item.getBoundingClientRect();
+    var dx = cx - gx, dy = cy - gy;
+    var len0 = Math.sqrt(dx * dx + dy * dy);
+    if (len0 < 1) return;
+    /* how far off the centre line the widest fan rays aim. The SHORT side of
+       the item bounds it, so an aim point stays inside the artwork however
+       elongated it is. */
+    var spread = zoom * Math.min(r.width, r.height) / 2;
+    var nx = -dy / len0 * spread, ny = dx / len0 * spread;
+    /* only the stretch of ray that can be inside the item is worth probing —
+       start where it enters the settled pose's bounding circle */
+    var reach = zoom * Math.sqrt(r.width * r.width + r.height * r.height) / 2;
+
+    /* is the settled-pose offset (vx,vy) from the centre on this item's ink
+       as things stand right now? (see the matrix note above) */
+    function inkAt(vx, vy) {
+      var el = document.elementFromPoint(
+        w.left + cx + (m[0] * vx + m[2] * vy) / zoom,
+        w.top + cy + (m[1] * vx + m[3] * vy) / zoom);
+      return !!(el && el.closest && el.closest('.jd-item') === item);
+    }
+
+    var graze = null;
+    /* one ray, grommet -> (centre + perpendicular·f). Returns the offset to
+       grab, or null when this ray finds no real purchase. */
+    function ray(f) {
+      var ex = cx + nx * f - gx, ey = cy + ny * f - gy;
+      var len = Math.sqrt(ex * ex + ey * ey);
+      if (len < 1) return null;
+      var ux = ex / len, uy = ey / len;
+      var from = Math.max(0, len - reach);
+      function at(s) { return inkAt(gx + ux * s - cx, gy + uy * s - cy); }
+      var s, a, b, deep, v;
+      for (s = from; s <= len; s += ANCHOR_STEP) {
+        if (!at(s)) continue;
+        /* Found an edge. Measure how far the ink RUNS from here, refining
+           both ends at sub-step resolution, and settle in the middle of that
+           run — capped at ANCHOR_BITE so a solid body is still gripped near
+           its edge (which is what keeps the sag out in the open) while a
+           SLIVER is gripped down its spine. Biting a flat few px into a
+           popsicle stick crossed near-lengthwise put the tip back out in the
+           antialiasing on the far side; centring in the run cannot. */
+        a = s; b = s;
+        while (a - 0.5 >= from && at(a - 0.5)) { a -= 0.5; }
+        while (b + ANCHOR_STEP <= len && b - a < ANCHOR_BITE * 2 && at(b + ANCHOR_STEP)) {
+          b += ANCHOR_STEP;
+        }
+        while (b + 0.5 <= len && b - a < ANCHOR_BITE * 2 && at(b + 0.5)) { b += 0.5; }
+        deep = Math.min(a + ANCHOR_BITE, (a + b) / 2);
+        v = { x: gx + ux * deep - cx, y: gy + uy * deep - cy };
+        /* a GRAZE — the ray clipping a corner or a rounded end, a run barely
+           a pixel thick — has no interior to sit in, so even its midpoint is
+           within antialiasing of bare wood. Remember it and keep looking for
+           ink thick enough to hold a knot; the graze is only used if nothing
+           better turns up on any ray. */
+        if (b - a < ANCHOR_MIN_RUN) {
+          /* keep the THICKEST graze seen, not the first: on a wispy item —
+             a peacock feather is all barbs — every crossing is a graze, and
+             the fattest one (a quill rather than a barb) is the only place
+             with enough ink to hide a rope end in */
+          if (!graze || b - a > graze.run) { graze = { v: v, run: b - a }; }
+          s = b; continue;
+        }
+        return v;
+      }
+      return null;
+    }
+
+    var i, hit;
+    for (i = 0; i < ANCHOR_FAN.length; i++) {
+      hit = ray(ANCHOR_FAN[i]);
+      if (hit) { ropeOffX = hit.x; ropeOffY = hit.y; return; }
+    }
+    if (graze) {
+      /* nothing but grazes anywhere: creep the tip a little further in
+         toward the centre before giving up. On the wispy items that end up
+         here the ink that IS present runs inward — a feather's barbs thicken
+         into its quill — so a couple of px that way buys real coverage,
+         and on anything else it is a nudge too small to see. */
+      var gl = Math.sqrt(graze.v.x * graze.v.x + graze.v.y * graze.v.y);
+      var pull = gl > ANCHOR_BITE ? (gl - ANCHOR_BITE / 2) / gl : 1;
+      ropeOffX = graze.v.x * pull; ropeOffY = graze.v.y * pull;
+    }
+  }
+
+  /* pick() probes while the 0.15s zoom is still in flight, and the matrix
+     correction above is only as good as a hit test on part-grown artwork:
+     a 3px rim in the settled pose is under 2px while the item is still
+     small, which is thin enough for antialiasing to answer "wood" on a
+     probe that will land on ink a moment later. So the anchor is CONFIRMED
+     once, right after the transition lands, against the real geometry. The
+     chain is still swinging into its sag at that point, so moving a pinned
+     end is invisible — it is the same thing an item drag does. */
+  var ZOOM_SETTLE = 200;    /* ms: the 0.15s transform ease, plus slack */
+  var ropeArm = 0;
+  function ropeConfirmAnchor(item) {
+    if (ropeArm) clearTimeout(ropeArm);
+    ropeArm = setTimeout(function () {
+      ropeArm = 0;
+      if (picked === item) ropeReanchor(item);
+    }, ZOOM_SETTLE);
+  }
+
+  /* the live item endpoint: the anchor, carried by the centre */
+  function ropeItemEnd(item) {
+    var c = ropeCentre(item);
+    return { x: c.x + ropeOffX, y: c.y + ropeOffY };
+  }
+  /* re-read the anchor against the CURRENT grommet direction and move the
+     endpoint to match. Called at the two moments the geometry has just
+     changed and everything is at rest — an item drop and a tag drop — because
+     the near edge of a silhouette depends on which way the string is pulling.
+     Deliberately does NOT re-pin: the rest length stays frozen from pick, so
+     a dragged-away item keeps its hard-won tautness. */
+  function ropeReanchor(item) {
+    if (!ropePts || item !== picked) return;
+    var c = ropeCentre(item);
+    ropeAnchor(item, c.x, c.y, ropeBx, ropeBy);
+    ropeSetItemEnd(c.x + ropeOffX, c.y + ropeOffY);
+  }
 
   /* (re)string the elastic between two points: freeze the rest length, then
      lay the chain out ALREADY BOWED by the slack, at zero velocity. Called at
@@ -702,6 +908,30 @@
         else if (bf) { b.x -= dx * f * 2; b.y -= dy * f * 2; }
       }
     }
+    /* BENDING RESISTANCE — the thing that makes this an elastic band and not
+       a bead chain, and the fix for the last of the "reads taut" cases
+       (testing report, 2026-08-09).
+
+       A perfectly limp chain hung between two points that are vertically in
+       line has one lowest-energy shape: fold the surplus into a hairpin and
+       let it hang straight down as a narrow bight. That is genuinely what a
+       bead chain does — and on a tag seated directly above its item it put
+       the entire fold inside the artwork, leaving a dead-straight line on
+       screen. Correct physics, useless picture, and untrue to the object:
+       red elastic cord resists being folded double. It bows.
+
+       Each interior point is nudged toward the midpoint of its neighbours,
+       which is a curvature penalty: negligible along a broad sag (the
+       neighbours nearly are its midpoint) and strong in a hairpin (where the
+       midpoint is far away). So the surplus stops folding and spends itself
+       sideways instead, which is both what the real cord does and the shape
+       that shows. Applied after the distance constraints and kept small, so
+       it shapes the sag without straightening it. */
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      p.x += ((ropePts[i - 1].x + ropePts[i + 1].x) / 2 - p.x) * ROPE.STIFF;
+      p.y += ((ropePts[i - 1].y + ropePts[i + 1].y) / 2 - p.y) * ROPE.STIFF;
+    }
     for (i = 1; i < n - 1; i++) {
       p = ropePts[i];
       var mx = p.x - p.px, my = p.y - p.py, m = Math.sqrt(mx * mx + my * my);
@@ -751,6 +981,7 @@
   function ropeStop() {
     if (ropeRAF) cancelAnimationFrame(ropeRAF);
     ropeRAF = 0; ropePts = null;
+    ropeOffX = 0; ropeOffY = 0;
   }
 
   /* ---- dragging the tag itself (owner request, 2026-08-09) ---------------
@@ -793,8 +1024,12 @@
     });
     function endTagDrag(e) {
       if (!tdrag || e.pointerId !== tdrag.id) return;
+      var moved = tdrag.on;
       tag.classList.remove('is-dragging');
       tdrag = null;
+      /* the tag has landed somewhere new, so the string pulls on the object
+         from a new direction — re-read which edge it grips */
+      if (moved && picked) ropeReanchor(picked);
     }
     tag.addEventListener('pointerup', endTagDrag);
     tag.addEventListener('pointercancel', endTagDrag);
@@ -830,6 +1065,7 @@
       rope.classList.remove('is-on');
     }
     tdrag = null;
+    if (ropeArm) { clearTimeout(ropeArm); ropeArm = 0; }
     ropeStop();          /* the chain stops simulating the moment it's gone */
     if (picked) {
       picked.classList.remove('is-picked');
@@ -912,18 +1148,48 @@
     var tw = tag.offsetWidth, th = tag.offsetHeight;
     var below = ay + 26 + th < w.height - 8;
     var ty = below ? ay + 26 : (vTop - 20 - th);
-    var tx = Math.max(8, Math.min(w.width - tw - 8, cx + 4));
+    function clampX(v) { return Math.max(8, Math.min(w.width - tw - 8, v)); }
+    var tx;
+    if (below) {
+      tx = clampX(cx + 4);
+    } else {
+      /* SEATED ABOVE — LEAN IT TO ONE SIDE (testing report, 2026-08-09).
+         A tag hung straight above its item puts both ends of the elastic on
+         one vertical line, and a slack cord between two such points has
+         nowhere to put its surplus except a fold hanging straight down —
+         i.e. straight into the artwork, where none of it can be seen. The
+         string then reads bone-taut however much slack it actually has.
+         Leaning the tag sideways by a good fraction of the drop gives the
+         sag somewhere to be, and the elastic hangs in an arc the way it
+         already does in the (far commoner) seated-below case.
+         HOW FAR: the belly of the sag hangs around the midpoint of the two
+         ends, so the lean has to be wide enough to swing that midpoint clear
+         of the artwork — a lean of half the item's width just parks the
+         belly back on top of it. Hence the item's own ZOOMED width (plus a
+         margin) as the floor, alongside a fraction of the drop.
+         Lean LEFT by preference: the grommet is on the tag's left edge, so
+         leaning left slides the body back over ground the tag already
+         covered and can't push it off the right wall. If the well runs out
+         that way — item hard against the left edge — lean right instead;
+         whichever survives clamping with more offset wins. */
+      var lean = Math.max(110, 0.62 * (cy - (ty + th / 2)), zoom * r.width + 40);
+      var lx = clampX(cx - lean - 10), rx = clampX(cx + lean - 10);
+      tx = Math.abs(lx + 10 - cx) >= Math.abs(rx + 10 - cx) ? lx : rx;
+    }
     tag.style.left = tx + 'px';
     tag.style.top = ty + 'px';
 
-    /* string the elastic: item CENTRE -> the grommet at the tag's left edge.
-       The predicted extent above still decides where the tag is SEATED (so
-       the zoomed artwork never lands on its own tag); it no longer has any
-       say in where the rope starts, because the rope starts under the ink.
-       Rest length is frozen here — see ROPE. */
+    /* string the elastic: the item's NEAR EDGE -> the grommet at the tag's
+       left edge. The predicted extent above still decides where the tag is
+       SEATED (so the zoomed artwork never lands on its own tag); it has no
+       say in where the rope starts, because that is read off the silhouette
+       itself — see ropeAnchor. Rest length is frozen here — see ROPE. */
     ropeTagH = th;
+    var gx = tx + 10, gy = ty + th / 2;
+    ropeAnchor(item, cx, cy, gx, gy);
     rope.setAttribute('class', 'jd-rope is-on');
-    ropePin(cx, cy, tx + 10, ty + th / 2);
+    ropePin(cx + ropeOffX, cy + ropeOffY, gx, gy);
+    ropeConfirmAnchor(item);
   }
 
   /* dismissal: any press that isn't the item or the tag — wood, page,
@@ -962,7 +1228,7 @@
        rope's item endpoint, handed over for free. Measuring the element per
        frame instead would force a layout on a filtered, compositor-promoted
        node mid-drag, which is the whole reason this path is transform-only. */
-    if (item === picked) ropeSetItemEnd(x, y);
+    if (item === picked) ropeSetItemEnd(x + ropeOffX, y + ropeOffY);
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
@@ -987,14 +1253,12 @@
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
-    /* one authoritative re-read once the position is baked into left/top: the
-       % round-trip moves the centre by a fraction of a pixel, and the rope's
-       endpoint should sit on the item's real resting centre, not on the
-       pre-bake estimate. One layout read, at rest — not per frame. */
-    if (item === picked && ropePts) {
-      var c = ropeItemEnd(item);
-      ropeSetItemEnd(c.x, c.y);
-    }
+    /* one authoritative pass once the position is baked into left/top: the %
+       round-trip moves the centre by a fraction of a pixel, and the drop has
+       changed which way the string pulls, so the near edge it should be
+       gripping has moved too. Both are settled here in one go — a handful of
+       hit tests on a stationary item, never per frame. */
+    ropeReanchor(item);
   }
 
   /* per-item wiring is deferred: the pile is BUILT by the loader above, so
