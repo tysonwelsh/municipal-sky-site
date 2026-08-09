@@ -610,14 +610,25 @@
     });
 
     /* seat the tag just below the item, grommet toward it, clamped to the
-       well; if there's no room below, it hangs above instead */
+       well; if there's no room below, it hangs above instead. The wrapper
+       div's rect knows nothing of the inner svg's rotate/scale (and the
+       picked zoom is still transitioning at this point anyway), so the
+       enlarged extent is PREDICTED: rotate the layout box by the settled
+       rotation, scale by --pick-scale, and seat against that — otherwise
+       the zoomed artwork lands on top of its own tag. */
     var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
-    var ax = r.left + r.width / 2 - w.left;      /* anchor: item bottom centre */
-    var ay = r.bottom - w.top - 6;
+    var cs = getComputedStyle(item);
+    var zoom = parseFloat(cs.getPropertyValue('--pick-scale')) || 1;
+    var ang = (parseFloat(cs.getPropertyValue('--rot')) || 0) * 0.94 * Math.PI / 180;
+    var vh = zoom * (r.width * Math.abs(Math.sin(ang)) + r.height * Math.abs(Math.cos(ang)));
+    var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
+    var vTop = cy - vh / 2, vBottom = cy + vh / 2;
+    var ax = cx;                                 /* anchor: item bottom centre */
+    var ay = vBottom - 6;
     tag.classList.add('is-on');                  /* measurable before placing */
     var tw = tag.offsetWidth, th = tag.offsetHeight;
     var below = ay + 26 + th < w.height - 8;
-    var ty = below ? ay + 26 : (r.top - w.top - 20 - th);
+    var ty = below ? ay + 26 : (vTop - 20 - th);
     var tx = Math.max(8, Math.min(w.width - tw - 8, ax + 4));
     tag.style.left = tx + 'px';
     tag.style.top = ty + 'px';
@@ -628,7 +639,7 @@
     var sag = below ? 10 : -10;
     rope.setAttribute('class', 'jd-rope is-on');
     rope.innerHTML =
-      '<path d="M ' + ax + ' ' + (below ? ay : r.top - w.top + 6) +
+      '<path d="M ' + ax + ' ' + (below ? ay : vTop + 6) +
       ' Q ' + ((ax + gx) / 2 + 6) + ' ' + ((ay + gy) / 2 + sag) +
       ', ' + gx + ' ' + gy + '" fill="none" stroke="#b3402f" ' +
       'stroke-width="2" stroke-linecap="round"/>' +
