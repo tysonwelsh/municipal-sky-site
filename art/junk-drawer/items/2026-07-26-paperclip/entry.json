@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-paperclip",
   "title": "Paperclip",
   "prompt": "A standard silver wire paperclip viewed from above, ultra-minimal style: a single continuous rounded-end stroke tracing the classic double loop. Transparent background.",
@@ -21,7 +21,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

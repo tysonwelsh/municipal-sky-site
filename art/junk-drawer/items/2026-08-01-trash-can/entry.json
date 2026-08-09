@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-01-trash-can",
   "title": "Galvanized trash can",
   "prompt": "A galvanized steel trash can in a pop-art style. I want the lid to be off leaning against the can and have it over flowing with various pieces of cartoony garbage (think banana peel, fish bone, tin can, and more). By pop art style I don’t mean bengay dots or comic book or anything, just the sort of screen print colors and flat style. Just the can, no decorative elements or background.",
@@ -22,7 +22,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {
@@ -45,7 +45,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {
@@ -68,7 +68,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-01",
       "grade_history": [],
       "annotations": {

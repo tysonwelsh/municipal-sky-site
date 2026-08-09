@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-09-mao-badge",
   "title": "Chairman Mao enamel pin badge",
   "prompt": "a kitschy chairman mao enamel pin badge. so the badge should have a red background with a sunburst pattern, and a faux silver border. then a relief of Mao's head in profile,  also faux silver.",
@@ -23,7 +23,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
@@ -46,11 +46,11 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-09",
       "grade_history": [
         {
-          "grade": "select",
+          "grade": 3.0,
           "date": "2026-08-09",
           "taxonomy_version": 7,
           "note": "Owner regrade on second thought, same day as filing: select → standard."
@@ -76,7 +76,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {

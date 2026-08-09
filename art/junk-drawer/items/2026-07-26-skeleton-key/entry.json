@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-skeleton-key",
   "title": "Brass skeleton key",
   "prompt": "A single antique brass skeleton key viewed from directly above, lying at a slight angle on a transparent background. Vintage engraving style: fine hatched linework, warm brass tones, an ornate bow with a clover-shaped cutout, a long stem, and a single toothed bit. No background shapes, no text.",
@@ -20,7 +20,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

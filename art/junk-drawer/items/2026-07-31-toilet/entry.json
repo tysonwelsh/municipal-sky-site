@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-31-toilet",
   "title": "Toilet, seat up",
   "prompt": "A toilet. Like a classic white porcelain toilet with its seat up in profile.",
@@ -21,7 +21,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {
@@ -44,7 +44,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {
@@ -67,7 +67,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-31",
       "grade_history": [],
       "annotations": {

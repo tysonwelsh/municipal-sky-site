@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-05-ruby-hook-earring",
   "title": "Antique ruby hook earring",
   "prompt": "A single antique hook earring with an oval shaped ruby center stone surround by a ring of diamond side stones inlaid in a 14k gold basket.",
@@ -18,7 +18,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -41,7 +41,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -64,7 +64,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {

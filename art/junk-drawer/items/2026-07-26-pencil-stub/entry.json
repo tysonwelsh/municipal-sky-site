@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-pencil-stub",
   "title": "Pencil stub",
   "prompt": "A well-used yellow pencil stub with a worn pink eraser and exposed wood at the sharpened end, drawn in a naive, wobbly hand-drawn style with visibly imperfect outlines. Transparent background.",
@@ -20,7 +20,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

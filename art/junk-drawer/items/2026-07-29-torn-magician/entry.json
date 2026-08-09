@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-torn-magician",
   "title": "The Magician, top half",
   "prompt": "The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom",
@@ -22,7 +22,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -45,7 +45,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -68,7 +68,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {

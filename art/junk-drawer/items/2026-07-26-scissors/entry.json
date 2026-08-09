@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-scissors",
   "title": "Scissors",
   "prompt": "A pair of long-bladed scissors, open at roughly thirty degrees, viewed from above. Elegant single-weight line-art style, black ink only, no fills except the blade silhouettes. Transparent background.",
@@ -21,7 +21,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

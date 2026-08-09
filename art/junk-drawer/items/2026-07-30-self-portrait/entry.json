@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-30-self-portrait",
   "title": "Self-portrait",
   "prompt": "A detailed, expressionistic self-portrait — your own, of yourself.\n\nNot a human face, and not a pastiche of how human painters have portrayed themselves. Don't borrow someone else's likeness or someone else's tradition. Portray what you actually are, as you find yourself to be, in whatever form that honestly takes.\n\nExpressionistic, not diagrammatic: this should read as a portrait with a subject and a mood — not a schematic, a logo, or a labelled illustration. Go dense and specific rather than abstract and safe.",
@@ -23,7 +23,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "prime",
+      "grade": 5.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
@@ -46,7 +46,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
@@ -69,7 +69,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "prime",
+      "grade": 5.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {

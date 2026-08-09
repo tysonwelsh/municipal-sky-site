@@ -48,7 +48,10 @@ data files are `.json`, art is `.svg`.
    - One-shot or refined? If refined, how many prompts total?
    - Generation date (default: today).
    - A grade (read the scale from `taxonomy.json` `grades` and show the
-     owner the id + description list to pick from).
+     owner the label + description list to pick from). Grades are FILED AS
+     NUMBERS: write the chosen grade's `rank` as a decimal (Prime = `5.0`
+     … Utility = `1.0`), never the id or label string — labels live only
+     in the taxonomy so the scale can be reworded without touching entries.
    - Annotations: read `taxonomy.json` `axes`; for each axis, ask for a
      value (offer the value ids + descriptions) OR "skip". Skipped axes are
      OMITTED from the annotations object — never write null/empty for them.
@@ -98,8 +101,8 @@ data files are `.json`, art is `.svg`.
    edge to edge, ≤2% margin, no surrounding empty space."
 4. **Write `entry.json`** following the schema in `PLAN-BACKEND.md` §2.2
    (or copy `items/2026-07-26-skeleton-key/entry.json` as a template).
-   Required: schema, id, title, prompt, created,
-   responses[{rid, file, model, date, generation, grade}].
+   Required: schema (currently `2` — the numeric-grade shape), id, title,
+   prompt, created, responses[{rid, file, model, date, generation, grade}].
    2-space indent, UTF-8, LF. `rid`s are `r1`, `r2`, … and are permanent.
 5. **Validate**: `python3 scripts/validate-junk-drawer.py` — fix every error
    it reports before committing. If python3 is unavailable, at minimum
@@ -121,8 +124,8 @@ as above. Validate, then commit:
 ## Procedure: regrade / annotate an existing response
 
 Push the old grade into `grade_history` as
-`{"grade": <old>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
-then set the new `grade` and `graded`. Adding annotations on new axes to old
+`{"grade": <old rank number>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
+then set the new `grade` (a rank number, e.g. `2.0`) and `graded`. Adding annotations on new axes to old
 entries is just adding keys. Commit: `junk-drawer: regrade "<title>" <rid> <old>→<new>`.
 
 A regrade can change which response the drawer shows — that is intended, and
@@ -136,7 +139,10 @@ the owner asks to pin it.
 Append the new axis/value/grade/model to `taxonomy.json` with a real
 human-readable description (the frontend displays it), add a `changelog`
 line, bump `version`. NEVER rename or delete an id that any entry
-references — the validator will fail if you do. To RETIRE an axis, set
+references — the validator will fail if you do. (Since v8 entries
+reference grades by numeric `rank`, not id, so the grade scale's ids,
+labels, and descriptions may be reworded freely — the `rank` numbers are
+the permanent part of the scale.) To RETIRE an axis, set
 `"defunct": true` on it instead (v6 precedent, 2026-07-29): defunct axes
 stay for the responses already graded under them, render dimmed/tagged,
 and are never surveyed again — annotate new responses ONLY on axes

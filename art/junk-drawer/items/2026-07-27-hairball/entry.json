@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-27-hairball",
   "title": "Hairball",
   "prompt": "hairball",
@@ -17,7 +17,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {

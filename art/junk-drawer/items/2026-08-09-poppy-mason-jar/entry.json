@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-09-poppy-mason-jar",
   "title": "Orange poppy in a mason jar",
   "prompt": "a single orange poppy flower in a mason jar vase. render it in a corporate Memphis style.",
@@ -20,7 +20,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
@@ -43,7 +43,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
@@ -66,7 +66,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {

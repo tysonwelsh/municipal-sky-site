@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-05-microscope-slide",
   "title": "Microscope slide of common germs at 400×",
   "prompt": "A microscope slide where, upon closer inspection, a detailed, realistic depiction of various common germs can be observed as they would be seen at 400x power of magnification",
@@ -19,7 +19,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -42,7 +42,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -65,7 +65,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {

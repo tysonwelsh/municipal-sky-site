@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-mammoth-ice-cube",
   "title": "Mammoth in an ice cube",
   "prompt": "I’d like a cartoony wooly mammoth frozen in a giant ice cube. Its eyes should be closed and it should have long luscious eyelashes. In fact, let’s go ahead and give it some eye shadow too so that it is a female wooly mammoth.",
@@ -22,7 +22,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -44,7 +44,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -66,7 +66,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {

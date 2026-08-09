@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-30-smashed-alarm-clock",
   "title": "Smashed alarm clock",
   "prompt": "A key-wound, mechanical spring-powered alarm clock that has been smashed by a wooden mallet (but generate just the clock not the mallet, I only mention the mallet so you get a sense of the sort of forensics of the impact of smash I have in mind). Give it a pop-art style, but no ben-day dots, I just mean in terms of colors and lines and such",
@@ -21,7 +21,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
@@ -44,7 +44,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
@@ -67,7 +67,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {
@@ -90,7 +90,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-30",
       "grade_history": [],
       "annotations": {

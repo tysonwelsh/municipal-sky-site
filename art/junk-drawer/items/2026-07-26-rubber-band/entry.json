@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-rubber-band",
   "title": "Rubber band",
   "prompt": "A single red rubber band lying in a relaxed loop, viewed from above, flat vector style with slight thickness variation where it twists. Transparent background.",
@@ -19,7 +19,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

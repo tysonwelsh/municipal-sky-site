@@ -258,12 +258,13 @@ function buildModelPanel(r, showSize) {
   let h = '<div class="svg-frame" onclick="toggleFrame(this)">' + r.svg
     + '<div class="svg-hint">tap to resize</div></div>';
 
-  // Overall grade
+  // Overall grade — the pill carries the grade's numeric rank, not its id:
+  // entries store grades as numbers (entry schema 2), labels stay display-only
   const gid = r.key + '__grade';
   h += '<div class="axis-group"><div class="axis-label">Overall grade</div>';
   h += '<div class="pills">';
   GRADES.forEach(g => {
-    h += '<div class="pill" data-group="' + gid + '" data-value="' + g.id + '" onclick="pick(this)">'
+    h += '<div class="pill" data-group="' + gid + '" data-value="' + g.rank + '" onclick="pick(this)">'
       + g.label + ' <span style="opacity:0.45;font-size:0.7rem">' + g.description.split('.')[0] + '</span></div>';
   });
   h += '</div></div>';
@@ -321,7 +322,7 @@ function pick(el) {
   } else if (g === 'pin') {
     pinned = v === '__none' ? null : v;
   } else if (g.endsWith('__grade')) {
-    state[g.split('__')[0]].grade = v;
+    state[g.split('__')[0]].grade = parseFloat(v);   // filed as a number
   } else {
     const [model, axis] = g.split('__');
     if (v === '__skip') delete state[model].axes[axis];

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-28-saturn-fadograph",
   "title": "Fadograph of a yestern Saturn",
   "prompt": "A  fadograph of a yestern scene depicting the planet Saturn from a reasonable distance",
@@ -21,7 +21,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
@@ -43,7 +43,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {
@@ -65,7 +65,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "prime",
+      "grade": 5.0,
       "graded": "2026-07-28",
       "grade_history": [],
       "annotations": {

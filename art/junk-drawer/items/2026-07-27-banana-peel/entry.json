@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-27-banana-peel",
   "title": "Discarded banana peel",
   "prompt": "generate a bannanna peel in a comic book or pop art style. i mean i don't want ben day dots or whatever, just a bannanna peel in a discarded bannanna peel in a comic book style",
@@ -18,7 +18,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {

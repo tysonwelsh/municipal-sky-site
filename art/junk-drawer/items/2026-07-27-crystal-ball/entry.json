@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-27-crystal-ball",
   "title": "Cracked crystal ball",
   "prompt": "A crystal ball the kind a fortune teller might have but only the ball not the stand, by which I mean it is an orb without a pedestal. Also it has a crack in the glass and the insides are a vague swirling cloudy myst as a result. I'd like it to look like it is painted in water colors with a sort of bohemian style like you might see on a carton of incense in a new agey headshop at the mall",
@@ -21,7 +21,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
@@ -43,7 +43,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
@@ -65,7 +65,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {

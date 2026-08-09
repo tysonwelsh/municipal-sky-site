@@ -245,7 +245,9 @@ pages.
 ### What the instrument collects (per response)
 
 - **Overall grade** — the full scale from taxonomy.json, with
-  descriptions. This is on each model's tab, not asked separately.
+  descriptions. This is on each model's tab, not asked separately. The
+  pills show labels but the exported JSON carries the grade's numeric
+  `rank` (5 … 1) — grades are stored as numbers, never id/label strings.
 - **Annotation axes** — each axis from taxonomy.json, with values +
   skip option. Optional per-axis notes.
 - **Size** — the `sizeTiers` picker appears on the FIRST model's tab
@@ -260,6 +262,8 @@ Share the artifact link and WAIT. The owner taps through the tabs,
 rates each image (they can see it right there), then hits "Results →
 Copy to clipboard" and pastes the JSON back into the chat. Parse the
 pasted JSON to extract grades, annotations, sizeClass, and `pinned`.
+Grades arrive as numbers (the taxonomy `rank`); file each one in
+entry.json as a decimal (`4.0`, not `"choice"`) per CLAUDE.md.
 
 If the owner defers grading entirely, a provisional self-assessment is
 allowed but must be labeled in `notes` ("provisional self-assessment —

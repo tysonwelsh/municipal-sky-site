@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-matchbook",
   "title": "Matchbook",
   "prompt": "A closed matchbook viewed from above, flat graphic-design style: deep red cover with a large stylized flame emblem in yellow and orange, the word MATCHES in small caps along the striker edge. Bold flat shapes, minimal shading. Transparent background.",
@@ -22,7 +22,7 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {

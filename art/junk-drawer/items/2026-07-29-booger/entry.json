@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-booger",
   "title": "Booger",
   "prompt": "booger",
@@ -23,7 +23,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -46,7 +46,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -69,7 +69,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {

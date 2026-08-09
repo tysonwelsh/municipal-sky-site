@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-05-deseret-beehive",
   "title": "Deseret beehive",
   "prompt": "A beehive, not unlike the kind you might see on the Utah state seal or some other graphic harkening back to Utah’s history as Deseret. Let’s have it be in color but like a faded news paper clipping (I’m talking just about the visual style — do not generate a newspaper background or whatever). No bees or text just the hive.",
@@ -18,7 +18,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "prime",
+      "grade": 5.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -41,7 +41,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
@@ -64,7 +64,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-peacock-feather",
   "title": "Peacock feather",
   "prompt": "A single, elegant peacock weather, with wispy barbs and of course that signature, iridescent eye pattern. Have it curve ever so slightly to the left. I’d like it to be done in an illustrated style as though it is done in fine line color pencils",
@@ -22,7 +22,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -45,7 +45,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -68,7 +68,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {

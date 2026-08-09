@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-fish-skeleton",
   "title": "Fish skeleton",
   "prompt": "A cartoony fish skeleton, but one of the ones where it is all bones except for the head which is still a fish head. I’m think if the kind that you might see in a comic book depiction of a trash can or a cartoon cat playing with or something. It should be slightly curved and the fish should have Xs for eyes to convey that it is dead lol",
@@ -21,7 +21,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -44,7 +44,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
@@ -67,7 +67,7 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {

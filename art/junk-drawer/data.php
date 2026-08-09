@@ -33,14 +33,6 @@ if (!is_array($taxonomy)) {
     exit();
 }
 
-// Grade id -> rank, straight off the taxonomy, for resolving `primary`.
-$gradeRank = [];
-foreach ($taxonomy['grades'] ?? [] as $g) {
-    if (isset($g['id'])) {
-        $gradeRank[$g['id']] = isset($g['rank']) ? (int) $g['rank'] : 0;
-    }
-}
-
 $items = [];
 $errors = [];
 
@@ -77,14 +69,16 @@ foreach ($entryFiles as $file) {
     // primary always resolves. An entry MAY pin one response by setting
     // `primary` — an explicit curatorial flag that wins outright. With no
     // pin, the best-graded response is shown, ties breaking to the earliest
-    // response, so a regrade re-points the drawer on its own. Entries whose
-    // responses carry no recognized grade fall back to the first response.
+    // response, so a regrade re-points the drawer on its own. Grades are
+    // stored as the taxonomy rank itself (5.0 … 1.0, entry schema 2), so
+    // "best" is just the highest number. Entries whose responses carry no
+    // numeric grade fall back to the first response.
     $rids = array_column($entry['responses'], 'rid');
     if (empty($entry['primary']) || !in_array($entry['primary'], $rids, true)) {
         $best = null;
         $bestRank = -1;
         foreach ($entry['responses'] as $resp) {
-            $rank = $gradeRank[$resp['grade'] ?? ''] ?? -1;
+            $rank = is_numeric($resp['grade'] ?? null) ? (float) $resp['grade'] : -1;
             if ($rank > $bestRank) {
                 $bestRank = $rank;
                 $best = $resp['rid'] ?? null;
