@@ -512,7 +512,9 @@
   /* tap = pick: pop to front, brief lift pulse, and the ITEM TAG — a manila
      specimen tag tethered to the picked object by a red elastic through its
      grommet (owner design, mockup-6). Persists until dismissed: tap wood /
-     Esc / pick another item / drag the picked item. */
+     Esc / pick another item. Dragging the picked item NO LONGER lets go —
+     the elastic has real physics now and follows (owner request,
+     2026-08-09); the tag itself can be dragged around too. */
   var tag = null, rope = null, picked = null, pendingReturn = null;
   var pileEl = well.querySelector('.jd-pile');
 
@@ -533,14 +535,259 @@
       'fill="#3a2a12" font-family="inherit">☝︎</text></svg>';
   }
 
+  /* ---- the red elastic, as an actual elastic (owner request, 2026-08-09) ---
+     The tether used to be ONE static quadratic path, drawn once at pick time
+     and then frozen. It could not dangle, could not stretch, and the instant
+     anything moved it was a lie — which is why dragging a picked item used to
+     dismiss the tag outright rather than admit the string had stopped
+     following. It is a Verlet chain now: SEGMENTS point masses pinned at both
+     ends, gravity plus distance constraints, resimulated per frame while the
+     tag is up.
+
+     Four decisions carry the behavior, and each is load-bearing:
+
+     · REST LENGTH IS FIXED AT PIN TIME, not recomputed per frame. The chain
+       is handed SLACK× the endpoint distance the moment it is pinned (floored
+       at MIN_REST, so a tag seated almost on top of its item still gets a
+       visible loop of string rather than a taut hyphen). That fixed length IS
+       the physics: drag the item away and the same piece of string runs out
+       of slack and pulls straight; bring it back and the slack returns as
+       dangle. Re-measuring the rest length every frame would give a rope that
+       is always equally slack — i.e. no stretch at all.
+
+     · THE ITEM END ANCHORS AT THE ITEM'S CENTRE, never at an edge. The
+       z-sandwich (tag 70 < rope 71 < picked item 72) means the rope passes
+       UNDER the artwork, so an anchor at the centre is always buried in ink
+       and can never show a gap. The old anchor was the edge-centre of the
+       item's PREDICTED rotated/zoomed bounding box, and for a rotated or
+       elongated item that point floats well off the drawn shape — the string
+       visibly ended in mid-air. Centre anchoring is the fix.
+
+     · THE LOOP SLEEPS. rAF runs only while the tag is on AND something is
+       still moving; once every point settles below EPS with both endpoints
+       unchanged, the frame cancels itself and an endpoint move wakes it
+       again. A picked item sitting still costs exactly nothing.
+
+     · THE STEP IS PER-FRAME, NOT PER-MILLISECOND. Verlet stores velocity as
+       (position − previous position), so feeding it a variable dt rescales
+       that velocity mid-flight and a single dropped frame launches the chain
+       across the well. A fixed step is stable; the cost is that the sag falls
+       a little faster on a 120Hz display, which nobody can see. */
+  var ROPE = {
+    SEGMENTS: 16,     /* point masses in the chain, both ends included */
+    SLACK: 1.25,      /* rest length as a multiple of the span at pin time */
+    MIN_REST: 60,     /* px — the shortest string we will ever hang */
+    GRAVITY: 0.55,    /* px per frame², ~60fps */
+    DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
+    ITER: 3,          /* constraint relaxation passes per frame */
+    EPS: 0.05         /* px moved per frame under which the chain is at rest */
+  };
+  var ropePts = null;         /* the chain: [{x,y,px,py}], 0 = item, last = grommet */
+  var ropeSeg = 0;            /* per-segment rest length, frozen at pin time */
+  var ropeAx = 0, ropeAy = 0; /* live item-end endpoint, well coords */
+  var ropeBx = 0, ropeBy = 0; /* live grommet endpoint, well coords */
+  var ropeRAF = 0;
+  var ropePath = null, ropeGrom = null;
+  /* the tag's height, measured when it is seated. The grommet sits at its
+     vertical middle, and we refuse to read offsetHeight inside the rAF loop —
+     a forced layout per frame on a drop-shadowed element is exactly the
+     repaint stall the drag path already goes out of its way to avoid. */
+  var ropeTagH = 0;
+  var ropeCalm = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function ropeReduced() { return !!(ropeCalm && ropeCalm.matches); }
+  function r1(v) { return Math.round(v * 10) / 10; }
+
+  /* the item endpoint: the wrapper's layout-box centre in well coords. The
+     rotation and the picked zoom both live on the INNER svg, so the wrapper's
+     rect centre is the visual centre whatever the item is doing. */
+  function ropeItemEnd(item) {
+    var w = well.getBoundingClientRect(), r = item.getBoundingClientRect();
+    return { x: r.left + r.width / 2 - w.left, y: r.top + r.height / 2 - w.top };
+  }
+  /* the grommet: 10px in from the tag's left edge, vertically centred — the
+     same spot the ::before brass ring is painted at in the stylesheet */
+  function ropeTagEnd() {
+    return { x: (parseFloat(tag.style.left) || 0) + 10,
+             y: (parseFloat(tag.style.top) || 0) + ropeTagH / 2 };
+  }
+
+  /* (re)string the elastic between two points: lay the chain along the
+     straight line between them at zero velocity and freeze the rest length.
+     Called at every pick — a re-pick gets a fresh string, not a stretched
+     one. Starting straight means the first second of animation IS the string
+     dropping into its sag, which reads as the tag being hung. */
+  function ropePin(ax, ay, bx, by) {
+    var n = ROPE.SEGMENTS, i, t;
+    var span = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay));
+    ropeSeg = Math.max(ROPE.MIN_REST, span * ROPE.SLACK) / (n - 1);
+    ropeAx = ax; ropeAy = ay; ropeBx = bx; ropeBy = by;
+    ropePts = [];
+    for (i = 0; i < n; i++) {
+      t = i / (n - 1);
+      var x = ax + (bx - ax) * t, y = ay + (by - ay) * t;
+      ropePts.push({ x: x, y: y, px: x, py: y });
+    }
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else { ropeDraw(); ropeWake(); }
+  }
+  /* endpoint setters — the ONLY things that wake the loop */
+  function ropeSetItemEnd(x, y) {
+    if (!ropePts || (x === ropeAx && y === ropeAy)) return;
+    ropeAx = x; ropeAy = y; ropeKick();
+  }
+  function ropeSetTagEnd(x, y) {
+    if (!ropePts || (x === ropeBx && y === ropeBy)) return;
+    ropeBx = x; ropeBy = y; ropeKick();
+  }
+  /* reduced motion: no swinging, ever. Run the same constraints to
+     convergence in one synchronous pass and draw the settled shape, so the
+     string is still correctly slack or taut — it just never sways there. */
+  function ropeKick() {
+    if (ropeReduced()) { ropeSettle(); ropeDraw(); }
+    else ropeWake();
+  }
+
+  /* one physics frame. Returns the largest distance any point travelled, so
+     the caller can decide whether the chain has come to rest. */
+  function ropeStep() {
+    var n = ropePts.length, i, k, p, moved = 0;
+    for (i = 1; i < n - 1; i++) {          /* verlet integrate the free points */
+      p = ropePts[i];
+      var vx = (p.x - p.px) * ROPE.DAMPING, vy = (p.y - p.py) * ROPE.DAMPING;
+      p.px = p.x; p.py = p.y;
+      p.x += vx; p.y += vy + ROPE.GRAVITY;
+    }
+    p = ropePts[0]; p.x = p.px = ropeAx; p.y = p.py = ropeAy;      /* pinned */
+    p = ropePts[n - 1]; p.x = p.px = ropeBx; p.y = p.py = ropeBy;  /* pinned */
+    for (k = 0; k < ROPE.ITER; k++) {
+      for (i = 0; i < n - 1; i++) {
+        var a = ropePts[i], b = ropePts[i + 1];
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        /* half the error each when both ends are free; the whole of it when
+           one end is a pin and cannot absorb its share */
+        var f = (d - ropeSeg) / d * 0.5;
+        var af = i > 0, bf = i + 1 < n - 1;
+        if (af && bf) {
+          a.x += dx * f; a.y += dy * f; b.x -= dx * f; b.y -= dy * f;
+        } else if (af) { a.x += dx * f * 2; a.y += dy * f * 2; }
+        else if (bf) { b.x -= dx * f * 2; b.y -= dy * f * 2; }
+      }
+    }
+    for (i = 1; i < n - 1; i++) {
+      p = ropePts[i];
+      var mx = p.x - p.px, my = p.y - p.py, m = Math.sqrt(mx * mx + my * my);
+      if (m > moved) moved = m;
+    }
+    return moved;
+  }
+  /* run to rest (reduced motion, and any time a settled shape is wanted
+     without animating toward it). Capped so a pathological configuration
+     can never spin the main thread. */
+  function ropeSettle() {
+    for (var i = 0; i < 400; i++) { if (ropeStep() < ROPE.EPS) return; }
+  }
+
+  /* one <path> for the whole chain, midpoint-quadratic smoothed so 16 points
+     read as string rather than as a surveyor's polyline, plus the grommet
+     ring at the tag end. Attributes are written on nodes built once in
+     buildTag() — re-parsing innerHTML 60×/second is the one avoidable cost
+     here. */
+  function ropeDraw() {
+    if (!ropePts || !ropePath) return;
+    var n = ropePts.length, i;
+    var d = 'M ' + r1(ropePts[0].x) + ' ' + r1(ropePts[0].y);
+    for (i = 1; i < n - 1; i++) {
+      d += ' Q ' + r1(ropePts[i].x) + ' ' + r1(ropePts[i].y) + ' ' +
+        r1((ropePts[i].x + ropePts[i + 1].x) / 2) + ' ' +
+        r1((ropePts[i].y + ropePts[i + 1].y) / 2);
+    }
+    d += ' L ' + r1(ropePts[n - 1].x) + ' ' + r1(ropePts[n - 1].y);
+    ropePath.setAttribute('d', d);
+    ropeGrom.setAttribute('cx', r1(ropeBx));
+    ropeGrom.setAttribute('cy', r1(ropeBy));
+  }
+
+  function ropeTick() {
+    ropeRAF = 0;
+    if (!ropePts) return;
+    var moved = ropeStep();
+    ropeDraw();
+    if (moved > ROPE.EPS) ropeWake();     /* still swinging → another frame */
+  }
+  function ropeWake() {
+    if (!ropeRAF && ropePts && !ropeReduced()) {
+      ropeRAF = requestAnimationFrame(ropeTick);
+    }
+  }
+  function ropeStop() {
+    if (ropeRAF) cancelAnimationFrame(ropeRAF);
+    ropeRAF = 0; ropePts = null;
+  }
+
+  /* ---- dragging the tag itself (owner request, 2026-08-09) ---------------
+     The tag is furniture now: press anywhere on the manila and it moves,
+     clamped to the well with the same 8px margin pick() seats against, with
+     the grommet endpoint feeding the rope every frame. Two guards make it
+     coexist with what is already on the tag:
+       · the two <a class="btn"> links are exempt — a press that starts on one
+         never becomes a drag, so DOWNLOAD SVG and REPORT CARD still click;
+       · a ~4px slop before the press counts as a drag, so an imprecise tap on
+         the manila doesn't shift the tag a pixel under the finger.
+     Pointer capture keeps the drag alive off the tag's edge; the document
+     dismissal handler already ignores presses inside .jd-itemtag. */
+  var TAG_SLOP = 4;
+  var tdrag = null;
+  function wireTagDrag() {
+    tag.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (e.target.closest && e.target.closest('.btn')) return;
+      tdrag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, on: false,
+                l0: parseFloat(tag.style.left) || 0,
+                t0: parseFloat(tag.style.top) || 0 };
+      try { tag.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault();          /* no text selection dragging the manila */
+    });
+    tag.addEventListener('pointermove', function (e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      var dx = e.clientX - tdrag.sx, dy = e.clientY - tdrag.sy;
+      if (!tdrag.on) {
+        if (dx * dx + dy * dy < TAG_SLOP * TAG_SLOP) return;
+        tdrag.on = true;
+        tag.classList.add('is-dragging');
+      }
+      var w = well.getBoundingClientRect();
+      var l = Math.max(8, Math.min(w.width - tag.offsetWidth - 8, tdrag.l0 + dx));
+      var t = Math.max(8, Math.min(w.height - ropeTagH - 8, tdrag.t0 + dy));
+      tag.style.left = l + 'px';
+      tag.style.top = t + 'px';
+      ropeSetTagEnd(l + 10, t + ropeTagH / 2);
+    });
+    function endTagDrag(e) {
+      if (!tdrag || e.pointerId !== tdrag.id) return;
+      tag.classList.remove('is-dragging');
+      tdrag = null;
+    }
+    tag.addEventListener('pointerup', endTagDrag);
+    tag.addEventListener('pointercancel', endTagDrag);
+  }
+
   function buildTag() {
     tag = document.createElement('div');
     tag.className = 'jd-itemtag';
     tag.setAttribute('role', 'group');
     rope = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     rope.setAttribute('class', 'jd-rope');
+    /* built once, then only ever given new attribute values — see ropeDraw */
+    rope.innerHTML =
+      '<path fill="none" stroke="#b3402f" stroke-width="2" stroke-linecap="round"/>' +
+      '<circle r="4.5" fill="none" stroke="#b3402f" stroke-width="2"/>';
+    ropePath = rope.querySelector('path');
+    ropeGrom = rope.querySelector('circle');
     well.appendChild(rope);
     well.appendChild(tag);
+    wireTagDrag();
   }
 
   function returnToPile(item) {
@@ -550,7 +797,13 @@
     }
   }
   function hideTag() {
-    if (tag) { tag.classList.remove('is-on'); rope.classList.remove('is-on'); }
+    if (tag) {
+      tag.classList.remove('is-on');
+      tag.classList.remove('is-dragging');
+      rope.classList.remove('is-on');
+    }
+    tdrag = null;
+    ropeStop();          /* the chain stops simulating the moment it's gone */
     if (picked) {
       picked.classList.remove('is-picked');
       /* mid-drag dismissal: moving the node now would break pointer
@@ -623,32 +876,30 @@
     var vh = zoom * (r.width * Math.abs(Math.sin(ang)) + r.height * Math.abs(Math.cos(ang)));
     var cx = r.left + r.width / 2 - w.left, cy = r.top + r.height / 2 - w.top;
     var vTop = cy - vh / 2, vBottom = cy + vh / 2;
-    var ax = cx;                                 /* anchor: item bottom centre */
-    var ay = vBottom - 6;
+    var ay = vBottom - 6;                        /* foot of the predicted extent */
     tag.classList.add('is-on');                  /* measurable before placing */
     var tw = tag.offsetWidth, th = tag.offsetHeight;
     var below = ay + 26 + th < w.height - 8;
     var ty = below ? ay + 26 : (vTop - 20 - th);
-    var tx = Math.max(8, Math.min(w.width - tw - 8, ax + 4));
+    var tx = Math.max(8, Math.min(w.width - tw - 8, cx + 4));
     tag.style.left = tx + 'px';
     tag.style.top = ty + 'px';
 
-    /* the red elastic: item anchor -> a loop through the grommet (which
-       sits at the tag's left edge, vertically centred) */
-    var gx = tx + 10, gy = ty + th / 2;
-    var sag = below ? 10 : -10;
+    /* string the elastic: item CENTRE -> the grommet at the tag's left edge.
+       The predicted extent above still decides where the tag is SEATED (so
+       the zoomed artwork never lands on its own tag); it no longer has any
+       say in where the rope starts, because the rope starts under the ink.
+       Rest length is frozen here — see ROPE. */
+    ropeTagH = th;
     rope.setAttribute('class', 'jd-rope is-on');
-    rope.innerHTML =
-      '<path d="M ' + ax + ' ' + (below ? ay : vTop + 6) +
-      ' Q ' + ((ax + gx) / 2 + 6) + ' ' + ((ay + gy) / 2 + sag) +
-      ', ' + gx + ' ' + gy + '" fill="none" stroke="#b3402f" ' +
-      'stroke-width="2" stroke-linecap="round"/>' +
-      '<circle cx="' + gx + '" cy="' + gy + '" r="4.5" fill="none" ' +
-      'stroke="#b3402f" stroke-width="2"/>';
+    ropePin(cx, cy, tx + 10, ty + th / 2);
   }
 
   /* dismissal: any press that isn't the item or the tag — wood, page,
-     notes, anywhere — plus Escape and resize (positions go stale) */
+     notes, anywhere — plus Escape and resize (positions go stale). Note what
+     is NOT on this list any more: dragging the picked item. The elastic
+     stretches and follows now (2026-08-09), so a drag is inspection, not
+     dismissal — only a press on something else lets go. */
   /* every dismissal path stands down while the report card is open — the
      record owns Esc/scrim then, and the selection must survive its close */
   document.addEventListener('pointerdown', function (e) {
@@ -676,11 +927,19 @@
     dropX = x; dropY = y;
     item.style.setProperty('--dx', (x - ox).toFixed(1) + 'px');
     item.style.setProperty('--dy', (y - oy).toFixed(1) + 'px');
+    /* the clamped x,y IS the item's live centre in well coords — exactly the
+       rope's item endpoint, handed over for free. Measuring the element per
+       frame instead would force a layout on a filtered, compositor-promoted
+       node mid-drag, which is the whole reason this path is transform-only. */
+    if (item === picked) ropeSetItemEnd(x, y);
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
     if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
-    item.style.zIndex = ++zTop;                  /* stays on top of the pile */
+    /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
+       item 72) instead of riding the zTop counter — it is still selected and
+       the elastic must still pass under it */
+    item.style.zIndex = item === picked ? 72 : ++zTop;
     if (moved) {                                 /* bake position, then rest */
       var w = well.getBoundingClientRect();
       item.style.left = (dropX / w.width * 100).toFixed(2) + '%';
@@ -691,6 +950,14 @@
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
+    /* one authoritative re-read once the position is baked into left/top: the
+       % round-trip moves the centre by a fraction of a pixel, and the rope's
+       endpoint should sit on the item's real resting centre, not on the
+       pre-bake estimate. One layout read, at rest — not per frame. */
+    if (item === picked && ropePts) {
+      var c = ropeItemEnd(item);
+      ropeSetItemEnd(c.x, c.y);
+    }
   }
 
   /* per-item wiring is deferred: the pile is BUILT by the loader above, so
@@ -719,10 +986,9 @@
       fx = e.clientX; fy = e.clientY;            /* twist pivots on this finger */
       var dx = e.clientX - sx, dy = e.clientY - sy;
       if (held === item) {
-        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
-          drag = true;
-          if (picked === item) hideTag();   /* the elastic lets go */
-        }
+        /* the elastic used to let go here; it holds on now (2026-08-09) —
+           place() feeds the rope the same clamped centre it clamps to */
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
         if (drag) place(item, ox + dx, oy + dy);
       }
     });
