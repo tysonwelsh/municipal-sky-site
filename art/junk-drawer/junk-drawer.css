@@ -112,6 +112,9 @@ html { scroll-behavior: smooth; }
 .jd-item {
   position: absolute;
   width: calc(var(--w) * 1cqmin);
+  /* the picked zoom: how much a tap-selected specimen grows for inspection.
+     JS reads this var to seat the tag/rope clear of the enlarged item. */
+  --pick-scale: 1.6;
   /* drag moves ride on --dx/--dy (transform-only motion — layout moves of a
      filtered element leave stale drop-shadow trails in Blink) */
   transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px));
@@ -166,14 +169,15 @@ html { scroll-behavior: smooth; }
 }
 .jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 
-/* tap-picked: the lift grammar as a brief pulse — visible acknowledgment
-   that the tap landed (interim until the Phase 3 specimen card) */
 /* picked = SELECTED: the lift persists for as long as the tag is attached
-   (not a pulse — the object stays raised off the pile while inspected) */
+   (not a pulse — the object stays raised off the pile while inspected),
+   and the specimen zooms up to --pick-scale so it can actually be SEEN
+   (owner request, 2026-08-09). The zoom is transform-only: layout, drop
+   clamps, and neighbours are untouched; it may overhang the well edge. */
 .jd-item.is-picked {
   filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
 }
-.jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+.jd-item.is-picked svg { transform: rotate(calc(var(--rot) * 0.94)) scale(var(--pick-scale)); }
 
 /* while something is picked, the REST of the pile falls back into shade —
    selection as stage light. Held/hovered items step back out of the dim
