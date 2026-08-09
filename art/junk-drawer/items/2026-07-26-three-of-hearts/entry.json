@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-three-of-hearts",
   "title": "Three of hearts",
   "prompt": "A three of hearts playing card from a standard deck, viewed exactly top-down, slightly aged white stock with softly rounded corners. Flat print style, true red pips, correct corner indices (one inverted). Transparent background.",
@@ -20,15 +20,15 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "clean",
-        "color": "clean",
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
         "composition": {
-          "value": "minor",
+          "value": 2.0,
           "note": "Pip spacing runs slightly wide against a real Bicycle layout; the card reads a touch tall."
         }
       },

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-27-crystal-ball",
   "title": "Cracked crystal ball",
   "prompt": "A crystal ball the kind a fortune teller might have but only the ball not the stand, by which I mean it is an orb without a pedestal. Also it has a crack in the glass and the insides are a vague swirling cloudy myst as a result. I'd like it to look like it is painted in water colors with a sort of bohemian style like you might see on a carton of incense in a new agey headshop at the mall",
@@ -21,14 +21,14 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%."
@@ -43,14 +43,14 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "partial",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "major"
+        "prompt-fidelity": 2.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 1.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Model produced a full incense-box illustration (sunburst rays, crescent moons, leaves, stars, mala bead borders) rather than the orb alone."
@@ -65,14 +65,14 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-07-27",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
-        "geometry": "minor",
-        "color": "clean",
-        "composition": "minor"
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 6.0%. Includes a shadow beneath the orb and mist wisping out of the crack."

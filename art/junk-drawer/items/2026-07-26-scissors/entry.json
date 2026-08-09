@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-scissors",
   "title": "Scissors",
   "prompt": "A pair of long-bladed scissors, open at roughly thirty degrees, viewed from above. Elegant single-weight line-art style, black ink only, no fills except the blade silhouettes. Transparent background.",
@@ -21,17 +21,17 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
+        "prompt-fidelity": 3.0,
         "geometry": {
-          "value": "minor",
+          "value": 2.0,
           "note": "The handle-to-shank joints read slightly detached at full size; the pivot screw floats a hair off the blade crossing."
         },
-        "color": "clean",
-        "composition": "clean"
+        "color": 3.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. viewBox normalized 2026-07-26: tightened from \"0 0 340 150\" to the measured ink bounds \"44.3 21.5 288.8 106.8\" (framing metadata only; artwork bytes untouched) — the padded box was clamping drags early."

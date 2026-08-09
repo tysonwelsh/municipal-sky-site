@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-08-holo-alien-sticker",
   "title": "Holographic alien header sticker",
   "prompt": "One of those holographic vinyl alien header stickers like from the 90s. You know the ones, like with the inverted teardrop shape and grey-blue-greenish holofoil shimmer like from the y2k era rave decals",
@@ -23,15 +23,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-08",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. ink-bounds check passed as generated — worst dead margin 5.1%; viewBox untouched."
@@ -46,15 +46,15 @@
         "mode": "refined",
         "prompt_count": 5
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-08",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Owner-directed refinement turns to the same subagent (1: pointier eyes, slightly more prominent rainbow accents; 2: eye point flipped to the inner end, brow arc removed; 3: darker silver foil with a whiter sticker border; 4: wider eyes, foil pushed further toward neutral silver/grey); final SVG only is kept. ink-bounds check run at ingest; viewBox normalized: tightened to measured ink bounds (reframe only, artwork bytes untouched). Grade and annotations were given on the pre-refinement one-shot — owner to confirm or regrade against the refined artwork."
@@ -69,15 +69,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-08",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "broken",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 1.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Disobeyed the output format: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited). ink-bounds check at ingest: PADDED, worst dead margin 16.3%; viewBox normalized: tightened from \"0 0 400 500\" to \"63.2 39.5 277.0 458.5\" (reframe only, no path edits) — composition graded against the original framing."

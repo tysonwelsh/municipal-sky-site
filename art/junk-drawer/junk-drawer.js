@@ -130,6 +130,25 @@
   }
   window.JD_sizeLabel = sizeLabel;   /* the record card states it too */
 
+  /* RATINGS, as filed — entries store every rating as a NUMBER: a grade is
+     the taxonomy grade's `rank` (5.0 … 1.0) and an annotation is the axis
+     value's `rank` (3.0 … 1.0), never the id or label (entry schema 2), so
+     the scales' wording can change without touching filed data. Resolve the
+     number back to its taxonomy object here; display strings still come
+     only from the taxonomy. */
+  function byRank(list, value) {
+    list = list || [];
+    for (var i = 0; i < list.length; i++) {
+      if (Number(list[i].rank) === Number(value)) return list[i];
+    }
+    return null;
+  }
+  window.JD_byRank = byRank;     /* the record card resolves axis values */
+  function gradeOf(tax, value) {
+    return byRank((tax || {}).grades, value);
+  }
+  window.JD_gradeOf = gradeOf;   /* the record card resolves grades too */
+
   /* aspect (w/h) from the inlined SVG's viewBox; the item box is that wide by
      that tall, so it tells us how much room the item claims for clamping */
   function svgAspect(el) {
@@ -304,7 +323,7 @@
       });
       primary = primary || (item.responses || [])[0] || {};
       var model = findById(tax.models, primary.model);
-      var grade = findById(tax.grades, primary.grade);
+      var grade = gradeOf(tax, primary.grade);
       var li = document.createElement('li');
       var t = document.createElement('span');
       t.className = 'jd-inv-title';
@@ -314,7 +333,7 @@
       m.textContent = model ? model.label : (primary.model || '');
       var g = document.createElement('span');
       g.className = 'jd-inv-grade';
-      g.textContent = grade ? grade.label : (primary.grade || '');
+      g.textContent = grade ? grade.label : (primary.grade == null ? '' : String(primary.grade));
       li.appendChild(t);
       li.appendChild(m);
       li.appendChild(g);
@@ -360,16 +379,17 @@
         /* display labels for the tap pick-chip, resolved while the
            taxonomy is in scope */
         var model = byId(tax.models, primary.model);
-        var grade = byId(tax.grades, primary.grade);
+        var grade = gradeOf(tax, primary.grade);
         item._modelLabel = model ? model.label : (primary.model || '');
-        item._gradeLabel = grade ? grade.label : (primary.grade || '');
+        item._gradeLabel = grade ? grade.label
+          : (primary.grade == null ? '' : String(primary.grade));
         /* the item tag also needs: process, date, the grade's rank on the
            scale (manicule position), the scale size, and the file url */
         var gen = primary.generation || {};
         item._process = gen.mode === 'refined'
           ? 'REFINED ×' + (gen.prompt_count || '?') : 'ONE-SHOT';
         item._date = primary.date || '';
-        item._rank = grade ? grade.rank : 0;
+        item._rank = grade ? grade.rank : (+primary.grade || 0);
         item._steps = (tax.grades || []).length || 5;
         item._box = boxFor(item.sizeClass);   /* tier box in cqmin, from taxonomy */
         /* SIZE, as filed: the owner's sizeClass tier read back as its
@@ -888,10 +908,11 @@
       'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
       '<span class="rc-mark-word">' + esc(word) + '</span></span>';
   }
+  /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
     if (a == null) return null;
-    return typeof a === 'string' ? { value: a } : a;
+    return typeof a === 'object' ? a : { value: a };
   }
   function fillHTML(label, value) {
     return '<div class="rc-fill">' +
@@ -938,8 +959,10 @@
       '</svg>';
   }
 
-  function gradeOf(id) {
-    return byId((payload.taxonomy || {}).grades, id) || { label: id || '', rank: 0 };
+  /* grades are filed as the taxonomy rank number — see JD_gradeOf above */
+  function gradeOf(value) {
+    return window.JD_gradeOf(payload.taxonomy, value) ||
+      { label: value == null ? '' : String(value), rank: +value || 0 };
   }
   function modelOf(id) {
     return byId((payload.taxonomy || {}).models, id) || { label: id || '', vendor: '' };
@@ -957,8 +980,8 @@
       if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
-        var v = byId(axis.values, a.value);
-        cell = mark(v ? v.label : a.value);
+        var v = window.JD_byRank(axis.values, a.value);
+        cell = mark(v ? v.label : String(a.value));
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';

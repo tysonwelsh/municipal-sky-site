@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 7,
-  "updated": "2026-07-30",
+  "version": 9,
+  "updated": "2026-08-09",
   "grades": [
     {
       "id": "prime",
@@ -43,16 +43,19 @@
       "values": [
         {
           "id": "faithful",
+          "rank": 3,
           "label": "Faithful",
           "description": "All requested elements present as specified."
         },
         {
           "id": "partial",
+          "rank": 2,
           "label": "Partial",
           "description": "Some requested elements missing, extra, or misread."
         },
         {
           "id": "off-brief",
+          "rank": 1,
           "label": "Off-brief",
           "description": "Substantially not the thing that was asked for."
         }
@@ -66,16 +69,19 @@
       "values": [
         {
           "id": "clean",
+          "rank": 3,
           "label": "Clean",
           "description": "No visible construction errors."
         },
         {
           "id": "minor",
+          "rank": 2,
           "label": "Minor defects",
           "description": "Small misalignments or overlaps visible on inspection."
         },
         {
           "id": "major",
+          "rank": 1,
           "label": "Major defects",
           "description": "Structural errors that dominate the read of the image."
         }
@@ -89,16 +95,19 @@
       "values": [
         {
           "id": "clean",
+          "rank": 3,
           "label": "Clean",
           "description": "Palette and rendering read as intended."
         },
         {
           "id": "minor",
+          "rank": 2,
           "label": "Minor defects",
           "description": "Off colors, banding, or stacking slips that don't break the image."
         },
         {
           "id": "major",
+          "rank": 1,
           "label": "Major defects",
           "description": "Rendering errors that break the image."
         }
@@ -112,16 +121,19 @@
       "values": [
         {
           "id": "clean",
+          "rank": 3,
           "label": "Clean",
           "description": "Well-composed within its viewBox."
         },
         {
           "id": "minor",
+          "rank": 2,
           "label": "Minor defects",
           "description": "Awkward margins, crowding, or scale oddities."
         },
         {
           "id": "major",
+          "rank": 1,
           "label": "Major defects",
           "description": "Subject clipped, marooned, or scaled absurdly."
         }
@@ -134,16 +146,19 @@
       "values": [
         {
           "id": "followed",
+          "rank": 3,
           "label": "Followed",
           "description": "Every explicit ask is honored as specified."
         },
         {
           "id": "drifted",
+          "rank": 2,
           "label": "Drifted",
           "description": "Some asks bent, missed, or quietly replaced."
         },
         {
           "id": "ignored",
+          "rank": 1,
           "label": "Ignored",
           "description": "Explicit asks are disregarded outright."
         }
@@ -156,16 +171,19 @@
       "values": [
         {
           "id": "disciplined",
+          "rank": 3,
           "label": "Disciplined",
           "description": "Nothing appears that the prompt didn't call for."
         },
         {
           "id": "embellished",
+          "rank": 2,
           "label": "Embellished",
           "description": "Unrequested extras crept in without taking over."
         },
         {
           "id": "overgrown",
+          "rank": 1,
           "label": "Overgrown",
           "description": "Additions crowd or upstage what was actually asked for."
         }
@@ -178,16 +196,19 @@
       "values": [
         {
           "id": "sound",
+          "rank": 3,
           "label": "Sound",
           "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
         },
         {
           "id": "strained",
+          "rank": 2,
           "label": "Strained",
           "description": "Visible seams — small breaks, misalignments, or spatial slips."
         },
         {
           "id": "broken",
+          "rank": 1,
           "label": "Broken",
           "description": "Structural or spatial failures dominate the read."
         }
@@ -200,16 +221,19 @@
       "values": [
         {
           "id": "unified",
+          "rank": 3,
           "label": "Unified",
           "description": "One coherent visual language throughout."
         },
         {
           "id": "mixed",
+          "rank": 2,
           "label": "Mixed",
           "description": "Registers collide — parts of the image speak different styles."
         },
         {
           "id": "incoherent",
+          "rank": 1,
           "label": "Incoherent",
           "description": "No governing style survives the image."
         }
@@ -222,16 +246,19 @@
       "values": [
         {
           "id": "abundant",
+          "rank": 3,
           "label": "Abundant",
           "description": "The piece has it — undeniable, unaccountable appeal."
         },
         {
           "id": "trace",
+          "rank": 2,
           "label": "Trace",
           "description": "A glimmer of something beyond competence."
         },
         {
           "id": "none-detected",
+          "rank": 1,
           "label": "None detected",
           "description": "Technically present, spiritually absent."
         }
@@ -352,6 +379,16 @@
       "date": "2026-07-30",
       "version": 7,
       "note": "Register model claude-sonnet-5-opus-5-refine (Claude Sonnet 5 → Opus 5 refine) — the first cross-model lineage id: one model's composition refined by another, given the base SVG as context. Filed under its own id rather than either parent's so neither model's record implies a clean-context one-shot sample it did not produce."
+    },
+    {
+      "date": "2026-08-09",
+      "version": 8,
+      "note": "Grades stored numerically (entry schema 2): every response's grade — and each grade_history grade — is now the tier's rank as a number (5.0 … 1.0), not the grade id string. The scale's `rank` is the permanent key entries reference; grade ids remain as internal handles and labels/descriptions (and even the ids themselves) may now be reworded freely without touching filed entries. Groundwork for relabeling the scale."
+    },
+    {
+      "date": "2026-08-09",
+      "version": 9,
+      "note": "Annotation axis values stored numerically too, completing entry schema 2: every axis value gains a rank (3 = best … 1 = worst, in listed order), and entries file an annotation as that rank number (3.0/2.0/1.0, bare or as {value, note}) instead of the value id string. Like the grade scale, value ids/labels may now be reworded freely — an axis's rank numbers are the permanent part. Axis ids themselves are still referenced by entries as annotation keys and remain permanent."
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-05-microscope-slide",
   "title": "Microscope slide of common germs at 400×",
   "prompt": "A microscope slide where, upon closer inspection, a detailed, realistic depiction of various common germs can be observed as they would be seen at 400x power of magnification",
@@ -19,15 +19,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "abundant"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings (only id-name overlap is the generic 'grain' filter, which Sonnet also uses; no shared structure). Ink-bounds check passed at ingest — worst dead margin 0.4%, viewBox left as generated. The heaviest build of the three at 31.9 KB and the only one that reads the prompt as two nested scales: an actual labelled glass slide — frosted end lettered GRAM STAIN · SPUTUM with accession number and wax-pencil annotations, coverslip with trapped-air edges and dust — carrying a circular 400× field inside it. Inside that field, a reusable symbol library (cocci, flagellated bacilli, spore-formers, diplococci, budding yeast) is stamped into recognisable arrangements: staphylococcal grape clusters, a streptococcal chain, vibrios, spirochetes, plus host cells for scale — a squamous epithelial cell with adherent flora and a neutrophil with phagocytosed diplococci. Depth of field is modelled with two blur planes, and a reticle with a 10 µm bar is drawn over it. Defect: one gradient stop in 'rodG' carries a corrupted hex color, stop-color=\"#d2淡\" — a stray CJK glyph inside the value. Filed byte-exact; that stop has stop-opacity=\"0\", so browsers drop the invalid color and the visible damage is nil, but the emitted output is malformed. It also breaks the appendix's transparent-background rule with an opaque glass-slide rect, and puts text on the artwork the brief did not request. Owner pinned this response for display."
@@ -42,15 +42,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings. Ink-bounds check passed at ingest — worst dead margin 0.8%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's 'no code fences' instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. It also lays down an opaque glass-slide rect as a backdrop, which the appendix explicitly forbade. The middle build at 14.2 KB, and the boldest colorist: a hot magenta-to-near-black field that reads more like a stained fluorescence image than transmitted light. Same symbol-library approach — coccus, flagellated rod, spore-bearing rod, spiral, erythrocyte — arranged into three staph clusters, two strep chains, scattered E. coli and two spirochetes, with a large neutrophil engulfing two rods. Rims the field with a metallic bezel and marks it 400× MIXED BACTERIAL FLORA with a 10 µm scale bar. Slide furniture is the most literal of the three: a taped specimen label, a biohazard trefoil, and a drawn crack in the glass."
@@ -65,15 +65,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-08-05",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "drifted",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample; independence confirmed by diff against siblings (only id-name overlap is the generic 'fieldClip', which Sonnet also uses; no shared structure). Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. The leanest build by a wide margin at 7.6 KB, and the only one to skip the slide entirely: it draws the eyepiece view alone — a pale lilac field, vignetted corners, one glass gloss sweep — with no slide, coverslip, label, or scale bar, so the prompt's 'microscope slide' is present only by implication and the stated 400× is nowhere marked. Inside, hand-placed circles rather than a symbol library: a twelve-cell staphylococcal cluster, an eight-cell strep chain, gram-negative rods with flagella, teal diplococci pairs and two spirilla drawn as single stroked wave paths. Depth of field is one heavy blur layer behind everything. Honest and clean but flat — every organism is the same smooth radial-gradient blob at a different size, with no host cells or debris to give the field scale."

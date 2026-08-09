@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-peacock-feather",
   "title": "Peacock feather",
   "prompt": "A single, elegant peacock weather, with wispy barbs and of course that signature, iridescent eye pattern. Have it curve ever so slightly to the left. I’d like it to be done in an illustrated style as though it is done in fine line color pencils",
@@ -22,15 +22,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.4%. The only response to declare a role and aria-label on the root. Builds the eye as five nested gradient-filled ovals (outer halo, gold, copper, blue, indigo pupil) with a separate barb-stroke layer fanning out from a single origin point at the eye's base, so the barbs radiate from the eye rather than from the shaft. Rachis is a filled tapering polygon plus three offset stroke copies for pencil pressure; two blurred radial ellipses sit on top as a specular sheen. A large blurred silhouette of the whole feather underlies everything at 17% opacity as a soft shadow."
@@ -45,15 +45,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "utility",
+      "grade": 1.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "ignored",
-        "restraint": "overgrown",
-        "integrity": "strained",
-        "style": "mixed",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 1.0,
+        "restraint": 1.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.1%. Drew the whole bird rather than the single feather that was asked for — body, neck, crest, beak, legs and feet, with a thirteen-feather tail fan behind it. The \"curve ever so slightly to the left\" instruction landed on the neck instead of the shaft. It added no scenery or background, but the bird itself is the unrequested addition, and it upstages the feather completely — the object actually asked for survives only as thirteen small copies in the tail. The tail is one `<g id=\"feather\">` reused via `<use>` with per-copy rotate and scale, and each copy carries its own eye and barbs, so the requested object exists thirteen times over at small scale. Colour-pencil texture is a real feTurbulence + feDisplacementMap filter pair rather than drawn-in jitter."
@@ -68,15 +68,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.2%. The tallest and narrowest of the three (viewBox 460 × 1021). Barbs are individually stroked paths — several hundred of them — in a green/teal/gold rotation, drawn in left/right pairs off the shaft so the plume reads as a continuous fringe rather than a repeated symbol. Eye is two stacked radial-gradient ellipses over a teal ground, ringed by dozens of hand-drawn contour outlines in ochre and slate that overshoot each other slightly, which is where its pencil quality comes from. Shaft is a polyline with three offset companions for pressure variation."

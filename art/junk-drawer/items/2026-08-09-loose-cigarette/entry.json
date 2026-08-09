@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-08-09-loose-cigarette",
   "title": "A single loose cigarette",
   "prompt": "a single loose cigarette",
@@ -21,15 +21,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Obeyed the output format. Ink-bounds check passed as generated (worst dead margin 1.6%); artwork bytes untouched."
@@ -44,15 +44,15 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "choice",
+      "grade": 4.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "embellished",
-        "integrity": "sound",
-        "style": "unified",
-        "je-ne-sais-quoi": "abundant"
+        "instruction-following": 3.0,
+        "restraint": 2.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses on both turns. Owner-directed refinement turn to the same subagent (1: remove the loose tobacco strands overlapping the white paper, keeping only those attached to the exposed brown tip); final SVG only is kept. Grade and annotations were given by the owner on the one-shot, before the refinement turn. Ink-bounds check passed on both versions (worst dead margin 1.2% each); artwork bytes untouched."
@@ -67,15 +67,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "standard",
+      "grade": 2.0,
       "graded": "2026-08-09",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "disciplined",
-        "integrity": "strained",
-        "style": "mixed",
-        "je-ne-sais-quoi": "none-detected"
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 1.0
       },
       "transcript": null,
       "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses. Disobeyed the output format: wrapped the SVG in a ```svg code fence, which was stripped at ingest (bytes otherwise unedited). Ink-bounds check passed as generated (worst dead margin 1.8%); artwork bytes untouched."

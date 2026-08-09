@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-26-pencil-stub",
   "title": "Pencil stub",
   "prompt": "A well-used yellow pencil stub with a worn pink eraser and exposed wood at the sharpened end, drawn in a naive, wobbly hand-drawn style with visibly imperfect outlines. Transparent background.",
@@ -20,17 +20,17 @@
         "mode": "refined",
         "prompt_count": 2
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-26",
       "grade_history": [],
       "annotations": {
-        "prompt-fidelity": "faithful",
+        "prompt-fidelity": 3.0,
         "geometry": {
-          "value": "minor",
+          "value": 2.0,
           "note": "The wobble is the brief, but the ferrule’s ellipse breaks tangency with the barrel on one side."
         },
-        "color": "clean",
-        "composition": "clean"
+        "color": 3.0,
+        "composition": 3.0
       },
       "transcript": null,
       "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. viewBox normalized 2026-07-26: tightened from \"0 0 230 74\" to measured ink bounds (framing metadata only; artwork bytes untouched)."

@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "id": "2026-07-29-tell-no-tailors-corner",
   "title": "Tell-No-Tailors' Corner",
   "prompt": "derryjellybies snooping around Tell-No-Tailors' Corner",
@@ -23,15 +23,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "embellished",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 2.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%, though a full-bleed grain rect covers the canvas and guarantees that reading. Builds an actual street corner in perspective: two skewed wall planes meeting on a quoined pier, cornice, drainpipe, cobbles, and a lit tailor's window with dress-form silhouettes behind the glass. Reads the invented word as jellyfish — one `#jelly` symbol defined once and reused eight times through `currentColor`, each instance recolored and backed by its own blurred halo, scaled from a big pink one pressed against the shop glass down to specks on the cornice and by the shingle. The sign is set in live `<text>` skewed onto the wall plane, and an feTurbulence grain film is laid over everything at 50% opacity. Obeyed the output format exactly — a bare SVG document, no prose or fences."
@@ -46,15 +46,15 @@
         "mode": "one-shot",
         "prompt_count": 1
       },
-      "grade": "select",
+      "grade": 3.0,
       "graded": "2026-07-29",
       "grade_history": [],
       "annotations": {
-        "instruction-following": "followed",
-        "restraint": "embellished",
-        "integrity": "strained",
-        "style": "unified",
-        "je-ne-sais-quoi": "trace"
+        "instruction-following": 3.0,
+        "restraint": 2.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.0%. Flat storybook elevation rather than perspective: terracotta brick shop on the left, slate tenement of watchers on the right, a night-sky slot between them with a crescent moon, a washing line of tailored laundry, and a cobbled street built from a tiled `<pattern>`. Six jellies share one `#jbody` path and are individually costumed — lime with a magnifier at the keyhole, orange behind a barrel, blueberry mid-tiptoe leaving a trail of dots, pink surfacing from a manhole, mint perched on the scissors sign, raspberry rounding the pier — and the corner quoin is re-drawn with a second `<use>` at the end of the document so the raspberry one reads as hiding behind it. Answers the prompt's secrecy with a poster reading SEEN SOMETHING? SAY NOTHING and a shuttered window full of eyes. Obeyed the output format exactly — a bare SVG document, no prose or fences."
