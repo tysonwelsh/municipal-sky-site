@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="140 112 302 622" role="img" aria-label="Orange poppy in a mason jar, corporate Memphis style">
+  <!-- stem and leaves -->
+  <path d="M300 300 C 292 380, 306 440, 298 520" fill="none" stroke="#4E9B6E" stroke-width="14" stroke-linecap="round"/>
+  <path d="M298 420 C 250 400, 218 410, 196 446 C 232 462, 276 452, 298 420 Z" fill="#6FB98F"/>
+  <path d="M300 470 C 344 452, 378 460, 398 494 C 364 510, 322 500, 300 470 Z" fill="#4E9B6E"/>
+  <!-- side bud -->
+  <path d="M300 360 C 350 340, 388 320, 408 282" fill="none" stroke="#4E9B6E" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="414" cy="270" rx="22" ry="30" fill="#E8846B" transform="rotate(20 414 270)"/>
+  <path d="M400 292 q 14 12 28 0 l -6 -18 q -8 6 -16 0 Z" fill="#6FB98F"/>
+
+  <!-- poppy flower -->
+  <g>
+    <path d="M300 118 C 360 100, 420 130, 428 190 C 434 240, 402 268, 366 272 C 400 296, 404 348, 366 374 C 330 398, 288 386, 270 356 C 246 390, 196 392, 168 360 C 140 328, 150 286, 182 266 C 148 252, 130 210, 148 172 C 168 130, 224 118, 258 140 C 264 126, 280 118, 300 118 Z" fill="#F2662B"/>
+    <path d="M300 150 C 344 140, 384 162, 388 206 C 391 240, 368 260, 340 264 C 366 284, 368 320, 340 338 C 314 354, 284 346, 270 324 C 252 348, 216 348, 196 326 C 176 302, 184 272, 208 258 C 184 246, 172 216, 186 190 C 200 162, 240 154, 264 170 C 268 158, 284 152, 300 150 Z" fill="#F58A4B"/>
+    <!-- dark center -->
+    <circle cx="286" cy="252" r="46" fill="#3B2B45"/>
+    <circle cx="286" cy="252" r="18" fill="#F5B841"/>
+    <!-- stamens -->
+    <g stroke="#3B2B45" stroke-width="5" stroke-linecap="round">
+      <line x1="286" y1="196" x2="286" y2="212"/>
+      <line x1="332" y1="220" x2="320" y2="230"/>
+      <line x1="342" y1="262" x2="326" y2="258"/>
+      <line x1="320" y1="298" x2="312" y2="286"/>
+      <line x1="252" y1="296" x2="260" y2="284"/>
+      <line x1="232" y1="258" x2="248" y2="256"/>
+      <line x1="244" y1="216" x2="254" y2="228"/>
+    </g>
+    <circle cx="286" cy="196" r="6" fill="#F5B841"/>
+    <circle cx="334" cy="218" r="6" fill="#F5B841"/>
+    <circle cx="344" cy="264" r="6" fill="#F5B841"/>
+    <circle cx="322" cy="300" r="6" fill="#F5B841"/>
+    <circle cx="250" cy="298" r="6" fill="#F5B841"/>
+    <circle cx="230" cy="258" r="6" fill="#F5B841"/>
+    <circle cx="242" cy="214" r="6" fill="#F5B841"/>
+  </g>
+
+  <!-- mason jar -->
+  <g>
+    <!-- water -->
+    <path d="M212 560 L388 560 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="#BFE0F0"/>
+    <!-- glass body -->
+    <path d="M212 512 L388 512 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="#DDEFF9" opacity="0.75"/>
+    <path d="M212 512 L388 512 L388 690 Q 388 726 352 726 L248 726 Q 212 726 212 690 Z" fill="none" stroke="#7BAFD4" stroke-width="10" stroke-linejoin="round"/>
+    <!-- lid band -->
+    <rect x="200" y="474" width="200" height="44" rx="14" fill="#F5B841"/>
+    <rect x="200" y="474" width="200" height="44" rx="14" fill="none" stroke="#D99A2B" stroke-width="6"/>
+    <!-- band threads -->
+    <line x1="222" y1="486" x2="378" y2="486" stroke="#D99A2B" stroke-width="5" stroke-linecap="round"/>
+    <line x1="222" y1="504" x2="378" y2="504" stroke="#D99A2B" stroke-width="5" stroke-linecap="round"/>
+    <!-- stem inside jar -->
+    <path d="M298 520 C 294 570, 302 620, 296 668" fill="none" stroke="#4E9B6E" stroke-width="12" stroke-linecap="round" opacity="0.8"/>
+    <!-- glass highlight -->
+    <path d="M240 548 C 236 590, 236 640, 244 686" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" opacity="0.85"/>
+    <!-- water line -->
+    <path d="M220 560 q 20 -10 40 0 t 40 0 t 40 0 t 40 0" fill="none" stroke="#8FCBE8" stroke-width="7" stroke-linecap="round"/>
+    <!-- embossed oval like a mason label -->
+    <ellipse cx="300" cy="632" rx="46" ry="56" fill="none" stroke="#9CC8E4" stroke-width="6"/>
+  </g>
+</svg>

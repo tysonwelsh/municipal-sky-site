@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="275 88 250 614">
+  <defs>
+    <linearGradient id="jarGlass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cfe8ec"/>
+      <stop offset="100%" stop-color="#a9d6dd"/>
+    </linearGradient>
+  </defs>
+
+  <!-- mason jar -->
+  <g>
+    <!-- jar body -->
+    <path d="M280 340
+             Q280 320 300 320
+             L500 320
+             Q520 320 520 340
+             L520 640
+             Q520 690 460 690
+             L340 690
+             Q280 690 280 640
+             Z" fill="url(#jarGlass)"/>
+    <!-- jar body outline highlight -->
+    <path d="M300 330 L300 620 Q300 660 340 670" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
+    <!-- water fill -->
+    <path d="M285 480 L515 480 L515 640 Q515 685 460 685 L340 685 Q285 685 285 640 Z" fill="#7fc4cd" opacity="0.55"/>
+    <!-- jar ridges -->
+    <rect x="280" y="360" width="240" height="10" fill="#8fd0d6" opacity="0.6"/>
+    <rect x="280" y="400" width="240" height="10" fill="#8fd0d6" opacity="0.6"/>
+    <rect x="280" y="440" width="240" height="10" fill="#8fd0d6" opacity="0.6"/>
+    <!-- jar neck -->
+    <path d="M310 320 L310 280 Q310 265 325 265 L475 265 Q490 265 490 280 L490 320 Z" fill="#bfe4e9"/>
+    <!-- jar lid -->
+    <rect x="295" y="230" width="210" height="45" rx="14" fill="#ff6f59"/>
+    <rect x="295" y="230" width="210" height="16" rx="8" fill="#ffffff" opacity="0.35"/>
+    <!-- lid band -->
+    <rect x="295" y="255" width="210" height="10" fill="#e85c46"/>
+  </g>
+
+  <!-- stem -->
+  <path d="M400 470 C 385 400, 410 330, 400 250" stroke="#3fa66a" stroke-width="16" fill="none" stroke-linecap="round"/>
+  <!-- leaves -->
+  <path d="M400 420 C 350 410, 320 440, 315 480 C 360 480, 395 460, 400 420 Z" fill="#4fbf7d"/>
+  <path d="M402 360 C 450 350, 480 380, 485 420 C 440 420, 405 400, 402 360 Z" fill="#3fa66a"/>
+
+  <!-- poppy flower -->
+  <g>
+    <!-- back petals -->
+    <path d="M400 250 C 330 210, 290 250, 300 310 C 340 320, 390 300, 400 250 Z" fill="#ff8a3d"/>
+    <path d="M400 250 C 470 210, 510 250, 500 310 C 460 320, 410 300, 400 250 Z" fill="#ff8a3d"/>
+    <!-- front petals -->
+    <path d="M400 250 C 330 240, 300 180, 340 130 C 380 160, 410 210, 400 250 Z" fill="#ff6f2c"/>
+    <path d="M400 250 C 470 240, 500 180, 460 130 C 420 160, 390 210, 400 250 Z" fill="#ff6f2c"/>
+    <path d="M400 250 C 380 190, 400 120, 460 100 C 470 150, 450 220, 400 250 Z" fill="#ff8a3d"/>
+    <path d="M400 250 C 420 190, 400 120, 340 100 C 330 150, 350 220, 400 250 Z" fill="#ff8a3d"/>
+    <!-- center dark core -->
+    <circle cx="400" cy="250" r="42" fill="#3b2b2b"/>
+    <circle cx="400" cy="250" r="30" fill="#57402f"/>
+    <!-- seed dots -->
+    <circle cx="385" cy="240" r="4" fill="#2a1c1c"/>
+    <circle cx="415" cy="240" r="4" fill="#2a1c1c"/>
+    <circle cx="400" cy="255" r="4" fill="#2a1c1c"/>
+    <circle cx="385" cy="265" r="4" fill="#2a1c1c"/>
+    <circle cx="415" cy="265" r="4" fill="#2a1c1c"/>
+    <circle cx="400" cy="225" r="4" fill="#2a1c1c"/>
+    <!-- stamen ring -->
+    <circle cx="400" cy="250" r="55" fill="none" stroke="#3b2b2b" stroke-width="6" stroke-dasharray="4 10" opacity="0.8"/>
+  </g>
+</svg>
