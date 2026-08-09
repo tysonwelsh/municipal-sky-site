@@ -12,6 +12,13 @@
    lockout buzzer with a coiled cord that runs off the edge of its own frame,
    as if plugged into something buried under the clutter.
 
+   VIEWPOINT (proposal §2, binding since mockup round 1): the drawer is seen
+   from DIRECTLY ABOVE, so this is a strict plan view — the paddle lies face-up
+   on the floor, the head is a set of concentric circles, the sticker lies flat,
+   and the cord is a slack helix sprawling across the floor. No horizon, no
+   vanishing point, no tilt: the press reads as TRAVEL because the cap's radius
+   tightens and the dark shaft ring around it widens (the technique 8b proved).
+
    Deliberate style break: the drawer is painterly trompe-l'oeil; this thing is
    a Saturday-morning prop — chunky, saturated, candy-gloss. It camouflages as
    "one more specimen that doesn't match" (proposal §preamble), so it is NOT
@@ -97,12 +104,15 @@ body {
 .paddle { display: block; width: 100%; height: auto; }
 
 /* every animated group is addressed in VIEWBOX user units, so the motion is
-   identical at hero scale, at drawer scale, and under any pile rotation */
-.pd-cap, .pd-head, .pd-lit, .pd-ring, .pd-glint, .pd-cord {
+   identical at hero scale, at drawer scale, and under any pile rotation.
+   PLAN VIEW: nothing tilts. The cap's travel down the shaft is a change of
+   RADIUS (the dark shaft ring around it widens); the cord's jiggle is motion
+   ACROSS THE FLOOR, pivoting on the strain-relief boot. */
+.pd-cap, .pd-body, .pd-lit, .pd-ring, .pd-glint, .pd-cord {
   transform-box: view-box;
 }
-.pd-cap, .pd-head, .pd-lit, .pd-ring, .pd-glint { transform-origin: 92px 92px; }
-.pd-cord { transform-origin: 265px 137px; }   /* the strain-relief boot */
+.pd-cap, .pd-body, .pd-lit, .pd-ring, .pd-glint { transform-origin: 88px 86px; }
+.pd-cord { transform-origin: 292px 131px; }   /* where the cord leaves the boot */
 .pd-lit  { opacity: 0; }
 .pd-ring { opacity: 0; }
 
@@ -110,35 +120,37 @@ body {
 .pd-cord  { animation: pd-cord-idle 8s linear infinite; }
 .pd-glint { animation: pd-glint 8s linear infinite; }
 @keyframes pd-cord-idle {
-  0%, 91%, 100% { transform: rotate(0deg); }
-  92.6% { transform: rotate(2.4deg); }
-  94.2% { transform: rotate(-1.7deg); }
-  95.8% { transform: rotate(1deg); }
-  97.4% { transform: rotate(-0.4deg); }
+  0%, 91%, 100% { transform: rotate(0deg) translate(0, 0); }
+  92.6% { transform: rotate(1.6deg) translate(-1px, 0.4px); }
+  94.2% { transform: rotate(-1.1deg) translate(0.6px, -0.3px); }
+  95.8% { transform: rotate(0.7deg) translate(-0.3px, 0.2px); }
+  97.4% { transform: rotate(-0.3deg) translate(0, 0); }
 }
 @keyframes pd-glint {
-  0%, 88%   { transform: translateX(-24px); }
-  97%, 100% { transform: translateX(228px); }
+  0%, 88%   { transform: translateX(-30px); }
+  97%, 100% { transform: translateX(160px); }
 }
 
-/* --- press: cap sinks and lights, housing squashes, cord springs --------- */
-.paddle-btn.is-press .pd-cap  { animation: pd-cap-press 0.42s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
-.paddle-btn.is-press .pd-head { animation: pd-head-squash 0.42s ease-out both; }
+/* --- press: the cap TRAVELS (radius tightens, shaft ring widens), the lamp
+       comes on, the whole moulding gives a cartoon jolt, and the coil shuffles
+       along the floor. No tilt anywhere — this is a view from straight up. -- */
+.paddle-btn.is-press .pd-cap  { animation: pd-cap-press 0.42s cubic-bezier(0.22, 0.9, 0.24, 1) both; }
+.paddle-btn.is-press .pd-body { animation: pd-body-jolt 0.42s ease-out both; }
 .paddle-btn.is-press .pd-lit  { animation: pd-lit 0.62s ease-out both; }
 .paddle-btn.is-press .pd-ring { animation: pd-ring 0.5s ease-out both; }
 .paddle-btn.is-press .pd-cord { animation: pd-cord-jiggle 0.72s cubic-bezier(0.25, 0.9, 0.35, 1) both; }
 @keyframes pd-cap-press {
   0%   { transform: scale(1); }
-  20%  { transform: scale(0.88); }
-  48%  { transform: scale(1.06); }
-  72%  { transform: scale(0.98); }
+  16%  { transform: scale(0.875); }   /* bottom of the stroke: ring at its widest */
+  44%  { transform: scale(0.9); }     /* a beat down there */
+  74%  { transform: scale(1.04); }    /* springy overshoot back up */
   100% { transform: scale(1); }
 }
-@keyframes pd-head-squash {
-  0%   { transform: scale(1, 1); }
-  20%  { transform: scale(1.05, 0.95); }
-  55%  { transform: scale(0.98, 1.02); }
-  100% { transform: scale(1, 1); }
+@keyframes pd-body-jolt {
+  0%   { transform: scale(1); }
+  18%  { transform: scale(1.022); }   /* the moulding spreads under the thumb */
+  55%  { transform: scale(0.996); }
+  100% { transform: scale(1); }
 }
 @keyframes pd-lit {
   0%   { opacity: 0; }
@@ -152,19 +164,21 @@ body {
   100% { opacity: 0;    transform: scale(1.3); }
 }
 @keyframes pd-cord-jiggle {
-  0%   { transform: rotate(0deg)    scaleY(1); }
-  11%  { transform: rotate(7deg)    scaleY(1.07); }
-  27%  { transform: rotate(-5deg)   scaleY(0.95); }
-  43%  { transform: rotate(3.2deg)  scaleY(1.03); }
-  60%  { transform: rotate(-1.9deg) scaleY(0.99); }
-  78%  { transform: rotate(0.9deg)  scaleY(1); }
-  100% { transform: rotate(0deg)    scaleY(1); }
+  0%   { transform: rotate(0deg)    translate(0, 0); }
+  11%  { transform: rotate(5.5deg)  translate(-4px, -1px); }
+  27%  { transform: rotate(-4deg)   translate(3px, 1px); }
+  43%  { transform: rotate(2.6deg)  translate(-1.8px, -0.6px); }
+  60%  { transform: rotate(-1.5deg) translate(1px, 0.3px); }
+  78%  { transform: rotate(0.7deg)  translate(-0.4px, 0); }
+  100% { transform: rotate(0deg)    translate(0, 0); }
 }
 
-/* --- the whole motion budget collapses to a colour change ---------------- */
+/* --- reduced motion: no keyframes at all, but the press must still READ, so
+       it becomes a held pose — cap parked down the shaft, lamp on ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .pd-cord, .pd-glint, .pd-cap, .pd-head, .pd-ring { animation: none !important; }
+  .pd-cord, .pd-glint, .pd-cap, .pd-body, .pd-ring { animation: none !important; }
   .pd-lit { animation: none !important; transition: opacity 0.12s linear; }
+  .paddle-btn.is-press .pd-cap { transform: scale(0.9); }
   .paddle-btn.is-press .pd-lit { opacity: 1; }
 }
 
@@ -284,135 +298,144 @@ body {
 <p class="mock-intro">
   Candidate <b>8d</b> of PLAN-TURN-OBJECT.md &sect;2 — a handheld quiz-show
   lockout buzzer that fell in the drawer, still plugged into something under the
-  clutter. Most story, least button-shaped silhouette; this page exists to prove
-  it still reads as pressable at drawer scale. Label everywhere is the
-  placeholder <b>TAKE A TURN</b>.
+  clutter. Drawn in <b>plan view</b> per &sect;2's binding rule: the drawer is
+  seen from directly above, so the paddle lies face-up on the floor and every
+  cue of depth is concentric, not tilted. Most story, least button-shaped
+  silhouette; this page exists to prove it still reads as pressable at drawer
+  scale. Label everywhere is the placeholder <b>TAKE A TURN</b>.
 </p>
 
 <!-- ======================= HERO ======================= -->
 <div class="sect">
   <h2>1 &middot; Hero — the object, press it</h2>
-  <p>Click, tap, or focus it and hit Enter / Space. Left idle it twitches its
-     cord about once every eight seconds and takes one slow gloss sweep across
-     the cap. All of it is off under <code>prefers-reduced-motion</code>, where
-     the press becomes a plain lamp-on state change.</p>
+  <p>Click, tap, or focus it and hit Enter / Space. Nothing tilts: the press is
+     <b>travel</b>, read the way a plan view has to read it — the cap's radius
+     tightens, the dark shaft ring around it widens, the lamp comes on, and the
+     coil shuffles across the floor on its boot. Left idle the cord twitches
+     about once every eight seconds and one gloss sweep crosses the cap. All of
+     it is off under <code>prefers-reduced-motion</code>, where the press
+     becomes a held pose: cap parked down the shaft, lamp on.</p>
 </div>
 <div class="hero">
   <div class="paddle-btn" id="hero-btn" role="button" tabindex="0"
        aria-label="Take a turn">
-    <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Contestant lockout buzzer labelled TAKE A TURN">
+    <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quiz-show lockout buzzer lying face-up, seen from directly above, labelled TAKE A TURN">
       <defs>
-        <radialGradient id="h_hous" cx="0.34" cy="0.28" r="0.82">
+        <radialGradient id="h_body" gradientUnits="userSpaceOnUse" cx="40" cy="28" r="300">
           <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.52" stop-color="#2f7fee"/>
+          <stop offset="0.35" stop-color="#2f7fee"/>
           <stop offset="1" stop-color="#12459f"/>
         </radialGradient>
-        <linearGradient id="h_grip" x1="0.12" y1="0" x2="0.68" y2="1">
-          <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.42" stop-color="#2f7fee"/>
-          <stop offset="1" stop-color="#12459f"/>
-        </linearGradient>
-        <radialGradient id="h_cap" cx="0.34" cy="0.28" r="0.8">
-          <stop offset="0" stop-color="#ff7a63"/>
-          <stop offset="0.44" stop-color="#e21f22"/>
-          <stop offset="1" stop-color="#8c1010"/>
-        </radialGradient>
-        <linearGradient id="h_chrome" x1="0.08" y1="0" x2="0.9" y2="1">
+        <linearGradient id="h_chrome" gradientUnits="userSpaceOnUse" x1="18" y1="12" x2="158" y2="160">
           <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="0.3" stop-color="#dde6f1"/>
-          <stop offset="0.58" stop-color="#8f9fb4"/>
-          <stop offset="0.8" stop-color="#c8d4e2"/>
+          <stop offset="0.28" stop-color="#dde6f1"/>
+          <stop offset="0.55" stop-color="#8f9fb4"/>
+          <stop offset="0.78" stop-color="#c8d4e2"/>
           <stop offset="1" stop-color="#6f7f95"/>
         </linearGradient>
-        <linearGradient id="h_cord" x1="0" y1="0" x2="0.25" y2="1">
+        <radialGradient id="h_cap" gradientUnits="userSpaceOnUse" cx="66" cy="62" r="108">
+          <stop offset="0" stop-color="#ff7a63"/>
+          <stop offset="0.42" stop-color="#e21f22"/>
+          <stop offset="1" stop-color="#8c1010"/>
+        </radialGradient>
+        <linearGradient id="h_cord" gradientUnits="userSpaceOnUse" x1="272" y1="112" x2="330" y2="196">
           <stop offset="0" stop-color="#5b6c88"/>
           <stop offset="0.5" stop-color="#2b3446"/>
           <stop offset="1" stop-color="#171d29"/>
         </linearGradient>
-        <radialGradient id="h_lit" cx="0.5" cy="0.5" r="0.5">
+        <radialGradient id="h_lit" gradientUnits="userSpaceOnUse" cx="88" cy="86" r="48.5">
           <stop offset="0" stop-color="#fffdf0" stop-opacity="0.98"/>
           <stop offset="0.42" stop-color="#ffe37a" stop-opacity="0.8"/>
           <stop offset="0.78" stop-color="#ffab2e" stop-opacity="0.42"/>
           <stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/>
         </radialGradient>
-        <clipPath id="h_capclip"><circle cx="92" cy="92" r="66"/></clipPath>
+        <clipPath id="h_capclip"><circle cx="88" cy="86" r="48.5"/></clipPath>
       </defs>
 
-      <!-- ============ the coiled cord: drawn first so the handle sits on it === -->
+      <!-- ==== the cord, lying flat on the floor: a slack helix seen from above,
+               drawn first so the body sits on top of it, and cut off by the
+               right edge of the viewBox because it runs under the clutter ==== -->
       <g class="pd-cord">
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="url(#h_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="url(#h_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="url(#h_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="url(#h_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="url(#h_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="url(#h_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="translate(-1.2 -2)"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="url(#h_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-9 298 157) translate(-1.2 -2)"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="url(#h_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(6 316 160) translate(-1.2 -2)"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="url(#h_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-5 334 161) translate(-1.2 -2)"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="url(#h_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(8 352 163) translate(-1.2 -2)"/>
       </g>
 
-      <!-- ============ the grip ============================================== -->
-      <g class="pd-grip">
-        <path d="M150 106 L232 128" fill="none" stroke="#0d1f3d" stroke-width="82" stroke-linecap="round"/>
-        <path d="M150 106 L232 128" fill="none" stroke="url(#h_grip)" stroke-width="74" stroke-linecap="round"/>
-        <path d="M156.6 130.6 L214 146" fill="none" stroke="#0e3a7d" stroke-width="17" stroke-linecap="round" opacity="0.42"/>
-        <path d="M168 88 L225 103" fill="none" stroke="#8dc4ff" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-        <path d="M176 85 L204 92.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-        <!-- moulding seam down the middle of the handle -->
-        <path d="M162 108 L238 128" fill="none" stroke="#12459f" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
-        <!-- strain-relief boot, where the cord leaves the handle -->
-        <path d="M238.2 104.8 L267.8 126.4 L262.2 147.6 L225.8 151.2 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
-        <path d="M243 111 L258 122" fill="none" stroke="#5d6b84" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
-        <path d="M238 126 L259 133" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
-        <path d="M234 138 L258 143" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
-        <!-- the sticker -->
-        <g transform="translate(217 121) rotate(15)">
-          <rect x="-34" y="-18" width="68" height="36" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
-          <rect x="-30" y="-14" width="60" height="28" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
-          <text x="0" y="-2.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
-          <text x="0" y="12.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
-          <!-- lifted corner, because it has been in a drawer -->
-          <path d="M34 18 L34 6 L22 18 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
-        </g>
-        <path d="M196 140 q9 4 18 1" fill="none" stroke="#8dc4ff" stroke-width="2.2" stroke-linecap="round" opacity="0.35"/>
-      </g>
-
-      <!-- ============ the head: housing, chrome bezel, big red cap ========== -->
-      <g class="pd-head">
-        <circle cx="92" cy="92" r="86" fill="url(#h_hous)" stroke="#0d1f3d" stroke-width="6"/>
-        <path d="M31 31 A86 86 0 0 1 92 6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
-        <path d="M153 153 A86 86 0 0 1 100 177" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
-        <circle cx="24" cy="118" r="5.5" fill="#0e3a7d" opacity="0.6"/>
-        <circle cx="150" cy="42" r="5.5" fill="#0e3a7d" opacity="0.5"/>
-        <!-- chrome bezel ring -->
-        <circle cx="92" cy="92" r="72" fill="none" stroke="url(#h_chrome)" stroke-width="13"/>
-        <circle cx="92" cy="92" r="78.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.75"/>
-        <circle cx="92" cy="92" r="65.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.55"/>
-        <!-- the cap's contact shadow, cast down-right onto the bezel -->
-        <circle cx="99" cy="100" r="66" fill="#08111f" opacity="0.42"/>
-        <g class="pd-cap">
-          <circle cx="92" cy="92" r="66" fill="url(#h_cap)" stroke="#5b0808" stroke-width="4"/>
-          <path d="M92 26 A66 66 0 0 1 155 74" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-          <path d="M148 130 A66 66 0 0 1 78 157" fill="none" stroke="#ff7a63" stroke-width="7" stroke-linecap="round" opacity="0.3"/>
-          <ellipse cx="70" cy="66" rx="35" ry="21" transform="rotate(-38 70 66)" fill="#ffd9cf" opacity="0.4"/>
-          <ellipse cx="61" cy="55" rx="14" ry="8.5" transform="rotate(-38 61 55)" fill="#ffffff" opacity="0.78"/>
-          <g class="pd-lit" opacity="0"><circle cx="92" cy="92" r="66" fill="url(#h_lit)"/></g>
-          <g class="pd-glint" clip-path="url(#h_capclip)" transform="translate(-24 0)">
-            <rect x="-40" y="10" width="26" height="170" transform="rotate(-22 92 92)" fill="#ffffff" opacity="0.2"/>
+      <!-- ==== the moulded body, top face up. One silhouette: the round head and
+               the grip are a single dark outline with one plastic gradient
+               across both, so nothing reads as a separate standing part ==== -->
+      <g class="pd-body">
+        <g class="pd-grip">
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="#0d1f3d" stroke-width="88" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="82.5" fill="#0d1f3d"/>
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="url(#h_body)" stroke-width="80" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="78.5" fill="url(#h_body)"/>
+          <!-- the crown of the grip catches the light; its lower-right flank falls away -->
+          <path d="M 165.5 123.5 L 229.5 140.1" fill="none" stroke="#12459f" stroke-width="16" stroke-linecap="round" opacity="0.38"/>
+          <path d="M 151.5 86.8 L 233.5 108.2" fill="none" stroke="#8dc4ff" stroke-width="34" stroke-linecap="round" opacity="0.24"/>
+          <path d="M 167.0 76.3 L 229.0 92.3" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.32"/>
+          <!-- strain-relief boot, seen from above, with its moulded ribs -->
+          <path d="M 243.3 95.2 L 295.0 117.9 L 289.0 141.1 L 232.7 135.8 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
+        <path d="M 250.4 134.2 L 258.0 105.2" fill="none" stroke="#5d6b84" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+        <path d="M 264.4 135.9 L 271.0 110.5" fill="none" stroke="#0e131c" stroke-width="3.0" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 278.4 137.7 L 284.0 115.7" fill="none" stroke="#0e131c" stroke-width="2.8" stroke-linecap="round" opacity="0.42"/>
+          <!-- the sticker, flat on the grip face -->
+          <g transform="translate(200 106) rotate(15)">
+            <rect x="-34" y="-23" width="68" height="46" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
+            <rect x="-30" y="-19" width="60" height="38" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
+            <text x="0" y="14" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
+            <!-- lifted corner, because it has been in a drawer -->
+            <path d="M 34 23 L 34 9 L 20 23 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
           </g>
         </g>
-        <g class="pd-ring" opacity="0"><circle cx="92" cy="92" r="66" fill="none" stroke="#ffe882" stroke-width="6"/></g>
+
+        <!-- ==== the head, concentric from the outside in: housing collar,
+                 chrome bezel, dark shaft the cap travels in, then the cap ==== -->
+        <path d="M 18.5 67.4 A 72 72 0 0 1 106.6 16.5" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+        <path d="M 157.5 104.6 A 72 72 0 0 1 69.4 155.5" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
+        <circle cx="141.6" cy="41.0" r="6.6" fill="url(#h_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 138.2 37.6 L 145.0 44.4 M 145.0 37.6 L 138.2 44.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="34.4" cy="131.0" r="6.6" fill="url(#h_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 31.0 127.6 L 37.8 134.4 M 37.8 127.6 L 31.0 134.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="88" cy="86" r="61" fill="none" stroke="url(#h_chrome)" stroke-width="11"/>
+        <circle cx="88" cy="86" r="67" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.7"/>
+        <circle cx="88" cy="86" r="55.2" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.55"/>
+        <!-- the shaft: a dark ring of it shows around the cap at rest, and it
+             WIDENS as the cap travels down into it -->
+        <circle cx="88" cy="86" r="53.5" fill="#0a1220"/>
+        <path d="M 135.0 103.1 A 50 50 0 0 1 79.3 135.2" fill="none" stroke="#33455f" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+        <!-- the cap floats above the shaft floor: its own shadow pools down-right -->
+        <circle cx="91.5" cy="90" r="50" fill="#04101f" opacity="0.5"/>
+        <g class="pd-cap">
+          <circle cx="88" cy="86" r="48.5" fill="url(#h_cap)" stroke="#5b0808" stroke-width="3"/>
+          <path d="M 46.2 70.8 A 44.5 44.5 0 0 1 103.2 44.2" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 129.8 101.2 A 44.5 44.5 0 0 1 72.8 127.8" fill="none" stroke="#5b0808" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+          <ellipse cx="68" cy="62" rx="25" ry="15" transform="rotate(-38 68 62)" fill="#ffd9cf" opacity="0.42"/>
+          <ellipse cx="62" cy="55" rx="10" ry="6" transform="rotate(-38 62 55)" fill="#ffffff" opacity="0.8"/>
+          <g class="pd-lit" opacity="0"><circle cx="88" cy="86" r="48.5" fill="url(#h_lit)"/></g>
+          <g class="pd-glint" clip-path="url(#h_capclip)" transform="translate(-30 0)">
+            <rect x="24" y="14" width="20" height="144" transform="rotate(-24 88 86)" fill="#ffffff" opacity="0.18"/>
+          </g>
+        </g>
+        <g class="pd-ring" opacity="0"><circle cx="88" cy="86" r="57" fill="none" stroke="#ffe882" stroke-width="6"/></g>
       </g>
     </svg>
   </div>
 </div>
-<p class="hero-hint">idle tell runs on an 8s cycle &middot; press = light + squash + cord spring</p>
+<p class="hero-hint">idle tell runs on an 8s cycle &middot; press = cap travel + widening shaft ring + lamp + cord jiggle</p>
 <p class="readout" id="hero-readout" aria-live="polite">no turns taken yet</p>
 
 <div class="rule"></div>
@@ -426,8 +449,10 @@ body {
      three of hearts <code>m</code>, pencil stub <code>s</code> with the
      elongation cap biting) and
      the paddle sits among them at <code>m</code> on the same area-normalised
-     ruler. <b>The press works here too</b> — this is the size the decision gets
-     made at.</p>
+     ruler. Everything here is lying flat and seen from straight up — the paddle
+     included, with the same pooled drop shadow the pile gives every other
+     specimen. <b>The press works here too</b> — this is the size the decision
+     gets made at.</p>
 </div>
 <div class="swatch-wrap">
   <div class="swatch" id="swatch">
@@ -525,114 +550,118 @@ body {
         <div class="rot" style="--rot:-8deg;">
           <div class="paddle-btn" id="drawer-btn" role="button" tabindex="0"
                aria-label="Take a turn">
-            <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Contestant lockout buzzer labelled TAKE A TURN">
+            <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quiz-show lockout buzzer lying face-up, seen from directly above, labelled TAKE A TURN">
               <defs>
-                <radialGradient id="d_hous" cx="0.34" cy="0.28" r="0.82">
+                <radialGradient id="d_body" gradientUnits="userSpaceOnUse" cx="40" cy="28" r="300">
                   <stop offset="0" stop-color="#8dc4ff"/>
-                  <stop offset="0.52" stop-color="#2f7fee"/>
+                  <stop offset="0.35" stop-color="#2f7fee"/>
                   <stop offset="1" stop-color="#12459f"/>
                 </radialGradient>
-                <linearGradient id="d_grip" x1="0.12" y1="0" x2="0.68" y2="1">
-                  <stop offset="0" stop-color="#8dc4ff"/>
-                  <stop offset="0.42" stop-color="#2f7fee"/>
-                  <stop offset="1" stop-color="#12459f"/>
-                </linearGradient>
-                <radialGradient id="d_cap" cx="0.34" cy="0.28" r="0.8">
-                  <stop offset="0" stop-color="#ff7a63"/>
-                  <stop offset="0.44" stop-color="#e21f22"/>
-                  <stop offset="1" stop-color="#8c1010"/>
-                </radialGradient>
-                <linearGradient id="d_chrome" x1="0.08" y1="0" x2="0.9" y2="1">
+                <linearGradient id="d_chrome" gradientUnits="userSpaceOnUse" x1="18" y1="12" x2="158" y2="160">
                   <stop offset="0" stop-color="#ffffff"/>
-                  <stop offset="0.3" stop-color="#dde6f1"/>
-                  <stop offset="0.58" stop-color="#8f9fb4"/>
-                  <stop offset="0.8" stop-color="#c8d4e2"/>
+                  <stop offset="0.28" stop-color="#dde6f1"/>
+                  <stop offset="0.55" stop-color="#8f9fb4"/>
+                  <stop offset="0.78" stop-color="#c8d4e2"/>
                   <stop offset="1" stop-color="#6f7f95"/>
                 </linearGradient>
-                <linearGradient id="d_cord" x1="0" y1="0" x2="0.25" y2="1">
+                <radialGradient id="d_cap" gradientUnits="userSpaceOnUse" cx="66" cy="62" r="108">
+                  <stop offset="0" stop-color="#ff7a63"/>
+                  <stop offset="0.42" stop-color="#e21f22"/>
+                  <stop offset="1" stop-color="#8c1010"/>
+                </radialGradient>
+                <linearGradient id="d_cord" gradientUnits="userSpaceOnUse" x1="272" y1="112" x2="330" y2="196">
                   <stop offset="0" stop-color="#5b6c88"/>
                   <stop offset="0.5" stop-color="#2b3446"/>
                   <stop offset="1" stop-color="#171d29"/>
                 </linearGradient>
-                <radialGradient id="d_lit" cx="0.5" cy="0.5" r="0.5">
+                <radialGradient id="d_lit" gradientUnits="userSpaceOnUse" cx="88" cy="86" r="48.5">
                   <stop offset="0" stop-color="#fffdf0" stop-opacity="0.98"/>
                   <stop offset="0.42" stop-color="#ffe37a" stop-opacity="0.8"/>
                   <stop offset="0.78" stop-color="#ffab2e" stop-opacity="0.42"/>
                   <stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/>
                 </radialGradient>
-                <clipPath id="d_capclip"><circle cx="92" cy="92" r="66"/></clipPath>
+                <clipPath id="d_capclip"><circle cx="88" cy="86" r="48.5"/></clipPath>
               </defs>
 
-              <!-- ============ the coiled cord: drawn first so the handle sits on it === -->
+              <!-- ==== the cord, lying flat on the floor: a slack helix seen from above,
+                       drawn first so the body sits on top of it, and cut off by the
+                       right edge of the viewBox because it runs under the clutter ==== -->
               <g class="pd-cord">
-                  <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-                  <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="url(#d_cord)" stroke-width="11.5" stroke-linecap="round"/>
-                  <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-                  <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-                  <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="url(#d_cord)" stroke-width="11.5" stroke-linecap="round"/>
-                  <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-                  <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-                  <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="url(#d_cord)" stroke-width="11.5" stroke-linecap="round"/>
-                  <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-                  <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-                  <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="url(#d_cord)" stroke-width="11.5" stroke-linecap="round"/>
-                  <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-                  <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-                  <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="url(#d_cord)" stroke-width="11.5" stroke-linecap="round"/>
-                  <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
+                <path d="M 274 122 L 292 131" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+                <path d="M 274 122 L 292 131" fill="none" stroke="url(#d_cord)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 274 122 L 292 131" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="translate(-1.2 -2)"/>
+                <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+                <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="url(#d_cord)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-9 298 157) translate(-1.2 -2)"/>
+                <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+                <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="url(#d_cord)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(6 316 160) translate(-1.2 -2)"/>
+                <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+                <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="url(#d_cord)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-5 334 161) translate(-1.2 -2)"/>
+                <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+                <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="url(#d_cord)" stroke-width="10" stroke-linecap="round"/>
+                <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(8 352 163) translate(-1.2 -2)"/>
               </g>
 
-              <!-- ============ the grip ============================================== -->
-              <g class="pd-grip">
-                <path d="M150 106 L232 128" fill="none" stroke="#0d1f3d" stroke-width="82" stroke-linecap="round"/>
-                <path d="M150 106 L232 128" fill="none" stroke="url(#d_grip)" stroke-width="74" stroke-linecap="round"/>
-                <path d="M156.6 130.6 L214 146" fill="none" stroke="#0e3a7d" stroke-width="17" stroke-linecap="round" opacity="0.42"/>
-                <path d="M168 88 L225 103" fill="none" stroke="#8dc4ff" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-                <path d="M176 85 L204 92.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-                <!-- moulding seam down the middle of the handle -->
-                <path d="M162 108 L238 128" fill="none" stroke="#12459f" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
-                <!-- strain-relief boot, where the cord leaves the handle -->
-                <path d="M238.2 104.8 L267.8 126.4 L262.2 147.6 L225.8 151.2 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
-                <path d="M243 111 L258 122" fill="none" stroke="#5d6b84" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
-                <path d="M238 126 L259 133" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
-                <path d="M234 138 L258 143" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
-                <!-- the sticker -->
-                <g transform="translate(217 121) rotate(15)">
-                  <rect x="-34" y="-18" width="68" height="36" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
-                  <rect x="-30" y="-14" width="60" height="28" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
-                  <text x="0" y="-2.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
-                  <text x="0" y="12.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
-                  <!-- lifted corner, because it has been in a drawer -->
-                  <path d="M34 18 L34 6 L22 18 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
-                </g>
-                <path d="M196 140 q9 4 18 1" fill="none" stroke="#8dc4ff" stroke-width="2.2" stroke-linecap="round" opacity="0.35"/>
-              </g>
-
-              <!-- ============ the head: housing, chrome bezel, big red cap ========== -->
-              <g class="pd-head">
-                <circle cx="92" cy="92" r="86" fill="url(#d_hous)" stroke="#0d1f3d" stroke-width="6"/>
-                <path d="M31 31 A86 86 0 0 1 92 6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
-                <path d="M153 153 A86 86 0 0 1 100 177" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
-                <circle cx="24" cy="118" r="5.5" fill="#0e3a7d" opacity="0.6"/>
-                <circle cx="150" cy="42" r="5.5" fill="#0e3a7d" opacity="0.5"/>
-                <!-- chrome bezel ring -->
-                <circle cx="92" cy="92" r="72" fill="none" stroke="url(#d_chrome)" stroke-width="13"/>
-                <circle cx="92" cy="92" r="78.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.75"/>
-                <circle cx="92" cy="92" r="65.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.55"/>
-                <!-- the cap's contact shadow, cast down-right onto the bezel -->
-                <circle cx="99" cy="100" r="66" fill="#08111f" opacity="0.42"/>
-                <g class="pd-cap">
-                  <circle cx="92" cy="92" r="66" fill="url(#d_cap)" stroke="#5b0808" stroke-width="4"/>
-                  <path d="M92 26 A66 66 0 0 1 155 74" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-                  <path d="M148 130 A66 66 0 0 1 78 157" fill="none" stroke="#ff7a63" stroke-width="7" stroke-linecap="round" opacity="0.3"/>
-                  <ellipse cx="70" cy="66" rx="35" ry="21" transform="rotate(-38 70 66)" fill="#ffd9cf" opacity="0.4"/>
-                  <ellipse cx="61" cy="55" rx="14" ry="8.5" transform="rotate(-38 61 55)" fill="#ffffff" opacity="0.78"/>
-                  <g class="pd-lit" opacity="0"><circle cx="92" cy="92" r="66" fill="url(#d_lit)"/></g>
-                  <g class="pd-glint" clip-path="url(#d_capclip)" transform="translate(-24 0)">
-                    <rect x="-40" y="10" width="26" height="170" transform="rotate(-22 92 92)" fill="#ffffff" opacity="0.2"/>
+              <!-- ==== the moulded body, top face up. One silhouette: the round head and
+                       the grip are a single dark outline with one plastic gradient
+                       across both, so nothing reads as a separate standing part ==== -->
+              <g class="pd-body">
+                <g class="pd-grip">
+                  <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="#0d1f3d" stroke-width="88" stroke-linecap="round"/>
+                  <circle cx="88" cy="86" r="82.5" fill="#0d1f3d"/>
+                  <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="url(#d_body)" stroke-width="80" stroke-linecap="round"/>
+                  <circle cx="88" cy="86" r="78.5" fill="url(#d_body)"/>
+                  <!-- the crown of the grip catches the light; its lower-right flank falls away -->
+                  <path d="M 165.5 123.5 L 229.5 140.1" fill="none" stroke="#12459f" stroke-width="16" stroke-linecap="round" opacity="0.38"/>
+                  <path d="M 151.5 86.8 L 233.5 108.2" fill="none" stroke="#8dc4ff" stroke-width="34" stroke-linecap="round" opacity="0.24"/>
+                  <path d="M 167.0 76.3 L 229.0 92.3" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.32"/>
+                  <!-- strain-relief boot, seen from above, with its moulded ribs -->
+                  <path d="M 243.3 95.2 L 295.0 117.9 L 289.0 141.1 L 232.7 135.8 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
+                <path d="M 250.4 134.2 L 258.0 105.2" fill="none" stroke="#5d6b84" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+                <path d="M 264.4 135.9 L 271.0 110.5" fill="none" stroke="#0e131c" stroke-width="3.0" stroke-linecap="round" opacity="0.5"/>
+                <path d="M 278.4 137.7 L 284.0 115.7" fill="none" stroke="#0e131c" stroke-width="2.8" stroke-linecap="round" opacity="0.42"/>
+                  <!-- the sticker, flat on the grip face -->
+                  <g transform="translate(200 106) rotate(15)">
+                    <rect x="-34" y="-23" width="68" height="46" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
+                    <rect x="-30" y="-19" width="60" height="38" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
+                    <text x="0" y="-3" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
+                    <text x="0" y="14" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
+                    <!-- lifted corner, because it has been in a drawer -->
+                    <path d="M 34 23 L 34 9 L 20 23 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
                   </g>
                 </g>
-                <g class="pd-ring" opacity="0"><circle cx="92" cy="92" r="66" fill="none" stroke="#ffe882" stroke-width="6"/></g>
+
+                <!-- ==== the head, concentric from the outside in: housing collar,
+                         chrome bezel, dark shaft the cap travels in, then the cap ==== -->
+                <path d="M 18.5 67.4 A 72 72 0 0 1 106.6 16.5" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+                <path d="M 157.5 104.6 A 72 72 0 0 1 69.4 155.5" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
+                <circle cx="141.6" cy="41.0" r="6.6" fill="url(#d_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+                <path d="M 138.2 37.6 L 145.0 44.4 M 145.0 37.6 L 138.2 44.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+                <circle cx="34.4" cy="131.0" r="6.6" fill="url(#d_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+                <path d="M 31.0 127.6 L 37.8 134.4 M 37.8 127.6 L 31.0 134.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+                <circle cx="88" cy="86" r="61" fill="none" stroke="url(#d_chrome)" stroke-width="11"/>
+                <circle cx="88" cy="86" r="67" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.7"/>
+                <circle cx="88" cy="86" r="55.2" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.55"/>
+                <!-- the shaft: a dark ring of it shows around the cap at rest, and it
+                     WIDENS as the cap travels down into it -->
+                <circle cx="88" cy="86" r="53.5" fill="#0a1220"/>
+                <path d="M 135.0 103.1 A 50 50 0 0 1 79.3 135.2" fill="none" stroke="#33455f" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+                <!-- the cap floats above the shaft floor: its own shadow pools down-right -->
+                <circle cx="91.5" cy="90" r="50" fill="#04101f" opacity="0.5"/>
+                <g class="pd-cap">
+                  <circle cx="88" cy="86" r="48.5" fill="url(#d_cap)" stroke="#5b0808" stroke-width="3"/>
+                  <path d="M 46.2 70.8 A 44.5 44.5 0 0 1 103.2 44.2" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+                  <path d="M 129.8 101.2 A 44.5 44.5 0 0 1 72.8 127.8" fill="none" stroke="#5b0808" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+                  <ellipse cx="68" cy="62" rx="25" ry="15" transform="rotate(-38 68 62)" fill="#ffd9cf" opacity="0.42"/>
+                  <ellipse cx="62" cy="55" rx="10" ry="6" transform="rotate(-38 62 55)" fill="#ffffff" opacity="0.8"/>
+                  <g class="pd-lit" opacity="0"><circle cx="88" cy="86" r="48.5" fill="url(#d_lit)"/></g>
+                  <g class="pd-glint" clip-path="url(#d_capclip)" transform="translate(-30 0)">
+                    <rect x="24" y="14" width="20" height="144" transform="rotate(-24 88 86)" fill="#ffffff" opacity="0.18"/>
+                  </g>
+                </g>
+                <g class="pd-ring" opacity="0"><circle cx="88" cy="86" r="57" fill="none" stroke="#ffe882" stroke-width="6"/></g>
               </g>
             </svg>
           </div>
@@ -659,112 +688,116 @@ body {
   <div class="variant">
     <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <radialGradient id="v1_hous" cx="0.34" cy="0.28" r="0.82">
+        <radialGradient id="v1_body" gradientUnits="userSpaceOnUse" cx="40" cy="28" r="300">
           <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.52" stop-color="#2f7fee"/>
+          <stop offset="0.35" stop-color="#2f7fee"/>
           <stop offset="1" stop-color="#12459f"/>
         </radialGradient>
-        <linearGradient id="v1_grip" x1="0.12" y1="0" x2="0.68" y2="1">
-          <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.42" stop-color="#2f7fee"/>
-          <stop offset="1" stop-color="#12459f"/>
-        </linearGradient>
-        <radialGradient id="v1_cap" cx="0.34" cy="0.28" r="0.8">
-          <stop offset="0" stop-color="#ff7a63"/>
-          <stop offset="0.44" stop-color="#e21f22"/>
-          <stop offset="1" stop-color="#8c1010"/>
-        </radialGradient>
-        <linearGradient id="v1_chrome" x1="0.08" y1="0" x2="0.9" y2="1">
+        <linearGradient id="v1_chrome" gradientUnits="userSpaceOnUse" x1="18" y1="12" x2="158" y2="160">
           <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="0.3" stop-color="#dde6f1"/>
-          <stop offset="0.58" stop-color="#8f9fb4"/>
-          <stop offset="0.8" stop-color="#c8d4e2"/>
+          <stop offset="0.28" stop-color="#dde6f1"/>
+          <stop offset="0.55" stop-color="#8f9fb4"/>
+          <stop offset="0.78" stop-color="#c8d4e2"/>
           <stop offset="1" stop-color="#6f7f95"/>
         </linearGradient>
-        <linearGradient id="v1_cord" x1="0" y1="0" x2="0.25" y2="1">
+        <radialGradient id="v1_cap" gradientUnits="userSpaceOnUse" cx="66" cy="62" r="108">
+          <stop offset="0" stop-color="#ff7a63"/>
+          <stop offset="0.42" stop-color="#e21f22"/>
+          <stop offset="1" stop-color="#8c1010"/>
+        </radialGradient>
+        <linearGradient id="v1_cord" gradientUnits="userSpaceOnUse" x1="272" y1="112" x2="330" y2="196">
           <stop offset="0" stop-color="#5b6c88"/>
           <stop offset="0.5" stop-color="#2b3446"/>
           <stop offset="1" stop-color="#171d29"/>
         </linearGradient>
-        <radialGradient id="v1_lit" cx="0.5" cy="0.5" r="0.5">
+        <radialGradient id="v1_lit" gradientUnits="userSpaceOnUse" cx="88" cy="86" r="48.5">
           <stop offset="0" stop-color="#fffdf0" stop-opacity="0.98"/>
           <stop offset="0.42" stop-color="#ffe37a" stop-opacity="0.8"/>
           <stop offset="0.78" stop-color="#ffab2e" stop-opacity="0.42"/>
           <stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/>
         </radialGradient>
-        <clipPath id="v1_capclip"><circle cx="92" cy="92" r="66"/></clipPath>
+        <clipPath id="v1_capclip"><circle cx="88" cy="86" r="48.5"/></clipPath>
       </defs>
 
-      <!-- ============ the coiled cord: drawn first so the handle sits on it === -->
+      <!-- ==== the cord, lying flat on the floor: a slack helix seen from above,
+               drawn first so the body sits on top of it, and cut off by the
+               right edge of the viewBox because it runs under the clutter ==== -->
       <g class="pd-cord">
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="url(#v1_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="url(#v1_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="url(#v1_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="url(#v1_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="url(#v1_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="url(#v1_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="translate(-1.2 -2)"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="url(#v1_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-9 298 157) translate(-1.2 -2)"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="url(#v1_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(6 316 160) translate(-1.2 -2)"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="url(#v1_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-5 334 161) translate(-1.2 -2)"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="url(#v1_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(8 352 163) translate(-1.2 -2)"/>
       </g>
 
-      <!-- ============ the grip ============================================== -->
-      <g class="pd-grip">
-        <path d="M150 106 L232 128" fill="none" stroke="#0d1f3d" stroke-width="82" stroke-linecap="round"/>
-        <path d="M150 106 L232 128" fill="none" stroke="url(#v1_grip)" stroke-width="74" stroke-linecap="round"/>
-        <path d="M156.6 130.6 L214 146" fill="none" stroke="#0e3a7d" stroke-width="17" stroke-linecap="round" opacity="0.42"/>
-        <path d="M168 88 L225 103" fill="none" stroke="#8dc4ff" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-        <path d="M176 85 L204 92.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-        <!-- moulding seam down the middle of the handle -->
-        <path d="M162 108 L238 128" fill="none" stroke="#12459f" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
-        <!-- strain-relief boot, where the cord leaves the handle -->
-        <path d="M238.2 104.8 L267.8 126.4 L262.2 147.6 L225.8 151.2 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
-        <path d="M243 111 L258 122" fill="none" stroke="#5d6b84" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
-        <path d="M238 126 L259 133" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
-        <path d="M234 138 L258 143" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
-        <!-- the sticker -->
-        <g transform="translate(217 121) rotate(15)">
-          <rect x="-34" y="-18" width="68" height="36" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
-          <rect x="-30" y="-14" width="60" height="28" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
-          <text x="0" y="-2.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
-          <text x="0" y="12.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
-          <!-- lifted corner, because it has been in a drawer -->
-          <path d="M34 18 L34 6 L22 18 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
-        </g>
-        <path d="M196 140 q9 4 18 1" fill="none" stroke="#8dc4ff" stroke-width="2.2" stroke-linecap="round" opacity="0.35"/>
-      </g>
-
-      <!-- ============ the head: housing, chrome bezel, big red cap ========== -->
-      <g class="pd-head">
-        <circle cx="92" cy="92" r="86" fill="url(#v1_hous)" stroke="#0d1f3d" stroke-width="6"/>
-        <path d="M31 31 A86 86 0 0 1 92 6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
-        <path d="M153 153 A86 86 0 0 1 100 177" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
-        <circle cx="24" cy="118" r="5.5" fill="#0e3a7d" opacity="0.6"/>
-        <circle cx="150" cy="42" r="5.5" fill="#0e3a7d" opacity="0.5"/>
-        <!-- chrome bezel ring -->
-        <circle cx="92" cy="92" r="72" fill="none" stroke="url(#v1_chrome)" stroke-width="13"/>
-        <circle cx="92" cy="92" r="78.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.75"/>
-        <circle cx="92" cy="92" r="65.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.55"/>
-        <!-- the cap's contact shadow, cast down-right onto the bezel -->
-        <circle cx="99" cy="100" r="66" fill="#08111f" opacity="0.42"/>
-        <g class="pd-cap">
-          <circle cx="92" cy="92" r="66" fill="url(#v1_cap)" stroke="#5b0808" stroke-width="4"/>
-          <path d="M92 26 A66 66 0 0 1 155 74" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-          <path d="M148 130 A66 66 0 0 1 78 157" fill="none" stroke="#ff7a63" stroke-width="7" stroke-linecap="round" opacity="0.3"/>
-          <ellipse cx="70" cy="66" rx="35" ry="21" transform="rotate(-38 70 66)" fill="#ffd9cf" opacity="0.4"/>
-          <ellipse cx="61" cy="55" rx="14" ry="8.5" transform="rotate(-38 61 55)" fill="#ffffff" opacity="0.78"/>
-          <g class="pd-lit" opacity="0"><circle cx="92" cy="92" r="66" fill="url(#v1_lit)"/></g>
-          <g class="pd-glint" clip-path="url(#v1_capclip)" transform="translate(-24 0)">
-            <rect x="-40" y="10" width="26" height="170" transform="rotate(-22 92 92)" fill="#ffffff" opacity="0.2"/>
+      <!-- ==== the moulded body, top face up. One silhouette: the round head and
+               the grip are a single dark outline with one plastic gradient
+               across both, so nothing reads as a separate standing part ==== -->
+      <g class="pd-body">
+        <g class="pd-grip">
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="#0d1f3d" stroke-width="88" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="82.5" fill="#0d1f3d"/>
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="url(#v1_body)" stroke-width="80" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="78.5" fill="url(#v1_body)"/>
+          <!-- the crown of the grip catches the light; its lower-right flank falls away -->
+          <path d="M 165.5 123.5 L 229.5 140.1" fill="none" stroke="#12459f" stroke-width="16" stroke-linecap="round" opacity="0.38"/>
+          <path d="M 151.5 86.8 L 233.5 108.2" fill="none" stroke="#8dc4ff" stroke-width="34" stroke-linecap="round" opacity="0.24"/>
+          <path d="M 167.0 76.3 L 229.0 92.3" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.32"/>
+          <!-- strain-relief boot, seen from above, with its moulded ribs -->
+          <path d="M 243.3 95.2 L 295.0 117.9 L 289.0 141.1 L 232.7 135.8 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
+        <path d="M 250.4 134.2 L 258.0 105.2" fill="none" stroke="#5d6b84" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+        <path d="M 264.4 135.9 L 271.0 110.5" fill="none" stroke="#0e131c" stroke-width="3.0" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 278.4 137.7 L 284.0 115.7" fill="none" stroke="#0e131c" stroke-width="2.8" stroke-linecap="round" opacity="0.42"/>
+          <!-- the sticker, flat on the grip face -->
+          <g transform="translate(200 106) rotate(15)">
+            <rect x="-34" y="-23" width="68" height="46" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
+            <rect x="-30" y="-19" width="60" height="38" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
+            <text x="0" y="14" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
+            <!-- lifted corner, because it has been in a drawer -->
+            <path d="M 34 23 L 34 9 L 20 23 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
           </g>
         </g>
-        <g class="pd-ring" opacity="0"><circle cx="92" cy="92" r="66" fill="none" stroke="#ffe882" stroke-width="6"/></g>
+
+        <!-- ==== the head, concentric from the outside in: housing collar,
+                 chrome bezel, dark shaft the cap travels in, then the cap ==== -->
+        <path d="M 18.5 67.4 A 72 72 0 0 1 106.6 16.5" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+        <path d="M 157.5 104.6 A 72 72 0 0 1 69.4 155.5" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
+        <circle cx="141.6" cy="41.0" r="6.6" fill="url(#v1_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 138.2 37.6 L 145.0 44.4 M 145.0 37.6 L 138.2 44.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="34.4" cy="131.0" r="6.6" fill="url(#v1_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 31.0 127.6 L 37.8 134.4 M 37.8 127.6 L 31.0 134.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="88" cy="86" r="61" fill="none" stroke="url(#v1_chrome)" stroke-width="11"/>
+        <circle cx="88" cy="86" r="67" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.7"/>
+        <circle cx="88" cy="86" r="55.2" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.55"/>
+        <!-- the shaft: a dark ring of it shows around the cap at rest, and it
+             WIDENS as the cap travels down into it -->
+        <circle cx="88" cy="86" r="53.5" fill="#0a1220"/>
+        <path d="M 135.0 103.1 A 50 50 0 0 1 79.3 135.2" fill="none" stroke="#33455f" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+        <!-- the cap floats above the shaft floor: its own shadow pools down-right -->
+        <circle cx="91.5" cy="90" r="50" fill="#04101f" opacity="0.5"/>
+        <g class="pd-cap">
+          <circle cx="88" cy="86" r="48.5" fill="url(#v1_cap)" stroke="#5b0808" stroke-width="3"/>
+          <path d="M 46.2 70.8 A 44.5 44.5 0 0 1 103.2 44.2" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 129.8 101.2 A 44.5 44.5 0 0 1 72.8 127.8" fill="none" stroke="#5b0808" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+          <ellipse cx="68" cy="62" rx="25" ry="15" transform="rotate(-38 68 62)" fill="#ffd9cf" opacity="0.42"/>
+          <ellipse cx="62" cy="55" rx="10" ry="6" transform="rotate(-38 62 55)" fill="#ffffff" opacity="0.8"/>
+          <g class="pd-lit" opacity="0"><circle cx="88" cy="86" r="48.5" fill="url(#v1_lit)"/></g>
+          <g class="pd-glint" clip-path="url(#v1_capclip)" transform="translate(-30 0)">
+            <rect x="24" y="14" width="20" height="144" transform="rotate(-24 88 86)" fill="#ffffff" opacity="0.18"/>
+          </g>
+        </g>
+        <g class="pd-ring" opacity="0"><circle cx="88" cy="86" r="57" fill="none" stroke="#ffe882" stroke-width="6"/></g>
       </g>
     </svg>
     <span>A &middot; cobalt grip / red cap</span>
@@ -772,112 +805,116 @@ body {
   <div class="variant">
     <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <radialGradient id="v2_hous" cx="0.34" cy="0.28" r="0.82">
+        <radialGradient id="v2_body" gradientUnits="userSpaceOnUse" cx="40" cy="28" r="300">
           <stop offset="0" stop-color="#ffc078"/>
-          <stop offset="0.52" stop-color="#f27e12"/>
+          <stop offset="0.35" stop-color="#f27e12"/>
           <stop offset="1" stop-color="#b04703"/>
         </radialGradient>
-        <linearGradient id="v2_grip" x1="0.12" y1="0" x2="0.68" y2="1">
-          <stop offset="0" stop-color="#ffc078"/>
-          <stop offset="0.42" stop-color="#f27e12"/>
-          <stop offset="1" stop-color="#b04703"/>
-        </linearGradient>
-        <radialGradient id="v2_cap" cx="0.34" cy="0.28" r="0.8">
-          <stop offset="0" stop-color="#ff7a63"/>
-          <stop offset="0.44" stop-color="#e21f22"/>
-          <stop offset="1" stop-color="#8c1010"/>
-        </radialGradient>
-        <linearGradient id="v2_chrome" x1="0.08" y1="0" x2="0.9" y2="1">
+        <linearGradient id="v2_chrome" gradientUnits="userSpaceOnUse" x1="18" y1="12" x2="158" y2="160">
           <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="0.3" stop-color="#dde6f1"/>
-          <stop offset="0.58" stop-color="#8f9fb4"/>
-          <stop offset="0.8" stop-color="#c8d4e2"/>
+          <stop offset="0.28" stop-color="#dde6f1"/>
+          <stop offset="0.55" stop-color="#8f9fb4"/>
+          <stop offset="0.78" stop-color="#c8d4e2"/>
           <stop offset="1" stop-color="#6f7f95"/>
         </linearGradient>
-        <linearGradient id="v2_cord" x1="0" y1="0" x2="0.25" y2="1">
+        <radialGradient id="v2_cap" gradientUnits="userSpaceOnUse" cx="66" cy="62" r="108">
+          <stop offset="0" stop-color="#ff7a63"/>
+          <stop offset="0.42" stop-color="#e21f22"/>
+          <stop offset="1" stop-color="#8c1010"/>
+        </radialGradient>
+        <linearGradient id="v2_cord" gradientUnits="userSpaceOnUse" x1="272" y1="112" x2="330" y2="196">
           <stop offset="0" stop-color="#5b6c88"/>
           <stop offset="0.5" stop-color="#2b3446"/>
           <stop offset="1" stop-color="#171d29"/>
         </linearGradient>
-        <radialGradient id="v2_lit" cx="0.5" cy="0.5" r="0.5">
+        <radialGradient id="v2_lit" gradientUnits="userSpaceOnUse" cx="88" cy="86" r="48.5">
           <stop offset="0" stop-color="#fffdf0" stop-opacity="0.98"/>
           <stop offset="0.42" stop-color="#ffe37a" stop-opacity="0.8"/>
           <stop offset="0.78" stop-color="#ffab2e" stop-opacity="0.42"/>
           <stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/>
         </radialGradient>
-        <clipPath id="v2_capclip"><circle cx="92" cy="92" r="66"/></clipPath>
+        <clipPath id="v2_capclip"><circle cx="88" cy="86" r="48.5"/></clipPath>
       </defs>
 
-      <!-- ============ the coiled cord: drawn first so the handle sits on it === -->
+      <!-- ==== the cord, lying flat on the floor: a slack helix seen from above,
+               drawn first so the body sits on top of it, and cut off by the
+               right edge of the viewBox because it runs under the clutter ==== -->
       <g class="pd-cord">
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="url(#v2_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="url(#v2_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="url(#v2_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="url(#v2_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="url(#v2_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="url(#v2_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="translate(-1.2 -2)"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="url(#v2_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-9 298 157) translate(-1.2 -2)"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="url(#v2_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(6 316 160) translate(-1.2 -2)"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="url(#v2_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-5 334 161) translate(-1.2 -2)"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="url(#v2_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(8 352 163) translate(-1.2 -2)"/>
       </g>
 
-      <!-- ============ the grip ============================================== -->
-      <g class="pd-grip">
-        <path d="M150 106 L232 128" fill="none" stroke="#3a1a02" stroke-width="82" stroke-linecap="round"/>
-        <path d="M150 106 L232 128" fill="none" stroke="url(#v2_grip)" stroke-width="74" stroke-linecap="round"/>
-        <path d="M156.6 130.6 L214 146" fill="none" stroke="#8a3702" stroke-width="17" stroke-linecap="round" opacity="0.42"/>
-        <path d="M168 88 L225 103" fill="none" stroke="#ffc078" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-        <path d="M176 85 L204 92.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-        <!-- moulding seam down the middle of the handle -->
-        <path d="M162 108 L238 128" fill="none" stroke="#b04703" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
-        <!-- strain-relief boot, where the cord leaves the handle -->
-        <path d="M238.2 104.8 L267.8 126.4 L262.2 147.6 L225.8 151.2 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
-        <path d="M243 111 L258 122" fill="none" stroke="#5d6b84" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
-        <path d="M238 126 L259 133" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
-        <path d="M234 138 L258 143" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
-        <!-- the sticker -->
-        <g transform="translate(217 121) rotate(15)">
-          <rect x="-34" y="-18" width="68" height="36" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
-          <rect x="-30" y="-14" width="60" height="28" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
-          <text x="0" y="-2.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
-          <text x="0" y="12.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
-          <!-- lifted corner, because it has been in a drawer -->
-          <path d="M34 18 L34 6 L22 18 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
-        </g>
-        <path d="M196 140 q9 4 18 1" fill="none" stroke="#ffc078" stroke-width="2.2" stroke-linecap="round" opacity="0.35"/>
-      </g>
-
-      <!-- ============ the head: housing, chrome bezel, big red cap ========== -->
-      <g class="pd-head">
-        <circle cx="92" cy="92" r="86" fill="url(#v2_hous)" stroke="#3a1a02" stroke-width="6"/>
-        <path d="M31 31 A86 86 0 0 1 92 6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
-        <path d="M153 153 A86 86 0 0 1 100 177" fill="none" stroke="#8a3702" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
-        <circle cx="24" cy="118" r="5.5" fill="#8a3702" opacity="0.6"/>
-        <circle cx="150" cy="42" r="5.5" fill="#8a3702" opacity="0.5"/>
-        <!-- chrome bezel ring -->
-        <circle cx="92" cy="92" r="72" fill="none" stroke="url(#v2_chrome)" stroke-width="13"/>
-        <circle cx="92" cy="92" r="78.5" fill="none" stroke="#3a1a02" stroke-width="2.6" opacity="0.75"/>
-        <circle cx="92" cy="92" r="65.5" fill="none" stroke="#3a1a02" stroke-width="2.6" opacity="0.55"/>
-        <!-- the cap's contact shadow, cast down-right onto the bezel -->
-        <circle cx="99" cy="100" r="66" fill="#08111f" opacity="0.42"/>
-        <g class="pd-cap">
-          <circle cx="92" cy="92" r="66" fill="url(#v2_cap)" stroke="#5b0808" stroke-width="4"/>
-          <path d="M92 26 A66 66 0 0 1 155 74" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-          <path d="M148 130 A66 66 0 0 1 78 157" fill="none" stroke="#ff7a63" stroke-width="7" stroke-linecap="round" opacity="0.3"/>
-          <ellipse cx="70" cy="66" rx="35" ry="21" transform="rotate(-38 70 66)" fill="#ffd9cf" opacity="0.4"/>
-          <ellipse cx="61" cy="55" rx="14" ry="8.5" transform="rotate(-38 61 55)" fill="#ffffff" opacity="0.78"/>
-          <g class="pd-lit" opacity="0"><circle cx="92" cy="92" r="66" fill="url(#v2_lit)"/></g>
-          <g class="pd-glint" clip-path="url(#v2_capclip)" transform="translate(-24 0)">
-            <rect x="-40" y="10" width="26" height="170" transform="rotate(-22 92 92)" fill="#ffffff" opacity="0.2"/>
+      <!-- ==== the moulded body, top face up. One silhouette: the round head and
+               the grip are a single dark outline with one plastic gradient
+               across both, so nothing reads as a separate standing part ==== -->
+      <g class="pd-body">
+        <g class="pd-grip">
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="#3a1a02" stroke-width="88" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="82.5" fill="#3a1a02"/>
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="url(#v2_body)" stroke-width="80" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="78.5" fill="url(#v2_body)"/>
+          <!-- the crown of the grip catches the light; its lower-right flank falls away -->
+          <path d="M 165.5 123.5 L 229.5 140.1" fill="none" stroke="#b04703" stroke-width="16" stroke-linecap="round" opacity="0.38"/>
+          <path d="M 151.5 86.8 L 233.5 108.2" fill="none" stroke="#ffc078" stroke-width="34" stroke-linecap="round" opacity="0.24"/>
+          <path d="M 167.0 76.3 L 229.0 92.3" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.32"/>
+          <!-- strain-relief boot, seen from above, with its moulded ribs -->
+          <path d="M 243.3 95.2 L 295.0 117.9 L 289.0 141.1 L 232.7 135.8 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
+        <path d="M 250.4 134.2 L 258.0 105.2" fill="none" stroke="#5d6b84" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+        <path d="M 264.4 135.9 L 271.0 110.5" fill="none" stroke="#0e131c" stroke-width="3.0" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 278.4 137.7 L 284.0 115.7" fill="none" stroke="#0e131c" stroke-width="2.8" stroke-linecap="round" opacity="0.42"/>
+          <!-- the sticker, flat on the grip face -->
+          <g transform="translate(200 106) rotate(15)">
+            <rect x="-34" y="-23" width="68" height="46" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
+            <rect x="-30" y="-19" width="60" height="38" rx="4" fill="none" stroke="#e21f22" stroke-width="1.6" opacity="0.75"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
+            <text x="0" y="14" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
+            <!-- lifted corner, because it has been in a drawer -->
+            <path d="M 34 23 L 34 9 L 20 23 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
           </g>
         </g>
-        <g class="pd-ring" opacity="0"><circle cx="92" cy="92" r="66" fill="none" stroke="#ffe882" stroke-width="6"/></g>
+
+        <!-- ==== the head, concentric from the outside in: housing collar,
+                 chrome bezel, dark shaft the cap travels in, then the cap ==== -->
+        <path d="M 18.5 67.4 A 72 72 0 0 1 106.6 16.5" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+        <path d="M 157.5 104.6 A 72 72 0 0 1 69.4 155.5" fill="none" stroke="#8a3702" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
+        <circle cx="141.6" cy="41.0" r="6.6" fill="url(#v2_chrome)" stroke="#3a1a02" stroke-width="2"/>
+        <path d="M 138.2 37.6 L 145.0 44.4 M 145.0 37.6 L 138.2 44.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="34.4" cy="131.0" r="6.6" fill="url(#v2_chrome)" stroke="#3a1a02" stroke-width="2"/>
+        <path d="M 31.0 127.6 L 37.8 134.4 M 37.8 127.6 L 31.0 134.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="88" cy="86" r="61" fill="none" stroke="url(#v2_chrome)" stroke-width="11"/>
+        <circle cx="88" cy="86" r="67" fill="none" stroke="#3a1a02" stroke-width="2.4" opacity="0.7"/>
+        <circle cx="88" cy="86" r="55.2" fill="none" stroke="#3a1a02" stroke-width="2.4" opacity="0.55"/>
+        <!-- the shaft: a dark ring of it shows around the cap at rest, and it
+             WIDENS as the cap travels down into it -->
+        <circle cx="88" cy="86" r="53.5" fill="#0a1220"/>
+        <path d="M 135.0 103.1 A 50 50 0 0 1 79.3 135.2" fill="none" stroke="#33455f" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+        <!-- the cap floats above the shaft floor: its own shadow pools down-right -->
+        <circle cx="91.5" cy="90" r="50" fill="#04101f" opacity="0.5"/>
+        <g class="pd-cap">
+          <circle cx="88" cy="86" r="48.5" fill="url(#v2_cap)" stroke="#5b0808" stroke-width="3"/>
+          <path d="M 46.2 70.8 A 44.5 44.5 0 0 1 103.2 44.2" fill="none" stroke="#ff7a63" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 129.8 101.2 A 44.5 44.5 0 0 1 72.8 127.8" fill="none" stroke="#5b0808" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+          <ellipse cx="68" cy="62" rx="25" ry="15" transform="rotate(-38 68 62)" fill="#ffd9cf" opacity="0.42"/>
+          <ellipse cx="62" cy="55" rx="10" ry="6" transform="rotate(-38 62 55)" fill="#ffffff" opacity="0.8"/>
+          <g class="pd-lit" opacity="0"><circle cx="88" cy="86" r="48.5" fill="url(#v2_lit)"/></g>
+          <g class="pd-glint" clip-path="url(#v2_capclip)" transform="translate(-30 0)">
+            <rect x="24" y="14" width="20" height="144" transform="rotate(-24 88 86)" fill="#ffffff" opacity="0.18"/>
+          </g>
+        </g>
+        <g class="pd-ring" opacity="0"><circle cx="88" cy="86" r="57" fill="none" stroke="#ffe882" stroke-width="6"/></g>
       </g>
     </svg>
     <span>B &middot; traffic-orange grip / red cap</span>
@@ -885,112 +922,116 @@ body {
   <div class="variant">
     <svg class="paddle" viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <defs>
-        <radialGradient id="v3_hous" cx="0.34" cy="0.28" r="0.82">
+        <radialGradient id="v3_body" gradientUnits="userSpaceOnUse" cx="40" cy="28" r="300">
           <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.52" stop-color="#2f7fee"/>
+          <stop offset="0.35" stop-color="#2f7fee"/>
           <stop offset="1" stop-color="#12459f"/>
         </radialGradient>
-        <linearGradient id="v3_grip" x1="0.12" y1="0" x2="0.68" y2="1">
-          <stop offset="0" stop-color="#8dc4ff"/>
-          <stop offset="0.42" stop-color="#2f7fee"/>
-          <stop offset="1" stop-color="#12459f"/>
-        </linearGradient>
-        <radialGradient id="v3_cap" cx="0.34" cy="0.28" r="0.8">
-          <stop offset="0" stop-color="#ffe58a"/>
-          <stop offset="0.44" stop-color="#ffc21f"/>
-          <stop offset="1" stop-color="#b07600"/>
-        </radialGradient>
-        <linearGradient id="v3_chrome" x1="0.08" y1="0" x2="0.9" y2="1">
+        <linearGradient id="v3_chrome" gradientUnits="userSpaceOnUse" x1="18" y1="12" x2="158" y2="160">
           <stop offset="0" stop-color="#ffffff"/>
-          <stop offset="0.3" stop-color="#dde6f1"/>
-          <stop offset="0.58" stop-color="#8f9fb4"/>
-          <stop offset="0.8" stop-color="#c8d4e2"/>
+          <stop offset="0.28" stop-color="#dde6f1"/>
+          <stop offset="0.55" stop-color="#8f9fb4"/>
+          <stop offset="0.78" stop-color="#c8d4e2"/>
           <stop offset="1" stop-color="#6f7f95"/>
         </linearGradient>
-        <linearGradient id="v3_cord" x1="0" y1="0" x2="0.25" y2="1">
+        <radialGradient id="v3_cap" gradientUnits="userSpaceOnUse" cx="66" cy="62" r="108">
+          <stop offset="0" stop-color="#ffe58a"/>
+          <stop offset="0.42" stop-color="#ffc21f"/>
+          <stop offset="1" stop-color="#b07600"/>
+        </radialGradient>
+        <linearGradient id="v3_cord" gradientUnits="userSpaceOnUse" x1="272" y1="112" x2="330" y2="196">
           <stop offset="0" stop-color="#5b6c88"/>
           <stop offset="0.5" stop-color="#2b3446"/>
           <stop offset="1" stop-color="#171d29"/>
         </linearGradient>
-        <radialGradient id="v3_lit" cx="0.5" cy="0.5" r="0.5">
+        <radialGradient id="v3_lit" gradientUnits="userSpaceOnUse" cx="88" cy="86" r="48.5">
           <stop offset="0" stop-color="#fffdf0" stop-opacity="0.98"/>
           <stop offset="0.42" stop-color="#ffe37a" stop-opacity="0.8"/>
           <stop offset="0.78" stop-color="#ffab2e" stop-opacity="0.42"/>
           <stop offset="1" stop-color="#ff8a2a" stop-opacity="0"/>
         </radialGradient>
-        <clipPath id="v3_capclip"><circle cx="92" cy="92" r="66"/></clipPath>
+        <clipPath id="v3_capclip"><circle cx="88" cy="86" r="48.5"/></clipPath>
       </defs>
 
-      <!-- ============ the coiled cord: drawn first so the handle sits on it === -->
+      <!-- ==== the cord, lying flat on the floor: a slack helix seen from above,
+               drawn first so the body sits on top of it, and cut off by the
+               right edge of the viewBox because it runs under the clutter ==== -->
       <g class="pd-cord">
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="url(#v3_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M265 137 C280 148 282 170 276 186" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="url(#v3_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M276 186 C260 72 314 72 298 187" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="url(#v3_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M298 187 C282 73 336 73 320 188" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="url(#v3_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M320 188 C304 74 358 74 342 189" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#10161f" stroke-width="17" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="url(#v3_cord)" stroke-width="11.5" stroke-linecap="round"/>
-          <path d="M342 189 C326 75 380 75 364 190" fill="none" stroke="#a8bcd8" stroke-width="2.8" stroke-linecap="round" opacity="0.5" transform="translate(-1.3 -2)"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="url(#v3_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 274 122 L 292 131" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="translate(-1.2 -2)"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" transform="rotate(-9 298 157)" fill="none" stroke="url(#v3_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 292.0 131.0 C 271.0 145.3 271.0 171.3 298.0 183.0 C 325.0 171.3 325.0 145.3 310.0 131.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-9 298 157) translate(-1.2 -2)"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" transform="rotate(6 316 160)" fill="none" stroke="url(#v3_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 310.0 135.5 C 289.0 149.0 289.0 173.5 316.0 184.5 C 343.0 173.5 343.0 149.0 328.0 135.5" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(6 316 160) translate(-1.2 -2)"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" transform="rotate(-5 334 161)" fill="none" stroke="url(#v3_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 328.0 134.0 C 307.0 148.8 307.0 175.8 334.0 188.0 C 361.0 175.8 361.0 148.8 346.0 134.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(-5 334 161) translate(-1.2 -2)"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="#10161f" stroke-width="15" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" transform="rotate(8 352 163)" fill="none" stroke="url(#v3_cord)" stroke-width="10" stroke-linecap="round"/>
+        <path d="M 346.0 138.0 C 325.0 151.8 325.0 176.8 352.0 188.0 C 379.0 176.8 379.0 151.8 364.0 138.0" fill="none" stroke="#a8bcd8" stroke-width="2.4" stroke-linecap="round" opacity="0.42" transform="rotate(8 352 163) translate(-1.2 -2)"/>
       </g>
 
-      <!-- ============ the grip ============================================== -->
-      <g class="pd-grip">
-        <path d="M150 106 L232 128" fill="none" stroke="#0d1f3d" stroke-width="82" stroke-linecap="round"/>
-        <path d="M150 106 L232 128" fill="none" stroke="url(#v3_grip)" stroke-width="74" stroke-linecap="round"/>
-        <path d="M156.6 130.6 L214 146" fill="none" stroke="#0e3a7d" stroke-width="17" stroke-linecap="round" opacity="0.42"/>
-        <path d="M168 88 L225 103" fill="none" stroke="#8dc4ff" stroke-width="14" stroke-linecap="round" opacity="0.5"/>
-        <path d="M176 85 L204 92.5" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-        <!-- moulding seam down the middle of the handle -->
-        <path d="M162 108 L238 128" fill="none" stroke="#12459f" stroke-width="2.4" stroke-linecap="round" opacity="0.5"/>
-        <!-- strain-relief boot, where the cord leaves the handle -->
-        <path d="M238.2 104.8 L267.8 126.4 L262.2 147.6 L225.8 151.2 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
-        <path d="M243 111 L258 122" fill="none" stroke="#5d6b84" stroke-width="3.4" stroke-linecap="round" opacity="0.7"/>
-        <path d="M238 126 L259 133" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
-        <path d="M234 138 L258 143" fill="none" stroke="#0e131c" stroke-width="3" stroke-linecap="round" opacity="0.45"/>
-        <!-- the sticker -->
-        <g transform="translate(217 121) rotate(15)">
-          <rect x="-34" y="-18" width="68" height="36" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
-          <rect x="-30" y="-14" width="60" height="28" rx="4" fill="none" stroke="#ffc21f" stroke-width="1.6" opacity="0.75"/>
-          <text x="0" y="-2.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
-          <text x="0" y="12.5" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="12" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
-          <!-- lifted corner, because it has been in a drawer -->
-          <path d="M34 18 L34 6 L22 18 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
-        </g>
-        <path d="M196 140 q9 4 18 1" fill="none" stroke="#8dc4ff" stroke-width="2.2" stroke-linecap="round" opacity="0.35"/>
-      </g>
-
-      <!-- ============ the head: housing, chrome bezel, big red cap ========== -->
-      <g class="pd-head">
-        <circle cx="92" cy="92" r="86" fill="url(#v3_hous)" stroke="#0d1f3d" stroke-width="6"/>
-        <path d="M31 31 A86 86 0 0 1 92 6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.5"/>
-        <path d="M153 153 A86 86 0 0 1 100 177" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
-        <circle cx="24" cy="118" r="5.5" fill="#0e3a7d" opacity="0.6"/>
-        <circle cx="150" cy="42" r="5.5" fill="#0e3a7d" opacity="0.5"/>
-        <!-- chrome bezel ring -->
-        <circle cx="92" cy="92" r="72" fill="none" stroke="url(#v3_chrome)" stroke-width="13"/>
-        <circle cx="92" cy="92" r="78.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.75"/>
-        <circle cx="92" cy="92" r="65.5" fill="none" stroke="#0d1f3d" stroke-width="2.6" opacity="0.55"/>
-        <!-- the cap's contact shadow, cast down-right onto the bezel -->
-        <circle cx="99" cy="100" r="66" fill="#08111f" opacity="0.42"/>
-        <g class="pd-cap">
-          <circle cx="92" cy="92" r="66" fill="url(#v3_cap)" stroke="#6b4700" stroke-width="4"/>
-          <path d="M92 26 A66 66 0 0 1 155 74" fill="none" stroke="#ffe58a" stroke-width="6" stroke-linecap="round" opacity="0.55"/>
-          <path d="M148 130 A66 66 0 0 1 78 157" fill="none" stroke="#ffe58a" stroke-width="7" stroke-linecap="round" opacity="0.3"/>
-          <ellipse cx="70" cy="66" rx="35" ry="21" transform="rotate(-38 70 66)" fill="#fff6d0" opacity="0.4"/>
-          <ellipse cx="61" cy="55" rx="14" ry="8.5" transform="rotate(-38 61 55)" fill="#ffffff" opacity="0.78"/>
-          <g class="pd-lit" opacity="0"><circle cx="92" cy="92" r="66" fill="url(#v3_lit)"/></g>
-          <g class="pd-glint" clip-path="url(#v3_capclip)" transform="translate(-24 0)">
-            <rect x="-40" y="10" width="26" height="170" transform="rotate(-22 92 92)" fill="#ffffff" opacity="0.2"/>
+      <!-- ==== the moulded body, top face up. One silhouette: the round head and
+               the grip are a single dark outline with one plastic gradient
+               across both, so nothing reads as a separate standing part ==== -->
+      <g class="pd-body">
+        <g class="pd-grip">
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="#0d1f3d" stroke-width="88" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="82.5" fill="#0d1f3d"/>
+          <path d="M 140.0 90.0 L 240.0 116.0" fill="none" stroke="url(#v3_body)" stroke-width="80" stroke-linecap="round"/>
+          <circle cx="88" cy="86" r="78.5" fill="url(#v3_body)"/>
+          <!-- the crown of the grip catches the light; its lower-right flank falls away -->
+          <path d="M 165.5 123.5 L 229.5 140.1" fill="none" stroke="#12459f" stroke-width="16" stroke-linecap="round" opacity="0.38"/>
+          <path d="M 151.5 86.8 L 233.5 108.2" fill="none" stroke="#8dc4ff" stroke-width="34" stroke-linecap="round" opacity="0.24"/>
+          <path d="M 167.0 76.3 L 229.0 92.3" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.32"/>
+          <!-- strain-relief boot, seen from above, with its moulded ribs -->
+          <path d="M 243.3 95.2 L 295.0 117.9 L 289.0 141.1 L 232.7 135.8 Z" fill="#242c3b" stroke="#10161f" stroke-width="4.5" stroke-linejoin="round"/>
+        <path d="M 250.4 134.2 L 258.0 105.2" fill="none" stroke="#5d6b84" stroke-width="3.2" stroke-linecap="round" opacity="0.55"/>
+        <path d="M 264.4 135.9 L 271.0 110.5" fill="none" stroke="#0e131c" stroke-width="3.0" stroke-linecap="round" opacity="0.5"/>
+        <path d="M 278.4 137.7 L 284.0 115.7" fill="none" stroke="#0e131c" stroke-width="2.8" stroke-linecap="round" opacity="0.42"/>
+          <!-- the sticker, flat on the grip face -->
+          <g transform="translate(200 106) rotate(15)">
+            <rect x="-34" y="-23" width="68" height="46" rx="6" fill="#fdf4dc" stroke="#c9b489" stroke-width="2"/>
+            <rect x="-30" y="-19" width="60" height="38" rx="4" fill="none" stroke="#ffc21f" stroke-width="1.6" opacity="0.75"/>
+            <text x="0" y="-3" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TAKE A</text>
+            <text x="0" y="14" text-anchor="middle" font-family="Verdana, DejaVu Sans, Geneva, sans-serif" font-size="13.5" font-weight="700" fill="#9e1b17" letter-spacing="0.2">TURN</text>
+            <!-- lifted corner, because it has been in a drawer -->
+            <path d="M 34 23 L 34 9 L 20 23 Z" fill="#e8dcbe" stroke="#c9b489" stroke-width="1.6" stroke-linejoin="round"/>
           </g>
         </g>
-        <g class="pd-ring" opacity="0"><circle cx="92" cy="92" r="66" fill="none" stroke="#ffe882" stroke-width="6"/></g>
+
+        <!-- ==== the head, concentric from the outside in: housing collar,
+                 chrome bezel, dark shaft the cap travels in, then the cap ==== -->
+        <path d="M 18.5 67.4 A 72 72 0 0 1 106.6 16.5" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+        <path d="M 157.5 104.6 A 72 72 0 0 1 69.4 155.5" fill="none" stroke="#0e3a7d" stroke-width="9" stroke-linecap="round" opacity="0.45"/>
+        <circle cx="141.6" cy="41.0" r="6.6" fill="url(#v3_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 138.2 37.6 L 145.0 44.4 M 145.0 37.6 L 138.2 44.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="34.4" cy="131.0" r="6.6" fill="url(#v3_chrome)" stroke="#0d1f3d" stroke-width="2"/>
+        <path d="M 31.0 127.6 L 37.8 134.4 M 37.8 127.6 L 31.0 134.4" stroke="#2a3a52" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
+        <circle cx="88" cy="86" r="61" fill="none" stroke="url(#v3_chrome)" stroke-width="11"/>
+        <circle cx="88" cy="86" r="67" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.7"/>
+        <circle cx="88" cy="86" r="55.2" fill="none" stroke="#0d1f3d" stroke-width="2.4" opacity="0.55"/>
+        <!-- the shaft: a dark ring of it shows around the cap at rest, and it
+             WIDENS as the cap travels down into it -->
+        <circle cx="88" cy="86" r="53.5" fill="#0a1220"/>
+        <path d="M 135.0 103.1 A 50 50 0 0 1 79.3 135.2" fill="none" stroke="#33455f" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+        <!-- the cap floats above the shaft floor: its own shadow pools down-right -->
+        <circle cx="91.5" cy="90" r="50" fill="#04101f" opacity="0.5"/>
+        <g class="pd-cap">
+          <circle cx="88" cy="86" r="48.5" fill="url(#v3_cap)" stroke="#6b4700" stroke-width="3"/>
+          <path d="M 46.2 70.8 A 44.5 44.5 0 0 1 103.2 44.2" fill="none" stroke="#ffe58a" stroke-width="6" stroke-linecap="round" opacity="0.5"/>
+          <path d="M 129.8 101.2 A 44.5 44.5 0 0 1 72.8 127.8" fill="none" stroke="#6b4700" stroke-width="7" stroke-linecap="round" opacity="0.35"/>
+          <ellipse cx="68" cy="62" rx="25" ry="15" transform="rotate(-38 68 62)" fill="#fff6d0" opacity="0.42"/>
+          <ellipse cx="62" cy="55" rx="10" ry="6" transform="rotate(-38 62 55)" fill="#ffffff" opacity="0.8"/>
+          <g class="pd-lit" opacity="0"><circle cx="88" cy="86" r="48.5" fill="url(#v3_lit)"/></g>
+          <g class="pd-glint" clip-path="url(#v3_capclip)" transform="translate(-30 0)">
+            <rect x="24" y="14" width="20" height="144" transform="rotate(-24 88 86)" fill="#ffffff" opacity="0.18"/>
+          </g>
+        </g>
+        <g class="pd-ring" opacity="0"><circle cx="88" cy="86" r="57" fill="none" stroke="#ffe882" stroke-width="6"/></g>
       </g>
     </svg>
     <span>C &middot; cobalt grip / buzzer-yellow cap</span>
@@ -1004,62 +1045,107 @@ body {
 <div class="notes">
   <h2>Notes for the pick, and for whoever implements it</h2>
   <ul>
-    <li><b>What I committed to.</b> Cobalt plastic grip, chrome bezel, fat red
-      cap, charcoal rubber coil. The coil is <i>severed by the right edge of the
-      viewBox</i> rather than tidily terminated — that clipped cord is the whole
-      "plugged into something under the clutter" story, and it costs nothing:
-      the root SVG clips to its own viewBox, so the cut is clean at any scale.
-      Rendered ink in the <code>0 0 360 200</code> box leaves
-      <code>L 0.8% · T 1.3% · R 0% · B 1.3%</code> of dead margin, so it can go
-      into <code>items/</code> already passing <code>check-svg-ink.sh</code>
-      with no viewBox normalisation.</li>
+    <li><b>Plan view, and what carries the depth now.</b> Round 1 drew this
+      thing in &frac34; elevation; &sect;2 now makes the drawer's straight-down
+      viewpoint binding, so it is redrawn lying face-up on the floor. Nothing
+      stands, nothing recedes, there is no horizon and no side shadow. Depth is
+      spent entirely on <b>concentric radii</b> — housing collar 82.5, chrome
+      bezel 61&plusmn;5.5, the dark shaft disc 53.5, the cap 48.5 — plus one
+      light direction stated once: every gradient is
+      <code>gradientUnits="userSpaceOnUse"</code>, so a single plastic ramp runs
+      across the head <i>and</i> the grip from the upper-left and the two never
+      shade like separate parts. The cap's own contact shadow is a disc offset
+      3.5&thinsp;/&thinsp;4 down-right under it, which is why the dark ring
+      around the cap is thin at the upper-left and fat at the lower-right. The
+      cast shadow is not baked in at all: it comes from the pile's own
+      <code>drop-shadow</code>, the same one every other specimen gets, so the
+      paddle pools its shadow around its footprint exactly like the key and the
+      pencil beside it.</li>
 
-    <li><b>Tap target at drawer scale.</b> On the shared ruler
-      (<code>m</code> = box 15.5) the artwork's 1.8 aspect gives
-      <code>--w = 15.5 &times; &radic;1.8 &asymp; 20.8</code> — about
+    <li><b>What I committed to.</b> Cobalt plastic moulding, chrome bezel, fat
+      red cap, charcoal rubber coil — unchanged from round 1, only re-viewed.
+      The coil is now a <i>slack flat helix seen from above</i>, four turns
+      relaxing unevenly toward the lower right and <i>severed by the right edge
+      of the viewBox</i> rather than tidily terminated; that clipped cord is the
+      whole "plugged into something under the clutter" story, and it costs
+      nothing, because the root SVG clips to its own viewBox and the cut is
+      clean at any scale. Measured ink in the <code>0 0 360 200</code> box
+      leaves <code>L 1.5% · R 0.1% · T 1.8% · B 2.0%</code> of dead margin
+      (<code>check-svg-ink.sh</code>: "tight enough"), so it can go into
+      <code>items/</code> with no viewBox normalisation.</li>
+
+    <li><b>The press had to be re-thought, not re-timed.</b> In elevation a
+      press is a dome sinking; from above that motion is invisible, so the
+      travel is spelled out the way 8b spells it: the cap scales
+      1&nbsp;&rarr;&nbsp;0.875, which drops it down the shaft and <b>widens the
+      dark ring</b> from ~5 to ~11 user units, the gloss and specular tighten
+      with it (they are inside the same group), the lamp floods the cap, and a
+      yellow impact ring expands past the bezel. The whole moulding gives a
+      2%&nbsp;cartoon jolt — a squash seen from directly above spreads, it does
+      not flatten. The cord jiggle is now motion <i>across the floor</i>:
+      rotate-plus-slide about the strain-relief boot at
+      <code>292&thinsp;131</code>, no <code>scaleY</code> stretch, because a
+      spring that stretched vertically here would read as standing up.</li>
+
+    <li><b>Tap target at drawer scale.</b> Aspect is still exactly 1.8, so on
+      the shared ruler (<code>m</code> = box 15.5)
+      <code>--w = 15.5 &times; &radic;1.8 &asymp; 20.8</code> — measured
       <b>112 &times; 62 px</b> of ink in a desktop-sized well and <b>90 &times;
       50 px</b> in a 375px portrait well after production's &times;1.2
-      small-well band. The live figures for <i>this</i> viewport are printed
-      under the swatch above. The whole painted silhouette is the hit target, so
-      the item clears the 44px floor on both axes; the red cap <i>alone</i> is
-      ~41px desktop / ~33px phone and the blue housing ~55 / 44px. If the owner
-      wants the red cap itself to be the 44px target, file it <code>m</code>
-      with <code>sizeScale: 1.15</code>. One trap: the aspect sits
-      <i>exactly</i> on <code>SIZE.elong = 1.8</code>, so any future lengthening
-      of the cord makes the elongation cap start shrinking the whole object,
-      button included.</li>
+      small-well band; live figures for <i>this</i> viewport print under the
+      swatch above. The whole painted silhouette is the hit target, so the item
+      clears the 44px floor on both axes at both sizes. <b>The cap alone got
+      smaller in plan view</b> — ~34px desktop / ~27px phone, against ~41 / ~33
+      in the round-1 elevation — and that is not a drawing error but the
+      viewpoint being honest: foreshortening used to hide most of the grip's
+      length, and now the grip claims it. No <code>sizeScale</code> rescues
+      that at <code>m</code> (the cap alone would need ~1.8&times;); if the
+      owner wants the red disc itself to be the touch target, that is an
+      argument for 8a/8b, not a tuning knob on 8d. One trap survives: sitting
+      <i>exactly</i> on <code>SIZE.elong = 1.8</code> means any future
+      lengthening of the cord starts the elongation cap shrinking the whole
+      object, cap included.</li>
 
-    <li><b>Label legibility is this candidate's real cost.</b> The sticker is
-      two lines because one line of TAKE A TURN across a 68-unit sticker is
-      unreadable at any drawer size. Even so, at pile scale the sticker is a
-      ~21px label-shaped smudge: it says "this thing is labelled", not what the
-      label says. It only becomes words in the hero, on hover-lift, or in the
-      pick zoom (<code>--pick-scale: 1.6</code>). 8a/8b/8e all print their label
-      bigger relative to the object; if legibility in the pile is a
-      requirement, 8d loses on it and should not be rescued by shrinking the
-      cord.</li>
+    <li><b>Label legibility: better than round 1, still this candidate's real
+      cost.</b> The sticker is no longer foreshortened — it lies flat on the
+      grip face at its true 68 &times; 46 with 13.5-unit type (round 1 could
+      only afford 12 on a 68 &times; 36 parallelogram), which is a genuine ~15%
+      gain and makes it legible in the hero at a glance. At pile scale it is
+      still a <b>~23px desktop / ~18px phone label-shaped smudge</b>: it says
+      "this thing is labelled", not what the label says. It only becomes words
+      on hover-lift or in the pick zoom (<code>--pick-scale: 1.6</code>).
+      8a/8b/8e still print their label bigger relative to the object; if
+      legibility in the pile is a requirement, 8d loses on it, and it should not
+      be rescued by shrinking the cord.</li>
 
-    <li><b>Z-order and rotation are riskier here than for the round
-      candidates.</b> The coil is wide, thin ink at the far right of the box — a
-      neighbour dropped on the right third swallows it, and the object degrades
-      from "buzzer with a cord" to "a knob". Two implications: the
-      first-visit z-boost from &sect;1 matters more for 8d than for any other
-      candidate, and the scatter's rotation range should avoid roughly
-      &plusmn;70&deg;&hellip;110&deg;, which stands the coil on end and reads as
-      a spring, not a cord.</li>
+    <li><b>Silhouette and rotation — plan view fixed the worst of this.</b> The
+      outline is now one moulded body, a keyhole: circle plus tapered bar, drawn
+      as a single dark union so nothing reads as a separate standing part. Two
+      consequences. (1) <b>Rotation is free.</b> Round 1's warning — avoid
+      &plusmn;70&deg;&hellip;110&deg; because it stands the coil on end — is
+      void: from straight above, every rotation is just the paddle lying at a
+      different angle on the floor, so the scatter can use its full range like
+      any other item. (2) <b>Z-order still matters more here than for the round
+      candidates</b>: the coil is thin ink across the right third of the box, so
+      a neighbour dropped on it degrades the object from "buzzer with a cord" to
+      "a knob". The first-visit z-boost from &sect;1 earns its keep on 8d.</li>
 
     <li><b>Nothing is baked into the art.</b> No <code>&lt;script&gt;</code>, no
-      <code>on*</code>, no <code>foreignObject</code>, no external refs, and no
-      SMIL either — SMIL is allowed by the brief but it cannot be silenced by
-      <code>prefers-reduced-motion</code>, and the idle tell is exactly the
-      thing that must be silenceable. Motion is CSS on four classed groups
-      (<code>.pd-cord .pd-cap .pd-head .pd-lit/.pd-ring/.pd-glint</code>) with
+      <code>on*</code>, no <code>foreignObject</code>, no external refs, no
+      filters, and no SMIL either — SMIL is allowed by the brief but it cannot
+      be silenced by <code>prefers-reduced-motion</code>, and the idle tell is
+      exactly the thing that must be silenceable. Motion is CSS on classed
+      groups (<code>.pd-cord .pd-body .pd-cap
+      .pd-lit/.pd-ring/.pd-glint</code>) with
       <code>transform-box: view-box</code>, so origins are stated in viewBox
       units and survive the pile's rotation, scale and drag transforms
-      untouched. The two press-only layers carry a real
-      <code>opacity="0"</code> attribute, so the file opened on its own — or
-      dropped into the pile before any CSS lands — shows the resting, unlit
-      buzzer instead of a permanently glowing one.</li>
+      untouched. Under reduced motion the press does not just stop animating, it
+      becomes a <i>held pose</i> — cap parked at 0.9 down the shaft, lamp on —
+      so the travel still reads for a visitor who has switched motion off. The
+      two press-only layers carry a real <code>opacity="0"</code> attribute, so
+      the file opened on its own — or dropped into the pile before any CSS
+      lands — shows the resting, unlit buzzer instead of a permanently glowing
+      one.</li>
 
     <li><b>Watch on implementation.</b> The press animation lives on a wrapper,
       not on <code>.jd-item</code> itself — the pile already owns that element's
@@ -1109,7 +1195,7 @@ body {
   /* honest size readout: what the judge is actually looking at, in CSS pixels */
   var item = document.getElementById("drawer-item"),
       out  = document.getElementById("drawer-size"),
-      head = document.querySelector("#drawer-btn .pd-head");
+      head = document.querySelector("#drawer-btn .pd-cap > circle");
 
   function measure() {
     if (!item || !out) { return; }
@@ -1117,7 +1203,7 @@ body {
         h = head ? head.getBoundingClientRect() : null;
     out.innerHTML = "at this viewport: item ink <b>" + Math.round(r.width) +
       " &times; " + Math.round(r.height) + " px</b>" +
-      (h ? " &middot; button head <b>" + Math.round(h.width) + " px</b>" : "") +
+      (h ? " &middot; red cap <b>" + Math.round(h.width) + " px</b>" : "") +
       " &middot; 44px touch floor " + (r.width >= 44 && r.height >= 44 ? "cleared" : "MISSED");
   }
   measure();

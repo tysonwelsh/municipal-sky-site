@@ -12,16 +12,26 @@
    string tag that reads TAKE A TURN in the drawer's own specimen-tag
    language (aged manila, red cord, typewriter caps).
 
-   THE OBJECT is ONE inline SVG (viewBox 0 0 300 244, transparent, no
+   VIEWPOINT: STRICT PLAN (owner ruling, PLAN-TURN-OBJECT §2, round 1). The
+   drawer is seen from directly overhead, so the bell is drawn as concentric
+   circles down its own axis — plinth flange, dome, spun rings, collar, shaft
+   well, plunger disc — and the tag lies FLAT on the floor beside it with the
+   cord running flat from the grommet to the base. No horizon, no elevation,
+   no tilt, no side shadow: the cast shadow pools around the footprint (the
+   drawer's own drop-shadow, same filter the other pile items get).
+
+   THE OBJECT is ONE inline SVG (viewBox 0 0 300 236, transparent, no
    <script>, no on* handlers, no foreignObject, no external refs, no SMIL).
    It is written to be lifted straight out of this file as the production
-   pile asset. Every moving part is a NAMED GROUP that the page's CSS drives:
-       .sb-plunger      — taps down and squashes (origin 134,74 = collar)
-       .sb-dome         — the shiver, rotating about its seat (134,204)
-       .sb-tag          — lags/swings about the grommet (its own 12.7%,50%)
-       .sb-base         — a token squash, origin (134,240) = the felt line
-       .sb-ring--near   — inner ding line   (origin 134,120 = the bell's heart)
-       .sb-ring--far    — outer ding line, later and wider
+   pile asset. Every moving part is a NAMED GROUP that the page's CSS drives,
+   and every one of them shares the bell's axis at 94,142:
+       .sb-plunger      — the disc: shrinks (= drops into the well)
+       .sb-plunger-dark — the disc taking its own well's shadow
+       .sb-refl         — the dome's reflections, rotational shiver
+       .sb-tag          — pivots flat about its grommet (its own 14.8%,50%)
+       .sb-base         — one small uniform jolt of the whole footprint
+       .sb-ring--near   — inner ding circle
+       .sb-ring--far    — outer ding circle, later and wider
    The press interaction lives in page JS; the idle tell is page CSS, NOT
    SMIL — precisely so `prefers-reduced-motion` can switch it off. A SMIL
    animation baked into the asset could not be. (Same call 8a made.)
@@ -103,8 +113,10 @@ body {
   cursor: pointer;
   outline: none;
   /* the drawer gives every item this shadow; the hero borrows it so the
-     object is judged sitting on something rather than floating */
-  filter: drop-shadow(6px 9px 7px rgba(22, 11, 4, 0.32));
+     object is judged lying on something rather than floating. Plan view, so
+     it is a POOL around the footprint with only a small push toward the
+     drawer's light direction — never a shadow cast off to one side. */
+  filter: drop-shadow(4px 6px 9px rgba(22, 11, 4, 0.34));
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -120,84 +132,106 @@ body {
 /* ---------------- the object's own moving parts -------------------------- */
 /* One behaviour spec, applied to EVERY copy of the SVG on the page (hero,
    drawer, variants). The asset carries the structure; the page carries the
-   motion. */
+   motion. PLAN VIEW: the viewer is directly overhead, so nothing here may
+   translate downward to fake depth — travel is radius, shadow-ring width and
+   value only (the 8b technique). Every animated part shares ONE origin, the
+   bell's centre at 94,142, because from above that is the axis of the whole
+   machine. */
 .sb { display: block; width: 100%; height: auto; overflow: visible; }
-.sb-plunger, .sb-dome, .sb-base, .sb-ring { transform-box: view-box; }
-.sb-plunger { transform-origin: 134px 74px; }    /* the collar it sinks into */
-.sb-dome    { transform-origin: 134px 204px; }   /* the skirt's seat line */
-.sb-base    { transform-origin: 134px 240px; }   /* the felt line */
-.sb-ring    { transform-origin: 134px 120px; }   /* the bell's heart */
+.sb-plunger, .sb-plunger-dark, .sb-refl, .sb-base, .sb-ring {
+  transform-box: view-box;
+  transform-origin: 86px 148px;
+}
 /* The tag is the one part carrying a placement `transform` ATTRIBUTE, and a
    CSS transform would replace it outright — so the attribute lives on a
-   static seat group and .sb-tag is the empty child inside it, swinging in
-   its own local space. fill-box + a percentage origin puts that swing on the
-   grommet (local 16,32 of a 110×64 box) without any viewBox arithmetic. */
-.sb-tag     { transform-box: fill-box; transform-origin: 12.7% 50%; }
+   static seat group and .sb-tag is the child inside it, pivoting in its own
+   local space. fill-box + a percentage origin puts that pivot on the grommet
+   (local 20,36 of a 2..124 × 0..72 ink box) with no viewBox arithmetic. */
+.sb-tag { transform-box: fill-box; transform-origin: 14.8% 50%; }
 
-/* PRESS — the plunger taps, the dome shivers side to side, two ding lines
-   go out. Slower and softer than a buzzer's slam: this is a counter bell,
-   the whole point of the candidate is that it is the gentle one. */
-@keyframes sbPlunger {
-  0%   { transform: translateY(0)    scale(1, 1); }
-  9%   { transform: translateY(14px) scale(1.10, 0.82); }
-  26%  { transform: translateY(11px) scale(1.06, 0.90); }
-  52%  { transform: translateY(0)    scale(0.97, 1.05); }
-  72%  { transform: translateY(2px)  scale(1.02, 0.98); }
-  100% { transform: translateY(0)    scale(1, 1); }
+/* PRESS, seen from above ---------------------------------------------------
+   1. the plunger DROPS: its disc shrinks and darkens, and because the dark
+      shaft well behind it is a fixed r26, the shadow ring around it widens
+      from 3 to ~7 user units on its own — travel with zero tilt;
+   2. the dome SHIVERS rotationally: its reflection group swims a few degrees
+      either way about the same axis (a chrome dome struck from above does not
+      slide sideways, its highlights swing);
+   3. the DING radiates as two concentric circles growing out of the centre
+      across the drawer floor.
+   Slower and softer than a buzzer's slam: this is a counter bell, and the
+   whole point of the candidate is that it is the gentle one. */
+@keyframes sbPlunge {
+  0%   { transform: scale(1); }
+  13%  { transform: scale(0.79); }
+  42%  { transform: scale(0.83); }
+  72%  { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
+@keyframes sbPlungeDark {
+  0%   { opacity: 0; }
+  13%  { opacity: 0.46; }
+  42%  { opacity: 0.38; }
+  100% { opacity: 0; }
 }
 @keyframes sbShiver {
-  0%   { transform: rotate(0deg)    scale(1, 1); }
-  9%   { transform: rotate(0.4deg)  scale(1.035, 0.965); }
-  20%  { transform: rotate(3.1deg)  scale(1.01, 0.99); }
-  34%  { transform: rotate(-2.4deg); }
-  47%  { transform: rotate(1.7deg); }
-  60%  { transform: rotate(-1.1deg); }
-  73%  { transform: rotate(0.6deg); }
-  86%  { transform: rotate(-0.25deg); }
-  100% { transform: rotate(0deg)    scale(1, 1); }
-}
-@keyframes sbTagSwing {
   0%   { transform: rotate(0deg); }
-  16%  { transform: rotate(-3.6deg); }
-  36%  { transform: rotate(2.6deg); }
-  56%  { transform: rotate(-1.5deg); }
-  76%  { transform: rotate(0.7deg); }
+  11%  { transform: rotate(4.4deg); }
+  27%  { transform: rotate(-3.4deg); }
+  44%  { transform: rotate(2.2deg); }
+  61%  { transform: rotate(-1.3deg); }
+  79%  { transform: rotate(0.6deg); }
   100% { transform: rotate(0deg); }
 }
-@keyframes sbBaseSquash {
-  0%   { transform: scale(1, 1); }
-  9%   { transform: scale(1.028, 0.972); }
-  40%  { transform: scale(0.994, 1.008); }
-  100% { transform: scale(1, 1); }
+/* the tag is lying flat on the floor: the jolt nudges it about its grommet,
+   a pivot IN the floor plane — not a swing out of it */
+@keyframes sbTagNudge {
+  0%   { transform: rotate(0deg); }
+  16%  { transform: rotate(-2.1deg); }
+  38%  { transform: rotate(1.5deg); }
+  60%  { transform: rotate(-0.8deg); }
+  80%  { transform: rotate(0.35deg); }
+  100% { transform: rotate(0deg); }
 }
+/* from overhead a struck bell cannot squash vertically — it gives one small
+   uniform jolt of its whole footprint instead */
+@keyframes sbBaseJolt {
+  0%   { transform: scale(1); }
+  11%  { transform: scale(1.014); }
+  40%  { transform: scale(0.996); }
+  100% { transform: scale(1); }
+}
+/* the ding rings are born at the dome's own edge (r80 × 0.86 ≈ the r70 dome
+   plus its flange) and travel OUTWARD across the floor — they never sit on
+   top of the dome pretending to be a highlight */
 @keyframes sbRingNear {
-  0%   { opacity: 0;    transform: scale(0.58); }
-  10%  { opacity: 1;    transform: scale(0.95); }
-  46%  { opacity: 0;    transform: scale(1.16); }
-  100% { opacity: 0;    transform: scale(1.16); }
+  0%   { opacity: 0;    transform: scale(0.92); }
+  9%   { opacity: 1;    transform: scale(1.05); }
+  58%  { opacity: 0;    transform: scale(1.50); }
+  100% { opacity: 0;    transform: scale(1.50); }
 }
 @keyframes sbRingFar {
-  0%,  14% { opacity: 0;    transform: scale(0.66); }
-  30%      { opacity: 0.92; transform: scale(1); }
-  70%      { opacity: 0;    transform: scale(1.2); }
-  100%     { opacity: 0;    transform: scale(1.2); }
+  0%, 17% { opacity: 0;    transform: scale(0.98); }
+  32%     { opacity: 0.92; transform: scale(1.25); }
+  80%     { opacity: 0;    transform: scale(1.85); }
+  100%    { opacity: 0;    transform: scale(1.85); }
 }
-.is-pressed .sb-plunger { animation: sbPlunger    0.66s cubic-bezier(.28,.86,.36,1); }
-.is-pressed .sb-dome    { animation: sbShiver     0.66s cubic-bezier(.25,.72,.4,1); }
-.is-pressed .sb-tag     { animation: sbTagSwing   0.66s cubic-bezier(.25,.72,.4,1); }
-.is-pressed .sb-base    { animation: sbBaseSquash 0.66s cubic-bezier(.28,.86,.36,1); }
-.is-pressed .sb-ring--near { animation: sbRingNear 0.66s ease-out; }
-.is-pressed .sb-ring--far  { animation: sbRingFar  0.66s ease-out; }
+.is-pressed .sb-plunger      { animation: sbPlunge     0.66s cubic-bezier(.28,.86,.36,1); }
+.is-pressed .sb-plunger-dark { animation: sbPlungeDark 0.66s cubic-bezier(.28,.86,.36,1); }
+.is-pressed .sb-refl         { animation: sbShiver     0.66s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .sb-tag          { animation: sbTagNudge   0.66s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .sb-base         { animation: sbBaseJolt   0.66s cubic-bezier(.28,.86,.36,1); }
+.is-pressed .sb-ring--near   { animation: sbRingNear   0.66s ease-out; }
+.is-pressed .sb-ring--far    { animation: sbRingFar    0.66s ease-out; }
 
-/* IDLE TELL — one faint ding line, on its own, every ~9s. The quietest of
-   the five idle tells by design; it is the same near ring the press uses,
-   run at a third of the opacity and half the speed, so the vocabulary is
-   consistent: this object's only language is "ring". */
+/* IDLE TELL — one faint concentric ring off the centre every ~9s. The
+   quietest of the five idle tells by design; it is the same near ring the
+   press uses, run at a third of the opacity and half the speed, so the
+   vocabulary is consistent: this object's only language is "ring". */
 @keyframes sbIdlePing {
-  0%,  88%  { opacity: 0;    transform: scale(0.62); }
-  92%       { opacity: 0.42; transform: scale(0.92); }
-  99%       { opacity: 0;    transform: scale(1.12); }
-  100%      { opacity: 0;    transform: scale(1.12); }
+  0%,  88%  { opacity: 0;    transform: scale(0.94); }
+  92%       { opacity: 0.44; transform: scale(1.08); }
+  99%       { opacity: 0;    transform: scale(1.44); }
+  100%      { opacity: 0;    transform: scale(1.44); }
 }
 .sb-ring--near { animation: sbIdlePing 9s linear infinite; }
 /* instances offset so the page does not ping in unison */
@@ -208,18 +242,20 @@ body {
 @media (prefers-reduced-motion: reduce) {
   /* no ping at all, and the press becomes a DISCRETE state (held ~320ms by
      the JS, then dropped) rather than a spring — motion reduced, feedback
-     kept: a press must still be unmistakably acknowledged. */
+     kept: a press must still be unmistakably acknowledged. Held plan-view
+     pose: plunger down (small + dark, wide shadow ring), both rings out. */
   .sb-ring--near { animation: none; opacity: 0; }
   .is-pressed .sb-plunger,
-  .is-pressed .sb-dome,
+  .is-pressed .sb-plunger-dark,
+  .is-pressed .sb-refl,
   .is-pressed .sb-tag,
   .is-pressed .sb-base,
   .is-pressed .sb-ring--near,
   .is-pressed .sb-ring--far { animation: none; }
-  .is-pressed .sb-plunger    { transform: translateY(12px) scale(1.06, 0.88); }
-  .is-pressed .sb-dome       { transform: scale(1.02, 0.98); }
-  .is-pressed .sb-ring--near { opacity: 1; }
-  .is-pressed .sb-ring--far  { opacity: 0.85; }
+  .is-pressed .sb-plunger      { transform: scale(0.81); }
+  .is-pressed .sb-plunger-dark { opacity: 0.44; }
+  .is-pressed .sb-ring--near   { opacity: 1;    transform: scale(1.04); }
+  .is-pressed .sb-ring--far    { opacity: 0.85; transform: scale(1.38); }
 }
 
 /* ---------------- IN-CONTEXT: the real drawer, the real ruler ------------ */
@@ -362,18 +398,21 @@ body {
   <p class="mock-intro">
     A chrome counter bell with its plunger, wearing a manila string tag that
     reads TAKE A TURN — the drawer's own specimen-tag language, tied to
-    hardware instead of art.
+    hardware instead of art. Drawn in strict plan view: you are looking
+    straight down into the drawer at it, tag lying flat alongside.
   </p>
-  <p class="mock-meta">PLAN-TURN-OBJECT §2 · candidate 8c · label placeholder: TAKE A TURN</p>
+  <p class="mock-meta">PLAN-TURN-OBJECT §2 · candidate 8c · plan view · label placeholder: TAKE A TURN</p>
 </div>
 
 <!-- ======================= HERO ======================= -->
 <div class="wrap">
   <h2 class="sec-head">1 · The object</h2>
   <p class="sec-sub">
-    Click, tap, or focus it and press Enter or Space. The plunger taps, the
-    dome shivers, two ding lines go out. Left alone it lets one faint ring
-    line off every nine seconds.
+    Click, tap, or focus it and press Enter or Space. Seen from above, the
+    plunger disc drops — it shrinks, darkens, and the dark ring of the shaft
+    widens around it — the dome's reflections shiver a few degrees either
+    way, and two ding circles race out across the floor. Left alone it lets
+    one faint ring off every nine seconds.
   </p>
 </div>
 <div class="wrap">
@@ -387,152 +426,183 @@ body {
 <!-- ids are prefixed sb_ so the page's copier can re-prefix each instance. -->
 <!-- ===================================================================== -->
 <svg id="sb-master" class="sb" xmlns="http://www.w3.org/2000/svg"
-     viewBox="0 0 300 244" role="img"
-     aria-label="A chrome counter bell with a manila tag reading TAKE A TURN">
+     viewBox="0 0 300 236" role="img"
+     aria-label="A chrome counter bell seen from directly above, its manila tag reading TAKE A TURN lying flat on the floor beside it">
   <defs>
-    <!-- the chrome ramp: white, sky, the dark horizon band, bounce, floor.
-         objectBoundingBox units, so dome / knob / collar each get their own
-         vertical ramp from one definition. Stop classes are the variant
-         hooks (see the var-brass / var-cherry rules in the page CSS). -->
-    <linearGradient id="sb_metal" x1="0.16" y1="0" x2="0.46" y2="1">
+    <!-- PLAN VIEW gradients are RADIAL, not vertical ramps: from overhead a
+         turned chrome dome is a disc lit from the drawer's upper left, so the
+         light falls off in RADIUS, not in height. Stop classes are the
+         variant hooks (see the var-brass / var-cherry rules in the page CSS). -->
+    <radialGradient id="sb_metal" cx="0.34" cy="0.30" r="0.80">
       <stop class="sb-c0" offset="0"    stop-color="#ffffff"/>
-      <stop class="sb-c1" offset="0.16" stop-color="#dcebf5"/>
-      <stop class="sb-c2" offset="0.40" stop-color="#a8bfd0"/>
-      <stop class="sb-c3" offset="0.56" stop-color="#5d7488"/>
-      <stop class="sb-c4" offset="0.66" stop-color="#8fa7b9"/>
-      <stop class="sb-c5" offset="0.84" stop-color="#6e8598"/>
+      <stop class="sb-c1" offset="0.18" stop-color="#dcebf5"/>
+      <stop class="sb-c2" offset="0.42" stop-color="#a8bfd0"/>
+      <stop class="sb-c3" offset="0.60" stop-color="#5d7488"/>
+      <stop class="sb-c4" offset="0.74" stop-color="#8fa7b9"/>
+      <stop class="sb-c5" offset="0.88" stop-color="#6e8598"/>
       <stop class="sb-c6" offset="1"    stop-color="#445769"/>
-    </linearGradient>
-    <linearGradient id="sb_plinth" x1="0.2" y1="0" x2="0.5" y2="1">
+    </radialGradient>
+    <radialGradient id="sb_plinth" cx="0.32" cy="0.28" r="0.82">
       <stop class="sb-d0" offset="0"    stop-color="#eaf2f8"/>
-      <stop class="sb-d1" offset="0.5"  stop-color="#9db2c3"/>
+      <stop class="sb-d1" offset="0.55" stop-color="#9db2c3"/>
       <stop class="sb-d2" offset="1"    stop-color="#4f6577"/>
-    </linearGradient>
-    <linearGradient id="sb_face" x1="0.1" y1="0" x2="0.7" y2="1">
+    </radialGradient>
+    <radialGradient id="sb_face" cx="0.30" cy="0.26" r="0.86">
       <stop class="sb-f0" offset="0" stop-color="#f4f9fd"/>
       <stop class="sb-f1" offset="1" stop-color="#b7c8d6"/>
-    </linearGradient>
+    </radialGradient>
+    <!-- the shaft the plunger travels down: a hole, so it is dark at the wall
+         and darkest where the plunger meets it -->
+    <radialGradient id="sb_well" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"    stop-color="#22303b"/>
+      <stop offset="0.72" stop-color="#1a2731"/>
+      <stop offset="1"    stop-color="#0b1319"/>
+    </radialGradient>
     <linearGradient id="sb_paper" x1="0" y1="0" x2="0.5" y2="1">
       <stop offset="0" stop-color="#f3e7c0"/>
       <stop offset="1" stop-color="#d9c58e"/>
     </linearGradient>
-    <clipPath id="sb_domeclip">
-      <path d="M32 202 C32 130 68 64 134 64 C200 64 236 130 236 202
-               C236 217 32 217 32 202 Z"/>
-    </clipPath>
+    <clipPath id="sb_domeclip"><circle cx="86" cy="148" r="70"/></clipPath>
   </defs>
 
-  <!-- the DING. Behind the bell, opacity 0 at rest as a presentation
-       attribute so the asset is correct even with no stylesheet at all.
-       Two rings: near (r 120, inside the box) and far (r 148, which leaves
-       the box at the top — see notes). Each arc is inked dark and capped
-       with warm cream so it reads on the wood as well as on paper. -->
-  <g class="sb-rings" pointer-events="none" fill="none" stroke-linecap="round">
+  <!-- ============ the tag, LYING FLAT on the drawer floor ================
+       Aged manila, punched grommet, typewriter caps — the drawer's own
+       specimen-tag language, read from above like everything else in the
+       pile. This is the whole argument for 8c: it says what the object is
+       in the drawer's handwriting. -->
+  <g transform="translate(188 72) rotate(-20) translate(-20 -36)">
+   <g class="sb-tag">
+    <path d="M34 0 H118 q6 0 6 6 V66 q0 6 -6 6 H34 L2 44 V28 Z
+             M20 36 m-8 0 a8 8 0 1 0 16 0 a8 8 0 1 0 -16 0"
+          fill-rule="evenodd" fill="url(#sb_paper)"
+          stroke="#7c5f2c" stroke-width="3.2" stroke-linejoin="round"/>
+    <circle cx="20" cy="36" r="8" fill="none" stroke="#a98436" stroke-width="3"/>
+    <!-- foxing + a crease, so the manila is aged, not just beige -->
+    <path d="M38 8 L112 8"  stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
+    <path d="M38 64 L112 64" stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
+    <ellipse cx="104" cy="18" rx="10" ry="5.5" fill="#c7a869" opacity="0.28"/>
+    <ellipse cx="46" cy="58" rx="8" ry="4.5" fill="#c7a869" opacity="0.22"/>
+    <text x="76" y="32" text-anchor="middle" fill="#3a2a12"
+          font-family="Courier New, Courier, monospace" font-weight="bold"
+          font-size="18" letter-spacing="1.3">TAKE A</text>
+    <text x="76" y="55" text-anchor="middle" fill="#3a2a12"
+          font-family="Courier New, Courier, monospace" font-weight="bold"
+          font-size="18" letter-spacing="1.3">TURN</text>
+   </g>
+  </g>
+
+  <!-- ============ the red cord, also flat on the floor ==================
+       Knotted through the grommet, slack across the boards, and disappearing
+       UNDER the bell's plinth (it is drawn before the bell, so the base
+       covers its end — from above that is exactly how a tied-on tag reads).
+       Same #b3402f the drawer's picked-item elastic uses. -->
+  <g fill="none" stroke-linecap="round">
+    <path d="M188 72 C193 92 178 100 168 102 C156 105 148 112 138 116"
+          stroke="#8d2b1e" stroke-width="8"/>
+    <path d="M188 72 C193 92 178 100 168 102 C156 105 148 112 138 116"
+          stroke="#b3402f" stroke-width="5"/>
+    <path d="M186 78 C189 92 177 97 168 99 C158 101 151 108 143 113"
+          stroke="#e08575" stroke-width="1.6" opacity="0.75"/>
+    <!-- the knot: one flat loop through the punched hole -->
+    <ellipse cx="188" cy="72" rx="13" ry="9" transform="rotate(-20 188 72)"
+             stroke="#8d2b1e" stroke-width="6"/>
+    <ellipse cx="188" cy="72" rx="13" ry="9" transform="rotate(-20 188 72)"
+             stroke="#b3402f" stroke-width="4"/>
+  </g>
+
+  <!-- ============ THE BELL, straight down the axis =======================
+       Concentric, outside in: plinth flange → dome → spun rings → collar →
+       shaft well → plunger disc. No silhouette, no skirt, no horizon line —
+       the only depth cue is radius, value and the width of the dark ring
+       around the plunger. -->
+  <g class="sb-base">
+    <!-- the plinth flange the bell stands on, its rim catching the light
+         top-left and going into shade bottom-right -->
+    <circle cx="86" cy="148" r="82" fill="url(#sb_plinth)"
+            stroke="#26333f" stroke-width="4"/>
+    <circle cx="86" cy="148" r="76.5" fill="none" stroke="#26333f"
+            stroke-width="1.4" opacity="0.35"/>
+    <path d="M7.5 148 A78.5 78.5 0 0 1 86 69.5" fill="none"
+          stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.6"/>
+    <path d="M164.5 148 A78.5 78.5 0 0 1 86 226.5" fill="none"
+          stroke="#1b2a36" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+    <!-- the warm bounce the drawer's wood throws back onto the flange -->
+    <path d="M153.1 183.7 A76 76 0 0 1 86 224" fill="none"
+          stroke="#e3ae63" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+
+    <!-- the dome: one big soft disc. Read as a hemisphere purely by the
+         radial falloff and the ring of highlights inside it. -->
+    <circle cx="86" cy="148" r="70" fill="url(#sb_metal)"
+            stroke="#26333f" stroke-width="4.5"/>
+    <g clip-path="url(#sb_domeclip)">
+      <!-- everything that swims when the bell is struck -->
+      <g class="sb-refl">
+        <!-- the window, cartooned into one soft blob, and its hot spot -->
+        <ellipse cx="56" cy="112" rx="27" ry="15" transform="rotate(-40 56 112)"
+                 fill="#ffffff" opacity="0.55"/>
+        <ellipse cx="47" cy="103" rx="10" ry="6" transform="rotate(-40 47 103)"
+                 fill="#ffffff" opacity="0.92"/>
+        <!-- specular crescent around the lit shoulder -->
+        <path d="M25 148 A61 61 0 0 1 86 87" fill="none"
+              stroke="#ffffff" stroke-width="6.5" stroke-linecap="round" opacity="0.5"/>
+        <!-- the dark band a chrome dome always reflects on its far side:
+             this is what makes chrome read as chrome from above -->
+        <path d="M147 148 A61 61 0 0 1 86 209" fill="none"
+              stroke="#2b4155" stroke-width="8.5" stroke-linecap="round" opacity="0.24"/>
+        <!-- the drawer's warm bounce along the shaded flank -->
+        <path d="M145.2 169.5 A63 63 0 0 1 64.5 207.2" fill="none"
+              stroke="#e3ae63" stroke-width="9" stroke-linecap="round" opacity="0.5"/>
+      </g>
+      <!-- spun-metal turning rings: static, and the plainest statement in
+           the drawing that we are looking down a lathe axis -->
+      <circle cx="86" cy="148" r="57" fill="none" stroke="#2b4155" stroke-width="1.5" opacity="0.16"/>
+      <circle cx="86" cy="148" r="46" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.20"/>
+      <circle cx="86" cy="148" r="35" fill="none" stroke="#2b4155" stroke-width="1.5" opacity="0.16"/>
+    </g>
+
+    <!-- the collar the plunger passes through -->
+    <circle cx="86" cy="148" r="31" fill="url(#sb_face)"
+            stroke="#26333f" stroke-width="3.5"/>
+    <path d="M58.1 145.6 A28 28 0 0 1 88.4 120.2" fill="none"
+          stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- the shaft well. The plunger sits IN this; when it drops, the plunger
+         disc shrinks and this dark ring widens around it. That widening ring
+         is the entire travel cue — 8b's technique, no tilt anywhere. -->
+    <circle cx="86" cy="148" r="26" fill="url(#sb_well)"/>
+    <path d="M61.5 148 A24.5 24.5 0 0 1 86 123.5" fill="none"
+          stroke="#050d12" stroke-width="4" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- the plunger disc: the thing you actually push, dead centre -->
+    <g class="sb-plunger">
+      <circle cx="86" cy="148" r="20" fill="url(#sb_face)"
+              stroke="#26333f" stroke-width="3"/>
+      <circle cx="86" cy="148" r="13" fill="none" stroke="#2b4155"
+              stroke-width="1.4" opacity="0.3"/>
+      <path d="M69.8 145.1 A16.5 16.5 0 0 1 88.9 131.7" fill="none"
+            stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" opacity="0.7"/>
+      <ellipse cx="78" cy="140" rx="7" ry="4.4" transform="rotate(-40 78 140)"
+               fill="#ffffff" opacity="0.85"/>
+      <!-- the disc going into the shadow of its own well as it drops -->
+      <circle class="sb-plunger-dark" cx="86" cy="148" r="20"
+              fill="#0b1319" opacity="0"/>
+    </g>
+  </g>
+
+  <!-- ============ the DING ==============================================
+       Concentric circles racing out from the bell's centre across the floor.
+       opacity 0 at rest as a presentation ATTRIBUTE, so the asset is correct
+       with no stylesheet at all, and pointer-events none so an invisible
+       shape never steals a hit test. Each ring is inked dark and capped with
+       warm cream, so it reads on wood as well as on paper. -->
+  <g class="sb-rings" pointer-events="none" fill="none">
     <g class="sb-ring sb-ring--near" opacity="0">
-      <path d="M18.7 86.9 A120 120 0 0 1 75.8 15.1"  stroke="#26333f" stroke-width="13"/>
-      <path d="M249.3 86.9 A120 120 0 0 0 192.2 15.1" stroke="#26333f" stroke-width="13"/>
-      <path d="M18.7 86.9 A120 120 0 0 1 75.8 15.1"  stroke="#ffdd7a" stroke-width="6.5"/>
-      <path d="M249.3 86.9 A120 120 0 0 0 192.2 15.1" stroke="#ffdd7a" stroke-width="6.5"/>
+      <circle cx="86" cy="148" r="80" stroke="#26333f" stroke-width="13"/>
+      <circle cx="86" cy="148" r="80" stroke="#ffdd7a" stroke-width="6.5"/>
     </g>
     <g class="sb-ring sb-ring--far" opacity="0">
-      <path d="M-5.1 69.4 A148 148 0 0 1 64.5 -10.7"  stroke="#26333f" stroke-width="11"/>
-      <path d="M273.1 69.4 A148 148 0 0 0 203.5 -10.7" stroke="#26333f" stroke-width="11"/>
-      <path d="M-5.1 69.4 A148 148 0 0 1 64.5 -10.7"  stroke="#ffe9a6" stroke-width="5"/>
-      <path d="M273.1 69.4 A148 148 0 0 0 203.5 -10.7" stroke="#ffe9a6" stroke-width="5"/>
-    </g>
-  </g>
-
-  <!-- the plinth: squat chrome cylinder. Drawn as one silhouette
-       (back half of the top ellipse, sides, front half of the bottom
-       ellipse) so the ink line never doubles on itself. -->
-  <g class="sb-base">
-    <path d="M4 196 a130 22 0 0 1 260 0 v22 a130 22 0 0 1 -260 0 z"
-          fill="url(#sb_plinth)" stroke="#26333f" stroke-width="4" stroke-linejoin="round"/>
-    <ellipse cx="134" cy="196" rx="130" ry="22" fill="url(#sb_face)"
-             stroke="#26333f" stroke-width="4"/>
-    <!-- rim bevel + the warm bounce the wood throws back up at it -->
-    <ellipse cx="134" cy="196" rx="118" ry="17" fill="none"
-             stroke="#ffffff" stroke-width="3" opacity="0.5"/>
-    <path d="M18 214 C50 236 218 236 250 214" fill="none"
-          stroke="#e3ae63" stroke-width="8" stroke-linecap="round" opacity="0.5"/>
-    <path d="M22 200 C34 214 42 218 54 222" fill="none"
-          stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.72"/>
-  </g>
-
-  <!-- the bell itself. Everything that shivers lives in here,
-       including the cord and the tag, so the tag can never detach from
-       the collar it is tied to. -->
-  <g class="sb-dome">
-    <path d="M32 202 C32 130 68 64 134 64 C200 64 236 130 236 202
-             C236 217 32 217 32 202 Z"
-          fill="url(#sb_metal)" stroke="#26333f" stroke-width="4.5" stroke-linejoin="round"/>
-    <g clip-path="url(#sb_domeclip)">
-      <!-- the big soft reflection: the window, cartooned into one blob -->
-      <ellipse cx="84" cy="126" rx="24" ry="41" transform="rotate(-25 84 126)"
-               fill="#ffffff" opacity="0.85"/>
-      <ellipse cx="108" cy="98" rx="9" ry="15" transform="rotate(-25 108 98)"
-               fill="#ffffff" opacity="0.6"/>
-      <!-- rim light down the shaded side -->
-      <path d="M219 172 C231 142 222 106 203 84" fill="none"
-            stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.45"/>
-      <!-- the drawer's warm bounce along the skirt -->
-      <path d="M48 189 C80 207 188 207 220 189" fill="none"
-            stroke="#e3ae63" stroke-width="10" stroke-linecap="round" opacity="0.5"/>
-      <!-- the horizon: what makes chrome read as chrome -->
-      <path d="M38 152 C76 168 192 168 230 152" fill="none"
-            stroke="#2b4155" stroke-width="9" stroke-linecap="round" opacity="0.2"/>
-    </g>
-    <!-- the collar the plunger sinks into, and the cord's anchor -->
-    <ellipse cx="134" cy="73" rx="27" ry="9" fill="url(#sb_metal)"
-             stroke="#26333f" stroke-width="4"/>
-
-    <!-- the plunger: taps down, squashes, comes back -->
-    <g class="sb-plunger">
-      <rect x="120" y="30" width="28" height="42" rx="9"
-            fill="url(#sb_metal)" stroke="#26333f" stroke-width="4"/>
-      <rect x="98" y="4" width="72" height="40" rx="20"
-            fill="url(#sb_metal)" stroke="#26333f" stroke-width="4.5"/>
-      <ellipse cx="120" cy="16" rx="15" ry="7" transform="rotate(-12 120 16)"
-               fill="#ffffff" opacity="0.85"/>
-      <path d="M110 36 C124 42 148 42 160 35" fill="none"
-            stroke="#2b4155" stroke-width="5" stroke-linecap="round" opacity="0.25"/>
-    </g>
-
-    <!-- the red cord: knotted round the collar, over the shoulder,
-         through the grommet. Same #b3402f the drawer's elastic uses. -->
-    <ellipse cx="134" cy="73" rx="31" ry="11" fill="none"
-             stroke="#8d2b1e" stroke-width="6"/>
-    <ellipse cx="134" cy="73" rx="31" ry="11" fill="none"
-             stroke="#b3402f" stroke-width="4"/>
-    <path d="M163 77 C190 98 175 140 195 181" fill="none"
-          stroke="#8d2b1e" stroke-width="8" stroke-linecap="round"/>
-    <path d="M163 77 C190 98 175 140 195 181" fill="none"
-          stroke="#b3402f" stroke-width="5" stroke-linecap="round"/>
-    <path d="M167 82 C186 100 178 132 190 158" fill="none"
-          stroke="#e08575" stroke-width="1.8" stroke-linecap="round" opacity="0.8"/>
-
-    <!-- the specimen tag: aged manila, punched grommet, typewriter
-         caps. This is the whole argument for 8c — it says what the object
-         is in the drawer's own handwriting. -->
-    <g transform="translate(188 148) rotate(15)">
-     <g class="sb-tag">
-      <path d="M30 0 H106 q6 0 6 6 V58 q0 6 -6 6 H30 L2 40 V24 Z
-               M16 32 m-7 0 a7 7 0 1 0 14 0 a7 7 0 1 0 -14 0"
-            fill-rule="evenodd" fill="url(#sb_paper)"
-            stroke="#7c5f2c" stroke-width="3.2" stroke-linejoin="round"/>
-      <circle cx="16" cy="32" r="7" fill="none" stroke="#a98436" stroke-width="3"/>
-      <!-- foxing + a crease, so the manila is aged, not just beige -->
-      <path d="M34 6 L104 6" stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
-      <path d="M34 58 L104 58" stroke="#c2ab74" stroke-width="1.6" opacity="0.8"/>
-      <ellipse cx="96" cy="16" rx="9" ry="5" fill="#c7a869" opacity="0.28"/>
-      <ellipse cx="42" cy="52" rx="7" ry="4" fill="#c7a869" opacity="0.22"/>
-      <text x="69" y="30" text-anchor="middle" fill="#3a2a12"
-            font-family="Courier New, Courier, monospace" font-weight="bold"
-            font-size="18" letter-spacing="1.4">TAKE A</text>
-      <text x="69" y="52" text-anchor="middle" fill="#3a2a12"
-            font-family="Courier New, Courier, monospace" font-weight="bold"
-            font-size="18" letter-spacing="1.4">TURN</text>
-     </g>
+      <circle cx="86" cy="148" r="80" stroke="#26333f" stroke-width="10"/>
+      <circle cx="86" cy="148" r="80" stroke="#ffe9a6" stroke-width="4.5"/>
     </g>
   </g>
 </svg>
@@ -634,13 +704,15 @@ body {
             </svg>
           </div>
 
-          <!-- THE BELL — filed medium (box 15.5), aspect 300/244 = 1.2295
-               → w = 15.5 · √1.2295 = 17.19 cqmin. Scattered lower-left and
+          <!-- THE BELL — filed medium (box 15.5), aspect 300/236 = 1.2712
+               → w = 15.5 · √1.2712 = 17.47 cqmin. Scattered lower-left and
                boosted to the top of the z-order per §1. The SVG is cloned
-               from the hero at load with its ids re-prefixed. -->
+               from the hero at load with its ids re-prefixed. --rot is the
+               pile's flat spin about the drawer's vertical axis — in plan
+               view that is the only rotation an object can have. -->
           <div class="ctx-item ctx-item--turn sb-host" id="ctx-turn"
                role="button" tabindex="0" aria-label="Take a turn"
-               style="--w: 17.19; --rot: -6deg; left: 33%; top: 64%;"></div>
+               style="--w: 17.47; --rot: -6deg; left: 33%; top: 64%;"></div>
 
         </div>
         <div class="ctx-varnish"></div>
@@ -651,7 +723,7 @@ body {
   <p class="ctx-cap">
     Bell rendered width right now: <b id="ctx-px">—</b> ·
     hit box: <b id="ctx-box">—</b> ·
-    tag ink alone: <b id="ctx-tag">—</b>
+    tag paper: <b id="ctx-tag">—</b>
   </p>
 </div>
 
@@ -686,66 +758,120 @@ body {
     <li><b>What I committed to.</b> The tag is the candidate, not the bell.
       8c only earns its place if the manila reads as the <i>drawer's</i>
       manila — so the paper is <code>#f3e7c0→#d9c58e</code> against the
-      tag's <code>#e8d9a8</code>, the ink is the tag's <code>#3a2a12</code>
-      in typewriter caps, and the cord is the exact <code>#b3402f</code> the
-      picked-item elastic uses in <code>junk-drawer.js</code>. Everything
-      above the cord is confidently cartoon (4.5px ink line, one big soft
-      window reflection, a squat 204×138 dome on a 260-wide plinth). The
-      seam between the two registers is the joke: someone tied a museum tag
-      to a Saturday-morning prop.</li>
-    <li><b>The tag is tied to the collar, not the plunger.</b> The cord
-      knots round the fixed collar at the base of the stem and the whole
-      cord + tag group lives <i>inside</i> <code>.sb-dome</code>, so the
-      knot can never drift off its anchor when the plunger drops 14px. The
-      tag then counter-swings about its own grommet, which is what makes it
-      lag the shiver instead of riding it rigidly. Watch the mechanism there:
-      the tag is the one part with a placement <code>transform</code>
-      attribute, and a CSS <code>transform</code> replaces an attribute
-      rather than composing with it — so the attribute sits on a static seat
-      group and the animated <code>.sb-tag</code> is the child inside it,
-      swinging in its own local space via
-      <code>transform-box: fill-box</code>. If implementation reparents or
-      flattens the tag, that is the thing that breaks.</li>
-    <li><b>Tap target at drawer scale.</b> The live readout above states it.
-      On a desktop well (~980 stage, 64px walls) the bell lands near
-      <b>90px</b> wide — well past the 44px floor. On a 375px phone the same
-      ruler gives roughly <b>62px</b>. Production hit-testing is ink-only
-      (<code>pointer-events: visiblePainted</code>), and the bell's ink is a
-      near-solid 300×244 silhouette plus the tag, so almost the whole box is
-      live — the best hit-area-per-footprint of the five, because nothing
-      here is a thin rim. Do not let the plunger become the only "obvious"
-      target: the dome is the target.</li>
-    <li><b>Label legibility — the honest bit.</b> At a 90px-wide bell the tag ink
-      is about <b>33×19px</b> and TAKE A / TURN sits right on the edge — two
-      lines of caps that a reader who already knows the words can read and a
-      cold reader probably cannot. At the ~62px a phone gives, it is texture:
-      "there is writing on that tag". So the tag buys <i>affordance</i> in the pile ("this
-      one is labelled, it must be for something") and delivers the words
-      only on the hero / picked zoom. If the owner wants the words legible
-      in the pile, 8c needs a large tier or a two-word label — TAKE A TURN
-      is four words' worth of characters on a 112×64 tag.</li>
-    <li><b>The far ding line leaves the viewBox.</b> The near ring (r 120)
-      stays inside; the far ring (r 148) crosses the top edge by ~11 user
-      units on purpose, so the flare feels like it escapes the object. The
-      resting art still fills the box edge-to-edge (≤2% margin on all four
-      sides: plinth at x 4, tag at x 296 and y 239, plunger cap at y 4), so
-      the ink-bounds check passes. Implementation must give the turn item's
-      svg <code>overflow: visible</code> — production
-      <code>.jd-item svg</code> does not set it and the UA default clips. If
-      that is forgotten, only the outer ring's tips get trimmed; the press
-      still reads. Both ring groups carry <code>opacity="0"</code> and
-      <code>pointer-events="none"</code> as attributes in the asset, so the
-      file is correct with no stylesheet at all and an invisible shape never
-      steals a hit test.</li>
+      specimen tag's <code>#e8d9a8</code>, the ink is the tag's
+      <code>#3a2a12</code> in typewriter caps, and the cord is the exact
+      <code>#b3402f</code> the picked-item elastic uses in
+      <code>junk-drawer.js</code>. Everything inside the plinth is
+      confidently cartoon (4.5px ink line, one big soft window reflection,
+      candy-gloss falloff). The seam between the two registers is the joke:
+      someone tied a museum tag to a Saturday-morning prop.</li>
+    <li><b>Plan view, and what it cost.</b> Round 1 drew this bell in ¾
+      elevation; the owner's ruling (PLAN-TURN-OBJECT §2) is that the drawer
+      is a strict top-down plan, so it is redrawn down its own axis:
+      concentric circles, outside in — plinth flange r82, dome r70, spun
+      turning rings, collar r31, shaft well r26, plunger disc r20. What the
+      elevation was carrying and this is not: the dome's <i>height</i>. From
+      above a counter bell and a chrome drawer-pull are the same silhouette,
+      so all of the "bell" now has to live in the shading — the radial
+      falloff, the crescent specular on the lit shoulder, the dark reflected
+      band on the far side, and the three lathe rings. Those rings are the
+      cheapest and most load-bearing thing in the drawing: they say
+      <i>turned metal, seen down the axis</i> in a way no gradient does. The
+      tag, which used to hang off the collar, now lies flat on the boards
+      up and to the right with the cord running flat across the open floor
+      and under the plinth — and it is doing
+      more work than before, because it is the only part of the object that
+      is unmistakably not a drawer-pull.</li>
+    <li><b>Travel with no tilt.</b> The press cannot translate anything
+      "down" — from overhead, down is toward the viewer. So it is 8b's
+      technique verbatim: the plunger disc <i>shrinks</i> (scale 0.79) and
+      <i>darkens</i>, and because the dark shaft well behind it stays a fixed
+      r26, the shadow ring around the disc widens from 4.5 to ~9 user units
+      on its own. That widening ring is the whole travel cue and it is the part
+      to judge. The dome answers rotationally: <code>.sb-refl</code>, the
+      reflection group only, swims ±4° about the same axis — a struck chrome
+      dome does not slide sideways, its highlights swing. The ding is now two
+      full concentric circles growing out of the centre across the floor
+      rather than arcs flaring off the top, which is what a ring looks like
+      when you are above it. The tag pivots ~2° about its grommet, in the
+      floor plane.</li>
+    <li><b>The tag is tied to the base, and it is drawn under it.</b> The
+      cord knots through the grommet, lies slack across the boards and its
+      far end runs <i>beneath</i> the plinth — literally: the cord is drawn
+      before <code>.sb-base</code>, so the flange covers where it lands. From
+      above that is exactly how a tied-on tag reads, and it costs nothing to
+      animate because the anchor is hidden. Mechanism worth keeping: the tag
+      is the one part with a placement <code>transform</code> attribute, and
+      a CSS <code>transform</code> replaces an attribute rather than
+      composing with it — so the attribute sits on a static seat group and
+      the animated <code>.sb-tag</code> is the child inside it, pivoting in
+      its own local space via <code>transform-box: fill-box</code>. If
+      implementation reparents or flattens the tag, that is the thing that
+      breaks.</li>
+    <li><b>Tap target at drawer scale — better in plan than in elevation.</b>
+      The live readout above states it. On a desktop well (~980 stage, 64px
+      walls) the bell lands near <b>92px</b> wide; on a 375px phone the same
+      ruler gives roughly <b>67px</b> (both measured off the live readout
+      above, desktop and 420px). Both are past the 44px floor, and the plan
+      view <i>improves</i> the number: the object's ink is now a solid
+      164-unit disc plus the tag instead of a tapering elevation, so the
+      live area is rounder and more centred under a thumb. Production
+      hit-testing is ink-only (<code>pointer-events: visiblePainted</code>)
+      and there is no thin rim anywhere here. Do not let the plunger disc
+      become the only "obvious" target — it is 20 of 82 radius; the whole
+      dome is the target, and at drawer scale the disc alone would be ~22px.</li>
+    <li><b>Label legibility — the honest bit, and plan view moved it.</b> At
+      a 92px-wide bell the tag paper is about <b>37×22px</b> and TAKE A /
+      TURN sits right on the edge: two lines of caps a reader who knows the
+      words can read and a cold reader probably cannot. At the 67px a phone
+      gives it is <b>27×16px</b> — texture, "there is writing on that tag".
+      Plan view helps slightly (the tag is flat-on rather than foreshortened
+      by the ¾ angle, so no letter is compressed) and hurts slightly (it lies
+      at 20°, so the reader tilts). Net: the tag still buys <i>affordance</i> in the pile
+      ("this one is labelled, it must be for something") and delivers the
+      words only on the hero and the picked zoom. If the owner wants them
+      legible in the pile, 8c needs a large tier or a two-word label — TAKE
+      A TURN is four words' worth of characters on a 122×72 tag.</li>
+    <li><b>Silhouette, honestly.</b> The cost of the ruling: in plan the bell
+      is a circle, and a circle is the drawer's most common shape (the pocket
+      mirror next to it in §2 is one — compare them at 67px in that view).
+      What separates them is the bullseye — dark well, bright disc, dead
+      centre — plus the tag and its red cord breaking the outline off the
+      upper right. That asymmetric outline is now the
+      main silhouette read, which is an argument for never letting
+      implementation crop the tag out of the box "to make it rounder". If the
+      owner wants a stronger read, the brass variant is the cheap answer: it
+      separates from the cool chrome of the mirror hardware immediately.</li>
+    <li><b>The ding circles leave the viewBox on purpose.</b> Both rings are
+      drawn at r80 and scaled at runtime — the near one out to 1.50, the far
+      one to 1.85, which is r148 and well outside the box. They are born at
+      1.0-ish, i.e. already at the plinth's edge, so they spend their whole
+      life travelling across the floor rather than sitting on the dome
+      pretending to be a highlight. The resting art fills the box
+      edge-to-edge — measured dead margin left 2, bottom 4, top ~1, right
+      &lt;1 user unit (0.7% / 1.7% / 0.4% / 0.3%) — so the ink-bounds check
+      passes.
+      Implementation must give the turn item's svg
+      <code>overflow: visible</code> — production <code>.jd-item svg</code>
+      does not set it and the UA default clips. If that is forgotten the
+      outer ring gets trimmed at the box; the press still reads, because the
+      travel cue is the shadow ring, not the ding. Both ring groups carry
+      <code>opacity="0"</code> and <code>pointer-events="none"</code> as
+      attributes in the asset, so the file is correct with no stylesheet at
+      all and an invisible shape never steals a hit test.</li>
     <li><b>Idle tell is page CSS, not SMIL, and it is quiet.</b> One faint
-      ring at 42% opacity for ~0.6s every 9s. Doubt worth the owner's
+      concentric ring at 44% opacity for ~0.6s every 9s, out of the centre. Doubt worth the owner's
       attention: this is the gentlest idle tell of the five, and §1 leans on
       the idle tell to keep a control buried in clutter discoverable. At
-      ~62px in a busy pile it may simply be too polite to do that job. Two
-      cheap escalations if it tests weak on-device: warm the ring to the
-      cream stroke only (drop the dark ink underlay so it reads as light,
-      not line), or add a slow specular sweep across the dome — the chrome
-      is begging for one. Under
+      67px in a busy pile it may simply be too polite to do that job — and
+      plan view raises the stakes, because the ring now expands past the
+      object's own footprint onto the floor, where a neighbouring item
+      dragged over the bell will sit on top of it. Two cheap escalations if
+      it tests weak on-device: warm the ring to the cream stroke only (drop
+      the dark ink underlay so it reads as light, not line), or rotate the
+      dome's specular group a few degrees on a slow loop — a plan-view
+      chrome dome is begging for that sweep and the group already exists.
+      Under
       <code>prefers-reduced-motion</code> the ping is off entirely and the
       press becomes a discrete held state (plunger down, both rings on) for
       ~320ms: motion reduced, acknowledgement kept.</li>
@@ -754,11 +880,16 @@ body {
       exactly as production stacks them; both are
       <code>pointer-events: none</code> so they tint it without stealing the
       press. Chrome is the risk in that corner — it takes its colour from
-      whatever is behind it, and against dark wood a real chrome bell would
-      go brown. I cheated it cool on purpose (the horizon band stays blue)
-      so the object stays legible as hardware, and added the warm
-      <code>#e3ae63</code> bounce along the skirt so it does not look
-      pasted on. The brass variant is the answer if the owner wants it to
+      whatever is behind it, and seen from directly above, a real chrome
+      dome would be a mirror of the ceiling ringed by the brown of the
+      drawer floor. I cheated it cool on purpose (the reflected band stays
+      blue) so the object stays legible as hardware, and put the warm
+      <code>#e3ae63</code> bounce on the far flank of both dome and flange —
+      the drawer's own light comes from the upper left, which is why every
+      highlight arc in the asset sits between 180° and 270° and every shade
+      arc between 0° and 90°. Keep that convention if the art is ever
+      extended; it is the only thing making the disc read as domed. The
+      brass variant is the answer if the owner wants it to
       belong more; the cherry variant is the answer if it needs to shout.</li>
   </ul>
 </div>
@@ -857,10 +988,10 @@ body {
     if (!w) { return; }
     pxOut.textContent = w + ' px wide';
     boxOut.textContent = w + ' × ' + hgt + ' px';
-    /* the tag's printed area spans ~110 of 300 user units across and
-       ~64 of 244 down, before its 15 degrees of rotation */
-    tagOut.textContent = Math.round(w * 110 / 300) + ' × ' +
-                         Math.round(hgt * 64 / 244) + ' px';
+    /* the tag paper measures 122 × 72 user units along its OWN axes (of a
+       300-wide viewBox), before the 22 degrees it is lying at */
+    tagOut.textContent = Math.round(w * 122 / 300) + ' × ' +
+                         Math.round(w * 72 / 300) + ' px';
   }
 
   measure();

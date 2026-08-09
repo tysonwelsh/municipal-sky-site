@@ -8,16 +8,27 @@
 /* ============================================================================
    THE JUNK DRAWER — MOCKUP 8A · THE FACE-OFF BUZZER
    Candidate for PLAN-TURN-OBJECT §2 (8a). The turn control becomes a pile
-   item: a fat glossy red plunger dome on a squat brass-and-bakelite base,
+   item: a fat glossy red plunger dome in a squat brass-and-bakelite base,
    engraved nameplate reading TAKE A TURN.
 
-   THE OBJECT is ONE inline SVG (viewBox 0 0 300 250, transparent, no script,
+   VIEWPOINT: strict PLAN VIEW, per §2 as amended 2026-08-09 — the drawer is
+   seen from directly above, so the buzzer lies flat and is drawn top-down.
+   No horizon, no vanishing point, no tilt, no side shadow. Depth is carried
+   by concentric radii (bakelite body → knurl → brass collar → dark well →
+   dome) and radial shading keyed from the upper left; the press reads as
+   mechanical TRAVEL because the dome's radius shrinks while the dark well
+   ring around it widens. Round 1's ¾-elevation drawing was rejected on this
+   exact property and has been redrawn.
+
+   THE OBJECT is ONE inline SVG (viewBox 0 0 300 340, transparent, no script,
    no on* handlers, no foreignObject, no external refs). It is written to be
    liftable straight out of this file as the production pile asset. Every
-   moving part is a NAMED GROUP the page's CSS drives:
-       .bz-dome   — sinks + squashes (origin 150,144 = the dome's seat)
-       .bz-base   — bulges under the impact (origin 150,246 = base bottom)
-       .bz-burst  — cartoon impact rays, opacity 0 at rest
+   moving part is a NAMED GROUP the page's CSS drives, all of them turning
+   about the object's centre (150,150) because plan view has no seat line:
+       .bz-dome   — radius shrinks; the well ring widens = travel
+       .bz-gloss  — the specular tightens as the dome drops
+       .bz-base   — the base ring bulges ~2% under the impact
+       .bz-burst  — cartoon impact rays, radial, opacity 0 at rest
        .bz-glint  — the idle specular sweep, clipped to the dome
    The press interaction lives in page JS; the idle tell is page CSS (NOT
    SMIL) precisely so `prefers-reduced-motion` can switch it off — a SMIL
@@ -97,9 +108,11 @@ body {
   display: block;
   cursor: pointer;
   outline: none;
-  /* the drawer gives every item this exact shadow; the hero borrows it so the
-     object is judged sitting on something, not floating */
-  filter: drop-shadow(6px 9px 7px rgba(22, 11, 4, 0.34));
+  /* the drawer gives every item a shadow of exactly this shape; the hero
+     borrows it so the object is judged sitting on something, not floating.
+     In plan view it POOLS around the footprint, nudged toward the key light
+     — there is no side of the object for a shadow to fall from. */
+  filter: drop-shadow(5px 7px 9px rgba(22, 11, 4, 0.34));
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
@@ -116,25 +129,35 @@ body {
 /* Applied to EVERY copy of the SVG on the page (hero, drawer, variants) —
    one behaviour spec, four instances. */
 .bz { display: block; width: 100%; height: auto; overflow: visible; }
-.bz-root, .bz-dome, .bz-base, .bz-burst { transform-box: view-box; }
-.bz-dome  { transform-origin: 150px 144px; }   /* the dome's seat line */
-.bz-base  { transform-origin: 150px 246px; }   /* base bottom centre */
-.bz-burst { transform-origin: 150px 118px; }   /* dome centre */
-.bz-root  { transform-origin: 150px 246px; }
+/* PLAN VIEW: every moving part turns about the SAME point — the object's
+   centre — because from directly above there is no up, no seat line and no
+   bottom edge to pivot on. Travel is expressed purely as radius. */
+.bz-root, .bz-dome, .bz-base, .bz-burst, .bz-gloss, .bz-glint { transform-box: view-box; }
+.bz-root, .bz-dome, .bz-base, .bz-burst, .bz-gloss { transform-origin: 150px 150px; }
 
-/* PRESS — dome sinks and squashes, base bulges to catch it, rays flare */
+/* PRESS — the dome's radius shrinks (it goes DOWN, away from the viewer, so
+   it gets smaller); the dark well ring between dome and collar widens, which
+   is the travel; the base ring bulges ~2% under the impact; rays flare. */
 @keyframes bzDome {
-  0%   { transform: translateY(0)    scale(1, 1); }
-  15%  { transform: translateY(26px) scale(1.10, 0.79); }
-  44%  { transform: translateY(0)    scale(0.965, 1.06); }
-  68%  { transform: translateY(5px)  scale(1.02, 0.975); }
-  100% { transform: translateY(0)    scale(1, 1); }
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.925); }
+  44%  { transform: scale(0.945); }
+  74%  { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+/* the specular tightens as the dome drops — a smaller, harder highlight is
+   how a curved gloss surface reads when it moves away from the light */
+@keyframes bzGloss {
+  0%   { transform: scale(1);    opacity: 1; }
+  16%  { transform: scale(0.82); opacity: 0.8; }
+  74%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
 }
 @keyframes bzBase {
-  0%   { transform: scale(1, 1); }
-  15%  { transform: scale(1.065, 0.935); }
-  44%  { transform: scale(0.985, 1.025); }
-  100% { transform: scale(1, 1); }
+  0%   { transform: scale(1); }
+  16%  { transform: scale(1.02); }
+  46%  { transform: scale(0.995); }
+  100% { transform: scale(1); }
 }
 @keyframes bzBurst {
   0%   { opacity: 0;    transform: scale(0.52); }
@@ -142,23 +165,26 @@ body {
   42%  { opacity: 0;    transform: scale(1.24); }
   100% { opacity: 0;    transform: scale(1.24); }
 }
+/* the whole object settles a hair INTO the floor — a scale beat, never a
+   translate: a slide would read as the object skating across the wood */
 @keyframes bzRoot {
-  0%, 100% { transform: translateY(0); }
-  15%      { transform: translateY(3px); }
-  46%      { transform: translateY(-2px); }
+  0%, 100% { transform: scale(1); }
+  16%      { transform: scale(0.986); }
+  50%      { transform: scale(1.006); }
 }
 .is-pressed .bz-dome  { animation: bzDome  0.46s cubic-bezier(.3, .85, .35, 1); }
+.is-pressed .bz-gloss { animation: bzGloss 0.46s cubic-bezier(.3, .85, .35, 1); }
 .is-pressed .bz-base  { animation: bzBase  0.46s cubic-bezier(.3, .85, .35, 1); }
 .is-pressed .bz-burst { animation: bzBurst 0.46s ease-out; }
 .is-pressed .bz-root  { animation: bzRoot  0.46s ease-out; }
 
-/* IDLE TELL — a slow specular glint sweeping the dome every 8s. Page CSS, so
+/* IDLE TELL — a slow specular glint crossing the dome every 8s. Page CSS, so
    reduced-motion can kill it; the asset itself carries no animation. */
 @keyframes bzGlint {
-  0%, 86%  { transform: translateX(-170px); opacity: 0; }
+  0%, 86%  { transform: translateX(0);      opacity: 0; }
   87%      { opacity: 0.9; }
-  96%      { transform: translateX(410px);  opacity: 0.9; }
-  100%     { transform: translateX(410px);  opacity: 0; }
+  96%      { transform: translateX(430px);  opacity: 0.9; }
+  100%     { transform: translateX(430px);  opacity: 0; }
 }
 .bz-glint { animation: bzGlint 8s linear infinite; will-change: transform; }
 /* the four instances are offset so the page doesn't strobe in unison */
@@ -172,11 +198,13 @@ body {
      kept: a press must still be unmistakably acknowledged. */
   .bz-glint { animation: none; opacity: 0; }
   .is-pressed .bz-dome,
+  .is-pressed .bz-gloss,
   .is-pressed .bz-base,
   .is-pressed .bz-burst,
   .is-pressed .bz-root { animation: none; }
-  .is-pressed .bz-dome  { transform: translateY(17px) scale(1.04, 0.90); }
-  .is-pressed .bz-base  { transform: scale(1.03, 0.97); }
+  .is-pressed .bz-dome  { transform: scale(0.925); }   /* held at the bottom */
+  .is-pressed .bz-gloss { transform: scale(0.82); }
+  .is-pressed .bz-base  { transform: scale(1.02); }
   .is-pressed .bz-burst { opacity: 1; }
 }
 
@@ -280,12 +308,16 @@ body {
 .var--amber .bz-s3 { stop-color: #a75c05; }
 .var--amber .bz-s4 { stop-color: #6d3a04; }
 .var--amber .bz-rim { stroke: #5e340a; }
+.var--amber .bz-b0 { stop-color: #ffd68f; }
 .var--blue .bz-s0 { stop-color: #9fdcff; }
 .var--blue .bz-s1 { stop-color: #45a8ee; }
 .var--blue .bz-s2 { stop-color: #1667c4; }
 .var--blue .bz-s3 { stop-color: #0f4694; }
 .var--blue .bz-s4 { stop-color: #0a2c63; }
 .var--blue .bz-rim { stroke: #0a2450; }
+/* the collar's bounce light is warm on every cap, but on the blue one an
+   orange smudge reads as dirt rather than reflected brass — cool it down */
+.var--blue .bz-b0 { stop-color: #86c8f5; }
 
 /* ---------------- NOTES --------------------------------------------------- */
 .notes { max-width: 40rem; margin: 0 auto; }
@@ -309,18 +341,22 @@ body {
 <div class="wrap">
   <h1 class="mock-title">Junk Drawer · Mockup 8a · The Face-Off Buzzer</h1>
   <p class="mock-intro">
-    The archetype game-show buzzer — a fat glossy red plunger dome on a squat
-    brass-and-bakelite base, the thing two contestants slap on a quiz stand.
+    The archetype game-show buzzer — a fat glossy red plunger dome in a squat
+    brass-and-bakelite base, the thing two contestants slap on a quiz stand —
+    lying flat in the drawer and drawn from directly above.
   </p>
-  <p class="mock-meta">PLAN-TURN-OBJECT §2 · candidate 8a · label placeholder: TAKE A TURN</p>
+  <p class="mock-meta">PLAN-TURN-OBJECT §2 · candidate 8a · plan view · label placeholder: TAKE A TURN</p>
 </div>
 
 <!-- ======================= HERO ======================= -->
 <div class="wrap">
   <h2 class="sec-head">1 · The object</h2>
   <p class="sec-sub">
-    Click, tap, or focus it and press Enter or Space. Left alone it throws a
-    slow specular glint across the dome every eight seconds.
+    Straight down into it, the way the drawer is seen. Click, tap, or focus it
+    and press Enter or Space: the dome shrinks into its well — that widening
+    dark ring is the travel — the base ring bulges, and the starburst flares
+    all the way round. Left alone it throws a slow specular glint across the
+    dome every eight seconds.
   </p>
 </div>
 <div class="wrap">
@@ -331,10 +367,13 @@ body {
 <!-- THE OBJECT — lift this element whole; it is the production candidate. -->
 <!-- No script, no on* attributes, no foreignObject, no external references. -->
 <!-- ===================================================================== -->
-<svg id="bz-master" class="bz" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 250"
-     role="img" aria-label="Red game-show buzzer with a brass plate reading TAKE A TURN">
+<svg id="bz-master" class="bz" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340"
+     role="img" aria-label="Game-show buzzer seen from directly above: a glossy red dome seated in a brass and bakelite ring, with a brass nameplate reading TAKE A TURN">
   <defs>
-    <radialGradient id="fb_dome" cx="0.36" cy="0.2" r="0.92">
+    <!-- Every gradient below is a PLAN-VIEW light model: the drawer's key comes
+         from the upper left, so highlights sit up-left and the fall-off runs to
+         the lower right. No gradient describes a vertical face. -->
+    <radialGradient id="fb_dome" cx="0.36" cy="0.28" r="0.9">
       <stop class="bz-s0" offset="0"    stop-color="#ff9077"/>
       <stop class="bz-s1" offset="0.3"  stop-color="#fb4a3a"/>
       <stop class="bz-s2" offset="0.63" stop-color="#dd1226"/>
@@ -346,117 +385,196 @@ body {
       <stop offset="0.5"  stop-color="#ffffff" stop-opacity="0.62"/>
       <stop offset="1"    stop-color="#ffffff" stop-opacity="0"/>
     </radialGradient>
+    <radialGradient id="fb_bounce" cx="0.5" cy="0.5" r="0.5">
+      <stop class="bz-b0" offset="0" stop-color="#ffb078" stop-opacity="0.75"/>
+      <stop class="bz-b0" offset="1" stop-color="#ffb078" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="fb_glint" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0"   stop-color="#ffffff" stop-opacity="0"/>
       <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.8"/>
       <stop offset="1"   stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="fb_cap" x1="0.1" y1="0" x2="0.9" y2="1">
+    <linearGradient id="fb_cap" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
       <stop offset="0"    stop-color="#ffeec0"/>
       <stop offset="0.34" stop-color="#e3b862"/>
       <stop offset="0.72" stop-color="#ab7d2d"/>
       <stop offset="1"    stop-color="#6d4d18"/>
     </linearGradient>
-    <linearGradient id="fb_band" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0"    stop-color="#f7dc99"/>
-      <stop offset="0.38" stop-color="#d3a44c"/>
-      <stop offset="1"    stop-color="#7d5a1e"/>
-    </linearGradient>
+    <radialGradient id="fb_bakr" cx="0.34" cy="0.26" r="0.92">
+      <stop offset="0"    stop-color="#5f5044"/>
+      <stop offset="0.42" stop-color="#372d27"/>
+      <stop offset="0.8"  stop-color="#1d1614"/>
+      <stop offset="1"    stop-color="#100b09"/>
+    </radialGradient>
     <linearGradient id="fb_bake" x1="0" y1="0" x2="1" y2="0.3">
       <stop offset="0"    stop-color="#5d4e42"/>
       <stop offset="0.34" stop-color="#332a25"/>
       <stop offset="0.78" stop-color="#1d1614"/>
       <stop offset="1"    stop-color="#120d0b"/>
     </linearGradient>
+    <radialGradient id="fb_well" cx="0.5" cy="0.42" r="0.62">
+      <stop offset="0" stop-color="#2b1712"/>
+      <stop offset="1" stop-color="#0b0504"/>
+    </radialGradient>
     <linearGradient id="fb_plate" x1="0" y1="0" x2="0.15" y2="1">
       <stop offset="0"    stop-color="#f6dda0"/>
       <stop offset="0.45" stop-color="#d5a951"/>
       <stop offset="1"    stop-color="#9a7128"/>
     </linearGradient>
     <clipPath id="fb_domeclip">
-      <path d="M3 118 A147 114 0 0 1 297 118 A147 26 0 0 1 3 118 Z"/>
-    </clipPath>
-    <clipPath id="fb_capclip">
-      <ellipse cx="150" cy="132" rx="120" ry="30"/>
+      <circle cx="150" cy="150" r="92"/>
     </clipPath>
   </defs>
 
   <g class="bz-root">
 
-    <!-- impact starburst: inert and invisible at rest; the page reveals it -->
+    <!-- ==================================================================
+         PLAN VIEW. Everything is concentric about (150,150); depth is
+         carried by RADIUS and by radial shading, never by tilt:
+             r 147  bakelite body, outer edge
+             r 126  step where the skirt breaks toward the collar
+             r 119.5 knurled grip band (milling, seen end-on from above)
+             r 112  brass collar ring
+             r  97  the dark well the dome travels in
+             r  92  the dome itself  <- shrinks on press; the well ring
+                                        between 92 and 97 WIDENS = travel
+         The nameplate flange is the one break in the circle: a moulded
+         bakelite tongue at the lower edge carrying the brass plate, lying
+         flat on the drawer floor like everything else.
+         ================================================================== -->
+
+    <!-- ============ impact starburst — inert and invisible at rest ======== -->
+    <!-- Radial, so it flares evenly around the whole footprint: the plan-view
+         equivalent of the elevation drawing's rays off the top of the dome.
+         Drawn UNDERNEATH the object (first in paint order) so the rays read as
+         bursting out from beneath its rim, and so the nameplate flange masks
+         the three rays that would otherwise land on TAKE A TURN. -->
     <g class="bz-burst" opacity="0" pointer-events="none"
        fill="#ffd23f" stroke="#8c2c12" stroke-width="3.4" stroke-linejoin="round">
-      <path d="M322.1 81.4 L302.1 93.3 L299.0 78.7 Z"/>
-      <path d="M287.4 10.6 L265.9 38.2 L255.4 24.9 Z"/>
-      <path d="M224.3 -21.8 L217.3 8.4 L203.2 0.9 Z"/>
-      <path d="M150.0 -22.0 L157.5 -5.0 L142.5 -5.0 Z"/>
-      <path d="M75.7 -21.8 L96.8 0.9 L82.7 8.4 Z"/>
-      <path d="M12.6 10.6 L44.6 24.9 L34.1 38.2 Z"/>
-      <path d="M-22.1 81.4 L1.0 78.7 L-2.1 93.3 Z"/>
-      <path d="M16 186 L21 200 L35 205 L21 210 L16 224 L11 210 L-3 205 L11 200 Z"/>
-      <path d="M284 186 L289 200 L303 205 L289 210 L284 224 L279 210 L265 205 L279 200 Z"/>
+      <path d="M 150 -40 L 132.45 -4 L 167.55 -4 Z"/>
+      <path d="M 245 -14.54 L 211.81 7.86 L 242.2 25.4 Z"/>
+      <path d="M 314.54 55 L 274.6 57.8 L 292.14 88.19 Z"/>
+      <path d="M 340 150 L 304 132.45 L 304 167.55 Z"/>
+      <path d="M 314.54 245 L 292.14 211.81 L 274.6 242.2 Z"/>
+      <path d="M 245 314.54 L 242.2 274.6 L 211.81 292.14 Z"/>
+      <path d="M 150 340 L 167.55 304 L 132.45 304 Z"/>
+      <path d="M 55 314.54 L 88.19 292.14 L 57.8 274.6 Z"/>
+      <path d="M -14.54 245 L 25.4 242.2 L 7.86 211.81 Z"/>
+      <path d="M -40 150 L -4 167.55 L -4 132.45 Z"/>
+      <path d="M -14.54 55 L 7.86 88.19 L 25.4 57.8 Z"/>
+      <path d="M 55 -14.54 L 57.8 25.4 L 88.19 7.86 Z"/>
+      <path d="M 194.52 -29.14 L 198.42 -20.04 L 207.52 -16.14 L 198.42 -12.24 L 194.52 -3.14 L 190.62 -12.24 L 181.52 -16.14 L 190.62 -20.04 Z"/>
+      <path d="M 316.14 181.52 L 320.04 190.62 L 329.14 194.52 L 320.04 198.42 L 316.14 207.52 L 312.24 198.42 L 303.14 194.52 L 312.24 190.62 Z"/>
+      <path d="M 105.48 303.14 L 109.38 312.24 L 118.48 316.14 L 109.38 320.04 L 105.48 329.14 L 101.58 320.04 L 92.48 316.14 L 101.58 312.24 Z"/>
+      <path d="M -16.14 92.48 L -12.24 101.58 L -3.14 105.48 L -12.24 109.38 L -16.14 118.48 L -20.04 109.38 L -29.14 105.48 L -20.04 101.58 Z"/>
     </g>
 
-    <!-- BASE, behind the dome: silhouette + brass top collar -->
+    <!-- ============ BASE — everything the dome is seated in =============== -->
     <g class="bz-base">
-      <path d="M30 132 L30 214 A120 32 0 0 0 270 214 L270 132 A120 30 0 0 0 30 132 Z"
-            fill="url(#fb_bake)" stroke="#150f0c" stroke-width="5" stroke-linejoin="round"/>
-      <ellipse cx="150" cy="132" rx="120" ry="30"
-               fill="url(#fb_cap)" stroke="#4a3512" stroke-width="4"/>
-      <!-- the recess the dome is seated in -->
-      <ellipse cx="150" cy="127" rx="147" ry="26" fill="#2a0d06" opacity="0.42"
-               clip-path="url(#fb_capclip)"/>
+
+      <!-- the moulded bakelite nameplate flange (drawn first, so the body
+           disc overlaps it and the two read as one casting) -->
+      <rect x="46" y="258" width="208" height="80" rx="18"
+            fill="url(#fb_bake)" stroke="#150f0c" stroke-width="5"/>
+
+      <!-- the squat bakelite body: a disc, keyed from the upper left -->
+      <circle cx="150" cy="150" r="147" fill="url(#fb_bakr)"
+              stroke="#150f0c" stroke-width="5"/>
+      <circle cx="150" cy="150" r="126" fill="none" stroke="#0d0908"
+              stroke-opacity="0.45" stroke-width="2.5"/>
+      <!-- knurled grip band: dashes read as milling from directly above -->
+      <circle cx="150" cy="150" r="119.5" fill="none" stroke="#0f0a08"
+              stroke-opacity="0.5" stroke-width="13" stroke-dasharray="5.09 7.02"/>
+      <!-- the rounded outer edge: lit arc on the key side, and on the far
+           side the edge rolling into its own shadow — the contact pool that
+           tells you the thing has thickness without showing a single flank -->
+      <path d="M 11.14 125.52 A 141 141 0 0 1 120.68 12.08" fill="none"
+            stroke="#b9a691" stroke-opacity="0.4" stroke-width="6" stroke-linecap="round"/>
+      <path d="M 288.86 174.48 A 141 141 0 0 1 179.32 287.92" fill="none"
+            stroke="#050302" stroke-opacity="0.5" stroke-width="9" stroke-linecap="round"/>
+
+      <!-- brass collar ring -->
+      <circle cx="150" cy="150" r="112" fill="url(#fb_cap)"
+              stroke="#4a3512" stroke-width="4"/>
+      <path d="M 46.81 128.07 A 105.5 105.5 0 0 1 124.48 47.63" fill="none"
+            stroke="#fff2cc" stroke-opacity="0.55" stroke-width="4" stroke-linecap="round"/>
+      <path d="M 253.19 171.93 A 105.5 105.5 0 0 1 175.52 252.37" fill="none"
+            stroke="#6b4a14" stroke-opacity="0.5" stroke-width="4" stroke-linecap="round"/>
+
+      <!-- the four slot screws holding the collar down; slots at four
+           different angles, because nobody ever lines screws up -->
+      <g fill="#d8ae5c" stroke="#4a3512" stroke-width="2">
+        <circle cx="223.89" cy="223.89" r="5.6"/>
+        <circle cx="76.11"  cy="223.89" r="5.6"/>
+        <circle cx="76.11"  cy="76.11"  r="5.6"/>
+        <circle cx="223.89" cy="76.11"  r="5.6"/>
+      </g>
+      <g stroke="#5a4116" stroke-width="2" stroke-linecap="round">
+        <line x1="219.9" y1="223.9" x2="227.9" y2="223.9"/>
+        <line x1="76.1"  y1="219.9" x2="76.1"  y2="227.9"/>
+        <line x1="72.3"  y1="79.9"  x2="79.9"  y2="72.3"/>
+        <line x1="220.4" y1="79.6"  x2="227.4" y2="72.6"/>
+      </g>
+
+      <!-- the well: the dark ring you watch widen when the dome travels -->
+      <circle cx="150" cy="150" r="97" fill="url(#fb_well)"/>
+      <circle cx="150" cy="150" r="97" fill="none" stroke="#000000"
+              stroke-opacity="0.5" stroke-width="2.5"/>
+
+      <!-- the nameplate, lying flat on the flange -->
+      <rect x="58" y="270" width="184" height="58" rx="9"
+            fill="url(#fb_plate)" stroke="#4a3512" stroke-width="3"/>
+      <rect x="64" y="276" width="172" height="46" rx="5"
+            fill="none" stroke="#fff2cc" stroke-width="1.6" opacity="0.4"/>
+      <text x="150" y="310.1" text-anchor="middle" textLength="152"
+            lengthAdjust="spacingAndGlyphs" font-size="27" font-weight="900"
+            letter-spacing="1"
+            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
+            fill="#fff4d2" opacity="0.55">TAKE A TURN</text>
+      <text x="150" y="308.5" text-anchor="middle" textLength="152"
+            lengthAdjust="spacingAndGlyphs" font-size="27" font-weight="900"
+            letter-spacing="1"
+            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
+            fill="#5a3d10">TAKE A TURN</text>
+      <g fill="#d8ae5c" stroke="#4a3512" stroke-width="1.6">
+        <circle cx="52"  cy="298" r="4.6"/>
+        <circle cx="248" cy="298" r="4.6"/>
+      </g>
     </g>
 
-    <!-- THE DOME -->
+    <!-- ============ THE DOME — the thing you slap ======================== -->
     <g class="bz-dome">
-      <path class="bz-rim" d="M3 118 A147 114 0 0 1 297 118 A147 26 0 0 1 3 118 Z"
-            fill="url(#fb_dome)" stroke="#5c0a12" stroke-width="5" stroke-linejoin="round"/>
-      <!-- bounce light picked up off the brass collar, along the lower rim -->
-      <path d="M28 124 A147 26 0 0 0 272 124" fill="none" stroke="#ffb49b"
-            stroke-width="5" stroke-linecap="round" opacity="0.38"/>
-      <!-- candy gloss: one confident highlight, one small sparkle -->
-      <ellipse cx="103" cy="47" rx="55" ry="26" transform="rotate(-24 103 47)"
-               fill="url(#fb_gloss)"/>
-      <ellipse cx="213" cy="38" rx="23" ry="10" transform="rotate(19 213 38)"
-               fill="#ffffff" opacity="0.5"/>
-      <!-- the idle glint: a bright slash the page sweeps across the dome -->
+      <circle class="bz-rim" cx="150" cy="150" r="92" fill="url(#fb_dome)"
+              stroke="#5c0a12" stroke-width="5"/>
+      <!-- warm bounce picked up off the brass collar on the shadow side -->
+      <ellipse cx="192" cy="198" rx="50" ry="30" transform="rotate(-34 192 198)"
+               fill="url(#fb_bounce)" clip-path="url(#fb_domeclip)"/>
+      <!-- curvature as two arcs, not a tilt: lit crescent up-left, the dome's
+           own shadow crescent down-right -->
+      <path d="M 65.88 132.12 A 86 86 0 0 1 129.19 66.55" fill="none"
+            stroke="#ffc3ab" stroke-opacity="0.45" stroke-width="5" stroke-linecap="round"/>
+      <path class="bz-rim" d="M 235.16 161.97 A 86 86 0 0 1 164.93 234.69" fill="none"
+            stroke="#5c0a12" stroke-opacity="0.45" stroke-width="7" stroke-linecap="round"/>
+      <!-- candy gloss: one confident highlight, one sparkle. Grouped so the
+           page can TIGHTEN the specular on press without fighting the
+           rotate() presentation attributes on the ellipses themselves. -->
+      <g class="bz-gloss">
+        <ellipse cx="111" cy="103" rx="43" ry="25" transform="rotate(-38 111 103)"
+                 fill="url(#fb_gloss)" clip-path="url(#fb_domeclip)"/>
+        <ellipse cx="100" cy="91" rx="11.5" ry="7" transform="rotate(-38 100 91)"
+                 fill="#ffffff" opacity="0.9"/>
+      </g>
+      <!-- the idle glint: a bright slash the page sweeps across the dome.
+           Authored PARKED off the left of the dome and inside the dome clip,
+           so with no page CSS at all (or with animation switched off) the
+           asset renders correctly: the slash simply isn't there. -->
       <g clip-path="url(#fb_domeclip)">
         <g class="bz-glint">
-          <path d="M-86 -12 L-30 -12 L14 158 L-42 158 Z" fill="url(#fb_glint)"/>
+          <path d="M -70 30 L -15 30 L -60 270 L -115 270 Z" fill="url(#fb_glint)"/>
         </g>
       </g>
     </g>
 
-    <!-- BASE, in front of the dome: the brass band the dome sinks behind,
-         the bakelite skirt, and the engraved nameplate -->
-    <g class="bz-base">
-      <path d="M30 132 A120 30 0 0 0 270 132 L270 154 A120 30 0 0 1 30 154 Z"
-            fill="url(#fb_band)" stroke="#4a3512" stroke-width="3.5" stroke-linejoin="round"/>
-      <path d="M30 154 A120 30 0 0 0 270 154 L270 214 A120 32 0 0 1 30 214 Z"
-            fill="url(#fb_bake)"/>
-      <!-- warm bounce down the lit (left) flank of the bakelite -->
-      <path d="M36 168 A120 30 0 0 0 60 196" fill="none" stroke="#8d7a68"
-            stroke-width="4" stroke-linecap="round" opacity="0.4"/>
-      <!-- the nameplate -->
-      <rect x="46" y="186" width="208" height="42" rx="9"
-            fill="url(#fb_plate)" stroke="#4a3512" stroke-width="3"/>
-      <rect x="52.5" y="191.5" width="195" height="31" rx="5.5"
-            fill="none" stroke="#fff2cc" stroke-width="1.6" opacity="0.42"/>
-      <text x="150" y="216.6" text-anchor="middle" textLength="178"
-            lengthAdjust="spacingAndGlyphs" font-size="26" font-weight="900"
-            letter-spacing="1"
-            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-            fill="#fff4d2" opacity="0.55">TAKE A TURN</text>
-      <text x="150" y="215" text-anchor="middle" textLength="178"
-            lengthAdjust="spacingAndGlyphs" font-size="26" font-weight="900"
-            letter-spacing="1"
-            font-family="'Arial Black','Helvetica Neue',Helvetica,Arial,sans-serif"
-            fill="#5a3d10">TAKE A TURN</text>
-      <!-- crisp front contour over the fills -->
-      <path d="M30 132 L30 214 A120 32 0 0 0 270 214 L270 132" fill="none"
-            stroke="#150f0c" stroke-width="5" stroke-linejoin="round"/>
-    </g>
 
   </g>
 </svg>
@@ -571,13 +689,16 @@ body {
             </svg>
           </div>
 
-          <!-- THE BUZZER — filed medium (box 15.5), aspect 1.2 → w = 16.98
-               cqmin. Scattered lower-left and boosted to the top of the
-               z-order, per PLAN-TURN-OBJECT §1 discoverability. The SVG is
-               cloned from the hero at load with its ids re-prefixed. -->
+          <!-- THE BUZZER — filed medium (box 15.5), aspect 300/340 = 0.882
+               → w = 15.5·√0.882 = 14.56 cqmin. Scattered lower-left and
+               boosted to the top of the z-order, per PLAN-TURN-OBJECT §1
+               discoverability. Rotated like every other pile item — in plan
+               view its own text rotates with it, exactly as the playing
+               card's pips and the pencil's paint do. The SVG is cloned from
+               the hero at load with its ids re-prefixed. -->
           <div class="ctx-item ctx-item--turn bz-host" id="ctx-turn"
                role="button" tabindex="0" aria-label="Take a turn"
-               style="--w: 16.98; --rot: -7deg; left: 33%; top: 65%;"></div>
+               style="--w: 14.56; --rot: -7deg; left: 33%; top: 65%;"></div>
 
         </div>
         <div class="ctx-varnish"></div>
@@ -587,7 +708,7 @@ body {
   </div>
   <p class="ctx-cap">
     Buzzer rendered width right now: <b id="ctx-px">—</b> ·
-    dome ink alone: <b id="ctx-dome">—</b> · hit box: <b id="ctx-box">—</b>
+    the dome alone: <b id="ctx-dome">—</b> · hit box: <b id="ctx-box">—</b>
   </p>
 </div>
 
@@ -595,8 +716,8 @@ body {
 <div class="wrap">
   <h2 class="sec-head">3 · Cap colour variants</h2>
   <p class="sec-sub">
-    Same asset, five gradient stops and one rim stroke overridden. Each of
-    these presses too.
+    Same asset, five dome stops, the bounce tint and one rim stroke
+    overridden. Each of these presses too.
   </p>
   <div class="var-row" id="var-row">
     <div class="var-cell">
@@ -619,50 +740,81 @@ body {
   <hr class="rule" />
   <h2 class="sec-head">4 · Notes</h2>
   <ul class="notes">
-    <li><b>What I committed to.</b> A near-elevation 3/4 read, not plan view.
-      The drawer's hardware is strict plan view, but its <i>specimens</i> are
-      not (the toilet, the rat, the urn are all drawn as objects), and 8a only
-      works if you can see the dome stand proud of the base and read the
-      nameplate on the base's front. The mismatch is the camouflage the
-      proposal asks for.</li>
-    <li><b>Chunk over realism.</b> Dome half-width 147 against a base
-      half-width 120 — the dome is 1.23× its base, which is the cartoon tell
-      that makes it look slappable. The dome geometry is deliberately seated
-      so its lower bulge always hangs below the base's top ellipse: no
-      background ever shows through the joint at any x. If the base is
-      widened past ~120 in implementation, that gap opens up.</li>
-    <li><b>Tap target and label legibility at drawer scale.</b> The live
-      readout above the variants states both. At a desktop well (~1060 stage,
-      64px walls) the buzzer lands near <b>90px</b> wide — comfortably past
-      the 44px floor, and the dome alone is ~42px tall. On a 375px phone the
-      same ruler gives ~57–63px wide and a <b>~30px-tall dome</b>: still a
-      legal hit box because the whole silhouette (dome + base) is the target,
-      but the dome by itself is not. Production hit-testing is ink-only
-      (<code>pointer-events: visiblePainted</code>), so the base's ink counts
-      — do not shrink the base to a sliver. The nameplate survives further
-      down than I expected: at ~90px it is readable if you look at it, and
-      only around ~60px does it degrade into a lettered brass strip. That is
-      why the plate is 208 of 300 viewBox units wide with
-      <code>textLength</code> pinned — do not narrow it for prettiness, and
-      do not swap in a lighter weight.</li>
-    <li><b>The burst leaves the viewBox by ~8%.</b> Rays flare past the box
-      top and sides on purpose (the resting art fills the box edge-to-edge so
-      the ink-bounds check passes; the transient flare could not also fit).
-      Implementation must give the turn item's svg
-      <code>overflow: visible</code> — production <code>.jd-item svg</code>
-      does not set it, and the UA default clips. If it's forgotten the press
-      still works and only the flare gets trimmed, so this degrades safely.
-      The burst group carries <code>pointer-events="none"</code> in the asset
-      because an <code>opacity: 0</code> shape still hit-tests.</li>
+    <li><b>Round 2: redrawn in plan view.</b> Round 1 filed this candidate in
+      ¾ elevation and the owner rejected the viewpoint; §2 now makes plan view
+      binding, and the object above is a fresh top-down drawing, not the old
+      one tipped over. Everything that carried depth by standing up now
+      carries it by <b>radius</b>: bakelite body (r 147) → knurled grip band
+      (r 119.5) → brass collar (r 112) → the dark well (r 97) → the dome
+      (r 92), all concentric on 150,150, all shaded from one upper-left key.
+      The only cast shadow is the pool the host's <code>drop-shadow</code>
+      lays <i>around</i> the footprint. The design language survived intact —
+      same reds, same brass and bakelite, same engraved plate, same
+      squash-and-flare personality; what changed is that you are now looking
+      down at it.</li>
+    <li><b>The press is travel, not squash.</b> In elevation the dome sank and
+      squashed. From above a sinking dome has exactly one honest reading: it
+      gets <b>smaller</b> and the dark well ring around it gets <b>wider</b>
+      — 5 viewBox units of ring at rest, 12 at the bottom of the stroke
+      (dome scale 0.925). The specular tightens with it (<code>.bz-gloss</code>
+      scales further, to 0.82) because a gloss surface moving away from the
+      light gives a smaller, harder highlight. The base ring bulges 2% to
+      catch the impact and the starburst — now radial, twelve rays and four
+      sparks all the way round — flares from the whole footprint. No group
+      translates: a translate from directly above would read as the buzzer
+      <i>skating across the wood</i>, which is the one thing it must not do.</li>
+    <li><b>Where the label went, and what it cost.</b> Plan view removes the
+      base's front face, which is where the nameplate lived. Two options: bend
+      the words around the ring (8b's answer) or lay a plate flat on the base.
+      I took the plate — a moulded bakelite flange at the lower edge carrying
+      the brass nameplate — because straight horizontal type stays readable
+      about a third smaller than arc type does, and because it gives the
+      silhouette a "front", which a bare disc has none of. It also keeps 8a
+      visibly distinct from 8b at pile scale, where both are otherwise a red
+      circle in a metal ring. The cost is that the footprint is no longer a
+      clean circle (aspect 300 × 340, so the pile ruler files it a touch
+      narrower) and that the flange is the one place the object could be read
+      as "a thing with a handle" rather than "a buzzer".</li>
+    <li><b>Tap target and legibility at drawer scale.</b> The live readout
+      under the drawer states both, and plan view <i>helps</i> here: the whole
+      silhouette is now one fat, near-round, entirely-painted target instead
+      of a wide-but-short elevation, and the dome alone — the part that looks
+      pressable — is 184 of 300 viewBox units across rather than a 30px-tall
+      sliver. At a desktop well the buzzer lands near <b>80px</b> wide with a
+      <b>~50px dome</b>; on a 375px phone it is ~55–60px wide with a ~34px
+      dome, and the dome alone is close to the 44px floor while the full ink
+      clears it easily. Production hit-testing is ink-only
+      (<code>pointer-events: visiblePainted</code>), so the base ring and the
+      flange count as target — do not thin them. The nameplate is 184 of 300
+      viewBox units wide with <code>textLength</code> pinned at 152: readable
+      if you look at it around 80px, degrading to a lettered brass strip near
+      55px. Do not narrow it for prettiness and do not swap in a lighter
+      weight. And note the plate rotates with the item, exactly like the
+      pencil's paint and the card's pips — text lying flat on the drawer floor
+      is the drawer's own convention, not a compromise.</li>
+    <li><b>The burst leaves the viewBox by ~13%.</b> Radial rays flare past all
+      four sides on purpose (the resting art fills the box edge-to-edge — the
+      body disc reaches within 1% of the left, right and top edges and the
+      flange within 0.6% of the bottom — so the ink-bounds check passes; the
+      transient flare could not also fit). Implementation must give the turn
+      item's svg <code>overflow: visible</code> — production
+      <code>.jd-item svg</code> does not set it, and the UA default clips. If
+      it's forgotten the press still works and only the flare gets trimmed, so
+      this degrades safely. The burst group carries
+      <code>pointer-events="none"</code> in the asset because an
+      <code>opacity: 0</code> shape still hit-tests.</li>
     <li><b>Idle tell is page CSS, not SMIL.</b> The glint is a static bright
-      slash clipped to the dome; the 8s sweep lives in a keyframe so
+      slash clipped to the dome circle; the 8s sweep lives in a keyframe so
       <code>prefers-reduced-motion</code> can switch it off — SMIL baked into
-      the asset could not be. Under reduced motion the press also drops to a
-      discrete held state (dome down, base bulged, rays on) rather than a
-      spring: motion reduced, acknowledgement kept. Honest doubt: at ~60px in
-      a busy pile, an 0.8s glint every 8s may be too quiet to do the
-      discoverability job §1 asks of it. Worth watching on-device before we
-      trust it as the only tell.</li>
+      the asset could not be. Under reduced motion the press drops to a
+      discrete held state (dome shrunk into the well, ring widened, base
+      bulged, rays on) rather than a spring: motion reduced, acknowledgement
+      kept. Honest doubt, unchanged by the redraw: at ~55px in a busy pile, an
+      0.8s glint every 8s may be too quiet to do the discoverability job §1
+      asks of it. Worth watching on-device before we trust it as the only
+      tell. Plan view does buy a little of that back — the red disc is a
+      rounder, higher-contrast blob against the wood than the old elevation
+      silhouette was.</li>
     <li><b>Z-order and the pile.</b> The buzzer sits at the top of the
       z-order here (the first-visit boost) and under the varnish + vignette
       layers, exactly as production stacks them — those are
@@ -670,7 +822,10 @@ body {
       press. Note the vignette does dull the cap noticeably in the drawer's
       lower-left corner, which is precisely where §1 wants the initial
       scatter; the amber variant is the cheap answer if the red reads too
-      muddy down there.</li>
+      muddy down there. Plan view also fixes a round-1 stacking oddity: an
+      elevation object in a top-down pile had to be either in front of or
+      behind its neighbours with no honest answer for overlap. Lying flat, it
+      overlaps the pencil and the key exactly the way two flat things do.</li>
   </ul>
 </div>
 
@@ -759,8 +914,9 @@ body {
     var hgt = Math.round(r.height);
     if (!w) { return; }
     pxOut.textContent = w + ' px';
-    /* the dome occupies y 4..144 of a 250-tall viewBox, x 3..297 of 300 */
-    domeOut.textContent = Math.round(w * 294 / 300) + ' × ' + Math.round(hgt * 140 / 250) + ' px';
+    /* plan view: the dome is a circle of r 92 in a 300-wide viewBox, so its
+       diameter is 184/300 of the rendered width — one number, not two */
+    domeOut.textContent = Math.round(w * 184 / 300) + ' px across';
     boxOut.textContent = w + ' × ' + hgt + ' px';
   }
 
