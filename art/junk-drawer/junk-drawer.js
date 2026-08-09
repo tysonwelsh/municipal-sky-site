@@ -579,7 +579,7 @@
     MIN_REST: 60,     /* px — the shortest string we will ever hang */
     GRAVITY: 0.55,    /* px per frame², ~60fps */
     DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
-    ITER: 3,          /* constraint relaxation passes per frame */
+    ITER: 4,          /* constraint relaxation passes per frame (alternating) */
     EPS: 0.05         /* px moved per frame under which the chain is at rest */
   };
   var ropePts = null;         /* the chain: [{x,y,px,py}], 0 = item, last = grommet */
@@ -660,8 +660,18 @@
     }
     p = ropePts[0]; p.x = p.px = ropeAx; p.y = p.py = ropeAy;      /* pinned */
     p = ropePts[n - 1]; p.x = p.px = ropeBx; p.y = p.py = ropeBy;  /* pinned */
+    /* Gauss-Seidel relaxation, ALTERNATING DIRECTION each pass. A one-way
+       sweep resolves each link using the already-corrected point behind it,
+       so the leftover error is pushed steadily toward the far end: the chain
+       coils up against whichever pin the sweep finishes on and takes seconds
+       of visible creep to even out. Reversing every other pass sends the
+       error back the other way and the slack distributes evenly — the shape
+       is symmetric and the chain reaches rest (and therefore sleeps) in a
+       fraction of the frames. */
     for (k = 0; k < ROPE.ITER; k++) {
-      for (i = 0; i < n - 1; i++) {
+      var back = (k & 1) === 1;
+      for (var j = 0; j < n - 1; j++) {
+        i = back ? n - 2 - j : j;
         var a = ropePts[i], b = ropePts[i + 1];
         var dx = b.x - a.x, dy = b.y - a.y;
         var d = Math.sqrt(dx * dx + dy * dy) || 0.0001;
