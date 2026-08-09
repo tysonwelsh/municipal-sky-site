@@ -280,8 +280,10 @@ html { scroll-behavior: smooth; }
 
 /* ---------------- placements ----------------------------------------------
    No per-item CSS: every placement (left/top as % of the well, --rot,
-   z-index, --w = sizeClass base × scale) is applied INLINE by the pile
-   loader from entry.json "placement" data served by data.php. */
+   z-index, --w) is applied INLINE by the pile loader. --w is the WIDTH the
+   loader computed under area normalization (tier box² footprint ÷ the
+   artwork's aspect, × sizeScale × id-hash jitter — see SIZE in
+   junk-drawer.js); this stylesheet just multiplies it onto the cqmin ruler. */
 
 /* fallback note: shown in the well when data.php is unreachable */
 .jd-fallback {

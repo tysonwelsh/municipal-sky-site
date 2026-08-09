@@ -56,11 +56,19 @@ data files are `.json`, art is `.svg`.
      `rid`, so a regrade re-points the drawer on its own. Write the entry's
      `primary` ONLY when the owner explicitly pins a response; it is an
      override flag, not a record of filing order. No pin ⇒ omit `primary`.
-   - Optional `sizeScale` — a positive multiplier on the tier box (default
-     1) for sizes between or below tiers; the continuous fine dial the
-     coarse tiers can't reach (e.g. paperclip = `"s"` × 0.364). Rendered
-     size is `sizeTiers[sizeClass].box × (sizeScale || 1)`. Omit it (or 1)
-     unless a tier alone doesn't land the size the owner wants.
+   - Optional `sizeScale` — a positive multiplier on the tier (default 1)
+     for sizes between or below tiers; the continuous fine dial the coarse
+     tiers can't reach (e.g. paperclip = `"s"` × 0.686). Tiers are AREA
+     classes (owner decision, 2026-08-09): the drawer renders every item at
+     footprint `w·h = (sizeTiers[sizeClass].box × sizeScale)²` whatever the
+     artwork's proportions, with the long side capped at 1.8 × the box
+     (before sizeScale) and a small id-hashed jitter (±9% linear) for
+     natural variation. sizeScale therefore scales the whole footprint
+     evenly at any aspect — NEVER use it to compensate for a tall or wide
+     viewBox; the normalization already does that. Omit it (or 1) unless a
+     tier alone doesn't land the size the owner wants. Sanity-check a new
+     filing with `python3 scripts/validate-junk-drawer.py --sizes`, which
+     prints every item's rendered footprint next to its tier-mates.
 2. **Create the directory**: `items/<YYYY-MM-DD>-<slug>/` where slug is a
    short kebab-case name for the subject (e.g. `rubber-duck`), NOT the full
    prompt. Check it doesn't already exist.
