@@ -422,18 +422,26 @@ the integrated whole; FINAL reviews everything including the documents.
 5. After launch: watch the provider spend dashboard for the first days;
    the global daily cap (§2.3) is the circuit breaker.
 
-## 8. Open decisions for the owner
+## 8. Owner decisions — DECIDED (2026-08-09, pre-launch)
 
-1. **The model pair**: Claude Sonnet 5 vs GPT-5? Two Claude tiers?
-   (Cross-vendor gives the more interesting preference data; both ids
-   must exist in the taxonomy model registry.) Config lives server-side
-   so it can rotate without a frontend change.
-2. **Session-local winner display** (§4.5 recommends yes for v1) —
-   confirm, since "shown in the drawer" could be read as shared.
-3. **Rate-limit numbers and the global daily cap** (defaults proposed
-   in §2.3).
-4. **The button's name/copy** — "TAKE A TURN", "COMMISSION AN OBJECT",
-   "FEED THE DRAWER"… (naming decision, same spirit as PLAN-RECORD's
-   name-tasting).
+These are settled constraints now, not open questions; agents build to
+them without re-asking.
+
+1. **The model pair: Claude Sonnet 5 vs GPT-5** (cross-vendor). Both
+   ids exist in the taxonomy model registry. The pairing lives in
+   server-side config (`jd-generate.php`) so it can change without a
+   frontend edit; the schema (§3) is pair-agnostic regardless.
+2. **Winner display: session-local only** (§4.5 as recommended).
+   Visitor items never enter the shared drawer in v1; no moderation
+   pipeline, no owner admin UI this round — curation happens later via
+   the MySQL records.
+3. **Rate limits: the §2.3 defaults** — 3 submissions/hour and 10/day
+   per visitor hash; global circuit breaker at 100 generations/day
+   ("the drawer is resting"). Constants in one place, tunable
+   post-launch.
+4. **Button name: deferred to name-tasting.** FE-C ships a placeholder
+   label behind one constant and produces 2–3 in-situ candidates
+   (e.g. TAKE A TURN · COMMISSION AN OBJECT · FEED THE DRAWER) for the
+   owner to taste on-device, PLAN-RECORD style. Not a launch blocker.
 5. Whether visitor items ever earn a path to the permanent collection
-   (the curation loop in §4.5) — no code depends on this now.
+   (the §4.5 curation loop) stays open — no code depends on it.
