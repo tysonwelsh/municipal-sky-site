@@ -253,6 +253,11 @@ function jd_probe_pair(string $prompt, array $keys, ?string $saveDir = null, str
         $body = (string) curl_multi_getcontent($h['ch']);
         $code = (int) curl_getinfo($h['ch'], CURLINFO_HTTP_CODE);
         $ms = (int) round((microtime(true) - $h['started']) * 1000);
+        // The transport error is the ONLY evidence when http=0: no body, no
+        // JSON error object, nothing. Swallowing it turns "your wifi dropped"
+        // and "the provider refused you" into the same unreadable failure.
+        $curlErrNo = curl_errno($h['ch']);
+        $curlErr = curl_error($h['ch']);
         curl_multi_remove_handle($mh, $h['ch']);
         curl_close($h['ch']);
 
@@ -279,7 +284,9 @@ function jd_probe_pair(string $prompt, array $keys, ?string $saveDir = null, str
             'provider' => $provider,
             'http' => $code,
             'ok' => $code === 200 && $svg !== null,
-            'error' => $code === 200 ? null : (string) ($data['error']['message'] ?? "http_$code"),
+            'error' => $code === 200 ? null : ($curlErrNo !== 0
+                ? "curl#$curlErrNo: $curlErr"
+                : (string) ($data['error']['message'] ?? "http_$code")),
             'svg_bytes' => $svg !== null ? strlen($svg) : 0,
             'latency_ms' => $ms,
             'usage' => $usage,
@@ -358,9 +365,19 @@ foreach ($PROMPTS as $pi => $prompt) {
             $turnCost += $slot['billed']['cost'];
         }
         unset($slot);
-        $turnCosts[] = $turnCost;
-        $results[] = ['label' => $label, 'prompt' => $prompt, 'slots' => $pair, 'turn_cost' => $turnCost];
-        fwrite(STDERR, sprintf("$%.6f\n", $turnCost));
+        // Only a COMPLETE turn is an observation of what a turn costs. A pair
+        // with a dead slot averaged in as $0.00 would drag the mean toward
+        // zero and quietly understate every projection built on it.
+        $complete = true;
+        foreach ($pair as $slot) {
+            $complete = $complete && $slot['ok'];
+        }
+        if ($complete) {
+            $turnCosts[] = $turnCost;
+        }
+        $results[] = ['label' => $label, 'prompt' => $prompt, 'slots' => $pair,
+                      'turn_cost' => $turnCost, 'complete' => $complete];
+        fwrite(STDERR, sprintf("$%.6f%s\n", $turnCost, $complete ? '' : '   INCOMPLETE'));
     }
 }
 
@@ -401,6 +418,7 @@ echo "\nARTWORK VALIDATION (verdict = the site's own jd_sanitize_svg)\n";
 printf("%-4s %-14s %9s %7s %8s %7s %-14s\n",
     '#', 'MODEL', 'SVG B', 'MARKS', 'RASTER?', 'FENCED', 'SANITIZER');
 echo str_repeat('-', 74), "\n";
+$count = count($turnCosts);   // needed by the failure block below, not just the summary
 $allClean = true;
 foreach ($results as $row) {
     foreach ($row['slots'] as $s) {
@@ -439,15 +457,29 @@ foreach ($results as $row) {
     }
 }
 if ($failures) {
-    echo "\nFAILED SLOTS (", count($failures), " of ", $count * count(JD_MODEL_PAIR), ")\n";
+    echo "\nFAILED SLOTS (", count($failures), " of ",
+        count($results) * count(JD_MODEL_PAIR), " attempted)\n";
     echo implode("\n", $failures), "\n";
     printf("  JD_PROVIDER_TIMEOUT is %ds — a latency at or near that is a timeout,\n"
          . "  and the visitor gets half a turn.\n", JD_PROVIDER_TIMEOUT);
 }
 
-$count = count($turnCosts);
+// Every projection below rests on at least one complete turn. With none, say
+// so plainly rather than printing an authoritative-looking $0.00.
+if ($count === 0) {
+    echo "\n", str_repeat('=', 60), "\n";
+    echo "No COMPLETE turns — every pair lost at least one slot.\n";
+    echo "There is nothing to average, so no cost estimate is given.\n";
+    echo "See FAILED SLOTS above for the transport errors.\n";
+    if ($saveDir !== null) {
+        echo "Any artwork that did arrive is still in $saveDir\n";
+    }
+    echo str_repeat('=', 60), "\n\n";
+    exit(1);
+}
+
 sort($turnCosts);
-$mean = array_sum($turnCosts) / max(1, $count);
+$mean = array_sum($turnCosts) / $count;
 $median = $turnCosts[(int) floor(($count - 1) / 2)];
 $min = $turnCosts[0];
 $max = $turnCosts[$count - 1];
@@ -461,7 +493,8 @@ foreach ($results as $row) {
 }
 
 echo "\n", str_repeat('=', 60), "\n";
-printf("Turns measured        %d\n", $count);
+printf("Complete turns        %d of %d attempted%s\n", $count, count($results),
+    $count === count($results) ? '' : '   <- averages use the complete ones only');
 printf("Mean cost per turn    %s\n", $money($mean));
 printf("Median                %s\n", $money($median));
 printf("Cheapest / dearest    %s  /  %s\n", $money($min), $money($max));
