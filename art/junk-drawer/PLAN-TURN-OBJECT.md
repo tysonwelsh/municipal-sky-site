@@ -21,7 +21,14 @@ repositionable.** After living with v0.6.0 the owner reversed §1's
 **bottom-left corner** of the well (half-plate + 3.5% inset off each wall,
 dead straight at 0° — v0.6.2 removed the −4° tilt and the pile's hover
 lift/grow, owner's call: it is a button, not a specimen pretending it was
-scattered — constant z 99) — same spot every session, every device.
+scattered — constant z 99) — same spot every session, every device. v0.6.3
+adds the corner RESERVATION: no item may spawn overlapping the plate. The
+scatter/restore paths push positions clear at apply time using the item's
+rotated bounding box, against the measured plate when it is built (the
+sizing math alone missed the ≤768px ×1.2 band and the 44px touch floor —
+a 15px graze on phones) with a math fallback + a post-build enforcement
+pass closing the artwork-fetch race. Stored scatters are never rewritten;
+junk DRAGGED onto the plate by the visitor still lands there.
 It cannot be dragged or rotated: `grip()` never lifts it, `place()` and all
 three rotation paths refuse it, `settle()` releases it unmoved, and an
 attempted drag neither moves it nor counts as a press. Nothing about it is
