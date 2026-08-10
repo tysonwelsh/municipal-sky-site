@@ -1735,9 +1735,10 @@ function JD_layerOpen() {
   /* FIXED HARDWARE (owner revision, 2026-08-10): the doorbell is screwed to
      the bottom-left corner of the drawer floor. It no longer scatters, drags,
      rotates, or persists a seat — same spot, every session, every device.
-     The gentle constant tilt keeps it reading as a thing lying in a drawer
-     rather than a UI sticker; the typed label stays legible at this angle. */
-  var CORNER = { inset: 0.035, rot: -4 };
+     Dead straight (rot 0), owner's call: it is a BUTTON in the corner, not a
+     specimen pretending it was scattered — no tilt, and no hover grow either
+     (see the :hover exemption in junk-drawer.css). */
+  var CORNER = { inset: 0.035, rot: 0 };
   var Z_FIXED = 99;   /* over every scattered item (their z runs 1..N) and
                          under zTop (100+), where anything the visitor drags
                          goes — junk deliberately dropped on the bell still

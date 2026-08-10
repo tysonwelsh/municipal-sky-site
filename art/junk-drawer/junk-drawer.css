@@ -152,11 +152,14 @@ html { scroll-behavior: smooth; }
    blur (~±12px penumbra) against a 16/22 offset keeps it attached and
    directional. */
 @media (hover: hover) {
-  .jd-item:hover {
+  /* :not(.jd-item--turn) — the doorbell is a fixed button, not a draggable
+     specimen (owner, 2026-08-10): no hover lift, no grow, no z jump. Its
+     pointer cursor and idle gleam are its whole hover story. */
+  .jd-item:not(.jd-item--turn):hover {
     filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
     z-index: 999 !important;
   }
-  .jd-item:hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+  .jd-item:not(.jd-item--turn):hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 }
 /* held while dragging: same lifted grammar, above everything. will-change
    promotes the moving filtered element to its own compositor layer so the

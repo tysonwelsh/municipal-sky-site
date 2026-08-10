@@ -19,7 +19,9 @@ as collection. The style break is the camouflage.
 repositionable.** After living with v0.6.0 the owner reversed §1's
 "it is a pile item" clause: the doorbell now sits screwed to the
 **bottom-left corner** of the well (half-plate + 3.5% inset off each wall,
-constant −4° tilt, constant z 99) — same spot every session, every device.
+dead straight at 0° — v0.6.2 removed the −4° tilt and the pile's hover
+lift/grow, owner's call: it is a button, not a specimen pretending it was
+scattered — constant z 99) — same spot every session, every device.
 It cannot be dragged or rotated: `grip()` never lifts it, `place()` and all
 three rotation paths refuse it, `settle()` releases it unmoved, and an
 attempted drag neither moves it nor counts as a press. Nothing about it is
