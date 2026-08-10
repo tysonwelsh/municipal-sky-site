@@ -437,17 +437,41 @@ html { scroll-behavior: smooth; }
      and the doorbell measures exactly like the medium specimen it is. */
   min-width: 44px;
 }
+/* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
+   asset's ink deliberately runs to within 1.5/240 of the viewBox edge — while
+   jdBellBuzz opens on a 3.5% scale jolt about the plate's centre and shakes up
+   to 4.2 user units sideways. Without this the plate's chunky dark outline
+   flattens against an invisible wall for the first ~150ms of every press
+   (measured: ~1.6% of the element's width clipped off the left at the 0.06s
+   keyframe, the right corner's outline gone entirely). The wrapper already
+   spills a drop-shadow well past this box, so nothing downstream is relying on
+   the SVG to clip. */
+.jd-item--turn svg { overflow: visible; }
 /* the keyboard visitor's ring. The wrapper is pointer-events:none like every
    item's, which does not affect focusability — Tab reaches it, and the ring
-   is drawn on the box because the ink inside is a solid rounded plate.
+   is drawn around the box because the ink inside is a solid rounded plate.
    :not(.is-tap) is the mouse exemption: a tap has to focus the object
    explicitly (the ink takes the hit, not the wrapper), and Chromium counts a
    programmatic focus as focus-visible — the flag says "this focus came from a
-   finger", and the JS drops it the moment focus leaves. */
-.jd-item--turn:focus-visible:not(.is-tap) {
-  outline: 3px dashed #ffe6a3;
-  outline-offset: 6px;
-  border-radius: 4px;
+   finger", and the JS drops it the moment focus leaves.
+
+   The ring is a PSEUDO-ELEMENT rather than an `outline`, for one reason: the
+   rotation lives on the inner svg (see .jd-item svg), so the wrapper's layout
+   box stays axis-aligned while the plate inside lies at up to ±18°. A real
+   outline is drawn on that unrotated box and visibly sits off-axis from the
+   thing it is pointing at. A pseudo-element can take the same
+   rotate(var(--rot)) the artwork takes, so the ring lies WITH the plate — and
+   it inherits the same transition, so it turns with it when the item spins. */
+.jd-item--turn:focus-visible:not(.is-tap) { outline: none; }
+.jd-item--turn:focus-visible:not(.is-tap)::after {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border: 3px dashed #ffe6a3;
+  border-radius: 6px;
+  transform: rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
 }
 /* …and .is-tap has to say `none` out loud, not merely decline to draw: the
    browser's OWN focus ring is what shows otherwise (measured: `outline: auto

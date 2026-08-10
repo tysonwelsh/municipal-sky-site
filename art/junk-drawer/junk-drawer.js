@@ -1474,8 +1474,14 @@ function JD_layerOpen() {
       /* the turn modal opens a beat AFTER the doorbell press so the press can
          be seen (OPEN_MS). Grabbing something else inside that beat means the
          visitor has moved on — stand the pending open down, or the modal pops
-         on top of a drag that is still in flight. (A re-grip of the doorbell
-         itself is left alone: its own press() re-arms the timer.) */
+         on top of a drag that is still in flight.
+         The doorbell's OWN re-grip is exempt HERE and handled at the drag
+         threshold instead (see pointermove): standing down on its pointerdown
+         would break the fast double-tap, because press() debounces at 150ms
+         and returns early without re-arming — the second tap would cancel the
+         first tap's open and then decline to schedule its own, swallowing the
+         modal entirely. A re-grip only has to cancel once it stops being a
+         tap. */
       if (item.dataset.turn !== 'object' &&
           window.JD_turnObject && window.JD_turnObject.standDown) {
         window.JD_turnObject.standDown();
@@ -1498,7 +1504,19 @@ function JD_layerOpen() {
       if (held === item) {
         /* the elastic used to let go here; it holds on now (2026-08-09) —
            place() feeds the rope the same clamped centre it clamps to */
-        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) drag = true;
+        if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
+          drag = true;
+          /* the doorbell cancelling its own pending open, at the exact moment
+             this gesture stops being a tap. A re-grip that becomes a DRAG
+             never reaches press(), so without this the previous tap's
+             openTimer fires mid-drag and the modal lands on top of a doorbell
+             still travelling under the scrim. Deliberately here and not on
+             pointerdown — see the note there. */
+          if (item.dataset.turn === 'object' &&
+              window.JD_turnObject && window.JD_turnObject.standDown) {
+            window.JD_turnObject.standDown();
+          }
+        }
         if (drag) place(item, ox + dx, oy + dy);
       }
     });
@@ -1721,21 +1739,72 @@ function JD_layerOpen() {
     return ASSET + (v ? '?v=' + encodeURIComponent(v) : '');
   }
 
+  /* THE BACKSTOP PLATE. turn-object.svg is now the ONLY way to take a turn —
+     the corner button it replaced was static markup in index.php and could not
+     fail to exist, so a fetch that never lands must not be allowed to remove
+     the feature from the page. This is a doorbell drawn inline, in the same
+     240×300 viewBox with the same class hooks (.db-plate / .db-pearl /
+     .db-flash / .db-label), so the tier math, the press keyframes and the
+     reduced-motion variant all drive it unchanged. It is deliberately plain —
+     flat fills, no gloss, no tape, no gleam — because its only job is to be
+     unmistakably a pressable doorbell on the day the artwork is missing. If a
+     visitor ever sees it, the deploy is broken; the turn still works. */
+  var FALLBACK_ART = [
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300">',
+    '<g class="db-plate">',
+    '<rect x="4" y="3" width="232" height="294" rx="34" fill="#d2a03c"',
+    ' stroke="#3a2408" stroke-width="5" stroke-linejoin="round"/>',
+    '<circle cx="120" cy="100" r="61" fill="#bb8c2c" stroke="#3a2408" stroke-width="5"/>',
+    '<circle cx="120" cy="100" r="50" fill="#5e3d0d" stroke="#3a2408" stroke-width="3.5"/>',
+    '<g class="db-pearl">',
+    '<circle cx="120" cy="100" r="47" fill="#f4e9d6" stroke="#3a2408" stroke-width="4"/>',
+    '<ellipse cx="102" cy="79" rx="19" ry="14" fill="#ffffff" opacity="0.9"/>',
+    '</g>',
+    '<circle class="db-flash" cx="120" cy="100" r="58" fill="none" stroke="#fff6cf"',
+    ' stroke-width="7" opacity="0" pointer-events="none"/>',
+    '<g class="db-label">',
+    '<rect x="24" y="177" width="192" height="77" rx="3" fill="#eaddb2"',
+    ' stroke="#b08f52" stroke-width="2"/>',
+    '<text x="120" y="213" text-anchor="middle" fill="#3b3020" font-weight="700"',
+    ' font-family="Courier New, Courier, monospace" font-size="25">TAKE A TURN</text>',
+    '<text x="120" y="241" text-anchor="middle" fill="#5d4d2e" letter-spacing="4"',
+    ' font-family="Courier New, Courier, monospace" font-size="13">— PRESS —</text>',
+    '</g></g></svg>'
+  ].join('');
+
   /* the asset request goes out immediately, in parallel with data.php — the
-     trigger must not queue behind the collection */
-  fetch(JD_API + assetUrl())
-    .then(function (r) {
-      if (!r.ok) throw new Error(ASSET + ' ' + r.status);
-      return r.text();
-    })
-    .then(function (text) { art = text; build(); })
-    .catch(function (err) {
-      /* nothing else opens the turn modal now, so this is worth saying out
-         loud rather than failing silently */
-      if (window.console && console.warn) {
-        console.warn('junk drawer: the turn object did not load — ' + err.message);
-      }
-    });
+     trigger must not queue behind the collection. It is also RETRIED twice
+     before giving up (a flaky first request on a phone shouldn't cost the
+     visitor the feature), and whatever happens the object gets BUILT: out of
+     tries, it is built on FALLBACK_ART instead. */
+  var RETRY_MS = [600, 1800];
+  function loadArt(tries) {
+    fetch(JD_API + assetUrl())
+      .then(function (r) {
+        if (!r.ok) throw new Error(ASSET + ' ' + r.status);
+        return r.text();
+      })
+      .then(function (text) {
+        /* a captive-portal login page or an HTML 404 body served with 200
+           would otherwise be injected as the doorbell */
+        if (text.indexOf('<svg') < 0) throw new Error(ASSET + ' is not an SVG');
+        art = text; build();
+      })
+      .catch(function (err) {
+        if (tries < RETRY_MS.length) {
+          window.setTimeout(function () { loadArt(tries + 1); }, RETRY_MS[tries]);
+          return;
+        }
+        /* worth saying out loud rather than failing silently — the drawer is
+           now wearing the understudy */
+        if (window.console && console.warn) {
+          console.warn('junk drawer: the turn object did not load (' +
+            err.message + ') — falling back to the inline plate');
+        }
+        art = FALLBACK_ART; build();
+      });
+  }
+  loadArt(0);
 
   /* called by the pile loader once the tier boxes are known (or once it has
      given up); `build` runs when BOTH the artwork and the ruler are in */
@@ -1840,10 +1909,16 @@ function JD_layerOpen() {
       /* z is deliberately NOT read back off the element. settle() rides every
          touched item up the zTop counter (101, 102, …), so the live zIndex
          here says "most recently handled", not "where this object sits in the
-         pile" — persisting it would re-assert an ever-climbing boost on every
-         load and quietly undo a burial the visitor performed. §1 gives the
-         boost to the FIRST scatter only, so the seat keeps the z it was born
-         with and only x/y/rot are the visitor's to change. */
+         pile" — persisting it would re-assert an EVER-CLIMBING boost on every
+         load. The seat therefore keeps the z it was born with (Z_FIRST), and
+         only x/y/rot are the visitor's to change.
+         Stated plainly, because it is easy to misread: this does NOT persist a
+         burial. A visitor can drag junk over the doorbell and it stays under
+         for the session, but the junk's own z is scenery too (items never
+         write z back either) — so on the next load seat() re-applies 99 while
+         the collection re-scatters at 1..N, and the doorbell surfaces. That is
+         the intended trade: the alternative loses the page's only control
+         behind a pile the visitor can no longer see it under. */
       z: prev.z || Z_FIRST
     };
     JD_store.set(SCATTER_KEY, map);

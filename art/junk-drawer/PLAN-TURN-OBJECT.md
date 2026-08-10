@@ -29,7 +29,15 @@ scatter seat is written back to `jd-scatter-v2` on settle, so a doorbell the
 visitor deliberately moved survives a refresh where a specimen's position
 (scenery, recomputed each load) does not — **position and rotation only**: the
 stored `z` is written once by the first scatter and never overwritten, so the
-§1 boost cannot be re-asserted on later loads and a burial stands. Two further
+ever-climbing `zTop` value a handled item picks up is never persisted.
+**A burial therefore holds for the session but not across a reload** (measured
+2026-08-10): `seat()` re-applies the stored `z` (99) on every load, while the
+junk the visitor dragged on top reverts to its own scatter `z` of 1..31 —
+items never write `z` back at all — so a refresh floats the doorbell back to
+the top. That is the deliberate trade: persisting the live `zIndex` instead
+would re-assert an *increasing* boost on every load (see the comment at
+`remember()`), which is worse, and the alternative of persisting a burial
+means a visitor can permanently lose the only control on the page. Two further
 notes from review: the object carries an unconditional 44 px `min-width` floor
 because the pile's cqmin sizing collapses on a short well (a phone in
 landscape sits outside the ≤768 px size band and drew the plate at 32.5 px),
