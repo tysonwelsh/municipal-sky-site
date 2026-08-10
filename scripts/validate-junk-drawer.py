@@ -398,6 +398,13 @@ def main():
     else:
         warn(items_dir, "no items/ directory yet")
 
+    # Hardware assets outside items/ get the same hygiene net: turn-object.svg
+    # is inlined into the live DOM just like item art, so an art-only edit
+    # must not be able to sneak scripts/handlers/external refs past review.
+    turn_object = ROOT / "turn-object.svg"
+    if turn_object.is_file():
+        svgs.append(turn_object)
+
     for svg in svgs:
         validate_svg(svg)
 

@@ -482,7 +482,10 @@ html { scroll-behavior: smooth; }
 /* the parts' own axes, in the asset's user units (viewBox 0 0 240 300) */
 .jd-item--turn .db-plate,
 .jd-item--turn .db-pearl,
-.jd-item--turn .db-flash { transform-box: view-box; }
+/* pointer-events must live HERE, not as an attribute in the SVG: the generic
+   .jd-item svg * { pointer-events: visiblePainted } rule beats a presentation
+   attribute, so only a CSS rule actually keeps the invisible ring un-hittable */
+.jd-item--turn .db-flash { transform-box: view-box; pointer-events: none; }
 .jd-item--turn .db-plate { transform-origin: 120px 150px; }   /* the plate's centre */
 .jd-item--turn .db-pearl { transform-origin: 120px 100px; }   /* the button's axis */
 .jd-item--turn .db-flash { transform-origin: 120px 100px; }   /* the bezel's rim */

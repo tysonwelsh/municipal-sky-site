@@ -150,8 +150,10 @@
         </g>
       </g>
 
-      <!-- the press flash on the bezel rim. opacity 0 at rest, and
-           pointer-events none so an invisible ring never steals a hit test. -->
+      <!-- the press flash on the bezel rim, opacity 0 at rest. The attribute
+           pointer-events="none" is advisory only: the page's .jd-item svg *
+           rule outranks presentation attributes, so the enforcing rule lives
+           in junk-drawer.css (the .db-flash rule under the turn item). -->
       <circle class="db-flash" cx="120" cy="100" r="58" fill="none"
               stroke="#fff6cf" stroke-width="7" opacity="0" pointer-events="none"/>
     </g>
