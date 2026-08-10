@@ -1,0 +1,335 @@
+<?php
+declare(strict_types=1);
+
+/**
+ * jd-cost-probe.php — what a Junk Drawer turn costs, measured not guessed.
+ *
+ * NOTHING IS SAVED. This calls the two providers directly and throws the
+ * artwork away, keeping only the token counts. It does not touch the
+ * database, does not write jd_submissions/jd_generations, does not go
+ * through api/jd-generate.php, and does not consume any of the JD_LIMIT_*
+ * rate-limit budget. The only trace it leaves is real spend on your two
+ * provider accounts.
+ *
+ * It mirrors jd_provider_call() in api/jd-generate.php (lines ~404-450)
+ * deliberately rather than including it, because that file is a request
+ * handler and executes on include. The payloads here must stay in step with
+ * it — same JD_SYSTEM_PROMPT, same JD_MAX_TOKENS, thinking disabled for
+ * Anthropic, max_completion_tokens for OpenAI — or the numbers stop
+ * describing the real feature.
+ *
+ * USAGE
+ *     php scripts/jd-cost-probe.php                    # the 5 built-in prompts
+ *     php scripts/jd-cost-probe.php --prompts=my.txt   # one prompt per line
+ *     php scripts/jd-cost-probe.php --runs=3           # repeat for variance
+ *     php scripts/jd-cost-probe.php --dry-run          # show what it WOULD spend
+ *     php scripts/jd-cost-probe.php --json
+ *
+ * Each prompt costs one real generation on EACH provider.
+ */
+
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
+require_once __DIR__ . '/../api/jd-config.php';
+ini_set('display_errors', '1');
+
+$opts = [];
+foreach (array_slice($argv, 1) as $arg) {
+    if (preg_match('/^--([a-z-]+)(?:=(.*))?$/', $arg, $m)) {
+        $opts[$m[1]] = $m[2] ?? true;
+    }
+}
+
+// A deliberate spread from trivial to elaborate: SVG output tokens are driven
+// almost entirely by how much structure the brief implies, so a single prompt
+// tells you nothing about the range you should budget for.
+$PROMPTS = [
+    'a paperclip',
+    'a small brass key with one bent tooth',
+    'a tangled pair of earbuds',
+    'a pocket watch with its cover open, showing the tiny gears inside',
+    'a dried seahorse in a glass jar on a windowsill at dusk',
+];
+if (is_string($opts['prompts'] ?? null)) {
+    $lines = file($opts['prompts'], FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if ($lines === false) {
+        fwrite(STDERR, "Could not read {$opts['prompts']}\n");
+        exit(1);
+    }
+    $PROMPTS = array_values(array_filter(array_map('trim', $lines)));
+}
+$runs = max(1, (int) ($opts['runs'] ?? 1));
+
+$priceDoc = json_decode((string) @file_get_contents(__DIR__ . '/jd-prices.json'), true);
+$PRICES = $priceDoc['prices'] ?? [];
+
+$secrets = jd_secrets();
+$KEYS = [
+    // mirrors jd-generate.php:393-394
+    'anthropic' => $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null,
+    'openai'    => $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null,
+];
+foreach ($KEYS as $p => $k) {
+    if ($k === null) {
+        fwrite(STDERR, "No API key configured for $p\n");
+        exit(1);
+    }
+}
+
+$calls = count($PROMPTS) * $runs * count(JD_MODEL_PAIR);
+echo "\nCost probe — ", count($PROMPTS), " prompt(s) x $runs run(s) x ",
+     count(JD_MODEL_PAIR), " providers = $calls live generation(s).\n";
+echo "Nothing is written to the database. Artwork is discarded.\n\n";
+
+if (isset($opts['dry-run'])) {
+    foreach ($PROMPTS as $i => $p) {
+        printf("  %d. %s\n", $i + 1, $p);
+    }
+    echo "\nDry run — no API calls made.\n\n";
+    exit(0);
+}
+
+// ---------------------------------------------------------------------------
+
+function jd_probe_payload(array $model, string $prompt): array
+{
+    if ($model['provider'] === 'anthropic') {
+        return ['https://api.anthropic.com/v1/messages', [
+            'model' => $model['api_model'],
+            'max_tokens' => JD_MAX_TOKENS,
+            'thinking' => ['type' => 'disabled'],
+            'system' => JD_SYSTEM_PROMPT,
+            'messages' => [['role' => 'user', 'content' => $prompt]],
+        ]];
+    }
+    return ['https://api.openai.com/v1/chat/completions', [
+        'model' => $model['api_model'],
+        'max_completion_tokens' => JD_MAX_TOKENS,
+        'messages' => [
+            ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
+            ['role' => 'user', 'content' => $prompt],
+        ],
+    ]];
+}
+
+function jd_probe_headers(string $provider, string $key): array
+{
+    return $provider === 'anthropic'
+        ? ['Content-Type: application/json', 'x-api-key: ' . $key, 'anthropic-version: 2023-06-01']
+        : ['Content-Type: application/json', 'Authorization: Bearer ' . $key];
+}
+
+/** Both providers for one prompt, concurrently — the pair is what a turn is. */
+function jd_probe_pair(string $prompt, array $keys): array
+{
+    $mh = curl_multi_init();
+    $handles = [];
+    foreach (JD_MODEL_PAIR as $idx => $model) {
+        [$url, $payload] = jd_probe_payload($model, $prompt);
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_HTTPHEADER => jd_probe_headers($model['provider'], $keys[$model['provider']]),
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_TIMEOUT => JD_PROVIDER_TIMEOUT,
+            CURLOPT_CONNECTTIMEOUT => JD_PROVIDER_CONNECT_TIMEOUT,
+        ]);
+        curl_multi_add_handle($mh, $ch);
+        $handles[$idx] = ['ch' => $ch, 'model' => $model, 'started' => microtime(true)];
+    }
+
+    $running = null;
+    do {
+        curl_multi_exec($mh, $running);
+        if ($running) {
+            curl_multi_select($mh, 1.0);
+        }
+    } while ($running > 0);
+
+    $out = [];
+    foreach ($handles as $idx => $h) {
+        $body = (string) curl_multi_getcontent($h['ch']);
+        $code = (int) curl_getinfo($h['ch'], CURLINFO_HTTP_CODE);
+        $ms = (int) round((microtime(true) - $h['started']) * 1000);
+        curl_multi_remove_handle($mh, $h['ch']);
+        curl_close($h['ch']);
+
+        $data = json_decode($body, true);
+        $provider = $h['model']['provider'];
+        $usage = (is_array($data) && isset($data['usage']) && is_array($data['usage']))
+            ? $data['usage'] : [];
+
+        // Extract only to measure it; the SVG itself is never kept.
+        $text = '';
+        if ($provider === 'anthropic') {
+            foreach ($data['content'] ?? [] as $block) {
+                if (($block['type'] ?? '') === 'text') {
+                    $text .= $block['text'];
+                }
+            }
+        } else {
+            $text = (string) ($data['choices'][0]['message']['content'] ?? '');
+        }
+        $svg = jd_extract_svg($text);
+
+        $out[] = [
+            'model' => $h['model']['api_model'],
+            'provider' => $provider,
+            'http' => $code,
+            'ok' => $code === 200 && $svg !== null,
+            'error' => $code === 200 ? null : (string) ($data['error']['message'] ?? "http_$code"),
+            'svg_bytes' => $svg !== null ? strlen($svg) : 0,
+            'latency_ms' => $ms,
+            'usage' => $usage,
+        ];
+        unset($text, $svg, $data, $body);   // artwork out of memory immediately
+    }
+    curl_multi_close($mh);
+    return $out;
+}
+
+// Same normalisation and pricing rules as jd-spend.php — see the long comment
+// there for why the two providers' inclusion rules differ.
+function jd_probe_cost(string $provider, array $u, array $p): array
+{
+    if ($provider === 'anthropic') {
+        $in = (int) ($u['input_tokens'] ?? 0);
+        $cw = (int) ($u['cache_creation_input_tokens'] ?? 0);
+        $cr = (int) ($u['cache_read_input_tokens'] ?? 0);
+        $out = (int) ($u['output_tokens'] ?? 0);
+        $reason = 0;
+    } else {
+        $pt = (int) ($u['prompt_tokens'] ?? 0);
+        $cr = (int) ($u['prompt_tokens_details']['cached_tokens'] ?? 0);
+        $in = max(0, $pt - $cr);
+        $cw = 0;
+        $out = (int) ($u['completion_tokens'] ?? 0);
+        $reason = (int) ($u['completion_tokens_details']['reasoning_tokens'] ?? 0);
+    }
+    $cost = $in / 1e6 * (float) ($p['input'] ?? 0)
+          + $cw / 1e6 * (float) ($p['cache_write'] ?? 0)
+          + $cr / 1e6 * (float) ($p['cache_read'] ?? 0)
+          + $out / 1e6 * (float) ($p['output'] ?? 0);
+    return compact('in', 'cw', 'cr', 'out', 'reason', 'cost');
+}
+
+// ---------------------------------------------------------------------------
+
+$results = [];
+$turnCosts = [];
+foreach ($PROMPTS as $pi => $prompt) {
+    for ($r = 0; $r < $runs; $r++) {
+        $label = $runs > 1 ? sprintf('%d.%d', $pi + 1, $r + 1) : (string) ($pi + 1);
+        fwrite(STDERR, "  [$label] " . substr($prompt, 0, 46) . " ... ");
+        $pair = jd_probe_pair($prompt, $KEYS);
+        $turnCost = 0.0;
+        foreach ($pair as &$slot) {
+            $price = $PRICES[$slot['model']] ?? [];
+            $slot['billed'] = jd_probe_cost($slot['provider'], $slot['usage'], $price);
+            $slot['priced'] = $price !== [];
+            $turnCost += $slot['billed']['cost'];
+        }
+        unset($slot);
+        $turnCosts[] = $turnCost;
+        $results[] = ['label' => $label, 'prompt' => $prompt, 'slots' => $pair, 'turn_cost' => $turnCost];
+        fwrite(STDERR, sprintf("$%.6f\n", $turnCost));
+    }
+}
+
+if (isset($opts['json'])) {
+    echo json_encode(['results' => $results, 'turn_costs' => $turnCosts],
+        JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), "\n";
+    exit(0);
+}
+
+$money = static fn(float $v): string => '$' . number_format($v, 6);
+$n = static fn(int $v): string => number_format($v);
+
+echo "\n";
+printf("%-4s %-34s %-14s %8s %8s %8s %9s %11s\n",
+    '#', 'PROMPT', 'MODEL', 'IN', 'OUT', 'REASON', 'SVG B', 'COST');
+echo str_repeat('-', 104), "\n";
+foreach ($results as $row) {
+    $first = true;
+    foreach ($row['slots'] as $s) {
+        printf("%-4s %-34s %-14s %8s %8s %8s %9s %11s%s\n",
+            $first ? $row['label'] : '',
+            $first ? substr($row['prompt'], 0, 34) : '',
+            $s['model'],
+            $n($s['billed']['in']), $n($s['billed']['out']),
+            $s['billed']['reason'] ? $n($s['billed']['reason']) : '-',
+            $s['ok'] ? $n($s['svg_bytes']) : 'FAIL',
+            $money($s['billed']['cost']),
+            $s['priced'] ? '' : ' (UNPRICED)');
+        $first = false;
+    }
+    printf("%-4s %-34s %-14s %8s %8s %8s %9s %11s\n", '', '', '', '', '', '', 'turn:', $money($row['turn_cost']));
+}
+
+// A failed slot is a first-class result: on the live site the visitor sees an
+// empty half of the pair, so the reason has to be legible here, not swallowed.
+$failures = [];
+foreach ($results as $row) {
+    foreach ($row['slots'] as $s) {
+        if (!$s['ok']) {
+            $failures[] = sprintf('  [%s] %-14s http=%-4d %-9s %s',
+                $row['label'], $s['model'], $s['http'],
+                $s['latency_ms'] . 'ms',
+                $s['error'] ?? ($s['usage'] ? 'no <svg> in a 200 response' : 'empty response'));
+        }
+    }
+}
+if ($failures) {
+    echo "\nFAILED SLOTS (", count($failures), " of ", $count * count(JD_MODEL_PAIR), ")\n";
+    echo implode("\n", $failures), "\n";
+    printf("  JD_PROVIDER_TIMEOUT is %ds — a latency at or near that is a timeout,\n"
+         . "  and the visitor gets half a turn.\n", JD_PROVIDER_TIMEOUT);
+}
+
+$count = count($turnCosts);
+sort($turnCosts);
+$mean = array_sum($turnCosts) / max(1, $count);
+$median = $turnCosts[(int) floor(($count - 1) / 2)];
+$min = $turnCosts[0];
+$max = $turnCosts[$count - 1];
+
+// Per-provider split, so you can size each dashboard's cap independently.
+$byProvider = [];
+foreach ($results as $row) {
+    foreach ($row['slots'] as $s) {
+        $byProvider[$s['provider']] = ($byProvider[$s['provider']] ?? 0) + $s['billed']['cost'];
+    }
+}
+
+echo "\n", str_repeat('=', 60), "\n";
+printf("Turns measured        %d\n", $count);
+printf("Mean cost per turn    %s\n", $money($mean));
+printf("Median                %s\n", $money($median));
+printf("Cheapest / dearest    %s  /  %s\n", $money($min), $money($max));
+echo str_repeat('-', 60), "\n";
+foreach ($byProvider as $prov => $total) {
+    printf("%-14s mean/turn  %s\n", $prov, $money($total / max(1, $count)));
+}
+echo str_repeat('-', 60), "\n";
+printf("Probe spend (actual)  %s\n", $money(array_sum($turnCosts)));
+echo str_repeat('=', 60), "\n\n";
+
+// The breaker is the number that matters for a spend cap: it is the most the
+// feature can cost you in a day before it refuses to generate at all.
+$daily = JD_LIMIT_GLOBAL_DAILY * $mean;
+$dailyMax = JD_LIMIT_GLOBAL_DAILY * $max;
+echo "WHAT TO EXPECT\n";
+printf("  At the JD_LIMIT_GLOBAL_DAILY breaker (%d turns/day):\n", JD_LIMIT_GLOBAL_DAILY);
+printf("    typical day at the cap   %s   (~%s / 30 days)\n",
+    '$' . number_format($daily, 2), '$' . number_format($daily * 30, 2));
+printf("    worst case at the cap    %s   (~%s / 30 days)\n",
+    '$' . number_format($dailyMax, 2), '$' . number_format($dailyMax * 30, 2));
+printf("  One visitor at their daily ceiling (%d turns): %s\n",
+    JD_LIMIT_DAILY, '$' . number_format(JD_LIMIT_DAILY * $mean, 2));
+echo "\n  Set your provider spend caps above the worst-case line, not the\n",
+     "  typical one — the breaker counts turns, not dollars.\n\n";
