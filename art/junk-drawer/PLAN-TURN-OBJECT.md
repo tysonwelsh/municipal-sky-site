@@ -15,6 +15,21 @@ A glossy cartoon game-show button sitting in the painterly clutter reads
 as *one more object that doesn't match* — the control disguises itself
 as collection. The style break is the camouflage.
 
+**REVISION (owner, 2026-08-10, v0.6.1): the doorbell is FIXED, not
+repositionable.** After living with v0.6.0 the owner reversed §1's
+"it is a pile item" clause: the doorbell now sits screwed to the
+**bottom-left corner** of the well (half-plate + 3.5% inset off each wall,
+constant −4° tilt, constant z 99) — same spot every session, every device.
+It cannot be dragged or rotated: `grip()` never lifts it, `place()` and all
+three rotation paths refuse it, `settle()` releases it unmoved, and an
+attempted drag neither moves it nor counts as a press. Nothing about it is
+stored any more (stale seats from the draggable era are swept from the
+layout key). Junk deliberately dropped on it can still cover it for the
+session; a fresh scatter never buries it. Tap/press, modal, a11y, and the
+idle gleam are unchanged. In the same pass the specimen tag's elastic was
+shortened to read about two-thirds its former length (ROPE.SLACK 1.25→1.17,
+MIN_REST 60→40, seat gaps 26→17 / 20→13, lean floors scaled).
+
 **STATUS — DONE (2026-08-10).** The owner picked **8e, the doorbell**, and it
 is implemented and shipped in v0.6.0. The mockup's hero SVG is now the
 production asset `turn-object.svg`, injected into `.jd-pile` by

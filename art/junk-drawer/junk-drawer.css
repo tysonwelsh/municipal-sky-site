@@ -418,8 +418,8 @@ html { scroll-behavior: smooth; }
    division is deliberate: a SMIL animation baked into the asset could not be
    switched off for prefers-reduced-motion, and CSS can. */
 .jd-item--turn {
-  /* it is pressable first and draggable second, and the cursor should say so
-     (the pile's default is `grab`) */
+  /* pressable, and ONLY pressable — fixed hardware since 2026-08-10, so the
+     pile's `grab` cursor would be a lie here */
   cursor: pointer;
   /* THE TOUCH FLOOR — the one size rule a specimen doesn't get, because this
      is the only way to take a turn and the retired corner button held ≥44px
