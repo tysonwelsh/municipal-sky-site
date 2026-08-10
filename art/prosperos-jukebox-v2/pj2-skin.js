@@ -290,8 +290,12 @@ PJ2.Skin = (function () {
   }
   function getMode() { return MODE; }
 
-  function palette(track) {
-    var p = (MODE === "night" ? PALETTES : PALETTES_P)[track];
+  // `mode` overrides the global MODE for one lookup — for surfaces whose ink
+  // does not follow the page. (The parchment binding cuts night windows into
+  // the sheet; what is drawn inside them keeps the night ramps while the page
+  // around them keeps the parchment ones.)
+  function palette(track, mode) {
+    var p = ((mode || MODE) === "night" ? PALETTES : PALETTES_P)[track];
     if (!p) throw new Error("PJ2.Skin: unknown track '" + track + "'");
     return p;
   }
@@ -1859,6 +1863,14 @@ PJ2.Skin = (function () {
       invalidate: function (layer) {
         if (dirty[layer] === undefined) throw new Error("PJ2.Skin.stack: no layer '" + layer + "'");
         dirty[layer] = true;
+      },
+      // Does a layer still owe a bake? For stacks that are NOT composited
+      // every frame (the folio's paper sheet), this is how the owner knows a
+      // composite is due — including after a debounced resize, which dirties
+      // the layer long after the call that asked for it.
+      isDirty: function (layer) {
+        if (dirty[layer] === undefined) throw new Error("PJ2.Skin.stack: no layer '" + layer + "'");
+        return !!dirty[layer];
       },
 
       // --- L3 alive-list ---------------------------------------------------

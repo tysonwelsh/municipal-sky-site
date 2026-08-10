@@ -50,6 +50,13 @@
 // reaches the margin apparatus (the quadrant/altitude panel), so nothing
 // else lost its datum.
 //
+// REMOVED (owner 2026-08-08): Ariel's horizon — the dashed rule across the
+// plate's foot with its "horizon — sinks through the release" label. It was
+// the last static plate furniture on any track, and it read as an
+// unexplained fixture: it only moved during a `release` event, so in normal
+// listening it was a motionless line with a caption. drawPlateFurniture is
+// now a no-op everywhere, and the `release` event no longer draws anything.
+//
 // Precision rules, binding (§2): data marks are never quantized coarser
 // than 1 device px (contour, marks, needle angles all draw at full
 // resolution on the smoothed L2 context); SAMPLES_PER_TURN is a constant
@@ -134,6 +141,12 @@ PJ2.Viz = (function () {
     if (!plateCanvas || !marginCanvas) {
       throw new Error("PJ2.Viz.create: needs plateCanvas, marginCanvas");
     }
+    // OPTIONAL: the folio's own paper canvas — the full-page sheet the
+    // parchment binding is drawn on (see paperFolio). Absent (the harness,
+    // and any host that has not added the element) the parchment dress
+    // simply has no paper behind its panels; nothing else changes, and the
+    // night binding never touches it.
+    var folioCanvas = opts.folioCanvas || null;
 
     // injectable environment (harness plumbing — the node smoke passes mocks)
     var raf = opts.raf || (typeof requestAnimationFrame !== "undefined"
@@ -259,56 +272,117 @@ PJ2.Viz = (function () {
       setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
       renderers: { paper: paperSidePanel, furniture: drawMarginFurniture, data: drawMarginData },
     });
-    plateStack.bindVisibility();
+    // the folio sheet: a paper-only stack, composited on demand rather than
+    // per frame — it changes with the track, the binding and the size, and
+    // nothing else. (Compositing a folio-sized layer every frame would be
+    // pure waste; the panels above it are what animate.)
+    var folioStack = folioCanvas ? Skin.stack(folioCanvas, track, {
+      seed: seed, w: opts.folioW || 1392, h: opts.folioH || 768,
+      dpr: opts.dpr, zones: {},
+      setTimeout: opts.setTimeout, clearTimeout: opts.clearTimeout,
+      renderers: { paper: paperFolio },
+    }) : null;
+    function invalidateFolio() {
+      if (folioStack) folioStack.invalidate("paper");
+    }
+    // The stack's own dirty flag is the trigger, not a flag of ours: every
+    // path that changes the sheet (setTrack, the binding switch, and the
+    // DEBOUNCED resize, which dirties the layer 160 ms after the call) sets
+    // it, so asking the stack cannot miss a re-bake the way a local flag can.
+    function compositeFolioIfDirty() {
+      if (folioStack && folioStack.isDirty("paper")) folioStack.composite();
+    }
 
     function invalidateFurniture() {
       plateStack.invalidate("furniture");
       marginStack.invalidate("furniture");
     }
 
-    // THE NIGHT SURFACE (PLAN-NIGHT-FOLIO §B, owner 2026-07-20): every
-    // panel — plate and margin — bakes the same flat night ground
-    // with a near-subliminal art-pixel grain (one tone step, blue-noise
-    // placed). No parchment, no windows, no texture boundaries: the folio
-    // is one continuous surface and seams are impossible by construction.
-    // The paper frame lives at the folio's CSS border now.
+    // THE NIGHT SURFACE (PLAN-NIGHT-FOLIO §B, owner 2026-07-20): every panel
+    // — plate and margin — fills the same flat night ground. No parchment, no
+    // windows, no texture boundaries. The paper frame lives at the folio's
+    // CSS border.
+    //
+    // THE GRAIN IS GONE (owner 2026-08-08). §B asked for a "near-subliminal"
+    // art-pixel grain, and this used to paint ~6% of cells one tone step up
+    // (paper[1] over spiral.bg, blue-noise placed). It was not subliminal —
+    // it read as speckle, or as static, on a ground that is otherwise almost
+    // black. Removing it also settles the folio's continuity for free: a flat
+    // fill is exactly .pj2-folio's own --pj2-paper, so the gutters between
+    // the panels now match the panels perfectly and no seam is possible.
     function paperNight(G, tr, sd, zones) {
-      var c = G.ctx, u = G.u || 2;
-      var p = Skin.palette(tr);
-      c.fillStyle = p.spiral.bg;
+      var c = G.ctx;
+      c.fillStyle = Skin.palette(tr).spiral.bg;
       c.fillRect(0, 0, G.w, G.h);
-      var bn = Skin.Dither.blueNoise(sd >>> 0);
-      c.fillStyle = (p.paper || p.plate)[1];   // ariel's ramp is named "plate"
-      var cols = Math.ceil(G.w / u), rows = Math.ceil(G.h / u);
-      for (var gy = 0; gy < rows; gy++) {
-        for (var gx = 0; gx < cols; gx++) {
-          if (bn.at(gx & 63, gy & 63) > 0.94) c.fillRect(gx * u, gy * u, u, u);
-        }
-      }
     }
-    // parchment binding: the calm codex page with the spiral's rounded
-    // monitor window (the PR #24 look, kept alive behind the switch)
-    function paperParchPlate(G, tr, sd, zones) {
+    // THE FOLIO'S PAPER (parchment binding; owner 2026-08-08). ONE sheet for
+    // the whole page, baked on a canvas that sits behind everything inside
+    // .pj2-folio — the title, both panels, the gutters, the log.
+    //
+    // It used to be baked twice, once per panel, and that could not read as a
+    // page: Skin.paper's generators work in LOCAL canvas coordinates, and the
+    // ariel/library/sycorax generators all centre a radial darkening on the
+    // canvas they are handed (pj2-skin.js: `n -= (dx*dx + dy*dy) * 0.20`,
+    // plus burnish sweeps off the same centre). Two panels therefore meant
+    // two sheets — each with its own bright middle and its own dark edge —
+    // with the folio's flat background showing through the 12px column gutter
+    // and the 8px gaps in the margin column between them. Closing the gaps
+    // would not have helped; the seam was the two centres, not the distance.
+    //
+    // Now the sheet is generated once at folio size, so there is one centre,
+    // one falloff, and no boundary anywhere. The panels above it paint only
+    // their own contents: the plate its night window, the margin nothing at
+    // all. Cost is a wash — one bake of the folio instead of two of the
+    // panels — and it stays on the debounced resize path (§6).
+    function paperFolio(G, tr, sd, zones) {
+      if (binding !== "parchment") return;   // night: the panels own their ground
       Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, plateZone: zones.plateZone,
+        u: G.u,
         quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
         deckle: false, stars: false,
       });
-      var pz = zones.plateZone;
-      if (!pz || !pz.rx || !pz.ry) return;
+    }
+
+    // CUT A NIGHT WINDOW into whatever paper this layer holds: a rounded
+    // rect of the track's night ground, with a feathered lip speckling into
+    // the paper at its edge. Every opening on the page — the spiral's plate
+    // zone and each of the apparatus panels — is cut by this one function,
+    // so they are unmistakably the same kind of hole. The loop is bounded to
+    // the window's own neighbourhood (the plate used to sweep the whole
+    // canvas for its single window; five small windows could not afford it).
+    // `feather` is the lip's reach in CSS px. The plate's window has room for
+    // the full 7; the apparatus panels are 8px apart, so theirs must stay
+    // under 4 or adjacent lips meet in the gutter and the parchment between
+    // two panels turns to speckle.
+    var WINDOW_FEATHER = 7;
+    function cutNightWindow(G, tr, sd, z, feather) {
+      if (!z || !(z.rx > 0) || !(z.ry > 0)) return;
       var c = G.ctx, u = G.u || 2;
+      var FEATHER = feather || WINDOW_FEATHER;
+      var f = FEATHER + u;
+      var gx0 = Math.max(0, Math.floor((z.cx - z.rx - f) / u));
+      var gx1 = Math.min(Math.ceil(G.w / u), Math.ceil((z.cx + z.rx + f) / u));
+      var gy0 = Math.max(0, Math.floor((z.cy - z.ry - f) / u));
+      var gy1 = Math.min(Math.ceil(G.h / u), Math.ceil((z.cy + z.ry + f) / u));
       c.fillStyle = Skin.palette(tr).spiral.bg;
-      var cols = Math.ceil(G.w / u), rows = Math.ceil(G.h / u);
-      for (var gy = 0; gy < rows; gy++) {
-        for (var gx = 0; gx < cols; gx++) {
+      for (var gy = gy0; gy < gy1; gy++) {
+        for (var gx = gx0; gx < gx1; gx++) {
           var px = gx * u, py = gy * u;
-          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, pz);
+          var d = Skin.rrectDist(px + u * 0.5, py + u * 0.5, z);
           if (d < 0) { c.fillRect(px, py, u, u); continue; }
-          if (d < 7 && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / 7) * 0.4) {
+          if (d < FEATHER
+              && Skin.noise.hash2(gx + (sd & 255), gy) < (1 - d / FEATHER) * 0.4) {
             c.fillRect(px, py, u, u);   // the feather speckle onto the paper
           }
         }
       }
+    }
+
+    // parchment binding: the spiral's rounded monitor window, cut into the
+    // folio's sheet. The paper behind it is paperFolio's; this paints the
+    // window and its feathered lip and leaves everything else TRANSPARENT.
+    function paperParchPlate(G, tr, sd, zones) {
+      cutNightWindow(G, tr, sd, zones.plateZone);
     }
     function paperPlatePanel(G, tr, sd, zones) {
       if (binding === "night") return paperNight(G, tr, sd, zones);
@@ -316,10 +390,19 @@ PJ2.Viz = (function () {
     }
     function paperSidePanel(G, tr, sd, zones) {
       if (binding === "night") return paperNight(G, tr, sd, zones);
-      Skin.paper(G.ctx, G.w, G.h, tr, sd, {
-        u: G.u, quietRects: [{ x: 0, y: 0, w: G.w, h: G.h }],
-        deckle: false, stars: false,
-      });
+      // Parchment: the margin sits on the folio's sheet (paperFolio), so it
+      // paints no paper of its own — only the five night windows its panels'
+      // content lives in. The scene band has none: it is a heading, and its
+      // display type belongs on the page.
+      var L = marginLayout(G), pf = 2;   // the panels' short lip (see above)
+      // taller windows leave less paper between panels, so the lip drops
+      // to 2 — at 3 the tree's speckle nearly met the row above it
+      cutNightWindow(G, tr, sd, panelWindow(L.scene, 0), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialA, 14), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialB, 14), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.rowA, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.rowB, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.tree, 0), pf);
     }
 
     // ---------------------------------------------------------------- camera
@@ -431,7 +514,6 @@ PJ2.Viz = (function () {
         case "organum": handleOrganum(ev, wallS); break;
         case "percussion": st.tallies++; pushTally(ev.mode || "strike"); break;
         case "bruise": st.bruise = ev.value || 0; break;
-        case "release": handleRelease(ev, wallS); break;
         case "feather": handleFeather(ev, wallS); break;
         case "bass-flourish": handleFlourish(ev, wallS); break;
         case "air":
@@ -612,11 +694,10 @@ PJ2.Viz = (function () {
       });
     }
 
-    function handleRelease(ev, wallS) {
-      // the plate's horizon sinks through the release (§1c)
-      st.releaseAt = wallS; st.releaseDur = ev.durS || 60;
-      plateStack.invalidate("furniture");
-    }
+    // (the `release` event drew Ariel's horizon line sinking; owner
+    // 2026-08-08 removed the horizon, so the release now has no plate
+    // illustration — the register migration it announces is already
+    // audible AND visible as the coil's own climb.)
 
     function handleFeather(ev, wallS) {
       addPlateIllustration(12, function (G, age, x, y) {
@@ -837,31 +918,14 @@ PJ2.Viz = (function () {
     }
 
     function drawPlateFurniture(G) {
-      // no caption (owner 2026-07-20: the explanatory line under the
-      // spiral is gone), no corner schema, no persistent marks (no-scar
-      // ruling) — the plate's only furniture is Ariel's horizon
-      if (track === "ariel") {
-        drawHorizon(G);
-      }
-    }
-
-    function drawHorizon(G) {
-      var c = G.ctx;
-      var sink = 0;
-      if (st.releaseAt != null) {
-        sink = clamp01((nowFn() / 1000 - st.releaseAt) / (st.releaseDur || 60)) * G.h * 0.05;
-      }
-      var hy = G.h * 0.86 + sink;
-      c.save();
-      c.setLineDash([2, 5]);
-      c.strokeStyle = pal.silver[2]; c.lineWidth = 1;
-      c.beginPath(); c.moveTo(G.w * 0.08, hy); c.lineTo(G.w * 0.92, hy); c.stroke();
-      c.restore();
-      if (fontsReady) {
-        // label lives on the plate ring, left of the night window — the
-        // dashed line itself passes honestly behind the floor
-        Skin.Type.smallCaps(c, "horizon — sinks through the release", G.w * 0.075, hy - 6, 12, pal.silver[1], 2);
-      }
+      // The plate carries NO static furniture on any track: no caption
+      // (owner 2026-07-20: the explanatory line under the spiral is gone),
+      // no corner schema, no persistent marks (no-scar ruling), and — owner
+      // 2026-08-08 — no Ariel horizon (the dashed rule and its
+      // "horizon — sinks through the release" label read as an unexplained
+      // fixture, since the sink only moves during a rare release event).
+      // The layer stays registered: the stack expects a furniture renderer,
+      // and the night ground beneath it is baked by the paper layer.
     }
 
     // ============================================================ PLATE L2 ==
@@ -1861,16 +1925,43 @@ PJ2.Viz = (function () {
     // scale — so no canvas height can push an emblem into its own heading
     // or readout. Idle (no scene / no info) renders deliberate em-dash
     // placeholders, never bare value fragments.
+    // The slots, STACKED with real gaps between them (owner 2026-08-08).
+    // They used to be independent fractions of the height, and they did not
+    // quite tile: the scene band ran to 0.17H while the dials began at 0.19H,
+    // so at 330px the band's last 1.4px lay inside the dials' slot. Nothing
+    // was drawn there, so nothing showed — until every slot became a window
+    // with a feathered lip, and the scene's progress bar started colliding
+    // with the tops of the dial windows.
+    //
+    // So the layout is now a sequence: each slot takes its height, then a
+    // fixed GAP of clear paper before the next. The gap has to survive two
+    // window lips (2px each) plus the 2px each window is lifted above its
+    // heading, hence 10.
+    var MARGIN_GAP = 10;
     function marginLayout(G) {
-      var H = G.h, W = G.w, pad = 8;
+      var H = G.h, W = G.w, pad = 8, gap = MARGIN_GAP;
+      var half = (W - 3 * pad) / 2, full = W - 2 * pad, right = pad * 2 + half;
+      // rows carry two lines of type; below 44px the second one is dropped by
+      // its own fit check (drawSeason), so the row height has a hard floor
+      // the scene band stacks three things — the operation label, the
+      // sub-line, and the progress bar — so it is the one slot that feels a
+      // few px either way
+      var sceneH = Math.round(H * 0.16);
+      var dialH = Math.round(H * 0.22);
+      var rowH = Math.max(44, Math.round(H * 0.14));
+      var y = pad;
+      var scene = { x: pad, y: y, w: full, h: sceneH };
+      y += sceneH + gap;
+      var dialA = { x: pad, y: y, w: half, h: dialH };
+      var dialB = { x: right, y: y, w: half, h: dialH };
+      y += dialH + gap;
+      var rowA = { x: pad, y: y, w: half, h: rowH };
+      var rowB = { x: right, y: y, w: half, h: rowH };
+      y += rowH + gap;
+      var tree = { x: pad, y: y, w: full, h: Math.max(40, H - pad - y) };
       return {
         pad: pad, W: W, H: H,
-        scene: { x: pad, y: pad, w: W - 2 * pad, h: H * 0.17 },
-        dialA: { x: pad, y: H * 0.19, w: (W - 3 * pad) / 2, h: H * 0.24 },
-        dialB: { x: pad * 2 + (W - 3 * pad) / 2, y: H * 0.19, w: (W - 3 * pad) / 2, h: H * 0.24 },
-        rowA: { x: pad, y: H * 0.45, w: (W - 3 * pad) / 2, h: H * 0.14 },
-        rowB: { x: pad * 2 + (W - 3 * pad) / 2, y: H * 0.45, w: (W - 3 * pad) / 2, h: H * 0.14 },
-        tree: { x: pad, y: H * 0.61, w: W - 2 * pad, h: H * 0.37 - pad },
+        scene: scene, dialA: dialA, dialB: dialB, rowA: rowA, rowB: rowB, tree: tree,
       };
     }
     // the content cell between heading row and readout row (dial panels)
@@ -1890,13 +1981,23 @@ PJ2.Viz = (function () {
       var s = Math.floor(avail / (bmpPx * (u || 2)));
       return s < 1 ? 1 : s;
     }
-    function marginInk() {
+    function marginInkOf(p) {
       return track === "library"
-        ? { cap: pal.ink[2], rule: pal.ink[3], lead: pal.ink[0], mid: pal.ink[1], accent: pal.rubric[0] }
+        ? { cap: p.ink[2], rule: p.ink[3], lead: p.ink[0], mid: p.ink[1], accent: p.rubric[0] }
         : (track === "sycorax"
-          ? { cap: pal.bone[2], rule: pal.bone[2], lead: pal.bone[0], mid: pal.bone[1], accent: pal.witch[1] }
-          : { cap: pal.silver[1], rule: pal.silver[2], lead: pal.silver[0], mid: pal.silver[1], accent: pal.gilt[0] });
+          ? { cap: p.bone[2], rule: p.bone[2], lead: p.bone[0], mid: p.bone[1], accent: p.witch[1] }
+          : { cap: p.silver[1], rule: p.silver[2], lead: p.silver[0], mid: p.silver[1], accent: p.gilt[0] });
     }
+    // the ink of whatever surface is being drawn on right now
+    function marginInk() { return marginInkOf(pal); }
+    // THE PAGE's ink — headings, rules and readout lines sit on the paper
+    // itself, not in a window, so they follow the BINDING and never the
+    // temporary night flip the window content draws under (see inWindowInk).
+    function pageMarginInk() { return marginInkOf(Skin.palette(track, binding)); }
+
+    // The panel heading and its rule live INSIDE the panel's window (owner
+    // 2026-08-08), so they take the ink of the surface being drawn — the
+    // window's — not the page's. Only the readout below stays on the paper.
     function panelHead(G, r, text) {
       if (!fontsReady) return;
       var c = G.ctx;
@@ -1905,10 +2006,75 @@ PJ2.Viz = (function () {
       c.strokeStyle = ic.rule; c.lineWidth = 1;
       c.beginPath(); c.moveTo(r.x, r.y + 15); c.lineTo(r.x + r.w, r.y + 15); c.stroke();
     }
-    // the readout baseline — the panel's one value line
-    function readoutLine(G, r, text, col) {
+    // the readout baseline — the panel's one value line, below the window
+    function readoutLine(G, r, text) {
       if (!fontsReady) return;
-      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 3, 12, col || marginInk().mid, 1);
+      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 3, 12, pageMarginInk().mid, 1);
+    }
+
+    // ---- THE APPARATUS WINDOWS (owner 2026-08-08) ----------------------------
+    // On the parchment binding each panel's CONTENT sits in its own night
+    // window cut into the sheet — the same kind of opening as the spiral's
+    // plate zone — while its heading, rule and readout stay on the paper.
+    // So the content draws with the NIGHT palette even while the page is
+    // parchment: the genealogy in amber on black, exactly as the night folio
+    // draws it, rather than iron gall on a hole in the page.
+    //
+    // Skin's mode is global (palette, atlas AND the dataInk tripwire all read
+    // it), so the switch is scoped: flip, draw, restore in a finally. On the
+    // night binding there is nothing to flip and this is a plain call.
+    // The mode the SURFACE being drawn is in — which is not the page's
+    // binding once windows exist (a parchment page holds night windows).
+    // Every ink decision must follow the surface; only paper choice and
+    // window geometry follow the page.
+    function inkMode() { return Skin.getMode ? Skin.getMode() : binding; }
+
+    function inWindowInk(fn) {
+      if (binding !== "parchment") { fn(); return; }
+      var pagePal = pal, pageAt = at;
+      Skin.setMode("night");
+      pal = Skin.palette(track); at = Skin.atlas(track);
+      try {
+        fn();
+      } finally {
+        Skin.setMode("parchment");
+        pal = pagePal; at = pageAt;
+      }
+    }
+
+    // What a panel DRAWS into, as distinct from the slot it occupies. On the
+    // parchment binding the slot is a black window, and everything in it —
+    // heading, rule, dial, the tree's caption — needs a margin from that
+    // black edge, so the drawing rect is inset while the WINDOW keeps the
+    // full slot. On the night binding there is no window and nothing moves.
+    //
+    // HORIZONTAL ONLY, deliberately. An earlier version also took 3px off the
+    // top and the height, which is invisible until you notice that panels
+    // test their own remaining height before drawing a second line — Ariel's
+    // season panel asks for 22px and had 21.2 — and the "gen · deepest"
+    // readout silently vanished. Vertical air comes from lifting the WINDOW
+    // instead (panelWindow), which no renderer measures.
+    function panelContentRect(r) {
+      if (binding !== "parchment") return r;
+      return { x: r.x + 5, y: r.y, w: r.w - 10, h: r.h };
+    }
+
+    // The window a slot occupies. It covers the slot from above its heading
+    // caps down to `bottomInset` short of the foot — what the slot must leave
+    // clear there: 14 for a dial (its readout baseline, the one thing still
+    // printed on the paper), 2 for a row (nothing below it), 0 for the scene
+    // band and the tree, whose own last lines are drawn INSIDE the window.
+    // Width is the slot's exactly: the 8px between the two columns is all
+    // that keeps their windows (and their lips) apart.
+    function panelWindow(r, bottomInset) {
+      var top = r.y - 2;                         // air above the heading caps (top ≈ r.y+2)
+      var bot = r.y + r.h - bottomInset;
+      if (bot < top + 8) bot = top + 8;
+      var h = bot - top;
+      return {
+        cx: r.x + r.w / 2, cy: top + h / 2, rx: r.w / 2, ry: h / 2,
+        r: Math.max(3, Math.min(6, Math.round(Math.min(r.w, h) * 0.08))),
+      };
     }
     function fmt2(v) { return v == null ? "—" : v.toFixed(2); }
     function hasScene() {
@@ -1920,49 +2086,55 @@ PJ2.Viz = (function () {
       var c = G.ctx;
       var hs = hasScene();
       var label = st.sceneLabel || lastInfo.sceneLabel || st.sceneType || lastInfo.sceneType;
-      // heading font fits the scene band; baseline stays clear of the
-      // sub-line row (drawn by the data pass at y+h−12)
-      var hf = Math.max(16, Math.min(30, Math.floor(L.scene.h * 0.5)));
-      var emblemCell = 0;
-      if (hs && track === "library") {
-        var opName = "op-" + String(label).toLowerCase();
-        if (at.has(opName)) {
-          // the operation emblem sits in its OWN reserved cell left of the
-          // heading, fit-scaled to the band — never under the letters
-          var eScale = fitScale(16, Math.min(L.scene.h - 8, hf + 14), G.u);
-          var eW = 16 * G.u * eScale;
-          at.stamp(c, opName, L.scene.x + eW / 2, L.scene.y + 4 + hf / 2, { u: G.u, scale: eScale });
-          emblemCell = eW + 8;
-        }
-      }
-      if (fontsReady) {
-        if (hs) {
-          Skin.Type.drawHeader(c, track, String(label), L.scene.x + emblemCell, L.scene.y + 4 + hf, hf, { u: G.u });
-        } else {
-          // idle: a deliberate em-dash placeholder in the caption voice —
-          // never the display face's rubricated initial on a bare dash
-          Skin.Type.smallCaps(c, "—", L.scene.x, L.scene.y + 4 + hf * 0.7, 15, marginInk().cap, 2);
-        }
-      }
-      if (hs && track === "sycorax") {
-        drawStationVignette(G, L.scene);
-      }
-      // panel heads
       var heads = track === "library"
         ? ["the tide · volvelle", "the athanor · fire", "aer · the air", "the chord · its metal", "genealogia motivi"]
         : (track === "sycorax"
           ? ["the treeline · tide", "the smoke · intensity", "the pose", "the tallies", "the cord and bone"]
           : ["the wind-rose · tide", "the quadrant · altitude", "the chord · constellation", "the season", "migratio · the signature"]);
-      panelHead(G, L.dialA, heads[0]);
-      panelHead(G, L.dialB, heads[1]);
-      panelHead(G, L.rowA, heads[2]);
-      panelHead(G, L.rowB, heads[3]);
-      panelHead(G, L.tree, heads[4]);
-      // the genealogy / tally cord / migration map is furniture-grade:
-      // redrawn only when an event changes it
-      if (track === "library") drawGenealogy(G, L.tree);
-      else if (track === "sycorax") drawTallyCord(G, L.tree);
-      else drawMigration(G, L.tree);
+
+      // EVERY slot is a window now, the scene band included (owner
+      // 2026-08-08), so the whole apparatus draws in window ink — the
+      // operation label and its emblem, the five headings with their rules,
+      // and the genealogy / tally cord / migration map (furniture-grade:
+      // redrawn only when an event changes it).
+      inWindowInk(function () {
+        var S = panelContentRect(L.scene);
+        // heading font fits the scene band; baseline stays clear of the
+        // sub-line row (drawn by the data pass at y+h−12)
+        var hf = Math.max(16, Math.min(30, Math.floor(S.h * 0.5)));
+        var emblemCell = 0;
+        if (hs && track === "library") {
+          var opName = "op-" + String(label).toLowerCase();
+          if (at.has(opName)) {
+            // the operation emblem sits in its OWN reserved cell left of the
+            // heading, fit-scaled to the band — never under the letters
+            var eScale = fitScale(16, Math.min(S.h - 8, hf + 14), G.u);
+            var eW = 16 * G.u * eScale;
+            at.stamp(c, opName, S.x + eW / 2, S.y + 4 + hf / 2, { u: G.u, scale: eScale });
+            emblemCell = eW + 8;
+          }
+        }
+        if (fontsReady) {
+          if (hs) {
+            Skin.Type.drawHeader(c, track, String(label), S.x + emblemCell, S.y + 4 + hf, hf, { u: G.u });
+          } else {
+            // idle: a deliberate em-dash placeholder in the caption voice —
+            // never the display face's rubricated initial on a bare dash
+            Skin.Type.smallCaps(c, "—", S.x, S.y + 4 + hf * 0.7, 15, marginInk().cap, 2);
+          }
+        }
+        if (hs && track === "sycorax") drawStationVignette(G, S);
+
+        panelHead(G, panelContentRect(L.dialA), heads[0]);
+        panelHead(G, panelContentRect(L.dialB), heads[1]);
+        panelHead(G, panelContentRect(L.rowA), heads[2]);
+        panelHead(G, panelContentRect(L.rowB), heads[3]);
+        panelHead(G, panelContentRect(L.tree), heads[4]);
+        var T = panelContentRect(L.tree);
+        if (track === "library") drawGenealogy(G, T);
+        else if (track === "sycorax") drawTallyCord(G, T);
+        else drawMigration(G, T);
+      });
     }
 
     // the five stations of the rite — small woodcut vignettes keyed by scene
@@ -2002,40 +2174,49 @@ PJ2.Viz = (function () {
       var c = G.ctx;
       var L = marginLayout(G);
       var info = lastInfo || {};
-      var ic = marginInk();
-      // scene sub-line + progress: only once a scene exists. Idle renders
-      // NOTHING here (final-gate ruling: no bare "— · x 0.00" fragments).
-      if (hasScene()) {
-        var x01 = info.x || 0;
-        var py = L.scene.y + L.scene.h - 5;
-        if (x01 > 0) {
-          c.strokeStyle = dataCol(ic.lead, "scene progress"); c.lineWidth = 2;
-          c.beginPath(); c.moveTo(L.scene.x, py); c.lineTo(L.scene.x + L.scene.w * x01, py); c.stroke();
+      // Every slot is a window, so the whole data pass is window ink. (The
+      // dials' readout lines are the exception and handle themselves:
+      // readoutLine always takes the page's ink, since it prints on the
+      // paper below its window.)
+      inWindowInk(function () {
+        var ic = marginInk();
+        var S = panelContentRect(L.scene);
+        // scene sub-line + progress: only once a scene exists. Idle renders
+        // NOTHING here (final-gate ruling: no bare "— · x 0.00" fragments).
+        if (hasScene()) {
+          var x01 = info.x || 0;
+          var py = S.y + S.h - 5;
+          if (x01 > 0) {
+            c.strokeStyle = dataCol(ic.lead, "scene progress"); c.lineWidth = 2;
+            c.beginPath(); c.moveTo(S.x, py); c.lineTo(S.x + S.w * x01, py); c.stroke();
+          }
+          c.fillStyle = ic.rule;
+          for (var px = S.x + S.w * x01 + 6; px < S.x + S.w - 2; px += 6) c.fillRect(px, py - 1, 2, 2);
+          if (fontsReady) {
+            var sub = (info.sceneType || st.sceneType || "—") + " · x " + x01.toFixed(2)
+              + (info.tideLabel ? " · " + info.tideLabel : "");
+            Skin.Type.smallCaps(c, sub, S.x, py - 6, 13, ic.mid, 1);
+          }
         }
-        c.fillStyle = ic.rule;
-        for (var px = L.scene.x + L.scene.w * x01 + 6; px < L.scene.x + L.scene.w - 2; px += 6) c.fillRect(px, py - 1, 2, 2);
-        if (fontsReady) {
-          var sub = (info.sceneType || st.sceneType || "—") + " · x " + x01.toFixed(2)
-            + (info.tideLabel ? " · " + info.tideLabel : "");
-          Skin.Type.smallCaps(c, sub, L.scene.x, py - 6, 13, ic.mid, 1);
+        var A = panelContentRect(L.dialA), B = panelContentRect(L.dialB);
+        var RA = panelContentRect(L.rowA), RB = panelContentRect(L.rowB);
+        if (track === "library") {
+          drawVolvelle(G, A, info);
+          drawAthanor(G, B, info);
+          drawAirQuills(G, RA, info);
+          drawChordMetal(G, RB, info);
+        } else if (track === "sycorax") {
+          drawTreeline(G, A, info);
+          drawSmoke(G, B, info);
+          drawPoseSigil(G, RA, info);
+          drawTallies(G, RB, info);
+        } else {
+          drawWindRose(G, A, info);
+          drawQuadrant(G, B, info);
+          drawConstellation(G, RA, info);
+          drawSeason(G, RB, info);
         }
-      }
-      if (track === "library") {
-        drawVolvelle(G, L.dialA, info);
-        drawAthanor(G, L.dialB, info);
-        drawAirQuills(G, L.rowA, info);
-        drawChordMetal(G, L.rowB, info);
-      } else if (track === "sycorax") {
-        drawTreeline(G, L.dialA, info);
-        drawSmoke(G, L.dialB, info);
-        drawPoseSigil(G, L.rowA, info);
-        drawTallies(G, L.rowB, info);
-      } else {
-        drawWindRose(G, L.dialA, info);
-        drawQuadrant(G, L.dialB, info);
-        drawConstellation(G, L.rowA, info);
-        drawSeason(G, L.rowB, info);
-      }
+      });
     }
 
     // ---- library margin panels ----
@@ -2079,7 +2260,7 @@ PJ2.Viz = (function () {
           c.fillRect(Math.round(cx + Math.cos(a2) * R) - 1, Math.round(cy + Math.sin(a2) * R) - 1, 2, 2);
         }
       }
-      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " · " + info.tideLabel : ""), pal.ink[1]);
+      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " · " + info.tideLabel : ""));
     }
 
     function drawAthanor(G, r, info) {
@@ -2107,10 +2288,13 @@ PJ2.Viz = (function () {
       if (inten != null) {
         var fillH = frac * (gBot - gTop);
         Skin.Dither.fill(c, gx + 2, gBot - fillH, gw - 4, fillH, pal.rubric[0], 0.5, { u: G.u });
-        c.fillStyle = dataCol(binding === "night" ? pal.gilt[0] : pal.rubric[0], "athanor gauge line");
+        // rubric red is not data-legal on the night ground (2.7:1) — gilt
+        // carries its data-side jobs there. Keyed to the SURFACE, not the
+        // page: in a night window on a parchment page, gilt still wins.
+        c.fillStyle = dataCol(inkMode() === "night" ? pal.gilt[0] : pal.rubric[0], "athanor gauge line");
         c.fillRect(gx, gBot - fillH - 1, gw, 2);
       }
-      readoutLine(G, r, "fire " + fmt2(inten) + " · gradus " + (inten == null ? "—" : ROMAN_HI[gradus - 1]), pal.ink[1]);
+      readoutLine(G, r, "fire " + fmt2(inten) + " · gradus " + (inten == null ? "—" : ROMAN_HI[gradus - 1]));
     }
 
     function drawAirQuills(G, r, info) {
@@ -2262,7 +2446,7 @@ PJ2.Viz = (function () {
         c.fillStyle = dataCol(pal.bone[0], "treeline fire position");
         c.beginPath(); c.moveTo(fireX, gy - 10); c.lineTo(fireX - 3, gy - 4); c.lineTo(fireX + 3, gy - 4); c.closePath(); c.fill();
       }
-      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " · " + info.tideLabel : ""), pal.bone[1]);
+      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " · " + info.tideLabel : ""));
     }
 
     function drawSmoke(G, r, info) {
@@ -2282,7 +2466,7 @@ PJ2.Viz = (function () {
         c.strokeStyle = dataCol(pal.bone[0], "smoke height"); c.lineWidth = 1.4;
         c.beginPath(); c.moveTo(bx - 12, bot - colH); c.lineTo(bx + 12, bot - colH); c.stroke();
       }
-      readoutLine(G, r, "intensity " + fmt2(inten) + " · bruise " + fmt2(st.bruise || (inten == null ? null : 0)), pal.bone[1]);
+      readoutLine(G, r, "intensity " + fmt2(inten) + " · bruise " + fmt2(st.bruise || (inten == null ? null : 0)));
     }
 
     function drawPoseSigil(G, r, info) {
@@ -2388,7 +2572,7 @@ PJ2.Viz = (function () {
           }
         }
       }
-      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " ✦ " + info.tideLabel : ""), pal.silver[1]);
+      readoutLine(G, r, "tide " + fmt2(tide) + (info.tideLabel ? " ✦ " + info.tideLabel : ""));
     }
 
     function drawQuadrant(G, r, info) {
@@ -2419,7 +2603,7 @@ PJ2.Viz = (function () {
         c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + Math.cos(aArm) * (R - 2), oy + Math.sin(aArm) * (R - 2)); c.stroke();
         Skin.star4(c, ox + Math.cos(aArm) * (R - 2), oy + Math.sin(aArm) * (R - 2), 3, pal.gilt[0]);
       }
-      readoutLine(G, r, "altitude " + fmt2(inten), pal.silver[1]);
+      readoutLine(G, r, "altitude " + fmt2(inten));
     }
 
     function drawConstellation(G, r, info) {
@@ -2510,12 +2694,6 @@ PJ2.Viz = (function () {
         var pc = pcFromHz(info.tonicHz);
         if (pc !== era.tonicPc) { era.tonicPc = pc; plateStack.invalidate("furniture"); }
       }
-      // the ariel horizon sinks through the release — it lives on the
-      // furniture layer, so rebake it at poll cadence while a release runs
-      if (track === "ariel" && st.releaseAt != null) {
-        var relX = (nowFn() / 1000 - st.releaseAt) / (st.releaseDur || 60);
-        if (relX <= 1.05) plateStack.invalidate("furniture");
-      }
     }
 
     function frame(ts) {
@@ -2526,6 +2704,7 @@ PJ2.Viz = (function () {
       lastFrameT = tNow;
       if (autoRotate && !dragging && !plateStack.isHidden()) camYaw += YAW_RATE * dt;
       computeMagnitudes();
+      compositeFolioIfDirty();   // the sheet: only when it actually changed
       plateStack.composite(tNow);
       marginStack.composite(tNow);
     }
@@ -2556,12 +2735,18 @@ PJ2.Viz = (function () {
         : Math.max(14, Math.round(Math.min(p.w, p.h) * 0.045));
       function apply(stack, s) {
         var G = stack.G();
-        if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return;
+        if (Math.abs(G.w - s.w) < 1 && Math.abs(G.h - s.h) < 1) return false;
         if (immediate) stack.resize(s.w, s.h);
         else stack.scheduleResize(s.w, s.h);
+        return true;
       }
       apply(plateStack, p);
       apply(marginStack, m);
+      // the sheet measures its own element (CSS stretches it to the folio),
+      // and a resize is the one thing that must re-bake it
+      if (folioStack) {
+        apply(folioStack, measure(folioCanvas, opts.folioW || 1392, opts.folioH || 768));
+      }
     }
 
     var viz = {
@@ -2572,6 +2757,7 @@ PJ2.Viz = (function () {
         track = t; cfg = TRACK_CFG[t];
         pal = Skin.palette(t); at = Skin.atlas(t);
         plateStack.setTrack(t); marginStack.setTrack(t);
+        if (folioStack) { folioStack.setTrack(t); invalidateFolio(); }
         resetRunState();
         clearIllustrations();
         for (var i = 0; i < TOTAL; i++) { baselineLin[i] = 0; magnitudes[i] = 0; }
@@ -2596,7 +2782,9 @@ PJ2.Viz = (function () {
         at = Skin.atlas(track);
         plateStack.invalidate("paper"); plateStack.invalidate("furniture");
         marginStack.invalidate("paper"); marginStack.invalidate("furniture");
+        invalidateFolio();   // the sheet is parchment-only: bake it or clear it
         measureAll(true);
+        compositeFolioIfDirty();  // the switch must show even while stopped
       },
       getBinding: function () { return binding; },
 

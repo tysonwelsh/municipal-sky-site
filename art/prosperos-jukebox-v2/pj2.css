@@ -269,11 +269,36 @@
    rounded-square frame (owner rulings O5/O6 + G1/G2 defaults). The
    stepped-pixel clip-path yielded to the rounded corners. */
 .pj2-folio {
+  position: relative;   /* the sheet below is positioned against this */
   background: var(--pj2-paper);
   border: 10px solid var(--pj2-paper-edge);
   border-radius: 16px;
   padding: 10px 12px 8px;
 }
+
+/* THE SHEET (owner 2026-08-08) — the folio's paper, on the parchment
+   binding only. One canvas stretched over the whole folio interior, baked
+   once by pj2-viz.js's paperFolio; the panels above it paint only their own
+   contents. It replaces the two per-panel paper bakes, which each centred
+   their own radial falloff and so read as two separate sheets with the
+   folio's flat background showing between them.
+   The night binding keeps its per-panel ground untouched — the sheet is
+   simply not displayed, and paperFolio returns without drawing. */
+.pj2-folio-paper { display: none; }
+.pj2-app[data-binding="parchment"] .pj2-folio-paper {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+/* the content rides above the sheet (an absolutely-positioned sibling would
+   otherwise paint over static content, however early it appears in the DOM) */
+.pj2-folio-head,
+.pj2-folio-grid { position: relative; z-index: 1; }
 
 /* running head — title, folio number, and the transport (owner 2026-07-27:
    play/stop/reset sit above the plate so they need no scrolling) */

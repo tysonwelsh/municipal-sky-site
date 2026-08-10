@@ -76,6 +76,13 @@ include '../../includes/header.php';
     <div class="pj2-folio-wrap">
       <div class="pj2-folio">
 
+        <!-- THE SHEET — the folio's own paper, one bake behind everything
+             inside it (parchment binding only; the night folio's panels
+             carry their own flat ground). Sits under the title, both
+             panels, the gutters and the log, so the page is one surface
+             instead of two textured rectangles on a bare field. -->
+        <canvas class="pj2-folio-paper" id="pj2-folio-paper" aria-hidden="true"></canvas>
+
         <header class="pj2-folio-head">
           <h1 class="pj2-title" id="pj2-title"><span class="pj2-title-pre">Prospero&rsquo;s Jukebox &middot; </span><span class="pj2-init">P</span>rospero&rsquo;s Library</h1>
           <!-- TRANSPORT — play/stop/reset ride the running head so they are
@@ -209,5 +216,13 @@ include '../../includes/header.php';
     }
   })();
 </script>
+
+<!-- THE LAYOUT MAP (dev only) — ?wire on the URL overlays labelled bounding
+     boxes on every container plus the canvas-drawn regions, for talking about
+     the layout by name. Nothing is emitted without the parameter, so an
+     ordinary visit never sees or fetches it. -->
+<?php if (isset($_GET['wire'])): ?>
+<script src="pj2-wireframe.js?v=<?php echo pj2v('pj2-wireframe.js'); ?>"></script>
+<?php endif; ?>
 
 <?php include '../../includes/footer.php'; ?>

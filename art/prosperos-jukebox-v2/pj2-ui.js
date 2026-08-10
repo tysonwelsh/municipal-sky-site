@@ -315,7 +315,11 @@
     var plate = $("pj2-plate"), margin = $("pj2-margin");
     if (window.PJ2 && PJ2.Viz && typeof PJ2.Viz.create === "function") {
       try {
-        return PJ2.Viz.create({ plateCanvas: plate, marginCanvas: margin });
+        return PJ2.Viz.create({
+          plateCanvas: plate,
+          marginCanvas: margin,
+          folioCanvas: $("pj2-folio-paper"),  // the parchment sheet (optional)
+        });
       } catch (err) {
         try { console.error("PJ2 UI: PJ2.Viz.create failed — placeholder plates", err); } catch (e) {}
       }
