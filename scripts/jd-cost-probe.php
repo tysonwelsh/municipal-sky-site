@@ -34,6 +34,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once __DIR__ . '/../api/jd-config.php';
+require_once __DIR__ . '/../api/jd-svg-sanitizer.php';
 ini_set('display_errors', '1');
 
 $opts = [];
@@ -92,6 +93,46 @@ if (isset($opts['dry-run'])) {
     exit(0);
 }
 
+// --self-test proves the validator can actually FAIL before any money is spent
+// on it. A raster detector that never fires would read as reassurance.
+if (isset($opts['self-test'])) {
+    $vector = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+        . '<path d="M1 1 L9 9"/><circle cx="5" cy="5" r="2"/></svg>';
+    $pngUri = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==';
+    $cases = [
+        ['genuine vector',        $vector, $vector,                    'ok',    false, 0],
+        ['raster in <image>',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+            . '<image href="' . $pngUri . '"/></svg>', null,           null,    true,  null],
+        ['bare raster data URI',
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">'
+            . '<rect fill="url(' . $pngUri . ')" width="10" height="10"/></svg>', null, null, true, null],
+        ['fenced in prose',       $vector, "Here you go!\n```svg\n$vector\n```", null,  false, 1],
+        ['no svg at all',         null,    'I cannot draw that.',      'no_svg', false, 1],
+    ];
+    $bad = 0;
+    foreach ($cases as [$name, $svg, $raw, $wantVerdict, $wantRaster, $wantDisobey]) {
+        $got = jd_probe_inspect($svg, $raw ?? (string) $svg);
+        $fails = [];
+        if ($wantVerdict !== null && $got['verdict'] !== $wantVerdict) {
+            $fails[] = "verdict={$got['verdict']} want=$wantVerdict";
+        }
+        if ($wantRaster !== null && $got['raster'] !== $wantRaster) {
+            $fails[] = 'raster=' . var_export($got['raster'], true);
+        }
+        if ($wantDisobey !== null && $got['disobedience'] !== $wantDisobey) {
+            $fails[] = "disobedience={$got['disobedience']} want=$wantDisobey";
+        }
+        printf("  %-22s %-9s verdict=%-16s raster=%-5s marks=%d%s\n",
+            $name, $fails ? 'FAIL' : 'pass', $got['verdict'],
+            $got['raster'] ? 'YES' : 'no', $got['marks'],
+            $fails ? '   <- ' . implode(', ', $fails) : '');
+        $bad += $fails ? 1 : 0;
+    }
+    echo "\n", $bad ? "$bad case(s) FAILED\n\n" : "Validator behaves correctly. No API calls made.\n\n";
+    exit($bad ? 1 : 0);
+}
+
 // ---------------------------------------------------------------------------
 
 function jd_probe_payload(array $model, string $prompt): array
@@ -120,6 +161,56 @@ function jd_probe_headers(string $provider, string $key): array
     return $provider === 'anthropic'
         ? ['Content-Type: application/json', 'x-api-key: ' . $key, 'anthropic-version: 2023-06-01']
         : ['Content-Type: application/json', 'Authorization: Bearer ' . $key];
+}
+
+/**
+ * Is this real vector artwork, or a bitmap in an <svg> wrapper?
+ *
+ * jd_extract_svg() only proves a '<svg' ... '</svg>' span exists, and a
+ * base64 PNG inside <image> would satisfy that with a very convincing byte
+ * count. So the verdict here is the site's OWN sanitizer — jd_sanitize_svg()
+ * allowlists elements and deliberately omits image/feImage/foreignObject/
+ * script — plus a mark census, because an SVG that parses clean but contains
+ * two <rect>s and nothing else is not a drawing either.
+ */
+function jd_probe_inspect(?string $svg, string $raw): array
+{
+    if ($svg === null) {
+        return ['verdict' => 'no_svg', 'marks' => 0, 'raster' => false,
+                'disobedience' => 1, 'tags' => []];
+    }
+
+    $sanitized = jd_sanitize_svg($svg);
+
+    // Counted on the raw string rather than the parsed tree, so that a
+    // document the sanitizer rejected before parsing is still described.
+    $tags = [];
+    if (preg_match_all('/<\s*([a-zA-Z][a-zA-Z0-9:_-]*)/', $svg, $m)) {
+        foreach ($m[1] as $t) {
+            $t = strtolower($t);
+            $tags[$t] = ($tags[$t] ?? 0) + 1;
+        }
+    }
+    $markTags = ['path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'text'];
+    $marks = 0;
+    foreach ($markTags as $t) {
+        $marks += $tags[$t] ?? 0;
+    }
+
+    // The exact failure mode we are testing for, checked three ways: the
+    // element, the filter primitive that smuggles one, and the payload.
+    $raster = isset($tags['image']) || isset($tags['feimage'])
+        || (bool) preg_match('#data:image/(png|jpe?g|gif|webp|bmp|avif)#i', $svg);
+
+    return [
+        'verdict' => $sanitized['ok'] ? 'ok' : ($sanitized['reason'] ?? 'rejected'),
+        'marks' => $marks,
+        'raster' => $raster,
+        // Matches jd-generate.php:215 — anything outside the SVG span (code
+        // fences, prose, apologies) is gradeable disobedience.
+        'disobedience' => trim($raw) !== $svg ? 1 : 0,
+        'tags' => $tags,
+    ];
 }
 
 /** Both providers for one prompt, concurrently — the pair is what a turn is. */
@@ -186,6 +277,8 @@ function jd_probe_pair(string $prompt, array $keys): array
             'svg_bytes' => $svg !== null ? strlen($svg) : 0,
             'latency_ms' => $ms,
             'usage' => $usage,
+            // Structural findings only — never the artwork itself.
+            'inspect' => jd_probe_inspect($svg, $text),
         ];
         unset($text, $svg, $data, $body);   // artwork out of memory immediately
     }
@@ -270,6 +363,37 @@ foreach ($results as $row) {
     }
     printf("%-4s %-34s %-14s %8s %8s %8s %9s %11s\n", '', '', '', '', '', '', 'turn:', $money($row['turn_cost']));
 }
+
+// Did each model actually return VECTOR artwork? The verdict column is the
+// site's own jd_sanitize_svg() — the same gate the live feature applies before
+// anything reaches a visitor.
+echo "\nARTWORK VALIDATION (verdict = the site's own jd_sanitize_svg)\n";
+printf("%-4s %-14s %9s %7s %8s %7s %-14s\n",
+    '#', 'MODEL', 'SVG B', 'MARKS', 'RASTER?', 'FENCED', 'SANITIZER');
+echo str_repeat('-', 74), "\n";
+$allClean = true;
+foreach ($results as $row) {
+    foreach ($row['slots'] as $s) {
+        $ins = $s['inspect'];
+        if ($ins['verdict'] !== 'ok' || $ins['raster']) {
+            $allClean = false;
+        }
+        printf("%-4s %-14s %9s %7s %8s %7s %-14s\n",
+            $row['label'], $s['model'],
+            $s['ok'] ? $n($s['svg_bytes']) : '-',
+            $s['ok'] ? $n($ins['marks']) : '-',
+            $ins['raster'] ? 'YES' : ($s['ok'] ? 'no' : '-'),
+            $s['ok'] ? ($ins['disobedience'] ? 'yes' : 'no') : '-',
+            $ins['verdict']);
+    }
+}
+echo str_repeat('-', 74), "\n";
+echo $allClean
+    ? "All returned slots are genuine vector SVG: no <image>, no feImage, no\n"
+    . "raster data URI, and every one passes the production sanitizer.\n"
+    : "!! At least one slot is not clean vector artwork — see RASTER/SANITIZER.\n";
+echo "MARKS counts path/rect/circle/ellipse/line/polyline/polygon/text elements:\n",
+     "a real drawing has many; a bitmap in a wrapper has almost none.\n";
 
 // A failed slot is a first-class result: on the live site the visitor sees an
 // empty half of the pair, so the reason has to be legible here, not swallowed.
