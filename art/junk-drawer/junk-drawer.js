@@ -304,6 +304,88 @@ function JD_layerOpen() {
     return out;
   }
 
+  /* ---- the doorbell's corner is reserved (owner, 2026-08-10) --------------
+     The Take-a-Turn doorbell is FIXED hardware in the bottom-left corner
+     (see the turn-object module), so nothing may spawn overlapping it. Its
+     rect is replayed here from the module's own geometry (JD_turnObject.GEOM)
+     with the same footprint math applySize gives every item, and positions
+     are pushed clear at APPLY time rather than only at scatter time: stored
+     scatters can predate this rule, and a viewport change moves the rect —
+     enforcing per-load is the only version that holds. Nothing is written
+     back; where the junk lies is scenery either way. */
+  function turnRect(W, H, MIN) {
+    var g = window.JD_turnObject && window.JD_turnObject.GEOM;
+    if (!g || !(W > 0 && H > 0)) return null;
+    var M = SCATTER.inset;
+    /* the BUILT doorbell is the truth — the ≤768px ×1.2 size band and the
+       44px touch floor are CSS the math below does not see (measured cost
+       of trusting math alone: a 15px graze on a phone). Measure the plate
+       whenever it exists. */
+    var bell = document.querySelector('.jd-item--turn');
+    if (bell) {
+      var pr = pile.getBoundingClientRect(), br = bell.getBoundingClientRect();
+      if (br.width > 0) {
+        return { x1: (br.right - pr.left) / W + M, y0: (br.top - pr.top) / H - M };
+      }
+    }
+    /* not built yet (its artwork fetch is async): replay the sizing —
+       tier box × aspect × fine × id jitter, plus the mobile band and the
+       floor. Approximate on purpose; JD_enforceTurnCorner re-runs against
+       the measured plate the moment it is built. */
+    var sq = Math.sqrt(g.aspect);
+    var shape = Math.min(1, SIZE.elong / Math.max(sq, 1 / sq));
+    var band = (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) ? 1.2 : 1;
+    var wpx = Math.max((turnBox || BASE.m) * sq * shape * g.fine * sizeJitter(g.id) / 100 * MIN * band, 44);
+    var hpx = wpx / g.aspect;
+    var hw = Math.min(0.5, wpx / 2 / W), hh = Math.min(0.5, hpx / 2 / H);
+    /* the corner the bell owns: x below x1 AND y above y0, its full plate
+       plus the pile's standard clearance as margin */
+    return { x1: 2 * hw + g.inset + M, y0: 1 - 2 * hh - g.inset - M };
+  }
+  /* the exact pass, run by the turn module once the plate is built and
+     seated (and so measurable): push anything already lying in the corner
+     clear of the REAL rect. Closes the race between the pile's apply pass
+     and the doorbell's async artwork fetch, whichever lands first. */
+  window.JD_enforceTurnCorner = function () {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
+    pile.querySelectorAll('.jd-item:not([data-turn])').forEach(function (el) {
+      var x = parseFloat(el.style.left) / 100, y = parseFloat(el.style.top) / 100;
+      if (!isFinite(x) || !isFinite(y)) return;
+      var r = el.getBoundingClientRect();
+      var rot = (parseFloat(el.style.getPropertyValue('--rot')) || 0) * Math.PI / 180;
+      var c = Math.abs(Math.cos(rot)), s = Math.abs(Math.sin(rot));
+      var w = r.width || 40, h = r.height || 40;
+      var a = avoidTurn(x, y,
+        Math.min(0.5, (w * c + h * s) / 2 / W),
+        Math.min(0.5, (w * s + h * c) / 2 / H), W, H, MIN);
+      if (a.x !== x || a.y !== y) {
+        el.style.left = (a.x * 100) + '%';
+        el.style.top = (a.y * 100) + '%';
+      }
+    });
+  };
+  function avoidTurn(x, y, hw, hh, W, H, MIN) {
+    var R = turnRect(W, H, MIN);
+    if (!R) return { x: x, y: y };
+    if (x - hw >= R.x1 || y + hh <= R.y0) return { x: x, y: y };   /* clear */
+    var pushX = R.x1 + hw;                       /* rightward, off the plate */
+    var pushY = R.y0 - hh;                       /* upward, off the plate */
+    var okX = pushX <= 1 - hw - SCATTER.inset;
+    var okY = pushY >= hh + SCATTER.inset;
+    if (okX && (!okY || pushX - x <= y - pushY)) return { x: +pushX.toFixed(4), y: y };
+    if (okY) return { x: x, y: +pushY.toFixed(4) };
+    return { x: x, y: y };   /* an item too big to fit anywhere else keeps its
+                                spot — overlap beats teleporting off the well */
+  }
+  /* the won-items module spawns into the same pile and honours the same
+     reservation; centre + half-sizes in well fractions in, corrected out */
+  window.JD_avoidTurn = function (x, y, hw, hh) {
+    var host = pile.getBoundingClientRect();
+    var W = host.width || 1, H = host.height || 1;
+    return avoidTurn(x, y, hw, hh, W, H, Math.min(W, H));
+  };
+
   /* stable-per-session: reuse the stored scatter iff it covers exactly the
      items on the page; otherwise recompute and persist. sessionStorage may be
      unavailable (private mode) — degrade to a fresh scatter each load. */
@@ -551,10 +633,24 @@ function JD_layerOpen() {
       /* positions are computed, never authored — see SCATTER above. One layout
          per session; applied in the same tick so nothing paints un-placed. */
       var layout = layoutFor(els);
+      var hostR = pile.getBoundingClientRect();
+      var HW = hostR.width || 1, HH = hostR.height || 1, HM = Math.min(HW, HH);
       els.forEach(function (el) {
         var p = layout[el.dataset.id];
-        el.style.left = (p.x * 100) + '%';
-        el.style.top = (p.y * 100) + '%';
+        /* pushed clear of the doorbell's reserved corner at apply time —
+           see turnRect above; the stored scatter itself is left alone.
+           The half-sizes are the item's ROTATED bounding box (its scatter
+           angle is known here): an unrotated box lets a tilted item's
+           corner reach ~15px onto the plate at ±34°. */
+        var wpx = (parseFloat(el.style.getPropertyValue('--w')) || BASE.m) / 100 * HM;
+        var hpx = wpx / svgAspect(el);
+        var rad = (p.rot || 0) * Math.PI / 180;
+        var c = Math.abs(Math.cos(rad)), s = Math.abs(Math.sin(rad));
+        var a = avoidTurn(p.x, p.y,
+          Math.min(0.5, (wpx * c + hpx * s) / 2 / HW),
+          Math.min(0.5, (wpx * s + hpx * c) / 2 / HH), HW, HH, HM);
+        el.style.left = (a.x * 100) + '%';
+        el.style.top = (a.y * 100) + '%';
         el.style.setProperty('--rot', p.rot + 'deg');
         el.style.zIndex = p.z;
       });
@@ -1739,6 +1835,10 @@ function JD_layerOpen() {
      specimen pretending it was scattered — no tilt, and no hover grow either
      (see the :hover exemption in junk-drawer.css). */
   var CORNER = { inset: 0.035, rot: 0 };
+  /* geometry the pile loader replays to reserve this corner from the scatter
+     (loader: turnRect / JD_avoidTurn). aspect is the asset's 240×300
+     viewBox — keep in step if the artwork's proportions ever change. */
+  var GEOM = { id: 'jd-turn-object', fine: FINE, aspect: 240 / 300, inset: CORNER.inset };
   var Z_FIXED = 99;   /* over every scattered item (their z runs 1..N) and
                          under zTop (100+), where anything the visitor drags
                          goes — junk deliberately dropped on the bell still
@@ -1866,6 +1966,10 @@ function JD_layerOpen() {
        — the identical call a specimen gets */
     window.JD_applySize(el, box, ID, FINE);
     seat(el, pile);
+    /* the reserved corner is exactly measurable only now — push any junk
+       already lying on the plate clear of the real rect (closes the race
+       between the pile's apply pass and this module's artwork fetch) */
+    if (window.JD_enforceTurnCorner) window.JD_enforceTurnCorner();
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();          /* Space must not scroll the page */
@@ -1955,7 +2059,7 @@ function JD_layerOpen() {
   function standDown() { window.clearTimeout(openTimer); openTimer = 0; }
 
   window.JD_turnObject = {
-    ready: ready, press: press, standDown: standDown
+    ready: ready, press: press, standDown: standDown, GEOM: GEOM
   };
 })();
 
@@ -3420,6 +3524,19 @@ function JD_layerOpen() {
       p = freshSpot(el, pile);
       map[rec.gen_id] = p;
       JD_store.set(K_SCATTER, map);
+    }
+    /* pushed clear of the doorbell's reserved corner at apply time, same as
+       the curated pile — a stored spot can predate the rule or a viewport
+       change; the stored value itself stays untouched */
+    if (window.JD_avoidTurn) {
+      var host_ = pile.getBoundingClientRect(), r_ = el.getBoundingClientRect();
+      var rad_ = (p.rot || 0) * Math.PI / 180;
+      var c_ = Math.abs(Math.cos(rad_)), s_ = Math.abs(Math.sin(rad_));
+      var w_ = r_.width || 40, h_ = r_.height || 40;
+      var av = window.JD_avoidTurn(p.x, p.y,
+        Math.min(0.45, (w_ * c_ + h_ * s_) / 2 / (host_.width || 1)),
+        Math.min(0.45, (w_ * s_ + h_ * c_) / 2 / (host_.height || 1)));
+      p = { x: av.x, y: av.y, rot: p.rot, z: p.z };
     }
     el.style.left = (p.x * 100) + '%';
     el.style.top = (p.y * 100) + '%';
