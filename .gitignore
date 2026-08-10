@@ -75,3 +75,6 @@ art/bardo/_harness.js
 # KOLOB headless dev harness — not for production
 art/kolob/_harness.js
 __pycache__/
+
+# cost-probe artwork (kept only when --save-svg is passed)
+local-dev/jd-probe/

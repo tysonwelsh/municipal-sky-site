@@ -23,9 +23,15 @@ declare(strict_types=1);
  *     php scripts/jd-cost-probe.php --prompts=my.txt   # one prompt per line
  *     php scripts/jd-cost-probe.php --runs=3           # repeat for variance
  *     php scripts/jd-cost-probe.php --dry-run          # show what it WOULD spend
+ *     php scripts/jd-cost-probe.php --self-test        # prove the validator fails correctly
+ *     php scripts/jd-cost-probe.php --save-svg         # KEEP the artwork + contact sheet
  *     php scripts/jd-cost-probe.php --json
  *
  * Each prompt costs one real generation on EACH provider.
+ *
+ * --save-svg is the one exception to "nothing is saved": it writes each SVG
+ * plus an index.html contact sheet to local-dev/jd-probe/<timestamp>/, which
+ * is gitignored and excluded from both deploy paths. Still no database writes.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -214,7 +220,7 @@ function jd_probe_inspect(?string $svg, string $raw): array
 }
 
 /** Both providers for one prompt, concurrently — the pair is what a turn is. */
-function jd_probe_pair(string $prompt, array $keys): array
+function jd_probe_pair(string $prompt, array $keys, ?string $saveDir = null, string $label = ''): array
 {
     $mh = curl_multi_init();
     $handles = [];
@@ -279,7 +285,16 @@ function jd_probe_pair(string $prompt, array $keys): array
             'usage' => $usage,
             // Structural findings only — never the artwork itself.
             'inspect' => jd_probe_inspect($svg, $text),
+            'file' => null,
         ];
+        // --save-svg is the ONLY path on which artwork touches disk. Default
+        // off: the probe's whole point is measuring a turn without keeping one.
+        if ($saveDir !== null && $svg !== null) {
+            $name = sprintf('%s-%s.svg', $label, $provider);
+            if (file_put_contents(rtrim($saveDir, '/') . '/' . $name, $svg) !== false) {
+                $out[count($out) - 1]['file'] = $name;
+            }
+        }
         unset($text, $svg, $data, $body);   // artwork out of memory immediately
     }
     curl_multi_close($mh);
@@ -313,13 +328,28 @@ function jd_probe_cost(string $provider, array $u, array $p): array
 
 // ---------------------------------------------------------------------------
 
+// Artwork, when kept at all, lands outside the repo's publishable surface:
+// local-dev/ is excluded from publish.sh and deploy.yml, and local-dev/jd-probe
+// is gitignored, so a saved run cannot be committed or deployed by accident.
+$saveDir = null;
+if (isset($opts['save-svg'])) {
+    $saveDir = is_string($opts['save-svg'])
+        ? $opts['save-svg']
+        : __DIR__ . '/../local-dev/jd-probe/' . gmdate('Ymd-His');
+    if (!is_dir($saveDir) && !mkdir($saveDir, 0755, true) && !is_dir($saveDir)) {
+        fwrite(STDERR, "Could not create $saveDir\n");
+        exit(1);
+    }
+    echo "Saving artwork to $saveDir\n\n";
+}
+
 $results = [];
 $turnCosts = [];
 foreach ($PROMPTS as $pi => $prompt) {
     for ($r = 0; $r < $runs; $r++) {
         $label = $runs > 1 ? sprintf('%d.%d', $pi + 1, $r + 1) : (string) ($pi + 1);
         fwrite(STDERR, "  [$label] " . substr($prompt, 0, 46) . " ... ");
-        $pair = jd_probe_pair($prompt, $KEYS);
+        $pair = jd_probe_pair($prompt, $KEYS, $saveDir, $label);
         $turnCost = 0.0;
         foreach ($pair as &$slot) {
             $price = $PRICES[$slot['model']] ?? [];
@@ -457,3 +487,72 @@ printf("  One visitor at their daily ceiling (%d turns): %s\n",
     JD_LIMIT_DAILY, '$' . number_format(JD_LIMIT_DAILY * $mean, 2));
 echo "\n  Set your provider spend caps above the worst-case line, not the\n",
      "  typical one — the breaker counts turns, not dollars.\n\n";
+
+// ---------------------------------------------------------------------------
+// Contact sheet — the point of saving artwork is looking at it side by side,
+// which is the same comparison the feature asks a visitor to make.
+//
+// Each drawing is referenced with <img src>, never inlined. SVG inside <img>
+// renders in a restricted mode with scripting and external loads disabled, so
+// reviewing raw model output cannot execute anything. The saved .svg files are
+// the RAW extraction, not the sanitized form, which is exactly why they are
+// displayed this way.
+if ($saveDir !== null) {
+    $h = static fn(string $s): string => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+    $cards = '';
+    foreach ($results as $row) {
+        $slots = '';
+        foreach ($row['slots'] as $s) {
+            $ins = $s['inspect'];
+            $art = $s['file'] !== null
+                ? '<img src="' . $h($s['file']) . '" alt="' . $h($row['prompt']) . '">'
+                : '<div class="fail">no artwork returned</div>';
+            $slots .= '<figure class="slot"><div class="art">' . $art . '</div>'
+                . '<figcaption><b>' . $h($s['model']) . '</b>'
+                . '<span>' . number_format($s['billed']['cost'], 6) . ' USD</span>'
+                . '<span>' . number_format($ins['marks']) . ' marks &middot; '
+                . number_format($s['svg_bytes']) . ' B</span>'
+                . '<span class="' . ($ins['verdict'] === 'ok' && !$ins['raster'] ? 'ok' : 'bad') . '">'
+                . ($ins['raster'] ? 'RASTER &mdash; ' : '') . $h($ins['verdict'])
+                . '</span></figcaption></figure>';
+        }
+        $cards .= '<section><h2>' . $h($row['label']) . '. ' . $h($row['prompt']) . '</h2>'
+            . '<div class="pair">' . $slots . '</div></section>';
+    }
+
+    $html = '<!doctype html><html lang="en"><head><meta charset="utf-8">'
+        . '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        . '<title>Junk Drawer cost probe — ' . $h(gmdate('Y-m-d H:i')) . ' UTC</title><style>'
+        . ':root{--bg:#fbfaf7;--fg:#1a1815;--mut:#6b665e;--line:#ddd8ce;--card:#fff;'
+        . '--ok:#2f6b3a;--bad:#a3341f}'
+        . '@media(prefers-color-scheme:dark){:root{--bg:#16150f;--fg:#ece7dc;--mut:#9a9387;'
+        . '--line:#332f27;--card:#201e17;--ok:#7fbf8a;--bad:#e08a72}}'
+        . '*{box-sizing:border-box}body{margin:0;padding:2rem 1.25rem;background:var(--bg);'
+        . 'color:var(--fg);font:16px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}'
+        . '.wrap{max-width:1100px;margin:0 auto}h1{font-size:1.4rem;margin:0 0 .25rem}'
+        . 'p.sub{color:var(--mut);margin:0 0 2rem}'
+        . 'h2{font-size:1rem;font-weight:600;margin:2.5rem 0 .75rem;padding-bottom:.5rem;'
+        . 'border-bottom:1px solid var(--line)}'
+        . '.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem}'
+        . '.slot{margin:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;'
+        . 'background:var(--card)}'
+        . '.art{aspect-ratio:1;display:grid;place-items:center;padding:1rem;'
+        . 'background-image:linear-gradient(45deg,rgba(128,128,128,.14) 25%,transparent 25%,'
+        . 'transparent 75%,rgba(128,128,128,.14) 75%),linear-gradient(45deg,'
+        . 'rgba(128,128,128,.14) 25%,transparent 25%,transparent 75%,rgba(128,128,128,.14) 75%);'
+        . 'background-size:18px 18px;background-position:0 0,9px 9px}'
+        . '.art img{max-width:100%;max-height:100%}'
+        . '.fail{color:var(--bad);font-size:.85rem}'
+        . 'figcaption{display:flex;flex-direction:column;gap:.15rem;padding:.75rem;'
+        . 'border-top:1px solid var(--line);font-size:.8rem;color:var(--mut)}'
+        . 'figcaption b{color:var(--fg);font-family:ui-monospace,SFMono-Regular,Menlo,monospace}'
+        . '.ok{color:var(--ok)}.bad{color:var(--bad);font-weight:600}'
+        . '</style></head><body><div class="wrap">'
+        . '<h1>Junk Drawer cost probe</h1><p class="sub">'
+        . $h(gmdate('Y-m-d H:i')) . ' UTC &middot; ' . $count . ' turns &middot; mean '
+        . number_format($mean, 6) . ' USD/turn &middot; checkerboard shows SVG transparency</p>'
+        . $cards . '</div></body></html>';
+
+    file_put_contents(rtrim($saveDir, '/') . '/index.html', $html);
+    echo "Contact sheet: ", rtrim($saveDir, '/'), "/index.html\n\n";
+}
