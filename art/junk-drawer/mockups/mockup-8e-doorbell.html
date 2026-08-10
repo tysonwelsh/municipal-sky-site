@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER · MOCKUP 8E · THE DOORBELL</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 8E · THE DOORBELL
+   Candidate for PLAN-TURN-OBJECT §2 (8e). The turn control becomes a pile
+   item: an old brass doorbell plate with a plump pearl button and a yellowed
+   hand-typed paper label TAPED to the plate beneath it — TAKE A TURN / PRESS.
+
+   THE OBJECT is ONE inline SVG (viewBox 0 0 240 300, transparent background,
+   ink edge-to-edge, no <script>, no on* handlers, no foreignObject, no
+   external refs, no SMIL). Lift it out of this file and it is the production
+   pile asset. Every moving part is a NAMED GROUP the page's CSS drives:
+       .db-plate   — the buzz-rattle: a jolt, then a damped side-to-side
+                     shake about the plate's centre (120,150)
+       .db-pearl   — the button: sinks into its well and squashes (120,100)
+       .db-flash   — a rim flash on the bezel, opacity 0 at rest
+       .db-label   — the taped paper, flapping about its taped top edge
+       .db-gleam   — the idle tell: a soft specular sweep clipped to the pearl
+   The press interaction lives in page JS (one class on the host); the idle
+   tell is page CSS, NOT SMIL — precisely so `prefers-reduced-motion` can
+   switch it off. A SMIL animation baked into the asset could not be.
+
+   DRAWER CONTEXT is honest: the floor / frame / craquelure textures are the
+   --jd-floor-url, --jd-frame-url and --jd-craq-url data-URIs copied VERBATIM
+   from junk-drawer.css, the walls use the same border-image slicing, varnish
+   and vignette are the same gradients, and item widths use the real
+   production ruler from junk-drawer.js applySize():
+       w = tierBox · √aspect · elongationCap · sizeScale   (cqmin of the well,
+   ×1.2 under 768px). So a "medium" on this page is a medium in the drawer.
+
+   STYLE: deliberately un-harmonized with the painterly specimens. Chunky
+   proportions, saturated brass, candy-gloss highlight, thick cartoon ink
+   line — a Saturday-morning prop among the trompe-l'oeil. The style break is
+   the camouflage (PLAN-TURN-OBJECT, top of file). 8e spends the least
+   game-show energy of the five and buys it back with premise-fit: everybody
+   already has a doorbell in a junk drawer.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier New", Courier, monospace;
+  /* the three procedural textures, VERBATIM from junk-drawer.css ---------- */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0 3rem;
+  overflow-x: hidden;
+}
+.wrap { max-width: 1060px; margin: 0 auto; padding: 0 14px; }
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center; margin-bottom: 0.4rem;
+}
+.mock-intro {
+  font-size: 0.7rem; line-height: 1.85; letter-spacing: 0.09em; color: #7c7566;
+  text-align: center; max-width: 46rem; margin: 0 auto 0.5rem;
+}
+.mock-meta {
+  font-size: 0.62rem; letter-spacing: 0.2em; color: #a9a293;
+  text-align: center; text-transform: uppercase; margin-bottom: 1.6rem;
+}
+.sec-head {
+  margin: 2.6rem auto 0.2rem;
+  font-size: 0.7rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: var(--plot-red);
+}
+.sec-sub {
+  margin: 0 auto 1.1rem; max-width: 44rem;
+  font-size: 0.66rem; line-height: 1.8; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.rule { border: 0; border-top: 1px solid #ddd7c8; margin: 2.4rem 0 0; }
+
+/* ---------------- HERO ---------------------------------------------------- */
+/* a neutral slab, not the drawer: this view is about the object alone */
+.hero-slab {
+  position: relative;
+  background:
+    radial-gradient(120% 120% at 30% 18%, #fffdf6 0%, #efeade 62%, #ded7c6 100%);
+  border: 1px solid #ddd7c8;
+  padding: 2.6rem 4% 2.2rem;
+  display: flex; flex-direction: column; align-items: center;
+}
+.hero-host {
+  width: min(340px, 78%);
+  display: block;
+  cursor: pointer;
+  outline: none;
+  /* the drawer gives every item this shadow; the hero borrows it so the
+     object is judged sitting on something rather than floating */
+  filter: drop-shadow(6px 9px 7px rgba(22, 11, 4, 0.32));
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.hero-host:focus-visible { outline: 3px dashed var(--plot-red); outline-offset: 18px; }
+.hero-hint {
+  margin-top: 1.6rem;
+  font-size: 0.62rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: #8a8272; text-align: center; line-height: 2;
+}
+.hero-hint b { color: var(--plot-red); }
+.counter { font-variant-numeric: tabular-nums; color: #3a2a12; font-weight: 700; }
+
+/* ---------------- the object's own moving parts -------------------------- */
+/* One behaviour spec, applied to EVERY copy of the SVG on the page (hero,
+   drawer, variants). The asset carries the structure; the page carries the
+   motion. */
+.db { display: block; width: 100%; height: auto; }
+.db-plate, .db-pearl, .db-flash { transform-box: view-box; }
+.db-plate { transform-origin: 120px 150px; }   /* the plate's own centre */
+.db-pearl { transform-origin: 120px 100px; }   /* the button's axis */
+.db-flash { transform-origin: 120px 100px; }   /* the bezel's rim */
+/* The label sits inside a group that already carries a placement `transform`
+   ATTRIBUTE (the paper's tilt), and a CSS transform would replace an
+   attribute rather than compose with it — so the attribute stays on the
+   static seat group and .db-label is the child inside it, flapping in its
+   own local space. fill-box + a percentage origin pins the hinge to the
+   taped top edge with no viewBox arithmetic. */
+.db-label { transform-box: fill-box; transform-origin: 50% 3%; }
+
+/* PRESS — the pearl sinks into its well and squashes; the whole plate takes
+   one jolt and then a damped buzz-rattle; the paper label flaps a beat
+   behind; the bezel throws a single rim flash. Quieter and shorter than a
+   buzzer's slam — this is a doorbell, the point of the candidate is that it
+   is the least theatrical of the five. */
+@keyframes dbPearl {
+  0%   { transform: translateY(0)     scale(1, 1); }
+  8%   { transform: translateY(10px)  scale(1.11, 0.85); }
+  32%  { transform: translateY(9px)   scale(1.07, 0.90); }
+  58%  { transform: translateY(0)     scale(0.96, 1.06); }
+  78%  { transform: translateY(1.5px) scale(1.02, 0.98); }
+  100% { transform: translateY(0)     scale(1, 1); }
+}
+/* the buzz-rattle. The first frame is a SCALE jolt, not a shift: at drawer
+   scale a 4-unit shake is barely a pixel, but a 3.5% squash of the whole
+   plate reads at any size. The shake then decays over ~7 beats. */
+@keyframes dbBuzz {
+  0%   { transform: translate(0, 0)         rotate(0deg)     scale(1, 1); }
+  6%   { transform: translate(0, 1.6px)     rotate(0deg)     scale(1.035, 0.965); }
+  14%  { transform: translate(-4.2px, 0.4px) rotate(-1deg)   scale(1.015, 0.99); }
+  22%  { transform: translate(3.6px, 0.8px)  rotate(0.8deg)  scale(1, 1); }
+  30%  { transform: translate(-3px, 0)       rotate(-0.62deg); }
+  38%  { transform: translate(2.3px, 0.4px)  rotate(0.46deg); }
+  46%  { transform: translate(-1.7px, 0)     rotate(-0.32deg); }
+  56%  { transform: translate(1.1px, 0.2px)  rotate(0.2deg); }
+  68%  { transform: translate(-0.6px, 0)     rotate(-0.1deg); }
+  100% { transform: translate(0, 0)          rotate(0deg)    scale(1, 1); }
+}
+@keyframes dbLabelFlap {
+  0%   { transform: rotate(0deg); }
+  12%  { transform: rotate(-2.4deg); }
+  30%  { transform: rotate(1.7deg); }
+  50%  { transform: rotate(-1deg); }
+  70%  { transform: rotate(0.5deg); }
+  100% { transform: rotate(0deg); }
+}
+@keyframes dbFlash {
+  0%   { opacity: 0;    transform: scale(0.94); }
+  7%   { opacity: 0.85; transform: scale(1); }
+  46%  { opacity: 0;    transform: scale(1.07); }
+  100% { opacity: 0;    transform: scale(1.07); }
+}
+.is-pressed .db-pearl { animation: dbPearl     0.62s cubic-bezier(.26,.86,.36,1); }
+.is-pressed .db-plate { animation: dbBuzz      0.62s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .db-label { animation: dbLabelFlap 0.62s cubic-bezier(.25,.72,.4,1); }
+.is-pressed .db-flash { animation: dbFlash     0.62s ease-out; }
+
+/* IDLE TELL — a soft gleam crossing the pearl every ~8s, clipped to the
+   button so it reads as light travelling over a curved pearl rather than a
+   sparkle stuck on top of it. §1's discoverability guardrail; the quietest
+   thing on the page by design. */
+@keyframes dbGleam {
+  0%, 84% { opacity: 0;    transform: translateX(-82px); }
+  87%     { opacity: 0.6;  }
+  93%     { opacity: 0.55; }
+  98%     { opacity: 0;    transform: translateX(82px); }
+  100%    { opacity: 0;    transform: translateX(82px); }
+}
+.db-gleam { animation: dbGleam 8s linear infinite; }
+/* instances offset so the page does not gleam in unison */
+.ctx-item--turn .db-gleam { animation-delay: 2.9s; }
+.var-cell:nth-child(2) .db-gleam { animation-delay: 1.4s; }
+.var-cell:nth-child(3) .db-gleam { animation-delay: 4.8s; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no gleam at all, and the press becomes a DISCRETE state (held ~320ms by
+     the JS, then dropped) rather than a spring — motion reduced, feedback
+     kept: a press must still be unmistakably acknowledged. */
+  .db-gleam { animation: none; opacity: 0; }
+  .is-pressed .db-pearl,
+  .is-pressed .db-plate,
+  .is-pressed .db-label,
+  .is-pressed .db-flash { animation: none; }
+  .is-pressed .db-pearl { transform: translateY(9px) scale(1.06, 0.89); }
+  .is-pressed .db-flash { opacity: 0.85; }
+}
+
+/* ---------------- IN-CONTEXT: the real drawer, the real ruler ------------ */
+.ctx-stage {
+  position: relative;
+  width: min(980px, 100%);
+  margin: 0 auto;
+  aspect-ratio: 3 / 2;
+  --wall: clamp(28px, 9vw, 64px);          /* production value, verbatim */
+  box-shadow: 10px 14px 30px -12px rgba(30, 18, 8, 0.45),
+              3px 5px 12px -5px rgba(30, 18, 8, 0.3);
+}
+.ctx-frame {                                /* = production .jd-frame */
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+.ctx-well {                                 /* = production .jd-well */
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;                     /* items size in cqmin, as live */
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+.ctx-craq {                                 /* = production .jd-craquelure */
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+.ctx-pile { position: absolute; inset: 0; z-index: 2; }
+.ctx-varnish {                              /* = production .jd-varnish */
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.ctx-vignette {                             /* = production .jd-vignette */
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+/* = production .jd-item: cqmin width, rotation on the svg, shadow on the box */
+.ctx-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  pointer-events: none;                     /* the neighbours are scenery */
+}
+.ctx-item > svg { display: block; width: 100%; height: auto; transform: rotate(var(--rot)); }
+.ctx-item--turn {
+  pointer-events: auto; cursor: pointer; outline: none;
+  z-index: 40;                              /* the first-visit z-boost, §1 */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.ctx-item--turn:focus-visible { outline: 3px dashed #ffe6a3; outline-offset: 8px; }
+.ctx-cap {
+  margin: 0.75rem auto 0; max-width: 44rem;
+  font-size: 0.62rem; letter-spacing: 0.16em; line-height: 2;
+  color: #8a8272; text-align: center; text-transform: uppercase;
+}
+.ctx-cap b { color: var(--plot-red); }
+@media (max-width: 768px) {
+  /* production shifts item sizes up a band on small wells (×1.2) and the
+     drawer goes tall — both mirrored, so the phone read is honest */
+  .ctx-item { width: calc(var(--w) * 1.2cqmin); }
+  .ctx-stage { aspect-ratio: 3 / 4.4; }
+  .hero-slab { padding: 2rem 3% 1.5rem; }
+  .hero-host { width: 82%; }
+}
+
+/* ---------------- VARIANT ROW -------------------------------------------- */
+.var-row {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: clamp(0.7rem, 4vw, 2.4rem);
+}
+.var-cell { width: min(160px, 27%); text-align: center; }
+.var-host {
+  display: block; width: 100%; cursor: pointer; outline: none;
+  filter: drop-shadow(4px 6px 5px rgba(22, 11, 4, 0.3));
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.var-host:focus-visible { outline: 3px dashed var(--plot-red); outline-offset: 8px; }
+.var-cap {
+  margin-top: 0.6rem;
+  font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: #8a8272;
+}
+/* The asset ships BRASS + PEARL as stop-color presentation attributes. These
+   rules are page CSS overriding those attributes — the SVG file is untouched,
+   so a variant is a handful of stop-colors at implementation time. */
+.var--bakelite .db-p0 { stop-color: #fff2ee; }
+.var--bakelite .db-p1 { stop-color: #ffb3a4; }
+.var--bakelite .db-p2 { stop-color: #ef6a55; }
+.var--bakelite .db-p3 { stop-color: #b9301f; }
+.var--bakelite .db-p4 { stop-color: #7c1409; }
+.var--nickel .db-b0 { stop-color: #ffffff; }
+.var--nickel .db-b1 { stop-color: #e6eef4; }
+.var--nickel .db-b2 { stop-color: #b3c4d1; }
+.var--nickel .db-b3 { stop-color: #8698a7; }
+.var--nickel .db-b4 { stop-color: #56697a; }
+
+/* ---------------- NOTES --------------------------------------------------- */
+.notes { max-width: 40rem; margin: 0 auto; }
+.notes li {
+  font-size: 0.7rem; line-height: 2; letter-spacing: 0.055em;
+  color: #4a463d; margin-bottom: 0.85rem; list-style: none;
+  padding-left: 1.5rem; position: relative;
+}
+.notes li::before {
+  content: "\25B8"; position: absolute; left: 0; top: 0; color: var(--plot-red);
+}
+.notes b { color: #262420; }
+.notes code {
+  font-family: var(--mono); font-size: 0.95em;
+  background: #ece7da; padding: 0 0.28em; border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1 class="mock-title">Junk Drawer &middot; Mockup 8e &middot; The Doorbell</h1>
+  <p class="mock-intro">
+    An old brass doorbell plate with a plump pearl button and a yellowed
+    hand-typed label taped underneath &mdash; the most junk-drawer-native of
+    the five: everybody already has one of these in a drawer.
+  </p>
+  <p class="mock-meta">PLAN-TURN-OBJECT &sect;2 &middot; candidate 8e &middot; label placeholder: TAKE A TURN</p>
+</div>
+
+<!-- ======================= HERO ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">1 &middot; The object</h2>
+  <p class="sec-sub">
+    Click, tap, or focus it and press Enter or Space. The pearl sinks into its
+    well, the whole plate gives a buzz-rattle, the taped label flaps a beat
+    behind. Left alone, a soft gleam crosses the pearl every eight seconds.
+  </p>
+</div>
+<div class="wrap">
+  <div class="hero-slab">
+    <div class="hero-host db-host" role="button" tabindex="0" aria-label="Take a turn">
+
+<!-- ===================================================================== -->
+<!-- THE ASSET. Lift from here to the closing </svg> and it is the pile     -->
+<!-- item: viewBox, transparent, ink edge-to-edge (plate stroke reaches     -->
+<!-- x 1.5..238.5 of 240 and y 0.5..299.5 of 300 — under 1% dead margin on  -->
+<!-- every side), no script / on* / foreignObject / external ref / SMIL.    -->
+<!-- All ids are prefixed db_ so the page's copier can re-prefix each       -->
+<!-- instance; nothing inside depends on page CSS to be a correct still.    -->
+<!-- ===================================================================== -->
+<svg id="db-master" class="db" xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 240 300" role="img"
+     aria-label="A brass doorbell plate with a pearl button and a taped paper label reading TAKE A TURN, PRESS">
+  <defs>
+    <!-- brass: highlight, warm face, the dark turn, deep shade. Stop classes
+         are the variant hooks: see the nickel rules in the page CSS. -->
+    <linearGradient id="db_brass" x1="0.1" y1="0" x2="0.62" y2="1">
+      <stop class="db-b0" offset="0"    stop-color="#fff3cd"/>
+      <stop class="db-b1" offset="0.2"  stop-color="#f0cf7d"/>
+      <stop class="db-b2" offset="0.5"  stop-color="#d2a03c"/>
+      <stop class="db-b3" offset="0.76" stop-color="#a97a22"/>
+      <stop class="db-b4" offset="1"    stop-color="#7a5311"/>
+    </linearGradient>
+    <!-- the bezel reads a touch darker than the plate: same ramp, shifted -->
+    <linearGradient id="db_bezel" x1="0.2" y1="0" x2="0.75" y2="1">
+      <stop class="db-b1" offset="0"    stop-color="#f0cf7d"/>
+      <stop class="db-b2" offset="0.38" stop-color="#d2a03c"/>
+      <stop class="db-b3" offset="0.72" stop-color="#a97a22"/>
+      <stop class="db-b4" offset="1"    stop-color="#7a5311"/>
+    </linearGradient>
+    <!-- the well the button sinks into: dark, with a little bounce at the
+         bottom so it is a hole and not a black disc -->
+    <radialGradient id="db_well" cx="0.5" cy="0.34" r="0.78">
+      <stop offset="0"    stop-color="#4b2f08"/>
+      <stop offset="0.72" stop-color="#5e3d0d"/>
+      <stop offset="1"    stop-color="#8a6420"/>
+    </radialGradient>
+    <!-- the pearl: plump, cool-white core falling to a warm shadowed rim -->
+    <radialGradient id="db_pearl" cx="0.35" cy="0.29" r="0.88">
+      <stop class="db-p0" offset="0"    stop-color="#ffffff"/>
+      <stop class="db-p1" offset="0.32" stop-color="#fdf6e9"/>
+      <stop class="db-p2" offset="0.64" stop-color="#f0e1cb"/>
+      <stop class="db-p3" offset="0.88" stop-color="#d6bfa0"/>
+      <stop class="db-p4" offset="1"    stop-color="#ac9377"/>
+    </radialGradient>
+    <linearGradient id="db_paper" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#f7ebc7"/>
+      <stop offset="1" stop-color="#dcc48b"/>
+    </linearGradient>
+    <linearGradient id="db_tape" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2e7bd"/>
+      <stop offset="1" stop-color="#d5c187"/>
+    </linearGradient>
+    <clipPath id="db_plateclip">
+      <rect x="4" y="3" width="232" height="294" rx="34"/>
+    </clipPath>
+    <clipPath id="db_pearlclip">
+      <circle cx="120" cy="100" r="47"/>
+    </clipPath>
+  </defs>
+
+  <!-- EVERYTHING is inside .db-plate: the plate is the thing that rattles,
+       and the button, screws and label rattle with it because they are
+       screwed and taped TO it. -->
+  <g class="db-plate">
+
+    <!-- the plate: one chunky rounded rectangle, thick cartoon ink line -->
+    <rect x="4" y="3" width="232" height="294" rx="34"
+          fill="url(#db_brass)" stroke="#3a2408" stroke-width="5" stroke-linejoin="round"/>
+    <!-- candy gloss: two diagonal sweeps, clipped to the plate -->
+    <g clip-path="url(#db_plateclip)">
+      <path d="M-24 120 L112 -24 L168 -24 L18 152 Z" fill="#fff6d6" opacity="0.3"/>
+      <path d="M-24 168 L186 -24 L212 -24 L4 200 Z" fill="#fff6d6" opacity="0.15"/>
+      <path d="M4 252 C74 300 178 302 236 250 L236 300 L4 300 Z"
+            fill="#5b3d0c" opacity="0.16"/>
+    </g>
+    <!-- the pressed inner bevel -->
+    <rect x="17" y="16" width="206" height="268" rx="25"
+          fill="none" stroke="#ffeeb6" stroke-width="3.5" opacity="0.45"/>
+    <rect x="17" y="16" width="206" height="268" rx="25"
+          fill="none" stroke="#6b4712" stroke-width="1.6" opacity="0.4"/>
+
+    <!-- four screw heads, each slotted at its own careless angle -->
+    <g class="db-screws" stroke-linecap="round">
+      <g>
+        <circle cx="30" cy="32" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="26" cy="28" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M22 25 L38 39" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="210" cy="32" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="206" cy="28" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M202 37 L218 27" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="30" cy="268" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="26" cy="264" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M22 268 L38 268" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="210" cy="268" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="206" cy="264" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M210 260 L210 276" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+    </g>
+
+    <!-- THE BUTTON. bezel, then the well, then the pearl on top of it: when
+         the pearl drops 10 units the well shows above it, which is what
+         makes the sink read as mechanism instead of as a wobble. -->
+    <g class="db-bell">
+      <circle cx="120" cy="100" r="61" fill="url(#db_bezel)" stroke="#3a2408" stroke-width="5"/>
+      <path d="M70 74 Q84 46 116 40" fill="none" stroke="#fff3cd" stroke-width="6"
+            opacity="0.55" stroke-linecap="round"/>
+      <path d="M170 126 Q156 154 124 160" fill="none" stroke="#6b4712" stroke-width="6"
+            opacity="0.35" stroke-linecap="round"/>
+      <circle cx="120" cy="100" r="50" fill="url(#db_well)" stroke="#3a2408" stroke-width="3.5"/>
+
+      <g class="db-pearl">
+        <circle cx="120" cy="100" r="47" fill="url(#db_pearl)" stroke="#3a2408" stroke-width="4"/>
+        <!-- candy-gloss highlight: one fat blob and its little companion -->
+        <ellipse cx="102" cy="79" rx="19" ry="14" transform="rotate(-28 102 79)"
+                 fill="#ffffff" opacity="0.9"/>
+        <ellipse cx="95" cy="74" rx="7.5" ry="5.5" transform="rotate(-28 95 74)"
+                 fill="#ffffff"/>
+        <!-- warm bounce off the brass along the lower rim -->
+        <path d="M88 130 Q120 154 154 122" fill="none" stroke="#e5c495" stroke-width="7"
+              opacity="0.5" stroke-linecap="round"/>
+        <path d="M79 112 Q78 70 112 56" fill="none" stroke="#ffffff" stroke-width="4.5"
+              opacity="0.45" stroke-linecap="round"/>
+        <!-- the idle gleam, clipped to the pearl. opacity 0 as an ATTRIBUTE so
+             the asset is a correct still with no stylesheet at all. -->
+        <g clip-path="url(#db_pearlclip)">
+          <g transform="rotate(-24 120 100)">
+            <g class="db-gleam" opacity="0">
+              <rect x="98" y="38" width="22" height="124" rx="11" fill="#ffffff" opacity="0.85"/>
+              <rect x="126" y="38" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.55"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- the press flash on the bezel rim. opacity 0 at rest, and
+           pointer-events none so an invisible ring never steals a hit test. -->
+      <circle class="db-flash" cx="120" cy="100" r="58" fill="none"
+              stroke="#fff6cf" stroke-width="7" opacity="0" pointer-events="none"/>
+    </g>
+
+    <!-- THE LABEL. Typed on a machine with a tired ribbon, gone yellow, taped
+         on by its two top corners — so it hinges from the tape and flaps. The
+         tape is drawn AFTER the paper and does not move: the paper flutters
+         under it, which is the whole reason the hinge sits at the top. -->
+    <g transform="rotate(-1.8 120 214)">
+      <g class="db-label">
+        <path d="M24 179 L215 176 L217 251 L23 254 Z"
+              fill="url(#db_paper)" stroke="#b08f52" stroke-width="2" stroke-linejoin="round"/>
+        <!-- foxing + the old fold across the middle -->
+        <ellipse cx="52" cy="242" rx="13" ry="7" fill="#c3a163" opacity="0.26"/>
+        <ellipse cx="192" cy="192" rx="9" ry="6" fill="#c3a163" opacity="0.22"/>
+        <path d="M25 224 Q120 220 216 226" fill="none" stroke="#c0a06a"
+              stroke-width="1.4" opacity="0.5"/>
+        <!-- typewriter impression under the ink, then the ink -->
+        <text x="121" y="214" text-anchor="middle"
+              font-family="Courier New, Courier, monospace" font-weight="700"
+              font-size="25" letter-spacing="0.5" fill="#9a7c46" opacity="0.4">TAKE A TURN</text>
+        <text x="120" y="213" text-anchor="middle"
+              font-family="Courier New, Courier, monospace" font-weight="700"
+              font-size="25" letter-spacing="0.5" fill="#3b3020">TAKE A TURN</text>
+        <text x="120" y="241" text-anchor="middle"
+              font-family="Courier New, Courier, monospace"
+              font-size="13" letter-spacing="4" fill="#5d4d2e">&#8212; PRESS &#8212;</text>
+      </g>
+      <!-- two strips of aged tape over the paper's top corners -->
+      <g class="db-tape">
+        <polygon points="40.5,159.7 53.5,182.3 15.5,204.3 2.5,181.7"
+                 fill="url(#db_tape)" opacity="0.78" stroke="#bda86e" stroke-width="1.2"/>
+        <path d="M36 168 L11 182" stroke="#fffbe4" stroke-width="3" opacity="0.5"
+              stroke-linecap="round"/>
+        <polygon points="199.5,159.7 186.5,182.3 224.5,204.3 237.5,181.7"
+                 fill="url(#db_tape)" opacity="0.78" stroke="#bda86e" stroke-width="1.2"/>
+        <path d="M204 168 L229 182" stroke="#fffbe4" stroke-width="3" opacity="0.5"
+              stroke-linecap="round"/>
+      </g>
+    </g>
+
+  </g>
+</svg>
+<!-- ===================== END OF THE ASSET ============================== -->
+
+    </div>
+    <p class="hero-hint">
+      Presses so far: <span class="counter" id="press-count">0</span><br />
+      <b>Enter</b> / <b>Space</b> work when it has focus &middot; idle gleam every 8s
+    </p>
+  </div>
+</div>
+
+<!-- ======================= IN CONTEXT ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">2 &middot; In the drawer, at drawer scale</h2>
+  <p class="sec-sub">
+    Real floor, frame and craquelure textures from <code>junk-drawer.css</code>;
+    three real specimens from <code>items/</code> at their filed sizes; the
+    doorbell filed medium, scattered lower-left and boosted to the top of the
+    z-order per &sect;1. It presses here too &mdash; this is where &ldquo;does it
+    read as pressable at 90px&rdquo; gets decided.
+  </p>
+</div>
+<div class="wrap">
+  <div class="ctx-stage">
+    <div class="ctx-frame">
+      <div class="ctx-well">
+        <div class="ctx-craq"></div>
+        <div class="ctx-pile">
+
+          <!-- NEIGHBOUR 1 — Matchbook (filed "l" x 0.712, viewBox 133.8x184.8):
+               w = 22 · √0.7240 · 0.712 = 13.33 cqmin. No ids in this asset,
+               so nothing to prefix. -->
+          <div class="ctx-item" style="--w: 13.33; --rot: -13deg; left: 47%; top: 34%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="8.0 6.0 133.8 184.8" aria-hidden="true">
+              <rect x="10" y="8" width="130" height="156" rx="7" fill="#b23a2a"/>
+              <circle cx="75" cy="72" r="36" fill="#f3c53c"/>
+              <path d="M75 42 C64 58 60 66 60 76 A15 15 0 0 0 90 76 C90 66 86 58 75 42 Z" fill="#e2731f"/>
+              <path d="M75 58 C70 66 68 70 68 76 A7 7 0 0 0 82 76 C82 70 80 66 75 58 Z" fill="#fdeec9"/>
+              <text x="75" y="146" text-anchor="middle" font-family="Courier, monospace" font-weight="bold" font-size="15" letter-spacing="3" fill="#f6e3c2">MATCHES</text>
+              <rect x="10" y="152" width="130" height="26" rx="3" fill="#8a3f2c"/>
+              <rect x="68" y="160" width="14" height="4" rx="1" fill="#c9c9c9"/>
+              <rect x="10" y="180" width="130" height="9" rx="2" fill="#6e5a4d"/>
+            </svg>
+          </div>
+
+          <!-- NEIGHBOUR 2 — Pencil stub (filed "s", viewBox 203.3x35.8, so the
+               1.8 elongation cap bites): w = 9 · √5.679 · 0.7553 = 16.20 cqmin.
+               No ids in this asset either. -->
+          <div class="ctx-item" style="--w: 16.20; --rot: 15deg; left: 42%; top: 73%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="16.8 18.3 203.3 35.8" aria-hidden="true">
+              <g stroke="#4a3a1e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M40 22 Q26 20 22 28 Q18 36 23 44 Q28 51 40 49 Z" fill="#e29999"/>
+                <path d="M40 22 L57 23 L55 51 L38 49 Z" fill="#b9c2c9"/>
+                <path d="M56 24 Q94 20 120 23 Q146 26 173 22 L176 47 Q141 52 113 49 Q85 46 58 50 Z" fill="#f2c230"/>
+                <path d="M173 22 L205 30 Q207 36 205 41 L176 47 Z" fill="#e0b070"/>
+                <path d="M205 30 L217 35 L205 41 Q203 36 205 30 Z" fill="#4a4a4a" stroke-width="2"/>
+              </g>
+              <path d="M45 27 L44 46" stroke="#6c7880" stroke-width="1.5" fill="none"/>
+              <path d="M51 26 L50 47" stroke="#6c7880" stroke-width="1.5" fill="none"/>
+              <path d="M62 31 Q110 27 168 29" stroke="#d9a51e" stroke-width="4" fill="none" opacity="0.7"/>
+              <path d="M62 42 Q112 46 168 43" stroke="#c8991b" stroke-width="3" fill="none" opacity="0.5"/>
+              <path d="M88 36 q14 -3 26 1 q10 3 22 -1" stroke="#7a5a10" stroke-width="1.2" fill="none" opacity="0.7"/>
+            </svg>
+          </div>
+
+          <!-- NEIGHBOUR 3 — Googly eyeball (filed "s", square 400x400):
+               w = 9 · √1 = 9.00 cqmin. This one DOES carry ids (clip, gradients,
+               filters) — every id and every url(#) reference below is prefixed
+               c3_ so the inlined copies never fight over defs. -->
+          <div class="ctx-item" style="--w: 9.00; --rot: 9deg; left: 31%; top: 41%;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" aria-hidden="true">
+              <defs>
+                <clipPath id="c3_cp"><circle cx="200" cy="200" r="196"/></clipPath>
+                <radialGradient id="c3_dome" cx="0.37" cy="0.33" r="0.82">
+                  <stop offset="0" stop-color="#f8f0dd"/>
+                  <stop offset="0.28" stop-color="#f0e2c5"/>
+                  <stop offset="0.52" stop-color="#ddc496"/>
+                  <stop offset="0.72" stop-color="#b78b52"/>
+                  <stop offset="0.88" stop-color="#7c5527"/>
+                  <stop offset="1" stop-color="#432a11"/>
+                </radialGradient>
+                <radialGradient id="c3_pupilG" cx="0.38" cy="0.32" r="0.85">
+                  <stop offset="0" stop-color="#181008"/>
+                  <stop offset="0.55" stop-color="#070403"/>
+                  <stop offset="0.85" stop-color="#140c05"/>
+                  <stop offset="1" stop-color="#33200d"/>
+                </radialGradient>
+                <filter id="c3_paint" x="-15%" y="-15%" width="130%" height="130%">
+                  <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="3" seed="4" result="t"/>
+                  <feDisplacementMap in="SourceGraphic" in2="t" scale="15"/>
+                  <feGaussianBlur stdDeviation="1.3"/>
+                </filter>
+                <filter id="c3_soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+                <filter id="c3_soft4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+                <filter id="c3_soft8" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+                <filter id="c3_grain" x="-5%" y="-5%" width="110%" height="110%">
+                  <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11"/>
+                  <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0.6 0.6 0 0"/>
+                </filter>
+              </defs>
+              <g clip-path="url(#c3_cp)">
+                <circle cx="200" cy="200" r="196" fill="url(#c3_dome)"/>
+                <ellipse cx="268" cy="288" rx="132" ry="104" fill="#4a3011" opacity="0.35" filter="url(#c3_soft8)" transform="rotate(-24 268 288)"/>
+                <g fill="none" stroke-linecap="round" filter="url(#c3_paint)">
+                  <path d="M 369 138 A 180 180 0 0 1 169 377" stroke="#5b3a17" stroke-width="22" opacity="0.45"/>
+                  <path d="M 64 316 A 178 178 0 0 1 84 62" stroke="#6e4a20" stroke-width="20" opacity="0.4"/>
+                  <path d="M 90 300 A 140 140 0 0 0 310 290" stroke="#b08346" stroke-width="24" opacity="0.35"/>
+                  <path d="M 150 262 A 110 100 0 0 0 300 230" stroke="#cfa868" stroke-width="20" opacity="0.3"/>
+                  <path d="M 92 170 A 120 118 0 0 1 200 78" stroke="#f6edd8" stroke-width="26" opacity="0.5"/>
+                  <path d="M 120 200 A 95 95 0 0 1 175 110" stroke="#fbf5e6" stroke-width="18" opacity="0.45"/>
+                  <path d="M 105 250 A 118 118 0 0 1 88 190" stroke="#e6d3ab" stroke-width="16" opacity="0.35"/>
+                  <path d="M 250 330 A 150 140 0 0 0 335 260" stroke="#8a5e2c" stroke-width="18" opacity="0.35"/>
+                  <path d="M 145 330 A 130 130 0 0 0 235 342" stroke="#9a6f38" stroke-width="14" opacity="0.3"/>
+                  <path d="M 300 110 A 150 150 0 0 1 340 175" stroke="#caa267" stroke-width="16" opacity="0.3"/>
+                </g>
+                <circle cx="268" cy="152" r="68" fill="#3d2710" opacity="0.42" filter="url(#c3_soft8)"/>
+                <circle cx="258" cy="140" r="62" fill="url(#c3_pupilG)" stroke="#241505" stroke-width="3" stroke-opacity="0.6"/>
+                <path d="M 212 178 A 61 61 0 0 0 305 165" fill="none" stroke="#6b4a24" stroke-width="5" opacity="0.45" filter="url(#c3_soft2)"/>
+                <ellipse cx="238" cy="119" rx="10" ry="8" transform="rotate(-22 238 119)" fill="#fff8e8" opacity="0.95" filter="url(#c3_soft2)"/>
+                <ellipse cx="236" cy="117" rx="5" ry="4" transform="rotate(-22 236 117)" fill="#ffffff"/>
+                <circle cx="278" cy="167" r="5" fill="#d8b877" opacity="0.5" filter="url(#c3_soft2)"/>
+                <path d="M 36 156 A 170 170 0 0 1 285 53 L 263 64 A 150 150 0 0 0 59 149 Z" fill="#fdf9ee" opacity="0.6" filter="url(#c3_soft4)"/>
+                <path d="M 56 117 A 166 166 0 0 1 243 40 L 232 49 A 154 154 0 0 0 71 116 Z" fill="#ffffff" opacity="0.85" filter="url(#c3_soft2)"/>
+                <path d="M 290 356 A 182 182 0 0 1 110 356" fill="none" stroke="#d9a95c" stroke-width="10" opacity="0.5" stroke-linecap="round" filter="url(#c3_soft4)"/>
+                <circle cx="200" cy="200" r="191" fill="none" stroke="#2e1c0a" stroke-width="8" opacity="0.85"/>
+                <circle cx="200" cy="200" r="183" fill="none" stroke="#7a5228" stroke-width="7" opacity="0.5" filter="url(#c3_soft2)"/>
+                <circle cx="200" cy="200" r="195" fill="none" stroke="#1d1206" stroke-width="3" opacity="0.9"/>
+                <circle cx="200" cy="200" r="196" filter="url(#c3_grain)" opacity="0.09"/>
+              </g>
+            </svg>
+          </div>
+
+          <!-- THE DOORBELL — filed medium (box 15.5), aspect 240/300 = 0.8
+               → w = 15.5 · √0.8 = 13.86 cqmin. The SVG is cloned from the hero
+               at load with its ids re-prefixed. -->
+          <div class="ctx-item ctx-item--turn db-host" id="ctx-turn"
+               role="button" tabindex="0" aria-label="Take a turn"
+               style="--w: 13.86; --rot: -7deg; left: 35%; top: 66%;"></div>
+
+        </div>
+        <div class="ctx-varnish"></div>
+        <div class="ctx-vignette"></div>
+      </div>
+    </div>
+  </div>
+  <p class="ctx-cap">
+    Plate rendered right now: <b id="ctx-px">&mdash;</b> &middot;
+    pearl: <b id="ctx-pearl">&mdash;</b> &middot;
+    &ldquo;TAKE A TURN&rdquo; cap height: <b id="ctx-cap-h">&mdash;</b>
+  </p>
+</div>
+
+<!-- ======================= VARIANTS ======================= -->
+<div class="wrap">
+  <h2 class="sec-head">3 &middot; Finish variants</h2>
+  <p class="sec-sub">
+    Same asset, same label; only gradient stop-colors are overridden from the
+    page. Each of these presses too.
+  </p>
+  <div class="var-row" id="var-row">
+    <div class="var-cell">
+      <div class="var-host db-host" role="button" tabindex="0" aria-label="Take a turn, brass and pearl"></div>
+      <p class="var-cap">Brass + pearl<br />the default</p>
+    </div>
+    <div class="var-cell">
+      <div class="var-host db-host var--bakelite" role="button" tabindex="0" aria-label="Take a turn, red bakelite button"></div>
+      <p class="var-cap">Red bakelite button<br />louder in the pile</p>
+    </div>
+    <div class="var-cell">
+      <div class="var-host db-host var--nickel" role="button" tabindex="0" aria-label="Take a turn, nickel plate"></div>
+      <p class="var-cap">Nickel plate<br />refuses the wood</p>
+    </div>
+  </div>
+</div>
+
+<!-- ======================= NOTES ======================= -->
+<div class="wrap">
+  <hr class="rule" />
+  <h2 class="sec-head">4 &middot; Notes</h2>
+  <ul class="notes">
+    <li><b>What I committed to.</b> Premise-fit over spectacle, exactly as the
+      candidate promises. The whole object is four shapes a child would draw
+      &mdash; plate, four screws, one fat pearl, one taped note &mdash; at a
+      5px cartoon ink line, saturated brass and a candy-gloss diagonal sweep
+      across the plate. No starburst, no motion lines, nothing leaving the
+      viewBox. The <i>label</i> does the work the other four candidates give
+      to noise: it is the only thing on the drawer floor with instructions
+      typed on it, and that is 8e's whole discoverability argument.</li>
+    <li><b>The sink is real mechanism, not a wobble.</b> Bezel, then a dark
+      well (<code>db_well</code>), then the pearl drawn on top of it: when
+      <code>.db-pearl</code> drops 10 user units the well shows above the
+      button, so the eye reads "that went into a hole". The plate's buzz
+      starts with a <i>scale</i> jolt (3.5% squash) before the side-to-side
+      shake, because at drawer scale a 4-unit shake is under a pixel while a
+      3.5% squash of the whole silhouette still reads. Implementation should
+      keep that ordering if it re-times the keyframes.</li>
+    <li><b>Tap target at drawer scale.</b> The live readout above states it.
+      Filed medium, the plate measures <b>73 &times; 91px</b> on this page's
+      1200px-wide stage (it grows toward ~95px on a taller well, since cqmin
+      follows the well's short side) and <b>47 &times; 58px</b> on a 375px
+      phone under production's &times;1.2 small-well bump &mdash; i.e. three
+      pixels above the 44px touch floor, the tightest of the
+      five, because a portrait plate spends its footprint on height. Ink
+      hit-testing helps here: the plate is a solid rounded rectangle, so
+      essentially the entire box is live (unlike a thin-rimmed or L-shaped
+      object). If the owner picks 8e, my recommendation is to file it
+      <code>"m"</code> with <code>sizeScale</code> around 1.15, or simply
+      <code>"l"</code> &times; 0.8 &mdash; do not ship it at a bare medium.</li>
+    <li><b>Label legibility &mdash; the honest bit.</b> On the hero the label
+      is a joke you can read. In the drawer the cap height of TAKE A TURN is
+      <b>5.3px</b> (7px at the largest wells) and <b>3.4px</b> on a phone
+      &mdash; the readout above states it live. That is texture, not
+      text &mdash; "there is typing on that thing", which still says
+      <i>this object has a purpose</i> and is most of what the label needs to
+      buy in the pile. The words themselves land on the picked zoom and in
+      the <code>aria-label</code>. If the owner wants them legible on the
+      floor, the answer is a shorter placeholder (PRESS, or the eventual
+      name) rather than a bigger tier &mdash; TAKE A TURN is 11 characters
+      across a 191-unit paper.</li>
+    <li><b>Z-order, the tape hinge, and the one thing that breaks.</b> The
+      doorbell sits at the top of the pile z-order (the §1 first-visit boost)
+      and under the varnish + vignette, both <code>pointer-events: none</code>,
+      exactly as production stacks them. The label is drawn first and the tape
+      strips after it, so the paper flaps <i>under</i> its own tape &mdash;
+      that is why the hinge is <code>transform-origin: 50% 3%</code> on a
+      <code>fill-box</code>. Watch the mechanism there: the tilt is a
+      <code>transform</code> ATTRIBUTE on the static seat group and the CSS
+      animates the child, because a CSS transform replaces an attribute
+      rather than composing with it. Flatten those two groups and the label
+      snaps upright the moment it is pressed.</li>
+    <li><b>Idle tell is page CSS, not SMIL, and it is a whisper.</b> One
+      gleam sweeping the pearl for ~1s every 8s, clipped to the button so it
+      reads as light on a curved surface. Under
+      <code>prefers-reduced-motion</code> it is off entirely and the press
+      becomes a discrete held state (pearl down, rim flash on) for ~320ms:
+      motion reduced, acknowledgement kept. Doubt for the owner: a 17px-wide
+      pearl gleaming once every 8s may be too polite to do the job §1 asks of
+      it. The cheap escalation is the bakelite variant &mdash; a red button
+      is a pre-attentive colour pop against brown wood in a way a pearl is
+      not.</li>
+    <li><b>The real risk is camouflage, and it cuts both ways.</b> Brass on
+      warm wood, aged paper next to manila specimen tags &mdash; 8e is the
+      candidate most likely to be <i>too</i> at home. The pearl and the
+      cartoon ink line are what save it (a bright near-white disc is the only
+      one on the floor), but the owner should judge section 2 on a phone
+      before deciding; if it disappears there, the nickel variant is the
+      answer that keeps the object and drops the problem. Compared to 8a/8b
+      this is the quiet one on purpose &mdash; the question is whether
+      "quiet" and "findable in clutter" can both be true.</li>
+  </ul>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * Copies of the object. The asset's ids are all prefixed db_ ; every
+   * copy gets its own prefix so inlined SVGs never fight over defs. The
+   * CLASS names use db- (hyphen), so this swap can never touch them.
+   * ------------------------------------------------------------------ */
+  var master = document.getElementById('db-master');
+  var copyN = 0;
+
+  function copyObject() {
+    copyN += 1;
+    var markup = master.outerHTML.split('db_').join('k' + copyN + '_');
+    var shell = document.createElement('div');
+    shell.innerHTML = markup;
+    var svg = shell.querySelector('svg');
+    svg.removeAttribute('id');
+    svg.removeAttribute('role');
+    svg.removeAttribute('aria-label');
+    svg.setAttribute('aria-hidden', 'true');
+    return svg;
+  }
+
+  var ctxHost = document.getElementById('ctx-turn');
+  ctxHost.appendChild(copyObject());
+
+  var varHosts = document.querySelectorAll('.var-host');
+  for (var i = 0; i < varHosts.length; i++) {
+    varHosts[i].appendChild(copyObject());
+  }
+
+  /* the hero's own copy is the master; the host div is the button, so the
+     svg must not also announce itself to the accessibility tree */
+  master.removeAttribute('role');
+  master.removeAttribute('aria-label');
+  master.setAttribute('aria-hidden', 'true');
+
+  /* ------------------------------------------------------------------ *
+   * The press. Page JS, never baked into the asset: it toggles one class
+   * on the host and the CSS above owns every frame of it.
+   * ------------------------------------------------------------------ */
+  var DUR = 640;
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+  var count = 0;
+  var readout = document.getElementById('press-count');
+
+  function press(host) {
+    var now = (window.performance && window.performance.now)
+      ? window.performance.now() : Date.now();
+    /* pointerdown and click both fire on a tap; one press per gesture */
+    if (now - (host.pressedAt || -1e9) < 150) { return; }
+    host.pressedAt = now;
+
+    host.classList.remove('is-pressed');
+    void host.offsetWidth;                    /* restart the keyframes */
+    host.classList.add('is-pressed');
+    window.clearTimeout(host.pressTimer);
+    host.pressTimer = window.setTimeout(function () {
+      host.classList.remove('is-pressed');
+    }, (reduce && reduce.matches) ? 320 : DUR);
+
+    count += 1;
+    readout.textContent = String(count);
+  }
+
+  var hosts = document.querySelectorAll('.db-host');
+  for (var h = 0; h < hosts.length; h++) {
+    (function (host) {
+      host.addEventListener('pointerdown', function () { press(host); });
+      host.addEventListener('click', function () { press(host); });
+      host.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    })(hosts[h]);
+  }
+
+  /* ------------------------------------------------------------------ *
+   * The honest ruler: what the plate actually measures in the drawer.
+   * ------------------------------------------------------------------ */
+  var pxOut = document.getElementById('ctx-px');
+  var pearlOut = document.getElementById('ctx-pearl');
+  var capOut = document.getElementById('ctx-cap-h');
+
+  function measure() {
+    var r = ctxHost.getBoundingClientRect();
+    var w = Math.round(r.width);
+    var hgt = Math.round(r.height);
+    if (!w) { return; }
+    pxOut.textContent = w + ' × ' + hgt + ' px';
+    /* the pearl is 94 of 240 user units across */
+    pearlOut.textContent = Math.round(w * 94 / 240) + ' px across';
+    /* Courier caps at font-size 25 stand ~17.5 of 300 user units tall */
+    capOut.textContent = (Math.round(hgt * 17.5 / 300 * 10) / 10) + ' px';
+  }
+
+  measure();
+  window.addEventListener('resize', measure);
+  if (window.ResizeObserver) {
+    new window.ResizeObserver(measure).observe(ctxHost);
+  }
+})();
+</script>
+
+</body>
+</html>

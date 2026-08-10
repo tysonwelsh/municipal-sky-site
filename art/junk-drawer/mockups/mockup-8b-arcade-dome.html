@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 8B &middot; THE ARCADE DOME</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 8B · THE ARCADE DOME (PLAN-TURN-OBJECT §2)
+   The take-a-turn trigger becomes a pile object: a jumbo candy-translucent
+   arcade cabinet button in a chrome bezel, printed label ring reading
+   TAKE A TURN three times around the rim, faint internal LED attract-pulse
+   on idle, mechanical clunk-depress plus a glow flash on press.
+
+   Deliberate style break: this is a Saturday-morning prop dropped into a
+   painterly trompe-l'oeil drawer. It does NOT harmonize with the wood — the
+   mismatch IS the camouflage (§ "the control disguises itself as collection").
+
+   Everything is inline. The three drawer textures below (--jd-floor-url,
+   --jd-craq-url, --jd-frame-url) are copied VERBATIM from junk-drawer.css so
+   the in-context view is the real stage, not an approximation. The three
+   companion items (paperclip, skeleton key, three of hearts) are the real
+   production SVGs from items/, id-namespaced per copy (c1_/c2_/c3_) and sized
+   with the real tier math: footprint side = sizeTiers[class].box × sizeScale,
+   in cqmin of the well, exactly as junk-drawer.js lays the pile out.
+
+   THE OBJECT ITSELF lives once, in <template id="ad-tpl"> — that markup is
+   the candidate production asset: viewBox + xmlns, transparent ground, ink
+   edge-to-edge (r=98.5 of a 100 half-box → 0.75% margin), no <script>, no
+   on* handlers, no foreignObject, no external references. Every animation on
+   this page is applied from PAGE css/js against the SVG's classes
+   (.ad-cap / .ad-led / .ad-flash / .ad-ring); nothing is baked into the art.
+   The page mints one namespaced copy per placement (a1_, a2_, …) because
+   inlined SVGs otherwise fight over their defs ids.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the drawer textures, VERBATIM from junk-drawer.css ------------------- */
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem;
+  overflow-x: hidden;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.4rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.sec-head {
+  max-width: 1060px; margin: 2.6rem auto 0.9rem;
+  font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: #8a8272;
+}
+.sec-head span { color: var(--plot-red); }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+.rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+
+/* ---------------- the object host ---------------------------------------
+   Production grammar, copied on purpose: the HOST div is the button (role,
+   tabindex, aria-label, listeners) and is itself pointer-events:none, so only
+   PAINTED ink takes the hit and the transparent corners of the square viewBox
+   stay pass-through — the same silhouette hit-testing .jd-item uses, which is
+   what lets a visitor scroll the drawer by dragging "empty" wood.
+   ---------------------------------------------------------------------- */
+.jd-arcade {
+  display: block;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+  /* cherry, the default cap ------------------------------------------- */
+  --cap-hi: #ff9aa0;
+  --cap-mid: #ef2233;
+  --cap-lo: #c00f1e;
+  --cap-edge: #8a0615;
+  --cap-rim: #5e0410;
+  --cap-bounce: #ff7a5c;
+  --led-hi: #fff3c0;
+  --led-lo: #ffd36a;
+}
+.jd-arcade svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.jd-arcade svg * { pointer-events: visiblePainted; cursor: pointer; }
+.jd-arcade:focus { outline: none; }
+.jd-arcade:focus-visible {
+  outline: 3px solid var(--plot-red);
+  outline-offset: 5px;
+  border-radius: 50%;
+}
+/* cap palettes ride on the HOST, so the gradient stops inside each minted
+   copy resolve against their own instance (that is why every copy carries
+   its own <defs> instead of sharing one) */
+.pal-blue  { --cap-hi:#b6ecff; --cap-mid:#1f8fe0; --cap-lo:#0d5bab; --cap-edge:#073a77; --cap-rim:#052a58; --cap-bounce:#4fd8ff; --led-hi:#eafcff; --led-lo:#7fe4ff; }
+.pal-amber { --cap-hi:#fff2b8; --cap-mid:#ffab1c; --cap-lo:#e07406; --cap-edge:#a24b03; --cap-rim:#71360a; --cap-bounce:#ffd166; --led-hi:#fffbe0; --led-lo:#ffd77a; }
+
+/* the CSS-driven parts of the artwork (defaults also live as presentation
+   attributes in the SVG, so the asset is correct standing alone) */
+.ad-s-hi     { stop-color: var(--cap-hi); }
+.ad-s-mid    { stop-color: var(--cap-mid); }
+.ad-s-lo     { stop-color: var(--cap-lo); }
+.ad-s-edge   { stop-color: var(--cap-edge); }
+.ad-s-bounce { stop-color: var(--cap-bounce); }
+.ad-s-led    { stop-color: var(--led-hi); }
+.ad-s-led2   { stop-color: var(--led-lo); }
+.ad-rim, .ad-rimdark { stroke: var(--cap-rim); }
+
+/* ---------------- press + idle ------------------------------------------
+   BASE state = the reduced-motion state: no keyframes anywhere, the press is
+   an instant depressed pose, the LED holds a static faint glow. Motion is
+   ADDED back below, inside prefers-reduced-motion:no-preference AND gated on
+   body:not(.rm) so the on-page simulator can take it away again.
+   ---------------------------------------------------------------------- */
+.ad-cap, .ad-led, .ad-ring {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+.ad-led   { opacity: 0.17; }
+.ad-flash { opacity: 0; }
+.ad-ring  { opacity: 0; }
+.jd-arcade.is-pressed .ad-cap   { transform: scale(0.9); }
+.jd-arcade.is-pressed .ad-flash { opacity: 0.5; }
+.jd-arcade.is-pressed .ad-led   { opacity: 0.6; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* idle tell: the arcade attract-mode breath — ~1.6s of glow inside an 8s
+     cycle, per PLAN-TURN-OBJECT §1 ("a subtle idle tell … every ~8s") */
+  body:not(.rm) .jd-arcade .ad-led {
+    animation: ad-attract 8s ease-in-out infinite;
+  }
+  body:not(.rm) .jd-arcade.is-pressed .ad-cap {
+    transform: none;
+    animation: ad-clunk 380ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+  body:not(.rm) .jd-arcade.is-pressed .ad-flash {
+    opacity: 0;
+    animation: ad-flash 380ms ease-out;
+  }
+  body:not(.rm) .jd-arcade.is-pressed .ad-led {
+    opacity: 0.17;
+    animation: ad-surge 380ms ease-out;
+  }
+  body:not(.rm) .jd-arcade.is-pressed .ad-ring {
+    animation: ad-ring 460ms ease-out;
+  }
+}
+@keyframes ad-attract {
+  0%, 70%, 100% { opacity: 0.12; transform: scale(1); }
+  79%           { opacity: 0.62; transform: scale(1.07); }
+  88%           { opacity: 0.22; transform: scale(1.01); }
+}
+/* the clunk: travel down inside the bezel (the cap shrinks, the dark shaft
+   ring around it widens), a beat at the bottom of the stroke, then a springy
+   overshoot back — squash-and-stretch, cartoon register */
+@keyframes ad-clunk {
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.885, 0.87); }
+  44%  { transform: scale(0.9); }
+  74%  { transform: scale(1.045, 1.05); }
+  100% { transform: scale(1); }
+}
+@keyframes ad-flash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.95; }
+  50%  { opacity: 0.28; }
+  100% { opacity: 0; }
+}
+@keyframes ad-surge {
+  0%   { opacity: 0.17; }
+  12%  { opacity: 0.85; }
+  100% { opacity: 0.17; }
+}
+@keyframes ad-ring {
+  0%   { opacity: 0.85; transform: scale(0.93); }
+  100% { opacity: 0;    transform: scale(1.3); }
+}
+
+/* ---------------- hero ---------------------------------------------------- */
+.hero {
+  position: relative;
+  max-width: 34rem; margin: 0 auto;
+  padding: 1.6rem 1rem 1.2rem;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* a soft pool of light so the prop is not floating on bare paper */
+.hero::before {
+  content: ""; position: absolute; left: 50%; top: 52%;
+  width: min(96vw, 30rem); height: min(96vw, 30rem);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 42% 38%,
+              rgba(255, 236, 196, 0.85) 0%, rgba(246, 243, 236, 0) 66%);
+  pointer-events: none;
+}
+.hero-btn {
+  position: relative;
+  width: min(80vw, 22rem);
+  filter: drop-shadow(10px 14px 12px rgba(22, 11, 4, 0.42));
+}
+.hero-hint {
+  position: relative;
+  margin-top: 1.15rem;
+  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #9a9284; text-align: center; line-height: 2;
+}
+.hero-hint kbd {
+  font-family: var(--mono); font-size: 0.62rem;
+  border: 1px solid #cfc7b5; border-bottom-width: 2px; border-radius: 3px;
+  padding: 0.05rem 0.3rem; color: #6d6656;
+}
+.readout {
+  position: relative; margin-top: 0.6rem;
+  font-size: 0.66rem; letter-spacing: 0.14em; color: var(--plot-red);
+  min-height: 1.2em; text-align: center;
+}
+.controls {
+  position: relative; margin-top: 0.9rem;
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9a9284;
+}
+.controls label { cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; }
+
+/* ---------------- the drawer stage (real palette) ------------------------ */
+.stage {
+  --wall: clamp(22px, 7vw, 52px);
+  position: relative;
+  width: 100%; max-width: 660px;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  transform: translateZ(0);
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+.frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+.well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+.craq {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+.pile { position: absolute; inset: 0; z-index: 2; }
+.wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+.varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+/* pile items — production geometry: width in cqmin of the well, rotation on
+   the inner svg, drop-shadow on the wrapper so it always falls down-right */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  pointer-events: none;
+}
+.jd-item > svg { display: block; width: 100%; height: auto; transform: rotate(var(--rot, 0deg)); }
+.jd-item > svg * { pointer-events: visiblePainted; }
+
+/* ---------------- drawer-scale ruler ------------------------------------- */
+.ruler {
+  display: flex; flex-wrap: wrap; gap: 1.4rem 2rem;
+  align-items: flex-end; justify-content: center;
+  margin: 1.6rem auto 0;
+}
+.ruler figure { text-align: center; }
+.ruler .jd-arcade { filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.5)); }
+.ruler figcaption {
+  margin-top: 0.55rem;
+  font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: #9a9284;
+}
+.r46 { width: 46px; }
+.r64 { width: 64px; }
+.r90 { width: 90px; }
+
+/* ---------------- variants ----------------------------------------------- */
+.variants {
+  display: flex; flex-wrap: wrap; gap: 1.5rem 2.2rem;
+  align-items: center; justify-content: center;
+  margin: 0 auto;
+}
+.variants figure { text-align: center; }
+.variants .jd-arcade {
+  width: min(30vw, 130px);
+  filter: drop-shadow(6px 9px 8px rgba(22, 11, 4, 0.4));
+}
+.variants figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8272;
+}
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+noscript p {
+  max-width: 44rem; margin: 1rem auto; text-align: center;
+  font-size: 0.7rem; color: var(--plot-red);
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 8B &middot; The Arcade Dome</p>
+<p class="mock-intro">
+  <b>8B &mdash; THE ARCADE DOME.</b> A jumbo candy-translucent arcade cabinet button
+  in a chrome bezel, printed label ring reading TAKE A TURN, faint internal LED
+  attract-pulse on idle, mechanical clunk-depress plus a glow flash on press &mdash;
+  the most <i>machine</i> of the five, tied to the site&rsquo;s arcade lineage.
+</p>
+
+<noscript><p>This page mints its button copies with JavaScript (each inlined SVG needs its own id namespace). With JS off, the object does not render.</p></noscript>
+
+<!-- =========================== HERO ================================== -->
+<p class="sec-head"><span>1</span> &middot; Hero &mdash; press it</p>
+<div class="hero">
+  <div class="jd-arcade hero-btn" role="button" tabindex="0" aria-label="Take a turn"></div>
+  <p class="hero-hint">
+    click / tap, or focus and hit <kbd>Enter</kbd> / <kbd>Space</kbd><br />
+    idle: watch the LED breathe every ~8&thinsp;s
+  </p>
+  <p class="readout" id="readout" role="status" aria-live="polite">&nbsp;</p>
+  <p class="controls">
+    <label><input type="checkbox" id="rm-toggle" /> simulate prefers-reduced-motion</label>
+  </p>
+</div>
+<p class="mock-label">
+  <b>the press</b> &mdash; cap travels down inside the bezel (it shrinks; the dark
+  shaft ring around it widens), beats at the bottom of the stroke, springs back with
+  a small overshoot &middot; the internal LED surges white-hot and a gold impact ring
+  snaps off the bezel &middot; under reduced motion the same press is an instant
+  depressed pose with no keyframes at all
+</p>
+
+<div class="rule"></div>
+
+<!-- ========================= IN CONTEXT ============================== -->
+<p class="sec-head"><span>2</span> &middot; In the drawer &mdash; real floor, real neighbours</p>
+<div class="stage">
+  <div class="frame">
+    <div class="well">
+      <div class="craq"></div>
+      <div class="pile">
+        <div class="jd-item" style="--w: 2.607; --rot: 24deg; left: 26%; top: 28%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="15.5 11.5 36.8 124.8" role="img" aria-label="paperclip">
+                  <path d="M20 132 L20 30 A14 14 0 0 1 48 30 L48 108 A10 10 0 0 1 28 108 L28 46 A6 6 0 0 1 40 46 L40 100"
+                        fill="none" stroke="#8f959c" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 13.1; --rot: 13deg; left: 62%; top: 40%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 196" role="img" aria-label="three of hearts playing card">
+                  <defs>
+                    <path id="c3_pc-heart" d="M10 17 C4.5 11.5 0 8.4 0 4.6 A4.4 4.4 0 0 1 8.6 3.1 L10 4.6 L11.4 3.1 A4.4 4.4 0 0 1 20 4.6 C20 8.4 15.5 11.5 10 17 Z" fill="#c0392b"/>
+                  </defs>
+                  <rect x="2" y="2" width="136" height="192" rx="10" fill="#fbf8ef" stroke="#b9b2a2" stroke-width="1.5"/>
+                  <rect x="8" y="8" width="124" height="180" rx="6" fill="none" stroke="#e4ddcb" stroke-width="1"/>
+                  <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                  <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  <g transform="rotate(180 70 98)">
+                    <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                    <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  </g>
+                  <use href="#c3_pc-heart" transform="translate(54 34) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(54 84) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(86 162) scale(1.6) rotate(180)"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 5.616; --rot: -52deg; left: 44%; top: 73%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="34.5 32.0 157.8 405.3">
+            <defs>
+              <pattern id="c2_hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="#4a3512" stroke-width="0.7"/>
+              </pattern>
+              <pattern id="c2_crosshatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+                <line x1="0" y1="0" x2="0" y2="7" stroke="#7a5a22" stroke-width="0.6"/>
+              </pattern>
+              <mask id="c2_bow-mask">
+                <rect x="0" y="0" width="240" height="480" fill="black"/>
+                <circle cx="120" cy="96" r="62" fill="white"/>
+                <circle cx="120" cy="76" r="17" fill="black"/>
+                <circle cx="102" cy="106" r="17" fill="black"/>
+                <circle cx="138" cy="106" r="17" fill="black"/>
+              </mask>
+            </defs>
+            <g transform="rotate(-8 120 240)">
+              <!-- bow with clover-shaped cutout -->
+              <circle cx="120" cy="96" r="62" fill="#b3873a" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="url(#c2_hatch)" opacity="0.35" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="none" stroke="#4a3512" stroke-width="2.5"/>
+              <circle cx="120" cy="76" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="102" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="138" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <path d="M66 62 A62 62 0 0 1 120 34" fill="none" stroke="#d9b25f" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+              <!-- collar rings -->
+              <rect x="101" y="156" width="38" height="9" rx="4.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <rect x="106" y="167" width="28" height="7" rx="3.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <!-- stem -->
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="url(#c2_crosshatch)" opacity="0.4"/>
+              <line x1="116" y1="182" x2="116" y2="362" stroke="#d9b25f" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+              <line x1="125" y1="182" x2="125" y2="362" stroke="#7a5a22" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+              <!-- tip ferrule -->
+              <rect x="107" y="366" width="26" height="16" rx="5" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <!-- bit with notched teeth -->
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="#b3873a" stroke="#4a3512" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="url(#c2_hatch)" opacity="0.35"/>
+              <line x1="126" y1="394" x2="158" y2="394" stroke="#d9b25f" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <!-- edge shading -->
+              <line x1="127" y1="184" x2="127" y2="360" stroke="#4a3512" stroke-width="1" opacity="0.35"/>
+              <path d="M158 66 A62 62 0 0 1 176 110" fill="none" stroke="#7a5a22" stroke-width="5" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="jd-item jd-arcade in-pile"
+             style="--w: 15.5; --rot: -11deg; left: 35%; top: 64%; z-index: 6;"
+             role="button" tabindex="0" aria-label="Take a turn"></div>
+      </div>
+      <div class="wallshade"></div>
+      <div class="varnish"></div>
+      <div class="vignette"></div>
+    </div>
+  </div>
+</div>
+<p class="mock-label">
+  <b>honest scale</b> &mdash; floor, craquelure, frame, wall shade, varnish and vignette
+  are the production values copied out of <code>junk-drawer.css</code>; the paperclip
+  (xs&thinsp;&times;&thinsp;0.8), brass key (s) and three of hearts (m) are the real
+  <code>items/</code> SVGs, sized by the real tier math in <code>cqmin</code> of the well
+  &middot; the dome sits at medium (<code>--w: 15.5</code>), scattered lower-left and
+  top of the z-order, per the discoverability guardrail &middot; it presses here too:
+  <b>rendered right now at <span id="px">&mdash;</span></b>
+</p>
+
+<div class="ruler">
+  <figure><div class="jd-arcade r46" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>46&thinsp;px<br />phone well</figcaption></figure>
+  <figure><div class="jd-arcade r64" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>64&thinsp;px<br />tablet</figcaption></figure>
+  <figure><div class="jd-arcade r90" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>90&thinsp;px<br />desktop well</figcaption></figure>
+</div>
+<p class="mock-label"><b>the read test</b> &mdash; medium tier lands near 46&thinsp;px on a 375&thinsp;px phone and near 90&thinsp;px on a desktop well &middot; the ring text goes decorative below ~64&thinsp;px; the silhouette (chrome ring + fat red dome + gold pip) is what has to carry the affordance</p>
+
+<div class="rule"></div>
+
+<!-- =========================== VARIANTS ============================== -->
+<p class="sec-head"><span>3</span> &middot; Cap variants &mdash; one custom-property swap</p>
+<div class="variants">
+  <figure><div class="jd-arcade" role="button" tabindex="0" aria-label="Take a turn, cherry cap"></div><figcaption>A &middot; cherry<br />(default)</figcaption></figure>
+  <figure><div class="jd-arcade pal-blue" role="button" tabindex="0" aria-label="Take a turn, blue cap"></div><figcaption>B &middot; player&nbsp;two blue</figcaption></figure>
+  <figure><div class="jd-arcade pal-amber" role="button" tabindex="0" aria-label="Take a turn, amber cap"></div><figcaption>C &middot; marquee amber</figcaption></figure>
+</div>
+<p class="mock-label"><b>cheap variants</b> &mdash; six custom properties (<code>--cap-hi/mid/lo/edge/rim/bounce</code>) plus two LED colours; the chrome, the knurl and the label ring never change &middot; cherry is the recommendation &mdash; it is the only one that still shouts at 46&thinsp;px against warm brown wood</p>
+
+<div class="rule"></div>
+
+<!-- ============================ NOTES ================================ -->
+<div class="considerations">
+  <p class="mc-head">Notes &middot; what I committed to, what implementation must watch</p>
+
+  <p><b>1 &middot; The label ring repeats three times, on purpose.</b> A pile object
+  scatters at a random angle and the visitor can rotate it, so a single arced
+  TAKE A TURN would spend most of its life upside-down. Three repetitions at 120&deg;
+  mean some instance is always within 60&deg; of upright, and a gold pip separates
+  them. Glyphs are placed individually (each its own rotated <code>&lt;text&gt;</code>)
+  rather than on a <code>textPath</code>, so ring fit is exact on every font stack
+  instead of depending on metrics that vary per platform.</p>
+
+  <p><b>2 &middot; Tap target at drawer scale.</b> The painted disc is the whole object
+  &mdash; 100% of the box width, no dead margin &mdash; so the hit area equals the
+  rendered size: ~46&thinsp;px on a 375&thinsp;px phone well, ~90&thinsp;px on desktop.
+  That clears the 44&thinsp;px minimum, but only just, and only because the artwork is
+  a full-bleed circle. If implementation ever tightens the medium tier or adds the
+  id-hashed jitter downward (&minus;9% linear &rarr; ~42&thinsp;px), the object needs a
+  <code>sizeScale</code> nudge above 1 rather than a bigger transparent box &mdash;
+  transparent padding buys nothing under silhouette hit-testing.</p>
+
+  <p><b>3 &middot; Label legibility is a hero-scale luxury, not the affordance.</b> At
+  46&thinsp;px the ring text is ~3&thinsp;px tall and reads as machined texture, which
+  is fine: the thing that says "press me" is the silhouette &mdash; chrome annulus,
+  fat glossy dome, specular hot-spot upper-left. Treat the ring as ornament that
+  rewards the zoom, and do <b>not</b> chase legibility by enlarging the type; bigger
+  type eats the dome, and the dome is the button.</p>
+
+  <p><b>4 &middot; The idle tell is CSS, not SMIL.</b> Nothing animated is baked into
+  the SVG &mdash; the attract pulse and the press are page-level keyframes targeting
+  <code>.ad-led</code>, <code>.ad-cap</code>, <code>.ad-flash</code>,
+  <code>.ad-ring</code>. That keeps the asset sanitizer-clean (no script, no
+  <code>on*</code>, no <code>foreignObject</code>, no external refs &mdash; the template
+  below was lifted out and run through <code>api/jd-svg-sanitizer.php</code>, which
+  returns <code>ok</code>) and, more
+  importantly, keeps <code>prefers-reduced-motion</code> in charge: CSS cannot switch
+  SMIL off. The reduced state here is the BASE state &mdash; a static faint glow and
+  an instant depressed pose &mdash; and motion is added back only inside
+  <code>no-preference</code>; the checkbox above simulates the setting.</p>
+
+  <p><b>5 &middot; Z-order and the glow.</b> The press flash lives inside the object's
+  own box (the impact ring peaks at r=93 of a 100 half-box), so it never paints
+  outside the item and never needs to escape <code>.jd-pile</code>'s stacking
+  context &mdash; no z-index fight with the wall shade, varnish or vignette above it.
+  Consequence to accept: the varnish and vignette tint the flash slightly, and an item
+  dragged on top of the dome will cover the pulse. That is the intended bargain from
+  &sect;1 &mdash; the visitor may bury it.</p>
+
+  <p><b>6 &middot; One host, one asset.</b> The interactive element is the wrapper div
+  (<code>role="button"</code>, <code>tabindex="0"</code>, aria-label, Enter/Space),
+  itself <code>pointer-events: none</code> with <code>visiblePainted</code> on the ink
+  &mdash; identical to <code>.jd-item</code>, so the object drops into the existing
+  gesture wiring without special-casing, and the square viewBox's transparent corners
+  keep passing scroll through to the wood. The template in this page's source is the
+  candidate production asset verbatim; the page only namespaces its ids per copy.</p>
+</div>
+
+<!-- ==================================================================== -->
+<!-- THE OBJECT — candidate production asset. One source of truth; the JS  -->
+<!-- below stamps a copy per placement with ids rewritten ad_ -> a<N>_.    -->
+<!-- ==================================================================== -->
+<template id="ad-tpl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" class="ad-svg" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="ad_collar" x1="0.1" y1="0.05" x2="0.9" y2="0.95">
+      <stop offset="0" stop-color="#f4f7fa"/>
+      <stop offset="0.2" stop-color="#c8d1d8"/>
+      <stop offset="0.5" stop-color="#8d979f"/>
+      <stop offset="0.78" stop-color="#5b656d"/>
+      <stop offset="1" stop-color="#39424a"/>
+    </linearGradient>
+    <linearGradient id="ad_chrome" x1="0.08" y1="0.04" x2="0.92" y2="0.96">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.16" stop-color="#e2eaf1"/>
+      <stop offset="0.4" stop-color="#98a3ac"/>
+      <stop offset="0.58" stop-color="#d3dbe2"/>
+      <stop offset="0.84" stop-color="#5d6770"/>
+      <stop offset="1" stop-color="#333c43"/>
+    </linearGradient>
+    <radialGradient id="ad_wellg" cx="0.5" cy="0.4" r="0.62">
+      <stop offset="0" stop-color="#241a1d"/>
+      <stop offset="1" stop-color="#0d0709"/>
+    </radialGradient>
+    <radialGradient id="ad_capg" cx="0.34" cy="0.28" r="0.88">
+      <stop class="ad-s-hi" offset="0" stop-color="#ff9aa0"/>
+      <stop class="ad-s-mid" offset="0.4" stop-color="#ef2233"/>
+      <stop class="ad-s-lo" offset="0.82" stop-color="#c00f1e"/>
+      <stop class="ad-s-edge" offset="1" stop-color="#8a0615"/>
+    </radialGradient>
+    <radialGradient id="ad_ledg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="ad-s-led" offset="0" stop-color="#fff3c0" stop-opacity="0.95"/>
+      <stop class="ad-s-led2" offset="0.5" stop-color="#ffd36a" stop-opacity="0.45"/>
+      <stop class="ad-s-led2" offset="1" stop-color="#ffd36a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ad_flashg" cx="0.5" cy="0.44" r="0.6">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.45" stop-color="#fff4c4" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffd76a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ad_glossg" x1="0.1" y1="0" x2="0.62" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="0.55" stop-color="#ffffff" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="ad_bounceg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="ad-s-bounce" offset="0" stop-color="#ff7a5c" stop-opacity="0.8"/>
+      <stop class="ad-s-bounce" offset="1" stop-color="#ff7a5c" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="ad_capclip"><circle cx="100" cy="100" r="65"/></clipPath>
+  </defs>
+
+  <!-- ============ the mounting collar: knurled nut, seen from above ====== -->
+  <circle cx="100" cy="100" r="97" fill="url(#ad_collar)" stroke="#1b1417" stroke-width="3"/>
+  <circle cx="100" cy="100" r="92.5" fill="none" stroke="#221a1d" stroke-opacity="0.5"
+          stroke-width="9" stroke-dasharray="6.3 8.23"/>
+  <path d="M 6.94 83.59 A 94.5 94.5 0 0 1 80.35 7.57" fill="none"
+        stroke="#ffffff" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- ============ the printed label ring ================================ -->
+  <circle cx="100" cy="100" r="88" fill="#241c20" stroke="#0f0b0d" stroke-width="2"/>
+  <path d="M 15.33 88.10 A 85.5 85.5 0 0 1 88.10 15.33" fill="none"
+        stroke="#aab2b8" stroke-opacity="0.28" stroke-width="2.4" stroke-linecap="round"/>
+  <g class="ad-label" font-family="Helvetica Neue, Helvetica, Arial, sans-serif"
+     font-size="14" font-weight="700" fill="#ffe9c9" text-anchor="middle">
+    <text transform="rotate(0.000 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(9.231 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(18.462 100 100)" x="100" y="22.5">K</text>
+    <text transform="rotate(27.692 100 100)" x="100" y="22.5">E</text>
+    <text transform="rotate(46.154 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(64.615 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(73.846 100 100)" x="100" y="22.5">U</text>
+    <text transform="rotate(83.077 100 100)" x="100" y="22.5">R</text>
+    <text transform="rotate(92.308 100 100)" x="100" y="22.5">N</text>
+    <path class="ad-pip" transform="rotate(106.154 100 100)" d="M100 12.5 L104 18 L100 23.5 L96 18 Z" fill="#ffc247"/>
+    <text transform="rotate(120.000 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(129.231 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(138.462 100 100)" x="100" y="22.5">K</text>
+    <text transform="rotate(147.692 100 100)" x="100" y="22.5">E</text>
+    <text transform="rotate(166.154 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(184.615 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(193.846 100 100)" x="100" y="22.5">U</text>
+    <text transform="rotate(203.077 100 100)" x="100" y="22.5">R</text>
+    <text transform="rotate(212.308 100 100)" x="100" y="22.5">N</text>
+    <path class="ad-pip" transform="rotate(226.154 100 100)" d="M100 12.5 L104 18 L100 23.5 L96 18 Z" fill="#ffc247"/>
+    <text transform="rotate(240.000 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(249.231 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(258.462 100 100)" x="100" y="22.5">K</text>
+    <text transform="rotate(267.692 100 100)" x="100" y="22.5">E</text>
+    <text transform="rotate(286.154 100 100)" x="100" y="22.5">A</text>
+    <text transform="rotate(304.615 100 100)" x="100" y="22.5">T</text>
+    <text transform="rotate(313.846 100 100)" x="100" y="22.5">U</text>
+    <text transform="rotate(323.077 100 100)" x="100" y="22.5">R</text>
+    <text transform="rotate(332.308 100 100)" x="100" y="22.5">N</text>
+    <path class="ad-pip" transform="rotate(346.154 100 100)" d="M100 12.5 L104 18 L100 23.5 L96 18 Z" fill="#ffc247"/>
+  </g>
+
+  <!-- ============ chrome bezel + the shaft the cap travels in ============ -->
+  <circle cx="100" cy="100" r="76" fill="url(#ad_chrome)" stroke="#1e262c" stroke-width="1.6"/>
+  <path d="M 27.10 96.18 A 73 73 0 0 1 94.91 27.18" fill="none"
+        stroke="#ffffff" stroke-opacity="0.85" stroke-width="5" stroke-linecap="round"/>
+  <path d="M 172.82 105.09 A 73 73 0 0 1 105.09 172.82" fill="none"
+        stroke="#39424a" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="100" cy="100" r="68" fill="url(#ad_wellg)"/>
+  <circle cx="100" cy="100" r="68" fill="none" stroke="#000000" stroke-opacity="0.45" stroke-width="2"/>
+
+  <!-- ============ the candy dome ======================================== -->
+  <g class="ad-cap">
+    <circle cx="100" cy="100" r="65" fill="url(#ad_capg)"/>
+    <circle class="ad-led" cx="100" cy="100" r="56" fill="url(#ad_ledg)"/>
+    <ellipse cx="126" cy="132" rx="42" ry="26" transform="rotate(-34 126 132)"
+             fill="url(#ad_bounceg)" clip-path="url(#ad_capclip)"/>
+    <circle class="ad-flash" cx="100" cy="100" r="65" fill="url(#ad_flashg)"/>
+    <ellipse class="ad-gloss" cx="76" cy="66" rx="37" ry="21" transform="rotate(-38 76 66)"
+             fill="url(#ad_glossg)" clip-path="url(#ad_capclip)"/>
+    <ellipse cx="69" cy="58" rx="9.5" ry="6.5" transform="rotate(-38 69 58)"
+             fill="#ffffff" opacity="0.92"/>
+    <path d="M 38.87 87.01 A 62.5 62.5 0 0 1 84.88 39.36" fill="none"
+          stroke="#ffffff" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+    <path class="ad-rimdark" d="M 161.89 108.70 A 62.5 62.5 0 0 1 115.12 160.64" fill="none"
+          stroke="#5e0410" stroke-opacity="0.45" stroke-width="4.5" stroke-linecap="round"/>
+    <circle class="ad-rim" cx="100" cy="100" r="65" fill="none"
+            stroke="#5e0410" stroke-width="3.2" stroke-opacity="0.9"/>
+  </g>
+
+  <!-- ============ press impact ring (idle: invisible) ==================== -->
+  <circle class="ad-ring" cx="100" cy="100" r="72" fill="none" stroke="#ffd76a" stroke-width="4.5"/>
+</svg></template>
+
+<script>
+(function () {
+  "use strict";
+  var TPL = document.getElementById("ad-tpl").innerHTML;
+  var minted = 0;
+  var presses = 0;
+  var readout = document.getElementById("readout");
+
+  /* one namespaced copy per placement: unprefixed inlined SVGs fight over
+     their defs ids (first one in the document wins for everybody) */
+  function mint(host) {
+    minted += 1;
+    host.innerHTML = TPL.split("ad_").join("a" + minted + "_");
+  }
+
+  function press(host) {
+    host.classList.remove("is-pressed");
+    /* force a reflow so a rapid second press restarts the keyframes */
+    void host.offsetWidth;
+    host.classList.add("is-pressed");
+    if (host.pressTimer) { clearTimeout(host.pressTimer); }
+    host.pressTimer = setTimeout(function () {
+      host.classList.remove("is-pressed");
+      host.pressTimer = null;
+    }, 500);
+    presses += 1;
+    if (readout) {
+      readout.textContent = "CLUNK · turn modal would open · " +
+        presses + (presses === 1 ? " press" : " presses");
+    }
+  }
+
+  var hosts = document.querySelectorAll(".jd-arcade");
+  for (var i = 0; i < hosts.length; i += 1) {
+    (function (host) {
+      mint(host);
+      host.addEventListener("click", function () { press(host); });
+      host.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    }(hosts[i]));
+  }
+
+  /* honest readout of what the drawer-scale copy actually measures */
+  var pileBtn = document.querySelector(".jd-arcade.in-pile");
+  var pxOut = document.getElementById("px");
+  function measure() {
+    if (!pileBtn || !pxOut) { return; }
+    pxOut.textContent = Math.round(pileBtn.getBoundingClientRect().width) + " px wide";
+  }
+  window.addEventListener("resize", measure);
+  measure();
+
+  var rm = document.getElementById("rm-toggle");
+  if (rm) {
+    rm.addEventListener("change", function () {
+      document.body.classList.toggle("rm", rm.checked);
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

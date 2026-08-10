@@ -1018,3 +1018,19 @@ are in the diff.)
   slot_in_progress` to any retry (C1.2 step 8). No cron, no sweeper — the
   owner clears it by hand. See the "Clearing a wedged day" note in
   PLAN-USER-PROMPTS.md §7.
+- **(f) C5.5 "The button" is SUPERSEDED (2026-08-10)** by the in-pile turn
+  object specified in PLAN-TURN-OBJECT (owner picked candidate 8e, the
+  doorbell). The corner brass card-holder — its `index.php` markup, its
+  `.jd-turn-btn` CSS and its JS wiring — is retired, and with it every
+  geometry rule C5.5 wrote about the stage's front band. What C5.5 still
+  binds is carried over unchanged by the pile object: a real button to the
+  accessibility tree (`role="button"`, focusable, Enter/Space, visible focus
+  ring, `aria-haspopup="dialog"`), labelled from `JD_STRINGS.turnButton`, a
+  ≥44 px hit target at every viewport — held now by an unconditional
+  `min-width` floor on the object rather than the button's old `min-height:
+  max(44px, …)`, because the pile's cqmin sizing collapses on a short well
+  (a phone in landscape is wider than the 768 px small-well breakpoint and
+  drew the plate at 32.5 px before the floor) — and no interference with pile drags
+  (it IS a pile item now, so it shares their gesture path rather than
+  dodging it). Everything else in C5 — the modal, the state machine, the
+  endpoints, consent, persistence — is untouched by that change.
