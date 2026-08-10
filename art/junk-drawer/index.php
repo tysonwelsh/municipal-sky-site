@@ -19,7 +19,12 @@ function jd_v($file)
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
 //                so it reads as the moment the live files landed (UTC)
-$jd_assets  = ['junk-drawer.css', 'junk-drawer.js', 'index.php'];
+// turn-object.svg is in this list because it is SERVED ART, not decoration in
+// the stylesheet: it is the Take-a-Turn trigger's whole appearance, fetched at
+// runtime by junk-drawer.js. Listing it means an art-only edit both busts the
+// visitor's cache (the hash is stamped onto the script tag below) and moves
+// the build fingerprint + deploy stamp the owner reads in the colophon.
+$jd_assets  = ['junk-drawer.css', 'junk-drawer.js', 'turn-object.svg', 'index.php'];
 $jd_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $jd_build   = substr(md5(implode('', array_map('jd_v', $jd_assets))), 0, 6);
 $jd_mtime   = 0;
@@ -105,18 +110,13 @@ include '../../includes/header.php';
     </svg>
 
     <!-- TAKE A TURN: the visitor's own commission (PLAN-USER-PROMPTS §4.1).
-         A brass card-holder screwed to the front band, bottom-left, in the
-         same hardware language as the pull — the one piece of chrome on this
-         stage that is a real control. Static markup like the rest of the
-         stage; everything it opens is built in JS from JSON (APP §4.10).
-         The label is set from JD_STRINGS.turnButton at init so the constant
-         stays the single source, and the button only reveals itself once the
-         script that answers it is running (see .jd-turn-btn in the CSS). -->
-    <button type="button" class="jd-turn-btn" id="jd-turn-btn" aria-haspopup="dialog">
-      <span class="jd-turn-brass">
-        <span class="jd-turn-slip"></span>
-      </span>
-    </button>
+         NO MARKUP HERE ANY MORE. The corner brass card-holder that used to
+         sit on this front band was retired on 2026-08-10: the owner picked
+         candidate 8e from the PLAN-TURN-OBJECT mockups, so the trigger is now
+         an OBJECT IN THE DRAWER — a doorbell plate injected into .jd-pile by
+         junk-drawer.js from turn-object.svg, draggable and scattered like
+         every specimen and labelled from JD_STRINGS.turnButton. Nothing about
+         the modal it opens changed. -->
   </div>
 
   <!-- ============ FIELD NOTES ============
@@ -185,7 +185,11 @@ include '../../includes/header.php';
 
 </div>
 
-<script src="junk-drawer.js?v=<?php echo jd_v('junk-drawer.js'); ?>"></script>
+<!-- data-jd-turn-object: the content hash of the turn object's artwork. The
+     script fetches turn-object.svg at runtime, so its cache-busting token has
+     to reach JS from here — there is no <link> or <img> to hang it on. -->
+<script src="junk-drawer.js?v=<?php echo jd_v('junk-drawer.js'); ?>"
+        data-jd-turn-object="<?php echo jd_v('turn-object.svg'); ?>"></script>
 
 <!-- Anonymous usage tracking: a page view. No personal data leaves the
      browser; the server records only a salted, daily-rotating visitor hash

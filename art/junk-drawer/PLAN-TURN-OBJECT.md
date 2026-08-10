@@ -15,6 +15,28 @@ A glossy cartoon game-show button sitting in the painterly clutter reads
 as *one more object that doesn't match* — the control disguises itself
 as collection. The style break is the camouflage.
 
+**STATUS — DONE (2026-08-10).** The owner picked **8e, the doorbell**, and it
+is implemented and shipped in v0.6.0. The mockup's hero SVG is now the
+production asset `turn-object.svg`, injected into `.jd-pile` by
+`junk-drawer.js` as a `.jd-item` with the reserved id `jd-turn-object`; the
+corner-chrome `.jd-turn-btn` (markup, CSS and JS wiring) is retired and the
+pile object is the sole trigger. The §1 contract below is implemented as
+written, with two implementation decisions worth recording: the tier is
+**medium × 1.15** (the tier is "m" per §1 and the taxonomy's own fine dial
+buys back the touch-target margin the mockup's measurement note asked for —
+58 × 72 px on a 375 px phone, 50 × 62 px at 320 px), and the object's own
+scatter seat is written back to `jd-scatter-v2` on settle, so a doorbell the
+visitor deliberately moved survives a refresh where a specimen's position
+(scenery, recomputed each load) does not — **position and rotation only**: the
+stored `z` is written once by the first scatter and never overwritten, so the
+§1 boost cannot be re-asserted on later loads and a burial stands. Two further
+notes from review: the object carries an unconditional 44 px `min-width` floor
+because the pile's cqmin sizing collapses on a short well (a phone in
+landscape sits outside the ≤768 px size band and drew the plate at 32.5 px),
+and `turn-object.svg` is listed in `index.php`'s `$jd_assets`, so an art-only
+edit busts caches and moves the colophon's build stamp. The modal, its state
+machine and the endpoints are untouched.
+
 ---
 
 ## 1. Interaction contract (applies to whichever design wins)

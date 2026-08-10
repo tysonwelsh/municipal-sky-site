@@ -74,3 +74,4 @@ art/zankyo/_harness.js
 art/bardo/_harness.js
 # KOLOB headless dev harness — not for production
 art/kolob/_harness.js
+__pycache__/

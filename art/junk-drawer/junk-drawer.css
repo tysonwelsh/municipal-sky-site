@@ -400,120 +400,148 @@ html { scroll-behavior: smooth; }
 }
 
 
-/* ---------------- TAKE A TURN: the one real control on the stage ---------
-   A brass card-holder screwed to the front band, bottom-left — the pull's
-   hardware language (mockup-5), the item tag's paper inside it. It is the
-   only thing on the chrome layer that takes a pointer: everything else up
-   there (varnish, vignette, the pull) is pointer-events:none.
+/* ---------------- TAKE A TURN: the doorbell in the pile ------------------
+   Candidate 8e won the mockup round (PLAN-TURN-OBJECT §2), so the one real
+   control on this page is now an OBJECT LYING IN THE DRAWER rather than a
+   brass card-holder screwed to the front band. The corner chrome is retired:
+   its markup, this block's predecessor, and its JS wiring all went with it.
 
-   THE GEOMETRY IS THE WHOLE POINT OF THIS RULE, so it is stated once:
+   The object is a .jd-item like any other — everything above about width,
+   rotation, drop-shadow, silhouette hit-testing, the lift on hover/hold and
+   the dim while something else is picked applies to it unchanged, and that
+   is the point: the control disguises itself as collection. What this block
+   adds is only what a doorbell does that a specimen doesn't.
 
-   · the box is --jd-turn-h tall and BOTTOM-anchored, and `bottom: --wall −
-     --jd-turn-h` puts its TOP EDGE exactly on the bottom band's inner arris.
-     The hit target therefore cannot reach into the well at any viewport
-     whatever --wall computes to, so it can never take a press meant for an
-     item or interrupt a pile drag; the surplus hangs off the drawer's outer
-     edge the way the pull hardware does. This is the invariant the rest of
-     the geometry bends around — nothing may raise that top edge.
-   · the safe area is answered by SHRINKING the box, never by lifting it: its
-     bottom edge stands (--wall − --jd-turn-h) + --jd-pull-drop above the
-     viewport floor, so trimming --jd-turn-h lifts that edge clear of the iOS
-     bar-reveal zone (PLAN-MOBILE §1) while the top stays welded to the
-     arris. It stops at 44px — the touch floor outranks the clearance —
-     and on a phone whose home-indicator inset is deeper than the wall is
-     tall, the two cannot both be had and the tap simply lands lower.
-     (An earlier `max(arris, 12px + inset − drop)` did lift it: with
-     viewport-fit=cover and a 34px inset it put the top edge ~31px INSIDE
-     the well, over the pile.)
-   · max-width is the no-collision guarantee against the pull: the bail's ink
-     starts at 50% − 0.367 × --jd-pull-w (x=40 of a 0 0 300 70 viewBox), so a
-     box capped there and inset 6px cannot reach it on any screen — including
-     a 320px phone, where the two are closest.
-   · ≥44px in both axes at every viewport; the brass plate inside is smaller
-     than the padded target, which is what the size floor is for.
-   The button reveals itself only once the script that answers it has run
-   (.is-ready) — it opens a JS-built dialog and nothing else. */
-.jd-turn-btn {
-  position: absolute;
-  z-index: 70;              /* over the vignette (62) and the pull (55), far
-                               under the modal scrim (322) */
-  --jd-turn-h: 48px;                                /* pre-env() fallback */
-  --jd-turn-h: max(44px, min(48px,
-                   calc(var(--wall) + var(--jd-pull-drop) - 13px
-                        - env(safe-area-inset-bottom))));
-  /* the extra 1px absorbs the frame's border-width rounding: --wall is a
-     clamp() that lands on fractions (9vw = 28.8px at 320), and a border-width
-     is rounded DOWN to whole pixels, so the arris sits up to 1px below where
-     the raw value says it does */
-  left: 6px;                                        /* pre-env() fallback */
-  bottom: calc(var(--wall) - var(--jd-turn-h) - 1px);
-  left: max(6px, env(safe-area-inset-left));
-  max-width: calc(50% - 0.367 * var(--jd-pull-w) - 8px);
-  min-height: var(--jd-turn-h);
-  min-width: 44px;
-  display: none;
-  align-items: center;
-  overflow: hidden;
-  padding: 0 6px;
-  border: 0;
-  background: none;
+   The moving parts are named groups inside turn-object.svg (.db-plate,
+   .db-pearl, .db-flash, .db-label, .db-gleam); the asset carries the
+   structure and this stylesheet carries every frame of the motion. That
+   division is deliberate: a SMIL animation baked into the asset could not be
+   switched off for prefers-reduced-motion, and CSS can. */
+.jd-item--turn {
+  /* it is pressable first and draggable second, and the cursor should say so
+     (the pile's default is `grab`) */
   cursor: pointer;
-  pointer-events: auto;
-  /* a discrete tap target: never a pan, never a double-tap zoom */
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  /* THE TOUCH FLOOR — the one size rule a specimen doesn't get, because this
+     is the only way to take a turn and the retired corner button held ≥44px
+     at every viewport by construction (min-height: max(44px, …)).
+     Items are sized in cqmin, so a SHORT well shrinks the whole pile, and the
+     ×1.2 small-well band that would compensate is keyed to `max-width: 768px`
+     — which a phone in LANDSCAPE is not (812×375, 932×430 …) while its well
+     is at its 300px minimum. Measured there before this rule: 32.5 × 40.6px.
+     A floor, not another size band, because a band multiplies whatever cqmin
+     happened to produce (×1.2 of 32.5 is still only 39px) while a floor
+     states the guarantee itself. The plate's ink fills its box (the drawn
+     rect spans 97% × 98% of the 240×300 viewBox) and the SVG keeps its
+     aspect, so 44px of width is 44 × 55px of genuinely pressable brass. On
+     any well tall enough for the cqmin size to clear 44px this never fires,
+     and the doorbell measures exactly like the medium specimen it is. */
+  min-width: 44px;
 }
-.jd-turn-btn.is-ready { display: flex; }
-/* the brass card-holder */
-.jd-turn-brass {
-  position: relative;
-  display: block;
-  padding: 3px 9px;
-  border: 1px solid rgba(58, 40, 14, 0.6);
-  border-radius: 2px;
-  background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
-              inset 0 -1px 0 rgba(40, 26, 8, 0.4),
-              2px 3px 5px -1px rgba(22, 11, 4, 0.55);
+/* the keyboard visitor's ring. The wrapper is pointer-events:none like every
+   item's, which does not affect focusability — Tab reaches it, and the ring
+   is drawn on the box because the ink inside is a solid rounded plate.
+   :not(.is-tap) is the mouse exemption: a tap has to focus the object
+   explicitly (the ink takes the hit, not the wrapper), and Chromium counts a
+   programmatic focus as focus-visible — the flag says "this focus came from a
+   finger", and the JS drops it the moment focus leaves. */
+.jd-item--turn:focus-visible:not(.is-tap) {
+  outline: 3px dashed #ffe6a3;
+  outline-offset: 6px;
+  border-radius: 4px;
 }
-/* two slot-head screws, one at each end of the plate */
-.jd-turn-brass::before,
-.jd-turn-brass::after {
-  content: "";
-  position: absolute; top: 50%; width: 5px; height: 5px;
-  margin-top: -2.5px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 32%, #f2dc9b 0%, #c1913c 55%, #5c421a 100%);
-  box-shadow: 0 1px 0 rgba(255, 244, 204, 0.35);
+/* …and .is-tap has to say `none` out loud, not merely decline to draw: the
+   browser's OWN focus ring is what shows otherwise (measured: `outline: auto
+   1px` around the plate on a mouse press), which is the very thing the flag
+   exists to keep off a finger-pressed object. */
+.jd-item--turn.is-tap:focus,
+.jd-item--turn.is-tap:focus-visible { outline: none; }
+/* the parts' own axes, in the asset's user units (viewBox 0 0 240 300) */
+.jd-item--turn .db-plate,
+.jd-item--turn .db-pearl,
+.jd-item--turn .db-flash { transform-box: view-box; }
+.jd-item--turn .db-plate { transform-origin: 120px 150px; }   /* the plate's centre */
+.jd-item--turn .db-pearl { transform-origin: 120px 100px; }   /* the button's axis */
+.jd-item--turn .db-flash { transform-origin: 120px 100px; }   /* the bezel's rim */
+/* The label sits inside a group carrying the paper's tilt as a transform
+   ATTRIBUTE, and a CSS transform REPLACES an attribute rather than composing
+   with it — so the attribute stays on the static seat group and .db-label is
+   the child flapping in its own local space. fill-box + a percentage origin
+   pins the hinge to the taped top edge with no viewBox arithmetic. */
+.jd-item--turn .db-label { transform-box: fill-box; transform-origin: 50% 3%; }
+
+/* THE PRESS — the pearl sinks into its drawn well and squashes; the whole
+   plate takes one jolt and then a damped buzz-rattle; the paper label flaps a
+   beat behind; the bezel throws a single rim flash. The buzz opens with a
+   SCALE jolt rather than a shift, and the ordering is load-bearing: at drawer
+   scale a 4-unit shake is under a pixel, while a 3.5% squash of the whole
+   silhouette still reads. Quieter and shorter than a buzzer's slam — 8e is
+   the least theatrical of the five on purpose. */
+@keyframes jdBellPearl {
+  0%   { transform: translateY(0)     scale(1, 1); }
+  8%   { transform: translateY(10px)  scale(1.11, 0.85); }
+  32%  { transform: translateY(9px)   scale(1.07, 0.90); }
+  58%  { transform: translateY(0)     scale(0.96, 1.06); }
+  78%  { transform: translateY(1.5px) scale(1.02, 0.98); }
+  100% { transform: translateY(0)     scale(1, 1); }
 }
-.jd-turn-brass::before { left: 2px; }
-.jd-turn-brass::after { right: 2px; }
-/* the paper slip in the holder — the item tag's manila, letterpressed */
-.jd-turn-slip {
-  display: block;
-  padding: 4px 9px;
-  background: #e9dcb4;
-  color: #3a2a12;
-  border: 1px solid rgba(74, 53, 18, 0.4);
-  box-shadow: inset 0 1px 2px rgba(58, 42, 18, 0.25);
-  font-family: var(--font-mono);
-  font-size: 0.56rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transition: background 0.15s ease-out;
+@keyframes jdBellBuzz {
+  0%   { transform: translate(0, 0)          rotate(0deg)    scale(1, 1); }
+  6%   { transform: translate(0, 1.6px)      rotate(0deg)    scale(1.035, 0.965); }
+  14%  { transform: translate(-4.2px, 0.4px) rotate(-1deg)   scale(1.015, 0.99); }
+  22%  { transform: translate(3.6px, 0.8px)  rotate(0.8deg)  scale(1, 1); }
+  30%  { transform: translate(-3px, 0)       rotate(-0.62deg); }
+  38%  { transform: translate(2.3px, 0.4px)  rotate(0.46deg); }
+  46%  { transform: translate(-1.7px, 0)     rotate(-0.32deg); }
+  56%  { transform: translate(1.1px, 0.2px)  rotate(0.2deg); }
+  68%  { transform: translate(-0.6px, 0)     rotate(-0.1deg); }
+  100% { transform: translate(0, 0)          rotate(0deg)    scale(1, 1); }
 }
-@media (hover: hover) {
-  .jd-turn-btn:hover .jd-turn-slip { background: #f4e9c4; }
+@keyframes jdBellLabel {
+  0%   { transform: rotate(0deg); }
+  12%  { transform: rotate(-2.4deg); }
+  30%  { transform: rotate(1.7deg); }
+  50%  { transform: rotate(-1deg); }
+  70%  { transform: rotate(0.5deg); }
+  100% { transform: rotate(0deg); }
 }
-.jd-turn-btn:active .jd-turn-brass {
-  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.4),
-              1px 1px 2px -1px rgba(22, 11, 4, 0.5);
-  transform: translateY(1px);
+@keyframes jdBellFlash {
+  0%   { opacity: 0;    transform: scale(0.94); }
+  7%   { opacity: 0.85; transform: scale(1); }
+  46%  { opacity: 0;    transform: scale(1.07); }
+  100% { opacity: 0;    transform: scale(1.07); }
 }
-.jd-turn-btn:focus-visible { outline: none; }
-.jd-turn-btn:focus-visible .jd-turn-brass {
-  outline: 2px solid #b3402f;
-  outline-offset: 2px;
+.jd-item--turn.is-pressed .db-pearl { animation: jdBellPearl 0.62s cubic-bezier(.26,.86,.36,1); }
+.jd-item--turn.is-pressed .db-plate { animation: jdBellBuzz  0.62s cubic-bezier(.25,.72,.4,1); }
+.jd-item--turn.is-pressed .db-label { animation: jdBellLabel 0.62s cubic-bezier(.25,.72,.4,1); }
+.jd-item--turn.is-pressed .db-flash { animation: jdBellFlash 0.62s ease-out; }
+
+/* THE IDLE TELL (§1's discoverability guardrail) — a soft gleam crossing the
+   pearl every ~8s, clipped to the button in the asset so it reads as light
+   travelling over a curved surface rather than a sparkle stuck on top of it.
+   The quietest thing on the stage, by design: a control buried in clutter is
+   the failure mode the old corner placement didn't have, and this is the
+   cheapest answer that doesn't turn the drawer into a slot machine. */
+@keyframes jdBellGleam {
+  0%, 84% { opacity: 0;    transform: translateX(-82px); }
+  87%     { opacity: 0.6; }
+  93%     { opacity: 0.55; }
+  98%     { opacity: 0;    transform: translateX(82px); }
+  100%    { opacity: 0;    transform: translateX(82px); }
+}
+.jd-item--turn .db-gleam { animation: jdBellGleam 8s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* no gleam at all, and the press becomes a DISCRETE state (held ~320ms by
+     the JS, then dropped) rather than a spring — motion reduced, feedback
+     kept: a press must still be unmistakably acknowledged, and this one is
+     also the gesture that opens a modal. */
+  .jd-item--turn .db-gleam { animation: none; opacity: 0; }
+  .jd-item--turn.is-pressed .db-pearl,
+  .jd-item--turn.is-pressed .db-plate,
+  .jd-item--turn.is-pressed .db-label,
+  .jd-item--turn.is-pressed .db-flash { animation: none; }
+  .jd-item--turn.is-pressed .db-pearl { transform: translateY(9px) scale(1.06, 0.89); }
+  .jd-item--turn.is-pressed .db-flash { opacity: 0.85; }
 }
 
 /* ---------------- arrange mode (?arrange=1, dev affordance) --------------- */
@@ -1411,19 +1439,11 @@ html.jd-turn-open { overflow: hidden; }
   .jd-pill { flex: 1 1 100%; min-width: 0; }
 }
 @media (max-width: 768px) {
-  /* the brass holder tightens so it stays clear of the pull's bail on the
-     narrowest phones (see the max-width guarantee on .jd-turn-btn); the
-     safe-area trim rides on the smaller ceiling here, same 44px floor */
-  .jd-turn-btn { --jd-turn-h: 46px; }
-  .jd-turn-btn {
-    --jd-turn-h: max(44px, min(46px,
-                     calc(var(--wall) + var(--jd-pull-drop) - 13px
-                          - env(safe-area-inset-bottom))));
-  }
-  .jd-turn-brass { padding: 3px 7px; }
-  .jd-turn-slip {
-    font-size: 0.48rem; letter-spacing: 0.12em; padding: 4px 6px;
-  }
+  /* (the corner brass holder's phone tuning used to live here; the trigger is
+     an object in the pile now. It rides this block's ×1.2 small-well size
+     bump like every item — but it does NOT rely on it for the touch target,
+     since phone-landscape viewports are wider than 768px and never enter this
+     query. Its own ≥44px floor is unconditional; see .jd-item--turn.) */
   /* 16px kills iOS's focus zoom, which would otherwise leave this fixed
      layer parked half off-screen */
   .jd-turn-input { font-size: 16px; }
@@ -1436,21 +1456,6 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn-title { font-size: 0.74rem; }
   .jd-turn-actions .jd-turn-go, .jd-turn-actions .jd-turn-alt { flex: 1 1 auto; }
 }
-@media (max-width: 360px) {
-  /* no room for the screw heads next to the label at this width */
-  .jd-turn-brass::before, .jd-turn-brass::after { display: none; }
-  .jd-turn-brass { padding: 3px; }
-  /* …and at the 320px floor, no room for the full 6px gutter either. The
-     max-width cap is the pull-collision guarantee and does not bend, so the
-     box gives up padding instead: at 320 the cap computes 93.27px while the
-     plate's min-content border box is 94.78px, and the plate would spill
-     1.5px past the content box into the right gutter. Trimming to 4px buys
-     the 4px the plate is short: the box now shrink-wraps at 90.78px, 2.5px
-     inside its own cap, and the plate's right edge stands 4.5px clear of the
-     bail's ink (was 2.0px). Still far above the 44px touch floor. */
-  .jd-turn-btn { padding: 0 4px; }
-}
-
 /* ---- the visitor's own item, in the pile --------------------------------
    A standard .jd-item in every respect that the gesture code can see — the
    tag is a pseudo-element on the wrapper, which is pointer-events:none, so

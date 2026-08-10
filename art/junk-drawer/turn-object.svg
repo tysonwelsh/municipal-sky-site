@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img"
+     aria-label="A brass doorbell plate with a pearl button and a taped paper label reading TAKE A TURN, PRESS">
+  <!-- THE TAKE-A-TURN OBJECT — candidate 8e, "the doorbell" (owner's pick,
+       PLAN-TURN-OBJECT §2). Lifted verbatim from the hero of
+       mockups/mockup-8e-doorbell.html; this file is that asset, unchanged.
+
+       Ink is edge to edge: the plate's stroke reaches x 1.5..238.5 of 240 and
+       y 0.5..299.5 of 300 — under 1% dead margin on every side, so the drawer's
+       drag clamping and area-normalized size math can trust the viewBox.
+
+       No <script>, no on* handlers, no foreignObject, no external references,
+       NO SMIL. Every moving part is a NAMED GROUP that junk-drawer.css drives:
+         .db-plate — the buzz-rattle, about the plate's centre (120,150)
+         .db-pearl — the button, sinking into its well (120,100)
+         .db-flash — a rim flash on the bezel, opacity 0 at rest
+         .db-label — the taped paper, hinged at its taped top edge
+         .db-gleam — the idle tell, a specular sweep clipped to the pearl
+       The motion is page CSS and not SMIL precisely so prefers-reduced-motion
+       can switch it off; a baked-in animation could not be.
+
+       Every id is prefixed db_ and every class uses db- (hyphen), so the
+       pile's per-copy id namespacing (JD_svgInst) can re-prefix the ids
+       without ever touching a class the stylesheet depends on. The stop
+       classes db-b0..4 / db-p0..4 are the finish-variant hooks (brass/pearl
+       ship as presentation attributes; a variant is a few stop-colors). -->
+  <defs>
+    <!-- brass: highlight, warm face, the dark turn, deep shade -->
+    <linearGradient id="db_brass" x1="0.1" y1="0" x2="0.62" y2="1">
+      <stop class="db-b0" offset="0"    stop-color="#fff3cd"/>
+      <stop class="db-b1" offset="0.2"  stop-color="#f0cf7d"/>
+      <stop class="db-b2" offset="0.5"  stop-color="#d2a03c"/>
+      <stop class="db-b3" offset="0.76" stop-color="#a97a22"/>
+      <stop class="db-b4" offset="1"    stop-color="#7a5311"/>
+    </linearGradient>
+    <!-- the bezel reads a touch darker than the plate: same ramp, shifted -->
+    <linearGradient id="db_bezel" x1="0.2" y1="0" x2="0.75" y2="1">
+      <stop class="db-b1" offset="0"    stop-color="#f0cf7d"/>
+      <stop class="db-b2" offset="0.38" stop-color="#d2a03c"/>
+      <stop class="db-b3" offset="0.72" stop-color="#a97a22"/>
+      <stop class="db-b4" offset="1"    stop-color="#7a5311"/>
+    </linearGradient>
+    <!-- the well the button sinks into: dark, with a little bounce at the
+         bottom so it is a hole and not a black disc -->
+    <radialGradient id="db_well" cx="0.5" cy="0.34" r="0.78">
+      <stop offset="0"    stop-color="#4b2f08"/>
+      <stop offset="0.72" stop-color="#5e3d0d"/>
+      <stop offset="1"    stop-color="#8a6420"/>
+    </radialGradient>
+    <!-- the pearl: plump, cool-white core falling to a warm shadowed rim -->
+    <radialGradient id="db_pearl" cx="0.35" cy="0.29" r="0.88">
+      <stop class="db-p0" offset="0"    stop-color="#ffffff"/>
+      <stop class="db-p1" offset="0.32" stop-color="#fdf6e9"/>
+      <stop class="db-p2" offset="0.64" stop-color="#f0e1cb"/>
+      <stop class="db-p3" offset="0.88" stop-color="#d6bfa0"/>
+      <stop class="db-p4" offset="1"    stop-color="#ac9377"/>
+    </radialGradient>
+    <linearGradient id="db_paper" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#f7ebc7"/>
+      <stop offset="1" stop-color="#dcc48b"/>
+    </linearGradient>
+    <linearGradient id="db_tape" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2e7bd"/>
+      <stop offset="1" stop-color="#d5c187"/>
+    </linearGradient>
+    <clipPath id="db_plateclip">
+      <rect x="4" y="3" width="232" height="294" rx="34"/>
+    </clipPath>
+    <clipPath id="db_pearlclip">
+      <circle cx="120" cy="100" r="47"/>
+    </clipPath>
+  </defs>
+
+  <!-- EVERYTHING is inside .db-plate: the plate is the thing that rattles,
+       and the button, screws and label rattle with it because they are
+       screwed and taped TO it. -->
+  <g class="db-plate">
+
+    <!-- the plate: one chunky rounded rectangle, thick cartoon ink line -->
+    <rect x="4" y="3" width="232" height="294" rx="34"
+          fill="url(#db_brass)" stroke="#3a2408" stroke-width="5" stroke-linejoin="round"/>
+    <!-- candy gloss: two diagonal sweeps, clipped to the plate -->
+    <g clip-path="url(#db_plateclip)">
+      <path d="M-24 120 L112 -24 L168 -24 L18 152 Z" fill="#fff6d6" opacity="0.3"/>
+      <path d="M-24 168 L186 -24 L212 -24 L4 200 Z" fill="#fff6d6" opacity="0.15"/>
+      <path d="M4 252 C74 300 178 302 236 250 L236 300 L4 300 Z"
+            fill="#5b3d0c" opacity="0.16"/>
+    </g>
+    <!-- the pressed inner bevel -->
+    <rect x="17" y="16" width="206" height="268" rx="25"
+          fill="none" stroke="#ffeeb6" stroke-width="3.5" opacity="0.45"/>
+    <rect x="17" y="16" width="206" height="268" rx="25"
+          fill="none" stroke="#6b4712" stroke-width="1.6" opacity="0.4"/>
+
+    <!-- four screw heads, each slotted at its own careless angle -->
+    <g class="db-screws" stroke-linecap="round">
+      <g>
+        <circle cx="30" cy="32" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="26" cy="28" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M22 25 L38 39" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="210" cy="32" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="206" cy="28" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M202 37 L218 27" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="30" cy="268" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="26" cy="264" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M22 268 L38 268" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+      <g>
+        <circle cx="210" cy="268" r="12" fill="url(#db_brass)" stroke="#3a2408" stroke-width="4"/>
+        <circle cx="206" cy="264" r="6.5" fill="#fff3cd" opacity="0.5"/>
+        <path d="M210 260 L210 276" stroke="#3a2408" stroke-width="4.5"/>
+      </g>
+    </g>
+
+    <!-- THE BUTTON. bezel, then the well, then the pearl on top of it: when
+         the pearl drops 10 units the well shows above it, which is what
+         makes the sink read as mechanism instead of as a wobble. -->
+    <g class="db-bell">
+      <circle cx="120" cy="100" r="61" fill="url(#db_bezel)" stroke="#3a2408" stroke-width="5"/>
+      <path d="M70 74 Q84 46 116 40" fill="none" stroke="#fff3cd" stroke-width="6"
+            opacity="0.55" stroke-linecap="round"/>
+      <path d="M170 126 Q156 154 124 160" fill="none" stroke="#6b4712" stroke-width="6"
+            opacity="0.35" stroke-linecap="round"/>
+      <circle cx="120" cy="100" r="50" fill="url(#db_well)" stroke="#3a2408" stroke-width="3.5"/>
+
+      <g class="db-pearl">
+        <circle cx="120" cy="100" r="47" fill="url(#db_pearl)" stroke="#3a2408" stroke-width="4"/>
+        <!-- candy-gloss highlight: one fat blob and its little companion -->
+        <ellipse cx="102" cy="79" rx="19" ry="14" transform="rotate(-28 102 79)"
+                 fill="#ffffff" opacity="0.9"/>
+        <ellipse cx="95" cy="74" rx="7.5" ry="5.5" transform="rotate(-28 95 74)"
+                 fill="#ffffff"/>
+        <!-- warm bounce off the brass along the lower rim -->
+        <path d="M88 130 Q120 154 154 122" fill="none" stroke="#e5c495" stroke-width="7"
+              opacity="0.5" stroke-linecap="round"/>
+        <path d="M79 112 Q78 70 112 56" fill="none" stroke="#ffffff" stroke-width="4.5"
+              opacity="0.45" stroke-linecap="round"/>
+        <!-- the idle gleam, clipped to the pearl. opacity 0 as an ATTRIBUTE so
+             the asset is a correct still with no stylesheet at all. -->
+        <g clip-path="url(#db_pearlclip)">
+          <g transform="rotate(-24 120 100)">
+            <g class="db-gleam" opacity="0">
+              <rect x="98" y="38" width="22" height="124" rx="11" fill="#ffffff" opacity="0.85"/>
+              <rect x="126" y="38" width="9" height="124" rx="4.5" fill="#ffffff" opacity="0.55"/>
+            </g>
+          </g>
+        </g>
+      </g>
+
+      <!-- the press flash on the bezel rim. opacity 0 at rest, and
+           pointer-events none so an invisible ring never steals a hit test. -->
+      <circle class="db-flash" cx="120" cy="100" r="58" fill="none"
+              stroke="#fff6cf" stroke-width="7" opacity="0" pointer-events="none"/>
+    </g>
+
+    <!-- THE LABEL. Typed on a machine with a tired ribbon, gone yellow, taped
+         on by its two top corners — so it hinges from the tape and flaps. The
+         tape is drawn AFTER the paper and does not move: the paper flutters
+         under it, which is the whole reason the hinge sits at the top.
+         The tilt is a transform ATTRIBUTE on this static seat group and the
+         CSS animates the child .db-label, because a CSS transform REPLACES an
+         attribute rather than composing with it. Flatten the two groups and
+         the label snaps upright the moment it is pressed. -->
+    <g transform="rotate(-1.8 120 214)">
+      <g class="db-label">
+        <path d="M24 179 L215 176 L217 251 L23 254 Z"
+              fill="url(#db_paper)" stroke="#b08f52" stroke-width="2" stroke-linejoin="round"/>
+        <!-- foxing + the old fold across the middle -->
+        <ellipse cx="52" cy="242" rx="13" ry="7" fill="#c3a163" opacity="0.26"/>
+        <ellipse cx="192" cy="192" rx="9" ry="6" fill="#c3a163" opacity="0.22"/>
+        <path d="M25 224 Q120 220 216 226" fill="none" stroke="#c0a06a"
+              stroke-width="1.4" opacity="0.5"/>
+        <!-- typewriter impression under the ink, then the ink -->
+        <text x="121" y="214" text-anchor="middle"
+              font-family="Courier New, Courier, monospace" font-weight="700"
+              font-size="25" letter-spacing="0.5" fill="#9a7c46" opacity="0.4">TAKE A TURN</text>
+        <text x="120" y="213" text-anchor="middle"
+              font-family="Courier New, Courier, monospace" font-weight="700"
+              font-size="25" letter-spacing="0.5" fill="#3b3020">TAKE A TURN</text>
+        <text x="120" y="241" text-anchor="middle"
+              font-family="Courier New, Courier, monospace"
+              font-size="13" letter-spacing="4" fill="#5d4d2e">&#8212; PRESS &#8212;</text>
+      </g>
+      <!-- two strips of aged tape over the paper's top corners -->
+      <g class="db-tape">
+        <polygon points="40.5,159.7 53.5,182.3 15.5,204.3 2.5,181.7"
+                 fill="url(#db_tape)" opacity="0.78" stroke="#bda86e" stroke-width="1.2"/>
+        <path d="M36 168 L11 182" stroke="#fffbe4" stroke-width="3" opacity="0.5"
+              stroke-linecap="round"/>
+        <polygon points="199.5,159.7 186.5,182.3 224.5,204.3 237.5,181.7"
+                 fill="url(#db_tape)" opacity="0.78" stroke="#bda86e" stroke-width="1.2"/>
+        <path d="M204 168 L229 182" stroke="#fffbe4" stroke-width="3" opacity="0.5"
+              stroke-linecap="round"/>
+      </g>
+    </g>
+
+  </g>
+</svg>

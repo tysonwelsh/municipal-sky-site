@@ -112,6 +112,12 @@ function JD_layerOpen() {
 (function () {
   var pile = document.querySelector('.jd-pile');
   var payloadRef = null;   /* the data.php payload, handed to JD_record */
+  /* the "m" tier box in cqmin, resolved from the live taxonomy and handed to
+     the turn object so the doorbell is measured on exactly the ruler the
+     collection is measured on (null when data.php never answered — the
+     object falls back to BASE.m rather than going missing, since it is now
+     the ONLY way to take a turn) */
+  var turnBox = null;
   /* tier box per sizeClass, in cqmin. Fallback only — the live boxes come
      from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
      data-driven. */
@@ -481,6 +487,7 @@ function JD_layerOpen() {
       var tiers = {};
       (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
       function boxFor(sc) { return tiers[sc] || BASE[sc] || BASE.m; }
+      turnBox = boxFor('m');   /* the doorbell is a medium drawer object */
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
           return r.rid === item.primary;
@@ -552,6 +559,10 @@ function JD_layerOpen() {
         el.style.zIndex = p.z;
       });
       if (window.JD_wirePile) window.JD_wirePile();
+      /* the drawer's own hardware goes in on top of the collection: the
+         Take-a-Turn doorbell, sized on the tier box just resolved. It is not
+         an entry and never was — see the turn-object module below. */
+      if (window.JD_turnObject) window.JD_turnObject.ready(turnBox);
       /* hand the record module the payload + the primary SVG texts, so a
          record opens with zero extra requests */
       if (window.JD_record) {
@@ -582,6 +593,10 @@ function JD_layerOpen() {
     })
     .catch(function (err) {
       fallbackNote();
+      /* the collection is what failed, not the drawer: the turn object is
+         frontend-injected and owes data.php nothing, and it is the only
+         trigger there is now — so it still goes in, on the fallback tier box */
+      if (window.JD_turnObject) window.JD_turnObject.ready(null);
       if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
     });
 })();
@@ -1203,6 +1218,9 @@ function JD_layerOpen() {
     }
     well.classList.remove('jd-has-pick');
   }
+  /* the turn object dismisses the selection before it opens the modal, from
+     both the pointer and the keyboard press — and it lives outside this IIFE */
+  window.JD_hideTag = hideTag;
 
   /* An item lying against a wall zooms straight into the well's
      overflow:hidden and gets a slice shaved off it — the skeleton key lost
@@ -1426,6 +1444,15 @@ function JD_layerOpen() {
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
+    /* the turn object writes its landing back into the session layout. A
+       specimen doesn't: where the junk is lying is scenery, recomputed from
+       the stored scatter on every load. WHERE THE CONTROL IS, is a decision
+       the visitor made — if they moved the doorbell somewhere they can find
+       it, a refresh must not teleport it back to the lower-left corner the
+       first scatter chose for them. */
+    if (item.dataset.turn === 'object' && window.JD_turnObject) {
+      window.JD_turnObject.remember(item);
+    }
     /* one authoritative pass once the position is baked into left/top: the %
        round-trip moves the centre by a fraction of a pixel, and the drop has
        changed which way the string pulls, so the near edge it should be
@@ -1444,6 +1471,15 @@ function JD_layerOpen() {
     item.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (held && e.pointerId !== pid) return;   /* second finger: twist owns it */
+      /* the turn modal opens a beat AFTER the doorbell press so the press can
+         be seen (OPEN_MS). Grabbing something else inside that beat means the
+         visitor has moved on — stand the pending open down, or the modal pops
+         on top of a drag that is still in flight. (A re-grip of the doorbell
+         itself is left alone: its own press() re-arms the timer.) */
+      if (item.dataset.turn !== 'object' &&
+          window.JD_turnObject && window.JD_turnObject.standDown) {
+        window.JD_turnObject.standDown();
+      }
       pend = item; drag = false;
       pid = e.pointerId;
       tapSlop = e.pointerType === 'touch' ? TOUCH_SLOP : SLOP;
@@ -1473,7 +1509,20 @@ function JD_layerOpen() {
       if (e.pointerId !== pid) return;           /* second finger up ≠ release */
       if (held === item) {
         settle(item, drag);
-        if (!drag) pick(item);                   /* press-release = tap/pick */
+        /* press-release without a drag = tap. For a specimen that is pick();
+           for the drawer's one piece of HARDWARE (the Take-a-Turn doorbell,
+           flagged data-turn) it is a PRESS instead — no specimen tag, no
+           report card, because it is not collection. Everything before this
+           line is identical for both: same grip, same drag, same settle. */
+        if (!drag) {
+          if (item.dataset.turn === 'object') {
+            /* press() dismisses any live specimen tag itself, on both the
+               pointer and the keyboard path — see the turn-object module */
+            if (window.JD_turnObject) window.JD_turnObject.press();
+          } else {
+            pick(item);
+          }
+        }
       }
       pend = held = null; drag = false; twist = null;
     });
@@ -1577,7 +1626,9 @@ function JD_layerOpen() {
   if (copy) copy.addEventListener('click', function (e) {
     e.preventDefault();
     var w = well.getBoundingClientRect(), out = {};
-    well.querySelectorAll('.jd-item').forEach(function (item) {
+    /* :not([data-turn]) — the doorbell is hardware, not a specimen, and this
+       readout is a list of where the COLLECTION is lying */
+    well.querySelectorAll('.jd-item:not([data-turn])').forEach(function (item) {
       var r = item.getBoundingClientRect();
       out[item.dataset.id || 'item'] = {
         x: +(((r.left + r.width / 2 - w.left) / w.width).toFixed(4)),
@@ -1598,6 +1649,263 @@ function JD_layerOpen() {
         function () { window.prompt('layout JSON:', json); done(false); });
     } else { window.prompt('layout JSON:', json); done(false); }
   });
+})();
+
+/* ---- THE TURN OBJECT — the doorbell in the pile (PLAN-TURN-OBJECT §1) ----
+   The Take-a-Turn trigger is no longer a piece of corner chrome: candidate 8e
+   won the mockup round, so the control is an OBJECT IN THE DRAWER — an old
+   brass doorbell plate with a pearl button and a taped label. The artwork is
+   a static asset (turn-object.svg) fetched alongside data.php and injected as
+   a .jd-item, which buys the whole gesture layer for free: hold-to-grip,
+   transform-only drag, wheel/[ ]/twist rotation, silhouette hit-testing, and
+   a scatter entry persisted in jd-scatter-v2 exactly like a specimen's.
+
+   What makes it hardware rather than collection is one dataset flag,
+   data-turn="object", and it is the only special case in the pile:
+     · the tap path branches on it (see wireItem's pointerup) — press, never
+       pick(), so it can never grow a specimen tag or a report card;
+     · it is injected here, not by the loader, so it is in no entry, no
+       inventory line, no count, no legend, and data.php has never heard of
+       it. Its reserved id 'jd-turn-object' cannot collide with an item id
+       (those are <YYYY-MM-DD>-<slug>) or a won item's gen_id (a UUID);
+     · the one dev iteration that walks the pile semantically (copy-layout)
+       excludes it.
+
+   Accessibility: the wrapper is a real button to the tree (role, tabindex,
+   Enter/Space, a visible focus ring in the CSS) labelled from
+   JD_STRINGS.turnButton, and it FOCUSES ITSELF on press so it is the modal's
+   opener and JD_turn's close() hands focus back to it.
+
+   Discoverability (§1): the first scatter of a session seats it in the
+   lower-left region at the top of the z-order, and the pearl gleams every
+   ~8s. Both are only a head start — drag junk on top of it and it stays
+   buried, because that layout is persisted like everyone else's. */
+(function () {
+  var ID = 'jd-turn-object';       /* reserved: see the collision note above */
+  var ASSET = '/art/junk-drawer/turn-object.svg';
+  var SCATTER_KEY = 'jd-scatter-v2';   /* the pile's own session layout */
+  var FALLBACK_BOX = 15.5;         /* = BASE.m, for a drawer that failed to load */
+  /* The mockup's measurement note: filed at a bare medium the plate lands
+     47×58px on a 375px phone — three pixels over the touch floor, the
+     tightest of the five candidates, because a portrait plate spends its
+     footprint on height. The tier stays MEDIUM (§1) and the taxonomy's own
+     fine dial buys the margin back, exactly as it does for a specimen. */
+  var FINE = 1.15;
+  var ROT_MAX = 18;   /* gentler than the pile's ±34: the typed label is this
+                         object's whole discoverability argument, and a label
+                         lying at 30° stops reading as typing on a thing */
+  /* the lower-left home region, in fractions of the well. Wide enough that
+     it is not the same spot every session, low and left enough to be the
+     first place a scanning eye that has run out of drawer ends up. */
+  var HOME = { x0: 0.10, x1: 0.42, y0: 0.58, y1: 0.90 };
+  var Z_FIRST = 99;   /* over every curated item (their z runs 1..N) and under
+                         zTop (100+), which is where anything the visitor has
+                         touched since goes — so burying it works */
+  var PRESS_MS = 640, PRESS_MS_CALM = 320, OPEN_MS = 200;
+
+  var calm = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  var art = null, box = null, armed = false, el = null;
+  var pressTimer = 0, openTimer = 0, lastPress = -1e9;
+
+  /* The artwork is a served asset like the stylesheet and this script, so it
+     is cache-busted like them: index.php lists it in $jd_assets (which also
+     puts it inside the footer's build fingerprint and 'deployed' mtime, so an
+     art-only edit moves the human-checkable stamp) and stamps the content
+     hash onto this script's tag. The bare path is the fallback for a host
+     that didn't — a dev harness or a mockup page — where a stale copy costs
+     nothing. */
+  function assetUrl() {
+    var tag = document.querySelector('script[data-jd-turn-object]');
+    var v = tag && tag.getAttribute('data-jd-turn-object');
+    return ASSET + (v ? '?v=' + encodeURIComponent(v) : '');
+  }
+
+  /* the asset request goes out immediately, in parallel with data.php — the
+     trigger must not queue behind the collection */
+  fetch(JD_API + assetUrl())
+    .then(function (r) {
+      if (!r.ok) throw new Error(ASSET + ' ' + r.status);
+      return r.text();
+    })
+    .then(function (text) { art = text; build(); })
+    .catch(function (err) {
+      /* nothing else opens the turn modal now, so this is worth saying out
+         loud rather than failing silently */
+      if (window.console && console.warn) {
+        console.warn('junk drawer: the turn object did not load — ' + err.message);
+      }
+    });
+
+  /* called by the pile loader once the tier boxes are known (or once it has
+     given up); `build` runs when BOTH the artwork and the ruler are in */
+  function ready(tierBox) {
+    box = (typeof tierBox === 'number' && tierBox > 0) ? tierBox : FALLBACK_BOX;
+    armed = true;
+    build();
+  }
+
+  function build() {
+    if (el || !armed || !art) return;
+    var pile = document.querySelector('.jd-pile');
+    if (!pile || !window.JD_svgInst || !window.JD_applySize) return;
+    el = document.createElement('div');
+    el.className = 'jd-item jd-item--turn';
+    el.dataset.id = ID;
+    el.dataset.turn = 'object';       /* the one flag the pile branches on */
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-haspopup', 'dialog');
+    el.setAttribute('aria-label', JD_STRINGS.turnButton);
+    /* the same per-copy id namespacing every inlined SVG in this document
+       gets — the asset's ids are all db_ prefixed, its CLASS names are all
+       db- (hyphen), so the swap can never touch a hook the stylesheet needs */
+    el.innerHTML = window.JD_svgInst(art, 'jto_');
+    var svg = el.querySelector('svg');
+    if (svg) {
+      /* the wrapper is the button; the drawing must not announce itself twice */
+      svg.removeAttribute('role');
+      svg.removeAttribute('aria-label');
+      svg.setAttribute('aria-hidden', 'true');
+    }
+    pile.appendChild(el);
+    /* area-normalized on the shared ruler, with the SVG's own 240×300 aspect
+       — the identical call a specimen gets */
+    window.JD_applySize(el, box, ID, FINE);
+    seat(el, pile);
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();          /* Space must not scroll the page */
+        press(true);
+      }
+    });
+    /* the ring suppressor below is only good for as long as this focus lasts */
+    el.addEventListener('blur', function () { el.classList.remove('is-tap'); });
+    /* and now it is an ordinary pile item as far as the gesture code is
+       concerned: grip, drag, rotate, settle — idempotent, so the loader
+       having already wired the collection costs nothing */
+    if (window.JD_wirePile) window.JD_wirePile();
+  }
+
+  /* position: its own entry in the pile's session layout. Present = the
+     visitor has already been here this session (possibly having dragged it
+     somewhere of their own), so it is honoured untouched; absent = a first
+     scatter, which gets the lower-left weighting and the z-order boost. */
+  function seat(node, pile) {
+    var map = JD_store.get(SCATTER_KEY) || {};
+    var p = map[ID];
+    if (!p) {
+      p = freshSeat(node, pile);
+      map[ID] = p;
+      JD_store.set(SCATTER_KEY, map);
+    }
+    node.style.left = (p.x * 100) + '%';
+    node.style.top = (p.y * 100) + '%';
+    node.style.setProperty('--rot', p.rot + 'deg');
+    node.style.zIndex = p.z || Z_FIRST;
+  }
+
+  function freshSeat(node, pile) {
+    var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
+    var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
+    var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
+    /* the same clearance the scatter keeps: a centre no closer to the wall
+       than half the item plus a hair, so it never lands half-guillotined */
+    function pin(v, half) {
+      var lo = half + 0.012, hi = 1 - lo;
+      return hi > lo ? Math.max(lo, Math.min(hi, v)) : 0.5;
+    }
+    return {
+      x: +pin(HOME.x0 + Math.random() * (HOME.x1 - HOME.x0), hw).toFixed(4),
+      y: +pin(HOME.y0 + Math.random() * (HOME.y1 - HOME.y0), hh).toFixed(4),
+      rot: +((Math.random() * 2 - 1) * ROT_MAX).toFixed(1),
+      z: Z_FIRST
+    };
+  }
+
+  /* …and back again: the gesture code calls this on every settle, so a
+     dragged or rotated doorbell keeps the spot the visitor gave it across a
+     refresh. Only the turn object does this (see settle) — the collection's
+     positions stay scenery, recomputed from the stored scatter. */
+  function remember(node) {
+    if (!el || node !== el) return;
+    var map = JD_store.get(SCATTER_KEY) || {};
+    var prev = map[ID] || {};
+    var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+    if (!isFinite(x) || !isFinite(y)) return;
+    map[ID] = {
+      x: +(x / 100).toFixed(4),
+      y: +(y / 100).toFixed(4),
+      rot: +(parseFloat(el.style.getPropertyValue('--rot')) || 0).toFixed(1),
+      /* z is deliberately NOT read back off the element. settle() rides every
+         touched item up the zTop counter (101, 102, …), so the live zIndex
+         here says "most recently handled", not "where this object sits in the
+         pile" — persisting it would re-assert an ever-climbing boost on every
+         load and quietly undo a burial the visitor performed. §1 gives the
+         boost to the FIRST scatter only, so the seat keeps the z it was born
+         with and only x/y/rot are the visitor's to change. */
+      z: prev.z || Z_FIRST
+    };
+    JD_store.set(SCATTER_KEY, map);
+  }
+
+  /* THE PRESS. One class on the wrapper; junk-drawer.css owns every frame of
+     it (the pearl sinking into its drawn well, the plate's buzz-rattle, the
+     label flapping under its tape, the rim flash) — and because the motion is
+     CSS and not SMIL baked into the asset, prefers-reduced-motion can turn it
+     into a discrete held state instead. The modal follows once the press has
+     had time to READ; opening on the same tick would swallow it. */
+  function press(viaKey) {
+    if (!el) return;
+    var now = Date.now();
+    if (now - lastPress < 150) return;   /* one press per gesture */
+    lastPress = now;
+    /* a press puts the drawer down: any specimen still picked is dismissed
+       (tag, elastic, zoom) before the modal covers the stage. It lives HERE
+       rather than at the pointer call site so the keyboard path gets it too —
+       Enter on a focused doorbell used to leave a picked specimen zoomed and
+       tagged underneath the scrim, and still tagged after the modal closed. */
+    if (window.JD_hideTag) window.JD_hideTag();
+    JD_haptic('select');
+    el.classList.remove('is-pressed');
+    void el.offsetWidth;                 /* restart the keyframes */
+    el.classList.add('is-pressed');
+    window.clearTimeout(pressTimer);
+    pressTimer = window.setTimeout(function () {
+      el.classList.remove('is-pressed');
+    }, (calm && calm.matches) ? PRESS_MS_CALM : PRESS_MS);
+    /* Focus it before the modal opens: JD_turn records document.activeElement
+       as the opener and hands focus back there on close, and the opener is
+       this object now. A tap has to be focused EXPLICITLY — the wrapper is
+       pointer-events:none (the ink takes the hit, see .jd-item), so a press
+       on the artwork never focuses it natively the way a press on a <button>
+       would. But Chromium matches :focus-visible on a programmatic focus, so
+       doing that alone leaves a keyboard ring standing on the plate after a
+       mouse click. Hence .is-tap.
+       Its reach is deliberately small, and worth stating plainly: it covers
+       the beat before the modal takes focus, and the case where no modal
+       arrives at all (JD_turn absent or refusing) — there the ring would
+       otherwise sit on the plate indefinitely after a mouse click. It does
+       NOT survive the modal: opening blurs the object and clears the flag, so
+       when close() hands focus back the ring shows. That is the retired
+       corner button's behaviour too, and it is the right answer — focus
+       returned to an opener should be visible. */
+    if (viaKey) el.classList.remove('is-tap');
+    else el.classList.add('is-tap');
+    try { el.focus({ preventScroll: true }); } catch (e) {}
+    window.clearTimeout(openTimer);
+    openTimer = window.setTimeout(function () {
+      if (window.JD_turn) window.JD_turn.open();
+    }, OPEN_MS);
+  }
+
+  /* the pending modal open, stood down: called when the visitor grips some
+     other item inside OPEN_MS of a press (see wireItem's pointerdown) */
+  function standDown() { window.clearTimeout(openTimer); openTimer = 0; }
+
+  window.JD_turnObject = {
+    ready: ready, press: press, remember: remember, standDown: standDown
+  };
 })();
 
 /* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
@@ -2119,15 +2427,18 @@ function JD_layerOpen() {
    Conventions borrowed wholesale from JD_record, deliberately: scrim + card,
    role="dialog" aria-modal="true", Escape peels ONE layer (the abandon
    confirm before the modal), scrim-press closes the top layer, focus returns
-   to the button. The two dialogs refuse to open over each other.
+   to the opener. The two dialogs refuse to open over each other.
 
    Nothing here is hardcoded from the rubric: every grade, axis, value and
    size label is resolved from the taxonomy in the data.php payload the pile
-   loader already fetched, exactly as the legend and the report card are. */
-(function () {
-  var btn = document.getElementById('jd-turn-btn');
-  if (!btn) return;
+   loader already fetched, exactly as the legend and the report card are.
 
+   THE TRIGGER LIVES ELSEWHERE (2026-08-10). The corner brass card-holder is
+   retired: the doorbell in the pile is the sole opener, and it calls
+   JD_turn.open() through the module interface at the foot of this file. This
+   module owns the modal and the state machine and nothing about the control
+   that summons it — which is why re-seating the trigger touched none of it. */
+(function () {
   var API_GEN = '/api/jd-generate.php';
   var API_RATE = '/api/jd-rate.php';
   var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
@@ -2321,6 +2632,10 @@ function JD_layerOpen() {
     if (isOpen) return;
     /* one modal at a time (C5.4): the record card owns Escape while it is up */
     if (window.JD_record && window.JD_record.isOpen()) return;
+    /* the working copy is minted by whoever opens the modal; since the opener
+       is now an object in the pile rather than a button this module owns, it
+       is minted HERE so every entry point gets the same clean start */
+    if (!work) work = blankWork();
     build();
     lastFocus = document.activeElement;
     isOpen = true;
@@ -3154,17 +3469,6 @@ function JD_layerOpen() {
       markCard(el, registerRecord(rec, shortTitle(rec.prompt)));
     });
   }
-
-  /* ---------- the button --------------------------------------------------- */
-  var label = btn.querySelector('.jd-turn-slip');
-  if (label) label.textContent = JD_STRINGS.turnButton;
-  btn.setAttribute('aria-label', JD_STRINGS.turnButton);
-  btn.classList.add('is-ready');
-  btn.addEventListener('click', function () {
-    JD_haptic('select');
-    if (!work) work = blankWork();
-    open();
-  });
 
   /* ---------- init (C5.4 step 8) ------------------------------------------ */
   /* A turn left in flight by a PREVIOUS page life is discarded here rather
