@@ -632,6 +632,10 @@ function JD_layerOpen() {
 
   function grip(item) {
     held = item;
+    /* the doorbell is FIXED hardware (owner revision, 2026-08-10): it still
+       becomes `held` — the pointerup press path requires it — but it never
+       lifts, so no is-held shadow and no grip haptic (press() buzzes) */
+    if (item.dataset.turn === 'object') return;
     item.classList.remove('is-lifted');          /* releases the demo pin */
     item.classList.add('is-held');
     JD_haptic('grip');       /* Android only; a silent no-op everywhere else */
@@ -725,8 +729,12 @@ function JD_layerOpen() {
        a little faster on a 120Hz display, which nobody can see. */
   var ROPE = {
     SEGMENTS: 16,     /* point masses in the chain, both ends included */
-    SLACK: 1.25,      /* rest length as a multiple of the span at pin time */
-    MIN_REST: 60,     /* px — the shortest string we will ever hang */
+    SLACK: 1.17,      /* rest length as a multiple of the span at pin time.
+                         Was 1.25 — shortened with MIN_REST and the seat gaps
+                         (owner request, 2026-08-10: the string reads about
+                         two-thirds its former length); the surplus that hangs
+                         as dangle is what this dial actually sets */
+    MIN_REST: 40,     /* px — the shortest string we will ever hang (was 60) */
     GRAVITY: 0.55,    /* px per frame², ~60fps */
     DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
     ITER: 4,          /* constraint relaxation passes per frame (alternating) */
@@ -1337,8 +1345,11 @@ function JD_layerOpen() {
     var ay = vBottom - 6;                        /* foot of the predicted extent */
     tag.classList.add('is-on');                  /* measurable before placing */
     var tw = tag.offsetWidth, th = tag.offsetHeight;
-    var below = ay + 26 + th < w.height - 8;
-    var ty = below ? ay + 26 : (vTop - 20 - th);
+    /* seat gaps trimmed 26→17 / 20→13 (owner request, 2026-08-10): the tag
+       sits closer so the string's span — the part of its length no slack
+       dial can shorten — comes down with the ROPE constants */
+    var below = ay + 17 + th < w.height - 8;
+    var ty = below ? ay + 17 : (vTop - 13 - th);
     function clampX(v) { return Math.max(8, Math.min(w.width - tw - 8, v)); }
     var tx;
     if (below) {
@@ -1363,7 +1374,10 @@ function JD_layerOpen() {
          covered and can't push it off the right wall. If the well runs out
          that way — item hard against the left edge — lean right instead;
          whichever survives clamping with more offset wins. */
-      var lean = Math.max(110, 0.62 * (cy - (ty + th / 2)), zoom * r.width + 40);
+      /* 110→80 / 0.62→0.48 with the shorter string (2026-08-10): less slack
+         means a smaller belly to swing clear, so the lean scales with it —
+         the zoomed-width floor is geometry and stays */
+      var lean = Math.max(80, 0.48 * (cy - (ty + th / 2)), zoom * r.width + 40);
       var lx = clampX(cx - lean - 10), rx = clampX(cx + lean - 10);
       tx = Math.abs(lx + 10 - cx) >= Math.abs(rx + 10 - cx) ? lx : rx;
     }
@@ -1408,6 +1422,10 @@ function JD_layerOpen() {
      trails behind the old positions. The final spot is baked into left/top
      once, at settle, when the element is at rest. */
   function place(item, x, y) {
+    /* fixed hardware does not travel: an attempted drag of the doorbell
+       moves nothing (and pointerup will see drag=true, so it won't press
+       either — an aborted drag is not a tap) */
+    if (item.dataset.turn === 'object') return;
     var w = well.getBoundingClientRect();
     var mx = item.offsetWidth / 2 + CLEAR, my = item.offsetHeight / 2 + CLEAR;
     x = Math.max(mx, Math.min(w.width - mx, x));
@@ -1423,6 +1441,14 @@ function JD_layerOpen() {
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
+    /* the doorbell settles into nothing: it never moved (place() refuses),
+       it keeps its fixed z instead of riding zTop, and it gets no landing
+       jostle — its seat is not the visitor's to change any more */
+    if (item.dataset.turn === 'object') {
+      item.style.removeProperty('--dx');
+      item.style.removeProperty('--dy');
+      return;
+    }
     if (pendingReturn === item) { returnToPile(item); pendingReturn = null; }
     /* the picked item keeps its place in the z-sandwich (tag 70 < rope 71 <
        item 72) instead of riding the zTop counter — it is still selected and
@@ -1444,15 +1470,6 @@ function JD_layerOpen() {
     }
     item.style.removeProperty('--dx');
     item.style.removeProperty('--dy');
-    /* the turn object writes its landing back into the session layout. A
-       specimen doesn't: where the junk is lying is scenery, recomputed from
-       the stored scatter on every load. WHERE THE CONTROL IS, is a decision
-       the visitor made — if they moved the doorbell somewhere they can find
-       it, a refresh must not teleport it back to the lower-left corner the
-       first scatter chose for them. */
-    if (item.dataset.turn === 'object' && window.JD_turnObject) {
-      window.JD_turnObject.remember(item);
-    }
     /* one authoritative pass once the position is baked into left/top: the %
        round-trip moves the centre by a fraction of a pixel, and the drop has
        changed which way the string pulls, so the near edge it should be
@@ -1509,9 +1526,11 @@ function JD_layerOpen() {
           /* the doorbell cancelling its own pending open, at the exact moment
              this gesture stops being a tap. A re-grip that becomes a DRAG
              never reaches press(), so without this the previous tap's
-             openTimer fires mid-drag and the modal lands on top of a doorbell
-             still travelling under the scrim. Deliberately here and not on
-             pointerdown — see the note there. */
+             openTimer would still fire. The bell itself no longer travels
+             (place() refuses fixed hardware), but the principle stands: a
+             gesture that outgrew the slop is not a tap, and must not open
+             the modal. Deliberately here and not on pointerdown — see the
+             note there. */
           if (item.dataset.turn === 'object' &&
               window.JD_turnObject && window.JD_turnObject.standDown) {
             window.JD_turnObject.standDown();
@@ -1574,6 +1593,7 @@ function JD_layerOpen() {
   function rotOf(item) { return parseFloat(getComputedStyle(item).getPropertyValue('--rot')) || 0; }
   function spin(item, d) {
     if (item === picked) return;
+    if (item.dataset.turn === 'object') return;  /* fixed hardware: no rotation */
     item.style.setProperty('--rot', (rotOf(item) + d).toFixed(1) + 'deg');
   }
 
@@ -1599,6 +1619,7 @@ function JD_layerOpen() {
     if (!held) return;
     e.preventDefault();
     if (held === picked) return;              /* upright while picked */
+    if (held.dataset.turn === 'object') return;  /* fixed hardware */
     held.style.setProperty('--rot', (gBase + e.rotation).toFixed(1) + 'deg');
   });
   window.addEventListener('gestureend', function (e) { if (held) e.preventDefault(); });
@@ -1623,6 +1644,7 @@ function JD_layerOpen() {
        exists, so it can't grab a neighbour or dismiss the tag) — it just
        doesn't turn an upright specimen */
     if (held === picked) return;
+    if (held.dataset.turn === 'object') return;  /* fixed hardware */
     var a = Math.atan2(e.clientY - fy, e.clientX - fx);
     held.style.setProperty('--rot',
       (twist.r0 + (a - twist.a0) * 180 / Math.PI).toFixed(1) + 'deg');
@@ -1694,14 +1716,15 @@ function JD_layerOpen() {
    JD_STRINGS.turnButton, and it FOCUSES ITSELF on press so it is the modal's
    opener and JD_turn's close() hands focus back to it.
 
-   Discoverability (§1): the first scatter of a session seats it in the
-   lower-left region at the top of the z-order, and the pearl gleams every
-   ~8s. Both are only a head start — drag junk on top of it and it stays
-   buried, because that layout is persisted like everyone else's. */
+   Discoverability (§1, revised 2026-08-10): the doorbell is FIXED in the
+   bottom-left corner — the same spot every session, every device — at a z
+   above every fresh scatter, and the pearl gleams every ~8s. It cannot be
+   dragged or rotated; only junk the visitor deliberately drops on it can
+   cover it, and only for that session. */
 (function () {
   var ID = 'jd-turn-object';       /* reserved: see the collision note above */
   var ASSET = '/art/junk-drawer/turn-object.svg';
-  var SCATTER_KEY = 'jd-scatter-v2';   /* the pile's own session layout */
+  var SCATTER_KEY = 'jd-scatter-v2';   /* only to sweep a stale seat — see seat() */
   var FALLBACK_BOX = 15.5;         /* = BASE.m, for a drawer that failed to load */
   /* The mockup's measurement note: filed at a bare medium the plate lands
      47×58px on a 375px phone — three pixels over the touch floor, the
@@ -1709,16 +1732,16 @@ function JD_layerOpen() {
      footprint on height. The tier stays MEDIUM (§1) and the taxonomy's own
      fine dial buys the margin back, exactly as it does for a specimen. */
   var FINE = 1.15;
-  var ROT_MAX = 18;   /* gentler than the pile's ±34: the typed label is this
-                         object's whole discoverability argument, and a label
-                         lying at 30° stops reading as typing on a thing */
-  /* the lower-left home region, in fractions of the well. Wide enough that
-     it is not the same spot every session, low and left enough to be the
-     first place a scanning eye that has run out of drawer ends up. */
-  var HOME = { x0: 0.10, x1: 0.42, y0: 0.58, y1: 0.90 };
-  var Z_FIRST = 99;   /* over every curated item (their z runs 1..N) and under
-                         zTop (100+), which is where anything the visitor has
-                         touched since goes — so burying it works */
+  /* FIXED HARDWARE (owner revision, 2026-08-10): the doorbell is screwed to
+     the bottom-left corner of the drawer floor. It no longer scatters, drags,
+     rotates, or persists a seat — same spot, every session, every device.
+     The gentle constant tilt keeps it reading as a thing lying in a drawer
+     rather than a UI sticker; the typed label stays legible at this angle. */
+  var CORNER = { inset: 0.035, rot: -4 };
+  var Z_FIXED = 99;   /* over every scattered item (their z runs 1..N) and
+                         under zTop (100+), where anything the visitor drags
+                         goes — junk deliberately dropped on the bell still
+                         covers it, but a fresh scatter never buries it */
   var PRESS_MS = 640, PRESS_MS_CALM = 320, OPEN_MS = 200;
 
   var calm = window.matchMedia
@@ -1850,78 +1873,30 @@ function JD_layerOpen() {
     });
     /* the ring suppressor below is only good for as long as this focus lasts */
     el.addEventListener('blur', function () { el.classList.remove('is-tap'); });
-    /* and now it is an ordinary pile item as far as the gesture code is
-       concerned: grip, drag, rotate, settle — idempotent, so the loader
-       having already wired the collection costs nothing */
+    /* wired through the same pile plumbing as everything else — but the
+       gesture code treats it as FIXED hardware: grip never lifts it, place()
+       and every rotation path refuse it, settle() releases it unmoved. What
+       remains of the shared wiring is exactly the tap. Idempotent, so the
+       loader having already wired the collection costs nothing */
     if (window.JD_wirePile) window.JD_wirePile();
   }
 
-  /* position: its own entry in the pile's session layout. Present = the
-     visitor has already been here this session (possibly having dragged it
-     somewhere of their own), so it is honoured untouched; absent = a first
-     scatter, which gets the lower-left weighting and the z-order boost. */
+  /* position: the fixed bottom-left corner, computed fresh every load from
+     the well's live proportions — nothing stored, nothing to honour. The
+     centre sits half the plate plus the inset off each wall, so it never
+     lands guillotined at any viewport. Sessions from the draggable era may
+     still carry a seat under our id in the pile's layout key; it is swept so
+     the stored map holds only truths. */
   function seat(node, pile) {
-    var map = JD_store.get(SCATTER_KEY) || {};
-    var p = map[ID];
-    if (!p) {
-      p = freshSeat(node, pile);
-      map[ID] = p;
-      JD_store.set(SCATTER_KEY, map);
-    }
-    node.style.left = (p.x * 100) + '%';
-    node.style.top = (p.y * 100) + '%';
-    node.style.setProperty('--rot', p.rot + 'deg');
-    node.style.zIndex = p.z || Z_FIRST;
-  }
-
-  function freshSeat(node, pile) {
     var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
     var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
     var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
-    /* the same clearance the scatter keeps: a centre no closer to the wall
-       than half the item plus a hair, so it never lands half-guillotined */
-    function pin(v, half) {
-      var lo = half + 0.012, hi = 1 - lo;
-      return hi > lo ? Math.max(lo, Math.min(hi, v)) : 0.5;
-    }
-    return {
-      x: +pin(HOME.x0 + Math.random() * (HOME.x1 - HOME.x0), hw).toFixed(4),
-      y: +pin(HOME.y0 + Math.random() * (HOME.y1 - HOME.y0), hh).toFixed(4),
-      rot: +((Math.random() * 2 - 1) * ROT_MAX).toFixed(1),
-      z: Z_FIRST
-    };
-  }
-
-  /* …and back again: the gesture code calls this on every settle, so a
-     dragged or rotated doorbell keeps the spot the visitor gave it across a
-     refresh. Only the turn object does this (see settle) — the collection's
-     positions stay scenery, recomputed from the stored scatter. */
-  function remember(node) {
-    if (!el || node !== el) return;
-    var map = JD_store.get(SCATTER_KEY) || {};
-    var prev = map[ID] || {};
-    var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
-    if (!isFinite(x) || !isFinite(y)) return;
-    map[ID] = {
-      x: +(x / 100).toFixed(4),
-      y: +(y / 100).toFixed(4),
-      rot: +(parseFloat(el.style.getPropertyValue('--rot')) || 0).toFixed(1),
-      /* z is deliberately NOT read back off the element. settle() rides every
-         touched item up the zTop counter (101, 102, …), so the live zIndex
-         here says "most recently handled", not "where this object sits in the
-         pile" — persisting it would re-assert an EVER-CLIMBING boost on every
-         load. The seat therefore keeps the z it was born with (Z_FIRST), and
-         only x/y/rot are the visitor's to change.
-         Stated plainly, because it is easy to misread: this does NOT persist a
-         burial. A visitor can drag junk over the doorbell and it stays under
-         for the session, but the junk's own z is scenery too (items never
-         write z back either) — so on the next load seat() re-applies 99 while
-         the collection re-scatters at 1..N, and the doorbell surfaces. That is
-         the intended trade: the alternative loses the page's only control
-         behind a pile the visitor can no longer see it under. */
-      z: prev.z || Z_FIRST
-    };
-    JD_store.set(SCATTER_KEY, map);
+    node.style.left = ((hw + CORNER.inset) * 100).toFixed(2) + '%';
+    node.style.top = ((1 - hh - CORNER.inset) * 100).toFixed(2) + '%';
+    node.style.setProperty('--rot', CORNER.rot + 'deg');
+    node.style.zIndex = Z_FIXED;
+    var map = JD_store.get(SCATTER_KEY);
+    if (map && map[ID]) { delete map[ID]; JD_store.set(SCATTER_KEY, map); }
   }
 
   /* THE PRESS. One class on the wrapper; junk-drawer.css owns every frame of
@@ -1979,7 +1954,7 @@ function JD_layerOpen() {
   function standDown() { window.clearTimeout(openTimer); openTimer = 0; }
 
   window.JD_turnObject = {
-    ready: ready, press: press, remember: remember, standDown: standDown
+    ready: ready, press: press, standDown: standDown
   };
 })();
 
