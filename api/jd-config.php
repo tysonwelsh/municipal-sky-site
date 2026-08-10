@@ -42,11 +42,15 @@ const JD_HARNESS = 'v3-web.1';
 // api_model is the exact wire string. Owner runbook: confirm both wire
 // strings against the providers' model lists at deploy.
 const JD_MODEL_PAIR = [
-    ['model_id'  => 'claude-sonnet-5',
-     'api_model' => 'claude-sonnet-5',
+    // Owner upgrade (2026-08-10): flagship tier — Claude Opus 5 vs GPT-5.1.
+    // Opus 5 note: thinking is ON by default on this model; jd-generate
+    // sends thinking:disabled (valid at default effort) so generation stays
+    // single-pass inside JD_PROVIDER_TIMEOUT on shared hosting.
+    ['model_id'  => 'claude-opus-5',
+     'api_model' => 'claude-opus-5',
      'provider'  => 'anthropic'],
-    ['model_id'  => 'gpt-5',
-     'api_model' => 'gpt-5',
+    ['model_id'  => 'gpt-5-1',
+     'api_model' => 'gpt-5.1',
      'provider'  => 'openai'],
 ];
 
