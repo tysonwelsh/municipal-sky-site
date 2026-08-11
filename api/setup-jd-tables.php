@@ -53,6 +53,32 @@ foreach ($statements as $table => $sql) {
     }
 }
 
+// --- additive migrations (safe to re-run) ----------------------------------
+// jd_comparisons.strength (C1.3 addition, 2026-08-11): the likert margin on
+// a comparison. Fresh installs get it from the CREATE above; a live table
+// gets it here. Checked before altering so a re-run stays quiet.
+try {
+    $has = false;
+    if (JD_DEV_MODE) {
+        foreach ($db->query('PRAGMA table_info(jd_comparisons)') as $col) {
+            if (($col['name'] ?? '') === 'strength') { $has = true; break; }
+        }
+        if (!$has) {
+            $db->exec('ALTER TABLE jd_comparisons ADD COLUMN strength TEXT NULL');
+        }
+    } else {
+        $q = $db->query("SHOW COLUMNS FROM jd_comparisons LIKE 'strength'");
+        $has = $q !== false && $q->fetch() !== false;
+        if (!$has) {
+            $db->exec("ALTER TABLE jd_comparisons ADD COLUMN strength VARCHAR(8) NULL AFTER winner_gen_id");
+        }
+    }
+    echo str_pad('strength column', 20) . ($has ? " already present\n" : " added\n");
+} catch (PDOException $e) {
+    $failed++;
+    echo str_pad('strength column', 20) . " FAILED: " . $e->getMessage() . "\n";
+}
+
 echo "\n" . ($failed === 0 ? "All tables present. Delete this script when you are done.\n" : "$failed statement(s) failed.\n");
 
 // ---------------------------------------------------------------------------
@@ -122,7 +148,9 @@ CREATE TABLE IF NOT EXISTS jd_ratings (
 CREATE TABLE IF NOT EXISTS jd_comparisons (
     id             CHAR(26)    NOT NULL PRIMARY KEY,
     submission_id  CHAR(26)    NOT NULL,
-    winner_gen_id  CHAR(26)    NULL,
+    winner_gen_id  CHAR(26)    NULL,          -- NULL = explicit tie
+    strength       VARCHAR(8)  NULL,          -- 'decisive'|'slight'; NULL on a
+                                              -- tie or a pre-likert client
     visitor_hash   CHAR(64)    NOT NULL,
     client         VARCHAR(16) NOT NULL DEFAULT 'web',
     rated_at       DATETIME    NOT NULL,
@@ -207,6 +235,7 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
     id             TEXT NOT NULL PRIMARY KEY,
     submission_id  TEXT NOT NULL,
     winner_gen_id  TEXT NULL,
+    strength       TEXT NULL,
     visitor_hash   TEXT NOT NULL,
     client         TEXT NOT NULL DEFAULT 'web',
     rated_at       TEXT NOT NULL,

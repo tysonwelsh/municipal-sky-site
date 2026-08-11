@@ -2580,7 +2580,8 @@ function JD_layerOpen() {
 
 /* ---- TAKE A TURN — the visitor commissions an object (contract C5) -------
    One modal, one state machine: consent → prompt → generating → reveal →
-   rate → compare → unveil. Two providers draw the same prompt in parallel
+   rate (the single bench: response A, response B, the call) → unveil.
+   Two providers draw the same prompt in parallel
    and are labelled only A and B until the ratings are in — blindness is
    enforced by the server (jd-generate never names a model), and this module
    never learns an identity before jd-rate answers.
@@ -2751,6 +2752,7 @@ function JD_layerOpen() {
     bodyEl.addEventListener('click', onClick);
     bodyEl.addEventListener('change', onChange);
     bodyEl.addEventListener('input', onInput);
+    ttInit();
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
       if (e.key !== 'Tab') return;
@@ -2829,8 +2831,7 @@ function JD_layerOpen() {
   function requestClose() {
     if (!isOpen) return;
     if (confirmOn) { dismissConfirm(); return; }
-    if (state === 'generating' || state === 'reveal' || state === 'rate' ||
-        state === 'compare') {
+    if (state === 'generating' || state === 'reveal' || state === 'rate') {
       showConfirm();
       return;
     }
@@ -2868,17 +2869,84 @@ function JD_layerOpen() {
     confirmEl = null;
   }
 
-  /* Escape peels ONE layer per press: the abandon confirm first, the modal
-     second, and never the page (the pile's own Escape handler stands down
-     for as long as this dialog is up — see JD_layerOpen). */
+  /* ---------- the definition layer (single bench, 2026-08-11) -------------
+     ONE system for every "what does this mean": a fixed singleton tooltip
+     for pointer hover and keyboard focus (aria-hidden — screen readers get
+     the same words natively via aria-describedby / the popovers), and the ⓘ
+     in-flow popovers the click handler above drives. The tooltip is
+     pointer-events:none so it can never take a press a control should have
+     had, and a plain touch tap never opens it — on touch the ⓘ carries the
+     definitions alone. */
+  var ttEl = null;
+  function ttInit() {
+    if (ttEl) return;
+    ttEl = document.createElement('div');
+    ttEl.className = 'jd-tt';
+    ttEl.setAttribute('aria-hidden', 'true');
+    ttEl.hidden = true;
+    document.body.appendChild(ttEl);
+    bodyEl.addEventListener('mouseover', function (e) {
+      if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
+      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+      if (t) ttShow(t); else ttHide();
+    });
+    bodyEl.addEventListener('mouseleave', ttHide);
+    bodyEl.addEventListener('focusin', function (e) {
+      var t = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+      var fv = false;
+      try { fv = e.target.matches(':focus-visible'); } catch (err) {}
+      if (t && fv) ttShow(t); else ttHide();
+    });
+    bodyEl.addEventListener('focusout', ttHide);
+    /* the modal's own scroller — a tooltip pinned to a moved anchor lies */
+    bodyEl.addEventListener('scroll', ttHide, true);
+  }
+  function ttShow(anchor) {
+    if (!ttEl) return;
+    ttEl.innerHTML = '<b>' + esc(anchor.getAttribute('data-tt-t')) + '</b>' +
+      esc(anchor.getAttribute('data-tt-d'));
+    ttEl.hidden = false;
+    var r = anchor.getBoundingClientRect();
+    ttEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 286)) + 'px';
+    ttEl.style.top = Math.max(8, r.top - ttEl.offsetHeight - 8) + 'px';
+  }
+  function ttHide() { if (ttEl) ttEl.hidden = true; }
+  /* fold every open ⓘ popover; returns whether any was open (the Escape
+     layering below peels it as its own layer) */
+  function closeDefs() {
+    var any = false;
+    Array.prototype.forEach.call(
+      bodyEl.querySelectorAll('.jd-def[aria-expanded="true"]'),
+      function (btn) {
+        any = true;
+        btn.setAttribute('aria-expanded', 'false');
+        var pop = bodyEl.querySelector('#' + btn.getAttribute('aria-controls'));
+        if (pop) pop.hidden = true;
+      });
+    return any;
+  }
+
+  /* Escape peels ONE layer per press: an open definitions popover first,
+     the abandon confirm second, the modal third, and never the page (the
+     pile's own Escape handler stands down for as long as this dialog is
+     up — see JD_layerOpen). */
   window.addEventListener('keydown', function (e) {
     if (!isOpen || e.key !== 'Escape') return;
     e.preventDefault();
+    ttHide();
+    if (!confirmOn && closeDefs()) return;
     requestClose();
   });
 
   /* ---------- the state machine ------------------------------------------- */
   function go(next) {
+    /* 'compare' retired 2026-08-11: the single bench's call step absorbed
+       it. A stored turn from the two-state era maps onto the bench's last
+       step rather than a state that no longer renders. */
+    if (next === 'compare') {
+      next = 'rate';
+      if (work) { work.step = 'call'; work.reached.call = true; }
+    }
     state = next;
     if (turn) { turn.state = next; persist(); }
     render();
@@ -2891,7 +2959,6 @@ function JD_layerOpen() {
     else if (state === 'generating') h = viewGenerating();
     else if (state === 'reveal') h = viewReveal();
     else if (state === 'rate') h = viewRate();
-    else if (state === 'compare') h = viewCompare();
     else if (state === 'unveil') h = viewUnveil();
     else if (state === 'apology') h = viewApology();
     paint(h);
@@ -3033,41 +3100,137 @@ function JD_layerOpen() {
     });
     return h + '</div>';
   }
-  function ratePanel(slot) {
-    var r = work.ratings[slot];
-    var grades = byRankDesc(tax().grades).map(function (g) {
-      return { value: g.rank, label: g.label || g.id, description: g.description };
+  /* THE SINGLE BENCH (owner pick, mockup round 10, 2026-08-11). One response
+     on the bench at a time — a step rail (response A → response B → the
+     call), the artwork pinned sticky while its response is graded, every
+     scale a native <select> (titles only on the control and in the list;
+     skip is the honest default), and ONE definition system: a hover/focus
+     tooltip plus an ⓘ per question that unfolds the whole scale in-flow.
+     The two-panel pill survey and the separate compare state are retired;
+     the call is the 5-point likert finale (winner + margin) and closes the
+     same state. pillRow above survives for the unveil's keep-chooser only. */
+
+  /* the finale's five stops: winner + strength. strength is the C1.3
+     contract addition (see jd-rate.php) — a tie has no margin. */
+  var LIKERT = [
+    { id: 'a2', big: 'A', word: 'decisively', title: 'A · decisively better',
+      desc: 'No contest — A is clearly the stronger drawing.', winner: 'a', strength: 'decisive' },
+    { id: 'a1', big: 'A', word: 'narrowly', title: 'A · narrowly better',
+      desc: 'A close call, but A edges it.', winner: 'a', strength: 'slight' },
+    { id: 'tie', big: '=', word: 'dead even', title: 'dead even',
+      desc: 'No daylight between them — filed as a tie.', winner: 'tie', strength: null },
+    { id: 'b1', big: 'B', word: 'narrowly', title: 'B · narrowly better',
+      desc: 'A close call, but B edges it.', winner: 'b', strength: 'slight' },
+    { id: 'b2', big: 'B', word: 'decisively', title: 'B · decisively better',
+      desc: 'No contest — B is clearly the stronger drawing.', winner: 'b', strength: 'decisive' }
+  ];
+  function likertStop(id) {
+    for (var i = 0; i < LIKERT.length; i++) if (LIKERT[i].id === id) return LIKERT[i];
+    return null;
+  }
+  /* the id the visitor's stored pick maps back to, so a re-render (step
+     navigation) restores the checked stop */
+  function likertChosen() {
+    if (!work.winner) return null;
+    if (work.winner === 'tie') return 'tie';
+    return work.winner + (work.strength === 'decisive' ? '2' : '1');
+  }
+
+  /* one question row: the ⓘ header (its button doubles as the hover/focus
+     tooltip anchor for the scale's meaning), the in-flow definitions
+     popover, the select, and — on axis rows — the folded note. Re-rendering
+     is safe: every answer lives in `work` and is written back as selected/
+     value/hidden state here. */
+  function scaleRow(slot, kind, ax, chosen) {
+    var axisId = ax ? ax.id : null;
+    var label = ax ? (ax.label || ax.id) : 'overall grade';
+    var desc = ax ? (ax.description || '') : 'The drawer’s own five-tier scale, best to worst.';
+    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var popId = 'jd-pop-' + slot + '-' + (axisId || 'grade');
+    var noteVal = axisId ? (work.ratings[slot].notes[axisId] || '') : '';
+    var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
+      '<div class="jd-rowhead">' +
+      '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
+      'aria-controls="' + popId + '" data-tt-t="' + esc(label) + '" data-tt-d="' +
+      esc(desc) + '"><span>' + esc(label) + '</span>' +
+      '<span class="jd-i" aria-hidden="true">i</span></button>' +
+      (axisId
+        ? '<button type="button" class="jd-notbtn' + (noteVal ? ' has-note' : '') +
+          '" data-act="note-toggle" data-slot="' + slot + '" data-axis="' +
+          esc(axisId) + '" aria-expanded="' + (noteVal ? 'true' : 'false') +
+          '">&#9998; note</button>'
+        : '') +
+      '</div>' +
+      '<div class="jd-pop" id="' + popId + '" hidden>' +
+      '<p class="jd-pop-desc">' + esc(desc) + '</p><dl>';
+    levels.forEach(function (l) {
+      h += '<dt>' + esc(l.label || l.id) + '</dt><dd>' + esc(l.description || '') + '</dd>';
     });
-    grades.push({ value: '', label: 'skip' });
-    var h = '<section class="jd-turn-panel">' +
-      '<h3 class="jd-turn-sub">Response ' + slot.toUpperCase() + '</h3>' +
-      plate(slot, { small: true }) +
-      '<p class="jd-turn-label">overall grade</p>' +
-      pillRow('jd-g-' + slot, 'overall grade for response ' + slot.toUpperCase(),
-        grades, r.grade, ' data-role="grade" data-slot="' + slot + '"');
-    liveAxes().forEach(function (ax) {
-      var opts = byRankDesc(ax.values).map(function (v) {
-        return { value: v.rank, label: v.label || v.id, description: v.description };
-      });
-      opts.push({ value: '', label: 'skip' });
-      h += '<p class="jd-turn-label" title="' + esc(ax.description || '') + '">' +
-        esc(ax.label || ax.id) + '</p>' +
-        pillRow('jd-a-' + slot + '-' + ax.id,
-          (ax.label || ax.id) + ' for response ' + slot.toUpperCase(),
-          opts, r.axes[ax.id], ' data-role="axis" data-slot="' + slot +
-          '" data-axis="' + esc(ax.id) + '"') +
-        '<input type="text" class="jd-turn-input jd-turn-note" ' +
-        'maxlength="' + MAX_NOTE + '" placeholder="a note, if you have one" ' +
-        'aria-label="note on ' + esc(ax.label || ax.id) + ' for response ' +
+    h += '<dt>skip</dt><dd>No answer filed for this question.</dd></dl></div>' +
+      '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
+      'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
+      (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
+      ' aria-label="' + esc(label) + ' for response ' + slot.toUpperCase() + '">' +
+      '<option value=""' + (chosen == null ? ' selected' : '') + '>skip</option>';
+    levels.forEach(function (l) {
+      var on = chosen != null && String(chosen) === String(l.rank);
+      h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
+        esc(l.label || l.id) + '</option>';
+    });
+    h += '</select>';
+    if (axisId) {
+      h += '<div class="jd-noterow" data-notewrap="' + slot + '-' + esc(axisId) +
+        '"' + (noteVal ? '' : ' hidden') + '>' +
+        '<input type="text" class="jd-turn-input jd-turn-note" maxlength="' +
+        MAX_NOTE + '" placeholder="a note, if you have one" ' +
+        'aria-label="note on ' + esc(label) + ' for response ' +
         slot.toUpperCase() + '" data-role="note" data-slot="' + slot +
-        '" data-axis="' + esc(ax.id) + '" value="' + esc(r.notes[ax.id] || '') + '">';
+        '" data-axis="' + esc(axisId) + '" value="' + esc(noteVal) + '"></div>';
+    }
+    return h + '</div>';
+  }
+
+  /* the step rail. First pass is linear (a step unlocks when the one before
+     it is left), back is always one press; a degraded one-survivor turn has
+     no rail at all — one panel, then file. */
+  function railHTML(ok) {
+    var steps = ok.map(function (s) {
+      return { id: s, n: ok.indexOf(s) + 1, label: 'response ' + s.toUpperCase(), short: s.toUpperCase() };
     });
-    /* the report path (APP §4.6), at its smallest honest size. The note is in
-       the DOM from the start and merely hidden: rate is the one long scrolling
-       state, and re-rendering it to reveal a field would throw the visitor
-       back to the top of the survey with focus on the close button. `hidden`
-       also keeps it out of focusables(), so the tab order matches what is
-       actually on screen. */
+    steps.push({ id: 'call', n: ok.length + 1, label: 'the call', short: 'CALL' });
+    var h = '<div class="jd-rail" role="list">';
+    steps.forEach(function (st) {
+      var current = work.step === st.id;
+      var reached = !!work.reached[st.id];
+      h += '<button type="button" role="listitem" class="jd-rail-step' +
+        (current ? ' is-current' : '') + '" data-act="step" data-step="' + st.id +
+        '"' + (reached ? '' : ' disabled') +
+        (current ? ' aria-current="step"' : '') +
+        ' aria-label="step ' + st.n + ' — ' + esc(st.label) + '">' +
+        '<b>' + st.n + '</b><span class="jd-rail-long"> · ' + esc(st.label) +
+        '</span><span class="jd-rail-short" aria-hidden="true"> · ' +
+        esc(st.short) + '</span></button>';
+    });
+    return h + '</div>';
+  }
+
+  /* the pinned plate: the artwork stays in view for the whole panel */
+  function benchPin(slot) {
+    return '<div class="jd-bench-pin">' + plate(slot, { small: true }) +
+      '<div class="jd-bench-col"><b>Response ' + slot.toUpperCase() + '</b>' +
+      '<span>graded alone — no names until filed</span></div></div>';
+  }
+
+  function benchPanel(slot, ok) {
+    var r = work.ratings[slot];
+    var idx = ok.indexOf(slot);
+    var two = ok.length > 1;
+    var h = '<section class="jd-turn-panel">' + benchPin(slot) +
+      scaleRow(slot, 'grade', null, r.grade);
+    liveAxes().forEach(function (ax) {
+      h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
+    });
+    /* the report path (APP §4.6), verbatim wording; note revealed in place */
     h += '<label class="jd-turn-check jd-turn-flag">' +
       '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
       (r.flag ? ' checked' : '') + '>' +
@@ -3077,35 +3240,89 @@ function JD_layerOpen() {
       MAX_NOTE + '" placeholder="what is wrong with it?" ' +
       'aria-label="note on the report for response ' + slot.toUpperCase() +
       '" data-role="flagnote" data-slot="' + slot + '" value="' +
-      esc(r.flagNote || '') + '"></div>';
-    return h + '</section>';
-  }
-  function viewRate() {
-    var ok = okSlots();
-    var two = ok.length > 1;
-    return head('Grade what came back') +
-      '<p class="jd-turn-copy">All of it is optional — skip anything that ' +
-      'doesn’t apply. The scale is the drawer’s own.</p>' +
-      ok.map(ratePanel).join('') +
-      actions('<button type="button" class="jd-turn-go" data-act="' +
-        (two ? 'compare' : 'file') + '">' +
-        (two ? 'next' : 'file the grades') + '</button>');
+      esc(r.flagNote || '') + '"></div></section>';
+    var acts = '';
+    if (idx > 0) {
+      acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
+    }
+    if (!two) {
+      acts += '<button type="button" class="jd-turn-go" data-act="file">file the grades</button>';
+    } else {
+      var next = idx + 1 < ok.length ? 'response ' + ok[idx + 1].toUpperCase() : 'the call';
+      acts += '<button type="button" class="jd-turn-go" data-act="next">next — ' +
+        esc(next) + ' &rarr;</button>';
+    }
+    return h + actions(acts);
   }
 
-  /* ---------- 6. compare --------------------------------------------------- */
-  function viewCompare() {
-    var opts = [
-      { value: 'a', label: 'A' },
-      { value: 'b', label: 'B' },
-      { value: 'tie', label: 'a tie' }
-    ];
-    return head('Which belongs in the drawer?') +
+  /* THE CALL — the preserved likert finale (mockup 10c salvage, kept by the
+     owner through the round-10 review: the call as geometry, five title-only
+     stops on a rail strung A-left to B-right, tooltips per stop, the ⓘ
+     unfolding the whole scale, filed as winner + margin). */
+  function callPanel(ok) {
+    var chosen = likertChosen();
+    var h = '<section class="jd-turn-panel">' +
       '<div class="jd-turn-plates">' +
-      okSlots().map(function (s) { return plate(s); }).join('') + '</div>' +
-      pillRow('jd-winner', 'which response belongs in the drawer', opts,
-        work.winner, ' data-role="winner"') +
-      actions('<button type="button" class="jd-turn-go" data-act="file"' +
-        (work.winner ? '' : ' disabled') + '>file it</button>');
+      ok.map(function (s) { return plate(s); }).join('') + '</div>' +
+      '<div class="jd-call">' +
+      '<div class="jd-rowhead">' +
+      '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
+      'aria-controls="jd-pop-call" data-tt-t="the call" data-tt-d="Which ' +
+      'response belongs in the drawer, and by how much.">' +
+      '<span>the call — which belongs in the drawer?</span>' +
+      '<span class="jd-i" aria-hidden="true">i</span></button></div>' +
+      '<div class="jd-pop" id="jd-pop-call" hidden>' +
+      '<p class="jd-pop-desc">The one required answer when both drawings ' +
+      'survived. It is filed as a winner plus a margin (a tie has no margin).</p><dl>';
+    LIKERT.forEach(function (o) {
+      h += '<dt>' + esc(o.title) + '</dt><dd>' + esc(o.desc) + '</dd>';
+    });
+    h += '</dl></div>' +
+      '<p class="jd-call-req">required — everything before it is optional</p>' +
+      '<div class="jd-likert" role="radiogroup" ' +
+      'aria-label="the call: which response belongs in the drawer"' +
+      (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
+      '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">A</span>' +
+      '<div class="jd-lk-rail">';
+    LIKERT.forEach(function (o) {
+      var on = chosen === o.id;
+      h += '<label class="jd-lk-stop' + (on ? ' is-on' : '') + '" data-tt-t="' +
+        esc(o.title) + '" data-tt-d="' + esc(o.desc) + '">' +
+        '<input type="radio" name="jd-call" value="' + o.id +
+        '" data-role="call" aria-describedby="jd-d-call-' + o.id + '"' +
+        (on ? ' checked' : '') + '>' +
+        '<span class="jd-lk-dot" aria-hidden="true"></span>' +
+        '<span class="jd-lk-cap"><b>' + esc(o.big) + '</b><span>' +
+        esc(o.word) + '</span></span></label>';
+    });
+    h += '</div><span class="jd-lk-end jd-lk-end--b" aria-hidden="true">B</span></div>';
+    LIKERT.forEach(function (o) {
+      h += '<span class="jd-vh" id="jd-d-call-' + o.id + '">' +
+        esc(o.title + ' — ' + o.desc) + '</span>';
+    });
+    h += '</div></section>';
+    return h + actions(
+      '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
+      '<button type="button" class="jd-turn-go" data-act="file"' +
+      (work.winner ? '' : ' disabled') + '>file the grades</button>');
+  }
+
+  function viewRate() {
+    var ok = okSlots();
+    /* a restored or degraded turn may hold a step that no longer exists */
+    if (work.step !== 'call' && ok.indexOf(work.step) === -1) work.step = ok[0];
+    if (work.step === 'call' && ok.length < 2) work.step = ok[0];
+    work.reached[work.step] = true;
+    var two = ok.length > 1;
+    return head('Grade what came back') +
+      '<p class="jd-turn-copy">' + (two
+        ? 'One at a time: A alone, then B alone, then the call. Everything ' +
+          'is optional except the call. Titles only — press an i for what ' +
+          'a scale means. The scale is the drawer’s own.'
+        : 'Only one drawing survived, so it is graded alone. Everything is ' +
+          'optional. Titles only — press an i for what a scale means.') + '</p>' +
+      (two ? railHTML(ok) : '') +
+      (work.step === 'call' ? callPanel(ok) : benchPanel(work.step, ok));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -3188,17 +3405,31 @@ function JD_layerOpen() {
       setDisabled('[data-act="consent"]', !t.checked);
     } else if (role === 'grade') {
       work.ratings[slot].grade = val == null ? null : Number(val);
+      t.classList.toggle('is-set', val != null);
     } else if (role === 'axis') {
       work.ratings[slot].axes[t.getAttribute('data-axis')] =
         val == null ? null : Number(val);
+      t.classList.toggle('is-set', val != null);
     } else if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
-      /* mutate in place — see ratePanel */
+      /* mutate in place — see benchPanel */
       var fn = bodyEl.querySelector('[data-flagnote="' + slot + '"]');
       if (fn) fn.hidden = !t.checked;
-    } else if (role === 'winner') {
-      work.winner = val;
-      setDisabled('[data-act="file"]', !val);
+    } else if (role === 'call') {
+      /* the likert finale: one stop = winner + margin */
+      var stop = likertStop(t.value);
+      work.winner = stop ? stop.winner : null;
+      work.strength = stop ? stop.strength : null;
+      var lk = t.closest('.jd-likert');
+      if (lk) {
+        if (work.winner && work.winner !== 'tie') lk.setAttribute('data-pick', work.winner);
+        else lk.setAttribute('data-pick', 'tie');
+        Array.prototype.forEach.call(lk.querySelectorAll('.jd-lk-stop'), function (st) {
+          var input = st.querySelector('input');
+          st.classList.toggle('is-on', !!(input && input.checked));
+        });
+      }
+      setDisabled('[data-act="file"]', !work.winner);
     } else if (role === 'keep') {
       work.keep = val;
     }
@@ -3241,8 +3472,41 @@ function JD_layerOpen() {
       startTurn();
     } else if (act === 'rate') {
       ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
-    } else if (act === 'compare') {
-      go('compare');
+    } else if (act === 'step' || act === 'next' || act === 'back') {
+      /* bench navigation. The whole panel re-renders (state lives in `work`,
+         so nothing is lost) and focus lands back on the heading. */
+      var seq = okSlots();
+      if (seq.length > 1) seq = seq.concat(['call']);
+      var at = seq.indexOf(work.step);
+      var dest = act === 'step' ? b.getAttribute('data-step')
+        : seq[at + (act === 'next' ? 1 : -1)];
+      if (dest && seq.indexOf(dest) !== -1) {
+        work.step = dest;
+        work.reached[dest] = true;
+        render();
+      }
+    } else if (act === 'def') {
+      /* one definitions popover at a time; press again, Esc, or any other
+         def to fold it. In-flow, so it never covers a control. */
+      var wasOpen = b.getAttribute('aria-expanded') === 'true';
+      closeDefs();
+      if (!wasOpen) {
+        b.setAttribute('aria-expanded', 'true');
+        var pop = bodyEl.querySelector('#' + b.getAttribute('aria-controls'));
+        if (pop) pop.hidden = false;
+      }
+    } else if (act === 'note-toggle') {
+      var key = b.getAttribute('data-slot') + '-' + b.getAttribute('data-axis');
+      var wrap = bodyEl.querySelector('[data-notewrap="' + key + '"]');
+      if (wrap) {
+        var opening = wrap.hidden;
+        wrap.hidden = !opening;
+        b.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        if (opening) {
+          var input = wrap.querySelector('input');
+          if (input) { try { input.focus(); } catch (err) {} }
+        }
+      }
     } else if (act === 'file') {
       submitRatings();
     } else if (act === 'keep') {
@@ -3266,7 +3530,12 @@ function JD_layerOpen() {
       prompt: '', consented: hasConsent(), notice: '', slow: false,
       slots: { a: { status: 'pending' }, b: { status: 'pending' } },
       ratings: { a: blankRating(), b: blankRating() },
-      winner: null, keep: null, kept: false, placed: false, reveal: null
+      /* the single bench: which step is on the bench, which steps the
+         visitor has reached (the rail's first pass is linear), and the
+         call's margin alongside its winner */
+      step: 'a', reached: { a: true },
+      winner: null, strength: null,
+      keep: null, kept: false, placed: false, reveal: null
     };
   }
   function blankRating() {
@@ -3394,12 +3663,16 @@ function JD_layerOpen() {
         ratings.push(f);
       }
     });
-    /* a comparison is legal as null ONLY in the degraded one-slot path */
+    /* a comparison is legal as null ONLY in the degraded one-slot path.
+       strength is the likert's margin (C1.3 addition, 2026-08-11): absent
+       exactly when the call is a tie. */
     var body = {
       submission_id: turn.submission_id,
       client: JD_CLIENT,
       ratings: ratings,
-      comparison: okSlots().length > 1 ? { winner: work.winner } : null
+      comparison: okSlots().length > 1
+        ? { winner: work.winner, strength: work.winner === 'tie' ? null : work.strength }
+        : null
     };
     setDisabled('[data-act="file"]', true);
     setDisabled('[data-act="retry-file"]', true);
