@@ -54,10 +54,10 @@ body {
 .mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
 
 .pair {
-  max-width: 1060px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+  max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
 }
-@media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
 .sheet {
   background: #efe6cb;
   border: 1px solid rgba(88, 74, 46, 0.5);
@@ -117,6 +117,20 @@ body {
   display: inline-flex; justify-content: space-between;
   width: 47px; flex: 0 0 auto;
 }
+
+/* OPTION C: one filled BAR gauge per verdict, the same 47px span for
+   every row — fill fraction = rank/steps, hairline ticks at the step
+   boundaries so a 3-step bar and a 5-step bar stay honest scales */
+.rc-bar {
+  position: relative; width: 47px; height: 8px; flex: 0 0 auto;
+  border: 1.5px solid currentColor; border-radius: 2px;
+  overflow: hidden;
+}
+.rc-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: currentColor; }
+.rc-bar-tick {
+  position: absolute; top: 0; bottom: 0; width: 1px;
+  background: currentColor; opacity: 0.4;
+}
 </style>
 </head>
 <body>
@@ -125,8 +139,9 @@ body {
 <p class="mock-intro">Killing the awkward gap in the verdict column. <b>A</b> keeps
 every meter at three dots and carries the grade&rsquo;s five tiers with
 half&#8209;filled dots. <b>B</b> keeps the honest five&#8209;dot grade and spreads the
-axes&rsquo; three dots across the same span. Both shown on the same sample card,
-plus every grade tier below so the mapping can be judged.</p>
+axes&rsquo; three dots across the same span. <b>C</b> replaces the dots with one
+filled bar gauge, ticked at its scale&rsquo;s steps. All three on the same sample
+card, plus every grade tier below so the mapping can be judged.</p>
 
 <div class="pair">
 
@@ -209,12 +224,54 @@ plus every grade tier below so the mapping can be judged.</p>
     &mdash; the grade stays honestly five-point.</p>
   </div>
 
+  <div class="sheet optC">
+    <h2>C &middot; bar &mdash; one filled gauge</h2>
+    <div class="rc-sect">Annotations</div>
+    <table class="rc-subj">
+      <thead><tr><th style="width:52%">Axis</th><th style="width:48%">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><span class="rc-subj-name">Instruction following</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span></span><span class="rc-mark rc-r3">No problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Structural integrity</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2">Small problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span></span><span class="rc-mark rc-r3">Has <i>it</i></span></span></td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td><span class="rc-avg-l">Overall grade</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+      </tfoot>
+    </table>
+    <div class="rc-sect">The five tiers as fills</div>
+    <table class="rc-subj">
+      <tbody>
+        <tr><td><span class="rc-subj-name">Prime</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g5"><span class="rc-bar-fill" style="width:100%"></span></span><span class="rc-mark rc-g5">Prime</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Choice</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Select</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g3"><span class="rc-bar-fill" style="width:60%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark rc-g3">Select</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Standard</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g2"><span class="rc-bar-fill" style="width:40%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark rc-g2">Standard</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Utility</span></td>
+          <td><span class="rc-verdict"><span class="rc-bar rc-g1"><span class="rc-bar-fill" style="width:20%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark rc-g1">Utility</span></span></td></tr>
+      </tbody>
+    </table>
+    <p class="mock-label" style="text-align:left; margin-top:0.8rem;">one gauge
+    for both scales: fill = rank / steps of ITS scale, hairline ticks at the
+    step boundaries (two ticks = a 3-step axis, four = the 5-tier grade), so
+    the scales stay honest and every row spans the same 47px with no gap.
+    a full bar drops its ticks &mdash; nothing to subdivide.</p>
+  </div>
+
 </div>
 
 <p class="mock-label"><b>THE QUESTION</b> &mdash; A buys perfect uniformity at the
 cost of the grade&rsquo;s literal five-point read (a half dot is doing tier
 arithmetic); B keeps both scales honest and gap-free but the two meters
-breathe differently. Pick one and it drops into dotsHTML() + two CSS lines.</p>
+breathe differently; C is one uniform instrument for both scales, honest via
+its tick marks, at the cost of the countable-dots read. Pick one and it drops
+into the shared meter builder + a few CSS lines.</p>
 
 </body>
 </html>
