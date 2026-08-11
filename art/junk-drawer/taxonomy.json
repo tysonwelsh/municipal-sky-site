@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 14,
+  "version": 15,
   "updated": "2026-08-10",
   "grades": [
     {
@@ -191,7 +191,7 @@
     },
     {
       "id": "integrity",
-      "label": "Integrity",
+      "label": "Structural integrity",
       "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
       "values": [
         {
@@ -420,6 +420,11 @@
       "date": "2026-08-11",
       "version": 14,
       "note": "Labels gain an _underscored emphasis_ convention (owner: italicize the it in \"Has it\"). HTML surfaces render the run in italics; plain-text surfaces (native option text, aria strings, stamped marks) strip the markers — JD_labelText in junk-drawer.js. Applied to je-ne-sais-quoi rank 3: Has _it_."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 15,
+      "note": "Spell out \"Structural integrity\" (owner call) — the integrity axis's display label, everywhere labels render (survey, popovers, legend, report card). The axis id stays integrity, as ids must."
     }
   ]
 }

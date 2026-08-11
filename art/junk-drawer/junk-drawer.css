@@ -1177,6 +1177,19 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 }
 .rc-mark.sm { font-size: 0.84rem; }
 .rc-mark-word { position: relative; display: inline-block; }
+/* the graded pencils (owner, 2026-08-11): the verdict is inked in the
+   pencil it earned — dark green when clean, deep red when broken, and a
+   warm ramp between. The label text still says the word; the colour
+   seconds it, never carries it alone. r* = the 3-step axes, g* = the
+   five grade tiers. All tuned dark enough to hold on the paper ground. */
+.rc-mark.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
+.rc-mark.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
+.rc-mark.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
+.rc-mark.rc-g5, .rc-alt-grade.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
+.rc-mark.rc-g4, .rc-alt-grade.rc-g4 { color: #46761a; }   /* choice — leaf green */
+.rc-mark.rc-g3, .rc-alt-grade.rc-g3 { color: #a06200; }   /* select — ochre */
+.rc-mark.rc-g2, .rc-alt-grade.rc-g2 { color: #b0490f; }   /* standard — burnt orange */
+.rc-mark.rc-g1, .rc-alt-grade.rc-g1 { color: #8f1d12; }   /* utility — deep red */
 
 /* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
 .rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; }
