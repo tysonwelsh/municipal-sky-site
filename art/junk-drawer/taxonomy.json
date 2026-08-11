@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 10,
+  "version": 11,
   "updated": "2026-08-10",
   "grades": [
     {
@@ -216,6 +216,7 @@
     },
     {
       "id": "style",
+      "defunct": true,
       "label": "Style",
       "description": "Is the image one consistent visual language, well executed — whatever language it chose?",
       "values": [
@@ -399,6 +400,11 @@
       "date": "2026-08-10",
       "version": 10,
       "note": "Register model gpt-5-1 (GPT-5.1) — the visitor-prompt feature's OpenAI slot moves to the flagship pair (Claude Opus 5 vs GPT-5.1, jd-config.php)."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 11,
+      "note": "Retire the \"style\" axis (owner call): defunct: true, the v6 mechanism — the survey stops asking it, jd-rate stops accepting it, the legend and report card drop it, and every filed style grading stays in the data untouched."
     }
   ]
 }
