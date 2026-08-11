@@ -26,6 +26,15 @@
    are the real items/2026-08-05-microscope-slide/ SVGs (claude-opus-5 as A,
    claude-sonnet-5 as B), id-namespaced per minted copy so their defs never
    collide — exactly production's JD_svgInst discipline.
+
+   MOBILE PASS (2026-08-11): the instrument is now responsive to its OWN
+   width via container queries on .stage-clamp (the sibling mockups'
+   pattern; Safari 16+ floor), never the viewport — so the page can stage
+   the SAME live instrument twice, at desk width and clamped to 375px.
+   Two container bands: ≤560px folds the label rail; ≤430px is the phone
+   treatment (2-col chip grid, vertical Likert rail, in-flow legend
+   sheets, a labelled 44px ⓘ DEFINE affordance, ≥44px targets, 16px
+   inputs, svh heights). See notes §5.
    ========================================================================== */
 :root {
   --paper: #f6f3ec;
@@ -95,16 +104,29 @@ noscript p {
   position: relative;
   display: flex; align-items: center; justify-content: center;
   max-width: 1060px; margin: 0 auto;
-  padding: max(18px, 3vh) 12px;
+  /* clamp()ed rather than media-queried: the scrim is page furniture, and
+     keeping it mechanism-free leaves container queries as the ONE
+     responsive mechanism for the instrument itself */
+  padding: clamp(10px, 2.5vw, 18px) clamp(6px, 1.5vw, 12px);
   background: #241708 radial-gradient(120% 130% at 50% 40%,
               rgba(84, 55, 24, 0.55) 0%, rgba(10, 5, 1, 0.65) 80%);
 }
+/* the clamp IS the container: the sheet responds to its own width, so the
+   narrow stage below shows the real phone layout on a desk monitor */
+.stage-clamp {
+  width: min(680px, 100%);
+  container-type: inline-size;
+}
+.stage-clamp--narrow { width: min(375px, 100%); }
 .jd-turn {
   position: relative;
-  width: min(680px, 100%);
+  width: 100%;
   /* forces the internal scroll the production `rate` state lives with, so
-     the sticky response pins actually demonstrate themselves */
+     the sticky response pins actually demonstrate themselves. svh, not vh:
+     on phones 100vh includes the retracted URL bar and traps the bottom
+     edge of the card under browser chrome. */
   height: min(78vh, 720px);
+  height: min(78svh, 720px);
   display: flex; flex-direction: column;
   color: var(--tink);
   font-family: var(--tmono);
@@ -128,7 +150,9 @@ noscript p {
   position: relative; z-index: 1;
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
-  padding: 18px 20px 20px;
+  /* the pin's negative sticky top reads this var — change them TOGETHER */
+  --scrollpad: 18px;
+  padding: var(--scrollpad) 20px 20px;
   scrollbar-width: thin;
 }
 .jd-turn-scroll::-webkit-scrollbar { width: 7px; }
@@ -201,7 +225,8 @@ noscript p {
 /* the pin: response label + thumbnail ride the top of the scroll while that
    panel's rows are on screen — you always see what you are grading */
 .lg-pin {
-  position: sticky; top: -18px; /* cancels the scroller's top padding */
+  /* cancels the scroller's top padding — kept in sync via the var */
+  position: sticky; top: calc(-1 * var(--scrollpad, 18px));
   z-index: 5;
   display: flex; align-items: center; gap: 0.7rem;
   margin: 0 -4px 0.45rem;
@@ -251,11 +276,16 @@ noscript p {
 .lg-row--grade .lg-qname { color: var(--tink); font-weight: 700; font-size: 0.66rem; }
 .lg-info {
   flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   width: 30px; height: 30px; margin-left: 0.1rem;
   border: 0; background: none; padding: 0;
   font-family: var(--tmono); font-size: 0.78rem; line-height: 1;
   color: var(--tink-2); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
+/* the word half of the touch affordance: hidden at desk width (the glyph +
+   hover carry it there), shown in the phone band where ⓘ must be FOUND */
+.lg-info-lbl { display: none; }
 .lg-info:hover, .lg-info[aria-expanded="true"] { color: var(--tred); }
 .lg-info:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
 
@@ -369,6 +399,7 @@ noscript p {
 .lg-vhead { display: flex; align-items: center; gap: 0.15rem; }
 .lg-vhead .jd-turn-sub { margin: 0; }
 .lg-vgrid {
+  position: relative; /* anchors the verdict legend card at desk width */
   display: grid;
   grid-template-columns: 76px 1fr 76px;
   gap: 0.7rem;
@@ -421,30 +452,94 @@ noscript p {
   }
 }
 
-/* ---------------- small screens, down to 320px ---------------------------- */
-@media (max-width: 600px) {
-  .jd-turn-scrim { padding: 10px 6px; }
-  .jd-turn { height: min(84vh, 720px); }
-  .jd-turn-scroll { padding: 14px 12px 16px; }
-  .lg-pin { top: -14px; }
-  .lg-row { grid-template-columns: 1fr; gap: 0.1rem; padding: 0.5rem 0; }
-  .lg-q { min-height: 34px; }
+/* ---------------- narrow bands: container queries on .stage-clamp ---------
+   The ONE responsive mechanism for the instrument (sibling 10C's pattern,
+   Safari 16+ floor). Two bands: ≤560px the label rail folds; ≤430px the
+   full phone treatment. 375×667 is the design baseline, 320px the floor. */
+@container (max-width: 560px) {
+  .lg-row { grid-template-columns: 1fr; gap: 0.15rem; padding: 0.5rem 0; }
   .lg-noterow { grid-column: 1; }
+  /* label left, ⓘ pushed to the row's right edge — a real place, not
+     wherever the name happens to end */
+  .lg-q { justify-content: space-between; }
+  .lg-vhead { justify-content: space-between; }
   .lg-chip { flex: 1 1 auto; justify-content: center; min-height: 44px; }
   .lg-notebtn { flex: 0 0 auto; min-height: 44px; }
-  /* the verdict: thumbs hold the two ends of the scale, chips run between */
-  .lg-vgrid { grid-template-columns: 1fr; gap: 0.5rem; }
-  .lg-vthumbs { display: flex; justify-content: space-between; align-items: flex-end; }
-  .lg-likchip { min-height: 58px; padding: 0.25rem 0.1rem; }
-  .lg-lik-s { font-size: 0.46rem; }
+}
+@container (max-width: 430px) {
+  /* -- screen budget: shorter card, tighter gutters, smaller pin -------- */
+  .jd-turn { height: min(84vh, 640px); height: min(84svh, 640px); }
+  .jd-turn-scroll { --scrollpad: 12px; padding: var(--scrollpad) 12px 16px; }
+  .jd-turn-title { font-size: 0.74rem; }
+  .lg-pin { gap: 0.55rem; }
+  .lg-thumb { width: 42px; height: 42px; }
+  .lg-pin-name { font-size: 0.66rem; letter-spacing: 0.16em; }
+  .lg-pin-grade { font-size: 0.56rem; letter-spacing: 0.1em; }
+
+  /* -- chips: a deliberate two-column grid, never flex-wrap rag ---------
+     grades: 5 tiers + skip = 2×3; axes: 3 values + skip = 2×2; the note
+     affordance takes its own full-width row. 8px gutters so adjacent
+     radio targets can't be fat-fingered into each other. */
+  .lg-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .lg-chip { min-height: 46px; min-width: 0; justify-content: center; padding: 0 0.4rem 0 1.05rem; }
+  .lg-cl { white-space: normal; text-align: center; line-height: 1.3; font-size: 0.6rem; }
+  .lg-row--grade .lg-chip { min-height: 48px; }
+  .lg-row--grade .lg-cl { font-size: 0.68rem; }
+  .lg-notebtn { grid-column: 1 / -1; justify-self: start; min-height: 44px; padding: 0 0.2rem; font-size: 0.6rem; }
+
+  /* -- the ⓘ becomes a labelled, bordered DEFINE affordance, 44px ------- */
+  .lg-info {
+    width: auto; height: auto; min-width: 44px; min-height: 44px;
+    padding: 0 10px; margin-left: 0.4rem;
+    border: 1px dashed var(--trule);
+  }
+  .lg-info-lbl {
+    display: inline;
+    font-size: 0.54rem; letter-spacing: 0.14em; text-transform: uppercase;
+  }
+
+  /* -- legends: in-flow, full-width sheets — never a floating overlay ---
+     opening one pushes the ledger down inside the card's own scroll, so
+     nothing overlaps, nothing needs a focus trap, nothing fights the
+     viewport. Definitions stack one per line. */
+  .lg-legend { position: static; margin: 2px 0 4px; }
   .lg-legend dl > div { grid-template-columns: 1fr; }
   .lg-legend dd { padding-bottom: 0.1rem; }
-}
-/* desktop hides the duplicate mobile thumb strip; mobile hides the columns */
-.lg-vthumbs { display: none; }
-@media (max-width: 600px) {
-  .lg-vcol { display: none; }
-  .lg-vthumbs { display: flex; }
+
+  /* -- inputs: 16px kills iOS focus-zoom; 44px target; scroll-margin
+        keeps a focused field clear of the sticky pin (top) and leaves
+        room over the keyboard (bottom) ------------------------------- */
+  .jd-turn-input { font-size: 16px; min-height: 44px; scroll-margin: 84px 0 120px; }
+
+  /* -- the verdict: a vertical rail. A's thumbnail anchors the TOP end,
+        B's the BOTTOM, the five stops run full-width between them —
+        direction survives the stacking, and the captions get real
+        reading size instead of five 60px slivers. ------------------- */
+  .lg-vgrid {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-areas: "enda lik" "endb lik" "leg leg";
+    grid-template-rows: auto 1fr;
+    gap: 0.6rem; align-items: stretch;
+  }
+  .lg-vthumb--a { grid-area: enda; align-self: start; }
+  .lg-vthumb--b { grid-area: endb; align-self: end; }
+  .lg-vthumb .lg-thumb { width: 60px; height: 60px; }
+  .lg-vgrid > .lg-legend { grid-area: leg; }
+  .lg-lik { grid-area: lik; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .lg-likchip {
+    flex-direction: row; justify-content: flex-start; gap: 12px;
+    min-height: 48px; padding: 0 0.8rem; text-align: left;
+  }
+  .lg-lik-t { font-size: 0.82rem; width: 1.1em; }
+  .lg-lik-s { font-size: 0.64rem; line-height: 1.35; }
+  /* the decisive ends' heavy rule turns with the axis: toward the anchors */
+  .lg-likchip[data-side="a"] { border-left-width: 1px; border-top-width: 3px; }
+  .lg-likchip[data-side="b"] { border-right-width: 1px; border-bottom-width: 3px; }
+
+  /* -- thumb ergonomics: the brass goes full-width ---------------------- */
+  .jd-turn-actions { gap: 10px; }
+  .jd-turn-go { flex: 1 1 100%; min-height: 48px; }
+  .lg-filestat { flex: 1 1 100%; text-align: center; }
 }
 
 /* ---------------- dev: the live filing ----------------------------------- */
@@ -493,6 +588,9 @@ noscript p {
   &ldquo;+&thinsp;note&rdquo;, and the comparison stretches to a five-point
   Likert strung between the two artworks. Definitions never left &mdash; they
   moved into hover/focus tooltips and a tap-to-open &#9432; legend card.
+  <b>MOBILE PASS</b>: the sheet now answers to its own width (container
+  queries, Safari 16+); below is the desk stage, then the same live
+  instrument clamped to 375px &mdash; the phone layout, on your monitor.
 </p>
 
 <noscript><p>This page renders the survey from the inlined taxonomy data and mints id-namespaced copies of the two artworks with JavaScript. With JS off, the instrument does not render.</p></noscript>
@@ -501,66 +599,60 @@ noscript p {
 <p class="sec-head"><span>1</span> &middot; The instrument &mdash; in the modal frame, fully live</p>
 
 <div class="jd-turn-scrim">
-  <div class="jd-turn" role="dialog" aria-modal="false" aria-label="grade what came back (mockup)">
-    <button type="button" class="jd-turn-close" aria-hidden="true" tabindex="-1">&#10005;</button>
-    <div class="jd-turn-scroll" id="scroll">
-      <h2 class="jd-turn-title">Grade what came back</h2>
-      <p class="jd-turn-copy">All of it is optional except the verdict at the
-      end &mdash; skip anything that doesn&rsquo;t apply. Titles only up here:
-      <b>hover or arrow onto any chip</b> for its definition, or <b>tap
-      &#9432;</b> for a question&rsquo;s whole scale at once.</p>
-
-      <section class="lg-panel" id="panel-a"></section>
-      <section class="lg-panel" id="panel-b"></section>
-
-      <section class="lg-verdict">
-        <div class="lg-vhead">
-          <h3 class="jd-turn-sub" id="vlabel">The verdict</h3>
-          <button type="button" class="lg-info" id="vinfo" aria-expanded="false"
-                  aria-controls="leg-verdict" aria-label="definitions: the verdict scale">&#9432;</button>
-        </div>
-        <p class="jd-turn-copy">Which belongs in the drawer &mdash; and by how
-        much? This one is required; a dead-even call files as a tie.</p>
-        <div class="lg-vgrid" style="position:relative;">
-          <!-- mobile: the thumbs become the two ends of the scale -->
-          <div class="lg-vthumbs">
-            <figure class="lg-vthumb"><div class="lg-thumb" id="vthumb-a-m" role="img" aria-label="response A, small"></div><figcaption>A</figcaption></figure>
-            <figure class="lg-vthumb"><div class="lg-thumb" id="vthumb-b-m" role="img" aria-label="response B, small"></div><figcaption>B</figcaption></figure>
-          </div>
-          <figure class="lg-vthumb lg-vcol"><div class="lg-thumb" id="vthumb-a" role="img" aria-label="response A, small"></div><figcaption>A</figcaption></figure>
-          <div class="lg-lik" id="likert" role="radiogroup" aria-label="which response is better, and by how much (A anchored left, B anchored right)"></div>
-          <figure class="lg-vthumb lg-vcol"><div class="lg-thumb" id="vthumb-b" role="img" aria-label="response B, small"></div><figcaption>B</figcaption></figure>
-          <div class="lg-legend" id="leg-verdict" hidden></div>
-        </div>
-      </section>
-
-      <div class="jd-turn-actions">
-        <button type="button" class="jd-turn-go" id="file" disabled>file it</button>
-        <span class="lg-filestat" id="filestat" role="status" aria-live="polite"></span>
-      </div>
+  <div class="stage-clamp">
+    <div class="jd-turn" role="dialog" aria-modal="false" aria-label="grade what came back (mockup, desk width)">
+      <button type="button" class="jd-turn-close" aria-hidden="true" tabindex="-1">&#10005;</button>
+      <div class="jd-turn-scroll" data-sheet="w"></div>
     </div>
   </div>
 </div>
 
 <p class="mock-label">
   <b>the touch contract</b> &mdash; a plain tap on a chip only ever selects;
-  &#9432; is the touch path to the definitions (one anchored legend card per
-  question, tap-outside or <b>esc</b> to close) &middot; on a pointer, hovering
-  any chip floats that level&rsquo;s definition; with a keyboard, arrow through
-  a row and the tooltip follows the focused chip &middot; the response header
+  &#9432; is the touch path to the definitions (one legend card per question,
+  tap-outside or <b>esc</b> to close) &middot; on a pointer, hovering any chip
+  floats that level&rsquo;s definition; with a keyboard, arrow through a row
+  and the tooltip follows the focused chip &middot; the response header
   &mdash; thumbnail and letter &mdash; stays pinned while its rows scroll
 </p>
 
 <div class="rule"></div>
 
+<!-- ========================= THE NARROW PROOF ========================= -->
+<p class="sec-head"><span>2</span> &middot; The narrow proof &mdash; the same live instrument, clamped to 375px</p>
+
+<div class="jd-turn-scrim">
+  <div class="stage-clamp stage-clamp--narrow">
+    <div class="jd-turn" role="dialog" aria-modal="false" aria-label="grade what came back (mockup, phone width)">
+      <button type="button" class="jd-turn-close" aria-hidden="true" tabindex="-1">&#10005;</button>
+      <div class="jd-turn-scroll" data-sheet="n"></div>
+    </div>
+  </div>
+</div>
+
+<p class="mock-label">
+  <b>the phone treatment</b> (&le;430px container; 375&times;667 baseline,
+  320px floor) &mdash; chips settle into a two-column grid with 8px gutters,
+  every target &ge;44px &middot; &#9432; grows a dashed border and the word
+  <b>define</b>; its legend opens IN FLOW as a full-width sheet that pushes
+  the ledger down &mdash; no overlay, nothing to trap focus in &middot; the
+  verdict turns 90&deg;: A&rsquo;s thumbnail anchors the top, B&rsquo;s the
+  bottom, five full-width stops between them &middot; the pin shrinks to a
+  42px thumbnail &middot; the brass runs full-width
+</p>
+
+<div class="rule"></div>
+
 <!-- =========================== THE FILING ============================ -->
-<p class="sec-head"><span>2</span> &middot; The filing, live &mdash; what this instrument would submit</p>
+<p class="sec-head"><span>3</span> &middot; The filing, live &mdash; what this instrument would submit</p>
 <details class="dev" open>
   <summary>jd-rate payload, rebuilt on every answer</summary>
   <pre id="payload"></pre>
 </details>
 <p class="mock-label">
-  <b>contract note</b> &mdash; the likert files the existing
+  <b>contract note</b> &mdash; the payload shows whichever stage you touched
+  last (<span id="payload-src">the desk stage</span>); both are the one
+  instrument &middot; the likert files the existing
   <code>comparison.winner</code> (a&thinsp;/&thinsp;b&thinsp;/&thinsp;tie) plus a
   NEW <code>strength</code> field; see the notes below &middot; grades and axis
   values file as rank numbers, exactly as C1.3 specifies today
@@ -626,18 +718,84 @@ noscript p {
   or extend the contract. (This is latent in production too; the ledger&rsquo;s
   folded notes just make it visible.) (ii) The sticky response pin lives inside
   <code>.jd-turn-scroll</code> and cancels its top padding with a negative
-  <code>top</code> &mdash; keep that in sync with the scroller&rsquo;s padding,
-  and mind the banner-band padding math on the real fixed scrim. (iii) The
-  legend card is absolutely positioned inside its row, inside the scroller, so
-  it scrolls with its question and can overlap the next row &mdash; acceptable
-  because any outside pointer-down dismisses it first; do not give it focusable
-  content without adding a focus trap. (iv) Tooltips hide on scroll (their
-  anchor moves under fixed positioning). (v) Motion is additive: the base
-  stylesheet has no transitions or keyframes; they exist only inside
+  <code>top</code> &mdash; both now read one <code>--scrollpad</code> custom
+  property on the scroller, so the narrow band retunes them together; keep any
+  future padding change on that var, and mind the banner-band padding math on
+  the real fixed scrim. (iii) The
+  legend card at desk width is absolutely positioned inside its row, inside the
+  scroller, so it scrolls with its question and can overlap the next row &mdash;
+  acceptable because any outside pointer-down dismisses it first; do not give it
+  focusable content without adding a focus trap. (In the phone band it is
+  static, in flow &mdash; no overlap, no trap needed.) (iv) Tooltips hide on
+  scroll (their anchor moves under fixed positioning). (v) Motion is additive:
+  the base stylesheet has no transitions or keyframes; they exist only inside
   <code>prefers-reduced-motion: no-preference</code>. (vi) Notes keep
   <code>MAX_NOTE</code> 500 via <code>maxlength</code>; the file action stays
   disabled until the verdict exists, mirroring the production
   winner-before-filing rule when both responses survive.</p>
+
+  <p><b>5 &middot; The mobile pass (2026-08-11) &mdash; what changed.</b> The
+  instrument now responds to its OWN width: <code>.stage-clamp</code> is a
+  <code>container-type: inline-size</code> container and every narrow rule is a
+  <code>@container</code> query (the sibling mockups&rsquo; pattern; Safari 16+
+  floor) &mdash; the old viewport <code>@media</code> block is gone, so the
+  page can stage the same live sheet at desk width and at 375px side by side.
+  Two bands. <b>&le;560px</b>: the label rail folds (label above chips, &#9432;
+  pushed to the row&rsquo;s right edge). <b>&le;430px</b>, the phone treatment:
+  chips leave flex-wrap for a deliberate <b>two-column grid</b> (grades 2&times;3
+  with skip, axes 2&times;2, &ldquo;+&thinsp;note&rdquo; on its own full-width
+  row) with 8px gutters against mis-taps; every interactive element &mdash;
+  chips, &#9432;, note, Likert stops, flag row, close &mdash; meets the
+  <b>44px floor</b>; the pin spends less of the screen (42px thumbnail,
+  smaller type) and its sticky offset tracks <code>--scrollpad</code>; the card
+  height is <code>svh</code>-based (<code>vh</code> fallback line first), never
+  a 100vh trap; text inputs get <code>font-size: 16px</code> (kills iOS
+  focus-zoom) plus <code>scroll-margin</code> so a focused field clears the
+  sticky pin and the keyboard; the brass files full-width. The <b>Likert turns
+  90&deg;</b>: A&rsquo;s thumbnail anchors the top end, B&rsquo;s the bottom,
+  and the five stops run full-width between them with captions at reading size
+  (0.64rem, up from five &asymp;60px slivers at 0.46rem); the decisive
+  ends&rsquo; heavy border rotates with the axis (top toward A, bottom toward
+  B), so direction still reads before the labels do.</p>
+
+  <p><b>6 &middot; The touch definition contract, restated for phones.</b>
+  Hover does not exist there, so the &#9432; path carries the full weight:
+  in the phone band it grows a dashed border and a visible <b>define</b> label
+  (44px target, right-aligned on every question row &mdash; a findable place),
+  and its legend card opens <b>in flow</b> as a full-width sheet that pushes
+  the ledger down inside the card&rsquo;s own scroll &mdash; comfortable at
+  320px, impossible to clip, nothing floats over a tappable chip, tap-outside
+  and Esc still close it. A plain tap on a chip still only ever selects.
+  Tooltips remain pointer/keyboard-only garnish; the <code>aria-describedby</code>
+  definitions remain the screen-reader path. Nothing anywhere depends on
+  hover.</p>
+
+  <p><b>7 &middot; What implementation must watch on real phones.</b> (i) The
+  container-query floor is Safari 16 / Chrome 105; production currently uses
+  viewport media queries for the modal &mdash; port these bands either by
+  adopting the clamp-container inside <code>.jd-turn</code> or by translating
+  to <code>@media</code>, but pick ONE mechanism there too. Since the real
+  modal is near-fullscreen on phones, container width &asymp; viewport width
+  and the bands translate 1:1. (ii) iOS focus-zoom keys on the input&rsquo;s
+  computed font-size at focus time in the VIEWPORT &mdash; the 16px rule must
+  actually apply on phones (in production, guard it with the same band that
+  is active there; the mockup&rsquo;s narrow container is only equal to the
+  viewport on a real phone). (iii) The virtual keyboard: the note inputs are
+  focused with <code>preventScroll</code> then <code>scrollIntoView</code>
+  (<code>block:'nearest'</code>) and carry <code>scroll-margin</code>, but iOS
+  resizes the visual viewport, not the layout viewport &mdash; verify the
+  field stays visible on a device, and keep
+  <code>overscroll-behavior: contain</code> + production&rsquo;s
+  <code>html.jd-turn-open&#123;overflow:hidden&#125;</code> so the internal
+  scroll never chains to the page. (iv) <code>svh</code> (Safari 15.4+) with
+  the plain-<code>vh</code> fallback declaration FIRST &mdash; do not reorder
+  the two height lines. (v) <code>-webkit-tap-highlight-color</code> is
+  cleared on chips, stops and &#9432; because selection/expansion states are
+  drawn explicitly; leave the ghost highlight off anything with its own
+  pressed state. (vi) A tap that closes an in-flow legend reflows the ledger
+  under the finger; the pointerdown-then-click ordering means the close
+  happens first and the click lands on the moved layout &mdash; production
+  should re-hit-test (as here) rather than cache the target.</p>
 </div>
 
 <!-- ==================================================================== -->
@@ -1478,12 +1636,18 @@ noscript p {
 
   var MAX_NOTE = 500;
   var GEN = { a: "01J…A", b: "01J…B" }; /* mock gen ids for the payload */
+  var STAGE_NAME = { w: "the desk stage", n: "the 375px stage" };
 
-  var state = {
-    a: { grade: null, axes: {}, notes: {}, flag: false, flagNote: "" },
-    b: { grade: null, axes: {}, notes: {}, flag: false, flagNote: "" },
-    verdict: null
-  };
+  /* one state per staged instance ('w' desk, 'n' narrow) — both are the same
+     instrument; the payload panel mirrors whichever was touched last */
+  var states = {};
+  function freshState() {
+    return {
+      a: { grade: null, axes: {}, notes: {}, flag: false, flagNote: "" },
+      b: { grade: null, axes: {}, notes: {}, flag: false, flagNote: "" },
+      verdict: null
+    };
+  }
 
   function esc(s) {
     return String(s == null ? "" : s)
@@ -1507,7 +1671,6 @@ noscript p {
   }
 
   /* ---- render: one chip -------------------------------------------------- */
-  function defId(slot, q, val) { return "d-" + slot + "-" + q + "-" + val; }
   var defsHTML = "";
   function chip(o) {
     /* o: {name, value, label, desc, meta, cls, tipTitle} */
@@ -1528,7 +1691,14 @@ noscript p {
     return chip({ name: name, value: "", label: "skip", cls: " lg-chip--skip",
       meta: meta, tipTitle: "skip",
       desc: "Files nothing for " + what + ".",
-      defId: defId(name, "skip", 0) });
+      defId: "d-" + name + "-skip" });
+  }
+  /* the ⓘ: glyph-only at desk width; the .lg-info-lbl word shows in the
+     phone band, where the button is the whole touch path to definitions */
+  function infoBtn(legId, label) {
+    return '<button type="button" class="lg-info" aria-expanded="false"' +
+      ' aria-controls="' + legId + '" aria-label="' + esc(label) + '">ⓘ' +
+      '<span class="lg-info-lbl" aria-hidden="true">define</span></button>';
   }
 
   /* ---- render: one ledger row -------------------------------------------- */
@@ -1542,37 +1712,37 @@ noscript p {
     return h + '</dl><p class="lg-leg-foot">esc or tap outside to close</p></div>';
   }
   function row(opts) {
-    /* opts: {slot, q, qLabel, grade?, options[{rank,label,description}],
+    /* opts: {inst, slot, q, qLabel, grade?, options[{rank,label,description}],
               legendSub, noteAxis?} */
-    var name = "lg-" + opts.slot + "-" + opts.q;
-    var legId = "leg-" + opts.slot + "-" + opts.q;
-    var meta = ' data-slot="' + opts.slot + '" data-q="' + opts.q + '"' +
+    var name = "lg-" + opts.inst + "-" + opts.slot + "-" + opts.q;
+    var legId = "leg-" + opts.inst + "-" + opts.slot + "-" + opts.q;
+    var meta = ' data-inst="' + opts.inst + '" data-slot="' + opts.slot +
+      '" data-q="' + opts.q + '"' +
       (opts.noteAxis ? ' data-kind="axis"' : ' data-kind="grade"');
     var chips = opts.options.map(function (v) {
       return chip({ name: name, value: v.rank, label: v.label,
         desc: v.description, meta: meta,
-        defId: defId(opts.slot, opts.q, v.rank) });
+        defId: "d-" + name + "-" + v.rank });
     }).join("");
     chips += skipChip(name, meta,
       opts.noteAxis ? "this axis" : "the overall grade");
     var noteBits = "";
     if (opts.noteAxis) {
-      var nid = "note-" + opts.slot + "-" + opts.q;
+      var nid = "note-" + opts.inst + "-" + opts.slot + "-" + opts.q;
       chips += '<button type="button" class="lg-notebtn" aria-expanded="false"' +
-        ' aria-controls="' + nid + '" data-notebtn data-slot="' + opts.slot +
-        '" data-q="' + opts.q + '">+ note</button>';
+        ' aria-controls="' + nid + '" data-notebtn data-inst="' + opts.inst +
+        '" data-slot="' + opts.slot + '" data-q="' + opts.q + '">+ note</button>';
       noteBits = '<div class="lg-noterow" id="' + nid + '" hidden>' +
         '<input type="text" class="jd-turn-input" maxlength="' + MAX_NOTE + '"' +
         ' placeholder="a note, if you have one"' +
         ' aria-label="note on ' + esc(opts.qLabel) + " for response " +
-        opts.slot.toUpperCase() + '" data-note data-slot="' + opts.slot +
-        '" data-q="' + opts.q + '"></div>';
+        opts.slot.toUpperCase() + '" data-note data-inst="' + opts.inst +
+        '" data-slot="' + opts.slot + '" data-q="' + opts.q + '"></div>';
     }
     return '<div class="lg-row' + (opts.grade ? " lg-row--grade" : "") + '">' +
       '<div class="lg-q"><span class="lg-qname">' + esc(opts.qLabel) + "</span>" +
-      '<button type="button" class="lg-info" aria-expanded="false"' +
-      ' aria-controls="' + legId + '" aria-label="all definitions: ' +
-      esc(opts.qLabel) + ", response " + opts.slot.toUpperCase() + '">ⓘ</button>' +
+      infoBtn(legId, "define " + opts.qLabel + " (response " +
+        opts.slot.toUpperCase() + "): the whole scale") +
       "</div>" +
       '<div class="lg-chips" role="radiogroup" aria-label="' + esc(opts.qLabel) +
       " for response " + opts.slot.toUpperCase() + '">' + chips + "</div>" +
@@ -1583,43 +1753,45 @@ noscript p {
   }
 
   /* ---- render: one response panel ---------------------------------------- */
-  function panel(slot) {
+  function panel(inst, slot) {
     var h = '<div class="lg-pin">' +
-      '<div class="lg-thumb" id="thumb-' + slot + '" role="img" aria-label="response ' +
+      '<div class="lg-thumb" id="thumb-' + inst + '-' + slot +
+      '" role="img" aria-label="response ' +
       slot.toUpperCase() + ', small"></div>' +
       '<span class="lg-pin-name">Response ' + slot.toUpperCase() + "</span>" +
-      '<span class="lg-pin-grade" id="pin-grade-' + slot +
+      '<span class="lg-pin-grade" id="pin-grade-' + inst + '-' + slot +
       '" aria-hidden="true">ungraded</span></div>';
-    h += row({ slot: slot, q: "grade", qLabel: "overall grade", grade: true,
-      options: TAXONOMY.grades,
+    h += row({ inst: inst, slot: slot, q: "grade", qLabel: "overall grade",
+      grade: true, options: TAXONOMY.grades,
       legendSub: "The headline call — the drawer’s five-tier scale." });
     TAXONOMY.axes.forEach(function (ax) {
-      h += row({ slot: slot, q: ax.id, qLabel: ax.label, noteAxis: true,
-        options: ax.values, legendSub: ax.description });
+      h += row({ inst: inst, slot: slot, q: ax.id, qLabel: ax.label,
+        noteAxis: true, options: ax.values, legendSub: ax.description });
     });
     h += '<label class="jd-turn-check lg-flag">' +
-      '<input type="checkbox" data-flag data-slot="' + slot + '">' +
+      '<input type="checkbox" data-flag data-inst="' + inst +
+      '" data-slot="' + slot + '">' +
       "<span>this response is broken or offensive</span></label>" +
-      '<div class="lg-flagnote" id="flagnote-' + slot + '" hidden>' +
+      '<div class="lg-flagnote" id="flagnote-' + inst + '-' + slot + '" hidden>' +
       '<input type="text" class="jd-turn-input" maxlength="' + MAX_NOTE + '"' +
       ' placeholder="what is wrong with it?"' +
       ' aria-label="note on the report for response ' + slot.toUpperCase() + '"' +
-      ' data-flagnote data-slot="' + slot + '"></div>';
+      ' data-flagnote data-inst="' + inst + '" data-slot="' + slot + '"></div>';
     return h;
   }
 
   /* ---- render: the Likert ------------------------------------------------- */
-  function likert() {
+  function likert(inst) {
     var h = "";
     LIKERT.forEach(function (o) {
-      var did = "d-verdict-" + o.key;
+      var did = "d-" + inst + "-verdict-" + o.key;
       defsHTML += '<span id="' + did + '">' + esc(o.tip) + "</span>";
       h += '<label class="lg-likchip"' +
         (o.strength === "decisive" ? ' data-side="' + o.winner + '"' : "") +
         ' data-tipt="' + esc(o.t === "=" ? "dead even" : o.t + " · " + o.s) + '"' +
         ' data-tipb="' + esc(o.tip) + '">' +
-        '<input type="radio" name="lg-verdict" value="' + o.key + '"' +
-        ' aria-describedby="' + did + '" data-verdict>' +
+        '<input type="radio" name="lg-' + inst + '-verdict" value="' + o.key + '"' +
+        ' aria-describedby="' + did + '" data-verdict data-inst="' + inst + '">' +
         '<span class="lg-lik-t" aria-hidden="true">' + esc(o.t) + "</span>" +
         '<span class="lg-lik-s">' + esc(o.s) + "</span>" +
         '<span class="vh">' + esc(o.t === "=" ? "dead even" : o.t + ", " + o.s) + "</span>" +
@@ -1628,25 +1800,57 @@ noscript p {
     return h;
   }
 
-  /* ---- build the DOM ------------------------------------------------------ */
-  $("#panel-a").innerHTML = panel("a");
-  $("#panel-b").innerHTML = panel("b");
-  $("#likert").innerHTML = likert();
-  $("#leg-verdict").outerHTML = legendCard("leg-verdict",
-    "the verdict · the scale",
-    "One required call: which response belongs in the drawer, and by how much. A is anchored left, B right.",
-    LIKERT.map(function (o) {
-      return [o.t === "=" ? "dead even" : o.t + " · " + o.s, o.tip];
-    }));
-  $("#defs").innerHTML = defsHTML;
-  placeThumb("thumb-a", "tpl-a");
-  placeThumb("thumb-b", "tpl-b");
-  placeThumb("vthumb-a", "tpl-a");
-  placeThumb("vthumb-b", "tpl-b");
-  placeThumb("vthumb-a-m", "tpl-a");
-  placeThumb("vthumb-b-m", "tpl-b");
+  /* ---- render: one whole sheet (the scroller's content) ------------------- */
+  function sheetHTML(inst) {
+    return '<h2 class="jd-turn-title">Grade what came back</h2>' +
+      '<p class="jd-turn-copy">All of it is optional except the verdict at the ' +
+      "end — skip anything that doesn’t apply. Titles only up here: " +
+      "<b>hover or arrow onto any chip</b> for its definition, or open " +
+      "<b>ⓘ define</b> for a question’s whole scale at once.</p>" +
+      '<section class="lg-panel">' + panel(inst, "a") + "</section>" +
+      '<section class="lg-panel">' + panel(inst, "b") + "</section>" +
+      '<section class="lg-verdict">' +
+      '<div class="lg-vhead"><h3 class="jd-turn-sub">The verdict</h3>' +
+      infoBtn("leg-" + inst + "-verdict", "define the verdict scale") + "</div>" +
+      '<p class="jd-turn-copy">Which belongs in the drawer — and by how much? ' +
+      "This one is required; a dead-even call files as a tie.</p>" +
+      '<div class="lg-vgrid">' +
+      '<figure class="lg-vthumb lg-vthumb--a"><div class="lg-thumb" id="vthumb-' +
+      inst + '-a" role="img" aria-label="response A, small"></div>' +
+      "<figcaption>A</figcaption></figure>" +
+      '<div class="lg-lik" role="radiogroup" aria-label="which response is ' +
+      'better, and by how much (A anchored at one end, B at the other)">' +
+      likert(inst) + "</div>" +
+      '<figure class="lg-vthumb lg-vthumb--b"><div class="lg-thumb" id="vthumb-' +
+      inst + '-b" role="img" aria-label="response B, small"></div>' +
+      "<figcaption>B</figcaption></figure>" +
+      legendCard("leg-" + inst + "-verdict", "the verdict · the scale",
+        "One required call: which response belongs in the drawer, and by how " +
+        "much. A holds one end of the scale, B the other.",
+        LIKERT.map(function (o) {
+          return [o.t === "=" ? "dead even" : o.t + " · " + o.s, o.tip];
+        })) +
+      "</div></section>" +
+      '<div class="jd-turn-actions">' +
+      '<button type="button" class="jd-turn-go" data-file data-inst="' + inst +
+      '" disabled>file it</button>' +
+      '<span class="lg-filestat" data-filestat role="status" aria-live="polite">' +
+      "</span></div>";
+  }
 
-  var scroller = $("#scroll");
+  /* ---- build the DOM: both stages, one instrument ------------------------- */
+  var sheets = document.querySelectorAll("[data-sheet]");
+  Array.prototype.forEach.call(sheets, function (sc) {
+    var inst = sc.getAttribute("data-sheet");
+    states[inst] = freshState();
+    sc.innerHTML = sheetHTML(inst);
+    placeThumb("thumb-" + inst + "-a", "tpl-a");
+    placeThumb("thumb-" + inst + "-b", "tpl-b");
+    placeThumb("vthumb-" + inst + "-a", "tpl-a");
+    placeThumb("vthumb-" + inst + "-b", "tpl-b");
+  });
+  $("#defs").innerHTML = defsHTML;
+
   var tip = $("#tip"), tipT = $("#tip-t"), tipB = $("#tip-b");
 
   /* ---- tooltip: one shared element ---------------------------------------
@@ -1690,7 +1894,9 @@ noscript p {
     /* re-evaluated on the next focusin; hide now so nothing lingers */
     if (tipAnchor) hideTip();
   });
-  scroller.addEventListener("scroll", hideTip, { passive: true });
+  Array.prototype.forEach.call(sheets, function (sc) {
+    sc.addEventListener("scroll", hideTip, { passive: true });
+  });
   window.addEventListener("scroll", hideTip, { passive: true });
 
   /* ---- legend cards: one open at a time ---------------------------------- */
@@ -1744,23 +1950,36 @@ noscript p {
       if (TAXONOMY.grades[i].rank === rank) return TAXONOMY.grades[i].label;
     return null;
   }
+  /* focus without yanking the scroller, then settle the field into view —
+     scroll-margin (phone band) keeps it clear of the sticky pin and leaves
+     headroom for the on-screen keyboard */
+  function focusInput(wrap) {
+    var inp = wrap.querySelector("input");
+    if (!inp) return;
+    try { inp.focus({ preventScroll: true }); } catch (err) { inp.focus(); }
+    if (inp.scrollIntoView) inp.scrollIntoView({ block: "nearest" });
+  }
   document.addEventListener("change", function (e) {
     var t = e.target;
+    var inst = t.getAttribute ? t.getAttribute("data-inst") : null;
+    if (!inst || !states[inst]) return;
     if (t.matches && t.matches("[data-verdict]")) {
       syncGroup(t);
       for (var i = 0; i < LIKERT.length; i++)
-        if (LIKERT[i].key === t.value) state.verdict = LIKERT[i];
-      $("#file").disabled = !state.verdict;
-      refreshPayload();
+        if (LIKERT[i].key === t.value) states[inst].verdict = LIKERT[i];
+      var sheet = t.closest("[data-sheet]");
+      var go = sheet && sheet.querySelector("[data-file]");
+      if (go) go.disabled = !states[inst].verdict;
+      refreshPayload(inst);
       return;
     }
     if (t.matches && t.matches("[data-flag]")) {
       var slot = t.getAttribute("data-slot");
-      state[slot].flag = t.checked;
-      var fn = document.getElementById("flagnote-" + slot);
+      states[inst][slot].flag = t.checked;
+      var fn = document.getElementById("flagnote-" + inst + "-" + slot);
       if (fn) fn.hidden = !t.checked;
-      if (t.checked && fn) { var inp = fn.querySelector("input"); if (inp) inp.focus(); }
-      refreshPayload();
+      if (t.checked && fn) focusInput(fn);
+      refreshPayload(inst);
       return;
     }
     if (t.type === "radio" && t.hasAttribute("data-q")) {
@@ -1768,50 +1987,59 @@ noscript p {
       var s = t.getAttribute("data-slot"), q = t.getAttribute("data-q");
       var val = t.value === "" ? null : Number(t.value);
       if (t.getAttribute("data-kind") === "grade") {
-        state[s].grade = val;
-        var pin = document.getElementById("pin-grade-" + s);
+        states[inst][s].grade = val;
+        var pin = document.getElementById("pin-grade-" + inst + "-" + s);
         if (pin) pin.innerHTML = val == null
           ? "grade skipped" : "<b>" + esc(gradeLabel(val)) + "</b>";
       } else {
-        state[s].axes[q] = val;
+        states[inst][s].axes[q] = val;
       }
-      refreshPayload();
+      refreshPayload(inst);
     }
   });
   document.addEventListener("input", function (e) {
     var t = e.target;
+    var inst = t.getAttribute ? t.getAttribute("data-inst") : null;
+    if (!inst || !states[inst]) return;
     if (t.matches && t.matches("[data-note]")) {
-      state[t.getAttribute("data-slot")].notes[t.getAttribute("data-q")] =
+      states[inst][t.getAttribute("data-slot")].notes[t.getAttribute("data-q")] =
         t.value.slice(0, MAX_NOTE);
-      refreshPayload();
+      refreshPayload(inst);
     } else if (t.matches && t.matches("[data-flagnote]")) {
-      state[t.getAttribute("data-slot")].flagNote = t.value.slice(0, MAX_NOTE);
-      refreshPayload();
+      states[inst][t.getAttribute("data-slot")].flagNote =
+        t.value.slice(0, MAX_NOTE);
+      refreshPayload(inst);
     }
   });
   document.addEventListener("click", function (e) {
     var b = e.target.closest && e.target.closest("[data-notebtn]");
     if (b) {
-      var nid = b.getAttribute("aria-controls");
-      var rowEl = document.getElementById(nid);
+      var inst = b.getAttribute("data-inst");
+      var rowEl = document.getElementById(b.getAttribute("aria-controls"));
       var opening = rowEl.hidden;
       rowEl.hidden = !opening;
       b.setAttribute("aria-expanded", opening ? "true" : "false");
-      var noteVal = state[b.getAttribute("data-slot")]
+      var noteVal = states[inst][b.getAttribute("data-slot")]
         .notes[b.getAttribute("data-q")] || "";
       b.innerHTML = opening ? "− note"
         : (noteVal ? 'note <span class="has-note">✓</span>' : "+ note");
-      if (opening) { var inp = rowEl.querySelector("input"); if (inp) inp.focus(); }
+      if (opening) focusInput(rowEl);
       return;
     }
-    if (e.target.closest && e.target.closest("#file") && state.verdict) {
-      $("#filestat").textContent =
+    var f = e.target.closest && e.target.closest("[data-file]");
+    if (f && states[f.getAttribute("data-inst")] &&
+        states[f.getAttribute("data-inst")].verdict) {
+      var fsheet = f.closest("[data-sheet]");
+      var st = fsheet && fsheet.querySelector("[data-filestat]");
+      if (st) st.textContent =
         "filed · (mockup — nothing sent; the payload below is what would go)";
     }
   });
 
-  /* ---- the live payload (C1.3 shape + the proposed strength field) ------- */
-  function refreshPayload() {
+  /* ---- the live payload (C1.3 shape + the proposed strength field) -------
+     mirrors whichever stage was touched last; #payload-src says which */
+  function refreshPayload(inst) {
+    var state = states[inst];
     var ratings = [], orphans = [];
     ["a", "b"].forEach(function (slot) {
       var r = state[slot], entry;
@@ -1853,8 +2081,10 @@ noscript p {
       pre.appendChild(document.createTextNode("\n\n"));
       pre.appendChild(w);
     }
+    var src = $("#payload-src");
+    if (src) src.textContent = STAGE_NAME[inst] || inst;
   }
-  refreshPayload();
+  refreshPayload("w");
 }());
 </script>
 </body>

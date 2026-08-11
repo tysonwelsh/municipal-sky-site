@@ -292,6 +292,26 @@ noscript p {
 .bench-step:disabled { opacity: 0.45; cursor: default; }
 .bench-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
+/* ---- phone-only affordances (mobile pass) --------------------------------
+   Rendered always, shown only by the ≤430px container block below: the
+   compressed rail labels ("1 · A") and the folded commission. At desk width
+   both stay display:none, so the desk presentation is untouched. */
+.bench-step-short { display: none; }
+.bench-commission { display: none; margin: 0 0 0.4rem; }
+.bench-commission summary {
+  display: flex; align-items: center; min-height: 44px; cursor: pointer;
+  font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.bench-commission summary::-webkit-details-marker { display: none; }
+.bench-commission summary::before {
+  content: "▸"; margin-right: 0.5rem; color: var(--tred);
+}
+.bench-commission[open] summary::before { content: "▾"; }
+.bench-commission[open] summary { color: var(--tink); }
+.bench-commission summary:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.bench-commission .bench-copy { margin: 0.1rem 0 0.5rem; }
+
 /* ---- panels: persistent in the DOM, toggled hidden ---------------------- */
 .bench-panel[hidden] { display: none; }
 
@@ -443,16 +463,104 @@ noscript p {
   .bench-plate-art { transition: border-color 0.15s; }
 }
 
-/* ---- narrow-sheet degradation for the new chrome ------------------------ */
+/* ---- THE PHONE SHEET (mobile pass, 2026-08-11) — ≤430px container -------
+   375×667 baseline, 320px floor. The contract: no horizontal overflow,
+   every target ≥44px, the artwork visible without eating the screen, and
+   one definition path (the ⓘ popover — no hover exists on touch). */
 @container (max-width: 430px) {
-  .bench-head { padding: 12px 12px 10px; }
-  .bench-step { font-size: 0.5rem; letter-spacing: 0.08em; gap: 0.25rem; }
-  .bench-def { font-size: 0.56rem; letter-spacing: 0.12em; }
-  .bench-sel { width: 9.5em; font-size: 0.6rem; padding-right: 1.3rem; }
-  .bench-notebtn .bench-notebtn-word { display: none; } /* icon only */
-  .bench-plate-art { width: clamp(72px, 26cqw, 96px); }
+  .bench-head { padding: 10px 12px 8px; }
+  .bench-head .bench-title { font-size: 0.74rem; } /* production phone size */
+
+  /* the head goes on a budget: the long copy + verbatim commission fold
+     behind one ≥44px tap, so head = title + one summary line + the rail */
+  .bench-copy--desk { display: none; }
+  .bench-commission { display: block; }
+
+  /* the rail: three ≥44px chips, labels compressed to "1 · A / 2 · B /
+     3 · CALL"; the current step is barred red on the lifted paper tone —
+     obvious at a glance, and never carried by color alone (the bar) */
+  .bench-steps { gap: 5px; }
+  .bench-step {
+    min-height: 44px; gap: 0.3rem; padding: 0.25rem 0.15rem;
+    font-size: 0.6rem; letter-spacing: 0.1em;
+  }
+  .bench-step b { font-size: 0.74rem; }
+  .bench-step-word { display: none; }
+  .bench-step-short { display: inline; }
+  .bench-step[aria-current="step"] {
+    background: var(--tpaper-hi);
+    box-shadow: inset 0 -3px 0 var(--tred);
+  }
+
+  /* scroll-padding keeps UA focus-scroll from parking a control under the
+     sticky plate (note inputs revealed + focused, step-head focus) */
+  .bench-scroll { padding: 12px 12px 16px; scroll-padding-top: 104px; }
+
+  /* the plate: slimmer art + one-clause caption ≈ 90px — the drawing stays
+     in view for the whole panel without taking half a 667px screen */
+  .bench-plate { gap: 10px; padding: 2px 0 6px; }
+  .bench-plate-art { width: clamp(60px, 21cqw, 78px); }
   .bench-plate-cap h3 { font-size: 0.68rem; }
+  .bench-plate-sub-more { display: none; } /* one clause, base type size */
+
+  /* question rows wrap deliberately: label line (rowhead + ✎) above, a
+     full-width ≥48px select below — the whole width is the tap target */
+  .bench-q { flex-wrap: wrap; gap: 0 8px; }
+  .bench-sel {
+    flex: 1 1 100%; width: 100%; min-height: 48px;
+    margin: 2px 0 8px;
+    font-size: 0.72rem; padding: 0.3rem 1.6rem 0.3rem 0.6rem;
+  }
+  .bench-notebtn { min-height: 44px; min-width: 44px; }
+  .bench-notebtn .bench-notebtn-word { display: none; } /* icon only */
+
+  /* PRESERVED definition affordance — narrow TUNE ONLY, declared in the
+     notes: the target grows to 44px and the ⓘ to 18px; base rules and
+     behavior untouched */
+  .bench-def { min-height: 44px; font-size: 0.6rem; letter-spacing: 0.12em; }
+  .bench-i { width: 18px; height: 18px; font-size: 0.64rem; }
+  /* PRESERVED popover — narrow TUNE ONLY, declared: phone-legible type;
+     on touch this popover carries every definition, so it cannot whisper */
+  .bench-pop { font-size: 0.72rem; line-height: 1.6; padding: 0.6rem 0.75rem 0.7rem; }
+  .bench-pop dt { font-size: 0.64rem; }
+
+  .bench-note, .bench-flagnote-in { min-height: 44px; }
+  .bench-check { min-height: 44px; }
+  .bench-check input { width: 20px; height: 20px; }
+
   .bench-plates2 { gap: 8px; }
+
+  /* the thumb foot: the advancing action (next / file) full width on top,
+     back full width under it — both ≥48px, both reachable one-handed */
+  .bench-nav { flex-wrap: wrap; gap: 8px; }
+  .bench-btn { min-height: 48px; }
+  .bench-btn--next, .bench-btn[data-act="file"] {
+    flex: 1 1 100%; order: -1; margin-left: 0;
+  }
+  .bench-btn--ghost { flex: 1 1 100%; }
+  .bench-office summary { min-height: 44px; }
+}
+
+/* ---- the 320px floor (a 320px phone gives a ~270–300px container) ------- */
+@container (max-width: 340px) {
+  .bench-step { letter-spacing: 0.06em; }
+  /* PRESERVED likert — narrow TUNE ONLY, declared in the notes: under a
+     ~300px container the five caps ("decisively") kiss their ~45px columns,
+     so tracking goes to zero, the caps drop 0.02rem, and the gap 6→4px.
+     Geometry, order, stop heights (≥44px) and behavior unchanged. */
+  .bench-likert { gap: 4px; }
+  .bench-lk-cap { font-size: 0.45rem; letter-spacing: 0; }
+}
+
+/* ---- real phones (viewport, not container) ------------------------------
+   Production parity: junk-drawer.css gives .jd-turn-input font-size 16px
+   under this same query — 16px kills iOS focus-zoom, which would otherwise
+   leave the fixed modal parked half off-screen. Selects count: iOS zooms
+   on any focused control under 16px. Container queries cannot see the
+   device, so the demo's narrow proof shows the layout but only a true
+   phone viewport shows the 16px type. */
+@media (max-width: 768px) {
+  .bench-sel, .bench-note, .bench-flagnote-in { font-size: 16px; }
 }
 
 /* ---------------- notes --------------------------------------------------- */
@@ -482,7 +590,9 @@ a time: the visitor grades <b>A</b> completely, then <b>B</b>, then makes
 &mdash; and files one batch. Every scale is a <b>dropdown</b>: one line per
 question, titles only on the closed control and in the list; definitions stay in
 the one preserved system &mdash; hover or focus a row for its meaning, the
-&#9432; unfolds the whole scale in&#8209;flow. Everything below is live.</p>
+&#9432; unfolds the whole scale in&#8209;flow. Everything below is live.
+<b>2026&#8209;08&#8209;11:</b> a dedicated mobile pass &mdash; see the narrow
+proof and note 7.</p>
 
 <div class="sec-head"><span>THE INSTRUMENT</span> &middot; live at desk width &mdash; scrim + sheet, real turn-modal tokens</div>
 
@@ -506,9 +616,13 @@ a tie)</p>
     <div class="bench-sheet" id="n1"></div>
   </div>
 </div>
-<p class="mock-label"><b>PHONE WIDTH</b> &mdash; rows hold one line (the note
-affordance drops to its glyph) &middot; the dropdowns open the OS picker &middot;
-the preserved likert degrades exactly as before</p>
+<p class="mock-label"><b>PHONE WIDTH</b> &mdash; the head folds the commission
+behind one tap &middot; the rail compresses to <b>1&nbsp;&middot;&nbsp;A /
+2&nbsp;&middot;&nbsp;B / 3&nbsp;&middot;&nbsp;CALL</b> chips, the current step
+barred red &middot; every scale is a full&#8209;width select under its own label
+line, opening the OS picker &middot; every target &ge;44px, next/file and back
+full width &middot; the preserved likert untouched save a declared
+&le;340px cap tune</p>
 
 <div class="rule"></div>
 
@@ -600,6 +714,49 @@ the preserved likert degrades exactly as before</p>
   static. (f) In production the sheet mounts inside the real turn modal, whose
   close/abandon path, focus trap and Escape layering are unchanged and out of
   scope here.</p>
+
+  <p><b>7 &middot; The mobile pass (2026&#8209;08&#8209;11).</b> A dedicated
+  rework for a 375&times;667 baseline with a 320px floor, all of it inside a
+  <code>@container (max-width: 430px)</code> block (plus a 340px floor block)
+  so the desk presentation is untouched. <b>What changed at phone width:</b>
+  the head goes on a budget &mdash; the long copy and the verbatim commission
+  fold behind one &ge;44px <code>&lt;details&gt;</code> tap (the copy is
+  rendered twice, inline for desk and folded for phone, CSS shows exactly
+  one; implementation may render once and restyle instead); the step rail
+  compresses to three &ge;44px chips labeled <code>1 &middot; A / 2 &middot;
+  B / 3 &middot; CALL</code>, the current chip barred red on the lifted paper
+  tone (never color alone); question rows wrap deliberately &mdash; label
+  line (rowhead + &#9998;) above, a full-width &ge;48px select below, so the
+  whole row width is the tap target; the sticky plate slims to ~90px (art
+  &le;78px, one-clause caption) so the drawing stays in view without taking
+  half the screen; next/file go full width on top with back full width under
+  them; every remaining target (&#9432; rowheads, &#9998;, flag row, note
+  inputs, office summary) hits 44px. <b>The touch definition contract:</b>
+  no hover exists on phones and the singleton tooltip is hover/focus-gated
+  by design (<code>(hover: hover)</code>), so the &#9432; in-flow popover
+  carries the full weight of every definition on touch &mdash; it is the one
+  path, its type is bumped to phone-legible size in the narrow block, and it
+  still pushes the sheet down rather than covering any control.
+  <b>Preserved-element narrow tuning, declared:</b> (i) the shared
+  <code>.bench-def</code>/<code>.bench-i</code> affordance grows to a 44px
+  target with an 18px ring, and <code>.bench-pop</code> type is enlarged
+  &mdash; additive overrides at &le;430px, base rules and behavior
+  untouched; (ii) the likert itself needed exactly one floor tweak at
+  &le;340px: cap tracking to zero, caps 0.47&rarr;0.45rem, gap 6&rarr;4px,
+  because "decisively" kisses its ~45px column once the container drops
+  under ~300px (a 320px phone yields ~270&ndash;300px depending on chrome)
+  &mdash; geometry, order, stop heights and behavior unchanged, and nothing
+  moves at 375px. <b>What implementation must watch on real phones:</b> the 16px
+  control font rides a <code>@media (max-width: 768px)</code> viewport query
+  (production's own <code>.jd-turn-input</code> rule) because container
+  queries cannot see the device &mdash; verify no iOS focus-zoom on selects
+  AND note inputs; <code>scroll-padding-top</code> on the scroll region
+  keeps UA focus-scroll from parking a revealed note input under the sticky
+  plate, but the on-screen keyboard interacts with the visual viewport in
+  version-specific ways &mdash; test a note near the fold on real iOS;
+  the real modal's &#10005; occupies the head's top-right 44px, which the
+  title margin still clears; and the OS select sheet is the picker &mdash;
+  do not intercept it.</p>
 </div>
 
 <!-- ==================================================================== -->
@@ -1498,8 +1655,9 @@ the preserved likert degrades exactly as before</p>
       '<div class="bench-plate-cap">' +
       '<h3 id="' + headingId + '" tabindex="-1" data-stephead>Response ' +
       slot.toUpperCase() + '</h3>' +
-      '<span class="bench-plate-sub">graded alone · no names until filed ' +
-      '· stays in view while you grade</span></div></div>';
+      '<span class="bench-plate-sub">graded alone · no names until filed' +
+      '<span class="bench-plate-sub-more"> · stays in view while you grade' +
+      '</span></span></div></div>';
   }
 
   /* ---- one compact line per question: rowhead · note · dropdown */
@@ -1611,22 +1769,30 @@ the preserved likert degrades exactly as before</p>
 
   /* ---- an instrument: head + rail + panels, all state kept in the DOM ---- */
   var STEPS = [
-    { key: 'a', num: '1', word: 'response A' },
-    { key: 'b', num: '2', word: 'response B' },
-    { key: 'call', num: '3', word: 'the call' }
+    { key: 'a', num: '1', word: 'response A', short: 'A' },
+    { key: 'b', num: '2', word: 'response B', short: 'B' },
+    { key: 'call', num: '3', word: 'the call', short: 'call' }
   ];
   function buildInstrument(sheet, inst) {
+    /* the head copy exists twice: inline at desk width, folded behind a
+       <details> at phone width (mobile pass) — CSS shows exactly one */
+    var copy = 'One at a time: A alone, then B alone, then the ' +
+      'call. Everything is optional except the call. The commission, verbatim ' +
+      '— “' + esc(PROMPT) + '”';
     var h = '<div class="bench-head">' +
       '<h2 class="bench-title">Grade what came back</h2>' +
-      '<p class="bench-copy">One at a time: A alone, then B alone, then the ' +
-      'call. Everything is optional except the call. The commission, verbatim ' +
-      '— “' + esc(PROMPT) + '”</p>' +
+      '<p class="bench-copy bench-copy--desk">' + copy + '</p>' +
+      '<details class="bench-commission">' +
+      '<summary>how this works · the commission</summary>' +
+      '<p class="bench-copy">' + copy + '</p></details>' +
       '<nav class="bench-steps" aria-label="survey progress — three steps">';
     STEPS.forEach(function (s, i) {
       h += '<button type="button" class="bench-step" data-goto="' + s.key +
         '" aria-label="step ' + (i + 1) + ' of 3 — ' + esc(s.word) + '"' +
         (i === 0 ? ' aria-current="step"' : ' disabled') +
-        '><b>' + s.num + '</b><span>' + esc(s.word) + '</span></button>';
+        '><b>' + s.num + '</b><span class="bench-step-word">' + esc(s.word) +
+        '</span><span class="bench-step-short" aria-hidden="true">· ' +
+        esc(s.short) + '</span></button>';
     });
     h += '</nav></div><div class="bench-scroll">' +
       panelResponse(inst, 'a',
