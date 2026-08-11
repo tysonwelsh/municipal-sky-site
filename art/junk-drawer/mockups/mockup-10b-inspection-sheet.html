@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 10B &middot; THE INSPECTION SHEET</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 10B · THE INSPECTION SHEET (survey-instrument
+   redesign, owner direction 2026-08-11 — one of three approaches)
+
+   THESIS: the instrument as an artifact. The drawer already grades like a
+   meat inspector (Prime/Choice/Select/Standard/Utility is the USDA register
+   on purpose), so the survey stops apologizing for it: the rate+compare
+   states become ONE paper inspection form — FORM JD-107, SPECIMEN INSPECTION
+   REPORT — the visitor fills in as the inspector. Rubber-stamp grade chips,
+   punch-box axis lines, a CONDEMNED stamp for the report path, a five-stop
+   needle comparator between the exhibits, and FILE THIS REPORT at the foot.
+
+   Restraint rule this page holds itself to: form fiction in the CHROME,
+   modern affordance in the INTERACTION — real radios in real radiogroups,
+   hit targets ≥44px, visible focus rings, one coherent footnote system for
+   definitions (hover / keyboard-focus tooltips + tappable footnote marks
+   that unfold typed small print inline), prefers-reduced-motion honored.
+
+   Everything renders from a JS const carrying the REAL taxonomy.json subset
+   (grades + the five live axes, verbatim; defunct axes excluded), exactly as
+   production renders from the payload. The two exhibits are the real
+   production SVGs from items/2026-08-05-microscope-slide/ (claude-opus-5 as
+   A, claude-sonnet-5 as B), inlined once each in <template>s and minted per
+   placement with namespaced ids so their defs never collide.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the turn-modal tokens, VERBATIM from junk-drawer.css ------------------ */
+  --tpaper: #e9dcb4;
+  --tpaper-hi: #f3e9c8;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --trule: rgba(74, 53, 18, 0.34);
+  --trule-2: rgba(74, 53, 18, 0.18);
+  --tred: #b3402f;
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem;
+  overflow-x: hidden;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.4rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.sec-head {
+  max-width: 1060px; margin: 2.6rem auto 0.9rem;
+  font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: #8a8272;
+}
+.sec-head span { color: var(--plot-red); }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+.rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+
+/* ---------------- the staged modal: scrim + sheet, real tokens -----------
+   Production's .jd-turn-scrim is position:fixed with an internal scroll
+   region; staged on a page, the scrim is an in-flow block and the sheet
+   grows to its content so the whole form can be read by scrolling the PAGE.
+   Chrome (border, double hairline, close ✕, paper + grain) is the real
+   turn-modal recipe. */
+.stage {
+  max-width: 1060px; margin: 0 auto;
+}
+.turn-scrim {
+  display: flex; justify-content: center; align-items: flex-start;
+  padding: clamp(12px, 3vw, 34px) 12px;
+  background: rgba(10, 5, 1, 0.58);
+}
+.turn-card {
+  position: relative;
+  width: min(680px, 100%);
+  color: var(--tink);
+  font-family: var(--tmono);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+.turn-card::before {
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+.turn-close {
+  position: absolute; top: 8px; right: 8px; z-index: 6;
+  min-width: 44px; min-height: 44px;
+  border: 0; background: none; cursor: not-allowed;
+  font-family: var(--tmono); font-size: 0.78rem; line-height: 1;
+  color: var(--tink-2);
+}
+.sheet {
+  position: relative; z-index: 1;
+  padding: 20px 22px 24px;
+}
+@media (max-width: 600px) {
+  .turn-scrim { padding: 10px 6px; }
+  .sheet { padding: 16px 12px 20px; }
+}
+
+/* ---------------- the form header ---------------------------------------- */
+.fh {
+  display: flex; align-items: stretch; gap: 10px;
+  margin: 0 48px 0.6rem 0; /* clear the ✕ target */
+  padding-bottom: 0.55rem;
+  border-bottom: 2px solid var(--tink);
+}
+.fh-no {
+  flex: 0 0 auto; align-self: center;
+  padding: 4px 8px;
+  border: 2px solid var(--tink);
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.14em;
+  line-height: 1.5; text-align: center;
+}
+.fh-mid { flex: 1 1 auto; min-width: 0; align-self: center; }
+.fh-title {
+  font-size: 0.86rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+}
+.fh-sub {
+  margin-top: 2px;
+  font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.fh-dup {
+  flex: 0 0 auto; align-self: center;
+  padding: 3px 6px;
+  border: 1px solid var(--tred); color: var(--tred);
+  font-size: 0.5rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; text-align: center; line-height: 1.6;
+  transform: rotate(2deg); opacity: 0.75;
+}
+@media (max-width: 480px) { .fh-dup { display: none; } }
+.fh-meta {
+  margin: 0 0 0.55rem;
+  border-bottom: 1px solid var(--trule);
+  font-size: 0.62rem; line-height: 1.6;
+}
+.fh-meta-row {
+  display: flex; flex-wrap: wrap; gap: 0.15rem 1.2rem;
+  padding: 0.3rem 0;
+}
+.fh-meta-row + .fh-meta-row { border-top: 1px solid var(--trule-2); }
+.fh-k {
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--tink-2);
+  margin-right: 0.45rem;
+}
+.fh-v { letter-spacing: 0.04em; }
+.fh-prompt { font-style: italic; }
+.smallprint {
+  margin: 0 0 1.1rem;
+  font-size: 0.6rem; line-height: 1.7; letter-spacing: 0.03em;
+  color: var(--tink-2);
+}
+.smallprint b { color: var(--tink); }
+
+/* ---------------- items --------------------------------------------------- */
+.item {
+  margin: 0 0 1.6rem; padding-top: 0.8rem;
+  border-top: 1px solid var(--trule);
+}
+.item-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem;
+  margin: 0 0 0.7rem;
+  font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+}
+.item-no {
+  padding: 1px 6px; border: 1.5px solid var(--tink);
+  font-size: 0.58rem; letter-spacing: 0.16em;
+}
+.item-dim {
+  flex-basis: 100%;
+  font-weight: 400; font-size: 0.56rem; letter-spacing: 0.14em;
+  color: var(--tink-2);
+}
+
+/* ---------------- the exhibit: artwork taped to the form ------------------ */
+.exhibit { margin: 0 0 1rem; }
+.ex-plate {
+  position: relative;
+  width: min(250px, 78%);
+  margin: 10px auto 0;
+  padding: 8px 8px 4px;
+  background: #f6efdc;
+  border: 1px solid var(--trule);
+  box-shadow: 2px 4px 10px -3px rgba(30, 18, 8, 0.4),
+              inset 0 0 20px rgba(58, 42, 18, 0.1);
+}
+.ex-a .ex-plate { transform: rotate(-0.9deg); }
+.ex-b .ex-plate { transform: rotate(0.8deg); }
+/* the tape strips */
+.ex-plate::before, .ex-plate::after {
+  content: ""; position: absolute; top: -9px; width: 58px; height: 19px;
+  background: rgba(235, 226, 186, 0.72);
+  border-left: 1px solid rgba(74, 53, 18, 0.18);
+  border-right: 1px solid rgba(74, 53, 18, 0.18);
+  box-shadow: 1px 2px 3px -1px rgba(30, 18, 8, 0.28);
+}
+.ex-plate::before { left: -16px; transform: rotate(-38deg); }
+.ex-plate::after { right: -16px; transform: rotate(38deg); }
+.ex-art { aspect-ratio: 1 / 1; }
+.ex-art svg { display: block; width: 100%; height: 100%; }
+.ex-plate figcaption {
+  padding: 4px 0 3px;
+  font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.26em; text-transform: uppercase; text-align: center;
+  color: var(--tink);
+  border-top: 1px dashed var(--trule);
+  margin-top: 6px;
+}
+
+/* ---------------- a form line: label + footnote mark + options ------------ */
+.line { margin: 0 0 0.9rem; }
+.line-head {
+  display: flex; align-items: baseline; gap: 0.1rem;
+  margin: 0 0 0.35rem;
+}
+.line-label {
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--tink);
+}
+/* the footnote mark — the explicit touch affordance for definitions. The
+   glyph is small (a superscript is), the TARGET is not: the ::before pad
+   extends the hit area to ~44px without disturbing the typography. */
+.fn-mark {
+  position: relative;
+  border: 0; background: none; cursor: pointer;
+  padding: 0 0.2rem;
+  font-family: var(--tmono); font-size: 0.72rem; line-height: 1;
+  color: var(--tred);
+}
+.fn-mark::before { content: ""; position: absolute; inset: -14px -10px; }
+.fn-mark:hover { text-decoration: underline; }
+.fn-mark:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+.fn-mark[aria-expanded="true"] { text-decoration: underline; font-weight: 700; }
+
+/* ---------------- the footnote slip: typed small print, inline -----------
+   Unfolds IN FLOW under its line (it pushes the form down rather than
+   covering any of it — nothing is ever blocked). Esc / tap-outside folds. */
+.fnslip {
+  margin: 0.45rem 0 0.2rem;
+  padding: 0.5rem 0.65rem 0.55rem;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid var(--trule);
+  border-left: 3px solid var(--tink);
+  font-size: 0.62rem; line-height: 1.65; letter-spacing: 0.03em;
+  color: var(--tink);
+}
+.fnslip-h {
+  margin: 0 0 0.3rem;
+  font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--tink-2);
+}
+.fnslip p { margin: 0 0 0.25rem; }
+.fnslip p:last-child { margin-bottom: 0; }
+.fnslip b { letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.58rem; }
+.fnslip .fn-axis-desc { font-style: italic; color: var(--tink-2); }
+
+/* ---------------- grade: rubber-stamp chips ------------------------------- */
+.stamps {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  align-items: stretch;
+}
+.stamp {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 46px; min-width: 84px;
+  padding: 0.3rem 0.7rem;
+  border: 3px double var(--trule);
+  border-radius: 4px;
+  background: rgba(255, 250, 232, 0.35);
+  color: var(--tink-2);
+  font-size: 0.64rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.stamp input {
+  position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0;
+}
+.stamp:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* the inked pose: red, embossed edge, a hair of rotation — each stamp lands
+   at its own angle, as stamps do */
+.stamp:nth-of-type(1) { --sr: -2.2deg; }
+.stamp:nth-of-type(2) { --sr: 1.6deg; }
+.stamp:nth-of-type(3) { --sr: -1.3deg; }
+.stamp:nth-of-type(4) { --sr: 2deg; }
+.stamp:nth-of-type(5) { --sr: -1.7deg; }
+.stamp.is-on {
+  color: var(--tred);
+  border-color: var(--tred);
+  background: rgba(179, 64, 47, 0.07);
+  box-shadow: inset 0 0 0 1px rgba(179, 64, 47, 0.5),
+              inset 0 0 12px rgba(179, 64, 47, 0.14);
+  text-shadow: 0 0 0.4px rgba(179, 64, 47, 0.8);
+  transform: rotate(var(--sr, -1.8deg));
+}
+.stamp.thunk { animation: stampIn 0.24s ease-out; }
+@keyframes stampIn {
+  0%   { transform: rotate(var(--sr, -1.8deg)) scale(1.5); opacity: 0; }
+  55%  { opacity: 1; }
+  72%  { transform: rotate(var(--sr, -1.8deg)) scale(0.94); }
+  100% { transform: rotate(var(--sr, -1.8deg)) scale(1); }
+}
+/* n/a — clerk's shorthand, deliberately NOT a stamp */
+.stamp.na {
+  flex: 0 1 auto; min-width: 64px;
+  border: 1px dashed var(--trule);
+  border-radius: 0;
+  background: none;
+  font-weight: 400; font-style: italic;
+  letter-spacing: 0.1em; text-transform: none;
+  font-size: 0.62rem;
+}
+.stamp.na.is-on {
+  color: var(--tink); border-color: var(--tink);
+  background: rgba(51, 36, 15, 0.05);
+  box-shadow: none; text-shadow: none; transform: none;
+}
+.stamp.na.thunk { animation: none; }
+
+/* ---------------- axes: punch-box options --------------------------------- */
+.punches {
+  display: flex; flex-wrap: wrap; gap: 2px 16px;
+  align-items: center;
+}
+.punch {
+  position: relative;
+  display: flex; align-items: center; gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.2rem 0.3rem 0.2rem 0.1rem;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.punch input {
+  position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0;
+}
+.punch:focus-within { outline: 2px solid var(--tred); outline-offset: 1px; }
+.pbox {
+  position: relative; flex: 0 0 auto;
+  width: 15px; height: 15px;
+  border: 1.5px solid var(--tink);
+  background: rgba(255, 252, 240, 0.5);
+}
+/* the ink lands a little over the lines, as ink does */
+.punch.is-on .pbox::after {
+  content: "\2715";
+  position: absolute; left: -3px; top: -6px;
+  font-size: 19px; line-height: 1;
+  color: var(--tred);
+  transform: rotate(7deg);
+}
+.pt {
+  font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.punch.is-on .pt { color: var(--tink); font-weight: 700; }
+.punch.na .pt {
+  font-style: italic; text-transform: none; letter-spacing: 0.06em;
+}
+.punch.na .pbox { border-style: dashed; border-width: 1px; }
+.punch.na.is-on .pbox::after {
+  content: "\2013"; color: var(--tink); font-size: 15px; left: 1px; top: -2px;
+  transform: none;
+}
+
+/* ---------------- remarks: collapsed write-in line ------------------------ */
+.remarks { margin-top: 0.1rem; }
+.remarks-t {
+  min-height: 34px;
+  position: relative;
+  border: 0; background: none; cursor: pointer;
+  padding: 0.2rem 0.3rem 0.2rem 0;
+  font-family: var(--tmono); font-size: 0.6rem;
+  letter-spacing: 0.14em; text-transform: lowercase;
+  color: var(--tink-2);
+}
+.remarks-t::before { content: ""; position: absolute; inset: -6px -8px; }
+.remarks-t:hover { color: var(--tink); }
+.remarks-t:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.remarks-t[aria-expanded="true"] { color: var(--tink); }
+.rm-body { padding: 0.1rem 0 0.2rem; }
+.writein {
+  display: block; width: 100%;
+  background: transparent;
+  border: 0; border-bottom: 1px dashed rgba(51, 36, 15, 0.55);
+  padding: 0.35rem 0.15rem;
+  font-family: var(--tmono); font-size: 0.7rem; line-height: 1.5;
+  color: var(--tink);
+  border-radius: 0;
+}
+.writein:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+.writein::placeholder { color: rgba(51, 36, 15, 0.4); font-style: italic; }
+
+/* ---------------- the condemned stamp (report path) ----------------------- */
+.condemn-wrap {
+  margin-top: 1rem; padding-top: 0.6rem;
+  border-top: 1px solid var(--trule-2);
+}
+.condemn {
+  display: flex; align-items: center; gap: 0.8rem;
+  min-height: 48px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.condemn input {
+  position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0;
+}
+.condemn:focus-within .condemn-stamp {
+  outline: 2px solid var(--tred); outline-offset: 3px;
+}
+.condemn-stamp {
+  flex: 0 0 auto;
+  padding: 0.35rem 0.6rem;
+  border: 3px double var(--trule);
+  border-radius: 4px;
+  color: var(--tink-2);
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase;
+}
+.condemn-text {
+  font-size: 0.62rem; line-height: 1.55; letter-spacing: 0.04em;
+  color: var(--tink-2);
+}
+.condemn-wrap.is-flagged .condemn-stamp {
+  color: var(--tred); border-color: var(--tred);
+  background: rgba(179, 64, 47, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(179, 64, 47, 0.5),
+              inset 0 0 10px rgba(179, 64, 47, 0.15);
+  transform: rotate(-3deg);
+}
+.condemn-wrap.is-flagged .condemn-stamp { animation: stampIn 0.24s ease-out; --sr: -3deg; }
+.condemn-wrap.is-flagged .condemn-text { color: var(--tink); }
+.condemn-note { padding: 0.2rem 0 0; }
+.wl {
+  display: block;
+  font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+
+/* ---------------- item 3: the comparator ---------------------------------- */
+.gauge-wrap {
+  display: flex; align-items: flex-end; justify-content: center;
+  gap: 12px;
+  margin: 0.2rem 0 0.8rem;
+}
+.g-thumb { flex: 0 0 auto; width: clamp(64px, 17vw, 92px); text-align: center; }
+.g-thumb .ex-art {
+  padding: 4px; background: #f6efdc;
+  border: 1px solid var(--trule);
+  box-shadow: 1px 2px 6px -2px rgba(30, 18, 8, 0.35);
+}
+.g-thumb span {
+  display: block; margin-top: 3px;
+  font-size: 0.66rem; font-weight: 700; letter-spacing: 0.3em;
+}
+.gauge { flex: 0 1 300px; min-width: 0; }
+.gauge svg { display: block; width: 100%; height: auto; }
+.g-line { stroke: var(--tink); }
+.g-eng {
+  font-family: var(--tmono); font-size: 7px; letter-spacing: 0.24em;
+  fill: var(--tink-2);
+}
+.g-ab { font-family: var(--tmono); font-size: 11px; font-weight: 700; fill: var(--tink); }
+.needle {
+  transform-box: view-box;
+  transform-origin: 150px 108px;
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.3, 1.12);
+}
+.gauge.idle .needle { opacity: 0.3; }
+.needle line, .needle polygon, .needle circle { stroke: var(--tred); fill: var(--tred); }
+
+.likert {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+.lk {
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  min-height: 48px;
+  padding: 0.3rem 0.35rem;
+  border: 1px solid var(--trule);
+  background: rgba(255, 250, 232, 0.5);
+  text-align: center;
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  line-height: 1.5;
+  color: var(--tink-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.lk input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.lk:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+.lk.is-on {
+  color: var(--tred); font-weight: 700;
+  border-color: var(--tred);
+  box-shadow: inset 0 0 0 1px var(--tred);
+  background: rgba(179, 64, 47, 0.06);
+}
+.lk.mid.is-on { color: var(--tink); border-color: var(--tink); box-shadow: inset 0 0 0 1px var(--tink); background: rgba(51,36,15,0.05); }
+@media (max-width: 620px) {
+  .likert { grid-template-columns: 1fr; }
+  .lk { justify-content: flex-start; text-align: left; }
+}
+
+/* ---------------- item 4: disposition ------------------------------------- */
+.sig-row {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  margin: 0.4rem 0 1rem;
+  font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.sig-line {
+  flex: 1 1 auto;
+  border-bottom: 1px solid var(--tink);
+  min-width: 60px; height: 1.1rem;
+}
+.sig-date { letter-spacing: 0.08em; }
+.dispo-foot { position: relative; }
+.file-btn {
+  display: block; width: 100%;
+  min-height: 52px;
+  padding: 0.6rem 1rem;
+  border: 3px double var(--tink);
+  border-radius: 4px;
+  background: rgba(255, 250, 232, 0.5);
+  color: var(--tink);
+  font-family: var(--tmono); font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.26em; text-transform: uppercase;
+  cursor: pointer;
+}
+.file-btn:not([disabled]):hover {
+  color: var(--tred); border-color: var(--tred);
+  background: rgba(179, 64, 47, 0.06);
+}
+.file-btn:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+.file-btn[disabled] { opacity: 0.45; cursor: default; }
+.file-req {
+  margin-top: 0.4rem;
+  font-size: 0.56rem; letter-spacing: 0.1em; color: var(--tink-2);
+  text-align: center;
+}
+.file-status {
+  min-height: 1.2rem; margin-top: 0.5rem;
+  font-size: 0.62rem; line-height: 1.6; letter-spacing: 0.04em;
+  text-align: center; color: var(--tink);
+}
+.filed-stamp {
+  display: none;
+  position: absolute; left: 50%; top: 50%; z-index: 3;
+  padding: 0.5rem 1.2rem;
+  border: 4px double var(--tred); border-radius: 6px;
+  color: var(--tred);
+  font-size: 1.15rem; font-weight: 700; letter-spacing: 0.34em;
+  text-transform: uppercase; text-align: center;
+  background: rgba(243, 233, 200, 0.6);
+  transform: translate(-50%, -50%) rotate(-7deg);
+  pointer-events: none;
+}
+.filed-stamp small {
+  display: block;
+  font-size: 0.52rem; letter-spacing: 0.2em; font-weight: 400;
+}
+.is-filed .filed-stamp { display: block; animation: filedIn 0.28s ease-out; }
+@keyframes filedIn {
+  0%   { transform: translate(-50%, -50%) rotate(-7deg) scale(1.6); opacity: 0; }
+  60%  { opacity: 1; }
+  75%  { transform: translate(-50%, -50%) rotate(-7deg) scale(0.94); }
+  100% { transform: translate(-50%, -50%) rotate(-7deg) scale(1); }
+}
+.mock-reset {
+  display: block; margin: 0.6rem auto 0;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--tmono); font-size: 0.56rem; letter-spacing: 0.12em;
+  color: var(--tink-2); text-decoration: underline;
+  min-height: 32px;
+}
+.mock-reset:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---------------- office use: the payload preview ------------------------- */
+.office { margin-top: 1.4rem; border-top: 2px solid var(--tink); padding-top: 0.5rem; }
+.office summary {
+  cursor: pointer;
+  font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--tink-2);
+  padding: 0.4rem 0; min-height: 34px;
+}
+.office summary:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.office pre {
+  margin-top: 0.3rem; padding: 0.6rem;
+  background: rgba(255, 252, 240, 0.6);
+  border: 1px solid var(--trule);
+  font-family: var(--tmono); font-size: 0.6rem; line-height: 1.6;
+  overflow-x: auto;
+}
+
+/* ---------------- the definition tooltip (hover / keyboard focus) ---------
+   A single fixed-position slip. Visual echo ONLY: the same text reaches
+   screen readers through aria-describedby on each radio (see the hidden
+   registry the script builds), so the tooltip itself stays aria-hidden. */
+.tt {
+  position: fixed; z-index: 80;
+  max-width: 270px;
+  padding: 0.45rem 0.6rem;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid var(--tink);
+  box-shadow: 3px 5px 12px -4px rgba(6, 3, 0, 0.55);
+  font-family: var(--tmono); font-size: 0.62rem; line-height: 1.6;
+  letter-spacing: 0.03em; color: var(--tink);
+  opacity: 0; visibility: hidden;
+  transition: opacity 0.12s ease;
+  pointer-events: none;
+}
+.tt.is-on { opacity: 1; visibility: visible; }
+.tt b { letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.58rem; }
+
+/* ---------------- reduced motion: the still form -------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .stamp.thunk, .condemn-wrap.is-flagged .condemn-stamp,
+  .is-filed .filed-stamp { animation: none; }
+  .needle { transition: none; }
+  .tt { transition: none; }
+}
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+noscript p {
+  max-width: 44rem; margin: 1rem auto; text-align: center;
+  font-size: 0.7rem; color: var(--plot-red);
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 10B &middot; The Inspection Sheet</p>
+<p class="mock-intro">
+  <b>10B &mdash; THE INSPECTION SHEET.</b> Survey-instrument rework, round 10
+  (one of three approaches). The rate + compare states become one paper form:
+  the visitor is the inspector, the responses are exhibits taped to the sheet,
+  grades are rubber stamps, axes are punch-box lines, definitions live in a
+  footnote system, and the comparison is a five-stop needle comparator between
+  exhibit A and exhibit B. Titles only on every option &mdash; hover or
+  keyboard-focus for a definition, tap a footnote mark (&sup1; &sup2; &hellip;)
+  to unfold the typed small print. Everything below is live.
+</p>
+
+<p class="sec-head"><span>THE INSTRUMENT</span> &middot; staged in situ &mdash; scrim + sheet, real turn-modal tokens</p>
+
+<noscript><p>This mockup renders the form from the taxonomy const with JavaScript &mdash; enable it to see the instrument.</p></noscript>
+
+<div class="stage">
+  <div class="turn-scrim">
+    <div class="turn-card" aria-label="specimen inspection report (staged mockup)">
+      <button type="button" class="turn-close" tabindex="-1"
+              title="mockup &mdash; the close / abandon path is unchanged and out of scope">&#x2715;</button>
+      <div class="sheet" id="sheet">
+
+        <header class="fh">
+          <div class="fh-no">FORM<br>JD&#8209;107</div>
+          <div class="fh-mid">
+            <h2 class="fh-title">Specimen Inspection Report</h2>
+            <p class="fh-sub">the junk drawer &middot; graded blind &middot; both exhibits unnamed until filed</p>
+          </div>
+          <div class="fh-dup" aria-hidden="true">retain<br>this copy</div>
+        </header>
+
+        <div class="fh-meta">
+          <div class="fh-meta-row">
+            <span><span class="fh-k">docket</span><span class="fh-v">T&#8209;0811&#8209;04</span></span>
+            <span><span class="fh-k">date</span><span class="fh-v">2026&#8209;08&#8209;11</span></span>
+            <span><span class="fh-k">scale</span><span class="fh-v">taxonomy v10</span></span>
+          </div>
+          <div class="fh-meta-row">
+            <span><span class="fh-k">commission, verbatim</span>
+            <span class="fh-v fh-prompt">&ldquo;A microscope slide where, upon closer inspection, a detailed, realistic
+            depiction of various common germs can be observed as they would be seen at 400x power of
+            magnification&rdquo;</span></span>
+          </div>
+        </div>
+
+        <p class="smallprint">
+          Every entry on this form is optional <b>except item&nbsp;3</b>, the comparative
+          finding, which is required before filing. Definitions: <b>hover or
+          keyboard&#8209;focus</b> any option for its definition; <b>tap a footnote
+          mark</b> (&sup1;&nbsp;&sup2;&nbsp;&hellip;) to unfold the full typed definitions
+          for that scale &mdash; Esc or a tap elsewhere folds it away. A plain tap on an
+          option always marks the form; it never opens a definition.
+        </p>
+
+        <div id="form-body"><!-- items 1–3, rendered from the taxonomy const --></div>
+
+        <!-- ------------- item 4: disposition -------------------------------- -->
+        <section class="item is-dispo" id="dispo" aria-label="item 4 — disposition">
+          <h3 class="item-head"><span class="item-no">ITEM&nbsp;4</span> DISPOSITION</h3>
+          <div class="sig-row" aria-hidden="true">
+            <span>inspector&rsquo;s mark</span><span class="sig-line"></span>
+            <span class="sig-date">2026&#8209;08&#8209;11</span>
+          </div>
+          <div class="dispo-foot">
+            <button type="button" class="file-btn" id="file-btn" disabled>File this report</button>
+            <div class="filed-stamp" aria-hidden="true">Filed<small>2026&#8209;08&#8209;11 &middot; one batch &middot; unveil follows</small></div>
+          </div>
+          <p class="file-req" id="file-req">item 3 &mdash; the comparative finding &mdash; must be entered before this report can be filed. everything else may stand blank.</p>
+          <p class="file-status" id="file-status" role="status"></p>
+          <button type="button" class="mock-reset" id="mock-reset" hidden>clear the filing (mockup only)</button>
+        </section>
+
+        <details class="office">
+          <summary>office use only &mdash; what filing would post (C1.3, live)</summary>
+          <pre id="payload">{}</pre>
+        </details>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="mock-label">
+  <b>exhibit A</b> claude-opus-5 &middot; <b>exhibit B</b> claude-sonnet-5 &mdash; the real
+  production SVGs from items/2026-08-05-microscope-slide/, id&#8209;namespaced per placement.
+  the sheet flows with the page here; production keeps the modal&rsquo;s internal scroll.
+</p>
+
+<div class="rule"></div>
+
+<!-- ============================ NOTES ================================ -->
+<div class="considerations">
+  <p class="mc-head">Notes &middot; what I committed to, what implementation must watch</p>
+
+  <p><b>1 &middot; The premise carries the chrome, never the interaction.</b> The
+  survey is a paper form because the taxonomy already talks like one &mdash; the
+  stamps, punch boxes, CONDEMNED and FILED are all fiction laid over completely
+  ordinary controls: every scale is a native <code>&lt;input type="radio"&gt;</code>
+  group inside a <code>role="radiogroup"</code> (Tab enters, arrows move, exactly
+  the semantics production&rsquo;s pills have today), every option is a &ge;44px
+  label, focus rings are real (<code>:focus-within</code> on the chip, as
+  production does), and selection is never colour alone &mdash; the stamp gains its
+  rotation + double-ring emboss, the punch box gains its &#x2715;, the n/a slot its
+  clerk&rsquo;s dash. Everything renders from a JS const holding the taxonomy.json
+  subset verbatim (grades + the five live axes; defunct axes excluded), so
+  production wires this to the payload exactly as <code>ratePanel()</code> does now.
+  Titles only, everywhere: the retired pill-row&rsquo;s inline descriptions are gone.</p>
+
+  <p><b>2 &middot; One footnote system &mdash; the a11y contract.</b> Three doors,
+  one set of definitions, no competing UIs: <b>(a)</b> hover, on hover-capable fine
+  pointers only, shows a transient tooltip for THAT option; <b>(b)</b> keyboard
+  focus shows the same tooltip (a modality flag distinguishes keyboard focus from
+  the focus a tap causes, so a plain tap only ever selects); <b>(c)</b> the
+  superscript footnote mark &mdash; the explicit touch affordance, its hit area
+  padded to ~44px by a <code>::before</code> &mdash; is a real button
+  (<code>aria-expanded</code>/<code>aria-controls</code>) that unfolds the whole
+  scale&rsquo;s definitions as an IN-FLOW typed slip under the line: it pushes the
+  form down rather than covering it, so it can never block rating; Esc or a tap
+  outside folds it, one slip open at a time. Screen readers don&rsquo;t depend on
+  any of that: each radio carries <code>aria-describedby</code> to a hidden
+  definition registry, so the definition is announced with the option natively;
+  the visual tooltip stays <code>aria-hidden</code>. Definition text sits in
+  <code>data-def</code> on the chip &mdash; no duplication drift.</p>
+
+  <p><b>3 &middot; The comparison is now a five-stop Likert &mdash; contract
+  addition, flagged not invented.</b> Wording: <i>A decisively better &middot; A
+  slightly better &middot; dead even &middot; B slightly better &middot; B
+  decisively better</i>, A anchored left and B right on the comparator and in the
+  chip row, both exhibits visible as plates beside the gauge. Filing would extend
+  C1.3&rsquo;s <code>comparison</code> object to
+  <code>{"winner": "a"|"b"|"tie", "strength": "decisive"|"slight"|null}</code>
+  (strength null exactly when winner is tie) &mdash; <code>winner</code> keeps its
+  exact current meaning so existing rows and the required-before-filing rule are
+  untouched; <code>strength</code> is one new nullable column. The office-use
+  panel at the sheet&rsquo;s foot prints this payload live. The needle is SVG drawn
+  on the page (no images), rotates via <code>transform-box: view-box</code>, and is
+  <code>aria-hidden</code> apparatus &mdash; the chips are the instrument.</p>
+
+  <p><b>4 &middot; Blank-form economy.</b> Per-axis remarks collapse behind a
+  small &ldquo;remarks &mdash;&rdquo; disclosure so ten empty ruled lines never
+  dominate the sheet; the CONDEMNED write-in (&ldquo;this response is broken or
+  offensive&rdquo; keeps the current wording) reveals the same way. Implementation
+  must keep production&rsquo;s mutate-in-place discipline here: rate is the one
+  long scrolling state, so slips, remarks and the flag line must toggle
+  <code>hidden</code> on nodes already in the DOM &mdash; never re-render the
+  state &mdash; or the visitor is thrown back to the top of the survey (the
+  comment above <code>ratePanel()</code> is the precedent).</p>
+
+  <p><b>5 &middot; Motion and stamps.</b> The stamp thunk, CONDEMNED slam, FILED
+  hit and the needle swing are the only motion; all are killed under
+  <code>prefers-reduced-motion: reduce</code> (the still form is the complete
+  form &mdash; the inked pose, not the landing, carries the state). The FILED
+  stamp is page fiction: production files ONE batch to <code>jd-rate.php</code>
+  and proceeds to unveil; nothing else on this sheet changes that flow, and the
+  single-exhibit degraded turn simply omits item&nbsp;2 and replaces item&nbsp;3
+  with a printed &ldquo;no comparison &mdash; sole exhibit&rdquo; line
+  (<code>comparison: null</code> stays legal there, per contract).</p>
+
+  <p><b>6 &middot; Floors and namespacing.</b> Nothing here needs more than the
+  iOS&nbsp;16 floor: no <code>popover</code> attribute, no anchor positioning, no
+  <code>:has()</code> &mdash; the tooltip is one fixed-position element placed by
+  script, the slips are plain in-flow toggles. The exhibits are minted from
+  templates with ids rewritten per copy (<code>id=</code>, <code>url(#&hellip;)</code>,
+  <code>href="#&hellip;"</code>), because both real SVGs use colliding ids
+  (<code>grain</code>, <code>glass&hellip;</code>) &mdash; production already owns
+  this via <code>JD_svgInst</code>.</p>
+</div>
+
+<!-- ==================================================================== -->
+<!-- THE EXHIBITS — real production artworks, one source each; the script  -->
+<!-- mints namespaced copies per placement (xa1_, xb1_, xa2_, xb2_).       -->
+<!-- ==================================================================== -->
+<template id="tpl-a"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8f4f4"/>
+      <stop offset="0.45" stop-color="#dfeef1"/>
+      <stop offset="0.72" stop-color="#eaf6f4"/>
+      <stop offset="1" stop-color="#d6e6ea"/>
+    </linearGradient>
+    <radialGradient id="fov" cx="0.42" cy="0.36" r="0.78">
+      <stop offset="0" stop-color="#fdf9ee"/>
+      <stop offset="0.55" stop-color="#f6efe1"/>
+      <stop offset="0.86" stop-color="#e6dcd0"/>
+      <stop offset="1" stop-color="#cfc6bf"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.62" stop-color="#1b1c2c" stop-opacity="0"/>
+      <stop offset="0.88" stop-color="#1b1c2c" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#141526" stop-opacity="0.5"/>
+    </radialGradient>
+    <radialGradient id="cocG" cx="0.34" cy="0.28" r="0.82">
+      <stop offset="0" stop-color="#b494dd"/>
+      <stop offset="0.42" stop-color="#7d4fb0"/>
+      <stop offset="0.85" stop-color="#4a2377"/>
+      <stop offset="1" stop-color="#341356"/>
+    </radialGradient>
+    <radialGradient id="cocG2" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#a9d0e6"/>
+      <stop offset="0.45" stop-color="#5f86b6"/>
+      <stop offset="1" stop-color="#2e3f6d"/>
+    </radialGradient>
+    <linearGradient id="rodG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e894b6"/>
+      <stop offset="0.35" stop-color="#d2淡" stop-opacity="0"/>
+      <stop offset="0.36" stop-color="#cf6f96"/>
+      <stop offset="1" stop-color="#9c2f5c"/>
+    </linearGradient>
+    <linearGradient id="rodP" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9d7fd0"/>
+      <stop offset="0.4" stop-color="#6b41a6"/>
+      <stop offset="1" stop-color="#3a1c68"/>
+    </linearGradient>
+    <radialGradient id="rbcG" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0b39c" stop-opacity="0.35"/>
+      <stop offset="0.42" stop-color="#e29a80" stop-opacity="0.7"/>
+      <stop offset="0.86" stop-color="#c86f54"/>
+      <stop offset="1" stop-color="#b05a44"/>
+    </radialGradient>
+    <radialGradient id="wbcG" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#eee6f6"/>
+      <stop offset="0.7" stop-color="#dccdea"/>
+      <stop offset="1" stop-color="#bda6d4"/>
+    </radialGradient>
+    <radialGradient id="epiG" cx="0.4" cy="0.34" r="0.8">
+      <stop offset="0" stop-color="#f3dbe6" stop-opacity="0.85"/>
+      <stop offset="0.7" stop-color="#e6c4d8" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#cfa4c0" stop-opacity="0.85"/>
+    </radialGradient>
+    <radialGradient id="yeastG" cx="0.36" cy="0.3" r="0.82">
+      <stop offset="0" stop-color="#d9c9ee"/>
+      <stop offset="0.55" stop-color="#b79ad9"/>
+      <stop offset="1" stop-color="#6c4aa0"/>
+    </radialGradient>
+    <radialGradient id="protG" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#cfe0ea" stop-opacity="0.9"/>
+      <stop offset="0.6" stop-color="#a8c2d6" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#7791ae" stop-opacity="0.9"/>
+    </radialGradient>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+    <filter id="far" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="veryfar" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+    </filter>
+    <filter id="mottle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="3" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.44  0 0 0 0 0.33  0 0 0 0 0.55  0.9 0 0 0 -0.15"/>
+    </filter>
+
+    <clipPath id="fovClip"><circle cx="545" cy="505" r="393"/></clipPath>
+    <clipPath id="slideClip"><rect x="4" y="4" width="992" height="992" rx="10"/></clipPath>
+
+    <g id="bac">
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="url(#rodG)"/>
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="none" stroke="#8c2751" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="-5" cy="-2.4" rx="7" ry="2.3" fill="#ffffff" opacity="0.3"/>
+      <circle cx="8" cy="1.2" r="2.1" fill="#7c1e46" opacity="0.45"/>
+      <circle cx="-8" cy="1.8" r="1.6" fill="#7c1e46" opacity="0.35"/>
+    </g>
+    <g id="bacf">
+      <path d="M18,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0" fill="none" stroke="#a8547a" stroke-width="1.1" stroke-opacity="0.5"/>
+      <path d="M18,-2 c10,-8 17,4 27,-3 c10,-7 16,5 26,-2" fill="none" stroke="#a8547a" stroke-width="0.9" stroke-opacity="0.35"/>
+      <path d="M-18,1 c-9,6 -15,-6 -24,0 c-9,6 -15,-6 -24,0" fill="none" stroke="#a8547a" stroke-width="1" stroke-opacity="0.42"/>
+      <use href="#bac" xlink:href="#bac"/>
+    </g>
+    <g id="bacspore">
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="url(#rodP)"/>
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="none" stroke="#2e1358" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="#f7f2df"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="none" stroke="#33175f" stroke-width="1" stroke-opacity="0.5"/>
+      <ellipse cx="-9" cy="-2.6" rx="8" ry="2.4" fill="#ffffff" opacity="0.26"/>
+    </g>
+    <g id="coc">
+      <circle r="7" fill="url(#cocG)"/>
+      <circle r="7" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.55"/>
+      <circle cx="-2.3" cy="-2.6" r="2" fill="#ffffff" opacity="0.4"/>
+    </g>
+    <g id="coc2">
+      <circle r="6.2" fill="url(#cocG2)"/>
+      <circle cx="-2" cy="-2.2" r="1.7" fill="#ffffff" opacity="0.38"/>
+    </g>
+    <g id="diplo">
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <circle cx="-9" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+      <circle cx="5" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+    </g>
+    <g id="yeast">
+      <ellipse rx="30" ry="26" fill="url(#yeastG)"/>
+      <ellipse rx="30" ry="26" fill="none" stroke="#4b2b7d" stroke-width="2" stroke-opacity="0.65"/>
+      <ellipse rx="22" ry="18" fill="none" stroke="#f0e6fa" stroke-width="1.2" stroke-opacity="0.35"/>
+      <circle cx="-9" cy="-8" r="5" fill="#ffffff" opacity="0.3"/>
+      <circle cx="7" cy="6" r="4.4" fill="#3d2068" opacity="0.35"/>
+      <circle cx="-3" cy="11" r="3" fill="#3d2068" opacity="0.25"/>
+      <g transform="translate(26,-20) rotate(-30)">
+        <ellipse rx="15" ry="13" fill="url(#yeastG)"/>
+        <ellipse rx="15" ry="13" fill="none" stroke="#4b2b7d" stroke-width="1.6" stroke-opacity="0.6"/>
+        <circle cx="-4" cy="-4" r="3" fill="#fff" opacity="0.28"/>
+      </g>
+    </g>
+  </defs>
+
+  <g clip-path="url(#slideClip)">
+    <!-- glass slide -->
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="url(#glass)" fill-opacity="0.62"/>
+    <rect x="14" y="14" width="972" height="972" rx="6" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.5"/>
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="none" stroke="#93b0b8" stroke-width="4" stroke-opacity="0.75"/>
+    <path d="M4,26 L996,26" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+    <path d="M4,974 L996,974" stroke="#8fa9b1" stroke-width="2" stroke-opacity="0.3"/>
+
+    <!-- frosted label end -->
+    <rect x="6" y="6" width="152" height="988" fill="#f6f3ea" fill-opacity="0.8"/>
+    <rect x="6" y="6" width="152" height="988" filter="url(#grain)" opacity="0.22"/>
+    <path d="M158,6 L158,994" stroke="#b9c9cc" stroke-width="2.5" stroke-opacity="0.7"/>
+    <path d="M150,6 L150,994" stroke="#ffffff" stroke-width="4" stroke-opacity="0.5"/>
+    <g transform="rotate(-90 82 500)" font-family="Georgia,'Times New Roman',serif" fill="#3b4250" text-anchor="middle">
+      <text x="82" y="60" font-size="30" letter-spacing="5" fill-opacity="0.82">GRAM  STAIN  ·  SPUTUM</text>
+      <text x="82" y="96" font-size="21" fill-opacity="0.7" letter-spacing="2">acc. 26–1174   oil imm.  400×</text>
+      <text x="82" y="128" font-size="19" fill-opacity="0.55" letter-spacing="2" font-style="italic">fixed &amp; counterstained · 05·08·26</text>
+    </g>
+
+    <!-- coverslip -->
+    <rect x="182" y="98" width="792" height="812" fill="#ffffff" fill-opacity="0.07" stroke="#8fb2be" stroke-width="2.2" stroke-opacity="0.55"/>
+    <rect x="188" y="104" width="780" height="800" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.4"/>
+    <path d="M182,98 L214,98 L182,130 Z" fill="#ffffff" fill-opacity="0.22"/>
+    <path d="M974,910 L938,910 L974,874 Z" fill="#8fb2be" fill-opacity="0.18"/>
+    <!-- trapped air / mounting medium edges -->
+    <path d="M182,300 c60,-26 130,10 190,-14" fill="none" stroke="#a8c6cf" stroke-width="1.4" stroke-opacity="0.4"/>
+    <path d="M974,660 c-70,20 -120,-16 -186,6" fill="none" stroke="#a8c6cf" stroke-width="1.2" stroke-opacity="0.32"/>
+    <!-- dust and fibre on the glass -->
+    <path d="M240,940 c40,-18 90,-6 130,-26" fill="none" stroke="#8c9aa2" stroke-width="1.3" stroke-opacity="0.35"/>
+    <circle cx="300" cy="60" r="2.2" fill="#7f8d95" opacity="0.4"/>
+    <circle cx="860" cy="70" r="1.6" fill="#7f8d95" opacity="0.35"/>
+    <circle cx="930" cy="946" r="2.6" fill="#7f8d95" opacity="0.3"/>
+    <circle cx="620" cy="960" r="1.8" fill="#7f8d95" opacity="0.3"/>
+
+    <!-- ============ 400x FIELD OF VIEW ============ -->
+    <g clip-path="url(#fovClip)">
+      <circle cx="545" cy="505" r="393" fill="url(#fov)"/>
+      <rect x="152" y="112" width="786" height="786" filter="url(#mottle)" opacity="0.2"/>
+
+      <!-- out-of-focus plane -->
+      <g filter="url(#veryfar)" opacity="0.4">
+        <ellipse cx="330" cy="230" rx="52" ry="22" transform="rotate(-24 330 230)" fill="#8d6fb8"/>
+        <ellipse cx="880" cy="380" rx="46" ry="20" transform="rotate(38 880 380)" fill="#a3608a"/>
+        <circle cx="640" cy="880" r="26" fill="#7b57a8"/>
+        <circle cx="240" cy="560" r="20" fill="#8e6bb2"/>
+        <ellipse cx="760" cy="140" rx="40" ry="17" transform="rotate(12 760 140)" fill="#9a5c86"/>
+      </g>
+      <g filter="url(#far)" opacity="0.5">
+        <ellipse cx="430" cy="180" rx="24" ry="9" transform="rotate(28 430 180)" fill="#9a4f78"/>
+        <ellipse cx="880" cy="620" rx="26" ry="10" transform="rotate(-42 880 620)" fill="#9a4f78"/>
+        <circle cx="700" cy="620" r="9" fill="#6d43a0"/>
+        <circle cx="716" cy="632" r="8" fill="#6d43a0"/>
+        <circle cx="300" cy="380" r="8.5" fill="#6d43a0"/>
+        <ellipse cx="560" cy="200" rx="30" ry="11" transform="rotate(-8 560 200)" fill="#8a3f6a"/>
+      </g>
+
+      <!-- mucus / proteinaceous debris strands -->
+      <g fill="none" stroke="#b9a9ae" stroke-opacity="0.3" filter="url(#soft)">
+        <path d="M170,420 C300,380 380,470 520,430 C660,390 760,470 920,430" stroke-width="14"/>
+        <path d="M200,760 C320,700 420,780 540,730 C680,672 800,760 930,700" stroke-width="10"/>
+        <path d="M640,150 C620,300 700,380 660,520 C630,630 700,760 660,880" stroke-width="9"/>
+      </g>
+      <g fill="none" stroke="#8f7f86" stroke-opacity="0.22">
+        <path d="M170,432 C300,392 380,482 520,442 C660,402 760,482 920,442" stroke-width="2"/>
+        <path d="M200,770 C320,710 420,790 540,740 C680,682 800,770 930,710" stroke-width="1.6"/>
+      </g>
+
+      <!-- partial air bubble at lower-left of field -->
+      <g>
+        <circle cx="255" cy="885" r="168" fill="#ffffff" fill-opacity="0.1"/>
+        <circle cx="255" cy="885" r="168" fill="none" stroke="#5c5f6b" stroke-width="15" stroke-opacity="0.3" filter="url(#soft)"/>
+        <circle cx="255" cy="885" r="158" fill="none" stroke="#ffffff" stroke-width="6" stroke-opacity="0.35"/>
+      </g>
+
+      <!-- squamous epithelial cell (scale reference) -->
+      <g>
+        <path d="M380,442 C472,448 562,492 586,572 C612,652 590,748 520,802 C450,856 340,882 260,846 C176,808 136,720 152,636 C168,550 232,470 302,452 C326,445 356,440 380,442 Z"
+              fill="url(#epiG)" stroke="#a2708f" stroke-width="2.4" stroke-opacity="0.7"/>
+        <path d="M362,470 C444,478 522,516 546,584 C572,656 550,736 490,782 C426,830 336,850 268,818" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M188,700 C250,742 330,760 404,742 C466,727 512,690 536,640" fill="none" stroke="#b8809f" stroke-width="2" stroke-opacity="0.45"/>
+        <ellipse cx="366" cy="642" rx="52" ry="46" fill="#7a4c92" fill-opacity="0.55" stroke="#4d2560" stroke-width="2" stroke-opacity="0.6"/>
+        <ellipse cx="352" cy="630" rx="18" ry="14" fill="#c9a8db" fill-opacity="0.5"/>
+        <circle cx="382" cy="660" r="7" fill="#3b1a52" fill-opacity="0.5"/>
+        <circle cx="350" cy="664" r="5" fill="#3b1a52" fill-opacity="0.4"/>
+        <circle cx="374" cy="620" r="4" fill="#3b1a52" fill-opacity="0.35"/>
+        <!-- adherent cocci on the cell surface (clue-cell look) -->
+        <g>
+          <use href="#coc" xlink:href="#coc" transform="translate(250,530) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(268,548) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(246,562) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(452,700) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(470,712) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(300,760) scale(0.8)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(420,540) rotate(28) scale(0.85)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(330,506) rotate(-14) scale(0.85)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(470,626) rotate(64) scale(0.8)"/>
+        </g>
+      </g>
+
+      <!-- neutrophil with phagocytosed diplococci -->
+      <g transform="translate(752,318)">
+        <circle r="58" fill="url(#wbcG)" stroke="#8f6fb0" stroke-width="2" stroke-opacity="0.6"/>
+        <path d="M-34,-16 C-46,-40 -22,-56 -2,-46 C10,-56 34,-48 38,-26 C54,-18 52,10 34,18 C34,40 8,52 -8,38 C-30,44 -46,24 -40,4 Z"
+              fill="#5a2d86" fill-opacity="0.78"/>
+        <path d="M-30,-14 C-40,-34 -20,-46 -4,-38" fill="none" stroke="#d6c2ea" stroke-width="2.4" stroke-opacity="0.4"/>
+        <path d="M2,-44 C-6,-24 8,-8 26,-14" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M-6,36 C-2,16 -20,4 -36,8" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.3"/>
+        <g fill="#7a52a8" fill-opacity="0.45">
+          <circle cx="-46" cy="30" r="3.2"/><circle cx="-30" cy="44" r="2.6"/><circle cx="46" cy="-2" r="3"/>
+          <circle cx="40" cy="34" r="2.8"/><circle cx="18" cy="48" r="3.2"/><circle cx="-52" cy="-6" r="2.6"/>
+          <circle cx="6" cy="-54" r="2.8"/>
+        </g>
+        <use href="#diplo" xlink:href="#diplo" transform="translate(-8,14) rotate(30) scale(0.62)"/>
+        <use href="#diplo" xlink:href="#diplo" transform="translate(24,-38) rotate(-52) scale(0.58)"/>
+      </g>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(838,222) rotate(24)"/>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(676,398) rotate(-64)"/>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(866,300) rotate(74) scale(0.9)"/>
+
+      <!-- erythrocytes -->
+      <g>
+        <g transform="translate(786,690)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(864,608) scale(0.97)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.28"/></g>
+        <g transform="translate(700,772) scale(0.94)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="21" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(880,760) scale(0.9) rotate(20)"><ellipse rx="45" ry="38" fill="url(#rbcG)"/><ellipse rx="45" ry="38" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/></g>
+      </g>
+
+      <!-- Candida: budding yeast with pseudohypha -->
+      <g transform="translate(318,806) rotate(-16)">
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#7a54ad" stroke-width="20" stroke-opacity="0.5" stroke-linecap="round"/>
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#432272" stroke-width="1.6" stroke-opacity="0.5" fill-opacity="0"/>
+        <path d="M-24,12 l0,-1" stroke="#432272" stroke-width="1.6" stroke-opacity="0.45"/>
+        <use href="#yeast" xlink:href="#yeast"/>
+      </g>
+      <use href="#yeast" xlink:href="#yeast" transform="translate(206,300) rotate(24) scale(0.82)"/>
+
+      <!-- flagellated protozoan (pear-shaped, 4 flagellar pairs) -->
+      <g transform="translate(690,236) rotate(-22)">
+        <g fill="none" stroke="#6d8298" stroke-width="1.6" stroke-opacity="0.55" stroke-linecap="round">
+          <path d="M78,-8 c26,-8 44,10 68,4"/>
+          <path d="M80,6 c28,10 48,-6 72,2"/>
+          <path d="M-14,-46 c-8,-26 -34,-32 -52,-26"/>
+          <path d="M-16,44 c-6,26 -32,34 -52,28"/>
+          <path d="M-70,4 c-30,4 -44,-14 -66,-10"/>
+        </g>
+        <path d="M78,0 C74,30 40,52 -6,52 C-52,52 -80,28 -80,0 C-80,-28 -52,-52 -6,-52 C40,-52 74,-30 78,0 Z"
+              fill="url(#protG)" stroke="#54748f" stroke-width="2.2" stroke-opacity="0.7"/>
+        <ellipse cx="-24" cy="0" rx="42" ry="36" fill="none" stroke="#3f6280" stroke-width="2.6" stroke-opacity="0.5"/>
+        <ellipse cx="-30" cy="-14" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <ellipse cx="-30" cy="16" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <path d="M14,-16 C40,-10 46,10 20,20" fill="none" stroke="#3f6280" stroke-width="3" stroke-opacity="0.45"/>
+        <g fill="#2f4c6b" fill-opacity="0.35">
+          <circle cx="40" cy="-24" r="3"/><circle cx="52" cy="-6" r="2.4"/><circle cx="44" cy="26" r="2.8"/>
+          <circle cx="12" cy="38" r="2.4"/><circle cx="-52" cy="34" r="2.6"/>
+        </g>
+        <ellipse cx="-40" cy="-26" rx="12" ry="8" fill="#ffffff" fill-opacity="0.28"/>
+      </g>
+
+      <!-- staphylococci: grape-like cluster -->
+      <g transform="translate(432,318)">
+        <use href="#coc" xlink:href="#coc" transform="translate(0,0)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(13,-8)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(6,12)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(20,7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-12,9)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-6,-13)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(9,-24)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(26,-18)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(32,-4)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(19,22)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(3,27)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-16,-4)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-20,22)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-30,10)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(38,10)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-4,-26) scale(0.9)"/>
+      </g>
+      <g transform="translate(600,168)">
+        <use href="#coc" xlink:href="#coc" transform="translate(0,0) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(12,8) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-11,10) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(2,20) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(22,-4) scale(0.9)"/>
+      </g>
+
+      <!-- streptococci: chain -->
+      <g>
+        <use href="#coc" xlink:href="#coc" transform="translate(498,784)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(511,777)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(525,772)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(539,770)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(553,771)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(567,776)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(580,783)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(592,792)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(604,802)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(617,810)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(631,815)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(645,817)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(659,815)"/>
+      </g>
+      <g>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(210,470)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(222,462)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(234,456)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(247,454)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(260,456)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(272,462)"/>
+      </g>
+
+      <!-- bacilli, some flagellated -->
+      <use href="#bacf" xlink:href="#bacf" transform="translate(600,452) rotate(-18)"/>
+      <use href="#bacf" xlink:href="#bacf" transform="translate(508,596) rotate(38)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(654,500) rotate(62)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(720,548) rotate(-34)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(786,470) rotate(14)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(842,436) rotate(-56)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(880,528) rotate(78)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(596,656) rotate(-8)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(560,700) rotate(48)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(268,624) rotate(-70)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(212,668) rotate(22)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(316,222) rotate(-40)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(392,196) rotate(16)"/>
+      <use href="#bacf" xlink:href="#bacf" transform="translate(470,244) rotate(-6)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(836,672) rotate(-24) scale(0.95)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(452,860) rotate(-44)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(742,856) rotate(30)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(300,352) rotate(84) scale(0.92)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(920,340) rotate(-12)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(546,144) rotate(52)"/>
+
+      <!-- Gram-positive spore-forming bacilli (chain) -->
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(230,376) rotate(-12)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(288,290) rotate(-12) scale(0.95)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(694,586) rotate(66)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(802,146) rotate(20) scale(0.95)"/>
+
+      <!-- vibrios: comma-shaped -->
+      <g fill="none" stroke="#a83a68" stroke-width="12" stroke-linecap="round" stroke-opacity="0.92">
+        <path d="M834,806 c14,-16 34,-18 52,-6"/>
+        <path d="M660,904 c16,-14 36,-14 52,0"/>
+        <path d="M902,614 c8,-18 26,-26 46,-20"/>
+        <path d="M212,748 c14,-14 34,-14 50,-2"/>
+      </g>
+      <g fill="none" stroke="#e59ab6" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5">
+        <path d="M836,802 c13,-14 32,-16 48,-6"/>
+        <path d="M662,900 c15,-12 33,-12 48,0"/>
+      </g>
+
+      <!-- spirochetes -->
+      <g fill="none" stroke="#5c2f96" stroke-width="3.4" stroke-linecap="round" stroke-opacity="0.9">
+        <g transform="translate(196,540) rotate(14)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(566,872) rotate(-10) scale(1.05)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0"/>
+        </g>
+        <g transform="translate(700,120) rotate(28) scale(0.92)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(892,880) rotate(-46) scale(0.85)" stroke-width="3.8">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+      </g>
+      <!-- spirillum: thicker helical rod -->
+      <g fill="none" stroke="#8e3a66" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9" transform="translate(760,760) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+      <g fill="none" stroke="#e29cba" stroke-width="2.4" stroke-opacity="0.4" transform="translate(760,757) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+
+      <!-- fine coccal / coccobacillary flora and stain precipitate -->
+      <g>
+        <use href="#coc" xlink:href="#coc" transform="translate(376,412) scale(0.72)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(672,680) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(504,470) scale(0.66)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(806,556) scale(0.68)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(618,282) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(258,222) scale(0.66)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(486,152) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(908,700) scale(0.72)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(556,548) scale(0.8)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(752,470) scale(0.78)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(370,884) scale(0.8)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(866,392) scale(0.76)"/>
+      </g>
+      <g fill="#4a2a6b" fill-opacity="0.5">
+        <circle cx="330" cy="588" r="2.2"/><circle cx="424" cy="452" r="1.7"/><circle cx="612" cy="386" r="2.4"/>
+        <circle cx="708" cy="452" r="1.8"/><circle cx="778" cy="404" r="2.1"/><circle cx="812" cy="500" r="1.6"/>
+        <circle cx="640" cy="736" r="2.3"/><circle cx="574" cy="640" r="1.9"/><circle cx="500" cy="716" r="2.5"/>
+        <circle cx="270" cy="512" r="1.7"/><circle cx="358" cy="266" r="2.2"/><circle cx="470" cy="330" r="1.6"/>
+        <circle cx="540" cy="238" r="2"/><circle cx="672" cy="516" r="1.5"/><circle cx="856" cy="480" r="2.3"/>
+        <circle cx="904" cy="600" r="1.8"/><circle cx="770" cy="612" r="2.1"/><circle cx="690" cy="828" r="1.7"/>
+        <circle cx="820" cy="880" r="2.4"/><circle cx="248" cy="700" r="1.9"/><circle cx="196" cy="600" r="2.2"/>
+        <circle cx="452" cy="800" r="1.6"/><circle cx="404" cy="740" r="2"/><circle cx="600" cy="120" r="2.1"/>
+        <circle cx="880" cy="200" r="1.8"/><circle cx="748" cy="180" r="2.3"/><circle cx="298" cy="428" r="1.7"/>
+        <circle cx="524" cy="892" r="2.2"/><circle cx="900" cy="808" r="1.6"/><circle cx="646" cy="200" r="1.9"/>
+      </g>
+
+      <!-- eyepiece reticle -->
+      <g stroke="#2b3145" stroke-opacity="0.26">
+        <path d="M545,132 L545,462" stroke-width="1.4"/>
+        <path d="M545,548 L545,878" stroke-width="1.4"/>
+        <path d="M164,505 L502,505" stroke-width="1.4"/>
+        <path d="M588,505 L926,505" stroke-width="1.4"/>
+        <g stroke-width="1.4">
+          <path d="M537,220 L553,220"/><path d="M537,320 L553,320"/><path d="M537,420 L553,420"/>
+          <path d="M537,620 L553,620"/><path d="M537,720 L553,720"/><path d="M537,820 L553,820"/>
+          <path d="M260,497 L260,513"/><path d="M360,497 L360,513"/><path d="M460,497 L460,513"/>
+          <path d="M660,497 L660,513"/><path d="M760,497 L760,513"/><path d="M860,497 L860,513"/>
+        </g>
+      </g>
+      <g stroke="#243049" stroke-opacity="0.55">
+        <path d="M248,308 L368,308" stroke-width="3.2"/>
+        <path d="M248,300 L248,316" stroke-width="2.4"/>
+        <path d="M368,300 L368,316" stroke-width="2.4"/>
+        <path d="M278,303 L278,313" stroke-width="1.6"/>
+        <path d="M308,302 L308,314" stroke-width="1.8"/>
+        <path d="M338,303 L338,313" stroke-width="1.6"/>
+      </g>
+      <text x="308" y="292" font-family="Georgia,'Times New Roman',serif" font-size="19" fill="#243049" fill-opacity="0.62" text-anchor="middle">10 µm</text>
+
+      <!-- field grain + vignette -->
+      <rect x="152" y="112" width="786" height="786" filter="url(#grain)" opacity="0.14"/>
+      <circle cx="545" cy="505" r="393" fill="url(#vig)"/>
+    </g>
+
+    <!-- lens rim: chromatic fringes + barrel edge -->
+    <circle cx="545" cy="505" r="386" fill="none" stroke="#7fc3d8" stroke-width="4" stroke-opacity="0.35"/>
+    <circle cx="545" cy="505" r="392" fill="none" stroke="#d9a469" stroke-width="3" stroke-opacity="0.3"/>
+    <circle cx="545" cy="505" r="395" fill="none" stroke="#22242f" stroke-width="6" stroke-opacity="0.55"/>
+    <circle cx="545" cy="505" r="400" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+
+    <!-- glass specular streaks over everything -->
+    <g opacity="0.5">
+      <path d="M-60,760 L300,-40 L392,-40 L32,760 Z" fill="#ffffff" fill-opacity="0.09"/>
+      <path d="M420,1040 L820,120 L866,120 L466,1040 Z" fill="#ffffff" fill-opacity="0.06"/>
+    </g>
+
+    <!-- annotation in wax pencil on the glass -->
+    <g font-family="Georgia,'Times New Roman',serif" fill="#3d4a56" fill-opacity="0.6">
+      <text x="196" y="72" font-size="20" font-style="italic">field 3 · ×400 (40/0.65)</text>
+      <text x="968" y="956" font-size="19" font-style="italic" text-anchor="end">mixed flora, PMNs present</text>
+    </g>
+    <path d="M186,84 C260,76 330,86 402,78" fill="none" stroke="#3d4a56" stroke-width="1.4" stroke-opacity="0.35"/>
+  </g>
+</svg></template>
+<template id="tpl-b"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef6f8"/>
+      <stop offset="55%" stop-color="#e2edf1"/>
+      <stop offset="100%" stop-color="#cfe0e6"/>
+    </linearGradient>
+    <radialGradient id="smearGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#eeb9d4" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#dca0c4" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#dca0c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fieldGrad" cx="45%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#f8dcea"/>
+      <stop offset="45%" stop-color="#ecbcd6"/>
+      <stop offset="75%" stop-color="#c98bb0"/>
+      <stop offset="100%" stop-color="#3a0f24"/>
+    </radialGradient>
+    <radialGradient id="rodGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffb0cc"/>
+      <stop offset="50%" stop-color="#e0537f"/>
+      <stop offset="100%" stop-color="#82203f"/>
+    </radialGradient>
+    <radialGradient id="coccusGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#cdb0ff"/>
+      <stop offset="55%" stop-color="#7c4bb5"/>
+      <stop offset="100%" stop-color="#3c1861"/>
+    </radialGradient>
+    <radialGradient id="spiralGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffcf8f"/>
+      <stop offset="55%" stop-color="#df8536"/>
+      <stop offset="100%" stop-color="#7a3d0f"/>
+    </radialGradient>
+    <radialGradient id="nucleusGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#7568e6"/>
+      <stop offset="60%" stop-color="#453191"/>
+      <stop offset="100%" stop-color="#221a4d"/>
+    </radialGradient>
+    <radialGradient id="cytoGrad" cx="42%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#faeef4"/>
+      <stop offset="70%" stop-color="#eccbdc"/>
+      <stop offset="100%" stop-color="#cf9fb9"/>
+    </radialGradient>
+    <radialGradient id="rbcGrad" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#f1a9b8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#df7c92" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#c85c73" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef0f2"/>
+      <stop offset="45%" stop-color="#9598a0"/>
+      <stop offset="55%" stop-color="#5c5e66"/>
+      <stop offset="100%" stop-color="#232327"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="55%">
+      <stop offset="55%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <clipPath id="fieldClip">
+      <circle cx="500" cy="500" r="478"/>
+    </clipPath>
+    <filter id="softBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+    </filter>
+
+    <g id="coccus">
+      <circle r="13" fill="url(#coccusGrad)" stroke="#241238" stroke-width="1.3"/>
+      <ellipse cx="-4" cy="-5" rx="4" ry="3" fill="#ffffff" opacity="0.45"/>
+    </g>
+
+    <g id="rod">
+      <path d="M -21,-11 L 21,-11 A 11 11 0 0 1 21,11 L -21,11 A 11 11 0 0 1 -21,-11 Z" fill="url(#rodGrad)" stroke="#5c1230" stroke-width="1.3"/>
+      <ellipse cx="-8" cy="-4" rx="11" ry="3.6" fill="#ffffff" opacity="0.32"/>
+      <path d="M -18 1 Q 0 -3 18 1" stroke="#5c1230" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M -32,-3 Q -55,-16 -76,-6 Q -92,2 -103,-9" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M -32,4 Q -50,18 -70,10" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+      <path d="M 32,3 Q 55,16 76,5 Q 91,-3 101,10" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M 32,-4 Q 50,-18 68,-9" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+    </g>
+
+    <g id="rodSpore">
+      <use href="#rod"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="#f7e6ee" stroke="#5c1230" stroke-width="1" opacity="0.95"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.5"/>
+    </g>
+
+    <g id="spiral">
+      <path d="M -70 0 C -55 -24, -25 24, 0 0 C 25 -24, 55 24, 70 0" stroke="url(#spiralGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M -70 -3 C -55 -27, -25 21, 0 -3 C 25 -27, 55 21, 70 -3" stroke="#ffe3b0" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.4"/>
+      <path d="M 70,0 Q 88,-10 98,2 Q 84,4 92,14" stroke="#df8536" stroke-width="1.3" fill="none" opacity="0.5"/>
+    </g>
+
+    <g id="rbc">
+      <ellipse rx="34" ry="30" fill="url(#rbcGrad)"/>
+      <ellipse rx="13" ry="11" fill="#c85c73" opacity="0.5"/>
+    </g>
+  </defs>
+
+  <!-- glass slide base -->
+  <rect x="8" y="8" width="984" height="984" rx="44" ry="44" fill="url(#glassGrad)"/>
+  <ellipse cx="500" cy="500" rx="530" ry="440" transform="rotate(18 500 500)" fill="url(#smearGrad)"/>
+
+  <!-- corner: specimen label -->
+  <g>
+    <rect x="20" y="20" width="188" height="74" rx="6" fill="#faf6ec" stroke="#c8c1a9" stroke-width="2"/>
+    <circle cx="36" cy="37" r="6" fill="#bd3b2c"/>
+    <text x="50" y="41" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#3a3428">SAMPLE 04</text>
+    <text x="30" y="60" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Mixed bacterial flora</text>
+    <text x="30" y="76" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Gram stain · 400×</text>
+  </g>
+
+  <!-- corner: tape -->
+  <g transform="translate(880,50) rotate(8)">
+    <rect x="-95" y="-20" width="190" height="42" fill="#e9dcb5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#5a4b2c" opacity="0.75">smear #4</text>
+  </g>
+
+  <!-- corner: biohazard trefoil -->
+  <g transform="translate(95,905)" opacity="0.4">
+    <circle cx="0" cy="-16" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="-14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="0" cy="0" r="6" fill="#555"/>
+  </g>
+
+  <!-- corner: crack -->
+  <path d="M 900,905 L 918,918 L 912,932 L 930,945 L 922,958" fill="none" stroke="#8f9aa0" stroke-width="1.4" opacity="0.5"/>
+
+  <!-- glass shine streaks -->
+  <polygon points="640,20 700,20 480,300 420,300" fill="#ffffff" opacity="0.1"/>
+  <polygon points="120,760 165,760 60,970 15,970" fill="#ffffff" opacity="0.08"/>
+
+  <!-- drop shadow of viewport -->
+  <ellipse cx="512" cy="514" rx="478" ry="478" fill="#000000" opacity="0.22" filter="url(#softBlur)"/>
+
+  <!-- magnified field -->
+  <g clip-path="url(#fieldClip)">
+    <circle cx="500" cy="500" r="478" fill="url(#fieldGrad)"/>
+    <rect x="20" y="20" width="960" height="960" filter="url(#grain)" opacity="0.4"/>
+
+    <line x1="14" y1="500" x2="986" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <line x1="500" y1="14" x2="500" y2="986" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <circle cx="500" cy="500" r="150" fill="none" stroke="#ffffff" opacity="0.07" stroke-width="1"/>
+    <circle cx="500" cy="500" r="300" fill="none" stroke="#ffffff" opacity="0.06" stroke-width="1"/>
+    <circle cx="500" cy="500" r="450" fill="none" stroke="#ffffff" opacity="0.05" stroke-width="1"/>
+
+    <g filter="url(#softBlur)" opacity="0.35">
+      <use href="#rbc" x="110" y="140"/>
+      <use href="#rbc" x="890" y="190"/>
+      <use href="#rbc" x="140" y="890"/>
+      <use href="#rbc" x="860" y="860"/>
+      <use href="#rbc" x="500" y="880"/>
+      <use href="#rbc" x="500" y="120"/>
+      <use href="#rbc" x="280" y="650"/>
+      <use href="#rbc" x="730" y="340"/>
+    </g>
+
+    <!-- stain debris -->
+    <g fill="#7a2d52" opacity="0.35">
+      <circle cx="120" cy="350" r="2.2"/><circle cx="300" cy="250" r="2.6"/><circle cx="430" cy="480" r="2"/>
+      <circle cx="600" cy="350" r="2.4"/><circle cx="780" cy="300" r="2"/><circle cx="880" cy="500" r="2.6"/>
+      <circle cx="750" cy="700" r="2.2"/><circle cx="600" cy="850" r="2"/><circle cx="430" cy="650" r="2.4"/>
+      <circle cx="250" cy="480" r="2"/><circle cx="160" cy="700" r="2.6"/><circle cx="350" cy="900" r="2"/>
+      <circle cx="700" cy="900" r="2.2"/><circle cx="900" cy="700" r="2"/><circle cx="500" cy="650" r="2.4"/>
+      <circle cx="650" cy="450" r="2"/><circle cx="200" cy="200" r="2.4"/><circle cx="850" cy="200" r="2"/>
+    </g>
+
+    <!-- Staphylococcus clusters -->
+    <g>
+      <use href="#coccus" x="190" y="650"/><use href="#coccus" x="210" y="642"/><use href="#coccus" x="174" y="636"/>
+      <use href="#coccus" x="212" y="664"/><use href="#coccus" x="168" y="660"/><use href="#coccus" x="194" y="626"/>
+      <use href="#coccus" x="184" y="674"/><use href="#coccus" x="164" y="646"/><use href="#coccus" x="216" y="652"/>
+      <use href="#coccus" x="198" y="670"/><use href="#coccus" x="180" y="628"/>
+    </g>
+    <g>
+      <use href="#coccus" x="760" y="290"/><use href="#coccus" x="780" y="282"/><use href="#coccus" x="744" y="276"/>
+      <use href="#coccus" x="782" y="304"/><use href="#coccus" x="738" y="300"/><use href="#coccus" x="764" y="266"/>
+      <use href="#coccus" x="754" y="314"/><use href="#coccus" x="734" y="286"/><use href="#coccus" x="786" y="292"/>
+      <use href="#coccus" x="768" y="310"/><use href="#coccus" x="750" y="268"/>
+    </g>
+    <g>
+      <use href="#coccus" x="540" y="140"/><use href="#coccus" x="560" y="132"/><use href="#coccus" x="524" y="126"/>
+      <use href="#coccus" x="562" y="154"/><use href="#coccus" x="518" y="150"/><use href="#coccus" x="544" y="116"/>
+      <use href="#coccus" x="534" y="164"/><use href="#coccus" x="514" y="136"/><use href="#coccus" x="566" y="142"/>
+      <use href="#coccus" x="548" y="160"/><use href="#coccus" x="530" y="118"/>
+    </g>
+
+    <!-- Streptococcus chains -->
+    <g>
+      <use href="#coccus" x="430" y="240"/><use href="#coccus" x="452" y="246"/><use href="#coccus" x="474" y="253"/>
+      <use href="#coccus" x="496" y="259"/><use href="#coccus" x="518" y="266"/><use href="#coccus" x="540" y="272"/>
+      <use href="#coccus" x="562" y="279"/>
+    </g>
+    <g>
+      <use href="#coccus" x="140" y="760"/><use href="#coccus" x="163" y="755"/><use href="#coccus" x="187" y="751"/>
+      <use href="#coccus" x="210" y="746"/><use href="#coccus" x="234" y="742"/><use href="#coccus" x="258" y="737"/>
+    </g>
+
+    <!-- E. coli rods -->
+    <use href="#rod" transform="translate(230,200) rotate(-15)"/>
+    <use href="#rod" transform="translate(680,150) rotate(20)"/>
+    <use href="#rod" transform="translate(830,420) rotate(95)"/>
+    <use href="#rod" transform="translate(140,480) rotate(55)"/>
+    <use href="#rod" transform="translate(550,760) rotate(-40)"/>
+    <use href="#rod" transform="translate(350,800) rotate(5)"/>
+    <use href="#rod" transform="translate(760,830) rotate(140)"/>
+    <use href="#rod" transform="translate(300,380) rotate(160)"/>
+    <use href="#rod" transform="translate(345,400) rotate(160)"/>
+
+    <!-- Bacillus with endospore -->
+    <use href="#rodSpore" transform="translate(410,560) rotate(-25)"/>
+    <use href="#rodSpore" transform="translate(210,300) rotate(75)"/>
+
+    <!-- Spiral bacteria -->
+    <use href="#spiral" transform="translate(520,400) rotate(10)"/>
+    <use href="#spiral" transform="translate(850,640) rotate(-25)"/>
+
+    <!-- Neutrophil (white blood cell) phagocytosing bacteria -->
+    <g transform="translate(650,600)">
+      <circle r="95" fill="url(#cytoGrad)" stroke="#b98aa5" stroke-width="2"/>
+      <g fill="#d98cae" opacity="0.4">
+        <circle cx="-40" cy="-50" r="2.4"/><circle cx="20" cy="-60" r="2"/><circle cx="55" cy="-20" r="2.4"/>
+        <circle cx="60" cy="30" r="2"/><circle cx="20" cy="60" r="2.4"/><circle cx="-30" cy="55" r="2"/>
+        <circle cx="-60" cy="10" r="2.4"/><circle cx="-10" cy="-10" r="2"/><circle cx="35" cy="5" r="2"/>
+      </g>
+      <use href="#rod" transform="translate(-62,52) rotate(30) scale(0.6)"/>
+      <use href="#rod" transform="translate(58,-45) rotate(-60) scale(0.55)"/>
+      <path d="M -40,-30 C -55,-45 -20,-55 -5,-40 C 10,-55 40,-45 35,-25 C 55,-15 50,15 30,20 C 40,40 10,55 -5,40 C -20,55 -50,40 -40,20 C -60,10 -55,-15 -40,-30 Z"
+            fill="url(#nucleusGrad)" stroke="#1c1440" stroke-width="1.5"/>
+      <path d="M -25,-25 Q -10,-15 -20,0 M 10,-30 Q 20,-15 10,0 M -10,20 Q 5,30 20,15" stroke="#8a7de0" stroke-width="1.2" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- vignette overlay -->
+    <circle cx="500" cy="500" r="478" fill="url(#vignette)"/>
+
+    <!-- reticle center -->
+    <circle cx="500" cy="500" r="3" fill="#ffffff" opacity="0.5"/>
+
+    <!-- scale bar -->
+    <g transform="translate(500,915)">
+      <line x1="-60" y1="0" x2="60" y2="0" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="-60" y1="-6" x2="-60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="60" y1="-6" x2="60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <text x="0" y="-13" text-anchor="middle" font-family="'Courier New', monospace" font-size="16" fill="#ffffff" opacity="0.85">10 µm</text>
+    </g>
+
+    <text x="500" y="70" text-anchor="middle" font-family="'Courier New', monospace" font-size="21" fill="#ffffff" opacity="0.55">400×  MIXED BACTERIAL FLORA</text>
+  </g>
+
+  <!-- viewport bezel -->
+  <circle cx="500" cy="500" r="483" fill="none" stroke="url(#bezelGrad)" stroke-width="13"/>
+  <circle cx="500" cy="500" r="475" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.35"/>
+  <path d="M 39.5,332.4 A 483 483 0 0 1 414.9,17.4" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.32" stroke-linecap="round"/>
+</svg></template>
+
+<script>
+(function () {
+  "use strict";
+
+  var MAX_NOTE = 500;
+
+  /* ------------------------------------------------------------------ *
+   * THE SCALES — the real taxonomy.json subset, verbatim (v10):        *
+   * grades + the five LIVE axes only (defunct axes are never surveyed).*
+   * Production substitutes the data.php payload for this const.        *
+   * ------------------------------------------------------------------ */
+  var TAX = {
+    version: 10,
+    grades: [
+      { id: "prime", rank: 5, label: "Prime",
+        description: "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
+      { id: "choice", rank: 4, label: "Choice",
+        description: "Strong result with minor blemishes a careful eye can find." },
+      { id: "select", rank: 3, label: "Select",
+        description: "Competent and recognizable; noticeable flaws on one or more axes." },
+      { id: "standard", rank: 2, label: "Standard",
+        description: "Gets the idea across despite significant defects." },
+      { id: "utility", rank: 1, label: "Utility",
+        description: "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
+    ],
+    axes: [
+      { id: "instruction-following", label: "Instruction following",
+        description: "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?",
+        values: [
+          { id: "followed", rank: 3, label: "Followed", description: "Every explicit ask is honored as specified." },
+          { id: "drifted", rank: 2, label: "Drifted", description: "Some asks bent, missed, or quietly replaced." },
+          { id: "ignored", rank: 1, label: "Ignored", description: "Explicit asks are disregarded outright." }
+        ] },
+      { id: "restraint", label: "Restraint",
+        description: "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
+        values: [
+          { id: "disciplined", rank: 3, label: "Disciplined", description: "Nothing appears that the prompt didn't call for." },
+          { id: "embellished", rank: 2, label: "Embellished", description: "Unrequested extras crept in without taking over." },
+          { id: "overgrown", rank: 1, label: "Overgrown", description: "Additions crowd or upstage what was actually asked for." }
+        ] },
+      { id: "integrity", label: "Integrity",
+        description: "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
+        values: [
+          { id: "sound", rank: 3, label: "Sound", description: "Coherent construction; nothing floats, breaks, or contradicts itself." },
+          { id: "strained", rank: 2, label: "Strained", description: "Visible seams — small breaks, misalignments, or spatial slips." },
+          { id: "broken", rank: 1, label: "Broken", description: "Structural or spatial failures dominate the read." }
+        ] },
+      { id: "style", label: "Style",
+        description: "Is the image one consistent visual language, well executed — whatever language it chose?",
+        values: [
+          { id: "unified", rank: 3, label: "Unified", description: "One coherent visual language throughout." },
+          { id: "mixed", rank: 2, label: "Mixed", description: "Registers collide — parts of the image speak different styles." },
+          { id: "incoherent", rank: 1, label: "Incoherent", description: "No governing style survives the image." }
+        ] },
+      { id: "je-ne-sais-quoi", label: "Je ne sais quoi",
+        description: "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
+        values: [
+          { id: "abundant", rank: 3, label: "Abundant", description: "The piece has it — undeniable, unaccountable appeal." },
+          { id: "trace", rank: 2, label: "Trace", description: "A glimmer of something beyond competence." },
+          { id: "none-detected", rank: 1, label: "None detected", description: "Technically present, spiritually absent." }
+        ] }
+    ]
+  };
+
+  /* the five-stop comparator — wording is this mockup's; the value maps to
+     the proposed C1.3 extension {winner, strength} noted at the page foot */
+  var COMPARE = [
+    { value: "a-decisive", winner: "a", strength: "decisive", ang: -56,
+      label: "A decisively better",
+      description: "Exhibit A carries the finding outright — no honest argument for B." },
+    { value: "a-slight", winner: "a", strength: "slight", ang: -28,
+      label: "A slightly better",
+      description: "Exhibit A ahead by a nose; a second inspector might quibble." },
+    { value: "even", winner: "tie", strength: null, ang: 0,
+      label: "Dead even",
+      description: "No daylight between them. Filed as a tie." },
+    { value: "b-slight", winner: "b", strength: "slight", ang: 28,
+      label: "B slightly better",
+      description: "Exhibit B ahead by a nose; a second inspector might quibble." },
+    { value: "b-decisive", winner: "b", strength: "decisive", ang: 56,
+      label: "B decisively better",
+      description: "Exhibit B carries the finding outright — no honest argument for A." }
+  ];
+
+  var NA_GRADE = "left ungraded — the report files without an overall grade.";
+  var NA_AXIS = "left blank — filed as not applicable, in the clerk's shorthand.";
+  var FN_GLYPHS = ["¹", "²", "³", "⁴", "⁵", "⁶", "⁷"];
+
+  /* ------------------------------------------------------------------ *
+   * state — mirrors production's work.ratings / work.comparison        *
+   * ------------------------------------------------------------------ */
+  function blankRating() { return { grade: null, axes: {}, notes: {}, flag: false, flagNote: "" }; }
+  var work = {
+    ratings: { a: blankRating(), b: blankRating() },
+    comparison: null
+  };
+
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  /* ------------------------------------------------------------------ *
+   * render: items 1–3 from the const                                   *
+   * ------------------------------------------------------------------ */
+  var defsRegistry = ""; /* hidden aria-describedby targets, collected here */
+
+  function defSpan(id, title, desc) {
+    defsRegistry += '<span id="' + id + '">' + esc(title) + " — " + esc(desc) + "</span>";
+  }
+
+  function chip(cls, name, value, role, slot, axisId, defId, title, desc, inner) {
+    defSpan(defId, title, desc);
+    return '<label class="' + cls + '" data-def-title="' + esc(title) +
+      '" data-def="' + esc(desc) + '">' +
+      '<input type="radio" name="' + name + '" value="' + esc(value) +
+      '" data-role="' + role + '"' +
+      (slot ? ' data-slot="' + slot + '"' : "") +
+      (axisId ? ' data-axis="' + esc(axisId) + '"' : "") +
+      ' aria-describedby="' + defId + '">' + inner + "</label>";
+  }
+
+  function lineHead(label, fnGlyph, slipId) {
+    return '<div class="line-head"><span class="line-label">' + esc(label) + "</span>" +
+      '<button type="button" class="fn-mark" aria-expanded="false" aria-controls="' +
+      slipId + '" aria-label="definitions — ' + esc(label) + '">' + fnGlyph + "</button></div>";
+  }
+
+  function slip(slipId, fnGlyph, label, axisDesc, options) {
+    var h = '<div class="fnslip" id="' + slipId + '" hidden role="note" aria-label="definitions — ' +
+      esc(label) + '">' +
+      '<p class="fnslip-h">' + fnGlyph + " " + esc(label) + " — definitions</p>";
+    if (axisDesc) h += '<p class="fn-axis-desc">' + esc(axisDesc) + "</p>";
+    options.forEach(function (o) {
+      h += "<p><b>" + esc(o.label) + "</b> — " + esc(o.description) + "</p>";
+    });
+    return h + "</div>";
+  }
+
+  function gradeLine(slot, fnIdx) {
+    var S = slot.toUpperCase();
+    var slipId = "slip-" + slot + "-grade";
+    var name = "g-" + slot;
+    var row = '<div class="stamps" role="radiogroup" aria-label="overall grade for exhibit ' + S + '">';
+    TAX.grades.forEach(function (g) {
+      row += chip("stamp", name, g.rank, "grade", slot, null,
+        "d-" + slot + "-g" + g.rank, g.label, g.description,
+        "<span>" + esc(g.label) + "</span>");
+    });
+    row += chip("stamp na", name, "", "grade", slot, null,
+      "d-" + slot + "-gna", "n/a", NA_GRADE, "<span>n/a</span>");
+    row += "</div>";
+    return '<div class="line">' +
+      lineHead("overall grade", FN_GLYPHS[fnIdx], slipId) + row +
+      slip(slipId, FN_GLYPHS[fnIdx], "overall grade",
+        "the drawer's own scale, best to worst — the USDA register, on purpose.",
+        TAX.grades.concat([{ label: "n/a", description: NA_GRADE }])) +
+      "</div>";
+  }
+
+  function axisLine(slot, ax, fnIdx) {
+    var S = slot.toUpperCase();
+    var slipId = "slip-" + slot + "-" + ax.id;
+    var name = "a-" + slot + "-" + ax.id;
+    var rmId = "rm-" + slot + "-" + ax.id;
+    var row = '<div class="punches" role="radiogroup" aria-label="' +
+      esc(ax.label) + ' for exhibit ' + S + '">';
+    ax.values.forEach(function (v) {
+      row += chip("punch", name, v.rank, "axis", slot, ax.id,
+        "d-" + slot + "-" + ax.id + "-" + v.rank, v.label, v.description,
+        '<span class="pbox" aria-hidden="true"></span><span class="pt">' + esc(v.label) + "</span>");
+    });
+    row += chip("punch na", name, "", "axis", slot, ax.id,
+      "d-" + slot + "-" + ax.id + "-na", "n/a", NA_AXIS,
+      '<span class="pbox" aria-hidden="true"></span><span class="pt">n/a</span>');
+    row += "</div>";
+    var remarks = '<div class="remarks">' +
+      '<button type="button" class="remarks-t" aria-expanded="false" aria-controls="' + rmId +
+      '">remarks —</button>' +
+      '<div class="rm-body" id="' + rmId + '" hidden>' +
+      '<input type="text" class="writein" maxlength="' + MAX_NOTE +
+      '" data-role="note" data-slot="' + slot + '" data-axis="' + esc(ax.id) +
+      '" placeholder="noted in passing" aria-label="remarks on ' + esc(ax.label) +
+      ' for exhibit ' + S + '"></div></div>';
+    return '<div class="line">' +
+      lineHead(ax.label, FN_GLYPHS[fnIdx], slipId) + row + remarks +
+      slip(slipId, FN_GLYPHS[fnIdx], ax.label, ax.description,
+        ax.values.concat([{ label: "n/a", description: NA_AXIS }])) +
+      "</div>";
+  }
+
+  function condemnBlock(slot) {
+    var S = slot.toUpperCase();
+    return '<div class="condemn-wrap" id="cw-' + slot + '">' +
+      '<label class="condemn">' +
+      '<input type="checkbox" data-role="flag" data-slot="' + slot + '">' +
+      '<span class="condemn-stamp" aria-hidden="true">condemned</span>' +
+      '<span class="condemn-text">this response is broken or offensive — condemn it and say why below</span>' +
+      "</label>" +
+      '<div class="condemn-note" id="cn-' + slot + '" hidden>' +
+      '<label class="wl">nature of defect' +
+      '<input type="text" class="writein" maxlength="' + MAX_NOTE +
+      '" data-role="flagnote" data-slot="' + slot +
+      '" placeholder="what is wrong with it?"></label></div></div>';
+  }
+
+  function exhibitPanel(slot, itemNo) {
+    var S = slot.toUpperCase();
+    var h = '<section class="item ex-' + slot + '" aria-label="item ' + itemNo +
+      ' — exhibit ' + S + '">' +
+      '<h3 class="item-head"><span class="item-no">ITEM&nbsp;' + itemNo +
+      "</span> EXHIBIT " + S +
+      '<span class="item-dim">response ' + S +
+      ' of 2 · identity withheld until the report is filed</span></h3>' +
+      '<div class="exhibit"><figure class="ex-plate">' +
+      '<div class="ex-art" data-art="' + slot + '1" role="img" aria-label="exhibit ' + S + '"></div>' +
+      "<figcaption>Exhibit " + S + "</figcaption></figure></div>";
+    h += gradeLine(slot, 0);
+    TAX.axes.forEach(function (ax, i) { h += axisLine(slot, ax, i + 1); });
+    h += condemnBlock(slot);
+    return h + "</section>";
+  }
+
+  function gaugeSvg() {
+    return '<svg viewBox="0 0 300 132" aria-hidden="true" focusable="false">' +
+      '<path class="g-line" d="M 74.1 67.6 A 86 86 0 0 1 225.9 67.6" fill="none" stroke-width="1.5"/>' +
+      '<g class="g-line" stroke-width="1.5">' +
+      '<line x1="83.7" y1="63.3" x2="73.7" y2="56.6"/>' +
+      '<line x1="112.4" y1="37.4" x2="106.8" y2="26.8"/>' +
+      '<line x1="150" y1="28" x2="150" y2="16"/>' +
+      '<line x1="187.6" y1="37.4" x2="193.2" y2="26.8"/>' +
+      '<line x1="216.3" y1="63.3" x2="226.3" y2="56.6"/>' +
+      "</g>" +
+      '<text class="g-ab" x="60" y="52" text-anchor="middle">A</text>' +
+      '<text class="g-ab" x="240" y="52" text-anchor="middle">B</text>' +
+      '<g class="needle" id="needle">' +
+      '<line x1="150" y1="118" x2="150" y2="36" stroke-width="2.5"/>' +
+      '<polygon points="150,26 146,38 154,38"/>' +
+      '<circle cx="150" cy="116" r="3" stroke-width="0"/>' +
+      "</g>" +
+      '<circle cx="150" cy="108" r="4.5" fill="#33240f" stroke="none"/>' +
+      '<line x1="146.8" y1="108" x2="153.2" y2="108" stroke="#e9dcb4" stroke-width="1.2"/>' +
+      '<text class="g-eng" x="150" y="129" text-anchor="middle">COMPARATOR · FIVE-STOP · NO. 7</text>' +
+      "</svg>";
+  }
+
+  function compareSection() {
+    var slipId = "slip-cmp";
+    var row = '<div class="likert" role="radiogroup" aria-label="comparative finding — which exhibit carries it">';
+    COMPARE.forEach(function (o) {
+      row += chip("lk" + (o.winner === "tie" ? " mid" : ""), "cmp", o.value,
+        "likert", null, null, "d-cmp-" + o.value, o.label, o.description,
+        '<span class="lk-t">' + esc(o.label) + "</span>");
+    });
+    row += "</div>";
+    return '<section class="item" aria-label="item 3 — comparative finding">' +
+      '<h3 class="item-head"><span class="item-no">ITEM&nbsp;3</span> COMPARATIVE FINDING' +
+      '<span class="item-dim">required before filing · A stands left, B stands right</span></h3>' +
+      '<div class="line">' +
+      lineHead("the finding", FN_GLYPHS[6], slipId) +
+      '<div class="gauge-wrap" aria-hidden="true">' +
+      '<div class="g-thumb"><div class="ex-art" data-art="a2"></div><span>A</span></div>' +
+      '<div class="gauge idle" id="gauge">' + gaugeSvg() + "</div>" +
+      '<div class="g-thumb"><div class="ex-art" data-art="b2"></div><span>B</span></div>' +
+      "</div>" + row +
+      slip(slipId, FN_GLYPHS[6], "comparative finding",
+        "one finding per report: which exhibit belongs in the drawer, and by how much.",
+        COMPARE) +
+      "</div></section>";
+  }
+
+  var host = document.getElementById("form-body");
+  host.innerHTML =
+    exhibitPanel("a", 1) +
+    exhibitPanel("b", 2) +
+    compareSection() +
+    "<div hidden>" + defsRegistry + "</div>";
+
+  /* ------------------------------------------------------------------ *
+   * mint the exhibits — namespaced ids per placement (defs collide     *
+   * otherwise: both artworks use ids like "grain")                     *
+   * ------------------------------------------------------------------ */
+  function mint(el) {
+    var key = el.getAttribute("data-art");           /* a1 / b1 / a2 / b2 */
+    var prefix = "x" + key + "_";
+    var tpl = document.getElementById(key.charAt(0) === "a" ? "tpl-a" : "tpl-b");
+    var raw = tpl.innerHTML
+      .replace(/\bid="([^"]+)"/g, 'id="' + prefix + '$1"')
+      .replace(/url\(#([^)]+)\)/g, "url(#" + prefix + "$1)")
+      .replace(/\bhref="#([^"]+)"/g, 'href="#' + prefix + '$1"');
+    el.innerHTML = raw;
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("[data-art]"), mint);
+
+  /* ------------------------------------------------------------------ *
+   * the definition tooltip — hover (fine pointers) + keyboard focus.   *
+   * Visual echo only (aria-hidden); SRs get aria-describedby.          *
+   * ------------------------------------------------------------------ */
+  var tip = document.createElement("div");
+  tip.className = "tt";
+  tip.setAttribute("aria-hidden", "true");
+  document.body.appendChild(tip);
+
+  var canHover = window.matchMedia &&
+    window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  var hadKb = false; /* focus-visible discipline: tooltips on KEYBOARD focus,
+                        never on the focus a tap causes (a tap only selects) */
+  window.addEventListener("keydown", function (e) {
+    if (e.key === "Tab" || e.key.indexOf("Arrow") === 0 ||
+        e.key === "Home" || e.key === "End") hadKb = true;
+  }, true);
+  window.addEventListener("pointerdown", function () { hadKb = false; }, true);
+
+  function showTip(el) {
+    var d = el.getAttribute("data-def");
+    if (!d) return;
+    tip.innerHTML = "<b>" + esc(el.getAttribute("data-def-title")) + "</b> — " + esc(d);
+    tip.classList.add("is-on");
+    tip.style.left = "0px"; tip.style.top = "0px";
+    var r = el.getBoundingClientRect();
+    var w = tip.offsetWidth, h = tip.offsetHeight;
+    var vw = document.documentElement.clientWidth;
+    var x = Math.min(Math.max(r.left + r.width / 2 - w / 2, 8), vw - w - 8);
+    var y = r.top - h - 10;
+    if (y < 8) y = r.bottom + 10;
+    tip.style.left = Math.round(x) + "px";
+    tip.style.top = Math.round(y) + "px";
+  }
+  function hideTip() { tip.classList.remove("is-on"); }
+
+  var sheet = document.getElementById("sheet");
+  sheet.addEventListener("mouseover", function (e) {
+    if (!canHover) return;
+    var c = e.target.closest ? e.target.closest("[data-def]") : null;
+    if (c) showTip(c);
+  });
+  sheet.addEventListener("mouseout", function (e) {
+    if (!canHover) return;
+    if (e.target.closest && e.target.closest("[data-def]")) hideTip();
+  });
+  sheet.addEventListener("focusin", function (e) {
+    var c = e.target.closest ? e.target.closest("[data-def]") : null;
+    if (c && hadKb) showTip(c); else hideTip();
+  });
+  sheet.addEventListener("focusout", function () { hideTip(); });
+  window.addEventListener("scroll", hideTip, true);
+  window.addEventListener("resize", hideTip);
+
+  /* ------------------------------------------------------------------ *
+   * footnote slips — tap the mark, fold with Esc / tap-outside         *
+   * ------------------------------------------------------------------ */
+  var openMark = null;
+  function closeSlips() {
+    if (!openMark) return;
+    var s = document.getElementById(openMark.getAttribute("aria-controls"));
+    if (s) s.hidden = true;
+    openMark.setAttribute("aria-expanded", "false");
+    openMark = null;
+  }
+  function toggleSlip(btn) {
+    var wasOpen = openMark === btn;
+    closeSlips();
+    if (wasOpen) return;
+    var s = document.getElementById(btn.getAttribute("aria-controls"));
+    if (!s) return;
+    s.hidden = false;
+    btn.setAttribute("aria-expanded", "true");
+    openMark = btn;
+  }
+  document.addEventListener("pointerdown", function (e) {
+    if (!openMark) return;
+    var s = document.getElementById(openMark.getAttribute("aria-controls"));
+    if (e.target === openMark || (openMark.contains && openMark.contains(e.target))) return;
+    if (s && s.contains(e.target)) return;
+    closeSlips();
+  });
+  window.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") { hideTip(); closeSlips(); }
+  });
+
+  /* ------------------------------------------------------------------ *
+   * input plumbing — production's onChange/onInput shape               *
+   * ------------------------------------------------------------------ */
+  function markGroup(input) {
+    var group = input.closest("[role=radiogroup]");
+    if (!group) return;
+    Array.prototype.forEach.call(group.querySelectorAll("label"), function (l) {
+      var i = l.querySelector("input");
+      var on = !!(i && i.checked);
+      l.classList.toggle("is-on", on);
+      l.classList.remove("thunk");
+      if (on) { void l.offsetWidth; l.classList.add("thunk"); }
+    });
+  }
+
+  var gauge = document.getElementById("gauge");
+  var needle = document.getElementById("needle");
+  var fileBtn = document.getElementById("file-btn");
+  var fileReq = document.getElementById("file-req");
+  var fileStatus = document.getElementById("file-status");
+  var dispo = document.getElementById("dispo");
+  var resetBtn = document.getElementById("mock-reset");
+  var payloadEl = document.getElementById("payload");
+  var filed = false;
+
+  function findCompare(v) {
+    for (var i = 0; i < COMPARE.length; i++) if (COMPARE[i].value === v) return COMPARE[i];
+    return null;
+  }
+
+  function payload() {
+    var out = { submission_id: "01J… (mockup)", client: "web", ratings: [], comparison: null };
+    ["a", "b"].forEach(function (slot) {
+      var r = work.ratings[slot];
+      var gid = "01J…" + slot.toUpperCase();
+      if (r.grade != null) out.ratings.push({ gen_id: gid, kind: "grade", value: r.grade });
+      TAX.axes.forEach(function (ax) {
+        var v = r.axes[ax.id];
+        if (v == null) return;
+        var e = { gen_id: gid, kind: "axis", axis_id: ax.id, value: v };
+        var note = (r.notes[ax.id] || "").trim();
+        if (note) e.note = note;
+        out.ratings.push(e);
+      });
+      if (r.flag) {
+        var f = { gen_id: gid, kind: "flag" };
+        var fn = r.flagNote.trim();
+        if (fn) f.note = fn;
+        out.ratings.push(f);
+      }
+    });
+    if (work.comparison) {
+      out.comparison = { winner: work.comparison.winner, strength: work.comparison.strength };
+    }
+    return out;
+  }
+
+  function sync() {
+    payloadEl.textContent = JSON.stringify(payload(), null, 2);
+    if (!filed) {
+      fileBtn.disabled = !work.comparison;
+      fileReq.hidden = !!work.comparison;
+    }
+  }
+
+  sheet.addEventListener("change", function (e) {
+    var t = e.target;
+    var role = t.getAttribute && t.getAttribute("data-role");
+    if (!role) return;
+    var slot = t.getAttribute("data-slot");
+    var val = t.value === "" ? null : t.value;
+    if (t.type === "radio") markGroup(t);
+    if (role === "grade") {
+      work.ratings[slot].grade = val == null ? null : Number(val);
+    } else if (role === "axis") {
+      work.ratings[slot].axes[t.getAttribute("data-axis")] =
+        val == null ? null : Number(val);
+    } else if (role === "likert") {
+      var o = findCompare(t.value);
+      work.comparison = o ? { winner: o.winner, strength: o.strength, value: o.value } : null;
+      if (o) {
+        gauge.classList.remove("idle");
+        needle.style.transform = "rotate(" + o.ang + "deg)";
+      }
+    } else if (role === "flag") {
+      work.ratings[slot].flag = t.checked;
+      /* mutate in place — never re-render the sheet (production lesson) */
+      document.getElementById("cw-" + slot).classList.toggle("is-flagged", t.checked);
+      document.getElementById("cn-" + slot).hidden = !t.checked;
+    }
+    sync();
+  });
+
+  sheet.addEventListener("input", function (e) {
+    var t = e.target;
+    var role = t.getAttribute && t.getAttribute("data-role");
+    if (!role) return;
+    var slot = t.getAttribute("data-slot");
+    if (role === "note") {
+      work.ratings[slot].notes[t.getAttribute("data-axis")] = t.value.slice(0, MAX_NOTE);
+    } else if (role === "flagnote") {
+      work.ratings[slot].flagNote = t.value.slice(0, MAX_NOTE);
+    }
+    sync();
+  });
+
+  sheet.addEventListener("click", function (e) {
+    var mark = e.target.closest ? e.target.closest(".fn-mark") : null;
+    if (mark) { toggleSlip(mark); return; }
+    var rt = e.target.closest ? e.target.closest(".remarks-t") : null;
+    if (rt) {
+      var body = document.getElementById(rt.getAttribute("aria-controls"));
+      var open = body.hidden;
+      body.hidden = !open;
+      rt.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) {
+        var inp = body.querySelector("input");
+        if (inp) inp.focus();
+      }
+      return;
+    }
+  });
+
+  fileBtn.addEventListener("click", function () {
+    if (!work.comparison || filed) return;
+    filed = true;
+    dispo.classList.add("is-filed");
+    fileBtn.disabled = true;
+    fileBtn.textContent = "Report filed";
+    fileStatus.textContent =
+      "Filed. In production this posts the batch on the right of this page once to " +
+      "/api/jd-rate.php — grades, punches, remarks, condemnations, and the finding " +
+      "— and the unveil follows.";
+    resetBtn.hidden = false;
+    sync();
+  });
+
+  resetBtn.addEventListener("click", function () {
+    filed = false;
+    dispo.classList.remove("is-filed");
+    fileBtn.textContent = "File this report";
+    fileStatus.textContent = "";
+    resetBtn.hidden = true;
+    sync();
+  });
+
+  sync();
+}());
+</script>
+
+</body>
+</html>
