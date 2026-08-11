@@ -1237,16 +1237,8 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   .rc-zoom-cap-t { font-size: 0.55rem; letter-spacing: 0.16em; }
 }
 
-/* ---- defunct axes (taxonomy v6): dimmed in the legend; excluded from the
-   report card entirely (owner, 2026-07-29 — filed gradings live in data) -- */
-.jd-axis-row.is-defunct { opacity: 0.55; }
-.jd-axis-flag {
-  margin-left: 0.6em;
-  font-size: 0.62em; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--plot-red, #b22222);
-  border: 1px solid currentColor; border-radius: 2px;
-  padding: 0.05em 0.4em;
-}
+/* (the defunct-axis legend rules retired 2026-08-11: the legend now lists
+   live axes only — see renderLegend in junk-drawer.js) */
 
 /* ============================================================================
    TAKE A TURN — the modal, the survey, and the visitor's own item (C5).

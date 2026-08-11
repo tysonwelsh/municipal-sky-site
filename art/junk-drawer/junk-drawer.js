@@ -478,23 +478,18 @@ function JD_layerOpen() {
         });
     }
     if (axesEl) {
-      /* live axes first, then defunct ones dimmed at the foot — retired
-         axes stay listed because old responses still carry their grades */
-      var axes = (tax.axes || []).slice().sort(function (a, b) {
-        return (a.defunct ? 1 : 0) - (b.defunct ? 1 : 0);
-      });
+      /* LIVE axes only (owner, 2026-08-11): the dimmed defunct rows are
+         gone from the legend — the field notes describe the survey as it
+         is asked today. Retired axes still exist in the taxonomy for the
+         old responses that carry their grades (the report card is where
+         that history surfaces, when it lands). */
+      var axes = (tax.axes || []).filter(function (ax) { return !ax.defunct; });
       axes.forEach(function (ax) {
         var row = document.createElement('div');
-        row.className = 'jd-axis-row' + (ax.defunct ? ' is-defunct' : '');
+        row.className = 'jd-axis-row';
         var label = document.createElement('span');
         label.className = 'jd-axis-label';
         label.textContent = ax.label || ax.id;
-        if (ax.defunct) {
-          var flag = document.createElement('span');
-          flag.className = 'jd-axis-flag';
-          flag.textContent = 'defunct';
-          label.appendChild(flag);
-        }
         var desc = document.createElement('span');
         desc.className = 'jd-axis-desc';
         desc.textContent = ax.description || '';
@@ -825,12 +820,14 @@ function JD_layerOpen() {
        a little faster on a 120Hz display, which nobody can see. */
   var ROPE = {
     SEGMENTS: 16,     /* point masses in the chain, both ends included */
-    SLACK: 1.17,      /* rest length as a multiple of the span at pin time.
-                         Was 1.25 — shortened with MIN_REST and the seat gaps
+    SLACK: 1.14,      /* rest length as a multiple of the span at pin time.
+                         Was 1.25, then 1.17; the excess took another ~20%
+                         cut (owner, 2026-08-11) with MIN_REST and the seat
+                         gaps — original note: shortened with the seat gaps
                          (owner request, 2026-08-10: the string reads about
                          two-thirds its former length); the surplus that hangs
                          as dangle is what this dial actually sets */
-    MIN_REST: 40,     /* px — the shortest string we will ever hang (was 60) */
+    MIN_REST: 32,     /* px — the shortest string we will ever hang (60→40→32) */
     GRAVITY: 0.55,    /* px per frame², ~60fps */
     DAMPING: 0.97,    /* velocity kept per frame (1.0 would swing forever) */
     ITER: 4,          /* constraint relaxation passes per frame (alternating) */
@@ -1441,11 +1438,12 @@ function JD_layerOpen() {
     var ay = vBottom - 6;                        /* foot of the predicted extent */
     tag.classList.add('is-on');                  /* measurable before placing */
     var tw = tag.offsetWidth, th = tag.offsetHeight;
-    /* seat gaps trimmed 26→17 / 20→13 (owner request, 2026-08-10): the tag
+    /* seat gaps trimmed 26→17 / 20→13 (owner request, 2026-08-10), then
+       17→14 / 13→10 with the second ~20% cut (owner, 2026-08-11): the tag
        sits closer so the string's span — the part of its length no slack
        dial can shorten — comes down with the ROPE constants */
-    var below = ay + 17 + th < w.height - 8;
-    var ty = below ? ay + 17 : (vTop - 13 - th);
+    var below = ay + 14 + th < w.height - 8;
+    var ty = below ? ay + 14 : (vTop - 10 - th);
     function clampX(v) { return Math.max(8, Math.min(w.width - tw - 8, v)); }
     var tx;
     if (below) {
@@ -1470,10 +1468,11 @@ function JD_layerOpen() {
          covered and can't push it off the right wall. If the well runs out
          that way — item hard against the left edge — lean right instead;
          whichever survives clamping with more offset wins. */
-      /* 110→80 / 0.62→0.48 with the shorter string (2026-08-10): less slack
+      /* 110→80 / 0.62→0.48 with the shorter string (2026-08-10), then
+         80→64 / 0.48→0.38 with the second cut (2026-08-11): less slack
          means a smaller belly to swing clear, so the lean scales with it —
          the zoomed-width floor is geometry and stays */
-      var lean = Math.max(80, 0.48 * (cy - (ty + th / 2)), zoom * r.width + 40);
+      var lean = Math.max(64, 0.38 * (cy - (ty + th / 2)), zoom * r.width + 40);
       var lx = clampX(cx - lean - 10), rx = clampX(cx + lean - 10);
       tx = Math.abs(lx + 10 - cx) >= Math.abs(rx + 10 - cx) ? lx : rx;
     }
