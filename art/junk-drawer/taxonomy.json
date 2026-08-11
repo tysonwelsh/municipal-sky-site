@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 11,
+  "version": 12,
   "updated": "2026-08-10",
   "grades": [
     {
@@ -147,19 +147,19 @@
         {
           "id": "followed",
           "rank": 3,
-          "label": "Followed",
+          "label": "No problems",
           "description": "Every explicit ask is honored as specified."
         },
         {
           "id": "drifted",
           "rank": 2,
-          "label": "Drifted",
+          "label": "Small problems",
           "description": "Some asks bent, missed, or quietly replaced."
         },
         {
           "id": "ignored",
           "rank": 1,
-          "label": "Ignored",
+          "label": "Big problems",
           "description": "Explicit asks are disregarded outright."
         }
       ]
@@ -172,19 +172,19 @@
         {
           "id": "disciplined",
           "rank": 3,
-          "label": "Disciplined",
+          "label": "No problems",
           "description": "Nothing appears that the prompt didn't call for."
         },
         {
           "id": "embellished",
           "rank": 2,
-          "label": "Embellished",
+          "label": "Small problems",
           "description": "Unrequested extras crept in without taking over."
         },
         {
           "id": "overgrown",
           "rank": 1,
-          "label": "Overgrown",
+          "label": "Big problems",
           "description": "Additions crowd or upstage what was actually asked for."
         }
       ]
@@ -197,19 +197,19 @@
         {
           "id": "sound",
           "rank": 3,
-          "label": "Sound",
+          "label": "No problems",
           "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
         },
         {
           "id": "strained",
           "rank": 2,
-          "label": "Strained",
+          "label": "Small problems",
           "description": "Visible seams — small breaks, misalignments, or spatial slips."
         },
         {
           "id": "broken",
           "rank": 1,
-          "label": "Broken",
+          "label": "Big problems",
           "description": "Structural or spatial failures dominate the read."
         }
       ]
@@ -405,6 +405,11 @@
       "date": "2026-08-11",
       "version": 11,
       "note": "Retire the \"style\" axis (owner call): defunct: true, the v6 mechanism — the survey stops asking it, jd-rate stops accepting it, the legend and report card drop it, and every filed style grading stays in the data untouched."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 12,
+      "note": "Relabel the three problem-shaped axes to one uniform scale (owner call): instruction-following, restraint and integrity now grade No problems / Small problems / Big problems (ranks unchanged — the v9 numeric filing makes this a pure rewording; per-axis descriptions keep the definitions). Je ne sais quoi keeps its labels pending its own rework — it grades a virtue, not a defect, and the problems framing does not fit it."
     }
   ]
 }
