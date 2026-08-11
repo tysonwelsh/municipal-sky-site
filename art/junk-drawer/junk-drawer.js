@@ -2161,14 +2161,20 @@ function JD_layerOpen() {
   var svgInst = window.JD_svgInst;
   /* the filed size, rendered the same way here as on the specimen tag */
   var sizeLabel = window.JD_sizeLabel;
-  /* a red-pencil hand mark; each takes its own rotation jitter + waver
-     filter so no two sit identically */
-  function mark(word) {
+  /* a hand-pencilled mark; each takes its own rotation jitter + waver
+     filter so no two sit identically. `cls` picks the pencil (the
+     rating-colour classes rc-r1..3 and rc-g1..5 in the stylesheet —
+     owner request, 2026-08-11); no class = the original red. Labels'
+     _emphasis_ pairs render in italics here (escape first, so nothing
+     can smuggle markup). */
+  function mark(word, cls) {
     markSeq++;
     var jit = JITTER[markSeq % JITTER.length];
-    return '<span class="rc-mark sm" style="--jit:' + jit +
+    return '<span class="rc-mark sm' + (cls ? ' ' + cls : '') +
+      '" style="--jit:' + jit +
       'deg; filter:url(#jdRcWv' + (markSeq % 4) + ')">' +
-      '<span class="rc-mark-word">' + esc(word) + '</span></span>';
+      '<span class="rc-mark-word">' +
+      esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
   }
   /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
@@ -2250,7 +2256,8 @@ function JD_layerOpen() {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
         var v = window.JD_byRank(axis.values, a.value);
-        cell = mark(window.JD_labelText(v ? v.label : String(a.value)));
+        cell = mark(v ? v.label : String(a.value),
+          v ? 'rc-r' + Math.round(v.rank) : '');
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';
@@ -2260,7 +2267,8 @@ function JD_layerOpen() {
       '<th style="width:52%">Axis</th><th style="width:48%">Verdict</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
-      '<td>' + mark(g.label) + '</td></tr></tfoot></table>';
+      '<td>' + mark(g.label, g.rank ? 'rc-g' + Math.round(g.rank) : '') +
+      '</td></tr></tfoot></table>';
   }
 
   function altsHTML(entry, curIdx) {
@@ -2274,7 +2282,11 @@ function JD_layerOpen() {
         svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
-        '<span class="rc-alt-grade">' + esc(g.label) + '</span>' +
+        /* the strip's little grades wear the same coloured pencils as the
+           card's marks (rc-g1..5 share their colour rules) */
+        '<span class="rc-alt-grade' +
+        (g.rank ? ' rc-g' + Math.round(g.rank) : '') + '">' +
+        esc(g.label) + '</span>' +
         '</span></button>';
     });
     return h + '</div>';
