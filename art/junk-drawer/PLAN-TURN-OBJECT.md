@@ -92,6 +92,20 @@ disguising itself:
   a lit color-variant row. Plan view, the fixed bottom-left seat, and the
   §1 contract otherwise stand.
 
+**STATUS — DONE (2026-08-11).** The owner picked **9a, the Credit Window**,
+in **blue**, labelled **PUSH FOR JUNK** (chosen off the
+`mockup-9a-labels.html` tasting sheet; the label prints ON the lens AND is
+`JD_STRINGS.turnButton`, so artwork and accessible name always agree —
+change them together). Shipped in v0.7.0: `turn-object.svg` is the 9a
+asset with blue as its presentation attributes, junk-drawer.css swapped
+the `db-*` press/gleam blocks for the `cw-*` sink/flare/breathe blocks
+(base state = reduced-motion state), the touch floor rose 44 → 53px
+because only the 83%-of-box housing is pressable (the halo is light,
+`pointer-events: none`), and the JS fallback plate became a plain credit
+button on the same class hooks. GEOM, the m × 1.15 tier, the 240×300
+box, and the corner seat all carried over unchanged, as the mockup's
+notes promised.
+
 Three candidates, one mockup page each (same Phase-0 discipline):
 
 - **9a — The Credit Window**: portrait rectangular backlit coin-door

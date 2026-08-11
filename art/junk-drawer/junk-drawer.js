@@ -45,10 +45,10 @@ var JD_CONSENT = {
 };
 
 var JD_STRINGS = {
-  turnButton: 'TAKE A TURN',   /* PLACEHOLDER pending owner name-tasting. */
-  // Candidates (ship commented, PLAN-RECORD style, for on-device tasting):
-  // turnButton: 'COMMISSION AN OBJECT',
-  // turnButton: 'FEED THE DRAWER',
+  /* the owner's pick, mockup-9a-labels tasting, 2026-08-11 — it is also the
+     wording PRINTED ON the button's lens in turn-object.svg: change the two
+     together or the accessible name and the artwork disagree */
+  turnButton: 'PUSH FOR JUNK',
   visitorTag: 'YOURS'          /* the paper tag on an item the visitor won */
 };
 
@@ -113,7 +113,7 @@ function JD_layerOpen() {
   var pile = document.querySelector('.jd-pile');
   var payloadRef = null;   /* the data.php payload, handed to JD_record */
   /* the "m" tier box in cqmin, resolved from the live taxonomy and handed to
-     the turn object so the doorbell is measured on exactly the ruler the
+     the turn object so the turn button is measured on exactly the ruler the
      collection is measured on (null when data.php never answered — the
      object falls back to BASE.m rather than going missing, since it is now
      the ONLY way to take a turn) */
@@ -304,8 +304,8 @@ function JD_layerOpen() {
     return out;
   }
 
-  /* ---- the doorbell's corner is reserved (owner, 2026-08-10) --------------
-     The Take-a-Turn doorbell is FIXED hardware in the bottom-left corner
+  /* ---- the turn button's corner is reserved (owner, 2026-08-10) --------------
+     The Take-a-Turn button is FIXED hardware in the bottom-left corner
      (see the turn-object module), so nothing may spawn overlapping it. Its
      rect is replayed here from the module's own geometry (JD_turnObject.GEOM)
      with the same footprint math applySize gives every item, and positions
@@ -317,7 +317,7 @@ function JD_layerOpen() {
     var g = window.JD_turnObject && window.JD_turnObject.GEOM;
     if (!g || !(W > 0 && H > 0)) return null;
     var M = SCATTER.inset;
-    /* the BUILT doorbell is the truth — the ≤768px ×1.2 size band and the
+    /* the BUILT button is the truth — the ≤768px ×1.2 size band and the
        44px touch floor are CSS the math below does not see (measured cost
        of trusting math alone: a 15px graze on a phone). Measure the plate
        whenever it exists. */
@@ -338,14 +338,14 @@ function JD_layerOpen() {
     var wpx = Math.max((turnBox || BASE.m) * sq * shape * g.fine * sizeJitter(g.id) / 100 * MIN * band, 44);
     var hpx = wpx / g.aspect;
     var hw = Math.min(0.5, wpx / 2 / W), hh = Math.min(0.5, hpx / 2 / H);
-    /* the corner the bell owns: x below x1 AND y above y0, its full plate
+    /* the corner the button owns: x below x1 AND y above y0, its full plate
        plus the pile's standard clearance as margin */
     return { x1: 2 * hw + g.inset + M, y0: 1 - 2 * hh - g.inset - M };
   }
   /* the exact pass, run by the turn module once the plate is built and
      seated (and so measurable): push anything already lying in the corner
      clear of the REAL rect. Closes the race between the pile's apply pass
-     and the doorbell's async artwork fetch, whichever lands first. */
+     and the turn button's async artwork fetch, whichever lands first. */
   window.JD_enforceTurnCorner = function () {
     var host = pile.getBoundingClientRect();
     var W = host.width || 1, H = host.height || 1, MIN = Math.min(W, H);
@@ -569,7 +569,7 @@ function JD_layerOpen() {
       var tiers = {};
       (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
       function boxFor(sc) { return tiers[sc] || BASE[sc] || BASE.m; }
-      turnBox = boxFor('m');   /* the doorbell is a medium drawer object */
+      turnBox = boxFor('m');   /* the turn button is a medium drawer object */
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
           return r.rid === item.primary;
@@ -637,7 +637,7 @@ function JD_layerOpen() {
       var HW = hostR.width || 1, HH = hostR.height || 1, HM = Math.min(HW, HH);
       els.forEach(function (el) {
         var p = layout[el.dataset.id];
-        /* pushed clear of the doorbell's reserved corner at apply time —
+        /* pushed clear of the turn button's reserved corner at apply time —
            see turnRect above; the stored scatter itself is left alone.
            The half-sizes are the item's ROTATED bounding box (its scatter
            angle is known here): an unrotated box lets a tilted item's
@@ -656,7 +656,7 @@ function JD_layerOpen() {
       });
       if (window.JD_wirePile) window.JD_wirePile();
       /* the drawer's own hardware goes in on top of the collection: the
-         Take-a-Turn doorbell, sized on the tier box just resolved. It is not
+         Take-a-Turn button, sized on the tier box just resolved. It is not
          an entry and never was — see the turn-object module below. */
       if (window.JD_turnObject) window.JD_turnObject.ready(turnBox);
       /* hand the record module the payload + the primary SVG texts, so a
@@ -728,7 +728,7 @@ function JD_layerOpen() {
 
   function grip(item) {
     held = item;
-    /* the doorbell is FIXED hardware (owner revision, 2026-08-10): it still
+    /* the turn button is FIXED hardware (owner revision, 2026-08-10): it still
        becomes `held` — the pointerup press path requires it — but it never
        lifts, so no is-held shadow and no grip haptic (press() buzzes) */
     if (item.dataset.turn === 'object') return;
@@ -1518,7 +1518,7 @@ function JD_layerOpen() {
      trails behind the old positions. The final spot is baked into left/top
      once, at settle, when the element is at rest. */
   function place(item, x, y) {
-    /* fixed hardware does not travel: an attempted drag of the doorbell
+    /* fixed hardware does not travel: an attempted drag of the turn button
        moves nothing (and pointerup will see drag=true, so it won't press
        either — an aborted drag is not a tap) */
     if (item.dataset.turn === 'object') return;
@@ -1537,7 +1537,7 @@ function JD_layerOpen() {
   }
   function settle(item, moved) {
     item.classList.remove('is-held');
-    /* the doorbell settles into nothing: it never moved (place() refuses),
+    /* the turn button settles into nothing: it never moved (place() refuses),
        it keeps its fixed z instead of riding zTop, and it gets no landing
        jostle — its seat is not the visitor's to change any more */
     if (item.dataset.turn === 'object') {
@@ -1584,11 +1584,11 @@ function JD_layerOpen() {
     item.addEventListener('pointerdown', function (e) {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       if (held && e.pointerId !== pid) return;   /* second finger: twist owns it */
-      /* the turn modal opens a beat AFTER the doorbell press so the press can
+      /* the turn modal opens a beat AFTER the turn button press so the press can
          be seen (OPEN_MS). Grabbing something else inside that beat means the
          visitor has moved on — stand the pending open down, or the modal pops
          on top of a drag that is still in flight.
-         The doorbell's OWN re-grip is exempt HERE and handled at the drag
+         The turn button's OWN re-grip is exempt HERE and handled at the drag
          threshold instead (see pointermove): standing down on its pointerdown
          would break the fast double-tap, because press() debounces at 150ms
          and returns early without re-arming — the second tap would cancel the
@@ -1619,10 +1619,10 @@ function JD_layerOpen() {
            place() feeds the rope the same clamped centre it clamps to */
         if (!drag && dx * dx + dy * dy > tapSlop * tapSlop) {
           drag = true;
-          /* the doorbell cancelling its own pending open, at the exact moment
+          /* the turn button cancelling its own pending open, at the exact moment
              this gesture stops being a tap. A re-grip that becomes a DRAG
              never reaches press(), so without this the previous tap's
-             openTimer would still fire. The bell itself no longer travels
+             openTimer would still fire. The button itself no longer travels
              (place() refuses fixed hardware), but the principle stands: a
              gesture that outgrew the slop is not a tap, and must not open
              the modal. Deliberately here and not on pointerdown — see the
@@ -1643,7 +1643,7 @@ function JD_layerOpen() {
       if (held === item) {
         settle(item, drag);
         /* press-release without a drag = tap. For a specimen that is pick();
-           for the drawer's one piece of HARDWARE (the Take-a-Turn doorbell,
+           for the drawer's one piece of HARDWARE (the Take-a-Turn button,
            flagged data-turn) it is a PRESS instead — no specimen tag, no
            report card, because it is not collection. Everything before this
            line is identical for both: same grip, same drag, same settle. */
@@ -1762,7 +1762,7 @@ function JD_layerOpen() {
   if (copy) copy.addEventListener('click', function (e) {
     e.preventDefault();
     var w = well.getBoundingClientRect(), out = {};
-    /* :not([data-turn]) — the doorbell is hardware, not a specimen, and this
+    /* :not([data-turn]) — the turn button is hardware, not a specimen, and this
        readout is a list of where the COLLECTION is lying */
     well.querySelectorAll('.jd-item:not([data-turn])').forEach(function (item) {
       var r = item.getBoundingClientRect();
@@ -1787,14 +1787,14 @@ function JD_layerOpen() {
   });
 })();
 
-/* ---- THE TURN OBJECT — the doorbell in the pile (PLAN-TURN-OBJECT §1) ----
-   The Take-a-Turn trigger is no longer a piece of corner chrome: candidate 8e
-   won the mockup round, so the control is an OBJECT IN THE DRAWER — an old
-   brass doorbell plate with a pearl button and a taped label. The artwork is
-   a static asset (turn-object.svg) fetched alongside data.php and injected as
-   a .jd-item, which buys the whole gesture layer for free: hold-to-grip,
-   transform-only drag, wheel/[ ]/twist rotation, silhouette hit-testing, and
-   a scatter entry persisted in jd-scatter-v2 exactly like a specimen's.
+/* ---- THE TURN OBJECT — the credit button in the pile (PLAN-TURN-OBJECT) --
+   The Take-a-Turn trigger is HARDWARE IN THE DRAWER: candidate 9a won mockup
+   round 9 (2026-08-11, replacing round 8's doorbell, which camouflaged too
+   well) — a backlit arcade credit button, charcoal coin-door housing, glowing
+   blue lens with PUSH FOR JUNK printed on the glass, throwing a pool of light
+   on the wood. The artwork is a static asset (turn-object.svg) fetched
+   alongside data.php and injected as a .jd-item, which buys the whole gesture
+   layer for free: silhouette hit-testing and the tap path in particular.
 
    What makes it hardware rather than collection is one dataset flag,
    data-turn="object", and it is the only special case in the pile:
@@ -1812,23 +1812,26 @@ function JD_layerOpen() {
    JD_STRINGS.turnButton, and it FOCUSES ITSELF on press so it is the modal's
    opener and JD_turn's close() hands focus back to it.
 
-   Discoverability (§1, revised 2026-08-10): the doorbell is FIXED in the
-   bottom-left corner — the same spot every session, every device — at a z
-   above every fresh scatter, and the pearl gleams every ~8s. It cannot be
-   dragged or rotated; only junk the visitor deliberately drops on it can
-   cover it, and only for that session. */
+   Discoverability (§1, revised 2026-08-10; inverted 2026-08-11): the button
+   is FIXED in the bottom-left corner — the same spot every session, every
+   device — at a z above every fresh scatter, and it is LIT: the lens halo is
+   the drawer's only light source, and the backlight breathes every ~8s. It
+   cannot be dragged or rotated; only junk the visitor deliberately drops on
+   it can cover it, and only for that session. */
 (function () {
   var ID = 'jd-turn-object';       /* reserved: see the collision note above */
   var ASSET = '/art/junk-drawer/turn-object.svg';
   var SCATTER_KEY = 'jd-scatter-v2';   /* only to sweep a stale seat — see seat() */
   var FALLBACK_BOX = 15.5;         /* = BASE.m, for a drawer that failed to load */
-  /* The mockup's measurement note: filed at a bare medium the plate lands
-     47×58px on a 375px phone — three pixels over the touch floor, the
-     tightest of the five candidates, because a portrait plate spends its
-     footprint on height. The tier stays MEDIUM (§1) and the taxonomy's own
-     fine dial buys the margin back, exactly as it does for a specimen. */
+  /* The 9a mockup's measurement note: at m × 1.15 the element lands 58×72px
+     on a 375px phone — the same numbers the doorbell measured, because the
+     candidate kept the 240×300 box precisely so this dial, GEOM and the
+     corner reservation all carry over unchanged. Only 83% of that width is
+     pressable housing (the outer band is halo light, pointer-events:none in
+     the CSS), which is why the CSS touch floor rose 44 → 53px: 53px of
+     element is 44px of plastic. */
   var FINE = 1.15;
-  /* FIXED HARDWARE (owner revision, 2026-08-10): the doorbell is screwed to
+  /* FIXED HARDWARE (owner revision, 2026-08-10): the turn button is screwed to
      the bottom-left corner of the drawer floor. It no longer scatters, drags,
      rotates, or persists a seat — same spot, every session, every device.
      Dead straight (rot 0), owner's call: it is a BUTTON in the corner, not a
@@ -1841,7 +1844,7 @@ function JD_layerOpen() {
   var GEOM = { id: 'jd-turn-object', fine: FINE, aspect: 240 / 300, inset: CORNER.inset };
   var Z_FIXED = 99;   /* over every scattered item (their z runs 1..N) and
                          under zTop (100+), where anything the visitor drags
-                         goes — junk deliberately dropped on the bell still
+                         goes — junk deliberately dropped on the button still
                          covers it, but a fresh scatter never buries it */
   var PRESS_MS = 640, PRESS_MS_CALM = 320, OPEN_MS = 200;
 
@@ -1866,34 +1869,37 @@ function JD_layerOpen() {
   /* THE BACKSTOP PLATE. turn-object.svg is now the ONLY way to take a turn —
      the corner button it replaced was static markup in index.php and could not
      fail to exist, so a fetch that never lands must not be allowed to remove
-     the feature from the page. This is a doorbell drawn inline, in the same
-     240×300 viewBox with the same class hooks (.db-plate / .db-pearl /
-     .db-flash / .db-label), so the tier math, the press keyframes and the
-     reduced-motion variant all drive it unchanged. It is deliberately plain —
-     flat fills, no gloss, no tape, no gleam — because its only job is to be
-     unmistakably a pressable doorbell on the day the artwork is missing. If a
-     visitor ever sees it, the deploy is broken; the turn still works. */
+     the feature from the page. This is a credit button drawn inline, in the
+     same 240×300 viewBox with the same geometry and class hooks (.cw-lens /
+     .cw-glowcore / .cw-flash), so the tier math, the touch-floor arithmetic
+     (housing at 83% of the box), the press keyframes and the reduced-motion
+     pose all drive it unchanged. It is deliberately plain — flat fills, no
+     halo, no bloom, no gradients — because its only job is to be unmistakably
+     a pressable lit button on the day the artwork is missing. If a visitor
+     ever sees it, the deploy is broken; the turn still works. */
   var FALLBACK_ART = [
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300">',
-    '<g class="db-plate">',
-    '<rect x="4" y="3" width="232" height="294" rx="34" fill="#d2a03c"',
-    ' stroke="#3a2408" stroke-width="5" stroke-linejoin="round"/>',
-    '<circle cx="120" cy="100" r="61" fill="#bb8c2c" stroke="#3a2408" stroke-width="5"/>',
-    '<circle cx="120" cy="100" r="50" fill="#5e3d0d" stroke="#3a2408" stroke-width="3.5"/>',
-    '<g class="db-pearl">',
-    '<circle cx="120" cy="100" r="47" fill="#f4e9d6" stroke="#3a2408" stroke-width="4"/>',
-    '<ellipse cx="102" cy="79" rx="19" ry="14" fill="#ffffff" opacity="0.9"/>',
+    '<rect x="20" y="25" width="200" height="250" rx="20" fill="#2b2830"',
+    ' stroke="#08070a" stroke-width="4"/>',
+    '<rect x="46" y="54" width="148" height="192" rx="12" fill="#17151b"/>',
+    '<g class="cw-lens">',
+    '<rect x="54" y="62" width="132" height="176" rx="10" fill="#4fb2f2"',
+    ' stroke="#093f78" stroke-width="3"/>',
+    '<g class="cw-glowcore" opacity="0.55">',
+    '<ellipse cx="120" cy="142" rx="66" ry="88" fill="#d9f1ff"/>',
     '</g>',
-    '<circle class="db-flash" cx="120" cy="100" r="58" fill="none" stroke="#fff6cf"',
-    ' stroke-width="7" opacity="0" pointer-events="none"/>',
-    '<g class="db-label">',
-    '<rect x="24" y="177" width="192" height="77" rx="3" fill="#eaddb2"',
-    ' stroke="#b08f52" stroke-width="2"/>',
-    '<text x="120" y="213" text-anchor="middle" fill="#3b3020" font-weight="700"',
-    ' font-family="Courier New, Courier, monospace" font-size="25">TAKE A TURN</text>',
-    '<text x="120" y="241" text-anchor="middle" fill="#5d4d2e" letter-spacing="4"',
-    ' font-family="Courier New, Courier, monospace" font-size="13">— PRESS —</text>',
-    '</g></g></svg>'
+    '<g fill="#0a1626" font-weight="700" text-anchor="middle"',
+    ' font-family="\'Arial Narrow\', \'Franklin Gothic Medium\', Impact, sans-serif">',
+    '<rect x="78" y="88" width="84" height="10" rx="2"/>',
+    '<rect x="78" y="104" width="84" height="10" rx="2"/>',
+    '<text x="120" y="164" font-size="31" letter-spacing="1" textLength="104"',
+    ' lengthAdjust="spacingAndGlyphs">PUSH FOR</text>',
+    '<text x="120" y="216" font-size="50" letter-spacing="2" textLength="100"',
+    ' lengthAdjust="spacingAndGlyphs">JUNK</text>',
+    '</g>',
+    '<rect class="cw-flash" x="54" y="62" width="132" height="176" rx="10"',
+    ' fill="#ffffff" opacity="0" pointer-events="none"/>',
+    '</g></svg>'
   ].join('');
 
   /* the asset request goes out immediately, in parallel with data.php — the
@@ -1910,7 +1916,7 @@ function JD_layerOpen() {
       })
       .then(function (text) {
         /* a captive-portal login page or an HTML 404 body served with 200
-           would otherwise be injected as the doorbell */
+           would otherwise be injected as the turn button */
         if (text.indexOf('<svg') < 0) throw new Error(ASSET + ' is not an SVG');
         art = text; build();
       })
@@ -1951,8 +1957,8 @@ function JD_layerOpen() {
     el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-label', JD_STRINGS.turnButton);
     /* the same per-copy id namespacing every inlined SVG in this document
-       gets — the asset's ids are all db_ prefixed, its CLASS names are all
-       db- (hyphen), so the swap can never touch a hook the stylesheet needs */
+       gets — the asset's ids are all cw_ prefixed, its CLASS names are all
+       cw- (hyphen), so the swap can never touch a hook the stylesheet needs */
     el.innerHTML = window.JD_svgInst(art, 'jto_');
     var svg = el.querySelector('svg');
     if (svg) {
@@ -2005,8 +2011,8 @@ function JD_layerOpen() {
   }
 
   /* THE PRESS. One class on the wrapper; junk-drawer.css owns every frame of
-     it (the pearl sinking into its drawn well, the plate's buzz-rattle, the
-     label flapping under its tape, the rim flash) — and because the motion is
+     it (the lens sinking a step into the housing, the backlight flaring
+     white-hot, the halo surging off the plate) — and because the motion is
      CSS and not SMIL baked into the asset, prefers-reduced-motion can turn it
      into a discrete held state instead. The modal follows once the press has
      had time to READ; opening on the same tick would swallow it. */
@@ -2589,7 +2595,7 @@ function JD_layerOpen() {
    loader already fetched, exactly as the legend and the report card are.
 
    THE TRIGGER LIVES ELSEWHERE (2026-08-10). The corner brass card-holder is
-   retired: the doorbell in the pile is the sole opener, and it calls
+   retired: the turn button in the pile is the sole opener, and it calls
    JD_turn.open() through the module interface at the foot of this file. This
    module owns the modal and the state machine and nothing about the control
    that summons it — which is why re-seating the trigger touched none of it. */
@@ -3525,7 +3531,7 @@ function JD_layerOpen() {
       map[rec.gen_id] = p;
       JD_store.set(K_SCATTER, map);
     }
-    /* pushed clear of the doorbell's reserved corner at apply time, same as
+    /* pushed clear of the turn button's reserved corner at apply time, same as
        the curated pile — a stored spot can predate the rule or a viewport
        change; the stored value itself stays untouched */
     if (window.JD_avoidTurn) {
