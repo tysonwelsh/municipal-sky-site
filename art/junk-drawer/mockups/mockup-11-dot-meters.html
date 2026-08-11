@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 11 &middot; DOT METERS</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 11 · DOT METERS (owner, 2026-08-11)
+   The report card's verdict meters: the five-dot grade row and the
+   three-dot axis rows leave an awkward gap whichever side the short
+   meter aligns to. Two candidate fixes, same sample card, side by side:
+
+   A — HALF-FILL: the grade uses THREE dots like the axes, carrying its
+       five tiers with half-filled dots (5→●●●, 4→●●◐, 3→●●○, 2→●◐○,
+       1→●○○ · linear map rank×3/5 rounded to the nearest half). Every
+       meter is the same width; no gap can exist.
+   B — SPREAD: the axes keep three dots but space them across the same
+       width as the grade's five, so both meters span one column edge to
+       edge; the grade keeps its honest five-dot scale.
+
+   The rc- styles below are lifted from junk-drawer.css (trimmed to what
+   the table needs) so the tasting is of the real card idiom.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec; --ink: #262420; --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --hand: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
+  --form: var(--mono);
+  --form-ink: #3c3323; --form-ink-2: rgba(60, 51, 35, 0.62);
+  --form-rule: rgba(88, 74, 46, 0.4); --red: #b3402f;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem; overflow-x: hidden;
+}
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.6rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+
+.pair {
+  max-width: 1060px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+}
+@media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+.sheet {
+  background: #efe6cb;
+  border: 1px solid rgba(88, 74, 46, 0.5);
+  box-shadow: 5px 8px 16px -6px rgba(30, 18, 8, 0.4);
+  padding: 1rem 1.1rem 1.2rem;
+  color: var(--form-ink);
+}
+.sheet h2 {
+  font-size: 0.68rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin: 0 0 0.7rem;
+}
+
+/* ---- the annotations table, in the card's idiom ------------------------- */
+.rc-sect {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  border-bottom: 1px solid var(--form-rule); padding-bottom: 0.25rem;
+  margin: 1.1rem 0 0;
+}
+.rc-subj { width: 100%; border-collapse: collapse; font-family: var(--form); }
+.rc-subj th {
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); font-weight: 400; text-align: left;
+  border-bottom: 1px solid var(--form-rule); padding: 0.4rem 0 0.25rem;
+}
+.rc-subj td { border-bottom: 1px solid rgba(88, 74, 46, 0.22); padding: 0.42rem 0; }
+.rc-subj tfoot td { border-bottom: 0; border-top: 1px solid var(--form-rule); }
+.rc-subj-name { font-size: 0.68rem; }
+.rc-avg-l {
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2);
+}
+.rc-mark { font-family: var(--hand); font-size: 0.84rem; display: inline-block; }
+.rc-mark i { font-style: italic; }
+.rc-r3 { color: #0b6a1f; } .rc-r2 { color: #a06200; } .rc-r1 { color: #8f1d12; }
+.rc-g5 { color: #0b6a1f; } .rc-g4 { color: #46761a; } .rc-g3 { color: #a06200; }
+.rc-g2 { color: #b0490f; } .rc-g1 { color: #8f1d12; }
+
+/* ---- the meters ---------------------------------------------------------- */
+.rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+.rc-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  border: 1.5px solid currentColor; flex: 0 0 auto;
+}
+.rc-dot.is-fill { background: currentColor; }
+/* A: the half-fill — a hard 50/50 gradient inside the ring */
+.rc-dot.is-half {
+  background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+}
+
+/* OPTION A: every meter is three dots at the natural tight gap */
+.optA .rc-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
+
+/* OPTION B: every meter spans the SAME width; three dots spread to the
+   five-dot span (5×7px + 4×3px = 47px) via space-between */
+.optB .rc-dots {
+  display: inline-flex; justify-content: space-between;
+  width: 47px; flex: 0 0 auto;
+}
+</style>
+</head>
+<body>
+
+<h1 class="mock-title">Junk Drawer &middot; Mockup 11 &middot; Dot Meters</h1>
+<p class="mock-intro">Killing the awkward gap in the verdict column. <b>A</b> keeps
+every meter at three dots and carries the grade&rsquo;s five tiers with
+half&#8209;filled dots. <b>B</b> keeps the honest five&#8209;dot grade and spreads the
+axes&rsquo; three dots across the same span. Both shown on the same sample card,
+plus every grade tier below so the mapping can be judged.</p>
+
+<div class="pair">
+
+  <div class="sheet optA">
+    <h2>A &middot; half-fill &mdash; three dots everywhere</h2>
+    <div class="rc-sect">Annotations</div>
+    <table class="rc-subj">
+      <thead><tr><th style="width:52%">Axis</th><th style="width:48%">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><span class="rc-subj-name">Instruction following</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-r3">No problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Structural integrity</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r2"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span></span><span class="rc-mark rc-r2">Small problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-r3">Has <i>it</i></span></span></td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td><span class="rc-avg-l">Overall grade</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g4"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-half"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+      </tfoot>
+    </table>
+    <div class="rc-sect">The five tiers on three dots</div>
+    <table class="rc-subj">
+      <tbody>
+        <tr><td><span class="rc-subj-name">Prime</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g5"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-g5">Prime</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Choice</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g4"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-half"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Select</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g3">Select</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Standard</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g2"><span class="rc-dot is-fill"></span><span class="rc-dot"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g2">Standard</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Utility</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g1"><span class="rc-dot is-half"></span><span class="rc-dot"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g1">Utility</span></span></td></tr>
+      </tbody>
+    </table>
+    <p class="mock-label" style="text-align:left; margin-top:0.8rem;">mapping:
+    rank &times; 3 / 5, rounded to the nearest half &mdash; 5 &rarr; 3 &middot;
+    4 &rarr; 2&frac12; &middot; 3 &rarr; 2 &middot; 2 &rarr; 1 &middot;
+    1 &rarr; &frac12;. every row identical width; the grade&rsquo;s meter is no
+    longer literally five-point.</p>
+  </div>
+
+  <div class="sheet optB">
+    <h2>B &middot; spread &mdash; three dots across the five-dot span</h2>
+    <div class="rc-sect">Annotations</div>
+    <table class="rc-subj">
+      <thead><tr><th style="width:52%">Axis</th><th style="width:48%">Verdict</th></tr></thead>
+      <tbody>
+        <tr><td><span class="rc-subj-name">Instruction following</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-r3">No problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Structural integrity</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r2"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span></span><span class="rc-mark rc-r2">Small problems</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-r3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-r3">Has <i>it</i></span></span></td></tr>
+      </tbody>
+      <tfoot>
+        <tr><td><span class="rc-avg-l">Overall grade</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g4"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+      </tfoot>
+    </table>
+    <div class="rc-sect">The five tiers, five honest dots</div>
+    <table class="rc-subj">
+      <tbody>
+        <tr><td><span class="rc-subj-name">Prime</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g5"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span></span><span class="rc-mark rc-g5">Prime</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Choice</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g4"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g4">Choice</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Select</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g3"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g3">Select</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Standard</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g2"><span class="rc-dot is-fill"></span><span class="rc-dot is-fill"></span><span class="rc-dot"></span><span class="rc-dot"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g2">Standard</span></span></td></tr>
+        <tr><td><span class="rc-subj-name">Utility</span></td>
+          <td><span class="rc-verdict"><span class="rc-dots rc-g1"><span class="rc-dot is-fill"></span><span class="rc-dot"></span><span class="rc-dot"></span><span class="rc-dot"></span><span class="rc-dot"></span></span><span class="rc-mark rc-g1">Utility</span></span></td></tr>
+      </tbody>
+    </table>
+    <p class="mock-label" style="text-align:left; margin-top:0.8rem;">every meter
+    spans the same 47px; the axes&rsquo; three dots sit looser (22px gaps vs the
+    grade&rsquo;s 3px), which is the visible tell that they are different scales
+    &mdash; the grade stays honestly five-point.</p>
+  </div>
+
+</div>
+
+<p class="mock-label"><b>THE QUESTION</b> &mdash; A buys perfect uniformity at the
+cost of the grade&rsquo;s literal five-point read (a half dot is doing tier
+arithmetic); B keeps both scales honest and gap-free but the two meters
+breathe differently. Pick one and it drops into dotsHTML() + two CSS lines.</p>
+
+</body>
+</html>
