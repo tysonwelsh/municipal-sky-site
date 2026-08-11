@@ -1196,7 +1196,14 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
    inherit the rating pencil's colour and stay decoration — aria-hidden,
    the word carries the meaning. */
 .rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
-.rc-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; width: 47px; }
+/* dots RIGHT-ALIGN inside the fixed box (owner, 2026-08-11 rev 2): the
+   meters hug the words, so the dot-to-word gap is the same on every row
+   and a three-dot meter's slack falls on its left, reading as the
+   indentation of a shorter scale rather than a hole before the word. */
+.rc-dots {
+  display: inline-flex; justify-content: flex-end;
+  gap: 3px; flex: 0 0 auto; width: 47px;
+}
 .rc-dot {
   width: 7px; height: 7px; border-radius: 50%;
   border: 1.5px solid currentColor; box-sizing: border-box;
