@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 12,
+  "version": 13,
   "updated": "2026-08-10",
   "grades": [
     {
@@ -248,19 +248,19 @@
         {
           "id": "abundant",
           "rank": 3,
-          "label": "Abundant",
+          "label": "Has it",
           "description": "The piece has it — undeniable, unaccountable appeal."
         },
         {
           "id": "trace",
           "rank": 2,
-          "label": "Trace",
+          "label": "Just a hint",
           "description": "A glimmer of something beyond competence."
         },
         {
           "id": "none-detected",
           "rank": 1,
-          "label": "None detected",
+          "label": "Ain't got it",
           "description": "Technically present, spiritually absent."
         }
       ]
@@ -410,6 +410,11 @@
       "date": "2026-08-11",
       "version": 12,
       "note": "Relabel the three problem-shaped axes to one uniform scale (owner call): instruction-following, restraint and integrity now grade No problems / Small problems / Big problems (ranks unchanged — the v9 numeric filing makes this a pure rewording; per-axis descriptions keep the definitions). Je ne sais quoi keeps its labels pending its own rework — it grades a virtue, not a defect, and the problems framing does not fit it."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 13,
+      "note": "Relabel je ne sais quoi (owner call, completing the v12 pass): Has it / Just a hint / Ain't got it — the axis grades a virtue, so it gets a presence scale in plain speech rather than the defect axes' problems scale. Ranks unchanged; the filed descriptions keep the definitions."
     }
   ]
 }
