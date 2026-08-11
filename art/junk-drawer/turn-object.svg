@@ -82,13 +82,19 @@
     <clipPath id="cw_lensclip"><rect x="54" y="62" width="132" height="176" rx="10"/></clipPath>
   </defs>
 
-  <!-- ============ the light on the wood (UNDER the hardware) ============ -->
+  <!-- ============ contact shadow: the housing pools its own dark =========
+       Painted FIRST, then the light over it (reordered 2026-08-11): a
+       shadow above the halo cut the pool with a hard dark edge down-right,
+       reading as glow tucked UNDER the casing. Light washes shadow out, so
+       it also softens: the glow owns the floor, the shadow only grounds
+       the housing. -->
+  <rect x="26" y="33" width="200" height="250" rx="20" fill="#1a0a03" opacity="0.3"/>
+
+  <!-- ============ the light on the wood (over the shadow, under the
+       hardware) ============ -->
   <g class="cw-halo" opacity="0.85">
     <ellipse cx="120" cy="150" rx="118" ry="148" fill="url(#cw_halog)"/>
   </g>
-
-  <!-- ============ contact shadow: the housing pools its own dark ========= -->
-  <rect x="26" y="33" width="200" height="250" rx="20" fill="#1a0a03" opacity="0.4"/>
 
   <!-- ============ the housing: chunky coin-door plastic, plan view ======= -->
   <rect x="20" y="25" width="200" height="250" rx="20"
