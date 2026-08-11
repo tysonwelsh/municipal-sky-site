@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 15,
+  "version": 16,
   "updated": "2026-08-10",
   "grades": [
     {
@@ -166,6 +166,7 @@
     },
     {
       "id": "restraint",
+      "defunct": true,
       "label": "Restraint",
       "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
       "values": [
@@ -425,6 +426,11 @@
       "date": "2026-08-11",
       "version": 15,
       "note": "Spell out \"Structural integrity\" (owner call) — the integrity axis's display label, everywhere labels render (survey, popovers, legend, report card). The axis id stays integrity, as ids must."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 16,
+      "note": "Retire the \"restraint\" axis (owner call — possibly temporary): defunct: true, the v6 mechanism. The survey stops asking it, jd-rate stops accepting it, the report card and legend drop it; every filed restraint grading stays in the data, and un-retiring is one flag removal away."
     }
   ]
 }

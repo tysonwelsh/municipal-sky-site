@@ -1182,9 +1182,23 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
    warm ramp between. The label text still says the word; the colour
    seconds it, never carries it alone. r* = the 3-step axes, g* = the
    five grade tiers. All tuned dark enough to hold on the paper ground. */
-.rc-mark.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
-.rc-mark.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
-.rc-mark.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
+.rc-mark.rc-r3, .rc-dots.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
+.rc-mark.rc-r2, .rc-dots.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
+.rc-mark.rc-r1, .rc-dots.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
+
+/* the verdict cell: the dot sparkline as its own fixed-width sub-column
+   ahead of the pencilled word, both under the one Verdict header. Filled
+   dots count the rank (3/2/1); hollow dots complete the scale so a top
+   mark and a floor mark read differently at a glance. Dots inherit the
+   rating pencil's colour and stay decoration — aria-hidden, the word
+   carries the meaning. */
+.rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+.rc-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
+.rc-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  border: 1.5px solid currentColor; box-sizing: border-box;
+}
+.rc-dot.is-fill { background: currentColor; }
 .rc-mark.rc-g5, .rc-alt-grade.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
 .rc-mark.rc-g4, .rc-alt-grade.rc-g4 { color: #46761a; }   /* choice — leaf green */
 .rc-mark.rc-g3, .rc-alt-grade.rc-g3 { color: #a06200; }   /* select — ochre */

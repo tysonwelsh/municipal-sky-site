@@ -2256,8 +2256,23 @@ function JD_layerOpen() {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
         var v = window.JD_byRank(axis.values, a.value);
-        cell = mark(v ? v.label : String(a.value),
-          v ? 'rc-r' + Math.round(v.rank) : '');
+        var cls = v ? 'rc-r' + Math.round(v.rank) : '';
+        /* the dot sparkline (owner, 2026-08-11): three dots ahead of the
+           verdict word, filled up to the rank — ●●● no problems, ●●○ the
+           middle, ●○○ the floor. Fixed-width, so the dots read as their
+           own little column under the shared Verdict header while the
+           word still carries the meaning (the dots are aria-hidden). */
+        var dots = '';
+        if (v) {
+          var full = Math.max(1, Math.min(3, Math.round(v.rank)));
+          dots = '<span class="rc-dots ' + cls + '" aria-hidden="true">';
+          for (var d = 1; d <= 3; d++) {
+            dots += '<span class="rc-dot' + (d <= full ? ' is-fill' : '') + '"></span>';
+          }
+          dots += '</span>';
+        }
+        cell = '<span class="rc-verdict">' + dots +
+          mark(v ? v.label : String(a.value), cls) + '</span>';
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';
