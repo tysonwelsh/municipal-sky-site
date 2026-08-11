@@ -3,25 +3,26 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>JUNK DRAWER &middot; MOCKUP 10C &middot; SALVAGE &mdash; THE LIKERT FINALE</title>
+<title>JUNK DRAWER &middot; MOCKUP 10C &middot; THE SINGLE BENCH</title>
 <style>
 /* ============================================================================
-   THE JUNK DRAWER — MOCKUP 10C · SALVAGE (owner review, 2026-08-11)
+   THE JUNK DRAWER — MOCKUP 10C · THE SINGLE BENCH (rework, 2026-08-11)
 
    The original 10c ("the double bench" — A and B judged side by side in
    mirrored chip halves) was REJECTED on review. The owner kept exactly one
-   element: the 5-point LIKERT FINALE below — the call as geometry, five
-   title-only stops on a rail strung between an A anchor (hard left) and a
-   B anchor (hard right), hover/focus tooltips per stop, an ⓘ popover with
-   the full scale, filed as comparison {winner, strength}.
+   element: the 5-point LIKERT FINALE — the call as geometry, five title-only
+   stops on a rail strung between an A anchor (hard left) and a B anchor
+   (hard right), hover/focus tooltips per stop, an ⓘ popover with the full
+   scale, filed as comparison {winner, strength}.
 
-   EVERYTHING ELSE IN THIS FILE WAS DELETED at the owner's direction. A
-   fresh rework is to be built AROUND this preserved element, in this file:
-   - the Likert below ships in the rework unchanged (visual + behavior);
-   - the new instrument rates ONE RESPONSE AT A TIME (not side by side);
-   - it uses DROPDOWNS to save vertical space.
-   The tokens (--t*) are verbatim from junk-drawer.css's turn modal; the
-   grain data-URI uses stitchTiles="stitch" — never regenerate it.
+   THIS FILE IS THE REWORK BUILT AROUND IT. One response on the bench at a
+   time: the visitor grades A completely, then B, then makes the call — the
+   preserved Likert, shipped unchanged as the finale — and files one batch.
+   Every scale is a dropdown (one compact line per question), titles only;
+   definitions live in the ONE preserved system (rowhead tooltip + ⓘ in-flow
+   popover). Blocks marked "PRESERVED ELEMENT" are the salvage and must not
+   change. The tokens (--t*) are verbatim from junk-drawer.css's turn modal;
+   the grain data-URI uses stitchTiles="stitch" — never regenerate it.
    ========================================================================== */
 :root {
   --paper: #f6f3ec;
@@ -64,6 +65,10 @@ body {
 }
 .mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
 .rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+noscript p {
+  max-width: 44rem; margin: 1rem auto; text-align: center;
+  font-size: 0.7rem; color: var(--plot-red);
+}
 
 /* ---------------- the stage: scrim + sheet, real jd-turn tokens ---------- */
 .stage {
@@ -90,6 +95,7 @@ body {
   width: min(680px, 100%);
   container-type: inline-size;
 }
+.stage-clamp--narrow { width: min(375px, 100%); }
 .bench-sheet {
   position: relative;
   width: 100%;
@@ -252,33 +258,1173 @@ body {
   .bench-lk-cap b { font-size: 0.62rem; }
   .bench-lk-end { font-size: 0.85rem; }
 }
+
+/* ==========================================================================
+   NEW — THE SINGLE BENCH. Everything below is the rework: the sheet head
+   with the step rail, the sticky plate, the dropdown rows, the note and
+   flag affordances, the filing foot. The preserved blocks above are used
+   as-is; nothing here restyles them.
+   ========================================================================== */
+
+/* ---- the sheet head: title, the commission, the step rail --------------- */
+.bench-head {
+  position: relative; z-index: 1;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--trule);
+}
+.bench-head .bench-title { margin-bottom: 0.4rem; }
+.bench-head .bench-copy { margin-bottom: 0.65rem; }
+.bench-steps { display: flex; gap: 6px; }
+.bench-step {
+  flex: 1 1 0; min-width: 0; min-height: 36px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+  padding: 0.25rem 0.2rem;
+  background: none; border: 1px solid var(--trule-2); cursor: pointer;
+  font-family: var(--tmono); font-size: 0.56rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.bench-step b { font-size: 0.68rem; letter-spacing: 0.04em; }
+.bench-step:not(:disabled):hover { border-color: var(--trule); color: var(--tink); }
+.bench-step[aria-current="step"] {
+  border-color: var(--tred); color: var(--tred); font-weight: 700;
+}
+.bench-step:disabled { opacity: 0.45; cursor: default; }
+.bench-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- panels: persistent in the DOM, toggled hidden ---------------------- */
+.bench-panel[hidden] { display: none; }
+
+/* ---- the plate: the artwork under grading, sticky so it stays in view --- */
+.bench-plate {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 0 0.55rem; padding: 4px 0 8px;
+  background: var(--tpaper) var(--tgrain);
+  border-bottom: 1px solid var(--trule);
+}
+.bench-plate-art {
+  flex: 0 0 auto;
+  width: clamp(84px, 24cqw, 132px);
+  border: 1px solid var(--trule);
+  background: var(--tpaper-hi);
+  box-shadow: 2px 3px 7px -3px rgba(20, 10, 3, 0.4);
+}
+.bench-plate-art svg { display: block; width: 100%; height: auto; }
+.bench-plate-cap { min-width: 0; }
+.bench-plate-cap h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.76rem; letter-spacing: 0.16em; text-transform: uppercase;
+}
+.bench-plate-sub {
+  display: block;
+  font-size: 0.56rem; letter-spacing: 0.1em; text-transform: uppercase;
+  line-height: 1.6; color: var(--tink-2);
+}
+
+/* ---- question rows: one compact line each — label · note · dropdown ----- */
+.bench-qs { margin-top: 0.2rem; }
+.bench-q { display: flex; align-items: center; gap: 8px; }
+.bench-q-wrap { border-top: 1px dashed var(--trule-2); }
+.bench-qs > .bench-q-wrap:first-child { border-top: 0; }
+.bench-q .bench-rowhead { flex: 1 1 auto; min-width: 0; }
+.bench-sel {
+  flex: 0 0 auto; width: 10.5em; min-height: 34px;
+  padding: 0.25rem 1.5rem 0.25rem 0.55rem;
+  appearance: none; -webkit-appearance: none; border-radius: 0;
+  font-family: var(--tmono); font-size: 0.64rem;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--tink); cursor: pointer;
+  border: 1px solid var(--trule);
+  background: var(--tpaper-hi)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2333240f' stroke-width='1.5'/%3E%3C/svg%3E")
+    no-repeat right 0.5rem center / 10px 6px;
+}
+.bench-sel.is-set { font-weight: 700; }
+.bench-sel:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the note affordance: five empty inputs never shown ----------------- */
+.bench-notebtn {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+  min-height: 34px; min-width: 34px; padding: 0 0.4rem;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--tmono); font-size: 0.56rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.bench-notebtn:hover,
+.bench-notebtn[aria-expanded="true"] { color: var(--tred); }
+.bench-notebtn.has-note { color: var(--tred); font-weight: 700; }
+.bench-notebtn:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.bench-notewrap { margin: 0.1rem 0 0.55rem; }
+.bench-note, .bench-flagnote-in {
+  width: 100%; min-height: 34px; padding: 0.3rem 0.5rem;
+  font-family: var(--tmono); font-size: 0.66rem; color: var(--tink);
+  background: var(--tpaper-hi); border: 1px solid var(--trule); border-radius: 0;
+}
+.bench-note::placeholder, .bench-flagnote-in::placeholder { color: var(--tink-2); }
+.bench-note:focus-visible, .bench-flagnote-in:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px;
+}
+
+/* ---- the report path: flag + note --------------------------------------- */
+.bench-check {
+  display: flex; align-items: center; gap: 0.5rem;
+  min-height: 40px; margin-top: 0.45rem; padding-top: 0.3rem;
+  border-top: 1px dashed var(--trule-2);
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2); cursor: pointer;
+}
+.bench-check input { width: 16px; height: 16px; flex: 0 0 auto; }
+.bench-check input:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.bench-check input:checked ~ span { color: var(--tred); font-weight: 700; }
+.bench-flagnote { margin: 0 0 0.4rem; }
+
+/* ---- the call panel: both plates, then the preserved finale ------------- */
+.bench-plates2 { display: flex; gap: 12px; justify-content: center; margin: 0.5rem 0 0.4rem; }
+.bench-plates2 figure { flex: 1 1 0; min-width: 0; max-width: 210px; }
+.bench-plates2 .bench-plate-art { width: 100%; }
+.bench-plates2 figcaption {
+  margin-top: 0.3rem; text-align: center;
+  font-size: 0.62rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--tink-2);
+}
+.bench-plates2[data-pick="a"] figure[data-side="a"] .bench-plate-art,
+.bench-plates2[data-pick="b"] figure[data-side="b"] .bench-plate-art { border-color: var(--tred); }
+.bench-plates2[data-pick="a"] figure[data-side="a"] figcaption,
+.bench-plates2[data-pick="b"] figure[data-side="b"] figcaption { color: var(--tred); }
+
+/* ---- the step foot: back / next / file ---------------------------------- */
+.bench-nav {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 1rem;
+}
+.bench-btn {
+  min-height: 40px; padding: 0.4rem 1rem;
+  font-family: var(--tmono); font-size: 0.66rem;
+  letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer;
+  background: var(--tink); color: var(--tpaper-hi); border: 1px solid var(--tink);
+}
+.bench-btn--next { margin-left: auto; }
+.bench-btn--ghost { background: none; color: var(--tink-2); border-color: var(--trule); }
+.bench-btn:not(:disabled):hover { border-color: var(--tred); }
+.bench-btn--ghost:not(:disabled):hover { color: var(--tink); }
+.bench-btn:disabled { opacity: 0.45; cursor: default; }
+.bench-btn:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.bench-filed {
+  margin-top: 0.55rem; min-height: 1em;
+  font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tred);
+}
+
+/* ---- office use only: the live payload ---------------------------------- */
+.bench-office {
+  margin-top: 0.8rem; padding-top: 0.4rem;
+  border-top: 1px dashed var(--trule-2);
+}
+.bench-office summary {
+  display: flex; align-items: center; min-height: 34px; cursor: pointer;
+  font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.bench-office summary:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.bench-office pre {
+  margin-top: 0.4rem; padding: 0.5rem 0.6rem;
+  background: var(--tpaper-hi); border: 1px solid var(--trule-2);
+  overflow-x: auto; font-size: 0.58rem; line-height: 1.55;
+}
+
+/* ---- motion for the new chrome: added, never assumed -------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .bench-sel, .bench-btn, .bench-step, .bench-notebtn {
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s, opacity 0.15s;
+  }
+  .bench-plate-art { transition: border-color 0.15s; }
+}
+
+/* ---- narrow-sheet degradation for the new chrome ------------------------ */
+@container (max-width: 430px) {
+  .bench-head { padding: 12px 12px 10px; }
+  .bench-step { font-size: 0.5rem; letter-spacing: 0.08em; gap: 0.25rem; }
+  .bench-def { font-size: 0.56rem; letter-spacing: 0.12em; }
+  .bench-sel { width: 9.5em; font-size: 0.6rem; padding-right: 1.3rem; }
+  .bench-notebtn .bench-notebtn-word { display: none; } /* icon only */
+  .bench-plate-art { width: clamp(72px, 26cqw, 96px); }
+  .bench-plate-cap h3 { font-size: 0.68rem; }
+  .bench-plates2 { gap: 8px; }
+}
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
 </style>
 </head>
 <body>
 
-<h1 class="mock-title">Junk Drawer &middot; Mockup 10C &middot; Salvage &mdash; The Likert Finale</h1>
-<p class="mock-intro">The double bench was rejected on review; the owner kept
-<b>one element</b> &mdash; the 5&#8209;point comparison below, the call as geometry.
-A fresh instrument is to be rebuilt around it in this file: <b>one response at
-a time</b>, <b>dropdowns</b> for the scales. This page currently shows only the
-preserved element, live.</p>
+<h1 class="mock-title">Junk Drawer &middot; Mockup 10C &middot; The Single Bench</h1>
+<p class="mock-intro"><b>10C &mdash; THE SINGLE BENCH.</b> Rework built around the
+salvaged finale after the double bench was rejected. One response on the bench at
+a time: the visitor grades <b>A</b> completely, then <b>B</b>, then makes
+<b>the call</b> &mdash; the preserved 5&#8209;point Likert, shipped unchanged
+&mdash; and files one batch. Every scale is a <b>dropdown</b>: one line per
+question, titles only on the closed control and in the list; definitions stay in
+the one preserved system &mdash; hover or focus a row for its meaning, the
+&#9432; unfolds the whole scale in&#8209;flow. Everything below is live.</p>
 
-<div class="sec-head">THE PRESERVED ELEMENT &middot; <span>LIVE</span></div>
+<div class="sec-head"><span>THE INSTRUMENT</span> &middot; live at desk width &mdash; scrim + sheet, real turn-modal tokens</div>
+
+<noscript><p>This mockup renders the instrument from the taxonomy const with JavaScript &mdash; enable it to see the bench.</p></noscript>
+
 <div class="stage">
   <div class="stage-clamp">
-    <div class="bench-sheet">
-      <div class="bench-scroll" id="s1-scroll"></div>
-    </div>
+    <div class="bench-sheet" id="w1"></div>
   </div>
 </div>
-<p class="mock-label"><b>KEEP AS IS</b> &mdash; title-only stops &middot; hover or
-focus a stop for its definition &middot; the &#9432; unfolds the whole scale in-flow
-&middot; A anchored hard left, B hard right &middot; files
-<b>comparison {winner, strength}</b> (strength omitted on a tie)</p>
+<p class="mock-label"><b>ONE AT A TIME</b> &mdash; a alone, then b alone, then the
+call &middot; the sticky plate keeps the drawing in view while it is graded
+&middot; dropdowns, one line per scale, skip standing by default &middot; the
+preserved finale files <b>comparison {winner, strength}</b> (strength omitted on
+a tie)</p>
+
+<div class="sec-head"><span>THE NARROW PROOF</span> &middot; the same instrument clamped to phone width</div>
+
+<div class="stage">
+  <div class="stage-clamp stage-clamp--narrow">
+    <div class="bench-sheet" id="n1"></div>
+  </div>
+</div>
+<p class="mock-label"><b>PHONE WIDTH</b> &mdash; rows hold one line (the note
+affordance drops to its glyph) &middot; the dropdowns open the OS picker &middot;
+the preserved likert degrades exactly as before</p>
+
+<div class="rule"></div>
+
+<!-- ============================ NOTES ================================ -->
+<div class="considerations">
+  <p class="mc-head">Notes &middot; what I committed to, what implementation must watch</p>
+
+  <p><b>1 &middot; The premise.</b> The double bench died because it judged two
+  drawings at once; the single bench seats one. Each response gets the full
+  instrument alone &mdash; overall grade, the five live axes, the report flag
+  &mdash; and only the finale ever shows A and B together, because comparison is
+  what that element <i>is</i>. The preserved Likert ships byte-for-byte: markup
+  from <code>likertHTML()</code>, its CSS blocks, the pick state, the singleton
+  tooltip, the &#9432; in-flow popover. It is mounted as the last step and wired
+  through the same delegated handlers, nothing more. Everything renders from a
+  JS const holding the taxonomy.json v10 subset verbatim &mdash; the five grades
+  and the five live axes (defunct axes excluded), option values are the
+  permanent <code>rank</code> numbers, exactly what production files.</p>
+
+  <p><b>2 &middot; Dropdowns: native <code>&lt;select&gt;</code>, deliberately.</b>
+  The owner's goal is vertical compactness; a native select buys it with the best
+  mobile behavior for free &mdash; the OS spinner/sheet on iOS and Android, full
+  keyboard semantics (arrows, type-ahead, Esc), correct focus and screen-reader
+  behavior with zero ARIA owed &mdash; where a custom listbox would make me own
+  roving focus, <code>aria-activedescendant</code>, touch scrolling and every
+  regression forever. The cost is that definitions cannot live inside options,
+  and the standing rule wants titles-only options anyway, so nothing real was
+  lost. The contract: option labels are level TITLES only (Prime &hellip;
+  Utility; Followed / Drifted / Ignored; &hellip;), the closed control shows the
+  chosen title only, <code>skip</code> is a real option and the default so an
+  untouched scale is honestly "skip", a chosen value goes bold
+  (<code>.is-set</code> &mdash; state never carried by color alone), and each
+  select carries an <code>aria-label</code> naming scale + response
+  ("Restraint for response A").</p>
+
+  <p><b>3 &middot; One definition system, reused not duplicated.</b> Every
+  question row's head is the preserved <code>.bench-def</code> affordance:
+  hover or keyboard-focus shows the preserved singleton tooltip with that
+  scale's own definition; a press on the &#9432; unfolds the preserved
+  <code>.bench-pop</code> in-flow with every level title + full definition
+  (plus a "skip" line), pushing the sheet down rather than covering any
+  control. The likert's stops keep their per-stop tooltips untouched. No
+  second definition UI exists on the page.</p>
+
+  <p><b>4 &middot; Sequencing: A &rarr; B &rarr; the call.</b> A three-step rail
+  sits in the sheet head: the current step carries
+  <code>aria-current="step"</code>, unreached steps are disabled so the first
+  pass is honestly linear (next unlocks the following step), and every visited
+  step stays a button &mdash; back is one press, on the rail or the ghost
+  button in the step foot. The three panels are built ONCE and toggled with
+  <code>hidden</code> &mdash; production's mutate-in-place discipline (the
+  comment above <code>ratePanel()</code> is the precedent) &mdash; so answers
+  survive navigation with no restore logic and hidden panels drop out of the
+  tab order by construction. On a step change the scroll resets and focus
+  moves to the step's heading (<code>tabindex="-1"</code>), which lives inside
+  the sticky plate: the artwork being rated is pinned to the top of the scroll
+  area, so the drawing stays in view for the entire panel, on the phone too.
+  Notes collapse behind a per-axis &#9998; affordance (never five empty
+  inputs); the report flag reveals its note the same way, wording unchanged.</p>
+
+  <p><b>5 &middot; The {winner, strength} contract &mdash; a proposed addition,
+  flagged not invented.</b> Production files <code>comparison: {winner}</code>;
+  the preserved finale wants <code>{"winner": "a"|"b"|"tie", "strength":
+  "decisive"|"slight"}</code> with <code>strength</code> OMITTED exactly when
+  the winner is a tie. <code>winner</code> keeps its exact current meaning so
+  the required-before-filing rule and existing rows are untouched;
+  <code>strength</code> is one new optional field for <code>jd-rate.php</code>
+  to accept. "File the grades" stays disabled until the call is made (both
+  responses exist here); filing prints the one-batch payload &mdash; the same
+  shape <code>submitRatings()</code> posts, mock ids standing in for
+  <code>gen_id</code>/<code>submission_id</code> &mdash; into the office-use
+  panel at the sheet's foot, live.</p>
+
+  <p><b>6 &middot; What implementation must watch.</b> (a) The one-survivor
+  degraded turn: with a single ok slot the rail collapses to that response
+  alone, the call panel never mounts, <code>comparison: null</code> stays
+  legal and filing enables without a call &mdash; this page stages the
+  two-slot flow only. (b) Notes and flag notes clamp to production's
+  <code>MAX_NOTE</code> (500) and empty notes are omitted from the batch, as
+  are skipped scales &mdash; never nulls. (c) The exhibits are minted from
+  inert <code>&lt;script type="text/template"&gt;</code> sources with
+  <code>id="</code>, <code>url(#</code> and <code>href="#</code> rewritten per
+  copy (both real SVGs collide on <code>glass</code>-ids); production owns
+  this via <code>JD_svgInst</code>. (d) Floors: nothing past iOS 16 &mdash; no
+  <code>popover</code> attribute, no <code>:has()</code>, container queries as
+  the salvage already used; sticky is plain <code>position: sticky</code>
+  inside the existing scroll region. (e) Motion is decorative micro-transition
+  only and killed under <code>prefers-reduced-motion</code>; the base state is
+  static. (f) In production the sheet mounts inside the real turn modal, whose
+  close/abandon path, focus trap and Escape layering are unchanged and out of
+  scope here.</p>
+</div>
+
+<!-- ==================================================================== -->
+<!-- THE EXHIBITS — real production artworks (microscope slide item),      -->
+<!-- claude-opus-5 as A, claude-sonnet-5 as B; inert template sources, the -->
+<!-- script mints id-namespaced copies per placement.                      -->
+<!-- ==================================================================== -->
+<script type="text/template" id="tpl-a"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="1000" height="1000">
+  <defs>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8f4f4"/>
+      <stop offset="0.45" stop-color="#dfeef1"/>
+      <stop offset="0.72" stop-color="#eaf6f4"/>
+      <stop offset="1" stop-color="#d6e6ea"/>
+    </linearGradient>
+    <radialGradient id="fov" cx="0.42" cy="0.36" r="0.78">
+      <stop offset="0" stop-color="#fdf9ee"/>
+      <stop offset="0.55" stop-color="#f6efe1"/>
+      <stop offset="0.86" stop-color="#e6dcd0"/>
+      <stop offset="1" stop-color="#cfc6bf"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.62" stop-color="#1b1c2c" stop-opacity="0"/>
+      <stop offset="0.88" stop-color="#1b1c2c" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#141526" stop-opacity="0.5"/>
+    </radialGradient>
+    <radialGradient id="cocG" cx="0.34" cy="0.28" r="0.82">
+      <stop offset="0" stop-color="#b494dd"/>
+      <stop offset="0.42" stop-color="#7d4fb0"/>
+      <stop offset="0.85" stop-color="#4a2377"/>
+      <stop offset="1" stop-color="#341356"/>
+    </radialGradient>
+    <radialGradient id="cocG2" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#a9d0e6"/>
+      <stop offset="0.45" stop-color="#5f86b6"/>
+      <stop offset="1" stop-color="#2e3f6d"/>
+    </radialGradient>
+    <linearGradient id="rodG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e894b6"/>
+      <stop offset="0.35" stop-color="#d2淡" stop-opacity="0"/>
+      <stop offset="0.36" stop-color="#cf6f96"/>
+      <stop offset="1" stop-color="#9c2f5c"/>
+    </linearGradient>
+    <linearGradient id="rodP" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9d7fd0"/>
+      <stop offset="0.4" stop-color="#6b41a6"/>
+      <stop offset="1" stop-color="#3a1c68"/>
+    </linearGradient>
+    <radialGradient id="rbcG" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0b39c" stop-opacity="0.35"/>
+      <stop offset="0.42" stop-color="#e29a80" stop-opacity="0.7"/>
+      <stop offset="0.86" stop-color="#c86f54"/>
+      <stop offset="1" stop-color="#b05a44"/>
+    </radialGradient>
+    <radialGradient id="wbcG" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#eee6f6"/>
+      <stop offset="0.7" stop-color="#dccdea"/>
+      <stop offset="1" stop-color="#bda6d4"/>
+    </radialGradient>
+    <radialGradient id="epiG" cx="0.4" cy="0.34" r="0.8">
+      <stop offset="0" stop-color="#f3dbe6" stop-opacity="0.85"/>
+      <stop offset="0.7" stop-color="#e6c4d8" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#cfa4c0" stop-opacity="0.85"/>
+    </radialGradient>
+    <radialGradient id="yeastG" cx="0.36" cy="0.3" r="0.82">
+      <stop offset="0" stop-color="#d9c9ee"/>
+      <stop offset="0.55" stop-color="#b79ad9"/>
+      <stop offset="1" stop-color="#6c4aa0"/>
+    </radialGradient>
+    <radialGradient id="protG" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#cfe0ea" stop-opacity="0.9"/>
+      <stop offset="0.6" stop-color="#a8c2d6" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#7791ae" stop-opacity="0.9"/>
+    </radialGradient>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+    <filter id="far" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="veryfar" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+    </filter>
+    <filter id="mottle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="3" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.44  0 0 0 0 0.33  0 0 0 0 0.55  0.9 0 0 0 -0.15"/>
+    </filter>
+
+    <clipPath id="fovClip"><circle cx="545" cy="505" r="393"/></clipPath>
+    <clipPath id="slideClip"><rect x="4" y="4" width="992" height="992" rx="10"/></clipPath>
+
+    <g id="bac">
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="url(#rodG)"/>
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="none" stroke="#8c2751" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="-5" cy="-2.4" rx="7" ry="2.3" fill="#ffffff" opacity="0.3"/>
+      <circle cx="8" cy="1.2" r="2.1" fill="#7c1e46" opacity="0.45"/>
+      <circle cx="-8" cy="1.8" r="1.6" fill="#7c1e46" opacity="0.35"/>
+    </g>
+    <g id="bacf">
+      <path d="M18,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0" fill="none" stroke="#a8547a" stroke-width="1.1" stroke-opacity="0.5"/>
+      <path d="M18,-2 c10,-8 17,4 27,-3 c10,-7 16,5 26,-2" fill="none" stroke="#a8547a" stroke-width="0.9" stroke-opacity="0.35"/>
+      <path d="M-18,1 c-9,6 -15,-6 -24,0 c-9,6 -15,-6 -24,0" fill="none" stroke="#a8547a" stroke-width="1" stroke-opacity="0.42"/>
+      <use href="#bac" xlink:href="#bac"/>
+    </g>
+    <g id="bacspore">
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="url(#rodP)"/>
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="none" stroke="#2e1358" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="#f7f2df"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="none" stroke="#33175f" stroke-width="1" stroke-opacity="0.5"/>
+      <ellipse cx="-9" cy="-2.6" rx="8" ry="2.4" fill="#ffffff" opacity="0.26"/>
+    </g>
+    <g id="coc">
+      <circle r="7" fill="url(#cocG)"/>
+      <circle r="7" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.55"/>
+      <circle cx="-2.3" cy="-2.6" r="2" fill="#ffffff" opacity="0.4"/>
+    </g>
+    <g id="coc2">
+      <circle r="6.2" fill="url(#cocG2)"/>
+      <circle cx="-2" cy="-2.2" r="1.7" fill="#ffffff" opacity="0.38"/>
+    </g>
+    <g id="diplo">
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <circle cx="-9" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+      <circle cx="5" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+    </g>
+    <g id="yeast">
+      <ellipse rx="30" ry="26" fill="url(#yeastG)"/>
+      <ellipse rx="30" ry="26" fill="none" stroke="#4b2b7d" stroke-width="2" stroke-opacity="0.65"/>
+      <ellipse rx="22" ry="18" fill="none" stroke="#f0e6fa" stroke-width="1.2" stroke-opacity="0.35"/>
+      <circle cx="-9" cy="-8" r="5" fill="#ffffff" opacity="0.3"/>
+      <circle cx="7" cy="6" r="4.4" fill="#3d2068" opacity="0.35"/>
+      <circle cx="-3" cy="11" r="3" fill="#3d2068" opacity="0.25"/>
+      <g transform="translate(26,-20) rotate(-30)">
+        <ellipse rx="15" ry="13" fill="url(#yeastG)"/>
+        <ellipse rx="15" ry="13" fill="none" stroke="#4b2b7d" stroke-width="1.6" stroke-opacity="0.6"/>
+        <circle cx="-4" cy="-4" r="3" fill="#fff" opacity="0.28"/>
+      </g>
+    </g>
+  </defs>
+
+  <g clip-path="url(#slideClip)">
+    <!-- glass slide -->
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="url(#glass)" fill-opacity="0.62"/>
+    <rect x="14" y="14" width="972" height="972" rx="6" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.5"/>
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="none" stroke="#93b0b8" stroke-width="4" stroke-opacity="0.75"/>
+    <path d="M4,26 L996,26" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+    <path d="M4,974 L996,974" stroke="#8fa9b1" stroke-width="2" stroke-opacity="0.3"/>
+
+    <!-- frosted label end -->
+    <rect x="6" y="6" width="152" height="988" fill="#f6f3ea" fill-opacity="0.8"/>
+    <rect x="6" y="6" width="152" height="988" filter="url(#grain)" opacity="0.22"/>
+    <path d="M158,6 L158,994" stroke="#b9c9cc" stroke-width="2.5" stroke-opacity="0.7"/>
+    <path d="M150,6 L150,994" stroke="#ffffff" stroke-width="4" stroke-opacity="0.5"/>
+    <g transform="rotate(-90 82 500)" font-family="Georgia,'Times New Roman',serif" fill="#3b4250" text-anchor="middle">
+      <text x="82" y="60" font-size="30" letter-spacing="5" fill-opacity="0.82">GRAM  STAIN  ·  SPUTUM</text>
+      <text x="82" y="96" font-size="21" fill-opacity="0.7" letter-spacing="2">acc. 26–1174   oil imm.  400×</text>
+      <text x="82" y="128" font-size="19" fill-opacity="0.55" letter-spacing="2" font-style="italic">fixed &amp; counterstained · 05·08·26</text>
+    </g>
+
+    <!-- coverslip -->
+    <rect x="182" y="98" width="792" height="812" fill="#ffffff" fill-opacity="0.07" stroke="#8fb2be" stroke-width="2.2" stroke-opacity="0.55"/>
+    <rect x="188" y="104" width="780" height="800" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.4"/>
+    <path d="M182,98 L214,98 L182,130 Z" fill="#ffffff" fill-opacity="0.22"/>
+    <path d="M974,910 L938,910 L974,874 Z" fill="#8fb2be" fill-opacity="0.18"/>
+    <!-- trapped air / mounting medium edges -->
+    <path d="M182,300 c60,-26 130,10 190,-14" fill="none" stroke="#a8c6cf" stroke-width="1.4" stroke-opacity="0.4"/>
+    <path d="M974,660 c-70,20 -120,-16 -186,6" fill="none" stroke="#a8c6cf" stroke-width="1.2" stroke-opacity="0.32"/>
+    <!-- dust and fibre on the glass -->
+    <path d="M240,940 c40,-18 90,-6 130,-26" fill="none" stroke="#8c9aa2" stroke-width="1.3" stroke-opacity="0.35"/>
+    <circle cx="300" cy="60" r="2.2" fill="#7f8d95" opacity="0.4"/>
+    <circle cx="860" cy="70" r="1.6" fill="#7f8d95" opacity="0.35"/>
+    <circle cx="930" cy="946" r="2.6" fill="#7f8d95" opacity="0.3"/>
+    <circle cx="620" cy="960" r="1.8" fill="#7f8d95" opacity="0.3"/>
+
+    <!-- ============ 400x FIELD OF VIEW ============ -->
+    <g clip-path="url(#fovClip)">
+      <circle cx="545" cy="505" r="393" fill="url(#fov)"/>
+      <rect x="152" y="112" width="786" height="786" filter="url(#mottle)" opacity="0.2"/>
+
+      <!-- out-of-focus plane -->
+      <g filter="url(#veryfar)" opacity="0.4">
+        <ellipse cx="330" cy="230" rx="52" ry="22" transform="rotate(-24 330 230)" fill="#8d6fb8"/>
+        <ellipse cx="880" cy="380" rx="46" ry="20" transform="rotate(38 880 380)" fill="#a3608a"/>
+        <circle cx="640" cy="880" r="26" fill="#7b57a8"/>
+        <circle cx="240" cy="560" r="20" fill="#8e6bb2"/>
+        <ellipse cx="760" cy="140" rx="40" ry="17" transform="rotate(12 760 140)" fill="#9a5c86"/>
+      </g>
+      <g filter="url(#far)" opacity="0.5">
+        <ellipse cx="430" cy="180" rx="24" ry="9" transform="rotate(28 430 180)" fill="#9a4f78"/>
+        <ellipse cx="880" cy="620" rx="26" ry="10" transform="rotate(-42 880 620)" fill="#9a4f78"/>
+        <circle cx="700" cy="620" r="9" fill="#6d43a0"/>
+        <circle cx="716" cy="632" r="8" fill="#6d43a0"/>
+        <circle cx="300" cy="380" r="8.5" fill="#6d43a0"/>
+        <ellipse cx="560" cy="200" rx="30" ry="11" transform="rotate(-8 560 200)" fill="#8a3f6a"/>
+      </g>
+
+      <!-- mucus / proteinaceous debris strands -->
+      <g fill="none" stroke="#b9a9ae" stroke-opacity="0.3" filter="url(#soft)">
+        <path d="M170,420 C300,380 380,470 520,430 C660,390 760,470 920,430" stroke-width="14"/>
+        <path d="M200,760 C320,700 420,780 540,730 C680,672 800,760 930,700" stroke-width="10"/>
+        <path d="M640,150 C620,300 700,380 660,520 C630,630 700,760 660,880" stroke-width="9"/>
+      </g>
+      <g fill="none" stroke="#8f7f86" stroke-opacity="0.22">
+        <path d="M170,432 C300,392 380,482 520,442 C660,402 760,482 920,442" stroke-width="2"/>
+        <path d="M200,770 C320,710 420,790 540,740 C680,682 800,770 930,710" stroke-width="1.6"/>
+      </g>
+
+      <!-- partial air bubble at lower-left of field -->
+      <g>
+        <circle cx="255" cy="885" r="168" fill="#ffffff" fill-opacity="0.1"/>
+        <circle cx="255" cy="885" r="168" fill="none" stroke="#5c5f6b" stroke-width="15" stroke-opacity="0.3" filter="url(#soft)"/>
+        <circle cx="255" cy="885" r="158" fill="none" stroke="#ffffff" stroke-width="6" stroke-opacity="0.35"/>
+      </g>
+
+      <!-- squamous epithelial cell (scale reference) -->
+      <g>
+        <path d="M380,442 C472,448 562,492 586,572 C612,652 590,748 520,802 C450,856 340,882 260,846 C176,808 136,720 152,636 C168,550 232,470 302,452 C326,445 356,440 380,442 Z"
+              fill="url(#epiG)" stroke="#a2708f" stroke-width="2.4" stroke-opacity="0.7"/>
+        <path d="M362,470 C444,478 522,516 546,584 C572,656 550,736 490,782 C426,830 336,850 268,818" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M188,700 C250,742 330,760 404,742 C466,727 512,690 536,640" fill="none" stroke="#b8809f" stroke-width="2" stroke-opacity="0.45"/>
+        <ellipse cx="366" cy="642" rx="52" ry="46" fill="#7a4c92" fill-opacity="0.55" stroke="#4d2560" stroke-width="2" stroke-opacity="0.6"/>
+        <ellipse cx="352" cy="630" rx="18" ry="14" fill="#c9a8db" fill-opacity="0.5"/>
+        <circle cx="382" cy="660" r="7" fill="#3b1a52" fill-opacity="0.5"/>
+        <circle cx="350" cy="664" r="5" fill="#3b1a52" fill-opacity="0.4"/>
+        <circle cx="374" cy="620" r="4" fill="#3b1a52" fill-opacity="0.35"/>
+        <!-- adherent cocci on the cell surface (clue-cell look) -->
+        <g>
+          <use href="#coc" xlink:href="#coc" transform="translate(250,530) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(268,548) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(246,562) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(452,700) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(470,712) scale(0.8)"/>
+          <use href="#coc" xlink:href="#coc" transform="translate(300,760) scale(0.8)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(420,540) rotate(28) scale(0.85)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(330,506) rotate(-14) scale(0.85)"/>
+          <use href="#bac" xlink:href="#bac" transform="translate(470,626) rotate(64) scale(0.8)"/>
+        </g>
+      </g>
+
+      <!-- neutrophil with phagocytosed diplococci -->
+      <g transform="translate(752,318)">
+        <circle r="58" fill="url(#wbcG)" stroke="#8f6fb0" stroke-width="2" stroke-opacity="0.6"/>
+        <path d="M-34,-16 C-46,-40 -22,-56 -2,-46 C10,-56 34,-48 38,-26 C54,-18 52,10 34,18 C34,40 8,52 -8,38 C-30,44 -46,24 -40,4 Z"
+              fill="#5a2d86" fill-opacity="0.78"/>
+        <path d="M-30,-14 C-40,-34 -20,-46 -4,-38" fill="none" stroke="#d6c2ea" stroke-width="2.4" stroke-opacity="0.4"/>
+        <path d="M2,-44 C-6,-24 8,-8 26,-14" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M-6,36 C-2,16 -20,4 -36,8" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.3"/>
+        <g fill="#7a52a8" fill-opacity="0.45">
+          <circle cx="-46" cy="30" r="3.2"/><circle cx="-30" cy="44" r="2.6"/><circle cx="46" cy="-2" r="3"/>
+          <circle cx="40" cy="34" r="2.8"/><circle cx="18" cy="48" r="3.2"/><circle cx="-52" cy="-6" r="2.6"/>
+          <circle cx="6" cy="-54" r="2.8"/>
+        </g>
+        <use href="#diplo" xlink:href="#diplo" transform="translate(-8,14) rotate(30) scale(0.62)"/>
+        <use href="#diplo" xlink:href="#diplo" transform="translate(24,-38) rotate(-52) scale(0.58)"/>
+      </g>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(838,222) rotate(24)"/>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(676,398) rotate(-64)"/>
+      <use href="#diplo" xlink:href="#diplo" transform="translate(866,300) rotate(74) scale(0.9)"/>
+
+      <!-- erythrocytes -->
+      <g>
+        <g transform="translate(786,690)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(864,608) scale(0.97)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.28"/></g>
+        <g transform="translate(700,772) scale(0.94)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="21" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(880,760) scale(0.9) rotate(20)"><ellipse rx="45" ry="38" fill="url(#rbcG)"/><ellipse rx="45" ry="38" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/></g>
+      </g>
+
+      <!-- Candida: budding yeast with pseudohypha -->
+      <g transform="translate(318,806) rotate(-16)">
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#7a54ad" stroke-width="20" stroke-opacity="0.5" stroke-linecap="round"/>
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#432272" stroke-width="1.6" stroke-opacity="0.5" fill-opacity="0"/>
+        <path d="M-24,12 l0,-1" stroke="#432272" stroke-width="1.6" stroke-opacity="0.45"/>
+        <use href="#yeast" xlink:href="#yeast"/>
+      </g>
+      <use href="#yeast" xlink:href="#yeast" transform="translate(206,300) rotate(24) scale(0.82)"/>
+
+      <!-- flagellated protozoan (pear-shaped, 4 flagellar pairs) -->
+      <g transform="translate(690,236) rotate(-22)">
+        <g fill="none" stroke="#6d8298" stroke-width="1.6" stroke-opacity="0.55" stroke-linecap="round">
+          <path d="M78,-8 c26,-8 44,10 68,4"/>
+          <path d="M80,6 c28,10 48,-6 72,2"/>
+          <path d="M-14,-46 c-8,-26 -34,-32 -52,-26"/>
+          <path d="M-16,44 c-6,26 -32,34 -52,28"/>
+          <path d="M-70,4 c-30,4 -44,-14 -66,-10"/>
+        </g>
+        <path d="M78,0 C74,30 40,52 -6,52 C-52,52 -80,28 -80,0 C-80,-28 -52,-52 -6,-52 C40,-52 74,-30 78,0 Z"
+              fill="url(#protG)" stroke="#54748f" stroke-width="2.2" stroke-opacity="0.7"/>
+        <ellipse cx="-24" cy="0" rx="42" ry="36" fill="none" stroke="#3f6280" stroke-width="2.6" stroke-opacity="0.5"/>
+        <ellipse cx="-30" cy="-14" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <ellipse cx="-30" cy="16" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <path d="M14,-16 C40,-10 46,10 20,20" fill="none" stroke="#3f6280" stroke-width="3" stroke-opacity="0.45"/>
+        <g fill="#2f4c6b" fill-opacity="0.35">
+          <circle cx="40" cy="-24" r="3"/><circle cx="52" cy="-6" r="2.4"/><circle cx="44" cy="26" r="2.8"/>
+          <circle cx="12" cy="38" r="2.4"/><circle cx="-52" cy="34" r="2.6"/>
+        </g>
+        <ellipse cx="-40" cy="-26" rx="12" ry="8" fill="#ffffff" fill-opacity="0.28"/>
+      </g>
+
+      <!-- staphylococci: grape-like cluster -->
+      <g transform="translate(432,318)">
+        <use href="#coc" xlink:href="#coc" transform="translate(0,0)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(13,-8)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(6,12)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(20,7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-12,9)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-6,-13)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(9,-24)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(26,-18)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(32,-4)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(19,22)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(3,27)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-16,-4)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-20,22)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-30,10)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(38,10)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-4,-26) scale(0.9)"/>
+      </g>
+      <g transform="translate(600,168)">
+        <use href="#coc" xlink:href="#coc" transform="translate(0,0) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(12,8) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(-11,10) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(2,20) scale(0.95)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(22,-4) scale(0.9)"/>
+      </g>
+
+      <!-- streptococci: chain -->
+      <g>
+        <use href="#coc" xlink:href="#coc" transform="translate(498,784)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(511,777)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(525,772)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(539,770)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(553,771)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(567,776)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(580,783)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(592,792)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(604,802)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(617,810)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(631,815)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(645,817)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(659,815)"/>
+      </g>
+      <g>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(210,470)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(222,462)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(234,456)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(247,454)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(260,456)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(272,462)"/>
+      </g>
+
+      <!-- bacilli, some flagellated -->
+      <use href="#bacf" xlink:href="#bacf" transform="translate(600,452) rotate(-18)"/>
+      <use href="#bacf" xlink:href="#bacf" transform="translate(508,596) rotate(38)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(654,500) rotate(62)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(720,548) rotate(-34)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(786,470) rotate(14)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(842,436) rotate(-56)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(880,528) rotate(78)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(596,656) rotate(-8)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(560,700) rotate(48)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(268,624) rotate(-70)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(212,668) rotate(22)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(316,222) rotate(-40)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(392,196) rotate(16)"/>
+      <use href="#bacf" xlink:href="#bacf" transform="translate(470,244) rotate(-6)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(836,672) rotate(-24) scale(0.95)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(452,860) rotate(-44)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(742,856) rotate(30)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(300,352) rotate(84) scale(0.92)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(920,340) rotate(-12)"/>
+      <use href="#bac" xlink:href="#bac" transform="translate(546,144) rotate(52)"/>
+
+      <!-- Gram-positive spore-forming bacilli (chain) -->
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(230,376) rotate(-12)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(288,290) rotate(-12) scale(0.95)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(694,586) rotate(66)"/>
+      <use href="#bacspore" xlink:href="#bacspore" transform="translate(802,146) rotate(20) scale(0.95)"/>
+
+      <!-- vibrios: comma-shaped -->
+      <g fill="none" stroke="#a83a68" stroke-width="12" stroke-linecap="round" stroke-opacity="0.92">
+        <path d="M834,806 c14,-16 34,-18 52,-6"/>
+        <path d="M660,904 c16,-14 36,-14 52,0"/>
+        <path d="M902,614 c8,-18 26,-26 46,-20"/>
+        <path d="M212,748 c14,-14 34,-14 50,-2"/>
+      </g>
+      <g fill="none" stroke="#e59ab6" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5">
+        <path d="M836,802 c13,-14 32,-16 48,-6"/>
+        <path d="M662,900 c15,-12 33,-12 48,0"/>
+      </g>
+
+      <!-- spirochetes -->
+      <g fill="none" stroke="#5c2f96" stroke-width="3.4" stroke-linecap="round" stroke-opacity="0.9">
+        <g transform="translate(196,540) rotate(14)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(566,872) rotate(-10) scale(1.05)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0"/>
+        </g>
+        <g transform="translate(700,120) rotate(28) scale(0.92)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(892,880) rotate(-46) scale(0.85)" stroke-width="3.8">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+      </g>
+      <!-- spirillum: thicker helical rod -->
+      <g fill="none" stroke="#8e3a66" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9" transform="translate(760,760) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+      <g fill="none" stroke="#e29cba" stroke-width="2.4" stroke-opacity="0.4" transform="translate(760,757) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+
+      <!-- fine coccal / coccobacillary flora and stain precipitate -->
+      <g>
+        <use href="#coc" xlink:href="#coc" transform="translate(376,412) scale(0.72)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(672,680) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(504,470) scale(0.66)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(806,556) scale(0.68)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(618,282) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(258,222) scale(0.66)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(486,152) scale(0.7)"/>
+        <use href="#coc" xlink:href="#coc" transform="translate(908,700) scale(0.72)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(556,548) scale(0.8)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(752,470) scale(0.78)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(370,884) scale(0.8)"/>
+        <use href="#coc2" xlink:href="#coc2" transform="translate(866,392) scale(0.76)"/>
+      </g>
+      <g fill="#4a2a6b" fill-opacity="0.5">
+        <circle cx="330" cy="588" r="2.2"/><circle cx="424" cy="452" r="1.7"/><circle cx="612" cy="386" r="2.4"/>
+        <circle cx="708" cy="452" r="1.8"/><circle cx="778" cy="404" r="2.1"/><circle cx="812" cy="500" r="1.6"/>
+        <circle cx="640" cy="736" r="2.3"/><circle cx="574" cy="640" r="1.9"/><circle cx="500" cy="716" r="2.5"/>
+        <circle cx="270" cy="512" r="1.7"/><circle cx="358" cy="266" r="2.2"/><circle cx="470" cy="330" r="1.6"/>
+        <circle cx="540" cy="238" r="2"/><circle cx="672" cy="516" r="1.5"/><circle cx="856" cy="480" r="2.3"/>
+        <circle cx="904" cy="600" r="1.8"/><circle cx="770" cy="612" r="2.1"/><circle cx="690" cy="828" r="1.7"/>
+        <circle cx="820" cy="880" r="2.4"/><circle cx="248" cy="700" r="1.9"/><circle cx="196" cy="600" r="2.2"/>
+        <circle cx="452" cy="800" r="1.6"/><circle cx="404" cy="740" r="2"/><circle cx="600" cy="120" r="2.1"/>
+        <circle cx="880" cy="200" r="1.8"/><circle cx="748" cy="180" r="2.3"/><circle cx="298" cy="428" r="1.7"/>
+        <circle cx="524" cy="892" r="2.2"/><circle cx="900" cy="808" r="1.6"/><circle cx="646" cy="200" r="1.9"/>
+      </g>
+
+      <!-- eyepiece reticle -->
+      <g stroke="#2b3145" stroke-opacity="0.26">
+        <path d="M545,132 L545,462" stroke-width="1.4"/>
+        <path d="M545,548 L545,878" stroke-width="1.4"/>
+        <path d="M164,505 L502,505" stroke-width="1.4"/>
+        <path d="M588,505 L926,505" stroke-width="1.4"/>
+        <g stroke-width="1.4">
+          <path d="M537,220 L553,220"/><path d="M537,320 L553,320"/><path d="M537,420 L553,420"/>
+          <path d="M537,620 L553,620"/><path d="M537,720 L553,720"/><path d="M537,820 L553,820"/>
+          <path d="M260,497 L260,513"/><path d="M360,497 L360,513"/><path d="M460,497 L460,513"/>
+          <path d="M660,497 L660,513"/><path d="M760,497 L760,513"/><path d="M860,497 L860,513"/>
+        </g>
+      </g>
+      <g stroke="#243049" stroke-opacity="0.55">
+        <path d="M248,308 L368,308" stroke-width="3.2"/>
+        <path d="M248,300 L248,316" stroke-width="2.4"/>
+        <path d="M368,300 L368,316" stroke-width="2.4"/>
+        <path d="M278,303 L278,313" stroke-width="1.6"/>
+        <path d="M308,302 L308,314" stroke-width="1.8"/>
+        <path d="M338,303 L338,313" stroke-width="1.6"/>
+      </g>
+      <text x="308" y="292" font-family="Georgia,'Times New Roman',serif" font-size="19" fill="#243049" fill-opacity="0.62" text-anchor="middle">10 µm</text>
+
+      <!-- field grain + vignette -->
+      <rect x="152" y="112" width="786" height="786" filter="url(#grain)" opacity="0.14"/>
+      <circle cx="545" cy="505" r="393" fill="url(#vig)"/>
+    </g>
+
+    <!-- lens rim: chromatic fringes + barrel edge -->
+    <circle cx="545" cy="505" r="386" fill="none" stroke="#7fc3d8" stroke-width="4" stroke-opacity="0.35"/>
+    <circle cx="545" cy="505" r="392" fill="none" stroke="#d9a469" stroke-width="3" stroke-opacity="0.3"/>
+    <circle cx="545" cy="505" r="395" fill="none" stroke="#22242f" stroke-width="6" stroke-opacity="0.55"/>
+    <circle cx="545" cy="505" r="400" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+
+    <!-- glass specular streaks over everything -->
+    <g opacity="0.5">
+      <path d="M-60,760 L300,-40 L392,-40 L32,760 Z" fill="#ffffff" fill-opacity="0.09"/>
+      <path d="M420,1040 L820,120 L866,120 L466,1040 Z" fill="#ffffff" fill-opacity="0.06"/>
+    </g>
+
+    <!-- annotation in wax pencil on the glass -->
+    <g font-family="Georgia,'Times New Roman',serif" fill="#3d4a56" fill-opacity="0.6">
+      <text x="196" y="72" font-size="20" font-style="italic">field 3 · ×400 (40/0.65)</text>
+      <text x="968" y="956" font-size="19" font-style="italic" text-anchor="end">mixed flora, PMNs present</text>
+    </g>
+    <path d="M186,84 C260,76 330,86 402,78" fill="none" stroke="#3d4a56" stroke-width="1.4" stroke-opacity="0.35"/>
+  </g>
+</svg></script>
+<script type="text/template" id="tpl-b"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef6f8"/>
+      <stop offset="55%" stop-color="#e2edf1"/>
+      <stop offset="100%" stop-color="#cfe0e6"/>
+    </linearGradient>
+    <radialGradient id="smearGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#eeb9d4" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#dca0c4" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#dca0c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="fieldGrad" cx="45%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#f8dcea"/>
+      <stop offset="45%" stop-color="#ecbcd6"/>
+      <stop offset="75%" stop-color="#c98bb0"/>
+      <stop offset="100%" stop-color="#3a0f24"/>
+    </radialGradient>
+    <radialGradient id="rodGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffb0cc"/>
+      <stop offset="50%" stop-color="#e0537f"/>
+      <stop offset="100%" stop-color="#82203f"/>
+    </radialGradient>
+    <radialGradient id="coccusGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#cdb0ff"/>
+      <stop offset="55%" stop-color="#7c4bb5"/>
+      <stop offset="100%" stop-color="#3c1861"/>
+    </radialGradient>
+    <radialGradient id="spiralGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffcf8f"/>
+      <stop offset="55%" stop-color="#df8536"/>
+      <stop offset="100%" stop-color="#7a3d0f"/>
+    </radialGradient>
+    <radialGradient id="nucleusGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#7568e6"/>
+      <stop offset="60%" stop-color="#453191"/>
+      <stop offset="100%" stop-color="#221a4d"/>
+    </radialGradient>
+    <radialGradient id="cytoGrad" cx="42%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#faeef4"/>
+      <stop offset="70%" stop-color="#eccbdc"/>
+      <stop offset="100%" stop-color="#cf9fb9"/>
+    </radialGradient>
+    <radialGradient id="rbcGrad" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#f1a9b8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#df7c92" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#c85c73" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef0f2"/>
+      <stop offset="45%" stop-color="#9598a0"/>
+      <stop offset="55%" stop-color="#5c5e66"/>
+      <stop offset="100%" stop-color="#232327"/>
+    </linearGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="55%">
+      <stop offset="55%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <clipPath id="fieldClip">
+      <circle cx="500" cy="500" r="478"/>
+    </clipPath>
+    <filter id="softBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+    </filter>
+
+    <g id="coccus">
+      <circle r="13" fill="url(#coccusGrad)" stroke="#241238" stroke-width="1.3"/>
+      <ellipse cx="-4" cy="-5" rx="4" ry="3" fill="#ffffff" opacity="0.45"/>
+    </g>
+
+    <g id="rod">
+      <path d="M -21,-11 L 21,-11 A 11 11 0 0 1 21,11 L -21,11 A 11 11 0 0 1 -21,-11 Z" fill="url(#rodGrad)" stroke="#5c1230" stroke-width="1.3"/>
+      <ellipse cx="-8" cy="-4" rx="11" ry="3.6" fill="#ffffff" opacity="0.32"/>
+      <path d="M -18 1 Q 0 -3 18 1" stroke="#5c1230" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M -32,-3 Q -55,-16 -76,-6 Q -92,2 -103,-9" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M -32,4 Q -50,18 -70,10" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+      <path d="M 32,3 Q 55,16 76,5 Q 91,-3 101,10" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M 32,-4 Q 50,-18 68,-9" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+    </g>
+
+    <g id="rodSpore">
+      <use href="#rod"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="#f7e6ee" stroke="#5c1230" stroke-width="1" opacity="0.95"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.5"/>
+    </g>
+
+    <g id="spiral">
+      <path d="M -70 0 C -55 -24, -25 24, 0 0 C 25 -24, 55 24, 70 0" stroke="url(#spiralGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M -70 -3 C -55 -27, -25 21, 0 -3 C 25 -27, 55 21, 70 -3" stroke="#ffe3b0" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.4"/>
+      <path d="M 70,0 Q 88,-10 98,2 Q 84,4 92,14" stroke="#df8536" stroke-width="1.3" fill="none" opacity="0.5"/>
+    </g>
+
+    <g id="rbc">
+      <ellipse rx="34" ry="30" fill="url(#rbcGrad)"/>
+      <ellipse rx="13" ry="11" fill="#c85c73" opacity="0.5"/>
+    </g>
+  </defs>
+
+  <!-- glass slide base -->
+  <rect x="8" y="8" width="984" height="984" rx="44" ry="44" fill="url(#glassGrad)"/>
+  <ellipse cx="500" cy="500" rx="530" ry="440" transform="rotate(18 500 500)" fill="url(#smearGrad)"/>
+
+  <!-- corner: specimen label -->
+  <g>
+    <rect x="20" y="20" width="188" height="74" rx="6" fill="#faf6ec" stroke="#c8c1a9" stroke-width="2"/>
+    <circle cx="36" cy="37" r="6" fill="#bd3b2c"/>
+    <text x="50" y="41" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#3a3428">SAMPLE 04</text>
+    <text x="30" y="60" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Mixed bacterial flora</text>
+    <text x="30" y="76" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Gram stain · 400×</text>
+  </g>
+
+  <!-- corner: tape -->
+  <g transform="translate(880,50) rotate(8)">
+    <rect x="-95" y="-20" width="190" height="42" fill="#e9dcb5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#5a4b2c" opacity="0.75">smear #4</text>
+  </g>
+
+  <!-- corner: biohazard trefoil -->
+  <g transform="translate(95,905)" opacity="0.4">
+    <circle cx="0" cy="-16" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="-14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="0" cy="0" r="6" fill="#555"/>
+  </g>
+
+  <!-- corner: crack -->
+  <path d="M 900,905 L 918,918 L 912,932 L 930,945 L 922,958" fill="none" stroke="#8f9aa0" stroke-width="1.4" opacity="0.5"/>
+
+  <!-- glass shine streaks -->
+  <polygon points="640,20 700,20 480,300 420,300" fill="#ffffff" opacity="0.1"/>
+  <polygon points="120,760 165,760 60,970 15,970" fill="#ffffff" opacity="0.08"/>
+
+  <!-- drop shadow of viewport -->
+  <ellipse cx="512" cy="514" rx="478" ry="478" fill="#000000" opacity="0.22" filter="url(#softBlur)"/>
+
+  <!-- magnified field -->
+  <g clip-path="url(#fieldClip)">
+    <circle cx="500" cy="500" r="478" fill="url(#fieldGrad)"/>
+    <rect x="20" y="20" width="960" height="960" filter="url(#grain)" opacity="0.4"/>
+
+    <line x1="14" y1="500" x2="986" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <line x1="500" y1="14" x2="500" y2="986" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <circle cx="500" cy="500" r="150" fill="none" stroke="#ffffff" opacity="0.07" stroke-width="1"/>
+    <circle cx="500" cy="500" r="300" fill="none" stroke="#ffffff" opacity="0.06" stroke-width="1"/>
+    <circle cx="500" cy="500" r="450" fill="none" stroke="#ffffff" opacity="0.05" stroke-width="1"/>
+
+    <g filter="url(#softBlur)" opacity="0.35">
+      <use href="#rbc" x="110" y="140"/>
+      <use href="#rbc" x="890" y="190"/>
+      <use href="#rbc" x="140" y="890"/>
+      <use href="#rbc" x="860" y="860"/>
+      <use href="#rbc" x="500" y="880"/>
+      <use href="#rbc" x="500" y="120"/>
+      <use href="#rbc" x="280" y="650"/>
+      <use href="#rbc" x="730" y="340"/>
+    </g>
+
+    <!-- stain debris -->
+    <g fill="#7a2d52" opacity="0.35">
+      <circle cx="120" cy="350" r="2.2"/><circle cx="300" cy="250" r="2.6"/><circle cx="430" cy="480" r="2"/>
+      <circle cx="600" cy="350" r="2.4"/><circle cx="780" cy="300" r="2"/><circle cx="880" cy="500" r="2.6"/>
+      <circle cx="750" cy="700" r="2.2"/><circle cx="600" cy="850" r="2"/><circle cx="430" cy="650" r="2.4"/>
+      <circle cx="250" cy="480" r="2"/><circle cx="160" cy="700" r="2.6"/><circle cx="350" cy="900" r="2"/>
+      <circle cx="700" cy="900" r="2.2"/><circle cx="900" cy="700" r="2"/><circle cx="500" cy="650" r="2.4"/>
+      <circle cx="650" cy="450" r="2"/><circle cx="200" cy="200" r="2.4"/><circle cx="850" cy="200" r="2"/>
+    </g>
+
+    <!-- Staphylococcus clusters -->
+    <g>
+      <use href="#coccus" x="190" y="650"/><use href="#coccus" x="210" y="642"/><use href="#coccus" x="174" y="636"/>
+      <use href="#coccus" x="212" y="664"/><use href="#coccus" x="168" y="660"/><use href="#coccus" x="194" y="626"/>
+      <use href="#coccus" x="184" y="674"/><use href="#coccus" x="164" y="646"/><use href="#coccus" x="216" y="652"/>
+      <use href="#coccus" x="198" y="670"/><use href="#coccus" x="180" y="628"/>
+    </g>
+    <g>
+      <use href="#coccus" x="760" y="290"/><use href="#coccus" x="780" y="282"/><use href="#coccus" x="744" y="276"/>
+      <use href="#coccus" x="782" y="304"/><use href="#coccus" x="738" y="300"/><use href="#coccus" x="764" y="266"/>
+      <use href="#coccus" x="754" y="314"/><use href="#coccus" x="734" y="286"/><use href="#coccus" x="786" y="292"/>
+      <use href="#coccus" x="768" y="310"/><use href="#coccus" x="750" y="268"/>
+    </g>
+    <g>
+      <use href="#coccus" x="540" y="140"/><use href="#coccus" x="560" y="132"/><use href="#coccus" x="524" y="126"/>
+      <use href="#coccus" x="562" y="154"/><use href="#coccus" x="518" y="150"/><use href="#coccus" x="544" y="116"/>
+      <use href="#coccus" x="534" y="164"/><use href="#coccus" x="514" y="136"/><use href="#coccus" x="566" y="142"/>
+      <use href="#coccus" x="548" y="160"/><use href="#coccus" x="530" y="118"/>
+    </g>
+
+    <!-- Streptococcus chains -->
+    <g>
+      <use href="#coccus" x="430" y="240"/><use href="#coccus" x="452" y="246"/><use href="#coccus" x="474" y="253"/>
+      <use href="#coccus" x="496" y="259"/><use href="#coccus" x="518" y="266"/><use href="#coccus" x="540" y="272"/>
+      <use href="#coccus" x="562" y="279"/>
+    </g>
+    <g>
+      <use href="#coccus" x="140" y="760"/><use href="#coccus" x="163" y="755"/><use href="#coccus" x="187" y="751"/>
+      <use href="#coccus" x="210" y="746"/><use href="#coccus" x="234" y="742"/><use href="#coccus" x="258" y="737"/>
+    </g>
+
+    <!-- E. coli rods -->
+    <use href="#rod" transform="translate(230,200) rotate(-15)"/>
+    <use href="#rod" transform="translate(680,150) rotate(20)"/>
+    <use href="#rod" transform="translate(830,420) rotate(95)"/>
+    <use href="#rod" transform="translate(140,480) rotate(55)"/>
+    <use href="#rod" transform="translate(550,760) rotate(-40)"/>
+    <use href="#rod" transform="translate(350,800) rotate(5)"/>
+    <use href="#rod" transform="translate(760,830) rotate(140)"/>
+    <use href="#rod" transform="translate(300,380) rotate(160)"/>
+    <use href="#rod" transform="translate(345,400) rotate(160)"/>
+
+    <!-- Bacillus with endospore -->
+    <use href="#rodSpore" transform="translate(410,560) rotate(-25)"/>
+    <use href="#rodSpore" transform="translate(210,300) rotate(75)"/>
+
+    <!-- Spiral bacteria -->
+    <use href="#spiral" transform="translate(520,400) rotate(10)"/>
+    <use href="#spiral" transform="translate(850,640) rotate(-25)"/>
+
+    <!-- Neutrophil (white blood cell) phagocytosing bacteria -->
+    <g transform="translate(650,600)">
+      <circle r="95" fill="url(#cytoGrad)" stroke="#b98aa5" stroke-width="2"/>
+      <g fill="#d98cae" opacity="0.4">
+        <circle cx="-40" cy="-50" r="2.4"/><circle cx="20" cy="-60" r="2"/><circle cx="55" cy="-20" r="2.4"/>
+        <circle cx="60" cy="30" r="2"/><circle cx="20" cy="60" r="2.4"/><circle cx="-30" cy="55" r="2"/>
+        <circle cx="-60" cy="10" r="2.4"/><circle cx="-10" cy="-10" r="2"/><circle cx="35" cy="5" r="2"/>
+      </g>
+      <use href="#rod" transform="translate(-62,52) rotate(30) scale(0.6)"/>
+      <use href="#rod" transform="translate(58,-45) rotate(-60) scale(0.55)"/>
+      <path d="M -40,-30 C -55,-45 -20,-55 -5,-40 C 10,-55 40,-45 35,-25 C 55,-15 50,15 30,20 C 40,40 10,55 -5,40 C -20,55 -50,40 -40,20 C -60,10 -55,-15 -40,-30 Z"
+            fill="url(#nucleusGrad)" stroke="#1c1440" stroke-width="1.5"/>
+      <path d="M -25,-25 Q -10,-15 -20,0 M 10,-30 Q 20,-15 10,0 M -10,20 Q 5,30 20,15" stroke="#8a7de0" stroke-width="1.2" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- vignette overlay -->
+    <circle cx="500" cy="500" r="478" fill="url(#vignette)"/>
+
+    <!-- reticle center -->
+    <circle cx="500" cy="500" r="3" fill="#ffffff" opacity="0.5"/>
+
+    <!-- scale bar -->
+    <g transform="translate(500,915)">
+      <line x1="-60" y1="0" x2="60" y2="0" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="-60" y1="-6" x2="-60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="60" y1="-6" x2="60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <text x="0" y="-13" text-anchor="middle" font-family="'Courier New', monospace" font-size="16" fill="#ffffff" opacity="0.85">10 µm</text>
+    </g>
+
+    <text x="500" y="70" text-anchor="middle" font-family="'Courier New', monospace" font-size="21" fill="#ffffff" opacity="0.55">400×  MIXED BACTERIAL FLORA</text>
+  </g>
+
+  <!-- viewport bezel -->
+  <circle cx="500" cy="500" r="483" fill="none" stroke="url(#bezelGrad)" stroke-width="13"/>
+  <circle cx="500" cy="500" r="475" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.35"/>
+  <path d="M 39.5,332.4 A 483 483 0 0 1 414.9,17.4" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.32" stroke-linecap="round"/>
+</svg></script>
 
 <script>
 (function () {
   "use strict";
+
+  /* ---- the rubric, verbatim from art/junk-drawer/taxonomy.json v10 ------
+     (grades + the five live axes; the four defunct axes are excluded — they
+     are never surveyed again) */
+  var TAXONOMY = {
+    version: 10,
+    grades: [
+      { "id": "prime", "rank": 5, "label": "Prime",
+        "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
+      { "id": "choice", "rank": 4, "label": "Choice",
+        "description": "Strong result with minor blemishes a careful eye can find." },
+      { "id": "select", "rank": 3, "label": "Select",
+        "description": "Competent and recognizable; noticeable flaws on one or more axes." },
+      { "id": "standard", "rank": 2, "label": "Standard",
+        "description": "Gets the idea across despite significant defects." },
+      { "id": "utility", "rank": 1, "label": "Utility",
+        "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
+    ],
+    axes: [
+      { "id": "instruction-following", "label": "Instruction following",
+        "description": "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?",
+        "values": [
+          { "id": "followed", "rank": 3, "label": "Followed", "description": "Every explicit ask is honored as specified." },
+          { "id": "drifted", "rank": 2, "label": "Drifted", "description": "Some asks bent, missed, or quietly replaced." },
+          { "id": "ignored", "rank": 1, "label": "Ignored", "description": "Explicit asks are disregarded outright." }
+        ] },
+      { "id": "restraint", "label": "Restraint",
+        "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
+        "values": [
+          { "id": "disciplined", "rank": 3, "label": "Disciplined", "description": "Nothing appears that the prompt didn't call for." },
+          { "id": "embellished", "rank": 2, "label": "Embellished", "description": "Unrequested extras crept in without taking over." },
+          { "id": "overgrown", "rank": 1, "label": "Overgrown", "description": "Additions crowd or upstage what was actually asked for." }
+        ] },
+      { "id": "integrity", "label": "Integrity",
+        "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
+        "values": [
+          { "id": "sound", "rank": 3, "label": "Sound", "description": "Coherent construction; nothing floats, breaks, or contradicts itself." },
+          { "id": "strained", "rank": 2, "label": "Strained", "description": "Visible seams — small breaks, misalignments, or spatial slips." },
+          { "id": "broken", "rank": 1, "label": "Broken", "description": "Structural or spatial failures dominate the read." }
+        ] },
+      { "id": "style", "label": "Style",
+        "description": "Is the image one consistent visual language, well executed — whatever language it chose?",
+        "values": [
+          { "id": "unified", "rank": 3, "label": "Unified", "description": "One coherent visual language throughout." },
+          { "id": "mixed", "rank": 2, "label": "Mixed", "description": "Registers collide — parts of the image speak different styles." },
+          { "id": "incoherent", "rank": 1, "label": "Incoherent", "description": "No governing style survives the image." }
+        ] },
+      { "id": "je-ne-sais-quoi", "label": "Je ne sais quoi",
+        "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
+        "values": [
+          { "id": "abundant", "rank": 3, "label": "Abundant", "description": "The piece has it — undeniable, unaccountable appeal." },
+          { "id": "trace", "rank": 2, "label": "Trace", "description": "A glimmer of something beyond competence." },
+          { "id": "none-detected", "rank": 1, "label": "None detected", "description": "Technically present, spiritually absent." }
+        ] }
+    ]
+  };
+
+  var MAX_NOTE = 500; /* production's cap, junk-drawer.js */
+  var GRADE_DESC = 'The drawer’s own five-tier scale, best to worst — ' +
+    'one grade for the whole drawing. Optional; skip stands.';
+  var SKIP_DESC = 'Leave the scale unanswered — skipped scales are omitted ' +
+    'from the filing, never written as blanks.';
+  var PROMPT = 'A microscope slide where, upon closer inspection, a detailed, ' +
+    'realistic depiction of various common germs can be observed as they would ' +
+    'be seen at 400x power of magnification';
 
   /* ============ PRESERVED — the finale: winner + strength ================ */
   var LIKERT = [
@@ -336,31 +1482,306 @@ focus a stop for its definition &middot; the &#9432; unfolds the whole scale in-
     return h + '</div>';
   }
 
-  /* ---- minimal salvage mount: the finale alone on the sheet ------------- */
-  var scroll = document.getElementById('s1-scroll');
-  scroll.innerHTML =
-    '<h2 class="bench-title">The call</h2>' +
-    '<p class="bench-copy">The preserved finale, standing alone. The rework ' +
-    'mounts this unchanged at the foot of the new instrument.</p>' +
-    likertHTML('s1');
+  /* ---- exhibits: mint an id-namespaced copy per placement --------------- */
+  function mintArt(which, prefix) {
+    var tpl = document.getElementById(which === 'a' ? 'tpl-a' : 'tpl-b');
+    return tpl.textContent
+      .replace(/\bid="/g, 'id="' + prefix)
+      .replace(/url\(#/g, 'url(#' + prefix)
+      .replace(/\bhref="#/g, 'href="#' + prefix);
+  }
+  function plateHTML(inst, slot, headingId) {
+    return '<div class="bench-plate">' +
+      '<div class="bench-plate-art" role="img" aria-label="response ' +
+      slot.toUpperCase() + ', the drawing under grading">' +
+      mintArt(slot, inst + 'p' + slot + '_') + '</div>' +
+      '<div class="bench-plate-cap">' +
+      '<h3 id="' + headingId + '" tabindex="-1" data-stephead>Response ' +
+      slot.toUpperCase() + '</h3>' +
+      '<span class="bench-plate-sub">graded alone · no names until filed ' +
+      '· stays in view while you grade</span></div></div>';
+  }
 
-  /* ---- preserved behavior: pick state -------------------------------- */
-  scroll.addEventListener('change', function (e) {
-    var t = e.target;
-    if (!t || t.getAttribute('data-kind') !== 'call') return;
-    var pick = null;
-    LIKERT.forEach(function (o) { if (o.id === t.value) pick = o; });
-    var lk = t.closest('.bench-likert');
-    if (lk) {
-      lk.setAttribute('data-pick', pick && pick.winner !== 'tie' ? pick.winner : 'tie');
-      Array.prototype.forEach.call(lk.querySelectorAll('.bench-lk-stop'), function (s) {
-        var input = s.querySelector('input');
-        s.classList.toggle('is-on', !!(input && input.checked));
-      });
+  /* ---- one compact line per question: rowhead · note · dropdown */
+  function byRankDesc(list) {
+    return (list || []).slice().sort(function (a, b) {
+      return (b.rank || 0) - (a.rank || 0);
+    });
+  }
+  function qRow(inst, slot, q) {
+    var popId = inst + '-pop-' + slot + '-' + q.qid;
+    var nwId = inst + '-nw-' + slot + '-' + q.qid;
+    var h = '<div class="bench-q-wrap"><div class="bench-q">' +
+      '<div class="bench-rowhead">' +
+      '<button type="button" class="bench-def" aria-expanded="false" ' +
+      'aria-controls="' + popId + '" data-tt-t="' + esc(q.label) +
+      '" data-tt-d="' + esc(q.tt) + '"><span>' + esc(q.label) + '</span>' +
+      '<span class="bench-i" aria-hidden="true">i</span></button></div>';
+    if (q.kind === 'axis') {
+      h += '<button type="button" class="bench-notebtn" aria-expanded="false" ' +
+        'aria-controls="' + nwId + '" aria-label="add a note on ' +
+        esc(q.label) + ' for response ' + slot.toUpperCase() + '">' +
+        '<span aria-hidden="true">✎</span>' +
+        '<span class="bench-notebtn-word">note</span></button>';
     }
-  });
+    h += '<select class="bench-sel" data-role="' + q.kind + '" data-slot="' + slot +
+      '"' + (q.kind === 'axis' ? ' data-axis="' + esc(q.axisId) + '"' : '') +
+      ' aria-label="' + esc(q.label) + ' for response ' + slot.toUpperCase() + '">';
+    q.options.forEach(function (o) {
+      h += '<option value="' + o.rank + '">' + esc(o.label) + '</option>';
+    });
+    h += '<option value="" selected>skip</option></select></div>';
+    /* the ⓘ popover: every level title + full definition, in-flow */
+    h += '<div class="bench-pop" id="' + popId + '" hidden>' +
+      '<p class="bench-pop-desc">' + esc(q.tt) + '</p><dl>';
+    q.options.forEach(function (o) {
+      h += '<dt>' + esc(o.label) + '</dt><dd>' + esc(o.description) + '</dd>';
+    });
+    h += '<dt>skip</dt><dd>' + esc(SKIP_DESC) + '</dd></dl></div>';
+    if (q.kind === 'axis') {
+      h += '<div class="bench-notewrap" id="' + nwId + '" hidden>' +
+        '<input type="text" class="bench-note" maxlength="' + MAX_NOTE +
+        '" placeholder="a note, if you have one" aria-label="note on ' +
+        esc(q.label) + ' for response ' + slot.toUpperCase() +
+        '" data-slot="' + slot + '" data-axis="' + esc(q.axisId) + '"></div>';
+    }
+    return h + '</div>';
+  }
+  function qRowsHTML(inst, slot) {
+    var h = '<div class="bench-qs">';
+    h += qRow(inst, slot, {
+      qid: 'grade', kind: 'grade', label: 'Overall grade',
+      tt: GRADE_DESC, options: byRankDesc(TAXONOMY.grades)
+    });
+    TAXONOMY.axes.forEach(function (ax) {
+      h += qRow(inst, slot, {
+        qid: ax.id, kind: 'axis', axisId: ax.id, label: ax.label,
+        tt: ax.description, options: byRankDesc(ax.values)
+      });
+    });
+    return h + '</div>';
+  }
 
-  /* ---- preserved behavior: singleton hover/focus tooltip --------------- */
+  /* ---- the report path (wording unchanged from production) -------------- */
+  function flagHTML(inst, slot) {
+    return '<label class="bench-check">' +
+      '<input type="checkbox" data-role="flag" data-slot="' + slot + '">' +
+      '<span>this response is broken or offensive</span></label>' +
+      '<div class="bench-flagnote" data-flagnote="' + slot + '" hidden>' +
+      '<input type="text" class="bench-flagnote-in" maxlength="' + MAX_NOTE +
+      '" placeholder="what is wrong with it?" ' +
+      'aria-label="note on the report for response ' + slot.toUpperCase() +
+      '" data-role="flagnote" data-slot="' + slot + '"></div>';
+  }
+
+  /* ---- the three panels -------------------------------------------------- */
+  function panelResponse(inst, slot, navHTML) {
+    var hid = inst + '-h-' + slot;
+    return '<section class="bench-panel" data-panel="' + slot +
+      '" aria-labelledby="' + hid + '"' + (slot === 'a' ? '' : ' hidden') + '>' +
+      plateHTML(inst, slot, hid) +
+      qRowsHTML(inst, slot) +
+      flagHTML(inst, slot) +
+      '<div class="bench-nav">' + navHTML + '</div></section>';
+  }
+  function panelCall(inst) {
+    var hid = inst + '-h-call';
+    return '<section class="bench-panel" data-panel="call" aria-labelledby="' +
+      hid + '" hidden>' +
+      '<h3 id="' + hid + '" tabindex="-1" data-stephead class="bench-title" ' +
+      'style="font-size:0.76rem;margin:0;">The call — A and B together</h3>' +
+      '<div class="bench-plates2">' +
+      ['a', 'b'].map(function (slot) {
+        return '<figure data-side="' + slot + '">' +
+          '<div class="bench-plate-art" role="img" aria-label="response ' +
+          slot.toUpperCase() + '">' + mintArt(slot, inst + 'k' + slot + '_') +
+          '</div><figcaption>' + slot.toUpperCase() + '</figcaption></figure>';
+      }).join('') + '</div>' +
+      likertHTML(inst) +
+      '<div class="bench-nav">' +
+      '<button type="button" class="bench-btn bench-btn--ghost" data-goto="b">' +
+      '← back — response B</button>' +
+      '<button type="button" class="bench-btn" data-act="file" disabled>' +
+      'file the grades</button></div>' +
+      '<p class="bench-filed" role="status" data-filed></p>' +
+      '<details class="bench-office"><summary>office use only — what ' +
+      'filing would post (one batch)</summary>' +
+      '<pre data-payload>{}</pre></details></section>';
+  }
+
+  /* ---- an instrument: head + rail + panels, all state kept in the DOM ---- */
+  var STEPS = [
+    { key: 'a', num: '1', word: 'response A' },
+    { key: 'b', num: '2', word: 'response B' },
+    { key: 'call', num: '3', word: 'the call' }
+  ];
+  function buildInstrument(sheet, inst) {
+    var h = '<div class="bench-head">' +
+      '<h2 class="bench-title">Grade what came back</h2>' +
+      '<p class="bench-copy">One at a time: A alone, then B alone, then the ' +
+      'call. Everything is optional except the call. The commission, verbatim ' +
+      '— “' + esc(PROMPT) + '”</p>' +
+      '<nav class="bench-steps" aria-label="survey progress — three steps">';
+    STEPS.forEach(function (s, i) {
+      h += '<button type="button" class="bench-step" data-goto="' + s.key +
+        '" aria-label="step ' + (i + 1) + ' of 3 — ' + esc(s.word) + '"' +
+        (i === 0 ? ' aria-current="step"' : ' disabled') +
+        '><b>' + s.num + '</b><span>' + esc(s.word) + '</span></button>';
+    });
+    h += '</nav></div><div class="bench-scroll">' +
+      panelResponse(inst, 'a',
+        '<button type="button" class="bench-btn bench-btn--next" data-goto="b">' +
+        'next — response B →</button>') +
+      panelResponse(inst, 'b',
+        '<button type="button" class="bench-btn bench-btn--ghost" data-goto="a">' +
+        '← back — response A</button>' +
+        '<button type="button" class="bench-btn bench-btn--next" data-goto="call">' +
+        'next — the call →</button>') +
+      panelCall(inst) + '</div>';
+    sheet.innerHTML = h;
+
+    var scroll = sheet.querySelector('.bench-scroll');
+    var unlocked = { a: true, b: false, call: false };
+
+    function setStep(key) {
+      if (!unlocked[key]) return;
+      STEPS.forEach(function (s) {
+        var panel = sheet.querySelector('[data-panel="' + s.key + '"]');
+        var tab = sheet.querySelector('.bench-step[data-goto="' + s.key + '"]');
+        if (panel) panel.hidden = s.key !== key;
+        if (tab) {
+          if (s.key === key) tab.setAttribute('aria-current', 'step');
+          else tab.removeAttribute('aria-current');
+          tab.disabled = !unlocked[s.key];
+        }
+      });
+      scroll.scrollTop = 0;
+      var head = sheet.querySelector('[data-panel="' + key + '"] [data-stephead]');
+      if (head) { try { head.focus({ preventScroll: true }); } catch (e) { head.focus(); } }
+    }
+
+    /* ---- clicks: steps, notes, filing (popovers are handled globally) --- */
+    sheet.addEventListener('click', function (e) {
+      var g = e.target.closest ? e.target.closest('[data-goto]') : null;
+      if (g && !g.disabled) {
+        unlocked[g.getAttribute('data-goto')] = true; /* only next-buttons and
+          unlocked tabs are pressable, so this never skips a step */
+        setStep(g.getAttribute('data-goto'));
+        return;
+      }
+      var nb = e.target.closest ? e.target.closest('.bench-notebtn') : null;
+      if (nb) {
+        var w = document.getElementById(nb.getAttribute('aria-controls'));
+        var open = nb.getAttribute('aria-expanded') === 'true';
+        nb.setAttribute('aria-expanded', open ? 'false' : 'true');
+        if (w) {
+          w.hidden = open;
+          if (!open) { var f = w.querySelector('input'); if (f) f.focus(); }
+        }
+        return;
+      }
+      var fb = e.target.closest ? e.target.closest('[data-act="file"]') : null;
+      if (fb && !fb.disabled) filePayload();
+    });
+
+    /* ---- changes: selects, flags, and the preserved call ---------------- */
+    sheet.addEventListener('change', function (e) {
+      var t = e.target;
+      if (!t || !t.getAttribute) return;
+      if (t.getAttribute('data-kind') === 'call') {
+        /* PRESERVED behavior: pick state (verbatim from the salvage) */
+        var pick = null;
+        LIKERT.forEach(function (o) { if (o.id === t.value) pick = o; });
+        var lk = t.closest('.bench-likert');
+        if (lk) {
+          lk.setAttribute('data-pick', pick && pick.winner !== 'tie' ? pick.winner : 'tie');
+          Array.prototype.forEach.call(lk.querySelectorAll('.bench-lk-stop'), function (s) {
+            var input = s.querySelector('input');
+            s.classList.toggle('is-on', !!(input && input.checked));
+          });
+        }
+        /* new: the call unlocks filing and marks the chosen plate */
+        var fbtn = sheet.querySelector('[data-act="file"]');
+        if (fbtn) fbtn.disabled = false;
+        var p2 = sheet.querySelector('.bench-plates2');
+        if (p2 && pick) p2.setAttribute('data-pick', pick.winner);
+        return;
+      }
+      if (t.classList && t.classList.contains('bench-sel')) {
+        t.classList.toggle('is-set', t.value !== '');
+        return;
+      }
+      if (t.getAttribute('data-role') === 'flag') {
+        var fn = sheet.querySelector('[data-flagnote="' +
+          t.getAttribute('data-slot') + '"]');
+        if (fn) fn.hidden = !t.checked; /* mutate in place — never re-render */
+      }
+    });
+
+    /* ---- inputs: mark note affordances that carry something ------------- */
+    sheet.addEventListener('input', function (e) {
+      var t = e.target;
+      if (!t || !t.classList || !t.classList.contains('bench-note')) return;
+      var wrap = t.closest('.bench-notewrap');
+      if (!wrap) return;
+      var btn = sheet.querySelector('.bench-notebtn[aria-controls="' + wrap.id + '"]');
+      if (btn) btn.classList.toggle('has-note', !!t.value.trim());
+    });
+
+    /* ---- filing: the same one-batch shape submitRatings() posts ---------- */
+    function filePayload() {
+      var payload = {
+        submission_id: 'mock-sub-' + inst,
+        client: { mock: true },
+        ratings: [],
+        comparison: null
+      };
+      ['a', 'b'].forEach(function (slot) {
+        var gen = 'mock-gen-' + slot;
+        var g = sheet.querySelector('select[data-role="grade"][data-slot="' + slot + '"]');
+        if (g && g.value !== '') {
+          payload.ratings.push({ gen_id: gen, kind: 'grade', value: Number(g.value) });
+        }
+        TAXONOMY.axes.forEach(function (ax) {
+          var s = sheet.querySelector('select[data-role="axis"][data-slot="' +
+            slot + '"][data-axis="' + ax.id + '"]');
+          if (!s || s.value === '') return; /* skipped scales are omitted */
+          var row = { gen_id: gen, kind: 'axis', axis_id: ax.id, value: Number(s.value) };
+          var n = sheet.querySelector('.bench-note[data-slot="' + slot +
+            '"][data-axis="' + ax.id + '"]');
+          if (n && n.value.trim()) row.note = n.value.trim().slice(0, MAX_NOTE);
+          payload.ratings.push(row);
+        });
+        var fl = sheet.querySelector('input[data-role="flag"][data-slot="' + slot + '"]');
+        if (fl && fl.checked) {
+          var f = { gen_id: gen, kind: 'flag' };
+          var fn = sheet.querySelector('input[data-role="flagnote"][data-slot="' + slot + '"]');
+          if (fn && fn.value.trim()) f.note = fn.value.trim().slice(0, MAX_NOTE);
+          payload.ratings.push(f);
+        }
+      });
+      var call = sheet.querySelector('input[data-kind="call"]:checked');
+      if (call) {
+        var pick = null;
+        LIKERT.forEach(function (o) { if (o.id === call.value) pick = o; });
+        if (pick) {
+          payload.comparison = { winner: pick.winner };
+          if (pick.strength) payload.comparison.strength = pick.strength;
+          /* strength omitted on a tie — the preserved element's contract */
+        }
+      }
+      var pre = sheet.querySelector('[data-payload]');
+      var det = sheet.querySelector('.bench-office');
+      var st = sheet.querySelector('[data-filed]');
+      if (pre) pre.textContent = JSON.stringify(payload, null, 2);
+      if (det) det.open = true;
+      if (st) st.textContent = 'filed (mock) — one batch to jd-rate.php, then the only unveil.';
+    }
+
+    wireTT(sheet);
+  }
+
+  /* ---- PRESERVED behavior: singleton hover/focus tooltip --------------- */
   var tt = document.createElement('div');
   tt.className = 'bench-tt'; tt.setAttribute('aria-hidden', 'true'); tt.hidden = true;
   document.body.appendChild(tt);
@@ -373,21 +1794,25 @@ focus a stop for its definition &middot; the &#9432; unfolds the whole scale in-
     tt.style.top = Math.max(8, r.top - tt.offsetHeight - 8) + 'px';
   }
   function hideTT() { tt.hidden = true; }
-  scroll.addEventListener('mouseover', function (e) {
-    if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
-    var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-    if (stop) showTT(stop); else hideTT();
-  });
-  scroll.addEventListener('mouseleave', hideTT);
-  scroll.addEventListener('focusin', function (e) {
-    var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-    if (stop && e.target.matches && e.target.matches(':focus-visible')) showTT(stop);
-    else hideTT();
-  });
-  scroll.addEventListener('focusout', hideTT);
+  /* the listener bodies are verbatim from the salvage; they are attached per
+     sheet (two live instances on this page) instead of to one scroll node */
+  function wireTT(scroll) {
+    scroll.addEventListener('mouseover', function (e) {
+      if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
+      var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+      if (stop) showTT(stop); else hideTT();
+    });
+    scroll.addEventListener('mouseleave', hideTT);
+    scroll.addEventListener('focusin', function (e) {
+      var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+      if (stop && e.target.matches && e.target.matches(':focus-visible')) showTT(stop);
+      else hideTT();
+    });
+    scroll.addEventListener('focusout', hideTT);
+  }
   window.addEventListener('scroll', hideTT, true);
 
-  /* ---- preserved behavior: the ⓘ popover ------------------------------- */
+  /* ---- PRESERVED behavior: the ⓘ popover ------------------------------- */
   document.addEventListener('click', function (e) {
     var btn = e.target.closest ? e.target.closest('.bench-def') : null;
     if (btn) {
@@ -417,6 +1842,10 @@ focus a stop for its definition &middot; the &#9432; unfolds the whole scale in-
         b.focus();
       });
   });
+
+  /* ---- mount both stages ------------------------------------------------ */
+  buildInstrument(document.getElementById('w1'), 'w1');
+  buildInstrument(document.getElementById('n1'), 'n1');
 }());
 </script>
 
