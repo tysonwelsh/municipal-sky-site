@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 9C &middot; THE MIDWAY MARQUEE</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 9C · THE MIDWAY MARQUEE (round 9: the trigger
+   becomes an ILLUMINATED arcade button, label printed ON the lens)
+   Where 9a/9b recreate real arcade hardware, this is the carnival take: a
+   landscape lozenge in a near-black housing, fifteen amber marquee bulbs
+   running a slow three-phase chase around a warm ivory backlit lens that says
+   TAKE A TURN in dark ink on the glass. The only light-emitting thing in the
+   drawer — a soft cream halo baked into the asset spills past the housing
+   onto the wood.
+
+   Everything is inline. The three drawer textures below (--jd-floor-url,
+   --jd-craq-url, --jd-frame-url) are copied VERBATIM from junk-drawer.css so
+   the in-context view is the real stage, not an approximation. The three
+   companion items (paperclip, skeleton key, three of hearts) are the real
+   production SVGs from items/, id-namespaced per copy (c1_/c2_/c3_) and sized
+   with the real tier math: footprint side = sizeTiers[class].box × sizeScale,
+   in cqmin of the well, exactly as junk-drawer.js lays the pile out.
+
+   THE OBJECT ITSELF lives once, in <template id="mq-tpl"> — that markup is
+   the candidate production asset: viewBox + xmlns, transparent ground, ink
+   edge-to-edge (the halo ellipse reaches within ~1% of every viewBox edge;
+   the housing itself spans 83% × 71% of the box so the drawer's area math is
+   not fooled by halo-only margin), no <script>, no on* handlers, no
+   foreignObject, no external references, NO SMIL. Every animation on this
+   page is applied from PAGE css/js against the SVG's classes (.mq-lens /
+   .mq-glowcore / .mq-halo / .mq-flash / .mq-bulb-a/-b/-c); nothing is baked
+   into the art — with no stylesheet the asset is a correct still with every
+   bulb lit steady. The page mints one namespaced copy per placement
+   (m1_, m2_, …) because inlined SVGs otherwise fight over their defs ids.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the drawer textures, VERBATIM from junk-drawer.css ------------------- */
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem;
+  overflow-x: hidden;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.4rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.sec-head {
+  max-width: 1060px; margin: 2.6rem auto 0.9rem;
+  font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: #8a8272;
+}
+.sec-head span { color: var(--plot-red); }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+.rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+
+/* ---------------- the object host ---------------------------------------
+   Production grammar, copied on purpose: the HOST div is the button (role,
+   tabindex, aria-label, listeners) and is itself pointer-events:none, so only
+   PAINTED ink takes the hit and the transparent corners of the viewBox stay
+   pass-through — the same silhouette hit-testing .jd-item uses. Note that the
+   halo is painted ink: a tap on the spill light presses the button. That is
+   deliberate generosity (see note 2 below).
+   ---------------------------------------------------------------------- */
+.jd-marquee {
+  display: block;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+  /* warm ivory, the default lens ---------------------------------------- */
+  --mq-l0: #fffdf2;   /* lens hot centre */
+  --mq-l1: #ffefc2;   /* lens mid cream */
+  --mq-l2: #f7c96b;   /* lens saturated edge */
+  --mq-l3: #e5a33c;   /* lens rim, deepest */
+  --mq-h:  #ffd98a;   /* halo spill colour */
+  --mq-g0: #fffefa;   /* glow-core hot */
+  --mq-g1: #fff3cd;   /* glow-core falloff */
+}
+.jd-marquee svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.jd-marquee svg * { pointer-events: visiblePainted; cursor: pointer; }
+.jd-marquee:focus { outline: none; }
+.jd-marquee:focus-visible {
+  outline: 3px solid var(--plot-red);
+  outline-offset: 5px;
+  border-radius: 18px;
+}
+/* lens tints ride on the HOST, so the gradient stops inside each minted
+   copy resolve against their own instance (that is why every copy carries
+   its own <defs> instead of sharing one). Bulbs stay warm amber in every
+   variant — the marquee is the constant, the lens is the variable. */
+.lens-ice     { --mq-l0:#f6feff; --mq-l1:#d4f4fc; --mq-l2:#6cc9e9; --mq-l3:#2f9cc9; --mq-h:#a8e6ff; --mq-g0:#f8ffff; --mq-g1:#dcf7ff; }
+.lens-magenta { --mq-l0:#fff6fc; --mq-l1:#ffd3ec; --mq-l2:#f26bb8; --mq-l3:#cc2f8d; --mq-h:#ff9fd8; --mq-g0:#fff8fd; --mq-g1:#ffdff2; }
+.lens-cherry  { --mq-l0:#ffe9df; --mq-l1:#ff9d84; --mq-l2:#f0402f; --mq-l3:#bd1414; --mq-h:#ff8a66; --mq-g0:#fff1e6; --mq-g1:#ffb49a; }
+
+/* the CSS-driven stops of the artwork (defaults also live as presentation
+   attributes in the SVG, so the asset is correct standing alone) */
+.mq-l0 { stop-color: var(--mq-l0); }
+.mq-l1 { stop-color: var(--mq-l1); }
+.mq-l2 { stop-color: var(--mq-l2); }
+.mq-l3 { stop-color: var(--mq-l3); }
+.mq-h0 { stop-color: var(--mq-h); }
+.mq-g0 { stop-color: var(--mq-g0); }
+.mq-g1 { stop-color: var(--mq-g1); }
+
+/* ---------------- press + idle ------------------------------------------
+   BASE state = the reduced-motion state: no keyframes anywhere, the whole
+   marquee frozen fully lit (the asset's own attribute state), the press an
+   instant sunk pose. Motion is ADDED back below, inside
+   prefers-reduced-motion:no-preference AND gated on body:not(.rm) so the
+   on-page simulator can take it away again.
+   ---------------------------------------------------------------------- */
+.mq-lens, .mq-halo {
+  transform-box: view-box;
+  transform-origin: 150px 105px;
+}
+.jd-marquee.is-pressed .mq-lens     { transform: scale(0.94, 0.92); }
+.jd-marquee.is-pressed .mq-flash    { opacity: 0.6; }
+.jd-marquee.is-pressed .mq-glowcore { opacity: 1; }
+.jd-marquee.is-pressed .mq-bulb-a,
+.jd-marquee.is-pressed .mq-bulb-b,
+.jd-marquee.is-pressed .mq-bulb-c   { animation: none; opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* idle tell #1: the marquee chase — three phase groups, 3s cycle, one
+     step per second, travelling clockwise a to b to c (negative delays so
+     nothing waits dark at load). Dim is 0.22, not 0: an unlit marquee bulb
+     still shows its amber glass over the baked off-dome. */
+  body:not(.rm) .jd-marquee .mq-bulb-a { animation: mq-chase 3s linear infinite; }
+  body:not(.rm) .jd-marquee .mq-bulb-b { animation: mq-chase 3s linear infinite; animation-delay: -2s; }
+  body:not(.rm) .jd-marquee .mq-bulb-c { animation: mq-chase 3s linear infinite; animation-delay: -1s; }
+  /* idle tell #2: a gentle lens breath every ~6.5s */
+  body:not(.rm) .jd-marquee .mq-glowcore { animation: mq-breath 6.5s ease-in-out infinite; }
+  /* the press: lens sinks a step into the housing (travel + squash), the
+     dark shaft shows around it, flare, springy overshoot back */
+  body:not(.rm) .jd-marquee.is-pressed .mq-lens {
+    transform: none;
+    animation: mq-sink 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+  body:not(.rm) .jd-marquee.is-pressed .mq-flash {
+    opacity: 0;
+    animation: mq-flare 420ms ease-out;
+  }
+  body:not(.rm) .jd-marquee.is-pressed .mq-glowcore {
+    opacity: 0.8;
+    animation: mq-coresurge 420ms ease-out;
+  }
+  body:not(.rm) .jd-marquee.is-pressed .mq-halo {
+    animation: mq-halo-flare 460ms ease-out;
+  }
+  /* while pressed the chase interrupts: every bulb snaps on together for a
+     beat (the .is-pressed rule above already pins them at animation:none /
+     opacity:1); when the class drops ~560ms later the chase resumes */
+}
+@keyframes mq-chase {
+  0%, 18%  { opacity: 1; }
+  30%, 70% { opacity: 0.22; }
+  82%, 100% { opacity: 1; }
+}
+@keyframes mq-breath {
+  0%, 62%, 100% { opacity: 0.8; }
+  74%           { opacity: 1; }
+  84%           { opacity: 0.85; }
+}
+@keyframes mq-sink {
+  0%   { transform: scale(1); }
+  18%  { transform: scale(0.935, 0.9); }
+  46%  { transform: scale(0.94, 0.92); }
+  76%  { transform: scale(1.025, 1.03); }
+  100% { transform: scale(1); }
+}
+@keyframes mq-flare {
+  0%   { opacity: 0; }
+  14%  { opacity: 0.95; }
+  55%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+@keyframes mq-coresurge {
+  0%   { opacity: 0.8; }
+  14%  { opacity: 1; }
+  100% { opacity: 0.8; }
+}
+@keyframes mq-halo-flare {
+  0%   { transform: scale(1); }
+  22%  { transform: scale(1.055); }
+  100% { transform: scale(1); }
+}
+
+/* ---------------- hero ---------------------------------------------------- */
+.hero {
+  position: relative;
+  max-width: 34rem; margin: 0 auto;
+  padding: 1.6rem 1rem 1.2rem;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* the object is a light source, so the hero seats it on dusk-dark wood-brown
+   instead of bare paper — the same argument the drawer will make at night */
+.hero-pad {
+  width: 100%;
+  padding: clamp(1.2rem, 5vw, 2.4rem);
+  border-radius: 14px;
+  background: radial-gradient(120% 120% at 46% 40%, #4a3418 0%, #2b1d0d 62%, #1d1308 100%);
+  box-shadow: inset 0 0 0 2px rgba(20, 10, 4, 0.65),
+              8px 12px 26px -10px rgba(30, 18, 8, 0.5);
+  display: flex; justify-content: center;
+}
+.hero-btn {
+  position: relative;
+  width: min(78vw, 24rem);
+  filter: drop-shadow(8px 12px 12px rgba(10, 5, 2, 0.55));
+}
+.hero-hint {
+  position: relative;
+  margin-top: 1.15rem;
+  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #9a9284; text-align: center; line-height: 2;
+}
+.hero-hint kbd {
+  font-family: var(--mono); font-size: 0.62rem;
+  border: 1px solid #cfc7b5; border-bottom-width: 2px; border-radius: 3px;
+  padding: 0.05rem 0.3rem; color: #6d6656;
+}
+.readout {
+  position: relative; margin-top: 0.6rem;
+  font-size: 0.66rem; letter-spacing: 0.14em; color: var(--plot-red);
+  min-height: 1.2em; text-align: center;
+}
+.controls {
+  position: relative; margin-top: 0.9rem;
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9a9284;
+}
+.controls label { cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; }
+
+/* ---------------- the drawer stage (real palette) ------------------------ */
+.stage {
+  --wall: clamp(22px, 7vw, 52px);
+  position: relative;
+  width: 100%; max-width: 660px;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  transform: translateZ(0);
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+.frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+.well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+.craq {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+.pile { position: absolute; inset: 0; z-index: 2; }
+.wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+.varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+/* pile items — production geometry: width in cqmin of the well, rotation on
+   the inner svg, drop-shadow on the wrapper so it always falls down-right */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  pointer-events: none;
+}
+.jd-item > svg { display: block; width: 100%; height: auto; transform: rotate(var(--rot, 0deg)); }
+.jd-item > svg * { pointer-events: visiblePainted; }
+
+/* ---------------- drawer-scale ruler ------------------------------------- */
+.ruler {
+  display: flex; flex-wrap: wrap; gap: 1.4rem 2rem;
+  align-items: flex-end; justify-content: center;
+  margin: 1.6rem auto 0;
+}
+.ruler figure { text-align: center; }
+.ruler .jd-marquee { filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.5)); }
+.ruler figcaption {
+  margin-top: 0.55rem;
+  font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: #9a9284;
+}
+.r78  { width: 78px; }
+.r96  { width: 96px; }
+.r118 { width: 118px; }
+
+/* ---------------- variants ----------------------------------------------- */
+.variants {
+  display: flex; flex-wrap: wrap; gap: 1.5rem 2.2rem;
+  align-items: center; justify-content: center;
+  margin: 0 auto;
+}
+.variants figure { text-align: center; }
+.variants .jd-marquee {
+  width: min(40vw, 200px);
+  filter: drop-shadow(6px 9px 8px rgba(22, 11, 4, 0.4));
+}
+.variants figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8272;
+}
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+noscript p {
+  max-width: 44rem; margin: 1rem auto; text-align: center;
+  font-size: 0.7rem; color: var(--plot-red);
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 9C &middot; The Midway Marquee</p>
+<p class="mock-intro">
+  <b>9C &mdash; THE MIDWAY MARQUEE.</b> The deliberately different take: where 9A and 9B
+  recreate real arcade hardware, this is carnival &mdash; a landscape lozenge in a
+  near-black housing, fifteen amber marquee bulbs running a slow chase around a warm
+  ivory backlit lens with TAKE A TURN printed in dark ink on the glass. The drawer&rsquo;s
+  only light source, and the most theatrical &ldquo;press me, this is a game&rdquo; of the three.
+</p>
+
+<noscript><p>This page mints its button copies with JavaScript (each inlined SVG needs its own id namespace). With JS off, the object does not render.</p></noscript>
+
+<!-- =========================== HERO ================================== -->
+<p class="sec-head"><span>1</span> &middot; Hero &mdash; press it</p>
+<div class="hero">
+  <div class="hero-pad">
+    <div class="jd-marquee hero-btn" role="button" tabindex="0" aria-label="Take a turn"></div>
+  </div>
+  <p class="hero-hint">
+    click / tap, or focus and hit <kbd>Enter</kbd> / <kbd>Space</kbd><br />
+    idle: the bulb chase steps once a second; the lens breathes every ~6&thinsp;s
+  </p>
+  <p class="readout" id="readout" role="status" aria-live="polite">&nbsp;</p>
+  <p class="controls">
+    <label><input type="checkbox" id="rm-toggle" /> simulate prefers-reduced-motion</label>
+  </p>
+</div>
+<p class="mock-label">
+  <b>the press</b> &mdash; the lens sinks a visible step into the housing (travel plus a
+  slight squash; the dark shaft shows around it), flares white, and every bulb snaps on
+  together for a beat &mdash; the chase interrupts, then resumes &middot; the halo swells
+  with it &middot; under reduced motion the same press is an instant sunk pose and the
+  marquee holds frozen at full &mdash; all bulbs lit, no chase, no breath
+</p>
+
+<div class="rule"></div>
+
+<!-- ========================= IN CONTEXT ============================== -->
+<p class="sec-head"><span>2</span> &middot; In the drawer &mdash; real floor, real neighbours, the real corner seat</p>
+<div class="stage">
+  <div class="frame">
+    <div class="well">
+      <div class="craq"></div>
+      <div class="pile">
+        <div class="jd-item" style="--w: 2.607; --rot: 24deg; left: 30%; top: 24%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="15.5 11.5 36.8 124.8" role="img" aria-label="paperclip">
+                  <path d="M20 132 L20 30 A14 14 0 0 1 48 30 L48 108 A10 10 0 0 1 28 108 L28 46 A6 6 0 0 1 40 46 L40 100"
+                        fill="none" stroke="#8f959c" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 13.1; --rot: 13deg; left: 64%; top: 38%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 196" role="img" aria-label="three of hearts playing card">
+                  <defs>
+                    <path id="c3_pc-heart" d="M10 17 C4.5 11.5 0 8.4 0 4.6 A4.4 4.4 0 0 1 8.6 3.1 L10 4.6 L11.4 3.1 A4.4 4.4 0 0 1 20 4.6 C20 8.4 15.5 11.5 10 17 Z" fill="#c0392b"/>
+                  </defs>
+                  <rect x="2" y="2" width="136" height="192" rx="10" fill="#fbf8ef" stroke="#b9b2a2" stroke-width="1.5"/>
+                  <rect x="8" y="8" width="124" height="180" rx="6" fill="none" stroke="#e4ddcb" stroke-width="1"/>
+                  <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                  <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  <g transform="rotate(180 70 98)">
+                    <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                    <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  </g>
+                  <use href="#c3_pc-heart" transform="translate(54 34) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(54 84) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(86 162) scale(1.6) rotate(180)"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 5.616; --rot: -52deg; left: 56%; top: 70%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="34.5 32.0 157.8 405.3">
+            <defs>
+              <pattern id="c2_hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="#4a3512" stroke-width="0.7"/>
+              </pattern>
+              <pattern id="c2_crosshatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+                <line x1="0" y1="0" x2="0" y2="7" stroke="#7a5a22" stroke-width="0.6"/>
+              </pattern>
+              <mask id="c2_bow-mask">
+                <rect x="0" y="0" width="240" height="480" fill="black"/>
+                <circle cx="120" cy="96" r="62" fill="white"/>
+                <circle cx="120" cy="76" r="17" fill="black"/>
+                <circle cx="102" cy="106" r="17" fill="black"/>
+                <circle cx="138" cy="106" r="17" fill="black"/>
+              </mask>
+            </defs>
+            <g transform="rotate(-8 120 240)">
+              <!-- bow with clover-shaped cutout -->
+              <circle cx="120" cy="96" r="62" fill="#b3873a" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="url(#c2_hatch)" opacity="0.35" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="none" stroke="#4a3512" stroke-width="2.5"/>
+              <circle cx="120" cy="76" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="102" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="138" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <path d="M66 62 A62 62 0 0 1 120 34" fill="none" stroke="#d9b25f" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+              <!-- collar rings -->
+              <rect x="101" y="156" width="38" height="9" rx="4.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <rect x="106" y="167" width="28" height="7" rx="3.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <!-- stem -->
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="url(#c2_crosshatch)" opacity="0.4"/>
+              <line x1="116" y1="182" x2="116" y2="362" stroke="#d9b25f" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+              <line x1="125" y1="182" x2="125" y2="362" stroke="#7a5a22" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+              <!-- tip ferrule -->
+              <rect x="107" y="366" width="26" height="16" rx="5" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <!-- bit with notched teeth -->
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="#b3873a" stroke="#4a3512" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="url(#c2_hatch)" opacity="0.35"/>
+              <line x1="126" y1="394" x2="158" y2="394" stroke="#d9b25f" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <!-- edge shading -->
+              <line x1="127" y1="184" x2="127" y2="360" stroke="#4a3512" stroke-width="1" opacity="0.35"/>
+              <path d="M158 66 A62 62 0 0 1 176 110" fill="none" stroke="#7a5a22" stroke-width="5" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="jd-item jd-marquee in-pile"
+             style="--w: 21.3; --rot: 0deg; left: 14.2%; top: 91.2%; z-index: 99;"
+             role="button" tabindex="0" aria-label="Take a turn"></div>
+      </div>
+      <div class="wallshade"></div>
+      <div class="varnish"></div>
+      <div class="vignette"></div>
+    </div>
+  </div>
+</div>
+<p class="mock-label">
+  <b>honest scale, honest seat</b> &mdash; floor, craquelure, frame, wall shade, varnish
+  and vignette are the production values copied out of <code>junk-drawer.css</code>; the
+  paperclip (xs&thinsp;&times;&thinsp;0.8), brass key (s) and three of hearts (m) are the
+  real <code>items/</code> SVGs, sized by the real tier math in <code>cqmin</code> of the
+  well &middot; the marquee sits at the production trigger tier, m&thinsp;&times;&thinsp;1.15
+  (box 17.83&thinsp;cqmin; the 300&times;210 aspect normalizes to <code>--w: 21.3</code>,
+  21.3&thinsp;&times;&thinsp;14.9&thinsp;cqmin), in the FIXED bottom-left corner seat,
+  dead straight at 0&deg;, constant z &middot; it presses here too:
+  <b>rendered right now at <span id="px">&mdash;</span></b>
+</p>
+
+<div class="ruler">
+  <figure><div class="jd-marquee r78" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>78&thinsp;px<br />phone well</figcaption></figure>
+  <figure><div class="jd-marquee r96" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>96&thinsp;px<br />tablet</figcaption></figure>
+  <figure><div class="jd-marquee r118" role="button" tabindex="0" aria-label="Take a turn"></div><figcaption>118&thinsp;px<br />desktop well</figcaption></figure>
+</div>
+<p class="mock-label"><b>the read test</b> &mdash; at the production doorbell&rsquo;s measured scale (1&thinsp;cqmin &asymp; 3.64&thinsp;px on a 375&thinsp;px phone: 58&thinsp;&times;&thinsp;72&thinsp;px for its 240&times;300 box) this landscape box lands at &asymp;&thinsp;78&thinsp;&times;&thinsp;54&thinsp;px &mdash; both sides clear the 44&thinsp;px floor, the long side generously &middot; below ~78&thinsp;px the label goes decorative and the GLOW plus the chase carry the affordance, which is the whole thesis</p>
+
+<div class="rule"></div>
+
+<!-- =========================== VARIANTS ============================== -->
+<p class="sec-head"><span>3</span> &middot; Lens tints &mdash; one custom-property swap, all fully lit</p>
+<div class="variants">
+  <figure><div class="jd-marquee" role="button" tabindex="0" aria-label="Take a turn, ivory lens"></div><figcaption>A &middot; ivory<br />(default)</figcaption></figure>
+  <figure><div class="jd-marquee lens-ice" role="button" tabindex="0" aria-label="Take a turn, ice lens"></div><figcaption>B &middot; cool ice</figcaption></figure>
+  <figure><div class="jd-marquee lens-magenta" role="button" tabindex="0" aria-label="Take a turn, magenta lens"></div><figcaption>C &middot; magenta</figcaption></figure>
+  <figure><div class="jd-marquee lens-cherry" role="button" tabindex="0" aria-label="Take a turn, cherry lens"></div><figcaption>D &middot; cherry red</figcaption></figure>
+</div>
+<p class="mock-label"><b>cheap variants</b> &mdash; seven custom properties (<code>--mq-l0..3</code> for the lens, <code>--mq-h</code> for the halo, <code>--mq-g0/g1</code> for the glow core) resolved by stop classes, exactly the <code>db-b0..4</code> pattern from <code>turn-object.svg</code> &middot; the housing, the ink and the fifteen amber bulbs never change &mdash; a marquee is warm-white-and-gold whatever the show &middot; ivory is the recommendation: an old theatre lamp, deliberately not red, so nothing else in the drawer can be mistaken for it</p>
+
+<div class="rule"></div>
+
+<!-- ============================ NOTES ================================ -->
+<div class="considerations">
+  <p class="mc-head">Notes &middot; what I committed to, what implementation must watch</p>
+
+  <p><b>1 &middot; First landscape candidate, built for the corner.</b> The production
+  seat (2026-08-10 revision) is fixed bottom-left, dead straight at 0&deg;, so this
+  plate is drawn landscape (300&times;210, 10:7) to lie along the bottom wall the way
+  a marquee lies over a door. At 0&deg; the corner reservation&rsquo;s rotated-bbox math
+  degenerates to the plain box, so the swap is only a footprint change:
+  m&thinsp;&times;&thinsp;1.15 normalizes to 21.3&thinsp;&times;&thinsp;14.9&thinsp;cqmin
+  (long side well under the 1.8&thinsp;&times;&thinsp;box cap), &asymp;&thinsp;78&thinsp;&times;&thinsp;54&thinsp;px
+  on a 375&thinsp;px phone against the doorbell&rsquo;s 58&thinsp;&times;&thinsp;72.</p>
+
+  <p><b>2 &middot; The halo is ink &mdash; and therefore tap target.</b> The spill
+  gradient is part of the SVG (an ellipse reaching within ~1% of every viewBox edge,
+  fading to fully transparent), painted FIRST so the housing, shadow and bulbs sit on
+  top of it. Under silhouette hit-testing (<code>visiblePainted</code>) that faint ink
+  takes hits: a tap on the glow presses the button. Accepted on purpose &mdash; a light
+  switch you can slap at. The housing itself still spans 83%&thinsp;&times;&thinsp;71%
+  of the box, so the drawer&rsquo;s area-normalized size math is not fooled by halo-only
+  margin; worst-side fully transparent margin is ~1%.</p>
+
+  <p><b>3 &middot; The chase is page CSS on phase classes, not SMIL.</b> Fifteen bulb
+  seats were computed, not eyeballed: every 35.42 units along the 531.4-unit perimeter
+  of the rounded-rect track (53,58)&ndash;(247,152), corner r&thinsp;26 &mdash; 5 bulbs
+  per phase group, symmetric left/right. Each seat is a baked
+  &ldquo;off&rdquo; dome (socket ring, dark amber glass, faint spec) with a lit overlay
+  (<code>use</code> of one defs group) classed <code>.mq-bulb-a/-b/-c</code>; the page
+  runs <code>mq-chase</code> at 3&thinsp;s with negative delays so the bright step
+  travels clockwise once a second. With no stylesheet every overlay is
+  <code>opacity="1"</code> &mdash; the asset&rsquo;s resting still is the full marquee,
+  which is also the reduced-motion state: frozen all-on, no keyframes anywhere.</p>
+
+  <p><b>4 &middot; The label is printed on the lens and pinned with
+  <code>textLength</code>.</b> One line of fat dark uppercase inside a thin keyline box,
+  printed-on-plastic style, on the condensed stack (Arial Narrow &rarr; Franklin Gothic
+  &rarr; Impact). <code>textLength</code> + <code>lengthAdjust</code> squeeze whatever
+  font the platform serves into the same 118-unit run, so the keyline never clips and
+  the lens never rewraps. The ink stays dark in every tint &mdash; a backlit sign prints
+  its message as shadow, it does not colour the letters &mdash; which keeps contrast
+  honest even on the cherry lens.</p>
+
+  <p><b>5 &middot; Two shadows, one bargain.</b> The asset bakes a soft pool of contact
+  shadow around the footprint (three feathered rounded rects &mdash; no filter
+  primitives, so the sanitizer surface stays identical to <code>turn-object.svg</code>:
+  no script, no <code>on*</code>, no <code>foreignObject</code>, no external refs, no
+  SMIL). The pile&rsquo;s own <code>drop-shadow</code> then adds the directional cast all
+  items share; together they read as a heavy housing sitting in its own glow. As in 8B,
+  varnish and vignette tint the halo slightly, and junk dragged onto the plate can bury
+  it for the session &mdash; though burying a lit sign visibly leaks light, which is the
+  best failure mode a hidden control has had yet.</p>
+
+  <p><b>6 &middot; One host, one asset.</b> The interactive element is the wrapper div
+  (<code>role="button"</code>, <code>tabindex="0"</code>, aria-label, Enter/Space),
+  itself <code>pointer-events: none</code> with <code>visiblePainted</code> on the ink
+  &mdash; identical to <code>.jd-item</code>, so the object drops into the existing
+  gesture wiring without special-casing. Ids are prefixed <code>mq_</code> (underscore),
+  classes <code>mq-</code> (hyphen), so per-copy id re-prefixing (here
+  <code>mq_ &rarr; m&lt;N&gt;_</code>, production <code>JD_svgInst</code>) never touches
+  a class the stylesheet drives. The template in this page&rsquo;s source is the
+  candidate production asset verbatim.</p>
+</div>
+
+<!-- ==================================================================== -->
+<!-- THE OBJECT — candidate production asset. One source of truth; the JS  -->
+<!-- below stamps a copy per placement with ids rewritten mq_ -> m<N>_.    -->
+<!-- ==================================================================== -->
+<template id="mq-tpl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 210" class="mq-svg" aria-hidden="true" focusable="false">
+  <!-- THE TAKE-A-TURN OBJECT — candidate 9c, "the midway marquee".
+       A landscape lozenge button seen in PLAN VIEW from directly above: soft
+       cream halo spilling onto the wood, pooled contact shadow, near-black
+       housing with a bevel step, a ring of fifteen amber marquee bulbs
+       recessed in sockets, and a backlit warm-ivory lens with TAKE A TURN
+       printed in dark ink on the glass. The only light source in the drawer.
+
+       Ink is edge to edge: the halo ellipse spans x 3..297 of 300 and
+       y 2.5..207.5 of 210 (~1% fully transparent margin per side) and COUNTS
+       as ink; the housing itself spans x 25..275, y 30..180 (83% by 71% of
+       the box) so area-normalized sizing is not fooled by halo-only margin.
+
+       No script, no on* handlers, no foreignObject, no external references,
+       NO SMIL. Every glowing or moving part is a NAMED GROUP or classed set
+       that page CSS drives:
+         .mq-halo     — the spill light under everything; press swells it
+                        about (150,105)
+         .mq-lens     — the whole backlit lens assembly; press sinks it a
+                        step into the shaft, about (150,105)
+         .mq-glowcore — the hot bloom inside the lens; the idle breath
+                        (opacity 0.8 as an ATTRIBUTE so the still is lit)
+         .mq-flash    — the press flare over the lens, opacity 0 at rest
+                        (as an attribute, same reason)
+         .mq-bulb-a / .mq-bulb-b / .mq-bulb-c — the lit bulb overlays in
+                        three phase groups of five, ordered a, b, c clockwise
+                        from top centre; page CSS chases them. Every overlay
+                        carries opacity="1", so with no stylesheet at all the
+                        asset is a correct still: the marquee fully lit.
+       The off-state dome under each overlay is baked art, never animated.
+
+       Bulb seats are computed, not eyeballed: 15 seats every 35.42 units
+       along the 531.4-unit perimeter of the rounded-rect track from (53,58)
+       to (247,152) with corner radius 26, starting at top centre — symmetric
+       left/right, 5 seats per phase group.
+
+       Variant hooks, the turn-object.svg db-b0..4 pattern: gradient stops
+       carry classes (lens mq-l0..3, halo mq-h0, glow core mq-g0/g1) and ship
+       warm ivory as presentation attributes; a tint is a few stop-color
+       overrides on a host class. Bulbs stay amber in every variant.
+
+       Every id is prefixed mq_ (underscore) and every class mq- (hyphen),
+       so per-copy id namespacing can re-prefix ids without touching classes. -->
+  <defs>
+    <!-- the halo: one colour, opacity does the falloff, fading to fully
+         transparent just inside the viewBox edge -->
+    <radialGradient id="mq_halog" cx="0.5" cy="0.5" r="0.5">
+      <stop class="mq-h0" offset="0"    stop-color="#ffd98a" stop-opacity="0.5"/>
+      <stop class="mq-h0" offset="0.45" stop-color="#ffd98a" stop-opacity="0.3"/>
+      <stop class="mq-h0" offset="0.75" stop-color="#ffd98a" stop-opacity="0.13"/>
+      <stop class="mq-h0" offset="0.92" stop-color="#ffd98a" stop-opacity="0.04"/>
+      <stop class="mq-h0" offset="1"    stop-color="#ffd98a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- housing: charcoal, lit faintly from upper-left -->
+    <linearGradient id="mq_houseg" x1="0.1" y1="0" x2="0.8" y2="1">
+      <stop offset="0"   stop-color="#3a3640"/>
+      <stop offset="0.5" stop-color="#232028"/>
+      <stop offset="1"   stop-color="#16141a"/>
+    </linearGradient>
+    <linearGradient id="mq_faceg" x1="0.15" y1="0" x2="0.75" y2="1">
+      <stop offset="0" stop-color="#2b2731"/>
+      <stop offset="1" stop-color="#1a181e"/>
+    </linearGradient>
+    <!-- the shaft the lens travels in: dark, warmed by light leaking down -->
+    <radialGradient id="mq_wellg" cx="0.5" cy="0.42" r="0.7">
+      <stop offset="0"    stop-color="#46300f"/>
+      <stop offset="0.55" stop-color="#241708"/>
+      <stop offset="1"    stop-color="#0d0805"/>
+    </radialGradient>
+    <!-- the lens: hot bright centre falling to a saturated warm edge -->
+    <radialGradient id="mq_lensg" cx="0.5" cy="0.46" r="0.72">
+      <stop class="mq-l0" offset="0"    stop-color="#fffdf2"/>
+      <stop class="mq-l1" offset="0.5"  stop-color="#ffefc2"/>
+      <stop class="mq-l2" offset="0.85" stop-color="#f7c96b"/>
+      <stop class="mq-l3" offset="1"    stop-color="#e5a33c"/>
+    </radialGradient>
+    <radialGradient id="mq_coreg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="mq-g0" offset="0"   stop-color="#fffefa" stop-opacity="0.95"/>
+      <stop class="mq-g1" offset="0.6" stop-color="#fff3cd" stop-opacity="0.5"/>
+      <stop class="mq-g1" offset="1"   stop-color="#fff3cd" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mq_flashg" cx="0.5" cy="0.48" r="0.6">
+      <stop offset="0"    stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.5"  stop-color="#fff6d9" stop-opacity="0.8"/>
+      <stop offset="1"    stop-color="#fff6d9" stop-opacity="0"/>
+    </radialGradient>
+    <!-- bulbs: lit dome, its glow, and the unlit amber glass beneath -->
+    <radialGradient id="mq_bulbg" cx="0.38" cy="0.32" r="0.85">
+      <stop offset="0"    stop-color="#fff8dc"/>
+      <stop offset="0.55" stop-color="#ffc94d"/>
+      <stop offset="1"    stop-color="#dd8a12"/>
+    </radialGradient>
+    <radialGradient id="mq_bulbglowg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#ffd76a" stop-opacity="0.6"/>
+      <stop offset="0.5" stop-color="#ffd76a" stop-opacity="0.28"/>
+      <stop offset="1"   stop-color="#ffd76a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mq_bulboffg" cx="0.38" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#8a5f26"/>
+      <stop offset="1" stop-color="#33210c"/>
+    </radialGradient>
+    <clipPath id="mq_lensclip"><rect x="74" y="74" width="152" height="62" rx="26"/></clipPath>
+    <!-- one bulb, twice: the baked off state and the lit overlay, both drawn
+         at the origin and placed by use/translate -->
+    <g id="mq_bulb_off">
+      <circle r="10.5" fill="#141118" stroke="#040308" stroke-width="1.6"/>
+      <circle r="8.8" fill="#0c0a10"/>
+      <circle r="7" fill="url(#mq_bulboffg)" stroke="#1d1207" stroke-width="1"/>
+      <circle cx="-2.3" cy="-2.5" r="1.9" fill="#ffffff" opacity="0.28"/>
+    </g>
+    <g id="mq_bulb_lit">
+      <circle r="13" fill="url(#mq_bulbglowg)"/>
+      <circle r="7" fill="url(#mq_bulbg)"/>
+      <circle cx="-2.3" cy="-2.5" r="2" fill="#ffffff" opacity="0.95"/>
+    </g>
+  </defs>
+
+  <!-- ============ the halo: light on the wood, under everything ========= -->
+  <ellipse class="mq-halo" cx="150" cy="105" rx="147" ry="102.5" fill="url(#mq_halog)"/>
+
+  <!-- ============ contact shadow pooling around the footprint =========== -->
+  <rect x="25" y="34" width="258" height="154" rx="54" fill="#170a03" opacity="0.1"/>
+  <rect x="29" y="37" width="250" height="148" rx="50" fill="#170a03" opacity="0.14"/>
+  <rect x="32" y="40" width="244" height="142" rx="47" fill="#170a03" opacity="0.18"/>
+
+  <!-- ============ the housing: charcoal lozenge with a bevel step ======= -->
+  <rect x="25" y="30" width="250" height="150" rx="48" fill="url(#mq_houseg)" stroke="#08070a" stroke-width="3"/>
+  <rect x="29" y="34" width="242" height="142" rx="45" fill="none" stroke="#5c5665" stroke-opacity="0.3" stroke-width="2"/>
+  <path d="M 29 110 L 29 78 A 44 44 0 0 1 73 34 L 152 34" fill="none"
+        stroke="#6e6878" stroke-opacity="0.45" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M 271 100 L 271 132 A 44 44 0 0 1 227 176 L 148 176" fill="none"
+        stroke="#000000" stroke-opacity="0.5" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="35" y="40" width="230" height="130" rx="40" fill="url(#mq_faceg)" stroke="#0c0a0e" stroke-opacity="0.8" stroke-width="1.5"/>
+
+  <!-- ============ fifteen bulb seats: baked off-state art =============== -->
+  <g class="mq-bulbs-off">
+    <use href="#mq_bulb_off" transform="translate(150 58)"/>
+    <use href="#mq_bulb_off" transform="translate(185.4 58)"/>
+    <use href="#mq_bulb_off" transform="translate(220.8 58)"/>
+    <use href="#mq_bulb_off" transform="translate(246.4 78.5)"/>
+    <use href="#mq_bulb_off" transform="translate(247 113.9)"/>
+    <use href="#mq_bulb_off" transform="translate(237.3 146.3)"/>
+    <use href="#mq_bulb_off" transform="translate(203.1 152)"/>
+    <use href="#mq_bulb_off" transform="translate(167.7 152)"/>
+    <use href="#mq_bulb_off" transform="translate(132.3 152)"/>
+    <use href="#mq_bulb_off" transform="translate(96.9 152)"/>
+    <use href="#mq_bulb_off" transform="translate(62.7 146.3)"/>
+    <use href="#mq_bulb_off" transform="translate(53 113.9)"/>
+    <use href="#mq_bulb_off" transform="translate(53.6 78.5)"/>
+    <use href="#mq_bulb_off" transform="translate(79.2 58)"/>
+    <use href="#mq_bulb_off" transform="translate(114.6 58)"/>
+  </g>
+
+  <!-- ============ the aperture and the shaft the lens travels in ======== -->
+  <rect x="68" y="68" width="164" height="74" rx="30" fill="#0e0c10" stroke="#050408" stroke-width="2"/>
+  <rect x="71" y="71" width="158" height="68" rx="28" fill="url(#mq_wellg)"/>
+
+  <!-- ============ the backlit lens, label printed on the glass ========== -->
+  <g class="mq-lens">
+    <rect x="74" y="74" width="152" height="62" rx="26" fill="url(#mq_lensg)" stroke="#241505" stroke-opacity="0.55" stroke-width="1.5"/>
+    <ellipse class="mq-glowcore" cx="150" cy="103" rx="64" ry="24" fill="url(#mq_coreg)" opacity="0.8"/>
+    <!-- recess: the lens sits a hair below the bezel lip -->
+    <g clip-path="url(#mq_lensclip)">
+      <rect x="74" y="75.5" width="152" height="62" rx="26" fill="none" stroke="#3f2708" stroke-opacity="0.28" stroke-width="5"/>
+    </g>
+    <!-- the printed label: thin keyline box, fat dark uppercase -->
+    <rect x="85" y="87" width="130" height="36" rx="5" fill="none" stroke="#33210a" stroke-opacity="0.75" stroke-width="1.6"/>
+    <text x="150" y="114" text-anchor="middle"
+          font-family="'Arial Narrow', 'Franklin Gothic Medium', Impact, sans-serif"
+          font-size="25" font-weight="700" letter-spacing="1" fill="#2e1d08"
+          textLength="118" lengthAdjust="spacingAndGlyphs">TAKE A TURN</text>
+    <!-- glass gloss over the print -->
+    <g clip-path="url(#mq_lensclip)">
+      <ellipse cx="118" cy="85" rx="52" ry="9" transform="rotate(-3 118 85)" fill="#ffffff" opacity="0.28"/>
+    </g>
+    <!-- press flare, opacity 0 at rest (attribute, so the still is honest) -->
+    <rect class="mq-flash" x="74" y="74" width="152" height="62" rx="26" fill="url(#mq_flashg)" opacity="0"/>
+  </g>
+
+  <!-- ============ the lit bulb overlays: three phase groups ============= -->
+  <g class="mq-bulbs-lit">
+    <use class="mq-bulb mq-bulb-a" href="#mq_bulb_lit" transform="translate(150 58)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-b" href="#mq_bulb_lit" transform="translate(185.4 58)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-c" href="#mq_bulb_lit" transform="translate(220.8 58)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-a" href="#mq_bulb_lit" transform="translate(246.4 78.5)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-b" href="#mq_bulb_lit" transform="translate(247 113.9)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-c" href="#mq_bulb_lit" transform="translate(237.3 146.3)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-a" href="#mq_bulb_lit" transform="translate(203.1 152)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-b" href="#mq_bulb_lit" transform="translate(167.7 152)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-c" href="#mq_bulb_lit" transform="translate(132.3 152)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-a" href="#mq_bulb_lit" transform="translate(96.9 152)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-b" href="#mq_bulb_lit" transform="translate(62.7 146.3)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-c" href="#mq_bulb_lit" transform="translate(53 113.9)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-a" href="#mq_bulb_lit" transform="translate(53.6 78.5)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-b" href="#mq_bulb_lit" transform="translate(79.2 58)" opacity="1"/>
+    <use class="mq-bulb mq-bulb-c" href="#mq_bulb_lit" transform="translate(114.6 58)" opacity="1"/>
+  </g>
+</svg></template>
+
+<script>
+(function () {
+  "use strict";
+  var TPL = document.getElementById("mq-tpl").innerHTML;
+  var minted = 0;
+  var presses = 0;
+  var readout = document.getElementById("readout");
+
+  /* one namespaced copy per placement: unprefixed inlined SVGs fight over
+     their defs ids (first one in the document wins for everybody) */
+  function mint(host) {
+    minted += 1;
+    host.innerHTML = TPL.split("mq_").join("m" + minted + "_");
+  }
+
+  function press(host) {
+    host.classList.remove("is-pressed");
+    /* force a reflow so a rapid second press restarts the keyframes */
+    void host.offsetWidth;
+    host.classList.add("is-pressed");
+    if (host.pressTimer) { clearTimeout(host.pressTimer); }
+    host.pressTimer = setTimeout(function () {
+      host.classList.remove("is-pressed");
+      host.pressTimer = null;
+    }, 560);
+    presses += 1;
+    if (readout) {
+      readout.textContent = "KA-CHUNK · full marquee · turn modal would open · " +
+        presses + (presses === 1 ? " press" : " presses");
+    }
+  }
+
+  var hosts = document.querySelectorAll(".jd-marquee");
+  for (var i = 0; i < hosts.length; i += 1) {
+    (function (host) {
+      mint(host);
+      host.addEventListener("click", function () { press(host); });
+      host.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    }(hosts[i]));
+  }
+
+  /* honest readout of what the drawer-scale copy actually measures */
+  var pileBtn = document.querySelector(".jd-marquee.in-pile");
+  var pxOut = document.getElementById("px");
+  function measure() {
+    if (!pileBtn || !pxOut) { return; }
+    var r = pileBtn.getBoundingClientRect();
+    pxOut.textContent = Math.round(r.width) + " × " + Math.round(r.height) + " px";
+  }
+  window.addEventListener("resize", measure);
+  measure();
+
+  var rm = document.getElementById("rm-toggle");
+  if (rm) {
+    rm.addEventListener("change", function () {
+      document.body.classList.toggle("rm", rm.checked);
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

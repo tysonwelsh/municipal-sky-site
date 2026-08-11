@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 9A &middot; LABEL TASTING</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 9A · LABEL TASTING (round 9 follow-up, 2026-08-11)
+   The owner picked 9a (the Credit Window) but not its placeholder label.
+   This sheet prints each candidate wording on the REAL 9a lens — template
+   copied verbatim from mockup-9a-credit-window.html, one namespaced mint per
+   tile, only the two <text> lines (content, font-size, textLength) rewritten
+   per tile — so the tasting is of actual fit on actual art, not of a list.
+   Same asset discipline as the parent page; press + idle breath kept live.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem; overflow-x: hidden;
+}
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.6rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+
+/* the tasting row sits on drawer-wood dusk so the backlight reads */
+.taste {
+  max-width: 1060px; margin: 0 auto;
+  background: radial-gradient(120% 120% at 50% 42%, #6f4c22 0%, #55391a 55%, #3c2812 100%);
+  border-radius: 14px;
+  padding: 1.9rem 1.2rem 1.4rem;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.6rem 1.2rem;
+}
+@media (max-width: 700px) { .taste { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.taste figure { display: flex; flex-direction: column; align-items: center; }
+.taste .jd-credit {
+  width: min(46vw, 12.5rem);
+  filter: drop-shadow(6px 9px 8px rgba(22, 11, 4, 0.42));
+}
+.taste figcaption {
+  margin-top: 0.7rem; text-align: center;
+  font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #e8d9a8; line-height: 1.9;
+}
+.taste figcaption span { color: #b39a5e; letter-spacing: 0.1em; text-transform: none; }
+
+/* ---------------- the object host (verbatim grammar from the parent) ----- */
+.jd-credit {
+  display: block;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+}
+.jd-credit svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.jd-credit svg * { pointer-events: visiblePainted; cursor: pointer; }
+.jd-credit:focus { outline: none; }
+.jd-credit:focus-visible {
+  outline: 3px solid var(--plot-red);
+  outline-offset: 5px;
+  border-radius: 14px;
+}
+
+/* press + idle, copied from the parent page (base = reduced-motion state) */
+.cw-lens, .cw-glowcore, .cw-halo, .cw-bloom {
+  transform-box: view-box;
+  transform-origin: 120px 150px;
+}
+.cw-halo     { opacity: 0.85; }
+.cw-glowcore { opacity: 0.55; }
+.cw-bloom    { opacity: 0.7; }
+.cw-flash    { opacity: 0; }
+.jd-credit.is-pressed .cw-lens     { transform: scale(0.93, 0.9); }
+.jd-credit.is-pressed .cw-flash    { opacity: 0.5; }
+.jd-credit.is-pressed .cw-glowcore { opacity: 1; }
+.jd-credit.is-pressed .cw-halo     { opacity: 1; }
+.jd-credit.is-pressed .cw-bloom    { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .jd-credit .cw-glowcore { animation: cw-breathe 8s ease-in-out infinite; }
+  .jd-credit .cw-halo     { animation: cw-breathe-halo 8s ease-in-out infinite; }
+  .jd-credit .cw-bloom    { animation: cw-breathe-halo 8s ease-in-out infinite; }
+  .jd-credit.is-pressed .cw-lens {
+    transform: none;
+    animation: cw-sink 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+  .jd-credit.is-pressed .cw-flash {
+    opacity: 0;
+    animation: cw-flashout 420ms ease-out;
+  }
+  .jd-credit.is-pressed .cw-glowcore {
+    opacity: 0.55;
+    animation: cw-flare 420ms ease-out;
+  }
+  .jd-credit.is-pressed .cw-halo,
+  .jd-credit.is-pressed .cw-bloom { animation: cw-surge 460ms ease-out; }
+}
+@keyframes cw-breathe {
+  0%, 70%, 100% { opacity: 0.45; }
+  79%           { opacity: 0.95; }
+  88%           { opacity: 0.55; }
+}
+@keyframes cw-breathe-halo {
+  0%, 70%, 100% { opacity: 0.72; }
+  79%           { opacity: 1; }
+  88%           { opacity: 0.8; }
+}
+@keyframes cw-sink {
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.925, 0.895); }
+  44%  { transform: scale(0.935, 0.915); }
+  74%  { transform: scale(1.02, 1.03); }
+  100% { transform: scale(1); }
+}
+@keyframes cw-flashout {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.95; }
+  55%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+@keyframes cw-flare {
+  0%   { opacity: 0.55; }
+  12%  { opacity: 1; }
+  100% { opacity: 0.55; }
+}
+@keyframes cw-surge {
+  0%   { opacity: 0.85; }
+  14%  { opacity: 1; }
+  100% { opacity: 0.85; }
+}
+</style>
+</head>
+<body>
+
+<h1 class="mock-title">Junk Drawer &middot; Mockup 9A &middot; Label Tasting</h1>
+<p class="mock-intro">The owner picked <b>9A &mdash; the Credit Window</b> but not its
+placeholder wording. Every tile below is the real 9a asset &mdash; same lens, same
+backlight, same press &mdash; with only the printed lines changed, so what is being
+tasted is the label AS IT WOULD SHIP: two silhouette lines under the credit
+bars, width-pinned to the lens. All amber; colour is a separate decision.
+Every tile presses.</p>
+
+<div class="taste">
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="TAKE A TURN"
+       data-l1="TAKE A" data-l2="TURN" data-s1="37" data-t1="100" data-s2="50" data-t2="100"></div>
+    <figcaption>0 &middot; TAKE A TURN<br /><span>the shipping placeholder, for reference</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="PUSH FOR JUNK"
+       data-l1="PUSH FOR" data-l2="JUNK" data-s1="31" data-t1="104" data-s2="50" data-t2="100"></div>
+    <figcaption>A &middot; PUSH FOR JUNK<br /><span>the coin-door&rsquo;s own idiom, drawer-ified</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="INSERT PROMPT"
+       data-l1="INSERT" data-l2="PROMPT" data-s1="35" data-t1="100" data-s2="39" data-t2="108"></div>
+    <figcaption>B &middot; INSERT PROMPT<br /><span>INSERT COIN &mdash; and it names what the modal wants</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="FEED THE DRAWER"
+       data-l1="FEED THE" data-l2="DRAWER" data-s1="31" data-t1="104" data-s2="39" data-t2="108"></div>
+    <figcaption>C &middot; FEED THE DRAWER<br /><span>already short-listed in junk-drawer.js</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="MAKE A THING"
+       data-l1="MAKE A" data-l2="THING" data-s1="37" data-t1="100" data-s2="45" data-t2="104"></div>
+    <figcaption>D &middot; MAKE A THING<br /><span>plainest and warmest; five fat letters</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="PRESS TO PLAY"
+       data-l1="PRESS TO" data-l2="PLAY" data-s1="31" data-t1="104" data-s2="50" data-t2="100"></div>
+    <figcaption>E &middot; PRESS TO PLAY<br /><span>pure arcade attract-screen</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="YOUR TURN"
+       data-l1="YOUR" data-l2="TURN" data-s1="39" data-t1="86" data-s2="50" data-t2="100"></div>
+    <figcaption>F &middot; YOUR TURN<br /><span>shortest; keeps the turn conceit</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="ADD TO PILE"
+       data-l1="ADD TO" data-l2="PILE" data-s1="36" data-t1="100" data-s2="50" data-t2="100"></div>
+    <figcaption>G &middot; ADD TO PILE<br /><span>drawer-native; says where it lands</span></figcaption></figure>
+  <figure><div class="jd-credit" role="button" tabindex="0" aria-label="DRAW ME A THING"
+       data-l1="DRAW ME" data-l2="A THING" data-s1="31" data-t1="104" data-s2="39" data-t2="108"></div>
+    <figcaption>H &middot; DRAW ME A THING<br /><span>the ask itself, in the visitor&rsquo;s voice</span></figcaption></figure>
+</div>
+
+<p class="mock-label"><b>NOTES</b> &mdash; line two carries the label (it is the big
+line); candidates were chosen so line two stays a short fat word &mdash; JUNK,
+PROMPT, DRAWER, THING, PLAY, TURN, PILE. Six-letter second lines (PROMPT,
+DRAWER) drop to a smaller size to keep the letterforms from crushing; they
+are the thinnest at drawer scale. The recommendation is <b>A &middot; PUSH FOR
+JUNK</b> &mdash; it borrows the exact grammar of the reference hardware
+(&ldquo;PUSH FOR CREDIT&rdquo;), says press-me in words as well as light,
+and lands the site&rsquo;s register.</p>
+
+<template id="cw-tpl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" class="cw-svg" aria-hidden="true" focusable="false">
+  <!-- THE TAKE-A-TURN OBJECT — candidate 9a, "the credit window": a backlit
+       coin-door credit button in plan view. The charcoal housing steps down
+       through a bevel to a dark well; the translucent amber lens rides one
+       step proud of it, lit from behind; TAKE A TURN is printed on the lens
+       in dark ink so the backlight silhouettes it, under the reference
+       hardware's two thick bars.
+
+       Ink is edge to edge: the housing spans x 20..220 / y 25..275 (83% of
+       the box both axes — the size math measures hardware) and the light
+       halo carries the ink to x 2..238 / y 2..298, under 1% dead margin on
+       the worst side. The halo is genuine artwork, not padding: it is the
+       light this object throws on the drawer floor.
+
+       No <script>, no on* handlers, no foreignObject, no external references,
+       NO SMIL. Every glowing/moving part is a NAMED GROUP that page CSS
+       drives:
+         .cw-halo     — the pool of lens-light on the wood, UNDER the housing
+         .cw-bloom    — light creeping over the bevel edges nearest the lens
+         .cw-lens     — the lens itself; the press sinks it (origin 120,150)
+         .cw-glowcore — the hot centre of the backlight, inside the lens
+         .cw-flash    — the press flare, opacity 0 AS AN ATTRIBUTE so the
+                        asset is a correct still with no stylesheet at all
+       The motion is page CSS and not SMIL precisely so prefers-reduced-motion
+       can switch it off; a baked-in animation could not be.
+
+       Every id is prefixed cw_ and every class uses cw- (hyphen), so the
+       per-copy id namespacing can re-prefix ids without ever touching a
+       class the stylesheet depends on. The stop classes cw-g0..3 (lens ramp),
+       cw-h0..3 (halo), cw-c0..2 (glow core) plus the .cw-rim / .cw-bloom-ink
+       strokes are the lens-colour variant hooks (amber ships as presentation
+       attributes; a variant is a few stop-color overrides on a host class,
+       same pattern as turn-object.svg's db-b0..4). -->
+  <defs>
+    <!-- the spilled light: hot near the housing, gone by the box edge -->
+    <radialGradient id="cw_halog" cx="0.5" cy="0.5" r="0.5">
+      <stop class="cw-h0" offset="0"    stop-color="#ffb640" stop-opacity="0.5"/>
+      <stop class="cw-h1" offset="0.45" stop-color="#ffab2e" stop-opacity="0.3"/>
+      <stop class="cw-h2" offset="0.78" stop-color="#ff9e1f" stop-opacity="0.12"/>
+      <stop class="cw-h3" offset="1"    stop-color="#ff9e1f" stop-opacity="0"/>
+    </radialGradient>
+    <!-- charcoal housing: top-left catches the drawer's light, falls to
+         near-black lower-right — plan-view depth, no tilt -->
+    <linearGradient id="cw_houseg" x1="0.12" y1="0.06" x2="0.86" y2="0.96">
+      <stop offset="0"   stop-color="#524e58"/>
+      <stop offset="0.5" stop-color="#2b2830"/>
+      <stop offset="1"   stop-color="#141218"/>
+    </linearGradient>
+    <linearGradient id="cw_faceg" x1="0.14" y1="0.08" x2="0.84" y2="0.94">
+      <stop offset="0"   stop-color="#3d3a43"/>
+      <stop offset="1"   stop-color="#1e1c22"/>
+    </linearGradient>
+    <!-- the well the lens sits in: a dark step down -->
+    <radialGradient id="cw_wellg" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0"   stop-color="#17151b"/>
+      <stop offset="1"   stop-color="#050408"/>
+    </radialGradient>
+    <!-- the lens: hot backlit centre falling to saturated edges -->
+    <radialGradient id="cw_lensg" cx="0.5" cy="0.42" r="0.75">
+      <stop class="cw-g0" offset="0"    stop-color="#fff3cf"/>
+      <stop class="cw-g1" offset="0.3"  stop-color="#ffd97a"/>
+      <stop class="cw-g2" offset="0.68" stop-color="#f7a51e"/>
+      <stop class="cw-g3" offset="1"    stop-color="#c96f08"/>
+    </radialGradient>
+    <!-- the bulb behind the plastic -->
+    <radialGradient id="cw_coreg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="cw-c0" offset="0"    stop-color="#fffdf0" stop-opacity="0.95"/>
+      <stop class="cw-c1" offset="0.55" stop-color="#ffe9a8" stop-opacity="0.4"/>
+      <stop class="cw-c2" offset="1"    stop-color="#ffe9a8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cw_flashg" cx="0.5" cy="0.46" r="0.62">
+      <stop offset="0"    stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.5"  stop-color="#fff3c8" stop-opacity="0.85"/>
+      <stop offset="1"    stop-color="#ffe08a" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cw_lensclip"><rect x="54" y="62" width="132" height="176" rx="10"/></clipPath>
+  </defs>
+
+  <!-- ============ the light on the wood (UNDER the hardware) ============ -->
+  <g class="cw-halo" opacity="0.85">
+    <ellipse cx="120" cy="150" rx="118" ry="148" fill="url(#cw_halog)"/>
+  </g>
+
+  <!-- ============ contact shadow: the housing pools its own dark ========= -->
+  <rect x="26" y="33" width="200" height="250" rx="20" fill="#1a0a03" opacity="0.4"/>
+
+  <!-- ============ the housing: chunky coin-door plastic, plan view ======= -->
+  <rect x="20" y="25" width="200" height="250" rx="20"
+        fill="url(#cw_houseg)" stroke="#08070a" stroke-width="4"/>
+  <!-- top face plateau, one step in -->
+  <rect x="30" y="35" width="180" height="230" rx="14" fill="url(#cw_faceg)"/>
+  <!-- the arris: light catch upper-left, shade lower-right -->
+  <path d="M42 258 Q30 250 30 232 L30 49 Q30 35 44 35 L196 35" fill="none"
+        stroke="#8e94a2" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M198 42 Q210 50 210 68 L210 251 Q210 265 196 265 L44 265" fill="none"
+        stroke="#000000" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round"/>
+  <!-- snap-clip notches, the coin-door tell -->
+  <rect x="14" y="130" width="8" height="40" rx="3" fill="#1c1a20" stroke="#08070a" stroke-width="2"/>
+  <rect x="218" y="130" width="8" height="40" rx="3" fill="#1c1a20" stroke="#08070a" stroke-width="2"/>
+
+  <!-- ============ the bevel step down into the lens well ================= -->
+  <rect x="46" y="54" width="148" height="192" rx="12" fill="url(#cw_wellg)"
+        stroke="#000000" stroke-opacity="0.7" stroke-width="2.5"/>
+  <!-- bevel arris highlight, upper-left only -->
+  <path d="M52 236 Q46 230 46 218 L46 68 Q46 54 60 54 L182 54" fill="none"
+        stroke="#6b7078" stroke-opacity="0.35" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- ============ light creeping over the step edge ====================== -->
+  <g class="cw-bloom" opacity="0.7">
+    <rect class="cw-bloom-ink" x="46" y="54" width="148" height="192" rx="12"
+          fill="none" stroke="#ffcf6e" stroke-width="6" opacity="0.4"/>
+    <rect class="cw-bloom-ink" x="38" y="46" width="164" height="208" rx="15"
+          fill="none" stroke="#ffcf6e" stroke-width="10" opacity="0.14"/>
+  </g>
+
+  <!-- ============ THE LENS: raised, backlit, printed ===================== -->
+  <g class="cw-lens">
+    <rect class="cw-rim" x="54" y="62" width="132" height="176" rx="10"
+          fill="url(#cw_lensg)" stroke="#8a4a04" stroke-width="3"/>
+    <!-- the bulb behind the plastic; page CSS breathes this -->
+    <g class="cw-glowcore" opacity="0.7">
+      <ellipse cx="120" cy="142" rx="80" ry="102" fill="url(#cw_coreg)"
+               clip-path="url(#cw_lensclip)"/>
+    </g>
+
+    <!-- the printed art: impression echo first, then the ink -->
+    <g clip-path="url(#cw_lensclip)"
+       font-family="'Arial Narrow', 'Franklin Gothic Medium', Impact, sans-serif"
+       font-weight="700" text-anchor="middle">
+      <!-- screened-ink impression: same art, nudged, warm dark, faint -->
+      <g fill="#7c4a08" opacity="0.38" transform="translate(1.6 1.6)">
+        <rect x="78" y="88"  width="84" height="10" rx="2"/>
+        <rect x="78" y="104" width="84" height="10" rx="2"/>
+        <text x="120" y="164" font-size="37" letter-spacing="1"
+              textLength="100" lengthAdjust="spacingAndGlyphs">TAKE A</text>
+        <text x="120" y="216" font-size="50" letter-spacing="2"
+              textLength="100" lengthAdjust="spacingAndGlyphs">TURN</text>
+      </g>
+      <!-- the ink itself: near-black, warm, variant-independent -->
+      <g fill="#241505">
+        <rect x="78" y="88"  width="84" height="10" rx="2"/>
+        <rect x="78" y="104" width="84" height="10" rx="2"/>
+        <text x="120" y="164" font-size="37" letter-spacing="1"
+              textLength="100" lengthAdjust="spacingAndGlyphs">TAKE A</text>
+        <text x="120" y="216" font-size="50" letter-spacing="2"
+              textLength="100" lengthAdjust="spacingAndGlyphs">TURN</text>
+      </g>
+    </g>
+
+    <!-- raised-plastic reads: edge light upper-left, edge shade lower-right,
+         one diagonal gloss streak -->
+    <path d="M60 226 Q57 223 57 214 L57 74 Q57 65 66 65 L172 65" fill="none"
+          stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M180 76 Q183 79 183 88 L183 226 Q183 235 174 235 L70 235" fill="none"
+          stroke="#8a4a04" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+    <g clip-path="url(#cw_lensclip)">
+      <path d="M40 120 L128 32 L156 32 L52 148 Z" fill="#ffffff" opacity="0.16"/>
+      <path d="M56 160 L168 44 L180 44 L62 176 Z" fill="#ffffff" opacity="0.08"/>
+    </g>
+
+    <!-- the press flare — opacity 0 AS AN ATTRIBUTE (correct still) -->
+    <rect class="cw-flash" x="54" y="62" width="132" height="176" rx="10"
+          fill="url(#cw_flashg)" opacity="0" pointer-events="none"/>
+  </g>
+</svg></template>
+
+<script>
+(function () {
+  "use strict";
+  var TPL = document.getElementById("cw-tpl").innerHTML;
+  var minted = 0;
+
+  function mint(host) {
+    minted += 1;
+    host.innerHTML = TPL.split("cw_").join("w" + minted + "_");
+    /* rewrite the two printed lines (impression echo + ink = 4 text nodes,
+       document order: impr line1, impr line2, ink line1, ink line2) */
+    var t = host.querySelectorAll("text");
+    var l1 = host.getAttribute("data-l1"), l2 = host.getAttribute("data-l2");
+    var s1 = host.getAttribute("data-s1"), t1 = host.getAttribute("data-t1");
+    var s2 = host.getAttribute("data-s2"), t2 = host.getAttribute("data-t2");
+    for (var i = 0; i < t.length; i += 1) {
+      var line1 = (i % 2 === 0);
+      t[i].textContent = line1 ? l1 : l2;
+      t[i].setAttribute("font-size", line1 ? s1 : s2);
+      t[i].setAttribute("textLength", line1 ? t1 : t2);
+    }
+  }
+
+  function press(host) {
+    host.classList.remove("is-pressed");
+    void host.offsetWidth;
+    host.classList.add("is-pressed");
+    if (host.pressTimer) { clearTimeout(host.pressTimer); }
+    host.pressTimer = setTimeout(function () {
+      host.classList.remove("is-pressed");
+      host.pressTimer = null;
+    }, 520);
+  }
+
+  var hosts = document.querySelectorAll(".jd-credit");
+  for (var i = 0; i < hosts.length; i += 1) {
+    (function (host) {
+      mint(host);
+      host.addEventListener("click", function () { press(host); });
+      host.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    }(hosts[i]));
+  }
+}());
+</script>
+
+</body>
+</html>

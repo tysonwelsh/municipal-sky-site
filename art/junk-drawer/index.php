@@ -111,12 +111,13 @@ include '../../includes/header.php';
 
     <!-- TAKE A TURN: the visitor's own commission (PLAN-USER-PROMPTS §4.1).
          NO MARKUP HERE ANY MORE. The corner brass card-holder that used to
-         sit on this front band was retired on 2026-08-10: the owner picked
-         candidate 8e from the PLAN-TURN-OBJECT mockups, so the trigger is now
-         an OBJECT IN THE DRAWER — a doorbell plate injected into .jd-pile by
-         junk-drawer.js from turn-object.svg, draggable and scattered like
-         every specimen and labelled from JD_STRINGS.turnButton. Nothing about
-         the modal it opens changed. -->
+         sit on this front band was retired on 2026-08-10 for a doorbell in
+         the pile (candidate 8e); on 2026-08-11 the doorbell was re-skinned
+         in turn as candidate 9a — a backlit blue arcade credit button
+         printed PUSH FOR JUNK, the drawer's one light source. Same wiring
+         either way: injected into .jd-pile by junk-drawer.js from
+         turn-object.svg, fixed in the bottom-left corner and labelled from
+         JD_STRINGS.turnButton. Nothing about the modal it opens changed. -->
   </div>
 
   <!-- ============ FIELD NOTES ============

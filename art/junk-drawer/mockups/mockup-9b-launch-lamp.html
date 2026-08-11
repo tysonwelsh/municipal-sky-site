@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 9B &middot; THE LAUNCH LAMP</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 9B · THE LAUNCH LAMP (round 9: the glowing trigger)
+   The take-a-turn trigger becomes the drawer's only light source: a jumbo
+   round illuminated pinball LAUNCH BALL button — big translucent cherry-red
+   dome lens seated in a chunky matte-black bezel, the label printed in dark
+   ink DIRECTLY ON the lens in an arched layout, so the backlight turns the
+   letters into crisp silhouettes. Idle tell is the real pinball attract
+   behavior: an insistent double-BLINK every ~6.5 s, not a gentle breath.
+
+   Top-down plan view is binding (owner, 2026-08-09): pure concentric circles,
+   depth from radial shading and the cast shadow pooling around the footprint;
+   the press reads as TRAVEL — the lens shrinks into the bezel and the dark
+   seam ring widens around it.
+
+   Everything is inline. The three drawer textures below (--jd-floor-url,
+   --jd-craq-url, --jd-frame-url) are copied VERBATIM from junk-drawer.css so
+   the in-context view is the real stage, not an approximation. The three
+   companion items (paperclip, skeleton key, three of hearts) are the real
+   production SVGs from items/, id-namespaced per copy (c1_/c2_/c3_) and sized
+   with the real tier math: footprint side = sizeTiers[class].box × sizeScale,
+   in cqmin of the well, exactly as junk-drawer.js lays the pile out.
+
+   THE OBJECT ITSELF lives once, in <template id="ll-tpl"> — that markup is
+   the candidate production asset: viewBox + xmlns, transparent ground, ink
+   edge-to-edge (the halo reaches r=99 of the 100 half-box → 0.5% margin; the
+   BEZEL disc reaches r=86, so the drawer's size math sees a mostly solid
+   object, not halo-only fluff), no <script>, no on* handlers, no
+   foreignObject, no external references, NO SMIL. Every animation on this
+   page is applied from PAGE css/js against the SVG's classes
+   (.la-lens / .la-glowcore / .la-halo / .la-flash / .la-ring); nothing is
+   baked into the art. The page mints one namespaced copy per placement
+   (l1_, l2_, …) because inlined SVGs otherwise fight over their defs ids.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* the drawer textures, VERBATIM from junk-drawer.css ------------------- */
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem;
+  overflow-x: hidden;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.4rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.sec-head {
+  max-width: 1060px; margin: 2.6rem auto 0.9rem;
+  font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: #8a8272;
+}
+.sec-head span { color: var(--plot-red); }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+.rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+
+/* ---------------- the object host ---------------------------------------
+   Production grammar, copied on purpose: the HOST div is the button (role,
+   tabindex, aria-label, listeners) and is itself pointer-events:none, so only
+   PAINTED ink takes the hit and the transparent corners of the square viewBox
+   stay pass-through — the same silhouette hit-testing .jd-item uses. The
+   halo, shadow, flash and ring are then explicitly opted OUT of the hit area
+   below (they are light and air, not hardware): the tap target is the bezel.
+   ---------------------------------------------------------------------- */
+.jd-lamp {
+  display: block;
+  pointer-events: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+  touch-action: manipulation;
+  /* cherry red, the default lens (faithful to the reference part) ------- */
+  --lamp-core: #fff7f1;
+  --lamp-hot: #ffb29a;
+  --lamp-mid: #ff3526;
+  --lamp-deep: #d01120;
+  --lamp-rim: #8a0413;
+  --lamp-halo: #ff4632;
+  --lamp-spill: #ff6a50;
+}
+.jd-lamp svg { display: block; width: 100%; height: auto; pointer-events: none; }
+.jd-lamp svg * { pointer-events: visiblePainted; cursor: pointer; }
+/* light and air never take the hit (the attribute pointer-events="none" in
+   the asset is advisory — the svg * rule above outranks it, so the enforcing
+   rule is this one, same arrangement as turn-object.svg's .db-flash) */
+.jd-lamp svg .la-shadow, .jd-lamp svg .la-halo,
+.jd-lamp svg .la-flash,  .jd-lamp svg .la-ring { pointer-events: none; }
+.jd-lamp:focus { outline: none; }
+.jd-lamp:focus-visible {
+  outline: 3px solid var(--plot-red);
+  outline-offset: 5px;
+  border-radius: 50%;
+}
+/* lens palettes ride on the HOST, so the gradient stops inside each minted
+   copy resolve against their own instance (that is why every copy carries
+   its own <defs> instead of sharing one) */
+.pal-amber { --lamp-core:#fffdf2; --lamp-hot:#ffe08a; --lamp-mid:#ffab1c; --lamp-deep:#e07406; --lamp-rim:#9a4a04; --lamp-halo:#ffb02e; --lamp-spill:#ffc257; }
+.pal-green { --lamp-core:#f4fff5; --lamp-hot:#a9ffb2; --lamp-mid:#27d94a; --lamp-deep:#0b9c2c; --lamp-rim:#045c18; --lamp-halo:#38e859; --lamp-spill:#5cf07d; }
+.pal-blue  { --lamp-core:#f2fbff; --lamp-hot:#a8e6ff; --lamp-mid:#23a6ff; --lamp-deep:#0b62d6; --lamp-rim:#063a8a; --lamp-halo:#3ab4ff; --lamp-spill:#5ec8ff; }
+
+/* the CSS-driven parts of the artwork (defaults also live as presentation
+   attributes in the SVG, so the asset is correct standing alone) */
+.la-s-core { stop-color: var(--lamp-core); }
+.la-s-hot  { stop-color: var(--lamp-hot); }
+.la-s-mid  { stop-color: var(--lamp-mid); }
+.la-s-deep { stop-color: var(--lamp-deep); }
+.la-s-rim  { stop-color: var(--lamp-rim); }
+.la-s-halo { stop-color: var(--lamp-halo); }
+.la-rimlight { stroke: var(--lamp-spill); }
+.la-lensrim  { stroke: var(--lamp-rim); }
+.la-ring     { stroke: var(--lamp-spill); }
+
+/* ---------------- press + idle ------------------------------------------
+   BASE state = the reduced-motion state: no keyframes anywhere, the press is
+   an instant sunk pose (the lens visibly smaller inside the bezel, seam ring
+   widened — travel, frozen), the backlight holds a steady glow. Motion is
+   ADDED back below, inside prefers-reduced-motion:no-preference AND gated on
+   body:not(.rm) so the on-page simulator can take it away again.
+   ---------------------------------------------------------------------- */
+.la-lens, .la-halo, .la-glowcore, .la-ring {
+  transform-box: view-box;
+  transform-origin: 100px 100px;
+}
+.la-glowcore { opacity: 0.55; }
+.la-halo     { opacity: 0.5; }
+.la-flash    { opacity: 0; }
+.la-ring     { opacity: 0; }
+.jd-lamp.is-pressed .la-lens     { transform: scale(0.88); }
+.jd-lamp.is-pressed .la-flash    { opacity: 0.55; }
+.jd-lamp.is-pressed .la-glowcore { opacity: 1; }
+.jd-lamp.is-pressed .la-halo     { opacity: 0.85; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* idle tell: pinball attract mode — an insistent double-BLINK (lens snaps
+     bright, halo swells, twice in quick succession) every ~6.5 s. Not a
+     breath: the ramps are ~130 ms, a snap. */
+  body:not(.rm) .jd-lamp .la-glowcore {
+    animation: la-blink-core 6.5s linear infinite;
+  }
+  body:not(.rm) .jd-lamp .la-halo {
+    animation: la-blink-halo 6.5s linear infinite;
+  }
+  body:not(.rm) .jd-lamp.is-pressed .la-lens {
+    transform: none;
+    animation: la-travel 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+  body:not(.rm) .jd-lamp.is-pressed .la-flash {
+    opacity: 0;
+    animation: la-flash 420ms ease-out;
+  }
+  body:not(.rm) .jd-lamp.is-pressed .la-glowcore {
+    opacity: 0.55;
+    animation: la-surge 420ms ease-out;
+  }
+  body:not(.rm) .jd-lamp.is-pressed .la-halo {
+    opacity: 0.5;
+    animation: la-halo-pop 420ms ease-out;
+  }
+  body:not(.rm) .jd-lamp.is-pressed .la-ring {
+    animation: la-ring 480ms ease-out;
+  }
+}
+@keyframes la-blink-core {
+  0%, 77%, 95%, 100% { opacity: 0.55; }
+  79%, 80%           { opacity: 1; }
+  83%                { opacity: 0.5; }
+  85%, 86%           { opacity: 1; }
+  91%                { opacity: 0.6; }
+}
+@keyframes la-blink-halo {
+  0%, 77%, 95%, 100% { opacity: 0.5;  transform: scale(1); }
+  79%, 80%           { opacity: 0.95; transform: scale(1.05); }
+  83%                { opacity: 0.5;  transform: scale(1); }
+  85%, 86%           { opacity: 0.95; transform: scale(1.05); }
+  91%                { opacity: 0.55; transform: scale(1.01); }
+}
+/* the press: the lens travels DOWN into the bezel — it shrinks, the dark
+   seam ring around it widens from 3.5 to ~11 units — beats at the bottom of
+   the stroke, springs back with a small overshoot */
+@keyframes la-travel {
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.865); }
+  44%  { transform: scale(0.88); }
+  72%  { transform: scale(1.035); }
+  100% { transform: scale(1); }
+}
+@keyframes la-flash {
+  0%   { opacity: 0; }
+  10%  { opacity: 0.95; }
+  50%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+@keyframes la-surge {
+  0%   { opacity: 0.55; }
+  10%  { opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { opacity: 0.55; }
+}
+@keyframes la-halo-pop {
+  0%   { opacity: 0.5; transform: scale(1); }
+  12%  { opacity: 1;   transform: scale(1.06); }
+  100% { opacity: 0.5; transform: scale(1); }
+}
+@keyframes la-ring {
+  0%   { opacity: 0.9; transform: scale(0.9); }
+  100% { opacity: 0;   transform: scale(1.3); }
+}
+
+/* ---------------- hero ---------------------------------------------------- */
+.hero {
+  position: relative;
+  max-width: 34rem; margin: 0 auto;
+  padding: 1.6rem 1rem 1.2rem;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* a dimmer pool than 8b's — the object brings its own light */
+.hero::before {
+  content: ""; position: absolute; left: 50%; top: 52%;
+  width: min(96vw, 30rem); height: min(96vw, 30rem);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 46% 42%,
+              rgba(255, 228, 186, 0.55) 0%, rgba(246, 243, 236, 0) 66%);
+  pointer-events: none;
+}
+.hero-btn {
+  position: relative;
+  width: min(80vw, 22rem);
+  /* soft shadow only — the halo alpha would otherwise cast its own ghost */
+  filter: drop-shadow(7px 10px 10px rgba(22, 11, 4, 0.32));
+}
+.hero-hint {
+  position: relative;
+  margin-top: 1.15rem;
+  font-size: 0.62rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: #9a9284; text-align: center; line-height: 2;
+}
+.hero-hint kbd {
+  font-family: var(--mono); font-size: 0.62rem;
+  border: 1px solid #cfc7b5; border-bottom-width: 2px; border-radius: 3px;
+  padding: 0.05rem 0.3rem; color: #6d6656;
+}
+.readout {
+  position: relative; margin-top: 0.6rem;
+  font-size: 0.66rem; letter-spacing: 0.14em; color: var(--plot-red);
+  min-height: 1.2em; text-align: center;
+}
+.controls {
+  position: relative; margin-top: 0.9rem;
+  font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #9a9284;
+}
+.controls label { cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; }
+
+/* ---------------- the drawer stage (real palette) ------------------------ */
+.stage {
+  --wall: clamp(22px, 7vw, 52px);
+  position: relative;
+  width: 100%; max-width: 660px;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  transform: translateZ(0);
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+.frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+.well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+.craq {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  opacity: 0.08;
+}
+.pile { position: absolute; inset: 0; z-index: 2; }
+.wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+.varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  opacity: 0.13;
+}
+.vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+/* pile items — production geometry: width in cqmin of the well, rotation on
+   the inner svg, drop-shadow on the wrapper so it always falls down-right */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  pointer-events: none;
+}
+.jd-item > svg { display: block; width: 100%; height: auto; transform: rotate(var(--rot, 0deg)); }
+.jd-item > svg * { pointer-events: visiblePainted; }
+/* the lamp gets a gentler wrapper shadow: drop-shadow works off the alpha
+   channel, and the halo would otherwise cast a big muddy ghost on the wood */
+.jd-item.jd-lamp { filter: drop-shadow(2px 3px 3px rgba(22, 11, 4, 0.45)); }
+
+/* ---------------- drawer-scale ruler ------------------------------------- */
+.ruler {
+  display: flex; flex-wrap: wrap; gap: 1.4rem 2rem;
+  align-items: flex-end; justify-content: center;
+  margin: 1.6rem auto 0;
+}
+.ruler figure { text-align: center; }
+.ruler .jd-lamp { filter: drop-shadow(2px 3px 3px rgba(22, 11, 4, 0.45)); }
+.ruler figcaption {
+  margin-top: 0.55rem;
+  font-size: 0.56rem; letter-spacing: 0.16em; text-transform: uppercase; color: #9a9284;
+}
+.r52 { width: 52px; }
+.r72 { width: 72px; }
+.r99 { width: 99px; }
+
+/* ---------------- variants ----------------------------------------------- */
+.variants {
+  display: flex; flex-wrap: wrap; gap: 1.5rem 2rem;
+  align-items: center; justify-content: center;
+  margin: 0 auto;
+}
+.variants figure { text-align: center; }
+.variants .jd-lamp {
+  width: min(38vw, 130px);
+  filter: drop-shadow(5px 8px 8px rgba(22, 11, 4, 0.35));
+}
+.variants figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: #8a8272;
+}
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+noscript p {
+  max-width: 44rem; margin: 1rem auto; text-align: center;
+  font-size: 0.7rem; color: var(--plot-red);
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 9B &middot; The Launch Lamp</p>
+<p class="mock-intro">
+  <b>9B &mdash; THE LAUNCH LAMP.</b> A jumbo illuminated pinball launch button:
+  translucent cherry-red lens in a chunky matte-black bezel, the label printed
+  in dark ink on the lens itself so the backlight cuts it into silhouettes.
+  The only thing in the drawer that emits light &mdash; and the fattest,
+  most slappable target of the three candidates.
+</p>
+
+<noscript><p>This page mints its button copies with JavaScript (each inlined SVG needs its own id namespace). With JS off, the object does not render.</p></noscript>
+
+<!-- =========================== HERO ================================== -->
+<p class="sec-head"><span>1</span> &middot; Hero &mdash; press it</p>
+<div class="hero">
+  <div class="jd-lamp hero-btn" role="button" tabindex="0" aria-label="TAKE A TURN"></div>
+  <p class="hero-hint">
+    click / tap, or focus and hit <kbd>Enter</kbd> / <kbd>Space</kbd><br />
+    idle: pinball attract mode &mdash; a double-blink every ~6.5&thinsp;s
+  </p>
+  <p class="readout" id="readout" role="status" aria-live="polite">&nbsp;</p>
+  <p class="controls">
+    <label><input type="checkbox" id="rm-toggle" /> simulate prefers-reduced-motion</label>
+  </p>
+</div>
+<p class="mock-label">
+  <b>the press</b> &mdash; the lens travels down into the bezel (it shrinks;
+  the dark seam ring around it widens from a hairline to a moat), beats at the
+  bottom of the stroke, springs back with a small overshoot &middot; the
+  backlight flashes white-hot, the halo pops, and an impact ring snaps off the
+  bezel &middot; under reduced motion the same press is an instant sunk pose
+  with no keyframes at all, and the idle blink is gone
+</p>
+
+<div class="rule"></div>
+
+<!-- ========================= IN CONTEXT ============================== -->
+<p class="sec-head"><span>2</span> &middot; In the drawer &mdash; real floor, real neighbours</p>
+<div class="stage">
+  <div class="frame">
+    <div class="well">
+      <div class="craq"></div>
+      <div class="pile">
+        <div class="jd-item" style="--w: 2.607; --rot: 24deg; left: 26%; top: 28%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="15.5 11.5 36.8 124.8" role="img" aria-label="paperclip">
+                  <path d="M20 132 L20 30 A14 14 0 0 1 48 30 L48 108 A10 10 0 0 1 28 108 L28 46 A6 6 0 0 1 40 46 L40 100"
+                        fill="none" stroke="#8f959c" stroke-width="5" stroke-linecap="round"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 13.1; --rot: 13deg; left: 62%; top: 40%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 196" role="img" aria-label="three of hearts playing card">
+                  <defs>
+                    <path id="c3_pc-heart" d="M10 17 C4.5 11.5 0 8.4 0 4.6 A4.4 4.4 0 0 1 8.6 3.1 L10 4.6 L11.4 3.1 A4.4 4.4 0 0 1 20 4.6 C20 8.4 15.5 11.5 10 17 Z" fill="#c0392b"/>
+                  </defs>
+                  <rect x="2" y="2" width="136" height="192" rx="10" fill="#fbf8ef" stroke="#b9b2a2" stroke-width="1.5"/>
+                  <rect x="8" y="8" width="124" height="180" rx="6" fill="none" stroke="#e4ddcb" stroke-width="1"/>
+                  <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                  <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  <g transform="rotate(180 70 98)">
+                    <text x="14" y="30" font-family="Georgia, serif" font-size="22" fill="#c0392b">3</text>
+                    <use href="#c3_pc-heart" transform="translate(11 36) scale(0.7)"/>
+                  </g>
+                  <use href="#c3_pc-heart" transform="translate(54 34) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(54 84) scale(1.6)"/>
+                  <use href="#c3_pc-heart" transform="translate(86 162) scale(1.6) rotate(180)"/>
+                </svg>
+        </div>
+        <div class="jd-item" style="--w: 5.616; --rot: -52deg; left: 44%; top: 66%;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="34.5 32.0 157.8 405.3">
+            <defs>
+              <pattern id="c2_hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="#4a3512" stroke-width="0.7"/>
+              </pattern>
+              <pattern id="c2_crosshatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(-30)">
+                <line x1="0" y1="0" x2="0" y2="7" stroke="#7a5a22" stroke-width="0.6"/>
+              </pattern>
+              <mask id="c2_bow-mask">
+                <rect x="0" y="0" width="240" height="480" fill="black"/>
+                <circle cx="120" cy="96" r="62" fill="white"/>
+                <circle cx="120" cy="76" r="17" fill="black"/>
+                <circle cx="102" cy="106" r="17" fill="black"/>
+                <circle cx="138" cy="106" r="17" fill="black"/>
+              </mask>
+            </defs>
+            <g transform="rotate(-8 120 240)">
+              <!-- bow with clover-shaped cutout -->
+              <circle cx="120" cy="96" r="62" fill="#b3873a" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="url(#c2_hatch)" opacity="0.35" mask="url(#c2_bow-mask)"/>
+              <circle cx="120" cy="96" r="62" fill="none" stroke="#4a3512" stroke-width="2.5"/>
+              <circle cx="120" cy="76" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="102" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <circle cx="138" cy="106" r="17" fill="none" stroke="#4a3512" stroke-width="2"/>
+              <path d="M66 62 A62 62 0 0 1 120 34" fill="none" stroke="#d9b25f" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+              <!-- collar rings -->
+              <rect x="101" y="156" width="38" height="9" rx="4.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <rect x="106" y="167" width="28" height="7" rx="3.5" fill="#b3873a" stroke="#4a3512" stroke-width="2"/>
+              <!-- stem -->
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <rect x="112" y="174" width="16" height="196" rx="7" fill="url(#c2_crosshatch)" opacity="0.4"/>
+              <line x1="116" y1="182" x2="116" y2="362" stroke="#d9b25f" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+              <line x1="125" y1="182" x2="125" y2="362" stroke="#7a5a22" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+              <!-- tip ferrule -->
+              <rect x="107" y="366" width="26" height="16" rx="5" fill="#b3873a" stroke="#4a3512" stroke-width="2.5"/>
+              <!-- bit with notched teeth -->
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="#b3873a" stroke="#4a3512" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M120 388 h46 v22 h-14 v10 h-9 v16 h-23 z" fill="url(#c2_hatch)" opacity="0.35"/>
+              <line x1="126" y1="394" x2="158" y2="394" stroke="#d9b25f" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+              <!-- edge shading -->
+              <line x1="127" y1="184" x2="127" y2="360" stroke="#4a3512" stroke-width="1" opacity="0.35"/>
+              <path d="M158 66 A62 62 0 0 1 176 110" fill="none" stroke="#7a5a22" stroke-width="5" opacity="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="jd-item jd-lamp in-pile"
+             style="--w: 17.8; --rot: 0deg; left: 14%; top: 86%; z-index: 99;"
+             role="button" tabindex="0" aria-label="TAKE A TURN"></div>
+      </div>
+      <div class="wallshade"></div>
+      <div class="varnish"></div>
+      <div class="vignette"></div>
+    </div>
+  </div>
+</div>
+<p class="mock-label">
+  <b>honest scale</b> &mdash; floor, craquelure, frame, wall shade, varnish and
+  vignette are the production values copied out of <code>junk-drawer.css</code>;
+  the paperclip (xs&thinsp;&times;&thinsp;0.8), brass key (s) and three of hearts
+  (m) are the real <code>items/</code> SVGs, sized by the real tier math in
+  <code>cqmin</code> of the well &middot; the lamp sits screwed to the
+  <b>bottom-left corner</b>, dead straight at 0&deg;, constant z&thinsp;99, per
+  the 2026-08-10 revision &mdash; not scattered &middot; footprint mirrors
+  production (m&thinsp;&times;&thinsp;1.15 &rarr; <code>--w:&thinsp;17.8</code>)
+  &middot; it blinks and presses here too:
+  <b>rendered right now at <span id="px">&mdash;</span></b>
+</p>
+
+<div class="ruler">
+  <figure><div class="jd-lamp r52" role="button" tabindex="0" aria-label="TAKE A TURN"></div><figcaption>52&thinsp;px<br />phone well</figcaption></figure>
+  <figure><div class="jd-lamp r72" role="button" tabindex="0" aria-label="TAKE A TURN"></div><figcaption>72&thinsp;px<br />tablet</figcaption></figure>
+  <figure><div class="jd-lamp r99" role="button" tabindex="0" aria-label="TAKE A TURN"></div><figcaption>99&thinsp;px<br />desktop well</figcaption></figure>
+</div>
+<p class="mock-label"><b>the read test</b> &mdash; m&thinsp;&times;&thinsp;1.15 lands
+  near 52&thinsp;px on a 375&thinsp;px phone well and near 99&thinsp;px on desktop
+  (computed the way 8b's note was: well &asymp; 294&thinsp;px min side on a
+  375&thinsp;px phone &rarr; 17.8&thinsp;cqmin &asymp; 52&thinsp;px) &middot; the
+  bezel &mdash; the tappable hardware &mdash; is 86% of that box &asymp;
+  45&thinsp;px, over the 44&thinsp;px floor with production's
+  <code>min-width</code> backstop behind it &middot; the arched label goes
+  decorative below ~64&thinsp;px; what carries the affordance at 52&thinsp;px is
+  the GLOW &mdash; the only light in the drawer</p>
+
+<div class="rule"></div>
+
+<!-- =========================== VARIANTS ============================== -->
+<p class="sec-head"><span>3</span> &middot; Lens variants &mdash; one custom-property swap</p>
+<div class="variants">
+  <figure><div class="jd-lamp" role="button" tabindex="0" aria-label="TAKE A TURN, cherry red lens"></div><figcaption>A &middot; cherry red<br />(default, the reference)</figcaption></figure>
+  <figure><div class="jd-lamp pal-amber" role="button" tabindex="0" aria-label="TAKE A TURN, amber lens"></div><figcaption>B &middot; marquee amber</figcaption></figure>
+  <figure><div class="jd-lamp pal-green" role="button" tabindex="0" aria-label="TAKE A TURN, green lens"></div><figcaption>C &middot; go green</figcaption></figure>
+  <figure><div class="jd-lamp pal-blue" role="button" tabindex="0" aria-label="TAKE A TURN, blue lens"></div><figcaption>D &middot; service blue</figcaption></figure>
+</div>
+<p class="mock-label"><b>cheap variants</b> &mdash; seven custom properties
+  (<code>--lamp-core/hot/mid/deep/rim/halo/spill</code>) recolor lens, backlight,
+  halo, rim-light and impact ring together; the black bezel, the seam and the
+  dark label ink never change &middot; exactly the <code>db-b0..4</code> pattern:
+  stops carry classes, a variant is a few stop-color overrides on a host class
+  &middot; red is the recommendation &mdash; it is the reference part, and red
+  light on warm brown wood is the loudest possible "this is not junk"</p>
+
+<div class="rule"></div>
+
+<!-- ============================ NOTES ================================ -->
+<div class="considerations">
+  <p class="mc-head">Notes &middot; what I committed to, what implementation must watch</p>
+
+  <p><b>1 &middot; The glow is the affordance, not the label.</b> Every previous
+  candidate fought the camouflage problem with shape or story; this one breaks the
+  physics of the drawer instead &mdash; nothing else in the pile emits light. The
+  halo (a radial gradient inside the SVG, fading to fully transparent before the
+  viewBox edge) spills colored light past the black bezel onto the wood, and the
+  rim-light on the bezel's inner edge (<code>.la-rimlight</code>) sells the lens as
+  the source. At 52&thinsp;px the arched text is texture, and that is fine: a lit
+  red disc in a black ring on brown wood needs no caption.</p>
+
+  <p><b>2 &middot; The arched label is a <code>textPath</code>, and that is safe
+  here only because the button never rotates.</b> 8b placed glyphs one at a time
+  precisely because a pile item scatters at random angles; the 2026-08-10 revision
+  fixed the trigger at 0&deg; in the bottom-left corner, so a single upright arch
+  is now guaranteed upright forever. The two arc paths (<code>la_arcTop</code>,
+  upper semicircle running left&rarr;right over the top; <code>la_arcBot</code>,
+  lower semicircle with sweep 0 so TURN renders upright, tops toward center) are
+  ids and get re-prefixed per copy like every other id. Glyph metrics vary per
+  font stack, so both arcs carry ~30% slack past the centered word; the words are
+  silhouettes, so a few px of drift never breaks the read.</p>
+
+  <p><b>3 &middot; Ink bounds vs. size math.</b> The halo counts as ink and reaches
+  r=99 of the 100 half-box (0.5% worst-side margin), but the BEZEL disc reaches
+  r=86 &mdash; the solid object is 86% of the box, so the area-normalized tier math
+  is not fooled into rendering a mostly-empty box. The hit area is deliberately the
+  bezel only: the halo, shadow, flash and ring carry <code>pointer-events="none"</code>
+  in the asset (advisory) and an enforcing page rule (binding, same arrangement as
+  <code>turn-object.svg</code>'s <code>.db-flash</code>), so light never steals a
+  drag meant for the wood beside the button. 86% of 52&thinsp;px &asymp;
+  45&thinsp;px on a phone &mdash; over the 44&thinsp;px floor, with production's
+  unconditional <code>min-width: 44px</code> backstop still behind it.</p>
+
+  <p><b>4 &middot; The idle tell is a blink, not a breath.</b> Real pinball attract
+  behavior: the lens snaps bright and the halo swells, twice in quick succession,
+  every ~6.5&thinsp;s &mdash; insistent, because this candidate's whole thesis is
+  refusing to camouflage. It is CSS, not SMIL (<code>la-blink-core</code> /
+  <code>la-blink-halo</code> against <code>.la-glowcore</code> / <code>.la-halo</code>),
+  so <code>prefers-reduced-motion</code> stays in charge: the BASE state is the
+  reduced state (steady glow, instant sunk press pose), motion is added back only
+  inside <code>no-preference</code>, and the checkbox above simulates the setting.
+  The asset itself is sanitizer-clean: no script, no <code>on*</code>, no
+  <code>foreignObject</code>, no external refs, no SMIL.</p>
+
+  <p><b>5 &middot; The press is travel.</b> The lens group scales down inside the
+  fixed bezel and the dark seam ring widens from a hairline to a moat &mdash; the
+  bezel visibly overlaps more of the lens, which is what makes it read as a plunge
+  rather than a wobble &mdash; then a white-hot flash, an expanding impact ring off
+  the bezel, and a springy overshoot home. Everything paints inside the object's own
+  box (the ring peaks at r&asymp;97), so nothing escapes <code>.jd-pile</code>'s
+  stacking context; the varnish and vignette tint the glow slightly, and junk
+  dragged on top can cover it for the session &mdash; the accepted &sect;1 bargain.
+  One watch-item: wrapper <code>drop-shadow</code> works off the alpha channel, so
+  the semi-transparent halo casts a faint ghost; this page ships the lamp a gentler
+  shadow than <code>.jd-item</code>'s default, and implementation should carry that
+  override.</p>
+
+  <p><b>6 &middot; One host, one asset.</b> The interactive element is the wrapper
+  div (<code>role="button"</code>, <code>tabindex="0"</code>, aria-label, Enter/Space),
+  itself <code>pointer-events: none</code> with <code>visiblePainted</code> on the
+  ink &mdash; identical to <code>.jd-item</code>. The template in this page's source
+  is the candidate production asset verbatim; the page only namespaces its
+  <code>la_</code> ids per copy (<code>l1_</code>, <code>l2_</code>, &hellip;), and
+  since every class uses the <code>la-</code> hyphen prefix, the id rewrite can
+  never touch a class the stylesheet depends on.</p>
+</div>
+
+<!-- ==================================================================== -->
+<!-- THE OBJECT — candidate production asset. One source of truth; the JS  -->
+<!-- below stamps a copy per placement with ids rewritten la_ -> l<N>_.    -->
+<!-- ==================================================================== -->
+<template id="ll-tpl"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img"
+     aria-label="An illuminated pinball launch button: a glowing cherry-red lens in a matte black bezel, TAKE A TURN printed in arched dark letters on the lens">
+  <!-- THE TAKE-A-TURN OBJECT — candidate 9b, "the launch lamp".
+       A pinball LAUNCH BALL button seen from directly above: cast shadow and
+       colored halo pooling on the wood, chunky matte-black bezel, dark seam
+       well, then the big backlit lens with the label printed ON it — arched
+       dark ink that the backlight cuts into silhouettes.
+
+       Ink is edge to edge: the halo reaches r=99 of the 100 half-box (0.5%
+       dead margin worst side) and the bezel disc reaches r=86, so the
+       drawer's size math sees a mostly solid object, not halo-only fluff.
+
+       No <script>, no on* handlers, no foreignObject, no external
+       references, NO SMIL. Every moving or glowing part is a NAMED GROUP
+       that page CSS drives:
+         .la-lens     — lens disc + printed label; the press travel, scaling
+                        about (100,100) so the bezel overlaps more of it
+         .la-glowcore — the hot backlit center; the idle blink and press surge
+         .la-halo     — light spilling past the bezel onto the wood; swells
+                        with the blink (opacity 0.6 as an ATTRIBUTE so the
+                        asset is a lit, correct still with no stylesheet)
+         .la-flash    — press flash across the lens, opacity 0 at rest
+         .la-ring     — expanding impact ring off the bezel, opacity 0 at rest
+         .la-shadow / .la-rimlight — static: the cast shadow, and the colored
+                        spill on the bezel's inner edge that sells the lens
+                        as the light source
+       The pointer-events="none" attributes on shadow/halo/flash/ring are
+       advisory only — the page's `svg *` rule outranks presentation
+       attributes, so the enforcing rule lives in page CSS (light and air
+       never take the hit; the bezel is the tap target).
+
+       Every id is prefixed la_ and every class uses la- (hyphen), so the
+       pile's per-copy id namespacing (JD_svgInst) can re-prefix the ids
+       without ever touching a class the stylesheet depends on. The stop
+       classes la-s-core/-hot/-mid/-deep/-rim/-halo plus the stroke hooks
+       .la-rimlight/.la-lensrim/.la-ring are the lens-color variant hooks
+       (cherry red ships as presentation attributes; a variant is a few
+       stop-color overrides on a host class — the db-b0..4 pattern). -->
+  <defs>
+    <!-- cast shadow pooling around the footprint, offset down-right -->
+    <radialGradient id="la_shadowg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#140a04" stop-opacity="0.45"/>
+      <stop offset="0.6" stop-color="#140a04" stop-opacity="0.45"/>
+      <stop offset="0.8" stop-color="#140a04" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#140a04" stop-opacity="0"/>
+    </radialGradient>
+    <!-- the halo: lens light spilling past the bezel, fading to nothing -->
+    <radialGradient id="la_halog" cx="0.5" cy="0.5" r="0.5">
+      <stop class="la-s-halo" offset="0" stop-color="#ff4632" stop-opacity="0.55"/>
+      <stop class="la-s-halo" offset="0.58" stop-color="#ff4632" stop-opacity="0.5"/>
+      <stop class="la-s-halo" offset="0.8" stop-color="#ff4632" stop-opacity="0.32"/>
+      <stop class="la-s-halo" offset="0.92" stop-color="#ff4632" stop-opacity="0.12"/>
+      <stop class="la-s-halo" offset="1" stop-color="#ff4632" stop-opacity="0"/>
+    </radialGradient>
+    <!-- matte black bezel, radially shaded from a soft top-left sheen -->
+    <radialGradient id="la_bezg" cx="0.42" cy="0.38" r="0.72">
+      <stop offset="0" stop-color="#4e4e55"/>
+      <stop offset="0.45" stop-color="#333338"/>
+      <stop offset="0.8" stop-color="#1b1b1f"/>
+      <stop offset="1" stop-color="#0d0d10"/>
+    </radialGradient>
+    <!-- the seam well the lens travels down into -->
+    <radialGradient id="la_wellg" cx="0.5" cy="0.46" r="0.6">
+      <stop offset="0" stop-color="#241111"/>
+      <stop offset="1" stop-color="#090404"/>
+    </radialGradient>
+    <!-- the backlit lens: near-white core falling to a deep saturated rim -->
+    <radialGradient id="la_lensg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="la-s-core" offset="0" stop-color="#fff7f1"/>
+      <stop class="la-s-hot" offset="0.32" stop-color="#ffb29a"/>
+      <stop class="la-s-mid" offset="0.6" stop-color="#ff3526"/>
+      <stop class="la-s-deep" offset="0.85" stop-color="#d01120"/>
+      <stop class="la-s-rim" offset="1" stop-color="#8a0413"/>
+    </radialGradient>
+    <!-- the hot center the blink drives -->
+    <radialGradient id="la_coreg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="la-s-core" offset="0" stop-color="#fff7f1" stop-opacity="0.95"/>
+      <stop class="la-s-hot" offset="0.55" stop-color="#ffb29a" stop-opacity="0.4"/>
+      <stop class="la-s-hot" offset="1" stop-color="#ffb29a" stop-opacity="0"/>
+    </radialGradient>
+    <!-- press flash: white-hot, warm skirt, neutral across all lens colors -->
+    <radialGradient id="la_flashg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.5" stop-color="#fff2d8" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#ffe0b0" stop-opacity="0"/>
+    </radialGradient>
+    <!-- label arcs: baselines for the arched print. Upper runs left-to-right
+         over the top (sweep 1); lower runs left-to-right under the bottom
+         (sweep 0), which renders TURN upright, glyph tops toward center. -->
+    <path id="la_arcTop" d="M 59 100 A 41 41 0 0 1 141 100" fill="none"/>
+    <path id="la_arcBot" d="M 46 100 A 54 54 0 0 0 154 100" fill="none"/>
+    <clipPath id="la_lensclip"><circle cx="100" cy="100" r="62.5"/></clipPath>
+  </defs>
+
+  <!-- ============ light and air: shadow, then the halo over it =========== -->
+  <circle class="la-shadow" cx="104" cy="106" r="93" fill="url(#la_shadowg)"
+          pointer-events="none"/>
+  <circle class="la-halo" cx="100" cy="100" r="99" fill="url(#la_halog)"
+          opacity="0.6" pointer-events="none"/>
+
+  <!-- ============ the bezel: chunky matte black, seen from above ========= -->
+  <circle cx="100" cy="100" r="86" fill="url(#la_bezg)" stroke="#060608" stroke-width="2.5"/>
+  <!-- soft outer bevel: lit arris top-left, shade lower-right -->
+  <path d="M 17.32 92.77 A 83 83 0 0 1 92.77 17.32" fill="none"
+        stroke="#75757f" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 182.68 107.23 A 83 83 0 0 1 107.23 182.68" fill="none"
+        stroke="#000000" stroke-opacity="0.5" stroke-width="3.5" stroke-linecap="round"/>
+  <!-- molded step on the bezel face -->
+  <circle cx="100" cy="100" r="77" fill="none" stroke="#0a0a0d" stroke-opacity="0.4" stroke-width="1.6"/>
+  <circle cx="100" cy="100" r="75.4" fill="none" stroke="#5c5c66" stroke-opacity="0.25" stroke-width="1.2"/>
+  <!-- inner slope down into the seam, then the dark well the lens sits in -->
+  <circle cx="100" cy="100" r="71" fill="none" stroke="#0c0c10" stroke-width="6"/>
+  <circle cx="100" cy="100" r="66.5" fill="url(#la_wellg)" stroke="#030303" stroke-width="2"/>
+  <!-- colored rim-light on the bezel's inner edge: the lens lights its housing -->
+  <circle class="la-rimlight" cx="100" cy="100" r="68.8" fill="none"
+          stroke="#ff6a50" stroke-width="2.2" opacity="0.6"/>
+
+  <!-- ============ the lens: travels down into the bezel on press ========= -->
+  <g class="la-lens">
+    <circle cx="100" cy="100" r="62.5" fill="url(#la_lensg)"/>
+    <circle class="la-glowcore" cx="100" cy="100" r="46" fill="url(#la_coreg)" opacity="0.8"/>
+    <!-- the printed label: dark ink ON the lens, arched with the circle,
+         silhouetted by the backlight -->
+    <g fill="#2a070a" font-family="'Arial Black', 'Arial Bold', Arial, Helvetica, sans-serif"
+       font-weight="900" text-anchor="middle">
+      <text font-size="21.5" letter-spacing="2.5"><textPath href="#la_arcTop" startOffset="50%">TAKE A</textPath></text>
+      <text font-size="24" letter-spacing="4"><textPath href="#la_arcBot" startOffset="50%">TURN</textPath></text>
+      <!-- printed pips filling the side gaps between the words -->
+      <path d="M 52 94 L 57 100 L 52 106 L 47 100 Z"/>
+      <path d="M 148 94 L 153 100 L 148 106 L 143 100 Z"/>
+    </g>
+    <!-- a restrained gloss: it is glass, but the backlight is the point -->
+    <g clip-path="url(#la_lensclip)">
+      <ellipse cx="78" cy="70" rx="30" ry="14" transform="rotate(-35 78 70)"
+               fill="#ffffff" opacity="0.16"/>
+      <path d="M 44.56 84.42 A 59.5 59.5 0 0 1 84.42 44.56" fill="none"
+            stroke="#ffffff" stroke-opacity="0.35" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+    <circle class="la-lensrim" cx="100" cy="100" r="62.5" fill="none"
+            stroke="#8a0413" stroke-width="2.5" opacity="0.85"/>
+    <circle class="la-flash" cx="100" cy="100" r="62.5" fill="url(#la_flashg)"
+            opacity="0" pointer-events="none"/>
+  </g>
+
+  <!-- ============ press impact ring off the bezel (idle: invisible) ====== -->
+  <circle class="la-ring" cx="100" cy="100" r="75" fill="none"
+          stroke="#ff6a50" stroke-width="4" opacity="0" pointer-events="none"/>
+</svg></template>
+
+<script>
+(function () {
+  "use strict";
+  var TPL = document.getElementById("ll-tpl").innerHTML;
+  var minted = 0;
+  var presses = 0;
+  var readout = document.getElementById("readout");
+
+  /* one namespaced copy per placement: unprefixed inlined SVGs fight over
+     their defs ids (first one in the document wins for everybody). Ids use
+     la_ (underscore), classes la- (hyphen), so this rewrite is class-safe. */
+  function mint(host) {
+    minted += 1;
+    host.innerHTML = TPL.split("la_").join("l" + minted + "_");
+  }
+
+  function press(host) {
+    host.classList.remove("is-pressed");
+    /* force a reflow so a rapid second press restarts the keyframes */
+    void host.offsetWidth;
+    host.classList.add("is-pressed");
+    if (host.pressTimer) { clearTimeout(host.pressTimer); }
+    host.pressTimer = setTimeout(function () {
+      host.classList.remove("is-pressed");
+      host.pressTimer = null;
+    }, 560);
+    presses += 1;
+    if (readout) {
+      readout.textContent = "CLACK · turn modal would open · " +
+        presses + (presses === 1 ? " press" : " presses");
+    }
+  }
+
+  var hosts = document.querySelectorAll(".jd-lamp");
+  for (var i = 0; i < hosts.length; i += 1) {
+    (function (host) {
+      mint(host);
+      host.addEventListener("click", function () { press(host); });
+      host.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+          e.preventDefault();
+          press(host);
+        }
+      });
+    }(hosts[i]));
+  }
+
+  /* honest readout of what the drawer-scale copy actually measures */
+  var pileBtn = document.querySelector(".jd-lamp.in-pile");
+  var pxOut = document.getElementById("px");
+  function measure() {
+    if (!pileBtn || !pxOut) { return; }
+    pxOut.textContent = Math.round(pileBtn.getBoundingClientRect().width) + " px wide";
+  }
+  window.addEventListener("resize", measure);
+  measure();
+
+  var rm = document.getElementById("rm-toggle");
+  if (rm) {
+    rm.addEventListener("change", function () {
+      document.body.classList.toggle("rm", rm.checked);
+    });
+  }
+}());
+</script>
+
+</body>
+</html>

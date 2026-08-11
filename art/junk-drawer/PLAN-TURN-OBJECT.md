@@ -71,6 +71,53 @@ machine and the endpoints are untouched.
 
 ---
 
+## ROUND 9 — the illuminated button (owner direction, 2026-08-11)
+
+Living with 8e surfaced the failure mode §1's guardrails were hedging
+against: the doorbell **camouflages as collection**. It reads as one more
+object in the clutter, not as the thing you press. The owner's new
+direction inverts the round-8 premise — the control should *stop*
+disguising itself:
+
+- The trigger becomes an **illuminated, glowing arcade button** — backlit
+  translucent lens, the drawer's ONLY light-emitting object. Reference
+  hardware supplied by the owner: rectangular "PUSH FOR CREDIT" / 25¢
+  coin-door buttons (lit amber/red/green/blue), and a round pinball
+  LAUNCH BALL dome.
+- **The label moves ONTO the button** — dark ink printed on the lens so
+  the backlight renders it as a silhouette. No more side/below label.
+- Depth effects are wanted (housing/bezel geometry, cast shadow, light
+  spill halo) so the button reads as pressable against the flat SVGs.
+- The owner is hesitant about red as the default; every candidate carries
+  a lit color-variant row. Plan view, the fixed bottom-left seat, and the
+  §1 contract otherwise stand.
+
+**STATUS — DONE (2026-08-11).** The owner picked **9a, the Credit Window**,
+in **blue**, labelled **PUSH FOR JUNK** (chosen off the
+`mockup-9a-labels.html` tasting sheet; the label prints ON the lens AND is
+`JD_STRINGS.turnButton`, so artwork and accessible name always agree —
+change them together). Shipped in v0.7.0: `turn-object.svg` is the 9a
+asset with blue as its presentation attributes, junk-drawer.css swapped
+the `db-*` press/gleam blocks for the `cw-*` sink/flare/breathe blocks
+(base state = reduced-motion state), the touch floor rose 44 → 53px
+because only the 83%-of-box housing is pressable (the halo is light,
+`pointer-events: none`), and the JS fallback plate became a plain credit
+button on the same class hooks. GEOM, the m × 1.15 tier, the 240×300
+box, and the corner seat all carried over unchanged, as the mockup's
+notes promised.
+
+Three candidates, one mockup page each (same Phase-0 discipline):
+
+- **9a — The Credit Window**: portrait rectangular backlit coin-door
+  button, faithful to the reference; amber default, two-bar lens motif,
+  stacked TAKE A / TURN. Variants: amber, red, green, blue.
+- **9b — The Launch Lamp**: jumbo round pinball launch button, arched
+  lens text; the faithful-to-red candidate. Variants: red, amber, green,
+  blue.
+- **9c — The Midway Marquee**: the different take — landscape lozenge
+  with a warm-ivory glowing lens and a ring of chase-light marquee bulbs
+  in the housing. Variants: ivory, cyan, magenta, red.
+
 ## 1. Interaction contract (applies to whichever design wins)
 
 - **It is a pile item.** Rendered into `.jd-pile` alongside the
