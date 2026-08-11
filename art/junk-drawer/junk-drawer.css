@@ -24,7 +24,10 @@ html { scroll-behavior: smooth; }
 
 /* ---------------- the stage: drawer as object on the page ---------------- */
 .jd-stage {
-  --wall: clamp(28px, 9vw, 64px);
+  /* thinned ~30% on every side (owner, 2026-08-11): was clamp(28px, 9vw,
+     64px). One variable, four walls — the well, the pile's cqmin item
+     sizing, and the fixed corner seat all follow it on their own. */
+  --wall: clamp(20px, 6.3vw, 45px);
   /* the pull's seating, as one invariant both breakpoints derive from. The
      bail is drawn in PLAN VIEW in a 0 0 300 70 viewBox whose y=10 line is the
      drawer's FACE PLANE: the backplate sits on it, everything below it (bail,
