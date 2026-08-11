@@ -25,6 +25,13 @@
          .cw-bloom    — light creeping over the bevel edges nearest the lens
          .cw-lens     — the lens itself; the press sinks it (origin 120,150)
          .cw-glowcore — the hot centre of the backlight, inside the lens
+         .cw-dim      — a lens-shaped veil of the lens's own deep blue, over
+                        the glowcore but UNDER the printed ink; opacity 0 AS
+                        AN ATTRIBUTE (correct still). The idle pulse drives
+                        it INVERSE to the glow: the lens ramp's hot stops
+                        leave the white core no headroom to brighten, so the
+                        visible half of the breath is this veil darkening the
+                        lit ground at the trough while the ink holds.
          .cw-flash    — the press flare, opacity 0 AS AN ATTRIBUTE so the
                         asset is a correct still with no stylesheet at all
        The motion is page CSS and not SMIL precisely so prefers-reduced-motion
@@ -134,6 +141,11 @@
       <ellipse cx="120" cy="142" rx="80" ry="102" fill="url(#cw_coreg)"
                clip-path="url(#cw_lensclip)"/>
     </g>
+    <!-- the breathing shade (see the map above) — fill is the cw-g3 edge
+         blue; a colour variant overrides it with a .cw-dim fill rule the
+         same way it overrides the stop hooks -->
+    <rect class="cw-dim" x="54" y="62" width="132" height="176" rx="10"
+          fill="#0b539e" opacity="0" pointer-events="none"/>
 
     <!-- the printed art: impression echo first, then the ink -->
     <g clip-path="url(#cw_lensclip)"

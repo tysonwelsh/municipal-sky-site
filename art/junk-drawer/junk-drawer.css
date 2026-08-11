@@ -515,6 +515,7 @@ html { scroll-behavior: smooth; }
    The touch-floor math above leans on this: pressable = the 83% housing. */
 .jd-item--turn .cw-halo,
 .jd-item--turn .cw-bloom,
+.jd-item--turn .cw-dim,
 .jd-item--turn .cw-flash { pointer-events: none; }
 
 /* THE BASE STATE IS THE REDUCED STATE (the 9a mockup's discipline, inverted
@@ -529,10 +530,17 @@ html { scroll-behavior: smooth; }
 .jd-item--turn .cw-halo     { opacity: 1; }
 .jd-item--turn .cw-glowcore { opacity: 0.75; }
 .jd-item--turn .cw-bloom    { opacity: 0.85; }
+/* the breathing shade stays OFF at rest: the reduced-motion state is the
+   fully lit button, and the veil exists only as the idle pulse's dark half
+   (see jdCreditPulseDim below — the lens ramp tops out near white, so the
+   glowcore's surge alone moves pixels single-digit RGB points; the visible
+   breath is this veil lifting and settling over the lit ground) */
+.jd-item--turn .cw-dim      { opacity: 0; }
 .jd-item--turn .cw-flash    { opacity: 0; }
 .jd-item--turn.is-pressed .cw-lens     { transform: scale(0.93, 0.9); }
 .jd-item--turn.is-pressed .cw-flash    { opacity: 0.5; }
 .jd-item--turn.is-pressed .cw-glowcore { opacity: 1; }
+.jd-item--turn.is-pressed .cw-dim      { opacity: 0; }
 .jd-item--turn.is-pressed .cw-halo,
 .jd-item--turn.is-pressed .cw-bloom    { opacity: 1; }
 
@@ -545,6 +553,7 @@ html { scroll-behavior: smooth; }
   .jd-item--turn .cw-glowcore { animation: jdCreditPulse 3.6s ease-in-out infinite; }
   .jd-item--turn .cw-halo     { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
   .jd-item--turn .cw-bloom    { animation: jdCreditPulseBloom 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-dim      { animation: jdCreditPulseDim 3.6s ease-in-out infinite; }
   /* THE PRESS — the lens travels DOWN a step into the housing: it shrinks
      with a slight squash (the dark well mouth widening around it is what
      makes the sink read as travel rather than wobble), holds a beat at the
@@ -566,6 +575,12 @@ html { scroll-behavior: smooth; }
   .jd-item--turn.is-pressed .cw-bloom {
     animation: jdCreditSurge 460ms ease-out;
   }
+  /* the veil must not mute the press: whatever phase the breath was in,
+     a press pins it clear so the flare reads at full brightness */
+  .jd-item--turn.is-pressed .cw-dim {
+    opacity: 0;
+    animation: none;
+  }
 }
 /* amplitude widened + a size breath on the pool (owner, 2026-08-11: "make
    the pulsing a bit more pronounced — I'm not really seeing it"). The
@@ -573,6 +588,19 @@ html { scroll-behavior: smooth; }
 @keyframes jdCreditPulse {
   0%, 100% { opacity: 0.5; }
   50%      { opacity: 1; }
+}
+/* the INNER pulse's visible half (2026-08-11): the glowcore swing above is
+   near-invisible on its own — the lens gradient's upper stops sit a few RGB
+   points from white, so compositing the white core at 0.5 vs 1.0 alpha moves
+   the lit ground single digits (measured ~8–16 luminance points, all of it
+   crammed into the red channel). Instead of brightening a ceiling, the
+   trough DARKENS: the .cw-dim veil (the lens's own #0b539e, under the ink)
+   settles in as the glow ebbs and lifts clear at the peak, so the whole lit
+   ground breathes while the printed silhouette keeps its contrast. Counter-
+   phase to jdCreditPulse: dim is 0 exactly when glow is 1. */
+@keyframes jdCreditPulseDim {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0; }
 }
 @keyframes jdCreditPulseHalo {
   0%, 100% { opacity: 0.65; transform: scale(0.97); }
