@@ -2176,6 +2176,20 @@ function JD_layerOpen() {
       '<span class="rc-mark-word">' +
       esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
   }
+  /* the dot sparkline (owner, 2026-08-11): `total` dots ahead of the
+     verdict word, filled up to the rank — ●●● no problems, ●●○○○-style
+     for the five grade tiers. The container is one FIXED width sized for
+     five dots (see .rc-dots), so a three-dot row leaves its tail empty
+     and every verdict word shares the same left edge down the card. The
+     dots are aria-hidden; the word carries the meaning. */
+  function dotsHTML(rank, total, cls) {
+    var full = Math.max(1, Math.min(total, rank));
+    var h = '<span class="rc-dots ' + cls + '" aria-hidden="true">';
+    for (var d = 1; d <= total; d++) {
+      h += '<span class="rc-dot' + (d <= full ? ' is-fill' : '') + '"></span>';
+    }
+    return h + '</span>';
+  }
   /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
@@ -2257,33 +2271,23 @@ function JD_layerOpen() {
       } else {
         var v = window.JD_byRank(axis.values, a.value);
         var cls = v ? 'rc-r' + Math.round(v.rank) : '';
-        /* the dot sparkline (owner, 2026-08-11): three dots ahead of the
-           verdict word, filled up to the rank — ●●● no problems, ●●○ the
-           middle, ●○○ the floor. Fixed-width, so the dots read as their
-           own little column under the shared Verdict header while the
-           word still carries the meaning (the dots are aria-hidden). */
-        var dots = '';
-        if (v) {
-          var full = Math.max(1, Math.min(3, Math.round(v.rank)));
-          dots = '<span class="rc-dots ' + cls + '" aria-hidden="true">';
-          for (var d = 1; d <= 3; d++) {
-            dots += '<span class="rc-dot' + (d <= full ? ' is-fill' : '') + '"></span>';
-          }
-          dots += '</span>';
-        }
-        cell = '<span class="rc-verdict">' + dots +
+        cell = '<span class="rc-verdict">' +
+          (v ? dotsHTML(Math.round(v.rank), 3, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';
     });
     var g = gradeOf(resp.grade);
+    var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
     return '<table class="rc-subj"><thead><tr>' +
       '<th style="width:52%">Axis</th><th style="width:48%">Verdict</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
-      '<td>' + mark(g.label, g.rank ? 'rc-g' + Math.round(g.rank) : '') +
-      '</td></tr></tfoot></table>';
+      '<td><span class="rc-verdict">' +
+      (g.rank ? dotsHTML(Math.round(g.rank), 5, gCls) : '') +
+      mark(g.label, gCls) +
+      '</span></td></tr></tfoot></table>';
   }
 
   function altsHTML(entry, curIdx) {

@@ -1188,22 +1188,26 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 
 /* the verdict cell: the dot sparkline as its own fixed-width sub-column
    ahead of the pencilled word, both under the one Verdict header. Filled
-   dots count the rank (3/2/1); hollow dots complete the scale so a top
-   mark and a floor mark read differently at a glance. Dots inherit the
-   rating pencil's colour and stay decoration — aria-hidden, the word
-   carries the meaning. */
+   dots count the rank; hollow dots complete the scale so a top mark and
+   a floor mark read differently at a glance. The box is sized for the
+   WIDEST meter — the grade row's five dots (5×7px + 4×3px = 47px) — and
+   the axes' three-dot meters leave their tail empty, so every verdict
+   word down the card shares one left edge (owner, 2026-08-11). Dots
+   inherit the rating pencil's colour and stay decoration — aria-hidden,
+   the word carries the meaning. */
 .rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
-.rc-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; }
+.rc-dots { display: inline-flex; gap: 3px; flex: 0 0 auto; width: 47px; }
 .rc-dot {
   width: 7px; height: 7px; border-radius: 50%;
   border: 1.5px solid currentColor; box-sizing: border-box;
+  flex: 0 0 auto;
 }
 .rc-dot.is-fill { background: currentColor; }
-.rc-mark.rc-g5, .rc-alt-grade.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
-.rc-mark.rc-g4, .rc-alt-grade.rc-g4 { color: #46761a; }   /* choice — leaf green */
-.rc-mark.rc-g3, .rc-alt-grade.rc-g3 { color: #a06200; }   /* select — ochre */
-.rc-mark.rc-g2, .rc-alt-grade.rc-g2 { color: #b0490f; }   /* standard — burnt orange */
-.rc-mark.rc-g1, .rc-alt-grade.rc-g1 { color: #8f1d12; }   /* utility — deep red */
+.rc-mark.rc-g5, .rc-alt-grade.rc-g5, .rc-dots.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
+.rc-mark.rc-g4, .rc-alt-grade.rc-g4, .rc-dots.rc-g4 { color: #46761a; }   /* choice — leaf green */
+.rc-mark.rc-g3, .rc-alt-grade.rc-g3, .rc-dots.rc-g3 { color: #a06200; }   /* select — ochre */
+.rc-mark.rc-g2, .rc-alt-grade.rc-g2, .rc-dots.rc-g2 { color: #b0490f; }   /* standard — burnt orange */
+.rc-mark.rc-g1, .rc-alt-grade.rc-g1, .rc-dots.rc-g1 { color: #8f1d12; }   /* utility — deep red */
 
 /* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
 .rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; }
