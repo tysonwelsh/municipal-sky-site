@@ -71,6 +71,39 @@ machine and the endpoints are untouched.
 
 ---
 
+## ROUND 9 — the illuminated button (owner direction, 2026-08-11)
+
+Living with 8e surfaced the failure mode §1's guardrails were hedging
+against: the doorbell **camouflages as collection**. It reads as one more
+object in the clutter, not as the thing you press. The owner's new
+direction inverts the round-8 premise — the control should *stop*
+disguising itself:
+
+- The trigger becomes an **illuminated, glowing arcade button** — backlit
+  translucent lens, the drawer's ONLY light-emitting object. Reference
+  hardware supplied by the owner: rectangular "PUSH FOR CREDIT" / 25¢
+  coin-door buttons (lit amber/red/green/blue), and a round pinball
+  LAUNCH BALL dome.
+- **The label moves ONTO the button** — dark ink printed on the lens so
+  the backlight renders it as a silhouette. No more side/below label.
+- Depth effects are wanted (housing/bezel geometry, cast shadow, light
+  spill halo) so the button reads as pressable against the flat SVGs.
+- The owner is hesitant about red as the default; every candidate carries
+  a lit color-variant row. Plan view, the fixed bottom-left seat, and the
+  §1 contract otherwise stand.
+
+Three candidates, one mockup page each (same Phase-0 discipline):
+
+- **9a — The Credit Window**: portrait rectangular backlit coin-door
+  button, faithful to the reference; amber default, two-bar lens motif,
+  stacked TAKE A / TURN. Variants: amber, red, green, blue.
+- **9b — The Launch Lamp**: jumbo round pinball launch button, arched
+  lens text; the faithful-to-red candidate. Variants: red, amber, green,
+  blue.
+- **9c — The Midway Marquee**: the different take — landscape lozenge
+  with a warm-ivory glowing lens and a ring of chase-light marquee bulbs
+  in the housing. Variants: ivory, cyan, magenta, red.
+
 ## 1. Interaction contract (applies to whichever design wins)
 
 - **It is a pile item.** Rendered into `.jd-pile` alongside the
