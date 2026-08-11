@@ -10,6 +10,7 @@
     "pottery"
   ],
   "sizeClass": "m",
+  "retired": true,
   "responses": [
     {
       "rid": "r1",
