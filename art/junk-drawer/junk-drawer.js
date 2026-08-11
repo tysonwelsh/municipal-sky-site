@@ -243,6 +243,16 @@ function JD_layerOpen() {
     return null;
   }
   window.JD_byRank = byRank;     /* the record card resolves axis values */
+
+  /* Taxonomy labels may carry _underscored_ emphasis (v14, owner request:
+     "Has _it_"). HTML surfaces render the run in italics; plain-text
+     surfaces — native <option> text, aria strings, the report card's
+     stamped marks — strip the markers. The data stays honest either way:
+     an underscore pair is the whole convention. */
+  function labelText(s) {
+    return String(s == null ? '' : s).replace(/_([^_]+)_/g, '$1');
+  }
+  window.JD_labelText = labelText;
   function gradeOf(tax, value) {
     return byRank((tax || {}).grades, value);
   }
@@ -2240,7 +2250,7 @@ function JD_layerOpen() {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
         var v = window.JD_byRank(axis.values, a.value);
-        cell = mark(v ? v.label : String(a.value));
+        cell = mark(window.JD_labelText(v ? v.label : String(a.value)));
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
         '</span></td><td>' + cell + '</td></tr>';
@@ -3163,7 +3173,10 @@ function JD_layerOpen() {
       '<div class="jd-pop" id="' + popId + '" hidden>' +
       '<p class="jd-pop-desc">' + esc(desc) + '</p><dl>';
     levels.forEach(function (l) {
-      h += '<dt>' + esc(l.label || l.id) + '</dt><dd>' + esc(l.description || '') + '</dd>';
+      /* escape FIRST, then honor the _emphasis_ convention — the italics
+         can never smuggle markup because the underscores wrap escaped text */
+      h += '<dt>' + esc(l.label || l.id).replace(/_([^_]+)_/g, '<i>$1</i>') +
+        '</dt><dd>' + esc(l.description || '') + '</dd>';
     });
     h += '<dt>skip</dt><dd>No answer filed for this question.</dd></dl></div>' +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
@@ -3173,8 +3186,9 @@ function JD_layerOpen() {
       '<option value=""' + (chosen == null ? ' selected' : '') + '>skip</option>';
     levels.forEach(function (l) {
       var on = chosen != null && String(chosen) === String(l.rank);
+      /* native option text cannot carry markup — the emphasis strips */
       h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
-        esc(l.label || l.id) + '</option>';
+        esc(window.JD_labelText(l.label || l.id)) + '</option>';
     });
     h += '</select>';
     if (axisId) {
