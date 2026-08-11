@@ -445,6 +445,15 @@ html { scroll-behavior: smooth; }
      the medium specimen it is. */
   min-width: 53px;
 }
+/* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
+   shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
+   at the boosted halo opacities it re-cast the pool of light as a dark
+   ghost offset down-right, the exact "light source with a dark aura" the 9a
+   mockup's notes flagged as the one read this design cannot afford. The
+   asset bakes its own contact shadow under the housing, so hardware still
+   sits ON the floor rather than floating. */
+.jd-item--turn { filter: none; }
+
 /* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
    asset's halo ink deliberately runs to within 2/240 of the viewBox edge —
    while jdCreditSink overshoots to scale(1.02, 1.03) on the way back up.
@@ -512,9 +521,11 @@ html { scroll-behavior: smooth; }
    then dropped. Motion is added back only inside no-preference, so
    prefers-reduced-motion needs no undo rules. Feedback survives either way:
    this is the gesture that opens a modal, and it must read. */
-.jd-item--turn .cw-halo     { opacity: 0.85; }
-.jd-item--turn .cw-glowcore { opacity: 0.55; }
-.jd-item--turn .cw-bloom    { opacity: 0.7; }
+/* opacities raised 2026-08-11 (owner: "make it clear that it's glowing"),
+   in step with the brighter halo stops in the asset itself */
+.jd-item--turn .cw-halo     { opacity: 1; }
+.jd-item--turn .cw-glowcore { opacity: 0.75; }
+.jd-item--turn .cw-bloom    { opacity: 0.85; }
 .jd-item--turn .cw-flash    { opacity: 0; }
 .jd-item--turn.is-pressed .cw-lens     { transform: scale(0.93, 0.9); }
 .jd-item--turn.is-pressed .cw-flash    { opacity: 0.5; }
@@ -523,14 +534,14 @@ html { scroll-behavior: smooth; }
 .jd-item--turn.is-pressed .cw-bloom    { opacity: 1; }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* THE IDLE TELL (§1's discoverability guardrail) — the backlight breathes:
-     ~1.6s of swell inside an 8s cycle. Where the doorbell's gleam was the
-     quietest thing on the stage, the light IS this design's thesis — but the
-     cycle stays long and the swell soft, so a lit button in the corner never
-     becomes a slot machine. */
-  .jd-item--turn .cw-glowcore { animation: jdCreditBreathe 8s ease-in-out infinite; }
+  /* THE IDLE TELL (§1's discoverability guardrail) — a continuous slow PULSE
+     (owner revision 2026-08-11, replacing the once-per-8s breath): the glow
+     swells and settles on a gentle ~3.6s sine so the button always reads as
+     live hardware, but the amplitude stays small and the cycle slow enough
+     that the corner never becomes a slot machine. */
+  .jd-item--turn .cw-glowcore { animation: jdCreditPulse 3.6s ease-in-out infinite; }
   .jd-item--turn .cw-halo,
-  .jd-item--turn .cw-bloom    { animation: jdCreditBreatheHalo 8s ease-in-out infinite; }
+  .jd-item--turn .cw-bloom    { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
   /* THE PRESS — the lens travels DOWN a step into the housing: it shrinks
      with a slight squash (the dark well mouth widening around it is what
      makes the sink read as travel rather than wobble), holds a beat at the
@@ -545,7 +556,7 @@ html { scroll-behavior: smooth; }
     animation: jdCreditFlash 420ms ease-out;
   }
   .jd-item--turn.is-pressed .cw-glowcore {
-    opacity: 0.55;
+    opacity: 0.75;
     animation: jdCreditFlare 420ms ease-out;
   }
   .jd-item--turn.is-pressed .cw-halo,
@@ -553,15 +564,13 @@ html { scroll-behavior: smooth; }
     animation: jdCreditSurge 460ms ease-out;
   }
 }
-@keyframes jdCreditBreathe {
-  0%, 70%, 100% { opacity: 0.45; }
-  79%           { opacity: 0.95; }
-  88%           { opacity: 0.55; }
+@keyframes jdCreditPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 0.95; }
 }
-@keyframes jdCreditBreatheHalo {
-  0%, 70%, 100% { opacity: 0.72; }
-  79%           { opacity: 1; }
-  88%           { opacity: 0.8; }
+@keyframes jdCreditPulseHalo {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
 }
 @keyframes jdCreditSink {
   0%   { transform: scale(1); }
@@ -577,14 +586,16 @@ html { scroll-behavior: smooth; }
   100% { opacity: 0; }
 }
 @keyframes jdCreditFlare {
-  0%   { opacity: 0.55; }
+  0%   { opacity: 0.75; }
   12%  { opacity: 1; }
-  100% { opacity: 0.55; }
+  100% { opacity: 0.75; }
 }
+/* with the halo now fully lit at rest, the press surge is a small scale POP
+   of the light pool instead of an opacity step it no longer has room for */
 @keyframes jdCreditSurge {
-  0%   { opacity: 0.85; }
-  14%  { opacity: 1; }
-  100% { opacity: 0.85; }
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 /* ---------------- arrange mode (?arrange=1, dev affordance) --------------- */
