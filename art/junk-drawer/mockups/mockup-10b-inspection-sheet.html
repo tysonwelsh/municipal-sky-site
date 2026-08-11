@@ -23,6 +23,18 @@
    definitions (hover / keyboard-focus tooltips + tappable footnote marks
    that unfold typed small print inline), prefers-reduced-motion honored.
 
+   MOBILE PASS (2026-08-11): the card is a size container (Safari/iOS 16+)
+   and every phone rule keys on the CARD's width, never the viewport — so
+   the stage-width toggle above the instrument demos the true 375/320
+   layouts live on a desk, and a real phone gets the same layout for free
+   (its viewport bounds the card). Phone form: stamps 3-across (2-across at
+   the 320 floor), punch boxes in two labelled columns, the comparator
+   gauge full-width ABOVE its thumb plates (larger than the desk inline
+   version, A still left / B still right), the five Likert stops stacked
+   A-top→B-bottom, footnote marks grown into true 44px buttons, slips at
+   ≥12px type, write-ins at 16px (iOS focus-zoom guard, mirroring
+   production's .jd-turn-input rule).
+
    Everything renders from a JS const carrying the REAL taxonomy.json subset
    (grades + the five live axes, verbatim; defunct axes excluded), exactly as
    production renders from the payload. The two exhibits are the real
@@ -99,6 +111,10 @@ body {
 .turn-card {
   position: relative;
   width: min(680px, 100%);
+  /* the ONE responsive mechanism: the card is a size container, and every
+     phone rule below queries the CARD width — a clamped stage on a desk and
+     a real 375px phone therefore render the identical form */
+  container: sheetcard / inline-size;
   color: var(--tink);
   font-family: var(--tmono);
   background: var(--tpaper) var(--tgrain);
@@ -121,10 +137,41 @@ body {
   position: relative; z-index: 1;
   padding: 20px 22px 24px;
 }
+/* page framing only — the scrim sits OUTSIDE the container, so viewport
+   media is correct here; everything inside the card queries the card.
+   The body's side padding slims too, so a 375px phone stages the card at
+   ~353px — the same side of the 350 floor breakpoint as production's real
+   modal (card ≈ 359px there) — instead of the page furniture shoving the
+   staged card into the 320-floor layout. */
 @media (max-width: 600px) {
+  body { padding: 1rem 0.3rem 2.6rem; }
   .turn-scrim { padding: 10px 6px; }
-  .sheet { padding: 16px 12px 20px; }
 }
+
+/* ---------------- the stage-width toggle (page furniture) ----------------
+   Clamps the scrim to a phone viewport so the desk viewer sees the real
+   375px / 320px form live — the container queries do the rest. */
+.stage-set {
+  max-width: 1060px; margin: 0 auto 0.7rem;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+  gap: 8px;
+  font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: #8a8272;
+}
+.stage-set button {
+  min-height: 44px; padding: 0 16px;
+  border: 1px solid #cfc8b6; background: #fffdf6;
+  font-family: var(--mono); font-size: 0.6rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #6d675a; cursor: pointer;
+}
+.stage-set button[aria-pressed="true"] {
+  border-color: var(--plot-red); color: var(--plot-red); font-weight: 700;
+}
+.stage-set button:focus-visible { outline: 2px solid var(--plot-red); outline-offset: 2px; }
+.stage[data-w] .turn-scrim { padding: 10px 8px; } /* production's phone scrim padding */
+.stage[data-w="375"] .turn-scrim { max-width: 375px; margin: 0 auto; }
+.stage[data-w="320"] .turn-scrim { max-width: 320px; margin: 0 auto; }
 
 /* ---------------- the form header ---------------------------------------- */
 .fh {
@@ -158,7 +205,6 @@ body {
   text-transform: uppercase; text-align: center; line-height: 1.6;
   transform: rotate(2deg); opacity: 0.75;
 }
-@media (max-width: 480px) { .fh-dup { display: none; } }
 .fh-meta {
   margin: 0 0 0.55rem;
   border-bottom: 1px solid var(--trule);
@@ -529,10 +575,6 @@ body {
   background: rgba(179, 64, 47, 0.06);
 }
 .lk.mid.is-on { color: var(--tink); border-color: var(--tink); box-shadow: inset 0 0 0 1px var(--tink); background: rgba(51,36,15,0.05); }
-@media (max-width: 620px) {
-  .likert { grid-template-columns: 1fr; }
-  .lk { justify-content: flex-start; text-align: left; }
-}
 
 /* ---------------- item 4: disposition ------------------------------------- */
 .sig-row {
@@ -645,6 +687,98 @@ body {
 .tt.is-on { opacity: 1; visibility: visible; }
 .tt b { letter-spacing: 0.14em; text-transform: uppercase; font-size: 0.58rem; }
 
+/* ============================================================================
+   MOBILE PASS — the phone form. All rules query the CARD (container
+   "sheetcard", Safari/iOS 16+ like everything else on this sheet), so the
+   clamped stages above show exactly what a phone renders. 560 ≈ any phone
+   (a 375 viewport puts the card at ~360); 350 ≈ the 320 floor.
+   ========================================================================== */
+@container sheetcard (max-width: 560px) {
+  /* the chrome pays rent: slimmer sheet padding, ✕ clearance only as wide
+     as the ✕, duplicate-copy flourish already gone below 480 */
+  .sheet { padding: 14px 12px 18px; }
+  .fh { margin-right: 44px; gap: 8px; }
+  .fh-title { font-size: 0.8rem; letter-spacing: 0.14em; }
+
+  /* type floors — form fiction may be small print, never 8px print */
+  .smallprint { font-size: 0.66rem; line-height: 1.75; }
+  .line-label { font-size: 0.66rem; }
+  .item-dim { font-size: 0.6rem; }
+  .fnslip { font-size: 0.75rem; line-height: 1.7; padding: 0.6rem 0.7rem 0.65rem; }
+  .fnslip b { font-size: 0.68rem; }
+  .fnslip-h { font-size: 0.6rem; }
+  .condemn-text { font-size: 0.68rem; }
+  .file-status { font-size: 0.66rem; }
+
+  /* the footnote mark is the ONLY definitions door on touch — it becomes a
+     true 44×44 button (bigger glyph, real box, no invisible-pad overlap
+     with the option row below it) */
+  .line-head { align-items: center; margin-bottom: 0.15rem; }
+  .fn-mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px;
+    font-size: 0.85rem;
+  }
+  .fn-mark::before { inset: 0; }
+
+  /* stamps: a 3-across rack instead of the five-across shelf */
+  .stamps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .stamp { min-width: 0; padding: 0.3rem 0.3rem; }
+  .stamp.na { min-width: 0; }
+
+  /* punch boxes: two labelled columns, one 44px row each, no orphan wrap */
+  .punches { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; }
+  .pt { font-size: 0.72rem; }
+
+  /* remarks + housekeeping targets to 44px */
+  .remarks-t { min-height: 44px; font-size: 0.64rem; }
+  .remarks-t::before { inset: -2px -8px; }
+  .office summary { min-height: 44px; }
+  .mock-reset { min-height: 44px; }
+
+  /* write-ins: 16px kills iOS focus-zoom (production .jd-turn-input rule) */
+  .writein { font-size: 16px; }
+
+  /* exhibits: viewable without dominating a 667px viewport */
+  .ex-plate { width: min(230px, 76%); }
+
+  /* the comparator survives by growing: gauge full-width on top (LARGER
+     than the desk inline version, engraving and A/B legible), thumb plates
+     under their own arc ends — A stays left, B stays right */
+  .gauge-wrap {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px 12px; justify-items: center; align-items: start;
+  }
+  .gauge { grid-row: 1; grid-column: 1 / -1; width: 100%; max-width: 330px; }
+  .g-thumb { grid-row: 2; width: 84px; }
+  .g-thumb:first-child { grid-column: 1; }
+  .g-thumb:last-child { grid-column: 2; }
+
+  /* the five stops stack, A-top → B-bottom, full-width 48px rows with
+     mis-tap spacing; direction is carried by the words AND the gauge above */
+  .likert { grid-template-columns: 1fr; gap: 8px; }
+  .lk { justify-content: flex-start; text-align: left; font-size: 0.64rem; padding: 0.3rem 0.7rem; }
+}
+
+@container sheetcard (max-width: 480px) {
+  .fh-dup { display: none; }
+}
+
+@container sheetcard (max-width: 350px) {
+  /* the 320 floor: two-across stamps, tighter header, same everything else */
+  .sheet { padding: 12px 10px 16px; }
+  .fh-no { font-size: 0.54rem; padding: 3px 6px; }
+  .fh-title { font-size: 0.74rem; }
+  .stamps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-thumb { width: 72px; }
+}
+
+/* belt-and-braces for real tablets/phones whose card exceeds the container
+   breakpoints: the 16px input floor mirrors production's media rule */
+@media (max-width: 768px) {
+  .writein { font-size: 16px; }
+}
+
 /* ---------------- reduced motion: the still form -------------------------- */
 @media (prefers-reduced-motion: reduce) {
   .stamp.thunk, .condemn-wrap.is-flagged .condemn-stamp,
@@ -688,11 +822,18 @@ noscript p {
   to unfold the typed small print. Everything below is live.
 </p>
 
-<p class="sec-head"><span>THE INSTRUMENT</span> &middot; staged in situ &mdash; scrim + sheet, real turn-modal tokens</p>
+<p class="sec-head"><span>THE INSTRUMENT</span> &middot; staged in situ &mdash; scrim + sheet, real turn-modal tokens &middot; clamp the stage to see the phone form live</p>
 
 <noscript><p>This mockup renders the form from the taxonomy const with JavaScript &mdash; enable it to see the instrument.</p></noscript>
 
-<div class="stage">
+<div class="stage-set" role="group" aria-label="stage width">
+  <span>stage width</span>
+  <button type="button" data-setw="" aria-pressed="true">desk</button>
+  <button type="button" data-setw="375" aria-pressed="false">phone &middot; 375</button>
+  <button type="button" data-setw="320" aria-pressed="false">floor &middot; 320</button>
+</div>
+
+<div class="stage" id="stage">
   <div class="turn-scrim">
     <div class="turn-card" aria-label="specimen inspection report (staged mockup)">
       <button type="button" class="turn-close" tabindex="-1"
@@ -763,6 +904,8 @@ noscript p {
   <b>exhibit A</b> claude-opus-5 &middot; <b>exhibit B</b> claude-sonnet-5 &mdash; the real
   production SVGs from items/2026-08-05-microscope-slide/, id&#8209;namespaced per placement.
   the sheet flows with the page here; production keeps the modal&rsquo;s internal scroll.
+  the phone layouts above are the real ones &mdash; every mobile rule queries the card&rsquo;s
+  own width, so the clamped stage and an actual 375px phone render identically.
 </p>
 
 <div class="rule"></div>
@@ -843,6 +986,58 @@ noscript p {
   <code>href="#&hellip;"</code>), because both real SVGs use colliding ids
   (<code>grain</code>, <code>glass&hellip;</code>) &mdash; production already owns
   this via <code>JD_svgInst</code>.</p>
+
+  <p><b>7 &middot; The mobile pass (2026-08-11)</b> &mdash; a 375&times;667
+  baseline with a 320 floor, touch-first, and one mechanism: the card is a
+  <b>size container</b> (<code>container: sheetcard / inline-size</code>,
+  Safari/iOS&nbsp;16+, same floor as everything else here) and every phone rule
+  is an <code>@container</code> rule on the card&rsquo;s width &mdash; which is
+  why the stage-width toggle above the instrument shows the genuine phone form
+  on a desk, and why production should hang the container on
+  <code>.jd-turn</code> itself (the scrim stays viewport business). What
+  changes under 560: sheet padding slims and the &#x2715; clearance narrows so
+  content gets the pixels; the five-across stamp shelf becomes a
+  <b>3-across rack</b> (2-across under 350) so no grade ever orphan-wraps; punch
+  boxes fall into <b>two labelled columns</b> of one 44px row each; the exhibit
+  plates trim to ~230px so an exhibit plus its grade line fits a 667px screen
+  together; the comparator <b>keeps its needle by growing</b> &mdash; the gauge
+  goes full-width above the two thumb plates (it renders LARGER than the desk
+  inline version, so the engraving and the A/B anchors stay legible) and the
+  five Likert stops stack as full-width 48px rows, A-top&nbsp;&rarr;&nbsp;B-bottom
+  with 8px mis-tap gaps &mdash; direction is carried by the words and by the
+  gauge directly above, and FILE THIS REPORT was already full-width.</p>
+
+  <p><b>7a &middot; The touch definition contract.</b> On a phone there is no
+  hover and no keyboard, so of note&nbsp;2&rsquo;s three doors only the footnote
+  mark stands &mdash; it therefore stops being a superscript with invisible
+  padding and becomes a <b>true 44&times;44 inline-flex button</b> with a bigger
+  glyph, sitting clear of the option row beneath (no overlapping ghost hit
+  areas to steal a stamp&rsquo;s top edge). The slips it unfolds move to
+  <b>&ge;12px type</b> at phone widths (0.75rem &mdash; small print as fiction,
+  not as hardship), stay in-flow so they never cover an option, and now fold on
+  a completed outside <i>click</i> rather than <code>pointerdown</code>,
+  because on touch a pointerdown is how a scroll starts &mdash; a visitor
+  scrolling while reading a slip must not have it fold under their thumb.
+  Screen readers still get every definition via <code>aria-describedby</code>;
+  tooltips remain a desk-only echo.</p>
+
+  <p><b>7b &middot; What implementation must watch on real phones.</b>
+  <b>(i)</b> Write-ins are 16px at phone widths &mdash; via the container rule
+  AND a <code>max-width: 768px</code> media mirror of production&rsquo;s
+  <code>.jd-turn-input</code> guard &mdash; so iOS never focus-zooms the fixed
+  modal half off-screen; production must keep that guard on these fields.
+  <b>(ii)</b> The real modal scrolls internally (<code>.jd-turn-scroll</code>):
+  verify on-device that focusing a remarks write-in scrolls it above the
+  keyboard inside that region (the mockup&rsquo;s page-flow staging can&rsquo;t
+  prove this; <code>visualViewport</code> is the fallback if WebKit misbehaves).
+  <b>(iii)</b> The banner band: production&rsquo;s scrim already reserves
+  <code>--banner-h</code> under <code>html.jd-chrome</code> &mdash; nothing on
+  this sheet may re-solve that. <b>(iv)</b> The stamp/condemn rotation
+  transforms overhang a few px at grid edges; sheet padding absorbs them, so
+  don&rsquo;t slim it below 10px. <b>(v)</b> No horizontal overflow exists down
+  to a 304px card (320 stage minus scrim padding) &mdash; keep it that way: any
+  new form line must wrap into the two-column punch grid or stack, never
+  scroll sideways.</p>
 </div>
 
 <!-- ==================================================================== -->
@@ -1969,7 +2164,10 @@ noscript p {
     btn.setAttribute("aria-expanded", "true");
     openMark = btn;
   }
-  document.addEventListener("pointerdown", function (e) {
+  /* fold on a completed CLICK outside, not pointerdown — on touch,
+     pointerdown fires at the start of a scroll gesture, and a visitor
+     scrolling while reading a long slip must not have it fold under them */
+  document.addEventListener("click", function (e) {
     if (!openMark) return;
     var s = document.getElementById(openMark.getAttribute("aria-controls"));
     if (e.target === openMark || (openMark.contains && openMark.contains(e.target))) return;
@@ -2124,6 +2322,23 @@ noscript p {
     fileStatus.textContent = "";
     resetBtn.hidden = true;
     sync();
+  });
+
+  /* ------------------------------------------------------------------ *
+   * the stage-width toggle — page furniture, not part of the form.     *
+   * Clamps the scrim; the container queries do the actual work.        *
+   * ------------------------------------------------------------------ */
+  var stageEl = document.getElementById("stage");
+  var setBtns = document.querySelectorAll(".stage-set button");
+  Array.prototype.forEach.call(setBtns, function (b) {
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(setBtns, function (o) {
+        o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      });
+      var w = b.getAttribute("data-setw");
+      if (w) stageEl.setAttribute("data-w", w);
+      else stageEl.removeAttribute("data-w");
+    });
   });
 
   sync();
