@@ -543,8 +543,8 @@ html { scroll-behavior: smooth; }
      live hardware, but the amplitude stays small and the cycle slow enough
      that the corner never becomes a slot machine. */
   .jd-item--turn .cw-glowcore { animation: jdCreditPulse 3.6s ease-in-out infinite; }
-  .jd-item--turn .cw-halo,
-  .jd-item--turn .cw-bloom    { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-halo     { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-bloom    { animation: jdCreditPulseBloom 3.6s ease-in-out infinite; }
   /* THE PRESS — the lens travels DOWN a step into the housing: it shrinks
      with a slight squash (the dark well mouth widening around it is what
      makes the sink read as travel rather than wobble), holds a beat at the
@@ -567,12 +567,19 @@ html { scroll-behavior: smooth; }
     animation: jdCreditSurge 460ms ease-out;
   }
 }
+/* amplitude widened + a size breath on the pool (owner, 2026-08-11: "make
+   the pulsing a bit more pronounced — I'm not really seeing it"). The
+   radius change is what the eye actually catches; the cycle stays slow. */
 @keyframes jdCreditPulse {
-  0%, 100% { opacity: 0.6; }
-  50%      { opacity: 0.95; }
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
 }
 @keyframes jdCreditPulseHalo {
-  0%, 100% { opacity: 0.8; }
+  0%, 100% { opacity: 0.65; transform: scale(0.97); }
+  50%      { opacity: 1;    transform: scale(1.04); }
+}
+@keyframes jdCreditPulseBloom {
+  0%, 100% { opacity: 0.55; }
   50%      { opacity: 1; }
 }
 @keyframes jdCreditSink {
