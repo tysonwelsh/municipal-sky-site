@@ -3,36 +3,25 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>JUNK DRAWER &middot; MOCKUP 10C &middot; THE DOUBLE BENCH</title>
+<title>JUNK DRAWER &middot; MOCKUP 10C &middot; SALVAGE &mdash; THE LIKERT FINALE</title>
 <style>
 /* ============================================================================
-   THE JUNK DRAWER — MOCKUP 10C · THE DOUBLE BENCH (survey-instrument
-   redesign, owner direction 2026-08-11: definitions off the face of the
-   questions; comparison becomes a 5-point Likert; end-to-end rework)
+   THE JUNK DRAWER — MOCKUP 10C · SALVAGE (owner review, 2026-08-11)
 
-   THE STRUCTURAL BET: grading and comparing are ONE activity. A and B are
-   judged TOGETHER, side by side, one axis at a time — the two artworks sit
-   in a sticky strip at the top of the sheet and stay in view for every
-   judgment; each question is one shared row with A's title-only chips on
-   the left half and B's on the right; the 5-point Likert spans the full
-   width at the bottom, its geometry (A anchored left, B anchored right)
-   carrying the direction; one filing action ends the whole instrument.
+   The original 10c ("the double bench" — A and B judged side by side in
+   mirrored chip halves) was REJECTED on review. The owner kept exactly one
+   element: the 5-point LIKERT FINALE below — the call as geometry, five
+   title-only stops on a rail strung between an A anchor (hard left) and a
+   B anchor (hard right), hover/focus tooltips per stop, an ⓘ popover with
+   the full scale, filed as comparison {winner, strength}.
 
-   Everything here is inline. The modal chrome (scrim, sheet, paper, grain,
-   brass, rules, type scale) lifts the REAL jd-turn tokens from
-   junk-drawer.css verbatim, so this reads as the same modal reskinned. The
-   survey renders from a JS const holding the REAL taxonomy.json subset
-   (grades + the five live axes; defunct axes excluded), the way production
-   renders from the data.php payload. The two sample artworks are the real
-   production SVGs from items/2026-08-05-microscope-slide/ (A =
-   claude-opus-5, B = claude-sonnet-5 — blind on the sheet), id-namespaced
-   per instance at runtime exactly as JD_svgInst does.
-
-   TWO LIVE STAGES: the same render function is mounted twice — once at the
-   production sheet width (min(680px,100%)) and once clamped to 360px. The
-   responsive degradation is written as CONTAINER queries on the sheet
-   clamp, so the narrow stage genuinely runs the phone layout on a desktop
-   screen, and the wide stage collapses the same way on a real 375px phone.
+   EVERYTHING ELSE IN THIS FILE WAS DELETED at the owner's direction. A
+   fresh rework is to be built AROUND this preserved element, in this file:
+   - the Likert below ships in the rework unchanged (visual + behavior);
+   - the new instrument rates ONE RESPONSE AT A TIME (not side by side);
+   - it uses DROPDOWNS to save vertical space.
+   The tokens (--t*) are verbatim from junk-drawer.css's turn modal; the
+   grain data-URI uses stitchTiles="stitch" — never regenerate it.
    ========================================================================== */
 :root {
   --paper: #f6f3ec;
@@ -99,12 +88,8 @@ body {
 .stage input { accent-color: var(--tred); }
 .stage-clamp {
   width: min(680px, 100%);
-  /* the responsive unit is the SHEET, not the viewport: both stages run the
-     same container-query rules (Safari 16+, the drawer's own iOS floor) */
   container-type: inline-size;
 }
-.stage--narrow .stage-clamp { width: min(360px, 100%); }
-
 .bench-sheet {
   position: relative;
   width: 100%;
@@ -120,11 +105,6 @@ body {
   content: ""; position: absolute; inset: 5px; z-index: 8; pointer-events: none;
   border: 1px solid var(--trule);
 }
-/* the ✕ is production chrome; inert on this page, so it is not focusable */
-.bench-close {
-  position: absolute; top: 10px; right: 14px; z-index: 9;
-  font-size: 0.78rem; color: var(--tink-2);
-}
 .bench-scroll {
   position: relative; z-index: 1;
   max-height: min(76vh, 660px);
@@ -134,7 +114,6 @@ body {
 }
 .bench-scroll::-webkit-scrollbar { width: 7px; }
 .bench-scroll::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
-
 .bench-title {
   margin: 0 40px 0.55rem 0;
   font-weight: 700;
@@ -146,57 +125,7 @@ body {
   color: var(--tink-2);
 }
 
-/* ---------------- the pinned pair ----------------------------------------
-   position:sticky against .bench-scroll: every judgment below happens with
-   both drawings in view. The strip repaints the sheet's own paper+grain so
-   rows slide UNDER it, and carries the report affordance per side. */
-.bench-pin {
-  position: sticky; top: 0; z-index: 6;
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px;
-  padding: 0.45rem 0 0.5rem;
-  margin: 0 0 0.1rem;
-  background: var(--tpaper) var(--tgrain);
-  border-bottom: 1px solid var(--trule);
-  box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
-}
-.bench-thumb { display: flex; gap: 9px; align-items: flex-start; min-width: 0; }
-.bench-thumb-col {
-  display: flex; flex-direction: column; gap: 5px; min-width: 0;
-  padding-top: 2px;
-}
-/* A reads from the LEFT edge, B from the RIGHT — the same anchoring the
-   Likert ends repeat at the foot of the sheet */
-.bench-thumb--b { flex-direction: row-reverse; }
-.bench-thumb--b .bench-thumb-col { align-items: flex-end; }
-.bench-thumb-tag { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.1em; }
-.bench-art {
-  flex: 0 0 auto; width: 86px; height: 86px; padding: 4px;
-  background: #f6efdc;
-  border: 1px solid var(--trule);
-  box-shadow: inset 0 0 12px rgba(58, 42, 18, 0.12);
-}
-.bench-art svg { display: block; width: 100%; height: 100%; }
-.bench-thumb.is-flagged .bench-art {
-  border-color: var(--tred);
-  box-shadow: inset 0 0 0 1px var(--tred), inset 0 0 12px rgba(58, 42, 18, 0.12);
-}
-.bench-flag {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  min-height: 30px; cursor: pointer;
-  font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--tink-2);
-}
-.bench-flag input { width: 14px; height: 14px; margin: 0; flex: 0 0 auto; }
-.bench-flag input:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.bench-thumb.is-flagged .bench-flag { color: var(--tred); font-weight: 700; }
-.bench-flagrow {
-  grid-column: 1 / -1;
-  display: flex; gap: 8px; align-items: center;
-}
-
-/* ---------------- shared rows: one axis, both responses ------------------ */
-.bench-rows { margin-top: 0.35rem; }
-.bench-row { border-bottom: 1px solid var(--trule-2); padding: 0.5rem 0 0.55rem; }
+/* ============ PRESERVED ELEMENT — the definition affordance ============== */
 .bench-rowhead { display: flex; align-items: center; }
 .bench-def {
   display: inline-flex; align-items: center; gap: 0.45rem;
@@ -236,69 +165,7 @@ body {
 }
 .bench-pop dd { margin: 0; color: var(--tink-2); }
 
-.bench-halves { display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px; }
-.bench-half { min-width: 0; }
-.bench-half--b { border-left: 1px solid var(--trule-2); padding-left: 16px; }
-.bench-side-tag {
-  display: block; margin: 0 0 0.25rem;
-  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.18em;
-  color: var(--tink-2);
-}
-
-/* title-only chips, mirrored halves on one shared 3-column grid so the same
-   level sits at the same coordinates on both sides — disagreement is a
-   glance, not a scroll */
-.bench-chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
-.bench-chip {
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  min-height: 40px; padding: 0.25rem 0.3rem;
-  background: rgba(255, 250, 232, 0.5);
-  border: 1px solid var(--trule);
-  cursor: pointer; text-align: center;
-}
-/* the real radio stays in the tree and tab order; only its box is hidden */
-.bench-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.bench-chip:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
-.bench-tick {
-  position: absolute; left: 0.25rem; top: 0.18rem;
-  font-size: 0.6rem; line-height: 1; opacity: 0; color: var(--tred);
-}
-.bench-chip.is-on {
-  background: rgba(255, 250, 232, 0.95);
-  border-color: var(--tred);
-  box-shadow: inset 0 0 0 1px var(--tred);
-}
-.bench-chip.is-on .bench-tick { opacity: 1; }
-.bench-chip-l {
-  font-size: 0.56rem; letter-spacing: 0.08em; text-transform: uppercase;
-  line-height: 1.25;
-}
-.bench-chip--skip { border-style: dashed; color: var(--tink-2); }
-
-.bench-notebtn {
-  margin-top: 0.25rem; min-height: 28px;
-  padding: 0.15rem 0.2rem 0.15rem 0;
-  background: none; border: 0; cursor: pointer;
-  font-family: var(--tmono);
-  font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--tink-2);
-}
-.bench-notebtn:hover, .bench-notebtn[aria-expanded="true"] { color: var(--tred); }
-.bench-notebtn:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.bench-noterow { display: flex; gap: 8px; align-items: center; margin: 0.35rem 0 0.1rem; }
-.bench-note-tag { flex: 0 0 auto; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.16em; }
-.bench-note-in {
-  flex: 1; min-width: 0;
-  padding: 0.35rem 0.5rem;
-  background: rgba(255, 252, 240, 0.72);
-  border: 1px solid var(--trule);
-  color: var(--tink);
-  font-family: var(--tmono); font-size: 0.66rem; line-height: 1.5;
-}
-.bench-note-in:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
-
-/* ---------------- the finale: the call, as geometry ----------------------
+/* ============ PRESERVED ELEMENT — the Likert finale ======================
    Five stops on one rail spanning from under A's column to under B's; the
    width itself says direction. Title-only stops; definitions by
    hover/focus tooltip and the row's own ⓘ. */
@@ -342,27 +209,6 @@ body {
 .bench-lk-cap b { font-size: 0.68rem; letter-spacing: 0.14em; color: var(--tink); }
 .bench-lk-stop.is-on .bench-lk-cap { color: var(--tink); font-weight: 700; }
 
-/* ---------------- filing --------------------------------------------------
-   brass for the way forward, verbatim from .jd-turn-go */
-.bench-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 0.9rem; }
-.bench-go {
-  min-height: 44px; padding: 0 1.1rem;
-  font-family: var(--tmono); font-size: 0.66rem;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  border: 1px solid rgba(58, 40, 14, 0.6);
-  cursor: pointer;
-  color: #2a1c07;
-  background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
-              2px 3px 5px -2px rgba(22, 11, 4, 0.5);
-}
-.bench-go:active { transform: translateY(1px); box-shadow: none; }
-.bench-go[disabled] { opacity: 0.42; cursor: default; box-shadow: none; transform: none; }
-.bench-go:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.bench-filed { margin: 0.6rem 0 0; font-size: 0.63rem; line-height: 1.7; color: var(--tink-2); }
-.bench-filed b { color: var(--tink); }
-.bench-filed code { font-family: var(--tmono); color: var(--tink); background: rgba(255, 252, 240, 0.7); padding: 0.05rem 0.25rem; }
-
 /* ---------------- the hover/focus tooltip ---------------------------------
    One singleton, fixed, pointer-events:none — it can never take a press a
    chip should have had. It is aria-hidden: the accessible copy of every
@@ -387,10 +233,9 @@ body {
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
-/* ---------------- motion: added, never assumed ---------------------------
-   base state = the reduced-motion state; transitions live only here */
+/* ---------------- motion: added, never assumed --------------------------- */
 @media (prefers-reduced-motion: no-preference) {
-  .bench-chip, .bench-lk-dot { transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+  .bench-lk-dot { transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
   .bench-def .bench-i { transition: color 0.15s, border-color 0.15s; }
   .bench-pop { animation: pop-in 0.16s ease-out; }
 }
@@ -399,1031 +244,43 @@ body {
   to   { opacity: 1; transform: none; }
 }
 
-/* ---------------- the mobile degradation (container query) ---------------
-   Two chip-columns cannot share 375px. The row keeps its ONE shared header
-   and becomes an A line over a B line — same instrument, same single pass
-   per axis, both drawings still pinned above. (Chosen over a segmented A/B
-   toggle, which hides half the bench and turns one pass into two; see the
-   notes at the foot of the page.) */
+/* narrow-sheet degradation for the preserved element only */
 @container (max-width: 560px) {
-  .bench-scroll { padding: 14px 12px 16px; max-height: min(80vh, 640px); }
-  .bench-title { font-size: 0.74rem; }
-  .bench-halves { grid-template-columns: 1fr; row-gap: 0.5rem; }
-  .bench-half--b { border-left: 0; padding-left: 0; border-top: 1px dashed var(--trule-2); padding-top: 0.5rem; }
-  .bench-side-tag { font-size: 0.66rem; color: var(--tink); }
-  .bench-chip { min-height: 44px; }
-  .bench-art { width: 60px; height: 60px; }
-  .bench-thumb { gap: 7px; }
-  .bench-thumb-tag { font-size: 0.8rem; }
-  .bench-pin { gap: 5px 10px; }
+  .bench-scroll { padding: 14px 12px 16px; }
   .bench-likert { gap: 6px; }
   .bench-lk-cap { font-size: 0.47rem; letter-spacing: 0.04em; }
   .bench-lk-cap b { font-size: 0.62rem; }
   .bench-lk-end { font-size: 0.85rem; }
-  .bench-note-in { font-size: 16px; } /* kills iOS focus zoom in the fixed layer */
-  .bench-actions .bench-go { flex: 1 1 auto; }
 }
-
-/* ---------------- notes --------------------------------------------------- */
-.notes { max-width: 46rem; margin: 0 auto; }
-.notes h3 {
-  margin: 1.6rem 0 0.4rem;
-  font-size: 0.66rem; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--plot-red);
-}
-.notes p, .notes li { font-size: 0.66rem; line-height: 1.85; letter-spacing: 0.04em; color: #5d5749; }
-.notes ul { padding-left: 1.2rem; margin: 0.3rem 0; }
-.notes code { font-size: 0.62rem; background: #eee8da; padding: 0.05rem 0.3rem; }
-.notes b { color: var(--ink); }
 </style>
 </head>
 <body>
 
-<h1 class="mock-title">Junk Drawer &middot; Mockup 10C &middot; The Double Bench</h1>
-<p class="mock-intro">
-  The survey instrument, reworked as a <b>comparative bench</b>: A and B are
-  judged together, side by side, one axis at a time — grading and comparing
-  become one activity, the scrolling halves, and the 5&#8209;point Likert is the
-  natural finale of the same sheet instead of a separate screen. Questions
-  show level TITLES only; every definition is one hover, one keyboard focus,
-  or one &#9432; away. Both stages below are fully live.
-</p>
+<h1 class="mock-title">Junk Drawer &middot; Mockup 10C &middot; Salvage &mdash; The Likert Finale</h1>
+<p class="mock-intro">The double bench was rejected on review; the owner kept
+<b>one element</b> &mdash; the 5&#8209;point comparison below, the call as geometry.
+A fresh instrument is to be rebuilt around it in this file: <b>one response at
+a time</b>, <b>dropdowns</b> for the scales. This page currently shows only the
+preserved element, live.</p>
 
-<div class="sec-head">STAGE 1 &middot; <span>THE BENCH AT DESK WIDTH</span> &middot; LIVE</div>
+<div class="sec-head">THE PRESERVED ELEMENT &middot; <span>LIVE</span></div>
 <div class="stage">
   <div class="stage-clamp">
     <div class="bench-sheet">
-      <span class="bench-close" aria-hidden="true">&#10005;</span>
       <div class="bench-scroll" id="s1-scroll"></div>
     </div>
   </div>
 </div>
-<p class="mock-label">
-  try it: <b>hover</b> any chip (definition tooltip) &middot; <b>tab + arrows</b>
-  through a row (radiogroups; focus shows the same tooltip) &middot; press an
-  <b>&#9432;</b> header for the whole scale &middot; <b>esc / tap outside</b>
-  dismisses &middot; <b>&#9873; report</b> beside a thumbnail &middot;
-  <b>+ note</b> under a half &middot; scroll — the pair stays pinned &middot;
-  pick a Likert stop, then <b>file the grades</b>
-</p>
-
-<div class="sec-head">STAGE 2 &middot; <span>THE SAME BENCH AT 360PX</span> &middot; LIVE</div>
-<div class="stage stage--narrow">
-  <div class="stage-clamp">
-    <div class="bench-sheet">
-      <span class="bench-close" aria-hidden="true">&#10005;</span>
-      <div class="bench-scroll" id="s2-scroll"></div>
-    </div>
-  </div>
-</div>
-<p class="mock-label">
-  identical DOM, container-queried: each row keeps its one shared header and
-  stacks an <b>A line</b> over a <b>B line</b>; thumbnails stay pinned;
-  chips grow to 44px targets
-</p>
-
-<div class="rule"></div>
-<div class="sec-head">NOTES &middot; <span>WHAT THIS COMMITS TO</span></div>
-<div class="notes">
-  <h3>The structural bet</h3>
-  <p>
-    One sheet, one pass. The two responses are pinned side by side
-    (<code>position: sticky</code> against <code>.jd-turn-scroll</code>) and every
-    question is one shared row: overall grade first, then the five live axes,
-    each with A&#8217;s title-only chips on the left half and B&#8217;s on the
-    right, on the same 3-column grid so the same level sits at the same
-    coordinates on both sides — disagreement between the columns is visible at
-    a glance. The comparison stops being a separate screen: after six rows of
-    looking at both drawings, the 5-point call is the last row of the same
-    bench, and one action files everything. Versus today&#8217;s instrument
-    (two sequential report-card panels, then a compare screen) this halves the
-    scrolling and never asks the visitor to grade from memory.
-  </p>
-  <h3>Definition mechanism, and its a11y contract</h3>
-  <ul>
-    <li><b>Chips and Likert stops are title-only.</b> Hovering one (mouse/pen)
-      or reaching its radio by keyboard shows a tooltip with that single
-      level&#8217;s definition. A plain tap on a chip only ever selects —
-      tooltips never open from touch, and the tooltip is
-      <code>pointer-events: none</code>, so it can never take a press.</li>
-    <li><b>The row header is the touch affordance:</b> the axis name + &#9432;
-      is one button (<code>aria-expanded</code>/<code>aria-controls</code>)
-      opening a popover with the axis description and every level&#8217;s
-      definition. One mechanism serves both halves.</li>
-    <li><b>Popovers are in-flow</b>, not overlays: they push the sheet down,
-      cover nothing, and never block further rating. Dismissal: the button
-      again, Esc (focus returns to the button), or a tap/click anywhere
-      outside. One open at a time. Esc peels tooltip &rarr; popover before it
-      ever reaches production&#8217;s abandon-confirm &rarr; modal layers.</li>
-    <li><b>Screen-reader parity is not the tooltip&#8217;s job:</b> every radio
-      carries <code>aria-describedby</code> to a static visually-hidden
-      &#8220;Title — definition&#8221; node, so the definition is announced on
-      focus regardless of pointer; the visual tooltip is
-      <code>aria-hidden</code>. Radiogroup semantics are native (real radios,
-      one <code>name</code> per side per axis, arrow keys move the tick,
-      <code>:focus-within</code> ring on the chip). The keyboard-focus tooltip
-      fires only when the input matches <code>:focus-visible</code>, so a
-      mouse click doesn&#8217;t flash it.</li>
-  </ul>
-  <h3>The Likert, and the contract note</h3>
-  <ul>
-    <li>Five stops on one rail spanning the sheet — A anchored hard left,
-      B hard right, matching the thumbnails above, so the geometry itself is
-      the direction. Wording: <b>A &middot; decisively / A &middot; narrowly /
-      dead even / B &middot; narrowly / B &middot; decisively</b>.</li>
-    <li>It files as <code>comparison: { "winner": "a"|"b"|"tie",
-      "strength": "decisive"|"slight" }</code> — <b>winner is unchanged from
-      C1.3; <code>strength</code> is a contract ADDITION</b> (absent for a
-      tie). It needs a plan amendment and a column on
-      <code>jd_comparisons</code>; this mockup does not invent the endpoint
-      change, it flags it. Degraded one-survivor turns skip the call exactly
-      as today (<code>comparison: null</code>).</li>
-    <li>As today, everything is optional except the call when both responses
-      exist: <b>file the grades</b> stays disabled until a stop is picked.
-      Skips file nothing (a skipped axis is an omitted entry, per the
-      C1.3 ratings shape).</li>
-  </ul>
-  <h3>Mobile: the honest degradation</h3>
-  <p>
-    Two chip-columns cannot share 375px, so at container width &le;560px each
-    row keeps its single shared header and becomes an <b>A line above a B
-    line</b> (the side tags step up in weight; B&#8217;s line is set off by a
-    dashed rule). The alternative — a segmented A/B toggle filtering one
-    column — was rejected: it hides half the instrument, turns one pass per
-    axis into two passes over the whole sheet, and quietly rebuilds the
-    sequential panels this mockup exists to retire. The pinned pair (60px
-    thumbs on phones) keeps both drawings in view either way. The rules are
-    <b>container queries</b> on the sheet clamp (Safari&nbsp;16+ — the
-    drawer&#8217;s existing iOS 16 floor), which is also how stage&nbsp;2 runs
-    the phone layout on a desktop screen; production could ship the same
-    rules as viewport media queries at &le;600px unchanged.
-  </p>
-  <h3>What implementation must watch</h3>
-  <ul>
-    <li>The sticky pin needs the sheet&#8217;s own paper + grain background and
-      a z-index above the rows and popovers, or content ghosts through it; its
-      grain tile won&#8217;t phase-match the sheet&#8217;s while scrolled —
-      acceptable (it reads as a separate slip), but don&#8217;t &#8220;fix&#8221;
-      it with <code>background-attachment</code>.</li>
-    <li>Inline SVGs must be id-namespaced per instance
-      (<code>JD_svgInst</code>, as production already does) — this page mints
-      four namespaced copies and their defs do not collide.</li>
-    <li>Flag notes live INSIDE the sticky strip so checking &#9873; while
-      scrolled deep never reveals an input off-screen; like production&#8217;s
-      flag note, reveal by toggling <code>hidden</code> in place — never
-      re-render the rate state (focus + scroll position must survive).</li>
-    <li>Notes and flag notes keep <code>MAX_NOTE</code> (500); grade rows have
-      no note (unchanged from production — notes are per-axis).</li>
-    <li>Base CSS is the reduced-motion state; transitions/keyframes exist only
-      inside <code>prefers-reduced-motion: no-preference</code>.</li>
-    <li>The bench renders from the taxonomy payload (grades sorted by rank
-      desc, axes filtered on <code>!defunct</code>) — nothing on this page is
-      hardcoded that production wouldn&#8217;t read from
-      <code>data.php</code>.</li>
-    <li>Tooltip positioning is viewport-fixed and hides on scroll; it must be
-      appended to <code>body</code>, not the scroll container, or it clips.</li>
-  </ul>
-</div>
-
-<div class="bench-tt" id="bench-tt" aria-hidden="true" hidden></div>
-
-<script type="text/template" id="tpl-svg-a">
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000" width="1000" height="1000">
-  <defs>
-    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#e8f4f4"/>
-      <stop offset="0.45" stop-color="#dfeef1"/>
-      <stop offset="0.72" stop-color="#eaf6f4"/>
-      <stop offset="1" stop-color="#d6e6ea"/>
-    </linearGradient>
-    <radialGradient id="fov" cx="0.42" cy="0.36" r="0.78">
-      <stop offset="0" stop-color="#fdf9ee"/>
-      <stop offset="0.55" stop-color="#f6efe1"/>
-      <stop offset="0.86" stop-color="#e6dcd0"/>
-      <stop offset="1" stop-color="#cfc6bf"/>
-    </radialGradient>
-    <radialGradient id="vig" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0.62" stop-color="#1b1c2c" stop-opacity="0"/>
-      <stop offset="0.88" stop-color="#1b1c2c" stop-opacity="0.16"/>
-      <stop offset="1" stop-color="#141526" stop-opacity="0.5"/>
-    </radialGradient>
-    <radialGradient id="cocG" cx="0.34" cy="0.28" r="0.82">
-      <stop offset="0" stop-color="#b494dd"/>
-      <stop offset="0.42" stop-color="#7d4fb0"/>
-      <stop offset="0.85" stop-color="#4a2377"/>
-      <stop offset="1" stop-color="#341356"/>
-    </radialGradient>
-    <radialGradient id="cocG2" cx="0.36" cy="0.3" r="0.8">
-      <stop offset="0" stop-color="#a9d0e6"/>
-      <stop offset="0.45" stop-color="#5f86b6"/>
-      <stop offset="1" stop-color="#2e3f6d"/>
-    </radialGradient>
-    <linearGradient id="rodG" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e894b6"/>
-      <stop offset="0.35" stop-color="#d2淡" stop-opacity="0"/>
-      <stop offset="0.36" stop-color="#cf6f96"/>
-      <stop offset="1" stop-color="#9c2f5c"/>
-    </linearGradient>
-    <linearGradient id="rodP" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#9d7fd0"/>
-      <stop offset="0.4" stop-color="#6b41a6"/>
-      <stop offset="1" stop-color="#3a1c68"/>
-    </linearGradient>
-    <radialGradient id="rbcG" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#f0b39c" stop-opacity="0.35"/>
-      <stop offset="0.42" stop-color="#e29a80" stop-opacity="0.7"/>
-      <stop offset="0.86" stop-color="#c86f54"/>
-      <stop offset="1" stop-color="#b05a44"/>
-    </radialGradient>
-    <radialGradient id="wbcG" cx="0.38" cy="0.32" r="0.8">
-      <stop offset="0" stop-color="#eee6f6"/>
-      <stop offset="0.7" stop-color="#dccdea"/>
-      <stop offset="1" stop-color="#bda6d4"/>
-    </radialGradient>
-    <radialGradient id="epiG" cx="0.4" cy="0.34" r="0.8">
-      <stop offset="0" stop-color="#f3dbe6" stop-opacity="0.85"/>
-      <stop offset="0.7" stop-color="#e6c4d8" stop-opacity="0.8"/>
-      <stop offset="1" stop-color="#cfa4c0" stop-opacity="0.85"/>
-    </radialGradient>
-    <radialGradient id="yeastG" cx="0.36" cy="0.3" r="0.82">
-      <stop offset="0" stop-color="#d9c9ee"/>
-      <stop offset="0.55" stop-color="#b79ad9"/>
-      <stop offset="1" stop-color="#6c4aa0"/>
-    </radialGradient>
-    <radialGradient id="protG" cx="0.4" cy="0.3" r="0.8">
-      <stop offset="0" stop-color="#cfe0ea" stop-opacity="0.9"/>
-      <stop offset="0.6" stop-color="#a8c2d6" stop-opacity="0.85"/>
-      <stop offset="1" stop-color="#7791ae" stop-opacity="0.9"/>
-    </radialGradient>
-
-    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="1.6"/>
-    </filter>
-    <filter id="far" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="6"/>
-    </filter>
-    <filter id="veryfar" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="13"/>
-    </filter>
-    <filter id="grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="11" result="n"/>
-      <feColorMatrix in="n" type="saturate" values="0"/>
-      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
-    </filter>
-    <filter id="mottle" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="3" seed="4" result="n"/>
-      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.44  0 0 0 0 0.33  0 0 0 0 0.55  0.9 0 0 0 -0.15"/>
-    </filter>
-
-    <clipPath id="fovClip"><circle cx="545" cy="505" r="393"/></clipPath>
-    <clipPath id="slideClip"><rect x="4" y="4" width="992" height="992" rx="10"/></clipPath>
-
-    <g id="bac">
-      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="url(#rodG)"/>
-      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="none" stroke="#8c2751" stroke-width="1.1" stroke-opacity="0.7"/>
-      <ellipse cx="-5" cy="-2.4" rx="7" ry="2.3" fill="#ffffff" opacity="0.3"/>
-      <circle cx="8" cy="1.2" r="2.1" fill="#7c1e46" opacity="0.45"/>
-      <circle cx="-8" cy="1.8" r="1.6" fill="#7c1e46" opacity="0.35"/>
-    </g>
-    <g id="bacf">
-      <path d="M18,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0" fill="none" stroke="#a8547a" stroke-width="1.1" stroke-opacity="0.5"/>
-      <path d="M18,-2 c10,-8 17,4 27,-3 c10,-7 16,5 26,-2" fill="none" stroke="#a8547a" stroke-width="0.9" stroke-opacity="0.35"/>
-      <path d="M-18,1 c-9,6 -15,-6 -24,0 c-9,6 -15,-6 -24,0" fill="none" stroke="#a8547a" stroke-width="1" stroke-opacity="0.42"/>
-      <use href="#bac" xlink:href="#bac"/>
-    </g>
-    <g id="bacspore">
-      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="url(#rodP)"/>
-      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="none" stroke="#2e1358" stroke-width="1.1" stroke-opacity="0.7"/>
-      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="#f7f2df"/>
-      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="none" stroke="#33175f" stroke-width="1" stroke-opacity="0.5"/>
-      <ellipse cx="-9" cy="-2.6" rx="8" ry="2.4" fill="#ffffff" opacity="0.26"/>
-    </g>
-    <g id="coc">
-      <circle r="7" fill="url(#cocG)"/>
-      <circle r="7" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.55"/>
-      <circle cx="-2.3" cy="-2.6" r="2" fill="#ffffff" opacity="0.4"/>
-    </g>
-    <g id="coc2">
-      <circle r="6.2" fill="url(#cocG2)"/>
-      <circle cx="-2" cy="-2.2" r="1.7" fill="#ffffff" opacity="0.38"/>
-    </g>
-    <g id="diplo">
-      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
-      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="url(#cocG)"/>
-      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
-      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
-      <circle cx="-9" cy="-3" r="2" fill="#fff" opacity="0.35"/>
-      <circle cx="5" cy="-3" r="2" fill="#fff" opacity="0.35"/>
-    </g>
-    <g id="yeast">
-      <ellipse rx="30" ry="26" fill="url(#yeastG)"/>
-      <ellipse rx="30" ry="26" fill="none" stroke="#4b2b7d" stroke-width="2" stroke-opacity="0.65"/>
-      <ellipse rx="22" ry="18" fill="none" stroke="#f0e6fa" stroke-width="1.2" stroke-opacity="0.35"/>
-      <circle cx="-9" cy="-8" r="5" fill="#ffffff" opacity="0.3"/>
-      <circle cx="7" cy="6" r="4.4" fill="#3d2068" opacity="0.35"/>
-      <circle cx="-3" cy="11" r="3" fill="#3d2068" opacity="0.25"/>
-      <g transform="translate(26,-20) rotate(-30)">
-        <ellipse rx="15" ry="13" fill="url(#yeastG)"/>
-        <ellipse rx="15" ry="13" fill="none" stroke="#4b2b7d" stroke-width="1.6" stroke-opacity="0.6"/>
-        <circle cx="-4" cy="-4" r="3" fill="#fff" opacity="0.28"/>
-      </g>
-    </g>
-  </defs>
-
-  <g clip-path="url(#slideClip)">
-    <!-- glass slide -->
-    <rect x="4" y="4" width="992" height="992" rx="10" fill="url(#glass)" fill-opacity="0.62"/>
-    <rect x="14" y="14" width="972" height="972" rx="6" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.5"/>
-    <rect x="4" y="4" width="992" height="992" rx="10" fill="none" stroke="#93b0b8" stroke-width="4" stroke-opacity="0.75"/>
-    <path d="M4,26 L996,26" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
-    <path d="M4,974 L996,974" stroke="#8fa9b1" stroke-width="2" stroke-opacity="0.3"/>
-
-    <!-- frosted label end -->
-    <rect x="6" y="6" width="152" height="988" fill="#f6f3ea" fill-opacity="0.8"/>
-    <rect x="6" y="6" width="152" height="988" filter="url(#grain)" opacity="0.22"/>
-    <path d="M158,6 L158,994" stroke="#b9c9cc" stroke-width="2.5" stroke-opacity="0.7"/>
-    <path d="M150,6 L150,994" stroke="#ffffff" stroke-width="4" stroke-opacity="0.5"/>
-    <g transform="rotate(-90 82 500)" font-family="Georgia,'Times New Roman',serif" fill="#3b4250" text-anchor="middle">
-      <text x="82" y="60" font-size="30" letter-spacing="5" fill-opacity="0.82">GRAM  STAIN  ·  SPUTUM</text>
-      <text x="82" y="96" font-size="21" fill-opacity="0.7" letter-spacing="2">acc. 26–1174   oil imm.  400×</text>
-      <text x="82" y="128" font-size="19" fill-opacity="0.55" letter-spacing="2" font-style="italic">fixed &amp; counterstained · 05·08·26</text>
-    </g>
-
-    <!-- coverslip -->
-    <rect x="182" y="98" width="792" height="812" fill="#ffffff" fill-opacity="0.07" stroke="#8fb2be" stroke-width="2.2" stroke-opacity="0.55"/>
-    <rect x="188" y="104" width="780" height="800" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.4"/>
-    <path d="M182,98 L214,98 L182,130 Z" fill="#ffffff" fill-opacity="0.22"/>
-    <path d="M974,910 L938,910 L974,874 Z" fill="#8fb2be" fill-opacity="0.18"/>
-    <!-- trapped air / mounting medium edges -->
-    <path d="M182,300 c60,-26 130,10 190,-14" fill="none" stroke="#a8c6cf" stroke-width="1.4" stroke-opacity="0.4"/>
-    <path d="M974,660 c-70,20 -120,-16 -186,6" fill="none" stroke="#a8c6cf" stroke-width="1.2" stroke-opacity="0.32"/>
-    <!-- dust and fibre on the glass -->
-    <path d="M240,940 c40,-18 90,-6 130,-26" fill="none" stroke="#8c9aa2" stroke-width="1.3" stroke-opacity="0.35"/>
-    <circle cx="300" cy="60" r="2.2" fill="#7f8d95" opacity="0.4"/>
-    <circle cx="860" cy="70" r="1.6" fill="#7f8d95" opacity="0.35"/>
-    <circle cx="930" cy="946" r="2.6" fill="#7f8d95" opacity="0.3"/>
-    <circle cx="620" cy="960" r="1.8" fill="#7f8d95" opacity="0.3"/>
-
-    <!-- ============ 400x FIELD OF VIEW ============ -->
-    <g clip-path="url(#fovClip)">
-      <circle cx="545" cy="505" r="393" fill="url(#fov)"/>
-      <rect x="152" y="112" width="786" height="786" filter="url(#mottle)" opacity="0.2"/>
-
-      <!-- out-of-focus plane -->
-      <g filter="url(#veryfar)" opacity="0.4">
-        <ellipse cx="330" cy="230" rx="52" ry="22" transform="rotate(-24 330 230)" fill="#8d6fb8"/>
-        <ellipse cx="880" cy="380" rx="46" ry="20" transform="rotate(38 880 380)" fill="#a3608a"/>
-        <circle cx="640" cy="880" r="26" fill="#7b57a8"/>
-        <circle cx="240" cy="560" r="20" fill="#8e6bb2"/>
-        <ellipse cx="760" cy="140" rx="40" ry="17" transform="rotate(12 760 140)" fill="#9a5c86"/>
-      </g>
-      <g filter="url(#far)" opacity="0.5">
-        <ellipse cx="430" cy="180" rx="24" ry="9" transform="rotate(28 430 180)" fill="#9a4f78"/>
-        <ellipse cx="880" cy="620" rx="26" ry="10" transform="rotate(-42 880 620)" fill="#9a4f78"/>
-        <circle cx="700" cy="620" r="9" fill="#6d43a0"/>
-        <circle cx="716" cy="632" r="8" fill="#6d43a0"/>
-        <circle cx="300" cy="380" r="8.5" fill="#6d43a0"/>
-        <ellipse cx="560" cy="200" rx="30" ry="11" transform="rotate(-8 560 200)" fill="#8a3f6a"/>
-      </g>
-
-      <!-- mucus / proteinaceous debris strands -->
-      <g fill="none" stroke="#b9a9ae" stroke-opacity="0.3" filter="url(#soft)">
-        <path d="M170,420 C300,380 380,470 520,430 C660,390 760,470 920,430" stroke-width="14"/>
-        <path d="M200,760 C320,700 420,780 540,730 C680,672 800,760 930,700" stroke-width="10"/>
-        <path d="M640,150 C620,300 700,380 660,520 C630,630 700,760 660,880" stroke-width="9"/>
-      </g>
-      <g fill="none" stroke="#8f7f86" stroke-opacity="0.22">
-        <path d="M170,432 C300,392 380,482 520,442 C660,402 760,482 920,442" stroke-width="2"/>
-        <path d="M200,770 C320,710 420,790 540,740 C680,682 800,770 930,710" stroke-width="1.6"/>
-      </g>
-
-      <!-- partial air bubble at lower-left of field -->
-      <g>
-        <circle cx="255" cy="885" r="168" fill="#ffffff" fill-opacity="0.1"/>
-        <circle cx="255" cy="885" r="168" fill="none" stroke="#5c5f6b" stroke-width="15" stroke-opacity="0.3" filter="url(#soft)"/>
-        <circle cx="255" cy="885" r="158" fill="none" stroke="#ffffff" stroke-width="6" stroke-opacity="0.35"/>
-      </g>
-
-      <!-- squamous epithelial cell (scale reference) -->
-      <g>
-        <path d="M380,442 C472,448 562,492 586,572 C612,652 590,748 520,802 C450,856 340,882 260,846 C176,808 136,720 152,636 C168,550 232,470 302,452 C326,445 356,440 380,442 Z"
-              fill="url(#epiG)" stroke="#a2708f" stroke-width="2.4" stroke-opacity="0.7"/>
-        <path d="M362,470 C444,478 522,516 546,584 C572,656 550,736 490,782 C426,830 336,850 268,818" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.35"/>
-        <path d="M188,700 C250,742 330,760 404,742 C466,727 512,690 536,640" fill="none" stroke="#b8809f" stroke-width="2" stroke-opacity="0.45"/>
-        <ellipse cx="366" cy="642" rx="52" ry="46" fill="#7a4c92" fill-opacity="0.55" stroke="#4d2560" stroke-width="2" stroke-opacity="0.6"/>
-        <ellipse cx="352" cy="630" rx="18" ry="14" fill="#c9a8db" fill-opacity="0.5"/>
-        <circle cx="382" cy="660" r="7" fill="#3b1a52" fill-opacity="0.5"/>
-        <circle cx="350" cy="664" r="5" fill="#3b1a52" fill-opacity="0.4"/>
-        <circle cx="374" cy="620" r="4" fill="#3b1a52" fill-opacity="0.35"/>
-        <!-- adherent cocci on the cell surface (clue-cell look) -->
-        <g>
-          <use href="#coc" xlink:href="#coc" transform="translate(250,530) scale(0.8)"/>
-          <use href="#coc" xlink:href="#coc" transform="translate(268,548) scale(0.8)"/>
-          <use href="#coc" xlink:href="#coc" transform="translate(246,562) scale(0.8)"/>
-          <use href="#coc" xlink:href="#coc" transform="translate(452,700) scale(0.8)"/>
-          <use href="#coc" xlink:href="#coc" transform="translate(470,712) scale(0.8)"/>
-          <use href="#coc" xlink:href="#coc" transform="translate(300,760) scale(0.8)"/>
-          <use href="#bac" xlink:href="#bac" transform="translate(420,540) rotate(28) scale(0.85)"/>
-          <use href="#bac" xlink:href="#bac" transform="translate(330,506) rotate(-14) scale(0.85)"/>
-          <use href="#bac" xlink:href="#bac" transform="translate(470,626) rotate(64) scale(0.8)"/>
-        </g>
-      </g>
-
-      <!-- neutrophil with phagocytosed diplococci -->
-      <g transform="translate(752,318)">
-        <circle r="58" fill="url(#wbcG)" stroke="#8f6fb0" stroke-width="2" stroke-opacity="0.6"/>
-        <path d="M-34,-16 C-46,-40 -22,-56 -2,-46 C10,-56 34,-48 38,-26 C54,-18 52,10 34,18 C34,40 8,52 -8,38 C-30,44 -46,24 -40,4 Z"
-              fill="#5a2d86" fill-opacity="0.78"/>
-        <path d="M-30,-14 C-40,-34 -20,-46 -4,-38" fill="none" stroke="#d6c2ea" stroke-width="2.4" stroke-opacity="0.4"/>
-        <path d="M2,-44 C-6,-24 8,-8 26,-14" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.35"/>
-        <path d="M-6,36 C-2,16 -20,4 -36,8" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.3"/>
-        <g fill="#7a52a8" fill-opacity="0.45">
-          <circle cx="-46" cy="30" r="3.2"/><circle cx="-30" cy="44" r="2.6"/><circle cx="46" cy="-2" r="3"/>
-          <circle cx="40" cy="34" r="2.8"/><circle cx="18" cy="48" r="3.2"/><circle cx="-52" cy="-6" r="2.6"/>
-          <circle cx="6" cy="-54" r="2.8"/>
-        </g>
-        <use href="#diplo" xlink:href="#diplo" transform="translate(-8,14) rotate(30) scale(0.62)"/>
-        <use href="#diplo" xlink:href="#diplo" transform="translate(24,-38) rotate(-52) scale(0.58)"/>
-      </g>
-      <use href="#diplo" xlink:href="#diplo" transform="translate(838,222) rotate(24)"/>
-      <use href="#diplo" xlink:href="#diplo" transform="translate(676,398) rotate(-64)"/>
-      <use href="#diplo" xlink:href="#diplo" transform="translate(866,300) rotate(74) scale(0.9)"/>
-
-      <!-- erythrocytes -->
-      <g>
-        <g transform="translate(786,690)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.3"/></g>
-        <g transform="translate(864,608) scale(0.97)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.28"/></g>
-        <g transform="translate(700,772) scale(0.94)"><circle r="45" fill="url(#rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="21" fill="#f6e0cf" fill-opacity="0.3"/></g>
-        <g transform="translate(880,760) scale(0.9) rotate(20)"><ellipse rx="45" ry="38" fill="url(#rbcG)"/><ellipse rx="45" ry="38" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/></g>
-      </g>
-
-      <!-- Candida: budding yeast with pseudohypha -->
-      <g transform="translate(318,806) rotate(-16)">
-        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#7a54ad" stroke-width="20" stroke-opacity="0.5" stroke-linecap="round"/>
-        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#432272" stroke-width="1.6" stroke-opacity="0.5" fill-opacity="0"/>
-        <path d="M-24,12 l0,-1" stroke="#432272" stroke-width="1.6" stroke-opacity="0.45"/>
-        <use href="#yeast" xlink:href="#yeast"/>
-      </g>
-      <use href="#yeast" xlink:href="#yeast" transform="translate(206,300) rotate(24) scale(0.82)"/>
-
-      <!-- flagellated protozoan (pear-shaped, 4 flagellar pairs) -->
-      <g transform="translate(690,236) rotate(-22)">
-        <g fill="none" stroke="#6d8298" stroke-width="1.6" stroke-opacity="0.55" stroke-linecap="round">
-          <path d="M78,-8 c26,-8 44,10 68,4"/>
-          <path d="M80,6 c28,10 48,-6 72,2"/>
-          <path d="M-14,-46 c-8,-26 -34,-32 -52,-26"/>
-          <path d="M-16,44 c-6,26 -32,34 -52,28"/>
-          <path d="M-70,4 c-30,4 -44,-14 -66,-10"/>
-        </g>
-        <path d="M78,0 C74,30 40,52 -6,52 C-52,52 -80,28 -80,0 C-80,-28 -52,-52 -6,-52 C40,-52 74,-30 78,0 Z"
-              fill="url(#protG)" stroke="#54748f" stroke-width="2.2" stroke-opacity="0.7"/>
-        <ellipse cx="-24" cy="0" rx="42" ry="36" fill="none" stroke="#3f6280" stroke-width="2.6" stroke-opacity="0.5"/>
-        <ellipse cx="-30" cy="-14" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
-        <ellipse cx="-30" cy="16" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
-        <path d="M14,-16 C40,-10 46,10 20,20" fill="none" stroke="#3f6280" stroke-width="3" stroke-opacity="0.45"/>
-        <g fill="#2f4c6b" fill-opacity="0.35">
-          <circle cx="40" cy="-24" r="3"/><circle cx="52" cy="-6" r="2.4"/><circle cx="44" cy="26" r="2.8"/>
-          <circle cx="12" cy="38" r="2.4"/><circle cx="-52" cy="34" r="2.6"/>
-        </g>
-        <ellipse cx="-40" cy="-26" rx="12" ry="8" fill="#ffffff" fill-opacity="0.28"/>
-      </g>
-
-      <!-- staphylococci: grape-like cluster -->
-      <g transform="translate(432,318)">
-        <use href="#coc" xlink:href="#coc" transform="translate(0,0)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(13,-8)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(6,12)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(20,7)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-12,9)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-6,-13)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(9,-24)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(26,-18)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(32,-4)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(19,22)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(3,27)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-16,-4)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-20,22)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-30,10)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(38,10)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-4,-26) scale(0.9)"/>
-      </g>
-      <g transform="translate(600,168)">
-        <use href="#coc" xlink:href="#coc" transform="translate(0,0) scale(0.95)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(12,8) scale(0.95)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(-11,10) scale(0.95)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(2,20) scale(0.95)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(22,-4) scale(0.9)"/>
-      </g>
-
-      <!-- streptococci: chain -->
-      <g>
-        <use href="#coc" xlink:href="#coc" transform="translate(498,784)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(511,777)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(525,772)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(539,770)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(553,771)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(567,776)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(580,783)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(592,792)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(604,802)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(617,810)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(631,815)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(645,817)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(659,815)"/>
-      </g>
-      <g>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(210,470)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(222,462)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(234,456)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(247,454)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(260,456)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(272,462)"/>
-      </g>
-
-      <!-- bacilli, some flagellated -->
-      <use href="#bacf" xlink:href="#bacf" transform="translate(600,452) rotate(-18)"/>
-      <use href="#bacf" xlink:href="#bacf" transform="translate(508,596) rotate(38)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(654,500) rotate(62)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(720,548) rotate(-34)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(786,470) rotate(14)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(842,436) rotate(-56)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(880,528) rotate(78)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(596,656) rotate(-8)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(560,700) rotate(48)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(268,624) rotate(-70)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(212,668) rotate(22)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(316,222) rotate(-40)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(392,196) rotate(16)"/>
-      <use href="#bacf" xlink:href="#bacf" transform="translate(470,244) rotate(-6)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(836,672) rotate(-24) scale(0.95)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(452,860) rotate(-44)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(742,856) rotate(30)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(300,352) rotate(84) scale(0.92)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(920,340) rotate(-12)"/>
-      <use href="#bac" xlink:href="#bac" transform="translate(546,144) rotate(52)"/>
-
-      <!-- Gram-positive spore-forming bacilli (chain) -->
-      <use href="#bacspore" xlink:href="#bacspore" transform="translate(230,376) rotate(-12)"/>
-      <use href="#bacspore" xlink:href="#bacspore" transform="translate(288,290) rotate(-12) scale(0.95)"/>
-      <use href="#bacspore" xlink:href="#bacspore" transform="translate(694,586) rotate(66)"/>
-      <use href="#bacspore" xlink:href="#bacspore" transform="translate(802,146) rotate(20) scale(0.95)"/>
-
-      <!-- vibrios: comma-shaped -->
-      <g fill="none" stroke="#a83a68" stroke-width="12" stroke-linecap="round" stroke-opacity="0.92">
-        <path d="M834,806 c14,-16 34,-18 52,-6"/>
-        <path d="M660,904 c16,-14 36,-14 52,0"/>
-        <path d="M902,614 c8,-18 26,-26 46,-20"/>
-        <path d="M212,748 c14,-14 34,-14 50,-2"/>
-      </g>
-      <g fill="none" stroke="#e59ab6" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5">
-        <path d="M836,802 c13,-14 32,-16 48,-6"/>
-        <path d="M662,900 c15,-12 33,-12 48,0"/>
-      </g>
-
-      <!-- spirochetes -->
-      <g fill="none" stroke="#5c2f96" stroke-width="3.4" stroke-linecap="round" stroke-opacity="0.9">
-        <g transform="translate(196,540) rotate(14)">
-          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
-        </g>
-        <g transform="translate(566,872) rotate(-10) scale(1.05)">
-          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0"/>
-        </g>
-        <g transform="translate(700,120) rotate(28) scale(0.92)">
-          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
-        </g>
-        <g transform="translate(892,880) rotate(-46) scale(0.85)" stroke-width="3.8">
-          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
-        </g>
-      </g>
-      <!-- spirillum: thicker helical rod -->
-      <g fill="none" stroke="#8e3a66" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9" transform="translate(760,760) rotate(-64)">
-        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
-      </g>
-      <g fill="none" stroke="#e29cba" stroke-width="2.4" stroke-opacity="0.4" transform="translate(760,757) rotate(-64)">
-        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
-      </g>
-
-      <!-- fine coccal / coccobacillary flora and stain precipitate -->
-      <g>
-        <use href="#coc" xlink:href="#coc" transform="translate(376,412) scale(0.72)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(672,680) scale(0.7)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(504,470) scale(0.66)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(806,556) scale(0.68)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(618,282) scale(0.7)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(258,222) scale(0.66)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(486,152) scale(0.7)"/>
-        <use href="#coc" xlink:href="#coc" transform="translate(908,700) scale(0.72)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(556,548) scale(0.8)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(752,470) scale(0.78)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(370,884) scale(0.8)"/>
-        <use href="#coc2" xlink:href="#coc2" transform="translate(866,392) scale(0.76)"/>
-      </g>
-      <g fill="#4a2a6b" fill-opacity="0.5">
-        <circle cx="330" cy="588" r="2.2"/><circle cx="424" cy="452" r="1.7"/><circle cx="612" cy="386" r="2.4"/>
-        <circle cx="708" cy="452" r="1.8"/><circle cx="778" cy="404" r="2.1"/><circle cx="812" cy="500" r="1.6"/>
-        <circle cx="640" cy="736" r="2.3"/><circle cx="574" cy="640" r="1.9"/><circle cx="500" cy="716" r="2.5"/>
-        <circle cx="270" cy="512" r="1.7"/><circle cx="358" cy="266" r="2.2"/><circle cx="470" cy="330" r="1.6"/>
-        <circle cx="540" cy="238" r="2"/><circle cx="672" cy="516" r="1.5"/><circle cx="856" cy="480" r="2.3"/>
-        <circle cx="904" cy="600" r="1.8"/><circle cx="770" cy="612" r="2.1"/><circle cx="690" cy="828" r="1.7"/>
-        <circle cx="820" cy="880" r="2.4"/><circle cx="248" cy="700" r="1.9"/><circle cx="196" cy="600" r="2.2"/>
-        <circle cx="452" cy="800" r="1.6"/><circle cx="404" cy="740" r="2"/><circle cx="600" cy="120" r="2.1"/>
-        <circle cx="880" cy="200" r="1.8"/><circle cx="748" cy="180" r="2.3"/><circle cx="298" cy="428" r="1.7"/>
-        <circle cx="524" cy="892" r="2.2"/><circle cx="900" cy="808" r="1.6"/><circle cx="646" cy="200" r="1.9"/>
-      </g>
-
-      <!-- eyepiece reticle -->
-      <g stroke="#2b3145" stroke-opacity="0.26">
-        <path d="M545,132 L545,462" stroke-width="1.4"/>
-        <path d="M545,548 L545,878" stroke-width="1.4"/>
-        <path d="M164,505 L502,505" stroke-width="1.4"/>
-        <path d="M588,505 L926,505" stroke-width="1.4"/>
-        <g stroke-width="1.4">
-          <path d="M537,220 L553,220"/><path d="M537,320 L553,320"/><path d="M537,420 L553,420"/>
-          <path d="M537,620 L553,620"/><path d="M537,720 L553,720"/><path d="M537,820 L553,820"/>
-          <path d="M260,497 L260,513"/><path d="M360,497 L360,513"/><path d="M460,497 L460,513"/>
-          <path d="M660,497 L660,513"/><path d="M760,497 L760,513"/><path d="M860,497 L860,513"/>
-        </g>
-      </g>
-      <g stroke="#243049" stroke-opacity="0.55">
-        <path d="M248,308 L368,308" stroke-width="3.2"/>
-        <path d="M248,300 L248,316" stroke-width="2.4"/>
-        <path d="M368,300 L368,316" stroke-width="2.4"/>
-        <path d="M278,303 L278,313" stroke-width="1.6"/>
-        <path d="M308,302 L308,314" stroke-width="1.8"/>
-        <path d="M338,303 L338,313" stroke-width="1.6"/>
-      </g>
-      <text x="308" y="292" font-family="Georgia,'Times New Roman',serif" font-size="19" fill="#243049" fill-opacity="0.62" text-anchor="middle">10 µm</text>
-
-      <!-- field grain + vignette -->
-      <rect x="152" y="112" width="786" height="786" filter="url(#grain)" opacity="0.14"/>
-      <circle cx="545" cy="505" r="393" fill="url(#vig)"/>
-    </g>
-
-    <!-- lens rim: chromatic fringes + barrel edge -->
-    <circle cx="545" cy="505" r="386" fill="none" stroke="#7fc3d8" stroke-width="4" stroke-opacity="0.35"/>
-    <circle cx="545" cy="505" r="392" fill="none" stroke="#d9a469" stroke-width="3" stroke-opacity="0.3"/>
-    <circle cx="545" cy="505" r="395" fill="none" stroke="#22242f" stroke-width="6" stroke-opacity="0.55"/>
-    <circle cx="545" cy="505" r="400" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
-
-    <!-- glass specular streaks over everything -->
-    <g opacity="0.5">
-      <path d="M-60,760 L300,-40 L392,-40 L32,760 Z" fill="#ffffff" fill-opacity="0.09"/>
-      <path d="M420,1040 L820,120 L866,120 L466,1040 Z" fill="#ffffff" fill-opacity="0.06"/>
-    </g>
-
-    <!-- annotation in wax pencil on the glass -->
-    <g font-family="Georgia,'Times New Roman',serif" fill="#3d4a56" fill-opacity="0.6">
-      <text x="196" y="72" font-size="20" font-style="italic">field 3 · ×400 (40/0.65)</text>
-      <text x="968" y="956" font-size="19" font-style="italic" text-anchor="end">mixed flora, PMNs present</text>
-    </g>
-    <path d="M186,84 C260,76 330,86 402,78" fill="none" stroke="#3d4a56" stroke-width="1.4" stroke-opacity="0.35"/>
-  </g>
-</svg></script>
-<script type="text/template" id="tpl-svg-b">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
-  <defs>
-    <linearGradient id="glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#eef6f8"/>
-      <stop offset="55%" stop-color="#e2edf1"/>
-      <stop offset="100%" stop-color="#cfe0e6"/>
-    </linearGradient>
-    <radialGradient id="smearGrad" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#eeb9d4" stop-opacity="0.55"/>
-      <stop offset="70%" stop-color="#dca0c4" stop-opacity="0.22"/>
-      <stop offset="100%" stop-color="#dca0c4" stop-opacity="0"/>
-    </radialGradient>
-    <radialGradient id="fieldGrad" cx="45%" cy="40%" r="75%">
-      <stop offset="0%" stop-color="#f8dcea"/>
-      <stop offset="45%" stop-color="#ecbcd6"/>
-      <stop offset="75%" stop-color="#c98bb0"/>
-      <stop offset="100%" stop-color="#3a0f24"/>
-    </radialGradient>
-    <radialGradient id="rodGrad" cx="35%" cy="30%" r="75%">
-      <stop offset="0%" stop-color="#ffb0cc"/>
-      <stop offset="50%" stop-color="#e0537f"/>
-      <stop offset="100%" stop-color="#82203f"/>
-    </radialGradient>
-    <radialGradient id="coccusGrad" cx="35%" cy="30%" r="75%">
-      <stop offset="0%" stop-color="#cdb0ff"/>
-      <stop offset="55%" stop-color="#7c4bb5"/>
-      <stop offset="100%" stop-color="#3c1861"/>
-    </radialGradient>
-    <radialGradient id="spiralGrad" cx="35%" cy="30%" r="75%">
-      <stop offset="0%" stop-color="#ffcf8f"/>
-      <stop offset="55%" stop-color="#df8536"/>
-      <stop offset="100%" stop-color="#7a3d0f"/>
-    </radialGradient>
-    <radialGradient id="nucleusGrad" cx="35%" cy="30%" r="80%">
-      <stop offset="0%" stop-color="#7568e6"/>
-      <stop offset="60%" stop-color="#453191"/>
-      <stop offset="100%" stop-color="#221a4d"/>
-    </radialGradient>
-    <radialGradient id="cytoGrad" cx="42%" cy="38%" r="70%">
-      <stop offset="0%" stop-color="#faeef4"/>
-      <stop offset="70%" stop-color="#eccbdc"/>
-      <stop offset="100%" stop-color="#cf9fb9"/>
-    </radialGradient>
-    <radialGradient id="rbcGrad" cx="50%" cy="50%" r="55%">
-      <stop offset="0%" stop-color="#f1a9b8" stop-opacity="0.55"/>
-      <stop offset="60%" stop-color="#df7c92" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#c85c73" stop-opacity="0.55"/>
-    </radialGradient>
-    <linearGradient id="bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#eef0f2"/>
-      <stop offset="45%" stop-color="#9598a0"/>
-      <stop offset="55%" stop-color="#5c5e66"/>
-      <stop offset="100%" stop-color="#232327"/>
-    </linearGradient>
-    <radialGradient id="vignette" cx="50%" cy="50%" r="55%">
-      <stop offset="55%" stop-color="#000000" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
-    </radialGradient>
-    <clipPath id="fieldClip">
-      <circle cx="500" cy="500" r="478"/>
-    </clipPath>
-    <filter id="softBlur" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="5"/>
-    </filter>
-    <filter id="grain" x="-10%" y="-10%" width="120%" height="120%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
-      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
-    </filter>
-
-    <g id="coccus">
-      <circle r="13" fill="url(#coccusGrad)" stroke="#241238" stroke-width="1.3"/>
-      <ellipse cx="-4" cy="-5" rx="4" ry="3" fill="#ffffff" opacity="0.45"/>
-    </g>
-
-    <g id="rod">
-      <path d="M -21,-11 L 21,-11 A 11 11 0 0 1 21,11 L -21,11 A 11 11 0 0 1 -21,-11 Z" fill="url(#rodGrad)" stroke="#5c1230" stroke-width="1.3"/>
-      <ellipse cx="-8" cy="-4" rx="11" ry="3.6" fill="#ffffff" opacity="0.32"/>
-      <path d="M -18 1 Q 0 -3 18 1" stroke="#5c1230" stroke-width="1" fill="none" opacity="0.35"/>
-      <path d="M -32,-3 Q -55,-16 -76,-6 Q -92,2 -103,-9" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
-      <path d="M -32,4 Q -50,18 -70,10" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
-      <path d="M 32,3 Q 55,16 76,5 Q 91,-3 101,10" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
-      <path d="M 32,-4 Q 50,-18 68,-9" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
-    </g>
-
-    <g id="rodSpore">
-      <use href="#rod"/>
-      <ellipse cx="20" cy="0" rx="9" ry="7" fill="#f7e6ee" stroke="#5c1230" stroke-width="1" opacity="0.95"/>
-      <ellipse cx="20" cy="0" rx="9" ry="7" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.5"/>
-    </g>
-
-    <g id="spiral">
-      <path d="M -70 0 C -55 -24, -25 24, 0 0 C 25 -24, 55 24, 70 0" stroke="url(#spiralGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
-      <path d="M -70 -3 C -55 -27, -25 21, 0 -3 C 25 -27, 55 21, 70 -3" stroke="#ffe3b0" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.4"/>
-      <path d="M 70,0 Q 88,-10 98,2 Q 84,4 92,14" stroke="#df8536" stroke-width="1.3" fill="none" opacity="0.5"/>
-    </g>
-
-    <g id="rbc">
-      <ellipse rx="34" ry="30" fill="url(#rbcGrad)"/>
-      <ellipse rx="13" ry="11" fill="#c85c73" opacity="0.5"/>
-    </g>
-  </defs>
-
-  <!-- glass slide base -->
-  <rect x="8" y="8" width="984" height="984" rx="44" ry="44" fill="url(#glassGrad)"/>
-  <ellipse cx="500" cy="500" rx="530" ry="440" transform="rotate(18 500 500)" fill="url(#smearGrad)"/>
-
-  <!-- corner: specimen label -->
-  <g>
-    <rect x="20" y="20" width="188" height="74" rx="6" fill="#faf6ec" stroke="#c8c1a9" stroke-width="2"/>
-    <circle cx="36" cy="37" r="6" fill="#bd3b2c"/>
-    <text x="50" y="41" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#3a3428">SAMPLE 04</text>
-    <text x="30" y="60" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Mixed bacterial flora</text>
-    <text x="30" y="76" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Gram stain · 400×</text>
-  </g>
-
-  <!-- corner: tape -->
-  <g transform="translate(880,50) rotate(8)">
-    <rect x="-95" y="-20" width="190" height="42" fill="#e9dcb5" opacity="0.6"/>
-    <text x="0" y="6" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#5a4b2c" opacity="0.75">smear #4</text>
-  </g>
-
-  <!-- corner: biohazard trefoil -->
-  <g transform="translate(95,905)" opacity="0.4">
-    <circle cx="0" cy="-16" r="15" fill="none" stroke="#555" stroke-width="4"/>
-    <circle cx="14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
-    <circle cx="-14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
-    <circle cx="0" cy="0" r="6" fill="#555"/>
-  </g>
-
-  <!-- corner: crack -->
-  <path d="M 900,905 L 918,918 L 912,932 L 930,945 L 922,958" fill="none" stroke="#8f9aa0" stroke-width="1.4" opacity="0.5"/>
-
-  <!-- glass shine streaks -->
-  <polygon points="640,20 700,20 480,300 420,300" fill="#ffffff" opacity="0.1"/>
-  <polygon points="120,760 165,760 60,970 15,970" fill="#ffffff" opacity="0.08"/>
-
-  <!-- drop shadow of viewport -->
-  <ellipse cx="512" cy="514" rx="478" ry="478" fill="#000000" opacity="0.22" filter="url(#softBlur)"/>
-
-  <!-- magnified field -->
-  <g clip-path="url(#fieldClip)">
-    <circle cx="500" cy="500" r="478" fill="url(#fieldGrad)"/>
-    <rect x="20" y="20" width="960" height="960" filter="url(#grain)" opacity="0.4"/>
-
-    <line x1="14" y1="500" x2="986" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
-    <line x1="500" y1="14" x2="500" y2="986" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
-    <circle cx="500" cy="500" r="150" fill="none" stroke="#ffffff" opacity="0.07" stroke-width="1"/>
-    <circle cx="500" cy="500" r="300" fill="none" stroke="#ffffff" opacity="0.06" stroke-width="1"/>
-    <circle cx="500" cy="500" r="450" fill="none" stroke="#ffffff" opacity="0.05" stroke-width="1"/>
-
-    <g filter="url(#softBlur)" opacity="0.35">
-      <use href="#rbc" x="110" y="140"/>
-      <use href="#rbc" x="890" y="190"/>
-      <use href="#rbc" x="140" y="890"/>
-      <use href="#rbc" x="860" y="860"/>
-      <use href="#rbc" x="500" y="880"/>
-      <use href="#rbc" x="500" y="120"/>
-      <use href="#rbc" x="280" y="650"/>
-      <use href="#rbc" x="730" y="340"/>
-    </g>
-
-    <!-- stain debris -->
-    <g fill="#7a2d52" opacity="0.35">
-      <circle cx="120" cy="350" r="2.2"/><circle cx="300" cy="250" r="2.6"/><circle cx="430" cy="480" r="2"/>
-      <circle cx="600" cy="350" r="2.4"/><circle cx="780" cy="300" r="2"/><circle cx="880" cy="500" r="2.6"/>
-      <circle cx="750" cy="700" r="2.2"/><circle cx="600" cy="850" r="2"/><circle cx="430" cy="650" r="2.4"/>
-      <circle cx="250" cy="480" r="2"/><circle cx="160" cy="700" r="2.6"/><circle cx="350" cy="900" r="2"/>
-      <circle cx="700" cy="900" r="2.2"/><circle cx="900" cy="700" r="2"/><circle cx="500" cy="650" r="2.4"/>
-      <circle cx="650" cy="450" r="2"/><circle cx="200" cy="200" r="2.4"/><circle cx="850" cy="200" r="2"/>
-    </g>
-
-    <!-- Staphylococcus clusters -->
-    <g>
-      <use href="#coccus" x="190" y="650"/><use href="#coccus" x="210" y="642"/><use href="#coccus" x="174" y="636"/>
-      <use href="#coccus" x="212" y="664"/><use href="#coccus" x="168" y="660"/><use href="#coccus" x="194" y="626"/>
-      <use href="#coccus" x="184" y="674"/><use href="#coccus" x="164" y="646"/><use href="#coccus" x="216" y="652"/>
-      <use href="#coccus" x="198" y="670"/><use href="#coccus" x="180" y="628"/>
-    </g>
-    <g>
-      <use href="#coccus" x="760" y="290"/><use href="#coccus" x="780" y="282"/><use href="#coccus" x="744" y="276"/>
-      <use href="#coccus" x="782" y="304"/><use href="#coccus" x="738" y="300"/><use href="#coccus" x="764" y="266"/>
-      <use href="#coccus" x="754" y="314"/><use href="#coccus" x="734" y="286"/><use href="#coccus" x="786" y="292"/>
-      <use href="#coccus" x="768" y="310"/><use href="#coccus" x="750" y="268"/>
-    </g>
-    <g>
-      <use href="#coccus" x="540" y="140"/><use href="#coccus" x="560" y="132"/><use href="#coccus" x="524" y="126"/>
-      <use href="#coccus" x="562" y="154"/><use href="#coccus" x="518" y="150"/><use href="#coccus" x="544" y="116"/>
-      <use href="#coccus" x="534" y="164"/><use href="#coccus" x="514" y="136"/><use href="#coccus" x="566" y="142"/>
-      <use href="#coccus" x="548" y="160"/><use href="#coccus" x="530" y="118"/>
-    </g>
-
-    <!-- Streptococcus chains -->
-    <g>
-      <use href="#coccus" x="430" y="240"/><use href="#coccus" x="452" y="246"/><use href="#coccus" x="474" y="253"/>
-      <use href="#coccus" x="496" y="259"/><use href="#coccus" x="518" y="266"/><use href="#coccus" x="540" y="272"/>
-      <use href="#coccus" x="562" y="279"/>
-    </g>
-    <g>
-      <use href="#coccus" x="140" y="760"/><use href="#coccus" x="163" y="755"/><use href="#coccus" x="187" y="751"/>
-      <use href="#coccus" x="210" y="746"/><use href="#coccus" x="234" y="742"/><use href="#coccus" x="258" y="737"/>
-    </g>
-
-    <!-- E. coli rods -->
-    <use href="#rod" transform="translate(230,200) rotate(-15)"/>
-    <use href="#rod" transform="translate(680,150) rotate(20)"/>
-    <use href="#rod" transform="translate(830,420) rotate(95)"/>
-    <use href="#rod" transform="translate(140,480) rotate(55)"/>
-    <use href="#rod" transform="translate(550,760) rotate(-40)"/>
-    <use href="#rod" transform="translate(350,800) rotate(5)"/>
-    <use href="#rod" transform="translate(760,830) rotate(140)"/>
-    <use href="#rod" transform="translate(300,380) rotate(160)"/>
-    <use href="#rod" transform="translate(345,400) rotate(160)"/>
-
-    <!-- Bacillus with endospore -->
-    <use href="#rodSpore" transform="translate(410,560) rotate(-25)"/>
-    <use href="#rodSpore" transform="translate(210,300) rotate(75)"/>
-
-    <!-- Spiral bacteria -->
-    <use href="#spiral" transform="translate(520,400) rotate(10)"/>
-    <use href="#spiral" transform="translate(850,640) rotate(-25)"/>
-
-    <!-- Neutrophil (white blood cell) phagocytosing bacteria -->
-    <g transform="translate(650,600)">
-      <circle r="95" fill="url(#cytoGrad)" stroke="#b98aa5" stroke-width="2"/>
-      <g fill="#d98cae" opacity="0.4">
-        <circle cx="-40" cy="-50" r="2.4"/><circle cx="20" cy="-60" r="2"/><circle cx="55" cy="-20" r="2.4"/>
-        <circle cx="60" cy="30" r="2"/><circle cx="20" cy="60" r="2.4"/><circle cx="-30" cy="55" r="2"/>
-        <circle cx="-60" cy="10" r="2.4"/><circle cx="-10" cy="-10" r="2"/><circle cx="35" cy="5" r="2"/>
-      </g>
-      <use href="#rod" transform="translate(-62,52) rotate(30) scale(0.6)"/>
-      <use href="#rod" transform="translate(58,-45) rotate(-60) scale(0.55)"/>
-      <path d="M -40,-30 C -55,-45 -20,-55 -5,-40 C 10,-55 40,-45 35,-25 C 55,-15 50,15 30,20 C 40,40 10,55 -5,40 C -20,55 -50,40 -40,20 C -60,10 -55,-15 -40,-30 Z"
-            fill="url(#nucleusGrad)" stroke="#1c1440" stroke-width="1.5"/>
-      <path d="M -25,-25 Q -10,-15 -20,0 M 10,-30 Q 20,-15 10,0 M -10,20 Q 5,30 20,15" stroke="#8a7de0" stroke-width="1.2" fill="none" opacity="0.4"/>
-    </g>
-
-    <!-- vignette overlay -->
-    <circle cx="500" cy="500" r="478" fill="url(#vignette)"/>
-
-    <!-- reticle center -->
-    <circle cx="500" cy="500" r="3" fill="#ffffff" opacity="0.5"/>
-
-    <!-- scale bar -->
-    <g transform="translate(500,915)">
-      <line x1="-60" y1="0" x2="60" y2="0" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
-      <line x1="-60" y1="-6" x2="-60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
-      <line x1="60" y1="-6" x2="60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
-      <text x="0" y="-13" text-anchor="middle" font-family="'Courier New', monospace" font-size="16" fill="#ffffff" opacity="0.85">10 µm</text>
-    </g>
-
-    <text x="500" y="70" text-anchor="middle" font-family="'Courier New', monospace" font-size="21" fill="#ffffff" opacity="0.55">400×  MIXED BACTERIAL FLORA</text>
-  </g>
-
-  <!-- viewport bezel -->
-  <circle cx="500" cy="500" r="483" fill="none" stroke="url(#bezelGrad)" stroke-width="13"/>
-  <circle cx="500" cy="500" r="475" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.35"/>
-  <path d="M 39.5,332.4 A 483 483 0 0 1 414.9,17.4" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.32" stroke-linecap="round"/>
-</svg></script>
+<p class="mock-label"><b>KEEP AS IS</b> &mdash; title-only stops &middot; hover or
+focus a stop for its definition &middot; the &#9432; unfolds the whole scale in-flow
+&middot; A anchored hard left, B hard right &middot; files
+<b>comparison {winner, strength}</b> (strength omitted on a tie)</p>
 
 <script>
-/* ==========================================================================
-   THE DOUBLE BENCH — one render function, mounted twice (s1 desk / s2 360px).
-   The survey renders from TAX, the REAL taxonomy.json subset (verbatim:
-   grades + the five live axes; the four "defunct": true axes excluded, as
-   production's liveAxes() does). Values are already listed rank-descending
-   in the taxonomy, matching production's byRankDesc() order.
-   ========================================================================== */
 (function () {
-  'use strict';
-  var MAX_NOTE = 500;
+  "use strict";
 
-  /* ---- taxonomy.json v10, verbatim subset -------------------------------- */
-  var TAX = {
-    grades: [
-      { id: "prime", rank: 5, label: "Prime",
-        description: "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is." },
-      { id: "choice", rank: 4, label: "Choice",
-        description: "Strong result with minor blemishes a careful eye can find." },
-      { id: "select", rank: 3, label: "Select",
-        description: "Competent and recognizable; noticeable flaws on one or more axes." },
-      { id: "standard", rank: 2, label: "Standard",
-        description: "Gets the idea across despite significant defects." },
-      { id: "utility", rank: 1, label: "Utility",
-        description: "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)." }
-    ],
-    axes: [
-      { id: "instruction-following", label: "Instruction following",
-        description: "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?",
-        values: [
-          { id: "followed", rank: 3, label: "Followed", description: "Every explicit ask is honored as specified." },
-          { id: "drifted", rank: 2, label: "Drifted", description: "Some asks bent, missed, or quietly replaced." },
-          { id: "ignored", rank: 1, label: "Ignored", description: "Explicit asks are disregarded outright." }
-        ] },
-      { id: "restraint", label: "Restraint",
-        description: "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
-        values: [
-          { id: "disciplined", rank: 3, label: "Disciplined", description: "Nothing appears that the prompt didn't call for." },
-          { id: "embellished", rank: 2, label: "Embellished", description: "Unrequested extras crept in without taking over." },
-          { id: "overgrown", rank: 1, label: "Overgrown", description: "Additions crowd or upstage what was actually asked for." }
-        ] },
-      { id: "integrity", label: "Integrity",
-        description: "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
-        values: [
-          { id: "sound", rank: 3, label: "Sound", description: "Coherent construction; nothing floats, breaks, or contradicts itself." },
-          { id: "strained", rank: 2, label: "Strained", description: "Visible seams — small breaks, misalignments, or spatial slips." },
-          { id: "broken", rank: 1, label: "Broken", description: "Structural or spatial failures dominate the read." }
-        ] },
-      { id: "style", label: "Style",
-        description: "Is the image one consistent visual language, well executed — whatever language it chose?",
-        values: [
-          { id: "unified", rank: 3, label: "Unified", description: "One coherent visual language throughout." },
-          { id: "mixed", rank: 2, label: "Mixed", description: "Registers collide — parts of the image speak different styles." },
-          { id: "incoherent", rank: 1, label: "Incoherent", description: "No governing style survives the image." }
-        ] },
-      { id: "je-ne-sais-quoi", label: "Je ne sais quoi",
-        description: "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
-        values: [
-          { id: "abundant", rank: 3, label: "Abundant", description: "The piece has it — undeniable, unaccountable appeal." },
-          { id: "trace", rank: 2, label: "Trace", description: "A glimmer of something beyond competence." },
-          { id: "none-detected", rank: 1, label: "None detected", description: "Technically present, spiritually absent." }
-        ] }
-    ]
-  };
-
-  var SKIP = { key: 'skip', value: '', title: 'skip',
-    desc: 'Leave it ungraded — a skip files nothing at all.' };
-
-  /* one shared row per question: overall grade first, then the live axes */
-  var ROWS = [{
-    id: 'grade', kind: 'grade', label: 'overall grade',
-    description: "One summary judgment per response — the drawer's five-tier scale.",
-    levels: TAX.grades.map(function (g) {
-      return { key: g.id, value: String(g.rank), title: g.label, desc: g.description };
-    })
-  }].concat(TAX.axes.map(function (ax) {
-    return {
-      id: ax.id, kind: 'axis', label: ax.label, description: ax.description,
-      levels: ax.values.map(function (v) {
-        return { key: v.id, value: String(v.rank), title: v.label, desc: v.description };
-      })
-    };
-  }));
-
-  /* the finale: winner + strength (strength is the contract addition) */
+  /* ============ PRESERVED — the finale: winner + strength ================ */
   var LIKERT = [
     { id: 'a2', big: 'A', word: 'decisively', title: 'A · decisively better',
       desc: 'No contest — A is clearly the stronger drawing.', winner: 'a', strength: 'decisive' },
@@ -1442,95 +299,8 @@ body {
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
   }
-  /* id-namespacing per inlined copy, same substitutions as JD_svgInst */
-  function svgInst(raw, prefix) {
-    return raw
-      .replace(/id="/g, 'id="' + prefix)
-      .replace(/url\(#/g, 'url(#' + prefix)
-      .replace(/href="#/g, 'href="#' + prefix);
-  }
 
-  /* ---- render ------------------------------------------------------------- */
-  function chipHTML(inst, q, side, o) {
-    var did = inst + '-d-' + q.id + '-' + o.key;
-    return '<label class="bench-chip' + (o.key === 'skip' ? ' bench-chip--skip' : '') +
-      '" data-tt-t="' + esc(o.title) + '" data-tt-d="' + esc(o.desc) + '">' +
-      '<input type="radio" name="' + inst + '-' + q.id + '-' + side +
-      '" value="' + esc(o.value) + '" data-kind="' + q.kind + '" data-q="' + q.id +
-      '" data-side="' + side + '" aria-describedby="' + did + '">' +
-      '<span class="bench-tick" aria-hidden="true">&#10003;</span>' +
-      '<span class="bench-chip-l">' + esc(o.title) + '</span></label>';
-  }
-  function halfHTML(inst, q, side) {
-    var opts = q.levels.concat([SKIP]);
-    var h = '<div class="bench-half bench-half--' + side + '">' +
-      '<span class="bench-side-tag" aria-hidden="true">' + side.toUpperCase() + '</span>' +
-      '<div class="bench-chips" role="radiogroup" aria-label="' +
-      esc(q.label) + ' — response ' + side.toUpperCase() + '">';
-    opts.forEach(function (o) { h += chipHTML(inst, q, side, o); });
-    h += '</div>';
-    if (q.kind === 'axis') {
-      h += '<button type="button" class="bench-notebtn" aria-expanded="false" ' +
-        'aria-controls="' + inst + '-note-' + q.id + '-' + side + '">+ note (' +
-        side.toUpperCase() + ')</button>';
-    }
-    return h + '</div>';
-  }
-  function noteRowHTML(inst, q, side) {
-    return '<div class="bench-noterow" id="' + inst + '-note-' + q.id + '-' + side + '" hidden>' +
-      '<span class="bench-note-tag" aria-hidden="true">' + side.toUpperCase() + '</span>' +
-      '<input type="text" class="bench-note-in" maxlength="' + MAX_NOTE + '" ' +
-      'placeholder="a note, if you have one" aria-label="note on ' + esc(q.label) +
-      ' for response ' + side.toUpperCase() + '"></div>';
-  }
-  function popHTML(inst, q) {
-    var h = '<div class="bench-pop" id="' + inst + '-pop-' + q.id + '" hidden>' +
-      '<p class="bench-pop-desc">' + esc(q.description) + '</p><dl>';
-    q.levels.forEach(function (o) {
-      h += '<dt>' + esc(o.title) + '</dt><dd>' + esc(o.desc) + '</dd>';
-    });
-    h += '<dt>' + esc(SKIP.title) + '</dt><dd>' + esc(SKIP.desc) + '</dd>';
-    return h + '</dl></div>';
-  }
-  function descNodesHTML(inst, q) {
-    var h = '';
-    q.levels.concat([SKIP]).forEach(function (o) {
-      h += '<span class="vh" id="' + inst + '-d-' + q.id + '-' + o.key + '">' +
-        esc(o.title + ' — ' + o.desc) + '</span>';
-    });
-    return h;
-  }
-  function rowHTML(inst, q) {
-    return '<div class="bench-row">' +
-      '<div class="bench-rowhead">' +
-      '<button type="button" class="bench-def" aria-expanded="false" aria-controls="' +
-      inst + '-pop-' + q.id + '"><span>' + esc(q.label) +
-      '</span><span class="bench-i" aria-hidden="true">i</span></button></div>' +
-      popHTML(inst, q) +
-      '<div class="bench-halves">' + halfHTML(inst, q, 'a') + halfHTML(inst, q, 'b') + '</div>' +
-      (q.kind === 'axis' ? noteRowHTML(inst, q, 'a') + noteRowHTML(inst, q, 'b') : '') +
-      descNodesHTML(inst, q) +
-      '</div>';
-  }
-  function thumbHTML(inst, side, svg) {
-    return '<div class="bench-thumb bench-thumb--' + side + '" data-thumb="' + side + '">' +
-      '<div class="bench-thumb-col">' +
-      '<span class="bench-thumb-tag">' + side.toUpperCase() + '</span>' +
-      '<label class="bench-flag">' +
-      '<input type="checkbox" data-role="flag" data-side="' + side +
-      '" aria-controls="' + inst + '-flag-' + side + '">' +
-      '<span>&#9873; report</span></label>' +
-      '</div>' +
-      '<div class="bench-art" role="img" aria-label="response ' + side.toUpperCase() + '">' +
-      svg + '</div></div>';
-  }
-  function flagRowHTML(inst, side) {
-    return '<div class="bench-flagrow" id="' + inst + '-flag-' + side + '" hidden>' +
-      '<span class="bench-note-tag" aria-hidden="true">' + side.toUpperCase() + '</span>' +
-      '<input type="text" class="bench-note-in" maxlength="' + MAX_NOTE + '" ' +
-      'placeholder="what is wrong with it?" aria-label="note on the report for response ' +
-      side.toUpperCase() + '"></div>';
-  }
+  /* PRESERVED verbatim from the double bench: markup for the finale */
   function likertHTML(inst) {
     var h = '<div class="bench-call">' +
       '<div class="bench-rowhead">' +
@@ -1566,207 +336,89 @@ body {
     return h + '</div>';
   }
 
-  function renderStage(inst, rawA, rawB) {
-    var scroll = document.getElementById(inst + '-scroll');
-    var h = '<h2 class="bench-title">Grade what came back — together</h2>' +
-      '<p class="bench-copy">Judge A and B side by side, one question at a time. ' +
-      'Titles only — hover, focus, or press an i for the definitions. Everything ' +
-      'is optional except the last call. The scale is the drawer&#8217;s own.</p>' +
-      '<div class="bench-pin">' +
-      thumbHTML(inst, 'a', svgInst(rawA, inst + 'a_')) +
-      thumbHTML(inst, 'b', svgInst(rawB, inst + 'b_')) +
-      flagRowHTML(inst, 'a') + flagRowHTML(inst, 'b') +
-      '</div>' +
-      '<div class="bench-rows">';
-    ROWS.forEach(function (q) { h += rowHTML(inst, q); });
-    h += '</div>' + likertHTML(inst) +
-      '<div class="bench-actions"><button type="button" class="bench-go" ' +
-      'data-act="file" disabled>file the grades</button></div>' +
-      '<p class="bench-filed" role="status"></p>';
-    scroll.innerHTML = h;
-    wire(scroll, inst);
-  }
+  /* ---- minimal salvage mount: the finale alone on the sheet ------------- */
+  var scroll = document.getElementById('s1-scroll');
+  scroll.innerHTML =
+    '<h2 class="bench-title">The call</h2>' +
+    '<p class="bench-copy">The preserved finale, standing alone. The rework ' +
+    'mounts this unchanged at the foot of the new instrument.</p>' +
+    likertHTML('s1');
 
-  /* ---- per-stage wiring --------------------------------------------------- */
-  var openPop = null; /* { btn, pop } — one popover open across the page */
-  function closePop(refocus) {
-    if (!openPop) return;
-    openPop.pop.hidden = true;
-    openPop.btn.setAttribute('aria-expanded', 'false');
-    if (refocus) { try { openPop.btn.focus(); } catch (e) {} }
-    openPop = null;
-  }
-  function togglePop(btn) {
-    var pop = document.getElementById(btn.getAttribute('aria-controls'));
-    if (!pop) return;
-    if (openPop && openPop.pop === pop) { closePop(false); return; }
-    closePop(false);
-    pop.hidden = false;
-    btn.setAttribute('aria-expanded', 'true');
-    openPop = { btn: btn, pop: pop };
-  }
-
-  function wire(scroll, inst) {
-    scroll.addEventListener('change', function (e) {
-      var t = e.target;
-      if (t.type === 'radio') {
-        /* mirror production's onChange: class toggles within the group */
-        var group = t.closest('[role="radiogroup"]');
-        if (group) {
-          Array.prototype.forEach.call(
-            group.querySelectorAll('.bench-chip, .bench-lk-stop'),
-            function (c) {
-              var input = c.querySelector('input');
-              c.classList.toggle('is-on', !!(input && input.checked));
-            });
-        }
-        if (t.getAttribute('data-kind') === 'call') {
-          var pick = null;
-          LIKERT.forEach(function (o) { if (o.id === t.value) pick = o; });
-          var lk = t.closest('.bench-likert');
-          if (lk && pick) lk.setAttribute('data-pick', pick.winner);
-          var go = scroll.querySelector('[data-act="file"]');
-          if (go) go.disabled = false;
-        }
-      } else if (t.getAttribute('data-role') === 'flag') {
-        /* mutate in place, never re-render — focus and scroll must survive */
-        var row = document.getElementById(t.getAttribute('aria-controls'));
-        if (row) row.hidden = !t.checked;
-        var thumb = t.closest('.bench-thumb');
-        if (thumb) thumb.classList.toggle('is-flagged', t.checked);
-        if (t.checked && row) {
-          var input = row.querySelector('input');
-          if (input) { try { input.focus(); } catch (e2) {} }
-        }
-      }
-    });
-
-    scroll.addEventListener('click', function (e) {
-      var def = e.target.closest ? e.target.closest('.bench-def') : null;
-      if (def) { togglePop(def); return; }
-      var nb = e.target.closest ? e.target.closest('.bench-notebtn') : null;
-      if (nb) {
-        var row = document.getElementById(nb.getAttribute('aria-controls'));
-        var on = nb.getAttribute('aria-expanded') === 'true';
-        nb.setAttribute('aria-expanded', on ? 'false' : 'true');
-        if (row) {
-          row.hidden = on;
-          if (!on) {
-            var input = row.querySelector('input');
-            if (input) { try { input.focus(); } catch (e2) {} }
-          }
-        }
-        return;
-      }
-      var go = e.target.closest ? e.target.closest('[data-act="file"]') : null;
-      if (go && !go.disabled) fileIt(scroll, inst);
-    });
-
-    scroll.addEventListener('scroll', hideTT, { passive: true });
-  }
-
-  /* ---- filing (mock): show exactly what would go to jd-rate --------------- */
-  function fileIt(scroll, inst) {
-    var entries = 0, notes = 0, flags = 0;
-    var perSide = { a: { grade: false, axes: 0 }, b: { grade: false, axes: 0 } };
-    Array.prototype.forEach.call(
-      scroll.querySelectorAll('input[type="radio"]:checked'),
-      function (r) {
-        var kind = r.getAttribute('data-kind'), side = r.getAttribute('data-side');
-        if (r.value === '' || !side) return; /* skip files nothing; call handled below */
-        if (kind === 'grade') { perSide[side].grade = true; entries++; }
-        else if (kind === 'axis') { perSide[side].axes++; entries++; }
-      });
-    Array.prototype.forEach.call(scroll.querySelectorAll('.bench-noterow input'),
-      function (i) { if (i.value.trim()) notes++; });
-    Array.prototype.forEach.call(scroll.querySelectorAll('[data-role="flag"]:checked'),
-      function () { flags++; entries++; });
-    var call = scroll.querySelector('input[data-kind="call"]:checked');
-    var pick = null;
-    if (call) LIKERT.forEach(function (o) { if (o.id === call.value) pick = o; });
-    var cmp = !pick ? 'null'
-      : pick.winner === 'tie' ? '{ "winner": "tie" }'
-      : '{ "winner": "' + pick.winner + '", "strength": "' + pick.strength + '" }';
-    var status = scroll.querySelector('.bench-filed');
-    if (status) {
-      status.innerHTML = '<b>filed (mock — no network).</b> ratings: ' + entries +
-        ' entries (A: ' + (perSide.a.grade ? 'grade + ' : 'no grade, ') +
-        perSide.a.axes + ' axes · B: ' + (perSide.b.grade ? 'grade + ' : 'no grade, ') +
-        perSide.b.axes + ' axes · ' + flags + ' flag' + (flags === 1 ? '' : 's') +
-        ') · ' + notes + ' note' + (notes === 1 ? '' : 's') +
-        ' riding along · comparison <code>' + cmp + '</code>' +
-        (pick && pick.winner !== 'tie'
-          ? ' — <code>strength</code> is the contract addition (C1.3 today files winner only)'
-          : '');
-    }
-  }
-
-  /* ---- the definition tooltip: hover (mouse/pen) + keyboard focus --------- */
-  var tt = document.getElementById('bench-tt');
-  var ttFor = null;
-  function showTT(lbl) {
-    if (!lbl || ttFor === lbl) return;
-    ttFor = lbl;
-    tt.innerHTML = '<b>' + esc(lbl.getAttribute('data-tt-t')) + '</b>' +
-      esc(lbl.getAttribute('data-tt-d'));
-    tt.hidden = false;
-    tt.style.visibility = 'hidden';
-    tt.style.left = '0px'; tt.style.top = '0px';
-    var r = lbl.getBoundingClientRect(), tr = tt.getBoundingClientRect();
-    var vw = window.innerWidth;
-    var left = Math.min(Math.max(8, r.left + r.width / 2 - tr.width / 2), vw - tr.width - 8);
-    var top = r.top - tr.height - 8;
-    if (top < 8) top = r.bottom + 8;
-    tt.style.left = left + 'px';
-    tt.style.top = top + 'px';
-    tt.style.visibility = 'visible';
-  }
-  function hideTT() {
-    if (tt.hidden) return;
-    tt.hidden = true;
-    ttFor = null;
-  }
-  document.addEventListener('pointerover', function (e) {
-    /* mouse/pen only: a plain tap must select, never open a tooltip */
-    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
-    var lbl = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-    if (lbl) showTT(lbl); else hideTT();
-  });
-  document.addEventListener('pointerout', function (e) {
-    var lbl = e.target.closest ? e.target.closest('[data-tt-t]') : null;
-    if (lbl && !(e.relatedTarget && lbl.contains(e.relatedTarget))) hideTT();
-  });
-  document.addEventListener('focusin', function (e) {
+  /* ---- preserved behavior: pick state -------------------------------- */
+  scroll.addEventListener('change', function (e) {
     var t = e.target;
-    if (!t || t.type !== 'radio') { hideTT(); return; }
-    var lbl = t.closest ? t.closest('[data-tt-t]') : null;
-    var kb = false;
-    try { kb = t.matches(':focus-visible'); } catch (err) { kb = true; }
-    if (lbl && kb) showTT(lbl); else hideTT();
+    if (!t || t.getAttribute('data-kind') !== 'call') return;
+    var pick = null;
+    LIKERT.forEach(function (o) { if (o.id === t.value) pick = o; });
+    var lk = t.closest('.bench-likert');
+    if (lk) {
+      lk.setAttribute('data-pick', pick && pick.winner !== 'tie' ? pick.winner : 'tie');
+      Array.prototype.forEach.call(lk.querySelectorAll('.bench-lk-stop'), function (s) {
+        var input = s.querySelector('input');
+        s.classList.toggle('is-on', !!(input && input.checked));
+      });
+    }
   });
-  document.addEventListener('focusout', hideTT);
-  window.addEventListener('scroll', hideTT, { passive: true });
-  window.addEventListener('resize', hideTT);
 
-  /* ---- global dismissal: Esc peels ONE layer; tap-outside closes ---------- */
+  /* ---- preserved behavior: singleton hover/focus tooltip --------------- */
+  var tt = document.createElement('div');
+  tt.className = 'bench-tt'; tt.setAttribute('aria-hidden', 'true'); tt.hidden = true;
+  document.body.appendChild(tt);
+  function showTT(stop) {
+    tt.innerHTML = '<b>' + esc(stop.getAttribute('data-tt-t')) + '</b>' +
+      esc(stop.getAttribute('data-tt-d'));
+    tt.hidden = false;
+    var r = stop.getBoundingClientRect();
+    tt.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 286)) + 'px';
+    tt.style.top = Math.max(8, r.top - tt.offsetHeight - 8) + 'px';
+  }
+  function hideTT() { tt.hidden = true; }
+  scroll.addEventListener('mouseover', function (e) {
+    if (!window.matchMedia || !window.matchMedia('(hover: hover)').matches) return;
+    var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+    if (stop) showTT(stop); else hideTT();
+  });
+  scroll.addEventListener('mouseleave', hideTT);
+  scroll.addEventListener('focusin', function (e) {
+    var stop = e.target.closest ? e.target.closest('[data-tt-t]') : null;
+    if (stop && e.target.matches && e.target.matches(':focus-visible')) showTT(stop);
+    else hideTT();
+  });
+  scroll.addEventListener('focusout', hideTT);
+  window.addEventListener('scroll', hideTT, true);
+
+  /* ---- preserved behavior: the ⓘ popover ------------------------------- */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest ? e.target.closest('.bench-def') : null;
+    if (btn) {
+      var pop = document.getElementById(btn.getAttribute('aria-controls'));
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      if (pop) pop.hidden = open;
+      return;
+    }
+    if (!e.target.closest || !e.target.closest('.bench-pop')) {
+      Array.prototype.forEach.call(document.querySelectorAll('.bench-def[aria-expanded="true"]'),
+        function (b) {
+          b.setAttribute('aria-expanded', 'false');
+          var p = document.getElementById(b.getAttribute('aria-controls'));
+          if (p) p.hidden = true;
+        });
+    }
+  });
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape') return;
-    if (!tt.hidden) { hideTT(); return; }
-    if (openPop) { e.preventDefault(); closePop(true); }
-  });
-  document.addEventListener('pointerdown', function (e) {
     hideTT();
-    if (!openPop) return;
-    if (openPop.pop.contains(e.target) || openPop.btn.contains(e.target)) return;
-    closePop(false);
+    Array.prototype.forEach.call(document.querySelectorAll('.bench-def[aria-expanded="true"]'),
+      function (b) {
+        b.setAttribute('aria-expanded', 'false');
+        var p = document.getElementById(b.getAttribute('aria-controls'));
+        if (p) p.hidden = true;
+        b.focus();
+      });
   });
-
-  /* ---- mount both stages -------------------------------------------------- */
-  var rawA = document.getElementById('tpl-svg-a').textContent;
-  var rawB = document.getElementById('tpl-svg-b').textContent;
-  renderStage('s1', rawA, rawB);
-  renderStage('s2', rawA, rawB);
-})();
+}());
 </script>
+
 </body>
 </html>
