@@ -445,6 +445,15 @@ html { scroll-behavior: smooth; }
      the medium specimen it is. */
   min-width: 53px;
 }
+/* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
+   shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
+   at the boosted halo opacities it re-cast the pool of light as a dark
+   ghost offset down-right, the exact "light source with a dark aura" the 9a
+   mockup's notes flagged as the one read this design cannot afford. The
+   asset bakes its own contact shadow under the housing, so hardware still
+   sits ON the floor rather than floating. */
+.jd-item--turn { filter: none; }
+
 /* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
    asset's halo ink deliberately runs to within 2/240 of the viewBox edge —
    while jdCreditSink overshoots to scale(1.02, 1.03) on the way back up.
@@ -512,9 +521,11 @@ html { scroll-behavior: smooth; }
    then dropped. Motion is added back only inside no-preference, so
    prefers-reduced-motion needs no undo rules. Feedback survives either way:
    this is the gesture that opens a modal, and it must read. */
-.jd-item--turn .cw-halo     { opacity: 0.85; }
-.jd-item--turn .cw-glowcore { opacity: 0.55; }
-.jd-item--turn .cw-bloom    { opacity: 0.7; }
+/* opacities raised 2026-08-11 (owner: "make it clear that it's glowing"),
+   in step with the brighter halo stops in the asset itself */
+.jd-item--turn .cw-halo     { opacity: 1; }
+.jd-item--turn .cw-glowcore { opacity: 0.75; }
+.jd-item--turn .cw-bloom    { opacity: 0.85; }
 .jd-item--turn .cw-flash    { opacity: 0; }
 .jd-item--turn.is-pressed .cw-lens     { transform: scale(0.93, 0.9); }
 .jd-item--turn.is-pressed .cw-flash    { opacity: 0.5; }
@@ -523,14 +534,14 @@ html { scroll-behavior: smooth; }
 .jd-item--turn.is-pressed .cw-bloom    { opacity: 1; }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* THE IDLE TELL (§1's discoverability guardrail) — the backlight breathes:
-     ~1.6s of swell inside an 8s cycle. Where the doorbell's gleam was the
-     quietest thing on the stage, the light IS this design's thesis — but the
-     cycle stays long and the swell soft, so a lit button in the corner never
-     becomes a slot machine. */
-  .jd-item--turn .cw-glowcore { animation: jdCreditBreathe 8s ease-in-out infinite; }
+  /* THE IDLE TELL (§1's discoverability guardrail) — a continuous slow PULSE
+     (owner revision 2026-08-11, replacing the once-per-8s breath): the glow
+     swells and settles on a gentle ~3.6s sine so the button always reads as
+     live hardware, but the amplitude stays small and the cycle slow enough
+     that the corner never becomes a slot machine. */
+  .jd-item--turn .cw-glowcore { animation: jdCreditPulse 3.6s ease-in-out infinite; }
   .jd-item--turn .cw-halo,
-  .jd-item--turn .cw-bloom    { animation: jdCreditBreatheHalo 8s ease-in-out infinite; }
+  .jd-item--turn .cw-bloom    { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
   /* THE PRESS — the lens travels DOWN a step into the housing: it shrinks
      with a slight squash (the dark well mouth widening around it is what
      makes the sink read as travel rather than wobble), holds a beat at the
@@ -545,7 +556,7 @@ html { scroll-behavior: smooth; }
     animation: jdCreditFlash 420ms ease-out;
   }
   .jd-item--turn.is-pressed .cw-glowcore {
-    opacity: 0.55;
+    opacity: 0.75;
     animation: jdCreditFlare 420ms ease-out;
   }
   .jd-item--turn.is-pressed .cw-halo,
@@ -553,15 +564,13 @@ html { scroll-behavior: smooth; }
     animation: jdCreditSurge 460ms ease-out;
   }
 }
-@keyframes jdCreditBreathe {
-  0%, 70%, 100% { opacity: 0.45; }
-  79%           { opacity: 0.95; }
-  88%           { opacity: 0.55; }
+@keyframes jdCreditPulse {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 0.95; }
 }
-@keyframes jdCreditBreatheHalo {
-  0%, 70%, 100% { opacity: 0.72; }
-  79%           { opacity: 1; }
-  88%           { opacity: 0.8; }
+@keyframes jdCreditPulseHalo {
+  0%, 100% { opacity: 0.8; }
+  50%      { opacity: 1; }
 }
 @keyframes jdCreditSink {
   0%   { transform: scale(1); }
@@ -577,14 +586,16 @@ html { scroll-behavior: smooth; }
   100% { opacity: 0; }
 }
 @keyframes jdCreditFlare {
-  0%   { opacity: 0.55; }
+  0%   { opacity: 0.75; }
   12%  { opacity: 1; }
-  100% { opacity: 0.55; }
+  100% { opacity: 0.75; }
 }
+/* with the halo now fully lit at rest, the press surge is a small scale POP
+   of the light pool instead of an opacity step it no longer has room for */
 @keyframes jdCreditSurge {
-  0%   { opacity: 0.85; }
-  14%  { opacity: 1; }
-  100% { opacity: 0.85; }
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 /* ---------------- arrange mode (?arrange=1, dev affordance) --------------- */
@@ -1447,6 +1458,220 @@ html.jd-turn-open { overflow: hidden; }
 .jd-pill-l { font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; }
 .jd-pill-d { font-size: 0.62rem; line-height: 1.4; color: var(--tink-2); }
 
+/* ---- THE SINGLE BENCH (owner pick, mockup round 10, 2026-08-11) ----------
+   The rate state's instrument: a step rail, the artwork pinned sticky while
+   its response is graded, one compact <select> line per scale, ONE
+   definition system (the singleton tooltip + the ⓘ in-flow popovers), and
+   the preserved 5-point likert finale. The pill styles above survive for
+   the unveil's keep-chooser only. */
+
+/* the step rail */
+.jd-rail { display: flex; gap: 6px; margin: 0 0 0.9rem; }
+.jd-rail-step {
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--tmono); font-size: 0.62rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tink-2);
+  background: rgba(255, 250, 232, 0.35);
+  border: 1px solid var(--trule);
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.jd-rail-step b { letter-spacing: 0; }
+.jd-rail-step[disabled] { opacity: 0.45; cursor: default; }
+/* the current step is never colour alone: red text, filled ground, and a
+   3px inset bar */
+.jd-rail-step.is-current {
+  color: var(--tred); font-weight: 700;
+  background: var(--tpaper-hi);
+  border-color: var(--tred);
+  box-shadow: inset 0 -3px 0 var(--tred);
+}
+.jd-rail-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-rail-short { display: none; }
+
+/* the pinned plate: sticky against .jd-turn-scroll, repainting the sheet's
+   own paper so rows slide under it */
+.jd-bench-pin {
+  position: sticky; top: 0; z-index: 6;
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 0.4rem 0 0.5rem;
+  margin: 0 0 0.35rem;
+  background: var(--tpaper) var(--tgrain);
+  border-bottom: 1px solid var(--trule);
+  box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
+}
+.jd-bench-pin .jd-turn-plate { flex: 0 0 auto; width: 96px; margin: 0; }
+.jd-bench-pin .jd-turn-plate figcaption { display: none; }
+.jd-bench-col {
+  display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding-top: 4px;
+}
+.jd-bench-col b { font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; }
+.jd-bench-col span { font-size: 0.6rem; letter-spacing: 0.1em; color: var(--tink-2); text-transform: uppercase; }
+
+/* one scale, one line: the ⓘ header on the left, the select on the right */
+.jd-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 230px);
+  gap: 2px 12px; align-items: center;
+  border-bottom: 1px solid var(--trule-2);
+  padding: 0.35rem 0 0.4rem;
+}
+.jd-row--grade .jd-def { font-size: 0.7rem; font-weight: 700; }
+.jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.jd-def {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  min-height: 44px; min-width: 0;
+  padding: 0.2rem 0.3rem 0.2rem 0;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--tmono);
+  font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tink-2); text-align: left;
+}
+.jd-def > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.jd-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex: 0 0 auto;
+  border: 1px solid var(--trule); border-radius: 50%;
+  font-size: 0.6rem; font-style: normal;
+  color: var(--tink-2);
+}
+.jd-def:hover .jd-i,
+.jd-def[aria-expanded="true"] { color: var(--tred); }
+.jd-def[aria-expanded="true"] .jd-i { color: var(--tred); border-color: var(--tred); }
+.jd-def:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-notbtn {
+  flex: 0 0 auto; margin-left: auto;
+  min-height: 44px; padding: 0.2rem 0.35rem;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--tmono); font-size: 0.58rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.jd-notbtn.has-note, .jd-notbtn[aria-expanded="true"] { color: var(--tred); }
+.jd-notbtn:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* the definitions popover: IN-FLOW — it pushes the sheet down instead of
+   covering any control, so it never blocks further rating */
+.jd-pop {
+  grid-column: 1 / -1;
+  margin: 0.15rem 0 0.4rem; padding: 0.55rem 0.7rem 0.65rem;
+  background: var(--tpaper-hi);
+  border: 1px solid var(--trule);
+  box-shadow: 3px 4px 8px -3px rgba(20, 10, 3, 0.35);
+  font-size: 0.63rem; line-height: 1.55; color: var(--tink);
+}
+.jd-pop-desc { color: var(--tink-2); margin: 0 0 0.2rem; }
+.jd-pop dl { margin: 0.3rem 0 0; }
+.jd-pop dt {
+  margin-top: 0.4rem;
+  font-weight: 700; font-size: 0.6rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.jd-pop dd { margin: 0; color: var(--tink-2); }
+
+/* the scale itself: a native select — OS picker on phones, titles only */
+.jd-turn-select {
+  min-height: 44px; width: 100%;
+  padding: 0.3rem 1.7rem 0.3rem 0.55rem;
+  font-family: var(--tmono); font-size: 0.66rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2);
+  background: rgba(255, 250, 232, 0.55)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1 L5 5 L9 1' fill='none' stroke='%2333240f' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 0.55rem center no-repeat;
+  border: 1px solid var(--trule);
+  border-radius: 0;
+  -webkit-appearance: none; appearance: none;
+  cursor: pointer;
+}
+/* a chosen value is never colour alone: it goes bold and ink-dark */
+.jd-turn-select.is-set { color: var(--tink); font-weight: 700; }
+.jd-turn-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-noterow { grid-column: 1 / -1; }
+.jd-noterow .jd-turn-note { margin-top: 0.25rem; }
+
+/* ---- the call: the preserved likert finale (mockup 10c salvage) ----------
+   Five stops on one rail spanning A (hard left) to B (hard right); the
+   width itself says direction. Title-only stops; definitions by hover/focus
+   tooltip and the row's own ⓘ. */
+.jd-call { padding: 0.6rem 0 0.2rem; }
+.jd-call-req { margin: 0 0 0.55rem; font-size: 0.58rem; letter-spacing: 0.1em; color: var(--tink-2); }
+.jd-likert { display: flex; align-items: flex-start; gap: 10px; margin: 0.2rem 0 0.3rem; }
+.jd-lk-end {
+  flex: 0 0 auto; padding-top: 1px;
+  font-size: 1rem; font-weight: 700; letter-spacing: 0.1em;
+  color: var(--tink-2);
+}
+.jd-likert[data-pick="a"] .jd-lk-end--a,
+.jd-likert[data-pick="b"] .jd-lk-end--b { color: var(--tred); }
+.jd-lk-rail { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.jd-lk-rail::before {
+  content: ""; position: absolute; left: 9%; right: 9%; top: 11px;
+  border-top: 2px solid var(--trule);
+}
+.jd-lk-stop {
+  position: relative; z-index: 1;
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding-top: 3px; cursor: pointer;
+}
+.jd-lk-stop input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.jd-lk-stop:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-lk-dot {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--tpaper-hi);
+  border: 2px solid var(--trule);
+}
+.jd-lk-stop.is-on .jd-lk-dot {
+  background: var(--tred); border-color: var(--tred);
+  box-shadow: 0 0 0 3px rgba(179, 64, 47, 0.25);
+}
+.jd-lk-cap {
+  display: flex; flex-direction: column; align-items: center;
+  font-size: 0.53rem; letter-spacing: 0.08em; text-transform: uppercase;
+  line-height: 1.35; text-align: center; color: var(--tink-2);
+}
+.jd-lk-cap b { font-size: 0.68rem; letter-spacing: 0.14em; color: var(--tink); }
+.jd-lk-stop.is-on .jd-lk-cap { color: var(--tink); font-weight: 700; }
+
+/* the singleton hover/focus tooltip. Fixed and pointer-events:none — it can
+   never take a press a control should have had. aria-hidden: screen readers
+   get every definition natively (aria-describedby on the likert radios, the
+   popovers everywhere else). Appended to <body>, so its fonts/colours are
+   literal rather than the scrim's scoped tokens. */
+.jd-tt {
+  position: fixed; z-index: 999;
+  max-width: 270px; padding: 0.5rem 0.6rem;
+  background: #2c1c09; color: #f3e9c8;
+  border: 1px solid rgba(243, 233, 200, 0.4);
+  box-shadow: 4px 6px 12px -4px rgba(0, 0, 0, 0.55);
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-size: 0.62rem; line-height: 1.55;
+  pointer-events: none;
+}
+.jd-tt b {
+  display: block; margin-bottom: 0.15rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.jd-vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* bench motion: added, never assumed — the base state is the reduced state */
+@media (prefers-reduced-motion: no-preference) {
+  .jd-lk-dot { transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+  .jd-def .jd-i { transition: color 0.15s, border-color 0.15s; }
+  .jd-pop { animation: jdPopIn 0.16s ease-out; }
+}
+@keyframes jdPopIn {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: none; }
+}
+
 /* ---- the unveil ---------------------------------------------------------- */
 .jd-turn-reveal {
   list-style: none; margin: 0 0 1rem; padding: 0;
@@ -1480,8 +1705,25 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn-plates { flex-direction: column; }
   .jd-turn-plate { width: 100%; max-width: 320px; margin-left: auto; margin-right: auto; }
   .jd-pill { flex: 1 1 100%; min-width: 0; }
+  /* the bench at phone width (10c mobile pass): the rail compresses to
+     1·A / 2·B / 3·CALL, each scale becomes a full-width select under its
+     own label line, and the pinned plate slims so it stops eating the
+     viewport */
+  .jd-rail-long { display: none; }
+  .jd-rail-short { display: inline; }
+  .jd-row { display: block; }
+  .jd-row .jd-turn-select { margin-top: 0.15rem; }
+  .jd-bench-pin .jd-turn-plate { width: 72px; }
+  .jd-bench-col b { font-size: 0.72rem; }
+  .jd-likert { gap: 6px; }
+  .jd-lk-cap { font-size: 0.47rem; letter-spacing: 0.04em; }
+  .jd-lk-cap b { font-size: 0.62rem; }
+  .jd-lk-end { font-size: 0.85rem; }
+  /* the call's plates ride the stacked .jd-turn-plates rule above */
 }
 @media (max-width: 768px) {
+  /* selects join the 16px rule below — a sub-16px control zooms iOS too */
+  .jd-turn-select { font-size: 16px; }
   /* (the corner brass holder's phone tuning used to live here; the trigger is
      an object in the pile now. It rides this block's ×1.2 small-well size
      bump like every item — but it does NOT rely on it for the touch target,

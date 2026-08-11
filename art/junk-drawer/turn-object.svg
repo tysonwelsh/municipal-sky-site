@@ -40,9 +40,9 @@
   <defs>
     <!-- the spilled light: hot near the housing, gone by the box edge -->
     <radialGradient id="cw_halog" cx="0.5" cy="0.5" r="0.5">
-      <stop class="cw-h0" offset="0"    stop-color="#3fb0ff" stop-opacity="0.5"/>
-      <stop class="cw-h1" offset="0.45" stop-color="#3fb0ff" stop-opacity="0.3"/>
-      <stop class="cw-h2" offset="0.78" stop-color="#3fb0ff" stop-opacity="0.12"/>
+      <stop class="cw-h0" offset="0"    stop-color="#3fb0ff" stop-opacity="0.9"/>
+      <stop class="cw-h1" offset="0.55" stop-color="#3fb0ff" stop-opacity="0.7"/>
+      <stop class="cw-h2" offset="0.85" stop-color="#3fb0ff" stop-opacity="0.5"/>
       <stop class="cw-h3" offset="1"    stop-color="#3fb0ff" stop-opacity="0"/>
     </radialGradient>
     <!-- charcoal housing: top-left catches the drawer's light, falls to

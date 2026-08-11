@@ -160,6 +160,7 @@ try {
     // Comparison. The winner is named by SLOT and mapped here, so a client can
     // never file a foreign generation as the winner.
     $winnerGenId = null;
+    $strength = null;
     if ($comparison === null) {
         if (count($okSlots) > 1) {
             jd_fail(400, 'comparison_required', 'A comparison is required when both drawings survived.');
@@ -174,6 +175,17 @@ try {
                 jd_fail(400, 'rating_invalid', 'That slot has no usable drawing to win with.');
             }
             $winnerGenId = $bySlot[$winner]['id'];
+        }
+        // strength — the likert margin (C1.3 addition, 2026-08-11: the single
+        // bench files the call as winner + margin). NULLABLE on a won slot so
+        // an older cached client that names only a winner still files; a tie
+        // by definition has no margin.
+        $strength = $comparison['strength'] ?? null;
+        if ($strength !== null && $strength !== 'decisive' && $strength !== 'slight') {
+            jd_fail(400, 'rating_invalid', 'The strength must be "decisive", "slight" or null.');
+        }
+        if ($winner === 'tie' && $strength !== null) {
+            jd_fail(400, 'rating_invalid', 'A tie has no margin.');
         }
     }
 
@@ -220,11 +232,27 @@ try {
         }
 
         if ($comparison !== null) {
-            $db->prepare(
-                'INSERT INTO jd_comparisons
-                    (id, submission_id, winner_gen_id, visitor_hash, client, rated_at)
-                 VALUES (?, ?, ?, ?, ?, ?)'
-            )->execute([jd_ulid(), $submissionId, $winnerGenId, $visitorHash, $client, $ratedAt]);
+            // The strength column lands via setup-jd-tables.php's migration;
+            // deploys are instant while the migration is a manual run, so a
+            // database that has not run it yet files the batch WITHOUT the
+            // margin rather than 500ing every rating in the gap.
+            try {
+                $db->prepare(
+                    'INSERT INTO jd_comparisons
+                        (id, submission_id, winner_gen_id, strength, visitor_hash, client, rated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)'
+                )->execute([jd_ulid(), $submissionId, $winnerGenId, $strength, $visitorHash, $client, $ratedAt]);
+            } catch (PDOException $e) {
+                if (!jd_missing_column($e)) {
+                    throw $e;
+                }
+                error_log('jd-rate: jd_comparisons.strength is missing — filed without the margin (run setup-jd-tables.php)');
+                $db->prepare(
+                    'INSERT INTO jd_comparisons
+                        (id, submission_id, winner_gen_id, visitor_hash, client, rated_at)
+                     VALUES (?, ?, ?, ?, ?, ?)'
+                )->execute([jd_ulid(), $submissionId, $winnerGenId, $visitorHash, $client, $ratedAt]);
+            }
         }
 
         $db->commit();
@@ -299,6 +327,19 @@ function jd_rank_on_scale(?float $value, array $ranks): ?float
         }
     }
     return null;
+}
+
+// MySQL says SQLSTATE 42S22 / "Unknown column"; SQLite says "has no column
+// named" (insert) or "no such column" (elsewhere). Anything else re-throws.
+function jd_missing_column(PDOException $e): bool
+{
+    if (($e->getCode() ?: '') === '42S22') {
+        return true;
+    }
+    $msg = $e->getMessage();
+    return str_contains($msg, 'no such column')
+        || str_contains($msg, 'has no column named')
+        || str_contains($msg, 'Unknown column');
 }
 
 function jd_clean_note(mixed $note): ?string

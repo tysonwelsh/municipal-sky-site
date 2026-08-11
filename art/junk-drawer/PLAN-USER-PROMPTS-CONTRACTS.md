@@ -212,7 +212,7 @@ server guarantee, not a UI courtesy).
     { "gen_id": "01J…B", "kind": "flag",
       "note": "response is broken or offensive (optional note)" }
   ],
-  "comparison": { "winner": "a" }
+  "comparison": { "winner": "a", "strength": "decisive" }
 }
 ```
 
@@ -232,6 +232,14 @@ server guarantee, not a UI courtesy).
   comparison object is required (`400 comparison_required`). Winner is
   named **by slot**, never by gen_id — the server maps slot → gen_id, so
   a client can never file a foreign generation as winner.
+- `comparison.strength` (added 2026-08-11, the single-bench likert):
+  `"decisive" | "slight" | null` — the margin of the call. A `"tie"`
+  must not carry one (`400 rating_invalid`). Nullable on a won slot so
+  an older cached client that names only a winner still files; the
+  shipping client always sends it. Stored in
+  `jd_comparisons.strength`; on a database that has not yet run the
+  setup script's migration, jd-rate falls back to filing the batch
+  without the margin rather than failing it.
 
 **Server processing:**
 
@@ -360,6 +368,9 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
     id             CHAR(26)    NOT NULL PRIMARY KEY,
     submission_id  CHAR(26)    NOT NULL,
     winner_gen_id  CHAR(26)    NULL,          -- NULL = explicit tie
+    strength       VARCHAR(8)  NULL,          -- 'decisive'|'slight'; NULL on a
+                                              -- tie or a pre-likert client
+                                              -- (added 2026-08-11)
     visitor_hash   CHAR(64)    NOT NULL,
     client         VARCHAR(16) NOT NULL DEFAULT 'web',
     rated_at       DATETIME    NOT NULL,
