@@ -2220,12 +2220,14 @@ function JD_layerOpen() {
       '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
-  /* the stage is tuned per shape class (critic pass, 2026-08-13): the CSS
-     positions .rc-plate-art differently for ultra-wide items (lying in the
-     floor plane, not levitating on the horizon) and squarish solid masses
-     (smaller envelope so the scene stays visible around them). The class is
-     read off the response's viewBox aspect right here; anything unparsable
-     stays on the default (tall/leaning) stage. */
+  /* the stage is tuned by shape, automatically (critic pass, 2026-08-13):
+     the CSS gives squarish solid masses a smaller envelope so the scene
+     stays visible around them; every other shape — tall and wide alike —
+     shares the default stage, sitting over the vanishing point (owner call,
+     2026-08-13: the item SHOULD obscure it; a floor-seated wide class was
+     retired on that call). The class is measured off the response's
+     viewBox aspect right here at render time — nothing is filed per item;
+     anything unparsable stays on the default stage. */
   function artClass(svgSrc) {
     var m = /viewBox\s*=\s*"([^"]+)"/.exec(svgSrc || '');
     if (m) {
@@ -2233,7 +2235,6 @@ function JD_layerOpen() {
       var w = +p[2], h = +p[3];
       if (w > 0 && h > 0) {
         var a = w / h;
-        if (a >= 3) return ' rc-art-wide';
         if (a >= 0.75 && a <= 1.33) return ' rc-art-square';
       }
     }
