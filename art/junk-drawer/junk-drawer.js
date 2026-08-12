@@ -2274,7 +2274,10 @@ function JD_layerOpen() {
        owner report). Rays and rows are kept in separate strings because
        the rays draw a step thicker (at equal width the converging lines
        read thinner than the crossing ones they meet). */
-    var DEPTH = H - HOR, GAP = 22, COLS = 44, S = 88, R = 1 - S / DEPTH;
+    /* S is the one density dial (owner, 2026-08-13: "widen the space between
+       the lines" — 88 → 112): R follows it, so the tiles stay square, and
+       COLS is sized to keep the outermost ray entering inside the gap. */
+    var DEPTH = H - HOR, GAP = 22, COLS = 37, S = 112, R = 1 - S / DEPTH;
     function ln(x1, y1, x2, y2) {
       return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
