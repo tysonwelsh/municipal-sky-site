@@ -2176,17 +2176,22 @@ function JD_layerOpen() {
       '<span class="rc-mark-word">' +
       esc(word).replace(/_([^_]+)_/g, '<i>$1</i>') + '</span></span>';
   }
-  /* the dot sparkline (owner, 2026-08-11): `total` dots ahead of the
-     verdict word, filled up to the rank — ●●● no problems, ●●○○○-style
-     for the five grade tiers. The container is one FIXED width sized for
-     five dots (see .rc-dots), so a three-dot row leaves its tail empty
-     and every verdict word shares the same left edge down the card. The
-     dots are aria-hidden; the word carries the meaning. */
-  function dotsHTML(rank, total, cls) {
+  /* the verdict gauge (owner pick, mockup 11 option C, 2026-08-11 —
+     replacing the dot sparkline): ONE segmented bar per verdict, every
+     row the same fixed span, filled to rank/steps of ITS OWN scale, with
+     hairline ticks at the step boundaries keeping a 3-step axis and the
+     5-tier grade honestly distinguishable. A full bar drops its ticks —
+     nothing left to subdivide. aria-hidden; the word carries the meaning. */
+  function barHTML(rank, total, cls) {
     var full = Math.max(1, Math.min(total, rank));
-    var h = '<span class="rc-dots ' + cls + '" aria-hidden="true">';
-    for (var d = 1; d <= total; d++) {
-      h += '<span class="rc-dot' + (d <= full ? ' is-fill' : '') + '"></span>';
+    var h = '<span class="rc-bar ' + cls + '" aria-hidden="true">' +
+      '<span class="rc-bar-fill" style="width:' +
+      (100 * full / total).toFixed(1) + '%"></span>';
+    if (full < total) {
+      for (var t = 1; t < total; t++) {
+        h += '<span class="rc-bar-tick" style="left:' +
+          (100 * t / total).toFixed(1) + '%"></span>';
+      }
     }
     return h + '</span>';
   }
@@ -2272,7 +2277,7 @@ function JD_layerOpen() {
         var v = window.JD_byRank(axis.values, a.value);
         var cls = v ? 'rc-r' + Math.round(v.rank) : '';
         cell = '<span class="rc-verdict">' +
-          (v ? dotsHTML(Math.round(v.rank), 3, cls) : '') +
+          (v ? barHTML(Math.round(v.rank), 3, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
       }
       rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
@@ -2285,7 +2290,7 @@ function JD_layerOpen() {
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
       '<td><span class="rc-verdict">' +
-      (g.rank ? dotsHTML(Math.round(g.rank), 5, gCls) : '') +
+      (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
       mark(g.label, gCls) +
       '</span></td></tr></tfoot></table>';
   }
