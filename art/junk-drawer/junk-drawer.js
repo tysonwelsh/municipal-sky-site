@@ -2286,7 +2286,9 @@ function JD_layerOpen() {
     var g = gradeOf(resp.grade);
     var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
     return '<table class="rc-subj"><thead><tr>' +
-      '<th style="width:52%">Axis</th><th style="width:48%">Verdict</th>' +
+      /* 52/48 → 44/56 (owner, 2026-08-11): the verdict column carries the
+         gauge AND the pencilled word, the axis column only a name */
+      '<th style="width:44%">Axis</th><th style="width:56%">Verdict</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
       '<td><span class="rc-verdict">' +
