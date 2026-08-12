@@ -1062,8 +1062,24 @@ html.jd-record-open { overflow: hidden; }
    BELOW the horizon (which crosses at 50%), so it reads as standing on the
    floor rather than pinned dead-center. Items letterbox inside the stage
    (their own preserveAspectRatio meet), so a tall item takes the stage's
-   height, a wide one its width, nothing ever touches the plate's rim. */
-.rc-plate-art { position: absolute; top: 15%; bottom: 14%; left: 10%; right: 10%; }
+   height, a wide one its width, nothing ever touches the plate's rim.
+
+   THE STAGE IS TUNED PER SHAPE CLASS (critic pass, 2026-08-13) — equal-
+   height letterboxing makes equal-height items of wildly unequal visual
+   mass, so junk-drawer.js reads each response's viewBox aspect and adds:
+   · rc-art-wide (aspect ≥ 3:1, cigarette/pencil-stub territory): seated in
+     the floor plane between the horizon (49%) and the nearest ground line
+     (83%) — an object LYING on the ground in front of the viewer, not
+     levitating at the vanishing point, and the glow line stays uncovered.
+   · rc-art-square (0.75–1.33, solid masses like the eyeball): a smaller
+     envelope (~56% of plate height) so the horizon and both grid fans
+     stay visible around the mass; at 71% the item IS the plate.
+   Default (tall/leaning items): 17/12 rather than a symmetric split —
+   centers land ~3% below the horizon (the threshold of visibility) and
+   bases plant below the 83% ground line. */
+.rc-plate-art { position: absolute; top: 17%; bottom: 12%; left: 10%; right: 10%; }
+.rc-plate-art.rc-art-square { top: 23%; bottom: 21%; }
+.rc-plate-art.rc-art-wide { top: 56%; bottom: 24%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
