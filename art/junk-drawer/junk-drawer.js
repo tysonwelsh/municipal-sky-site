@@ -2178,20 +2178,19 @@ function JD_layerOpen() {
   }
   /* the verdict gauge (owner pick, mockup 11 option C, 2026-08-11 —
      replacing the dot sparkline): ONE segmented bar per verdict, every
-     row the same fixed span, filled to rank/steps of ITS OWN scale, with
-     hairline ticks at the step boundaries keeping a 3-step axis and the
-     5-tier grade honestly distinguishable. A full bar drops its ticks —
-     nothing left to subdivide. aria-hidden; the word carries the meaning. */
+     row the same fixed span, filled to rank/steps of ITS OWN scale.
+     The step dividers are paper-coloured and drawn OVER the fill (owner
+     rev, 2026-08-11), battery-style — so a 100% bar still reads as its
+     segments, and a 3-step axis and the 5-tier grade stay honestly
+     distinguishable. aria-hidden; the word carries the meaning. */
   function barHTML(rank, total, cls) {
     var full = Math.max(1, Math.min(total, rank));
     var h = '<span class="rc-bar ' + cls + '" aria-hidden="true">' +
       '<span class="rc-bar-fill" style="width:' +
       (100 * full / total).toFixed(1) + '%"></span>';
-    if (full < total) {
-      for (var t = 1; t < total; t++) {
-        h += '<span class="rc-bar-tick" style="left:' +
-          (100 * t / total).toFixed(1) + '%"></span>';
-      }
+    for (var t = 1; t < total; t++) {
+      h += '<span class="rc-bar-tick" style="left:' +
+        (100 * t / total).toFixed(1) + '%"></span>';
     }
     return h + '</span>';
   }

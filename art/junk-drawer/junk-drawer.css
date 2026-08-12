@@ -1201,9 +1201,13 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
   overflow: hidden; box-sizing: border-box;
 }
 .rc-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: currentColor; }
+/* the step dividers ride OVER the fill in the card's own paper colour
+   (owner rev: battery-style), so a full bar still shows its segments;
+   on the empty track they melt into the paper, which is fine — the
+   fill's leading edge is the reading there */
 .rc-bar-tick {
-  position: absolute; top: 0; bottom: 0; width: 1px;
-  background: currentColor; opacity: 0.4;
+  position: absolute; top: 0; bottom: 0; width: 1.5px;
+  background: var(--card, #efe4c6);
 }
 .rc-mark.rc-g5, .rc-alt-grade.rc-g5, .rc-bar.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
 .rc-mark.rc-g4, .rc-alt-grade.rc-g4, .rc-bar.rc-g4 { color: #46761a; }   /* choice — leaf green */
