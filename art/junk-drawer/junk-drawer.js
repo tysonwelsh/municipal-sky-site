@@ -2274,10 +2274,17 @@ function JD_layerOpen() {
        owner report). Rays and rows are kept in separate strings because
        the rays draw a step thicker (at equal width the converging lines
        read thinner than the crossing ones they meet). */
-    /* S is the one density dial (owner, 2026-08-13: "widen the space between
-       the lines" — 88 → 112): R follows it, so the tiles stay square, and
-       COLS is sized to keep the outermost ray entering inside the gap. */
-    var DEPTH = H - HOR, GAP = 22, COLS = 37, S = 112, R = 1 - S / DEPTH;
+    /* S is the density dial (owner: "widen the space between the lines" —
+       88 → 112). ROWK flattens the tiles: cell depth = ROWK × cell width
+       on screen (owner, 2026-08-13 — screen-SQUARE cells read as stretched
+       away toward the horizon; real square floor tiles foreshorten flatter
+       than that at a glancing view, so 0.62 is what "square tiles" actually
+       look like). R follows both so the proportion holds at every depth.
+       GAP doubled 22 → 44 on the same date's owner call — the old band
+       felt claustrophobic — and COLS is sized to keep the outermost ray
+       entering inside the (now wider) gap. */
+    var DEPTH = H - HOR, GAP = 44, COLS = 20, S = 112, ROWK = 0.62,
+      R = 1 - ROWK * S / DEPTH;
     function ln(x1, y1, x2, y2) {
       return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
@@ -2344,8 +2351,8 @@ function JD_layerOpen() {
       'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + rowsC + '</g>' +
       '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" ' +
       'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + raysC + '</g>' +
-      '<rect x="0" y="' + (HOR - 60) + '" width="' + W + '" height="120" ' +
-      'fill="url(#' + pfx + 'jdRcGlow)"/>' +
+      '<rect x="0" y="' + (HOR - GAP - 31) + '" width="' + W + '" height="' +
+      (2 * GAP + 62) + '" fill="url(#' + pfx + 'jdRcGlow)"/>' +
       '<rect x="0" y="0" width="' + W + '" height="' + H +
       '" fill="url(#' + pfx + 'jdRcVig)"/>' +
       '</svg>';
