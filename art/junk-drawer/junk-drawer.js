@@ -1413,17 +1413,12 @@ function JD_layerOpen() {
     tag.innerHTML =
       /* name on its own line(s) — the tag has a fixed width, so a long
          specimen name wraps to a second line instead of stretching the tag
-         past the well's edge; model · date · size sit under it. SIZE is
-         per-ITEM (the tier the owner picked), not per-response, so it belongs
-         on this identifying line rather than in the grade column below. */
+         past the well's edge; model · date sit under it. (The filed SIZE
+         used to ride this line too — dropped from the tag entirely, owner
+         request 2026-08-12; the report card still shows it.) */
       '<div class="l1"><span class="name">' + esc((d.title || '').toUpperCase()) +
       '</span><span class="meta">' + esc((d.model || '').toUpperCase()) +
       '<span class="sep">·</span><span class="dim">' + esc(d.date || '') + '</span>' +
-      (d.size
-        ? '<span class="szwrap"><span class="sep">·</span>' +
-          '<span class="dim">SIZE: <span class="sz">' + esc(d.size.toUpperCase()) +
-          '</span></span></span>'
-        : '') +
       '</span></div>' +
       '<div class="l2"><span class="gradecol">' +
       '<span class="gradelabel">GRADE: <span class="g">' +
@@ -2174,7 +2169,8 @@ function JD_layerOpen() {
      collide (same discipline as the rating instrument). One implementation,
      shared with the pile — see JD_svgInst at the top of this file. */
   var svgInst = window.JD_svgInst;
-  /* the filed size, rendered the same way here as on the specimen tag */
+  /* the filed size tier (the report card is the one place it still shows —
+     the specimen tag dropped it, owner request 2026-08-12) */
   var sizeLabel = window.JD_sizeLabel;
   /* a hand-pencilled mark; each takes its own rotation jitter + waver
      filter so no two sit identically. `cls` picks the pencil (the
