@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 12A &middot; PRESSED &amp; FILED</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 12A · PRESSED & FILED (round 12, tag redesign)
+   The faithful refactor: same manila inventory tag — pointed left end,
+   grommet, red elastic — re-typeset by someone who cares. Changes are all
+   inside the silhouette:
+     · a real LABEL/VALUE grid (MODEL / FILED / GRADE share one label
+       column, values align on a common left edge)
+     · a disciplined type scale (name 0.7rem·700 → values 0.62rem →
+       labels 0.5rem caps → buttons 0.55rem), one line-height rhythm
+     · two hairline rules split the tag into three registers:
+       name / filing grid / button bar
+     · buttons become a full-width bar, one line each, equal halves
+     · material: faint paper grain, top-edge sheen, rounded right corners
+       (opposite the point), a turned metal grommet
+   NO silhouette change — clip-path, fixed widths (20.5rem / 17rem),
+   grow-downward-only, grommet-left-center all as shipped.
+   ========================================================================== */
+:root {
+  --paper: #f4f1e8; --ink: #2a2620; --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --tag-paper: #e8d9a8;
+  --tag-ink: #3a2a12;
+  --tag-dim: rgba(58, 42, 18, 0.62);
+  --tag-rule: rgba(74, 53, 18, 0.4);
+  --tag-rule-soft: rgba(74, 53, 18, 0.28);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 1.4rem 0.9rem 3.5rem; overflow-x: hidden;
+}
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.4rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center; font-weight: 700;
+}
+.mock-intro {
+  max-width: 47rem; margin: 0 auto 1.8rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.09em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+
+/* ---- the drawer-floor stages the tags float over ------------------------ */
+.bays {
+  max-width: 1120px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+  gap: 20px;
+}
+.bay { min-width: 0; }
+.stage {
+  position: relative;
+  min-height: 250px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1.6rem 0.9rem;
+  overflow: hidden;
+  border: 1px solid rgba(40, 22, 8, 0.55);
+  box-shadow: 6px 9px 20px -8px rgba(30, 18, 8, 0.45),
+              inset 0 0 0 3px rgba(20, 10, 4, 0.25);
+  /* busy wood-grain floor, CSS only: plank bands + fine streaks + knots-ish
+     turbulence + a warm key light and vignette */
+  background:
+    radial-gradient(130% 140% at 40% 24%, rgba(0,0,0,0) 55%, rgba(20,10,4,0.30) 100%),
+    radial-gradient(80% 90% at 68% 74%, rgba(255,223,158,0.14) 0%, rgba(255,223,158,0) 70%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(46, 26, 8, 0.14) 0 2px, rgba(0,0,0,0) 2px 9px,
+      rgba(255, 214, 140, 0.06) 9px 11px, rgba(0,0,0,0) 11px 26px),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+.mock-label {
+  margin: 0.75rem auto 0; max-width: 30rem;
+  font-size: 0.63rem; line-height: 1.85; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.16em; }
+
+/* ---- hang: tag + the stub of red elastic entering the grommet ----------- */
+.hang {
+  position: relative; padding-left: 58px; max-width: 100%;
+  min-width: 0;   /* flex item: without this min-width:auto keeps the tag's
+                     20.5rem intrinsic width and the max-width backstop on the
+                     tag never engages on a phone-width stage */
+}
+.stub {
+  position: absolute; left: -4px; top: 50%; transform: translateY(-50%);
+  z-index: 2; overflow: visible; pointer-events: none;
+  filter: drop-shadow(1px 2px 1px rgba(22, 11, 4, 0.35));
+}
+
+/* ============================================================================
+   THE TAG — same silhouette as shipped (.jd-itemtag), re-tailored inside
+   ========================================================================== */
+.tag {
+  position: relative; z-index: 1;
+  width: var(--w, 20.5rem);
+  max-width: calc(100% - 16px);
+  color: var(--tag-ink);
+  font-family: var(--mono);
+  padding: 0.75rem 0.95rem 0.8rem 2rem;      /* extra room right of grommet */
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  border: 1px solid var(--tag-rule);
+  border-radius: 0 7px 7px 0;                /* subtle ease opposite the point */
+  filter: drop-shadow(1px 2px 2px rgba(22, 11, 4, 0.38))
+          drop-shadow(4px 7px 10px rgba(22, 11, 4, 0.26));
+  /* manila with a whisper of grain and a top-edge sheen — cheap layers the
+     real tag can carry verbatim */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.29 0 0 0 0 0.21 0 0 0 0 0.09 0 0 0 0.55 -0.42'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E"),
+    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 22%,
+                    rgba(0, 0, 0, 0) 78%, rgba(96, 68, 26, 0.10) 100%),
+    var(--tag-paper);
+  box-shadow: inset 0 0 0 1px rgba(255, 249, 226, 0.28);   /* pressed edge */
+}
+.tag::before {                                /* the grommet, turned metal */
+  content: ""; position: absolute; left: 5px; top: 50%;
+  width: 11px; height: 11px; transform: translateY(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 50% 44%,
+    #4a3a1c 0 21%, #b39a5e 30%, #8a713c 52%, #c9ad67 72%, #75592a 100%);
+  box-shadow: 0 1px 1px rgba(58, 42, 18, 0.45),
+              0 0 0 2px rgba(232, 217, 168, 0.9);   /* washer seats on paper */
+}
+
+/* register 1 — the specimen name: two lines reserved, two lines max */
+.tag .name {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; line-height: 1.4;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.8em;                          /* = two lines, steady height */
+  padding-bottom: 0.4rem; margin-bottom: 0.45rem;
+  border-bottom: 1px solid var(--tag-rule-soft);
+}
+
+/* register 2 — the filing grid: one label column, values share a left edge */
+.tag .rows { display: flex; flex-direction: column; gap: 0.22rem; }
+.tag .row  { display: flex; align-items: baseline; min-width: 0; }
+.tag .lab {
+  flex: 0 0 3.4rem;
+  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tag-dim); line-height: 1.5;
+}
+.tag .val {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.62rem; letter-spacing: 0.05em; line-height: 1.5;
+  text-transform: uppercase; overflow-wrap: break-word;
+}
+.tag .val.date { color: var(--tag-dim); white-space: nowrap; flex: 0 0 auto; }
+.tag .val.g { font-weight: 700; letter-spacing: 0.12em; flex: 0 0 auto; }
+.tag .val.g.none { color: var(--tag-dim); }
+.tag .row--grade { align-items: center; }
+.tag .row--grade svg {
+  margin-left: auto; overflow: visible; display: block;
+  margin-right: -11px;   /* the gauge svg carries 11px of empty right padding
+                            (viewBox -9 0 88, bar ends at x=68) — pull it out
+                            so the BAR, not the box, aligns flush right over
+                            the button bar's edge */
+}
+
+/* register 3 — the button bar: equal halves (or one full-width), one line */
+.tag .btns {
+  display: flex; gap: 0.45rem;
+  margin-top: 0.55rem; padding-top: 0.55rem;
+  border-top: 1px solid var(--tag-rule-soft);
+}
+.tag .btn {
+  flex: 1 1 0; min-width: 0;
+  font-size: 0.55rem; letter-spacing: 0.1em; line-height: 1;
+  color: var(--tag-ink); text-decoration: none; text-align: center;
+  white-space: nowrap;
+  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+  padding: 0.44rem 0.2rem 0.4rem;
+  background: rgba(255, 252, 240, 0.3);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
+}
+.tag .btn:hover { background: rgba(255, 252, 240, 0.65); }
+.tag .btn:active { box-shadow: none; transform: translateY(1px); }
+
+/* the 17rem narrow variant (mirrors the ≤768px overrides in junk-drawer.css) */
+.tag--narrow { --w: 17rem; padding: 0.6rem 0.75rem 0.65rem 1.75rem; }
+.tag--narrow .name { font-size: 0.62rem; }
+.tag--narrow .lab  { font-size: 0.46rem; flex-basis: 2.9rem; }
+.tag--narrow .val  { font-size: 0.56rem; }
+.tag--narrow .btn  { font-size: 0.5rem; letter-spacing: 0.08em; padding: 0.4rem 0.15rem 0.36rem; }
+
+/* ---- design notes -------------------------------------------------------- */
+.notes {
+  max-width: 47rem; margin: 2.6rem auto 0;
+  border-top: 2px solid var(--ink); padding-top: 1rem;
+}
+.notes h2 {
+  font-size: 0.72rem; letter-spacing: 0.26em; text-transform: uppercase;
+  margin-bottom: 0.8rem;
+}
+.notes ul { list-style: none; }
+.notes li {
+  font-size: 0.68rem; line-height: 1.85; letter-spacing: 0.04em;
+  color: #55503f; padding-left: 1.3rem; position: relative; margin-bottom: 0.55rem;
+}
+.notes li::before { content: "—"; position: absolute; left: 0; color: var(--plot-red); }
+.notes b { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<h1 class="mock-title">Mockup 12A &middot; Pressed &amp; Filed</h1>
+<p class="mock-intro">
+  The specimen tag, <b>faithful refactor</b>: same manila, same point, same grommet
+  and red elastic &mdash; but typeset like a stock-room that passed inspection.
+  A label/value grid, three ruled registers, a one-line button bar.
+  Fixed width 20.5rem (17rem narrow); the tag only ever grows downward.
+</p>
+
+<div class="bays">
+
+  <!-- 1 · graded CHOICE, normal name -->
+  <section class="bay">
+    <div class="stage">
+      <div class="hang">
+        <svg class="stub" width="74" height="48" viewBox="0 0 74 48" aria-hidden="true">
+          <path d="M -8 6 C 18 30, 40 14, 68.5 24" fill="none"
+                stroke="#b22222" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <article class="tag" aria-label="specimen tag: mammoth in an ice cube">
+          <h3 class="name">Mammoth in an Ice Cube</h3>
+          <div class="rows">
+            <div class="row"><span class="lab">Model</span><span class="val">Claude Opus 5</span></div>
+            <div class="row"><span class="lab">Filed</span><span class="val date">2026-07-29</span></div>
+            <div class="row row--grade"><span class="lab">Grade</span><span class="val g">Choice</span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 4 of 5"><defs><clipPath id="clipA"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipA)"><rect x="2" y="2" width="52.8" height="9" fill="#46761a"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#e8d9a8" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#46761a" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+          <div class="btns">
+            <a class="btn" href="#">DOWNLOAD SVG &#10515;</a>
+            <a class="btn" href="#">REPORT CARD &rarr;</a>
+          </div>
+        </article>
+      </div>
+    </div>
+    <p class="mock-label"><b>1 &middot; 20.5rem</b> &middot; graded CHOICE &middot; short name (second line reserved &mdash; a short name never shrinks the tag)</p>
+  </section>
+
+  <!-- 2 · long name wraps to 2 lines, long model label, PRIME -->
+  <section class="bay">
+    <div class="stage">
+      <div class="hang">
+        <svg class="stub" width="74" height="48" viewBox="0 0 74 48" aria-hidden="true">
+          <path d="M -8 40 C 20 18, 42 32, 68.5 24" fill="none"
+                stroke="#b22222" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <article class="tag" aria-label="specimen tag: commemorative teaspoon from a decommissioned lighthouse">
+          <h3 class="name">Commemorative Teaspoon from a Decommissioned Lighthouse</h3>
+          <div class="rows">
+            <div class="row"><span class="lab">Model</span><span class="val">Claude Sonnet 5 &rarr; Opus 5 refine</span></div>
+            <div class="row"><span class="lab">Filed</span><span class="val date">2026-08-02</span></div>
+            <div class="row row--grade"><span class="lab">Grade</span><span class="val g">Prime</span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 5 of 5"><defs><clipPath id="clipB"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipB)"><rect x="2" y="2" width="66" height="9" fill="#0b6a1f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#e8d9a8" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#0b6a1f" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+          <div class="btns">
+            <a class="btn" href="#">DOWNLOAD SVG &#10515;</a>
+            <a class="btn" href="#">REPORT CARD &rarr;</a>
+          </div>
+        </article>
+      </div>
+    </div>
+    <p class="mock-label"><b>2 &middot; 20.5rem</b> &middot; graded PRIME &middot; two-line name + long model label ("&rarr; refine" chain)</p>
+  </section>
+
+  <!-- 3 · UNGRADED, download-only -->
+  <section class="bay">
+    <div class="stage">
+      <div class="hang">
+        <svg class="stub" width="74" height="48" viewBox="0 0 74 48" aria-hidden="true">
+          <path d="M -8 10 C 22 34, 44 16, 68.5 24" fill="none"
+                stroke="#b22222" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <article class="tag" aria-label="specimen tag: left-handed smoke shifter">
+          <h3 class="name">Left-Handed Smoke Shifter</h3>
+          <div class="rows">
+            <div class="row"><span class="lab">Model</span><span class="val">Claude Haiku 4.5</span></div>
+            <div class="row"><span class="lab">Filed</span><span class="val date">2026-08-10</span></div>
+            <div class="row row--grade"><span class="lab">Grade</span><span class="val g none">Ungraded</span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="ungraded"><defs><clipPath id="clipC"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipC)"><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="rgba(58,42,18,0.55)" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+          <div class="btns">
+            <a class="btn" href="#">DOWNLOAD SVG &#10515;</a>
+          </div>
+        </article>
+      </div>
+    </div>
+    <p class="mock-label"><b>3 &middot; 20.5rem</b> &middot; UNGRADED (empty track, dim verdict) &middot; download-only: the lone button takes the bar</p>
+  </section>
+
+  <!-- 4 · the 17rem narrow width, SELECT (rank 2) -->
+  <section class="bay">
+    <div class="stage">
+      <div class="hang">
+        <svg class="stub" width="74" height="48" viewBox="0 0 74 48" aria-hidden="true">
+          <path d="M -8 42 C 16 20, 44 30, 68.5 24" fill="none"
+                stroke="#b22222" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <article class="tag tag--narrow" aria-label="specimen tag: municipal parking meter, expired">
+          <h3 class="name">Municipal Parking Meter, Expired</h3>
+          <div class="rows">
+            <div class="row"><span class="lab">Model</span><span class="val">Claude Sonnet 5</span></div>
+            <div class="row"><span class="lab">Filed</span><span class="val date">2026-07-18</span></div>
+            <div class="row row--grade"><span class="lab">Grade</span><span class="val g">Select</span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 2 of 5"><defs><clipPath id="clipD"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipD)"><rect x="2" y="2" width="26.4" height="9" fill="#b0490f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#e8d9a8" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#e8d9a8" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#b0490f" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+          <div class="btns">
+            <a class="btn" href="#">DOWNLOAD SVG &#10515;</a>
+            <a class="btn" href="#">REPORT CARD &rarr;</a>
+          </div>
+        </article>
+      </div>
+    </div>
+    <p class="mock-label"><b>4 &middot; 17rem narrow</b> &middot; graded SELECT (rank 2) &middot; the &le;768px compact scale</p>
+  </section>
+
+</div>
+
+<section class="notes">
+  <h2>Design Notes &middot; 12A Pressed &amp; Filed</h2>
+  <ul>
+    <li><b>Three ruled registers.</b> Two hairlines (rgba(74,53,18,0.28)) split the tag
+      into name / filing grid / button bar. That is the whole layout story: every
+      variant reads in the same three horizontal bands, so tags feel stamped from
+      one die even when the content differs.</li>
+    <li><b>A real label/value grid.</b> MODEL, FILED, GRADE share a fixed 3.4rem label
+      column (2.9rem narrow); all values start on one left edge. The old tag ran
+      "model &middot; date" as an inline sentence &mdash; splitting the date onto its own FILED
+      row costs one line but buys alignment, and the two-line name reserve means
+      total height stays steady anyway. Labels are presentation, not new data.</li>
+    <li><b>Type scale, four steps, one rhythm.</b> Name 0.7rem/700/0.07em; values
+      0.62rem; button text 0.55rem; labels 0.5rem caps at 0.18em tracking. Rows sit
+      on a shared 1.5 line-height so the grid keeps a baseline beat. Narrow variant
+      steps everything down one notch (0.62 / 0.56 / 0.5 / 0.46rem).</li>
+    <li><b>Name clamp unchanged in behavior.</b> -webkit-line-clamp: 2 with
+      min-height: 2.8em (2 &times; 1.4 line-height) &mdash; a short name reserves the same
+      two lines a long one uses (tags 1 and 2). The one remaining growth is a
+      wrapping model label (tag 2), which pushes the tag downward only &mdash; pick()
+      measures the tag's height at runtime, as today.</li>
+    <li><b>Gauge kept verbatim,</b> right-aligned on the GRADE row so its right edge
+      lines up over the button bar's right edge. Verdict word sits by the label,
+      meter flush right &mdash; the row reads label &rarr; word &rarr; measure. UNGRADED shows
+      the dim verdict + empty bordered track per the shipped spec.</li>
+    <li><b>Buttons: one line, equal halves.</b> The old two-line centered buttons are
+      now a full-width bar: flex 1 each, 3px radius, faint cream fill and a 1px
+      drop under the border so they read pressable against the manila. Download-only
+      (tag 3) is the same bar with one button taking the full width &mdash; no layout
+      special-case. White-space: nowrap holds each label to one line at both widths.</li>
+    <li><b>Material, all inline/CSS:</b> a 140px feTurbulence data-URI at ~5% for paper
+      grain, a 178deg sheen (light top edge, faint soot at the foot), inset 1px cream
+      edge, and border-radius 0 7px 7px 0 &mdash; the clip-path polygon keeps the full
+      right edge, so the radius survives it while the point stays sharp. Grommet is
+      an 11px radial-gradient washer with a dark bore, ringed by 2px of paper so it
+      reads seated, not printed.</li>
+    <li><b>Grommet stays left-edge, vertically centered</b> &mdash; the seat/rope math in
+      pick() and the Verlet elastic anchor there today; no reason to move it. The red
+      stub in each stage is mockup-only scenery showing the attachment reads.</li>
+    <li><b>Integration watch-outs:</b> (a) the tag is drawn with border + clip-path as
+      shipped, so the border still vanishes along the pointed bevels &mdash; unchanged
+      from production; (b) filter: two drop-shadows replaces the single one &mdash; keep
+      the .is-dragging will-change promotion; (c) the paper-grain background-image
+      joins background-color on the same element &mdash; no new DOM; (d) buttons remain
+      &lt;a&gt; with cursor:pointer, everything else stays the grab surface;
+      (e) date value keeps white-space:nowrap so ISO dates never split at hyphens;
+      the model value still wraps (see tag 2 at 17rem).</li>
+  </ul>
+</section>
+
+</body>
+</html>
