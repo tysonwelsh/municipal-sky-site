@@ -1064,22 +1064,22 @@ html.jd-record-open { overflow: hidden; }
    (their own preserveAspectRatio meet), so a tall item takes the stage's
    height, a wide one its width, nothing ever touches the plate's rim.
 
-   THE STAGE IS TUNED PER SHAPE CLASS (critic pass, 2026-08-13) — equal-
-   height letterboxing makes equal-height items of wildly unequal visual
-   mass, so junk-drawer.js reads each response's viewBox aspect and adds:
-   · rc-art-wide (aspect ≥ 3:1, cigarette/pencil-stub territory): seated in
-     the floor plane between the horizon (49%) and the nearest ground line
-     (83%) — an object LYING on the ground in front of the viewer, not
-     levitating at the vanishing point, and the glow line stays uncovered.
+   THE STAGE IS TUNED BY SHAPE (critic pass 2026-08-13; automatic — nothing
+   is filed per item): equal-height letterboxing makes equal-height items
+   of wildly unequal visual mass, so junk-drawer.js measures each
+   response's viewBox aspect at render time and adds:
    · rc-art-square (0.75–1.33, solid masses like the eyeball): a smaller
      envelope (~56% of plate height) so the horizon and both grid fans
      stay visible around the mass; at 71% the item IS the plate.
-   Default (tall/leaning items): 17/12 rather than a symmetric split —
-   centers land ~3% below the horizon (the threshold of visibility) and
-   bases plant below the 83% ground line. */
+   Everything else — tall, leaning, and wide alike — shares the default
+   stage: 17/12 rather than a symmetric split, so centers land ~3% below
+   the horizon (the threshold of visibility) and tall bases plant below
+   the 83% ground line. The item deliberately sits OVER the vanishing
+   point and glow line (owner, 2026-08-13) — a wide item covering the
+   horizon is the composition working, not a collision; an earlier
+   floor-seated wide class was retired on that call. */
 .rc-plate-art { position: absolute; top: 17%; bottom: 12%; left: 10%; right: 10%; }
 .rc-plate-art.rc-art-square { top: 23%; bottom: 21%; }
-.rc-plate-art.rc-art-wide { top: 56%; bottom: 24%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
