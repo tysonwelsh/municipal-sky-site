@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 12B &middot; THE ACCESSION CARD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 12B · THE ACCESSION CARD (specimen-tag redesign,
+   round 12 — one of two dramatic reworks)
+
+   THESIS: the tag stops being a shipping tag and becomes the RECORD — a ruled
+   accession card pulled from the municipal collection's card catalog. Cream
+   card stock (a shade lighter than the app's manila, as catalog cards are),
+   red top rule, faint blue ruling, a pre-printed collection masthead, typed
+   entry lines (SPECIMEN heading, MODEL / FILED fields), and the grade landed
+   as a rubber stamp — inked in the rank's own color, set a couple of degrees
+   off square, the segmented bar gauge riding inside the stamp like a
+   calibration strip. A punched hole with a paper reinforcement ring takes the
+   red elastic at the left edge's center (same anchor as today's grommet, so
+   the rope math carries over unchanged).
+
+   Someone typed this card in 1974; the curator still stamps it.
+   ========================================================================== */
+:root {
+  /* wood floor, verbatim from mockup-6 (the drawer the card floats over) */
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  /* soft paper grain for the card stock */
+  --cgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.9' numOctaves='3' seed='13'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.32 0 0 0 0 0.25 0 0 0 0 0.12 0 0 0 0.10 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --plot-red: #b22222;
+  --paper: #f4f1e8;
+  --pageink: #2a2620;
+  /* the card's own tokens ------------------------------------------------- */
+  --acc-paper: #f2ead0;          /* cream card stock — one shade off manila  */
+  --acc-ink: #3a2a12;
+  --acc-dim: rgba(58, 42, 18, 0.62);
+  --acc-faint: rgba(58, 42, 18, 0.4);
+  --acc-blue: rgba(88, 108, 152, 0.34);   /* the faded ruling                */
+  --acc-lh: 1.2rem;              /* the ruling pitch — every typed line obeys */
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper); color: var(--pageink);
+  font-family: var(--font-mono);
+  padding: 2rem 1rem 4rem;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  font-size: 0.85rem; letter-spacing: 0.3em; text-align: center;
+  font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem;
+}
+.mock-intro {
+  font-size: 0.7rem; letter-spacing: 0.08em; text-align: center;
+  color: #6d6455; max-width: 800px; margin: 0 auto 2.2rem; line-height: 1.85;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.14em; }
+.stagerow {
+  display: flex; flex-wrap: wrap; gap: 2rem 1.8rem; justify-content: center;
+  max-width: 1180px; margin: 0 auto;
+}
+.vwrap { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+.tile {
+  position: relative;
+  padding: 44px 28px 40px 64px;   /* extra left: the elastic stub lives there */
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+  box-shadow: inset 0 0 70px rgba(20, 10, 4, 0.38),
+              10px 14px 30px -12px rgba(30, 18, 8, 0.45),
+              3px 5px 12px -5px rgba(30, 18, 8, 0.3);
+}
+.vlabel {
+  max-width: 24rem;
+  font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #6d6455; text-align: center; line-height: 1.9;
+}
+.vlabel b { color: var(--plot-red); }
+
+/* ============================================================================
+   THE CARD — .acc is what .jd-itemtag would become
+   ========================================================================== */
+.acc {
+  --w: 20.5rem;
+  position: relative;
+  width: var(--w);
+  max-width: calc(100% - 16px);
+  color: var(--acc-ink);
+  font-family: var(--font-mono);
+  background: var(--acc-paper);
+  border: 1px solid rgba(74, 53, 18, 0.5);
+  border-radius: 7px;             /* catalog cards wear soft corners */
+  cursor: grab;                   /* the whole card is the drag handle */
+  /* two shadows: a tight contact shadow for edge definition over busy grain,
+     a broader lift so it reads as floating above the pile */
+  filter: drop-shadow(1px 2px 2px rgba(22, 11, 4, 0.42))
+          drop-shadow(4px 7px 9px rgba(22, 11, 4, 0.42));
+}
+/* card-stock grain, over everything, touching nothing */
+.acc::after {
+  content: ""; position: absolute; inset: 0; z-index: 5;
+  border-radius: inherit;
+  background: var(--cgrain);
+  pointer-events: none;
+}
+
+/* ---- pre-printed masthead, above the red rule ---------------------------- */
+.acc .hd {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.34rem 0.9rem 0.26rem 2.4rem;
+  font-size: 0.48rem; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--acc-dim);
+  white-space: nowrap;
+}
+/* the collection line yields (ellipsis) before the red ACCESSION ever clips */
+.acc .hd .hd-l { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.acc .hd .hd-r { flex: 0 0 auto; color: rgba(178, 34, 34, 0.78); letter-spacing: 0.16em; }
+/* the red top rule — the card catalog's signature, doubled */
+.acc .redrule {
+  position: relative; height: 0;
+  border-top: 1px solid rgba(178, 34, 34, 0.85);
+}
+.acc .redrule::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 2px;
+  border-top: 1px solid rgba(178, 34, 34, 0.38);
+}
+
+/* ---- the ruled body ------------------------------------------------------
+   Faint blue ruling at --acc-lh pitch, running the card's full width (under
+   the hole too, as it would). Every typed line inside uses line-height
+   --acc-lh and vertical margins in multiples of it, so type sits on lines. */
+.acc .bd {
+  position: relative;
+  padding: 0.34rem 0.9rem 0.72rem 2.4rem;
+  border-radius: 0 0 7px 7px;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--acc-lh) - 1px),
+    var(--acc-blue) calc(var(--acc-lh) - 1px),
+    var(--acc-blue) var(--acc-lh)
+  );
+  background-position: 0 0.28rem;   /* phase: lines meet the type's baseline */
+}
+/* the red margin line, right of the punched hole */
+.acc .bd::before {
+  content: ""; position: absolute; left: 2rem; top: 0; bottom: 0;
+  border-left: 1px solid rgba(178, 34, 34, 0.3);
+}
+
+/* ---- the heading line: SPECIMEN, typed ----------------------------------
+   Two lines RESERVED whether needed or not (steady card height), clamped at
+   two so a runaway title cannot grow the card without limit. */
+.acc .name {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: calc(2 * var(--acc-lh));
+  line-height: var(--acc-lh);
+  font-size: 0.74rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  text-shadow: 0 0 0.5px rgba(58, 42, 18, 0.55);   /* a hair of ink bleed */
+}
+
+/* ---- the typed fields: MODEL · FILED ------------------------------------ */
+.acc .fields {
+  display: flex; flex-wrap: wrap; column-gap: 1.1rem;
+  line-height: var(--acc-lh);
+  font-size: 0.62rem; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.acc .fields .fl {
+  font-size: 0.5rem; letter-spacing: 0.16em;
+  color: var(--acc-dim); margin-right: 0.4rem;
+}
+.acc .fields .f-date { white-space: nowrap; }   /* ISO dates never split */
+.acc .fields .f-date .fv { color: var(--acc-dim); }
+
+/* ---- the foot: grade stamp + actions ------------------------------------ */
+.acc .foot {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 0.55rem 0.7rem;
+  margin-top: calc(0.4 * var(--acc-lh));
+}
+.acc .gradecell { display: flex; align-items: center; gap: 0.45rem; }
+.acc .cell-l {
+  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--acc-dim);
+  writing-mode: vertical-rl; transform: rotate(180deg);   /* pre-printed, edge-on */
+  line-height: 1;
+}
+/* the rubber stamp: rank-colored ink, a couple degrees off square, the
+   segmented gauge riding inside as its calibration strip */
+.acc .stamp {
+  display: inline-flex; flex-direction: column; align-items: center;
+  gap: 1px;
+  padding: 0.24rem 0.55rem 0.32rem;
+  border: 2px solid currentColor;
+  border-radius: 5px;
+  transform: rotate(-2deg);
+  text-shadow: 0 0 0.6px currentColor;
+  box-shadow: inset 0 0 0 0.5px currentColor;
+}
+.acc .stamp .s-word {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.18em;
+  line-height: 1.25; text-transform: uppercase;
+}
+.acc .stamp svg { display: block; overflow: visible; }
+/* the four inks (rank → color, same table as the gauge) */
+.acc .stamp.g5 { color: #0b6a1f; background: rgba(11, 106, 31, 0.07); }
+.acc .stamp.g4 { color: #46761a; background: rgba(70, 118, 26, 0.08); }
+.acc .stamp.g3 { color: #a06200; background: rgba(160, 98, 0, 0.08); }
+.acc .stamp.g2 { color: #b0490f; background: rgba(176, 73, 15, 0.07); }
+.acc .stamp.g1 { color: #8f1d12; background: rgba(143, 29, 18, 0.07); }
+/* no verdict yet: the pencilled placeholder box awaiting the curator */
+.acc .stamp.pending {
+  border: 1.5px dashed var(--acc-faint);
+  border-radius: 3px;
+  transform: none; box-shadow: none; text-shadow: none;
+  color: var(--acc-dim); background: none;
+}
+.acc .stamp.pending .s-word { font-weight: 400; letter-spacing: 0.14em; }
+
+/* the actions — the ONLY click targets on the card */
+.acc .btns { margin-left: auto; display: flex; gap: 0.4rem; align-items: stretch; position: relative; z-index: 6; }
+.acc .btn {
+  font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--acc-ink);
+  border: 1px solid rgba(74, 53, 18, 0.6);
+  border-radius: 2px;
+  padding: 0.3rem 0.5rem;
+  background: rgba(255, 252, 240, 0.4);
+  text-decoration: none; text-align: center; line-height: 1.5;
+  display: flex; flex-direction: column; justify-content: center;
+  cursor: pointer;
+}
+.acc .btn:hover { background: rgba(255, 252, 240, 0.8); }
+
+/* ---- the punched hole + reinforcement ring -------------------------------
+   Left edge, vertically centered — the SAME anchor as today's grommet, so
+   pick()'s rope math carries over. The hole is painted (drawer shadow in the
+   punch), ringed by the white paper reinforcement donut. */
+.acc .hole {
+  position: absolute; left: 6px; top: 50%;
+  width: 22px; height: 22px;
+  transform: translateY(-50%);
+  z-index: 3;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(255,255,255,0.5) 0 2px, transparent 5px),
+    radial-gradient(circle,
+      #241708 0 4.3px,                          /* the punch: drawer shadow  */
+      rgba(20, 12, 4, 0.55) 4.3px 5px,          /* punched edge              */
+      #f8f3e2 5px 9.6px,                        /* the reinforcement ring    */
+      rgba(74, 53, 18, 0.55) 9.6px 10.4px,      /* ring's cut edge           */
+      transparent 10.4px);
+  box-shadow: 0.5px 1px 1.5px rgba(22, 11, 4, 0.3);
+}
+/* the red elastic, entering the punch from the pile side */
+.acc .stub {
+  position: absolute; left: -48px; top: calc(50% - 42px);
+  width: 70px; height: 84px;
+  z-index: 4; overflow: visible; pointer-events: none;
+}
+
+/* ---- narrow tier (mirrors the ≤768px production variant) ----------------- */
+.acc.w17 { --w: 17rem; }
+
+/* ---------------- design notes (sibling conventions) ---------------------- */
+.considerations {
+  max-width: 46rem; margin: 3rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--pageink); }
+.considerations code {
+  font-family: var(--font-mono); font-size: 0.66rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 12B &middot; The Accession Card</p>
+<p class="mock-intro">
+  <b>12B &mdash; THE ACCESSION CARD.</b> Specimen-tag redesign, round 12
+  (dramatic rework, two of two). The tag becomes the specimen&rsquo;s catalog
+  record: cream card stock, red top rule, faint ruling, a pre-printed
+  masthead, typed SPECIMEN / MODEL / FILED lines, the grade landed as a
+  rank-colored rubber stamp carrying the segmented gauge, and the red elastic
+  through a punched hole with a paper reinforcement ring &mdash; same left-edge
+  anchor as today&rsquo;s grommet.
+</p>
+
+<div class="stagerow">
+
+  <!-- ============ variant 1: graded CHOICE, normal name ==================== -->
+  <div class="vwrap">
+    <div class="tile">
+      <div class="acc" aria-label="specimen card: mammoth in an ice cube">
+        <svg class="stub" viewBox="0 0 70 84" aria-hidden="true">
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="rgba(22,11,4,0.28)" stroke-width="2.6"
+                transform="translate(1.4 2)"/>
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="#b22222" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="65" cy="42" r="2.6" fill="#8f1a1a"/>
+        </svg>
+        <span class="hole" aria-hidden="true"></span>
+        <div class="hd">
+          <span class="hd-l">Junk Drawer &middot; Municipal Collection</span>
+          <span class="hd-r">Accession</span>
+        </div>
+        <div class="redrule" aria-hidden="true"></div>
+        <div class="bd">
+          <div class="name">Mammoth in an Ice Cube</div>
+          <div class="fields">
+            <span class="f-model"><span class="fl">Model</span><span class="fv">Claude Opus 5</span></span>
+            <span class="f-date"><span class="fl">Filed</span><span class="fv">2026-07-29</span></span>
+          </div>
+          <div class="foot">
+            <span class="gradecell">
+              <span class="cell-l">Grade</span>
+              <span class="stamp g4">
+                <span class="s-word">Choice</span>
+                <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 4 of 5"><defs><clipPath id="clipA1"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipA1)"><rect x="2" y="2" width="52.8" height="9" fill="#46761a"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#f2ead0" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#46761a" stroke-width="1.5"/></svg>
+              </span>
+            </span>
+            <span class="btns">
+              <a class="btn" href="#" title="download the SVG as generated">Download<br>SVG &#x2913;</a>
+              <a class="btn" href="#" title="open the report card">Report<br>Card &rarr;</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="vlabel"><b>1 &middot; graded choice</b> &mdash; normal name &middot; 20.5rem &middot; both actions</p>
+  </div>
+
+  <!-- ============ variant 2: long name + long model, PRIME ================= -->
+  <div class="vwrap">
+    <div class="tile">
+      <div class="acc" aria-label="specimen card: articulated wooden artist's mannequin, left hand, posed mid-wave">
+        <svg class="stub" viewBox="0 0 70 84" aria-hidden="true">
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="rgba(22,11,4,0.28)" stroke-width="2.6"
+                transform="translate(1.4 2)"/>
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="#b22222" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="65" cy="42" r="2.6" fill="#8f1a1a"/>
+        </svg>
+        <span class="hole" aria-hidden="true"></span>
+        <div class="hd">
+          <span class="hd-l">Junk Drawer &middot; Municipal Collection</span>
+          <span class="hd-r">Accession</span>
+        </div>
+        <div class="redrule" aria-hidden="true"></div>
+        <div class="bd">
+          <div class="name">Articulated Wooden Artist&rsquo;s Mannequin, Left Hand</div>
+          <div class="fields">
+            <span class="f-model"><span class="fl">Model</span><span class="fv">Claude Sonnet 5 &rarr; Opus 5 refine</span></span>
+            <span class="f-date"><span class="fl">Filed</span><span class="fv">2026-08-02</span></span>
+          </div>
+          <div class="foot">
+            <span class="gradecell">
+              <span class="cell-l">Grade</span>
+              <span class="stamp g5">
+                <span class="s-word">Prime</span>
+                <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 5 of 5"><defs><clipPath id="clipB2"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipB2)"><rect x="2" y="2" width="66" height="9" fill="#0b6a1f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#f2ead0" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#0b6a1f" stroke-width="1.5"/></svg>
+              </span>
+            </span>
+            <span class="btns">
+              <a class="btn" href="#" title="download the SVG as generated">Download<br>SVG &#x2913;</a>
+              <a class="btn" href="#" title="open the report card">Report<br>Card &rarr;</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="vlabel"><b>2 &middot; graded prime</b> &mdash; two-line name at the clamp + long model label (wraps) &middot; 20.5rem</p>
+  </div>
+
+  <!-- ============ variant 3: UNGRADED, download-only ======================= -->
+  <div class="vwrap">
+    <div class="tile">
+      <div class="acc" aria-label="specimen card: bakelite rotary telephone dial">
+        <svg class="stub" viewBox="0 0 70 84" aria-hidden="true">
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="rgba(22,11,4,0.28)" stroke-width="2.6"
+                transform="translate(1.4 2)"/>
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="#b22222" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="65" cy="42" r="2.6" fill="#8f1a1a"/>
+        </svg>
+        <span class="hole" aria-hidden="true"></span>
+        <div class="hd">
+          <span class="hd-l">Junk Drawer &middot; Municipal Collection</span>
+          <span class="hd-r">Accession</span>
+        </div>
+        <div class="redrule" aria-hidden="true"></div>
+        <div class="bd">
+          <div class="name">Bakelite Rotary Telephone Dial</div>
+          <div class="fields">
+            <span class="f-model"><span class="fl">Model</span><span class="fv">Claude Sonnet 5</span></span>
+            <span class="f-date"><span class="fl">Filed</span><span class="fv">2026-08-10</span></span>
+          </div>
+          <div class="foot">
+            <span class="gradecell">
+              <span class="cell-l">Grade</span>
+              <span class="stamp pending">
+                <span class="s-word">Ungraded</span>
+                <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="ungraded"><g><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="rgba(58,42,18,0.55)" stroke-width="1.5"/></svg>
+              </span>
+            </span>
+            <span class="btns">
+              <a class="btn" href="#" title="download the SVG as generated">Download<br>SVG &#x2913;</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="vlabel"><b>3 &middot; ungraded</b> &mdash; pencilled placeholder box, hollow gauge &middot; download-only (no report card)</p>
+  </div>
+
+  <!-- ============ variant 4: 17rem narrow, SELECT (rank 2) ================= -->
+  <div class="vwrap">
+    <div class="tile">
+      <div class="acc w17" aria-label="specimen card: tin of assorted buttons">
+        <svg class="stub" viewBox="0 0 70 84" aria-hidden="true">
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="rgba(22,11,4,0.28)" stroke-width="2.6"
+                transform="translate(1.4 2)"/>
+          <path d="M5 81 C 24 70, 46 55, 65 42" fill="none"
+                stroke="#b22222" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="65" cy="42" r="2.6" fill="#8f1a1a"/>
+        </svg>
+        <span class="hole" aria-hidden="true"></span>
+        <div class="hd">
+          <span class="hd-l">Municipal Collection</span>
+          <span class="hd-r">Accession</span>
+        </div>
+        <div class="redrule" aria-hidden="true"></div>
+        <div class="bd">
+          <div class="name">Tin of Assorted Buttons</div>
+          <div class="fields">
+            <span class="f-model"><span class="fl">Model</span><span class="fv">Claude Opus 5</span></span>
+            <span class="f-date"><span class="fl">Filed</span><span class="fv">2026-07-31</span></span>
+          </div>
+          <div class="foot">
+            <span class="gradecell">
+              <span class="cell-l">Grade</span>
+              <span class="stamp g2">
+                <span class="s-word">Select</span>
+                <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 2 of 5"><defs><clipPath id="clipD4"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#clipD4)"><rect x="2" y="2" width="26.4" height="9" fill="#b0490f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#f2ead0" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#f2ead0" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#b0490f" stroke-width="1.5"/></svg>
+              </span>
+            </span>
+            <span class="btns">
+              <a class="btn" href="#" title="download the SVG as generated">Download<br>SVG &#x2913;</a>
+              <a class="btn" href="#" title="open the report card">Report<br>Card &rarr;</a>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="vlabel"><b>4 &middot; 17rem narrow tier</b> &mdash; select (rank 2) &middot; the foot wraps, the card grows downward only</p>
+  </div>
+
+</div>
+
+<!-- ================= design notes ========================================= -->
+<section class="considerations">
+  <p class="mc-head">Design Notes &middot; 12B</p>
+
+  <p><b>The move.</b> Today&rsquo;s tag is a luggage label; this is the
+  drawer&rsquo;s paperwork. Cream card stock (<code>#f2ead0</code>, one shade
+  lighter than the app&rsquo;s manila <code>#e8d9a8</code>, as catalog cards
+  are against their envelopes), the classic doubled red top rule, faded blue
+  ruling at a fixed <code>--acc-lh: 1.2rem</code> pitch, a pre-printed
+  masthead, and typed entry lines. The blue ruling is the one non-ink hue on
+  the card &mdash; period-correct office stock, kept at 0.34 alpha so it
+  reads as paper, not as UI.</p>
+
+  <p><b>The stamp is the verdict.</b> The grade block is a rubber stamp set
+  2&deg; off square, inked in the rank&rsquo;s own color (the same five-color
+  table the gauge already uses), with the segmented bar gauge riding inside
+  it as the calibration strip &mdash; gauge dividers switched from manila to
+  this card&rsquo;s paper color <code>#f2ead0</code> so they read over the
+  fill. One ink per card: the stamp word, border, tint, and gauge all agree.
+  UNGRADED swaps the stamp for a square, dashed, pencil-weight placeholder
+  box (no rotation, dim ink, hollow gauge at 0.55/0.3 ink alphas) &mdash;
+  a slot the curator hasn&rsquo;t stamped yet.</p>
+
+  <p><b>Anchor unchanged.</b> The punched hole + reinforcement ring sits at
+  the left edge&rsquo;s vertical center &mdash; the exact anchor of
+  today&rsquo;s grommet, so <code>pick()</code>&rsquo;s seat/rope math is
+  untouched. (The catalog-authentic spot would be bottom-center, where the
+  drawer rod goes; not worth re-deriving the elastic for.) The hole is
+  <b>painted</b>, not cut: a radial-gradient punch + ring on one absolutely
+  positioned span, ~17px from the left edge to its center vs today&rsquo;s
+  ~9.5px &mdash; the rope endpoint constant in <code>junk-drawer.js</code>
+  needs that one-number nudge. A real cutout would need
+  <code>mask</code>/<code>clip-path: path()</code> and buys little at 22px.</p>
+
+  <p><b>Steady height, downward growth.</b> The SPECIMEN line keeps
+  production&rsquo;s exact clamp mechanics: two lines reserved
+  (<code>min-height: 2&times;--acc-lh</code>), <code>-webkit-line-clamp: 2</code>.
+  MODEL stays breakable (the long refine label wraps); FILED&rsquo;s date is
+  <code>white-space: nowrap</code>. The foot is <code>flex-wrap</code>: on the
+  17rem tier the two buttons drop to their own row under the stamp, and the
+  card only ever grows downward &mdash; <code>pick()</code> already measures
+  tag height at runtime, so nothing else changes.</p>
+
+  <p><b>Integration notes for the real build.</b>
+  (1)&nbsp;<code>.jd-itemtag</code> loses its <code>clip-path</code> polygon
+  and gains <code>border-radius: 7px</code> &mdash; the drop-shadow filter
+  works the same; keep <code>cursor: grab</code>, <code>touch-action: none</code>,
+  buttons the only pointer targets (they sit at a higher z-index than the
+  grain overlay, which is <code>pointer-events: none</code>).
+  (2)&nbsp;The grommet <code>::before</code> becomes the hole span&rsquo;s
+  gradient recipe; the elastic stub here is page dressing &mdash; production
+  keeps its Verlet rope, re-aimed at x&asymp;17px.
+  (3)&nbsp;<code>meterSVG()</code> is reused verbatim except the divider
+  stroke constant (<code>#e8d9a8 &rarr; #f2ead0</code>); the tag build also
+  stamps a <code>g1&hellip;g5</code>/<code>pending</code> class on the stamp
+  box from the same rank it already reads &mdash; one code path, same
+  <code>ranked</code> switch.
+  (4)&nbsp;The masthead and field labels (&ldquo;MODEL&rdquo;,
+  &ldquo;FILED&rdquo;, &ldquo;GRADE&rdquo;) are static pre-printed chrome in
+  the template string; all specimen values stay escaped plain text exactly as
+  today. The masthead is <code>white-space: nowrap; overflow: hidden</code>
+  with an ellipsis fallback, and the 17rem tier shortens it (drop the
+  &ldquo;Junk Drawer &middot;&rdquo; prefix, keep &ldquo;Municipal
+  Collection&rdquo;) in the same <code>&le;768px</code> block that sets
+  <code>--jd-tag-w</code>.
+  (5)&nbsp;If typed lines are added or moved, keep every body line-height and
+  vertical margin a multiple of <code>--acc-lh</code> or the type drifts off
+  the ruling; the ruling phase lives in one
+  <code>background-position</code> value on <code>.bd</code>.</p>
+</section>
+
+</body>
+</html>
