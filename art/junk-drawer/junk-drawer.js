@@ -2220,13 +2220,106 @@ function JD_layerOpen() {
       '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
-  /* the vaporwave floor: black-and-white checkerboard projected toward a
-     center vanishing point; far rows dissolve into the navy horizon.
-     `pfx` namespaces the two gradient ids: the plate and the enlargement can
+  /* the vaporwave floor, mk II (owner, 2026-08-12): TWIN perspective grids —
+     a floor below the artwork and a ceiling above it — teal-blue wireframe
+     lines all converging on one central vanishing point; both grids dissolve
+     into a hazy glow band at the shared horizon. The viewBox is square to
+     match the plate; the enlargement crops it center-out (slice).
+     `pfx` namespaces the gradient ids: the plate and the enlargement can
      be in the document at the same time, and while their gradients happen to
      be identical today, two copies fighting over one id is exactly the bug
      svgInst exists to prevent — so the floor prefixes its own defs too. */
   function floorSVG(pfx) {
+    pfx = pfx || '';
+    var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
+    /* true one-point perspective: equally spaced ground lines at depth n sit
+       at y = HOR ± DEPTH/n — wide apart underfoot, compressing hard at the
+       horizon. GAP holds an empty band at the horizon so the two grids never
+       actually meet; each grid also fades out through a luminance-mask
+       gradient before it gets there. */
+    /* OFF shifts the harmonic series so the nearest row lands ~85% down the
+       panel instead of exactly on its edge (critic round 1: the near field
+       read as an empty fan without it). Rows run until they're finer than
+       roughly half the GAP, so the last few visibly dissolve INTO the glow
+       rather than stopping short of it. */
+    var DEPTH = H - HOR, GAP = 22, OFF = 0.4, ROWS = 14, COLS = 11, S = 88;
+    function ln(x1, y1, x2, y2) {
+      return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+        '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    var floor = '', ceil = '';
+    for (var n = 1; n <= ROWS; n++) {
+      var dy = DEPTH / (n + OFF);
+      if (dy <= GAP * 0.55) break;
+      floor += ln(0, HOR + dy, W, HOR + dy);
+      ceil += ln(0, HOR - dy, W, HOR - dy);
+    }
+    for (var j = -COLS; j <= COLS; j++) {
+      var xN = VPX + j * S;             /* the ray at the near (screen) edge */
+      var xF = VPX + j * S * (GAP / DEPTH);   /* …stopped at the gap's edge */
+      floor += ln(xN, H, xF, HOR + GAP);
+      ceil += ln(xN, 0, xF, HOR - GAP);
+    }
+    function mask(id, y0, y1) {
+      /* white = keep, black = drop: full strength at the near edge, dying
+         away inside the glow (critic round 1: near/far contrast, and let the
+         finest lines fade into the light rather than before it) */
+      return '<linearGradient id="' + id + 'g" x1="0" y1="' + y0 +
+        '" x2="0" y2="' + y1 + '" gradientUnits="userSpaceOnUse">' +
+        '<stop offset="0" stop-color="#fff"/>' +
+        '<stop offset="0.5" stop-color="#c4c4c4"/>' +
+        '<stop offset="0.82" stop-color="#737373"/>' +
+        '<stop offset="1" stop-color="#000"/>' +
+        '</linearGradient>' +
+        '<mask id="' + id + '"><rect x="0" y="0" width="' + W + '" height="' +
+        H + '" fill="url(#' + id + 'g)"/></mask>';
+    }
+    return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + pfx + 'jdRcBg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0a0e24"/>' +
+      '<stop offset="0.5" stop-color="#152451"/>' +
+      '<stop offset="1" stop-color="#0a0e24"/>' +
+      '</linearGradient>' +
+      /* the horizon's own light: a thin bright core over a soft wide swell —
+         a luminous horizon line, not a fog bank (critic round 1) */
+      '<linearGradient id="' + pfx + 'jdRcGlow" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '<stop offset="0.42" stop-color="#37d8cf" stop-opacity="0.07"/>' +
+      '<stop offset="0.5" stop-color="#54e8dd" stop-opacity="0.32"/>' +
+      '<stop offset="0.58" stop-color="#37d8cf" stop-opacity="0.07"/>' +
+      '<stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '</linearGradient>' +
+      /* corner vignette so the brightest strokes don't hit the frame at full
+         strength; keeps the eye on the artwork */
+      '<radialGradient id="' + pfx + 'jdRcVig" cx="0.5" cy="0.5" r="0.72">' +
+      '<stop offset="0" stop-color="#060a18" stop-opacity="0"/>' +
+      '<stop offset="0.72" stop-color="#060a18" stop-opacity="0"/>' +
+      '<stop offset="1" stop-color="#060a18" stop-opacity="0.42"/>' +
+      '</radialGradient>' +
+      mask(pfx + 'jdRcMf', H, HOR + GAP * 0.5) +
+      mask(pfx + 'jdRcMc', 0, HOR - GAP * 0.5) +
+      '</defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H +
+      '" fill="url(#' + pfx + 'jdRcBg)"/>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + floor + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + ceil + '</g>' +
+      '<rect x="0" y="' + (HOR - 60) + '" width="' + W + '" height="120" ' +
+      'fill="url(#' + pfx + 'jdRcGlow)"/>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H +
+      '" fill="url(#' + pfx + 'jdRcVig)"/>' +
+      '</svg>';
+  }
+
+  /* RETIRED — kept as a backup on the owner's request (2026-08-12): the mk-I
+     floor, a black-and-white checkerboard projected toward a center vanishing
+     point, far rows dissolving into the navy horizon. Not called anywhere;
+     to restore it, point the two floorSVG() call sites here (its 600×240
+     viewBox suits the old 224px landscape plate, not the square one). */
+  function checkerFloorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
     var ROWS = 9, R = 0.7, CW = 104;
