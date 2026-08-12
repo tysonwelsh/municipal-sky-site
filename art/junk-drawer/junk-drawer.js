@@ -2300,9 +2300,10 @@ function JD_layerOpen() {
     var g = gradeOf(resp.grade);
     var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
     return '<table class="rc-subj"><thead><tr>' +
-      /* 52/48 → 44/56 (owner, 2026-08-11): the verdict column carries the
-         gauge AND the pencilled word, the axis column only a name */
-      '<th style="width:44%">Axis</th><th style="width:56%">Verdict</th>' +
+      /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the verdict column
+         carries the gauge AND the pencilled word, the axis column only a
+         name — but 44% squeezed the axis names a touch too hard */
+      '<th style="width:47%">Axis</th><th style="width:53%">Verdict</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
       '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
       '<td><span class="rc-verdict">' +
