@@ -278,13 +278,6 @@ html { scroll-behavior: smooth; }
    (measured — scrollWidth ran 97px past the tag). Values that can't outgrow
    the tag are held together; the one that can is allowed to wrap. */
 .jd-itemtag .meta .dim { white-space: nowrap; }
-/* the filed size tier: dim "SIZE:" label, full-ink value — the same
-   label/value weighting the grade line uses below. The whole chunk is one
-   unbreakable unit (separator included) so a narrow tag moves "· SIZE: SMALL
-   ×0.36" to the next line intact instead of stranding the label above its
-   value. */
-.jd-itemtag .szwrap { white-space: nowrap; }
-.jd-itemtag .sz { color: #3a2a12; font-weight: 700; }
 /* wrap is the overflow valve on a narrow well: the meter is a fixed 88px and
    the buttons have a floor, so on the smallest wells the buttons drop to
    their own row instead of pushing the tag wider than its fixed width */
