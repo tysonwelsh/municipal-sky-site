@@ -2258,27 +2258,29 @@ function JD_layerOpen() {
        horizon. GAP holds an empty band at the horizon so the two grids never
        actually meet; each grid also fades out through a luminance-mask
        gradient before it gets there. */
-    /* OFF shifts the harmonic series so the nearest row lands ~85% down the
-       panel instead of exactly on its edge (critic round 1: the near field
-       read as an empty fan without it). Rows run until they're finer than
-       roughly half the GAP, so the last few visibly dissolve INTO the glow
-       rather than stopping short of it. */
-    /* COLS runs far past the frame (owner, 2026-08-13): an outermost ray at
-       ±COLS·S exits through the side edge at y ≈ HOR + DEPTH²/(COLS·S), so
-       26 columns carry rays to within ~15px of the gap and the floor reads
-       as one unbroken surface out to its corners — 11 columns left bare
-       wedges beside the horizon. Rays and rows are kept in separate strings
-       because the rays draw a step thicker (same owner note: at 1.25 the
-       converging lines read thinner than the crossing ones they meet). */
-    var DEPTH = H - HOR, GAP = 22, OFF = 0.4, ROWS = 14, COLS = 26, S = 88;
+    /* SQUARE TILES (owner, 2026-08-13): rows recede GEOMETRICALLY, not
+       harmonically. With geometric spacing the on-screen cell aspect is
+       CONSTANT at every depth — cell width at a row is S·dy/DEPTH, cell
+       height is dy·(1−R), so R = 1 − S/DEPTH makes width equal height:
+       every tile reads as a square, all the way down. (The earlier
+       harmonic series was "truer" optics but its cell aspect varies —
+       squares mid-field flattened into wide letterbox slats near the
+       horizon, which is what the owner was seeing.) Rows run until finer
+       than roughly half the GAP, dissolving INTO the glow.
+       COLS runs far past the frame: an outermost ray at ±COLS·S exits
+       through the side edge at y ≈ HOR + DEPTH²/(COLS·S), so 44 columns
+       carry the fan to within ~1px of the gap and the surface never
+       visibly stops generating at the sides (26 left dead wedges there —
+       owner report). Rays and rows are kept in separate strings because
+       the rays draw a step thicker (at equal width the converging lines
+       read thinner than the crossing ones they meet). */
+    var DEPTH = H - HOR, GAP = 22, COLS = 44, S = 88, R = 1 - S / DEPTH;
     function ln(x1, y1, x2, y2) {
       return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
     }
     var rowsF = '', rowsC = '', raysF = '', raysC = '';
-    for (var n = 1; n <= ROWS; n++) {
-      var dy = DEPTH / (n + OFF);
-      if (dy <= GAP * 0.55) break;
+    for (var dy = DEPTH * R; dy > GAP * 0.55; dy *= R) {
       rowsF += ln(0, HOR + dy, W, HOR + dy);
       rowsC += ln(0, HOR - dy, W, HOR - dy);
     }
