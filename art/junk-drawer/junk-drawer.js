@@ -2268,7 +2268,7 @@ function JD_layerOpen() {
         '" x2="0" y2="' + y1 + '" gradientUnits="userSpaceOnUse">' +
         '<stop offset="0" stop-color="#fff"/>' +
         '<stop offset="0.5" stop-color="#c4c4c4"/>' +
-        '<stop offset="0.82" stop-color="#5e5e5e"/>' +
+        '<stop offset="0.82" stop-color="#737373"/>' +
         '<stop offset="1" stop-color="#000"/>' +
         '</linearGradient>' +
         '<mask id="' + id + '"><rect x="0" y="0" width="' + W + '" height="' +
