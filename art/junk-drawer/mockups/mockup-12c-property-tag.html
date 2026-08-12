@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 12C &middot; THE PROPERTY TAG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Stardos+Stencil:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 12C · THE PROPERTY TAG (specimen-tag redesign,
+   round 12 — one of two DRAMATIC reworks)
+
+   THESIS: the tag stops being a note and becomes CITY HARDWARE — the heavy
+   kraft property/evidence tag a municipal stock room wires to a chair leg.
+   Stenciled bureau header, a real metal eyelet washer for the elastic, a
+   die-cut blank (angled wire end + chamfered corners), ruled form fields,
+   the grade filed as a double-ring CERTIFICATION SEAL around the shipped
+   segmented gauge, and small print that is entirely too serious about a
+   rubber duck ("REMOVAL BY REQUISITION ONLY" · FORM JD-14).
+
+   Same skeleton as production (.jd-itemtag): fixed width 20.5rem / 17rem
+   narrow, grows downward only, 2-line reserved NAME clamp, wrappable model
+   label, nowrap date, meter + buttons row that wraps as the overflow valve,
+   whole surface a drag handle with ONLY the two buttons clickable.
+   ========================================================================== */
+:root {
+  --paper: #f6f3ec;
+  --ink: #262420;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --stencil: "Stardos Stencil", "Courier Prime", "Courier New", Courier, monospace;
+
+  /* the tag's own stock: kraft — one shade deeper/warmer than the app
+     manila #e8d9a8, so it reads as heavier card against the same family */
+  --kraft: #dcc186;
+  --kraft-hi: #e6cf9c;
+  --tink: #3a2a12;
+  --tdim: rgba(58, 42, 18, 0.62);
+  --trule: rgba(58, 42, 18, 0.3);
+  --tred: #b22222;
+  /* kraft paper grain (turbulence, kraft-toned) */
+  --kgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.8' numOctaves='3' seed='13'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.31 0 0 0 0 0.22 0 0 0 0 0.09 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* long-fibre streaks — kraft stock has a machine direction */
+  --kfibre: repeating-linear-gradient(88deg,
+      rgba(120, 88, 34, 0.05) 0 1px, transparent 1px 5px,
+      rgba(255, 244, 214, 0.06) 5px 6px, transparent 6px 13px);
+  /* wood-grain noise for the drawer floor */
+  --wgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='w' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.012 0.12' numOctaves='4' seed='8'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.13 0 0 0 0 0.06 0 0 0 0 0.02 0 0 0 0.42 0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23w)'/%3E%3C/svg%3E");
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--mono);
+  padding: 1.1rem 0.9rem 3rem;
+  overflow-x: hidden;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------ */
+.mock-title {
+  max-width: 1060px; margin: 0 auto 0.35rem;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center;
+}
+.mock-intro {
+  max-width: 46rem; margin: 0 auto 1.4rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.sec-head {
+  max-width: 1060px; margin: 2.6rem auto 0.9rem;
+  font-size: 0.68rem; letter-spacing: 0.26em; text-transform: uppercase;
+  text-align: center; color: #8a8272;
+}
+.sec-head span { color: var(--plot-red); }
+.mock-label {
+  max-width: 44rem; margin: 0.9rem auto 0;
+  font-size: 0.66rem; line-height: 1.9; letter-spacing: 0.1em; color: #8a8272;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+.rule { max-width: 1060px; margin: 2.4rem auto 0; border-top: 1px solid #ded8c9; }
+
+/* ---------------- the drawer floor: busy wood, on purpose ----------------- */
+.drawer {
+  max-width: 1060px; margin: 0 auto;
+  padding: 34px 22px 40px;
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start;
+  gap: 34px 26px;
+  border: 10px solid #4a2c10;
+  border-radius: 3px;
+  background:
+    var(--wgrain),
+    repeating-linear-gradient(90deg,
+      transparent 0 148px, rgba(26, 12, 3, 0.5) 148px 150px,
+      rgba(255, 214, 150, 0.06) 150px 152px, transparent 152px 300px),
+    repeating-linear-gradient(88.5deg,
+      rgba(46, 24, 6, 0.22) 0 3px, transparent 3px 11px,
+      rgba(224, 168, 100, 0.09) 11px 13px, transparent 13px 31px),
+    linear-gradient(115deg, #8a5527 0%, #7a481d 34%, #8c5a2b 55%, #6f3f16 82%, #7d4b20 100%);
+  box-shadow: inset 0 0 60px rgba(15, 6, 0, 0.55), 6px 10px 26px -8px rgba(20, 10, 2, 0.5);
+}
+
+/* each staged variant: caption chip + elastic stub + tag */
+.slot { min-width: 0; }
+.cap {
+  display: inline-block; margin: 0 0 12px 58px;
+  padding: 3px 9px 2px;
+  background: var(--paper);
+  border: 1px solid rgba(58, 42, 18, 0.45);
+  font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--tink);
+  box-shadow: 1px 2px 3px rgba(10, 4, 0, 0.45);
+  transform: rotate(-0.6deg);
+}
+.cap b { color: var(--plot-red); }
+.tagrow { position: relative; padding-left: 56px; }
+/* the red elastic: a stub of the production rope entering the eyelet.
+   z-order per production: tag 70 < elastic 71 (< picked item 72). */
+.stub {
+  position: absolute; left: 0; top: 50%;
+  margin-top: -55px;
+  z-index: 3; pointer-events: none;
+}
+
+/* ============================================================================
+   THE PROPERTY TAG
+   Outer wrap carries the fixed width + the die-cut drop shadow; the inner
+   element carries the clip — the shadow then always follows the punched
+   shape (no clipped-filter order-of-operations gamble).
+   ========================================================================== */
+.ptag-wrap {
+  position: relative; z-index: 1;
+  width: var(--tw, 20.5rem);
+  max-width: calc(100% - 16px);
+  filter: drop-shadow(3px 5px 5px rgba(16, 8, 2, 0.55))
+          drop-shadow(1px 2px 2px rgba(16, 8, 2, 0.35));
+}
+.ptag {
+  position: relative;
+  cursor: grab;                              /* whole tag = drag handle */
+  color: var(--tink);
+  font-family: var(--mono);
+  background:
+    var(--kgrain),
+    var(--kfibre),
+    linear-gradient(104deg, var(--kraft-hi) 0%, var(--kraft) 26%, var(--kraft) 78%, #d3b678 100%);
+  /* die-cut blank: angled wire end at left (point at edge-center — the ONE
+     elastic attachment), chamfered corners on the free end */
+  clip-path: polygon(20px 0, calc(100% - 9px) 0, 100% 9px,
+                     100% calc(100% - 9px), calc(100% - 9px) 100%,
+                     20px 100%, 0 50%);
+  padding: 0.55rem 0.8rem 0.5rem 2.35rem;    /* room right of the washer */
+}
+/* wear: vignette toward the die-cut edge, one thumbed smudge, a top sheen */
+.ptag::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background:
+    radial-gradient(130% 100% at 52% 42%, transparent 52%, rgba(96, 62, 18, 0.16) 96%),
+    radial-gradient(38% 22% at 82% 88%, rgba(96, 62, 18, 0.1), transparent 70%),
+    linear-gradient(rgba(255, 246, 216, 0.07), transparent 26%);
+}
+/* the metal eyelet washer — hole center x=13px, y=50% (see notes: rope
+   anchor moves +3.5px right of production's grommet center) */
+.ptag::before {
+  content: ""; position: absolute; z-index: 4;
+  left: 4px; top: 50%; width: 18px; height: 18px; margin-top: -9px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(255, 255, 250, 0.85) 0 1px, transparent 34%),
+    radial-gradient(circle,
+      #241204 0 3px,               /* the punched hole — drawer wood shows */
+      #4d453a 3.5px 4px,           /* rolled inner lip */
+      #d9d3c4 4.5px 5.5px,         /* zinc highlight */
+      #a89f8c 6px 7px,
+      #837a67 7.5px 8.2px,
+      #55503f 8.6px 9px,           /* seated rim */
+      transparent 9.4px);
+}
+
+/* ---------------- stenciled bureau header --------------------------------- */
+.pt-hd {
+  padding-bottom: 0.26rem;
+  border-bottom: 4px double var(--tink);
+}
+.pt-dept {
+  font-family: var(--stencil);
+  font-weight: 700; font-size: 1.04rem; line-height: 1;
+  letter-spacing: 0.135em; text-transform: uppercase;
+  /* letterpress: ink pressed into the stock */
+  text-shadow: 0 1px 0 rgba(255, 246, 216, 0.28);
+  white-space: nowrap;
+}
+.pt-sub {
+  margin-top: 2px;
+  font-size: 0.46rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--tdim);
+  white-space: nowrap;
+}
+
+/* ---------------- form field rows ----------------------------------------- */
+.pt-fld { padding: 0.26rem 0 0.22rem; border-bottom: 1px solid var(--trule); }
+.pt-k {
+  display: block; margin-bottom: 1px;
+  font-size: 0.46rem; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--tdim);
+}
+/* the specimen NAME — the injected part that can outgrow the tag: two lines
+   RESERVED (min-height) and clamped, exactly production's discipline */
+.pt-name {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em;
+  line-height: 1.32; min-height: 2.64em;
+  text-transform: uppercase;
+}
+.pt-split { display: flex; gap: 0.9rem; }
+.pt-split .cell-model { flex: 1 1 auto; min-width: 0; }  /* model may wrap */
+.pt-split .cell-date  { flex: 0 0 auto; }
+.pt-v { font-size: 0.6rem; line-height: 1.35; text-transform: uppercase; letter-spacing: 0.03em; }
+.cell-date .pt-v { white-space: nowrap; }   /* ISO date never splits */
+
+/* ---------------- certification seal + actions ---------------------------- */
+.pt-act {
+  display: flex; align-items: center; gap: 0.55rem;
+  flex-wrap: wrap; row-gap: 0.5rem;          /* the overflow valve, as shipped */
+  padding-top: 0.44rem;
+}
+.pt-cert {
+  flex: 0 0 auto;
+  padding: 0.26rem 0.55rem 0.3rem;
+  border: 3px double rgba(58, 42, 18, 0.8);
+  border-radius: 3px;
+  background: rgba(255, 250, 230, 0.14);
+  transform: rotate(-1.6deg);                /* stamped a hair off true */
+}
+.pt-cert-top {
+  font-size: 0.56rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.pt-cert-top .gk { color: var(--tdim); font-weight: 400; letter-spacing: 0.2em; }
+.pt-cert-top .g { letter-spacing: 0.18em; }
+.pt-cert svg { display: block; overflow: visible; margin-top: 2px; }
+.pt-cert-fine {
+  margin-top: 2px;
+  font-size: 0.4rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tdim);
+  white-space: nowrap;
+}
+/* no verdict on file: the seal was never struck */
+.pt-cert.ungraded {
+  border: 1px dashed rgba(58, 42, 18, 0.55);
+  padding: 0.32rem 0.6rem 0.36rem;
+  transform: none;
+  background: none;
+}
+.pt-cert.ungraded .pt-cert-top .g { color: var(--tdim); }
+
+.pt-btns { margin-left: auto; display: flex; align-items: stretch; gap: 0.38rem; }
+.pt-btn {
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgba(58, 42, 18, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(58, 42, 18, 0.14);
+  background: rgba(255, 250, 230, 0.22);
+  color: var(--tink); text-decoration: none;
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  text-align: center; line-height: 1.5;
+  cursor: pointer;                    /* the ONLY click targets on the tag */
+}
+.pt-btn:hover { background: rgba(255, 252, 240, 0.55); }
+
+/* ---------------- the over-serious foot ----------------------------------- */
+.pt-foot {
+  display: flex; justify-content: space-between; gap: 0.6rem;
+  margin-top: 0.42rem; padding-top: 0.22rem;
+  border-top: 1px solid var(--trule);
+  font-size: 0.4rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: rgba(58, 42, 18, 0.55);
+  white-space: nowrap;
+}
+
+/* ============================================================================
+   NARROW VARIANT — production's ≤768px compaction: --tw 17rem, tighter
+   padding, one type-step down; the flex-wrap row is still the valve.
+   ========================================================================== */
+.narrow .ptag-wrap { --tw: 17rem; }
+.narrow .ptag { padding: 0.45rem 0.6rem 0.4rem 2.1rem; }
+.narrow .pt-dept { font-size: 0.86rem; letter-spacing: 0.12em; }
+.narrow .pt-sub { font-size: 0.42rem; letter-spacing: 0.22em; }
+.narrow .pt-name { font-size: 0.64rem; }
+.narrow .pt-v { font-size: 0.56rem; }
+.narrow .pt-act { gap: 0.5rem; }
+.narrow .pt-btn { font-size: 0.5rem; padding: 0.18rem 0.36rem; }
+.narrow .pt-foot span:first-child { display: none; }  /* small print yields first */
+
+/* ---------------- notes --------------------------------------------------- */
+.considerations {
+  max-width: 44rem; margin: 2.2rem auto 0;
+  font-size: 0.72rem; line-height: 1.95; color: #4a463c;
+}
+.considerations .mc-head {
+  font-size: 0.66rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--plot-red); margin-bottom: 0.7rem; text-align: center;
+}
+.considerations p { margin-bottom: 0.75rem; }
+.considerations b { color: var(--ink); }
+.considerations code {
+  font-family: var(--mono); font-size: 0.68rem;
+  background: #ece7da; padding: 0 0.25rem; border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<p class="mock-title">Junk Drawer &middot; Mockup 12C &middot; The Property Tag</p>
+<p class="mock-intro">
+  <b>12C &mdash; THE PROPERTY TAG.</b> Specimen-tag redesign, round 12
+  (dramatic-rework lane). The manila slip becomes the heavy kraft tag a city
+  stock room wires to a chair leg: stenciled MUNICIPAL PROPERTY header over
+  BUREAU OF SPECIMENS, a zinc eyelet washer for the red elastic, a die-cut
+  blank, ruled form fields, the grade struck as a double-ring certification
+  seal around the shipped segmented gauge, and a form number in the foot.
+  Same skeleton as production: fixed width, grows downward only, two-line
+  reserved name clamp, whole tag drags, only the two buttons click.
+</p>
+
+<p class="sec-head"><span>IN THE DRAWER</span> &middot; four filings over live wood grain &mdash; elastic entering the eyelet at left-edge center</p>
+
+<div class="drawer">
+
+  <!-- ================= variant 1: graded CHOICE, normal name ============== -->
+  <div class="slot">
+    <span class="cap"><b>&#9312;</b> graded &middot; choice &middot; normal name</span>
+    <div class="tagrow">
+      <svg class="stub" width="70" height="110" viewBox="0 0 70 110" aria-hidden="true">
+        <path d="M3 107 C 20 86, 36 70, 69 55" fill="none" stroke="rgba(20,8,2,0.35)" stroke-width="3" stroke-linecap="round" transform="translate(1.5,2)"/>
+        <path d="M3 107 C 20 86, 36 70, 69 55" fill="none" stroke="#b22222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <div class="ptag-wrap">
+        <div class="ptag" aria-label="specimen tag: Mammoth in an ice cube">
+          <header class="pt-hd">
+            <div class="pt-dept">Municipal Property</div>
+            <div class="pt-sub">Bureau of Specimens &middot; City Stock Room</div>
+          </header>
+          <div class="pt-fld">
+            <span class="pt-k">Article</span>
+            <span class="pt-name">Mammoth in an ice cube</span>
+          </div>
+          <div class="pt-fld pt-split">
+            <span class="cell-model"><span class="pt-k">Issued by</span><span class="pt-v">Claude Opus 5</span></span>
+            <span class="cell-date"><span class="pt-k">Date</span><span class="pt-v">2026-07-29</span></span>
+          </div>
+          <div class="pt-act">
+            <span class="pt-cert">
+              <span class="pt-cert-top"><span class="gk">GRADE</span> <span class="g" style="color:#46761a">CHOICE</span></span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 4 of 5"><defs><clipPath id="c12a"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#c12a)"><rect x="2" y="2" width="52.8" height="9" fill="#46761a"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#dcc186" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#46761a" stroke-width="1.5"/></svg>
+              <span class="pt-cert-fine">Per Scale JD-5</span>
+            </span>
+            <span class="pt-btns">
+              <a class="pt-btn" href="#" title="download the SVG as generated">DOWNLOAD<br>SVG &#x2913;</a>
+              <a class="pt-btn" href="#" title="open the report card">REPORT<br>CARD &rarr;</a>
+            </span>
+          </div>
+          <div class="pt-foot">
+            <span>Removal by requisition only</span>
+            <span>FORM JD-14 &middot; REV. 7/26</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ variant 2: long 2-line name + long model, PRIME ========= -->
+  <div class="slot">
+    <span class="cap"><b>&#9313;</b> long name + long model &middot; prime</span>
+    <div class="tagrow">
+      <svg class="stub" width="70" height="110" viewBox="0 0 70 110" aria-hidden="true">
+        <path d="M2 4 C 22 24, 40 40, 69 55" fill="none" stroke="rgba(20,8,2,0.35)" stroke-width="3" stroke-linecap="round" transform="translate(1.5,2)"/>
+        <path d="M2 4 C 22 24, 40 40, 69 55" fill="none" stroke="#b22222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <div class="ptag-wrap">
+        <div class="ptag" aria-label="specimen tag: The complete works of Shakespeare rendered as plumbing diagrams">
+          <header class="pt-hd">
+            <div class="pt-dept">Municipal Property</div>
+            <div class="pt-sub">Bureau of Specimens &middot; City Stock Room</div>
+          </header>
+          <div class="pt-fld">
+            <span class="pt-k">Article</span>
+            <span class="pt-name">The complete works of Shakespeare rendered as plumbing diagrams</span>
+          </div>
+          <div class="pt-fld pt-split">
+            <span class="cell-model"><span class="pt-k">Issued by</span><span class="pt-v">Claude Sonnet 5 &rarr; Opus 5 refine</span></span>
+            <span class="cell-date"><span class="pt-k">Date</span><span class="pt-v">2026-08-02</span></span>
+          </div>
+          <div class="pt-act">
+            <span class="pt-cert">
+              <span class="pt-cert-top"><span class="gk">GRADE</span> <span class="g" style="color:#0b6a1f">PRIME</span></span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 5 of 5"><defs><clipPath id="c12b"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#c12b)"><rect x="2" y="2" width="66" height="9" fill="#0b6a1f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#dcc186" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#0b6a1f" stroke-width="1.5"/></svg>
+              <span class="pt-cert-fine">Per Scale JD-5</span>
+            </span>
+            <span class="pt-btns">
+              <a class="pt-btn" href="#" title="download the SVG as generated">DOWNLOAD<br>SVG &#x2913;</a>
+              <a class="pt-btn" href="#" title="open the report card">REPORT<br>CARD &rarr;</a>
+            </span>
+          </div>
+          <div class="pt-foot">
+            <span>Removal by requisition only</span>
+            <span>FORM JD-14 &middot; REV. 7/26</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= variant 3: UNGRADED, download-only ================= -->
+  <div class="slot">
+    <span class="cap"><b>&#9314;</b> ungraded &middot; download-only</span>
+    <div class="tagrow">
+      <svg class="stub" width="70" height="110" viewBox="0 0 70 110" aria-hidden="true">
+        <path d="M2 96 C 22 82, 42 66, 69 55" fill="none" stroke="rgba(20,8,2,0.35)" stroke-width="3" stroke-linecap="round" transform="translate(1.5,2)"/>
+        <path d="M2 96 C 22 82, 42 66, 69 55" fill="none" stroke="#b22222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <div class="ptag-wrap">
+        <div class="ptag" aria-label="specimen tag: A rubber duck">
+          <header class="pt-hd">
+            <div class="pt-dept">Municipal Property</div>
+            <div class="pt-sub">Bureau of Specimens &middot; City Stock Room</div>
+          </header>
+          <div class="pt-fld">
+            <span class="pt-k">Article</span>
+            <span class="pt-name">A rubber duck</span>
+          </div>
+          <div class="pt-fld pt-split">
+            <span class="cell-model"><span class="pt-k">Issued by</span><span class="pt-v">Claude Haiku 4.5</span></span>
+            <span class="cell-date"><span class="pt-k">Date</span><span class="pt-v">2026-08-10</span></span>
+          </div>
+          <div class="pt-act">
+            <span class="pt-cert ungraded">
+              <span class="pt-cert-top"><span class="gk">GRADE</span> <span class="g">UNGRADED</span></span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="ungraded"><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="rgba(58,42,18,0.3)" stroke-width="1.5"/><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="rgba(58,42,18,0.55)" stroke-width="1.5"/></svg>
+              <span class="pt-cert-fine">Awaiting inspection</span>
+            </span>
+            <span class="pt-btns">
+              <a class="pt-btn" href="#" title="download the SVG as generated">DOWNLOAD<br>SVG &#x2913;</a>
+            </span>
+          </div>
+          <div class="pt-foot">
+            <span>Removal by requisition only</span>
+            <span>FORM JD-14 &middot; REV. 7/26</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= variant 4: 17rem narrow, SELECT (rank 2) =========== -->
+  <div class="slot narrow">
+    <span class="cap"><b>&#9315;</b> 17rem narrow &middot; select (rank 2)</span>
+    <div class="tagrow">
+      <svg class="stub" width="70" height="110" viewBox="0 0 70 110" aria-hidden="true">
+        <path d="M3 107 C 20 86, 36 70, 69 55" fill="none" stroke="rgba(20,8,2,0.35)" stroke-width="3" stroke-linecap="round" transform="translate(1.5,2)"/>
+        <path d="M3 107 C 20 86, 36 70, 69 55" fill="none" stroke="#b22222" stroke-width="2.6" stroke-linecap="round"/>
+      </svg>
+      <div class="ptag-wrap">
+        <div class="ptag" aria-label="specimen tag: Brass padlock, no key">
+          <header class="pt-hd">
+            <div class="pt-dept">Municipal Property</div>
+            <div class="pt-sub">Bureau of Specimens &middot; City Stock Room</div>
+          </header>
+          <div class="pt-fld">
+            <span class="pt-k">Article</span>
+            <span class="pt-name">Brass padlock, no key</span>
+          </div>
+          <div class="pt-fld pt-split">
+            <span class="cell-model"><span class="pt-k">Issued by</span><span class="pt-v">Claude Opus 5</span></span>
+            <span class="cell-date"><span class="pt-k">Date</span><span class="pt-v">2026-07-31</span></span>
+          </div>
+          <div class="pt-act">
+            <span class="pt-cert">
+              <span class="pt-cert-top"><span class="gk">GRADE</span> <span class="g" style="color:#b0490f">SELECT</span></span>
+              <svg width="88" height="14" viewBox="-9 0 88 14" role="img" aria-label="grade 2 of 5"><defs><clipPath id="c12d"><rect x="2" y="2" width="66" height="9" rx="2"/></clipPath></defs><g clip-path="url(#c12d)"><rect x="2" y="2" width="26.4" height="9" fill="#b0490f"/><line x1="15.2" y1="2" x2="15.2" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="28.4" y1="2" x2="28.4" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="41.6" y1="2" x2="41.6" y2="11" stroke="#dcc186" stroke-width="1.5"/><line x1="54.8" y1="2" x2="54.8" y2="11" stroke="#dcc186" stroke-width="1.5"/></g><rect x="2" y="2" width="66" height="9" rx="2" fill="none" stroke="#b0490f" stroke-width="1.5"/></svg>
+              <span class="pt-cert-fine">Per Scale JD-5</span>
+            </span>
+            <span class="pt-btns">
+              <a class="pt-btn" href="#" title="download the SVG as generated">DOWNLOAD<br>SVG &#x2913;</a>
+              <a class="pt-btn" href="#" title="open the report card">REPORT<br>CARD &rarr;</a>
+            </span>
+          </div>
+          <div class="pt-foot">
+            <span>Removal by requisition only</span>
+            <span>FORM JD-14 &middot; REV. 7/26</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="mock-label">
+  <b>the fiction:</b> every specimen is city inventory &mdash; the bureau wires
+  the same over-serious kraft tag to a mammoth and to a rubber duck alike.
+  content model unchanged: name &middot; model &middot; date &middot; grade + gauge
+  &middot; two actions. no size line (removed 2026-08-12, not reintroduced).
+</p>
+
+<div class="rule"></div>
+
+<!-- =========================== design notes =============================== -->
+<section class="considerations">
+  <p class="mc-head">Design Notes &middot; 12C</p>
+
+  <p><b>The move.</b> The current tag is a label; this one is <b>hardware</b> —
+  a municipal property/evidence tag. Three things carry that: the stenciled
+  two-deck header (MUNICIPAL PROPERTY over BUREAU OF SPECIMENS, closed by a
+  double rule, letterpress-debossed into the stock), the ruled requisition
+  fields with micro-labels (ARTICLE / ISSUED BY / DATE), and the grade struck
+  as a rotated double-ring <b>certification seal</b> with the shipped gauge
+  inside it and &ldquo;PER SCALE JD-5&rdquo; in microtype. The
+  foot (&ldquo;REMOVAL BY REQUISITION ONLY&rdquo; &middot; FORM
+  JD-14 &middot; REV. 7/26) is static chrome, identical on every specimen —
+  the bureau being too serious about a rubber duck is the joke doing the
+  theming.</p>
+
+  <p><b>Stock &amp; die-cut.</b> Kraft <code>#dcc186</code> — one warm step
+  below the app manila <code>#e8d9a8</code>, so it reads as heavier card in
+  the same family (the app manila reappears as the gauge divider color's
+  sibling: dividers are cut in the TAG's paper <code>#dcc186</code>, per the
+  gauge spec). The blank is die-cut: production's angled wire end at left
+  (point depth grows 14&rarr;20px to seat the bigger washer) plus 9px
+  chamfered corners on the free end &mdash;
+  <code>polygon(20px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px),
+  calc(100% - 9px) 100%, 20px 100%, 0 50%)</code>. Texture is one turbulence
+  grain + a machine-direction fibre streak + an edge vignette, all CSS.</p>
+
+  <p><b>The eyelet.</b> Attachment stays at <b>left edge center</b> — rope-math
+  parity with today. The 7px painted grommet becomes an 18px zinc washer
+  (pure radial-gradient, the hole painted near-black so the wood reads
+  through). Hole center sits at <code>(13px, 50%)</code> vs production's
+  <code>(9.5px, 50%)</code>: <b>the rope's tag-anchor offset shifts +3.5px
+  right</b> — one constant in pick()/the Verlet chain, nothing else moves.</p>
+
+  <p><b>Skeleton parity (integration).</b> Same contract as
+  <code>.jd-itemtag</code>: fixed <code>--jd-tag-w</code> 20.5rem /
+  <code>17rem</code> at &le;768px, <code>max-width: calc(100% - 16px)</code>,
+  grows downward only. NAME keeps the two-line reserve
+  (<code>min-height: 2.64em</code> at lh 1.32) and 2-line clamp; the model
+  cell is the wrappable one (<code>flex: 1; min-width: 0</code>), the DATE
+  cell is <code>nowrap</code>; the seal+buttons row keeps
+  <code>flex-wrap</code> as the overflow valve (at 17rem the buttons drop to
+  their own row, shown in &#9315;). Only <code>.pt-name</code>,
+  <code>.pt-v</code> values, the grade word + gauge, and the buttons are
+  injected (escaped text, exactly today's fields); everything else is
+  template chrome.</p>
+
+  <p><b>Watch-outs for the real build.</b> (1)&nbsp;<b>Shadow/clip split:</b>
+  here the drop-shadow lives on a wrapper and the clip on the inner element,
+  so the shadow always follows the die-cut; if the build keeps production's
+  single-element approach, re-test the <code>is-dragging</code>
+  stale-shadow workaround since the filter is now two drop-shadows.
+  (2)&nbsp;<b>meterSVG changes:</b> divider stroke <code>#e8d9a8 &rarr;
+  #dcc186</code>; keep per-instance clipPath ids (production already mints
+  them). (3)&nbsp;<b>Seal rotation</b> is transform-only (no layout shift);
+  drop it for the ungraded dashed state, as shown. (4)&nbsp;<b>Stencil
+  font:</b> add <code>Stardos Stencil</code> (700) to the Google Fonts
+  request; fallback chain lands on bold Courier Prime, which still reads as
+  a typed department header — acceptable degrade, no layout dependence on
+  the stencil metrics since the header is <code>nowrap</code> at sizes that
+  fit both fonts at both widths. (5)&nbsp;<b>Cursor contract</b> unchanged:
+  <code>cursor: grab</code> on the tag, <code>pointer</code> only on the two
+  buttons; the seal, header, and foot are inert. (6)&nbsp;The narrow tier
+  hides the foot's small-print line (keeps the form number) — the one
+  content-free concession at 17rem.</p>
+</section>
+
+</body>
+</html>
