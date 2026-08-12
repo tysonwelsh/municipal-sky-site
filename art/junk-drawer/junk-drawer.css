@@ -1043,10 +1043,13 @@ html.jd-record-open { overflow: hidden; }
 .rc-plate {
   position: relative; overflow: hidden;
   margin-top: 0.55rem;
-  /* square (owner, 2026-08-12): the plate matches the card's inner width in
-     height, replacing the old fixed 224px landscape field */
-  aspect-ratio: 1 / 1;
-  padding: 10px 12px;
+  /* near-square (owner, 2026-08-12): first squared from the old fixed 224px
+     landscape field, then trimmed a touch — height is 90% of the card's
+     inner width. The vertical padding is deliberately deep so the item
+     floats in the scene with air above and below instead of filling the
+     plate rim to rim. */
+  aspect-ratio: 10 / 9;
+  padding: 30px 12px;
   background: #101010;
   border: 1px solid var(--form-rule);
 }

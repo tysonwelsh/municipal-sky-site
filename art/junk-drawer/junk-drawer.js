@@ -2242,23 +2242,30 @@ function JD_layerOpen() {
        read as an empty fan without it). Rows run until they're finer than
        roughly half the GAP, so the last few visibly dissolve INTO the glow
        rather than stopping short of it. */
-    var DEPTH = H - HOR, GAP = 22, OFF = 0.4, ROWS = 14, COLS = 11, S = 88;
+    /* COLS runs far past the frame (owner, 2026-08-13): an outermost ray at
+       ±COLS·S exits through the side edge at y ≈ HOR + DEPTH²/(COLS·S), so
+       26 columns carry rays to within ~15px of the gap and the floor reads
+       as one unbroken surface out to its corners — 11 columns left bare
+       wedges beside the horizon. Rays and rows are kept in separate strings
+       because the rays draw a step thicker (same owner note: at 1.25 the
+       converging lines read thinner than the crossing ones they meet). */
+    var DEPTH = H - HOR, GAP = 22, OFF = 0.4, ROWS = 14, COLS = 26, S = 88;
     function ln(x1, y1, x2, y2) {
       return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
     }
-    var floor = '', ceil = '';
+    var rowsF = '', rowsC = '', raysF = '', raysC = '';
     for (var n = 1; n <= ROWS; n++) {
       var dy = DEPTH / (n + OFF);
       if (dy <= GAP * 0.55) break;
-      floor += ln(0, HOR + dy, W, HOR + dy);
-      ceil += ln(0, HOR - dy, W, HOR - dy);
+      rowsF += ln(0, HOR + dy, W, HOR + dy);
+      rowsC += ln(0, HOR - dy, W, HOR - dy);
     }
     for (var j = -COLS; j <= COLS; j++) {
       var xN = VPX + j * S;             /* the ray at the near (screen) edge */
       var xF = VPX + j * S * (GAP / DEPTH);   /* …stopped at the gap's edge */
-      floor += ln(xN, H, xF, HOR + GAP);
-      ceil += ln(xN, 0, xF, HOR - GAP);
+      raysF += ln(xN, H, xF, HOR + GAP);
+      raysC += ln(xN, 0, xF, HOR - GAP);
     }
     function mask(id, y0, y1) {
       /* white = keep, black = drop: full strength at the near edge, dying
@@ -2304,9 +2311,13 @@ function JD_layerOpen() {
       '<rect x="0" y="0" width="' + W + '" height="' + H +
       '" fill="url(#' + pfx + 'jdRcBg)"/>' +
       '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
-      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + floor + '</g>' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + rowsF + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + raysF + '</g>' +
       '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" ' +
-      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + ceil + '</g>' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + rowsC + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + raysC + '</g>' +
       '<rect x="0" y="' + (HOR - 60) + '" width="' + W + '" height="120" ' +
       'fill="url(#' + pfx + 'jdRcGlow)"/>' +
       '<rect x="0" y="0" width="' + W + '" height="' + H +
