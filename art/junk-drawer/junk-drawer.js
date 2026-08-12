@@ -2232,47 +2232,66 @@ function JD_layerOpen() {
   function floorSVG(pfx) {
     pfx = pfx || '';
     var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
-    var ROWS = 9, R = 0.7, CW = 104;
-    var ts = [1];
-    for (var i = 1; i <= ROWS; i++) ts.push(ts[i - 1] * R);
+    /* true one-point perspective: equally spaced ground lines at depth n sit
+       at y = HOR ± DEPTH/n — wide apart underfoot, compressing hard at the
+       horizon. GAP holds an empty band at the horizon so the two grids never
+       actually meet; each grid also fades out through a luminance-mask
+       gradient before it gets there. */
+    var DEPTH = H - HOR, GAP = 22, ROWS = 12, COLS = 11, S = 88;
     function ln(x1, y1, x2, y2) {
       return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
     }
-    var grid = '';
-    /* cross lines: perspective-spaced rows marching to the horizon, mirrored
-       about it (r starts at 1 — row 0 lies exactly on the viewBox edges) */
-    for (var r = 1; r <= ROWS; r++) {
-      var dy = ts[r] * HOR;
-      grid += ln(0, HOR + dy, W, HOR + dy) + ln(0, HOR - dy, W, HOR - dy);
+    var floor = '', ceil = '';
+    for (var n = 1; n <= ROWS; n++) {
+      var dy = DEPTH / n;
+      if (dy <= GAP) break;
+      floor += ln(0, HOR + dy, W, HOR + dy);
+      ceil += ln(0, HOR - dy, W, HOR - dy);
     }
-    /* rays: out from the vanishing point through the near edge of each grid,
-       floor and ceiling; far columns overshoot the viewBox and just clip */
-    for (var j = -8; j <= 8; j++) {
-      var x = VPX + j * CW;
-      grid += ln(VPX, HOR, x, H) + ln(VPX, HOR, x, 0);
+    for (var j = -COLS; j <= COLS; j++) {
+      var xN = VPX + j * S;             /* the ray at the near (screen) edge */
+      var xF = VPX + j * S * (GAP / DEPTH);   /* …stopped at the gap's edge */
+      floor += ln(xN, H, xF, HOR + GAP);
+      ceil += ln(xN, 0, xF, HOR - GAP);
+    }
+    function mask(id, y0, y1) {
+      /* white = keep, black = drop: full strength at the near edge, gone a
+         little before the gap line */
+      return '<linearGradient id="' + id + 'g" x1="0" y1="' + y0 +
+        '" x2="0" y2="' + y1 + '" gradientUnits="userSpaceOnUse">' +
+        '<stop offset="0" stop-color="#fff"/>' +
+        '<stop offset="0.72" stop-color="#9a9a9a"/>' +
+        '<stop offset="1" stop-color="#000"/>' +
+        '</linearGradient>' +
+        '<mask id="' + id + '"><rect x="0" y="0" width="' + W + '" height="' +
+        H + '" fill="url(#' + id + 'g)"/></mask>';
     }
     return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
       'preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
       '<defs>' +
       '<linearGradient id="' + pfx + 'jdRcBg" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#0a0e24"/>' +
-      '<stop offset="0.5" stop-color="#13204a"/>' +
+      '<stop offset="0.5" stop-color="#152451"/>' +
       '<stop offset="1" stop-color="#0a0e24"/>' +
       '</linearGradient>' +
-      '<linearGradient id="' + pfx + 'jdRcHaze" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#13204a" stop-opacity="0"/>' +
-      '<stop offset="0.5" stop-color="#1b2c63" stop-opacity="0.9"/>' +
-      '<stop offset="1" stop-color="#13204a" stop-opacity="0"/>' +
-      '</linearGradient></defs>' +
+      /* the horizon's own light: a soft teal-blue glow swelling from the gap */
+      '<linearGradient id="' + pfx + 'jdRcGlow" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '<stop offset="0.5" stop-color="#37d8cf" stop-opacity="0.22"/>' +
+      '<stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/>' +
+      '</linearGradient>' +
+      mask(pfx + 'jdRcMf', H, HOR + GAP + 8) +
+      mask(pfx + 'jdRcMc', 0, HOR - GAP - 8) +
+      '</defs>' +
       '<rect x="0" y="0" width="' + W + '" height="' + H +
       '" fill="url(#' + pfx + 'jdRcBg)"/>' +
-      '<g stroke="#2fd0c9" stroke-opacity="0.48" stroke-width="1.1" fill="none">' +
-      grid + '</g>' +
-      '<rect x="0" y="' + (HOR - 84) + '" width="' + W + '" height="168" ' +
-      'fill="url(#' + pfx + 'jdRcHaze)"/>' +
-      '<line x1="0" y1="' + HOR + '" x2="' + W + '" y2="' + HOR +
-      '" stroke="#49e3d6" stroke-opacity="0.5" stroke-width="1.2"/>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.55" stroke-width="1.2" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMf)">' + floor + '</g>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.55" stroke-width="1.2" ' +
+      'fill="none" mask="url(#' + pfx + 'jdRcMc)">' + ceil + '</g>' +
+      '<rect x="0" y="' + (HOR - 60) + '" width="' + W + '" height="120" ' +
+      'fill="url(#' + pfx + 'jdRcGlow)"/>' +
       '</svg>';
   }
 
