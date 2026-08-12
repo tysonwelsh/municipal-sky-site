@@ -1045,19 +1045,25 @@ html.jd-record-open { overflow: hidden; }
   margin-top: 0.55rem;
   /* near-square (owner, 2026-08-12): first squared from the old fixed 224px
      landscape field, then trimmed a touch — height is 90% of the card's
-     inner width. The padding is the ITEM'S STAGE MARGIN, and it is
-     percentage-based on purpose (both axes resolve against the plate's
-     WIDTH, per CSS): a tall item — the ionic column was the tell — used to
-     run rim to rim at every plate size; now the artwork field keeps ~80%
-     of the plate's height at any width, so the item sits back IN the scene
-     with sky above it and floor below it. */
+     inner width. */
   aspect-ratio: 10 / 9;
-  padding: 9% 7%;
   background: #101010;
   border: 1px solid var(--form-rule);
 }
 .rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rc-plate-art { position: relative; height: 100%; }
+/* THE STAGE (ground-up rebuild, owner, 2026-08-13). The item used to live in
+   a normal-flow div sized by the plate's padding — and CSS resolves even
+   VERTICAL percentage padding against the WIDTH, so no padding value could
+   state "the item keeps X% of the plate's height" directly; two rounds of
+   padding tuning read as no change at all. The stage is now absolutely
+   positioned, where top/bottom percentages DO resolve against the plate's
+   height: the artwork keeps 71% of it at every card size, full stop. The
+   extra point of top inset over bottom seats the item's center a touch
+   BELOW the horizon (which crosses at 50%), so it reads as standing on the
+   floor rather than pinned dead-center. Items letterbox inside the stage
+   (their own preserveAspectRatio meet), so a tall item takes the stage's
+   height, a wide one its width, nothing ever touches the plate's rim. */
+.rc-plate-art { position: absolute; top: 15%; bottom: 14%; left: 10%; right: 10%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
