@@ -1045,11 +1045,14 @@ html.jd-record-open { overflow: hidden; }
   margin-top: 0.55rem;
   /* near-square (owner, 2026-08-12): first squared from the old fixed 224px
      landscape field, then trimmed a touch — height is 90% of the card's
-     inner width. The vertical padding is deliberately deep so the item
-     floats in the scene with air above and below instead of filling the
-     plate rim to rim. */
+     inner width. The padding is the ITEM'S STAGE MARGIN, and it is
+     percentage-based on purpose (both axes resolve against the plate's
+     WIDTH, per CSS): a tall item — the ionic column was the tell — used to
+     run rim to rim at every plate size; now the artwork field keeps ~80%
+     of the plate's height at any width, so the item sits back IN the scene
+     with sky above it and floor below it. */
   aspect-ratio: 10 / 9;
-  padding: 30px 12px;
+  padding: 9% 7%;
   background: #101010;
   border: 1px solid var(--form-rule);
 }
