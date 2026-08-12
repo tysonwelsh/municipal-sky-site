@@ -1411,25 +1411,28 @@ function JD_layerOpen() {
     var ranked = !!d.rank;
     tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));
     tag.innerHTML =
-      /* name on its own line(s) — the tag has a fixed width, so a long
-         specimen name wraps to a second line instead of stretching the tag
-         past the well's edge; model · date sit under it. (The filed SIZE
-         used to ride this line too — dropped from the tag entirely, owner
-         request 2026-08-12; the report card still shows it.) */
-      '<div class="l1"><span class="name">' + esc((d.title || '').toUpperCase()) +
-      '</span><span class="meta">' + esc((d.model || '').toUpperCase()) +
-      '<span class="sep">·</span><span class="dim">' + esc(d.date || '') + '</span>' +
-      '</span></div>' +
-      '<div class="l2"><span class="gradecol">' +
-      '<span class="gradelabel">GRADE: <span class="g">' +
-      (ranked ? esc((d.grade || '').toUpperCase()) : 'UNGRADED') + '</span></span>' +
+      /* PRESSED & FILED (round 12, mockup-12a, owner pick 2026-08-12): three
+         ruled registers — name / filing grid / button bar. The name has a
+         fixed width to wrap inside (two lines reserved); MODEL and GRADE
+         share one label column so the values align on a common left edge.
+         (The filed SIZE and the DATE used to ride the tag too — both dropped
+         at the owner's request, 2026-08-12; the report card still shows
+         them.) */
+      '<div class="name">' + esc((d.title || '').toUpperCase()) + '</div>' +
+      '<div class="rows">' +
+      '<div class="row"><span class="lab">MODEL</span><span class="val">' +
+      esc((d.model || '').toUpperCase()) + '</span></div>' +
+      '<div class="row row--grade"><span class="lab">GRADE</span>' +
+      '<span class="val g' + (ranked ? '' : ' none') + '">' +
+      (ranked ? esc((d.grade || '').toUpperCase()) : 'UNGRADED') + '</span>' +
       meterSVG(ranked ? (+d.rank || 1) : null, +d.steps || 5) +
-      '</span><span class="btns">' +
+      '</div></div>' +
+      '<div class="btns">' +
       '<a class="btn" href="' + esc(d.url || '') + '" download="' + esc(d.id || '') + '.svg" ' +
-      'title="download the SVG as generated">DOWNLOAD<br>SVG ⤓</a>' +
+      'title="download the SVG as generated">DOWNLOAD SVG ⤓</a>' +
       (d.card === 'none' ? '' :
-        '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT<br>CARD →</a>') +
-      '</span></div>';
+        '<a class="btn jd-fullrecord" href="#' + esc(d.id || '') + '" title="open the report card">REPORT CARD →</a>') +
+      '</div>';
     var fr = tag.querySelector('.jd-fullrecord');
     if (fr) fr.addEventListener('click', function (e) {
       e.preventDefault();
