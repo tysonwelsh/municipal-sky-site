@@ -1638,17 +1638,6 @@ html.jd-turn-open { overflow: hidden; }
 .jd-def[aria-expanded="true"] { color: var(--tred); }
 .jd-def[aria-expanded="true"] .jd-i { color: var(--tred); border-color: var(--tred); }
 .jd-def:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-notbtn {
-  flex: 0 0 auto; margin-left: auto;
-  min-height: 44px; padding: 0.2rem 0.35rem;
-  background: none; border: 0; cursor: pointer;
-  font-family: var(--tmono); font-size: 0.58rem;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--tink-2);
-}
-.jd-notbtn.has-note, .jd-notbtn[aria-expanded="true"] { color: var(--tred); }
-.jd-notbtn:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-
 /* the definitions popover: IN-FLOW — it pushes the sheet down instead of
    covering any control, so it never blocks further rating */
 .jd-pop {
@@ -1686,8 +1675,6 @@ html.jd-turn-open { overflow: hidden; }
 /* a chosen value is never colour alone: it goes bold and ink-dark */
 .jd-turn-select.is-set { color: var(--tink); font-weight: 700; }
 .jd-turn-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-noterow { grid-column: 1 / -1; }
-.jd-noterow .jd-turn-note { margin-top: 0.25rem; }
 
 /* ---- the call: the preserved likert finale (mockup 10c salvage) ----------
    Five stops on one rail spanning A (hard left) to B (hard right); the

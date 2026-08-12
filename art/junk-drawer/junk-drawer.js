@@ -3199,28 +3199,23 @@ function JD_layerOpen() {
 
   /* one question row: the ⓘ header (its button doubles as the hover/focus
      tooltip anchor for the scale's meaning), the in-flow definitions
-     popover, the select, and — on axis rows — the folded note. Re-rendering
-     is safe: every answer lives in `work` and is written back as selected/
-     value/hidden state here. */
+     popover, and the select. (The folded per-axis note was removed at the
+     owner's request, 2026-08-12 — the survey files values only. The report
+     path's flag note below is separate and stays.) Re-rendering is safe:
+     every answer lives in `work` and is written back as selected state
+     here. */
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
     var desc = ax ? (ax.description || '') : 'The drawer’s own five-tier scale, best to worst.';
     var levels = byRankDesc(ax ? ax.values : tax().grades);
     var popId = 'jd-pop-' + slot + '-' + (axisId || 'grade');
-    var noteVal = axisId ? (work.ratings[slot].notes[axisId] || '') : '';
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
       '<div class="jd-rowhead">' +
       '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
       'aria-controls="' + popId + '" data-tt-t="' + esc(label) + '" data-tt-d="' +
       esc(desc) + '"><span>' + esc(label) + '</span>' +
       '<span class="jd-i" aria-hidden="true">i</span></button>' +
-      (axisId
-        ? '<button type="button" class="jd-notbtn' + (noteVal ? ' has-note' : '') +
-          '" data-act="note-toggle" data-slot="' + slot + '" data-axis="' +
-          esc(axisId) + '" aria-expanded="' + (noteVal ? 'true' : 'false') +
-          '">&#9998; note</button>'
-        : '') +
       '</div>' +
       '<div class="jd-pop" id="' + popId + '" hidden>' +
       '<p class="jd-pop-desc">' + esc(desc) + '</p><dl>';
@@ -3243,15 +3238,6 @@ function JD_layerOpen() {
         esc(window.JD_labelText(l.label || l.id)) + '</option>';
     });
     h += '</select>';
-    if (axisId) {
-      h += '<div class="jd-noterow" data-notewrap="' + slot + '-' + esc(axisId) +
-        '"' + (noteVal ? '' : ' hidden') + '>' +
-        '<input type="text" class="jd-turn-input jd-turn-note" maxlength="' +
-        MAX_NOTE + '" placeholder="a note, if you have one" ' +
-        'aria-label="note on ' + esc(label) + ' for response ' +
-        slot.toUpperCase() + '" data-role="note" data-slot="' + slot +
-        '" data-axis="' + esc(axisId) + '" value="' + esc(noteVal) + '"></div>';
-    }
     return h + '</div>';
   }
 
@@ -3513,9 +3499,6 @@ function JD_layerOpen() {
       }
       setDisabled('[data-act="generate"]',
         !(t.value.trim().length && n <= MAX_PROMPT));
-    } else if (role === 'note') {
-      work.ratings[t.getAttribute('data-slot')].notes[t.getAttribute('data-axis')] =
-        t.value.slice(0, MAX_NOTE);
     } else if (role === 'flagnote') {
       work.ratings[t.getAttribute('data-slot')].flagNote = t.value.slice(0, MAX_NOTE);
     }
@@ -3559,18 +3542,6 @@ function JD_layerOpen() {
         b.setAttribute('aria-expanded', 'true');
         var pop = bodyEl.querySelector('#' + b.getAttribute('aria-controls'));
         if (pop) pop.hidden = false;
-      }
-    } else if (act === 'note-toggle') {
-      var key = b.getAttribute('data-slot') + '-' + b.getAttribute('data-axis');
-      var wrap = bodyEl.querySelector('[data-notewrap="' + key + '"]');
-      if (wrap) {
-        var opening = wrap.hidden;
-        wrap.hidden = !opening;
-        b.setAttribute('aria-expanded', opening ? 'true' : 'false');
-        if (opening) {
-          var input = wrap.querySelector('input');
-          if (input) { try { input.focus(); } catch (err) {} }
-        }
       }
     } else if (act === 'file') {
       submitRatings();
@@ -3718,9 +3689,10 @@ function JD_layerOpen() {
       if (r.grade != null) ratings.push({ gen_id: gen, kind: 'grade', value: r.grade });
       Object.keys(r.axes).forEach(function (axisId) {
         if (r.axes[axisId] == null) return;
-        var row = { gen_id: gen, kind: 'axis', axis_id: axisId, value: r.axes[axisId] };
-        if (r.notes[axisId]) row.note = r.notes[axisId].slice(0, MAX_NOTE);
-        ratings.push(row);
+        /* values only — the per-axis note field left the survey with the
+           rest of the note UI (owner request, 2026-08-12); the API still
+           accepts notes, this client just never files one */
+        ratings.push({ gen_id: gen, kind: 'axis', axis_id: axisId, value: r.axes[axisId] });
       });
       if (r.flag) {
         var f = { gen_id: gen, kind: 'flag' };
@@ -3781,18 +3753,24 @@ function JD_layerOpen() {
   }
 
   /* ---------- the won item joins the pile (C5.3 / C5.4 step 7) ------------- */
+  /* the visitor's filing for one slot, in the annotations shape the report
+     card renders (a bare rank, or {value, note} — notes only exist on works
+     persisted before the note field left the survey, 2026-08-12) */
+  function ratingAnnotations(r) {
+    var annotations = {};
+    Object.keys(r.axes).forEach(function (axisId) {
+      if (r.axes[axisId] == null) return;
+      annotations[axisId] = (r.notes && r.notes[axisId])
+        ? { value: r.axes[axisId], note: r.notes[axisId] }
+        : r.axes[axisId];
+    });
+    return annotations;
+  }
   function placeWinner(slot) {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok' || !s.svg) return;
     var rv = revealFor(slot) || {};
     var r = work.ratings[slot];
-    var annotations = {};
-    Object.keys(r.axes).forEach(function (axisId) {
-      if (r.axes[axisId] == null) return;
-      annotations[axisId] = r.notes[axisId]
-        ? { value: r.axes[axisId], note: r.notes[axisId] }
-        : r.axes[axisId];
-    });
     var rec = {
       gen_id: s.gen_id,
       submission_id: turn.submission_id,
@@ -3804,8 +3782,23 @@ function JD_layerOpen() {
       /* additive to the C5.3 shape: the visitor's own filing, so a restored
          item's specimen tag and report card still state what they graded */
       grade: r.grade,
-      annotations: annotations
+      annotations: ratingAnnotations(r)
     };
+    /* the OTHER bench response rides along (owner request, 2026-08-12): the
+       report card shows both options from the turn, the loser filed as an
+       alternative response on the same entry. Only the winner joins the
+       pile — this is record-keeping, not a second item. */
+    var other = okSlots().filter(function (x) { return x !== slot; })[0];
+    var os = other && work.slots[other];
+    if (os && os.status === 'ok' && os.svg && os.gen_id) {
+      var orv = revealFor(other) || {};
+      rec.also = {
+        gen_id: os.gen_id, svg: os.svg,
+        model_id: orv.model_id || '', label: orv.label || '',
+        grade: work.ratings[other].grade,
+        annotations: ratingAnnotations(work.ratings[other])
+      };
+    }
     var list = JD_store.get(K_ITEMS) || [];
     list = [rec].concat(list.filter(function (x) { return x.gen_id !== rec.gen_id; }));
     if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
@@ -3922,22 +3915,40 @@ function JD_layerOpen() {
     if (byId(payload.items, rec.gen_id)) return true;   /* already filed */
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
+    var responses = [{
+      rid: 'r1', file: file, model: rec.model_id, date: day,
+      generation: { mode: 'one-shot', prompt_count: 1 },
+      grade: rec.grade, annotations: rec.annotations || {},
+      /* a data: URL, and the ONLY thing the card may do with it is hang it
+         off the download link — `visitor: true` above stops ensureSVGs from
+         ever treating it as a path to join to JD_API (APP §4.1); the SVG
+         text itself is primed into the cache below */
+      url: svgDataUrl(rec.svg), transcript_url: null
+    }];
+    var primed = {};
+    primed[rec.gen_id + '/' + file] = rec.svg;
+    /* the turn's OTHER response files as r2 (owner request, 2026-08-12), so
+       the card's "same prompt" strip shows both options with the grades the
+       visitor gave each. `primary: 'r1'` below pins the WINNER as the shown
+       response — without the pin, best-grade-wins would re-point the card
+       (and the drawer) at a loser the visitor happened to grade higher.
+       Records stored before this change have no `also` and file one
+       response, exactly as they did. */
+    if (rec.also && rec.also.svg && rec.also.gen_id) {
+      var afile = rec.also.gen_id + '.svg';
+      responses.push({
+        rid: 'r2', file: afile, model: rec.also.model_id, date: day,
+        generation: { mode: 'one-shot', prompt_count: 1 },
+        grade: rec.also.grade, annotations: rec.also.annotations || {},
+        url: svgDataUrl(rec.also.svg), transcript_url: null
+      });
+      primed[rec.gen_id + '/' + afile] = rec.also.svg;
+    }
     payload.items.unshift({
       id: rec.gen_id, title: title, prompt: rec.prompt, created: day,
       visitor: true, sizeClass: VISITOR_TIER, primary: 'r1',
-      responses: [{
-        rid: 'r1', file: file, model: rec.model_id, date: day,
-        generation: { mode: 'one-shot', prompt_count: 1 },
-        grade: rec.grade, annotations: rec.annotations || {},
-        /* a data: URL, and the ONLY thing the card may do with it is hang it
-           off the download link — `visitor: true` above stops ensureSVGs from
-           ever treating it as a path to join to JD_API (APP §4.1); the SVG
-           text itself is primed into the cache below */
-        url: svgDataUrl(rec.svg), transcript_url: null
-      }]
+      responses: responses
     });
-    var primed = {};
-    primed[rec.gen_id + '/' + file] = rec.svg;
     window.JD_record.setData(payload, primed);
     return true;
   }
