@@ -2220,6 +2220,26 @@ function JD_layerOpen() {
       '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
+  /* the stage is tuned per shape class (critic pass, 2026-08-13): the CSS
+     positions .rc-plate-art differently for ultra-wide items (lying in the
+     floor plane, not levitating on the horizon) and squarish solid masses
+     (smaller envelope so the scene stays visible around them). The class is
+     read off the response's viewBox aspect right here; anything unparsable
+     stays on the default (tall/leaning) stage. */
+  function artClass(svgSrc) {
+    var m = /viewBox\s*=\s*"([^"]+)"/.exec(svgSrc || '');
+    if (m) {
+      var p = m[1].replace(/,/g, ' ').trim().split(/\s+/);
+      var w = +p[2], h = +p[3];
+      if (w > 0 && h > 0) {
+        var a = w / h;
+        if (a >= 3) return ' rc-art-wide';
+        if (a >= 0.75 && a <= 1.33) return ' rc-art-square';
+      }
+    }
+    return '';
+  }
+
   /* the vaporwave floor, mk II (owner, 2026-08-12): TWIN perspective grids —
      a floor below the artwork and a ceiling above it — teal-blue wireframe
      lines all converging on one central vanishing point; both grids dissolve
@@ -2455,10 +2475,11 @@ function JD_layerOpen() {
        a <button>, whose UA box model would fight the absolutely-positioned
        floor. The corner hint is there for touch, where there is no hover to
        discover the affordance with. */
+    var artSrc = svgCache[entry.id + '/' + resp.file] || '';
     h += '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
       'aria-label="Enlarge the artwork">' + floorSVG() +
-      '<div class="rc-plate-art">' +
-      svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jr' + curIdx + '_') +
+      '<div class="rc-plate-art' + artClass(artSrc) + '">' +
+      svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
       '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
       '</div>';

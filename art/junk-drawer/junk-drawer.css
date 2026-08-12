@@ -1045,19 +1045,41 @@ html.jd-record-open { overflow: hidden; }
   margin-top: 0.55rem;
   /* near-square (owner, 2026-08-12): first squared from the old fixed 224px
      landscape field, then trimmed a touch — height is 90% of the card's
-     inner width. The padding is the ITEM'S STAGE MARGIN, and it is
-     percentage-based on purpose (both axes resolve against the plate's
-     WIDTH, per CSS): a tall item — the ionic column was the tell — used to
-     run rim to rim at every plate size; now the artwork field keeps ~80%
-     of the plate's height at any width, so the item sits back IN the scene
-     with sky above it and floor below it. */
+     inner width. */
   aspect-ratio: 10 / 9;
-  padding: 9% 7%;
   background: #101010;
   border: 1px solid var(--form-rule);
 }
 .rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
-.rc-plate-art { position: relative; height: 100%; }
+/* THE STAGE (ground-up rebuild, owner, 2026-08-13). The item used to live in
+   a normal-flow div sized by the plate's padding — and CSS resolves even
+   VERTICAL percentage padding against the WIDTH, so no padding value could
+   state "the item keeps X% of the plate's height" directly; two rounds of
+   padding tuning read as no change at all. The stage is now absolutely
+   positioned, where top/bottom percentages DO resolve against the plate's
+   height: the artwork keeps 71% of it at every card size, full stop. The
+   extra point of top inset over bottom seats the item's center a touch
+   BELOW the horizon (which crosses at 50%), so it reads as standing on the
+   floor rather than pinned dead-center. Items letterbox inside the stage
+   (their own preserveAspectRatio meet), so a tall item takes the stage's
+   height, a wide one its width, nothing ever touches the plate's rim.
+
+   THE STAGE IS TUNED PER SHAPE CLASS (critic pass, 2026-08-13) — equal-
+   height letterboxing makes equal-height items of wildly unequal visual
+   mass, so junk-drawer.js reads each response's viewBox aspect and adds:
+   · rc-art-wide (aspect ≥ 3:1, cigarette/pencil-stub territory): seated in
+     the floor plane between the horizon (49%) and the nearest ground line
+     (83%) — an object LYING on the ground in front of the viewer, not
+     levitating at the vanishing point, and the glow line stays uncovered.
+   · rc-art-square (0.75–1.33, solid masses like the eyeball): a smaller
+     envelope (~56% of plate height) so the horizon and both grid fans
+     stay visible around the mass; at 71% the item IS the plate.
+   Default (tall/leaning items): 17/12 rather than a symmetric split —
+   centers land ~3% below the horizon (the threshold of visibility) and
+   bases plant below the 83% ground line. */
+.rc-plate-art { position: absolute; top: 17%; bottom: 12%; left: 10%; right: 10%; }
+.rc-plate-art.rc-art-square { top: 23%; bottom: 21%; }
+.rc-plate-art.rc-art-wide { top: 56%; bottom: 24%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
