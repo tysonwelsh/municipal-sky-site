@@ -220,9 +220,16 @@ html { scroll-behavior: smooth; }
      are small and there is plenty of wood, frame, and notes left to scroll
      from, so no exemption is carved out for them. */
   touch-action: none;
-  background: #e8d9a8;
+  /* PRESSED & FILED (round 12, mockup-12a, owner pick 2026-08-12): manila
+     with a whisper of feTurbulence paper grain (stitchTiles='stitch' — the
+     Safari rule above applies; never reseed) and a 178deg top-edge sheen */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.29 0 0 0 0 0.21 0 0 0 0 0.09 0 0 0 0.55 -0.42'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E"),
+    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 22%,
+                    rgba(0, 0, 0, 0) 78%, rgba(96, 68, 26, 0.10) 100%),
+    #e8d9a8;
   color: #3a2a12;
-  padding: 0.7rem 0.95rem 0.65rem 2rem;   /* extra room right of the grommet */
+  padding: 0.75rem 0.95rem 0.8rem 2rem;   /* extra room right of the grommet */
   /* FIXED width (owner request, 2026-07-30): the tag used to be sized by its
      longest line, so a long specimen name stretched it until it pushed past
      the well's edges on a phone. The width is set here instead and the NAME
@@ -232,8 +239,13 @@ html { scroll-behavior: smooth; }
   width: var(--jd-tag-w, 20.5rem);
   max-width: calc(100% - 16px);
   clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
-  filter: drop-shadow(2px 3px 4px rgba(22, 11, 4, 0.4));
+  /* the clip-path polygon keeps the full right edge, so the radius survives
+     it while the point stays sharp */
+  border-radius: 0 7px 7px 0;
+  filter: drop-shadow(1px 2px 2px rgba(22, 11, 4, 0.38))
+          drop-shadow(4px 7px 10px rgba(22, 11, 4, 0.26));
   border: 1px solid rgba(74, 53, 18, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 249, 226, 0.28);   /* pressed edge */
   font-family: var(--font-mono);
   opacity: 0;
   pointer-events: none;
@@ -249,58 +261,79 @@ html { scroll-behavior: smooth; }
   will-change: left, top, filter;
   transition: none;
 }
-.jd-itemtag::before {         /* the grommet the elastic loops through */
-  content: ""; position: absolute; left: 6px; top: 50%; width: 7px; height: 7px;
-  transform: translateY(-50%); border-radius: 50%; background: #b39a5e;
-  box-shadow: inset 0 0 0 2px #8a713c;
+.jd-itemtag::before {         /* the grommet, turned metal: dark bore, washer
+                                 seated on 2px of paper. Centre ~10.5px from
+                                 the left edge — the rope's tag endpoint in
+                                 pick() is left+10, close enough to agree. */
+  content: ""; position: absolute; left: 5px; top: 50%;
+  width: 11px; height: 11px; transform: translateY(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 50% 44%,
+    #4a3a1c 0 21%, #b39a5e 30%, #8a713c 52%, #c9ad67 72%, #75592a 100%);
+  box-shadow: 0 1px 1px rgba(58, 42, 18, 0.45),
+              0 0 0 2px rgba(232, 217, 168, 0.9);
 }
-.jd-itemtag .l1 { font-size: 0.64rem; letter-spacing: 0.08em; text-transform: uppercase; }
-/* the specimen NAME: the one part that can outgrow the tag, so it is the one
-   part allowed to wrap. Two lines are RESERVED (min-height) whether the name
-   needs them or not, so tags keep a steady height from item to item, and
-   clamped at two so a runaway title can't grow the tag without limit. */
+/* register 1 — the specimen NAME: the one part that can outgrow the tag, so
+   it is the one part allowed to wrap. Two lines are RESERVED (min-height)
+   whether the name needs them or not, so tags keep a steady height from item
+   to item, and clamped at two so a runaway title can't grow the tag without
+   limit. A hairline rule closes the register. */
 .jd-itemtag .name {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; line-height: 1.4;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
   overflow: hidden;
-  line-height: 1.3;
-  min-height: 2.6em;      /* = two lines at this line-height */
+  min-height: 2.8em;      /* = two lines at this line-height */
+  padding-bottom: 0.4rem; margin-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(74, 53, 18, 0.28);
 }
-/* model · date, under the name; wraps rather than truncating (model labels
-   can be long) — pick() measures the tag's height at runtime, so a taller
-   tag seats and ropes correctly on its own */
-.jd-itemtag .meta { display: block; margin-top: 0.2rem; line-height: 1.3; }
-.jd-itemtag .sep { opacity: 0.45; padding: 0 0.32em; }
-.jd-itemtag .dim { color: rgba(58, 42, 18, 0.62); }
-/* the SHORT meta values are atomic — an ISO date offers a break at every
-   hyphen, so without this a narrow tag splits "2026-07-26" across two lines.
-   The model label stays breakable on purpose: the tag is a fixed width, and
-   "Claude Sonnet 5 → Opus 5 refine" overflows it on a phone if it can't wrap
-   (measured — scrollWidth ran 97px past the tag). Values that can't outgrow
-   the tag are held together; the one that can is allowed to wrap. */
-.jd-itemtag .meta .dim { white-space: nowrap; }
-/* wrap is the overflow valve on a narrow well: the meter is a fixed 88px and
-   the buttons have a floor, so on the smallest wells the buttons drop to
-   their own row instead of pushing the tag wider than its fixed width */
-.jd-itemtag .l2 {
-  display: flex; align-items: center; gap: 0.95rem; margin-top: 0.42rem;
-  flex-wrap: wrap; row-gap: 0.45rem;
+/* register 2 — the filing grid: MODEL and GRADE share one fixed label
+   column so the values start on a common left edge. The model value is the
+   one that may wrap ("Claude Sonnet 5 → Opus 5 refine" overflows a phone
+   tag otherwise) — pick() measures the tag's height at runtime, so a taller
+   tag seats and ropes correctly on its own. */
+.jd-itemtag .rows { display: flex; flex-direction: column; gap: 0.22rem; }
+.jd-itemtag .row  { display: flex; align-items: baseline; min-width: 0; }
+.jd-itemtag .lab {
+  flex: 0 0 3.4rem;
+  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(58, 42, 18, 0.62); line-height: 1.5;
 }
-.jd-itemtag .gradelabel { white-space: nowrap; }
-/* the grade column: "GRADE: VALUE" on one line, the segmented bar below */
-.jd-itemtag .gradecol { display: flex; flex-direction: column; gap: 1px; }
-.jd-itemtag .gradelabel { font-size: 0.66rem; letter-spacing: 0.11em; }
-.jd-itemtag .gradelabel .g { color: #3a2a12; font-weight: 700; }
-.jd-itemtag svg { overflow: visible; vertical-align: middle; }
-.jd-itemtag .btns { margin-left: auto; display: flex; gap: 0.4rem; }
-.jd-itemtag .btns { align-items: stretch; }
+.jd-itemtag .val {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.62rem; letter-spacing: 0.05em; line-height: 1.5;
+  text-transform: uppercase; overflow-wrap: break-word;
+}
+.jd-itemtag .val.g { font-weight: 700; letter-spacing: 0.12em; flex: 0 0 auto; }
+.jd-itemtag .val.g.none { color: rgba(58, 42, 18, 0.62); }
+.jd-itemtag .row--grade { align-items: center; }
+.jd-itemtag .row--grade svg {
+  margin-left: auto; overflow: visible; display: block;
+  margin-right: -11px;   /* the gauge svg carries 11px of empty right padding
+                            (viewBox -9 0 88, bar ends at x=68) — pull it out
+                            so the BAR, not the box, aligns flush right over
+                            the button bar's edge */
+}
+/* register 3 — the button bar: one line, equal flex halves (a download-only
+   tag is the same bar with the lone button taking the full width — no
+   special case). nowrap holds each label to one line at both widths. */
+.jd-itemtag .btns {
+  display: flex; gap: 0.45rem;
+  margin-top: 0.55rem; padding-top: 0.55rem;
+  border-top: 1px solid rgba(74, 53, 18, 0.28);
+}
 .jd-itemtag .btn {
-  font-size: 0.58rem; letter-spacing: 0.13em; color: #3a2a12;
-  border: 1px solid rgba(74, 53, 18, 0.6); padding: 0.3rem 0.55rem;
-  text-decoration: none; text-align: center; line-height: 1.5;
-  display: flex; flex-direction: column; justify-content: center;
+  flex: 1 1 0; min-width: 0;
+  font-size: 0.55rem; letter-spacing: 0.1em; line-height: 1;
+  color: #3a2a12; text-decoration: none; text-align: center;
+  white-space: nowrap;
+  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+  padding: 0.44rem 0.2rem 0.4rem;
+  background: rgba(255, 252, 240, 0.3);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
   cursor: pointer;          /* the two links stay links, not drag handles */
 }
-.jd-itemtag .btn:hover { background: rgba(255, 252, 240, 0.55); }
+.jd-itemtag .btn:hover { background: rgba(255, 252, 240, 0.65); }
+.jd-itemtag .btn:active { box-shadow: none; transform: translateY(1px); }
 
 /* the red elastic: drawn across the whole well, above items, under the tag.
    One <path> rewritten per frame by the Verlet chain in junk-drawer.js — the
@@ -811,11 +844,14 @@ html { scroll-behavior: smooth; }
     /* item tag compacts for small wells: a narrower fixed width, and the
        gap between meter and buttons tightens so line 2 still fits on one
        row on a phone (the max-width in the base rule remains the backstop) */
-  .jd-itemtag { padding: 0.42rem 0.7rem 0.34rem 1.3rem; --jd-tag-w: 17rem; }
-  .jd-itemtag .l2 { gap: 0.6rem; }
-  .jd-itemtag .l1 { font-size: 0.56rem; }
-  .jd-itemtag .gradelabel { font-size: 0.6rem; }
-  .jd-itemtag .btn { font-size: 0.52rem; padding: 0.12rem 0.38rem; }
+  .jd-itemtag { padding: 0.6rem 0.75rem 0.65rem 1.75rem; --jd-tag-w: 17rem; }
+  .jd-itemtag .name { font-size: 0.62rem; }
+  .jd-itemtag .lab  { font-size: 0.46rem; flex-basis: 2.9rem; }
+  .jd-itemtag .val  { font-size: 0.56rem; }
+  .jd-itemtag .btn  {
+    font-size: 0.5rem; letter-spacing: 0.08em;
+    padding: 0.4rem 0.15rem 0.36rem;
+  }
   /* IMMERSIVE MODE (owner request, G5 revision 4, 2026-07-26): on this
      page only, the fixed site banner slides away while the drawer is in
      view and returns when the visitor scrolls to the notes. Page-scoped
