@@ -1043,7 +1043,9 @@ html.jd-record-open { overflow: hidden; }
 .rc-plate {
   position: relative; overflow: hidden;
   margin-top: 0.55rem;
-  height: 224px;
+  /* square (owner, 2026-08-12): the plate matches the card's inner width in
+     height, replacing the old fixed 224px landscape field */
+  aspect-ratio: 1 / 1;
   padding: 10px 12px;
   background: #101010;
   border: 1px solid var(--form-rule);
@@ -1295,7 +1297,7 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 @media (max-width: 480px) {
   .jd-record-scrim { padding: 10px 8px; }
   .rc-scroll { padding: 12px 12px 10px; }
-  .rc-plate { height: 170px; }
+  /* (no plate height override: the square aspect-ratio holds on phones too) */
   /* on a phone the enlargement IS the point — give it nearly the whole
      screen and keep only enough chrome to say what it is and how to leave */
   .jd-record-zoom { padding: 10px 8px; gap: 7px; }

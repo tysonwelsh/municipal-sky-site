@@ -2220,13 +2220,68 @@ function JD_layerOpen() {
       '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
-  /* the vaporwave floor: black-and-white checkerboard projected toward a
-     center vanishing point; far rows dissolve into the navy horizon.
-     `pfx` namespaces the two gradient ids: the plate and the enlargement can
+  /* the vaporwave floor, mk II (owner, 2026-08-12): TWIN perspective grids —
+     a floor below the artwork and a ceiling above it — teal-blue wireframe
+     lines all converging on one central vanishing point; both grids dissolve
+     into a hazy glow band at the shared horizon. The viewBox is square to
+     match the plate; the enlargement crops it center-out (slice).
+     `pfx` namespaces the gradient ids: the plate and the enlargement can
      be in the document at the same time, and while their gradients happen to
      be identical today, two copies fighting over one id is exactly the bug
      svgInst exists to prevent — so the floor prefixes its own defs too. */
   function floorSVG(pfx) {
+    pfx = pfx || '';
+    var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
+    var ROWS = 9, R = 0.7, CW = 104;
+    var ts = [1];
+    for (var i = 1; i <= ROWS; i++) ts.push(ts[i - 1] * R);
+    function ln(x1, y1, x2, y2) {
+      return '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+        '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    var grid = '';
+    /* cross lines: perspective-spaced rows marching to the horizon, mirrored
+       about it (r starts at 1 — row 0 lies exactly on the viewBox edges) */
+    for (var r = 1; r <= ROWS; r++) {
+      var dy = ts[r] * HOR;
+      grid += ln(0, HOR + dy, W, HOR + dy) + ln(0, HOR - dy, W, HOR - dy);
+    }
+    /* rays: out from the vanishing point through the near edge of each grid,
+       floor and ceiling; far columns overshoot the viewBox and just clip */
+    for (var j = -8; j <= 8; j++) {
+      var x = VPX + j * CW;
+      grid += ln(VPX, HOR, x, H) + ln(VPX, HOR, x, 0);
+    }
+    return '<svg class="rc-floor" viewBox="0 0 ' + W + ' ' + H + '" ' +
+      'preserveAspectRatio="xMidYMid slice" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + pfx + 'jdRcBg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#0a0e24"/>' +
+      '<stop offset="0.5" stop-color="#13204a"/>' +
+      '<stop offset="1" stop-color="#0a0e24"/>' +
+      '</linearGradient>' +
+      '<linearGradient id="' + pfx + 'jdRcHaze" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#13204a" stop-opacity="0"/>' +
+      '<stop offset="0.5" stop-color="#1b2c63" stop-opacity="0.9"/>' +
+      '<stop offset="1" stop-color="#13204a" stop-opacity="0"/>' +
+      '</linearGradient></defs>' +
+      '<rect x="0" y="0" width="' + W + '" height="' + H +
+      '" fill="url(#' + pfx + 'jdRcBg)"/>' +
+      '<g stroke="#2fd0c9" stroke-opacity="0.48" stroke-width="1.1" fill="none">' +
+      grid + '</g>' +
+      '<rect x="0" y="' + (HOR - 84) + '" width="' + W + '" height="168" ' +
+      'fill="url(#' + pfx + 'jdRcHaze)"/>' +
+      '<line x1="0" y1="' + HOR + '" x2="' + W + '" y2="' + HOR +
+      '" stroke="#49e3d6" stroke-opacity="0.5" stroke-width="1.2"/>' +
+      '</svg>';
+  }
+
+  /* RETIRED — kept as a backup on the owner's request (2026-08-12): the mk-I
+     floor, a black-and-white checkerboard projected toward a center vanishing
+     point, far rows dissolving into the navy horizon. Not called anywhere;
+     to restore it, point the two floorSVG() call sites here (its 600×240
+     viewBox suits the old 224px landscape plate, not the square one). */
+  function checkerFloorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 240, VPX = W / 2, HOR = 96;
     var ROWS = 9, R = 0.7, CW = 104;
