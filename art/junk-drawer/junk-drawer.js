@@ -587,7 +587,7 @@ function JD_layerOpen() {
         item._gradeLabel = grade ? grade.label
           : (primary.grade == null ? '' : String(primary.grade));
         /* the item tag also needs: process, date, the grade's rank on the
-           scale (manicule position), the scale size, and the file url */
+           scale (bar fill), the scale size, and the file url */
         var gen = primary.generation || {};
         item._process = gen.mode === 'refined'
           ? 'REFINED ×' + (gen.prompt_count || '?') : 'ONE-SHOT';
@@ -763,31 +763,46 @@ function JD_layerOpen() {
       .replace(/"/g, '&quot;');
   }
 
-  /* rank === null draws the ruler with NO manicule: an abstention, not a
-     verdict. The needle has to be absent rather than parked, because a
-     manicule at the first tick is a legible reading — "graded, and graded
+  /* The grade meter: the same segmented bar gauge as the report card —
+     rank/steps of the track filled in the grade's ink, with paper-colored
+     dividers (the tag's #e8d9a8) drawn OVER the fill, battery-style, so
+     the segments stay visible even at 100%. rank === null draws the empty
+     track with faint ink dividers: an abstention, not a verdict. The fill
+     has to be absent rather than parked at one segment, because a bar
+     filled to the first segment is a legible reading — "graded, and graded
      worst" — and that is the one thing an ungraded specimen must not say.
-     Height and width are unchanged either way so the tag's layout doesn't
-     shift between a graded and an ungraded specimen. */
+     Width is unchanged either way (fixed 88px box, 66px track — the tag's
+     wrap math depends on it) so the layout doesn't shift between a graded
+     and an ungraded specimen. */
   function meterSVG(rank, steps) {
-    var span = 66, x0 = 2;
-    var ticks = '', gap = span / (steps - 1);
-    for (var i = 0; i < steps; i++) {
-      var tx = x0 + i * gap, end = (i === 0 || i === steps - 1);
-      ticks += '<line x1="' + tx + '" y1="' + (end ? 3.5 : 5) + '" x2="' + tx +
-        '" y2="10" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>';
+    var span = 66, x0 = 2, y = 2, h = 9;
+    /* worst → best, matched to the report card's rc-g1..5 ramp */
+    var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+    var graded = rank !== null;
+    var color = 'rgba(58,42,18,0.55)', fill = '';
+    if (graded) {
+      var full = Math.max(1, Math.min(steps, rank));
+      color = RAMP[steps > 1 ? Math.round((full - 1) / (steps - 1) * 4) : 4];
+      fill = '<rect x="' + x0 + '" y="' + y + '" width="' +
+        (span * full / steps).toFixed(1) + '" height="' + h +
+        '" fill="' + color + '"/>';
     }
-    var needle = '';
-    if (rank !== null) {
-      var mx = x0 + (rank - 1) * gap;
-      needle = '<text x="' + mx + '" y="24" text-anchor="middle" font-size="15" ' +
-        'fill="#3a2a12" font-family="inherit">☝︎</text>';
+    var ticks = '';
+    for (var t = 1; t < steps; t++) {
+      var tx = (x0 + span * t / steps).toFixed(1);
+      ticks += '<line x1="' + tx + '" y1="' + y + '" x2="' + tx +
+        '" y2="' + (y + h) + '" stroke="' +
+        (graded ? '#e8d9a8' : 'rgba(58,42,18,0.3)') + '" stroke-width="1.5"/>';
     }
-    return '<svg width="88" height="26" viewBox="-9 0 88 26" role="img" ' +
-      'aria-label="' + (rank === null ? 'not graded'
-        : 'grade ' + rank + ' of ' + steps) + '">' +
-      '<line x1="2" y1="7.5" x2="68" y2="7.5" stroke="rgba(58,42,18,0.55)" stroke-width="1"/>' +
-      ticks + needle + '</svg>';
+    return '<svg width="88" height="14" viewBox="-9 0 88 14" role="img" ' +
+      'aria-label="' + (graded ? 'grade ' + rank + ' of ' + steps
+        : 'not graded') + '">' +
+      '<defs><clipPath id="jd-meterclip"><rect x="' + x0 + '" y="' + y +
+      '" width="' + span + '" height="' + h + '" rx="2"/></clipPath></defs>' +
+      '<g clip-path="url(#jd-meterclip)">' + fill + ticks + '</g>' +
+      '<rect x="' + x0 + '" y="' + y + '" width="' + span + '" height="' + h +
+      '" rx="2" fill="none" stroke="' + color + '" stroke-width="1.5"/>' +
+      '</svg>';
   }
 
   /* ---- the red elastic, as an actual elastic (owner request, 2026-08-09) ---
@@ -1386,12 +1401,12 @@ function JD_layerOpen() {
     var d = item.dataset;
     /* GRADE, three states, read straight off the dataset — one code path for
        every specimen in the well:
-       · data-rank a number → filed grade, ruler with the manicule on it.
+       · data-rank a number → filed grade, the bar filled to it.
          Curated items ALWAYS land here: the loader writes a number (0 when
          the grade doesn't resolve), so their reading is untouched.
        · data-rank empty → the visitor skipped the grade step, and there is
-         no verdict to show. Blank label + a needle parked at rank 1 read as
-         a filed worst-grade, so it says UNGRADED against a bare ruler.
+         no verdict to show. Blank label + a bar filled to one segment read
+         as a filed worst-grade, so it says UNGRADED over an empty track.
        data-card="none" is the other dataset switch: see dropIntoPile. */
     var ranked = !!d.rank;
     tag.setAttribute('aria-label', 'specimen tag: ' + (d.title || ''));

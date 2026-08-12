@@ -293,7 +293,7 @@ html { scroll-behavior: smooth; }
   flex-wrap: wrap; row-gap: 0.45rem;
 }
 .jd-itemtag .gradelabel { white-space: nowrap; }
-/* the grade column: "GRADE: VALUE" on one line, the ruler/manicule below */
+/* the grade column: "GRADE: VALUE" on one line, the segmented bar below */
 .jd-itemtag .gradecol { display: flex; flex-direction: column; gap: 1px; }
 .jd-itemtag .gradelabel { font-size: 0.66rem; letter-spacing: 0.11em; }
 .jd-itemtag .gradelabel .g { color: #3a2a12; font-weight: 700; }
