@@ -1080,6 +1080,15 @@ html.jd-record-open { overflow: hidden; }
   font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
   text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
 }
+/* the file number: unlabelled fine print under the notes (owner rev,
+   2026-08-13 — smaller and greyer than the data above it) */
+.rc-note-no {
+  margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.04em;
+  color: rgba(55, 65, 79, 0.55);
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+}
 
 /* ---- section heading ---------------------------------------------------- */
 .rc-head {
@@ -1150,13 +1159,15 @@ html.jd-record-open { overflow: hidden; }
    radius, cream fill, a 1px press shadow. The card's click/key handlers
    exempt it from the plate's zoom. */
 .rc-dl {
-  position: absolute; right: 8px; bottom: 8px; z-index: 3;
+  /* inset far enough that the button clears the kraft corner's 26px
+     diagonal (owner rev, 2026-08-13 — it overlapped at 8/8) */
+  position: absolute; right: 18px; bottom: 15px; z-index: 3;
   display: inline-block;
-  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.12em;
+  font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
   color: #46505e;
   border: 1px solid var(--form-rule); border-radius: 3px;
-  padding: 0.42em 0.7em 0.38em;
+  padding: 0.5em 0.85em 0.46em;
   background: rgba(255, 250, 232, 0.82);
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
   cursor: pointer;
@@ -1266,10 +1277,13 @@ html.jd-record-open { overflow: hidden; }
 .rc-can-fold:not(.is-open) p {
   max-height: 4.5em;      /* 3 lines of the 1.5 line-height — the floor */
   overflow: hidden;
-  /* the cut dissolves to nothing over the last stretch — a fade-out, not
-     a guillotine (owner rev, 2026-08-13) */
-  -webkit-mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.5) 82%, rgba(0, 0, 0, 0) 100%);
-          mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.5) 82%, rgba(0, 0, 0, 0) 100%);
+  /* the cut dissolves over the LAST LINE and a bit, and only there: the
+     fade band is a fixed em depth, not a fraction of the box (owner rev
+     ×2, 2026-08-13 — a proportional fade on the stretched fold dimmed
+     nearly half the text, which read as truncating too soon over blank
+     space above the expander) */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.9em), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1.9em), rgba(0, 0, 0, 0) 100%);
 }
 /* in landscape the folded prompt is the column's springy row (owner rev,
    2026-08-13 — the text "fills the space available to it"): a tall
