@@ -2220,37 +2220,21 @@ function JD_layerOpen() {
       '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
-  /* the stage is tuned by shape, automatically (critic pass, 2026-08-13):
-     the CSS gives squarish solid masses a smaller envelope so the scene
-     stays visible around them; every other shape — tall and wide alike —
-     shares the default stage, sitting over the vanishing point (owner call,
-     2026-08-13: the item SHOULD obscure it; a floor-seated wide class was
-     retired on that call). The class is measured off the response's
-     viewBox aspect right here at render time — nothing is filed per item;
-     anything unparsable stays on the default stage. */
-  function artClass(svgSrc) {
-    var m = /viewBox\s*=\s*"([^"]+)"/.exec(svgSrc || '');
-    if (m) {
-      var p = m[1].replace(/,/g, ' ').trim().split(/\s+/);
-      var w = +p[2], h = +p[3];
-      if (w > 0 && h > 0) {
-        var a = w / h;
-        if (a >= 0.75 && a <= 1.33) return ' rc-art-square';
-      }
-    }
-    return '';
-  }
-
-  /* the vaporwave floor, mk II (owner, 2026-08-12): TWIN perspective grids —
-     a floor below the artwork and a ceiling above it — teal-blue wireframe
-     lines all converging on one central vanishing point; both grids dissolve
-     into a hazy glow band at the shared horizon. The viewBox is square to
-     match the plate; the enlargement crops it center-out (slice).
-     `pfx` namespaces the gradient ids: the plate and the enlargement can
-     be in the document at the same time, and while their gradients happen to
-     be identical today, two copies fighting over one id is exactly the bug
-     svgInst exists to prevent — so the floor prefixes its own defs too. */
-  function floorSVG(pfx) {
+  /* RETIRED — kept as a backup on the same terms as checkerFloorSVG below
+     (round 13, owner pick 2026-08-13: the display container went paper —
+     mockup-13b's graph-grid photo swatch, all CSS on .rc-plate — so the
+     dark stage left the card and the enlargement together, and the
+     shape-tuned rc-art-square envelope went with it; the photograph frames
+     every aspect the same). This was the vaporwave floor, mk II (owner,
+     2026-08-12): TWIN perspective grids — a floor below the artwork and a
+     ceiling above it — teal-blue wireframe lines all converging on one
+     central vanishing point; both grids dissolve into a hazy glow band at
+     the shared horizon. The viewBox is square to match the retired square
+     plate; the enlargement cropped it center-out (slice). `pfx` namespaces
+     the gradient ids so the plate and enlargement copies never fought over
+     one id. Not called anywhere; to restore it, re-point cardHTML/zoomHTML
+     at it and give .rc-plate back a dark ground. */
+  function floorSVG(pfx) {  /* eslint-disable-line no-unused-vars */
     pfx = pfx || '';
     var W = 600, H = 600, VPX = W / 2, HOR = H / 2;
     /* true one-point perspective: equally spaced ground lines at depth n sit
@@ -2412,8 +2396,21 @@ function JD_layerOpen() {
     return byId((payload.taxonomy || {}).models, id) || { label: id || '', vendor: '' };
   }
 
+  /* every axis name is a disclosure (owner, 2026-08-13): press it and a
+     row unfolds beneath with the axis's own taxonomy description. The
+     description rows ship in the table, hidden; build()'s click handler
+     flips them. One card renders at a time, so the fixed ids are safe. */
+  function axisBtn(inner, descId) {
+    return '<button type="button" class="rc-axbtn" aria-expanded="false" ' +
+      'aria-controls="' + descId + '" data-axd="' + descId + '">' + inner +
+      '<span class="rc-axcaret" aria-hidden="true">▾</span></button>';
+  }
+  function descRow(descId, text) {
+    return '<tr class="rc-axdesc" id="' + descId + '" hidden>' +
+      '<td colspan="2">' + esc(text) + '</td></tr>';
+  }
   function subjectsHTML(resp) {
-    var rows = '';
+    var rows = '', di = 0;
     ((payload.taxonomy || {}).axes || []).forEach(function (axis) {
       /* defunct axes never appear on the report card (owner, 2026-07-29);
          their filed gradings live on in the data and the legend still
@@ -2430,22 +2427,31 @@ function JD_layerOpen() {
           (v ? barHTML(Math.round(v.rank), 3, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
       }
-      rows += '<tr><td><span class="rc-subj-name">' + esc(axis.label || axis.id) +
-        '</span></td><td>' + cell + '</td></tr>';
+      var descId = 'rc-axd-' + (di++);
+      rows += '<tr><td>' +
+        axisBtn('<span class="rc-subj-name">' + esc(axis.label || axis.id) +
+          '</span>', descId) +
+        '</td><td>' + cell + '</td></tr>' +
+        descRow(descId, axis.description || '');
     });
     var g = gradeOf(resp.grade);
     var gCls = g.rank ? 'rc-g' + Math.round(g.rank) : '';
+    /* the overall row unfolds the scale itself, plus the earned tier's own
+       description when the taxonomy carries one */
+    var gDesc = 'The drawer’s own five-tier scale, best to worst.' +
+      (g.description ? ' ' + g.label + ': ' + g.description : '');
     return '<table class="rc-subj"><thead><tr>' +
       /* 52/48 → 44/56 → 47/53 (owner, 2026-08-12): the verdict column
          carries the gauge AND the pencilled word, the axis column only a
          name — but 44% squeezed the axis names a touch too hard */
       '<th style="width:47%">Axis</th><th style="width:53%">Verdict</th>' +
       '</tr></thead><tbody>' + rows + '</tbody>' +
-      '<tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td>' +
-      '<td><span class="rc-verdict">' +
+      '<tfoot><tr><td>' +
+      axisBtn('<span class="rc-avg-l">Overall grade</span>', 'rc-axd-g') +
+      '</td><td><span class="rc-verdict">' +
       (g.rank ? barHTML(Math.round(g.rank), 5, gCls) : '') +
       mark(g.label, gCls) +
-      '</span></td></tr></tfoot></table>';
+      '</span></td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>';
   }
 
   function altsHTML(entry, curIdx) {
@@ -2469,35 +2475,55 @@ function JD_layerOpen() {
     return h + '</div>';
   }
 
+  /* THE CARD, landscape (round 13, owner pick 2026-08-13: mockup-13a's
+     layout carrying mockup-13b's paper display container). One masthead
+     across two columns: the photograph and its fill-in caption on the left,
+     the paperwork — prompt, annotations, strip, footer — on the right. The
+     grid areas live in junk-drawer.css; under 700px the column wrappers go
+     display:contents and this same DOM reads as the portrait flow (which is
+     why the source order below IS the portrait order). */
   function cardHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
     var h = '';
     h += '<header class="rc-block rc-masthead">' +
       '<div class="rc-item">' + esc(entry.title) + '</div></header>';
-    /* Model/Prompted/Process describe the RESPONSE; Size describes the ITEM
-       (one tier per entry, shared by every response), so it holds steady as
-       the alternatives are stepped through. */
-    h += '<div class="rc-block rc-fillsline">' +
+    /* the plate is the enlargement's handle: role/tabindex make it a real
+       button for keyboard and screen readers without wrapping the artwork in
+       a <button>, whose UA box model would fight the absolutely-positioned
+       photo layers. The corner hint is there for touch, where there is no
+       hover to discover the affordance with. The four spans are the kraft
+       photo corners holding the print to the form. */
+    var artSrc = svgCache[entry.id + '/' + resp.file] || '';
+    h += '<div class="rc-col-l">' +
+      '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
+      'aria-label="Enlarge the artwork">' +
+      '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
+      '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
+      '<div class="rc-plate-art">' +
+      svgInst(artSrc, 'jr' + curIdx + '_') +
+      '</div>' +
+      '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
+      '</div>' +
+      /* Model/Prompted/Process describe the RESPONSE; Size describes the
+         ITEM (one tier per entry, shared by every response), so it holds
+         steady as the alternatives are stepped through. In landscape these
+         are the photograph's caption, one ruled line each. */
+      '<div class="rc-block rc-fillsline">' +
       fillHTML('Model', esc(m.label)) +
       fillHTML('Prompted', esc(fmtDate(resp.date))) +
       fillHTML('Process', esc(processLabel(resp.generation))) +
       fillHTML('Size', esc(sizeLabel(payload.taxonomy, entry) || '—')) +
-      '</div>';
-    /* the plate is the enlargement's handle: role/tabindex make it a real
-       button for keyboard and screen readers without wrapping the artwork in
-       a <button>, whose UA box model would fight the absolutely-positioned
-       floor. The corner hint is there for touch, where there is no hover to
-       discover the affordance with. */
-    var artSrc = svgCache[entry.id + '/' + resp.file] || '';
-    h += '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
-      'aria-label="Enlarge the artwork">' + floorSVG() +
-      '<div class="rc-plate-art' + artClass(artSrc) + '">' +
-      svgInst(artSrc, 'jr' + curIdx + '_') +
-      '</div>' +
-      '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
-      '</div>';
-    h += '<div class="rc-block rc-head">The prompt</div>' +
-      '<div class="rc-block rc-assign"><p>“' + esc(entry.prompt) + '”</p></div>';
+      '</div></div>';
+    /* the prompt renders foldable; render() measures it after paint and
+       strips the fold when it actually fits three lines — so the expander
+       only ever appears on prompts that need it */
+    h += '<div class="rc-col-r">' +
+      '<div class="rc-block rc-head">The prompt</div>' +
+      '<div class="rc-block rc-assign rc-can-fold"><p>“' + esc(entry.prompt) +
+      '”</p>' +
+      '<button type="button" class="rc-pv" aria-expanded="false">' +
+      '<span class="rc-pv-more">show full prompt ▾</span>' +
+      '<span class="rc-pv-less">show less ▴</span></button></div>';
     h += '<div class="rc-block rc-head">Annotations</div>' +
       '<div class="rc-block">' + subjectsHTML(resp) + '</div>';
     var alts = altsHTML(entry, curIdx);
@@ -2510,18 +2536,19 @@ function JD_layerOpen() {
       esc(entry.id) + '.svg" title="download the SVG as generated">' +
       'Download SVG ⤓</a></span>' +
       '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
-      '</div></div>';
+      '</div></div></div>';
     return h;
   }
 
-  /* the enlargement's contents: the SAME response the card is showing, on the
-     same black plate over the same vaporwave floor, so it reads as the plate
-     grown rather than a different picture. Its inlined copy takes a `jz`
-     prefix — the `jr` copy is still in the card underneath it. */
+  /* the enlargement's contents: the SAME response the card is showing, on
+     the same graph-paper photo swatch (its CSS twin lives on .rc-zoom-fig),
+     so it reads as the photograph held up off the form rather than a
+     different picture. Its inlined copy takes a `jz` prefix — the `jr` copy
+     is still in the card underneath it. */
   function zoomHTML(entry, resp, curIdx) {
     var m = modelOf(resp.model);
     return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
-      'aria-label="Shrink the artwork">' + floorSVG('z') +
+      'aria-label="Shrink the artwork">' +
       '<div class="rc-zoom-art">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
       '</div></div>' +
@@ -2591,6 +2618,28 @@ function JD_layerOpen() {
     scrollEl.addEventListener('click', function (e) {
       if (e.target.closest && e.target.closest('.rc-plate')) {
         openZoom(e.target.closest('.rc-plate'));
+        return;
+      }
+      /* the prompt's fold (round 13): the expander toggles the block open;
+         state is DOM-only on purpose — a re-render folds a long prompt
+         back down, which is right when the response (and card height
+         budget) just changed */
+      var pv = e.target.closest ? e.target.closest('.rc-pv') : null;
+      if (pv) {
+        var box = pv.closest('.rc-assign');
+        var open = box.classList.toggle('is-open');
+        pv.setAttribute('aria-expanded', open ? 'true' : 'false');
+        return;
+      }
+      /* an axis name unfolds its taxonomy description (owner, 2026-08-13) */
+      var ax = e.target.closest ? e.target.closest('.rc-axbtn') : null;
+      if (ax) {
+        var dr = scrollEl.querySelector('#' + ax.getAttribute('data-axd'));
+        if (dr) {
+          var opening = dr.hidden;
+          dr.hidden = !opening;
+          ax.setAttribute('aria-expanded', opening ? 'true' : 'false');
+        }
         return;
       }
       var b = e.target.closest ? e.target.closest('.rc-alt') : null;
@@ -2682,6 +2731,17 @@ function JD_layerOpen() {
     markSeq = 0;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     scrollEl.innerHTML = cardHTML(curEntry, resp, curResp);
+    /* the prompt renders foldable, then earns it: measured here, after
+       layout, because "three lines" depends on the column's real width —
+       a character count lies in one orientation or the other. A prompt
+       that fits its three lines loses the fold and the expander both. */
+    var fold = scrollEl.querySelector('.rc-assign.rc-can-fold');
+    if (fold) {
+      var fp = fold.querySelector('p');
+      if (fp && fp.scrollHeight <= fp.clientHeight + 2) {
+        fold.classList.remove('rc-can-fold');
+      }
+    }
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
