@@ -2398,10 +2398,14 @@ function JD_layerOpen() {
      row unfolds beneath with the axis's own taxonomy description. The
      description rows ship in the table, hidden; build()'s click handler
      flips them. One card renders at a time, so the fixed ids are safe. */
+  /* the expander sits LEFT of the name as a boxed +/− (owner rev,
+     2026-08-13 — appendix-index style, not a dropdown arrow); the glyph
+     itself is CSS content keyed off aria-expanded */
   function axisBtn(inner, descId) {
     return '<button type="button" class="rc-axbtn" aria-expanded="false" ' +
-      'aria-controls="' + descId + '" data-axd="' + descId + '">' + inner +
-      '<span class="rc-axcaret" aria-hidden="true">▾</span></button>';
+      'aria-controls="' + descId + '" data-axd="' + descId + '">' +
+      '<span class="rc-axcaret" aria-hidden="true"></span>' + inner +
+      '</button>';
   }
   function descRow(descId, text) {
     return '<tr class="rc-axdesc" id="' + descId + '" hidden>' +
