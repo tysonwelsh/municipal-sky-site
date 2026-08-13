@@ -1207,18 +1207,23 @@ html.jd-record-open { overflow: hidden; }
 /* the box takes the room the viewport has; the SVG inside keeps its aspect
    (preserveAspectRatio meet), so tall art and wide art both simply fit */
 .rc-zoom-fig {
+  /* the paper grew with the print (owner, 2026-08-14): the same graph
+     swatch the plate wears, with every gradient length multiplied by
+     --gk — the measured fig-width / plate-width factor junk-drawer.js
+     sets on open (zoomGridScale). The 2.5 fallback approximates the
+     common desktop ratio if the measurement never lands, so a script
+     hiccup still beats a same-size grid. Rule weights scale too: a
+     zoomed-in pen line is a wider pen line. */
+  --gk: 2.5;
   position: relative; overflow: hidden;
   flex: 0 1 auto; min-height: 0;
   width: min(1040px, 100%); height: 100%;
   padding: 16px 18px;
-  /* the card's photograph, held up off the form: the same graph-paper
-     print swatch the plate wears (round 13 — the dark plate + vaporwave
-     floor retired together), so the enlargement reads as the photo grown */
   background:
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
-    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
-    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
     #f8f3e2;
   border: 1px solid rgba(55, 65, 79, 0.35);
   box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.8);
