@@ -1620,6 +1620,14 @@ html.jd-turn-open { overflow: hidden; }
   font-size: 0.62rem; letter-spacing: 0.12em; color: var(--tink-2);
 }
 .jd-turn-count.is-over { color: var(--tred); font-weight: 700; }
+/* the third-party disclosure as fine print under the send button (its
+   gating card retired 2026-08-14) — present, honest, and not a wall */
+.jd-turn-fine {
+  margin: 0.8rem 0 0; padding-top: 0.55rem;
+  border-top: 1px solid var(--trule-2);
+  font-size: 0.56rem; line-height: 1.7; letter-spacing: 0.04em;
+  color: var(--tink-2);
+}
 /* honest bad news: a ruled slip, never a red alarm */
 .jd-turn-notice {
   margin: 0 0 0.9rem; padding: 0.5rem 0.7rem;
