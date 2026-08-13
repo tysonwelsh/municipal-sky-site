@@ -2715,6 +2715,24 @@ function JD_layerOpen() {
     if (!zoomOn || !zoomEl || !curEntry) return;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     zoomEl.innerHTML = zoomHTML(curEntry, resp, curResp);
+    zoomGridScale();
+  }
+
+  /* the print's grid grows with the print (owner, 2026-08-14): the
+     enlargement is the same photograph held closer, so its graph squares
+     — and rule weights — scale by the factor the paper itself grew. The
+     factor is measured, not assumed: fig width over plate width, fed to
+     the gradient math on .rc-zoom-fig via --gk. Skips silently while the
+     layer is display:none (rects are 0 there); openZoom re-runs it once
+     the layer is up. */
+  function zoomGridScale() {
+    if (!zoomOn || !zoomEl || !scrollEl) return;
+    var pl = scrollEl.querySelector('.rc-plate');
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (!pl || !fig) return;
+    var pw = pl.getBoundingClientRect().width;
+    var fw = fig.getBoundingClientRect().width;
+    if (pw > 0 && fw > 0) fig.style.setProperty('--gk', (fw / pw).toFixed(3));
   }
 
   function openZoom(from) {
@@ -2724,6 +2742,7 @@ function JD_layerOpen() {
     zoomFrom = from || null;
     syncZoom();
     zoomEl.classList.add('is-on');
+    zoomGridScale();
     /* focus follows the artwork so Space/Enter/Esc all land here, and so a
        keyboard visitor isn't left tabbing the card hidden behind the layer */
     var fig = zoomEl.querySelector('.rc-zoom-fig');
