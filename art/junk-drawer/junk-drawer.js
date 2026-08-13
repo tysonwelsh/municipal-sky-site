@@ -2908,7 +2908,7 @@ function JD_layerOpen() {
   var ROT_MAX = 34;         /* the pile's scatter rotation range, ± degrees */
 
   var payload = null;       /* the data.php payload — the survey renders from it */
-  var scrim = null, card = null, bodyEl = null, confirmEl = null;
+  var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
   var state = '', isOpen = false, confirmOn = false, restored = false;
   var turn = null;          /* the persisted in-flight record (C5.3) */
   var work = null;          /* the working copy: svgs, ratings, comparison */
@@ -2918,6 +2918,10 @@ function JD_layerOpen() {
   var stateTitle = '';      /* the current state's heading — also the dialog's
                                accessible name, so the name changes with the
                                step instead of naming the whole flow once */
+  /* the masthead the next paint will print: FORM JD-1 §n, the heading, and
+     the box stamp (when the bureau has done something). head() fills it; the
+     view string is built before paint runs, so the two can never disagree. */
+  var pendingHead = null;
 
   /* ---------- small helpers ---------------------------------------------- */
   function esc(s) {
@@ -3034,13 +3038,26 @@ function JD_layerOpen() {
     if (scrim) return;
     scrim = document.createElement('div');
     scrim.className = 'jd-turn-scrim';
+    /* FORM JD-1 (round-15 redesign): the masthead lives OUTSIDE the scroller
+       — the sheet's identity (form number, section, heading, the bureau's
+       box stamp) never scrolls away from the words it names. The sprite
+       carries the two arcs every round seal sets its type on; it has no ink
+       of its own. */
     scrim.innerHTML =
+      '<svg class="jd-turn-sprite" aria-hidden="true" focusable="false" ' +
+      'width="0" height="0"><defs>' +
+      '<path id="jd-seal-t" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/>' +
+      '<path id="jd-seal-b" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/>' +
+      '</defs></svg>' +
       '<div class="jd-turn" role="dialog" aria-modal="true" ' +
       'aria-label="take a turn">' +
-      '<button type="button" class="jd-turn-close" aria-label="close">✕</button>' +
+      '<button type="button" class="jd-turn-close" aria-label="close">' +
+      '<span aria-hidden="true">✕</span></button>' +
+      '<header class="jd-turn-head"></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');
+    headEl = scrim.querySelector('.jd-turn-head');
     bodyEl = scrim.querySelector('.jd-turn-scroll');
     scrim.addEventListener('pointerdown', function (e) {
       if (e.target === scrim) requestClose();
@@ -3081,7 +3098,9 @@ function JD_layerOpen() {
   }
   function focusFirst() {
     var f = focusables(confirmOn && confirmEl ? confirmEl : card);
-    var pref = (confirmOn && confirmEl ? confirmEl : bodyEl)
+    /* card, not bodyEl: the heading — the landing place for most states —
+       lives in the masthead outside the scroller now */
+    var pref = (confirmOn && confirmEl ? confirmEl : card)
       .querySelector('[data-autofocus]');
     var target = pref || f[0];
     if (target) { try { target.focus(); } catch (e) {} }
@@ -3266,11 +3285,24 @@ function JD_layerOpen() {
     bodyEl.scrollTop = 0;
     focusFirst();
   }
-  /* every write to the body goes through here: the dialog's accessible name is
-     the heading that was just built (see head) */
+  /* every write to the card goes through here: the masthead head() just
+     declared, the body, the dialog's accessible name, and the card's
+     data-view — the one hook the landscape bench's width and grid ride on
+     (see .jd-turn[data-view="bench"] in junk-drawer.css). */
   function paint(h) {
+    headEl.innerHTML = headHTML();
     bodyEl.innerHTML = h;
     card.setAttribute('aria-label', stateTitle || 'take a turn');
+    card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
+  }
+  /* the masthead: FORM JD-1 §n · the heading · (the bureau's box stamp) */
+  function headHTML() {
+    var p = pendingHead || { title: 'take a turn', sec: 1 };
+    return '<span class="jd-turn-formno" aria-hidden="true">FORM JD-1<em>§' +
+      p.sec + '</em></span>' +
+      '<h2 class="jd-turn-title" tabindex="-1"' +
+      (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>' +
+      (p.box ? boxStamp(p.box.word, p.box.small) : '');
   }
 
   /* (the consent card — C5.2's gating checkbox — retired 2026-08-14, owner
@@ -3278,22 +3310,28 @@ function JD_layerOpen() {
      stays canonical for privacy.php and rides the prompt card as fine
      print; the acknowledgment is recorded when the words are sent.) */
 
-  /* ---------- 1. prompt ---------------------------------------------------- */
+  /* ---------- 1. the brief (§1) -------------------------------------------- */
   function viewPrompt() {
     var draft = (work && work.prompt) || '';
     var msg = work && work.notice
       ? '<p class="jd-turn-notice" role="status">' + esc(work.notice) + '</p>' : '';
     var n = draft.length;
-    return head('Describe an object for the drawer', true) +
+    /* the one card the bureau stamps WITHOUT the visitor having acted: a
+       rate-limited turn comes back here, so OVER QUOTA rides the masthead
+       and the words the visitor typed stay put (work.stamp, set in
+       settleSlot). Nothing is disabled — pressing send simply asks again. */
+    return head('Describe an object', 1,
+      { noFocus: true, box: (work && work.stamp) || null }) +
       msg +
-      '<p class="jd-turn-copy">Two machines get your words, verbatim, and each ' +
-      'draws the thing. You grade what comes back and keep the one you like.</p>' +
-      '<label class="jd-turn-label" for="jd-turn-prompt">the brief</label>' +
-      '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="3" ' +
+      '<p class="jd-turn-line">Two machines each draw it. You grade both, and ' +
+      'keep the one you like.</p>' +
+      '<div class="jd-turn-fieldwrap">' +
+      '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="5" ' +
       'data-role="prompt" data-autofocus spellcheck="true" ' +
+      'aria-label="describe an object for the drawer" ' +
       'placeholder="a brass fish that is also a whistle">' + esc(draft) + '</textarea>' +
       '<p class="jd-turn-count' + (n > MAX_PROMPT ? ' is-over' : '') +
-      '" aria-live="polite">' + n + ' / ' + MAX_PROMPT + '</p>' +
+      '" aria-live="polite">' + n + ' / ' + MAX_PROMPT + '</p></div>' +
       /* the honeypot: off-screen rather than display:none (which most bots
          skip), never in the tab order, never announced */
       '<div class="jd-turn-hp" aria-hidden="true">' +
@@ -3309,34 +3347,62 @@ function JD_layerOpen() {
       '<p class="jd-turn-fine">' + esc(JD_CONSENT.text) + '</p>';
   }
 
-  /* ---------- 3. generating ------------------------------------------------ */
+  /* ---------- 3. the darkroom (§2, RECEIVED) -------------------------------
+     Two slots, two states. No table, no headers, no assignment column: the
+     visitor is waiting on A and B, and that is all this says. The mark glyph
+     is aria-hidden — the word beside it is what the live region announces. */
   function slotLine(slot) {
     var s = work.slots[slot];
-    var name = slot.toUpperCase();
-    if (s.status === 'ok') return 'response ' + name + ' — arrived';
-    if (s.status === 'pending') return 'response ' + name + ' — still drawing…';
-    return 'response ' + name + ' — didn’t survive';
+    if (s.status === 'ok') {
+      return '<span class="jd-turn-st jd-turn-st--ok">' +
+        '<span class="m" aria-hidden="true">✓</span>arrived</span>';
+    }
+    if (s.status === 'pending') {
+      return '<span class="jd-turn-st jd-turn-st--wait">still drawing' +
+        '<span class="jd-turn-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b>' +
+        '</span></span>';
+    }
+    return '<span class="jd-turn-st jd-turn-st--fail">' +
+      '<span class="m" aria-hidden="true">✗</span>didn’t survive</span>';
+  }
+  function slotRow(slot) {
+    return '<b>' + slot.toUpperCase() + '</b>' + slotLine(slot);
+  }
+  function darkroomTitle() {
+    return (work.slots.a.status === 'pending' && work.slots.b.status === 'pending')
+      ? 'Two machines are drawing' : 'One is still drawing';
   }
   function viewGenerating() {
-    return head('Two machines are drawing…') +
-      '<p class="jd-turn-copy">The same words went to both. It can take a ' +
-      'minute or two — leave this open.</p>' +
+    return head(darkroomTitle(), 2) +
+      '<p class="jd-turn-line">It can take a minute or two — leave this open.</p>' +
       '<ul class="jd-turn-slots" aria-live="polite">' +
-      '<li data-slotline="a">' + esc(slotLine('a')) + '</li>' +
-      '<li data-slotline="b">' + esc(slotLine('b')) + '</li>' +
+      '<li data-slotline="a">' + slotRow('a') + '</li>' +
+      '<li data-slotline="b">' + slotRow('b') + '</li>' +
       '</ul>' +
-      '<p class="jd-turn-copy jd-turn-slow" data-slow' +
+      '<p class="jd-turn-delay" data-slow' +
       (work.slow ? '' : ' hidden') + '>Still going. The drawing is long ' +
-      'because it is being written line by line.</p>';
+      'because it is being written line by line.</p>' +
+      '<div class="jd-turn-stampline">' +
+      seal('RECEIVED', work.received || stampDay() + ' ' + stampClock()) +
+      '</div>';
   }
   function paintSlots() {
     if (!isOpen || state !== 'generating') return;
     ['a', 'b'].forEach(function (slot) {
       var li = bodyEl.querySelector('[data-slotline="' + slot + '"]');
-      if (li) li.textContent = slotLine(slot);
+      if (li) li.innerHTML = slotRow(slot);
     });
     var slow = bodyEl.querySelector('[data-slow]');
     if (slow && work.slow) slow.removeAttribute('hidden');
+    /* the heading is a state display too — once one machine has landed, the
+       masthead stops claiming two of them are still drawing */
+    var t = darkroomTitle(), h2 = headEl && headEl.querySelector('.jd-turn-title');
+    if (h2 && t !== stateTitle) {
+      stateTitle = t;
+      if (pendingHead) pendingHead.title = t;
+      h2.textContent = t;
+      card.setAttribute('aria-label', t);
+    }
   }
   function startSlowTimer() {
     stopSlowTimer();
@@ -3352,16 +3418,25 @@ function JD_layerOpen() {
     slowTimer = 0;
   }
 
-  /* ---------- 4. reveal (blind: A and B, nothing else) --------------------- */
+  /* ---------- 4. the reveal (§3, ATTACHED) ---------------------------------
+     The exhibit is the record card's photograph, reused exactly: a
+     graph-paper print swatch held down by kraft photo corners, floating a
+     millimetre off the sheet. An attached photograph is an attached
+     photograph. `pin` drops the caption — on the bench the heading already
+     says which drawing this is. */
   function plate(slot, opts) {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
     opts = opts || {};
-    return '<figure class="jd-turn-plate' + (opts.small ? ' is-small' : '') + '">' +
-      '<div class="jd-turn-art" role="img" aria-label="response ' +
+    return '<figure class="jd-turn-plate">' +
+      '<div class="jd-turn-art" role="img" aria-label="drawing ' +
       slot.toUpperCase() + '">' +
-      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
-      '<figcaption>' + slot.toUpperCase() + '</figcaption></figure>';
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      '<div class="jd-turn-art-in">' +
+      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div></div>' +
+      (opts.pin ? '' : '<figcaption>' + slot.toUpperCase() + '</figcaption>') +
+      '</figure>';
   }
   function okSlots() {
     return ['a', 'b'].filter(function (s) { return work.slots[s].status === 'ok'; });
@@ -3371,16 +3446,19 @@ function JD_layerOpen() {
     var lost = ok.length === 1
       ? '<p class="jd-turn-notice" role="status">the other machine’s ' +
         'drawing didn’t survive — you’ll grade this one alone.</p>' : '';
-    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back') +
+    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back',
+      3, { box: { word: 'Attached', small: stampClock() } }) +
       lost +
       '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
       '</div>' +
-      '<p class="jd-turn-copy">No names yet. Who drew which is withheld until ' +
-      'your grades are filed.</p>' +
+      '<p class="jd-turn-line">Grade them first — the names come after.</p>' +
       actions('<button type="button" class="jd-turn-go" data-act="rate">grade them</button>');
   }
 
-  /* ---------- 5. rate — the survey, rendered from the taxonomy ------------- */
+  /* ---------- 5. rate — the survey, rendered from the taxonomy -------------
+     pillRow survives for the unveil's tie keep-chooser alone (the two-panel
+     pill survey retired with the single bench, 2026-08-11). Its tick is
+     GRAPHITE, not stamp red: the election is the visitor's own hand. */
   function pillRow(name, label, options, chosen, meta) {
     var h = '<div class="jd-pillrow" role="radiogroup" aria-label="' + esc(label) + '">';
     options.forEach(function (o) {
@@ -3389,10 +3467,7 @@ function JD_layerOpen() {
         '<input type="radio" name="' + esc(name) + '" value="' + esc(o.value) + '"' +
         meta + (on ? ' checked' : '') + '>' +
         '<span class="jd-pill-tick" aria-hidden="true">✓</span>' +
-        '<span class="jd-pill-l">' + esc(o.label) + '</span>' +
-        (o.description
-          ? '<span class="jd-pill-d">' + esc(o.description) + '</span>' : '') +
-        '</label>';
+        esc(o.label) + '</label>';
     });
     return h + '</div>';
   }
@@ -3438,7 +3513,12 @@ function JD_layerOpen() {
      owner's request, 2026-08-12 — the survey files values only. The report
      path's flag note below is separate and stays.) Re-rendering is safe:
      every answer lives in `work` and is written back as selected state
-     here. */
+     here.
+
+     THE POPOVER IS ONE LINE (round-15 design): the axis's own definition and
+     nothing else. The level-by-level schedule it used to unfold was twelve
+     lines explaining a four-option select whose options are already words —
+     and those words are in the select, which is where a person reads them. */
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
@@ -3452,15 +3532,7 @@ function JD_layerOpen() {
       esc(desc) + '"><span>' + esc(label) + '</span>' +
       '<span class="jd-i" aria-hidden="true">i</span></button>' +
       '</div>' +
-      '<div class="jd-pop" id="' + popId + '" hidden>' +
-      '<p class="jd-pop-desc">' + esc(desc) + '</p><dl>';
-    levels.forEach(function (l) {
-      /* escape FIRST, then honor the _emphasis_ convention — the italics
-         can never smuggle markup because the underscores wrap escaped text */
-      h += '<dt>' + esc(l.label || l.id).replace(/_([^_]+)_/g, '<i>$1</i>') +
-        '</dt><dd>' + esc(l.description || '') + '</dd>';
-    });
-    h += '<dt>skip</dt><dd>No answer filed for this question.</dd></dl></div>' +
+      '<div class="jd-pop" id="' + popId + '" hidden>' + esc(desc) + '</div>' +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
       'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
       (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
@@ -3478,10 +3550,11 @@ function JD_layerOpen() {
 
   /* the step rail. First pass is linear (a step unlocks when the one before
      it is left), back is always one press; a degraded one-survivor turn has
-     no rail at all — one panel, then file. */
+     no rail at all — one panel, then file. A step the visitor has finished
+     carries a PENCIL tick (.is-done): their hand, not the bureau's. */
   function railHTML(ok) {
     var steps = ok.map(function (s) {
-      return { id: s, n: ok.indexOf(s) + 1, label: 'response ' + s.toUpperCase(), short: s.toUpperCase() };
+      return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(), short: s.toUpperCase() };
     });
     steps.push({ id: 'call', n: ok.length + 1, label: 'the call', short: 'CALL' });
     var h = '<div class="jd-rail" role="list">';
@@ -3489,29 +3562,33 @@ function JD_layerOpen() {
       var current = work.step === st.id;
       var reached = !!work.reached[st.id];
       h += '<button type="button" role="listitem" class="jd-rail-step' +
-        (current ? ' is-current' : '') + '" data-act="step" data-step="' + st.id +
+        (current ? ' is-current' : reached ? ' is-done' : '') +
+        '" data-act="step" data-step="' + st.id +
         '"' + (reached ? '' : ' disabled') +
         (current ? ' aria-current="step"' : '') +
         ' aria-label="step ' + st.n + ' — ' + esc(st.label) + '">' +
-        '<b>' + st.n + '</b><span class="jd-rail-long"> · ' + esc(st.label) +
-        '</span><span class="jd-rail-short" aria-hidden="true"> · ' +
+        '<b>' + st.n + '</b><span class="jd-rail-long">' + esc(st.label) +
+        '</span><span class="jd-rail-short" aria-hidden="true">' +
         esc(st.short) + '</span></button>';
     });
     return h + '</div>';
   }
 
-  /* the pinned plate: the artwork stays in view for the whole panel */
-  function benchPin(slot) {
-    return '<div class="jd-bench-pin">' + plate(slot, { small: true }) +
-      '<div class="jd-bench-col"><b>Response ' + slot.toUpperCase() + '</b>' +
-      '<span>graded alone — no names until filed</span></div></div>';
-  }
-
+  /* THE LANDSCAPE BENCH (owner modification on the round-15 pick,
+     2026-08-13). The bench borrows the report card's two-column pattern: the
+     exhibit on the LEFT, the paperwork on the RIGHT. The wrappers are layout
+     only — under 700px they go display:contents and this same DOM reads as
+     the portrait flow, with the exhibit sticky at the top of the scroller.
+     The card widens to carry the two columns and narrows again the moment it
+     stops (see paint's data-view). */
   function benchPanel(slot, ok) {
     var r = work.ratings[slot];
     var idx = ok.indexOf(slot);
     var two = ok.length > 1;
-    var h = '<section class="jd-turn-panel">' + benchPin(slot) +
+    var h = '<div class="jd-bench">' +
+      '<div class="jd-bench-l"><div class="jd-turn-pin">' +
+      plate(slot, { pin: true }) + '</div></div>' +
+      '<div class="jd-bench-r">' +
       scaleRow(slot, 'grade', null, r.grade);
     liveAxes().forEach(function (ax) {
       h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
@@ -3520,13 +3597,13 @@ function JD_layerOpen() {
     h += '<label class="jd-turn-check jd-turn-flag">' +
       '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
       (r.flag ? ' checked' : '') + '>' +
-      '<span>this response is broken or offensive</span></label>' +
+      '<span>this drawing is broken or offensive</span></label>' +
       '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
-      '<input type="text" class="jd-turn-input jd-turn-note" maxlength="' +
+      '<input type="text" class="jd-turn-note" maxlength="' +
       MAX_NOTE + '" placeholder="what is wrong with it?" ' +
-      'aria-label="note on the report for response ' + slot.toUpperCase() +
+      'aria-label="note on the report for drawing ' + slot.toUpperCase() +
       '" data-role="flagnote" data-slot="' + slot + '" value="' +
-      esc(r.flagNote || '') + '"></div></section>';
+      esc(r.flagNote || '') + '"></div>';
     var acts = '';
     if (idx > 0) {
       acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
@@ -3534,11 +3611,15 @@ function JD_layerOpen() {
     if (!two) {
       acts += '<button type="button" class="jd-turn-go" data-act="file">file the grades</button>';
     } else {
-      var next = idx + 1 < ok.length ? 'response ' + ok[idx + 1].toUpperCase() : 'the call';
+      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'the call';
       acts += '<button type="button" class="jd-turn-go" data-act="next">next — ' +
         esc(next) + ' &rarr;</button>';
     }
-    return h + actions(acts);
+    /* the action row closes the PAPERWORK column, not the sheet: on the
+       landscape bench it settles against the foot of the exhibit beside it
+       (margin-top:auto), and in the portrait stack it is simply the last
+       thing on the card, exactly where it was */
+    return h + actions(acts) + '</div></div>';
   }
 
   /* THE CALL — the preserved likert finale (mockup 10c salvage, kept by the
@@ -3547,26 +3628,22 @@ function JD_layerOpen() {
      unfolding the whole scale, filed as winner + margin). */
   function callPanel(ok) {
     var chosen = likertChosen();
-    var h = '<section class="jd-turn-panel">' +
-      '<div class="jd-turn-plates">' +
+    var h = '<div class="jd-turn-plates jd-turn-plates--call">' +
       ok.map(function (s) { return plate(s); }).join('') + '</div>' +
-      '<div class="jd-call">' +
-      '<div class="jd-rowhead">' +
+      '<div class="jd-callhead">' +
       '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
       'aria-controls="jd-pop-call" data-tt-t="the call" data-tt-d="Which ' +
-      'response belongs in the drawer, and by how much.">' +
-      '<span>the call — which belongs in the drawer?</span>' +
-      '<span class="jd-i" aria-hidden="true">i</span></button></div>' +
-      '<div class="jd-pop" id="jd-pop-call" hidden>' +
-      '<p class="jd-pop-desc">The one required answer when both drawings ' +
-      'survived. It is filed as a winner plus a margin (a tie has no margin).</p><dl>';
-    LIKERT.forEach(function (o) {
-      h += '<dt>' + esc(o.title) + '</dt><dd>' + esc(o.desc) + '</dd>';
-    });
-    h += '</dl></div>' +
-      '<p class="jd-call-req">required — everything before it is optional</p>' +
+      'drawing belongs in the drawer, and by how much.">' +
+      '<span>Which belongs in the drawer?</span>' +
+      '<span class="jd-i" aria-hidden="true">i</span></button>' +
+      '<span class="jd-req">Required</span></div>' +
+      /* one line, like every other ⓘ: the per-stop wording is on the stops
+         themselves, in the tooltip, and in the hidden descriptions below */
+      '<div class="jd-pop" id="jd-pop-call" hidden>The one required answer ' +
+      'when both drawings survived — filed as a winner plus a margin (a tie ' +
+      'has no margin).</div>' +
       '<div class="jd-likert" role="radiogroup" ' +
-      'aria-label="the call: which response belongs in the drawer"' +
+      'aria-label="the call: which drawing belongs in the drawer"' +
       (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
       '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">A</span>' +
       '<div class="jd-lk-rail">';
@@ -3586,13 +3663,16 @@ function JD_layerOpen() {
       h += '<span class="jd-vh" id="jd-d-call-' + o.id + '">' +
         esc(o.title + ' — ' + o.desc) + '</span>';
     });
-    h += '</div></section>';
     return h + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
       (work.winner ? '' : ' disabled') + '>file the grades</button>');
   }
 
+  /* §4 the bench, §5 the call. Neither carries an instruction line: they are
+     the two cards where the visitor is working, so they are the two with the
+     least to read. The heading names the drawing on the bench, the rail says
+     where in the three steps it sits, and the ⓘ carries the rest. */
   function viewRate() {
     var ok = okSlots();
     /* a restored or degraded turn may hold a step that no longer exists */
@@ -3600,15 +3680,11 @@ function JD_layerOpen() {
     if (work.step === 'call' && ok.length < 2) work.step = ok[0];
     work.reached[work.step] = true;
     var two = ok.length > 1;
-    return head('Grade what came back') +
-      '<p class="jd-turn-copy">' + (two
-        ? 'One at a time: A alone, then B alone, then the call. Everything ' +
-          'is optional except the call. Titles only — press an i for what ' +
-          'a scale means. The scale is the drawer’s own.'
-        : 'Only one drawing survived, so it is graded alone. Everything is ' +
-          'optional. Titles only — press an i for what a scale means.') + '</p>' +
+    var call = work.step === 'call';
+    return head(call ? 'The call' : 'Grade drawing ' + work.step.toUpperCase(),
+      call ? 5 : 4, { view: call ? 'call' : 'bench' }) +
       (two ? railHTML(ok) : '') +
-      (work.step === 'call' ? callPanel(ok) : benchPanel(work.step, ok));
+      (call ? callPanel(ok) : benchPanel(work.step, ok));
   }
 
   /* ---------- 7. unveil ---------------------------------------------------- */
@@ -3617,57 +3693,139 @@ function JD_layerOpen() {
     for (var i = 0; i < list.length; i++) if (list[i].slot === slot) return list[i];
     return null;
   }
+  /* which slot (if any) the visitor ends up keeping — the fate column below
+     states it once, and the ACCESSIONED seal stamps that it happened */
+  function keptSlot() {
+    var ok = okSlots();
+    if (work.winner === 'tie') return work.kept ? (work.keep || null) : null;
+    if (ok.length === 1) return ok[0];
+    return (work.winner === 'a' || work.winner === 'b') ? work.winner : null;
+  }
+  /* ---------- 7. the unveil (§6, ACCESSIONED) ------------------------------ */
   function viewUnveil() {
+    var kept = keptSlot();
     var lines = (work.reveal || []).map(function (r) {
+      var slot = (r.slot || '').toLowerCase();
       var who = esc(r.label || r.model_id || '');
-      var vendor = r.vendor ? ' <span class="jd-turn-dim">(' + esc(r.vendor) + ')</span>' : '';
-      var fate = r.status && r.status !== 'ok'
-        ? ' <span class="jd-turn-dim">— didn’t survive</span>' : '';
-      return '<li><b>' + esc((r.slot || '').toUpperCase()) + '</b> was ' +
-        who + vendor + fate + '</li>';
+      var vendor = r.vendor ? ' <i>(' + esc(r.vendor) + ')</i>' : '';
+      var fate = r.status && r.status !== 'ok' ? 'didn’t survive'
+        : (kept && slot === kept && work.placed) ? 'in the drawer' : 'filed';
+      var kls = (kept && slot === kept && work.placed) ? ' kept' : '';
+      return '<li><b>' + esc(slot.toUpperCase()) + '</b>' + who + vendor +
+        '<span class="fate' + kls + '">' + fate + '</span></li>';
     }).join('');
-    var h = head('Who drew what') + '<ul class="jd-turn-reveal">' + lines + '</ul>';
+    var h = head('Who drew what', 6) + '<ul class="jd-turn-reveal">' + lines + '</ul>';
     if (work.winner === 'tie' && !work.kept) {
-      h += '<p class="jd-turn-copy">A tie is filed as a tie. Keep one for your ' +
-        'own drawer anyway?</p>' +
+      /* nothing has been accessioned until the election is made — no seal */
+      h += '<p class="jd-turn-line">A tie is filed as a tie. Keep one for your ' +
+        'drawer anyway?</p>' +
         pillRow('jd-keep', 'which drawing to keep', [
-          { value: 'a', label: 'A' },
-          { value: 'b', label: 'B' },
-          { value: '', label: 'neither' }
+          { value: 'a', label: 'Drawing A' },
+          { value: 'b', label: 'Drawing B' },
+          { value: '', label: 'Neither' }
         ], work.keep, ' data-role="keep"') +
         actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
     } else {
-      h += '<p class="jd-turn-copy">' + (work.placed
-        ? 'It’s in the drawer — yours only, tagged as such. Dig it out ' +
-          'and the specimen tag knows whose it is.'
+      /* one short line, and it clears the seal's corner */
+      h += '<p class="jd-turn-line">' + (work.placed
+        ? 'It’s in the drawer — yours only, tagged as such.'
         : 'Nothing kept. The grades are filed all the same.') + '</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="done">done</button>');
+        actions('<button type="button" class="jd-turn-go" data-act="done">done</button>' +
+          '<button type="button" class="jd-turn-alt" data-act="again">take another turn</button>' +
+          /* the one big seal of the turn: blank sheet at the Brief,
+             ACCESSIONED here */
+          seal('ACCESSIONED', stampDay() + ' ' + new Date().getFullYear(), true));
     }
     return h;
   }
 
-  /* ---------- the failure end ---------------------------------------------- */
+  /* ---------- the failure end (§2, RETURNED TO SENDER) --------------------- */
   function viewApology() {
-    return head('Nothing came back') +
-      '<p class="jd-turn-copy">' + esc(work && work.notice
+    return head('Nothing came back', 2) +
+      '<div class="jd-turn-stampzone">' +
+      '<p class="jd-turn-line">' + esc(work && work.notice
         ? work.notice
         : 'Both machines failed. This cost you nothing — the drawer will try ' +
           'again whenever you like.') + '</p>' +
+      boxStamp('Returned to sender', 'no charge · ' + stampDay(), true) + '</div>' +
       actions('<button type="button" class="jd-turn-go" data-act="again">try again</button>' +
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
 
-  /* The heading is the landing place for every state that has no field of its
-     own to fill in (C5.8): moving through the flow should read as the step you
-     just reached, not as the dismiss control that happens to come first in the
-     DOM. tabindex="-1" makes it focusable without adding a tab stop. The one
-     state with a field of its own (prompt) passes noFocus and keeps it. */
-  function head(t, noFocus) {
+  /* THE MASTHEAD. Every card is FORM JD-1; what changes is the heading and
+     the section number on the badge (§1 brief → §6 unveil). head() declares
+     the next paint's masthead and contributes NOTHING to the body string —
+     it returns '' so the views can go on reading as one concatenation.
+
+     The heading is the landing place for every state that has no field of
+     its own to fill in (C5.8): moving through the flow should read as the
+     step you just reached, not as the dismiss control that happens to come
+     first in the DOM. tabindex="-1" makes it focusable without adding a tab
+     stop. The one state with a field of its own (prompt) passes noFocus and
+     keeps it.
+
+     opts: { noFocus, view, box: {word, small} } — `view` is the card's
+     data-view (only 'bench' means anything to the CSS), `box` is the
+     rectangular handling stamp this card carries in its masthead. */
+  function head(t, sec, opts) {
+    opts = opts || {};
     stateTitle = t;
-    return '<h2 class="jd-turn-title" tabindex="-1"' +
-      (noFocus ? '' : ' data-autofocus') + '>' + esc(t) + '</h2>';
+    pendingHead = {
+      title: t, sec: sec, noFocus: !!opts.noFocus,
+      view: opts.view || 'form', box: opts.box || null
+    };
+    return '';
   }
   function actions(inner) { return '<div class="jd-turn-actions">' + inner + '</div>'; }
+
+  /* ---------- the bureau's hand: the stamps -------------------------------
+     ROUND SEALS are determinations (RECEIVED, ACCESSIONED); RECTANGULAR BOX
+     STAMPS are routine handling (ATTACHED, OVER QUOTA, RETURNED TO SENDER,
+     NOT FILED). A state that is stamped is never also written out in prose.
+     Every stamp is aria-hidden and absolutely positioned or inline-flex at
+     zero layout cost: it decorates a state the markup already carries. */
+  var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
+                'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function stampClock(d) {
+    d = d || new Date();
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+  }
+  function stampDay(d) {
+    d = d || new Date();
+    return d.getDate() + ' ' + MONTHS[d.getMonth()];
+  }
+  function boxStamp(word, small, across) {
+    return '<span class="jd-turn-stamp' + (across ? ' jd-turn-stamp--across' : '') +
+      '" aria-hidden="true">' + esc(word) +
+      (small ? '<small>' + esc(small) + '</small>' : '') + '</span>';
+  }
+  /* the round seal, set on the two arcs in the sprite. Both href forms are
+     written: the SVG2 `href` and the xlink one Safari still honours. */
+  function seal(word, sub, big) {
+    var size = word.length > 9 ? 10.4 : 13;
+    function arc(id, text) {
+      return '<text><textPath href="#' + id + '" xlink:href="#' + id +
+        '" startOffset="50%" text-anchor="middle">' + esc(text) +
+        '</textPath></text>';
+    }
+    return '<div class="jd-turn-sealslot' + (big ? ' jd-turn-sealslot--big' : '') +
+      '" aria-hidden="true">' +
+      '<svg class="jd-seal' + (big ? ' jd-seal--big' : '') +
+      '" viewBox="0 0 120 120" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
+      'aria-hidden="true" focusable="false">' +
+      '<g fill="none" stroke="currentColor">' +
+      '<circle cx="60" cy="60" r="54" stroke-width="2.8"/>' +
+      '<circle cx="60" cy="60" r="45" stroke-width="1.1"/></g>' +
+      '<g fill="currentColor" font-family="Georgia,serif" font-size="9.4" ' +
+      'letter-spacing="2.1">' + arc('jd-seal-t', 'DEPT. OF SPECIMEN RECORDS') +
+      arc('jd-seal-b', '· MUNICIPAL SKY ·') + '</g>' +
+      '<g fill="currentColor" text-anchor="middle" font-family="Georgia,serif">' +
+      '<text x="60" y="56" font-size="' + size +
+      '" letter-spacing="1.4" font-weight="bold">' + esc(word) + '</text>' +
+      '<text x="60" y="70" font-size="8" letter-spacing="1.2">' + esc(sub) +
+      '</text></g></svg></div>';
+  }
 
   /* ---------- input plumbing ---------------------------------------------- */
   function onChange(e) {
@@ -3798,6 +3956,10 @@ function JD_layerOpen() {
   function blankWork() {
     return {
       prompt: '', notice: '', slow: false,
+      /* the bureau's marks on this sheet: the box stamp the brief carries
+         when a turn came back over quota, and the RECEIVED seal's timestamp
+         (minted once, so a re-render never re-dates the stamp) */
+      stamp: null, received: '',
       slots: { a: { status: 'pending' }, b: { status: 'pending' } },
       ratings: { a: blankRating(), b: blankRating() },
       /* the single bench: which step is on the bench, which steps the
@@ -3830,6 +3992,8 @@ function JD_layerOpen() {
     persist();
     work.slow = false;
     work.notice = '';
+    work.stamp = null;                       /* a new turn is a clean sheet */
+    work.received = stampDay() + ' ' + stampClock();
     work.slots = { a: { status: 'pending' }, b: { status: 'pending' } };
     go('generating');
     startSlowTimer();
@@ -3900,6 +4064,11 @@ function JD_layerOpen() {
       work = blankWork();
       work.prompt = draft;
       work.notice = notice;
+      /* the handling stamp for the state the notice explains: the brief comes
+         back with OVER QUOTA (or CLOSED FOR THE DAY) in its masthead */
+      work.stamp = limited === 'drawer_resting'
+        ? { word: 'Closed for the day', small: null }
+        : { word: 'Over quota', small: '≈' + humanWait(wait) };
       go('prompt');
       return;
     }
@@ -3967,10 +4136,13 @@ function JD_layerOpen() {
     if (!res || !res.ok) {
       var code = ((res || {}).error || {}).code || 'server_error';
       JD_track('turn_error', code);
-      paint(head('The grades didn’t file') +
-        '<p class="jd-turn-copy">The drawer couldn’t record them ' +
-        '(' + esc(code) + '). Nothing was written — the whole batch goes ' +
-        'together or not at all.</p>' +
+      /* the same shape as the apology, a different stamp (§6, NOT FILED) */
+      paint(head('The grades didn’t file', 6) +
+        '<div class="jd-turn-stampzone">' +
+        '<p class="jd-turn-line">The drawer couldn’t record them ' +
+        '(<b>' + esc(code) + '</b>). Nothing was written — the whole batch ' +
+        'goes together or not at all, and your grades are still here.</p>' +
+        boxStamp('Not filed', 'batch rejected · ' + stampClock(), true) + '</div>' +
         actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
           '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
       focusFirst();
