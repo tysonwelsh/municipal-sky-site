@@ -23,19 +23,20 @@
      BRASS   — the bureau's hardware. The wicket, the plates, the buttons,
                the likert track. Anything the building owns.
      ENAMEL  — machine-issued numbers and machine states. The dark lit
-               window in the wicket, the NOW PROCESSING board. Anything the
-               machine says, not the clerk.
-     PAPER   — the transaction itself. The request slip, the claim ticket,
-               the envelopes, the assessment lines, the specimen tag.
+               window in the wicket, the Darkroom's small lit chip. Anything
+               the machine says, not the clerk.
+     PAPER   — the transaction itself. The request slip, the envelopes, the
+               assessment lines, the specimen tag, the Unveil's stub.
                Anything the visitor touches or gets back.
    If a thing doesn't fit one of those three, it doesn't belong on the card.
 
-   PROGRESS IS A PUNCHED TICKET. Every card carries the same object under
-   the wicket: claim ticket № 0412, four punch positions (taken / drawn /
-   graded / filed), and a rubber stamp on its right end saying where the
-   transaction actually stands. It is the ONE global progress read; the
-   bench's own step rail is local to grading and never competes with it.
-   Choices are punched too — the likert stops are bores that take a red peg.
+   REV. 2 (post-review). The round was rejected as "too cluttered and full of
+   text — designed for the designer, not the end user." So: the claim-ticket
+   progress strip that rode every card is DELETED (one punched stub survives on
+   the Unveil, as a receipt); subtitles are gone or cut to one short line; the
+   info popovers carry the axis definition only, never a level-by-level list;
+   the wicket is slimmer. Each card now shows only what the visitor needs to
+   ACT, and every card is visibly shorter than the live one it replaces.
 
    FUNCTIONAL PARITY is absolute: every control production has, this has,
    with the same semantics (native <select>s, in-flow ⓘ popovers, 44px
@@ -248,7 +249,7 @@ body {
 .ic-wicket {
   position: relative; z-index: 5; flex: 0 0 auto;
   display: flex; align-items: center; gap: 10px;
-  height: 54px; padding: 0 5px 0 12px;
+  height: 44px; padding: 0 2px 0 10px;
   background: linear-gradient(180deg, #d9be7e 0%, #c0a45f 34%, #a2874a 68%, #7b6330 100%);
   border-bottom: 1px solid #3f3117;
   box-shadow: inset 0 1px 0 rgba(255, 248, 220, 0.5);
@@ -268,14 +269,14 @@ body {
 /* the engraved window plate — bolted over the grille */
 .ic-plate {
   position: relative; z-index: 2;
-  padding: 0.4rem 0.7rem 0.36rem;
+  padding: 0.3rem 0.55rem 0.28rem;
   background: linear-gradient(180deg, #e6cf95 0%, #c8ac6b 52%, #9c8244 100%);
   border: 1px solid #6b5626; border-radius: 2px;
   box-shadow: inset 0 1px 0 rgba(255, 251, 224, 0.7),
               inset 0 -1px 0 rgba(60, 44, 14, 0.35),
               0 2px 4px -1px rgba(20, 12, 2, 0.55);
-  font-size: 0.56rem; font-weight: 700;
-  letter-spacing: 0.2em; text-transform: uppercase;
+  font-size: 0.5rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
   color: #3b2c10; text-shadow: 0 1px 0 rgba(255, 249, 216, 0.55);
   white-space: nowrap;
 }
@@ -284,7 +285,7 @@ body {
 .ic-queue {
   position: relative; z-index: 2; margin-left: auto;
   display: flex; align-items: baseline; gap: 0.45rem;
-  padding: 0.28rem 0.55rem 0.3rem;
+  padding: 0.22rem 0.45rem 0.24rem;
   background: linear-gradient(180deg, var(--enamel-2), var(--enamel) 55%, #201305);
   border: 1px solid #5d4a22; border-radius: 2px;
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.72), 0 1px 0 rgba(255, 246, 210, 0.3);
@@ -294,31 +295,31 @@ body {
   text-transform: uppercase; color: rgba(243, 233, 200, 0.48);
 }
 .ic-queue b {
-  font-size: 0.68rem; letter-spacing: 0.1em; color: var(--lit);
+  font-size: 0.6rem; letter-spacing: 0.1em; color: var(--lit);
   text-shadow: 0 0 7px rgba(240, 190, 90, 0.6);
 }
 .ic-close {
   position: relative; z-index: 2;
-  width: 44px; height: 44px; flex: 0 0 auto;
+  width: 44px; height: 40px; flex: 0 0 auto;
   display: flex; align-items: center; justify-content: center;
   border: 1px solid rgba(50, 38, 14, 0.5); border-radius: 2px;
-  background: linear-gradient(180deg, rgba(255, 248, 216, 0.4), rgba(90, 70, 30, 0.28));
-  box-shadow: inset 0 1px 0 rgba(255, 251, 224, 0.55);
-  font-family: var(--tmono); font-size: 0.86rem; font-weight: 700; line-height: 1;
+  background: linear-gradient(180deg, #ddc287 0%, #c1a562 50%, #94793f 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 251, 224, 0.7),
+              0 1px 3px -1px rgba(20, 12, 2, 0.6);
+  font-family: var(--tmono); font-size: 0.8rem; font-weight: 700; line-height: 1;
   color: #241804; text-shadow: 0 1px 0 rgba(255, 249, 216, 0.55);
   cursor: pointer;
 }
-.ic-close:hover { color: #6d1d10; background: linear-gradient(180deg, rgba(255, 248, 216, 0.6), rgba(90, 70, 30, 0.2)); }
+.ic-close:hover { color: #6d1d10; background: linear-gradient(180deg, #e8d09a 0%, #cbb072 50%, #a2874a 100%); }
 .ic-close:focus-visible { outline: 2px solid #43310f; outline-offset: 2px; }
 
 /* ---- the counter lip: the slot under the grille where paper passes ------ */
 .ic-lip {
-  flex: 0 0 auto; height: 11px;
+  flex: 0 0 auto; height: 7px;
   background: linear-gradient(180deg,
-    rgba(8, 4, 1, 0.9) 0 4px,
-    rgba(62, 44, 18, 0.5) 4px 6px,
-    rgba(90, 66, 26, 0.16) 6px 9px,
-    rgba(90, 66, 26, 0) 9px 11px);
+    rgba(8, 4, 1, 0.9) 0 3px,
+    rgba(62, 44, 18, 0.5) 3px 5px,
+    rgba(90, 66, 26, 0.14) 5px 7px);
 }
 
 /* ---- the counter surface: the card's scroller -------------------------- */
@@ -326,19 +327,21 @@ body {
   position: relative; z-index: 1;
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
-  padding: 13px 20px 20px;
+  padding: 12px 18px 15px;
   scrollbar-width: thin;
 }
 .ic-body::-webkit-scrollbar { width: 7px; }
 .ic-body::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
 
 /* ==========================================================================
-   THE CLAIM TICKET — the one global progress read, on every card
+   THE RECEIPT — the ONE surviving piece of the ticket fiction.
+   It appears on the UNVEIL only, as a small punched stub handed back at the
+   end. It is a record, not a progress tracker: it never rides the other cards.
    ========================================================================== */
-.ic-ticket {
+.ic-receipt {
   position: relative;
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
-  margin: 0 0 0.85rem; padding: 0.4rem 0.55rem 0.42rem 1.15rem;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 0.75rem; padding: 0.3rem 0.5rem 0.3rem 0.85rem;
   background:
     linear-gradient(178deg, rgba(255, 252, 236, 0.7) 0 22%, rgba(0, 0, 0, 0) 60%,
                     rgba(96, 68, 26, 0.07) 100%),
@@ -348,54 +351,33 @@ body {
 }
 /* the perforation it was torn from the roll along */
 .tk-perf {
-  position: absolute; left: 6px; top: 3px; bottom: 3px; width: 1px;
+  position: absolute; left: 5px; top: 3px; bottom: 3px; width: 1px;
   background: repeating-linear-gradient(180deg,
     rgba(74, 53, 18, 0.55) 0 3px, rgba(74, 53, 18, 0) 3px 6px);
 }
-.tk-no { display: flex; flex-direction: column; gap: 1px; flex: 0 0 auto; }
+.tk-no {
+  flex: 0 0 auto;
+  font-size: 0.58rem; letter-spacing: 0.1em;
+}
 .tk-no i {
-  font-style: normal; font-size: 0.44rem; letter-spacing: 0.2em;
-  text-transform: uppercase; color: var(--tink-2);
+  font-style: normal; font-size: 0.44rem; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--tink-2); margin-right: 0.4rem;
 }
-.tk-no b { font-size: 0.74rem; letter-spacing: 0.08em; }
-.tk-punch {
-  display: flex; align-items: center; gap: 12px; list-style: none;
-  margin: 0; padding: 0;
-}
-.tk-punch li {
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  font-size: 0.44rem; letter-spacing: 0.14em; text-transform: uppercase;
-  color: rgba(51, 36, 15, 0.45);
-}
-.tk-hole {
-  width: 12px; height: 12px; border-radius: 50%;
-  border: 1px dashed rgba(74, 53, 18, 0.45);
-  background: rgba(255, 250, 228, 0.5);
-}
-/* punched = a real hole: the counter's dark shows through, paper edge lit */
-.tk-punch li.on { color: var(--tink); font-weight: 700; }
-.tk-punch li.on .tk-hole {
-  border: 0;
+/* four holes, all punched through: the transaction is complete */
+.tk-punch { display: flex; align-items: center; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.tk-punch li { width: 10px; height: 10px; border-radius: 50%; font-size: 0;
   background: radial-gradient(circle at 50% 42%, #0f0902 0 58%, #3d2c12 100%);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9),
-              0 1px 0 rgba(255, 251, 230, 0.75);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 251, 230, 0.75);
 }
-/* the position the punch is heading for */
-.tk-punch li.next { color: var(--tink-2); }
-.tk-punch li.next .tk-hole {
-  border-color: var(--tred); border-style: solid;
-  box-shadow: 0 0 0 3px rgba(179, 64, 47, 0.16);
-}
-/* the rubber stamp: where the transaction actually stands */
+/* the rubber stamp on the stub's right end */
 .tk-stamp {
-  margin-left: auto; flex: 0 0 auto;
-  position: relative;
-  padding: 0.26rem 0.5rem 0.22rem;
+  margin-left: auto; flex: 0 0 auto; position: relative;
+  padding: 0.2rem 0.42rem 0.16rem;
   border: 2px solid var(--tred);
   box-shadow: inset 0 0 0 1px rgba(179, 64, 47, 0.45);
   color: var(--tred); opacity: 0.88;
-  font-size: 0.53rem; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
+  font-size: 0.48rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase;
   transform: rotate(-2.4deg);
 }
 /* ink that didn't take, so the stamp reads pressed rather than printed */
@@ -408,7 +390,6 @@ body {
   background-size: 13px 11px, 17px 14px, 21px 9px;
   opacity: 0.75;
 }
-.tk-stamp.is-void { color: #6b6152; border-color: #6b6152; box-shadow: inset 0 0 0 1px rgba(107, 97, 82, 0.4); }
 
 /* ==========================================================================
    TYPE — the clerk's register
@@ -419,26 +400,15 @@ body {
   color: var(--tink-2);
 }
 .ic-title {
-  margin: 0 0 0.55rem;
+  margin: 0 0 0.5rem;
   font-family: var(--tmono); font-weight: 700;
-  font-size: 0.82rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: 0.78rem; letter-spacing: 0.15em; text-transform: uppercase;
 }
 .ic-copy {
-  margin: 0 0 0.85rem;
-  font-size: 0.7rem; line-height: 1.55; color: var(--tink-2);
+  margin: 0 0 0.6rem;
+  font-size: 0.66rem; line-height: 1.5; color: var(--tink-2);
 }
 .ic-dim { color: var(--tink-2); }
-.ic-label {
-  display: block; margin: 0 0 0.3rem;
-  font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--tink-2);
-}
-.ic-notice {
-  margin: 0 0 0.9rem; padding: 0.5rem 0.7rem;
-  background: rgba(255, 250, 232, 0.62);
-  border-left: 3px solid var(--tred);
-  font-size: 0.68rem; line-height: 1.5;
-}
 /* the clerk's own hand — pencil, never type */
 .ic-pencil {
   font-family: var(--hand); font-size: 0.86rem; line-height: 1.4;
@@ -448,34 +418,13 @@ body {
 /* ==========================================================================
    PAPER OBJECT — the slip (the Brief)
    ========================================================================== */
-.ic-slip {
-  position: relative;
-  margin: 0 0 0.75rem;
-  background:
-    linear-gradient(178deg, rgba(255, 253, 240, 0.75) 0 14%, rgba(0, 0, 0, 0) 46%,
-                    rgba(96, 68, 26, 0.06) 100%),
-    var(--slip);
-  border: 1px solid var(--trule);
-  box-shadow: 3px 5px 10px -5px rgba(20, 10, 3, 0.5);
-}
-.slip-head {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-  padding: 0.42rem 0.7rem 0.4rem;
-  border-bottom: 1px solid var(--trule);
-  background: rgba(74, 53, 18, 0.06);
-}
-.slip-head b {
-  font-size: 0.56rem; letter-spacing: 0.18em; text-transform: uppercase;
-}
-.slip-head span {
-  font-size: 0.48rem; letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--tink-2); white-space: nowrap;
-}
-.slip-body { padding: 0.6rem 0.7rem 0.5rem; }
+.ic-slip { position: relative; margin: 0 0 0.55rem; }
 .ic-input {
-  --lh: 22px;
+  --lh: 21px;
   display: block; width: 100%; box-sizing: border-box;
-  padding: 7px 10px 8px;
+  /* no bottom padding: a scrolling textarea renders overflow text INSIDE its
+     padding box, which would leave a half-cut line under the last rule */
+  padding: 7px 10px 0;
   color: var(--tink);
   font-family: var(--tmono); font-size: 13px; line-height: var(--lh);
   border: 1px solid var(--trule);
@@ -485,27 +434,24 @@ body {
     rgba(0, 0, 0, 0) 0 calc(var(--lh) - 1px),
     rgba(74, 53, 18, 0.2) calc(var(--lh) - 1px) var(--lh));
   background-position: 0 7px;
+  box-shadow: 3px 5px 10px -5px rgba(20, 10, 3, 0.45);
   resize: vertical;
 }
 .ic-input:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
 .slip-foot {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 0.35rem 0.7rem 0.5rem;
+  display: flex; align-items: baseline; justify-content: flex-end;
+  padding: 0.22rem 0.1rem 0;
 }
 .slip-foot .ic-count {
   font-size: 0.6rem; letter-spacing: 0.12em; color: var(--tink-2);
 }
 .ic-count.is-over { color: var(--tred); font-weight: 700; }
-.slip-init {
-  font-size: 0.46rem; letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(51, 36, 15, 0.45);
-}
 /* the disclosure: the reverse of the form. Quiet, present, never a wall. */
 .ic-fine {
-  margin: 0.9rem 0 0; padding-top: 0.55rem;
+  margin: 0.8rem 0 0; padding-top: 0.5rem;
   border-top: 1px solid var(--trule-2);
-  font-size: 0.56rem; line-height: 1.7; letter-spacing: 0.04em;
-  color: var(--tink-2);
+  font-size: 0.55rem; line-height: 1.62; letter-spacing: 0.03em;
+  color: rgba(51, 36, 15, 0.6);
 }
 .ic-fine b {
   display: block; margin-bottom: 0.2rem;
@@ -518,7 +464,7 @@ body {
    ========================================================================== */
 .ic-actions {
   display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  margin-top: 1rem;
+  margin-top: 0.8rem;
 }
 .ic-go, .ic-alt {
   min-height: 44px; padding: 0 1.1rem;
@@ -538,69 +484,39 @@ body {
 .ic-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
 .ic-go[disabled], .ic-alt[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
 .ic-go:focus-visible, .ic-alt:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.ic-hint {
-  font-size: 0.54rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--tink-2);
-}
 
 /* ==========================================================================
-   THE DARKROOM — NOW PROCESSING
+   THE DARKROOM — it's processing
    ========================================================================== */
-.dk-board {
-  position: relative;
-  display: flex; align-items: center; gap: 14px;
-  margin: 0 0 0.85rem; padding: 0.7rem 0.9rem;
-  background:
-    radial-gradient(120% 140% at 22% 0%, rgba(240, 208, 137, 0.09), rgba(0, 0, 0, 0) 62%),
-    linear-gradient(180deg, var(--enamel) 0%, var(--enamel-2) 100%);
-  border: 1px solid #4a3a1c;
-  box-shadow: inset 0 1px 0 rgba(255, 246, 210, 0.16),
-              inset 0 -10px 18px -12px rgba(0, 0, 0, 0.9),
-              2px 4px 9px -4px rgba(10, 5, 1, 0.6);
+/* the enamel whisper: a small lit chip beside the heading. It costs no extra
+   row on the card — the machine's voice, not a board on the wall. */
+.dk-head {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 0.35rem;
 }
-/* four bureau screws, in the grommet's turned metal */
-.scr {
-  position: absolute; width: 9px; height: 9px; border-radius: 50%;
-  background: radial-gradient(circle at 50% 40%, #e0c689 0 26%, var(--br-2) 46%,
-                              var(--br-3) 68%, #4b3a17 100%);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
+.dk-head .ic-title { margin: 0; }
+.dk-chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  margin-left: auto; padding: 0.16rem 0.4rem 0.18rem 0.24rem;
+  background: linear-gradient(180deg, var(--enamel-2), var(--enamel) 55%, #201305);
+  border: 1px solid #4a3a1c; border-radius: 2px;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.72), 0 1px 0 rgba(255, 246, 210, 0.22);
 }
-.scr::after {
-  content: ""; position: absolute; left: 1.5px; right: 1.5px; top: 4px;
-  height: 1.4px; background: rgba(30, 20, 6, 0.85); border-radius: 1px;
-  transform: rotate(28deg);
+.dk-chip b {
+  font-size: 0.56rem; letter-spacing: 0.1em; color: var(--lit);
+  text-shadow: 0 0 7px rgba(240, 190, 90, 0.55);
 }
-.scr.tl { top: 5px; left: 5px; } .scr.tr { top: 5px; right: 5px; }
-.scr.bl { bottom: 5px; left: 5px; } .scr.br { bottom: 5px; right: 5px; }
-.dk-legend {
-  flex: 1 1 auto; min-width: 0; padding-left: 8px;
-}
-.dk-legend i {
-  display: block; font-style: normal;
-  font-size: 0.52rem; letter-spacing: 0.3em; text-transform: uppercase;
-  color: rgba(243, 233, 200, 0.52);
-}
-.dk-digits {
-  display: block; margin-top: 2px;
-  font-size: 1.32rem; font-weight: 700; letter-spacing: 0.14em;
-  color: var(--lit); text-shadow: 0 0 12px rgba(240, 190, 90, 0.55),
-                                  0 0 3px rgba(255, 226, 160, 0.85);
-}
-.dk-since {
-  font-size: 0.5rem; letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(243, 233, 200, 0.42);
-}
-.dk-clock { flex: 0 0 auto; width: 56px; height: 56px; margin-right: 8px; }
+.dk-clock { flex: 0 0 auto; width: 17px; height: 17px; }
 .dk-clock .hand { stroke: #2c2216; stroke-linecap: round; }
-.dk-clock .sec { stroke: var(--tred); stroke-width: 1.4; transform-origin: 30px 30px; }
+.dk-clock .sec { stroke: var(--tred); stroke-width: 2.2; transform-origin: 30px 30px; }
 
 /* the queue register: two dockets, leader-dotted like a bureau roster */
-.dk-list { list-style: none; margin: 0 0 0.8rem; padding: 0; }
+.dk-list { list-style: none; margin: 0; padding: 0; }
 .dk-row {
   display: flex; align-items: center; gap: 9px;
-  padding: 0.5rem 0.15rem;
+  padding: 0.42rem 0.15rem;
   border-bottom: 1px solid var(--trule-2);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
 }
 .dk-lamp {
   flex: 0 0 auto; width: 11px; height: 11px; border-radius: 50%;
@@ -625,7 +541,7 @@ body {
 .dk-slow {
   position: relative;
   display: flex; gap: 10px; align-items: flex-start;
-  margin: 0.8rem 0 0; padding: 0.6rem 0.75rem;
+  margin: 0.7rem 0 0; padding: 0.5rem 0.65rem;
   background: rgba(255, 250, 228, 0.72);
   border: 1px solid var(--trule-2);
   box-shadow: 2px 3px 7px -4px rgba(20, 10, 3, 0.5);
@@ -644,7 +560,7 @@ body {
 /* ==========================================================================
    PAPER OBJECT — the envelope (the Reveal)
    ========================================================================== */
-.ic-envs { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.9rem; }
+.ic-envs { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.7rem; }
 .ic-env {
   flex: 1 1 0; min-width: 0; margin: 0;
   padding: 0 8px 8px;
@@ -706,7 +622,7 @@ body {
 }
 
 /* the loose print on the counter (call + bench pin) — no envelope */
-.ic-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.9rem; }
+.ic-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.7rem; }
 .ic-print { flex: 1 1 0; min-width: 0; margin: 0; }
 .ic-print .env-win { background: #f6efdc; }
 .ic-print figcaption {
@@ -723,7 +639,7 @@ body {
    THE BENCH — examining what came back
    ========================================================================== */
 /* the step rail: three counter chits, each with its own punch numeral */
-.ic-rail { display: flex; gap: 6px; margin: 0 0 0.9rem; }
+.ic-rail { display: flex; gap: 6px; margin: 0 0 0.7rem; }
 .rail-step {
   flex: 1 1 0; min-width: 0; min-height: 44px;
   display: flex; align-items: center; justify-content: center; gap: 7px;
@@ -761,13 +677,13 @@ body {
 .ic-pin {
   position: sticky; top: 0; z-index: 6;
   display: flex; gap: 14px; align-items: flex-start;
-  padding: 0.5rem 0 0.55rem;
-  margin: 0 0 0.35rem;
+  padding: 0.4rem 0 0.45rem;
+  margin: 0 0 0.3rem;
   background: var(--tpaper) var(--tgrain);
   border-bottom: 1px solid var(--trule);
   box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
 }
-.pin-fig { position: relative; flex: 0 0 auto; width: 96px; margin: 0; }
+.pin-fig { position: relative; flex: 0 0 auto; width: 84px; margin: 0; }
 .pin-fig .env-win { padding: 6px; }
 /* the clip: a small brass bulldog seated on the print's top edge */
 .pin-clip {
@@ -787,11 +703,6 @@ body {
   font-size: 0.55rem; letter-spacing: 0.1em; color: var(--tink-2);
   text-transform: uppercase;
 }
-.pin-col .pin-of {
-  display: inline-block; margin-top: 2px; padding: 0.16rem 0.36rem;
-  border: 1px solid var(--trule); color: var(--tink-2);
-  font-size: 0.46rem; letter-spacing: 0.16em;
-}
 
 /* one assessment line: label + ⓘ, leader dots, the native select */
 .ic-row {
@@ -799,7 +710,7 @@ body {
   grid-template-columns: minmax(0, 1fr) minmax(170px, 220px);
   gap: 2px 12px; align-items: center;
   border-bottom: 1px solid var(--trule-2);
-  padding: 0.3rem 0 0.35rem;
+  padding: 0.22rem 0 0.26rem;
 }
 .ic-rowhead { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .ic-def {
@@ -830,20 +741,14 @@ body {
 /* the popover stays IN FLOW — it pushes the sheet down, never covers a control */
 .ic-pop {
   grid-column: 1 / -1;
-  margin: 0.15rem 0 0.4rem; padding: 0.55rem 0.7rem 0.65rem;
+  margin: 0.15rem 0 0.35rem; padding: 0.45rem 0.6rem 0.5rem;
   background: var(--tpaper-hi);
   border: 1px solid var(--trule);
   border-left: 3px solid var(--br-3);
   box-shadow: 3px 4px 8px -3px rgba(20, 10, 3, 0.35);
   font-size: 0.63rem; line-height: 1.55; color: var(--tink);
 }
-.ic-pop-desc { color: var(--tink-2); margin: 0 0 0.2rem; }
-.ic-pop dl { margin: 0.3rem 0 0; }
-.ic-pop dt {
-  margin-top: 0.4rem; font-weight: 700; font-size: 0.6rem;
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
-.ic-pop dd { margin: 0; color: var(--tink-2); }
+.ic-pop-desc { color: var(--tink-2); margin: 0; }
 /* the scale: a NATIVE select — the phone's own picker, titles only */
 .ic-select {
   min-height: 44px; width: 100%;
@@ -868,8 +773,8 @@ body {
 /* the report path: the counter's complaint line, and the note it unfolds */
 .ic-check {
   display: flex; align-items: flex-start; gap: 0.55rem;
-  margin: 0.4rem 0 0; padding: 0.5rem 0.1rem;
-  min-height: 44px; font-size: 0.7rem; line-height: 1.5; cursor: pointer;
+  margin: 0.3rem 0 0; padding: 0.45rem 0.1rem;
+  min-height: 44px; font-size: 0.68rem; line-height: 1.5; cursor: pointer;
   color: var(--tink-2);
   border-top: 1px solid var(--trule-2);
 }
@@ -895,9 +800,9 @@ body {
 /* ==========================================================================
    THE CALL — telling the clerk which one to keep
    ========================================================================== */
-.ic-call { padding: 0.5rem 0 0.2rem; }
+.ic-call { padding: 0.35rem 0 0.1rem; }
 .ic-req {
-  margin: 0 0 0.6rem;
+  margin: 0 0 0.35rem;
   font-size: 0.56rem; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--tred);
 }
@@ -963,13 +868,13 @@ body {
    THE UNVEIL — the ticket punched out, the specimen handed over
    ========================================================================== */
 .uv-endorse {
-  list-style: none; margin: 0 0 0.9rem; padding: 0.15rem 0 0;
+  list-style: none; margin: 0 0 0.7rem; padding: 0;
 }
 .uv-endorse li {
   display: flex; align-items: baseline; gap: 10px;
-  padding: 0.42rem 0.1rem;
+  padding: 0.34rem 0.1rem;
   border-bottom: 1px solid var(--trule-2);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 .uv-endorse b {
   flex: 0 0 auto; width: 22px; height: 22px;
@@ -987,7 +892,7 @@ body {
 /* the hand-over: the kept print with its specimen tag lying beside it */
 .uv-hand {
   display: flex; gap: 14px; align-items: center;
-  margin: 0 0 0.9rem; padding: 0.75rem 0.8rem;
+  margin: 0 0 0.7rem; padding: 0.6rem 0.7rem;
   background: rgba(255, 250, 228, 0.42);
   border: 1px solid var(--trule-2);
 }
@@ -1029,7 +934,7 @@ body {
                line-height: 1.6; text-transform: uppercase; }
 .ic-tag .val.g { font-weight: 700; letter-spacing: 0.12em; color: var(--g4); }
 /* the tie's keep-chooser: three counter chits */
-.uv-chits { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 0.9rem; }
+.uv-chits { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 0.7rem; }
 .uv-chit {
   position: relative; flex: 1 1 120px; min-height: 44px;
   display: flex; align-items: center; gap: 0.5rem;
@@ -1061,8 +966,8 @@ body {
 .ic--closed .ic-queue b { color: #7c6a45; text-shadow: none; }
 .ic-placard {
   position: relative;
-  margin: 0.55rem auto 1rem; width: min(310px, 100%);
-  padding: 0.72rem 0.7rem 0.66rem;
+  margin: 0.1rem 0 0.75rem; width: min(260px, 100%);
+  padding: 0.42rem 0.6rem 0.4rem;
   text-align: center;
   background: linear-gradient(180deg, #2f3f52 0%, #223144 55%, #18242f 100%);
   border: 1px solid #0e161e;
@@ -1073,35 +978,29 @@ body {
   transform: rotate(-0.8deg);
 }
 .ic-placard b {
-  display: block; font-size: 0.72rem; font-weight: 700;
-  letter-spacing: 0.22em; text-transform: uppercase;
+  display: block; font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
 }
 .ic-placard span {
-  display: block; margin-top: 0.3rem;
-  font-size: 0.52rem; letter-spacing: 0.2em; text-transform: uppercase;
+  display: block; margin-top: 0.16rem;
+  font-size: 0.46rem; letter-spacing: 0.18em; text-transform: uppercase;
   color: rgba(234, 241, 246, 0.65);
 }
 /* the two chains it hangs from */
 .ic-placard::before, .ic-placard::after {
-  content: ""; position: absolute; top: -22px; width: 5px; height: 24px;
+  content: ""; position: absolute; top: -13px; width: 4px; height: 14px;
   background: repeating-linear-gradient(180deg,
     var(--br-1) 0 2px, var(--br-3) 2px 4px, rgba(24, 16, 6, 0.9) 4px 6px);
   box-shadow: 0 1px 2px rgba(10, 5, 1, 0.5);
 }
-.ic-placard::before { left: 24px; }
-.ic-placard::after { right: 24px; }
+.ic-placard::before { left: 20px; }
+.ic-placard::after { right: 20px; }
 .ic-placard .eye {
-  position: absolute; top: -4px; width: 7px; height: 7px; border-radius: 50%;
-  border: 2px solid var(--br-2); background: transparent;
+  position: absolute; top: -3px; width: 6px; height: 6px; border-radius: 50%;
+  border: 1.5px solid var(--br-2); background: transparent;
 }
-.ic-placard .eye.l { left: 22px; }
-.ic-placard .eye.r { right: 22px; }
-.ap-cost {
-  margin: 0 0 0.9rem; padding: 0.5rem 0.7rem;
-  background: rgba(255, 250, 232, 0.6);
-  border-left: 3px solid var(--br-3);
-  font-size: 0.62rem; line-height: 1.6; color: var(--tink-2);
-}
+.ic-placard .eye.l { left: 19px; }
+.ic-placard .eye.r { right: 19px; }
 
 /* ==========================================================================
    MOTION — added, never assumed
@@ -1109,15 +1008,10 @@ body {
 @media (prefers-reduced-motion: no-preference) {
   .dk-clock .sec { animation: icTick 60s steps(60, end) infinite; }
   .dk-row.is-pending .dk-lamp { animation: icPulse 1.9s ease-in-out infinite; }
-  .tk-punch li.next .tk-hole { animation: icWait 2.4s ease-in-out infinite; }
   .ic-pop { animation: icPop 0.16s ease-out; }
 }
 @keyframes icTick { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 @keyframes icPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.42; } }
-@keyframes icWait {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(179, 64, 47, 0.16); }
-  50% { box-shadow: 0 0 0 5px rgba(179, 64, 47, 0.07); }
-}
 @keyframes icPop { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 
 /* ==========================================================================
@@ -1134,17 +1028,13 @@ body {
   .ic-queue b { font-size: 0.6rem; }
   .ic-title { font-size: 0.72rem; letter-spacing: 0.13em; }
 
-  /* the ticket keeps its number, punches and stamp; only the punch WORDS go */
-  .ic-ticket { gap: 9px; padding-left: 0.95rem; }
-  .tk-no b { font-size: 0.66rem; }
-  .tk-punch { gap: 9px; }
-  .tk-punch li { font-size: 0; gap: 0; }
-  .tk-punch li .tk-hole { width: 13px; height: 13px; }
-  .tk-stamp { font-size: 0.46rem; letter-spacing: 0.13em; padding: 0.22rem 0.36rem 0.2rem; }
+  .ic-receipt { gap: 8px; padding-left: 0.8rem; }
+  .tk-no { font-size: 0.54rem; }
+  .tk-stamp { font-size: 0.44rem; letter-spacing: 0.12em; padding: 0.18rem 0.34rem 0.14rem; }
 
   /* stacked, never tabbed — the question is "which of these two" */
   .ic-envs, .ic-plates { flex-direction: column; }
-  .ic-env, .ic-print { width: 100%; max-width: 320px; margin-left: auto; margin-right: auto; }
+  .ic-env, .ic-print { width: 100%; max-width: 290px; margin-left: auto; margin-right: auto; }
 
   .rail-long { display: none; }
   .rail-short { display: inline; }
@@ -1158,10 +1048,10 @@ body {
   .ic-select, .ic-input, .ic-note { font-size: 16px; }
   /* the rules are a background, so they cannot scroll with the text: give the
      phone slip enough lines that a normal brief never scrolls it */
-  .ic-input { --lh: 26px; min-height: 216px; }
+  .ic-input { --lh: 25px; min-height: 184px; }
 
   .ic-pin { gap: 10px; }
-  .pin-fig { width: 74px; }
+  .pin-fig { width: 70px; }
   .pin-col b { font-size: 0.7rem; }
 
   .ic-likert { gap: 6px; }
@@ -1169,9 +1059,7 @@ body {
   .lk-cap b { font-size: 0.6rem; }
   .lk-end { width: 22px; height: 22px; font-size: 0.7rem; }
 
-  .dk-board { gap: 9px; padding: 0.6rem 0.7rem; }
-  .dk-clock { width: 44px; height: 44px; margin-right: 6px; }
-  .dk-digits { font-size: 1.1rem; }
+  .dk-head { gap: 7px; }
   .dk-row { font-size: 0.64rem; gap: 7px; }
 
   .uv-hand { flex-direction: column; align-items: stretch; gap: 10px; }
@@ -1179,12 +1067,10 @@ body {
   .uv-chit { flex: 1 1 100%; }
 
   .ic-actions .ic-go, .ic-actions .ic-alt { flex: 1 1 auto; justify-content: center; }
-  .ic-hint { flex: 1 1 100%; }
-  .slip-head { flex-wrap: wrap; gap: 2px; }
 }
 @container card (max-width: 400px) {
-  .tk-punch { gap: 7px; }
-  .ic-ticket { gap: 7px; }
+  .tk-punch { gap: 5px; }
+  .ic-receipt { gap: 7px; }
 }
 
 /* ==========================================================================
@@ -1221,37 +1107,25 @@ body {
 <h1 class="mock-title">Junk Drawer &middot; Round 15 &middot; The Turn Cards</h1>
 <p class="mock-sub">15B &mdash; The Intake Counter</p>
 <p class="mock-intro">
-  Every card is a <b>transaction at the bureau's service counter</b>. The modal
-  is a window: a brass wicket across the top, a dark slot beneath it where paper
-  passes, and the counter surface below where this transaction's paperwork sits.
-  The arcade button outside is coin-op hardware &mdash; this carries the hardware
-  inward and gives it a clerk. Three materials do all the work:
+  Every card is a <b>transaction at a service counter</b>: a brass wicket across
+  the top, a slot beneath it, the counter surface below. Three materials, quietly
+  &mdash; brass for the building's hardware, enamel for what the machine says,
+  paper for the transaction. Nothing else is on a card but the thing you act on.
 </p>
 <div class="mock-key">
-  <span><b>BRASS</b> &mdash; the building's hardware: wicket, plates, buttons, the likert track</span>
-  <span><b>ENAMEL</b> &mdash; what the machine says: the queue window, NOW PROCESSING</span>
-  <span><b>PAPER</b> &mdash; the transaction: slip, ticket, envelopes, assessment lines, tag</span>
+  <span><b>REV. 2</b> &mdash; the claim-ticket tracker is gone; a punched stub survives on the Unveil only</span>
+  <span><b>REV. 2</b> &mdash; one instruction line at most, most cards none</span>
+  <span><b>REV. 2</b> &mdash; &#9432; carries the axis definition; no level-by-level list</span>
 </div>
-<p class="mock-intro">
-  Progress is <b>one punched claim ticket</b>, carried under the wicket on every
-  card: № 0412, four punch positions (taken / drawn / graded / filed) and a
-  rubber stamp saying where the transaction stands. Choices are punched too
-  &mdash; the likert's stops are bores that take a red peg. Demo-state toggles
-  sit <em>above</em> each stage, never inside the card; the only script on this
-  page clones the seven authored cards into the 375&nbsp;px rail, drives those
-  toggles, and counts the Brief's characters.
-</p>
 
 <h2 class="sec-head">Desktop &mdash; <span>the seven cards</span>, each in its own stage (56&thinsp;px banner reserved, wood behind the scrim)</h2>
 
 <!-- ======================================================================
      1 · THE BRIEF
      ====================================================================== -->
-<p class="cardlab" id="s-brief">1 &middot; The Brief <em>&mdash; the request slip under the wicket</em></p>
+<p class="cardlab" id="s-brief">1 &middot; The Brief <em>&mdash; the slip under the wicket</em></p>
 <p class="carddesc">
-  Form JD&#8209;1 slid across the counter. The slip is ruled paper, the count is
-  the clerk's tally in the slip's own footer, and the disclosure is the fine
-  print on the reverse. The claim ticket is already issued and unpunched.
+  Heading, ruled slip, count, SEND IT, fine print. Nothing else.
 </p>
 <div class="stage" data-clone="brief">
   <div class="stage-banner"><span class="sb-title">MUNICIPAL SKY</span><span class="sb-nav">writing &nbsp; art &nbsp; about</span></div>
@@ -1267,55 +1141,27 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: none yet">
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">at the window</span>
-        </div>
 
-        <p class="ic-eyebrow">Request slip &middot; form JD&#8209;1</p>
         <h2 class="ic-title">Describe an object for the drawer</h2>
-        <p class="ic-copy">
-          Two machines get your words, verbatim, and each draws the thing. You
-          grade what comes back and keep the one you like.
-        </p>
 
         <div class="ic-slip">
-          <div class="slip-head">
-            <b>The brief &mdash; article wanted</b>
-            <span>in your own words</span>
-          </div>
-          <div class="slip-body">
-            <label class="ic-label" for="brief-ta">describe it</label>
-            <textarea id="brief-ta" class="ic-input" rows="5" data-count="brief-n"
-              spellcheck="true"
-              placeholder="a brass fish that is also a whistle">The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</textarea>
-          </div>
+          <textarea id="brief-ta" class="ic-input" rows="5" data-count="brief-n"
+            aria-label="describe an object for the drawer"
+            spellcheck="true"
+            placeholder="a brass fish that is also a whistle">The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</textarea>
           <div class="slip-foot">
             <span class="ic-count" id="brief-n" aria-live="polite">368 / 500</span>
-            <span class="slip-init">clerk&nbsp;init. ______</span>
           </div>
         </div>
 
         <div class="ic-actions">
           <button type="button" class="ic-go">send it <span aria-hidden="true">&#8594;</span></button>
-          <span class="ic-hint">goes under the grille</span>
         </div>
 
         <p class="ic-fine">
-          <b>Notice &mdash; printed on the reverse of this form</b>
-          When you take a turn, the words you type are sent to two AI providers
-          &mdash; Anthropic (Claude) and OpenAI (GPT) &mdash; which each draw an
-          object from them. Your prompt, the drawings that come back, your
-          ratings, and an anonymous daily-rotating visitor code are stored so the
-          results can be studied and the feature kept honest. Nothing you type
-          here is shown to other visitors.
+          Your words go to Anthropic (Claude) and OpenAI (GPT) to draw. Your
+          prompt, the drawings, your grades and an anonymous daily code are kept
+          so the results can be studied. Nothing you type is shown to others.
         </p>
 
       </div>
@@ -1327,12 +1173,10 @@ body {
 <!-- ======================================================================
      2 · THE DARKROOM
      ====================================================================== -->
-<p class="cardlab" id="s-dark">2 &middot; The Darkroom <em>&mdash; NOW PROCESSING &#8470; 0412</em></p>
+<p class="cardlab" id="s-dark">2 &middot; The Darkroom <em>&mdash; it's processing, and two slot states</em></p>
 <p class="carddesc">
-  The queue board is the only thing on the card that speaks in enamel: the
-  machine's own voice, lit. The wall clock gives the wait a shape; the two
-  dockets are a bureau roster with leader dots and status lamps. The slow-turn
-  notice is a card the clerk pencilled and taped up.
+  The board and its wall clock are gone; a 17&thinsp;px enamel chip beside the
+  heading carries the machine's voice for no extra row.
 </p>
 <div class="tools" data-tools="dark">
   <b>demo state</b>
@@ -1355,51 +1199,21 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">in process</span>
-        </div>
 
-        <div class="dk-board">
-          <span class="scr tl" aria-hidden="true"></span><span class="scr tr" aria-hidden="true"></span>
-          <span class="scr bl" aria-hidden="true"></span><span class="scr br" aria-hidden="true"></span>
-          <svg class="dk-clock" viewBox="0 0 60 60" aria-hidden="true">
-            <circle cx="30" cy="30" r="27" fill="#f3e9c8" stroke="#5d4a22" stroke-width="2.4"/>
-            <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(74,53,18,.28)" stroke-width="0.7"/>
-            <g stroke="#4a3a1c" stroke-width="1.6" stroke-linecap="round">
-              <line x1="30" y1="7"  x2="30" y2="12"/><line x1="30" y1="48" x2="30" y2="53"/>
-              <line x1="7"  y1="30" x2="12" y2="30"/><line x1="48" y1="30" x2="53" y2="30"/>
-            </g>
-            <g stroke="rgba(74,53,18,.55)" stroke-width="1">
-              <line x1="41.5" y1="10.1" x2="39.5" y2="13.5"/><line x1="49.9" y1="18.5" x2="46.5" y2="20.5"/>
-              <line x1="49.9" y1="41.5" x2="46.5" y2="39.5"/><line x1="41.5" y1="49.9" x2="39.5" y2="46.5"/>
-              <line x1="18.5" y1="49.9" x2="20.5" y2="46.5"/><line x1="10.1" y1="41.5" x2="13.5" y2="39.5"/>
-              <line x1="10.1" y1="18.5" x2="13.5" y2="20.5"/><line x1="18.5" y1="10.1" x2="20.5" y2="13.5"/>
-            </g>
-            <line class="hand" x1="30" y1="30" x2="30" y2="19" stroke-width="3"/>
-            <line class="hand" x1="30" y1="30" x2="43" y2="34" stroke-width="2.2"/>
-            <line class="hand sec" x1="30" y1="34" x2="30" y2="12"/>
-            <circle cx="30" cy="30" r="2.2" fill="#2c2216"/>
-          </svg>
-          <span class="dk-legend">
-            <i>Now processing</i>
-            <b class="dk-digits">&#8470;&nbsp;0412</b>
-            <span class="dk-since">at the window since 2:41 &middot; two in the queue</span>
+        <div class="dk-head">
+          <h2 class="ic-title">Two machines are drawing&hellip;</h2>
+          <span class="dk-chip" aria-hidden="true">
+            <svg class="dk-clock" viewBox="0 0 60 60">
+              <circle cx="30" cy="30" r="26" fill="#f3e9c8" stroke="#5d4a22" stroke-width="3"/>
+              <line class="hand" x1="30" y1="30" x2="30" y2="17" stroke-width="4"/>
+              <line class="hand" x1="30" y1="30" x2="44" y2="35" stroke-width="3"/>
+              <line class="hand sec" x1="30" y1="35" x2="30" y2="11"/>
+              <circle cx="30" cy="30" r="3" fill="#2c2216"/>
+            </svg>
+            <b>&#8470;&nbsp;0412</b>
           </span>
         </div>
-
-        <h2 class="ic-title">Two machines are drawing&hellip;</h2>
-        <p class="ic-copy">
-          The same words went to both. It can take a minute or two &mdash; leave
-          this open.
-        </p>
+        <p class="ic-copy">A minute or two &mdash; leave this open.</p>
 
         <ul class="dk-list" aria-live="polite">
           <li class="dk-row is-pending" data-slot="a">
@@ -1433,10 +1247,7 @@ body {
      ====================================================================== -->
 <p class="cardlab" id="s-reveal">3 &middot; The Reveal <em>&mdash; two envelopes back under the grille</em></p>
 <p class="carddesc">
-  Both drawings return in manila envelopes, pushed through the slot (note the
-  shadow across each top edge and the half-degree they landed at). The blindness
-  is stated by the envelope itself: the return-address line is ruled and empty
-  &mdash; <b>sender withheld</b>.
+  Two envelopes, a button. The blindness is stated once, on the envelopes.
 </p>
 <div class="stage" data-clone="reveal">
   <div class="stage-banner"><span class="sb-title">MUNICIPAL SKY</span><span class="sb-nav">writing &nbsp; art &nbsp; about</span></div>
@@ -1452,19 +1263,7 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken, drawn">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">returned</span>
-        </div>
 
-        <p class="ic-eyebrow">Handed back across the counter</p>
         <h2 class="ic-title">Two drawings came back</h2>
 
         <div class="ic-envs">
@@ -1473,7 +1272,7 @@ body {
             <div class="env-win"><div class="plate-art a" role="img"
               aria-label="response A — the top half of a torn tarot card, The Magician, in coloring-book line art"></div></div>
             <figcaption class="env-foot">
-              <span class="env-from"><i>from</i><span>sender withheld</span></span>
+              <span class="env-from"><span>sender withheld</span></span>
               <span class="env-mark" aria-hidden="true">A</span>
             </figcaption>
           </figure>
@@ -1482,19 +1281,14 @@ body {
             <div class="env-win"><div class="plate-art b" role="img"
               aria-label="response B — the top half of a torn tarot card, The Magician, in coloring-book line art"></div></div>
             <figcaption class="env-foot">
-              <span class="env-from"><i>from</i><span>sender withheld</span></span>
+              <span class="env-from"><span>sender withheld</span></span>
               <span class="env-mark" aria-hidden="true">B</span>
             </figcaption>
           </figure>
         </div>
 
-        <p class="ic-copy">
-          No names yet. Who drew which is withheld until your grades are filed.
-        </p>
-
         <div class="ic-actions">
           <button type="button" class="ic-go">grade them <span aria-hidden="true">&#8594;</span></button>
-          <span class="ic-hint">one at a time, then the call</span>
         </div>
 
       </div>
@@ -1508,12 +1302,8 @@ body {
      ====================================================================== -->
 <p class="cardlab" id="s-bench">4 &middot; The Bench <em>&mdash; examining what came back</em></p>
 <p class="carddesc">
-  The step rail is three counter chits, each with its own punch numeral; the
-  print stays clipped to the counter while it is assessed. Assessment lines run
-  label &rarr; leader dots &rarr; native&nbsp;<code>&lt;select&gt;</code>. The
-  &#9432; popover is shown open on <b>structural integrity</b> to prove it pushes
-  the sheet down rather than covering anything, and the complaint line is shown
-  checked with its folded note unfolded.
+  Artwork, rail, four selects, the flag. The &#9432; is shown open on
+  <b>structural integrity</b> &mdash; one line, in flow, covering nothing.
 </p>
 <div class="tools" data-tools="bench">
   <b>demo state</b>
@@ -1534,24 +1324,8 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken, drawn">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">under examination</span>
-        </div>
 
         <h2 class="ic-title">Grade what came back</h2>
-        <p class="ic-copy">
-          One at a time: A alone, then B alone, then the call. Everything is
-          optional except the call. Titles only &mdash; press an i for what a
-          scale means. The scale is the drawer's own.
-        </p>
 
         <div class="ic-rail" role="list">
           <button type="button" role="listitem" class="rail-step is-current" aria-current="step"
@@ -1580,8 +1354,7 @@ body {
             </figure>
             <div class="pin-col">
               <b>Response A</b>
-              <span>graded alone &mdash; no names until filed</span>
-              <span class="pin-of">counter copy &middot; 1 of 2</span>
+              <span>sender withheld</span>
             </div>
           </div>
 
@@ -1602,14 +1375,6 @@ body {
             </select>
             <div class="ic-pop" id="pop-grade" hidden>
               <p class="ic-pop-desc">The drawer's own five-tier scale, best to worst.</p>
-              <dl>
-                <dt>Prime</dt><dd>Exceptional. Faithful to the prompt, technically clean, aesthetically resolved.</dd>
-                <dt>Choice</dt><dd>Strong result with minor blemishes a careful eye can find.</dd>
-                <dt>Select</dt><dd>Competent and recognizable; noticeable flaws on one or more axes.</dd>
-                <dt>Standard</dt><dd>Gets the idea across despite significant defects.</dd>
-                <dt>Utility</dt><dd>The lowest tier. Barely fit for purpose; kept for the record.</dd>
-                <dt>skip</dt><dd>No answer filed for this question.</dd>
-              </dl>
             </div>
           </div>
 
@@ -1628,12 +1393,6 @@ body {
             </select>
             <div class="ic-pop" id="pop-instr" hidden>
               <p class="ic-pop-desc">Did the output honor each explicit ask &mdash; elements, constraints, viewpoint, style requests?</p>
-              <dl>
-                <dt>No problems</dt><dd>Every explicit ask is honored as specified.</dd>
-                <dt>Small problems</dt><dd>Some asks bent, missed, or quietly replaced.</dd>
-                <dt>Big problems</dt><dd>Explicit asks are disregarded outright.</dd>
-                <dt>skip</dt><dd>No answer filed for this question.</dd>
-              </dl>
             </div>
           </div>
 
@@ -1652,12 +1411,6 @@ body {
             </select>
             <div class="ic-pop" id="pop-integ" data-pop-body>
               <p class="ic-pop-desc">Does the picture hold together &mdash; parts connect, joins meet, anatomy is possible, occlusion behaves?</p>
-              <dl>
-                <dt>No problems</dt><dd>Coherent construction; nothing floats, breaks, or contradicts.</dd>
-                <dt>Small problems</dt><dd>Visible seams &mdash; small breaks, misalignments, or spatial slips.</dd>
-                <dt>Big problems</dt><dd>Structural or spatial failures dominate the read.</dd>
-                <dt>skip</dt><dd>No answer filed for this question.</dd>
-              </dl>
             </div>
           </div>
 
@@ -1676,12 +1429,6 @@ body {
             </select>
             <div class="ic-pop" id="pop-jnsq" hidden>
               <p class="ic-pop-desc">The intangible &mdash; whatever makes a piece more than the sum of its axes.</p>
-              <dl>
-                <dt>Has <i>it</i></dt><dd>The piece has it &mdash; undeniable, unaccountable appeal.</dd>
-                <dt>Just a hint</dt><dd>A glimmer of something beyond competence.</dd>
-                <dt>Ain't got it</dt><dd>Technically present, spiritually absent.</dd>
-                <dt>skip</dt><dd>No answer filed for this question.</dd>
-              </dl>
             </div>
           </div>
 
@@ -1690,7 +1437,7 @@ body {
             <span>this response is broken or offensive</span>
           </label>
           <div class="ic-note-wrap" data-flagnote>
-            <label for="bench-note">note for the counter &mdash; what is wrong with it?</label>
+            <label for="bench-note">what's wrong with it?</label>
             <input type="text" id="bench-note" class="ic-note" maxlength="240"
               value="the magician has six fingers on the wand hand"
               placeholder="what is wrong with it?">
@@ -1713,11 +1460,8 @@ body {
      ====================================================================== -->
 <p class="cardlab" id="s-call">5 &middot; The Call <em>&mdash; telling the clerk which one to keep</em></p>
 <p class="carddesc">
-  Both prints come out of their envelopes and lie on the counter. The five-stop
-  rail is a machined brass track: the stops are <b>bores</b>, and your answer is
-  a red peg seated in one of them &mdash; the same punch vocabulary as the
-  ticket. A&nbsp;hard left, B&nbsp;hard right, the tie dead centre; the chosen
-  side's brass end-tab turns red so the direction is never colour on the dot alone.
+  Both prints, one rail. The stops are bores in a brass track; your answer is a
+  red peg seated in one. The chosen side's end-tab turns red too.
 </p>
 <div class="stage" data-clone="call">
   <div class="stage-banner"><span class="sb-title">MUNICIPAL SKY</span><span class="sb-nav">writing &nbsp; art &nbsp; about</span></div>
@@ -1733,24 +1477,8 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken, drawn">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">awaiting the call</span>
-        </div>
 
         <h2 class="ic-title">Grade what came back</h2>
-        <p class="ic-copy">
-          One at a time: A alone, then B alone, then the call. Everything is
-          optional except the call. Titles only &mdash; press an i for what a
-          scale means. The scale is the drawer's own.
-        </p>
 
         <div class="ic-rail" role="list">
           <button type="button" role="listitem" class="rail-step is-done" aria-label="step 1 — response A">
@@ -1783,22 +1511,15 @@ body {
           <div class="ic-call">
             <div class="ic-rowhead">
               <button type="button" class="ic-def" aria-expanded="false" aria-controls="pop-call">
-                <span>the call &mdash; which belongs in the drawer?</span>
+                <span>which belongs in the drawer?</span>
                 <span class="ic-i" aria-hidden="true">i</span>
               </button>
               <span class="ic-leader" aria-hidden="true"></span>
             </div>
             <div class="ic-pop" id="pop-call" hidden>
-              <p class="ic-pop-desc">The one required answer when both drawings survived. It is filed as a winner plus a margin (a tie has no margin).</p>
-              <dl>
-                <dt>A &middot; decisively better</dt><dd>No contest &mdash; A is clearly the stronger drawing.</dd>
-                <dt>A &middot; narrowly better</dt><dd>A close call, but A edges it.</dd>
-                <dt>dead even</dt><dd>No daylight between them &mdash; filed as a tie.</dd>
-                <dt>B &middot; narrowly better</dt><dd>A close call, but B edges it.</dd>
-                <dt>B &middot; decisively better</dt><dd>No contest &mdash; B is clearly the stronger drawing.</dd>
-              </dl>
+              <p class="ic-pop-desc">Filed as a winner plus a margin &mdash; a tie has no margin.</p>
             </div>
-            <p class="ic-req">required &mdash; the clerk cannot file without it</p>
+            <p class="ic-req">required</p>
 
             <div class="ic-likert" role="radiogroup" data-pick="b"
                  aria-label="the call: which response belongs in the drawer">
@@ -1854,12 +1575,10 @@ body {
 <!-- ======================================================================
      6 · THE UNVEIL
      ====================================================================== -->
-<p class="cardlab" id="s-unveil">6 &middot; The Unveil <em>&mdash; ticket punched out, specimen handed over</em></p>
+<p class="cardlab" id="s-unveil">6 &middot; The Unveil <em>&mdash; the specimen handed over, with a stub</em></p>
 <p class="carddesc">
-  All four punches through, the stamp reads FILED, and the names are the ticket's
-  endorsement on the reverse. The kept drawing is handed across with the drawer's
-  own specimen tag already tied to it &mdash; grommet, manila, the same object
-  the pile shows when you dig it out.
+  The only place the punched ticket survives: a stub above the buttons, a receipt
+  at the end rather than a tracker throughout.
 </p>
 <div class="tools" data-tools="unveil">
   <b>demo state</b>
@@ -1880,19 +1599,7 @@ body {
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken, drawn, graded, filed">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">filed</span>
-        </div>
 
-        <p class="ic-eyebrow">Endorsement &mdash; reverse of ticket &#8470;&nbsp;0412</p>
         <h2 class="ic-title">Who drew what</h2>
 
         <ul class="uv-endorse">
@@ -1923,9 +1630,7 @@ body {
 
         <!-- the tie's keep-chooser, shown only in the tie state -->
         <div data-tieblock hidden>
-          <p class="ic-copy">
-            A tie is filed as a tie. Keep one for your own drawer anyway?
-          </p>
+          <p class="ic-copy">Filed as a tie. Keep one anyway?</p>
           <div class="uv-chits" role="radiogroup" aria-label="which drawing to keep">
             <label class="uv-chit is-on"><input type="radio" name="keep-d" checked>
               <span class="tick" aria-hidden="true">&#10003;</span>A</label>
@@ -1936,16 +1641,19 @@ body {
           </div>
         </div>
 
-        <p class="ic-copy" data-placedcopy>
-          It's in the drawer &mdash; yours only, tagged as such. Dig it out and
-          the specimen tag knows whose it is.
-        </p>
+        <p class="ic-copy" data-placedcopy>It's in the drawer &mdash; yours only.</p>
+
+        <div class="ic-receipt">
+          <span class="tk-perf" aria-hidden="true"></span>
+          <span class="tk-no"><i>claim ticket</i>&#8470;&nbsp;0412</span>
+          <ol class="tk-punch" aria-hidden="true"><li></li><li></li><li></li><li></li></ol>
+          <span class="tk-stamp">filed</span>
+        </div>
 
         <div class="ic-actions">
           <button type="button" class="ic-go" data-keepbtn hidden>put it in the drawer</button>
           <button type="button" class="ic-go" data-donebtn>done</button>
           <button type="button" class="ic-alt">take another turn</button>
-          <span class="ic-hint">a fresh ticket, same window</span>
         </div>
 
       </div>
@@ -1959,9 +1667,8 @@ body {
      ====================================================================== -->
 <p class="cardlab" id="s-apology">7 &middot; The Apology <em>&mdash; SEE OTHER CLERK</em></p>
 <p class="carddesc">
-  The grille goes unlit and an enamel placard drops across it on two brass
-  chains. Three failures, three retry paths &mdash; and in each the ticket's own
-  stamp tells the truth about whether the transaction is void or merely stalled.
+  The grille goes unlit and a small placard hangs on it. Heading, one line,
+  the retry.
 </p>
 <div class="stage" data-clone="apology">
   <div class="stage-banner"><span class="sb-title">MUNICIPAL SKY</span><span class="sb-nav">writing &nbsp; art &nbsp; about</span></div>
@@ -1983,26 +1690,10 @@ body {
           <span>see other clerk</span>
         </div>
 
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp is-void">void &mdash; no charge</span>
-        </div>
 
         <h2 class="ic-title">Nothing came back</h2>
         <p class="ic-copy">
-          Both machines failed. This cost you nothing &mdash; the drawer will try
-          again whenever you like.
-        </p>
-        <p class="ap-cost">
-          Your words are still on the slip. Pressing <b>try again</b> sends the
-          same brief back through the window on a fresh ticket.
+          Both machines failed. This cost you nothing, and your words are kept.
         </p>
 
         <div class="ic-actions">
@@ -2034,30 +1725,14 @@ body {
           <b>Back shortly</b>
           <span>the counter is at its limit</span>
         </div>
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">still good</span>
-        </div>
         <h2 class="ic-title">The window is full</h2>
         <p class="ic-copy">
-          The counter has served all it can for the moment. Nothing was spent and
-          your ticket is still good &mdash; try again in a few minutes.
-        </p>
-        <p class="ap-cost">
-          <b>Ticket &#8470;&nbsp;0412 holds your place.</b> The brief you typed is
-          kept on the slip until you close this window.
+          Too many turns at once. Nothing was spent &mdash; try again in a few
+          minutes.
         </p>
         <div class="ic-actions">
           <button type="button" class="ic-go">try again</button>
           <button type="button" class="ic-alt">close</button>
-          <span class="ic-hint">roughly four minutes</span>
         </div>
       </div>
     </div>
@@ -2077,26 +1752,10 @@ body {
       </header>
       <div class="ic-lip" aria-hidden="true"></div>
       <div class="ic-body">
-        <div class="ic-ticket">
-          <span class="tk-perf" aria-hidden="true"></span>
-          <span class="tk-no"><i>claim ticket</i><b>&#8470;&nbsp;0412</b></span>
-          <ol class="tk-punch" aria-label="ticket punches: taken, drawn, graded">
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>taken</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>drawn</li>
-            <li class="on"><span class="tk-hole" aria-hidden="true"></span>graded</li>
-            <li class="next"><span class="tk-hole" aria-hidden="true"></span>filed</li>
-          </ol>
-          <span class="tk-stamp">not filed</span>
-        </div>
-        <p class="ic-eyebrow">The clerk's window jammed on the last punch</p>
         <h2 class="ic-title">The grades didn't file</h2>
-        <p class="ic-notice">
-          Your call and your grades are still on the counter &mdash; nothing was
-          lost. Press file again and the clerk will re-punch the ticket.
-        </p>
-        <p class="ap-cost">
-          The drawings are still here too. If you close now, the turn is
-          abandoned and neither drawing is kept.
+        <p class="ic-copy">
+          Your grades are still here &mdash; nothing was lost. Close now and the
+          turn is abandoned.
         </p>
         <div class="ic-actions">
           <button type="button" class="ic-go">file again</button>
@@ -2115,8 +1774,8 @@ body {
   The stage below is a true 800&thinsp;px viewport: 56&thinsp;px of banner
   reserved at the top, the card clamped to <code>max-height:100%</code>,
   border-box, and the counter surface &mdash; not the whole card &mdash; taking
-  the internal scroll. The wicket and its close key stay fixed to the frame; the
-  ticket and the actions ride the paper, as they should, because they are paper.
+  the internal scroll. Trimmed this hard, the Call now clears 800&thinsp;px with
+  room to spare; the wicket and its close key stay fixed to the frame regardless.
 </p>
 <div class="stage stage--clamp" data-copyof="call">
   <div class="stage-banner"><span class="sb-title">MUNICIPAL SKY</span><span class="sb-nav">writing &nbsp; art &nbsp; about</span></div>
@@ -2139,142 +1798,123 @@ body {
      DESIGN NOTES
      ====================================================================== -->
 <section class="notes">
-  <h2>Design notes &mdash; 15B, The Intake Counter</h2>
+  <h2>Design notes &mdash; 15B, The Intake Counter (rev. 2)</h2>
 
-  <h3>The fiction and its rules</h3>
+  <h3>What rev. 2 cut, and why</h3>
   <p>
-    The visitor is standing on the public side of a service window at the
-    bureau. The card is not a panel floating in a scrim &mdash; it is the
-    window: brass wicket, a dark slot under it, counter surface below. That
-    single architectural idea is what makes seven very different states read as
-    one place, and it is enforced by three hard rules.
+    Rev. 1 lost the round for being <b>designed for the designer</b>. The worst
+    offender was the claim-ticket strip riding every card: a four-position
+    progress tracker that told the visitor where they were in a flow they were
+    already walking through one screen at a time. It has been <b>deleted</b>. A
+    single punched stub survives on the <b>Unveil</b>, where it is a receipt for
+    a finished transaction, not a map of an unfinished one. Also gone: every
+    eyebrow rubric, the level-by-level definition lists in the &#9432; popovers,
+    the &ldquo;clerk&rdquo; and &ldquo;the counter has served all it can&rdquo;
+    voice-of-the-building copy, the wall-clock board, the form&nbsp;JD&#8209;1
+    header on the slip, and every hint line beside a button.
   </p>
-  <ol>
-    <li>
-      <b>Three materials, three jobs.</b> <b>Brass</b> is the building's
-      hardware and only the building's: the wicket, the engraved window plate,
-      the action buttons, the likert track, the bulldog clip, the tag's grommet.
-      <b>Enamel</b> (dark lacquer, lit type) is reserved for what the
-      <em>machine</em> says, never the clerk: the queue number in the wicket and
-      the NOW PROCESSING board. <b>Paper</b> is the transaction: the request
-      slip, the claim ticket, the envelopes, the assessment lines, the folded
-      complaint note, the specimen tag. Nothing on any card is allowed to be a
-      fourth material. The one deliberate exception is the Apology's placard,
-      which is <em>painted steel</em> &mdash; and it is the exception precisely
-      because it belongs to the building shutting the visitor out.
-    </li>
-    <li>
-      <b>Progress is one punched ticket.</b> Ticket &#8470;&nbsp;0412 sits under
-      the wicket on every card, always in the same place, always the same
-      object: perforated left edge, the number, four punch positions
-      (<code>taken / drawn / graded / filed</code>), and a rubber stamp on the
-      right end naming the current state. Punched holes are real holes &mdash;
-      dark bore, lit paper edge. The <em>next</em> position wears a red ring and
-      breathes. That is the whole global progress read; nothing else on any card
-      is allowed to duplicate it.
-    </li>
-    <li>
-      <b>Choices are punched.</b> The likert's five stops are bores in a brass
-      track, and the visitor's answer is a red peg seated in one. The bench
-      rail's step numerals are punch circles too (dashed = not yet, solid = been
-      there, red = here). The vocabulary of "a hole made in paper by a machine"
-      does double duty as both progress and choice, which is why the design
-      never needs a second selection idiom.
-    </li>
-  </ol>
+  <p>
+    The test each card now has to pass: <b>can the visitor act with only what is
+    on the screen?</b> Anything that was true but not needed came off.
+  </p>
 
-  <h3>How progress reads, card by card</h3>
+  <h3>The fiction, whispering</h3>
+  <p>
+    The card is still a service window &mdash; brass wicket, a dark slot under
+    it, counter surface below &mdash; but the wicket is now 44&thinsp;px of slim
+    band rather than 54&thinsp;px of stage set, and it carries only two things:
+    the engraved window plate and the enamel number. Three materials still do
+    all the work: <b>brass</b> for the building's hardware (wicket, buttons,
+    likert track, clip, grommet), <b>enamel</b> for what the machine says (the
+    number, the Darkroom's chip), <b>paper</b> for the transaction (slip,
+    envelopes, assessment lines, the stub, the tag). The Apology's placard is
+    painted steel &mdash; the one exception, because it belongs to the building
+    shutting the visitor out.
+  </p>
   <ul>
-    <li><b>Brief</b> &mdash; no punches; stamp <em>AT THE WINDOW</em>; the "taken" hole is the one breathing.</li>
-    <li><b>Darkroom</b> &mdash; <em>taken</em> punched; stamp <em>IN PROCESS</em>; the enamel board repeats the number so the machine and the ticket visibly agree.</li>
-    <li><b>Reveal</b> &mdash; <em>taken, drawn</em>; stamp <em>RETURNED</em>.</li>
-    <li><b>Bench</b> &mdash; same two punches; stamp <em>UNDER EXAMINATION</em>. The bench's own three-step rail is <em>local</em> — it never touches the ticket, so there is no ambiguity about which control means "where am I in the turn" and which means "which response am I on".</li>
-    <li><b>Call</b> &mdash; stamp changes to <em>AWAITING THE CALL</em>; the rail's first two chits are marked done.</li>
-    <li><b>Unveil</b> &mdash; all four punched; stamp <em>FILED</em>; the names are printed as the ticket's endorsement.</li>
-    <li><b>Apology</b> &mdash; the stamp is the honest one: <em>VOID &mdash; NO CHARGE</em> when the generation died, <em>STILL GOOD</em> when it is only a rate limit (the ticket holds your place), <em>NOT FILED</em> when the filing jammed and the work is still on the counter.</li>
+    <li>
+      <b>The queue number is the whole ticket fiction now.</b> &#8470;&nbsp;0412
+      is lit in the wicket on every card, appears once more on the Darkroom's
+      enamel chip, and is punched out on the Unveil's stub. Three appearances,
+      no progress semantics.
+    </li>
+    <li>
+      <b>Choices are still punched.</b> The likert's five stops are bores in a
+      brass track and the answer is a red peg seated in one; the rail's step
+      numerals are punch circles. That vocabulary survived because it is doing
+      interaction work, not narration.
+    </li>
+    <li>
+      <b>The Darkroom's clock shrank to a 17&thinsp;px chip beside the
+      heading.</b> It costs no row on the card, keeps the machine's voice, and
+      the second hand still turns.
+    </li>
   </ul>
 
-  <h3>Functional parity &mdash; what carried over unchanged</h3>
+  <h3>How progress reads, without a tracker</h3>
+  <p>
+    From the heading and the controls, which is where a user looks anyway:
+    <em>Describe an object</em> &rarr; <em>Two machines are drawing&hellip;</em>
+    &rarr; <em>Two drawings came back</em> &rarr; <em>Grade what came back</em>
+    (with the three-step rail saying which of A&nbsp;/&nbsp;B&nbsp;/&nbsp;the
+    call you are on) &rarr; <em>Who drew what</em>. The rail is the only
+    progress control left, it is local to grading, and it stays clickable and
+    focusable with future steps disabled &mdash; exactly as production has it.
+  </p>
+
+  <h3>Functional parity &mdash; nothing was cut but copy</h3>
   <ul>
-    <li>Brief: textarea, live 500-char count, SEND IT, and the disclosure verbatim as fine print (re-framed as "printed on the reverse of this form", which is what fine print <em>is</em>).</li>
-    <li>Darkroom: per-slot pending / ok / failed, plus the slow-turn notice, all as separate states of the same docket row (toggleable above the stage).</li>
-    <li>Bench: the rail stays a real, focusable, clickable control with disabled future steps; selects stay native <code>&lt;select&gt;</code> (OS pickers on phones); the &#9432; popover is <em>in flow</em> &mdash; it pushes the sheet down and never covers a control; every target clears 44&thinsp;px; the flag checkbox and its folded note are intact.</li>
-    <li>Call: five stops, A hard left, B hard right, tie dead centre, filed as winner + margin. Selection is never colour alone &mdash; the peg is a different <em>shape</em> from a bore, the caption goes bold and ink-dark, and the chosen end-tab flips to red.</li>
-    <li>Unveil: names, the placement copy, the tie keep-chooser (A / B / neither), plus <em>take another turn</em> beside <em>done</em>.</li>
-    <li>Card geometry: <code>width: min(680px, 100%)</code>, <code>max-height: 100%</code> in a scrim that reserves the 56&thinsp;px banner, border-box, growing downward with internal scroll only on the counter surface. See the clamp stage above.</li>
+    <li><b>Brief</b>: textarea, live 500-char count, SEND IT, the disclosure as fine print. The heading is the only instruction.</li>
+    <li><b>Darkroom</b>: per-slot pending / ok / failed and the slow-turn notice (toggle above the stage).</li>
+    <li><b>Bench</b>: the rail as a real control; native <code>&lt;select&gt;</code>s for OS pickers; the &#9432; popover in flow, one line, covering nothing; 44&thinsp;px targets; the broken-or-offensive flag and its folded note.</li>
+    <li><b>Call</b>: five stops, A hard left, B hard right, tie dead centre, filed as winner + margin. Selection is never colour alone &mdash; peg vs. bore is a shape change, the caption goes bold, the chosen end-tab flips red.</li>
+    <li><b>Unveil</b>: names, the placement line, the tie keep-chooser (A / B / neither), <em>take another turn</em> beside <em>done</em>, and the stub.</li>
+    <li><b>Apology</b>: all three failures, all three retry paths.</li>
+    <li><b>Geometry</b>: <code>width: min(680px, 100%)</code>, <code>max-height: 100%</code> in a scrim reserving the 56&thinsp;px banner, border-box, internal scroll on the counter surface only. See the clamp stage.</li>
   </ul>
 
   <h3>Integration watch-outs</h3>
   <ul>
     <li>
-      <b>The close &#10005; moves into the wicket.</b> Production pins it
-      absolutely at top-right and pads the title 52&thinsp;px to clear it. Here
-      it is a real 44&times;44 brass key <em>inside</em> the band, so the title
-      is free to use the full width and the long-standing "the &#10005; is under
-      the site banner" hazard cannot recur &mdash; the band is the topmost thing
-      in the card and the scrim already reserves the banner. Worth keeping the
-      scrim's <code>padding-top</code> reservation anyway; belt and braces.
+      <b>The close &#10005; lives in the wicket</b> as a real 44&times;40 brass
+      key, so the title uses the full width and production's 52&thinsp;px title
+      padding is unnecessary. Keep the scrim's banner reservation regardless.
     </li>
     <li>
-      <b>The ruled textarea.</b> The slip's rules are a background gradient on
-      the textarea and the background does <em>not</em> scroll with the text in
-      Blink. Mitigated by <code>rows="5"</code> and by tying the rule pitch to a
-      <code>--lh</code> custom property that the phone query bumps to 26&thinsp;px
-      alongside the 16&thinsp;px font (the iOS focus-zoom guard). If the owner
-      would rather not carry that fragility, drop the gradient and keep the slip
-      header/footer &mdash; the object still reads as a form.
+      <b>The ruled textarea's rules are a background gradient</b> and do not
+      scroll with the text in Blink. Two things keep it honest: a
+      <code>--lh</code> custom property the phone query bumps to 25&thinsp;px
+      beside the 16&thinsp;px font (the iOS focus-zoom guard), and
+      <code>padding-bottom: 0</code> &mdash; a scrolling textarea paints overflow
+      text inside its padding box, which otherwise leaves a half-cut line sitting
+      under the last rule. Dropping the gradient costs nothing structural if the
+      owner would rather not carry it.
     </li>
     <li>
-      <b>The ticket is paper, so it scrolls.</b> It is tempting to make
-      <code>.ic-ticket</code> sticky so the progress read never leaves the frame
-      on a tall card &mdash; but the bench already spends its
-      <code>position: sticky; top: 0</code> on the pinned print, and stacking two
-      stickies means hard-coding the ticket's height into the pin's offset,
-      which breaks the moment the ticket wraps on a narrow phone. The call here
-      is: <em>the wicket is the building and stays; everything made of paper
-      scrolls.</em> If the owner wants the ticket pinned, pin it and give the
-      bench's print a plain (non-sticky) treatment &mdash; not both.
+      <b>Nothing is sticky but the bench's pinned print.</b> With the ticket
+      strip gone there is no second candidate, which removes rev.&nbsp;1's
+      stacked-sticky hazard entirely.
     </li>
     <li>
-      <b>The ticket's punch labels are decorative at 375.</b> They collapse to
-      bare holes below a 600&thinsp;px card, which is fine visually but means the
-      <code>&lt;ol&gt;</code> must carry an <code>aria-label</code> naming the
-      punched state (it does here) rather than relying on the words.
+      <b>&#8470;&nbsp;0412 must be one value.</b> Render it once from the turn
+      record and pass it to the wicket, the Darkroom chip and the stub; if they
+      can disagree the conceit collapses.
     </li>
     <li>
-      <b>The wicket is 54&thinsp;px of fixed chrome</b> (48 on a phone) on top of
-      the lip. On a short landscape phone that is real estate the counter surface
-      loses. The band already shrinks in the container query; if landscape gets
-      tight, the honest next move is to drop the engraved plate's
-      &ldquo;Specimen Intake&rdquo; half rather than shrink the 44&thinsp;px
-      close key.
-    </li>
-    <li>
-      <b>The queue number is fiction that has to be real.</b> &#8470;&nbsp;0412
-      must come from the turn record (any stable per-turn integer will do) and be
-      identical in the wicket, on the ticket, and on the enamel board. If they
-      can ever disagree, the whole conceit collapses &mdash; better to render the
-      number once and pass it three times than to derive it twice.
-    </li>
-    <li>
-      <b>Envelopes cost a wrapper.</b> The Reveal's <code>.ic-env</code> adds a
-      flap and a foot around production's existing plate markup; the plate itself
+      <b>Envelopes cost a wrapper, not a rewrite.</b> <code>.ic-env</code> adds a
+      flap and a foot around production's existing plate markup; the plate
       (<code>aspect-ratio: 1/1</code>, <code>#f6efdc</code>, inset shadow) is
-      unchanged, so the SVG instancing path (<code>JD_svgInst</code>, namespaced
-      ids) needs no edit at all.
+      unchanged, so the SVG instancing path needs no edit.
     </li>
     <li>
-      <b>Escaped-text discipline holds.</b> The only visitor content on these
-      cards is the prompt, and it renders as plain text inside the textarea (note
-      the typographic apostrophes surviving intact). Every wicket bar, punch
-      hole, screw, chain, clip, stamp and clock is CSS or inline SVG &mdash;
-      there is no path by which visitor words become decoration.
+      <b>Escaped-text discipline holds.</b> The only visitor content is the
+      prompt, rendered as text in the textarea. Every bar, hole, chain, clip,
+      stamp and clock is CSS or inline SVG.
     </li>
     <li>
-      <b>Motion is additive.</b> The clock's second hand, the pending lamp's
-      pulse and the next-punch ring all live inside
+      <b>Motion is additive.</b> The clock hand and the pending lamp live inside
       <code>prefers-reduced-motion: no-preference</code>; the base state is the
-      reduced state, matching the existing bench rules.
+      reduced state.
     </li>
   </ul>
 
@@ -2372,8 +2012,6 @@ body {
     });
     var slow = card.querySelector('[data-slow]');
     if (slow) { if (v === 'slow') slow.removeAttribute('hidden'); else slow.setAttribute('hidden', ''); }
-    var stamp = card.querySelector('.tk-stamp');
-    if (stamp) stamp.textContent = (v === 'slow') ? 'in process — slow' : 'in process';
   }
   function applyBench(card, v) {
     var open = v === 'open';
