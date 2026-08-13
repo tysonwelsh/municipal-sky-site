@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 14 &middot; CAPTION ON THE PHOTOGRAPH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   MOCKUP 14 — the fill-ins (MODEL / PROMPTED / PROCESS / SIZE) move ONTO the
+   photograph (round-13 card, owner request 2026-08-13). Three treatments of
+   the same square graph-paper print swatch; pick one.
+   ========================================================================== */
+:root {
+  --card: #efe4c6; --card-hi: #f7efd8;
+  --form-ink: #37414f; --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42); --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428; --red: #b02a24;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: #efeade; color: var(--form-ink); font-family: var(--rc-mono);
+  padding: 1.4rem 1rem 3rem;
+}
+.t { text-align:center; font-size:0.82rem; letter-spacing:0.3em; text-transform:uppercase; font-weight:700; margin-bottom:0.4rem; }
+.intro { max-width:46rem; margin:0 auto 1.6rem; text-align:center; font-size:0.66rem; line-height:1.9; letter-spacing:0.07em; color:#8a8272; }
+.intro b { color: var(--red); }
+.row { display:flex; flex-wrap:wrap; gap:26px; justify-content:center; max-width:1400px; margin:0 auto; }
+.opt { width: 420px; max-width: 100%; }
+.optlab { font-size:0.63rem; letter-spacing:0.12em; text-transform:uppercase; color:#8a8272; text-align:center; margin:0.7rem auto 0; max-width:24rem; line-height:1.8; }
+.optlab b { color: var(--red); letter-spacing:0.16em; }
+/* a patch of the card's paper behind each plate, so the swatch reads in situ */
+.cardbit {
+  background: var(--card); border: 1px solid rgba(48,38,20,0.55);
+  padding: 18px 20px 20px;
+  box-shadow: 10px 16px 26px -10px rgba(6,3,0,0.45);
+}
+
+/* ---- the photograph, verbatim from the shipped card ---------------------- */
+.rc-plate {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
+              0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.rc-corner {
+  position: absolute; width: 26px; height: 26px; z-index: 3;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+.rc-plate-hint {
+  position: absolute; right: 8px; bottom: 6px; z-index: 4; pointer-events: none;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: rgba(55, 65, 79, 0.5);
+}
+
+/* =========================================================================
+   OPTION A — THE CAPTION STRIP: a translucent band of the print's own paper
+   across the photograph's foot, ruled off from the picture; the four fills
+   run as one typed line each pair. The artwork keeps the upper field
+   (inset 6% 8% 22%).
+   ========================================================================= */
+.va .rc-plate-art { position: absolute; inset: 6% 8% 22%; }
+.va .rc-plate-art svg { display: block; width: 100%; height: 100%; }
+.va-strip {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  height: 19%;
+  background: rgba(248, 243, 226, 0.82);
+  border-top: 1px solid rgba(55, 65, 79, 0.34);
+  padding: 6px 12px 5px;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 16px;
+  align-content: center; row-gap: 2px;
+}
+.va-cell { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
+.va-l {
+  font-family: var(--form); font-size: 0.48rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.va-v {
+  font-family: var(--rc-mono); font-size: 0.6rem; color: var(--typed);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* =========================================================================
+   OPTION B — THE MARGIN NOTES: no band at all — the data is typed straight
+   onto the graph paper in the print's lower-left margin, the way a lab
+   tech pencils a plate number on a proof. A soft paper halo keeps the type
+   legible where it crosses grid lines. Artwork inset 6% 8% 20%.
+   ========================================================================= */
+.vb .rc-plate-art { position: absolute; inset: 6% 8% 20%; }
+.vb .rc-plate-art svg { display: block; width: 100%; height: 100%; }
+.vb-notes {
+  position: absolute; left: 4.5%; bottom: 4%; z-index: 2;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.vb-line { display: flex; align-items: baseline; gap: 0.5em; }
+.vb-l {
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  min-width: 4.6em;
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+}
+.vb-v {
+  font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
+}
+
+/* =========================================================================
+   OPTION C — THE TAPED LABEL: a small cream index label stuck to the
+   print's lower-left corner, half a degree off square, two strips of aged
+   tape holding it. The four fills stack 2×2 on the label. Artwork inset
+   6% 8% 24% (the label overlaps the picture's corner slightly — it is ON
+   the photograph, like a real filing label). */
+.vc .rc-plate-art { position: absolute; inset: 6% 8% 21%; }
+.vc .rc-plate-art svg { display: block; width: 100%; height: 100%; }
+.vc-label {
+  position: absolute; left: 3.5%; bottom: 3.5%; z-index: 2;
+  width: 62%;
+  background: #fbf7e9;
+  border: 1px solid rgba(55, 65, 79, 0.28);
+  box-shadow: 0 2px 5px -1px rgba(46, 34, 12, 0.4);
+  transform: rotate(-1.2deg);
+  padding: 7px 10px 6px;
+  display: grid; grid-template-columns: 1fr 1fr; column-gap: 14px; row-gap: 2px;
+}
+.vc-label::before, .vc-label::after {
+  content: ""; position: absolute; width: 34px; height: 12px;
+  background: rgba(233, 221, 180, 0.55);
+  border-left: 1px dashed rgba(120, 100, 50, 0.25);
+  border-right: 1px dashed rgba(120, 100, 50, 0.25);
+  transform: rotate(-38deg);
+}
+.vc-label::before { top: -7px; left: -14px; }
+.vc-label::after  { top: -7px; right: -14px; transform: rotate(38deg); }
+.vc-cell { display: flex; flex-direction: column; min-width: 0; }
+.vc-l {
+  font-family: var(--form); font-size: 0.44rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--form-ink-2);
+}
+.vc-v {
+  font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
+  border-bottom: 1px solid rgba(55, 65, 79, 0.18);
+  padding-bottom: 1px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+</style>
+</head>
+<body>
+<h1 class="t">Mockup 14 &middot; Caption on the Photograph</h1>
+<p class="intro">The MODEL / PROMPTED / PROCESS / SIZE fill-ins leave the ruled caption
+under the photo and move <b>onto the graph paper itself</b>. Three treatments, same data,
+same shipped swatch &mdash; the long refine-chain model value is used everywhere as the stress case.</p>
+<div class="row">
+<section class="opt va"><div class="cardbit"><div class="rc-plate"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><div class="rc-plate-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="va_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="va_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="va_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="va_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- parchment face of the card, torn away along the bottom -->
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    <!-- card border, cut off where the card is torn -->
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    <!-- ripped bottom edge -->
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    <!-- roman numeral I -->
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    <!-- arbour of roses across the top -->
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#va_rose" href="#va_rose" transform="translate(106,100)"/>
+      <use xlink:href="#va_rose" href="#va_rose" transform="translate(231,104)"/>
+      <use xlink:href="#va_rose" href="#va_rose" transform="translate(429,104)"/>
+      <use xlink:href="#va_rose" href="#va_rose" transform="translate(554,99)"/>
+    </g>
+
+    <!-- rose vines hanging down the left -->
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#va_rose" href="#va_rose" transform="translate(90,322)"/></g>
+
+    <!-- rose vines hanging down the right -->
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#va_rose" href="#va_rose" transform="translate(570,322)"/></g>
+
+    <!-- lilies of the garden -->
+    <g stroke-width="5">
+      <use xlink:href="#va_lily" href="#va_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#va_lily" href="#va_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#va_leaf" href="#va_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    <!-- lemniscate above the head -->
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    <!-- head -->
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    <!-- neck and collar -->
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    <!-- raised arm -->
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    <!-- fist gripping the wand -->
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    <!-- double-ended wand -->
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#va_spark" href="#va_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#va_spark" href="#va_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#va_spark" href="#va_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    <!-- lowered arm, finger pointing down -->
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    <!-- robe and cloak -->
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    <!-- ouroboros belt: the snake biting its own tail -->
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg>
+</div><div class="va-strip"><span class="va-cell"><span class="va-l">Model</span><span class="va-v">Claude Sonnet 5 → Opus 5 refine</span></span><span class="va-cell"><span class="va-l">Prompted</span><span class="va-v">9 August 2026</span></span><span class="va-cell"><span class="va-l">Process</span><span class="va-v">refined (2 prompts)</span></span><span class="va-cell"><span class="va-l">Size</span><span class="va-v">Small</span></span></div><span class="rc-plate-hint">⤢ enlarge</span></div></div><p class="optlab"><b>A · the caption strip</b> — a translucent band of the print’s own paper across the photograph’s foot, ruled off like an archival contact sheet; fills 2×2, long values ellipsize.</p></section><section class="opt vb"><div class="cardbit"><div class="rc-plate"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><div class="rc-plate-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="vb_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="vb_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="vb_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="vb_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- parchment face of the card, torn away along the bottom -->
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    <!-- card border, cut off where the card is torn -->
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    <!-- ripped bottom edge -->
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    <!-- roman numeral I -->
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    <!-- arbour of roses across the top -->
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#vb_rose" href="#vb_rose" transform="translate(106,100)"/>
+      <use xlink:href="#vb_rose" href="#vb_rose" transform="translate(231,104)"/>
+      <use xlink:href="#vb_rose" href="#vb_rose" transform="translate(429,104)"/>
+      <use xlink:href="#vb_rose" href="#vb_rose" transform="translate(554,99)"/>
+    </g>
+
+    <!-- rose vines hanging down the left -->
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#vb_rose" href="#vb_rose" transform="translate(90,322)"/></g>
+
+    <!-- rose vines hanging down the right -->
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#vb_rose" href="#vb_rose" transform="translate(570,322)"/></g>
+
+    <!-- lilies of the garden -->
+    <g stroke-width="5">
+      <use xlink:href="#vb_lily" href="#vb_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#vb_lily" href="#vb_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#vb_leaf" href="#vb_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    <!-- lemniscate above the head -->
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    <!-- head -->
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    <!-- neck and collar -->
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    <!-- raised arm -->
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    <!-- fist gripping the wand -->
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    <!-- double-ended wand -->
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#vb_spark" href="#vb_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#vb_spark" href="#vb_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#vb_spark" href="#vb_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    <!-- lowered arm, finger pointing down -->
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    <!-- robe and cloak -->
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    <!-- ouroboros belt: the snake biting its own tail -->
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg>
+</div><div class="vb-notes"><span class="vb-line"><span class="vb-l">Model</span><span class="vb-v">Claude Sonnet 5 → Opus 5 refine</span></span><span class="vb-line"><span class="vb-l">Prompted</span><span class="vb-v">9 August 2026</span></span><span class="vb-line"><span class="vb-l">Process</span><span class="vb-v">refined (2 prompts)</span></span><span class="vb-line"><span class="vb-l">Size</span><span class="vb-v">Small</span></span></div><span class="rc-plate-hint">⤢ enlarge</span></div></div><p class="optlab"><b>B · the margin notes</b> — no band: typed straight onto the graph paper in the lower-left margin, lab-proof style, a soft paper halo keeping the type legible over the rules.</p></section><section class="opt vc"><div class="cardbit"><div class="rc-plate"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><div class="rc-plate-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="vc_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="vc_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="vc_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="vc_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- parchment face of the card, torn away along the bottom -->
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    <!-- card border, cut off where the card is torn -->
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    <!-- ripped bottom edge -->
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    <!-- roman numeral I -->
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    <!-- arbour of roses across the top -->
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#vc_rose" href="#vc_rose" transform="translate(106,100)"/>
+      <use xlink:href="#vc_rose" href="#vc_rose" transform="translate(231,104)"/>
+      <use xlink:href="#vc_rose" href="#vc_rose" transform="translate(429,104)"/>
+      <use xlink:href="#vc_rose" href="#vc_rose" transform="translate(554,99)"/>
+    </g>
+
+    <!-- rose vines hanging down the left -->
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#vc_rose" href="#vc_rose" transform="translate(90,322)"/></g>
+
+    <!-- rose vines hanging down the right -->
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#vc_rose" href="#vc_rose" transform="translate(570,322)"/></g>
+
+    <!-- lilies of the garden -->
+    <g stroke-width="5">
+      <use xlink:href="#vc_lily" href="#vc_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#vc_lily" href="#vc_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#vc_leaf" href="#vc_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    <!-- lemniscate above the head -->
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    <!-- head -->
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    <!-- neck and collar -->
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    <!-- raised arm -->
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    <!-- fist gripping the wand -->
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    <!-- double-ended wand -->
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#vc_spark" href="#vc_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#vc_spark" href="#vc_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#vc_spark" href="#vc_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    <!-- lowered arm, finger pointing down -->
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    <!-- robe and cloak -->
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    <!-- ouroboros belt: the snake biting its own tail -->
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg>
+</div><div class="vc-label"><span class="vc-cell"><span class="vc-l">Model</span><span class="vc-v">Claude Sonnet 5 → Opus 5 refine</span></span><span class="vc-cell"><span class="vc-l">Prompted</span><span class="vc-v">9 August 2026</span></span><span class="vc-cell"><span class="vc-l">Process</span><span class="vc-v">refined (2 prompts)</span></span><span class="vc-cell"><span class="vc-l">Size</span><span class="vc-v">Small</span></span></div><span class="rc-plate-hint">⤢ enlarge</span></div></div><p class="optlab"><b>C · the taped label</b> — a cream filing label stuck to the print’s corner, a half-degree off square, two strips of aged tape; fills 2×2 on the label, long values ellipsize.</p></section></div></body></html>
