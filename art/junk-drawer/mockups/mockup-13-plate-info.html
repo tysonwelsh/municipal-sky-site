@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 13 &middot; PLATE INFO OVERLAY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 13 · PLATE INFO OVERLAY (round 13)
+   The report card's info fills (MODEL / PROMPTED / PROCESS / SIZE) move off
+   the paper form and ONTO the vaporwave plate. Three candidates:
+     13A CORNER REGISTERS — camcorder-OSD corners, one fill per corner
+     13B SKY BAND         — one thin readout strip across the ceiling
+     13C FLOOR PLACARD    — a museum placard planted on the near floor
+   The floor SVG is a static snapshot of the live floorSVG() (S=112,
+   ROWK=0.62, GAP=44); the specimen is the poppy mason jar (Opus response,
+   whose real filing matches the copy shown). The paper page around the
+   plates stands in for the report card.
+   ========================================================================== */
+:root {
+  --paper: #efe4c6; --ink: #37414f; --plot-red: #b02a24;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --teal: #2fd0c9;
+  --teal-dim: rgba(47, 208, 201, 0.55);
+  --teal-bright: #9ff5ec;
+  --glow: 0 0 7px rgba(47, 208, 201, 0.45);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 1.4rem 0.9rem 3.5rem;
+}
+.mock-title {
+  margin: 0 auto 0.4rem; max-width: 1100px;
+  font-size: 0.82rem; letter-spacing: 0.3em; text-transform: uppercase;
+  text-align: center; font-weight: 700;
+}
+.mock-intro {
+  max-width: 47rem; margin: 0 auto 1.8rem;
+  font-size: 0.68rem; line-height: 1.9; letter-spacing: 0.09em; color: #8a8272;
+  text-align: center;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.16em; }
+.bays {
+  max-width: 1600px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 26px;
+}
+.bay-name {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.24em;
+  text-transform: uppercase; margin-bottom: 0.35rem;
+}
+.bay-name b { color: var(--plot-red); }
+.bay-note {
+  font-size: 0.6rem; line-height: 1.75; letter-spacing: 0.04em;
+  color: #8a8272; margin-bottom: 0.7rem; min-height: 4.6em;
+}
+.plate {
+  position: relative; overflow: hidden; aspect-ratio: 10 / 9; width: 100%;
+  background: #101010; border: 1px solid rgba(55, 65, 79, 0.42);
+}
+.rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
+.art { position: absolute; top: 17%; bottom: 12%; left: 10%; right: 10%; }
+.art svg { display: block; width: 100%; height: 100%; }
+.hint {
+  position: absolute; right: 8px; bottom: 6px; z-index: 3;
+  font-family: var(--mono); font-size: 0.46rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: rgba(239, 228, 198, 0.46);
+}
+
+/* ---- 13A · CORNER REGISTERS (camcorder OSD) ----------------------------- */
+.osd {
+  position: absolute; z-index: 2; display: flex; flex-direction: column;
+  gap: 2px; max-width: 46%;
+}
+.osd-tl { top: 9px; left: 11px; }
+.osd-tr { top: 9px; right: 11px; text-align: right; }
+.osd-bl { bottom: 9px; left: 11px; }
+.osd-br { bottom: 20px; right: 11px; text-align: right; }
+.osd-l {
+  font-size: 0.44rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--teal-dim);
+}
+.osd-v {
+  font-size: 0.58rem; letter-spacing: 0.08em; color: var(--teal-bright);
+  text-shadow: var(--glow);
+}
+/* the hint cedes the bottom-right corner to SIZE and recenters */
+.mock-a .hint { right: 50%; transform: translateX(50%); }
+
+/* ---- 13B · SKY BAND ------------------------------------------------------ */
+.band {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 2;
+  display: flex; justify-content: center; align-items: baseline;
+  flex-wrap: wrap; row-gap: 1px; column-gap: 12px;
+  padding: 8px 10px 10px;
+  /* the sky already darkens upward; this just firms the top edge under the
+     type so it reads at every crop */
+  background: linear-gradient(rgba(6, 9, 26, 0.72), rgba(6, 9, 26, 0));
+}
+.band-cell { display: inline-flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.band-l {
+  font-size: 0.44rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--teal-dim);
+}
+.band-v {
+  font-size: 0.56rem; letter-spacing: 0.06em; color: var(--teal-bright);
+  text-shadow: var(--glow);
+}
+.band-sep { width: 1px; height: 0.7em; background: rgba(47, 208, 201, 0.3); align-self: center; }
+
+/* ---- 13C · FLOOR PLACARD ------------------------------------------------- */
+.placard {
+  position: absolute; left: 50%; bottom: 4.5%; transform: translateX(-50%);
+  z-index: 2; width: max-content; max-width: 88%;
+  display: grid; grid-template-columns: auto auto; gap: 3px 22px;
+  padding: 8px 14px 9px;
+  background: rgba(8, 13, 34, 0.78);
+  border: 1px solid rgba(47, 208, 201, 0.55);
+  box-shadow: 0 0 9px rgba(47, 208, 201, 0.22), inset 0 0 9px rgba(47, 208, 201, 0.08);
+}
+.pl-cell { display: flex; align-items: baseline; gap: 7px; white-space: nowrap; }
+.pl-l {
+  font-size: 0.42rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--teal-dim); min-width: 4.6em;
+}
+.pl-v { font-size: 0.56rem; letter-spacing: 0.05em; color: var(--teal-bright); text-shadow: var(--glow); }
+/* the stage lifts to keep the jar's base clear of the placard */
+.mock-c .art { bottom: 22%; }
+.mock-c .hint { bottom: auto; top: 6px; }
+</style>
+</head>
+<body>
+<div class="mock-title">The Junk Drawer &middot; Mockup 13 &middot; the info fills move onto the plate</div>
+<p class="mock-intro">MODEL / PROMPTED / PROCESS / SIZE leave the paper form and overlay the
+vaporwave scene itself. Three treatments — <b>pick one, mix, or redirect</b>. Type is
+Courier on teal, matched to the grid; the paper card around the plate is unchanged.</p>
+<div class="bays">
+<div class="bay">
+  <div class="bay-name"><b>13A</b> &middot; Corner registers</div>
+  <div class="bay-note">Camcorder-OSD corners: one fill per corner, labels whispered, values
+  glowing. Reads as instrumentation ON the viewport — the scene stays empty. The
+  ⤢&nbsp;enlarge hint cedes the bottom-right corner to SIZE and recenters.</div>
+  <div class="plate mock-a"><svg class="rc-floor" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="ajdRcBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0e24"/><stop offset="0.5" stop-color="#152451"/><stop offset="1" stop-color="#0a0e24"/></linearGradient><linearGradient id="ajdRcGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/><stop offset="0.42" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="0.5" stop-color="#54e8dd" stop-opacity="0.32"/><stop offset="0.58" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/></linearGradient><radialGradient id="ajdRcVig" cx="0.5" cy="0.5" r="0.72"><stop offset="0" stop-color="#060a18" stop-opacity="0"/><stop offset="0.72" stop-color="#060a18" stop-opacity="0"/><stop offset="1" stop-color="#060a18" stop-opacity="0.42"/></radialGradient><linearGradient id="ajdRcMfg" x1="0" y1="600" x2="0" y2="322" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="ajdRcMf"><rect x="0" y="0" width="600" height="600" fill="url(#ajdRcMfg)"/></mask><linearGradient id="ajdRcMcg" x1="0" y1="0" x2="0" y2="278" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="ajdRcMc"><rect x="0" y="0" width="600" height="600" fill="url(#ajdRcMcg)"/></mask></defs><rect x="0" y="0" width="600" height="600" fill="url(#ajdRcBg)"/><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#ajdRcMf)"><line x1="0.0" y1="530.6" x2="600.0" y2="530.6"/><line x1="0.0" y1="477.2" x2="600.0" y2="477.2"/><line x1="0.0" y1="436.2" x2="600.0" y2="436.2"/><line x1="0.0" y1="404.7" x2="600.0" y2="404.7"/><line x1="0.0" y1="380.4" x2="600.0" y2="380.4"/><line x1="0.0" y1="361.8" x2="600.0" y2="361.8"/><line x1="0.0" y1="347.5" x2="600.0" y2="347.5"/><line x1="0.0" y1="336.5" x2="600.0" y2="336.5"/><line x1="0.0" y1="328.1" x2="600.0" y2="328.1"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#ajdRcMf)"><line x1="-1940.0" y1="600.0" x2="-28.5" y2="344.0"/><line x1="-1828.0" y1="600.0" x2="-12.1" y2="344.0"/><line x1="-1716.0" y1="600.0" x2="4.3" y2="344.0"/><line x1="-1604.0" y1="600.0" x2="20.7" y2="344.0"/><line x1="-1492.0" y1="600.0" x2="37.2" y2="344.0"/><line x1="-1380.0" y1="600.0" x2="53.6" y2="344.0"/><line x1="-1268.0" y1="600.0" x2="70.0" y2="344.0"/><line x1="-1156.0" y1="600.0" x2="86.5" y2="344.0"/><line x1="-1044.0" y1="600.0" x2="102.9" y2="344.0"/><line x1="-932.0" y1="600.0" x2="119.3" y2="344.0"/><line x1="-820.0" y1="600.0" x2="135.7" y2="344.0"/><line x1="-708.0" y1="600.0" x2="152.2" y2="344.0"/><line x1="-596.0" y1="600.0" x2="168.6" y2="344.0"/><line x1="-484.0" y1="600.0" x2="185.0" y2="344.0"/><line x1="-372.0" y1="600.0" x2="201.4" y2="344.0"/><line x1="-260.0" y1="600.0" x2="217.9" y2="344.0"/><line x1="-148.0" y1="600.0" x2="234.3" y2="344.0"/><line x1="-36.0" y1="600.0" x2="250.7" y2="344.0"/><line x1="76.0" y1="600.0" x2="267.1" y2="344.0"/><line x1="188.0" y1="600.0" x2="283.6" y2="344.0"/><line x1="300.0" y1="600.0" x2="300.0" y2="344.0"/><line x1="412.0" y1="600.0" x2="316.4" y2="344.0"/><line x1="524.0" y1="600.0" x2="332.9" y2="344.0"/><line x1="636.0" y1="600.0" x2="349.3" y2="344.0"/><line x1="748.0" y1="600.0" x2="365.7" y2="344.0"/><line x1="860.0" y1="600.0" x2="382.1" y2="344.0"/><line x1="972.0" y1="600.0" x2="398.6" y2="344.0"/><line x1="1084.0" y1="600.0" x2="415.0" y2="344.0"/><line x1="1196.0" y1="600.0" x2="431.4" y2="344.0"/><line x1="1308.0" y1="600.0" x2="447.8" y2="344.0"/><line x1="1420.0" y1="600.0" x2="464.3" y2="344.0"/><line x1="1532.0" y1="600.0" x2="480.7" y2="344.0"/><line x1="1644.0" y1="600.0" x2="497.1" y2="344.0"/><line x1="1756.0" y1="600.0" x2="513.5" y2="344.0"/><line x1="1868.0" y1="600.0" x2="530.0" y2="344.0"/><line x1="1980.0" y1="600.0" x2="546.4" y2="344.0"/><line x1="2092.0" y1="600.0" x2="562.8" y2="344.0"/><line x1="2204.0" y1="600.0" x2="579.3" y2="344.0"/><line x1="2316.0" y1="600.0" x2="595.7" y2="344.0"/><line x1="2428.0" y1="600.0" x2="612.1" y2="344.0"/><line x1="2540.0" y1="600.0" x2="628.5" y2="344.0"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#ajdRcMc)"><line x1="0.0" y1="69.4" x2="600.0" y2="69.4"/><line x1="0.0" y1="122.8" x2="600.0" y2="122.8"/><line x1="0.0" y1="163.8" x2="600.0" y2="163.8"/><line x1="0.0" y1="195.3" x2="600.0" y2="195.3"/><line x1="0.0" y1="219.6" x2="600.0" y2="219.6"/><line x1="0.0" y1="238.2" x2="600.0" y2="238.2"/><line x1="0.0" y1="252.5" x2="600.0" y2="252.5"/><line x1="0.0" y1="263.5" x2="600.0" y2="263.5"/><line x1="0.0" y1="271.9" x2="600.0" y2="271.9"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#ajdRcMc)"><line x1="-1940.0" y1="0.0" x2="-28.5" y2="256.0"/><line x1="-1828.0" y1="0.0" x2="-12.1" y2="256.0"/><line x1="-1716.0" y1="0.0" x2="4.3" y2="256.0"/><line x1="-1604.0" y1="0.0" x2="20.7" y2="256.0"/><line x1="-1492.0" y1="0.0" x2="37.2" y2="256.0"/><line x1="-1380.0" y1="0.0" x2="53.6" y2="256.0"/><line x1="-1268.0" y1="0.0" x2="70.0" y2="256.0"/><line x1="-1156.0" y1="0.0" x2="86.5" y2="256.0"/><line x1="-1044.0" y1="0.0" x2="102.9" y2="256.0"/><line x1="-932.0" y1="0.0" x2="119.3" y2="256.0"/><line x1="-820.0" y1="0.0" x2="135.7" y2="256.0"/><line x1="-708.0" y1="0.0" x2="152.2" y2="256.0"/><line x1="-596.0" y1="0.0" x2="168.6" y2="256.0"/><line x1="-484.0" y1="0.0" x2="185.0" y2="256.0"/><line x1="-372.0" y1="0.0" x2="201.4" y2="256.0"/><line x1="-260.0" y1="0.0" x2="217.9" y2="256.0"/><line x1="-148.0" y1="0.0" x2="234.3" y2="256.0"/><line x1="-36.0" y1="0.0" x2="250.7" y2="256.0"/><line x1="76.0" y1="0.0" x2="267.1" y2="256.0"/><line x1="188.0" y1="0.0" x2="283.6" y2="256.0"/><line x1="300.0" y1="0.0" x2="300.0" y2="256.0"/><line x1="412.0" y1="0.0" x2="316.4" y2="256.0"/><line x1="524.0" y1="0.0" x2="332.9" y2="256.0"/><line x1="636.0" y1="0.0" x2="349.3" y2="256.0"/><line x1="748.0" y1="0.0" x2="365.7" y2="256.0"/><line x1="860.0" y1="0.0" x2="382.1" y2="256.0"/><line x1="972.0" y1="0.0" x2="398.6" y2="256.0"/><line x1="1084.0" y1="0.0" x2="415.0" y2="256.0"/><line x1="1196.0" y1="0.0" x2="431.4" y2="256.0"/><line x1="1308.0" y1="0.0" x2="447.8" y2="256.0"/><line x1="1420.0" y1="0.0" x2="464.3" y2="256.0"/><line x1="1532.0" y1="0.0" x2="480.7" y2="256.0"/><line x1="1644.0" y1="0.0" x2="497.1" y2="256.0"/><line x1="1756.0" y1="0.0" x2="513.5" y2="256.0"/><line x1="1868.0" y1="0.0" x2="530.0" y2="256.0"/><line x1="1980.0" y1="0.0" x2="546.4" y2="256.0"/><line x1="2092.0" y1="0.0" x2="562.8" y2="256.0"/><line x1="2204.0" y1="0.0" x2="579.3" y2="256.0"/><line x1="2316.0" y1="0.0" x2="595.7" y2="256.0"/><line x1="2428.0" y1="0.0" x2="612.1" y2="256.0"/><line x1="2540.0" y1="0.0" x2="628.5" y2="256.0"/></g><rect x="0" y="225" width="600" height="150" fill="url(#ajdRcGlow)"/><rect x="0" y="0" width="600" height="600" fill="url(#ajdRcVig)"/></svg><div class="art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="101.2 47.0 430.5 944.8" width="430.5" height="944.8">
+  <defs>
+    <clipPath id="jarClip">
+      <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- stem -->
+  <path d="M312 292 C304 452 336 566 322 760" fill="none" stroke="#3FA37A" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- leaves -->
+  <path d="M308 470 C232 432 148 448 122 498 C186 554 274 540 308 470 Z" fill="#2E8A68"/>
+  <path d="M308 470 C246 466 188 480 150 498" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <path d="M320 606 C390 570 470 590 492 638 C430 686 350 672 320 606 Z" fill="#3FA37A"/>
+  <path d="M320 606 C378 604 430 618 466 638" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- poppy bloom -->
+  <g transform="translate(310,266)">
+    <g fill="#E0552B">
+      <g transform="rotate(18)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(90)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(162)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(234)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+    </g>
+    <g fill="#F4713B">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(126)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(270)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(342)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+    </g>
+    <g fill="#FF9A62" opacity="0.85">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+    </g>
+    <circle cx="0" cy="0" r="62" fill="#2B2A3D"/>
+    <circle cx="0" cy="0" r="36" fill="#4B3F6B"/>
+    <g fill="#F2C14E">
+      <circle cx="0" cy="-80" r="10"/><circle cx="57" cy="-57" r="10"/><circle cx="80" cy="0" r="10"/>
+      <circle cx="57" cy="57" r="10"/><circle cx="0" cy="80" r="10"/><circle cx="-57" cy="57" r="10"/>
+      <circle cx="-80" cy="0" r="10"/><circle cx="-57" cy="-57" r="10"/>
+    </g>
+  </g>
+
+  <!-- mason jar -->
+  <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z" fill="#BFE3E0" opacity="0.9"/>
+  <g clip-path="url(#jarClip)">
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 996 L100 996 Z" fill="#9FD6D2" opacity="0.9"/>
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 784 C442 762 384 792 306 794 C230 796 176 766 100 786 Z" fill="#7FC7C4"/>
+    <rect x="146" y="620" width="40" height="350" rx="20" fill="#FFFFFF" opacity="0.55"/>
+    <rect x="206" y="640" width="18" height="170" rx="9" fill="#FFFFFF" opacity="0.4"/>
+    <rect x="100" y="930" width="420" height="16" fill="#8FCFCB" opacity="0.6"/>
+  </g>
+
+  <!-- neck ridges -->
+  <rect x="152" y="560" width="316" height="24" rx="12" fill="#A9DAD6"/>
+  <rect x="152" y="526" width="316" height="24" rx="12" fill="#BFE3E0"/>
+
+  <!-- lid band -->
+  <rect x="132" y="470" width="356" height="52" rx="24" fill="#F2C14E"/>
+  <g fill="#E8A93C">
+    <rect x="168" y="480" width="14" height="32" rx="7"/>
+    <rect x="212" y="480" width="14" height="32" rx="7"/>
+    <rect x="256" y="480" width="14" height="32" rx="7"/>
+    <rect x="300" y="480" width="14" height="32" rx="7"/>
+    <rect x="344" y="480" width="14" height="32" rx="7"/>
+    <rect x="388" y="480" width="14" height="32" rx="7"/>
+    <rect x="432" y="480" width="14" height="32" rx="7"/>
+  </g>
+</svg>
+</div><div class="osd osd-tl"><span class="osd-l">Model</span><span class="osd-v">Claude Opus 5</span></div><div class="osd osd-tr"><span class="osd-l">Prompted</span><span class="osd-v">9 August 2026</span></div><div class="osd osd-bl"><span class="osd-l">Process</span><span class="osd-v">refined (2 prompts)</span></div><div class="osd osd-br"><span class="osd-l">Size</span><span class="osd-v">Small</span></div><span class="hint">⤢ enlarge</span></div>
+</div>
+<div class="bay">
+  <div class="bay-name"><b>13B</b> &middot; Sky band</div>
+  <div class="bay-note">One thin readout strip across the ceiling, fills separated by hairline
+  ticks, backed by a breath of extra dark so it survives any crop. The floor —
+  and the hint's corner — stay untouched. Wraps to two rows on phones.</div>
+  <div class="plate mock-b"><svg class="rc-floor" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="bjdRcBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0e24"/><stop offset="0.5" stop-color="#152451"/><stop offset="1" stop-color="#0a0e24"/></linearGradient><linearGradient id="bjdRcGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/><stop offset="0.42" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="0.5" stop-color="#54e8dd" stop-opacity="0.32"/><stop offset="0.58" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/></linearGradient><radialGradient id="bjdRcVig" cx="0.5" cy="0.5" r="0.72"><stop offset="0" stop-color="#060a18" stop-opacity="0"/><stop offset="0.72" stop-color="#060a18" stop-opacity="0"/><stop offset="1" stop-color="#060a18" stop-opacity="0.42"/></radialGradient><linearGradient id="bjdRcMfg" x1="0" y1="600" x2="0" y2="322" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="bjdRcMf"><rect x="0" y="0" width="600" height="600" fill="url(#bjdRcMfg)"/></mask><linearGradient id="bjdRcMcg" x1="0" y1="0" x2="0" y2="278" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="bjdRcMc"><rect x="0" y="0" width="600" height="600" fill="url(#bjdRcMcg)"/></mask></defs><rect x="0" y="0" width="600" height="600" fill="url(#bjdRcBg)"/><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#bjdRcMf)"><line x1="0.0" y1="530.6" x2="600.0" y2="530.6"/><line x1="0.0" y1="477.2" x2="600.0" y2="477.2"/><line x1="0.0" y1="436.2" x2="600.0" y2="436.2"/><line x1="0.0" y1="404.7" x2="600.0" y2="404.7"/><line x1="0.0" y1="380.4" x2="600.0" y2="380.4"/><line x1="0.0" y1="361.8" x2="600.0" y2="361.8"/><line x1="0.0" y1="347.5" x2="600.0" y2="347.5"/><line x1="0.0" y1="336.5" x2="600.0" y2="336.5"/><line x1="0.0" y1="328.1" x2="600.0" y2="328.1"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#bjdRcMf)"><line x1="-1940.0" y1="600.0" x2="-28.5" y2="344.0"/><line x1="-1828.0" y1="600.0" x2="-12.1" y2="344.0"/><line x1="-1716.0" y1="600.0" x2="4.3" y2="344.0"/><line x1="-1604.0" y1="600.0" x2="20.7" y2="344.0"/><line x1="-1492.0" y1="600.0" x2="37.2" y2="344.0"/><line x1="-1380.0" y1="600.0" x2="53.6" y2="344.0"/><line x1="-1268.0" y1="600.0" x2="70.0" y2="344.0"/><line x1="-1156.0" y1="600.0" x2="86.5" y2="344.0"/><line x1="-1044.0" y1="600.0" x2="102.9" y2="344.0"/><line x1="-932.0" y1="600.0" x2="119.3" y2="344.0"/><line x1="-820.0" y1="600.0" x2="135.7" y2="344.0"/><line x1="-708.0" y1="600.0" x2="152.2" y2="344.0"/><line x1="-596.0" y1="600.0" x2="168.6" y2="344.0"/><line x1="-484.0" y1="600.0" x2="185.0" y2="344.0"/><line x1="-372.0" y1="600.0" x2="201.4" y2="344.0"/><line x1="-260.0" y1="600.0" x2="217.9" y2="344.0"/><line x1="-148.0" y1="600.0" x2="234.3" y2="344.0"/><line x1="-36.0" y1="600.0" x2="250.7" y2="344.0"/><line x1="76.0" y1="600.0" x2="267.1" y2="344.0"/><line x1="188.0" y1="600.0" x2="283.6" y2="344.0"/><line x1="300.0" y1="600.0" x2="300.0" y2="344.0"/><line x1="412.0" y1="600.0" x2="316.4" y2="344.0"/><line x1="524.0" y1="600.0" x2="332.9" y2="344.0"/><line x1="636.0" y1="600.0" x2="349.3" y2="344.0"/><line x1="748.0" y1="600.0" x2="365.7" y2="344.0"/><line x1="860.0" y1="600.0" x2="382.1" y2="344.0"/><line x1="972.0" y1="600.0" x2="398.6" y2="344.0"/><line x1="1084.0" y1="600.0" x2="415.0" y2="344.0"/><line x1="1196.0" y1="600.0" x2="431.4" y2="344.0"/><line x1="1308.0" y1="600.0" x2="447.8" y2="344.0"/><line x1="1420.0" y1="600.0" x2="464.3" y2="344.0"/><line x1="1532.0" y1="600.0" x2="480.7" y2="344.0"/><line x1="1644.0" y1="600.0" x2="497.1" y2="344.0"/><line x1="1756.0" y1="600.0" x2="513.5" y2="344.0"/><line x1="1868.0" y1="600.0" x2="530.0" y2="344.0"/><line x1="1980.0" y1="600.0" x2="546.4" y2="344.0"/><line x1="2092.0" y1="600.0" x2="562.8" y2="344.0"/><line x1="2204.0" y1="600.0" x2="579.3" y2="344.0"/><line x1="2316.0" y1="600.0" x2="595.7" y2="344.0"/><line x1="2428.0" y1="600.0" x2="612.1" y2="344.0"/><line x1="2540.0" y1="600.0" x2="628.5" y2="344.0"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#bjdRcMc)"><line x1="0.0" y1="69.4" x2="600.0" y2="69.4"/><line x1="0.0" y1="122.8" x2="600.0" y2="122.8"/><line x1="0.0" y1="163.8" x2="600.0" y2="163.8"/><line x1="0.0" y1="195.3" x2="600.0" y2="195.3"/><line x1="0.0" y1="219.6" x2="600.0" y2="219.6"/><line x1="0.0" y1="238.2" x2="600.0" y2="238.2"/><line x1="0.0" y1="252.5" x2="600.0" y2="252.5"/><line x1="0.0" y1="263.5" x2="600.0" y2="263.5"/><line x1="0.0" y1="271.9" x2="600.0" y2="271.9"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#bjdRcMc)"><line x1="-1940.0" y1="0.0" x2="-28.5" y2="256.0"/><line x1="-1828.0" y1="0.0" x2="-12.1" y2="256.0"/><line x1="-1716.0" y1="0.0" x2="4.3" y2="256.0"/><line x1="-1604.0" y1="0.0" x2="20.7" y2="256.0"/><line x1="-1492.0" y1="0.0" x2="37.2" y2="256.0"/><line x1="-1380.0" y1="0.0" x2="53.6" y2="256.0"/><line x1="-1268.0" y1="0.0" x2="70.0" y2="256.0"/><line x1="-1156.0" y1="0.0" x2="86.5" y2="256.0"/><line x1="-1044.0" y1="0.0" x2="102.9" y2="256.0"/><line x1="-932.0" y1="0.0" x2="119.3" y2="256.0"/><line x1="-820.0" y1="0.0" x2="135.7" y2="256.0"/><line x1="-708.0" y1="0.0" x2="152.2" y2="256.0"/><line x1="-596.0" y1="0.0" x2="168.6" y2="256.0"/><line x1="-484.0" y1="0.0" x2="185.0" y2="256.0"/><line x1="-372.0" y1="0.0" x2="201.4" y2="256.0"/><line x1="-260.0" y1="0.0" x2="217.9" y2="256.0"/><line x1="-148.0" y1="0.0" x2="234.3" y2="256.0"/><line x1="-36.0" y1="0.0" x2="250.7" y2="256.0"/><line x1="76.0" y1="0.0" x2="267.1" y2="256.0"/><line x1="188.0" y1="0.0" x2="283.6" y2="256.0"/><line x1="300.0" y1="0.0" x2="300.0" y2="256.0"/><line x1="412.0" y1="0.0" x2="316.4" y2="256.0"/><line x1="524.0" y1="0.0" x2="332.9" y2="256.0"/><line x1="636.0" y1="0.0" x2="349.3" y2="256.0"/><line x1="748.0" y1="0.0" x2="365.7" y2="256.0"/><line x1="860.0" y1="0.0" x2="382.1" y2="256.0"/><line x1="972.0" y1="0.0" x2="398.6" y2="256.0"/><line x1="1084.0" y1="0.0" x2="415.0" y2="256.0"/><line x1="1196.0" y1="0.0" x2="431.4" y2="256.0"/><line x1="1308.0" y1="0.0" x2="447.8" y2="256.0"/><line x1="1420.0" y1="0.0" x2="464.3" y2="256.0"/><line x1="1532.0" y1="0.0" x2="480.7" y2="256.0"/><line x1="1644.0" y1="0.0" x2="497.1" y2="256.0"/><line x1="1756.0" y1="0.0" x2="513.5" y2="256.0"/><line x1="1868.0" y1="0.0" x2="530.0" y2="256.0"/><line x1="1980.0" y1="0.0" x2="546.4" y2="256.0"/><line x1="2092.0" y1="0.0" x2="562.8" y2="256.0"/><line x1="2204.0" y1="0.0" x2="579.3" y2="256.0"/><line x1="2316.0" y1="0.0" x2="595.7" y2="256.0"/><line x1="2428.0" y1="0.0" x2="612.1" y2="256.0"/><line x1="2540.0" y1="0.0" x2="628.5" y2="256.0"/></g><rect x="0" y="225" width="600" height="150" fill="url(#bjdRcGlow)"/><rect x="0" y="0" width="600" height="600" fill="url(#bjdRcVig)"/></svg><div class="art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="101.2 47.0 430.5 944.8" width="430.5" height="944.8">
+  <defs>
+    <clipPath id="jarClip">
+      <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- stem -->
+  <path d="M312 292 C304 452 336 566 322 760" fill="none" stroke="#3FA37A" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- leaves -->
+  <path d="M308 470 C232 432 148 448 122 498 C186 554 274 540 308 470 Z" fill="#2E8A68"/>
+  <path d="M308 470 C246 466 188 480 150 498" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <path d="M320 606 C390 570 470 590 492 638 C430 686 350 672 320 606 Z" fill="#3FA37A"/>
+  <path d="M320 606 C378 604 430 618 466 638" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- poppy bloom -->
+  <g transform="translate(310,266)">
+    <g fill="#E0552B">
+      <g transform="rotate(18)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(90)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(162)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(234)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+    </g>
+    <g fill="#F4713B">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(126)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(270)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(342)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+    </g>
+    <g fill="#FF9A62" opacity="0.85">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+    </g>
+    <circle cx="0" cy="0" r="62" fill="#2B2A3D"/>
+    <circle cx="0" cy="0" r="36" fill="#4B3F6B"/>
+    <g fill="#F2C14E">
+      <circle cx="0" cy="-80" r="10"/><circle cx="57" cy="-57" r="10"/><circle cx="80" cy="0" r="10"/>
+      <circle cx="57" cy="57" r="10"/><circle cx="0" cy="80" r="10"/><circle cx="-57" cy="57" r="10"/>
+      <circle cx="-80" cy="0" r="10"/><circle cx="-57" cy="-57" r="10"/>
+    </g>
+  </g>
+
+  <!-- mason jar -->
+  <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z" fill="#BFE3E0" opacity="0.9"/>
+  <g clip-path="url(#jarClip)">
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 996 L100 996 Z" fill="#9FD6D2" opacity="0.9"/>
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 784 C442 762 384 792 306 794 C230 796 176 766 100 786 Z" fill="#7FC7C4"/>
+    <rect x="146" y="620" width="40" height="350" rx="20" fill="#FFFFFF" opacity="0.55"/>
+    <rect x="206" y="640" width="18" height="170" rx="9" fill="#FFFFFF" opacity="0.4"/>
+    <rect x="100" y="930" width="420" height="16" fill="#8FCFCB" opacity="0.6"/>
+  </g>
+
+  <!-- neck ridges -->
+  <rect x="152" y="560" width="316" height="24" rx="12" fill="#A9DAD6"/>
+  <rect x="152" y="526" width="316" height="24" rx="12" fill="#BFE3E0"/>
+
+  <!-- lid band -->
+  <rect x="132" y="470" width="356" height="52" rx="24" fill="#F2C14E"/>
+  <g fill="#E8A93C">
+    <rect x="168" y="480" width="14" height="32" rx="7"/>
+    <rect x="212" y="480" width="14" height="32" rx="7"/>
+    <rect x="256" y="480" width="14" height="32" rx="7"/>
+    <rect x="300" y="480" width="14" height="32" rx="7"/>
+    <rect x="344" y="480" width="14" height="32" rx="7"/>
+    <rect x="388" y="480" width="14" height="32" rx="7"/>
+    <rect x="432" y="480" width="14" height="32" rx="7"/>
+  </g>
+</svg>
+</div><div class="band"><span class="band-cell"><span class="band-l">Model</span><span class="band-v">Claude Opus 5</span></span><span class="band-sep"></span><span class="band-cell"><span class="band-l">Prompted</span><span class="band-v">9 August 2026</span></span><span class="band-sep"></span><span class="band-cell"><span class="band-l">Process</span><span class="band-v">refined (2 prompts)</span></span><span class="band-sep"></span><span class="band-cell"><span class="band-l">Size</span><span class="band-v">Small</span></span></div><span class="hint">⤢ enlarge</span></div>
+</div>
+<div class="bay">
+  <div class="bay-name"><b>13C</b> &middot; Floor placard</div>
+  <div class="bay-note">A museum placard planted on the near floor: translucent navy, teal
+  hairline, faint glow — signage that lives IN the scene rather than on the
+  glass. The stage lifts a few points so the jar clears it; the hint moves topside.</div>
+  <div class="plate mock-c"><svg class="rc-floor" viewBox="0 0 600 600" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="cjdRcBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0a0e24"/><stop offset="0.5" stop-color="#152451"/><stop offset="1" stop-color="#0a0e24"/></linearGradient><linearGradient id="cjdRcGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd0c9" stop-opacity="0"/><stop offset="0.42" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="0.5" stop-color="#54e8dd" stop-opacity="0.32"/><stop offset="0.58" stop-color="#37d8cf" stop-opacity="0.07"/><stop offset="1" stop-color="#2fd0c9" stop-opacity="0"/></linearGradient><radialGradient id="cjdRcVig" cx="0.5" cy="0.5" r="0.72"><stop offset="0" stop-color="#060a18" stop-opacity="0"/><stop offset="0.72" stop-color="#060a18" stop-opacity="0"/><stop offset="1" stop-color="#060a18" stop-opacity="0.42"/></radialGradient><linearGradient id="cjdRcMfg" x1="0" y1="600" x2="0" y2="322" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="cjdRcMf"><rect x="0" y="0" width="600" height="600" fill="url(#cjdRcMfg)"/></mask><linearGradient id="cjdRcMcg" x1="0" y1="0" x2="0" y2="278" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff"/><stop offset="0.5" stop-color="#c4c4c4"/><stop offset="0.82" stop-color="#737373"/><stop offset="1" stop-color="#000"/></linearGradient><mask id="cjdRcMc"><rect x="0" y="0" width="600" height="600" fill="url(#cjdRcMcg)"/></mask></defs><rect x="0" y="0" width="600" height="600" fill="url(#cjdRcBg)"/><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#cjdRcMf)"><line x1="0.0" y1="530.6" x2="600.0" y2="530.6"/><line x1="0.0" y1="477.2" x2="600.0" y2="477.2"/><line x1="0.0" y1="436.2" x2="600.0" y2="436.2"/><line x1="0.0" y1="404.7" x2="600.0" y2="404.7"/><line x1="0.0" y1="380.4" x2="600.0" y2="380.4"/><line x1="0.0" y1="361.8" x2="600.0" y2="361.8"/><line x1="0.0" y1="347.5" x2="600.0" y2="347.5"/><line x1="0.0" y1="336.5" x2="600.0" y2="336.5"/><line x1="0.0" y1="328.1" x2="600.0" y2="328.1"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#cjdRcMf)"><line x1="-1940.0" y1="600.0" x2="-28.5" y2="344.0"/><line x1="-1828.0" y1="600.0" x2="-12.1" y2="344.0"/><line x1="-1716.0" y1="600.0" x2="4.3" y2="344.0"/><line x1="-1604.0" y1="600.0" x2="20.7" y2="344.0"/><line x1="-1492.0" y1="600.0" x2="37.2" y2="344.0"/><line x1="-1380.0" y1="600.0" x2="53.6" y2="344.0"/><line x1="-1268.0" y1="600.0" x2="70.0" y2="344.0"/><line x1="-1156.0" y1="600.0" x2="86.5" y2="344.0"/><line x1="-1044.0" y1="600.0" x2="102.9" y2="344.0"/><line x1="-932.0" y1="600.0" x2="119.3" y2="344.0"/><line x1="-820.0" y1="600.0" x2="135.7" y2="344.0"/><line x1="-708.0" y1="600.0" x2="152.2" y2="344.0"/><line x1="-596.0" y1="600.0" x2="168.6" y2="344.0"/><line x1="-484.0" y1="600.0" x2="185.0" y2="344.0"/><line x1="-372.0" y1="600.0" x2="201.4" y2="344.0"/><line x1="-260.0" y1="600.0" x2="217.9" y2="344.0"/><line x1="-148.0" y1="600.0" x2="234.3" y2="344.0"/><line x1="-36.0" y1="600.0" x2="250.7" y2="344.0"/><line x1="76.0" y1="600.0" x2="267.1" y2="344.0"/><line x1="188.0" y1="600.0" x2="283.6" y2="344.0"/><line x1="300.0" y1="600.0" x2="300.0" y2="344.0"/><line x1="412.0" y1="600.0" x2="316.4" y2="344.0"/><line x1="524.0" y1="600.0" x2="332.9" y2="344.0"/><line x1="636.0" y1="600.0" x2="349.3" y2="344.0"/><line x1="748.0" y1="600.0" x2="365.7" y2="344.0"/><line x1="860.0" y1="600.0" x2="382.1" y2="344.0"/><line x1="972.0" y1="600.0" x2="398.6" y2="344.0"/><line x1="1084.0" y1="600.0" x2="415.0" y2="344.0"/><line x1="1196.0" y1="600.0" x2="431.4" y2="344.0"/><line x1="1308.0" y1="600.0" x2="447.8" y2="344.0"/><line x1="1420.0" y1="600.0" x2="464.3" y2="344.0"/><line x1="1532.0" y1="600.0" x2="480.7" y2="344.0"/><line x1="1644.0" y1="600.0" x2="497.1" y2="344.0"/><line x1="1756.0" y1="600.0" x2="513.5" y2="344.0"/><line x1="1868.0" y1="600.0" x2="530.0" y2="344.0"/><line x1="1980.0" y1="600.0" x2="546.4" y2="344.0"/><line x1="2092.0" y1="600.0" x2="562.8" y2="344.0"/><line x1="2204.0" y1="600.0" x2="579.3" y2="344.0"/><line x1="2316.0" y1="600.0" x2="595.7" y2="344.0"/><line x1="2428.0" y1="600.0" x2="612.1" y2="344.0"/><line x1="2540.0" y1="600.0" x2="628.5" y2="344.0"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.25" fill="none" mask="url(#cjdRcMc)"><line x1="0.0" y1="69.4" x2="600.0" y2="69.4"/><line x1="0.0" y1="122.8" x2="600.0" y2="122.8"/><line x1="0.0" y1="163.8" x2="600.0" y2="163.8"/><line x1="0.0" y1="195.3" x2="600.0" y2="195.3"/><line x1="0.0" y1="219.6" x2="600.0" y2="219.6"/><line x1="0.0" y1="238.2" x2="600.0" y2="238.2"/><line x1="0.0" y1="252.5" x2="600.0" y2="252.5"/><line x1="0.0" y1="263.5" x2="600.0" y2="263.5"/><line x1="0.0" y1="271.9" x2="600.0" y2="271.9"/></g><g stroke="#2fd0c9" stroke-opacity="0.6" stroke-width="1.7" fill="none" mask="url(#cjdRcMc)"><line x1="-1940.0" y1="0.0" x2="-28.5" y2="256.0"/><line x1="-1828.0" y1="0.0" x2="-12.1" y2="256.0"/><line x1="-1716.0" y1="0.0" x2="4.3" y2="256.0"/><line x1="-1604.0" y1="0.0" x2="20.7" y2="256.0"/><line x1="-1492.0" y1="0.0" x2="37.2" y2="256.0"/><line x1="-1380.0" y1="0.0" x2="53.6" y2="256.0"/><line x1="-1268.0" y1="0.0" x2="70.0" y2="256.0"/><line x1="-1156.0" y1="0.0" x2="86.5" y2="256.0"/><line x1="-1044.0" y1="0.0" x2="102.9" y2="256.0"/><line x1="-932.0" y1="0.0" x2="119.3" y2="256.0"/><line x1="-820.0" y1="0.0" x2="135.7" y2="256.0"/><line x1="-708.0" y1="0.0" x2="152.2" y2="256.0"/><line x1="-596.0" y1="0.0" x2="168.6" y2="256.0"/><line x1="-484.0" y1="0.0" x2="185.0" y2="256.0"/><line x1="-372.0" y1="0.0" x2="201.4" y2="256.0"/><line x1="-260.0" y1="0.0" x2="217.9" y2="256.0"/><line x1="-148.0" y1="0.0" x2="234.3" y2="256.0"/><line x1="-36.0" y1="0.0" x2="250.7" y2="256.0"/><line x1="76.0" y1="0.0" x2="267.1" y2="256.0"/><line x1="188.0" y1="0.0" x2="283.6" y2="256.0"/><line x1="300.0" y1="0.0" x2="300.0" y2="256.0"/><line x1="412.0" y1="0.0" x2="316.4" y2="256.0"/><line x1="524.0" y1="0.0" x2="332.9" y2="256.0"/><line x1="636.0" y1="0.0" x2="349.3" y2="256.0"/><line x1="748.0" y1="0.0" x2="365.7" y2="256.0"/><line x1="860.0" y1="0.0" x2="382.1" y2="256.0"/><line x1="972.0" y1="0.0" x2="398.6" y2="256.0"/><line x1="1084.0" y1="0.0" x2="415.0" y2="256.0"/><line x1="1196.0" y1="0.0" x2="431.4" y2="256.0"/><line x1="1308.0" y1="0.0" x2="447.8" y2="256.0"/><line x1="1420.0" y1="0.0" x2="464.3" y2="256.0"/><line x1="1532.0" y1="0.0" x2="480.7" y2="256.0"/><line x1="1644.0" y1="0.0" x2="497.1" y2="256.0"/><line x1="1756.0" y1="0.0" x2="513.5" y2="256.0"/><line x1="1868.0" y1="0.0" x2="530.0" y2="256.0"/><line x1="1980.0" y1="0.0" x2="546.4" y2="256.0"/><line x1="2092.0" y1="0.0" x2="562.8" y2="256.0"/><line x1="2204.0" y1="0.0" x2="579.3" y2="256.0"/><line x1="2316.0" y1="0.0" x2="595.7" y2="256.0"/><line x1="2428.0" y1="0.0" x2="612.1" y2="256.0"/><line x1="2540.0" y1="0.0" x2="628.5" y2="256.0"/></g><rect x="0" y="225" width="600" height="150" fill="url(#cjdRcGlow)"/><rect x="0" y="0" width="600" height="600" fill="url(#cjdRcVig)"/></svg><div class="art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="101.2 47.0 430.5 944.8" width="430.5" height="944.8">
+  <defs>
+    <clipPath id="jarClip">
+      <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z"/>
+    </clipPath>
+  </defs>
+
+  <!-- stem -->
+  <path d="M312 292 C304 452 336 566 322 760" fill="none" stroke="#3FA37A" stroke-width="24" stroke-linecap="round"/>
+
+  <!-- leaves -->
+  <path d="M308 470 C232 432 148 448 122 498 C186 554 274 540 308 470 Z" fill="#2E8A68"/>
+  <path d="M308 470 C246 466 188 480 150 498" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+  <path d="M320 606 C390 570 470 590 492 638 C430 686 350 672 320 606 Z" fill="#3FA37A"/>
+  <path d="M320 606 C378 604 430 618 466 638" fill="none" stroke="#CFE9DF" stroke-width="8" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- poppy bloom -->
+  <g transform="translate(310,266)">
+    <g fill="#E0552B">
+      <g transform="rotate(18)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(90)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(162)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(234)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="128" ry="104"/></g>
+    </g>
+    <g fill="#F4713B">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(126)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(270)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+      <g transform="rotate(342)"><ellipse cx="0" cy="-102" rx="118" ry="96"/></g>
+    </g>
+    <g fill="#FF9A62" opacity="0.85">
+      <g transform="rotate(54)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(198)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+      <g transform="rotate(306)"><ellipse cx="0" cy="-116" rx="52" ry="34"/></g>
+    </g>
+    <circle cx="0" cy="0" r="62" fill="#2B2A3D"/>
+    <circle cx="0" cy="0" r="36" fill="#4B3F6B"/>
+    <g fill="#F2C14E">
+      <circle cx="0" cy="-80" r="10"/><circle cx="57" cy="-57" r="10"/><circle cx="80" cy="0" r="10"/>
+      <circle cx="57" cy="57" r="10"/><circle cx="0" cy="80" r="10"/><circle cx="-57" cy="57" r="10"/>
+      <circle cx="-80" cy="0" r="10"/><circle cx="-57" cy="-57" r="10"/>
+    </g>
+  </g>
+
+  <!-- mason jar -->
+  <path d="M180 606 h260 a70 70 0 0 1 70 70 v244 a70 70 0 0 1 -70 70 h-260 a70 70 0 0 1 -70 -70 v-244 a70 70 0 0 1 70 -70 z" fill="#BFE3E0" opacity="0.9"/>
+  <g clip-path="url(#jarClip)">
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 996 L100 996 Z" fill="#9FD6D2" opacity="0.9"/>
+    <path d="M100 748 C176 728 230 758 306 756 C384 754 442 724 520 746 L520 784 C442 762 384 792 306 794 C230 796 176 766 100 786 Z" fill="#7FC7C4"/>
+    <rect x="146" y="620" width="40" height="350" rx="20" fill="#FFFFFF" opacity="0.55"/>
+    <rect x="206" y="640" width="18" height="170" rx="9" fill="#FFFFFF" opacity="0.4"/>
+    <rect x="100" y="930" width="420" height="16" fill="#8FCFCB" opacity="0.6"/>
+  </g>
+
+  <!-- neck ridges -->
+  <rect x="152" y="560" width="316" height="24" rx="12" fill="#A9DAD6"/>
+  <rect x="152" y="526" width="316" height="24" rx="12" fill="#BFE3E0"/>
+
+  <!-- lid band -->
+  <rect x="132" y="470" width="356" height="52" rx="24" fill="#F2C14E"/>
+  <g fill="#E8A93C">
+    <rect x="168" y="480" width="14" height="32" rx="7"/>
+    <rect x="212" y="480" width="14" height="32" rx="7"/>
+    <rect x="256" y="480" width="14" height="32" rx="7"/>
+    <rect x="300" y="480" width="14" height="32" rx="7"/>
+    <rect x="344" y="480" width="14" height="32" rx="7"/>
+    <rect x="388" y="480" width="14" height="32" rx="7"/>
+    <rect x="432" y="480" width="14" height="32" rx="7"/>
+  </g>
+</svg>
+</div><div class="placard"><span class="pl-cell"><span class="pl-l">Model</span><span class="pl-v">Claude Opus 5</span></span><span class="pl-cell"><span class="pl-l">Prompted</span><span class="pl-v">9 August 2026</span></span><span class="pl-cell"><span class="pl-l">Process</span><span class="pl-v">refined (2 prompts)</span></span><span class="pl-cell"><span class="pl-l">Size</span><span class="pl-v">Small</span></span></div><span class="hint">⤢ enlarge</span></div>
+</div>
+</div>
+</body>
+</html>
