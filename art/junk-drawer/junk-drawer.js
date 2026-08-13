@@ -2514,9 +2514,8 @@ function JD_layerOpen() {
           '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
         : '') +
       /* the file number rides the notes too (owner rev, 2026-08-13 — the
-         card's footer line retired with it) */
-      '<span class="rc-note-line"><span class="rc-note-l">No.</span>' +
-      '<span class="rc-note-v">' + esc(entry.id) + '</span></span>';
+         card's footer line retired with it), as unlabelled fine print */
+      '<span class="rc-note-no">' + esc(entry.id) + '</span>';
     /* the photograph stays the enlarge control (role/tabindex, whole
        surface); its corner carries the DOWNLOAD SVG button — the "⤢
        enlarge" hint retired for it (owner rev, 2026-08-13). The click/key
@@ -2544,7 +2543,7 @@ function JD_layerOpen() {
       '<button type="button" class="rc-pv" aria-expanded="false">' +
       '<span class="rc-pv-more">show full prompt ▾</span>' +
       '<span class="rc-pv-less">show less ▴</span></button></div>';
-    h += '<div class="rc-block rc-head">Annotations</div>' +
+    h += '<div class="rc-block rc-head">Grades</div>' +
       '<div class="rc-block">' + subjectsHTML(resp) + '</div>';
     var alts = altsHTML(entry, curIdx);
     if (alts) {
