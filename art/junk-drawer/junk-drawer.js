@@ -3103,7 +3103,7 @@ function JD_layerOpen() {
     scrim.classList.add('is-on');
     document.documentElement.classList.add('jd-turn-open');
     /* a turn from a previous page life was already discarded at init */
-    go(!turn ? (hasConsent() ? 'prompt' : 'consent') : state || 'prompt');
+    go(!turn ? 'prompt' : state || 'prompt');
     JD_track('turn_open', null);
   }
   /* close paths that are free to leave: nothing is in flight or unfiled */
@@ -3244,6 +3244,11 @@ function JD_layerOpen() {
       next = 'rate';
       if (work) { work.step = 'call'; work.reached.call = true; }
     }
+    /* 'consent' retired 2026-08-14 (owner): the gating card is gone — the
+       flow opens on the prompt, which carries the disclosure as fine print
+       and records the acknowledgment when the words are actually sent. A
+       stored turn parked on the old card lands on the prompt. */
+    if (next === 'consent') next = 'prompt';
     state = next;
     if (turn) { turn.state = next; persist(); }
     render();
@@ -3251,8 +3256,7 @@ function JD_layerOpen() {
   function render() {
     if (!isOpen) return;
     var h = '';
-    if (state === 'consent') h = viewConsent();
-    else if (state === 'prompt') h = viewPrompt();
+    if (state === 'prompt') h = viewPrompt();
     else if (state === 'generating') h = viewGenerating();
     else if (state === 'reveal') h = viewReveal();
     else if (state === 'rate') h = viewRate();
@@ -3269,20 +3273,12 @@ function JD_layerOpen() {
     card.setAttribute('aria-label', stateTitle || 'take a turn');
   }
 
-  /* ---------- 1. consent (C5.2) ------------------------------------------- */
-  function viewConsent() {
-    return head('Before the machines draw', true) +
-      '<p class="jd-turn-copy">' + esc(JD_CONSENT.text) + '</p>' +
-      '<label class="jd-turn-check">' +
-      '<input type="checkbox" data-role="consent" data-autofocus' +
-      (work && work.consented ? ' checked' : '') + '>' +
-      '<span>' + esc(JD_CONSENT.check) + '</span></label>' +
-      actions(
-        '<button type="button" class="jd-turn-go" data-act="consent"' +
-        (work && work.consented ? '' : ' disabled') + '>continue</button>');
-  }
+  /* (the consent card — C5.2's gating checkbox — retired 2026-08-14, owner
+     call: the flow opens on the prompt. The DISCLOSURE survives: JD_CONSENT
+     stays canonical for privacy.php and rides the prompt card as fine
+     print; the acknowledgment is recorded when the words are sent.) */
 
-  /* ---------- 2. prompt ---------------------------------------------------- */
+  /* ---------- 1. prompt ---------------------------------------------------- */
   function viewPrompt() {
     var draft = (work && work.prompt) || '';
     var msg = work && work.notice
@@ -3307,7 +3303,10 @@ function JD_layerOpen() {
       actions(
         '<button type="button" class="jd-turn-go" data-act="generate"' +
         (draft.trim().length && n <= MAX_PROMPT ? '' : ' disabled') +
-        '>send it</button>');
+        '>send it</button>') +
+      /* the third-party disclosure, as fine print now that its gating card
+         is retired (owner, 2026-08-14) — same canonical words */
+      '<p class="jd-turn-fine">' + esc(JD_CONSENT.text) + '</p>';
   }
 
   /* ---------- 3. generating ------------------------------------------------ */
@@ -3661,8 +3660,8 @@ function JD_layerOpen() {
   /* The heading is the landing place for every state that has no field of its
      own to fill in (C5.8): moving through the flow should read as the step you
      just reached, not as the dismiss control that happens to come first in the
-     DOM. tabindex="-1" makes it focusable without adding a tab stop. States
-     that DO have a field (consent, prompt) pass noFocus and keep it. */
+     DOM. tabindex="-1" makes it focusable without adding a tab stop. The one
+     state with a field of its own (prompt) passes noFocus and keeps it. */
   function head(t, noFocus) {
     stateTitle = t;
     return '<h2 class="jd-turn-title" tabindex="-1"' +
@@ -3686,11 +3685,7 @@ function JD_layerOpen() {
     }
     var slot = t.getAttribute('data-slot');
     var val = t.value === '' ? null : t.value;
-    if (role === 'consent') {
-      work = work || blankWork();
-      work.consented = t.checked;
-      setDisabled('[data-act="consent"]', !t.checked);
-    } else if (role === 'grade') {
+    if (role === 'grade') {
       work.ratings[slot].grade = val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
     } else if (role === 'axis') {
@@ -3747,12 +3742,15 @@ function JD_layerOpen() {
     var b = e.target.closest ? e.target.closest('[data-act]') : null;
     if (!b || b.disabled) return;
     var act = b.getAttribute('data-act');
-    if (act === 'consent') {
-      JD_store.set(K_CONSENT, {
-        version: JD_CONSENT.version, at: new Date().toISOString()
-      });
-      go('prompt');
-    } else if (act === 'generate') {
+    if (act === 'generate') {
+      /* the acknowledgment is recorded at the moment the words are sent —
+         the disclosure sits right on this card (the gating consent card
+         retired 2026-08-14, owner call) */
+      if (!hasConsent()) {
+        JD_store.set(K_CONSENT, {
+          version: JD_CONSENT.version, at: new Date().toISOString()
+        });
+      }
       startTurn();
     } else if (act === 'rate') {
       ensurePayload().then(function () { go('rate'); }, function () { go('rate'); });
@@ -3799,7 +3797,7 @@ function JD_layerOpen() {
 
   function blankWork() {
     return {
-      prompt: '', consented: hasConsent(), notice: '', slow: false,
+      prompt: '', notice: '', slow: false,
       slots: { a: { status: 'pending' }, b: { status: 'pending' } },
       ratings: { a: blankRating(), b: blankRating() },
       /* the single bench: which step is on the bench, which steps the
