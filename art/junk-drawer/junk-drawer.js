@@ -227,7 +227,10 @@ function JD_layerOpen() {
     }
     return label;
   }
-  window.JD_sizeLabel = sizeLabel;   /* the record card states it too */
+  window.JD_sizeLabel = sizeLabel;   /* kept global: the pile loader and the
+                                        visitor-item labeler both call it,
+                                        though no UI surface displays size
+                                        any more (owner, 2026-08-13) */
 
   /* RATINGS, as filed — entries store every rating as a NUMBER: a grade is
      the taxonomy grade's `rank` (5.0 … 1.0) and an annotation is the axis
@@ -2172,9 +2175,9 @@ function JD_layerOpen() {
      collide (same discipline as the rating instrument). One implementation,
      shared with the pile — see JD_svgInst at the top of this file. */
   var svgInst = window.JD_svgInst;
-  /* the filed size tier (the report card is the one place it still shows —
-     the specimen tag dropped it, owner request 2026-08-12) */
-  var sizeLabel = window.JD_sizeLabel;
+  /* (the filed size tier shows nowhere in the UI any more — the specimen
+     tag dropped it 2026-08-12, the report card 2026-08-13; the data keeps
+     it, and window.JD_sizeLabel still serves the loader/legend) */
   /* a hand-pencilled mark; each takes its own rotation jitter + waver
      filter so no two sit identically. `cls` picks the pencil (the
      rating-colour classes rc-r1..3 and rc-g1..5 in the stylesheet —
@@ -2213,11 +2216,6 @@ function JD_layerOpen() {
     var a = (resp.annotations || {})[axisId];
     if (a == null) return null;
     return typeof a === 'object' ? a : { value: a };
-  }
-  function fillHTML(label, value) {
-    return '<div class="rc-fill">' +
-      '<span class="rc-fill-l">' + esc(label) + '</span>' +
-      '<span class="rc-fill-v">' + value + '</span></div>';
   }
 
   /* RETIRED — kept as a backup on the same terms as checkerFloorSVG below
@@ -2493,7 +2491,24 @@ function JD_layerOpen() {
        photo layers. The corner hint is there for touch, where there is no
        hover to discover the affordance with. The four spans are the kraft
        photo corners holding the print to the form. */
+    /* the response's data rides ON the photograph as margin notes (owner
+       pick, mockup-14 option B, 2026-08-13): typed straight onto the graph
+       paper in the print's lower-left, lab-proof style. MODEL and DATE
+       always; PROCESS only when the response was refined — one-shot is the
+       default story and doesn't need saying (owner call, same date). SIZE
+       left the card entirely on that call: it now shows nowhere in the UI
+       and lives on in the data. */
     var artSrc = svgCache[entry.id + '/' + resp.file] || '';
+    var gen = resp.generation || {};
+    var notes =
+      '<span class="rc-note-line"><span class="rc-note-l">Model</span>' +
+      '<span class="rc-note-v">' + esc(m.label) + '</span></span>' +
+      '<span class="rc-note-line"><span class="rc-note-l">Date</span>' +
+      '<span class="rc-note-v">' + esc(fmtDate(resp.date)) + '</span></span>' +
+      (gen.mode === 'refined'
+        ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
+          '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
+        : '');
     h += '<div class="rc-col-l">' +
       '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
       'aria-label="Enlarge the artwork">' +
@@ -2502,17 +2517,8 @@ function JD_layerOpen() {
       '<div class="rc-plate-art">' +
       svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
+      '<div class="rc-notes">' + notes + '</div>' +
       '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
-      '</div>' +
-      /* Model/Prompted/Process describe the RESPONSE; Size describes the
-         ITEM (one tier per entry, shared by every response), so it holds
-         steady as the alternatives are stepped through. In landscape these
-         are the photograph's caption, one ruled line each. */
-      '<div class="rc-block rc-fillsline">' +
-      fillHTML('Model', esc(m.label)) +
-      fillHTML('Prompted', esc(fmtDate(resp.date))) +
-      fillHTML('Process', esc(processLabel(resp.generation))) +
-      fillHTML('Size', esc(sizeLabel(payload.taxonomy, entry) || '—')) +
       '</div></div>';
     /* the prompt renders foldable; render() measures it after paint and
        strips the fold when it actually fits three lines — so the expander
