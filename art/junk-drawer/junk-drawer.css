@@ -938,7 +938,11 @@ html { scroll-behavior: smooth; }
   --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
   --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
 
-  position: fixed; inset: 0; z-index: 320;
+  /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
+     design — so the scrim RESERVES it (round-13 fit contract, owner bug
+     report 2026-08-13): the modal's world starts below the banner and the
+     card can never slide its masthead or close ✕ underneath it. */
+  position: fixed; inset: var(--banner-h, 56px) 0 0 0; z-index: 320;
   display: none;
   align-items: center; justify-content: center;
   padding: max(14px, 2.2vh) 14px;
@@ -947,10 +951,18 @@ html { scroll-behavior: smooth; }
 .jd-record-scrim.is-on { display: flex; }
 html.jd-record-open { overflow: hidden; }
 
-/* ---- the card ------------------------------------------------------------ */
+/* ---- the card, landscape (round 13, owner pick 2026-08-13) ---------------
+   --plate is the display window's square side, clamped by VIEWPORT HEIGHT —
+   the round-13 fix: the retired aspect-ratio:10/9 plate derived its height
+   from the card's WIDTH, which is what ran short desktops out of room. The
+   42vw guard keeps both columns fitting at every landscape width; the card's
+   own width follows the plate. max-height is 100% of the banner-reserved,
+   padded scrim = calc(100dvh − banner − 2×pad), border-box throughout. */
 .jd-record {
+  --plate: clamp(240px, min(52dvh, 42vw), 420px);
   position: relative;
-  width: min(560px, 100%);
+  box-sizing: border-box;
+  width: min(calc(var(--plate) + 500px), 100%);
   max-height: 100%;
   display: flex; flex-direction: column;
   color: var(--form-ink);
@@ -985,40 +997,63 @@ html.jd-record-open { overflow: hidden; }
   color: var(--form-ink-2); padding: 5px 7px;
 }
 .jd-record-close:hover { color: var(--red); }
+/* the card's one content box: a grid — masthead across, then the two
+   columns. overflow-y:auto is a SAFETY VALVE only (sub-500px landscape
+   viewports); at every target size the columns fit the reserved viewport
+   and no scrollbar exists. Under 700px this goes back to a flex column
+   and scrolling is correct again. */
 .rc-scroll {
   position: relative; z-index: 1;
   flex: 1 1 auto; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain;
-  display: flex; flex-direction: column;
-  padding: 14px 18px 12px;
+  padding: 11px 20px 12px;
+  display: grid;
+  grid-template-columns: var(--plate) minmax(330px, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "mast mast" "left right";
+  column-gap: 22px;
   scrollbar-width: thin;
 }
 .rc-scroll::-webkit-scrollbar { width: 7px; }
 .rc-scroll::-webkit-scrollbar-thumb { background: rgba(55, 65, 79, 0.30); }
 .rc-block { flex: 0 0 auto; }
 
-/* ---- masthead: the item title ------------------------------------------- */
-.rc-masthead { text-align: center; padding-bottom: 2px; }
+/* the two columns: exhibit left, paperwork right. The wrappers are layout
+   only — under 700px they go display:contents and the DOM's source order
+   reads as the portrait flow. The footer's margin-top:auto closes both
+   columns on one baseline, like a ledger. */
+.rc-col-l { grid-area: left; min-width: 0; display: flex; flex-direction: column; }
+.rc-col-r {
+  grid-area: right; min-width: 0; display: flex; flex-direction: column;
+  border-left: 1px solid var(--form-rule-2); padding-left: 20px;
+}
+.rc-col-r .rc-prov { margin-top: auto; }
+
+/* ---- masthead: the item title, once, across both columns ----------------- */
+.rc-masthead {
+  grid-area: mast; text-align: center;
+  padding: 0.2em 0 0.4em;
+  border-bottom: 1px solid var(--form-rule-2);
+  margin-bottom: 8px;
+}
 .rc-item {
   font-family: var(--form); font-size: 0.75rem; font-weight: 700;
   letter-spacing: 0.19em; text-transform: uppercase;
-  margin-top: 0.5em; color: #2f3846;
+  color: #2f3846;
 }
 
 /* ---- the info block: MODEL · PROMPTED · PROCESS · SIZE ------------------
-   Four fills no longer fit one row at the card's width, so the line wraps to
-   two; row-gap keeps the wrapped rules from touching. */
+   In landscape the column is only --plate wide, so each fill takes its own
+   ruled line — a figure caption under the photograph, four rows; the
+   portrait stack below restores the 2×2. */
 .rc-fillsline {
-  margin-top: 0.5rem;
+  margin-top: 0.55rem;
   display: flex; flex-wrap: wrap; gap: 0 12px; row-gap: 2px;
   justify-content: space-between;
 }
-/* a 40% basis puts exactly two fills on a row at any card width, so the four
-   read as a tidy 2×2 block instead of three-then-one; grow takes up the
-   slack so the ruled lines end flush, like a form */
 .rc-fill {
-  flex: 1 1 40%; display: flex; align-items: baseline; gap: 0.5em;
-  border-bottom: 1px solid var(--form-rule-2); padding: 0.26em 0 0.14em;
+  flex: 1 1 100%; display: flex; align-items: baseline; gap: 0.5em;
+  border-bottom: 1px solid var(--form-rule-2); padding: 0.22em 0 0.12em;
 }
 .rc-fill-l {
   font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.13em;
@@ -1035,71 +1070,72 @@ html.jd-record-open { overflow: hidden; }
   display: flex; align-items: center; gap: 0.7em;
   font-family: var(--form); font-size: 0.55rem; letter-spacing: 0.26em;
   text-transform: uppercase; color: var(--form-ink-2);
-  margin: 0.62rem 0 0.3rem;
+  margin: 0 0 0.3rem;
 }
 .rc-head::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+.rc-col-r .rc-head + .rc-head, .rc-assign + .rc-head,
+.rc-col-r .rc-block + .rc-head { margin-top: 0.55rem; }
+.rc-col-r > .rc-head:first-child { margin-top: 0.1rem; }
 
-/* ---- the artwork plate on the vaporwave floor --------------------------- */
+/* ---- the photograph (round 13: 13a's landscape carrying 13b's paper
+   display container; the twin-grid vaporwave stage is retired — see
+   floorSVG's note in junk-drawer.js) ---------------------------------------
+   A SQUARE window whose side IS --plate (vh-clamped on .jd-record): its
+   height never derives from the card's width again. The backing is a
+   photo-lab print swatch — a faint engineering grid ruled in a pale
+   blueprint dilution of the form ink, on paper a shade lighter than the
+   form; decisively NOT neon, decisively still paper. Kraft photo corners
+   hold the print down (they overhang 4px, so NO overflow:hidden here) and
+   the drop shadow floats it a millimetre off the form. 13b's FILED stamp
+   was cut on the same owner call. Items letterbox inside the 8% inset
+   (their own preserveAspectRatio meet) — every aspect gets the same frame,
+   which is why the retired stage's shape-tuning went with it. */
 .rc-plate {
-  position: relative; overflow: hidden;
-  margin-top: 0.55rem;
-  /* near-square (owner, 2026-08-12): first squared from the old fixed 224px
-     landscape field, then trimmed a touch — height is 90% of the card's
-     inner width. */
-  aspect-ratio: 10 / 9;
-  background: #101010;
-  border: 1px solid var(--form-rule);
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
+              0 1px 3px rgba(46, 34, 12, 0.35);
 }
-.rc-floor { position: absolute; inset: 0; width: 100%; height: 100%; }
-/* THE STAGE (ground-up rebuild, owner, 2026-08-13). The item used to live in
-   a normal-flow div sized by the plate's padding — and CSS resolves even
-   VERTICAL percentage padding against the WIDTH, so no padding value could
-   state "the item keeps X% of the plate's height" directly; two rounds of
-   padding tuning read as no change at all. The stage is now absolutely
-   positioned, where top/bottom percentages DO resolve against the plate's
-   height: the artwork keeps 71% of it at every card size, full stop. The
-   extra point of top inset over bottom seats the item's center a touch
-   BELOW the horizon (which crosses at 50%), so it reads as standing on the
-   floor rather than pinned dead-center. Items letterbox inside the stage
-   (their own preserveAspectRatio meet), so a tall item takes the stage's
-   height, a wide one its width, nothing ever touches the plate's rim.
-
-   THE STAGE IS TUNED BY SHAPE (critic pass 2026-08-13; automatic — nothing
-   is filed per item): equal-height letterboxing makes equal-height items
-   of wildly unequal visual mass, so junk-drawer.js measures each
-   response's viewBox aspect at render time and adds:
-   · rc-art-square (0.75–1.33, solid masses like the eyeball): a smaller
-     envelope (~56% of plate height) so the horizon and both grid fans
-     stay visible around the mass; at 71% the item IS the plate.
-   Everything else — tall, leaning, and wide alike — shares the default
-   stage: 17/12 rather than a symmetric split, so centers land ~3% below
-   the horizon (the threshold of visibility) and tall bases plant below
-   the 83% ground line. The item deliberately sits OVER the vanishing
-   point and glow line (owner, 2026-08-13) — a wide item covering the
-   horizon is the composition working, not a collision; an earlier
-   floor-seated wide class was retired on that call. */
-.rc-plate-art { position: absolute; top: 17%; bottom: 12%; left: 10%; right: 10%; }
-.rc-plate-art.rc-art-square { top: 23%; bottom: 21%; }
+.rc-plate-art { position: absolute; inset: 8%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
+/* the kraft photo corners */
+.rc-corner {
+  position: absolute; width: 26px; height: 26px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
 
 /* ---- the enlargement (owner, 2026-08-09) --------------------------------
-   The plate is a small field on a form; press it and the same artwork comes
-   up full-viewport, on the same black plate over the same vaporwave floor,
-   so it reads as the plate grown rather than a second picture. Out again by
-   pressing anywhere on the layer (the art, the caption, the surround) or by
-   Escape — which peels this layer before it peels the card (junk-drawer.js).
-   The corner hint carries the affordance on touch, where nothing hovers. */
+   The photograph is a small field on a form; press it and the same artwork
+   comes up full-viewport on the same print swatch, so it reads as the photo
+   held up rather than a second picture. Out again by pressing anywhere on
+   the layer (the art, the caption, the surround) or by Escape — which peels
+   this layer before it peels the card (junk-drawer.js). The corner hint
+   carries the affordance on touch, where nothing hovers. */
 .rc-plate { cursor: zoom-in; }
 .rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 .rc-plate-hint {
   position: absolute; right: 8px; bottom: 6px; z-index: 2;
   pointer-events: none;
   font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
-  text-transform: uppercase; color: rgba(239, 228, 198, 0.46);
+  text-transform: uppercase; color: rgba(55, 65, 79, 0.5);
   transition: color 0.18s ease;
 }
 .rc-plate:hover .rc-plate-hint,
-.rc-plate:focus-visible .rc-plate-hint { color: rgba(239, 228, 198, 0.92); }
+.rc-plate:focus-visible .rc-plate-hint { color: var(--form-ink); }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
@@ -1136,10 +1172,16 @@ html.jd-record-open { overflow: hidden; }
   flex: 0 1 auto; min-height: 0;
   width: min(1040px, 100%); height: 100%;
   padding: 16px 18px;
-  background: #101010;
-  /* a paper-tinted hairline, not the card's ink rule: that rule is meant to
-     read against the card's paper, and would vanish on the dark veil */
-  border: 1px solid rgba(231, 221, 194, 0.22);
+  /* the card's photograph, held up off the form: the same graph-paper
+     print swatch the plate wears (round 13 — the dark plate + vaporwave
+     floor retired together), so the enlargement reads as the photo grown */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.35);
   box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.8);
   cursor: zoom-out;
 }
@@ -1174,20 +1216,44 @@ html.jd-record-open { overflow: hidden; }
   .jd-record-zoom.is-on,
   .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
   .rc-plate-hint { transition: none; }
+  .rc-axcaret { transition: none; }
 }
 
-/* ---- THE PROMPT (verbatim) ---------------------------------------------- */
+/* ---- THE PROMPT (verbatim) -----------------------------------------------
+   Long prompts FOLD to three lines behind a "show full prompt" expander
+   (round 13 — the old always-on max-height:7.4em inner scrollbar was the
+   third nested scroller on the card and is gone). cardHTML renders every
+   prompt foldable; render() measures after paint and strips rc-can-fold
+   when the prompt fits its three lines, which also hides the expander. */
 .rc-assign {
   border-top: 1px solid var(--form-rule);
   border-bottom: 1px solid var(--form-rule);
-  padding: 0.48rem 0.1rem 0.5rem;
-  max-height: 7.4em; overflow-y: auto; overscroll-behavior: contain;
+  padding: 0.36rem 0.1rem 0.3rem;
 }
 .rc-assign p {
   font-family: var(--rc-mono); font-size: 0.665rem; line-height: 1.5;
   color: #33302a; white-space: pre-wrap; word-break: break-word;
   text-indent: -0.52em; padding-left: 0.52em;
 }
+.rc-can-fold:not(.is-open) p {
+  max-height: 4.5em;      /* exactly 3 lines of the 1.5 line-height */
+  overflow: hidden;
+  /* the third line dissolves rather than guillotines — the fold's tell */
+  -webkit-mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.3));
+          mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.3));
+}
+.rc-pv {
+  display: inline-block; margin-top: 3px; cursor: pointer;
+  border: 0; background: none; padding: 0 0 1px; margin-left: 0;
+  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  border-bottom: 1px dotted var(--form-rule);
+}
+.rc-pv:hover { color: var(--red); border-bottom-color: var(--red); }
+.rc-pv:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-assign:not(.rc-can-fold) .rc-pv { display: none; }
+.rc-can-fold.is-open .rc-pv-more { display: none; }
+.rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
 
 /* ---- the annotations table (AXIS | VERDICT + OVERALL GRADE footer) ------ */
 table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
@@ -1216,6 +1282,27 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 .rc-subj-name {
   font-family: var(--form); font-size: 0.62rem; letter-spacing: 0.05em;
   line-height: 1.26; color: #2f3846;
+}
+/* every axis name is a disclosure (owner, 2026-08-13): press it and the
+   row beneath unfolds the axis's taxonomy description. Button reset keeps
+   the form's face; the caret is the affordance. */
+.rc-axbtn {
+  display: inline-flex; align-items: baseline; gap: 0.35em;
+  border: 0; background: none; padding: 0; margin: 0;
+  text-align: left; cursor: pointer;
+}
+.rc-axcaret {
+  font-size: 0.5rem; color: var(--form-ink-2);
+  transition: transform 0.15s ease;
+}
+.rc-axbtn[aria-expanded="true"] .rc-axcaret { transform: rotate(180deg); }
+.rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l,
+.rc-axbtn:hover .rc-axcaret { color: var(--red); }
+.rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+tr.rc-axdesc td {
+  padding: 0.12em 0.5em 0.5em;
+  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1.6;
+  letter-spacing: 0.02em; color: var(--form-ink-2);
 }
 .rc-skip {
   font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
@@ -1322,10 +1409,40 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
 .rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
 
 /* ---- small screens ------------------------------------------------------- */
+/* under 700px the card stacks back to the single-column portrait flow:
+   masthead, photograph, fills, prompt, annotations, strip, footer. The
+   column wrappers go display:contents (the DOM's source order IS the
+   portrait order), the body scrolls again — correct on a phone — and the
+   close ✕ stays pinned to the card, outside the scrolling box. */
+@media (max-width: 700px) {
+  .jd-record { width: min(560px, 100%); }
+  .rc-scroll { display: flex; flex-direction: column; padding: 12px 14px 11px; }
+  .rc-col-l, .rc-col-r { display: contents; }
+  .rc-masthead { margin-bottom: 6px; }
+  /* still vh-clamped — a landscape phone can't blow the card out */
+  .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto; }
+  .rc-fill { flex: 1 1 40%; }          /* back to the 2×2 */
+  .rc-fillsline { margin-bottom: 0.55rem; }
+  .rc-head { margin-top: 0.55rem; }
+}
+/* the compact register: a short landscape viewport gives up ~30px of air
+   instead of growing a scrollbar — the same form, set solid. Landscape
+   only; the portrait stack above has its own (correct) scroll. */
+@media (min-width: 701px) and (max-height: 640px) {
+  .jd-record-scrim { padding: max(10px, 1.5dvh) 14px; }
+  .rc-scroll { padding: 10px 20px 10px; }
+  .rc-masthead { padding: 0.15em 0 0.3em; margin-bottom: 6px; }
+  .rc-col-r .rc-head + .rc-head, .rc-assign + .rc-head,
+  .rc-col-r .rc-block + .rc-head { margin-top: 0.42rem; }
+  .rc-assign { padding: 0.3rem 0.1rem 0.26rem; }
+  table.rc-subj td, table.rc-subj tfoot td { padding: 0.13em 0.5em 0.17em; }
+  .rc-alt-art { height: 30px; }
+  .rc-alt { padding: 3px 4px 4px; }
+  .rc-prov { padding-top: 0.28rem; }
+}
 @media (max-width: 480px) {
   .jd-record-scrim { padding: 10px 8px; }
   .rc-scroll { padding: 12px 12px 10px; }
-  /* (no plate height override: the square aspect-ratio holds on phones too) */
   /* on a phone the enlargement IS the point — give it nearly the whole
      screen and keep only enough chrome to say what it is and how to leave */
   .jd-record-zoom { padding: 10px 8px; gap: 7px; }
