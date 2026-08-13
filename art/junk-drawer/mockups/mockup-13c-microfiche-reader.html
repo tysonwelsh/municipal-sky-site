@@ -1,0 +1,2660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 13C &middot; THE MICROFICHE READER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 13C · THE MICROFICHE READER (record-card redesign,
+   round 13 — the fit-bug round; one of the dramatic reworks)
+
+   THESIS: the vaporwave floor RETIRES. The top of the report card becomes a
+   municipal A/V reading machine — charcoal chrome, a dark viewer window with
+   a warm LIGHT-TABLE glow behind the artwork (backlit film, not synthwave),
+   and the item's responses presented as a TRAY OF MOUNTED SLIDES along the
+   viewer's bottom edge. Clicking a slide swaps the viewer, the readout line,
+   and the annotations. Below the machine the familiar paper form continues:
+   masthead, size fill, prompt (FOLDED at ~3 lines), annotations, footer.
+
+   THE FIT CONTRACT (why round 13 exists) — demonstrated live in every frame:
+   · the scrim reserves the banner:      top: var(--banner-h, 56px)
+   · the card caps at the space left:    max-height: 100% of the padded scrim
+                                         (= calc(100dvh − 56px − 2·padding))
+   · the viewer is the ONLY soft part:   flex: 0 1 clamp(200px,
+                                           calc(var(--vpH,100dvh) * 0.38),
+                                           430px);  min-height: 150px
+     — flexbox compresses it toward its 150px floor BEFORE any internal
+     scrollbar can appear; everything else is flex: 0 0 auto.
+   · the prompt folds at 3 lines (-webkit-line-clamp) with an expander on the
+     section-head rule — the old max-height:7.4em inner scroller is gone.
+   · the close ✕ lives on the machine bezel, the card's top edge — and the
+     scrim already starts below the banner, so it can never hide under it.
+   ========================================================================== */
+:root {
+  /* wood floor, verbatim from mockup-6/12 (the drawer behind the scrim) */
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --plot-red: #b22222;
+  --paper: #f4f1e8;
+  --pageink: #2a2620;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; }
+body {
+  background: var(--paper); color: var(--pageink);
+  font-family: var(--font-mono);
+  padding: 2rem 1rem 4rem;
+}
+
+/* ---------------- page furniture (sibling mockup conventions) ------------- */
+.mock-title {
+  font-size: 0.85rem; letter-spacing: 0.3em; text-align: center;
+  font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem;
+}
+.mock-intro {
+  font-size: 0.7rem; letter-spacing: 0.08em; text-align: center;
+  color: #6d6455; max-width: 820px; margin: 0 auto 2.4rem; line-height: 1.85;
+}
+.mock-intro b { color: var(--plot-red); letter-spacing: 0.14em; }
+.demo { max-width: 1280px; margin: 0 auto 2.6rem; }
+.demo-label {
+  font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 0.5rem;
+}
+.demo-label b { color: var(--plot-red); }
+.demo-sub {
+  font-size: 0.62rem; letter-spacing: 0.08em; color: #6d6455;
+  line-height: 1.8; margin-bottom: 0.7rem; max-width: 900px;
+}
+
+/* ---------------- the simulated viewport frame ---------------------------- */
+/* Each frame stands in for a browser viewport: the fixed banner mock at the
+   top, the wood page behind, and the record scrim over it. --vpH is the
+   frame's stand-in for 100dvh: the viewer clamp below reads it, so a 680px
+   frame really exercises the short-desktop math no matter how tall the real
+   window is. In integration --vpH does not exist and the clamp falls back
+   to 100dvh. */
+.frame {
+  position: relative; overflow: hidden;
+  height: var(--vpH, 680px);
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+  border: 1px solid #3c3223;
+  box-shadow: inset 0 0 90px rgba(20, 10, 4, 0.35);
+}
+.mock-banner {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--banner-h, 56px);
+  z-index: 1000;
+  background: #fff; border-bottom: 1px solid #1a1a1a;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.2rem;
+  font-family: var(--font-mono);
+}
+.mock-banner .mb-title { font-weight: 700; font-size: 0.85rem; letter-spacing: -0.01em; }
+.mock-banner .mb-title::before { content: "▌"; color: #2626c9; margin-right: 0.4em; }
+.mock-banner nav { display: flex; gap: 1.6rem; font-size: 0.68rem; letter-spacing: 0.08em; }
+.mock-banner nav a { color: #1a1a1a; text-decoration: none; }
+.mock-banner nav .on { text-decoration: underline; text-underline-offset: 4px; }
+
+/* ============================================================================
+   THE SCRIM — reserves the banner. Real CSS: position:fixed; inset:0;
+   top: var(--banner-h, 56px). (Absolute here only because it lives in a
+   demo frame.) The card's max-height:100% then resolves to
+   100dvh − banner − 2·padding via border-box — the fix for bug #1 and #2.
+   ========================================================================== */
+.mf-scrim {
+  /* the report card's paper + ink, scoped (verbatim from .jd-record-scrim) */
+  --card: #efe4c6;
+  --card-hi: #f7efd8;
+  --form-ink: #37414f;
+  --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42);
+  --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428;
+  --red: #b02a24;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  /* the machine's chrome, warm charcoals — CRT-era municipal, not synthwave */
+  --mch: #23272e;
+  --mch-hi: #2e333c;
+  --mch-lo: #1a1d22;
+  --mch-edge: #101318;
+  --mch-etch: #8b939e;
+  --phos: #e2c383;             /* the readout's warm phosphor */
+  --glow: #fff3d6;             /* the light table */
+  --mount: #e7dfc4;            /* slide-mount cardboard */
+  --mount-ink: #4d4536;
+
+  position: absolute; top: var(--banner-h, 56px); left: 0; right: 0; bottom: 0;
+  z-index: 320;
+  display: flex; align-items: center; justify-content: center;
+  padding: 12px 14px;
+  background: rgba(10, 5, 1, 0.55);
+}
+
+/* ---- the card ------------------------------------------------------------ */
+.mf-card {
+  position: relative;
+  width: min(600px, 100%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--form-ink);
+  border: 1px solid rgba(20, 16, 10, 0.72);
+  background: var(--mch);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+.mf-scrollwrap {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  scrollbar-width: thin;
+}
+.mf-scrollwrap::-webkit-scrollbar { width: 7px; }
+.mf-scrollwrap::-webkit-scrollbar-thumb { background: rgba(55, 65, 79, 0.30); }
+
+/* ============================================================================
+   THE MACHINE — bezel · viewer window · slide tray · readout
+   ========================================================================== */
+.mf-machine {
+  flex: 0 1 auto;
+  /* EXPLICIT minimum — this is what lets the outer flexbox compress the
+     machine at all: with min-height:auto, Chromium's intrinsic min-content
+     of a nested flex column freezes the viewer at its flex BASIS (≈38vh)
+     and the card scrolls instead of shrinking. 285px = bezel 26 + viewer
+     floor 150 + gap 6 + tray ~72 + readout ~24 + padding 7.
+     (Integration watch-out — see notes.) */
+  min-height: 285px;
+  display: flex; flex-direction: column;
+  background: linear-gradient(#2b3038, var(--mch) 26%, #1f232a 88%, #191d23);
+  border-bottom: 2px solid var(--mch-edge);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  padding: 0 12px 7px;
+}
+.mf-bezel {
+  flex: 0 0 auto; height: 26px;
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 -12px; padding: 0 9px 0 12px;
+}
+.mf-screw {
+  flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #565d68, #23262c 70%);
+  box-shadow: inset 0 -1px 1px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.06);
+  position: relative;
+}
+.mf-screw::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 2.4px; height: 1.1px;
+  background: rgba(8, 9, 11, 0.85); transform: rotate(-28deg);
+}
+.mf-bezel-label {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--mch-etch);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6);   /* etched into the chrome */
+}
+.mf-counter {
+  flex: 0 0 auto;
+  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.18em;
+  color: var(--phos);
+  background: #101318; border: 1px solid #0a0c0f; border-radius: 2px;
+  padding: 2px 6px 1px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.mf-close {
+  flex: 0 0 auto; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.72rem; line-height: 1;
+  color: #a7aeb8; padding: 5px 6px;
+}
+.mf-close:hover { color: #e0796b; }
+
+/* ---- the viewer window — the ONLY flexible row (the fit fix, bug #2) -----
+   Basis ≈ 38% of the viewport; px floor and ceiling; flex-shrink lets a
+   short desktop press it toward 150px before anything needs to scroll. */
+.mf-window {
+  position: relative; overflow: hidden;
+  flex: 0 1 clamp(200px, calc(var(--vpH, 100dvh) * 0.38), 430px);
+  min-height: 150px;
+  cursor: zoom-in;
+  background: radial-gradient(115% 90% at 50% 46%, #171b20 0%, #101317 62%, #0b0d11 100%);
+  border: 1px solid #0a0c0f;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.75),
+              inset 0 0 0 2px rgba(255, 255, 255, 0.03);
+}
+.mf-window:focus-visible { outline: 2px solid var(--phos); outline-offset: 2px; }
+/* the light table: a warm backlit field behind the film — NO grid, no neon */
+.mf-bed {
+  position: absolute; inset: 6% 10%; pointer-events: none;
+  background: radial-gradient(58% 54% at 50% 51%,
+              rgba(255, 246, 219, 0.98) 0%,
+              rgba(252, 240, 205, 0.88) 42%,
+              rgba(244, 229, 188, 0.42) 68%,
+              rgba(240, 224, 180, 0.0) 88%);
+}
+.mf-art {
+  position: absolute; inset: 10% 15%; display: none;
+  filter: drop-shadow(0 1px 4px rgba(30, 20, 5, 0.28));
+}
+.mf-art.is-on { display: block; }
+.mf-art svg { display: block; width: 100%; height: 100%; }
+/* the glass: faint scanlines + a diagonal reflection + corner shading */
+.mf-glass {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0 3px, rgba(10, 8, 2, 0.045) 3px 4px),
+    linear-gradient(112deg,
+      rgba(255, 255, 255, 0.055) 0%, rgba(255, 255, 255, 0.0) 26%),
+    radial-gradient(140% 120% at 50% 50%,
+      rgba(0, 0, 0, 0) 55%, rgba(4, 5, 8, 0.5) 100%);
+}
+.mf-hint {
+  position: absolute; right: 8px; bottom: 6px; z-index: 2; pointer-events: none;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: rgba(239, 228, 198, 0.46);
+}
+.mf-window:hover .mf-hint, .mf-window:focus-visible .mf-hint {
+  color: rgba(239, 228, 198, 0.92);
+}
+
+/* ---- the slide tray: RESPONSES ON FILE, along the viewer's bottom edge ---
+   Each response is a mounted transparency: cardboard slide mount, a small
+   film window, the model printed on the mount, the grade pencilled beside
+   it in its earned colour (the mount is paper, so the spec colours hold).
+   The current slide's window is BACKLIT and its mount is seated deeper. */
+.mf-tray {
+  flex: 0 0 auto;
+  margin-top: 6px;
+  display: flex; gap: 8px; justify-content: center;
+  padding: 6px 7px;
+  background: #14171b;
+  border: 1px solid #0b0d10; border-radius: 2px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.65);
+  overflow-x: auto;
+  scrollbar-width: thin; scrollbar-color: #3a4048 #101318;
+}
+.mf-tray::-webkit-scrollbar { height: 6px; }
+.mf-tray::-webkit-scrollbar-track { background: #101318; }
+.mf-tray::-webkit-scrollbar-thumb { background: #3a4048; }
+.mf-slide {
+  flex: 0 1 158px; min-width: 96px;
+  cursor: pointer; text-align: left;
+  background: linear-gradient(var(--mount), #ddd4b6);
+  border: 1px solid #b3a785; border-radius: 3px;
+  padding: 3px 6px 3px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 1px 2px rgba(0, 0, 0, 0.55);
+  position: relative;
+}
+.mf-slide:hover { background: linear-gradient(#f0e9d0, #e3dabd); }
+.mf-slide:focus-visible { outline: 2px solid var(--phos); outline-offset: 1px; }
+.mf-slide.is-cur {
+  border-color: rgba(176, 42, 36, 0.8);
+  box-shadow: inset 0 1px 3px rgba(60, 44, 12, 0.45), 0 0 0 1px rgba(176, 42, 36, 0.35);
+  transform: translateY(1px);
+}
+.mf-slide-window {
+  display: block; height: 34px; overflow: hidden;
+  position: relative; border-radius: 2px;
+  background: #272c33; border: 1px solid #8f8465;
+}
+.mf-slide.is-cur .mf-slide-window {
+  background: radial-gradient(70% 90% at 50% 50%,
+              #fff4d8 0%, #f3e6c2 60%, #d9cba2 100%);
+}
+.mf-slide-window svg {
+  position: absolute; inset: 2px; width: calc(100% - 4px); height: calc(100% - 4px);
+  opacity: 0.55;
+}
+.mf-slide.is-cur .mf-slide-window svg { opacity: 1; }
+.mf-slide-cap {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 6px; margin-top: 3px; min-height: 13px;
+}
+.mf-slide-model {
+  font-family: var(--form); font-size: 0.435rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #6c6350; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.mf-slide.is-cur .mf-slide-model { color: var(--mount-ink); }
+.mf-slide-grade {
+  font-family: var(--hand); font-size: 0.62rem; line-height: 1;
+  white-space: nowrap; transform: rotate(-1.6deg);
+}
+/* the graded pencils — same colour law as the paper form (spec) */
+.rc-g5 { color: #0b6a1f; }
+.rc-g4 { color: #46761a; }
+.rc-g3 { color: #a06200; }
+.rc-g2 { color: #b0490f; }
+.rc-g1 { color: #8f1d12; }
+.rc-r3 { color: #0b6a1f; }
+.rc-r2 { color: #a06200; }
+.rc-r1 { color: #8f1d12; }
+/* the visitor card's winner: the curator's pen on the kept slide's mount */
+.mf-kept {
+  position: absolute; top: -1px; right: 5px; z-index: 2;
+  font-family: var(--hand); font-size: 0.58rem; color: var(--red);
+  transform: rotate(3deg); pointer-events: none;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- the readout: the machine indexes the slide it is showing ------------
+   MODEL / PROMPTED / PROCESS describe the CURRENT slide, so they live on
+   the machine and swap with it. SIZE belongs to the item and stays on the
+   paper form below. */
+.mf-readout {
+  flex: 0 0 auto;
+  display: flex; margin-top: 6px;
+  background: #101318; border: 1px solid #0a0c0f; border-radius: 2px;
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.8);
+  padding: 2px 8px 2px;
+}
+.mf-ro {
+  flex: 1 1 0; min-width: 0;
+  display: flex; align-items: baseline; gap: 6px;
+  overflow: hidden;
+}
+.mf-ro + .mf-ro { border-left: 1px solid #23272e; padding-left: 8px; margin-left: 8px; }
+.mf-ro-l {
+  flex: 0 0 auto;
+  font-family: var(--rc-mono); font-size: 0.42rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #6d747e;
+}
+.mf-ro-v {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.03em;
+  color: var(--phos);
+  text-shadow: 0 0 6px rgba(226, 195, 131, 0.35);
+}
+
+/* ============================================================================
+   THE PAPER — the familiar form continues below the machine
+   ========================================================================== */
+.mf-paper {
+  flex: 0 0 auto; position: relative;
+  padding: 8px 16px 8px;
+  background: var(--card) var(--grain);
+  color: var(--form-ink);
+}
+.mf-paper::before {
+  content: ""; position: absolute; inset: 5px; border: 1px solid var(--form-rule);
+  border-top: 0; pointer-events: none;
+}
+.mf-masthead { text-align: center; padding: 2px 0 1px; }
+.rc-item {
+  font-family: var(--form); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.19em; text-transform: uppercase; color: #2f3846;
+}
+.rc-fillsline { margin-top: 0.2rem; display: flex; gap: 0 12px; }
+.rc-fill {
+  flex: 1 1 auto; display: flex; align-items: baseline; gap: 0.5em;
+  border-bottom: 1px solid var(--form-rule-2); padding: 0.2em 0 0.12em;
+}
+.rc-fill-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.rc-fill-v {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--rc-mono); font-size: 0.66rem; color: var(--typed);
+}
+.rc-head {
+  display: flex; align-items: center; gap: 0.7em;
+  font-family: var(--form); font-size: 0.55rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  margin: 0.42rem 0 0.22rem;
+}
+.rc-head-rule { flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+
+/* ---- THE PROMPT: folded at ~3 lines, expander on the head rule (bug #3) -- */
+.mf-quote {
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.34rem 0.1rem 0.36rem;
+}
+.mf-quote p {
+  font-family: var(--rc-mono); font-size: 0.665rem; line-height: 1.5;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+}
+.mf-quote.is-folded p {
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mf-expand {
+  cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #46505e;
+  border: 1px solid var(--form-rule-2); background: rgba(255, 250, 232, 0.5);
+  padding: 2px 7px 1px; white-space: nowrap;
+}
+.mf-expand:hover { border-color: var(--form-rule); color: var(--red); }
+.mf-expand[hidden] { display: none; }
+
+/* ---- annotations table (verbatim scale from the shipping card) ----------- */
+table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rc-subj th {
+  font-family: var(--form); font-weight: 400;
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); text-align: left;
+  padding: 0.28em 0.5em; background: rgba(55, 65, 79, 0.055);
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+}
+table.rc-subj th + th, table.rc-subj td + td { border-left: 1px solid var(--form-rule-2); }
+table.rc-subj td {
+  padding: 0.2em 0.5em 0.24em;
+  border-bottom: 1px solid var(--form-rule-2);
+  vertical-align: middle;
+}
+table.rc-subj tbody tr:last-child td { border-bottom: 1px solid var(--form-rule); }
+table.rc-subj tfoot td {
+  border-top: 2px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.22em 0.5em 0.26em;
+  background: rgba(55, 65, 79, 0.03);
+}
+.rc-subj-name {
+  font-family: var(--form); font-size: 0.62rem; letter-spacing: 0.05em;
+  line-height: 1.26; color: #2f3846;
+}
+.rc-avg-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2);
+}
+.rc-mark {
+  position: relative; display: inline-block;
+  font-family: var(--hand);
+  line-height: 1.12; letter-spacing: 0.005em;
+  transform: rotate(var(--jit, -1.2deg));
+  transform-origin: 12% 70%;
+}
+.rc-mark.sm { font-size: 0.84rem; }
+.rc-mark-word { position: relative; display: inline-block; }
+.rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+.rc-bar {
+  position: relative; width: 47px; height: 8px; flex: 0 0 auto;
+  border: 1.5px solid currentColor; border-radius: 2px;
+  overflow: hidden; box-sizing: border-box;
+}
+.rc-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: currentColor; }
+.rc-bar-tick {
+  position: absolute; top: 0; bottom: 0; width: 1.5px;
+  background: var(--card, #efe4c6);
+}
+
+/* ---- the card foot -------------------------------------------------------- */
+.rc-prov { margin-top: 0.36rem; padding-top: 0.26rem; border-top: 1px solid var(--form-rule-2); }
+.rc-formline {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.8em;
+  font-family: var(--rc-mono); font-size: 0.48rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: #918a76;
+}
+.rc-formline .rc-formno { text-align: right; line-height: 1.5; }
+.rc-dl {
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.15em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e; border: 1px solid var(--form-rule);
+  padding: 0.3em 0.8em;
+  background: rgba(255, 250, 232, 0.5);
+}
+.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+
+/* ============================================================================
+   THE ENLARGEMENT — the viewer grown full-bleed (demo 4, static state).
+   In integration this is the existing .jd-record-zoom layer: a child of
+   <body>, z-index 1100, deliberately ABOVE the banner (1000) — same fiction,
+   new dressing: the light table fills the wall; the slide tray rides the
+   right edge so the visitor can keep switching slides while enlarged.
+   ========================================================================== */
+.mf-zoom {
+  /* in integration this layer is a BODY child (like .jd-record-zoom), not a
+     scrim child — so it re-declares the tokens it uses, same precedent */
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --red: #b02a24;
+  --mount: #e7dfc4;
+  --mount-ink: #4d4536;
+  --phos: #e2c383;
+  position: absolute; inset: 0; z-index: 1100;
+  background: radial-gradient(120% 100% at 50% 44%, #14171c 0%, #0c0e12 58%, #07080b 100%);
+  cursor: zoom-out;
+}
+.mf-zoom-bed {
+  position: absolute; inset: 7% 16% 15%; pointer-events: none;
+  background: radial-gradient(52% 52% at 50% 50%,
+              rgba(255, 246, 219, 0.98) 0%,
+              rgba(252, 240, 205, 0.9) 44%,
+              rgba(244, 229, 188, 0.4) 70%,
+              rgba(240, 224, 180, 0) 90%);
+}
+.mf-zoom-art { position: absolute; inset: 10% 20% 18%; }
+.mf-zoom-art svg { display: block; width: 100%; height: 100%; }
+.mf-zoom-tray {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 8px 7px;
+  background: rgba(20, 23, 27, 0.92);
+  border: 1px solid #0b0d10; border-radius: 3px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+.mf-zoom-tray .mf-slide { flex: 0 0 auto; width: 118px; }
+.mf-zoom-cap {
+  position: absolute; left: 0; right: 0; bottom: 3.2%;
+  text-align: center; display: flex; flex-direction: column; gap: 4px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9); pointer-events: none;
+}
+.mf-zoom-cap .t {
+  font-family: var(--form, Georgia, serif); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: #e7ddc2;
+}
+.mf-zoom-cap .h {
+  font-family: var(--font-mono); font-size: 0.48rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(231, 221, 194, 0.48);
+}
+
+/* ---------------- phone demo ---------------------------------------------- */
+.phone-wrap { display: flex; justify-content: center; }
+.phone-wrap iframe {
+  width: 390px; height: 720px; border: 1px solid #3c3223;
+  box-shadow: inset 0 0 40px rgba(20, 10, 4, 0.2);
+  background: #8d6537;
+}
+/* #phone-view is a full standalone demo that only exists when this same file
+   is loaded WITH the #phone-view fragment — the iframe above does exactly
+   that, which is how one self-contained file shows a real 390px layout
+   (headless Chromium refuses windows under ~500px). */
+#phone-view { display: none; }
+body:has(#phone-view:target) { overflow: hidden; }
+#phone-view:target {
+  display: block; position: fixed; inset: 0; z-index: 5000;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+#phone-view .mock-banner { height: 48px; padding: 0 0.9rem; }
+#phone-view .mock-banner nav { display: none; }
+#phone-view .mf-scrim { --banner-h: 48px; --vpH: 100dvh; padding: 10px 8px; }
+
+@media (max-width: 480px) {
+  .mf-machine { padding: 0 9px 7px; }
+  .mf-bezel { margin: 0 -9px; }
+  .mf-window { flex-basis: clamp(170px, calc(var(--vpH, 100dvh) * 0.34), 430px); }
+  .mf-tray { justify-content: flex-start; }
+  .mf-slide { flex: 0 0 118px; }
+  .mf-readout { flex-wrap: wrap; row-gap: 1px; }
+  .mf-ro { flex: 1 1 40%; }
+  .mf-ro:nth-child(3) { border-left: 0; padding-left: 0; margin-left: 0; }
+  .mf-paper { padding: 8px 12px 9px; }
+}
+
+/* ---------------- design notes --------------------------------------------- */
+.notes {
+  max-width: 900px; margin: 3.5rem auto 0; padding: 1.6rem 2rem 2rem;
+  background: #fffdf6; border: 1px solid #d8d2bd;
+}
+.notes h2 {
+  font-size: 0.78rem; letter-spacing: 0.24em; text-transform: uppercase;
+  margin-bottom: 1rem;
+}
+.notes h3 {
+  font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--plot-red); margin: 1.3rem 0 0.5rem;
+}
+.notes p, .notes li { font-size: 0.68rem; line-height: 1.85; color: #3d382e; }
+.notes ul { padding-left: 1.2rem; }
+.notes li { margin-bottom: 0.45rem; }
+.notes code {
+  background: #f0ecdd; border: 1px solid #ddd6c0; padding: 0 4px;
+  font-size: 0.62rem;
+}
+</style>
+</head>
+<body>
+
+<!-- artwork, inlined ONCE as symbols (ids prefixed per source, the svgInst
+     discipline) and referenced everywhere with <use> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="art-tm-opus" viewBox="0 0 660 570">
+  <defs>
+    <g id="tmo-rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="tmo-leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="tmo-spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="tmo-lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- parchment face of the card, torn away along the bottom -->
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    <!-- card border, cut off where the card is torn -->
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    <!-- ripped bottom edge -->
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    <!-- roman numeral I -->
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    <!-- arbour of roses across the top -->
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(106,100)"/>
+      <use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(231,104)"/>
+      <use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(429,104)"/>
+      <use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(554,99)"/>
+    </g>
+
+    <!-- rose vines hanging down the left -->
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(90,322)"/></g>
+
+    <!-- rose vines hanging down the right -->
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#tmo-rose" href="#tmo-rose" transform="translate(570,322)"/></g>
+
+    <!-- lilies of the garden -->
+    <g stroke-width="5">
+      <use xlink:href="#tmo-lily" href="#tmo-lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#tmo-lily" href="#tmo-lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#tmo-leaf" href="#tmo-leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    <!-- lemniscate above the head -->
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    <!-- head -->
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    <!-- neck and collar -->
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    <!-- raised arm -->
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    <!-- fist gripping the wand -->
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    <!-- double-ended wand -->
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#tmo-spark" href="#tmo-spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#tmo-spark" href="#tmo-spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#tmo-spark" href="#tmo-spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    <!-- lowered arm, finger pointing down -->
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    <!-- robe and cloak -->
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    <!-- ouroboros belt: the snake biting its own tail -->
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</symbol>
+<symbol id="art-tm-sonnet" viewBox="0 0 600 460">
+  <defs>
+    <path id="tms-petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/>
+    <path id="tms-lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/>
+    <path id="tms-leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/>
+    <path id="tms-paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/>
+    <clipPath id="tms-paperClip">
+      <use href="#tms-paperShape"/>
+    </clipPath>
+  </defs>
+
+  <use href="#tms-paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/>
+
+  <g clip-path="url(#tms-paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- climbing vines -->
+    <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" />
+    <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" />
+
+    <g transform="translate(78,178) rotate(20)"><use href="#tms-leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(44,248) rotate(200)"><use href="#tms-leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(522,178) rotate(160)"><use href="#tms-leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(556,248) rotate(-20)"><use href="#tms-leaf"/><path d="M0,0 L16,0"/></g>
+
+    <!-- roses top corners -->
+    <g transform="translate(65,58)">
+      <use href="#tms-petal"/>
+      <use href="#tms-petal" transform="rotate(72)"/>
+      <use href="#tms-petal" transform="rotate(144)"/>
+      <use href="#tms-petal" transform="rotate(216)"/>
+      <use href="#tms-petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+    <g transform="translate(535,58)">
+      <use href="#tms-petal"/>
+      <use href="#tms-petal" transform="rotate(72)"/>
+      <use href="#tms-petal" transform="rotate(144)"/>
+      <use href="#tms-petal" transform="rotate(216)"/>
+      <use href="#tms-petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+
+    <!-- lilies lower sides -->
+    <g transform="translate(50,388)">
+      <use href="#tms-lilypetal" transform="rotate(-25)"/>
+      <use href="#tms-lilypetal"/>
+      <use href="#tms-lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+    <g transform="translate(550,388)">
+      <use href="#tms-lilypetal" transform="rotate(-25)"/>
+      <use href="#tms-lilypetal"/>
+      <use href="#tms-lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+
+    <!-- double border frame -->
+    <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/>
+
+    <!-- roman numeral corners -->
+    <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/>
+    <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/>
+    <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+    <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+
+    <!-- infinity symbol above head -->
+    <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/>
+
+    <!-- altar items at torn edge -->
+    <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/>
+    <path d="M168,417 L168,428 M160,430 L176,430"/>
+    <path d="M193,398 L193,424" />
+    <circle cx="193" cy="396" r="3"/>
+    <circle cx="300" cy="415" r="20"/>
+    <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/>
+    <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/>
+    <circle cx="430" cy="408" r="3"/>
+
+    <!-- robe body -->
+    <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/>
+    <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/>
+
+    <!-- collar -->
+    <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/>
+
+    <!-- ouroboros belt -->
+    <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/>
+    <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/>
+    <circle cx="369" cy="298" r="1.6" fill="#161616"/>
+    <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/>
+
+    <!-- lower arm (pointing down) -->
+    <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/>
+    <circle cx="186" cy="392" r="10" fill="#fffdf6"/>
+    <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/>
+
+    <!-- raised arm (holding wand) -->
+    <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/>
+    <circle cx="401" cy="46" r="13" fill="#fffdf6"/>
+    <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/>
+
+    <!-- wand + flame -->
+    <path d="M398,42 L398,14 M406,42 L406,14"/>
+    <circle cx="402" cy="44" r="3"/>
+    <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/>
+
+    <!-- head + hair -->
+    <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/>
+    <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/>
+    <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/>
+    <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/>
+
+    <!-- face -->
+    <circle cx="288" cy="104" r="4" fill="#161616"/>
+    <circle cx="312" cy="104" r="4" fill="#161616"/>
+    <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/>
+    <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/>
+    <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/>
+    <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/>
+
+  </g>
+</symbol>
+<symbol id="art-tm-fable" viewBox="0 0 520 468">
+  <defs>
+    <path id="tmf-card" d="M10 40 Q10 12 38 12 L482 12 Q510 12 510 40 L510 405 L480 436 L455 412 L430 448 L402 420 L372 454 L345 424 L315 450 L288 418 L258 452 L230 424 L200 455 L172 428 L145 456 L118 430 L90 452 L62 424 L35 446 L10 428 Z"/>
+    <clipPath id="tmf-clip"><use href="#tmf-card"/></clipPath>
+    <g id="tmf-rose" fill="#fff" stroke="#000" stroke-width="3.5">
+      <circle cx="0" cy="-12" r="8.5"/>
+      <circle cx="11.4" cy="-3.7" r="8.5"/>
+      <circle cx="7.1" cy="9.7" r="8.5"/>
+      <circle cx="-7.1" cy="9.7" r="8.5"/>
+      <circle cx="-11.4" cy="-3.7" r="8.5"/>
+      <circle cx="0" cy="0" r="5.5"/>
+    </g>
+    <path id="tmf-star" d="M0 -11 L2.6 -2.6 L11 0 L2.6 2.6 L0 11 L-2.6 2.6 L-11 0 L-2.6 -2.6 Z"/>
+    <path id="tmf-leaf" d="M-11 0 Q0 -8 11 0 Q0 8 -11 0 Z"/>
+  </defs>
+
+  <use href="#tmf-card" fill="#fff" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+
+  <g clip-path="url(#tmf-clip)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 470 L32 56 Q32 34 54 34 L466 34 Q488 34 488 56 L488 470" stroke-width="4"/>
+    <path d="M246 52 L274 52 M260 52 L260 88 M246 88 L274 88" stroke-width="5.5"/>
+    <path d="M34 118 C100 150 175 102 260 126 C345 102 420 150 486 118" stroke-width="4"/>
+    <use href="#tmf-leaf" transform="translate(170 113) rotate(-18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#tmf-leaf" transform="translate(350 113) rotate(18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#tmf-rose" transform="translate(100 131)"/>
+    <use href="#tmf-rose" transform="translate(260 124)"/>
+    <use href="#tmf-rose" transform="translate(420 131)"/>
+    <path d="M260 166 C248 148 222 148 222 166 C222 184 248 184 260 166 C272 148 298 148 298 166 C298 184 272 184 260 166" stroke-width="5"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(110 100) scale(0.8)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(190 78) scale(0.6)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(95 200) scale(0.9)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(72 305) scale(0.7)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(108 385) scale(0.75)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(415 210) scale(1.1)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(448 300) scale(0.75)"/>
+    <use href="#tmf-star" fill="#fff" stroke-width="3.5" transform="translate(385 398) scale(0.7)"/>
+    <path d="M230 256 Q260 244 290 256 L335 470 L205 470 Z" fill="#fff" stroke-width="5"/>
+    <path d="M244 262 L236 470 M276 262 L284 470" stroke-width="4"/>
+    <path d="M248 258 L260 274 L272 258" stroke-width="4"/>
+    <circle cx="260" cy="372" r="17" fill="#fff" stroke-width="4.5"/>
+    <circle cx="272" cy="360" r="5.5" fill="#fff" stroke-width="3.5"/>
+    <circle cx="273.5" cy="359" r="1.4" fill="#000" stroke="none"/>
+    <rect x="143.5" y="96" width="13" height="108" rx="6.5" fill="#fff" stroke-width="4.5"/>
+    <path d="M243 252 L168 140 L152 158 L225 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M176 152 L160 170" stroke-width="4"/>
+    <circle cx="158" cy="150" r="13" fill="#fff" stroke-width="4.5"/>
+    <path d="M300 252 L358 344 L340 358 L283 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M350 332 L333 346" stroke-width="4"/>
+    <path d="M352 350 L352 392" stroke-width="5"/>
+    <circle cx="352" cy="356" r="11" fill="#fff" stroke-width="4.5"/>
+    <circle cx="260" cy="218" r="31" fill="#fff" stroke-width="5"/>
+    <path d="M231 206 Q260 196 289 206 M236 199 Q260 190 284 199" stroke-width="3.5"/>
+    <path d="M231 206 Q220 213 226 224 M289 206 Q300 213 294 224" stroke-width="3.5"/>
+    <circle cx="247" cy="216" r="3" fill="#000" stroke="none"/>
+    <circle cx="273" cy="216" r="3" fill="#000" stroke="none"/>
+    <path d="M246 231 Q260 242 274 231" stroke-width="4"/>
+    <circle cx="238" cy="227" r="3.2" stroke-width="2.5"/>
+    <circle cx="282" cy="227" r="3.2" stroke-width="2.5"/>
+  </g>
+
+  <use href="#tmf-card" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+</symbol>
+<symbol id="art-ms-opus" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="mso-glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e8f4f4"/>
+      <stop offset="0.45" stop-color="#dfeef1"/>
+      <stop offset="0.72" stop-color="#eaf6f4"/>
+      <stop offset="1" stop-color="#d6e6ea"/>
+    </linearGradient>
+    <radialGradient id="mso-fov" cx="0.42" cy="0.36" r="0.78">
+      <stop offset="0" stop-color="#fdf9ee"/>
+      <stop offset="0.55" stop-color="#f6efe1"/>
+      <stop offset="0.86" stop-color="#e6dcd0"/>
+      <stop offset="1" stop-color="#cfc6bf"/>
+    </radialGradient>
+    <radialGradient id="mso-vig" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0.62" stop-color="#1b1c2c" stop-opacity="0"/>
+      <stop offset="0.88" stop-color="#1b1c2c" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#141526" stop-opacity="0.5"/>
+    </radialGradient>
+    <radialGradient id="mso-cocG" cx="0.34" cy="0.28" r="0.82">
+      <stop offset="0" stop-color="#b494dd"/>
+      <stop offset="0.42" stop-color="#7d4fb0"/>
+      <stop offset="0.85" stop-color="#4a2377"/>
+      <stop offset="1" stop-color="#341356"/>
+    </radialGradient>
+    <radialGradient id="mso-cocG2" cx="0.36" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#a9d0e6"/>
+      <stop offset="0.45" stop-color="#5f86b6"/>
+      <stop offset="1" stop-color="#2e3f6d"/>
+    </radialGradient>
+    <linearGradient id="mso-rodG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e894b6"/>
+      <stop offset="0.35" stop-color="#d2淡" stop-opacity="0"/>
+      <stop offset="0.36" stop-color="#cf6f96"/>
+      <stop offset="1" stop-color="#9c2f5c"/>
+    </linearGradient>
+    <linearGradient id="mso-rodP" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9d7fd0"/>
+      <stop offset="0.4" stop-color="#6b41a6"/>
+      <stop offset="1" stop-color="#3a1c68"/>
+    </linearGradient>
+    <radialGradient id="mso-rbcG" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#f0b39c" stop-opacity="0.35"/>
+      <stop offset="0.42" stop-color="#e29a80" stop-opacity="0.7"/>
+      <stop offset="0.86" stop-color="#c86f54"/>
+      <stop offset="1" stop-color="#b05a44"/>
+    </radialGradient>
+    <radialGradient id="mso-wbcG" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#eee6f6"/>
+      <stop offset="0.7" stop-color="#dccdea"/>
+      <stop offset="1" stop-color="#bda6d4"/>
+    </radialGradient>
+    <radialGradient id="mso-epiG" cx="0.4" cy="0.34" r="0.8">
+      <stop offset="0" stop-color="#f3dbe6" stop-opacity="0.85"/>
+      <stop offset="0.7" stop-color="#e6c4d8" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#cfa4c0" stop-opacity="0.85"/>
+    </radialGradient>
+    <radialGradient id="mso-yeastG" cx="0.36" cy="0.3" r="0.82">
+      <stop offset="0" stop-color="#d9c9ee"/>
+      <stop offset="0.55" stop-color="#b79ad9"/>
+      <stop offset="1" stop-color="#6c4aa0"/>
+    </radialGradient>
+    <radialGradient id="mso-protG" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#cfe0ea" stop-opacity="0.9"/>
+      <stop offset="0.6" stop-color="#a8c2d6" stop-opacity="0.85"/>
+      <stop offset="1" stop-color="#7791ae" stop-opacity="0.9"/>
+    </radialGradient>
+
+    <filter id="mso-soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6"/>
+    </filter>
+    <filter id="mso-far" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+    <filter id="mso-veryfar" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="13"/>
+    </filter>
+    <filter id="mso-grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="1.05" numOctaves="2" seed="11" result="n"/>
+      <feColorMatrix in="n" type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+    </filter>
+    <filter id="mso-mottle" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.011" numOctaves="3" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.44  0 0 0 0 0.33  0 0 0 0 0.55  0.9 0 0 0 -0.15"/>
+    </filter>
+
+    <clipPath id="mso-fovClip"><circle cx="545" cy="505" r="393"/></clipPath>
+    <clipPath id="mso-slideClip"><rect x="4" y="4" width="992" height="992" rx="10"/></clipPath>
+
+    <g id="mso-bac">
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="url(#mso-rodG)"/>
+      <rect x="-18" y="-6.6" width="36" height="13.2" rx="6.6" fill="none" stroke="#8c2751" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="-5" cy="-2.4" rx="7" ry="2.3" fill="#ffffff" opacity="0.3"/>
+      <circle cx="8" cy="1.2" r="2.1" fill="#7c1e46" opacity="0.45"/>
+      <circle cx="-8" cy="1.8" r="1.6" fill="#7c1e46" opacity="0.35"/>
+    </g>
+    <g id="mso-bacf">
+      <path d="M18,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0 c9,-6 15,6 24,0" fill="none" stroke="#a8547a" stroke-width="1.1" stroke-opacity="0.5"/>
+      <path d="M18,-2 c10,-8 17,4 27,-3 c10,-7 16,5 26,-2" fill="none" stroke="#a8547a" stroke-width="0.9" stroke-opacity="0.35"/>
+      <path d="M-18,1 c-9,6 -15,-6 -24,0 c-9,6 -15,-6 -24,0" fill="none" stroke="#a8547a" stroke-width="1" stroke-opacity="0.42"/>
+      <use href="#mso-bac" xlink:href="#mso-bac"/>
+    </g>
+    <g id="mso-bacspore">
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="url(#mso-rodP)"/>
+      <rect x="-24" y="-7.4" width="48" height="14.8" rx="7" fill="none" stroke="#2e1358" stroke-width="1.1" stroke-opacity="0.7"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="#f7f2df"/>
+      <ellipse cx="9" cy="0" rx="8.5" ry="5.6" fill="none" stroke="#33175f" stroke-width="1" stroke-opacity="0.5"/>
+      <ellipse cx="-9" cy="-2.6" rx="8" ry="2.4" fill="#ffffff" opacity="0.26"/>
+    </g>
+    <g id="mso-coc">
+      <circle r="7" fill="url(#mso-cocG)"/>
+      <circle r="7" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.55"/>
+      <circle cx="-2.3" cy="-2.6" r="2" fill="#ffffff" opacity="0.4"/>
+    </g>
+    <g id="mso-coc2">
+      <circle r="6.2" fill="url(#mso-cocG2)"/>
+      <circle cx="-2" cy="-2.2" r="1.7" fill="#ffffff" opacity="0.38"/>
+    </g>
+    <g id="mso-diplo">
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="url(#mso-cocG)"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="url(#mso-cocG)"/>
+      <ellipse cx="-7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <ellipse cx="7" cy="0" rx="7.6" ry="8.4" fill="none" stroke="#2f1152" stroke-width="0.9" stroke-opacity="0.5"/>
+      <circle cx="-9" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+      <circle cx="5" cy="-3" r="2" fill="#fff" opacity="0.35"/>
+    </g>
+    <g id="mso-yeast">
+      <ellipse rx="30" ry="26" fill="url(#mso-yeastG)"/>
+      <ellipse rx="30" ry="26" fill="none" stroke="#4b2b7d" stroke-width="2" stroke-opacity="0.65"/>
+      <ellipse rx="22" ry="18" fill="none" stroke="#f0e6fa" stroke-width="1.2" stroke-opacity="0.35"/>
+      <circle cx="-9" cy="-8" r="5" fill="#ffffff" opacity="0.3"/>
+      <circle cx="7" cy="6" r="4.4" fill="#3d2068" opacity="0.35"/>
+      <circle cx="-3" cy="11" r="3" fill="#3d2068" opacity="0.25"/>
+      <g transform="translate(26,-20) rotate(-30)">
+        <ellipse rx="15" ry="13" fill="url(#mso-yeastG)"/>
+        <ellipse rx="15" ry="13" fill="none" stroke="#4b2b7d" stroke-width="1.6" stroke-opacity="0.6"/>
+        <circle cx="-4" cy="-4" r="3" fill="#fff" opacity="0.28"/>
+      </g>
+    </g>
+  </defs>
+
+  <g clip-path="url(#mso-slideClip)">
+    <!-- glass slide -->
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="url(#mso-glass)" fill-opacity="0.62"/>
+    <rect x="14" y="14" width="972" height="972" rx="6" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.5"/>
+    <rect x="4" y="4" width="992" height="992" rx="10" fill="none" stroke="#93b0b8" stroke-width="4" stroke-opacity="0.75"/>
+    <path d="M4,26 L996,26" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+    <path d="M4,974 L996,974" stroke="#8fa9b1" stroke-width="2" stroke-opacity="0.3"/>
+
+    <!-- frosted label end -->
+    <rect x="6" y="6" width="152" height="988" fill="#f6f3ea" fill-opacity="0.8"/>
+    <rect x="6" y="6" width="152" height="988" filter="url(#mso-grain)" opacity="0.22"/>
+    <path d="M158,6 L158,994" stroke="#b9c9cc" stroke-width="2.5" stroke-opacity="0.7"/>
+    <path d="M150,6 L150,994" stroke="#ffffff" stroke-width="4" stroke-opacity="0.5"/>
+    <g transform="rotate(-90 82 500)" font-family="Georgia,'Times New Roman',serif" fill="#3b4250" text-anchor="middle">
+      <text x="82" y="60" font-size="30" letter-spacing="5" fill-opacity="0.82">GRAM  STAIN  ·  SPUTUM</text>
+      <text x="82" y="96" font-size="21" fill-opacity="0.7" letter-spacing="2">acc. 26–1174   oil imm.  400×</text>
+      <text x="82" y="128" font-size="19" fill-opacity="0.55" letter-spacing="2" font-style="italic">fixed &amp; counterstained · 05·08·26</text>
+    </g>
+
+    <!-- coverslip -->
+    <rect x="182" y="98" width="792" height="812" fill="#ffffff" fill-opacity="0.07" stroke="#8fb2be" stroke-width="2.2" stroke-opacity="0.55"/>
+    <rect x="188" y="104" width="780" height="800" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-opacity="0.4"/>
+    <path d="M182,98 L214,98 L182,130 Z" fill="#ffffff" fill-opacity="0.22"/>
+    <path d="M974,910 L938,910 L974,874 Z" fill="#8fb2be" fill-opacity="0.18"/>
+    <!-- trapped air / mounting medium edges -->
+    <path d="M182,300 c60,-26 130,10 190,-14" fill="none" stroke="#a8c6cf" stroke-width="1.4" stroke-opacity="0.4"/>
+    <path d="M974,660 c-70,20 -120,-16 -186,6" fill="none" stroke="#a8c6cf" stroke-width="1.2" stroke-opacity="0.32"/>
+    <!-- dust and fibre on the glass -->
+    <path d="M240,940 c40,-18 90,-6 130,-26" fill="none" stroke="#8c9aa2" stroke-width="1.3" stroke-opacity="0.35"/>
+    <circle cx="300" cy="60" r="2.2" fill="#7f8d95" opacity="0.4"/>
+    <circle cx="860" cy="70" r="1.6" fill="#7f8d95" opacity="0.35"/>
+    <circle cx="930" cy="946" r="2.6" fill="#7f8d95" opacity="0.3"/>
+    <circle cx="620" cy="960" r="1.8" fill="#7f8d95" opacity="0.3"/>
+
+    <!-- ============ 400x FIELD OF VIEW ============ -->
+    <g clip-path="url(#mso-fovClip)">
+      <circle cx="545" cy="505" r="393" fill="url(#mso-fov)"/>
+      <rect x="152" y="112" width="786" height="786" filter="url(#mso-mottle)" opacity="0.2"/>
+
+      <!-- out-of-focus plane -->
+      <g filter="url(#mso-veryfar)" opacity="0.4">
+        <ellipse cx="330" cy="230" rx="52" ry="22" transform="rotate(-24 330 230)" fill="#8d6fb8"/>
+        <ellipse cx="880" cy="380" rx="46" ry="20" transform="rotate(38 880 380)" fill="#a3608a"/>
+        <circle cx="640" cy="880" r="26" fill="#7b57a8"/>
+        <circle cx="240" cy="560" r="20" fill="#8e6bb2"/>
+        <ellipse cx="760" cy="140" rx="40" ry="17" transform="rotate(12 760 140)" fill="#9a5c86"/>
+      </g>
+      <g filter="url(#mso-far)" opacity="0.5">
+        <ellipse cx="430" cy="180" rx="24" ry="9" transform="rotate(28 430 180)" fill="#9a4f78"/>
+        <ellipse cx="880" cy="620" rx="26" ry="10" transform="rotate(-42 880 620)" fill="#9a4f78"/>
+        <circle cx="700" cy="620" r="9" fill="#6d43a0"/>
+        <circle cx="716" cy="632" r="8" fill="#6d43a0"/>
+        <circle cx="300" cy="380" r="8.5" fill="#6d43a0"/>
+        <ellipse cx="560" cy="200" rx="30" ry="11" transform="rotate(-8 560 200)" fill="#8a3f6a"/>
+      </g>
+
+      <!-- mucus / proteinaceous debris strands -->
+      <g fill="none" stroke="#b9a9ae" stroke-opacity="0.3" filter="url(#mso-soft)">
+        <path d="M170,420 C300,380 380,470 520,430 C660,390 760,470 920,430" stroke-width="14"/>
+        <path d="M200,760 C320,700 420,780 540,730 C680,672 800,760 930,700" stroke-width="10"/>
+        <path d="M640,150 C620,300 700,380 660,520 C630,630 700,760 660,880" stroke-width="9"/>
+      </g>
+      <g fill="none" stroke="#8f7f86" stroke-opacity="0.22">
+        <path d="M170,432 C300,392 380,482 520,442 C660,402 760,482 920,442" stroke-width="2"/>
+        <path d="M200,770 C320,710 420,790 540,740 C680,682 800,770 930,710" stroke-width="1.6"/>
+      </g>
+
+      <!-- partial air bubble at lower-left of field -->
+      <g>
+        <circle cx="255" cy="885" r="168" fill="#ffffff" fill-opacity="0.1"/>
+        <circle cx="255" cy="885" r="168" fill="none" stroke="#5c5f6b" stroke-width="15" stroke-opacity="0.3" filter="url(#mso-soft)"/>
+        <circle cx="255" cy="885" r="158" fill="none" stroke="#ffffff" stroke-width="6" stroke-opacity="0.35"/>
+      </g>
+
+      <!-- squamous epithelial cell (scale reference) -->
+      <g>
+        <path d="M380,442 C472,448 562,492 586,572 C612,652 590,748 520,802 C450,856 340,882 260,846 C176,808 136,720 152,636 C168,550 232,470 302,452 C326,445 356,440 380,442 Z"
+              fill="url(#mso-epiG)" stroke="#a2708f" stroke-width="2.4" stroke-opacity="0.7"/>
+        <path d="M362,470 C444,478 522,516 546,584 C572,656 550,736 490,782 C426,830 336,850 268,818" fill="none" stroke="#ffffff" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M188,700 C250,742 330,760 404,742 C466,727 512,690 536,640" fill="none" stroke="#b8809f" stroke-width="2" stroke-opacity="0.45"/>
+        <ellipse cx="366" cy="642" rx="52" ry="46" fill="#7a4c92" fill-opacity="0.55" stroke="#4d2560" stroke-width="2" stroke-opacity="0.6"/>
+        <ellipse cx="352" cy="630" rx="18" ry="14" fill="#c9a8db" fill-opacity="0.5"/>
+        <circle cx="382" cy="660" r="7" fill="#3b1a52" fill-opacity="0.5"/>
+        <circle cx="350" cy="664" r="5" fill="#3b1a52" fill-opacity="0.4"/>
+        <circle cx="374" cy="620" r="4" fill="#3b1a52" fill-opacity="0.35"/>
+        <!-- adherent cocci on the cell surface (clue-cell look) -->
+        <g>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(250,530) scale(0.8)"/>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(268,548) scale(0.8)"/>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(246,562) scale(0.8)"/>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(452,700) scale(0.8)"/>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(470,712) scale(0.8)"/>
+          <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(300,760) scale(0.8)"/>
+          <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(420,540) rotate(28) scale(0.85)"/>
+          <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(330,506) rotate(-14) scale(0.85)"/>
+          <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(470,626) rotate(64) scale(0.8)"/>
+        </g>
+      </g>
+
+      <!-- neutrophil with phagocytosed diplococci -->
+      <g transform="translate(752,318)">
+        <circle r="58" fill="url(#mso-wbcG)" stroke="#8f6fb0" stroke-width="2" stroke-opacity="0.6"/>
+        <path d="M-34,-16 C-46,-40 -22,-56 -2,-46 C10,-56 34,-48 38,-26 C54,-18 52,10 34,18 C34,40 8,52 -8,38 C-30,44 -46,24 -40,4 Z"
+              fill="#5a2d86" fill-opacity="0.78"/>
+        <path d="M-30,-14 C-40,-34 -20,-46 -4,-38" fill="none" stroke="#d6c2ea" stroke-width="2.4" stroke-opacity="0.4"/>
+        <path d="M2,-44 C-6,-24 8,-8 26,-14" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.35"/>
+        <path d="M-6,36 C-2,16 -20,4 -36,8" fill="none" stroke="#efe7f8" stroke-width="3" stroke-opacity="0.3"/>
+        <g fill="#7a52a8" fill-opacity="0.45">
+          <circle cx="-46" cy="30" r="3.2"/><circle cx="-30" cy="44" r="2.6"/><circle cx="46" cy="-2" r="3"/>
+          <circle cx="40" cy="34" r="2.8"/><circle cx="18" cy="48" r="3.2"/><circle cx="-52" cy="-6" r="2.6"/>
+          <circle cx="6" cy="-54" r="2.8"/>
+        </g>
+        <use href="#mso-diplo" xlink:href="#mso-diplo" transform="translate(-8,14) rotate(30) scale(0.62)"/>
+        <use href="#mso-diplo" xlink:href="#mso-diplo" transform="translate(24,-38) rotate(-52) scale(0.58)"/>
+      </g>
+      <use href="#mso-diplo" xlink:href="#mso-diplo" transform="translate(838,222) rotate(24)"/>
+      <use href="#mso-diplo" xlink:href="#mso-diplo" transform="translate(676,398) rotate(-64)"/>
+      <use href="#mso-diplo" xlink:href="#mso-diplo" transform="translate(866,300) rotate(74) scale(0.9)"/>
+
+      <!-- erythrocytes -->
+      <g>
+        <g transform="translate(786,690)"><circle r="45" fill="url(#mso-rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(864,608) scale(0.97)"><circle r="45" fill="url(#mso-rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="22" fill="#f6e0cf" fill-opacity="0.28"/></g>
+        <g transform="translate(700,772) scale(0.94)"><circle r="45" fill="url(#mso-rbcG)"/><circle r="45" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/><circle r="21" fill="#f6e0cf" fill-opacity="0.3"/></g>
+        <g transform="translate(880,760) scale(0.9) rotate(20)"><ellipse rx="45" ry="38" fill="url(#mso-rbcG)"/><ellipse rx="45" ry="38" fill="none" stroke="#a85440" stroke-width="1.6" stroke-opacity="0.5"/></g>
+      </g>
+
+      <!-- Candida: budding yeast with pseudohypha -->
+      <g transform="translate(318,806) rotate(-16)">
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#7a54ad" stroke-width="20" stroke-opacity="0.5" stroke-linecap="round"/>
+        <path d="M-70,26 C-30,10 10,-4 54,-20" fill="none" stroke="#432272" stroke-width="1.6" stroke-opacity="0.5" fill-opacity="0"/>
+        <path d="M-24,12 l0,-1" stroke="#432272" stroke-width="1.6" stroke-opacity="0.45"/>
+        <use href="#mso-yeast" xlink:href="#mso-yeast"/>
+      </g>
+      <use href="#mso-yeast" xlink:href="#mso-yeast" transform="translate(206,300) rotate(24) scale(0.82)"/>
+
+      <!-- flagellated protozoan (pear-shaped, 4 flagellar pairs) -->
+      <g transform="translate(690,236) rotate(-22)">
+        <g fill="none" stroke="#6d8298" stroke-width="1.6" stroke-opacity="0.55" stroke-linecap="round">
+          <path d="M78,-8 c26,-8 44,10 68,4"/>
+          <path d="M80,6 c28,10 48,-6 72,2"/>
+          <path d="M-14,-46 c-8,-26 -34,-32 -52,-26"/>
+          <path d="M-16,44 c-6,26 -32,34 -52,28"/>
+          <path d="M-70,4 c-30,4 -44,-14 -66,-10"/>
+        </g>
+        <path d="M78,0 C74,30 40,52 -6,52 C-52,52 -80,28 -80,0 C-80,-28 -52,-52 -6,-52 C40,-52 74,-30 78,0 Z"
+              fill="url(#mso-protG)" stroke="#54748f" stroke-width="2.2" stroke-opacity="0.7"/>
+        <ellipse cx="-24" cy="0" rx="42" ry="36" fill="none" stroke="#3f6280" stroke-width="2.6" stroke-opacity="0.5"/>
+        <ellipse cx="-30" cy="-14" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <ellipse cx="-30" cy="16" rx="14" ry="11" fill="#33517a" fill-opacity="0.5"/>
+        <path d="M14,-16 C40,-10 46,10 20,20" fill="none" stroke="#3f6280" stroke-width="3" stroke-opacity="0.45"/>
+        <g fill="#2f4c6b" fill-opacity="0.35">
+          <circle cx="40" cy="-24" r="3"/><circle cx="52" cy="-6" r="2.4"/><circle cx="44" cy="26" r="2.8"/>
+          <circle cx="12" cy="38" r="2.4"/><circle cx="-52" cy="34" r="2.6"/>
+        </g>
+        <ellipse cx="-40" cy="-26" rx="12" ry="8" fill="#ffffff" fill-opacity="0.28"/>
+      </g>
+
+      <!-- staphylococci: grape-like cluster -->
+      <g transform="translate(432,318)">
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(0,0)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(13,-8)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(6,12)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(20,7)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-12,9)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-6,-13)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(9,-24)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(26,-18)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(32,-4)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(19,22)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(3,27)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-16,-4)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-20,22)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-30,10)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(38,10)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-4,-26) scale(0.9)"/>
+      </g>
+      <g transform="translate(600,168)">
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(0,0) scale(0.95)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(12,8) scale(0.95)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(-11,10) scale(0.95)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(2,20) scale(0.95)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(22,-4) scale(0.9)"/>
+      </g>
+
+      <!-- streptococci: chain -->
+      <g>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(498,784)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(511,777)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(525,772)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(539,770)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(553,771)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(567,776)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(580,783)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(592,792)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(604,802)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(617,810)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(631,815)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(645,817)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(659,815)"/>
+      </g>
+      <g>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(210,470)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(222,462)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(234,456)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(247,454)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(260,456)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(272,462)"/>
+      </g>
+
+      <!-- bacilli, some flagellated -->
+      <use href="#mso-bacf" xlink:href="#mso-bacf" transform="translate(600,452) rotate(-18)"/>
+      <use href="#mso-bacf" xlink:href="#mso-bacf" transform="translate(508,596) rotate(38)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(654,500) rotate(62)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(720,548) rotate(-34)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(786,470) rotate(14)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(842,436) rotate(-56)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(880,528) rotate(78)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(596,656) rotate(-8)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(560,700) rotate(48)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(268,624) rotate(-70)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(212,668) rotate(22)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(316,222) rotate(-40)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(392,196) rotate(16)"/>
+      <use href="#mso-bacf" xlink:href="#mso-bacf" transform="translate(470,244) rotate(-6)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(836,672) rotate(-24) scale(0.95)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(452,860) rotate(-44)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(742,856) rotate(30)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(300,352) rotate(84) scale(0.92)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(920,340) rotate(-12)"/>
+      <use href="#mso-bac" xlink:href="#mso-bac" transform="translate(546,144) rotate(52)"/>
+
+      <!-- Gram-positive spore-forming bacilli (chain) -->
+      <use href="#mso-bacspore" xlink:href="#mso-bacspore" transform="translate(230,376) rotate(-12)"/>
+      <use href="#mso-bacspore" xlink:href="#mso-bacspore" transform="translate(288,290) rotate(-12) scale(0.95)"/>
+      <use href="#mso-bacspore" xlink:href="#mso-bacspore" transform="translate(694,586) rotate(66)"/>
+      <use href="#mso-bacspore" xlink:href="#mso-bacspore" transform="translate(802,146) rotate(20) scale(0.95)"/>
+
+      <!-- vibrios: comma-shaped -->
+      <g fill="none" stroke="#a83a68" stroke-width="12" stroke-linecap="round" stroke-opacity="0.92">
+        <path d="M834,806 c14,-16 34,-18 52,-6"/>
+        <path d="M660,904 c16,-14 36,-14 52,0"/>
+        <path d="M902,614 c8,-18 26,-26 46,-20"/>
+        <path d="M212,748 c14,-14 34,-14 50,-2"/>
+      </g>
+      <g fill="none" stroke="#e59ab6" stroke-width="3" stroke-linecap="round" stroke-opacity="0.5">
+        <path d="M836,802 c13,-14 32,-16 48,-6"/>
+        <path d="M662,900 c15,-12 33,-12 48,0"/>
+      </g>
+
+      <!-- spirochetes -->
+      <g fill="none" stroke="#5c2f96" stroke-width="3.4" stroke-linecap="round" stroke-opacity="0.9">
+        <g transform="translate(196,540) rotate(14)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(566,872) rotate(-10) scale(1.05)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0"/>
+        </g>
+        <g transform="translate(700,120) rotate(28) scale(0.92)">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+        <g transform="translate(892,880) rotate(-46) scale(0.85)" stroke-width="3.8">
+          <path d="M0,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0 c8,-15 16,-15 24,0 c8,15 16,15 24,0"/>
+        </g>
+      </g>
+      <!-- spirillum: thicker helical rod -->
+      <g fill="none" stroke="#8e3a66" stroke-width="9" stroke-linecap="round" stroke-opacity="0.9" transform="translate(760,760) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+      <g fill="none" stroke="#e29cba" stroke-width="2.4" stroke-opacity="0.4" transform="translate(760,757) rotate(-64)">
+        <path d="M0,0 c10,-20 22,-20 32,0 c10,20 22,20 32,0 c10,-20 22,-20 32,0"/>
+      </g>
+
+      <!-- fine coccal / coccobacillary flora and stain precipitate -->
+      <g>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(376,412) scale(0.72)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(672,680) scale(0.7)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(504,470) scale(0.66)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(806,556) scale(0.68)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(618,282) scale(0.7)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(258,222) scale(0.66)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(486,152) scale(0.7)"/>
+        <use href="#mso-coc" xlink:href="#mso-coc" transform="translate(908,700) scale(0.72)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(556,548) scale(0.8)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(752,470) scale(0.78)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(370,884) scale(0.8)"/>
+        <use href="#mso-coc2" xlink:href="#mso-coc2" transform="translate(866,392) scale(0.76)"/>
+      </g>
+      <g fill="#4a2a6b" fill-opacity="0.5">
+        <circle cx="330" cy="588" r="2.2"/><circle cx="424" cy="452" r="1.7"/><circle cx="612" cy="386" r="2.4"/>
+        <circle cx="708" cy="452" r="1.8"/><circle cx="778" cy="404" r="2.1"/><circle cx="812" cy="500" r="1.6"/>
+        <circle cx="640" cy="736" r="2.3"/><circle cx="574" cy="640" r="1.9"/><circle cx="500" cy="716" r="2.5"/>
+        <circle cx="270" cy="512" r="1.7"/><circle cx="358" cy="266" r="2.2"/><circle cx="470" cy="330" r="1.6"/>
+        <circle cx="540" cy="238" r="2"/><circle cx="672" cy="516" r="1.5"/><circle cx="856" cy="480" r="2.3"/>
+        <circle cx="904" cy="600" r="1.8"/><circle cx="770" cy="612" r="2.1"/><circle cx="690" cy="828" r="1.7"/>
+        <circle cx="820" cy="880" r="2.4"/><circle cx="248" cy="700" r="1.9"/><circle cx="196" cy="600" r="2.2"/>
+        <circle cx="452" cy="800" r="1.6"/><circle cx="404" cy="740" r="2"/><circle cx="600" cy="120" r="2.1"/>
+        <circle cx="880" cy="200" r="1.8"/><circle cx="748" cy="180" r="2.3"/><circle cx="298" cy="428" r="1.7"/>
+        <circle cx="524" cy="892" r="2.2"/><circle cx="900" cy="808" r="1.6"/><circle cx="646" cy="200" r="1.9"/>
+      </g>
+
+      <!-- eyepiece reticle -->
+      <g stroke="#2b3145" stroke-opacity="0.26">
+        <path d="M545,132 L545,462" stroke-width="1.4"/>
+        <path d="M545,548 L545,878" stroke-width="1.4"/>
+        <path d="M164,505 L502,505" stroke-width="1.4"/>
+        <path d="M588,505 L926,505" stroke-width="1.4"/>
+        <g stroke-width="1.4">
+          <path d="M537,220 L553,220"/><path d="M537,320 L553,320"/><path d="M537,420 L553,420"/>
+          <path d="M537,620 L553,620"/><path d="M537,720 L553,720"/><path d="M537,820 L553,820"/>
+          <path d="M260,497 L260,513"/><path d="M360,497 L360,513"/><path d="M460,497 L460,513"/>
+          <path d="M660,497 L660,513"/><path d="M760,497 L760,513"/><path d="M860,497 L860,513"/>
+        </g>
+      </g>
+      <g stroke="#243049" stroke-opacity="0.55">
+        <path d="M248,308 L368,308" stroke-width="3.2"/>
+        <path d="M248,300 L248,316" stroke-width="2.4"/>
+        <path d="M368,300 L368,316" stroke-width="2.4"/>
+        <path d="M278,303 L278,313" stroke-width="1.6"/>
+        <path d="M308,302 L308,314" stroke-width="1.8"/>
+        <path d="M338,303 L338,313" stroke-width="1.6"/>
+      </g>
+      <text x="308" y="292" font-family="Georgia,'Times New Roman',serif" font-size="19" fill="#243049" fill-opacity="0.62" text-anchor="middle">10 µm</text>
+
+      <!-- field grain + vignette -->
+      <rect x="152" y="112" width="786" height="786" filter="url(#mso-grain)" opacity="0.14"/>
+      <circle cx="545" cy="505" r="393" fill="url(#mso-vig)"/>
+    </g>
+
+    <!-- lens rim: chromatic fringes + barrel edge -->
+    <circle cx="545" cy="505" r="386" fill="none" stroke="#7fc3d8" stroke-width="4" stroke-opacity="0.35"/>
+    <circle cx="545" cy="505" r="392" fill="none" stroke="#d9a469" stroke-width="3" stroke-opacity="0.3"/>
+    <circle cx="545" cy="505" r="395" fill="none" stroke="#22242f" stroke-width="6" stroke-opacity="0.55"/>
+    <circle cx="545" cy="505" r="400" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.35"/>
+
+    <!-- glass specular streaks over everything -->
+    <g opacity="0.5">
+      <path d="M-60,760 L300,-40 L392,-40 L32,760 Z" fill="#ffffff" fill-opacity="0.09"/>
+      <path d="M420,1040 L820,120 L866,120 L466,1040 Z" fill="#ffffff" fill-opacity="0.06"/>
+    </g>
+
+    <!-- annotation in wax pencil on the glass -->
+    <g font-family="Georgia,'Times New Roman',serif" fill="#3d4a56" fill-opacity="0.6">
+      <text x="196" y="72" font-size="20" font-style="italic">field 3 · ×400 (40/0.65)</text>
+      <text x="968" y="956" font-size="19" font-style="italic" text-anchor="end">mixed flora, PMNs present</text>
+    </g>
+    <path d="M186,84 C260,76 330,86 402,78" fill="none" stroke="#3d4a56" stroke-width="1.4" stroke-opacity="0.35"/>
+  </g>
+</symbol>
+<symbol id="art-ms-sonnet" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="mss-glassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef6f8"/>
+      <stop offset="55%" stop-color="#e2edf1"/>
+      <stop offset="100%" stop-color="#cfe0e6"/>
+    </linearGradient>
+    <radialGradient id="mss-smearGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#eeb9d4" stop-opacity="0.55"/>
+      <stop offset="70%" stop-color="#dca0c4" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#dca0c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mss-fieldGrad" cx="45%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#f8dcea"/>
+      <stop offset="45%" stop-color="#ecbcd6"/>
+      <stop offset="75%" stop-color="#c98bb0"/>
+      <stop offset="100%" stop-color="#3a0f24"/>
+    </radialGradient>
+    <radialGradient id="mss-rodGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffb0cc"/>
+      <stop offset="50%" stop-color="#e0537f"/>
+      <stop offset="100%" stop-color="#82203f"/>
+    </radialGradient>
+    <radialGradient id="mss-coccusGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#cdb0ff"/>
+      <stop offset="55%" stop-color="#7c4bb5"/>
+      <stop offset="100%" stop-color="#3c1861"/>
+    </radialGradient>
+    <radialGradient id="mss-spiralGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffcf8f"/>
+      <stop offset="55%" stop-color="#df8536"/>
+      <stop offset="100%" stop-color="#7a3d0f"/>
+    </radialGradient>
+    <radialGradient id="mss-nucleusGrad" cx="35%" cy="30%" r="80%">
+      <stop offset="0%" stop-color="#7568e6"/>
+      <stop offset="60%" stop-color="#453191"/>
+      <stop offset="100%" stop-color="#221a4d"/>
+    </radialGradient>
+    <radialGradient id="mss-cytoGrad" cx="42%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#faeef4"/>
+      <stop offset="70%" stop-color="#eccbdc"/>
+      <stop offset="100%" stop-color="#cf9fb9"/>
+    </radialGradient>
+    <radialGradient id="mss-rbcGrad" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#f1a9b8" stop-opacity="0.55"/>
+      <stop offset="60%" stop-color="#df7c92" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#c85c73" stop-opacity="0.55"/>
+    </radialGradient>
+    <linearGradient id="mss-bezelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#eef0f2"/>
+      <stop offset="45%" stop-color="#9598a0"/>
+      <stop offset="55%" stop-color="#5c5e66"/>
+      <stop offset="100%" stop-color="#232327"/>
+    </linearGradient>
+    <radialGradient id="mss-vignette" cx="50%" cy="50%" r="55%">
+      <stop offset="55%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.55"/>
+    </radialGradient>
+    <clipPath id="mss-fieldClip">
+      <circle cx="500" cy="500" r="478"/>
+    </clipPath>
+    <filter id="mss-softBlur" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+    <filter id="mss-grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0"/>
+    </filter>
+
+    <g id="mss-coccus">
+      <circle r="13" fill="url(#mss-coccusGrad)" stroke="#241238" stroke-width="1.3"/>
+      <ellipse cx="-4" cy="-5" rx="4" ry="3" fill="#ffffff" opacity="0.45"/>
+    </g>
+
+    <g id="mss-rod">
+      <path d="M -21,-11 L 21,-11 A 11 11 0 0 1 21,11 L -21,11 A 11 11 0 0 1 -21,-11 Z" fill="url(#mss-rodGrad)" stroke="#5c1230" stroke-width="1.3"/>
+      <ellipse cx="-8" cy="-4" rx="11" ry="3.6" fill="#ffffff" opacity="0.32"/>
+      <path d="M -18 1 Q 0 -3 18 1" stroke="#5c1230" stroke-width="1" fill="none" opacity="0.35"/>
+      <path d="M -32,-3 Q -55,-16 -76,-6 Q -92,2 -103,-9" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M -32,4 Q -50,18 -70,10" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+      <path d="M 32,3 Q 55,16 76,5 Q 91,-3 101,10" stroke="#e0537f" stroke-width="1.1" fill="none" opacity="0.4"/>
+      <path d="M 32,-4 Q 50,-18 68,-9" stroke="#e0537f" stroke-width="1" fill="none" opacity="0.3"/>
+    </g>
+
+    <g id="mss-rodSpore">
+      <use href="#mss-rod"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="#f7e6ee" stroke="#5c1230" stroke-width="1" opacity="0.95"/>
+      <ellipse cx="20" cy="0" rx="9" ry="7" fill="none" stroke="#ffffff" stroke-width="0.6" opacity="0.5"/>
+    </g>
+
+    <g id="mss-spiral">
+      <path d="M -70 0 C -55 -24, -25 24, 0 0 C 25 -24, 55 24, 70 0" stroke="url(#mss-spiralGrad)" stroke-width="9" fill="none" stroke-linecap="round"/>
+      <path d="M -70 -3 C -55 -27, -25 21, 0 -3 C 25 -27, 55 21, 70 -3" stroke="#ffe3b0" stroke-width="2.4" fill="none" stroke-linecap="round" opacity="0.4"/>
+      <path d="M 70,0 Q 88,-10 98,2 Q 84,4 92,14" stroke="#df8536" stroke-width="1.3" fill="none" opacity="0.5"/>
+    </g>
+
+    <g id="mss-rbc">
+      <ellipse rx="34" ry="30" fill="url(#mss-rbcGrad)"/>
+      <ellipse rx="13" ry="11" fill="#c85c73" opacity="0.5"/>
+    </g>
+  </defs>
+
+  <!-- glass slide base -->
+  <rect x="8" y="8" width="984" height="984" rx="44" ry="44" fill="url(#mss-glassGrad)"/>
+  <ellipse cx="500" cy="500" rx="530" ry="440" transform="rotate(18 500 500)" fill="url(#mss-smearGrad)"/>
+
+  <!-- corner: specimen label -->
+  <g>
+    <rect x="20" y="20" width="188" height="74" rx="6" fill="#faf6ec" stroke="#c8c1a9" stroke-width="2"/>
+    <circle cx="36" cy="37" r="6" fill="#bd3b2c"/>
+    <text x="50" y="41" font-family="'Courier New', monospace" font-size="14" font-weight="bold" fill="#3a3428">SAMPLE 04</text>
+    <text x="30" y="60" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Mixed bacterial flora</text>
+    <text x="30" y="76" font-family="Georgia, serif" font-style="italic" font-size="11" fill="#5a5340">Gram stain · 400×</text>
+  </g>
+
+  <!-- corner: tape -->
+  <g transform="translate(880,50) rotate(8)">
+    <rect x="-95" y="-20" width="190" height="42" fill="#e9dcb5" opacity="0.6"/>
+    <text x="0" y="6" text-anchor="middle" font-family="'Courier New', monospace" font-size="12" fill="#5a4b2c" opacity="0.75">smear #4</text>
+  </g>
+
+  <!-- corner: biohazard trefoil -->
+  <g transform="translate(95,905)" opacity="0.4">
+    <circle cx="0" cy="-16" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="-14" cy="8" r="15" fill="none" stroke="#555" stroke-width="4"/>
+    <circle cx="0" cy="0" r="6" fill="#555"/>
+  </g>
+
+  <!-- corner: crack -->
+  <path d="M 900,905 L 918,918 L 912,932 L 930,945 L 922,958" fill="none" stroke="#8f9aa0" stroke-width="1.4" opacity="0.5"/>
+
+  <!-- glass shine streaks -->
+  <polygon points="640,20 700,20 480,300 420,300" fill="#ffffff" opacity="0.1"/>
+  <polygon points="120,760 165,760 60,970 15,970" fill="#ffffff" opacity="0.08"/>
+
+  <!-- drop shadow of viewport -->
+  <ellipse cx="512" cy="514" rx="478" ry="478" fill="#000000" opacity="0.22" filter="url(#mss-softBlur)"/>
+
+  <!-- magnified field -->
+  <g clip-path="url(#mss-fieldClip)">
+    <circle cx="500" cy="500" r="478" fill="url(#mss-fieldGrad)"/>
+    <rect x="20" y="20" width="960" height="960" filter="url(#mss-grain)" opacity="0.4"/>
+
+    <line x1="14" y1="500" x2="986" y2="500" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <line x1="500" y1="14" x2="500" y2="986" stroke="#ffffff" stroke-width="1" opacity="0.1"/>
+    <circle cx="500" cy="500" r="150" fill="none" stroke="#ffffff" opacity="0.07" stroke-width="1"/>
+    <circle cx="500" cy="500" r="300" fill="none" stroke="#ffffff" opacity="0.06" stroke-width="1"/>
+    <circle cx="500" cy="500" r="450" fill="none" stroke="#ffffff" opacity="0.05" stroke-width="1"/>
+
+    <g filter="url(#mss-softBlur)" opacity="0.35">
+      <use href="#mss-rbc" x="110" y="140"/>
+      <use href="#mss-rbc" x="890" y="190"/>
+      <use href="#mss-rbc" x="140" y="890"/>
+      <use href="#mss-rbc" x="860" y="860"/>
+      <use href="#mss-rbc" x="500" y="880"/>
+      <use href="#mss-rbc" x="500" y="120"/>
+      <use href="#mss-rbc" x="280" y="650"/>
+      <use href="#mss-rbc" x="730" y="340"/>
+    </g>
+
+    <!-- stain debris -->
+    <g fill="#7a2d52" opacity="0.35">
+      <circle cx="120" cy="350" r="2.2"/><circle cx="300" cy="250" r="2.6"/><circle cx="430" cy="480" r="2"/>
+      <circle cx="600" cy="350" r="2.4"/><circle cx="780" cy="300" r="2"/><circle cx="880" cy="500" r="2.6"/>
+      <circle cx="750" cy="700" r="2.2"/><circle cx="600" cy="850" r="2"/><circle cx="430" cy="650" r="2.4"/>
+      <circle cx="250" cy="480" r="2"/><circle cx="160" cy="700" r="2.6"/><circle cx="350" cy="900" r="2"/>
+      <circle cx="700" cy="900" r="2.2"/><circle cx="900" cy="700" r="2"/><circle cx="500" cy="650" r="2.4"/>
+      <circle cx="650" cy="450" r="2"/><circle cx="200" cy="200" r="2.4"/><circle cx="850" cy="200" r="2"/>
+    </g>
+
+    <!-- Staphylococcus clusters -->
+    <g>
+      <use href="#mss-coccus" x="190" y="650"/><use href="#mss-coccus" x="210" y="642"/><use href="#mss-coccus" x="174" y="636"/>
+      <use href="#mss-coccus" x="212" y="664"/><use href="#mss-coccus" x="168" y="660"/><use href="#mss-coccus" x="194" y="626"/>
+      <use href="#mss-coccus" x="184" y="674"/><use href="#mss-coccus" x="164" y="646"/><use href="#mss-coccus" x="216" y="652"/>
+      <use href="#mss-coccus" x="198" y="670"/><use href="#mss-coccus" x="180" y="628"/>
+    </g>
+    <g>
+      <use href="#mss-coccus" x="760" y="290"/><use href="#mss-coccus" x="780" y="282"/><use href="#mss-coccus" x="744" y="276"/>
+      <use href="#mss-coccus" x="782" y="304"/><use href="#mss-coccus" x="738" y="300"/><use href="#mss-coccus" x="764" y="266"/>
+      <use href="#mss-coccus" x="754" y="314"/><use href="#mss-coccus" x="734" y="286"/><use href="#mss-coccus" x="786" y="292"/>
+      <use href="#mss-coccus" x="768" y="310"/><use href="#mss-coccus" x="750" y="268"/>
+    </g>
+    <g>
+      <use href="#mss-coccus" x="540" y="140"/><use href="#mss-coccus" x="560" y="132"/><use href="#mss-coccus" x="524" y="126"/>
+      <use href="#mss-coccus" x="562" y="154"/><use href="#mss-coccus" x="518" y="150"/><use href="#mss-coccus" x="544" y="116"/>
+      <use href="#mss-coccus" x="534" y="164"/><use href="#mss-coccus" x="514" y="136"/><use href="#mss-coccus" x="566" y="142"/>
+      <use href="#mss-coccus" x="548" y="160"/><use href="#mss-coccus" x="530" y="118"/>
+    </g>
+
+    <!-- Streptococcus chains -->
+    <g>
+      <use href="#mss-coccus" x="430" y="240"/><use href="#mss-coccus" x="452" y="246"/><use href="#mss-coccus" x="474" y="253"/>
+      <use href="#mss-coccus" x="496" y="259"/><use href="#mss-coccus" x="518" y="266"/><use href="#mss-coccus" x="540" y="272"/>
+      <use href="#mss-coccus" x="562" y="279"/>
+    </g>
+    <g>
+      <use href="#mss-coccus" x="140" y="760"/><use href="#mss-coccus" x="163" y="755"/><use href="#mss-coccus" x="187" y="751"/>
+      <use href="#mss-coccus" x="210" y="746"/><use href="#mss-coccus" x="234" y="742"/><use href="#mss-coccus" x="258" y="737"/>
+    </g>
+
+    <!-- E. coli rods -->
+    <use href="#mss-rod" transform="translate(230,200) rotate(-15)"/>
+    <use href="#mss-rod" transform="translate(680,150) rotate(20)"/>
+    <use href="#mss-rod" transform="translate(830,420) rotate(95)"/>
+    <use href="#mss-rod" transform="translate(140,480) rotate(55)"/>
+    <use href="#mss-rod" transform="translate(550,760) rotate(-40)"/>
+    <use href="#mss-rod" transform="translate(350,800) rotate(5)"/>
+    <use href="#mss-rod" transform="translate(760,830) rotate(140)"/>
+    <use href="#mss-rod" transform="translate(300,380) rotate(160)"/>
+    <use href="#mss-rod" transform="translate(345,400) rotate(160)"/>
+
+    <!-- Bacillus with endospore -->
+    <use href="#mss-rodSpore" transform="translate(410,560) rotate(-25)"/>
+    <use href="#mss-rodSpore" transform="translate(210,300) rotate(75)"/>
+
+    <!-- Spiral bacteria -->
+    <use href="#mss-spiral" transform="translate(520,400) rotate(10)"/>
+    <use href="#mss-spiral" transform="translate(850,640) rotate(-25)"/>
+
+    <!-- Neutrophil (white blood cell) phagocytosing bacteria -->
+    <g transform="translate(650,600)">
+      <circle r="95" fill="url(#mss-cytoGrad)" stroke="#b98aa5" stroke-width="2"/>
+      <g fill="#d98cae" opacity="0.4">
+        <circle cx="-40" cy="-50" r="2.4"/><circle cx="20" cy="-60" r="2"/><circle cx="55" cy="-20" r="2.4"/>
+        <circle cx="60" cy="30" r="2"/><circle cx="20" cy="60" r="2.4"/><circle cx="-30" cy="55" r="2"/>
+        <circle cx="-60" cy="10" r="2.4"/><circle cx="-10" cy="-10" r="2"/><circle cx="35" cy="5" r="2"/>
+      </g>
+      <use href="#mss-rod" transform="translate(-62,52) rotate(30) scale(0.6)"/>
+      <use href="#mss-rod" transform="translate(58,-45) rotate(-60) scale(0.55)"/>
+      <path d="M -40,-30 C -55,-45 -20,-55 -5,-40 C 10,-55 40,-45 35,-25 C 55,-15 50,15 30,20 C 40,40 10,55 -5,40 C -20,55 -50,40 -40,20 C -60,10 -55,-15 -40,-30 Z"
+            fill="url(#mss-nucleusGrad)" stroke="#1c1440" stroke-width="1.5"/>
+      <path d="M -25,-25 Q -10,-15 -20,0 M 10,-30 Q 20,-15 10,0 M -10,20 Q 5,30 20,15" stroke="#8a7de0" stroke-width="1.2" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- vignette overlay -->
+    <circle cx="500" cy="500" r="478" fill="url(#mss-vignette)"/>
+
+    <!-- reticle center -->
+    <circle cx="500" cy="500" r="3" fill="#ffffff" opacity="0.5"/>
+
+    <!-- scale bar -->
+    <g transform="translate(500,915)">
+      <line x1="-60" y1="0" x2="60" y2="0" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="-60" y1="-6" x2="-60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <line x1="60" y1="-6" x2="60" y2="6" stroke="#ffffff" stroke-width="3" opacity="0.85"/>
+      <text x="0" y="-13" text-anchor="middle" font-family="'Courier New', monospace" font-size="16" fill="#ffffff" opacity="0.85">10 µm</text>
+    </g>
+
+    <text x="500" y="70" text-anchor="middle" font-family="'Courier New', monospace" font-size="21" fill="#ffffff" opacity="0.55">400×  MIXED BACTERIAL FLORA</text>
+  </g>
+
+  <!-- viewport bezel -->
+  <circle cx="500" cy="500" r="483" fill="none" stroke="url(#mss-bezelGrad)" stroke-width="13"/>
+  <circle cx="500" cy="500" r="475" fill="none" stroke="#000000" stroke-width="1.5" opacity="0.35"/>
+  <path d="M 39.5,332.4 A 483 483 0 0 1 414.9,17.4" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.32" stroke-linecap="round"/>
+</symbol>
+<symbol id="art-ms-fable" viewBox="0 0 900 900">
+  <defs>
+    <radialGradient id="msf-gField" cx="45%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#f8eef6"/>
+      <stop offset="60%" stop-color="#eddcea"/>
+      <stop offset="100%" stop-color="#d6bcd6"/>
+    </radialGradient>
+    <radialGradient id="msf-gPurple" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#c9a3e8"/>
+      <stop offset="45%" stop-color="#7a49ad"/>
+      <stop offset="100%" stop-color="#3a1c60"/>
+    </radialGradient>
+    <radialGradient id="msf-gPink" cx="35%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#f4b0c1"/>
+      <stop offset="45%" stop-color="#d24b6a"/>
+      <stop offset="100%" stop-color="#7f2038"/>
+    </radialGradient>
+    <radialGradient id="msf-gTeal" cx="35%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#9fe6d8"/>
+      <stop offset="45%" stop-color="#3a9d8c"/>
+      <stop offset="100%" stop-color="#155248"/>
+    </radialGradient>
+    <radialGradient id="msf-gCorner" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#241733"/>
+      <stop offset="100%" stop-color="#080510"/>
+    </radialGradient>
+    <linearGradient id="msf-gGloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="msf-fBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="msf-fSoft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+    <mask id="msf-corners">
+      <rect width="900" height="900" fill="#fff"/>
+      <circle cx="450" cy="450" r="451" fill="#000"/>
+    </mask>
+    <clipPath id="msf-fieldClip">
+      <circle cx="450" cy="450" r="449"/>
+    </clipPath>
+  </defs>
+
+  <!-- optical field of view -->
+  <circle cx="450" cy="450" r="450" fill="url(#msf-gField)"/>
+
+  <g clip-path="url(#msf-fieldClip)" filter="url(#msf-fSoft)">
+
+    <!-- out-of-focus background microbes (depth of field) -->
+    <g filter="url(#msf-fBlur)" opacity="0.5">
+      <circle cx="150" cy="220" r="26" fill="url(#msf-gPurple)"/>
+      <circle cx="185" cy="245" r="24" fill="url(#msf-gPurple)"/>
+      <rect x="720" y="180" width="78" height="28" rx="14" fill="url(#msf-gPink)" transform="rotate(40 759 194)"/>
+      <circle cx="330" cy="720" r="30" fill="url(#msf-gTeal)"/>
+      <circle cx="620" cy="760" r="22" fill="url(#msf-gPurple)"/>
+      <rect x="120" y="560" width="70" height="26" rx="13" fill="url(#msf-gPink)" transform="rotate(-25 155 573)"/>
+    </g>
+
+    <!-- faint stained debris -->
+    <g fill="#8a5a86" opacity="0.18">
+      <circle cx="410" cy="180" r="4"/><circle cx="520" cy="330" r="3"/>
+      <circle cx="260" cy="520" r="5"/><circle cx="640" cy="300" r="3.5"/>
+      <circle cx="480" cy="560" r="4.5"/><circle cx="360" cy="600" r="3"/>
+      <circle cx="700" cy="620" r="4"/><circle cx="230" cy="380" r="3.5"/>
+      <circle cx="560" cy="700" r="3"/><circle cx="150" cy="460" r="4"/>
+    </g>
+
+    <!-- Staphylococcus: grape-like clusters (gram-positive cocci) -->
+    <g stroke="#2b1350" stroke-width="1.5">
+      <circle cx="300" cy="300" r="21" fill="url(#msf-gPurple)"/>
+      <circle cx="326" cy="316" r="20" fill="url(#msf-gPurple)"/>
+      <circle cx="286" cy="342" r="21" fill="url(#msf-gPurple)"/>
+      <circle cx="321" cy="352" r="19" fill="url(#msf-gPurple)"/>
+      <circle cx="347" cy="336" r="20" fill="url(#msf-gPurple)"/>
+      <circle cx="273" cy="308" r="19" fill="url(#msf-gPurple)"/>
+      <circle cx="312" cy="277" r="20" fill="url(#msf-gPurple)"/>
+      <circle cx="343" cy="298" r="19" fill="url(#msf-gPurple)"/>
+      <circle cx="365" cy="320" r="18" fill="url(#msf-gPurple)"/>
+      <circle cx="297" cy="372" r="19" fill="url(#msf-gPurple)"/>
+      <circle cx="332" cy="380" r="18" fill="url(#msf-gPurple)"/>
+      <circle cx="266" cy="345" r="18" fill="url(#msf-gPurple)"/>
+    </g>
+
+    <!-- Streptococcus: chain of cocci -->
+    <g stroke="#2b1350" stroke-width="1.4">
+      <circle cx="555" cy="175" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="583" cy="188" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="611" cy="199" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="640" cy="205" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="669" cy="209" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="698" cy="215" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="726" cy="226" r="16" fill="url(#msf-gPurple)"/>
+      <circle cx="751" cy="243" r="16" fill="url(#msf-gPurple)"/>
+    </g>
+
+    <!-- Bacilli: gram-negative rods with flagella -->
+    <g>
+      <g transform="rotate(28 585 605)">
+        <path d="M540 597 Q505 590 470 610 Q515 604 540 613 Z" fill="none" stroke="#c05070" stroke-width="2" opacity="0.7"/>
+        <rect x="540" y="592" width="82" height="27" rx="13" fill="url(#msf-gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="581" y1="595" x2="581" y2="616" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(-18 660 665)">
+        <rect x="620" y="652" width="86" height="27" rx="13" fill="url(#msf-gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="663" y1="655" x2="663" y2="676" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(62 560 700)">
+        <path d="M600 700 Q640 690 680 710 Q636 704 600 715 Z" fill="none" stroke="#c05070" stroke-width="2" opacity="0.7"/>
+        <rect x="520" y="687" width="80" height="26" rx="13" fill="url(#msf-gPink)" stroke="#611830" stroke-width="1.4"/>
+      </g>
+      <g transform="rotate(-40 700 540)">
+        <rect x="662" y="527" width="76" height="26" rx="13" fill="url(#msf-gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="700" y1="530" x2="700" y2="550" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(10 470 470)">
+        <rect x="430" y="458" width="80" height="25" rx="12" fill="url(#msf-gPink)" stroke="#611830" stroke-width="1.4"/>
+      </g>
+    </g>
+
+    <!-- Diplococci: paired cocci -->
+    <g stroke="#155248" stroke-width="1.4">
+      <circle cx="170" cy="465" r="20" fill="url(#msf-gTeal)"/>
+      <circle cx="205" cy="478" r="20" fill="url(#msf-gTeal)"/>
+      <circle cx="700" cy="440" r="19" fill="url(#msf-gTeal)"/>
+      <circle cx="732" cy="452" r="19" fill="url(#msf-gTeal)"/>
+    </g>
+
+    <!-- Spirilla / spirochetes: spiral bacteria -->
+    <path d="M150 660 q20 -34 40 0 q20 34 40 0 q20 -34 40 0 q20 34 40 0"
+          fill="none" stroke="url(#msf-gTeal)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M150 660 q20 -34 40 0 q20 34 40 0 q20 -34 40 0 q20 34 40 0"
+          fill="none" stroke="#0e4038" stroke-width="10" stroke-linecap="round" opacity="0.25"/>
+    <path d="M640 700 q18 -30 36 0 q18 30 36 0 q18 -30 36 0"
+          fill="none" stroke="url(#msf-gPurple)" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- solitary cocci scattered -->
+    <g stroke="#2b1350" stroke-width="1.2">
+      <circle cx="470" cy="250" r="14" fill="url(#msf-gPurple)"/>
+      <circle cx="440" cy="700" r="15" fill="url(#msf-gPurple)"/>
+      <circle cx="600" cy="380" r="13" fill="url(#msf-gTeal)"/>
+    </g>
+
+  </g>
+
+  <!-- glass gloss highlight -->
+  <ellipse cx="360" cy="260" rx="300" ry="180" fill="url(#msf-gGloss)" clip-path="url(#msf-fieldClip)"/>
+
+  <!-- lens rim -->
+  <circle cx="450" cy="450" r="447" fill="none" stroke="#0d0716" stroke-width="8" opacity="0.55"/>
+  <circle cx="450" cy="450" r="441" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.2"/>
+
+  <!-- optics vignette in corners -->
+  <rect width="900" height="900" fill="url(#msf-gCorner)" mask="url(#msf-corners)"/>
+</symbol>
+
+<!-- the visitor's two duck drawings (hand-made stand-ins for a turn's output) -->
+<symbol id="art-duck-a" viewBox="0 0 240 210">
+  <g stroke="#7a5c10" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M38 148 C30 108 62 88 96 92 L128 96 C126 76 132 56 152 48 C176 39 198 54 200 76 C201 92 192 102 180 108 C196 118 206 136 200 156 C192 182 158 192 118 190 C78 188 44 176 38 148 Z" fill="#f2c33b"/>
+    <path d="M38 148 C26 144 16 134 14 122 C24 128 34 130 42 128" fill="#f2c33b"/>
+    <path d="M196 84 C210 82 222 86 228 94 C220 98 210 100 202 98 C208 102 212 108 212 114 C202 112 194 106 190 100 Z" fill="#e88f1f"/>
+  </g>
+  <ellipse cx="170" cy="74" rx="10" ry="11" fill="#fffdf4" stroke="#7a5c10" stroke-width="3"/>
+  <circle cx="166" cy="76" r="4.4" fill="#2b2318"/>
+  <path d="M158 66 C162 62 172 60 180 64" fill="none" stroke="#7a5c10" stroke-width="3.4" stroke-linecap="round"/>
+  <path d="M158 88 C162 91 168 92 173 91" fill="none" stroke="#a97f1c" stroke-width="2.4" stroke-linecap="round"/>
+  <g stroke="#4c5866" stroke-width="3.4" stroke-linejoin="round">
+    <path d="M128 40 C132 24 148 14 164 16 C178 18 188 28 190 40 C170 32 148 32 128 40 Z" fill="#f6f2e6"/>
+    <path d="M124 44 C146 34 172 34 194 44 L192 52 C170 43 148 43 126 52 Z" fill="#3f4c9c"/>
+  </g>
+  <path d="M52 160 C66 170 96 178 122 179" fill="none" stroke="#a97f1c" stroke-width="2.6" stroke-linecap="round"/>
+</symbol>
+<symbol id="art-duck-b" viewBox="0 0 240 210">
+  <g stroke="#7a5c10" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M42 138 C38 104 70 96 92 104 L118 116 C110 92 118 64 142 60 C168 56 186 74 182 96 C180 108 170 114 162 116 C182 128 190 150 178 166 C162 186 120 188 88 178 C60 170 46 158 42 138 Z" fill="#f2c33b"/>
+  </g>
+  <path d="M150 118 C162 114 176 116 182 124 C174 130 162 132 152 128 Z" fill="#e88f1f" stroke="#7a5c10" stroke-width="3.6" stroke-linejoin="round"/>
+  <ellipse cx="146" cy="88" rx="9" ry="10" fill="#fffdf4" stroke="#7a5c10" stroke-width="3"/>
+  <path d="M141 84 C145 92 151 92 151 86 C151 92 143 96 141 90" fill="none" stroke="#2b2318" stroke-width="2.6"/>
+  <g stroke="#4c5866" stroke-width="3.2" stroke-linejoin="round">
+    <path d="M170 26 C176 14 192 10 202 16 C210 22 212 32 208 40 C196 30 182 28 170 26 Z" fill="#f6f2e6"/>
+    <path d="M166 32 C182 28 200 32 210 42 L206 48 C194 38 180 36 168 40 Z" fill="#3f4c9c"/>
+  </g>
+  <path d="M60 150 C74 162 108 170 134 168" fill="none" stroke="#a97f1c" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M96 128 C104 124 114 124 120 128" fill="none" stroke="#a97f1c" stroke-width="2.4" stroke-linecap="round"/>
+</symbol>
+</defs></svg>
+
+<h1 class="mock-title">Junk Drawer &middot; Mockup 13c &middot; The Microfiche Reader</h1>
+<p class="mock-intro">
+  Round 13 — the record card learns to FIT. The vaporwave floor retires; the top of the
+  card becomes the bureau's <b>library-basement reading machine</b>: charcoal chrome, a
+  light-table glow behind the film, and every response to the prompt mounted as a
+  <b>slide in the tray</b> along the viewer's edge. Clicking a slide swaps the viewer,
+  the readout, and the annotations. The paper form continues below, prompt folded at
+  three lines. Every frame here is a real viewport simulation — banner reserved,
+  card capped, footer visible.
+</p>
+
+<!-- ======================================================================
+     DEMO 1 — desktop 1280×680 (the short-desktop case), curated item,
+     3 slides, short prompt
+     ====================================================================== -->
+<section class="demo">
+  <h2 class="demo-label">1 · desktop, short viewport (1280×680) — <b>curated item, 3 slides, short prompt</b></h2>
+  <p class="demo-sub">The hard case from the bug report: banner reserved by the scrim
+  (<code>top: 56px</code>), viewer compressed by flexbox toward its floor, whole card —
+  footer and close included — visible with NO internal scrollbar. Click the mounted
+  slides to swap the viewer, readout and annotations.</p>
+  <div class="frame" style="--vpH: 680px">
+    <div class="mock-banner"><span class="mb-title">Municipal Sky</span>
+      <nav><a href="#d1">INFORMATION GRAPHICS</a> <a class="on" href="#d1">ART</a> <a href="#d1">ABOUT</a></nav></div>
+    <div class="mf-scrim">
+      <div class="mf-card" role="dialog" aria-modal="true" aria-label="report card">
+        <div class="mf-scrollwrap">
+          <div class="mf-machine">
+            <div class="mf-bezel">
+              <span class="mf-screw"></span>
+              <span class="mf-bezel-label">Municipal Sky · A/V Annex — Microfiche Reader Mk&nbsp;IV</span>
+              <span class="mf-counter">SLIDE 1 / 3</span>
+              <button type="button" class="mf-close" aria-label="close">✕</button>
+            </div>
+            <div class="mf-window" role="button" tabindex="0" aria-label="Enlarge the artwork">
+              <div class="mf-bed" aria-hidden="true"></div>
+              <div class="mf-art is-on"><svg viewBox="0 0 1000 1000"><use href="#art-ms-opus"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 1000 1000"><use href="#art-ms-sonnet"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 900 900"><use href="#art-ms-fable"/></svg></div>
+              <div class="mf-glass" aria-hidden="true"></div>
+              <span class="mf-hint" aria-hidden="true">⤢ enlarge</span>
+            </div>
+            <div class="mf-tray" role="group" aria-label="responses on file">
+              <button type="button" class="mf-slide is-cur" data-resp="0">
+                <span class="mf-slide-window"><svg viewBox="0 0 1000 1000"><use href="#art-ms-opus"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Opus 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="1">
+                <span class="mf-slide-window"><svg viewBox="0 0 1000 1000"><use href="#art-ms-sonnet"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Sonnet 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="2">
+                <span class="mf-slide-window"><svg viewBox="0 0 900 900"><use href="#art-ms-fable"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Fable 5</span><span class="mf-slide-grade rc-g3">Select</span></span>
+              </button>
+            </div>
+            <div class="mf-readout">
+              <span class="mf-ro"><span class="mf-ro-l">Model</span><span class="mf-ro-v" data-ro="model">Claude Opus 5</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Prompted</span><span class="mf-ro-v" data-ro="prompted">5 August 2026</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Process</span><span class="mf-ro-v" data-ro="process">one-shot</span></span>
+            </div>
+          </div>
+          <div class="mf-paper">
+            <header class="mf-masthead"><div class="rc-item">Microscope slide of common germs at 400×</div></header>
+            <div class="rc-fillsline">
+              <div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Small</span></div>
+            </div>
+            <div class="rc-head"><span>The prompt</span><span class="rc-head-rule"></span><button type="button" class="mf-expand" hidden>＋ show full prompt</button></div>
+            <div class="mf-quote is-folded"><p>“A microscope slide where, upon closer inspection, a detailed, realistic depiction of various common germs can be observed as they would be seen at 400x power of magnification”</p></div>
+            <div class="rc-head"><span>Annotations</span><span class="rc-head-rule"></span></div>
+            <table class="rc-subj">
+              <thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead>
+              <tbody>
+                <tr data-axis="if"><td><span class="rc-subj-name">Instruction following</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r2" style="--jit:-1.2deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr>
+                <tr data-axis="integrity"><td><span class="rc-subj-name">Structural integrity</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:0.8deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+                <tr data-axis="jnsq"><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr>
+              </tbody>
+              <tfoot>
+                <tr data-grade><td><span class="rc-avg-l">Overall grade</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark sm rc-g4" style="--jit:-1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr>
+              </tfoot>
+            </table>
+            <div class="rc-prov"><div class="rc-formline">
+              <span><a class="rc-dl" href="#d1">Download SVG ⤓</a></span>
+              <span class="rc-formno">No. 2026-08-05-microscope-slide</span>
+            </div></div>
+          </div>
+        </div>
+        <script type="application/json" class="mf-data">
+        {"slides":[
+          {"model":"Claude Opus 5","prompted":"5 August 2026","process":"one-shot",
+           "axes":{"if":[2,"Small problems"],"integrity":[3,"No problems"],"jnsq":[3,"Has _it_"]},"grade":[4,"Choice"]},
+          {"model":"Claude Sonnet 5","prompted":"5 August 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[3,"No problems"],"jnsq":[2,"Just a hint"]},"grade":[4,"Choice"]},
+          {"model":"Claude Fable 5","prompted":"5 August 2026","process":"one-shot",
+           "axes":{"if":[2,"Small problems"],"integrity":[3,"No problems"],"jnsq":[1,"Ain't got it"]},"grade":[3,"Select"]}
+        ]}
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DEMO 2a — the LONG tarot prompt, folded, still at 680
+     ====================================================================== -->
+<section class="demo" id="d2">
+  <h2 class="demo-label">2a · desktop, short viewport (1280×680) — <b>the long tarot prompt, folded at 3 lines</b></h2>
+  <p class="demo-sub">The 400-character prompt that used to grow its own inner scrollbar.
+  Folded, the whole card still fits the 680px viewport; the expander sits on the
+  section-head rule.</p>
+  <div class="frame" style="--vpH: 680px">
+    <div class="mock-banner"><span class="mb-title">Municipal Sky</span>
+      <nav><a href="#d2">INFORMATION GRAPHICS</a> <a class="on" href="#d2">ART</a> <a href="#d2">ABOUT</a></nav></div>
+    <div class="mf-scrim">
+      <div class="mf-card" role="dialog" aria-modal="true" aria-label="report card">
+        <div class="mf-scrollwrap">
+          <div class="mf-machine">
+            <div class="mf-bezel">
+              <span class="mf-screw"></span>
+              <span class="mf-bezel-label">Municipal Sky · A/V Annex — Microfiche Reader Mk&nbsp;IV</span>
+              <span class="mf-counter">SLIDE 1 / 3</span>
+              <button type="button" class="mf-close" aria-label="close">✕</button>
+            </div>
+            <div class="mf-window" role="button" tabindex="0" aria-label="Enlarge the artwork">
+              <div class="mf-bed" aria-hidden="true"></div>
+              <div class="mf-art is-on"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></div>
+              <div class="mf-glass" aria-hidden="true"></div>
+              <span class="mf-hint" aria-hidden="true">⤢ enlarge</span>
+            </div>
+            <div class="mf-tray" role="group" aria-label="responses on file">
+              <button type="button" class="mf-slide is-cur" data-resp="0">
+                <span class="mf-slide-window"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Opus 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="1">
+                <span class="mf-slide-window"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Sonnet 5</span><span class="mf-slide-grade rc-g1">Utility</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="2">
+                <span class="mf-slide-window"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Fable 5</span><span class="mf-slide-grade rc-g3">Select</span></span>
+              </button>
+            </div>
+            <div class="mf-readout">
+              <span class="mf-ro"><span class="mf-ro-l">Model</span><span class="mf-ro-v" data-ro="model">Claude Opus 5</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Prompted</span><span class="mf-ro-v" data-ro="prompted">29 July 2026</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Process</span><span class="mf-ro-v" data-ro="process">refined (2 prompts)</span></span>
+            </div>
+          </div>
+          <div class="mf-paper">
+            <header class="mf-masthead"><div class="rc-item">The Magician, top half</div></header>
+            <div class="rc-fillsline">
+              <div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div>
+            </div>
+            <div class="rc-head"><span>The prompt</span><span class="rc-head-rule"></span><button type="button" class="mf-expand">＋ show full prompt</button></div>
+            <div class="mf-quote is-folded"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div>
+            <div class="rc-head"><span>Annotations</span><span class="rc-head-rule"></span></div>
+            <table class="rc-subj">
+              <thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead>
+              <tbody>
+                <tr data-axis="if"><td><span class="rc-subj-name">Instruction following</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.2deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+                <tr data-axis="integrity"><td><span class="rc-subj-name">Structural integrity</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r2" style="--jit:0.8deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr>
+                <tr data-axis="jnsq"><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr>
+              </tbody>
+              <tfoot>
+                <tr data-grade><td><span class="rc-avg-l">Overall grade</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark sm rc-g4" style="--jit:-1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr>
+              </tfoot>
+            </table>
+            <div class="rc-prov"><div class="rc-formline">
+              <span><a class="rc-dl" href="#d2">Download SVG ⤓</a></span>
+              <span class="rc-formno">No. 2026-07-29-torn-magician</span>
+            </div></div>
+          </div>
+        </div>
+        <script type="application/json" class="mf-data">
+        {"slides":[
+          {"model":"Claude Opus 5","prompted":"29 July 2026","process":"refined (2 prompts)",
+           "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[3,"Has _it_"]},"grade":[4,"Choice"]},
+          {"model":"Claude Sonnet 5","prompted":"29 July 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[1,"Big problems"],"jnsq":[1,"Ain't got it"]},"grade":[1,"Utility"]},
+          {"model":"Claude Fable 5","prompted":"29 July 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[2,"Just a hint"]},"grade":[3,"Select"]}
+        ]}
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DEMO 2b — same card, expander OPEN, on a 760px viewport
+     ====================================================================== -->
+<section class="demo" id="d2b">
+  <h2 class="demo-label">2b · desktop (1280×760) — <b>the same card with the prompt unfolded</b></h2>
+  <p class="demo-sub">Opening the prompt is the ONE act that may make the card taller
+  than the viewport: the viewer gives its slack first (flex-shrink toward its 150px
+  floor), and only past that does the card's thin scrollbar appear — an explicit
+  reader choice, not the resting state.</p>
+  <div class="frame" style="--vpH: 760px">
+    <div class="mock-banner"><span class="mb-title">Municipal Sky</span>
+      <nav><a href="#d2b">INFORMATION GRAPHICS</a> <a class="on" href="#d2b">ART</a> <a href="#d2b">ABOUT</a></nav></div>
+    <div class="mf-scrim">
+      <div class="mf-card" role="dialog" aria-modal="true" aria-label="report card">
+        <div class="mf-scrollwrap">
+          <div class="mf-machine">
+            <div class="mf-bezel">
+              <span class="mf-screw"></span>
+              <span class="mf-bezel-label">Municipal Sky · A/V Annex — Microfiche Reader Mk&nbsp;IV</span>
+              <span class="mf-counter">SLIDE 1 / 3</span>
+              <button type="button" class="mf-close" aria-label="close">✕</button>
+            </div>
+            <div class="mf-window" role="button" tabindex="0" aria-label="Enlarge the artwork">
+              <div class="mf-bed" aria-hidden="true"></div>
+              <div class="mf-art is-on"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></div>
+              <div class="mf-art"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></div>
+              <div class="mf-glass" aria-hidden="true"></div>
+              <span class="mf-hint" aria-hidden="true">⤢ enlarge</span>
+            </div>
+            <div class="mf-tray" role="group" aria-label="responses on file">
+              <button type="button" class="mf-slide is-cur" data-resp="0">
+                <span class="mf-slide-window"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Opus 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="1">
+                <span class="mf-slide-window"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Sonnet 5</span><span class="mf-slide-grade rc-g1">Utility</span></span>
+              </button>
+              <button type="button" class="mf-slide" data-resp="2">
+                <span class="mf-slide-window"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Fable 5</span><span class="mf-slide-grade rc-g3">Select</span></span>
+              </button>
+            </div>
+            <div class="mf-readout">
+              <span class="mf-ro"><span class="mf-ro-l">Model</span><span class="mf-ro-v" data-ro="model">Claude Opus 5</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Prompted</span><span class="mf-ro-v" data-ro="prompted">29 July 2026</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Process</span><span class="mf-ro-v" data-ro="process">refined (2 prompts)</span></span>
+            </div>
+          </div>
+          <div class="mf-paper">
+            <header class="mf-masthead"><div class="rc-item">The Magician, top half</div></header>
+            <div class="rc-fillsline">
+              <div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div>
+            </div>
+            <div class="rc-head"><span>The prompt</span><span class="rc-head-rule"></span><button type="button" class="mf-expand">− fold prompt</button></div>
+            <div class="mf-quote"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div>
+            <div class="rc-head"><span>Annotations</span><span class="rc-head-rule"></span></div>
+            <table class="rc-subj">
+              <thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead>
+              <tbody>
+                <tr data-axis="if"><td><span class="rc-subj-name">Instruction following</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.2deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+                <tr data-axis="integrity"><td><span class="rc-subj-name">Structural integrity</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r2" style="--jit:0.8deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr>
+                <tr data-axis="jnsq"><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr>
+              </tbody>
+              <tfoot>
+                <tr data-grade><td><span class="rc-avg-l">Overall grade</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark sm rc-g4" style="--jit:-1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr>
+              </tfoot>
+            </table>
+            <div class="rc-prov"><div class="rc-formline">
+              <span><a class="rc-dl" href="#d2b">Download SVG ⤓</a></span>
+              <span class="rc-formno">No. 2026-07-29-torn-magician</span>
+            </div></div>
+          </div>
+        </div>
+        <script type="application/json" class="mf-data">
+        {"slides":[
+          {"model":"Claude Opus 5","prompted":"29 July 2026","process":"refined (2 prompts)",
+           "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[3,"Has _it_"]},"grade":[4,"Choice"]},
+          {"model":"Claude Sonnet 5","prompted":"29 July 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[1,"Big problems"],"jnsq":[1,"Ain't got it"]},"grade":[1,"Utility"]},
+          {"model":"Claude Fable 5","prompted":"29 July 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[2,"Just a hint"]},"grade":[3,"Select"]}
+        ]}
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DEMO 3 — visitor card, 2 slides, winner marked current
+     ====================================================================== -->
+<section class="demo" id="d3">
+  <h2 class="demo-label">3 · desktop (1280×680) — <b>a visitor's card: their turn filed BOTH drawings</b></h2>
+  <p class="demo-sub">The turn's two drawings are both mounted; the one the visitor kept
+  is the current slide, flagged in the curator's pen. Multi-response display is
+  first-class: the tray is the same mechanism the curated cards use.</p>
+  <div class="frame" style="--vpH: 680px">
+    <div class="mock-banner"><span class="mb-title">Municipal Sky</span>
+      <nav><a href="#d3">INFORMATION GRAPHICS</a> <a class="on" href="#d3">ART</a> <a href="#d3">ABOUT</a></nav></div>
+    <div class="mf-scrim">
+      <div class="mf-card" role="dialog" aria-modal="true" aria-label="report card">
+        <div class="mf-scrollwrap">
+          <div class="mf-machine">
+            <div class="mf-bezel">
+              <span class="mf-screw"></span>
+              <span class="mf-bezel-label">Municipal Sky · A/V Annex — Microfiche Reader Mk&nbsp;IV</span>
+              <span class="mf-counter">SLIDE 2 / 2</span>
+              <button type="button" class="mf-close" aria-label="close">✕</button>
+            </div>
+            <div class="mf-window" role="button" tabindex="0" aria-label="Enlarge the artwork">
+              <div class="mf-bed" aria-hidden="true"></div>
+              <div class="mf-art"><svg viewBox="0 0 240 210"><use href="#art-duck-b"/></svg></div>
+              <div class="mf-art is-on"><svg viewBox="0 0 240 210"><use href="#art-duck-a"/></svg></div>
+              <div class="mf-glass" aria-hidden="true"></div>
+              <span class="mf-hint" aria-hidden="true">⤢ enlarge</span>
+            </div>
+            <div class="mf-tray" role="group" aria-label="responses on file">
+              <button type="button" class="mf-slide" data-resp="0">
+                <span class="mf-slide-window"><svg viewBox="0 0 240 210"><use href="#art-duck-b"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Sonnet 5</span><span class="mf-slide-grade rc-g2">Standard</span></span>
+              </button>
+              <button type="button" class="mf-slide is-cur" data-resp="1">
+                <span class="mf-kept" aria-hidden="true">✓ kept</span>
+                <span class="mf-slide-window"><svg viewBox="0 0 240 210"><use href="#art-duck-a"/></svg></span>
+                <span class="mf-slide-cap"><span class="mf-slide-model">Claude Fable 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+              </button>
+            </div>
+            <div class="mf-readout">
+              <span class="mf-ro"><span class="mf-ro-l">Model</span><span class="mf-ro-v" data-ro="model">Claude Fable 5</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Prompted</span><span class="mf-ro-v" data-ro="prompted">13 August 2026</span></span>
+              <span class="mf-ro"><span class="mf-ro-l">Process</span><span class="mf-ro-v" data-ro="process">one-shot</span></span>
+            </div>
+          </div>
+          <div class="mf-paper">
+            <header class="mf-masthead"><div class="rc-item">World-weary rubber duck</div></header>
+            <div class="rc-fillsline">
+              <div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Small</span></div>
+            </div>
+            <div class="rc-head"><span>The prompt</span><span class="rc-head-rule"></span><button type="button" class="mf-expand" hidden>＋ show full prompt</button></div>
+            <div class="mf-quote is-folded"><p>“a rubber duck that has seen some things. give him a little sailor hat and have him gazing off to the side with a thousand-yard stare, but still cute”</p></div>
+            <div class="rc-head"><span>Annotations</span><span class="rc-head-rule"></span></div>
+            <table class="rc-subj">
+              <thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead>
+              <tbody>
+                <tr data-axis="if"><td><span class="rc-subj-name">Instruction following</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.2deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+                <tr data-axis="integrity"><td><span class="rc-subj-name">Structural integrity</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:0.8deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+                <tr data-axis="jnsq"><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r2" style="--jit:-1.7deg"><span class="rc-mark-word">Just a hint</span></span></span></td></tr>
+              </tbody>
+              <tfoot>
+                <tr data-grade><td><span class="rc-avg-l">Overall grade</span></td>
+                  <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark sm rc-g4" style="--jit:-1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr>
+              </tfoot>
+            </table>
+            <div class="rc-prov"><div class="rc-formline">
+              <span><a class="rc-dl" href="#d3">Download SVG ⤓</a></span>
+              <span class="rc-formno">No. 2026-08-13-weary-duck</span>
+            </div></div>
+          </div>
+        </div>
+        <script type="application/json" class="mf-data">
+        {"slides":[
+          {"model":"Claude Sonnet 5","prompted":"13 August 2026","process":"one-shot",
+           "axes":{"if":[2,"Small problems"],"integrity":[2,"Small problems"],"jnsq":[1,"Ain't got it"]},"grade":[2,"Standard"]},
+          {"model":"Claude Fable 5","prompted":"13 August 2026","process":"one-shot",
+           "axes":{"if":[3,"No problems"],"integrity":[3,"No problems"],"jnsq":[2,"Just a hint"]},"grade":[4,"Choice"]}
+        ]}
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DEMO 4 — the ENLARGED state: the viewer grown full-bleed
+     ====================================================================== -->
+<section class="demo" id="d4">
+  <h2 class="demo-label">4 · <b>enlarged</b> — the viewer full-bleed (static state demo)</h2>
+  <p class="demo-sub">Press the viewer and the light table takes the whole wall — the
+  existing <code>.jd-record-zoom</code> layer (body child, z-index 1100, above the
+  banner) with the reader's dressing. The slide tray rides the right edge so slides
+  stay switchable while enlarged; click anywhere or Esc to shrink.</p>
+  <div class="frame" style="--vpH: 680px">
+    <div class="mock-banner"><span class="mb-title">Municipal Sky</span>
+      <nav><a href="#d4">INFORMATION GRAPHICS</a> <a class="on" href="#d4">ART</a> <a href="#d4">ABOUT</a></nav></div>
+    <div class="mf-zoom" role="button" tabindex="0" aria-label="Shrink the artwork">
+        <div class="mf-zoom-bed" aria-hidden="true"></div>
+        <div class="mf-zoom-art"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></div>
+        <div class="mf-glass" aria-hidden="true"></div>
+        <div class="mf-zoom-tray" aria-label="responses on file">
+          <button type="button" class="mf-slide is-cur" data-resp="0">
+            <span class="mf-slide-window"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></span>
+            <span class="mf-slide-cap"><span class="mf-slide-model">Opus 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+          </button>
+          <button type="button" class="mf-slide" data-resp="1">
+            <span class="mf-slide-window"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></span>
+            <span class="mf-slide-cap"><span class="mf-slide-model">Sonnet 5</span><span class="mf-slide-grade rc-g1">Utility</span></span>
+          </button>
+          <button type="button" class="mf-slide" data-resp="2">
+            <span class="mf-slide-window"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></span>
+            <span class="mf-slide-cap"><span class="mf-slide-model">Fable 5</span><span class="mf-slide-grade rc-g3">Select</span></span>
+          </button>
+        </div>
+        <div class="mf-zoom-cap">
+          <span class="t">The Magician, top half · Claude Opus 5</span>
+          <span class="h">click, or press esc, to shrink</span>
+        </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DEMO 5 — phone width (390px) via a self-iframe onto #phone-view
+     ====================================================================== -->
+<section class="demo" id="d5">
+  <h2 class="demo-label">5 · <b>phone</b> — 390px (this same file iframed onto its #phone-view fragment)</h2>
+  <p class="demo-sub">Mobile banner is 48px (<code>--banner-h-mobile</code>); the viewer
+  basis drops to 34% of the viewport; the tray scrolls sideways if slides overflow;
+  the readout wraps to two lines. Long tarot prompt, folded.</p>
+  <div class="phone-wrap">
+    <iframe src="mockup-13c-microfiche-reader.html#phone-view" title="phone-width demo"></iframe>
+  </div>
+</section>
+
+<!-- ======================================================================
+     DESIGN NOTES
+     ====================================================================== -->
+<section class="notes">
+  <h2>Design notes — 13c · The Microfiche Reader</h2>
+
+  <h3>The fiction, and what retired</h3>
+  <ul>
+    <li>The vaporwave floor (<code>floorSVG</code>, twin teal grids, navy sky) RETIRES.
+      The artwork now sits in a municipal A/V reading machine: charcoal chrome
+      (<code>#23272e</code> family), a dark glass window, and a warm <b>light-table
+      glow</b> (<code>#fff3d6</code> radial) behind the film. No perspective grid, no
+      neon wireframe — the glow is the machine's lamp, CRT-era, not synthwave.
+      Keep <code>floorSVG</code> in the source as a retired backup beside
+      <code>checkerFloorSVG</code> (owner precedent, 2026-08-12).</li>
+    <li>The responses become <b>mounted slides in a tray</b> along the viewer's bottom
+      edge — cardboard slide mounts (the brief's "slide-mount border" option), model
+      printed on the mount, grade pencilled beside it in its earned colour (the mount
+      is paper, so the spec colours <code>rc-g1…g5</code> hold without a dark-theme
+      variant). The current slide's window is backlit and its mount seats 1px deeper
+      with the red current-border the old alt strip used.</li>
+    <li><b>MODEL / PROMPTED / PROCESS move onto the machine</b> as a phosphor readout
+      line under the tray — they describe the slide in the viewer and swap with it.
+      <b>SIZE stays on the paper</b> (it belongs to the item), a single form fill under
+      the masthead. The masthead itself moved below the machine: the machine is the
+      card's face; the paper record begins with the title.</li>
+    <li>Visitor cards file BOTH drawings of a turn as slides; the kept one is the
+      current slide and carries a hand-pen "✓ kept" on its mount. Curated items mount
+      one slide per model response. A single-response item hides the tray entirely
+      (same rule as today's <code>altsHTML</code> returning ''), and the viewer
+      inherits the freed height automatically — it is the only flexible row.</li>
+  </ul>
+
+  <h3>How the fit contract is met (the point of round 13)</h3>
+  <ul>
+    <li><b>Scrim reserves the banner:</b> <code>.jd-record-scrim { position: fixed;
+      inset: 0; top: var(--banner-h, 56px); }</code> — the card can no longer slide
+      under the banner, so the close ✕ (on the machine bezel, the card's top edge) is
+      always visible. In this mockup the scrim is <code>position:absolute</code> only
+      because it lives inside demo frames.</li>
+    <li><b>Card cap:</b> the card keeps <code>max-height: 100%</code> with border-box
+      sizing; because the scrim now starts at 56px and carries its own padding, that
+      resolves to <code>calc(100dvh − 56px − 2·12px)</code> without any calc in the
+      card itself.</li>
+    <li><b>The viewer is the one soft row:</b> <code>.mf-window { flex: 0 1
+      clamp(200px, calc(100dvh * 0.38), 430px); min-height: 150px; }</code> (the
+      mockup reads <code>var(--vpH, 100dvh)</code> so each demo frame can stand in
+      for a viewport). Everything else in the column is <code>flex: 0 0 auto</code>,
+      so when the viewport is short, flexbox compresses the viewer toward its 150px
+      floor BEFORE the scroll container has anything to scroll. At 1280×680 the whole
+      card — machine, paper, footer — fits with no internal scrollbar (demos 1–2a);
+      at 1280×800 the viewer rides its ~38vh basis (~304px).</li>
+    <li><b>The prompt folds:</b> <code>.mf-quote.is-folded p { -webkit-line-clamp: 3
+      }</code> replaces the old <code>max-height: 7.4em; overflow-y: auto</code> inner
+      scroller (the nested-scroller bug). The expander button sits ON the
+      section-head rule ("＋ show full prompt" / "− fold prompt") and is hidden by a
+      scrollHeight check when the prompt fits in 3 lines. Unfolding may exceed the
+      cap — the viewer gives its slack first, then the card's single thin scrollbar
+      appears; that state is a deliberate reader action (demo 2b).</li>
+    <li><b>No other nested scrollers:</b> the only <code>overflow-y: auto</code> left
+      is the card's own <code>.mf-scrollwrap</code>; the tray scrolls on the x-axis
+      only, on phones, when slides overflow.</li>
+  </ul>
+
+  <h3>Slide-swapping onto the existing data-resp mechanism</h3>
+  <ul>
+    <li>The tray buttons ARE the old <code>.rc-alt</code> buttons: same
+      <code>data-resp="i"</code> attribute, same delegated click in
+      <code>build()</code> — <code>curResp = i; render(false)</code>. Nothing about
+      the event wiring changes; <code>altsHTML</code> becomes <code>trayHTML</code>
+      and moves from below the annotations up into the machine block that
+      <code>cardHTML</code> emits.</li>
+    <li>Because <code>render()</code> already rebuilds the whole card per response,
+      the readout line and annotations swap for free — this mockup's little
+      JSON-driven swap script (~50 lines, bottom of file) exists only so the static
+      page can demonstrate the interaction; it is NOT the integration plan.</li>
+    <li>Unlike the old strip (hidden under 2 responses), the tray should render for
+      length ≥ 2 exactly as before; the counter in the bezel reads
+      "SLIDE i / n" and doubles as the multi-response advertisement.</li>
+    <li>The enlargement reuses <code>.jd-record-zoom</code> (body child, z-index 1100
+      — already, and deliberately, above the banner): swap the floor for the
+      light-table bed and optionally overlay the same tray markup at the right edge
+      so <code>data-resp</code> keeps working while enlarged (Esc-peeling order
+      unchanged).</li>
+  </ul>
+
+  <h3>Integration watch-outs</h3>
+  <ul>
+    <li><b>svgInst discipline stands:</b> the viewer copy, the tray thumbnail, and
+      the zoom copy of one response are three inlined copies of one SVG — each needs
+      its own id prefix (<code>jr/jt/jz</code>) exactly as today. This mockup inlines
+      each artwork once as a <code>&lt;symbol&gt;</code> and <code>&lt;use&gt;</code>s
+      it, which the real card could adopt (one prefixed copy, three uses) to shrink
+      the DOM.</li>
+    <li><b>dvh, not vh:</b> the clamp and the cap use <code>100dvh</code> so iOS URL-bar
+      collapse doesn't open a gap or clip the footer. Fallback for old Safari:
+      declare the <code>vh</code> line first, <code>dvh</code> second.</li>
+    <li><b>The machine needs an EXPLICIT min-height</b> (285px = bezel + viewer
+      floor + tray + readout). This was found the hard way in this mockup: with
+      <code>min-height: auto</code>, Chromium computes the nested flex column's
+      intrinsic minimum using the viewer's flex BASIS, so the outer flexbox never
+      shrinks the machine at all and the card scrolls instead (the bug this round
+      exists to kill). With <code>min-height: 0</code> the bezel/tray/readout could
+      be crushed. The explicit value replaces the automatic minimum and makes the
+      shrink-to-floor behavior real — recompute it if the tray or readout metrics
+      change.</li>
+    <li><b>Opaque-background art</b> (e.g. the microscope slides) sits on the light
+      table as a lit transparency — fine; but the bed's glow is invisible behind it,
+      so the drop-shadow on <code>.mf-art</code> is what keeps it seated. Line art
+      with transparent ground (most items) reads as backlit film — the flattering
+      case.</li>
+    <li><b>Phone banner is 48px</b> (<code>--banner-h-mobile</code>): the scrim must
+      read the live banner var, not hardcode 56 — this file's phone view sets
+      <code>--banner-h: 48px</code> the same way the site's media query does.</li>
+    <li><b>Verdict words stay per-response</b> and re-render with the slide; "Has
+      <i>it</i>" keeps its italic via the existing <code>_it_</code> markdown in
+      <code>mark()</code>.</li>
+    <li><b>Grain/mottle:</b> paper textures now apply to <code>.mf-paper</code> only —
+      don't let the card-wide mottle overlay tint the machine chrome. All
+      feTurbulence keeps <code>stitchTiles="stitch"</code> (standing Safari lesson).</li>
+    <li>This is a user-facing change to the record card — when it lands, remember the
+      drawer's own changelog conventions (and the sibling rule precedent: bump any
+      user-visible version marker in the same commit).</li>
+  </ul>
+
+  <p style="margin-top:1.4rem"><b>Inline script note:</b> one small script at the foot
+  of this file (a) swaps slides from the per-card JSON so the tray is clickable in
+  the mockup, (b) runs the prompt expander, and (c) hides the expander when a prompt
+  fits its 3-line fold. No external JS; everything else is CSS.</p>
+</section>
+
+<!-- ======================================================================
+     PHONE VIEW — only rendered when this file is loaded as #phone-view
+     (the demo-5 iframe does that); hidden otherwise.
+     ====================================================================== -->
+<div id="phone-view">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span></div>
+  <div class="mf-scrim">
+    <div class="mf-card" role="dialog" aria-modal="true" aria-label="report card">
+      <div class="mf-scrollwrap">
+        <div class="mf-machine">
+          <div class="mf-bezel">
+            <span class="mf-screw"></span>
+            <span class="mf-bezel-label">A/V Annex — Reader Mk&nbsp;IV</span>
+            <span class="mf-counter">SLIDE 1 / 3</span>
+            <button type="button" class="mf-close" aria-label="close">✕</button>
+          </div>
+          <div class="mf-window" role="button" tabindex="0" aria-label="Enlarge the artwork">
+            <div class="mf-bed" aria-hidden="true"></div>
+            <div class="mf-art is-on"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></div>
+            <div class="mf-art"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></div>
+            <div class="mf-art"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></div>
+            <div class="mf-glass" aria-hidden="true"></div>
+            <span class="mf-hint" aria-hidden="true">⤢ enlarge</span>
+          </div>
+          <div class="mf-tray" role="group" aria-label="responses on file">
+            <button type="button" class="mf-slide is-cur" data-resp="0">
+              <span class="mf-slide-window"><svg viewBox="0 0 660 570"><use href="#art-tm-opus"/></svg></span>
+              <span class="mf-slide-cap"><span class="mf-slide-model">Claude Opus 5</span><span class="mf-slide-grade rc-g4">Choice</span></span>
+            </button>
+            <button type="button" class="mf-slide" data-resp="1">
+              <span class="mf-slide-window"><svg viewBox="0 0 600 460"><use href="#art-tm-sonnet"/></svg></span>
+              <span class="mf-slide-cap"><span class="mf-slide-model">Claude Sonnet 5</span><span class="mf-slide-grade rc-g1">Utility</span></span>
+            </button>
+            <button type="button" class="mf-slide" data-resp="2">
+              <span class="mf-slide-window"><svg viewBox="0 0 520 468"><use href="#art-tm-fable"/></svg></span>
+              <span class="mf-slide-cap"><span class="mf-slide-model">Claude Fable 5</span><span class="mf-slide-grade rc-g3">Select</span></span>
+            </button>
+          </div>
+          <div class="mf-readout">
+            <span class="mf-ro"><span class="mf-ro-l">Model</span><span class="mf-ro-v" data-ro="model">Claude Opus 5</span></span>
+            <span class="mf-ro"><span class="mf-ro-l">Prompted</span><span class="mf-ro-v" data-ro="prompted">29 July 2026</span></span>
+            <span class="mf-ro"><span class="mf-ro-l">Process</span><span class="mf-ro-v" data-ro="process">refined (2 prompts)</span></span>
+          </div>
+        </div>
+        <div class="mf-paper">
+          <header class="mf-masthead"><div class="rc-item">The Magician, top half</div></header>
+          <div class="rc-fillsline">
+            <div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div>
+          </div>
+          <div class="rc-head"><span>The prompt</span><span class="rc-head-rule"></span><button type="button" class="mf-expand">＋ show full prompt</button></div>
+          <div class="mf-quote is-folded"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div>
+          <div class="rc-head"><span>Annotations</span><span class="rc-head-rule"></span></div>
+          <table class="rc-subj">
+            <thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead>
+            <tbody>
+              <tr data-axis="if"><td><span class="rc-subj-name">Instruction following</span></td>
+                <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.2deg"><span class="rc-mark-word">No problems</span></span></span></td></tr>
+              <tr data-axis="integrity"><td><span class="rc-subj-name">Structural integrity</span></td>
+                <td><span class="rc-verdict"><span class="rc-bar rc-r2"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r2" style="--jit:0.8deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr>
+              <tr data-axis="jnsq"><td><span class="rc-subj-name">Je ne sais quoi</span></td>
+                <td><span class="rc-verdict"><span class="rc-bar rc-r3"><span class="rc-bar-fill" style="width:100%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark sm rc-r3" style="--jit:-1.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr>
+            </tbody>
+            <tfoot>
+              <tr data-grade><td><span class="rc-avg-l">Overall grade</span></td>
+                <td><span class="rc-verdict"><span class="rc-bar rc-g4"><span class="rc-bar-fill" style="width:80%"></span><span class="rc-bar-tick" style="left:20%"></span><span class="rc-bar-tick" style="left:40%"></span><span class="rc-bar-tick" style="left:60%"></span><span class="rc-bar-tick" style="left:80%"></span></span><span class="rc-mark sm rc-g4" style="--jit:-1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr>
+            </tfoot>
+          </table>
+          <div class="rc-prov"><div class="rc-formline">
+            <span><a class="rc-dl" href="#phone-view">Download SVG ⤓</a></span>
+            <span class="rc-formno">No. 2026-07-29-torn-magician</span>
+          </div></div>
+        </div>
+      </div>
+      <script type="application/json" class="mf-data">
+      {"slides":[
+        {"model":"Claude Opus 5","prompted":"29 July 2026","process":"refined (2 prompts)",
+         "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[3,"Has _it_"]},"grade":[4,"Choice"]},
+        {"model":"Claude Sonnet 5","prompted":"29 July 2026","process":"one-shot",
+         "axes":{"if":[3,"No problems"],"integrity":[1,"Big problems"],"jnsq":[1,"Ain't got it"]},"grade":[1,"Utility"]},
+        {"model":"Claude Fable 5","prompted":"29 July 2026","process":"one-shot",
+         "axes":{"if":[3,"No problems"],"integrity":[2,"Small problems"],"jnsq":[2,"Just a hint"]},"grade":[3,"Select"]}
+      ]}
+      </script>
+    </div>
+  </div>
+</div>
+
+<script>
+/* MOCKUP-ONLY interaction shim (noted in the brief as allowed):
+   (a) slide swapping from the per-card JSON — in integration this is the
+       existing data-resp → curResp → render(false) path, unchanged;
+   (b) the prompt expander;
+   (c) hiding the expander when a prompt already fits its 3-line fold. */
+(function () {
+  'use strict';
+  function esc(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function wordHTML(w) {
+    return esc(w).replace(/_([^_]+)_/g, '<i>$1</i>');
+  }
+  function setVerdict(row, rank, total, cls) {
+    var bar = row.querySelector('.rc-bar');
+    var mark = row.querySelector('.rc-mark');
+    if (bar) {
+      bar.className = 'rc-bar ' + cls;
+      bar.querySelector('.rc-bar-fill').style.width = (100 * rank / total).toFixed(1) + '%';
+    }
+    if (mark) mark.className = 'rc-mark sm ' + cls;
+  }
+  document.querySelectorAll('.mf-card').forEach(function (card) {
+    var dataEl = card.querySelector('script.mf-data');
+    if (!dataEl) return;
+    var data = JSON.parse(dataEl.textContent);
+    var slides = card.querySelectorAll('.mf-tray .mf-slide');
+    function show(i) {
+      var s = data.slides[i];
+      card.querySelectorAll('.mf-window .mf-art').forEach(function (a, j) {
+        a.classList.toggle('is-on', j === i);
+      });
+      slides.forEach(function (b, j) { b.classList.toggle('is-cur', j === i); });
+      var c = card.querySelector('.mf-counter');
+      if (c) c.textContent = 'SLIDE ' + (i + 1) + ' / ' + data.slides.length;
+      ['model', 'prompted', 'process'].forEach(function (k) {
+        var el = card.querySelector('[data-ro="' + k + '"]');
+        if (el) el.textContent = s[k];
+      });
+      card.querySelectorAll('tr[data-axis]').forEach(function (row) {
+        var ax = s.axes[row.getAttribute('data-axis')];
+        if (!ax) return;
+        setVerdict(row, ax[0], 3, 'rc-r' + ax[0]);
+        row.querySelector('.rc-mark-word').innerHTML = wordHTML(ax[1]);
+      });
+      var grow = card.querySelector('tr[data-grade]');
+      if (grow) {
+        setVerdict(grow, s.grade[0], 5, 'rc-g' + s.grade[0]);
+        grow.querySelector('.rc-mark-word').innerHTML = wordHTML(s.grade[1]);
+      }
+    }
+    slides.forEach(function (b, i) {
+      b.addEventListener('click', function () { show(i); });
+    });
+    /* the expander */
+    var btn = card.querySelector('.mf-expand');
+    var quote = card.querySelector('.mf-quote');
+    if (btn && quote) {
+      btn.addEventListener('click', function () {
+        var folded = quote.classList.toggle('is-folded');
+        btn.textContent = folded ? '＋ show full prompt' : '− fold prompt';
+      });
+      /* hide the button when the prompt fits its fold */
+      var p = quote.querySelector('p');
+      var probe = function () {
+        if (!quote.classList.contains('is-folded')) return;
+        btn.hidden = p.scrollHeight <= p.clientHeight + 2;
+      };
+      probe();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(probe);
+    }
+  });
+})();
+</script>
+</body>
+</html>
