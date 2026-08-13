@@ -990,13 +990,23 @@ html.jd-record-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .jd-record.is-enter { animation: none; }
 }
+/* the close control: a proper boxed ✕ (owner rev, 2026-08-13 — bigger and
+   more official than the bare glyph it replaces; same boxed language as
+   the axis expanders and the download button) */
 .jd-record-close {
   position: absolute; top: 9px; right: 9px; z-index: 5;
-  border: 0; background: none; cursor: pointer;
-  font-family: var(--rc-mono); font-size: 0.72rem; line-height: 1;
-  color: var(--form-ink-2); padding: 5px 7px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.5);
+  cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.9rem; line-height: 1;
+  color: var(--form-ink); padding: 0;
 }
-.jd-record-close:hover { color: var(--red); }
+.jd-record-close:hover {
+  background: #37414f; color: var(--card); border-color: #37414f;
+}
+.jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 /* the card's one content box: a grid — masthead across, then the two
    columns. overflow-y:auto is a SAFETY VALVE only (sub-500px landscape
    viewports); at every target size the columns fit the reserved viewport
@@ -1288,17 +1298,25 @@ table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
    row beneath unfolds the axis's taxonomy description. Button reset keeps
    the form's face; the caret is the affordance. */
 .rc-axbtn {
-  display: inline-flex; align-items: baseline; gap: 0.35em;
+  display: inline-flex; align-items: center; gap: 0.45em;
   border: 0; background: none; padding: 0; margin: 0;
   text-align: left; cursor: pointer;
 }
+/* the boxed +/− ahead of the name (owner rev, 2026-08-13): the index-mark
+   of a form's appendix, not a dropdown arrow. − replaces + while open. */
 .rc-axcaret {
-  font-size: 0.5rem; color: var(--form-ink-2);
-  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+  width: 11px; height: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.5);
+  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1;
+  color: var(--form-ink-2);
 }
-.rc-axbtn[aria-expanded="true"] .rc-axcaret { transform: rotate(180deg); }
-.rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l,
-.rc-axbtn:hover .rc-axcaret { color: var(--red); }
+.rc-axcaret::before { content: "+"; }
+.rc-axbtn[aria-expanded="true"] .rc-axcaret::before { content: "−"; }
+.rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
+.rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
 .rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 tr.rc-axdesc td {
   padding: 0.12em 0.5em 0.5em;
