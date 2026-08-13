@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 15A &middot; THE REQUISITION (FORM JD-1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 15A · "THE REQUISITION"
+   Round 15, take-a-turn card redesign. The unifying fiction:
+
+     THE WHOLE TURN IS ONE MUNICIPAL DOCUMENT — FORM JD-1, REQUISITION FOR
+     SPECIMEN — and the seven "cards" are its seven chapters. The visitor
+     never navigates between screens; one sheet of manila moves through six
+     stations of a bureau, and each station marks it.
+
+   THE THREE HANDS (the fiction's one hard rule — every mark on the paper
+   belongs to exactly one of them, and they never share a face):
+     · THE PRINTER  — serif small caps, faded ink. The blank form itself:
+                      form number, department line, section heads, line
+                      numbers, boilerplate. Present before anyone touches it.
+     · THE MACHINES — typewriter mono, full ink. Everything filled IN: the
+                      requisition number, timestamps, the subject line, the
+                      status column, the model names at the unveil.
+     · THE BUREAU   — RED RUBBER STAMPS, never anything else. A stamp is
+                      applied BY the department, at a station, and it can
+                      never be applied by the visitor. Round seals are
+                      determinations (RECEIVED, ACCESSIONED); rectangular
+                      box stamps are routine handling (EXHIBITS ATTACHED,
+                      RETURNED TO SENDER, NOT FILED, OVER QUOTA).
+     · (the fourth hand) THE VISITOR — graphite cursive. Their answers mark
+                      the form in pencil: a tick in the line-number gutter
+                      when a scale is answered, a pencilled ring around the
+                      determination stop they chose. The visitor writes; the
+                      visitor never stamps.
+
+   PROGRESS READS AS A DOCUMENT FILLING IN, three ways at once:
+     1. the ROUTING STRIP in the masthead — six station boxes that tick red
+        as the form clears them (present on every card, identical geometry,
+        so it is unmistakably the same paper);
+     2. the DOCKET LINE — "req. no." and "received" start as empty dotted
+        blanks on the Brief and are typed in the moment the words are sent;
+     3. the STAMPS — the Brief carries a DASHED EMPTY RING captioned
+        "space reserved for department use"; the Unveil lands the
+        ACCESSIONED seal in exactly that spot. Blank form → sealed form.
+
+   FUNCTIONAL PARITY: every control in the live flow (junk-drawer.js
+   ~3030–4250) exists here — 500-char textarea + count + SEND IT + the
+   disclosure fine print; the darkroom's slow notice and per-slot
+   pending/ok/failed; the blind reveal + grade button; the bench's clickable
+   step rail, pinned plate, native <select>s, in-flow ⓘ popovers, the
+   broken/offensive flag + folded note, back/next; the call's 5-stop likert
+   rail; the unveil's reveal + tie keep-chooser; the apology's retry paths.
+
+   DEMO SCAFFOLDING ONLY (not part of the design):
+     · each demo is its own 100vh .frame with a mocked 56px site banner and
+       an absolutely-positioned scrim, so the geometry matches production
+       (fixed banner z1000, scrim reserving the band);
+     · :target solo mode — open the page at #d1…#d12 and every other section
+       collapses, so the targeted frame IS the viewport;
+     · ONE tiny inline script at the bottom: when the page is top-level it
+       injects the 375px phone set as <iframe>s pointing at this same file's
+       #d1…#d12. That is its entire job — no behaviour is scripted, every
+       card state below is static markup. (The top-level check is what stops
+       the iframes from recursing.)
+   ========================================================================== */
+
+:root { --banner-h: 56px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  color: #2a2620;
+  /* the wood-toned page the drawer lives on (carried from mockup 13b) */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+
+/* ---- demo scaffolding ---------------------------------------------------- */
+body:has(.demo:target) > :not(:target) { display: none; }
+body:has(.demo:target) { overflow: hidden; }
+.frame { position: relative; height: 100vh; overflow: hidden; }
+.mock-banner {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--banner-h);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: #fff; border-bottom: 1px solid #111;
+}
+.mb-title { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; color: #111; }
+.mb-title::before { content: "▌"; color: #2233dd; margin-right: 0.45em; }
+.mb-nav { display: flex; gap: 2.2em; font-size: 0.8rem; text-transform: uppercase; color: #111; }
+.mb-nav b { font-weight: 400; text-decoration: underline; text-underline-offset: 5px; }
+.demo-tag {
+  position: absolute; top: calc(var(--banner-h) + 8px); left: 10px; z-index: 500;
+  max-width: 52ch;
+  font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase;
+  line-height: 1.7; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.74); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 5px 9px;
+}
+.demo-tag b { color: #f3c98a; }
+@media (max-width: 500px) { .demo-tag { display: none; } }
+
+/* the reading pages (intro + notes) that sit between the demos */
+.page {
+  max-width: 940px; margin: 0 auto; padding: 34px 26px 40px;
+  background: #ece0bf; color: #33240f;
+  border-left: 1px solid rgba(20, 10, 4, 0.5); border-right: 1px solid rgba(20, 10, 4, 0.5);
+  box-shadow: 0 0 44px rgba(0, 0, 0, 0.5);
+}
+.page h1 { font-size: 1.05rem; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 0.5rem; }
+.page h2 {
+  font-size: 0.74rem; letter-spacing: 0.2em; text-transform: uppercase;
+  margin: 1.6rem 0 0.5rem; padding-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(74, 53, 18, 0.35);
+}
+.page h3 { font-size: 0.68rem; letter-spacing: 0.14em; text-transform: uppercase; margin: 1rem 0 0.35rem; color: #7a4a1d; }
+.page p, .page li { font-size: 0.74rem; line-height: 1.75; margin-bottom: 0.55rem; }
+.page ul, .page ol { padding-left: 1.4em; margin-bottom: 0.7rem; }
+.page code { background: rgba(255, 250, 232, 0.6); padding: 0 3px; }
+.page a { color: #b3402f; }
+.page .lead { font-size: 0.8rem; }
+.page .idx { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.6rem 0 0.2rem; }
+.page .idx a {
+  font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+  text-decoration: none; color: #33240f;
+  border: 1px solid rgba(74, 53, 18, 0.45); background: rgba(255, 250, 232, 0.5);
+  padding: 5px 8px;
+}
+.page .idx a:hover { border-color: #b3402f; color: #b3402f; }
+
+/* the phone gallery */
+#phones { padding: 30px 18px 60px; }
+#phones .ph-head {
+  max-width: 940px; margin: 0 auto 18px; color: #f0e6cc;
+  font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; line-height: 1.8;
+}
+#phones .ph-grid { display: flex; flex-wrap: wrap; gap: 26px; justify-content: center; }
+#phones figure { width: 375px; }
+#phones figcaption {
+  color: #f0e6cc; font-size: 0.58rem; letter-spacing: 0.13em;
+  text-transform: uppercase; padding: 0 0 6px 2px;
+}
+#phones iframe {
+  display: block; width: 375px; height: 780px; border: 0;
+  border: 2px solid rgba(20, 10, 4, 0.75);
+  box-shadow: 0 14px 30px -10px rgba(0, 0, 0, 0.7);
+  background: #000;
+}
+
+/* ============================================================================
+   THE SCRIM + THE FORM — the part that graduates to junk-drawer.css.
+   Production: .jd-turn-scrim { position: fixed; inset: 0; padding-top:
+   max(12px, 2vh, calc(var(--banner-h) + 8px)); } — here the .frame plays the
+   viewport, so `absolute` stands in for `fixed`.
+   ========================================================================== */
+.rq-scrim {
+  /* THE PAPER IS THE TURN'S OWN, NOT THE REPORT CARD'S. Manila and brass:
+     this is hardware you operate. What the requisition borrows from the
+     record card is its FORM GRAMMAR — serif small caps, ruled section
+     heads, numbered lines, boxed controls — not its cool office cream. */
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tpaper-lo: #e2d3a8;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
+  --graphite: #4b4030;        /* the visitor's pencil */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  /* grain + mottle carried VERBATIM from the shipped card + turn modal
+     (stitchTiles="stitch" — the standing Safari lesson; never reseed) */
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* the rubber-stamp speckle: masks every stamp so the ink breaks up the way
+     a stamp pad does. Alpha-masked (the source is black at varying alpha), and
+     tuned to a MEAN of ~0.82 — enough gap for the ink to look pressed rather
+     than printed, nowhere near enough to cost the words their legibility. */
+  --tspeck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='s' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.75' numOctaves='4' seed='5'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 0.22'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23s)'/%3E%3C/svg%3E");
+
+  position: absolute; inset: 0; top: var(--banner-h); z-index: 320;
+  display: flex; align-items: center; justify-content: center;
+  padding: max(12px, 2vh) 12px;
+  background: rgba(10, 5, 1, 0.58);
+}
+
+/* ---- the form itself ----------------------------------------------------- */
+.rq-card {
+  position: relative;
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  /* the card is a FLEX ITEM of the scrim, so its default min-width:auto lets
+     any nowrap descendant (a stamp, a form number, a scale title) push it
+     wider than the phone viewport. This is the line that keeps 375px honest. */
+  min-width: 0;
+  max-height: 100%;                 /* = the banner-reserved, padded viewport */
+  display: flex; flex-direction: column;
+  color: var(--tink);
+  font-family: var(--tmono);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the printed double border */
+.rq-card::before {
+  content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+/* paper mottle */
+.rq-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background-image: var(--tmottle); background-size: 420px 420px;
+}
+/* the boxed ✕ — the record card's control language (a 26px printed box
+   centred in a 44px target, so the box can stay form-sized) */
+.rq-close {
+  position: absolute; top: 3px; right: 3px; z-index: 8;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  font-family: var(--tmono); font-size: 0.86rem; line-height: 1;
+  color: var(--tink);
+}
+.rq-close span {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+}
+.rq-close:hover span { background: #33240f; color: var(--tpaper); border-color: #33240f; }
+.rq-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ============================================================================
+   THE MASTHEAD — the part of the paper that never changes, and the part that
+   accumulates. It lives OUTSIDE the scroller on purpose: the form number, the
+   docket, and the routing strip are the document's identity, and identity must
+   not scroll away mid-turn. (Integration note: this differs from the live
+   .jd-turn-scroll, which holds everything.)
+   ========================================================================== */
+.rq-mast {
+  position: relative; z-index: 4; flex: 0 0 auto;
+  padding: 9px 18px 7px;
+  border-bottom: 2px solid var(--trule);
+  background: linear-gradient(180deg, rgba(255, 250, 232, 0.42), rgba(255, 250, 232, 0) 70%);
+}
+/* row 1 — the printed band */
+.rq-band {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-right: 44px;              /* clears the ✕ */
+}
+.rq-formno {
+  flex: 0 0 auto;
+  font-family: var(--tform); font-weight: 700; font-size: 0.6rem;
+  letter-spacing: 0.1em; color: #2c1f0c; white-space: nowrap;
+  border: 1.5px solid rgba(48, 34, 12, 0.75); padding: 1px 6px 0;
+}
+.rq-dept {
+  flex: 1 1 auto; min-width: 0;
+  font-family: var(--tform); font-size: 0.47rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--tink-2); line-height: 1.4;
+}
+.rq-rev {
+  flex: 0 0 auto;
+  font-family: var(--tmono); font-size: 0.44rem; letter-spacing: 0.1em;
+  color: var(--tink-3); white-space: nowrap;
+}
+/* row 2 — the docket: printed labels, typed values. An unassigned value is a
+   DOTTED BLANK, which is the whole point on the Brief. */
+.rq-docket {
+  display: flex; flex-wrap: wrap; gap: 2px 18px;
+  margin-top: 5px;
+}
+.rq-dk { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
+.rq-dk i {
+  font-family: var(--tform); font-style: normal;
+  font-size: 0.45rem; letter-spacing: 0.17em; text-transform: uppercase;
+  color: var(--tink-3);
+}
+.rq-dk b {
+  font-family: var(--tmono); font-weight: 700; font-size: 0.55rem;
+  letter-spacing: 0.07em; color: var(--tink);
+  border-bottom: 1px dotted var(--trule); padding: 0 0.35em 1px;
+  min-width: 5.5em; display: inline-block;
+}
+.rq-dk b.rq-blank {
+  font-weight: 400; color: var(--tink-3); font-style: italic;
+}
+/* row 3 — THE ROUTING STRIP. Six station boxes, identical on every card; this
+   is the progress control that is NOT a control (it reports, it never
+   navigates — the bench rail below is the clickable one, and they are
+   deliberately different sizes and different type). */
+.rq-route { display: flex; gap: 4px; margin-top: 6px; list-style: none; }
+.rq-route li {
+  flex: 1 1 0; min-width: 0;
+  display: flex; align-items: stretch;
+  border: 1px solid var(--trule-2);
+  background: rgba(255, 250, 232, 0.22);
+  color: var(--tink-3);
+}
+.rq-route b {
+  flex: 0 0 auto; width: 1.35em;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--tform); font-size: 0.5rem; font-weight: 700;
+  border-right: 1px solid var(--trule-2);
+  background: rgba(74, 53, 18, 0.06);
+}
+.rq-route span {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 3px;
+  padding: 3px 4px 2px 5px;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.13em;
+  text-transform: uppercase; white-space: nowrap; overflow: hidden;
+}
+.rq-route em { font-style: normal; }
+/* a cleared station is TICKED — in red, because clearing a station is the
+   bureau's mark, not the visitor's */
+.rq-route .is-done { color: var(--tink-2); border-color: var(--trule); }
+.rq-route .is-done b { background: rgba(74, 53, 18, 0.10); color: var(--tink); }
+.rq-route .is-done em::after {
+  content: "✓"; color: var(--tstamp); font-weight: 700; font-size: 0.62rem;
+}
+/* the station the form is standing at */
+.rq-route .is-now {
+  color: var(--tred); border-color: var(--tred);
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 -2px 0 var(--tred);
+}
+.rq-route .is-now b { color: var(--tred); border-right-color: var(--tred); background: rgba(179, 64, 47, 0.08); }
+.rq-route .is-now span { font-weight: 700; }
+/* a station the form will never reach (a returned requisition) */
+.rq-route .is-void { position: relative; opacity: 0.62; }
+.rq-route .is-void::after {
+  content: ""; position: absolute; left: 2px; right: 2px; top: 50%;
+  border-top: 1.5px solid var(--tstamp); transform: rotate(-2deg);
+}
+/* row 4 — the narration line: which station, and what was written there */
+.rq-station {
+  margin-top: 4px;
+  font-family: var(--tform); font-size: 0.46rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: var(--tink-3); line-height: 1.5;
+}
+.rq-station b { color: var(--tink-2); font-weight: 700; }
+.rq-station.is-bad b, .rq-station.is-bad { color: var(--tstamp); }
+
+/* ---- the body: the one scroller ------------------------------------------ */
+.rq-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 12px 18px 26px;
+  scrollbar-width: thin;
+}
+.rq-body::-webkit-scrollbar { width: 7px; }
+.rq-body::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
+
+/* ---- section heads: the chapter marks ------------------------------------ */
+.rq-sec {
+  display: flex; align-items: center; gap: 0.6em;
+  margin: 0 0 0.5rem;
+  font-weight: 400;
+}
+.rq-secno {
+  flex: 0 0 auto;
+  font-family: var(--tform); font-weight: 700; font-size: 0.5rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--tink-2);
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.45);
+  padding: 2px 5px 1px;
+}
+.rq-sech {
+  flex: 0 0 auto;
+  font-family: var(--tform); font-size: 0.66rem; font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--tink);
+}
+.rq-secrule { flex: 1 1 auto; min-width: 8px; border-top: 1px solid var(--trule-2); }
+.rq-secnote {
+  flex: 0 0 auto;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--tink-3); white-space: nowrap;
+}
+.rq-sec.is-bad .rq-secno { color: var(--tstamp); border-color: var(--tstamp); }
+.rq-sec.is-bad .rq-sech { color: var(--tstamp); }
+@media (max-width: 430px) { .rq-secnote { display: none; } }
+
+/* the section body — everything a chapter holds sits in here so a stamp can
+   be positioned against the CHAPTER rather than the card */
+.rq-secbody { position: relative; }
+
+/* ---- printed instruction / typed copy ------------------------------------ */
+.rq-instr {
+  margin: 0 0 0.6rem;
+  font-family: var(--tmono); font-size: 0.68rem; line-height: 1.6;
+  color: var(--tink-2);
+}
+.rq-instr b { color: var(--tink); font-weight: 700; }
+/* the subject line: the visitor's own words, TYPED ONTO the form, travelling
+   with it from station 2 onward. Escaped text only — decoration is CSS. */
+.rq-subject {
+  margin: 0 0 0.75rem;
+  border-top: 1px solid var(--trule); border-bottom: 1px solid var(--trule);
+  background: rgba(255, 250, 232, 0.32);
+  padding: 0.35rem 0.5rem 0.4rem;
+}
+.rq-subject-l {
+  display: block; margin-bottom: 2px;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+.rq-subject p {
+  font-family: var(--tmono); font-size: 0.63rem; line-height: 1.45;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rq-subject.is-full p { display: block; -webkit-line-clamp: unset; overflow: visible; }
+
+/* a ruled notice slip — honest bad news, never a red alarm bar */
+.rq-notice {
+  margin: 0 0 0.8rem; padding: 0.45rem 0.65rem;
+  background: rgba(255, 250, 232, 0.62);
+  border-left: 3px solid var(--tred);
+  border-top: 1px solid var(--trule-2); border-bottom: 1px solid var(--trule-2);
+  font-size: 0.66rem; line-height: 1.5;
+}
+.rq-notice b {
+  display: block; margin-bottom: 2px;
+  font-family: var(--tform); font-size: 0.46rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--tstamp);
+}
+
+/* ---- BOX 1: the requester's own field ------------------------------------ */
+.rq-boxlab {
+  display: flex; align-items: baseline; gap: 0.6em; flex-wrap: wrap;
+  margin: 0 0 0.3rem;
+}
+.rq-boxlab .l {
+  font-family: var(--tform); font-weight: 700; font-size: 0.5rem;
+  letter-spacing: 0.19em; text-transform: uppercase; color: var(--tink);
+}
+.rq-boxlab .h {
+  font-family: var(--tform); font-size: 0.45rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+.rq-fieldwrap { position: relative; }
+.rq-input {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 0.55rem 0.65rem 1.35rem;
+  background: rgba(255, 252, 240, 0.78);
+  border: 1px solid var(--trule);
+  box-shadow: inset 0 0 0 1px rgba(255, 252, 240, 0.85),
+              inset 0 1px 3px rgba(74, 53, 18, 0.12);
+  color: var(--tink);
+  font-family: var(--tmono); font-size: 0.78rem; line-height: 1.5;
+  resize: vertical;
+}
+.rq-input:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+/* the character count, seated INSIDE the field's lower-right like a form's
+   own printed counter box */
+.rq-count {
+  position: absolute; left: 7px; bottom: 7px;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--tink-3);
+  background: rgba(255, 252, 240, 0.9);
+  border: 1px solid var(--trule-2); padding: 1px 5px 0;
+}
+.rq-count b { font-family: var(--tmono); color: var(--tink-2); font-weight: 700; }
+.rq-count.is-over, .rq-count.is-over b { color: var(--tred); }
+
+/* ---- actions: brass forward, paper otherwise ----------------------------- */
+.rq-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 0.9rem; }
+.rq-go, .rq-alt {
+  min-height: 44px; padding: 0 1.1rem;
+  font-family: var(--tmono); font-size: 0.66rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  border: 1px solid rgba(58, 40, 14, 0.6);
+  cursor: pointer;
+}
+.rq-go {
+  color: #2a1c07;
+  background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
+              2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+}
+.rq-go:active { transform: translateY(1px); box-shadow: none; }
+.rq-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
+.rq-go[disabled], .rq-alt[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+.rq-go:focus-visible, .rq-alt:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the boilerplate foot: the disclosure, as the form's small print ----- */
+.rq-fine {
+  margin: 0.85rem 0 0; padding-top: 0.5rem;
+  border-top: 1px solid var(--trule-2);
+  font-size: 0.55rem; line-height: 1.7; letter-spacing: 0.03em;
+  color: var(--tink-2);
+}
+.rq-fine b {
+  font-family: var(--tform); font-weight: 700; font-size: 0.46rem;
+  letter-spacing: 0.19em; text-transform: uppercase; color: var(--tink-3);
+  margin-right: 0.5em;
+}
+
+/* ============================================================================
+   THE STAMPS — the bureau's hand, and the bureau's hand only.
+   ========================================================================== */
+/* THE SEAL SLOT — the one place on the form where a determination lands. The
+   Brief prints a dashed empty ring in it; the Unveil lands the ACCESSIONED
+   seal in exactly the same slot, at the same angle. It rides the action row
+   and bleeds upward out of it, the way a hand-stamp lands across whatever
+   happens to be under it. */
+.rq-sealslot {
+  position: relative; flex: 0 0 auto;
+  margin: -34px 2px -26px auto;
+  width: 104px; height: 104px;
+}
+.rq-sealslot { overflow: hidden; }
+.rq-sealslot > * { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.rq-sealslot--big { width: 132px; height: 132px; margin: -62px 0 -26px auto; }
+/* a section with no action row of its own still needs somewhere for the
+   station's stamp to land: a right-aligned line that the slot bleeds up out of */
+.rq-stampline { display: flex; justify-content: flex-end; }
+.rq-stampline .rq-sealslot { margin: -46px 2px 0 auto; }
+
+/* round seals = determinations */
+.rq-seal {
+  position: absolute; z-index: 3; pointer-events: none;
+  width: 104px; height: 104px;
+  color: var(--tstamp); opacity: 0.6;
+  transform: rotate(-11deg);
+  mix-blend-mode: multiply;
+  -webkit-mask-image: var(--tspeck); mask-image: var(--tspeck);
+  -webkit-mask-size: 140px 140px; mask-size: 140px 140px;
+}
+.rq-seal--big { opacity: 0.66; transform: rotate(-9deg); }
+/* the dashed EMPTY ring on the blank form — the promise the ACCESSIONED seal
+   keeps. Same size, same place, same angle, no ink. */
+.rq-reserved {
+  position: absolute; z-index: 3; pointer-events: none;
+  width: 104px; height: 104px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; text-align: center;
+  border: 1.5px dashed var(--trule); border-radius: 50%;
+  color: var(--tink-3); transform: rotate(-11deg);
+}
+.rq-reserved b {
+  font-family: var(--tform); font-weight: 700; font-size: 0.4rem;
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
+  max-width: 74px;
+}
+.rq-reserved i {
+  font-family: var(--tmono); font-style: normal; font-size: 0.38rem;
+  letter-spacing: 0.1em; color: rgba(51, 36, 15, 0.3);
+}
+/* rectangular box stamps = routine handling */
+.rq-box {
+  display: inline-flex; flex-direction: column; align-items: center;
+  padding: 3px 9px 2px;
+  color: var(--tstamp);
+  border: 2px solid var(--tstamp); outline: 1px solid var(--tstamp); outline-offset: 2px;
+  font-family: var(--tform); font-weight: 700;
+  font-size: 0.56rem; letter-spacing: 0.2em; text-transform: uppercase;
+  line-height: 1.25; white-space: nowrap;
+  opacity: 0.88; mix-blend-mode: multiply;
+  transform: rotate(-2.4deg);
+  -webkit-mask-image: var(--tspeck); mask-image: var(--tspeck);
+  -webkit-mask-size: 140px 140px; mask-size: 140px 140px;
+}
+.rq-box small {
+  font-family: var(--tmono); font-weight: 400; font-size: 0.4rem;
+  letter-spacing: 0.14em; opacity: 0.9;
+}
+.rq-box--head { flex: 0 0 auto; margin-left: 0.4em; transform: rotate(-2.4deg) translateY(-1px); }
+/* the big returned stamp: it lies ACROSS the section, and it is allowed to
+   cross the type — a stamp that dodged the text would not be a stamp */
+.rq-box--across {
+  position: absolute; z-index: 3; pointer-events: none;
+  left: 50%; top: 42%;
+  transform: translate(-50%, -50%) rotate(-6deg);
+  font-size: 1.05rem; letter-spacing: 0.26em; padding: 7px 18px 5px;
+  border-width: 3px; opacity: 0.66;
+}
+.rq-box--across small { font-size: 0.5rem; letter-spacing: 0.2em; opacity: 1; }
+
+/* ============================================================================
+   SEC. 2 — EXECUTION: the two machines, as a status table on the form.
+   ========================================================================== */
+table.rq-mach { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rq-mach th {
+  font-family: var(--tform); font-weight: 400;
+  font-size: 0.44rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--tink-3); text-align: left;
+  padding: 0.28em 0.5em; background: rgba(74, 53, 18, 0.06);
+  border-top: 1px solid var(--trule); border-bottom: 1px solid var(--trule);
+}
+table.rq-mach th + th, table.rq-mach td + td { border-left: 1px solid var(--trule-2); }
+table.rq-mach td {
+  padding: 0.4em 0.5em;
+  border-bottom: 1px solid var(--trule-2);
+  font-family: var(--tmono); font-size: 0.63rem; line-height: 1.4;
+  vertical-align: middle;
+}
+table.rq-mach tr:last-child td { border-bottom: 1px solid var(--trule); }
+.rq-mach .ex { font-weight: 700; letter-spacing: 0.22em; }
+.rq-mach .dim { color: var(--tink-3); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.rq-st { display: inline-flex; align-items: baseline; gap: 0.4em; }
+.rq-st .m { font-family: var(--tform); font-weight: 700; font-size: 0.7rem; line-height: 1; }
+.rq-st--wait { color: var(--tink-2); }
+.rq-st--ok { color: #4a6b18; }
+.rq-st--ok .m { color: #4a6b18; }
+.rq-st--fail { color: var(--tstamp); }
+/* the ellipsis that says a pen is still moving. Motion is ADDED, never
+   assumed — the base state is the reduced state. */
+.rq-dots b { font-weight: 400; opacity: 0.25; }
+@media (prefers-reduced-motion: no-preference) {
+  .rq-dots b { animation: rqDot 1.5s infinite; }
+  .rq-dots b:nth-child(2) { animation-delay: 0.25s; }
+  .rq-dots b:nth-child(3) { animation-delay: 0.5s; }
+}
+@keyframes rqDot { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+/* the delay notice: a slip clipped to the form, not an error */
+.rq-delay {
+  margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+  border: 1px dashed var(--trule);
+  background: rgba(255, 250, 232, 0.4);
+  font-size: 0.63rem; line-height: 1.5; font-style: italic; color: var(--tink-2);
+}
+.rq-delay b {
+  display: block; font-style: normal;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--tink-3); margin-bottom: 2px;
+}
+
+/* ============================================================================
+   THE EXHIBITS — the returns, ATTACHED to the form. This is the record card's
+   photograph, reused exactly: a graph-paper print swatch held down by kraft
+   photo corners, floating a millimetre off the sheet. An attached photograph
+   is an attached photograph; nothing about it needed reinventing.
+   ========================================================================== */
+.rq-exhibits { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
+/* SEC. 5 shows the exhibits as REFERENCE, not as the subject — sec. 3 is
+   where you look at them. Capping the plate here is what keeps the whole
+   determination section (rail, both plates, the scale, the actions) inside a
+   1280x800 viewport with nothing scrolled. */
+.rq-exhibits--call { justify-content: center; }
+.rq-exhibits--call .rq-ex { max-width: 236px; }
+.rq-ex { flex: 1 1 0; min-width: 0; margin: 0; }
+.rq-ex-plate {
+  position: relative; width: 100%; aspect-ratio: 1 / 1;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.rq-ex-art { position: absolute; inset: 7%; }
+.rq-ex-art svg { display: block; width: 100%; height: 100%; }
+.rq-corner {
+  position: absolute; width: 24px; height: 24px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.rq-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rq-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rq-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.rq-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+/* the caption strip: printed label, printed disclaimer — never the model */
+.rq-ex-cap {
+  display: flex; align-items: baseline; gap: 0.55em; flex-wrap: wrap;
+  margin-top: 0.45rem; padding-top: 0.25rem;
+  border-top: 1px solid var(--trule-2);
+}
+.rq-ex-cap b {
+  font-family: var(--tform); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--tink);
+}
+.rq-ex-cap span {
+  font-family: var(--tform); font-size: 0.42rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+.rq-ex-cap .won { color: var(--tstamp); font-weight: 700; }
+
+/* ============================================================================
+   SEC. 4/5 — THE BENCH. The step rail is the ONE navigation control on the
+   form: it moves between sections 4 and 5 of the same document, so it is
+   labelled with section numbers rather than invented step names.
+   ========================================================================== */
+.rq-rail { display: flex; gap: 6px; margin: 0 0 0.65rem; }
+.rq-rail button {
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; padding: 0.3rem 0.4rem;
+  font-family: var(--tform); font-size: 0.46rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tink-3);
+  background: rgba(255, 250, 232, 0.35);
+  border: 1px solid var(--trule);
+  cursor: pointer; white-space: nowrap; overflow: hidden;
+}
+.rq-rail button b {
+  font-family: var(--tmono); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--tink-2);
+}
+.rq-rail button[disabled] { opacity: 0.45; cursor: default; }
+/* a section the visitor has finished carries a PENCIL tick — their hand,
+   not the bureau's */
+.rq-rail .is-done b::after {
+  content: " ✓"; font-family: var(--thand); color: var(--graphite); letter-spacing: 0;
+}
+/* the current section: never colour alone — red type, filled ground, 3px bar */
+.rq-rail .is-now {
+  color: var(--tred); background: var(--tpaper-hi);
+  border-color: var(--tred); box-shadow: inset 0 -3px 0 var(--tred);
+}
+.rq-rail .is-now b { color: var(--tred); }
+.rq-rail button:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.rq-rail .sh { display: none; }
+
+/* the pinned exhibit: the artwork under examination stays in view for the
+   whole section, repainting the sheet's own paper so rows slide under it */
+.rq-pin {
+  position: sticky; top: 0; z-index: 4;
+  display: flex; gap: 12px; align-items: center;
+  padding: 0.35rem 0 0.5rem; margin: 0 0 0.3rem;
+  background: var(--tpaper) var(--tgrain);
+  border-bottom: 1px solid var(--trule);
+  box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
+}
+.rq-pin .rq-ex { flex: 0 0 auto; width: 92px; }
+.rq-pin .rq-ex-cap { display: none; }
+.rq-pin .rq-corner { width: 16px; height: 16px; }
+.rq-pincol { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rq-pincol b {
+  font-family: var(--tform); font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase;
+}
+.rq-pincol span {
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--tink-3); line-height: 1.5;
+}
+.rq-pincol .rq-box { align-self: flex-start; margin-top: 2px; transform: rotate(-1.5deg); font-size: 0.44rem; padding: 2px 6px 1px; }
+
+/* ---- the numbered examination lines -------------------------------------- */
+.rq-row {
+  display: grid;
+  grid-template-columns: 2.7em minmax(0, 1fr) minmax(168px, 224px);
+  gap: 2px 10px; align-items: center;
+  border-bottom: 1px solid var(--trule-2);
+  padding: 0.28rem 0 0.32rem;
+}
+/* the line number, and the gutter the visitor's pencil tick lands in */
+.rq-rowno {
+  align-self: center;
+  font-family: var(--tform); font-size: 0.5rem; letter-spacing: 0.08em;
+  color: var(--tink-3); white-space: nowrap;
+}
+.rq-row.is-filled .rq-rowno::after {
+  content: " ✓"; font-family: var(--thand); font-size: 0.78rem;
+  color: var(--graphite); letter-spacing: 0;
+}
+.rq-row.is-skipped .rq-rowno::after { content: " —"; color: var(--tink-3); }
+.rq-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rq-def {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  min-height: 44px; min-width: 0;
+  padding: 0.2rem 0.3rem 0.2rem 0;
+  background: none; border: 0; cursor: pointer;
+  font-family: var(--tform);
+  font-size: 0.55rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--tink-2); text-align: left;
+}
+.rq-def > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rq-i {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; flex: 0 0 auto;
+  border: 1px solid var(--trule); border-radius: 50%;
+  font-family: var(--tform); font-size: 0.55rem; font-style: italic;
+  color: var(--tink-2);
+}
+.rq-def:hover, .rq-def[aria-expanded="true"] { color: var(--tred); }
+.rq-def:hover .rq-i, .rq-def[aria-expanded="true"] .rq-i { color: var(--tred); border-color: var(--tred); }
+.rq-def:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* the ⓘ popover — IN FLOW. It pushes the sheet down; it never covers a
+   control. Set as the form's own "schedule of values" appendix. */
+.rq-pop {
+  grid-column: 1 / -1;
+  margin: 0.2rem 0 0.45rem; padding: 0.5rem 0.7rem 0.6rem;
+  background: var(--tpaper-hi);
+  border: 1px solid var(--trule);
+  box-shadow: 3px 4px 8px -3px rgba(20, 10, 3, 0.35);
+  font-size: 0.62rem; line-height: 1.5; color: var(--tink);
+}
+.rq-pop-h {
+  font-family: var(--tform); font-size: 0.42rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--tink-3);
+  padding-bottom: 3px; margin-bottom: 4px; border-bottom: 1px solid var(--trule-2);
+}
+.rq-pop-desc { color: var(--tink-2); margin: 0 0 0.25rem; }
+.rq-pop dl { margin: 0.25rem 0 0; }
+.rq-pop dt {
+  margin-top: 0.35rem;
+  font-family: var(--tform); font-weight: 700; font-size: 0.55rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.rq-pop dd { margin: 0; color: var(--tink-2); }
+.rq-pop[hidden] { display: none; }
+
+/* the scale itself stays a NATIVE select — phone OS pickers, titles only */
+.rq-select {
+  min-height: 44px; width: 100%;
+  padding: 0.3rem 1.7rem 0.3rem 0.55rem;
+  font-family: var(--tmono); font-size: 0.66rem;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-3);
+  background: rgba(255, 252, 240, 0.62)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1 L5 5 L9 1' fill='none' stroke='%2333240f' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 0.55rem center no-repeat;
+  border: 1px solid var(--trule);
+  border-radius: 0;
+  -webkit-appearance: none; appearance: none;
+  cursor: pointer;
+}
+.rq-select.is-set { color: var(--tink); font-weight: 700; background-color: rgba(255, 252, 240, 0.92); }
+.rq-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the report path: a boxed sub-section, not a stray checkbox ---------- */
+.rq-report {
+  margin-top: 0.55rem; padding: 0.35rem 0.6rem 0.5rem;
+  border: 1px solid var(--trule-2);
+  background: rgba(74, 53, 18, 0.035);
+}
+.rq-report .rq-boxlab { margin-bottom: 0.1rem; }
+.rq-check {
+  display: flex; align-items: center; gap: 0.55rem;
+  min-height: 44px; cursor: pointer;
+  font-size: 0.66rem; line-height: 1.45; color: var(--tink-2);
+}
+.rq-check input { width: 18px; height: 18px; flex: 0 0 auto; accent-color: var(--tred); }
+.rq-note {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 0.4rem 0.55rem;
+  background: rgba(255, 252, 240, 0.78);
+  border: 1px solid var(--trule);
+  font-family: var(--tmono); font-size: 0.66rem; color: var(--tink);
+}
+.rq-note:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+.rq-notelab {
+  display: block; margin: 0.1rem 0 0.25rem;
+  font-family: var(--tform); font-size: 0.42rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+
+/* ============================================================================
+   SEC. 5 — THE DETERMINATION SCALE. Five graduated stops printed across the
+   form, A hard left to B hard right: the width itself says direction. The
+   visitor's pick is a PENCILLED RING around the stop — their hand on the
+   bureau's printed scale.
+   ========================================================================== */
+.rq-detbox {
+  margin-top: 0.5rem; padding: 0.5rem 0.7rem 0.6rem;
+  border: 1px solid var(--trule);
+  background: rgba(255, 250, 232, 0.34);
+}
+.rq-req {
+  margin: 0.1rem 0 0.5rem;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--tstamp);
+}
+.rq-likert { display: flex; align-items: flex-start; gap: 10px; margin: 0.5rem 0 0.2rem; }
+.rq-lk-end {
+  flex: 0 0 auto; padding-top: 2px;
+  font-family: var(--tform); font-size: 1rem; font-weight: 700;
+  letter-spacing: 0.1em; color: var(--tink-3);
+}
+.rq-likert[data-pick="b"] .rq-lk-end--b, .rq-likert[data-pick="a"] .rq-lk-end--a { color: var(--tred); }
+.rq-lk-rail { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
+.rq-lk-rail::before {
+  content: ""; position: absolute; left: 9%; right: 9%; top: 13px;
+  border-top: 2px solid var(--trule);
+}
+.rq-lk-stop {
+  position: relative; z-index: 1;
+  flex: 1 1 0; min-width: 0; min-height: 44px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding-top: 5px; cursor: pointer;
+}
+.rq-lk-stop input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.rq-lk-stop:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+.rq-lk-dot {
+  position: relative;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--tpaper-hi); border: 2px solid var(--trule);
+}
+.rq-lk-stop.is-on .rq-lk-dot { background: var(--tred); border-color: var(--tred); }
+/* the pencilled ring — deliberately off-round and off-axis */
+.rq-lk-stop.is-on .rq-lk-dot::after {
+  content: ""; position: absolute; left: -8px; top: -7px;
+  width: 30px; height: 28px;
+  border: 1.6px solid var(--graphite); border-radius: 50%;
+  transform: rotate(-8deg) scale(1.04, 0.95);
+  opacity: 0.85;
+}
+.rq-lk-cap {
+  display: flex; flex-direction: column; align-items: center;
+  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.1em;
+  text-transform: uppercase; line-height: 1.35; text-align: center; color: var(--tink-3);
+}
+.rq-lk-cap b { font-family: var(--tmono); font-size: 0.66rem; letter-spacing: 0.14em; color: var(--tink-2); }
+.rq-lk-stop.is-on .rq-lk-cap { color: var(--tink); }
+.rq-lk-stop.is-on .rq-lk-cap b { color: var(--tred); }
+/* the determination, written out under the scale in the visitor's own hand */
+.rq-detline {
+  display: flex; align-items: baseline; gap: 0.6em; flex-wrap: wrap;
+  margin-top: 0.55rem; padding-top: 0.35rem;
+  border-top: 1px dotted var(--trule);
+}
+.rq-detline i {
+  font-family: var(--tform); font-style: normal; font-size: 0.44rem;
+  letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-3);
+}
+.rq-detline .hand {
+  font-family: var(--thand); font-size: 0.92rem; color: var(--graphite);
+  transform: rotate(-1.4deg); display: inline-block;
+}
+.rq-detline .sig { margin-left: auto; }
+
+/* ============================================================================
+   SEC. 6 — ACCESSION: the disposition table + the tie election.
+   ========================================================================== */
+table.rq-disp { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rq-disp th {
+  font-family: var(--tform); font-weight: 400;
+  font-size: 0.44rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--tink-3); text-align: left;
+  padding: 0.28em 0.5em; background: rgba(74, 53, 18, 0.06);
+  border-top: 1px solid var(--trule); border-bottom: 1px solid var(--trule);
+}
+table.rq-disp th + th, table.rq-disp td + td { border-left: 1px solid var(--trule-2); }
+table.rq-disp td {
+  padding: 0.4em 0.5em;
+  border-bottom: 1px solid var(--trule-2);
+  font-family: var(--tmono); font-size: 0.64rem; line-height: 1.4;
+}
+table.rq-disp tr:last-child td { border-bottom: 1px solid var(--trule); }
+.rq-disp .ex { font-weight: 700; letter-spacing: 0.22em; }
+.rq-disp .vendor { color: var(--tink-3); }
+.rq-disp .kept { color: var(--tstamp); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.56rem; }
+.rq-disp .held { color: var(--tink-3); letter-spacing: 0.1em; text-transform: uppercase; font-size: 0.56rem; }
+
+/* the tie election: the pill row survives from the live turn, for this and
+   nothing else */
+.rq-pills { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.35rem 0 0.2rem; }
+.rq-pill {
+  position: relative; flex: 1 1 120px; min-width: 96px; min-height: 44px;
+  display: flex; align-items: center; box-sizing: border-box;
+  padding: 0.45rem 0.55rem 0.5rem 1.5rem;
+  background: rgba(255, 250, 232, 0.5); border: 1px solid var(--trule);
+  font-family: var(--tform); font-size: 0.58rem; letter-spacing: 0.16em;
+  text-transform: uppercase; cursor: pointer;
+}
+.rq-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.rq-pill:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+.rq-pill .tick {
+  position: absolute; left: 0.4rem; top: 50%; transform: translateY(-58%) rotate(-9deg);
+  font-family: var(--thand); font-size: 0.95rem; color: var(--graphite); opacity: 0;
+}
+.rq-pill.is-on { background: rgba(255, 250, 232, 0.95); border-color: var(--tred); box-shadow: inset 0 0 0 1px var(--tred); }
+.rq-pill.is-on .tick { opacity: 1; }
+
+/* ---- the accession stub: what the visitor keeps -------------------------- */
+.rq-stub {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 0.7rem; padding: 0.45rem 0.6rem;
+  border: 1px solid var(--trule); border-left: 4px solid var(--tstamp);
+  background: rgba(255, 250, 232, 0.5);
+}
+.rq-stub-txt { min-width: 0; }
+.rq-stub-txt b {
+  display: block;
+  font-family: var(--tform); font-size: 0.48rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--tink-3); margin-bottom: 2px;
+}
+.rq-stub-txt span { font-size: 0.63rem; line-height: 1.5; color: var(--tink-2); }
+
+/* ============================================================================
+   PHONE — 375px. Everything above holds; these are the compressions.
+   ========================================================================== */
+@media (max-width: 600px) {
+  .rq-scrim { padding: 8px 8px; }
+  .rq-mast { padding: 8px 12px 6px; }
+  .rq-body { padding: 10px 12px 14px; }
+  /* the routing strip goes numerals-only; the narration line names the
+     station instead, so nothing is lost */
+  .rq-route span { display: none; }
+  .rq-route li { flex: 0 0 auto; }
+  .rq-route b { width: 2.1em; height: 22px; border-right: 0; font-size: 0.55rem; }
+  .rq-route .is-done b::after { content: "✓"; color: var(--tstamp); margin-left: 2px; font-size: 0.5rem; }
+  .rq-route .is-void::after { left: 1px; right: 1px; }
+  .rq-deptx { display: none; }
+  .rq-docket { gap: 1px 12px; }
+  .rq-dk b { min-width: 4.5em; font-size: 0.5rem; }
+  /* stacked, never tabbed: the whole question is "which of these two" */
+  .rq-exhibits { flex-direction: column; }
+  .rq-ex { width: 100%; max-width: 300px; margin-left: auto; margin-right: auto; }
+  /* the examination line becomes label-over-control */
+  .rq-row { grid-template-columns: 2.4em minmax(0, 1fr); }
+  .rq-row .rq-select { grid-column: 1 / -1; margin-top: 0.1rem; }
+  .rq-pin .rq-ex { width: 68px; }
+  .rq-pincol b { font-size: 0.62rem; }
+  .rq-rail .lg { display: none; }
+  .rq-rail .sh { display: block; }
+  .rq-likert { gap: 5px; }
+  .rq-lk-cap { font-size: 0.38rem; letter-spacing: 0.03em; }
+  .rq-lk-cap b { font-size: 0.58rem; }
+  .rq-lk-end { font-size: 0.85rem; }
+  /* the seal slot shrinks and stops bleeding upward — on a phone the action
+     row is full-width buttons, so the slot takes its own line under them */
+  .rq-sealslot { width: 84px; height: 84px; margin: 2px 0 0 auto; }
+  .rq-sealslot--big { width: 96px; height: 96px; margin: 2px 0 0 auto; }
+  .rq-stampline .rq-sealslot { margin-top: -30px; }
+  .rq-reserved b { font-size: 0.34rem; max-width: 62px; }
+  .rq-box--across { font-size: 0.78rem; letter-spacing: 0.16em; padding: 5px 12px 4px; }
+  .rq-actions .rq-go, .rq-actions .rq-alt { flex: 1 1 auto; }
+  .rq-secnote { display: none; }
+}
+@media (max-width: 768px) {
+  /* 16px kills iOS's focus zoom, which would leave this fixed layer parked
+     half off-screen */
+  .rq-input, .rq-select, .rq-note { font-size: 16px; }
+  /* the printed counter box sits inside the field; at 16px it needs a deeper
+     reserved band or the last line runs under it */
+  .rq-input { padding-bottom: 1.9rem; min-height: 9.5rem; }
+  .rq-select { letter-spacing: 0.06em; }
+}
+/* motion is added, never assumed */
+@media (prefers-reduced-motion: no-preference) {
+  .rq-pop { animation: rqPop 0.16s ease-out; }
+}
+@keyframes rqPop { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+
+<!-- THE EXHIBITS, ONCE. Both drawings are real responses to the tarot prompt from
+     items/2026-07-29-torn-magician (Claude Opus 5 and Claude Sonnet 5); their internal
+     ids are prefixed so the two can share one document, exactly the way JD_svgInst
+     namespaces them at runtime. The seal arcs live here too, so every stamp on the
+     page draws its department ring from one pair of paths. -->
+<svg class="jd-sprite" aria-hidden="true" width="0" height="0" style="position:absolute"><defs><path id="sealT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="sealB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><symbol id="art-a" viewBox="0 0 660 570"><defs> <g id="oa_rose"> <circle cx="0" cy="-14" r="7.5"/> <circle cx="13.3" cy="-4.3" r="7.5"/> <circle cx="8.2" cy="11.3" r="7.5"/> <circle cx="-8.2" cy="11.3" r="7.5"/> <circle cx="-13.3" cy="-4.3" r="7.5"/> <circle cx="0" cy="0" r="6.5"/> <circle cx="0" cy="0" r="2.5"/> </g> <g id="oa_leaf"> <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/> <path d="M4 1C12 -1 21 -2 27 -1"/> </g> <g id="oa_spark"> <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/> </g> <g id="oa_lily"> <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/> <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/> <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/> <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/> <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/> <circle cx="0" cy="-2" r="5"/> </g> </defs> <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"> <!-- parchment face of the card, torn away along the bottom --> <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/> <!-- card border, cut off where the card is torn --> <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/> <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/> <!-- ripped bottom edge --> <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/> <!-- roman numeral I --> <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/> <!-- arbour of roses across the top --> <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/> <g stroke-width="4.5"> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(168,100) rotate(-12)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(290,108) rotate(168)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(370,108) rotate(12)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(490,100) rotate(192)"/> </g> <g stroke-width="5"> <use xlink:href="#oa_rose" href="#oa_rose" transform="translate(106,100)"/> <use xlink:href="#oa_rose" href="#oa_rose" transform="translate(231,104)"/> <use xlink:href="#oa_rose" href="#oa_rose" transform="translate(429,104)"/> <use xlink:href="#oa_rose" href="#oa_rose" transform="translate(554,99)"/> </g> <!-- rose vines hanging down the left --> <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/> <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/> <g stroke-width="4.5"> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(98,175) rotate(195)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(98,250) rotate(-15)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(94,400) rotate(-25)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(88,456) rotate(200)"/> </g> <g stroke-width="5"><use xlink:href="#oa_rose" href="#oa_rose" transform="translate(90,322)"/></g> <!-- rose vines hanging down the right --> <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/> <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/> <g stroke-width="4.5"> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(562,175) rotate(-15)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(562,250) rotate(195)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(566,400) rotate(205)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(574,456) rotate(-20)"/> </g> <g stroke-width="5"><use xlink:href="#oa_rose" href="#oa_rose" transform="translate(570,322)"/></g> <!-- lilies of the garden --> <g stroke-width="5"> <use xlink:href="#oa_lily" href="#oa_lily" transform="translate(132,474) rotate(-8)"/> <path d="M132 476C129 494 133 508 131 524"/> <use xlink:href="#oa_lily" href="#oa_lily" transform="translate(520,472) rotate(8)"/> <path d="M520 474C523 492 519 508 521 534"/> </g> <g stroke-width="4.5"> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(130,494) rotate(150)"/> <use xlink:href="#oa_leaf" href="#oa_leaf" transform="translate(522,492) rotate(30)"/> </g> <!-- lemniscate above the head --> <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/> <!-- head --> <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/> <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/> <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/> <g stroke-width="4"> <path d="M300 196C306 186 314 184 320 189"/> <path d="M326 182C334 178 342 180 346 186"/> <path d="M352 192C356 187 361 187 364 192"/> </g> <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/> <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/> <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/> <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/> <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/> <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/> <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/> <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/> <!-- neck and collar --> <path d="M315 294C314 302 314 308 316 313"/> <path d="M345 294C346 302 346 308 344 313"/> <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/> <!-- raised arm --> <path d="M306 314C304 310 303 307 302 305"/> <path d="M302 305L246 253L247 258L211 204"/> <path d="M274 335L218 283L217 278L181 224"/> <path d="M211 204L218 200"/> <path d="M181 224L174 228"/> <path d="M218 200C208 216 194 226 174 228"/> <!-- fist gripping the wand --> <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/> <g stroke-width="4"> <path d="M180 214C188 211 196 210 202 211"/> <path d="M179 202C187 199 196 198 203 199"/> <path d="M180 190C188 187 196 186 203 187"/> </g> <!-- double-ended wand --> <g stroke-width="6"> <circle cx="184" cy="128" r="13"/> <circle cx="184" cy="276" r="13"/> <path d="M179 141L179 178"/> <path d="M189 141L189 178"/> <path d="M179 214L179 263"/> <path d="M189 214L189 263"/> </g> <g stroke-width="4"> <use xlink:href="#oa_spark" href="#oa_spark" transform="translate(136,166) scale(0.85)"/> <use xlink:href="#oa_spark" href="#oa_spark" transform="translate(224,152) scale(0.7)"/> <use xlink:href="#oa_spark" href="#oa_spark" transform="translate(150,262) scale(0.6)"/> </g> <!-- lowered arm, finger pointing down --> <path d="M354 313C378 313 396 318 408 328"/> <path d="M408 328C440 346 462 366 466 418"/> <path d="M390 342C420 362 428 374 428 420"/> <path d="M420 414C430 436 460 436 470 412"/> <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/> <!-- robe and cloak --> <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/> <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/> <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/> <path d="M360 318C378 328 392 340 400 350"/> <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/> <g stroke-width="4"> <path d="M304 358C300 396 302 424 302 444"/> <path d="M356 358C360 396 358 424 358 444"/> <path d="M302 484C302 498 302 508 302 514"/> <path d="M358 484C358 494 358 500 358 504"/> </g> <!-- ouroboros belt: the snake biting its own tail --> <g stroke-width="5.5"> <path d="M258 452C290 448 320 450 336 456"/> <path d="M258 476C290 480 322 476 336 468"/> <path d="M336 456C344 458 350 460 356 461"/> <path d="M336 468C344 465 350 462 356 461"/> <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/> </g> <g stroke-width="4"> <path d="M352 455L358 459"/> <path d="M352 467L358 463"/> <path d="M280 458L286 464L280 470L274 464Z"/> <path d="M300 457L306 463L300 469L294 463Z"/> <path d="M318 458L324 464L318 470L312 464Z"/> </g> <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/> </g></symbol><symbol id="art-b" viewBox="0 0 600 460"><defs> <path id="sb_petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/> <path id="sb_lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/> <path id="sb_leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/> <path id="sb_paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/> <clipPath id="sb_paperClip"> <use href="#sb_paperShape"/> </clipPath> </defs> <use href="#sb_paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/> <g clip-path="url(#sb_paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"> <!-- climbing vines --> <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" /> <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" /> <g transform="translate(78,178) rotate(20)"><use href="#sb_leaf"/><path d="M0,0 L16,0"/></g> <g transform="translate(44,248) rotate(200)"><use href="#sb_leaf"/><path d="M0,0 L16,0"/></g> <g transform="translate(522,178) rotate(160)"><use href="#sb_leaf"/><path d="M0,0 L16,0"/></g> <g transform="translate(556,248) rotate(-20)"><use href="#sb_leaf"/><path d="M0,0 L16,0"/></g> <!-- roses top corners --> <g transform="translate(65,58)"> <use href="#sb_petal"/> <use href="#sb_petal" transform="rotate(72)"/> <use href="#sb_petal" transform="rotate(144)"/> <use href="#sb_petal" transform="rotate(216)"/> <use href="#sb_petal" transform="rotate(288)"/> <circle cx="0" cy="0" r="6"/> </g> <g transform="translate(535,58)"> <use href="#sb_petal"/> <use href="#sb_petal" transform="rotate(72)"/> <use href="#sb_petal" transform="rotate(144)"/> <use href="#sb_petal" transform="rotate(216)"/> <use href="#sb_petal" transform="rotate(288)"/> <circle cx="0" cy="0" r="6"/> </g> <!-- lilies lower sides --> <g transform="translate(50,388)"> <use href="#sb_lilypetal" transform="rotate(-25)"/> <use href="#sb_lilypetal"/> <use href="#sb_lilypetal" transform="rotate(25)"/> <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/> </g> <g transform="translate(550,388)"> <use href="#sb_lilypetal" transform="rotate(-25)"/> <use href="#sb_lilypetal"/> <use href="#sb_lilypetal" transform="rotate(25)"/> <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/> </g> <!-- double border frame --> <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/> <!-- roman numeral corners --> <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/> <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/> <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text> <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text> <!-- infinity symbol above head --> <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/> <!-- altar items at torn edge --> <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/> <path d="M168,417 L168,428 M160,430 L176,430"/> <path d="M193,398 L193,424" /> <circle cx="193" cy="396" r="3"/> <circle cx="300" cy="415" r="20"/> <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/> <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/> <circle cx="430" cy="408" r="3"/> <!-- robe body --> <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/> <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/> <!-- collar --> <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/> <!-- ouroboros belt --> <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/> <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/> <circle cx="369" cy="298" r="1.6" fill="#161616"/> <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/> <!-- lower arm (pointing down) --> <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/> <circle cx="186" cy="392" r="10" fill="#fffdf6"/> <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/> <!-- raised arm (holding wand) --> <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/> <circle cx="401" cy="46" r="13" fill="#fffdf6"/> <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/> <!-- wand + flame --> <path d="M398,42 L398,14 M406,42 L406,14"/> <circle cx="402" cy="44" r="3"/> <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/> <!-- head + hair --> <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/> <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/> <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/> <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/> <!-- face --> <circle cx="288" cy="104" r="4" fill="#161616"/> <circle cx="312" cy="104" r="4" fill="#161616"/> <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/> <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/> <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/> <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/> </g></symbol></svg>
+
+<!-- ======================================================================= -->
+<section class="page" id="top">
+  <h1>Junk Drawer · Mockup 15A — “The Requisition”</h1>
+  <p class="lead">The whole turn is <b>one municipal document</b>: <b>FORM JD-1 — REQUISITION FOR SPECIMEN</b>.
+  The seven cards are its seven chapters. One sheet of manila moves through six stations of a bureau, and
+  each station marks it — the routing strip ticks, the docket fills in, and the stamps land. The blank form
+  carries a dashed empty ring reserved “for department use”; the last card lands the <b>ACCESSIONED</b> seal
+  in exactly that spot.</p>
+  <p>Every demo below is its own fake viewport: a mocked 56&nbsp;px site banner, a scrim that reserves it, and
+  the card centred in what is left. Open any demo’s link to put it alone in the viewport.</p>
+  <div class="idx">
+    <a href="#d1">1 · the brief</a>
+    <a href="#d2">2 · the darkroom</a>
+    <a href="#d3">2b · darkroom, late &amp; mixed</a>
+    <a href="#d4">3 · the reveal</a>
+    <a href="#d5">4 · the bench</a>
+    <a href="#d6">4b · bench, schedule open</a>
+    <a href="#d7">5 · the call</a>
+    <a href="#d8">6 · the unveil</a>
+    <a href="#d9">6b · unveil, tie election</a>
+    <a href="#d10">7 · the apology</a>
+    <a href="#d11">7b · filing failed</a>
+    <a href="#d12">7c · over quota</a>
+    <a href="#notes">design notes</a>
+    <a href="#phones">375&nbsp;px set</a>
+  </div>
+</section>
+
+<!-- =========================== D1 · THE BRIEF ============================= -->
+<section class="demo" id="d1" data-label="1 · The Brief — the blank form">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>1 · THE BRIEF</b> — sec. 1, request. Nothing stamped: the docket blanks are empty and the seal ring is dashed and reserved.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 1 — request">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b class="rq-blank">not assigned</b></span>
+          <span class="rq-dk"><i>Received</i><b class="rq-blank">—</b></span>
+          <span class="rq-dk"><i>Requester</i><b>VISITOR 8F2C</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-now"><b>1</b><span>Intake<em></em></span></li>
+          <li><b>2</b><span>Drawing<em></em></span></li>
+          <li><b>3</b><span>Returns<em></em></span></li>
+          <li><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>1 of 6</b> — intake. Nothing has been stamped; this form is blank.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 1</span><span class="rq-sech">Request</span><span class="rq-secrule"></span><span class="rq-secnote">to be completed by the requester</span></h2>
+        <div class="rq-secbody">
+          <p class="rq-instr">Two machines get your words, <b>verbatim</b>, and each draws the thing. You grade
+          what comes back and keep the one you like.</p>
+          <div class="rq-boxlab">
+            <span class="l">Box 1 — describe the object requested</span>
+            <span class="h">one object · print legibly</span>
+          </div>
+          <div class="rq-fieldwrap">
+            <textarea class="rq-input" rows="5" spellcheck="true" aria-label="describe the object requested" placeholder="a brass fish that is also a whistle">The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</textarea>
+            <p class="rq-count" aria-live="polite"><b>368</b> / 500 characters</p>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Send it</button>
+            <div class="rq-sealslot" aria-hidden="true">
+              <div class="rq-reserved">
+                <b>Space reserved for department use</b>
+                <i>do not write</i>
+              </div>
+            </div>
+          </div>
+          <p class="rq-fine"><b>Notice to requester</b>When you take a turn, the words you type are sent to two
+          AI providers — Anthropic (Claude) and OpenAI (GPT) — which each draw an object from them. Your
+          prompt, the drawings that come back, your ratings, and an anonymous daily-rotating visitor code are
+          stored so the results can be studied and the feature kept honest. Nothing you type here is shown to
+          other visitors.</p>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ========================= D2 · THE DARKROOM =========================== -->
+<section class="demo" id="d2" data-label="2 · The Darkroom — RECEIVED">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>2 · THE DARKROOM</b> — sec. 2, execution. The docket has filled in, station 1 has ticked, and the RECEIVED seal has landed.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 2 — execution">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Requester</i><b>VISITOR 8F2C</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-now"><b>2</b><span>Drawing<em></em></span></li>
+          <li><b>3</b><span>Returns<em></em></span></li>
+          <li><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>2 of 6</b> — drawing. Received 13 Aug 2026, 14:22. Two machines assigned.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 2</span><span class="rq-sech">Execution</span><span class="rq-secrule"></span><span class="rq-secnote">departmental — no action required</span></h2>
+        <div class="rq-secbody">
+          <div class="rq-subject">
+            <span class="rq-subject-l">Subject of requisition — as written, box 1</span>
+            <p>The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</p>
+          </div>
+          <p class="rq-instr">The same words went to both. It can take a minute or two — leave this open.</p>
+          <table class="rq-mach">
+            <thead><tr><th style="width:4rem">Exhibit</th><th>Assigned to</th><th style="width:7.2rem">Status</th></tr></thead>
+            <tbody>
+              <tr><td class="ex">A</td><td class="dim">machine one — withheld</td><td><span class="rq-st rq-st--wait">drawing<span class="rq-dots"><b>.</b><b>.</b><b>.</b></span></span></td></tr>
+              <tr><td class="ex">B</td><td class="dim">machine two — withheld</td><td><span class="rq-st rq-st--wait">drawing<span class="rq-dots"><b>.</b><b>.</b><b>.</b></span></span></td></tr>
+            </tbody>
+          </table>
+          <div class="rq-stampline"><div class="rq-sealslot"><svg class="rq-seal" viewBox="0 0 120 120" aria-hidden="true">
+            <g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="45" stroke-width="1.1"/></g>
+            <g fill="currentColor" font-family="Georgia,serif" font-size="9.6" letter-spacing="2.2"><text><textPath href="#sealT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#sealB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g>
+            <g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="56" font-size="13" letter-spacing="1.4" font-weight="bold">RECEIVED</text><text x="60" y="70" font-size="8" letter-spacing="1.2">13 AUG 2026</text></g>
+          </svg></div></div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ==================== D3 · THE DARKROOM, LATE & MIXED ================== -->
+<section class="demo" id="d3" data-label="2b · The Darkroom — delay notice, one return, one loss">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>2b · THE DARKROOM (late &amp; mixed)</b> — the slow-turn notice, plus per-slot ok / failed. Every slot state on one card.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 2 — execution">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Requester</i><b>VISITOR 8F2C</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-now"><b>2</b><span>Drawing<em></em></span></li>
+          <li><b>3</b><span>Returns<em></em></span></li>
+          <li><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>2 of 6</b> — drawing. One exhibit in at 14:24; one machine still out.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 2</span><span class="rq-sech">Execution</span><span class="rq-secrule"></span><span class="rq-secnote">departmental — no action required</span></h2>
+        <div class="rq-secbody">
+          <div class="rq-subject">
+            <span class="rq-subject-l">Subject of requisition — as written, box 1</span>
+            <p>The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</p>
+          </div>
+          <table class="rq-mach">
+            <thead><tr><th style="width:4rem">Exhibit</th><th>Assigned to</th><th style="width:7.2rem">Status</th></tr></thead>
+            <tbody>
+              <tr><td class="ex">A</td><td class="dim">machine one — withheld</td><td><span class="rq-st rq-st--ok"><span class="m">✓</span>returned 14:24</span></td></tr>
+              <tr><td class="ex">B</td><td class="dim">machine two — withheld</td><td><span class="rq-st rq-st--fail"><span class="m">✗</span>no return</span></td></tr>
+            </tbody>
+          </table>
+          <p class="rq-delay"><b>Notice of delay</b>Still going. The drawing is long because it is being written line by line.</p>
+          <div class="rq-stampline"><div class="rq-sealslot"><svg class="rq-seal" viewBox="0 0 120 120" aria-hidden="true">
+            <g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="45" stroke-width="1.1"/></g>
+            <g fill="currentColor" font-family="Georgia,serif" font-size="9.6" letter-spacing="2.2"><text><textPath href="#sealT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#sealB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g>
+            <g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="56" font-size="13" letter-spacing="1.4" font-weight="bold">RECEIVED</text><text x="60" y="70" font-size="8" letter-spacing="1.2">13 AUG 2026</text></g>
+          </svg></div></div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- =========================== D4 · THE REVEAL =========================== -->
+<section class="demo" id="d4" data-label="3 · The Reveal — exhibits attached">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>3 · THE REVEAL</b> — sec. 3, returns. A box stamp (routine handling), not a seal. The drawings are exhibits on photo corners; the machines stay withheld.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 3 — returns">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Exhibits</i><b>2 attached</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-now"><b>3</b><span>Returns<em></em></span></li>
+          <li><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>3 of 6</b> — returns. Both exhibits attached 14:24. Attribution withheld.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 3</span><span class="rq-sech">Returns</span><span class="rq-secrule"></span>
+          <span class="rq-box rq-box--head">Exhibits attached<small>13 AUG 14:24</small></span>
+        </h2>
+        <div class="rq-secbody">
+          <div class="rq-exhibits">
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit A"><svg viewBox="0 0 660 570"><use href="#art-a"/></svg></div>
+              </div>
+              <figcaption class="rq-ex-cap"><b>Exhibit A</b><span>machine withheld</span></figcaption>
+            </figure>
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit B"><svg viewBox="0 0 600 460"><use href="#art-b"/></svg></div>
+              </div>
+              <figcaption class="rq-ex-cap"><b>Exhibit B</b><span>machine withheld</span></figcaption>
+            </figure>
+          </div>
+          <div class="rq-notice">
+            <b>Rule 4 — blind examination</b>
+            No names yet. Who drew which is withheld until your grades are filed.
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Grade the drawings</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ============================ D5 · THE BENCH =========================== -->
+<section class="demo" id="d5" data-label="4 · The Bench — sec. 4, exhibit A">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>4 · THE BENCH</b> — sec. 4, examination. The rail navigates the form’s own sections; answered lines take a pencil tick in the number gutter.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 4 — examination of exhibit A">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Exhibits</i><b>2 attached</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-now"><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>4 of 6</b> — examination. Sec. 4 open on exhibit A; sec. 5 not yet reached.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 4</span><span class="rq-sech">Examination</span><span class="rq-secrule"></span><span class="rq-secnote">optional · one exhibit at a time</span></h2>
+        <div class="rq-secbody">
+          <p class="rq-instr">One at a time: A alone, then B alone, then the call. Everything here is optional
+          — <b>sec. 5 is not</b>. Titles only; press an <b>i</b> for what a scale means. The scale is the
+          drawer’s own.</p>
+          <div class="rq-rail" role="list">
+            <button type="button" role="listitem" class="is-now" aria-current="step" aria-label="section 4 — exhibit A"><b>4·A</b><span class="lg">Exhibit A</span><span class="sh">Exhibit A</span></button>
+            <button type="button" role="listitem" disabled aria-label="section 4 — exhibit B"><b>4·B</b><span class="lg">Exhibit B</span><span class="sh">Exhibit B</span></button>
+            <button type="button" role="listitem" disabled aria-label="section 5 — determination"><b>5</b><span class="lg">Determination</span><span class="sh">Determ.</span></button>
+          </div>
+          <div class="rq-pin">
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit A"><svg viewBox="0 0 660 570"><use href="#art-a"/></svg></div>
+              </div>
+            </figure>
+            <div class="rq-pincol">
+              <b>Exhibit A</b>
+              <span>examined alone · attribution withheld until filed</span>
+              <span class="rq-box">Under examination</span>
+            </div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.1</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="p41"><span>Overall grade</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="overall grade for exhibit A">
+              <option>Skip</option><option selected>Prime</option><option>Choice</option><option>Select</option><option>Standard</option><option>Utility</option>
+            </select>
+            <div class="rq-pop" id="p41" hidden></div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.2</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="p42"><span>Instruction following</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="instruction following for exhibit A">
+              <option>Skip</option><option>No problems</option><option selected>Small problems</option><option>Big problems</option>
+            </select>
+            <div class="rq-pop" id="p42" hidden></div>
+          </div>
+          <div class="rq-row is-skipped">
+            <span class="rq-rowno">4.3</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="p43"><span>Structural integrity</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select" aria-label="structural integrity for exhibit A">
+              <option selected>Skip</option><option>No problems</option><option>Small problems</option><option>Big problems</option>
+            </select>
+            <div class="rq-pop" id="p43" hidden></div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.4</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="p44"><span>Je ne sais quoi</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="je ne sais quoi for exhibit A">
+              <option>Skip</option><option selected>Has it</option><option>Just a hint</option><option>Ain’t got it</option>
+            </select>
+            <div class="rq-pop" id="p44" hidden></div>
+          </div>
+          <div class="rq-report">
+            <div class="rq-boxlab"><span class="l">Sec. 4.9 — report</span><span class="h">to the department</span></div>
+            <label class="rq-check"><input type="checkbox"><span>This response is broken or offensive</span></label>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Next — exhibit B →</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ================= D6 · THE BENCH, SCHEDULE OPEN + REPORT =============== -->
+<section class="demo" id="d6" data-label="4b · The Bench — ⓘ schedule open, report filed">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>4b · THE BENCH (ⓘ open, report filed)</b> — the definitions popover is IN FLOW: it pushes the sheet down and never covers a control. Rail on exhibit B, 4·A ticked.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 4 — examination of exhibit B">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Exhibits</i><b>2 attached</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-now"><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>4 of 6</b> — examination. Exhibit A complete; exhibit B on the bench.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 4</span><span class="rq-sech">Examination</span><span class="rq-secrule"></span><span class="rq-secnote">optional · one exhibit at a time</span></h2>
+        <div class="rq-secbody">
+          <div class="rq-rail" role="list">
+            <button type="button" role="listitem" class="is-done" aria-label="section 4 — exhibit A"><b>4·A</b><span class="lg">Exhibit A</span><span class="sh">Exhibit A</span></button>
+            <button type="button" role="listitem" class="is-now" aria-current="step" aria-label="section 4 — exhibit B"><b>4·B</b><span class="lg">Exhibit B</span><span class="sh">Exhibit B</span></button>
+            <button type="button" role="listitem" aria-label="section 5 — determination"><b>5</b><span class="lg">Determination</span><span class="sh">Determ.</span></button>
+          </div>
+          <div class="rq-pin">
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit B"><svg viewBox="0 0 600 460"><use href="#art-b"/></svg></div>
+              </div>
+            </figure>
+            <div class="rq-pincol">
+              <b>Exhibit B</b>
+              <span>examined alone · attribution withheld until filed</span>
+              <span class="rq-box">Under examination</span>
+            </div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.1</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="q41"><span>Overall grade</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="overall grade for exhibit B">
+              <option>Skip</option><option>Prime</option><option selected>Choice</option><option>Select</option><option>Standard</option><option>Utility</option>
+            </select>
+            <div class="rq-pop" id="q41" hidden></div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.2</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="true" aria-controls="q42"><span>Instruction following</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="instruction following for exhibit B">
+              <option>Skip</option><option selected>No problems</option><option>Small problems</option><option>Big problems</option>
+            </select>
+            <div class="rq-pop" id="q42">
+              <p class="rq-pop-h">Schedule of values — sec. 4.2</p>
+              <p class="rq-pop-desc">Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?</p>
+              <dl>
+                <dt>No problems</dt><dd>Every explicit ask is honored as specified.</dd>
+                <dt>Small problems</dt><dd>Some asks bent, missed, or quietly replaced.</dd>
+                <dt>Big problems</dt><dd>Explicit asks are disregarded outright.</dd>
+                <dt>Skip</dt><dd>No answer filed for this question.</dd>
+              </dl>
+            </div>
+          </div>
+          <div class="rq-row is-skipped">
+            <span class="rq-rowno">4.3</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="q43"><span>Structural integrity</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select" aria-label="structural integrity for exhibit B">
+              <option selected>Skip</option><option>No problems</option><option>Small problems</option><option>Big problems</option>
+            </select>
+            <div class="rq-pop" id="q43" hidden></div>
+          </div>
+          <div class="rq-row is-filled">
+            <span class="rq-rowno">4.4</span>
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="q44"><span>Je ne sais quoi</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <select class="rq-select is-set" aria-label="je ne sais quoi for exhibit B">
+              <option>Skip</option><option>Has it</option><option selected>Just a hint</option><option>Ain’t got it</option>
+            </select>
+            <div class="rq-pop" id="q44" hidden></div>
+          </div>
+          <div class="rq-report">
+            <div class="rq-boxlab"><span class="l">Sec. 4.9 — report</span><span class="h">to the department</span></div>
+            <label class="rq-check"><input type="checkbox" checked><span>This response is broken or offensive</span></label>
+            <label class="rq-notelab" for="rqnote6">What is wrong with it?</label>
+            <input type="text" class="rq-note" id="rqnote6" maxlength="280" value="the torn edge runs off the card and the wand hand is missing a finger">
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-alt">← Back</button>
+            <button type="button" class="rq-go">Next — sec. 5 →</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ============================= D7 · THE CALL =========================== -->
+<section class="demo" id="d7" data-label="5 · The Call — determination">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>5 · THE CALL</b> — sec. 5, determination. Both sec. 4 lines ticked on the rail. The likert is a printed graduated scale; the pick is a pencilled ring.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 5 — determination">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Exhibits</i><b>2 attached</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-done"><b>4</b><span>Exam.<em></em></span></li>
+          <li class="is-now"><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>5 of 6</b> — determination. Sec. 4 complete for both exhibits.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 5</span><span class="rq-sech">Determination</span><span class="rq-secrule"></span><span class="rq-secnote">required</span></h2>
+        <div class="rq-secbody">
+          <div class="rq-rail" role="list">
+            <button type="button" role="listitem" class="is-done" aria-label="section 4 — exhibit A"><b>4·A</b><span class="lg">Exhibit A</span><span class="sh">Exhibit A</span></button>
+            <button type="button" role="listitem" class="is-done" aria-label="section 4 — exhibit B"><b>4·B</b><span class="lg">Exhibit B</span><span class="sh">Exhibit B</span></button>
+            <button type="button" role="listitem" class="is-now" aria-current="step" aria-label="section 5 — determination"><b>5</b><span class="lg">Determination</span><span class="sh">Determ.</span></button>
+          </div>
+          <div class="rq-exhibits rq-exhibits--call">
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit A"><svg viewBox="0 0 660 570"><use href="#art-a"/></svg></div>
+              </div>
+              <figcaption class="rq-ex-cap"><b>Exhibit A</b><span>machine withheld</span></figcaption>
+            </figure>
+            <figure class="rq-ex">
+              <div class="rq-ex-plate"><span class="rq-corner tl"></span><span class="rq-corner tr"></span><span class="rq-corner bl"></span><span class="rq-corner br"></span>
+                <div class="rq-ex-art" role="img" aria-label="exhibit B"><svg viewBox="0 0 600 460"><use href="#art-b"/></svg></div>
+              </div>
+              <figcaption class="rq-ex-cap"><b>Exhibit B</b><span>machine withheld</span></figcaption>
+            </figure>
+          </div>
+          <div class="rq-detbox">
+            <div class="rq-rowhead"><button type="button" class="rq-def" aria-expanded="false" aria-controls="p5"><span>Sec. 5.1 — which exhibit belongs in the drawer?</span><span class="rq-i" aria-hidden="true">i</span></button></div>
+            <p class="rq-req">Required — everything before it is optional</p>
+            <div class="rq-likert" role="radiogroup" aria-label="the call: which exhibit belongs in the drawer" data-pick="b">
+              <span class="rq-lk-end rq-lk-end--a" aria-hidden="true">A</span>
+              <div class="rq-lk-rail">
+                <label class="rq-lk-stop"><input type="radio" name="call"><span class="rq-lk-dot" aria-hidden="true"></span><span class="rq-lk-cap"><b>A</b><span>decisively</span></span></label>
+                <label class="rq-lk-stop"><input type="radio" name="call"><span class="rq-lk-dot" aria-hidden="true"></span><span class="rq-lk-cap"><b>A</b><span>narrowly</span></span></label>
+                <label class="rq-lk-stop"><input type="radio" name="call"><span class="rq-lk-dot" aria-hidden="true"></span><span class="rq-lk-cap"><b>=</b><span>dead even</span></span></label>
+                <label class="rq-lk-stop is-on"><input type="radio" name="call" checked><span class="rq-lk-dot" aria-hidden="true"></span><span class="rq-lk-cap"><b>B</b><span>narrowly</span></span></label>
+                <label class="rq-lk-stop"><input type="radio" name="call"><span class="rq-lk-dot" aria-hidden="true"></span><span class="rq-lk-cap"><b>B</b><span>decisively</span></span></label>
+              </div>
+              <span class="rq-lk-end rq-lk-end--b" aria-hidden="true">B</span>
+            </div>
+            <div class="rq-detline">
+              <i>Determination</i><span class="hand">Exhibit B, narrowly</span>
+              <span class="sig"><i>Signed</i> <span class="hand">visitor 8F2C</span></span>
+            </div>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-alt">← Back</button>
+            <button type="button" class="rq-go">File the grades</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ============================ D8 · THE UNVEIL ========================== -->
+<section class="demo" id="d8" data-label="6 · The Unveil — ACCESSIONED">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>6 · THE UNVEIL</b> — sec. 6, accession. The seal lands in the spot the Brief reserved with a dashed ring. Attribution is finally typed in.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 6 — accession">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Closed</i><b>13 AUG 14:31</b></span>
+          <span class="rq-dk"><i>Acc. no.</i><b>JD-2026-0447-A</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-done"><b>4</b><span>Exam.<em></em></span></li>
+          <li class="is-done"><b>5</b><span>Determ.<em></em></span></li>
+          <li class="is-done is-now"><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>6 of 6</b> — accession. Form complete; every station cleared.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 6</span><span class="rq-sech">Accession</span><span class="rq-secrule"></span><span class="rq-secnote">attribution released</span></h2>
+        <div class="rq-secbody">
+          <table class="rq-disp">
+            <thead><tr><th style="width:4rem">Exhibit</th><th>Drawn by</th><th style="width:8rem">Disposition</th></tr></thead>
+            <tbody>
+              <tr><td class="ex">A</td><td>Claude Opus 5 <span class="vendor">(Anthropic)</span></td><td><span class="held">returned to file</span></td></tr>
+              <tr><td class="ex">B</td><td>GPT-5.1 <span class="vendor">(OpenAI)</span></td><td><span class="kept">accessioned</span></td></tr>
+            </tbody>
+          </table>
+          <div class="rq-stub">
+            <div class="rq-stub-txt">
+              <b>Accession stub — JD-2026-0447-A</b>
+              <span>It’s in the drawer — yours only, tagged as such. Dig it out and the specimen tag knows
+              whose it is.</span>
+            </div>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Done</button>
+            <button type="button" class="rq-alt">Take another turn</button>
+            <div class="rq-sealslot rq-sealslot--big" aria-hidden="true">
+          <svg class="rq-seal rq-seal--big" viewBox="0 0 120 120" aria-hidden="true">
+            <g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="55" stroke-width="3"/><circle cx="60" cy="60" r="45" stroke-width="1.1"/></g>
+            <g fill="currentColor" font-family="Georgia,serif" font-size="9.2" letter-spacing="2"><text><textPath href="#sealT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#sealB" startOffset="50%" text-anchor="middle">· ACC. JD-2026-0447-A ·</textPath></text></g>
+            <g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="55" font-size="10.6" letter-spacing="0.5" font-weight="bold">ACCESSIONED</text><text x="60" y="69" font-size="8" letter-spacing="1.2">13 AUG 2026</text></g>
+          </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ====================== D9 · THE UNVEIL, TIE ELECTION ================== -->
+<section class="demo" id="d9" data-label="6b · The Unveil — tie, election open">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>6b · THE UNVEIL (tie)</b> — a tie is filed as a tie; the accession is a separate, elective act. No seal until the election is made.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 6 — accession">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Filed</i><b>13 AUG 14:31</b></span>
+          <span class="rq-dk"><i>Acc. no.</i><b class="rq-blank">pending election</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-done"><b>4</b><span>Exam.<em></em></span></li>
+          <li class="is-done"><b>5</b><span>Determ.<em></em></span></li>
+          <li class="is-now"><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station">Station <b>6 of 6</b> — accession. Determination: dead even. Election required.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 6</span><span class="rq-sech">Accession</span><span class="rq-secrule"></span><span class="rq-secnote">attribution released</span></h2>
+        <div class="rq-secbody">
+          <table class="rq-disp">
+            <thead><tr><th style="width:4rem">Exhibit</th><th>Drawn by</th><th style="width:8rem">Disposition</th></tr></thead>
+            <tbody>
+              <tr><td class="ex">A</td><td>Claude Opus 5 <span class="vendor">(Anthropic)</span></td><td><span class="held">tie — filed</span></td></tr>
+              <tr><td class="ex">B</td><td>GPT-5.1 <span class="vendor">(OpenAI)</span></td><td><span class="held">tie — filed</span></td></tr>
+            </tbody>
+          </table>
+          <div class="rq-report" style="margin-top:0.8rem">
+            <div class="rq-boxlab"><span class="l">Sec. 6.1 — election</span><span class="h">requester’s copy only</span></div>
+            <p class="rq-instr" style="margin:0.2rem 0 0.1rem">A tie is filed as a tie. Keep one for your own drawer anyway?</p>
+            <div class="rq-pills" role="radiogroup" aria-label="which drawing to keep">
+              <label class="rq-pill is-on"><input type="radio" name="keep" checked><span class="tick" aria-hidden="true">✓</span>Exhibit A</label>
+              <label class="rq-pill"><input type="radio" name="keep"><span class="tick" aria-hidden="true">✓</span>Exhibit B</label>
+              <label class="rq-pill"><input type="radio" name="keep"><span class="tick" aria-hidden="true">✓</span>Neither</label>
+            </div>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Put it in the drawer</button>
+            <div class="rq-sealslot" aria-hidden="true">
+              <div class="rq-reserved"><b>Seal withheld pending election</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- =========================== D10 · THE APOLOGY ========================= -->
+<section class="demo" id="d10" data-label="7 · The Apology — RETURNED TO SENDER">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>7 · THE APOLOGY</b> — nothing returned. The routing strip strikes the stations the form will never reach; the stamp lies across the section and is allowed to cross the type.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1 — returned to sender">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0448</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:40</b></span>
+          <span class="rq-dk"><i>Charge</i><b>none</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-void"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-void"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-void"><b>4</b><span>Exam.<em></em></span></li>
+          <li class="is-void"><b>5</b><span>Determ.<em></em></span></li>
+          <li class="is-void"><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station is-bad">Halted at station <b>2</b> — nothing returned. No charge to the requester.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec is-bad"><span class="rq-secno">✗</span><span class="rq-sech">Disposition</span><span class="rq-secrule"></span><span class="rq-secnote">no exhibits attached</span></h2>
+        <div class="rq-secbody" style="min-height:150px">
+          <div class="rq-subject">
+            <span class="rq-subject-l">Subject of requisition — held for re-submission</span>
+            <p>The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</p>
+          </div>
+          <p class="rq-instr">Both machines failed. This cost you nothing — the drawer will try again whenever
+          you like.</p>
+          <span class="rq-box rq-box--across" aria-hidden="true">Returned to sender<small>no charge · 13 AUG 2026</small></span>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Try again</button>
+            <button type="button" class="rq-alt">Close</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ======================= D11 · THE FILING FAILED ======================= -->
+<section class="demo" id="d11" data-label="7b · Filing failed — NOT FILED">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>7b · FILING FAILED</b> — the grades did not write. Station 6 is struck, not the whole strip: the examination stands, only the filing failed.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1 — the grades did not file">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b>JD·26-0447</b></span>
+          <span class="rq-dk"><i>Received</i><b>13 AUG 14:22</b></span>
+          <span class="rq-dk"><i>Acc. no.</i><b class="rq-blank">not assigned</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-done"><b>1</b><span>Intake<em></em></span></li>
+          <li class="is-done"><b>2</b><span>Drawing<em></em></span></li>
+          <li class="is-done"><b>3</b><span>Returns<em></em></span></li>
+          <li class="is-done"><b>4</b><span>Exam.<em></em></span></li>
+          <li class="is-done"><b>5</b><span>Determ.<em></em></span></li>
+          <li class="is-void is-now"><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station is-bad">Halted at station <b>6</b> — the batch did not write. Nothing was recorded.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec is-bad"><span class="rq-secno">✗</span><span class="rq-sech">Filing</span><span class="rq-secrule"></span><span class="rq-secnote">whole batch or nothing</span></h2>
+        <div class="rq-secbody" style="min-height:140px">
+          <p class="rq-instr">The drawer couldn’t record them (<b>server_error</b>). Nothing was written —
+          the whole batch goes together or not at all. Your examination is still on this form.</p>
+          <span class="rq-box rq-box--across" style="top:46%; left:66%" aria-hidden="true">Not filed<small>batch rejected · 14:31</small></span>
+          <div class="rq-actions">
+            <button type="button" class="rq-go">Try filing again</button>
+            <button type="button" class="rq-alt">Close</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ========================= D12 · OVER QUOTA ============================ -->
+<section class="demo" id="d12" data-label="7c · Over quota — held at intake">
+<div class="frame">
+  <div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div>
+  <div class="demo-tag"><b>7c · OVER QUOTA</b> — the live flow sends a rate-limited turn BACK to the brief with a notice, so the rate-limit wears sec. 1, not the apology. The words are still in box 1.</div>
+  <div class="rq-scrim">
+    <article class="rq-card" role="dialog" aria-modal="true" aria-label="Form JD-1, section 1 — request">
+      <button type="button" class="rq-close" aria-label="close"><span>✕</span></button>
+      <div class="rq-mast">
+        <div class="rq-band">
+          <span class="rq-formno">FORM JD-1</span>
+          <span class="rq-dept">Requisition for specimen<span class="rq-deptx"> · Dept. of Specimen Records · Municipal Sky div.</span></span>
+          <span class="rq-rev">REV. 08/26</span>
+        </div>
+        <div class="rq-docket">
+          <span class="rq-dk"><i>Req. no.</i><b class="rq-blank">not assigned</b></span>
+          <span class="rq-dk"><i>Received</i><b class="rq-blank">—</b></span>
+          <span class="rq-dk"><i>Requester</i><b>VISITOR 8F2C</b></span>
+        </div>
+        <ol class="rq-route">
+          <li class="is-now"><b>1</b><span>Intake<em></em></span></li>
+          <li><b>2</b><span>Drawing<em></em></span></li>
+          <li><b>3</b><span>Returns<em></em></span></li>
+          <li><b>4</b><span>Exam.<em></em></span></li>
+          <li><b>5</b><span>Determ.<em></em></span></li>
+          <li><b>6</b><span>Accession<em></em></span></li>
+        </ol>
+        <p class="rq-station is-bad">Held at station <b>1</b> — over quota. No requisition number was issued.</p>
+      </div>
+      <div class="rq-body">
+        <h2 class="rq-sec"><span class="rq-secno">Sec. 1</span><span class="rq-sech">Request</span><span class="rq-secrule"></span>
+          <span class="rq-box rq-box--head">Over quota<small>RETRY ≈ 20 MIN</small></span>
+        </h2>
+        <div class="rq-secbody">
+          <div class="rq-notice">
+            <b>Held at intake</b>
+            You’ve had a few turns already. The drawer will take another in about twenty minutes. Your words
+            are still in box 1.
+          </div>
+          <div class="rq-boxlab">
+            <span class="l">Box 1 — describe the object requested</span>
+            <span class="h">one object · print legibly</span>
+          </div>
+          <div class="rq-fieldwrap">
+            <textarea class="rq-input" rows="5" spellcheck="true" aria-label="describe the object requested">The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom</textarea>
+            <p class="rq-count"><b>368</b> / 500 characters</p>
+          </div>
+          <div class="rq-actions">
+            <button type="button" class="rq-go" disabled>Send it</button>
+            <button type="button" class="rq-alt">Close</button>
+          </div>
+          <p class="rq-fine"><b>Notice to requester</b>When you take a turn, the words you type are sent to two
+          AI providers — Anthropic (Claude) and OpenAI (GPT) — which each draw an object from them. Your
+          prompt, the drawings that come back, your ratings, and an anonymous daily-rotating visitor code are
+          stored so the results can be studied and the feature kept honest. Nothing you type here is shown to
+          other visitors.</p>
+        </div>
+      </div>
+    </article>
+  </div>
+</div>
+</section>
+
+<!-- ============================ DESIGN NOTES ============================= -->
+<section class="page" id="notes">
+  <h1>Design notes — 15A “The Requisition”</h1>
+
+  <h2>1 · The fiction, and its rules</h2>
+  <p>The turn is not a wizard with seven screens. It is <b>one sheet of paper — FORM JD-1 — moving through
+  six stations of a bureau</b>. Every card is the same sheet at a different desk. Three things make that
+  legible, and they are on every card in identical geometry: the <b>form band</b> (form number, department,
+  revision), the <b>docket line</b>, and the <b>routing strip</b>.</p>
+
+  <h3>The four hands (the one hard rule)</h3>
+  <ul>
+    <li><b>The printer</b> — serif small caps in faded ink. The blank form: form number, section heads, line
+    numbers (4.1, 4.2…), boilerplate. It exists before anyone touches the paper.</li>
+    <li><b>The machines</b> — typewriter mono at full ink. Everything filled <i>in</i>: the requisition
+    number, timestamps, the subject line (the visitor’s own words, typed onto the form), the status column,
+    the attribution at the unveil.</li>
+    <li><b>The bureau</b> — <b>red rubber stamps, and nothing else</b>. A stamp is applied by the department
+    at a station. The visitor can never cause a stamp directly; a stamp is always something that happened
+    <i>to</i> the form.</li>
+    <li><b>The visitor</b> — graphite cursive. A pencil tick in the line-number gutter when a scale is
+    answered; a pencilled ring around the determination stop they chose; the determination written out in
+    hand under the scale. The visitor writes; the visitor never stamps.</li>
+  </ul>
+
+  <h3>What each stamp means</h3>
+  <ul>
+    <li><b>Round seal = a determination.</b> Two exist: <b>RECEIVED</b> (the requisition is now real and has
+    a number — the darkroom) and <b>ACCESSIONED</b> (the specimen has entered the collection — the unveil).
+    Round seals carry the department ring and a date.</li>
+    <li><b>Box stamp = routine handling.</b> <b>EXHIBITS ATTACHED</b> (reveal), <b>UNDER EXAMINATION</b> (the
+    bench’s pinned plate), <b>OVER QUOTA</b> (held at intake), <b>RETURNED TO SENDER</b> and <b>NOT FILED</b>
+    (the failure ends). Box stamps sit inline in a section head, or lie across the section when the news is
+    bad enough to interrupt reading.</li>
+    <li><b>The dashed empty ring</b> is not a stamp — it is the <i>space reserved</i> for one. The Brief
+    carries it captioned “space reserved for department use · do not write”; the Unveil lands ACCESSIONED in
+    exactly that spot, same size, same rotation. The tie card re-uses it (“seal withheld pending election”),
+    which is why a tie feels unfinished until the visitor elects.</li>
+    <li>Every stamp is masked with a turbulence speckle and set to <code>mix-blend-mode: multiply</code>, so
+    the ink breaks up over the paper grain the way a stamp pad does, and never reads as a UI badge.</li>
+  </ul>
+
+  <h2>2 · How progress reads</h2>
+  <p>Three independent readings, all saying “this document is filling in”:</p>
+  <ol>
+    <li><b>The routing strip</b> — six station boxes, always all six, always in the same place. Cleared
+    stations take a red ✓; the current station is red-outlined with a 3&nbsp;px inset bar (never colour
+    alone); stations a returned form will never reach are struck through in red. A visitor who glances at
+    nothing else can see “3 of 6, and it moved.”</li>
+    <li><b>The docket</b> — “req. no.” and “received” start as italic dotted blanks and are <i>typed in</i>
+    the moment the words are sent. By the unveil the third slot has become “acc. no.”, which is the number
+    the specimen keeps.</li>
+    <li><b>The stamps</b> — blank form → RECEIVED → ATTACHED → (the visitor’s pencil) → ACCESSIONED. Note the
+    deliberate gap: <b>the examination and the call carry no new stamp</b>, because nothing bureaucratic
+    happens there. Those two cards are the only ones where the visitor’s own hand is the mark, and the ticks
+    on the rail and in the number gutters are what fills them in.</li>
+  </ol>
+  <p>The narration line under the strip (“Station 4 of 6 — examination. Exhibit A complete; exhibit B on the
+  bench.”) is the phone’s primary progress read, since the strip compresses to numerals under 600&nbsp;px.</p>
+
+  <h2>3 · Two rails, and why they can’t be confused</h2>
+  <p>There are two horizontal step-like things, and keeping them apart was the main layout problem.</p>
+  <ul>
+    <li>The <b>routing strip</b> reports and never navigates: it lives in the masthead, is ~22&nbsp;px tall,
+    is set in serif small caps, and is an <code>&lt;ol&gt;</code>, not buttons.</li>
+    <li>The <b>bench rail</b> navigates and is the only control of its kind: it lives in the body, is
+    44&nbsp;px tall, has a two-line button face, and is labelled with the form’s own section numbers —
+    <b>4·A</b>, <b>4·B</b>, <b>5</b>. That last move is the payoff of the fiction: the rail isn’t “steps in a
+    wizard”, it is <i>which section of this form you are writing in</i>, which is exactly what the live code
+    does (the third step IS the call).</li>
+  </ul>
+
+  <h2>4 · Functional parity checklist</h2>
+  <ul>
+    <li><b>Brief</b> — textarea (500 max) with the count seated inside the field’s lower-right as a printed
+    counter box; SEND IT (brass); the third-party disclosure as “Notice to requester” boilerplate under a
+    rule. The disclosure is <i>quiet but present</i> — small print on a form is the most natural home it has
+    ever had. The honeypot input keeps its off-screen position (not shown).</li>
+    <li><b>Darkroom</b> — per-slot pending / ok / failed as a three-column status table (demo 2 and 2b cover
+    all three states), plus the slow-turn notice as a clipped “Notice of delay” slip.</li>
+    <li><b>Reveal</b> — both plates, blind, with the withholding stated as “Rule 4 — blind examination”, and
+    the grade button.</li>
+    <li><b>Bench</b> — clickable rail (44&nbsp;px, disabled steps still visible), sticky pinned plate, four
+    native <code>&lt;select&gt;</code>s (phone OS pickers intact), ⓘ popovers <b>in flow</b> spanning the row
+    grid so they push the sheet down and never cover a control, the broken/offensive flag with its folded
+    note, back/next.</li>
+    <li><b>Call</b> — the 5-stop likert rail spanning A-left to B-right, unchanged in structure; the stops
+    are printed graduations and the pick adds a pencilled ring on top of the red dot (selection is never
+    colour alone: dot fill + ring + bolded caption + the written determination line).</li>
+    <li><b>Unveil</b> — attribution table, disposition per exhibit, the accession stub, DONE + TAKE ANOTHER
+    TURN; the tie election survives as the pill row (its only remaining use).</li>
+    <li><b>Apology</b> — generation failure, filing failure, and over-quota, each with its retry path.</li>
+  </ul>
+
+  <h2>5 · Integration watch-outs</h2>
+  <ul>
+    <li><b>The masthead is outside the scroller.</b> Live, everything lives in <code>.jd-turn-scroll</code>.
+    Here <code>.rq-mast</code> is a fixed flex child and <code>.rq-body</code> is the only scroller. This is
+    deliberate — the document’s identity must not scroll away — but it costs ~78&nbsp;px of card height on
+    desktop and ~70 on a phone, and it is the number to re-measure first if the bench runs long. If it has to
+    go, drop the narration line before the routing strip.</li>
+    <li><b>Two sticky layers on the bench.</b> <code>.rq-pin</code> is <code>position: sticky; top: 0</code>
+    inside <code>.rq-body</code>, which is correct because the masthead is outside that scroller. If the
+    masthead is ever moved back inside, the pin needs a <code>top</code> offset or it will slide under it.</li>
+    <li><b>Stamps use <code>mix-blend-mode: multiply</code> plus a mask.</b> Both are cheap, but a stamp
+    positioned over a <code>position: sticky</code> element will composite oddly during scroll — keep every
+    stamp inside <code>.rq-secbody</code> and out of <code>.rq-pin</code> (the pin’s “under examination” mark
+    is a plain box stamp with no blend-critical overlap).</li>
+    <li><b>Line numbers are generated, not authored.</b> 4.1 is the overall grade, 4.2… follow
+    <code>liveAxes()</code> in taxonomy order, and 4.9 is reserved for the report. If an axis is added or
+    retired the numbers shift — that is fine and correct for a form, but it means nothing may ever reference
+    “4.3” in copy.</li>
+    <li><b>The rate-limit path does not reach the apology.</b> <code>settleSlot</code> clears the turn and
+    returns to <code>prompt</code> with a notice, so OVER QUOTA had to be designed onto sec. 1 (demo 7c), not
+    onto the disposition card. Designing it as an apology would have been a fiction that contradicts the
+    code.</li>
+    <li><b>The degraded one-survivor turn</b> has no rail at all in the live code (one panel, then file). In
+    this design that means sec. 4 renders without the rail and its action reads “File the grades”; the
+    routing strip still shows station 5 as cleared-by-default, since no determination is possible.</li>
+    <li><b><code>min-width: 0</code> on the card is load-bearing.</b> The card is a flex item of the
+    scrim, so its default <code>min-width: auto</code> lets any nowrap descendant — a stamp, the form
+    number, a scale title — push it wider than a 375&nbsp;px viewport. The live
+    <code>.jd-turn</code> has the same latent exposure and gains new nowrap children with this design.</li>
+    <li><b>Escaped text discipline holds.</b> The only visitor content on the paper is the subject line and
+    the report note, both plain text nodes; every stamp, corner, ring, tick and rule is CSS or inline SVG.</li>
+    <li><b>Fit.</b> The card is <code>width: min(680px, 100%)</code>, <code>max-height: 100%</code> of the
+    banner-reserved padded scrim, <code>box-sizing: border-box</code> throughout — unchanged from the live
+    contract. Only <code>.rq-body</code> scrolls, and only when the content genuinely exceeds the viewport
+    (the bench at 375&nbsp;px is the case that does).</li>
+  </ul>
+
+  <h2>6 · Deliberate copy decisions</h2>
+  <p>The buttons keep the drawer’s plain speech — <b>Send it</b>, <b>Grade the drawings</b>, <b>File the
+  grades</b>, <b>Done</b> — rather than becoming “Submit form JD-1”. The fiction lives in the <i>paper</i>,
+  not in the voice; a bureau that also talked like a bureau would be a joke that overstays. The one place the
+  fiction takes over the words is where the form is genuinely speaking about itself: section heads, the
+  routing strip, the notice slips, and the stamps.</p>
+  <h2>7 · Reading this file</h2>
+  <p>Each demo is a 100&nbsp;vh fake viewport; open <code>#d1</code>…<code>#d12</code> to isolate one.
+  The 375&nbsp;px gallery at the end is this same file loaded in 375-wide iframes — the only way to make
+  the real media queries fire — and its <code>src</code>s are assigned after the parent’s load event,
+  one every 120&nbsp;ms, because twelve frames requested during load will stall the document. That
+  script is the only JavaScript here; no card state is scripted.</p>
+
+  <p>“Response A/B” becomes <b>Exhibit A/B</b> throughout, because an exhibit is a thing attached to a
+  document, and that is the whole conceit. This is the one wholesale rename the design asks for.</p>
+</section>
+
+<!-- ============================ 375px SET =============================== -->
+<section id="phones">
+  <div class="ph-head">The full set at 375&nbsp;px — each frame is this same file loaded in a 375-wide
+  iframe, so the real media queries fire. Every card is the same markup you read above.</div>
+  <div class="ph-grid"></div>
+</section>
+
+<script>
+/* THE ONLY SCRIPT ON THE PAGE, AND IT IS DEMO SCAFFOLDING — no card state
+   below is scripted; every state in every demo is static markup.
+
+   It builds the 375px gallery as iframes pointing at this same file's
+   #d1…#d12. The :target solo mode makes each iframe show exactly one card at
+   a true 375px viewport, which is the only way to get the real media queries
+   to fire (a 375px-wide DIV on a desktop viewport would not).
+
+   Two guards, both load-bearing:
+     · top-level only, and never when a .demo is targeted — otherwise the
+       gallery would rebuild itself inside every frame and recurse;
+     · the src is assigned AFTER the parent's own load event, one frame every
+       120ms. Twelve frames requested during the parent's load will stall the
+       document (and hang a headless screenshot) — deferring costs nothing and
+       keeps the page interactive while the set fills in. */
+(function () {
+  if (window.top !== window.self) return;
+  if (document.querySelector('.demo:target')) return;
+  var grid = document.querySelector('#phones .ph-grid');
+  if (!grid) return;
+  var base = location.href.split('#')[0];
+  var frames = [];
+  Array.prototype.forEach.call(document.querySelectorAll('.demo'), function (d) {
+    var fig = document.createElement('figure');
+    var cap = document.createElement('figcaption');
+    cap.textContent = d.getAttribute('data-label') || d.id;
+    var f = document.createElement('iframe');
+    f.setAttribute('title', cap.textContent + ' at 375px');
+    f.setAttribute('scrolling', 'no');
+    f.setAttribute('loading', 'lazy');
+    f.dataset.src = base + '#' + d.id;
+    fig.appendChild(cap);
+    fig.appendChild(f);
+    grid.appendChild(fig);
+    frames.push(f);
+  });
+  function fill(i) {
+    if (i >= frames.length) return;
+    frames[i].src = frames[i].dataset.src;
+    setTimeout(function () { fill(i + 1); }, 120);
+  }
+  if (document.readyState === 'complete') setTimeout(function () { fill(0); }, 60);
+  else window.addEventListener('load', function () { setTimeout(function () { fill(0); }, 60); });
+})();
+</script>
+</body>
+</html>
