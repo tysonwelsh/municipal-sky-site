@@ -1277,13 +1277,17 @@ html.jd-record-open { overflow: hidden; }
 .rc-can-fold:not(.is-open) p {
   max-height: 4.5em;      /* 3 lines of the 1.5 line-height — the floor */
   overflow: hidden;
-  /* the cut dissolves over the LAST LINE and a bit, and only there: the
-     fade band is a fixed em depth, not a fraction of the box (owner rev
-     ×2, 2026-08-13 — a proportional fade on the stretched fold dimmed
-     nearly half the text, which read as truncating too soon over blank
-     space above the expander) */
-  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.9em), rgba(0, 0, 0, 0) 100%);
-          mask-image: linear-gradient(#000 calc(100% - 1.9em), rgba(0, 0, 0, 0) 100%);
+  /* the cut dissolves over the LAST TEXT LINE, and only there (owner rev
+     ×3, 2026-08-13 — first a proportional fade dimmed half the box, then
+     a 1.9em band still zeroed the final two lines, which read as the text
+     truncating early over blank space; a band deeper than one line always
+     will, because everything past the fade's midpoint is unreadable). The
+     em pair is the fallback; the lh pair, where supported, is exactly one
+     line whatever the line-height. */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
 }
 /* in landscape the folded prompt is the column's springy row (owner rev,
    2026-08-13 — the text "fills the space available to it"): a tall
