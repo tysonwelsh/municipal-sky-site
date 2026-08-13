@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 13B &middot; FORM 27-B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 13B · FORM 27-B (round 13, record-card redesign)
+   The vaporwave display plate RETIRES. The whole card is ONE continuous
+   municipal form — cream paper top to bottom — and the artwork is a
+   PHOTOGRAPH ATTACHED to it: a light graph-grid photo swatch (engineering
+   grid ruled in a pale blueprint dilution of the form ink) held down by four
+   kraft photo corners, a drop shadow doing the depth work. No dark plate
+   anywhere. The over-serious form fiction carries the character: form
+   number box, department line, numbered sections, a faint FILED stamp.
+
+   THE FIT CONTRACT (why round 13 exists — all numbers deliberate):
+     · the scrim reserves the banner:            top: 56px (var(--banner-h))
+     · the card caps at the leftover viewport:   max-height: 100% of the
+       padded scrim = calc(100dvh − 56px − 2×pad), border-box
+     · the photo box height is vh-aware:         clamp(200px, 34vh, 340px)
+       (WIDTH no longer decides the artwork's height — the old 10/9
+       aspect-ratio plate is what blew the card past the viewport)
+     · the prompt FOLDS at 3 lines (-webkit-line-clamp) behind a
+       checkbox-label expander in the section-head row — no always-on
+       inner scrollbar, no nested scroller
+     · close ✕ is absolute in the card, never scrolled away
+     · at 1280×680 the whole form, footer included, fits with no internal
+       scrolling for a normal prompt (verified by headless screenshot)
+   ========================================================================== */
+:root {
+  --banner-h: 56px;
+  --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--mono);
+  color: #2a2620;
+  /* the wood-toned page the drawer lives on */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+
+/* ---- one demo = one fake viewport ----------------------------------------
+   Each .frame is exactly 100vh tall, carries its own 56px banner mock and an
+   absolutely positioned scrim below it — the same geometry the real page
+   will have with a FIXED banner and a FIXED scrim. Navigate to #demo1…#demo4
+   to put one frame exactly in the (screenshot) viewport. */
+.demo { scroll-margin-top: 0; position: relative; }
+/* screenshot solo mode: open the page at #demo1…#demo4 and every other
+   section collapses, so the targeted fake viewport IS the viewport —
+   no scrolling involved (headless fragment scroll is racy). No hash =
+   all demos stacked for normal reading. */
+body:has(.demo:target) > :not(:target) { display: none; }
+.frame { position: relative; height: 100vh; overflow: hidden; }
+.frame--phone {
+  width: 390px; margin: 0 auto;
+  border-left: 2px solid rgba(20, 10, 4, 0.7);
+  border-right: 2px solid rgba(20, 10, 4, 0.7);
+}
+
+/* the site banner, mocked (css/style.css .site-banner: fixed, 56px, z 1000) */
+.mock-banner {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--banner-h);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: #fff; border-bottom: 1px solid #111;
+}
+.mb-title { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; color: #111; }
+.mb-title::before { content: "▌"; color: #2233dd; margin-right: 0.45em; }
+.mb-nav { display: flex; gap: 2.2em; font-size: 0.8rem; text-transform: uppercase; color: #111; }
+.mb-nav b { font-weight: 400; text-decoration: underline; text-underline-offset: 5px; }
+.mb-nav[hidden] { display: none; }
+
+/* the demo label chip, riding above the scrim, below the banner */
+.demo-tag {
+  position: absolute; top: calc(var(--banner-h) + 8px); left: 10px; z-index: 500;
+  max-width: 46ch;
+  font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase;
+  line-height: 1.7; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.72); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 5px 9px;
+}
+.demo--phone .demo-tag { max-width: 32ch; }
+
+/* ============================================================================
+   THE SCRIM + THE CARD — the part that graduates to junk-drawer.css.
+   In production: .jd-record-scrim { position: fixed; inset: 0; top: var(--banner-h); }
+   Here the frame plays the viewport, so `absolute` stands in for `fixed`.
+   ========================================================================== */
+.rc-scrim {
+  /* the form's paper + ink, scoped (same tokens the shipped card uses) */
+  --card: #efe4c6;
+  --card-hi: #f7efd8;
+  --form-ink: #37414f;
+  --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42);
+  --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428;
+  --red: #b02a24;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  /* grain + mottle carried over VERBATIM from the shipped card
+     (stitchTiles="stitch" — the standing Safari lesson; never reseed) */
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  /* THE FIX, line one: the scrim starts UNDER the banner. Production:
+     position: fixed; inset: 0; top: var(--banner-h); z-index: 320. */
+  position: absolute; inset: 0; top: var(--banner-h); z-index: 320;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(4px, 1.2vh, 14px) 14px;
+  background: rgba(10, 5, 1, 0.55);
+}
+
+/* ---- the card: one continuous sheet of form paper ------------------------ */
+.rc-card {
+  position: relative;
+  width: min(560px, 100%);
+  /* THE FIX, line two: 100% of the padded scrim = 100dvh − banner − padding,
+     border-box. The card can never outgrow the visible viewport. */
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--form-ink);
+  background: var(--card) var(--grain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+.rc-card::before { /* inner hairline of the printed double border */
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  border: 1px solid var(--form-rule);
+}
+.rc-card::after { /* paper mottle */
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: var(--mottle); background-size: 420px 420px;
+}
+.rc-close {
+  position: absolute; top: 7px; right: 8px; z-index: 6;
+  border: 0; background: none; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.72rem; line-height: 1;
+  color: var(--form-ink-2); padding: 5px 7px;
+}
+.rc-close:hover { color: var(--red); }
+
+/* the single scroller — a SAFETY VALVE only: with a folded prompt the
+   content fits and no scrollbar exists; it engages for the expanded long
+   prompt and on short phones */
+.rc-body {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  display: flex; flex-direction: column;
+  padding: 8px 16px 6px;
+  scrollbar-width: thin;
+}
+.rc-body::-webkit-scrollbar { width: 7px; }
+.rc-body::-webkit-scrollbar-thumb { background: rgba(55, 65, 79, 0.30); }
+.rc-body > * { flex: 0 0 auto; }
+
+/* ---- form header band ----------------------------------------------------- */
+.rc-formhead {
+  display: flex; align-items: center; gap: 12px;
+  padding: 1px 18px 2px 0; /* right inset clears the ✕ */
+  border-bottom: 2px solid var(--form-rule);
+}
+.rc-formbox {
+  font-family: var(--form); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.09em; color: #2f3846; white-space: nowrap;
+  border: 1.5px solid rgba(55, 65, 79, 0.75); padding: 1px 6px 0;
+}
+.rc-dept {
+  flex: 1 1 auto; text-align: center;
+  font-family: var(--form); font-size: 0.48rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--form-ink-2); line-height: 1.3;
+}
+.rc-rev {
+  font-family: var(--rc-mono); font-size: 0.44rem; letter-spacing: 0.1em;
+  color: var(--form-ink-2); white-space: nowrap;
+}
+
+/* the subject line: the specimen title as the form's subject */
+.rc-subject {
+  display: flex; align-items: baseline; gap: 0.7em;
+  margin-top: 3px; padding-bottom: 2px;
+  border-bottom: 1px solid var(--form-rule-2);
+}
+.rc-subject-l {
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.rc-subject-v {
+  font-family: var(--form); font-weight: 700; font-size: 0.74rem; line-height: 1.1;
+  letter-spacing: 0.17em; text-transform: uppercase; color: #2f3846;
+  min-width: 0;
+}
+
+/* ---- the fill-in boxes: MODEL / PROMPTED / PROCESS / SIZE ----------------
+   One ruled row of four boxed cells, label printed small in the box corner,
+   value typed below — proper municipal-form furniture. (Phone: 2×2.) */
+.rc-fills {
+  display: grid; grid-template-columns: 1.15fr 1fr 1.25fr 0.72fr;
+  margin-top: 4px;
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.35);
+}
+.rc-fill { min-width: 0; padding: 1px 6px 2px; border-left: 1px solid var(--form-rule-2); }
+.rc-fill:first-child { border-left: 0; }
+.rc-fill-l {
+  display: block; line-height: 1.25; font-family: var(--form); font-size: 0.42rem;
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--form-ink-2);
+}
+.rc-fill-v {
+  display: block; margin-top: 1px; line-height: 1.2;
+  font-family: var(--rc-mono); font-size: 0.6rem; color: var(--typed);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ---- SEC. 1 — the photograph ----------------------------------------------
+   THE FIX, line three: the photo's height comes from the viewport, not the
+   card width. clamp(200px, 34vh, 340px) — at 680px-tall desktops that is
+   ~231px (vs ~465px from the retired 10/9 plate); on tall screens it grows
+   to a stately 340px and stops. */
+.rc-mount {
+  position: relative;
+  margin-top: 3px;
+  height: clamp(200px, 34vh, 340px); /* production: 34dvh */
+  cursor: zoom-in;
+}
+.rc-mount:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.rc-photo {
+  position: absolute; inset: 0;
+  /* the photo-lab print backing: a faint engineering grid ruled in a pale
+     blueprint dilution of the form ink, on paper a shade lighter than the
+     form — decisively NOT neon, decisively still paper */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  /* the attachment illusion: the photograph floats a millimetre off the form */
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
+              0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.rc-photo-art { position: absolute; inset: 8% 8%; }
+.rc-photo-art svg { display: block; width: 100%; height: 100%; }
+/* kraft photo corners holding the print down */
+.rc-corner {
+  position: absolute; width: 26px; height: 26px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+.rc-exh {
+  position: absolute; top: 6px; left: 30px; z-index: 1;
+  font-family: var(--form); font-size: 0.42rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(55, 65, 79, 0.5);
+}
+.rc-hint {
+  position: absolute; right: 9px; bottom: 6px; z-index: 2; pointer-events: none;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: rgba(55, 65, 79, 0.5);
+  transition: color 0.18s ease;
+}
+.rc-mount:hover .rc-hint, .rc-mount:focus-visible .rc-hint { color: var(--form-ink); }
+/* the faint department stamp, half over the photograph's corner */
+.rc-stamp {
+  position: absolute; right: 88px; bottom: -12px; z-index: 3;
+  width: 96px; height: 96px;
+  color: #9c3a31; opacity: 0.30;
+  transform: rotate(-12deg);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* ---- section heads --------------------------------------------------------- */
+.rc-sec {
+  display: flex; align-items: center; gap: 0.7em;
+  margin: 3px 0 2px;
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--form-ink-2); white-space: nowrap;
+}
+.rc-secrule { flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+
+/* ---- SEC. 2 — the prompt, with the 3-line FOLD -----------------------------
+   THE FIX, line four: no nested scroller. The <p> clamps to 3 lines; the
+   checkbox-label expander in the head row lets the whole card grow instead
+   (the card's single scroller absorbs any excess). Production keeps the
+   same markup — cardHTML renders the checkbox+label only when the prompt
+   measures past 3 lines. */
+.rc-fold { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+.rc-assign {
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 2px 3px 2px;
+  background: rgba(255, 250, 232, 0.25);
+}
+.rc-assign p {
+  font-family: var(--rc-mono); font-size: 0.585rem; line-height: 1.36;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rc-fold:checked ~ .rc-assign p {
+  display: block; -webkit-line-clamp: unset; overflow: visible;
+}
+.rc-more {
+  flex: 0 0 auto; cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.44rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: #46505e;
+  border: 1px solid var(--form-rule); padding: 1px 6px 0;
+  background: rgba(255, 250, 232, 0.5);
+}
+.rc-more:hover { color: var(--red); border-color: rgba(176, 42, 36, 0.6); }
+.rc-fold:focus-visible ~ .rc-sec .rc-more { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-more .m-less { display: none; }
+.rc-fold:checked ~ .rc-sec .rc-more .m-open { display: none; }
+.rc-fold:checked ~ .rc-sec .rc-more .m-less { display: inline; }
+
+/* ---- SEC. 3 — annotations (Axis 47% / Verdict 53%) -------------------------- */
+table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rc-subj th {
+  font-family: var(--form); font-weight: 400;
+  font-size: 0.44rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); text-align: left;
+  padding: 0.16em 0.5em; background: rgba(55, 65, 79, 0.055);
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+}
+table.rc-subj th + th, table.rc-subj td + td { border-left: 1px solid var(--form-rule-2); }
+table.rc-subj td {
+  padding: 2px 0.5em 2px;
+  line-height: 1; /* kill the 1rem strut — the cells' children size the row */
+  border-bottom: 1px solid var(--form-rule-2);
+  vertical-align: middle;
+}
+table.rc-subj tbody tr:last-child td { border-bottom: 1px solid var(--form-rule); }
+table.rc-subj tfoot td {
+  border-top: 2px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.06em 0.5em 0.1em;
+  background: rgba(55, 65, 79, 0.03);
+}
+.rc-subj-name {
+  display: block; max-height: 12px;
+  font-family: var(--form); font-size: 0.56rem; letter-spacing: 0.05em;
+  line-height: 1.15; overflow: visible; color: #2f3846;
+}
+.rc-skip {
+  display: block;
+  font-family: var(--rc-mono); font-size: 0.52rem; letter-spacing: 0.11em;
+  color: #8c8676; text-transform: uppercase; line-height: 1.4;
+}
+.rc-avg-l {
+  display: block; max-height: 11px; overflow: visible;
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2);
+}
+
+/* the red pencil (verdict words) + the coloured rating/grade pencils */
+.rc-mark {
+  position: relative; display: inline-block;
+  font-family: var(--hand); font-size: 0.68rem; color: var(--red);
+  line-height: 0.98; letter-spacing: 0.005em;
+  transform: rotate(var(--jit, -1.2deg));
+  transform-origin: 12% 70%;
+}
+.rc-mark-word { position: relative; display: inline-block; }
+.rc-mark.rc-r3, .rc-bar.rc-r3 { color: #0b6a1f; }
+.rc-mark.rc-r2, .rc-bar.rc-r2 { color: #a06200; }
+.rc-mark.rc-r1, .rc-bar.rc-r1 { color: #8f1d12; }
+.rc-mark.rc-g5, .rc-alt-grade.rc-g5, .rc-bar.rc-g5 { color: #0b6a1f; }
+.rc-mark.rc-g4, .rc-alt-grade.rc-g4, .rc-bar.rc-g4 { color: #46761a; }
+.rc-mark.rc-g3, .rc-alt-grade.rc-g3, .rc-bar.rc-g3 { color: #a06200; }
+.rc-mark.rc-g2, .rc-alt-grade.rc-g2, .rc-bar.rc-g2 { color: #b0490f; }
+.rc-mark.rc-g1, .rc-alt-grade.rc-g1, .rc-bar.rc-g1 { color: #8f1d12; }
+
+/* the segmented gauge (owner pick, mockup 11 option C) — unchanged mechanics:
+   fixed span, fill = rank/steps, paper-coloured dividers OVER the fill */
+.rc-verdict { display: flex; align-items: center; gap: 0.55rem; height: 12px; overflow: visible; }
+.rc-bar {
+  position: relative; width: 42px; height: 7px; flex: 0 0 auto;
+  border: 1.5px solid currentColor; border-radius: 2px;
+  overflow: hidden; box-sizing: border-box;
+}
+.rc-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: currentColor; }
+.rc-bar-tick {
+  position: absolute; top: 0; bottom: 0; width: 1.5px;
+  background: var(--card, #efe4c6);
+}
+
+/* ---- SEC. 4 — other models, same prompt ------------------------------------ */
+.rc-alts { display: flex; gap: 7px; }
+/* compact evidence chips: thumbnail left, model + grade right — one short
+   row instead of the old two-deck stack (vertical room is the whole game) */
+.rc-alt {
+  flex: 1 1 0; min-width: 0;
+  display: flex; align-items: center; gap: 7px;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+  padding: 3px 6px 3px 4px;
+}
+.rc-alt:hover { background: rgba(255, 250, 232, 0.85); border-color: var(--form-rule); }
+.rc-alt.is-cur { border-color: rgba(176, 42, 36, 0.75); background: rgba(255, 250, 232, 0.92); }
+.rc-alt-art { display: block; flex: 0 0 30px; width: 30px; height: 30px; }
+.rc-alt-art svg { display: block; width: 100%; height: 100%; }
+.rc-alt-cap {
+  display: block; min-width: 0;
+  font-family: var(--form); font-size: 0.44rem; letter-spacing: 0.08em;
+  line-height: 1.35; color: #4d5462; text-transform: uppercase;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rc-alt.is-cur .rc-alt-cap { color: #2f3846; }
+.rc-alt-grade {
+  display: block;
+  font-family: var(--hand); font-size: 0.6rem; color: var(--red);
+  text-transform: none; letter-spacing: 0;
+}
+
+/* ---- the foot: download + accession no. ------------------------------------- */
+.rc-foot {
+  margin-top: 4px; padding-top: 4px;
+  border-top: 2px solid var(--form-rule);
+  display: flex; align-items: center; justify-content: space-between; gap: 0.8em;
+}
+.rc-dl {
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.54rem; letter-spacing: 0.15em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e; border: 1px solid var(--form-rule);
+  padding: 0.26em 0.8em;
+  background: rgba(255, 250, 232, 0.5);
+}
+.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-no {
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: #918a76; text-align: right; line-height: 1.5;
+}
+
+/* ---- phone frame overrides (the real thing uses @media (max-width: 480px);
+   headless Chromium refuses sub-500px windows, so the 390px frame carries
+   the same overrides by class) ---- */
+.frame--phone .mock-banner { padding: 0 14px; }
+.frame--phone .rc-scrim { padding: 10px 8px; }
+.frame--phone .rc-body { padding: 10px 12px 9px; }
+.frame--phone .rc-formhead { gap: 8px; }
+.frame--phone .rc-dept { letter-spacing: 0.1em; }
+.frame--phone .rc-rev { display: none; }
+.frame--phone .rc-fills { grid-template-columns: 1fr 1fr; }
+.frame--phone .rc-fill:nth-child(3) { border-left: 0; }
+.frame--phone .rc-fill:nth-child(n+3) { border-top: 1px solid var(--form-rule-2); }
+.frame--phone .rc-subject-v { font-size: 0.66rem; letter-spacing: 0.13em; }
+.frame--phone .rc-mount { height: clamp(180px, 30vh, 340px); }
+.frame--phone .rc-alts { flex-direction: column; gap: 5px; }
+.frame--phone .rc-alt-art { flex-basis: 34px; width: 34px; height: 34px; }
+.frame--phone .rc-stamp { width: 80px; height: 80px; right: 58px; }
+
+/* ============================================================================
+   page chrome: intro + design notes (not part of the card design)
+   ========================================================================== */
+.pagehead {
+  max-width: 62rem; margin: 0 auto; padding: 1.6rem 1rem 1.4rem;
+  color: #f0e6cc; text-align: center;
+}
+.pagehead h1 { font-size: 0.85rem; letter-spacing: 0.3em; text-transform: uppercase; }
+.pagehead p {
+  margin-top: 0.55rem; font-size: 0.66rem; line-height: 1.9;
+  letter-spacing: 0.08em; color: rgba(240, 230, 204, 0.75);
+}
+.pagehead b { color: #ffb0a6; letter-spacing: 0.14em; }
+.notes {
+  max-width: 46rem; margin: 2.2rem auto 3.5rem; padding: 1.6rem 1.9rem 1.9rem;
+  background: #efe4c6; color: #37414f;
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 10px 16px 28px -10px rgba(6, 3, 0, 0.6);
+}
+.notes h2 {
+  font-size: 0.72rem; letter-spacing: 0.24em; text-transform: uppercase;
+  border-bottom: 2px solid rgba(55, 65, 79, 0.42); padding-bottom: 0.5rem;
+}
+.notes h3 {
+  margin: 1.3rem 0 0.4rem; font-size: 0.6rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: #6a7280;
+}
+.notes p, .notes li {
+  font-size: 0.64rem; line-height: 1.85; letter-spacing: 0.02em; color: #3a3428;
+}
+.notes ul { padding-left: 1.2em; }
+.notes li { margin: 0.3em 0; }
+.notes code {
+  font-family: var(--mono); font-size: 0.6rem;
+  background: rgba(55, 65, 79, 0.08); padding: 0.1em 0.35em;
+}
+.notes b { color: #8f1d12; }
+</style>
+</head>
+<body>
+
+<header class="pagehead">
+  <h1>Junk Drawer · Mockup 13B · “Form 27-B”</h1>
+  <p>Round 13 record-card redesign, option B — the vaporwave plate retires; the whole card
+  becomes one continuous municipal form and the artwork is a <b>photograph attached to it</b>.
+  Each demo below is a full fake viewport (100vh) with its own 56px banner mock —
+  jump with <b>#demo1 … #demo4</b>. Design notes at the end of the page.</p>
+</header>
+
+<section class="demo" id="demo1"><div class="frame"><div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div><div class="rc-scrim"><article class="rc-card" role="dialog" aria-modal="true" aria-label="specimen record"><button type="button" class="rc-close" aria-label="close">✕</button><div class="rc-body"><div class="rc-formhead"><span class="rc-formbox">FORM 27-B</span><span class="rc-dept">Department of Specimen Records — Municipal Sky Div.</span><span class="rc-rev">REV. 07/26</span></div><div class="rc-subject"><span class="rc-subject-l">Subject of record</span><span class="rc-subject-v">Pencil stub</span></div><div class="rc-fills"><div class="rc-fill"><span class="rc-fill-l">Model</span><span class="rc-fill-v">Claude Fable 5</span></div><div class="rc-fill"><span class="rc-fill-l">Prompted</span><span class="rc-fill-v">26 July 2026</span></div><div class="rc-fill"><span class="rc-fill-l">Process</span><span class="rc-fill-v">one-shot</span></div><div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Small</span></div></div><div class="rc-mount" role="button" tabindex="0" aria-label="Enlarge the artwork"><div class="rc-photo"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><span class="rc-exh" aria-hidden="true">Sec. 1 — Photograph of specimen</span><div class="rc-photo-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="16.8 18.3 203.3 35.8" role="img" aria-label="pencil stub">
+        <g stroke="#4a3a1e" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M40 22 Q26 20 22 28 Q18 36 23 44 Q28 51 40 49 Z" fill="#e29999"/>
+          <path d="M40 22 L57 23 L55 51 L38 49 Z" fill="#b9c2c9"/>
+          <path d="M56 24 Q94 20 120 23 Q146 26 173 22 L176 47 Q141 52 113 49 Q85 46 58 50 Z" fill="#f2c230"/>
+          <path d="M173 22 L205 30 Q207 36 205 41 L176 47 Z" fill="#e0b070"/>
+          <path d="M205 30 L217 35 L205 41 Q203 36 205 30 Z" fill="#4a4a4a" stroke-width="2"/>
+        </g>
+        <path d="M45 27 L44 46" stroke="#6c7880" stroke-width="1.5" fill="none"/>
+        <path d="M51 26 L50 47" stroke="#6c7880" stroke-width="1.5" fill="none"/>
+        <path d="M62 31 Q110 27 168 29" stroke="#d9a51e" stroke-width="4" fill="none" opacity="0.7"/>
+        <path d="M62 42 Q112 46 168 43" stroke="#c8991b" stroke-width="3" fill="none" opacity="0.5"/>
+        <path d="M88 36 q14 -3 26 1 q10 3 22 -1" stroke="#7a5a10" stroke-width="1.2" fill="none" opacity="0.7"/>
+      </svg></div><span class="rc-hint" aria-hidden="true">⤢ enlarge</span></div><svg class="rc-stamp" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="d1s_arcT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="d1s_arcB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="41" stroke-width="1.1"/></g><g fill="currentColor" font-family="Georgia,serif" font-size="10.5" letter-spacing="2.6"><text><textPath href="#d1s_arcT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#d1s_arcB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g><g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="57" font-size="15" letter-spacing="3" font-weight="bold">FILED</text><text x="60" y="71" font-size="8.5" letter-spacing="1.5">FORM 27-B</text></g></svg></div><div class="rc-sec"><span>Sec. 2 — The prompt (verbatim)</span><i class="rc-secrule"></i></div><div class="rc-assign"><p>“A well-used yellow pencil stub with a worn pink eraser and exposed wood at the sharpened end, drawn in a naive, wobbly hand-drawn style with visibly imperfect outlines. Transparent background.”</p></div><div class="rc-sec"><span>Sec. 3 — Annotations</span><i class="rc-secrule"></i></div><table class="rc-subj"><thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead><tbody><tr><td><span class="rc-subj-name">Instruction following</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-1.3deg"><span class="rc-mark-word">No problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Structural integrity</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:0.9deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Je ne sais quoi</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:-0.7deg"><span class="rc-mark-word">Just a hint</span></span></span></td></tr></tbody><tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td><td><span class="rc-verdict"><span class="rc-bar rc-g3" aria-hidden="true"><span class="rc-bar-fill" style="width:60.0%"></span><span class="rc-bar-tick" style="left:20.0%"></span><span class="rc-bar-tick" style="left:40.0%"></span><span class="rc-bar-tick" style="left:60.0%"></span><span class="rc-bar-tick" style="left:80.0%"></span></span><span class="rc-mark rc-g3" style="--jit:-1.1deg"><span class="rc-mark-word">Select</span></span></span></td></tr></tfoot></table><div class="rc-foot"><a class="rc-dl" href="#" title="download the SVG as generated">Download SVG ⤓</a><span class="rc-no">No. 2026-07-26-pencil-stub</span></div></div></article></div></div><div class="demo-tag">Demo 1 · desktop 560px · curated item · short prompt (no fold needed)</div></section><section class="demo" id="demo2"><div class="frame"><div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div><div class="rc-scrim"><article class="rc-card" role="dialog" aria-modal="true" aria-label="specimen record"><button type="button" class="rc-close" aria-label="close">✕</button><div class="rc-body"><div class="rc-formhead"><span class="rc-formbox">FORM 27-B</span><span class="rc-dept">Department of Specimen Records — Municipal Sky Div.</span><span class="rc-rev">REV. 07/26</span></div><div class="rc-subject"><span class="rc-subject-l">Subject of record</span><span class="rc-subject-v">The Magician, top half</span></div><div class="rc-fills"><div class="rc-fill"><span class="rc-fill-l">Model</span><span class="rc-fill-v">Claude Opus 5</span></div><div class="rc-fill"><span class="rc-fill-l">Prompted</span><span class="rc-fill-v">29 July 2026</span></div><div class="rc-fill"><span class="rc-fill-l">Process</span><span class="rc-fill-v">refined (2 prompts)</span></div><div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div></div><div class="rc-mount" role="button" tabindex="0" aria-label="Enlarge the artwork"><div class="rc-photo"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><span class="rc-exh" aria-hidden="true">Sec. 1 — Photograph of specimen</span><div class="rc-photo-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d2a_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d2a_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d2a_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d2a_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2a_rose" href="#d2a_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d2a_lily" href="#d2a_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d2a_lily" href="#d2a_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d2a_leaf" href="#d2a_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d2a_spark" href="#d2a_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d2a_spark" href="#d2a_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d2a_spark" href="#d2a_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></div><span class="rc-hint" aria-hidden="true">⤢ enlarge</span></div><svg class="rc-stamp" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="d2s_arcT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="d2s_arcB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="41" stroke-width="1.1"/></g><g fill="currentColor" font-family="Georgia,serif" font-size="10.5" letter-spacing="2.6"><text><textPath href="#d2s_arcT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#d2s_arcB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g><g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="57" font-size="15" letter-spacing="3" font-weight="bold">FILED</text><text x="60" y="71" font-size="8.5" letter-spacing="1.5">FORM 27-B</text></g></svg></div><input type="checkbox" class="rc-fold" id="fold-d2"><div class="rc-sec"><span>Sec. 2 — The prompt (verbatim)</span><i class="rc-secrule"></i><label class="rc-more" for="fold-d2"><span class="m-open">show full prompt ▾</span><span class="m-less">fold prompt ▴</span></label></div><div class="rc-assign"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div><div class="rc-sec"><span>Sec. 3 — Annotations</span><i class="rc-secrule"></i></div><table class="rc-subj"><thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead><tbody><tr><td><span class="rc-subj-name">Instruction following</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-1.3deg"><span class="rc-mark-word">No problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Structural integrity</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:0.9deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Je ne sais quoi</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-0.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr></tbody><tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td><td><span class="rc-verdict"><span class="rc-bar rc-g4" aria-hidden="true"><span class="rc-bar-fill" style="width:80.0%"></span><span class="rc-bar-tick" style="left:20.0%"></span><span class="rc-bar-tick" style="left:40.0%"></span><span class="rc-bar-tick" style="left:60.0%"></span><span class="rc-bar-tick" style="left:80.0%"></span></span><span class="rc-mark rc-g4" style="--jit:-1.1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr></tfoot></table><div class="rc-sec"><span>Sec. 4 — Other models, same prompt</span><i class="rc-secrule"></i></div><div class="rc-alts"><button type="button" class="rc-alt is-cur"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d2t0_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d2t0_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d2t0_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d2t0_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2t0_rose" href="#d2t0_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d2t0_lily" href="#d2t0_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d2t0_lily" href="#d2t0_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d2t0_leaf" href="#d2t0_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d2t0_spark" href="#d2t0_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d2t0_spark" href="#d2t0_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d2t0_spark" href="#d2t0_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Opus 5<span class="rc-alt-grade rc-g4">Choice</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460">
+  <defs>
+    <path id="d2t1_petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/>
+    <path id="d2t1_lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/>
+    <path id="d2t1_leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/>
+    <path id="d2t1_paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/>
+    <clipPath id="d2t1_paperClip">
+      <use href="#d2t1_paperShape"/>
+    </clipPath>
+  </defs>
+
+  <use href="#d2t1_paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d2t1_paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" />
+    <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" />
+
+    <g transform="translate(78,178) rotate(20)"><use href="#d2t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(44,248) rotate(200)"><use href="#d2t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(522,178) rotate(160)"><use href="#d2t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(556,248) rotate(-20)"><use href="#d2t1_leaf"/><path d="M0,0 L16,0"/></g>
+
+    
+    <g transform="translate(65,58)">
+      <use href="#d2t1_petal"/>
+      <use href="#d2t1_petal" transform="rotate(72)"/>
+      <use href="#d2t1_petal" transform="rotate(144)"/>
+      <use href="#d2t1_petal" transform="rotate(216)"/>
+      <use href="#d2t1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+    <g transform="translate(535,58)">
+      <use href="#d2t1_petal"/>
+      <use href="#d2t1_petal" transform="rotate(72)"/>
+      <use href="#d2t1_petal" transform="rotate(144)"/>
+      <use href="#d2t1_petal" transform="rotate(216)"/>
+      <use href="#d2t1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+
+    
+    <g transform="translate(50,388)">
+      <use href="#d2t1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d2t1_lilypetal"/>
+      <use href="#d2t1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+    <g transform="translate(550,388)">
+      <use href="#d2t1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d2t1_lilypetal"/>
+      <use href="#d2t1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+
+    
+    <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/>
+
+    
+    <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/>
+    <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/>
+    <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+    <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+
+    
+    <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/>
+
+    
+    <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/>
+    <path d="M168,417 L168,428 M160,430 L176,430"/>
+    <path d="M193,398 L193,424" />
+    <circle cx="193" cy="396" r="3"/>
+    <circle cx="300" cy="415" r="20"/>
+    <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/>
+    <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/>
+    <circle cx="430" cy="408" r="3"/>
+
+    
+    <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/>
+    <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/>
+
+    
+    <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/>
+
+    
+    <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/>
+    <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/>
+    <circle cx="369" cy="298" r="1.6" fill="#161616"/>
+    <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/>
+
+    
+    <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/>
+    <circle cx="186" cy="392" r="10" fill="#fffdf6"/>
+    <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/>
+
+    
+    <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/>
+    <circle cx="401" cy="46" r="13" fill="#fffdf6"/>
+    <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/>
+
+    
+    <path d="M398,42 L398,14 M406,42 L406,14"/>
+    <circle cx="402" cy="44" r="3"/>
+    <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/>
+
+    
+    <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/>
+    <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/>
+    <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/>
+    <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/>
+
+    
+    <circle cx="288" cy="104" r="4" fill="#161616"/>
+    <circle cx="312" cy="104" r="4" fill="#161616"/>
+    <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/>
+    <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/>
+    <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/>
+    <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/>
+
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Sonnet 5<span class="rc-alt-grade rc-g1">Utility</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 468">
+  <defs>
+    <path id="d2t2_card" d="M10 40 Q10 12 38 12 L482 12 Q510 12 510 40 L510 405 L480 436 L455 412 L430 448 L402 420 L372 454 L345 424 L315 450 L288 418 L258 452 L230 424 L200 455 L172 428 L145 456 L118 430 L90 452 L62 424 L35 446 L10 428 Z"/>
+    <clipPath id="d2t2_clip"><use href="#d2t2_card"/></clipPath>
+    <g id="d2t2_rose" fill="#fff" stroke="#000" stroke-width="3.5">
+      <circle cx="0" cy="-12" r="8.5"/>
+      <circle cx="11.4" cy="-3.7" r="8.5"/>
+      <circle cx="7.1" cy="9.7" r="8.5"/>
+      <circle cx="-7.1" cy="9.7" r="8.5"/>
+      <circle cx="-11.4" cy="-3.7" r="8.5"/>
+      <circle cx="0" cy="0" r="5.5"/>
+    </g>
+    <path id="d2t2_star" d="M0 -11 L2.6 -2.6 L11 0 L2.6 2.6 L0 11 L-2.6 2.6 L-11 0 L-2.6 -2.6 Z"/>
+    <path id="d2t2_leaf" d="M-11 0 Q0 -8 11 0 Q0 8 -11 0 Z"/>
+  </defs>
+
+  <use href="#d2t2_card" fill="#fff" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d2t2_clip)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 470 L32 56 Q32 34 54 34 L466 34 Q488 34 488 56 L488 470" stroke-width="4"/>
+    <path d="M246 52 L274 52 M260 52 L260 88 M246 88 L274 88" stroke-width="5.5"/>
+    <path d="M34 118 C100 150 175 102 260 126 C345 102 420 150 486 118" stroke-width="4"/>
+    <use href="#d2t2_leaf" transform="translate(170 113) rotate(-18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d2t2_leaf" transform="translate(350 113) rotate(18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d2t2_rose" transform="translate(100 131)"/>
+    <use href="#d2t2_rose" transform="translate(260 124)"/>
+    <use href="#d2t2_rose" transform="translate(420 131)"/>
+    <path d="M260 166 C248 148 222 148 222 166 C222 184 248 184 260 166 C272 148 298 148 298 166 C298 184 272 184 260 166" stroke-width="5"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(110 100) scale(0.8)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(190 78) scale(0.6)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(95 200) scale(0.9)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(72 305) scale(0.7)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(108 385) scale(0.75)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(415 210) scale(1.1)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(448 300) scale(0.75)"/>
+    <use href="#d2t2_star" fill="#fff" stroke-width="3.5" transform="translate(385 398) scale(0.7)"/>
+    <path d="M230 256 Q260 244 290 256 L335 470 L205 470 Z" fill="#fff" stroke-width="5"/>
+    <path d="M244 262 L236 470 M276 262 L284 470" stroke-width="4"/>
+    <path d="M248 258 L260 274 L272 258" stroke-width="4"/>
+    <circle cx="260" cy="372" r="17" fill="#fff" stroke-width="4.5"/>
+    <circle cx="272" cy="360" r="5.5" fill="#fff" stroke-width="3.5"/>
+    <circle cx="273.5" cy="359" r="1.4" fill="#000" stroke="none"/>
+    <rect x="143.5" y="96" width="13" height="108" rx="6.5" fill="#fff" stroke-width="4.5"/>
+    <path d="M243 252 L168 140 L152 158 L225 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M176 152 L160 170" stroke-width="4"/>
+    <circle cx="158" cy="150" r="13" fill="#fff" stroke-width="4.5"/>
+    <path d="M300 252 L358 344 L340 358 L283 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M350 332 L333 346" stroke-width="4"/>
+    <path d="M352 350 L352 392" stroke-width="5"/>
+    <circle cx="352" cy="356" r="11" fill="#fff" stroke-width="4.5"/>
+    <circle cx="260" cy="218" r="31" fill="#fff" stroke-width="5"/>
+    <path d="M231 206 Q260 196 289 206 M236 199 Q260 190 284 199" stroke-width="3.5"/>
+    <path d="M231 206 Q220 213 226 224 M289 206 Q300 213 294 224" stroke-width="3.5"/>
+    <circle cx="247" cy="216" r="3" fill="#000" stroke="none"/>
+    <circle cx="273" cy="216" r="3" fill="#000" stroke="none"/>
+    <path d="M246 231 Q260 242 274 231" stroke-width="4"/>
+    <circle cx="238" cy="227" r="3.2" stroke-width="2.5"/>
+    <circle cx="282" cy="227" r="3.2" stroke-width="2.5"/>
+  </g>
+
+  <use href="#d2t2_card" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+</svg></span><span class="rc-alt-cap">Claude Fable 5<span class="rc-alt-grade rc-g3">Select</span></span></button></div><div class="rc-foot"><a class="rc-dl" href="#" title="download the SVG as generated">Download SVG ⤓</a><span class="rc-no">No. 2026-07-29-torn-magician</span></div></div></article></div></div><div class="demo-tag">Demo 2 · desktop · the long tarot prompt, FOLDED at 3 lines (click &quot;show full prompt&quot;)</div></section><section class="demo" id="demo2x"><div class="frame"><div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div><div class="rc-scrim"><article class="rc-card" role="dialog" aria-modal="true" aria-label="specimen record"><button type="button" class="rc-close" aria-label="close">✕</button><div class="rc-body"><div class="rc-formhead"><span class="rc-formbox">FORM 27-B</span><span class="rc-dept">Department of Specimen Records — Municipal Sky Div.</span><span class="rc-rev">REV. 07/26</span></div><div class="rc-subject"><span class="rc-subject-l">Subject of record</span><span class="rc-subject-v">The Magician, top half</span></div><div class="rc-fills"><div class="rc-fill"><span class="rc-fill-l">Model</span><span class="rc-fill-v">Claude Opus 5</span></div><div class="rc-fill"><span class="rc-fill-l">Prompted</span><span class="rc-fill-v">29 July 2026</span></div><div class="rc-fill"><span class="rc-fill-l">Process</span><span class="rc-fill-v">refined (2 prompts)</span></div><div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div></div><div class="rc-mount" role="button" tabindex="0" aria-label="Enlarge the artwork"><div class="rc-photo"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><span class="rc-exh" aria-hidden="true">Sec. 1 — Photograph of specimen</span><div class="rc-photo-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d2xa_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d2xa_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d2xa_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d2xa_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2xa_rose" href="#d2xa_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d2xa_lily" href="#d2xa_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d2xa_lily" href="#d2xa_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d2xa_leaf" href="#d2xa_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d2xa_spark" href="#d2xa_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d2xa_spark" href="#d2xa_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d2xa_spark" href="#d2xa_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></div><span class="rc-hint" aria-hidden="true">⤢ enlarge</span></div><svg class="rc-stamp" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="d2xs_arcT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="d2xs_arcB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="41" stroke-width="1.1"/></g><g fill="currentColor" font-family="Georgia,serif" font-size="10.5" letter-spacing="2.6"><text><textPath href="#d2xs_arcT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#d2xs_arcB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g><g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="57" font-size="15" letter-spacing="3" font-weight="bold">FILED</text><text x="60" y="71" font-size="8.5" letter-spacing="1.5">FORM 27-B</text></g></svg></div><input type="checkbox" class="rc-fold" id="fold-d2x" checked><div class="rc-sec"><span>Sec. 2 — The prompt (verbatim)</span><i class="rc-secrule"></i><label class="rc-more" for="fold-d2x"><span class="m-open">show full prompt ▾</span><span class="m-less">fold prompt ▴</span></label></div><div class="rc-assign"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div><div class="rc-sec"><span>Sec. 3 — Annotations</span><i class="rc-secrule"></i></div><table class="rc-subj"><thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead><tbody><tr><td><span class="rc-subj-name">Instruction following</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-1.3deg"><span class="rc-mark-word">No problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Structural integrity</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:0.9deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Je ne sais quoi</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-0.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr></tbody><tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td><td><span class="rc-verdict"><span class="rc-bar rc-g4" aria-hidden="true"><span class="rc-bar-fill" style="width:80.0%"></span><span class="rc-bar-tick" style="left:20.0%"></span><span class="rc-bar-tick" style="left:40.0%"></span><span class="rc-bar-tick" style="left:60.0%"></span><span class="rc-bar-tick" style="left:80.0%"></span></span><span class="rc-mark rc-g4" style="--jit:-1.1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr></tfoot></table><div class="rc-sec"><span>Sec. 4 — Other models, same prompt</span><i class="rc-secrule"></i></div><div class="rc-alts"><button type="button" class="rc-alt is-cur"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d2xt0_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d2xt0_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d2xt0_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d2xt0_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d2xt0_rose" href="#d2xt0_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d2xt0_lily" href="#d2xt0_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d2xt0_lily" href="#d2xt0_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d2xt0_leaf" href="#d2xt0_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d2xt0_spark" href="#d2xt0_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d2xt0_spark" href="#d2xt0_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d2xt0_spark" href="#d2xt0_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Opus 5<span class="rc-alt-grade rc-g4">Choice</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460">
+  <defs>
+    <path id="d2xt1_petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/>
+    <path id="d2xt1_lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/>
+    <path id="d2xt1_leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/>
+    <path id="d2xt1_paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/>
+    <clipPath id="d2xt1_paperClip">
+      <use href="#d2xt1_paperShape"/>
+    </clipPath>
+  </defs>
+
+  <use href="#d2xt1_paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d2xt1_paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" />
+    <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" />
+
+    <g transform="translate(78,178) rotate(20)"><use href="#d2xt1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(44,248) rotate(200)"><use href="#d2xt1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(522,178) rotate(160)"><use href="#d2xt1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(556,248) rotate(-20)"><use href="#d2xt1_leaf"/><path d="M0,0 L16,0"/></g>
+
+    
+    <g transform="translate(65,58)">
+      <use href="#d2xt1_petal"/>
+      <use href="#d2xt1_petal" transform="rotate(72)"/>
+      <use href="#d2xt1_petal" transform="rotate(144)"/>
+      <use href="#d2xt1_petal" transform="rotate(216)"/>
+      <use href="#d2xt1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+    <g transform="translate(535,58)">
+      <use href="#d2xt1_petal"/>
+      <use href="#d2xt1_petal" transform="rotate(72)"/>
+      <use href="#d2xt1_petal" transform="rotate(144)"/>
+      <use href="#d2xt1_petal" transform="rotate(216)"/>
+      <use href="#d2xt1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+
+    
+    <g transform="translate(50,388)">
+      <use href="#d2xt1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d2xt1_lilypetal"/>
+      <use href="#d2xt1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+    <g transform="translate(550,388)">
+      <use href="#d2xt1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d2xt1_lilypetal"/>
+      <use href="#d2xt1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+
+    
+    <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/>
+
+    
+    <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/>
+    <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/>
+    <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+    <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+
+    
+    <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/>
+
+    
+    <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/>
+    <path d="M168,417 L168,428 M160,430 L176,430"/>
+    <path d="M193,398 L193,424" />
+    <circle cx="193" cy="396" r="3"/>
+    <circle cx="300" cy="415" r="20"/>
+    <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/>
+    <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/>
+    <circle cx="430" cy="408" r="3"/>
+
+    
+    <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/>
+    <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/>
+
+    
+    <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/>
+
+    
+    <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/>
+    <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/>
+    <circle cx="369" cy="298" r="1.6" fill="#161616"/>
+    <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/>
+
+    
+    <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/>
+    <circle cx="186" cy="392" r="10" fill="#fffdf6"/>
+    <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/>
+
+    
+    <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/>
+    <circle cx="401" cy="46" r="13" fill="#fffdf6"/>
+    <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/>
+
+    
+    <path d="M398,42 L398,14 M406,42 L406,14"/>
+    <circle cx="402" cy="44" r="3"/>
+    <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/>
+
+    
+    <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/>
+    <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/>
+    <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/>
+    <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/>
+
+    
+    <circle cx="288" cy="104" r="4" fill="#161616"/>
+    <circle cx="312" cy="104" r="4" fill="#161616"/>
+    <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/>
+    <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/>
+    <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/>
+    <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/>
+
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Sonnet 5<span class="rc-alt-grade rc-g1">Utility</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 468">
+  <defs>
+    <path id="d2xt2_card" d="M10 40 Q10 12 38 12 L482 12 Q510 12 510 40 L510 405 L480 436 L455 412 L430 448 L402 420 L372 454 L345 424 L315 450 L288 418 L258 452 L230 424 L200 455 L172 428 L145 456 L118 430 L90 452 L62 424 L35 446 L10 428 Z"/>
+    <clipPath id="d2xt2_clip"><use href="#d2xt2_card"/></clipPath>
+    <g id="d2xt2_rose" fill="#fff" stroke="#000" stroke-width="3.5">
+      <circle cx="0" cy="-12" r="8.5"/>
+      <circle cx="11.4" cy="-3.7" r="8.5"/>
+      <circle cx="7.1" cy="9.7" r="8.5"/>
+      <circle cx="-7.1" cy="9.7" r="8.5"/>
+      <circle cx="-11.4" cy="-3.7" r="8.5"/>
+      <circle cx="0" cy="0" r="5.5"/>
+    </g>
+    <path id="d2xt2_star" d="M0 -11 L2.6 -2.6 L11 0 L2.6 2.6 L0 11 L-2.6 2.6 L-11 0 L-2.6 -2.6 Z"/>
+    <path id="d2xt2_leaf" d="M-11 0 Q0 -8 11 0 Q0 8 -11 0 Z"/>
+  </defs>
+
+  <use href="#d2xt2_card" fill="#fff" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d2xt2_clip)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 470 L32 56 Q32 34 54 34 L466 34 Q488 34 488 56 L488 470" stroke-width="4"/>
+    <path d="M246 52 L274 52 M260 52 L260 88 M246 88 L274 88" stroke-width="5.5"/>
+    <path d="M34 118 C100 150 175 102 260 126 C345 102 420 150 486 118" stroke-width="4"/>
+    <use href="#d2xt2_leaf" transform="translate(170 113) rotate(-18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d2xt2_leaf" transform="translate(350 113) rotate(18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d2xt2_rose" transform="translate(100 131)"/>
+    <use href="#d2xt2_rose" transform="translate(260 124)"/>
+    <use href="#d2xt2_rose" transform="translate(420 131)"/>
+    <path d="M260 166 C248 148 222 148 222 166 C222 184 248 184 260 166 C272 148 298 148 298 166 C298 184 272 184 260 166" stroke-width="5"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(110 100) scale(0.8)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(190 78) scale(0.6)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(95 200) scale(0.9)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(72 305) scale(0.7)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(108 385) scale(0.75)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(415 210) scale(1.1)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(448 300) scale(0.75)"/>
+    <use href="#d2xt2_star" fill="#fff" stroke-width="3.5" transform="translate(385 398) scale(0.7)"/>
+    <path d="M230 256 Q260 244 290 256 L335 470 L205 470 Z" fill="#fff" stroke-width="5"/>
+    <path d="M244 262 L236 470 M276 262 L284 470" stroke-width="4"/>
+    <path d="M248 258 L260 274 L272 258" stroke-width="4"/>
+    <circle cx="260" cy="372" r="17" fill="#fff" stroke-width="4.5"/>
+    <circle cx="272" cy="360" r="5.5" fill="#fff" stroke-width="3.5"/>
+    <circle cx="273.5" cy="359" r="1.4" fill="#000" stroke="none"/>
+    <rect x="143.5" y="96" width="13" height="108" rx="6.5" fill="#fff" stroke-width="4.5"/>
+    <path d="M243 252 L168 140 L152 158 L225 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M176 152 L160 170" stroke-width="4"/>
+    <circle cx="158" cy="150" r="13" fill="#fff" stroke-width="4.5"/>
+    <path d="M300 252 L358 344 L340 358 L283 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M350 332 L333 346" stroke-width="4"/>
+    <path d="M352 350 L352 392" stroke-width="5"/>
+    <circle cx="352" cy="356" r="11" fill="#fff" stroke-width="4.5"/>
+    <circle cx="260" cy="218" r="31" fill="#fff" stroke-width="5"/>
+    <path d="M231 206 Q260 196 289 206 M236 199 Q260 190 284 199" stroke-width="3.5"/>
+    <path d="M231 206 Q220 213 226 224 M289 206 Q300 213 294 224" stroke-width="3.5"/>
+    <circle cx="247" cy="216" r="3" fill="#000" stroke="none"/>
+    <circle cx="273" cy="216" r="3" fill="#000" stroke="none"/>
+    <path d="M246 231 Q260 242 274 231" stroke-width="4"/>
+    <circle cx="238" cy="227" r="3.2" stroke-width="2.5"/>
+    <circle cx="282" cy="227" r="3.2" stroke-width="2.5"/>
+  </g>
+
+  <use href="#d2xt2_card" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+</svg></span><span class="rc-alt-cap">Claude Fable 5<span class="rc-alt-grade rc-g3">Select</span></span></button></div><div class="rc-foot"><a class="rc-dl" href="#" title="download the SVG as generated">Download SVG ⤓</a><span class="rc-no">No. 2026-07-29-torn-magician</span></div></div></article></div></div><div class="demo-tag">Demo 2, continued · same card with the expander OPEN (card scrolls only now, by design)</div></section><section class="demo" id="demo3"><div class="frame"><div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav"><span>Information graphics</span><b>Art</b><span>About</span></nav></div><div class="rc-scrim"><article class="rc-card" role="dialog" aria-modal="true" aria-label="specimen record"><button type="button" class="rc-close" aria-label="close">✕</button><div class="rc-body"><div class="rc-formhead"><span class="rc-formbox">FORM 27-B</span><span class="rc-dept">Department of Specimen Records — Municipal Sky Div.</span><span class="rc-rev">REV. 07/26</span></div><div class="rc-subject"><span class="rc-subject-l">Subject of record</span><span class="rc-subject-v">Googly eyeball</span></div><div class="rc-fills"><div class="rc-fill"><span class="rc-fill-l">Model</span><span class="rc-fill-v">Claude Fable 5</span></div><div class="rc-fill"><span class="rc-fill-l">Prompted</span><span class="rc-fill-v">13 Aug 2026</span></div><div class="rc-fill"><span class="rc-fill-l">Process</span><span class="rc-fill-v">one-shot</span></div><div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Small</span></div></div><div class="rc-mount" role="button" tabindex="0" aria-label="Enlarge the artwork"><div class="rc-photo"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><span class="rc-exh" aria-hidden="true">Sec. 1 — Photograph of specimen</span><div class="rc-photo-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <clipPath id="d3a_cp"><circle cx="200" cy="200" r="196"/></clipPath>
+    <radialGradient id="d3a_dome" cx="0.37" cy="0.33" r="0.82">
+      <stop offset="0" stop-color="#f8f0dd"/>
+      <stop offset="0.28" stop-color="#f0e2c5"/>
+      <stop offset="0.52" stop-color="#ddc496"/>
+      <stop offset="0.72" stop-color="#b78b52"/>
+      <stop offset="0.88" stop-color="#7c5527"/>
+      <stop offset="1" stop-color="#432a11"/>
+    </radialGradient>
+    <radialGradient id="d3a_pupilG" cx="0.38" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#181008"/>
+      <stop offset="0.55" stop-color="#070403"/>
+      <stop offset="0.85" stop-color="#140c05"/>
+      <stop offset="1" stop-color="#33200d"/>
+    </radialGradient>
+    <filter id="d3a_paint" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="3" seed="4" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="15"/>
+      <feGaussianBlur stdDeviation="1.3"/>
+    </filter>
+    <filter id="d3a_soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="d3a_soft4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="d3a_soft8" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="d3a_grain" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0.6 0.6 0 0"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#d3a_cp)">
+    
+    <circle cx="200" cy="200" r="196" fill="url(#d3a_dome)"/>
+
+    
+    <ellipse cx="268" cy="288" rx="132" ry="104" fill="#4a3011" opacity="0.35" filter="url(#d3a_soft8)" transform="rotate(-24 268 288)"/>
+
+    
+    <g fill="none" stroke-linecap="round" filter="url(#d3a_paint)">
+      <path d="M 369 138 A 180 180 0 0 1 169 377" stroke="#5b3a17" stroke-width="22" opacity="0.45"/>
+      <path d="M 64 316 A 178 178 0 0 1 84 62" stroke="#6e4a20" stroke-width="20" opacity="0.4"/>
+      <path d="M 90 300 A 140 140 0 0 0 310 290" stroke="#b08346" stroke-width="24" opacity="0.35"/>
+      <path d="M 150 262 A 110 100 0 0 0 300 230" stroke="#cfa868" stroke-width="20" opacity="0.3"/>
+      <path d="M 92 170 A 120 118 0 0 1 200 78" stroke="#f6edd8" stroke-width="26" opacity="0.5"/>
+      <path d="M 120 200 A 95 95 0 0 1 175 110" stroke="#fbf5e6" stroke-width="18" opacity="0.45"/>
+      <path d="M 105 250 A 118 118 0 0 1 88 190" stroke="#e6d3ab" stroke-width="16" opacity="0.35"/>
+      <path d="M 250 330 A 150 140 0 0 0 335 260" stroke="#8a5e2c" stroke-width="18" opacity="0.35"/>
+      <path d="M 145 330 A 130 130 0 0 0 235 342" stroke="#9a6f38" stroke-width="14" opacity="0.3"/>
+      <path d="M 300 110 A 150 150 0 0 1 340 175" stroke="#caa267" stroke-width="16" opacity="0.3"/>
+    </g>
+
+    
+    <circle cx="268" cy="152" r="68" fill="#3d2710" opacity="0.42" filter="url(#d3a_soft8)"/>
+
+    
+    <circle cx="258" cy="140" r="62" fill="url(#d3a_pupilG)" stroke="#241505" stroke-width="3" stroke-opacity="0.6"/>
+    <path d="M 212 178 A 61 61 0 0 0 305 165" fill="none" stroke="#6b4a24" stroke-width="5" opacity="0.45" filter="url(#d3a_soft2)"/>
+
+    
+    <ellipse cx="238" cy="119" rx="10" ry="8" transform="rotate(-22 238 119)" fill="#fff8e8" opacity="0.95" filter="url(#d3a_soft2)"/>
+    <ellipse cx="236" cy="117" rx="5" ry="4" transform="rotate(-22 236 117)" fill="#ffffff"/>
+    <circle cx="278" cy="167" r="5" fill="#d8b877" opacity="0.5" filter="url(#d3a_soft2)"/>
+
+    
+    <path d="M 36 156 A 170 170 0 0 1 285 53 L 263 64 A 150 150 0 0 0 59 149 Z" fill="#fdf9ee" opacity="0.6" filter="url(#d3a_soft4)"/>
+    <path d="M 56 117 A 166 166 0 0 1 243 40 L 232 49 A 154 154 0 0 0 71 116 Z" fill="#ffffff" opacity="0.85" filter="url(#d3a_soft2)"/>
+
+    
+    <path d="M 290 356 A 182 182 0 0 1 110 356" fill="none" stroke="#d9a95c" stroke-width="10" opacity="0.5" stroke-linecap="round" filter="url(#d3a_soft4)"/>
+
+    
+    <circle cx="200" cy="200" r="191" fill="none" stroke="#2e1c0a" stroke-width="8" opacity="0.85"/>
+    <circle cx="200" cy="200" r="183" fill="none" stroke="#7a5228" stroke-width="7" opacity="0.5" filter="url(#d3a_soft2)"/>
+    <circle cx="200" cy="200" r="195" fill="none" stroke="#1d1206" stroke-width="3" opacity="0.9"/>
+
+    
+    <circle cx="200" cy="200" r="196" filter="url(#d3a_grain)" opacity="0.09"/>
+  </g>
+</svg></div><span class="rc-hint" aria-hidden="true">⤢ enlarge</span></div><svg class="rc-stamp" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="d3s_arcT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="d3s_arcB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="41" stroke-width="1.1"/></g><g fill="currentColor" font-family="Georgia,serif" font-size="10.5" letter-spacing="2.6"><text><textPath href="#d3s_arcT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#d3s_arcB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g><g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="57" font-size="15" letter-spacing="3" font-weight="bold">FILED</text><text x="60" y="71" font-size="8.5" letter-spacing="1.5">FORM 27-B</text></g></svg></div><input type="checkbox" class="rc-fold" id="fold-d3"><div class="rc-sec"><span>Sec. 2 — The prompt (verbatim)</span><i class="rc-secrule"></i><label class="rc-more" for="fold-d3"><span class="m-open">show full prompt ▾</span><span class="m-less">fold prompt ▴</span></label></div><div class="rc-assign"><p>“a single googly eyeball, rolled slightly askew, done in a painterly style as though it is oil paint, like something from a 17th century painting by a Flemish master: warm ivory white deepening to umber at the rim, an off-center black pupil with a bright fleck, and a curved glint of light sweeping the upper curve”</p></div><div class="rc-sec"><span>Sec. 3 — Annotations</span><i class="rc-secrule"></i></div><table class="rc-subj"><thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead><tbody><tr><td><span class="rc-subj-name">Instruction following</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-1.3deg"><span class="rc-mark-word">No problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Structural integrity</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:0.9deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Je ne sais quoi</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-0.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr></tbody><tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td><td><span class="rc-verdict"><span class="rc-bar rc-g4" aria-hidden="true"><span class="rc-bar-fill" style="width:80.0%"></span><span class="rc-bar-tick" style="left:20.0%"></span><span class="rc-bar-tick" style="left:40.0%"></span><span class="rc-bar-tick" style="left:60.0%"></span><span class="rc-bar-tick" style="left:80.0%"></span></span><span class="rc-mark rc-g4" style="--jit:-1.1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr></tfoot></table><div class="rc-sec"><span>Sec. 4 — Other models, same prompt</span><i class="rc-secrule"></i></div><div class="rc-alts"><button type="button" class="rc-alt is-cur"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <clipPath id="d3t0_cp"><circle cx="200" cy="200" r="196"/></clipPath>
+    <radialGradient id="d3t0_dome" cx="0.37" cy="0.33" r="0.82">
+      <stop offset="0" stop-color="#f8f0dd"/>
+      <stop offset="0.28" stop-color="#f0e2c5"/>
+      <stop offset="0.52" stop-color="#ddc496"/>
+      <stop offset="0.72" stop-color="#b78b52"/>
+      <stop offset="0.88" stop-color="#7c5527"/>
+      <stop offset="1" stop-color="#432a11"/>
+    </radialGradient>
+    <radialGradient id="d3t0_pupilG" cx="0.38" cy="0.32" r="0.85">
+      <stop offset="0" stop-color="#181008"/>
+      <stop offset="0.55" stop-color="#070403"/>
+      <stop offset="0.85" stop-color="#140c05"/>
+      <stop offset="1" stop-color="#33200d"/>
+    </radialGradient>
+    <filter id="d3t0_paint" x="-15%" y="-15%" width="130%" height="130%">
+      <feTurbulence type="turbulence" baseFrequency="0.035" numOctaves="3" seed="4" result="t"/>
+      <feDisplacementMap in="SourceGraphic" in2="t" scale="15"/>
+      <feGaussianBlur stdDeviation="1.3"/>
+    </filter>
+    <filter id="d3t0_soft2" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+    <filter id="d3t0_soft4" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="d3t0_soft8" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="d3t0_grain" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="11"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.6 0.6 0.6 0 0"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#d3t0_cp)">
+    
+    <circle cx="200" cy="200" r="196" fill="url(#d3t0_dome)"/>
+
+    
+    <ellipse cx="268" cy="288" rx="132" ry="104" fill="#4a3011" opacity="0.35" filter="url(#d3t0_soft8)" transform="rotate(-24 268 288)"/>
+
+    
+    <g fill="none" stroke-linecap="round" filter="url(#d3t0_paint)">
+      <path d="M 369 138 A 180 180 0 0 1 169 377" stroke="#5b3a17" stroke-width="22" opacity="0.45"/>
+      <path d="M 64 316 A 178 178 0 0 1 84 62" stroke="#6e4a20" stroke-width="20" opacity="0.4"/>
+      <path d="M 90 300 A 140 140 0 0 0 310 290" stroke="#b08346" stroke-width="24" opacity="0.35"/>
+      <path d="M 150 262 A 110 100 0 0 0 300 230" stroke="#cfa868" stroke-width="20" opacity="0.3"/>
+      <path d="M 92 170 A 120 118 0 0 1 200 78" stroke="#f6edd8" stroke-width="26" opacity="0.5"/>
+      <path d="M 120 200 A 95 95 0 0 1 175 110" stroke="#fbf5e6" stroke-width="18" opacity="0.45"/>
+      <path d="M 105 250 A 118 118 0 0 1 88 190" stroke="#e6d3ab" stroke-width="16" opacity="0.35"/>
+      <path d="M 250 330 A 150 140 0 0 0 335 260" stroke="#8a5e2c" stroke-width="18" opacity="0.35"/>
+      <path d="M 145 330 A 130 130 0 0 0 235 342" stroke="#9a6f38" stroke-width="14" opacity="0.3"/>
+      <path d="M 300 110 A 150 150 0 0 1 340 175" stroke="#caa267" stroke-width="16" opacity="0.3"/>
+    </g>
+
+    
+    <circle cx="268" cy="152" r="68" fill="#3d2710" opacity="0.42" filter="url(#d3t0_soft8)"/>
+
+    
+    <circle cx="258" cy="140" r="62" fill="url(#d3t0_pupilG)" stroke="#241505" stroke-width="3" stroke-opacity="0.6"/>
+    <path d="M 212 178 A 61 61 0 0 0 305 165" fill="none" stroke="#6b4a24" stroke-width="5" opacity="0.45" filter="url(#d3t0_soft2)"/>
+
+    
+    <ellipse cx="238" cy="119" rx="10" ry="8" transform="rotate(-22 238 119)" fill="#fff8e8" opacity="0.95" filter="url(#d3t0_soft2)"/>
+    <ellipse cx="236" cy="117" rx="5" ry="4" transform="rotate(-22 236 117)" fill="#ffffff"/>
+    <circle cx="278" cy="167" r="5" fill="#d8b877" opacity="0.5" filter="url(#d3t0_soft2)"/>
+
+    
+    <path d="M 36 156 A 170 170 0 0 1 285 53 L 263 64 A 150 150 0 0 0 59 149 Z" fill="#fdf9ee" opacity="0.6" filter="url(#d3t0_soft4)"/>
+    <path d="M 56 117 A 166 166 0 0 1 243 40 L 232 49 A 154 154 0 0 0 71 116 Z" fill="#ffffff" opacity="0.85" filter="url(#d3t0_soft2)"/>
+
+    
+    <path d="M 290 356 A 182 182 0 0 1 110 356" fill="none" stroke="#d9a95c" stroke-width="10" opacity="0.5" stroke-linecap="round" filter="url(#d3t0_soft4)"/>
+
+    
+    <circle cx="200" cy="200" r="191" fill="none" stroke="#2e1c0a" stroke-width="8" opacity="0.85"/>
+    <circle cx="200" cy="200" r="183" fill="none" stroke="#7a5228" stroke-width="7" opacity="0.5" filter="url(#d3t0_soft2)"/>
+    <circle cx="200" cy="200" r="195" fill="none" stroke="#1d1206" stroke-width="3" opacity="0.9"/>
+
+    
+    <circle cx="200" cy="200" r="196" filter="url(#d3t0_grain)" opacity="0.09"/>
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Fable 5<span class="rc-alt-grade rc-g4">Choice</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600">
+  <defs>
+    <radialGradient id="d3t1_scleraGrad" cx="38%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#fdf6e3"/>
+      <stop offset="28%" stop-color="#f2e2b8"/>
+      <stop offset="52%" stop-color="#dcb877"/>
+      <stop offset="76%" stop-color="#a1693a"/>
+      <stop offset="100%" stop-color="#472a17"/>
+    </radialGradient>
+
+    <radialGradient id="d3t1_irisGrad" cx="35%" cy="30%" r="72%">
+      <stop offset="0%" stop-color="#e0ac63"/>
+      <stop offset="28%" stop-color="#b47a35"/>
+      <stop offset="58%" stop-color="#7a4420"/>
+      <stop offset="85%" stop-color="#4a2510"/>
+      <stop offset="100%" stop-color="#20110a"/>
+    </radialGradient>
+
+    <radialGradient id="d3t1_pupilGrad" cx="42%" cy="36%" r="62%">
+      <stop offset="0%" stop-color="#0c0805"/>
+      <stop offset="55%" stop-color="#020100"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <radialGradient id="d3t1_vignetteGrad" cx="40%" cy="35%" r="78%">
+      <stop offset="0%" stop-color="#1a0f07" stop-opacity="0"/>
+      <stop offset="58%" stop-color="#1a0f07" stop-opacity="0"/>
+      <stop offset="84%" stop-color="#3a2312" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#160c06" stop-opacity="0.82"/>
+    </radialGradient>
+
+    <linearGradient id="d3t1_glintGrad" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#fdf3d8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <clipPath id="d3t1_sphereClip">
+      <circle cx="300" cy="300" r="293"/>
+    </clipPath>
+
+    <clipPath id="d3t1_irisClip">
+      <circle cx="365" cy="340" r="112"/>
+    </clipPath>
+
+    <filter id="d3t1_brushDisplace" x="-30%" y="-30%" width="160%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.03" numOctaves="3" seed="11" result="turb"/>
+      <feDisplacementMap in="SourceGraphic" in2="turb" scale="16" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+
+    <filter id="d3t1_softBlur" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+
+    <filter id="d3t1_mediumBlur" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+
+    <filter id="d3t1_grain" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="4" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.7 0"/>
+    </filter>
+  </defs>
+
+  <g clip-path="url(#d3t1_sphereClip)">
+    <g filter="url(#d3t1_brushDisplace)">
+      
+      <circle cx="300" cy="300" r="293" fill="url(#d3t1_scleraGrad)"/>
+
+      
+      <ellipse cx="200" cy="178" rx="118" ry="96" fill="#fdf6e3" opacity="0.45" transform="rotate(-18 200 178)"/>
+      <ellipse cx="145" cy="300" rx="95" ry="120" fill="#eddcb0" opacity="0.4" transform="rotate(10 145 300)"/>
+      <ellipse cx="185" cy="425" rx="110" ry="90" fill="#d9b978" opacity="0.42" transform="rotate(-8 185 425)"/>
+      <ellipse cx="320" cy="475" rx="130" ry="85" fill="#a06b3a" opacity="0.48" style="mix-blend-mode:multiply" transform="rotate(4 320 475)"/>
+      <ellipse cx="472" cy="418" rx="115" ry="105" fill="#7a4a24" opacity="0.5" style="mix-blend-mode:multiply" transform="rotate(-12 472 418)"/>
+      <ellipse cx="522" cy="292" rx="100" ry="130" fill="#4a2c17" opacity="0.55" style="mix-blend-mode:multiply" transform="rotate(9 522 292)"/>
+      <ellipse cx="432" cy="148" rx="105" ry="85" fill="#eddcb0" opacity="0.35" transform="rotate(15 432 148)"/>
+      <ellipse cx="300" cy="52" rx="90" ry="55" fill="#6b4020" opacity="0.32" style="mix-blend-mode:multiply" transform="rotate(0 300 52)"/>
+
+      
+      <path d="M 120,480 C 180,562 420,562 480,480 C 458,522 380,542 300,542 C 220,542 142,522 120,480 Z"
+            fill="#221207" opacity="0.4" style="mix-blend-mode:multiply"/>
+
+      
+      <g clip-path="url(#d3t1_irisClip)">
+        <circle cx="365" cy="340" r="112" fill="url(#d3t1_irisGrad)"/>
+        <g stroke-linecap="round">
+          <line x1="407" y1="340" x2="465" y2="340" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="401.4" y1="361" x2="451.6" y2="390" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="386" y1="376.4" x2="415" y2="426.6" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="365" y1="382" x2="365" y2="440" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="344" y1="376.4" x2="315" y2="426.6" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="328.6" y1="361" x2="278.4" y2="390" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="323" y1="340" x2="265" y2="340" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="328.6" y1="319" x2="278.4" y2="290" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="344" y1="303.6" x2="315" y2="253.4" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="365" y1="298" x2="365" y2="240" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+          <line x1="386" y1="303.6" x2="415" y2="253.4" stroke="#d3a15c" stroke-width="3.5" opacity="0.55"/>
+          <line x1="401.4" y1="319" x2="451.6" y2="290" stroke="#4c2b14" stroke-width="3.5" opacity="0.5"/>
+        </g>
+      </g>
+
+      
+      <circle cx="365" cy="340" r="112" fill="none" stroke="#20110a" stroke-width="7" opacity="0.5"/>
+
+      
+      <circle cx="300" cy="300" r="293" fill="url(#d3t1_vignetteGrad)" style="mix-blend-mode:multiply"/>
+
+      
+      <path d="M 90,200 C 150,80 300,40 420,70 C 480,85 520,130 540,170 C 460,140 380,120 300,120 C 220,120 150,150 90,200 Z"
+            fill="url(#d3t1_glintGrad)" opacity="0.75" style="mix-blend-mode:screen" filter="url(#d3t1_mediumBlur)"/>
+    </g>
+
+    
+    <ellipse cx="372" cy="346" rx="52" ry="48" fill="url(#d3t1_pupilGrad)" transform="rotate(-8 372 346)"/>
+
+    
+    <ellipse cx="396" cy="367" rx="11" ry="6" fill="#cfe0e8" opacity="0.22" filter="url(#d3t1_softBlur)" transform="rotate(30 396 367)"/>
+
+    
+    <ellipse cx="345" cy="317" rx="14" ry="10" fill="#fffdf5" opacity="0.85" filter="url(#d3t1_softBlur)" transform="rotate(-20 345 317)"/>
+    <circle cx="343" cy="314" r="4.5" fill="#ffffff" opacity="0.95"/>
+
+    
+    <circle cx="300" cy="300" r="293" fill="#808080" filter="url(#d3t1_grain)" opacity="0.06" style="mix-blend-mode:overlay"/>
+
+    
+    <circle cx="300" cy="300" r="290" fill="none" stroke="#2c1a0d" stroke-width="5" opacity="0.4"/>
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Sonnet 5<span class="rc-alt-grade rc-g3">Select</span></span></button></div><div class="rc-foot"><a class="rc-dl" href="#" title="download the SVG as generated">Download SVG ⤓</a><span class="rc-no">No. v-2026-0813-a7</span></div></div></article></div></div><div class="demo-tag">Demo 3 · visitor card · 2 responses in the strip</div></section><section class="demo demo--phone" id="demo4"><div class="frame frame--phone"><div class="mock-banner"><span class="mb-title">Municipal Sky</span><nav class="mb-nav" hidden><span>Information graphics</span><b>Art</b><span>About</span></nav></div><div class="rc-scrim"><article class="rc-card" role="dialog" aria-modal="true" aria-label="specimen record"><button type="button" class="rc-close" aria-label="close">✕</button><div class="rc-body"><div class="rc-formhead"><span class="rc-formbox">FORM 27-B</span><span class="rc-dept">Department of Specimen Records — Municipal Sky Div.</span><span class="rc-rev">REV. 07/26</span></div><div class="rc-subject"><span class="rc-subject-l">Subject of record</span><span class="rc-subject-v">The Magician, top half</span></div><div class="rc-fills"><div class="rc-fill"><span class="rc-fill-l">Model</span><span class="rc-fill-v">Claude Opus 5</span></div><div class="rc-fill"><span class="rc-fill-l">Prompted</span><span class="rc-fill-v">29 July 2026</span></div><div class="rc-fill"><span class="rc-fill-l">Process</span><span class="rc-fill-v">refined (2 prompts)</span></div><div class="rc-fill"><span class="rc-fill-l">Size</span><span class="rc-fill-v">Medium</span></div></div><div class="rc-mount" role="button" tabindex="0" aria-label="Enlarge the artwork"><div class="rc-photo"><span class="rc-corner tl"></span><span class="rc-corner tr"></span><span class="rc-corner bl"></span><span class="rc-corner br"></span><span class="rc-exh" aria-hidden="true">Sec. 1 — Photograph of specimen</span><div class="rc-photo-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d4a_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d4a_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d4a_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d4a_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d4a_rose" href="#d4a_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d4a_lily" href="#d4a_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d4a_lily" href="#d4a_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d4a_leaf" href="#d4a_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d4a_spark" href="#d4a_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d4a_spark" href="#d4a_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d4a_spark" href="#d4a_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></div><span class="rc-hint" aria-hidden="true">⤢ enlarge</span></div><svg class="rc-stamp" viewBox="0 0 120 120" aria-hidden="true"><defs><path id="d4s_arcT" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/><path id="d4s_arcB" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/></defs><g fill="none" stroke="currentColor"><circle cx="60" cy="60" r="54" stroke-width="2.6"/><circle cx="60" cy="60" r="41" stroke-width="1.1"/></g><g fill="currentColor" font-family="Georgia,serif" font-size="10.5" letter-spacing="2.6"><text><textPath href="#d4s_arcT" startOffset="50%" text-anchor="middle">DEPT. OF SPECIMEN RECORDS</textPath></text><text><textPath href="#d4s_arcB" startOffset="50%" text-anchor="middle">· MUNICIPAL SKY ·</textPath></text></g><g fill="currentColor" text-anchor="middle" font-family="Georgia,serif"><text x="60" y="57" font-size="15" letter-spacing="3" font-weight="bold">FILED</text><text x="60" y="71" font-size="8.5" letter-spacing="1.5">FORM 27-B</text></g></svg></div><input type="checkbox" class="rc-fold" id="fold-d4"><div class="rc-sec"><span>Sec. 2 — The prompt (verbatim)</span><i class="rc-secrule"></i><label class="rc-more" for="fold-d4"><span class="m-open">show full prompt ▾</span><span class="m-less">fold prompt ▴</span></label></div><div class="rc-assign"><p>“The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom”</p></div><div class="rc-sec"><span>Sec. 3 — Annotations</span><i class="rc-secrule"></i></div><table class="rc-subj"><thead><tr><th style="width:47%">Axis</th><th style="width:53%">Verdict</th></tr></thead><tbody><tr><td><span class="rc-subj-name">Instruction following</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-1.3deg"><span class="rc-mark-word">No problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Structural integrity</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r2" aria-hidden="true"><span class="rc-bar-fill" style="width:66.7%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r2" style="--jit:0.9deg"><span class="rc-mark-word">Small problems</span></span></span></td></tr><tr><td><span class="rc-subj-name">Je ne sais quoi</span></td><td><span class="rc-verdict"><span class="rc-bar rc-r3" aria-hidden="true"><span class="rc-bar-fill" style="width:100.0%"></span><span class="rc-bar-tick" style="left:33.3%"></span><span class="rc-bar-tick" style="left:66.7%"></span></span><span class="rc-mark rc-r3" style="--jit:-0.7deg"><span class="rc-mark-word">Has <i>it</i></span></span></span></td></tr></tbody><tfoot><tr><td><span class="rc-avg-l">Overall grade</span></td><td><span class="rc-verdict"><span class="rc-bar rc-g4" aria-hidden="true"><span class="rc-bar-fill" style="width:80.0%"></span><span class="rc-bar-tick" style="left:20.0%"></span><span class="rc-bar-tick" style="left:40.0%"></span><span class="rc-bar-tick" style="left:60.0%"></span><span class="rc-bar-tick" style="left:80.0%"></span></span><span class="rc-mark rc-g4" style="--jit:-1.1deg"><span class="rc-mark-word">Choice</span></span></span></td></tr></tfoot></table><div class="rc-sec"><span>Sec. 4 — Other models, same prompt</span><i class="rc-secrule"></i></div><div class="rc-alts"><button type="button" class="rc-alt is-cur"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 660 570">
+  <defs>
+    <g id="d4t0_rose">
+      <circle cx="0" cy="-14" r="7.5"/>
+      <circle cx="13.3" cy="-4.3" r="7.5"/>
+      <circle cx="8.2" cy="11.3" r="7.5"/>
+      <circle cx="-8.2" cy="11.3" r="7.5"/>
+      <circle cx="-13.3" cy="-4.3" r="7.5"/>
+      <circle cx="0" cy="0" r="6.5"/>
+      <circle cx="0" cy="0" r="2.5"/>
+    </g>
+    <g id="d4t0_leaf">
+      <path d="M0 0C8 -11 24 -10 30 0C22 10 8 10 0 0Z"/>
+      <path d="M4 1C12 -1 21 -2 27 -1"/>
+    </g>
+    <g id="d4t0_spark">
+      <path d="M0 -13C1.5 -3 3 -1.5 13 0C3 1.5 1.5 3 0 13C-1.5 3 -3 1.5 -13 0C-3 -1.5 -1.5 -3 0 -13Z"/>
+    </g>
+    <g id="d4t0_lily">
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(0)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-38)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(76)"/>
+      <path d="M0 -4C-7 -16 -4 -28 0 -33C4 -28 7 -16 0 -4Z" transform="rotate(-76)"/>
+      <circle cx="0" cy="-2" r="5"/>
+    </g>
+  </defs>
+
+  <g fill="none" stroke="#141414" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M10 10L650 10L650 544L628 520L612 504L592 534L570 498L552 528L534 506L512 556L490 512L476 502L456 526L436 508L414 516L398 500L376 534L358 504L342 528L320 494L300 518L286 506L262 558L242 520L226 508L206 536L182 496L160 522L146 504L120 542L96 508L82 528L62 500L44 538L26 512L10 546Z" fill="#f3e3c1" stroke="none"/>
+
+    
+    <path d="M10 546L10 10L650 10L650 544" stroke-width="11"/>
+    <path d="M26 512L26 26L634 26L634 526" stroke-width="5"/>
+
+    
+    <path d="M10 546L26 512L44 538L62 500L82 528L96 508L120 542L146 504L160 522L182 496L206 536L226 508L242 520L262 558L286 506L300 518L320 494L342 528L358 504L376 534L398 500L414 516L436 508L456 526L476 502L490 512L512 556L534 506L552 528L570 498L592 534L612 504L628 520L650 544" stroke-width="7"/>
+
+    
+    <path d="M306 36H354V47H338V63H354V74H306V63H322V47H306Z" stroke-width="6"/>
+
+    
+    <path d="M40 152C66 110 100 94 140 96C200 99 260 110 330 110C400 110 460 99 520 96C560 94 594 110 620 152" stroke-width="6"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(168,100) rotate(-12)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(290,108) rotate(168)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(370,108) rotate(12)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(490,100) rotate(192)"/>
+    </g>
+    <g stroke-width="5">
+      <use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(106,100)"/>
+      <use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(231,104)"/>
+      <use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(429,104)"/>
+      <use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(554,99)"/>
+    </g>
+
+    
+    <path d="M106 122C92 170 104 230 92 300" stroke-width="5.5"/>
+    <path d="M90 344C80 400 96 440 88 517" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(98,175) rotate(195)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(98,250) rotate(-15)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(94,400) rotate(-25)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(88,456) rotate(200)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(90,322)"/></g>
+
+    
+    <path d="M554 122C568 170 556 230 568 300" stroke-width="5.5"/>
+    <path d="M570 344C580 400 564 440 572 499" stroke-width="5.5"/>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(562,175) rotate(-15)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(562,250) rotate(195)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(566,400) rotate(205)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(574,456) rotate(-20)"/>
+    </g>
+    <g stroke-width="5"><use xlink:href="#d4t0_rose" href="#d4t0_rose" transform="translate(570,322)"/></g>
+
+    
+    <g stroke-width="5">
+      <use xlink:href="#d4t0_lily" href="#d4t0_lily" transform="translate(132,474) rotate(-8)"/>
+      <path d="M132 476C129 494 133 508 131 524"/>
+      <use xlink:href="#d4t0_lily" href="#d4t0_lily" transform="translate(520,472) rotate(8)"/>
+      <path d="M520 474C523 492 519 508 521 534"/>
+    </g>
+    <g stroke-width="4.5">
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(130,494) rotate(150)"/>
+      <use xlink:href="#d4t0_leaf" href="#d4t0_leaf" transform="translate(522,492) rotate(30)"/>
+    </g>
+
+    
+    <path d="M330 146C316 126 292 126 288 146C292 166 316 166 330 146C344 126 368 126 372 146C368 166 344 166 330 146Z" stroke-width="7"/>
+
+    
+    <path d="M292 230C288 264 302 296 330 296C358 296 372 264 368 230"/>
+    <path d="M292 230C284 196 302 174 330 174C358 174 376 196 368 230"/>
+    <path d="M296 212C302 228 308 228 314 214C320 230 328 230 334 214C340 230 350 228 356 216C360 222 363 222 366 212" stroke-width="4.5"/>
+    <g stroke-width="4">
+      <path d="M300 196C306 186 314 184 320 189"/>
+      <path d="M326 182C334 178 342 180 346 186"/>
+      <path d="M352 192C356 187 361 187 364 192"/>
+    </g>
+    <path d="M286 234C306 225 354 225 374 234" stroke-width="5"/>
+    <path d="M287 246C307 237 353 237 373 246" stroke-width="5"/>
+    <path d="M291 248C283 244 281 260 290 262" stroke-width="5"/>
+    <path d="M369 248C377 244 379 260 370 262" stroke-width="5"/>
+    <circle cx="313" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <circle cx="347" cy="256" r="4.5" fill="#141414" stroke="none"/>
+    <path d="M330 258C324 268 326 274 333 273" stroke-width="4.5"/>
+    <path d="M317 280C324 288 337 288 344 279" stroke-width="4.5"/>
+
+    
+    <path d="M315 294C314 302 314 308 316 313"/>
+    <path d="M345 294C346 302 346 308 344 313"/>
+    <path d="M306 313C314 326 346 326 354 313" stroke-width="5"/>
+
+    
+    <path d="M306 314C304 310 303 307 302 305"/>
+    <path d="M302 305L246 253L247 258L211 204"/>
+    <path d="M274 335L218 283L217 278L181 224"/>
+    <path d="M211 204L218 200"/>
+    <path d="M181 224L174 228"/>
+    <path d="M218 200C208 216 194 226 174 228"/>
+
+    
+    <path d="M202 178C210 186 210 206 202 212C196 216 186 217 180 215C170 215 165 208 172 204C164 202 163 194 172 192C164 189 166 181 175 182C172 176 194 172 202 178Z"/>
+    <g stroke-width="4">
+      <path d="M180 214C188 211 196 210 202 211"/>
+      <path d="M179 202C187 199 196 198 203 199"/>
+      <path d="M180 190C188 187 196 186 203 187"/>
+    </g>
+
+    
+    <g stroke-width="6">
+      <circle cx="184" cy="128" r="13"/>
+      <circle cx="184" cy="276" r="13"/>
+      <path d="M179 141L179 178"/>
+      <path d="M189 141L189 178"/>
+      <path d="M179 214L179 263"/>
+      <path d="M189 214L189 263"/>
+    </g>
+    <g stroke-width="4">
+      <use xlink:href="#d4t0_spark" href="#d4t0_spark" transform="translate(136,166) scale(0.85)"/>
+      <use xlink:href="#d4t0_spark" href="#d4t0_spark" transform="translate(224,152) scale(0.7)"/>
+      <use xlink:href="#d4t0_spark" href="#d4t0_spark" transform="translate(150,262) scale(0.6)"/>
+    </g>
+
+    
+    <path d="M354 313C378 313 396 318 408 328"/>
+    <path d="M408 328C440 346 462 366 466 418"/>
+    <path d="M390 342C420 362 428 374 428 420"/>
+    <path d="M420 414C430 436 460 436 470 412"/>
+    <path d="M436 436C428 442 428 452 434 456C428 460 430 468 438 466C434 472 438 478 444 474C448 472 450 470 452 468C448 478 447 490 450 494C456 495 459 486 456 476C462 468 466 458 464 448C462 438 446 431 436 436Z"/>
+
+    
+    <path d="M270 340C258 386 256 436 258 470C259 494 259 524 260 554"/>
+    <path d="M398 340C404 386 400 436 398 470C398 482 398 490 398 500"/>
+    <path d="M300 318C268 340 244 372 236 414C231 448 230 476 228 506"/>
+    <path d="M360 318C378 328 392 340 400 350"/>
+    <path d="M300 318C314 344 346 344 360 318" stroke-width="5.5"/>
+    <g stroke-width="4">
+      <path d="M304 358C300 396 302 424 302 444"/>
+      <path d="M356 358C360 396 358 424 358 444"/>
+      <path d="M302 484C302 498 302 508 302 514"/>
+      <path d="M358 484C358 494 358 500 358 504"/>
+    </g>
+
+    
+    <g stroke-width="5.5">
+      <path d="M258 452C290 448 320 450 336 456"/>
+      <path d="M258 476C290 480 322 476 336 468"/>
+      <path d="M336 456C344 458 350 460 356 461"/>
+      <path d="M336 468C344 465 350 462 356 461"/>
+      <path d="M350 452C358 442 376 440 386 450C396 458 393 474 380 479C367 484 354 477 350 470C356 466 356 457 350 452Z"/>
+    </g>
+    <g stroke-width="4">
+      <path d="M352 455L358 459"/>
+      <path d="M352 467L358 463"/>
+      <path d="M280 458L286 464L280 470L274 464Z"/>
+      <path d="M300 457L306 463L300 469L294 463Z"/>
+      <path d="M318 458L324 464L318 470L312 464Z"/>
+    </g>
+    <circle cx="377" cy="452" r="3" fill="#141414" stroke="none"/>
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Opus 5<span class="rc-alt-grade rc-g4">Choice</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460">
+  <defs>
+    <path id="d4t1_petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/>
+    <path id="d4t1_lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/>
+    <path id="d4t1_leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/>
+    <path id="d4t1_paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/>
+    <clipPath id="d4t1_paperClip">
+      <use href="#d4t1_paperShape"/>
+    </clipPath>
+  </defs>
+
+  <use href="#d4t1_paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d4t1_paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+
+    
+    <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" />
+    <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" />
+
+    <g transform="translate(78,178) rotate(20)"><use href="#d4t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(44,248) rotate(200)"><use href="#d4t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(522,178) rotate(160)"><use href="#d4t1_leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(556,248) rotate(-20)"><use href="#d4t1_leaf"/><path d="M0,0 L16,0"/></g>
+
+    
+    <g transform="translate(65,58)">
+      <use href="#d4t1_petal"/>
+      <use href="#d4t1_petal" transform="rotate(72)"/>
+      <use href="#d4t1_petal" transform="rotate(144)"/>
+      <use href="#d4t1_petal" transform="rotate(216)"/>
+      <use href="#d4t1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+    <g transform="translate(535,58)">
+      <use href="#d4t1_petal"/>
+      <use href="#d4t1_petal" transform="rotate(72)"/>
+      <use href="#d4t1_petal" transform="rotate(144)"/>
+      <use href="#d4t1_petal" transform="rotate(216)"/>
+      <use href="#d4t1_petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+
+    
+    <g transform="translate(50,388)">
+      <use href="#d4t1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d4t1_lilypetal"/>
+      <use href="#d4t1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+    <g transform="translate(550,388)">
+      <use href="#d4t1_lilypetal" transform="rotate(-25)"/>
+      <use href="#d4t1_lilypetal"/>
+      <use href="#d4t1_lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+
+    
+    <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/>
+
+    
+    <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/>
+    <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/>
+    <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+    <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+
+    
+    <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/>
+
+    
+    <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/>
+    <path d="M168,417 L168,428 M160,430 L176,430"/>
+    <path d="M193,398 L193,424" />
+    <circle cx="193" cy="396" r="3"/>
+    <circle cx="300" cy="415" r="20"/>
+    <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/>
+    <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/>
+    <circle cx="430" cy="408" r="3"/>
+
+    
+    <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/>
+    <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/>
+
+    
+    <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/>
+
+    
+    <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/>
+    <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/>
+    <circle cx="369" cy="298" r="1.6" fill="#161616"/>
+    <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/>
+
+    
+    <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/>
+    <circle cx="186" cy="392" r="10" fill="#fffdf6"/>
+    <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/>
+
+    
+    <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/>
+    <circle cx="401" cy="46" r="13" fill="#fffdf6"/>
+    <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/>
+
+    
+    <path d="M398,42 L398,14 M406,42 L406,14"/>
+    <circle cx="402" cy="44" r="3"/>
+    <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/>
+
+    
+    <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/>
+    <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/>
+    <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/>
+    <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/>
+
+    
+    <circle cx="288" cy="104" r="4" fill="#161616"/>
+    <circle cx="312" cy="104" r="4" fill="#161616"/>
+    <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/>
+    <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/>
+    <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/>
+    <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/>
+
+  </g>
+</svg></span><span class="rc-alt-cap">Claude Sonnet 5<span class="rc-alt-grade rc-g1">Utility</span></span></button><button type="button" class="rc-alt"><span class="rc-alt-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 468">
+  <defs>
+    <path id="d4t2_card" d="M10 40 Q10 12 38 12 L482 12 Q510 12 510 40 L510 405 L480 436 L455 412 L430 448 L402 420 L372 454 L345 424 L315 450 L288 418 L258 452 L230 424 L200 455 L172 428 L145 456 L118 430 L90 452 L62 424 L35 446 L10 428 Z"/>
+    <clipPath id="d4t2_clip"><use href="#d4t2_card"/></clipPath>
+    <g id="d4t2_rose" fill="#fff" stroke="#000" stroke-width="3.5">
+      <circle cx="0" cy="-12" r="8.5"/>
+      <circle cx="11.4" cy="-3.7" r="8.5"/>
+      <circle cx="7.1" cy="9.7" r="8.5"/>
+      <circle cx="-7.1" cy="9.7" r="8.5"/>
+      <circle cx="-11.4" cy="-3.7" r="8.5"/>
+      <circle cx="0" cy="0" r="5.5"/>
+    </g>
+    <path id="d4t2_star" d="M0 -11 L2.6 -2.6 L11 0 L2.6 2.6 L0 11 L-2.6 2.6 L-11 0 L-2.6 -2.6 Z"/>
+    <path id="d4t2_leaf" d="M-11 0 Q0 -8 11 0 Q0 8 -11 0 Z"/>
+  </defs>
+
+  <use href="#d4t2_card" fill="#fff" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+
+  <g clip-path="url(#d4t2_clip)" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 470 L32 56 Q32 34 54 34 L466 34 Q488 34 488 56 L488 470" stroke-width="4"/>
+    <path d="M246 52 L274 52 M260 52 L260 88 M246 88 L274 88" stroke-width="5.5"/>
+    <path d="M34 118 C100 150 175 102 260 126 C345 102 420 150 486 118" stroke-width="4"/>
+    <use href="#d4t2_leaf" transform="translate(170 113) rotate(-18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d4t2_leaf" transform="translate(350 113) rotate(18)" fill="#fff" stroke-width="3.5"/>
+    <use href="#d4t2_rose" transform="translate(100 131)"/>
+    <use href="#d4t2_rose" transform="translate(260 124)"/>
+    <use href="#d4t2_rose" transform="translate(420 131)"/>
+    <path d="M260 166 C248 148 222 148 222 166 C222 184 248 184 260 166 C272 148 298 148 298 166 C298 184 272 184 260 166" stroke-width="5"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(110 100) scale(0.8)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(190 78) scale(0.6)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(95 200) scale(0.9)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(72 305) scale(0.7)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(108 385) scale(0.75)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(415 210) scale(1.1)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(448 300) scale(0.75)"/>
+    <use href="#d4t2_star" fill="#fff" stroke-width="3.5" transform="translate(385 398) scale(0.7)"/>
+    <path d="M230 256 Q260 244 290 256 L335 470 L205 470 Z" fill="#fff" stroke-width="5"/>
+    <path d="M244 262 L236 470 M276 262 L284 470" stroke-width="4"/>
+    <path d="M248 258 L260 274 L272 258" stroke-width="4"/>
+    <circle cx="260" cy="372" r="17" fill="#fff" stroke-width="4.5"/>
+    <circle cx="272" cy="360" r="5.5" fill="#fff" stroke-width="3.5"/>
+    <circle cx="273.5" cy="359" r="1.4" fill="#000" stroke="none"/>
+    <rect x="143.5" y="96" width="13" height="108" rx="6.5" fill="#fff" stroke-width="4.5"/>
+    <path d="M243 252 L168 140 L152 158 L225 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M176 152 L160 170" stroke-width="4"/>
+    <circle cx="158" cy="150" r="13" fill="#fff" stroke-width="4.5"/>
+    <path d="M300 252 L358 344 L340 358 L283 272 Z" fill="#fff" stroke-width="5"/>
+    <path d="M350 332 L333 346" stroke-width="4"/>
+    <path d="M352 350 L352 392" stroke-width="5"/>
+    <circle cx="352" cy="356" r="11" fill="#fff" stroke-width="4.5"/>
+    <circle cx="260" cy="218" r="31" fill="#fff" stroke-width="5"/>
+    <path d="M231 206 Q260 196 289 206 M236 199 Q260 190 284 199" stroke-width="3.5"/>
+    <path d="M231 206 Q220 213 226 224 M289 206 Q300 213 294 224" stroke-width="3.5"/>
+    <circle cx="247" cy="216" r="3" fill="#000" stroke="none"/>
+    <circle cx="273" cy="216" r="3" fill="#000" stroke="none"/>
+    <path d="M246 231 Q260 242 274 231" stroke-width="4"/>
+    <circle cx="238" cy="227" r="3.2" stroke-width="2.5"/>
+    <circle cx="282" cy="227" r="3.2" stroke-width="2.5"/>
+  </g>
+
+  <use href="#d4t2_card" fill="none" stroke="#000" stroke-width="7" stroke-linejoin="round"/>
+</svg></span><span class="rc-alt-cap">Claude Fable 5<span class="rc-alt-grade rc-g3">Select</span></span></button></div><div class="rc-foot"><a class="rc-dl" href="#" title="download the SVG as generated">Download SVG ⤓</a><span class="rc-no">No. 2026-07-29-torn-magician</span></div></div></article></div></div><div class="demo-tag">Demo 4 · phone width (390px frame)</div></section>
+
+<section class="notes" id="notes">
+  <h2>Design notes — 13B “Form 27-B”</h2>
+
+  <h3>The idea</h3>
+  <p>The old card was two fictions stapled together: office paperwork above and below, a neon
+  exhibition plate in the middle. 13B commits to one: everything is <b>Form 27-B</b>, a single
+  sheet of cream form paper. The artwork stops being a stage and becomes <b>evidence</b> — a
+  photograph attached to the record. The display container is a photo-lab print backing: paper a
+  shade lighter than the form (<code>#f8f3e2</code>), ruled with a faint engineering grid in a pale
+  blueprint dilution of the form ink (<code>rgba(74,98,138, .17/.07)</code>, 45px majors over 9px
+  minors) — graph paper, not neon. Four kraft photo corners hold the print; a small drop shadow
+  (<code>0 4px 10px -3px</code>) floats it a millimetre off the sheet, and a faint rotated FILED
+  stamp (<code>opacity .30</code>, <code>mix-blend-mode: multiply</code>) overlaps its lower corner. That shadow
+  and stamp are the only depth cues — no dark plate anywhere, bold in character, restrained in palette.</p>
+
+  <h3>Structure (all shipped content, nothing added)</h3>
+  <ul>
+    <li>Header band: FORM 27-B box · department line · REV — then the specimen title as the
+      form’s <em>subject of record</em> (letterspaced serif caps on a rule).</li>
+    <li>MODEL / PROMPTED / PROCESS / SIZE as one row of four ruled fill-in boxes, label printed
+      in the box corner, value typed (2×2 on phones).</li>
+    <li>Sec. 1 — the photograph (the enlarge handle, <code>role="button"</code>, ⤢ hint bottom-right,
+      hint ink-coloured now that the ground is paper).</li>
+    <li>Sec. 2 — the prompt, verbatim, mono, quoted, with the fold (below).</li>
+    <li>Sec. 3 — annotations table, Axis 47% / Verdict 53%, 3-segment gauges + hand-inked verdict
+      words in the earned pencil colours; OVERALL GRADE footer row with the 5-segment gauge.</li>
+    <li>Sec. 4 — other models, same prompt (hidden when there is one response; 2-up visitor
+      variant in demo 3). Compact evidence chips — thumbnail left, model label + coloured grade
+      word right — one ~38px row instead of the old two-deck stack (vertical room is the game).
+      Phones re-stack the chips vertically.</li>
+    <li>Foot: Download SVG ⤓ · No. &lt;id&gt;. Close ✕ absolute top-right, never scrolls away.</li>
+  </ul>
+
+  <h3>How the fit contract is met (the reason round 13 exists)</h3>
+  <ul>
+    <li><b>Scrim reserves the banner:</b> <code>.jd-record-scrim { top: var(--banner-h) }</code>
+      (56px) instead of <code>inset: 0</code>. The banner can no longer draw over the title or ✕.</li>
+    <li><b>Card cap:</b> the scrim keeps <code>padding: clamp(4px, 1.2vh, 14px) 14px</code> and the card is
+      <code>max-height: 100%</code> of it with <code>box-sizing: border-box</code> — i.e.
+      <code>calc(100dvh − 56px − 2×pad)</code>. Use <code>dvh</code> in production so phone URL bars are honest.</li>
+    <li><b>vh-aware photo box:</b> <code>height: clamp(200px, 34vh, 340px)</code> replaces the width-driven
+      <code>aspect-ratio: 10/9</code> plate. At 680px viewports the photo is ~231px (was ~465px) and the
+      artwork letterboxes inside it; at tall desktops it stops at 340px.</li>
+    <li><b>The fold:</b> the prompt <code>&lt;p&gt;</code> clamps at 3 lines
+      (<code>-webkit-line-clamp: 3</code>); a hidden checkbox + label in the Sec. 2 head row
+      (“show full prompt ▾ / fold prompt ▴”) releases it. <b>No nested scroller</b> — the old
+      <code>max-height: 7.4em; overflow-y: auto</code> box is gone. When expanded, the card’s ONE
+      scroller absorbs the excess (demo 2, second frame).</li>
+    <li><b>Result:</b> at 1280×680 the whole form — header to footer — is visible with no internal
+      scrollbar for a normal prompt, three-model strip included (verified by headless screenshots at
+      1280×800 and 1280×680; note headless <code>--window-size=1280,680</code> actually yields a 593px
+      inner viewport — ~87px goes to phantom browser UI — so the fit was proven at 593px usable,
+      i.e. with margin to spare on a real 680px screen).</li>
+  </ul>
+
+  <h3>Integration watch-outs</h3>
+  <ul>
+    <li><b>Expander is pure CSS</b> (checkbox-label, no JS): <code>cardHTML</code> should emit the
+      checkbox + label only when the prompt overflows 3 lines — measure after render
+      (<code>p.scrollHeight &gt; p.clientHeight</code>) or approximate by character count (&gt;≈230 chars
+      at desktop width). A label on a never-overflowing prompt is a dead control.</li>
+    <li><b>The checkbox must precede the Sec. 2 head</b> in DOM order — the CSS uses the general
+      sibling combinator (<code>.rc-fold:checked ~ …</code>).</li>
+    <li><b>floorSVG() is orphaned</b> in the card, but the ENLARGEMENT layer
+      (<code>.jd-record-zoom</code>, a body child above the banner) still uses it — decide whether the
+      zoom keeps the vaporwave floor or gets a big graph-paper mount to match. This mockup assumes
+      the zoom is restyled to match, but did not redesign it.</li>
+    <li><b>Hint/exhibit colours flipped</b> from paper-on-black to ink-on-paper — the shipped
+      <code>.rc-plate-hint</code> colour values don’t survive the move.</li>
+    <li><b>Stamp + corners are decoration:</b> <code>aria-hidden</code>, <code>pointer-events: none</code>
+      (corners sit inside the <code>role="button"</code> mount, so clicks still enlarge).</li>
+    <li><b>Alt-strip caption is one line</b> (model + grade, ellipsized) to buy vertical room; on
+      phones it re-wraps to two lines by class — in production keep that inside the existing
+      <code>@media (max-width: 480px)</code> block.</li>
+    <li><b>Mockup vs production geometry:</b> frames here use <code>position: absolute</code> +
+      <code>100vh</code> sections to fake viewports; production keeps <code>position: fixed</code> and
+      <code>100dvh</code>. The phone demo is a 390px class-based frame (headless Chromium refuses
+      sub-500px windows), mirroring the 480px media query.</li>
+    <li><b>Type sizes tightened</b> (~0.44–0.62rem across the furniture) to buy the fit — worth an
+      owner squint on a real monitor before adoption.</li>
+    <li><b>The table-strut trap:</b> the annotation rows only got short after
+      (a) <code>td { line-height: 1 }</code> and (b) making <code>.rc-verdict</code> a block-level
+      <code>flex</code> with <code>height: 12px; overflow: visible</code> — an inline-level verdict span
+      lets the td's inherited 1rem strut set every row to ~21px, and the hand font's fallback
+      metrics make it worse. Keep both when porting or the card silently grows ~25px.</li>
+    <li>Grain/mottle data-URIs are carried over verbatim (<code>stitchTiles="stitch"</code> — never reseed).</li>
+  </ul>
+</section>
+
+</body>
+</html>
