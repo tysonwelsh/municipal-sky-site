@@ -1030,14 +1030,14 @@ html.jd-record-open { overflow: hidden; }
 
 /* the two columns: exhibit left, paperwork right. The wrappers are layout
    only — under 700px they go display:contents and the DOM's source order
-   reads as the portrait flow. The footer's margin-top:auto closes both
-   columns on one baseline, like a ledger. */
+   reads as the portrait flow. The folded prompt is the column's springy
+   row (below): it absorbs the slack a tall photograph leaves, so the two
+   columns close together. */
 .rc-col-l { grid-area: left; min-width: 0; display: flex; flex-direction: column; }
 .rc-col-r {
   grid-area: right; min-width: 0; display: flex; flex-direction: column;
   border-left: 1px solid var(--form-rule-2); padding-left: 20px;
 }
-.rc-col-r .rc-prov { margin-top: auto; }
 
 /* ---- masthead: the item title, once, across both columns ----------------- */
 .rc-masthead {
@@ -1060,17 +1060,23 @@ html.jd-record-open { overflow: hidden; }
    (.rc-fillsline) retired with SIZE on the same call. */
 .rc-notes {
   position: absolute; left: 4.5%; bottom: 4%; z-index: 2;
+  max-width: 64%;          /* clear of the DOWNLOAD button's corner */
   display: flex; flex-direction: column; gap: 1px;
   pointer-events: none;    /* the photograph stays one whole enlarge target */
 }
-.rc-note-line { display: flex; align-items: baseline; gap: 0.5em; }
+.rc-note-line { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
 .rc-note-l {
+  flex: 0 0 auto;
   font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.15em;
   text-transform: uppercase; color: var(--form-ink-2);
   min-width: 4.6em;
   text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
 }
+/* values hold one line and ellipsize rather than run under the DOWNLOAD
+   button in the opposite corner */
 .rc-note-v {
+  flex: 0 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
   text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
 }
@@ -1138,15 +1144,26 @@ html.jd-record-open { overflow: hidden; }
    carries the affordance on touch, where nothing hovers. */
 .rc-plate { cursor: zoom-in; }
 .rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-.rc-plate-hint {
-  position: absolute; right: 8px; bottom: 6px; z-index: 2;
-  pointer-events: none;
-  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.17em;
-  text-transform: uppercase; color: rgba(55, 65, 79, 0.5);
-  transition: color 0.18s ease;
+/* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
+   2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
+   it), wearing the specimen tag's button tailoring: hairline border, 3px
+   radius, cream fill, a 1px press shadow. The card's click/key handlers
+   exempt it from the plate's zoom. */
+.rc-dl {
+  position: absolute; right: 8px; bottom: 8px; z-index: 3;
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e;
+  border: 1px solid var(--form-rule); border-radius: 3px;
+  padding: 0.42em 0.7em 0.38em;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
 }
-.rc-plate:hover .rc-plate-hint,
-.rc-plate:focus-visible .rc-plate-hint { color: var(--form-ink); }
+.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-dl:active { box-shadow: none; transform: translateY(1px); }
+.rc-dl:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
@@ -1247,14 +1264,33 @@ html.jd-record-open { overflow: hidden; }
   text-indent: -0.52em; padding-left: 0.52em;
 }
 .rc-can-fold:not(.is-open) p {
-  max-height: 4.5em;      /* exactly 3 lines of the 1.5 line-height */
+  max-height: 4.5em;      /* 3 lines of the 1.5 line-height — the floor */
   overflow: hidden;
-  /* the third line dissolves rather than guillotines — the fold's tell */
-  -webkit-mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.3));
-          mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.3));
+  /* the cut dissolves to nothing over the last stretch — a fade-out, not
+     a guillotine (owner rev, 2026-08-13) */
+  -webkit-mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.5) 82%, rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 55%, rgba(0, 0, 0, 0.5) 82%, rgba(0, 0, 0, 0) 100%);
+}
+/* in landscape the folded prompt is the column's springy row (owner rev,
+   2026-08-13 — the text "fills the space available to it"): a tall
+   photograph leaves the right column slack, and instead of dead air under
+   a 3-line cut, the fold stretches into that slack and fades out where it
+   ends. flex-basis 0 is load-bearing: basis auto would start from the
+   prompt's FULL height and defeat the fold whenever the right column is
+   the taller one. The 4.5em floor keeps short columns at the 3-line fold. */
+@media (min-width: 701px) {
+  .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) {
+    display: flex; flex-direction: column;
+    flex: 1 1 auto; min-height: 0;
+  }
+  .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) p {
+    flex: 1 1 0; min-height: 4.5em; max-height: none;
+  }
 }
 .rc-pv {
   display: inline-block; margin-top: 3px; cursor: pointer;
+  align-self: flex-start;   /* the folded block is a flex column in
+                               landscape — keep the expander left */
   border: 0; background: none; padding: 0 0 1px; margin-left: 0;
   font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.17em;
   text-transform: uppercase; color: var(--form-ink-2);
@@ -1405,27 +1441,8 @@ tr.rc-axdesc td {
   text-transform: none; letter-spacing: 0;
 }
 
-/* ---- the card foot: download + accession no. ---------------------------- */
-.rc-prov {
-  margin-top: 0.52rem; padding-top: 0.34rem;
-  border-top: 1px solid var(--form-rule-2);
-}
-.rc-formline {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 0.8em;
-  font-family: var(--rc-mono); font-size: 0.48rem; letter-spacing: 0.13em;
-  text-transform: uppercase; color: #918a76;
-}
-.rc-formline .rc-formno { text-align: right; line-height: 1.5; }
-.rc-dl {
-  display: inline-block;
-  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.15em;
-  text-transform: uppercase; text-decoration: none; white-space: nowrap;
-  color: #46505e; border: 1px solid var(--form-rule);
-  padding: 0.34em 0.8em;
-  background: rgba(255, 250, 232, 0.5);
-}
-.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+/* (the card foot — download + accession no. — retired 2026-08-13: the
+   DOWNLOAD button rides the photograph and the file number its notes) */
 
 /* ---- small screens ------------------------------------------------------- */
 /* under 700px the card stacks back to the single-column portrait flow:
@@ -1455,7 +1472,6 @@ tr.rc-axdesc td {
   table.rc-subj td, table.rc-subj tfoot td { padding: 0.13em 0.5em 0.17em; }
   .rc-alt-art { height: 30px; }
   .rc-alt { padding: 3px 4px 4px; }
-  .rc-prov { padding-top: 0.28rem; }
 }
 @media (max-width: 480px) {
   .jd-record-scrim { padding: 10px 8px; }
