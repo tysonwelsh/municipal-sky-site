@@ -2512,7 +2512,15 @@ function JD_layerOpen() {
       (gen.mode === 'refined'
         ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
           '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
-        : '');
+        : '') +
+      /* the file number rides the notes too (owner rev, 2026-08-13 — the
+         card's footer line retired with it) */
+      '<span class="rc-note-line"><span class="rc-note-l">No.</span>' +
+      '<span class="rc-note-v">' + esc(entry.id) + '</span></span>';
+    /* the photograph stays the enlarge control (role/tabindex, whole
+       surface); its corner carries the DOWNLOAD SVG button — the "⤢
+       enlarge" hint retired for it (owner rev, 2026-08-13). The click/key
+       handlers in build() exempt .rc-dl so a download never also zooms. */
     h += '<div class="rc-col-l">' +
       '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
       'aria-label="Enlarge the artwork">' +
@@ -2522,7 +2530,9 @@ function JD_layerOpen() {
       svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
       '<div class="rc-notes">' + notes + '</div>' +
-      '<span class="rc-plate-hint" aria-hidden="true">⤢ enlarge</span>' +
+      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
+      esc(entry.id) + '.svg" title="download the SVG as generated">' +
+      'DOWNLOAD SVG ⤓</a>' +
       '</div></div>';
     /* the prompt renders foldable; render() measures it after paint and
        strips the fold when it actually fits three lines — so the expander
@@ -2541,13 +2551,9 @@ function JD_layerOpen() {
       h += '<div class="rc-block rc-head">Other models, same prompt</div>' +
         '<div class="rc-block">' + alts + '</div>';
     }
-    h += '<div class="rc-block rc-prov"><div class="rc-formline">' +
-      '<span><a class="rc-dl" href="' + esc(resp.url) + '" download="' +
-      esc(entry.id) + '.svg" title="download the SVG as generated">' +
-      'Download SVG ⤓</a></span>' +
-      '<span class="rc-formno">No. ' + esc(entry.id) + '</span>' +
-      '</div></div></div>';
-    return h;
+    /* (no footer any more: the download button lives on the photograph and
+       the file number in its margin notes — owner rev, 2026-08-13) */
+    return h + '</div>';
   }
 
   /* the enlargement's contents: the SAME response the card is showing, on
@@ -2626,6 +2632,8 @@ function JD_layerOpen() {
     });
     scrim.querySelector('.jd-record-close').addEventListener('click', close);
     scrollEl.addEventListener('click', function (e) {
+      /* the DOWNLOAD button rides ON the plate: it must never also zoom */
+      if (e.target.closest && e.target.closest('.rc-dl')) return;
       if (e.target.closest && e.target.closest('.rc-plate')) {
         openZoom(e.target.closest('.rc-plate'));
         return;
@@ -2663,6 +2671,8 @@ function JD_layerOpen() {
        preventDefault'd or the card scrolls out from under the enlargement */
     scrollEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      /* Enter on the focused DOWNLOAD link is the download, not the zoom */
+      if (e.target.closest && e.target.closest('.rc-dl')) return;
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
       if (!p) return;
       e.preventDefault();
