@@ -1568,6 +1568,22 @@ tr.rc-axdesc td {
      a stamp pad does (mean ~0.82 — pressed, never illegible) */
   --tspeck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='s' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.75' numOctaves='4' seed='5'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 0.22'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23s)'/%3E%3C/svg%3E");
 
+  /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
+     spacing scale for the whole form, named so the next new row reaches for
+     a token instead of inventing a 6th font-size. Every value below is used
+     more than once in the rules that follow — that repetition is the point:
+     a size that only ever appears once doesn't belong in the ladder, it's
+     a display size (the likert's A/B, the big stamps) and stays literal. */
+  --t-micro: 0.44rem;   /* form-nos, stamp small print, the tersest labels */
+  --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
+  --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
+  --t-lead: 0.78rem;    /* the one input field — leave it alone */
+  --t-title: 0.86rem;   /* the masthead heading — leave it alone */
+  --sp-1: 4px;           /* tight — icon-to-label gaps, row internal padding */
+  --sp-2: 8px;           /* default — label-to-control, masthead padding */
+  --sp-3: 14px;          /* between rows/blocks */
+  --sp-4: 22px;          /* between sections */
+
   position: fixed; inset: 0; z-index: 322;
   display: none;
   align-items: center; justify-content: center;
@@ -1620,13 +1636,18 @@ html.jd-turn-open { overflow: hidden; }
   background-image: var(--tmottle); background-size: 420px 420px;
 }
 /* the boxed ✕ — the record card's control language (a 26px printed box
-   centred in a 44px target, so the box can stay form-sized) */
+   centred in a 44px target, so the box can stay form-sized). F1 (round-16):
+   this used to be position:absolute against the whole CARD while the
+   masthead centred its own row independently — two unrelated coordinate
+   frames that happened to disagree by 7.6px. It is now a plain flex child
+   of .jd-turn-head, on the SAME line as the title, so it shares the title's
+   centerline by construction instead of by luck. */
 .jd-turn-close {
-  position: absolute; top: 3px; right: 3px; z-index: 8;
+  flex: 0 0 auto; z-index: 8;
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--tmono); font-size: 0.86rem; line-height: 1;
+  font-family: var(--tmono); font-size: var(--t-title); line-height: 1;
   color: var(--tink);
 }
 .jd-turn-close span {
@@ -1641,17 +1662,28 @@ html.jd-turn-open { overflow: hidden; }
    A form number, the heading, and (only when the bureau has done something)
    a box stamp. This is the entire surviving "form band": no docket, no
    routing strip, no narration. It sits OUTSIDE the scroller, so the sheet's
-   identity never scrolls away from the words it names. */
+   identity never scrolls away from the words it names.
+   THE MASTHEAD RULE (F1): everything on this row — form-no, heading, box
+   stamp, and the ✕ — is a flex child of ONE row (.jd-turn-head,
+   align-items: center). Nothing in it is positioned outside that row's own
+   box model. The heading and the stamp/formno live in .jd-turn-headline (a
+   nested flex row, because paint() replaces just its innerHTML on every
+   state change); the ✕ is the row's one static, never-replaced child, so a
+   future edit to the head's content can never orphan its click handler. */
 .jd-turn-head {
   position: relative; z-index: 4; flex: 0 0 auto;
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 52px 7px 16px;
+  padding: var(--sp-2) 16px;    /* F5: 8px/8px, not the old 8px/7px accident */
   border-bottom: 1.5px solid var(--trule);
   background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
 }
+.jd-turn-headline {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+}
 .jd-turn-formno {
   flex: 0 0 auto; align-self: flex-start; margin-top: 2px;
-  font-family: var(--tform); font-weight: 700; font-size: 0.48rem;
+  font-family: var(--tform); font-weight: 700; font-size: var(--t-micro);
   letter-spacing: 0.1em; color: var(--tink-2); white-space: nowrap;
   border: 1px solid rgba(48, 34, 12, 0.5); padding: 2px 5px 1px;
 }
@@ -1662,12 +1694,12 @@ html.jd-turn-open { overflow: hidden; }
    the ring would be noise rather than a keyboard cue. */
 .jd-turn-title {
   flex: 1 1 auto; min-width: 0; margin: 0;
-  font-family: var(--tform); font-weight: 700; font-size: 0.86rem;
+  font-family: var(--tform); font-weight: 700; font-size: var(--t-title);
   letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
   color: var(--tink);
 }
 .jd-turn-title:focus { outline: none; }
-.jd-turn-head .jd-turn-stamp { flex: 0 0 auto; margin-left: auto; }
+.jd-turn-headline .jd-turn-stamp { flex: 0 0 auto; margin-left: auto; }
 
 /* ---- the body: the one scroller ------------------------------------------ */
 .jd-turn-scroll {
@@ -1684,7 +1716,7 @@ html.jd-turn-open { overflow: hidden; }
    and the Call, the two cards where the visitor is working, carry none. */
 .jd-turn-line {
   margin: 0 0 0.6rem;
-  font-family: var(--tmono); font-size: 0.68rem; line-height: 1.5;
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
   color: var(--tink-2);
 }
 .jd-turn-line b { color: var(--tink); font-weight: 700; }
@@ -1694,16 +1726,26 @@ html.jd-turn-open { overflow: hidden; }
   background: rgba(255, 250, 232, 0.62);
   border-left: 3px solid var(--tred);
   border-top: 1px solid var(--trule-2); border-bottom: 1px solid var(--trule-2);
-  font-size: 0.66rem; line-height: 1.5; color: var(--tink-2);
+  font-size: var(--t-body); line-height: 1.5; color: var(--tink-2);
 }
-/* the disclosure, as the form's small print (its gating card retired
-   2026-08-14) — present, honest, and not a wall */
+/* the form's small print. Round 16 kept JD_CONSENT.text printed here
+   verbatim (OVERRIDE 3) and just tightened the typography; round 17 (owner
+   call, 2026-08-14) stopped printing it at all — privacy.php §4 already
+   quotes those words live, so the card now carries one linked line instead
+   of the full paragraph. The class stays: still quiet fine print, still a
+   lighter rule than the rest of the card. */
 .jd-turn-fine {
-  margin: 0.8rem 0 0; padding-top: 0.45rem;
+  margin: var(--sp-3) 0 0; padding-top: var(--sp-2);
   border-top: 1px solid var(--trule-2);
-  font-size: 0.55rem; line-height: 1.65; letter-spacing: 0.02em;
+  font-size: var(--t-label); line-height: 1.5; letter-spacing: 0.02em;
   color: var(--tink-2);
 }
+/* the one link on the card: reads as a link within the paper fiction (ink
+   underline, darkens on hover) rather than a UI-blue affordance that would
+   break it */
+.jd-turn-link { color: var(--tink-2); text-decoration: underline; text-decoration-color: var(--tink-2); }
+.jd-turn-link:hover { color: var(--tink); text-decoration-color: var(--tink); }
+.jd-turn-link:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- BOX 1: the requester's own field ------------------------------------ */
 .jd-turn-fieldwrap { position: relative; }
@@ -1725,7 +1767,7 @@ html.jd-turn-open { overflow: hidden; }
 /* the character count, seated INSIDE the field like a form's printed counter */
 .jd-turn-count {
   position: absolute; left: 7px; bottom: 7px;
-  font-family: var(--tform); font-size: 0.5rem; letter-spacing: 0.14em;
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.14em;
   text-transform: uppercase; color: var(--tink-2);
   background: rgba(255, 252, 240, 0.9);
   border: 1px solid var(--trule-2); padding: 1px 5px 0;
@@ -1743,12 +1785,14 @@ html.jd-turn-open { overflow: hidden; }
 /* ---- actions: brass forward, paper otherwise ----------------------------- */
 .jd-turn-actions {
   position: relative;
-  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-  margin-top: 0.7rem;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);
+  margin-top: var(--sp-3);
 }
 .jd-turn-go, .jd-turn-alt {
-  min-height: 44px; padding: 0 1.1rem;
-  font-family: var(--tmono); font-size: 0.66rem;
+  /* OVERRIDE 2: touch floor, not a universal one — see the coarse-pointer
+     query near .jd-row below, which restores 44px wherever it's needed. */
+  min-height: 34px; padding: 0 1.1rem;
+  font-family: var(--tmono); font-size: var(--t-body);
   letter-spacing: 0.16em; text-transform: uppercase;
   border: 1px solid rgba(58, 40, 14, 0.6);
   cursor: pointer;
@@ -1804,7 +1848,7 @@ html.jd-turn-open { overflow: hidden; }
   border: 1.6px solid var(--tstamp);
   outline: 1px solid var(--tstamp); outline-offset: 2px;
   font-family: var(--tform); font-weight: 700;
-  font-size: 0.48rem; letter-spacing: 0.18em; text-transform: uppercase;
+  font-size: var(--t-micro); letter-spacing: 0.18em; text-transform: uppercase;
   line-height: 1.35; white-space: nowrap;
   opacity: 0.9; mix-blend-mode: multiply;
   transform: rotate(-2.2deg);
@@ -1813,7 +1857,7 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-turn-stamp small {
   font-family: var(--tmono); font-weight: 400;
-  font-size: 0.4rem; letter-spacing: 0.12em;
+  font-size: var(--t-micro); letter-spacing: 0.12em;
 }
 /* the big stamp that lies ACROSS the card — and is allowed to cross the
    type, because a stamp that dodged the words would not be a stamp */
@@ -1826,7 +1870,7 @@ html.jd-turn-open { overflow: hidden; }
   font-size: 1.05rem; letter-spacing: 0.24em; padding: 7px 18px 5px;
   border-width: 3px; opacity: 0.66;
 }
-.jd-turn-stamp--across small { font-size: 0.5rem; letter-spacing: 0.2em; }
+.jd-turn-stamp--across small { font-size: var(--t-label); letter-spacing: 0.2em; }
 
 /* ============================================================================
    THE DARKROOM — two slots, two states. No table, no headers, no assignment
@@ -1837,12 +1881,12 @@ html.jd-turn-open { overflow: hidden; }
   display: flex; align-items: center; gap: 0.7em;
   padding: 0.34rem 0.1rem;
   border-bottom: 1px solid var(--trule-2);
-  font-size: 0.7rem;
+  font-size: var(--t-body);
 }
 .jd-turn-slots li:first-child { border-top: 1px solid var(--trule-2); }
 .jd-turn-slots > li > b {
   flex: 0 0 auto; width: 1.5rem; text-align: center;
-  font-family: var(--tform); font-size: 0.62rem; font-weight: 700;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
   letter-spacing: 0.1em;
   border: 1px solid var(--trule-2); background: rgba(255, 250, 232, 0.5);
   padding: 1px 0 0;
@@ -1869,7 +1913,7 @@ html.jd-turn-open { overflow: hidden; }
   margin: 0.6rem 0 0; padding: 0.4rem 0.6rem;
   border: 1px dashed var(--trule);
   background: rgba(255, 250, 232, 0.4);
-  font-size: 0.63rem; line-height: 1.5; font-style: italic; color: var(--tink-2);
+  font-size: var(--t-body); line-height: 1.5; font-style: italic; color: var(--tink-2);
 }
 
 /* ============================================================================
@@ -1909,7 +1953,7 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-plate figcaption {
   margin-top: 0.35rem; padding-top: 0.2rem;
   border-top: 1px solid var(--trule-2);
-  font-family: var(--tform); font-size: 0.68rem; font-weight: 700;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--tink);
 }
 
@@ -1918,10 +1962,14 @@ html.jd-turn-open { overflow: hidden; }
    ========================================================================== */
 .jd-rail { display: flex; gap: 6px; margin: 0 0 0.6rem; }
 .jd-rail-step {
-  flex: 1 1 0; min-width: 0; min-height: 44px;
+  /* OVERRIDE 2 (round-16): 44px is a TOUCH floor, not a universal one — see
+     the same note on .jd-row below. Compressed by default; the coarse-
+     pointer/mobile media queries at the foot of this file restore the
+     floor wherever a finger, not a cursor, has to land on it. */
+  flex: 1 1 0; min-width: 0; min-height: 34px;
   display: flex; align-items: center; justify-content: center; gap: 0.45em;
   padding: 0.3rem 0.4rem;
-  font-family: var(--tform); font-size: 0.52rem;
+  font-family: var(--tform); font-size: var(--t-label);
   letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--tink-3);
   background: rgba(255, 250, 232, 0.35);
@@ -1929,7 +1977,7 @@ html.jd-turn-open { overflow: hidden; }
   cursor: pointer; white-space: nowrap; overflow: hidden;
 }
 .jd-rail-step b {
-  font-family: var(--tmono); font-size: 0.6rem; font-weight: 700;
+  font-family: var(--tmono); font-size: var(--t-label); font-weight: 700;
   letter-spacing: 0.1em; color: var(--tink-2);
 }
 .jd-rail-step[disabled] { opacity: 0.45; cursor: default; }
@@ -1966,14 +2014,25 @@ html.jd-turn-open { overflow: hidden; }
   column-gap: 20px; align-items: start;
 }
 .jd-bench-l { min-width: 0; }
+/* R2-F1/F2 (round-17, owner override): the "let them differ" approach from
+   round 16 fixed the auto-margin bug but relocated the dead space instead of
+   removing it — the exhibit (up to 380px) and the paperwork (~246px) are
+   structurally mismatched by design, so the outer card was always going to
+   be exhibit-height, and whatever the paperwork column didn't use just sat
+   there as a blank rectangle under the button. The plate stays full size —
+   it's the thing being judged, not a bug to paper over by shrinking it.
+   Instead the column SPANS the exhibit's height (stretch + min-height: 100%,
+   so the border-left rule reaches all the way down) and CENTRES its content
+   inside that span — the leftover space splits above and below the block of
+   rows instead of collecting under it, which reads as composition rather
+   than as a column that ran out of content. */
 .jd-bench-r {
-  min-width: 0; align-self: stretch;
+  min-width: 0;
   display: flex; flex-direction: column;
+  align-self: stretch; min-height: 100%; justify-content: center;
   border-left: 1px solid var(--trule-2); padding-left: 20px;
 }
-/* the paperwork column's springy row: the action buttons settle against the
-   foot of the exhibit beside them instead of floating under the last select */
-.jd-bench-r .jd-turn-actions { margin-top: auto; }
+.jd-bench-r .jd-turn-actions { margin-top: var(--sp-4); }
 /* the pinned exhibit: the artwork under examination stays in view for the
    whole panel. On the landscape bench it simply sits in its column; in the
    portrait stack (≤700px) it goes sticky and repaints the sheet's own paper
@@ -1982,56 +2041,56 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-pin { display: flex; justify-content: center; }
 .jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: 100%; }
 
-/* ---- the examination rows ------------------------------------------------ */
+/* ---- the examination rows -------------------------------------------------
+   F4/OVERRIDE 2 (round-16): a row's height used to be its 44px control PLUS
+   its own 0.15rem top/bottom padding — the row and the control were both
+   spending space on the same "give this a touch target" job. The padding is
+   gone; the control's own min-height carries the row entirely, and that
+   min-height is now a TOUCH floor, not a universal one (below). */
 .jd-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(160px, 214px);
   gap: 2px 10px; align-items: center;
   border-bottom: 1px solid var(--trule-2);
-  padding: 0.15rem 0;
+  padding: 0;
 }
+/* OVERALL GRADE outranks the three secondary axes, the way the report
+   card's tfoot grade row outranks the axis rows above it: a 2px rule (not
+   the row's usual 1px) closes it off from whatever came before — the rail,
+   or (in the portrait stack) the pinned plate. */
+.jd-row--grade { border-top: 2px solid var(--trule); }
 .jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* OVERRIDE 1 (round-16, owner): the ⓘ circle and the click-to-unfold
+   popover it drove are both gone outright — see the note at .jd-vh below
+   for the accessibility replacement (aria-describedby, not a widget). The
+   label is now an inert PRINTED GLOSS, not a control: a <span>, no
+   tabindex, no role. Its only affordance is typographic — a hairline
+   dotted rule under the text, the way a footnote marker sits under a word
+   rather than looking like a button — and it still anchors the hover/focus
+   tooltip on mouseover (ttInit reads data-tt-t/data-tt-d off any element,
+   not just interactive ones). */
 .jd-def {
-  display: inline-flex; align-items: center; gap: 0.45rem;
-  min-height: 44px; min-width: 0;
-  padding: 0.2rem 0.3rem 0.2rem 0;
-  background: none; border: 0; cursor: pointer;
+  display: inline-flex; align-items: center; min-width: 0;
   font-family: var(--tform);
-  font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase;
+  font-size: var(--t-label); letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--tink-2); text-align: left;
 }
 .jd-row--grade .jd-def { color: var(--tink); }
-.jd-def > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.jd-i {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 16px; height: 16px; flex: 0 0 auto;
-  border: 1px solid var(--trule); border-radius: 50%;
-  font-family: var(--tform); font-size: 0.55rem; font-style: italic;
-  color: var(--tink-2);
+.jd-def > span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border-bottom: 1px dotted var(--trule-2);
 }
-.jd-def:hover, .jd-def[aria-expanded="true"] { color: var(--tred); }
-.jd-def:hover .jd-i, .jd-def[aria-expanded="true"] .jd-i { color: var(--tred); border-color: var(--tred); }
-.jd-def:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-/* the ⓘ popover — IN FLOW (it pushes the sheet down, it never covers a
-   control) and ONE LINE: what the scale is about. The level names are in the
-   select, which is where a person reads them. It is deliberately NOT shaped
-   like the note field two rows below it: no box, a marginal rule and italics,
-   the way a printed gloss sits beside a form line rather than a place to
-   write. */
-.jd-pop {
-  grid-column: 1 / -1;
-  margin: 0 0 0.4rem; padding: 0.15rem 0 0.15rem 0.7rem;
-  border-left: 3px solid var(--trule);
-  font-family: var(--tform); font-style: italic;
-  font-size: 0.68rem; line-height: 1.5; color: var(--tink-2);
-}
-.jd-pop[hidden] { display: none; }
+.jd-def:hover > span { color: var(--tink); }
 
-/* the scale itself stays a NATIVE select — phone OS pickers, titles only */
+/* the scale itself stays a NATIVE select — phone OS pickers, titles only.
+   OVERRIDE 2: 44px is a touch floor. Compressed by default (a <select>
+   doesn't need 44px of height to be legibly a select on a device with a
+   cursor); the coarse-pointer/mobile media queries below restore the floor
+   wherever a finger has to land on it. */
 .jd-turn-select {
-  min-height: 44px; width: 100%;
+  min-height: 34px; width: 100%;
   padding: 0.3rem 1.7rem 0.3rem 0.55rem;
-  font-family: var(--tmono); font-size: 0.66rem;
+  font-family: var(--tmono); font-size: var(--t-body);
   letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--tink-3);
   background: rgba(255, 252, 240, 0.62)
@@ -2049,8 +2108,8 @@ html.jd-turn-open { overflow: hidden; }
 /* ---- the report path: a checkbox, and a note only once it is ticked ------ */
 .jd-turn-check {
   display: flex; align-items: center; gap: 0.55rem;
-  min-height: 44px; cursor: pointer;
-  font-size: 0.66rem; line-height: 1.45; color: var(--tink-2);
+  min-height: 34px; cursor: pointer;               /* OVERRIDE 2: touch floor below */
+  font-size: var(--t-body); line-height: 1.45; color: var(--tink-2);
 }
 /* the native control, tinted to the drawer's red rather than the platform's
    blue (accent-color is Safari 15.4+, under the iOS 16 floor; where it is
@@ -2059,16 +2118,25 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-scrim input { accent-color: var(--tred); }
 .jd-turn-check input { width: 18px; height: 18px; flex: 0 0 auto; }
 /* the report path sits below the scales, not among them */
-.jd-turn-flag { margin-top: 0.35rem; }
+.jd-turn-flag { margin-top: var(--sp-3); }   /* row rhythm: last row → flag = sp-3 (14px) */
 .jd-turn-note {
   display: block; width: 100%; box-sizing: border-box;
-  min-height: 44px;                 /* it sits beside 44px controls */
+  min-height: 34px;           /* OVERRIDE 2: matches .jd-turn-check's floor */
   padding: 0.4rem 0.55rem;
   background: rgba(255, 252, 240, 0.78);
   border: 1px solid var(--trule);
-  font-family: var(--tmono); font-size: 0.66rem; color: var(--tink);
+  font-family: var(--tmono); font-size: var(--t-body); color: var(--tink);
 }
 .jd-turn-note:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+
+/* OVERRIDE 2 — the 44px floor, restored wherever a coarse pointer exists.
+   any-pointer:coarse catches a touchscreen even on a device that ALSO has a
+   mouse (a touch laptop); the ≤768px rule below is the belt-and-braces case
+   for browsers/devices that misreport pointer type. */
+@media (any-pointer: coarse) {
+  .jd-turn-select, .jd-turn-check, .jd-turn-note, .jd-rail-step,
+  .jd-turn-go, .jd-turn-alt { min-height: 44px; }
+}
 
 /* ============================================================================
    THE CALL — five graduated stops printed across the form, A hard left to B
@@ -2077,13 +2145,21 @@ html.jd-turn-open { overflow: hidden; }
    ========================================================================== */
 .jd-callhead { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
 .jd-req {
-  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.16em;
+  font-family: var(--tform); font-size: var(--t-micro); letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--tstamp);
   border: 1px solid rgba(168, 51, 42, 0.5); padding: 1px 4px 0;
 }
 .jd-likert { display: flex; align-items: flex-start; gap: 10px; margin: 0.15rem 0 0; }
+/* R2-F4 (round-17): the A/B glyphs sit on the STOP DOTS' centreline, not a
+   guessed padding. .jd-lk-rail::before draws the connecting line at
+   top: 13px — that's the dot centre (.jd-lk-stop's 5px padding-top + half
+   the 16px dot). A 26px-tall flex box centres its text at exactly half its
+   own height, so starting from the same flex-start edge as the rail
+   (.jd-likert is align-items: flex-start) puts the glyph's centre at 13px
+   too, matched to the dots instead of approximated against them. */
 .jd-lk-end {
-  flex: 0 0 auto; padding-top: 4px;
+  flex: 0 0 auto; height: 26px;
+  display: flex; align-items: center;
   font-family: var(--tform); font-size: 0.95rem; font-weight: 700;
   letter-spacing: 0.1em; color: var(--tink-3);
 }
@@ -2118,10 +2194,10 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-lk-cap {
   display: flex; flex-direction: column; align-items: center;
-  font-family: var(--tform); font-size: 0.44rem; letter-spacing: 0.1em;
+  font-family: var(--tform); font-size: var(--t-micro); letter-spacing: 0.1em;
   text-transform: uppercase; line-height: 1.35; text-align: center; color: var(--tink-3);
 }
-.jd-lk-cap b { font-family: var(--tmono); font-size: 0.66rem; letter-spacing: 0.14em; color: var(--tink-2); }
+.jd-lk-cap b { font-family: var(--tmono); font-size: var(--t-body); letter-spacing: 0.14em; color: var(--tink-2); }
 .jd-lk-stop.is-on .jd-lk-cap { color: var(--tink); }
 .jd-lk-stop.is-on .jd-lk-cap b { color: var(--tred); }
 
@@ -2133,12 +2209,12 @@ html.jd-turn-open { overflow: hidden; }
   display: flex; align-items: baseline; gap: 0.7em; flex-wrap: wrap;
   padding: 0.4rem 0.1rem;
   border-bottom: 1px solid var(--trule-2);
-  font-size: 0.7rem; color: var(--tink);
+  font-size: var(--t-body); color: var(--tink);
 }
 .jd-turn-reveal li:first-child { border-top: 1px solid var(--trule-2); }
 .jd-turn-reveal b {
   flex: 0 0 auto; width: 1.5rem; text-align: center;
-  font-family: var(--tform); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700; letter-spacing: 0.1em;
   border: 1px solid var(--trule-2); background: rgba(255, 250, 232, 0.5);
   padding: 1px 0 0;
 }
@@ -2146,7 +2222,7 @@ html.jd-turn-open { overflow: hidden; }
 /* the fate follows the name, it does not sit at the right margin — that side
    of the row is where the seal lands */
 .jd-turn-reveal .fate {
-  font-family: var(--tform); font-size: 0.5rem; letter-spacing: 0.16em;
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--tink-3);
 }
 .jd-turn-reveal .fate.kept { color: var(--tstamp); font-weight: 700; }
@@ -2159,7 +2235,7 @@ html.jd-turn-open { overflow: hidden; }
   display: flex; align-items: center; box-sizing: border-box;
   padding: 0.45rem 0.55rem 0.5rem 1.5rem;
   background: rgba(255, 250, 232, 0.5); border: 1px solid var(--trule);
-  font-family: var(--tform); font-size: 0.58rem; letter-spacing: 0.16em;
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
   text-transform: uppercase; cursor: pointer;
 }
 /* the real radio stays in the accessibility tree and in the tab order; only
@@ -2181,10 +2257,11 @@ html.jd-turn-open { overflow: hidden; }
 
 /* ---- the singleton hover/focus tooltip ------------------------------------
    Fixed and pointer-events:none — it can never take a press a control should
-   have had. aria-hidden: screen readers get every definition natively
-   (aria-describedby on the likert radios, the ⓘ popovers everywhere else).
-   Appended to <body>, so its fonts/colours are literal rather than the
-   scrim's scoped tokens. */
+   have had. aria-hidden: screen readers get every definition natively via
+   aria-describedby (the likert radios, and — OVERRIDE 1, round-16 — every
+   row's scale select, pointed at the .jd-vh text that used to live behind a
+   click-to-unfold .jd-pop). Appended to <body>, so its fonts/colours are
+   literal rather than the scrim's scoped tokens. */
 .jd-tt {
   position: fixed; z-index: 999;
   max-width: 270px; padding: 0.5rem 0.6rem;
@@ -2192,13 +2269,18 @@ html.jd-turn-open { overflow: hidden; }
   border: 1px solid rgba(243, 233, 200, 0.4);
   box-shadow: 4px 6px 12px -4px rgba(0, 0, 0, 0.55);
   font-family: "Courier Prime", "Courier New", Courier, monospace;
-  font-size: 0.62rem; line-height: 1.55;
+  font-size: var(--t-body); line-height: 1.55;
   pointer-events: none;
 }
 .jd-tt b {
   display: block; margin-bottom: 0.15rem;
   letter-spacing: 0.14em; text-transform: uppercase;
 }
+/* visually-hidden. Carries the likert's per-stop descriptions, and (OVERRIDE
+   1, round-16) each row's scale definition — permanently in the DOM instead
+   of behind the retired click-to-unfold .jd-pop, wired to its control via
+   aria-describedby so a screen reader announces it the moment the control
+   itself receives focus. No toggle, no state, nothing to keep in sync. */
 .jd-vh {
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
@@ -2219,7 +2301,7 @@ html.jd-turn-open { overflow: hidden; }
   box-shadow: 6px 10px 18px -6px rgba(6, 3, 0, 0.6);
 }
 .jd-turn-confirm-card p {
-  margin: 0; font-family: var(--tmono); font-size: 0.7rem; line-height: 1.55;
+  margin: 0; font-family: var(--tmono); font-size: var(--t-body); line-height: 1.55;
 }
 
 /* motion is added, never assumed */
@@ -2228,13 +2310,10 @@ html.jd-turn-open { overflow: hidden; }
      call — a short transition makes that read as one document changing
      shape rather than two cards swapping */
   .jd-turn { transition: width 0.22s cubic-bezier(.2, .8, .25, 1); }
-  .jd-pop { animation: jdPopIn 0.16s ease-out; }
   .jd-lk-dot { transition: border-color 0.15s, background-color 0.15s; }
-  .jd-def .jd-i { transition: color 0.15s, border-color 0.15s; }
-}
-@keyframes jdPopIn {
-  from { opacity: 0; transform: translateY(-3px); }
-  to   { opacity: 1; transform: none; }
+  /* the def label's one hover feedback (OVERRIDE 1): an ink shift, no
+     click-to-unfold left to animate open */
+  .jd-def > span { transition: color 0.15s; }
 }
 
 /* ============================================================================
@@ -2252,7 +2331,13 @@ html.jd-turn-open { overflow: hidden; }
     position: sticky; top: 0; z-index: 4;
     padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
     background: var(--tpaper) var(--tgrain);
-    border-bottom: 1px solid var(--trule);
+    /* R2-F3 (round-17): no border-bottom here — OVERALL GRADE is always the
+       first row under the pin in the portrait stack, and its own
+       .jd-row--grade top rule (2px) closed the plate off from the rows
+       already; a second 1px rule 2.4px above it just doubled the hairline.
+       The box-shadow stays — it's doing a different job, selling the sticky
+       plate lifting off the rows sliding underneath it, not ruling off a
+       section. */
     box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
   }
   .jd-turn-pin .jd-turn-plate { width: 148px; }
@@ -2272,8 +2357,6 @@ html.jd-turn-open { overflow: hidden; }
   /* the examination row becomes label-over-control */
   .jd-row { grid-template-columns: minmax(0, 1fr); }
   .jd-row .jd-turn-select { margin-bottom: 0.3rem; }
-  /* (the mockup shortened the ⓘ row to 34px here to buy vertical space; it
-     is a real control, so it keeps the 44px floor instead) */
   .jd-turn-pin .jd-turn-plate { width: 108px; }
   .jd-rail-long { display: none; }
   .jd-rail-short { display: inline; }
@@ -2305,6 +2388,12 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn-input, .jd-turn-select, .jd-turn-note { font-size: 16px; }
   .jd-turn-input { min-height: 8.5rem; }
   .jd-turn-select { letter-spacing: 0.06em; }
+  /* OVERRIDE 2: the 44px touch floor, kept UNCONDITIONALLY at this
+     breakpoint regardless of what any-pointer reports — a phone-width
+     viewport is a touch target regardless of what the UA claims about the
+     pointer that's actually attached to it right now */
+  .jd-turn-select, .jd-turn-check, .jd-turn-note, .jd-rail-step,
+  .jd-turn-go, .jd-turn-alt { min-height: 44px; }
   /* immersive mode has slid the banner off the top (see .site-banner above),
      so the reserved band comes back as ordinary padding — and returns only
      while the chrome is actually showing */
