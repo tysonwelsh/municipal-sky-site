@@ -78,6 +78,7 @@ $KEYS = [
     // mirrors jd-generate.php:393-394
     'anthropic' => $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null,
     'openai'    => $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null,
+    'kimi'      => $secrets['jd_kimi_key'] ?? $secrets['kimi_key'] ?? null,
 ];
 foreach ($KEYS as $p => $k) {
     if ($k === null) {
@@ -86,9 +87,9 @@ foreach ($KEYS as $p => $k) {
     }
 }
 
-$calls = count($PROMPTS) * $runs * count(JD_MODEL_PAIR);
+$calls = count($PROMPTS) * $runs * count(JD_MODEL_TRIO);
 echo "\nCost probe — ", count($PROMPTS), " prompt(s) x $runs run(s) x ",
-     count(JD_MODEL_PAIR), " providers = $calls live generation(s).\n";
+     count(JD_MODEL_TRIO), " providers = $calls live generation(s).\n";
 echo "Nothing is written to the database. Artwork is discarded.\n\n";
 
 if (isset($opts['dry-run'])) {
@@ -150,6 +151,17 @@ function jd_probe_payload(array $model, string $prompt): array
             'thinking' => ['type' => 'disabled'],
             'system' => JD_SYSTEM_PROMPT,
             'messages' => [['role' => 'user', 'content' => $prompt]],
+        ]];
+    }
+    if ($model['provider'] === 'kimi') {
+        return ['https://api.moonshot.ai/v1/chat/completions', [
+            'model' => $model['api_model'],
+            'max_tokens' => JD_MAX_TOKENS,
+            'reasoning_effort' => 'low',
+            'messages' => [
+                ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
+                ['role' => 'user', 'content' => $prompt],
+            ],
         ]];
     }
     return ['https://api.openai.com/v1/chat/completions', [
@@ -219,12 +231,12 @@ function jd_probe_inspect(?string $svg, string $raw): array
     ];
 }
 
-/** Both providers for one prompt, concurrently — the pair is what a turn is. */
+/** All three providers for one prompt, concurrently — the trio is what a turn is. */
 function jd_probe_pair(string $prompt, array $keys, ?string $saveDir = null, string $label = ''): array
 {
     $mh = curl_multi_init();
     $handles = [];
-    foreach (JD_MODEL_PAIR as $idx => $model) {
+    foreach (JD_MODEL_TRIO as $idx => $model) {
         [$url, $payload] = jd_probe_payload($model, $prompt);
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -458,7 +470,7 @@ foreach ($results as $row) {
 }
 if ($failures) {
     echo "\nFAILED SLOTS (", count($failures), " of ",
-        count($results) * count(JD_MODEL_PAIR), " attempted)\n";
+        count($results) * count(JD_MODEL_TRIO), " attempted)\n";
     echo implode("\n", $failures), "\n";
     printf("  JD_PROVIDER_TIMEOUT is %ds — a latency at or near that is a timeout,\n"
          . "  and the visitor gets half a turn.\n", JD_PROVIDER_TIMEOUT);

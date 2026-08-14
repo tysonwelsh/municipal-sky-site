@@ -163,12 +163,12 @@ try {
     $strength = null;
     if ($comparison === null) {
         if (count($okSlots) > 1) {
-            jd_fail(400, 'comparison_required', 'A comparison is required when both drawings survived.');
+            jd_fail(400, 'comparison_required', 'A comparison is required when more than one drawing survived.');
         }
     } else {
         $winner = $comparison['winner'] ?? null;
-        if ($winner !== 'a' && $winner !== 'b' && $winner !== 'tie') {
-            jd_fail(400, 'rating_invalid', 'The winner must be "a", "b" or "tie".');
+        if ($winner !== 'a' && $winner !== 'b' && $winner !== 'c' && $winner !== 'tie') {
+            jd_fail(400, 'rating_invalid', 'The winner must be "a", "b", "c" or "tie".');
         }
         if ($winner !== 'tie') {
             if (!isset($bySlot[$winner]) || $bySlot[$winner]['status'] !== 'ok') {

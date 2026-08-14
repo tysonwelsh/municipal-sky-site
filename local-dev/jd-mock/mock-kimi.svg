@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <title>mock: brass lantern-moth (kimi)</title>
+  <defs>
+    <radialGradient id="brass" cx="0.4" cy="0.35" r="0.8">
+      <stop offset="0" stop-color="#e8c35a"/>
+      <stop offset="0.7" stop-color="#b8892e"/>
+      <stop offset="1" stop-color="#7d5a1c"/>
+    </radialGradient>
+  </defs>
+  <g stroke="#3a2c10" stroke-width="4" stroke-linejoin="round">
+    <path d="M100 60 C 60 20 20 40 30 90 C 38 130 80 140 100 110 Z" fill="url(#brass)"/>
+    <path d="M100 60 C 140 20 180 40 170 90 C 162 130 120 140 100 110 Z" fill="url(#brass)"/>
+    <ellipse cx="100" cy="120" rx="14" ry="46" fill="#8a6a24"/>
+    <path d="M92 78 C 84 60 76 52 66 48 M108 78 C 116 60 124 52 134 48" fill="none" stroke-linecap="round"/>
+  </g>
+  <circle cx="70" cy="80" r="9" fill="#3a2c10"/>
+  <circle cx="130" cy="80" r="9" fill="#3a2c10"/>
+</svg>

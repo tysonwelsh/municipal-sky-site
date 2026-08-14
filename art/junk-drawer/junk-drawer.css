@@ -2254,6 +2254,15 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-pill.is-on .jd-pill-tick { opacity: 1; }
 
+/* the three-way call (2026-08-14): two picks in the tie election's own pill
+   language — the winner (or dead even), then the margin. The margin question
+   unfolds under the winner pick like the flag note does under its checkbox */
+.jd-callmargin-q {
+  margin: 0.7rem 0 0.1rem;
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+
 /* ---- the singleton hover/focus tooltip ------------------------------------
    Fixed and pointer-events:none — it can never take a press a control should
    have had. aria-hidden: screen readers get every definition natively via

@@ -2,11 +2,12 @@
 // POST /api/jd-generate.php — one model's SVG for one visitor prompt.
 // Contract: PLAN-USER-PROMPTS-CONTRACTS.md C1.2, C4.
 //
-// The client fires this twice in parallel (slot a, slot b) with one shared
-// client_ref. The submission row — not the request — is the rate-limit unit,
-// and the unique key on client_ref is what makes the two callers converge on
-// it. No model identity appears in any response from this file: blindness is
-// server-enforced, and the reveal exists only in jd-rate.php.
+// The client fires this three times in parallel (slots a, b, c) with one
+// shared client_ref. The submission row — not the request — is the
+// rate-limit unit, and the unique key on client_ref is what makes the
+// callers converge on it. No model identity appears in any response from
+// this file: blindness is server-enforced, and the reveal exists only in
+// jd-rate.php.
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
@@ -29,8 +30,8 @@ if (!is_string($clientRef)
 }
 
 $slot = $body['slot'] ?? null;
-if ($slot !== 'a' && $slot !== 'b') {
-    jd_fail(400, 'bad_request', 'slot must be "a" or "b".');
+if ($slot !== 'a' && $slot !== 'b' && $slot !== 'c') {
+    jd_fail(400, 'bad_request', 'slot must be "a", "b" or "c".');
 }
 
 // --- 2. Honeypot: no row written, no provider called ----------------------
@@ -87,7 +88,7 @@ try {
             $prompt,
             $visitorHash,
             $client,
-            random_int(0, 1),
+            random_int(0, 5),
             $now,
             JD_CONSENT_VERSION,
             'pending',
@@ -114,8 +115,9 @@ try {
     }
 
     // --- 9. Model routing + pending row before the provider call ----------
-    $pairIndex = ((int) $submission['pair_order']) === 1 ? 1 : 0;
-    $model = $slot === 'a' ? JD_MODEL_PAIR[$pairIndex] : JD_MODEL_PAIR[1 - $pairIndex];
+    $perm = JD_TRIO_PERMS[(int) $submission['pair_order'] % 6];
+    $slotIndex = array_search($slot, ['a', 'b', 'c'], true);
+    $model = JD_MODEL_TRIO[$perm[$slotIndex]];
 
     if (!JD_DEV_MODE && jd_provider_key($model['provider']) === null) {
         // Refuse before a row exists rather than bank a failure the visitor
@@ -386,6 +388,15 @@ function jd_provider_params(string $provider): string
             'temperature' => 'provider-default',
         ]);
     }
+    if ($provider === 'kimi') {
+        return json_encode([
+            'max_tokens' => JD_MAX_TOKENS,
+            // kimi-k3 reasons by default and blows the timeout (see
+            // JD_MODEL_TRIO); 'low' is the disclosed compromise.
+            'reasoning_effort' => 'low',
+            'temperature' => 'provider-default',
+        ]);
+    }
     return json_encode([
         'max_completion_tokens' => JD_MAX_TOKENS,
         'temperature' => 'provider-default',
@@ -397,9 +408,13 @@ function jd_provider_params(string $provider): string
 function jd_provider_key(string $provider): ?string
 {
     $secrets = jd_secrets();
-    $key = $provider === 'anthropic'
-        ? ($secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null)
-        : ($secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null);
+    if ($provider === 'anthropic') {
+        $key = $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null;
+    } elseif ($provider === 'kimi') {
+        $key = $secrets['jd_kimi_key'] ?? $secrets['kimi_key'] ?? null;
+    } else {
+        $key = $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null;
+    }
     return (is_string($key) && $key !== '') ? $key : null;
 }
 
@@ -431,6 +446,25 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt): a
             'thinking' => ['type' => 'disabled'],
             'system' => JD_SYSTEM_PROMPT,
             'messages' => [
+                ['role' => 'user', 'content' => $prompt],
+            ],
+        ];
+    } elseif ($provider === 'kimi') {
+        // Moonshot's OpenAI-compatible endpoint. Standard max_tokens (the
+        // max_completion_tokens spelling is a GPT-5 reasoning-family quirk);
+        // reasoning_effort keeps the thinking model inside the shared
+        // hosting time budget (probed 2026-08-14 — see JD_MODEL_TRIO).
+        $url = 'https://api.moonshot.ai/v1/chat/completions';
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $key,
+        ];
+        $payload = [
+            'model' => $apiModel,
+            'max_tokens' => JD_MAX_TOKENS,
+            'reasoning_effort' => 'low',
+            'messages' => [
+                ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $prompt],
             ],
         ];

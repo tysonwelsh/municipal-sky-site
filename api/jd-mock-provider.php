@@ -20,6 +20,7 @@ const JD_MOCK_DIR = __DIR__ . '/../local-dev/jd-mock';
 const JD_MOCK_USAGE = [
     'anthropic' => ['input_tokens' => 214, 'output_tokens' => 1873],
     'openai' => ['prompt_tokens' => 209, 'completion_tokens' => 1642, 'total_tokens' => 1851],
+    'kimi' => ['prompt_tokens' => 211, 'completion_tokens' => 1704, 'total_tokens' => 1915],
 ];
 
 /**
@@ -48,7 +49,10 @@ function jd_mock_call(string $provider, string $prompt): array
         return jd_mock_ok(jd_mock_fixture('mock-hostile.svg'), $usage);
     }
 
-    $svg = jd_mock_fixture($provider === 'anthropic' ? 'mock-anthropic.svg' : 'mock-openai.svg');
+    $svg = jd_mock_fixture(
+        $provider === 'anthropic' ? 'mock-anthropic.svg'
+            : ($provider === 'kimi' ? 'mock-kimi.svg' : 'mock-openai.svg')
+    );
 
     if (stripos($prompt, '[prose]') !== false) {
         $svg = "Certainly! Here is the object you described.\n\n```svg\n"

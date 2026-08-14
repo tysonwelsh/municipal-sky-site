@@ -66,7 +66,7 @@ Behavior (APP §4.2, verbatim intent):
 
 ### C1.2 `POST /api/jd-generate.php`
 
-The client fires **two parallel** requests, one per slot. The client
+The client fires **three parallel** requests, one per slot. The client
 mints one `client_ref` (UUID v4 via `crypto.randomUUID()`, supported at
 the iOS 16 floor) shared by both requests, and persists it via `JD_store`
 **before** dispatching either fetch — this is the recoverability handle
@@ -79,10 +79,10 @@ request).
 ```json
 {
   "client_ref": "8b0d5c1e-…-uuid-v4",       // required, 36 chars, UUID shape
-  "slot": "a",                              // required, "a" | "b"
+  "slot": "a",                              // required, "a" | "b" | "c"
   "prompt": "a brass fish that is also a whistle",  // required, 1–500 chars after trim
   "client": "web",                          // "web" | "ios" | "android"; default "web"
-  "consent": { "version": "jd-consent-1" }, // required, must equal JD_CONSENT_VERSION
+  "consent": { "version": "jd-consent-2" }, // required, must equal JD_CONSENT_VERSION
   "website": ""                             // honeypot: must be absent or empty string
 }
 ```
@@ -97,7 +97,7 @@ request).
    (`mb_strlen`) → else `400 prompt_invalid`. **Stored byte-exact as
    received** (untrimmed) — the prompt is frozen verbatim.
 4. Consent: `consent.version` must equal the server-side constant
-   `JD_CONSENT_VERSION` (`'jd-consent-1'`, in `api/jd-config.php`) →
+   `JD_CONSENT_VERSION` (`'jd-consent-2'`, in `api/jd-config.php`) →
    else `400 consent_required`. (The client always sends it; the modal
    cannot submit without the recorded consent state — C5.2.)
 5. `client`: validated against `['web','ios','android']`; anything else
@@ -105,14 +105,14 @@ request).
 6. **Submission resolve (race-safe):** `SELECT` `jd_submissions` by
    `client_ref`. If none: rate-limit checks (step 7), then
    `INSERT IGNORE` a new row with `id = jd_ulid()`,
-   `pair_order = random_int(0,1)`, prompt, `visitor_hash`
+   `pair_order = random_int(0,5)` (a `JD_TRIO_PERMS` index), prompt, `visitor_hash`
    (`msky_visitor_hash($secrets)`), `client`, `ai_consent_at = now`,
    `ai_consent_version`, `status='pending'`; then re-`SELECT` by
    `client_ref` (the unique key makes the parallel-slot race converge on
    one row — the loser's INSERT is ignored). If the resolved row's
    `visitor_hash` differs from the caller's, still proceed (UTC-midnight
    hash rotation mid-flow is legitimate).
-7. **Rate limits** (only when creating a new submission; both slot calls
+7. **Rate limits** (only when creating a new submission; all slot calls
    share one submission so the submission is the rate-limit unit):
    - `COUNT(*) jd_submissions WHERE visitor_hash=? AND created >= now-1h`
      `>= 3` → `429 rate_limited`, `retry_after` = seconds until the
@@ -133,8 +133,8 @@ request).
    `409 {"error":{"code":"slot_in_progress"}}`; `status='failed'|'rejected'`
    → re-return the stored failure (same shape as step 11/12; **no
    re-generation in v1** — a failed slot stays failed, bounding cost).
-9. **Model routing:** `JD_MODEL_PAIR` (C4) index `pair_order` serves slot
-   `a`, the other serves slot `b`. INSERT the `jd_generations` row
+9. **Model routing:** `JD_TRIO_PERMS[pair_order]` (C4) maps each slot to
+   its `JD_MODEL_TRIO` entry. INSERT the `jd_generations` row
    (`status='pending'`, model fields, `harness`, `params` JSON) **before**
    the provider call, then call the provider (C4) with a 90 s cURL
    timeout. In `JD_DEV_MODE` the provider call is
@@ -226,9 +226,9 @@ server guarantee, not a UI courtesy).
 - `kind='flag'`: no `axis_id`, no `value` (NULL); `note` optional. This
   is APP §4.6's report path — one row, no queue, no admin UI.
 - `note`: ≤500 chars, stored truncated.
-- `comparison.winner`: `"a" | "b" | "tie"`, or `"comparison": null`.
+- `comparison.winner`: `"a" | "b" | "c" | "tie"`, or `"comparison": null`.
   `null` is legal **only** when the submission has exactly one
-  `status='ok'` generation (degraded mode); with two ok slots a
+  `status='ok'` generation (degraded mode); with more than one ok slot a
   comparison object is required (`400 comparison_required`). Winner is
   named **by slot**, never by gen_id — the server maps slot → gen_id, so
   a client can never file a foreign generation as winner.
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     prompt             TEXT         NOT NULL,
     visitor_hash       CHAR(64)     NOT NULL,
     client             VARCHAR(16)  NOT NULL DEFAULT 'web',
-    pair_order         TINYINT      NOT NULL,            -- 0|1: JD_MODEL_PAIR index serving slot a
+    pair_order         TINYINT      NOT NULL,            -- 0-5: JD_TRIO_PERMS index (slot→model permutation)
     ai_consent_at      DATETIME     NULL,                -- APP §4.5
     ai_consent_version VARCHAR(16)  NULL,                -- APP §4.5
     status             ENUM('pending','generated','rated','failed') NOT NULL DEFAULT 'pending',
@@ -330,7 +330,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
 CREATE TABLE IF NOT EXISTS jd_generations (
     id             CHAR(26)     NOT NULL PRIMARY KEY,
     submission_id  CHAR(26)     NOT NULL,
-    slot           ENUM('a','b') NOT NULL,
+    slot           ENUM('a','b','c') NOT NULL,
     model_id       VARCHAR(64)  NOT NULL,   -- taxonomy models registry id (join key)
     model_version  VARCHAR(64)  NOT NULL,   -- exact API model string sent on the wire
     provider       VARCHAR(32)  NOT NULL,   -- 'anthropic' | 'openai'
@@ -537,25 +537,35 @@ raw API call has no repo, no tools, no skills. The visitor's prompt is
 sent verbatim as the sole user message, no sharpening, no wrapping.
 Any change to this constant bumps the harness string (`v3-web.2`, …).
 
-### C4.2 Model pair — `JD_MODEL_PAIR` in `api/jd-config.php`
+### C4.2 Model trio — `JD_MODEL_TRIO` in `api/jd-config.php`
+
+(2026-08-14: the pair became a trio — Kimi K3 joined as the third model,
+slot `c`. `pair_order` widened from 0|1 to 0–5, an index into
+`JD_TRIO_PERMS`, the six slot→model permutations, so model identity
+still never correlates with slot position. This excerpt was also
+brought back in line with the config: it showed sonnet-5/gpt-5 while
+the flagship upgrade of 2026-08-10 had moved the pair to opus-5/gpt-5.1.)
 
 ```php
-const JD_MODEL_PAIR = [
-    [ 'model_id'  => 'claude-sonnet-5',   // taxonomy models registry id
-      'api_model' => 'claude-sonnet-5',   // exact wire string
+const JD_MODEL_TRIO = [
+    [ 'model_id'  => 'claude-opus-5',     // taxonomy models registry id
+      'api_model' => 'claude-opus-5',     // exact wire string
       'provider'  => 'anthropic' ],
-    [ 'model_id'  => 'gpt-5',
-      'api_model' => 'gpt-5',
+    [ 'model_id'  => 'gpt-5-1',
+      'api_model' => 'gpt-5.1',
       'provider'  => 'openai' ],
+    [ 'model_id'  => 'kimi-k3',
+      'api_model' => 'kimi-k3',
+      'provider'  => 'kimi' ],
 ];
 ```
 
-Both `model_id`s exist in `taxonomy.json` `models` (verified). The
-Anthropic id `claude-sonnet-5` is the complete current model string —
-**no date suffix** (verified against current API docs 2026-08-09; do not
-append one). `gpt-5` likewise. **Owner note (runbook):** confirm both
+All three `model_id`s exist in `taxonomy.json` `models` (verified). The
+Anthropic id `claude-opus-5` is the complete current model string —
+**no date suffix**; `gpt-5.1` and `kimi-k3` likewise (kimi-k3 verified
+against `/v1/models` 2026-08-14). **Owner note (runbook):** confirm the
 wire strings against the providers' model lists at deploy; changing a
-pair entry is a one-line config edit, and the schema records
+trio entry is a one-line config edit, and the schema records
 `model_version` per row so history stays honest.
 
 ### C4.3 Request parameters (per provider)
@@ -593,7 +603,26 @@ pair entry is a one-line config edit, and the schema records
   default). Response text = `choices[0].message.content`; `usage`
   stored.
 
-**Both:** `CURLOPT_TIMEOUT 90`, `CURLOPT_CONNECTTIMEOUT 10`,
+**Kimi** (`https://api.moonshot.ai/v1/chat/completions`, header
+`Authorization: Bearer <key>` — OpenAI-compatible):
+
+```json
+{ "model": "kimi-k3", "max_tokens": 12000, "reasoning_effort": "low",
+  "messages": [ { "role": "system", "content": JD_SYSTEM_PROMPT },
+                { "role": "user",  "content": <prompt verbatim> } ] }
+```
+
+- Standard `max_tokens` (the `max_completion_tokens` spelling is a GPT-5
+  reasoning-family quirk, not an OpenAI-protocol rule). **Do NOT send
+  `temperature`.** `reasoning_effort: "low"` is deliberate and disclosed:
+  kimi-k3 reasons by default (~25 tok/s observed; a default-effort SVG
+  ran past 280s in probing, 2026-08-14), and the 90s budget is a shared
+  hosting fact. This is the same trade the Anthropic entry makes with
+  `thinking: disabled`. Response text = `choices[0].message.content`
+  (a `reasoning_content` field also arrives; it is not part of the
+  artifact); `usage` stored.
+
+**All three:** `CURLOPT_TIMEOUT 90`, `CURLOPT_CONNECTTIMEOUT 10`,
 `CURLOPT_RETURNTRANSFER`, `CURLOPT_FORBID_REUSE` (chat.php pattern).
 `latency_ms` = wall clock around `curl_exec`. **Do not copy chat.php's**
 CORS wildcard, `$debug_mode`, `error_log` of full responses, sequential
@@ -604,8 +633,9 @@ text), e.g.
 `{"max_tokens":12000,"thinking":"disabled","temperature":"provider-default"}`
 / `{"max_completion_tokens":12000,"temperature":"provider-default"}`.
 
-**Keys:** `$secrets['jd_claude_key'] ?? $secrets['claude_key']` and
-`$secrets['jd_openai_key'] ?? $secrets['openai_key']` (owner runbook adds
+**Keys:** `$secrets['jd_claude_key'] ?? $secrets['claude_key']`,
+`$secrets['jd_openai_key'] ?? $secrets['openai_key']` and
+`$secrets['jd_kimi_key'] ?? $secrets['kimi_key']` (owner runbook adds
 the dedicated keys later; fallback keeps the feature launchable).
 
 ### C4.4 Extraction & disobedience

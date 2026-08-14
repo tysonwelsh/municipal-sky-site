@@ -1,5 +1,13 @@
 # PLAN-USER-PROMPTS.md — visitor-submitted prompts ("Take a Turn")
 
+> **Amendment 2026-08-14 — the pair became a trio.** Every turn now draws
+> THREE responses: Claude Opus 5, GPT-5.1, and Kimi K3 (slots a/b/c, a
+> random permutation per submission). The two-model language below
+> ("two SVG responses", §2.2's two parallel fetches, the `ENUM(a, b)`
+> sketch) is historical; **PLAN-USER-PROMPTS-CONTRACTS.md is the current
+> truth** (C1, C4.2). Consent bumped to `jd-consent-2` because the
+> disclosure names the providers.
+
 Plan for the first *interactive* junk-drawer feature: a button on the
 bottom-left of the drawer that lets a **visitor** describe an object,
 receive two SVG responses from two different LLMs via API, rate each on

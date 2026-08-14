@@ -37,11 +37,12 @@ JD_PROMPT;
 
 const JD_HARNESS = 'v3-web.1';
 
-// C4.2 — index 0 vs 1 is chosen per submission by pair_order and recorded;
-// the model_id values are taxonomy.json `models` registry ids (join keys) and
-// api_model is the exact wire string. Owner runbook: confirm both wire
-// strings against the providers' model lists at deploy.
-const JD_MODEL_PAIR = [
+// C4.2 — the slot→model assignment is chosen per submission by pair_order
+// (0-5, an index into JD_TRIO_PERMS) and recorded; the model_id values are
+// taxonomy.json `models` registry ids (join keys) and api_model is the exact
+// wire string. Owner runbook: confirm wire strings against the providers'
+// model lists at deploy.
+const JD_MODEL_TRIO = [
     // Owner upgrade (2026-08-10): flagship tier — Claude Opus 5 vs GPT-5.1.
     // Opus 5 note: thinking is ON by default on this model; jd-generate
     // sends thinking:disabled (valid at default effort) so generation stays
@@ -52,6 +53,23 @@ const JD_MODEL_PAIR = [
     ['model_id'  => 'gpt-5-1',
      'api_model' => 'gpt-5.1',
      'provider'  => 'openai'],
+    // Third chair (2026-08-14): Kimi K3 joins every turn (slot c). Wire id
+    // confirmed against /v1/models the same day. kimi-k3 reasons by default
+    // (~25 tok/s observed; an SVG at default effort ran past 280s), so
+    // jd-generate sends reasoning_effort:'low' — the same trade the Opus
+    // entry makes with thinking:disabled, and recorded in params the same
+    // way. Probed 2026-08-14: effort 'low' answered a paperclip SVG in 7s.
+    ['model_id'  => 'kimi-k3',
+     'api_model' => 'kimi-k3',
+     'provider'  => 'kimi'],
+];
+
+// The 6 slot permutations, indexed by pair_order: which TRIO entry serves
+// slot a, then b, then c. Same anti-bias discipline as the pair shuffle —
+// model identity must never correlate with slot position.
+const JD_TRIO_PERMS = [
+    [0, 1, 2], [0, 2, 1], [1, 0, 2],
+    [1, 2, 0], [2, 0, 1], [2, 1, 0],
 ];
 
 const JD_MAX_TOKENS = 12000;
@@ -59,8 +77,9 @@ const JD_PROVIDER_TIMEOUT = 90;
 const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 
 // C5.2 / APP §4.5 — the consent of record. Must match JD_CONSENT.version in
-// junk-drawer.js and the copy quoted in privacy.php.
-const JD_CONSENT_VERSION = 'jd-consent-1';
+// junk-drawer.js and the copy quoted in privacy.php. jd-consent-2 (2026-08-14):
+// the disclosure gains a third provider, Moonshot AI (Kimi).
+const JD_CONSENT_VERSION = 'jd-consent-2';
 
 // C1.2 step 7 — cost controls, tunable in one place post-launch.
 const JD_LIMIT_HOURLY = 3;

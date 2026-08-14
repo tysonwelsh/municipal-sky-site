@@ -38,14 +38,14 @@ var JD_CLIENT = 'web';
    repeating it) — JD_CONSENT.text/.version stay exactly as filed regardless,
    because they are still what gets recorded against the visitor's turn. */
 var JD_CONSENT = {
-  version: 'jd-consent-1',
-  text: 'When you take a turn, the words you type are sent to two AI ' +
-    'providers — Anthropic (Claude) and OpenAI (GPT) — which each draw an ' +
-    'object from them. Your prompt, the drawings that come back, your ' +
-    'ratings, and an anonymous daily-rotating visitor code are stored so ' +
-    'the results can be studied and the feature kept honest. Nothing you ' +
-    'type here is shown to other visitors.',
-  check: 'I understand — send my words to Anthropic and OpenAI'
+  version: 'jd-consent-2',
+  text: 'When you take a turn, the words you type are sent to three AI ' +
+    'providers — Anthropic (Claude), OpenAI (GPT), and Moonshot AI (Kimi) — ' +
+    'which each draw an object from them. Your prompt, the drawings that ' +
+    'come back, your ratings, and an anonymous daily-rotating visitor code ' +
+    'are stored so the results can be studied and the feature kept honest. ' +
+    'Nothing you type here is shown to other visitors.',
+  check: 'I understand — send my words to Anthropic, OpenAI and Moonshot AI'
 };
 
 var JD_STRINGS = {
@@ -3398,15 +3398,16 @@ function JD_layerOpen() {
          the page that carries the full disclosure. JD_CONSENT.text/.version
          are unchanged and still what gets recorded on submission — this is
          a change to what the card SHOWS, not what the visitor agrees to. */
-      '<p class="jd-turn-fine">Sent to Anthropic and OpenAI to be drawn ' +
-      'and studied — see our <a class="jd-turn-link" href="/privacy.php">' +
-      'privacy</a> page.</p>';
+      '<p class="jd-turn-fine">Sent to Anthropic, OpenAI and Moonshot AI to ' +
+      'be drawn and studied — see our <a class="jd-turn-link" ' +
+      'href="/privacy.php">privacy</a> page.</p>';
   }
 
   /* ---------- 3. the darkroom (§2, RECEIVED) -------------------------------
-     Two slots, two states. No table, no headers, no assignment column: the
-     visitor is waiting on A and B, and that is all this says. The mark glyph
-     is aria-hidden — the word beside it is what the live region announces. */
+     Three slots, two states. No table, no headers, no assignment column: the
+     visitor is waiting on A, B and C, and that is all this says. The mark
+     glyph is aria-hidden — the word beside it is what the live region
+     announces. */
   function slotLine(slot) {
     var s = work.slots[slot];
     if (s.status === 'ok') {
@@ -3424,9 +3425,15 @@ function JD_layerOpen() {
   function slotRow(slot) {
     return '<b>' + slot.toUpperCase() + '</b>' + slotLine(slot);
   }
+  function pendingCount() {
+    return ['a', 'b', 'c'].filter(function (s) {
+      return work.slots[s].status === 'pending';
+    }).length;
+  }
   function darkroomTitle() {
-    return (work.slots.a.status === 'pending' && work.slots.b.status === 'pending')
-      ? 'Two machines are drawing' : 'One is still drawing';
+    var n = pendingCount();
+    return n === 3 ? 'Three machines are drawing'
+      : n === 2 ? 'Two are still drawing' : 'One is still drawing';
   }
   function viewGenerating() {
     return head(darkroomTitle(), 2) +
@@ -3434,6 +3441,7 @@ function JD_layerOpen() {
       '<ul class="jd-turn-slots" aria-live="polite">' +
       '<li data-slotline="a">' + slotRow('a') + '</li>' +
       '<li data-slotline="b">' + slotRow('b') + '</li>' +
+      '<li data-slotline="c">' + slotRow('c') + '</li>' +
       '</ul>' +
       '<p class="jd-turn-delay" data-slow' +
       (work.slow ? '' : ' hidden') + '>Still going. The drawing is long ' +
@@ -3441,7 +3449,7 @@ function JD_layerOpen() {
   }
   function paintSlots() {
     if (!isOpen || state !== 'generating') return;
-    ['a', 'b'].forEach(function (slot) {
+    ['a', 'b', 'c'].forEach(function (slot) {
       var li = bodyEl.querySelector('[data-slotline="' + slot + '"]');
       if (li) li.innerHTML = slotRow(slot);
     });
@@ -3492,15 +3500,21 @@ function JD_layerOpen() {
       '</figure>';
   }
   function okSlots() {
-    return ['a', 'b'].filter(function (s) { return work.slots[s].status === 'ok'; });
+    return ['a', 'b', 'c'].filter(function (s) { return work.slots[s].status === 'ok'; });
   }
   function viewReveal() {
     var ok = okSlots();
-    var lost = ok.length === 1
-      ? '<p class="jd-turn-notice" role="status">the other machine’s ' +
-        'drawing didn’t survive — you’ll grade this one alone.</p>' : '';
-    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back', 3) +
-      lost +
+    var lost = 3 - ok.length;
+    var notice = lost === 2
+      ? '<p class="jd-turn-notice" role="status">two machines’ drawings ' +
+        'didn’t survive — you’ll grade this one alone.</p>'
+      : lost === 1
+        ? '<p class="jd-turn-notice" role="status">one machine’s drawing ' +
+          'didn’t survive — you’ll grade the two that came back.</p>' : '';
+    var COUNT = { 1: 'One drawing came back', 2: 'Two drawings came back',
+      3: 'Three drawings came back' };
+    return head(COUNT[ok.length] || COUNT[1], 3) +
+      notice +
       '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
       '</div>' +
       /* CUTS §3 (round-16): "grade them first — the names come after" is cut
@@ -3539,21 +3553,30 @@ function JD_layerOpen() {
      same state. pillRow above survives for the unveil's keep-chooser only. */
 
   /* the finale's five stops: winner + strength. strength is the C1.3
-     contract addition (see jd-rate.php) — a tie has no margin. */
-  var LIKERT = [
-    { id: 'a2', big: 'A', word: 'decisively', title: 'A · decisively better',
-      desc: 'No contest — A is clearly the stronger drawing.', winner: 'a', strength: 'decisive' },
-    { id: 'a1', big: 'A', word: 'narrowly', title: 'A · narrowly better',
-      desc: 'A close call, but A edges it.', winner: 'a', strength: 'slight' },
-    { id: 'tie', big: '=', word: 'dead even', title: 'dead even',
-      desc: 'No daylight between them — filed as a tie.', winner: 'tie', strength: null },
-    { id: 'b1', big: 'B', word: 'narrowly', title: 'B · narrowly better',
-      desc: 'A close call, but B edges it.', winner: 'b', strength: 'slight' },
-    { id: 'b2', big: 'B', word: 'decisively', title: 'B · decisively better',
-      desc: 'No contest — B is clearly the stronger drawing.', winner: 'b', strength: 'decisive' }
-  ];
+     contract addition (see jd-rate.php) — a tie has no margin. The rail is
+     strung between the two surviving slots, whatever letters they carry
+     (three models fly since 2026-08-14, so a degraded turn's survivors are
+     not always A and B); likertStops() builds the run for the pair at hand. */
+  function likertStops(x, y) {
+    var X = x.toUpperCase(), Y = y.toUpperCase();
+    return [
+      { id: x + '2', big: X, word: 'decisively', title: X + ' · decisively better',
+        desc: 'No contest — ' + X + ' is clearly the stronger drawing.', winner: x, strength: 'decisive' },
+      { id: x + '1', big: X, word: 'narrowly', title: X + ' · narrowly better',
+        desc: 'A close call, but ' + X + ' edges it.', winner: x, strength: 'slight' },
+      { id: 'tie', big: '=', word: 'dead even', title: 'dead even',
+        desc: 'No daylight between them — filed as a tie.', winner: 'tie', strength: null },
+      { id: y + '1', big: Y, word: 'narrowly', title: Y + ' · narrowly better',
+        desc: 'A close call, but ' + Y + ' edges it.', winner: y, strength: 'slight' },
+      { id: y + '2', big: Y, word: 'decisively', title: Y + ' · decisively better',
+        desc: 'No contest — ' + Y + ' is clearly the stronger drawing.', winner: y, strength: 'decisive' }
+    ];
+  }
+  /* the stops of the call currently on the bench, so the change handler can
+     map a picked stop back to winner + margin */
+  var curCallStops = [];
   function likertStop(id) {
-    for (var i = 0; i < LIKERT.length; i++) if (LIKERT[i].id === id) return LIKERT[i];
+    for (var i = 0; i < curCallStops.length; i++) if (curCallStops[i].id === id) return curCallStops[i];
     return null;
   }
   /* the id the visitor's stored pick maps back to, so a re-render (step
@@ -3737,14 +3760,23 @@ function JD_layerOpen() {
     return h + actions(acts) + '</div></div>';
   }
 
-  /* THE CALL — the preserved likert finale (mockup 10c salvage, kept by the
-     owner through the round-10 review: the call as geometry, five title-only
-     stops on a rail strung A-left to B-right, tooltips per stop, filed as
-     winner + margin). Its own "what is this" gloss gets the same OVERRIDE 1
-     treatment as every scale row's: a plain label, and the definition wired
-     to the radiogroup rather than a click-to-unfold popover. */
+  /* a call is ready to file when a winner is named AND (it's a tie, or the
+     margin is picked too). The likert sets winner+margin in one stop, so it
+     satisfies this the same way the two-pick call does. */
+  function callReady() {
+    return !!work.winner && (work.winner === 'tie' || !!work.strength);
+  }
+
+  /* THE CALL — the preserved likert finale when exactly two drawings
+     survived (mockup 10c salvage, kept by the owner through the round-10
+     review: the call as geometry, five title-only stops on a rail strung
+     between the two survivors, tooltips per stop, filed as winner + margin).
+     With three survivors there is no honest LINE to string — a rail reads
+     A↔B as the axis and C falls off the world — so the three-way call is
+     two picks in the survey's own pill language: the winner (or dead even),
+     then the margin. Same contract either way: winner + strength, tie has
+     no margin. (Third model per turn, 2026-08-14.) */
   function callPanel(ok) {
-    var chosen = likertChosen();
     var h = '<div class="jd-turn-plates jd-turn-plates--call">' +
       ok.map(function (s) { return plate(s); }).join('') + '</div>' +
       '<div class="jd-callhead">' +
@@ -3754,36 +3786,57 @@ function JD_layerOpen() {
       '<span class="jd-req">Required</span></div>' +
       /* one line, like every other def: the per-stop wording is on the
          stops themselves, in the tooltip, and in the hidden descriptions
-         below — this one line is the radiogroup's own description */
+         below — this one line is the control's own description */
       '<span class="jd-vh" id="jd-d-call-what">The one required answer ' +
-      'when both drawings survived — filed as a winner plus a margin (a tie ' +
-      'has no margin).</span>' +
-      '<div class="jd-likert" role="radiogroup" ' +
-      'aria-label="the call: which drawing belongs in the drawer" ' +
-      'aria-describedby="jd-d-call-what"' +
-      (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
-      '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">A</span>' +
-      '<div class="jd-lk-rail">';
-    LIKERT.forEach(function (o) {
-      var on = chosen === o.id;
-      h += '<label class="jd-lk-stop' + (on ? ' is-on' : '') + '" data-tt-t="' +
-        esc(o.title) + '" data-tt-d="' + esc(o.desc) + '">' +
-        '<input type="radio" name="jd-call" value="' + o.id +
-        '" data-role="call" aria-describedby="jd-d-call-' + o.id + '"' +
-        (on ? ' checked' : '') + '>' +
-        '<span class="jd-lk-dot" aria-hidden="true"></span>' +
-        '<span class="jd-lk-cap"><b>' + esc(o.big) + '</b><span>' +
-        esc(o.word) + '</span></span></label>';
-    });
-    h += '</div><span class="jd-lk-end jd-lk-end--b" aria-hidden="true">B</span></div>';
-    LIKERT.forEach(function (o) {
-      h += '<span class="jd-vh" id="jd-d-call-' + o.id + '">' +
-        esc(o.title + ' — ' + o.desc) + '</span>';
-    });
+      'when more than one drawing survived — filed as a winner plus a ' +
+      'margin (a tie has no margin).</span>';
+    if (ok.length === 2) {
+      var X = ok[0], Y = ok[1];
+      curCallStops = likertStops(X, Y);
+      var chosen = likertChosen();
+      h += '<div class="jd-likert" role="radiogroup" ' +
+        'aria-label="the call: which drawing belongs in the drawer" ' +
+        'aria-describedby="jd-d-call-what"' +
+        (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
+        '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">' + X.toUpperCase() + '</span>' +
+        '<div class="jd-lk-rail">';
+      curCallStops.forEach(function (o) {
+        var on = chosen === o.id;
+        h += '<label class="jd-lk-stop' + (on ? ' is-on' : '') + '" data-tt-t="' +
+          esc(o.title) + '" data-tt-d="' + esc(o.desc) + '">' +
+          '<input type="radio" name="jd-call" value="' + o.id +
+          '" data-role="call" aria-describedby="jd-d-call-' + o.id + '"' +
+          (on ? ' checked' : '') + '>' +
+          '<span class="jd-lk-dot" aria-hidden="true"></span>' +
+          '<span class="jd-lk-cap"><b>' + esc(o.big) + '</b><span>' +
+          esc(o.word) + '</span></span></label>';
+      });
+      h += '</div><span class="jd-lk-end jd-lk-end--b" aria-hidden="true">' + Y.toUpperCase() + '</span></div>';
+      curCallStops.forEach(function (o) {
+        h += '<span class="jd-vh" id="jd-d-call-' + o.id + '">' +
+          esc(o.title + ' — ' + o.desc) + '</span>';
+      });
+    } else {
+      curCallStops = [];
+      var winOpts = ok.map(function (s) {
+        return { value: s, label: 'Drawing ' + s.toUpperCase() };
+      });
+      winOpts.push({ value: 'tie', label: 'dead even' });
+      h += pillRow('jd-callwin', 'which drawing belongs in the drawer',
+        winOpts, work.winner, ' data-role="callwin"') +
+        '<div data-callmargin' +
+        (work.winner && work.winner !== 'tie' ? '' : ' hidden') + '>' +
+        '<p class="jd-turn-line jd-callmargin-q">By how much?</p>' +
+        pillRow('jd-callmargin', 'the margin', [
+          { value: 'slight', label: 'narrowly' },
+          { value: 'decisive', label: 'decisively' }
+        ], work.strength, ' data-role="callmargin"') +
+        '</div>';
+    }
     return h + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
-      (work.winner ? '' : ' disabled') + '>file the grades</button>');
+      (callReady() ? '' : ' disabled') + '>file the grades</button>');
   }
 
   /* §4 the bench, §5 the call. Neither carries an instruction line: they are
@@ -3817,7 +3870,7 @@ function JD_layerOpen() {
     var ok = okSlots();
     if (work.winner === 'tie') return work.kept ? (work.keep || null) : null;
     if (ok.length === 1) return ok[0];
-    return (work.winner === 'a' || work.winner === 'b') ? work.winner : null;
+    return (work.winner && ok.indexOf(work.winner) !== -1) ? work.winner : null;
   }
   /* ---------- 7. the unveil (§6) -------------------------------------------- */
   function viewUnveil() {
@@ -3834,13 +3887,14 @@ function JD_layerOpen() {
     }).join('');
     var h = head('Who drew what', 6) + '<ul class="jd-turn-reveal">' + lines + '</ul>';
     if (work.winner === 'tie' && !work.kept) {
+      var keepOpts = okSlots().map(function (s) {
+        return { value: s, label: 'Drawing ' + s.toUpperCase() };
+      });
+      keepOpts.push({ value: '', label: okSlots().length > 2 ? 'None of them' : 'Neither' });
       h += '<p class="jd-turn-line">A tie is filed as a tie. Keep one for your ' +
         'drawer anyway?</p>' +
-        pillRow('jd-keep', 'which drawing to keep', [
-          { value: 'a', label: 'Drawing A' },
-          { value: 'b', label: 'Drawing B' },
-          { value: '', label: 'Neither' }
-        ], work.keep, ' data-role="keep"') +
+        pillRow('jd-keep', 'which drawing to keep', keepOpts,
+          work.keep, ' data-role="keep"') +
         actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
     } else {
       h += '<p class="jd-turn-line">' + (work.placed
@@ -3857,8 +3911,8 @@ function JD_layerOpen() {
     return head('Nothing came back', 2) +
       '<p class="jd-turn-line">' + esc(work && work.notice
         ? work.notice
-        : 'Both machines failed. This cost you nothing — the drawer will try ' +
-          'again whenever you like.') + '</p>' +
+        : 'The machines all failed. This cost you nothing — the drawer will ' +
+          'try again whenever you like.') + '</p>' +
       actions('<button type="button" class="jd-turn-go" data-act="again">try again</button>' +
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
@@ -3946,7 +4000,19 @@ function JD_layerOpen() {
           st.classList.toggle('is-on', !!(input && input.checked));
         });
       }
-      setDisabled('[data-act="file"]', !work.winner);
+      setDisabled('[data-act="file"]', !callReady());
+    } else if (role === 'callwin') {
+      /* the three-way call's first pick: the winner (or dead even). The
+         margin question stands down on a tie — a tie has no margin — and a
+         changed winner keeps any margin already picked */
+      work.winner = val;
+      if (work.winner === 'tie') work.strength = null;
+      var mg = bodyEl.querySelector('[data-callmargin]');
+      if (mg) mg.hidden = !(work.winner && work.winner !== 'tie');
+      setDisabled('[data-act="file"]', !callReady());
+    } else if (role === 'callmargin') {
+      work.strength = val;
+      setDisabled('[data-act="file"]', !callReady());
     } else if (role === 'keep') {
       work.keep = val;
     }
@@ -4023,8 +4089,8 @@ function JD_layerOpen() {
   function blankWork() {
     return {
       prompt: '', notice: '', slow: false,
-      slots: { a: { status: 'pending' }, b: { status: 'pending' } },
-      ratings: { a: blankRating(), b: blankRating() },
+      slots: { a: { status: 'pending' }, b: { status: 'pending' }, c: { status: 'pending' } },
+      ratings: { a: blankRating(), b: blankRating(), c: blankRating() },
       /* the single bench: which step is on the bench, which steps the
          visitor has reached (the rail's first pass is linear), and the
          call's margin alongside its winner */
@@ -4037,7 +4103,7 @@ function JD_layerOpen() {
     return { grade: null, axes: {}, notes: {}, flag: false, flagNote: '' };
   }
 
-  /* ---------- generating: two parallel calls, one shared client_ref -------- */
+  /* ---------- generating: three parallel calls, one shared client_ref ------ */
   function startTurn() {
     var text = (work && work.prompt) || '';
     if (!text.trim().length || text.length > MAX_PROMPT) return;
@@ -4050,16 +4116,16 @@ function JD_layerOpen() {
        we never received */
     turn = {
       client_ref: uuid(), state: 'generating', submission_id: null,
-      slots: { a: { status: 'pending' }, b: { status: 'pending' } }
+      slots: { a: { status: 'pending' }, b: { status: 'pending' }, c: { status: 'pending' } }
     };
     persist();
     work.slow = false;
     work.notice = '';
-    work.slots = { a: { status: 'pending' }, b: { status: 'pending' } };
+    work.slots = { a: { status: 'pending' }, b: { status: 'pending' }, c: { status: 'pending' } };
     go('generating');
     startSlowTimer();
     JD_track('turn_submit', null);
-    ['a', 'b'].forEach(function (slot) {
+    ['a', 'b', 'c'].forEach(function (slot) {
       /* NO client abort and NO client timeout — the server owns the 90s
          budget, and a fetch cancelled here would abandon a generation the
          server is still paying for (C5.4) */
@@ -4085,7 +4151,7 @@ function JD_layerOpen() {
     });
   }
 
-  /* each slot lands on its own — the UI never waits for the pair */
+  /* each slot lands on its own — the UI never waits for the trio */
   function settleSlot(mine, slot, res) {
     if (mine !== token || !work || !turn) return;
     if (res && res.ok && res.svg) {
@@ -4104,17 +4170,18 @@ function JD_layerOpen() {
     }
     persist();
     paintSlots();
-    if (work.slots.a.status === 'pending' || work.slots.b.status === 'pending') return;
+    if (pendingCount() > 0) return;
     stopSlowTimer();
     if (okSlots().length) { go('reveal'); return; }
     /* nothing survived: a limit refusal goes back to the brief with honest
        copy (no submission was created), anything else is an apology */
-    var codes = ['a', 'b'].map(function (s) { return work.slots[s].code; });
+    var codes = ['a', 'b', 'c'].map(function (s) { return work.slots[s].code; });
     var limited = codes.filter(function (c) {
       return c === 'rate_limited' || c === 'drawer_resting';
     })[0];
     if (limited) {
-      var wait = work.slots.a.retry_after || work.slots.b.retry_after;
+      var wait = work.slots.a.retry_after || work.slots.b.retry_after ||
+        work.slots.c.retry_after;
       var notice = limited === 'drawer_resting'
         ? 'the drawer is resting — it has drawn all it can today. come back ' +
           'tomorrow.'
@@ -4129,10 +4196,10 @@ function JD_layerOpen() {
       return;
     }
     work.notice = codes.indexOf('sanitizer_rejected') !== -1
-      ? 'both machines answered with something the drawer wouldn’t accept ' +
+      ? 'the machines answered with something the drawer wouldn’t accept ' +
         '— it rejects rather than repairs. This cost you nothing.'
-      : 'Both machines failed. This cost you nothing — the drawer will try ' +
-        'again whenever you like.';
+      : 'All three machines failed. This cost you nothing — the drawer will ' +
+        'try again whenever you like.';
     turn.state = 'apology';
     persist();
     go('apology');
@@ -4208,7 +4275,7 @@ function JD_layerOpen() {
     /* the winner is placed from the reveal payload — a degraded turn keeps
        its survivor, a tie asks the visitor (a purely local choice) */
     if (ok.length === 1) placeWinner(ok[0]);
-    else if (work.winner === 'a' || work.winner === 'b') placeWinner(work.winner);
+    else if (work.winner && work.winner !== 'tie') placeWinner(work.winner);
     go('unveil');
   }
 
@@ -4244,21 +4311,28 @@ function JD_layerOpen() {
       grade: r.grade,
       annotations: ratingAnnotations(r)
     };
-    /* the OTHER bench response rides along (owner request, 2026-08-12): the
-       report card shows both options from the turn, the loser filed as an
-       alternative response on the same entry. Only the winner joins the
-       pile — this is record-keeping, not a second item. */
-    var other = okSlots().filter(function (x) { return x !== slot; })[0];
-    var os = other && work.slots[other];
-    if (os && os.status === 'ok' && os.svg && os.gen_id) {
-      var orv = revealFor(other) || {};
-      rec.also = {
-        gen_id: os.gen_id, svg: os.svg,
-        model_id: orv.model_id || '', label: orv.label || '',
-        grade: work.ratings[other].grade,
-        annotations: ratingAnnotations(work.ratings[other])
-      };
-    }
+    /* the OTHER bench responses ride along (owner request, 2026-08-12;
+       generalized to the trio 2026-08-14): the report card shows every
+       option from the turn, the losers filed as alternative responses on
+       the same entry. Only the winner joins the pile — this is
+       record-keeping, not extra items. Records persisted before the trio
+       carry a single `also` object; new ones carry `others` (array), and
+       registerRecord reads both. */
+    var others = okSlots().filter(function (x) { return x !== slot; });
+    rec.others = [];
+    others.forEach(function (other) {
+      var os = work.slots[other];
+      if (os && os.status === 'ok' && os.svg && os.gen_id) {
+        var orv = revealFor(other) || {};
+        rec.others.push({
+          gen_id: os.gen_id, svg: os.svg,
+          model_id: orv.model_id || '', label: orv.label || '',
+          grade: work.ratings[other].grade,
+          annotations: ratingAnnotations(work.ratings[other])
+        });
+      }
+    });
+    if (!rec.others.length) delete rec.others;
     var list = JD_store.get(K_ITEMS) || [];
     list = [rec].concat(list.filter(function (x) { return x.gen_id !== rec.gen_id; }));
     if (list.length > MAX_ITEMS) list = list.slice(0, MAX_ITEMS);
@@ -4387,23 +4461,25 @@ function JD_layerOpen() {
     }];
     var primed = {};
     primed[rec.gen_id + '/' + file] = rec.svg;
-    /* the turn's OTHER response files as r2 (owner request, 2026-08-12), so
-       the card's "same prompt" strip shows both options with the grades the
-       visitor gave each. `primary: 'r1'` below pins the WINNER as the shown
-       response — without the pin, best-grade-wins would re-point the card
-       (and the drawer) at a loser the visitor happened to grade higher.
-       Records stored before this change have no `also` and file one
-       response, exactly as they did. */
-    if (rec.also && rec.also.svg && rec.also.gen_id) {
-      var afile = rec.also.gen_id + '.svg';
+    /* the turn's OTHER responses file as r2, r3 (owner request, 2026-08-12;
+       trio-generalized 2026-08-14), so the card's "same prompt" strip shows
+       every option with the grades the visitor gave each. `primary: 'r1'`
+       below pins the WINNER as the shown response — without the pin,
+       best-grade-wins would re-point the card (and the drawer) at a loser
+       the visitor happened to grade higher. Records stored before this
+       change have a single `also` (or nothing) and file accordingly. */
+    var loserRecs = rec.others || (rec.also ? [rec.also] : []);
+    loserRecs.forEach(function (alt, ai) {
+      if (!alt.svg || !alt.gen_id) return;
+      var afile = alt.gen_id + '.svg';
       responses.push({
-        rid: 'r2', file: afile, model: rec.also.model_id, date: day,
+        rid: 'r' + (ai + 2), file: afile, model: alt.model_id, date: day,
         generation: { mode: 'one-shot', prompt_count: 1 },
-        grade: rec.also.grade, annotations: rec.also.annotations || {},
-        url: svgDataUrl(rec.also.svg), transcript_url: null
+        grade: alt.grade, annotations: alt.annotations || {},
+        url: svgDataUrl(alt.svg), transcript_url: null
       });
-      primed[rec.gen_id + '/' + afile] = rec.also.svg;
-    }
+      primed[rec.gen_id + '/' + afile] = alt.svg;
+    });
     payload.items.unshift({
       id: rec.gen_id, title: title, prompt: rec.prompt, created: day,
       visitor: true, sizeClass: VISITOR_TIER, primary: 'r1',
