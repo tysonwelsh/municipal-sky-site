@@ -1467,6 +1467,23 @@ tr.rc-axdesc td {
   font-family: var(--hand); font-size: 0.66rem; color: var(--red);
   text-transform: none; letter-spacing: 0;
 }
+/* the strip pagers (owner directive, 2026-08-14 — entries reached 4
+   responses and the row was built for 3): plain boxed ◂ ▸ in the same
+   paper-and-rule language as the thumbnails they sit beside, form-ink
+   rather than pencil — this is furniture, not a verdict. Disabled at the
+   filing order's ends (no wraparound), dimmed like a spent control. */
+.rc-alt-nav {
+  flex: 0 0 auto; align-self: stretch; width: 20px;
+  font: inherit; font-size: 0.62rem; line-height: 1; padding: 0;
+  cursor: pointer; color: var(--form-ink-2);
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+}
+.rc-alt-nav:hover:not(:disabled) {
+  background: rgba(255, 250, 232, 0.85);
+  border-color: var(--form-rule); color: var(--form-ink);
+}
+.rc-alt-nav:disabled { opacity: 0.32; cursor: default; }
 
 /* (the card foot — download + accession no. — retired 2026-08-13: the
    DOWNLOAD button rides the photograph and the file number its notes) */

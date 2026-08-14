@@ -2138,6 +2138,15 @@ function JD_layerOpen() {
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
+  /* the alternatives strip's window start (owner directive, 2026-08-14 —
+     with Kimi K3 filed, entries reached 4 responses and the strip outgrew
+     its row): at most 3 thumbnails show at once; ◂ ▸ buttons step the
+     window one response at a time. No wraparound — the archive keeps its
+     filing order and the buttons go disabled at the ends. State is a
+     module var so a full re-render (switching response) never loses the
+     visitor's place; nav presses re-render the strip alone, not the card,
+     so a long prompt's fold stays as it was left. */
+  var altWin = 0;
   /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
      to be, the card is a form and the art is one field on it — so pressing
      the plate lifts the same artwork onto a full-viewport layer where it can
@@ -2466,8 +2475,18 @@ function JD_layerOpen() {
 
   function altsHTML(entry, curIdx) {
     if (!entry.responses || entry.responses.length < 2) return '';
+    var n = entry.responses.length, paged = n > 3;
+    altWin = Math.max(0, Math.min(altWin, n - 3));
+    var slice = paged ? entry.responses.slice(altWin, altWin + 3)
+                      : entry.responses;
     var h = '<div class="rc-alts">';
-    entry.responses.forEach(function (r, i) {
+    if (paged) {
+      h += '<button type="button" class="rc-alt-nav" data-nav="-1"' +
+        (altWin === 0 ? ' disabled' : '') +
+        ' aria-label="Earlier responses">◂</button>';
+    }
+    slice.forEach(function (r, j) {
+      var i = paged ? altWin + j : j;
       var m = modelOf(r.model), g = gradeOf(r.grade);
       h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
         '" data-resp="' + i + '">' +
@@ -2482,6 +2501,11 @@ function JD_layerOpen() {
         esc(g.label) + '</span>' +
         '</span></button>';
     });
+    if (paged) {
+      h += '<button type="button" class="rc-alt-nav" data-nav="1"' +
+        (altWin >= n - 3 ? ' disabled' : '') +
+        ' aria-label="More responses">▸</button>';
+    }
     return h + '</div>';
   }
 
@@ -2556,7 +2580,7 @@ function JD_layerOpen() {
     var alts = altsHTML(entry, curIdx);
     if (alts) {
       h += '<div class="rc-block rc-head">Other models, same prompt</div>' +
-        '<div class="rc-block">' + alts + '</div>';
+        '<div class="rc-block rc-alts-block">' + alts + '</div>';
     }
     /* (no footer any more: the download button lives on the photograph and
        the file number in its margin notes — owner rev, 2026-08-13) */
@@ -2665,6 +2689,20 @@ function JD_layerOpen() {
           dr.hidden = !opening;
           ax.setAttribute('aria-expanded', opening ? 'true' : 'false');
         }
+        return;
+      }
+      /* the strip's ◂ ▸ pagers (4+ responses): step the thumbnail window
+         and rebuild the STRIP ALONE — a full render() would fold a long
+         prompt the visitor just opened, and browsing the bench isn't
+         switching the response */
+      var nav = e.target.closest ? e.target.closest('.rc-alt-nav') : null;
+      if (nav) {
+        if (nav.disabled) return;
+        var step = parseInt(nav.getAttribute('data-nav'), 10);
+        altWin = Math.max(0, Math.min(altWin + step,
+          curEntry.responses.length - 3));
+        var altsBlock = scrollEl.querySelector('.rc-alts-block');
+        if (altsBlock) altsBlock.innerHTML = altsHTML(curEntry, curResp);
         return;
       }
       var b = e.target.closest ? e.target.closest('.rc-alt') : null;
@@ -2815,6 +2853,12 @@ function JD_layerOpen() {
     for (var i = 0; i < entry.responses.length; i++) {
       if (entry.responses[i].rid === entry.primary) curResp = i;
     }
+    /* open with the PRIMARY's thumbnail showing: the window centers on it
+       (one earlier response visible when there is one), clamped to the
+       strip's ends */
+    altWin = entry.responses.length > 3
+      ? Math.max(0, Math.min(curResp - 1, entry.responses.length - 3))
+      : 0;
     injectDefs();
     build();
     isOpen = true;
