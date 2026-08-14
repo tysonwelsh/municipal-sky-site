@@ -1610,6 +1610,13 @@ html.jd-turn-open { overflow: hidden; }
   position: relative;
   box-sizing: border-box;
   width: min(680px, 100%);
+  /* .rc-bar-tick (reused verbatim on the bench, owner directive r4) paints
+     its dividers in --card, a custom property normally scoped to the
+     report card's own paper; this form has no such variable, so without a
+     local value the tick would fall back to the rc default (#efe4c6)
+     instead of this sheet's actual paper (--tpaper, #ece0bf) — close, but
+     visibly a different paper under the fill's leading edge. */
+  --card: var(--tpaper);
   /* the card is a FLEX ITEM of the scrim, so its default min-width:auto lets
      any nowrap descendant push it wider than the phone viewport. This line is
      what keeps 375px honest. */
@@ -1983,18 +1990,32 @@ html.jd-turn-open { overflow: hidden; }
    spending space on the same "give this a touch target" job. The padding is
    gone; the control's own min-height carries the row entirely, and that
    min-height is now a TOUCH floor, not a universal one (below). */
+/* the column split (owner directive r4): brought toward the report card's
+   own 47/53 (.rc-subj th, above) — 1fr against 1.13fr lands there while
+   staying fluid, and the 170px floor keeps a select legible once the
+   ≤700px fold has room to give it. */
 .jd-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 214px);
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 1.13fr);
   gap: 2px 10px; align-items: center;
   border-bottom: 1px solid var(--trule-2);
   padding: 0;
 }
-/* OVERALL GRADE outranks the three secondary axes, the way the report
-   card's tfoot grade row outranks the axis rows above it: a 2px rule (not
-   the row's usual 1px) closes it off from whatever came before — the rail,
-   or (in the portrait stack) the pinned plate. */
+/* OVERALL GRADE outranks the axes, the way the report card's tfoot grade
+   row outranks the axis rows above it: a 2px rule (not the row's usual
+   1px) sets it off from whatever came before it. It now sits LAST (owner
+   directive r4, matching the report card's own axes-then-tfoot order —
+   see benchPanel), so this rule finally separates what it looks like it
+   separates, rather than sitting above the very first row. */
 .jd-row--grade { border-top: 2px solid var(--trule); }
+/* the column head above the rows (owner directive r4): same grid as the
+   rows below it so the two labels land over their columns, set in the
+   report card's own <th> voice — small form caps, not the row's mono. */
+.jd-row--head {
+  padding: 0.3em 0 0.35em; border-bottom: 1px solid var(--trule);
+  font-family: var(--tform); font-size: var(--t-micro); font-weight: 400;
+  letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-2);
+}
 .jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
 /* OVERRIDE 1 (round-16, owner): the ⓘ circle and the click-to-unfold
    popover it drove are both gone outright — see the note at .jd-vh below
@@ -2017,6 +2038,18 @@ html.jd-turn-open { overflow: hidden; }
   border-bottom: 1px dotted var(--trule-2);
 }
 .jd-def:hover > span { color: var(--tink); }
+
+/* the picked-value gauge sits ahead of the select (owner directive r4):
+   .rc-bar is the report card's own gauge, unchanged — reused, not
+   reinvented, so a filled bench row and its report-card row draw the same
+   mark. width:auto overrides .jd-turn-select's own width:100%, which would
+   otherwise fight the gauge for the row; flex:1 lets the select take
+   whatever the gauge doesn't need. Empty (no value picked yet) collapses
+   to nothing, so an unanswered row looks exactly as it did before this
+   round. */
+.jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
+.jd-row-ctrl .rc-bar { flex: 0 0 auto; }
 
 /* the scale itself stays a NATIVE select — phone OS pickers, titles only.
    OVERRIDE 2: 44px is a touch floor. Compressed by default (a <select>
@@ -2266,11 +2299,13 @@ html.jd-turn-open { overflow: hidden; }
     position: sticky; top: 0; z-index: 4;
     padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
     background: var(--tpaper) var(--tgrain);
-    /* R2-F3 (round-17): no border-bottom here — OVERALL GRADE is always the
-       first row under the pin in the portrait stack, and its own
-       .jd-row--grade top rule (2px) closed the plate off from the rows
-       already; a second 1px rule 2.4px above it just doubled the hairline.
-       The box-shadow stays — it's doing a different job, selling the sticky
+    /* R2-F3 (round-17), reasoning updated (owner directive r4 — grade moved
+       to last, see benchPanel): no border-bottom here. The HEADER row is
+       always first under the pin in the portrait stack (order changed, its
+       position in the DOM did not), and the header carries no top rule of
+       its own to double against; a rule painted here would just be a lone
+       hairline with nothing on either side of it justifying it. The
+       box-shadow stays — it's doing a different job, selling the sticky
        plate lifting off the rows sliding underneath it, not ruling off a
        section. */
     box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
@@ -2292,6 +2327,12 @@ html.jd-turn-open { overflow: hidden; }
   /* the examination row becomes label-over-control */
   .jd-row { grid-template-columns: minmax(0, 1fr); }
   .jd-row .jd-turn-select { margin-bottom: 0.3rem; }
+  /* the header row named two COLUMNS; label-over-control just stacked
+     both of them into one, so there is no pair left for it to name — each
+     row's own dotted-underline label already says what it is at this
+     width, the way it always has. Drop the header rather than let it read
+     as two mystery lines above the first row. */
+  .jd-row--head { display: none; }
   .jd-turn-pin .jd-turn-plate { width: 108px; }
   .jd-rail-long { display: none; }
   .jd-rail-short { display: inline; }

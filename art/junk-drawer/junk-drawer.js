@@ -2215,6 +2215,10 @@ function JD_layerOpen() {
     }
     return h + '</span>';
   }
+  window.JD_barHTML = barHTML;  /* the bench (r4, owner directive) reuses this
+    gauge verbatim once a value is picked, instead of inventing a second one —
+    a filled-in bench and the report card it produces are meant to speak the
+    same visual language */
   /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
@@ -3532,6 +3536,31 @@ function JD_layerOpen() {
      click-to-unfold popover (owner: "an awkward little eye"); now it reaches
      keyboard and screen-reader users the moment they focus the select, and
      mouse users on hover over the label, and needs no toggle state at all. */
+  /* The chosen-value gauge, built in ONE place because two callers need the
+     identical mark: scaleRow() paints it with whatever was already answered,
+     and onChange() re-paints it the instant the visitor picks (below). Owner
+     directive r4: once a row has an actual answer it grows the SAME
+     segmented bar the report card shows for that same value — window.
+     JD_barHTML and the report card's own rc-r… / rc-g… rank classes, not a
+     parallel set. (Those prefixes are written out rather than starred: a
+     literal asterisk-slash inside a block comment closes it, and that broke
+     the whole file once already.) `total` is the scale's own step count (3
+     for an axis, 5 for the grade), so the bar always fills against the
+     total it's segmented into. Keeping this a function is the fix for a bug
+     worth remembering: the gauge used to be inlined in scaleRow() alone, so
+     it only ever appeared if you left the step and came back — in the flow
+     a visitor actually walks, the select fires change, work.ratings is
+     written, and the row itself never re-renders, so the gauge was
+     invisible the whole way through a live turn. A mark that reports state
+     has to be written wherever the state is written. */
+  function gaugeFor(ax, total, chosen) {
+    if (chosen == null) return '';
+    var picked = ax ? window.JD_byRank(ax.values, chosen)
+      : window.JD_gradeOf(tax(), chosen);
+    var rank = picked ? Math.round(picked.rank) : 0;
+    if (!rank) return '';
+    return window.JD_barHTML(rank, total, (ax ? 'rc-r' : 'rc-g') + rank);
+  }
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
@@ -3544,6 +3573,13 @@ function JD_layerOpen() {
       esc(desc) + '"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
+      /* the gauge (if any) is the FIRST CHILD of .jd-row-ctrl, not wrapped
+         in its own span — paintGauge (below, in the input plumbing) finds
+         it with ctrl.querySelector('.rc-bar') and removes/inserts it as a
+         direct child on every change, so first paint has to hand it the
+         identical shape or the live update's removeChild throws on a node
+         that isn't actually its child. */
+      '<div class="jd-row-ctrl">' + gaugeFor(ax, levels.length, chosen) +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
       'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
       (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
@@ -3556,8 +3592,19 @@ function JD_layerOpen() {
       h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
         esc(window.JD_labelText(l.label || l.id)) + '</option>';
     });
-    h += '</select>';
+    h += '</select></div>';
     return h + '</div>';
+  }
+  /* the column head above the rows, mirroring the report card's <thead>
+     (owner directive r4 — see .rc-subj th): same two-column split and the
+     same left-hand word ("Axis"), but the right column is worded to ASK
+     rather than report — the report card's "Verdict" names a fact already
+     filed, this one names a blank still waiting to be filled. A plain grid
+     row, not a table head, so it carries nothing assistive tech needs; each
+     select's own aria-label/aria-describedby already says what it is. */
+  function benchHeadHTML() {
+    return '<div class="jd-row jd-row--head" aria-hidden="true">' +
+      '<span>Axis</span><span>Your rating</span></div>';
   }
 
   /* the step rail. First pass is linear (a step unlocks when the one before
@@ -3601,10 +3648,18 @@ function JD_layerOpen() {
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
       plate(slot, { pin: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
-      scaleRow(slot, 'grade', null, r.grade);
+      benchHeadHTML();
+    /* axes first, in taxonomy order, THEN the overall grade (owner
+       directive r4): the report card files axes in <tbody> and the overall
+       grade alone in <tfoot> below a rule — the SAME rubric was reading in
+       the opposite order here, one click away. .jd-row--grade already
+       carries the 2px top rule that reads as a tfoot break; it just needed
+       the grade row to actually be last for that rule to mean what it looks
+       like it means. */
     liveAxes().forEach(function (ax) {
       h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
     });
+    h += scaleRow(slot, 'grade', null, r.grade);
     /* the report path (APP §4.6); F9 (round-16) — the checkbox label and the
        note's placeholder used to ask the same question twice ("this drawing
        is broken or offensive" / "what is wrong with it?"). The label is
@@ -3790,6 +3845,20 @@ function JD_layerOpen() {
   function actions(inner) { return '<div class="jd-turn-actions">' + inner + '</div>'; }
 
   /* ---------- input plumbing ---------------------------------------------- */
+  /* swap the row's gauge for the value just chosen — in place, because a
+     full repaint here would close the native picker's own row under the
+     visitor's finger and lose the scroll position mid-survey. Clearing back
+     to "skip" removes the mark, the same as the report card showing nothing
+     for an axis that was never assessed. */
+  function paintGauge(select, ax, val) {
+    var ctrl = select.parentNode;
+    if (!ctrl || !ctrl.classList || !ctrl.classList.contains('jd-row-ctrl')) return;
+    var old = ctrl.querySelector('.rc-bar');
+    if (old) ctrl.removeChild(old);
+    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var html = gaugeFor(ax, levels.length, val == null ? null : Number(val));
+    if (html) ctrl.insertAdjacentHTML('afterbegin', html);
+  }
   function onChange(e) {
     var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
     if (!role) return;
@@ -3808,10 +3877,12 @@ function JD_layerOpen() {
     if (role === 'grade') {
       work.ratings[slot].grade = val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
+      paintGauge(t, null, val);
     } else if (role === 'axis') {
       work.ratings[slot].axes[t.getAttribute('data-axis')] =
         val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
+      paintGauge(t, byId(liveAxes(), t.getAttribute('data-axis')), val);
     } else if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
       /* mutate in place — see benchPanel */
