@@ -31,8 +31,12 @@ var JD_API = '';
 var JD_CLIENT = 'web';
 
 /* The third-party-AI disclosure, recorded per submission. This copy is
-   canonical: privacy.php quotes the same words, and drift between the two is
-   a blocking review finding (APP §4.5). */
+   canonical: privacy.php §4 quotes it verbatim, and drift between the two is
+   a blocking review finding (APP §4.5). The prompt card stopped PRINTING
+   these words in round 17 (owner call, 2026-08-14: privacy.php already
+   carries the full disclosure live, so the card links to it instead of
+   repeating it) — JD_CONSENT.text/.version stay exactly as filed regardless,
+   because they are still what gets recorded against the visitor's turn. */
 var JD_CONSENT = {
   version: 'jd-consent-1',
   text: 'When you take a turn, the words you type are sent to two AI ' +
@@ -3346,9 +3350,16 @@ function JD_layerOpen() {
         '<button type="button" class="jd-turn-go" data-act="generate"' +
         (draft.trim().length && n <= MAX_PROMPT ? '' : ' disabled') +
         '>send it</button>') +
-      /* the third-party disclosure, as fine print now that its gating card
-         is retired (owner, 2026-08-14) — same canonical words */
-      '<p class="jd-turn-fine">' + esc(JD_CONSENT.text) + '</p>';
+      /* R2 addendum (owner, 2026-08-14): the card no longer prints
+         JD_CONSENT.text — privacy.php §4 already quotes it verbatim and is
+         live, so repeating it here was the redundant kind of bloat this
+         round was cutting. One line naming where the words go, linking to
+         the page that carries the full disclosure. JD_CONSENT.text/.version
+         are unchanged and still what gets recorded on submission — this is
+         a change to what the card SHOWS, not what the visitor agrees to. */
+      '<p class="jd-turn-fine">Sent to Anthropic and OpenAI to be drawn ' +
+      'and studied — see our <a class="jd-turn-link" href="/privacy.php">' +
+      'privacy</a> page.</p>';
   }
 
   /* ---------- 3. the darkroom (§2, RECEIVED) -------------------------------

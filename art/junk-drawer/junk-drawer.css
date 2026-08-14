@@ -1728,18 +1728,24 @@ html.jd-turn-open { overflow: hidden; }
   border-top: 1px solid var(--trule-2); border-bottom: 1px solid var(--trule-2);
   font-size: var(--t-body); line-height: 1.5; color: var(--tink-2);
 }
-/* the disclosure, as the form's small print (its gating card retired
-   2026-08-14) — present, honest, and not a wall */
+/* the form's small print. Round 16 kept JD_CONSENT.text printed here
+   verbatim (OVERRIDE 3) and just tightened the typography; round 17 (owner
+   call, 2026-08-14) stopped printing it at all — privacy.php §4 already
+   quotes those words live, so the card now carries one linked line instead
+   of the full paragraph. The class stays: still quiet fine print, still a
+   lighter rule than the rest of the card. */
 .jd-turn-fine {
-  /* OVERRIDE 3 (round-16): the words are the recorded consent text and stay
-     verbatim — only the typography tightened: a shorter leading and a
-     lighter rule so it settles as quiet fine print instead of a block of
-     prose the same weight as the rest of the card. */
   margin: var(--sp-3) 0 0; padding-top: var(--sp-2);
   border-top: 1px solid var(--trule-2);
   font-size: var(--t-label); line-height: 1.5; letter-spacing: 0.02em;
   color: var(--tink-2);
 }
+/* the one link on the card: reads as a link within the paper fiction (ink
+   underline, darkens on hover) rather than a UI-blue affordance that would
+   break it */
+.jd-turn-link { color: var(--tink-2); text-decoration: underline; text-decoration-color: var(--tink-2); }
+.jd-turn-link:hover { color: var(--tink); text-decoration-color: var(--tink); }
+.jd-turn-link:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- BOX 1: the requester's own field ------------------------------------ */
 .jd-turn-fieldwrap { position: relative; }
@@ -2008,20 +2014,24 @@ html.jd-turn-open { overflow: hidden; }
   column-gap: 20px; align-items: start;
 }
 .jd-bench-l { min-width: 0; }
-/* F2 (round-16): this column used to be align-self: stretch, matched to the
-   PLATE's height (up to 380px), with .jd-turn-actions's margin-top: auto
-   pushing the action row to the bottom of that borrowed height — four 44px
-   rows don't fill 380px, so the button floated 87px above the flag row with
-   nothing between them. The column is its own content height now; the
-   plate and the paperwork are two independent columns that are allowed to
-   end at different heights, same as the report card's two columns do. */
+/* R2-F1/F2 (round-17, owner override): the "let them differ" approach from
+   round 16 fixed the auto-margin bug but relocated the dead space instead of
+   removing it — the exhibit (up to 380px) and the paperwork (~246px) are
+   structurally mismatched by design, so the outer card was always going to
+   be exhibit-height, and whatever the paperwork column didn't use just sat
+   there as a blank rectangle under the button. The plate stays full size —
+   it's the thing being judged, not a bug to paper over by shrinking it.
+   Instead the column SPANS the exhibit's height (stretch + min-height: 100%,
+   so the border-left rule reaches all the way down) and CENTRES its content
+   inside that span — the leftover space splits above and below the block of
+   rows instead of collecting under it, which reads as composition rather
+   than as a column that ran out of content. */
 .jd-bench-r {
   min-width: 0;
   display: flex; flex-direction: column;
+  align-self: stretch; min-height: 100%; justify-content: center;
   border-left: 1px solid var(--trule-2); padding-left: 20px;
 }
-/* a FIXED gap to the action row, not a stretch-to-fill one — replacing one
-   auto-margin bug with a different auto-margin bug was the thing to avoid */
 .jd-bench-r .jd-turn-actions { margin-top: var(--sp-4); }
 /* the pinned exhibit: the artwork under examination stays in view for the
    whole panel. On the landscape bench it simply sits in its column; in the
@@ -2140,8 +2150,16 @@ html.jd-turn-open { overflow: hidden; }
   border: 1px solid rgba(168, 51, 42, 0.5); padding: 1px 4px 0;
 }
 .jd-likert { display: flex; align-items: flex-start; gap: 10px; margin: 0.15rem 0 0; }
+/* R2-F4 (round-17): the A/B glyphs sit on the STOP DOTS' centreline, not a
+   guessed padding. .jd-lk-rail::before draws the connecting line at
+   top: 13px — that's the dot centre (.jd-lk-stop's 5px padding-top + half
+   the 16px dot). A 26px-tall flex box centres its text at exactly half its
+   own height, so starting from the same flex-start edge as the rail
+   (.jd-likert is align-items: flex-start) puts the glyph's centre at 13px
+   too, matched to the dots instead of approximated against them. */
 .jd-lk-end {
-  flex: 0 0 auto; padding-top: 4px;
+  flex: 0 0 auto; height: 26px;
+  display: flex; align-items: center;
   font-family: var(--tform); font-size: 0.95rem; font-weight: 700;
   letter-spacing: 0.1em; color: var(--tink-3);
 }
@@ -2313,7 +2331,13 @@ html.jd-turn-open { overflow: hidden; }
     position: sticky; top: 0; z-index: 4;
     padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
     background: var(--tpaper) var(--tgrain);
-    border-bottom: 1px solid var(--trule);
+    /* R2-F3 (round-17): no border-bottom here — OVERALL GRADE is always the
+       first row under the pin in the portrait stack, and its own
+       .jd-row--grade top rule (2px) closed the plate off from the rows
+       already; a second 1px rule 2.4px above it just doubled the hairline.
+       The box-shadow stays — it's doing a different job, selling the sticky
+       plate lifting off the rows sliding underneath it, not ruling off a
+       section. */
     box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
   }
   .jd-turn-pin .jd-turn-plate { width: 148px; }
