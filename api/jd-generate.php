@@ -243,9 +243,12 @@ try {
         'usage_tokens' => $usage,
     ]);
 
-    // Idempotent, and never a downgrade from 'rated'.
-    $db->prepare("UPDATE jd_submissions SET status = 'generated' WHERE id = ? AND status = 'pending'")
-       ->execute([$submissionId]);
+    // Idempotent, and never a downgrade from 'rated'. Also post-provider, so it
+    // takes the same reconnect path as the settle above.
+    jd_db_retry(function (PDO $db) use ($submissionId): void {
+        $db->prepare("UPDATE jd_submissions SET status = 'generated' WHERE id = ? AND status = 'pending'")
+           ->execute([$submissionId]);
+    }, $db);
 
     jd_json_out(200, [
         'ok' => true,
@@ -349,23 +352,28 @@ function jd_enforce_rate_limits(PDO $db, string $visitorHash, string $slot): voi
 // the pending state it is leaving.
 function jd_finish_generation(PDO $db, string $generationId, array $fields): void
 {
-    $stmt = $db->prepare(
-        'UPDATE jd_generations
-            SET status = ?, reject_reason = ?, raw_response = ?, svg = ?,
-                disobedience = ?, latency_ms = ?, usage_tokens = ?
-          WHERE id = ? AND status = ?'
-    );
-    $stmt->execute([
-        $fields['status'],
-        $fields['reject_reason'] ?? null,
-        $fields['raw_response'] ?? null,
-        $fields['svg'] ?? null,
-        (int) ($fields['disobedience'] ?? 0),
-        $fields['latency_ms'] ?? null,
-        $fields['usage_tokens'] ?? null,
-        $generationId,
-        'pending',
-    ]);
+    // Through jd_db_retry() because this is the first write after the provider
+    // call, and the connection may not have survived it (jd-config.php C6.2).
+    // The 'pending' guard below is what makes the replay safe.
+    jd_db_retry(function (PDO $db) use ($generationId, $fields): void {
+        $stmt = $db->prepare(
+            'UPDATE jd_generations
+                SET status = ?, reject_reason = ?, raw_response = ?, svg = ?,
+                    disobedience = ?, latency_ms = ?, usage_tokens = ?
+              WHERE id = ? AND status = ?'
+        );
+        $stmt->execute([
+            $fields['status'],
+            $fields['reject_reason'] ?? null,
+            $fields['raw_response'] ?? null,
+            $fields['svg'] ?? null,
+            (int) ($fields['disobedience'] ?? 0),
+            $fields['latency_ms'] ?? null,
+            $fields['usage_tokens'] ?? null,
+            $generationId,
+            'pending',
+        ]);
+    }, $db);
 }
 
 // C4.3 — exactly what was sent, minus the prompt and system text.

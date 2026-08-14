@@ -1,1 +1,1 @@
-0.8.44 — the rating gauge stands down in the one narrow window where it was squeezing the answer text ("SMALL PROBLEMS" showing as "SMALL PROB"); unchanged everywhere else
+0.8.45 — a slow generation no longer vanishes: when the database connection dies while a model is still drawing, the result is now saved on a fresh connection instead of being lost

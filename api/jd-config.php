@@ -101,11 +101,16 @@ function jd_secrets(): array
 // ---------------------------------------------------------------------------
 // C6.1 — one PDO for the request. Production/local-with-MySQL reuse
 // database.php verbatim; dev mode gets a SQLite file created on demand.
-function jd_db(): PDO
+function jd_db(bool $fresh = false): PDO
 {
     static $shared = null;
-    if ($shared instanceof PDO) {
+    if (!$fresh && $shared instanceof PDO) {
         return $shared;
+    }
+    if ($fresh) {
+        // Drop the dead handle before rebuilding, so a failed reconnect cannot
+        // hand the old one back out. See jd_db_retry() below.
+        $shared = null;
     }
 
     if (JD_DEV_MODE) {
@@ -146,6 +151,61 @@ function jd_db(): PDO
     /** @var PDO $pdo — defined by database.php */
     $shared = $pdo;
     return $shared;
+}
+
+// ---------------------------------------------------------------------------
+// C6.2 — surviving a connection that died while the provider was working.
+//
+// A generation holds this connection open and completely idle for the 60-120s
+// of the provider call, and shared hosting will sometimes close it in that
+// window. The symptom is a 2006/2013 on the FIRST write after the call returns:
+// jd_finish_generation() throws, jd-generate.php's catch answers 500, and the
+// row it was about to settle is stranded at 'pending' forever — no
+// reject_reason, no latency_ms, no usage_tokens, because the statement that
+// records all three is the one that failed. That is indistinguishable in the
+// database from a request that died mid-flight, which is what made it hard to
+// read. Observed 2026-08-14 01:42:16Z on generation 01KZYYVZMWM4R4TRC1P43CNSMW,
+// 76s into an Opus 5 call, with the cause visible only in the PHP error log.
+//
+// Note this is NOT plain wait_timeout: the session value is 3600, and an idle
+// connection measurably survives 180s on this host. Whatever governor is
+// closing it, the write path must not assume the connection outlived the
+// provider call.
+function jd_db_connection_lost(PDOException $e): bool
+{
+    $driverCode = $e->errorInfo[1] ?? null;
+    if ($driverCode === 2006 || $driverCode === 2013) {
+        return true;
+    }
+    $message = $e->getMessage();
+    return stripos($message, 'server has gone away') !== false
+        || stripos($message, 'Lost connection') !== false;
+}
+
+/**
+ * Run one database write, reconnecting and replaying it EXACTLY once if the
+ * connection died. Any other PDOException propagates untouched to the C1 error
+ * envelope — this recovers a dead socket, not a bad statement.
+ *
+ * Only safe for idempotent writes. Every call site guards on the row state it
+ * is leaving (`WHERE ... AND status = 'pending'`), so a replay that lands after
+ * a partially-applied first attempt is a no-op rather than a double write.
+ *
+ * @param callable(PDO):mixed $work
+ * @return mixed
+ */
+function jd_db_retry(callable $work, ?PDO $db = null)
+{
+    try {
+        return $work($db ?? jd_db());
+    } catch (PDOException $e) {
+        if (!jd_db_connection_lost($e)) {
+            throw $e;
+        }
+        error_log('jd: database connection lost across the provider call; '
+            . 'reconnecting and replaying — ' . $e->getMessage());
+        return $work(jd_db(true));
+    }
 }
 
 function jd_db_driver(PDO $db): string
