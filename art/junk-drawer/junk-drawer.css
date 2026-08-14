@@ -13,10 +13,11 @@
        the stitched tile seams)
      · NO mix-blend-mode ON A FULL-STAGE LAYER: blended layers over per-item
        filter layers rasterize with visible seam lines in Safari; at these
-       opacities plain alpha is visually identical. The ONE exception is a
-       SMALL element that has to soak into paper rather than sit on it — the
-       turn modal's rubber stamps (a 92–112px seal, a few-em box stamp) use
-       multiply, and are never promoted to a stage-wide layer
+       opacities plain alpha is visually identical. (The turn modal's rubber
+       stamps used to be the one small-element exception to this; the owner
+       retired the stamps 2026-08-14, and the file carries no mix-blend-mode
+       at all now — if one comes back, it earns fresh Safari testing, not a
+       free pass from this old exception.)
      · the stage keeps its own compositing layer (translateZ(0)) so Safari's
        rasterization of the turbulence-heavy textures stays stable
      · drag motion is transform-only (--dx/--dy) — layout moves of a
@@ -1520,32 +1521,35 @@ tr.rc-axdesc td {
    label from the data.php payload.
 
    THE FICTION: the whole turn is ONE municipal document. The visitor never
-   changes screens — the same sheet gains a heading, a section number on its
-   FORM JD-1 badge, and at the stations that matter A STAMP.
+   changes screens — the same sheet gains a heading and a section number on
+   its FORM JD-1 badge as it goes.
 
-   STAMPS ARE THE STATE MACHINE. A stamp carries the state a paragraph used
-   to, which is the entire reason it is here. ROUND SEALS are determinations
-   (RECEIVED at the darkroom, ACCESSIONED at the unveil); RECTANGULAR BOX
-   STAMPS are handling (ATTACHED, OVER QUOTA, RETURNED TO SENDER, NOT FILED).
-   A state that is stamped is never also written out in prose.
+   THE STAMPS ARE GONE (owner call, 2026-08-14). Round 15 built this modal
+   around "stamps are the state machine" — a red rubber seal or box stamp
+   standing in for every state that would otherwise need a sentence. The
+   owner didn't like them and asked for every one removed: the RECEIVED seal,
+   the ATTACHED box, ACCESSIONED, OVER QUOTA / CLOSED FOR THE DAY, RETURNED TO
+   SENDER, NOT FILED — all six sites. Do not reintroduce a stamp to "restore"
+   this; it is a deliberate reversal, not a regression to fix. Each state's
+   meaning survives in prose that was already there alongside its stamp (the
+   heading, the notice slip, the line under the plates) — nothing here is
+   silent for having lost its stamp.
 
-   TWO HANDS, NEVER SWAPPED. The bureau stamps in red rubber (--tstamp); the
-   visitor writes in graphite (--graphite) — the pencilled ring on the chosen
-   likert stop, the pencil tick on a finished rail step, the tie election's
-   tick. That rule is what lets a red mark mean "the system did this" with no
-   legend anywhere.
+   ONE HAND ON THE FORM NOW: the visitor writes in graphite (--graphite) —
+   the pencilled ring on the chosen likert stop, the pencil tick on a
+   finished rail step, the tie election's tick. --tstamp (the old stamp-pad
+   red) survives only as a plain ink-red accent, unconnected to any stamp:
+   the failed-slot glyph, the required-scale flag, the "kept" fate on the
+   unveil.
 
    Tokens are scoped to the scrim, the same way the rc-* ones are, so neither
    modal can leach into the other. The grain/mottle data-URIs are copied
-   VERBATIM from the record card and the speckle mask from the mockup
-   (stitchTiles="stitch" — never regenerate them; a reseed breaks the tile
-   seams in Safari).
+   VERBATIM from the record card (stitchTiles="stitch" — never regenerate
+   them; a reseed breaks the tile seams in Safari).
 
-   THE ONE mix-blend-mode IN THIS FILE lives on the stamps, deliberately: the
-   Safari lesson at the head of this file forbids blended FULL-STAGE layers
-   over the filtered pile, not a 92px seal or a 7-em box stamp. A stamp that
-   sat on top of the paper instead of soaking into it would not be a stamp.
-   Keep them small elements; never promote one to a stage-wide layer.
+   This file carries no mix-blend-mode: the stamps were its one user, and
+   the Safari lesson at the head of this file still forbids blending a
+   FULL-STAGE layer over the filtered pile regardless.
    ========================================================================== */
 .jd-turn-scrim {
   --tpaper: #ece0bf;
@@ -1564,17 +1568,14 @@ tr.rc-axdesc td {
   --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
   --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
   --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
-  /* the rubber-stamp speckle: masks every stamp so the ink breaks up the way
-     a stamp pad does (mean ~0.82 — pressed, never illegible) */
-  --tspeck: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='s' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.75' numOctaves='4' seed='5'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.2 0 0 0 0.22'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23s)'/%3E%3C/svg%3E");
 
   /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
      spacing scale for the whole form, named so the next new row reaches for
      a token instead of inventing a 6th font-size. Every value below is used
      more than once in the rules that follow — that repetition is the point:
      a size that only ever appears once doesn't belong in the ladder, it's
-     a display size (the likert's A/B, the big stamps) and stays literal. */
-  --t-micro: 0.44rem;   /* form-nos, stamp small print, the tersest labels */
+     a display size (the likert's A/B) and stays literal. */
+  --t-micro: 0.44rem;   /* form-nos, the tersest labels */
   --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
   --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
   --t-lead: 0.78rem;    /* the one input field — leave it alone */
@@ -1603,9 +1604,6 @@ tr.rc-axdesc td {
 }
 .jd-turn-scrim.is-on { display: flex; }
 html.jd-turn-open { overflow: hidden; }
-/* the seal's two arcs, defined once. It carries no ink of its own — the
-   <textPath>s in each seal reference these ids. */
-.jd-turn-sprite { position: absolute; width: 0; height: 0; }
 
 /* ---- the form itself ----------------------------------------------------- */
 .jd-turn {
@@ -1659,17 +1657,16 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ---- the masthead: one line -----------------------------------------------
-   A form number, the heading, and (only when the bureau has done something)
-   a box stamp. This is the entire surviving "form band": no docket, no
-   routing strip, no narration. It sits OUTSIDE the scroller, so the sheet's
-   identity never scrolls away from the words it names.
-   THE MASTHEAD RULE (F1): everything on this row — form-no, heading, box
-   stamp, and the ✕ — is a flex child of ONE row (.jd-turn-head,
-   align-items: center). Nothing in it is positioned outside that row's own
-   box model. The heading and the stamp/formno live in .jd-turn-headline (a
-   nested flex row, because paint() replaces just its innerHTML on every
-   state change); the ✕ is the row's one static, never-replaced child, so a
-   future edit to the head's content can never orphan its click handler. */
+   A form number and the heading. This is the entire surviving "form band":
+   no docket, no routing strip, no narration. It sits OUTSIDE the scroller,
+   so the sheet's identity never scrolls away from the words it names.
+   THE MASTHEAD RULE (F1): everything on this row — form-no, heading, and the
+   ✕ — is a flex child of ONE row (.jd-turn-head, align-items: center).
+   Nothing in it is positioned outside that row's own box model. The heading
+   and the form-no live in .jd-turn-headline (a nested flex row, because
+   paint() replaces just its innerHTML on every state change); the ✕ is the
+   row's one static, never-replaced child, so a future edit to the head's
+   content can never orphan its click handler. */
 .jd-turn-head {
   position: relative; z-index: 4; flex: 0 0 auto;
   display: flex; align-items: center; gap: 10px;
@@ -1699,7 +1696,6 @@ html.jd-turn-open { overflow: hidden; }
   color: var(--tink);
 }
 .jd-turn-title:focus { outline: none; }
-.jd-turn-headline .jd-turn-stamp { flex: 0 0 auto; margin-left: auto; }
 
 /* ---- the body: the one scroller ------------------------------------------ */
 .jd-turn-scroll {
@@ -1813,66 +1809,6 @@ html.jd-turn-open { overflow: hidden; }
 }
 
 /* ============================================================================
-   THE STAMPS — the bureau's hand, and the bureau's hand only.
-   ========================================================================== */
-/* A SEAL COSTS NO LAYOUT. It is absolutely positioned against the row it
-   belongs to and anchored to that row's BOTTOM, so it bleeds upward across
-   whatever happens to be above it (the way a hand-stamp lands) and can never
-   extend past the scroller and invent a scrollbar. */
-.jd-turn-sealslot {
-  position: absolute; right: 2px; bottom: 0; z-index: 3; pointer-events: none;
-  width: 92px; height: 92px;
-}
-.jd-turn-sealslot--big { width: 112px; height: 112px; }
-/* a card with no action row of its own still needs somewhere for the stamp
-   to land: a reserved band at the foot of the section */
-.jd-turn-stampline { position: relative; height: 42px; }
-.jd-turn-actions:has(.jd-turn-sealslot) { padding-right: 104px; }
-
-/* round seals = determinations */
-.jd-seal {
-  position: absolute; z-index: 3; pointer-events: none;
-  width: 100%; height: 100%;
-  color: var(--tstamp); opacity: 0.6;
-  transform: rotate(-11deg);
-  mix-blend-mode: multiply;
-  -webkit-mask-image: var(--tspeck); mask-image: var(--tspeck);
-  -webkit-mask-size: 140px 140px; mask-size: 140px 140px;
-}
-.jd-seal--big { opacity: 0.68; transform: rotate(-9deg); }
-/* rectangular box stamps = routine handling */
-.jd-turn-stamp {
-  display: inline-flex; align-items: baseline; gap: 0.5em;
-  padding: 2px 7px 1px;
-  color: var(--tstamp);
-  border: 1.6px solid var(--tstamp);
-  outline: 1px solid var(--tstamp); outline-offset: 2px;
-  font-family: var(--tform); font-weight: 700;
-  font-size: var(--t-micro); letter-spacing: 0.18em; text-transform: uppercase;
-  line-height: 1.35; white-space: nowrap;
-  opacity: 0.9; mix-blend-mode: multiply;
-  transform: rotate(-2.2deg);
-  -webkit-mask-image: var(--tspeck); mask-image: var(--tspeck);
-  -webkit-mask-size: 140px 140px; mask-size: 140px 140px;
-}
-.jd-turn-stamp small {
-  font-family: var(--tmono); font-weight: 400;
-  font-size: var(--t-micro); letter-spacing: 0.12em;
-}
-/* the big stamp that lies ACROSS the card — and is allowed to cross the
-   type, because a stamp that dodged the words would not be a stamp */
-.jd-turn-stampzone { position: relative; min-height: 104px; }
-.jd-turn-stamp--across {
-  position: absolute; z-index: 3; pointer-events: none;
-  left: 50%; top: 46%;
-  flex-direction: column; align-items: center; gap: 0;
-  transform: translate(-50%, -50%) rotate(-6deg);
-  font-size: 1.05rem; letter-spacing: 0.24em; padding: 7px 18px 5px;
-  border-width: 3px; opacity: 0.66;
-}
-.jd-turn-stamp--across small { font-size: var(--t-label); letter-spacing: 0.2em; }
-
-/* ============================================================================
    THE DARKROOM — two slots, two states. No table, no headers, no assignment
    column: the visitor is waiting on A and B, and that is all this says.
    ========================================================================== */
@@ -1981,8 +1917,8 @@ html.jd-turn-open { overflow: hidden; }
   letter-spacing: 0.1em; color: var(--tink-2);
 }
 .jd-rail-step[disabled] { opacity: 0.45; cursor: default; }
-/* a step the visitor has finished carries a PENCIL tick — their hand, not
-   the bureau's. (The bureau stamps; the visitor writes.) */
+/* a step the visitor has finished carries a PENCIL tick — the visitor's own
+   hand, graphite against the printed form. */
 .jd-rail-step.is-done b::after {
   content: " ✓"; font-family: var(--thand); color: var(--graphite); letter-spacing: 0;
 }
@@ -2219,8 +2155,7 @@ html.jd-turn-open { overflow: hidden; }
   padding: 1px 0 0;
 }
 .jd-turn-reveal i { font-style: normal; color: var(--tink-3); }
-/* the fate follows the name, it does not sit at the right margin — that side
-   of the row is where the seal lands */
+/* the fate follows the name rather than sitting at the row's right margin */
 .jd-turn-reveal .fate {
   font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--tink-3);
@@ -2364,22 +2299,12 @@ html.jd-turn-open { overflow: hidden; }
   .jd-lk-cap { font-size: 0.42rem; letter-spacing: 0.01em; }
   .jd-lk-cap b { font-size: 0.6rem; }
   .jd-lk-end { font-size: 0.85rem; }
-  /* the head stamp keeps its word and drops its timestamp — on a 375px head
-     every character it spends is a character the heading has to wrap */
-  .jd-turn-head .jd-turn-stamp small { display: none; }
   /* the counter leaves the field: at 16px the text would scroll under it */
   .jd-turn-count {
     position: static; display: block; text-align: right; margin-top: 4px;
     border: 0; background: none; padding: 0;
   }
   .jd-turn-input { padding-bottom: 0.55rem; }
-  /* the seal shrinks and takes a reserved band UNDER the buttons instead of
-     landing on them — a phone action row is two full-width buttons wide */
-  .jd-turn-sealslot { width: 76px; height: 76px; }
-  .jd-turn-sealslot--big { width: 88px; height: 88px; }
-  .jd-turn-actions:has(.jd-turn-sealslot) { padding-right: 0; padding-bottom: 82px; }
-  .jd-turn-stampline { height: 34px; }
-  .jd-turn-stamp--across { font-size: 0.8rem; letter-spacing: 0.16em; padding: 5px 12px 4px; }
   .jd-pill { flex: 1 1 100%; }
 }
 @media (max-width: 768px) {
