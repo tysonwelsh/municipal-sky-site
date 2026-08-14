@@ -322,6 +322,11 @@
       "id": "kimi-k3",
       "label": "Kimi K3",
       "vendor": "Moonshot AI"
+    },
+    {
+      "id": "gemini-3-1-pro",
+      "label": "Gemini 3.1 Pro",
+      "vendor": "Google"
     }
   ],
   "sizeTiers": [

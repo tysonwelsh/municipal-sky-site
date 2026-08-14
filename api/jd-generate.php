@@ -88,7 +88,7 @@ try {
             $prompt,
             $visitorHash,
             $client,
-            random_int(0, 5),
+            random_int(0, 23),
             $now,
             JD_CONSENT_VERSION,
             'pending',
@@ -115,9 +115,9 @@ try {
     }
 
     // --- 9. Model routing + pending row before the provider call ----------
-    $perm = JD_TRIO_PERMS[(int) $submission['pair_order'] % 6];
+    $perm = JD_DRAW_PERMS[(int) $submission['pair_order'] % 24];
     $slotIndex = array_search($slot, ['a', 'b', 'c'], true);
-    $model = JD_MODEL_TRIO[$perm[$slotIndex]];
+    $model = JD_MODEL_POOL[$perm[$slotIndex]];
 
     if (!JD_DEV_MODE && jd_provider_key($model['provider']) === null) {
         // Refuse before a row exists rather than bank a failure the visitor
@@ -392,8 +392,17 @@ function jd_provider_params(string $provider): string
         return json_encode([
             'max_tokens' => JD_MAX_TOKENS,
             // kimi-k3 reasons by default and blows the timeout (see
-            // JD_MODEL_TRIO); 'low' is the disclosed compromise.
+            // JD_MODEL_POOL); 'low' is the disclosed compromise.
             'reasoning_effort' => 'low',
+            'temperature' => 'provider-default',
+        ]);
+    }
+    if ($provider === 'google') {
+        return json_encode([
+            'max_output_tokens' => JD_MAX_TOKENS,
+            // Gemini 3.x thinks by default; 'low' is the disclosed compromise
+            // (see JD_MODEL_POOL).
+            'thinking_level' => 'low',
             'temperature' => 'provider-default',
         ]);
     }
@@ -412,6 +421,8 @@ function jd_provider_key(string $provider): ?string
         $key = $secrets['jd_claude_key'] ?? $secrets['claude_key'] ?? null;
     } elseif ($provider === 'kimi') {
         $key = $secrets['jd_kimi_key'] ?? $secrets['kimi_key'] ?? null;
+    } elseif ($provider === 'google') {
+        $key = $secrets['jd_gemini_key'] ?? $secrets['gemini_key'] ?? null;
     } else {
         $key = $secrets['jd_openai_key'] ?? $secrets['openai_key'] ?? null;
     }
@@ -453,7 +464,7 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt): a
         // Moonshot's OpenAI-compatible endpoint. Standard max_tokens (the
         // max_completion_tokens spelling is a GPT-5 reasoning-family quirk);
         // reasoning_effort keeps the thinking model inside the shared
-        // hosting time budget (probed 2026-08-14 — see JD_MODEL_TRIO).
+        // hosting time budget (probed 2026-08-14 — see JD_MODEL_POOL).
         $url = 'https://api.moonshot.ai/v1/chat/completions';
         $headers = [
             'Content-Type: application/json',
@@ -466,6 +477,26 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt): a
             'messages' => [
                 ['role' => 'system', 'content' => JD_SYSTEM_PROMPT],
                 ['role' => 'user', 'content' => $prompt],
+            ],
+        ];
+    } elseif ($provider === 'google') {
+        // Gemini's generateContent endpoint. The key rides in the
+        // x-goog-api-key header; thinkingLevel 'low' keeps the thinking
+        // model inside the shared hosting time budget (see JD_MODEL_POOL).
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/'
+            . rawurlencode($apiModel) . ':generateContent';
+        $headers = [
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $key,
+        ];
+        $payload = [
+            'system_instruction' => ['parts' => [['text' => JD_SYSTEM_PROMPT]]],
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $prompt]]],
+            ],
+            'generationConfig' => [
+                'maxOutputTokens' => JD_MAX_TOKENS,
+                'thinkingConfig' => ['thinkingLevel' => 'low'],
             ],
         ];
     } else {
@@ -515,12 +546,22 @@ function jd_provider_call(string $provider, string $apiModel, string $prompt): a
     }
 
     $usage = isset($data['usage']) && is_array($data['usage']) ? $data['usage'] : [];
+    if ($provider === 'google' && isset($data['usageMetadata']) && is_array($data['usageMetadata'])) {
+        $usage = $data['usageMetadata'];
+    }
 
     if ($provider === 'anthropic') {
         $text = '';
         foreach ($data['content'] ?? [] as $block) {
             if (is_array($block) && ($block['type'] ?? '') === 'text') {
                 $text .= (string) ($block['text'] ?? '');
+            }
+        }
+    } elseif ($provider === 'google') {
+        $text = '';
+        foreach ($data['candidates'][0]['content']['parts'] ?? [] as $part) {
+            if (is_array($part)) {
+                $text .= (string) ($part['text'] ?? '');
             }
         }
     } else {

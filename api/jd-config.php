@@ -37,12 +37,12 @@ JD_PROMPT;
 
 const JD_HARNESS = 'v3-web.1';
 
-// C4.2 — the slot→model assignment is chosen per submission by pair_order
-// (0-5, an index into JD_TRIO_PERMS) and recorded; the model_id values are
-// taxonomy.json `models` registry ids (join keys) and api_model is the exact
-// wire string. Owner runbook: confirm wire strings against the providers'
-// model lists at deploy.
-const JD_MODEL_TRIO = [
+// C4.2 — each turn draws 3 of the 4 pool entries: the slot→model assignment
+// is chosen per submission by pair_order (0-23, an index into JD_DRAW_PERMS)
+// and recorded; the model_id values are taxonomy.json `models` registry ids
+// (join keys) and api_model is the exact wire string. Owner runbook: confirm
+// wire strings against the providers' model lists at deploy.
+const JD_MODEL_POOL = [
     // Owner upgrade (2026-08-10): flagship tier — Claude Opus 5 vs GPT-5.1.
     // Opus 5 note: thinking is ON by default on this model; jd-generate
     // sends thinking:disabled (valid at default effort) so generation stays
@@ -62,14 +62,34 @@ const JD_MODEL_TRIO = [
     ['model_id'  => 'kimi-k3',
      'api_model' => 'kimi-k3',
      'provider'  => 'kimi'],
+    // Fourth chair (2026-08-14): Gemini joins the pool; each turn still draws
+    // three, so one pool entry sits out per turn. First wired as 3.7-flash
+    // because the owner's key was free tier (pro answered 429 limit:0); the
+    // owner moved the key to a paid plan the same day and the chair became
+    // 3.1-pro (probed: a keyhole SVG in 15.5s at thinkingLevel 'low').
+    // api_model is the pinned preview id — 'gemini-pro-latest' would shift
+    // under the eval. thinkingLevel 'low' is the same trade the Opus and
+    // Kimi entries make. Gemini wraps the SVG in code fences despite the
+    // system prompt; jd_extract_svg strips them and the disobedience flag
+    // records it.
+    ['model_id'  => 'gemini-3-1-pro',
+     'api_model' => 'gemini-3.1-pro-preview',
+     'provider'  => 'google'],
 ];
 
-// The 6 slot permutations, indexed by pair_order: which TRIO entry serves
-// slot a, then b, then c. Same anti-bias discipline as the pair shuffle —
-// model identity must never correlate with slot position.
-const JD_TRIO_PERMS = [
+// The 24 ordered draws of 3 from the 4-entry pool, indexed by pair_order:
+// which POOL entry serves slot a, then b, then c. Same anti-bias discipline
+// as the pair shuffle — model identity must never correlate with slot
+// position, and no model may be favoured by the sit-out.
+const JD_DRAW_PERMS = [
     [0, 1, 2], [0, 2, 1], [1, 0, 2],
     [1, 2, 0], [2, 0, 1], [2, 1, 0],
+    [0, 1, 3], [0, 3, 1], [1, 0, 3],
+    [1, 3, 0], [3, 0, 1], [3, 1, 0],
+    [0, 2, 3], [0, 3, 2], [2, 0, 3],
+    [2, 3, 0], [3, 0, 2], [3, 2, 0],
+    [1, 2, 3], [1, 3, 2], [2, 1, 3],
+    [2, 3, 1], [3, 1, 2], [3, 2, 1],
 ];
 
 const JD_MAX_TOKENS = 12000;
@@ -77,9 +97,9 @@ const JD_PROVIDER_TIMEOUT = 90;
 const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 
 // C5.2 / APP §4.5 — the consent of record. Must match JD_CONSENT.version in
-// junk-drawer.js and the copy quoted in privacy.php. jd-consent-2 (2026-08-14):
-// the disclosure gains a third provider, Moonshot AI (Kimi).
-const JD_CONSENT_VERSION = 'jd-consent-2';
+// junk-drawer.js and the copy quoted in privacy.php. jd-consent-3 (2026-08-14):
+// the disclosure gains a fourth provider, Google (Gemini).
+const JD_CONSENT_VERSION = 'jd-consent-3';
 
 // C1.2 step 7 — cost controls, tunable in one place post-launch.
 const JD_LIMIT_HOURLY = 3;

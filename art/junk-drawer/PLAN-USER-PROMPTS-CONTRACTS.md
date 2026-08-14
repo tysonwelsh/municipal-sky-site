@@ -82,7 +82,7 @@ request).
   "slot": "a",                              // required, "a" | "b" | "c"
   "prompt": "a brass fish that is also a whistle",  // required, 1–500 chars after trim
   "client": "web",                          // "web" | "ios" | "android"; default "web"
-  "consent": { "version": "jd-consent-2" }, // required, must equal JD_CONSENT_VERSION
+  "consent": { "version": "jd-consent-3" }, // required, must equal JD_CONSENT_VERSION
   "website": ""                             // honeypot: must be absent or empty string
 }
 ```
@@ -97,7 +97,7 @@ request).
    (`mb_strlen`) → else `400 prompt_invalid`. **Stored byte-exact as
    received** (untrimmed) — the prompt is frozen verbatim.
 4. Consent: `consent.version` must equal the server-side constant
-   `JD_CONSENT_VERSION` (`'jd-consent-2'`, in `api/jd-config.php`) →
+   `JD_CONSENT_VERSION` (`'jd-consent-3'`, in `api/jd-config.php`) →
    else `400 consent_required`. (The client always sends it; the modal
    cannot submit without the recorded consent state — C5.2.)
 5. `client`: validated against `['web','ios','android']`; anything else
@@ -105,7 +105,7 @@ request).
 6. **Submission resolve (race-safe):** `SELECT` `jd_submissions` by
    `client_ref`. If none: rate-limit checks (step 7), then
    `INSERT IGNORE` a new row with `id = jd_ulid()`,
-   `pair_order = random_int(0,5)` (a `JD_TRIO_PERMS` index), prompt, `visitor_hash`
+   `pair_order = random_int(0,23)` (a `JD_DRAW_PERMS` index), prompt, `visitor_hash`
    (`msky_visitor_hash($secrets)`), `client`, `ai_consent_at = now`,
    `ai_consent_version`, `status='pending'`; then re-`SELECT` by
    `client_ref` (the unique key makes the parallel-slot race converge on
@@ -133,8 +133,8 @@ request).
    `409 {"error":{"code":"slot_in_progress"}}`; `status='failed'|'rejected'`
    → re-return the stored failure (same shape as step 11/12; **no
    re-generation in v1** — a failed slot stays failed, bounding cost).
-9. **Model routing:** `JD_TRIO_PERMS[pair_order]` (C4) maps each slot to
-   its `JD_MODEL_TRIO` entry. INSERT the `jd_generations` row
+9. **Model routing:** `JD_DRAW_PERMS[pair_order]` (C4) maps each slot to
+   its `JD_MODEL_POOL` entry. INSERT the `jd_generations` row
    (`status='pending'`, model fields, `harness`, `params` JSON) **before**
    the provider call, then call the provider (C4) with a 90 s cURL
    timeout. In `JD_DEV_MODE` the provider call is
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     prompt             TEXT         NOT NULL,
     visitor_hash       CHAR(64)     NOT NULL,
     client             VARCHAR(16)  NOT NULL DEFAULT 'web',
-    pair_order         TINYINT      NOT NULL,            -- 0-5: JD_TRIO_PERMS index (slot→model permutation)
+    pair_order         TINYINT      NOT NULL,            -- 0-23: JD_DRAW_PERMS index (slot→model draw of 3 from 4)
     ai_consent_at      DATETIME     NULL,                -- APP §4.5
     ai_consent_version VARCHAR(16)  NULL,                -- APP §4.5
     status             ENUM('pending','generated','rated','failed') NOT NULL DEFAULT 'pending',
@@ -537,17 +537,20 @@ raw API call has no repo, no tools, no skills. The visitor's prompt is
 sent verbatim as the sole user message, no sharpening, no wrapping.
 Any change to this constant bumps the harness string (`v3-web.2`, …).
 
-### C4.2 Model trio — `JD_MODEL_TRIO` in `api/jd-config.php`
+### C4.2 Model pool — `JD_MODEL_POOL` in `api/jd-config.php`
 
-(2026-08-14: the pair became a trio — Kimi K3 joined as the third model,
-slot `c`. `pair_order` widened from 0|1 to 0–5, an index into
-`JD_TRIO_PERMS`, the six slot→model permutations, so model identity
-still never correlates with slot position. This excerpt was also
-brought back in line with the config: it showed sonnet-5/gpt-5 while
-the flagship upgrade of 2026-08-10 had moved the pair to opus-5/gpt-5.1.)
+(2026-08-14, later: the trio became a pool of four — Gemini 3.1 Pro
+joined. Each turn still draws three, so `pair_order` widened from 0–5 to
+0–23, an index into `JD_DRAW_PERMS`, the 24 ordered draws of 3 from 4:
+every model sits out one turn in four, and model identity still never
+correlates with slot position. Earlier the same day: the pair became a
+trio — Kimi K3 joined as the third model, slot `c`, pair_order 0|1 →
+0–5. This excerpt was also brought back in line with the config: it
+showed sonnet-5/gpt-5 while the flagship upgrade of 2026-08-10 had moved
+the pair to opus-5/gpt-5.1.)
 
 ```php
-const JD_MODEL_TRIO = [
+const JD_MODEL_POOL = [
     [ 'model_id'  => 'claude-opus-5',     // taxonomy models registry id
       'api_model' => 'claude-opus-5',     // exact wire string
       'provider'  => 'anthropic' ],
@@ -557,15 +560,24 @@ const JD_MODEL_TRIO = [
     [ 'model_id'  => 'kimi-k3',
       'api_model' => 'kimi-k3',
       'provider'  => 'kimi' ],
+    [ 'model_id'  => 'gemini-3-1-pro',
+      'api_model' => 'gemini-3.1-pro-preview',
+      'provider'  => 'google' ],
 ];
 ```
 
-All three `model_id`s exist in `taxonomy.json` `models` (verified). The
+All four `model_id`s exist in `taxonomy.json` `models` (verified). The
 Anthropic id `claude-opus-5` is the complete current model string —
-**no date suffix**; `gpt-5.1` and `kimi-k3` likewise (kimi-k3 verified
-against `/v1/models` 2026-08-14). **Owner note (runbook):** confirm the
+**no date suffix**; `gpt-5.1`, `kimi-k3` and `gemini-3.1-pro-preview`
+likewise (kimi-k3 verified against `/v1/models`, the Gemini id against
+`/v1beta/models`, both 2026-08-14). The Gemini chair is the pinned
+**preview** id, not `gemini-pro-latest`: an alias would shift under the
+eval, and a preview id may retire — the runbook check catches both.
+(Gemini was first wired as 3.7-flash on the owner's free-tier key —
+pro answered 429 limit:0 — and became 3.1-pro when the key moved to a
+paid plan, same day.) **Owner note (runbook):** confirm the
 wire strings against the providers' model lists at deploy; changing a
-trio entry is a one-line config edit, and the schema records
+pool entry is a one-line config edit, and the schema records
 `model_version` per row so history stays honest.
 
 ### C4.3 Request parameters (per provider)
@@ -622,7 +634,26 @@ trio entry is a one-line config edit, and the schema records
   (a `reasoning_content` field also arrives; it is not part of the
   artifact); `usage` stored.
 
-**All three:** `CURLOPT_TIMEOUT 90`, `CURLOPT_CONNECTTIMEOUT 10`,
+**Google** (`https://generativelanguage.googleapis.com/v1beta/models/
+<api_model>:generateContent`, header `x-goog-api-key: <key>`):
+
+```json
+{ "system_instruction": { "parts": [ { "text": JD_SYSTEM_PROMPT } ] },
+  "contents": [ { "role": "user", "parts": [ { "text": <prompt verbatim> } ] } ],
+  "generationConfig": { "maxOutputTokens": 12000,
+                        "thinkingConfig": { "thinkingLevel": "low" } } }
+```
+
+- `thinkingLevel: "low"` is the same deliberate, disclosed trade as the
+  Anthropic and Kimi entries (Gemini 3.x thinks by default; probed
+  2026-08-14, 'low' answered a keyhole SVG in 15.5s on 3.1-pro). **Do NOT
+  send `temperature`.** Response text = concatenation of
+  `candidates[0].content.parts[].text`; `usageMetadata` stored as
+  `usage_tokens` JSON. Gemini wraps the SVG in code fences despite the
+  system prompt — C4.4 extraction strips them and the disobedience flag
+  records it.
+
+**All four:** `CURLOPT_TIMEOUT 90`, `CURLOPT_CONNECTTIMEOUT 10`,
 `CURLOPT_RETURNTRANSFER`, `CURLOPT_FORBID_REUSE` (chat.php pattern).
 `latency_ms` = wall clock around `curl_exec`. **Do not copy chat.php's**
 CORS wildcard, `$debug_mode`, `error_log` of full responses, sequential
@@ -634,8 +665,9 @@ text), e.g.
 / `{"max_completion_tokens":12000,"temperature":"provider-default"}`.
 
 **Keys:** `$secrets['jd_claude_key'] ?? $secrets['claude_key']`,
-`$secrets['jd_openai_key'] ?? $secrets['openai_key']` and
-`$secrets['jd_kimi_key'] ?? $secrets['kimi_key']` (owner runbook adds
+`$secrets['jd_openai_key'] ?? $secrets['openai_key']`,
+`$secrets['jd_kimi_key'] ?? $secrets['kimi_key']` and
+`$secrets['jd_gemini_key'] ?? $secrets['gemini_key']` (owner runbook adds
 the dedicated keys later; fallback keeps the feature launchable).
 
 ### C4.4 Extraction & disobedience
@@ -658,7 +690,7 @@ passed C3.
 var JD_API = '';            // API base; '' = same origin. EVERY fetch = JD_API + '/absolute/path'
 var JD_CLIENT = 'web';      // sent in every POST body; never sniffed server-side
 var JD_CONSENT = {
-  version: 'jd-consent-1',
+  version: 'jd-consent-3',
   text: <C5.2 copy, verbatim>
 };
 var JD_STRINGS = {
@@ -958,7 +990,7 @@ scenarios; then `php scripts/test-jd-sanitizer.php`.
 **Backend pair (BE-C writes, BE-K reviews) — creates:**
 
 ```
-api/jd-config.php            constants (JD_MODEL_PAIR, JD_SYSTEM_PROMPT, JD_CONSENT_VERSION,
+api/jd-config.php            constants (JD_MODEL_POOL, JD_SYSTEM_PROMPT, JD_CONSENT_VERSION,
                              rate-limit constants), jd_ulid(), jd_db(), the C6.1 gate
 api/jd-origin.php            jd_require_allowed_origin() + JD_ALLOWED_ORIGINS
 api/jd-generate.php          C1.2

@@ -88,6 +88,10 @@ include 'includes/header.php';
                         <a href="https://platform.moonshot.ai/docs/agreement/userprivacy" target="_blank"
                             rel="noopener">privacy policy</a>.
                     </li>
+                    <li><strong>Google (Gemini)</strong> &mdash;
+                        <a href="https://policies.google.com/privacy" target="_blank"
+                            rel="noopener">privacy policy</a>.
+                    </li>
                 </ul>
                 <p>Your input is processed by these providers under their own privacy policies. <strong>Please
                         don&rsquo;t
@@ -99,11 +103,11 @@ include 'includes/header.php';
                 <p>The Junk Drawer lets you describe an object and have three different AI models each draw it. Before
                     your first turn, the page shows you this and asks you to agree to it:</p>
                 <blockquote>
-                    <p>When you take a turn, the words you type are sent to three AI providers &mdash; Anthropic
-                        (Claude), OpenAI (GPT), and Moonshot AI (Kimi) &mdash; which each draw an object from them.
-                        Your prompt, the drawings that come back, your ratings, and an anonymous daily-rotating
-                        visitor code are stored so the results can be studied and the feature kept honest. Nothing
-                        you type here is shown to other visitors.</p>
+                    <p>When you take a turn, the words you type are sent to four AI providers &mdash; Anthropic
+                        (Claude), OpenAI (GPT), Moonshot AI (Kimi), and Google (Gemini) &mdash; three of which each
+                        draw an object from them. Your prompt, the drawings that come back, your ratings, and an
+                        anonymous daily-rotating visitor code are stored so the results can be studied and the feature
+                        kept honest. Nothing you type here is shown to other visitors.</p>
                 </blockquote>
 
                 <p><strong>What is stored, in the categories app stores use:</strong></p>
@@ -127,8 +131,8 @@ include 'includes/header.php';
                 </ul>
 
                 <p><strong>Who receives your prompt:</strong> the words you type are sent to
-                    <strong>Anthropic (Claude)</strong>, <strong>OpenAI (GPT)</strong> and <strong>Moonshot AI
-                    (Kimi)</strong> &mdash; all named in section 3
+                    <strong>Anthropic (Claude)</strong>, <strong>OpenAI (GPT)</strong>, <strong>Moonshot AI
+                    (Kimi)</strong> and <strong>Google (Gemini)</strong> &mdash; all named in section 3
                     above, with links to their privacy policies &mdash; and to nobody else. As with the bot,
                     <strong>please don&rsquo;t type personal, sensitive, or confidential information into it.</strong>
                 </p>

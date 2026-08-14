@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <title>mock: tin wind-up key (google)</title>
+  <defs>
+    <linearGradient id="tin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d8dde2"/>
+      <stop offset="0.5" stop-color="#9aa4ad"/>
+      <stop offset="1" stop-color="#6b757e"/>
+    </linearGradient>
+  </defs>
+  <g stroke="#33393f" stroke-width="4" stroke-linejoin="round">
+    <circle cx="100" cy="62" r="34" fill="url(#tin)"/>
+    <circle cx="100" cy="62" r="14" fill="#4a525a"/>
+    <path d="M84 96 L76 170 L124 170 L116 96 Z" fill="url(#tin)"/>
+    <path d="M76 170 L64 150 M124 170 L136 150" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M100 28 L100 8 M86 14 L114 14" stroke="#33393f" stroke-width="6" stroke-linecap="round" fill="none"/>
+</svg>

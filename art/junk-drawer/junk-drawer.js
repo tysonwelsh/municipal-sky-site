@@ -38,14 +38,15 @@ var JD_CLIENT = 'web';
    repeating it) — JD_CONSENT.text/.version stay exactly as filed regardless,
    because they are still what gets recorded against the visitor's turn. */
 var JD_CONSENT = {
-  version: 'jd-consent-2',
-  text: 'When you take a turn, the words you type are sent to three AI ' +
-    'providers — Anthropic (Claude), OpenAI (GPT), and Moonshot AI (Kimi) — ' +
-    'which each draw an object from them. Your prompt, the drawings that ' +
-    'come back, your ratings, and an anonymous daily-rotating visitor code ' +
-    'are stored so the results can be studied and the feature kept honest. ' +
-    'Nothing you type here is shown to other visitors.',
-  check: 'I understand — send my words to Anthropic, OpenAI and Moonshot AI'
+  version: 'jd-consent-3',
+  text: 'When you take a turn, the words you type are sent to four AI ' +
+    'providers — Anthropic (Claude), OpenAI (GPT), Moonshot AI (Kimi), and ' +
+    'Google (Gemini) — three of which each draw an object from them. Your ' +
+    'prompt, the drawings that come back, your ratings, and an anonymous ' +
+    'daily-rotating visitor code are stored so the results can be studied ' +
+    'and the feature kept honest. Nothing you type here is shown to other ' +
+    'visitors.',
+  check: 'I understand — send my words to Anthropic, OpenAI, Moonshot AI and Google'
 };
 
 var JD_STRINGS = {
@@ -3398,8 +3399,8 @@ function JD_layerOpen() {
          the page that carries the full disclosure. JD_CONSENT.text/.version
          are unchanged and still what gets recorded on submission — this is
          a change to what the card SHOWS, not what the visitor agrees to. */
-      '<p class="jd-turn-fine">Sent to Anthropic, OpenAI and Moonshot AI to ' +
-      'be drawn and studied — see our <a class="jd-turn-link" ' +
+      '<p class="jd-turn-fine">Sent to Anthropic, OpenAI, Moonshot AI and ' +
+      'Google to be drawn and studied — see our <a class="jd-turn-link" ' +
       'href="/privacy.php">privacy</a> page.</p>';
   }
 

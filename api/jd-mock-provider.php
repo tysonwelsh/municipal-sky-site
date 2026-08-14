@@ -21,6 +21,7 @@ const JD_MOCK_USAGE = [
     'anthropic' => ['input_tokens' => 214, 'output_tokens' => 1873],
     'openai' => ['prompt_tokens' => 209, 'completion_tokens' => 1642, 'total_tokens' => 1851],
     'kimi' => ['prompt_tokens' => 211, 'completion_tokens' => 1704, 'total_tokens' => 1915],
+    'google' => ['promptTokenCount' => 208, 'candidatesTokenCount' => 1690, 'totalTokenCount' => 1898],
 ];
 
 /**
@@ -51,7 +52,8 @@ function jd_mock_call(string $provider, string $prompt): array
 
     $svg = jd_mock_fixture(
         $provider === 'anthropic' ? 'mock-anthropic.svg'
-            : ($provider === 'kimi' ? 'mock-kimi.svg' : 'mock-openai.svg')
+            : ($provider === 'kimi' ? 'mock-kimi.svg'
+            : ($provider === 'google' ? 'mock-google.svg' : 'mock-openai.svg'))
     );
 
     if (stripos($prompt, '[prose]') !== false) {
