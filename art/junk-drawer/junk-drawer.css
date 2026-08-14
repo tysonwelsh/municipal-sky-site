@@ -2050,6 +2050,20 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
 .jd-row-ctrl .rc-bar { flex: 0 0 auto; }
+/* THE ONE BAND THE GAUGE CANNOT HAVE (measured, 2026-08-14). Between 701px
+   and 768px three rules collide: the bench is still LANDSCAPE (its portrait
+   fold is ≤700px), inputs are already raised to 16px against iOS focus-zoom
+   (the ≤768px rule at the foot of this file), and the paperwork column is at
+   its narrowest. A 47px bar plus its gap then leaves ~107px for a word that
+   wants 148px, and the select truncates mid-word — "SMALL PROBLEMS" renders
+   "SMALL PROB". The gauge is decoration; the visitor's own answer is not, so
+   the gauge is what yields. Above 768px the type drops back and both fit;
+   below 701px the row folds to label-over-control and the select spans the
+   full width, so the gauge is welcome at both ends and only stands down in
+   between. Verified at 720/760/800/860/920/1440. */
+@media (min-width: 701px) and (max-width: 768px) {
+  .jd-row-ctrl .rc-bar { display: none; }
+}
 
 /* the scale itself stays a NATIVE select — phone OS pickers, titles only.
    OVERRIDE 2: 44px is a touch floor. Compressed by default (a <select>

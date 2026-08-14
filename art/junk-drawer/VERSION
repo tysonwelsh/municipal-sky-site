@@ -1,1 +1,1 @@
-0.8.43 — the rating bench now reads like the report card: axes first and the overall grade last, a column header over both, and the same coloured gauge beside each answer as it is chosen
+0.8.44 — the rating gauge stands down in the one narrow window where it was squeezing the answer text ("SMALL PROBLEMS" showing as "SMALL PROB"); unchanged everywhere else
