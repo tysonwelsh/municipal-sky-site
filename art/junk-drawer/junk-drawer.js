@@ -2215,6 +2215,10 @@ function JD_layerOpen() {
     }
     return h + '</span>';
   }
+  window.JD_barHTML = barHTML;  /* the bench (r4, owner directive) reuses this
+    gauge verbatim once a value is picked, instead of inventing a second one —
+    a filled-in bench and the report card it produces are meant to speak the
+    same visual language */
   /* an annotation is a bare rank number or { value: <rank>, note } */
   function annOf(resp, axisId) {
     var a = (resp.annotations || {})[axisId];
@@ -2922,9 +2926,9 @@ function JD_layerOpen() {
   var stateTitle = '';      /* the current state's heading — also the dialog's
                                accessible name, so the name changes with the
                                step instead of naming the whole flow once */
-  /* the masthead the next paint will print: FORM JD-1 §n, the heading, and
-     the box stamp (when the bureau has done something). head() fills it; the
-     view string is built before paint runs, so the two can never disagree. */
+  /* the masthead the next paint will print: FORM JD-1 §n and the heading.
+     head() fills it; the view string is built before paint runs, so the two
+     can never disagree. */
   var pendingHead = null;
 
   /* ---------- small helpers ---------------------------------------------- */
@@ -3043,16 +3047,11 @@ function JD_layerOpen() {
     scrim = document.createElement('div');
     scrim.className = 'jd-turn-scrim';
     /* FORM JD-1 (round-15 redesign): the masthead lives OUTSIDE the scroller
-       — the sheet's identity (form number, section, heading, the bureau's
-       box stamp) never scrolls away from the words it names. The sprite
-       carries the two arcs every round seal sets its type on; it has no ink
-       of its own. */
+       — the sheet's identity (form number, section, heading) never scrolls
+       away from the words it names. (The round seals that used to share this
+       masthead, and the sprite that defined their arc paths, were removed
+       2026-08-14 — owner call, see the CSS banner.) */
     scrim.innerHTML =
-      '<svg class="jd-turn-sprite" aria-hidden="true" focusable="false" ' +
-      'width="0" height="0"><defs>' +
-      '<path id="jd-seal-t" d="M 60 60 m -44 0 a 44 44 0 1 1 88 0"/>' +
-      '<path id="jd-seal-b" d="M 60 60 m -44 0 a 44 44 0 1 0 88 0"/>' +
-      '</defs></svg>' +
       '<div class="jd-turn" role="dialog" aria-modal="true" ' +
       'aria-label="take a turn">' +
       /* F1 (round-16): the ✕ is now a plain flex child of .jd-turn-head,
@@ -3300,14 +3299,13 @@ function JD_layerOpen() {
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
-  /* the masthead: FORM JD-1 §n · the heading · (the bureau's box stamp) */
+  /* the masthead: FORM JD-1 §n · the heading */
   function headHTML() {
     var p = pendingHead || { title: 'take a turn', sec: 1 };
     return '<span class="jd-turn-formno" aria-hidden="true">FORM JD-1<em>§' +
       p.sec + '</em></span>' +
       '<h2 class="jd-turn-title" tabindex="-1"' +
-      (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>' +
-      (p.box ? boxStamp(p.box.word, p.box.small) : '');
+      (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>';
   }
 
   /* (the consent card — C5.2's gating checkbox — retired 2026-08-14, owner
@@ -3321,17 +3319,16 @@ function JD_layerOpen() {
     var msg = work && work.notice
       ? '<p class="jd-turn-notice" role="status">' + esc(work.notice) + '</p>' : '';
     var n = draft.length;
-    /* the one card the bureau stamps WITHOUT the visitor having acted: a
-       rate-limited turn comes back here, so OVER QUOTA rides the masthead
-       and the words the visitor typed stay put (work.stamp, set in
-       settleSlot). Nothing is disabled — pressing send simply asks again. */
+    /* the one card that can come back WITHOUT the visitor having acted: a
+       rate-limited turn returns here with work.notice explaining why (set in
+       settleSlot) and the words the visitor typed stay put. Nothing is
+       disabled — pressing send simply asks again. */
     /* CUTS §1 (round-16): the "two machines draw it, you grade both and keep
        one" line is cut — the heading says "describe an object," and every
        card after this one narrates its own step as the visitor reaches it
        ("two drawings came back," "grade drawing A"). The flow tells its own
        story; this card doesn't need to tell it in advance too. */
-    return head('Describe an object', 1,
-      { noFocus: true, box: (work && work.stamp) || null }) +
+    return head('Describe an object', 1, { noFocus: true }) +
       msg +
       '<div class="jd-turn-fieldwrap">' +
       '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="5" ' +
@@ -3396,10 +3393,7 @@ function JD_layerOpen() {
       '</ul>' +
       '<p class="jd-turn-delay" data-slow' +
       (work.slow ? '' : ' hidden') + '>Still going. The drawing is long ' +
-      'because it is being written line by line.</p>' +
-      '<div class="jd-turn-stampline">' +
-      seal('RECEIVED', work.received || stampDay() + ' ' + stampClock()) +
-      '</div>';
+      'because it is being written line by line.</p>';
   }
   function paintSlots() {
     if (!isOpen || state !== 'generating') return;
@@ -3461,8 +3455,7 @@ function JD_layerOpen() {
     var lost = ok.length === 1
       ? '<p class="jd-turn-notice" role="status">the other machine’s ' +
         'drawing didn’t survive — you’ll grade this one alone.</p>' : '';
-    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back',
-      3, { box: { word: 'Attached', small: stampClock() } }) +
+    return head(ok.length === 1 ? 'One drawing came back' : 'Two drawings came back', 3) +
       lost +
       '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
       '</div>' +
@@ -3543,6 +3536,31 @@ function JD_layerOpen() {
      click-to-unfold popover (owner: "an awkward little eye"); now it reaches
      keyboard and screen-reader users the moment they focus the select, and
      mouse users on hover over the label, and needs no toggle state at all. */
+  /* The chosen-value gauge, built in ONE place because two callers need the
+     identical mark: scaleRow() paints it with whatever was already answered,
+     and onChange() re-paints it the instant the visitor picks (below). Owner
+     directive r4: once a row has an actual answer it grows the SAME
+     segmented bar the report card shows for that same value — window.
+     JD_barHTML and the report card's own rc-r… / rc-g… rank classes, not a
+     parallel set. (Those prefixes are written out rather than starred: a
+     literal asterisk-slash inside a block comment closes it, and that broke
+     the whole file once already.) `total` is the scale's own step count (3
+     for an axis, 5 for the grade), so the bar always fills against the
+     total it's segmented into. Keeping this a function is the fix for a bug
+     worth remembering: the gauge used to be inlined in scaleRow() alone, so
+     it only ever appeared if you left the step and came back — in the flow
+     a visitor actually walks, the select fires change, work.ratings is
+     written, and the row itself never re-renders, so the gauge was
+     invisible the whole way through a live turn. A mark that reports state
+     has to be written wherever the state is written. */
+  function gaugeFor(ax, total, chosen) {
+    if (chosen == null) return '';
+    var picked = ax ? window.JD_byRank(ax.values, chosen)
+      : window.JD_gradeOf(tax(), chosen);
+    var rank = picked ? Math.round(picked.rank) : 0;
+    if (!rank) return '';
+    return window.JD_barHTML(rank, total, (ax ? 'rc-r' : 'rc-g') + rank);
+  }
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
@@ -3555,6 +3573,13 @@ function JD_layerOpen() {
       esc(desc) + '"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
+      /* the gauge (if any) is the FIRST CHILD of .jd-row-ctrl, not wrapped
+         in its own span — paintGauge (below, in the input plumbing) finds
+         it with ctrl.querySelector('.rc-bar') and removes/inserts it as a
+         direct child on every change, so first paint has to hand it the
+         identical shape or the live update's removeChild throws on a node
+         that isn't actually its child. */
+      '<div class="jd-row-ctrl">' + gaugeFor(ax, levels.length, chosen) +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
       'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
       (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
@@ -3567,8 +3592,19 @@ function JD_layerOpen() {
       h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
         esc(window.JD_labelText(l.label || l.id)) + '</option>';
     });
-    h += '</select>';
+    h += '</select></div>';
     return h + '</div>';
+  }
+  /* the column head above the rows, mirroring the report card's <thead>
+     (owner directive r4 — see .rc-subj th): same two-column split and the
+     same left-hand word ("Axis"), but the right column is worded to ASK
+     rather than report — the report card's "Verdict" names a fact already
+     filed, this one names a blank still waiting to be filled. A plain grid
+     row, not a table head, so it carries nothing assistive tech needs; each
+     select's own aria-label/aria-describedby already says what it is. */
+  function benchHeadHTML() {
+    return '<div class="jd-row jd-row--head" aria-hidden="true">' +
+      '<span>Axis</span><span>Your rating</span></div>';
   }
 
   /* the step rail. First pass is linear (a step unlocks when the one before
@@ -3612,10 +3648,18 @@ function JD_layerOpen() {
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
       plate(slot, { pin: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
-      scaleRow(slot, 'grade', null, r.grade);
+      benchHeadHTML();
+    /* axes first, in taxonomy order, THEN the overall grade (owner
+       directive r4): the report card files axes in <tbody> and the overall
+       grade alone in <tfoot> below a rule — the SAME rubric was reading in
+       the opposite order here, one click away. .jd-row--grade already
+       carries the 2px top rule that reads as a tfoot break; it just needed
+       the grade row to actually be last for that rule to mean what it looks
+       like it means. */
     liveAxes().forEach(function (ax) {
       h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
     });
+    h += scaleRow(slot, 'grade', null, r.grade);
     /* the report path (APP §4.6); F9 (round-16) — the checkbox label and the
        note's placeholder used to ask the same question twice ("this drawing
        is broken or offensive" / "what is wrong with it?"). The label is
@@ -3724,14 +3768,14 @@ function JD_layerOpen() {
     return null;
   }
   /* which slot (if any) the visitor ends up keeping — the fate column below
-     states it once, and the ACCESSIONED seal stamps that it happened */
+     states it once */
   function keptSlot() {
     var ok = okSlots();
     if (work.winner === 'tie') return work.kept ? (work.keep || null) : null;
     if (ok.length === 1) return ok[0];
     return (work.winner === 'a' || work.winner === 'b') ? work.winner : null;
   }
-  /* ---------- 7. the unveil (§6, ACCESSIONED) ------------------------------ */
+  /* ---------- 7. the unveil (§6) -------------------------------------------- */
   function viewUnveil() {
     var kept = keptSlot();
     var lines = (work.reveal || []).map(function (r) {
@@ -3746,7 +3790,6 @@ function JD_layerOpen() {
     }).join('');
     var h = head('Who drew what', 6) + '<ul class="jd-turn-reveal">' + lines + '</ul>';
     if (work.winner === 'tie' && !work.kept) {
-      /* nothing has been accessioned until the election is made — no seal */
       h += '<p class="jd-turn-line">A tie is filed as a tie. Keep one for your ' +
         'drawer anyway?</p>' +
         pillRow('jd-keep', 'which drawing to keep', [
@@ -3756,28 +3799,22 @@ function JD_layerOpen() {
         ], work.keep, ' data-role="keep"') +
         actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
     } else {
-      /* one short line, and it clears the seal's corner */
       h += '<p class="jd-turn-line">' + (work.placed
         ? 'It’s in the drawer — yours only, tagged as such.'
         : 'Nothing kept. The grades are filed all the same.') + '</p>' +
         actions('<button type="button" class="jd-turn-go" data-act="done">done</button>' +
-          '<button type="button" class="jd-turn-alt" data-act="again">take another turn</button>' +
-          /* the one big seal of the turn: blank sheet at the Brief,
-             ACCESSIONED here */
-          seal('ACCESSIONED', stampDay() + ' ' + new Date().getFullYear(), true));
+          '<button type="button" class="jd-turn-alt" data-act="again">take another turn</button>');
     }
     return h;
   }
 
-  /* ---------- the failure end (§2, RETURNED TO SENDER) --------------------- */
+  /* ---------- the failure end (§2) ------------------------------------------ */
   function viewApology() {
     return head('Nothing came back', 2) +
-      '<div class="jd-turn-stampzone">' +
       '<p class="jd-turn-line">' + esc(work && work.notice
         ? work.notice
         : 'Both machines failed. This cost you nothing — the drawer will try ' +
           'again whenever you like.') + '</p>' +
-      boxStamp('Returned to sender', 'no charge · ' + stampDay(), true) + '</div>' +
       actions('<button type="button" class="jd-turn-go" data-act="again">try again</button>' +
         '<button type="button" class="jd-turn-alt" data-act="done">close</button>');
   }
@@ -3794,70 +3831,34 @@ function JD_layerOpen() {
      stop. The one state with a field of its own (prompt) passes noFocus and
      keeps it.
 
-     opts: { noFocus, view, box: {word, small} } — `view` is the card's
-     data-view (only 'bench' means anything to the CSS), `box` is the
-     rectangular handling stamp this card carries in its masthead. */
+     opts: { noFocus, view } — `view` is the card's data-view (only 'bench'
+     means anything to the CSS). */
   function head(t, sec, opts) {
     opts = opts || {};
     stateTitle = t;
     pendingHead = {
       title: t, sec: sec, noFocus: !!opts.noFocus,
-      view: opts.view || 'form', box: opts.box || null
+      view: opts.view || 'form'
     };
     return '';
   }
   function actions(inner) { return '<div class="jd-turn-actions">' + inner + '</div>'; }
 
-  /* ---------- the bureau's hand: the stamps -------------------------------
-     ROUND SEALS are determinations (RECEIVED, ACCESSIONED); RECTANGULAR BOX
-     STAMPS are routine handling (ATTACHED, OVER QUOTA, RETURNED TO SENDER,
-     NOT FILED). A state that is stamped is never also written out in prose.
-     Every stamp is aria-hidden and absolutely positioned or inline-flex at
-     zero layout cost: it decorates a state the markup already carries. */
-  var MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  function pad2(n) { return (n < 10 ? '0' : '') + n; }
-  function stampClock(d) {
-    d = d || new Date();
-    return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
-  }
-  function stampDay(d) {
-    d = d || new Date();
-    return d.getDate() + ' ' + MONTHS[d.getMonth()];
-  }
-  function boxStamp(word, small, across) {
-    return '<span class="jd-turn-stamp' + (across ? ' jd-turn-stamp--across' : '') +
-      '" aria-hidden="true">' + esc(word) +
-      (small ? '<small>' + esc(small) + '</small>' : '') + '</span>';
-  }
-  /* the round seal, set on the two arcs in the sprite. Both href forms are
-     written: the SVG2 `href` and the xlink one Safari still honours. */
-  function seal(word, sub, big) {
-    var size = word.length > 9 ? 10.4 : 13;
-    function arc(id, text) {
-      return '<text><textPath href="#' + id + '" xlink:href="#' + id +
-        '" startOffset="50%" text-anchor="middle">' + esc(text) +
-        '</textPath></text>';
-    }
-    return '<div class="jd-turn-sealslot' + (big ? ' jd-turn-sealslot--big' : '') +
-      '" aria-hidden="true">' +
-      '<svg class="jd-seal' + (big ? ' jd-seal--big' : '') +
-      '" viewBox="0 0 120 120" xmlns:xlink="http://www.w3.org/1999/xlink" ' +
-      'aria-hidden="true" focusable="false">' +
-      '<g fill="none" stroke="currentColor">' +
-      '<circle cx="60" cy="60" r="54" stroke-width="2.8"/>' +
-      '<circle cx="60" cy="60" r="45" stroke-width="1.1"/></g>' +
-      '<g fill="currentColor" font-family="Georgia,serif" font-size="9.4" ' +
-      'letter-spacing="2.1">' + arc('jd-seal-t', 'DEPT. OF SPECIMEN RECORDS') +
-      arc('jd-seal-b', '· MUNICIPAL SKY ·') + '</g>' +
-      '<g fill="currentColor" text-anchor="middle" font-family="Georgia,serif">' +
-      '<text x="60" y="56" font-size="' + size +
-      '" letter-spacing="1.4" font-weight="bold">' + esc(word) + '</text>' +
-      '<text x="60" y="70" font-size="8" letter-spacing="1.2">' + esc(sub) +
-      '</text></g></svg></div>';
-  }
-
   /* ---------- input plumbing ---------------------------------------------- */
+  /* swap the row's gauge for the value just chosen — in place, because a
+     full repaint here would close the native picker's own row under the
+     visitor's finger and lose the scroll position mid-survey. Clearing back
+     to "skip" removes the mark, the same as the report card showing nothing
+     for an axis that was never assessed. */
+  function paintGauge(select, ax, val) {
+    var ctrl = select.parentNode;
+    if (!ctrl || !ctrl.classList || !ctrl.classList.contains('jd-row-ctrl')) return;
+    var old = ctrl.querySelector('.rc-bar');
+    if (old) ctrl.removeChild(old);
+    var levels = byRankDesc(ax ? ax.values : tax().grades);
+    var html = gaugeFor(ax, levels.length, val == null ? null : Number(val));
+    if (html) ctrl.insertAdjacentHTML('afterbegin', html);
+  }
   function onChange(e) {
     var t = e.target, role = t.getAttribute && t.getAttribute('data-role');
     if (!role) return;
@@ -3876,10 +3877,12 @@ function JD_layerOpen() {
     if (role === 'grade') {
       work.ratings[slot].grade = val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
+      paintGauge(t, null, val);
     } else if (role === 'axis') {
       work.ratings[slot].axes[t.getAttribute('data-axis')] =
         val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
+      paintGauge(t, byId(liveAxes(), t.getAttribute('data-axis')), val);
     } else if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
       /* mutate in place — see benchPanel */
@@ -3976,10 +3979,6 @@ function JD_layerOpen() {
   function blankWork() {
     return {
       prompt: '', notice: '', slow: false,
-      /* the bureau's marks on this sheet: the box stamp the brief carries
-         when a turn came back over quota, and the RECEIVED seal's timestamp
-         (minted once, so a re-render never re-dates the stamp) */
-      stamp: null, received: '',
       slots: { a: { status: 'pending' }, b: { status: 'pending' } },
       ratings: { a: blankRating(), b: blankRating() },
       /* the single bench: which step is on the bench, which steps the
@@ -4012,8 +4011,6 @@ function JD_layerOpen() {
     persist();
     work.slow = false;
     work.notice = '';
-    work.stamp = null;                       /* a new turn is a clean sheet */
-    work.received = stampDay() + ' ' + stampClock();
     work.slots = { a: { status: 'pending' }, b: { status: 'pending' } };
     go('generating');
     startSlowTimer();
@@ -4083,12 +4080,7 @@ function JD_layerOpen() {
       clearTurn();                 /* no submission was created — nothing to keep */
       work = blankWork();
       work.prompt = draft;
-      work.notice = notice;
-      /* the handling stamp for the state the notice explains: the brief comes
-         back with OVER QUOTA (or CLOSED FOR THE DAY) in its masthead */
-      work.stamp = limited === 'drawer_resting'
-        ? { word: 'Closed for the day', small: null }
-        : { word: 'Over quota', small: '≈' + humanWait(wait) };
+      work.notice = notice;        /* the brief comes back explaining why, in prose */
       go('prompt');
       return;
     }
@@ -4156,13 +4148,11 @@ function JD_layerOpen() {
     if (!res || !res.ok) {
       var code = ((res || {}).error || {}).code || 'server_error';
       JD_track('turn_error', code);
-      /* the same shape as the apology, a different stamp (§6, NOT FILED) */
+      /* the same shape as the apology (§6) — same prose-only pattern, no stamp */
       paint(head('The grades didn’t file', 6) +
-        '<div class="jd-turn-stampzone">' +
         '<p class="jd-turn-line">The drawer couldn’t record them ' +
         '(<b>' + esc(code) + '</b>). Nothing was written — the whole batch ' +
         'goes together or not at all, and your grades are still here.</p>' +
-        boxStamp('Not filed', 'batch rejected · ' + stampClock(), true) + '</div>' +
         actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
           '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
       focusFirst();
