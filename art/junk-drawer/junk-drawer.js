@@ -2717,6 +2717,11 @@ function JD_layerOpen() {
       var i = parseInt(b.getAttribute('data-resp'), 10);
       if (isNaN(i) || i === curResp) return;
       curResp = i;
+      /* the picked option centers itself in the strip — the same centering
+         the open path gives the primary, clamped to the strip's ends */
+      if (curEntry.responses.length > 3) {
+        altWin = Math.max(0, Math.min(i - 1, curEntry.responses.length - 3));
+      }
       render(false);
     });
     /* the plate answers Enter/Space like the button it claims to be; Space is
