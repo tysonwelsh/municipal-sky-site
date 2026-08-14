@@ -37,7 +37,7 @@ JD_PROMPT;
 
 const JD_HARNESS = 'v3-web.1';
 
-// C4.2 — each turn draws 3 of the 4 pool entries: the slot→model assignment
+// C4.2 — all four pool entries draw every turn: the slot→model assignment
 // is chosen per submission by pair_order (0-23, an index into JD_DRAW_PERMS)
 // and recorded; the model_id values are taxonomy.json `models` registry ids
 // (join keys) and api_model is the exact wire string. Owner runbook: confirm
@@ -62,34 +62,33 @@ const JD_MODEL_POOL = [
     ['model_id'  => 'kimi-k3',
      'api_model' => 'kimi-k3',
      'provider'  => 'kimi'],
-    // Fourth chair (2026-08-14): Gemini joins the pool; each turn still draws
-    // three, so one pool entry sits out per turn. First wired as 3.7-flash
-    // because the owner's key was free tier (pro answered 429 limit:0); the
-    // owner moved the key to a paid plan the same day and the chair became
-    // 3.1-pro (probed: a keyhole SVG in 15.5s at thinkingLevel 'low').
-    // api_model is the pinned preview id — 'gemini-pro-latest' would shift
-    // under the eval. thinkingLevel 'low' is the same trade the Opus and
-    // Kimi entries make. Gemini wraps the SVG in code fences despite the
-    // system prompt; jd_extract_svg strips them and the disobedience flag
-    // records it.
+    // Fourth chair (2026-08-14): Gemini joins the pool. First wired as
+    // 3.7-flash because the owner's key was free tier (pro answered 429
+    // limit:0); the owner moved the key to a paid plan the same day and the
+    // chair became 3.1-pro (probed: a keyhole SVG in 15.5s at thinkingLevel
+    // 'low'). api_model is the pinned preview id — 'gemini-pro-latest'
+    // would shift under the eval. thinkingLevel 'low' is the same trade the
+    // Opus and Kimi entries make. Gemini wraps the SVG in code fences
+    // despite the system prompt; jd_extract_svg strips them and the
+    // disobedience flag records it.
     ['model_id'  => 'gemini-3-1-pro',
      'api_model' => 'gemini-3.1-pro-preview',
      'provider'  => 'google'],
 ];
 
-// The 24 ordered draws of 3 from the 4-entry pool, indexed by pair_order:
-// which POOL entry serves slot a, then b, then c. Same anti-bias discipline
-// as the pair shuffle — model identity must never correlate with slot
-// position, and no model may be favoured by the sit-out.
+// The 24 slot permutations of the 4-entry pool, indexed by pair_order:
+// which POOL entry serves slot a, then b, then c, then d. Same anti-bias
+// discipline as the pair shuffle — model identity must never correlate
+// with slot position. (pair_order was 0-5 for the trio earlier the same
+// day, then 0-23 as ordered draws of 3 from 4 for a few hours — owner
+// call, 2026-08-14: every chair draws every turn, no sit-outs.)
 const JD_DRAW_PERMS = [
-    [0, 1, 2], [0, 2, 1], [1, 0, 2],
-    [1, 2, 0], [2, 0, 1], [2, 1, 0],
-    [0, 1, 3], [0, 3, 1], [1, 0, 3],
-    [1, 3, 0], [3, 0, 1], [3, 1, 0],
-    [0, 2, 3], [0, 3, 2], [2, 0, 3],
-    [2, 3, 0], [3, 0, 2], [3, 2, 0],
-    [1, 2, 3], [1, 3, 2], [2, 1, 3],
-    [2, 3, 1], [3, 1, 2], [3, 2, 1],
+    [0, 1, 2, 3], [0, 1, 3, 2], [0, 2, 1, 3], [0, 2, 3, 1],
+    [0, 3, 1, 2], [0, 3, 2, 1], [1, 0, 2, 3], [1, 0, 3, 2],
+    [1, 2, 0, 3], [1, 2, 3, 0], [1, 3, 0, 2], [1, 3, 2, 0],
+    [2, 0, 1, 3], [2, 0, 3, 1], [2, 1, 0, 3], [2, 1, 3, 0],
+    [2, 3, 0, 1], [2, 3, 1, 0], [3, 0, 1, 2], [3, 0, 2, 1],
+    [3, 1, 0, 2], [3, 1, 2, 0], [3, 2, 0, 1], [3, 2, 1, 0],
 ];
 
 const JD_MAX_TOKENS = 12000;
@@ -97,9 +96,10 @@ const JD_PROVIDER_TIMEOUT = 90;
 const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 
 // C5.2 / APP §4.5 — the consent of record. Must match JD_CONSENT.version in
-// junk-drawer.js and the copy quoted in privacy.php. jd-consent-3 (2026-08-14):
-// the disclosure gains a fourth provider, Google (Gemini).
-const JD_CONSENT_VERSION = 'jd-consent-3';
+// junk-drawer.js and the copy quoted in privacy.php. jd-consent-4 (2026-08-14,
+// a few hours after -3): the rotation wording ("three of which") gave way to
+// the fact — all four providers draw every turn.
+const JD_CONSENT_VERSION = 'jd-consent-4';
 
 // C1.2 step 7 — cost controls, tunable in one place post-launch.
 const JD_LIMIT_HOURLY = 3;

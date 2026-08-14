@@ -79,10 +79,10 @@ request).
 ```json
 {
   "client_ref": "8b0d5c1e-…-uuid-v4",       // required, 36 chars, UUID shape
-  "slot": "a",                              // required, "a" | "b" | "c"
+  "slot": "a",                              // required, "a" | "b" | "c" | "d"
   "prompt": "a brass fish that is also a whistle",  // required, 1–500 chars after trim
   "client": "web",                          // "web" | "ios" | "android"; default "web"
-  "consent": { "version": "jd-consent-3" }, // required, must equal JD_CONSENT_VERSION
+  "consent": { "version": "jd-consent-4" }, // required, must equal JD_CONSENT_VERSION
   "website": ""                             // honeypot: must be absent or empty string
 }
 ```
@@ -97,7 +97,7 @@ request).
    (`mb_strlen`) → else `400 prompt_invalid`. **Stored byte-exact as
    received** (untrimmed) — the prompt is frozen verbatim.
 4. Consent: `consent.version` must equal the server-side constant
-   `JD_CONSENT_VERSION` (`'jd-consent-3'`, in `api/jd-config.php`) →
+   `JD_CONSENT_VERSION` (`'jd-consent-4'`, in `api/jd-config.php`) →
    else `400 consent_required`. (The client always sends it; the modal
    cannot submit without the recorded consent state — C5.2.)
 5. `client`: validated against `['web','ios','android']`; anything else
@@ -226,7 +226,7 @@ server guarantee, not a UI courtesy).
 - `kind='flag'`: no `axis_id`, no `value` (NULL); `note` optional. This
   is APP §4.6's report path — one row, no queue, no admin UI.
 - `note`: ≤500 chars, stored truncated.
-- `comparison.winner`: `"a" | "b" | "c" | "tie"`, or `"comparison": null`.
+- `comparison.winner`: `"a" | "b" | "c" | "d" | "tie"`, or `"comparison": null`.
   `null` is legal **only** when the submission has exactly one
   `status='ok'` generation (degraded mode); with more than one ok slot a
   comparison object is required (`400 comparison_required`). Winner is
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
     prompt             TEXT         NOT NULL,
     visitor_hash       CHAR(64)     NOT NULL,
     client             VARCHAR(16)  NOT NULL DEFAULT 'web',
-    pair_order         TINYINT      NOT NULL,            -- 0-23: JD_DRAW_PERMS index (slot→model draw of 3 from 4)
+    pair_order         TINYINT      NOT NULL,            -- 0-23: JD_DRAW_PERMS index (slot→model permutation of 4)
     ai_consent_at      DATETIME     NULL,                -- APP §4.5
     ai_consent_version VARCHAR(16)  NULL,                -- APP §4.5
     status             ENUM('pending','generated','rated','failed') NOT NULL DEFAULT 'pending',
@@ -539,13 +539,14 @@ Any change to this constant bumps the harness string (`v3-web.2`, …).
 
 ### C4.2 Model pool — `JD_MODEL_POOL` in `api/jd-config.php`
 
-(2026-08-14, later: the trio became a pool of four — Gemini 3.1 Pro
-joined. Each turn still draws three, so `pair_order` widened from 0–5 to
-0–23, an index into `JD_DRAW_PERMS`, the 24 ordered draws of 3 from 4:
-every model sits out one turn in four, and model identity still never
-correlates with slot position. Earlier the same day: the pair became a
-trio — Kimi K3 joined as the third model, slot `c`, pair_order 0|1 →
-0–5. This excerpt was also brought back in line with the config: it
+(2026-08-14, later still: every chair draws every turn — the draw-3-of-4
+rotation lasted a few hours before the owner called it: no sit-outs.
+`pair_order` stays 0–23, now an index into `JD_DRAW_PERMS` as the 24 full
+slot permutations of the 4-entry pool; model identity still never
+correlates with slot position, and slot `d` joined the schema. Earlier
+the same day: the trio became a pool of four (Gemini 3.1 Pro joined) and
+the pair became a trio before that (Kimi K3, slot `c`, pair_order 0|1 →
+0–5). This excerpt was also brought back in line with the config: it
 showed sonnet-5/gpt-5 while the flagship upgrade of 2026-08-10 had moved
 the pair to opus-5/gpt-5.1.)
 
@@ -690,7 +691,7 @@ passed C3.
 var JD_API = '';            // API base; '' = same origin. EVERY fetch = JD_API + '/absolute/path'
 var JD_CLIENT = 'web';      // sent in every POST body; never sniffed server-side
 var JD_CONSENT = {
-  version: 'jd-consent-3',
+  version: 'jd-consent-4',
   text: <C5.2 copy, verbatim>
 };
 var JD_STRINGS = {

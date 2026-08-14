@@ -2,7 +2,7 @@
 // POST /api/jd-generate.php — one model's SVG for one visitor prompt.
 // Contract: PLAN-USER-PROMPTS-CONTRACTS.md C1.2, C4.
 //
-// The client fires this three times in parallel (slots a, b, c) with one
+// The client fires this four times in parallel (slots a, b, c, d) with one
 // shared client_ref. The submission row — not the request — is the
 // rate-limit unit, and the unique key on client_ref is what makes the
 // callers converge on it. No model identity appears in any response from
@@ -30,8 +30,8 @@ if (!is_string($clientRef)
 }
 
 $slot = $body['slot'] ?? null;
-if ($slot !== 'a' && $slot !== 'b' && $slot !== 'c') {
-    jd_fail(400, 'bad_request', 'slot must be "a", "b" or "c".');
+if ($slot !== 'a' && $slot !== 'b' && $slot !== 'c' && $slot !== 'd') {
+    jd_fail(400, 'bad_request', 'slot must be "a", "b", "c" or "d".');
 }
 
 // --- 2. Honeypot: no row written, no provider called ----------------------
@@ -104,8 +104,8 @@ try {
 
     $submissionId = $submission['id'];
 
-    // The stored prompt is the prompt of record: both slots are sent exactly
-    // the text the submission froze, whatever the second caller re-posted.
+    // The stored prompt is the prompt of record: every slot is sent exactly
+    // the text the submission froze, whatever a later caller re-posted.
     $prompt = (string) $submission['prompt'];
 
     // --- 8. Slot idempotency ---------------------------------------------
@@ -116,7 +116,7 @@ try {
 
     // --- 9. Model routing + pending row before the provider call ----------
     $perm = JD_DRAW_PERMS[(int) $submission['pair_order'] % 24];
-    $slotIndex = array_search($slot, ['a', 'b', 'c'], true);
+    $slotIndex = array_search($slot, ['a', 'b', 'c', 'd'], true);
     $model = JD_MODEL_POOL[$perm[$slotIndex]];
 
     if (!JD_DEV_MODE && jd_provider_key($model['provider']) === null) {

@@ -79,12 +79,13 @@ try {
     echo str_pad('strength column', 20) . " FAILED: " . $e->getMessage() . "\n";
 }
 
-// jd_generations.slot gains 'c' (third model per turn, 2026-08-14): fresh
-// installs get ENUM('a','b','c') from the CREATE above; a live MySQL table
-// gets widened here. SQLite tables created before this change carry the old
-// CHECK constraint — SQLite can't alter one, but the dev database is
-// disposable: delete local-dev/jd-dev.sqlite and re-run. (Checked first so
-// a re-run stays quiet.)
+// jd_generations.slot gains 'd' (fourth model per turn, 2026-08-14; 'c'
+// joined earlier the same day): fresh installs get ENUM('a','b','c','d')
+// from the CREATE above; a live MySQL table gets widened here. SQLite tables
+// created before this change carry the old CHECK constraint — SQLite can't
+// alter one, but the dev database is disposable: delete
+// local-dev/jd-dev.sqlite and re-run. (Checked first so a re-run stays
+// quiet.)
 try {
     $widened = false;
     if (JD_DEV_MODE) {
@@ -92,15 +93,15 @@ try {
     } else {
         $q = $db->query("SHOW COLUMNS FROM jd_generations LIKE 'slot'");
         $col = $q !== false ? $q->fetch() : false;
-        $widened = is_array($col) && strpos((string) ($col['Type'] ?? ''), "'c'") !== false;
+        $widened = is_array($col) && strpos((string) ($col['Type'] ?? ''), "'d'") !== false;
         if (!$widened) {
-            $db->exec("ALTER TABLE jd_generations MODIFY COLUMN slot ENUM('a','b','c') NOT NULL");
+            $db->exec("ALTER TABLE jd_generations MODIFY COLUMN slot ENUM('a','b','c','d') NOT NULL");
         }
     }
-    echo str_pad('slot c', 20) . ($widened ? " already present\n" : " added\n");
+    echo str_pad('slot d', 20) . ($widened ? " already present\n" : " added\n");
 } catch (PDOException $e) {
     $failed++;
-    echo str_pad('slot c', 20) . " FAILED: " . $e->getMessage() . "\n";
+    echo str_pad('slot d', 20) . " FAILED: " . $e->getMessage() . "\n";
 }
 
 echo "\n" . ($failed === 0 ? "All tables present. Delete this script when you are done.\n" : "$failed statement(s) failed.\n");
@@ -133,7 +134,7 @@ CREATE TABLE IF NOT EXISTS jd_submissions (
 CREATE TABLE IF NOT EXISTS jd_generations (
     id             CHAR(26)     NOT NULL PRIMARY KEY,
     submission_id  CHAR(26)     NOT NULL,
-    slot           ENUM('a','b','c') NOT NULL,
+    slot           ENUM('a','b','c','d') NOT NULL,
     model_id       VARCHAR(64)  NOT NULL,
     model_version  VARCHAR(64)  NOT NULL,
     provider       VARCHAR(32)  NOT NULL,
@@ -216,7 +217,7 @@ CREATE INDEX IF NOT EXISTS idx_jds_created ON jd_submissions (created)",
 CREATE TABLE IF NOT EXISTS jd_generations (
     id             TEXT     NOT NULL PRIMARY KEY,
     submission_id  TEXT     NOT NULL,
-    slot           TEXT     NOT NULL CHECK (slot IN ('a','b','c')),
+    slot           TEXT     NOT NULL CHECK (slot IN ('a','b','c','d')),
     model_id       TEXT     NOT NULL,
     model_version  TEXT     NOT NULL,
     provider       TEXT     NOT NULL,

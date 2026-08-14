@@ -100,11 +100,11 @@ include 'includes/header.php';
                     otherwise share your information with third parties, except where required by law.</p>
 
                 <h2>4. The Junk Drawer &mdash; taking a turn</h2>
-                <p>The Junk Drawer lets you describe an object and have three different AI models each draw it. Before
+                <p>The Junk Drawer lets you describe an object and have four different AI models each draw it. Before
                     your first turn, the page shows you this and asks you to agree to it:</p>
                 <blockquote>
                     <p>When you take a turn, the words you type are sent to four AI providers &mdash; Anthropic
-                        (Claude), OpenAI (GPT), Moonshot AI (Kimi), and Google (Gemini) &mdash; three of which each
+                        (Claude), OpenAI (GPT), Moonshot AI (Kimi), and Google (Gemini) &mdash; which each
                         draw an object from them. Your prompt, the drawings that come back, your ratings, and an
                         anonymous daily-rotating visitor code are stored so the results can be studied and the feature
                         kept honest. Nothing you type here is shown to other visitors.</p>
@@ -113,7 +113,7 @@ include 'includes/header.php';
                 <p><strong>What is stored, in the categories app stores use:</strong></p>
                 <ul>
                     <li><strong>User Content</strong> &mdash; the prompt text you type, stored exactly as you wrote it,
-                        and the SVG drawings the three models return.</li>
+                        and the SVG drawings the four models return.</li>
                     <li><strong>Usage Data</strong> &mdash; your ratings: the overall grade and any per-axis annotations
                         you choose to give each drawing, any short notes you attach, whether you flagged a drawing as
                         broken or offensive, and which of the drawings you preferred (or that you called it a tie).

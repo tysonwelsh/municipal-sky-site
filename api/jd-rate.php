@@ -167,8 +167,8 @@ try {
         }
     } else {
         $winner = $comparison['winner'] ?? null;
-        if ($winner !== 'a' && $winner !== 'b' && $winner !== 'c' && $winner !== 'tie') {
-            jd_fail(400, 'rating_invalid', 'The winner must be "a", "b", "c" or "tie".');
+        if ($winner !== 'a' && $winner !== 'b' && $winner !== 'c' && $winner !== 'd' && $winner !== 'tie') {
+            jd_fail(400, 'rating_invalid', 'The winner must be "a", "b", "c", "d" or "tie".');
         }
         if ($winner !== 'tie') {
             if (!isset($bySlot[$winner]) || $bySlot[$winner]['status'] !== 'ok') {

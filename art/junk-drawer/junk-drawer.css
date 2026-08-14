@@ -1883,7 +1883,12 @@ html.jd-turn-open { overflow: hidden; }
    ========================================================================== */
 .jd-turn-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
 .jd-turn-plates--call { justify-content: center; }
-.jd-turn-plates--call .jd-turn-plate { max-width: 210px; }
+.jd-turn-plates--call .jd-turn-plate { max-width: 200px; }
+/* the plates views widen for the same reason the bench does — four exhibits
+   need the room, and only for as long as they need it (fourth chair,
+   2026-08-14): the reveal and the call carry every surviving plate at once */
+.jd-turn[data-view="call"],
+.jd-turn[data-view="plates"] { width: min(880px, 100%); }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 .jd-turn-art {
   position: relative; width: 100%; aspect-ratio: 1 / 1;
@@ -2333,6 +2338,8 @@ html.jd-turn-open { overflow: hidden; }
      the column wrappers go display:contents (the DOM's source order IS the
      portrait order), and the exhibit goes sticky again */
   .jd-turn[data-view="bench"] { width: min(680px, 100%); }
+  .jd-turn[data-view="call"],
+  .jd-turn[data-view="plates"] { width: min(680px, 100%); }
   .jd-bench { display: block; }
   .jd-bench-l, .jd-bench-r { display: contents; }
   .jd-turn-pin {
