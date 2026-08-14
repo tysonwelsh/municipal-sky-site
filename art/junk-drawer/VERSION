@@ -1,1 +1,1 @@
-0.8.45 — a slow generation no longer vanishes: when the database connection dies while a model is still drawing, the result is now saved on a fresh connection instead of being lost
+0.8.47 — two report cards gain Kimi K3 responses: mao badge (standard) and fish skeleton (select); both drawers keep their current pieces

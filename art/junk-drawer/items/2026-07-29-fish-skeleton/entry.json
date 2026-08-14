@@ -79,6 +79,27 @@
       },
       "transcript": null,
       "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.2%. By far the smallest artifact in the drawer at 1,654 bytes, and produced with no tool calls at all — a single pass. Five single ribs hang off one curved spine, every bone stroked twice (dark #23211f under cream #f6f1e3) so the thinner light stroke reads as the bone body inside its own outline. Teal head and matching teal tail fin, three short gill strokes, and an X eye made of two crossed segments. The flattest and least detailed of the three: no mouth, no teeth, no interior anatomy."
+    },
+    {
+      "rid": "r4",
+      "file": "kimi-k3.svg",
+      "model": "kimi-k3",
+      "model_version": "kimi-k3",
+      "date": "2026-08-14",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-08-14",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "integrity": 1.0,
+        "je-ne-sais-quoi": 2.0
+      },
+      "transcript": null,
+      "notes": "generated via detached `kimi -p` process with cwd /tmp/jd-gen (no repo context — Kimi Code adaptation of generation harness v2 isolation; harness preamble, standard technical appendix v1). Empirically clean: process log shows zero tool calls and no repo paths. CLI bullet marker prefixed stdout, stripped at ingest (harness decoration, not model prose). Independence verified: 0 shared path-data lines vs r1-r3. ink-bounds check passed (worst dead margin 1.5%). Drew two X eyes (prompt: \"Xs for eyes\"). Owner-rated 2026-08-14; restraint and style axes skipped on the instrument."
     }
   ]
 }
