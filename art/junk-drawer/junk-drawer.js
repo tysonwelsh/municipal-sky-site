@@ -3051,13 +3051,20 @@ function JD_layerOpen() {
       '</defs></svg>' +
       '<div class="jd-turn" role="dialog" aria-modal="true" ' +
       'aria-label="take a turn">' +
+      /* F1 (round-16): the ✕ is now a plain flex child of .jd-turn-head,
+         sharing the title's centerline by construction instead of being
+         position:absolute against the whole card in a separate coordinate
+         frame. It sits OUTSIDE .jd-turn-headline, which is the only part of
+         the head paint() rewrites on every state change — so the close
+         button (and its one click listener, bound once below) is never torn
+         down and never needs rebinding. */
+      '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
-      '<span aria-hidden="true">✕</span></button>' +
-      '<header class="jd-turn-head"></header>' +
+      '<span aria-hidden="true">✕</span></button></header>' +
       '<div class="jd-turn-scroll"></div></div>';
     document.body.appendChild(scrim);
     card = scrim.querySelector('.jd-turn');
-    headEl = scrim.querySelector('.jd-turn-head');
+    headEl = scrim.querySelector('.jd-turn-headline');
     bodyEl = scrim.querySelector('.jd-turn-scroll');
     scrim.addEventListener('pointerdown', function (e) {
       if (e.target === scrim) requestClose();
@@ -3185,14 +3192,22 @@ function JD_layerOpen() {
     confirmEl = null;
   }
 
-  /* ---------- the definition layer (single bench, 2026-08-11) -------------
-     ONE system for every "what does this mean": a fixed singleton tooltip
-     for pointer hover and keyboard focus (aria-hidden — screen readers get
-     the same words natively via aria-describedby / the popovers), and the ⓘ
-     in-flow popovers the click handler above drives. The tooltip is
-     pointer-events:none so it can never take a press a control should have
-     had, and a plain touch tap never opens it — on touch the ⓘ carries the
-     definitions alone. */
+  /* ---------- the definition layer (OVERRIDE 1, round-16) -----------------
+     ONE system for every "what does this mean," and it is now JUST the
+     fixed singleton tooltip: mouseover for pointer hover, focusin for
+     keyboard focus on the CONTROL the definition is about (never the label
+     itself — .jd-def is a plain <span>, not a tab stop). Screen readers get
+     every definition natively via aria-describedby, pointed at a permanent
+     .jd-vh node — see scaleRow/callPanel. The click-to-unfold ⓘ popover
+     that used to sit beside the tooltip (owner: "an awkward little eye") is
+     retired outright, not replaced with a second widget. Touch-without-a-
+     screen-reader is a known, accepted gap: no hover, no focus ring, and a
+     tap on a <select> hands off to the OS picker before any custom tooltip
+     could show — the row label IS the definition's subject and the
+     select's own option words carry the actual scale, which is judged
+     self-explanatory enough to leave the gap open rather than patch it with
+     another click affordance. The tooltip itself is pointer-events:none so
+     it can never take a press a control should have had. */
   var ttEl = null;
   function ttInit() {
     if (ttEl) return;
@@ -3227,30 +3242,16 @@ function JD_layerOpen() {
     ttEl.style.top = Math.max(8, r.top - ttEl.offsetHeight - 8) + 'px';
   }
   function ttHide() { if (ttEl) ttEl.hidden = true; }
-  /* fold every open ⓘ popover; returns whether any was open (the Escape
-     layering below peels it as its own layer) */
-  function closeDefs() {
-    var any = false;
-    Array.prototype.forEach.call(
-      bodyEl.querySelectorAll('.jd-def[aria-expanded="true"]'),
-      function (btn) {
-        any = true;
-        btn.setAttribute('aria-expanded', 'false');
-        var pop = bodyEl.querySelector('#' + btn.getAttribute('aria-controls'));
-        if (pop) pop.hidden = true;
-      });
-    return any;
-  }
 
-  /* Escape peels ONE layer per press: an open definitions popover first,
-     the abandon confirm second, the modal third, and never the page (the
-     pile's own Escape handler stands down for as long as this dialog is
-     up — see JD_layerOpen). */
+  /* Escape peels ONE layer per press: the abandon confirm first, the modal
+     second, and never the page (the pile's own Escape handler stands down
+     for as long as this dialog is up — see JD_layerOpen). A third layer —
+     an open definitions popover — used to peel first; OVERRIDE 1 (round-16)
+     retired the popover outright, so there is one fewer layer to peel. */
   window.addEventListener('keydown', function (e) {
     if (!isOpen || e.key !== 'Escape') return;
     e.preventDefault();
     ttHide();
-    if (!confirmOn && closeDefs()) return;
     requestClose();
   });
 
@@ -3320,11 +3321,14 @@ function JD_layerOpen() {
        rate-limited turn comes back here, so OVER QUOTA rides the masthead
        and the words the visitor typed stay put (work.stamp, set in
        settleSlot). Nothing is disabled — pressing send simply asks again. */
+    /* CUTS §1 (round-16): the "two machines draw it, you grade both and keep
+       one" line is cut — the heading says "describe an object," and every
+       card after this one narrates its own step as the visitor reaches it
+       ("two drawings came back," "grade drawing A"). The flow tells its own
+       story; this card doesn't need to tell it in advance too. */
     return head('Describe an object', 1,
       { noFocus: true, box: (work && work.stamp) || null }) +
       msg +
-      '<p class="jd-turn-line">Two machines each draw it. You grade both, and ' +
-      'keep the one you like.</p>' +
       '<div class="jd-turn-fieldwrap">' +
       '<textarea id="jd-turn-prompt" class="jd-turn-input" rows="5" ' +
       'data-role="prompt" data-autofocus spellcheck="true" ' +
@@ -3451,7 +3455,11 @@ function JD_layerOpen() {
       lost +
       '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
       '</div>' +
-      '<p class="jd-turn-line">Grade them first — the names come after.</p>' +
+      /* CUTS §3 (round-16): "grade them first — the names come after" is cut
+         — the button right below it already says "grade them," so the
+         sentence was explaining a button whose own label is the same
+         instruction. Who drew which is answered on its own turn, at the
+         unveil. */
       actions('<button type="button" class="jd-turn-go" data-act="rate">grade them</button>');
   }
 
@@ -3476,7 +3484,8 @@ function JD_layerOpen() {
      call), the artwork pinned sticky while its response is graded, every
      scale a native <select> (titles only on the control and in the list;
      skip is the honest default), and ONE definition system: a hover/focus
-     tooltip plus an ⓘ per question that unfolds the whole scale in-flow.
+     tooltip anchored to a plain-text label (OVERRIDE 1, round-16 — the
+     click-to-unfold ⓘ popover it used to pair with is retired outright).
      The two-panel pill survey and the separate compare state are retired;
      the call is the 5-point likert finale (winner + margin) and closes the
      same state. pillRow above survives for the unveil's keep-chooser only. */
@@ -3507,36 +3516,39 @@ function JD_layerOpen() {
     return work.winner + (work.strength === 'decisive' ? '2' : '1');
   }
 
-  /* one question row: the ⓘ header (its button doubles as the hover/focus
-     tooltip anchor for the scale's meaning), the in-flow definitions
-     popover, and the select. (The folded per-axis note was removed at the
-     owner's request, 2026-08-12 — the survey files values only. The report
-     path's flag note below is separate and stays.) Re-rendering is safe:
-     every answer lives in `work` and is written back as selected state
-     here.
+  /* one question row: the label (a plain, non-interactive gloss — OVERRIDE
+     1, round-16), a permanently-present hidden definition wired to the
+     select via aria-describedby, and the select itself. (The folded
+     per-axis note was removed at the owner's request, 2026-08-12 — the
+     survey files values only. The report path's flag note below is
+     separate and stays.) Re-rendering is safe: every answer lives in `work`
+     and is written back as selected state here.
 
-     THE POPOVER IS ONE LINE (round-15 design): the axis's own definition and
-     nothing else. The level-by-level schedule it used to unfold was twelve
-     lines explaining a four-option select whose options are already words —
-     and those words are in the select, which is where a person reads them. */
+     THE DEFINITION IS ONE LINE (round-15 design, still true post-OVERRIDE-1):
+     the axis's own definition and nothing else. The level-by-level schedule
+     it used to unfold was twelve lines explaining a four-option select whose
+     options are already words — and those words are in the select, which is
+     where a person reads them. It used to reach the visitor through a
+     click-to-unfold popover (owner: "an awkward little eye"); now it reaches
+     keyboard and screen-reader users the moment they focus the select, and
+     mouse users on hover over the label, and needs no toggle state at all. */
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
     var label = ax ? (ax.label || ax.id) : 'overall grade';
     var desc = ax ? (ax.description || '') : 'The drawer’s own five-tier scale, best to worst.';
     var levels = byRankDesc(ax ? ax.values : tax().grades);
-    var popId = 'jd-pop-' + slot + '-' + (axisId || 'grade');
+    var descId = 'jd-d-' + slot + '-' + (axisId || 'grade');
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
       '<div class="jd-rowhead">' +
-      '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
-      'aria-controls="' + popId + '" data-tt-t="' + esc(label) + '" data-tt-d="' +
-      esc(desc) + '"><span>' + esc(label) + '</span>' +
-      '<span class="jd-i" aria-hidden="true">i</span></button>' +
+      '<span class="jd-def" data-tt-t="' + esc(label) + '" data-tt-d="' +
+      esc(desc) + '"><span>' + esc(label) + '</span></span>' +
       '</div>' +
-      '<div class="jd-pop" id="' + popId + '" hidden>' + esc(desc) + '</div>' +
+      '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
       'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
       (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
-      ' aria-label="' + esc(label) + ' for response ' + slot.toUpperCase() + '">' +
+      ' aria-label="' + esc(label) + ' for response ' + slot.toUpperCase() +
+      '" aria-describedby="' + descId + '">' +
       '<option value=""' + (chosen == null ? ' selected' : '') + '>skip</option>';
     levels.forEach(function (l) {
       var on = chosen != null && String(chosen) === String(l.rank);
@@ -3593,11 +3605,15 @@ function JD_layerOpen() {
     liveAxes().forEach(function (ax) {
       h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
     });
-    /* the report path (APP §4.6), verbatim wording; note revealed in place */
+    /* the report path (APP §4.6); F9 (round-16) — the checkbox label and the
+       note's placeholder used to ask the same question twice ("this drawing
+       is broken or offensive" / "what is wrong with it?"). The label is
+       trimmed to the fact being reported; the placeholder alone asks for the
+       reason, once the field is open to ask it. */
     h += '<label class="jd-turn-check jd-turn-flag">' +
       '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
       (r.flag ? ' checked' : '') + '>' +
-      '<span>this drawing is broken or offensive</span></label>' +
+      '<span>broken or offensive</span></label>' +
       '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
       '<input type="text" class="jd-turn-note" maxlength="' +
       MAX_NOTE + '" placeholder="what is wrong with it?" ' +
@@ -3624,26 +3640,28 @@ function JD_layerOpen() {
 
   /* THE CALL — the preserved likert finale (mockup 10c salvage, kept by the
      owner through the round-10 review: the call as geometry, five title-only
-     stops on a rail strung A-left to B-right, tooltips per stop, the ⓘ
-     unfolding the whole scale, filed as winner + margin). */
+     stops on a rail strung A-left to B-right, tooltips per stop, filed as
+     winner + margin). Its own "what is this" gloss gets the same OVERRIDE 1
+     treatment as every scale row's: a plain label, and the definition wired
+     to the radiogroup rather than a click-to-unfold popover. */
   function callPanel(ok) {
     var chosen = likertChosen();
     var h = '<div class="jd-turn-plates jd-turn-plates--call">' +
       ok.map(function (s) { return plate(s); }).join('') + '</div>' +
       '<div class="jd-callhead">' +
-      '<button type="button" class="jd-def" data-act="def" aria-expanded="false" ' +
-      'aria-controls="jd-pop-call" data-tt-t="the call" data-tt-d="Which ' +
+      '<span class="jd-def" data-tt-t="the call" data-tt-d="Which ' +
       'drawing belongs in the drawer, and by how much.">' +
-      '<span>Which belongs in the drawer?</span>' +
-      '<span class="jd-i" aria-hidden="true">i</span></button>' +
+      '<span>Which belongs in the drawer?</span></span>' +
       '<span class="jd-req">Required</span></div>' +
-      /* one line, like every other ⓘ: the per-stop wording is on the stops
-         themselves, in the tooltip, and in the hidden descriptions below */
-      '<div class="jd-pop" id="jd-pop-call" hidden>The one required answer ' +
+      /* one line, like every other def: the per-stop wording is on the
+         stops themselves, in the tooltip, and in the hidden descriptions
+         below — this one line is the radiogroup's own description */
+      '<span class="jd-vh" id="jd-d-call-what">The one required answer ' +
       'when both drawings survived — filed as a winner plus a margin (a tie ' +
-      'has no margin).</div>' +
+      'has no margin).</span>' +
       '<div class="jd-likert" role="radiogroup" ' +
-      'aria-label="the call: which drawing belongs in the drawer"' +
+      'aria-label="the call: which drawing belongs in the drawer" ' +
+      'aria-describedby="jd-d-call-what"' +
       (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
       '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">A</span>' +
       '<div class="jd-lk-rail">';
@@ -3672,7 +3690,8 @@ function JD_layerOpen() {
   /* §4 the bench, §5 the call. Neither carries an instruction line: they are
      the two cards where the visitor is working, so they are the two with the
      least to read. The heading names the drawing on the bench, the rail says
-     where in the three steps it sits, and the ⓘ carries the rest. */
+     where in the three steps it sits, and each row's own label (with its
+     hover/focus definition) carries the rest. */
   function viewRate() {
     var ok = okSlots();
     /* a restored or degraded turn may hold a step that no longer exists */
@@ -3924,16 +3943,6 @@ function JD_layerOpen() {
         work.step = dest;
         work.reached[dest] = true;
         render();
-      }
-    } else if (act === 'def') {
-      /* one definitions popover at a time; press again, Esc, or any other
-         def to fold it. In-flow, so it never covers a control. */
-      var wasOpen = b.getAttribute('aria-expanded') === 'true';
-      closeDefs();
-      if (!wasOpen) {
-        b.setAttribute('aria-expanded', 'true');
-        var pop = bodyEl.querySelector('#' + b.getAttribute('aria-controls'));
-        if (pop) pop.hidden = false;
       }
     } else if (act === 'file') {
       submitRatings();
