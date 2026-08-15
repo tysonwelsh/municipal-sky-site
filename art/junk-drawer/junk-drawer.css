@@ -1056,14 +1056,16 @@ html.jd-record-open { overflow: hidden; }
   color: #2f3846;
 }
 
-/* ---- the margin notes: MODEL · DATE (· PROCESS when refined) -------------
-   (owner pick, mockup-14 option B, 2026-08-13) The response's data is typed
-   straight onto the graph paper in the print's lower-left margin, the way a
-   lab tech pencils a plate number on a proof. A soft paper halo keeps the
-   type legible where it crosses the grid rules. The old ruled caption
-   (.rc-fillsline) retired with SIZE on the same call. */
+/* ---- the margin notes: MODEL · DATE (· TOKENS · COST on a visitor's own
+   item) (· PROCESS when refined) — (owner pick, mockup-14 option B,
+   2026-08-13) The response's data is typed straight onto the graph paper in
+   the print's lower-left margin, the way a lab tech pencils a plate number
+   on a proof. A soft paper halo keeps the type legible where it crosses the
+   grid rules. The old ruled caption (.rc-fillsline) retired with SIZE on the
+   same call. Bottom edge dropped 4% → 3% on 2026-08-15: the file number
+   leaving the stack freed a line, and the data rides lower for it. */
 .rc-notes {
-  position: absolute; left: 4.5%; bottom: 4%; z-index: 2;
+  position: absolute; left: 4.5%; bottom: 3%; z-index: 2;
   max-width: 64%;          /* clear of the DOWNLOAD button's corner */
   display: flex; flex-direction: column; gap: 1px;
   pointer-events: none;    /* the photograph stays one whole enlarge target */
@@ -1084,11 +1086,17 @@ html.jd-record-open { overflow: hidden; }
   font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
   text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
 }
-/* the file number: unlabelled fine print under the notes (owner rev,
-   2026-08-13 — smaller and greyer than the data above it) */
+/* the file number: unlabelled fine print, moved out of the margin notes to
+   sit directly beneath the DOWNLOAD button (owner rev, 2026-08-15 — the
+   notes band was a line too tall once Tokens/Cost joined; the button's old
+   footprint is the spot already proven clear of the kraft corner, so the
+   number takes it and the button nudges up to make the room). Inert to
+   presses, like the notes: the photograph stays one whole enlarge target. */
 .rc-note-no {
-  margin-top: 2px;
+  position: absolute; right: 18px; bottom: 15px; z-index: 3;
+  pointer-events: none;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 40%;
   font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.04em;
   color: rgba(55, 65, 79, 0.55);
   text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
@@ -1164,8 +1172,10 @@ html.jd-record-open { overflow: hidden; }
    exempt it from the plate's zoom. */
 .rc-dl {
   /* inset far enough that the button clears the kraft corner's 26px
-     diagonal (owner rev, 2026-08-13 — it overlapped at 8/8) */
-  position: absolute; right: 18px; bottom: 15px; z-index: 3;
+     diagonal (owner rev, 2026-08-13 — it overlapped at 8/8). Bottom nudged
+     15px → 28px on 2026-08-15: the file number now sits beneath the button
+     in this one's old footprint (see .rc-note-no). */
+  position: absolute; right: 18px; bottom: 28px; z-index: 3;
   display: inline-block;
   font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;

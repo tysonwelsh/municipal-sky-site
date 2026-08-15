@@ -2621,14 +2621,14 @@ function JD_layerOpen() {
       (gen.mode === 'refined'
         ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
           '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
-        : '') +
-      /* the file number rides the notes too (owner rev, 2026-08-13 — the
-         card's footer line retired with it), as unlabelled fine print */
-      '<span class="rc-note-no">' + esc(entry.id) + '</span>';
+        : '');
     /* the photograph stays the enlarge control (role/tabindex, whole
        surface); its corner carries the DOWNLOAD SVG button — the "⤢
        enlarge" hint retired for it (owner rev, 2026-08-13). The click/key
-       handlers in build() exempt .rc-dl so a download never also zooms. */
+       handlers in build() exempt .rc-dl so a download never also zooms.
+       The file number prints beneath the button (owner rev, 2026-08-15 —
+       it used to tail the notes, a line too many once Tokens/Cost
+       joined). */
     h += '<div class="rc-col-l">' +
       '<div class="rc-block rc-plate" role="button" tabindex="0" ' +
       'aria-label="Enlarge the artwork">' +
@@ -2641,6 +2641,7 @@ function JD_layerOpen() {
       '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
       esc(entry.id) + '.svg" title="download the SVG as generated">' +
       'DOWNLOAD SVG ⤓</a>' +
+      '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
       '</div></div>';
     /* the prompt renders foldable; render() measures it after paint and
        strips the fold when it actually fits three lines — so the expander
