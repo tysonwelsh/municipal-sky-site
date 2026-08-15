@@ -2221,9 +2221,17 @@ html.jd-turn-open { overflow: hidden; }
    paint, so the Brief and the Unveil keep the form's narrow 680px measure.
    Under 700px the wrappers go display:contents and the DOM's source order IS
    the portrait flow: rail, plate (sticky again), scales, flag, actions. */
+/* the exhibit is sized on the REPORT CARD'S OWN RULER (owner, 2026-08-15:
+   "I would like these to be larger, more like the main display in the report
+   card"). The bench used to run a stop below the card on every term —
+   46dvh/34vw/380px against the card's 52dvh/42vw/420px — for no reason that
+   survives stating: the drawing being GRADED is at least as important as the
+   drawing being read about, and it is the same square window either way. The
+   card widens to carry it, exactly as .jd-record's width follows its own
+   --plate, so the paperwork column keeps the room it had. */
 .jd-turn[data-view="bench"] {
-  --plate: clamp(240px, min(46dvh, 34vw), 380px);
-  width: min(920px, 100%);
+  --plate: clamp(240px, min(52dvh, 42vw), 420px);
+  width: min(960px, 100%);
 }
 .jd-bench {
   display: grid;
@@ -2609,7 +2617,18 @@ html.jd-turn-open { overflow: hidden; }
        section. */
     box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
   }
-  .jd-turn-pin .jd-turn-plate { width: 148px; }
+  /* THE PINNED EXHIBIT, sized by the viewport it has to share (owner,
+     2026-08-15). 148px was a thumbnail of the thing under examination — a
+     phone's report card gives the same artwork the card's full width, so the
+     visitor graded a drawing a quarter the size of the one they'd just been
+     reading about. The constraint the flat 148px was really guarding is that
+     this plate is STICKY: whatever it takes, it takes for the whole panel,
+     out of the scroller the rows live in. So it is bounded in the axis that
+     actually matters — dvh, not px — the way the record card's --plate is.
+     At 30dvh a tall phone gets a ~250px exhibit and still has room for the
+     rail, four rows and the button without scrolling; a short landscape
+     window yields down to the floor instead of swallowing the form. */
+  .jd-turn-pin .jd-turn-plate { width: min(100%, clamp(140px, 30dvh, 300px)); }
   .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
 }
 @media (max-width: 600px) {
@@ -2632,7 +2651,10 @@ html.jd-turn-open { overflow: hidden; }
      width, the way it always has. Drop the header rather than let it read
      as two mystery lines above the first row. */
   .jd-row--head { display: none; }
-  .jd-turn-pin .jd-turn-plate { width: 108px; }
+  /* (the 108px pin is gone: a narrow screen is not a short one, and the
+     ≤700px rule above is already bounded by the height it competes for.
+     Stacking a width breakpoint on top of it only shrank the exhibit on
+     precisely the devices with the most vertical room to give it.) */
   .jd-rail-long { display: none; }
   .jd-rail-short { display: inline; }
   .jd-likert { gap: 5px; }
