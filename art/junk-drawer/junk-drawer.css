@@ -496,31 +496,68 @@ html { scroll-behavior: smooth; }
    already spills a drop-shadow well past this box, so nothing downstream is
    relying on the SVG to clip. Cheap insurance, kept. */
 .jd-item--turn svg { overflow: visible; }
-/* the keyboard visitor's ring. The wrapper is pointer-events:none like every
-   item's, which does not affect focusability — Tab reaches it, and the ring
-   is drawn around the box because the ink inside is a solid rounded plate.
-   :not(.is-tap) is the mouse exemption: a tap has to focus the object
-   explicitly (the ink takes the hit, not the wrapper), and Chromium counts a
-   programmatic focus as focus-visible — the flag says "this focus came from a
-   finger", and the JS drops it the moment focus leaves.
+/* THE KEYBOARD VISITOR'S FOCUS STATE — THE LAMP, NOT A BOX (owner,
+   2026-08-15: "I don't want the boundaries of that box to ever be visible").
 
-   The ring is a PSEUDO-ELEMENT rather than an `outline`, for one reason: the
-   rotation lives on the inner svg (see .jd-item svg), so the wrapper's layout
-   box stays axis-aligned while the plate inside lies at up to ±18°. A real
-   outline is drawn on that unrotated box and visibly sits off-axis from the
-   thing it is pointing at. A pseudo-element can take the same
-   rotate(var(--rot)) the artwork takes, so the ring lies WITH the plate — and
-   it inherits the same transition, so it turns with it when the item spins. */
-.jd-item--turn:focus-visible:not(.is-tap) { outline: none; }
-.jd-item--turn:focus-visible:not(.is-tap)::after {
-  content: '';
-  position: absolute;
-  inset: -9px;
-  border: 3px dashed #ffe6a3;
-  border-radius: 6px;
-  transform: rotate(var(--rot));
-  transition: transform 0.15s ease-out;
-  pointer-events: none;
+   What was here: a 3px dashed rect at inset -9px on the wrapper. The wrapper
+   is the whole reserved seat, and this asset spends its outer 17% on halo —
+   light, not hardware — so the rect landed a long way off the plastic and
+   read as exactly what the owner called it, the boundary of the space the
+   button occupies rather than an outline of the button. Escape out of the
+   prompt card and there it was: the modal hands focus back to its opener,
+   .is-tap was cleared by the blur on the way in, and the box drew.
+
+   The rect is gone outright — no pseudo-element, no outline, nothing that
+   can paint that rectangle in any state. But focus must still be VISIBLE
+   for anyone arriving by Tab, so it moved onto the object: the lamp holds
+   at its peak (the idle breath stops, the veil lifts, the backlight goes to
+   full) and blooms a little warm light off the plate. That is a state this
+   hardware already knows how to be in, it is the shape of the object rather
+   than of its seat, and no rectangle exists anywhere in it.
+
+   :not(.is-tap) is still the pointer exemption: the wrapper is
+   pointer-events:none (the ink takes the hit), so a press has to focus the
+   object explicitly, and Chromium counts a programmatic focus as
+   focus-visible. The flag says "this focus came from a finger" — and it now
+   SURVIVES THE MODAL (see press() in junk-drawer.js), so a pointer visitor
+   who opens the card and leaves it, by any exit, gets no focus state at all.
+   One Tab clears the flag and the lamp answers the keyboard again.
+
+   Every rule below also says :not(.is-pressed). A press outranks a focus
+   state — it is the newer, louder event and it has its own choreography —
+   but these selectors are the more specific ones, so without that guard a
+   keyboard press (Enter on a focused object, which by definition is not
+   .is-tap) would have its sink and flare overruled by the state it is
+   supposed to interrupt. */
+.jd-item--turn:focus-visible { outline: none; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-glowcore { opacity: 1; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-dim      { opacity: 0; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-flash    { opacity: 0.34; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-halo,
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-bloom {
+  opacity: 1; transform: scale(1.09);
+}
+/* the bloom is drawn from the artwork's own alpha, so it is the object's
+   silhouette in warm light — never a frame around it. The wrapper carries
+   filter:none on this item (see above), so this is the only filter in play
+   and it exists only while focused. */
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) svg {
+  filter: drop-shadow(0 0 5px rgba(255, 214, 130, 0.95))
+          drop-shadow(0 0 12px rgba(255, 198, 92, 0.55));
+}
+/* THE ONE EXCEPTION, and it is not the owner's screen. Under an OS high-
+   contrast theme the browser repaints the artwork in system colours — the
+   lamp, the halo, the bloom and this filter all flatten — so the focus
+   state above would leave nothing at all on the only control in the drawer.
+   A ring is the only thing that survives forced colours, so one is drawn
+   HERE and nowhere else: it cannot appear unless the visitor has turned
+   high contrast on at the operating system, by which point the drawer is
+   not the drawer any more. */
+@media (forced-colors: active) {
+  .jd-item--turn:focus-visible:not(.is-tap) {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
 }
 /* …and .is-tap has to say `none` out loud, not merely decline to draw: the
    browser's OWN focus ring is what shows otherwise (measured: `outline: auto
@@ -609,6 +646,18 @@ html { scroll-behavior: smooth; }
      a press pins it clear so the flare reads at full brightness */
   .jd-item--turn.is-pressed .cw-dim {
     opacity: 0;
+    animation: none;
+  }
+  /* FOCUS HOLDS THE BREATH. The idle pulse is an animation, and an animation
+     beats any static declaration however specific, so the focus state above
+     would be invisible here without this — the lamp would go on breathing
+     straight through it. Stopping the cycle is also half of what makes the
+     state read: a steadily-lit button next to a slowly-breathing one is a
+     difference the eye catches without a rectangle being involved. */
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-glowcore,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-halo,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-bloom,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-dim {
     animation: none;
   }
 }

@@ -2011,6 +2011,9 @@ function JD_layerOpen() {
     ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
   var art = null, box = null, armed = false, el = null;
   var pressTimer = 0, openTimer = 0, lastPress = -1e9;
+  /* armed by a POINTER press, spent on the focus the modal hands back — the
+     one blur/focus pair the visitor never asked for. See press(). */
+  var quietRestore = false;
 
   /* The artwork is a served asset like the stylesheet and this script, so it
      is cache-busted like them: index.php lists it in $jd_assets (which also
@@ -2143,8 +2146,19 @@ function JD_layerOpen() {
         press(true);
       }
     });
-    /* the ring suppressor below is only good for as long as this focus lasts */
+    /* the pointer-focus flag is only good for as long as this focus lasts */
     el.addEventListener('blur', function () { el.classList.remove('is-tap'); });
+    /* …except across the modal, which is the one blur the visitor did not
+       ask for. press() arms this when the press came from a pointer; the
+       modal takes focus (clearing the flag on the way in), and when it hands
+       focus back here — by ✕, by scrim, by Escape — the flag is restored so
+       a mouse round-trip lights nothing at all. It is consumed on that one
+       focus, so the next Tab is a keyboard arrival like any other. */
+    el.addEventListener('focus', function () {
+      if (!quietRestore) return;
+      quietRestore = false;
+      el.classList.add('is-tap');
+    });
     /* wired through the same pile plumbing as everything else — but the
        gesture code treats it as FIXED hardware: grip never lifts it, place()
        and every rotation path refuse it, settle() releases it unmoved. What
@@ -2204,17 +2218,23 @@ function JD_layerOpen() {
        would. But Chromium matches :focus-visible on a programmatic focus, so
        doing that alone leaves a keyboard ring standing on the plate after a
        mouse click. Hence .is-tap.
-       Its reach is deliberately small, and worth stating plainly: it covers
-       the beat before the modal takes focus, and the case where no modal
-       arrives at all (JD_turn absent or refusing) — there the ring would
-       otherwise sit on the plate indefinitely after a mouse click. It does
-       NOT survive the modal: opening blurs the object and clears the flag, so
-       when close() hands focus back the ring shows. That is the retired
-       corner button's behaviour too, and it is the right answer — focus
-       returned to an opener should be visible. */
+       It DOES survive the modal (owner, 2026-08-15). It used not to: opening
+       blurred the object and cleared the flag, so closing the prompt card —
+       Escape especially, which leaves Chromium's last input modality set to
+       keyboard — handed focus back to an object that then drew its focus
+       state unbidden. The visitor pressed a button with a finger and got
+       something they never asked for on the way out. `quietRestore` re-arms
+       the flag on the ONE focus the modal returns (see the listener in
+       ready()); a pointer round-trip therefore lights nothing, and a Tab
+       after it is a keyboard arrival like any other and lights the lamp.
+       Keyboard presses never arm it: Enter opened the card, so focus coming
+       back must be visible. */
     if (viaKey) el.classList.remove('is-tap');
     else el.classList.add('is-tap');
     try { el.focus({ preventScroll: true }); } catch (e) {}
+    /* set AFTER the focus above, which fires its own focus event — arming
+       first would spend the flag on this press instead of on the return */
+    quietRestore = !viaKey;
     window.clearTimeout(openTimer);
     openTimer = window.setTimeout(function () {
       if (window.JD_turn) window.JD_turn.open();
