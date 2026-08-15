@@ -2858,6 +2858,10 @@ function JD_layerOpen() {
     zoomFrom = from || null;
     syncZoom();
     zoomEl.classList.add('is-on');
+    /* syncZoom's own fit ran while the layer was still display:none, where
+       getBBox has nothing to measure — the reframe only counts once the
+       layer is up, the same reason zoomGridScale re-runs here */
+    if (window.JD_fitView) window.JD_fitView(zoomEl.querySelector('.rc-zoom-art svg'));
     zoomGridScale();
     /* focus follows the artwork so Space/Enter/Esc all land here, and so a
        keyboard visitor isn't left tabbing the card hidden behind the layer */
