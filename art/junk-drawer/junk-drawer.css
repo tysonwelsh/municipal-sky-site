@@ -1464,7 +1464,19 @@ tr.rc-axdesc td {
 }
 .rc-alt:hover { background: rgba(255, 250, 232, 0.85); border-color: var(--form-rule); }
 .rc-alt.is-cur { border-color: rgba(176, 42, 36, 0.75); background: rgba(255, 250, 232, 0.92); }
-.rc-alt-art { display: block; height: 46px; }
+/* the thumbnail is a SCALE MODEL OF THE PLATE, not a letterbox slot (owner
+   report, 2026-08-15: "the SVGs in the strip differ from how they're shown
+   elsewhere"). It used to be a fixed 46px band the full width of the button
+   — roughly 2.7 : 1, while the plate's window (.rc-plate-art, inset 6/8/20
+   of a square) is 84 : 74. Every drawing letterboxes inside whatever box it
+   is given, so a TALL item drew at 14 × 46 in the strip against 93 × 309 on
+   the plate: a seventh of the size, small enough that hairlines, small type
+   and thin limbs fall under a device pixel and simply stop being drawn —
+   parts of the artwork missing, exactly as reported, while the same file
+   looked complete on the plate two inches away. Matching the plate's
+   proportion makes the strip the plate in miniature: same framing, same
+   letterboxing, same drawing, one scale down. */
+.rc-alt-art { display: block; width: 100%; aspect-ratio: 84 / 74; }
 .rc-alt-art svg { display: block; width: 100%; height: 100%; }
 .rc-alt-cap {
   display: block; margin-top: 4px;
@@ -1524,7 +1536,13 @@ tr.rc-axdesc td {
   .rc-col-r .rc-block + .rc-head { margin-top: 0.42rem; }
   .rc-assign { padding: 0.3rem 0.1rem 0.26rem; }
   table.rc-subj td, table.rc-subj tfoot td { padding: 0.13em 0.5em 0.17em; }
-  .rc-alt-art { height: 30px; }
+  /* a short viewport buys its vertical back by narrowing the thumbnail, not
+     by squashing it: the box keeps the plate's proportion (see .rc-alt-art)
+     and simply gets smaller, so the drawing inside stays the drawing the
+     plate shows. Bounding the WIDTH is what leaves the ratio in charge of
+     the height — a fixed height with a full-width box would ignore the
+     ratio outright and put the letterbox band back. */
+  .rc-alt-art { width: min(100%, 82px); margin-inline: auto; }
   .rc-alt { padding: 3px 4px 4px; }
 }
 @media (max-width: 480px) {

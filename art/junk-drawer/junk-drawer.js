@@ -235,34 +235,99 @@ function JD_layerOpen() {
      aspect or footprint. A skipped fit is silent and harmless — the drawing
      stays clipped, exactly as it always has.
 
-     The union of the declared frame and the content bbox is padded 4% of the
-     longer frame side on every side (getBBox ignores stroke widths; the pad
-     covers typical strokes and blur bleed), then CAPPED: no side may grow by
-     more than half the frame's own dimension in that axis, so a pathological
-     off-canvas background rect can't shrink the art to a speck — beyond the
-     cap it stays clipped, same as today. A drawing that already fits is left
-     byte-identical. */
-  function fitView(svg) {
+     ONE FRAME PER ARTWORK, SHARED BY EVERY SURFACE (2026-08-15, second
+     pass — the owner reported thumbnails that don't match the drawing
+     shown elsewhere). Two things made the fit drift between copies:
+
+       · getBBox is a LAYOUT measurement, not a property of the file. On
+         artwork carrying <text> it comes back slightly different at 46px
+         than at 350px (font metrics resolve per rendered size), so the
+         pile, the plate, the strip thumbnail and the enlargement each
+         derived their own frame from their own copy — the same drawing,
+         four framings.
+       · a copy measured before its box has a size measures nothing.
+
+     So the fit is computed ONCE per artwork and MEMOISED under a caller's
+     key (the response's cache key, a generation id — anything stable per
+     artwork). Every later copy applies the stored frame without measuring:
+     identical framing everywhere, by construction, and one layout pass
+     instead of one per copy. A failed measurement is never cached, so the
+     first copy that renders in a real box still gets to decide.
+
+     WHAT THE FRAME MAY GROW BY. Ink that pokes a little past the frame is
+     a model missing its own edge, and reframing rescues it. Ink that runs
+     WELL past the frame is deliberate full bleed — a sunburst, a glow, a
+     drop shadow drawn oversize precisely so the viewport crops it — and
+     "rescuing" that wrecks the composition: the first pass grew a 1000×1000
+     alarm-clock poster to 2000×2000, which drew the clock at half size in a
+     field of white with the rays' points now sticking out. So:
+
+       · the pad (getBBox ignores stroke width, so ink AT the edge may paint
+         just past it) is 2% of the SHORTER frame side. The old 4% of the
+         LONGER side was ruinous on an elongated frame — on a 1000×110
+         cigarette it added 40 units of sky and floor, 73% of the height,
+         to a drawing whose ink never left the frame at all.
+       · each side is rescued ALL OR NOTHING, at 15% of its own dimension.
+         Growing "up to a cap" was the worst of both: still clipped AND
+         shrunk. Past the cap the authored edge stands and the overshoot
+         stays cropped — which is what a full-bleed drawing wants.
+
+     A drawing that already fits is left byte-identical. */
+  var FIT_PAD = 0.02, FIT_CAP = 0.15;
+  var fitFrames = {};              /* key -> viewBox string ('' = as authored) */
+
+  function fitView(svg, key) {
     if (!svg) return;
+    /* the artwork is letterboxed on every surface, whatever the file asks
+       for: a root preserveAspectRatio of "none" would stretch the drawing
+       to each box's own shape (so the plate and the strip thumbnail would
+       disagree), and a "slice" would crop it differently in each. Neither
+       is a choice the display layer can honour across boxes of four
+       different proportions, so the root is normalised on every copy.
+       Curated files declare none of these today; visitor generations are
+       passed through the sanitizer's bytes untouched and can. */
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     var vb = String(svg.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
     if (vb.length !== 4 || !(vb[2] > 0) || !(vb[3] > 0)) return;
+    if (key && fitFrames[key] !== undefined) {
+      if (fitFrames[key]) svg.setAttribute('viewBox', fitFrames[key]);
+      return;
+    }
     var bb;
-    try { bb = svg.getBBox(); } catch (e) { return; }
+    try { bb = svg.getBBox(); } catch (e) { return; }   /* not rendered: don't cache */
     if (!bb || !(bb.width > 0) || !(bb.height > 0)) return;
-    var pad = 0.04 * Math.max(vb[2], vb[3]);
-    var x0 = Math.min(vb[0], bb.x - pad), y0 = Math.min(vb[1], bb.y - pad);
-    var x1 = Math.max(vb[0] + vb[2], bb.x + bb.width + pad);
-    var y1 = Math.max(vb[1] + vb[3], bb.y + bb.height + pad);
-    /* the cap, per side, in that side's own axis */
-    var cx = 0.5 * vb[2], cy = 0.5 * vb[3];
-    x0 = Math.max(x0, vb[0] - cx);        x1 = Math.min(x1, vb[0] + vb[2] + cx);
-    y0 = Math.max(y0, vb[1] - cy);        y1 = Math.min(y1, vb[1] + vb[3] + cy);
-    if (x0 === vb[0] && y0 === vb[1] &&
-        x1 === vb[0] + vb[2] && y1 === vb[1] + vb[3]) return;   /* already fits */
-    var r = function (n) { return Math.round(n * 100) / 100; };
-    svg.setAttribute('viewBox', [r(x0), r(y0), r(x1 - x0), r(y1 - y0)].join(' '));
+    var pad = FIT_PAD * Math.min(vb[2], vb[3]);
+    var capX = FIT_CAP * vb[2], capY = FIT_CAP * vb[3];
+    var x0 = vb[0], y0 = vb[1], x1 = vb[0] + vb[2], y1 = vb[1] + vb[3];
+    /* how far each side would have to move to take in the padded ink */
+    var wl = x0 - (bb.x - pad), wr = (bb.x + bb.width + pad) - x1;
+    var wt = y0 - (bb.y - pad), wb = (bb.y + bb.height + pad) - y1;
+    if (wl > 0 && wl <= capX) x0 -= wl;
+    if (wr > 0 && wr <= capX) x1 += wr;
+    if (wt > 0 && wt <= capY) y0 -= wt;
+    if (wb > 0 && wb <= capY) y1 += wb;
+    var frame = '';
+    if (x0 !== vb[0] || y0 !== vb[1] ||
+        x1 !== vb[0] + vb[2] || y1 !== vb[1] + vb[3]) {
+      var r = function (n) { return Math.round(n * 100) / 100; };
+      frame = [r(x0), r(y0), r(x1 - x0), r(y1 - y0)].join(' ');
+      svg.setAttribute('viewBox', frame);
+    }
+    if (key) fitFrames[key] = frame;
   }
   window.JD_fitView = fitView;   /* every surface that inlines an item SVG */
+
+  /* the one call every surface makes after it writes artwork into the DOM:
+     each holder carries data-fit="<key>" and gets the frame filed under that
+     key. Keys are per-ARTWORK, never per-copy or per-surface — that is what
+     makes a 46px thumbnail and a 350px plate show the same drawing. */
+  function fitAll(root) {
+    if (!root) return;
+    Array.prototype.forEach.call(root.querySelectorAll('[data-fit]'), function (el) {
+      fitView(el.querySelector('svg'), el.getAttribute('data-fit'));
+    });
+  }
+  window.JD_fitAll = fitAll;
 
   /* SIZE, as filed — the one display string for how big an item reads in the
      drawer, shown on the specimen tag and the report card. Taxonomy-driven:
@@ -663,6 +728,9 @@ function JD_layerOpen() {
            (so "Small ×0.36" states the whole size, not just the tier) */
         item._sizeLabel = sizeLabel(tax, item);
         item._url = primary.url;
+        /* the artwork's identity for the shared display frame — the SAME
+           string the report card keys its copies under (see fitView) */
+        item._fit = item.id + '/' + primary.file;
         return fetch(JD_API + primary.url).then(function (r) {
           if (!r.ok) throw new Error(primary.url + ' ' + r.status);
           return r.text();
@@ -694,8 +762,10 @@ function JD_layerOpen() {
         pile.appendChild(el);
         /* reframe BEFORE sizing: the fit needs the rendered copy (getBBox
            throws otherwise), and applySize reads aspect off the viewBox —
-           the expanded frame must be what it reads. See fitView above. */
-        fitView(el.querySelector('svg'));
+           the expanded frame must be what it reads. Keyed on the artwork,
+           under the SAME key the report card files its copies under, so the
+           pile and the card cannot disagree about the frame. See fitView. */
+        fitView(el.querySelector('svg'), item._fit);
         /* size: area-normalized on the shared ruler (--w still carries WIDTH;
            the CSS contract is unchanged) — see applySize above */
         applySize(el, item._box, item.id,
@@ -2209,6 +2279,15 @@ function JD_layerOpen() {
      visitor's place; nav presses re-render the strip alone, not the card,
      so a long prompt's fold stays as it was left. */
   var altWin = 0;
+  /* THE ARTWORK'S KEY for the shared display frame (see fitView). One string
+     per DRAWING, so the plate, the strip thumbnail, the enlargement and — for
+     a won item — the bench and the pile all reframe identically instead of
+     each measuring its own copy in its own box. A visitor response carries
+     its generation id and is keyed on that, because its filename is scoped to
+     whichever response won the turn; a curated one is keyed on its path. */
+  function fitKey(entry, resp) {
+    return resp.gen_id ? 'gen:' + resp.gen_id : entry.id + '/' + resp.file;
+  }
   /* THE ENLARGEMENT (owner, 2026-08-09): the artwork plate is small — it has
      to be, the card is a form and the art is one field on it — so pressing
      the plate lifts the same artwork onto a full-viewport layer where it can
@@ -2552,7 +2631,9 @@ function JD_layerOpen() {
       var m = modelOf(r.model), g = gradeOf(r.grade);
       h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
         '" data-resp="' + i + '">' +
-        '<span class="rc-alt-art">' +
+        /* data-fit is the artwork's key, not the thumbnail's: the strip
+           shows the drawing the plate shows, at the frame the plate uses */
+        '<span class="rc-alt-art" data-fit="' + esc(fitKey(entry, r)) + '">' +
         svgInst(svgCache[entry.id + '/' + r.file] || '', 'jt' + i + '_') +
         '</span>' +
         '<span class="rc-alt-cap">' + esc(m.label) +
@@ -2634,7 +2715,7 @@ function JD_layerOpen() {
       'aria-label="Enlarge the artwork">' +
       '<span class="rc-corner tl"></span><span class="rc-corner tr"></span>' +
       '<span class="rc-corner bl"></span><span class="rc-corner br"></span>' +
-      '<div class="rc-plate-art">' +
+      '<div class="rc-plate-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
       '<div class="rc-notes">' + notes + '</div>' +
@@ -2674,7 +2755,7 @@ function JD_layerOpen() {
     var m = modelOf(resp.model);
     return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
       'aria-label="Shrink the artwork">' +
-      '<div class="rc-zoom-art">' +
+      '<div class="rc-zoom-art" data-fit="' + esc(fitKey(entry, resp)) + '">' +
       svgInst(svgCache[entry.id + '/' + resp.file] || '', 'jz' + curIdx + '_') +
       '</div></div>' +
       '<div class="rc-zoom-cap">' +
@@ -2845,8 +2926,9 @@ function JD_layerOpen() {
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     zoomEl.innerHTML = zoomHTML(curEntry, resp, curResp);
     /* the zoom re-inlines the same svg string, so it needs its own reframe —
-       fitted before zoomGridScale measures the figure */
-    if (window.JD_fitView) window.JD_fitView(zoomEl.querySelector('.rc-zoom-art svg'));
+       fitted before zoomGridScale measures the figure. Same artwork key as
+       the plate, so the enlargement is the plate's drawing, held closer. */
+    if (window.JD_fitAll) window.JD_fitAll(zoomEl);
     zoomGridScale();
   }
 
@@ -2876,8 +2958,10 @@ function JD_layerOpen() {
     zoomEl.classList.add('is-on');
     /* syncZoom's own fit ran while the layer was still display:none, where
        getBBox has nothing to measure — the reframe only counts once the
-       layer is up, the same reason zoomGridScale re-runs here */
-    if (window.JD_fitView) window.JD_fitView(zoomEl.querySelector('.rc-zoom-art svg'));
+       layer is up, the same reason zoomGridScale re-runs here. (A frame
+       already filed for this artwork is applied without measuring at all,
+       so this is usually a no-op that costs nothing.) */
+    if (window.JD_fitAll) window.JD_fitAll(zoomEl);
     zoomGridScale();
     /* focus follows the artwork so Space/Enter/Esc all land here, and so a
        keyboard visitor isn't left tabbing the card hidden behind the layer */
@@ -2918,10 +3002,10 @@ function JD_layerOpen() {
     }
     /* reframe after paint, in the same post-paint pass: the plate and the
        strip thumbs inlined above may declare a frame their geometry
-       overshoots — fitView widens the viewBox, never the drawing */
-    Array.prototype.forEach.call(
-      scrollEl.querySelectorAll('.rc-plate-art svg, .rc-alt-art svg'),
-      window.JD_fitView || function () {});
+       overshoots — fitView widens the viewBox, never the drawing. Every
+       holder carries the ARTWORK's key, so a 46px thumbnail is handed the
+       frame the 350px plate resolved rather than measuring its own. */
+    if (window.JD_fitAll) window.JD_fitAll(scrollEl);
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
@@ -3440,10 +3524,7 @@ function JD_layerOpen() {
        overshoot the frame they declare — reframe them here, post-paint, on
        the live card (fitView needs the rendered DOM for getBBox). Views with
        no plates match nothing and this is a no-op. */
-    if (window.JD_fitView) {
-      Array.prototype.forEach.call(
-        bodyEl.querySelectorAll('.jd-turn-art-in svg'), window.JD_fitView);
-    }
+    if (window.JD_fitAll) window.JD_fitAll(bodyEl);
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
@@ -3682,7 +3763,13 @@ function JD_layerOpen() {
       slot.toUpperCase() + '">' +
       '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
       '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
-      '<div class="jd-turn-art-in">' +
+      /* the generation id keys the frame: the reveal's big plate and the
+         bench's pinned one are the same drawing and must be framed alike.
+         A slot that somehow arrived without one falls back to this turn's
+         own ref — never a bare slot letter, which the NEXT turn's slot A
+         would collide with and inherit a stale frame from. */
+      '<div class="jd-turn-art-in" data-fit="gen:' +
+      esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
       window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div></div>' +
       (opts.pin ? '' : '<figcaption>' + slot.toUpperCase() + '</figcaption>') +
       '</figure>';
@@ -4601,8 +4688,10 @@ function JD_layerOpen() {
     pile.appendChild(el);
     /* reframe before sizing: a live-generated drawing can overshoot the
        frame it declares, and applySize's aspect read (svgAspect) must see
-       the expanded viewBox — see fitView at the top of the file */
-    if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'));
+       the expanded viewBox — see fitView at the top of the file. Same
+       generation key the turn plates used, so the won item lands in the
+       drawer framed exactly as it was on the bench. */
+    if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'), 'gen:' + rec.gen_id);
     if (window.JD_applySize) {
       window.JD_applySize(el, tierBox(VISITOR_TIER), rec.gen_id, 1);
     }
@@ -4669,7 +4758,9 @@ function JD_layerOpen() {
     var file = rec.gen_id + '.svg';
     var day = String(rec.won_at || '').slice(0, 10);
     var responses = [{
-      rid: 'r1', file: file, model: rec.model_id, date: day,
+      /* gen_id rides the response so the card frames this drawing under the
+         SAME key the bench and the pile used for it (see fitKey / fitView) */
+      rid: 'r1', file: file, gen_id: rec.gen_id, model: rec.model_id, date: day,
       generation: { mode: 'one-shot', prompt_count: 1 },
       grade: rec.grade, annotations: rec.annotations || {},
       /* a data: URL, and the ONLY thing the card may do with it is hang it
@@ -4697,7 +4788,7 @@ function JD_layerOpen() {
       if (!alt.svg || !alt.gen_id) return;
       var afile = alt.gen_id + '.svg';
       responses.push({
-        rid: 'r' + (ai + 2), file: afile, model: alt.model_id, date: day,
+        rid: 'r' + (ai + 2), file: afile, gen_id: alt.gen_id, model: alt.model_id, date: day,
         generation: { mode: 'one-shot', prompt_count: 1 },
         grade: alt.grade, annotations: alt.annotations || {},
         url: svgDataUrl(alt.svg), transcript_url: null
