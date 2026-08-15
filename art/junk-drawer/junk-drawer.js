@@ -215,6 +215,55 @@ function JD_layerOpen() {
   }
   window.JD_svgInst = svgInst;   /* the record card inlines copies too */
 
+  /* REFRAME, never redraw (owner-approved, 2026-08-15). Models are prompted
+     to fill the viewBox edge to edge and sometimes draw past it — a headstock
+     at negative y, a glow bleeding past the frame. An inline <svg> clips at
+     the viewport it declares, so the overshoot is sliced off in the pile, on
+     the report card's plate, in the enlargement, and on the turn plates; the
+     DOWNLOADED file clips too, but its bytes are its own business — the
+     sanitizer passes generation bytes through untouched, so reframing is the
+     display layer's job (the sanctioned inverse of the ingest-time viewBox
+     tightening in CLAUDE.md).
+
+     The fix is a wider viewBox, NOT overflow:visible: spilled ink would paint
+     over the plate's borders and kraft photo corners, and in the pile it
+     would break the item's silhouette — drag/hit math trusts the element box
+     the viewBox aspect defines (svgAspect, applySize, the scatter clamping).
+
+     `svg` must be IN THE RENDERED DOM: getBBox throws on non-rendered
+     subtrees, so callers fit after insertion and before anything measures
+     aspect or footprint. A skipped fit is silent and harmless — the drawing
+     stays clipped, exactly as it always has.
+
+     The union of the declared frame and the content bbox is padded 4% of the
+     longer frame side on every side (getBBox ignores stroke widths; the pad
+     covers typical strokes and blur bleed), then CAPPED: no side may grow by
+     more than half the frame's own dimension in that axis, so a pathological
+     off-canvas background rect can't shrink the art to a speck — beyond the
+     cap it stays clipped, same as today. A drawing that already fits is left
+     byte-identical. */
+  function fitView(svg) {
+    if (!svg) return;
+    var vb = String(svg.getAttribute('viewBox') || '').split(/[\s,]+/).map(Number);
+    if (vb.length !== 4 || !(vb[2] > 0) || !(vb[3] > 0)) return;
+    var bb;
+    try { bb = svg.getBBox(); } catch (e) { return; }
+    if (!bb || !(bb.width > 0) || !(bb.height > 0)) return;
+    var pad = 0.04 * Math.max(vb[2], vb[3]);
+    var x0 = Math.min(vb[0], bb.x - pad), y0 = Math.min(vb[1], bb.y - pad);
+    var x1 = Math.max(vb[0] + vb[2], bb.x + bb.width + pad);
+    var y1 = Math.max(vb[1] + vb[3], bb.y + bb.height + pad);
+    /* the cap, per side, in that side's own axis */
+    var cx = 0.5 * vb[2], cy = 0.5 * vb[3];
+    x0 = Math.max(x0, vb[0] - cx);        x1 = Math.min(x1, vb[0] + vb[2] + cx);
+    y0 = Math.max(y0, vb[1] - cy);        y1 = Math.min(y1, vb[1] + vb[3] + cy);
+    if (x0 === vb[0] && y0 === vb[1] &&
+        x1 === vb[0] + vb[2] && y1 === vb[1] + vb[3]) return;   /* already fits */
+    var r = function (n) { return Math.round(n * 100) / 100; };
+    svg.setAttribute('viewBox', [r(x0), r(y0), r(x1 - x0), r(y1 - y0)].join(' '));
+  }
+  window.JD_fitView = fitView;   /* every surface that inlines an item SVG */
+
   /* SIZE, as filed — the one display string for how big an item reads in the
      drawer, shown on the specimen tag and the report card. Taxonomy-driven:
      the tier's own label, never a hardcoded name, falling back to the raw
@@ -642,11 +691,15 @@ function JD_layerOpen() {
         /* per-item prefix: the pile is many independently-authored SVGs in
            one document, so each copy gets its own id namespace */
         el.innerHTML = svgInst(rec.svg, 'jp' + i + '_');
+        pile.appendChild(el);
+        /* reframe BEFORE sizing: the fit needs the rendered copy (getBBox
+           throws otherwise), and applySize reads aspect off the viewBox —
+           the expanded frame must be what it reads. See fitView above. */
+        fitView(el.querySelector('svg'));
         /* size: area-normalized on the shared ruler (--w still carries WIDTH;
            the CSS contract is unchanged) — see applySize above */
         applySize(el, item._box, item.id,
           (typeof item.sizeScale === 'number' && item.sizeScale > 0) ? item.sizeScale : 1);
-        pile.appendChild(el);
         return el;
       });
       /* positions are computed, never authored — see SCATTER above. One layout
@@ -1996,6 +2049,8 @@ function JD_layerOpen() {
        gets — the asset's ids are all cw_ prefixed, its CLASS names are all
        cw- (hyphen), so the swap can never touch a hook the stylesheet needs */
     el.innerHTML = window.JD_svgInst(art, 'jto_');
+    /* NO fitView here: turn-object.svg is controlled repo art whose frame is
+       honest by construction — the reframe is for model-generated ink only */
     var svg = el.querySelector('svg');
     if (svg) {
       /* the wrapper is the button; the drawing must not announce itself twice */
@@ -2773,6 +2828,9 @@ function JD_layerOpen() {
     if (!zoomOn || !zoomEl || !curEntry) return;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
     zoomEl.innerHTML = zoomHTML(curEntry, resp, curResp);
+    /* the zoom re-inlines the same svg string, so it needs its own reframe —
+       fitted before zoomGridScale measures the figure */
+    if (window.JD_fitView) window.JD_fitView(zoomEl.querySelector('.rc-zoom-art svg'));
     zoomGridScale();
   }
 
@@ -2838,6 +2896,12 @@ function JD_layerOpen() {
         fold.classList.remove('rc-can-fold');
       }
     }
+    /* reframe after paint, in the same post-paint pass: the plate and the
+       strip thumbs inlined above may declare a frame their geometry
+       overshoots — fitView widens the viewBox, never the drawing */
+    Array.prototype.forEach.call(
+      scrollEl.querySelectorAll('.rc-plate-art svg, .rc-alt-art svg'),
+      window.JD_fitView || function () {});
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
@@ -3352,6 +3416,14 @@ function JD_layerOpen() {
   function paint(h) {
     headEl.innerHTML = headHTML();
     bodyEl.innerHTML = h;
+    /* the plates (reveal/bench/call) inline freshly-generated SVGs, which can
+       overshoot the frame they declare — reframe them here, post-paint, on
+       the live card (fitView needs the rendered DOM for getBBox). Views with
+       no plates match nothing and this is a no-op. */
+    if (window.JD_fitView) {
+      Array.prototype.forEach.call(
+        bodyEl.querySelectorAll('.jd-turn-art-in svg'), window.JD_fitView);
+    }
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
@@ -4496,6 +4568,10 @@ function JD_layerOpen() {
        for any SVG that did not come from this repo (APP §4.12) */
     el.innerHTML = window.JD_svgInst(rec.svg, 'juw' + (instSeq++) + '_');
     pile.appendChild(el);
+    /* reframe before sizing: a live-generated drawing can overshoot the
+       frame it declares, and applySize's aspect read (svgAspect) must see
+       the expanded viewBox — see fitView at the top of the file */
+    if (window.JD_fitView) window.JD_fitView(el.querySelector('svg'));
     if (window.JD_applySize) {
       window.JD_applySize(el, tierBox(VISITOR_TIER), rec.gen_id, 1);
     }

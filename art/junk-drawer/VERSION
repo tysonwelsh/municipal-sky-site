@@ -1,1 +1,1 @@
-0.9.0 — the darkroom, redrawn: square graph-paper swatches, per-slot retro loading animations, the wait slip riding on top
+0.9.1 — display-time viewBox expansion: drawings that overshoot their declared frame are reframed, not clipped
