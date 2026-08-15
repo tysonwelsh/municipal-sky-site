@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 16B &middot; THE FOUR MACHINES</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 16B · THE FOUR MACHINES  (round 16, the darkroom)
+
+   The waiting card, re-imagined as a dark workbench: four small machines —
+   a platen printing press, a telegraph key, a film reel, a loom — each work
+   one blind slot. No masthead, no FORM JD-1 badge, no list: the only words
+   are "please wait…" engraved on a riveted brass plate.
+
+   STATES (per slot, keyed to the slot's letter — never to a model name):
+     pending  the machine loops its own motion, pilot light breathing amber
+     arrived  the machine HALTS (base pose), ejects a paper slip: letter + ✓
+     failed   one shudder, the pilot light dies ink red, a tag: ✗ didn't survive
+
+   THE MOTION RULE (same as the live card): motion is ADDED, never assumed.
+   Every animation below lives inside @media (prefers-reduced-motion:
+   no-preference), so the reduced-motion fallback is the base stylesheet —
+   machines stand in their rest poses and state changes simply appear.
+   Because the loops are also gated on .is-pending, removing that class IS
+   the halt: .is-ok / .is-fail machines show the same rest pose with no
+   extra "stop" rule.
+
+   THE SCATTER: a deliberate 2×2 non-grid — slight rotations, the telegraph
+   and the loom nudged inward so silhouettes just overlap. Not table rows.
+
+   The grain/mottle data-URIs are copied VERBATIM from junk-drawer.css
+   (seeds 7 and 23 — never reseed; stitchTiles seams break in Safari).
+   ========================================================================== */
+
+/* ---------------- page furniture (mockup chrome only) --------------------- */
+:root {
+  --paper: #f4f1e8; --ink: #2a2620; --plot-red: #b22222;
+  --mono: "Courier Prime", "Courier New", Courier, monospace;
+  --banner-h: 56px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--mono);
+  padding: 0.9rem 0.9rem 4rem; overflow-x: hidden;
+}
+.mock-title {
+  max-width: 1240px; margin: 0 auto 0.3rem;
+  font-size: 0.74rem; letter-spacing: 0.28em; text-transform: uppercase;
+  text-align: center; font-weight: 700;
+}
+.mock-title b { color: var(--plot-red); }
+.mock-intro {
+  max-width: 62rem; margin: 0 auto; text-align: center;
+  font-size: 0.6rem; line-height: 1.75; letter-spacing: 0.06em; color: #8a8272;
+}
+.mock-intro b, .demo-label b { color: var(--plot-red); letter-spacing: 0.12em; }
+.demo { max-width: 1240px; margin: 2rem auto; }
+.demo-label {
+  margin: 0 auto 0.45rem; max-width: 1240px;
+  font-size: 0.6rem; line-height: 1.7; letter-spacing: 0.09em;
+  color: #8a8272; text-transform: uppercase; text-align: center;
+}
+
+/* the demo frame: a viewport stand-in with the drawer's wood floor behind
+   the scrim (wood gradient + seed-19 turbulence lifted from mockup-13a) */
+.frame {
+  position: relative; overflow: hidden;
+  max-width: 1240px; margin: 0 auto; height: min(800px, 92vh);
+  border: 1px solid rgba(40, 22, 8, 0.55);
+  box-shadow: 0 10px 26px -12px rgba(30, 18, 8, 0.5);
+  background:
+    radial-gradient(130% 140% at 40% 24%, rgba(0,0,0,0) 55%, rgba(20,10,4,0.30) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px, rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+.frame.is-phone { width: 375px; height: min(720px, 92vh); }
+.mock-banner {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--banner-h);
+  background: var(--paper); border-bottom: 1px solid var(--ink);
+  display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  font-weight: 700; font-size: 0.8rem;
+}
+.mock-banner::before { content: ""; width: 6px; height: 18px; background: #24339c; }
+
+/* the scrim: real CSS is position:fixed; absolute here only inside the frame */
+.dm-scrim {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--banner-h) + 8px) 12px 12px;
+  background: rgba(10, 5, 1, 0.58);
+}
+
+/* ============================================================================
+   THE CARD — a square of dark bench. Tokens scoped to the card, same pattern
+   as .jd-turn-scrim in the live file.
+   ========================================================================== */
+.dm-card {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --trule: rgba(74, 53, 18, 0.40);
+  --tred: #b3402f;
+  --tok: #4a6b18;                 /* the live card's arrived-green */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  /* VERBATIM from junk-drawer.css (seeds 7 / 23 — do not reseed) */
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* bench + machine metals */
+  --bench: #3a2712;
+  --iron: #57493a;
+  --steel: #a89e8a;
+  --steel-lo: #6e6557;
+  --steel-hi: #8a7f6c;
+  --brass: #c2a059;
+  --wood: #7a5a30;
+  --wood-hi: #96703e;
+  --lamp: #ffb43a;
+
+  position: relative;
+  width: min(440px, 100%);
+  aspect-ratio: 1 / 1;            /* THE SQUARE — owner directive r2 */
+  max-height: 100%;
+  font-family: var(--tmono);
+  background:
+    radial-gradient(130% 130% at 50% 26%, rgba(0, 0, 0, 0) 42%, rgba(6, 3, 0, 0.62) 100%),
+    repeating-linear-gradient(0deg, rgba(12, 6, 2, 0.35) 0 2px, transparent 2px 88px),
+    var(--tgrain),
+    var(--bench);
+  border: 1px solid rgba(20, 12, 4, 0.9);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5),
+              inset 0 0 60px rgba(0, 0, 0, 0.45);
+}
+/* a thin brass hairline inside the iron edge — the bench's one ornament */
+.dm-card::before {
+  content: ""; position: absolute; inset: 6px; z-index: 1; pointer-events: none;
+  border: 1px solid rgba(198, 168, 102, 0.28);
+}
+.dm-rivet {
+  position: absolute; z-index: 6; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ecd28c, #8a6a2c 72%);
+  box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.65);
+}
+.dm-rivet.tl { top: 11px; left: 11px; }   .dm-rivet.tr { top: 11px; right: 11px; }
+.dm-rivet.bl { bottom: 11px; left: 11px; } .dm-rivet.br { bottom: 11px; right: 11px; }
+
+/* ---- the brass plate: the card's ONLY words ------------------------------ */
+.dm-plate {
+  position: absolute; top: 7.5%; left: 50%; z-index: 5;
+  transform: translateX(-50%) rotate(-0.6deg);
+  padding: 5px 18px 4px;
+  font-size: 0.58rem; letter-spacing: 0.24em; color: #2a1c07;
+  background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+  border: 1px solid rgba(58, 40, 14, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
+              0 3px 6px -2px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+.dm-plate::before, .dm-plate::after {
+  content: ""; position: absolute; top: 50%; width: 4px; height: 4px;
+  border-radius: 50%; transform: translateY(-50%);
+  background: radial-gradient(circle at 35% 30%, #f0dc9e, #6b4d1a 75%);
+  box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.6);
+}
+.dm-plate::before { left: 5px; } .dm-plate::after { right: 5px; }
+
+/* ---- the scatter: 2×2, rotated, overlapping — deliberately not a grid ---- */
+.dm-stage { position: absolute; inset: 0; z-index: 2; }
+.dm-slot { position: absolute; width: 48%; }
+.dm-slot--a { left: 2.5%;  top: 16%;    transform: rotate(-3deg);   z-index: 2; }
+.dm-slot--b { right: 3%;   top: 19.5%;  transform: rotate(2.4deg);  z-index: 3; width: 50%; }
+.dm-slot--c { left: 5.5%;  bottom: 7%;  transform: rotate(2deg);    z-index: 3; width: 47%; }
+.dm-slot--d { right: 2%;   bottom: 3.5%; transform: rotate(-2.6deg); z-index: 2; width: 52%; }
+.dm-machine svg { display: block; width: 100%; height: auto; }
+.is-fail .dm-machine svg { opacity: 0.55; }   /* a dead machine goes dim */
+
+/* the engraved letter chip, bolted to the bench in front of each machine —
+   A–D stay readable in every state (later cards reference them) */
+.dm-key {
+  position: absolute; left: 5%; bottom: -3%; z-index: 4;
+  width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--tform); font-weight: 700; font-size: 0.66rem;
+  color: #e6cf93;
+  border: 1px solid rgba(198, 168, 102, 0.5);
+  background: rgba(20, 12, 4, 0.55);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(198, 168, 102, 0.15);
+}
+.dm-slot--b .dm-key { left: auto; right: 5%; }
+.dm-slot--d .dm-key { left: auto; right: 6%; }
+
+/* ---- the paper slip a machine prints on arrival -------------------------- */
+.dm-slip {
+  position: absolute; z-index: 4; opacity: 0;
+  display: flex; align-items: baseline; gap: 0.4em;
+  padding: 3px 8px 2px;
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid var(--trule);
+  border-top: 1px dashed var(--trule);   /* the perforation it tore off at */
+  box-shadow: 0 3px 5px -2px rgba(0, 0, 0, 0.55);
+  font-size: 0.6rem; color: var(--tink);
+  pointer-events: none;
+}
+.dm-slip b { font-family: var(--tform); font-weight: 700; font-size: 0.72rem; letter-spacing: 0.06em; }
+.dm-slip i { font-style: normal; font-weight: 700; color: var(--tok); }
+/* each machine ejects its own way: press up, telegraph right, reel down,
+   loom out the front */
+.dm-slot--a .dm-slip { left: 50%; top: -5%;  transform: translate(-50%, 12px) rotate(-1deg); }
+.dm-slot--b .dm-slip { right: -4%; top: 34%; transform: translateX(-14px) rotate(1.5deg); }
+.dm-slot--c .dm-slip { left: 40%; bottom: -13%; transform: translateY(-10px) rotate(-2deg); }
+.dm-slot--d .dm-slip { left: 36%; bottom: -11%; transform: translateY(-8px) rotate(2deg); }
+.is-ok .dm-slip { opacity: 1; }
+.is-ok .dm-slot--a .dm-slip { transform: translate(-50%, 0) rotate(-1deg); }
+.is-ok .dm-slot--b .dm-slip { transform: translateX(0) rotate(1.5deg); }
+.is-ok .dm-slot--c .dm-slip { transform: translateY(0) rotate(-2deg); }
+.is-ok .dm-slot--d .dm-slip { transform: translateY(0) rotate(2deg); }
+
+/* ---- the failure tag: red ink on a scrap, not an alarm bar ---------------- */
+.dm-fail {
+  position: absolute; left: 52%; top: -3%; z-index: 4; opacity: 0;
+  transform: translateX(-50%) rotate(-3deg);
+  padding: 2px 7px 1px;
+  background: var(--tpaper);
+  border: 1px solid var(--trule);
+  box-shadow: 0 3px 5px -2px rgba(0, 0, 0, 0.55);
+  font-size: 0.52rem; letter-spacing: 0.05em; font-weight: 700;
+  color: var(--tred);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dm-slot--b .dm-fail { left: 44%; }
+.is-fail .dm-fail { opacity: 1; }
+
+/* ---- the pilot light ------------------------------------------------------ */
+.dm-lamp { fill: var(--lamp); }
+.is-ok .dm-lamp { fill: #caa050; opacity: 0.85; }      /* settled: steady, dim */
+.is-fail .dm-lamp { fill: var(--tred); opacity: 0.5; } /* dead, ink red */
+
+/* ---- the replay control: a small bench-mounted button --------------------- */
+.dm-replay {
+  position: absolute; left: 50%; bottom: 7px; z-index: 6;
+  transform: translateX(-50%);
+  padding: 5px 10px;
+  font-family: var(--tmono); font-size: 0.52rem; letter-spacing: 0.2em;
+  text-transform: uppercase; color: rgba(230, 207, 147, 0.55);
+  background: none; border: 0; cursor: pointer;
+}
+.dm-replay:hover { color: #e6cf93; }
+.dm-replay:focus-visible { outline: 1px solid var(--lamp); outline-offset: 2px; }
+
+/* ============================================================================
+   MOTION — added only where motion is welcome, and only to pending machines.
+   The reduced-motion fallback is everything above: rest poses, instant slips.
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .dm-slip { transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+  .dm-fail { transition: opacity 0.3s ease 0.3s; }   /* after the shudder */
+
+  /* the pilot light breathes while a machine works */
+  .is-pending .dm-lamp { animation: dmLamp 1.15s ease-in-out infinite; }
+  @keyframes dmLamp { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+  /* A — the platen press pumps: dwell, slam, dwell, rise */
+  .is-pending .dm-press-head { animation: dmPump 1.5s ease-in-out infinite; }
+  @keyframes dmPump {
+    0%, 28%  { transform: translateY(0); }
+    44%, 58% { transform: translateY(8px); }
+    86%, 100% { transform: translateY(0); }
+  }
+
+  /* B — the telegraph key taps: dot … dot-dash */
+  .dm-tel-arm { transform-box: view-box; transform-origin: 31px 50px; }
+  .is-pending .dm-tel-arm { animation: dmTap 1.2s ease-in-out infinite; }
+  @keyframes dmTap {
+    0%        { transform: rotate(0); }
+    7%        { transform: rotate(7deg); }
+    13%, 36%  { transform: rotate(0); }
+    43%       { transform: rotate(7deg); }
+    49%       { transform: rotate(0); }
+    56%       { transform: rotate(7deg); }
+    63%, 100% { transform: rotate(0); }
+  }
+
+  /* C — the film reels spool, big slow / small fast, opposite ways */
+  .dm-reel { transform-box: view-box; }
+  .dm-reel--l { transform-origin: 36px 38px; }
+  .dm-reel--r { transform-origin: 86px 44px; }
+  .is-pending .dm-reel--l { animation: dmSpin 2.6s linear infinite; }
+  .is-pending .dm-reel--r { animation: dmSpin 1.9s linear infinite reverse; }
+  @keyframes dmSpin { to { transform: rotate(360deg); } }
+
+  /* D — the loom shuttle slides, catching at each end */
+  .is-pending .dm-shuttle { animation: dmShuttle 1.3s ease-in-out infinite; }
+  @keyframes dmShuttle {
+    0%, 100% { transform: translateX(-17px); }
+    50%      { transform: translateX(17px); }
+  }
+
+  /* failure: one hard shudder, then stillness */
+  .is-fail .dm-machine { animation: dmShudder 0.45s linear 1; }
+  @keyframes dmShudder {
+    0%, 100% { transform: translate(0, 0); }
+    20%      { transform: translate(-2px, 1px); }
+    40%      { transform: translate(2px, -1px); }
+    60%      { transform: translate(-1.5px, -1px); }
+    80%      { transform: translate(1px, 1px); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dm-slip, .dm-fail { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<h1 class="mock-title">JUNK DRAWER &middot; MOCKUP 16B &middot; <b>THE FOUR MACHINES</b></h1>
+<p class="mock-intro">
+  The waiting card as a dark workbench: four small machines work the four blind slots.
+  No title, no form number — only <b>please wait&hellip;</b> on a riveted brass plate.
+  Arrival halts a machine and it prints a slip with its letter;
+  failure kills the pilot light in ink red. Letters A&ndash;D stay readable throughout.
+  Motion lives behind <code>prefers-reduced-motion: no-preference</code>; reduced users get the rest poses.
+</p>
+
+<section class="demo">
+  <p class="demo-label"><b>DESKTOP</b> &mdash; 1280&times;800 viewport &middot; arrivals land at 3s / 6s / 9s, one fails at 12s, then holds &middot; replay restarts the run</p>
+  <div class="frame">
+    <div class="mock-banner">Municipal Sky</div>
+    <div class="dm-scrim" id="demo-desktop"></div>
+  </div>
+</section>
+
+<section class="demo">
+  <p class="demo-label"><b>PHONE</b> &mdash; 375px width &middot; the square card shrinks to fit; the run is offset by 0.8s</p>
+  <div class="frame is-phone">
+    <div class="mock-banner">Municipal Sky</div>
+    <div class="dm-scrim" id="demo-phone"></div>
+  </div>
+</section>
+
+<!-- ========================================================================
+     THE CARD (stamped into both demo frames by the script below)
+     ======================================================================== -->
+<template id="dm-card-template">
+<div class="dm-card" role="status" aria-label="Please wait — four drawings are being made">
+  <i class="dm-rivet tl"></i><i class="dm-rivet tr"></i>
+  <i class="dm-rivet bl"></i><i class="dm-rivet br"></i>
+  <p class="dm-plate">please wait&hellip;</p>
+
+  <div class="dm-stage">
+
+    <!-- SLOT A — the platen printing press -->
+    <div class="dm-slot dm-slot--a is-pending" data-slot="A">
+      <div class="dm-machine">
+        <svg viewBox="0 0 120 96" aria-hidden="true">
+          <ellipse cx="60" cy="88" rx="46" ry="5" fill="rgba(0,0,0,0.4)"/>
+          <rect x="16" y="78" width="88" height="7" rx="2" fill="#57493a"/>
+          <rect x="23" y="18" width="7" height="62" fill="#6e6557"/>
+          <rect x="90" y="18" width="7" height="62" fill="#6e6557"/>
+          <rect x="23" y="14" width="74" height="7" rx="2" fill="#8a7f6c"/>
+          <rect x="36" y="66" width="48" height="9" fill="#7a5a30"/>
+          <rect x="40" y="62" width="40" height="4" fill="#ece0bf"/>
+          <g class="dm-press-head">
+            <rect x="56" y="21" width="8" height="26" fill="#8a7f6c"/>
+            <rect x="38" y="45" width="44" height="9" rx="1.5" fill="#a89e8a"/>
+            <rect x="38" y="52" width="44" height="2" fill="#6e6557"/>
+          </g>
+          <circle cx="104" cy="9" r="3" fill="#57493a"/>
+          <circle class="dm-lamp" cx="104" cy="9" r="3.4"/>
+        </svg>
+      </div>
+      <span class="dm-key">A</span>
+      <span class="dm-slip"><b>A</b><i>✓</i></span>
+      <span class="dm-fail">✗ didn&rsquo;t survive</span>
+    </div>
+
+    <!-- SLOT B — the telegraph key -->
+    <div class="dm-slot dm-slot--b is-pending" data-slot="B">
+      <div class="dm-machine">
+        <svg viewBox="0 0 120 96" aria-hidden="true">
+          <ellipse cx="60" cy="87" rx="48" ry="5" fill="rgba(0,0,0,0.4)"/>
+          <rect x="12" y="72" width="96" height="9" rx="3" fill="#7a5a30"/>
+          <rect x="12" y="72" width="96" height="3" rx="1.5" fill="#96703e"/>
+          <rect x="28" y="52" width="7" height="20" fill="#6e6557"/>
+          <circle cx="31.5" cy="52" r="4" fill="#8a7f6c"/>
+          <rect x="76" y="58" width="8" height="14" fill="#57493a"/>
+          <g class="dm-tel-arm">
+            <rect x="29" y="46" width="56" height="5" rx="2.5" fill="#a89e8a"/>
+            <rect x="80" y="40" width="6" height="8" fill="#6e6557"/>
+            <circle cx="83" cy="38" r="5.5" fill="#c2a059"/>
+          </g>
+          <rect x="94" y="44" width="16" height="28" rx="2" fill="#57493a"/>
+          <circle cx="102" cy="52" r="5" fill="#8a7f6c"/>
+          <rect x="99" y="58" width="6" height="10" fill="#6e6557"/>
+          <circle class="dm-lamp" cx="102" cy="36" r="3.4"/>
+        </svg>
+      </div>
+      <span class="dm-key">B</span>
+      <span class="dm-slip"><b>B</b><i>✓</i></span>
+      <span class="dm-fail">✗ didn&rsquo;t survive</span>
+    </div>
+
+    <!-- SLOT C — the film reel -->
+    <div class="dm-slot dm-slot--c is-pending" data-slot="C">
+      <div class="dm-machine">
+        <svg viewBox="0 0 120 96" aria-hidden="true">
+          <ellipse cx="60" cy="86" rx="46" ry="5" fill="rgba(0,0,0,0.4)"/>
+          <rect x="14" y="74" width="92" height="8" rx="2" fill="#57493a"/>
+          <path d="M44 57 Q60 66 78 57" stroke="#241f18" stroke-width="4.5" fill="none"/>
+          <rect x="53" y="56" width="16" height="18" rx="2" fill="#6e6557"/>
+          <rect x="57" y="60" width="8" height="6" fill="#241f18"/>
+          <g class="dm-reel dm-reel--l">
+            <circle cx="36" cy="38" r="21" fill="#3d362c" stroke="#a89e8a" stroke-width="4"/>
+            <g stroke="#a89e8a" stroke-width="3">
+              <line x1="36" y1="38" x2="36" y2="20"/>
+              <line x1="36" y1="38" x2="51.5" y2="47"/>
+              <line x1="36" y1="38" x2="20.5" y2="47"/>
+            </g>
+            <circle cx="36" cy="38" r="4" fill="#c2a059"/>
+            <circle cx="36" cy="21" r="2.2" fill="#c2a059"/>
+          </g>
+          <g class="dm-reel dm-reel--r">
+            <circle cx="86" cy="44" r="15" fill="#3d362c" stroke="#a89e8a" stroke-width="3.5"/>
+            <g stroke="#a89e8a" stroke-width="2.5">
+              <line x1="86" y1="44" x2="86" y2="31"/>
+              <line x1="86" y1="44" x2="97" y2="50.5"/>
+              <line x1="86" y1="44" x2="75" y2="50.5"/>
+            </g>
+            <circle cx="86" cy="44" r="3.4" fill="#c2a059"/>
+            <circle cx="86" cy="32" r="1.9" fill="#c2a059"/>
+          </g>
+          <circle class="dm-lamp" cx="61" cy="50" r="3.2"/>
+        </svg>
+      </div>
+      <span class="dm-key">C</span>
+      <span class="dm-slip"><b>C</b><i>✓</i></span>
+      <span class="dm-fail">✗ didn&rsquo;t survive</span>
+    </div>
+
+    <!-- SLOT D — the loom -->
+    <div class="dm-slot dm-slot--d is-pending" data-slot="D">
+      <div class="dm-machine">
+        <svg viewBox="0 0 120 96" aria-hidden="true">
+          <ellipse cx="60" cy="87" rx="48" ry="5" fill="rgba(0,0,0,0.4)"/>
+          <g stroke="rgba(236,224,191,0.32)" stroke-width="1">
+            <line x1="30" y1="26" x2="30" y2="76"/><line x1="38" y1="26" x2="38" y2="76"/>
+            <line x1="46" y1="26" x2="46" y2="76"/><line x1="54" y1="26" x2="54" y2="76"/>
+            <line x1="62" y1="26" x2="62" y2="76"/><line x1="70" y1="26" x2="70" y2="76"/>
+            <line x1="78" y1="26" x2="78" y2="76"/><line x1="86" y1="26" x2="86" y2="76"/>
+            <line x1="94" y1="26" x2="94" y2="76"/>
+          </g>
+          <rect x="14" y="22" width="8" height="60" fill="#7a5a30"/>
+          <rect x="98" y="22" width="8" height="60" fill="#7a5a30"/>
+          <rect x="14" y="20" width="92" height="6" rx="2" fill="#96703e"/>
+          <rect x="14" y="76" width="92" height="6" rx="2" fill="#96703e"/>
+          <g class="dm-shuttle">
+            <rect x="45" y="42" width="30" height="11" rx="5.5" fill="#c2a059"/>
+            <rect x="48" y="44" width="24" height="3" rx="1.5" fill="#d9bd76"/>
+            <circle cx="60" cy="47.5" r="3" fill="#5c4318"/>
+          </g>
+          <circle class="dm-lamp" cx="111" cy="14" r="3.2"/>
+        </svg>
+      </div>
+      <span class="dm-key">D</span>
+      <span class="dm-slip"><b>D</b><i>✓</i></span>
+      <span class="dm-fail">✗ didn&rsquo;t survive</span>
+    </div>
+
+  </div>
+
+  <button type="button" class="dm-replay">&#8635; replay</button>
+</div>
+</template>
+
+<script>
+/* SELF-DEMO: staggered arrivals — A at 3s, B at 6s, D at 9s, C fails at 12s —
+   then the end state holds. The replay button re-runs the same timeline. */
+(function () {
+  var PLAN = [
+    ["a", "ok",   3000],
+    ["b", "ok",   6000],
+    ["d", "ok",   9000],
+    ["c", "fail", 12000]
+  ];
+  function setup(host, offset) {
+    var card = document.getElementById("dm-card-template")
+      .content.firstElementChild.cloneNode(true);
+    host.appendChild(card);
+    var timers = [];
+    function run() {
+      timers.forEach(clearTimeout);
+      timers = [];
+      card.querySelectorAll(".dm-slot").forEach(function (s) {
+        s.classList.remove("is-ok", "is-fail");
+        s.classList.add("is-pending");
+      });
+      PLAN.forEach(function (p) {
+        timers.push(setTimeout(function () {
+          var s = card.querySelector(".dm-slot--" + p[0]);
+          s.classList.remove("is-pending");
+          s.classList.add(p[1] === "ok" ? "is-ok" : "is-fail");
+        }, p[2] + offset));
+      });
+    }
+    card.querySelector(".dm-replay").addEventListener("click", run);
+    run();
+  }
+  setup(document.getElementById("demo-desktop"), 0);
+  setup(document.getElementById("demo-phone"), 800);
+})();
+</script>
+</body>
+</html>

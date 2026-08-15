@@ -3415,27 +3415,93 @@ function JD_layerOpen() {
       'href="/privacy.php">privacy</a> page.</p>';
   }
 
-  /* ---------- 3. the darkroom (§2, RECEIVED) -------------------------------
-     Four slots, two states. No table, no headers, no assignment column: the
-     visitor is waiting on A, B, C and D, and that is all this says. The mark
-     glyph is aria-hidden — the word beside it is what the live region
-     announces. */
-  function slotLine(slot) {
-    var s = work.slots[slot];
-    if (s.status === 'ok') {
-      return '<span class="jd-turn-st jd-turn-st--ok">' +
-        '<span class="m" aria-hidden="true">✓</span>arrived</span>';
-    }
-    if (s.status === 'pending') {
-      return '<span class="jd-turn-st jd-turn-st--wait">still drawing' +
-        '<span class="jd-turn-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b>' +
-        '</span></span>';
-    }
-    return '<span class="jd-turn-st jd-turn-st--fail">' +
-      '<span class="m" aria-hidden="true">✗</span>didn’t survive</span>';
+  /* ---------- 3. the darkroom (§2) ------------------------------------------
+     ROUND-17 REDESIGN (owner pick 2026-08-14, mockups/mockup-17a-loading-
+     scatter.html, ported faithfully): the waiting card is a SQUARE sheet
+     carrying four graph-paper print swatches in a tight 2×2 — the same
+     swatch the finished drawings land in (.jd-turn-art's background, reused
+     verbatim). While a machine works, its swatch runs its own OLD-SCHOOL
+     WEB WAIT INDICATOR printed in ink, keyed stably to the slot letter:
+       a — the flipping hourglass (classic Windows wait cursor)
+       b — the radial-tick throbber (classic browser-chrome spinner)
+       c — the segmented block progress bar (Win95, indeterminate)
+       d — the bouncing loading dots
+     A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
+     TOP of the pile. No FORM JD-1 badge, no title: the masthead collapses to
+     an overlay strip so only the ✕ rides the card's top-right corner (the
+     button itself is untouched — F1's never-replaced static child — only its
+     row is restyled, in the CSS).
+     The theatrics are aria-hidden; each swatch carries a visually-hidden
+     status line that the wrapper's aria-live="polite" announces. paintSlots
+     touches ONLY the swatch whose state changed — rewriting a still-pending
+     swatch's markup would restart its loop every time a neighbour lands. */
+  /* the failure word for a slot, by the code the server (or the wire) sent —
+     owner directive, round 17: "didn't survive" is retired on THIS card for
+     phrases that say what actually happened. Written to be reusable: the
+     reveal's notices and the unveil's fate column keep their own copy for
+     now (their redesign is a later card), but anything new asks this first. */
+  var FAIL_WORDS = {
+    provider_failed: 'the machine didn’t answer',
+    sanitizer_rejected: 'the drawer refused the drawing',
+    network: 'lost on the wire',
+    rate_limited: 'out of turns for now',
+    drawer_resting: 'the drawer is resting',
+    slot_in_progress: 'already at work'
+  };
+  function failWord(code) {
+    return FAIL_WORDS[code] || 'came back blank';
   }
-  function slotRow(slot) {
-    return '<b>' + slot.toUpperCase() + '</b>' + slotLine(slot);
+  /* one slot's standing, read off the working copy — a restored or degraded
+     turn lands here too, so a slot that is neither ok nor failed is pending */
+  function slotStatus(slot) {
+    var s = work.slots[slot] || {};
+    if (s.status === 'ok') return { state: 'ok', word: 'arrived' };
+    if (s.status === 'failed') return { state: 'fail', word: failWord(s.code) };
+    return { state: 'pending', word: 'still drawing' };
+  }
+  /* the settled face of a swatch: its letter inks in over the verdict */
+  function darkResultInner(slot, st) {
+    return '<span class="jd-dark-big">' + slot.toUpperCase() + '</span>' +
+      '<span class="jd-dark-verdict jd-dark-verdict--' + st.state + '">' +
+      '<span class="m" aria-hidden="true">' + (st.state === 'ok' ? '✓' : '✗') +
+      '</span> ' + esc(st.word) + '</span>';
+  }
+  /* the pending face: one retro wait indicator per slot, printed in ink on
+     the graph paper. All of it is decoration — aria-hidden by the caller. */
+  function darkWell(slot) {
+    var i, ticks = '';
+    if (slot === 'a') {
+      return '<svg class="jd-dark-hg" width="34" height="42" viewBox="0 0 36 44">' +
+        '<g class="hg">' +
+        '<path class="hg-sand hg-sand-top" d="M10.5 8 H25.5 L20 20 H16 Z"/>' +
+        '<path class="hg-sand hg-sand-bot" d="M16 24 H20 L25.5 36 H10.5 Z"/>' +
+        '<path class="hg-frame" d="M7 4 H29 L21.5 22 L29 40 H7 L14.5 22 Z"/>' +
+        '</g></svg>';
+    }
+    if (slot === 'b') {
+      for (i = 0; i < 12; i++) {
+        ticks += '<line x1="20" y1="5" x2="20" y2="12"' +
+          (i ? ' transform="rotate(' + i * 30 + ' 20 20)"' : '') + '/>';
+      }
+      return '<svg class="jd-dark-throb" width="40" height="40" viewBox="0 0 40 40">' +
+        '<g class="throb">' + ticks + '</g></svg>';
+    }
+    if (slot === 'c') {
+      return '<span class="jd-dark-pbar"><span class="fill"></span></span>';
+    }
+    return '<span class="jd-dark-dots"><span></span><span></span><span></span></span>';
+  }
+  function darkSwatch(slot) {
+    var st = slotStatus(slot);
+    return '<div class="jd-dark-sw jd-dark-sw--' + slot + '" data-slotline="' +
+      slot + '" data-state="' + st.state + '">' +
+      '<span class="jd-dark-letter" aria-hidden="true">' + slot + '</span>' +
+      '<div class="jd-dark-well" aria-hidden="true">' + darkWell(slot) + '</div>' +
+      '<div class="jd-dark-result" aria-hidden="true">' +
+      (st.state === 'pending' ? '' : darkResultInner(slot, st)) + '</div>' +
+      /* the words the live region actually announces */
+      '<span class="jd-vh" data-slotsr>slot ' + slot + ': ' + esc(st.word) +
+      '</span></div>';
   }
   function pendingCount() {
     return JD_SLOTS.filter(function (s) {
@@ -3449,27 +3515,44 @@ function JD_layerOpen() {
       : n === 2 ? 'Two are still drawing' : 'One is still drawing';
   }
   function viewGenerating() {
-    return head(darkroomTitle(), 2) +
-      '<p class="jd-turn-line">It can take a minute or two — leave this open.</p>' +
-      '<ul class="jd-turn-slots" aria-live="polite">' +
-      JD_SLOTS.map(function (s) {
-        return '<li data-slotline="' + s + '">' + slotRow(s) + '</li>';
-      }).join('') +
-      '</ul>' +
-      '<p class="jd-turn-delay" data-slow' +
-      (work.slow ? '' : ' hidden') + '>Still going. The drawing is long ' +
-      'because it is being written line by line.</p>';
+    /* noFocus: this view's headline is display:none (the slip is the only
+       copy), so the landing focus goes to the first real control — the ✕.
+       The title still EXISTS (hidden) and still carries darkroomTitle() as
+       the dialog's accessible name; paintSlots keeps it in sync as slots
+       land, exactly as before. */
+    return head(darkroomTitle(), 2, { view: 'darkroom', noFocus: true }) +
+      '<div class="jd-dark" aria-live="polite">' +
+      JD_SLOTS.map(darkSwatch).join('') +
+      /* the wait slip: ONE easily-edited pencilled line, riding on top of
+         the pile; the slow-timer line lives under it, behind the same
+         data-slow/hidden pattern the timer has always used. This card never
+         needs the mockup's summary line — pendingCount() hitting 0 goes
+         straight to 'reveal'. */
+      '<div class="jd-dark-wait"><span class="jd-dark-line">please wait…</span>' +
+      '<span class="jd-dark-slow" data-slow' + (work.slow ? '' : ' hidden') +
+      '>Still going. The drawing is long because it is being written line by ' +
+      'line.</span></div></div>';
   }
   function paintSlots() {
     if (!isOpen || state !== 'generating') return;
     JD_SLOTS.forEach(function (slot) {
-      var li = bodyEl.querySelector('[data-slotline="' + slot + '"]');
-      if (li) li.innerHTML = slotRow(slot);
+      var sw = bodyEl.querySelector('[data-slotline="' + slot + '"]');
+      if (!sw) return;
+      var st = slotStatus(slot);
+      /* untouched swatches are left alone — reprinting a pending swatch
+         would restart its loop mid-drain every time a neighbour lands */
+      if (sw.getAttribute('data-state') === st.state) return;
+      sw.setAttribute('data-state', st.state);
+      var res = sw.querySelector('.jd-dark-result');
+      if (res) res.innerHTML = darkResultInner(slot, st);
+      var sr = sw.querySelector('[data-slotsr]');
+      if (sr) sr.textContent = 'slot ' + slot + ': ' + st.word;
     });
     var slow = bodyEl.querySelector('[data-slow]');
     if (slow && work.slow) slow.removeAttribute('hidden');
     /* the heading is a state display too — once one machine has landed, the
-       masthead stops claiming two of them are still drawing */
+       (here hidden) title stops claiming four are still drawing, and the
+       dialog's accessible name moves with it */
     var t = darkroomTitle(), h2 = headEl && headEl.querySelector('.jd-turn-title');
     if (h2 && t !== stateTitle) {
       stateTitle = t;

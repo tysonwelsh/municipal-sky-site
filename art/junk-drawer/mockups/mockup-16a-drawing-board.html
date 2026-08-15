@@ -1,0 +1,538 @@
+<title>JUNK DRAWER · MOCKUP 16A · THE DRAFTING TABLE</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 16A · THE DRAFTING TABLE  (the darkroom, round 16)
+
+   The waiting card re-imagined as a sheet of graph paper seen from above.
+   Four drawing instruments work at scattered spots — never rows, never model
+   names, only the slot letters A–D:
+
+     A  a pencil sketching a looping gesture (graphite)
+     B  an ink nib tracing a line (dark ink)
+     C  a compass slowly sweeping an arc (brass)
+     D  a typewriter carriage ratcheting across (black enamel)
+
+   While a slot is pending its instrument keeps working; when the drawing
+   arrives the stroke completes and the tool comes to rest beside a settled
+   ✓ arrived; when a slot fails the tool snaps off its path and the work is
+   scratched out in ink red (✗ didn't survive).
+
+   Owner directives honoured: no "Four machines are drawing" title (only a
+   hand-lettered 'please wait…' in --thand graphite at a jaunty angle), no
+   FORM JD-1 badge, a square card that fits a 375px phone, one different
+   animation per slot, and a prefers-reduced-motion fallback in which every
+   animation simply never runs — the base styles ARE the static pending state.
+
+   Tokens (--tpaper, --tink, --tred, --graphite, fonts) and the grain/mottle
+   data-URIs are copied VERBATIM from junk-drawer.css (.jd-turn-scrim, lines
+   1572–1587). feTurbulence seeds stay 7 and 23 — never reseed them.
+
+   Classes prefixed db- are new to this mockup. Motion-path note: the pencil
+   and nib ride their strokes with CSS offset-path; the compass sway and the
+   carriage ratchet are plain transforms. Arrival/failure are class flips
+   (.is-ok / .is-fail) that kill the animation and pin the final geometry,
+   so the states hold even where offset-path is unsupported (the tool just
+   rests at its static mid-stroke position instead of the path end).
+   ========================================================================== */
+
+/* ---------------- page furniture (mockup frame, not the card) ------------- */
+:root {
+  --font-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --plot-red: #b22222;
+  --paper: #f4f1e8;
+  --pageink: #2a2620;
+  --banner-h: 56px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; }
+body {
+  background: var(--paper); color: var(--pageink);
+  font-family: var(--font-mono);
+  padding: 2rem 1rem 5rem;
+}
+.mock-title {
+  font-size: 0.85rem; letter-spacing: 0.3em; text-align: center;
+  font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem;
+}
+.mock-title b { color: var(--plot-red); }
+.mock-intro {
+  font-size: 0.7rem; letter-spacing: 0.06em; text-align: center;
+  color: #6d6455; max-width: 860px; margin: 0 auto 2rem; line-height: 1.9;
+}
+.demo { max-width: 1280px; margin: 0 auto 2.4rem; }
+.demo-label {
+  font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: #6d6455; margin-bottom: 0.5rem;
+}
+.demo-label b { color: var(--plot-red); font-weight: 700; letter-spacing: 0.18em; }
+
+/* the simulated viewport: banner mock + wood floor + the scrim over it */
+.frame {
+  position: relative; overflow: hidden;
+  height: var(--vpH, 800px);
+  background: #8d6537;
+  border: 1px solid #3c3223;
+  box-shadow: inset 0 0 90px rgba(20, 10, 4, 0.35);
+}
+.frame--phone { width: 375px; margin: 0 auto; }
+.mock-banner {
+  position: absolute; top: 0; left: 0; right: 0; height: var(--banner-h);
+  z-index: 1000;
+  background: #fff; border-bottom: 1px solid #1a1a1a;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.2rem;
+}
+.mock-banner .mb-title { font-weight: 700; font-size: 0.85rem; }
+.mock-banner .mb-title::before { content: "\275A"; color: #2626c9; margin-right: 0.4em; }
+.mock-banner nav { display: flex; gap: 1.4rem; font-size: 0.66rem; letter-spacing: 0.08em; }
+.mock-banner nav a { color: #1a1a1a; text-decoration: none; }
+.mock-banner nav .on { text-decoration: underline; text-underline-offset: 4px; }
+
+/* the scrim, standing in for .jd-turn-scrim */
+.db-scrim {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--banner-h) + 8px) 12px 12px;
+  background: rgba(10, 5, 1, 0.58);
+}
+
+/* ---------------- the card: one square sheet of graph paper --------------- */
+.db-card {
+  /* verbatim from .jd-turn-scrim */
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --graphite: #4b4030;
+  --tok: #4a6b18;
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  position: relative;
+  width: min(470px, 100%);
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  color: var(--tink);
+  font-family: var(--tmono);
+  /* graph-paper ruling over aged paper: the exhibit swatch's grid
+     (junk-drawer.css .jd-turn-art) laid on this form's own paper */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.16) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.16) 0 1px, transparent 1px 42px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 8.4px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 8.4px),
+    var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 12px 20px 32px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the printed double border */
+.db-card::before {
+  content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+/* paper mottle */
+.db-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background-image: var(--tmottle); background-size: 420px 420px;
+}
+
+/* 'please wait…' — hand-lettered in pencil, at a jaunty angle, with a
+   hand-drawn underline squiggle. The only words on the sheet. */
+.db-wait {
+  position: absolute; top: 7%; left: 50%; z-index: 3;
+  transform: translateX(-50%) rotate(-4deg);
+  font-family: var(--thand); font-size: clamp(1.05rem, 5vw, 1.55rem);
+  color: var(--graphite); opacity: 0.9; white-space: nowrap;
+}
+.db-wait svg {
+  display: block; width: 78%; height: 8px; margin: 1px auto 0;
+}
+.db-wait svg path {
+  fill: none; stroke: var(--graphite); stroke-width: 1.6;
+  stroke-linecap: round; opacity: 0.65;
+}
+
+/* ---------------- the four instruments, scattered ------------------------- */
+.db-slot { position: absolute; z-index: 2; }
+.db-slot--a { left: 5%;  top: 19%;    width: 37%; transform: rotate(-2deg); }
+.db-slot--b { right: 4%; top: 26%;    width: 37%; transform: rotate(1.6deg); }
+.db-slot--c { left: 7%;  bottom: 8%;  width: 33%; transform: rotate(1.8deg); }
+.db-slot--d { right: 5%; bottom: 10%; width: 41%; transform: rotate(-1.4deg); }
+.db-svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+/* every stroke rides pathLength="100", so the draw loop is one keyframe set */
+.db-stroke {
+  fill: none; stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 45;          /* static pending: a half-drawn stroke */
+}
+.db-stroke--a { stroke: var(--graphite); stroke-width: 1.6; }
+.db-stroke--b { stroke: var(--tink);     stroke-width: 2.1; }
+.db-stroke--c { stroke: var(--graphite); stroke-width: 1.6; }
+
+/* the tools' static pending pose: mid-stroke. Motion is ADDED below, under
+   no-preference — this base is the reduced-motion state. */
+.db-tool--a {
+  offset-path: path("M14,66 C26,18 62,12 58,42 C55,66 92,74 104,44 C110,30 118,30 122,40");
+  offset-rotate: auto; offset-distance: 55%;
+}
+.db-tool--b {
+  offset-path: path("M10,74 C34,30 52,28 66,48 C80,68 104,60 118,26");
+  offset-rotate: auto; offset-distance: 55%;
+}
+.db-tool--c { transform-origin: 40px 16px; }   /* the compass pivot */
+.db-type rect { opacity: 0; }
+.db-type rect:nth-child(-n+4) { opacity: 0.85; }  /* static pending: half-typed */
+
+/* the scratch-out and ink blot: invisible until the slot fails */
+.db-scratch { opacity: 0; }
+.db-scratch path {
+  fill: none; stroke: var(--tred); stroke-width: 2.4; stroke-linecap: round;
+}
+.db-scratch circle, .db-scratch ellipse { fill: var(--tred); }
+
+/* the paper tag: slot letter + the word the live region reads */
+.db-tag {
+  display: inline-flex; align-items: baseline; gap: 0.45em;
+  margin: 1px 0 0; padding: 1px 7px 1px 1px;
+  font-size: 0.58rem; letter-spacing: 0.05em;
+  background: rgba(255, 250, 232, 0.66);
+  border: 1px solid var(--trule-2);
+  box-shadow: 0 1px 2px rgba(46, 34, 12, 0.25);
+  color: var(--tink-2);
+}
+.db-tag b {
+  align-self: stretch; display: flex; align-items: center;
+  padding: 0 6px; margin-right: 0.1em;
+  font-family: var(--tform); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.1em; color: var(--tink);
+  border-right: 1px solid var(--trule-2);
+}
+.db-st .m { font-family: var(--tform); font-weight: 700; margin-right: 0.15em; }
+.db-slot.is-ok .db-st { color: var(--tok); }
+.db-slot.is-fail .db-st { color: var(--tred); }
+/* the waiting ellipsis: motion added, never assumed */
+.db-dots b { font-weight: 400; opacity: 0.25; }
+
+/* ---------------- the three states ---------------------------------------- */
+/* ARRIVED: stroke completed, tool at rest at the end of its path, tag green */
+.db-slot.is-ok .db-stroke { animation: none; stroke-dashoffset: 0; opacity: 1; }
+.db-slot.is-ok .db-tool   { animation: none; offset-distance: 100%; opacity: 0.85; }
+.db-slot.is-ok .db-tool--c { animation: none; transform: rotate(0deg); }
+.db-slot.is-ok .db-tool--d { animation: none; transform: translateX(-64px); }
+.db-slot.is-ok .db-type rect { animation: none; opacity: 0.85; }
+
+/* FAILED: tool snapped off its path, half-work scratched out in ink red */
+.db-slot.is-fail .db-stroke { animation: none; stroke-dashoffset: 45; opacity: 0.5; }
+.db-slot.is-fail .db-scratch { opacity: 1; }
+.db-slot.is-fail .db-tool--a { animation: none; offset-distance: 62%; transform: rotate(38deg) translate(12px, 7px); }
+.db-slot.is-fail .db-tool--b { animation: none; offset-distance: 50%; transform: rotate(-46deg) translate(16px, -12px); }
+.db-slot.is-fail .db-tool--c { animation: none; transform: rotate(13deg) translate(7px, 9px); }
+.db-slot.is-fail .db-tool--d { animation: none; transform: translateX(-64px) rotate(-4deg); }
+.db-slot.is-fail .db-type rect { animation: none; opacity: 0.4; }
+
+/* ---------------- motion: ADDED under no-preference only ------------------- */
+@keyframes dbDraw {        /* one draw loop, shared by pencil / nib / arc */
+  0%   { stroke-dashoffset: 100; opacity: 1; }
+  68%  { stroke-dashoffset: 0; }
+  84%  { stroke-dashoffset: 0;   opacity: 1; }
+  93%  { stroke-dashoffset: 0;   opacity: 0; }
+  94%  { stroke-dashoffset: 100; opacity: 0; }
+  100% { stroke-dashoffset: 100; opacity: 1; }
+}
+@keyframes dbMove {        /* the tool rides the stroke in step with dbDraw */
+  0%   { offset-distance: 0%;   opacity: 1; }
+  68%  { offset-distance: 100%; }
+  84%  { offset-distance: 100%; opacity: 1; }
+  93%  { offset-distance: 100%; opacity: 0; }
+  94%  { offset-distance: 0%;   opacity: 0; }
+  100% { offset-distance: 0%;   opacity: 1; }
+}
+@keyframes dbSway {        /* the compass rocks gently about its pivot */
+  from { transform: rotate(-3deg); }
+  to   { transform: rotate(3.5deg); }
+}
+@keyframes dbCarriage {    /* ratchet left in steps, hold, snap back */
+  0%   { transform: translateX(0); }
+  84%  { transform: translateX(-64px); }
+  92%  { transform: translateX(-64px); }
+  96%  { transform: translateX(0); }
+  100% { transform: translateX(0); }
+}
+@keyframes dbChar {        /* one typed mark appears, holds, clears */
+  0%   { opacity: 0; }
+  5%   { opacity: 0.85; }
+  86%  { opacity: 0.85; }
+  93%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes dbDot { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .db-stroke--a { animation: dbDraw 5s   linear infinite; }
+  .db-tool--a   { animation: dbMove 5s   linear infinite; }
+  .db-stroke--b { animation: dbDraw 6.2s linear infinite; }
+  .db-tool--b   { animation: dbMove 6.2s linear infinite; }
+  .db-stroke--c { animation: dbDraw 7.4s linear infinite; }
+  .db-tool--c   { animation: dbSway 1.5s ease-in-out infinite alternate; }
+  .db-tool--d   { animation: dbCarriage 6.4s steps(8, end) infinite; }
+  .db-type rect { animation: dbChar 6.4s linear infinite; }
+  .db-type rect:nth-child(1) { animation-delay: 0.15s; }
+  .db-type rect:nth-child(2) { animation-delay: 0.75s; }
+  .db-type rect:nth-child(3) { animation-delay: 1.35s; }
+  .db-type rect:nth-child(4) { animation-delay: 1.95s; }
+  .db-type rect:nth-child(5) { animation-delay: 2.55s; }
+  .db-type rect:nth-child(6) { animation-delay: 3.15s; }
+  .db-type rect:nth-child(7) { animation-delay: 3.75s; }
+  .db-type rect:nth-child(8) { animation-delay: 4.35s; }
+  .db-dots b { animation: dbDot 1.5s infinite; }
+  .db-dots b:nth-child(2) { animation-delay: 0.25s; }
+  .db-dots b:nth-child(3) { animation-delay: 0.5s; }
+}
+/* the reduced-motion fallback: no animation ever runs; the base styles above
+   are the static pending state, and .is-ok / .is-fail pin the end geometry.
+   Stated explicitly so the rule is greppable, not just implied by gating. */
+@media (prefers-reduced-motion: reduce) {
+  .db-card *, .db-card *::before, .db-card *::after { animation: none !important; }
+}
+/* the same freeze, forced by class for the static preview below */
+.db-static .db-card *, .db-static .db-card *::before, .db-static .db-card *::after {
+  animation: none !important;
+}
+
+/* the replay control: small, low-contrast, out of the fiction's way */
+.db-replay {
+  position: absolute; right: 9px; bottom: 7px; z-index: 7;
+  padding: 4px 6px; cursor: pointer;
+  font-family: var(--tmono); font-size: 0.55rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+.db-replay:hover { color: var(--tink); text-decoration: underline; }
+.db-replay:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+
+/* the static end-state preview (no scrim, motion forced off) */
+.db-static-wrap { display: flex; justify-content: center; }
+.db-static .db-card { box-shadow: 8px 12px 22px -8px rgba(6, 3, 0, 0.5); }
+</style>
+
+<h1 class="mock-title">Mockup 16A — <b>The Drafting Table</b></h1>
+<p class="mock-intro">
+  The darkroom as a square sheet of graph paper seen from above. Four drawing
+  instruments work at scattered spots — a pencil sketching loops, an ink nib
+  tracing a line, a compass sweeping an arc, a typewriter carriage ratcheting
+  across — each keyed to a blind slot, A–D. Arrivals freeze mid-gesture with
+  the stroke completed; a failure snaps the tool and scratches the work out in
+  red. Self-demo: A lands at 3s, C at 6s, B at 9s, D fails at 12s, then holds.
+  <code>prefers-reduced-motion</code> → no animation runs; pending is a static
+  half-drawn state.
+</p>
+
+<section class="demo">
+  <p class="demo-label"><b>Desktop</b> · 1280×800 viewport · live demo (replay control on the sheet, lower right)</p>
+  <div class="frame" style="--vpH:800px">
+    <div class="mock-banner">
+      <span class="mb-title">MUNICIPAL SKY</span>
+      <nav><a href="#">the drawer</a><a href="#" class="on">junk</a><a href="#">about</a></nav>
+    </div>
+    <div class="db-scrim" data-darkroom></div>
+  </div>
+</section>
+
+<section class="demo">
+  <p class="demo-label"><b>Phone</b> · 375px viewport · the square card must fit whole</p>
+  <div class="frame frame--phone" style="--vpH:720px">
+    <div class="mock-banner">
+      <span class="mb-title">MUNICIPAL SKY</span>
+      <nav><a href="#" class="on">junk</a><a href="#">about</a></nav>
+    </div>
+    <div class="db-scrim" data-darkroom></div>
+  </div>
+</section>
+
+<section class="demo">
+  <p class="demo-label"><b>End state, motion off</b> · what the reduced-motion visitor sees once all four slots have settled</p>
+  <div class="db-static-wrap">
+    <div class="db-static" data-darkroom data-darkroom-settled></div>
+  </div>
+</section>
+
+<template id="db-card">
+  <div class="db-card" role="group" aria-label="Please wait — four drawings in progress">
+    <p class="db-wait">please wait…
+      <svg viewBox="0 0 120 8" aria-hidden="true">
+        <path d="M4,5 C28,1 58,8 86,4 C100,2 112,6 117,4"/>
+      </svg>
+    </p>
+
+    <!-- the slots: status words are what the live region announces; the
+         glyphs and instrument theatrics stay aria-hidden inside the SVGs -->
+    <div aria-live="polite">
+    <!-- SLOT A — the pencil, sketching a looping gesture -->
+    <div class="db-slot db-slot--a" data-slot="a">
+      <svg class="db-svg" viewBox="0 0 130 96" aria-hidden="true">
+        <path class="db-stroke db-stroke--a" pathLength="100"
+              d="M14,66 C26,18 62,12 58,42 C55,66 92,74 104,44 C110,30 118,30 122,40"/>
+        <g class="db-tool db-tool--a">
+          <path d="M0,0 L9,-4 L9,4 Z" fill="#a5836a"/>
+          <path d="M0,0 L3.4,-1.5 L3.4,1.5 Z" fill="#2c251c"/>
+          <rect x="9" y="-4" width="30" height="8" fill="#c08334"/>
+          <rect x="9" y="-4" width="30" height="2.6" fill="#d99a4b"/>
+          <rect x="39" y="-4" width="5" height="8" fill="#8f8578"/>
+          <rect x="44" y="-4" width="7" height="8" rx="2" fill="#b3402f"/>
+        </g>
+        <g class="db-scratch">
+          <path d="M18,30 L42,42 L68,52 L98,70"/>
+          <path d="M24,72 L52,56 L80,42 L106,26"/>
+        </g>
+      </svg>
+      <p class="db-tag"><b>A</b><span class="db-st">drawing<span class="db-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></span></p>
+    </div>
+
+    <!-- SLOT B — the ink nib, tracing a line -->
+    <div class="db-slot db-slot--b" data-slot="b">
+      <svg class="db-svg" viewBox="0 0 130 96" aria-hidden="true">
+        <path class="db-stroke db-stroke--b" pathLength="100"
+              d="M10,74 C34,30 52,28 66,48 C80,68 104,60 118,26"/>
+        <g class="db-tool db-tool--b">
+          <path d="M0,0 L7,-5 L14,0 L7,5 Z" fill="#3a332a"/>
+          <path d="M7,-4 L7,4" stroke="#ece0bf" stroke-width="0.8"/>
+          <rect x="14" y="-2.2" width="30" height="4.4" rx="2" fill="#6b4f2a"/>
+          <rect x="14" y="-2.2" width="30" height="1.5" fill="#8a6a3e"/>
+        </g>
+        <g class="db-scratch">
+          <ellipse cx="70" cy="50" rx="6" ry="4.6"/>
+          <path d="M72,54 C73,60 71,64 72,68" stroke-width="1.6"/>
+          <path d="M16,68 L48,50 L84,36 L114,22"/>
+        </g>
+      </svg>
+      <p class="db-tag"><b>B</b><span class="db-st">drawing<span class="db-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></span></p>
+    </div>
+
+    <!-- SLOT C — the compass, sweeping an arc (arc centred on the needle at
+         34,86, radius 52, from due east up to the vertical) -->
+    <div class="db-slot db-slot--c" data-slot="c">
+      <svg class="db-svg" viewBox="0 0 120 100" aria-hidden="true">
+        <path class="db-stroke db-stroke--c" pathLength="100"
+              d="M86,86 A52,52 0 0 0 43,35"/>
+        <g class="db-tool db-tool--c">
+          <line x1="40" y1="16" x2="34" y2="86" stroke="#8a6a2a" stroke-width="3" stroke-linecap="round"/>
+          <line x1="40" y1="16" x2="72" y2="50" stroke="#8a6a2a" stroke-width="3" stroke-linecap="round"/>
+          <line x1="72" y1="50" x2="74.5" y2="54.5" stroke="#4b4030" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="40" cy="16" r="5.5" fill="#6d5320"/>
+          <circle cx="40" cy="16" r="2" fill="#8a6a2a"/>
+          <circle cx="34" cy="86" r="1.8" fill="#33240f"/>
+        </g>
+        <g class="db-scratch">
+          <path d="M52,80 L64,62 L78,44 L90,30"/>
+          <path d="M88,74 L74,58 L60,46 L48,38"/>
+        </g>
+      </svg>
+      <p class="db-tag"><b>C</b><span class="db-st">drawing<span class="db-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></span></p>
+    </div>
+
+    <!-- SLOT D — the typewriter carriage, ratcheting across -->
+    <div class="db-slot db-slot--d" data-slot="d">
+      <svg class="db-svg" viewBox="0 0 140 96" aria-hidden="true">
+        <g aria-hidden="true">
+          <rect x="10" y="16" width="120" height="10" rx="3" fill="#2e2822"/>
+          <circle cx="8"  cy="21" r="5" fill="#2e2822"/>
+          <circle cx="132" cy="21" r="5" fill="#2e2822"/>
+          <rect x="18" y="29" width="104" height="5" fill="#4a4238"/>
+        </g>
+        <g class="db-type" fill="#33240f">
+          <rect x="20"  y="44" width="6" height="8"/>
+          <rect x="30"  y="46" width="5" height="6"/>
+          <rect x="39"  y="43" width="6" height="9"/>
+          <rect x="49"  y="45" width="5" height="7"/>
+          <rect x="58"  y="44" width="6" height="8"/>
+          <rect x="68"  y="46" width="5" height="6"/>
+          <rect x="77"  y="43" width="6" height="9"/>
+          <rect x="87"  y="45" width="5" height="7"/>
+        </g>
+        <g class="db-tool db-tool--d">
+          <rect x="88" y="10" width="34" height="26" rx="3" fill="#3d352b"/>
+          <rect x="93" y="15" width="24" height="4" fill="#5d5344"/>
+          <rect x="93" y="22" width="16" height="3" fill="#5d5344"/>
+        </g>
+        <g class="db-scratch">
+          <path d="M16,54 L44,48 L72,50 L100,44"/>
+          <path d="M22,40 L58,56 L94,42"/>
+        </g>
+      </svg>
+      <p class="db-tag"><b>D</b><span class="db-st">drawing<span class="db-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></span></p>
+    </div>
+    </div>
+
+    <button class="db-replay" type="button">↻ replay</button>
+  </div>
+</template>
+
+<script>
+/* Self-demo: staggered blind arrivals, then hold. A lands at 3s, C at 6s,
+   B at 9s, D fails at 12s. Each [data-darkroom] host gets its own card from
+   the template and its own timer set; [data-darkroom-settled] skips the wait
+   and opens directly on the end state. The replay control just re-runs. */
+(function () {
+  var PLAN = [
+    { slot: 'a', outcome: 'ok',   at: 3000 },
+    { slot: 'c', outcome: 'ok',   at: 6000 },
+    { slot: 'b', outcome: 'ok',   at: 9000 },
+    { slot: 'd', outcome: 'fail', at: 12000 }
+  ];
+  var PENDING = 'drawing<span class="db-dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span>';
+  var tpl = document.getElementById('db-card');
+
+  function settle(host, slot, outcome) {
+    var el = host.querySelector('[data-slot="' + slot + '"]');
+    if (!el) return;
+    el.classList.remove('is-ok', 'is-fail');
+    el.classList.add(outcome === 'ok' ? 'is-ok' : 'is-fail');
+    el.querySelector('.db-st').innerHTML = outcome === 'ok'
+      ? '<span class="m" aria-hidden="true">✓</span>arrived'
+      : '<span class="m" aria-hidden="true">✗</span>didn’t survive';
+  }
+
+  function reset(host) {
+    host.querySelectorAll('.db-slot').forEach(function (el) {
+      el.classList.remove('is-ok', 'is-fail');
+      el.querySelector('.db-st').innerHTML = PENDING;
+    });
+  }
+
+  document.querySelectorAll('[data-darkroom]').forEach(function (host) {
+    host.appendChild(tpl.content.cloneNode(true));
+    var timers = [];
+    function stop() { timers.forEach(clearTimeout); timers = []; }
+    function run() {
+      stop();
+      reset(host);
+      PLAN.forEach(function (step) {
+        timers.push(setTimeout(function () {
+          settle(host, step.slot, step.outcome);
+        }, step.at));
+      });
+    }
+    host.querySelector('.db-replay').addEventListener('click', run);
+    if (host.hasAttribute('data-darkroom-settled')) {
+      PLAN.forEach(function (step) { settle(host, step.slot, step.outcome); });
+      host.querySelector('.db-replay').hidden = true;
+    } else {
+      run();
+    }
+  });
+})();
+</script>

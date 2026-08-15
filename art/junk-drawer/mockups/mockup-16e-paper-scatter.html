@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 16E &middot; THE SCATTER (waiting card)</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 16E · "THE SCATTER"  (the darkroom, redesigned)
+   ----------------------------------------------------------------------------
+   THE FICTION: the waiting card is a miniature of the drawer itself. While the
+   four blind machines draw, four BLANK PAPER SCRAPS lie tossed on a square
+   sheet at different angles — the pile aesthetic, shrunk to a card. Each scrap
+   is being drawn on, each by a DIFFERENT hand:
+     A — a wandering pen line doodles itself, over and over
+     B — a typewriter hammers marks letter by letter
+     C — an ink blot blooms and spreads
+     D — faint graph-paper lines etch themselves
+   ARRIVAL = the scrap settles flat and its letter inks in with a ✓.
+   FAILURE = the scrap crumples, red-edged: ✗ didn’t survive.
+   A fifth, smaller scrap carries "please wait…" pencilled in the visitor's own
+   graphite hand (--thand, --graphite).
+
+   OWNER BRIEF (round 16): no "Four machines are drawing" title, no FORM JD-1
+   badge, a SQUARE card, no table rows, one animation per anonymous slot, the
+   three slot states stay legible, letters A–D stay readable (later cards
+   reference them — so each scrap carries its pencilled corner letter from the
+   start), prefers-reduced-motion freezes every animation into a static state,
+   and the file SELF-DEMOS: arrivals at ~3s / ~6s / ~9s, one failure at ~12s,
+   then it holds the end state with a small replay control.
+
+   The grain/mottle data-URIs below are copied VERBATIM from junk-drawer.css
+   (stitchTiles="stitch", seeds 7 and 23 — never regenerate; a reseed breaks
+   the tile seams in Safari). No external assets: system font stacks only, so
+   the file opens clean over file://.
+   ============================================================================ */
+
+:root {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --graphite: #4b4030;
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  /* VERBATIM from junk-drawer.css lines 1586–1587 — do not reseed */
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* the drawer interior the card floats over (wood bg copied verbatim from
+   mockup-15a) */
+body {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 16px 24px;
+  font-family: var(--tmono);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+/* the scrim dim, as in the real modal */
+body::before {
+  content: ""; position: fixed; inset: 0;
+  background: rgba(10, 5, 1, 0.45);
+  pointer-events: none;
+}
+
+.demo-tag {
+  position: fixed; top: 8px; left: 10px; z-index: 500;
+  font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase;
+  line-height: 1.7; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.74); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 5px 9px;
+}
+.demo-tag b { color: #f3c98a; }
+@media (max-width: 500px) { .demo-tag { display: none; } }
+
+/* ---- the square sheet ---------------------------------------------------- */
+.sheet {
+  position: relative; z-index: 1;
+  /* square, and honest at 375px: never wider than the viewport's short side */
+  width: min(560px, calc(100vw - 32px), calc(100vh - 110px));
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  color: var(--tink);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* mottle + the printed double border, house style */
+.sheet::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--tmottle);
+}
+.sheet::after {
+  content: ""; position: absolute; inset: 5px; pointer-events: none;
+  border: 1px solid var(--trule);
+  outline: 1px solid var(--trule-2);
+  outline-offset: 2px;
+}
+
+/* ---- the scraps ------------------------------------------------------------
+   Each scrap is a rotated absolute panel. --rot is its tossed angle;
+   --rot-flat the near-level angle it settles to on arrival. The BASE
+   transform per state is on the state rule itself, so when reduced-motion
+   kills the keyframes the scrap still lands in the right final pose. */
+.scrap {
+  position: absolute;
+  width: 41%; height: 33%;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(74, 53, 18, 0.30);
+  border-radius: 2px;
+  box-shadow: 4px 7px 10px -4px rgba(30, 18, 4, 0.55);
+  transform: rotate(var(--rot));
+  animation: rock 5.2s ease-in-out infinite alternate;
+  transition: border-color 0.5s, box-shadow 0.7s;
+}
+.scrap-a { left: 6%;  top: 7%;  --rot: -7deg; --rot-flat: -1.2deg; }
+.scrap-b { right: 6%; top: 9%;  --rot: 5.5deg; --rot-flat: 0.8deg; }
+.scrap-c { left: 9%;  bottom: 8%; --rot: 4deg;  --rot-flat: -0.6deg; }
+.scrap-d { right: 8%; bottom: 6%; --rot: -5deg; --rot-flat: 1deg; }
+
+@keyframes rock {
+  from { transform: rotate(var(--rot)); }
+  to   { transform: rotate(calc(var(--rot) + 1.3deg)); }
+}
+
+/* the pencilled corner letter — readable from the first frame, because the
+   reveal card references A–D */
+.corner-letter {
+  position: absolute; top: 4px; left: 7px;
+  font-family: var(--thand);
+  font-size: 0.9rem;
+  color: var(--graphite);
+  opacity: 0.85;
+}
+
+/* ---- the four pending hands ---------------------------------------------- */
+.draw {
+  position: absolute; inset: 8% 10%;
+  display: block; width: 80%; height: 84%;
+  transition: opacity 0.45s;
+}
+
+/* A — the wandering pen line (pathLength=100 so the dash maths are trivial;
+   base offset leaves it 55% drawn as the static reduced-motion frame) */
+.pen-path {
+  fill: none; stroke: var(--tink-2); stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 45;
+  animation: pen-doodle 3.8s linear infinite;
+}
+@keyframes pen-doodle {
+  0%   { stroke-dashoffset: 100; opacity: 1; }
+  62%  { stroke-dashoffset: 0;   opacity: 1; }
+  82%  { stroke-dashoffset: 0;   opacity: 1; }
+  100% { stroke-dashoffset: 0;   opacity: 0; }
+}
+
+/* B — the typewriter: JS hammers the marks in one by one; the caret blinks.
+   Static fallback text is already in the markup, so with scripting off or
+   motion reduced the scrap simply reads fully typed. */
+.type-out {
+  position: absolute; inset: 18% 6% 30%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--tmono);
+  font-size: 0.66rem; letter-spacing: 0.28em;
+  color: var(--tink);
+  white-space: nowrap; overflow: hidden;
+}
+.type-caret {
+  display: inline-block; width: 0.55em; height: 1em;
+  margin-left: 2px; vertical-align: -0.15em;
+  background: var(--tink-2);
+  animation: caret 0.85s steps(1) infinite;
+}
+@keyframes caret { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+
+/* C — the ink blot blooms, holds, fades, blooms again (base: half-bloomed) */
+.blot {
+  fill: var(--tink);
+  transform-origin: 50px 32px;
+  transform: scale(0.55);
+  opacity: 0.75;
+  animation: blot-bloom 4.6s ease-in-out infinite;
+}
+.blot-2 {
+  fill: var(--tink-2);
+  transform-origin: 62px 40px;
+  transform: scale(0.4);
+  opacity: 0.6;
+  animation: blot-bloom 4.6s ease-in-out 0.5s infinite;
+}
+@keyframes blot-bloom {
+  0%   { transform: scale(0);    opacity: 0; }
+  45%  { transform: scale(0.85); opacity: 0.8; }
+  62%  { transform: scale(1);    opacity: 0.85; }
+  85%  { transform: scale(1);    opacity: 0.85; }
+  100% { transform: scale(1.04); opacity: 0; }
+}
+
+/* D — graph lines etch themselves, staggered, then fade and restart
+   (base offset leaves the grid ~2/3 etched as the static frame) */
+.etch-line {
+  stroke: rgba(74, 53, 18, 0.38); stroke-width: 1;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 34;
+  animation: etch 4.2s linear infinite;
+}
+.etch-line:nth-child(2)  { animation-delay: 0.25s; }
+.etch-line:nth-child(3)  { animation-delay: 0.5s; }
+.etch-line:nth-child(4)  { animation-delay: 0.75s; }
+.etch-line:nth-child(5)  { animation-delay: 1s; }
+.etch-line:nth-child(6)  { animation-delay: 1.25s; }
+.etch-line:nth-child(7)  { animation-delay: 1.5s; }
+.etch-line:nth-child(8)  { animation-delay: 1.75s; }
+@keyframes etch {
+  0%   { stroke-dashoffset: 100; opacity: 1; }
+  55%  { stroke-dashoffset: 0;   opacity: 1; }
+  80%  { stroke-dashoffset: 0;   opacity: 1; }
+  100% { stroke-dashoffset: 0;   opacity: 0; }
+}
+
+/* ---- arrival / failure ---------------------------------------------------- */
+.result {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s 0.35s;
+}
+.big-letter {
+  font-family: var(--tform);
+  font-size: 1.7rem; line-height: 1;
+  color: var(--tink);
+}
+.verdict {
+  font-family: var(--tmono);
+  font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--tink-2);
+}
+.verdict .m { font-style: normal; }
+
+/* arrived: settles flat with a small overshoot, shadow tightens, letter inks */
+.scrap[data-state="ok"] {
+  transform: rotate(var(--rot-flat));
+  animation: settle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1;
+  box-shadow: 2px 3px 6px -3px rgba(30, 18, 4, 0.5);
+}
+@keyframes settle {
+  0%   { transform: rotate(var(--rot)) translateY(-5px); }
+  55%  { transform: rotate(calc(var(--rot-flat) - 1.6deg)) translateY(0); }
+  100% { transform: rotate(var(--rot-flat)); }
+}
+.scrap[data-state="ok"] .draw,
+.scrap[data-state="ok"] .type-out { opacity: 0; }
+.scrap[data-state="ok"] .result { opacity: 1; }
+
+/* failed: the scrap crumples — a quick erratic wrench, then it stays wadded,
+   edged in ink red */
+.scrap[data-state="fail"] {
+  transform: rotate(calc(var(--rot) + 9deg)) scale(0.86) skew(-2deg, 1deg);
+  animation: crumple 0.7s ease-in-out 1;
+  border-color: var(--tred);
+  box-shadow: inset 0 0 0 1px rgba(179, 64, 47, 0.45),
+              inset 6px 8px 14px -6px rgba(120, 30, 20, 0.35),
+              5px 9px 12px -6px rgba(30, 10, 4, 0.6);
+}
+@keyframes crumple {
+  0%   { transform: rotate(var(--rot)) scale(1); }
+  30%  { transform: rotate(calc(var(--rot) + 15deg)) scale(0.9) skew(4deg, -2deg); }
+  60%  { transform: rotate(calc(var(--rot) - 5deg)) scale(0.88) skew(-3deg, 2deg); }
+  100% { transform: rotate(calc(var(--rot) + 9deg)) scale(0.86) skew(-2deg, 1deg); }
+}
+.scrap[data-state="fail"] .draw,
+.scrap[data-state="fail"] .type-out { opacity: 0; }
+.scrap[data-state="fail"] .result { opacity: 1; }
+.scrap[data-state="fail"] .big-letter { color: var(--tink-2); }
+.scrap[data-state="fail"] .verdict { color: var(--tred); }
+
+/* ---- the fifth scrap: "please wait…" -------------------------------------- */
+.wait-scrap {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 34%; height: 13%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(74, 53, 18, 0.26);
+  border-radius: 2px;
+  box-shadow: 3px 5px 8px -4px rgba(30, 18, 4, 0.5);
+  animation: wait-rock 7s ease-in-out infinite alternate;
+}
+@keyframes wait-rock {
+  from { transform: translate(-50%, -50%) rotate(-2.6deg); }
+  to   { transform: translate(-50%, -50%) rotate(-1.4deg); }
+}
+.wait-scrap span {
+  font-family: var(--thand);
+  font-size: 0.95rem;
+  color: var(--graphite);
+}
+
+/* ---- replay (demo scaffolding, deliberately unobtrusive) ------------------- */
+.replay {
+  position: absolute; right: 10px; bottom: 8px; z-index: 5;
+  font-family: var(--tmono);
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2);
+  background: none; border: none;
+  border-bottom: 1px solid var(--trule);
+  padding: 1px 2px;
+  cursor: pointer;
+}
+.replay:hover, .replay:focus-visible { color: var(--tink); border-bottom-color: var(--tink); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---- prefers-reduced-motion: every hand freezes mid-stroke ------------------
+   Base styles above are already the static frames (pen 55% drawn, blot
+   half-bloomed, grid 2/3 etched, typed text shown in full by the JS guard).
+   The settle/crumple keyframes are skipped; the state rules' own transforms
+   put each scrap in its final pose instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .scrap, .wait-scrap, .pen-path, .blot, .blot-2, .etch-line, .type-caret {
+    animation: none !important;
+  }
+  .type-caret { opacity: 1; }
+  .result, .draw, .type-out, .scrap { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="demo-tag">MOCKUP <b>16E · THE SCATTER</b> — waiting card ("the darkroom") — self-demo: arrivals ~3s / ~6s / ~9s, one failure ~12s</div>
+
+<main class="sheet" aria-label="Please wait — four drawings are being made">
+
+  <!-- A — the wandering pen -->
+  <div class="scrap scrap-a" data-slot="a" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">a</span>
+    <svg class="draw" viewBox="0 0 100 64" aria-hidden="true">
+      <path class="pen-path" pathLength="100"
+        d="M6 34 C 14 12, 24 12, 28 30 S 38 52, 46 34 S 52 10, 62 22 S 70 50, 78 36 S 88 18, 94 30" />
+    </svg>
+    <div class="result">
+      <span class="big-letter">A</span>
+      <span class="verdict"><span class="m" aria-hidden="true">✓</span> arrived</span>
+    </div>
+  </div>
+
+  <!-- B — the typewriter -->
+  <div class="scrap scrap-b" data-slot="b" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">b</span>
+    <div class="draw">
+      <span class="type-out"><span class="type-text">·—·~~·—··—~·</span><span class="type-caret" aria-hidden="true"></span></span>
+    </div>
+    <div class="result">
+      <span class="big-letter">B</span>
+      <span class="verdict"><span class="m" aria-hidden="true">✓</span> arrived</span>
+    </div>
+  </div>
+
+  <!-- C — the ink blot -->
+  <div class="scrap scrap-c" data-slot="c" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">c</span>
+    <svg class="draw" viewBox="0 0 100 64" aria-hidden="true">
+      <path class="blot"
+        d="M50 8 C 60 6, 70 14, 69 26 C 68 36, 74 42, 66 50 C 58 58, 44 58, 37 50 C 30 42, 28 34, 32 24 C 36 14, 42 10, 50 8 Z" />
+      <path class="blot-2"
+        d="M64 34 C 70 32, 75 37, 73 43 C 71 49, 63 50, 60 45 C 57 40, 59 36, 64 34 Z" />
+    </svg>
+    <div class="result">
+      <span class="big-letter">C</span>
+      <span class="verdict"><span class="m" aria-hidden="true">✓</span> arrived</span>
+    </div>
+  </div>
+
+  <!-- D — the etching graph lines -->
+  <div class="scrap scrap-d" data-slot="d" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">d</span>
+    <svg class="draw" viewBox="0 0 100 64" aria-hidden="true">
+      <line class="etch-line" pathLength="100" x1="8"  y1="14" x2="92" y2="14" />
+      <line class="etch-line" pathLength="100" x1="8"  y1="26" x2="92" y2="26" />
+      <line class="etch-line" pathLength="100" x1="8"  y1="38" x2="92" y2="38" />
+      <line class="etch-line" pathLength="100" x1="8"  y1="50" x2="92" y2="50" />
+      <line class="etch-line" pathLength="100" x1="22" y1="8"  x2="22" y2="56" />
+      <line class="etch-line" pathLength="100" x1="42" y1="8"  x2="42" y2="56" />
+      <line class="etch-line" pathLength="100" x1="62" y1="8"  x2="62" y2="56" />
+      <line class="etch-line" pathLength="100" x1="80" y1="8"  x2="80" y2="56" />
+    </svg>
+    <div class="result">
+      <span class="big-letter">D</span>
+      <span class="verdict"><span class="m" aria-hidden="true">✓</span> arrived</span>
+    </div>
+  </div>
+
+  <!-- the fifth scrap — the only words on the card -->
+  <div class="wait-scrap"><span>please wait&hellip;</span></div>
+
+  <button class="replay" type="button" data-replay>↻ replay</button>
+  <div class="sr-only" role="status" aria-live="polite" data-live></div>
+</main>
+
+<script>
+/* Demo scaffolding only — the staggered arrival schedule. In production this
+   is the API poller calling the same setState(). */
+(function () {
+  var reduced = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var live = document.querySelector("[data-live]");
+  var timers = [];
+
+  /* the demo schedule: three arrivals, one failure, then hold */
+  var SCHEDULE = [
+    [3000,  "a", "ok"],
+    [6000,  "c", "ok"],
+    [9000,  "d", "ok"],
+    [12000, "b", "fail"]
+  ];
+
+  function setState(slot, state) {
+    var el = document.querySelector('.scrap[data-slot="' + slot + '"]');
+    if (!el) return;
+    el.setAttribute("data-state", state);
+    var word = state === "ok" ? "arrived" : "didn’t survive";
+    live.textContent = "Slot " + slot.toUpperCase() + " " + word + ".";
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.querySelectorAll(".scrap").forEach(function (el) {
+      el.setAttribute("data-state", "pending");
+    });
+    live.textContent = "";
+    SCHEDULE.forEach(function (step) {
+      timers.push(setTimeout(function () { setState(step[1], step[2]); }, step[0]));
+    });
+  }
+
+  /* B's typewriter: hammer the marks in one by one, pause, wipe, retype.
+     Reduced motion (or no JS) leaves the full string from the markup. */
+  var typeText = document.querySelector(".type-text");
+  var TYPE_STR = typeText.textContent;
+  if (!reduced) {
+    var i = 0, pause = 0;
+    typeText.textContent = "";
+    setInterval(function () {
+      var b = document.querySelector('.scrap[data-slot="b"]');
+      if (b.getAttribute("data-state") !== "pending") return;
+      if (pause > 0) { pause--; return; }
+      if (i < TYPE_STR.length) {
+        typeText.textContent = TYPE_STR.slice(0, ++i);
+      } else {
+        pause = 14; i = 0; /* hold the full line, then wipe and retype */
+      }
+    }, 160);
+  }
+
+  document.querySelector("[data-replay]").addEventListener("click", reset);
+  reset();
+})();
+</script>
+</body>
+</html>

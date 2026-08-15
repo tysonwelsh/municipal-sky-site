@@ -1833,47 +1833,271 @@ html.jd-turn-open { overflow: hidden; }
 }
 
 /* ============================================================================
-   THE DARKROOM — two slots, two states. No table, no headers, no assignment
-   column: the visitor is waiting on A and B, and that is all this says.
+   THE DARKROOM (§2) — ROUND-17 REDESIGN, owner pick 2026-08-14.
+   Ported faithfully from mockups/mockup-17a-loading-scatter.html (16e's scrap
+   sizes, 16f's calm): the waiting card is a SQUARE sheet, and the four slots
+   are graph-paper print swatches in a tight 2×2 — the report card's
+   "photograph" (.jd-turn-art below), so a slot waits in the same frame its
+   drawing will arrive in. Each swatch runs its own OLD-SCHOOL WEB WAIT
+   INDICATOR, printed in ink and keyed stably to the slot letter: a flipping
+   hourglass, a radial-tick throbber, a segmented block progress bar, bouncing
+   loading dots. A fifth slip — "please wait…" in the visitor's pencil hand —
+   floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
+   collapses to an overlay strip so only the ✕ rides the top-right corner
+   (the button and its once-bound listener are untouched — F1 — only the row
+   is restyled; the headline hides, and the title goes on naming the dialog
+   to assistive tech from display:none).
+
+   MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
+   (hourglass mid-drain, throbber ring at rest, bar half-full, dots in a
+   row); every animation lives under prefers-reduced-motion: no-preference,
+   a reduce block stills the rest, and the end-state poses live on the
+   data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
+   settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
+   mid-loop. (The old --tstamp fail red is retired with this card: the
+   owner-approved mockup shipped --tred.)
    ========================================================================== */
-.jd-turn-slots { list-style: none; margin: 0; padding: 0; }
-.jd-turn-slots li {
-  display: flex; align-items: center; gap: 0.7em;
-  padding: 0.34rem 0.1rem;
-  border-bottom: 1px solid var(--trule-2);
-  font-size: var(--t-body);
+/* the square cut, this view only. The 100vh reserve stands in for the scrim's
+   own padding (banner band + insets ≈ 76px desktop, 20px phone), so the
+   aspect-ratio never meets max-height: the card is square at 375px and
+   centred in 1280×800 alike. */
+.jd-turn[data-view="darkroom"] {
+  width: min(560px, 100%, calc(100vh - 110px));
+  aspect-ratio: 1 / 1;
 }
-.jd-turn-slots li:first-child { border-top: 1px solid var(--trule-2); }
-.jd-turn-slots > li > b {
-  flex: 0 0 auto; width: 1.5rem; text-align: center;
-  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
-  letter-spacing: 0.1em;
-  border: 1px solid var(--trule-2); background: rgba(255, 250, 232, 0.5);
-  padding: 1px 0 0;
+/* the masthead as overlay strip: out of the flow, no rule, no wash — just
+   the ✕ floating at the corner, ABOVE the printed double border (z 6) */
+.jd-turn[data-view="darkroom"] .jd-turn-head {
+  position: absolute; top: 0; right: 0; z-index: 20;
+  padding: 0; border-bottom: 0; background: none;
 }
-.jd-turn-st { display: inline-flex; align-items: baseline; gap: 0.4em; }
-.jd-turn-st .m { font-family: var(--tform); font-weight: 700; font-size: 0.72rem; line-height: 1; }
-.jd-turn-st--wait { color: var(--tink-2); }
-.jd-turn-st--ok { color: #4a6b18; }
-.jd-turn-st--fail { color: var(--tstamp); }
-/* the ellipsis that says a pen is still moving. Motion is ADDED, never
-   assumed — the base state is the reduced state. */
-.jd-turn-dots b {
-  display: inline; opacity: 0.25;
-  font-family: inherit; font-weight: 400;
+.jd-turn[data-view="darkroom"] .jd-turn-headline { display: none; }
+/* the body stops scrolling and becomes the pile's table */
+.jd-turn[data-view="darkroom"] .jd-turn-scroll { padding: 0; overflow: hidden; }
+.jd-dark { position: relative; height: 100%; }
+
+/* ---- the four swatches -----------------------------------------------------
+   ~41% × 33% each (mockup-16e's scrap sizes), the toss tamed to ±1.4°–1.8°,
+   vertical gaps tightened to 9%/9% because the wait slip no longer takes up
+   layout space. The print swatch is .jd-turn-art's own background, border
+   and shadow, copied verbatim. */
+.jd-dark-sw {
+  position: absolute;
+  width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  transform: rotate(var(--rot));
+  transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
 }
+.jd-dark-sw--a { left: 5.5%; top: 9%;     --rot: -1.8deg; --rot-flat: -0.7deg; }
+.jd-dark-sw--b { right: 5.5%; top: 9.5%;  --rot: 1.5deg;  --rot-flat: 0.5deg; }
+.jd-dark-sw--c { left: 6.5%; bottom: 9.5%; --rot: 1.4deg; --rot-flat: -0.4deg; }
+.jd-dark-sw--d { right: 6.5%; bottom: 9%; --rot: -1.6deg; --rot-flat: 0.8deg; }
+
+/* the pencilled corner letter — legible in every state, because the cards
+   that follow reference A–D */
+.jd-dark-letter {
+  position: absolute; top: 3px; left: 7px; z-index: 3;
+  font-family: var(--thand); font-size: 0.9rem;
+  color: var(--graphite); opacity: 0.85;
+}
+
+/* the fixed-height animation well: the swap to ✓/✗ never shifts the sheet */
+.jd-dark-well {
+  position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+
+/* a — the hourglass: sand drains, then the glass snaps 180° and starts over
+   (the old wait cursor's two-frame blink, not a tween). Static base: top
+   bulb full, bottom half-full. */
+.jd-dark-hg .hg { transform-box: fill-box; transform-origin: center; }
+.jd-dark-hg .hg-frame {
+  fill: none; stroke: var(--tink-2); stroke-width: 1.6; stroke-linejoin: round;
+}
+.jd-dark-hg .hg-sand { fill: rgba(51, 36, 15, 0.55); }
+.jd-dark-hg .hg-sand-top {
+  transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(1);
+}
+.jd-dark-hg .hg-sand-bot {
+  transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0.55);
+}
+@keyframes jdDarkHgFlip {
+  0%, 49.99% { transform: rotate(0deg); }
+  50%, 100%  { transform: rotate(180deg); }
+}
+@keyframes jdDarkSandTop { from { transform: scaleY(1); }    to { transform: scaleY(0.12); } }
+@keyframes jdDarkSandBot { from { transform: scaleY(0.12); } to { transform: scaleY(1); } }
+
+/* b — the throbber: twelve radial ticks in a fading ring, turned in twelve
+   hard steps so the bright head chases its own tail */
+.jd-dark-throb .throb { transform-box: fill-box; transform-origin: center; }
+.jd-dark-throb line { stroke: var(--tink-2); stroke-width: 2.4; stroke-linecap: round; }
+.jd-dark-throb line:nth-child(1)  { opacity: 1; }
+.jd-dark-throb line:nth-child(2)  { opacity: 0.92; }
+.jd-dark-throb line:nth-child(3)  { opacity: 0.83; }
+.jd-dark-throb line:nth-child(4)  { opacity: 0.75; }
+.jd-dark-throb line:nth-child(5)  { opacity: 0.66; }
+.jd-dark-throb line:nth-child(6)  { opacity: 0.58; }
+.jd-dark-throb line:nth-child(7)  { opacity: 0.5; }
+.jd-dark-throb line:nth-child(8)  { opacity: 0.42; }
+.jd-dark-throb line:nth-child(9)  { opacity: 0.33; }
+.jd-dark-throb line:nth-child(10) { opacity: 0.25; }
+.jd-dark-throb line:nth-child(11) { opacity: 0.17; }
+.jd-dark-throb line:nth-child(12) { opacity: 0.08; }
+@keyframes jdDarkThrob { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* c — the segmented progress bar (Win95, indeterminate): an inset track, the
+   blocks stamped in the graph paper's own blue ink, filling in discrete
+   steps and dumping back. Static base: half-full. */
+.jd-dark-pbar {
+  display: block; width: 74%; height: 13px; overflow: hidden;
+  background: rgba(248, 243, 226, 0.65);
+  border: 1px solid rgba(51, 36, 15, 0.5);
+  box-shadow: inset 1px 1px 2px rgba(46, 34, 12, 0.3);
+}
+.jd-dark-pbar .fill {
+  display: block; height: 100%; width: 55%;
+  background: repeating-linear-gradient(90deg,
+    rgba(74, 98, 138, 0.85) 0 5px, transparent 5px 8px);
+}
+@keyframes jdDarkPbar { from { width: 0; } to { width: 102%; } }
+
+/* d — the loading dots: three stamped dots in a staggered wave */
+.jd-dark-dots { display: flex; gap: 8px; align-items: center; }
+.jd-dark-dots span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--tink-2);
+}
+@keyframes jdDarkDot {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-6px); }
+}
+
+/* ---- arrival / failure: the end poses live on the state classes ----------- */
+.jd-dark-result {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+.jd-dark-big {
+  font-family: var(--tform); font-size: 1.7rem; line-height: 1; color: var(--tink);
+}
+.jd-dark-verdict {
+  font-family: var(--tmono); font-size: 0.55rem;
+  letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
+  padding: 0 7px;   /* the longer per-code failure phrases wrap to two lines —
+                       keep them off the swatch's edges when they do */
+}
+.jd-dark-verdict .m { font-style: normal; }
+.jd-dark-sw[data-state="ok"] .jd-dark-verdict--ok { color: #4a6b18; }
+.jd-dark-sw[data-state="fail"] .jd-dark-verdict--fail { color: var(--tred); }
+
+/* arrived: the swatch settles near-level and the loop fades out */
+.jd-dark-sw[data-state="ok"] {
+  transform: rotate(var(--rot-flat));
+  box-shadow: 0 2px 5px -2px rgba(46, 34, 12, 0.4), 0 1px 2px rgba(46, 34, 12, 0.28);
+}
+@keyframes jdDarkSettle {
+  0%   { transform: rotate(var(--rot)) translateY(-4px); }
+  55%  { transform: rotate(calc(var(--rot-flat) - 1.2deg)) translateY(0); }
+  100% { transform: rotate(var(--rot-flat)); }
+}
+.jd-dark-sw[data-state="ok"] .jd-dark-well { opacity: 0; }
+.jd-dark-sw[data-state="ok"] .jd-dark-result { opacity: 1; }
+
+/* failed: a quick judder, then the indicator FREEZES mid-loop where it
+   stands, dimmed; the swatch edges red */
+.jd-dark-sw[data-state="fail"] {
+  transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97);
+  border-color: rgba(179, 64, 47, 0.6);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35),
+              inset 0 0 0 1px rgba(179, 64, 47, 0.35);
+}
+@keyframes jdDarkJolt {
+  0%   { transform: rotate(var(--rot)) scale(1); }
+  35%  { transform: rotate(calc(var(--rot) - 3deg)) scale(0.98); }
+  70%  { transform: rotate(calc(var(--rot) + 3.4deg)) scale(0.965); }
+  100% { transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97); }
+}
+.jd-dark-sw[data-state="fail"] .jd-dark-well { opacity: 0.45; }
+.jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
+.jd-dark-sw[data-state="fail"] .jd-dark-big { color: var(--tink-2); }
+
+/* ---- the wait slip, laid OVER the pile -------------------------------------
+   Centred on top of the four swatches, overlapping their inner corners, a
+   real drop shadow so it reads as a slip laid over the pile. The pencilled
+   line is ONE element so the owner can reword it in one place; the slow-timer
+   line sits under it, behind data-slow/hidden. */
+.jd-dark-wait {
+  position: absolute; left: 50%; top: 50%; z-index: 6;
+  width: 46%; min-height: 15%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  padding: 8px 10px;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(74, 53, 18, 0.30); border-radius: 2px;
+  box-shadow: 7px 11px 18px -6px rgba(20, 10, 2, 0.6),
+              2px 3px 7px -2px rgba(20, 10, 2, 0.45);
+}
+.jd-dark-line {
+  font-family: var(--thand); font-size: 1rem; color: var(--graphite);
+}
+.jd-dark-slow {
+  font-family: var(--tmono); font-size: var(--t-label); font-style: italic;
+  line-height: 1.45; text-align: center; color: var(--tink-2);
+}
+@keyframes jdDarkWaitRock {
+  from { transform: translate(-50%, -50%) rotate(-2.5deg); }
+  to   { transform: translate(-50%, -50%) rotate(-1.5deg); }
+}
+
+/* ---- motion: added, never assumed ------------------------------------------
+   Everything above is the static reduced-motion page; the loops only run for
+   visitors who haven't asked for stillness. */
 @media (prefers-reduced-motion: no-preference) {
-  .jd-turn-dots b { animation: jdTurnDot 1.5s infinite; }
-  .jd-turn-dots b:nth-child(2) { animation-delay: 0.25s; }
-  .jd-turn-dots b:nth-child(3) { animation-delay: 0.5s; }
+  .jd-dark-hg .hg          { animation: jdDarkHgFlip 3s linear infinite; }
+  .jd-dark-hg .hg-sand-top { animation: jdDarkSandTop 1.5s linear infinite; }
+  .jd-dark-hg .hg-sand-bot { animation: jdDarkSandBot 1.5s linear infinite; }
+  .jd-dark-throb .throb    { animation: jdDarkThrob 1.15s steps(12) infinite; }
+  .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
+  .jd-dark-dots span       { animation: jdDarkDot 1.25s ease-in-out infinite; }
+  .jd-dark-dots span:nth-child(2) { animation-delay: 0.16s; }
+  .jd-dark-dots span:nth-child(3) { animation-delay: 0.32s; }
+  .jd-dark-wait            { animation: jdDarkWaitRock 7s ease-in-out infinite alternate; }
+
+  /* arrival / failure theatrics — one-shot, then the state class holds */
+  .jd-dark-sw[data-state="ok"]   { animation: jdDarkSettle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1; }
+  .jd-dark-sw[data-state="fail"] { animation: jdDarkJolt 0.5s ease-in-out 1; }
+
+  /* arrived: the loop stops where it stands (the well fades over it).
+     failed: it FREEZES mid-loop. */
+  .jd-dark-sw[data-state="ok"] .hg, .jd-dark-sw[data-state="ok"] .hg-sand-top,
+  .jd-dark-sw[data-state="ok"] .hg-sand-bot, .jd-dark-sw[data-state="ok"] .throb,
+  .jd-dark-sw[data-state="ok"] .fill, .jd-dark-sw[data-state="ok"] .jd-dark-dots span,
+  .jd-dark-sw[data-state="fail"] .hg, .jd-dark-sw[data-state="fail"] .hg-sand-top,
+  .jd-dark-sw[data-state="fail"] .hg-sand-bot, .jd-dark-sw[data-state="fail"] .throb,
+  .jd-dark-sw[data-state="fail"] .fill, .jd-dark-sw[data-state="fail"] .jd-dark-dots span {
+    animation-play-state: paused;
+  }
 }
-@keyframes jdTurnDot { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
-/* the slow-turn notice: a slip clipped to the form, not an error */
-.jd-turn-delay {
-  margin: 0.6rem 0 0; padding: 0.4rem 0.6rem;
-  border: 1px dashed var(--trule);
-  background: rgba(255, 250, 232, 0.4);
-  font-size: var(--t-body); line-height: 1.5; font-style: italic; color: var(--tink-2);
+@media (prefers-reduced-motion: reduce) {
+  .jd-dark-hg .hg, .jd-dark-hg .hg-sand-top, .jd-dark-hg .hg-sand-bot,
+  .jd-dark-throb .throb, .jd-dark-pbar .fill, .jd-dark-dots span,
+  .jd-dark-wait, .jd-dark-sw {
+    animation: none !important;
+  }
+  .jd-dark-sw, .jd-dark-well, .jd-dark-result { transition: none; }
 }
 
 /* ============================================================================

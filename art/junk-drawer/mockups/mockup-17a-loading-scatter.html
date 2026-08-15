@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 17A &middot; THE LOADING SCATTER (waiting card)</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 17A · "THE LOADING SCATTER"  (the darkroom, rev. 2)
+   ----------------------------------------------------------------------------
+   Round-17 REVISION HYBRID: 16e's scrap sizes and pile layout, 16f's calmer
+   current-card-sibling tone, plus the owner's new notes:
+
+     1. GRAPH-PAPER SLOTS. The four scraps are no longer blank paper — each is
+        the report card's graph-paper "photograph" swatch, background/border/
+        shadow copied VERBATIM from .jd-turn-art (junk-drawer.css 1893–1903).
+        While a machine works, its print swatch is still being exposed.
+     2. 16e's SIZE kept (~41% × 33% per scrap, 2×2), but the toss is TAMED:
+        ±1.4°–1.8° instead of 16e's −7°/+5.5°/+4°/−5°.
+     3. LOADING ANIMATIONS, NOT DRAWING HANDS. Each slot runs its own
+        OLD-SCHOOL WEB WAIT INDICATOR, printed in ink on the graph paper:
+          A — the flipping hourglass (classic Windows wait cursor)
+          B — the radial-tick throbber (classic browser chrome spinner)
+          C — the segmented block progress bar (Win95, indeterminate loop)
+          D — the bouncing "loading dots"
+        Each lives in a fixed-height well; the pencilled corner letter A–D is
+        legible in every state.
+     4. THE "PLEASE WAIT…" SLIP LIES ON TOP — a fifth, smaller card centred
+        OVER the pile (z-index above, real drop shadow, overlapping the inner
+        corners). Freed from layout, the 2×2 gaps tighten vertically.
+     5. Round-16 feedback stands: square card, no FORM JD-1 badge, no title
+        besides the slip, no table rows.
+
+   States: pending (the retro loop runs) → arrived (✓ "arrived", ok-green
+   #4a6b18, the loop settles and fades) / failed (✗ "didn't survive", ink red
+   #b3402f, the indicator FREEZES mid-loop). MOTION IS ADDED, NEVER ASSUMED:
+   base styles are the static pending frames, every animation lives under
+   @media (prefers-reduced-motion: no-preference), a reduce block stills the
+   rest, and the end-state poses live on the state classes themselves.
+
+   The grain/mottle data-URIs are copied VERBATIM from junk-drawer.css lines
+   1586–1587 (stitchTiles="stitch", seeds 7 and 23 — never reseed). No external
+   assets: system font stacks only, opens clean over file://.
+
+   DEMO SCAFFOLDING ONLY (not the design): the wood desk, the scrim dim, the
+   corner tag, the replay button, and the one inline script that walks the
+   slots — arrivals ~3s / ~6s / ~9s, one loss ~12s, then it holds.
+   ========================================================================== */
+
+:root {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tok: #4a6b18;             /* the production slot-ok green (.jd-turn-st--ok) */
+  --graphite: #4b4030;        /* the visitor's pencil */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  /* VERBATIM from junk-drawer.css lines 1586–1587 — do not reseed */
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* the drawer interior the card floats over (wood bg copied verbatim from
+   mockup-15a via 16e) */
+body {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 16px 24px;
+  font-family: var(--tmono);
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+/* the scrim dim, as in the real modal */
+body::before {
+  content: ""; position: fixed; inset: 0;
+  background: rgba(10, 5, 1, 0.45);
+  pointer-events: none;
+}
+
+.demo-tag {
+  position: fixed; top: 8px; left: 10px; z-index: 500;
+  max-width: 46ch;
+  font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase;
+  line-height: 1.7; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.74); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 5px 9px;
+}
+.demo-tag b { color: #f3c98a; }
+@media (max-width: 500px) { .demo-tag { display: none; } }
+
+/* ---- the square sheet ---------------------------------------------------- */
+.sheet {
+  position: relative; z-index: 1;
+  /* square, and honest at 375px: never wider than the viewport's short side —
+     ~94vw on a phone, centred in a 1280×800 desktop window */
+  width: min(560px, calc(100vw - 32px), calc(100vh - 110px));
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  color: var(--tink);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* mottle + the printed double border, house style */
+.sheet::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: var(--tmottle);
+}
+.sheet::after {
+  content: ""; position: absolute; inset: 5px; pointer-events: none;
+  border: 1px solid var(--trule);
+  outline: 1px solid var(--trule-2);
+  outline-offset: 2px;
+}
+
+/* ---- the four graph-paper scraps ------------------------------------------
+   16e's ~41% × 33% scraps in a 2×2, but the toss is tamed to ±1.4°–1.8°
+   (--rot), settling near-level on arrival (--rot-flat). The vertical gaps are
+   TIGHTER than 16e (tops 9%, bottoms 9%) because the wait slip no longer
+   takes up layout space — it floats over the middle. The graph-paper print
+   swatch below is copied VERBATIM from .jd-turn-art (junk-drawer.css
+   1893–1903) — the same "photograph" the finished drawings land in. */
+.scrap {
+  position: absolute;
+  width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  transform: rotate(var(--rot));
+  transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
+}
+.scrap-a { left: 5.5%; top: 9%;    --rot: -1.8deg; --rot-flat: -0.7deg; }
+.scrap-b { right: 5.5%; top: 9.5%;  --rot: 1.5deg;  --rot-flat: 0.5deg; }
+.scrap-c { left: 6.5%; bottom: 9.5%; --rot: 1.4deg; --rot-flat: -0.4deg; }
+.scrap-d { right: 6.5%; bottom: 9%; --rot: -1.6deg; --rot-flat: 0.8deg; }
+
+/* the pencilled corner letter — readable from the first frame in every
+   state, because the reveal card references A–D */
+.corner-letter {
+  position: absolute; top: 3px; left: 7px; z-index: 3;
+  font-family: var(--thand);
+  font-size: 0.9rem;
+  color: var(--graphite);
+  opacity: 0.85;
+}
+
+/* ---- the fixed-height animation well --------------------------------------
+   One per scrap; the swap to ✓/✗ never shifts the layout. Theatrics are
+   aria-hidden — the live region carries the news. */
+.well {
+  position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+
+/* A — THE HOURGLASS (classic Windows wait cursor): sand drains from the top
+   bulb into the bottom, then the whole glass FLIPS and it starts over. The
+   flip is a hard snap (49.99% → 50%), the way the old cursor blinked between
+   its two frames. Static base: top bulb full, bottom half-full. */
+.hg {
+  transform-box: fill-box; transform-origin: center;
+}
+.hg-frame {
+  fill: none; stroke: var(--tink-2); stroke-width: 1.6; stroke-linejoin: round;
+}
+.hg-sand { fill: rgba(51, 36, 15, 0.55); }
+.hg-sand-top {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  transform: scaleY(1);
+}
+.hg-sand-bot {
+  transform-box: fill-box; transform-origin: 50% 100%;
+  transform: scaleY(0.55);
+}
+@keyframes hg-flip {
+  0%, 49.99% { transform: rotate(0deg); }
+  50%, 100%  { transform: rotate(180deg); }
+}
+@keyframes hg-sand-top { from { transform: scaleY(1); }    to { transform: scaleY(0.12); } }
+@keyframes hg-sand-bot { from { transform: scaleY(0.12); } to { transform: scaleY(1); } }
+
+/* B — THE THROBBER (classic browser-chrome spinner): twelve radial ticks in
+   a fading ring; the ring turns in twelve hard steps, so the bright head
+   chases its own tail. Static base: the full ring, head at twelve o'clock. */
+.throb {
+  transform-box: fill-box; transform-origin: center;
+}
+.throb line {
+  stroke: var(--tink-2); stroke-width: 2.4; stroke-linecap: round;
+}
+.throb line:nth-child(1)  { opacity: 1; }
+.throb line:nth-child(2)  { opacity: 0.92; }
+.throb line:nth-child(3)  { opacity: 0.83; }
+.throb line:nth-child(4)  { opacity: 0.75; }
+.throb line:nth-child(5)  { opacity: 0.66; }
+.throb line:nth-child(6)  { opacity: 0.58; }
+.throb line:nth-child(7)  { opacity: 0.5; }
+.throb line:nth-child(8)  { opacity: 0.42; }
+.throb line:nth-child(9)  { opacity: 0.33; }
+.throb line:nth-child(10) { opacity: 0.25; }
+.throb line:nth-child(11) { opacity: 0.17; }
+.throb line:nth-child(12) { opacity: 0.08; }
+@keyframes throb-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* C — THE SEGMENTED PROGRESS BAR (Win95, indeterminate): an inset track; the
+   blue blocks of the graph paper's own ink fill it left to right in discrete
+   steps, then dump and refill. Static base: half-full. */
+.pbar {
+  width: 74%; height: 13px; overflow: hidden;
+  background: rgba(248, 243, 226, 0.65);
+  border: 1px solid rgba(51, 36, 15, 0.5);
+  box-shadow: inset 1px 1px 2px rgba(46, 34, 12, 0.3);
+}
+.pbar-fill {
+  display: block; height: 100%; width: 55%;
+  background: repeating-linear-gradient(90deg,
+    rgba(74, 98, 138, 0.85) 0 5px, transparent 5px 8px);
+}
+@keyframes pbar-fill { from { width: 0; } to { width: 102%; } }
+
+/* D — THE LOADING DOTS: three stamped dots bounce in a staggered wave, the
+   late-90s "loading…" ellipsis made physical. Static base: the row at rest. */
+.dots { display: flex; gap: 8px; align-items: center; }
+.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--tink-2);
+}
+@keyframes dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-6px); }
+}
+
+/* ---- arrival / failure ------------------------------------------------------
+   The end poses live on the state classes; the keyframes only get them there
+   with feeling (and only under no-preference). */
+.result {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+.big-letter {
+  font-family: var(--tform);
+  font-size: 1.7rem; line-height: 1;
+  color: var(--tink);
+}
+.verdict {
+  font-family: var(--tmono);
+  font-size: 0.55rem; letter-spacing: 0.14em; text-transform: uppercase;
+}
+.verdict .m { font-style: normal; }
+.verdict--fail { display: none; }
+
+/* arrived: the swatch settles near-level, the loop fades out, ✓ inks green */
+.scrap[data-state="ok"] {
+  transform: rotate(var(--rot-flat));
+  box-shadow: 0 2px 5px -2px rgba(46, 34, 12, 0.4), 0 1px 2px rgba(46, 34, 12, 0.28);
+}
+@keyframes settle {
+  0%   { transform: rotate(var(--rot)) translateY(-4px); }
+  55%  { transform: rotate(calc(var(--rot-flat) - 1.2deg)) translateY(0); }
+  100% { transform: rotate(var(--rot-flat)); }
+}
+.scrap[data-state="ok"] .well { opacity: 0; }
+.scrap[data-state="ok"] .result { opacity: 1; }
+.scrap[data-state="ok"] .verdict { color: var(--tok); }
+
+/* failed: a quick judder, then the retro indicator FREEZES mid-loop where it
+   stands, dimmed; the swatch edges red and the ✗ reads in ink red */
+.scrap[data-state="fail"] {
+  transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97);
+  border-color: rgba(179, 64, 47, 0.6);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35),
+              inset 0 0 0 1px rgba(179, 64, 47, 0.35);
+}
+@keyframes fail-jolt {
+  0%   { transform: rotate(var(--rot)) scale(1); }
+  35%  { transform: rotate(calc(var(--rot) - 3deg)) scale(0.98); }
+  70%  { transform: rotate(calc(var(--rot) + 3.4deg)) scale(0.965); }
+  100% { transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97); }
+}
+.scrap[data-state="fail"] .well { opacity: 0.45; }
+.scrap[data-state="fail"] .result { opacity: 1; }
+.scrap[data-state="fail"] .verdict--ok { display: none; }
+.scrap[data-state="fail"] .verdict--fail { display: inline; color: var(--tred); }
+.scrap[data-state="fail"] .big-letter { color: var(--tink-2); }
+
+/* ---- the fifth card: "please wait…", laid OVER the pile --------------------
+   No longer in the layout flow — it floats centred on top of the four
+   swatches, overlapping their inner corners, with a real drop shadow so it
+   reads as a slip laid over the pile. ONE element carries the words, in the
+   visitor's graphite hand, so the owner can reword it in one place. */
+.wait-card {
+  position: absolute; left: 50%; top: 50%; z-index: 6;
+  width: 42%; height: 18%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(74, 53, 18, 0.30);
+  border-radius: 2px;
+  box-shadow: 7px 11px 18px -6px rgba(20, 10, 2, 0.6),
+              2px 3px 7px -2px rgba(20, 10, 2, 0.45);
+}
+.wait-card span {
+  font-family: var(--thand);
+  font-size: 1rem;
+  color: var(--graphite);
+}
+.wait-card.is-done { box-shadow: 4px 7px 12px -5px rgba(20, 10, 2, 0.5); }
+.wait-card.is-done span { font-size: 0.8rem; opacity: 0.75; }
+@keyframes wait-rock {
+  from { transform: translate(-50%, -50%) rotate(-2.5deg); }
+  to   { transform: translate(-50%, -50%) rotate(-1.5deg); }
+}
+
+/* ---- replay (demo scaffolding, deliberately unobtrusive) ------------------- */
+.replay {
+  position: absolute; right: 10px; bottom: 8px; z-index: 7;
+  font-family: var(--tmono);
+  font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-2);
+  background: none; border: none;
+  border-bottom: 1px solid var(--trule);
+  padding: 1px 2px;
+  cursor: pointer;
+}
+.replay:hover, .replay:focus-visible { color: var(--tink); border-bottom-color: var(--tink); }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ---- MOTION IS ADDED, NEVER ASSUMED ----------------------------------------
+   Everything above is the static reduced-motion page: hourglass mid-drain,
+   throbber ring at rest, bar half-full, dots in a row. The loops only run
+   for visitors who haven't asked for stillness. */
+@media (prefers-reduced-motion: no-preference) {
+  .hg          { animation: hg-flip 3s linear infinite; }
+  .hg-sand-top { animation: hg-sand-top 1.5s linear infinite; }
+  .hg-sand-bot { animation: hg-sand-bot 1.5s linear infinite; }
+  .throb       { animation: throb-spin 1.15s steps(12) infinite; }
+  .pbar-fill   { animation: pbar-fill 2.7s steps(12) infinite; }
+  .dot         { animation: dot-bounce 1.25s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.16s; }
+  .dot:nth-child(3) { animation-delay: 0.32s; }
+  .wait-card   { animation: wait-rock 7s ease-in-out infinite alternate; }
+
+  /* arrival / failure theatrics — one-shot, then the state class holds */
+  .scrap[data-state="ok"]   { animation: settle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1; }
+  .scrap[data-state="fail"] { animation: fail-jolt 0.5s ease-in-out 1; }
+
+  /* arrived: the loop stops outright. failed: it FREEZES mid-loop. */
+  .scrap[data-state="ok"] .hg, .scrap[data-state="ok"] .hg-sand-top,
+  .scrap[data-state="ok"] .hg-sand-bot, .scrap[data-state="ok"] .throb,
+  .scrap[data-state="ok"] .pbar-fill, .scrap[data-state="ok"] .dot,
+  .scrap[data-state="fail"] .hg, .scrap[data-state="fail"] .hg-sand-top,
+  .scrap[data-state="fail"] .hg-sand-bot, .scrap[data-state="fail"] .throb,
+  .scrap[data-state="fail"] .pbar-fill, .scrap[data-state="fail"] .dot {
+    animation-play-state: paused;
+  }
+}
+
+/* ---- prefers-reduced-motion: the still room ---------------------------------
+   Base styles are already the static pending frames, so this is the belt and
+   braces: no loops, no one-shots, no transitions; the state classes' own
+   transforms put each scrap in its final pose instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .hg, .hg-sand-top, .hg-sand-bot, .throb, .pbar-fill, .dot,
+  .wait-card, .scrap {
+    animation: none !important;
+  }
+  .scrap, .well, .result { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<p class="demo-tag">MOCKUP <b>17A · THE LOADING SCATTER</b> — 16e's scraps on
+graph paper, 16f's calm; four retro wait indicators; the slip floats on top.
+Self-demo: arrivals ~3s / ~6s / ~9s, one loss ~12s. Square card — fits 375px
+phone, centred at 1280×800.</p>
+
+<main class="sheet" aria-label="Please wait — four drawings are being made">
+
+  <!-- A — the flipping hourglass -->
+  <div class="scrap scrap-a" data-slot="a" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">a</span>
+    <div class="well" aria-hidden="true">
+      <svg width="34" height="42" viewBox="0 0 36 44">
+        <g class="hg">
+          <path class="hg-sand hg-sand-top" d="M10.5 8 H25.5 L20 20 H16 Z" />
+          <path class="hg-sand hg-sand-bot" d="M16 24 H20 L25.5 36 H10.5 Z" />
+          <path class="hg-frame" d="M7 4 H29 L21.5 22 L29 40 H7 L14.5 22 Z" />
+        </g>
+      </svg>
+    </div>
+    <div class="result">
+      <span class="big-letter">A</span>
+      <span class="verdict verdict--ok"><span class="m" aria-hidden="true">✓</span> arrived</span>
+      <span class="verdict verdict--fail"><span class="m" aria-hidden="true">✗</span> didn&rsquo;t survive</span>
+    </div>
+  </div>
+
+  <!-- B — the radial-tick throbber -->
+  <div class="scrap scrap-b" data-slot="b" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">b</span>
+    <div class="well" aria-hidden="true">
+      <svg width="40" height="40" viewBox="0 0 40 40">
+        <g class="throb">
+          <line x1="20" y1="5" x2="20" y2="12" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(30 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(60 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(90 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(120 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(150 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(180 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(210 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(240 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(270 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(300 20 20)" />
+          <line x1="20" y1="5" x2="20" y2="12" transform="rotate(330 20 20)" />
+        </g>
+      </svg>
+    </div>
+    <div class="result">
+      <span class="big-letter">B</span>
+      <span class="verdict verdict--ok"><span class="m" aria-hidden="true">✓</span> arrived</span>
+      <span class="verdict verdict--fail"><span class="m" aria-hidden="true">✗</span> didn&rsquo;t survive</span>
+    </div>
+  </div>
+
+  <!-- C — the segmented block progress bar -->
+  <div class="scrap scrap-c" data-slot="c" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">c</span>
+    <div class="well" aria-hidden="true">
+      <div class="pbar"><span class="pbar-fill"></span></div>
+    </div>
+    <div class="result">
+      <span class="big-letter">C</span>
+      <span class="verdict verdict--ok"><span class="m" aria-hidden="true">✓</span> arrived</span>
+      <span class="verdict verdict--fail"><span class="m" aria-hidden="true">✗</span> didn&rsquo;t survive</span>
+    </div>
+  </div>
+
+  <!-- D — the bouncing loading dots -->
+  <div class="scrap scrap-d" data-slot="d" data-state="pending">
+    <span class="corner-letter" aria-hidden="true">d</span>
+    <div class="well" aria-hidden="true">
+      <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+    </div>
+    <div class="result">
+      <span class="big-letter">D</span>
+      <span class="verdict verdict--ok"><span class="m" aria-hidden="true">✓</span> arrived</span>
+      <span class="verdict verdict--fail"><span class="m" aria-hidden="true">✗</span> didn&rsquo;t survive</span>
+    </div>
+  </div>
+
+  <!-- the fifth card — the only words on the sheet, one editable element -->
+  <div class="wait-card" data-wait-card><span data-wait-line>please wait&hellip;</span></div>
+
+  <button class="replay" type="button" data-replay>↻ replay</button>
+  <div class="sr-only" role="status" aria-live="polite" data-live></div>
+</main>
+
+<script>
+/* DEMO SCAFFOLDING ONLY — the production card is painted from live slot
+   events; this stands in for them. Arrivals ~3s / ~6s / ~9s, one loss ~12s,
+   then the card holds the end state. */
+(function () {
+  'use strict';
+  var PLAN = [
+    ['a', 3000,  'ok'],
+    ['c', 6000,  'ok'],
+    ['b', 9000,  'ok'],
+    ['d', 12000, 'fail']
+  ];
+  var live = document.querySelector('[data-live]');
+  var waitCard = document.querySelector('[data-wait-card]');
+  var waitLine = document.querySelector('[data-wait-line]');
+  var timers = [];
+
+  function settle(slot, outcome) {
+    var el = document.querySelector('.scrap[data-slot="' + slot + '"]');
+    if (!el || el.getAttribute('data-state') !== 'pending') return;
+    el.setAttribute('data-state', outcome);
+    live.textContent = outcome === 'ok'
+      ? 'Slot ' + slot.toUpperCase() + ' arrived.'
+      : 'Slot ' + slot.toUpperCase() + ' didn’t survive.';
+
+    /* every swatch resolved: the slip quiets to a summary (16f was right) */
+    if (!document.querySelector('.scrap[data-state="pending"]')) {
+      waitLine.textContent = 'three arrived · one didn’t survive';
+      waitCard.classList.add('is-done');
+      live.textContent = 'Three drawings arrived; one didn’t survive.';
+    }
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.querySelectorAll('.scrap').forEach(function (el) {
+      el.setAttribute('data-state', 'pending');
+    });
+    waitLine.textContent = 'please wait…';
+    waitCard.classList.remove('is-done');
+    live.textContent = '';
+    PLAN.forEach(function (step) {
+      timers.push(setTimeout(function () { settle(step[0], step[2]); }, step[1]));
+    });
+  }
+
+  document.querySelector('[data-replay]').addEventListener('click', reset);
+  reset();
+}());
+</script>
+</body>
+</html>

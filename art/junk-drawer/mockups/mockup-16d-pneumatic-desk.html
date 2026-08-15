@@ -1,0 +1,637 @@
+<title>JUNK DRAWER · MOCKUP 16D · THE PNEUMATIC DESK</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 16D · THE PNEUMATIC DESK  (the darkroom, round 16)
+
+   ONE CARD: the waiting view after PUSH FOR JUNK, while four blind machines
+   draw. The square card is a DESKTOP SEEN IN PLAN VIEW. Four delivery
+   mechanisms cross it, one per anonymous slot, each with its own loop:
+
+     A  pneumatic tube   — a capsule rattles up and down a brass pipe
+     B  conveyor belt    — a twine-tied parcel trundles along the top edge
+     C  dumbwaiter       — a rope platform creeps up a shaft in ratchet steps
+     D  clerk's spike    — a fresh sheet hovers, dithering, above the spindle
+
+   ARRIVAL  = the mechanism settles and a sealed envelope lands on the leather
+              blotter, stamped with the slot letter; the tag reads "✓ arrived".
+   FAILURE  = the mechanism jams where it stands (ink red), no envelope; the
+              blotter keeps only a dashed outline and the tag reads
+              "✗ didn't survive".
+
+   No masthead, no form number: the only words on the card are "please wait…"
+   typed on a slip pinned under a glass paperweight, and the four tags.
+
+   Owner's round-16 rules honoured: square card · four distinct animations ·
+   no table rows · states legible (pending / arrived / didn't survive) ·
+   slot letters always readable · prefers-reduced-motion = static poses ·
+   self-demo (A 3s, B 6s, C 9s, D jams 12s, then holds; replay below).
+
+   Tokens and the grain/mottle tiles are copied VERBATIM from
+   junk-drawer.css (.jd-turn-scrim) — seeds 7 and 23, never regenerate.
+   No external assets: Courier Prime falls back to Courier New locally.
+   ========================================================================== */
+
+:root {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tstamp: #a8332a;
+  --graphite: #4b4030;
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* brass, lifted from the .jd-turn-go gradient */
+  --brass-hi: #e2c07a;
+  --brass: #b3873a;
+  --brass-lo: #7a5722;
+  /* state colours, lightened for legibility on the dark desktop */
+  --tok: #a9c46a;
+  --tfail: #e0705c;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+button { font: inherit; color: inherit; background: none; border: 0; }
+body {
+  background: #20150a;
+  color: #e9dcb9;
+  font-family: var(--tmono);
+  padding: 2rem 1rem 4rem;
+}
+
+/* ---------------- page furniture (mockup chrome, not the card) ------------- */
+.mock-title {
+  font-size: 0.85rem; letter-spacing: 0.3em; text-align: center;
+  font-weight: 700; text-transform: uppercase; margin-bottom: 0.45rem;
+}
+.mock-title b { color: var(--tfail); }
+.mock-intro {
+  font-size: 0.7rem; letter-spacing: 0.06em; text-align: center;
+  color: #a8997a; max-width: 700px; margin: 0 auto 1.6rem; line-height: 1.9;
+}
+.demo { display: flex; flex-direction: column; align-items: center; gap: 1rem; }
+.mock-note {
+  font-size: 0.62rem; letter-spacing: 0.08em; color: #a8997a;
+  display: flex; gap: 1.2em; align-items: center; justify-content: center;
+  flex-wrap: wrap; text-align: center;
+}
+.pd-replay {
+  min-height: 30px; padding: 0 0.9rem;
+  font-family: var(--tmono); font-size: 0.62rem;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tpaper);
+  background: rgba(236, 224, 191, 0.10);
+  border: 1px solid rgba(226, 192, 122, 0.4);
+  cursor: pointer;
+}
+.pd-replay:hover { background: rgba(236, 224, 191, 0.2); }
+.pd-replay:focus-visible { outline: 2px solid var(--tfail); outline-offset: 2px; }
+.sr {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* ============================================================================
+   THE CARD — a square desktop in plan view. container-type: size lets every
+   part scale in cqw/cqh, so the 375px phone and the desktop render the SAME
+   drawing, just smaller.
+   ========================================================================== */
+.pd-card {
+  container-type: size;
+  position: relative;
+  width: min(540px, 94vw, 78vh);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  color: var(--tink);
+  font-family: var(--tmono);
+  /* muted walnut desktop, kept dark so the paper/brass palette sits on top */
+  background: linear-gradient(135deg, #6d4a26 0%, #553a1e 52%, #462e15 100%);
+  border: 1px solid rgba(24, 15, 5, 0.85);
+  box-shadow: 14px 22px 34px -10px rgba(0, 0, 0, 0.7),
+              3px 6px 12px -4px rgba(0, 0, 0, 0.55);
+}
+/* the gilt inset rule — the desk's tooled border */
+.pd-card::before {
+  content: ""; position: absolute; inset: 2.2%; z-index: 4; pointer-events: none;
+  border: 1px solid rgba(226, 192, 122, 0.30);
+  box-shadow: inset 0 0 0 1px rgba(24, 15, 5, 0.5);
+}
+/* wood grain + mottle, the verbatim paper tiles doing duty as desk wear */
+.pd-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: var(--tgrain), var(--tmottle);
+  background-size: 170px 170px, 420px 420px;
+}
+
+/* ---- the blotter: where every delivery lands ------------------------------ */
+.pd-blotter {
+  position: absolute; left: 21%; top: 26%; width: 58%; height: 50%; z-index: 1;
+  background: linear-gradient(160deg, #43321f, #33240f 70%);
+  border: 1px solid rgba(16, 10, 3, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(226, 192, 122, 0.28),
+              inset 0 3px 10px rgba(0, 0, 0, 0.55),
+              0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.pd-pads {
+  position: absolute; inset: 8%;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 8%;
+}
+.pd-pad { position: relative; }
+/* the dashed landing imprint: visible while pending, stamped with the letter,
+   so A–D read from the first frame */
+.pd-ghost {
+  position: absolute; inset: 4%;
+  border: 1px dashed rgba(236, 224, 191, 0.42);
+  display: flex; align-items: center; justify-content: center;
+}
+.pd-ghost b {
+  font-family: var(--tform); font-weight: 700; font-size: 6cqw;
+  color: rgba(236, 224, 191, 0.5);
+}
+/* the sealed envelope — hidden until the slot lands */
+.pd-env {
+  position: absolute; inset: 4%; z-index: 2;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(48, 34, 12, 0.55);
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.45);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0;
+  transform: translateY(-26%) rotate(-9deg) scale(1.06);
+}
+/* the flap */
+.pd-env::before {
+  content: ""; position: absolute; left: 0; right: 0; top: 0; height: 48%;
+  background: linear-gradient(180deg, #e6d6b0, #d8c593);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  border-bottom: 1px solid rgba(48, 34, 12, 0.28);
+}
+/* the wax seal */
+.pd-env::after {
+  content: ""; position: absolute; left: 50%; top: 34%; width: 24%; aspect-ratio: 1;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #c95443, #a8332a 60%, #7e241d);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.pd-env b {
+  position: relative; z-index: 1; margin-bottom: 6%;
+  font-family: var(--tform); font-weight: 700; font-size: 6.5cqw;
+  line-height: 1; color: var(--tink);
+}
+.pd-pad.is-ok .pd-env { opacity: 1; transform: rotate(-2deg); }
+.pd-pad.is-ok .pd-ghost { opacity: 0; }
+.pd-pad.is-fail .pd-ghost { border-color: rgba(224, 112, 92, 0.85); }
+.pd-pad.is-fail .pd-ghost b { color: var(--tfail); }
+/* the ✓ / ✗ corner mark on the pad */
+.pd-pad .pd-mark {
+  display: none; position: absolute; right: -2%; top: -8%; z-index: 3;
+  font-family: var(--tform); font-weight: 700; font-size: 4.5cqw; line-height: 1;
+}
+.pd-pad.is-ok .pd-mark { display: block; color: var(--tok); }
+.pd-pad.is-fail .pd-mark { display: block; color: var(--tfail); }
+
+/* ---- the tags: the only status words on the card --------------------------- */
+.pd-tag {
+  position: absolute; z-index: 5;
+  display: flex; align-items: center; gap: 0.55em;
+  max-width: 30%;
+  padding: 0.35em 0.6em;
+  font-size: 2.4cqw; letter-spacing: 0.06em; line-height: 1.35;
+  color: #e9dcb9;
+  background: rgba(26, 16, 6, 0.62);
+  border: 1px solid rgba(226, 192, 122, 0.32);
+}
+.pd-tag b {
+  flex: 0 0 auto;
+  font-family: var(--tform); font-weight: 700; font-size: 1.1em;
+  border: 1px solid rgba(226, 192, 122, 0.45);
+  background: rgba(244, 234, 208, 0.12);
+  padding: 0 0.35em;
+}
+.pd-tag.is-ok .w { color: var(--tok); }
+.pd-tag.is-fail { border-color: rgba(224, 112, 92, 0.6); }
+.pd-tag.is-fail .w { color: var(--tfail); }
+.pd-tag--a { left: 3%; top: 74.5%; }
+.pd-tag--b { left: 19%; top: 16.8%; }
+.pd-tag--c { left: 75%; top: 80%; }
+.pd-tag--d { left: 68%; top: 88.5%; }
+
+/* ============================================================================
+   MECHANISM A — the pneumatic tube (left edge). Capsule rattles up the pipe.
+   ========================================================================== */
+.pd-mech--a { position: absolute; left: 4%; top: 7%; width: 9%; height: 64%; z-index: 2; }
+.pd-pipe {
+  position: absolute; left: 30%; top: 0; width: 40%; height: 100%;
+  border-radius: 1.6cqw;
+  background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi) 30%,
+    #fff0c8 42%, var(--brass) 60%, #5d3f18);
+  box-shadow: 2px 3px 5px rgba(0, 0, 0, 0.45), inset 0 0 0 1px rgba(58, 40, 14, 0.6);
+}
+/* the dark slot the capsule travels in */
+.pd-pipe::before {
+  content: ""; position: absolute; left: 42%; top: 2%; width: 16%; height: 96%;
+  background: rgba(26, 16, 6, 0.55); border-radius: 1px;
+}
+/* a collar ring near the top */
+.pd-pipe::after {
+  content: ""; position: absolute; left: -16%; top: 5%; width: 132%; height: 3.5%;
+  background: linear-gradient(90deg, #5d3f18, var(--brass), #5d3f18);
+  border-radius: 2px; border: 1px solid rgba(58, 40, 14, 0.5);
+}
+.pd-receiver {
+  position: absolute; left: 4%; bottom: -1.5%; width: 92%; height: 9%;
+  background: radial-gradient(ellipse at 50% 18%, var(--brass-hi), var(--brass-lo) 72%);
+  border: 1px solid rgba(58, 40, 14, 0.7);
+  border-radius: 14% 14% 46% 46%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+.pd-capsule {
+  position: absolute; left: 22%; top: 2%; width: 56%; height: 11%;
+  transform: translateY(300%);            /* reduced-motion pose: mid-pipe */
+}
+.pd-capsule i {
+  display: block; position: relative; width: 100%; height: 100%;
+  border-radius: 1.2cqw;
+  background: linear-gradient(180deg, #caa15a, #8a6228);
+  border: 1px solid rgba(58, 40, 14, 0.75);
+}
+/* brass end caps */
+.pd-capsule i::before, .pd-capsule i::after {
+  content: ""; position: absolute; left: -7%; width: 114%; height: 22%;
+  background: linear-gradient(90deg, var(--brass-lo), var(--brass-hi), var(--brass-lo));
+  border-radius: 2px; border: 1px solid rgba(58, 40, 14, 0.5);
+}
+.pd-capsule i::before { top: -7%; }
+.pd-capsule i::after { bottom: -7%; }
+@keyframes pdCapsule {
+  0%, 8%   { transform: translateY(0); }
+  46%, 54% { transform: translateY(690%); }
+  92%, 100% { transform: translateY(0); }
+}
+@keyframes pdRattle { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.pd-mech--a.is-ok .pd-capsule { animation: none; transform: translateY(690%); }
+.pd-mech--a.is-ok .pd-capsule i { animation: none; }
+.pd-mech--a.is-fail .pd-capsule { animation: none; transform: translateY(320%) rotate(7deg); }
+.pd-mech--a.is-fail .pd-capsule i { animation: none; }
+.pd-mech--a.is-fail .pd-pipe {
+  box-shadow: 0 0 0 2px rgba(179, 64, 47, 0.7), 2px 3px 5px rgba(0, 0, 0, 0.45);
+}
+
+/* ============================================================================
+   MECHANISM B — the conveyor belt (top edge). Parcel trundles left to right.
+   ========================================================================== */
+.pd-mech--b { position: absolute; left: 19%; top: 6%; width: 57%; height: 9.5%; z-index: 2; }
+.pd-belt {
+  position: absolute; left: 5%; right: 5%; top: 32%; height: 38%;
+  background: repeating-linear-gradient(90deg,
+    #3d2c16 0 1.4cqw, #54391c 1.4cqw 2.8cqw);
+  border: 1px solid rgba(16, 10, 3, 0.8);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+@keyframes pdBelt { from { background-position: 0 0; } to { background-position: 2.8cqw 0; } }
+.pd-roller {
+  position: absolute; top: 12%; width: 10%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass-lo) 62%, #4a3118);
+  border: 1px solid rgba(58, 40, 14, 0.7);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+}
+.pd-roller::before {
+  content: ""; position: absolute; left: 47%; top: 12%; width: 6%; height: 76%;
+  background: rgba(58, 40, 14, 0.55);
+}
+.pd-roller.l { left: 1%; }
+.pd-roller.r { right: 1%; }
+.pd-parcel {
+  position: absolute; left: 5%; top: -24%; width: 12%; height: 54%;
+  background: linear-gradient(180deg, #d9c391, #bfa268);
+  border: 1px solid rgba(74, 53, 18, 0.6);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+  transform: translateX(280%);           /* reduced-motion pose: mid-belt */
+}
+/* the twine */
+.pd-parcel::before {
+  content: ""; position: absolute; left: 46%; top: 0; width: 8%; height: 100%;
+  background: rgba(122, 87, 34, 0.55);
+}
+.pd-parcel::after {
+  content: ""; position: absolute; top: 46%; left: 0; height: 8%; width: 100%;
+  background: rgba(122, 87, 34, 0.55);
+}
+@keyframes pdParcel {
+  0%   { transform: translateX(-130%); opacity: 0; }
+  6%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { transform: translateX(790%); opacity: 0; }
+}
+.pd-mech--b.is-ok .pd-belt, .pd-mech--b.is-fail .pd-belt { animation: none; }
+.pd-mech--b.is-ok .pd-roller::before, .pd-mech--b.is-fail .pd-roller::before { animation: none; }
+.pd-mech--b.is-ok .pd-parcel { animation: none; opacity: 0; }
+.pd-mech--b.is-fail .pd-parcel {
+  animation: none; transform: translateX(380%) rotate(8deg);
+  border-color: var(--tred);
+}
+.pd-mech--b.is-fail .pd-belt { box-shadow: 0 0 0 2px rgba(179, 64, 47, 0.7); }
+
+/* ============================================================================
+   MECHANISM C — the dumbwaiter (right edge). Platform creeps up in steps.
+   ========================================================================== */
+.pd-mech--c {
+  position: absolute; left: 87%; top: 18%; width: 9.5%; height: 60%; z-index: 2;
+  overflow: hidden;                        /* clips the rope above the pulley */
+}
+/* the shaft rails */
+.pd-mech--c::before, .pd-mech--c::after {
+  content: ""; position: absolute; top: 0; width: 7%; height: 100%;
+  background: linear-gradient(180deg, #3d2c16, #54391c);
+  border: 1px solid rgba(16, 10, 3, 0.7);
+}
+.pd-mech--c::before { left: 0; }
+.pd-mech--c::after { right: 0; }
+.pd-pulley {
+  position: absolute; left: 50%; top: 2%; width: 52%; aspect-ratio: 1;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-hi), var(--brass-lo) 68%);
+  border: 1px solid rgba(58, 40, 14, 0.7);
+}
+.pd-pulley::before {
+  content: ""; position: absolute; left: 47%; top: 10%; width: 6%; height: 80%;
+  background: rgba(58, 40, 14, 0.55);
+}
+.pd-plat {
+  position: absolute; left: 10%; bottom: 5%; width: 80%; height: 7%;
+  background: linear-gradient(180deg, #caa15a, #8a6228);
+  border: 1px solid rgba(58, 40, 14, 0.75);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, 0.4);
+  transform: translateY(-320%);           /* reduced-motion pose: mid-shaft */
+}
+/* the rope: a child of the platform, long enough to reach past the pulley */
+.pd-plat::before {
+  content: ""; position: absolute; left: 46%; bottom: 100%; width: 8%; height: 1300%;
+  background: linear-gradient(90deg, #6b5433, #9a7d4e, #6b5433);
+}
+@keyframes pdPlat {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-1080%); }
+}
+.pd-mech--c.is-ok .pd-plat { animation: none; transform: translateY(-1080%); }
+.pd-mech--c.is-ok .pd-pulley { animation: none; }
+.pd-mech--c.is-fail .pd-plat { animation: none; transform: translateY(-340%) rotate(10deg); }
+.pd-mech--c.is-fail .pd-pulley { animation: none; }
+.pd-mech--c.is-fail::before, .pd-mech--c.is-fail::after {
+  box-shadow: 0 0 0 1px rgba(179, 64, 47, 0.75);
+}
+
+/* ============================================================================
+   MECHANISM D — the clerk's desk spike (bottom). A fresh sheet hovers,
+   dithering, until it is spiked (arrival) or slides off askew (jam).
+   ========================================================================== */
+.pd-mech--d { position: absolute; left: 30%; top: 86.5%; width: 36%; height: 11%; z-index: 2; }
+.pd-spikebase {
+  position: absolute; left: 50%; bottom: 6%; width: 22%; aspect-ratio: 2.6 / 1;
+  transform: translateX(-50%); border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 28%, var(--brass-hi), var(--brass-lo) 68%, #4a3118);
+  border: 1px solid rgba(58, 40, 14, 0.7);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+}
+.pd-spike {
+  position: absolute; left: 50%; bottom: 16%; width: 2.4%; height: 62%;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, #5d3f18, var(--brass-hi), #5d3f18);
+}
+.pd-spike::before {
+  content: ""; position: absolute; left: -45%; top: -13%; width: 190%; height: 16%;
+  background: var(--brass-hi);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+/* the sheets already on the spike */
+.pd-oldsheet {
+  position: absolute; left: 50%; bottom: 14%; width: 21%; height: 26%;
+  background: #e0d4ae; border: 1px solid rgba(74, 53, 18, 0.45);
+}
+.pd-oldsheet.s1 { transform: translateX(-50%) rotate(-5deg); }
+.pd-oldsheet.s2 { transform: translateX(-50%) rotate(4deg); bottom: 12%; }
+/* the incoming sheet, hovering over the point */
+.pd-newsheet {
+  position: absolute; left: 38%; bottom: 92%; width: 24%; height: 30%;
+  background: var(--tpaper-hi); border: 1px solid rgba(74, 53, 18, 0.5);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  transform: rotate(-3deg);               /* reduced-motion pose: hovering */
+}
+@keyframes pdHover {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%      { transform: translateY(-24%) rotate(2deg); }
+}
+.pd-mech--d.is-ok .pd-newsheet {
+  animation: none; transform: translateY(64%) rotate(-2deg);
+}
+.pd-mech--d.is-fail .pd-newsheet {
+  animation: none; transform: translateY(46%) translateX(130%) rotate(26deg);
+  border-color: var(--tred);
+  box-shadow: 0 0 0 1px rgba(179, 64, 47, 0.55), 0 2px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ============================================================================
+   THE SLIP — "please wait…" typed in monospace, pinned under a paperweight.
+   ========================================================================== */
+.pd-slip {
+  position: absolute; left: 60%; top: 16.8%; width: 27%; z-index: 5;
+  padding: 2% 2.5% 2.6%;
+  background: var(--tpaper-hi) var(--tgrain);
+  border: 1px solid rgba(48, 34, 12, 0.45);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.45);
+  transform: rotate(2.5deg);
+  font-size: 2.4cqw; letter-spacing: 0.05em; color: var(--tink);
+  white-space: nowrap;
+}
+.pd-slip::after {                          /* the torn bottom edge */
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: repeating-linear-gradient(90deg,
+    rgba(48, 34, 12, 0.4) 0 2px, transparent 2px 4px);
+}
+.pd-slip .dots b { opacity: 0.25; font-weight: 400; }
+@keyframes pdDot { 0%, 60%, 100% { opacity: 0.25; } 30% { opacity: 1; } }
+.pd-weight {
+  position: absolute; left: 80%; top: 12.5%; width: 12%; aspect-ratio: 1; z-index: 6;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%,
+    rgba(255, 255, 255, 0.7), rgba(214, 222, 226, 0.28) 32%,
+    rgba(122, 130, 138, 0.35) 62%, rgba(38, 44, 52, 0.5));
+  border: 1px solid rgba(20, 24, 30, 0.4);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset 0 -2px 4px rgba(255, 255, 255, 0.25);
+}
+
+/* ============================================================================
+   MOTION IS ADDED, NEVER ASSUMED. Everything above is the reduced-motion
+   (static) rendering; loops and transitions only exist here.
+   ========================================================================== */
+@media (prefers-reduced-motion: no-preference) {
+  .pd-capsule { animation: pdCapsule 4.6s ease-in-out infinite; }
+  .pd-capsule i { animation: pdRattle 0.14s linear infinite alternate; }
+  .pd-belt { animation: pdBelt 1.1s linear infinite; }
+  .pd-roller::before { animation: pdSpin 1.1s linear infinite; }
+  .pd-parcel { animation: pdParcel 5.4s linear infinite; }
+  .pd-pulley { animation: pdPulleySpin 9s linear infinite; }
+  .pd-plat { animation: pdPlat 13s steps(36) infinite alternate; }
+  .pd-newsheet { animation: pdHover 2.6s ease-in-out infinite; }
+  .pd-slip .dots b { animation: pdDot 1.5s infinite; }
+  .pd-slip .dots b:nth-child(2) { animation-delay: 0.25s; }
+  .pd-slip .dots b:nth-child(3) { animation-delay: 0.5s; }
+  .pd-env { transition: opacity 0.5s ease, transform 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+  .pd-ghost { transition: opacity 0.3s ease; }
+  .pd-mech--b.is-ok .pd-parcel { transition: opacity 0.4s ease; }
+}
+@keyframes pdSpin { to { transform: rotate(360deg); } }
+/* the pulley is centred with translateX(-50%), so its spin needs the
+   translate folded in — the roller spokes use plain pdSpin instead */
+@keyframes pdPulleySpin {
+  from { transform: translateX(-50%) rotate(0deg); }
+  to   { transform: translateX(-50%) rotate(360deg); }
+}
+</style>
+
+<p class="mock-title">JUNK DRAWER · <b>MOCKUP 16D</b> · THE PNEUMATIC DESK</p>
+<p class="mock-intro">
+  The darkroom as a desktop in plan view. Four delivery mechanisms — pneumatic
+  tube, conveyor belt, dumbwaiter, desk spike — one per blind slot. Arrival
+  lands a sealed, letter-stamped envelope on the blotter; a jam turns the
+  mechanism red and leaves only the dashed imprint. Self-demo: A lands at 3s,
+  B at 6s, C at 9s, D jams at 12s, then holds.
+</p>
+
+<div class="demo">
+  <div class="pd-card" id="pd-card" role="img"
+       aria-label="A desktop with four delivery mechanisms, one per drawing slot">
+    <!-- the blotter and its four landing pads -->
+    <div class="pd-blotter">
+      <div class="pd-pads">
+        <div class="pd-pad pd-pad--a">
+          <div class="pd-ghost"><b>A</b></div>
+          <div class="pd-env"><b>A</b></div>
+          <span class="pd-mark" aria-hidden="true"></span>
+        </div>
+        <div class="pd-pad pd-pad--b">
+          <div class="pd-ghost"><b>B</b></div>
+          <div class="pd-env"><b>B</b></div>
+          <span class="pd-mark" aria-hidden="true"></span>
+        </div>
+        <div class="pd-pad pd-pad--c">
+          <div class="pd-ghost"><b>C</b></div>
+          <div class="pd-env"><b>C</b></div>
+          <span class="pd-mark" aria-hidden="true"></span>
+        </div>
+        <div class="pd-pad pd-pad--d">
+          <div class="pd-ghost"><b>D</b></div>
+          <div class="pd-env"><b>D</b></div>
+          <span class="pd-mark" aria-hidden="true"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- A · pneumatic tube -->
+    <div class="pd-mech pd-mech--a">
+      <div class="pd-pipe"></div>
+      <div class="pd-capsule"><i></i></div>
+      <div class="pd-receiver"></div>
+    </div>
+    <!-- B · conveyor belt -->
+    <div class="pd-mech pd-mech--b">
+      <div class="pd-roller l"></div>
+      <div class="pd-roller r"></div>
+      <div class="pd-belt"></div>
+      <div class="pd-parcel"></div>
+    </div>
+    <!-- C · dumbwaiter -->
+    <div class="pd-mech pd-mech--c">
+      <div class="pd-pulley"></div>
+      <div class="pd-plat"></div>
+    </div>
+    <!-- D · clerk's desk spike -->
+    <div class="pd-mech pd-mech--d">
+      <div class="pd-oldsheet s2"></div>
+      <div class="pd-oldsheet s1"></div>
+      <div class="pd-spikebase"></div>
+      <div class="pd-spike"></div>
+      <div class="pd-newsheet"></div>
+    </div>
+
+    <!-- the slip and its paperweight -->
+    <div class="pd-slip">please wait<span class="dots" aria-hidden="true"><b>.</b><b>.</b><b>.</b></span></div>
+    <div class="pd-weight"></div>
+
+    <!-- the four tags -->
+    <div class="pd-tag pd-tag--a"><b>A</b> <span class="w">drawing…</span></div>
+    <div class="pd-tag pd-tag--b"><b>B</b> <span class="w">drawing…</span></div>
+    <div class="pd-tag pd-tag--c"><b>C</b> <span class="w">drawing…</span></div>
+    <div class="pd-tag pd-tag--d"><b>D</b> <span class="w">drawing…</span></div>
+  </div>
+
+  <p class="mock-note">
+    <button class="pd-replay" id="pd-replay" type="button">↺ replay the wait</button>
+    <span>arrivals 3s / 6s / 9s · one jam at 12s · holds the end state</span>
+  </p>
+  <p class="sr" id="pd-live" aria-live="polite"></p>
+</div>
+
+<script>
+(function () {
+  var SLOTS = ['a', 'b', 'c', 'd'];
+  var TIMELINE = [
+    { slot: 'a', at: 3000,  state: 'ok' },
+    { slot: 'b', at: 6000,  state: 'ok' },
+    { slot: 'c', at: 9000,  state: 'ok' },
+    { slot: 'd', at: 12000, state: 'fail' }
+  ];
+  var WORD = {
+    pending: 'drawing…',
+    ok: '✓ arrived',
+    fail: '✗ didn’t survive'
+  };
+  var live = document.getElementById('pd-live');
+  var timers = [];
+
+  function parts(slot) {
+    return [
+      document.querySelector('.pd-mech--' + slot),
+      document.querySelector('.pd-tag--' + slot),
+      document.querySelector('.pd-pad--' + slot)
+    ];
+  }
+
+  function setSlot(slot, state) {
+    parts(slot).forEach(function (el) {
+      el.classList.remove('is-ok', 'is-fail');
+      if (state !== 'pending') el.classList.add(state === 'ok' ? 'is-ok' : 'is-fail');
+    });
+    var w = document.querySelector('.pd-tag--' + slot + ' .w');
+    w.textContent = WORD[state];
+    /* the ✓/✗ corner mark on the blotter pad mirrors the tag glyph */
+    var mark = document.querySelector('.pd-pad--' + slot + ' .pd-mark');
+    mark.textContent = state === 'pending' ? '' : (state === 'ok' ? '✓' : '✗');
+    if (state !== 'pending') {
+      live.textContent = 'Slot ' + slot.toUpperCase() + ' ' +
+        (state === 'ok' ? 'arrived' : 'didn’t survive');
+    }
+  }
+
+  function run() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    live.textContent = '';
+    SLOTS.forEach(function (s) { setSlot(s, 'pending'); });
+    TIMELINE.forEach(function (ev) {
+      timers.push(setTimeout(function () { setSlot(ev.slot, ev.state); }, ev.at));
+    });
+  }
+
+  document.getElementById('pd-replay').addEventListener('click', run);
+  run();
+})();
+</script>

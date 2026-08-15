@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 16F &middot; THE QUIET EVOLUTION (the darkroom)</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 16F · "THE QUIET EVOLUTION"  (the darkroom card)
+   ----------------------------------------------------------------------------
+   THE CONCEPT: the conservative option — the current darkroom card's sibling,
+   not a stranger. Same sheet, same printed double border, same grain and
+   mottle, same ink. Every piece of the owner's round-16 feedback, nothing more:
+
+     1. NO FORM JD-1 badge, NO "Four machines are drawing" masthead. The only
+        line of copy is a quiet "please wait…" under the top edge.
+     2. The card is visibly more SQUARE — 430px wide instead of 680.
+     3. The <ul> of table rows is GONE. Four loose aged-paper scraps lie on
+        the sheet in a broken 2×2 — slight offsets and rotations, settling
+        FLAT when their drawing arrives.
+     4. Each scrap has its OWN small animation instead of the shared bouncing
+        ellipsis: A a pulsing rule line, B a rocking pencil, C a creeping
+        underscore, D a soft blinking dot. Subtle, in-fiction, keyed to the
+        anonymous slot letter — never to a model name.
+     5. States stay legible: pending (animating, "still drawing"), arrived
+        (✓ "arrived", settled flat, ok-green), failed (✗ "didn't survive",
+        stamp-pad ink red). The slot letters A–D never leave their scraps.
+
+   Tokens, fonts, grain/mottle data-URIs and the form border are carried
+   VERBATIM from junk-drawer.css (.jd-turn-scrim, lines 1571–1700;
+   stitchTiles="stitch", seeds 7 and 23 — never reseed). The ok-green #4a6b18
+   is the production slot-ok colour (.jd-turn-st--ok); the fail red is
+   --tstamp, per the standing "one red accent, no stamps" note.
+
+   MOTION IS ADDED, NEVER ASSUMED: every animation lives inside
+   @media (prefers-reduced-motion: no-preference). The reduced state is the
+   base state — static scraps, static status words.
+
+   DEMO SCAFFOLDING ONLY (not part of the design): the wood desk background,
+   the mocked banner, the corner tag, the replay button and the one inline
+   script that walks the slots through staggered arrivals (A lands ~3s,
+   C ~6s, B ~9s, D fails ~12s) and then holds the end state.
+   ========================================================================== */
+
+:root { --banner-h: 56px; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  color: #2a2620;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.006 0.09' numOctaves='4' seed='19'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.03 0.9 1.1 0 0 -1.05'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg,
+      rgba(60, 36, 12, 0.22) 0 3px,  rgba(120, 80, 38, 0.10) 3px 52px,
+      rgba(40, 22, 8, 0.28) 52px 55px, rgba(140, 96, 48, 0.10) 55px 108px),
+    #8d6537;
+}
+
+/* ---- demo scaffolding ---------------------------------------------------- */
+.mock-banner {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--banner-h);
+  z-index: 1000;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+  background: #fff; border-bottom: 1px solid #111;
+}
+.mb-title { font-weight: 700; font-size: 1rem; letter-spacing: -0.01em; color: #111; }
+.mb-title::before { content: "▌"; color: #2233dd; margin-right: 0.45em; }
+.mb-nav { display: flex; gap: 2.2em; font-size: 0.8rem; text-transform: uppercase; color: #111; }
+.mb-nav b { font-weight: 400; text-decoration: underline; text-underline-offset: 5px; }
+
+.demo-tag {
+  position: fixed; top: calc(var(--banner-h) + 8px); left: 10px; z-index: 500;
+  max-width: 44ch;
+  font-size: 0.6rem; letter-spacing: 0.13em; text-transform: uppercase;
+  line-height: 1.7; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.74); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 5px 9px;
+}
+.demo-tag b { color: #f3c98a; }
+@media (max-width: 500px) { .demo-tag { display: none; } }
+
+.replay {
+  position: fixed; right: 12px; bottom: 12px; z-index: 500;
+  font-family: inherit; font-size: 0.6rem; letter-spacing: 0.13em;
+  text-transform: uppercase; color: #f0e6cc;
+  background: rgba(12, 6, 2, 0.74); border: 1px solid rgba(240, 230, 204, 0.25);
+  padding: 6px 10px; cursor: pointer;
+}
+.replay:hover { border-color: #f3c98a; color: #f3c98a; }
+.replay:focus-visible { outline: 2px solid #f3c98a; outline-offset: 2px; }
+
+/* ============================================================================
+   THE SCRIM + THE FORM — the part that would graduate to junk-drawer.css.
+   Tokens scoped to the scrim, exactly as .jd-turn-scrim does.
+   ========================================================================== */
+.qe-scrim {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
+  --graphite: #4b4030;        /* the visitor's pencil */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  /* grain + mottle carried VERBATIM from the shipped turn card
+     (stitchTiles="stitch" — the standing Safari lesson; never reseed) */
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+  /* the same type/spacing ladders the production card uses */
+  --t-micro: 0.44rem;
+  --t-label: 0.55rem;
+  --t-body: 0.66rem;
+  --t-lead: 0.78rem;
+  --t-title: 0.86rem;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 14px; --sp-4: 22px;
+
+  position: fixed; inset: 0; z-index: 322;
+  display: flex; align-items: center; justify-content: center;
+  /* top inset reserves the mocked banner's band, as the production scrim does */
+  padding: max(12px, 2vh, calc(var(--banner-h) + 8px)) 12px max(12px, 2vh);
+  background: rgba(10, 5, 1, 0.58);
+}
+
+/* ---- the form itself: the same sheet, cut squarer ------------------------- */
+.qe-card {
+  position: relative;
+  box-sizing: border-box;
+  width: min(430px, 100%);          /* was min(680px, 100%) on the live card */
+  /* the card is a FLEX ITEM of the scrim — min-width:0 keeps 375px honest */
+  min-width: 0;
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--tink);
+  font-family: var(--tmono);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the printed double border */
+.qe-card::before {
+  content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+/* paper mottle */
+.qe-card::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background-image: var(--tmottle); background-size: 420px 420px;
+}
+
+/* the boxed ✕ — the record card's control language, kept (a sibling keeps
+   its close control); it just no longer has a masthead to sit in */
+.qe-close {
+  position: absolute; top: 6px; right: 6px; z-index: 8;
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  font-family: var(--tmono); font-size: var(--t-title); line-height: 1;
+  color: var(--tink);
+}
+.qe-close span {
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+}
+.qe-close:hover span { background: #33240f; color: var(--tpaper); border-color: #33240f; }
+.qe-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the body -------------------------------------------------------------- */
+.qe-body {
+  position: relative; z-index: 1;
+  padding: 34px 22px 22px;   /* top pad clears the ✕ corner */
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* THE ONE LINE OF COPY. No badge, no heading — just this, centred, quiet. */
+.qe-line {
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
+  letter-spacing: 0.08em; color: var(--tink-2);
+  text-align: center;
+}
+.qe-line.is-done { color: var(--tink-3); }
+
+/* ---- the four scraps: a broken 2×2, not a list ---------------------------- */
+.qe-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 16px 18px;
+  width: 100%;
+  margin-top: var(--sp-3);
+}
+.qe-tile {
+  position: relative;
+  padding: 12px 12px 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 232, 0.55), rgba(255, 250, 232, 0.28)),
+    var(--tpaper-hi) var(--tgrain);
+  border: 1px solid var(--trule);
+  box-shadow: 2px 3px 6px -2px rgba(46, 34, 12, 0.45),
+              0 1px 2px rgba(46, 34, 12, 0.25);
+  /* each scrap lies a little askew on the sheet; the --r/--tx/--ty vars are
+     set per-tile inline so the arrangement reads loose, not gridded */
+  transform: rotate(var(--r, 0deg)) translate(var(--tx, 0), var(--ty, 0));
+  transition: transform 0.7s ease, box-shadow 0.7s ease;
+}
+/* the break in the 2×2: the right-hand scraps sit a touch lower */
+.qe-tile:nth-child(2n) { margin-top: 10px; }
+/* arrival / loss: the scrap settles flat and its shadow quiets */
+.qe-tile.is-ok, .qe-tile.is-fail {
+  transform: none;
+  box-shadow: 1px 2px 3px -1px rgba(46, 34, 12, 0.35);
+}
+
+.qe-tilerow { display: flex; align-items: center; gap: 10px; }
+
+/* the slot letter — the current darkroom's boxed <b>, unchanged */
+.qe-letter {
+  flex: 0 0 auto; width: 1.5rem; text-align: center;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--trule-2); background: rgba(255, 250, 232, 0.5);
+  padding: 1px 0 0;
+}
+
+/* the per-slot animation well: fixed height so a swap to ✓/✗ never shifts
+   the sheet. The mark glyph is aria-hidden — the word beside it is what a
+   live region would announce. */
+.qe-anim {
+  flex: 1 1 auto; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+}
+.qe-mark { font-family: var(--tform); font-weight: 700; font-size: 1.25rem; line-height: 1; }
+.qe-tile.is-ok .qe-mark { color: #4a6b18; }
+.qe-tile.is-fail .qe-mark { color: var(--tstamp); }
+
+/* the status word under each scrap */
+.qe-status {
+  margin-top: 6px; text-align: center;
+  font-family: var(--tmono); font-size: var(--t-label);
+  letter-spacing: 0.12em; line-height: 1.4;
+}
+.st--wait { color: var(--tink-2); }
+.st--ok { color: #4a6b18; }
+.st--fail { color: var(--tstamp); }
+
+/* ---- the four small fictions ----------------------------------------------
+   Base state = reduced state: every glyph below is a static drawing until
+   the no-preference media query at the foot lends it motion. */
+
+/* A — the pulsing rule line */
+.qe-rule {
+  width: 46px; height: 0;
+  border-bottom: 1.5px solid var(--tink-2);
+  opacity: 0.25;
+}
+
+/* B — the pencil, resting at a writing tilt */
+.qe-pencil { display: block; transform: rotate(12deg); }
+
+/* C — the creeping underscore, drawn and waiting */
+.qe-creep {
+  width: 46px; height: 0;
+  border-bottom: 1.5px solid var(--tink-2);
+  transform: scaleX(0.3); transform-origin: left center;
+}
+
+/* D — the soft dot, dim */
+.qe-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--tink-2); opacity: 0.25;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .qe-rule  { animation: qeRule 1.9s ease-in-out infinite; }
+  .qe-pencil { animation: qePencil 1.8s ease-in-out infinite; }
+  .qe-creep { animation: qeCreep 3.4s steps(14) infinite; }
+  .qe-dot   { animation: qeDot 1.5s ease-in-out infinite; }
+  /* once a scrap has settled, its fiction stops even here — the JS hides the
+     animated glyph, this is the belt-and-braces half */
+  .qe-tile.is-ok .qe-rule, .qe-tile.is-ok .qe-pencil,
+  .qe-tile.is-ok .qe-creep, .qe-tile.is-ok .qe-dot,
+  .qe-tile.is-fail .qe-rule, .qe-tile.is-fail .qe-pencil,
+  .qe-tile.is-fail .qe-creep, .qe-tile.is-fail .qe-dot { animation: none; }
+}
+@keyframes qeRule   { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@keyframes qePencil { 0%, 100% { transform: rotate(12deg); } 50% { transform: rotate(-10deg); } }
+@keyframes qeCreep  { 0% { transform: scaleX(0); } 78%, 100% { transform: scaleX(1); } }
+@keyframes qeDot    { 0%, 100% { opacity: 0.2; } 45% { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="mock-banner" aria-hidden="true">
+  <span class="mb-title">municipal.sky</span>
+  <span class="mb-nav"><b>drawer</b><b>index</b><b>about</b></span>
+</div>
+
+<p class="demo-tag"><b>Mockup 16f · The Quiet Evolution</b> — the darkroom,
+made squarer. No badge, no title; four loose scraps, each with its own small
+fiction. Self-demos: arrivals ~3s / 6s / 9s, one loss ~12s.</p>
+
+<div class="qe-scrim">
+  <div class="qe-card" role="dialog" aria-label="please wait">
+    <button class="qe-close" type="button" aria-label="close"><span aria-hidden="true">✕</span></button>
+    <div class="qe-body">
+      <p class="qe-line" data-line>please wait&hellip;</p>
+
+      <div class="qe-grid" aria-live="polite">
+
+        <section class="qe-tile" data-slot="a" style="--r:-1.3deg; --tx:-2px; --ty:1px;">
+          <div class="qe-tilerow">
+            <b class="qe-letter">A</b>
+            <span class="qe-anim" aria-hidden="true"><span class="qe-rule"></span></span>
+          </div>
+          <p class="qe-status"><span class="st--wait" data-status>still drawing</span></p>
+        </section>
+
+        <section class="qe-tile" data-slot="b" style="--r:1.1deg; --tx:2px; --ty:0px;">
+          <div class="qe-tilerow">
+            <b class="qe-letter">B</b>
+            <span class="qe-anim" aria-hidden="true">
+              <svg class="qe-pencil" width="22" height="26" viewBox="0 0 22 26">
+                <rect x="9" y="2" width="4.5" height="14" fill="#d9a441" stroke="#33240f" stroke-width="0.8"/>
+                <rect x="9" y="2" width="1.5" height="14" fill="#33240f" opacity="0.18"/>
+                <polygon points="9,16 13.5,16 11.25,22" fill="#f4ead0" stroke="#33240f" stroke-width="0.8"/>
+                <polygon points="10.4,19.4 12.1,19.4 11.25,22" fill="#4b4030"/>
+              </svg>
+            </span>
+          </div>
+          <p class="qe-status"><span class="st--wait" data-status>still drawing</span></p>
+        </section>
+
+        <section class="qe-tile" data-slot="c" style="--r:0.9deg; --tx:-1px; --ty:2px;">
+          <div class="qe-tilerow">
+            <b class="qe-letter">C</b>
+            <span class="qe-anim" aria-hidden="true"><span class="qe-creep"></span></span>
+          </div>
+          <p class="qe-status"><span class="st--wait" data-status>still drawing</span></p>
+        </section>
+
+        <section class="qe-tile" data-slot="d" style="--r:-1.0deg; --tx:2px; --ty:3px;">
+          <div class="qe-tilerow">
+            <b class="qe-letter">D</b>
+            <span class="qe-anim" aria-hidden="true"><span class="qe-dot"></span></span>
+          </div>
+          <p class="qe-status"><span class="st--wait" data-status>still drawing</span></p>
+        </section>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="replay" type="button" data-replay>&#8635; replay</button>
+
+<script>
+/* DEMO SCAFFOLDING ONLY — the production card is painted by junk-drawer.js
+   from live slot events; this stands in for them. Staggered: A lands ~3s,
+   C ~6s, B ~9s, D doesn't survive ~12s, then the card holds. */
+(function () {
+  'use strict';
+  var PLAN = [
+    ['a', 3000, 'ok'],
+    ['c', 6000, 'ok'],
+    ['b', 9000, 'ok'],
+    ['d', 12000, 'fail']
+  ];
+  var anims = {};
+  var timers = [];
+
+  /* remember each scrap's pending glyph so replay can put it back */
+  document.querySelectorAll('.qe-tile').forEach(function (tile) {
+    var well = tile.querySelector('.qe-anim');
+    anims[tile.getAttribute('data-slot')] = well.innerHTML;
+  });
+
+  function settle(slot, outcome) {
+    var tile = document.querySelector('.qe-tile[data-slot="' + slot + '"]');
+    if (!tile || tile.classList.contains('is-ok') || tile.classList.contains('is-fail')) return;
+    tile.classList.add(outcome === 'ok' ? 'is-ok' : 'is-fail');
+    tile.querySelector('.qe-anim').innerHTML =
+      '<span class="qe-mark">' + (outcome === 'ok' ? '✓' : '✗') + '</span>';
+    var st = tile.querySelector('[data-status]');
+    st.className = outcome === 'ok' ? 'st--ok' : 'st--fail';
+    st.textContent = outcome === 'ok' ? '✓ arrived' : '✗ didn’t survive';
+
+    /* every scrap settled: the one line of copy quiets down with them */
+    if (document.querySelectorAll('.qe-tile.is-ok, .qe-tile.is-fail').length === PLAN.length) {
+      var line = document.querySelector('[data-line]');
+      line.textContent = 'three arrived · one didn’t survive';
+      line.classList.add('is-done');
+    }
+  }
+
+  function reset() {
+    timers.forEach(clearTimeout);
+    timers = [];
+    document.querySelectorAll('.qe-tile').forEach(function (tile) {
+      tile.classList.remove('is-ok', 'is-fail');
+      tile.querySelector('.qe-anim').innerHTML = anims[tile.getAttribute('data-slot')];
+      var st = tile.querySelector('[data-status]');
+      st.className = 'st--wait';
+      st.textContent = 'still drawing';
+    });
+    var line = document.querySelector('[data-line]');
+    line.textContent = 'please wait…';
+    line.classList.remove('is-done');
+    PLAN.forEach(function (step) {
+      timers.push(setTimeout(function () { settle(step[0], step[2]); }, step[1]));
+    });
+  }
+
+  document.querySelector('[data-replay]').addEventListener('click', reset);
+  reset();
+}());
+</script>
+
+</body>
+</html>
