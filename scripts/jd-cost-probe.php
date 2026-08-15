@@ -70,7 +70,7 @@ if (is_string($opts['prompts'] ?? null)) {
 }
 $runs = max(1, (int) ($opts['runs'] ?? 1));
 
-$priceDoc = json_decode((string) @file_get_contents(__DIR__ . '/jd-prices.json'), true);
+$priceDoc = json_decode((string) @file_get_contents(__DIR__ . '/../api/jd-prices.json'), true);
 $PRICES = $priceDoc['prices'] ?? [];
 
 $secrets = jd_secrets();

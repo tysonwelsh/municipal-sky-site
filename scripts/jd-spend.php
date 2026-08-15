@@ -5,10 +5,11 @@ declare(strict_types=1);
  * jd-spend.php — exact provider spend for Junk Drawer generations.
  *
  * jd-generate.php stores each provider's own usage object verbatim in
- * jd_generations.usage_tokens (see jd-generate.php:171). That column is the
+ * jd_generations.usage_tokens (see jd-generate.php:173). That column is the
  * authoritative token record, so this script never estimates: it reads the
  * counts the providers themselves reported and multiplies by the rate table in
- * scripts/jd-prices.json.
+ * api/jd-prices.json (normalized by the shared api/jd-usage.php — the same
+ * code jd-rate.php's reveal payload prices with).
  *
  * WHERE TO RUN IT
  * ---------------
@@ -28,7 +29,7 @@ declare(strict_types=1);
  *   --submission=ID     only this submission (26-char ULID)
  *   --unrated           only submissions that never got graded (status<>'rated')
  *   --json              machine-readable output instead of the table
- *   --prices=FILE       rate table (default: scripts/jd-prices.json)
+ *   --prices=FILE       rate table (default: api/jd-prices.json)
  *   --sqlite=FILE       read a SQLite database instead of MySQL
  *
  * Credentials come from jd_secrets() — config/secrets.php locally, the
@@ -45,6 +46,7 @@ if (PHP_SAPI !== 'cli') {
 }
 
 require_once __DIR__ . '/../api/jd-config.php';
+require_once __DIR__ . '/../api/jd-usage.php';   // the shared normalizer + rates
 ini_set('display_errors', '1');   // jd-config silences these for JSON responses
 
 // ---------------------------------------------------------------------------
@@ -64,7 +66,7 @@ if (isset($opts['help'])) {
     exit(0);
 }
 
-$pricesFile = is_string($opts['prices'] ?? null) ? $opts['prices'] : __DIR__ . '/jd-prices.json';
+$pricesFile = is_string($opts['prices'] ?? null) ? $opts['prices'] : __DIR__ . '/../api/jd-prices.json';
 $priceDoc = json_decode((string) @file_get_contents($pricesFile), true);
 if (!is_array($priceDoc) || !isset($priceDoc['prices'])) {
     fwrite(STDERR, "Could not read a price table from $pricesFile\n");
@@ -139,45 +141,12 @@ $rows = $stmt->fetchAll();
 // ---------------------------------------------------------------------------
 // normalisation
 //
-// The two providers report usage in different shapes and with different
-// inclusion rules. Both are folded to the same four billable buckets here, and
-// getting the inclusion rules right is the whole correctness of this script:
-//
-//   Anthropic /v1/messages — input_tokens EXCLUDES both cache figures, so the
-//     three input buckets simply add up.
-//   OpenAI /v1/chat/completions — prompt_tokens INCLUDES cached_tokens, so the
-//     cached part must be subtracted out to avoid billing it twice at the full
-//     rate; and completion_tokens ALREADY INCLUDES reasoning_tokens, so
-//     reasoning is reported for visibility but never added on top.
-function jd_normalize_usage(string $provider, array $u): array
-{
-    if ($provider === 'anthropic') {
-        return [
-            'input'      => (int) ($u['input_tokens'] ?? 0),
-            'cache_write'=> (int) ($u['cache_creation_input_tokens'] ?? 0),
-            'cache_read' => (int) ($u['cache_read_input_tokens'] ?? 0),
-            'output'     => (int) ($u['output_tokens'] ?? 0),
-            'reasoning'  => 0,
-        ];
-    }
-    $prompt = (int) ($u['prompt_tokens'] ?? 0);
-    $cached = (int) ($u['prompt_tokens_details']['cached_tokens'] ?? 0);
-    return [
-        'input'      => max(0, $prompt - $cached),
-        'cache_write'=> 0,
-        'cache_read' => $cached,
-        'output'     => (int) ($u['completion_tokens'] ?? 0),
-        'reasoning'  => (int) ($u['completion_tokens_details']['reasoning_tokens'] ?? 0),
-    ];
-}
-
-function jd_cost(array $t, array $p): float
-{
-    return $t['input']       / 1e6 * (float) ($p['input'] ?? 0)
-         + $t['cache_write'] / 1e6 * (float) ($p['cache_write'] ?? 0)
-         + $t['cache_read']  / 1e6 * (float) ($p['cache_read'] ?? 0)
-         + $t['output']      / 1e6 * (float) ($p['output'] ?? 0);
-}
+// MOVED to api/jd-usage.php (required above), where the reveal payload shares
+// it: the four providers report usage in three shapes — Anthropic, OpenAI
+// (whose shape Kimi's OpenAI-compatible endpoint reuses) and Google's
+// usageMetadata — with different inclusion rules, folded there to the same
+// billable buckets. The inclusion rules are documented at the top of that
+// file; getting them right is the whole correctness of this script.
 
 $byModel = [];
 $detail = [];
@@ -288,5 +257,6 @@ if ($unpriced) {
          basename($pricesFile), ".\n",
          "         Those calls are counted as \$0 — add the model and re-run.\n";
 }
-echo "\nReasoning tokens are already inside OUTPUT (OpenAI bills them there);\n",
-     "the column is shown separately only so you can see what you paid for.\n\n";
+echo "\nReasoning tokens are already inside OUTPUT (OpenAI and Google both bill\n",
+     "them there — Google's thoughtsTokenCount is output-priced); the column is\n",
+     "shown separately only so you can see what you paid for.\n\n";

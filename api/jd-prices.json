@@ -1,29 +1,37 @@
 {
   "_comment": [
-    "Price table for scripts/jd-spend.php. All figures are USD per MILLION tokens.",
+    "Price table for api/jd-rate.php (the reveal payload) and scripts/jd-spend.php.",
+    "All figures are USD per MILLION tokens.",
     "Keys are jd_generations.model_version — the exact provider wire string that",
-    "jd-generate.php sent (JD_MODEL_PAIR's api_model), so a model swap in",
+    "jd-generate.php sent (the pool's api_model), so a model swap in",
     "api/jd-config.php only needs a matching key added here.",
     "",
-    "Field meanings, normalised across both providers by jd-spend.php:",
+    "Field meanings, normalised across all four providers by api/jd-usage.php:",
     "  input       uncached input tokens",
     "  output      output tokens (for OpenAI this INCLUDES reasoning tokens,",
-    "              because completion_tokens already counts them)",
-    "  cache_write Anthropic 5-minute cache writes; 0 for OpenAI (no such charge)",
-    "  cache_read  Anthropic cache hits / OpenAI cached input tokens",
+    "              because completion_tokens already counts them; for Google it",
+    "              INCLUDES thoughtsTokenCount, billed as output)",
+    "  cache_write Anthropic 5-minute cache writes; 0 for the others (OpenAI and",
+    "              Moonshot have no such charge; Google implicit caching likewise)",
+    "  cache_read  Anthropic cache hits / OpenAI cached input tokens / Moonshot",
+    "              automatic-cache hits / Google cachedContentTokenCount",
     "",
     "VERIFY BEFORE TRUSTING A LARGE NUMBER: providers change prices. Re-check the",
     "source URLs below and update _fetched when you do."
   ],
-  "_fetched": "2026-08-10",
+  "_fetched": "2026-08-15",
   "_sources": {
     "anthropic": "https://platform.claude.com/docs/en/about-claude/pricing",
-    "openai": "https://developers.openai.com/api/docs/pricing"
+    "openai": "https://developers.openai.com/api/docs/pricing",
+    "kimi": "https://requesty.ai/models/moonshot/kimi-k3 (agrees with https://benchlm.ai/moonshot/api-pricing)",
+    "google": "https://userightai.com/models/gemini-3.1-pro (agrees with https://aipricing.guru/google-ai-pricing)"
   },
   "_notes": {
     "claude-sonnet-5": "Introductory $2/$10 runs through 2026-08-31; standard $3/$15 starts 2026-09-01. Update this entry if you switch the pair to Sonnet 5 after that date.",
     "gpt-5.4": "Prices shown are the <272K context tier.",
-    "gpt-5.5": "Prices shown are the <272K context tier."
+    "gpt-5.5": "Prices shown are the <272K context tier.",
+    "kimi-k3": "Moonshot context caching is automatic — no write charge; hits bill at the cache_read rate.",
+    "gemini-3.1-pro-preview": "$2/$12 is the <200K-context tier (our prompts are tiny). DISCREPANCY: one aggregator (costgoat) claims the *preview* id bills at $1/$6 — unresolvable from here; check the actual bill and correct. The 0.20 cache_read is an UNVERIFIED estimate (10% of input, the usual implicit-cache ratio), not a sourced figure."
   },
 
   "prices": {
@@ -40,6 +48,9 @@
     "gpt-5.5":      { "input": 5.00, "output": 30.00,  "cache_write": 0.0, "cache_read": 0.50  },
     "gpt-5.6-luna": { "input": 0.20, "output": 1.20,   "cache_write": 0.0, "cache_read": 0.02  },
     "gpt-5-mini":   { "input": 0.25, "output": 2.00,   "cache_write": 0.0, "cache_read": 0.025 },
-    "gpt-5-nano":   { "input": 0.05, "output": 0.40,   "cache_write": 0.0, "cache_read": 0.005 }
+    "gpt-5-nano":   { "input": 0.05, "output": 0.40,   "cache_write": 0.0, "cache_read": 0.005 },
+
+    "kimi-k3":               { "input": 3.00, "output": 15.00, "cache_write": 0.0, "cache_read": 0.30 },
+    "gemini-3.1-pro-preview": { "input": 2.00, "output": 12.00, "cache_write": 0.0, "cache_read": 0.20 }
   }
 }

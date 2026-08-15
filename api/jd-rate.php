@@ -8,6 +8,7 @@
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
+require_once __DIR__ . '/jd-usage.php';   // the reveal prices what it cost
 require_once __DIR__ . '/visitor-hash.php';
 
 jd_require_allowed_origin();
@@ -64,7 +65,9 @@ try {
         jd_fail(404, 'not_found', 'That submission is not on file.');
     }
 
-    $stmt = $db->prepare('SELECT id, slot, model_id, status FROM jd_generations WHERE submission_id = ? ORDER BY slot');
+    // provider/model_version/usage_tokens ride along so the reveal can say
+    // what each surviving drawing cost (jd_build_reveal below).
+    $stmt = $db->prepare('SELECT id, slot, model_id, status, provider, model_version, usage_tokens FROM jd_generations WHERE submission_id = ? ORDER BY slot');
     $stmt->execute([$submissionId]);
     $generations = $stmt->fetchAll();
 
@@ -356,6 +359,14 @@ function jd_clean_note(mixed $note): ?string
 
 // Failed and rejected slots ARE revealed: the visitor may fairly learn which
 // machine failed them. label/vendor come from the taxonomy models registry.
+// Surviving generations also carry what they COST (owner call, 2026-08-15):
+// the normalized token counts and the exact provider spend, computed by the
+// shared api/jd-usage.php from the usage object jd-generate.php stored
+// verbatim. A survivor with no usage recorded (never reached the provider —
+// or a mock call) gets tokens/cost null and priced false rather than four
+// honest-looking zeros; an UNPRICED model gets cost_usd null, never a
+// confident $0. Failed slots get neither key — nothing was drawn, and a
+// failed call's usage (when one exists) is partial anyway.
 function jd_build_reveal(array $generations, array $taxonomy): array
 {
     $registry = [];
@@ -368,13 +379,34 @@ function jd_build_reveal(array $generations, array $taxonomy): array
     $reveal = [];
     foreach ($generations as $generation) {
         $modelId = (string) $generation['model_id'];
-        $reveal[] = [
+        $entry = [
             'slot' => $generation['slot'],
             'model_id' => $modelId,
             'label' => (string) ($registry[$modelId]['label'] ?? $modelId),
             'vendor' => (string) ($registry[$modelId]['vendor'] ?? ''),
             'status' => $generation['status'],
         ];
+        if ($generation['status'] === 'ok') {
+            $usage = !empty($generation['usage_tokens'])
+                ? json_decode((string) $generation['usage_tokens'], true) : null;
+            $cost = jd_generation_cost(
+                (string) ($generation['provider'] ?? ''),
+                (string) ($generation['model_version'] ?? ''),
+                is_array($usage) ? $usage : null
+            );
+            $t = $cost['tokens'];
+            // the payload carries the three numbers a person reads; the cache
+            // and reasoning buckets stay in the database (jd-spend.php's job)
+            $entry['tokens'] = $t === null ? null : [
+                'input' => $t['input'],
+                'output' => $t['output'],
+                'total' => $t['input'] + $t['cache_write'] + $t['cache_read'] + $t['output'],
+            ];
+            $entry['cost_usd'] = $cost['cost_usd'] === null
+                ? null : round($cost['cost_usd'], 6);
+            $entry['priced'] = $cost['priced'];
+        }
+        $reveal[] = $entry;
     }
     return $reveal;
 }

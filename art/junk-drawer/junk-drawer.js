@@ -2598,11 +2598,26 @@ function JD_layerOpen() {
        and lives on in the data. */
     var artSrc = svgCache[entry.id + '/' + resp.file] || '';
     var gen = resp.generation || {};
+    /* what the drawing COST (2026-08-15): token counts and provider spend
+       ride the reveal payload into the visitor record, so a won item's card
+       states them — after a reload too. Only visitor responses carry these
+       fields; curated items omit the lines entirely, and an unpriced model
+       loses just the Cost line (the house rule: omit, never print null). */
+    var tkTotal = resp.tokens && isFinite(+resp.tokens.total) ? +resp.tokens.total : null;
+    var tkCost = resp.cost_usd != null && isFinite(+resp.cost_usd) ? +resp.cost_usd : null;
     var notes =
       '<span class="rc-note-line"><span class="rc-note-l">Model</span>' +
       '<span class="rc-note-v">' + esc(m.label) + '</span></span>' +
       '<span class="rc-note-line"><span class="rc-note-l">Date</span>' +
       '<span class="rc-note-v">' + esc(fmtDate(resp.date)) + '</span></span>' +
+      (tkTotal !== null
+        ? '<span class="rc-note-line"><span class="rc-note-l">Tokens</span>' +
+          '<span class="rc-note-v">' + esc(tkTotal.toLocaleString('en-US')) + '</span></span>'
+        : '') +
+      (tkCost !== null
+        ? '<span class="rc-note-line"><span class="rc-note-l">Cost</span>' +
+          '<span class="rc-note-v">$' + esc(tkCost.toFixed(4)) + '</span></span>'
+        : '') +
       (gen.mode === 'refined'
         ? '<span class="rc-note-line"><span class="rc-note-l">Process</span>' +
           '<span class="rc-note-v">' + esc(processLabel(gen)) + '</span></span>'
@@ -4499,6 +4514,13 @@ function JD_layerOpen() {
       grade: r.grade,
       annotations: ratingAnnotations(r)
     };
+    /* what the drawing COST rides the record too (2026-08-15): the reveal
+       payload's per-slot tokens/cost_usd, so the report card can state them
+       after a reload. Omitted when the reveal carries none (a survivor with
+       no usage recorded); cost_usd alone stays null when the model is
+       unpriced — the card omits hollow lines rather than printing them. */
+    if (rv.tokens) rec.tokens = rv.tokens;
+    if (rv.cost_usd != null) rec.cost_usd = rv.cost_usd;
     /* the OTHER bench responses ride along (owner request, 2026-08-12;
        generalized to the trio 2026-08-14): the report card shows every
        option from the turn, the losers filed as alternative responses on
@@ -4518,6 +4540,10 @@ function JD_layerOpen() {
           grade: work.ratings[other].grade,
           annotations: ratingAnnotations(work.ratings[other])
         });
+        /* the losers' costs file too — the card's "same prompt" strip shows
+           every option, and each response's notes state their own spend */
+        if (orv.tokens) rec.others[rec.others.length - 1].tokens = orv.tokens;
+        if (orv.cost_usd != null) rec.others[rec.others.length - 1].cost_usd = orv.cost_usd;
       }
     });
     if (!rec.others.length) delete rec.others;
@@ -4651,6 +4677,11 @@ function JD_layerOpen() {
          text itself is primed into the cache below */
       url: svgDataUrl(rec.svg), transcript_url: null
     }];
+    /* the cost fields (2026-08-15) ride the RESPONSE, not the entry, so the
+       strip's per-response notes can each state their own spend. Records
+       persisted before this simply lack them, and the card omits the lines. */
+    if (rec.tokens) responses[0].tokens = rec.tokens;
+    if (rec.cost_usd != null) responses[0].cost_usd = rec.cost_usd;
     var primed = {};
     primed[rec.gen_id + '/' + file] = rec.svg;
     /* the turn's OTHER responses file as r2, r3 (owner request, 2026-08-12;
@@ -4670,6 +4701,8 @@ function JD_layerOpen() {
         grade: alt.grade, annotations: alt.annotations || {},
         url: svgDataUrl(alt.svg), transcript_url: null
       });
+      if (alt.tokens) responses[responses.length - 1].tokens = alt.tokens;
+      if (alt.cost_usd != null) responses[responses.length - 1].cost_usd = alt.cost_usd;
       primed[rec.gen_id + '/' + afile] = alt.svg;
     });
     payload.items.unshift({
