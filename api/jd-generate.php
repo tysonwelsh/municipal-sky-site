@@ -72,8 +72,29 @@ try {
 
     if ($submission === null) {
         // --- 7. Rate limits — only when a new submission is being created --
-        jd_enforce_rate_limits($db, $visitorHash, $slot);
+        // The four slot requests race: each can load "no submission" before
+        // any sibling's INSERT lands and then run this check against a count
+        // a sibling is moving under it. A racer that trips the limit RE-LOADS
+        // before failing — if a sibling created the submission in the
+        // meantime, this request belongs to a turn that was legal when it
+        // started and joins it; only a turn no sibling managed to start is
+        // refused. (2026-08-15: without the re-load, whichever slot counted
+        // last after a boundary crossing ate a lone 429 mid-turn — observed
+        // live as one chair failing rate_limited while its three siblings
+        // drew.)
+        $limited = jd_rate_limit_failure($db, $visitorHash);
+        if ($limited !== null) {
+            $submission = jd_load_submission_by_ref($db, $clientRef);
+            if ($submission === null) {
+                jd_fail($limited['status'], $limited['code'], $limited['message'], [
+                    'slot' => $slot,
+                    'retry_after' => $limited['retry_after'],
+                ]);
+            }
+        }
+    }
 
+    if ($submission === null) {
         $insert = $db->prepare(
             jd_insert_ignore($db) . ' jd_submissions
                 (id, client_ref, created, prompt, visitor_hash, client, pair_order,
@@ -315,16 +336,20 @@ function jd_respond_for_generation(array $generation, string $submissionId, stri
 }
 
 // C1.2 step 7. Cutoffs are computed here in PHP and bound as parameters so
-// the same SQL runs on MySQL and on the dev SQLite file.
-function jd_enforce_rate_limits(PDO $db, string $visitorHash, string $slot): void
+// the same SQL runs on MySQL and on the dev SQLite file. Returns the refusal
+// as DATA (null = the turn may proceed) rather than failing itself, so the
+// caller can re-check for a sibling-created submission before answering 429 —
+// the parallel-slot race, see the note at the call site.
+function jd_rate_limit_failure(PDO $db, string $visitorHash): ?array
 {
     $hourly = $db->prepare('SELECT COUNT(*) FROM jd_submissions WHERE visitor_hash = ? AND created >= ?');
     $hourly->execute([$visitorHash, gmdate('Y-m-d H:i:s', time() - 3600)]);
     if ((int) $hourly->fetchColumn() >= JD_LIMIT_HOURLY) {
-        jd_fail(429, 'rate_limited', 'That is enough turns for one hour.', [
-            'slot' => $slot,
+        return [
+            'status' => 429, 'code' => 'rate_limited',
+            'message' => 'That is enough turns for one hour.',
             'retry_after' => 3600,
-        ]);
+        ];
     }
 
     $midnight = jd_utc_midnight();
@@ -332,10 +357,11 @@ function jd_enforce_rate_limits(PDO $db, string $visitorHash, string $slot): voi
     $daily = $db->prepare('SELECT COUNT(*) FROM jd_submissions WHERE visitor_hash = ? AND created >= ?');
     $daily->execute([$visitorHash, $midnight]);
     if ((int) $daily->fetchColumn() >= JD_LIMIT_DAILY) {
-        jd_fail(429, 'rate_limited', 'That is enough turns for one day.', [
-            'slot' => $slot,
+        return [
+            'status' => 429, 'code' => 'rate_limited',
+            'message' => 'That is enough turns for one day.',
             'retry_after' => jd_seconds_to_utc_midnight(),
-        ]);
+        ];
     }
 
     // Global circuit breaker. Counts pending rows too — in-flight generations
@@ -343,11 +369,14 @@ function jd_enforce_rate_limits(PDO $db, string $visitorHash, string $slot): voi
     $global = $db->prepare('SELECT COUNT(*) FROM jd_generations WHERE created >= ?');
     $global->execute([$midnight]);
     if ((int) $global->fetchColumn() >= JD_LIMIT_GLOBAL_DAILY) {
-        jd_fail(503, 'drawer_resting', 'The drawer is resting — come back tomorrow.', [
-            'slot' => $slot,
+        return [
+            'status' => 503, 'code' => 'drawer_resting',
+            'message' => 'The drawer is resting — come back tomorrow.',
             'retry_after' => jd_seconds_to_utc_midnight(),
-        ]);
+        ];
     }
+
+    return null;
 }
 
 // Nothing ever UPDATEs a row away from 'ok', so every settle is guarded on
