@@ -3949,7 +3949,9 @@ function JD_layerOpen() {
      verbatim). While a machine works, its swatch runs its own OLD-SCHOOL
      WEB WAIT INDICATOR printed in ink, keyed stably to the slot letter:
        a — the flipping hourglass (classic Windows wait cursor)
-       b — the radial-tick throbber (classic browser-chrome spinner)
+       b — the stray word: LOADING ricocheting off the swatch's own edges
+           (the DVD-menu screensaver; round-19 swap, owner pick 2026-08-16 —
+           replaced the radial-tick throbber)
        c — the segmented block progress bar (Win95, indeterminate)
        d — the bouncing loading dots
      A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
@@ -3995,7 +3997,6 @@ function JD_layerOpen() {
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   function darkWell(slot) {
-    var i, ticks = '';
     if (slot === 'a') {
       return '<svg class="jd-dark-hg" width="34" height="42" viewBox="0 0 36 44">' +
         '<g class="hg">' +
@@ -4005,12 +4006,9 @@ function JD_layerOpen() {
         '</g></svg>';
     }
     if (slot === 'b') {
-      for (i = 0; i < 12; i++) {
-        ticks += '<line x1="20" y1="5" x2="20" y2="12"' +
-          (i ? ' transform="rotate(' + i * 30 + ' 20 20)"' : '') + '/>';
-      }
-      return '<svg class="jd-dark-throb" width="40" height="40" viewBox="0 0 40 40">' +
-        '<g class="throb">' + ticks + '</g></svg>';
+      /* two nested movers, one axis each — the CSS runs them at
+         incommensurate periods so the ricochet never visibly repeats */
+      return '<span class="jd-dark-stray"><span class="sy">LOADING</span></span>';
     }
     if (slot === 'c') {
       return '<span class="jd-dark-pbar"><span class="fill"></span></span>';
