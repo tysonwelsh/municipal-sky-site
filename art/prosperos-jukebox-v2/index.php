@@ -109,7 +109,7 @@ include '../../includes/header.php';
                  running head (owner 2026-07-27) to sit with the rest of the
                  apparatus captions, beside the plate. -->
             <div class="pj2-folio-no" id="pj2-folio-no">c dorian &middot; tonic 262</div>
-            <canvas id="pj2-margin" aria-label="the margin apparatus — tide, intensity, the air, the chord, and the motif genealogy as diagram furniture"></canvas>
+            <canvas id="pj2-margin" aria-label="the margin apparatus — the working theme on a five-line staff, tide, intensity, the air, the chord, and the motif genealogy as diagram furniture"></canvas>
             <section class="pj2-log-block">
               <h2 class="pj2-log-head" id="pj2-log-head">annotationes &middot; the scribal log</h2>
               <div class="pj2-log" id="pj2-log" role="log" aria-live="polite" aria-label="the scribal event log">
