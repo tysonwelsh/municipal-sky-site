@@ -1362,6 +1362,9 @@ html.jd-record-open { overflow: hidden; }
   padding: 0.36rem 0.1rem 0.3rem;
 }
 .rc-assign p {
+  margin: 0;   /* the site sheet gives every p a 1rem tail (css/style.css) —
+                  here it opened a dead band between the folded prompt's
+                  fade and the expander (owner, 2026-08-16) */
   font-family: var(--rc-mono); font-size: 0.665rem; line-height: 1.5;
   color: #33302a; white-space: pre-wrap; word-break: break-word;
   text-indent: -0.52em; padding-left: 0.52em;
