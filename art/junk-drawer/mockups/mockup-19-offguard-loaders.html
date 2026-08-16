@@ -160,15 +160,21 @@
   .cut-notch { animation: cutNotch 5s linear infinite; }
   @keyframes cutNotch { from { transform: translateX(0); } to { transform: translateX(162px); } }
 
-  /* ============ no. 10 — stray point ============ */
-  .stray-x { position: absolute; top: 0; left: 0; animation: strayX 2.3s linear infinite alternate; }
-  .stray-y { animation: strayY 3.1s linear infinite alternate; }
-  .stray-x .pt { width: 7px; height: 7px; background: var(--blue); }
-  .stray-x.g1 { animation-delay: 0.13s; } .stray-x.g1 .stray-y { animation-delay: 0.13s; }
-  .stray-x.g2 { animation-delay: 0.26s; } .stray-x.g2 .stray-y { animation-delay: 0.26s; }
-  .stray-x.g1 .pt { opacity: 0.35; } .stray-x.g2 .pt { opacity: 0.15; }
-  @keyframes strayX { from { transform: translateX(0); } to { transform: translateX(173px); } }
-  @keyframes strayY { from { transform: translateY(0); } to { transform: translateY(173px); } }
+  /* ============ no. 10 — stray word ============ */
+  /* the ricochet field is the PLATE, not the inset stage: inset 0 puts the
+     bounce boundaries on the graph paper's own edges, and z-index 1 keeps the
+     word sliding UNDER the kraft corners (z 2) that hold the sheet down. */
+  .bounce-field { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+  .stray-x { position: absolute; top: 0; left: 0; animation: strayX 3.7s linear infinite alternate; }
+  .stray-y { animation: strayY 4.9s linear infinite alternate; }
+  .stray-word {
+    display: block; width: 54px; height: 13px; line-height: 13px;
+    font-family: var(--tmono); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.12em; white-space: nowrap; text-align: center;
+    color: var(--blue);
+  }
+  @keyframes strayX { from { transform: translateX(0); } to { transform: translateX(178px); } }
+  @keyframes strayY { from { transform: translateY(0); } to { transform: translateY(219px); } }
 
   @media (prefers-reduced-motion: reduce) {
     * { animation-play-state: paused !important; }
@@ -394,15 +400,15 @@
     <figure class="plate">
       <div class="art">
         <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
-        <div class="stage">
-          <div class="stray-x g2"><div class="stray-y"><div class="pt"></div></div></div>
-          <div class="stray-x g1"><div class="stray-y"><div class="pt"></div></div></div>
-          <div class="stray-x"><div class="stray-y"><div class="pt"></div></div></div>
+        <div class="bounce-field">
+          <div class="stray-x"><div class="stray-y"><span class="stray-word">LOADING</span></div></div>
         </div>
       </div>
-      <figcaption><span class="no">&#8470;&thinsp;10</span> &mdash; Stray Point</figcaption>
-      <p class="note">One data point has escaped its cell and is ricocheting around the
-      plate, trailing afterimages. It never quite hits the corner. Nobody&rsquo;s does.</p>
+      <figcaption><span class="no">&#8470;&thinsp;10</span> &mdash; Stray Word <span class="no">(rev.&thinsp;B)</span></figcaption>
+      <p class="note">The escaped data point has been identified: it is the word LOADING,
+      ricocheting off the plate&rsquo;s own edges &mdash; the full sheet, corner to corner,
+      passing under the photo corners &mdash; exactly like the logo you once waited on.
+      It never quite hits the corner. Nobody&rsquo;s does.</p>
     </figure>
 
   </div>
