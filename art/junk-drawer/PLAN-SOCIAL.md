@@ -132,28 +132,41 @@ metric-compatible fallbacks (Courier 10 Pitch, Liberation). For
 pixel-identical renders in CI, bundle Courier Prime (OFL-licensed —
 committable) under `art/junk-drawer/social/fonts/` — phase 2 chore.
 
-## §4 Video / animation (phase 2)
+## §4 Video / animation (BUILT 2026-08-16)
 
-`scripts/render-jd-social-video.py` (to build):
+`scripts/render-jd-social-video.py` — produces
+`social/renders/<id>/07-draw-reveal.mp4`, 1080×1350 H.264, ~19s:
+specimens draw themselves stroke by stroke A→D **in each SVG's document
+order** (the order the model actually emitted the shapes — real
+provenance), letters stamp at each start, then model names + grades
+reveal under the plates; verbatim prompt on-sheet throughout.
 
-- **The mechanic:** inject a stylesheet into each SVG at render time —
-  stroked paths get `stroke-dasharray = pathLength` +
-  `stroke-dashoffset` animation (the classic self-drawing line); filled
-  shapes get staggered fade/scale-in in document order (document order =
-  the order the model "drew" — real provenance, not fake).
-- **The format:** one sheet, four plates; specimens draw themselves
-  sequentially A→B→C→D (~4–6s each), labels stamp in after each, hold on
-  the full grid, end-card = The Record. ~25–35s. Master at 1080×1350;
-  9:16 crop for Reels.
-- **The pipeline:** chromium headless frame-stepped screenshots (CSS
-  animations driven by a virtual clock) → ffmpeg (present in the
-  toolchain at `/opt/pw-browsers/ffmpeg-*`) → H.264 MP4.
-- **The variance is content:** a model that draws in filled wedges has
-  nothing to stroke-animate — the caption says so ("Sonnet builds solids;
-  nothing to trace"). Per-response animation style is detected from the
-  SVG (stroke vs fill census) and noted in `meta.json`.
-- Audio: Reels favor audio; start silent + on-screen type, revisit
-  (trending-audio selection can't be automated well at $0).
+- **The mechanic:** stroked paths animate `stroke-dashoffset` over their
+  measured `getTotalLength()`; filled shapes fade in after their outline
+  (or alone); pre-dashed strokes and unstrokeable elements fall back to
+  a fade. A model that draws in filled solids has little to trace — the
+  caption can say so; that variance is content.
+- **Determinism with zero browser-automation deps:** every animation on
+  the page is CSS, *paused*, offset by a negative delay read from
+  `?t=<ms>` — loading the page at `?t=5000` IS the frame at 5s. One
+  headless-shell screenshot per frame (8 workers ≈ 1 min per video),
+  then ffmpeg. H.264 ffmpeg comes from `$FFMPEG_BIN` / PATH /
+  `pip install imageio-ffmpeg` — Playwright's bundled ffmpeg is
+  VP8-only and can't feed Instagram.
+- Remaining (phase 2): 9:16 crop for Reels; audio (start silent,
+  revisit); optional per-response stroke-vs-fill census in `meta.json`.
+
+**In-app draw-on reveal (owner idea, 2026-08-16 — decision pending):**
+the same technique runs live on the real SVG DOM with no video file —
+prototyped in `mockups/mockup-18-draw-on-reveal.html` (buttons per
+specimen, replay, draw-time knob). Recommended integration points if
+adopted: the report-card photograph enlarge, and the alternative-flip
+(incoming response draws on). Not the initial pile load — dozens of
+simultaneous animations are expensive and noisy, and the pile's premise
+is walking in on the mess already there. Guardrails: honor
+`prefers-reduced-motion`, cache measured lengths, strip inline
+animation styles after the run. Touching `junk-drawer.js` is a
+user-facing change (VERSION bump + owner sign-off) — not done yet.
 
 ## §5 Automation pipeline
 
@@ -318,8 +331,11 @@ times.
   (cover/closeups/record + captions + meta/alt-text); `social/queue.json`
   schema; demo render of `2026-07-29-fish-skeleton` committed under
   `social/renders/`.
-- **Phase 2:** video renderer (§4); bundle Courier Prime; reddit-kit
-  emitter; render the re-run four-model backlog as it lands.
+- **Phase 2 — video DONE (2026-08-16):** `render-jd-social-video.py`
+  (§4, shared primitives refactored into `scripts/jd_social_lib.py`) +
+  `mockups/mockup-18-draw-on-reveal.html` (in-app candidate, §4).
+  Remaining: bundle Courier Prime; reddit-kit emitter; 9:16 Reels crop;
+  render the re-run four-model backlog as it lands.
 - **Phase 3:** accounts + secrets (§8); render→PR workflow; posting cron
   (IG carousel, X, Bluesky) + token refresh + failure issues.
 - **Phase 4:** engagement digest routine (§5.5); stats snapshots (§9).

@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>mockup-18 — draw-on reveal (in-app candidate)</title>
+<style>
+  :root {
+    --paper: #f8f3e2; --plate: #fdfaf0; --ink: #37414f; --ink2: #6a7280;
+    --typed: #3a3428; --rule2: rgba(55,65,79,.20);
+    --form: "Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",serif;
+    --mono: "Courier Prime","Courier 10 Pitch","Liberation Mono","Courier New",monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    min-height:100vh; padding:40px 20px 80px;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+      var(--paper);
+    font-family: var(--form); color: var(--ink);
+    display:flex; flex-direction:column; align-items:center; gap:22px;
+  }
+  h1 { font-size:.95rem; letter-spacing:.28em; text-transform:uppercase;
+       color:var(--ink2); text-align:center; }
+  .plate {
+    position:relative; width:min(560px, 92vw); aspect-ratio:1/1;
+    background:var(--plate); border:1.5px solid rgba(55,65,79,.30);
+    box-shadow:0 6px 16px -6px rgba(46,34,12,.45), 0 2px 4px rgba(46,34,12,.30);
+  }
+  .plate .art { position:absolute; inset:7%; }
+  .spec { display:none; width:100%; height:100%; }
+  .spec.on { display:block; }
+  .spec svg { display:block; width:100%; height:100%; }
+  .kc { position:absolute; width:34px; height:34px; z-index:2;
+        background:linear-gradient(135deg,#dfcd9a,#c3aa6e);
+        filter:drop-shadow(0 1.5px 2px rgba(46,34,12,.4)); }
+  .kc.tl { top:-7px; left:-7px;  clip-path:polygon(0 0,100% 0,0 100%); }
+  .kc.tr { top:-7px; right:-7px; clip-path:polygon(0 0,100% 0,100% 100%); }
+  .kc.bl { bottom:-7px; left:-7px;  clip-path:polygon(0 0,0 100%,100% 100%); }
+  .kc.br { bottom:-7px; right:-7px; clip-path:polygon(100% 0,100% 100%,0 100%); }
+  .bar { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+  button, .lbl {
+    font-family:var(--mono); font-size:.78rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--typed);
+  }
+  button {
+    background:var(--plate); border:1.5px solid rgba(55,65,79,.35);
+    padding:8px 14px; cursor:pointer; box-shadow:0 2px 4px rgba(46,34,12,.25);
+  }
+  button.on { background:#e9e2c8; box-shadow:inset 0 1px 3px rgba(46,34,12,.25); }
+  .knob { display:flex; align-items:center; gap:10px; }
+  .notes {
+    max-width:620px; font-family:var(--mono); font-size:.8rem; line-height:1.55;
+    color:var(--typed); background:var(--plate);
+    border:1.5px solid rgba(55,65,79,.3); padding:18px 20px;
+    box-shadow:0 4px 10px -4px rgba(46,34,12,.4);
+  }
+  .notes b { letter-spacing:.12em; }
+  @keyframes jdDraw { to { stroke-dashoffset:0; } }
+  @keyframes jdFill { from { fill-opacity:0; } to { fill-opacity:var(--jdfo,1); } }
+  @keyframes jdOp   { from { opacity:0; }      to { opacity:var(--jdo,1); } }
+</style>
+</head>
+<body>
+<h1>Mockup 18 — draw-on reveal<br>(report-card / alternative-flip candidate)</h1>
+
+<div class="plate">
+  <div class="kc tl"></div><div class="kc tr"></div>
+  <div class="kc bl"></div><div class="kc br"></div>
+  <div class="art">
+<div class="spec" data-model="Claude Opus 5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400" role="img" aria-label="Cartoon fish skeleton with a fish head and X eyes"><title>Cartoon Fish Skeleton</title><g fill="none" stroke="#2A2A33" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M 638 143 C 678 104, 726 56, 786 10 C 758 62, 726 120, 702 172 C 728 212, 758 252, 782 292 C 734 256, 682 196, 638 143 Z" fill="#F5EDDD"/><g stroke-width="5" stroke="#3D3A46" opacity="0.85"><path d="M 656 146 L 758 44 M 660 154 L 736 84 M 664 162 L 712 128 M 656 152 L 748 252 M 660 160 L 730 228 M 664 168 L 708 196"/></g><path d="M 273 214 Q 265 129 327 59 M 273 214 Q 265 299 327 369 M 328 240 Q 321 161 378 97 M 328 240 Q 321 319 378 383 M 384 251 Q 377 177 431 116 M 384 251 Q 377 325 431 386 M 439 247 Q 433 180 482 125 M 439 247 Q 433 314 482 369 M 493 233 Q 488 176 529 129 M 493 233 Q 488 290 529 337 M 543 212 Q 539 167 572 130 M 543 212 Q 539 257 572 294 M 583 188 Q 580 156 603 130 M 583 188 Q 580 220 603 246 M 613 167 Q 611 146 626 129 M 613 167 Q 611 188 626 205" stroke-width="13"/><path d="M 273 214 Q 265 129 327 59 M 273 214 Q 265 299 327 369 M 328 240 Q 321 161 378 97 M 328 240 Q 321 319 378 383 M 384 251 Q 377 177 431 116 M 384 251 Q 377 325 431 386 M 439 247 Q 433 180 482 125 M 439 247 Q 433 314 482 369 M 493 233 Q 488 176 529 129 M 493 233 Q 488 290 529 337 M 543 212 Q 539 167 572 130 M 543 212 Q 539 257 572 294 M 583 188 Q 580 156 603 130 M 583 188 Q 580 220 603 246 M 613 167 Q 611 146 626 129 M 613 167 Q 611 188 626 205" stroke="#F5EDDD" stroke-width="6"/><path d="M 230 175 C 370 330, 560 215, 640 146" stroke-width="24"/><path d="M 230 175 C 370 330, 560 215, 640 146" stroke="#F5EDDD" stroke-width="14"/><path d="M 305 220 L 296 236 M 358 239 L 354 256 M 410 243 L 413 260 M 464 233 L 469 250 M 514 215 L 522 231 M 559 192 L 568 208 M 593 170 L 603 184" stroke-width="4" stroke-linecap="butt" opacity="0.9"/><path d="M 18 176 L 16 248 L 102 208 Z" fill="#8C3D4A" stroke="none"/><path d="M 16 176 C 60 100, 150 68, 236 92 C 250 170, 248 248, 226 302 C 160 332, 92 310, 62 272 L 14 248 L 100 208 Z" fill="#7FB8CA"/><path d="M 62 272 C 92 310, 160 332, 226 302 C 218 282, 150 296, 76 256 Z" fill="#B4DCE7" stroke="none"/><path d="M 206 104 C 228 168, 226 240, 202 296" stroke-width="7" opacity="0.65"/><path d="M 35 184 L 48 189 L 36 200 Z M 61 194 L 74 198 L 62 209 Z M 38 236 L 52 230 L 39 220 Z" fill="#F5EDDD" stroke-width="4"/><circle cx="126" cy="148" r="27" fill="#EAF6F8" stroke-width="5"/><path d="M 110 132 L 142 164 M 142 132 L 110 164" stroke-width="10"/><path d="M 100 108 C 118 97, 142 99, 158 111" stroke-width="6" opacity="0.75"/><circle cx="66" cy="163" r="5" fill="#2A2A33" stroke="none"/></g></svg></div>
+<div class="spec" data-model="Claude Sonnet 5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 158">
+  <g transform="translate(-15,-49)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- stink/dead squiggles above head -->
+    <g stroke="#4a372a" stroke-width="2.2" opacity="0.75">
+      <path d="M58,86 Q64,73 58,60 Q52,49 58,40"/>
+      <path d="M80,89 Q86,77 80,66 Q75,56 80,47"/>
+    </g>
+
+    <!-- spine (drawn as a rounded tube: dark outline + bone fill) -->
+    <path d="M110,140 Q275,95 440,140" stroke="#3a2a1f" stroke-width="11"/>
+    <path d="M110,140 Q275,95 440,140" stroke="#f4ecd8" stroke-width="7.5"/>
+
+    <!-- rib bones (7 pairs, tapering toward tail, swept back toward the head) -->
+    <g stroke="#3a2a1f" stroke-width="2.6">
+      <!-- rib 1 -->
+      <g transform="translate(149.6,130.5) rotate(-41.7)"><path d="M -8,0 Q -4,-25 0,-45.8 Q 4,-25 8,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(149.6,130.5) rotate(18.3)"><path d="M -8,0 Q -4,25 0,45.8 Q 4,25 8,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 2 -->
+      <g transform="translate(189.2,123.6) rotate(-38.06)"><path d="M -7.5,0 Q -3.7,-23 0,-41.6 Q 3.7,-23 7.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(189.2,123.6) rotate(21.94)"><path d="M -7.5,0 Q -3.7,23 0,41.6 Q 3.7,23 7.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 3 -->
+      <g transform="translate(228.8,119.26) rotate(-34.36)"><path d="M -6.5,0 Q -3.2,-20.5 0,-37.4 Q 3.2,-20.5 6.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(228.8,119.26) rotate(25.64)"><path d="M -6.5,0 Q -3.2,20.5 0,37.4 Q 3.2,20.5 6.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 4 -->
+      <g transform="translate(268.4,118.6) rotate(-30.62)"><path d="M -6,0 Q -3,-18 0,-33.2 Q 3,-18 6,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(268.4,118.6) rotate(29.38)"><path d="M -6,0 Q -3,18 0,33.2 Q 3,18 6,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 5 -->
+      <g transform="translate(308,118.4) rotate(-26.88)"><path d="M -5,0 Q -2.5,-16 0,-29 Q 2.5,-16 5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(308,118.4) rotate(33.12)"><path d="M -5,0 Q -2.5,16 0,29 Q 2.5,16 5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 6 -->
+      <g transform="translate(347.6,121.86) rotate(-23.16)"><path d="M -4.5,0 Q -2.2,-13.5 0,-24.8 Q 2.2,-13.5 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(347.6,121.86) rotate(36.84)"><path d="M -4.5,0 Q -2.2,13.5 0,24.8 Q 2.2,13.5 4.5,0 Z" fill="#f4ecd8"/></g>
+      <!-- rib 7 -->
+      <g transform="translate(387.2,127.9) rotate(-19.49)"><path d="M -3.5,0 Q -1.7,-11 0,-20.6 Q 1.7,-11 3.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(387.2,127.9) rotate(40.51)"><path d="M -3.5,0 Q -1.7,11 0,20.6 Q 1.7,11 3.5,0 Z" fill="#f4ecd8"/></g>
+    </g>
+
+    <!-- tail fin bones, fanning out from end of spine -->
+    <g stroke="#3a2a1f" stroke-width="3">
+      <g transform="translate(440,140) rotate(60.3)"><path d="M -6,0 Q -3.5,-38 0,-70 Q 3.5,-38 6,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(90.3)"><path d="M -4.5,0 Q -2.6,-27 0,-50 Q 2.6,-27 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(120.3)"><path d="M -4.5,0 Q -2.6,-27 0,-50 Q 2.6,-27 4.5,0 Z" fill="#f4ecd8"/></g>
+      <g transform="translate(440,140) rotate(150.3)"><path d="M -6,0 Q -3.5,-38 0,-70 Q 3.5,-38 6,0 Z" fill="#f4ecd8"/></g>
+    </g>
+
+    <!-- fish head (the only fleshy part) -->
+    <path d="M110,140 C100,172 60,175 40,155 C25,140 25,110 40,92 C55,78 95,80 112,112 Z"
+          fill="#f4ecd8" stroke="#3a2a1f" stroke-width="4"/>
+
+    <!-- gill crease -->
+    <path d="M107,96 Q95,128 107,160" stroke="#3a2a1f" stroke-width="3"/>
+
+    <!-- X eye, showing it's dead -->
+    <g stroke="#2a1c13" stroke-width="6">
+      <path d="M58,105 L76,123"/>
+      <path d="M58,123 L76,105"/>
+    </g>
+
+    <!-- open mouth with a couple bony teeth -->
+    <path d="M32,128 Q40,140 52,131" stroke="#3a2a1f" stroke-width="3"/>
+    <path d="M39,133 L41,140 L43,133 Z" fill="#f4ecd8" stroke="#3a2a1f" stroke-width="1.5"/>
+    <path d="M46,133 L48,140 L50,133 Z" fill="#f4ecd8" stroke="#3a2a1f" stroke-width="1.5"/>
+  </g>
+</svg></div>
+<div class="spec" data-model="Claude Fable 5"><svg xmlns="http://www.w3.org/2000/svg" viewBox="4 57 392 116">
+  <g stroke="#23211f" stroke-width="10" stroke-linecap="round" fill="none">
+    <path d="M130.5 79.3 Q152.5 113.6 159.7 153.7"/>
+    <path d="M169 67 Q186.2 104 187.8 144.8"/>
+    <path d="M208.4 64.5 Q219.8 99.6 215.2 136.1"/>
+    <path d="M247 69.6 Q253.4 100 243.8 129.6"/>
+    <path d="M284 80.4 Q287.1 105.5 274.6 127.4"/>
+    <path d="M112 132 Q222 72 336 122" stroke-width="11"/>
+  </g>
+  <g stroke="#f6f1e3" stroke-width="5" stroke-linecap="round" fill="none">
+    <path d="M130.5 79.3 Q152.5 113.6 159.7 153.7"/>
+    <path d="M169 67 Q186.2 104 187.8 144.8"/>
+    <path d="M208.4 64.5 Q219.8 99.6 215.2 136.1"/>
+    <path d="M247 69.6 Q253.4 100 243.8 129.6"/>
+    <path d="M284 80.4 Q287.1 105.5 274.6 127.4"/>
+    <path d="M112 132 Q222 72 336 122" stroke-width="6"/>
+  </g>
+  <g stroke-linejoin="round">
+    <path d="M334 114 L389 76 L373 119 L389 161 L334 130 Q325 122 334 114 Z" fill="#8fc1bb" stroke="#23211f" stroke-width="5"/>
+    <g stroke="#23211f" stroke-width="3" stroke-linecap="round" fill="none" opacity="0.85">
+      <path d="M341 120 L376 93"/>
+      <path d="M342 123 L368 119"/>
+      <path d="M341 126 L375 148"/>
+    </g>
+    <path d="M10 130 C24 98 62 84 98 90 C114 94 122 108 122 126 C122 146 112 160 94 165 C70 171 44 168 22 158 L38 143 Z" fill="#8fc1bb" stroke="#23211f" stroke-width="5"/>
+    <path d="M102 96 Q88 126 100 162" fill="none" stroke="#23211f" stroke-width="4" stroke-linecap="round"/>
+    <g stroke="#23211f" stroke-width="5.5" stroke-linecap="round">
+      <path d="M49 113 L67 131"/>
+      <path d="M67 113 L49 131"/>
+    </g>
+  </g>
+</svg></div>
+<div class="spec" data-model="Kimi K3"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 58 788 300">
+    <!-- dark underlay strokes (outline) for bones -->
+    <g fill="none" stroke="#33302a" stroke-linecap="round">
+      <g stroke-width="16">
+        <path d="M60 140 L18 72"/>
+        <path d="M60 140 L12 106"/>
+        <path d="M60 140 L10 142"/>
+        <path d="M60 140 L14 178"/>
+        <path d="M60 140 L28 210"/>
+      </g>
+      <g stroke-width="17">
+        <path d="M146 155 Q122 200 146 245"/>
+        <path d="M199 150 Q175 220 199 290"/>
+        <path d="M253 146 Q229 234 253 322"/>
+        <path d="M308 141 Q284 241 308 341"/>
+        <path d="M364 138 Q340 242 364 346"/>
+        <path d="M420 135 Q396 235 420 335"/>
+        <path d="M476 133 Q452 221 476 309"/>
+        <path d="M531 129 Q507 199 531 269"/>
+      </g>
+      <path stroke-width="20" d="M60 140 C220 260 420 280 600 170"/>
+    </g>
+    <!-- cream bone strokes -->
+    <g fill="none" stroke="#f8f3e3" stroke-linecap="round">
+      <g stroke-width="8">
+        <path d="M60 140 L18 72"/>
+        <path d="M60 140 L12 106"/>
+        <path d="M60 140 L10 142"/>
+        <path d="M60 140 L14 178"/>
+        <path d="M60 140 L28 210"/>
+      </g>
+      <g stroke-width="9">
+        <path d="M146 155 Q122 200 146 245"/>
+        <path d="M199 150 Q175 220 199 290"/>
+        <path d="M253 146 Q229 234 253 322"/>
+        <path d="M308 141 Q284 241 308 341"/>
+        <path d="M364 138 Q340 242 364 346"/>
+        <path d="M420 135 Q396 235 420 335"/>
+        <path d="M476 133 Q452 221 476 309"/>
+        <path d="M531 129 Q507 199 531 269"/>
+      </g>
+      <path stroke-width="12" d="M60 140 C220 260 420 280 600 170"/>
+    </g>
+    <!-- bone knobs: rib tips, vertebrae, tail tips -->
+    <g fill="#f8f3e3" stroke="#33302a" stroke-width="5">
+      <circle cx="18" cy="72" r="7"/>
+      <circle cx="12" cy="106" r="7"/>
+      <circle cx="10" cy="142" r="7"/>
+      <circle cx="14" cy="178" r="7"/>
+      <circle cx="28" cy="210" r="7"/>
+      <circle cx="60" cy="140" r="9"/>
+      <circle cx="146" cy="155" r="8"/><circle cx="146" cy="245" r="8"/>
+      <circle cx="160" cy="200" r="8"/>
+      <circle cx="199" cy="150" r="8"/><circle cx="199" cy="290" r="8"/>
+      <circle cx="213" cy="220" r="8"/>
+      <circle cx="253" cy="146" r="8"/><circle cx="253" cy="322" r="8"/>
+      <circle cx="267" cy="234" r="8"/>
+      <circle cx="308" cy="141" r="8"/><circle cx="308" cy="341" r="8"/>
+      <circle cx="322" cy="241" r="8"/>
+      <circle cx="364" cy="138" r="8"/><circle cx="364" cy="346" r="8"/>
+      <circle cx="378" cy="242" r="8"/>
+      <circle cx="420" cy="135" r="8"/><circle cx="420" cy="335" r="8"/>
+      <circle cx="434" cy="235" r="8"/>
+      <circle cx="476" cy="133" r="8"/><circle cx="476" cy="309" r="8"/>
+      <circle cx="490" cy="221" r="8"/>
+      <circle cx="531" cy="129" r="8"/><circle cx="531" cy="269" r="8"/>
+      <circle cx="545" cy="199" r="8"/>
+    </g>
+    <!-- mouth interior behind head -->
+    <path d="M788 143 L708 164 Q698 185 714 201 L782 217 Z" fill="#4a4438"/>
+    <!-- fleshy fish head -->
+    <path d="M590 120 Q655 35 742 88 Q778 108 782 150 L715 168 Q705 185 718 196 L775 210 Q740 285 655 290 Q600 285 588 240 Q572 175 590 120 Z"
+          fill="#a3c26a" stroke="#33302a" stroke-width="7" stroke-linejoin="round"/>
+    <!-- gill -->
+    <path d="M615 128 Q592 195 610 258" fill="none" stroke="#33302a" stroke-width="6" stroke-linecap="round"/>
+    <!-- pectoral fin -->
+    <path d="M628 268 Q596 306 562 300 Q584 272 608 252 Z" fill="#86a84f" stroke="#33302a" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M600 262 Q584 282 572 292 M612 272 Q596 290 582 296" fill="none" stroke="#33302a" stroke-width="4" stroke-linecap="round"/>
+    <!-- X eyes (dead) -->
+    <g fill="none" stroke="#33302a" stroke-linecap="round">
+      <path stroke-width="8" d="M677 117 L713 153 M713 117 L677 153"/>
+      <path stroke-width="7" d="M627 89 L653 115 M653 89 L627 115"/>
+    </g>
+  </svg></div>
+  </div>
+</div>
+
+<div class="bar" id="models"></div>
+<div class="bar">
+  <button id="replay">Replay ⟳</button>
+  <span class="knob"><span class="lbl">Draw time</span>
+    <input type="range" id="dur" min="1" max="8" step="0.5" value="3">
+    <span class="lbl" id="durv">3.0s</span></span>
+</div>
+
+<div class="notes">
+<b>WHAT THIS IS:</b> the social video's stroke-draw technique running live
+on the real SVG DOM — no video file involved. Stroked paths draw
+themselves over their measured length (in document order — the order the
+model emitted them); filled shapes fade in; pre-dashed strokes and
+unstrokeable elements fall back to a fade.<br><br>
+<b>WHERE IT COULD LIVE IN THE DRAWER:</b> (1) when a report card's
+photograph enlarges — one item, full attention, cost is one-time;
+(2) when flipping to an alternative response — the incoming specimen
+draws on. NOT recommended for the initial pile load: dozens of SVGs
+animating at once is expensive and reads as noise, and the pile's charm
+is walking in on the mess already in progress.<br><br>
+<b>GUARDRAILS FOR REAL INTEGRATION:</b> honor
+<code>prefers-reduced-motion</code> (this page does — it skips straight
+to the finished art); measure lengths once per SVG and cache; strip the
+inline animation styles after the run so the art returns to its
+untouched state.
+</div>
+
+<script>
+(function () {
+  var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var specs = [].slice.call(document.querySelectorAll('.spec'));
+  var bar = document.getElementById('models');
+  var durIn = document.getElementById('dur'), durV = document.getElementById('durv');
+
+  function clearAnim(svg) {
+    [].slice.call(svg.querySelectorAll('*')).forEach(function (el) {
+      el.style.animation = ''; el.style.strokeDasharray = '';
+      el.style.strokeDashoffset = ''; el.style.removeProperty('--jdfo');
+      el.style.removeProperty('--jdo');
+    });
+  }
+
+  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,symbol,marker';
+  function draw(svg, span) {
+    if (reduced) return;
+    clearAnim(svg);
+    void svg.getBoundingClientRect();  // reflow so a re-run restarts
+    var items = [];
+    [].slice.call(svg.querySelectorAll(
+        'path,line,polyline,polygon,circle,ellipse,rect,text,use'))
+      .forEach(function (el) {
+        if (el.closest(SKIP)) return;
+        var cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        var L = 0; try { L = el.getTotalLength(); } catch (e) {}
+        var stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+                      parseFloat(cs.strokeOpacity) > 0 &&
+                      cs.strokeDasharray === 'none' && L > 0;
+        var filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+        if (stroked || filled)
+          items.push({el:el, L:Math.max(L,4), stroked:stroked, filled:filled, cs:cs});
+      });
+    var totalW = items.reduce(function (s,i){ return s + Math.sqrt(i.L); }, 0) || 1;
+    var acc = 0;
+    items.forEach(function (it) {
+      var frac = Math.sqrt(it.L) / totalW;
+      var start = (acc / totalW) * span * 0.9;
+      acc += Math.sqrt(it.L);
+      var dur = Math.max(Math.min(span * frac * 1.7, span - start), 0.12);
+      function add(name, d, delay, ease, vars) {
+        var a = name+' '+d+'s '+ease+' '+delay+'s 1 both';
+        it.el.style.animation = it.el.style.animation ?
+          it.el.style.animation + ', ' + a : a;
+        if (vars) for (var k in vars) it.el.style.setProperty(k, vars[k]);
+      }
+      if (it.stroked) {
+        it.el.style.strokeDasharray = it.L;
+        it.el.style.strokeDashoffset = it.L;
+        add('jdDraw', dur, start, 'ease-out');
+        if (it.filled)
+          add('jdFill', Math.max(dur*0.6,0.15), start + dur*0.45, 'ease-in',
+              {'--jdfo': it.cs.fillOpacity});
+      } else {
+        add('jdOp', Math.max(dur*0.8,0.15), start, 'ease-in', {'--jdo': it.cs.opacity});
+      }
+    });
+  }
+
+  function show(i) {
+    specs.forEach(function (s, j) { s.classList.toggle('on', j === i); });
+    [].slice.call(bar.children).forEach(function (b, j) {
+      b.classList.toggle('on', j === i); });
+    draw(specs[i].querySelector('svg'), parseFloat(durIn.value));
+  }
+  specs.forEach(function (s, i) {
+    var b = document.createElement('button');
+    b.textContent = s.dataset.model;
+    b.addEventListener('click', function () { show(i); });
+    bar.appendChild(b);
+  });
+  document.getElementById('replay').addEventListener('click', function () {
+    var i = specs.findIndex(function (s) { return s.classList.contains('on'); });
+    show(i < 0 ? 0 : i);
+  });
+  durIn.addEventListener('input', function () {
+    durV.textContent = parseFloat(durIn.value).toFixed(1) + 's'; });
+  show(0);
+})();
+</script>
+</body>
+</html>

@@ -48,5 +48,11 @@
       "rid": "r2",
       "model": "claude-sonnet-5"
     }
-  ]
+  ],
+  "video": {
+    "file": "07-draw-reveal.mp4",
+    "duration_s": 18.8,
+    "fps": 24,
+    "alt": "Animated specimen sheet: 4 AI-generated vector drawings of Fish skeleton draw themselves stroke by stroke, labeled A to D, then the model names and grades are revealed under each drawing."
+  }
 }
