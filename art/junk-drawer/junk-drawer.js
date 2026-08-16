@@ -3616,13 +3616,13 @@ function JD_layerOpen() {
     scrim.innerHTML =
       '<div class="jd-turn" role="dialog" aria-modal="true" ' +
       'aria-label="take a turn">' +
-      /* F1 (round-16): the ✕ is now a plain flex child of .jd-turn-head,
-         sharing the title's centerline by construction instead of being
-         position:absolute against the whole card in a separate coordinate
-         frame. It sits OUTSIDE .jd-turn-headline, which is the only part of
-         the head paint() rewrites on every state change — so the close
-         button (and its one click listener, bound once below) is never torn
-         down and never needs rebinding. */
+      /* F1 (round-16, seat revised 2026-08-16): the ✕ belongs to
+         .jd-turn-head — pinned to the row's own top-right corner in the
+         CSS, never positioned against the whole card in a separate
+         coordinate frame. It sits OUTSIDE .jd-turn-headline, which is the
+         only part of the head paint() rewrites on every state change — so
+         the close button (and its one click listener, bound once below) is
+         never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
       '<span aria-hidden="true">✕</span></button></header>' +

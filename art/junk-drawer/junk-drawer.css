@@ -1802,14 +1802,19 @@ html.jd-turn-open { overflow: hidden; }
   background-image: var(--tmottle); background-size: 420px 420px;
 }
 /* the boxed ✕ — the record card's control language (a 26px printed box
-   centred in a 44px target, so the box can stay form-sized). F1 (round-16):
-   this used to be position:absolute against the whole CARD while the
-   masthead centred its own row independently — two unrelated coordinate
-   frames that happened to disagree by 7.6px. It is now a plain flex child
-   of .jd-turn-head, on the SAME line as the title, so it shares the title's
-   centerline by construction instead of by luck. */
+   centred in a 44px target, so the box can stay form-sized). Owner rev
+   2026-08-16: seated in the sheet's TOP-RIGHT CORNER — the 44px target is
+   pinned to the head's corner so its printed box lands 9px in from the
+   card's edges, the record card's exact seat, instead of drifting with the
+   row's padding (it sat 26px in on desktop and 56px on phones, visibly
+   adrift). It anchors to the HEAD, not the card, so the darkroom's
+   cornered overlay strip carries it unchanged; DOM-wise it stays the
+   head's one static, never-replaced child (F1) — paint() rewrites only
+   .jd-turn-headline, so the close's click handler still binds once. The
+   head's min-height (44px + rule) keeps the band fully containing the
+   target, which also re-centres the box on a one-line title's centerline. */
 .jd-turn-close {
-  flex: 0 0 auto; z-index: 8;
+  position: absolute; top: 0; right: 0; z-index: 8;
   width: 44px; height: 44px;
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
@@ -1828,17 +1833,20 @@ html.jd-turn-open { overflow: hidden; }
    A form number and the heading. This is the entire surviving "form band":
    no docket, no routing strip, no narration. It sits OUTSIDE the scroller,
    so the sheet's identity never scrolls away from the words it names.
-   THE MASTHEAD RULE (F1): everything on this row — form-no, heading, and the
-   ✕ — is a flex child of ONE row (.jd-turn-head, align-items: center).
-   Nothing in it is positioned outside that row's own box model. The heading
-   and the form-no live in .jd-turn-headline (a nested flex row, because
+   THE MASTHEAD RULE (F1, amended 2026-08-16): everything here belongs to
+   ONE row's box model (.jd-turn-head) — the heading flows in it, and the ✕
+   is pinned to its corner, never positioned against anything outside it.
+   The heading lives in .jd-turn-headline (a nested flex row, because
    paint() replaces just its innerHTML on every state change); the ✕ is the
    row's one static, never-replaced child, so a future edit to the head's
    content can never orphan its click handler. */
 .jd-turn-head {
   position: relative; z-index: 4; flex: 0 0 auto;
   display: flex; align-items: center; gap: 10px;
-  padding: var(--sp-2) 16px;    /* F5: 8px/8px, not the old 8px/7px accident */
+  /* right padding clears the cornered 44px close target (44 + a hair);
+     min-height guarantees the band contains it, title short or absent */
+  box-sizing: border-box; min-height: 44px;
+  padding: var(--sp-2) 48px var(--sp-2) 16px;
   border-bottom: 1.5px solid var(--trule);
   background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
 }
@@ -2743,7 +2751,7 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
 }
 @media (max-width: 600px) {
-  .jd-turn-head { padding: 7px 46px 6px 12px; gap: 8px; }
+  .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
   .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
   .jd-turn-scroll { padding: 10px 12px 14px; }
   /* stacked, never tabbed: the whole question is "which of these two", and a
