@@ -135,13 +135,7 @@ BASE_CSS = """
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   width: 1080px; height: 1350px; overflow: hidden; position: relative;
-  /* the drawer's graph paper (junk-drawer.css .rc-plate) at 2x module */
-  background:
-    repeating-linear-gradient(0deg,  rgba(74,98,138,0.17) 0 2px, transparent 2px 90px),
-    repeating-linear-gradient(90deg, rgba(74,98,138,0.17) 0 2px, transparent 2px 90px),
-    repeating-linear-gradient(0deg,  rgba(74,98,138,0.07) 0 2px, transparent 2px 18px),
-    repeating-linear-gradient(90deg, rgba(74,98,138,0.07) 0 2px, transparent 2px 18px),
-    var(--paper);
+  background: var(--paper);   /* plain sheet — the graph paper lives on the plates */
 }
 /* municipal double rule */
 .frame { position: absolute; inset: 24px; border: 2.5px solid var(--rule);
@@ -165,7 +159,14 @@ body {
   text-transform: uppercase; color: var(--ink2); }
 .head::after { content: ""; flex: 1 1 auto; border-top: 1.5px solid var(--rule2); }
 
-.plate { position: relative; background: var(--plate);
+.plate { position: relative;
+  /* the drawer's graph paper (junk-drawer.css .rc-plate), same module */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74,98,138,0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74,98,138,0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,0.07) 0 1px, transparent 1px 9px),
+    var(--plate);
   border: 1.5px solid rgba(55, 65, 79, 0.30);
   box-shadow: 0 7px 18px -6px rgba(46, 34, 12, 0.45),
               0 2px 5px rgba(46, 34, 12, 0.30); }

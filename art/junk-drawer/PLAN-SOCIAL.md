@@ -135,11 +135,14 @@ committable) under `art/junk-drawer/social/fonts/` — phase 2 chore.
 ## §4 Video / animation (BUILT 2026-08-16)
 
 `scripts/render-jd-social-video.py` — produces
-`social/renders/<id>/07-draw-reveal.mp4`, 1080×1350 H.264, ~19s:
-specimens draw themselves stroke by stroke A→D **in each SVG's document
-order** (the order the model actually emitted the shapes — real
-provenance), letters stamp at each start, then model names + grades
-reveal under the plates; verbatim prompt on-sheet throughout.
+`social/renders/<id>/07-draw-reveal.mp4`, 1080×1350 H.264, ~12s: all
+specimens draw themselves stroke by stroke **simultaneously** (owner
+rev 2026-08-16; each in its own SVG document order — the order the
+model actually emitted the shapes, real provenance), then model names +
+grades reveal under the plates; verbatim prompt on-sheet throughout.
+Style note (same owner rev): the graph paper lives on the item plates
+(matching the drawer's report-card `.rc-plate`); the surrounding sheet
+is plain cream — applies to the still cards too via the shared CSS.
 
 - **The mechanic:** stroked paths animate `stroke-dashoffset` over their
   measured `getTotalLength()`; filled shapes fade in after their outline

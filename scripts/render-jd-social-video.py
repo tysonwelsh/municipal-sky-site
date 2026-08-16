@@ -6,10 +6,10 @@ Usage:
         [--workers N] [--crf N] [--keep-html]
 
 Produces art/junk-drawer/social/renders/<id>/07-draw-reveal.mp4 — a
-1080x1350 H.264 video on the graph-paper sheet: the four specimens draw
-themselves stroke by stroke (A -> B -> C -> D, in each SVG's own document
-order — real provenance, the order the model actually emitted the
-shapes), then the model names + grades stamp in under the plates.
+1080x1350 H.264 video: the four specimens draw themselves stroke by
+stroke SIMULTANEOUSLY on their graph-paper plates (each in its own SVG
+document order — real provenance, the order the model actually emitted
+the shapes), then the model names + grades stamp in under the plates.
 
 How it stays deterministic with no browser automation dependency: the
 page's every animation is CSS, *paused*, with a negative delay taken
@@ -38,9 +38,9 @@ from jd_social_lib import (JD, REPO, SITE, blind_order, esc, find_chrome,
                            screenshot)
 
 # timeline (seconds)
-INTRO = 0.9          # sheet on screen before A starts
-PER = 3.2            # per-specimen draw window
-REVEAL_GAP = 0.3     # pause after D finishes
+INTRO = 0.9          # sheet on screen before the draw starts
+DRAW = 6.0           # shared draw window — all specimens draw at once
+REVEAL_GAP = 0.3     # pause after the draw finishes
 CAP_STAGGER = 0.3    # caption stamps, one after another
 CAP_DUR = 0.7
 TAIL = 3.2           # hold on the fully revealed sheet
@@ -112,12 +112,11 @@ VIDEO_JS = """
   }
 
   var svgs = [].slice.call(document.querySelectorAll('.plate-art svg'));
-  svgs.forEach(function (svg, i) {
-    var w0 = CFG.intro + i * CFG.per;
-    schedule(svg, w0, w0 + CFG.per * 0.94);
+  svgs.forEach(function (svg) {
+    schedule(svg, CFG.intro, CFG.intro + CFG.draw);   // all at once
   });
-  [].slice.call(document.querySelectorAll('.jd-letter')).forEach(function (el, i) {
-    anim(el, 'jdStamp', 0.4, CFG.intro + i * CFG.per, 'ease-out');
+  [].slice.call(document.querySelectorAll('.jd-letter')).forEach(function (el) {
+    anim(el, 'jdStamp', 0.4, CFG.intro, 'ease-out');
   });
   [].slice.call(document.querySelectorAll('.jd-cap')).forEach(function (el, i) {
     anim(el, 'jdCap', CFG.capDur, CFG.reveal + i * CFG.capStagger, 'ease-out');
@@ -137,7 +136,7 @@ def video_page(entry, blind, tax, item_dir, live=False):
                     f'{grade_label(tax, r.get("grade"))}')
     while len(labels) < 4:
         labels.append("—"); subs.append("")
-    reveal = INTRO + n * PER + REVEAL_GAP
+    reveal = INTRO + DRAW + REVEAL_GAP
     total = reveal + (n - 1) * CAP_STAGGER + CAP_DUR + TAIL
     prompt = esc(entry["prompt"])
     tp = min(prompt_pt(entry["prompt"]), 23)
@@ -160,7 +159,7 @@ FILE Nº {esc(entry["id"].upper())} · 1 PROMPT · {n} MODELS · SVG</div>
   DRAWN IN DOCUMENT ORDER &nbsp;·&nbsp; FULL DRAWER → LINK IN BIO</span>
   <span class="eyebrow" style="font-size:18px;letter-spacing:0.18em">{SITE}</span>
 </div>"""
-    cfg = json.dumps({"intro": INTRO, "per": PER, "reveal": reveal,
+    cfg = json.dumps({"intro": INTRO, "draw": DRAW, "reveal": reveal,
                       "capStagger": CAP_STAGGER, "capDur": CAP_DUR,
                       "live": live, "liveDelay": 0.4})
     return page(body, extra_css=VIDEO_CSS, tail=VIDEO_JS % {"cfg": cfg}), total
@@ -215,8 +214,8 @@ def render_video(item_id, chrome, ffmpeg, fps, workers, crf, keep_html):
         "fps": fps,
         "alt": (f"Animated specimen sheet: {len(blind)} AI-generated vector "
                 f"drawings of {entry['title']} draw themselves stroke by "
-                f"stroke, labeled A to D, then the model names and grades "
-                f"are revealed under each drawing.")}
+                f"stroke at the same time, labeled A to D, then the model "
+                f"names and grades are revealed under each drawing.")}
     with open(mp, "w", encoding="utf-8") as f:
         json.dump(meta, f, indent=2)
         f.write("\n")
