@@ -2299,16 +2299,30 @@ function JD_layerOpen() {
    Two customers: the report card's plate (open / response flip / REPLAY)
    and the turn's reveal, where the fresh drawings' first appearance is the
    whole point. opts: { force: play even under prefers-reduced-motion — an
-   explicit request is not ambient animation; secs: run length, default
-   2.6 }. Returns true if it played. The inline animation styles are
-   stripped when the run ends, so the DOM goes back to exactly what was
-   rendered; overlapping runs on one svg settle by a sequence stamp on the
-   element — the newer run owns the artwork. Keyframes live in
-   junk-drawer.css beside .rc-plate-art. */
+   explicit request is not ambient animation; secs: run length — omit it
+   and the run is paced by the DRAWING (below) }. Returns the seconds the
+   run will take (truthy), or false if it didn't play. The inline
+   animation styles are stripped when the run ends, so the DOM goes back
+   to exactly what was rendered; overlapping runs on one svg settle by a
+   sequence stamp on the element — the newer run owns the artwork.
+   Keyframes live in junk-drawer.css beside .rc-plate-art.
+
+   PACING (owner rev, 2026-08-16 — "simple objects drew in slow motion"):
+   a fixed run length made every drawing finish in the same time, so a
+   one-path paperclip crawled while a 600-element portrait sprinted. The
+   default now models a hand moving at constant speed: the run length is
+   total measured ink (every element's length, min-clamped) divided by
+   the artwork's viewBox diagonal — a scale-free "diagonals of ink"
+   number — drawn at WORK_RATE diagonals/second, clamped to
+   [SECS_MIN, SECS_MAX] so a two-stroke doodle still registers and a
+   monster can't run half a minute. Calibrated on the live items:
+   paperclip work≈3 → 1.2s, fish skeleton ≈5 → 1.6s, subway rat ≈9 →
+   3.0s, crystal ball ≈25 and up → the 4.2s cap. */
 (function () {
   var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
   var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,' +
     'symbol,marker';
+  var WORK_RATE = 3, SECS_MIN = 1.2, SECS_MAX = 4.2;
   var seq = 0;
   function strip(svg) {
     if (!svg || !document.contains(svg)) return;
@@ -2329,9 +2343,8 @@ function JD_layerOpen() {
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     } catch (e) {}
     if (!svg || (reduce && !opts.force)) return false;
-    var secs = opts.secs || 2.6;
     var els = svg.querySelectorAll(SEL);
-    var items = [], i, el, cs, L, stroked, filled;
+    var items = [], i, el, cs, L, stroked, filled, ink = 0;
     for (i = 0; i < els.length; i++) {
       el = els[i];
       if (el.closest && el.closest(SKIP)) continue;
@@ -2346,6 +2359,27 @@ function JD_layerOpen() {
       if (!stroked && !filled) continue;
       items.push({ el: el, L: Math.max(L, 4), stroked: stroked,
         filled: filled, fo: cs.fillOpacity, op: cs.opacity });
+      ink += Math.max(L, 4);
+    }
+    var secs = opts.secs;
+    if (!secs) {
+      /* pace by the drawing, not the clock (see PACING above). The
+         diagonal comes from the declared viewBox — the same frame the
+         lengths are measured in; a viewBox-less artwork (none in the
+         collection, but the validator doesn't forbid it) falls back to
+         its rendered bounding box. */
+      var diag = 0;
+      var vb = svg.viewBox && svg.viewBox.baseVal;
+      if (vb && vb.width > 0) {
+        diag = Math.sqrt(vb.width * vb.width + vb.height * vb.height);
+      } else {
+        try {
+          var bb = svg.getBBox();
+          diag = Math.sqrt(bb.width * bb.width + bb.height * bb.height);
+        } catch (e) {}
+      }
+      var work = diag > 0 ? ink / diag : 0;
+      secs = Math.min(SECS_MAX, Math.max(SECS_MIN, work / WORK_RATE));
     }
     var totalW = 0;
     for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
@@ -2385,7 +2419,7 @@ function JD_layerOpen() {
     setTimeout(function () {
       if (svg.__jdDrawSeq === my) strip(svg);
     }, (secs + 0.4) * 1000);
-    return true;
+    return secs;
   };
 })();
 
@@ -3230,20 +3264,22 @@ function JD_layerOpen() {
      here is the card's plate ONLY — the enlargement is the same photograph
      held closer, not a new drawing; the strip's thumbnails and the pile
      never draw at all. */
-  var DRAW_SECS = 2.6;
   var drawNext = false, drawUntil = 0;
   /* `force` is the REPLAY button's explicit press: requested motion plays
      even when prefers-reduced-motion is on — the preference guards against
      ambient animation, and a button whose whole job is "animate this" going
-     dead would be the worse accessibility outcome. */
+     dead would be the worse accessibility outcome. No `secs`: the engine
+     paces each artwork by its own measured ink (owner rev, 2026-08-16 —
+     a paperclip sketches in a moment, a portrait takes its time). */
   function drawOn(force) {
     if (!scrollEl || !curEntry || !window.JD_drawOn) return;
     var holder = scrollEl.querySelector('.rc-plate-art');
     var svg = holder ? holder.querySelector('svg') : null;
-    if (svg && window.JD_drawOn(svg, { force: !!force, secs: DRAW_SECS })) {
+    var secs = svg && window.JD_drawOn(svg, { force: !!force });
+    if (secs) {
       /* the lazy-fetch guard's window: while this hasn't elapsed, a draw
          is (or may be) in flight on the plate */
-      drawUntil = Date.now() + (DRAW_SECS + 0.4) * 1000;
+      drawUntil = Date.now() + (secs + 0.4) * 1000;
     }
   }
 
