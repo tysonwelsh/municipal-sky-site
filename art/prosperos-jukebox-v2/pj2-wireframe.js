@@ -211,7 +211,7 @@
         // mirror marginLayout()'s stacked sequence: scene, staff, dials,
         // rows, then the tree takes the remainder
         var sceneH = Math.round(H * 0.13), staffH = Math.round(H * 0.21);
-        var dialH = Math.round(H * 0.18), rowH = Math.max(44, Math.round(H * 0.11));
+        var dialH = Math.round(H * 0.18), rowH = Math.max(48, Math.round(H * 0.11));
         var y = p;
         var slots = [];
         slots.push({ x: p, y: y, w: W - 2 * p, h: sceneH, key: "scene", head: "the scene heading" });
