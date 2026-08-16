@@ -1,0 +1,5 @@
+Fish skeleton — one prompt, 4 models (Anthropic, Moonshot AI), one shot each, SVG output.
+
+Guess which is which, then check the last image for the record.
+
+The full drawer: https://municipalsky.com/art/junk-drawer/

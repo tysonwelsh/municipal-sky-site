@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "note": "Posting queue for the social pipeline (PLAN-SOCIAL.md §5.2). Owner-ordered: position in the array is posting order. status: queued -> approved -> posted (or skipped). The posting workflow fills posted.{instagram,x} with {date, id}.",
+  "queue": [
+    {
+      "item": "2026-07-29-fish-skeleton",
+      "status": "queued",
+      "added": "2026-08-16",
+      "platforms": ["instagram", "x"],
+      "posted": {}
+    }
+  ]
+}
