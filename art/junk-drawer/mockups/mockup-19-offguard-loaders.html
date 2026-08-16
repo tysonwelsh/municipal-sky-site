@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Off-Guard Loading Studies</title>
+</head>
+<body>
+<style>
+  :root {
+    --tpaper: #ece0bf; --tpaper-hi: #f4ead0;
+    --tink: #33240f; --tink-2: rgba(51,36,15,0.68); --tink-3: rgba(51,36,15,0.44);
+    --trule: rgba(74,53,18,0.40); --trule-2: rgba(74,53,18,0.19);
+    --tred: #b3402f; --graphite: #4b4030;
+    --blue: #4a628a; --blue-soft: rgba(74,98,138,0.25);
+    --plate-paper: #f8f3e2;
+    --tmono: "Courier Prime", "Courier New", Courier, monospace;
+    --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 40px 20px 80px;
+    background: var(--tpaper) var(--tgrain);
+    color: var(--tink); font-family: var(--tmono);
+  }
+  .sheet { max-width: 1040px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 8px; }
+  header h1 {
+    font-family: var(--tform); font-size: 1.25rem; font-weight: 700;
+    letter-spacing: 0.3em; text-transform: uppercase; margin: 0 0 6px;
+  }
+  header .no { font-size: 0.6rem; letter-spacing: 0.24em; color: var(--tink-2); }
+  header .dek {
+    font-size: 0.66rem; letter-spacing: 0.08em; color: var(--tink-2);
+    max-width: 560px; margin: 10px auto 0; line-height: 1.7;
+  }
+  hr.rule { border: 0; border-top: 1px solid var(--trule); margin: 26px 0 0; }
+
+  h2.sect {
+    font-family: var(--tform); font-size: 0.78rem; font-weight: 700;
+    letter-spacing: 0.28em; text-transform: uppercase; color: var(--tink);
+    display: flex; align-items: center; gap: 14px; margin: 44px 0 6px;
+  }
+  h2.sect::before, h2.sect::after { content: ""; flex: 1; border-top: 1px solid var(--trule-2); }
+  p.sect-note {
+    text-align: center; font-size: 0.6rem; letter-spacing: 0.1em;
+    color: var(--tink-3); margin: 0 0 26px;
+  }
+
+  .board {
+    display: flex; flex-wrap: wrap;
+    justify-content: center; gap: 40px 34px;
+  }
+  figure.plate { margin: 0; width: 234px; }
+  .art {
+    position: relative; width: 234px; height: 234px;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74,98,138,0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74,98,138,0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74,98,138,0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74,98,138,0.07) 0 1px, transparent 1px 9px),
+      var(--plate-paper);
+    border: 1px solid rgba(55,65,79,0.30);
+    box-shadow: 0 4px 10px -3px rgba(46,34,12,0.5), 0 1px 3px rgba(46,34,12,0.35);
+  }
+  .corner {
+    position: absolute; width: 22px; height: 22px; z-index: 2;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1.5px rgba(46,34,12,0.45));
+  }
+  .corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+  .corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+  .stage { position: absolute; top: 27px; left: 27px; width: 180px; height: 180px; overflow: hidden; }
+  .stage svg { display: block; width: 180px; height: 180px; }
+
+  figcaption {
+    margin-top: 9px; padding-top: 5px; border-top: 1px solid var(--trule-2);
+    font-family: var(--tform); font-size: 0.66rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--tink);
+  }
+  figcaption .no { font-family: var(--tmono); color: var(--tink-3); letter-spacing: 0.08em; }
+  p.note {
+    margin: 5px 0 0; font-size: 0.58rem; letter-spacing: 0.05em;
+    line-height: 1.65; color: var(--tink-2);
+  }
+
+  footer {
+    margin-top: 56px; padding-top: 12px; border-top: 1px solid var(--trule);
+    font-size: 0.56rem; letter-spacing: 0.12em; color: var(--tink-3);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+  }
+
+  /* ============ no. 1 — the long climb ============ */
+  .climb-scroll { animation: climbScroll 0.95s linear infinite; }
+  @keyframes climbScroll { from { transform: translate(0,0); } to { transform: translate(-18px,18px); } }
+  .climb-dot { animation: climbHop 0.95s cubic-bezier(.5,0,.4,1) infinite; }
+  @keyframes climbHop {
+    0% { transform: translateY(0); } 38% { transform: translateY(-15px); }
+    62% { transform: translateY(-1px); } 74% { transform: translateY(0); } 100% { transform: translateY(0); }
+  }
+
+  /* ============ no. 2 — undecided cube ============ */
+  .cube-a, .cube-dot-a { animation: cubeA 3s steps(1) infinite; }
+  .cube-b, .cube-dot-b { animation: cubeB 3s steps(1) infinite; }
+  @keyframes cubeA { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0.32; } }
+  @keyframes cubeB { 0%, 49.9% { opacity: 0.32; } 50%, 100% { opacity: 1; } }
+  .cube-dot-a { animation-name: cubeDotA; } .cube-dot-b { animation-name: cubeDotB; }
+  @keyframes cubeDotA { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+  @keyframes cubeDotB { 0%, 49.9% { opacity: 0; } 50%, 100% { opacity: 1; } }
+
+  /* ============ no. 4 — deeper grid ============ */
+  .zoom-sq {
+    transform-origin: 90px 90px;
+    animation: zoomSq 8s linear infinite; opacity: 0;
+  }
+  .zoom-sq.d2 { animation-delay: -2s; } .zoom-sq.d4 { animation-delay: -4s; }
+  .zoom-sq.d6 { animation-delay: -6s; }
+  @keyframes zoomSq {
+    0%   { transform: scale(0.14); opacity: 0; }
+    12%  { opacity: 0.75; }
+    25%  { transform: scale(0.28); }
+    50%  { transform: scale(0.56); }
+    75%  { transform: scale(1.12); opacity: 0.75; }
+    100% { transform: scale(2.3); opacity: 0; }
+  }
+
+  /* ============ no. 5 — interference ============ */
+  .lens {
+    position: absolute; top: 50%; left: 50%; width: 118px; height: 118px;
+    margin: -59px 0 0 -59px; border-radius: 50%;
+    background: repeating-linear-gradient(0deg, rgba(74,98,138,0.30) 0 1px, transparent 1px 8px);
+    outline: 1px solid rgba(74,98,138,0.45); outline-offset: -1px;
+    animation: lensTurn 7s ease-in-out infinite alternate;
+  }
+  @keyframes lensTurn { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+
+  /* ============ no. 6 — the surveyor ============ */
+  .survey-run {
+    stroke-dasharray: 60 525;
+    animation: surveyRun 5.5s linear infinite;
+  }
+  @keyframes surveyRun { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -585px; } }
+
+  /* ============ no. 7 — awaiting signal ============ */
+  .signal-scroll { animation: signalScroll 4.2s linear infinite; }
+  @keyframes signalScroll { from { transform: translateX(0); } to { transform: translateX(-180px); } }
+
+  /* ============ no. 9 — cut here ============ */
+  .cut-intact { animation: cutIntact 5s linear infinite; }
+  @keyframes cutIntact { from { clip-path: inset(0 0 0 0%); } to { clip-path: inset(0 0 0 100%); } }
+  .cut-open { animation: cutOpen 5s linear infinite; }
+  @keyframes cutOpen { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0% 0 0); } }
+  .cut-notch { animation: cutNotch 5s linear infinite; }
+  @keyframes cutNotch { from { transform: translateX(0); } to { transform: translateX(162px); } }
+
+  /* ============ no. 10 — stray point ============ */
+  .stray-x { position: absolute; top: 0; left: 0; animation: strayX 2.3s linear infinite alternate; }
+  .stray-y { animation: strayY 3.1s linear infinite alternate; }
+  .stray-x .pt { width: 7px; height: 7px; background: var(--blue); }
+  .stray-x.g1 { animation-delay: 0.13s; } .stray-x.g1 .stray-y { animation-delay: 0.13s; }
+  .stray-x.g2 { animation-delay: 0.26s; } .stray-x.g2 .stray-y { animation-delay: 0.26s; }
+  .stray-x.g1 .pt { opacity: 0.35; } .stray-x.g2 .pt { opacity: 0.15; }
+  @keyframes strayX { from { transform: translateX(0); } to { transform: translateX(173px); } }
+  @keyframes strayY { from { transform: translateY(0); } to { transform: translateY(173px); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-play-state: paused !important; }
+  }
+</style>
+
+<div class="sheet">
+  <header>
+    <div class="no">FORM 19 &middot; WAIT-STATE STUDIES &middot; SHEET 1 OF 1</div>
+    <h1>Off-Guard Loading Studies</h1>
+    <p class="dek">Ten fresh candidates for the four-plate wait state. Everything is
+    drawn in the plate&rsquo;s own blueprint ink on its own graph paper &mdash; flat,
+    ruled, and slightly wrong. No spinners were harmed.</p>
+    <hr class="rule">
+  </header>
+
+  <h2 class="sect">The Mind-Bending Five</h2>
+  <p class="sect-note">each one is quietly impossible if you watch it long enough</p>
+  <div class="board">
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <g class="climb-scroll">
+              <path d="M -54 234 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18"
+                fill="none" stroke="#4a628a" stroke-width="1.6" opacity="0.75"/>
+              <path d="M -54 234 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 v -18 h 18 V 300 H -54 Z"
+                fill="rgba(74,98,138,0.06)" stroke="none"/>
+            </g>
+            <g class="climb-dot">
+              <circle cx="99" cy="85" r="5" fill="#4b4030"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;1</span> &mdash; The Long Climb</figcaption>
+      <p class="note">A dot climbs one step per beat. The staircase pours away beneath it
+      at exactly one step per beat. Net altitude gained: none. It keeps going anyway.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <g stroke="#4a628a" fill="none">
+              <line x1="54" y1="126" x2="82" y2="98" stroke-width="1.2" opacity="0.5"/>
+              <line x1="126" y1="126" x2="154" y2="98" stroke-width="1.2" opacity="0.5"/>
+              <line x1="54" y1="54" x2="82" y2="26" stroke-width="1.2" opacity="0.5"/>
+              <line x1="126" y1="54" x2="154" y2="26" stroke-width="1.2" opacity="0.5"/>
+              <rect class="cube-a" x="54" y="54" width="72" height="72" stroke-width="1.8"/>
+              <rect class="cube-b" x="82" y="26" width="72" height="72" stroke-width="1.8"/>
+            </g>
+            <circle class="cube-dot-a" cx="54" cy="126" r="3.4" fill="#b3402f"/>
+            <circle class="cube-dot-b" cx="154" cy="26" r="3.4" fill="#b3402f"/>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;2</span> &mdash; Undecided Cube</figcaption>
+      <p class="note">A wireframe cube on ruled paper. Every beat it changes its mind about
+      which face is nearer. The red dot marks the current front corner. It is never sure.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <line x1="18" y1="108" x2="162" y2="108" stroke="rgba(74,98,138,0.55)" stroke-width="1.4"/>
+            <line x1="18" y1="102" x2="18" y2="114" stroke="rgba(74,98,138,0.55)" stroke-width="1.4"/>
+            <path d="M162 108 l-7 -4.5 v9 Z" fill="rgba(74,98,138,0.55)"/>
+            <line x1="90" y1="106" x2="90" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.1357;0.1477;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line><line x1="126" y1="106" x2="126" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.2643;0.2763;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line><line x1="144" y1="106" x2="144" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.3929;0.4049;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line><line x1="153" y1="106" x2="153" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.5071;0.5191;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line><line x1="157.5" y1="106" x2="157.5" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.6071;0.6191;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line><line x1="159.75" y1="106" x2="159.75" y2="112" stroke="#4b4030" stroke-width="1.4" stroke-linecap="round" opacity="0"><animate attributeName="opacity" values="0;0;0.8;0.8;0;0" keyTimes="0;0.6929;0.7049;0.9;0.96;1" dur="7s" repeatCount="indefinite"/></line>
+            <g>
+  <animateTransform attributeName="transform" type="translate"
+    values="0 0;0 0;72 0;72 0;108 0;108 0;126 0;126 0;135 0;135 0;139.5 0;139.5 0;141.75 0;141.75 0" keyTimes="0;0.0857;0.1357;0.2143;0.2643;0.3429;0.3929;0.4571;0.5071;0.5571;0.6071;0.6429;0.6929;1"
+    dur="7s" repeatCount="indefinite" calcMode="linear"/>
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="0 0;0 0;0 -9;0 0;0 0;0 -9;0 0;0 0;0 -9;0 0;0 0;0 -9;0 0;0 0;0 -9;0 0;0 0;0 -9;0 0;0 0" keyTimes="0;0.0857;0.1107;0.1357;0.2143;0.2393;0.2643;0.3429;0.3679;0.3929;0.4571;0.4821;0.5071;0.5571;0.5821;0.6071;0.6429;0.6679;0.6929;1"
+      dur="7s" repeatCount="indefinite" calcMode="linear"/>
+    <circle cx="18" cy="99" r="4" fill="#4b4030"/>
+  </g>
+</g>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;3</span> &mdash; Zeno&rsquo;s Errand</figcaption>
+      <p class="note">Each hop covers exactly half the distance that remains. Pencil ticks
+      keep the ledger. Arrival is mathematically guaranteed and never happens.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <line x1="90" y1="72" x2="90" y2="108" stroke="rgba(74,98,138,0.35)" stroke-width="1"/>
+            <line x1="72" y1="90" x2="108" y2="90" stroke="rgba(74,98,138,0.35)" stroke-width="1"/>
+            <rect class="zoom-sq"    x="45" y="45" width="90" height="90" fill="none" stroke="#4a628a" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+            <rect class="zoom-sq d2" x="45" y="45" width="90" height="90" fill="none" stroke="#4a628a" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+            <rect class="zoom-sq d4" x="45" y="45" width="90" height="90" fill="none" stroke="#4a628a" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+            <rect class="zoom-sq d6" x="45" y="45" width="90" height="90" fill="none" stroke="#4a628a" stroke-width="1.4" vector-effect="non-scaling-stroke"/>
+            <circle cx="90" cy="90" r="3" fill="#b3402f"/>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;4</span> &mdash; Deeper Grid</figcaption>
+      <p class="note">The paper turns out to be printed on more of the same paper, all the
+      way down. Squares surface from the centre and sail past the margins. You are the red dot.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <div class="lens"></div>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;5</span> &mdash; Interference</figcaption>
+      <p class="note">A ruled lens laid over ruled paper, turning slowly. The two rulings
+      argue and the argument is visible: moir&eacute; bands crawl where no ink moves at all.</p>
+    </figure>
+
+  </div>
+
+  <h2 class="sect">The Off-Guard Five</h2>
+  <p class="sect-note">nothing impossible here &mdash; merely unexpected paperwork</p>
+  <div class="board">
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <path d="M 18 63 H 108 V 18 H 153 V 108 H 63 V 153 H 18 Z"
+              fill="none" stroke="rgba(74,98,138,0.4)" stroke-width="1" stroke-dasharray="2.5 3.5"/>
+            <path class="survey-run" d="M 18 63 H 108 V 18 H 153 V 108 H 63 V 153 H 18 Z"
+              fill="none" stroke="#4a628a" stroke-width="2.4" opacity="0.85"/>
+            <circle cx="18" cy="63" r="2.2" fill="#4a628a" opacity="0.5"/>
+            <circle cx="153" cy="108" r="2.2" fill="#4a628a" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;6</span> &mdash; The Surveyor</figcaption>
+      <p class="note">A route has been staked out along the grid lines and something is
+      pacing it. It only ever walks the printed rules. It does not cut corners.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <g class="signal-scroll">
+              <path d="M0 90 h27 l4 -22 l4 30 l4 -8 h30 l3 -11 h4 l3 11 h29 l4 -44 l5 52 l4 -8 h59" fill="none" stroke="#4a628a" stroke-width="1.6" opacity="0.8" stroke-linejoin="round"/>
+              <path d="M180 90 h27 l4 -22 l4 30 l4 -8 h30 l3 -11 h4 l3 11 h29 l4 -44 l5 52 l4 -8 h59" fill="none" stroke="#4a628a" stroke-width="1.6" opacity="0.8" stroke-linejoin="round"/>
+              <path d="M112 90 l4 -44 l5 52 l4 -8" fill="none" stroke="#b3402f" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M292 90 l4 -44 l5 52 l4 -8" fill="none" stroke="#b3402f" stroke-width="1.6" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;7</span> &mdash; Awaiting Signal</figcaption>
+      <p class="note">The instrument is fine. The paper is moving. Something out there
+      twitches now and then, and once per sweep it twitches in red.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+      <path d="M27 54 q -1.0 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-1.2 41 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.0417;0.0567;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M36 54 q 0.7 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(0.9 41 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.0933;0.1083;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M45 54 q -0.5 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-0.6 41 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.1450;0.1600;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M54 54 q 0.9 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(1.1 41 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.1967;0.2117;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M22 76 q 16 -9 41 -17" fill="none" stroke="#4b4030" stroke-width="2.4" stroke-linecap="round" transform="rotate(0.0 41 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.2483;0.2633;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M99 54 q -1.0 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-1.2 113 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.3000;0.3150;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M108 54 q 0.7 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(0.9 113 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.3517;0.3667;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M117 54 q -0.5 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-0.6 113 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.4033;0.4183;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M126 54 q 0.9 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(1.1 113 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.4550;0.4700;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M94 76 q 16 -9 41 -17" fill="none" stroke="#4b4030" stroke-width="2.4" stroke-linecap="round" transform="rotate(0.0 113 68)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.5067;0.5217;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M63 117 q -1.0 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-1.2 77 131)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.5583;0.5733;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M72 117 q 0.7 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(0.9 77 131)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.6100;0.6250;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M81 117 q -0.5 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(-0.6 77 131)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.6617;0.6767;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M90 117 q 0.9 13 0 27" fill="none" stroke="#4b4030" stroke-width="2.2" stroke-linecap="round" transform="rotate(1.1 77 131)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.7133;0.7283;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+      <path d="M58 139 q 16 -9 41 -17" fill="none" stroke="#4b4030" stroke-width="2.4" stroke-linecap="round" transform="rotate(0.0 77 131)" opacity="0"><animate attributeName="opacity" values="0;0;0.85;0.85;0;0" keyTimes="0;0.7650;0.7800;0.93;0.975;1" dur="6s" repeatCount="indefinite"/></path>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;8</span> &mdash; Counting Something</figcaption>
+      <p class="note">Somebody is keeping score in pencil, five-bar gates, at a steady
+      clip. The sheet is wiped and the count begins again. What is being counted is not disclosed.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <svg viewBox="0 0 180 180">
+            <g class="cut-open">
+              <line x1="9" y1="90" x2="171" y2="90" stroke="#4a628a" stroke-width="1.5"
+                stroke-dasharray="7 5" transform="translate(0,-3) rotate(-1.1 9 90)" opacity="0.8"/>
+              <line x1="9" y1="90" x2="171" y2="90" stroke="#4a628a" stroke-width="1.5"
+                stroke-dasharray="7 5" transform="translate(0,3) rotate(1.1 9 90)" opacity="0.8"/>
+            </g>
+            <line class="cut-intact" x1="9" y1="90" x2="171" y2="90" stroke="#4a628a"
+              stroke-width="1.5" stroke-dasharray="7 5" opacity="0.8"/>
+            <g class="cut-notch">
+              <line x1="9" y1="80" x2="9" y2="100" stroke="#4b4030" stroke-width="1.6"/>
+              <path d="M5 71 L9 79 L13 71" fill="none" stroke="#4b4030" stroke-width="1.4"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;9</span> &mdash; Cut Along Dotted Line</figcaption>
+      <p class="note">The form is being separated from itself, dash by dash. Behind the
+      blade the two halves quietly drift apart. Please retain the lower portion.</p>
+    </figure>
+
+    <figure class="plate">
+      <div class="art">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="stage">
+          <div class="stray-x g2"><div class="stray-y"><div class="pt"></div></div></div>
+          <div class="stray-x g1"><div class="stray-y"><div class="pt"></div></div></div>
+          <div class="stray-x"><div class="stray-y"><div class="pt"></div></div></div>
+        </div>
+      </div>
+      <figcaption><span class="no">&#8470;&thinsp;10</span> &mdash; Stray Point</figcaption>
+      <p class="note">One data point has escaped its cell and is ricocheting around the
+      plate, trailing afterimages. It never quite hits the corner. Nobody&rsquo;s does.</p>
+    </figure>
+
+  </div>
+
+  <footer>
+    <span>ART / JUNK-DRAWER / MOCKUPS &mdash; ROUND 19</span>
+    <span>MOTION HALTS UNDER PREFERS-REDUCED-MOTION</span>
+    <span>BLUEPRINT INK &middot; GRAPHITE &middot; ONE RED</span>
+  </footer>
+</div>
+
+</body>
+</html>
