@@ -1249,6 +1249,25 @@ html.jd-record-open { overflow: hidden; }
 .rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
 .rc-dl:active { box-shadow: none; transform: translateY(1px); }
 .rc-dl:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+/* THE REPLAY button (owner, 2026-08-16): the drawing plays itself when the
+   card opens; this plays it again on request. DOWNLOAD's tailoring, one
+   rung up the same corner — a real <button>, so the font that the <a>
+   inherited is set here explicitly. */
+.rc-draw {
+  position: absolute; right: 18px; bottom: 64px; z-index: 3;
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; white-space: nowrap;
+  color: #46505e;
+  border: 1px solid var(--form-rule); border-radius: 3px;
+  padding: 0.5em 0.85em 0.46em;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
+}
+.rc-draw:hover { background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-draw:active { box-shadow: none; transform: translateY(1px); }
+.rc-draw:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
