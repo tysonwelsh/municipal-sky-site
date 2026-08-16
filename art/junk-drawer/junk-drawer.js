@@ -3616,13 +3616,13 @@ function JD_layerOpen() {
     scrim.innerHTML =
       '<div class="jd-turn" role="dialog" aria-modal="true" ' +
       'aria-label="take a turn">' +
-      /* F1 (round-16): the ✕ is now a plain flex child of .jd-turn-head,
-         sharing the title's centerline by construction instead of being
-         position:absolute against the whole card in a separate coordinate
-         frame. It sits OUTSIDE .jd-turn-headline, which is the only part of
-         the head paint() rewrites on every state change — so the close
-         button (and its one click listener, bound once below) is never torn
-         down and never needs rebinding. */
+      /* F1 (round-16, seat revised 2026-08-16): the ✕ belongs to
+         .jd-turn-head — pinned to the row's own top-right corner in the
+         CSS, never positioned against the whole card in a separate
+         coordinate frame. It sits OUTSIDE .jd-turn-headline, which is the
+         only part of the head paint() rewrites on every state change — so
+         the close button (and its one click listener, bound once below) is
+         never torn down and never needs rebinding. */
       '<header class="jd-turn-head"><div class="jd-turn-headline"></div>' +
       '<button type="button" class="jd-turn-close" aria-label="close">' +
       '<span aria-hidden="true">✕</span></button></header>' +
@@ -3880,12 +3880,13 @@ function JD_layerOpen() {
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
-  /* the masthead: FORM JD-1 §n · the heading */
+  /* the masthead: just the heading (the FORM JD-1 §n badge that used to
+     lead this row was retired 2026-08-16, owner call — head() still takes
+     the section number so the flow's §1–§6 order stays declared at the
+     call sites, but nothing prints it) */
   function headHTML() {
     var p = pendingHead || { title: 'take a turn', sec: 1 };
-    return '<span class="jd-turn-formno" aria-hidden="true">FORM JD-1<em>§' +
-      p.sec + '</em></span>' +
-      '<h2 class="jd-turn-title" tabindex="-1"' +
+    return '<h2 class="jd-turn-title" tabindex="-1"' +
       (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>';
   }
 
