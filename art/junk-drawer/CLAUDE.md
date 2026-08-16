@@ -55,8 +55,9 @@ data files are `.json`, art is `.svg`.
    - Annotations: read `taxonomy.json` `axes`; for each axis, ask for a
      value (offer the value labels + descriptions) OR "skip". Like grades,
      annotation values are FILED AS NUMBERS: write the chosen value's
-     `rank` as a decimal (best = `3.0` … worst = `1.0` on the 3-point
-     axes), never the value id or label. Skipped axes are OMITTED from the
+     `rank` as a decimal (best = the axis's top rank — `3.0` on 3-point
+     axes, `4.0` on 4-point — worst = `1.0`), never the value id or
+     label. Skipped axes are OMITTED from the
      annotations object — never write null/empty for them. Attach the
      owner's remarks as `{"value": <rank>, "note": ...}`.
    - A `sizeClass` — how big the item reads in the drawer. Read the tiers

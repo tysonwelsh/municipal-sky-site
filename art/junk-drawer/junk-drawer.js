@@ -359,7 +359,8 @@ function JD_layerOpen() {
 
   /* RATINGS, as filed — entries store every rating as a NUMBER: a grade is
      the taxonomy grade's `rank` (5.0 … 1.0) and an annotation is the axis
-     value's `rank` (3.0 … 1.0), never the id or label (entry schema 2), so
+     value's `rank` (the axis's top rank — 3.0 or 4.0 — down to 1.0),
+     never the id or label (entry schema 2), so
      the scales' wording can change without touching filed data. Resolve the
      number back to its taxonomy object here; display strings still come
      only from the taxonomy. */
@@ -381,6 +382,18 @@ function JD_layerOpen() {
     return String(s == null ? '' : s).replace(/_([^_]+)_/g, '$1');
   }
   window.JD_labelText = labelText;
+
+  /* The pencil an axis value writes with. Classes encode rank AND scale
+     length, because a rank means nothing without its scale: on a 3-point
+     axis rank 3 is the best news there is (dark green), on a 4-point axis
+     it is second place (leaf green). 3-point axes keep the original
+     rc-r1..3 pencils; 4-point axes (v17) get their own rc-q1..4 ramp in
+     the stylesheet. The grade scale's rc-g1..5 is separate (JD_gradeOf). */
+  function axisCls(axis, rank) {
+    var pts = ((axis || {}).values || []).length;
+    return (pts === 4 ? 'rc-q' : 'rc-r') + Math.round(rank);
+  }
+  window.JD_axisCls = axisCls;   /* the record card and the bench share it */
   function gradeOf(tax, value) {
     return byRank((tax || {}).grades, value);
   }
@@ -2484,8 +2497,8 @@ function JD_layerOpen() {
      it, and window.JD_sizeLabel still serves the loader/legend) */
   /* a hand-pencilled mark; each takes its own rotation jitter + waver
      filter so no two sit identically. `cls` picks the pencil (the
-     rating-colour classes rc-r1..3 and rc-g1..5 in the stylesheet —
-     owner request, 2026-08-11); no class = the original red. Labels'
+     rating-colour classes rc-r1..3, rc-q1..4 and rc-g1..5 in the
+     stylesheet — owner request, 2026-08-11); no class = the original red. Labels'
      _emphasis_ pairs render in italics here (escape first, so nothing
      can smuggle markup). */
   function mark(word, cls) {
@@ -2731,10 +2744,14 @@ function JD_layerOpen() {
       if (!a) {
         cell = '<span class="rc-skip">— · not assessed</span>';
       } else {
+        /* the bar fills against the axis's OWN step count — 3- and 4-point
+           scales coexist since v17 — and the pencil class is scale-aware
+           for the same reason (JD_axisCls) */
         var v = window.JD_byRank(axis.values, a.value);
-        var cls = v ? 'rc-r' + Math.round(v.rank) : '';
+        var steps = (axis.values || []).length || 3;
+        var cls = v ? window.JD_axisCls(axis, v.rank) : '';
         cell = '<span class="rc-verdict">' +
-          (v ? barHTML(Math.round(v.rank), 3, cls) : '') +
+          (v ? barHTML(Math.round(v.rank), steps, cls) : '') +
           mark(v ? v.label : String(a.value), cls) + '</span>';
       }
       var descId = 'rc-axd-' + (di++);
@@ -4660,11 +4677,11 @@ function JD_layerOpen() {
      and onChange() re-paints it the instant the visitor picks (below). Owner
      directive r4: once a row has an actual answer it grows the SAME
      segmented bar the report card shows for that same value — window.
-     JD_barHTML and the report card's own rc-r… / rc-g… rank classes, not a
-     parallel set. (Those prefixes are written out rather than starred: a
+     JD_barHTML and the report card's own rc-r… / rc-q… / rc-g… rank classes,
+     not a parallel set. (Those prefixes are written out rather than starred: a
      literal asterisk-slash inside a block comment closes it, and that broke
      the whole file once already.) `total` is the scale's own step count (3
-     for an axis, 5 for the grade), so the bar always fills against the
+     or 4 for an axis since v17, 5 for the grade), so the bar always fills against the
      total it's segmented into. Keeping this a function is the fix for a bug
      worth remembering: the gauge used to be inlined in scaleRow() alone, so
      it only ever appeared if you left the step and came back — in the flow
@@ -4678,7 +4695,8 @@ function JD_layerOpen() {
       : window.JD_gradeOf(tax(), chosen);
     var rank = picked ? Math.round(picked.rank) : 0;
     if (!rank) return '';
-    return window.JD_barHTML(rank, total, (ax ? 'rc-r' : 'rc-g') + rank);
+    return window.JD_barHTML(rank, total,
+      ax ? window.JD_axisCls(ax, rank) : 'rc-g' + rank);
   }
   function scaleRow(slot, kind, ax, chosen) {
     var axisId = ax ? ax.id : null;
