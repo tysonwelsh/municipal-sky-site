@@ -2837,6 +2837,13 @@ function JD_layerOpen() {
       '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
       esc(entry.id) + '.svg" title="download the SVG as generated">' +
       'DOWNLOAD SVG ⤓</a>' +
+      /* the drawing plays itself when the card opens; this plays it again
+         on request (owner, 2026-08-16). It rides the photograph one rung
+         above DOWNLOAD, and the click/key handlers exempt it from the
+         plate's zoom the same way. */
+      '<button type="button" class="rc-draw" ' +
+      'title="watch the drawing draw itself again" ' +
+      'aria-label="Replay the drawing">REPLAY ✎</button>' +
       '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
       '</div></div>';
     /* the prompt renders foldable; render() measures it after paint and
@@ -2939,6 +2946,12 @@ function JD_layerOpen() {
     scrollEl.addEventListener('click', function (e) {
       /* the DOWNLOAD button rides ON the plate: it must never also zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
+      /* REPLAY rides the plate too: it redraws, never zooms. An explicit
+         press is requested motion, so it plays under reduced-motion too. */
+      if (e.target.closest && e.target.closest('.rc-draw')) {
+        drawOn(true);
+        return;
+      }
       if (e.target.closest && e.target.closest('.rc-plate')) {
         openZoom(e.target.closest('.rc-plate'));
         return;
@@ -2995,8 +3008,11 @@ function JD_layerOpen() {
        preventDefault'd or the card scrolls out from under the enlargement */
     scrollEl.addEventListener('keydown', function (e) {
       if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      /* Enter on the focused DOWNLOAD link is the download, not the zoom */
+      /* Enter on the focused DOWNLOAD link is the download, not the zoom;
+         REPLAY is a real <button>, so the UA turns these keys into its
+         click — the handler above redraws, nothing here should zoom */
       if (e.target.closest && e.target.closest('.rc-dl')) return;
+      if (e.target.closest && e.target.closest('.rc-draw')) return;
       var p = e.target.closest ? e.target.closest('.rc-plate') : null;
       if (!p) return;
       e.preventDefault();
@@ -3178,8 +3194,12 @@ function JD_layerOpen() {
     }
   }
 
-  function drawOn() {
-    if (reduceMotion || !scrollEl || !curEntry) return;
+  /* `force` is the REPLAY button's explicit press: requested motion plays
+     even when prefers-reduced-motion is on — the preference guards against
+     ambient animation, and a button whose whole job is "animate this" going
+     dead would be the worse accessibility outcome. */
+  function drawOn(force) {
+    if ((reduceMotion && !force) || !scrollEl || !curEntry) return;
     var holder = scrollEl.querySelector('.rc-plate-art');
     var svg = holder ? holder.querySelector('svg') : null;
     if (!svg) return;
