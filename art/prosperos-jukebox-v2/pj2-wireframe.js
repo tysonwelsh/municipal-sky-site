@@ -122,7 +122,7 @@
       size: "15px caption · 1px rule beneath" },
     { sel: "#pj2-margin", name: "#pj2-margin  ⟨canvas⟩", color: C.leaf,
       note: "the margin apparatus canvas — seven panel slots, drawn by pj2-viz.js",
-      size: "height 398px · width follows the column (500px)" },
+      size: "height 340px · width follows the column (500px)" },
     { sel: ".pj2-log-block", name: ".pj2-log-block", color: C.leaf,
       note: "the annotation block — heading plus the scrolling log",
       size: "flex 1 1 auto — takes the column's leftover height" },
@@ -130,7 +130,7 @@
       note: "the log's heading (its wording changes per book)", size: "15px caption" },
     { sel: "#pj2-log", name: "#pj2-log", color: C.leaf,
       note: "the scribal log — newest first, ink ages in three steps",
-      size: "min-height 200px · max-height 330px · scrolls" },
+      size: "min-height 240px · max-height 330px · scrolls" },
 
     { sel: ".pj2-cabinet", name: ".pj2-cabinet", color: C.region,
       note: "the conjurer's cabinet — the wood-and-brass strip; constant across books",
@@ -208,16 +208,15 @@
         var W = mr.width, H = mr.height, p = 8;   // marginLayout()'s pad
         var half = (W - 3 * p) / 2, gap = 10;     // …and its MARGIN_GAP
         var heads = MARGIN_HEADS[currentTrack()];
-        // mirror marginLayout()'s stacked sequence: scene, staff, dials,
-        // rows, then the tree takes the remainder
-        var sceneH = Math.round(H * 0.13), staffH = Math.round(H * 0.21);
-        var dialH = Math.round(H * 0.18), rowH = Math.max(48, Math.round(H * 0.11));
+        // mirror marginLayout()'s stacked sequence: scene+staff share the
+        // top row, then dials, rows, and the tree takes the remainder
+        var topH = Math.round(H * 0.22);
+        var dialH = Math.round(H * 0.21), rowH = Math.max(48, Math.round(H * 0.13));
         var y = p;
         var slots = [];
-        slots.push({ x: p, y: y, w: W - 2 * p, h: sceneH, key: "scene", head: "the scene heading" });
-        y += sceneH + gap;
-        slots.push({ x: p, y: y, w: W - 2 * p, h: staffH, key: "staff", head: heads[0] });
-        y += staffH + gap;
+        slots.push({ x: p, y: y, w: half, h: topH, key: "scene", head: "the scene heading" });
+        slots.push({ x: p * 2 + half, y: y, w: half, h: topH, key: "staff", head: heads[0] });
+        y += topH + gap;
         slots.push({ x: p, y: y, w: half, h: dialH, key: "dialA", head: heads[1] });
         slots.push({ x: p * 2 + half, y: y, w: half, h: dialH, key: "dialB", head: heads[2] });
         y += dialH + gap;

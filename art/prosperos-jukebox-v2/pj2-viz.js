@@ -405,18 +405,18 @@ PJ2.Viz = (function () {
     function paperSidePanel(G, tr, sd, zones) {
       if (binding === "night") return paperNight(G, tr, sd, zones);
       // Parchment: the margin sits on the folio's sheet (paperFolio), so it
-      // paints no paper of its own — only the night windows its panels'
-      // content lives in. The scene band has none: it is a heading, and its
-      // display type belongs on the page.
+      // paints no paper of its own — only the night windows its panels
+      // live in, one per slot.
       var L = marginLayout(G), pf = 2;   // the panels' short lip (see above)
       // taller windows leave less paper between panels, so the lip drops
-      // to 2 — at 3 the tree's speckle nearly met the row above it
+      // to 2 — at 3 the tree's speckle nearly met the row above it.
+      // Every window runs to (nearly) its slot's foot now: the readouts
+      // moved INSIDE the windows (owner 2026-08-16), so no slot keeps a
+      // strip of paper below its box anymore.
       cutNightWindow(G, tr, sd, panelWindow(L.scene, 0), pf);
-      // 18, not 14: the readout baseline sits at h−3, so its caps top out
-      // near h−13 — at 14 the window's feather speckle struck the text
-      cutNightWindow(G, tr, sd, panelWindow(L.staff, 18), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.dialA, 18), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.dialB, 18), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.staff, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialA, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialB, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.rowA, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.rowB, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.tree, 0), pf);
@@ -1749,20 +1749,18 @@ PJ2.Viz = (function () {
       // rows carry two lines of type; the 48px floor keeps the season's
       // second baseline clear of the window's lower lip (below ~44 the
       // line is dropped by drawSeason's own fit check anyway)
-      // the scene band stacks three things — the operation label, the
-      // sub-line, and the progress bar — so it is the one slot that feels a
-      // few px either way
-      // the staff (owner 2026-08-16, rehomed off the plate) needs the
-      // tallest cell: five lines plus ledger air above and below
-      var sceneH = Math.round(H * 0.13);
-      var staffH = Math.round(H * 0.21);
-      var dialH = Math.round(H * 0.18);
-      var rowH = Math.max(48, Math.round(H * 0.11));
+      // the scene band and the staff SHARE the top row (owner 2026-08-16:
+      // neither earned full width — the band's three stacked lines and the
+      // stave's short phrase both live happily in a half). The row's height
+      // is the staff's need: five lines plus ledger air, a heading above,
+      // the readout below.
+      var topH = Math.round(H * 0.22);
+      var dialH = Math.round(H * 0.21);
+      var rowH = Math.max(48, Math.round(H * 0.13));
       var y = pad;
-      var scene = { x: pad, y: y, w: full, h: sceneH };
-      y += sceneH + gap;
-      var staff = { x: pad, y: y, w: full, h: staffH };
-      y += staffH + gap;
+      var scene = { x: pad, y: y, w: half, h: topH };
+      var staff = { x: right, y: y, w: half, h: topH };
+      y += topH + gap;
       var dialA = { x: pad, y: y, w: half, h: dialH };
       var dialB = { x: right, y: y, w: half, h: dialH };
       y += dialH + gap;
@@ -1776,8 +1774,8 @@ PJ2.Viz = (function () {
       };
     }
     // the content cell between heading row and readout row (dial panels);
-    // the 18 mirrors the dial/staff windows' bottomInset — content must
-    // stay inside the window, clear of its feathered lip
+    // the 18 reserves the readout line's room INSIDE the window (its
+    // baseline prints at h−6, caps to ~h−16) — content stops above it
     function cellOf(r) {
       var top = r.y + 20, bot = r.y + r.h - 18;
       if (bot < top + 8) bot = top + 8;
@@ -1803,14 +1801,14 @@ PJ2.Viz = (function () {
     }
     // the ink of whatever surface is being drawn on right now
     function marginInk() { return marginInkOf(pal); }
-    // THE PAGE's ink — headings, rules and readout lines sit on the paper
-    // itself, not in a window, so they follow the BINDING and never the
-    // temporary night flip the window content draws under (see inWindowInk).
-    function pageMarginInk() { return marginInkOf(Skin.palette(track, binding)); }
+    // (pageMarginInk — the binding-following ink for text printed on the
+    // paper itself — retired 2026-08-16 with the last paper-side text: the
+    // readouts moved inside their windows, so every line in the apparatus
+    // now takes the window surface's ink.)
 
     // The panel heading and its rule live INSIDE the panel's window (owner
     // 2026-08-08), so they take the ink of the surface being drawn — the
-    // window's — not the page's. Only the readout below stays on the paper.
+    // window's — not the page's.
     function panelHead(G, r, text) {
       if (!fontsReady) return;
       var c = G.ctx;
@@ -1832,19 +1830,24 @@ PJ2.Viz = (function () {
       c.strokeStyle = ic.rule; c.lineWidth = 1;
       c.beginPath(); c.moveTo(r.x, r.y + 15); c.lineTo(r.x + r.w, r.y + 15); c.stroke();
     }
-    // the readout baseline — the panel's one value line, below the window
+    // the readout baseline — the panel's one value line, printed INSIDE
+    // its window just above the lower lip. It used to sit on the paper
+    // BELOW the window; on the parchment page "tide 0.45 · candlelit"
+    // orphaned outside the tide's black container read as information
+    // that had lost its box (owner 2026-08-16).
     function readoutLine(G, r, text) {
       if (!fontsReady) return;
-      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 3, 12, pageMarginInk().mid, 1);
+      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 6, 12, marginInk().mid, 1);
     }
 
     // ---- THE APPARATUS WINDOWS (owner 2026-08-08) ----------------------------
-    // On the parchment binding each panel's CONTENT sits in its own night
+    // On the parchment binding each panel sits WHOLE in its own night
     // window cut into the sheet — the same kind of opening as the spiral's
-    // plate zone — while its heading, rule and readout stay on the paper.
-    // So the content draws with the NIGHT palette even while the page is
-    // parchment: the genealogy in amber on black, exactly as the night folio
-    // draws it, rather than iron gall on a hole in the page.
+    // plate zone. Heading, content and readout all live inside it (the
+    // readouts joined them 2026-08-16 — nothing of a panel prints on the
+    // paper anymore). So a panel draws with the NIGHT palette even while
+    // the page is parchment: the genealogy in amber on black, exactly as
+    // the night folio draws it, rather than iron gall on a hole in the page.
     //
     // Skin's mode is global (palette, atlas AND the dataInk tripwire all read
     // it), so the switch is scoped: flip, draw, restore in a finally. On the
@@ -1887,9 +1890,9 @@ PJ2.Viz = (function () {
 
     // The window a slot occupies. It covers the slot from above its heading
     // caps down to `bottomInset` short of the foot — what the slot must leave
-    // clear there: 18 for a dial (its readout baseline, the one thing still
-    // printed on the paper), 2 for a row (nothing below it), 0 for the scene
-    // band and the tree, whose own last lines are drawn INSIDE the window.
+    // clear there: 2 for the panels (readouts included — every line of a
+    // panel draws inside its window now, owner 2026-08-16), 0 for the scene
+    // band and the tree, whose content runs to the slot's very foot.
     // Width is the slot's exactly: the 8px between the two columns is all
     // that keeps their windows (and their lips) apart.
     function panelWindow(r, bottomInset) {
@@ -2034,6 +2037,16 @@ PJ2.Viz = (function () {
               ? "" : sceneTok + " · ")
               + "x " + x01.toFixed(2)
               + (info.tideLabel ? " · " + info.tideLabel : "");
+            // the band is half-width now: pare the sub-line back to its own
+            // panel (panelHead's rule) rather than run under the staff
+            c.save();
+            c.font = '12px ' + Skin.Type.MONO;
+            var subW = function (s) { return c.measureText(String(s).toUpperCase()).width + s.length; };
+            if (subW(sub) > S.w - 2) {
+              while (sub.length > 1 && subW(sub + "…") > S.w - 2) sub = sub.slice(0, sub.length - 1);
+              sub += "…";
+            }
+            c.restore();
             Skin.Type.smallCaps(c, sub, S.x, py - 6, 12, ic.mid, 1);
           }
         }
@@ -2084,7 +2097,7 @@ PJ2.Viz = (function () {
       var ic = marginInk();
       var mo = info && info.motif && info.motif.working;
       var notes = mo && mo.themeNotes;
-      // the readout below the window: name + generation. Ariel's fiction
+      // the readout under the stave: name + generation. Ariel's fiction
       // flags a promoted signature (the ghost that won the coin).
       var gen = (mo && mo.themeGen) || 0;
       var sig = track === "ariel" && info.signature;
@@ -2098,8 +2111,9 @@ PJ2.Viz = (function () {
       function yFor(dia) { return midY + (STAFF_MID_DIA - dia) * HS; }
       var clefW = 14;
       var x0 = r.x + 2;
-      // the readout sits below the window, outside the clip, so it prints
-      // first — and only once a theme exists to name
+      // the readout lives inside the window but outside the note clip
+      // (which stops at h−18, right above the readout's caps), so it
+      // prints first — and only once a theme exists to name
       if (notes && notes.length) {
         readoutLine(G, r, name
           + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "")
