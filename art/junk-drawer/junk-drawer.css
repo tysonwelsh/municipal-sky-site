@@ -1192,6 +1192,17 @@ html.jd-record-open { overflow: hidden; }
 /* the artwork yields its bottom band to the margin notes */
 .rc-plate-art { position: absolute; inset: 6% 8% 20%; }
 .rc-plate-art svg { display: block; width: 100%; height: 100%; }
+/* THE DRAW-ON REVEAL's keyframes (owner, 2026-08-16; the scheduling —
+   who draws when, for how long — is all JS in junk-drawer.js drawOn():
+   per-element inline animations against these three names). jdDrawOn
+   runs a stroke back along its own measured dash; jdFillOn/jdFadeOn
+   raise fills and unstrokeables to the opacity the artwork itself
+   declared, carried in via --jdfo/--jdo so a translucent original
+   never overshoots to 1. prefers-reduced-motion is honored in the JS
+   (it skips scheduling entirely), so no motion query is needed here. */
+@keyframes jdDrawOn { to { stroke-dashoffset: 0; } }
+@keyframes jdFillOn { from { fill-opacity: 0; } to { fill-opacity: var(--jdfo, 1); } }
+@keyframes jdFadeOn { from { opacity: 0; }      to { opacity: var(--jdo, 1); } }
 /* the kraft photo corners */
 .rc-corner {
   position: absolute; width: 26px; height: 26px; z-index: 2;
