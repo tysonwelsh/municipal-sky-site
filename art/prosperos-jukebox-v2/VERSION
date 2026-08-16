@@ -1,1 +1,1 @@
-2.0.0-rc.11 — every panel keeps its own readout inside its box now (no more "tide 0.45 · candlelit" stranded on the paper below its window), and the chapter band and the staff share one row — the dashboard is shorter, the log deeper
+2.0.0-rc.12 — the margin stops saying things twice: the tide's name prints once (under the tide dial, not also on the scene band), the genealogy drops the caption that echoed the staff's theme name, and Sycorax's pose loses the "root 0" that could never read anything else

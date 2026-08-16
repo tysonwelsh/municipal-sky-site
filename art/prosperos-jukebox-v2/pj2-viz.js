@@ -242,7 +242,6 @@ PJ2.Viz = (function () {
         pose: null,
         sceneLabel: null, sceneType: null, sceneX: 0, sceneIdx: 0, sceneCount: 0,
         lastCadence: null,    // {kind, label, rootStep|null, at}
-        signature: null,
       };
     }
     resetRunState();
@@ -2033,10 +2032,14 @@ PJ2.Viz = (function () {
             // scenes BY their type, so there it would just echo the heading
             var sceneTok = info.sceneType || st.sceneType || "—";
             var drawnLabel = st.sceneLabel || info.sceneLabel || st.sceneType || info.sceneType || "";
+            // the tide label used to ride this line too — but the tide dial
+            // prints it a hundred pixels below, under a heading that says
+            // "tide", so it was the same word twice on one screen (owner
+            // 2026-08-16). The band keeps what only IT knows: which scene,
+            // and how far through.
             var sub = (String(sceneTok).toLowerCase() === String(drawnLabel).toLowerCase()
               ? "" : sceneTok + " · ")
-              + "x " + x01.toFixed(2)
-              + (info.tideLabel ? " · " + info.tideLabel : "");
+              + "x " + x01.toFixed(2);
             // the band is half-width now: pare the sub-line back to its own
             // panel (panelHead's rule) rather than run under the staff
             c.save();
@@ -2422,12 +2425,11 @@ PJ2.Viz = (function () {
         placed.push({ x: nx, y: ny, gen: nd.gen });
         if (!nd.answer) { px = nx; pyy = ny; }
       }
-      if (st.signature && fontsReady) {
-        // the caption lives INSIDE the tree's window (bottomInset 0), so it
-        // needs its own air from the feathered lip — at h−2 the parchment
-        // speckle cut straight through the letters
-        Skin.Type.smallCaps(c, "theme " + st.signature, r.x, r.y + r.h - 8, 12, pal.ink[2], 1);
-      }
+      // (the "theme <name>" caption stood here until 2026-08-16. Only Ariel
+      // ever emits a signature, so in the one book that drew this the name
+      // always fell through to the working theme — the very string the staff
+      // panel prints in its readout, two panels up. The tree's job is the
+      // lineage; the staff names the line.)
     }
 
     // ---- sycorax margin panels ----
@@ -2500,10 +2502,13 @@ PJ2.Viz = (function () {
         at.stamp(c, "pose-" + pose, x + pw / 2, line.cy, { u: G.u, scale: pScale, tint: pal.bone[0] });
         x += pw + 8;
       }
-      // name + root ride the same line, beside the sigil (never beneath)
+      // the name rides the same line, beside the sigil (never beneath). It
+      // used to carry "· root N" as well, but Sycorax pins the root to i
+      // forever (pj2-harmony.js current(): rootDeg 0 in pose mode, and both
+      // pose emit sites hardcode 0) — so that field printed the constant
+      // "root 0" for the life of the book. Cut 2026-08-16.
       if (fontsReady) {
-        var txt = (pose || "—") + (info.rootDeg != null ? " · root " + info.rootDeg : "");
-        Skin.Type.smallCaps(c, txt, x, line.cy + 4, 13, pal.bone[0], 1);
+        Skin.Type.smallCaps(c, (pose || "—"), x, line.cy + 4, 13, pal.bone[0], 1);
       }
     }
 
@@ -2719,8 +2724,9 @@ PJ2.Viz = (function () {
       }
       if (info.sceneIdx != null) { st.sceneIdx = info.sceneIdx; st.sceneCount = info.sceneCount || st.sceneCount; }
       if (info.pose) st.pose = info.pose;
-      if (info.signature) st.signature = info.signature.name || st.signature;
-      if (info.motif && info.motif.working && !st.signature) st.signature = info.motif.working.theme;
+      // (st.signature was tracked here for the genealogy's caption; the
+      // caption went 2026-08-16 and the panels that still want a signature
+      // read info.signature directly, so the mirrored state went with it.)
       // era safety net: if the engine exposes tonicHz, trust it
       if (info.tonicHz) {
         var pc = pcFromHz(info.tonicHz);
