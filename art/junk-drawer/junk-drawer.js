@@ -2286,6 +2286,109 @@ function JD_layerOpen() {
    other. Pressing the artwork plate ENLARGES it over the card; that layer is
    a second dismissable thing inside one dialog, so Escape peels the
    enlargement before the card (see the keydown handler at the foot). */
+/* ============================================================================
+   THE DRAW-ON ENGINE — window.JD_drawOn(svg, opts)
+   Animates an inlined SVG as if it were being drawn: every element plays in
+   DOCUMENT ORDER — the order the generating model actually emitted the
+   shapes — so the reveal is a small replay of the generation, provenance as
+   motion rather than a canned wipe. Stroked paths draw along their measured
+   length (the dasharray trick); filled shapes fade in once their outline is
+   mostly down; pre-dashed strokes and unmeasurables (text, use) fall back
+   to a fade. Each element's share of the run scales with the square root of
+   its length, so one long spine can't starve the small bones.
+   Two customers: the report card's plate (open / response flip / REPLAY)
+   and the turn's reveal, where the fresh drawings' first appearance is the
+   whole point. opts: { force: play even under prefers-reduced-motion — an
+   explicit request is not ambient animation; secs: run length, default
+   2.6 }. Returns true if it played. The inline animation styles are
+   stripped when the run ends, so the DOM goes back to exactly what was
+   rendered; overlapping runs on one svg settle by a sequence stamp on the
+   element — the newer run owns the artwork. Keyframes live in
+   junk-drawer.css beside .rc-plate-art. */
+(function () {
+  var SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
+  var SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,' +
+    'symbol,marker';
+  var seq = 0;
+  function strip(svg) {
+    if (!svg || !document.contains(svg)) return;
+    var els = svg.querySelectorAll(SEL);
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+  }
+  window.JD_drawOn = function (svg, opts) {
+    opts = opts || {};
+    var reduce = false;
+    try {
+      reduce = window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {}
+    if (!svg || (reduce && !opts.force)) return false;
+    var secs = opts.secs || 2.6;
+    var els = svg.querySelectorAll(SEL);
+    var items = [], i, el, cs, L, stroked, filled;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (el.closest && el.closest(SKIP)) continue;
+      cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      L = 0;
+      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
+      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' &&
+        L > 0;
+      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+      if (!stroked && !filled) continue;
+      items.push({ el: el, L: Math.max(L, 4), stroked: stroked,
+        filled: filled, fo: cs.fillOpacity, op: cs.opacity });
+    }
+    var totalW = 0;
+    for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
+    var acc = 0, my = ++seq;
+    svg.__jdDrawSeq = my;
+    for (i = 0; i < items.length; i++) {
+      var it = items[i];
+      var w = Math.sqrt(it.L) / (totalW || 1);
+      /* starts pack into the first 90% so the tail still finishes inside
+         the run; durations get 1.7x their share, overlapping neighbours
+         the way a hand keeps moving before the last stroke dries */
+      var startF = acc * 0.9;
+      acc += w;
+      var durF = Math.min(w * 1.7, 1 - startF);
+      var start = startF * secs;
+      var dur = Math.max(durF * secs, 0.12);
+      if (it.stroked) {
+        it.el.style.strokeDasharray = it.L;
+        it.el.style.strokeDashoffset = it.L;
+        var a = 'jdDrawOn ' + dur.toFixed(3) + 's ease-out ' +
+          start.toFixed(3) + 's 1 both';
+        if (it.filled) {
+          it.el.style.setProperty('--jdfo', it.fo);
+          a += ', jdFillOn ' + Math.max(dur * 0.6, 0.15).toFixed(3) +
+            's ease-in ' + (start + dur * 0.45).toFixed(3) + 's 1 both';
+        }
+        it.el.style.animation = a;
+      } else {
+        it.el.style.setProperty('--jdo', it.op);
+        it.el.style.animation = 'jdFadeOn ' +
+          Math.max(dur * 0.8, 0.15).toFixed(3) + 's ease-in ' +
+          start.toFixed(3) + 's 1 both';
+      }
+    }
+    /* put the artwork back to plain rendered state once the run is over;
+       a newer run on the same svg owns it instead */
+    setTimeout(function () {
+      if (svg.__jdDrawSeq === my) strip(svg);
+    }, (secs + 0.4) * 1000);
+    return true;
+  };
+})();
+
 (function () {
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
@@ -2834,16 +2937,19 @@ function JD_layerOpen() {
       svgInst(artSrc, 'jr' + curIdx + '_') +
       '</div>' +
       '<div class="rc-notes">' + notes + '</div>' +
-      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
-      esc(entry.id) + '.svg" title="download the SVG as generated">' +
-      'DOWNLOAD SVG ⤓</a>' +
-      /* the drawing plays itself when the card opens; this plays it again
-         on request (owner, 2026-08-16). It rides the photograph one rung
-         above DOWNLOAD, and the click/key handlers exempt it from the
-         plate's zoom the same way. */
+      /* the photograph's button row (owner rev, 2026-08-16: REPLAY joined
+         DOWNLOAD on one row): REPLAY plays the drawing again on request —
+         the click/key handlers exempt both buttons from the plate's zoom.
+         The row is one positioned flex box, so the buttons never need to
+         guess each other's widths. */
+      '<div class="rc-plate-btns">' +
       '<button type="button" class="rc-draw" ' +
       'title="watch the drawing draw itself again" ' +
       'aria-label="Replay the drawing">REPLAY ✎</button>' +
+      '<a class="rc-dl" href="' + esc(resp.url) + '" download="' +
+      esc(entry.id) + '.svg" title="download the SVG as generated">' +
+      'DOWNLOAD SVG ⤓</a>' +
+      '</div>' +
       '<span class="rc-note-no">' + esc(entry.id) + '</span>' +
       '</div></div>';
     /* the prompt renders foldable; render() measures it after paint and
@@ -3117,127 +3223,28 @@ function JD_layerOpen() {
   }
 
   /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens —
-     and again when the visitor flips to another model's response — the
-     photograph doesn't just appear: the artwork draws itself onto the
-     plate, stroke by stroke, in SVG document order. Document order is the
-     order the generating model actually emitted the shapes, so the reveal
-     is a small replay of the generation — provenance as motion, not a
-     canned wipe. Stroked paths draw along their measured length (the
-     dasharray trick); filled shapes fade in once their outline is mostly
-     down; pre-dashed strokes and unmeasurables (text, use) fall back to a
-     fade. Each element's share of the run scales with the square root of
-     its length, so one long spine can't starve the small bones.
-     Guardrails: prefers-reduced-motion skips the whole thing; the
-     per-element schedule is measured once per ARTWORK and cached under
-     the same key fitView frames with (a re-inlined copy replays without
-     re-measuring); and the inline animation styles are stripped after the
-     run so the DOM returns to exactly what cardHTML rendered. Scope is
-     the card's plate ONLY — the enlargement is the same photograph held
-     closer, not a new drawing; the strip's thumbnails and the pile never
-     draw at all. */
+     and again when the visitor flips to another model's response, or
+     presses REPLAY — the photograph doesn't just appear: the artwork draws
+     itself onto the plate via window.JD_drawOn (the shared engine at the
+     top of this file; the turn's reveal drinks from the same well). Scope
+     here is the card's plate ONLY — the enlargement is the same photograph
+     held closer, not a new drawing; the strip's thumbnails and the pile
+     never draw at all. */
   var DRAW_SECS = 2.6;
-  var DRAW_SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
-  var DRAW_SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,' +
-    'symbol,marker';
-  var drawNext = false, drawTimer = 0, drawSeq = 0, drawSched = {};
-  var reduceMotion = false;
-  try {
-    reduceMotion = window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch (e) {}
-
-  /* one pass of geometry + paint questions per artwork, answered from a
-     fresh inlined copy and remembered by traversal index (the copies are
-     re-inlined from one cached source string, so the index is stable) */
-  function measureDraw(svg) {
-    var els = svg.querySelectorAll(DRAW_SEL);
-    var items = [], i, el, cs, L, stroked, filled;
-    for (i = 0; i < els.length; i++) {
-      el = els[i];
-      if (el.closest && el.closest(DRAW_SKIP)) continue;
-      cs = getComputedStyle(el);
-      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
-      L = 0;
-      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
-      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
-        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' &&
-        L > 0;
-      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
-      if (!stroked && !filled) continue;
-      items.push({ idx: i, L: Math.max(L, 4), stroked: stroked,
-        filled: filled, fo: cs.fillOpacity, op: cs.opacity });
-    }
-    var totalW = 0;
-    for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
-    var acc = 0;
-    for (i = 0; i < items.length; i++) {
-      var w = Math.sqrt(items[i].L) / (totalW || 1);
-      /* starts pack into the first 90% so the tail still finishes inside
-         the run; durations get 1.7x their share, overlapping neighbours
-         the way a hand keeps moving before the last stroke dries */
-      items[i].startF = acc * 0.9;
-      acc += w;
-      items[i].durF = Math.min(w * 1.7, 1 - items[i].startF);
-    }
-    return items;
-  }
-
-  function stripDraw(svg) {
-    if (!svg || !document.contains(svg)) return;
-    var els = svg.querySelectorAll(DRAW_SEL);
-    for (var i = 0; i < els.length; i++) {
-      els[i].style.animation = '';
-      els[i].style.strokeDasharray = '';
-      els[i].style.strokeDashoffset = '';
-      els[i].style.removeProperty('--jdfo');
-      els[i].style.removeProperty('--jdo');
-    }
-  }
-
+  var drawNext = false, drawUntil = 0;
   /* `force` is the REPLAY button's explicit press: requested motion plays
      even when prefers-reduced-motion is on — the preference guards against
      ambient animation, and a button whose whole job is "animate this" going
      dead would be the worse accessibility outcome. */
   function drawOn(force) {
-    if ((reduceMotion && !force) || !scrollEl || !curEntry) return;
+    if (!scrollEl || !curEntry || !window.JD_drawOn) return;
     var holder = scrollEl.querySelector('.rc-plate-art');
     var svg = holder ? holder.querySelector('svg') : null;
-    if (!svg) return;
-    var resp = curEntry.responses[curResp] || curEntry.responses[0];
-    var key = fitKey(curEntry, resp);
-    var sched = drawSched[key] || (drawSched[key] = measureDraw(svg));
-    var els = svg.querySelectorAll(DRAW_SEL);
-    var seq = ++drawSeq;
-    if (drawTimer) { clearTimeout(drawTimer); drawTimer = 0; }
-    for (var i = 0; i < sched.length; i++) {
-      var it = sched[i], el = els[it.idx];
-      if (!el) continue;
-      var start = it.startF * DRAW_SECS;
-      var dur = Math.max(it.durF * DRAW_SECS, 0.12);
-      if (it.stroked) {
-        el.style.strokeDasharray = it.L;
-        el.style.strokeDashoffset = it.L;
-        var a = 'jdDrawOn ' + dur.toFixed(3) + 's ease-out ' +
-          start.toFixed(3) + 's 1 both';
-        if (it.filled) {
-          el.style.setProperty('--jdfo', it.fo);
-          a += ', jdFillOn ' + Math.max(dur * 0.6, 0.15).toFixed(3) +
-            's ease-in ' + (start + dur * 0.45).toFixed(3) + 's 1 both';
-        }
-        el.style.animation = a;
-      } else {
-        el.style.setProperty('--jdo', it.op);
-        el.style.animation = 'jdFadeOn ' +
-          Math.max(dur * 0.8, 0.15).toFixed(3) + 's ease-in ' +
-          start.toFixed(3) + 's 1 both';
-      }
+    if (svg && window.JD_drawOn(svg, { force: !!force, secs: DRAW_SECS })) {
+      /* the lazy-fetch guard's window: while this hasn't elapsed, a draw
+         is (or may be) in flight on the plate */
+      drawUntil = Date.now() + (DRAW_SECS + 0.4) * 1000;
     }
-    /* put the plate back to plain rendered state once the run is over; a
-       newer draw (response flipped mid-run) owns the plate instead */
-    drawTimer = setTimeout(function () {
-      drawTimer = 0;
-      if (seq === drawSeq) stripDraw(svg);
-    }, (DRAW_SECS + 0.4) * 1000);
   }
 
   function render(animate) {
@@ -3323,7 +3330,7 @@ function JD_layerOpen() {
          (an alternative was picked before its fetch landed): then the
          landing IS the reveal, and it draws. */
       var plateEmpty = !scrollEl.querySelector('.rc-plate-art svg');
-      if (drawTimer && !plateEmpty) {
+      if (drawUntil > Date.now() && !plateEmpty) {
         var ab = scrollEl.querySelector('.rc-alts-block');
         if (ab) ab.innerHTML = altsHTML(curEntry, curResp);
         if (window.JD_fitAll) window.JD_fitAll(scrollEl);
@@ -3434,6 +3441,9 @@ function JD_layerOpen() {
   var payload = null;       /* the data.php payload — the survey renders from it */
   var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
   var state = '', isOpen = false, confirmOn = false, restored = false;
+  /* set only at the go('reveal') that ends the darkroom wait: the next
+     render draws the fresh plates on (see the hook at render()'s foot) */
+  var revealFresh = false;
   var turn = null;          /* the persisted in-flight record (C5.3) */
   var work = null;          /* the working copy: svgs, ratings, comparison */
   var token = 0;            /* per-turn token — a settling fetch from an
@@ -3804,6 +3814,20 @@ function JD_layerOpen() {
     paint(h);
     bodyEl.scrollTop = 0;
     focusFirst();
+    /* the fresh drawings' first appearance draws itself on (owner,
+       2026-08-16 — "it should feel magical"): all surviving plates at
+       once, via the shared engine, and ONLY on the arrival from the
+       darkroom — revealFresh is set at the go('reveal') that ends the
+       wait, so a restored or revisited reveal shows finished prints
+       rather than replaying the trick. Respects reduced motion (no
+       force: this is ambient, not a press). */
+    if (state === 'reveal' && revealFresh) {
+      revealFresh = false;
+      if (window.JD_drawOn) {
+        var fresh = bodyEl.querySelectorAll('.jd-turn-plates svg');
+        for (var fi = 0; fi < fresh.length; fi++) window.JD_drawOn(fresh[fi]);
+      }
+    }
   }
   /* every write to the card goes through here: the masthead head() just
      declared, the body, the dialog's accessible name, and the card's
@@ -4753,7 +4777,7 @@ function JD_layerOpen() {
     paintSlots();
     if (pendingCount() > 0) return;
     stopSlowTimer();
-    if (okSlots().length) { go('reveal'); return; }
+    if (okSlots().length) { revealFresh = true; go('reveal'); return; }
     /* nothing survived: a limit refusal goes back to the brief with honest
        copy (no submission was created), anything else is an apology */
     var codes = JD_SLOTS.map(function (s) { return work.slots[s].code; });
