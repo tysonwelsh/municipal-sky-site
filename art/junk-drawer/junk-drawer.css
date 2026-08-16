@@ -1846,13 +1846,8 @@ html.jd-turn-open { overflow: hidden; }
   flex: 1 1 auto; min-width: 0;
   display: flex; align-items: center; gap: 10px;
 }
-.jd-turn-formno {
-  flex: 0 0 auto; align-self: flex-start; margin-top: 2px;
-  font-family: var(--tform); font-weight: 700; font-size: var(--t-micro);
-  letter-spacing: 0.1em; color: var(--tink-2); white-space: nowrap;
-  border: 1px solid rgba(48, 34, 12, 0.5); padding: 2px 5px 1px;
-}
-.jd-turn-formno em { font-style: normal; color: var(--tink-3); margin-left: 0.45em; }
+/* (the boxed FORM JD-1 §n badge that used to open this row was retired
+   2026-08-16, owner call — the heading is the whole headline now) */
 /* the heading — the one thing on this row a visitor actually reads. It is
    also the dialog's accessible name and the focus target for every state
    with no field of its own; focused programmatically (never a tab stop), so
@@ -2800,7 +2795,13 @@ html.jd-turn-open { overflow: hidden; }
   /* immersive mode has slid the banner off the top (see .site-banner above),
      so the reserved band comes back as ordinary padding — and returns only
      while the chrome is actually showing */
-  .jd-turn-scrim { padding: 10px 8px; }
+  /* padding tightens for the small screen; and the card rides the TOP of
+     the screen instead of centring (owner, 2026-08-16): a centred card put
+     the prompt's textarea at mid-screen, exactly where the software
+     keyboard lands — the field and the keys crowded each other.
+     Top-aligned, the field sits in the strip the keyboard never covers,
+     on every card of the flow alike. */
+  .jd-turn-scrim { padding: 10px 8px; align-items: flex-start; }
   html.jd-chrome .jd-turn-scrim { padding-top: calc(var(--banner-h) + 8px); }
   .jd-turn-actions .jd-turn-go, .jd-turn-actions .jd-turn-alt { flex: 1 1 auto; }
 }

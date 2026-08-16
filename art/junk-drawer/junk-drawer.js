@@ -3880,12 +3880,13 @@ function JD_layerOpen() {
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
-  /* the masthead: FORM JD-1 §n · the heading */
+  /* the masthead: just the heading (the FORM JD-1 §n badge that used to
+     lead this row was retired 2026-08-16, owner call — head() still takes
+     the section number so the flow's §1–§6 order stays declared at the
+     call sites, but nothing prints it) */
   function headHTML() {
     var p = pendingHead || { title: 'take a turn', sec: 1 };
-    return '<span class="jd-turn-formno" aria-hidden="true">FORM JD-1<em>§' +
-      p.sec + '</em></span>' +
-      '<h2 class="jd-turn-title" tabindex="-1"' +
+    return '<h2 class="jd-turn-title" tabindex="-1"' +
       (p.noFocus ? '' : ' data-autofocus') + '>' + esc(p.title) + '</h2>';
   }
 
