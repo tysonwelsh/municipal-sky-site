@@ -1230,12 +1230,23 @@ html.jd-record-open { overflow: hidden; }
    it), wearing the specimen tag's button tailoring: hairline border, 3px
    radius, cream fill, a 1px press shadow. The card's click/key handlers
    exempt it from the plate's zoom. */
-.rc-dl {
-  /* inset far enough that the button clears the kraft corner's 26px
-     diagonal (owner rev, 2026-08-13 — it overlapped at 8/8). Bottom nudged
-     15px → 28px on 2026-08-15: the file number now sits beneath the button
-     in this one's old footprint (see .rc-note-no). */
+/* the photograph's button row (owner rev, 2026-08-16: REPLAY sits on the
+   SAME row as DOWNLOAD). One positioned flex box owns the corner — inset
+   far enough to clear the kraft corner's 26px diagonal, bottom 28px so the
+   file number keeps its line beneath (see .rc-note-no) — and the buttons
+   inside are ordinary flow, so neither needs to guess the other's width. */
+.rc-plate-btns {
   position: absolute; right: 18px; bottom: 28px; z-index: 3;
+  display: flex; align-items: center; gap: 8px;
+  /* a plate too narrow for the pair stacks them UPWARD (wrap-reverse) —
+     back to the brief stacked layout — rather than spilling onto the
+     file number's line below */
+  flex-wrap: wrap-reverse; justify-content: flex-end;
+}
+/* the buttons' shared tailoring (the specimen tag's: hairline border, 3px
+   radius, cream fill, 1px press shadow). REPLAY is a real <button>, so the
+   font the <a> inherited is set explicitly for both. */
+.rc-dl, .rc-draw {
   display: inline-block;
   font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
   text-transform: uppercase; text-decoration: none; white-space: nowrap;
@@ -1246,28 +1257,11 @@ html.jd-record-open { overflow: hidden; }
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
   cursor: pointer;
 }
-.rc-dl:hover { background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-dl:active { box-shadow: none; transform: translateY(1px); }
-.rc-dl:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-/* THE REPLAY button (owner, 2026-08-16): the drawing plays itself when the
-   card opens; this plays it again on request. DOWNLOAD's tailoring, one
-   rung up the same corner — a real <button>, so the font that the <a>
-   inherited is set here explicitly. */
-.rc-draw {
-  position: absolute; right: 18px; bottom: 64px; z-index: 3;
-  display: inline-block;
-  font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
-  text-transform: uppercase; white-space: nowrap;
-  color: #46505e;
-  border: 1px solid var(--form-rule); border-radius: 3px;
-  padding: 0.5em 0.85em 0.46em;
-  background: rgba(255, 250, 232, 0.82);
-  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
-  cursor: pointer;
-}
-.rc-draw:hover { background: #37414f; color: var(--card); border-color: #37414f; }
-.rc-draw:active { box-shadow: none; transform: translateY(1px); }
-.rc-draw:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-dl:hover, .rc-draw:hover {
+  background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
+.rc-dl:focus-visible, .rc-draw:focus-visible {
+  outline: 2px solid var(--red); outline-offset: 2px; }
 
 /* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
    the scrim carries z-index 320, which makes it a stacking context, so
