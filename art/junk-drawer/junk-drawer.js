@@ -2290,15 +2290,8 @@ function JD_layerOpen() {
   var payload = null, svgCache = {};
   var scrim = null, cardEl = null, scrollEl = null;
   var curEntry = null, curResp = 0, isOpen = false, pushed = false;
-  /* the alternatives strip's window start (owner directive, 2026-08-14 —
-     with Kimi K3 filed, entries reached 4 responses and the strip outgrew
-     its row): at most 3 thumbnails show at once; ◂ ▸ buttons step the
-     window one response at a time. No wraparound — the archive keeps its
-     filing order and the buttons go disabled at the ends. State is a
-     module var so a full re-render (switching response) never loses the
-     visitor's place; nav presses re-render the strip alone, not the card,
-     so a long prompt's fold stays as it was left. */
-  var altWin = 0;
+  /* (the alternatives strip's window index retired 2026-08-15 — the strip
+     is a scroll port now and its position IS its scrollLeft. See altsHTML.) */
   /* THE ARTWORK'S KEY for the shared display frame (see fitView). One string
      per DRAWING, so the plate, the strip thumbnail, the enlargement and — for
      a won item — the bench and the pile all reframe identically instead of
@@ -2634,20 +2627,33 @@ function JD_layerOpen() {
       '</span></td></tr>' + descRow('rc-axd-g', gDesc) + '</tfoot></table>';
   }
 
+  /* THE STRIP IS A SCROLLER (owner, 2026-08-15: "I'd also like to be able to
+     scrub my finger across them"). It used to be a WINDOW: three thumbnails
+     rendered at a time out of N, with ◂ ▸ swapping which three. That is why
+     a finger did nothing on it — there was nothing beside the three to scrub
+     TO, and no scroll box to scrub in. Every response is in the DOM now, in
+     one horizontal scroll port, so the platform's own panning does the work:
+     momentum, rubber-banding at the ends, and snapping, on a phone for free.
+
+     The pagers stay and now scroll the port by one thumbnail instead of
+     re-rendering the strip; their disabled state reads off scrollLeft. The
+     window index is gone entirely — position is the scroll offset, which is
+     a fact about the DOM rather than a number we have to keep in step with
+     it, and every thumbnail is reachable by Tab now instead of only the
+     three currently framed. */
   function altsHTML(entry, curIdx) {
     if (!entry.responses || entry.responses.length < 2) return '';
     var n = entry.responses.length, paged = n > 3;
-    altWin = Math.max(0, Math.min(altWin, n - 3));
-    var slice = paged ? entry.responses.slice(altWin, altWin + 3)
-                      : entry.responses;
     var h = '<div class="rc-alts">';
     if (paged) {
       h += '<button type="button" class="rc-alt-nav" data-nav="-1"' +
-        (altWin === 0 ? ' disabled' : '') +
         ' aria-label="Earlier responses">◂</button>';
     }
-    slice.forEach(function (r, j) {
-      var i = paged ? altWin + j : j;
+    /* is-many is what fixes each thumbnail at a third of the port so the
+       next one peeks past the edge — the affordance that says "these
+       scroll". With three or fewer they share the port and nothing moves. */
+    h += '<div class="rc-alt-port' + (paged ? ' is-many' : '') + '">';
+    entry.responses.forEach(function (r, i) {
       var m = modelOf(r.model), g = gradeOf(r.grade);
       h += '<button type="button" class="rc-alt' + (i === curIdx ? ' is-cur' : '') +
         '" data-resp="' + i + '">' +
@@ -2664,12 +2670,101 @@ function JD_layerOpen() {
         esc(g.label) + '</span>' +
         '</span></button>';
     });
+    h += '</div>';
     if (paged) {
       h += '<button type="button" class="rc-alt-nav" data-nav="1"' +
-        (altWin >= n - 3 ? ' disabled' : '') +
         ' aria-label="More responses">▸</button>';
     }
     return h + '</div>';
+  }
+
+  /* one thumbnail's worth of travel, gap included — the pagers' step and the
+     unit the centring below thinks in */
+  function altStep(port) {
+    var a = port.querySelector('.rc-alt');
+    if (!a) return port.clientWidth;
+    var gap = parseFloat(getComputedStyle(port).columnGap);
+    return a.getBoundingClientRect().width + (isFinite(gap) ? gap : 8);
+  }
+  /* the pagers go dim at the ends of the TRAVEL, not at the ends of a window
+     index — one tolerance for the sub-pixel scrollLeft a snap can leave */
+  function syncAltNav(strip) {
+    var port = strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    var max = port.scrollWidth - port.clientWidth;
+    var l = strip.querySelector('.rc-alt-nav[data-nav="-1"]');
+    var r = strip.querySelector('.rc-alt-nav[data-nav="1"]');
+    if (l) l.disabled = port.scrollLeft <= 1;
+    if (r) r.disabled = port.scrollLeft >= max - 1;
+  }
+  /* put the shown response under the visitor's eye. scrollLeft is assigned
+     rather than scrollIntoView'd on purpose: scrollIntoView would also walk
+     up and move the card's own vertical scroller, which on a re-render means
+     the card jumping while the visitor is reading it. */
+  function centerAlt(strip, idx, smooth) {
+    var port = strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    var a = port.querySelector('.rc-alt[data-resp="' + idx + '"]');
+    if (!a) return;
+    /* measured off the RECTS, not offsetLeft: offsetLeft is relative to the
+       nearest positioned ancestor, and the port is static — so it answered
+       with the thumbnail's distance from somewhere up in the card (511px in
+       a port 446px wide), every centring clamped to the far end, and the
+       card opened with its own selected thumbnail sliced to a sliver at the
+       edge. The rects are relative to the viewport and the difference
+       between them is the distance actually wanted. */
+    var pr = port.getBoundingClientRect(), ar = a.getBoundingClientRect();
+    var to = port.scrollLeft + (ar.left - pr.left) - (port.clientWidth - ar.width) / 2;
+    to = Math.max(0, Math.min(to, port.scrollWidth - port.clientWidth));
+    if (smooth && port.scrollTo) { port.scrollTo({ left: to, behavior: 'smooth' }); }
+    else { port.scrollLeft = to; }
+  }
+
+  /* THE SCRUB. Touch and trackpad need nothing from us — a scroll port pans
+     itself, and hijacking that would cost the momentum and the rubber-band
+     that make it feel native, which is the whole point of the request. What
+     the platform does NOT give is dragging with a held mouse button, so that
+     alone is synthesised here, for pointerType 'mouse' only.
+
+     A drag must not also pick a thumbnail. Past a few pixels of travel the
+     gesture is a scrub, and the click that follows pointerup is swallowed by
+     a one-shot capture listener — cleared on the next task either way, so a
+     drag that ends without a click can never eat a later one. */
+  function wireAltScrub(strip) {
+    var port = strip.querySelector('.rc-alt-port');
+    if (!port) return;
+    port.addEventListener('scroll', function () { syncAltNav(strip); }, { passive: true });
+    var down = false, moved = false, x0 = 0, left0 = 0;
+    port.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'touch' || e.button !== 0) return;
+      down = true; moved = false; x0 = e.clientX; left0 = port.scrollLeft;
+    });
+    port.addEventListener('pointermove', function (e) {
+      if (!down) return;
+      var dx = e.clientX - x0;
+      if (!moved && Math.abs(dx) < 5) return;
+      if (!moved) {
+        moved = true;
+        port.classList.add('is-scrubbing');
+        try { port.setPointerCapture(e.pointerId); } catch (err) {}
+      }
+      e.preventDefault();                     /* no text/image drag under it */
+      port.scrollLeft = left0 - dx;
+    });
+    var end = function (e) {
+      if (!down) return;
+      down = false;
+      port.classList.remove('is-scrubbing');
+      try { port.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (!moved) return;
+      var kill = function (ev) { ev.preventDefault(); ev.stopPropagation(); };
+      port.addEventListener('click', kill, true);
+      window.setTimeout(function () {
+        port.removeEventListener('click', kill, true);
+      }, 0);
+    };
+    port.addEventListener('pointerup', end);
+    port.addEventListener('pointercancel', end);
   }
 
   /* THE CARD, landscape (round 13, owner pick 2026-08-13: mockup-13a's
@@ -2870,18 +2965,22 @@ function JD_layerOpen() {
         }
         return;
       }
-      /* the strip's ◂ ▸ pagers (4+ responses): step the thumbnail window
-         and rebuild the STRIP ALONE — a full render() would fold a long
-         prompt the visitor just opened, and browsing the bench isn't
-         switching the response */
+      /* the strip's ◂ ▸ pagers (4+ responses): one thumbnail of travel in
+         the scroll port. They move the SAME strip the finger moves — no
+         re-render, so a long prompt the visitor just unfolded stays
+         unfolded, and browsing the bench still isn't switching the
+         response. Smooth, unless the visitor asked for less motion. */
       var nav = e.target.closest ? e.target.closest('.rc-alt-nav') : null;
       if (nav) {
         if (nav.disabled) return;
-        var step = parseInt(nav.getAttribute('data-nav'), 10);
-        altWin = Math.max(0, Math.min(altWin + step,
-          curEntry.responses.length - 3));
-        var altsBlock = scrollEl.querySelector('.rc-alts-block');
-        if (altsBlock) altsBlock.innerHTML = altsHTML(curEntry, curResp);
+        var strip = scrollEl.querySelector('.rc-alts');
+        var port = strip && strip.querySelector('.rc-alt-port');
+        if (!port) return;
+        var by = parseInt(nav.getAttribute('data-nav'), 10) * altStep(port);
+        var calm = window.matchMedia
+          && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (port.scrollBy) port.scrollBy({ left: by, behavior: calm ? 'auto' : 'smooth' });
+        else port.scrollLeft += by;
         return;
       }
       var b = e.target.closest ? e.target.closest('.rc-alt') : null;
@@ -2889,11 +2988,6 @@ function JD_layerOpen() {
       var i = parseInt(b.getAttribute('data-resp'), 10);
       if (isNaN(i) || i === curResp) return;
       curResp = i;
-      /* the picked option centers itself in the strip — the same centering
-         the open path gives the primary, clamped to the strip's ends */
-      if (curEntry.responses.length > 3) {
-        altWin = Math.max(0, Math.min(i - 1, curEntry.responses.length - 3));
-      }
       render(false);
     });
     /* the plate answers Enter/Space like the button it claims to be; Space is
@@ -3026,6 +3120,16 @@ function JD_layerOpen() {
        holder carries the ARTWORK's key, so a 46px thumbnail is handed the
        frame the 350px plate resolved rather than measuring its own. */
     if (window.JD_fitAll) window.JD_fitAll(scrollEl);
+    /* the strip is a fresh node after every render, so its scrub listeners
+       are wired here rather than delegated (scroll doesn't bubble anyway),
+       and the shown response is brought under the eye without animating —
+       this is a repaint of the card, not a move the visitor made. */
+    var strip = scrollEl.querySelector('.rc-alts');
+    if (strip) {
+      wireAltScrub(strip);
+      centerAlt(strip, curResp, false);
+      syncAltNav(strip);
+    }
     /* a re-render replaces the plate node, so an open enlargement re-syncs to
        the new response and re-points its way home (the lazy alternative SVGs
        landing is the common case; switching response while enlarged is the
@@ -3053,12 +3157,8 @@ function JD_layerOpen() {
     for (var i = 0; i < entry.responses.length; i++) {
       if (entry.responses[i].rid === entry.primary) curResp = i;
     }
-    /* open with the PRIMARY's thumbnail showing: the window centers on it
-       (one earlier response visible when there is one), clamped to the
-       strip's ends */
-    altWin = entry.responses.length > 3
-      ? Math.max(0, Math.min(curResp - 1, entry.responses.length - 3))
-      : 0;
+    /* (opening on the PRIMARY's thumbnail is render()'s job now — it centres
+       whatever curResp is in the scroll port, clamped to the ends) */
     injectDefs();
     build();
     isOpen = true;
