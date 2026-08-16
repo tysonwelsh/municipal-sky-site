@@ -1514,7 +1514,47 @@ tr.rc-axdesc td {
 .rc-mark.rc-g1, .rc-alt-grade.rc-g1, .rc-bar.rc-g1 { color: #8f1d12; }   /* utility — deep red */
 
 /* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
-.rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; }
+/* The strip is a rail with a SCROLL PORT between its two pagers (owner,
+   2026-08-15: "I'd also like to be able to scrub my finger across them").
+   The pagers sit outside the port so they stay put while the thumbnails
+   travel; the port is the only thing that scrolls, and on a phone it is the
+   platform's own pan — momentum, rubber-band and snap, none of it written
+   here. overscroll-behavior keeps a scrub that runs off the end from
+   turning into a page swipe or a browser back gesture. */
+.rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; align-items: stretch; }
+.rc-alt-port {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; gap: 8px;
+  overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  /* NO SCROLL SNAPPING, and it was tried: centre-aligned snap points are
+     unreachable for the first and last thumbnail, and Chromium re-snaps
+     whenever the box relayouts — which here is every time a lazily-fetched
+     alternative lands. The card opened showing the END of the strip with the
+     selected thumbnail clipped to a sliver at the left edge. Position is set
+     deliberately (centerAlt, on open and on every pick) and otherwise left
+     exactly where the finger put it, which is what scrubbing means. */
+  /* the bar is furniture this form doesn't own: the peeking next thumbnail
+     and the pagers are the affordance, and a scrollbar under a row of
+     photographs reads as a browser part that wandered onto the page */
+  scrollbar-width: none;
+}
+.rc-alt-port::-webkit-scrollbar { display: none; }
+/* the mouse's own scrub (see wireAltScrub): the platform pans for touch and
+   trackpad, but a held button drags nothing without help, so that one case
+   is synthesised — and while it runs, nothing under the cursor may select */
+.rc-alt-port.is-scrubbing { cursor: grabbing; user-select: none; }
+.rc-alt-port.is-scrubbing .rc-alt { pointer-events: none; }
+/* A SCROLLER HAS TO LOOK LIKE ONE. Three thumbnails at exactly a third of
+   the port each (minus the two gaps) is the tidy answer and the wrong one:
+   the fourth then begins precisely at the edge and is clipped to nothing, so
+   the strip looks complete and the scrub nobody can see is a scrub nobody
+   will try. Dividing by 3¼ instead spends about 8% of each thumbnail's width
+   to leave a sliver of the next one showing — the oldest affordance there
+   is, and the reason a finger goes to it at all. Three or fewer share the
+   port as before: nothing is hidden, so nothing should pretend to be. */
+.rc-alt-port.is-many .rc-alt { flex: 0 0 calc((100% - 16px) / 3.25); }
 .rc-alt {
   flex: 1 1 0; min-width: 0;
   font: inherit; text-align: center; cursor: pointer;
