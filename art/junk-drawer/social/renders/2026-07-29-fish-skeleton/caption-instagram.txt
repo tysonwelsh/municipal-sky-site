@@ -1,0 +1,9 @@
+Fish skeleton. One prompt, 4 models, one shot each — no retries, no cherry-picking.
+
+The prompt, verbatim, is typed on the sheet. Every panel is an SVG file — vector art measured in kilobytes, not pixels.
+
+Guess which model drew which — A, B, C or D — then swipe. The record is on the last card.
+
+The full drawer (and the files) — link in bio.
+
+#svg #vectorart #vector #generativeart #aiart #aidesign #designtools #graphicdesign #promptengineering #machinelearning

@@ -2988,6 +2988,7 @@ function JD_layerOpen() {
       var i = parseInt(b.getAttribute('data-resp'), 10);
       if (isNaN(i) || i === curResp) return;
       curResp = i;
+      drawNext = true;  /* the incoming response draws itself on */
       render(false);
     });
     /* the plate answers Enter/Space like the button it claims to be; Space is
@@ -3099,6 +3100,126 @@ function JD_layerOpen() {
     }
   }
 
+  /* THE DRAW-ON REVEAL (owner, 2026-08-16): when the report card opens —
+     and again when the visitor flips to another model's response — the
+     photograph doesn't just appear: the artwork draws itself onto the
+     plate, stroke by stroke, in SVG document order. Document order is the
+     order the generating model actually emitted the shapes, so the reveal
+     is a small replay of the generation — provenance as motion, not a
+     canned wipe. Stroked paths draw along their measured length (the
+     dasharray trick); filled shapes fade in once their outline is mostly
+     down; pre-dashed strokes and unmeasurables (text, use) fall back to a
+     fade. Each element's share of the run scales with the square root of
+     its length, so one long spine can't starve the small bones.
+     Guardrails: prefers-reduced-motion skips the whole thing; the
+     per-element schedule is measured once per ARTWORK and cached under
+     the same key fitView frames with (a re-inlined copy replays without
+     re-measuring); and the inline animation styles are stripped after the
+     run so the DOM returns to exactly what cardHTML rendered. Scope is
+     the card's plate ONLY — the enlargement is the same photograph held
+     closer, not a new drawing; the strip's thumbnails and the pile never
+     draw at all. */
+  var DRAW_SECS = 2.6;
+  var DRAW_SEL = 'path,line,polyline,polygon,circle,ellipse,rect,text,use';
+  var DRAW_SKIP = 'defs,clipPath,mask,pattern,linearGradient,radialGradient,' +
+    'symbol,marker';
+  var drawNext = false, drawTimer = 0, drawSeq = 0, drawSched = {};
+  var reduceMotion = false;
+  try {
+    reduceMotion = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (e) {}
+
+  /* one pass of geometry + paint questions per artwork, answered from a
+     fresh inlined copy and remembered by traversal index (the copies are
+     re-inlined from one cached source string, so the index is stable) */
+  function measureDraw(svg) {
+    var els = svg.querySelectorAll(DRAW_SEL);
+    var items = [], i, el, cs, L, stroked, filled;
+    for (i = 0; i < els.length; i++) {
+      el = els[i];
+      if (el.closest && el.closest(DRAW_SKIP)) continue;
+      cs = getComputedStyle(el);
+      if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+      L = 0;
+      try { if (el.getTotalLength) L = el.getTotalLength(); } catch (e) {}
+      stroked = cs.stroke !== 'none' && parseFloat(cs.strokeWidth) > 0 &&
+        parseFloat(cs.strokeOpacity) > 0 && cs.strokeDasharray === 'none' &&
+        L > 0;
+      filled = cs.fill !== 'none' && parseFloat(cs.fillOpacity) > 0;
+      if (!stroked && !filled) continue;
+      items.push({ idx: i, L: Math.max(L, 4), stroked: stroked,
+        filled: filled, fo: cs.fillOpacity, op: cs.opacity });
+    }
+    var totalW = 0;
+    for (i = 0; i < items.length; i++) totalW += Math.sqrt(items[i].L);
+    var acc = 0;
+    for (i = 0; i < items.length; i++) {
+      var w = Math.sqrt(items[i].L) / (totalW || 1);
+      /* starts pack into the first 90% so the tail still finishes inside
+         the run; durations get 1.7x their share, overlapping neighbours
+         the way a hand keeps moving before the last stroke dries */
+      items[i].startF = acc * 0.9;
+      acc += w;
+      items[i].durF = Math.min(w * 1.7, 1 - items[i].startF);
+    }
+    return items;
+  }
+
+  function stripDraw(svg) {
+    if (!svg || !document.contains(svg)) return;
+    var els = svg.querySelectorAll(DRAW_SEL);
+    for (var i = 0; i < els.length; i++) {
+      els[i].style.animation = '';
+      els[i].style.strokeDasharray = '';
+      els[i].style.strokeDashoffset = '';
+      els[i].style.removeProperty('--jdfo');
+      els[i].style.removeProperty('--jdo');
+    }
+  }
+
+  function drawOn() {
+    if (reduceMotion || !scrollEl || !curEntry) return;
+    var holder = scrollEl.querySelector('.rc-plate-art');
+    var svg = holder ? holder.querySelector('svg') : null;
+    if (!svg) return;
+    var resp = curEntry.responses[curResp] || curEntry.responses[0];
+    var key = fitKey(curEntry, resp);
+    var sched = drawSched[key] || (drawSched[key] = measureDraw(svg));
+    var els = svg.querySelectorAll(DRAW_SEL);
+    var seq = ++drawSeq;
+    if (drawTimer) { clearTimeout(drawTimer); drawTimer = 0; }
+    for (var i = 0; i < sched.length; i++) {
+      var it = sched[i], el = els[it.idx];
+      if (!el) continue;
+      var start = it.startF * DRAW_SECS;
+      var dur = Math.max(it.durF * DRAW_SECS, 0.12);
+      if (it.stroked) {
+        el.style.strokeDasharray = it.L;
+        el.style.strokeDashoffset = it.L;
+        var a = 'jdDrawOn ' + dur.toFixed(3) + 's ease-out ' +
+          start.toFixed(3) + 's 1 both';
+        if (it.filled) {
+          el.style.setProperty('--jdfo', it.fo);
+          a += ', jdFillOn ' + Math.max(dur * 0.6, 0.15).toFixed(3) +
+            's ease-in ' + (start + dur * 0.45).toFixed(3) + 's 1 both';
+        }
+        el.style.animation = a;
+      } else {
+        el.style.setProperty('--jdo', it.op);
+        el.style.animation = 'jdFadeOn ' +
+          Math.max(dur * 0.8, 0.15).toFixed(3) + 's ease-in ' +
+          start.toFixed(3) + 's 1 both';
+      }
+    }
+    /* put the plate back to plain rendered state once the run is over; a
+       newer draw (response flipped mid-run) owns the plate instead */
+    drawTimer = setTimeout(function () {
+      drawTimer = 0;
+      if (seq === drawSeq) stripDraw(svg);
+    }, (DRAW_SECS + 0.4) * 1000);
+  }
+
   function render(animate) {
     markSeq = 0;
     var resp = curEntry.responses[curResp] || curEntry.responses[0];
@@ -3143,6 +3264,10 @@ function JD_layerOpen() {
       void cardEl.offsetWidth;
       cardEl.classList.add('is-enter');
     }
+    /* the reveal runs only where a caller asked for it (open, response
+       flip) — a plain re-render, like the strip filling in, must never
+       restart a drawing */
+    if (drawNext) { drawNext = false; drawOn(); }
   }
 
   function open(id, viaHistory) {
@@ -3166,8 +3291,35 @@ function JD_layerOpen() {
     document.documentElement.classList.add('jd-record-open');
     /* render immediately with what's cached (the primary always is); the
        strip thumbnails fill in when the lazy fetches land */
+    drawNext = true;  /* opening the card draws the photograph on */
     render(true);
-    ensureSVGs(entry).then(function () { if (isOpen) render(false); });
+    ensureSVGs(entry).then(function () {
+      if (!isOpen) return;
+      /* the lazy fetches usually land while the reveal is still running,
+         and all they change is the strip — the plate's own SVG was cached
+         before first paint. A full render here would cut the drawing dead,
+         so while a draw is in flight refresh the strip alone. The full
+         path still runs when the plate is actually missing its artwork
+         (an alternative was picked before its fetch landed): then the
+         landing IS the reveal, and it draws. */
+      var plateEmpty = !scrollEl.querySelector('.rc-plate-art svg');
+      if (drawTimer && !plateEmpty) {
+        var ab = scrollEl.querySelector('.rc-alts-block');
+        if (ab) ab.innerHTML = altsHTML(curEntry, curResp);
+        if (window.JD_fitAll) window.JD_fitAll(scrollEl);
+        /* the replaced strip is a fresh node, so it takes the same wiring
+           render() gives one — scrub, centring, nav sync */
+        var st = scrollEl.querySelector('.rc-alts');
+        if (st) {
+          wireAltScrub(st);
+          centerAlt(st, curResp, false);
+          syncAltNav(st);
+        }
+        return;
+      }
+      drawNext = plateEmpty;
+      render(false);
+    });
     if (!viaHistory) {
       try { history.pushState({ jdRecord: id }, '', '#' + id); pushed = true; }
       catch (e) { pushed = false; }
