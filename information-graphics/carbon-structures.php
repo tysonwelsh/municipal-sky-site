@@ -34,7 +34,8 @@ include '../includes/header.php';
   }
 
   /* banner starts hidden on load (dashboard fills the window immediately),
-     reveals on scroll-up, retracts again on scroll-down (this page only) */
+     stays hidden at the very top, reveals on scroll-up further down the
+     page, retracts again on scroll-down (this page only) */
   .site-banner { transition: transform 0.25s ease; }
   body.carbon-banner-hidden .site-banner { transform: translateY(-100%); }
 </style>
@@ -46,7 +47,9 @@ include '../includes/header.php';
     window.addEventListener("scroll", () => {
       const y = window.scrollY;
       if (Math.abs(y - lastY) < 4) return; // ignore sub-pixel jitter
-      document.body.classList.toggle("carbon-banner-hidden", y > lastY && y > 80);
+      // hidden at the very top (dashboard fills the window) and when
+      // scrolling down; revealed only by scrolling up while down the page
+      document.body.classList.toggle("carbon-banner-hidden", y <= 80 || y > lastY);
       lastY = y;
     }, { passive: true });
   })();
