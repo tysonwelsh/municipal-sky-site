@@ -86,7 +86,7 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     overflow: hidden;
   }
-  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; overflow-y: auto; }
+  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; }
   #plotStrips {
     display: flex; gap: 12px; align-items: stretch; margin-top: 14px;
   }
@@ -566,11 +566,9 @@ function resize() {
   const vh = document.getElementById("svhProbe").offsetHeight;
   const h = Math.max(250, vh - headerH - stripsH - footerH - 100);
   plot.style.height = h + "px";
-  // cap the side column to the plot height (it scrolls internally if taller),
-  // so the document always fits the viewport — embedded in an iframe, any
-  // internal page scroll makes the whole dashboard shift during page scroll
-  document.querySelector(".side").style.maxHeight =
-    window.innerWidth > 760 ? h + "px" : "";
+  // the side column keeps its natural height: if it is taller than the plot,
+  // the document grows past the viewport and the OUTER page scrolls (or the
+  // host page grows the iframe) — never an inner scrollbar on the dashboard
   W = plot.clientWidth; H = plot.clientHeight;
   canvas.width = W * DPR; canvas.height = H * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);

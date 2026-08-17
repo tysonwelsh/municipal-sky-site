@@ -17,10 +17,17 @@ include '../includes/header.php';
   .carbon-fullscreen iframe {
     display: block;
     width: 100%;
-    height: 100vh;   /* fallback */
+    height: 100vh;   /* fallback + minimum; JS below grows it to the content height */
     height: 100svh;  /* stable: doesn't change when mobile browser chrome shows/hides on scroll */
     border: 0;
     background: #f9f9f7;
+  }
+
+  /* probe: reads the stable small-viewport height in px (no pure-JS way to read svh) */
+  #carbonSvhProbe {
+    position: absolute; top: 0; left: 0;
+    height: 100vh; height: 100svh;
+    visibility: hidden; pointer-events: none;
   }
 </style>
 
@@ -54,8 +61,38 @@ include '../includes/header.php';
 
 <!-- Visualization embed: outside .content-frame, so it spans the full viewport -->
 <div class="carbon-fullscreen">
-  <iframe src="carbon-point-cloud/" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
+  <iframe id="carbonFrame" src="carbon-point-cloud/" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
 </div>
+<div id="carbonSvhProbe" aria-hidden="true"></div>
+
+<script>
+  /* Grow the iframe to the app's natural document height, so the dashboard
+     never gets its own scrollbar — the page's scrollbar is the only one.
+     The app's document height only depends on the iframe height via the
+     plot's viewport-fit, and then it EQUALS the iframe height, so this
+     settles instead of oscillating. */
+  (function () {
+    const f = document.getElementById("carbonFrame");
+    const probe = document.getElementById("carbonSvhProbe");
+    function fit() {
+      const doc = f.contentDocument;
+      if (!doc || !doc.documentElement) return;
+      const h = Math.max(Math.ceil(doc.documentElement.scrollHeight), probe.offsetHeight);
+      if (f.style.height !== h + "px") f.style.height = h + "px";
+    }
+    f.addEventListener("load", () => {
+      fit();
+      // content height changes on theme/structure switches, data loads, reflows
+      new ResizeObserver(fit).observe(f.contentDocument.body);
+    });
+    // parent resize: drop back to the CSS 100svh baseline, then re-measure —
+    // otherwise a stale inline height would pin the document tall forever
+    window.addEventListener("resize", () => {
+      f.style.height = "";
+      requestAnimationFrame(() => requestAnimationFrame(fit));
+    });
+  })();
+</script>
 
 <div class="main-wrapper">
   <div class="content-frame">
