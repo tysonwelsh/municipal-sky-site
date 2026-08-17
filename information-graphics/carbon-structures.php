@@ -84,16 +84,19 @@ include '../includes/header.php';
 <script>
   /* Grow the iframe to the app's natural document height, so the dashboard
      never gets its own scrollbar — the page's scrollbar is the only one.
-     The app's document height only depends on the iframe height via the
-     plot's viewport-fit, and then it EQUALS the iframe height, so this
-     settles instead of oscillating. */
+     The app fits its plot to THIS page's svh probe (not the iframe's own
+     viewport), so the content height doesn't feed back into the iframe.
+     Measure body.scrollHeight, not documentElement.scrollHeight: the latter
+     is floored at the iframe's current viewport height, so it could never
+     shrink the iframe again after the content gets shorter (theme switch). */
   (function () {
     const f = document.getElementById("carbonFrame");
     const probe = document.getElementById("carbonSvhProbe");
     function fit() {
       const doc = f.contentDocument;
       if (!doc || !doc.documentElement) return;
-      const h = Math.max(Math.ceil(doc.documentElement.scrollHeight), probe.offsetHeight);
+      const contentH = doc.body ? doc.body.scrollHeight : doc.documentElement.scrollHeight;
+      const h = Math.max(Math.ceil(contentH), probe.offsetHeight);
       if (f.style.height !== h + "px") f.style.height = h + "px";
     }
     f.addEventListener("load", () => {

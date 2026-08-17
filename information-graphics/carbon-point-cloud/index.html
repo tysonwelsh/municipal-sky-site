@@ -49,12 +49,13 @@
     color: var(--ink);
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     padding: 20px 24px;
-    min-height: 100vh;
-    min-height: 100svh;
   }
-  /* probe element: lets resize() read the stable small-viewport height (svh) in px */
+  /* probe element: lets resize() read the stable small-viewport height (svh) in px.
+     position: fixed so the probe does NOT contribute to the document's scroll
+     overflow — an absolute 100svh probe would pin scrollHeight >= the iframe's
+     viewport height and the host page could never shrink the iframe again */
   #svhProbe {
-    position: absolute; top: 0; left: 0;
+    position: fixed; top: 0; left: 0;
     height: 100vh; height: 100svh;
     visibility: hidden; pointer-events: none;
   }
@@ -563,8 +564,17 @@ function resize() {
   const stripsH = document.getElementById("plotStrips").offsetHeight;
   const footerH = document.querySelector("footer").offsetHeight;
   // svh probe: stable across mobile browser chrome show/hide, so scrolling
-  // doesn't re-fit the layout (falls back to vh where svh is unsupported)
-  const vh = document.getElementById("svhProbe").offsetHeight;
+  // doesn't re-fit the layout (falls back to vh where svh is unsupported).
+  // When embedded, read the HOST page's svh probe instead of our own: ours
+  // tracks the iframe's viewport, which the host page grows to fit our
+  // document — fitting the plot to it would feed that growth back (loop).
+  let vh = document.getElementById("svhProbe").offsetHeight;
+  if (window.frameElement) {
+    try {
+      const hostProbe = window.parent.document.getElementById("carbonSvhProbe");
+      if (hostProbe) vh = hostProbe.offsetHeight;
+    } catch (e) { /* cross-origin embed: keep our own probe */ }
+  }
   const h = Math.max(250, vh - headerH - stripsH - footerH - 100);
   plot.style.height = h + "px";
   // the side column keeps its natural height: if it is taller than the plot,
