@@ -29,7 +29,23 @@ include '../includes/header.php';
     height: 100vh; height: 100svh;
     visibility: hidden; pointer-events: none;
   }
+
+  /* banner retracts on scroll-down, returns on scroll-up (this page only) */
+  .site-banner { transition: transform 0.25s ease; }
+  body.carbon-banner-hidden .site-banner { transform: translateY(-100%); }
 </style>
+
+<script>
+  (function () {
+    let lastY = window.scrollY;
+    window.addEventListener("scroll", () => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) < 4) return; // ignore sub-pixel jitter
+      document.body.classList.toggle("carbon-banner-hidden", y > lastY && y > 80);
+      lastY = y;
+    }, { passive: true });
+  })();
+</script>
 
 <!-- Main Content -->
 <div class="main-wrapper">
