@@ -158,10 +158,24 @@
   }
   .tooltip b { color: var(--ink); font-weight: 600; }
   .tooltip .tt-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
+  /* on-screen fly controls (touch only — shown via JS when coarsePointer && flying) */
+  #flyPad {
+    position: absolute; right: 12px; bottom: 12px; z-index: 5;
+    flex-direction: column; gap: 8px; touch-action: none;
+  }
+  #flyPad button { width: 52px; height: 52px; font-size: 18px; border-radius: 50%; opacity: 0.85; }
   @media (max-width: 760px) {
     .layout { flex-direction: column; }
     .side { flex: none; width: 100%; }
     #plotStrips { flex-direction: column; }
+    /* pared-down controls + removed analysis strips (JS gates buildRdf/buildBondPanel too) */
+    .controls .seqWrap, .controls .sizeWrap, #seqControls { display: none; }
+    #rdfPanel, #bondPanel { display: none; }
+    .controls select { max-width: 100%; }
+    .controls label { max-width: 100%; padding: 6px 0; }
+    /* let dropdown labels shrink below content width so long selects don't
+       overflow; checkbox labels keep intrinsic width and wrap whole instead */
+    .controls label:has(select) { min-width: 0; }
   }
   footer { margin-top: 10px; font-size: 12px; color: var(--muted); }
   footer a { color: var(--ink-2); }
@@ -186,10 +200,10 @@
   <label><input type="checkbox" id="strainChk"> Bond strain</label>
   <label><input type="checkbox" id="hideGridChk"> Hide gridlines</label>
   <label><input type="checkbox" id="spinChk"> Spin</label>
-  <label><input type="checkbox" id="flyChk"> Fly (WASD)</label>
-  <label>Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
+  <label><input type="checkbox" id="flyChk"> <span id="flyLabel">Fly (WASD)</span></label>
+  <label class="sizeWrap">Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
   <button id="resetBtn">Reset view</button>
-  <label>Sequence
+  <label class="seqWrap">Sequence
     <select id="seqSel" aria-label="Sequence">
       <option value="">—</option>
     </select>
@@ -206,6 +220,10 @@
   <div class="plot" id="plot">
     <canvas id="canvas"></canvas>
     <div class="tooltip" id="tooltip"></div>
+    <div id="flyPad" style="display:none">
+      <button id="flyFwd" aria-label="Move forward">▲</button>
+      <button id="flyBack" aria-label="Move back">▼</button>
+    </div>
   </div>
   <div class="side">
     <aside class="panel">
@@ -249,6 +267,13 @@
 <script src="structures/manifest.js"></script>
 <script>
 "use strict";
+
+// mobile gates: mobileMQ = layout breakpoint (matches the CSS media query) —
+// read .matches live, never a cached boolean: rotating a phone across 760px
+// re-runs the panel builders via resize(). coarsePointer = touch interaction
+// changes (a narrow desktop window keeps the mouse); static per device.
+const mobileMQ = matchMedia("(max-width: 760px)");
+const coarsePointer = matchMedia("(pointer: coarse)").matches;
 
 const CN_NAMES = ["sp⁰ isolated", "sp¹-like end", "sp (chain)", "sp² (graphitic)", "sp³ (diamond-like)", "over-coordinated", "CN 6", "CN 7", "CN 8"];
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -409,6 +434,7 @@ function strainColors() {
 
 const BOND_H = 110, BOND_M = { l: 8, r: 8, t: 8, b: 22 };
 function buildBondPanel() {
+  if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
   const panel = document.getElementById("bondPanel");
   const nb = S.bonds.length / 2;
   if (!nb) { panel.style.display = "none"; return; }
@@ -815,6 +841,7 @@ function drawPairHighlight() {
 
 const RDF_H = 130, RDF_M = { l: 46, r: 16, t: 36, b: 22 };
 function buildRdf() {
+  if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
   const panel = document.getElementById("rdfPanel");
   if (!S || !S.rdf) { panel.style.display = "none"; return; }
   panel.style.display = "";
@@ -1124,14 +1151,8 @@ function scheduleQuadtree() {
   }, 120);
 }
 
-canvas.addEventListener("mousemove", e => {
-  if (!quad || !S) return tooltip.style.display = "none";
-  const rect = canvas.getBoundingClientRect();
-  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
-  const i = quad.find(mx, my, 9);
-  if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i]))) {
-    tooltip.style.display = "none"; return;
-  }
+// shared atom-tooltip body: hover (mouse) and tap (touch) both use it
+function showAtomTooltip(i, mx, my) {
   const cn = S.cn[i];
   // ring-size distribution through this atom (full periodic ring set)
   let ringLine = "";
@@ -1154,6 +1175,16 @@ canvas.addEventListener("mousemove", e => {
   const tw = tooltip.offsetWidth;
   tooltip.style.left = Math.min(mx + 14, W - tw - 8) + "px";
   tooltip.style.top = (my + 14) + "px";
+}
+canvas.addEventListener("mousemove", e => {
+  if (!quad || !S) return tooltip.style.display = "none";
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const i = quad.find(mx, my, 9);
+  if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i]))) {
+    tooltip.style.display = "none"; return;
+  }
+  showAtomTooltip(i, mx, my);
 });
 canvas.addEventListener("mouseleave", () => tooltip.style.display = "none");
 
@@ -1163,11 +1194,64 @@ canvas.addEventListener("click", e => {
   if (dragMoved) { dragMoved = false; return; } // a rotate gesture is not a selection click
   if (!quad || !S) return;
   const rect = canvas.getBoundingClientRect();
-  const i = quad.find(e.clientX - rect.left, e.clientY - rect.top, 9);
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const i = quad.find(mx, my, 9);
   selectAtom(i === undefined ? null : i);
+  // tap parity with desktop hover: show the same tooltip (mouse users already
+  // have it via mousemove, so this is touch-only)
+  if (coarsePointer) {
+    if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i])))
+      tooltip.style.display = "none";
+    else showAtomTooltip(i, mx, my);
+  }
 });
+// pinch zoom / dolly — touch only (desktop zooms with the wheel below).
+// Registered BEFORE d3.drag so these listeners run first at-target: on a
+// staggered pinch finger 1 already owns a rotate drag when finger 2 lands, and
+// d3.drag's touchmove calls preventDefault + stopImmediatePropagation, which
+// would starve these handlers if they were registered after it. While a pinch
+// is live, stopImmediatePropagation keeps the stale rotate gesture out until
+// every finger lifts (also avoids a position jump when fingers lift one at a
+// time). Two fingers are also excluded from starting a drag via its .filter().
+if (coarsePointer) {
+  let pinchD = 0;       // finger separation at the last move; 0 = re-arm on next move
+  let pinching = false; // two fingers down; stays true until every finger lifts
+  const pinchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  canvas.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) { pinching = true; pinchD = 0; }
+  });
+  canvas.addEventListener("touchmove", e => {
+    if (!pinching) return; // single finger: leave the rotate drag alone
+    e.stopImmediatePropagation(); // suppress the competing d3.drag rotate mid-pinch
+    if (e.touches.length !== 2 || !S) return;
+    e.preventDefault(); // suppress the browser's page pinch-zoom
+    const d = pinchDist(e.touches);
+    if (!d) return;
+    if (pinchD) {
+      const k = d / pinchD;
+      if (flying) {
+        const B = flyBasis(), step = (k - 1) * 0.9 * S.radius;
+        cam[0] += B.f[0] * step; cam[1] += B.f[1] * step; cam[2] += B.f[2] * step;
+      } else {
+        zoom = Math.max(0.3, Math.min(8, zoom * k));
+      }
+      draw(); scheduleQuadtree();
+    }
+    pinchD = d;
+  }, { passive: false });
+  const pinchEnd = e => {
+    if (e.touches.length < 2) pinchD = 0;
+    if (!e.touches.length) pinching = false;
+  };
+  canvas.addEventListener("touchend", pinchEnd);
+  canvas.addEventListener("touchcancel", pinchEnd);
+}
+
 d3.select(canvas).call(
   d3.drag()
+    // two fingers = pinch (handled above); never start a competing rotation
+    // drag — without this the two per-finger drags cancel each other's rotation
+    .filter(e => !e.touches || e.touches.length < 2)
     .on("start", () => { dragMoved = false; canvas.classList.add("dragging"); tooltip.style.display = "none"; })
     .on("drag", e => {
       if (flying) {
@@ -1197,6 +1281,22 @@ canvas.addEventListener("wheel", e => {
 // ---------- fly mode ----------
 const flyChk = document.getElementById("flyChk");
 const navHint = document.getElementById("navHint");
+const flyPad = document.getElementById("flyPad");
+
+if (coarsePointer) {
+  document.getElementById("flyLabel").textContent = "Fly"; // no WASD on a phone
+  // on-screen forward/back: feed the same key set the fly loop reads for WASD
+  const bindFlyKey = (id, key) => {
+    const btn = document.getElementById(id);
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); keys.add(key); });
+    const off = () => { keys.delete(key); if (flying && !keys.size) scheduleQuadtree(); };
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  };
+  bindFlyKey("flyFwd", "w");
+  bindFlyKey("flyBack", "s");
+}
 
 function flyLoop(t) {
   if (!flying) return;
@@ -1222,6 +1322,7 @@ function setFly(on) {
   if (on === flying) return;
   flying = on;
   flyChk.checked = on;
+  flyPad.style.display = coarsePointer && on ? "flex" : "none";
   if (on && S) {
     // enter along the current orbit view direction, just outside the cell
     const m = rotMatrix();
