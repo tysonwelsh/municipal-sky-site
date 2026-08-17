@@ -1364,10 +1364,10 @@ for (const t of window.__THEMES) {
   themeSel.appendChild(o);
 }
 let savedTheme = null;
-try { savedTheme = localStorage.getItem("pc-theme"); } catch (_) { /* file:// may deny storage */ }
+try { savedTheme = localStorage.getItem("pc-theme-v2"); } catch (_) { /* file:// may deny storage */ }
 themeSel.value = savedTheme || "oppenheimer";
 themeSel.addEventListener("change", () => {
-  try { localStorage.setItem("pc-theme", themeSel.value); } catch (_) {}
+  try { localStorage.setItem("pc-theme-v2", themeSel.value); } catch (_) {}
   applyTheme(themeSel.value);
   themeSel.value = activeTheme.id; // reflect fallback if the saved id was unknown
 });
