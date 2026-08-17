@@ -8,10 +8,13 @@ include '../includes/header.php';
 <style>
   /* ── Visualization embed: full-viewport, ignoring the site's normal frame ── */
 
+  /* this page hides the fixed banner on load, so it drops the body's
+     banner-height padding too — the dashboard starts at the very top */
+  body { padding-top: 0; }
+
   /* body-level section, so it escapes .content-frame's max-width and padding */
   .carbon-fullscreen {
     width: 100%;
-    margin-top: 32px;
   }
 
   .carbon-fullscreen iframe {
@@ -30,12 +33,14 @@ include '../includes/header.php';
     visibility: hidden; pointer-events: none;
   }
 
-  /* banner retracts on scroll-down, returns on scroll-up (this page only) */
+  /* banner starts hidden on load (dashboard fills the window immediately),
+     reveals on scroll-up, retracts again on scroll-down (this page only) */
   .site-banner { transition: transform 0.25s ease; }
   body.carbon-banner-hidden .site-banner { transform: translateY(-100%); }
 </style>
 
 <script>
+  document.body.classList.add("carbon-banner-hidden"); // hidden on first load
   (function () {
     let lastY = window.scrollY;
     window.addEventListener("scroll", () => {
@@ -47,35 +52,7 @@ include '../includes/header.php';
   })();
 </script>
 
-<!-- Main Content -->
-<div class="main-wrapper">
-  <div class="content-frame">
-
-    <!-- Page Header -->
-    <div class="post-container">
-      <header>
-        <h1>The Hidden Structure of Amorphous Carbon</h1>
-        <p class="post-date">2026.08.17</p>
-      </header>
-    </div>
-
-    <!-- Introduction -->
-    <div class="post-container">
-      <section class="prose-flow">
-        <p>Soot, charcoal, and the diamond in a ring are all pure carbon — what differs is how the atoms connect.
-          These interactive point clouds let you tumble through simulated carbon structures atom by atom: amorphous
-          carbons across a range of densities, carbide-derived carbons before and after annealing, and graphite as it
-          accumulates irradiation damage. Color encodes each atom's coordination number; the panels tally ring sizes,
-          bond lengths, and the radial distribution function.</p>
-        <p>Drag to rotate, scroll to zoom, and try the theme selector — the same data rendered as a midnight
-          observatory plate, an Oppenheimer-era journal figure, or a Kandinsky composition.</p>
-      </section>
-    </div>
-
-  </div>
-</div>
-
-<!-- Visualization embed: outside .content-frame, so it spans the full viewport -->
+<!-- Visualization embed: at the very top, outside .content-frame, so it spans the full viewport -->
 <div class="carbon-fullscreen">
   <iframe id="carbonFrame" src="carbon-point-cloud/?v=<?php echo filemtime('carbon-point-cloud/index.html'); ?>" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
 </div>
@@ -115,6 +92,27 @@ include '../includes/header.php';
 
 <div class="main-wrapper">
   <div class="content-frame">
+
+    <!-- Page Header -->
+    <div class="post-container">
+      <header>
+        <h1>The Hidden Structure of Amorphous Carbon</h1>
+        <p class="post-date">2026.08.17</p>
+      </header>
+    </div>
+
+    <!-- Introduction -->
+    <div class="post-container">
+      <section class="prose-flow">
+        <p>Soot, charcoal, and the diamond in a ring are all pure carbon — what differs is how the atoms connect.
+          These interactive point clouds let you tumble through simulated carbon structures atom by atom: amorphous
+          carbons across a range of densities, carbide-derived carbons before and after annealing, and graphite as it
+          accumulates irradiation damage. Color encodes each atom's coordination number; the panels tally ring sizes,
+          bond lengths, and the radial distribution function.</p>
+        <p>Drag to rotate, scroll to zoom, and try the theme selector — the same data rendered as a midnight
+          observatory plate, an Oppenheimer-era journal figure, or a Kandinsky composition.</p>
+      </section>
+    </div>
 
     <!-- Methodology note -->
     <div class="post-container">
