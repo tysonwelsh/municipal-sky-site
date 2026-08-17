@@ -50,6 +50,13 @@
     font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     padding: 20px 24px;
     min-height: 100vh;
+    min-height: 100svh;
+  }
+  /* probe element: lets resize() read the stable small-viewport height (svh) in px */
+  #svhProbe {
+    position: absolute; top: 0; left: 0;
+    height: 100vh; height: 100svh;
+    visibility: hidden; pointer-events: none;
   }
   header h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
   header .sub { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
@@ -79,7 +86,7 @@
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     overflow: hidden;
   }
-  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; }
+  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; overflow-y: auto; }
   #plotStrips {
     display: flex; gap: 12px; align-items: stretch; margin-top: 14px;
   }
@@ -160,6 +167,7 @@
 </style>
 </head>
 <body>
+<div id="svhProbe" aria-hidden="true"></div>
 <header>
   <h1 id="title">Loading…</h1>
   <div class="sub" id="subtitle"></div>
@@ -235,7 +243,6 @@
 <script src="themes/midnight.js"></script>
 <script src="themes/oppenheimer.js"></script>
 <script src="themes/kandinsky.js"></script>
-<script src="themes_claude/oppenheimer-trinity.js"></script>
 <script src="d3.min.js"></script>
 <script src="structures/manifest.js"></script>
 <script>
@@ -287,7 +294,7 @@ function applyTheme(id) {
   applyThemeVars();
   themeStyleEl.textContent = theme.css || "";
   activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
-  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); scheduleQuadtree(); }
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); scheduleQuadtree(); resize(); }
 }
 
 const canvas = document.getElementById("canvas");
@@ -553,8 +560,17 @@ function resize() {
   const headerH = document.querySelector("header").offsetHeight +
                   document.querySelector(".controls").offsetHeight;
   const stripsH = document.getElementById("plotStrips").offsetHeight;
-  const h = Math.max(420, window.innerHeight - headerH - stripsH - 100);
+  const footerH = document.querySelector("footer").offsetHeight;
+  // svh probe: stable across mobile browser chrome show/hide, so scrolling
+  // doesn't re-fit the layout (falls back to vh where svh is unsupported)
+  const vh = document.getElementById("svhProbe").offsetHeight;
+  const h = Math.max(250, vh - headerH - stripsH - footerH - 100);
   plot.style.height = h + "px";
+  // cap the side column to the plot height (it scrolls internally if taller),
+  // so the document always fits the viewport — embedded in an iframe, any
+  // internal page scroll makes the whole dashboard shift during page scroll
+  document.querySelector(".side").style.maxHeight =
+    window.innerWidth > 760 ? h + "px" : "";
   W = plot.clientWidth; H = plot.clientHeight;
   canvas.width = W * DPR; canvas.height = H * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);

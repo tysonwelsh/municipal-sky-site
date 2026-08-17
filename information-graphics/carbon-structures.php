@@ -17,7 +17,8 @@ include '../includes/header.php';
   .carbon-fullscreen iframe {
     display: block;
     width: 100%;
-    height: 100vh;
+    height: 100vh;   /* fallback */
+    height: 100svh;  /* stable: doesn't change when mobile browser chrome shows/hides on scroll */
     border: 0;
     background: #f9f9f7;
   }
