@@ -183,6 +183,7 @@
   <label><input type="checkbox" id="bondsChk" checked> Bonds</label>
   <label><input type="checkbox" id="ringsChk"> Rings</label>
   <label><input type="checkbox" id="strainChk"> Bond strain</label>
+  <label><input type="checkbox" id="hideGridChk"> Hide gridlines</label>
   <label><input type="checkbox" id="spinChk"> Spin</label>
   <label><input type="checkbox" id="flyChk"> Fly (WASD)</label>
   <label>Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
@@ -619,7 +620,7 @@ function draw() {
     }
   }
 
-  drawCellBox(m, scale, B);
+  if (!document.getElementById("hideGridChk").checked) drawCellBox(m, scale, B);
 
   // bonds: batched by strain bucket when the toggle is on, single gray path otherwise
   if (document.getElementById("bondsChk").checked) {
@@ -1244,6 +1245,7 @@ window.addEventListener("keyup", e => {
 window.addEventListener("blur", () => keys.clear());
 
 document.getElementById("bondsChk").addEventListener("change", () => { draw(); });
+document.getElementById("hideGridChk").addEventListener("change", () => { draw(); });
 document.getElementById("ringsChk").addEventListener("change", () => { draw(); });
 document.getElementById("strainChk").addEventListener("change", e => {
   if (e.target.checked) document.getElementById("bondsChk").checked = true;
