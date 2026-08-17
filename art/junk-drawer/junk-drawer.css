@@ -1986,10 +1986,11 @@ html.jd-turn-open { overflow: hidden; }
    are graph-paper print swatches in a tight 2×2 — the report card's
    "photograph" (.jd-turn-art below), so a slot waits in the same frame its
    drawing will arrive in. Each swatch runs its own OLD-SCHOOL WEB WAIT
-   INDICATOR, printed in ink and keyed stably to the slot letter: a flipping
-   hourglass, the stray word (LOADING adrift, DVD-menu style — round-19
-   swap, owner pick 2026-08-16), a segmented block progress bar, bouncing
-   loading dots. A fifth slip — "please wait…" in the visitor's pencil hand —
+   INDICATOR, printed in ink and keyed stably to the slot letter: a plotter
+   pen tracing a circuit generated fresh each turn (round-20 swap — the
+   flipping hourglass retires), the stray word (LOADING adrift, DVD-menu
+   style — round-19 swap, owner pick 2026-08-16), a segmented block progress
+   bar, bouncing loading dots. A fifth slip — "please wait…" in the visitor's pencil hand —
    floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
    collapses to an overlay strip so only the ✕ rides the top-right corner
    (the button and its once-bound listener are untouched — F1 — only the row
@@ -1997,8 +1998,8 @@ html.jd-turn-open { overflow: hidden; }
    to assistive tech from display:none).
 
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
-   (hourglass mid-drain, the stray word at rest in the centre, bar half-full,
-   dots in a row); every animation lives under prefers-reduced-motion: no-preference,
+   (a partial plot with the pen resting on it, the stray word at rest in the
+   centre, bar half-full, dots in a row); every animation lives under prefers-reduced-motion: no-preference,
    a reduce block stills the rest, and the end-state poses live on the
    data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
    settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
@@ -2063,26 +2064,30 @@ html.jd-turn-open { overflow: hidden; }
   transition: opacity 0.5s;
 }
 
-/* a — the hourglass: sand drains, then the glass snaps 180° and starts over
-   (the old wait cursor's two-frame blink, not a tween). Static base: top
-   bulb full, bottom half-full. */
-.jd-dark-hg .hg { transform-box: fill-box; transform-origin: center; }
-.jd-dark-hg .hg-frame {
-  fill: none; stroke: var(--tink-2); stroke-width: 1.6; stroke-linejoin: round;
+/* a — the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+   retires): a machine plotting a circuit along the graph paper's own rules.
+   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
+   spanning-tree tour, different every turn, seamless by construction); this
+   file only knows two dash windows on that path. The ink is a 30-unit
+   window (of pathLength 100) crawling around the circuit — line appearing
+   at the head, lifting away at the tail — and the nib is a 0.01-unit round
+   dot pinned to the window's head: base offsets -15 and -45 stay exactly
+   30 apart, and both travel -100 per loop, so the dot rides the ink's
+   leading edge forever. Static base: a partial trace, pen resting on it. */
+.jd-dark-plot { display: block; }
+.jd-dark-plot .plot-ink {
+  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 30 70; stroke-dashoffset: -15;
 }
-.jd-dark-hg .hg-sand { fill: rgba(51, 36, 15, 0.55); }
-.jd-dark-hg .hg-sand-top {
-  transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(1);
+.jd-dark-plot .plot-nib {
+  fill: none; stroke: var(--tink); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -45;
 }
-.jd-dark-hg .hg-sand-bot {
-  transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(0.55);
-}
-@keyframes jdDarkHgFlip {
-  0%, 49.99% { transform: rotate(0deg); }
-  50%, 100%  { transform: rotate(180deg); }
-}
-@keyframes jdDarkSandTop { from { transform: scaleY(1); }    to { transform: scaleY(0.12); } }
-@keyframes jdDarkSandBot { from { transform: scaleY(0.12); } to { transform: scaleY(1); } }
+/* implicit from: each starts at its base offset, one full period apart */
+@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -145; } }
 
 /* b — the stray word: LOADING adrift on the print, ricocheting off the
    swatch's own edges like the DVD-menu logo of blessed memory (round-19
@@ -2235,9 +2240,10 @@ html.jd-turn-open { overflow: hidden; }
    Everything above is the static reduced-motion page; the loops only run for
    visitors who haven't asked for stillness. */
 @media (prefers-reduced-motion: no-preference) {
-  .jd-dark-hg .hg          { animation: jdDarkHgFlip 3s linear infinite; }
-  .jd-dark-hg .hg-sand-top { animation: jdDarkSandTop 1.5s linear infinite; }
-  .jd-dark-hg .hg-sand-bot { animation: jdDarkSandBot 1.5s linear infinite; }
+  /* the pen covers the 540-unit circuit in 30s — about two grid squares a
+     second, plotter pace; both windows on the same clock or the dot drifts */
+  .jd-dark-plot .plot-ink  { animation: jdDarkPlotInk 30s linear infinite; }
+  .jd-dark-plot .plot-nib  { animation: jdDarkPlotNib 30s linear infinite; }
   .jd-dark-stray           { animation: jdDarkStrayX 3.7s linear infinite alternate; }
   .jd-dark-stray .sy       { animation: jdDarkStrayY 4.9s linear infinite alternate; }
   .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
@@ -2252,19 +2258,19 @@ html.jd-turn-open { overflow: hidden; }
 
   /* arrived: the loop stops where it stands (the well fades over it).
      failed: it FREEZES mid-loop. */
-  .jd-dark-sw[data-state="ok"] .hg, .jd-dark-sw[data-state="ok"] .hg-sand-top,
-  .jd-dark-sw[data-state="ok"] .hg-sand-bot, .jd-dark-sw[data-state="ok"] .jd-dark-stray,
+  .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="ok"] .fill, .jd-dark-sw[data-state="ok"] .jd-dark-dots span,
-  .jd-dark-sw[data-state="fail"] .hg, .jd-dark-sw[data-state="fail"] .hg-sand-top,
-  .jd-dark-sw[data-state="fail"] .hg-sand-bot, .jd-dark-sw[data-state="fail"] .jd-dark-stray,
+  .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="fail"] .fill, .jd-dark-sw[data-state="fail"] .jd-dark-dots span {
     animation-play-state: paused;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .jd-dark-hg .hg, .jd-dark-hg .hg-sand-top, .jd-dark-hg .hg-sand-bot,
+  .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
   .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-pbar .fill, .jd-dark-dots span,
   .jd-dark-wait, .jd-dark-sw {
     animation: none !important;
