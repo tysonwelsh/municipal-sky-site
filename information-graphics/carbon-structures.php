@@ -6,28 +6,20 @@ include '../includes/header.php';
 ?>
 
 <style>
-  /* ── Visualization embed styles (scoped to this page) ── */
+  /* ── Visualization embed: full-viewport, ignoring the site's normal frame ── */
 
-  .carbon-embed {
+  /* body-level section, so it escapes .content-frame's max-width and padding */
+  .carbon-fullscreen {
+    width: 100%;
     margin-top: 32px;
-    margin-bottom: 32px;
   }
 
-  .carbon-embed iframe {
+  .carbon-fullscreen iframe {
     display: block;
     width: 100%;
-    height: 85vh;
-    min-height: 560px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
+    height: 100vh;
+    border: 0;
     background: #f9f9f7;
-  }
-
-  @media (max-width: 768px) {
-    .carbon-embed iframe {
-      height: 78vh;
-      min-height: 480px;
-    }
   }
 </style>
 
@@ -56,12 +48,16 @@ include '../includes/header.php';
       </section>
     </div>
 
-    <!-- Visualization embed -->
-    <div class="wide-container">
-      <div class="carbon-embed">
-        <iframe src="carbon-point-cloud/" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
-      </div>
-    </div>
+  </div>
+</div>
+
+<!-- Visualization embed: outside .content-frame, so it spans the full viewport -->
+<div class="carbon-fullscreen">
+  <iframe src="carbon-point-cloud/" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
+</div>
+
+<div class="main-wrapper">
+  <div class="content-frame">
 
     <!-- Methodology note -->
     <div class="post-container">
