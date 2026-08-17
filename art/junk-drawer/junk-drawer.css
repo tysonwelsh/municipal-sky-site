@@ -1990,7 +1990,8 @@ html.jd-turn-open { overflow: hidden; }
    pen tracing a circuit generated fresh each turn (round-20 swap — the
    flipping hourglass retires), the stray word (LOADING adrift, DVD-menu
    style — round-19 swap, owner pick 2026-08-16), a segmented block progress
-   bar, bouncing loading dots. A fifth slip — "please wait…" in the visitor's pencil hand —
+   bar, a ticking wristwatch (round-21 swap — the bouncing dots retire).
+   A fifth slip — "please wait…" in the visitor's pencil hand —
    floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
    collapses to an overlay strip so only the ✕ rides the top-right corner
    (the button and its once-bound listener are untouched — F1 — only the row
@@ -1999,7 +2000,7 @@ html.jd-turn-open { overflow: hidden; }
 
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
    (a partial plot with the pen resting on it, the stray word at rest in the
-   centre, bar half-full, dots in a row); every animation lives under prefers-reduced-motion: no-preference,
+   centre, bar half-full, the watch reading its seeded time); every animation lives under prefers-reduced-motion: no-preference,
    a reduce block stills the rest, and the end-state poses live on the
    data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
    settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
@@ -2159,16 +2160,35 @@ html.jd-turn-open { overflow: hidden; }
 }
 @keyframes jdDarkPbar { from { width: 0; } to { width: 102%; } }
 
-/* d — the loading dots: three stamped dots in a staggered wave */
-.jd-dark-dots { display: flex; gap: 8px; align-items: center; }
-.jd-dark-dots span {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--tink-2);
+/* d — the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
+   dots retire): the classic Mac "please wait" watch, drawn with a ruling
+   pen — case circle, twelve ticks faked by one dashed circle (pathLength
+   12, dash 0.14/0.86, offset 0.07 to centre each tick on its hour), two
+   hands, a centre pin, strap lugs. The minute hand clicks one tick per
+   half-second (steps(12) over 6s), the hour hand one tick per 6s
+   (steps(12) over 72s). The hands' base angles arrive as --jdwm/--jdwh
+   inline on the svg — the JS seeds them from the turn's client_ref, so
+   every wait starts at a different (plausible) time; the keyframes add
+   360deg to whatever the seed says, so the loop is seamless at any start.
+   Static base: the watch reading its seeded time (10:10, the watch-
+   advertisement pose, if the vars are missing). */
+.jd-dark-watch .w-case, .jd-dark-watch .w-lug {
+  fill: none; stroke: var(--tink-2); stroke-width: 1.6; stroke-linejoin: round;
 }
-@keyframes jdDarkDot {
-  0%, 60%, 100% { transform: translateY(0); }
-  30%           { transform: translateY(-6px); }
+.jd-dark-watch .w-lug { stroke-width: 1.4; }
+.jd-dark-watch .w-ticks {
+  fill: none; stroke: var(--tink-2); stroke-width: 2.2;
+  stroke-dasharray: 0.14 0.86; stroke-dashoffset: 0.07;
 }
+.jd-dark-watch .w-min, .jd-dark-watch .w-hr {
+  stroke: var(--tink); stroke-linecap: round;
+  transform-box: view-box; transform-origin: 20px 22px;
+}
+.jd-dark-watch .w-min { stroke-width: 2;   transform: rotate(var(--jdwm, 60deg)); }
+.jd-dark-watch .w-hr  { stroke-width: 2.6; transform: rotate(var(--jdwh, -55deg)); }
+.jd-dark-watch .w-pin { fill: var(--tink); }
+@keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
+@keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
 
 /* ---- arrival / failure: the end poses live on the state classes ----------- */
 .jd-dark-result {
@@ -2262,9 +2282,8 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-stray           { animation: jdDarkStrayX 3.7s linear infinite alternate; }
   .jd-dark-stray .sy       { animation: jdDarkStrayY 4.9s linear infinite alternate; }
   .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
-  .jd-dark-dots span       { animation: jdDarkDot 1.25s ease-in-out infinite; }
-  .jd-dark-dots span:nth-child(2) { animation-delay: 0.16s; }
-  .jd-dark-dots span:nth-child(3) { animation-delay: 0.32s; }
+  .jd-dark-watch .w-min    { animation: jdDarkWatchMin 6s steps(12, end) infinite; }
+  .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 72s steps(12, end) infinite; }
   .jd-dark-wait            { animation: jdDarkWaitRock 7s ease-in-out infinite alternate; }
 
   /* arrival / failure theatrics — one-shot, then the state class holds */
@@ -2276,17 +2295,20 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
-  .jd-dark-sw[data-state="ok"] .fill, .jd-dark-sw[data-state="ok"] .jd-dark-dots span,
+  .jd-dark-sw[data-state="ok"] .fill,
+  .jd-dark-sw[data-state="ok"] .w-min, .jd-dark-sw[data-state="ok"] .w-hr,
   .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
-  .jd-dark-sw[data-state="fail"] .fill, .jd-dark-sw[data-state="fail"] .jd-dark-dots span {
+  .jd-dark-sw[data-state="fail"] .fill,
+  .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr {
     animation-play-state: paused;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
-  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-pbar .fill, .jd-dark-dots span,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-pbar .fill,
+  .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
   .jd-dark-wait, .jd-dark-sw {
     animation: none !important;
   }

@@ -3955,7 +3955,9 @@ function JD_layerOpen() {
            (the DVD-menu screensaver; round-19 swap, owner pick 2026-08-16 —
            replaced the radial-tick throbber)
        c — the segmented block progress bar (Win95, indeterminate)
-       d — the bouncing loading dots
+       d — the wristwatch: the classic Mac wait cursor, hands seeded from
+           the turn ref so every wait starts at a different time (round-21
+           swap, owner pick 2026-08-17 — the bouncing dots retire)
      A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
      TOP of the pile. No FORM JD-1 badge, no title: the masthead collapses to
      an overlay strip so only the ✕ rides the card's top-right corner (the
@@ -4083,7 +4085,29 @@ function JD_layerOpen() {
     if (slot === 'c') {
       return '<span class="jd-dark-pbar"><span class="fill"></span></span>';
     }
-    return '<span class="jd-dark-dots"><span></span><span></span><span></span></span>';
+    /* d — the wristwatch. The hands' base angles ride inline as CSS vars,
+       seeded from the turn ref (same fold as darkPlotCircuit's) so each
+       wait starts at a different plausible time: the minute hand lands ON
+       a tick (a multiple of 30deg — steps(12) must stay on ticks) and the
+       hour hand sits proportionally between its own ticks, the way a real
+       watch holds its hour hand at ten past. The keyframes add 360deg to
+       whatever these say, so the loop closes from any start. */
+    var ws = ((turn && turn.client_ref) || 'jd') + ':' + slot;
+    var wh = 2166136261 >>> 0, wj;
+    for (wj = 0; wj < ws.length; wj++) {
+      wh ^= ws.charCodeAt(wj);
+      wh = (wh + (wh << 1) + (wh << 4) + (wh << 7) + (wh << 8) + (wh << 24)) >>> 0;
+    }
+    var wm = wh % 12, whr = (wh >> 4) % 12;
+    return '<svg class="jd-dark-watch" width="44" height="48" viewBox="0 0 40 44"' +
+      ' style="--jdwm:' + (wm * 30) + 'deg;--jdwh:' + (whr * 30 + wm * 2.5) + 'deg">' +
+      '<rect class="w-lug" x="16" y="1.5" width="8" height="4" rx="1"/>' +
+      '<rect class="w-lug" x="16" y="38.5" width="8" height="4" rx="1"/>' +
+      '<circle class="w-case" cx="20" cy="22" r="15"/>' +
+      '<circle class="w-ticks" cx="20" cy="22" r="12.5" pathLength="12"/>' +
+      '<line class="w-min" x1="20" y1="22" x2="20" y2="11.5"/>' +
+      '<line class="w-hr" x1="20" y1="22" x2="20" y2="15.5"/>' +
+      '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
   }
   function darkSwatch(slot) {
     var st = slotStatus(slot);
