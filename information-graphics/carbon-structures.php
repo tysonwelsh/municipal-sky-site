@@ -61,7 +61,7 @@ include '../includes/header.php';
 
 <!-- Visualization embed: outside .content-frame, so it spans the full viewport -->
 <div class="carbon-fullscreen">
-  <iframe id="carbonFrame" src="carbon-point-cloud/" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
+  <iframe id="carbonFrame" src="carbon-point-cloud/?v=<?php echo filemtime('carbon-point-cloud/index.html'); ?>" title="Interactive carbon point cloud visualization" loading="lazy"></iframe>
 </div>
 <div id="carbonSvhProbe" aria-hidden="true"></div>
 
