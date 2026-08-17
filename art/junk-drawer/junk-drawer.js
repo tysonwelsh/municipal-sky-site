@@ -4101,8 +4101,8 @@ function JD_layerOpen() {
     var wm = wh % 12, whr = (wh >> 4) % 12;
     return '<svg class="jd-dark-watch" width="44" height="48" viewBox="0 0 40 44"' +
       ' style="--jdwm:' + (wm * 30) + 'deg;--jdwh:' + (whr * 30 + wm * 2.5) + 'deg">' +
-      '<rect class="w-lug" x="16" y="1.5" width="8" height="4" rx="1"/>' +
-      '<rect class="w-lug" x="16" y="38.5" width="8" height="4" rx="1"/>' +
+      '<rect class="w-lug" x="15" y="0.5" width="10" height="6" rx="1.5"/>' +
+      '<rect class="w-lug" x="15" y="37.5" width="10" height="6" rx="1.5"/>' +
       '<circle class="w-case" cx="20" cy="22" r="15"/>' +
       '<circle class="w-ticks" cx="20" cy="22" r="12.5" pathLength="12"/>' +
       '<line class="w-min" x1="20" y1="22" x2="20" y2="11.5"/>' +

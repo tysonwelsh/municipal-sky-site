@@ -2083,13 +2083,23 @@ html.jd-turn-open { overflow: hidden; }
    seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
    centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
    un-snapped pair above it is the fallback for browsers without round():
-   plain centring — a hair off the rules, never broken. */
+   plain centring — a hair off the rules, never broken.
+   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
+   phases from the edge its gradient line starts at — 90deg from the LEFT,
+   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
+   swatch's height. Snapping `top` therefore only registered at heights
+   that happened to be multiples of 9 (the desktop harness was; phones
+   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
+   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
+   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
+   swatch height. Never snap `top` while the paper's 0deg layers phase
+   from the bottom. */
 .jd-dark-sw--a .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; }
 .jd-dark-plot {
   display: block; position: absolute;
-  left: calc(50% - 45px); top: calc(50% - 27px);
+  left: calc(50% - 45px); bottom: calc(50% - 27px);
   left: calc(round(down, 50% - 45px, 9px) + 5px);
-  top: calc(round(down, 50% - 27px, 9px) + 5px);
+  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
 }
 .jd-dark-plot .plot-ink {
   fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
@@ -2172,10 +2182,18 @@ html.jd-turn-open { overflow: hidden; }
    360deg to whatever the seed says, so the loop is seamless at any start.
    Static base: the watch reading its seeded time (10:10, the watch-
    advertisement pose, if the vars are missing). */
-.jd-dark-watch .w-case, .jd-dark-watch .w-lug {
-  fill: none; stroke: var(--tink-2); stroke-width: 1.6; stroke-linejoin: round;
+/* the dial and the strap lugs are FILLED (--tpaper-hi; owner, 2026-08-17)
+   so the graph paper never shows through the watch — it sits ON the sheet,
+   not printed into it. Ticks and hands draw after the case in the markup,
+   so they ride on the solid dial. */
+.jd-dark-watch .w-case {
+  fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.6;
+  stroke-linejoin: round;
 }
-.jd-dark-watch .w-lug { stroke-width: 1.4; }
+.jd-dark-watch .w-lug {
+  fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.4;
+  stroke-linejoin: round;
+}
 .jd-dark-watch .w-ticks {
   fill: none; stroke: var(--tink-2); stroke-width: 2.2;
   stroke-dasharray: 0.14 0.86; stroke-dashoffset: 0.07;
