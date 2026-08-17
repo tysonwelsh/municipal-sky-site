@@ -3948,7 +3948,9 @@ function JD_layerOpen() {
      swatch the finished drawings land in (.jd-turn-art's background, reused
      verbatim). While a machine works, its swatch runs its own OLD-SCHOOL
      WEB WAIT INDICATOR printed in ink, keyed stably to the slot letter:
-       a — the flipping hourglass (classic Windows wait cursor)
+       a — the plotter pen: a generated circuit, fresh every turn (round-18
+           redesign, owner pick 2026-08-17 — the flipping hourglass retires;
+           see darkPlotCircuit below for the construction)
        b — the radial-tick throbber (classic browser-chrome spinner)
        c — the segmented block progress bar (Win95, indeterminate)
        d — the bouncing loading dots
@@ -3992,17 +3994,85 @@ function JD_layerOpen() {
       '<span class="m" aria-hidden="true">' + (st.state === 'ok' ? '✓' : '✗') +
       '</span> ' + esc(st.word) + '</span>';
   }
+  /* a fresh plotted circuit for slot A (round 18, owner pick 2026-08-17):
+     a random spanning tree over a 5×3 grid of cells, then the closed tour
+     that walks the fine 10×6 lattice around it — the classic plotter-art
+     construction. Every intersection is visited exactly once, the line
+     never crosses itself, and it ends where it began, so the CSS dash loop
+     is seamless. ~1,242 distinct circuits observed over 2,000 seeds; the
+     seed is the turn's client_ref, so every TURN draws a different circuit
+     while repaints and restored turns re-derive the same one (paintSlots
+     never rewrites a pending swatch, but the guarantee costs nothing).
+     Geometry: 9px pitch + 4.5px margin = viewBox 0 0 90 54, and pathLength
+     100 normalizes the dash arithmetic no matter where the turns fall. */
+  function darkPlotCircuit(seed) {
+    var CW = 5, CH = 3, PITCH = 9, MARGIN = 4.5;
+    /* FNV-1a fold of the seed, then xorshift32 — tiny, seedable, plenty */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    if (!h) h = 88172645; /* xorshift must never sit at zero */
+    function rnd() {
+      h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0;
+      return h / 4294967296;
+    }
+    /* randomized DFS spanning tree over the coarse cells; conn[cell] is a
+       4-bit mask of tree edges: 1 up, 2 right, 4 down, 8 left */
+    var conn = [], seen = [], stack = [], c, n, k;
+    for (i = 0; i < CW * CH; i++) { conn.push(0); seen.push(false); }
+    c = (rnd() * CW * CH) | 0;
+    seen[c] = true; stack.push(c);
+    while (stack.length) {
+      c = stack[stack.length - 1];
+      var cx = c % CW, cy = (c / CW) | 0, opts = [];
+      if (cy > 0      && !seen[c - CW]) opts.push([c - CW, 1, 4]);
+      if (cx < CW - 1 && !seen[c + 1])  opts.push([c + 1, 2, 8]);
+      if (cy < CH - 1 && !seen[c + CW]) opts.push([c + CW, 4, 1]);
+      if (cx > 0      && !seen[c - 1])  opts.push([c - 1, 8, 2]);
+      if (!opts.length) { stack.pop(); continue; }
+      k = opts[(rnd() * opts.length) | 0];
+      n = k[0];
+      conn[c] |= k[1]; conn[n] |= k[2];
+      seen[n] = true; stack.push(n);
+    }
+    /* walk the fine lattice clockwise around the tree: at each vertex the
+       move follows from its corner of the cell and the tree's edges —
+       top-left goes up if the tree does (else right), and so on around */
+    var x = 0, y = 0, px = [], py = [], v = 0;
+    do {
+      px.push(x); py.push(y);
+      var m = conn[(y >> 1) * CW + (x >> 1)], ex = x & 1, ey = y & 1;
+      if (!ex && !ey)     { if (m & 1) y--; else x++; }
+      else if (ex && !ey) { if (m & 2) x++; else y++; }
+      else if (ex && ey)  { if (m & 4) y++; else x--; }
+      else                { if (m & 8) x--; else y--; }
+      v++;
+    } while ((x || y) && v <= CW * CH * 4);
+    /* merge straight runs so the d stays short: keep only the turns */
+    var d = 'M' + (MARGIN + px[0] * PITCH) + ' ' + (MARGIN + py[0] * PITCH), j;
+    for (j = 1; j < px.length; j++) {
+      var a = j - 1, b = (j + 1) % px.length;
+      if ((px[a] === px[j] && px[j] === px[b]) ||
+          (py[a] === py[j] && py[j] === py[b])) continue;
+      d += 'L' + (MARGIN + px[j] * PITCH) + ' ' + (MARGIN + py[j] * PITCH);
+    }
+    return d + 'Z';
+  }
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   function darkWell(slot) {
     var i, ticks = '';
     if (slot === 'a') {
-      return '<svg class="jd-dark-hg" width="34" height="42" viewBox="0 0 36 44">' +
-        '<g class="hg">' +
-        '<path class="hg-sand hg-sand-top" d="M10.5 8 H25.5 L20 20 H16 Z"/>' +
-        '<path class="hg-sand hg-sand-bot" d="M16 24 H20 L25.5 36 H10.5 Z"/>' +
-        '<path class="hg-frame" d="M7 4 H29 L21.5 22 L29 40 H7 L14.5 22 Z"/>' +
-        '</g></svg>';
+      /* the ink and the nib are the SAME path: the ink is a 30-unit dash
+         window crawling around the circuit, the nib a 0.01-unit dot riding
+         30 units ahead of the window's tail — i.e. exactly at its head */
+      var d = darkPlotCircuit(((turn && turn.client_ref) || 'jd') + ':' + slot);
+      return '<svg class="jd-dark-plot" width="90" height="54" viewBox="0 0 90 54">' +
+        '<path class="plot-ink" d="' + d + '" pathLength="100"/>' +
+        '<path class="plot-nib" d="' + d + '" pathLength="100"/>' +
+        '</svg>';
     }
     if (slot === 'b') {
       for (i = 0; i < 12; i++) {
