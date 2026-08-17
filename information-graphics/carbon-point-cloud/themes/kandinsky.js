@@ -101,6 +101,7 @@ const KANDINSKY_RENDER = {
   ringStrokeAlpha: 0.9,
   ringMutedFactor: 0.18,
   pairHighlightAlpha: 0.55,
+  rdfFillAlpha: 0.15,     // flat gouache wash beneath g(r)
   pairHighlightWidth: 1,
   cellBoxWidth: 1,
   axisLabelFont: "12px 'Josefin Sans', Futura, sans-serif",

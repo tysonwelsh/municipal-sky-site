@@ -131,6 +131,7 @@ window.__registerTheme({
     ringStrokeAlpha: 0.8,
     ringMutedFactor: 0.18,
     pairHighlightAlpha: 0.5,
+    rdfFillAlpha: 0.08, // faint washed tint beneath g(r), like an old plate
     pairHighlightWidth: 0.8,
     cellBoxWidth: 1,
     // canvas axis labels: serif, ALL CAPS, abbreviated unit

@@ -41,5 +41,6 @@ window.__registerTheme({
     // stronger depth falloff than the default, for a more "deep space" feel
     orbitAlpha: t => 0.40 + 0.60 * t,
     axisLabelFont: "12px 'Avenir Next', system-ui, sans-serif",
+    rdfFillAlpha: 0.16, // a little glow pooling beneath the g(r) curve
   },
 });

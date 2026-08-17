@@ -242,9 +242,9 @@
 
 <script>window.__THEMES = []; window.__registerTheme = t => window.__THEMES.push(t);</script>
 <script src="themes/default.js?v=8e22d835"></script>
-<script src="themes/midnight.js?v=58c54fae"></script>
-<script src="themes/oppenheimer.js?v=68feca61"></script>
-<script src="themes/kandinsky.js?v=bbebaa0d"></script>
+<script src="themes/midnight.js?v=74032fd1"></script>
+<script src="themes/oppenheimer.js?v=cf37a7d6"></script>
+<script src="themes/kandinsky.js?v=d429036f"></script>
 <script src="d3.min.js?v=69faba9d"></script>
 <script src="structures/manifest.js"></script>
 <script>
@@ -263,6 +263,7 @@ const FALLBACK_RENDER = {
   bondWidth: 1, bondAlphaBrushed: 0.10, dimAlpha: 0.10,
   ringFillAlpha: 0.30, ringStrokeAlpha: 0.7, ringMutedFactor: 0.18, ringWidth: 1,
   pairHighlightAlpha: 0.55, pairHighlightWidth: 1,
+  rdfFillAlpha: 0.12, // opacity of the area fill beneath the g(r) curve
   cellBoxWidth: 1, axisLabelFont: "12px system-ui, sans-serif",
   orbitSize: t => 0.72 + 0.55 * t,
   orbitAlpha: t => 0.55 + 0.45 * t,
@@ -837,9 +838,13 @@ function buildRdf() {
   svg.append("text").attr("x", w - RDF_M.r - 34).attr("y", RDF_H - 6).attr("text-anchor", "end").text("r (Å)");
   svg.append("text").attr("x", 6).attr("y", 12).text("g(r)");
   const line = d3.line().x((v, k) => x((k + 0.5) * dr)).y(v => y(v));
+  const area = d3.area().x((v, k) => x((k + 0.5) * dr)).y0(RDF_H - RDF_M.b).y1(v => y(v));
   for (const c of ghosts)
     svg.append("path").attr("d", d3.line().x((v, k) => x((k + 0.5) * c.rdf.dr)).y(v => y(v))(c.rdf.g))
       .attr("fill", "none").attr("stroke", css("--baseline")).attr("stroke-width", 1.2);
+  // tasteful fill beneath the main g(r) curve; intensity is per-theme
+  svg.append("path").attr("d", area(g))
+    .attr("fill", css("--cn4")).attr("opacity", activeRender.rdfFillAlpha);
   svg.append("path").attr("d", line(g))
     .attr("fill", "none").attr("stroke", css("--cn4")).attr("stroke-width", 2);
   // annotations: bond cutoff + graphite/diamond first-neighbor distances
