@@ -67,6 +67,9 @@ information-graphics/prosperos-jukebox-backup-*/
 # Junk Drawer dev-mock SQLite database (JD_DEV_MOCK=1) — local only
 local-dev/jd-dev.sqlite
 
+# Thousand Flowers dev accounts database (localhost SQLite fallback) — local only
+local-dev/flowers-dev.sqlite
+
 # ZANKYŌ headless dev harness — not for production
 art/zankyo/_harness.js
 

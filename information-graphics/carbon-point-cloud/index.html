@@ -82,17 +82,33 @@
   #seqControls { display: inline-flex; align-items: center; gap: 4px; }
   #seqPrev, #seqNext { padding: 4px 7px; }
   .layout { display: flex; gap: 16px; align-items: stretch; }
+  /* left column: plot stacked over the analysis strips. Both are therefore the
+     same width, and the side column runs alongside the pair rather than the
+     strips cutting across underneath it. */
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
   .plot {
-    position: relative; flex: 1 1 auto; min-width: 0;
+    position: relative; flex: 0 0 auto; min-width: 0;
     background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
     overflow: hidden;
   }
   .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; }
   #plotStrips {
-    display: flex; gap: 12px; align-items: stretch; margin-top: 14px;
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin-top: 14px;
   }
-  #plotStrips .panel { min-width: 0; margin: 0; padding: 8px 14px; }
-  #rdfPanel { flex: 7 7 0; }
+  /* Between the 760px breakpoint and roughly 1000px the sidebar leaves the
+     strips too little room, and they squeeze until headings and cell
+     dimensions wrap mid-phrase. Floors + wrapping let the row reflow onto a
+     second line instead — the panels stay legible and the plot gives up the
+     height. Floors must stay small enough that any two still fit one line. */
+  #plotStrips .panel { min-width: 208px; margin: 0; padding: 8px 14px; }
+  /* needs the extra id to outrank #plotStrips .panel above. 328 = the 300px
+     floor buildRdf() gives the g(r) SVG, plus the panel's 28px of padding —
+     any narrower and the SVG overflows its own panel. */
+  #plotStrips #rdfPanel { min-width: 328px; }
+  /* the row under the cloud: coordination legend, then g(r) as the widest
+     panel, then the bond-length histogram */
+  #cnPanel { flex: 2.5 2.5 0; }
+  #rdfPanel { flex: 6 6 0; }
   #bondPanel { flex: 3 3 0; }
   #plotStrips h2 { margin-bottom: 4px; }
   #plotStrips .hint { margin-top: 4px; font-size: 11px; }
@@ -103,6 +119,7 @@
     border-radius: 10px; padding: 14px 16px; font-size: 13px;
   }
   .ring-row {
+    position: relative; /* anchors the hover tip */
     display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
     border-radius: 6px; cursor: pointer;
     -webkit-user-select: none; user-select: none;
@@ -114,12 +131,27 @@
   .ring-size { color: var(--ink); font-weight: 550; width: 18px; text-align: right; font-variant-numeric: tabular-nums; }
   .ring-track { flex: 1; height: 10px; display: block; position: relative; }
   .ring-tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--grid); }
+  /* hover tip on a chart row: same surface treatment as the heading tooltips */
+  .row-tip {
+    display: none; position: absolute; z-index: 20; top: calc(100% + 3px); right: 0; width: 248px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+    padding: 8px 10px; font-size: 12px; font-weight: 400; line-height: 1.55;
+    color: var(--ink-2); text-align: left; cursor: default;
+  }
+  .row-tip b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row-tip .swatch {
+    display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px;
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  .ring-row:hover .row-tip { display: block; }
   .ring-axis { display: flex; align-items: center; gap: 8px; padding: 2px 6px 0; margin: 0 -6px; }
   .ring-axis-track { position: relative; flex: 1; height: 13px; display: block; }
   .ring-tick-label { position: absolute; top: 0; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
   .ring-bar { height: 100%; display: block; border-radius: 0 4px 4px 0; min-width: 2px; }
   .ring-bar-drawn { height: 100%; display: block; border-radius: 0 4px 4px 0; }
   .ring-count { color: var(--ink-2); width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ring-axis-cap { color: var(--muted); font-size: 10px; }
   #bondSvg { display: block; width: 100%; }
   #bondSvg text { font: 10px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
   #bondSvg .domain, #bondSvg .tick line { stroke: var(--baseline); }
@@ -145,6 +177,60 @@
   .cn-label { color: var(--ink); font-weight: 550; width: 42px; }
   .cn-count { color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; }
   .cn-pct { color: var(--muted); width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* ---- bond-network entropy panel ---- */
+  #bneSvg { display: block; width: 100%; margin-top: 2px; }
+  #bneSvg text { font: 10px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  #bneSvg .domain, #bneSvg .tick line { stroke: var(--baseline); }
+  #bneSvg .descband { fill: var(--cn2); fill-opacity: 0.10; }
+  .bne-big { display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px; }
+  .bne-big b { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .bne-big span { font-size: 11px; color: var(--muted); }
+  .bne-strip { position: relative; height: 14px; margin: 8px 0 0;
+               border-bottom: 1px solid var(--baseline); }
+  .bne-tick { position: absolute; bottom: 0; width: 1px; height: 7px; background: var(--muted);
+              transform: translateX(-0.5px); }
+  .bne-tick.me { height: 14px; width: 2px; background: var(--cn4); }
+  .bne-nrow { display: flex; align-items: center; gap: 8px; color: var(--ink-2); margin-top: 6px; }
+  .bne-nrow input[type=range] { flex: 1; width: auto; }
+  .bne-nrow b { font-variant-numeric: tabular-nums; width: 20px; text-align: right; color: var(--ink); }
+  .bne-ramp { height: 9px; border-radius: 3px; margin-top: 10px; }
+  .bne-ramp-lab { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+                  font-variant-numeric: tabular-nums; margin-top: 3px; }
+  .bne-cls { display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+             border-radius: 6px; cursor: pointer; -webkit-user-select: none; user-select: none;
+             border: 1px solid transparent; }
+  .bne-cls:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .bne-cls.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .bne-cls.dim { opacity: 0.35; }
+  .bne-cls .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px var(--border); }
+  .bne-cls .bars { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 12px;
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bne-cls .pct { color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; }
+  /* "i" badge beside a panel heading: the explanation lives in a hover/focus
+     tooltip so it costs no vertical space in the sidebar */
+  .info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; margin-left: 6px; border-radius: 50%;
+    border: 1px solid var(--muted); color: var(--muted);
+    font-size: 9px; font-weight: 500; line-height: 1;
+    text-transform: none; letter-spacing: 0; font-style: italic;
+    cursor: help; position: relative; vertical-align: middle;
+  }
+  .info:hover, .info:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+  .info-tip {
+    display: none; position: absolute; z-index: 20; top: 20px; right: -6px; width: 286px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+    padding: 9px 11px; font-size: 12px; font-weight: 400; font-style: normal; line-height: 1.5;
+    /* the tip lives inside an <h2>: undo every heading treatment a theme may
+       set there (small caps, tracking, uppercase) so it reads as body text */
+    text-transform: none; letter-spacing: 0; font-variant: normal; font-variant-caps: normal;
+    color: var(--ink-2); text-align: left; white-space: normal;
+  }
+  .info:hover .info-tip, .info:focus .info-tip { display: block; }
+  /* strip panels sit left of centre, so their tips open rightward instead —
+     a right-anchored tip on the CN panel would run off the left edge */
+  #plotStrips .info-tip { left: -6px; right: auto; }
   .panel .hint { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.45; }
   .panel .divider { border-top: 1px solid var(--grid); margin: 12px 0; }
   .meta-row { display: flex; justify-content: space-between; padding: 2px 0; color: var(--ink-2); }
@@ -195,6 +281,12 @@
   <label>Theme
     <select id="themeSel" aria-label="Theme"></select>
   </label>
+  <label>Color by
+    <select id="colorSel" aria-label="Color by">
+      <option value="cn">Coordination number</option>
+      <option value="bne">Bond-network entropy</option>
+    </select>
+  </label>
   <label><input type="checkbox" id="bondsChk" checked> Bonds</label>
   <label><input type="checkbox" id="ringsChk"> Rings</label>
   <label><input type="checkbox" id="strainChk"> Bond strain</label>
@@ -217,41 +309,84 @@
 </div>
 
 <div class="layout">
-  <div class="plot" id="plot">
-    <canvas id="canvas"></canvas>
-    <div class="tooltip" id="tooltip"></div>
-    <div id="flyPad" style="display:none">
-      <button id="flyFwd" aria-label="Move forward">▲</button>
-      <button id="flyBack" aria-label="Move back">▼</button>
+  <!-- left column: the cloud with its analysis row directly beneath, so the
+       strips stay as wide as the plot and the side column runs past both -->
+  <div class="main">
+    <div class="plot" id="plot">
+      <canvas id="canvas"></canvas>
+      <div class="tooltip" id="tooltip"></div>
+      <div id="flyPad" style="display:none">
+        <button id="flyFwd" aria-label="Move forward">▲</button>
+        <button id="flyBack" aria-label="Move back">▼</button>
+      </div>
+    </div>
+    <div id="plotStrips">
+      <aside class="panel" id="cnPanel">
+        <h2>Coordination number @1.8 Å<span class="info" tabindex="0" role="note"
+          aria-label="About coordination number">i<span class="info-tip">Neighbours within 1.8 Å of
+          each atom, counted against full periodic images — an atom bonded across the cell boundary
+          still counts. The bonds drawn in the cloud are intra-box only, so a CN 3 atom near a face
+          may show fewer than three lines. CN 3 is graphitic sp², CN 4 diamond-like sp³; CN 1–2 are
+          chain ends and CN 5+ over-coordination. Click a class to isolate it, shift-click to add.
+          Density and mean CN below are computed from the relaxed cell.</span></span></h2>
+        <div id="legend"></div>
+        <div class="divider"></div>
+        <div id="meta"></div>
+      </aside>
+      <div class="panel" id="rdfPanel" style="display:none">
+        <h2>Radial distribution function g(r)<span class="info" tabindex="0" role="note"
+          aria-label="About the radial distribution function">i<span class="info-tip">The density of
+          atom pairs at separation r, normalised so a uniform structure sits at 1. Computed with
+          periodic images out to the smaller of 10 Å and half the cell's thinnest width. The first
+          peak is the bond length, the second the first-neighbour shell; where the curve settles to
+          1 the structure has lost all order. Dashed line: the 1.8 Å bond/CN cutoff. Dotted lines:
+          graphite (1.42 Å) and diamond (1.54 Å) first-neighbour distances. Brush a range of r to
+          highlight every atom pair at that separation in the cloud — available to 5 Å, capped at
+          120,000 pairs — and click outside the band to clear. With a sequence active, the other
+          stages draw as gray ghost curves.</span></span></h2>
+        <svg id="rdfSvg"></svg>
+      </div>
+      <aside class="panel" id="bondPanel" style="display:none">
+        <h2>Bond lengths &lt; 1.8 Å<span class="info" tabindex="0" role="note"
+          aria-label="About the bond-length histogram">i<span class="info-tip">Every intra-box bond
+          shorter than the 1.8 Å cutoff, binned at 0.02 Å; bonds crossing the box boundary are
+          excluded. Bars carry the same ramp as the Bond strain toggle — red compressed, neutral at
+          the median, blue stretched — scaled symmetrically about the median, so colour reads as
+          strain magnitude rather than absolute length. Brush a range to select those bonds in the
+          cloud; click outside the band to clear.</span></span></h2>
+        <svg id="bondSvg"></svg>
+        <div class="hint" id="bondHint"></div>
+      </aside>
     </div>
   </div>
   <div class="side">
-    <aside class="panel">
-      <h2>Coordination number @1.8 Å</h2>
-      <div id="legend"></div>
-      <div class="hint">Click a class to isolate it. CN uses periodic images; drawn bonds are intra-box only.</div>
-      <div class="divider"></div>
-      <div id="meta"></div>
-    </aside>
     <aside class="panel" id="ringPanel" style="display:none">
-      <h2>Rings by size</h2>
+      <h2>Rings by size<span class="info" tabindex="0" role="note"
+        aria-label="About the ring-size distribution">i<span class="info-tip">Shortest-path
+        (Franzblau) rings of size 3–10 on the periodic bond network: a cycle counts as a ring only
+        if no shortcut exists between any two of its atoms. Solid bar: rings lying entirely inside
+        the box, drawn in the cloud. Faded bar: rings crossing the box boundary — counted here, but
+        not drawable. The 6-ring is the graphitic reference state; 5- and 7-rings are the
+        characteristic defects of a disordered network. Click a size to isolate those rings,
+        shift-click to add.</span></span></h2>
       <div id="ringChart"></div>
-      <div class="hint">Shortest-path rings on the periodic bond network. Solid bar: rings drawn in the cloud; faded bar: rings crossing the box boundary, counted but not drawn.</div>
+    </aside>
+    <aside class="panel" id="bnePanel" style="display:none">
+      <h2>Bond-network entropy<span class="info" tabindex="0" role="note"
+        aria-label="About the bond-network entropy panel">i<span class="info-tip" id="bneAbout"></span></span></h2>
+      <div id="bneHead"></div>
+      <svg id="bneSvg"></svg>
+      <div class="bne-nrow">
+        <span>Environment n</span>
+        <input type="range" id="bneN" min="0" max="6" step="1" value="3">
+        <b id="bneNVal"></b>
+      </div>
+      <div id="bneRamp"></div>
+      <div class="divider"></div>
+      <div id="bneClasses"></div>
+      <div class="hint" id="bneHint"></div>
     </aside>
   </div>
-</div>
-
-<div id="plotStrips">
-  <div class="panel" id="rdfPanel" style="display:none">
-    <h2>Radial distribution function g(r)</h2>
-    <svg id="rdfSvg"></svg>
-    <div class="hint">Brush a range of r to highlight every atom pair at that separation in the 3D view (pair highlighting available up to 5 Å); click outside the brushed band to clear. Dashed line: the 1.8 Å bond/CN cutoff. Dotted lines: graphite (1.42 Å) and diamond (1.54 Å) first-neighbor distances. With a sequence active, the other stages draw as gray ghost curves.</div>
-  </div>
-  <aside class="panel" id="bondPanel" style="display:none">
-    <h2>Bond lengths &lt; 1.8 Å</h2>
-    <svg id="bondSvg"></svg>
-    <div class="hint" id="bondHint"></div>
-  </aside>
 </div>
 
 <footer>
@@ -261,10 +396,12 @@
 <script>window.__THEMES = []; window.__registerTheme = t => window.__THEMES.push(t);</script>
 <script src="themes/default.js?v=8e22d835"></script>
 <script src="themes/midnight.js?v=74032fd1"></script>
-<script src="themes/oppenheimer.js?v=cf37a7d6"></script>
+<script src="themes/oppenheimer.js?v=e7d0430c"></script>
 <script src="themes/kandinsky.js?v=d429036f"></script>
 <script src="d3.min.js?v=69faba9d"></script>
 <script src="structures/manifest.js"></script>
+<script>window.__BNE_INDEX = [];</script>
+<script src="structures_bne/index.js?v=73ba09fa"></script>
 <script>
 "use strict";
 
@@ -322,7 +459,7 @@ function applyTheme(id) {
   applyThemeVars();
   themeStyleEl.textContent = theme.css || "";
   activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
-  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); scheduleQuadtree(); resize(); }
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); scheduleQuadtree(); resize(); }
 }
 
 const canvas = document.getElementById("canvas");
@@ -372,6 +509,7 @@ window.__STRUCT_CB = payload => {
   computeBondData();
   updateBondSel(); // re-derive masks for this structure's bonds
   buildHeader(); buildLegend(); buildMeta(); buildRingPanel(); buildBondPanel(); buildRdf();
+  loadBne(payload.id); bneAttach();
   resize(); // re-fit the plot now that the strips have their real height
 };
 
@@ -432,7 +570,11 @@ function strainColors() {
   return Array.from({ length: STRAIN_N }, (_, b) => scale(b / (STRAIN_N - 1)));
 }
 
-const BOND_H = 110, BOND_M = { l: 8, r: 8, t: 8, b: 22 };
+// chart heights are grown by fitStripCharts() to fill their panel — the strips
+// row is as tall as its tallest member (the CN legend), and since the hints
+// moved into heading tooltips the two charts would otherwise sit above dead space
+let BOND_H = 110;
+const BOND_H_MIN = 110, BOND_M = { l: 8, r: 8, t: 8, b: 22 };
 function buildBondPanel() {
   if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
   const panel = document.getElementById("bondPanel");
@@ -469,17 +611,18 @@ function buildBondPanel() {
     .attr("stroke", css("--ink")).attr("stroke-dasharray", "3,3").attr("opacity", 0.6);
   svg.append("g").attr("transform", `translate(0,${BOND_H - BOND_M.b})`)
     .call(d3.axisBottom(x).ticks(4).tickFormat(v => v.toFixed(1)));
+  // live readout only — the explanation of the ramp lives in the heading tooltip
   const updateHint = () => {
     let selLine = "";
     if (bondBrushRange && bondSelMask) {
       let n = 0;
       for (const v of bondSelMask) n += v;
       selLine = `<br><b style="color:var(--ink)">${n.toLocaleString()} bonds selected</b> ` +
-                `(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)} Å) — click outside the band to clear.`;
+                `(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)} Å)`;
     }
     document.getElementById("bondHint").innerHTML =
-      `${nb.toLocaleString()} intra-box bonds · median <b style="color:var(--ink)">${med.toFixed(3)} Å</b> ` +
-      `(dashed). Bars use the strain ramp: red compressed, neutral at the median, blue stretched.` + selLine;
+      `${nb.toLocaleString()} intra-box bonds · median ` +
+      `<b style="color:var(--ink)">${med.toFixed(3)} Å</b> (dashed)` + selLine;
   };
   let rafPending = false;
   const brush = d3.brushX()
@@ -551,11 +694,14 @@ function buildMeta() {
   const vol = cellVolume(lat);
   const massG = S.n * 12.011 / 6.02214076e23;
   const dens = massG / (vol * 1e-24);
-  document.getElementById("meta").innerHTML = [
+  const rows = [
     ["Cell a·b·c", `${a.toFixed(1)} × ${b.toFixed(1)} × ${c.toFixed(1)} Å`],
     ["Density", `${dens.toFixed(2)} g/cm³`],
     ["Mean CN", d3.mean(S.cn).toFixed(2)],
-  ].map(([k, v]) => `<div class="meta-row"><span>${k}</span><b>${v}</b></div>`).join("");
+  ];
+  if (bneData) rows.push(["BNE growth rate", bneData.descriptor.toFixed(3)]);
+  document.getElementById("meta").innerHTML =
+    rows.map(([k, v]) => `<div class="meta-row"><span>${k}</span><b>${v}</b></div>`).join("");
 }
 function cellVolume(l) {
   return Math.abs(
@@ -584,7 +730,36 @@ function project(x, y, z, m, scale) {
 }
 
 // ---------- drawing ----------
+// Grow the g(r) and bond-length charts into whatever vertical slack their panel
+// has. Slack is measured as the gap between the last child's bottom edge and
+// the panel's content box; panels stretch to the row height, so that gap is
+// exactly the dead space. One corrective pass — after it the gap is ~0, so this
+// settles rather than oscillating.
+function fitStripCharts() {
+  if (mobileMQ.matches || !S) return;
+  const slackOf = panel => {
+    if (!panel || !panel.offsetParent || !panel.lastElementChild) return 0;
+    const padB = parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+    return Math.floor(panel.getBoundingClientRect().bottom - padB -
+                      panel.lastElementChild.getBoundingClientRect().bottom);
+  };
+  const rdfSlack = slackOf(document.getElementById("rdfPanel"));
+  if (rdfSlack > 2) { RDF_H = Math.max(RDF_H_MIN, RDF_H + rdfSlack); buildRdf(); }
+  const bondSlack = slackOf(document.getElementById("bondPanel"));
+  if (bondSlack > 2) { BOND_H = Math.max(BOND_H_MIN, BOND_H + bondSlack); buildBondPanel(); }
+}
+
+let resizing = false;
 function resize() {
+  // The plot's height now depends on the side column's height, and the panel
+  // builders below rebuild panels in BOTH columns — so a resize can trigger the
+  // ResizeObserver that called it. One guarded pass per event; it converges
+  // because panel content is a pure function of the data, not of the plot size.
+  if (resizing) return;
+  resizing = true;
+  try { resizeInner(); } finally { resizing = false; }
+}
+function resizeInner() {
   DPR = window.devicePixelRatio || 1;
   const headerH = document.querySelector("header").offsetHeight +
                   document.querySelector(".controls").offsetHeight;
@@ -602,7 +777,13 @@ function resize() {
       if (hostProbe) vh = hostProbe.offsetHeight;
     } catch (e) { /* cross-origin embed: keep our own probe */ }
   }
-  const h = Math.max(250, vh - headerH - stripsH - footerH - 100);
+  // Fit the plot to the viewport and let the strips follow immediately beneath
+  // it. The plot is deliberately NOT grown to match a taller side column: the
+  // strips belong directly under the cloud, and the side column is free to run
+  // past the bottom of the left column instead.
+  // 110 = body padding + inter-row gaps + a few px of slack, tuned so the
+  // dashboard lands just inside the viewport rather than just outside it
+  const h = Math.max(250, vh - headerH - stripsH - footerH - 110);
   plot.style.height = h + "px";
   // the side column keeps its natural height: if it is taller than the plot,
   // the document grows past the viewport and the OUTER page scrolls (or the
@@ -610,7 +791,14 @@ function resize() {
   W = plot.clientWidth; H = plot.clientHeight;
   canvas.width = W * DPR; canvas.height = H * DPR;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  if (S) { draw(); scheduleQuadtree(); buildBondPanel(); buildRdf(); }
+  if (S) {
+    // rebuild from the baseline heights, then grow into the slack — without the
+    // reset the charts could only ever get taller, and a shrinking window would
+    // leave them oversized and push the row out
+    RDF_H = RDF_H_MIN; BOND_H = BOND_H_MIN;
+    draw(); scheduleQuadtree(); buildBondPanel(); buildRdf(); buildBnePanel();
+    fitStripCharts();
+  }
 }
 
 // ---------- fly camera ----------
@@ -684,9 +872,13 @@ function draw() {
       ctx.stroke();
     }
     const sel = k => !bondSelMask || bondSelMask[k];
-    // with a ring size isolated, bonds outside those rings render at half opacity
+    // with a ring size isolated, bonds outside those rings render at half opacity;
+    // an isolated barcode class pulls back everything it doesn't touch, harder
+    const bneTouch = bneSelSet ? k => bneSelSet.has(BB[2*k]) || bneSelSet.has(BB[2*k+1]) : null;
     const alphaGroups = ringBondMask
       ? [[k => ringBondMask[k] === 1, 1], [k => ringBondMask[k] === 0, 0.5]]
+      : bneTouch
+      ? [[bneTouch, 1], [k => !bneTouch(k), 0.22]]
       : [[() => true, 1]];
     for (const [inGroup, mult] of alphaGroups) {
       ctx.globalAlpha = baseAlpha * mult;
@@ -726,6 +918,10 @@ function draw() {
   const depthNorm = 1 / (S.radius * 2);
   const TAU = 2 * Math.PI;
   const fadeFill = css("--muted");
+  // colour-by-entropy: per-atom ramp bucket precomputed with the surprisals
+  const byBne = colorMode() === "bne" && bneBucket;
+  const bneCols = byBne ? bneColors() : null;
+  const bneUnsampled = css("--baseline");
   for (let k = 0; k < n; k++) {
     const i = order[k];
     if (flying && !isFinite(px[i])) continue;
@@ -734,6 +930,7 @@ function draw() {
                    (ringMembers !== null && !ringMembers.has(i)) ||
                    (brushRange !== null && hlMask !== null && !hlMask[i]) ||
                    (bondAtomMask !== null && !bondAtomMask[i]) ||
+                   (bneSelSet !== null && !bneSelSet.has(i)) ||
                    (atomSelSet !== null && !atomSelSet.has(i));
     let r, alpha;
     if (flying) {
@@ -748,7 +945,9 @@ function draw() {
       alpha = activeRender.orbitAlpha(t);
     }
     ctx.globalAlpha = dimmed ? activeRender.dimAlpha : alpha;
-    ctx.fillStyle = dimmed ? fadeFill : (colors[cn] ??= cnColor(cn));
+    ctx.fillStyle = dimmed ? fadeFill
+      : byBne ? (isNaN(bneSurp[i]) ? bneUnsampled : bneCols[bneBucket[i]])
+      : (colors[cn] ??= cnColor(cn));
     ctx.beginPath();
     ctx.arc(px[i], py[i], r, 0, TAU);
     ctx.fill();
@@ -839,7 +1038,8 @@ function drawPairHighlight() {
   ctx.globalAlpha = 1;
 }
 
-const RDF_H = 130, RDF_M = { l: 46, r: 16, t: 36, b: 22 };
+let RDF_H = 130;
+const RDF_H_MIN = 130, RDF_M = { l: 46, r: 16, t: 36, b: 22 };
 function buildRdf() {
   if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
   const panel = document.getElementById("rdfPanel");
@@ -847,7 +1047,7 @@ function buildRdf() {
   panel.style.display = "";
   const svg = d3.select("#rdfSvg");
   svg.selectAll("*").remove();
-  const w = Math.max(360, panel.clientWidth - 32);
+  const w = Math.max(300, panel.clientWidth - 32);
   svg.attr("width", w).attr("height", RDF_H).attr("viewBox", `0 0 ${w} ${RDF_H}`);
   const { dr, rmax, g } = S.rdf;
   const ghosts = seq
@@ -859,11 +1059,13 @@ function buildRdf() {
   svg.append("g").attr("class", "grid").attr("transform", `translate(${RDF_M.l},0)`)
     .call(d3.axisLeft(y).ticks(4).tickSize(-(w - RDF_M.l - RDF_M.r)).tickFormat(""));
   svg.append("g").attr("transform", `translate(0,${RDF_H - RDF_M.b})`)
-    .call(d3.axisBottom(x).ticks(10));
+    .call(d3.axisBottom(x).ticks(w < 520 ? 6 : 10));
   svg.append("g").attr("transform", `translate(${RDF_M.l},0)`)
     .call(d3.axisLeft(y).ticks(4));
-  svg.append("text").attr("x", w - RDF_M.r - 34).attr("y", RDF_H - 6).attr("text-anchor", "end").text("r (Å)");
+  // both captions ride in the top margin: on a narrow panel an axis-line "r (Å)"
+  // collides with the last tick label
   svg.append("text").attr("x", 6).attr("y", 12).text("g(r)");
+  svg.append("text").attr("x", w - RDF_M.r).attr("y", 12).attr("text-anchor", "end").text("r (Å)");
   const line = d3.line().x((v, k) => x((k + 0.5) * dr)).y(v => y(v));
   const area = d3.area().x((v, k) => x((k + 0.5) * dr)).y0(RDF_H - RDF_M.b).y1(v => y(v));
   for (const c of ghosts)
@@ -1025,11 +1227,6 @@ function buildRingPanel() {
   chart.selectAll(".ring-row").data(sizes, d => d).join("div")
     .attr("class", "ring-row")
     .on("mousedown", e => e.preventDefault()) // keep shift+click from selecting text
-    .attr("title", d => {
-      const dn = drawn[d] || 0, miss = counts[d] - dn;
-      return `${counts[d].toLocaleString()} rings of size ${d} — ${(100 * counts[d] / total).toFixed(1)}% of all rings.` +
-             ` ${dn.toLocaleString()} drawn in the cloud; ${miss.toLocaleString()} cross the box boundary and are not drawn.`;
-    })
     .on("click", (e, size) => {
       if (e.shiftKey) selectedRings.has(size) ? selectedRings.delete(size) : selectedRings.add(size);
       else selectedRings = (selectedRings.size === 1 && selectedRings.has(size)) ? new Set() : new Set([size]);
@@ -1037,26 +1234,43 @@ function buildRingPanel() {
       updateRingMembers();
       refreshRingDim(); draw();
     })
-    .html(d =>
-      `<span class="ring-size">${d}</span>` +
-      `<span class="ring-track">` + tickSpans +
-        `<span class="ring-bar" style="width:${(100 * counts[d] / max).toFixed(1)}%; background:color-mix(in srgb, ${ringColor(d)} 30%, transparent)">` +
-          `<span class="ring-bar-drawn" style="width:${(100 * (drawn[d] || 0) / counts[d]).toFixed(1)}%; background:${ringColor(d)}"></span>` +
+    .html(d => {
+      const dn = drawn[d] || 0, miss = counts[d] - dn;
+      const faded = `color-mix(in srgb, ${ringColor(d)} 30%, transparent)`;
+      return `<span class="ring-size">${d}</span>` +
+        `<span class="ring-track">` + tickSpans +
+          `<span class="ring-bar" style="width:${(100 * counts[d] / max).toFixed(1)}%; background:${faded}">` +
+            `<span class="ring-bar-drawn" style="width:${(100 * dn / counts[d]).toFixed(1)}%; background:${ringColor(d)}"></span>` +
+          `</span>` +
         `</span>` +
-      `</span>` +
-      `<span class="ring-count">${counts[d].toLocaleString()}</span>`);
-  // labeled count axis under the chart, on the same %-of-max scale;
-  // label every other tick (lines stay at full density) and use k-notation
+        `<span class="ring-count">${counts[d].toLocaleString()}</span>` +
+        // hover tip: the two counts the bar's solid and faded segments encode,
+        // each keyed by a swatch in the matching treatment
+        `<span class="row-tip">` +
+          `<b>${counts[d].toLocaleString()} ${d}-rings</b> · ` +
+          `${(100 * counts[d] / total).toFixed(1)}% of all rings` +
+          `<br><span class="swatch" style="background:${ringColor(d)}"></span>` +
+          `<b>${dn.toLocaleString()}</b> drawn in the cloud` +
+          `<br><span class="swatch" style="background:${faded}"></span>` +
+          `<b>${miss.toLocaleString()}</b> crossing the box boundary` +
+        `</span>`;
+    });
+  // labeled count axis under the chart, on the same %-of-max scale. Every tick
+  // is labeled where the track has room for it (~26px per label), otherwise
+  // every other one; k-notation keeps the 14k-ring cells legible.
   const fmtTick = v => v >= 1000 ? `${+(v / 1000).toFixed(1)}k` : String(v);
+  const trackPx = Math.max(80, panel.clientWidth - 130); // track ≈ panel − size/count columns
+  const everyTick = trackPx / (ticks.length + 1) >= 26;
   chart.selectAll(".ring-axis").remove();
   chart.append("div").attr("class", "ring-axis")
     .html(`<span class="ring-size"></span>` +
       `<span class="ring-axis-track">` +
         `<span class="ring-tick-label" style="left:0">0</span>` +
-        ticks.map((t, i) => i % 2 === 0 ? "" :
-          `<span class="ring-tick-label" style="left:${(100 * t / max).toFixed(2)}%">${fmtTick(t)}</span>`).join("") +
+        ticks.map((t, i) => (everyTick || i % 2 === 1)
+          ? `<span class="ring-tick-label" style="left:${(100 * t / max).toFixed(2)}%">${fmtTick(t)}</span>`
+          : "").join("") +
       `</span>` +
-      `<span class="ring-count"></span>`);
+      `<span class="ring-count ring-axis-cap">rings</span>`);
   refreshRingDim();
 }
 function refreshRingDim() {
@@ -1166,10 +1380,19 @@ function showAtomTooltip(i, mx, my) {
         .map(s => `${byS.get(s)}×<span style="color:${ringColor(s)}">${s}-ring</span>`).join(", ");
     }
   }
+  // local-topology line: this atom's H₁ barcode class and its surprisal
+  let bneLine = "";
+  const bcur = bneCur();
+  if (bcur && bneSurp && bcur.cls[i] >= 0) {
+    const c = bcur.cls[i];
+    bneLine = `<br>LAE(n=${bcur.n}): <b>${barsText(bcur.bars[c])}</b>` +
+      ` · ${(100 * bcur.counts[c] / bcur.sampled).toFixed(1)}% of atoms` +
+      `<br>surprisal ${bneSurp[i].toFixed(2)} nats`;
+  }
   tooltip.innerHTML =
     `<span class="tt-dot" style="background:${cnColor(cn)}"></span><b>Atom ${i}</b> — CN ${cn}` +
     `<br>${CN_NAMES[Math.min(cn, 8)]}` +
-    ringLine +
+    ringLine + bneLine +
     `<br>(${S.P[3*i].toFixed(2)}, ${S.P[3*i+1].toFixed(2)}, ${S.P[3*i+2].toFixed(2)}) Å`;
   tooltip.style.display = "block";
   const tw = tooltip.offsetWidth;
@@ -1383,12 +1606,255 @@ document.getElementById("resetBtn").addEventListener("click", () => {
   selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
   brushRange = null; buildRdf();
   bondBrushRange = null; updateBondSel(); buildBondPanel();
+  bneSel = new Set(); bneSelSet = null; buildBnePanel();
   refreshLegendDim(); refreshRingDim(); draw(); scheduleQuadtree();
 });
 document.getElementById("spinChk").addEventListener("change", e => {
   clearInterval(spinTimer);
   if (e.target.checked) spinTimer = setInterval(() => { if (!flying) { yaw += 0.004; draw(); } }, 33);
   else scheduleQuadtree();
+});
+
+// ---------- bond-network entropy ----------
+// Sidecar payloads from tools/bne.py: per-atom H1-barcode CLASS at several
+// environment sizes n, plus the BNE(n) curve and the growth-rate descriptor.
+// BNE(n) = -Σ P ln P over barcode classes, so the per-atom SURPRISAL
+// -ln P(class) averages (over sampled atoms) to exactly BNE(n): the colour
+// channel in the cloud and the published number are the same quantity.
+const BNE_CACHE = {};
+const BNE_BUCKETS = 33;
+let bneData = null;          // sidecar for the displayed structure
+// index into bneData.nDisplay. Default n = 18: large enough to see medium-range
+// topology, small enough that classes still repeat in a few-thousand-atom cell
+// (at n = 26–30 nearly every environment is unique and the colour saturates).
+let bneNIdx = 3;
+let bneSurp = null;          // Float32Array per atom (NaN = atom not sampled)
+let bneBucket = null;        // Uint8Array per atom, index into the colour ramp
+let bneSMin = 0, bneSMax = 1;
+let bneSel = new Set();      // selected barcode classes (empty = show all)
+let bneSelSet = null;        // atoms allowed by that selection
+const colorSel = document.getElementById("colorSel");
+const colorMode = () => colorSel.value;
+
+window.__BNE_CB = payload => {
+  BNE_CACHE[payload.id] = payload;
+  if (S && payload.id === S.id) bneAttach();
+  else if (bneData && seq && seq.ids.includes(payload.id)) buildBnePanel(); // ghost curve arrived
+};
+function loadBne(id) {
+  if (id in BNE_CACHE) return; // null = sidecar missing, don't retry forever
+  const el = document.createElement("script");
+  el.src = `structures_bne/${id}.js?v=${Date.now()}`;
+  el.onload = () => el.remove();
+  el.onerror = () => { BNE_CACHE[id] = null; el.remove(); if (S && S.id === id) bneAttach(); };
+  document.body.appendChild(el);
+}
+
+function bneCur() { // the byN block for the active environment size
+  if (!bneData) return null;
+  const n = bneData.nDisplay[Math.min(bneNIdx, bneData.nDisplay.length - 1)];
+  return { n, ...bneData.byN[String(n)] };
+}
+function bneAttach() {
+  bneData = (S && BNE_CACHE[S.id]) || null;
+  bneSel = new Set(); bneSelSet = null;
+  if (bneData) {
+    const slider = document.getElementById("bneN");
+    slider.max = bneData.nDisplay.length - 1;
+    bneNIdx = Math.min(bneNIdx, bneData.nDisplay.length - 1);
+    slider.value = bneNIdx;
+    document.getElementById("bneNVal").textContent = bneData.nDisplay[bneNIdx];
+  }
+  computeBneAtoms();
+  buildBnePanel(); buildMeta(); draw();
+}
+// per-atom surprisal + ramp bucket, recomputed whenever n changes
+function computeBneAtoms() {
+  bneSurp = null; bneBucket = null;
+  const cur = bneCur();
+  if (!cur || !S || cur.cls.length !== S.n) return;
+  const tot = cur.sampled;
+  const surpOf = cur.counts.map(c => -Math.log(c / tot));
+  bneSurp = new Float32Array(S.n);
+  bneSMin = Infinity; bneSMax = -Infinity;
+  for (let i = 0; i < S.n; i++) {
+    const c = cur.cls[i];
+    if (c < 0) { bneSurp[i] = NaN; continue; }
+    const s = surpOf[c];
+    bneSurp[i] = s;
+    if (s < bneSMin) bneSMin = s;
+    if (s > bneSMax) bneSMax = s;
+  }
+  if (!isFinite(bneSMin)) { bneSMin = 0; bneSMax = 1; }
+  const span = (bneSMax - bneSMin) || 1;
+  bneBucket = new Uint8Array(S.n);
+  for (let i = 0; i < S.n; i++)
+    bneBucket[i] = isNaN(bneSurp[i]) ? 0
+      : Math.round(((bneSurp[i] - bneSMin) / span) * (BNE_BUCKETS - 1));
+}
+// ordinary → rare ramp, theme-derived (same idiom as the bond-strain trio)
+function bneTrio() {
+  const explicit = n => document.documentElement.style.getPropertyValue(n).trim();
+  return [
+    explicit("--bne-lo") || css("--baseline"),
+    explicit("--bne-mid") || css("--cn2"),
+    explicit("--bne-hi") || css("--cn1"),
+  ];
+}
+const bneScale = () =>
+  d3.scaleLinear().domain([0, 0.5, 1]).range(bneTrio()).interpolate(d3.interpolateLab);
+function bneColors() {
+  const sc = bneScale();
+  return Array.from({ length: BNE_BUCKETS }, (_, b) => sc(b / (BNE_BUCKETS - 1)));
+}
+
+function bneSelectClass(c, additive) {
+  if (additive) bneSel.has(c) ? bneSel.delete(c) : bneSel.add(c);
+  else bneSel = (bneSel.size === 1 && bneSel.has(c)) ? new Set() : new Set([c]);
+  const cur = bneCur();
+  if (!bneSel.size) bneSelSet = null;
+  else {
+    bneSelSet = new Set();
+    for (let i = 0; i < S.n; i++) if (bneSel.has(cur.cls[i])) bneSelSet.add(i);
+  }
+  d3.selectAll(".bne-cls")
+    .classed("dim", d => bneSel.size > 0 && !bneSel.has(d.c))
+    .classed("sel", d => bneSel.has(d.c));
+  draw(); scheduleQuadtree();
+}
+
+const barsText = bars => bars.length
+  ? bars.map(([a, b]) => a === b ? `${a}` : `${a}–${b}`).join(" ")
+  : "no rings";
+
+const BNE_H = 104, BNE_M = { l: 28, r: 10, t: 18, b: 16 };
+function buildBnePanel() {
+  const panel = document.getElementById("bnePanel");
+  const cur = bneCur();
+  if (!cur) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const [lo, hi] = bneData.descRange;
+  const curve = bneData.curve;
+  const bneAtN = curve.bne[curve.ns.indexOf(cur.n)];
+
+  // where this structure's growth rate sits among every structure in the set —
+  // a bare 0.113 means nothing without the population behind it
+  let strip = "";
+  if (window.__BNE_INDEX && window.__BNE_INDEX.length > 1) {
+    const all = window.__BNE_INDEX;
+    const ext = d3.extent(all, d => d.descriptor);
+    const pos = d => (100 * (d - ext[0]) / (ext[1] - ext[0])).toFixed(1);
+    strip =
+      `<div class="bne-strip" title="Growth-rate descriptor of all ${all.length} structures; ` +
+      `this one marked.">` +
+      all.map(d => `<span class="bne-tick${d.id === S.id ? " me" : ""}" ` +
+        `style="left:${pos(d.descriptor)}%" title="${d.name}: ${d.descriptor.toFixed(3)}"></span>`).join("") +
+      `</div><div class="bne-ramp-lab"><span>${ext[0].toFixed(2)} ordered</span>` +
+      `<span>all ${all.length} structures</span><span>disordered ${ext[1].toFixed(2)}</span></div>`;
+  }
+  document.getElementById("bneHead").innerHTML =
+    `<div class="bne-big"><b>${bneData.descriptor.toFixed(3)}</b>` +
+    `<span>mean BNE(n)/n, n = ${lo}–${hi}</span></div>` + strip +
+    `<div class="meta-row"><span>BNE(n = ${cur.n})</span><b>${(bneAtN ?? NaN).toFixed(2)} nats</b></div>` +
+    `<div class="meta-row"><span>distinct environments</span><b>${cur.counts.length.toLocaleString()}</b></div>`;
+
+  // BNE(n) curve — other sequence stages draw as gray ghosts, as in g(r)
+  const svg = d3.select("#bneSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(180, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", BNE_H).attr("viewBox", `0 0 ${w} ${BNE_H}`);
+  const ghosts = seq
+    ? seq.ids.filter(id => id !== S.id).map(id => BNE_CACHE[id]).filter(Boolean)
+    : [];
+  const x = d3.scaleLinear([curve.ns[0], curve.ns[curve.ns.length - 1]], [BNE_M.l, w - BNE_M.r]);
+  const ymax = d3.max([curve, ...ghosts.map(g => g.curve)], c => d3.max(c.bne)) || 1;
+  const y = d3.scaleLinear([0, ymax * 1.08], [BNE_H - BNE_M.b, BNE_M.t]).nice();
+  svg.append("rect").attr("class", "descband")
+    .attr("x", x(lo)).attr("width", x(hi) - x(lo))
+    .attr("y", BNE_M.t).attr("height", BNE_H - BNE_M.b - BNE_M.t);
+  svg.append("g").attr("transform", `translate(0,${BNE_H - BNE_M.b})`)
+    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
+  svg.append("g").attr("transform", `translate(${BNE_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(3));
+  const line = c => d3.line().x((v, k) => x(c.ns[k])).y(v => y(v))(c.bne);
+  for (const g of ghosts)
+    svg.append("path").attr("d", line(g.curve))
+      .attr("fill", "none").attr("stroke", css("--baseline")).attr("stroke-width", 1.2);
+  svg.append("path").attr("d", line(curve))
+    .attr("fill", "none").attr("stroke", css("--cn4")).attr("stroke-width", 2);
+  svg.append("line").attr("x1", x(cur.n)).attr("x2", x(cur.n))
+    .attr("y1", BNE_M.t).attr("y2", BNE_H - BNE_M.b)
+    .attr("stroke", css("--ink")).attr("stroke-dasharray", "3,3").attr("opacity", 0.55);
+  // axis captions sit in the top margin so neither collides with a tick label
+  svg.append("text").attr("x", 2).attr("y", 9).text("BNE (nats)");
+  svg.append("text").attr("x", w - BNE_M.r).attr("y", 9).attr("text-anchor", "end")
+    .text(`n → (band: ${lo}–${hi})`);
+
+  // colour ramp legend (only meaningful while the cloud is coloured by BNE)
+  const cols = bneColors();
+  document.getElementById("bneRamp").innerHTML =
+    `<div class="bne-ramp" style="background:linear-gradient(90deg,${cols.join(",")})"></div>` +
+    `<div class="bne-ramp-lab"><span>${bneSMin.toFixed(2)} common</span>` +
+    `<span>surprisal −ln P (nats)</span><span>rare ${bneSMax.toFixed(2)}</span></div>`;
+
+  // commonest barcode classes
+  const tot = cur.sampled;
+  const sc = bneScale(), span = (bneSMax - bneSMin) || 1;
+  const rows = cur.counts.map((count, c) => ({ c, count, bars: cur.bars[c] }))
+    .slice(0, 6);
+  d3.select("#bneClasses").selectAll(".bne-cls").data(rows, d => d.c).join("div")
+    .attr("class", "bne-cls")
+    .on("mousedown", e => e.preventDefault())
+    .attr("title", d =>
+      `${d.count.toLocaleString()} atoms (${(100 * d.count / tot).toFixed(1)}%) share this local topology.\n` +
+      `H₁ barcode: ${d.bars.length} independent ring${d.bars.length === 1 ? "" : "s"}` +
+      (d.bars.length ? ` at hop intervals ${barsText(d.bars)}` : "") +
+      `\nsurprisal ${(-Math.log(d.count / tot)).toFixed(2)} nats`)
+    .on("click", (e, d) => bneSelectClass(d.c, e.shiftKey))
+    .html(d => {
+      const s = -Math.log(d.count / tot);
+      return `<span class="dot" style="background:${sc((s - bneSMin) / span)}"></span>` +
+             `<span class="bars">${barsText(d.bars)}</span>` +
+             `<span class="pct">${(100 * d.count / tot).toFixed(1)}%</span>`;
+    });
+  d3.selectAll(".bne-cls")
+    .classed("dim", d => bneSel.size > 0 && !bneSel.has(d.c))
+    .classed("sel", d => bneSel.has(d.c));
+
+  const ceiling = Math.log(tot);
+  const sampled = cur.sampled < S.n
+    ? ` Sampled ${cur.sampled.toLocaleString()} of ${S.n.toLocaleString()} atoms; the rest draw neutral.`
+    : "";
+  // Explanation moves to the heading's hover tooltip, where it costs no height —
+  // so the instructional lines trimmed earlier can come back at no cost.
+  document.getElementById("bneAbout").innerHTML =
+    `Shannon entropy of the H₁-barcode distribution over ${cur.n}-atom local environments on the ` +
+    `1.8 Å bond graph — a topological measure of disorder. The curve is BNE(n); the band is the ` +
+    `${lo}–${hi} window whose mean slope is the growth rate, and other sequence stages draw as gray ` +
+    `ghost curves. Rows are the commonest barcodes, each independent ring written as its hop-distance ` +
+    `interval from the reference atom; click one to isolate the atoms carrying it, shift-click to add.` +
+    sampled;
+  // Only the finite-size warning stays on the panel: it says the number on
+  // screen is not trustworthy, which shouldn't be hidden behind a hover.
+  const warn = bneAtN > 0.75 * ceiling
+    ? `<b style="color:var(--cn1)">Near the finite-size ceiling</b> (ln N = ${ceiling.toFixed(2)}): ` +
+      `almost every environment in this cell is unique, so BNE saturates and the growth rate understates the disorder.`
+    : "";
+  const hintEl = document.getElementById("bneHint");
+  hintEl.innerHTML = warn;
+  hintEl.style.display = warn ? "" : "none";
+}
+
+document.getElementById("bneN").addEventListener("input", e => {
+  bneNIdx = +e.target.value;
+  const cur = bneCur();
+  document.getElementById("bneNVal").textContent = cur ? cur.n : "";
+  bneSel = new Set(); bneSelSet = null;
+  computeBneAtoms(); buildBnePanel(); draw();
+});
+colorSel.addEventListener("change", () => {
+  if (colorMode() === "bne" && S && !BNE_CACHE[S.id]) loadBne(S.id);
+  draw();
 });
 
 // ---------- structure selector ----------
@@ -1457,6 +1923,7 @@ seqSel.addEventListener("change", () => {
   seq = SEQUENCES.find(s => s.key === seqSel.value) || null;
   if (seq) {
     seq.ids.forEach(prefetch); // warm the cache so RDF ghost curves appear
+    seq.ids.forEach(loadBne);  // …and the BNE(n) ghost curves
     const cur = seq.ids.indexOf(sel.property("value"));
     seqGo(cur >= 0 ? cur : 0);
   } else { seqUI(); buildRdf(); }
@@ -1476,7 +1943,7 @@ playBtn.addEventListener("click", () => {
 // ---------- theme redraw ----------
 darkMQ.addEventListener("change", () => {
   applyThemeVars();
-  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); }
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); }
 });
 
 window.addEventListener("resize", resize);
@@ -1501,7 +1968,7 @@ themeSel.addEventListener("change", () => {
 applyTheme(themeSel.value);
 themeSel.value = activeTheme.id;
 
-const DEFAULT = "amorphous_carbon__density_2d9_1000";
+const DEFAULT = "variable_porosity_carbon__vpc_d_200_density_0d9_model_9"; // VPC(D) 0.9 model 9, 213 atoms
 sel.property("value", DEFAULT);
 loadStructure(DEFAULT);
 </script>

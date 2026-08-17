@@ -110,12 +110,10 @@ window.__registerTheme({
     /* ---- legend & ring rows: no modern hover wash, just an underline rule ---- */
     .cn-row:hover, .ring-row:hover { background: none; box-shadow: inset 0 -1px 0 rgba(31,29,26,0.35); }
 
-    /* ---- ring chart as ruled graph paper: one horizontal ledger line per
-           ring-size row behind the bars, a darker base rule under the axis,
-           and count gridlines extended to cross the horizontals ---- */
-    .ring-track { border-bottom: 1px solid rgba(18,56,90,0.28); }
+    /* ---- ring chart: vertical count gridlines plus a base rule under the
+           axis. The per-row horizontal ledger lines were removed — behind
+           eight stacked bars they read as chart junk rather than ruling. ---- */
     .ring-axis-track { border-bottom: 1px solid rgba(18,56,90,0.50); }
-    .ring-tick { top: -5px; bottom: -5px; }
 
     /* ---- footer as a colophon ---- */
     footer { font-style: italic; border-top: 1px solid rgba(31,29,26,0.35); padding-top: 6px; }

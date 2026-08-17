@@ -1,6 +1,6 @@
 <?php
 $page_title = 'The Hidden Structure of Amorphous Carbon - Municipal Sky';
-$page_description = 'Interactive 3D point clouds of simulated carbon atomic structures — coordination numbers, ring statistics, and radial distribution functions across amorphous, carbide-derived, and irradiated carbons.';
+$page_description = 'Interactive 3D point clouds of simulated carbon atomic structures — coordination numbers, ring statistics, radial distribution functions, and bond-network entropy across amorphous, carbide-derived, and irradiated carbons.';
 $page_type = 'article';
 include '../includes/header.php';
 ?>
@@ -111,9 +111,26 @@ include '../includes/header.php';
           These interactive point clouds let you tumble through simulated carbon structures atom by atom: amorphous
           carbons across a range of densities, carbide-derived carbons before and after annealing, and graphite as it
           accumulates irradiation damage. Color encodes each atom's coordination number; the panels tally ring sizes,
-          bond lengths, and the radial distribution function.</p>
+          bond lengths, the radial distribution function, and the bond-network entropy of the structure.</p>
         <p>Drag to rotate, hold Ctrl/⌘ and scroll to zoom, and try the theme selector — the same data rendered as a midnight
           observatory plate, an Oppenheimer-era journal figure, or a Kandinsky composition.</p>
+      </section>
+    </div>
+
+    <!-- Bond-network entropy -->
+    <div class="post-container">
+      <section class="prose-flow">
+        <p>The paper these structures come from argues that a single topological number predicts how well a
+          disordered network conducts heat: its <em>bond-network entropy</em>. Walk out along the bonds from an
+          atom to its nearest few dozen neighbors, and the little graph you collect has a shape — a certain number
+          of independent rings, sitting at certain distances from where you started. Catalogue that shape for every
+          atom, and the entropy of the resulting distribution measures how many genuinely different neighborhoods
+          the material contains. Perfect graphite has one; a badly disordered carbon has hundreds.</p>
+        <p>Switch <strong>Color by</strong> to bond-network entropy and each atom is shaded by how rare its own
+          neighborhood is, from the commonplace to the singular. The average of that shading is exactly the number
+          reported in the panel. The clearest demonstration is the irradiation sequence: step IRG&nbsp;T2 through
+          T9 and watch the pristine graphitic environment — three hexagons, nothing else — fall from 77% of atoms
+          to 57%, while the entropy curve lifts behind it.</p>
       </section>
     </div>
 
@@ -124,6 +141,12 @@ include '../includes/header.php';
             coordination-disordered solids</em> (<a href="https://arxiv.org/abs/2412.12753"
             target="_blank">arXiv:2412.12753</a>), relaxed with the GAP potential. Bonds are drawn between atoms within
           1.8&nbsp;Å.</p>
+        <p>The bond-network entropy shown here is an independent reimplementation from the paper's description,
+          following the H<sub>1</sub>-barcode construction of Schweinhart et al. (2020) rather than running their
+          Swatches code — so the ordering across structures is the meaningful result, not the absolute values.
+          Cells of a few hundred atoms are small enough that nearly every neighborhood in them is unique, which
+          caps the entropy and understates their disorder; the panel flags this when it happens. Structures over
+          6,000 atoms are sampled rather than exhaustively catalogued.</p>
       </section>
     </div>
 
