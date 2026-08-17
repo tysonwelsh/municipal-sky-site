@@ -1987,8 +1987,9 @@ html.jd-turn-open { overflow: hidden; }
    "photograph" (.jd-turn-art below), so a slot waits in the same frame its
    drawing will arrive in. Each swatch runs its own OLD-SCHOOL WEB WAIT
    INDICATOR, printed in ink and keyed stably to the slot letter: a plotter
-   pen tracing a circuit generated fresh each turn (round 18 — the flipping
-   hourglass retires), a radial-tick throbber, a segmented block progress
+   pen tracing a circuit generated fresh each turn (round-20 swap — the
+   flipping hourglass retires), the stray word (LOADING adrift, DVD-menu
+   style — round-19 swap, owner pick 2026-08-16), a segmented block progress
    bar, bouncing loading dots. A fifth slip — "please wait…" in the visitor's pencil hand —
    floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
    collapses to an overlay strip so only the ✕ rides the top-right corner
@@ -1997,8 +1998,8 @@ html.jd-turn-open { overflow: hidden; }
    to assistive tech from display:none).
 
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
-   (a partial plot with the pen resting on it, throbber ring at rest, bar
-   half-full, dots in a row); every animation lives under prefers-reduced-motion: no-preference,
+   (a partial plot with the pen resting on it, the stray word at rest in the
+   centre, bar half-full, dots in a row); every animation lives under prefers-reduced-motion: no-preference,
    a reduce block stills the rest, and the end-state poses live on the
    data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
    settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
@@ -2088,23 +2089,44 @@ html.jd-turn-open { overflow: hidden; }
 @keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
 @keyframes jdDarkPlotNib { to { stroke-dashoffset: -145; } }
 
-/* b — the throbber: twelve radial ticks in a fading ring, turned in twelve
-   hard steps so the bright head chases its own tail */
-.jd-dark-throb .throb { transform-box: fill-box; transform-origin: center; }
-.jd-dark-throb line { stroke: var(--tink-2); stroke-width: 2.4; stroke-linecap: round; }
-.jd-dark-throb line:nth-child(1)  { opacity: 1; }
-.jd-dark-throb line:nth-child(2)  { opacity: 0.92; }
-.jd-dark-throb line:nth-child(3)  { opacity: 0.83; }
-.jd-dark-throb line:nth-child(4)  { opacity: 0.75; }
-.jd-dark-throb line:nth-child(5)  { opacity: 0.66; }
-.jd-dark-throb line:nth-child(6)  { opacity: 0.58; }
-.jd-dark-throb line:nth-child(7)  { opacity: 0.5; }
-.jd-dark-throb line:nth-child(8)  { opacity: 0.42; }
-.jd-dark-throb line:nth-child(9)  { opacity: 0.33; }
-.jd-dark-throb line:nth-child(10) { opacity: 0.25; }
-.jd-dark-throb line:nth-child(11) { opacity: 0.17; }
-.jd-dark-throb line:nth-child(12) { opacity: 0.08; }
-@keyframes jdDarkThrob { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* b — the stray word: LOADING adrift on the print, ricocheting off the
+   swatch's own edges like the DVD-menu logo of blessed memory (round-19
+   swap — mockup-19-offguard-loaders.html №10 rev B replaces the radial-tick
+   throbber; owner pick 2026-08-16). The bounce field is the WHOLE swatch,
+   not the inset well — the well opens to inset 0 for this slot only, so the
+   word rebounds off the graph paper's edges and slides UNDER the pencilled
+   letter (z 3) and the verdict (z 2). The two axes run incommensurate
+   periods, so the path never visibly repeats. Position trick: left/top
+   0→100% paired with translate 0→-100% makes each travel span exactly
+   (swatch − word) at ANY swatch size — both halves tween linearly, so the
+   sum is linear too. Static base: the word at rest in the centre. */
+.jd-dark-sw--b .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-stray {
+  position: absolute; left: 50%; top: 0; height: 100%;
+  width: max-content; transform: translateX(-50%);
+}
+.jd-dark-stray .sy {
+  /* RELATIVE, not absolute — the word must stay in flow so the x-mover's
+     max-content width IS the word's width: an absolutely-positioned child
+     sizes its parent to 0, which nulls the translateX(-100%) half of the
+     position trick and lets the word sail past the right edge until its
+     LEFT side hits (owner catch, 2026-08-17). Relative keeps the top:
+     0→100% animation working — the offset resolves against the mover's
+     full-well height, translateY(-100%) against the word's own. */
+  position: relative; top: 50%; transform: translateY(-50%);
+  display: block;
+  font-family: var(--tmono); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.12em; white-space: nowrap;
+  color: rgba(74, 98, 138, 0.85);   /* the graph paper's own blue ink */
+}
+@keyframes jdDarkStrayX {
+  from { left: 0;    transform: translateX(0); }
+  to   { left: 100%; transform: translateX(-100%); }
+}
+@keyframes jdDarkStrayY {
+  from { top: 0;    transform: translateY(0); }
+  to   { top: 100%; transform: translateY(-100%); }
+}
 
 /* c — the segmented progress bar (Win95, indeterminate): an inset track, the
    blocks stamped in the graph paper's own blue ink, filling in discrete
@@ -2222,7 +2244,8 @@ html.jd-turn-open { overflow: hidden; }
      second, plotter pace; both windows on the same clock or the dot drifts */
   .jd-dark-plot .plot-ink  { animation: jdDarkPlotInk 30s linear infinite; }
   .jd-dark-plot .plot-nib  { animation: jdDarkPlotNib 30s linear infinite; }
-  .jd-dark-throb .throb    { animation: jdDarkThrob 1.15s steps(12) infinite; }
+  .jd-dark-stray           { animation: jdDarkStrayX 3.7s linear infinite alternate; }
+  .jd-dark-stray .sy       { animation: jdDarkStrayY 4.9s linear infinite alternate; }
   .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
   .jd-dark-dots span       { animation: jdDarkDot 1.25s ease-in-out infinite; }
   .jd-dark-dots span:nth-child(2) { animation-delay: 0.16s; }
@@ -2236,17 +2259,19 @@ html.jd-turn-open { overflow: hidden; }
   /* arrived: the loop stops where it stands (the well fades over it).
      failed: it FREEZES mid-loop. */
   .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
-  .jd-dark-sw[data-state="ok"] .throb,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="ok"] .fill, .jd-dark-sw[data-state="ok"] .jd-dark-dots span,
   .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
-  .jd-dark-sw[data-state="fail"] .throb,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="fail"] .fill, .jd-dark-sw[data-state="fail"] .jd-dark-dots span {
     animation-play-state: paused;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
-  .jd-dark-throb .throb, .jd-dark-pbar .fill, .jd-dark-dots span,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-pbar .fill, .jd-dark-dots span,
   .jd-dark-wait, .jd-dark-sw {
     animation: none !important;
   }

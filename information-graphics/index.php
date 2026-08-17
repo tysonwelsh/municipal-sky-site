@@ -15,6 +15,13 @@ include '../includes/header.php';
             <!-- Entry List -->
             <div class="entry-list">
                 <div class="entry">
+                    <span class="entry-date">2026.08.17</span>
+                    <div class="entry-content">
+                        <a href="carbon-structures" class="entry-title">The Hidden Structure of Amorphous Carbon</a>
+                        <span class="entry-description">Interactive 3D point clouds of simulated carbon atomic structures.</span>
+                    </div>
+                </div>
+                <div class="entry">
                     <span class="entry-date">2026.02.23</span>
                     <div class="entry-content">
                         <a href="underworld-occupations" class="entry-title">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</a>

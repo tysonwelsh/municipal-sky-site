@@ -11,9 +11,9 @@
 //   2. listener unhook verified: after detach() the engine's listener lists
 //      are EMPTY and the poll timer is cleared (no leaks)
 //   3. PJ2.Skin.dev = true the whole run: zero dataInk violations while all
-//      three skins draw full frames with live marks + event illustrations
-//   4. the scripted events actually land (tree grows, cut hushes then
-//      clears WITHOUT residue — owner ruling: no scar state anywhere)
+//      three skins draw full frames with live marks + the margin staff
+//   4. the scripted events actually land (tree grows; the plate stays
+//      emblem-free — the L3 column was removed, owner 2026-08-16)
 //
 // Usage: node viz-smoke.js      Exit 0 = ALL GREEN, exit 1 = failures.
 // ============================================================================
@@ -323,7 +323,11 @@ TRACKS.forEach(function (tr) {
   if (tr === "library") {
     check("library: genealogy grew from events", dbg.tree >= 3, "tree=" + dbg.tree);
     check("library: era moved with Transmutatio (C→F)", dbg.era.tonicPc === 5, "tonicPc=" + dbg.era.tonicPc);
-    check("library: illustrations alive (emblems)", dbg.illustrations > 0, "n=" + dbg.illustrations);
+    // the emblem column is gone (owner 2026-08-16): a full scripted evening
+    // must leave NOTHING on the plate's L3 alive-list
+    check("library: plate stays emblem-free (column removed)",
+      viz._stacks.plate.illustrations.length === 0,
+      "n=" + viz._stacks.plate.illustrations.length);
     check("library: floor plots the drones", dbg.drones >= 2, "drones=" + dbg.drones);
     check("library: harpsichord ripples the baseline", dbg.plucks >= 1, "plucks=" + dbg.plucks);
     check("library: music-box glints alive", dbg.glints >= 1, "glints=" + dbg.glints);

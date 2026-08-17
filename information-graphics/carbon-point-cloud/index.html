@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carbon Point Cloud</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --muted:       #898781;
+    --grid:        #e1e0d9;
+    --baseline:    #c3c2b7;
+    --border:      rgba(11,11,11,0.10);
+    --bond:        rgba(120,118,112,0.40);
+    --cn0: #0b0b0b; --cn1: #e34948; --cn2: #eda100; --cn3: #008300;
+    --cn4: #2a78d6; --cn5: #e87ba4; --cn6: #4a3aa7; --cn7: #eb6834; --cn8: #1baf7a;
+    /* ring sizes: diverging around the graphitic 6-ring (warm = smaller, cool = larger) */
+    --ring3: #a11f1e; --ring4: #cc3d3b; --ring5: #e98481; --ring6: #b3b1aa;
+    --ring7: #7fb1ed; --ring8: #3987e5; --ring9: #1c5cab; --ring10: #0d366b;
+    /* bond strain: compressed → median → stretched (median must read neutral on the surface) */
+    --strain-lo: #d03b3b; --strain-mid: #a8a6a0; --strain-hi: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface:     #1a1a19;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --muted:       #898781;
+      --grid:        #2c2c2a;
+      --baseline:    #383835;
+      --border:      rgba(255,255,255,0.10);
+      --bond:        rgba(150,148,142,0.35);
+      --cn0: #ffffff; --cn1: #e0403f; --cn2: #c98500; --cn3: #008300;
+      --cn4: #3987e5; --cn5: #d55181; --cn6: #9085e9; --cn7: #d95926; --cn8: #199e70;
+      --ring3: #f28d8b; --ring4: #e2716f; --ring5: #cf5654; --ring6: #6e6c66;
+      --ring7: #4f92e4; --ring8: #6da7ec; --ring9: #9ec5f4; --ring10: #cde2fb;
+      --strain-lo: #e0403f; --strain-mid: #ffffff; --strain-hi: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 20px 24px;
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+  /* probe element: lets resize() read the stable small-viewport height (svh) in px */
+  #svhProbe {
+    position: absolute; top: 0; left: 0;
+    height: 100vh; height: 100svh;
+    visibility: hidden; pointer-events: none;
+  }
+  header h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
+  header .sub { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+    margin: 14px 0 12px; font-size: 13px; color: var(--ink-2);
+  }
+  .controls label { display: flex; align-items: center; gap: 6px; }
+  select {
+    font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+    max-width: 340px;
+  }
+  input[type=range] { width: 90px; accent-color: var(--cn4); }
+  input[type=checkbox] { accent-color: var(--cn4); }
+  button {
+    font: inherit; font-size: 13px; color: var(--ink-2); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { color: var(--ink); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #seqControls { display: inline-flex; align-items: center; gap: 4px; }
+  #seqPrev, #seqNext { padding: 4px 7px; }
+  .layout { display: flex; gap: 16px; align-items: stretch; }
+  .plot {
+    position: relative; flex: 1 1 auto; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden;
+  }
+  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; }
+  #plotStrips {
+    display: flex; gap: 12px; align-items: stretch; margin-top: 14px;
+  }
+  #plotStrips .panel { min-width: 0; margin: 0; padding: 8px 14px; }
+  #rdfPanel { flex: 7 7 0; }
+  #bondPanel { flex: 3 3 0; }
+  #plotStrips h2 { margin-bottom: 4px; }
+  #plotStrips .hint { margin-top: 4px; font-size: 11px; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+  }
+  .ring-row {
+    display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+    border-radius: 6px; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+    border: 1px solid transparent; /* button-like: selected rows get a frame, no layout shift */
+  }
+  .ring-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .ring-row.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .ring-row.dim { opacity: 0.35; }
+  .ring-size { color: var(--ink); font-weight: 550; width: 18px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ring-track { flex: 1; height: 10px; display: block; position: relative; }
+  .ring-tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--grid); }
+  .ring-axis { display: flex; align-items: center; gap: 8px; padding: 2px 6px 0; margin: 0 -6px; }
+  .ring-axis-track { position: relative; flex: 1; height: 13px; display: block; }
+  .ring-tick-label { position: absolute; top: 0; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ring-bar { height: 100%; display: block; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .ring-bar-drawn { height: 100%; display: block; border-radius: 0 4px 4px 0; }
+  .ring-count { color: var(--ink-2); width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+  #bondSvg { display: block; width: 100%; }
+  #bondSvg text { font: 10px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  #bondSvg .domain, #bondSvg .tick line { stroke: var(--baseline); }
+  #bondSvg .selection { fill: var(--cn2); fill-opacity: 0.14; stroke: var(--cn2); stroke-opacity: 0.5; }
+  #rdfSvg { display: block; width: 100%; }
+  #rdfSvg text { font: 11px system-ui, sans-serif; fill: var(--muted); }
+  #rdfSvg .rdf-readout { fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+  #rdfSvg .domain, #rdfSvg .tick line { stroke: var(--baseline); }
+  #rdfSvg .grid line { stroke: var(--grid); }
+  #rdfSvg .grid .domain { stroke: none; }
+  #rdfSvg .selection { fill: var(--cn2); fill-opacity: 0.14; stroke: var(--cn2); stroke-opacity: 0.5; }
+  .panel h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .cn-row {
+    display: flex; align-items: center; gap: 8px; padding: 5px 6px; margin: 0 -6px;
+    border-radius: 6px; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+    border: 1px solid transparent; /* button-like: selected rows get a frame, no layout shift */
+  }
+  .cn-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .cn-row.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .cn-row.dim { opacity: 0.35; }
+  .cn-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px var(--border); }
+  .cn-label { color: var(--ink); font-weight: 550; width: 42px; }
+  .cn-count { color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .cn-pct { color: var(--muted); width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  .panel .hint { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.45; }
+  .panel .divider { border-top: 1px solid var(--grid); margin: 12px 0; }
+  .meta-row { display: flex; justify-content: space-between; padding: 2px 0; color: var(--ink-2); }
+  .meta-row b { color: var(--ink); font-weight: 550; font-variant-numeric: tabular-nums; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+    padding: 8px 10px; font-size: 12px; color: var(--ink-2); line-height: 1.5;
+    max-width: 220px; z-index: 10;
+  }
+  .tooltip b { color: var(--ink); font-weight: 600; }
+  .tooltip .tt-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    .side { flex: none; width: 100%; }
+    #plotStrips { flex-direction: column; }
+  }
+  footer { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div id="svhProbe" aria-hidden="true"></div>
+<header>
+  <h1 id="title">Loading…</h1>
+  <div class="sub" id="subtitle"></div>
+</header>
+
+<div class="controls">
+  <label>Structure
+    <select id="structSel" aria-label="Structure"></select>
+  </label>
+  <label>Theme
+    <select id="themeSel" aria-label="Theme"></select>
+  </label>
+  <label><input type="checkbox" id="bondsChk" checked> Bonds</label>
+  <label><input type="checkbox" id="ringsChk"> Rings</label>
+  <label><input type="checkbox" id="strainChk"> Bond strain</label>
+  <label><input type="checkbox" id="hideGridChk"> Hide gridlines</label>
+  <label><input type="checkbox" id="spinChk"> Spin</label>
+  <label><input type="checkbox" id="flyChk"> Fly (WASD)</label>
+  <label>Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
+  <button id="resetBtn">Reset view</button>
+  <label>Sequence
+    <select id="seqSel" aria-label="Sequence">
+      <option value="">—</option>
+    </select>
+  </label>
+  <span id="seqControls" style="display:none">
+    <button id="seqPrev" title="Previous stage">◀</button>
+    <span id="seqPos" style="font-variant-numeric:tabular-nums; margin:0 2px;"></span>
+    <button id="seqNext" title="Next stage">▶</button>
+    <button id="seqPlay">Play</button>
+  </span>
+</div>
+
+<div class="layout">
+  <div class="plot" id="plot">
+    <canvas id="canvas"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+  <div class="side">
+    <aside class="panel">
+      <h2>Coordination number @1.8 Å</h2>
+      <div id="legend"></div>
+      <div class="hint">Click a class to isolate it. CN uses periodic images; drawn bonds are intra-box only.</div>
+      <div class="divider"></div>
+      <div id="meta"></div>
+    </aside>
+    <aside class="panel" id="ringPanel" style="display:none">
+      <h2>Rings by size</h2>
+      <div id="ringChart"></div>
+      <div class="hint">Shortest-path rings on the periodic bond network. Solid bar: rings drawn in the cloud; faded bar: rings crossing the box boundary, counted but not drawn.</div>
+    </aside>
+  </div>
+</div>
+
+<div id="plotStrips">
+  <div class="panel" id="rdfPanel" style="display:none">
+    <h2>Radial distribution function g(r)</h2>
+    <svg id="rdfSvg"></svg>
+    <div class="hint">Brush a range of r to highlight every atom pair at that separation in the 3D view (pair highlighting available up to 5 Å); click outside the brushed band to clear. Dashed line: the 1.8 Å bond/CN cutoff. Dotted lines: graphite (1.42 Å) and diamond (1.54 Å) first-neighbor distances. With a sequence active, the other stages draw as gray ghost curves.</div>
+  </div>
+  <aside class="panel" id="bondPanel" style="display:none">
+    <h2>Bond lengths &lt; 1.8 Å</h2>
+    <svg id="bondSvg"></svg>
+    <div class="hint" id="bondHint"></div>
+  </aside>
+</div>
+
+<footer>
+  Structures: Iwanowski, Csányi &amp; Simoncelli, <i>Bond-network entropy governs heat transport in coordination-disordered solids</i> (arXiv:2412.12753), relaxed with the GAP potential.
+</footer>
+
+<script>window.__THEMES = []; window.__registerTheme = t => window.__THEMES.push(t);</script>
+<script src="themes/default.js?v=8e22d835"></script>
+<script src="themes/midnight.js?v=58c54fae"></script>
+<script src="themes/oppenheimer.js?v=68feca61"></script>
+<script src="themes/kandinsky.js?v=bbebaa0d"></script>
+<script src="d3.min.js?v=69faba9d"></script>
+<script src="structures/manifest.js"></script>
+<script>
+"use strict";
+
+const CN_NAMES = ["sp⁰ isolated", "sp¹-like end", "sp (chain)", "sp² (graphitic)", "sp³ (diamond-like)", "over-coordinated", "CN 6", "CN 7", "CN 8"];
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const cnColor = cn => css(`--cn${Math.min(cn, 8)}`);
+
+// ---------- themes ----------
+// Appearance is driven by the active theme: CSS custom properties (vars /
+// varsDark), extra CSS text, and canvas render parameters (render). Themes
+// register via window.__registerTheme from files in themes/. FALLBACK_RENDER
+// reproduces the original built-in rendering, so partial themes are safe.
+const FALLBACK_RENDER = {
+  bondWidth: 1, bondAlphaBrushed: 0.10, dimAlpha: 0.10,
+  ringFillAlpha: 0.30, ringStrokeAlpha: 0.7, ringMutedFactor: 0.18, ringWidth: 1,
+  pairHighlightAlpha: 0.55, pairHighlightWidth: 1,
+  cellBoxWidth: 1, axisLabelFont: "12px system-ui, sans-serif",
+  orbitSize: t => 0.72 + 0.55 * t,
+  orbitAlpha: t => 0.55 + 0.45 * t,
+  flySize: (rBase, radius, rz) => Math.min(14, Math.max(0.4, rBase * 1.5 * radius / rz)),
+  flyAlpha: (radius, rz) => Math.max(0.14, Math.min(1, 1.25 - rz / (2.5 * radius))),
+};
+let activeRender = { ...FALLBACK_RENDER };
+let activeTheme = null, appliedVars = [];
+const darkMQ = matchMedia("(prefers-color-scheme: dark)");
+const themeStyleEl = document.createElement("style");
+themeStyleEl.id = "theme-css";
+document.head.appendChild(themeStyleEl);
+
+function applyThemeVars() {
+  if (!activeTheme) return;
+  const rootStyle = document.documentElement.style;
+  for (const k of appliedVars) rootStyle.removeProperty(k);
+  appliedVars = [];
+  const useDark = activeTheme.varsDark && darkMQ.matches;
+  const vars = { ...(activeTheme.vars || {}), ...(useDark ? activeTheme.varsDark : {}) };
+  for (const [k, v] of Object.entries(vars)) { rootStyle.setProperty(k, v); appliedVars.push(k); }
+  rootStyle.setProperty("color-scheme",
+    activeTheme.colorScheme || (activeTheme.varsDark ? "light dark" : "light"));
+}
+
+function applyTheme(id) {
+  const theme = window.__THEMES.find(t => t.id === id) || window.__THEMES[0];
+  if (!theme) return;
+  activeTheme = theme;
+  document.documentElement.dataset.theme = theme.id;
+  applyThemeVars();
+  themeStyleEl.textContent = theme.css || "";
+  activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); scheduleQuadtree(); resize(); }
+}
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const plot = document.getElementById("plot");
+const tooltip = document.getElementById("tooltip");
+
+// ---------- state ----------
+let S = null;               // current structure payload
+let px = null, py = null, pz = null;   // projected coords (screen space)
+let order = null;           // depth order (Uint32Array)
+let yaw = 0.55, pitch = -0.35, zoom = 1, panX = 0, panY = 0;
+let selectedCNs = new Set();   // legend isolate filter (empty = show all; shift+click multi-selects)
+let quad = null;            // quadtree for hover, rebuilt after redraws settle
+let spinTimer = null;
+let W = 0, H = 0, DPR = 1;
+
+// ---------- data loading ----------
+const CACHE = {};
+let pendingId = null;
+window.__STRUCT_CB = payload => {
+  CACHE[payload.id] = payload;
+  if (pendingId !== null && payload.id !== pendingId) {
+    // prefetch for ghost curves — refresh the RDF overlay if it belongs to the active sequence
+    if (seq && seq.ids.includes(payload.id)) buildRdf();
+    return;
+  }
+  S = payload;
+  S.n = payload.natoms;
+  S.P = Float64Array.from(payload.pos);
+  // center on cell midpoint
+  const lat = payload.lattice;
+  S.cx = (lat[0][0] + lat[1][0] + lat[2][0]) / 2;
+  S.cy = (lat[0][1] + lat[1][1] + lat[2][1]) / 2;
+  S.cz = (lat[0][2] + lat[1][2] + lat[2][2]) / 2;
+  // half-diagonal for fit
+  S.radius = Math.hypot(S.cx, S.cy, S.cz) * 1.05;
+  px = new Float64Array(S.n); py = new Float64Array(S.n); pz = new Float64Array(S.n);
+  order = Uint32Array.from({length: S.n}, (_, i) => i);
+  S.cnCounts = d3.rollup(payload.cn, v => v.length, d => d);
+  selectedCNs = new Set();
+  selectedRings = new Set(); ringMembers = null; ringBondMask = null;
+  selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  pairIndex = null;
+  // keep the brushed ranges while stepping a sequence so they can be compared stage-to-stage
+  if (!(seq && seq.ids.includes(payload.id))) { brushRange = null; bondBrushRange = null; }
+  computeBondData();
+  updateBondSel(); // re-derive masks for this structure's bonds
+  buildHeader(); buildLegend(); buildMeta(); buildRingPanel(); buildBondPanel(); buildRdf();
+  resize(); // re-fit the plot now that the strips have their real height
+};
+
+// ---------- bond lengths & strain ----------
+const STRAIN_N = 33; // color buckets for the smooth compressed→median→stretched ramp
+let bondBrushRange = null;   // [lo, hi] Å selected on the histogram
+let bondSelMask = null;      // per-bond: 1 = inside the brushed length range
+let bondAtomMask = null;     // per-atom: 1 = endpoint of a selected bond
+function updateBondSel() {
+  if (!bondBrushRange || !S) { bondSelMask = null; bondAtomMask = null; return; }
+  const nb = S.bonds.length / 2;
+  bondSelMask = new Uint8Array(nb);
+  bondAtomMask = new Uint8Array(S.n);
+  const [lo, hi] = bondBrushRange;
+  for (let k = 0; k < nb; k++) {
+    if (S.bondLen[k] >= lo && S.bondLen[k] <= hi) {
+      bondSelMask[k] = 1;
+      bondAtomMask[S.bonds[2*k]] = 1;
+      bondAtomMask[S.bonds[2*k+1]] = 1;
+    }
+  }
+}
+function computeBondData() {
+  if (S.bondLen) return;
+  const nb = S.bonds.length / 2, P = S.P, B = S.bonds;
+  const len = new Float32Array(nb);
+  for (let k = 0; k < nb; k++) {
+    const a = B[2*k], b = B[2*k+1];
+    len[k] = Math.hypot(P[3*b] - P[3*a], P[3*b+1] - P[3*a+1], P[3*b+2] - P[3*a+2]);
+  }
+  const sorted = Float32Array.from(len).sort();
+  const med = nb ? sorted[nb >> 1] : 0;
+  const lo = nb ? sorted[0] : 0, hi = nb ? sorted[nb - 1] : 0;
+  const span = Math.max(med - lo, hi - med) || 1; // symmetric so color = strain magnitude
+  const bucket = new Uint8Array(nb);
+  for (let k = 0; k < nb; k++) {
+    const t = 0.5 + (len[k] - med) / (2 * span); // 0 compressed … 0.5 median … 1 stretched
+    bucket[k] = Math.max(0, Math.min(STRAIN_N - 1, Math.round(t * (STRAIN_N - 1))));
+  }
+  S.bondLen = len; S.bondMed = med; S.bondSpan = span; S.bondBucket = bucket;
+}
+// A theme may define --strain-lo/mid/hi as inline overrides; otherwise pick a trio
+// suited to the active surface (median must be white on dark, neutral gray on light).
+function strainTrio() {
+  const explicit = n => document.documentElement.style.getPropertyValue(n).trim();
+  const darkSurface = d3.lab(css("--surface")).l < 50;
+  return [
+    explicit("--strain-lo") || (darkSurface ? "#e0403f" : "#d03b3b"),
+    explicit("--strain-mid") || (darkSurface ? "#ffffff" : "#a8a6a0"),
+    explicit("--strain-hi") || (darkSurface ? "#3987e5" : "#2a78d6"),
+  ];
+}
+function strainScale() {
+  return d3.scaleLinear().domain([0, 0.5, 1]).range(strainTrio()).interpolate(d3.interpolateLab);
+}
+function strainColors() {
+  const scale = strainScale();
+  return Array.from({ length: STRAIN_N }, (_, b) => scale(b / (STRAIN_N - 1)));
+}
+
+const BOND_H = 110, BOND_M = { l: 8, r: 8, t: 8, b: 22 };
+function buildBondPanel() {
+  const panel = document.getElementById("bondPanel");
+  const nb = S.bonds.length / 2;
+  if (!nb) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const svg = d3.select("#bondSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(160, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", BOND_H).attr("viewBox", `0 0 ${w} ${BOND_H}`);
+  const lo = d3.min(S.bondLen), binW = 0.02;
+  const x0 = Math.floor(lo / binW) * binW, x1 = 1.8;
+  const nbins = Math.max(1, Math.round((x1 - x0) / binW));
+  const counts = new Array(nbins).fill(0);
+  for (const v of S.bondLen)
+    counts[Math.max(0, Math.min(nbins - 1, Math.floor((v - x0) / binW)))]++;
+  const x = d3.scaleLinear([x0, x1], [BOND_M.l, w - BOND_M.r]);
+  const y = d3.scaleLinear([0, d3.max(counts)], [BOND_H - BOND_M.b, BOND_M.t]);
+  const med = S.bondMed, span = S.bondSpan;
+  const scale = strainScale();
+  const bw = x(x0 + binW) - x(x0);
+  for (let k = 0; k < nbins; k++) {
+    if (!counts[k]) continue;
+    const mid = x0 + (k + 0.5) * binW;
+    svg.append("rect")
+      .attr("x", x(x0 + k * binW) + 0.5).attr("width", Math.max(1, bw - 1))
+      .attr("y", y(counts[k])).attr("height", y(0) - y(counts[k]))
+      .attr("rx", 1)
+      .attr("fill", scale(0.5 + (mid - med) / (2 * span)))
+      .append("title").text(`${counts[k].toLocaleString()} bonds at ${(x0 + k * binW).toFixed(2)}–${(x0 + (k + 1) * binW).toFixed(2)} Å`);
+  }
+  svg.append("line").attr("x1", x(med)).attr("x2", x(med))
+    .attr("y1", BOND_M.t).attr("y2", BOND_H - BOND_M.b)
+    .attr("stroke", css("--ink")).attr("stroke-dasharray", "3,3").attr("opacity", 0.6);
+  svg.append("g").attr("transform", `translate(0,${BOND_H - BOND_M.b})`)
+    .call(d3.axisBottom(x).ticks(4).tickFormat(v => v.toFixed(1)));
+  const updateHint = () => {
+    let selLine = "";
+    if (bondBrushRange && bondSelMask) {
+      let n = 0;
+      for (const v of bondSelMask) n += v;
+      selLine = `<br><b style="color:var(--ink)">${n.toLocaleString()} bonds selected</b> ` +
+                `(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)} Å) — click outside the band to clear.`;
+    }
+    document.getElementById("bondHint").innerHTML =
+      `${nb.toLocaleString()} intra-box bonds · median <b style="color:var(--ink)">${med.toFixed(3)} Å</b> ` +
+      `(dashed). Bars use the strain ramp: red compressed, neutral at the median, blue stretched.` + selLine;
+  };
+  let rafPending = false;
+  const brush = d3.brushX()
+    .extent([[BOND_M.l, BOND_M.t], [w - BOND_M.r, BOND_H - BOND_M.b]])
+    .on("brush end", ev => {
+      bondBrushRange = ev.selection ? ev.selection.map(x.invert) : null;
+      updateBondSel();
+      updateHint();
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { rafPending = false; draw(); });
+      }
+    });
+  const bg = svg.append("g").call(brush);
+  if (bondBrushRange) bg.call(brush.move, bondBrushRange.map(x));
+  updateHint();
+}
+
+function inject(id) {
+  const el = document.createElement("script");
+  el.src = `structures/${id}.js?v=${Date.now()}`; // bypass stale webview cache of regenerated data
+  el.onload = () => el.remove();
+  document.body.appendChild(el);
+}
+function loadStructure(id) {
+  pendingId = id;
+  if (CACHE[id]) { window.__STRUCT_CB(CACHE[id]); return; }
+  document.getElementById("title").textContent = "Loading…";
+  inject(id);
+}
+function prefetch(id) { if (!CACHE[id]) inject(id); }
+
+// ---------- header / legend / meta ----------
+function buildHeader() {
+  document.getElementById("title").textContent = `${S.group} — ${S.name}`;
+  document.getElementById("subtitle").textContent =
+    `${S.natoms.toLocaleString()} atoms · ${S.nbonds.toLocaleString()} intra-box bonds at 1.8 Å (wrapping bonds omitted)`;
+}
+
+function buildLegend() {
+  const cns = [...S.cnCounts.keys()].sort(d3.ascending);
+  const rows = d3.select("#legend").selectAll(".cn-row").data(cns, d => d).join("div")
+    .attr("class", "cn-row")
+    .on("mousedown", e => e.preventDefault()) // keep shift+click from selecting text
+    .on("click", (e, cn) => {
+      if (e.shiftKey) selectedCNs.has(cn) ? selectedCNs.delete(cn) : selectedCNs.add(cn);
+      else selectedCNs = (selectedCNs.size === 1 && selectedCNs.has(cn)) ? new Set() : new Set([cn]);
+      refreshLegendDim(); draw(); scheduleQuadtree();
+    });
+  rows.html(cn => {
+    const count = S.cnCounts.get(cn);
+    const pct = (100 * count / S.n).toFixed(1);
+    return `<span class="cn-dot" style="background:${cnColor(cn)}"></span>` +
+           `<span class="cn-label">CN ${cn}</span>` +
+           `<span class="cn-count">${count.toLocaleString()}</span>` +
+           `<span class="cn-pct">${pct}%</span>`;
+  });
+  refreshLegendDim();
+}
+function refreshLegendDim() {
+  d3.selectAll(".cn-row")
+    .classed("dim", d => selectedCNs.size > 0 && !selectedCNs.has(d))
+    .classed("sel", d => selectedCNs.has(d));
+}
+
+function buildMeta() {
+  const lat = S.lattice;
+  const a = Math.hypot(...lat[0]), b = Math.hypot(...lat[1]), c = Math.hypot(...lat[2]);
+  const vol = cellVolume(lat);
+  const massG = S.n * 12.011 / 6.02214076e23;
+  const dens = massG / (vol * 1e-24);
+  document.getElementById("meta").innerHTML = [
+    ["Cell a·b·c", `${a.toFixed(1)} × ${b.toFixed(1)} × ${c.toFixed(1)} Å`],
+    ["Density", `${dens.toFixed(2)} g/cm³`],
+    ["Mean CN", d3.mean(S.cn).toFixed(2)],
+  ].map(([k, v]) => `<div class="meta-row"><span>${k}</span><b>${v}</b></div>`).join("");
+}
+function cellVolume(l) {
+  return Math.abs(
+    l[0][0]*(l[1][1]*l[2][2]-l[1][2]*l[2][1]) -
+    l[0][1]*(l[1][0]*l[2][2]-l[1][2]*l[2][0]) +
+    l[0][2]*(l[1][0]*l[2][1]-l[1][1]*l[2][0]));
+}
+
+// ---------- projection ----------
+function rotMatrix() {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  // yaw about world z (the cell's vertical), then pitch about screen x
+  return [
+    cy, -sy, 0,
+    sy * cp, cy * cp, -sp,
+    sy * sp, cy * sp, cp,
+  ];
+}
+function project(x, y, z, m, scale) {
+  x -= S.cx; y -= S.cy; z -= S.cz;
+  const rx = m[0]*x + m[1]*y + m[2]*z;
+  const ry = m[3]*x + m[4]*y + m[5]*z;
+  const rz = m[6]*x + m[7]*y + m[8]*z;
+  return [W/2 + panX + rx * scale, H/2 + panY - rz * scale, ry]; // ry = depth (into screen)
+}
+
+// ---------- drawing ----------
+function resize() {
+  DPR = window.devicePixelRatio || 1;
+  const headerH = document.querySelector("header").offsetHeight +
+                  document.querySelector(".controls").offsetHeight;
+  const stripsH = document.getElementById("plotStrips").offsetHeight;
+  const footerH = document.querySelector("footer").offsetHeight;
+  // svh probe: stable across mobile browser chrome show/hide, so scrolling
+  // doesn't re-fit the layout (falls back to vh where svh is unsupported)
+  const vh = document.getElementById("svhProbe").offsetHeight;
+  const h = Math.max(250, vh - headerH - stripsH - footerH - 100);
+  plot.style.height = h + "px";
+  // the side column keeps its natural height: if it is taller than the plot,
+  // the document grows past the viewport and the OUTER page scrolls (or the
+  // host page grows the iframe) — never an inner scrollbar on the dashboard
+  W = plot.clientWidth; H = plot.clientHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (S) { draw(); scheduleQuadtree(); buildBondPanel(); buildRdf(); }
+}
+
+// ---------- fly camera ----------
+const FOV = 72 * Math.PI / 180, NEAR = 0.35;
+let flying = false, cam = [0, 0, 0], fyaw = 0, fpitch = 0;
+const keys = new Set();
+let flyRAF = null, lastT = 0;
+
+function flyBasis() {
+  const cp = Math.cos(fpitch), sp = Math.sin(fpitch);
+  const cy = Math.cos(fyaw), sy = Math.sin(fyaw);
+  const f = [cp * cy, cp * sy, sp];          // forward
+  const r = [sy, -cy, 0];                    // right (world-z up)
+  const u = [r[1]*f[2] - r[2]*f[1], r[2]*f[0] - r[0]*f[2], r[0]*f[1] - r[1]*f[0]];
+  return { f, r, u, focal: H / (2 * Math.tan(FOV / 2)) };
+}
+function flyProject(x, y, z, B) {
+  const dx = x - cam[0], dy = y - cam[1], dz = z - cam[2];
+  const rz = dx*B.f[0] + dy*B.f[1] + dz*B.f[2];
+  if (rz < NEAR) return null;
+  const s = B.focal / rz;
+  return [W/2 + (dx*B.r[0] + dy*B.r[1] + dz*B.r[2]) * s,
+          H/2 - (dx*B.u[0] + dy*B.u[1] + dz*B.u[2]) * s, rz];
+}
+
+function draw() {
+  if (!S) return;
+  ctx.clearRect(0, 0, W, H);
+  const n = S.n, P = S.P;
+  const B = flying ? flyBasis() : null;
+  const m = flying ? null : rotMatrix();
+  const scale = zoom * Math.min(W, H) / (2 * S.radius);
+
+  if (flying) {
+    for (let i = 0; i < n; i++) {
+      const p = flyProject(P[3*i], P[3*i+1], P[3*i+2], B);
+      if (p) { px[i] = p[0]; py[i] = p[1]; pz[i] = p[2]; }
+      else { px[i] = NaN; py[i] = NaN; pz[i] = -1e9; }
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      const [sx, sy, d] = project(P[3*i], P[3*i+1], P[3*i+2], m, scale);
+      px[i] = sx; py[i] = sy; pz[i] = d;
+    }
+  }
+
+  if (!document.getElementById("hideGridChk").checked) drawCellBox(m, scale, B);
+
+  // bonds: batched by strain bucket when the toggle is on, single gray path otherwise
+  if (document.getElementById("bondsChk").checked) {
+    const BB = S.bonds;
+    const strain = document.getElementById("strainChk").checked && S.bondBucket;
+    ctx.lineWidth = activeRender.bondWidth;
+    ctx.globalAlpha = brushRange ? activeRender.bondAlphaBrushed : 1; // recede while an RDF range is brushed
+    const visible = k => {
+      const a = BB[2*k], b = BB[2*k+1];
+      if (flying && (!isFinite(px[a]) || !isFinite(px[b]))) return false;
+      if (selectedCNs.size && !selectedCNs.has(S.cn[a]) && !selectedCNs.has(S.cn[b])) return false;
+      return true;
+    };
+    // histogram selection: unselected bonds recede to a faint gray pass
+    const baseAlpha = brushRange ? activeRender.bondAlphaBrushed : 1;
+    if (bondSelMask) {
+      ctx.beginPath();
+      for (let k = 0; k < BB.length / 2; k++) {
+        if (bondSelMask[k] || !visible(k)) continue;
+        ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+      }
+      ctx.strokeStyle = css("--bond");
+      ctx.globalAlpha = Math.min(baseAlpha, 0.10);
+      ctx.stroke();
+    }
+    const sel = k => !bondSelMask || bondSelMask[k];
+    // with a ring size isolated, bonds outside those rings render at half opacity
+    const alphaGroups = ringBondMask
+      ? [[k => ringBondMask[k] === 1, 1], [k => ringBondMask[k] === 0, 0.5]]
+      : [[() => true, 1]];
+    for (const [inGroup, mult] of alphaGroups) {
+      ctx.globalAlpha = baseAlpha * mult;
+      if (strain) {
+        const nb = BB.length / 2, buckets = Array.from({ length: STRAIN_N }, () => []);
+        for (let k = 0; k < nb; k++) if (sel(k) && inGroup(k) && visible(k)) buckets[S.bondBucket[k]].push(k);
+        const cols = strainColors();
+        for (let b = 0; b < STRAIN_N; b++) {
+          if (!buckets[b].length) continue;
+          ctx.beginPath();
+          for (const k of buckets[b]) {
+            ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+          }
+          ctx.strokeStyle = cols[b];
+          ctx.stroke();
+        }
+      } else {
+        ctx.beginPath();
+        for (let k = 0; k < BB.length / 2; k++) {
+          if (!sel(k) || !inGroup(k) || !visible(k)) continue;
+          ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+        }
+        ctx.strokeStyle = bondSelMask ? css("--cn2") : css("--bond");
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  drawRings();
+  drawPairHighlight();
+
+  // atoms: depth-sorted, far → near
+  order.sort((a, b) => pz[b] - pz[a]);
+  const rBase = +document.getElementById("sizeRange").value;
+  const colors = {}; // cn -> css color cache
+  const depthNorm = 1 / (S.radius * 2);
+  const TAU = 2 * Math.PI;
+  const fadeFill = css("--muted");
+  for (let k = 0; k < n; k++) {
+    const i = order[k];
+    if (flying && !isFinite(px[i])) continue;
+    const cn = S.cn[i];
+    const dimmed = (selectedCNs.size && !selectedCNs.has(cn)) ||
+                   (ringMembers !== null && !ringMembers.has(i)) ||
+                   (brushRange !== null && hlMask !== null && !hlMask[i]) ||
+                   (bondAtomMask !== null && !bondAtomMask[i]) ||
+                   (atomSelSet !== null && !atomSelSet.has(i));
+    let r, alpha;
+    if (flying) {
+      // calibrated so an atom at the entry distance (1.5 × cell radius) renders at
+      // exactly the slider size — toggling fly on/off doesn't change apparent dot size
+      const rz = pz[i];
+      r = activeRender.flySize(rBase, S.radius, rz);
+      alpha = activeRender.flyAlpha(S.radius, rz);
+    } else {
+      const t = 0.5 - pz[i] * depthNorm; // 0 (far) … 1 (near)
+      r = rBase * activeRender.orbitSize(t);
+      alpha = activeRender.orbitAlpha(t);
+    }
+    ctx.globalAlpha = dimmed ? activeRender.dimAlpha : alpha;
+    ctx.fillStyle = dimmed ? fadeFill : (colors[cn] ??= cnColor(cn));
+    ctx.beginPath();
+    ctx.arc(px[i], py[i], r, 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // halo around the click-selected atom
+  if (selectedAtom !== null && isFinite(px[selectedAtom])) {
+    const rBaseSel = +document.getElementById("sizeRange").value;
+    ctx.beginPath();
+    ctx.arc(px[selectedAtom], py[selectedAtom], rBaseSel * 1.6 + 3, 0, TAU);
+    ctx.strokeStyle = css("--ink");
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+// ---------- radial distribution function ----------
+const PAIR_MAX = 5;        // pair-highlight range limit (Å)
+const HL_CAP = 120000;     // max highlighted pair lines per frame
+let brushRange = null, pairIndex = null, hlClipped = false;
+
+function buildPairIndex() {
+  if (S.pairIdx) { pairIndex = S.pairIdx; return; }
+  const n = S.n, P = S.P, cell = 2.5, reach = Math.ceil(PAIR_MAX / cell);
+  const grid = new Map();
+  const key = (a, b, c) => a * 73856093 ^ b * 19349663 ^ c * 83492791;
+  const gx = new Int32Array(n), gy = new Int32Array(n), gz = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    gx[i] = Math.floor(P[3*i] / cell); gy[i] = Math.floor(P[3*i+1] / cell); gz[i] = Math.floor(P[3*i+2] / cell);
+    const k = key(gx[i], gy[i], gz[i]);
+    let bucket = grid.get(k);
+    if (!bucket) grid.set(k, bucket = []);
+    bucket.push(i);
+  }
+  const di = [], pi = [];
+  const m2 = PAIR_MAX * PAIR_MAX;
+  for (let i = 0; i < n; i++) {
+    for (let a = -reach; a <= reach; a++)
+      for (let b = -reach; b <= reach; b++)
+        for (let c = -reach; c <= reach; c++) {
+          const bucket = grid.get(key(gx[i] + a, gy[i] + b, gz[i] + c));
+          if (!bucket) continue;
+          for (const j of bucket) {
+            if (j <= i) continue;
+            const dx = P[3*j] - P[3*i], dy = P[3*j+1] - P[3*i+1], dz = P[3*j+2] - P[3*i+2];
+            const d2 = dx*dx + dy*dy + dz*dz;
+            if (d2 < m2 && d2 > 1e-8) { di.push(Math.sqrt(d2)); pi.push(i, j); }
+          }
+        }
+  }
+  const idx = Array.from(di.keys()).sort((a, b) => di[a] - di[b]);
+  const d = new Float32Array(idx.length), p = new Uint32Array(idx.length * 2);
+  for (let k = 0; k < idx.length; k++) {
+    d[k] = di[idx[k]]; p[2*k] = pi[2*idx[k]]; p[2*k+1] = pi[2*idx[k]+1];
+  }
+  S.pairIdx = pairIndex = { d, p };
+}
+const bisect = (arr, v) => {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < v) lo = m + 1; else hi = m; }
+  return lo;
+};
+
+let hlMask = null; // atoms participating in the brushed pairs
+function drawPairHighlight() {
+  hlClipped = false;
+  if (!brushRange) { hlMask = null; return; }
+  buildPairIndex();
+  if (!hlMask || hlMask.length !== S.n) hlMask = new Uint8Array(S.n);
+  else hlMask.fill(0);
+  const lo = bisect(pairIndex.d, brushRange[0]);
+  let hi = bisect(pairIndex.d, brushRange[1]);
+  if (hi - lo > HL_CAP) { hi = lo + HL_CAP; hlClipped = true; }
+  if (hi <= lo) return;
+  const p = pairIndex.p;
+  ctx.beginPath();
+  for (let k = lo; k < hi; k++) {
+    const a = p[2*k], b = p[2*k+1];
+    hlMask[a] = 1; hlMask[b] = 1;
+    if (flying && (!isFinite(px[a]) || !isFinite(px[b]))) continue;
+    ctx.moveTo(px[a], py[a]); ctx.lineTo(px[b], py[b]);
+  }
+  ctx.globalAlpha = activeRender.pairHighlightAlpha;
+  ctx.strokeStyle = css("--cn2");
+  ctx.lineWidth = activeRender.pairHighlightWidth;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+const RDF_H = 130, RDF_M = { l: 46, r: 16, t: 36, b: 22 };
+function buildRdf() {
+  const panel = document.getElementById("rdfPanel");
+  if (!S || !S.rdf) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const svg = d3.select("#rdfSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(360, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", RDF_H).attr("viewBox", `0 0 ${w} ${RDF_H}`);
+  const { dr, rmax, g } = S.rdf;
+  const ghosts = seq
+    ? seq.ids.filter(id => id !== S.id).map(id => CACHE[id]).filter(c => c && c.rdf)
+    : [];
+  const x = d3.scaleLinear([0, rmax], [RDF_M.l, w - RDF_M.r]);
+  const ymax = d3.max([g, ...ghosts.map(c => c.rdf.g)], a => d3.max(a));
+  const y = d3.scaleLinear([0, ymax * 1.06], [RDF_H - RDF_M.b, RDF_M.t]).nice();
+  svg.append("g").attr("class", "grid").attr("transform", `translate(${RDF_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(4).tickSize(-(w - RDF_M.l - RDF_M.r)).tickFormat(""));
+  svg.append("g").attr("transform", `translate(0,${RDF_H - RDF_M.b})`)
+    .call(d3.axisBottom(x).ticks(10));
+  svg.append("g").attr("transform", `translate(${RDF_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(4));
+  svg.append("text").attr("x", w - RDF_M.r - 34).attr("y", RDF_H - 6).attr("text-anchor", "end").text("r (Å)");
+  svg.append("text").attr("x", 6).attr("y", 12).text("g(r)");
+  const line = d3.line().x((v, k) => x((k + 0.5) * dr)).y(v => y(v));
+  for (const c of ghosts)
+    svg.append("path").attr("d", d3.line().x((v, k) => x((k + 0.5) * c.rdf.dr)).y(v => y(v))(c.rdf.g))
+      .attr("fill", "none").attr("stroke", css("--baseline")).attr("stroke-width", 1.2);
+  svg.append("path").attr("d", line(g))
+    .attr("fill", "none").attr("stroke", css("--cn4")).attr("stroke-width", 2);
+  // annotations: bond cutoff + graphite/diamond first-neighbor distances
+  const ann = (r, dash, label, anchor, row) => {
+    if (r > rmax) return;
+    svg.append("line").attr("x1", x(r)).attr("x2", x(r))
+      .attr("y1", RDF_M.t).attr("y2", RDF_H - RDF_M.b)
+      .attr("stroke", css("--muted")).attr("stroke-dasharray", dash).attr("opacity", 0.7);
+    svg.append("text").attr("x", x(r) + (anchor === "end" ? -3 : 3))
+      .attr("y", row === 2 ? RDF_M.t - 4 : RDF_M.t - 18)
+      .attr("text-anchor", anchor).text(label);
+  };
+  ann(1.42, "1,2", "graphite", "end", 1);
+  ann(1.54, "1,2", "diamond", "start", 1);
+  ann(1.8, "5,3", "cutoff 1.8 Å", "start", 2);
+  // crosshair + readout
+  const cross = svg.append("line").attr("y1", RDF_M.t).attr("y2", RDF_H - RDF_M.b)
+    .attr("stroke", css("--muted")).attr("opacity", 0).attr("pointer-events", "none");
+  const readout = svg.append("text").attr("class", "rdf-readout")
+    .attr("x", w - RDF_M.r).attr("y", RDF_M.t + 2).attr("text-anchor", "end");
+  svg.on("mousemove", ev => {
+    const [mx] = d3.pointer(ev);
+    const r = x.invert(mx);
+    if (r < 0 || r > rmax) { cross.attr("opacity", 0); readout.text(""); return; }
+    const k = Math.min(g.length - 1, Math.max(0, Math.floor(r / dr)));
+    cross.attr("x1", mx).attr("x2", mx).attr("opacity", 0.5);
+    readout.text(`r = ${r.toFixed(2)} Å   g(r) = ${g[k].toFixed(2)}${hlClipped ? "   (highlight capped)" : ""}`);
+  }).on("mouseleave", () => { cross.attr("opacity", 0); readout.text(""); });
+  // brush → pair highlight
+  let rafPending = false;
+  const brush = d3.brushX()
+    .extent([[RDF_M.l, RDF_M.t], [w - RDF_M.r, RDF_H - RDF_M.b]])
+    .on("brush end", ev => {
+      brushRange = ev.selection ? ev.selection.map(x.invert) : null;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { rafPending = false; draw(); });
+      }
+    });
+  const bg = svg.append("g").call(brush);
+  if (brushRange) bg.call(brush.move, brushRange.map(x));
+}
+let selectedRings = new Set(), ringMembers = null, ringBondMask = null; // empty set = show all; shift+click multi-selects
+let selectedAtom = null, atomRingIdxSel = null, atomSelSet = null;
+const ringColor = size => css(`--ring${Math.max(3, Math.min(10, size))}`);
+
+// per-bond membership mask: bonds forming an edge of any ring in ringList keep full opacity
+function ringBondMaskFrom(ringList) {
+  if (!ringList.length) return null;
+  if (!S.bondMap) {
+    S.bondMap = new Map();
+    for (let k = 0; k < S.bonds.length / 2; k++) {
+      const a = S.bonds[2*k], b = S.bonds[2*k+1];
+      S.bondMap.set(Math.min(a, b) * S.n + Math.max(a, b), k);
+    }
+  }
+  const mask = new Uint8Array(S.bonds.length / 2);
+  for (const r of ringList) {
+    for (let t = 0; t < r.length; t++) {
+      const a = r[t], b = r[(t + 1) % r.length];
+      const k = S.bondMap.get(Math.min(a, b) * S.n + Math.max(a, b));
+      if (k !== undefined) mask[k] = 1;
+    }
+  }
+  return mask;
+}
+function refreshRingBondMask() {
+  if (atomRingIdxSel !== null)
+    ringBondMask = ringBondMaskFrom(S.rings.filter((r, idx) => atomRingIdxSel.has(idx)));
+  else if (selectedRings.size)
+    ringBondMask = ringBondMaskFrom(S.rings.filter(r => selectedRings.has(r.length)));
+  else ringBondMask = null;
+}
+function updateRingMembers() {
+  ringMembers = selectedRings.size === 0 ? null
+    : new Set(S.rings.filter(r => selectedRings.has(r.length)).flat());
+  refreshRingBondMask();
+}
+
+// atom click-selection: spotlight one atom plus every drawable ring through it
+function selectAtom(i) {
+  if (i === null || i === selectedAtom) {
+    selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  } else {
+    selectedAtom = i;
+    atomRingIdxSel = new Set();
+    atomSelSet = new Set([i]);
+    S.rings.forEach((r, idx) => {
+      if (r.includes(i)) { atomRingIdxSel.add(idx); for (const a of r) atomSelSet.add(a); }
+    });
+  }
+  refreshRingBondMask();
+  draw();
+}
+
+function drawRings() {
+  const atomMode = atomRingIdxSel !== null; // atom selection shows its rings even with the toggle off
+  if (!document.getElementById("ringsChk").checked && !atomMode) return;
+  const rings = S.rings;
+  if (!rings || !rings.length) return;
+  // mean projected depth per ring, drawn far → near
+  const vis = [];
+  for (let k = 0; k < rings.length; k++) {
+    const r = rings[k];
+    if (atomMode) { if (!atomRingIdxSel.has(k)) continue; }
+    else if (selectedRings.size && !selectedRings.has(r.length)) continue;
+    let d = 0, ok = true;
+    for (const i of r) {
+      if (flying && !isFinite(px[i])) { ok = false; break; }
+      d += pz[i];
+    }
+    if (ok) vis.push([d / r.length, k]);
+  }
+  vis.sort((a, b) => b[0] - a[0]);
+  const mute = brushRange ? activeRender.ringMutedFactor : 1; // recede while an RDF range is brushed
+  const fillA = activeRender.ringFillAlpha * mute, strokeA = activeRender.ringStrokeAlpha * mute;
+  ctx.lineWidth = activeRender.ringWidth;
+  for (const [, k] of vis) {
+    const r = rings[k];
+    const col = ringColor(r.length);
+    ctx.beginPath();
+    ctx.moveTo(px[r[0]], py[r[0]]);
+    for (let t = 1; t < r.length; t++) ctx.lineTo(px[r[t]], py[r[t]]);
+    ctx.closePath();
+    ctx.globalAlpha = fillA;
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.globalAlpha = strokeA;
+    ctx.strokeStyle = col;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function buildRingPanel() {
+  const panel = document.getElementById("ringPanel");
+  const counts = S.ringCounts;
+  if (!counts || !Object.keys(counts).length) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const sizes = Object.keys(counts).map(Number).sort(d3.ascending);
+  const total = d3.sum(sizes, s => counts[s]);
+  const max = d3.max(sizes, s => counts[s]);
+  const drawn = {};
+  for (const r of S.rings) drawn[r.length] = (drawn[r.length] || 0) + 1;
+  // count gridlines at nice round values — bars are %-of-max, so ticks at
+  // (100*t/max)% sit exactly on the data scale
+  const ticks = d3.ticks(0, max, 5).filter(t => t > 0 && t < max);
+  const tickSpans = ticks.map(t =>
+    `<span class="ring-tick" style="left:${(100 * t / max).toFixed(2)}%"></span>`).join("");
+  const chart = d3.select("#ringChart");
+  chart.selectAll(".ring-row").data(sizes, d => d).join("div")
+    .attr("class", "ring-row")
+    .on("mousedown", e => e.preventDefault()) // keep shift+click from selecting text
+    .attr("title", d => {
+      const dn = drawn[d] || 0, miss = counts[d] - dn;
+      return `${counts[d].toLocaleString()} rings of size ${d} — ${(100 * counts[d] / total).toFixed(1)}% of all rings.` +
+             ` ${dn.toLocaleString()} drawn in the cloud; ${miss.toLocaleString()} cross the box boundary and are not drawn.`;
+    })
+    .on("click", (e, size) => {
+      if (e.shiftKey) selectedRings.has(size) ? selectedRings.delete(size) : selectedRings.add(size);
+      else selectedRings = (selectedRings.size === 1 && selectedRings.has(size)) ? new Set() : new Set([size]);
+      if (selectedRings.size) document.getElementById("ringsChk").checked = true;
+      updateRingMembers();
+      refreshRingDim(); draw();
+    })
+    .html(d =>
+      `<span class="ring-size">${d}</span>` +
+      `<span class="ring-track">` + tickSpans +
+        `<span class="ring-bar" style="width:${(100 * counts[d] / max).toFixed(1)}%; background:color-mix(in srgb, ${ringColor(d)} 30%, transparent)">` +
+          `<span class="ring-bar-drawn" style="width:${(100 * (drawn[d] || 0) / counts[d]).toFixed(1)}%; background:${ringColor(d)}"></span>` +
+        `</span>` +
+      `</span>` +
+      `<span class="ring-count">${counts[d].toLocaleString()}</span>`);
+  // labeled count axis under the chart, on the same %-of-max scale;
+  // label every other tick (lines stay at full density) and use k-notation
+  const fmtTick = v => v >= 1000 ? `${+(v / 1000).toFixed(1)}k` : String(v);
+  chart.selectAll(".ring-axis").remove();
+  chart.append("div").attr("class", "ring-axis")
+    .html(`<span class="ring-size"></span>` +
+      `<span class="ring-axis-track">` +
+        `<span class="ring-tick-label" style="left:0">0</span>` +
+        ticks.map((t, i) => i % 2 === 0 ? "" :
+          `<span class="ring-tick-label" style="left:${(100 * t / max).toFixed(2)}%">${fmtTick(t)}</span>`).join("") +
+      `</span>` +
+      `<span class="ring-count"></span>`);
+  refreshRingDim();
+}
+function refreshRingDim() {
+  d3.selectAll(".ring-row")
+    .classed("dim", d => selectedRings.size > 0 && !selectedRings.has(d))
+    .classed("sel", d => selectedRings.has(d));
+}
+
+function drawCellBox(m, scale, B) {
+  const [A, Bv, C] = S.lattice;
+  const corners = [];
+  for (let i = 0; i < 8; i++) {
+    const x = (i & 1) * A[0] + ((i >> 1) & 1) * Bv[0] + ((i >> 2) & 1) * C[0];
+    const y = (i & 1) * A[1] + ((i >> 1) & 1) * Bv[1] + ((i >> 2) & 1) * C[1];
+    const z = (i & 1) * A[2] + ((i >> 1) & 1) * Bv[2] + ((i >> 2) & 1) * C[2];
+    corners.push(flying ? flyProject(x, y, z, B) : project(x, y, z, m, scale));
+  }
+  const edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  ctx.beginPath();
+  for (const [i, j] of edges) {
+    if (!corners[i] || !corners[j]) continue; // edge endpoint behind the camera
+    ctx.moveTo(corners[i][0], corners[i][1]);
+    ctx.lineTo(corners[j][0], corners[j][1]);
+  }
+  ctx.strokeStyle = css("--grid");
+  ctx.lineWidth = activeRender.cellBoxWidth;
+  ctx.stroke();
+  if (flying) return; // no axis labels while inside the box
+
+  // axis labels + extent ticks on the three origin edges
+  ctx.font = activeRender.axisLabelFont;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const axes = [[1, "x"], [2, "y"], [4, "z"]];
+  for (const [ci, name] of axes) {
+    const p0 = corners[0], p1 = corners[ci];
+    const mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+    // push label outward from box center
+    const bx = d3.mean(corners, d => d[0]), by = d3.mean(corners, d => d[1]);
+    const dx = mx - bx, dy = my - by;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;      // outward unit vector (screen space)
+    const L = S.lattice[[null,0,1,null,2][ci]];
+    const Llen = Math.hypot(...L);
+    const ex = p1[0] - p0[0], ey = p1[1] - p0[1];
+    const elen = Math.hypot(ex, ey) || 1;
+    const nx = -ey / elen, ny = ex / elen;   // tick-mark perpendicular (screen)
+    ctx.fillStyle = css("--muted");
+    const axisText = activeRender.axisLabel ? activeRender.axisLabel(name) : `${name} (Å)`;
+    // axis name runs parallel to its edge and turns with it as the box
+    // rotates; flip 180° where that would leave the text upside down
+    let ang = Math.atan2(ey, ex);
+    if (ang > Math.PI / 2 || ang < -Math.PI / 2) ang += Math.PI;
+    ctx.save();
+    ctx.translate(mx + 26 * ux, my + 26 * uy);
+    ctx.rotate(ang);
+    ctx.fillText(axisText, 0, 0);
+    ctx.restore();
+    ctx.fillText(`${Llen.toFixed(0)}`, p1[0] + 10 * ux, p1[1] + 10 * uy);
+    // scale ticks along the edge at nice round Å intervals, true to the cell
+    const tv = d3.ticks(0, Llen, Math.max(2, Math.round(Llen / 5)))
+      .filter(v => v > 0 && v < Llen);
+    ctx.strokeStyle = css("--muted");
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    for (const v of tv) {
+      const f = v / Llen, tx = p0[0] + ex * f, ty = p0[1] + ey * f;
+      ctx.moveTo(tx - nx * 3, ty - ny * 3); ctx.lineTo(tx + nx * 3, ty + ny * 3);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = css("--muted");
+    for (const v of tv) {
+      const f = v / Llen;
+      ctx.fillText(String(v), p0[0] + ex * f + 13 * ux, p0[1] + ey * f + 13 * uy);
+    }
+  }
+  // single origin label (three per-axis zeros would collide)
+  const bx0 = d3.mean(corners, d => d[0]), by0 = d3.mean(corners, d => d[1]);
+  const odx = corners[0][0] - bx0, ody = corners[0][1] - by0;
+  const olen = Math.hypot(odx, ody) || 1;
+  ctx.fillStyle = css("--muted");
+  ctx.fillText("0", corners[0][0] + 10 * odx / olen, corners[0][1] + 10 * ody / olen);
+}
+
+// ---------- hover tooltip ----------
+function scheduleQuadtree() {
+  clearTimeout(scheduleQuadtree.t);
+  scheduleQuadtree.t = setTimeout(() => {
+    if (!S) return;
+    const visible = Array.from(order).filter(i => isFinite(px[i]));
+    quad = d3.quadtree().x(i => px[i]).y(i => py[i]).addAll(visible);
+  }, 120);
+}
+
+canvas.addEventListener("mousemove", e => {
+  if (!quad || !S) return tooltip.style.display = "none";
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const i = quad.find(mx, my, 9);
+  if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i]))) {
+    tooltip.style.display = "none"; return;
+  }
+  const cn = S.cn[i];
+  // ring-size distribution through this atom (full periodic ring set)
+  let ringLine = "";
+  const sizes = S.atomRings ? S.atomRings[i]
+    : S.rings ? S.rings.filter(r => r.includes(i)).map(r => r.length) : null;
+  if (sizes) {
+    if (!sizes.length) ringLine = "<br>Rings: none";
+    else {
+      const byS = d3.rollup(sizes, v => v.length, d => d);
+      ringLine = "<br>Rings: " + [...byS.keys()].sort(d3.ascending)
+        .map(s => `${byS.get(s)}×<span style="color:${ringColor(s)}">${s}-ring</span>`).join(", ");
+    }
+  }
+  tooltip.innerHTML =
+    `<span class="tt-dot" style="background:${cnColor(cn)}"></span><b>Atom ${i}</b> — CN ${cn}` +
+    `<br>${CN_NAMES[Math.min(cn, 8)]}` +
+    ringLine +
+    `<br>(${S.P[3*i].toFixed(2)}, ${S.P[3*i+1].toFixed(2)}, ${S.P[3*i+2].toFixed(2)}) Å`;
+  tooltip.style.display = "block";
+  const tw = tooltip.offsetWidth;
+  tooltip.style.left = Math.min(mx + 14, W - tw - 8) + "px";
+  tooltip.style.top = (my + 14) + "px";
+});
+canvas.addEventListener("mouseleave", () => tooltip.style.display = "none");
+
+// ---------- interaction ----------
+let dragMoved = false;
+canvas.addEventListener("click", e => {
+  if (dragMoved) { dragMoved = false; return; } // a rotate gesture is not a selection click
+  if (!quad || !S) return;
+  const rect = canvas.getBoundingClientRect();
+  const i = quad.find(e.clientX - rect.left, e.clientY - rect.top, 9);
+  selectAtom(i === undefined ? null : i);
+});
+d3.select(canvas).call(
+  d3.drag()
+    .on("start", () => { dragMoved = false; canvas.classList.add("dragging"); tooltip.style.display = "none"; })
+    .on("drag", e => {
+      if (flying) {
+        fyaw -= e.dx * 0.0035;
+        fpitch = Math.max(-1.5, Math.min(1.5, fpitch - e.dy * 0.0035));
+      } else if (e.sourceEvent.shiftKey) { panX += e.dx; panY += e.dy; }
+      else {
+        yaw += e.dx * 0.006;
+        pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch - e.dy * 0.006));
+      }
+      dragMoved = true;
+      draw();
+    })
+    .on("end", () => { canvas.classList.remove("dragging"); scheduleQuadtree(); })
+);
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (flying) {
+    const B = flyBasis(), step = -e.deltaY * 0.0018 * S.radius;
+    cam[0] += B.f[0] * step; cam[1] += B.f[1] * step; cam[2] += B.f[2] * step;
+  } else {
+    zoom = Math.max(0.3, Math.min(8, zoom * Math.exp(-e.deltaY * 0.0015)));
+  }
+  draw(); scheduleQuadtree();
+}, { passive: false });
+
+// ---------- fly mode ----------
+const flyChk = document.getElementById("flyChk");
+const navHint = document.getElementById("navHint");
+
+function flyLoop(t) {
+  if (!flying) return;
+  const dt = Math.min(0.06, (t - lastT) / 1000) || 0.016;
+  lastT = t;
+  if (keys.size && S) {
+    const B = flyBasis();
+    const sp = S.radius * 0.55 * (keys.has("shift") ? 3 : 1) * dt;
+    let mx = 0, my = 0, mz = 0;
+    const add = (v, s) => { mx += v[0] * s; my += v[1] * s; mz += v[2] * s; };
+    if (keys.has("w")) add(B.f, sp);
+    if (keys.has("s")) add(B.f, -sp);
+    if (keys.has("d")) add(B.r, sp);
+    if (keys.has("a")) add(B.r, -sp);
+    if (keys.has("e")) add(B.u, sp);
+    if (keys.has("q")) add(B.u, -sp);
+    if (mx || my || mz) { cam[0] += mx; cam[1] += my; cam[2] += mz; draw(); }
+  }
+  flyRAF = requestAnimationFrame(flyLoop);
+}
+
+function setFly(on) {
+  if (on === flying) return;
+  flying = on;
+  flyChk.checked = on;
+  if (on && S) {
+    // enter along the current orbit view direction, just outside the cell
+    const m = rotMatrix();
+    let f = [m[3], m[4], m[5]];
+    const nrm = Math.hypot(...f) || 1;
+    f = f.map(v => v / nrm);
+    fyaw = Math.atan2(f[1], f[0]);
+    fpitch = Math.asin(Math.max(-1, Math.min(1, f[2])));
+    cam = [S.cx - f[0] * S.radius * 1.5, S.cy - f[1] * S.radius * 1.5, S.cz - f[2] * S.radius * 1.5];
+    lastT = performance.now();
+    flyRAF = requestAnimationFrame(flyLoop);
+  } else {
+    cancelAnimationFrame(flyRAF);
+    keys.clear();
+  }
+  if (navHint) navHint.textContent = flying
+    ? "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · scroll to dolly · Esc exits"
+    : "Drag to rotate · scroll to zoom";
+  if (S) { draw(); scheduleQuadtree(); }
+}
+flyChk.addEventListener("change", () => setFly(flyChk.checked));
+
+const FLY_KEYS = new Set(["w", "a", "s", "d", "q", "e", "shift"]);
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") return setFly(false);
+  if (!flying) return;
+  const tag = e.target.tagName;
+  if (tag === "SELECT" || tag === "INPUT" || tag === "BUTTON" || tag === "TEXTAREA") return;
+  const k = e.key.toLowerCase();
+  if (FLY_KEYS.has(k)) { keys.add(k); e.preventDefault(); }
+});
+window.addEventListener("keyup", e => {
+  keys.delete(e.key.toLowerCase());
+  if (flying && !keys.size) scheduleQuadtree();
+});
+window.addEventListener("blur", () => keys.clear());
+
+document.getElementById("bondsChk").addEventListener("change", () => { draw(); });
+document.getElementById("hideGridChk").addEventListener("change", () => { draw(); });
+document.getElementById("ringsChk").addEventListener("change", () => { draw(); });
+document.getElementById("strainChk").addEventListener("change", e => {
+  if (e.target.checked) document.getElementById("bondsChk").checked = true;
+  draw();
+});
+document.getElementById("sizeRange").addEventListener("input", () => { draw(); });
+document.getElementById("resetBtn").addEventListener("click", () => {
+  setFly(false);
+  yaw = 0.55; pitch = -0.35; zoom = 1; panX = panY = 0; selectedCNs = new Set(); selectedRings = new Set(); ringMembers = null; ringBondMask = null;
+  selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  brushRange = null; buildRdf();
+  bondBrushRange = null; updateBondSel(); buildBondPanel();
+  refreshLegendDim(); refreshRingDim(); draw(); scheduleQuadtree();
+});
+document.getElementById("spinChk").addEventListener("change", e => {
+  clearInterval(spinTimer);
+  if (e.target.checked) spinTimer = setInterval(() => { if (!flying) { yaw += 0.004; draw(); } }, 33);
+  else scheduleQuadtree();
+});
+
+// ---------- structure selector ----------
+const sel = d3.select("#structSel");
+const groups = d3.group(window.__MANIFEST, d => d.group);
+for (const [g, items] of groups) {
+  const og = sel.append("optgroup").attr("label", g);
+  og.selectAll("option").data(items).join("option")
+    .attr("value", d => d.id)
+    .text(d => `${d.name} (${d.natoms.toLocaleString()})`);
+}
+sel.on("change", function () { syncSequenceTo(this.value); loadStructure(this.value); });
+
+// ---------- sequences (ordered stages; camera holds still across steps) ----------
+const SEQUENCES = [
+  { key: "irg", label: "Irradiation damage — IRG T2→T9",
+    ids: ["irradiated_graphite__irg_t2_14009", "irradiated_graphite__irg_t3_14009",
+          "irradiated_graphite__irg_t5_14009", "irradiated_graphite__irg_t9_14009"] },
+  { key: "cdc", label: "CDC1200 annealing — before→after",
+    ids: ["carbide_derived_carbon__cdc1200", "carbide_derived_carbon__ann_cdc1200"] },
+  { key: "ac", label: "AC densification — ρ 1.5→2.9 (216 atoms)",
+    ids: ["amorphous_carbon__density_1d5_216", "amorphous_carbon__density_1d8_216",
+          "amorphous_carbon__density_2d0_216", "amorphous_carbon__density_2d1_216",
+          "amorphous_carbon__density_2d4_216", "amorphous_carbon__density_2d6_216",
+          "amorphous_carbon__density_2d9_216"] },
+  { key: "vpc", label: "VPC(D) density — ρ 0.9→1.9",
+    ids: ["variable_porosity_carbon__vpc_d_density_0d9_930",
+          "variable_porosity_carbon__vpc_d_density_1d5_991",
+          "variable_porosity_carbon__vpc_d_density_1d9_989"] },
+];
+let seq = null, seqIdx = 0, playTimer = null;
+const seqSel = document.getElementById("seqSel");
+const seqControls = document.getElementById("seqControls");
+const playBtn = document.getElementById("seqPlay");
+for (const s of SEQUENCES) {
+  const o = document.createElement("option");
+  o.value = s.key; o.textContent = s.label;
+  seqSel.appendChild(o);
+}
+
+function stopPlay() {
+  clearInterval(playTimer); playTimer = null; playBtn.textContent = "Play";
+}
+function seqUI() {
+  seqControls.style.display = seq ? "inline-flex" : "none";
+  if (seq) {
+    document.getElementById("seqPos").textContent = `${seqIdx + 1}/${seq.ids.length}`;
+    document.getElementById("seqPrev").disabled = seqIdx === 0;
+    document.getElementById("seqNext").disabled = seqIdx === seq.ids.length - 1;
+  }
+}
+function seqGo(i) {
+  seqIdx = Math.max(0, Math.min(seq.ids.length - 1, i));
+  const id = seq.ids[seqIdx];
+  sel.property("value", id);
+  loadStructure(id);
+  seqUI();
+}
+// keep the sequence picker consistent when the structure dropdown is used directly
+function syncSequenceTo(id) {
+  if (seq && seq.ids.includes(id)) { seqIdx = seq.ids.indexOf(id); seqUI(); return; }
+  if (seq) { stopPlay(); seq = null; seqSel.value = ""; seqUI(); }
+}
+seqSel.addEventListener("change", () => {
+  stopPlay();
+  seq = SEQUENCES.find(s => s.key === seqSel.value) || null;
+  if (seq) {
+    seq.ids.forEach(prefetch); // warm the cache so RDF ghost curves appear
+    const cur = seq.ids.indexOf(sel.property("value"));
+    seqGo(cur >= 0 ? cur : 0);
+  } else { seqUI(); buildRdf(); }
+});
+document.getElementById("seqPrev").addEventListener("click", () => { stopPlay(); seqGo(seqIdx - 1); });
+document.getElementById("seqNext").addEventListener("click", () => { stopPlay(); seqGo(seqIdx + 1); });
+playBtn.addEventListener("click", () => {
+  if (playTimer) return stopPlay();
+  playBtn.textContent = "Pause";
+  if (seqIdx === seq.ids.length - 1) seqGo(0);          // restart from the first stage
+  playTimer = setInterval(() => {
+    if (seqIdx === seq.ids.length - 1) return stopPlay(); // hold on the last stage
+    seqGo(seqIdx + 1);
+  }, 1800);
+});
+
+// ---------- theme redraw ----------
+darkMQ.addEventListener("change", () => {
+  applyThemeVars();
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); draw(); }
+});
+
+window.addEventListener("resize", resize);
+new ResizeObserver(() => resize()).observe(plot);
+resize();
+
+// ---------- theme selector ----------
+const themeSel = document.getElementById("themeSel");
+for (const t of window.__THEMES) {
+  const o = document.createElement("option");
+  o.value = t.id; o.textContent = t.name;
+  themeSel.appendChild(o);
+}
+let savedTheme = null;
+try { savedTheme = localStorage.getItem("pc-theme-v2"); } catch (_) { /* file:// may deny storage */ }
+themeSel.value = savedTheme || "oppenheimer";
+themeSel.addEventListener("change", () => {
+  try { localStorage.setItem("pc-theme-v2", themeSel.value); } catch (_) {}
+  applyTheme(themeSel.value);
+  themeSel.value = activeTheme.id; // reflect fallback if the saved id was unknown
+});
+applyTheme(themeSel.value);
+themeSel.value = activeTheme.id;
+
+const DEFAULT = "amorphous_carbon__density_2d9_1000";
+sel.property("value", DEFAULT);
+loadStructure(DEFAULT);
+</script>
+</body>
+</html>

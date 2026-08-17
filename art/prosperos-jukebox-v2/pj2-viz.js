@@ -9,8 +9,8 @@
 // (PJ2.Library / PJ2.Sycorax / PJ2.Ariel — attachAnalyser, note/event
 // listeners, getInfo). It owns the spiral (v1's honest FFT coil — 7 octaves
 // × 96 samples, one turn per octave, dB floor −75 / ceil −10, adaptive
-// baseline, drag + auto-rotate camera), the margin apparatus (§4 diegetic
-// telemetry), and the §4 per-event illustrations on the L3 alive-list.
+// baseline, drag + auto-rotate camera) and the margin apparatus (§4
+// diegetic telemetry, plus the theme staff).
 //
 // SPIRAL REVERT + NIGHT FOLIO (PLAN-SPIRAL-REVERT / PLAN-NIGHT-FOLIO,
 // owner 2026-07-20): the coil renders v1's phosphor treatment for ALL
@@ -56,6 +56,22 @@
 // unexplained fixture: it only moved during a `release` event, so in normal
 // listening it was a motionless line with a caption. drawPlateFurniture is
 // now a no-op everywhere, and the `release` event no longer draws anything.
+//
+// REMOVED (owner 2026-08-16): the plate's emblem column — the §4 per-event
+// illustrations that stamped into four slots down the plate's left edge
+// (cadence sigils and gilt rules, the transmutation op, the ouroboros,
+// feathers, pose gouges, organum rules, the waterphone apparition). They
+// appeared and faded beside the coil unannounced and never earned their
+// meaning; the scribal log already narrates every one of those events in
+// words. addPlateIllustration / stampEmblem and each handler's stamp are
+// gone (with them the cut/cut-return bookkeeping, which by then existed
+// only to gate the apparition — the cut is audio-only again); the L3
+// alive-list machinery stays in pj2-skin.js, simply unused here.
+//
+// MOVED + REBUILT (owner 2026-08-16): the theme staff — off the plate's
+// top-left corner and into its own full-width margin panel, redrawn as a
+// REAL five-line staff (see drawThemeStaff). The plate is the spiral's
+// alone now; everything readable lives in the margin column.
 //
 // Precision rules, binding (§2): data marks are never quantized coarser
 // than 1 device px (contour, marks, needle angles all draw at full
@@ -220,15 +236,12 @@ PJ2.Viz = (function () {
         tree: [],             // library genealogy nodes {gen, name, ghost, answer, coagula}
         migration: [],        // ariel develop/answer gens
         sinkPx: 0,            // sycorax print-drop offset (CSS px)
-        cut: null,            // sycorax {tB, sev, dip, ret:{t,s}|null} (audio t)
         ghostLineUntil: -1e9, // ariel prior-evening flight-line (wall s)
         flightScenes: 0,      // ariel legs drawn = scenes seen
         bruise: 0,
         pose: null,
         sceneLabel: null, sceneType: null, sceneX: 0, sceneIdx: 0, sceneCount: 0,
-        emblemSlot: 0,        // L3 stamp placement cycler
         lastCadence: null,    // {kind, label, rootStep|null, at}
-        signature: null,
       };
     }
     resetRunState();
@@ -391,15 +404,18 @@ PJ2.Viz = (function () {
     function paperSidePanel(G, tr, sd, zones) {
       if (binding === "night") return paperNight(G, tr, sd, zones);
       // Parchment: the margin sits on the folio's sheet (paperFolio), so it
-      // paints no paper of its own — only the five night windows its panels'
-      // content lives in. The scene band has none: it is a heading, and its
-      // display type belongs on the page.
+      // paints no paper of its own — only the night windows its panels
+      // live in, one per slot.
       var L = marginLayout(G), pf = 2;   // the panels' short lip (see above)
       // taller windows leave less paper between panels, so the lip drops
-      // to 2 — at 3 the tree's speckle nearly met the row above it
+      // to 2 — at 3 the tree's speckle nearly met the row above it.
+      // Every window runs to (nearly) its slot's foot now: the readouts
+      // moved INSIDE the windows (owner 2026-08-16), so no slot keeps a
+      // strip of paper below its box anymore.
       cutNightWindow(G, tr, sd, panelWindow(L.scene, 0), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.dialA, 14), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.dialB, 14), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.staff, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialA, 2), pf);
+      cutNightWindow(G, tr, sd, panelWindow(L.dialB, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.rowA, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.rowB, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.tree, 0), pf);
@@ -496,7 +512,6 @@ PJ2.Viz = (function () {
           if (ev.state === "play" || ev.state === "reseed") {
             resetRunState();
             invalidateFurniture();
-            clearIllustrations();
           }
           break;
         case "scene": handleScene(ev, wallS); break;
@@ -507,21 +522,12 @@ PJ2.Viz = (function () {
         case "seam-ghost": st.ghostLineUntil = wallS + 60; break;
         case "develop": case "answer": handleDevelop(ev, wallS); break;
         case "coagula": handleCoagula(ev, wallS); break;
-        case "cut": handleCut(ev, wallS); break;
-        case "cut-return": handleCutReturn(ev, wallS); break;
         case "pose": st.pose = ev.pose; break;
-        case "arrival": handleArrival(ev, wallS); break;
-        case "organum": handleOrganum(ev, wallS); break;
         case "percussion": st.tallies++; pushTally(ev.mode || "strike"); break;
         case "bruise": st.bruise = ev.value || 0; break;
-        case "feather": handleFeather(ev, wallS); break;
-        case "bass-flourish": handleFlourish(ev, wallS); break;
-        case "air":
-          // the waterphone apparition stamps its emblem in the hush (§1b)
-          if (track === "sycorax" && ev.voice === "waterphone" && cutActive(aNow())) {
-            stampEmblem("apparition", 10, { tint2: pal.witch ? pal.witch[1] : undefined, witch: true });
-          }
-          break;
+        // arrival / organum / feather / bass-flourish / air / cut /
+        // cut-return: these drew only emblem-column stamps — gone with the
+        // column (owner 2026-08-16). The log still narrates each of them.
         default: break;
       }
     }
@@ -555,30 +561,9 @@ PJ2.Viz = (function () {
         var idx = parseRomanRoot(typeof last === "string" ? last : (last && last.name));
         if (idx != null) rootStep = era.steps[idx];
       }
+      // bookkeeping only — the cadence's stamped emblem went with the
+      // column (2026-08-16); the log announces the arrival in words
       st.lastCadence = { kind: ev.kind, label: ev.label || ev.kind, rootStep: rootStep, at: wallS };
-      if (track === "library") {
-        // gilt line + the arrival root's metal sigil, stamped (§4) — gilt,
-        // not rubric, now that the emblem column sits on the night window
-        var sig = rootStep != null ? Skin.DEGREE_SIGIL[rootStep] : null;
-        addPlateIllustration(20, function (G, age, x, y) {
-          var life = 1 - age;
-          var c = G.ctx;
-          c.strokeStyle = pal.gilt[1]; c.lineWidth = 1.4;
-          c.beginPath(); c.moveTo(x - 22, y + 14); c.lineTo(x + 22, y + 14); c.stroke();
-          if (sig) at.stamp(c, "sigil-" + sig, x, y - 2, { u: G.u, scale: 2, tint: pal.gilt[0], fade: life, seed: seed + 7 });
-          if (fontsReady) Skin.Type.smallCaps(c, ev.label || ev.kind, x, y + 26, 13, pal.gilt[1], 1, "center");
-        });
-      } else if (track === "ariel") {
-        var glyph = ev.kind === "float" ? "feather" : "glyph-lift";
-        addPlateIllustration(18, function (G, age, x, y) {
-          at.stamp(G.ctx, glyph, x, y, {
-            u: G.u, scale: 2, fade: 1 - age, seed: seed + 11,
-            tint: pal.silver[0], tint2: pal.gilt[1],
-          });
-          if (fontsReady) Skin.Type.smallCaps(G.ctx, ev.kind, x, y + 24, 12, pal.silver[1], 1, "center");
-        });
-      }
-      // sycorax has no cadences by design — darkening arrivals handled via "arrival"
     }
 
     function handleSeachange(ev, wallS) {
@@ -592,9 +577,6 @@ PJ2.Viz = (function () {
         // the rare semitone SINK: the whole plate's print drops one visible
         // line lower, once (§4). One art line = 3 cells.
         st.sinkPx = st.sinkPx + 6;
-      }
-      if (track === "library") {
-        stampEmblem("op-transmutatio", 22, {});
       }
       plateStack.invalidate("furniture");
       marginStack.invalidate("furniture");
@@ -610,20 +592,12 @@ PJ2.Viz = (function () {
       if (track === "library") {
         st.tree.push({ gen: 0, name: ev.name, ghost: true });
         marginStack.invalidate("furniture");
-      } else if (track === "sycorax") {
-        // the chant intones it: a worn, double-struck print of last night's
-        // line — a doubled bone rule on the plate (§4)
-        addPlateIllustration(14, function (G, age, x, y) {
-          var c = G.ctx, life = 1 - age;
-          c.strokeStyle = rgba(pal.bone[1], 0.9 * life); c.lineWidth = 1.2;
-          c.beginPath(); c.moveTo(x - 30, y); c.lineTo(x + 30, y - 4); c.stroke();
-          c.beginPath(); c.moveTo(x - 29, y + 3); c.lineTo(x + 31, y - 1); c.stroke();
-          if (fontsReady) Skin.Type.smallCaps(c, "ghost", x, y + 16, 12, pal.bone[1], 1, "center");
-        });
-      } else {
+      } else if (track === "ariel") {
         // the returning bird: prior evening's flight-line ghosted under tonight's
         st.ghostLineUntil = wallS + 90;
       }
+      // sycorax: the chant intones it and the log records it — the doubled
+      // bone rule went with the emblem column (2026-08-16)
     }
 
     function handleDevelop(ev, wallS) {
@@ -639,117 +613,21 @@ PJ2.Viz = (function () {
         st.migration.push({ gen: ev.gen || 0, answer: ev.type === "answer" });
         if (st.migration.length > 24) st.migration.shift();
         marginStack.invalidate("furniture");
-        if (ev.type === "answer") {
-          addPlateIllustration(10, function (G, age, x, y) {
-            at.stamp(G.ctx, "wingbeat", x, y, { u: G.u, scale: 2, fade: 1 - age, seed: seed + 3, tint: pal.sky[1] });
-          });
-        }
       }
     }
 
     function handleCoagula(ev, wallS) {
       st.tree.push({ gen: 9, name: ev.name, coagula: true });
       marginStack.invalidate("furniture");
-      stampEmblem("ouroboros", 24, {});
     }
 
-    function handleCut(ev, wallS) {
-      st.cut = { tB: ev.t, sev: clamp01(ev.severity || 0.5), dip: ev.dip, ret: null };
-    }
-    function handleCutReturn(ev, wallS) {
-      // OWNER RULING: no scar. The slash + skip-print visualize the real
-      // audio dip and fade out COMPLETELY with the return ramp — nothing
-      // persistent stays on the plate. The carried bruise's only visual
-      // residue is the treeline margin darkening slightly (drawTreeline).
-      if (st.cut) st.cut.ret = { t: ev.t, s: ev.returnS || 4 };
-    }
-    // the cut is an AUDIO event again — no slash, no hush on the coil
-    // (owner 2026-07-20; sycorax spiral dramaturgy waits for that track's
-    // planned rework). cutActive still gates the waterphone apparition.
-    function cutActive(audioT) {
-      var c = st.cut;
-      if (!c) return false;
-      if (audioT < c.tB) return false;
-      if (c.ret && audioT > c.ret.t + c.ret.s) { st.cut = null; return false; }
-      return true;
-    }
-
-    function handleArrival(ev, wallS) {
-      // darkening arrivals gouge the pose sigil deeper (§4 sycorax cadence row)
-      var pose = st.pose;
-      if (!pose || !at.has("pose-" + pose)) return;
-      addPlateIllustration(12, function (G, age, x, y) {
-        at.stamp(G.ctx, "pose-" + pose, x, y, {
-          u: G.u, scale: 3, fade: 1 - age * age, seed: seed + 13, tint: pal.bone[0],
-        });
-      });
-    }
-
-    function handleOrganum(ev, wallS) {
-      addPlateIllustration(8, function (G, age, x, y) {
-        var c = G.ctx, life = 1 - age;
-        c.strokeStyle = rgba(pal.bone[0], life); c.lineWidth = 1.4;
-        c.beginPath(); c.moveTo(x - 22, y - 4); c.lineTo(x + 22, y - 4); c.stroke();
-        c.beginPath(); c.moveTo(x - 22, y + 4); c.lineTo(x + 22, y + 4); c.stroke();
-      });
-    }
-
-    // (the `release` event drew Ariel's horizon line sinking; owner
-    // 2026-08-08 removed the horizon, so the release now has no plate
-    // illustration — the register migration it announces is already
-    // audible AND visible as the coil's own climb.)
-
-    function handleFeather(ev, wallS) {
-      addPlateIllustration(12, function (G, age, x, y) {
-        at.stamp(G.ctx, "feather", x, y, {
-          u: G.u, scale: 2, fade: 1 - age, seed: seed + 21,
-          tint: pal.silver[0],
-        });
-      });
-    }
-    function handleFlourish(ev, wallS) {
-      addPlateIllustration(8, function (G, age, x, y) {
-        var c = G.ctx;
-        c.strokeStyle = dataCol(pal.silver[0], "bass-flourish");
-        c.lineWidth = 1.4;
-        c.beginPath();
-        c.moveTo(x - 16, y + 8); c.quadraticCurveTo(x, y - 14, x + 16, y + 4);
-        c.stroke();
-      });
-    }
-
-    // L3 placement: emblems live in the plate's left margin column, cycling
-    // four slots so consecutive events never overprint. The age handed to
-    // draw() is HOLD-THEN-DECAY eased: full ink for the first 45% of the
-    // ttl, then the re-threshold absorption — a stamp should be READ before
-    // the page drinks it.
-    function addPlateIllustration(ttl, draw) {
-      var slot = st.emblemSlot++ % 4;
-      plateStack.addIllustration({
-        ttl: ttl,
-        draw: function (G, age) {
-          var eased = age < 0.45 ? 0 : (age - 0.45) / 0.55;
-          var x = G.w * 0.085;
-          var y = G.h * (0.16 + slot * 0.2);
-          draw(G, eased, x, y);
-        },
-      }, nowFn() / 1000);
-    }
-    function stampEmblem(name, ttl, o) {
-      if (!at.has(name)) return;
-      addPlateIllustration(ttl, function (G, age, x, y) {
-        at.stamp(G.ctx, name, x, y, {
-          u: G.u, scale: 2, fade: 1 - age, seed: seed + 31,
-          // library emblems gild on the night window (ink is invisible there)
-          tint: o.witch ? (pal.witch ? pal.witch[1] : pal.primary)
-            : (track === "library" ? pal.gilt[0] : undefined),
-          tint2: o.tint2,
-        });
-      });
-    }
-    function clearIllustrations() {
-      plateStack.illustrations.length = 0;
-    }
+    // (the emblem column's plumbing — addPlateIllustration, stampEmblem,
+    // the four-slot cycler and the hold-then-decay easing — lived here;
+    // removed with the column, owner 2026-08-16. The cut/cut-return
+    // bookkeeping went with it: by then it existed only to gate the
+    // waterphone apparition stamp, so the cut is an audio event with no
+    // visual state at all — the carried bruise's darkening of the treeline
+    // margin, fed by the `bruise` event, remains its only residue.)
 
     // =============================================================== NOTES ==
     function ofOf(freq) {
@@ -1436,7 +1314,6 @@ PJ2.Viz = (function () {
       drawConstellationFloor(G, M, proj, audioT);
       drawPhosphorCoil(G, M, proj, humBar);
       drawOctaveAxisAndScale(G, M);
-      drawThemeStaff(G, M);
 
       // ---- per-track live extras ------------------------------------------
       drawNoteMarks(G, M, proj, audioT);
@@ -1696,83 +1573,10 @@ PJ2.Viz = (function () {
       c.textBaseline = "alphabetic";
     }
 
-    // ---- THE THEME STAFF (owner 2026-07-20): the working theme written
-    // out as sheet music in the night window's top-left corner (above the
-    // emblem column, left of the octave axis — free in both bindings).
-    // Motif notes are SCALE DEGREES, so they map 1:1 onto diatonic staff
-    // steps: degree 0 (the tonic) always sits on the emphasized line, and
-    // the staff survives a sea change exactly like the motifs do. Note
-    // lengths render mensural-style: filled head + flag = half-beat,
-    // filled + stem = one beat, a dot adds half, open head = two beats,
-    // open headless = longer (the augmented breves). Library only.
-    var STAFF_ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
-    function drawThemeStaff(G, M) {
-      if ((track !== "library" && track !== "ariel") || !fontsReady) return;
-      var mo = lastInfo && lastInfo.motif && lastInfo.motif.working;
-      var notes = mo && mo.themeNotes;
-      if (!notes || !notes.length) return;
-      var c = G.ctx;
-      var sp = pal.spiral;
-      var pz = plateZones.plateZone;
-      var x0 = (pz.rx > 1 ? pz.cx - pz.rx : 0) + 20;
-      var y0 = (pz.ry > 1 ? pz.cy - pz.ry : 0) + 18;
-      var wMax = Math.max(120, Math.min(210, M.CX - M.R - 60 - x0));
-      var gap = 7;                                   // px per staff half-step
-      // caption: name + generation. Ariel's fiction calls it the song, and
-      // a promoted signature (the ghost that won the coin) is flagged.
-      var gen = mo.themeGen || 0;
-      var sig = track === "ariel" && lastInfo.signature;
-      var name = (sig && sig.promoted && sig.name) ? sig.name : (mo.theme || "—");
-      var cap = (track === "ariel" ? "the song · " : "the theme · ") + name
-        + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "")
-        + (sig && sig.promoted ? " · signature" : "");
-      Skin.Type.smallCaps(c, cap, x0, y0, 12, spRGBA(sp.octaveLabel, 0.7), 1);
-      // degree range → vertical placement; each degree step = one half-step
-      // (HALF px), staff lines on even degrees so the tonic sits on a line
-      var HALF = gap / 2 + 1.5;   // ≈5 px per degree step
-      var dMin = notes[0].deg, dMax = notes[0].deg, i;
-      for (i = 1; i < notes.length; i++) {
-        if (notes[i].deg < dMin) dMin = notes[i].deg;
-        if (notes[i].deg > dMax) dMax = notes[i].deg;
-      }
-      var staffTop = y0 + 12;
-      function yFor(deg) { return staffTop + (dMax + 1 - deg) * HALF; }
-      var noteW = Math.min(16, Math.floor(wMax / notes.length));
-      var lineW = notes.length * noteW + 12;
-      for (var degAt = dMax + 1; degAt >= dMin - 1; degAt--) {
-        if (((degAt % 2) + 2) % 2 !== 0) continue;   // lines on even degrees
-        var tonicLine = ((degAt % 7) + 7) % 7 === 0;
-        c.strokeStyle = spRGBA(sp.baseStroke, tonicLine ? 0.85 : 0.4);
-        c.lineWidth = 1;
-        c.beginPath(); c.moveTo(x0, yFor(degAt)); c.lineTo(x0 + lineW, yFor(degAt)); c.stroke();
-      }
-      // the notes, mensural pixel heads
-      for (i = 0; i < notes.length; i++) {
-        var nx = x0 + 8 + i * noteW;
-        var ny = yFor(notes[i].deg);
-        var b = notes[i].durBeats || 1;
-        var open = b >= 2;
-        var head = spRGBA(sp.ribbonStroke, 0.95);
-        if (open) {
-          c.strokeStyle = head; c.lineWidth = 1.5;
-          c.strokeRect(nx - 3, ny - 2.5, 6, 5);
-        } else {
-          c.fillStyle = head;
-          c.fillRect(nx - 3, ny - 2.5, 6, 5);
-        }
-        if (b < 3) {                                   // stem
-          c.strokeStyle = head; c.lineWidth = 1;
-          c.beginPath(); c.moveTo(nx + 3, ny - 2); c.lineTo(nx + 3, ny - 12); c.stroke();
-          if (b <= 0.5) {                              // flag for the half-beat
-            c.beginPath(); c.moveTo(nx + 3, ny - 12); c.lineTo(nx + 7, ny - 8); c.stroke();
-          }
-        }
-        if (b === 1.5 || b === 3) {                    // the dot
-          c.fillStyle = head;
-          c.fillRect(nx + 6, ny - 1, 2, 2);
-        }
-      }
-    }
+    // (the theme staff drew here, in the night window's top-left corner,
+    // as a two-to-four-line degree grid; owner 2026-08-16 moved it into
+    // the margin apparatus and rebuilt it as a real five-line staff —
+    // see drawThemeStaff in the MARGIN section below.)
 
     // ---- the v1 octave axis + scale caption (prosperos-jukebox-viz.js:
     // 1917–1950): C1…C7 ticks on the left, billboarded (tracks camera pitch
@@ -1941,17 +1745,21 @@ PJ2.Viz = (function () {
     function marginLayout(G) {
       var H = G.h, W = G.w, pad = 8, gap = MARGIN_GAP;
       var half = (W - 3 * pad) / 2, full = W - 2 * pad, right = pad * 2 + half;
-      // rows carry two lines of type; below 44px the second one is dropped by
-      // its own fit check (drawSeason), so the row height has a hard floor
-      // the scene band stacks three things — the operation label, the
-      // sub-line, and the progress bar — so it is the one slot that feels a
-      // few px either way
-      var sceneH = Math.round(H * 0.16);
-      var dialH = Math.round(H * 0.22);
-      var rowH = Math.max(44, Math.round(H * 0.14));
+      // rows carry two lines of type; the 48px floor keeps the season's
+      // second baseline clear of the window's lower lip (below ~44 the
+      // line is dropped by drawSeason's own fit check anyway)
+      // the scene band and the staff SHARE the top row (owner 2026-08-16:
+      // neither earned full width — the band's three stacked lines and the
+      // stave's short phrase both live happily in a half). The row's height
+      // is the staff's need: five lines plus ledger air, a heading above,
+      // the readout below.
+      var topH = Math.round(H * 0.22);
+      var dialH = Math.round(H * 0.21);
+      var rowH = Math.max(48, Math.round(H * 0.13));
       var y = pad;
-      var scene = { x: pad, y: y, w: full, h: sceneH };
-      y += sceneH + gap;
+      var scene = { x: pad, y: y, w: half, h: topH };
+      var staff = { x: right, y: y, w: half, h: topH };
+      y += topH + gap;
       var dialA = { x: pad, y: y, w: half, h: dialH };
       var dialB = { x: right, y: y, w: half, h: dialH };
       y += dialH + gap;
@@ -1961,12 +1769,14 @@ PJ2.Viz = (function () {
       var tree = { x: pad, y: y, w: full, h: Math.max(40, H - pad - y) };
       return {
         pad: pad, W: W, H: H,
-        scene: scene, dialA: dialA, dialB: dialB, rowA: rowA, rowB: rowB, tree: tree,
+        scene: scene, staff: staff, dialA: dialA, dialB: dialB, rowA: rowA, rowB: rowB, tree: tree,
       };
     }
-    // the content cell between heading row and readout row (dial panels)
+    // the content cell between heading row and readout row (dial panels);
+    // the 18 reserves the readout line's room INSIDE the window (its
+    // baseline prints at h−6, caps to ~h−16) — content stops above it
     function cellOf(r) {
-      var top = r.y + 20, bot = r.y + r.h - 14;
+      var top = r.y + 20, bot = r.y + r.h - 18;
       if (bot < top + 8) bot = top + 8;
       return { top: top, bot: bot, cy: (top + bot) / 2, ch: bot - top };
     }
@@ -1990,35 +1800,53 @@ PJ2.Viz = (function () {
     }
     // the ink of whatever surface is being drawn on right now
     function marginInk() { return marginInkOf(pal); }
-    // THE PAGE's ink — headings, rules and readout lines sit on the paper
-    // itself, not in a window, so they follow the BINDING and never the
-    // temporary night flip the window content draws under (see inWindowInk).
-    function pageMarginInk() { return marginInkOf(Skin.palette(track, binding)); }
+    // (pageMarginInk — the binding-following ink for text printed on the
+    // paper itself — retired 2026-08-16 with the last paper-side text: the
+    // readouts moved inside their windows, so every line in the apparatus
+    // now takes the window surface's ink.)
 
     // The panel heading and its rule live INSIDE the panel's window (owner
     // 2026-08-08), so they take the ink of the surface being drawn — the
-    // window's — not the page's. Only the readout below stays on the paper.
+    // window's — not the page's.
     function panelHead(G, r, text) {
       if (!fontsReady) return;
       var c = G.ctx;
       var ic = marginInk();
-      Skin.Type.smallCaps(c, text, r.x, r.y + 11, 13, ic.cap, 2);
+      // the heading must never leave its slot — a half-width panel's
+      // neighbour starts 8px away. Measure in the caption face (plus the
+      // 2px tracking smallCaps adds per letter) and pare back to an
+      // ellipsis if a fallback face runs wide.
+      var t = String(text);
+      c.save();
+      c.font = '13px ' + Skin.Type.MONO;
+      function headW(s) { return c.measureText(String(s).toUpperCase()).width + s.length * 2; }
+      if (headW(t) > r.w - 4) {
+        while (t.length > 1 && headW(t + "…") > r.w - 4) t = t.slice(0, t.length - 1);
+        t += "…";
+      }
+      c.restore();
+      Skin.Type.smallCaps(c, t, r.x, r.y + 11, 13, ic.cap, 2);
       c.strokeStyle = ic.rule; c.lineWidth = 1;
       c.beginPath(); c.moveTo(r.x, r.y + 15); c.lineTo(r.x + r.w, r.y + 15); c.stroke();
     }
-    // the readout baseline — the panel's one value line, below the window
+    // the readout baseline — the panel's one value line, printed INSIDE
+    // its window just above the lower lip. It used to sit on the paper
+    // BELOW the window; on the parchment page "tide 0.45 · candlelit"
+    // orphaned outside the tide's black container read as information
+    // that had lost its box (owner 2026-08-16).
     function readoutLine(G, r, text) {
       if (!fontsReady) return;
-      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 3, 12, pageMarginInk().mid, 1);
+      Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 6, 12, marginInk().mid, 1);
     }
 
     // ---- THE APPARATUS WINDOWS (owner 2026-08-08) ----------------------------
-    // On the parchment binding each panel's CONTENT sits in its own night
+    // On the parchment binding each panel sits WHOLE in its own night
     // window cut into the sheet — the same kind of opening as the spiral's
-    // plate zone — while its heading, rule and readout stay on the paper.
-    // So the content draws with the NIGHT palette even while the page is
-    // parchment: the genealogy in amber on black, exactly as the night folio
-    // draws it, rather than iron gall on a hole in the page.
+    // plate zone. Heading, content and readout all live inside it (the
+    // readouts joined them 2026-08-16 — nothing of a panel prints on the
+    // paper anymore). So a panel draws with the NIGHT palette even while
+    // the page is parchment: the genealogy in amber on black, exactly as
+    // the night folio draws it, rather than iron gall on a hole in the page.
     //
     // Skin's mode is global (palette, atlas AND the dataInk tripwire all read
     // it), so the switch is scoped: flip, draw, restore in a finally. On the
@@ -2061,9 +1889,9 @@ PJ2.Viz = (function () {
 
     // The window a slot occupies. It covers the slot from above its heading
     // caps down to `bottomInset` short of the foot — what the slot must leave
-    // clear there: 14 for a dial (its readout baseline, the one thing still
-    // printed on the paper), 2 for a row (nothing below it), 0 for the scene
-    // band and the tree, whose own last lines are drawn INSIDE the window.
+    // clear there: 2 for the panels (readouts included — every line of a
+    // panel draws inside its window now, owner 2026-08-16), 0 for the scene
+    // band and the tree, whose content runs to the slot's very foot.
     // Width is the slot's exactly: the 8px between the two columns is all
     // that keeps their windows (and their lips) apart.
     function panelWindow(r, bottomInset) {
@@ -2090,18 +1918,23 @@ PJ2.Viz = (function () {
         ? ["the tide · volvelle", "the athanor · fire", "aer · the air", "the chord · its metal", "genealogia motivi"]
         : (track === "sycorax"
           ? ["the treeline · tide", "the smoke · intensity", "the pose", "the tallies", "the cord and bone"]
-          : ["the wind-rose · tide", "the quadrant · altitude", "the chord · constellation", "the season", "migratio · the signature"]);
+          : ["the wind-rose · tide", "the quadrant · altitude", "chord · constellation", "the season", "migratio · the signature"]);
+      // the staff panel's heading, in each book's fiction
+      var staffHead = track === "library" ? "thema · the staff"
+        : (track === "sycorax" ? "the chant · its staff" : "the song · its staff");
 
       // EVERY slot is a window now, the scene band included (owner
       // 2026-08-08), so the whole apparatus draws in window ink — the
-      // operation label and its emblem, the five headings with their rules,
+      // operation label and its emblem, the six headings with their rules,
       // and the genealogy / tally cord / migration map (furniture-grade:
       // redrawn only when an event changes it).
       inWindowInk(function () {
         var S = panelContentRect(L.scene);
-        // heading font fits the scene band; baseline stays clear of the
-        // sub-line row (drawn by the data pass at y+h−12)
-        var hf = Math.max(16, Math.min(30, Math.floor(S.h * 0.5)));
+        // heading font fits the scene band; the clamp keeps the baseline
+        // (y+4+hf) and its descenders clear of the sub-line row's caps
+        // (drawn by the data pass at y+h−12) — at 0.5/30 the g's and p's
+        // sat on the sub-line in every book
+        var hf = Math.max(16, Math.min(22, Math.floor(S.h * 0.42)));
         var emblemCell = 0;
         if (hs && track === "library") {
           var opName = "op-" + String(label).toLowerCase();
@@ -2125,6 +1958,7 @@ PJ2.Viz = (function () {
         }
         if (hs && track === "sycorax") drawStationVignette(G, S);
 
+        panelHead(G, panelContentRect(L.staff), staffHead);
         panelHead(G, panelContentRect(L.dialA), heads[0]);
         panelHead(G, panelContentRect(L.dialB), heads[1]);
         panelHead(G, panelContentRect(L.rowA), heads[2]);
@@ -2193,11 +2027,33 @@ PJ2.Viz = (function () {
           c.fillStyle = ic.rule;
           for (var px = S.x + S.w * x01 + 6; px < S.x + S.w - 2; px += 6) c.fillRect(px, py - 1, 2, 2);
           if (fontsReady) {
-            var sub = (info.sceneType || st.sceneType || "—") + " · x " + x01.toFixed(2)
-              + (info.tideLabel ? " · " + info.tideLabel : "");
-            Skin.Type.smallCaps(c, sub, S.x, py - 6, 13, ic.mid, 1);
+            // the sceneType token only earns its slot when it says something
+            // the display title above doesn't — sycorax and ariel title
+            // scenes BY their type, so there it would just echo the heading
+            var sceneTok = info.sceneType || st.sceneType || "—";
+            var drawnLabel = st.sceneLabel || info.sceneLabel || st.sceneType || info.sceneType || "";
+            // the tide label used to ride this line too — but the tide dial
+            // prints it a hundred pixels below, under a heading that says
+            // "tide", so it was the same word twice on one screen (owner
+            // 2026-08-16). The band keeps what only IT knows: which scene,
+            // and how far through.
+            var sub = (String(sceneTok).toLowerCase() === String(drawnLabel).toLowerCase()
+              ? "" : sceneTok + " · ")
+              + "x " + x01.toFixed(2);
+            // the band is half-width now: pare the sub-line back to its own
+            // panel (panelHead's rule) rather than run under the staff
+            c.save();
+            c.font = '12px ' + Skin.Type.MONO;
+            var subW = function (s) { return c.measureText(String(s).toUpperCase()).width + s.length; };
+            if (subW(sub) > S.w - 2) {
+              while (sub.length > 1 && subW(sub + "…") > S.w - 2) sub = sub.slice(0, sub.length - 1);
+              sub += "…";
+            }
+            c.restore();
+            Skin.Type.smallCaps(c, sub, S.x, py - 6, 12, ic.mid, 1);
           }
         }
+        drawThemeStaff(G, panelContentRect(L.staff), info);
         var A = panelContentRect(L.dialA), B = panelContentRect(L.dialB);
         var RA = panelContentRect(L.rowA), RB = panelContentRect(L.rowB);
         if (track === "library") {
@@ -2217,6 +2073,157 @@ PJ2.Viz = (function () {
           drawSeason(G, RB, info);
         }
       });
+    }
+
+    // ---- THE THEME STAFF (owner 2026-07-20; rehomed + rebuilt 2026-08-16):
+    // the working theme written out as sheet music — no longer the old
+    // two-to-four-line degree grid in the plate's corner, but a REAL
+    // five-line staff in its own margin panel. Treble range: E4 on the
+    // bottom line, and a letter-clef "G" printed ON the G4 line (the
+    // gothic manuscripts' clef — honest at pixel size, where a swash clef
+    // would be mush). Every note is spelled ABSOLUTELY: the live tonic
+    // (info.tonicHz, so a sea change re-roots the staff) plus the track's
+    // mode steps gives the midi pitch; the floor's flat-preferring table
+    // names it; letter → line-or-space, middle C gets its ledger line, and
+    // the accidental prints beside its own head ("b" / "#" in the data
+    // face — per-note, which stays honest even in Sycorax's undiatonic
+    // witch mode). Note lengths keep the mensural language of the old
+    // corner staff: filled head + flag = half-beat, filled + stem = one
+    // beat, a dot adds half, open head = two beats, open headless = the
+    // augmented breves. All three books carry it now — the chant has a
+    // working theme too, and it always deserved printing.
+    var STAFF_ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"];
+    var STAFF_LETTER_DIA = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
+    var STAFF_MID_DIA = 34;               // B4 — the middle line's diatonic index
+    function drawThemeStaff(G, r, info) {
+      var c = G.ctx;
+      var ic = marginInk();
+      var mo = info && info.motif && info.motif.working;
+      var notes = mo && mo.themeNotes;
+      // the readout under the stave: name + generation. Ariel's fiction
+      // flags a promoted signature (the ghost that won the coin).
+      var gen = (mo && mo.themeGen) || 0;
+      var sig = track === "ariel" && info.signature;
+      var name = (sig && sig.promoted && sig.name) ? sig.name : ((mo && mo.theme) || "—");
+      var cell = cellOf(r);
+      // geometry: HS px per line-or-space step, the staff centred on the
+      // cell (B4 on the middle line); everything clips to the panel's
+      // window so a far-flung variation cannot print into a neighbour
+      var HS = clamp(Math.floor(cell.ch / 13), 3, 5);
+      var midY = Math.round(cell.cy);
+      function yFor(dia) { return midY + (STAFF_MID_DIA - dia) * HS; }
+      var clefW = 14;
+      var x0 = r.x + 2;
+      // the readout lives inside the window but outside the note clip
+      // (which stops at h−18, right above the readout's caps), so it
+      // prints first — and only once a theme exists to name
+      if (notes && notes.length) {
+        readoutLine(G, r, name
+          + (gen > 0 ? " · gen " + (STAFF_ROMAN[Math.min(gen, 12) - 1] || gen) : "")
+          + (sig && sig.promoted ? " · signature" : ""));
+      }
+      // the stave rules the full panel width, manuscript-style — the notes
+      // themselves stay left-anchored on the ruling
+      var lineW = r.w - 4;
+      var cx0 = r.x - 4, cy0 = r.y + 17, cx1 = r.x + r.w + 4, cy1 = r.y + r.h - 18;
+      c.save();
+      c.beginPath();
+      c.moveTo(cx0, cy0); c.lineTo(cx1, cy0); c.lineTo(cx1, cy1); c.lineTo(cx0, cy1);
+      c.closePath(); c.clip();
+      // the five lines, E4 (dia 30) to F5 (dia 38)
+      c.strokeStyle = ic.rule; c.lineWidth = 1;
+      for (var dl = 30; dl <= 38; dl += 2) {
+        c.beginPath(); c.moveTo(x0, yFor(dl)); c.lineTo(x0 + lineW, yFor(dl)); c.stroke();
+      }
+      // the letter-clef: "G" printed on its own line
+      if (fontsReady) {
+        c.font = '15px "VT323", monospace';
+        c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillStyle = ic.cap;
+        c.fillText("G", x0 + 6, yFor(32) - 1);
+        c.textAlign = "left"; c.textBaseline = "alphabetic";
+      }
+      if (!notes || !notes.length) {
+        // idle: the ruled stave awaits its theme — the empty ruling is the
+        // slot's ONE placeholder (final-gate law), no em dash and no readout
+        c.restore();
+        return;
+      }
+      // spell a scale degree absolutely: midi → letter, accidental, octave
+      var tonicMidi = Math.round(freqToMidi(info.tonicHz || cfg.homeTonicHz));
+      function spell(deg) {
+        var d7 = ((deg % 7) + 7) % 7;
+        var midi = tonicMidi + era.steps[d7] + 12 * Math.floor(deg / 7);
+        var label = CONST_PITCH_LABELS[((midi % 12) + 12) % 12];
+        return {
+          dia: (Math.floor(midi / 12) - 1) * 7 + STAFF_LETTER_DIA[label.charAt(0)],
+          acc: label.charAt(1) || "",
+        };
+      }
+      var noteW = clamp(Math.floor((r.w - clefW - 14) / notes.length), 9, 24);
+      // the display octave: the ruling is fixed (E4–F5), but a chant may
+      // live an octave below it — so take the theme's median line-or-space
+      // and shift the PRINTING by a whole octave to land it on the stave.
+      // The ottava "8" under the clef confesses the shift (the vocal
+      // score's octave clef — the pitch itself is never bent).
+      var sps = [];
+      for (var si = 0; si < notes.length; si++) sps.push(spell(notes[si].deg));
+      var dias = sps.map(function (s) { return s.dia; }).sort(function (a, b) { return a - b; });
+      var med = dias[Math.floor(dias.length / 2)];
+      var oct = Math.max(-7, Math.min(7, 7 * Math.round((STAFF_MID_DIA - med) / 7)));
+      if (oct !== 0 && fontsReady) {
+        c.font = '9px "VT323", monospace';
+        c.textAlign = "center"; c.textBaseline = "middle";
+        c.fillStyle = ic.cap;
+        // oct up on the page = sounds below the ruling = "8" under the clef
+        c.fillText("8", x0 + 6, oct > 0 ? yFor(32) + HS * 2 + 8 : yFor(32) - HS * 2 - 4);
+        c.textAlign = "left"; c.textBaseline = "alphabetic";
+      }
+      function ledger(nx, y) {
+        c.beginPath(); c.moveTo(nx - 6, y); c.lineTo(nx + 6, y); c.stroke();
+      }
+      var head = dataCol(ic.lead, "theme staff notes");
+      for (var i = 0; i < notes.length; i++) {
+        var sp2 = sps[i];
+        var dd = sp2.dia + oct;
+        var nx = x0 + clefW + 10 + i * noteW + Math.floor(noteW / 2);
+        var ny = yFor(dd);
+        // ledger lines out to the note: middle C below, A5 and beyond above
+        c.strokeStyle = ic.rule; c.lineWidth = 1;
+        var ld;
+        for (ld = 28; ld >= dd; ld -= 2) ledger(nx, yFor(ld));
+        for (ld = 40; ld <= dd; ld += 2) ledger(nx, yFor(ld));
+        // the accidental rides beside its own head
+        if (sp2.acc && fontsReady) {
+          c.font = '11px "VT323", monospace';
+          c.textAlign = "right"; c.textBaseline = "middle";
+          c.fillStyle = ic.mid;
+          c.fillText(sp2.acc, nx - 5, ny);
+          c.textAlign = "left"; c.textBaseline = "alphabetic";
+        }
+        // mensural pixel heads — the old corner staff's language, verbatim
+        var b = notes[i].durBeats || 1;
+        if (b >= 2) {
+          c.strokeStyle = head; c.lineWidth = 1.5;
+          c.strokeRect(nx - 3, ny - 2.5, 6, 5);
+        } else {
+          c.fillStyle = head;
+          c.fillRect(nx - 3, ny - 2.5, 6, 5);
+        }
+        if (b < 3) {                                   // stem
+          var stemH = HS * 2.5 + 3;
+          c.strokeStyle = head; c.lineWidth = 1;
+          c.beginPath(); c.moveTo(nx + 3, ny - 2); c.lineTo(nx + 3, ny - 2 - stemH); c.stroke();
+          if (b <= 0.5) {                              // flag for the half-beat
+            c.beginPath(); c.moveTo(nx + 3, ny - 2 - stemH); c.lineTo(nx + 7, ny + 2 - stemH); c.stroke();
+          }
+        }
+        if (b === 1.5 || b === 3) {                    // the dot
+          c.fillStyle = head;
+          c.fillRect(nx + 6, ny - 1, 2, 2);
+        }
+      }
+      c.restore();
     }
 
     // ---- library margin panels ----
@@ -2269,16 +2276,21 @@ PJ2.Viz = (function () {
       var inten = info.intensity;
       var frac = inten == null ? 0 : clamp01((inten - 0.04) / (0.65 - 0.04));
       var gradus = inten == null ? 1 : 1 + Math.min(3, Math.floor(frac * 4));
-      // the furnace in its own reserved cell, fit-scaled — never under the
-      // heading or across the readout (final-gate fix)
+      // the furnace and its gauge read as ONE instrument: centred in the
+      // cell as a group, tops aligned to the furnace's stamped height —
+      // never under the heading or across the readout (final-gate fix)
       var aScale = fitScale(16, cell.ch, G.u);
-      at.stamp(c, "athanor-" + gradus, r.x + r.w * 0.27, cell.cy, {
+      var stampH = 16 * G.u * aScale;
+      var gw = Math.max(10, Math.min(14, Math.floor(r.w * 0.09)));
+      var groupW = stampH + 16 + gw;             // the stamp is square: w = h
+      var fx = r.x + (r.w - groupW) / 2 + stampH / 2;
+      at.stamp(c, "athanor-" + gradus, fx, cell.cy, {
         u: G.u, scale: aScale, tint: pal.ink[0],
         tint2: inten == null ? pal.ink[1] : pal.rubric[1], // idle: cold hearth, no fire
       });
       // the gauge — four degrees of fire; fill height is data
-      var gw = Math.max(10, Math.min(14, Math.floor(r.w * 0.09)));
-      var gx = r.x + r.w * 0.58, gTop = cell.top, gBot = cell.bot;
+      var gx = fx + stampH / 2 + 16;
+      var gTop = cell.cy - stampH / 2, gBot = cell.cy + stampH / 2;
       c.strokeStyle = pal.ink[1]; c.lineWidth = 1.4;
       c.strokeRect(gx, gTop, gw, gBot - gTop);
       for (var d = 1; d < 4; d++) {
@@ -2413,9 +2425,11 @@ PJ2.Viz = (function () {
         placed.push({ x: nx, y: ny, gen: nd.gen });
         if (!nd.answer) { px = nx; pyy = ny; }
       }
-      if (st.signature && fontsReady) {
-        Skin.Type.smallCaps(c, "theme " + st.signature, r.x, r.y + r.h - 2, 12, pal.ink[2], 1);
-      }
+      // (the "theme <name>" caption stood here until 2026-08-16. Only Ariel
+      // ever emits a signature, so in the one book that drew this the name
+      // always fell through to the working theme — the very string the staff
+      // panel prints in its readout, two panels up. The tree's job is the
+      // lineage; the staff names the line.)
     }
 
     // ---- sycorax margin panels ----
@@ -2456,6 +2470,14 @@ PJ2.Viz = (function () {
       var frac = inten == null ? 0 : clamp01((inten - 0.04) / (0.65 - 0.04));
       var bx = r.x + r.w / 2, bot = cell.bot, top = cell.top;
       var colH = (bot - top) * frac;
+      // the hearth: a ground line for the smoke to rise FROM (echoing the
+      // treeline's ridge), with a coal-bed at the column's foot — so the
+      // dial keeps its instrument even at rest, when the height bar sits
+      // ON the grate and reads "no smoke yet". Furniture ink, not data.
+      c.strokeStyle = pal.bone[2]; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(r.x, bot); c.lineTo(r.x + r.w, bot); c.stroke();
+      c.fillStyle = pal.bone[2];
+      c.fillRect(bx - 6, bot - 3, 12, 2);
       // the column: dithered bone rising, drifting
       for (var y = 0; y < colH; y += 4) {
         var drift = Math.sin(y / 14) * (2 + y * 0.06);
@@ -2480,10 +2502,13 @@ PJ2.Viz = (function () {
         at.stamp(c, "pose-" + pose, x + pw / 2, line.cy, { u: G.u, scale: pScale, tint: pal.bone[0] });
         x += pw + 8;
       }
-      // name + root ride the same line, beside the sigil (never beneath)
+      // the name rides the same line, beside the sigil (never beneath). It
+      // used to carry "· root N" as well, but Sycorax pins the root to i
+      // forever (pj2-harmony.js current(): rootDeg 0 in pose mode, and both
+      // pose emit sites hardcode 0) — so that field printed the constant
+      // "root 0" for the life of the book. Cut 2026-08-16.
       if (fontsReady) {
-        var txt = (pose || "—") + (info.rootDeg != null ? " · root " + info.rootDeg : "");
-        Skin.Type.smallCaps(c, txt, x, line.cy + 4, 13, pal.bone[0], 1);
+        Skin.Type.smallCaps(c, (pose || "—"), x, line.cy + 4, 13, pal.bone[0], 1);
       }
     }
 
@@ -2580,8 +2605,11 @@ PJ2.Viz = (function () {
       var cell = cellOf(r);
       var inten = info.intensity;
       var frac = inten == null ? 0 : clamp01((inten - 0.04) / (0.65 - 0.04));
-      var ox = r.x + 8, oy = cell.bot, R = Math.min(r.w - 36, cell.ch);
+      var R = Math.min(r.w - 36, cell.ch);
       if (R < 12) R = 12;
+      // the instrument's footprint is R wide (origin to limb): centre it in
+      // the cell like its siblings, rather than hugging the left edge
+      var ox = r.x + (r.w - R) / 2, oy = cell.bot;
       c.strokeStyle = pal.silver[1]; c.lineWidth = 1;
       c.beginPath(); c.arc(ox, oy, R, -Math.PI / 2, 0); c.stroke();
       c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox, oy - R); c.stroke();
@@ -2618,13 +2646,22 @@ PJ2.Viz = (function () {
       var ay = line.cy - 2 * s;
       Skin.drawAsterism(c, Skin.asterisms.i, r.x + 4, ay, { track: "ariel", scale: s, lit: idx === 0 });
       Skin.drawAsterism(c, Skin.asterisms.ii, r.x + 4 + 52 * s + 14, ay, { track: "ariel", scale: s, lit: idx === 1 });
-      // the #4 — a lone gilt star only the halo lights
+      // the chord numeral sits on the rows' shared text line (cy+4, same as
+      // the pose and tally captions), and the #4's halo star rides just left
+      // of it — numeral and star as one group, not two stray specks
       var halo = info.haloLevel || 0;
+      var nm = name.slice(0, 10);
       var sx = r.x + r.w - 10;
-      if (halo > 0.03) Skin.star4(c, sx, line.cy - 4, 3.5, pal.gilt[1], halo > 0.05);
-      else { c.fillStyle = pal.silver[2]; c.fillRect(sx - 1, line.cy - 5, 2, 2); }
       if (fontsReady) {
-        Skin.Type.smallCaps(c, name.slice(0, 10), r.x + r.w, line.bot, 12, pal.silver[0], 1, "right");
+        c.save();
+        c.font = '12px ' + Skin.Type.MONO;
+        sx = r.x + r.w - (c.measureText(nm.toUpperCase()).width + nm.length) - 8;
+        c.restore();
+      }
+      if (halo > 0.03) Skin.star4(c, sx, line.cy - 1, 3.5, pal.gilt[1], halo > 0.05);
+      else { c.fillStyle = pal.silver[2]; c.fillRect(sx - 1, line.cy - 2, 2, 2); }
+      if (fontsReady) {
+        Skin.Type.smallCaps(c, nm, r.x + r.w, line.cy + 4, 12, pal.silver[0], 1, "right");
       }
     }
 
@@ -2687,8 +2724,9 @@ PJ2.Viz = (function () {
       }
       if (info.sceneIdx != null) { st.sceneIdx = info.sceneIdx; st.sceneCount = info.sceneCount || st.sceneCount; }
       if (info.pose) st.pose = info.pose;
-      if (info.signature) st.signature = info.signature.name || st.signature;
-      if (info.motif && info.motif.working && !st.signature) st.signature = info.motif.working.theme;
+      // (st.signature was tracked here for the genealogy's caption; the
+      // caption went 2026-08-16 and the panels that still want a signature
+      // read info.signature directly, so the mirrored state went with it.)
       // era safety net: if the engine exposes tonicHz, trust it
       if (info.tonicHz) {
         var pc = pcFromHz(info.tonicHz);
@@ -2759,7 +2797,6 @@ PJ2.Viz = (function () {
         plateStack.setTrack(t); marginStack.setTrack(t);
         if (folioStack) { folioStack.setTrack(t); invalidateFolio(); }
         resetRunState();
-        clearIllustrations();
         for (var i = 0; i < TOTAL; i++) { baselineLin[i] = 0; magnitudes[i] = 0; }
         rebuildSampleIdx();
         lastInfo = {};
@@ -2852,7 +2889,7 @@ PJ2.Viz = (function () {
         var t = tNow === undefined ? nowFn() / 1000 : tNow;
         plateStack.composite(t); marginStack.composite(t);
       },
-      _injectEvent: onEvent,   // bench-only: art-direct §4 illustrations on demand
+      _injectEvent: onEvent,   // bench-only: art-direct the event vocabulary on demand
       _injectNote: onNote,
       debug: function () {
         var peak = 0;
@@ -2868,7 +2905,6 @@ PJ2.Viz = (function () {
           lolliOf: st.lolli ? st.lolli.lastOf : null,
           era: { tonicPc: era.tonicPc },
           plateMs: plateStack.lastCompositeMs(),
-          illustrations: plateStack.illustrations.length,
           info: lastInfo,
         };
       },
