@@ -231,15 +231,12 @@ PJ2.Viz = (function () {
         humLevel: 0,          // smoothed hum level (bar height)
         notches: [],          // active spectral notches {of, t0, until} — see applyOverlayNotches
         pulseAt: -1e9,        // sycorax proto-drum last lub (audio t)
-        tallies: 0,           // sycorax percussion strokes this evening
-        tallyKinds: [],       // recent percussion kinds (margin readout)
         tree: [],             // library genealogy nodes {gen, name, ghost, answer, coagula}
         migration: [],        // ariel develop/answer gens
         sinkPx: 0,            // sycorax print-drop offset (CSS px)
         ghostLineUntil: -1e9, // ariel prior-evening flight-line (wall s)
         flightScenes: 0,      // ariel legs drawn = scenes seen
         bruise: 0,
-        pose: null,
         sceneLabel: null, sceneType: null, sceneX: 0, sceneIdx: 0, sceneCount: 0,
         lastCadence: null,    // {kind, label, rootStep|null, at}
       };
@@ -416,8 +413,6 @@ PJ2.Viz = (function () {
       cutNightWindow(G, tr, sd, panelWindow(L.staff, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.dialA, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.dialB, 2), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.rowA, 2), pf);
-      cutNightWindow(G, tr, sd, panelWindow(L.rowB, 2), pf);
       cutNightWindow(G, tr, sd, panelWindow(L.tree, 0), pf);
     }
 
@@ -522,18 +517,15 @@ PJ2.Viz = (function () {
         case "seam-ghost": st.ghostLineUntil = wallS + 60; break;
         case "develop": case "answer": handleDevelop(ev, wallS); break;
         case "coagula": handleCoagula(ev, wallS); break;
-        case "pose": st.pose = ev.pose; break;
-        case "percussion": st.tallies++; pushTally(ev.mode || "strike"); break;
         case "bruise": st.bruise = ev.value || 0; break;
         // arrival / organum / feather / bass-flourish / air / cut /
         // cut-return: these drew only emblem-column stamps — gone with the
-        // column (owner 2026-08-16). The log still narrates each of them.
+        // column (owner 2026-08-16). pose / percussion fed only the
+        // pose/tallies row — gone with the rowA/rowB slots (owner
+        // 2026-08-17). The log still narrates each of them, and the
+        // proto-drum note events still drive the plate's pulse mark.
         default: break;
       }
-    }
-    function pushTally(kind) {
-      st.tallyKinds.push(kind);
-      if (st.tallyKinds.length > 8) st.tallyKinds.shift();
     }
 
     function handleScene(ev, wallS) {
@@ -1745,17 +1737,17 @@ PJ2.Viz = (function () {
     function marginLayout(G) {
       var H = G.h, W = G.w, pad = 8, gap = MARGIN_GAP;
       var half = (W - 3 * pad) / 2, full = W - 2 * pad, right = pad * 2 + half;
-      // rows carry two lines of type; the 48px floor keeps the season's
-      // second baseline clear of the window's lower lip (below ~44 the
-      // line is dropped by drawSeason's own fit check anyway)
       // the scene band and the staff SHARE the top row (owner 2026-08-16:
       // neither earned full width — the band's three stacked lines and the
       // stave's short phrase both live happily in a half). The row's height
       // is the staff's need: five lines plus ledger air, a heading above,
       // the readout below.
-      var topH = Math.round(H * 0.22);
+      // (the rowA/rowB pair that sat between the dials and the tree — the
+      // air/chord, pose/tallies, constellation/season rows — is REMOVED,
+      // owner 2026-08-17: they never explained themselves and weren't
+      // pulling their weight. Three rows remain: scene+staff, dials, tree.)
+      var topH = Math.round(H * 0.23);
       var dialH = Math.round(H * 0.21);
-      var rowH = Math.max(48, Math.round(H * 0.13));
       var y = pad;
       var scene = { x: pad, y: y, w: half, h: topH };
       var staff = { x: right, y: y, w: half, h: topH };
@@ -1763,13 +1755,10 @@ PJ2.Viz = (function () {
       var dialA = { x: pad, y: y, w: half, h: dialH };
       var dialB = { x: right, y: y, w: half, h: dialH };
       y += dialH + gap;
-      var rowA = { x: pad, y: y, w: half, h: rowH };
-      var rowB = { x: right, y: y, w: half, h: rowH };
-      y += rowH + gap;
       var tree = { x: pad, y: y, w: full, h: Math.max(40, H - pad - y) };
       return {
         pad: pad, W: W, H: H,
-        scene: scene, staff: staff, dialA: dialA, dialB: dialB, rowA: rowA, rowB: rowB, tree: tree,
+        scene: scene, staff: staff, dialA: dialA, dialB: dialB, tree: tree,
       };
     }
     // the content cell between heading row and readout row (dial panels);
@@ -1777,12 +1766,6 @@ PJ2.Viz = (function () {
     // baseline prints at h−6, caps to ~h−16) — content stops above it
     function cellOf(r) {
       var top = r.y + 20, bot = r.y + r.h - 18;
-      if (bot < top + 8) bot = top + 8;
-      return { top: top, bot: bot, cy: (top + bot) / 2, ch: bot - top };
-    }
-    // a single inline content line (row panels — no readout row)
-    function lineOf(r) {
-      var top = r.y + 20, bot = r.y + r.h - 2;
       if (bot < top + 8) bot = top + 8;
       return { top: top, bot: bot, cy: (top + bot) / 2, ch: bot - top };
     }
@@ -1914,18 +1897,20 @@ PJ2.Viz = (function () {
       var c = G.ctx;
       var hs = hasScene();
       var label = st.sceneLabel || lastInfo.sceneLabel || st.sceneType || lastInfo.sceneType;
+      // (the air/chord, pose/tallies and constellation/season rows that sat
+      // between the dials and the tree are gone — owner 2026-08-17)
       var heads = track === "library"
-        ? ["the tide · volvelle", "the athanor · fire", "aer · the air", "the chord · its metal", "genealogia motivi"]
+        ? ["the tide · volvelle", "the athanor · fire", "genealogia motivi"]
         : (track === "sycorax"
-          ? ["the treeline · tide", "the smoke · intensity", "the pose", "the tallies", "the cord and bone"]
-          : ["the wind-rose · tide", "the quadrant · altitude", "chord · constellation", "the season", "migratio · the signature"]);
+          ? ["the treeline · tide", "the smoke · intensity", "the cord and bone"]
+          : ["the wind-rose · tide", "the quadrant · altitude", "migratio · the signature"]);
       // the staff panel's heading, in each book's fiction
       var staffHead = track === "library" ? "thema · the staff"
         : (track === "sycorax" ? "the chant · its staff" : "the song · its staff");
 
       // EVERY slot is a window now, the scene band included (owner
       // 2026-08-08), so the whole apparatus draws in window ink — the
-      // operation label and its emblem, the six headings with their rules,
+      // operation label and its emblem, the four headings with their rules,
       // and the genealogy / tally cord / migration map (furniture-grade:
       // redrawn only when an event changes it).
       inWindowInk(function () {
@@ -1961,9 +1946,7 @@ PJ2.Viz = (function () {
         panelHead(G, panelContentRect(L.staff), staffHead);
         panelHead(G, panelContentRect(L.dialA), heads[0]);
         panelHead(G, panelContentRect(L.dialB), heads[1]);
-        panelHead(G, panelContentRect(L.rowA), heads[2]);
-        panelHead(G, panelContentRect(L.rowB), heads[3]);
-        panelHead(G, panelContentRect(L.tree), heads[4]);
+        panelHead(G, panelContentRect(L.tree), heads[2]);
         var T = panelContentRect(L.tree);
         if (track === "library") drawGenealogy(G, T);
         else if (track === "sycorax") drawTallyCord(G, T);
@@ -2055,22 +2038,15 @@ PJ2.Viz = (function () {
         }
         drawThemeStaff(G, panelContentRect(L.staff), info);
         var A = panelContentRect(L.dialA), B = panelContentRect(L.dialB);
-        var RA = panelContentRect(L.rowA), RB = panelContentRect(L.rowB);
         if (track === "library") {
           drawVolvelle(G, A, info);
           drawAthanor(G, B, info);
-          drawAirQuills(G, RA, info);
-          drawChordMetal(G, RB, info);
         } else if (track === "sycorax") {
           drawTreeline(G, A, info);
           drawSmoke(G, B, info);
-          drawPoseSigil(G, RA, info);
-          drawTallies(G, RB, info);
         } else {
           drawWindRose(G, A, info);
           drawQuadrant(G, B, info);
-          drawConstellation(G, RA, info);
-          drawSeason(G, RB, info);
         }
       });
     }
@@ -2309,54 +2285,8 @@ PJ2.Viz = (function () {
       readoutLine(G, r, "fire " + fmt2(inten) + " · gradus " + (inten == null ? "—" : ROMAN_HI[gradus - 1]));
     }
 
-    function drawAirQuills(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var n = typeof info.airHolders === "number" ? info.airHolders
-        : (info.airHolders && info.airHolders.length);
-      var count = n == null ? 0 : n;
-      var limit = Math.max(3, count);
-      var qScale = fitScale(12, line.ch, G.u);
-      var slot = 12 * G.u * qScale + 6;
-      var x = r.x + slot / 2;
-      for (var i = 0; i < limit; i++) {
-        if (i < count) at.stamp(c, "quill", x, line.cy, { u: G.u, scale: qScale, tint: i === 0 ? pal.ink[0] : pal.ink[1] });
-        else { // an inked rest — the air not yet taken
-          var rs = Math.min(10, line.ch / 2 - 1);
-          c.strokeStyle = pal.ink[3]; c.lineWidth = 1.4;
-          c.strokeRect(x - rs, line.cy - rs, rs * 2, rs * 2);
-          c.beginPath(); c.moveTo(x - rs * 0.4, line.cy + rs * 0.4); c.lineTo(x + rs * 0.4, line.cy - rs * 0.4); c.stroke();
-        }
-        x += slot;
-      }
-      // the value rides BESIDE the icons on the same line — never beneath
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, (n == null ? "—" : n + " aloft"), x + 2, line.cy + 4, 12, pal.ink[1], 1);
-      }
-    }
-
-    function drawChordMetal(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var name = info.harmony == null ? "—" : String(info.harmony);
-      var idx = info.harmony == null ? null : parseRomanRoot(name);
-      var sigW = 12 * G.u + 6; // the sigil's reserved right cell
-      if (fontsReady) {
-        var fs = Math.min(26, line.ch + 4);
-        c.fillStyle = pal.ink[0];
-        c.font = fs + "px " + Skin.Type.MONO;
-        c.textBaseline = "alphabetic"; c.textAlign = "left";
-        c.fillText(name.slice(0, 8), r.x + 2, line.cy + fs * 0.36);
-      }
-      if (idx != null) {
-        var sig = Skin.DEGREE_SIGIL[era.steps[idx]];
-        if (sig) {
-          at.stamp(c, "sigil-" + sig, r.x + r.w - sigW / 2 - 2, line.cy, {
-            u: G.u, scale: fitScale(12, line.ch, G.u), tint: pal.rubric[0],
-          });
-        }
-      }
-    }
+    // (drawAirQuills and drawChordMetal — the air/chord row pair — lived
+    // here; removed with the rowA/rowB slots, owner 2026-08-17.)
 
     // library genealogy tree — pen-work family diagram from real events
     function drawGenealogy(G, r) {
@@ -2491,55 +2421,10 @@ PJ2.Viz = (function () {
       readoutLine(G, r, "intensity " + fmt2(inten) + " · bruise " + fmt2(st.bruise || (inten == null ? null : 0)));
     }
 
-    function drawPoseSigil(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var pose = info.pose || st.pose;
-      var x = r.x + 2;
-      if (pose && at.has("pose-" + pose)) {
-        var pScale = fitScale(12, line.ch, G.u);
-        var pw = 12 * G.u * pScale;
-        at.stamp(c, "pose-" + pose, x + pw / 2, line.cy, { u: G.u, scale: pScale, tint: pal.bone[0] });
-        x += pw + 8;
-      }
-      // the name rides the same line, beside the sigil (never beneath). It
-      // used to carry "· root N" as well, but Sycorax pins the root to i
-      // forever (pj2-harmony.js current(): rootDeg 0 in pose mode, and both
-      // pose emit sites hardcode 0) — so that field printed the constant
-      // "root 0" for the life of the book. Cut 2026-08-16.
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, (pose || "—"), x, line.cy + 4, 13, pal.bone[0], 1);
-      }
-    }
-
-    function drawTallies(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var n = st.tallies;
-      var groups = Math.min(8, Math.floor(n / 5)), rem = Math.min(n, 40) % 5;
-      var y0 = line.cy;
-      var hh = Math.min(8, line.ch / 2 - 1); // stroke half-height fits the line
-      c.strokeStyle = dataCol(pal.bone[0], "percussion tallies"); c.lineWidth = 1.4;
-      var x = r.x + 4;
-      var xCap = r.x + r.w - 62; // reserve the value's room on the same line
-      function strokes(count, gate) {
-        for (var i = 0; i < count; i++) {
-          c.beginPath();
-          c.moveTo(x + i * 5 + (Skin.noise.hash2(i, x) - 0.5) * 1.5, y0 - hh);
-          c.lineTo(x + i * 5 + (Skin.noise.hash2(i, x + 1) - 0.5) * 1.5, y0 + hh);
-          c.stroke();
-        }
-        if (gate) { // the fifth stroke crosses
-          c.beginPath(); c.moveTo(x - 2, y0 + hh - 2); c.lineTo(x + 22, y0 - hh + 2); c.stroke();
-        }
-        x += 30;
-      }
-      for (var g = 0; g < groups && x < xCap; g++) strokes(4, true);
-      if (x < xCap && rem > 0) strokes(rem, false);
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, n + " strokes", r.x + r.w, y0 + 4, 12, pal.bone[1], 1, "right");
-      }
-    }
+    // (drawPoseSigil and drawTallies — the pose/tallies row pair — lived
+    // here; removed with the rowA/rowB slots, owner 2026-08-17. The
+    // percussion still speaks through the plate's proto-drum mark and the
+    // scribal log.)
 
     // the cord-and-bone: develops as knots on a cord (sycorax tree panel)
     function drawTallyCord(G, r) {
@@ -2634,51 +2519,10 @@ PJ2.Viz = (function () {
       readoutLine(G, r, "altitude " + fmt2(inten));
     }
 
-    function drawConstellation(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var name = info.harmony == null ? "—" : String(info.harmony);
-      var idx = info.harmony == null ? null : parseRomanRoot(name);
-      // the two Lydian homes as VECTOR asterisms scaled to the line (the
-      // stamped cells are taller than a row panel — drawAsterism is the
-      // full-resolution vocabulary for exactly this)
-      var s = Math.min(0.55, line.ch / 44);
-      var ay = line.cy - 2 * s;
-      Skin.drawAsterism(c, Skin.asterisms.i, r.x + 4, ay, { track: "ariel", scale: s, lit: idx === 0 });
-      Skin.drawAsterism(c, Skin.asterisms.ii, r.x + 4 + 52 * s + 14, ay, { track: "ariel", scale: s, lit: idx === 1 });
-      // the chord numeral sits on the rows' shared text line (cy+4, same as
-      // the pose and tally captions), and the #4's halo star rides just left
-      // of it — numeral and star as one group, not two stray specks
-      var halo = info.haloLevel || 0;
-      var nm = name.slice(0, 10);
-      var sx = r.x + r.w - 10;
-      if (fontsReady) {
-        c.save();
-        c.font = '12px ' + Skin.Type.MONO;
-        sx = r.x + r.w - (c.measureText(nm.toUpperCase()).width + nm.length) - 8;
-        c.restore();
-      }
-      if (halo > 0.03) Skin.star4(c, sx, line.cy - 1, 3.5, pal.gilt[1], halo > 0.05);
-      else { c.fillStyle = pal.silver[2]; c.fillRect(sx - 1, line.cy - 2, 2, 2); }
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, nm, r.x + r.w, line.cy + 4, 12, pal.silver[0], 1, "right");
-      }
-    }
-
-    function drawSeason(G, r, info) {
-      var c = G.ctx;
-      var line = lineOf(r);
-      var sig = info.signature || {};
-      if (fontsReady) {
-        Skin.Type.smallCaps(c, (sig.name || "—") + (sig.promoted ? " ✦ promoted" : ""),
-          r.x + 2, line.top + 9, 13, sig.promoted ? pal.gilt[1] : pal.silver[0], 1);
-        if (line.bot - line.top >= 22) {
-          Skin.Type.smallCaps(c, "gen " + (sig.themeGen == null ? "—" : sig.themeGen)
-            + " · deepest " + (sig.maxGen == null ? "—" : sig.maxGen),
-            r.x + 2, line.top + 21, 12, pal.silver[1], 1);
-        }
-      }
-    }
+    // (drawConstellation and drawSeason — the constellation/season row pair
+    // — lived here; removed with the rowA/rowB slots, owner 2026-08-17.
+    // The signature's name and generation still print under the stave, and
+    // a promoted signature is still flagged there.)
 
     // ariel migration map (tree panel): the flight of gens across the season
     function drawMigration(G, r) {
@@ -2723,7 +2567,8 @@ PJ2.Viz = (function () {
         marginStack.invalidate("furniture");
       }
       if (info.sceneIdx != null) { st.sceneIdx = info.sceneIdx; st.sceneCount = info.sceneCount || st.sceneCount; }
-      if (info.pose) st.pose = info.pose;
+      // (st.pose was mirrored here for the pose row; the row went with
+      // rowA/rowB, owner 2026-08-17.)
       // (st.signature was tracked here for the genealogy's caption; the
       // caption went 2026-08-16 and the panels that still want a signature
       // read info.signature directly, so the mirrored state went with it.)
