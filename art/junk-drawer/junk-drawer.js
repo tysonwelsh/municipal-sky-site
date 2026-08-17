@@ -4099,7 +4099,7 @@ function JD_layerOpen() {
       wh = (wh + (wh << 1) + (wh << 4) + (wh << 7) + (wh << 8) + (wh << 24)) >>> 0;
     }
     var wm = wh % 12, whr = (wh >> 4) % 12;
-    return '<svg class="jd-dark-watch" width="44" height="48" viewBox="0 0 40 44"' +
+    return '<svg class="jd-dark-watch" width="62" height="67" viewBox="0 0 40 44"' +
       ' style="--jdwm:' + (wm * 30) + 'deg;--jdwh:' + (whr * 30 + wm * 2.5) + 'deg">' +
       '<rect class="w-lug" x="15" y="0.5" width="10" height="6" rx="1.5"/>' +
       '<rect class="w-lug" x="15" y="37.5" width="10" height="6" rx="1.5"/>' +
