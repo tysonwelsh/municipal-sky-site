@@ -2,6 +2,9 @@
 $page_title = 'The Hidden Structure of Amorphous Carbon - Municipal Sky';
 $page_description = 'Interactive 3D point clouds of simulated carbon atomic structures — coordination numbers, ring statistics, radial distribution functions, and bond-network entropy across amorphous, carbide-derived, and irradiated carbons.';
 $page_type = 'article';
+// share card: the VPC(T) 1.5 structure rendered in the viewer's Oppenheimer
+// palette (regenerate with pointcloud_entropy/tools/make_og_image.py)
+$page_image = '/images/carbon-structures-share.png';
 include '../includes/header.php';
 ?>
 
