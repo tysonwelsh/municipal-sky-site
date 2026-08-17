@@ -4066,9 +4066,9 @@ function JD_layerOpen() {
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   function darkWell(slot) {
     if (slot === 'a') {
-      /* the ink and the nib are the SAME path: the ink is a 30-unit dash
+      /* the ink and the nib are the SAME path: the ink is a 15-unit dash
          window crawling around the circuit, the nib a 0.01-unit dot riding
-         30 units ahead of the window's tail — i.e. exactly at its head */
+         15 units ahead of the window's tail — i.e. exactly at its head */
       var d = darkPlotCircuit(((turn && turn.client_ref) || 'jd') + ':' + slot);
       return '<svg class="jd-dark-plot" width="90" height="54" viewBox="0 0 90 54">' +
         '<path class="plot-ink" d="' + d + '" pathLength="100"/>' +

@@ -2068,26 +2068,41 @@ html.jd-turn-open { overflow: hidden; }
    retires): a machine plotting a circuit along the graph paper's own rules.
    The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
    spanning-tree tour, different every turn, seamless by construction); this
-   file only knows two dash windows on that path. The ink is a 30-unit
-   window (of pathLength 100) crawling around the circuit — line appearing
-   at the head, lifting away at the tail — and the nib is a 0.01-unit round
-   dot pinned to the window's head: base offsets -15 and -45 stay exactly
-   30 apart, and both travel -100 per loop, so the dot rides the ink's
-   leading edge forever. Static base: a partial trace, pen resting on it. */
-.jd-dark-plot { display: block; }
+   file only knows two dash windows on that path. The ink is a 15-unit
+   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
+   around the circuit — line appearing at the head, lifting away at the
+   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
+   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
+   loop, so the dot rides the ink's leading edge forever. Static base: a
+   partial trace, pen resting on it.
+   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
+   printed rules, not near them, so the well opens to the whole swatch
+   (slot B's precedent) and the SVG pins to the paper's own 9px grid:
+   round() snaps the centred offset down to a multiple of 9, then +5px
+   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
+   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
+   un-snapped pair above it is the fallback for browsers without round():
+   plain centring — a hair off the rules, never broken. */
+.jd-dark-sw--a .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-plot {
+  display: block; position: absolute;
+  left: calc(50% - 45px); top: calc(50% - 27px);
+  left: calc(round(down, 50% - 45px, 9px) + 5px);
+  top: calc(round(down, 50% - 27px, 9px) + 5px);
+}
 .jd-dark-plot .plot-ink {
   fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
   stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 30 70; stroke-dashoffset: -15;
+  stroke-dasharray: 15 85; stroke-dashoffset: -15;
 }
 .jd-dark-plot .plot-nib {
   fill: none; stroke: var(--tink); stroke-width: 4;
   stroke-linecap: round;
-  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -45;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
 }
 /* implicit from: each starts at its base offset, one full period apart */
 @keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
-@keyframes jdDarkPlotNib { to { stroke-dashoffset: -145; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
 
 /* b — the stray word: LOADING adrift on the print, ricocheting off the
    swatch's own edges like the DVD-menu logo of blessed memory (round-19
