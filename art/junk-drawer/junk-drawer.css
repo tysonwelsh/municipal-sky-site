@@ -2101,7 +2101,14 @@ html.jd-turn-open { overflow: hidden; }
   width: max-content; transform: translateX(-50%);
 }
 .jd-dark-stray .sy {
-  position: absolute; top: 50%; transform: translateY(-50%);
+  /* RELATIVE, not absolute — the word must stay in flow so the x-mover's
+     max-content width IS the word's width: an absolutely-positioned child
+     sizes its parent to 0, which nulls the translateX(-100%) half of the
+     position trick and lets the word sail past the right edge until its
+     LEFT side hits (owner catch, 2026-08-17). Relative keeps the top:
+     0→100% animation working — the offset resolves against the mover's
+     full-well height, translateY(-100%) against the word's own. */
+  position: relative; top: 50%; transform: translateY(-50%);
   display: block;
   font-family: var(--tmono); font-size: 10.5px; font-weight: 700;
   letter-spacing: 0.12em; white-space: nowrap;
