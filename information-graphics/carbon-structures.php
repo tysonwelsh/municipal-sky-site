@@ -109,7 +109,7 @@ include '../includes/header.php';
           carbons across a range of densities, carbide-derived carbons before and after annealing, and graphite as it
           accumulates irradiation damage. Color encodes each atom's coordination number; the panels tally ring sizes,
           bond lengths, and the radial distribution function.</p>
-        <p>Drag to rotate, scroll to zoom, and try the theme selector — the same data rendered as a midnight
+        <p>Drag to rotate, hold Ctrl/⌘ and scroll to zoom, and try the theme selector — the same data rendered as a midnight
           observatory plate, an Oppenheimer-era journal figure, or a Kandinsky composition.</p>
       </section>
     </div>

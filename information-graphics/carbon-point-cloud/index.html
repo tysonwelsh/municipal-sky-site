@@ -1268,6 +1268,11 @@ d3.select(canvas).call(
     .on("end", () => { canvas.classList.remove("dragging"); scheduleQuadtree(); })
 );
 canvas.addEventListener("wheel", e => {
+  // Embedded on the site: let a plain wheel scroll the HOST page instead —
+  // the dashboard fills the viewport, so trapping the wheel here would
+  // strand the page scroll (and the host's retracting banner). Hold
+  // Ctrl/Cmd (or trackpad pinch, which sets ctrlKey) to zoom as before.
+  if (window.frameElement && !e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
   if (flying) {
     const B = flyBasis(), step = -e.deltaY * 0.0018 * S.radius;
@@ -1339,8 +1344,12 @@ function setFly(on) {
     keys.clear();
   }
   if (navHint) navHint.textContent = flying
-    ? "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · scroll to dolly · Esc exits"
-    : "Drag to rotate · scroll to zoom";
+    ? (window.frameElement
+      ? "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · Ctrl/⌘+scroll to dolly · Esc exits"
+      : "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · scroll to dolly · Esc exits")
+    : (window.frameElement
+      ? "Drag to rotate · Ctrl/⌘+scroll to zoom"  // plain wheel scrolls the host page when embedded
+      : "Drag to rotate · scroll to zoom");
   if (S) { draw(); scheduleQuadtree(); }
 }
 flyChk.addEventListener("change", () => setFly(flyChk.checked));
