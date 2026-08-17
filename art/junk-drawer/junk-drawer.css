@@ -2165,8 +2165,8 @@ html.jd-turn-open { overflow: hidden; }
    pen — case circle, twelve ticks faked by one dashed circle (pathLength
    12, dash 0.14/0.86, offset 0.07 to centre each tick on its hour), two
    hands, a centre pin, strap lugs. The minute hand clicks one tick per
-   half-second (steps(12) over 6s), the hour hand one tick per 6s
-   (steps(12) over 72s). The hands' base angles arrive as --jdwm/--jdwh
+   second (steps(12) over 12s; owner slow-down 2026-08-17, from 6s), the
+   hour hand one tick per 12s. The hands' base angles arrive as --jdwm/--jdwh
    inline on the svg — the JS seeds them from the turn's client_ref, so
    every wait starts at a different (plausible) time; the keyframes add
    360deg to whatever the seed says, so the loop is seamless at any start.
@@ -2279,11 +2279,14 @@ html.jd-turn-open { overflow: hidden; }
      second, plotter pace; both windows on the same clock or the dot drifts */
   .jd-dark-plot .plot-ink  { animation: jdDarkPlotInk 30s linear infinite; }
   .jd-dark-plot .plot-nib  { animation: jdDarkPlotNib 30s linear infinite; }
-  .jd-dark-stray           { animation: jdDarkStrayX 3.7s linear infinite alternate; }
-  .jd-dark-stray .sy       { animation: jdDarkStrayY 4.9s linear infinite alternate; }
+  /* stray drift slowed 2x (owner, 2026-08-17): same 37:49 period ratio,
+     so the never-quite-repeating wander survives the slowdown */
+  .jd-dark-stray           { animation: jdDarkStrayX 7.4s linear infinite alternate; }
+  .jd-dark-stray .sy       { animation: jdDarkStrayY 9.8s linear infinite alternate; }
   .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
-  .jd-dark-watch .w-min    { animation: jdDarkWatchMin 6s steps(12, end) infinite; }
-  .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 72s steps(12, end) infinite; }
+  /* watch slowed 2x (owner, 2026-08-17): a click per second, horology pace */
+  .jd-dark-watch .w-min    { animation: jdDarkWatchMin 12s steps(12, end) infinite; }
+  .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 144s steps(12, end) infinite; }
   .jd-dark-wait            { animation: jdDarkWaitRock 7s ease-in-out infinite alternate; }
 
   /* arrival / failure theatrics — one-shot, then the state class holds */
