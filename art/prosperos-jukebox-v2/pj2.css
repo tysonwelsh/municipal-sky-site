@@ -384,7 +384,7 @@
 #pj2-margin {
   display: block;
   width: 100%;
-  height: 340px;
+  height: 320px; /* three rows since the air/chord (etc.) row pair left (2026-08-17) */
 }
 
 /* ---------------------------------------------------------------------------
