@@ -3,7 +3,7 @@
 // picks between them following the OS `prefers-color-scheme` setting.
 window.__registerTheme({
   id: "default",
-  name: "Default (system light/dark)",
+  name: "Original (system light/dark)",
 
   vars: {
     "--page":     "#f9f9f7",

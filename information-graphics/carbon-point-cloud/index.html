@@ -177,7 +177,7 @@
   <label><input type="checkbox" id="strainChk"> Bond strain</label>
   <label><input type="checkbox" id="spinChk"> Spin</label>
   <label><input type="checkbox" id="flyChk"> Fly (WASD)</label>
-  <label>Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2.6"></label>
+  <label>Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
   <button id="resetBtn">Reset view</button>
   <label>Sequence
     <select id="seqSel" aria-label="Sequence">
@@ -235,6 +235,7 @@
 <script src="themes/midnight.js"></script>
 <script src="themes/oppenheimer.js"></script>
 <script src="themes/kandinsky.js"></script>
+<script src="themes_claude/oppenheimer-trinity.js"></script>
 <script src="d3.min.js"></script>
 <script src="structures/manifest.js"></script>
 <script>
@@ -1350,7 +1351,7 @@ for (const t of window.__THEMES) {
 }
 let savedTheme = null;
 try { savedTheme = localStorage.getItem("pc-theme"); } catch (_) { /* file:// may deny storage */ }
-themeSel.value = savedTheme || "default";
+themeSel.value = savedTheme || "oppenheimer";
 themeSel.addEventListener("change", () => {
   try { localStorage.setItem("pc-theme", themeSel.value); } catch (_) {}
   applyTheme(themeSel.value);

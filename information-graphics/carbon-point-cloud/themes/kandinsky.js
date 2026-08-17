@@ -128,45 +128,7 @@ window.__registerTheme({
     "--bond":     "rgba(24,21,18,0.45)", // black construction lines
   },
 
-  css: KANDINSKY_CSS + `
-    /* ---- the composition field: one diagonal construction hairline,
-           drawn like pencil under the paint ---- */
-    .plot {
-      background-image:
-        linear-gradient(115deg, transparent calc(62% - 0.5px), rgba(24,21,18,0.10) 62%, transparent calc(62% + 0.5px));
-    }
-  `,
-
-  render: KANDINSKY_RENDER,
-});
-
-window.__registerTheme({
-  id: "kandinsky-nocturne",
-  name: "Kandinsky — Several Circles",
-  colorScheme: "dark", // pinned nocturne
-
-  vars: {
-    ...KANDINSKY_SHARED,
-    "--cn0":      "#F4EDDE", // isolated atoms read as pale marks, not black
-    "--ring6":    "#6E6858",
-    "--page":     "#191B26", // near-black indigo
-    "--surface":  "#222536",
-    "--ink":      "#F4EDDE",
-    "--ink-2":    "#C9C2AC",
-    "--muted":    "#8A8672",
-    "--grid":     "rgba(244,237,222,0.14)",
-    "--baseline": "rgba(244,237,222,0.35)",
-    "--border":   "rgba(244,237,222,0.55)",
-    "--bond":     "rgba(244,237,222,0.40)",
-  },
-
-  css: KANDINSKY_CSS + `
-    /* ---- construction hairline in chalk-pale on the night field ---- */
-    .plot {
-      background-image:
-        linear-gradient(115deg, transparent calc(62% - 0.5px), rgba(244,237,222,0.12) 62%, transparent calc(62% + 0.5px));
-    }
-  `,
+  css: KANDINSKY_CSS,
 
   render: KANDINSKY_RENDER,
 });
