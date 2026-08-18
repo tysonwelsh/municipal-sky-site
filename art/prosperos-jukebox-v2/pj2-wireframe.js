@@ -27,7 +27,7 @@
 //   · AMBER, dashed = regions *drawn inside* the two canvases by pj2-viz.js.
 //     There is no element to inspect — the boxes below are recomputed from
 //     the same formulas the renderer uses (measureAll's plate zone;
-//     marginLayout's seven panel slots). Changing one of those is a JS edit.
+//     marginLayout's five panel slots). Changing one of those is a JS edit.
 //
 // Each part also carries a plain-words note and a "what decides its size"
 // line. Those are no longer shown on screen (the sidebar that held them was
@@ -121,8 +121,8 @@
       note: "the folio number — mode and tonic",
       size: "15px caption · 1px rule beneath" },
     { sel: "#pj2-margin", name: "#pj2-margin  ⟨canvas⟩", color: C.leaf,
-      note: "the margin apparatus canvas — seven panel slots, drawn by pj2-viz.js",
-      size: "height 340px · width follows the column (500px)" },
+      note: "the margin apparatus canvas — five panel slots, drawn by pj2-viz.js",
+      size: "height 320px · width follows the column (500px)" },
     { sel: ".pj2-log-block", name: ".pj2-log-block", color: C.leaf,
       note: "the annotation block — heading plus the scrolling log",
       size: "flex 1 1 auto — takes the column's leftover height" },
@@ -159,15 +159,15 @@
   // --------------------------------------------------------------------------
   // THE CANVAS-DRAWN REGIONS — no DOM to measure, so these are recomputed
   // from pj2-viz.js's own geometry. Keep the two in step: the plate zone is
-  // measureAll()'s `pad`/radius, the seven margin slots are marginLayout().
+  // measureAll()'s `pad`/radius, the five margin slots are marginLayout().
   // --------------------------------------------------------------------------
   var MARGIN_HEADS = {
     library: ["thema · the staff", "the tide · volvelle", "the athanor · fire",
-      "aer · the air", "the chord · its metal", "genealogia motivi"],
+      "genealogia motivi"],
     sycorax: ["the chant · its staff", "the treeline · tide", "the smoke · intensity",
-      "the pose", "the tallies", "the cord and bone"],
+      "the cord and bone"],
     ariel: ["the song · its staff", "the wind-rose · tide", "the quadrant · altitude",
-      "the chord · constellation", "the season", "migratio · the signature"],
+      "migratio · the signature"],
   };
 
   function currentTrack() {
@@ -209,9 +209,9 @@
         var half = (W - 3 * p) / 2, gap = 10;     // …and its MARGIN_GAP
         var heads = MARGIN_HEADS[currentTrack()];
         // mirror marginLayout()'s stacked sequence: scene+staff share the
-        // top row, then dials, rows, and the tree takes the remainder
-        var topH = Math.round(H * 0.22);
-        var dialH = Math.round(H * 0.21), rowH = Math.max(48, Math.round(H * 0.13));
+        // top row, then the dials, and the tree takes the remainder
+        var topH = Math.round(H * 0.23);
+        var dialH = Math.round(H * 0.21);
         var y = p;
         var slots = [];
         slots.push({ x: p, y: y, w: half, h: topH, key: "scene", head: "the scene heading" });
@@ -220,10 +220,7 @@
         slots.push({ x: p, y: y, w: half, h: dialH, key: "dialA", head: heads[1] });
         slots.push({ x: p * 2 + half, y: y, w: half, h: dialH, key: "dialB", head: heads[2] });
         y += dialH + gap;
-        slots.push({ x: p, y: y, w: half, h: rowH, key: "rowA", head: heads[3] });
-        slots.push({ x: p * 2 + half, y: y, w: half, h: rowH, key: "rowB", head: heads[4] });
-        y += rowH + gap;
-        slots.push({ x: p, y: y, w: W - 2 * p, h: Math.max(40, H - p - y), key: "tree", head: heads[5] });
+        slots.push({ x: p, y: y, w: W - 2 * p, h: Math.max(40, H - p - y), key: "tree", head: heads[3] });
         for (var i = 0; i < slots.length; i++) {
           var s = slots[i];
           out.push({

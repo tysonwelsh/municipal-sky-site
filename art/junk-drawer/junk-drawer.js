@@ -3954,8 +3954,14 @@ function JD_layerOpen() {
        b — the stray word: LOADING ricocheting off the swatch's own edges
            (the DVD-menu screensaver; round-19 swap, owner pick 2026-08-16 —
            replaced the radial-tick throbber)
-       c — the segmented block progress bar (Win95, indeterminate)
-       d — the bouncing loading dots
+       c — the scatterword: LOADING… explodes, drifts, and zoops back
+           together, three different bangs to a super-cycle, the whole
+           flight generated fresh every turn (round-22 swap, owner pick
+           2026-08-18 — the Win95 segmented progress bar retires; see
+           darkScatterword below for the construction)
+       d — the wristwatch: the classic Mac wait cursor, hands seeded from
+           the turn ref so every wait starts at a different time (round-21
+           swap, owner pick 2026-08-17 — the bouncing dots retire)
      A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
      TOP of the pile. No FORM JD-1 badge, no title: the masthead collapses to
      an overlay strip so only the ✕ rides the card's top-right corner (the
@@ -4062,6 +4068,300 @@ function JD_layerOpen() {
     }
     return d + 'Z';
   }
+  /* the scatterword for slot C (round-22 swap, owner pick 2026-08-18; the
+     Win95 segmented block progress bar retires — mockup approved at the 4.2s
+     tempo with seeded trajectories and the 3-bang super-cycle): the word
+     LOADING… blown apart and pulled back together, forever.
+
+     ONE BANG, IN BEATS. The word holds assembled just long enough to read.
+     Then every glyph takes an impulse straight out along its own ray and
+     FLIES — fastest at the instant of the bang, decelerating the whole way
+     under quadratic drag, speed(t) = V0 / (1 + t/TAU). The float is not a
+     second motion bolted on after the explosion; it IS the explosion's dying
+     tail. The glyphs slow, curve (a slow constant CURL, so the early flight
+     is a straight radial line and the late flight arcs lazily), knock back
+     off the swatch's edges while they still have speed, and are barely
+     moving by the end. Then the suction takes them: the zoop, a hard
+     ease-IN that accelerates them inward and stops dead as the word snaps
+     back onto its typed positions. Angular speed rides the same profile, so
+     a glyph spins hardest right after the bang and the last of the spin is
+     finished by the zoop — every glyph lands on a whole number of turns.
+
+     WHY THIS IS GENERATED rather than hand-authored CSS, two reasons:
+       · every TURN gets its own explosion — new rays, new spins, new walls
+         to knock off — the way slot A gets its own circuit; and
+       · the deceleration is baked into the WAYPOINT SPACING, not into an
+         easing curve. Waypoints come out dense where the glyph is fast and
+         sparse where it loiters (adaptive decimation to sub-pixel
+         tolerance) and every flight keyframe is joined `linear`. That is
+         what makes the outward throw readable frame by frame instead of
+         reading as a cut, and no easing function in CSS draws that curve.
+     A super-cycle is BANGS=3 of these end to end (owner-approved), so the
+     swatch does not visibly repeat for 12.6s — three different explosions,
+     each stratified into its own sector of the circle so no two of them can
+     come out looking like the same bang.
+
+     Seeded the house way (same FNV-1a → xorshift32 fold as darkPlotCircuit,
+     from the turn's client_ref), so a repaint or a restored turn re-derives
+     the identical animation, byte for byte. Emits a <style> block plus the
+     glyph spans; the keyframe names and the binding selectors are all
+     scoped by a prefix derived from that same hash, so two turns — or two
+     slots, or a swatch left over mid-transition — can never collide.
+
+     GEOMETRY. Everything is computed in "real-scale" px against a 140×110
+     FIELD (the approved mockup's card) with a 13px glyph, then divided by
+     each glyph's own font-size and emitted in em — so one generated
+     stylesheet drives the swatch at every size the card ever takes. CX/CY
+     are the glyph centres MEASURED in-browser from the assembled pose, and
+     EM is the font-size each glyph's translate() resolves against (the
+     three ellipsis dots are set 1.45×). They are only true for the exact
+     type in the CSS: var(--tmono) at 700 with letter-spacing 0.08em and the
+     dots' 1.45em / line-height 0 / −0.186em advance trim. Change any of
+     those and these numbers must be re-measured, not adjusted by eye. */
+  function darkScatterword(seed) {
+    /* ---- choreography: FIXED for every seed, this is the approved tempo -- */
+    var BANG    = 4.2;      /* one bang, seconds                             */
+    var BANGS   = 3;        /* bangs per super-cycle                         */
+    var HOLD    = 0.62;     /* assembled hold, split across the loop seam    */
+    var LEAD    = 0.35;     /* fraction of that hold before the impulse      */
+    var ZOOP    = 0.30;     /* suction home, seconds                         */
+    var EZ_ZOOP = 'cubic-bezier(.7,.05,.9,.92)'; /* accelerate in, dead stop */
+    /* ---- physics: also fixed ------------------------------------------- */
+    var V0  = 385;          /* muzzle speed, px/s at real scale              */
+    var TAU = 0.24;         /* drag time constant, s                         */
+    /* ---- what the seed is allowed to vary ------------------------------ */
+    var V0_JITTER = 0.15;   /* ± fraction of V0                              */
+    var RAY_JITTER = 10;    /* ± deg off the glyph's slot in the fan         */
+    var SECTOR_JITTER = 32; /* ± deg a bang may wander inside its sector     */
+    var CURL_MIN = 10, CURL_MAX = 22;     /* deg/s, either direction         */
+    var SPIN_MIN = 720, SPIN_MAX = 1080;  /* deg of spin during the flight   */
+    var SPIN_LEFT_MIN = 80, SPIN_LEFT_MAX = 150; /* deg left for the snap    */
+    /* ---- simulation / emission tuning ---------------------------------- */
+    var DT = 0.003;         /* integration step, s                           */
+    var POS_TOL = 0.60;     /* max waypoint error, real-scale px             */
+    var ROT_TOL = 4.0;      /* …and degrees                                  */
+    var MAX_GAP = 0.20;     /* never leave a gap longer than this, s         */
+    var ERR_PROBES = 6;     /* interior points probed per candidate chord    */
+    var AIM_SWEEP = 54;     /* deg the ray may be nudged for clearance       */
+    var AIM_STEP = 3;       /* granularity of that search, deg               */
+    var AIM_CLEAR = 44;     /* px of clear run we try to buy                 */
+    var AIM_COST = 0.45;    /* px of score paid per deg off the fan slot.
+                               Deliberately steep: a weak penalty here lets
+                               clearance override the seeded ray, and then
+                               different seeds pick the SAME heading and the
+                               bangs stop looking different from each other. */
+    var EM_DP = 2, DEG_DP = 1, PCT_DP = 3;  /* 0.01em ≈ 0.13px at real scale */
+    /* ---- the glyphs, measured ------------------------------------------ */
+    var GLYPHS = 'LOADING...';
+    var NG = 10;
+    var CX = [30.44, 39.29, 48.13, 56.97, 65.82, 74.66, 83.51, 94.10, 102.95, 111.80];
+    var CY = [55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 53.50, 53.50, 53.50];
+    var EM = [13, 13, 13, 13, 13, 13, 13, 18.85, 18.85, 18.85];
+    /* roam box for glyph CENTRES — keeps the ink inside the field */
+    var XMIN = 8, XMAX = 132, YMIN = 12, YMAX = 98;
+
+    var DEG = Math.PI / 180;
+    var CYCLE = BANG * BANGS;
+    var T1 = HOLD * LEAD;                   /* impulse, local to the bang    */
+    var T3 = BANG - (HOLD - T1) - ZOOP;     /* the suction grabs them        */
+    var T4 = T3 + ZOOP;                     /* home                          */
+
+    /* the house fold: FNV-1a of the seed string, then xorshift32 */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    var prefix = 'jdsw' + h.toString(36);   /* scopes classes AND keyframes  */
+    var st = h || 88172645;                 /* xorshift must never sit at 0  */
+    function rnd() {
+      st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+      return st / 4294967296;
+    }
+    function span(lo, hi) { return lo + rnd() * (hi - lo); }
+    function coin() { return rnd() < 0.5 ? 1 : -1; }
+
+    /* distance from (x, y) along `ang` before the roam box */
+    function freeRun(x, y, ang) {
+      var dx = Math.cos(ang), dy = Math.sin(ang), t = Infinity;
+      if (dx > 1e-9) t = Math.min(t, (XMAX - x) / dx);
+      else if (dx < -1e-9) t = Math.min(t, (XMIN - x) / dx);
+      if (dy > 1e-9) t = Math.min(t, (YMAX - y) / dy);
+      else if (dy < -1e-9) t = Math.min(t, (YMIN - y) / dy);
+      return t;
+    }
+    /* Nudge a fan ray so the glyph has room to actually FLY outward: stay
+       within ±AIM_SWEEP of its slot in the fan (the ten headings still cover
+       the circle) but prefer a heading with a long clear run, so nothing
+       smacks a wall 80ms in and loses its radial read. */
+    function aim(x, y, target) {
+      var best = target, bestScore = -1e9, dev, a, sc;
+      for (dev = -AIM_SWEEP; dev <= AIM_SWEEP; dev += AIM_STEP) {
+        a = target + dev * DEG;
+        sc = Math.min(freeRun(x, y, a), AIM_CLEAR) - AIM_COST * Math.abs(dev);
+        if (sc > bestScore) { bestScore = sc; best = a; }
+      }
+      return best;
+    }
+    /* one glyph's whole flight, integrated at DT; walls reflect elastically */
+    function fly(cx, cy, ang, v0, curl, rTotal) {
+      var n = Math.max(1, Math.round((T3 - T1) / DT));
+      var dt = (T3 - T1) / n;
+      var cc = Math.cos(curl * dt), ss = Math.sin(curl * dt);
+      var denom = Math.log(1 + (T3 - T1) / TAU);
+      var dx = Math.cos(ang), dy = Math.sin(ang);
+      var x = cx, y = cy;
+      var ts = [T1], xs = [cx], ys = [cy], rs = [0], bz = [0];
+      var k, t, sp, nx, ny, ndx, hit;
+      for (k = 1; k <= n; k++) {
+        t = T1 + k * dt;
+        sp = v0 / (1 + (k - 0.5) * dt / TAU);          /* midpoint speed */
+        ndx = dx * cc - dy * ss; dy = dx * ss + dy * cc; dx = ndx;
+        nx = x + dx * sp * dt;
+        ny = y + dy * sp * dt;
+        hit = 0;
+        if (nx < XMIN) { nx = 2 * XMIN - nx; dx = -dx; hit = 1; }
+        else if (nx > XMAX) { nx = 2 * XMAX - nx; dx = -dx; hit = 1; }
+        if (ny < YMIN) { ny = 2 * YMIN - ny; dy = -dy; hit = 1; }
+        else if (ny > YMAX) { ny = 2 * YMAX - ny; dy = -dy; hit = 1; }
+        x = nx < XMIN ? XMIN : (nx > XMAX ? XMAX : nx);
+        y = ny < YMIN ? YMIN : (ny > YMAX ? YMAX : ny);
+        ts.push(t); xs.push(x); ys.push(y); bz.push(hit);
+        /* spin on the same log profile as distance, normalised to rTotal */
+        rs.push(rTotal * Math.log(1 + (t - T1) / TAU) / denom);
+      }
+      return { ts: ts, xs: xs, ys: ys, rs: rs, bz: bz };
+    }
+    /* Does the straight chord i→cand stay within tolerance of the real
+       flight? Probed at up to ERR_PROBES evenly spaced interior points: a
+       segment never spans a bounce (those always cut), so between its ends
+       the path is a smooth arc under monotonically decaying speed and has no
+       high-frequency structure for the probes to step over. Keeping this
+       O(1) per candidate is what keeps the whole generator linear. */
+    function chordOk(s, i2, cand) {
+      var steps = cand - i2, sp, probes, p, k, f;
+      if (steps < 2) return true;
+      sp = s.ts[cand] - s.ts[i2];
+      probes = (steps - 1 < ERR_PROBES) ? steps - 1 : ERR_PROBES;
+      for (p = 1; p <= probes; p++) {
+        k = i2 + Math.round(steps * p / (probes + 1));
+        if (k <= i2 || k >= cand) continue;
+        f = (s.ts[k] - s.ts[i2]) / sp;
+        if (Math.abs(s.xs[i2] + (s.xs[cand] - s.xs[i2]) * f - s.xs[k]) > POS_TOL ||
+            Math.abs(s.ys[i2] + (s.ys[cand] - s.ys[i2]) * f - s.ys[k]) > POS_TOL ||
+            Math.abs(s.rs[i2] + (s.rs[cand] - s.rs[i2]) * f - s.rs[k]) > ROT_TOL) {
+          return false;
+        }
+      }
+      return true;
+    }
+    /* Keep the fewest waypoints whose LINEAR-IN-TIME interpolation stays
+       inside tolerance: dense while fast, sparse while loitering. Every
+       bounce is forced to be a waypoint so the turn-back stays crisp. */
+    function decimate(s) {
+      var n = s.ts.length, keep = [0], i2 = 0, j, cand;
+      while (i2 < n - 1) {
+        j = i2 + 1;
+        if (!s.bz[j]) {
+          while (j + 1 < n) {
+            cand = j + 1;
+            if (s.ts[cand] - s.ts[i2] > MAX_GAP) break;
+            if (!chordOk(s, i2, cand)) break;
+            j = cand;
+            if (s.bz[cand]) break;
+          }
+        }
+        keep.push(j);
+        i2 = j;
+      }
+      return keep;
+    }
+    /* one bang: ten independent flights. `base` and `fanDir` come from the
+       super-cycle below, not from here — a bang's fan is a rigid golden-angle
+       ring, so if two bangs drew similar bases independently the two
+       explosions would look the same. The caller stratifies them instead. */
+    function simulateBang(base, fanDir) {
+      var out = [], g, ang, v0, curl, sg, turns, rTotal, rHome, s;
+      for (g = 0; g < NG; g++) {
+        /* golden angle between NEIGHBOURING glyphs, so adjacent letters —
+           and the three dots, which start out touching — tear apart in very
+           different directions while the ten headings still cover the circle */
+        ang = aim(CX[g], CY[g],
+          (base + fanDir * g * 137.5 + span(-RAY_JITTER, RAY_JITTER)) * DEG);
+        v0 = V0 * (1 + span(-V0_JITTER, V0_JITTER));
+        curl = span(CURL_MIN, CURL_MAX) * coin() * DEG;
+        sg = coin();
+        /* land the flight's spin a controlled 80–150deg short of a whole
+           number of turns, so the zoop finishes it with a quarter-turn snap */
+        turns = Math.max(1, Math.round(span(SPIN_MIN, SPIN_MAX) / 360));
+        rTotal = sg * (360 * turns - span(SPIN_LEFT_MIN, SPIN_LEFT_MAX));
+        rHome = sg * 360 * turns;
+        s = fly(CX[g], CY[g], ang, v0, curl, rTotal);
+        out.push({ s: s, keep: decimate(s), rHome: rHome });
+      }
+      return out;
+    }
+    function tf(dx, dy, rot, em) {
+      return 'translate(' + (dx / em).toFixed(EM_DP) + 'em,' +
+        (dy / em).toFixed(EM_DP) + 'em) rotate(' + rot.toFixed(DEG_DP) + 'deg)';
+    }
+    function pc(t) { return (t / CYCLE * 100).toFixed(PCT_DP); }
+
+    /* Stratify the three bangs around the circle instead of drawing three
+       independent bases: each gets its own 360/BANGS sector (plus jitter,
+       plus a coin flip on which way its fan is dealt round the circle). */
+    var bangs = [], b, base0 = rnd() * 360;
+    for (b = 0; b < BANGS; b++) {
+      bangs.push(simulateBang(base0 + b * (360 / BANGS) +
+        span(-SECTOR_JITTER, SECTOR_JITTER), coin()));
+    }
+
+    var out = ['<style>'], j, idx, rotAcc, tOff, tr, keep, s;
+    for (i = 0; i < NG; i++) {
+      out.push('@keyframes ', prefix, '_', i, '{0%{transform:', tf(0, 0, 0, EM[i]), '}');
+      rotAcc = 0;
+      for (b = 0; b < BANGS; b++) {
+        tOff = b * BANG;
+        tr = bangs[b][i]; s = tr.s; keep = tr.keep;
+        /* flat hold right up to the impulse — the word must be EXACTLY the
+           typed word for the whole beat, not merely near it */
+        out.push(pc(tOff + T1), '%{transform:', tf(0, 0, rotAcc, EM[i]), '}');
+        for (j = 1; j < keep.length; j++) {
+          idx = keep[j];
+          out.push(pc(tOff + s.ts[idx]), '%{transform:',
+            tf(s.xs[idx] - CX[i], s.ys[idx] - CY[i], rotAcc + s.rs[idx], EM[i]));
+          /* the last flight waypoint is where the suction takes over, and
+             it carries the only easing curve in the whole animation */
+          if (j === keep.length - 1) out.push(';animation-timing-function:', EZ_ZOOP);
+          out.push('}');
+        }
+        rotAcc += tr.rHome;
+        out.push(pc(tOff + T4), '%');
+        if (b === BANGS - 1) out.push(',100%');
+        out.push('{transform:', tf(0, 0, rotAcc, EM[i]), '}');
+      }
+      out.push('}');
+    }
+    /* The bindings live inside the reduced-motion guard, so a visitor who
+       has asked for stillness gets the base pose — the assembled word — and
+       the @keyframes above go inert with nothing referencing them. The
+       DURATION is emitted here too, from CYCLE: change BANG or BANGS and the
+       super-cycle length can never drift out of sync with a hand-written
+       number in the stylesheet. Everything else about the loop
+       (iteration-count, the linear joins, fill-mode) is in junk-drawer.css
+       with the other slots. */
+    out.push('@media (prefers-reduced-motion:no-preference){');
+    out.push('.', prefix, ' .jd-dark-gl{animation-duration:', CYCLE.toFixed(2), 's}');
+    for (i = 0; i < NG; i++) {
+      out.push('.', prefix, ' .jd-dark-gl', i, '{animation-name:', prefix, '_', i, '}');
+    }
+    out.push('}</style><span class="jd-dark-word ', prefix, '">');
+    for (i = 0; i < NG; i++) {
+      out.push('<span class="jd-dark-gl jd-dark-gl', i, '">', GLYPHS.charAt(i), '</span>');
+    }
+    out.push('</span>');
+    return out.join('');
+  }
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   function darkWell(slot) {
@@ -4081,9 +4381,36 @@ function JD_layerOpen() {
       return '<span class="jd-dark-stray"><span class="sy">LOADING</span></span>';
     }
     if (slot === 'c') {
-      return '<span class="jd-dark-pbar"><span class="fill"></span></span>';
+      /* the whole track is generated per turn (see darkScatterword): a
+         <style> carrying ten seed-scoped keyframe blocks, then the ten
+         glyphs that ride them. Style-via-innerHTML applies — a <style>
+         element inserted this way is live, and it is display:none so it
+         never counts as a child of the well's flex box. */
+      return darkScatterword(((turn && turn.client_ref) || 'jd') + ':' + slot);
     }
-    return '<span class="jd-dark-dots"><span></span><span></span><span></span></span>';
+    /* d — the wristwatch. The hands' base angles ride inline as CSS vars,
+       seeded from the turn ref (same fold as darkPlotCircuit's) so each
+       wait starts at a different plausible time: the minute hand lands ON
+       a tick (a multiple of 30deg — steps(12) must stay on ticks) and the
+       hour hand sits proportionally between its own ticks, the way a real
+       watch holds its hour hand at ten past. The keyframes add 360deg to
+       whatever these say, so the loop closes from any start. */
+    var ws = ((turn && turn.client_ref) || 'jd') + ':' + slot;
+    var wh = 2166136261 >>> 0, wj;
+    for (wj = 0; wj < ws.length; wj++) {
+      wh ^= ws.charCodeAt(wj);
+      wh = (wh + (wh << 1) + (wh << 4) + (wh << 7) + (wh << 8) + (wh << 24)) >>> 0;
+    }
+    var wm = wh % 12, whr = (wh >> 4) % 12;
+    return '<svg class="jd-dark-watch" width="62" height="67" viewBox="0 0 40 44"' +
+      ' style="--jdwm:' + (wm * 30) + 'deg;--jdwh:' + (whr * 30 + wm * 2.5) + 'deg">' +
+      '<rect class="w-lug" x="15" y="0.5" width="10" height="6" rx="1.5"/>' +
+      '<rect class="w-lug" x="15" y="37.5" width="10" height="6" rx="1.5"/>' +
+      '<circle class="w-case" cx="20" cy="22" r="15"/>' +
+      '<circle class="w-ticks" cx="20" cy="22" r="12.5" pathLength="12"/>' +
+      '<line class="w-min" x1="20" y1="22" x2="20" y2="11.5"/>' +
+      '<line class="w-hr" x1="20" y1="22" x2="20" y2="15.5"/>' +
+      '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
   }
   function darkSwatch(slot) {
     var st = slotStatus(slot);
