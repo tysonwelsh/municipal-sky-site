@@ -56,6 +56,7 @@
 .pj2-app[data-track="library"] {
   --pj2-void: #0b0a08;
   --pj2-paper: #0a0805;        /* the night ground — one surface everywhere */
+  --pj2-window: #0a0805;       /* the WINDOW ground — spiral.bg, binding-proof */
   --pj2-paper-lite: #120d07;   /* the grain lift                            */
   --pj2-paper-deep: #060402;
   --pj2-paper-edge: #b49a68;   /* the thin parchment FRAME tone             */
@@ -81,6 +82,7 @@
 .pj2-app[data-track="sycorax"] {
   --pj2-void: #070605;
   --pj2-paper: #08070f;        /* the night ground                           */
+  --pj2-window: #08070f;       /* the WINDOW ground — spiral.bg, binding-proof */
   --pj2-paper-lite: #0e0c17;
   --pj2-paper-deep: #060509;
   --pj2-paper-edge: #453729;   /* the thin soot-rag FRAME tone               */
@@ -106,6 +108,7 @@
 .pj2-app[data-track="ariel"] {
   --pj2-void: #05070c;
   --pj2-paper: #06090e;        /* the night ground                           */
+  --pj2-window: #06090e;       /* the WINDOW ground — spiral.bg, binding-proof */
   --pj2-paper-lite: #0b1119;
   --pj2-paper-deep: #04060a;
   --pj2-paper-edge: #22345a;   /* the thin engraved-plate FRAME tone         */
@@ -160,6 +163,23 @@
   --pj2-paper-deep: #101a30;
   --pj2-paper-edge: #05070c;
 }
+/* The log's window keeps the NIGHT ink on the parchment binding, exactly as
+   inWindowInk() does for the canvas panels: a panel drawn in a night window
+   uses the night palette even while the page is paper. Only Library's
+   parchment block re-inks (Sycorax and Ariel override paper tones alone), so
+   only Library needs restoring — the values are its night block's, verbatim. */
+.pj2-app[data-binding="parchment"][data-track="library"] .pj2-log-block {
+  --pj2-ink0: #ffdc82;
+  --pj2-ink1: #ffc878;
+  --pj2-ink2: #b4823c;
+  --pj2-ink3: #785f32;
+  --pj2-accent: #c9a227;
+  --pj2-accent2: #b0553c;
+  --pj2-age0: #ffdc82;
+  --pj2-age1: #ffc878;
+  --pj2-age2: #b4823c;
+}
+
 .pj2-app[data-binding="parchment"] .pj2-folio {
   border: 2px solid var(--pj2-paper-edge);
   border-radius: 6px;
@@ -397,6 +417,20 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* THE LOG IS A WINDOW TOO (owner 2026-08-17). The apparatus panels above
+     it sit in night windows cut into the page and keep the NIGHT palette
+     whichever binding is up (pj2-viz.js inWindowInk / cutNightWindow); the
+     DOM log alone followed the page, so on parchment it read as iron gall
+     on tan while every box above it was amber on black. It now paints the
+     same ground the canvas cuts its panels with (--pj2-window = the track's
+     spiral.bg), inset 8px so its edges land on the panels' own 8..W-8 span,
+     with panelWindow()'s 3-6px corner. Text stays FLUSH to that edge — the
+     canvas panels draw their headings at r.x, so any inner padding here
+     would step the log's left margin off the column it belongs to. */
+  margin: 0 8px;
+  padding: 4px 0 6px;
+  background: var(--pj2-window);
+  border-radius: 5px;
 }
 .pj2-log-head {
   font-family: "VT323", monospace;
@@ -408,7 +442,7 @@
   border-bottom: 1px solid var(--pj2-ink3);
   /* margin (not padding) so the rule matches the canvas panels' 8..492 span */
   padding: 0 0 2px;
-  margin: 0 8px 4px;
+  margin: 0 0 4px;   /* the block carries the 8px now — see .pj2-log-block */
 }
 .pj2-log {
   flex: 1 1 auto;
@@ -419,7 +453,7 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 0 8px; /* rows share the canvas panels' left edge (pad = 8) */
+  padding: 0;     /* the block's 8px margin puts rows on the canvas panels' left edge */
   scrollbar-width: thin;
   scrollbar-color: var(--pj2-ink3) transparent;
 }
