@@ -35,7 +35,7 @@ if (!$isCli) {
     header('Content-Type: text/plain; charset=utf-8');
     // Production requires the setup key: this writes 107 rows into the live
     // tables and must not be triggerable by a stray GET.
-    if (JD_IS_PRODUCTION) {
+    if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
         $secrets  = jd_secrets();
         $expected = $secrets['jd_setup_key'] ?? null;
         $supplied = $_GET['key'] ?? '';

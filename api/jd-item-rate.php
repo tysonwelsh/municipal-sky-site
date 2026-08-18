@@ -24,7 +24,7 @@ jd_require_allowed_origin();
 jd_require_post();
 
 // --- Auth -----------------------------------------------------------------
-if (JD_IS_PRODUCTION) {
+if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
     // jd_bench_key if it exists, else the jd_setup_key that is already on file
     // — this needs no new secret to work in production. Same trust level:
     // whoever holds jd_setup_key can already create and alter these tables.

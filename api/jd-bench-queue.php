@@ -21,7 +21,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     jd_fail(405, 'method_not_allowed', 'GET only.');
 }
 
-if (JD_IS_PRODUCTION) {
+if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
     // See jd-item-rate.php: falls back to the jd_setup_key already on file, so
     // the bench needs nothing added to production to work.
     $secrets  = jd_secrets();

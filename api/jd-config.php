@@ -114,6 +114,19 @@ const JD_LIMIT_HOURLY = 100000;
 const JD_LIMIT_DAILY = 100000;
 const JD_LIMIT_GLOBAL_DAILY = 2000;
 
+// The rating bench's auth, in one switch.
+//
+// FALSE (2026-08-18, owner call): the owner is effectively the only visitor and
+// wanted to just open the link and rate. The bench endpoints are therefore
+// unauthenticated. What that exposes: anyone who finds two unlinked, noindex
+// URLs could file junk ratings, or re-run an idempotent backfill that writes
+// nothing new. No spend, no personal data, and fully recoverable — bench rows
+// are deletable with `DELETE FROM jd_ratings WHERE client = 'bench'`.
+//
+// Set this back to true to require jd_bench_key (falling back to jd_setup_key),
+// which is the whole of the reversal.
+const JD_BENCH_REQUIRE_KEY = false;
+
 const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
 const JD_RATINGS_MAX = 64;
