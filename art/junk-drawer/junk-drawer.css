@@ -1494,11 +1494,17 @@ tr.rc-axdesc td {
 /* the graded pencils (owner, 2026-08-11): the verdict is inked in the
    pencil it earned — dark green when clean, deep red when broken, and a
    warm ramp between. The label text still says the word; the colour
-   seconds it, never carries it alone. r* = the 3-step axes, g* = the
-   five grade tiers. All tuned dark enough to hold on the paper ground. */
+   seconds it, never carries it alone. r* = the 3-step axes, q* = the
+   4-step axes (v17 — a rank only means something against its own scale,
+   so each length gets its own ramp; JD_axisCls picks), g* = the five
+   grade tiers. All tuned dark enough to hold on the paper ground. */
 .rc-mark.rc-r3, .rc-bar.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
 .rc-mark.rc-r2, .rc-bar.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
 .rc-mark.rc-r1, .rc-bar.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
+.rc-mark.rc-q4, .rc-bar.rc-q4 { color: #0b6a1f; }   /* read the brief / neat stack — dark green */
+.rc-mark.rc-q3, .rc-bar.rc-q3 { color: #46761a; }   /* skimmed it / a little shuffled — leaf green */
+.rc-mark.rc-q2, .rc-bar.rc-q2 { color: #a06200; }   /* misread it / out of order — ochre */
+.rc-mark.rc-q1, .rc-bar.rc-q1 { color: #8f1d12; }   /* wrote its own brief / fifty-two pickup — deep red */
 
 /* the verdict cell: ONE segmented bar gauge ahead of the pencilled word
    (owner pick, mockup 11 option C — it replaced the dot sparkline whose

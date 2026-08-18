@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 16,
-  "updated": "2026-08-10",
+  "version": 17,
+  "updated": "2026-08-16",
   "grades": [
     {
       "id": "prime",
@@ -142,7 +142,8 @@
     {
       "id": "instruction-following",
       "label": "Instruction following",
-      "description": "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests?",
+      "defunct": true,
+      "description": "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests? (Defunct as of v17, 2026-08-16 — superseded by Understanding the Assignment; kept for responses graded under it.)",
       "values": [
         {
           "id": "followed",
@@ -168,7 +169,7 @@
       "id": "restraint",
       "defunct": true,
       "label": "Restraint",
-      "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes?",
+      "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes? (Retired v16; superseded by the re-scoped Restraint axis of v17, 2026-08-16 — kept for responses graded under it.)",
       "values": [
         {
           "id": "disciplined",
@@ -193,7 +194,8 @@
     {
       "id": "integrity",
       "label": "Structural integrity",
-      "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent?",
+      "defunct": true,
+      "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent? (Defunct as of v17, 2026-08-16 — its territory split: the object side went to Structural Coherence, the rendered-occlusion side to Layering; kept for responses graded under it.)",
       "values": [
         {
           "id": "sound",
@@ -243,6 +245,144 @@
     },
     {
       "id": "je-ne-sais-quoi",
+      "label": "Je ne sais quoi",
+      "defunct": true,
+      "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway. (Defunct as of v17, 2026-08-16 — superseded by the fresh jnsq axis, same scale, so the new rubric starts blank everywhere; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "abundant",
+          "rank": 3,
+          "label": "Has _it_",
+          "description": "The piece has it — undeniable, unaccountable appeal."
+        },
+        {
+          "id": "trace",
+          "rank": 2,
+          "label": "Just a hint",
+          "description": "A glimmer of something beyond competence."
+        },
+        {
+          "id": "none-detected",
+          "rank": 1,
+          "label": "Ain't got it",
+          "description": "Technically present, spiritually absent."
+        }
+      ]
+    },
+    {
+      "id": "understanding-assignment",
+      "label": "Understanding the Assignment",
+      "description": "Did the model grasp the brief — each explicit ask, and the evident intent behind it? Judged on what it tried to draw; whether the drawing itself holds up belongs to the axes below.",
+      "values": [
+        {
+          "id": "read-the-brief",
+          "rank": 4,
+          "label": "Read the brief",
+          "description": "Every explicit ask lands as specified, and the intent behind the words comes through."
+        },
+        {
+          "id": "skimmed-it",
+          "rank": 3,
+          "label": "Skimmed it",
+          "description": "An ask bent, softened, or quietly swapped for something easier."
+        },
+        {
+          "id": "misread-it",
+          "rank": 2,
+          "label": "Misread it",
+          "description": "Asks missed or misunderstood; the subject survives, but the brief only partly does."
+        },
+        {
+          "id": "own-brief",
+          "rank": 1,
+          "label": "Wrote its own brief",
+          "description": "Substantially not the thing that was asked for."
+        }
+      ]
+    },
+    {
+      "id": "restraint-2",
+      "label": "Restraint",
+      "description": "Did the model respect the brief's negative space? Prompts underspecify, and filling the gaps is the job — this axis charges only additions that crowd, contradict, or upstage the ask.",
+      "values": [
+        {
+          "id": "disciplined",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Nothing crowds the ask; what the model added fills the brief's gaps in its spirit."
+        },
+        {
+          "id": "embellished",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Unrequested extras crept in without taking over."
+        },
+        {
+          "id": "overgrown",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "Additions crowd, contradict, or upstage what was actually asked for."
+        }
+      ]
+    },
+    {
+      "id": "layering",
+      "label": "Layering",
+      "description": "Errors of the picture: stacking order and occlusion as rendered, fill, stroke and gradient work, framing and use of the canvas. The test — if it could be fixed without moving a single path (reorder, repaint, reframe), it lands here.",
+      "values": [
+        {
+          "id": "neat-stack",
+          "rank": 4,
+          "label": "Neat stack",
+          "description": "Stacking, paint, and framing all read as intended."
+        },
+        {
+          "id": "shuffled",
+          "rank": 3,
+          "label": "A little shuffled",
+          "description": "A slip you find on inspection — one wrong overlap, a paint or framing oddity."
+        },
+        {
+          "id": "out-of-order",
+          "rank": 2,
+          "label": "Out of order",
+          "description": "A visible rendering error changes how the image reads."
+        },
+        {
+          "id": "fifty-two-pickup",
+          "rank": 1,
+          "label": "Fifty-two pickup",
+          "description": "The picture loses to its own stacking, paint, or framing — rendering failures dominate."
+        }
+      ]
+    },
+    {
+      "id": "structural-coherence",
+      "label": "Structural Coherence",
+      "description": "Errors of the object: parts attach, anatomy is possible, proportions and viewpoint stay self-consistent. If fixing it means redrawing geometry, it lands here.",
+      "values": [
+        {
+          "id": "sound",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
+        },
+        {
+          "id": "strained",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Visible seams — small breaks, misalignments, or spatial slips."
+        },
+        {
+          "id": "broken",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "The object could not exist; structural failures dominate the read."
+        }
+      ]
+    },
+    {
+      "id": "jnsq",
       "label": "Je ne sais quoi",
       "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
       "values": [
@@ -441,6 +581,11 @@
       "date": "2026-08-11",
       "version": 16,
       "note": "Retire the \"restraint\" axis (owner call — possibly temporary): defunct: true, the v6 mechanism. The survey stops asking it, jd-rate stops accepting it, the report card and legend drop it; every filed restraint grading stays in the data, and un-retiring is one flag removal away."
+    },
+    {
+      "date": "2026-08-16",
+      "version": 17,
+      "note": "The v17 rework (owner call, 2026-08-16): the placeholder rubric gives way to a benchmark-shaped one, and EVERY response starts blank under it — all five new axes get fresh ids, so nothing filed under the old rubric carries forward and a full re-rating pass follows. Retired (the v6 mechanism — filed gradings stay in the data, the survey and report card stop asking): instruction-following (superseded by understanding-assignment), integrity (its territory split between structural-coherence and layering) and je-ne-sais-quoi (superseded by jnsq — same scale and labels, new id purely so the slate is clean). The five new axes, in survey order: understanding-assignment \"Understanding the Assignment\" (4-point: Read the brief / Skimmed it / Misread it / Wrote its own brief) — comprehension of the brief, judged on what the model TRIED to draw; restraint-2 \"Restraint\" (the problems scale, re-scoped from the v16-retired restraint: gap-filling is the job, only upstaging additions are charged); layering \"Layering\" (4-point: Neat stack / A little shuffled / Out of order / Fifty-two pickup) — errors of the PICTURE: stacking, paint, framing — anything fixable without moving a path; structural-coherence \"Structural Coherence\" (the problems scale) — errors of the OBJECT: anything whose fix means redrawing geometry; jnsq \"Je ne sais quoi\" (Has _it_ / Just a hint / Ain't got it, unchanged). The picture/object bright line is written into the two axis descriptions so a defect has exactly one home. First 4-point scales in the taxonomy: their values file as ranks 4.0 … 1.0, the same v9 numeric convention."
     }
   ]
 }
