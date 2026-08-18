@@ -22,8 +22,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 }
 
 if (JD_IS_PRODUCTION) {
+    // See jd-item-rate.php: falls back to the jd_setup_key already on file, so
+    // the bench needs nothing added to production to work.
     $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? null;
+    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
     $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
     if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
         jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');

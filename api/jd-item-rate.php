@@ -25,11 +25,15 @@ jd_require_post();
 
 // --- Auth -----------------------------------------------------------------
 if (JD_IS_PRODUCTION) {
+    // jd_bench_key if it exists, else the jd_setup_key that is already on file
+    // — this needs no new secret to work in production. Same trust level:
+    // whoever holds jd_setup_key can already create and alter these tables.
+    // Set a dedicated jd_bench_key later if the two should be separable.
     $secrets  = jd_secrets();
-    $expected = $secrets['jd_bench_key'] ?? null;
+    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
     $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? '';
     if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-        jd_fail(403, 'forbidden', 'The bench key is missing or wrong. Add jd_bench_key to secrets.php.');
+        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
     }
 }
 
