@@ -29,6 +29,17 @@
 
 require_once __DIR__ . '/jd-config.php';
 
+// jd-config.php turns display_errors off, which for a maintenance script means
+// a failure arrives as a blank 500. Report it here instead.
+set_error_handler(function ($no, $str, $file, $line) {
+    echo "PHP error: $str  ($file:$line)\n";
+    return true;
+});
+set_exception_handler(function ($e) {
+    http_response_code(500);
+    echo "FAILED: " . $e->getMessage() . "\n  at " . $e->getFile() . ':' . $e->getLine() . "\n";
+});
+
 $isCli = (PHP_SAPI === 'cli');
 
 if (!$isCli) {
@@ -123,6 +134,33 @@ if (!$entries) {
 
 $db = jd_db();
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+// Self-migrating: this script NEEDS jd_submissions.item_id, so it adds the
+// column rather than depending on setup-jd-tables.php having been run first.
+// Same guarded idiom as the migrations there; safe to re-run.
+try {
+    $hasItemId = false;
+    if (JD_DEV_MODE) {
+        foreach ($db->query('PRAGMA table_info(jd_submissions)') as $col) {
+            if (($col['name'] ?? '') === 'item_id') { $hasItemId = true; break; }
+        }
+        if (!$hasItemId) {
+            $db->exec('ALTER TABLE jd_submissions ADD COLUMN item_id TEXT NULL');
+            $db->exec('CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)');
+        }
+    } else {
+        $q = $db->query("SHOW COLUMNS FROM jd_submissions LIKE 'item_id'");
+        $hasItemId = $q !== false && $q->fetch() !== false;
+        if (!$hasItemId) {
+            $db->exec("ALTER TABLE jd_submissions ADD COLUMN item_id VARCHAR(64) NULL AFTER client_ref");
+            $db->exec("CREATE INDEX idx_jds_item ON jd_submissions (item_id)");
+        }
+    }
+    echo $hasItemId ? "item_id column: already present\n" : "item_id column: ADDED\n";
+} catch (PDOException $e) {
+    echo "item_id column: FAILED — " . $e->getMessage() . "\n";
+    exit(1);
+}
 
 // Curated submissions already on file — the idempotency guard.
 $already = [];
