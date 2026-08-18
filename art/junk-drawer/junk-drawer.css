@@ -1989,8 +1989,10 @@ html.jd-turn-open { overflow: hidden; }
    INDICATOR, printed in ink and keyed stably to the slot letter: a plotter
    pen tracing a circuit generated fresh each turn (round-20 swap — the
    flipping hourglass retires), the stray word (LOADING adrift, DVD-menu
-   style — round-19 swap, owner pick 2026-08-16), a segmented block progress
-   bar, a ticking wristwatch (round-21 swap — the bouncing dots retire).
+   style — round-19 swap, owner pick 2026-08-16), the scatterword (LOADING…
+   blown apart and zooped back together, its flight generated fresh each turn
+   — round-22 swap, owner pick 2026-08-18, the Win95 segmented progress bar
+   retires), a ticking wristwatch (round-21 swap — the bouncing dots retire).
    A fifth slip — "please wait…" in the visitor's pencil hand —
    floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
    collapses to an overlay strip so only the ✕ rides the top-right corner
@@ -2000,7 +2002,8 @@ html.jd-turn-open { overflow: hidden; }
 
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
    (a partial plot with the pen resting on it, the stray word at rest in the
-   centre, bar half-full, the watch reading its seeded time); every animation lives under prefers-reduced-motion: no-preference,
+   centre, the scatterword assembled and readable, the watch reading its
+   seeded time); every animation lives under prefers-reduced-motion: no-preference,
    a reduce block stills the rest, and the end-state poses live on the
    data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
    settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
@@ -2157,21 +2160,63 @@ html.jd-turn-open { overflow: hidden; }
   to   { top: 100%; transform: translateY(-100%); }
 }
 
-/* c — the segmented progress bar (Win95, indeterminate): an inset track, the
-   blocks stamped in the graph paper's own blue ink, filling in discrete
-   steps and dumping back. Static base: half-full. */
-.jd-dark-pbar {
-  display: block; width: 74%; height: 13px; overflow: hidden;
-  background: rgba(248, 243, 226, 0.65);
-  border: 1px solid rgba(51, 36, 15, 0.5);
-  box-shadow: inset 1px 1px 2px rgba(46, 34, 12, 0.3);
+/* c — the scatterword (round-22 swap, owner pick 2026-08-18; the Win95
+   segmented block progress bar retires): the word LOADING… holds just long
+   enough to read, explodes — every glyph thrown straight out along its own
+   ray, fastest at the bang and decelerating the whole way, tumbling, knocking
+   back off the swatch's edges — and then a fast suction zoops it back into
+   the word. Three different bangs to a 12.6s super-cycle, so it does not
+   visibly repeat.
+   THE TRACKS ARE GENERATED PER TURN in the JS (darkScatterword — ten
+   ballistic flights integrated under drag, seeded from the turn ref, so
+   every turn gets its own explosion and a repaint re-derives the same one).
+   This file knows only the base pose and the fact that it loops: the
+   generated <style> rides inside the well and carries animation-name AND
+   animation-duration, so the super-cycle's length lives in exactly ONE
+   place — the generator — and can never drift out of sync with a
+   hand-written number here.
+   SIZING. The flight is authored in em against a 140×110 FIELD (the
+   approved mockup's card), so one generated stylesheet drives the swatch at
+   every size the card takes. The well opens to the whole swatch (slot B's
+   precedent) and the field is centred in it, sized so its 10.769em width IS
+   the swatch's width: container-type: size makes the swatch a container, and
+   100/10.769 = 9.286cqw. The plain px above it is the fallback for browsers
+   without container queries (round()'s precedent in slot A — declare the
+   dumb value first, the clever one second); it is sized for the SMALLEST
+   swatch we ship (~145px on a phone) so that on those browsers the field can
+   only ever under-fill, never overflow.
+   The swatch is 41×33 (aspect 1.242) and the field is 140×110 (1.273), so
+   filling the width letterboxes the field by ~1% of the swatch's height top
+   and bottom. It is centred, and nothing is lost: the generator's roam box
+   already holds the glyph centres a little off every edge, so the letters
+   were never going to reach the extreme top and bottom anyway. */
+.jd-dark-sw--c { container-type: size; }
+.jd-dark-sw--c .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-word {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: pre;
+  font-family: var(--tmono); font-weight: 700; line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--tink);
+  font-size: 13.5px;
+  font-size: 9.286cqw;
 }
-.jd-dark-pbar .fill {
-  display: block; height: 100%; width: 55%;
-  background: repeating-linear-gradient(90deg,
-    rgba(74, 98, 138, 0.85) 0 5px, transparent 5px 8px);
+/* BASE POSE = the assembled word, exactly as typed — transform: none puts
+   every glyph in its word position. This is the static frame AND the
+   reduced-motion frame: whenever nothing is moving, the swatch reads
+   LOADING… and nothing else. */
+.jd-dark-gl { display: inline-block; transform: none; }
+/* the ellipsis is set 1.45× so each dot survives as its own drifting body (a
+   period at this size is barely two pixels of ink). line-height: 0 stops the
+   taller glyph from growing the word's line box, and the negative margin
+   pulls its advance back onto the typewriter's monospace grid. The
+   generator's measured glyph centres assume all three of these, and the type
+   above them — do not retune either without re-measuring. */
+.jd-dark-gl7, .jd-dark-gl8, .jd-dark-gl9 {
+  color: #4a628a;   /* the graph paper's own blue ink */
+  font-size: 1.45em; line-height: 0; margin-right: -0.186em;
 }
-@keyframes jdDarkPbar { from { width: 0; } to { width: 102%; } }
 
 /* d — the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
    dots retire): the classic Mac "please wait" watch, drawn with a ruling
@@ -2304,7 +2349,17 @@ html.jd-turn-open { overflow: hidden; }
      so the never-quite-repeating wander survives the slowdown */
   .jd-dark-stray           { animation: jdDarkStrayX 7.4s linear infinite alternate; }
   .jd-dark-stray .sy       { animation: jdDarkStrayY 9.8s linear infinite alternate; }
-  .jd-dark-pbar .fill      { animation: jdDarkPbar 2.7s steps(12) infinite; }
+  /* the scatterword: ten bodies on one super-cycle. animation-name and
+     animation-duration arrive from the generated block in the well, so only
+     the parts that are the same for every seed live here. LINEAR is the
+     default join on purpose — the deceleration after each bang lives in the
+     waypoint SPACING, not in a curve; the one eased keyframe in the whole
+     animation is the zoop, which carries its own timing function. */
+  .jd-dark-gl {
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
   /* watch slowed 2x (owner, 2026-08-17): a click per second, horology pace */
   .jd-dark-watch .w-min    { animation: jdDarkWatchMin 12s steps(12, end) infinite; }
   .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 144s steps(12, end) infinite; }
@@ -2319,19 +2374,19 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
-  .jd-dark-sw[data-state="ok"] .fill,
+  .jd-dark-sw[data-state="ok"] .jd-dark-gl,
   .jd-dark-sw[data-state="ok"] .w-min, .jd-dark-sw[data-state="ok"] .w-hr,
   .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
-  .jd-dark-sw[data-state="fail"] .fill,
+  .jd-dark-sw[data-state="fail"] .jd-dark-gl,
   .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr {
     animation-play-state: paused;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
-  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-pbar .fill,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-gl,
   .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
   .jd-dark-wait, .jd-dark-sw {
     animation: none !important;
