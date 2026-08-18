@@ -125,6 +125,40 @@ reorder, renumber, or rewrite existing responses. Elicit grade/annotations
 as above. Validate, then commit:
 `junk-drawer: add <model> alternative to "<title>"`.
 
+## Ratings now live in the DATABASE (2026-08-18) — read this first
+
+**Annotations are no longer filed in `entry.json`.** Taxonomy v17 retired all
+9 previous axes at once, so every response needed re-rating on the 5 live
+axes; those judgments go to the `jd_ratings` table, not to the files.
+
+- `art/junk-drawer/rating-bench.html` — the owner's rating instrument
+  (unlinked, noindex), the DB-writing successor to `sizing-desk.html`'s
+  export-a-blob pattern. Keys answer by POSITION, 1 always best.
+- `api/jd-bench-queue.php` (read) and `api/jd-item-rate.php` (write) — both
+  gated on `jd_bench_key`, falling back to `jd_setup_key`.
+- `api/jd-backfill-curated.php` — files each curated item as a synthetic
+  `jd_submissions` row (keyed by `item_id`) with one `jd_generations` row per
+  response, so a rating has something to hang off. Idempotent; run it after
+  adding items so the new ones become rateable.
+
+**`## The one rule` above is now narrower than it reads.** Committing is still
+the whole publishing act for ARTWORK and item METADATA — the `.svg`, the
+prompt, the title, `sizeClass`, `retired`. It is no longer true of scores.
+
+**Transitional state, and the thing most likely to confuse you:** the drawer
+still RENDERS annotations from `entry.json`, and the read path that would show
+DB ratings is not built yet. So bench ratings are being collected but are not
+visible on the site. Do not "fix" the drawer by copying DB ratings back into
+`entry.json` — the direction of travel is the other way.
+
+The 9 defunct-axis scores still in `entry.json` are a deliberate historical
+record: they span five taxonomy versions, so they were NOT migrated (a single
+`taxonomy_version` stamp on them would be false). Leave them.
+
+When filing a NEW item, still collect a grade as described below — the backfill
+carries it into the DB as a seed row. Per-axis annotations for new items are
+the bench's job now, not the entry file's.
+
 ## Procedure: regrade / annotate an existing response
 
 Push the old grade into `grade_history` as
