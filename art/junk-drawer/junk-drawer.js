@@ -4069,9 +4069,23 @@ function JD_layerOpen() {
     return d + 'Z';
   }
   /* the scatterword for slot C (round-22 swap, owner pick 2026-08-18; the
-     Win95 segmented block progress bar retires — mockup approved at the 4.2s
-     tempo with seeded trajectories and the 3-bang super-cycle): the word
-     LOADING… blown apart and pulled back together, forever.
+     Win95 segmented block progress bar retires — mockup approved with seeded
+     trajectories and the 3-bang super-cycle): the word LOADING… blown apart
+     and pulled back together, forever.
+
+     OWNER TUNING, 2026-08-18, three dials moved together and nothing else:
+       · the type is 15% smaller (13 → 11.05 real-scale px) against an
+         UNCHANGED 140×110 flight field, so the word sits more modestly on
+         the paper while the explosion still throws it across the whole
+         swatch. Only CX/CY/EM moved — the roam box did not;
+       · the ellipsis is inked like the rest of the word (the blue is gone;
+         see the CSS) — a sizing change only as far as this file cares; and
+       · the bang runs at the 6s "house tempo" the owner picked off the
+         variant sheet, up from the 4.2s "hard bang": a longer hold, a
+         gentler impulse (V0 260 not 385) over a longer drag time (TAU 0.30
+         not 0.24), lazier CURL, half the SPIN, and a slightly roomier ZOOP.
+         Same choreography, walked instead of sprinted. BANGS stays 3, so
+         the super-cycle is 18s.
 
      ONE BANG, IN BEATS. The word holds assembled just long enough to read.
      Then every glyph takes an impulse straight out along its own ray and
@@ -4097,7 +4111,7 @@ function JD_layerOpen() {
          what makes the outward throw readable frame by frame instead of
          reading as a cut, and no easing function in CSS draws that curve.
      A super-cycle is BANGS=3 of these end to end (owner-approved), so the
-     swatch does not visibly repeat for 12.6s — three different explosions,
+     swatch does not visibly repeat for 18s — three different explosions,
      each stratified into its own sector of the circle so no two of them can
      come out looking like the same bang.
 
@@ -4109,32 +4123,37 @@ function JD_layerOpen() {
      slots, or a swatch left over mid-transition — can never collide.
 
      GEOMETRY. Everything is computed in "real-scale" px against a 140×110
-     FIELD (the approved mockup's card) with a 13px glyph, then divided by
-     each glyph's own font-size and emitted in em — so one generated
+     FIELD (the approved mockup's card) with an 11.05px glyph, then divided
+     by each glyph's own font-size and emitted in em — so one generated
      stylesheet drives the swatch at every size the card ever takes. CX/CY
      are the glyph centres MEASURED in-browser from the assembled pose, and
      EM is the font-size each glyph's translate() resolves against (the
      three ellipsis dots are set 1.45×). They are only true for the exact
      type in the CSS: var(--tmono) at 700 with letter-spacing 0.08em and the
      dots' 1.45em / line-height 0 / −0.186em advance trim. Change any of
-     those and these numbers must be re-measured, not adjusted by eye. */
+     those — including the glyph SIZE, as the 2026-08-18 tuning did — and
+     these numbers must be re-measured, not adjusted by eye.
+     The FIELD is deliberately not part of that: it stayed 140×110 through
+     the shrink, which is why the roam box below is untouched and the
+     explosion still covers as much of the swatch as it did before. */
   function darkScatterword(seed) {
-    /* ---- choreography: FIXED for every seed, this is the approved tempo -- */
-    var BANG    = 4.2;      /* one bang, seconds                             */
+    /* ---- choreography: FIXED for every seed, the 6s "house tempo" the
+           owner picked off the variant sheet (2026-08-18) ----------------- */
+    var BANG    = 6.0;      /* one bang, seconds                             */
     var BANGS   = 3;        /* bangs per super-cycle                         */
-    var HOLD    = 0.62;     /* assembled hold, split across the loop seam    */
+    var HOLD    = 0.70;     /* assembled hold, split across the loop seam    */
     var LEAD    = 0.35;     /* fraction of that hold before the impulse      */
-    var ZOOP    = 0.30;     /* suction home, seconds                         */
+    var ZOOP    = 0.38;     /* suction home, seconds                         */
     var EZ_ZOOP = 'cubic-bezier(.7,.05,.9,.92)'; /* accelerate in, dead stop */
     /* ---- physics: also fixed ------------------------------------------- */
-    var V0  = 385;          /* muzzle speed, px/s at real scale              */
-    var TAU = 0.24;         /* drag time constant, s                         */
+    var V0  = 260;          /* muzzle speed, px/s at real scale              */
+    var TAU = 0.30;         /* drag time constant, s                         */
     /* ---- what the seed is allowed to vary ------------------------------ */
     var V0_JITTER = 0.15;   /* ± fraction of V0                              */
     var RAY_JITTER = 10;    /* ± deg off the glyph's slot in the fan         */
     var SECTOR_JITTER = 32; /* ± deg a bang may wander inside its sector     */
-    var CURL_MIN = 10, CURL_MAX = 22;     /* deg/s, either direction         */
-    var SPIN_MIN = 720, SPIN_MAX = 1080;  /* deg of spin during the flight   */
+    var CURL_MIN = 8, CURL_MAX = 17;      /* deg/s, either direction         */
+    var SPIN_MIN = 450, SPIN_MAX = 700;   /* deg of spin during the flight   */
     var SPIN_LEFT_MIN = 80, SPIN_LEFT_MAX = 150; /* deg left for the snap    */
     /* ---- simulation / emission tuning ---------------------------------- */
     var DT = 0.003;         /* integration step, s                           */
@@ -4150,14 +4169,18 @@ function JD_layerOpen() {
                                clearance override the seeded ray, and then
                                different seeds pick the SAME heading and the
                                bangs stop looking different from each other. */
-    var EM_DP = 2, DEG_DP = 1, PCT_DP = 3;  /* 0.01em ≈ 0.13px at real scale */
-    /* ---- the glyphs, measured ------------------------------------------ */
+    var EM_DP = 2, DEG_DP = 1, PCT_DP = 3;  /* 0.01em ≈ 0.11px at real scale */
+    /* ---- the glyphs, measured (re-measured 2026-08-18 for the 11.05px
+           type; the word now spans 0.537 of the field's width, was 0.632) - */
     var GLYPHS = 'LOADING...';
     var NG = 10;
-    var CX = [30.44, 39.29, 48.13, 56.97, 65.82, 74.66, 83.51, 94.10, 102.95, 111.80];
-    var CY = [55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 55.25, 53.50, 53.50, 53.50];
-    var EM = [13, 13, 13, 13, 13, 13, 13, 18.85, 18.85, 18.85];
-    /* roam box for glyph CENTRES — keeps the ink inside the field */
+    var CX = [36.16, 43.67, 51.19, 58.70, 66.22, 73.73, 81.25, 90.26, 97.79, 105.32];
+    var CY = [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 53.48, 53.48, 53.48];
+    var EM = [11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 16.02, 16.02, 16.02];
+    /* roam box for glyph CENTRES — keeps the ink inside the field. UNCHANGED
+       by the 2026-08-18 shrink, on purpose: the word got smaller, the flight
+       did not. If anything the smaller glyphs now clear the edges by a
+       little more ink than they used to. */
     var XMIN = 8, XMAX = 132, YMIN = 12, YMAX = 98;
 
     var DEG = Math.PI / 180;
@@ -4378,7 +4401,10 @@ function JD_layerOpen() {
     if (slot === 'b') {
       /* two nested movers, one axis each — the CSS runs them at
          incommensurate periods so the ricochet never visibly repeats */
-      return '<span class="jd-dark-stray"><span class="sy">LOADING</span></span>';
+      /* round-23 reword (owner pick 2026-08-18): the drifting word drops
+         LOADING for the office's own plea — "please / wait", two lines, in
+         an old-fashioned script hand (see .sy in the CSS) */
+      return '<span class="jd-dark-stray"><span class="sy">please<br>wait</span></span>';
     }
     if (slot === 'c') {
       /* the whole track is generated per turn (see darkScatterword): a

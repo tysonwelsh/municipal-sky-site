@@ -2118,10 +2118,12 @@ html.jd-turn-open { overflow: hidden; }
 @keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
 @keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
 
-/* b — the stray word: LOADING adrift on the print, ricocheting off the
-   swatch's own edges like the DVD-menu logo of blessed memory (round-19
+/* b — the stray word: "please / wait" adrift on the print, ricocheting off
+   the swatch's own edges like the DVD-menu logo of blessed memory (round-19
    swap — mockup-19-offguard-loaders.html №10 rev B replaces the radial-tick
-   throbber; owner pick 2026-08-16). The bounce field is the WHOLE swatch,
+   throbber; owner pick 2026-08-16. Round-23 reword, owner pick 2026-08-18:
+   LOADING retires for a two-line "please / wait" in an old-fashioned script
+   hand — a politer ghost to chase around the paper). The bounce field is the WHOLE swatch,
    not the inset well — the well opens to inset 0 for this slot only, so the
    word rebounds off the graph paper's edges and slides UNDER the pencilled
    letter (z 3) and the verdict (z 2). The two axes run incommensurate
@@ -2144,11 +2146,15 @@ html.jd-turn-open { overflow: hidden; }
      full-well height, translateY(-100%) against the word's own. */
   position: relative; top: 50%; transform: translateY(-50%);
   display: block;
-  /* 10.5px -> 14.5px: the word grows ~40% (owner, 2026-08-17), same as the
-     watch across the pile — the travel math is %-based, so the bounce field
-     just tightens to fit the bigger word on its own */
-  font-family: var(--tmono); font-size: 14.5px; font-weight: 700;
-  letter-spacing: 0.12em; white-space: nowrap;
+  /* round-23: typewriter caps retire for an old-fashioned script hand —
+     classic system cursives, best-first (Snell on Apple, Brush Script on
+     Windows), never the chalky --thand: this is penmanship, not a scrawl.
+     Two lines set snug; the bounce math never notices — the travel is
+     %-based against the block's own max-content size */
+  font-family: "Snell Roundhand", "Apple Chancery", "Edwardian Script ITC",
+               "Brush Script MT", "Lucida Handwriting", cursive;
+  font-size: 17px; font-weight: 400; line-height: 1.02;
+  letter-spacing: 0.02em; white-space: nowrap; text-align: center;
   color: rgba(74, 98, 138, 0.85);   /* the graph paper's own blue ink */
 }
 @keyframes jdDarkStrayX {
@@ -2165,8 +2171,14 @@ html.jd-turn-open { overflow: hidden; }
    enough to read, explodes — every glyph thrown straight out along its own
    ray, fastest at the bang and decelerating the whole way, tumbling, knocking
    back off the swatch's edges — and then a fast suction zoops it back into
-   the word. Three different bangs to a 12.6s super-cycle, so it does not
+   the word. Three different bangs to an 18s super-cycle, so it does not
    visibly repeat.
+   OWNER TUNING, 2026-08-18 (round-22 follow-up, three changes at once):
+   the type is 15% smaller against an unchanged flight field, so the word
+   sits more modestly in the swatch while the explosion still uses the whole
+   card; the ellipsis takes the same ink as the letters; and the bang runs at
+   the 6s "house tempo" the owner picked off the variant sheet (was 4.2s),
+   which makes the super-cycle 18s.
    THE TRACKS ARE GENERATED PER TURN in the JS (darkScatterword — ten
    ballistic flights integrated under drag, seeded from the turn ref, so
    every turn gets its own explosion and a repaint re-derives the same one).
@@ -2178,13 +2190,17 @@ html.jd-turn-open { overflow: hidden; }
    SIZING. The flight is authored in em against a 140×110 FIELD (the
    approved mockup's card), so one generated stylesheet drives the swatch at
    every size the card takes. The well opens to the whole swatch (slot B's
-   precedent) and the field is centred in it, sized so its 10.769em width IS
+   precedent) and the field is centred in it, sized so its 12.670em width IS
    the swatch's width: container-type: size makes the swatch a container, and
-   100/10.769 = 9.286cqw. The plain px above it is the fallback for browsers
-   without container queries (round()'s precedent in slot A — declare the
-   dumb value first, the clever one second); it is sized for the SMALLEST
-   swatch we ship (~145px on a phone) so that on those browsers the field can
-   only ever under-fill, never overflow.
+   100/12.670 = 7.893cqw. (Owner tuning 2026-08-18: the glyph shrank from 13
+   to 11.05 real-scale px — 15% — while the FIELD stayed 140×110, which is
+   the whole point of the change: a smaller word thrown across exactly the
+   same card. That is the only reason this em-per-field number moved.) The
+   plain px above it is the fallback for browsers without container queries
+   (round()'s precedent in slot A — declare the dumb value first, the clever
+   one second); it is sized for the SMALLEST swatch we ship (~145px on a
+   phone) so that on those browsers the field can only ever under-fill, never
+   overflow.
    The swatch is 41×33 (aspect 1.242) and the field is 140×110 (1.273), so
    filling the width letterboxes the field by ~1% of the swatch's height top
    and bottom. It is centred, and nothing is lost: the generator's roam box
@@ -2199,8 +2215,8 @@ html.jd-turn-open { overflow: hidden; }
   font-family: var(--tmono); font-weight: 700; line-height: 1;
   letter-spacing: 0.08em;
   color: var(--tink);
-  font-size: 13.5px;
-  font-size: 9.286cqw;
+  font-size: 11.4px;
+  font-size: 7.893cqw;
 }
 /* BASE POSE = the assembled word, exactly as typed — transform: none puts
    every glyph in its word position. This is the static frame AND the
@@ -2208,13 +2224,16 @@ html.jd-turn-open { overflow: hidden; }
    LOADING… and nothing else. */
 .jd-dark-gl { display: inline-block; transform: none; }
 /* the ellipsis is set 1.45× so each dot survives as its own drifting body (a
-   period at this size is barely two pixels of ink). line-height: 0 stops the
-   taller glyph from growing the word's line box, and the negative margin
-   pulls its advance back onto the typewriter's monospace grid. The
-   generator's measured glyph centres assume all three of these, and the type
-   above them — do not retune either without re-measuring. */
+   period at this size is barely two pixels of ink) — and it matters more now
+   the type is 15% smaller. line-height: 0 stops the taller glyph from growing
+   the word's line box, and the negative margin pulls its advance back onto
+   the typewriter's monospace grid. Both of those are RATIOS in em, so they
+   survived the shrink untouched; the generator's measured glyph centres did
+   not, and were re-measured. Do not retune any of this without re-measuring.
+   The dots take the same ink as the letters (owner tuning, 2026-08-18 — they
+   used to be printed in the graph paper's own blue): one word, one pen, just
+   an ellipsis typed a size up. */
 .jd-dark-gl7, .jd-dark-gl8, .jd-dark-gl9 {
-  color: #4a628a;   /* the graph paper's own blue ink */
   font-size: 1.45em; line-height: 0; margin-right: -0.186em;
 }
 
