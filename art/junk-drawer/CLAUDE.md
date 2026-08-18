@@ -159,3 +159,11 @@ without the flag. Commit: `junk-drawer: taxonomy — add axis "<label>"`.
 - Never create or commit a manifest/index of items — `data.php` assembles
   it at request time.
 - Never store transcripts or notes as `.md` inside `items/` — use `.json`.
+- Never reintroduce a rubber stamp to the turn modal. Round 15 built it
+  around "stamps are the state machine" — a red seal or box stamp standing
+  in for RECEIVED, ATTACHED, ACCESSIONED, OVER QUOTA / CLOSED FOR THE DAY,
+  RETURNED TO SENDER, NOT FILED. The owner asked for every one removed
+  (2026-08-14, `2fbeaf6`). It is a deliberate reversal, not a regression to
+  restore. Each state's meaning survives in prose that was already there;
+  `--tstamp` remains only as a plain ink-red accent, tied to no stamp. The
+  longer note lives in `junk-drawer.css` above the turn-modal tokens.
