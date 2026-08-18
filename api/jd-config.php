@@ -102,9 +102,17 @@ const JD_PROVIDER_CONNECT_TIMEOUT = 10;
 const JD_CONSENT_VERSION = 'jd-consent-4';
 
 // C1.2 step 7 — cost controls, tunable in one place post-launch.
-const JD_LIMIT_HOURLY = 3;
-const JD_LIMIT_DAILY = 10;
-const JD_LIMIT_GLOBAL_DAILY = 100;
+//
+// RAISED 2026-08-18 (owner call): the owner is the only user for now and the
+// re-rating backfill reruns prompts in bulk — 30 items x 4 models is 120
+// generations, which the old global 100 would have stopped mid-run. The
+// per-visitor caps are effectively off. THE GLOBAL CAP IS DELIBERATELY STILL
+// FINITE: jd-generate.php is publicly reachable with no feature flag, and this
+// number is the only thing bounding spend at four paid providers if a bot
+// finds it. Lower these again when the drawer opens to the public.
+const JD_LIMIT_HOURLY = 100000;
+const JD_LIMIT_DAILY = 100000;
+const JD_LIMIT_GLOBAL_DAILY = 2000;
 
 const JD_PROMPT_MAX_CHARS = 500;
 const JD_NOTE_MAX_CHARS = 500;
@@ -262,6 +270,26 @@ function jd_insert_ignore(PDO $db): string
 // C1 — 26-char Crockford base32 ULID: 48-bit ms timestamp + 80 bits of
 // random_bytes entropy. Possession of a submission_id is the capability to
 // rate it, so the random half must be unguessable, not merely unique.
+/**
+ * The curator's stable visitor_hash — the owner, rating from the bench, and the
+ * filer of the curated backfill's seed rows.
+ *
+ * msky_visitor_hash() puts the UTC date INSIDE the hash so a visitor cannot be
+ * followed across days. That is right for visitors and useless for the curator:
+ * a 385-cell pass across three sittings would file the owner as three different
+ * raters. This is a fixed value instead, so curated work always groups.
+ *
+ * It is deliberately NOT secret-derived: nothing is protected by it. A client
+ * can never set visitor_hash — the server always assigns it — so a guessable
+ * constant forges nothing, and keeping it constant means production needs no
+ * extra key and no rotation can orphan already-filed rows. The real rater-class
+ * discriminator is the `client` column ('curated' | 'bench' | 'seed' | 'web').
+ */
+function jd_curator_hash(): string
+{
+    return hash('sha256', 'municipal-sky-curator-v1');
+}
+
 function jd_ulid(): string
 {
     $alphabet = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';

@@ -104,6 +104,46 @@ try {
     echo str_pad('slot d', 20) . " FAILED: " . $e->getMessage() . "\n";
 }
 
+// jd_submissions.item_id — the curated backfill (2026-08-18).
+//
+// The Junk Drawer's curated collection (art/junk-drawer/items/) is backfilled
+// into jd_submissions/jd_generations so its responses can be rated through the
+// same jd_ratings store the turn flow writes. item_id is the join key back to
+// the filesystem AND the discriminator that keeps curated rows out of
+// turn-flow analytics.
+//
+// *** READ THIS BEFORE WRITING ANY REPORT OVER THESE TABLES ***
+// Curated rows are NOT visitor turns. They sit permanently at
+// status='generated' because the ENUM has no 'curated' member, which in the
+// turn flow is the signature of a visitor who abandoned before rating. Any
+// funnel/abandonment/spend report MUST exclude them with:
+//     WHERE s.item_id IS NULL      (turn data only)
+// Curated jd_generations rows also carry svg = NULL: the .svg file on disk is
+// canonical. Anything assuming jd_generations.svg IS NOT NULL breaks on them.
+try {
+    $has = false;
+    if (JD_DEV_MODE) {
+        foreach ($db->query('PRAGMA table_info(jd_submissions)') as $col) {
+            if (($col['name'] ?? '') === 'item_id') { $has = true; break; }
+        }
+        if (!$has) {
+            $db->exec('ALTER TABLE jd_submissions ADD COLUMN item_id TEXT NULL');
+            $db->exec('CREATE INDEX IF NOT EXISTS idx_jds_item ON jd_submissions (item_id)');
+        }
+    } else {
+        $q = $db->query("SHOW COLUMNS FROM jd_submissions LIKE 'item_id'");
+        $has = $q !== false && $q->fetch() !== false;
+        if (!$has) {
+            $db->exec("ALTER TABLE jd_submissions ADD COLUMN item_id VARCHAR(64) NULL AFTER client_ref");
+            $db->exec("CREATE INDEX idx_jds_item ON jd_submissions (item_id)");
+        }
+    }
+    echo str_pad('item_id column', 20) . ($has ? " already present\n" : " added\n");
+} catch (PDOException $e) {
+    $failed++;
+    echo str_pad('item_id column', 20) . " FAILED: " . $e->getMessage() . "\n";
+}
+
 echo "\n" . ($failed === 0 ? "All tables present. Delete this script when you are done.\n" : "$failed statement(s) failed.\n");
 
 // ---------------------------------------------------------------------------
