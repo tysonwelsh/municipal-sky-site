@@ -38,6 +38,8 @@
 // The overlay only ever reads the page: no styles are written to any existing
 // element, and everything it adds lives inside one node, so removing the
 // query parameter restores the page exactly.
+// (2026-08-17: touched to force a deploy re-upload after a stale manual
+// publish overwrote the server copy — see pj2-viz.js's re-sync note.)
 // ============================================================================
 
 (function () {

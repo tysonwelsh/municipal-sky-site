@@ -73,6 +73,14 @@
 // REAL five-line staff (see drawThemeStaff). The plate is the spiral's
 // alone now; everything readable lives in the margin column.
 //
+// DEPLOY RE-SYNC (2026-08-17): a manual publish from a stale checkout
+// overwrote the SERVER copy of this file with a pre-rowA/rowB-removal
+// build — and the hash-diffing FTP deploy, whose sync state already
+// matched Git, saw nothing to re-upload. This paragraph is the content
+// change that forces the re-upload. The root cause (publish.sh uploading
+// even when its push is rejected as behind origin) is guarded against in
+// scripts/publish.sh as of the same day.
+//
 // Precision rules, binding (§2): data marks are never quantized coarser
 // than 1 device px (contour, marks, needle angles all draw at full
 // resolution on the smoothed L2 context); SAMPLES_PER_TURN is a constant

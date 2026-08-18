@@ -37,13 +37,26 @@ else
   git commit -q -m "$msg" && echo "Git: committed \"$msg\""
 fi
 
-# Push to the remote (non-fatal — the FTP upload still proceeds if push fails).
+# Push to the remote. A push that fails for NETWORK/credential reasons is
+# non-fatal — the FTP upload still proceeds and Git can be synced manually.
+# A push REJECTED AS BEHIND ORIGIN is fatal: uploading that checkout would
+# clobber the live site with stale files, and the GitHub Actions deploy will
+# never repair them (its hash sync-state still matches Git, so it sees
+# nothing to re-upload). That exact sequence resurrected deleted jukebox UI
+# on 2026-08-17 — merge origin/main first, then publish.
 # Capture the real error rather than swallowing it, so failures are actionable.
 if push_out="$(git push 2>&1)"; then
   echo "Git: pushed to remote."
 else
-  echo "publish: git push failed — FTP upload still proceeds; sync Git manually."
   printf '%s\n' "$push_out" | sed 's/^/  git: /'
+  if printf '%s' "$push_out" | grep -qiE "non-fast-forward|fetch first|\[rejected\]"; then
+    echo "publish: ABORTING — the remote has commits this checkout lacks."
+    echo "  Uploading now would overwrite the live site with stale files that the"
+    echo "  Actions deploy cannot detect or repair. Run:  git pull --no-rebase"
+    echo "  (resolve any conflicts), then re-run publish."
+    exit 1
+  fi
+  echo "publish: git push failed — FTP upload still proceeds; sync Git manually."
   if printf '%s' "$push_out" | grep -qi "workflow.*scope"; then
     echo "  → Cause: this push touches .github/workflows/, but your Git credential"
     echo "    lacks GitHub's 'workflow' scope. Grant it once (opens a browser):"

@@ -7,6 +7,8 @@
 // and the conjurer's cabinet; pj2-ui.js drives the engines and pj2-viz.js
 // draws the plates. Family front-door pattern per art/kolob/index.php,
 // including the anonymous page-view / first-play tracking.
+// (2026-08-17: touched to force a deploy re-upload after a stale manual
+// publish overwrote the server copy — see pj2-viz.js's re-sync note.)
 // ============================================================================
 $page_title = "Prospero's Jukebox — Municipal Sky";
 $page_description = "An aleatoric jukebox of three books: the Library's alchemical codex, Sycorax's woodcut grimoire, and Ariel's celestial atlas. Generative chamber music that never repeats, drawn as living manuscript plates.";
