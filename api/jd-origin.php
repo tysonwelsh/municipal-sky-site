@@ -37,7 +37,7 @@ function jd_require_allowed_origin(): void
             header('Access-Control-Allow-Origin: ' . $origin);
         }
         header('Access-Control-Allow-Methods: POST, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type');
+        header('Access-Control-Allow-Headers: Content-Type, X-Bench-Key');
         header('Access-Control-Max-Age: 86400');
         header('Vary: Origin');
         // C1 — Content-Type: application/json on every response, preflight
