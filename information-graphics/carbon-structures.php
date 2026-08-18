@@ -124,16 +124,16 @@ include '../includes/header.php';
     <div class="post-container">
       <section class="prose-flow">
         <p>The paper these structures come from argues that a single topological number predicts how well a
-          disordered network conducts heat: its <em>bond-network entropy</em>. Walk out along the bonds from an
-          atom to its nearest few dozen neighbors, and the little graph you collect has a shape — a certain number
-          of independent rings, sitting at certain distances from where you started. Catalogue that shape for every
+          disordered network conducts heat: its <em>bond-network entropy</em>. Gather an atom's nearest few dozen
+          neighbors, and the little graph of bonds among them has a shape — a certain number of independent rings,
+          sitting a certain number of bonds from where you started. Catalogue that shape for every
           atom, and the entropy of the resulting distribution measures how many genuinely different neighborhoods
           the material contains. Perfect graphite has one; a badly disordered carbon has hundreds.</p>
         <p>Switch <strong>Color by</strong> to bond-network entropy and each atom is shaded by how rare its own
           neighborhood is, from the commonplace to the singular. The average of that shading is exactly the number
           reported in the panel. The clearest demonstration is the irradiation sequence: step IRG&nbsp;T2 through
-          T9 and watch the pristine graphitic environment — three hexagons, nothing else — fall from 77% of atoms
-          to 57%, while the entropy curve lifts behind it.</p>
+          T9 and watch the pristine graphitic environment — three hexagons, nothing else — fall from 79% of atoms
+          to 59%, while the entropy curve lifts behind it.</p>
       </section>
     </div>
 
@@ -141,15 +141,15 @@ include '../includes/header.php';
     <div class="post-container">
       <section class="prose-flow">
         <p>Structures from Iwanowski, Csányi &amp; Simoncelli, <em>Bond-network entropy governs heat transport in
-            coordination-disordered solids</em> (<a href="https://arxiv.org/abs/2412.12753"
-            target="_blank">arXiv:2412.12753</a>), relaxed with the GAP potential. Bonds are drawn between atoms within
-          1.8&nbsp;Å.</p>
-        <p>The bond-network entropy shown here is an independent reimplementation from the paper's description,
-          following the H<sub>1</sub>-barcode construction of Schweinhart et al. (2020) rather than running their
-          Swatches code — so the ordering across structures is the meaningful result, not the absolute values.
+            coordination-disordered solids</em> (<a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp"
+            target="_blank">Phys. Rev. X 15, 041041 (2025)</a>), relaxed with the GAP potential. Bonds are drawn
+          between atoms within 1.8&nbsp;Å.</p>
+        <p>The bond-network entropy is computed with the authors' own reference implementation, the
+          <a href="https://github.com/MPA2suite/smooth-disorder" target="_blank">smooth-disorder</a> package, with
+          every atom of every structure catalogued — no sampling. The values here reproduce the paper's
+          (amorphous carbon at 2.9&nbsp;g/cm³ and 8,000 atoms: 0.240 against Fig.&nbsp;2c's&nbsp;≈0.24).
           Cells of a few hundred atoms are small enough that nearly every neighborhood in them is unique, which
-          caps the entropy and understates their disorder; the panel flags this when it happens. Structures over
-          6,000 atoms are sampled rather than exhaustively catalogued.</p>
+          caps the entropy and understates their disorder; the panel flags this when it happens.</p>
       </section>
     </div>
 
