@@ -194,4 +194,23 @@ include '../includes/header.php';
   </div>
 </div>
 
+<!-- Anonymous usage tracking (site pattern): a page view only. No personal
+     data leaves the browser; the server records a salted, daily-rotating
+     visitor hash for unique-visit counts. The dashboard itself lives in the
+     carbon-point-cloud iframe — a separate document — so interactions inside
+     it aren't counted here, only arrivals at the page. -->
+<script>
+  (function () {
+    fetch("../api/page-event-tracking.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        page: "carbon-structures",
+        event_type: "page_view",
+        label: null,
+      }),
+    }).catch(function () {});
+  })();
+</script>
+
 <?php include '../includes/footer.php'; ?>

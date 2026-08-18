@@ -124,9 +124,23 @@ $L[] = sprintf("  %-26s %d views (%d unique), %d downloads   [all-time: %d / %d 
     $i($pr24,'v'), $i($pr24,'u'), $i($pr24,'d'),
     $i($prAll,'v'), $i($prAll,'u'), $i($prAll,'d'));
 
+$cb = $pe24['carbon-structures'] ?? []; $cbA = $peAll['carbon-structures'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique)   [all-time: %d views, %d unique]",
+    "Carbon structures",
+    $i($cb,'v'), $i($cb,'u'),
+    $i($cbA,'v'), $i($cbA,'u'));
+
+// v2 is the live jukebox (linked from /art since 2026-08-07); v1 stays for
+// its history only — it is no longer linked anywhere.
+$j2 = $pe24['prosperos-jukebox-v2'] ?? []; $j2A = $peAll['prosperos-jukebox-v2'] ?? [];
+$L[] = sprintf("  %-26s %d views (%d unique), %d plays   [all-time: %d / %d / %d]",
+    "Prospero's Jukebox v2",
+    $i($j2,'v'), $i($j2,'u'), $i($j2,'p'),
+    $i($j2A,'v'), $i($j2A,'u'), $i($j2A,'p'));
+
 $jk = $pe24['prosperos-jukebox'] ?? []; $jkA = $peAll['prosperos-jukebox'] ?? [];
 $L[] = sprintf("  %-26s %d views (%d unique), %d plays   [all-time: %d / %d / %d]",
-    "Prospero's Jukebox",
+    "Prospero's Jukebox (v1)",
     $i($jk,'v'), $i($jk,'u'), $i($jk,'p'),
     $i($jkA,'v'), $i($jkA,'u'), $i($jkA,'p'));
 
