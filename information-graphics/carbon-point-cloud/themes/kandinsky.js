@@ -116,6 +116,12 @@ window.__registerTheme({
   name: "Kandinsky",
   colorScheme: "light", // pinned: OS dark mode does not flip this plate
 
+  // Bauhaus hierarchy: the yellow is the loudest of the three primaries, so it
+  // goes to whichever coordination class actually dominates the structure
+  // rather than sitting permanently on CN 2. The engine swaps it with that
+  // class's colour, so the palette still holds one of each.
+  cnDominant: "#F2A81D",
+
   vars: {
     ...KANDINSKY_SHARED,
     "--page":     "#EFE7D3",           // warm cream
@@ -127,6 +133,33 @@ window.__registerTheme({
     "--baseline": "rgba(24,21,18,0.40)",
     "--border":   "rgba(24,21,18,0.70)",
     "--bond":     "rgba(24,21,18,0.45)", // black construction lines
+  },
+
+  css: KANDINSKY_CSS,
+
+  render: KANDINSKY_RENDER,
+});
+
+window.__registerTheme({
+  id: "kandinsky-nocturne",
+  name: "Kandinsky — Several Circles",
+  colorScheme: "dark", // pinned nocturne
+
+  cnDominant: "#F2A81D", // as above: yellow follows the majority class
+
+  vars: {
+    ...KANDINSKY_SHARED,
+    "--cn0":      "#F4EDDE", // isolated atoms read as pale marks, not black
+    "--ring6":    "#6E6858",
+    "--page":     "#191B26", // near-black indigo
+    "--surface":  "#222536",
+    "--ink":      "#F4EDDE",
+    "--ink-2":    "#C9C2AC",
+    "--muted":    "#8A8672",
+    "--grid":     "rgba(244,237,222,0.14)",
+    "--baseline": "rgba(244,237,222,0.35)",
+    "--border":   "rgba(244,237,222,0.55)",
+    "--bond":     "rgba(244,237,222,0.40)",
   },
 
   css: KANDINSKY_CSS,

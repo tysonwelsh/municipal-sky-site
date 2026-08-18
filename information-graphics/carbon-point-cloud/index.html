@@ -249,7 +249,22 @@
     position: absolute; right: 12px; bottom: 12px; z-index: 5;
     flex-direction: column; gap: 8px; touch-action: none;
   }
-  #flyPad button { width: 52px; height: 52px; font-size: 18px; border-radius: 50%; opacity: 0.85; }
+  #flyPad button {
+    width: 52px; height: 52px; border-radius: 50%; opacity: 0.85;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    /* held down, these are buttons — not text. The arrows are SVG so there is
+       no text node to select, and these four kill the rest of the mobile
+       press-and-hold behaviour: selection, the iOS callout menu, the tap
+       flash, and the double-tap-to-zoom delay. */
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  #flyPad button svg {
+    width: 19px; height: 19px; display: block; fill: currentColor;
+    pointer-events: none; /* presses always land on the button itself */
+  }
   @media (max-width: 760px) {
     .layout { flex-direction: column; }
     .side { flex: none; width: 100%; }
@@ -316,8 +331,12 @@
       <canvas id="canvas"></canvas>
       <div class="tooltip" id="tooltip"></div>
       <div id="flyPad" style="display:none">
-        <button id="flyFwd" aria-label="Move forward">▲</button>
-        <button id="flyBack" aria-label="Move back">▼</button>
+        <button id="flyFwd" type="button" aria-label="Move forward">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5l8 14H4z"/></svg>
+        </button>
+        <button id="flyBack" type="button" aria-label="Move back">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19L4 5h16z"/></svg>
+        </button>
       </div>
     </div>
     <div id="plotStrips">
@@ -397,7 +416,7 @@
 <script src="themes/default.js?v=8e22d835"></script>
 <script src="themes/midnight.js?v=74032fd1"></script>
 <script src="themes/oppenheimer.js?v=e7d0430c"></script>
-<script src="themes/kandinsky.js?v=d429036f"></script>
+<script src="themes/kandinsky.js?v=1ae38699"></script>
 <script src="d3.min.js?v=69faba9d"></script>
 <script src="structures/manifest.js"></script>
 <script>window.__BNE_INDEX = [];</script>
@@ -414,7 +433,34 @@ const coarsePointer = matchMedia("(pointer: coarse)").matches;
 
 const CN_NAMES = ["sp⁰ isolated", "sp¹-like end", "sp (chain)", "sp² (graphitic)", "sp³ (diamond-like)", "over-coordinated", "CN 6", "CN 7", "CN 8"];
 const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-const cnColor = cn => css(`--cn${Math.min(cn, 8)}`);
+
+// A theme may ask for one signature colour to always land on the structure's
+// most populous coordination class (theme.cnDominant). That's a per-structure
+// decision, so it can't live in the CSS vars: instead cnColor() consults a
+// remap that swaps the dominant class with whichever class owns that colour.
+// Only CN colouring is affected — the strain and entropy ramps read the
+// --cn* vars directly and stay fixed.
+let cnRemap = null;
+const cnColor = cn => (cnRemap && cnRemap.has(cn))
+  ? cnRemap.get(cn)
+  : css(`--cn${Math.min(cn, 8)}`);
+
+function updateCnRemap() {
+  cnRemap = null;
+  const want = activeTheme && activeTheme.cnDominant;
+  if (!want || !S || !S.cnCounts || !S.cnCounts.size) return;
+  const norm = c => c.trim().toLowerCase();
+  let dom = null, domN = -1;
+  for (const [cn, n] of S.cnCounts) if (n > domN) { domN = n; dom = cn; }
+  if (dom === null) return;
+  const cls = [...S.cnCounts.keys()];
+  const owner = cls.find(cn => norm(css(`--cn${Math.min(cn, 8)}`)) === norm(want));
+  if (owner === dom) return;                       // already the dominant class
+  cnRemap = new Map([[dom, want]]);
+  // hand the dominant class's old colour to the class that had the signature
+  // colour, so the palette keeps exactly one of each
+  if (owner !== undefined) cnRemap.set(owner, css(`--cn${Math.min(dom, 8)}`));
+}
 
 // ---------- themes ----------
 // Appearance is driven by the active theme: CSS custom properties (vars /
@@ -459,6 +505,7 @@ function applyTheme(id) {
   applyThemeVars();
   themeStyleEl.textContent = theme.css || "";
   activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
+  updateCnRemap();
   if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); scheduleQuadtree(); resize(); }
 }
 
@@ -500,6 +547,7 @@ window.__STRUCT_CB = payload => {
   px = new Float64Array(S.n); py = new Float64Array(S.n); pz = new Float64Array(S.n);
   order = Uint32Array.from({length: S.n}, (_, i) => i);
   S.cnCounts = d3.rollup(payload.cn, v => v.length, d => d);
+  updateCnRemap(); // dominant-class colour is per-structure
   selectedCNs = new Set();
   selectedRings = new Set(); ringMembers = null; ringBondMask = null;
   selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
@@ -1943,6 +1991,7 @@ playBtn.addEventListener("click", () => {
 // ---------- theme redraw ----------
 darkMQ.addEventListener("change", () => {
   applyThemeVars();
+  updateCnRemap(); // the palette just changed under it
   if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); }
 });
 
