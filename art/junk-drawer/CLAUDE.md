@@ -128,8 +128,15 @@ as above. Validate, then commit:
 ## Ratings now live in the DATABASE (2026-08-18) — read this first
 
 **Annotations are no longer filed in `entry.json`.** Taxonomy v17 retired all
-9 previous axes at once, so every response needed re-rating on the 5 live
-axes; those judgments go to the `jd_ratings` table, not to the files.
+9 previous axes at once, so every response needed re-rating; those judgments go
+to the `jd_ratings` table, not to the files. v18 then folded Restraint into
+Understanding the Assignment and put Layering on the 3-point problems scale,
+leaving **4 live axes — 308 cells across the 77 live responses.**
+
+Nothing reads the axis list from anywhere but `taxonomy.json`: the queue
+endpoint filters `defunct`, the write endpoint validates against the live ranks,
+and the bench binds keys by POSITION. A taxonomy change of this shape needs no
+code change — which is the test a future rubric edit should still pass.
 
 - `art/junk-drawer/rating-bench.html` — the owner's rating instrument
   (unlinked, noindex), the DB-writing successor to `sizing-desk.html`'s

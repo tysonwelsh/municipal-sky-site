@@ -63,6 +63,11 @@ foreach ($taxonomy['axes'] ?? [] as $axis) {
     ];
 }
 
+$liveAxisIds = [];
+foreach ($axes as $a) {
+    $liveAxisIds[$a['id']] = true;
+}
+
 $grades = [];
 foreach ($taxonomy['grades'] ?? [] as $g) {
     $grades[] = ['rank' => (int) ($g['rank'] ?? 0), 'label' => (string) ($g['label'] ?? '')];
@@ -144,7 +149,12 @@ foreach ($subs as $sub) {
         $note = null; $gradeBench = null; $gradeSeed = null; $flags = [];
         foreach ($byGen[$g['id']] ?? [] as $r) {
             if ($r['client'] === 'bench') {
-                if ($r['kind'] === 'axis' && $r['axis_id'] !== null) {
+                // LIVE axes only. A rating filed under an axis that has since
+                // been retired stays in the table as history, but must not
+                // count toward "complete" or reappear in the survey — that
+                // would mark a response done on a question no longer asked.
+                if ($r['kind'] === 'axis' && $r['axis_id'] !== null
+                    && isset($liveAxisIds[$r['axis_id']])) {
                     $axisValues[$r['axis_id']] = (float) $r['value'];
                 } elseif ($r['kind'] === 'grade') {
                     $gradeBench = (float) $r['value'];
