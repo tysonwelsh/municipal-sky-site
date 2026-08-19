@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 18,
+  "version": 19,
   "updated": "2026-08-16",
   "grades": [
     {
@@ -327,31 +327,6 @@
       "defunct": true
     },
     {
-      "id": "layering",
-      "label": "Layering",
-      "description": "Errors of the picture: stacking order and occlusion as rendered, fill, stroke and gradient work, framing and use of the canvas. The test — if it could be fixed without moving a single path (reorder, repaint, reframe), it lands here.",
-      "values": [
-        {
-          "id": "clean",
-          "rank": 3,
-          "label": "No problems",
-          "description": "Stacking, paint, and framing all read as intended."
-        },
-        {
-          "id": "shuffled",
-          "rank": 2,
-          "label": "Small problems",
-          "description": "A slip you find on inspection — one wrong overlap, a paint or framing oddity."
-        },
-        {
-          "id": "fifty-two-pickup",
-          "rank": 1,
-          "label": "Big problems",
-          "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking, paint, or framing."
-        }
-      ]
-    },
-    {
       "id": "structural-coherence",
       "label": "Structural Coherence",
       "description": "Errors of the object: parts attach, anatomy is possible, proportions and viewpoint stay self-consistent. If fixing it means redrawing geometry, it lands here.",
@@ -373,6 +348,31 @@
           "rank": 1,
           "label": "Big problems",
           "description": "The object could not exist; structural failures dominate the read."
+        }
+      ]
+    },
+    {
+      "id": "layering",
+      "label": "Layering",
+      "description": "Errors of the picture: stacking order and occlusion as rendered, fill, stroke and gradient work, framing and use of the canvas. The test — if it could be fixed without moving a single path (reorder, repaint, reframe), it lands here.",
+      "values": [
+        {
+          "id": "clean",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Stacking, paint, and framing all read as intended."
+        },
+        {
+          "id": "shuffled",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "A slip you find on inspection — one wrong overlap, a paint or framing oddity."
+        },
+        {
+          "id": "fifty-two-pickup",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking, paint, or framing."
         }
       ]
     },
@@ -586,6 +586,11 @@
       "date": "2026-08-19",
       "version": 18,
       "note": "Owner call, 2026-08-19, before any v17 rating was filed — so nothing is stranded and no re-rating is lost. Retired (v6 mechanism): restraint-2 \"Restraint\", folded into understanding-assignment. Living with the rubric showed the two asking one question: an unrequested addition that upstages the ask IS a failure to understand the assignment, and splitting it invited double-charging the same defect. understanding-assignment's description and its top three value descriptions now carry the negative-space test explicitly. layering drops from 4-point to the 3-point problems scale (No problems / Small problems / Big problems), matching structural-coherence: the picture and object axes are the same question about different territory, and asking them in different shapes made the survey harder to answer than the judgment warranted. Its old \"Out of order\" and \"Fifty-two pickup\" fold into Big problems. The rubric is now four axes: understanding-assignment (4-point), layering, structural-coherence and jnsq (3-point) — 308 cells across the 77 live responses, down from 385."
+    },
+    {
+      "date": "2026-08-19",
+      "version": 19,
+      "note": "Owner call: structural-coherence moves to second, directly after understanding-assignment, ahead of layering. Survey order is display order everywhere — the turn survey, the record card, the how-to-read legend and the rating bench all iterate this array and filter defunct — so this one move reorders every instrument. The reading it produces: did the model understand the brief, is the OBJECT sound, is the PICTURE of it sound, and does it have _it_ — object before picture, since a well-drawn impossible thing is the more basic failure. Order only; no scale, id, label or description changed, and nothing already filed is affected (annotations key by axis id, ratings store axis_id)."
     }
   ]
 }
