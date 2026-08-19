@@ -841,6 +841,27 @@ function JD_layerOpen() {
       if (window.JD_record && location.hash.length > 1) {
         window.JD_record.openFromHash();
       }
+      /* ?rerun=<item_id> — the rating bench opens the drawer here to re-issue
+         a curated item's prompt to the four current models. Handled beside the
+         #<id> deep link and for the same reason: it resolves an id against
+         payload.items, so it can only run once the payload is in. The bench
+         cannot host this itself — the whole point is that a rerun is an
+         ordinary turn, and the turn flow lives here. The param is consumed
+         from the URL so a refresh does not spend a second generation. */
+      var rr = /[?&]rerun=([^&]+)/.exec(location.search);
+      if (rr && window.JD_turn) {
+        var wanted = decodeURIComponent(rr[1]);
+        var item = null;
+        for (var ri = 0; ri < payloadRef.items.length; ri++) {
+          if (payloadRef.items[ri].id === wanted) { item = payloadRef.items[ri]; break; }
+        }
+        try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+        if (item && item.prompt) {
+          window.JD_turn.rerun(item.prompt);
+        } else {
+          console.warn('rerun: no such item, or it carries no prompt:', wanted);
+        }
+      }
     })
     .catch(function (err) {
       fallbackNote();
@@ -5649,10 +5670,35 @@ function JD_layerOpen() {
   restored = true;
   restoreWon();
 
+  /* A RERUN — the curator re-issuing a curated item's original prompt to the
+     four models currently in the pool, to see how they draw it now.
+     Deliberately the SAME path a visitor's turn takes: same generation
+     endpoint, same slot animations, same blind rating, same reveal. The only
+     difference is where the words came from. Anything that forked here would
+     drift from the real flow and stop being comparable to it. */
+  function rerun(promptText) {
+    if (!promptText || !promptText.trim().length) { return false; }
+    if (isOpen) { return false; }
+    clearTurn();
+    work = blankWork();
+    work.prompt = String(promptText).slice(0, MAX_PROMPT);
+    open();
+    /* the acknowledgment the generate button would have recorded — the
+       disclosure lives on the card itself since 2026-08-14 */
+    if (!hasConsent()) {
+      JD_store.set(K_CONSENT, {
+        version: JD_CONSENT.version, at: new Date().toISOString()
+      });
+    }
+    startTurn();
+    return true;
+  }
+
   window.JD_turn = {
     setData: setData,
     open: open,
     close: close,
+    rerun: rerun,
     isOpen: function () { return isOpen; }
   };
 })();

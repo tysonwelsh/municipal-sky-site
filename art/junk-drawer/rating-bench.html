@@ -149,8 +149,8 @@ body.excluded #banner{display:block}
   <div id="acts">
     <button class="act" id="bPrev">←</button>
     <button class="act" id="bNext">next ⏎</button>
-    <button class="act" id="bExcl">exclude x</button>
-    <button class="act rerun" id="bRerun">rerun g</button>
+    <button class="act" id="bExcl">flag exclude x</button>
+    <button class="act rerun" id="bRerun">rerun ↗ g</button>
     <button class="act" id="bHelp">?</button>
   </div>
 </div>
@@ -166,8 +166,8 @@ body.excluded #banner{display:block}
     <tr><td><kbd>n</kbd></td><td>note on this response</td></tr>
     <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>previous / next response</td></tr>
     <tr><td><kbd>Tab</kbd></td><td>cycle siblings in this item</td></tr>
-    <tr><td><kbd>x</kbd></td><td>toggle exclude (retire the item)</td></tr>
-    <tr><td><kbd>g</kbd></td><td>toggle rerun request</td></tr>
+    <tr><td><kbd>x</kbd></td><td>flag to exclude — applied later, not immediate</td></tr>
+    <tr><td><kbd>g</kbd></td><td>rerun this item — opens a real turn in a new tab</td></tr>
     <tr><td><kbd>p</kbd></td><td>expand the prompt</td></tr>
     <tr><td><kbd>?</kbd> / <kbd>Esc</kbd></td><td>this legend</td></tr>
   </table>
@@ -434,12 +434,19 @@ function toggleExclude(){
            note:(on?'RETIRE ':'UNRETIRE ') + it.item_id});
   render();
 }
+/* A rerun is a REAL turn, so it happens where turns happen: a new tab on the
+   drawer, deep-linked with the item id. The drawer re-issues the stored prompt
+   to the four current models with the ordinary loading animations, blind
+   rating and reveal. Rebuilding any of that here would drift from the real
+   flow and stop being comparable to it. The flag row is still filed so the
+   rerun is on the record next to the ratings that prompted it. */
 function toggleRerun(){
-  var it = cur()._item, on = !reruns[it.item_id];
-  reruns[it.item_id] = on; if (!on) { delete reruns[it.item_id]; }
+  var it = cur()._item;
+  reruns[it.item_id] = true;
   enqueue({generation_id:cur().generation_id,
            ratings:[{kind:'flag', axis_id:'rerun-request'}],
-           note:(on?'RERUN ':'CANCEL RERUN ') + it.item_id});
+           note:'RERUN ' + it.item_id});
+  window.open(BASE + '?rerun=' + encodeURIComponent(it.item_id), '_blank');
   render();
 }
 
