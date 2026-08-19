@@ -147,6 +147,7 @@ body.excluded #banner{display:block}
 <div id="foot">
   <div id="grade"></div>
   <div id="acts">
+    <button class="act" id="bReplay">replay ↻ r</button>
     <button class="act" id="bPrev">←</button>
     <button class="act" id="bNext">next ⏎</button>
     <button class="act" id="bExcl">flag exclude x</button>
@@ -168,6 +169,7 @@ body.excluded #banner{display:block}
     <tr><td><kbd>Tab</kbd></td><td>cycle siblings in this item</td></tr>
     <tr><td><kbd>x</kbd></td><td>flag to exclude — applied later, not immediate</td></tr>
     <tr><td><kbd>g</kbd></td><td>rerun this item — opens a real turn in a new tab</td></tr>
+    <tr><td><kbd>r</kbd></td><td>replay the drawing — repaints it from scratch so you can watch it assemble</td></tr>
     <tr><td><kbd>p</kbd></td><td>expand the prompt</td></tr>
     <tr><td><kbd>?</kbd> / <kbd>Esc</kbd></td><td>this legend</td></tr>
   </table>
@@ -450,6 +452,23 @@ function toggleRerun(){
   render();
 }
 
+/* Replay: repaint the SVG from scratch so it assembles in front of you.
+   Judging Layering means judging stacking order, and the order paths land in
+   IS the stacking order — watching it build is the most direct read of the
+   axis there is. An <img> only animates on load, and re-setting the same src
+   is a no-op against cache, so the node is replaced with a cache-busted URL
+   to guarantee a genuinely fresh document every press. */
+var replayN = 0;
+function replay(){
+  var r = cur(); if (!r || !r.svg) { return; }
+  var old = document.getElementById('img');
+  var img = document.createElement('img');
+  img.id = 'img';
+  img.alt = old.alt;
+  old.replaceWith(img);
+  img.src = BASE + r.svg + '?replay=' + (++replayN);
+}
+
 function addNote(){
   var r = cur();
   var t = window.prompt('Note for ' + r._item.title + ' · ' + r.rid, r.note || '');
@@ -494,10 +513,12 @@ document.addEventListener('keydown', function(e){
   if (k === 'x'){ toggleExclude(); e.preventDefault(); return; }
   if (k === 'g'){ toggleRerun(); e.preventDefault(); return; }
   if (k === 'n'){ addNote(); e.preventDefault(); return; }
+  if (k === 'r'){ replay(); e.preventDefault(); return; }
   if (k === 'p'){ document.getElementById('prompt').classList.toggle('open'); e.preventDefault(); return; }
 });
 
 document.getElementById('prompt').onclick = function(){ this.classList.toggle('open'); };
+document.getElementById('bReplay').onclick = replay;
 document.getElementById('bPrev').onclick  = function(){ go(-1); };
 document.getElementById('bNext').onclick  = function(){ nextUnrated(); };
 document.getElementById('bExcl').onclick  = toggleExclude;

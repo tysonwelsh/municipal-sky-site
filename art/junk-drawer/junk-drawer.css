@@ -2159,9 +2159,19 @@ html.jd-turn-open { overflow: hidden; }
      %-based against the block's own max-content size */
   font-family: "Snell Roundhand", "Apple Chancery", "Edwardian Script ITC",
                "Brush Script MT", "Lucida Handwriting", cursive;
-  font-size: 17px; font-weight: 400; line-height: 1.02;
+  /* Sized up and un-faded (owner, 2026-08-19): at 17px in a translucent blue
+     it read as a smudge on the grid rather than a word adrift on it.
+     LINE-HEIGHT IS THE BUG FIX. The markup is two lines (please<br>wait) and
+     this was 1.02 — "set snug". Snell Roundhand and every fallback here are
+     script faces with deep descenders, so the tail of the p in "please" ran
+     down into "wait" and read as a clipped letter. 1.3 clears it while the
+     pair still reads as one block. None of this disturbs the DVD bounce:
+     jdDarkStrayX/Y travel left/top 0→100% against translate(-100%), measured
+     from the word's own max-content box, so the word can be any size and
+     still hit the walls exactly. */
+  font-size: 23px; font-weight: 400; line-height: 1.3;
   letter-spacing: 0.02em; white-space: nowrap; text-align: center;
-  color: rgba(74, 98, 138, 0.85);   /* the graph paper's own blue ink */
+  color: #3b4f70;   /* the graph paper's own blue ink, opaque and a shade deeper */
 }
 @keyframes jdDarkStrayX {
   from { left: 0;    transform: translateX(0); }
@@ -2259,6 +2269,15 @@ html.jd-turn-open { overflow: hidden; }
    so the graph paper never shows through the watch — it sits ON the sheet,
    not printed into it. Ticks and hands draw after the case in the markup,
    so they ride on the solid dial. */
+/* The watch's well, full-bleed like a/b/c (owner catch, 2026-08-19: the watch
+   sat low). The BASE .jd-dark-well is inset top: 24% / bottom: 14% — room the
+   original indicator wanted under the slot letter — which puts its centre at
+   24 + (100-24-14)/2 = 55% of the swatch, 5% low. Slots a, b and c each
+   overrode it to full-bleed as they were rebuilt; slot d was the one indicator
+   never re-based, so it alone kept the asymmetry and centred 5% low. The
+   watch centres on the swatch itself now, like its neighbours. */
+.jd-dark-sw--d .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; }
+
 .jd-dark-watch .w-case {
   fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.6;
   stroke-linejoin: round;
