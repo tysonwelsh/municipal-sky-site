@@ -37,6 +37,78 @@ JD_PROMPT;
 
 const JD_HARNESS = 'v3-web.1';
 
+// ---------------------------------------------------------------------------
+// EFFORT PROFILES — the reasoning condition, named and versioned.
+//
+// The visitor turn and a benchmark rerun want opposite things. A visitor is
+// watching a loading animation inside JD_PROVIDER_TIMEOUT, so the web profile
+// buys latency with thinking. A benchmark wants each model at its best and
+// does not care if that takes minutes. Both are legitimate; what is NOT
+// legitimate is pooling their results, so each profile carries its own
+// harness id and every generation records which one produced it.
+//
+// APPLES TO APPLES, HONESTLY: these knobs are NOT calibrated against each
+// other. Anthropic's effort, OpenAI's and Moonshot's reasoning_effort, and
+// Google's thinkingLevel are vendor-defined ordinals over different
+// mechanisms — "high" on one is not "high" on another, and no published
+// mapping exists. The bench profile therefore does not claim equal compute.
+// It claims a uniform CONDITION — every model at its vendor's top documented
+// setting — and relies on jd-usage.php's reasoning-token normalisation to
+// make the actual spend visible per generation, so the asymmetry lands in the
+// data instead of hiding in this file.
+//
+// What IS genuinely equalised across the four: the system prompt (byte
+// identical), the user prompt, JD_MAX_TOKENS, provider-default sampling
+// (forced — Opus 5 rejects temperature outright), and pair_order slot
+// randomisation.
+//
+// KNOWN FLAW IN THE WEB PROFILE, left deliberately: openai sends no reasoning
+// parameter, so GPT-5.1 runs at its vendor default while the other three are
+// explicitly throttled. Fixing it would change visitor behaviour and make
+// v3-web.1 data non-comparable with itself, so it stays until the web harness
+// is next bumped. The bench profile does not inherit the flaw.
+const JD_EFFORT = [
+    'web' => [
+        // Opus 5 thinks by default; disabled is accepted at effort high or
+        // below. NOTE: with thinking off, Opus 5 can leak <thinking> tags
+        // into visible output — a plausible source of recorded disobedience
+        // on this profile, and another reason the bench profile leaves
+        // thinking on.
+        'anthropic' => ['thinking' => ['type' => 'disabled']],
+        'openai'    => [],
+        'kimi'      => ['reasoning_effort' => 'low'],
+        'google'    => ['thinking_level' => 'low'],
+    ],
+    'bench' => [
+        // budget_tokens is REMOVED on Opus 5 (400). Effort is output_config,
+        // and 'max' requires thinking left on — so no thinking key here.
+        'anthropic' => ['output_config' => ['effort' => 'max']],
+        'openai'    => ['reasoning_effort' => 'high'],
+        'kimi'      => ['reasoning_effort' => 'high'],
+        'google'    => ['thinking_level' => 'high'],
+    ],
+];
+
+const JD_HARNESS_BY_PROFILE = [
+    'web'   => 'v3-web.1',
+    'bench' => 'v4-bench.1',
+];
+
+// A benchmark run is not on a visitor's clock. CLI has no max_execution_time,
+// so this is the only ceiling — generous enough for a thinking model at max
+// effort (kimi at DEFAULT effort was observed past 280s).
+const JD_BENCH_TIMEOUT = 900;
+
+function jd_effort(string $provider, string $profile): array
+{
+    return JD_EFFORT[$profile][$provider] ?? [];
+}
+
+function jd_harness(string $profile): string
+{
+    return JD_HARNESS_BY_PROFILE[$profile] ?? JD_HARNESS;
+}
+
 // C4.2 — all four pool entries draw every turn: the slot→model assignment
 // is chosen per submission by pair_order (0-23, an index into JD_DRAW_PERMS)
 // and recorded; the model_id values are taxonomy.json `models` registry ids
