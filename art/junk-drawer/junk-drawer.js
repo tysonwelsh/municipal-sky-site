@@ -4594,8 +4594,8 @@ function JD_layerOpen() {
     if (anim === 'bar') {
       /* the whole climb is generated per turn (see darkHonestBar): a
          <style> carrying the seeded keyframe track, then the wobbled frame
-         and the fill that rides it. Style-via-innerHTML applies — slot C's
-         scatterword precedent. */
+         and the fill that rides it. Style-via-innerHTML applies — the
+         scatterword's precedent. */
       return darkHonestBar(((turn && turn.client_ref) || 'jd') + ':' + slot);
     }
     /* watch — the wristwatch. The hands' base angles ride inline as CSS vars,

@@ -2100,7 +2100,7 @@ html.jd-turn-open { overflow: hidden; }
    partial trace, pen resting on it.
    REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
    printed rules, not near them, so the well opens to the whole swatch
-   (slot B's precedent) and the SVG pins to the paper's own 9px grid:
+   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
    round() snaps the centred offset down to a multiple of 9, then +5px
    seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
    centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
@@ -2312,6 +2312,13 @@ html.jd-turn-open { overflow: hidden; }
    indicator never re-based, so it alone kept the asymmetry and centred 5%
    low. The watch centres on the swatch itself now, like its neighbours. */
 .jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
+/* The bar needs this for the same reason the other four do: the BASE
+   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
+   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
+   overrides it as it is built; the bar arrived in round 24 without one and
+   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
+   line too. */
+.jd-dark-well--bar { left: 0; right: 0; top: 0; bottom: 0; }
 
 .jd-dark-watch .w-case {
   fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.6;
