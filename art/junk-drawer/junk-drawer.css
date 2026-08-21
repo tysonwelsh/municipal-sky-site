@@ -2040,18 +2040,26 @@ html.jd-turn-open { overflow: hidden; }
    whole square, no rule, no wash, ABOVE the printed double border (z 6). The
    ✕ keeps its corner seat (F1: the head's static child, untouched); the
    symmetric side padding clears it while keeping the phrase truly centred. */
-.jd-turn[data-view="darkroom"] .jd-turn-head {
+.jd-turn[data-view="darkroom"] .jd-turn-head,
+.jd-turn[data-view="plates"] .jd-turn-head {
   position: absolute; top: 0; left: 0; right: 0; z-index: 20;
   padding: 0 48px; border-bottom: 0; background: none;
 }
-.jd-turn[data-view="darkroom"] .jd-turn-headline { justify-content: center; }
+.jd-turn[data-view="darkroom"] .jd-turn-headline,
+.jd-turn[data-view="plates"] .jd-turn-headline { justify-content: center; }
 /* the broadcast phrase reads as an announcement: a step up from the form
    titles' size, and a touch more letterspacing (text-indent balances the
-   final tracking space so the centring is optical, not just geometric) */
-.jd-turn[data-view="darkroom"] .jd-turn-title {
+   final tracking space so the centring is optical, not just geometric).
+   The reveal wears the same dress (rev. 3, owner directive 2026-08-21) —
+   the darkroom and the reveal are consecutive faces of one pile, and their
+   headings should say so; the reveal's scroller reserves the band's height
+   instead of the darkroom's zeroed padding (its content is in the flow). */
+.jd-turn[data-view="darkroom"] .jd-turn-title,
+.jd-turn[data-view="plates"] .jd-turn-title {
   flex: 0 1 auto; text-align: center;
   font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
 }
+.jd-turn[data-view="plates"] .jd-turn-scroll { padding-top: 50px; }
 /* the body stops scrolling and becomes the pile's table */
 .jd-turn[data-view="darkroom"] .jd-turn-scroll { padding: 0; overflow: hidden; }
 .jd-dark { position: relative; height: 100%; }
@@ -2685,24 +2693,23 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn[data-view="call"] { width: min(880px, 100%); }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
-/* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21):
-   the drawings come back in the same arrangement their indicators ran in —
-   the darkroom card's measure, two columns, the darkroom's own toss angles,
-   and the slot letter pencilled onto each print instead of printed on a
-   caption strip beneath it. Survivors fill the grid in slot order, so a
-   full turn seats a/b/c/d exactly where their swatches stood; a degraded
-   turn compacts forward rather than leaving holes. */
+/* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21;
+   rev. 3 same day: the prints sit STRAIGHT — the toss angles came and went
+   in one review — and the masthead wears the darkroom's own dress, so the
+   two cards read as consecutive pages of one sheet): the drawings come
+   back in the same 2×2 arrangement their indicators ran in, on the
+   darkroom card's measure, with the slot letter pencilled onto each print
+   instead of printed on a caption strip beneath it. Survivors fill the
+   grid in slot order, so a full turn seats a/b/c/d exactly where their
+   swatches stood; a degraded turn compacts forward rather than leaving
+   holes. */
 .jd-turn[data-view="plates"] { width: min(560px, 100%); }
 .jd-turn[data-view="plates"] .jd-turn-plates {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 5.5% 6%;
-  padding: 1.5% 1% 2%;      /* room for the toss to lean into */
+  padding: 1.5% 1% 2%;
 }
 .jd-turn[data-view="plates"] .jd-turn-plate { position: relative; }
-.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(1) { transform: rotate(-1.8deg); }
-.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(2) { transform: rotate(1.5deg); }
-.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(3) { transform: rotate(1.4deg); }
-.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(4) { transform: rotate(-1.6deg); }
 /* the lone survivor of a fully-degraded turn takes the middle rather than
    sitting in one corner of an otherwise empty grid */
 .jd-turn[data-view="plates"] .jd-turn-plate:only-child {
@@ -2718,8 +2725,12 @@ html.jd-turn-open { overflow: hidden; }
   color: var(--graphite); opacity: 0.85;
 }
 /* the one action centres under the pile, the way the darkroom's margin
-   line does */
-.jd-turn[data-view="plates"] .jd-turn-actions { justify-content: center; }
+   line does, with real air on both sides of it (rev. 3: the button sat
+   tight against the pile and the sheet's edge) */
+.jd-turn[data-view="plates"] .jd-turn-actions {
+  justify-content: center;
+  margin-top: var(--sp-4); margin-bottom: var(--sp-2);
+}
 .jd-turn-art {
   position: relative; width: 100%; aspect-ratio: 1 / 1;
   background:
@@ -3244,6 +3255,14 @@ html.jd-turn-open { overflow: hidden; }
 @media (max-width: 600px) {
   .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
   .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
+  /* the darkroom/reveal announcement heading steps down with the sheet, or
+     the reveal's longer counts ("Four drawings came back") wrap the band */
+  .jd-turn[data-view="darkroom"] .jd-turn-head,
+  .jd-turn[data-view="plates"] .jd-turn-head { padding: 0 48px; }
+  .jd-turn[data-view="darkroom"] .jd-turn-title,
+  .jd-turn[data-view="plates"] .jd-turn-title {
+    font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
+  }
   .jd-turn-scroll { padding: 10px 12px 14px; }
   /* the CALL stacks, never tabs: the whole question is "which of these
      two", and a tab that hides one of them asks the visitor to hold it in
