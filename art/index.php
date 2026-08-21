@@ -19,8 +19,7 @@ include '../includes/header.php';
                         <span class="entry-description">A falling column of characters from
                             seventy-three writing systems &mdash; Greek, Cherokee, Deseret,
                             Devanagari, Tibetan, Chinese, Linear B &mdash; struck one to a printed
-                            square on a sheet of engineering paper. No column ever repeats. A
-                            loading screen that loads nothing, forever.</span>
+                            square on a sheet of engineering paper. No column ever repeats.</span>
                     </div>
                 </div>
                 <div class="entry">

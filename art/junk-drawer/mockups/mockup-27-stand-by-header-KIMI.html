@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 27 (KIMI) &middot; PLEASE STAND BY — the wait line as a header, no overlay</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 27 · "PLEASE STAND BY", AS A HEADER  (KIMI'S TAKE)
+   ----------------------------------------------------------------------------
+   Supersedes mockup-26 (the test-pattern overlay slip): the owner ruled the
+   slip OUT entirely — it covers the loading animations, which are the point
+   of the darkroom. The pile gets the whole sheet back; the waiting message
+   becomes a HEADER in one of the two empty bands the pile leaves on the
+   card (above the top row, below the bottom row — each ~13% of the sheet).
+
+   Copy discipline: CONCISE. The line's whole job is "the machines are
+   drawing; wait". Three options:
+
+     A — pencil, ABOVE.  "please stand by…" in the visitor's hand (the old
+         slip's words and voice, freed from the card), centred over the pile.
+     B — small caps, ABOVE.  "PLEASE STAND BY" set like the form furniture
+         the rest of the turn modal uses, with the LIVE COUNT as a pencil
+         sub-line — production already computes it (darkroomTitle(): "Four
+         machines are drawing" → "Three are still drawing" → …), so this
+         header would tick down as the swatches settle. The only option that
+         tells the visitor something new as it waits.
+     C — pencil, BELOW.  A's line under the pile instead — the sheet reads
+         pile-first, message-second; the bottom band is also where the slip
+         used to throw its shadow, so the layout changes least.
+
+   Production notes for whichever ships:
+   · .jd-dark-wait / .jd-dark-line / jdDarkWaitRock retire whole. The slow
+     line ("Still going…") loses its home with the slip — it is shown here
+     tucked under each header, still behind data-slow/hidden in production.
+   · The darkroom's headline is display:none today (the slip was the only
+     copy). Any of these restores a visible heading — B can literally BE
+     darkroomTitle()'s element, so the aria-live title and the visible text
+     never drift apart.
+   · Nothing overlaps the pile: paintSlots' swatch-level updates stay
+     untouched.
+
+   DEMO SCAFFOLDING ONLY (not the design): the dark desk, the scene sheet,
+   the option labels and notes. No external assets.
+   ========================================================================== */
+
+:root {
+  --tpaper: #ece0bf;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --graphite: #4b4030;
+  --tmono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --thand: "Segoe Print", "Bradley Hand", cursive;
+  --tcaps: "Arial Narrow", "Helvetica Neue", "Liberation Sans Narrow", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 40px 24px 64px;
+  background: #241a10;
+  color: #d8cba8;
+  font-family: var(--tmono);
+}
+h1 {
+  font-size: 0.85rem; font-weight: 400; letter-spacing: 0.12em;
+  text-align: center; margin: 0 0 6px; color: #a89572;
+}
+.sub {
+  text-align: center; font-size: 0.66rem; color: #77684c;
+  margin: 0 0 36px; letter-spacing: 0.06em;
+}
+
+/* ---- the demo scene: the darkroom card, shrunk to a study ------------------
+   Swatch background/positions/toss copied VERBATIM from production
+   (.jd-dark-sw, .jd-dark-sw--a…d); the slip is gone. */
+.scenes { display: flex; flex-wrap: wrap; gap: 48px; justify-content: center; }
+.study { width: 380px; }
+.scene {
+  position: relative; width: 380px; height: 380px;
+  background: var(--tpaper);
+  border: 1px solid rgba(74, 53, 18, 0.35); border-radius: 3px;
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.sw {
+  position: absolute; width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.sw--a { left: 5.5%; top: 13%;     transform: rotate(-1.8deg); }
+.sw--b { right: 5.5%; top: 13.5%;  transform: rotate(1.5deg); }
+.sw--c { left: 6.5%; bottom: 13.5%; transform: rotate(1.4deg); }
+.sw--d { right: 6.5%; bottom: 13%; transform: rotate(-1.6deg); }
+.sw i {
+  position: absolute; top: 3px; left: 7px;
+  font-family: var(--thand); font-style: normal;
+  font-size: 0.9rem; color: var(--graphite); opacity: 0.85;
+}
+
+/* ---- the header line -------------------------------------------------------
+   Sits in the ~13% band above (or below) the pile; never overlaps a swatch. */
+.wait {
+  position: absolute; left: 0; right: 0; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center;
+}
+.wait--above { top: 0; height: 12.5%; justify-content: center; }
+.wait--below { bottom: 0; height: 12.5%; justify-content: center; }
+
+.wait-pencil {
+  font-family: var(--thand); font-size: 1.05rem; color: var(--graphite);
+}
+.wait-caps {
+  font-family: var(--tcaps); font-weight: 700;
+  font-size: 0.92rem; letter-spacing: 0.24em; text-indent: 0.24em;
+  color: var(--tink);
+}
+.wait-count {
+  font-family: var(--thand); font-size: 0.8rem; color: var(--graphite);
+  opacity: 0.85;
+}
+.wait-slow {
+  font-family: var(--tmono); font-size: 0.54rem; font-style: italic;
+  color: var(--tink-2);
+}
+
+/* ---- study labels & notes (scaffolding) ---- */
+.study h2 {
+  font-size: 0.72rem; font-weight: 400; letter-spacing: 0.14em;
+  color: #c9b98f; margin: 16px 0 4px; text-transform: uppercase;
+}
+.study p {
+  font-size: 0.62rem; line-height: 1.55; color: #8d7c5a; margin: 0;
+}
+</style>
+</head>
+<body>
+
+<h1>MOCKUP 27 · PLEASE STAND BY, AS A HEADER (KIMI&rsquo;S TAKE)</h1>
+<p class="sub">no overlay slip &mdash; the pile keeps the whole sheet; the wait line moves to the band above or below it</p>
+
+<div class="scenes">
+
+  <!-- ================= A — pencil, ABOVE ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="wait wait--above">
+        <span class="wait-pencil">please stand by&hellip;</span>
+        <span class="wait-slow">Still going — the drawings are written line by line.</span>
+      </div>
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+    </div>
+    <h2>A &mdash; pencil, above</h2>
+    <p>The old slip&rsquo;s words and voice, freed from the card: one pencilled
+    line centred over the pile, the slow line tucked under it. Smallest
+    possible change — same hand the corner letters are written in, nothing
+    new to learn.</p>
+  </div>
+
+  <!-- ================= B — small caps, ABOVE, with the live count ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="wait wait--above">
+        <span class="wait-caps">PLEASE STAND BY</span>
+        <span class="wait-count">four machines are drawing&hellip;</span>
+      </div>
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+    </div>
+    <h2>B &mdash; small caps + the live count</h2>
+    <p>&ldquo;PLEASE STAND BY&rdquo; set like the turn modal&rsquo;s form
+    furniture, with production&rsquo;s existing count line as a pencil sub —
+    it already ticks down (&ldquo;three are still drawing&rdquo;&hellip;) as
+    swatches settle. The only option that tells the visitor something new
+    while it waits.</p>
+  </div>
+
+  <!-- ================= C — pencil, BELOW ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+      <div class="wait wait--below">
+        <span class="wait-pencil">please stand by&hellip;</span>
+        <span class="wait-slow">Still going — the drawings are written line by line.</span>
+      </div>
+    </div>
+    <h2>C &mdash; pencil, below</h2>
+    <p>The same line under the pile instead: the sheet reads pile-first,
+    message-second, and the ✕ keeps the top edge to itself. The bottom band
+    is where the old slip threw its shadow, so the layout changes least.</p>
+  </div>
+
+</div>
+
+</body>
+</html>

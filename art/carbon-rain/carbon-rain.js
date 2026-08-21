@@ -13,9 +13,9 @@
    markup. The guard on the listener matters: animationiteration BUBBLES, and
    the pinwheel squares run their own animation inside the same stream.
 
-   This is a SIBLING of the wait indicator in art/junk-drawer/junk-drawer.js,
+   The character pool is a COPY of the one in art/junk-drawer/junk-drawer.js,
    not a shared library — the two are meant to grow apart. If you change the
-   character pool here, that one does not follow.
+   pool here, that one does not follow.
    ========================================================================== */
 (function () {
   'use strict';
@@ -45,31 +45,11 @@
     el.className = 'cr-g cr-' + key + (rev ? ' is-rev' : '') +
                    (el.getAttribute('data-spin') || '');
     el.textContent = ch;
-    el.removeAttribute('data-word');
   }
 
   function fill(s) {
     var cells = s.children, n = cells.length, i;
     for (i = 0; i < n; i++) strike(cells[i]);
-    if (Math.random() < s.__wordP) {
-      var pool = [], w;
-      for (i = 0; i < s.__words.length; i++) {
-        if (s.__words[i].length + 2 <= n) pool.push(s.__words[i]);
-      }
-      if (pool.length) {
-        w = pool[rnd(pool.length)];
-        var at = rnd(n - w.length + 1);
-        for (i = 0; i < w.length; i++) {
-          var c = cells[at + i];
-          /* upright Latin, never reversed, never re-struck: the word surfaces
-             out of the noise because it is coherent, not because it is a
-             different colour */
-          c.className = 'cr-g cr-lat is-word';
-          c.textContent = w.charAt(i) === ' ' ? '' : w.charAt(i);
-          c.setAttribute('data-word', '1');
-        }
-      }
-    }
   }
 
   function onWrap(e) {
@@ -95,8 +75,6 @@
        against the ELEMENT's own height, so 100% here would move a stream by
        its own length and wrap it in full view, mid-sheet. */
     host.style.setProperty('--cr-h', H + 'px');
-    var words = opt.words || ['LOADING', 'STAND BY'];
-    var wordP = opt.wordP == null ? 0.06 : opt.wordP;
     var spinP = opt.spinP == null ? 0.06 : opt.spinP;
     var rows = Math.floor(H / CELL);
     var frag = document.createDocumentFragment(), streams = [];
@@ -134,7 +112,6 @@
           }
           st.appendChild(cell);
         }
-        st.__words = words; st.__wordP = wordP;
         fill(st);
         st.addEventListener('animationiteration', onWrap);
         col.appendChild(st);
@@ -152,7 +129,7 @@
           var st = streams[rnd(streams.length)];
           if (!st) continue;
           var cell = st.children[rnd(st.children.length)];
-          if (cell && !cell.getAttribute('data-word')) strike(cell);
+          if (cell) strike(cell);
         }
       }, 1000));
     }

@@ -2677,12 +2677,49 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
 .jd-turn-plates--call { justify-content: center; }
 .jd-turn-plates--call .jd-turn-plate { max-width: 200px; }
-/* the plates views widen for the same reason the bench does — four exhibits
-   need the room, and only for as long as they need it (fourth chair,
-   2026-08-14): the reveal and the call carry every surviving plate at once */
-.jd-turn[data-view="call"],
-.jd-turn[data-view="plates"] { width: min(880px, 100%); }
+/* the CALL still widens for the same reason the bench does — it carries
+   every surviving plate in one row, and only for as long as it needs the
+   room (fourth chair, 2026-08-14). The reveal used to widen with it; since
+   round 26 rev. 2 it is a 2×2 pile on the darkroom's own measure instead —
+   see below. */
+.jd-turn[data-view="call"] { width: min(880px, 100%); }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
+
+/* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21):
+   the drawings come back in the same arrangement their indicators ran in —
+   the darkroom card's measure, two columns, the darkroom's own toss angles,
+   and the slot letter pencilled onto each print instead of printed on a
+   caption strip beneath it. Survivors fill the grid in slot order, so a
+   full turn seats a/b/c/d exactly where their swatches stood; a degraded
+   turn compacts forward rather than leaving holes. */
+.jd-turn[data-view="plates"] { width: min(560px, 100%); }
+.jd-turn[data-view="plates"] .jd-turn-plates {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5.5% 6%;
+  padding: 1.5% 1% 2%;      /* room for the toss to lean into */
+}
+.jd-turn[data-view="plates"] .jd-turn-plate { position: relative; }
+.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(1) { transform: rotate(-1.8deg); }
+.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(2) { transform: rotate(1.5deg); }
+.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(3) { transform: rotate(1.4deg); }
+.jd-turn[data-view="plates"] .jd-turn-plate:nth-child(4) { transform: rotate(-1.6deg); }
+/* the lone survivor of a fully-degraded turn takes the middle rather than
+   sitting in one corner of an otherwise empty grid */
+.jd-turn[data-view="plates"] .jd-turn-plate:only-child {
+  grid-column: 1 / -1; width: 60%; margin: 0 auto;
+}
+/* the caption strip becomes the darkroom's pencilled corner letter, seated
+   just past the kraft corner's diagonal so the two never collide */
+.jd-turn[data-view="plates"] .jd-turn-plate figcaption {
+  position: absolute; top: 2px; left: 26px; z-index: 3;
+  margin: 0; padding: 0; border: 0;
+  font-family: var(--thand); font-size: 0.9rem; font-weight: 400;
+  letter-spacing: 0; text-transform: lowercase;
+  color: var(--graphite); opacity: 0.85;
+}
+/* the one action centres under the pile, the way the darkroom's margin
+   line does */
+.jd-turn[data-view="plates"] .jd-turn-actions { justify-content: center; }
 .jd-turn-art {
   position: relative; width: 100%; aspect-ratio: 1 / 1;
   background:
@@ -3170,8 +3207,9 @@ html.jd-turn-open { overflow: hidden; }
      the column wrappers go display:contents (the DOM's source order IS the
      portrait order), and the exhibit goes sticky again */
   .jd-turn[data-view="bench"] { width: min(680px, 100%); }
-  .jd-turn[data-view="call"],
-  .jd-turn[data-view="plates"] { width: min(680px, 100%); }
+  .jd-turn[data-view="call"] { width: min(680px, 100%); }
+  /* (the reveal needs no clamp here: its 2×2 pile lives on the darkroom's
+     560px measure at every width — round 26 rev. 2) */
   .jd-bench { display: block; }
   .jd-bench-l, .jd-bench-r { display: contents; }
   .jd-turn-pin {
@@ -3207,13 +3245,14 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
   .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
   .jd-turn-scroll { padding: 10px 12px 14px; }
-  /* stacked, never tabbed: the whole question is "which of these two", and a
-     tab that hides one of them asks the visitor to hold it in their head */
-  .jd-turn-plates { flex-direction: column; }
-  .jd-turn-plates .jd-turn-plate {
-    width: 100%; max-width: 280px; margin-left: auto; margin-right: auto;
+  /* the CALL stacks, never tabs: the whole question is "which of these
+     two", and a tab that hides one of them asks the visitor to hold it in
+     their head. (The reveal no longer stacks — holding the 2×2 pile at
+     every width is the point of the round-26 rev. 2 layout.) */
+  .jd-turn-plates--call { flex-direction: column; }
+  .jd-turn-plates--call .jd-turn-plate {
+    width: 100%; max-width: 190px; margin-left: auto; margin-right: auto;
   }
-  .jd-turn-plates--call .jd-turn-plate { max-width: 190px; }
   /* the examination row becomes label-over-control */
   .jd-row { grid-template-columns: minmax(0, 1fr); }
   .jd-row .jd-turn-select { margin-bottom: 0.3rem; }

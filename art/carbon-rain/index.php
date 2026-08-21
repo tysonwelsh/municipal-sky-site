@@ -1,6 +1,6 @@
 <?php
 $page_title = 'The Carbon Rain - Municipal Sky';
-$page_description = 'A falling column of characters from 73 writing systems — Greek, Cherokee, Deseret, Devanagari, Tibetan, Chinese, Linear B — struck one to a printed square on a sheet of engineering paper. A loading screen that loads nothing, forever.';
+$page_description = 'A falling column of characters from 73 writing systems — Greek, Cherokee, Deseret, Devanagari, Tibetan, Chinese, Linear B — struck one to a printed square on a sheet of engineering paper. No column ever repeats.';
 
 // Cache-bust local assets with an md5 content hash (?v=xxxxxxxx), computed at
 // request time so a changed file always ships a fresh URL.
@@ -43,14 +43,13 @@ include '../../includes/header.php';
 <script>
   (function () {
     var host = document.getElementById('cr-rain');
-    var opts = { words: ['LOADING', 'STAND BY'] };
-    window.CarbonRain.mount(host, opts);
+    window.CarbonRain.mount(host);
     /* the sheet is sized off the viewport, so a resize changes how many
        columns it holds — rebuild, but only once the dragging stops */
     var t = null;
     window.addEventListener('resize', function () {
       clearTimeout(t);
-      t = setTimeout(function () { window.CarbonRain.mount(host, opts); }, 320);
+      t = setTimeout(function () { window.CarbonRain.mount(host); }, 320);
     });
   })();
 </script>

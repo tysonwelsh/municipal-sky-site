@@ -31,8 +31,7 @@
 
 /* ---- the sheet ------------------------------------------------------------
    Height-driven so it always fits the window under the banner, and wide
-   enough to carry a real number of columns. The print swatch's paper, border
-   and shadow are the junk drawer's, scaled up. */
+   enough to carry a real number of columns. */
 .cr-sheet {
   position: relative;
   width: min(1180px, 100%);
@@ -63,9 +62,6 @@
 }
 .cr-g.is-rev  { transform: scaleX(-1); }
 .cr-g.is-spin { overflow: visible; }
-/* a word laid into the rain keeps the same blue as the rain around it; the
-   weight is the only thing that lifts it */
-.cr-g.is-word { color: var(--cr-ink); font-weight: 700; }
 .cr-lat { font-size: calc(10.0px * var(--cr-zoom)); }
 .cr-dig { font-size: calc(10.0px * var(--cr-zoom)); }
 .cr-mrk { font-size: calc(10.0px * var(--cr-zoom)); }
