@@ -15,6 +15,16 @@ include '../includes/header.php';
             <div class="entry-list entry-list--undated">
                 <div class="entry">
                     <div class="entry-content">
+                        <a href="/art/carbon-rain/" class="entry-title">The Carbon Rain</a>
+                        <span class="entry-description">A falling column of characters from
+                            seventy-three writing systems &mdash; Greek, Cherokee, Deseret,
+                            Devanagari, Tibetan, Chinese, Linear B &mdash; struck one to a printed
+                            square on a sheet of engineering paper. No column ever repeats. A
+                            loading screen that loads nothing, forever.</span>
+                    </div>
+                </div>
+                <div class="entry">
+                    <div class="entry-content">
                         <a href="/art/kolob/" class="entry-title">KOLOB &#x10417;&#x10404;&#x10422;&#x10409;&#x10412;</a>
                         <span class="entry-description">An aleatoric hymn engine serving a colony of saints on the
                             frontier of eternity.</span>

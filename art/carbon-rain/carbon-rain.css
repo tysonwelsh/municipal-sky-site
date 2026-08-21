@@ -1,0 +1,193 @@
+/* ============================================================================
+   THE CARBON RAIN — standalone piece.
+   One sheet of engineering paper, ruled the house way (9px fine, 45px heavy),
+   with the rain falling down its own rules. Everything is absolute px: the
+   ruling does NOT scale with the sheet, so a bigger sheet simply holds more
+   columns. That is the point — the paper stays the same paper.
+   ========================================================================== */
+.cr-page {
+  --cr-paper: #f8f3e2;
+  --cr-ink: #4a628a;          /* the ruling's own colour, struck solid */
+  --cr-type: #33240f;
+  --cr-type-2: rgba(51, 36, 15, 0.62);
+  --cr-type-3: rgba(51, 36, 15, 0.40);
+  --cr-rule: rgba(74, 53, 18, 0.34);
+  /* THE ZOOM. One number scales the whole piece: the paper's ruling, the
+     square each glyph sits in, and every script's font-size. The characters
+     are NOT re-tuned per zoom level — each script's size was measured once so
+     its advance matches the Latin's, and multiplying them all by the same
+     factor keeps that true. Change --cr-zoom and --cr-cell together: the cell
+     is 9px x zoom, and carbon-rain.js reads the cell straight off this
+     element, so the two can never drift apart. */
+  --cr-zoom: 2;
+  --cr-cell: 18px;          /* 9px x --cr-zoom */
+  --cr-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --cr-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  background: #ece0bf;
+  padding: 0 clamp(10px, 3vw, 34px) 40px;
+}
+.cr-head {
+  max-width: 1180px; margin: 0 auto; padding: 22px 2px 14px;
+  display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--cr-rule);
+}
+.cr-head h1 {
+  font-family: var(--cr-form); font-size: clamp(1rem, 2.2vw, 1.35rem);
+  font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase;
+  margin: 0; color: var(--cr-type);
+}
+.cr-head .cr-dek {
+  font-family: var(--cr-mono); font-size: 0.62rem; letter-spacing: 0.08em;
+  line-height: 1.8; color: var(--cr-type-2); margin: 0; flex: 1 1 320px;
+}
+
+/* ---- the sheet ------------------------------------------------------------
+   Height-driven so it always fits the window under the banner, and wide
+   enough to carry a real number of columns. The print swatch's paper, border
+   and shadow are the junk drawer's, scaled up. */
+.cr-sheet {
+  position: relative;
+  width: min(1180px, 100%);
+  height: min(calc(100vh - 190px), 860px);
+  min-height: 380px;
+  margin: 22px auto 0;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    var(--cr-paper);
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+.cr-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+.cr-c { position: absolute; top: 0; display: block; opacity: var(--cr-o); }
+.cr-s { position: absolute; top: 0; left: 0; display: block;
+  transform: translateY(var(--cr-y0)); }
+.cr-g {
+  display: block; text-align: center;
+  width: var(--cr-cell); height: var(--cr-cell); line-height: var(--cr-cell);
+  font-family: var(--cr-mono); font-style: normal; color: var(--cr-ink);
+  overflow: hidden;
+}
+.cr-g.is-rev  { transform: scaleX(-1); }
+.cr-g.is-spin { overflow: visible; }
+/* a word laid into the rain keeps the same blue as the rain around it; the
+   weight is the only thing that lifts it */
+.cr-g.is-word { color: var(--cr-ink); font-weight: 700; }
+.cr-lat { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-dig { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-mrk { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-grk { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-cyr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-heb { font-size: calc(10px * var(--cr-zoom)); }
+.cr-arb { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-dev { font-size: calc(8.9px * var(--cr-zoom)); }
+.cr-geo { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-arm { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-cjk { font-size: calc(6px * var(--cr-zoom)); }
+.cr-han { font-size: calc(7.5px * var(--cr-zoom)); }
+.cr-tha { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-che { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-des { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-tib { font-size: calc(12px * var(--cr-zoom)); }
+.cr-brh { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-sid { font-size: calc(8.3px * var(--cr-zoom)); }
+.cr-shr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-gra { font-size: calc(6.8px * var(--cr-zoom)); }
+.cr-khr { font-size: calc(10px * var(--cr-zoom)); }
+.cr-ben { font-size: calc(9px * var(--cr-zoom)); }
+.cr-gur { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-guj { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-ori { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-tam { font-size: calc(8.1px * var(--cr-zoom)); }
+.cr-tel { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-kan { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-mal { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-sin { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-mya { font-size: calc(7.3px * var(--cr-zoom)); }
+.cr-khm { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-run { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-got { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-ita { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-phn { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-lnb { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-cop { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-tfn { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-osa { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-shw { font-size: calc(11.9px * var(--cr-zoom)); }
+.cr-vai { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-adl { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-nko { font-size: calc(11.1px * var(--cr-zoom)); }
+.cr-yii { font-size: calc(10.4px * var(--cr-zoom)); }
+.cr-gla { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-eth { font-size: calc(6.6px * var(--cr-zoom)); }
+.cr-syr { font-size: calc(8px * var(--cr-zoom)); }
+.cr-thn { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lao { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-bam { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-ave { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-olt { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-arc { font-size: calc(9.2px * var(--cr-zoom)); }
+.cr-nab { font-size: calc(11.4px * var(--cr-zoom)); }
+.cr-pal { font-size: calc(10px * var(--cr-zoom)); }
+.cr-man { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-car { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-lyc { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lyd { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-ugr { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-opr { font-size: calc(5.2px * var(--cr-zoom)); }
+.cr-mer { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-olc { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-cham { font-size: calc(5.5px * var(--cr-zoom)); }
+.cr-bali { font-size: calc(5.8px * var(--cr-zoom)); }
+.cr-java { font-size: calc(5.6px * var(--cr-zoom)); }
+.cr-bugi { font-size: calc(6.2px * var(--cr-zoom)); }
+.cr-batk { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-lisu { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-bass { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-mend { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-wcho { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-rohg { font-size: calc(11px * var(--cr-zoom)); }
+.cr-tale { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-mth { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-pla { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-alc { font-size: calc(6.6px * var(--cr-zoom)); }
+
+@keyframes crFall {
+  from { transform: translateY(calc(-1 * var(--cr-dh))); }
+  to   { transform: translateY(var(--cr-h)); }
+}
+@keyframes crSpin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes crSpinCcw { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cr-s { animation: crFall var(--cr-d) linear var(--cr-dl) infinite; }
+  .cr-g.is-spin { animation: crSpin var(--cr-sd) linear infinite; }
+  .cr-g.is-spin.is-ccw { animation-name: crSpinCcw; }
+}
+/* stillness: with no fall there is no wrap, so the sheet simply holds the
+   page of type it was first dealt */
+@media (prefers-reduced-motion: reduce) {
+  .cr-s, .cr-g.is-spin { animation: none !important; }
+}
+
+.cr-foot {
+  max-width: 1180px; margin: 16px auto 0; padding-top: 10px;
+  border-top: 1px solid var(--cr-rule);
+  font-family: var(--cr-mono); font-size: 0.55rem; letter-spacing: 0.1em;
+  color: var(--cr-type-3); line-height: 1.9;
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.cr-foot a { color: var(--cr-type-2); }
+.cr-build { font-size: 0.5rem; letter-spacing: 0.14em; }
+.cr-build-sep { padding: 0 0.5em; opacity: 0.55; }
+
+@media (max-width: 700px) {
+  .cr-sheet { height: min(calc(100vh - 210px), 620px); }
+  .cr-head { padding-top: 16px; }
+}
