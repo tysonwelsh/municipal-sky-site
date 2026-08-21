@@ -20,7 +20,7 @@ define('JD_IS_PRODUCTION', is_readable('/home1/tdrivemy/private_config/secrets.p
 define('JD_DEV_MODE', !JD_IS_PRODUCTION && getenv('JD_DEV_MOCK') === '1');
 
 // ---------------------------------------------------------------------------
-// C4.1 — harness v4-web.1. This constant IS the harness: any edit to these
+// C4.1 — harness v4-web.2. This constant IS the harness: any edit to these
 // bytes requires bumping JD_HARNESS ('v3-web.2', ...), because responses
 // generated under different harnesses are not strictly comparable.
 const JD_SYSTEM_PROMPT = <<<'JD_PROMPT'
@@ -34,17 +34,18 @@ around the subject); transparent background (no opaque backdrop
 rectangle); fully self-contained (no external references, no <script>,
 no event attributes, no <foreignObject>, no raster images).
 
-These are CLIP ART: a single subject to be dropped into someone else's
-design. Draw the figure, never the ground. A ship means the ship alone -
-no water, no sky, no horizon, no birds. No ground plane, no cast shadow
-pooled beneath it, no vignette, no frame. What is structurally part of the
-subject stays (sails and rigging are the ship); the setting it would occupy
-does not. Where the subject's edge is genuinely unclear, keep what a
-designer would need and leave out the rest. If the brief explicitly asks
-for a setting, follow the brief.
+The subject stands alone. Each drawing is a standalone element that will
+be placed into someone else's layout, so draw the figure and never the
+ground it would sit on. A ship means the ship alone - no water, no sky, no
+horizon, no birds. No ground plane, no cast shadow pooled beneath it, no
+vignette, no frame. What is structurally part of the subject stays (sails
+and rigging are the ship); the setting it would occupy does not. Where the
+subject's edge is genuinely unclear, keep what a designer would need and
+leave out the rest. If the brief explicitly asks for a setting, follow the
+brief.
 JD_PROMPT;
 
-const JD_HARNESS = 'v4-web.1';
+const JD_HARNESS = 'v4-web.2';
 
 // ---------------------------------------------------------------------------
 // EFFORT PROFILES — the reasoning condition, named and versioned.
@@ -98,13 +99,17 @@ const JD_EFFORT = [
     ],
 ];
 
-// Prompt generation v4 (2026-08-21): the clip-art / figure-not-ground clause.
+// Prompt generation v4 (2026-08-21): the figure-not-ground clause. Revision .2
+// dropped the words "CLIP ART" — naming a genre imported its whole visual
+// style (flat, simplified, mid-90s) into drawings whose style is supposed to
+// come from the brief alone. Same requirement, stated as purpose and
+// prohibition instead of as a category (owner catch, 2026-08-21).
 // The system prompt is shared by both profiles, so a prompt edit moves BOTH.
 // Everything generated before this stays under v3-web.1 and is permanently
 // distinguishable — those 77 responses were drawn to a different brief.
 const JD_HARNESS_BY_PROFILE = [
-    'web'   => 'v4-web.1',
-    'bench' => 'v4-bench.1',
+    'web'   => 'v4-web.2',
+    'bench' => 'v4-bench.2',
 ];
 
 // A benchmark run is not on a visitor's clock. CLI has no max_execution_time,

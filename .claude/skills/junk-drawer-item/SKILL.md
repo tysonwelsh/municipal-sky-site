@@ -67,14 +67,15 @@ owner's choice) whose entire prompt is:
    > backdrop rectangle); fully self-contained (no external references,
    > no `<script>`, no event attributes, no `<foreignObject>`).
    >
-   > These are CLIP ART: a single subject to be dropped into someone else's
-   > design. Draw the figure, never the ground. A ship means the ship alone
-   > — no water, no sky, no horizon, no birds. No ground plane, no cast
-   > shadow pooled beneath it, no vignette, no frame. What is structurally
-   > part of the subject stays (sails and rigging are the ship); the setting
-   > it would occupy does not. Where the subject's edge is genuinely
-   > unclear, keep what a designer would need and leave out the rest. If the
-   > brief explicitly asks for a setting, follow the brief.
+   > The subject stands alone. Each drawing is a standalone element that
+   > will be placed into someone else's layout, so draw the figure and never
+   > the ground it would sit on. A ship means the ship alone — no water, no
+   > sky, no horizon, no birds. No ground plane, no cast shadow pooled
+   > beneath it, no vignette, no frame. What is structurally part of the
+   > subject stays (sails and rigging are the ship); the setting it would
+   > occupy does not. Where the subject's edge is genuinely unclear, keep
+   > what a designer would need and leave out the rest. If the brief
+   > explicitly asks for a setting, follow the brief.
 
 Beyond preamble + prompt + appendix, give the subagent NOTHING — no drawer
 context, no examples, no taxonomy. Its reply is the artifact.
@@ -197,12 +198,14 @@ Independent responses to the same prompt differ almost everywhere.
     response filed before 2026-07-31. Do not retro-edit them.
   - **v2** — `svg-specimen` agent + harness preamble + the same appendix.
     2026-07-31 to 2026-08-20.
-  - **v3** — the clip-art clause joins the appendix (owner call, 2026-08-21):
-    figure not ground, no setting, no cast shadow, with the brief able to
-    override. Everything from 2026-08-21 on. Kept byte-aligned with the
-    site's `JD_SYSTEM_PROMPT` (`api/jd-config.php`), whose harness moved to
-    prompt generation v4 for the same edit — the two paths must ask for the
-    same artwork or a skill-made item is not comparable with a generated one.
+  - **v3** — the figure-not-ground clause joins the appendix (owner call,
+    2026-08-21): no setting, no cast shadow, no frame, with the brief able to
+    override. It deliberately does NOT say "clip art" — naming a genre
+    imported its visual style into drawings whose style is supposed to come
+    from the brief alone. Everything from 2026-08-21 on. Kept byte-aligned
+    with the site's `JD_SYSTEM_PROMPT` (`api/jd-config.php`), harness
+    `v4-web.2` / `v4-bench.2` — the two paths must ask for the same artwork
+    or a skill-made item is not comparable with a generated one.
 
 ## 4. Verify the artifact
 

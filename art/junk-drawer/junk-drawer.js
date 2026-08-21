@@ -4017,22 +4017,28 @@ function JD_layerOpen() {
      scatter.html, ported faithfully): the waiting card is a SQUARE sheet
      carrying four graph-paper print swatches in a tight 2×2 — the same
      swatch the finished drawings land in (.jd-turn-art's background, reused
-     verbatim). While a machine works, its swatch runs its own OLD-SCHOOL
-     WEB WAIT INDICATOR printed in ink, keyed stably to the slot letter:
-       a — the plotter pen: a generated circuit, fresh every turn (round-20
+     verbatim). While a machine works, its swatch runs an OLD-SCHOOL WEB
+     WAIT INDICATOR printed in ink, dealt per turn from a pool of five
+     (round-24 rotation, owner directive 2026-08-21 — see darkDeal; before
+     then each indicator was keyed stably to its slot letter):
+       plotter — a generated circuit, fresh every turn (round-20
            swap, owner pick 2026-08-17 — the flipping hourglass retires;
            see darkPlotCircuit below for the construction)
-       b — the stray word: LOADING ricocheting off the swatch's own edges
+       stray — "please / wait" ricocheting off the swatch's own edges
            (the DVD-menu screensaver; round-19 swap, owner pick 2026-08-16 —
-           replaced the radial-tick throbber)
-       c — the scatterword: LOADING… explodes, drifts, and zoops back
+           replaced the radial-tick throbber; round-23 reword 2026-08-18)
+       scatter — LOADING… explodes, drifts, and zoops back
            together, three different bangs to a super-cycle, the whole
            flight generated fresh every turn (round-22 swap, owner pick
            2026-08-18 — the Win95 segmented progress bar retires; see
            darkScatterword below for the construction)
-       d — the wristwatch: the classic Mac wait cursor, hands seeded from
+       watch — the classic Mac wait cursor, hands seeded from
            the turn ref so every wait starts at a different time (round-21
            swap, owner pick 2026-08-17 — the bouncing dots retire)
+       bar — the honest bar: a hatched ink fill that climbs slowly,
+           stalls, takes setbacks, and second-guesses itself above ~80,
+           never finishing (rounds 24–25, owner pick 2026-08-21; see
+           darkHonestBar below for the construction)
      A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
      TOP of the pile. No FORM JD-1 badge, no title: the masthead collapses to
      an overlay strip so only the ✕ rides the card's top-right corner (the
@@ -4527,8 +4533,39 @@ function JD_layerOpen() {
   }
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
-  function darkWell(slot) {
-    if (slot === 'a') {
+  /* THE ROTATION (round 24, owner directive 2026-08-21): the waiting
+     indicators are a POOL, not a seating chart — five animations, four
+     swatches, dealt fresh every turn so two runs of a prompt no longer show
+     the same card and no two swatches in a turn ever match. The deal is a
+     Fisher–Yates shuffle of the pool, seeded the house way from the turn's
+     client_ref, so a repaint or a restored turn re-derives the same
+     arrangement. The slot letters now mean POSITION only (the pencilled
+     corner labels the later cards reference); which indicator a position
+     hosts is the turn's own business. Each well wears its indicator's name
+     — jd-dark-well--plot/stray/scatter/watch/bar — and the CSS keys the
+     full-bleed and overflow tailoring to THAT, not to the slot. */
+  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'bar'];
+  function darkDeal() {
+    var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    if (!h) h = 88172645; /* xorshift must never sit at zero */
+    function rnd() {
+      h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0;
+      return h / 4294967296;
+    }
+    var deck = DARK_POOL.slice(), j, t;
+    for (i = deck.length - 1; i > 0; i--) {
+      j = (rnd() * (i + 1)) | 0;
+      t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+    return deck;   /* slot a takes deck[0], b deck[1], and so on */
+  }
+  function darkWell(slot, anim) {
+    if (anim === 'plot') {
       /* the ink and the nib are the SAME path: the ink is a 15-unit dash
          window crawling around the circuit, the nib a 0.01-unit dot riding
          15 units ahead of the window's tail — i.e. exactly at its head */
@@ -4538,7 +4575,7 @@ function JD_layerOpen() {
         '<path class="plot-nib" d="' + d + '" pathLength="100"/>' +
         '</svg>';
     }
-    if (slot === 'b') {
+    if (anim === 'stray') {
       /* two nested movers, one axis each — the CSS runs them at
          incommensurate periods so the ricochet never visibly repeats */
       /* round-23 reword (owner pick 2026-08-18): the drifting word drops
@@ -4546,7 +4583,7 @@ function JD_layerOpen() {
          an old-fashioned script hand (see .sy in the CSS) */
       return '<span class="jd-dark-stray"><span class="sy">please<br>wait</span></span>';
     }
-    if (slot === 'c') {
+    if (anim === 'scatter') {
       /* the whole track is generated per turn (see darkScatterword): a
          <style> carrying ten seed-scoped keyframe blocks, then the ten
          glyphs that ride them. Style-via-innerHTML applies — a <style>
@@ -4554,7 +4591,14 @@ function JD_layerOpen() {
          never counts as a child of the well's flex box. */
       return darkScatterword(((turn && turn.client_ref) || 'jd') + ':' + slot);
     }
-    /* d — the wristwatch. The hands' base angles ride inline as CSS vars,
+    if (anim === 'bar') {
+      /* the whole climb is generated per turn (see darkHonestBar): a
+         <style> carrying the seeded keyframe track, then the wobbled frame
+         and the fill that rides it. Style-via-innerHTML applies — slot C's
+         scatterword precedent. */
+      return darkHonestBar(((turn && turn.client_ref) || 'jd') + ':' + slot);
+    }
+    /* watch — the wristwatch. The hands' base angles ride inline as CSS vars,
        seeded from the turn ref (same fold as darkPlotCircuit's) so each
        wait starts at a different plausible time: the minute hand lands ON
        a tick (a multiple of 30deg — steps(12) must stay on ticks) and the
@@ -4578,12 +4622,13 @@ function JD_layerOpen() {
       '<line class="w-hr" x1="20" y1="22" x2="20" y2="15.5"/>' +
       '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
   }
-  function darkSwatch(slot) {
+  function darkSwatch(slot, anim) {
     var st = slotStatus(slot);
     return '<div class="jd-dark-sw jd-dark-sw--' + slot + '" data-slotline="' +
       slot + '" data-state="' + st.state + '">' +
       '<span class="jd-dark-letter" aria-hidden="true">' + slot + '</span>' +
-      '<div class="jd-dark-well" aria-hidden="true">' + darkWell(slot) + '</div>' +
+      '<div class="jd-dark-well jd-dark-well--' + anim + '" aria-hidden="true">' +
+      darkWell(slot, anim) + '</div>' +
       '<div class="jd-dark-result" aria-hidden="true">' +
       (st.state === 'pending' ? '' : darkResultInner(slot, st)) + '</div>' +
       /* the words the live region actually announces */
@@ -4607,9 +4652,10 @@ function JD_layerOpen() {
        The title still EXISTS (hidden) and still carries darkroomTitle() as
        the dialog's accessible name; paintSlots keeps it in sync as slots
        land, exactly as before. */
+    var deal = darkDeal();   /* one shuffle per turn; slot i takes deal[i] */
     return head(darkroomTitle(), 2, { view: 'darkroom', noFocus: true }) +
       '<div class="jd-dark" aria-live="polite">' +
-      JD_SLOTS.map(darkSwatch).join('') +
+      JD_SLOTS.map(function (s, i) { return darkSwatch(s, deal[i]); }).join('') +
       /* the wait slip: ONE easily-edited pencilled line, riding on top of
          the pile; the slow-timer line lives under it, behind the same
          data-slow/hidden pattern the timer has always used. This card never

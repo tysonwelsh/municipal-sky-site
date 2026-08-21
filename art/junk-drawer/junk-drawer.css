@@ -1991,14 +1991,22 @@ html.jd-turn-open { overflow: hidden; }
    sizes, 16f's calm): the waiting card is a SQUARE sheet, and the four slots
    are graph-paper print swatches in a tight 2×2 — the report card's
    "photograph" (.jd-turn-art below), so a slot waits in the same frame its
-   drawing will arrive in. Each swatch runs its own OLD-SCHOOL WEB WAIT
-   INDICATOR, printed in ink and keyed stably to the slot letter: a plotter
-   pen tracing a circuit generated fresh each turn (round-20 swap — the
-   flipping hourglass retires), the stray word (LOADING adrift, DVD-menu
-   style — round-19 swap, owner pick 2026-08-16), the scatterword (LOADING…
-   blown apart and zooped back together, its flight generated fresh each turn
-   — round-22 swap, owner pick 2026-08-18, the Win95 segmented progress bar
-   retires), a ticking wristwatch (round-21 swap — the bouncing dots retire).
+   drawing will arrive in. Each swatch runs an OLD-SCHOOL WEB WAIT INDICATOR,
+   printed in ink and dealt per turn from a pool of five (round-24 rotation,
+   owner directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from
+   the turn ref; before then each indicator was keyed stably to its slot
+   letter): a plotter pen tracing a circuit generated fresh each turn
+   (round-20 swap — the flipping hourglass retires), the stray word ("please /
+   wait" adrift, DVD-menu style — round-19 swap, owner pick 2026-08-16),
+   the scatterword (LOADING… blown apart and zooped back together, its flight
+   generated fresh each turn — round-22 swap, owner pick 2026-08-18, the Win95
+   segmented progress bar retires), a ticking wristwatch (round-21 swap — the
+   bouncing dots retire), and the honest bar (a hatched ink fill that climbs,
+   stalls, takes setbacks, and second-guesses itself above ~80 — rounds
+   24–25, owner pick 2026-08-21). The well under each indicator wears the
+   indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
+   full-bleed/overflow tailoring below keys to that, not to the slot: the
+   slot classes (--a…--d) now mean position only.
    A fifth slip — "please wait…" in the visitor's pencil hand —
    floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
    collapses to an overlay strip so only the ✕ rides the top-right corner
@@ -2009,7 +2017,8 @@ html.jd-turn-open { overflow: hidden; }
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
    (a partial plot with the pen resting on it, the stray word at rest in the
    centre, the scatterword assembled and readable, the watch reading its
-   seeded time); every animation lives under prefers-reduced-motion: no-preference,
+   seeded time, the bar parked mid-climb at 68%); every animation lives under
+   prefers-reduced-motion: no-preference,
    a reduce block stills the rest, and the end-state poses live on the
    data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
    settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
@@ -2078,7 +2087,7 @@ html.jd-turn-open { overflow: hidden; }
   transition: opacity 0.5s;
 }
 
-/* a — the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
    retires): a machine plotting a circuit along the graph paper's own rules.
    The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
    spanning-tree tour, different every turn, seamless by construction); this
@@ -2107,7 +2116,7 @@ html.jd-turn-open { overflow: hidden; }
    stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
    swatch height. Never snap `top` while the paper's 0deg layers phase
    from the bottom. */
-.jd-dark-sw--a .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
 .jd-dark-plot {
   display: block; position: absolute;
   left: calc(50% - 45px); bottom: calc(50% - 27px);
@@ -2128,20 +2137,20 @@ html.jd-turn-open { overflow: hidden; }
 @keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
 @keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
 
-/* b — the stray word: "please / wait" adrift on the print, ricocheting off
+/* the stray word: "please / wait" adrift on the print, ricocheting off
    the swatch's own edges like the DVD-menu logo of blessed memory (round-19
    swap — mockup-19-offguard-loaders.html №10 rev B replaces the radial-tick
    throbber; owner pick 2026-08-16. Round-23 reword, owner pick 2026-08-18:
    LOADING retires for a two-line "please / wait" in an old-fashioned script
    hand — a politer ghost to chase around the paper). The bounce field is the WHOLE swatch,
-   not the inset well — the well opens to inset 0 for this slot only, so the
+   not the inset well — the well opens to inset 0 for this indicator only, so the
    word rebounds off the graph paper's edges and slides UNDER the pencilled
    letter (z 3) and the verdict (z 2). The two axes run incommensurate
    periods, so the path never visibly repeats. Position trick: left/top
    0→100% paired with translate 0→-100% makes each travel span exactly
    (swatch − word) at ANY swatch size — both halves tween linearly, so the
    sum is linear too. Static base: the word at rest in the centre. */
-.jd-dark-sw--b .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-well--stray { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
 .jd-dark-stray {
   position: absolute; left: 50%; top: 0; height: 100%;
   width: max-content; transform: translateX(-50%);
@@ -2203,7 +2212,7 @@ html.jd-turn-open { overflow: hidden; }
   to   { top: 100%; transform: translateY(-100%); }
 }
 
-/* c — the scatterword (round-22 swap, owner pick 2026-08-18; the Win95
+/* the scatterword (round-22 swap, owner pick 2026-08-18; the Win95
    segmented block progress bar retires): the word LOADING… holds just long
    enough to read, explodes — every glyph thrown straight out along its own
    ray, fastest at the bang and decelerating the whole way, tumbling, knocking
@@ -2226,9 +2235,11 @@ html.jd-turn-open { overflow: hidden; }
    hand-written number here.
    SIZING. The flight is authored in em against a 140×110 FIELD (the
    approved mockup's card), so one generated stylesheet drives the swatch at
-   every size the card takes. The well opens to the whole swatch (slot B's
+   every size the card takes. The well opens to the whole swatch (the stray's
    precedent) and the field is centred in it, sized so its 12.670em width IS
-   the swatch's width: container-type: size makes the swatch a container, and
+   the swatch's width: container-type: size makes the WELL a container (the
+   round-24 rotation moved it off the swatch — the well is full-bleed, so
+   the geometry is identical), and
    100/12.670 = 7.893cqw. (Owner tuning 2026-08-18: the glyph shrank from 13
    to 11.05 real-scale px — 15% — while the FIELD stayed 140×110, which is
    the whole point of the change: a smaller word thrown across exactly the
@@ -2243,8 +2254,10 @@ html.jd-turn-open { overflow: hidden; }
    and bottom. It is centred, and nothing is lost: the generator's roam box
    already holds the glyph centres a little off every edge, so the letters
    were never going to reach the extreme top and bottom anyway. */
-.jd-dark-sw--c { container-type: size; }
-.jd-dark-sw--c .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-well--scatter {
+  container-type: size;
+  left: 0; right: 0; top: 0; bottom: 0; overflow: hidden;
+}
 .jd-dark-word {
   position: absolute; left: 50%; top: 50%;
   transform: translate(-50%, -50%);
@@ -2274,7 +2287,7 @@ html.jd-turn-open { overflow: hidden; }
   font-size: 1.45em; line-height: 0; margin-right: -0.186em;
 }
 
-/* d — the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
+/* the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
    dots retire): the classic Mac "please wait" watch, drawn with a ruling
    pen — case circle, twelve ticks faked by one dashed circle (pathLength
    12, dash 0.14/0.86, offset 0.07 to centre each tick on its hour), two
@@ -2290,14 +2303,15 @@ html.jd-turn-open { overflow: hidden; }
    so the graph paper never shows through the watch — it sits ON the sheet,
    not printed into it. Ticks and hands draw after the case in the markup,
    so they ride on the solid dial. */
-/* The watch's well, full-bleed like a/b/c (owner catch, 2026-08-19: the watch
+/* The watch's well, full-bleed like the plotter's, the stray's and the
+   scatterword's (owner catch, 2026-08-19: the watch
    sat low). The BASE .jd-dark-well is inset top: 24% / bottom: 14% — room the
    original indicator wanted under the slot letter — which puts its centre at
-   24 + (100-24-14)/2 = 55% of the swatch, 5% low. Slots a, b and c each
-   overrode it to full-bleed as they were rebuilt; slot d was the one indicator
-   never re-based, so it alone kept the asymmetry and centred 5% low. The
-   watch centres on the swatch itself now, like its neighbours. */
-.jd-dark-sw--d .jd-dark-well { left: 0; right: 0; top: 0; bottom: 0; }
+   24 + (100-24-14)/2 = 55% of the swatch, 5% low. The other indicators each
+   overrode it to full-bleed as they were rebuilt; the watch was the one
+   indicator never re-based, so it alone kept the asymmetry and centred 5%
+   low. The watch centres on the swatch itself now, like its neighbours. */
+.jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
 
 .jd-dark-watch .w-case {
   fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.6;
@@ -2320,6 +2334,27 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark-watch .w-pin { fill: var(--tink); }
 @keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
 @keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
+
+/* the honest bar (rounds 24–25, owner pick 2026-08-21; tuned on
+   mockup-24-honest-bar.html's bench, dressed by mockup-25-bar-styles.html's
+   hatched-stripes option with the stripes thickened): a hand-wobbled ink
+   outline whose fill climbs slowly, stalls, takes setbacks, and above ~80
+   second-guesses itself in wider swings — never finishing, never quite
+   erratic. The track is GENERATED per turn in the JS (darkHonestBar — a
+   seeded 150-tick climb baked into keyframes, one tick per 0.3s, a 45s
+   super-cycle whose seam is the sigh-and-start-over); this file knows only
+   the frame, the fill's dress, and the static pose. The bar keeps the
+   DEFAULT inset well — the one indicator that does — because the wobbled
+   frame wants the paper's margin around it. Stripes are the round-25
+   thickening: 5px of ink, 2.5px of paper. Static base: parked at 68%,
+   mid-climb — the pose a reduced-motion visitor sees. */
+.jd-dark-barwrap { position: relative; width: 100%; height: 22px; }
+.jd-dark-barfill {
+  position: absolute; left: 3px; top: 3px; bottom: 3px;
+  width: 68%; max-width: calc(100% - 6px);
+  background:
+    repeating-linear-gradient(90deg, var(--tink-2) 0 5px, transparent 5px 7.5px);
+}
 
 /* ---- arrival / failure: the end poses live on the state classes ----------- */
 .jd-dark-result {
@@ -2435,23 +2470,27 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-sw[data-state="fail"] { animation: jdDarkJolt 0.5s ease-in-out 1; }
 
   /* arrived: the loop stops where it stands (the well fades over it).
-     failed: it FREEZES mid-loop. */
+     failed: it FREEZES mid-loop. (The bar's binding arrives from its
+     generated <style> like the scatterword's, but pausing works the same —
+     it is in this list.) */
   .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray,
   .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="ok"] .jd-dark-gl,
   .jd-dark-sw[data-state="ok"] .w-min, .jd-dark-sw[data-state="ok"] .w-hr,
+  .jd-dark-sw[data-state="ok"] .jd-dark-barfill,
   .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray,
   .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
   .jd-dark-sw[data-state="fail"] .jd-dark-gl,
-  .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr {
+  .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr,
+  .jd-dark-sw[data-state="fail"] .jd-dark-barfill {
     animation-play-state: paused;
   }
 }
 @media (prefers-reduced-motion: reduce) {
   .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
-  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-gl,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-gl, .jd-dark-barfill,
   .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
   .jd-dark-wait, .jd-dark-sw {
     animation: none !important;
