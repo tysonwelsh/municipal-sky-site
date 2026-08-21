@@ -1,0 +1,89 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>ink-density sieve</title>
+<style>body{font-family:"Courier New",monospace;font-size:12px;background:#ece0bf;
+color:#33240f;padding:16px;white-space:pre-wrap;word-break:break-all}</style></head><body>
+<div id="log">working…</div>
+<script>
+// each script: [key, normalised font-size, [ranges]]
+var R=[
+ ["grk",10.0,[[0x0391,0x03A9],[0x03B1,0x03C9],[0x03DC,0x03FF]]],
+ ["cyr",10.0,[[0x0410,0x044F],[0x0460,0x0481],[0x048A,0x04FF],[0x0500,0x052F]]],
+ ["heb",10.0,[[0x05D0,0x05EA]]],
+ ["arb",10.0,[[0x0620,0x064A],[0x0671,0x06D3]]],
+ ["geo",10.0,[[0x10A0,0x10C5],[0x10D0,0x10FA],[0x1C90,0x1CBA]]],
+ ["arm", 8.4,[[0x0531,0x0556],[0x0561,0x0587]]],
+ ["che", 8.9,[[0x13A0,0x13F5],[0xAB70,0xABBF]]],
+ ["des", 9.2,[[0x10400,0x1044F]]],
+ ["tib",11.0,[[0x0F40,0x0F6C],[0x0F90,0x0FBC]]],
+ ["han", 8.0,[[0x3131,0x318E]]],
+ ["cjk", 7.0,[[0x2F00,0x2FD5],[0x31C0,0x31E3],[0x4E00,0x5FFF]]],
+ ["run", 8.6,[[0x16A0,0x16EA]]],
+ ["got", 9.0,[[0x10330,0x1034A]]],
+ ["ita", 9.3,[[0x10300,0x1031F]]],
+ ["phn", 9.2,[[0x10900,0x10915]]],
+ ["lnb", 9.1,[[0x10000,0x1005D],[0x10080,0x100FA]]],
+ ["cop", 9.4,[[0x2C80,0x2CE2],[0x2CEB,0x2CF1]]],
+ ["tfn", 9.2,[[0x2D30,0x2D67]]],
+ ["osa", 9.4,[[0x104B0,0x104D3],[0x104D8,0x104FB]]],
+ ["shw",11.5,[[0x10450,0x1047F]]],
+ ["vai", 8.1,[[0xA500,0xA62B]]],
+ ["adl", 8.3,[[0x1E900,0x1E943]]],
+ ["nko",11.0,[[0x07CA,0x07EA]]],
+ ["yii",10.2,[[0xA000,0xA48C]]],
+ ["gla", 6.7,[[0x2C00,0x2C2E],[0x2C30,0x2C5E]]],
+ ["eth", 7.9,[[0x1200,0x1248],[0x124A,0x1256],[0x1260,0x1288],[0x12A0,0x12C0],[0x12D8,0x1310]]],
+ ["syr", 7.9,[[0x0710,0x072F]]],
+ ["thn",10.0,[[0x0780,0x07A5]]],
+ ["lao",10.5,[[0x0E81,0x0EAE]]],
+ ["bam", 9.4,[[0xA6A0,0xA6EF]]],
+ ["mth",10.0,[[0x2200,0x22FF]]],
+ ["pla",10.0,[[0x2600,0x266F]]]
+];
+var LAT="ABCDEFGHIJKLMNOPQRSTUVWXYZ", CAP=150, SUP=4; // supersample
+var c=document.createElement("canvas"); c.width=c.height=48;
+var x=c.getContext("2d",{willReadFrequently:true});
+function ink(ch,px){
+  x.clearRect(0,0,48,48);
+  x.font=(px*SUP)+'px "Courier Prime","Courier New",Courier,monospace';
+  x.textBaseline="middle"; x.textAlign="center"; x.fillStyle="#000";
+  x.fillText(ch,24,24);
+  var d=x.getImageData(0,0,48,48).data, n=0, minx=48,maxx=-1,miny=48,maxy=-1;
+  for(var i=0;i<48*48;i++){
+    if(d[i*4+3]>60){ n++;
+      var px_=i%48, py=(i/48)|0;
+      if(px_<minx)minx=px_; if(px_>maxx)maxx=px_;
+      if(py<miny)miny=py; if(py>maxy)maxy=py;
+    }
+  }
+  return {n:n, w:maxx-minx+1, h:maxy-miny+1};
+}
+// the Latin band is the reference: what a struck character looks like
+var lo=1e9, hi=0, ws=0;
+for(var i=0;i<LAT.length;i++){var m=ink(LAT[i],10);
+  if(m.n<lo)lo=m.n; if(m.n>hi)hi=m.n; ws+=m.w;}
+var LATW=ws/LAT.length;
+var MIN=Math.round(lo*0.55), MAX=Math.round(hi*1.85);
+var TOFU=JSON.stringify(ink("\u{10FFFF}",10))+"|"+JSON.stringify(ink("￿",10));
+var out={}, stats=[];
+R.forEach(function(s){
+  var key=s[0], size=s[1], cand=[], kept=[];
+  s[2].forEach(function(r){ for(var cp=r[0];cp<=r[1];cp++) cand.push(cp); });
+  cand.forEach(function(cp){
+    var ch=String.fromCodePoint(cp);
+    var m=ink(ch,size);
+    if(m.n===0) return;                                  // blank / unassigned
+    if(TOFU.indexOf(JSON.stringify(m))>=0) return;        // tofu box
+    if(m.n<MIN||m.n>MAX) return;                          // speck or blob
+    if(m.w>LATW*SUP*1.9) return;                          // too wide for the cell
+    kept.push(ch);
+  });
+  // thin evenly so one script cannot swamp the mix, and so the sample
+  // spans the whole block instead of clustering at its start
+  var step=Math.max(1,Math.ceil(kept.length/CAP)), thin=[];
+  for(var i=0;i<kept.length;i+=step) thin.push(kept[i]);
+  out[key]=thin.join("");
+  stats.push(key+" "+thin.length+"/"+cand.length);
+});
+document.getElementById("log").textContent =
+  "BAND ink px "+MIN+"-"+MAX+" (latin "+lo+"-"+hi+")\n"+stats.join("  ")+
+  "\n@@@"+JSON.stringify(out)+"@@@";
+</script></body></html>

@@ -2415,6 +2415,156 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
 .jd-dark-sw[data-state="fail"] .jd-dark-big { color: var(--tink-2); }
 
+/* ---- f — the carbon rain (round 25, owner pick 2026-08-21) ------------------
+   A falling-glyph column in the manner of the film everyone has seen, retyped
+   on the office machine: 78 writing systems, 5987 characters, one glyph to a
+   printed square, falling down the paper's own rules. The joke is the charset
+   — the inscrutable machine language turns out to be a filing cabinet — and
+   the reversed strikes, which the Matrix does for the look and a carbon copy
+   does because you are reading the second sheet from behind.
+
+   THE COLUMN NEVER REPEATS, and the mechanism is worth knowing before anyone
+   changes it. A stream loops; at the instant it wraps — jumping from below
+   the bottom edge back above the top — every square in it is off the sheet.
+   junk-drawer.js listens for that exact moment (animationiteration on the
+   stream, guarded to the `fall` animation, because the pinwheel squares'
+   own iteration events BUBBLE to the same listener) and re-draws the whole
+   column's characters there. Nobody ever sees a glyph change, and the supply
+   is the entire pool rather than a fixed strip of markup.
+
+   MIND THE TRAVEL DISTANCE: --jdr-h is the SHEET's height, set inline by the
+   builder. A percentage in translateY resolves against the ELEMENT's own
+   height, so `100%` here would move a stream by its own length and wrap it
+   in full view, mid-sheet.
+
+   Each script carries its own font-size (--jdr-* below), measured so that its
+   advance matches the Latin's; Cherokee at 8.9px, Deseret at 9.2px, Chinese
+   at 6px and Latin at 10px all sit on one rhythm. Never re-tune one of these
+   by eye — the inventory and the sizes are generated together.
+   -------------------------------------------------------------------------- */
+.jd-dark-well--rain { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+.jd-rain-c { position: absolute; top: 0; display: block; opacity: var(--jdr-o); }
+.jd-rain-s { position: absolute; top: 0; left: 0; display: block;
+  transform: translateY(var(--jdr-y0)); }
+.jd-rain-s i {
+  display: block; width: 9px; height: 9px; line-height: 9px; text-align: center;
+  font-family: var(--tmono); font-style: normal; color: #4a628a;   /* the paper's own ruling colour, struck solid */
+  overflow: hidden;
+}
+.jd-rain-s i.is-rev  { transform: scaleX(-1); }
+.jd-rain-s i.is-spin { overflow: visible; }
+/* a word laid into the rain: upright Latin, never reversed, never re-struck.
+   It stays the SAME BLUE as the rain around it (owner, 2026-08-21) — the word
+   is meant to surface out of the noise because it is coherent, not because it
+   changes colour. The office's own two words (LOADING / STAND BY) carry a
+   little more weight than the words of the job in hand; that is the whole
+   difference between them. */
+.jd-rain-s i.is-word  { color: #4a628a; }
+.jd-rain-s i.is-heavy { color: #4a628a; font-weight: 700; }
+.jdr-lat { font-size: 10.0px; }
+.jdr-dig { font-size: 10.0px; }
+.jdr-mrk { font-size: 10.0px; }
+.jdr-grk { font-size: 10.1px; }
+.jdr-cyr { font-size: 9.3px; }
+.jdr-heb { font-size: 10px; }
+.jdr-arb { font-size: 9.9px; }
+.jdr-dev { font-size: 8.9px; }
+.jdr-geo { font-size: 9.7px; }
+.jdr-arm { font-size: 9.7px; }
+.jdr-cjk { font-size: 6px; }
+.jdr-han { font-size: 7.5px; }
+.jdr-tha { font-size: 10.1px; }
+.jdr-che { font-size: 9.5px; }
+.jdr-des { font-size: 10.3px; }
+.jdr-tib { font-size: 12px; }
+.jdr-brh { font-size: 9.6px; }
+.jdr-sid { font-size: 8.3px; }
+.jdr-shr { font-size: 9.3px; }
+.jdr-gra { font-size: 6.8px; }
+.jdr-khr { font-size: 10px; }
+.jdr-ben { font-size: 9px; }
+.jdr-gur { font-size: 9.8px; }
+.jdr-guj { font-size: 8.2px; }
+.jdr-ori { font-size: 9.1px; }
+.jdr-tam { font-size: 8.1px; }
+.jdr-tel { font-size: 7.2px; }
+.jdr-kan { font-size: 7.2px; }
+.jdr-mal { font-size: 6.1px; }
+.jdr-sin { font-size: 7.9px; }
+.jdr-mya { font-size: 7.3px; }
+.jdr-khm { font-size: 8.5px; }
+.jdr-run { font-size: 8.2px; }
+.jdr-got { font-size: 9.3px; }
+.jdr-ita { font-size: 9.1px; }
+.jdr-phn { font-size: 9.1px; }
+.jdr-lnb { font-size: 7.6px; }
+.jdr-cop { font-size: 9.5px; }
+.jdr-tfn { font-size: 9.8px; }
+.jdr-osa { font-size: 8.8px; }
+.jdr-shw { font-size: 11.9px; }
+.jdr-vai { font-size: 7.9px; }
+.jdr-adl { font-size: 8.2px; }
+.jdr-nko { font-size: 11.1px; }
+.jdr-yii { font-size: 10.4px; }
+.jdr-gla { font-size: 7.2px; }
+.jdr-eth { font-size: 6.6px; }
+.jdr-syr { font-size: 8px; }
+.jdr-thn { font-size: 9.5px; }
+.jdr-lao { font-size: 10.1px; }
+.jdr-bam { font-size: 9.9px; }
+.jdr-ave { font-size: 9.4px; }
+.jdr-olt { font-size: 9.5px; }
+.jdr-arc { font-size: 9.2px; }
+.jdr-nab { font-size: 11.4px; }
+.jdr-pal { font-size: 10px; }
+.jdr-man { font-size: 7.6px; }
+.jdr-car { font-size: 8.8px; }
+.jdr-lyc { font-size: 9.5px; }
+.jdr-lyd { font-size: 9.6px; }
+.jdr-ugr { font-size: 6.1px; }
+.jdr-opr { font-size: 5.2px; }
+.jdr-mer { font-size: 7.2px; }
+.jdr-olc { font-size: 9.6px; }
+.jdr-cham { font-size: 5.5px; }
+.jdr-bali { font-size: 5.8px; }
+.jdr-java { font-size: 5.6px; }
+.jdr-bugi { font-size: 6.2px; }
+.jdr-batk { font-size: 6.1px; }
+.jdr-lisu { font-size: 9.7px; }
+.jdr-bass { font-size: 8.5px; }
+.jdr-mend { font-size: 8.5px; }
+.jdr-wcho { font-size: 9.4px; }
+.jdr-rohg { font-size: 11px; }
+.jdr-tale { font-size: 10.3px; }
+.jdr-mth { font-size: 10.0px; }
+.jdr-pla { font-size: 10.0px; }
+.jdr-alc { font-size: 6.6px; }
+
+@keyframes jdRainFall {
+  from { transform: translateY(calc(-1 * var(--jdr-dh))); }
+  to   { transform: translateY(var(--jdr-h)); }
+}
+@keyframes jdRainSpin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes jdRainSpinCcw { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .jd-rain-s { animation: jdRainFall var(--jdr-d) linear var(--jdr-dl) infinite; }
+  .jd-rain-s i.is-spin { animation: jdRainSpin var(--jdr-sd) linear infinite; }
+  .jd-rain-s i.is-spin.is-ccw { animation-name: jdRainSpinCcw; }
+}
+/* stillness: with no fall there is no wrap, so animationiteration never fires
+   and the sheet simply holds the page of type it was first dealt */
+@media (prefers-reduced-motion: reduce) {
+  .jd-rain-s, .jd-rain-s i.is-spin { animation: none !important; }
+}
+/* arrived / failed: the rain stops where it stands, with the rest of the well */
+.jd-dark-sw[data-state="ok"]   .jd-rain-s, .jd-dark-sw[data-state="ok"]   .jd-rain-s i.is-spin,
+.jd-dark-sw[data-state="fail"] .jd-rain-s, .jd-dark-sw[data-state="fail"] .jd-rain-s i.is-spin {
+  animation-play-state: paused;
+}
+
 /* ---- the wait slip, laid OVER the pile -------------------------------------
    Centred on top of the four swatches, overlapping their inner corners, a
    real drop shadow so it reads as a slip laid over the pile. The pencilled

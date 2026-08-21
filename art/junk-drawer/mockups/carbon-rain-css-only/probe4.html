@@ -1,0 +1,146 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>sieve v2</title>
+<style>body{font-family:monospace;font-size:12px;background:#ece0bf;color:#33240f;
+padding:14px;white-space:pre-wrap;word-break:break-all}</style></head><body>
+<div id="o">starting…</div>
+<script>
+var R=[
+ ["grk",[[0x0370,0x03FF],[0x1F00,0x1FFE]]],
+ ["cyr",[[0x0400,0x052F],[0xA640,0xA69D]]],
+ ["heb",[[0x05D0,0x05F2],[0xFB1D,0xFB4F]]],
+ ["arb",[[0x0620,0x06D3],[0x0750,0x077F],[0x08A0,0x08BD]]],
+ ["geo",[[0x10A0,0x10FA],[0x10D0,0x10FF],[0x1C90,0x1CBF],[0x2D00,0x2D2D]]],
+ ["arm",[[0x0531,0x0587]]],
+ ["che",[[0x13A0,0x13F5],[0xAB70,0xABBF]]],
+ ["des",[[0x10400,0x1044F]]],
+ ["tib",[[0x0F40,0x0F6C]]],
+ ["han",[[0x3131,0x318E],[0xA960,0xA97C]]],
+ ["cjk",[[0x2F00,0x2FD5],[0x4E00,0x9FA5]]],
+ ["run",[[0x16A0,0x16F8]]],
+ ["got",[[0x10330,0x1034A]]],
+ ["ita",[[0x10300,0x1031F]]],
+ ["phn",[[0x10900,0x10915]]],
+ ["lnb",[[0x10000,0x1005D],[0x10080,0x100FA]]],
+ ["cop",[[0x2C80,0x2CF3],[0x03E2,0x03EF]]],
+ ["tfn",[[0x2D30,0x2D67]]],
+ ["osa",[[0x104B0,0x104FB]]],
+ ["shw",[[0x10450,0x1047F]]],
+ ["vai",[[0xA500,0xA62B]]],
+ ["adl",[[0x1E900,0x1E943]]],
+ ["nko",[[0x07CA,0x07EA]]],
+ ["yii",[[0xA000,0xA48C]]],
+ ["gla",[[0x2C00,0x2C5E]]],
+ ["eth",[[0x1200,0x1399],[0x2D80,0x2DDE]]],
+ ["syr",[[0x0710,0x072F],[0x0860,0x086A]]],
+ ["thn",[[0x0780,0x07A5]]],
+ ["lao",[[0x0E81,0x0EAE]]],
+ ["bam",[[0xA6A0,0xA6EF]]],
+ /* ---- Sanskrit and its scripts, plus the rest of the Indic family ---- */
+ ["dev",[[0x0904,0x0939],[0x0958,0x0961],[0x0972,0x097F]]],
+ ["brh",[[0x11013,0x11037]]],
+ ["sid",[[0x11580,0x115AE]]],
+ ["shr",[[0x11183,0x111B2]]],
+ ["gra",[[0x11305,0x11339]]],
+ ["khr",[[0x10A00,0x10A35]]],
+ ["ben",[[0x0985,0x09B9],[0x09DC,0x09DF]]],
+ ["gur",[[0x0A05,0x0A39],[0x0A59,0x0A5E]]],
+ ["guj",[[0x0A85,0x0AB9]]],
+ ["ori",[[0x0B05,0x0B39]]],
+ ["tam",[[0x0B85,0x0BB9]]],
+ ["tel",[[0x0C05,0x0C39],[0x0C58,0x0C5A]]],
+ ["kan",[[0x0C85,0x0CB9]]],
+ ["mal",[[0x0D05,0x0D39],[0x0D54,0x0D56]]],
+ ["sin",[[0x0D85,0x0DC6]]],
+ ["tha",[[0x0E01,0x0E2E]]],
+ ["mya",[[0x1000,0x1021],[0x1050,0x1055]]],
+ ["khm",[[0x1780,0x17A2]]],
+ /* ---- further afield ---- */
+ ["ave",[[0x10B00,0x10B35]]],
+ ["olt",[[0x10C00,0x10C48]]],
+ ["arc",[[0x10840,0x10855]]],
+ ["nab",[[0x10880,0x1089E]]],
+ ["pal",[[0x10860,0x10876]]],
+ ["man",[[0x10AC0,0x10AE4]]],
+ ["car",[[0x102A0,0x102D0]]],
+ ["lyc",[[0x10280,0x1029C]]],
+ ["lyd",[[0x10920,0x10939]]],
+ ["ugr",[[0x10380,0x1039D]]],
+ ["opr",[[0x103A0,0x103C3]]],
+ ["mer",[[0x10980,0x109B7]]],
+ ["olc",[[0x1C50,0x1C77]]],
+ ["cham",[[0xAA00,0xAA28]]],
+ ["bali",[[0x1B05,0x1B33]]],
+ ["java",[[0xA984,0xA9B2]]],
+ ["bugi",[[0x1A00,0x1A16]]],
+ ["batk",[[0x1BC0,0x1BE5]]],
+ ["lisu",[[0xA4D0,0xA4F7]]],
+ ["bass",[[0x16AD0,0x16AED]]],
+ ["mend",[[0x1E800,0x1E870]]],
+ ["wcho",[[0x1E2C0,0x1E2EB]]],
+ ["rohg",[[0x10D00,0x10D23]]],
+ ["tale",[[0x1950,0x196D]]],
+ ["tifi2",[[0x1E7E0,0x1E7E6]]]
+];
+var CAPS={cjk:600,yii:400,eth:400,cyr:400,arb:400,grk:400};
+var LAT="ABCDEFGHIJKLMNOPQRSTUVWXYZ",SUP=4,N=44;
+var c=document.createElement("canvas");c.width=c.height=N;
+var x=c.getContext("2d",{willReadFrequently:true});
+var m=document.createElement("canvas").getContext("2d");
+function adv(ch,px){m.font=px+'px "Courier Prime","Courier New",Courier,monospace';
+  return m.measureText(ch).width;}
+function shape(ch,px){
+  x.clearRect(0,0,N,N);
+  x.font=(px*SUP)+'px "Courier Prime","Courier New",Courier,monospace';
+  x.textBaseline="middle";x.textAlign="center";x.fillStyle="#000";x.fillText(ch,N/2,N/2);
+  var d=x.getImageData(0,0,N,N).data;
+  var minx=N,maxx=-1,miny=N,maxy=-1,n=0;
+  for(var i=0;i<N*N;i++){ if(d[i*4+3]>60){n++;var X=i%N,Y=(i/N)|0;
+    if(X<minx)minx=X;if(X>maxx)maxx=X;if(Y<miny)miny=Y;if(Y>maxy)maxy=Y;} }
+  if(!n) return null;
+  var border=0,inner=0,bt=0,it=0;
+  for(var Y=miny;Y<=maxy;Y++)for(var X=minx;X<=maxx;X++){
+    var on=d[(Y*N+X)*4+3]>60, edge=(X<=minx+1||X>=maxx-1||Y<=miny+1||Y>=maxy-1);
+    if(edge){bt++;if(on)border++;}else{it++;if(on)inner++;}
+  }
+  return {n:n,w:maxx-minx+1,h:maxy-miny+1,bf:border/Math.max(1,bt),inf:inner/Math.max(1,it)};
+}
+var lo=1e9,hi=0,latw=0;
+for(var i=0;i<LAT.length;i++){var s=shape(LAT[i],10);
+  if(s.n<lo)lo=s.n; if(s.n>hi)hi=s.n; latw+=s.w;}
+latw/=LAT.length;
+var MIN=Math.round(lo*0.5), MAX=Math.round(hi*1.9), LATADV=adv("A",10);
+var out={},stats=[],qi=0;
+function step(){
+  var t0=performance.now();
+  while(qi<R.length && performance.now()-t0<400){
+    var key=R[qi][0], cand=[];
+    R[qi][1].forEach(function(r){for(var cp=r[0];cp<=r[1];cp++)cand.push(cp);});
+    // 1. measured normalisation: what size puts this script on Latin's advance?
+    var sum=0,cnt=0;
+    for(var i=0;i<cand.length&&cnt<40;i+=Math.max(1,(cand.length/40)|0)){
+      var a=adv(String.fromCodePoint(cand[i]),10); if(a>0){sum+=a;cnt++;}
+    }
+    var size=cnt?Math.max(5,Math.min(13,Math.round(LATADV/(sum/cnt)*10*10)/10)):10;
+    var kept=[];
+    cand.forEach(function(cp){
+      var ch=String.fromCodePoint(cp);
+      if(adv(ch,10)<=0) return;
+      var s=shape(ch,size);
+      if(!s) return;
+      if(s.n<MIN||s.n>MAX) return;
+      if(s.bf>0.72&&s.inf<0.10) return;          // tofu box
+      if(s.w>latw*1.95) return;                   // too wide for the cell
+      kept.push(ch);
+    });
+    var cap=CAPS[key]||99999, step2=Math.max(1,Math.ceil(kept.length/cap)), thin=[];
+    for(var i=0;i<kept.length;i+=step2) thin.push(kept[i]);
+    out[key]={size:size,chars:thin.join("")};
+    stats.push(key+":"+thin.length+"@"+size);
+    qi++;
+  }
+  document.getElementById("o").textContent =
+    (qi<R.length ? ("… "+qi+"/"+R.length+"\n") : ("DONE band "+MIN+"-"+MAX+"\n"))
+    + stats.join(" ") + (qi>=R.length ? "\n%%%"+JSON.stringify(out)+"%%%" : "");
+  if(qi<R.length) setTimeout(step,0);
+}
+step();
+</script></body></html>
