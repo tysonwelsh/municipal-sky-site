@@ -2007,12 +2007,13 @@ html.jd-turn-open { overflow: hidden; }
    indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
    full-bleed/overflow tailoring below keys to that, not to the slot: the
    slot classes (--a…--d) now mean position only.
-   A fifth slip — "please wait…" in the visitor's pencil hand —
-   floats ON TOP of the pile. No FORM JD-1 badge, no title: the masthead
-   collapses to an overlay strip so only the ✕ rides the top-right corner
-   (the button and its once-bound listener are untouched — F1 — only the row
-   is restyled; the headline hides, and the title goes on naming the dialog
-   to assistive tech from display:none).
+   ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
+   fifth slip — "please wait…" in the pencil hand, floated over the pile —
+   is retired; it covered the indicators. The masthead is VISIBLE on this
+   card instead: PLEASE STAND BY centred in a full-width overlay band (the ✕
+   and its once-bound listener are untouched — F1 — only the row is
+   restyled), with a plain mono sentence in the sheet's bottom margin
+   (.jd-dark-foot) carrying the slow-timer line beneath it.
 
    MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
    (a partial plot with the pen resting on it, the stray word at rest in the
@@ -2033,13 +2034,24 @@ html.jd-turn-open { overflow: hidden; }
   width: min(560px, 100%, calc(100vh - 110px));
   aspect-ratio: 1 / 1;
 }
-/* the masthead as overlay strip: out of the flow, no rule, no wash — just
-   the ✕ floating at the corner, ABOVE the printed double border (z 6) */
+/* the masthead as overlay band (round 26, owner pick 2026-08-21,
+   mockup-26-standby-claude rev. 3): PLEASE STAND BY floats over the sheet's
+   top margin in the form's own serif — out of the flow so the pile keeps the
+   whole square, no rule, no wash, ABOVE the printed double border (z 6). The
+   ✕ keeps its corner seat (F1: the head's static child, untouched); the
+   symmetric side padding clears it while keeping the phrase truly centred. */
 .jd-turn[data-view="darkroom"] .jd-turn-head {
-  position: absolute; top: 0; right: 0; z-index: 20;
-  padding: 0; border-bottom: 0; background: none;
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  padding: 0 48px; border-bottom: 0; background: none;
 }
-.jd-turn[data-view="darkroom"] .jd-turn-headline { display: none; }
+.jd-turn[data-view="darkroom"] .jd-turn-headline { justify-content: center; }
+/* the broadcast phrase reads as an announcement: a step up from the form
+   titles' size, and a touch more letterspacing (text-indent balances the
+   final tracking space so the centring is optical, not just geometric) */
+.jd-turn[data-view="darkroom"] .jd-turn-title {
+  flex: 0 1 auto; text-align: center;
+  font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
+}
 /* the body stops scrolling and becomes the pile's table */
 .jd-turn[data-view="darkroom"] .jd-turn-scroll { padding: 0; overflow: hidden; }
 .jd-dark { position: relative; height: 100%; }
@@ -2565,33 +2577,32 @@ html.jd-turn-open { overflow: hidden; }
   animation-play-state: paused;
 }
 
-/* ---- the wait slip, laid OVER the pile -------------------------------------
-   Centred on top of the four swatches, overlapping their inner corners, a
-   real drop shadow so it reads as a slip laid over the pile. The pencilled
-   line is ONE element so the owner can reword it in one place; the slow-timer
-   line sits under it, behind data-slow/hidden. */
-.jd-dark-wait {
-  position: absolute; left: 50%; top: 50%; z-index: 6;
-  width: 46%; min-height: 15%;
-  transform: translate(-50%, -50%) rotate(-2deg);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 3px;
-  padding: 8px 10px;
-  background: var(--tpaper-hi) var(--tgrain);
-  border: 1px solid rgba(74, 53, 18, 0.30); border-radius: 2px;
-  box-shadow: 7px 11px 18px -6px rgba(20, 10, 2, 0.6),
-              2px 3px 7px -2px rgba(20, 10, 2, 0.45);
+/* ---- the margin line, under the pile (round 26) ----------------------------
+   The pencilled wait slip retired (owner pick 2026-08-21, mockup-26-standby-
+   claude rev. 3): laid over the pile it covered the indicators, which are the
+   whole show. One plain mono sentence in the sheet's bottom margin instead —
+   the line is ONE element so the owner can reword it in one place — with the
+   slow-timer line beneath it, behind the same data-slow/hidden pattern. The
+   working ellipsis is three dots arriving in turn: printed static as the base
+   pose, animated only where motion is welcome (the house rule). */
+.jd-dark-foot {
+  position: absolute; left: 8%; right: 8%; bottom: 3%; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center;
 }
 .jd-dark-line {
-  font-family: var(--thand); font-size: 1rem; color: var(--graphite);
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
 }
+.jd-dark-dots i { font-style: normal; }
 .jd-dark-slow {
   font-family: var(--tmono); font-size: var(--t-label); font-style: italic;
   line-height: 1.45; text-align: center; color: var(--tink-2);
 }
-@keyframes jdDarkWaitRock {
-  from { transform: translate(-50%, -50%) rotate(-2.5deg); }
-  to   { transform: translate(-50%, -50%) rotate(-1.5deg); }
+@keyframes jdDarkDot {
+  0%, 20%  { opacity: 0; }
+  30%, 90% { opacity: 1; }
+  100%     { opacity: 0; }
 }
 
 /* ---- motion: added, never assumed ------------------------------------------
@@ -2620,7 +2631,10 @@ html.jd-turn-open { overflow: hidden; }
   /* watch slowed 2x (owner, 2026-08-17): a click per second, horology pace */
   .jd-dark-watch .w-min    { animation: jdDarkWatchMin 12s steps(12, end) infinite; }
   .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 144s steps(12, end) infinite; }
-  .jd-dark-wait            { animation: jdDarkWaitRock 7s ease-in-out infinite alternate; }
+  /* the margin line's working ellipsis: three dots arriving in turn */
+  .jd-dark-dots i              { opacity: 0; animation: jdDarkDot 1.8s linear infinite; }
+  .jd-dark-dots i:nth-child(2) { animation-delay: 0.45s; }
+  .jd-dark-dots i:nth-child(3) { animation-delay: 0.9s; }
 
   /* arrival / failure theatrics — one-shot, then the state class holds */
   .jd-dark-sw[data-state="ok"]   { animation: jdDarkSettle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1; }
@@ -2649,7 +2663,7 @@ html.jd-turn-open { overflow: hidden; }
   .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
   .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-gl, .jd-dark-barfill,
   .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
-  .jd-dark-wait, .jd-dark-sw {
+  .jd-dark-dots i, .jd-dark-sw {
     animation: none !important;
   }
   .jd-dark-sw, .jd-dark-well, .jd-dark-result { transition: none; }

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>junk drawer — PLEASE STAND BY slips (round 26 · CLAUDE'S TAKE)</title>
+<title>junk drawer — PLEASE STAND BY, combined (round 26 · CLAUDE'S TAKE)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root {
@@ -16,7 +16,6 @@
     --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
     --mono: "Courier Prime", "Courier New", Courier, monospace;
     --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
-    --cond: "Arial Narrow", "Franklin Gothic Medium", Impact, sans-serif;
     --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
   }
   * { box-sizing: border-box; }
@@ -28,35 +27,32 @@
     font-family: var(--mono);
     color: #d8d2c0;
   }
-  header { text-align: center; margin-bottom: 44px; }
-  header h1 {
+  header.page { text-align: center; margin-bottom: 44px; }
+  header.page h1 {
     font-size: 15px; font-weight: normal; letter-spacing: 0.14em;
     margin: 0 0 8px; color: #b9b29e;
   }
-  header .who {
+  header.page .who {
     display: inline-block; margin: 0 0 10px; padding: 2px 10px;
     border: 1px solid #6d6650; font-size: 10px; letter-spacing: 0.3em;
     color: #cfc8b2;
   }
-  header p { font-size: 11px; margin: 0 auto; opacity: 0.55; max-width: 560px; line-height: 1.6; }
+  header.page p { font-size: 11px; margin: 0 auto; opacity: 0.55; max-width: 560px; line-height: 1.6; }
 
-  .desk {
-    display: flex; flex-wrap: wrap; justify-content: center;
-    gap: 56px 64px; max-width: 1560px;
-  }
-  .candidate { margin: 0; width: 420px; }
+  .desk { display: flex; flex-wrap: wrap; justify-content: center; gap: 56px 64px; }
+  .candidate { margin: 0; width: 460px; }
   figcaption { margin-top: 18px; }
   figcaption .name { display: block; font-size: 11px; color: #cfc8b2; letter-spacing: 0.08em; }
   figcaption .blurb { display: block; margin-top: 6px; font-size: 10px; opacity: 0.55; line-height: 1.6; }
 
   /* =====================================================================
-     THE DARKROOM CARD, facsimile — production-spec from junk-drawer.css:
-     square sheet, grain + double border, ✕ box, four graph-paper swatches
-     at their real seats with static pending faces. Only the centre slip
-     differs between candidates.
+     THE DARKROOM CARD, facsimile — production-spec from junk-drawer.css.
+     The chosen design: PLEASE STAND BY in the form's serif masthead above
+     the pile, a plain sentence in the bottom margin, nothing covering the
+     four indicators.
      ===================================================================== */
   .card {
-    position: relative; width: 420px; height: 420px;
+    position: relative; width: 460px; height: 460px;
     color: var(--ink);
     background: var(--paper) var(--grain);
     border: 1px solid rgba(48, 38, 20, 0.55);
@@ -99,7 +95,6 @@
     position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
     display: flex; align-items: center; justify-content: center;
   }
-  /* static pending faces — stand-ins for the dealt indicators */
   .well svg { display: block; }
   .well .stray {
     font-family: var(--hand); font-size: 15px; line-height: 1.15;
@@ -110,180 +105,58 @@
     letter-spacing: 0.08em; color: var(--ink-2);
   }
 
-  /* the slip seat every candidate shares — production .jd-dark-wait terms:
-     centred over the pile, z 6, real drop shadow, −2° toss */
-  .slip {
-    position: absolute; left: 50%; top: 50%; z-index: 6;
-    transform: translate(-50%, -50%) rotate(-2deg);
-    background: var(--paper-hi) var(--grain);
-    border: 1px solid rgba(74, 53, 18, 0.30); border-radius: 2px;
-    box-shadow: 7px 11px 18px -6px rgba(20, 10, 2, 0.6),
-                2px 3px 7px -2px rgba(20, 10, 2, 0.45);
-    overflow: hidden;
-  }
-
-  /* =====================================================================
-     1 — THE MONOSCOPE. The engineers' test card, printed in the office's
-     own ink: circle, crosshair, resolution wedges, grey steps, station
-     call letters, and the banner across the middle. All decoration is in
-     the drawing; the words are the only thing that must survive.
-     ===================================================================== */
-  .s1-slip { width: 62%; }
-  .s1-slip svg { display: block; width: 100%; height: auto; }
-  .s1-slip::after {           /* the phosphor sweep: a faint band of light */
-    content: ""; position: absolute; left: 0; right: 0; top: -22%; height: 18%;
-    background: linear-gradient(180deg, rgba(255, 252, 236, 0) 0%,
-                rgba(255, 252, 236, 0.5) 50%, rgba(255, 252, 236, 0) 100%);
-    pointer-events: none;
-  }
-
-  /* =====================================================================
-     2 — THE COLOR BARS. SMPTE bars gone to paper: the inks are faded the
-     way a printed slide fades, and the card is the drawer's one colour
-     moment while the machines work. Sync slips once in a while.
-     ===================================================================== */
-  .s2-slip { width: 58%; padding: 7px; }
-  .s2-tv { position: relative; aspect-ratio: 4 / 3; border: 1px solid rgba(51, 36, 15, 0.5); }
-  .s2-bars { display: flex; height: 58%; }
-  .s2-bars i { flex: 1 1 0; }
-  .s2-bars i:nth-child(1) { background: #b5ac93; }
-  .s2-bars i:nth-child(2) { background: #bfa94e; }
-  .s2-bars i:nth-child(3) { background: #62a49b; }
-  .s2-bars i:nth-child(4) { background: #6f9a52; }
-  .s2-bars i:nth-child(5) { background: #a4628f; }
-  .s2-bars i:nth-child(6) { background: #a84a38; }
-  .s2-bars i:nth-child(7) { background: #4d5f96; }
-  .s2-mid { display: flex; height: 10%; }
-  .s2-mid i { flex: 1 1 0; }
-  .s2-mid i:nth-child(1) { background: #4d5f96; }
-  .s2-mid i:nth-child(2) { background: #2c2317; }
-  .s2-mid i:nth-child(3) { background: #a4628f; }
-  .s2-mid i:nth-child(4) { background: #2c2317; }
-  .s2-mid i:nth-child(5) { background: #62a49b; }
-  .s2-mid i:nth-child(6) { background: #2c2317; }
-  .s2-mid i:nth-child(7) { background: #b5ac93; }
-  .s2-band {
-    height: 32%; background: #261e12;
+  /* the masthead: the form's own heading row, un-hidden for the darkroom —
+     serif small caps in the top band, clear of the ✕ */
+  .head {
+    position: absolute; left: 12px; right: 56px; top: 0; z-index: 7;
+    min-height: 44px;
     display: flex; align-items: center; justify-content: center;
-  }
-  .s2-band span {
-    font-family: var(--mono); font-weight: 700; font-size: 13px;
-    letter-spacing: 0.28em; text-indent: 0.28em; color: #e9dfc0;
-  }
-  .s2-tv::after {             /* the print shows through the inks a little */
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: var(--grain);
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.22em; text-indent: 0.22em; text-transform: uppercase;
+    color: var(--ink); text-align: center;
   }
 
-  /* =====================================================================
-     3 — THE SLATE. The "technical difficulties" slide, all type: sunburst
-     rays, the lozenge, PLEASE small and STAND BY large, one quiet line
-     underneath — the natural home for the slow-timer message.
-     ===================================================================== */
-  .s3-slip {
-    width: 60%;
-    padding: 14px 12px 12px;
-    display: flex; flex-direction: column; align-items: center;
-  }
-  .s3-frame {
-    position: relative; width: 100%;
-    border: 1px solid rgba(51, 36, 15, 0.55);
-    box-shadow: inset 0 0 0 3px var(--paper-hi), inset 0 0 0 4px rgba(51, 36, 15, 0.35);
-    padding: 16px 10px 12px;
-    display: flex; flex-direction: column; align-items: center;
-    overflow: hidden;
-  }
-  .s3-rays {
-    position: absolute; left: 50%; top: 46%; width: 320%; aspect-ratio: 1;
-    transform: translate(-50%, -50%);
-    background: repeating-conic-gradient(from 2deg,
-      rgba(51, 36, 15, 0.16) 0deg 3.4deg, transparent 3.4deg 12deg);
-    pointer-events: none;
-  }
-  .s3-oval {
-    position: relative;
-    border: 2.5px solid var(--ink); border-radius: 50%;
-    background: var(--paper-hi);
-    padding: 12px 26px 13px;
-    display: flex; flex-direction: column; align-items: center; gap: 1px;
-  }
-  .s3-please {
-    font-family: var(--mono); font-size: 10px; font-weight: 700;
-    letter-spacing: 0.52em; text-indent: 0.52em; color: var(--ink);
-  }
-  .s3-standby {
-    font-family: var(--cond); font-size: 27px; font-weight: 700;
-    letter-spacing: 0.05em; line-height: 1.02; color: var(--ink);
-    white-space: nowrap;
-  }
-  .s3-line {
-    position: relative; margin-top: 10px;
-    font-family: var(--mono); font-size: 7px; letter-spacing: 0.16em;
-    text-indent: 0.16em; color: var(--ink-2); text-align: center;
-    white-space: nowrap;
-    background: var(--paper-hi); padding: 2px 7px;   /* a chip of clear paper,
-                                                        so the rays never run
-                                                        through the words */
+  /* the bottom line: the form's own quiet mono, sentence case, centred in
+     the bottom margin — where the slow-timer message appends on a long wait */
+  .foot {
+    position: absolute; left: 8%; right: 8%; bottom: 3%; z-index: 7;
+    text-align: center;
+    font-family: var(--mono); font-size: 0.66rem; line-height: 1.5;
+    color: var(--ink-2);
   }
 
-  /* ---- motion: added, never assumed ---------------------------------- */
+  /* the working ellipsis: three dots arriving in turn; static "…" under
+     reduced motion */
+  .dots i { font-style: normal; }
   @media (prefers-reduced-motion: no-preference) {
-    .slip { animation: rock 7s ease-in-out infinite alternate; }
-    @keyframes rock {
-      from { transform: translate(-50%, -50%) rotate(-2.5deg); }
-      to   { transform: translate(-50%, -50%) rotate(-1.5deg); }
-    }
-    .s1-slip::after { animation: sweep 5.5s linear infinite; }
-    @keyframes sweep {
-      0%   { transform: translateY(0); }
-      70%  { transform: translateY(760%); }
-      100% { transform: translateY(760%); }
-    }
-    .s2-tv { animation: syncslip 7s steps(1, end) infinite; }
-    @keyframes syncslip {
-      0%, 87%  { transform: none; filter: none; }
-      88%      { transform: translateX(3px) skewX(1deg); }
-      89%      { transform: translateX(-2px); }
-      90%      { transform: translateY(-2px) skewX(-0.7deg); }
-      91%, 100%{ transform: none; }
-    }
-    /* the slate sits in a projector gate: it weaves, and now and then the
-       lamp breathes */
-    .s3-slip { animation: rock 7s ease-in-out infinite alternate, gate 0.9s steps(2, end) infinite; }
-    @keyframes gate {
-      0%   { margin-top: 0; }
-      50%  { margin-top: 0.6px; }
-      100% { margin-top: 0; }
-    }
-    .s3-frame { animation: lamp 6.4s linear infinite; }
-    @keyframes lamp {
-      0%, 91%, 94%, 100% { opacity: 1; }
-      92% { opacity: 0.82; }
-      93% { opacity: 0.94; }
-      96% { opacity: 0.88; }
-      97% { opacity: 1; }
+    .dots i { animation: dot 1.8s linear infinite; opacity: 0; }
+    .dots i:nth-child(2) { animation-delay: 0.45s; }
+    .dots i:nth-child(3) { animation-delay: 0.9s; }
+    @keyframes dot {
+      0%, 20% { opacity: 0; }
+      30%, 90% { opacity: 1; }
+      100% { opacity: 0; }
     }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>THE JUNK DRAWER — the darkroom's wait slip goes broadcast (round 26)</h1>
+<header class="page">
+  <h1>THE JUNK DRAWER — the darkroom card, combined (round 26, rev. 3)</h1>
   <div class="who">CLAUDE'S TAKE</div>
-  <p>Three replacements for the pencilled &ldquo;please wait&hellip;&rdquo; slip laid over the
-  four swatches — each one a PLEASE STAND BY card in the manner of the television test
-  patterns, printed on the office's own paper. The swatches, the indicator deal, and the
-  arrival states are untouched; only the centre slip changes. The slow-timer line keeps
-  its seat under the slip's main matter in all three.</p>
+  <p>The chosen combination: PLEASE STAND BY in the form's serif masthead above the
+  pile, and one plain sentence in the bottom margin. Nothing covers the four
+  indicators. The bottom line is where the slow-timer message appends on a long wait,
+  and it can carry the countdown as drawings land.</p>
 </header>
 
 <div class="desk">
 
-  <!-- ================= 1 · THE MONOSCOPE ================= -->
   <figure class="candidate">
     <div class="card">
       <span class="x">✕</span>
+      <div class="head">Please Stand By</div>
 
       <div class="sw sw--a"><span class="lt">a</span>
         <div class="well">
@@ -313,188 +186,17 @@
         </div>
       </div>
 
-      <div class="slip s1-slip">
-        <svg viewBox="0 0 320 240" role="img" aria-label="test pattern: please stand by">
-          <g stroke="#33240f" stroke-opacity="0.22" stroke-width="0.8">
-            <line x1="40" y1="0" x2="40" y2="240"/><line x1="280" y1="0" x2="280" y2="240"/>
-            <line x1="0" y1="40" x2="320" y2="40"/><line x1="0" y1="200" x2="320" y2="200"/>
-          </g>
-          <g stroke="#33240f" stroke-opacity="0.35" stroke-width="0.9">
-            <line x1="0" y1="0" x2="320" y2="240"/><line x1="320" y1="0" x2="0" y2="240"/>
-          </g>
-          <g fill="none" stroke="#33240f" stroke-width="2">
-            <circle cx="160" cy="120" r="104"/>
-            <circle cx="160" cy="120" r="78" stroke-width="1.2"/>
-            <circle cx="160" cy="120" r="30" stroke-width="1.2"/>
-          </g>
-          <g stroke="#33240f" stroke-width="1.2">
-            <line x1="160" y1="8" x2="160" y2="232"/>
-            <line x1="24" y1="120" x2="296" y2="120"/>
-          </g>
-          <!-- resolution wedges, four fans -->
-          <g stroke="#33240f" stroke-width="1.4">
-            <line x1="146" y1="46" x2="154" y2="88"/><line x1="153" y1="44" x2="157.5" y2="87"/>
-            <line x1="160" y1="43" x2="160" y2="86"/><line x1="167" y1="44" x2="162.5" y2="87"/>
-            <line x1="174" y1="46" x2="166" y2="88"/>
-            <line x1="146" y1="194" x2="154" y2="152"/><line x1="153" y1="196" x2="157.5" y2="153"/>
-            <line x1="160" y1="197" x2="160" y2="154"/><line x1="167" y1="196" x2="162.5" y2="153"/>
-            <line x1="174" y1="194" x2="166" y2="152"/>
-            <line x1="62" y1="106" x2="118" y2="114"/><line x1="60" y1="113" x2="117" y2="117.5"/>
-            <line x1="59" y1="120" x2="116" y2="120"/><line x1="60" y1="127" x2="117" y2="122.5"/>
-            <line x1="62" y1="134" x2="118" y2="126"/>
-            <line x1="258" y1="106" x2="202" y2="114"/><line x1="260" y1="113" x2="203" y2="117.5"/>
-            <line x1="261" y1="120" x2="204" y2="120"/><line x1="260" y1="127" x2="203" y2="122.5"/>
-            <line x1="258" y1="134" x2="202" y2="126"/>
-          </g>
-          <!-- grey steps -->
-          <g>
-            <rect x="120" y="92"  width="16" height="10" fill="#33240f" fill-opacity="0.15"/>
-            <rect x="136" y="92"  width="16" height="10" fill="#33240f" fill-opacity="0.35"/>
-            <rect x="152" y="92"  width="16" height="10" fill="#33240f" fill-opacity="0.55"/>
-            <rect x="168" y="92"  width="16" height="10" fill="#33240f" fill-opacity="0.75"/>
-            <rect x="184" y="92"  width="16" height="10" fill="#33240f" fill-opacity="0.9"/>
-            <rect x="120" y="138" width="16" height="10" fill="#33240f" fill-opacity="0.9"/>
-            <rect x="136" y="138" width="16" height="10" fill="#33240f" fill-opacity="0.75"/>
-            <rect x="152" y="138" width="16" height="10" fill="#33240f" fill-opacity="0.55"/>
-            <rect x="168" y="138" width="16" height="10" fill="#33240f" fill-opacity="0.35"/>
-            <rect x="184" y="138" width="16" height="10" fill="#33240f" fill-opacity="0.15"/>
-          </g>
-          <!-- corner registration -->
-          <g fill="none" stroke="#33240f" stroke-width="1.2">
-            <circle cx="26" cy="26" r="10"/><circle cx="294" cy="26" r="10"/>
-            <circle cx="26" cy="214" r="10"/><circle cx="294" cy="214" r="10"/>
-          </g>
-          <!-- call letters + the banner, each on its own printed panel so the
-               pattern never runs through the words -->
-          <rect x="116" y="58" width="88" height="15" fill="#f4ead0" stroke="#33240f" stroke-width="0.8"/>
-          <text x="160" y="69" text-anchor="middle" font-family="'Courier Prime','Courier New',monospace"
-                font-size="9" letter-spacing="4" fill="#33240f">JNKD·TV</text>
-          <rect x="58" y="106" width="204" height="28" fill="#33240f"/>
-          <text x="160" y="125" text-anchor="middle" font-family="'Courier Prime','Courier New',monospace"
-                font-weight="700" font-size="15" letter-spacing="3" fill="#f4ead0">PLEASE STAND BY</text>
-          <rect x="102" y="166" width="116" height="14" fill="#f4ead0" stroke="#33240f" stroke-width="0.8"/>
-          <text x="160" y="176" text-anchor="middle" font-family="'Courier Prime','Courier New',monospace"
-                font-size="8" letter-spacing="2" fill="#33240f" fill-opacity="0.75">AWAITING TRANSMISSION</text>
-        </svg>
-      </div>
+      <div class="foot">Your SVGs are being drawn. This could take a few minutes<span
+        class="dots"><i>.</i><i>.</i><i>.</i></span></div>
     </div>
     <figcaption>
-      <span class="name">1 · THE MONOSCOPE — the engineers' test card, printed in ink</span>
-      <span class="blurb">Circle, crosshair, resolution wedges, grey steps, corner
-      registration marks, house call letters (JNKD·TV), and the banner across the middle.
-      Entirely in the card's own ink on the slip's paper, so it sits in the "printed
-      indicator" family the four swatches already belong to. Motion is one faint phosphor
-      band sweeping down every few seconds; reduced motion gets the still card. The
-      slow-timer line takes the AWAITING TRANSMISSION seat.</span>
-    </figcaption>
-  </figure>
-
-  <!-- ================= 2 · THE COLOR BARS ================= -->
-  <figure class="candidate">
-    <div class="card">
-      <span class="x">✕</span>
-
-      <div class="sw sw--a"><span class="lt">a</span>
-        <div class="well"><span class="scat">LOADING…</span></div>
-      </div>
-      <div class="sw sw--b"><span class="lt">b</span>
-        <div class="well">
-          <svg width="62" height="67" viewBox="0 0 40 44">
-            <rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/>
-            <rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/>
-            <circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/>
-            <line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
-            <line x1="20" y1="22" x2="14" y2="26" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="20" cy="22" r="1.2" fill="#33240f"/>
-          </svg>
-        </div>
-      </div>
-      <div class="sw sw--c"><span class="lt">c</span>
-        <div class="well"><span class="stray">please<br>wait</span></div>
-      </div>
-      <div class="sw sw--d"><span class="lt">d</span>
-        <div class="well">
-          <svg width="90" height="54" viewBox="0 0 90 54">
-            <path d="M13.5 4.5 L13.5 31.5 L31.5 31.5 L31.5 13.5 L49.5 13.5 L49.5 40.5 L76.5 40.5"
-                  fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2"/>
-            <circle cx="76.5" cy="40.5" r="2.4" fill="#33240f" fill-opacity="0.85"/>
-          </svg>
-        </div>
-      </div>
-
-      <div class="slip s2-slip">
-        <div class="s2-tv">
-          <div class="s2-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="s2-mid"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <div class="s2-band"><span>PLEASE STAND BY</span></div>
-        </div>
-      </div>
-    </div>
-    <figcaption>
-      <span class="name">2 · THE COLOR BARS — SMPTE bars, gone to paper</span>
-      <span class="blurb">The one candidate that brings colour: the bars are faded the way
-      a printed slide fades, overlaid with the sheet's grain so they read as old process
-      inks rather than screen phosphors — the drawer's one colour moment while the
-      machines work, the way the arcade button is its one light source. PLEASE STAND BY
-      sits in the dark band beneath. Sync slips sideways for a frame every seven seconds;
-      reduced motion holds the card steady. The slow-timer line sits under the slip on
-      its paper margin.</span>
-    </figcaption>
-  </figure>
-
-  <!-- ================= 3 · THE SLATE ================= -->
-  <figure class="candidate">
-    <div class="card">
-      <span class="x">✕</span>
-
-      <div class="sw sw--a"><span class="lt">a</span>
-        <div class="well">
-          <svg width="62" height="67" viewBox="0 0 40 44">
-            <rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/>
-            <rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/>
-            <circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/>
-            <line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
-            <line x1="20" y1="22" x2="25" y2="17" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
-            <circle cx="20" cy="22" r="1.2" fill="#33240f"/>
-          </svg>
-        </div>
-      </div>
-      <div class="sw sw--b"><span class="lt">b</span>
-        <div class="well"><span class="scat">LOADING…</span></div>
-      </div>
-      <div class="sw sw--c"><span class="lt">c</span>
-        <div class="well">
-          <svg width="90" height="54" viewBox="0 0 90 54">
-            <path d="M4.5 13.5 L31.5 13.5 L31.5 40.5 L58.5 40.5 L58.5 22 L85.5 22"
-                  fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2"/>
-            <circle cx="85.5" cy="22" r="2.4" fill="#33240f" fill-opacity="0.85"/>
-          </svg>
-        </div>
-      </div>
-      <div class="sw sw--d"><span class="lt">d</span>
-        <div class="well"><span class="stray">please<br>wait</span></div>
-      </div>
-
-      <div class="slip s3-slip">
-        <div class="s3-frame">
-          <span class="s3-rays"></span>
-          <div class="s3-oval">
-            <span class="s3-please">PLEASE</span>
-            <span class="s3-standby">STAND BY</span>
-          </div>
-          <span class="s3-line">· TRANSMISSION WILL RESUME SHORTLY ·</span>
-        </div>
-      </div>
-    </div>
-    <figcaption>
-      <span class="name">3 · THE SLATE — the technical-difficulties slide</span>
-      <span class="blurb">All type, no apparatus: sunburst rays, the lozenge, PLEASE
-      small over STAND BY in condensed broadcast capitals, and one quiet line beneath —
-      which is exactly where the slow-timer message already lives, so on a long wait the
-      slate's own caption becomes the explanation. Motion is a projector's gate weave
-      (a sub-pixel breathing) and an occasional lamp flicker; reduced motion gets the
-      still slide. The most restrained of the three — closest in spirit to the pencilled
-      slip it replaces.</span>
+      <span class="name">PLEASE STAND BY over the pile · the sentence beneath it</span>
+      <span class="blurb">Header: the darkroom's hidden masthead un-hidden, serif small
+      caps with a touch more letterspacing so the broadcast phrase reads as an
+      announcement. Foot: the form's quiet mono, sentence case, with a working
+      ellipsis; on a long wait the slow-timer line ("Still going&hellip;") appends here,
+      and as drawings land the sentence can count down. Reduced motion stills the
+      dots.</span>
     </figcaption>
   </figure>
 

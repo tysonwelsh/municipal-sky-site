@@ -4042,11 +4042,14 @@ function JD_layerOpen() {
            stalls, takes setbacks, and second-guesses itself above ~80,
            never finishing (rounds 24–25, owner pick 2026-08-21; see
            darkHonestBar below for the construction)
-     A fifth slip — "please wait…" in the visitor's pencil hand — floats ON
-     TOP of the pile. No FORM JD-1 badge, no title: the masthead collapses to
-     an overlay strip so only the ✕ rides the card's top-right corner (the
-     button itself is untouched — F1's never-replaced static child — only its
-     row is restyled, in the CSS).
+     ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
+     fifth slip — "please wait…" in the pencil hand, floated ON TOP of the
+     pile — is retired; it covered the indicators, which are the whole show.
+     In its place the masthead is VISIBLE on this card (PLEASE STAND BY,
+     centred as a full-width overlay band; the ✕ keeps its corner seat —
+     F1's never-replaced static child, only its row is restyled in the CSS)
+     and a plain mono sentence sits in the sheet's bottom margin, with the
+     slow-timer line beneath it as before.
      The theatrics are aria-hidden; each swatch carries a visually-hidden
      status line that the wrapper's aria-live="polite" announces. paintSlots
      touches ONLY the swatch whose state changed — rewriting a still-pending
@@ -4843,28 +4846,32 @@ function JD_layerOpen() {
       return work.slots[s].status === 'pending';
     }).length;
   }
-  function darkroomTitle() {
-    var n = pendingCount();
-    return n === 4 ? 'Four machines are drawing'
-      : n === 3 ? 'Three are still drawing'
-      : n === 2 ? 'Two are still drawing' : 'One is still drawing';
-  }
   function viewGenerating() {
-    /* noFocus: this view's headline is display:none (the slip is the only
-       copy), so the landing focus goes to the first real control — the ✕.
-       The title still EXISTS (hidden) and still carries darkroomTitle() as
-       the dialog's accessible name; paintSlots keeps it in sync as slots
-       land, exactly as before. */
+    /* THE MASTHEAD IS VISIBLE on this card since round 26 (owner pick,
+       2026-08-21, mockups/mockup-26-standby-claude.html rev. 3): PLEASE
+       STAND BY in the form's own serif, centred over the pile — the
+       broadcast slate as a heading, not a slip. It is a fixed phrase, so
+       the title no longer counts down as slots land (the round-17
+       darkroomTitle() countdown retired with the sync in paintSlots);
+       every landing still reaches assistive tech through each swatch's
+       visually-hidden status line inside the wrapper's aria-live. The
+       heading is also the landing focus now that it is visible (C5.8 —
+       this card has no field of its own). */
     var deal = darkDeal();   /* one shuffle per turn; slot i takes deal[i] */
-    return head(darkroomTitle(), 2, { view: 'darkroom', noFocus: true }) +
+    return head('Please stand by', 2, { view: 'darkroom' }) +
       '<div class="jd-dark" aria-live="polite">' +
       JD_SLOTS.map(function (s, i) { return darkSwatch(s, deal[i]); }).join('') +
-      /* the wait slip: ONE easily-edited pencilled line, riding on top of
-         the pile; the slow-timer line lives under it, behind the same
-         data-slow/hidden pattern the timer has always used. This card never
-         needs the mockup's summary line — pendingCount() hitting 0 goes
+      /* the margin line (round 26): the pencilled wait slip retired — it
+         covered the indicators, which are the whole show. One plain
+         sentence in the sheet's bottom margin instead, with a working
+         ellipsis (aria-hidden: the words carry the meaning, the dots are
+         theatre). The slow-timer line keeps its seat beneath it, behind
+         the same data-slow/hidden pattern the timer has always used. This
+         card still needs no summary line — pendingCount() hitting 0 goes
          straight to 'reveal'. */
-      '<div class="jd-dark-wait"><span class="jd-dark-line">please wait…</span>' +
+      '<div class="jd-dark-foot"><span class="jd-dark-line">Your SVGs are ' +
+      'being drawn. This could take a few minutes<span class="jd-dark-dots" ' +
+      'aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span>' +
       '<span class="jd-dark-slow" data-slow' + (work.slow ? '' : ' hidden') +
       '>Still going. The drawing is long because it is being written line by ' +
       'line.</span></div></div>';
@@ -4886,16 +4893,9 @@ function JD_layerOpen() {
     });
     var slow = bodyEl.querySelector('[data-slow]');
     if (slow && work.slow) slow.removeAttribute('hidden');
-    /* the heading is a state display too — once one machine has landed, the
-       (here hidden) title stops claiming four are still drawing, and the
-       dialog's accessible name moves with it */
-    var t = darkroomTitle(), h2 = headEl && headEl.querySelector('.jd-turn-title');
-    if (h2 && t !== stateTitle) {
-      stateTitle = t;
-      if (pendingHead) pendingHead.title = t;
-      h2.textContent = t;
-      card.setAttribute('aria-label', t);
-    }
+    /* (the round-17 countdown title — "Three are still drawing" — retired
+       with round 26's fixed PLEASE STAND BY heading; the per-slot status
+       lines above are the progress announcements now) */
   }
   function startSlowTimer() {
     stopSlowTimer();
