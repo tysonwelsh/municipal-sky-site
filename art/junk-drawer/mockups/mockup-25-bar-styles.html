@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — honest bar, style options (round 25)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --ink-3: rgba(51, 36, 15, 0.44);
+    --pencil: #4b4030;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 24px 72px;
+    font-family: var(--mono);
+    color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 40px; }
+  header h1 {
+    font-size: 15px; font-weight: normal; letter-spacing: 0.14em;
+    margin: 0 0 8px; color: #b9b29e;
+  }
+  header p { font-size: 11px; margin: 0; opacity: 0.55; max-width: 480px; line-height: 1.6; }
+
+  .desk {
+    display: flex; flex-wrap: wrap; justify-content: center;
+    gap: 56px 72px; max-width: 760px;
+  }
+  .candidate { margin: 0; width: 230px; }
+  .rot1 { transform: rotate(-1.4deg); }
+  .rot2 { transform: rotate(1.2deg); }
+  .rot3 { transform: rotate(-0.8deg); }
+  .rot4 { transform: rotate(1.7deg); }
+
+  /* ---- the swatch: production-spec, copied verbatim from .jd-dark-sw ---- */
+  .swatch {
+    position: relative;
+    width: 230px; height: 185px;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  }
+  .corner {
+    position: absolute; top: 3px; left: 7px; z-index: 3;
+    font-family: var(--hand); font-size: 0.9rem;
+    color: var(--pencil); opacity: 0.85;
+  }
+  .well {
+    position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  figcaption { margin-top: 16px; }
+  figcaption .name { display: block; font-size: 11px; color: #cfc8b2; letter-spacing: 0.05em; }
+  figcaption .blurb { display: block; margin-top: 5px; font-size: 10px; opacity: 0.55; line-height: 1.55; }
+
+  /* =====================================================================
+     1 — HATCHED (the current one): vertical ink stripes in a wobbled frame
+     ===================================================================== */
+  .s1-wrap { position: relative; width: 100%; height: 22px; }
+  .s1-fill {
+    position: absolute; left: 3px; top: 3px; bottom: 3px;
+    width: 0%; max-width: calc(100% - 6px);
+    background: repeating-linear-gradient(90deg, var(--ink-2) 0 5px, transparent 5px 7.5px);
+    transition: width 0.3s steps(4, end);
+  }
+
+  /* =====================================================================
+     2 — SOLID: one continuous pour of ink, no segments, same wobbled frame
+     ===================================================================== */
+  .s2-wrap { position: relative; width: 100%; height: 22px; }
+  .s2-fill {
+    position: absolute; left: 3px; top: 3px; bottom: 3px;
+    width: 0%; max-width: calc(100% - 6px);
+    background: rgba(51, 36, 15, 0.62);
+    transition: width 0.3s steps(4, end);
+  }
+
+  /* =====================================================================
+     3 — INK BLOCKS: little hand-stamped squares, one by one, no frame
+     ===================================================================== */
+  .s3-wrap { position: relative; width: 100%; height: 22px; }
+  .s3-fill {
+    position: absolute; left: 1px; top: 2px; bottom: 2px;
+    width: 0%; max-width: calc(100% - 2px);
+    background: repeating-linear-gradient(90deg,
+      var(--ink-2) 0 9px, transparent 9px 13px);
+    transition: width 0.3s steps(4, end);
+  }
+
+  /* =====================================================================
+     4 — BRUSH STROKE: a single marker swipe, ragged hand-painted edges,
+         no frame, no segments
+     ===================================================================== */
+  .s4-wrap { position: relative; width: 100%; height: 22px; }
+  .s4-fill { transition: width 0.3s steps(4, end); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .s1-fill, .s2-fill, .s3-fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>the honest bar — style options (round 25)</h1>
+  <p>Same motion model in every swatch (default tuning: rate 1.6, setback 0.16/6,
+     fluctuation above 85 ±7, 380ms tick). Only the ink treatment differs.</p>
+</header>
+
+<div class="desk">
+
+  <figure class="candidate rot1">
+    <div class="swatch">
+      <span class="corner">1</span>
+      <div class="well">
+        <div class="s1-wrap">
+          <svg width="100%" height="100%" viewBox="0 0 180 22" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M2,3 L178,2 L179,19 L3,20 Z" fill="none" stroke="#33240f" stroke-width="1.4"
+                  stroke-linejoin="round" opacity="0.85"/>
+            <path d="M2,3 L178,2 M3,20 L179,19" fill="none" stroke="#33240f" stroke-width="0.6" opacity="0.3"/>
+          </svg>
+          <div class="s1-fill" id="f1"></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="name">1 — hatched stripes, wobbled frame</span>
+      <span class="blurb">The current style. Vertical pen stripes behind a hand-drawn
+        rectangle — drafting-table standard issue.</span>
+    </figcaption>
+  </figure>
+
+  <figure class="candidate rot2">
+    <div class="swatch">
+      <span class="corner">2</span>
+      <div class="well">
+        <div class="s2-wrap">
+          <svg width="100%" height="100%" viewBox="0 0 180 22" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M3,2 L177,3 L178,20 L2,19 Z" fill="none" stroke="#4b4030" stroke-width="1.1"
+                  stroke-linejoin="round" opacity="0.75"/>
+            <path d="M4,4 L176,4 M4,18 L177,17" fill="none" stroke="#4b4030" stroke-width="0.5" opacity="0.35"/>
+          </svg>
+          <div class="s2-fill" id="f2"></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="name">2 — solid ink, no segments</span>
+      <span class="blurb">One continuous pour of ink behind the same hand-drawn frame.
+        Nothing to count, nothing to measure — it just fills.</span>
+    </figcaption>
+  </figure>
+
+  <figure class="candidate rot3">
+    <div class="swatch">
+      <span class="corner">3</span>
+      <div class="well">
+        <div class="s3-wrap">
+          <div class="s3-fill" id="f3"></div>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="name">3 — ink blocks, no frame</span>
+      <span class="blurb">Little stamped squares laid down one at a time, no outline at
+        all — half tally marks, half battery indicator.</span>
+    </figcaption>
+  </figure>
+
+  <figure class="candidate rot4">
+    <div class="swatch">
+      <span class="corner">4</span>
+      <div class="well">
+        <div class="s4-wrap">
+          <svg width="100%" height="100%" viewBox="0 0 180 22" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <clipPath id="brush">
+                <!-- a hand-painted stroke: ragged top and bottom edges -->
+                <path d="M0,5 Q22,2.5 45,4.5 T90,4 T135,5 T180,4 L180,17.5 Q158,20 135,18 T90,18.5 T45,17.5 T0,18.5 Z"/>
+              </clipPath>
+            </defs>
+            <rect class="s4-fill" id="f4" x="0" y="0" width="0%" height="22"
+                  fill="rgba(51, 36, 15, 0.68)" clip-path="url(#brush)"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <figcaption>
+      <span class="name">4 — brush stroke, no frame</span>
+      <span class="blurb">A single marker swipe with ragged hand-painted edges. The bar
+        as a gesture, not a gauge.</span>
+    </figcaption>
+  </figure>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var reduced = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* default tuning from the round-24 bench */
+  var P = { rate: 1.6, setback: 0.16, depth: 6, thresh: 85, amp: 7, tick: 380 };
+
+  var f1 = document.getElementById("f1");
+  var f2 = document.getElementById("f2");
+  var f3 = document.getElementById("f3");
+  var f4 = document.getElementById("f4");
+
+  function paint(v) {
+    f1.style.width = v + "%";
+    f2.style.width = v + "%";
+    f3.style.width = v + "%";
+    f4.style.width = v + "%";
+  }
+
+  if (reduced) { paint(68); return; }
+
+  var v = 0;
+  setInterval(function () {
+    var r = Math.random();
+    if (v < P.thresh) {
+      if (r < P.setback) v -= Math.random() * P.depth;
+      else if (r < P.setback + 0.18) { /* stall */ }
+      else v += Math.random() * P.rate;
+    } else {
+      var anchor = P.thresh + 5;
+      v += (anchor - v) * 0.12 + (Math.random() - 0.5) * 2 * P.amp * 0.4;
+    }
+    v = Math.max(0, Math.min(98, v));
+    paint(v);
+  }, P.tick);
+})();
+</script>
+
+</body>
+</html>

@@ -3489,9 +3489,12 @@ function JD_layerOpen() {
    never learns an identity before jd-rate answers.
 
    Conventions borrowed wholesale from JD_record, deliberately: scrim + card,
-   role="dialog" aria-modal="true", Escape peels ONE layer (the abandon
-   confirm before the modal), scrim-press closes the top layer, focus returns
-   to the opener. The two dialogs refuse to open over each other.
+   role="dialog" aria-modal="true", Escape peels ONE layer (the enlargement,
+   then the abandon confirm, then the modal), scrim-press closes the top
+   layer, focus returns to the opener. The ratings screen borrows the record
+   card's two plate tricks too — REPLAY and press-to-enlarge, on the same
+   shared engine and the same .jd-record-zoom layer (2026-08-21). The two
+   dialogs refuse to open over each other.
 
    Nothing here is hardcoded from the rubric: every grade, axis, value and
    size label is resolved from the taxonomy in the data.php payload the pile
@@ -3676,6 +3679,19 @@ function JD_layerOpen() {
     bodyEl.addEventListener('click', onClick);
     bodyEl.addEventListener('change', onChange);
     bodyEl.addEventListener('input', onInput);
+    /* the bench/call plate answers Enter/Space like the button it claims to
+       be (role="button" — see plate()); Space is preventDefault'd or the
+       card scrolls out from under the enlargement. REPLAY is a real
+       <button>, so the UA turns these keys into its click — onClick above
+       redraws, nothing here should zoom. */
+    bodyEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      if (e.target.closest && e.target.closest('.jd-turn-draw')) return;
+      var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
+      if (!p || p.getAttribute('role') !== 'button') return;
+      e.preventDefault();
+      openZoom(p);
+    });
     ttInit();
     /* the trap: Tab cycles inside whichever layer is on top */
     card.addEventListener('keydown', function (e) {
@@ -3738,6 +3754,7 @@ function JD_layerOpen() {
   /* close paths that are free to leave: nothing is in flight or unfiled */
   function close() {
     if (!isOpen) return;
+    closeZoom(true);   /* the layer outlives the card's DOM if it isn't peeled */
     isOpen = false;
     confirmOn = false;
     dismissConfirm();
@@ -3766,6 +3783,10 @@ function JD_layerOpen() {
   }
   function showConfirm() {
     if (confirmOn) return;
+    /* the confirm must never open UNDER a still-open enlargement — the
+       zoom layer paints above everything on the page, so peel it first
+       (silently: the confirm, not the plate, is about to take focus) */
+    closeZoom(true);
     confirmOn = true;
     confirmEl = document.createElement('div');
     confirmEl.className = 'jd-turn-confirm';
@@ -3846,14 +3867,17 @@ function JD_layerOpen() {
   }
   function ttHide() { if (ttEl) ttEl.hidden = true; }
 
-  /* Escape peels ONE layer per press: the abandon confirm first, the modal
-     second, and never the page (the pile's own Escape handler stands down
-     for as long as this dialog is up — see JD_layerOpen). A third layer —
-     an open definitions popover — used to peel first; OVERRIDE 1 (round-16)
-     retired the popover outright, so there is one fewer layer to peel. */
+  /* Escape peels ONE layer per press: an open enlargement first, the abandon
+     confirm second, the modal third, and never the page (the pile's own
+     Escape handler stands down for as long as this dialog is up — see
+     JD_layerOpen). A fourth layer — an open definitions popover — used to
+     peel first; OVERRIDE 1 (round-16) retired the popover outright, so there
+     is one fewer layer to peel. The enlargement joined the stack later
+     (2026-08-21) and sits on top of everything, so it peels first. */
   window.addEventListener('keydown', function (e) {
     if (!isOpen || e.key !== 'Escape') return;
     e.preventDefault();
+    if (zoomOn) { closeZoom(); return; }
     ttHide();
     requestClose();
   });
@@ -3908,6 +3932,15 @@ function JD_layerOpen() {
      data-view — the one hook the landscape bench's width and grid ride on
      (see .jd-turn[data-view="bench"] in junk-drawer.css). */
   function paint(h) {
+    /* an open enlargement belongs to the plate it was lifted from, and this
+       paint is about to replace that plate — peel the layer (silently: the
+       node focus would return to is going away) rather than let it drift
+       onto a stale step's paperwork. Unlike the report card, which re-syncs
+       its enlargement across re-renders, the bench's whole navigation IS a
+       re-render, so closing is the honest move. The peel lives HERE, not in
+       render(): every write to the card goes through paint, including the
+       filing-failure repaint in onFiled that bypasses render. */
+    closeZoom(true);
     headEl.innerHTML = headHTML();
     bodyEl.innerHTML = h;
     /* the plates (reveal/bench/call) inline freshly-generated SVGs, which can
@@ -4423,6 +4456,75 @@ function JD_layerOpen() {
     out.push('</span>');
     return out.join('');
   }
+  /* the honest bar (rounds 24–25, owner pick 2026-08-21 — the pool's first
+     member beyond the original four; tuned on mockup-24-honest-bar.html's
+     bench, dressed by mockup-25-bar-styles.html's hatched-stripes option):
+     a hand-wobbled ink bar outline whose hatched fill climbs SLOWLY, stalls,
+     takes real setbacks, and once it gets above ~80 starts second-guessing
+     itself in wider swings — never finishing, never quite erratic, and when
+     the super-cycle ends it sighs and starts the climb over. No percentage,
+     no "est. remaining": the commentary is entirely in the motion.
+     OWNER TUNING, 2026-08-21 (pasted off the bench's copy-parameters
+     button): rate 6, setback 0.17, depth 18, thresh 80, amp 12, tick 300ms.
+     GENERATED, the house way (darkScatterword's precedent): the whole climb
+     is simulated once per turn from the turn's client_ref and baked into a
+     seed-scoped @keyframes track — one waypoint per tick, every segment
+     joined steps(1, end), so the bar HOLDS each value for a tick and then
+     jumps, like ink laid down one stroke at a time. A repaint or a restored
+     turn re-derives the same climb byte for byte; reduced-motion visitors
+     get the static base (parked at 68%) with the track inert. The loop seam
+     is the joke completing itself: fluctuating in the high eighties at
+     100%, then 0%. */
+  function darkHonestBar(seed) {
+    /* the bench's knobs, fixed by the owner 2026-08-21 */
+    var RATE = 6, SETBACK = 0.17, DEPTH = 18, THRESH = 80, AMP = 12;
+    var TICK = 0.3;          /* seconds per tick                              */
+    var TICKS = 150;         /* the super-cycle: 150 × 0.3s = 45s             */
+    /* the house fold: FNV-1a of the seed string, then xorshift32 */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    var prefix = 'jdhb' + h.toString(36);   /* scopes classes AND keyframes */
+    var st = h || 88172645;                 /* xorshift must never sit at 0 */
+    function rnd() {
+      st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+      return st / 4294967296;
+    }
+    /* the bench's motion model, verbatim: below the threshold a slow climb
+       with stalls and setbacks; above it a mean-reverting wander around the
+       high eighties — wider swings, but it never sprints, never finishes,
+       and never falls apart */
+    var out = ['<style>@keyframes ', prefix, '_w{'], v = 0, r, k;
+    for (k = 0; k <= TICKS; k++) {
+      out.push((k / TICKS * 100).toFixed(3), '%{width:', v.toFixed(1),
+        '%;animation-timing-function:steps(1,end)}');
+      r = rnd();
+      if (v < THRESH) {
+        if (r < SETBACK) v -= rnd() * DEPTH;            /* a setback */
+        else if (r < SETBACK + 0.18) { /* a stall: hold this tick */ }
+        else v += rnd() * RATE;                         /* the climb */
+      } else {
+        v += (THRESH + 5 - v) * 0.12 + (rnd() - 0.5) * 2 * AMP * 0.4;
+      }
+      v = Math.max(0, Math.min(98, v));
+    }
+    out.push('}@media (prefers-reduced-motion:no-preference){',
+      '.', prefix, ' .jd-dark-barfill{animation:', prefix, '_w ',
+      (TICKS * TICK).toFixed(1), 's linear infinite}}</style>');
+    /* the wobbled frame is the approved mockup's hand-drawn rectangle,
+       carried over byte for byte */
+    out.push('<span class="jd-dark-barwrap ', prefix, '">' +
+      '<svg width="100%" height="100%" viewBox="0 0 180 22" ' +
+      'preserveAspectRatio="none">' +
+      '<path d="M2,3 L178,2 L179,19 L3,20 Z" fill="none" stroke="#33240f" ' +
+      'stroke-width="1.4" stroke-linejoin="round" opacity="0.85"/>' +
+      '<path d="M2,3 L178,2 M3,20 L179,19" fill="none" stroke="#33240f" ' +
+      'stroke-width="0.6" opacity="0.3"/>' +
+      '</svg><span class="jd-dark-barfill"></span></span>');
+    return out.join('');
+  }
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   function darkWell(slot) {
@@ -4570,25 +4672,183 @@ function JD_layerOpen() {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
     opts = opts || {};
-    return '<figure class="jd-turn-plate">' +
-      '<div class="jd-turn-art" role="img" aria-label="drawing ' +
-      slot.toUpperCase() + '">' +
+    /* two optional fittings, both worn only by the RATE plates (bench +
+       call) — the reveal's stay plain, since its drawings just drew
+       themselves on arrival and grading hasn't begun. `zoom` makes the
+       whole figure the enlarge control, the record card's plate idiom
+       (role/tabindex on the photograph, handlers at onClick and the
+       anonymous plate keydown wired in build()); `replay` mounts the
+       report photograph's REPLAY button on the print's own corner. The
+       figure's data-slot is how the delegated handlers learn which drawing
+       a press belongs to. */
+    return '<figure class="jd-turn-plate"' +
+      (opts.zoom ? ' role="button" tabindex="0" data-slot="' + slot + '"' +
+        ' aria-label="Enlarge the artwork"' : '') + '>' +
+      '<div class="jd-turn-art">' +
       '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
       '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
       /* the generation id keys the frame: the reveal's big plate and the
          bench's pinned one are the same drawing and must be framed alike.
          A slot that somehow arrived without one falls back to this turn's
          own ref — never a bare slot letter, which the NEXT turn's slot A
-         would collide with and inherit a stale frame from. */
-      '<div class="jd-turn-art-in" data-fit="gen:' +
+         would collide with and inherit a stale frame from. The role="img"
+         lives HERE, on the svg-only wrapper, not on .jd-turn-art: role=img
+         makes every child presentational, which would hide the REPLAY
+         button from assistive tech (the record card's .rc-plate-art
+         carries no role for the same reason). */
+      '<div class="jd-turn-art-in" role="img" aria-label="drawing ' +
+      slot.toUpperCase() + '" data-fit="gen:' +
       esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
-      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div></div>' +
+      window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
+      (opts.replay
+        ? '<button type="button" class="jd-turn-draw" data-act="replay" ' +
+          'data-slot="' + slot + '" ' +
+          'title="watch the drawing draw itself again" ' +
+          'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
+          'REPLAY ✎</button>'
+        : '') +
+      '</div>' +
       (opts.pin ? '' : '<figcaption>' + slot.toUpperCase() + '</figcaption>') +
       '</figure>';
   }
   function okSlots() {
     return JD_SLOTS.filter(function (s) { return work.slots[s].status === 'ok'; });
   }
+
+  /* ---------- the bench's enlargement + REPLAY (owner, 2026-08-21) ----------
+     The ratings screen borrows the report card's two plate tricks verbatim.
+     REPLAY rides each grading plate's corner and plays the drawing again on
+     request — an explicit press is requested motion, so it plays under
+     prefers-reduced-motion too ({ force: true }; the rationale at the record
+     card's drawOn applies unchanged: a button whose whole job is "animate
+     this" going dead would be the worse accessibility outcome). ENLARGE is
+     the record card's own full-viewport layer reused class-for-class
+     (.jd-record-zoom/.rc-zoom-fig/.rc-zoom-art/.rc-zoom-cap), so the print
+     held closer looks identical wherever it was lifted from.
+     Two deliberate differences from the record card, both because the bench
+     is BLIND and the bench NAVIGATES by re-rendering:
+       — the caption names the visitor's prompt and the slot letter, never
+         the model. The report card prints "title · model"; here that would
+         leak which machine drew which before the unveil tells it.
+       — a re-render CLOSES the layer rather than re-syncing it the way the
+         report card's syncZoom does. The card re-renders under an open
+         enlargement only when the response flips; the bench re-renders on
+         every step, and an enlargement left open across a step change would
+         hang over the wrong drawing's paperwork (the peel lives at paint()'s
+         head, so the filing-failure repaint is covered too).
+     State lives here, as JD_record's does, because Escape has to know which
+     layer it is peeling: enlargement first, then the confirm, then the
+     modal (the window keydown handler below). */
+  var zoomEl = null, zoomOn = false, zoomFrom = null;
+  /* the layer hangs off <body>, not off the scrim — the scrim's z-index
+     makes it a stacking context capped below the fixed site banner, and the
+     enlargement has to cover the whole viewport to be worth doing (the
+     standing note on .jd-record-zoom in junk-drawer.css). Being outside the
+     scrim also keeps its presses away from the scrim's
+     press-to-request-close entirely. */
+  function buildZoom() {
+    if (zoomEl) return;
+    zoomEl = document.createElement('div');
+    zoomEl.className = 'jd-record-zoom';
+    /* a dialog in its own right: the turn card carries aria-modal, so
+       assistive tech ignores everything outside it — and this layer, living
+       on <body>, is outside it. Focus moves in here on open, which is what
+       scopes AT to this dialog rather than the form behind it. */
+    zoomEl.setAttribute('role', 'dialog');
+    zoomEl.setAttribute('aria-modal', 'true');
+    zoomEl.setAttribute('aria-label', 'enlarged artwork');
+    document.body.appendChild(zoomEl);
+    /* one dismissal path for every press inside the layer — the artwork
+       itself, the caption, or the dark surround. All three mean: put it
+       back. */
+    zoomEl.addEventListener('click', function () { closeZoom(); });
+    zoomEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      closeZoom();
+    });
+  }
+  /* the enlargement's contents: the SAME drawing the plate shows, on the
+     same graph-paper swatch (.rc-zoom-fig's CSS is shared with the record
+     card). Its inlined copy takes a `juz` prefix — the plate's own copy is
+     `ju<slot>N_`, still in the card underneath, and the record card's `jz`
+     belongs to a dialog that refuses to be open alongside this one.
+     `fit` is the plate's own data-fit key, carried over verbatim so
+     JD_fitAll reframes the copy exactly as it framed the plate. */
+  function zoomHTML(slot, fit) {
+    var s = work.slots[slot];
+    return '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+      'aria-label="Shrink the artwork">' +
+      '<div class="rc-zoom-art" data-fit="' + esc(fit) + '">' +
+      window.JD_svgInst(s.svg, 'juz' + slot + (instSeq++) + '_') +
+      '</div></div>' +
+      '<div class="rc-zoom-cap">' +
+      '<span class="rc-zoom-cap-t">' + esc(shortTitle(work.prompt)) +
+      ' · drawing ' + slot.toUpperCase() + '</span>' +
+      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
+      '</div>';
+  }
+  /* the print's grid grows with the print (owner, 2026-08-14 on the record
+     card, same mechanism here): the enlargement's graph squares — and rule
+     weights — scale by the factor the paper itself grew. Measured, not
+     assumed: fig width over the plate we lifted from, fed to the gradient
+     math on .rc-zoom-fig via --gk. Skips silently while the layer is
+     display:none (rects are 0 there); openZoom re-runs it once the layer
+     is up. */
+  function zoomGridScale() {
+    if (!zoomOn || !zoomEl) return;
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (!fig || !zoomFrom || !document.contains(zoomFrom)) return;
+    var pw = zoomFrom.getBoundingClientRect().width;
+    var fw = fig.getBoundingClientRect().width;
+    if (pw > 0 && fw > 0) fig.style.setProperty('--gk', (fw / pw).toFixed(3));
+  }
+  function openZoom(from) {
+    if (!isOpen || zoomOn || !work) return;
+    var slot = from.getAttribute('data-slot');
+    var s = slot && work.slots[slot];
+    if (!s || s.status !== 'ok') return;
+    buildZoom();
+    zoomOn = true;
+    zoomFrom = from;
+    var artIn = from.querySelector('.jd-turn-art-in');
+    zoomEl.innerHTML = zoomHTML(slot, artIn ? artIn.getAttribute('data-fit') : '');
+    zoomEl.classList.add('is-on');
+    /* the reframe only counts once the layer is up: getBBox has nothing to
+       measure while the layer is display:none. (A frame already filed for
+       this artwork's gen: key — and the plate's own paint filed one — is
+       applied without measuring at all, so this is usually a no-op that
+       costs nothing.) zoomGridScale re-runs here for the same reason. */
+    if (window.JD_fitAll) window.JD_fitAll(zoomEl);
+    zoomGridScale();
+    /* focus follows the artwork so Space/Enter/Esc all land here, and so a
+       keyboard visitor isn't left tabbing the form hidden behind the layer */
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (fig) { try { fig.focus(); } catch (e) {} }
+  }
+  /* `silent` closes without handing focus back — used when the card is
+     re-rendering or going away and the plate we came from is about to be
+     replaced anyway */
+  function closeZoom(silent) {
+    if (!zoomOn) return;
+    zoomOn = false;
+    if (zoomEl) { zoomEl.classList.remove('is-on'); zoomEl.innerHTML = ''; }
+    var back = zoomFrom;
+    zoomFrom = null;
+    if (!silent && back && document.contains(back)) {
+      try { back.focus(); } catch (e) {}
+    }
+  }
+  /* REPLAY's half of the pair: find the plate's own svg and hand it to the
+     shared draw-on engine with force — see the block comment above. Each
+     plate replays its OWN drawing (the button carries data-slot, but the
+     plate it rides is authority enough). */
+  function replayPlate(btn) {
+    var pl = btn.closest ? btn.closest('.jd-turn-plate') : null;
+    var svg = pl ? pl.querySelector('.jd-turn-art-in svg') : null;
+    if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
+  }
+
   function viewReveal() {
     var ok = okSlots();
     var lost = JD_SLOTS.length - ok.length;
@@ -4804,7 +5064,7 @@ function JD_layerOpen() {
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      plate(slot, { pin: true }) + '</div></div>' +
+      plate(slot, { pin: true, zoom: true, replay: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       benchHeadHTML();
     /* axes first, in taxonomy order, THEN the overall grade (owner
@@ -4870,7 +5130,7 @@ function JD_layerOpen() {
      same day.) */
   function callPanel(ok) {
     var h = '<div class="jd-turn-plates jd-turn-plates--call">' +
-      ok.map(function (s) { return plate(s); }).join('') + '</div>' +
+      ok.map(function (s) { return plate(s, { zoom: true, replay: true }); }).join('') + '</div>' +
       '<div class="jd-callhead">' +
       '<span class="jd-def" data-tt-t="the call" data-tt-d="Which ' +
       'drawing belongs in the drawer, and by how much.">' +
@@ -5132,8 +5392,20 @@ function JD_layerOpen() {
     if (b) b.disabled = !!off;
   }
   function onClick(e) {
+    /* REPLAY rides the plate: it redraws, never zooms (the record card's
+       handler exempts its .rc-draw the same way). An explicit press is
+       requested motion, so it plays under reduced-motion too — replayPlate
+       passes force. */
+    var dr = e.target.closest ? e.target.closest('.jd-turn-draw') : null;
+    if (dr) { replayPlate(dr); return; }
     var b = e.target.closest ? e.target.closest('[data-act]') : null;
-    if (!b || b.disabled) return;
+    if (!b || b.disabled) {
+      /* not an action press — the bench/call plate itself is the enlarge
+         control (the reveal's plates carry no role and fall through) */
+      var p = e.target.closest ? e.target.closest('.jd-turn-plate') : null;
+      if (p && p.getAttribute('role') === 'button') openZoom(p);
+      return;
+    }
     var act = b.getAttribute('data-act');
     if (act === 'generate') {
       /* the acknowledgment is recorded at the moment the words are sent —

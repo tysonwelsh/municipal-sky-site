@@ -2036,10 +2036,14 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark { position: relative; height: 100%; }
 
 /* ---- the four swatches -----------------------------------------------------
-   ~41% × 33% each (mockup-16e's scrap sizes), the toss tamed to ±1.4°–1.8°,
-   vertical gaps tightened to 9%/9% because the wait slip no longer takes up
-   layout space. The print swatch is .jd-turn-art's own background, border
-   and shadow, copied verbatim. */
+   ~41% × 33% each (mockup-16e's scrap sizes), the toss tamed to ±1.4°–1.8°.
+   The pile was pulled inward (owner, 2026-08-21 — the rows read as two
+   separate pairs, not one pile): the outer margins went from 9%/9.5% to
+   13%/13.5%, which halves the empty band between the rows from ~15.5% to
+   7.5% of the card's height. The centred wait slip (min-height 15%, so it
+   spans 42.5%–57.5%) still overlaps both rows' inner edges by ~4% and
+   bridges the band. The print swatch is .jd-turn-art's own background,
+   border and shadow, copied verbatim. */
 .jd-dark-sw {
   position: absolute;
   width: 41%; height: 33%;
@@ -2054,10 +2058,10 @@ html.jd-turn-open { overflow: hidden; }
   transform: rotate(var(--rot));
   transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
 }
-.jd-dark-sw--a { left: 5.5%; top: 9%;     --rot: -1.8deg; --rot-flat: -0.7deg; }
-.jd-dark-sw--b { right: 5.5%; top: 9.5%;  --rot: 1.5deg;  --rot-flat: 0.5deg; }
-.jd-dark-sw--c { left: 6.5%; bottom: 9.5%; --rot: 1.4deg; --rot-flat: -0.4deg; }
-.jd-dark-sw--d { right: 6.5%; bottom: 9%; --rot: -1.6deg; --rot-flat: 0.8deg; }
+.jd-dark-sw--a { left: 5.5%; top: 13%;     --rot: -1.8deg; --rot-flat: -0.7deg; }
+.jd-dark-sw--b { right: 5.5%; top: 13.5%;  --rot: 1.5deg;  --rot-flat: 0.5deg; }
+.jd-dark-sw--c { left: 6.5%; bottom: 13.5%; --rot: 1.4deg; --rot-flat: -0.4deg; }
+.jd-dark-sw--d { right: 6.5%; bottom: 13%; --rot: -1.6deg; --rot-flat: 0.8deg; }
 
 /* the pencilled corner letter — legible in every state, because the cards
    that follow reference A–D */
@@ -2171,6 +2175,23 @@ html.jd-turn-open { overflow: hidden; }
      still hit the walls exactly. */
   font-size: 23px; font-weight: 400; line-height: 1.3;
   letter-spacing: 0.02em; white-space: nowrap; text-align: center;
+  /* PADDING IS THE WALL-CLIP FIX (owner catch, 2026-08-21): the p's tail was
+     sliced at the swatch's edge. Every face in this stack paints ink OUTSIDE
+     its own line box — descender tails, entry/exit swashes, italic overhang —
+     and the well clips at overflow: hidden, so at the exact moment the
+     bounce math kissed a wall with the word's BOX, any ink overhanging that
+     box was already past the wall and got cut. (The 1.3 line-height above
+     only stopped the p's tail colliding with "wait" INSIDE the block; it
+     does nothing at the walls, because the box the travel is measured from
+     is unchanged by leading.) The fix is padding, not more line-height: the
+     position trick measures the PADDED box — the x-mover's max-content width
+     takes the child's padding, and translateY(-100%) resolves against the
+     padded height — so the walls are now kissed by a box that CONTAINS all
+     the ink, on all four sides, at any swatch size. 0.35em ≈ 8px at 23px:
+     deeper than the stack's deepest descender (Edwardian Script ≈ 0.3em),
+     small enough that the word still reads as touching the walls — the
+     padding is the word's own breathing room. */
+  padding: 0.35em;
   color: #3b4f70;   /* the graph paper's own blue ink, opaque and a shade deeper */
 }
 @keyframes jdDarkStrayX {
@@ -2483,6 +2504,37 @@ html.jd-turn-open { overflow: hidden; }
   font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
   letter-spacing: 0.22em; text-transform: uppercase; color: var(--tink);
 }
+
+/* RATE-plate fittings (owner, 2026-08-21) — the bench and the call borrow
+   the report photograph's two tricks. Press-to-enlarge: the whole plate is
+   the control (role="button" from plate() in junk-drawer.js), and the
+   enlargement itself reuses the record card's .jd-record-zoom layer
+   class-for-class — nothing here restyles it. REPLAY: the report card's
+   .rc-draw re-tailored in THIS form's tokens, because that rule reaches for
+   --rc-mono/--form-rule, which are scoped to .jd-record-scrim and resolve
+   to nothing inside .jd-turn. It rides the print's lower-right corner,
+   inset far enough (12px) to clear the kraft corner's 18px inner diagonal,
+   and the click/key handlers exempt it from the plate's zoom — it redraws,
+   never zooms. */
+.jd-turn-plate[role="button"] { cursor: zoom-in; }
+.jd-turn-plate[role="button"]:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-draw {
+  position: absolute; right: 12px; bottom: 12px; z-index: 3;
+  font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; white-space: nowrap;
+  color: var(--tink);
+  border: 1px solid var(--trule); border-radius: 3px;
+  padding: 0.5em 0.85em 0.46em;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
+}
+.jd-turn-draw:hover {
+  background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
+.jd-turn-draw:active { box-shadow: none; transform: translateY(1px); }
+.jd-turn-draw:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px; }
 
 /* ============================================================================
    THE BENCH — the rail is the one navigation control on the form.

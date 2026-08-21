@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — loader refinement: the honest bar (round 24)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --ink-3: rgba(51, 36, 15, 0.44);
+    --pencil: #4b4030;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 24px 72px;
+    font-family: var(--mono);
+    color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 36px; }
+  header h1 {
+    font-size: 15px; font-weight: normal; letter-spacing: 0.14em;
+    margin: 0 0 8px; color: #b9b29e;
+  }
+  header p { font-size: 11px; margin: 0; opacity: 0.55; max-width: 460px; line-height: 1.6; }
+
+  /* ---- the swatch: production-spec, copied verbatim from .jd-dark-sw ---- */
+  .swatch {
+    position: relative;
+    width: 230px; height: 185px;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+    transform: rotate(-1.3deg);
+  }
+  .corner {
+    position: absolute; top: 3px; left: 7px; z-index: 3;
+    font-family: var(--hand); font-size: 0.9rem;
+    color: var(--pencil); opacity: 0.85;
+  }
+  .well {
+    position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* ---- the honest bar: hand-wobbled ink outline, hatched fill, no words ---- */
+  .barwrap { position: relative; width: 100%; height: 22px; }
+  .fill {
+    position: absolute;
+    left: 3px; top: 3px; bottom: 3px;
+    width: 0%; max-width: calc(100% - 6px);
+    background:
+      repeating-linear-gradient(90deg, var(--ink-2) 0 5px, transparent 5px 7.5px);
+    transition: width 0.3s steps(4, end);
+  }
+
+  /* ---- the tuning bench ---- */
+  .bench {
+    margin-top: 44px;
+    width: min(560px, 92vw);
+    font-size: 11px;
+    color: #b9b29e;
+  }
+  .bench h2 {
+    font-size: 10px; font-weight: normal; letter-spacing: 0.22em;
+    text-transform: uppercase; margin: 0 0 14px; opacity: 0.6;
+  }
+  .knob { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .knob label { flex: 0 0 200px; }
+  .knob input[type="range"] { flex: 1; accent-color: #b3402f; }
+  .knob output { flex: 0 0 56px; text-align: right; opacity: 0.8; }
+  .bench button {
+    margin-top: 10px;
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    background: none; color: #b9b29e;
+    border: 1px solid rgba(185, 178, 158, 0.4); border-radius: 3px;
+    padding: 6px 14px; cursor: pointer;
+  }
+  .bench button:hover { border-color: #b3402f; color: #e8e2d0; }
+  #copied { margin-left: 12px; font-size: 10px; opacity: 0; transition: opacity 0.3s; }
+  #copied.on { opacity: 0.75; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .fill { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>the honest bar — refinement bench (round 24)</h1>
+  <p>One production-spec swatch, one bar, no commentary. Tune the knobs until
+     the climb feels right, then note the numbers.</p>
+</header>
+
+<div class="swatch">
+  <span class="corner">F</span>
+  <div class="well">
+    <div class="barwrap">
+      <svg width="100%" height="100%" viewBox="0 0 180 22" preserveAspectRatio="none" aria-hidden="true">
+        <!-- hand-wobbled bar outline -->
+        <path d="M2,3 L178,2 L179,19 L3,20 Z" fill="none" stroke="#33240f" stroke-width="1.4"
+              stroke-linejoin="round" opacity="0.85"/>
+        <path d="M2,3 L178,2 M3,20 L179,19" fill="none" stroke="#33240f" stroke-width="0.6" opacity="0.3"/>
+      </svg>
+      <div class="fill" id="fill"></div>
+    </div>
+  </div>
+</div>
+
+<div class="bench" role="group" aria-label="tuning controls">
+  <h2>tuning</h2>
+  <div class="knob">
+    <label for="k-rate">climb rate (max %/tick, under 85)</label>
+    <input type="range" id="k-rate" min="0.2" max="6" step="0.1" value="1.6">
+    <output id="o-rate">1.6</output>
+  </div>
+  <div class="knob">
+    <label for="k-setback">setback chance (under 85)</label>
+    <input type="range" id="k-setback" min="0" max="0.5" step="0.01" value="0.16">
+    <output id="o-setback">0.16</output>
+  </div>
+  <div class="knob">
+    <label for="k-depth">setback depth (max %)</label>
+    <input type="range" id="k-depth" min="1" max="20" step="0.5" value="6">
+    <output id="o-depth">6</output>
+  </div>
+  <div class="knob">
+    <label for="k-thresh">fluctuation starts at (%)</label>
+    <input type="range" id="k-thresh" min="60" max="95" step="1" value="85">
+    <output id="o-thresh">85</output>
+  </div>
+  <div class="knob">
+    <label for="k-amp">fluctuation swing (± %)</label>
+    <input type="range" id="k-amp" min="1" max="14" step="0.5" value="7">
+    <output id="o-amp">7</output>
+  </div>
+  <div class="knob">
+    <label for="k-tick">tick interval (ms)</label>
+    <input type="range" id="k-tick" min="120" max="1200" step="20" value="380">
+    <output id="o-tick">380</output>
+  </div>
+  <button id="restart" type="button">restart the climb</button>
+  <button id="copy" type="button">copy parameters</button>
+  <span id="copied" aria-live="polite"></span>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var fill = document.getElementById("fill");
+  var reduced = window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* knobs */
+  var ids = ["rate", "setback", "depth", "thresh", "amp", "tick"];
+  var P = {};
+  ids.forEach(function (k) {
+    var el = document.getElementById("k-" + k);
+    var out = document.getElementById("o-" + k);
+    P[k] = parseFloat(el.value);
+    el.addEventListener("input", function () {
+      P[k] = parseFloat(el.value);
+      out.textContent = el.value;
+      if (k === "tick" && !reduced) restartTimer();
+    });
+  });
+
+  /* copy the current knob values to the clipboard for sharing */
+  var copied = document.getElementById("copied");
+  document.getElementById("copy").addEventListener("click", function () {
+    var text = "honest-bar parameters: " + ids.map(function (k) {
+      return k + "=" + P[k];
+    }).join(", ");
+    function flash(msg) {
+      copied.textContent = msg;
+      copied.classList.add("on");
+      setTimeout(function () { copied.classList.remove("on"); }, 1600);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(
+        function () { flash("copied — paste it in the chat"); },
+        function () { flash("clipboard blocked: " + text); });
+    } else {
+      flash(text);
+    }
+  });
+
+  if (reduced) {
+    fill.style.width = "68%";
+    return;
+  }
+
+  /* the motion model:
+     below the threshold — a slow, mostly steady climb with the occasional
+     stall or setback; above it — a mean-reverting wander around the high
+     eighties: wider swings, but it never sprints, never finishes, and
+     never falls apart. */
+  var v = 0, timer = null;
+
+  function step() {
+    var r = Math.random();
+    if (v < P.thresh) {
+      if (r < P.setback) {
+        v -= Math.random() * P.depth;                 /* a setback */
+      } else if (r < P.setback + 0.18) {
+        /* a stall: hold this tick */
+      } else {
+        v += Math.random() * P.rate;                  /* the slow climb */
+      }
+    } else {
+      /* mean-reverting fluctuation: pull toward threshold+5, jitter ±amp */
+      var anchor = P.thresh + 5;
+      v += (anchor - v) * 0.12 + (Math.random() - 0.5) * 2 * P.amp * 0.4;
+    }
+    v = Math.max(0, Math.min(98, v));
+    fill.style.width = v + "%";
+  }
+
+  function restartTimer() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(step, P.tick);
+  }
+
+  document.getElementById("restart").addEventListener("click", function () {
+    v = 0;
+    fill.style.width = "0%";
+  });
+
+  restartTimer();
+})();
+</script>
+
+</body>
+</html>
