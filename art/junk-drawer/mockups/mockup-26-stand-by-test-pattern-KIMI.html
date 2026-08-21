@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>JUNK DRAWER &middot; MOCKUP 26 (KIMI) &middot; PLEASE STAND BY — three test-pattern takes on the wait slip</title>
+<style>
+/* ============================================================================
+   THE JUNK DRAWER — MOCKUP 26 · "PLEASE STAND BY"  (KIMI'S TAKE)
+   ----------------------------------------------------------------------------
+   The brief: the darkroom's fifth slip — today a pencilled "please wait…"
+   floating over the four graph-paper swatches — becomes "PLEASE STAND BY",
+   inspired by the test patterns television stations broadcast when there was
+   nothing on. Three options, each shown IN SITU: the production pile behind
+   it (graph-paper swatch background/border/shadow and the ±1.4°–1.8° toss
+   copied VERBATIM from junk-drawer.css .jd-dark-sw / .jd-dark-sw--a…d).
+
+     A — THE MONOSCOPE.  The slip carries a little CRT: a dark ink screen
+         with the classic camera-tube pattern drawn in paper-white line —
+         crosshair circle, corner brackets, diagonal registration ticks,
+         grayscale chips, scanlines. The most "object" of the three: a tiny
+         television set laid on the pile.
+
+     B — THE COLOR BARS.  SMPTE bars, printed colours (desaturated like ink
+         in a trade journal, not phosphor), over the black station-ID band
+         with the words reversed out of it. The boldest option — the only
+         real colour in the darkroom, but the PUSH FOR JUNK button already
+         glows blue, so there is precedent for broadcast light.
+
+     C — THE TEST CARD.  The BBC Test Card language translated into the
+         drawer's own tongue: the pattern printed in dark ink directly on the
+         slip's paper — crosshair circle, corner registration marks, edge
+         gratings. The quietest option; it reads as a sheet from the same
+         office as everything else in the pile.
+
+   Notes that apply to all three:
+   · The slip is WIDER than production's 46% (58% here) — a test card needs
+     a landscape field. If one ships, .jd-dark-wait's width changes with it.
+   · The slow-timer line ("Still going…") is shown visible in every option;
+     in production it stays behind data-slow/hidden as it does today.
+   · The gentle rock is production's own jdDarkWaitRock, kept. MOTION IS
+     ADDED, NEVER ASSUMED: it lives under no-preference only.
+
+   DEMO SCAFFOLDING ONLY (not the design): the dark desk, the scene sheet,
+   the option labels and notes under each scene. No external assets.
+   ========================================================================== */
+
+:root {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --tred: #b3402f;
+  --graphite: #4b4030;
+  --tmono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --tcaps: "Arial Narrow", "Helvetica Neue", "Liberation Sans Narrow", Arial, sans-serif;
+  --t-label: 0.68rem;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 40px 24px 64px;
+  background: #241a10;
+  color: #d8cba8;
+  font-family: var(--tmono);
+}
+h1 {
+  font-size: 0.85rem; font-weight: 400; letter-spacing: 0.12em;
+  text-align: center; margin: 0 0 6px; color: #a89572;
+}
+.sub {
+  text-align: center; font-size: 0.66rem; color: #77684c;
+  margin: 0 0 36px; letter-spacing: 0.06em;
+}
+
+/* ---- the demo scene: the darkroom card, shrunk to a study ------------------
+   Positions/sizes/rotations/graph paper copied from production .jd-dark-sw;
+   only the SIZE of the sheet is demo scaffolding. */
+.scenes { display: flex; flex-wrap: wrap; gap: 48px; justify-content: center; }
+.study { width: 380px; }
+.scene {
+  position: relative; width: 380px; height: 380px;
+  background: var(--tpaper);
+  border: 1px solid rgba(74, 53, 18, 0.35); border-radius: 3px;
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+}
+.sw {
+  position: absolute; width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.sw--a { left: 5.5%; top: 13%;     transform: rotate(-1.8deg); }
+.sw--b { right: 5.5%; top: 13.5%;  transform: rotate(1.5deg); }
+.sw--c { left: 6.5%; bottom: 13.5%; transform: rotate(1.4deg); }
+.sw--d { right: 6.5%; bottom: 13%; transform: rotate(-1.6deg); }
+.sw i {  /* the pencilled corner letter */
+  position: absolute; top: 3px; left: 7px;
+  font-family: "Segoe Print", "Bradley Hand", cursive; font-style: normal;
+  font-size: 0.9rem; color: var(--graphite); opacity: 0.85;
+}
+
+/* ---- the slip, shared ------------------------------------------------------
+   Production's .jd-dark-wait (centred overlay, rock, shadow), widened to a
+   landscape field — see the banner note. */
+.slip {
+  position: absolute; left: 50%; top: 50%; z-index: 6;
+  width: 58%;
+  transform: translate(-50%, -50%) rotate(-2deg);
+  background: var(--tpaper-hi);
+  border: 1px solid rgba(74, 53, 18, 0.30); border-radius: 2px;
+  box-shadow: 7px 11px 18px -6px rgba(20, 10, 2, 0.6),
+              2px 3px 7px -2px rgba(20, 10, 2, 0.45);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 10px 12px 8px;
+}
+.slow {
+  font-family: var(--tmono); font-size: 0.56rem; font-style: italic;
+  line-height: 1.4; text-align: center; color: var(--tink-2);
+  margin-top: 6px;
+}
+@keyframes rock {
+  from { transform: translate(-50%, -50%) rotate(-2.5deg); }
+  to   { transform: translate(-50%, -50%) rotate(-1.5deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .slip { animation: rock 7s ease-in-out infinite alternate; }
+}
+
+/* ======================= A — THE MONOSCOPE =================================
+   A dark ink screen seated in the slip: the pattern drawn in paper-white
+   line, scanlines over it, a hairline bezel. */
+.slip--mono { padding: 10px 10px 8px; }
+.mono-screen {
+  position: relative; width: 100%; border-radius: 7px;
+  background: #221c12;
+  border: 1px solid rgba(51, 36, 15, 0.8);
+  outline: 1px solid rgba(244, 234, 208, 0.28); outline-offset: 2px;
+  overflow: hidden;
+}
+.mono-screen svg { display: block; width: 100%; height: auto; }
+.mono-screen::after {  /* the scanlines + a soft tube falloff */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 105% at 50% 42%, transparent 55%, rgba(0, 0, 0, 0.5) 100%);
+}
+.mono-caption {
+  font-family: var(--tmono); font-size: 0.52rem; letter-spacing: 0.22em;
+  color: var(--tink-2); margin-top: 7px; text-transform: uppercase;
+}
+
+/* ======================= B — THE COLOR BARS ================================ */
+.slip--bars { padding: 10px 10px 8px; }
+.bars-frame {
+  width: 100%; border: 1px solid rgba(51, 36, 15, 0.55);
+  background: #17130c;
+}
+.bars {
+  display: flex; height: 62px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+}
+.bars b { flex: 1; display: block; }
+/* SMPTE order, taken down to printed-ink saturation */
+.bars b:nth-child(1) { background: #a8a49b; }  /* gray   */
+.bars b:nth-child(2) { background: #b3a94f; }  /* yellow */
+.bars b:nth-child(3) { background: #5f9e93; }  /* cyan   */
+.bars b:nth-child(4) { background: #649a55; }  /* green  */
+.bars b:nth-child(5) { background: #9c5f86; }  /* magenta*/
+.bars b:nth-child(6) { background: #a25444; }  /* red    */
+.bars b:nth-child(7) { background: #4a5e8e; }  /* blue   */
+.bars-band {
+  padding: 7px 6px 8px; text-align: center;
+  background: #17130c;
+}
+.bars-band span {
+  font-family: var(--tcaps); font-weight: 700;
+  font-size: 1.02rem; letter-spacing: 0.18em;
+  color: #ece0bf;
+}
+.bars-id {
+  display: flex; justify-content: space-between;
+  padding: 3px 7px 4px;
+  font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: rgba(236, 224, 191, 0.55);
+  border-top: 1px solid rgba(236, 224, 191, 0.16);
+}
+
+/* ======================= C — THE TEST CARD =================================
+   The pattern printed in the drawer's own ink on the slip's paper — no
+   screen, no colour. */
+.slip--card { background: var(--tpaper-hi); }
+.card-field { width: 100%; }
+.card-field svg { display: block; width: 100%; height: auto; }
+
+/* ---- study labels & notes (scaffolding) ---- */
+.study h2 {
+  font-size: 0.72rem; font-weight: 400; letter-spacing: 0.14em;
+  color: #c9b98f; margin: 16px 0 4px; text-transform: uppercase;
+}
+.study p {
+  font-size: 0.62rem; line-height: 1.55; color: #8d7c5a; margin: 0;
+}
+</style>
+</head>
+<body>
+
+<h1>MOCKUP 26 · PLEASE STAND BY (KIMI&rsquo;S TAKE)</h1>
+<p class="sub">the darkroom wait slip as a television test pattern &mdash; three options, shown over the production pile</p>
+
+<div class="scenes">
+
+  <!-- ================= A — THE MONOSCOPE ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+
+      <div class="slip slip--mono">
+        <div class="mono-screen">
+          <svg viewBox="0 0 220 132" aria-hidden="true">
+            <g fill="none" stroke="#ece0bf" stroke-width="1.1">
+              <!-- the crosshair circle -->
+              <circle cx="110" cy="62" r="42"/>
+              <circle cx="110" cy="62" r="34" stroke-width="0.55" opacity="0.6"/>
+              <!-- crosshairs, broken at the circle like the tube cards -->
+              <line x1="14" y1="62" x2="68" y2="62"/>
+              <line x1="152" y1="62" x2="206" y2="62"/>
+              <line x1="110" y1="8" x2="110" y2="20"/>
+              <line x1="110" y1="104" x2="110" y2="112"/>
+              <!-- diagonal registration ticks -->
+              <line x1="80" y1="32" x2="62" y2="14" stroke-width="0.8"/>
+              <line x1="140" y1="32" x2="158" y2="14" stroke-width="0.8"/>
+              <line x1="80" y1="92" x2="66" y2="106" stroke-width="0.8"/>
+              <line x1="140" y1="92" x2="154" y2="106" stroke-width="0.8"/>
+              <!-- corner brackets -->
+              <path d="M 12 20 V 10 H 22" stroke-width="1"/>
+              <path d="M 208 20 V 10 H 198" stroke-width="1"/>
+              <path d="M 12 104 V 114 H 22" stroke-width="1"/>
+              <path d="M 208 104 V 114 H 198" stroke-width="1"/>
+              <!-- centre dot -->
+              <circle cx="110" cy="62" r="1.6" fill="#ece0bf" stroke="none"/>
+            </g>
+            <!-- the words, in the circle's clear band -->
+            <text x="110" y="59" text-anchor="middle"
+                  font-family="'Arial Narrow','Liberation Sans Narrow',Arial,sans-serif"
+                  font-size="13.5" font-weight="700" letter-spacing="2.5"
+                  fill="#ece0bf">PLEASE</text>
+            <text x="110" y="74" text-anchor="middle"
+                  font-family="'Arial Narrow','Liberation Sans Narrow',Arial,sans-serif"
+                  font-size="13.5" font-weight="700" letter-spacing="2.5"
+                  fill="#ece0bf">STAND BY</text>
+            <!-- grayscale chips -->
+            <g stroke="none">
+              <rect x="52"  y="118" width="18" height="7" fill="#ece0bf"/>
+              <rect x="71"  y="118" width="18" height="7" fill="#bfb491"/>
+              <rect x="90"  y="118" width="18" height="7" fill="#8f8669"/>
+              <rect x="109" y="118" width="18" height="7" fill="#665e48"/>
+              <rect x="128" y="118" width="18" height="7" fill="#413b2c"/>
+              <rect x="147" y="118" width="18" height="7" fill="#221c12" stroke="#4a4232" stroke-width="0.5"/>
+            </g>
+          </svg>
+        </div>
+        <div class="mono-caption">MSKY &middot; channel 4</div>
+        <span class="slow">Still going. The drawing is long because it is being written line by line.</span>
+      </div>
+    </div>
+    <h2>A &mdash; The Monoscope</h2>
+    <p>A tiny television laid on the pile: dark ink screen, the camera-tube
+    pattern in paper-white line, scanlines and tube falloff over it. The most
+    object-like of the three; the reversed-out words do the broadcasting.</p>
+  </div>
+
+  <!-- ================= B — THE COLOR BARS ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+
+      <div class="slip slip--bars">
+        <div class="bars-frame">
+          <div class="bars"><b></b><b></b><b></b><b></b><b></b><b></b><b></b></div>
+          <div class="bars-band"><span>PLEASE STAND BY</span></div>
+          <div class="bars-id"><span>MSKY&middot;4</span><span>MUNICIPAL SKY</span></div>
+        </div>
+        <span class="slow">Still going. The drawing is long because it is being written line by line.</span>
+      </div>
+    </div>
+    <h2>B &mdash; The Color Bars</h2>
+    <p>SMPTE bars taken down to printed-ink saturation, over the black
+    station-ID band with the words reversed out of it. The boldest option —
+    the darkroom&rsquo;s only real colour, though the PUSH FOR JUNK button
+    already glows, so broadcast light has precedent.</p>
+  </div>
+
+  <!-- ================= C — THE TEST CARD ================= -->
+  <div class="study">
+    <div class="scene">
+      <div class="sw sw--a"><i>A</i></div>
+      <div class="sw sw--b"><i>B</i></div>
+      <div class="sw sw--c"><i>C</i></div>
+      <div class="sw sw--d"><i>D</i></div>
+
+      <div class="slip slip--card">
+        <div class="card-field">
+          <svg viewBox="0 0 220 118" aria-hidden="true">
+            <g fill="none" stroke="#33240f">
+              <!-- edge gratings: line groups tightening toward the margins -->
+              <g stroke-width="0.7" opacity="0.75">
+                <line x1="8"  y1="18" x2="8"  y2="100"/>
+                <line x1="14" y1="18" x2="14" y2="100"/>
+                <line x1="19" y1="18" x2="19" y2="100"/>
+                <line x1="23" y1="18" x2="23" y2="100"/>
+                <line x1="26" y1="18" x2="26" y2="100"/>
+                <line x1="212" y1="18" x2="212" y2="100"/>
+                <line x1="206" y1="18" x2="206" y2="100"/>
+                <line x1="201" y1="18" x2="201" y2="100"/>
+                <line x1="197" y1="18" x2="197" y2="100"/>
+                <line x1="194" y1="18" x2="194" y2="100"/>
+              </g>
+              <!-- corner registration crosses -->
+              <g stroke-width="0.9">
+                <circle cx="42" cy="26" r="5"/><line x1="42" y1="18" x2="42" y2="34"/><line x1="34" y1="26" x2="50" y2="26"/>
+                <circle cx="178" cy="26" r="5"/><line x1="178" y1="18" x2="178" y2="34"/><line x1="170" y1="26" x2="186" y2="26"/>
+                <circle cx="42" cy="92" r="5"/><line x1="42" y1="84" x2="42" y2="100"/><line x1="34" y1="92" x2="50" y2="92"/>
+                <circle cx="178" cy="92" r="5"/><line x1="178" y1="84" x2="178" y2="100"/><line x1="170" y1="92" x2="186" y2="92"/>
+              </g>
+              <!-- the crosshair circle -->
+              <circle cx="110" cy="56" r="40" stroke-width="1.2"/>
+              <circle cx="110" cy="56" r="46" stroke-width="0.55" opacity="0.6"/>
+              <line x1="110" y1="6" x2="110" y2="106" stroke-width="0.9"/>
+              <line x1="62" y1="56" x2="158" y2="56" stroke-width="0.9"/>
+              <!-- the castellated top/bottom ticks of the test cards -->
+              <g stroke-width="0.8">
+                <line x1="86" y1="12" x2="86" y2="18"/><line x1="98" y1="12" x2="98" y2="18"/>
+                <line x1="122" y1="12" x2="122" y2="18"/><line x1="134" y1="12" x2="134" y2="18"/>
+                <line x1="86" y1="100" x2="86" y2="106"/><line x1="98" y1="100" x2="98" y2="106"/>
+                <line x1="122" y1="100" x2="122" y2="106"/><line x1="134" y1="100" x2="134" y2="106"/>
+              </g>
+              <circle cx="110" cy="56" r="1.7" fill="#33240f" stroke="none"/>
+            </g>
+            <text x="110" y="52" text-anchor="middle"
+                  font-family="'Arial Narrow','Liberation Sans Narrow',Arial,sans-serif"
+                  font-size="12.5" font-weight="700" letter-spacing="2.2"
+                  fill="#33240f">PLEASE</text>
+            <text x="110" y="67" text-anchor="middle"
+                  font-family="'Arial Narrow','Liberation Sans Narrow',Arial,sans-serif"
+                  font-size="12.5" font-weight="700" letter-spacing="2.2"
+                  fill="#33240f">STAND BY</text>
+          </svg>
+        </div>
+        <span class="slow">Still going. The drawing is long because it is being written line by line.</span>
+      </div>
+    </div>
+    <h2>C &mdash; The Test Card</h2>
+    <p>The BBC test-card language in the drawer&rsquo;s own tongue: dark ink
+    on the slip&rsquo;s paper, crosshair circle, registration crosses, edge
+    gratings. The quietest option — it could be a sheet from the same office
+    as the graph-paper swatches beneath it.</p>
+  </div>
+
+</div>
+
+</body>
+</html>
