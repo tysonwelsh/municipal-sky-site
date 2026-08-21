@@ -95,6 +95,9 @@ body.compact #art{max-width:min(100%,190px)}
 .g.on{border-color:var(--accent);color:var(--ink);background:#312c4d}
 .g.seed{border-style:dashed}
 #acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+#build{width:100%;text-align:right;color:var(--dim);font-size:11px;
+  font-variant-numeric:tabular-nums;opacity:.75}
+#build.stale{color:var(--warn);opacity:1}
 .act{padding:4px 10px;border-radius:3px;border:1px solid var(--line);
   background:var(--bg);color:var(--ink);cursor:pointer;font:inherit;font-size:12px}
 .act:hover{border-color:var(--accent-dim)}
@@ -154,6 +157,8 @@ body.excluded #banner{display:block}
     <button class="act rerun" id="bRerun">rerun ↗ g</button>
     <button class="act" id="bHelp">?</button>
   </div>
+  <div id="build" title="version · byte fingerprint · deploy time — from the server, so it cannot lie about what is running">—
+  </div>
 </div>
 
 <div id="help">
@@ -193,6 +198,7 @@ var BASE  = '/art/junk-drawer/';
 var K_KEY = 'jd-bench-key';
 
 var Q = null;            /* the queue payload */
+var loadedBuild = null;  /* the build this page loaded against */
 var flat = [];           /* every response, flattened, in queue order */
 var idx = 0;             /* current response index into flat */
 var axisIdx = 0;         /* which axis is expanded */
@@ -228,6 +234,15 @@ function pump(){
   post(API_R, job).then(function(j){
     sending = false;
     if (j && j.ok){
+      /* The write endpoint reports its own build. If it disagrees with the one
+         this page loaded against, a deploy landed mid-session and the page is
+         stale — worth saying, because the rubric could have changed under it. */
+      if (j.build && loadedBuild && j.build !== loadedBuild){
+        var b = document.getElementById('build');
+        b.classList.add('stale');
+        b.textContent = 'build changed on the server (' + loadedBuild + ' → ' +
+                        j.build + ') — reload before rating further';
+      }
       outbox.shift(); failures = 0;
       if (outbox.length) { pump(); } else { setSync('saved'); }
     } else {
@@ -262,6 +277,14 @@ function load(){
       return;
     }
     Q = j; flat = [];
+    if (j.build){
+      loadedBuild = j.build.build;
+      document.getElementById('build').textContent =
+        j.build.version + ' · ' + j.build.build +
+        (j.build.deployed ? ' · ' + j.build.deployed : '') +
+        ' · taxonomy v' + j.build.taxonomy +
+        ' · harness ' + j.build.harness.web + '/' + j.build.harness.bench;
+    }
     j.items.forEach(function(it){
       it.responses.forEach(function(r){ r._item = it; flat.push(r); });
     });

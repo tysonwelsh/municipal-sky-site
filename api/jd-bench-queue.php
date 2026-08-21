@@ -14,6 +14,7 @@
 
 require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-origin.php';
+require_once __DIR__ . '/jd-build.php';
 
 jd_require_allowed_origin();
 
@@ -204,6 +205,7 @@ foreach ($subs as $sub) {
 
 jd_json_out(200, [
     'ok'               => true,
+    'build'            => jd_build_stamp(),
     'taxonomy_version' => (int) ($taxonomy['version'] ?? 0),
     'axes'             => $axes,
     'grades'           => $grades,

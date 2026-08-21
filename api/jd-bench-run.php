@@ -40,6 +40,7 @@ require_once __DIR__ . '/jd-config.php';
 require_once __DIR__ . '/jd-provider.php';
 require_once __DIR__ . '/jd-svg-sanitizer.php';
 require_once __DIR__ . '/jd-usage.php';
+require_once __DIR__ . '/jd-build.php';
 // JD_DEV_MODE routes to the mock so the write path can be exercised without
 // spending anything. jd-generate.php applies the mock at its CALL SITE rather
 // than inside jd_provider_call, so a runner that called the provider layer
@@ -89,6 +90,7 @@ if (!$targets) {
 
 $pool = JD_MODEL_POOL;
 
+echo "build          : " . jd_build_line() . "\n";
 echo "harness        : " . jd_harness(BENCH_PROFILE) . "\n";
 echo "effort profile : " . BENCH_PROFILE . "\n";
 echo "timeout        : " . JD_BENCH_TIMEOUT . "s per call\n";
