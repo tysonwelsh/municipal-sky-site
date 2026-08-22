@@ -1,5 +1,5 @@
 /* ============================================================================
-   THE CARBON RAIN — standalone piece.
+   KIMI'S TAKE — a spin-off of The Carbon Rain (art/carbon-rain/).
    One sheet of engineering paper, ruled the house way (9px fine, 45px heavy),
    with the rain falling down its own rules. Everything is absolute px: the
    ruling does NOT scale with the sheet, so a bigger sheet simply holds more
@@ -35,7 +35,7 @@
 .cr-sheet {
   position: relative;
   width: min(1180px, 100%);
-  height: min(calc(100vh - 150px), 900px);
+  height: min(calc(100vh - 180px), 900px);
   min-height: 380px;
   margin: 0 auto;
   overflow: hidden;
@@ -51,17 +51,30 @@
 }
 .cr-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
-.cr-c { position: absolute; top: 0; display: block; opacity: var(--cr-o); }
+/* a stream is one strip of glyphs riding one PATH. Positions are written by
+   the JS renderer straight to each glyph's transform — the same arithmetic
+   as the reservation table, from the same clock. The container just anchors
+   the coordinate system and the opacity. */
 .cr-s { position: absolute; top: 0; left: 0; display: block;
-  transform: translateY(var(--cr-y0)); }
+  opacity: var(--cr-o); }
+/* TEMP: stubborn streams in red ink while the commissioned behaviour is
+   being tuned. Remove this rule and the is-stubborn class in spawn(). */
+.cr-s.is-stubborn .cr-g { color: #b3331f; }
 .cr-g {
+  position: absolute; top: 0; left: 0;
   display: block; text-align: center;
   width: var(--cr-cell); height: var(--cr-cell); line-height: var(--cr-cell);
   font-family: var(--cr-mono); font-style: normal; color: var(--cr-ink);
   overflow: hidden;
 }
-.cr-g.is-rev  { transform: scaleX(-1); }
-.cr-g.is-spin { overflow: visible; }
+/* mirror and pinwheel live on the INNER wrapper: a glyph's spin/mirror must
+   never share a transform with the JS-written translate on the outer cell —
+   the scale/rotate would multiply the translation and teleport the glyph */
+.cr-g u { display: block; width: 100%; height: 100%; line-height: inherit;
+  text-decoration: none;   /* it is a wrapper, not an underline */ }
+.cr-g u.is-rev  { transform: scaleX(-1); }
+.cr-g.is-spin { overflow: hidden; }  /* the 0.65 scale in crSpin keeps the
+  rotating box inside its square; hidden is belt-and-braces against ink spill */
 .cr-lat { font-size: calc(10.0px * var(--cr-zoom)); }
 .cr-dig { font-size: calc(10.0px * var(--cr-zoom)); }
 .cr-mrk { font-size: calc(10.0px * var(--cr-zoom)); }
@@ -141,23 +154,43 @@
 .cr-pla { font-size: calc(10.0px * var(--cr-zoom)); }
 .cr-alc { font-size: calc(6.6px * var(--cr-zoom)); }
 
-@keyframes crFall {
-  from { transform: translateY(calc(-1 * var(--cr-dh))); }
-  to   { transform: translateY(var(--cr-h)); }
-}
-@keyframes crSpin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-@keyframes crSpinCcw { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+/* pinwheels turn at 65% scale: an 18px box rotated raw has a ~25px bounding
+   box and sweeps into the neighbouring lane (or a crossing stream); scaled,
+   the rotating box's diagonal stays inside its own square, so even the
+   spinners can never touch another stream */
+@keyframes crSpin    { from { transform: rotate(0) scale(0.65); } to { transform: rotate(360deg) scale(0.65); } }
+@keyframes crSpinCcw { from { transform: rotate(0) scale(0.65); } to { transform: rotate(-360deg) scale(0.65); } }
 
 @media (prefers-reduced-motion: no-preference) {
-  .cr-s { animation: crFall var(--cr-d) linear var(--cr-dl) infinite; }
-  .cr-g.is-spin { animation: crSpin var(--cr-sd) linear infinite; }
-  .cr-g.is-spin.is-ccw { animation-name: crSpinCcw; }
+  .cr-g u.is-spin { animation: crSpin var(--cr-sd) linear infinite; }
+  .cr-g u.is-spin.is-ccw { animation-name: crSpinCcw; }
 }
-/* stillness: with no fall there is no wrap, so the sheet simply holds the
-   page of type it was first dealt */
+/* stillness: with no motion the sheet simply holds the page of type it was
+   first dealt (stream positions are written once at birth) */
 @media (prefers-reduced-motion: reduce) {
-  .cr-s, .cr-g.is-spin { animation: none !important; }
+  .cr-g u.is-spin { animation: none !important; }
 }
+
+/* the dial sits on the stamp's own rules: same width as the sheet, same
+   small monospace — it is furniture, not part of the piece */
+.cr-dial {
+  width: min(1180px, 100%); max-width: none;
+  margin: 12px auto 0; text-align: left;
+  display: flex; align-items: baseline; gap: 1.2em;
+  font-family: var(--cr-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--cr-type-3);
+}
+.cr-dial input[type="range"] {
+  width: 140px; margin: 0; vertical-align: middle;
+  accent-color: var(--cr-ink);
+}
+.cr-dial button {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 1px solid var(--cr-type-3);
+  padding: 0.1em 0.9em 0.2em; cursor: pointer;
+}
+.cr-dial button:hover { color: var(--cr-ink); border-color: var(--cr-ink); }
+.cr-dial-live { opacity: 0.7; }
 
 .cr-build {
   /* the SAME width rule as the sheet, so the stamp sits exactly under its

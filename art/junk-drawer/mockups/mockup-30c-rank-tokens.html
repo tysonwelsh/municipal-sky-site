@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — rank the drawings: THE LOT NUMBERS (round 30, option C)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #ece0bf;
+    --paper-hi: #f4ead0;
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --rule: rgba(74, 53, 18, 0.40);
+    --pencil: #4b4030;
+    --red: #b3402f;
+    --ok: #4a6b18;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+    --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: hidden; }
+  body {
+    margin: 0; min-height: 100vh; background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 44px 24px 88px;
+    font-family: var(--mono); color: #d8d2c0;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* ---------- page header + designer's note (dark desk) ---------- */
+  header { text-align: center; margin-bottom: 26px; max-width: 620px; }
+  header h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.14em; margin: 0 0 8px; color: #b9b29e; }
+  header p { font-size: 11px; margin: 0 auto; opacity: 0.62; max-width: 600px; line-height: 1.7; }
+  header p + p { margin-top: 9px; }
+  header b { color: #cfc8b2; font-weight: normal; }
+
+  .switcher {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    margin: 22px 0 30px; font-size: 10px; letter-spacing: 0.12em; color: #8e8877;
+  }
+  .switcher button {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+    min-height: 30px; padding: 0 12px; cursor: pointer; color: #b9b29e;
+    background: #2a2f38; border: 1px solid #3d434e;
+  }
+  .switcher button[aria-pressed="true"] { background: #454b57; color: #f0ead8; border-color: #5d6472; }
+  .switcher button:focus-visible { outline: 2px solid #8fa0c0; outline-offset: 2px; }
+
+  /* ---------- the card ---------- */
+  .card {
+    position: relative; width: min(560px, 100%);
+    color: var(--ink);
+    background: var(--paper) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.55);
+    box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66), 3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+    padding: 14px 22px 22px;
+  }
+  .card::before { content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none; border: 1px solid var(--rule); }
+  .card .x {
+    position: absolute; top: 9px; right: 9px; z-index: 20;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.5); font-size: 13px;
+    color: var(--ink); font-family: var(--mono); cursor: pointer; padding: 0; line-height: 1;
+  }
+  .head {
+    margin: 6px 40px 0; text-align: center;
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.22em; text-indent: 0.22em; text-transform: uppercase; color: var(--ink);
+  }
+  .formline {
+    margin: 7px 0 0; text-align: center; font-size: 0.56rem;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .rule-x { height: 1px; background: var(--rule); margin: 11px 0 0; }
+  .rule-x + .rule-x { margin-top: 2px; opacity: 0.5; }
+  .instr {
+    margin: 13px 0 0; text-align: center; font-size: 0.68rem; line-height: 1.6; color: var(--ink-2);
+  }
+  .instr b { color: var(--ink); font-weight: normal; }
+
+  /* ---------- the 2x2 of prints, full size ---------- */
+  .grid {
+    margin: 14px 0 0;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px 18px;
+  }
+  /* fewer survivors never shrinks a print: the grid keeps its 2-up measure and
+     the odd third sits centred beneath the pair. */
+  .grid.n3 .print:last-child { grid-column: 1 / -1; justify-self: center; width: calc(50% - 9px); }
+  .print { margin: 0; }
+  .sw {
+    position: relative; width: 100%; aspect-ratio: 1 / 1;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+    display: block; padding: 0; font: inherit; color: inherit; cursor: pointer;
+    touch-action: manipulation;
+  }
+  .sw:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+  .kc {
+    position: absolute; width: 20px; height: 20px; z-index: 2;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+  }
+  .kc.tl { top: -3px; left: -3px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .kc.tr { top: -3px; right: -3px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .kc.bl { bottom: -3px; left: -3px;  clip-path: polygon(0 0, 100% 100%, 0 100%); background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+  .kc.br { bottom: -3px; right: -3px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+  .well {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .well svg { display: block; width: 46%; height: 46%; }
+
+  .caption {
+    margin: 9px 2px 0; display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  }
+  .caption .lb { font-family: var(--hand); font-size: 0.86rem; line-height: 1.1; color: var(--pencil); }
+  .caption .rk {
+    font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2);
+    white-space: nowrap;
+  }
+
+  /* ---------- the lot-number token ---------- */
+  .token {
+    position: relative; width: 46px; height: 46px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--hand); font-size: 1.45rem; line-height: 1; color: var(--pencil);
+    background: var(--paper-hi);
+    border: 1px solid rgba(74, 53, 18, 0.45);
+    box-shadow: 0 2px 3px -1px rgba(46, 34, 12, 0.42), inset 0 1px 0 rgba(255, 253, 240, 0.7);
+    cursor: grab; padding: 0 0 4px; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  /* a placed slip is small on purpose — this keeps its touch target big */
+  .sw .token.placed::before { content: ""; position: absolute; inset: -5px; }
+  .token::after {            /* the dried gum along the bottom edge */
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+    background: rgba(160, 130, 70, 0.20); border-top: 1px solid rgba(74, 53, 18, 0.13);
+  }
+  .token:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .token.armed { box-shadow: 0 0 0 2px var(--pencil), 0 2px 3px -1px rgba(46, 34, 12, 0.42); }
+  .token.dragging-src { opacity: 0.28; }
+
+  .ghost {
+    position: fixed; z-index: 90; pointer-events: none; margin: 0;
+    width: 56px; height: 56px; font-size: 1.7rem;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 8px 16px -5px rgba(6, 3, 0, 0.55), inset 0 1px 0 rgba(255, 253, 240, 0.7);
+    cursor: grabbing;
+  }
+
+  /* ---------- the tray ---------- */
+  .tray {
+    margin: 20px 0 0; padding: 9px 12px 11px;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.34);
+  }
+  .tray-h {
+    font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-2);
+    display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  }
+  .seats { display: flex; gap: 12px; margin: 9px 0 0; flex-wrap: wrap; }
+  .slot { position: relative; width: 46px; height: 46px; flex: 0 0 auto; }
+  .slot::before {                    /* the empty seat, printed on the tray */
+    content: ""; position: absolute; inset: 0;
+    border: 1px dashed rgba(74, 53, 18, 0.42);
+    background: rgba(74, 53, 18, 0.04);
+  }
+  .slot.pad::after {                 /* pads: more slips underneath */
+    content: ""; position: absolute; inset: 0; z-index: 0; transform: translate(3px, 3px);
+    background: var(--paper-hi); border: 1px solid rgba(74, 53, 18, 0.30);
+    box-shadow: 3px 3px 0 -1px var(--paper-hi), 3px 3px 0 0 rgba(74, 53, 18, 0.24);
+  }
+  .slot .token { position: absolute; inset: 0; z-index: 1; width: auto; height: auto; }
+  .slot.gone .token { display: none; }
+  .slot .out {
+    position: absolute; inset: 0; display: none; align-items: center; justify-content: center;
+    font-size: 0.5rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .slot.gone .out { display: flex; }
+  .tray-note { margin: 9px 0 0; font-size: 0.58rem; color: var(--ink-2); line-height: 1.5; }
+
+  /* ---------- drop invitation ---------- */
+  .seat-hint {
+    position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; z-index: 3;
+    border: 1px dashed var(--pencil); background: rgba(75, 64, 48, 0.05);
+    display: none; align-items: center; justify-content: center;
+    font-family: var(--hand); font-size: 1.1rem; color: rgba(75, 64, 48, 0.42);
+  }
+  body.dragging .seat-hint { display: flex; }
+  body.dragging .sw { cursor: copy; }
+  .sw.over { background-color: #fffaea; box-shadow: 0 0 0 2px var(--pencil), 0 4px 10px -3px rgba(46, 34, 12, 0.5); }
+  .sw.over .seat-hint { border-color: var(--pencil); background: rgba(75, 64, 48, 0.10); }
+  /* a print that already wears a number shows the seat through it: this drop replaces */
+  body.dragging .sw.over .token.placed { opacity: 0.32; }
+  .tray.over { background: rgba(179, 64, 47, 0.09); box-shadow: 0 0 0 2px rgba(179, 64, 47, 0.5); }
+
+  /* the token as placed on a print */
+  .sw .token.placed {
+    position: absolute; top: 8px; right: 8px; z-index: 5;
+    width: 40px; height: 40px; font-size: 1.3rem;
+  }
+
+  /* ---------- the filed-rank ledger ---------- */
+  .ledger { margin: 18px 0 0; border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.44); }
+  .ledger-h {
+    font-size: 0.55rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-2);
+    padding: 6px 10px 5px; border-bottom: 1px solid var(--rule); text-align: center;
+  }
+  .ledger-row { display: flex; }
+  .lg {
+    flex: 1 1 0; min-width: 0; text-align: center; padding: 6px 2px 7px;
+    border-right: 1px solid rgba(74, 53, 18, 0.22);
+  }
+  .lg:last-child { border-right: 0; }
+  .lg .who { display: block; font-size: 0.52rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .lg .val { display: block; margin-top: 1px; font-family: var(--hand); font-size: 1.3rem; line-height: 1.05; color: var(--pencil); }
+  .lg .val.empty { color: rgba(75, 64, 48, 0.34); }
+  .ledger-note {
+    padding: 6px 10px 7px; border-top: 1px solid rgba(74, 53, 18, 0.22);
+    font-size: 0.58rem; line-height: 1.5; color: var(--ink-2); text-align: center;
+  }
+  .ledger-note[hidden] { display: none; }
+  .ledger-note em { font-style: normal; color: var(--red); }
+
+  /* ---------- the file bar ---------- */
+  .filebar { margin: 18px 0 2px; text-align: center; }
+  .brass {
+    min-height: 46px; padding: 0 1.3rem;
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+    font-family: var(--mono); font-size: 0.66rem;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    border: 1px solid rgba(58, 40, 14, 0.6);
+    color: #2a1c07;
+    background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55), 2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+    cursor: pointer;
+  }
+  .brass:active { transform: translateY(1px); box-shadow: none; }
+  .brass[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+  .brass:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .hint { margin: 9px 0 0; font-size: 0.6rem; line-height: 1.5; color: var(--ink-2); min-height: 1.5em; }
+  .hint.done { color: var(--ok); }
+
+  /* ---------- the rank picker (tap / keyboard fallback) ---------- */
+  .picker {
+    position: fixed; z-index: 95; width: 214px; padding: 9px 10px 10px;
+    background: var(--paper-hi) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.6);
+    box-shadow: 0 12px 24px -8px rgba(6, 3, 0, 0.6);
+  }
+  .picker[hidden] { display: none; }
+  .picker::before { content: ""; position: absolute; inset: 3px; border: 1px solid var(--rule); pointer-events: none; }
+  .picker h3 {
+    margin: 2px 0 8px; text-align: center; font-family: var(--mono); font-weight: normal;
+    font-size: 0.55rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .picker .pk-row { display: flex; gap: 6px; justify-content: center; }
+  .picker .pk {
+    width: 44px; height: 44px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--hand); font-size: 1.3rem; color: var(--pencil);
+    background: rgba(255, 253, 240, 0.8); border: 1px solid rgba(74, 53, 18, 0.42);
+    cursor: pointer; padding: 0;
+  }
+  .picker .pk[aria-pressed="true"] { background: var(--pencil); color: var(--paper-hi); }
+  .picker .pk:focus-visible, .picker .pk-clear:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .picker .pk-foot { margin: 8px 0 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .picker .pk-clear, .picker .pk-close {
+    font-family: var(--mono); font-size: 0.55rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-2); background: none; border: 0; padding: 8px 4px; cursor: pointer; min-height: 34px;
+  }
+  .picker .pk-clear { color: var(--red); }
+  .scrim { position: fixed; inset: 0; z-index: 94; background: transparent; }
+  .scrim[hidden] { display: none; }
+
+  .sr {
+    position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+
+  /* ---------- phone ---------- */
+  @media (max-width: 460px) {
+    body { padding: 30px 12px 72px; }
+    .card { padding: 12px 14px 18px; }
+    .grid { gap: 16px 12px; }
+    .head { font-size: 0.86rem; letter-spacing: 0.16em; text-indent: 0.16em; margin: 6px 34px 0; }
+    .well svg { width: 52%; height: 52%; }
+    .sw .token.placed { width: 38px; height: 38px; top: 6px; right: 6px; font-size: 1.2rem; }
+    .seat-hint { width: 38px; height: 38px; top: 6px; right: 6px; }
+    .seats { gap: 10px; }
+    .caption { display: block; }
+    .caption .rk { display: block; margin-top: 2px; }
+  }
+
+  /* ---------- motion is added, never assumed ---------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .sw, .tray, .token { transition: box-shadow 110ms ease, background-color 110ms ease, opacity 110ms ease; }
+    .sw .token.placed { animation: settle 150ms ease-out; }
+    @keyframes settle {
+      from { transform: translateY(-5px) scale(1.16); opacity: 0.3; }
+      to   { transform: none; opacity: 1; }
+    }
+    .picker { animation: lift 120ms ease-out; }
+    @keyframes lift { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>JUNK DRAWER — RANK THE DRAWINGS: THE LOT NUMBERS (round 30, option C)</h1>
+  <p><b>Designer's note.</b> The prints never move and never shrink — the artwork stays
+  big enough to actually judge, which on a phone means no thumbnails and no squinting.
+  What moves is a small gummed <b>lot number</b>: drag a 1, 2, 3 or 4 out of the tray and
+  press it onto a print's corner. There is exactly <b>one</b> 1 slip in the drawer, so
+  first place can't be shared — the 2s, 3s and 4s come in pads, which is how ties happen.</p>
+  <p>Ranks are filed dense, and the ledger says so out loud rather than quietly rewriting
+  the visitor: write 1, 3, 3, 4 and it prints the filed row 1, 2, 2, 3 with one line of
+  plain English. Fewer survivors never shrinks a print — <b>three</b> keeps the same 2-up
+  measure with the odd one centred beneath the pair and pulls the 4 pad off the tray;
+  <b>two</b> leaves a single row and a tray holding only the 1 and a pad of 2s, at which
+  point the unique-1 rule alone makes it the old better/worse call, with a tie still
+  impossible at the top.</p>
+</header>
+
+<div class="switcher">
+  <span>SURVIVORS</span>
+  <button type="button" data-n="4" aria-pressed="true">4</button>
+  <button type="button" data-n="3" aria-pressed="false">3</button>
+  <button type="button" data-n="2" aria-pressed="false">2</button>
+</div>
+
+<div class="card" id="card">
+  <button class="x" type="button" aria-label="Close">✕</button>
+  <div class="head">Rank the Drawings</div>
+  <div class="formline">Form JD-1 · Part IV — the call</div>
+  <div class="rule-x"></div>
+  <div class="rule-x"></div>
+
+  <p class="instr" id="instr">
+    Drag a lot number onto each drawing. There is only <b>one 1</b> — below it, two
+    drawings may share a number. Or tap a drawing to pick its number.
+  </p>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="tray" id="tray">
+    <div class="tray-h"><span>Lot numbers</span><span id="trayState"></span></div>
+    <div class="seats" id="seats"></div>
+    <p class="tray-note">The 1 is one of a kind — take it off one print to put it on another.
+    2, 3 and 4 come in pads; there is always another.</p>
+  </div>
+
+  <div class="ledger">
+    <div class="ledger-h">As filed</div>
+    <div class="ledger-row" id="ledgerRow"></div>
+    <p class="ledger-note" id="ledgerNote" hidden></p>
+  </div>
+
+  <div class="filebar">
+    <button class="brass" id="fileBtn" type="button" disabled>File the grades</button>
+    <p class="hint" id="hint">Every drawing needs a number, and one of them must be the 1.</p>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<div class="picker" id="picker" role="dialog" aria-modal="false" aria-labelledby="pkTitle" hidden>
+  <h3 id="pkTitle">Rank Model A</h3>
+  <div class="pk-row" id="pkRow"></div>
+  <div class="pk-foot">
+    <button class="pk-clear" type="button" id="pkClear">Take it off</button>
+    <button class="pk-close" type="button" id="pkClose">Done</button>
+  </div>
+</div>
+
+<p class="sr" role="status" aria-live="polite" id="live"></p>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ------------------------------------------------------------------ *
+   * the four mock drawings — the app's muted colours
+   * ------------------------------------------------------------------ */
+  var ART = {
+    A: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="40" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="13" fill="#33240f"/></svg>',
+    B: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="13" y="24" width="74" height="52" rx="13" fill="none" stroke="#3f5a86" stroke-width="6"/><rect x="31" y="42" width="38" height="16" rx="6" fill="#3f5a86" fill-opacity="0.55"/></svg>',
+    C: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 14 L86 82 L14 82 Z" fill="none" stroke="#4a6b18" stroke-width="6" stroke-linejoin="round"/><circle cx="50" cy="62" r="7" fill="#4a6b18"/></svg>',
+    D: '<svg viewBox="14 39 72 46" style="width:54%;height:54%" aria-hidden="true"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="63" r="9" fill="#f4ead0"/></svg>'
+  };
+  var ALL = ["A", "B", "C", "D"];
+
+  var grid = document.getElementById("grid"),
+      seats = document.getElementById("seats"),
+      tray = document.getElementById("tray"),
+      trayState = document.getElementById("trayState"),
+      ledgerRow = document.getElementById("ledgerRow"),
+      ledgerNote = document.getElementById("ledgerNote"),
+      fileBtn = document.getElementById("fileBtn"),
+      hint = document.getElementById("hint"),
+      instr = document.getElementById("instr"),
+      picker = document.getElementById("picker"),
+      pkRow = document.getElementById("pkRow"),
+      pkTitle = document.getElementById("pkTitle"),
+      pkClear = document.getElementById("pkClear"),
+      pkClose = document.getElementById("pkClose"),
+      scrim = document.getElementById("scrim"),
+      live = document.getElementById("live");
+
+  var models = ALL.slice(0),      // survivors in play
+      written = {},               // model -> written rank (1..N) or null
+      armed = null,               // a rank tapped in the tray, waiting for a print
+      pickerFor = null,
+      drag = null;
+
+  var INSTR_BASE = instr.innerHTML;
+
+  /* ------------------------------------------------------------------ *
+   * state
+   * ------------------------------------------------------------------ */
+  function reset(n) {
+    models = ALL.slice(0, n);
+    written = {};
+    models.forEach(function (m) { written[m] = null; });
+    armed = null;
+    closePicker();
+    buildGrid();
+    buildTray();
+    render();
+  }
+
+  function place(model, rank) {
+    if (rank === 1) {                                 // the 1 is one of a kind
+      models.forEach(function (m) { if (written[m] === 1) written[m] = null; });
+    }
+    written[model] = rank;
+    armed = null;
+    render();
+    say("Model " + model + " marked " + rank + ". " + spoken());
+  }
+
+  function clearModel(model) {
+    written[model] = null;
+    render();
+    say("Model " + model + " cleared. " + spoken());
+  }
+
+  /* dense ranks: sort the written values, close the gaps */
+  function dense() {
+    var vals = models.map(function (m) { return written[m]; })
+                     .filter(function (v) { return v !== null; });
+    var uniq = vals.filter(function (v, i, a) { return a.indexOf(v) === i; })
+                   .sort(function (a, b) { return a - b; });
+    var map = {}, out = {};
+    uniq.forEach(function (v, i) { map[v] = i + 1; });
+    models.forEach(function (m) { out[m] = written[m] === null ? null : map[written[m]]; });
+    return out;
+  }
+
+  function complete() {
+    return models.every(function (m) { return written[m] !== null; });
+  }
+  function hasOne() {
+    return models.some(function (m) { return written[m] === 1; });
+  }
+  function valid() { return complete() && hasOne(); }
+
+  function spoken() {
+    var d = dense();
+    return "Filed: " + models.map(function (m) {
+      return m + " " + (d[m] === null ? "blank" : d[m]);
+    }).join(", ") + ".";
+  }
+  function say(msg) { live.textContent = msg; }
+
+  /* ------------------------------------------------------------------ *
+   * building
+   * ------------------------------------------------------------------ */
+  function buildGrid() {
+    grid.className = "grid" + (models.length === 3 ? " n3" : models.length === 2 ? " n2" : "");
+    grid.innerHTML = "";
+    models.forEach(function (m) {
+      var fig = document.createElement("figure");
+      fig.className = "print";
+      fig.innerHTML =
+        '<button class="sw" type="button" data-model="' + m + '">' +
+          '<span class="kc tl"></span><span class="kc tr"></span>' +
+          '<span class="kc bl"></span><span class="kc br"></span>' +
+          '<span class="seat-hint" aria-hidden="true"></span>' +
+          '<span class="well">' + ART[m] + '</span>' +
+        '</button>' +
+        '<figcaption class="caption"><span class="lb">Model ' + m + '</span>' +
+        '<span class="rk" data-rk="' + m + '">no number</span></figcaption>';
+      grid.appendChild(fig);
+    });
+  }
+
+  function buildTray() {
+    seats.innerHTML = "";
+    for (var r = 1; r <= models.length; r++) {
+      var slot = document.createElement("div");
+      slot.className = "slot" + (r > 1 ? " pad" : "");
+      slot.setAttribute("data-rank", String(r));
+      slot.innerHTML =
+        '<span class="out" aria-hidden="true">out</span>' +
+        '<button class="token" type="button" data-rank="' + r + '" data-source="tray" ' +
+        'aria-label="Lot number ' + r + (r === 1 ? ', one of a kind' : ', a pad of them') + '">' + r + '</button>';
+      seats.appendChild(slot);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * render
+   * ------------------------------------------------------------------ */
+  function render() {
+    var d = dense();
+
+    /* tokens on the prints */
+    Array.prototype.forEach.call(grid.querySelectorAll(".sw"), function (sw) {
+      var m = sw.getAttribute("data-model");
+      var tok = sw.querySelector(".token.placed");
+      if (written[m] === null) {
+        if (tok) tok.parentNode.removeChild(tok);
+        sw.setAttribute("aria-label", "Model " + m + ", no number yet. Activate to choose one.");
+      } else {
+        if (!tok) {
+          tok = document.createElement("span");
+          tok.className = "token placed";
+          tok.setAttribute("data-source", "print");
+          tok.setAttribute("data-model", m);
+          sw.appendChild(tok);
+        } else if (tok.textContent !== String(written[m])) {
+          tok.classList.remove("placed");
+          void tok.offsetWidth;
+          tok.classList.add("placed");
+        }
+        tok.setAttribute("data-rank", String(written[m]));
+        tok.textContent = String(written[m]);
+        sw.setAttribute("aria-label", "Model " + m + ", marked " + written[m] +
+          ", filed as rank " + d[m] + ". Activate to change it.");
+      }
+      var rk = grid.querySelector('[data-rk="' + m + '"]');
+      if (rk) {
+        rk.textContent = written[m] === null ? "no number"
+          : (written[m] === d[m] ? "rank " + d[m] : "wrote " + written[m] + " · rank " + d[m]);
+      }
+    });
+
+    /* the tray: the 1's seat empties when it is out on a print */
+    Array.prototype.forEach.call(seats.children, function (slot) {
+      var r = Number(slot.getAttribute("data-rank"));
+      var out = r === 1 && hasOne();
+      slot.classList.toggle("gone", out);
+      var t = slot.querySelector(".token");
+      if (t) t.classList.toggle("armed", armed === r);
+    });
+    trayState.textContent = hasOne() ? "the 1 is out" : "";
+
+    /* the ledger */
+    ledgerRow.innerHTML = "";
+    models.forEach(function (m) {
+      var cell = document.createElement("div");
+      cell.className = "lg";
+      cell.innerHTML = '<span class="who">Model ' + m + '</span>' +
+        '<span class="val' + (d[m] === null ? " empty" : "") + '">' +
+        (d[m] === null ? "—" : d[m]) + "</span>";
+      ledgerRow.appendChild(cell);
+    });
+
+    var shifted = models.some(function (m) { return written[m] !== null && written[m] !== d[m]; });
+    if (shifted) {
+      ledgerNote.hidden = false;
+      ledgerNote.innerHTML = "You wrote <em>" +
+        models.map(function (m) { return written[m] === null ? "—" : written[m]; }).join(", ") +
+        "</em>. Skipped numbers close up, so this files as " +
+        models.map(function (m) { return d[m] === null ? "—" : d[m]; }).join(", ") + ".";
+    } else {
+      ledgerNote.hidden = true;
+    }
+
+    /* the brass button */
+    fileBtn.disabled = !valid();
+    hint.classList.toggle("done", valid());
+    if (armed !== null) {
+      hint.textContent = "Tap a drawing to write " + armed + " on it.";
+    } else if (valid()) {
+      hint.textContent = "Ready to file.";
+    } else if (!complete()) {
+      var left = models.filter(function (m) { return written[m] === null; }).length;
+      hint.textContent = left + (left === 1 ? " drawing still has" : " drawings still have") +
+        " no number" + (hasOne() ? "." : ", and one of them must be the 1.");
+    } else {
+      hint.textContent = "One drawing has to wear the 1 — first place is never shared.";
+    }
+
+    instr.innerHTML = armed === null ? INSTR_BASE :
+      "The <b>" + armed + "</b> is in hand. Tap the drawing it belongs to — or tap the number again to put it back.";
+
+    if (pickerFor) paintPicker();
+  }
+
+  /* ------------------------------------------------------------------ *
+   * dragging — pointer events, mouse and touch alike
+   * ------------------------------------------------------------------ */
+  function onPointerDown(e) {
+    var tok = e.target.closest ? e.target.closest(".token") : null;
+    if (!tok || e.button > 0) return;
+    drag = {
+      src: tok,
+      rank: Number(tok.getAttribute("data-rank")),
+      from: tok.getAttribute("data-source"),
+      model: tok.getAttribute("data-model"),
+      x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY,
+      moved: false, ghost: null, id: e.pointerId
+    };
+    try { tok.setPointerCapture(e.pointerId); } catch (err) {}
+    e.preventDefault();
+  }
+
+  function onPointerMove(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    drag.x = e.clientX; drag.y = e.clientY;
+    if (!drag.moved) {
+      if (Math.abs(e.clientX - drag.x0) < 6 && Math.abs(e.clientY - drag.y0) < 6) return;
+      drag.moved = true;
+      startGhost();
+    }
+    drag.ghost.style.left = drag.x + "px";
+    drag.ghost.style.top = drag.y + "px";
+    paintTargets(targetAt(drag.x, drag.y));
+    e.preventDefault();
+  }
+
+  function startGhost() {
+    closePicker();
+    var g = document.createElement("div");
+    g.className = "token ghost";
+    g.textContent = String(drag.rank);
+    document.body.appendChild(g);
+    drag.ghost = g;
+    drag.src.classList.add("dragging-src");
+    document.body.classList.add("dragging");
+    armed = null;
+  }
+
+  function targetAt(x, y) {
+    var el = document.elementFromPoint(x, y);
+    if (!el) return null;
+    var sw = el.closest ? el.closest(".sw") : null;
+    if (sw) return { kind: "print", model: sw.getAttribute("data-model"), el: sw };
+    var tr = el.closest ? el.closest(".tray") : null;
+    if (tr) return { kind: "tray", el: tr };
+    return null;
+  }
+
+  function paintTargets(t) {
+    Array.prototype.forEach.call(grid.querySelectorAll(".sw"), function (sw) {
+      sw.classList.toggle("over", !!t && t.kind === "print" && t.el === sw);
+    });
+    tray.classList.toggle("over", !!t && t.kind === "tray" && drag && drag.from === "print");
+  }
+
+  function onPointerUp(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    var d = drag;
+    if (d.moved) {
+      var t = targetAt(e.clientX, e.clientY);
+      endGhost();
+      if (t && t.kind === "print") {
+        place(t.model, d.rank);
+      } else if (d.from === "print") {
+        clearModel(d.model);                 // dragged off the print, anywhere else
+      } else {
+        render();
+      }
+    } else {
+      endGhost();
+      if (d.from === "tray") {               // a tap in the tray: take it in hand
+        armed = (armed === d.rank) ? null : d.rank;
+        render();
+        say(armed === null ? "Put back." : "Lot number " + armed + " in hand. Choose a drawing.");
+      } else {                               // a tap on a placed token: open its picker
+        openPicker(d.model);
+      }
+    }
+    drag = null;
+  }
+
+  function endGhost() {
+    if (drag && drag.ghost) drag.ghost.parentNode.removeChild(drag.ghost);
+    if (drag && drag.src) drag.src.classList.remove("dragging-src");
+    document.body.classList.remove("dragging");
+    paintTargets(null);
+  }
+
+  function onPointerCancel(e) {
+    if (!drag || e.pointerId !== drag.id) return;
+    endGhost(); drag = null; render();
+  }
+
+  document.addEventListener("pointerdown", onPointerDown);
+  document.addEventListener("pointermove", onPointerMove, { passive: false });
+  document.addEventListener("pointerup", onPointerUp);
+  document.addEventListener("pointercancel", onPointerCancel);
+
+  /* ------------------------------------------------------------------ *
+   * tapping a print: place what's in hand, else open the picker
+   * ------------------------------------------------------------------ */
+  grid.addEventListener("click", function (e) {
+    var sw = e.target.closest ? e.target.closest(".sw") : null;
+    if (!sw) return;
+    if (e.target.closest(".token")) return;      // the token handles its own taps
+    var m = sw.getAttribute("data-model");
+    if (armed !== null) { place(m, armed); return; }
+    openPicker(m);
+  });
+
+  /* keyboard on tokens: Enter/Space arms or opens, handled by click */
+  seats.addEventListener("click", function (e) {
+    var tok = e.target.closest ? e.target.closest(".token") : null;
+    if (!tok) return;
+    if (drag) return;
+    /* pointer path already handled it for mice and fingers; this catches
+       keyboard activation, which fires click with no pointer sequence */
+    if (e.detail !== 0) return;
+    var r = Number(tok.getAttribute("data-rank"));
+    armed = (armed === r) ? null : r;
+    render();
+    say(armed === null ? "Put back." : "Lot number " + armed + " in hand. Choose a drawing.");
+  });
+
+  /* ------------------------------------------------------------------ *
+   * the rank picker
+   * ------------------------------------------------------------------ */
+  function openPicker(model) {
+    pickerFor = model;
+    pkTitle.textContent = "Rank Model " + model;
+    pkRow.innerHTML = "";
+    for (var r = 1; r <= models.length; r++) {
+      var b = document.createElement("button");
+      b.className = "pk"; b.type = "button";
+      b.setAttribute("data-rank", String(r));
+      b.setAttribute("aria-label", "Rank " + r + (r === 1 ? ", best" : ""));
+      b.textContent = String(r);
+      pkRow.appendChild(b);
+    }
+    paintPicker();
+    picker.hidden = false;
+    scrim.hidden = false;
+    positionPicker(model);
+    var first = pkRow.querySelector('.pk[aria-pressed="true"]') || pkRow.firstChild;
+    if (first) first.focus();
+  }
+
+  function paintPicker() {
+    if (!pickerFor) return;
+    Array.prototype.forEach.call(pkRow.children, function (b) {
+      var r = Number(b.getAttribute("data-rank"));
+      b.setAttribute("aria-pressed", written[pickerFor] === r ? "true" : "false");
+    });
+    pkClear.style.visibility = written[pickerFor] === null ? "hidden" : "visible";
+  }
+
+  function positionPicker(model) {
+    var sw = grid.querySelector('.sw[data-model="' + model + '"]');
+    if (!sw) return;
+    var r = sw.getBoundingClientRect(), p = picker.getBoundingClientRect();
+    var left = r.left + r.width / 2 - p.width / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - p.width - 8));
+    var top = r.bottom + 8;
+    if (top + p.height > window.innerHeight - 8) top = Math.max(8, r.top - p.height - 8);
+    picker.style.left = Math.round(left) + "px";
+    picker.style.top = Math.round(top) + "px";
+  }
+
+  function closePicker() {
+    if (!pickerFor) return;
+    var m = pickerFor;
+    pickerFor = null;
+    picker.hidden = true;
+    scrim.hidden = true;
+    var sw = grid.querySelector('.sw[data-model="' + m + '"]');
+    if (sw) sw.focus();
+  }
+
+  pkRow.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".pk") : null;
+    if (!b || !pickerFor) return;
+    place(pickerFor, Number(b.getAttribute("data-rank")));
+    closePicker();
+  });
+  pkClear.addEventListener("click", function () {
+    if (!pickerFor) return;
+    var m = pickerFor; closePicker(); clearModel(m);
+  });
+  pkClose.addEventListener("click", closePicker);
+  scrim.addEventListener("pointerdown", closePicker);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (pickerFor) { closePicker(); }
+    else if (armed !== null) { armed = null; render(); say("Put back."); }
+  });
+  window.addEventListener("resize", function () { if (pickerFor) positionPicker(pickerFor); });
+
+  /* ------------------------------------------------------------------ *
+   * filing
+   * ------------------------------------------------------------------ */
+  fileBtn.addEventListener("click", function () {
+    if (!valid()) return;
+    var d = dense();
+    hint.classList.add("done");
+    hint.textContent = "Filed — " + models.map(function (m) { return m + ": " + d[m]; }).join("  ");
+    say("Filed. " + spoken());
+  });
+
+  /* survivor count, to show the degradation */
+  Array.prototype.forEach.call(document.querySelectorAll(".switcher button"), function (b) {
+    b.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll(".switcher button"), function (o) {
+        o.setAttribute("aria-pressed", o === b ? "true" : "false");
+      });
+      reset(Number(b.getAttribute("data-n")));
+    });
+  });
+
+  reset(4);
+})();
+</script>
+
+</body>
+</html>

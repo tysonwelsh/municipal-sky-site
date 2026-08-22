@@ -1,17 +1,30 @@
 /* ============================================================================
-   THE CARBON RAIN — standalone piece.
+   KIMI'S TAKE — a spin-off of The Carbon Rain (art/carbon-rain/), forked at
+   its v0.1.3: same rain, no words. The two are meant to grow apart.
 
-   A falling column of characters in the manner of the film everyone has seen,
-   retyped on a municipal office machine: 73 writing systems and five sets of
-   notation, 5,987 characters, one glyph to a printed square, falling down the
-   ruling of the paper itself.
+   The Matrix rain, re-run for the large-language-model era: 73 writing
+   systems and five sets of notation, one glyph to a printed square, streaming
+   along PATHS across a sheet of engineering paper — entering from every edge,
+   running straight or turning corners — at different speeds, and never once
+   overlapping.
 
-   THE COLUMN NEVER REPEATS. A stream loops; at the instant it wraps — jumping
-   from below the bottom edge back above the top — every square in it is off
-   the sheet. That is where the characters are drawn again, so the change is
-   never seen and the supply is the whole pool rather than a fixed strip of
-   markup. The guard on the listener matters: animationiteration BUBBLES, and
-   the pinwheel squares run their own animation inside the same stream.
+   THE TRAFFIC IS SOLVED AT BIRTH, NOT ON THE ROAD. Streams glide smoothly at
+   constant speed, but a glide along a fixed path at constant velocity is
+   predictable: each stream's whole traverse is a closed-form set of (cell,
+   time-interval) reservations, checked against every stream already booked
+   before it is allowed to exist. No braking, no yielding, no gridlock — a
+   stream that cannot find clear spacetime is simply not born this cycle, and
+   the gap reads as weather. Births are dealt one per planner tick: bursts
+   traverse in lockstep and the sheet waves; singletons never do. And the
+   MIX is balanced by a ledger, not by hope: the planner tracks booked
+   cell-seconds per axis and births whichever clear candidate most reduces
+   the imbalance — a wide sheet would otherwise belong to the horizontals.
+
+   THE COLUMN STILL NEVER REPEATS. A stream's glyphs are dealt when it is
+   born and re-dealt only while it is entirely off the sheet — retirement is
+   a fact about the clock, so it works in background tabs too. And the
+   renderer writes positions computed from the same arithmetic as the
+   bookings: no second clock, no engine-specific keyframe behaviour.
 
    The character pool is a COPY of the one in art/junk-drawer/junk-drawer.js,
    not a shared library — the two are meant to grow apart. If you change the
@@ -40,11 +53,16 @@
     var key = BAG[rnd(BAG.length)], set = POOL[key].a;
     var ch = set[rnd(set.length)];
     /* a reversal only reads as one on a script the viewer recognises, and
-       never on a glyph that is symmetrical about its own vertical axis */
+       never on a glyph that is symmetrical about its own vertical axis.
+       Mirror and spin live on the INNER wrapper: the scale/rotate must
+       never touch the outer cell's JS-written translate, or the glyph
+       teleports off its path (scale multiplies the translation too). */
     var rev = MOK[key] && SYM.indexOf(ch) < 0 && Math.random() < 0.18;
-    el.className = 'cr-g cr-' + key + (rev ? ' is-rev' : '') +
-                   (el.getAttribute('data-spin') || '');
-    el.textContent = ch;
+    el.className = 'cr-g cr-' + key;
+    var inner = el.firstChild;
+    inner.className = (el.getAttribute('data-spin') || '') +
+                      (rev ? ' is-rev' : '');
+    inner.textContent = ch;
   }
 
   function fill(s) {
@@ -52,16 +70,377 @@
     for (i = 0; i < n; i++) strike(cells[i]);
   }
 
-  function onWrap(e) {
-    /* animationiteration BUBBLES. Every pinwheel square inside this stream
-       runs its own crSpin, and those events arrive here too — without this
-       guard a column re-rolls whenever one of its pinwheels completes a turn,
-       mid-fall and in plain sight. */
-    if (e.target !== this || e.animationName !== 'crFall') return;
-    fill(this);
+  /* ========================================================================
+     THE TRAFFIC MANAGER — paths, not lanes, and still zero collisions.
+
+     A stream is no longer a straight strip on one lane: it is a PATH on the
+     grid. It enters from an edge, runs straight or turns — cell centre to
+     cell centre, always orthogonally, never crossing its own trail — and
+     leaves by any edge. Motion is smooth (constant speed, positions written
+     to transform by the renderer), and because the whole path is fixed at
+     birth, occupancy is closed-form:
+     measure ARCLENGTH along the path in cells; glyph j rides at arclength
+     s−j where s = v·(t−t0), and path cell i (centre at arclength i) is
+     touched while s ∈ (i−0.5, i+len−0.5). Born at t0, that is the seconds
+     interval [t0 + (i−0.5)/v, t0 + (i+len−0.5)/v]. The reservation table
+     holds one interval list per grid cell; the planner only births a path
+     whose intervals conflict with nothing already booked. Streams never
+     brake, yield, or reroute — traffic is solved at birth or not at all.
+
+     Paths turn because the mesh is the point: a straight rain reads as
+     weather, a turning one reads as TRAFFIC. Roughly half the paths are
+     dealt 1–3 corners; the rest stay straight, keeping the rain's memory.
+
+     Births are dealt ONE per planner tick. Burst births were the wave bug:
+     streams born in the same cycle traverse in lockstep, wrap together, and
+     the sheet oscillated between orientations. One per tick decorrelates
+     them for good.
+     ====================================================================== */
+
+  /* motion is SMOOTH (linear CSS animation, continuous px); only the
+     collision model is discrete, because the paper's cells are. Speeds are
+     cells per second — zoom-independent by construction, and matched to the
+     original rain's pace: 22–42 squares/sec in 9px-square units = 2.4–4.7
+     cells/sec at the doubled cell. Much faster and a glyph crosses its own
+     square in a frame or two, which strobes instead of gliding. */
+  var SPD_MIN = 2.2, SPD_SPAN = 2.5;   /* 2.2–4.7 cells/sec */
+  var DEBUG = /[?&]debug/.test(location.search);
+
+  /* per-mount state */
+  var grid = null;          /* { cols, rows, CELL, host, spinP } */
+  var booked = new Map();   /* cellKey -> [[t0, t1, id], ...] */
+  var live = [];            /* stream records: { id, el, keys, slot } */
+  var slots = [];
+  var nextId = 1;
+  var timers = [];
+  var stubbornP = 0.35;     /* live-tunable via KimisTake.set() */
+
+  /* the piece's clock is the wall clock MINUS whatever time it spent paused,
+     so pausing freezes everything the model does — births, retirements,
+     positions — and resuming continues exactly where it left off */
+  var paused = false, pausedAt = 0, pauseAccum = 0;
+  function nowSec() {
+    return ((paused ? pausedAt : performance.now()) - pauseAccum) / 1000;
+  }
+  function keyOf(row, col) { return (row << 10) | col; }
+
+  var DVEC = { d: [0, 1], u: [0, -1], r: [1, 0], l: [-1, 0] };
+
+  /* Is one cell clear for a strip's whole passage? The window covers the
+     head's arrival through the tail's departure, padded to a visible beat. */
+  function cellFree(key, idx, len, v, t0) {
+    var a = t0 + (idx - 0.5) / v - PAD, b = t0 + (idx + len - 0.5) / v + PAD;
+    var list = booked.get(key);
+    if (!list) return true;
+    for (var m = 0; m < list.length; m++) {
+      if (a < list[m][1] && list[m][0] < b) return false;
+    }
+    return true;
   }
 
-  var timers = [];
+  /* Deal a path REACTIVELY. Enters from the edge dir implies with the
+     strip's length plus margin behind it, then runs straight until it has
+     a reason not to: a stream turns ONLY when the cell ahead is already
+     booked for the moment the strip would arrive — then it takes whichever
+     perpendicular is clear, snake-game style. Streams with an open road
+     never turn, so an empty sheet is pure rain and a busy one weaves.
+     Off-sheet travel is invisible and needs no clearance; leaving the sheet
+     is always allowed and is the exit. Returns null when the walk is boxed
+     in — the planner deals again with a different lane, speed or moment.
+
+     STUBBORN streams (a dealt share of births) carry a commission: exit by
+     the edge OPPOSITE the one they entered — which is exactly the edge their
+     entry heading points at. They still yield to traffic, but two rules
+     change: a wrong edge is a wall, not an exit, and when traffic has pushed
+     them off course they steer back toward the target at the next clear
+     square. A stubborn stream that has wandered past its budget gives up and
+     leaves by any edge — the release valve that keeps a stubborn majority
+     from gridlocking the sheet. */
+  function genPath(dir, len, v, t0, stubborn) {
+    var cols = grid.cols, rows = grid.rows;
+    var mB = len + 2 + rnd(8), mA = len + 2 + rnd(8);
+    var heading = DVEC[dir], col, row;
+    if (dir === 'd') { col = rnd(cols); row = -mB; }
+    else if (dir === 'u') { col = rnd(cols); row = rows - 1 + mB; }
+    else if (dir === 'r') { row = rnd(rows); col = -mB; }
+    else { row = rnd(rows); col = cols - 1 + mB; }
+    var cells = [[col, row]];
+    var seen = {}; seen[col + ',' + row] = 1;
+    var onSheet = false, exiting = false, onLen = 0, sinceCorrect = 0;
+    var giveUp = false;
+    var maxOn = 40 + rnd(30);   /* don't wander the sheet forever */
+    var guard = mB + 3 * (cols + rows) + mA + 16;
+    while (guard-- > 0) {
+      var nc = col + heading[0], nr = row + heading[1];
+      var on = nc >= 0 && nc < cols && nr >= 0 && nr < rows;
+      if (exiting) {
+        cells.push([nc, nr]); col = nc; row = nr;
+        if (nc < -mA || nc >= cols + mA || nr < -mA || nr >= rows + mA) return cells;
+        continue;
+      }
+      if (!onSheet) {
+        cells.push([nc, nr]); col = nc; row = nr;
+        if (on) { onSheet = true; seen[nc + ',' + nr] = 1; }
+        continue;
+      }
+      if (onLen > maxOn) giveUp = true;   /* the release valve */
+      if (!on) {
+        /* leaving the sheet: stubborn streams only leave by the edge their
+           commission names — any other edge is a wall */
+        if (!stubborn || giveUp || heading === DVEC[dir]) {
+          exiting = true; cells.push([nc, nr]); col = nc; row = nr; continue;
+        }
+      }
+      var idx = cells.length;
+      var straightOK = on && !seen[nc + ',' + nr] &&
+                       cellFree(keyOf(nr, nc), idx, len, v, t0);
+      if (stubborn && !giveUp && heading !== DVEC[dir]) {
+        /* off course: steer back toward the commission at the next clear
+           square (not instantly — a small run keeps the correction from
+           reading as jitter) */
+        var tc = col + DVEC[dir][0], tr = row + DVEC[dir][1];
+        if (sinceCorrect >= 2 &&
+            tc >= 0 && tc < cols && tr >= 0 && tr < rows &&
+            !seen[tc + ',' + tr] &&
+            cellFree(keyOf(tr, tc), idx, len, v, t0) &&
+            Math.random() < 0.8) {
+          heading = DVEC[dir]; sinceCorrect = 0; continue;
+        }
+      }
+      if (straightOK) {
+        cells.push([nc, nr]); seen[nc + ',' + nr] = 1; col = nc; row = nr;
+        onLen++; sinceCorrect++;
+        continue;
+      }
+      /* BLOCKED — turn. When the walk has wandered long, prefer the side
+         that heads for the nearer edge, so exits come around in time. */
+      var perps = heading[0] === 0 ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]];
+      if (onLen >= maxOn) {
+        perps.sort(function (a, b) {
+          var da = a[0] ? (a[0] > 0 ? cols - 1 - col : col)
+                        : (a[1] > 0 ? rows - 1 - row : row);
+          var db = b[0] ? (b[0] > 0 ? cols - 1 - col : col)
+                        : (b[1] > 0 ? rows - 1 - row : row);
+          return da - db;
+        });
+      } else if (rnd(2)) perps.reverse();
+      var chosen = null;
+      for (var q = 0; q < 2; q++) {
+        var qc = col + perps[q][0], qr = row + perps[q][1];
+        if (qc >= 0 && qc < cols && qr >= 0 && qr < rows &&
+            !seen[qc + ',' + qr] &&
+            cellFree(keyOf(qr, qc), idx, len, v, t0)) { chosen = perps[q]; break; }
+      }
+      if (!chosen) return null;   /* boxed in — deal again */
+      heading = chosen; onLen = 0; sinceCorrect = 0;
+    }
+    return null;
+  }
+
+  /* The load balancer's ledger: how many cell-seconds of each axis are
+     currently booked. A stream passing over a cell occupies it for ~len/v
+     seconds, so cost = on-sheet cells of each axis × len/v. */
+  var axisTime = { v: 0, h: 0 };
+  function axisCost(cells, len, v) {
+    var cv = 0, ch = 0;
+    for (var i = 1; i < cells.length; i++) {
+      var c = cells[i];
+      if (c[0] < 0 || c[0] >= grid.cols || c[1] < 0 || c[1] >= grid.rows) continue;
+      if (c[0] === cells[i - 1][0]) cv++; else ch++;
+    }
+    var sec = len / v;
+    return { v: cv * sec, h: ch * sec };
+  }
+
+  /* Cell i's centre sits at arclength i cells along the path; a glyph's box
+     is one square, so cell i is touched while the head's arclength s lies in
+     (i−0.5, i+len−0.5). In seconds, with the pad that gives every handoff a
+     visible beat of clear paper (near-misses read as touches): */
+  var PAD = 0.35;
+  function pathIntervals(cells, len, v, t0) {
+    var out = [];
+    for (var i = 0; i < cells.length; i++) {
+      var c = cells[i][0], r = cells[i][1];
+      if (c < 0 || c >= grid.cols || r < 0 || r >= grid.rows) continue;
+      out.push([keyOf(r, c), t0 + (i - 0.5) / v - PAD,
+                t0 + (i + len - 0.5) / v + PAD]);
+    }
+    return out;
+  }
+
+  function conflicts(ivals) {
+    for (var j = 0; j < ivals.length; j++) {
+      var list = booked.get(ivals[j][0]);
+      if (!list) continue;
+      for (var m = 0; m < list.length; m++) {
+        if (ivals[j][1] < list[m][1] && list[m][0] < ivals[j][2]) return true;
+      }
+    }
+    return false;
+  }
+
+  function reserve(id, ivals) {
+    if (DEBUG && conflicts(ivals)) {
+      console.error('[kimis-take] double-booking detected, stream ' + id);
+    }
+    for (var j = 0; j < ivals.length; j++) {
+      var list = booked.get(ivals[j][0]);
+      if (!list) { list = []; booked.set(ivals[j][0], list); }
+      list.push([ivals[j][1], ivals[j][2], id]);
+    }
+  }
+
+  function release(id, keys) {
+    for (var j = 0; j < keys.length; j++) {
+      var list = booked.get(keys[j]);
+      if (!list) continue;
+      for (var m = list.length - 1; m >= 0; m--) {
+        if (list[m][2] === id) list.splice(m, 1);
+      }
+      if (!list.length) booked.delete(keys[j]);
+    }
+  }
+
+  function sweep(now) {
+    booked.forEach(function (list, key) {
+      for (var m = list.length - 1; m >= 0; m--) {
+        if (list[m][1] < now - 1) list.splice(m, 1);
+      }
+      if (!list.length) booked.delete(key);
+    });
+  }
+
+  function spawn(cells, len, v, t0, ivals, slot, stubborn, dir) {
+    var id = nextId++, j;
+    var P = cells.length;
+    var st = document.createElement('span');
+    st.className = 'cr-s' + (stubborn ? ' is-stubborn' : '');   /* TEMP: red ink
+      while the commissioned behaviour is being watched — remove with the
+      .cr-s.is-stubborn rule */
+    st.style.setProperty('--cr-o', (0.62 + Math.random() * 0.38).toFixed(2));
+    for (j = 0; j < len; j++) {
+      var cell = document.createElement('i');
+      cell.appendChild(document.createElement('u'));   /* mirror/spin wrapper */
+      if (Math.random() < grid.spinP) {
+        cell.setAttribute('data-spin',
+          ' is-spin' + (Math.random() < 0.5 ? ' is-ccw' : ''));
+        cell.firstChild.style.setProperty('--cr-sd',
+          (4 + Math.random() * 7).toFixed(2) + 's');
+      }
+      st.appendChild(cell);
+    }
+    fill(st);
+    var keys = [];
+    for (j = 0; j < ivals.length; j++) keys.push(ivals[j][0]);
+    reserve(id, ivals);
+    var rec = { id: id, el: st, keys: keys, slot: slot,
+                cells: cells, len: len, v: v, t0: t0, P: P,
+                endT: t0 + (P - 1) / v,
+                cost: axisCost(cells, len, v) };
+    axisTime.v += rec.cost.v; axisTime.h += rec.cost.h;
+    /* the sim harness (local-dev/kimis-take-sim.js) replays positions from
+       these parameters and asserts no two streams ever share a cell */
+    if (DEBUG) rec.plan = { cells: cells, len: len, v: v, t0: t0, P: P,
+                            stubborn: !!stubborn, dir: dir };
+    st.__rec = rec;
+    grid.host.appendChild(st);
+    live.push(rec);
+    slot.free = false;
+    positionStream(rec, nowSec());
+  }
+
+  /* THE RENDERER IS THE MODEL. Glyph j rides at arclength s−j along the
+     path, s = v·(t−t0) — the same arithmetic the reservations are booked
+     with, from the same wall clock, written straight to transform. No CSS
+     animation, no second clock, no engine-specific keyframe behaviour to
+     drift from the bookings. rAF drives it in the foreground; the planner
+     tick re-renders at 4fps so background tabs (where rAF parks) stay
+     honest too. */
+  function positionStream(rec, now) {
+    var cells = rec.cells, P = rec.P, CELL = grid.CELL;
+    var els = rec.el.children;
+    var s = rec.v * (now - rec.t0);
+    for (var j = 0; j < rec.len; j++) {
+      var q = s - j;
+      if (q < 0) q = 0; else if (q > P - 1) q = P - 1;
+      var i0 = Math.floor(q);
+      if (i0 >= P - 1) i0 = P - 2;
+      var fr = q - i0;
+      var c0 = cells[i0], c1 = cells[i0 + 1];
+      els[j].style.transform =
+        'translate(' + ((c0[0] + (c1[0] - c0[0]) * fr) * CELL).toFixed(1) + 'px,' +
+                       ((c0[1] + (c1[1] - c0[1]) * fr) * CELL).toFixed(1) + 'px)';
+    }
+  }
+
+  var rafId = 0;
+  function frame() {
+    var now = nowSec();
+    for (var r = 0; r < live.length; r++) positionStream(live[r], now);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  /* Birth one stream into clear spacetime, or leave the slot empty. The
+     slot's compass point is the ENTRY heading; where the path goes from
+     there is the walk's business. With seedPhase the stream starts
+     mid-traverse (negative delays) so the sheet opens already woven.
+
+     Collision-free is necessary but not sufficient: the MIX is a controlled
+     quantity too. Up to three conflict-free candidates are dealt, and the
+     one that most reduces the global vertical/horizontal booked-time
+     imbalance is born. Straight horizontal runs live longer on a wide sheet
+     (more cells to cross), so without this the horizontals slowly eat the
+     page — with it the ledger corrects every birth. */
+  function planCandidate(slot, seedPhase) {
+    var cands = [];
+    for (var attempt = 0; attempt < 40 && cands.length < 3; attempt++) {
+      var dir = slot.dir || 'd';
+      var len = 8 + rnd(38);   /* 8–45 glyphs: paths wind, so the old
+                                  axis-length cap no longer applies */
+      var v = SPD_MIN + Math.random() * SPD_SPAN;
+      var stubborn = Math.random() < stubbornP;   /* the commissioned share */
+      /* t0 is dealt BEFORE the walk: the walk avoids cells by the moment
+         the strip would arrive, so the moment has to exist first */
+      var t0 = seedPhase ? nowSec() - Math.random() * 80
+                         : nowSec() + Math.random() * 1.2;
+      var cells = genPath(dir, len, v, t0, stubborn);
+      if (!cells) continue;
+      var dur = (cells.length - 1) / v;
+      if (seedPhase && -t0 > dur) continue;   /* already done — redeal */
+      var ivals = pathIntervals(cells, len, v, t0);
+      if (conflicts(ivals)) continue;   /* belt and braces: the walk already
+                                           checked each cell at arrival time */
+      var cost = axisCost(cells, len, v);
+      cands.push({ cells: cells, len: len, v: v, t0: t0, ivals: ivals,
+                   cv: cost.v, ch: cost.h, stubborn: stubborn, dir: dir });
+    }
+    if (!cands.length) return false;   /* the gap stays; the planner comes back around */
+    var best = cands[0], bestScore = Infinity;
+    for (var j = 0; j < cands.length; j++) {
+      var sc = Math.abs((axisTime.v + cands[j].cv) - (axisTime.h + cands[j].ch));
+      if (sc < bestScore) { bestScore = sc; best = cands[j]; }
+    }
+    spawn(best.cells, best.len, best.v, best.t0, best.ivals, slot,
+          best.stubborn, best.dir);
+    return true;
+  }
+
+  /* Retire streams whose traverse is done. Timer-driven, not event-driven:
+     the head reaching the path's end (with the margins guaranteeing the
+     tail is off the sheet behind it) is a fact about the clock, and the
+     clock works in background tabs where animation events may not fire. */
+  function retireDone(now) {
+    for (var j = live.length - 1; j >= 0; j--) {
+      var rec = live[j];
+      if (now < rec.endT) continue;
+      release(rec.id, rec.keys);
+      axisTime.v -= rec.cost.v; axisTime.h -= rec.cost.h;
+      rec.slot.free = true;   /* the planner rebirths it when spacetime clears */
+      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+      live.splice(j, 1);
+    }
+  }
+
   function build(host, opt) {
     opt = opt || {};
     var W = host.clientWidth, H = host.clientHeight;
@@ -70,73 +449,66 @@
        same value rules the paper. Reading it here means the two cannot drift. */
     var css = getComputedStyle(host);
     var CELL = parseFloat(css.getPropertyValue('--cr-cell')) || 9;
-    var zoom = CELL / 9;
-    /* --cr-h is the SHEET's height. A percentage in translateY resolves
-       against the ELEMENT's own height, so 100% here would move a stream by
-       its own length and wrap it in full view, mid-sheet. */
-    host.style.setProperty('--cr-h', H + 'px');
-    var spinP = opt.spinP == null ? 0.06 : opt.spinP;
-    var rows = Math.floor(H / CELL);
-    var frag = document.createDocumentFragment(), streams = [];
-    for (var c = 0; c < Math.floor(W / CELL); c++) {
-      /* every column carries a stream; the gaps in the rain are made by a
-         run-up above the sheet, so a column empties and fills again on its own
-         cycle rather than being dealt empty and staying blank */
-      var col = document.createElement('span');
-      col.className = 'cr-c';
-      col.style.left = (c * CELL) + 'px';
-      col.style.setProperty('--cr-o', (0.62 + Math.random() * 0.38).toFixed(2));
-      var ndrop = Math.random() < 0.38 ? 2 : 1;
-      var len = 8 + rnd(Math.max(2, Math.min(rows, 46) - 8));
-      var body = len * CELL;
-      var lead = body + Math.round(body * (0.10 + Math.random() * 1.30));
-      var travel = H + lead;
-      /* scaled by the zoom so the rain always falls at the same number of
-         SQUARES per second, whatever size the squares are */
-      var d = travel / ((22 + Math.random() * 20) * zoom);
-      var base = Math.random() * d;
-      for (var s = 0; s < ndrop; s++) {
-        var st = document.createElement('span');
-        st.className = 'cr-s';
-        st.style.setProperty('--cr-dh', lead + 'px');
-        st.style.setProperty('--cr-d', d.toFixed(2) + 's');
-        var ph = (base + s * d / 2) % d;
-        st.style.setProperty('--cr-dl', (-ph).toFixed(2) + 's');
-        st.style.setProperty('--cr-y0', Math.round(-lead + travel * ph / d) + 'px');
-        for (i = 0; i < len; i++) {
-          var cell = document.createElement('i');
-          if (Math.random() < spinP) {
-            cell.setAttribute('data-spin',
-              ' is-spin' + (Math.random() < 0.5 ? ' is-ccw' : ''));
-            cell.style.setProperty('--cr-sd', (4 + Math.random() * 7).toFixed(2) + 's');
-          }
-          st.appendChild(cell);
-        }
-        fill(st);
-        st.addEventListener('animationiteration', onWrap);
-        col.appendChild(st);
-        streams.push(st);
-      }
-      frag.appendChild(col);
+    var cols = Math.floor(W / CELL), rows = Math.floor(H / CELL);
+    if (cols < 4 || rows < 4) return 0;
+    /* the host is snapped to whole cells so the ruling and the glyph squares
+       share one origin */
+    host.style.width = (cols * CELL) + 'px';
+    host.style.height = (rows * CELL) + 'px';
+    grid = { cols: cols, rows: rows, CELL: CELL, host: host,
+             spinP: opt.spinP == null ? 0.06 : opt.spinP };
+    if (opt.stubbornP != null) stubbornP = opt.stubbornP;
+    booked = new Map();
+    axisTime = { v: 0, h: 0 };
+    live = [];
+    slots = [];
+    /* the cast: one slot per entry heading — down, up, right, left — each
+       slot re-entering from its own edge forever, the path's turns re-dealt
+       at every birth. opt.dirs overrides the cast; the page's dial deals
+       n streams round-robin over the four points. */
+    var dirs = opt.dirs || ['d', 'u', 'r', 'l'];
+    for (var s = 0; s < dirs.length; s++) {
+      slots.push({ free: true, dir: dirs[s] });
     }
-    host.appendChild(frag);
-    /* the slow in-view re-strike: a few squares a second, caught out of the
-       corner of an eye rather than watched */
+    /* deal the first page: seeds start mid-traverse, so the sheet opens
+       already woven rather than filling in from the edges */
+    for (s = 0; s < slots.length; s++) {
+      planCandidate(slots[s], true);
+    }
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      /* the planner: retires finished streams, then keeps free slots filled,
+         ONE birth per tick. Burst births were the wave bug — streams born
+         together traverse together, wrap together, and the sheet oscillated
+         between orientations. An empty slot is just another gap in the rain. */
+      timers.push(setInterval(function () {
+        if (paused) return;
+        var now = nowSec();
+        sweep(now);
+        retireDone(now);
+        for (var j = 0; j < slots.length; j++) {
+          if (slots[j].free) { planCandidate(slots[j], false); break; }
+        }
+        /* rAF parks in hidden tabs; keep positions honest at 4fps there */
+        for (j = 0; j < live.length; j++) positionStream(live[j], now);
+      }, 250));
+      if (!paused) { cancelAnimationFrame(rafId); frame(); }
+      /* the slow in-view re-strike: a few squares a second, caught out of the
+         corner of an eye rather than watched */
       var rate = opt.visibleRate == null ? 10 : opt.visibleRate;
       timers.push(setInterval(function () {
+        if (paused || !live.length) return;
         for (var i = 0; i < rate; i++) {
-          var st = streams[rnd(streams.length)];
-          if (!st) continue;
-          var cell = st.children[rnd(st.children.length)];
+          var rec = live[rnd(live.length)];
+          if (!rec) continue;
+          var cell = rec.el.children[rnd(rec.el.children.length)];
           if (cell) strike(cell);
         }
       }, 1000));
     }
-    return streams.length;
+    return live.length;
   }
 
-  window.CarbonRain = {
+  window.KimisTake = {
     scripts: Object.keys(POOL).length,
     characters: (function () {
       var seen = {}, n = 0;
@@ -147,9 +519,30 @@
       }
       return n;
     })(),
+    /* the dial's readout: how many streams are actually on the sheet vs how
+       many the cast asked for — at high counts the gap is the point */
+    stats: function () { return { live: live.length, slots: slots.length }; },
+    /* lab controls: pause freezes the piece's own clock (render, planner,
+       births, retirements); resume continues from the frozen instant;
+       set() live-tunes what the planner deals next */
+    pause: function () {
+      if (paused) return;
+      paused = true;
+      pausedAt = performance.now();
+      cancelAnimationFrame(rafId);
+    },
+    resume: function () {
+      if (!paused) return;
+      pauseAccum += performance.now() - pausedAt;
+      paused = false;
+      if (live.length) { cancelAnimationFrame(rafId); frame(); }
+    },
+    paused: function () { return paused; },
+    set: function (o) { if (o && o.stubbornP != null) stubbornP = o.stubbornP; },
     mount: function (host, opt) {
       for (var i = 0; i < timers.length; i++) clearInterval(timers[i]);
       timers = [];
+      cancelAnimationFrame(rafId);
       host.innerHTML = '';
       /* setTimeout, NOT requestAnimationFrame: rAF is parked while the tab is
          hidden, so a visitor who opens this in a background tab would come

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — model labels on the grid (round 28)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #ece0bf;
+    --paper-hi: #f4ead0;
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --rule: rgba(74, 53, 18, 0.40);
+    --pencil: #4b4030;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+    --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 48px 24px 72px;
+    font-family: var(--mono); color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 44px; }
+  header h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.14em; margin: 0 0 8px; color: #b9b29e; }
+  header p { font-size: 11px; margin: 0 auto; opacity: 0.55; max-width: 560px; line-height: 1.6; }
+
+  .desk { display: flex; flex-wrap: wrap; justify-content: center; gap: 56px 64px; max-width: 1100px; }
+  .candidate { margin: 0; width: 460px; }
+  figcaption { margin-top: 18px; }
+  figcaption .name { display: block; font-size: 11px; color: #cfc8b2; letter-spacing: 0.08em; }
+  figcaption .blurb { display: block; margin-top: 6px; font-size: 10px; opacity: 0.55; line-height: 1.6; }
+
+  /* ---- the darkroom/results card, production-spec (straight seats, kraft
+     corners — round 26 rev. 4). Top row waits, bottom row has arrived, so
+     each label candidate is judged on both faces at once. ---- */
+  .card {
+    position: relative; width: 460px; height: 460px;
+    color: var(--ink);
+    background: var(--paper) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.55);
+    box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66), 3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+  }
+  .card::before { content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none; border: 1px solid var(--rule); }
+  .card .x {
+    position: absolute; top: 9px; right: 9px; z-index: 20;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.5); font-size: 13px;
+  }
+  .card .head {
+    position: absolute; left: 48px; right: 48px; top: 0; z-index: 7; min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.22em; text-indent: 0.22em; text-transform: uppercase; color: var(--ink);
+  }
+  .card .foot {
+    position: absolute; left: 8%; right: 8%; bottom: 3%; z-index: 7; text-align: center;
+    font-family: var(--mono); font-size: 0.66rem; line-height: 1.5; color: var(--ink-2);
+  }
+  .sw {
+    position: absolute; width: 41%; height: 33%;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  }
+  .sw--a { left: 6%; top: 13%; }
+  .sw--b { right: 6%; top: 13%; }
+  .sw--c { left: 6%; bottom: 13%; }
+  .sw--d { right: 6%; bottom: 13%; }
+  .kc {
+    position: absolute; width: 22px; height: 22px; z-index: 2;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+  }
+  .kc.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .kc.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .kc.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%); background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+  .kc.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+  .well {
+    position: absolute; left: 10%; right: 10%; top: 20%; bottom: 12%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .well .stray { font-family: var(--hand); font-size: 14px; line-height: 1.15; text-align: center; color: var(--ink-2); }
+  .well svg { display: block; max-width: 100%; max-height: 100%; }
+
+  /* =====================================================================
+     1 — THE PENCILLED PHRASE: the current graphite hand, but saying the
+     whole thing. Same voice, more words.
+     ===================================================================== */
+  .lb1 {
+    position: absolute; top: 2px; left: 26px; z-index: 3;
+    font-family: var(--hand); font-size: 0.82rem;
+    color: var(--pencil); opacity: 0.9;
+  }
+
+  /* =====================================================================
+     2 — THE FILE TAB: an index tab on the print's top edge, the way a
+     folder in a drawer is labelled. Paper on paper, printed type.
+     ===================================================================== */
+  .lb2 {
+    position: absolute; top: -15px; left: 24px; z-index: 1;
+    padding: 2px 10px 6px;
+    background: #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30); border-bottom: 0;
+    border-radius: 3px 3px 0 0;
+    font-family: var(--mono); font-size: 8px; font-weight: 700;
+    letter-spacing: 0.18em; text-indent: 0.18em; color: var(--ink-2);
+  }
+
+  /* =====================================================================
+     3 — THE MUSEUM CAPTION: printed small caps centred BENEATH each
+     print, the way a plate is captioned on a wall or in a catalogue.
+     ===================================================================== */
+  .lb3 {
+    position: absolute; left: 0; right: 0; bottom: -17px; z-index: 3;
+    text-align: center;
+    font-family: var(--mono); font-size: 8px; font-weight: 700;
+    letter-spacing: 0.24em; text-indent: 0.24em; color: var(--ink-2);
+  }
+
+  /* =====================================================================
+     4 — THE INK PLATE: a printed dark chip centred on the print's top
+     edge — the PLEASE STAND BY banner's language, one per frame.
+     ===================================================================== */
+  .lb4 {
+    position: absolute; top: 5px; left: 50%; transform: translateX(-50%); z-index: 3;
+    padding: 3px 9px 2px;
+    background: var(--ink); color: var(--paper-hi);
+    font-family: var(--mono); font-size: 7.5px; font-weight: 700;
+    letter-spacing: 0.2em; text-indent: 0.2em; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>THE JUNK DRAWER — labelling the models on the grid (round 28)</h1>
+  <p>Four ways to say &ldquo;Model A&rdquo; on the darkroom and Results frames, replacing
+  the lone pencilled letter. Each card shows both faces — top row still drawing, bottom
+  row arrived — since the label has to read on each. The models stay anonymous until
+  the unveil, so the label is always the letter, never the name; whichever wins, the
+  later cards&rsquo; copy (&ldquo;grade drawing A&rdquo;, &ldquo;Drawing A&rdquo;) would
+  follow it to &ldquo;Model A&rdquo;.</p>
+</header>
+
+<div class="desk">
+
+  <!-- ============ 1 · THE PENCILLED PHRASE ============ -->
+  <figure class="candidate">
+    <div class="card">
+      <span class="x">✕</span><div class="head">Please Stand By</div>
+      <div class="sw sw--a"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb1">Model A</span>
+        <div class="well"><svg width="54" height="58" viewBox="0 0 40 44"><rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/><line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="26" y2="25" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="22" r="1.2" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--b"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb1">Model B</span>
+        <div class="well"><span class="stray">please<br>wait</span></div></div>
+      <div class="sw sw--c"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb1">Model C</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--d"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb1">Model D</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg></div></div>
+      <div class="foot">Your SVGs are being drawn. This could take a few minutes…</div>
+    </div>
+    <figcaption>
+      <span class="name">1 · THE PENCILLED PHRASE — the current hand, saying it all</span>
+      <span class="blurb">The graphite letter grows into the whole phrase, same voice and
+      seat. Cheapest change, warmest read; the least "labelled" of the four — it stays a
+      jotting.</span>
+    </figcaption>
+  </figure>
+
+  <!-- ============ 2 · THE FILE TAB ============ -->
+  <figure class="candidate">
+    <div class="card">
+      <span class="x">✕</span><div class="head">Please Stand By</div>
+      <div class="sw sw--a"><span class="lb2">MODEL A</span><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <div class="well"><svg width="54" height="58" viewBox="0 0 40 44"><rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/><line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="26" y2="25" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="22" r="1.2" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--b"><span class="lb2">MODEL B</span><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <div class="well"><span class="stray">please<br>wait</span></div></div>
+      <div class="sw sw--c"><span class="lb2">MODEL C</span><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--d"><span class="lb2">MODEL D</span><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg></div></div>
+      <div class="foot">Your SVGs are being drawn. This could take a few minutes…</div>
+    </div>
+    <figcaption>
+      <span class="name">2 · THE FILE TAB — an index tab on the top edge</span>
+      <span class="blurb">The print becomes a labelled folder: a paper tab rides the top
+      edge with MODEL A in printed type. Very much this drawer's furniture; costs a
+      little vertical room between the rows, and the tab pokes above the frame the way
+      real tabs do.</span>
+    </figcaption>
+  </figure>
+
+  <!-- ============ 3 · THE MUSEUM CAPTION ============ -->
+  <figure class="candidate">
+    <div class="card">
+      <span class="x">✕</span><div class="head">Please Stand By</div>
+      <div class="sw sw--a"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb3">MODEL A</span>
+        <div class="well"><svg width="54" height="58" viewBox="0 0 40 44"><rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/><line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="26" y2="25" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="22" r="1.2" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--b"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb3">MODEL B</span>
+        <div class="well"><span class="stray">please<br>wait</span></div></div>
+      <div class="sw sw--c"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb3">MODEL C</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--d"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb3">MODEL D</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg></div></div>
+      <div class="foot">Your SVGs are being drawn. This could take a few minutes…</div>
+    </div>
+    <figcaption>
+      <span class="name">3 · THE MUSEUM CAPTION — printed beneath the print</span>
+      <span class="blurb">MODEL A centred under each frame, catalogue style. The artwork
+      keeps its whole frame; the label reads as curation rather than filing. Uses the
+      gap between the rows (and the bottom margin shares with the sentence).</span>
+    </figcaption>
+  </figure>
+
+  <!-- ============ 4 · THE INK PLATE ============ -->
+  <figure class="candidate">
+    <div class="card">
+      <span class="x">✕</span><div class="head">Please Stand By</div>
+      <div class="sw sw--a"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb4">MODEL A</span>
+        <div class="well"><svg width="54" height="58" viewBox="0 0 40 44"><rect x="15" y="0.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><rect x="15" y="37.5" width="10" height="6" rx="1.5" fill="#33240f" fill-opacity="0.55"/><circle cx="20" cy="22" r="15" fill="none" stroke="#33240f" stroke-opacity="0.8" stroke-width="2.4"/><line x1="20" y1="22" x2="20" y2="11.5" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><line x1="20" y1="22" x2="26" y2="25" stroke="#33240f" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/><circle cx="20" cy="22" r="1.2" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--b"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb4">MODEL B</span>
+        <div class="well"><span class="stray">please<br>wait</span></div></div>
+      <div class="sw sw--c"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb4">MODEL C</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg></div></div>
+      <div class="sw sw--d"><span class="kc tl"></span><span class="kc tr"></span><span class="kc bl"></span><span class="kc br"></span>
+        <span class="lb4">MODEL D</span>
+        <div class="well"><svg viewBox="0 0 100 100" width="86" height="86"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg></div></div>
+      <div class="foot">Your SVGs are being drawn. This could take a few minutes…</div>
+    </div>
+    <figcaption>
+      <span class="name">4 · THE INK PLATE — a printed chip on the top edge</span>
+      <span class="blurb">The PLEASE STAND BY banner's own language, one small dark chip
+      per frame, centred on the top edge. The most legible at a glance and the most
+      "labelled system" of the four; the boldest ink on the card after the masthead.</span>
+    </figcaption>
+  </figure>
+
+</div>
+
+</body>
+</html>

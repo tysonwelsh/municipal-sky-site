@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  var CB = 'cb=' + Date.now() + Math.random();
+  document.write('<link rel="stylesheet" href="../art/kimis-take/kimis-take.css?' + CB + '">');
+</script>
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<div class="main-wrapper cr-page">
+  <div class="cr-sheet"><span class="cr-rain" id="cr-rain"></span></div>
+</div>
+<img id="hold" width="1" height="1" alt="" />
+<pre id="probe-result">RUNNING</pre>
+<script>document.write('<scr' + 'ipt src="../art/kimis-take/kimis-take.js?' + CB + '"><\/scr' + 'ipt>');</script>
+<script>
+  var host = document.getElementById('cr-rain');
+  window.KimisTake.mount(host, { dirs: ['d','d','u','u','r','r','l','l'] });
+  setTimeout(function () {
+    var hr = host.getBoundingClientRect();
+    var out = [];
+    var streams = host.querySelectorAll('.cr-s');
+    for (var s = 0; s < Math.min(2, streams.length); s++) {
+      var cells = streams[s].children;
+      out.push('stream ' + s + ' cells=' + cells.length);
+      for (var i = 0; i < Math.min(8, cells.length); i++) {
+        var r = cells[i].getBoundingClientRect();
+        out.push('  g' + i +
+          ' xf=' + (cells[i].style.transform || '(none)') +
+          ' rect=(' + (r.left - hr.left).toFixed(1) + ',' + (r.top - hr.top).toFixed(1) + ')' +
+          ' cls=' + cells[i].className);
+      }
+    }
+    document.getElementById('probe-result').textContent = 'STRIP2\n' + out.join('\n');
+  }, 3000);
+</script>
+<script>
+  document.getElementById('hold').src = 'slow.php?x=' + Math.random();
+</script>
+</body>
+</html>

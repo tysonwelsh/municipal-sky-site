@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — rank the drawings: THE SORTING RACK (round 30, option A)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #ece0bf;
+    --paper-hi: #f4ead0;
+    --paper-lo: #e0d1a4;
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --ink-3: rgba(51, 36, 15, 0.44);
+    --rule: rgba(74, 53, 18, 0.40);
+    --pencil: #4b4030;
+    --red: #b3402f;
+    --green: #4a6b18;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+    --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --brass: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+    --pw: 72px;   /* the width of one print — every print, everywhere */
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 44px 20px 90px;
+    font-family: var(--mono); color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 26px; max-width: 620px; }
+  header h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.13em; margin: 0 0 10px; color: #b9b29e; }
+  header p { font-size: 11px; margin: 0 auto; opacity: 0.6; line-height: 1.75; }
+
+  /* survivor switch — a bench control, outside the fiction */
+  .bench { display: flex; align-items: center; gap: 8px; margin-bottom: 30px; font-size: 10px; letter-spacing: 0.1em; color: #8d8778; }
+  .bench button {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    min-height: 30px; padding: 0 12px; cursor: pointer;
+    background: #2b3038; color: #b9b29e; border: 1px solid #3d434d;
+  }
+  .bench button[aria-pressed="true"] { background: #3f4650; color: #efe7d2; border-color: #5b6470; }
+
+  /* ─────────────────────────  THE CARD  ───────────────────────── */
+  .card {
+    position: relative; width: 100%; max-width: 462px;
+    color: var(--ink);
+    background: var(--paper) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.55);
+    box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66), 3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+    padding: 14px 15px 15px;
+  }
+  .card::before { content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none; border: 1px solid var(--rule); }
+  .card .x {
+    position: absolute; top: 9px; right: 9px; z-index: 20;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.5); font-size: 13px;
+    color: var(--ink); cursor: pointer;
+  }
+  .head {
+    position: relative; z-index: 7; text-align: center; padding: 6px 40px 0;
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.2em; text-indent: 0.2em; text-transform: uppercase;
+  }
+  .subhead {
+    position: relative; z-index: 7; text-align: center; margin-top: 5px;
+    font-size: 0.56rem; letter-spacing: 0.2em; text-indent: 0.2em; color: var(--ink-3);
+  }
+  .rule-h { height: 1px; background: var(--rule); margin: 10px 3px 0; position: relative; z-index: 7; }
+  .instr {
+    position: relative; z-index: 7; margin: 9px 3px 0;
+    font-size: 0.63rem; line-height: 1.62; color: var(--ink-2); text-align: center;
+  }
+  .instr .alt { display: block; margin-top: 3px; color: var(--ink-3); }
+
+  /* ─────────────────────────  ZONES  ───────────────────────── */
+  .zone { position: relative; z-index: 7; }
+  .zone-cap {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+    font-family: var(--form); font-weight: 700; font-size: 0.56rem;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2);
+    margin: 0 1px 4px;
+  }
+  .zone-cap .note { font-family: var(--mono); font-weight: normal; letter-spacing: 0.02em; text-transform: none; font-size: 0.6rem; color: var(--ink-3); }
+
+  /* the arrived tray */
+  .tray { margin-top: 13px; }
+  .tray .bed {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    min-height: 56px; padding: 8px;
+    background: rgba(255, 250, 232, 0.34);
+    border: 1px solid var(--rule);
+    box-shadow: inset 0 1px 3px rgba(46, 34, 12, 0.16);
+  }
+
+  /* the rack */
+  .rack { margin-top: 14px; }
+  .shelf {
+    display: grid; grid-template-columns: 46px 1fr; align-items: stretch;
+    border: 1px solid var(--rule); border-top-width: 0;
+    background: rgba(255, 250, 232, 0.22);
+  }
+  .shelf:first-of-type { border-top-width: 1px; }
+  .plate {
+    position: relative; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+    min-height: 56px; padding: 4px 2px;
+    border-right: 1px solid var(--rule);
+    background: rgba(233, 222, 191, 0.55);
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+  }
+  .plate .num { font-family: var(--hand); font-size: 1.55rem; line-height: 1; color: var(--pencil); }
+  .plate .cap { font-size: 0.44rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-3); text-align: center; white-space: nowrap; }
+  .shelf.is-empty .plate .num { opacity: 0.32; }
+  .plate:focus-visible { outline: 2px solid var(--pencil); outline-offset: -3px; }
+
+  .bed {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 7px 8px; min-height: 56px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shelf .bed { cursor: pointer; }
+  .empty-note {
+    flex: 1; text-align: center; font-size: 0.6rem; letter-spacing: 0.04em;
+    color: var(--ink-3); border: 1px dashed rgba(74, 53, 18, 0.30);
+    padding: 11px 6px; background: rgba(255, 250, 232, 0.28);
+  }
+  .zone.armed .empty-note { border-color: var(--pencil); border-style: solid; color: var(--pencil); background: rgba(255, 250, 232, 0.62); }
+  .zone.armed { background: rgba(255, 250, 232, 0.55); }
+  .zone.refused .empty-note, .zone.refused { border-color: var(--red); }
+  .zone.refused .empty-note { color: var(--red); }
+  body.dragging .empty-note { border-color: rgba(75, 64, 48, 0.75); color: var(--pencil); }
+  /* nothing gets highlighted while a print is in transit */
+  body.dragging, body.dragging * { -webkit-user-select: none !important; user-select: none !important; cursor: grabbing !important; }
+
+  /* the first shelf — deeper paper, brass lip, its own printed note */
+  .shelf.first { background: var(--paper-lo); box-shadow: inset 0 2px 5px rgba(46, 34, 12, 0.22); }
+  .shelf.first .plate { background: rgba(206, 190, 148, 0.7); }
+  .shelf.first .empty-note { background: rgba(255, 250, 232, 0.20); border-color: rgba(74, 53, 18, 0.42); }
+  .lip {
+    grid-column: 1 / -1; height: 16px; display: flex; align-items: center; justify-content: center;
+    background: var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.5), inset 0 -1px 0 rgba(40, 24, 4, 0.4);
+    font-family: var(--form); font-weight: 700; font-size: 0.47rem;
+    letter-spacing: 0.24em; text-indent: 0.24em; text-transform: uppercase; color: #3a2708;
+  }
+
+  /* the armed / refused rings — stated last so they beat the first shelf's well */
+  .zone.armed { box-shadow: inset 0 0 0 2px var(--pencil); }
+  .zone.refused { box-shadow: inset 0 0 0 2px rgba(179, 64, 47, 0.8); }
+
+  /* ─────────────────────────  A PRINT  ───────────────────────── */
+  .print {
+    position: relative; width: var(--pw);
+    cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent;
+    background: none; border: 0; padding: 0;
+    -webkit-user-select: none; user-select: none;
+    -webkit-user-drag: none; -webkit-touch-callout: none;
+  }
+  .print svg, .print .sw { pointer-events: none; }   /* the print is one object to the pointer */
+  .print .sw {
+    position: relative; width: var(--pw); height: var(--pw);
+    display: flex; align-items: center; justify-content: center;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  }
+  .print .sw svg { display: block; width: 64%; height: 64%; }
+  .print .lb {
+    display: block; text-align: center; margin-top: 3px;
+    font-family: var(--hand); font-size: 0.72rem; line-height: 1.1; color: var(--pencil);
+  }
+  .kc {
+    position: absolute; width: 15px; height: 15px; z-index: 2;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+  }
+  .kc.tl { top: -3px; left: -3px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .kc.tr { top: -3px; right: -3px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .kc.bl { bottom: -3px; left: -3px;  clip-path: polygon(0 0, 100% 100%, 0 100%); background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+  .kc.br { bottom: -3px; right: -3px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+
+  .print:focus-visible { outline: 2px solid var(--pencil); outline-offset: 3px; }
+  .print.picked .sw { outline: 2px solid var(--pencil); outline-offset: 3px; }
+  .print.picked .sw::after {          /* a pencilled slip laid on the print itself */
+    content: "in hand"; position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+    padding: 0 4px 1px; background: var(--paper-hi); border: 1px solid rgba(74, 53, 18, 0.28);
+    font-family: var(--hand); font-size: 0.6rem; line-height: 1.25; color: var(--pencil);
+    white-space: nowrap;
+  }
+  .print.lifted .sw { opacity: 0.22; box-shadow: none; }
+  .print.lifted .lb { opacity: 0.3; }
+
+  /* the ghost that follows the finger */
+  .ghost { position: fixed; z-index: 90; pointer-events: none; left: 0; top: 0; }
+  .ghost .print { cursor: grabbing; }
+  .ghost .sw { box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6), 0 3px 7px rgba(6, 3, 0, 0.4); }
+
+  /* ─────────────────────────  NOTICE + ACTION  ───────────────────────── */
+  .notice {
+    position: relative; z-index: 7; min-height: 30px; margin-top: 12px;
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    font-size: 0.62rem; line-height: 1.45; color: var(--ink-2); padding: 0 4px;
+  }
+  .notice.bad { color: var(--red); }
+  .notice.done { color: var(--green); }
+  .go {
+    position: relative; z-index: 7; display: block; width: 100%; min-height: 44px; margin-top: 2px;
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #2a1c07; border: 1px solid rgba(58, 40, 14, 0.6); cursor: pointer;
+    background: var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55), 2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+  }
+  .go[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+  .go:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .foot {
+    position: relative; z-index: 7; text-align: center; margin-top: 9px;
+    font-size: 0.55rem; line-height: 1.5; color: var(--ink-3);
+  }
+
+  @media (max-width: 430px) {
+    :root { --pw: 62px; }
+    body { padding: 28px 12px 70px; }
+    .head { font-size: 0.86rem; letter-spacing: 0.16em; text-indent: 0.16em; padding: 6px 34px 0; }
+    .shelf { grid-template-columns: 46px 1fr; }
+    .bed, .tray .bed { gap: 6px; }
+  }
+
+  /* motion is added, never assumed */
+  @media (prefers-reduced-motion: no-preference) {
+    .plate, .empty-note, .shelf, .print .sw, .go { transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease, opacity 140ms ease; }
+    .go:active:not([disabled]) { transform: translateY(1px); box-shadow: none; }
+    .ghost.flyback { transition: left 210ms ease-out, top 210ms ease-out; }
+    @keyframes jd-shake {
+      0% { transform: translateX(0); }  18% { transform: translateX(-7px); }
+      38% { transform: translateX(6px); } 58% { transform: translateX(-4px); }
+      78% { transform: translateX(3px); } 100% { transform: translateX(0); }
+    }
+    .ghost.refused .print { animation: jd-shake 300ms ease-in-out; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>junk drawer — rank the drawings: THE SORTING RACK (round 30, option A)</h1>
+  <p><strong>Designer's note.</strong> The call becomes a piece of shelving: the arrived prints wait in a
+  tray, and under it a rack whose top shelf is singular — deeper paper, a brass lip printed
+  <em>goes in the drawer</em> — takes exactly one print (a second is shaken back with a printed refusal),
+  while every shelf below it holds as many as you like. The graphite numeral on each shelf plate is the
+  <em>dense</em> rank that actually gets filed: an empty shelf is skipped and the count closes up, so the rack
+  can read 1 / 2 / — / 3. Three survivors builds a three-shelf rack and two builds a two-shelf one, so the
+  rack is never taller than the answer it can hold — the bench switch shows both.</p>
+</header>
+
+<div class="bench" role="group" aria-label="survivor count">
+  <span>SURVIVORS</span>
+  <button type="button" data-n="4" aria-pressed="true">4</button>
+  <button type="button" data-n="3" aria-pressed="false">3</button>
+  <button type="button" data-n="2" aria-pressed="false">2</button>
+</div>
+
+<div class="card" id="card">
+  <span class="x" role="button" tabindex="0" aria-label="close">✕</span>
+  <div class="head">The Order of Finish</div>
+  <div class="subhead">FORM JD-1 · PART IV</div>
+  <div class="rule-h"></div>
+  <p class="instr">
+    Drag each print onto a shelf. Only one print may sit on the first shelf; below it,
+    prints may share a shelf and share a rank.
+    <span class="alt">No dragging? Tap a print to take it in hand, then tap a shelf.</span>
+  </p>
+
+  <div class="zone tray" id="tray" data-zone="tray">
+    <div class="zone-cap"><span>Arrived — awaiting placement</span><span class="note" id="trayCount"></span></div>
+    <div class="bed" id="trayBed"></div>
+  </div>
+
+  <div class="rack" id="rack"></div>
+
+  <p class="notice" id="notice" role="status" aria-live="polite"></p>
+  <button class="go" id="go" type="button" disabled>File the grades</button>
+  <p class="foot">An empty shelf is skipped: the count closes up. Ties are filed as written.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ART = {
+    A: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg>',
+    B: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="11" y="24" width="78" height="52" rx="13" fill="none" stroke="#4a628a" stroke-width="6"/><rect x="30" y="43" width="40" height="14" rx="7" fill="#4a628a" fill-opacity="0.55"/></svg>',
+    C: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12 L88 84 L12 84 Z" fill="none" stroke="#4a6b18" stroke-width="6" stroke-linejoin="round"/><circle cx="50" cy="63" r="8" fill="#4a6b18" fill-opacity="0.6"/></svg>',
+    D: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg>'
+  };
+  var ORD = ["first", "second", "third", "fourth"];
+
+  var card = document.getElementById("card");
+  var trayBed = document.getElementById("trayBed");
+  var trayZone = document.getElementById("tray");
+  var trayCount = document.getElementById("trayCount");
+  var rack = document.getElementById("rack");
+  var notice = document.getElementById("notice");
+  var go = document.getElementById("go");
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  var N = 4;               // survivors
+  var ids = [];            // ["A","B",...]
+  var zones = {};          // zoneId -> [ids]
+  var els = {};            // id -> print element
+  var beds = {};           // zoneId -> bed element
+  var shelves = {};        // zoneId -> shelf element
+  var plates = {};         // zoneId -> plate element
+  var picked = null;       // id currently "in hand"
+  var drag = null;         // active drag state
+
+  /* ── build ───────────────────────────────────────────────────── */
+
+  function build(n) {
+    N = n;
+    ids = ["A", "B", "C", "D"].slice(0, n);
+    zones = { tray: ids.slice() };
+    els = {}; beds = { tray: trayBed }; shelves = {}; plates = {};
+    picked = null;
+
+    trayBed.innerHTML = "";
+    rack.innerHTML = "";
+
+    var cap = document.createElement("div");
+    cap.className = "zone-cap";
+    cap.innerHTML = '<span>The rack</span><span class="note">best at the top</span>';
+    rack.appendChild(cap);
+
+    for (var i = 0; i < n; i++) {
+      var zid = "s" + (i + 1);
+      zones[zid] = [];
+
+      var shelf = document.createElement("div");
+      shelf.className = "zone shelf is-empty" + (i === 0 ? " first" : "");
+      shelf.setAttribute("data-zone", zid);
+
+      var plate = document.createElement("div");
+      plate.className = "plate";
+      plate.setAttribute("role", "button");
+      plate.setAttribute("tabindex", "0");
+      plate.innerHTML = '<span class="num"></span><span class="cap"></span>';
+      shelf.appendChild(plate);
+
+      var bed = document.createElement("div");
+      bed.className = "bed";
+      shelf.appendChild(bed);
+
+      if (i === 0) {
+        var lip = document.createElement("div");
+        lip.className = "lip";
+        lip.textContent = "goes in the drawer";
+        shelf.appendChild(lip);
+      }
+
+      rack.appendChild(shelf);
+      shelves[zid] = shelf; beds[zid] = bed; plates[zid] = plate;
+
+      bindZone(zid, shelf, plate);
+    }
+
+    ids.forEach(function (id) {
+      var el = makePrint(id);
+      els[id] = el;
+    });
+
+    render();
+    say("");
+  }
+
+  function makePrint(id) {
+    var el = document.createElement("div");
+    el.className = "print";
+    el.setAttribute("data-id", id);
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("draggable", "false");
+    el.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    el.innerHTML =
+      '<div class="sw"><span class="kc tl"></span><span class="kc tr"></span>' +
+      '<span class="kc bl"></span><span class="kc br"></span>' + ART[id] + "</div>" +
+      '<span class="lb">Model ' + id + "</span>";
+    el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("click", function (e) { e.stopPropagation(); });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault(); e.stopPropagation(); togglePick(id);
+      }
+    });
+    return el;
+  }
+
+  function bindZone(zid, shelf, plate) {
+    shelf.addEventListener("click", function () { placeHere(zid); });
+    plate.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault(); e.stopPropagation(); placeHere(zid);
+      }
+    });
+  }
+  trayZone.addEventListener("click", function () { placeHere("tray"); });
+
+  /* ── ranking ─────────────────────────────────────────────────── */
+
+  function shelfIds() {
+    var out = [];
+    for (var i = 1; i <= N; i++) out.push("s" + i);
+    return out;
+  }
+
+  // dense rank: an occupied shelf takes the next number; an empty one is skipped
+  function denseRanks() {
+    var map = {}, r = 1;
+    shelfIds().forEach(function (zid) {
+      if (zones[zid].length) { map[zid] = r; r++; }
+      else map[zid] = null;
+    });
+    return map;
+  }
+
+  function valid() { return zones.tray.length === 0 && zones.s1.length === 1; }
+
+  /* ── render ──────────────────────────────────────────────────── */
+
+  function render() {
+    Object.keys(beds).forEach(function (zid) {
+      var bed = beds[zid];
+      bed.innerHTML = "";
+      zones[zid].forEach(function (id) { bed.appendChild(els[id]); });
+      if (!zones[zid].length) {
+        var n = document.createElement("div");
+        n.className = "empty-note";
+        n.textContent = zid === "tray" ? "nothing left to place"
+          : (zid === "s1" ? "one print only"
+          : (zid === "s2" ? (N > 2 ? "empty — ties allowed here" : "empty — the other print")
+                          : "empty — skipped in the count"));
+        bed.appendChild(n);
+      }
+    });
+
+    var ranks = denseRanks();
+    shelfIds().forEach(function (zid) {
+      var shelf = shelves[zid], occupied = zones[zid].length > 0;
+      shelf.classList.toggle("is-empty", !occupied);
+      var num = zid === "s1" ? "1" : (ranks[zid] === null ? "—" : String(ranks[zid]));
+      plates[zid].querySelector(".num").textContent = num;
+      var capText = zid === "s1" ? "one only"
+        : (N > 2 ? (zones[zid].length > 1 ? "tied" : "tie ok") : "second");
+      plates[zid].querySelector(".cap").textContent = capText;
+      plates[zid].setAttribute("aria-label",
+        picked ? ("Place Model " + picked + " on the " + ORD[shelfIds().indexOf(zid)] + " shelf")
+               : ("The " + ORD[shelfIds().indexOf(zid)] + " shelf, " +
+                  (occupied ? "holding " + zones[zid].map(function (i) { return "Model " + i; }).join(" and ") : "empty")));
+    });
+
+    ids.forEach(function (id) {
+      els[id].classList.toggle("picked", picked === id);
+      var zid = zoneOf(id);
+      var r = zid === "tray" ? null : ranks[zid];
+      els[id].setAttribute("aria-label",
+        "Model " + id + ", " + (r ? "rank " + r : "not yet ranked") + (picked === id ? ", in hand" : ""));
+    });
+
+    var left = zones.tray.length;
+    trayCount.textContent = left ? (left + " to place") : "none left";
+    go.disabled = !valid();
+  }
+
+  function zoneOf(id) {
+    var found = "tray";
+    Object.keys(zones).forEach(function (z) { if (zones[z].indexOf(id) !== -1) found = z; });
+    return found;
+  }
+
+  function say(msg, kind) {
+    notice.textContent = msg || (picked
+      ? "Model " + picked + " is in hand — now choose a shelf."
+      : "Nothing in hand — take a print by dragging it, or tap it.");
+    notice.className = "notice" + (kind ? " " + kind : "");
+  }
+
+  /* ── moving a print ──────────────────────────────────────────── */
+
+  function canDrop(id, zid) {
+    if (zid !== "s1") return true;
+    return zones.s1.length === 0 || zones.s1[0] === id;
+  }
+
+  function refuse(zid) {
+    var holder = zones.s1[0];
+    say("Only one drawing can be first — Model " + holder + " is on that shelf. Move it off, or choose another shelf.", "bad");
+    var shelf = shelves[zid];
+    if (!shelf) return;
+    shelf.classList.add("refused");
+    setTimeout(function () { shelf.classList.remove("refused"); }, 700);
+  }
+
+  function move(id, zid) {
+    var from = zoneOf(id);
+    zones[from] = zones[from].filter(function (x) { return x !== id; });
+    zones[zid].push(id);
+    return from;
+  }
+
+  function placeHere(zid) {
+    if (!picked) {
+      say("Take a print in hand first — tap one of the drawings.", "bad");
+      return;
+    }
+    var id = picked;
+    if (!canDrop(id, zid)) { refuse(zid); return; }
+    move(id, zid);
+    picked = null;
+    render();
+    announcePlacement(id, zid);
+  }
+
+  function announcePlacement(id, zid) {
+    if (zid === "tray") { say("Model " + id + " is back in the tray."); return; }
+    if (valid()) {
+      say("Ready to file. " + summary(), "done");
+      return;
+    }
+    var r = denseRanks()[zid];
+    var mates = zones[zid].filter(function (x) { return x !== id; });
+    var tie = mates.length ? " — tied with " + mates.map(function (m) { return "Model " + m; }).join(" and ") : "";
+    say("Model " + id + " placed at rank " + r + tie + ". " + remaining());
+  }
+
+  function remaining() {
+    var left = zones.tray.length;
+    if (left) return left + (left === 1 ? " print" : " prints") + " still in the tray.";
+    if (!zones.s1.length) return "The first shelf is still empty.";
+    return "";
+  }
+
+  function summary() {
+    var ranks = denseRanks();
+    return ids.map(function (id) { return id + " " + (ranks[zoneOf(id)] || "—"); }).join(" · ");
+  }
+
+  function togglePick(id) {
+    picked = (picked === id) ? null : id;
+    render();
+    say(picked ? "" : "Put down. Nothing in hand.");
+  }
+
+  /* ── drag ────────────────────────────────────────────────────── */
+
+  function onPointerDown(e) {
+    if (e.button !== undefined && e.button > 0) return;
+    var el = e.currentTarget;
+    // stop the browser from starting a text selection / native drag under the finger
+    e.preventDefault();
+    el.focus({ preventScroll: true });
+    var id = el.getAttribute("data-id");
+    drag = {
+      id: id, el: el, moved: false,
+      x0: e.clientX, y0: e.clientY,
+      pointerId: e.pointerId, ghost: null, over: null, rects: null
+    };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    el.addEventListener("pointermove", onPointerMove);
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerCancel);
+  }
+
+  function clearSelection() {
+    var s = window.getSelection && window.getSelection();
+    if (s && s.rangeCount) { try { s.removeAllRanges(); } catch (err) {} }
+  }
+
+  function zoneRects() {
+    var list = [];
+    Object.keys(beds).forEach(function (zid) {
+      var host = zid === "tray" ? trayZone : shelves[zid];
+      list.push({ zid: zid, el: host, r: host.getBoundingClientRect() });
+    });
+    return list;
+  }
+
+  function startDrag(e) {
+    var el = drag.el;
+    clearSelection();
+    var r = el.getBoundingClientRect();
+    var ghost = document.createElement("div");
+    ghost.className = "ghost";
+    ghost.appendChild(el.cloneNode(true));
+    ghost.style.width = r.width + "px";
+    document.body.appendChild(ghost);
+    drag.ghost = ghost;
+    drag.dx = e.clientX - r.left;
+    drag.dy = e.clientY - r.top;
+    drag.home = r;
+    drag.rects = zoneRects();
+    el.classList.add("lifted");
+    document.body.classList.add("dragging");
+    picked = null;
+    ids.forEach(function (i) { els[i].classList.remove("picked"); });
+    moveGhost(e.clientX, e.clientY);
+  }
+
+  function moveGhost(x, y) {
+    drag.ghost.style.left = (x - drag.dx) + "px";
+    drag.ghost.style.top = (y - drag.dy) + "px";
+  }
+
+  function hitZone(x, y) {
+    var hit = null;
+    drag.rects.forEach(function (z) {
+      var r = z.r;
+      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hit = z;
+    });
+    return hit;
+  }
+
+  function markOver(z) {
+    if (drag.over === (z ? z.zid : null)) return;
+    drag.rects.forEach(function (q) { q.el.classList.remove("armed", "refused"); });
+    drag.over = z ? z.zid : null;
+    if (!z) return;
+    if (canDrop(drag.id, z.zid)) z.el.classList.add("armed");
+    else z.el.classList.add("refused");
+  }
+
+  function onPointerMove(e) {
+    if (!drag) return;
+    if (!drag.moved) {
+      if (Math.abs(e.clientX - drag.x0) < 6 && Math.abs(e.clientY - drag.y0) < 6) return;
+      drag.moved = true;
+      startDrag(e);
+    }
+    moveGhost(e.clientX, e.clientY);
+    markOver(hitZone(e.clientX, e.clientY));
+  }
+
+  function cleanupDrag() {
+    if (!drag) return;
+    var el = drag.el;
+    el.removeEventListener("pointermove", onPointerMove);
+    el.removeEventListener("pointerup", onPointerUp);
+    el.removeEventListener("pointercancel", onPointerCancel);
+    try { el.releasePointerCapture(drag.pointerId); } catch (err) {}
+    el.classList.remove("lifted");
+    document.body.classList.remove("dragging");
+    if (drag.rects) drag.rects.forEach(function (q) { q.el.classList.remove("armed", "refused"); });
+    drag = null;
+  }
+
+  function killGhost() {
+    if (drag && drag.ghost && drag.ghost.parentNode) drag.ghost.parentNode.removeChild(drag.ghost);
+  }
+
+  function bounceBack(zid, done) {
+    var ghost = drag.ghost, home = drag.home;
+    if (reduce.matches || !ghost) { if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost); done(); return; }
+    ghost.classList.add("refused");
+    setTimeout(function () {
+      ghost.classList.remove("refused");
+      ghost.classList.add("flyback");
+      ghost.style.left = home.left + "px";
+      ghost.style.top = home.top + "px";
+      setTimeout(function () {
+        if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+        done();
+      }, 230);
+    }, 310);
+  }
+
+  function onPointerUp(e) {
+    if (!drag) return;
+    if (!drag.moved) { var id = drag.id; cleanupDrag(); togglePick(id); return; }
+
+    var z = hitZone(e.clientX, e.clientY);
+    var id2 = drag.id;
+
+    if (!z) { killGhost(); cleanupDrag(); render(); say("Put back — that is not a shelf."); return; }
+
+    if (!canDrop(id2, z.zid)) {
+      var zid = z.zid;
+      var d = drag;
+      bounceBack(zid, function () {});
+      // keep the source visible again immediately; the ghost handles the return
+      d.el.classList.remove("lifted");
+      document.body.classList.remove("dragging");
+      d.rects.forEach(function (q) { q.el.classList.remove("armed"); });
+      d.el.removeEventListener("pointermove", onPointerMove);
+      d.el.removeEventListener("pointerup", onPointerUp);
+      d.el.removeEventListener("pointercancel", onPointerCancel);
+      try { d.el.releasePointerCapture(d.pointerId); } catch (err) {}
+      drag = null;
+      refuse(zid);
+      return;
+    }
+
+    killGhost();
+    cleanupDrag();
+    move(id2, z.zid);
+    render();
+    announcePlacement(id2, z.zid);
+  }
+
+  function onPointerCancel() {
+    if (!drag) return;
+    killGhost();
+    cleanupDrag();
+    render();
+  }
+
+  /* ── chrome ──────────────────────────────────────────────────── */
+
+  go.addEventListener("click", function () {
+    if (go.disabled) return;
+    say("Filed: " + summary() + ".", "done");
+  });
+
+  document.querySelectorAll(".bench button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".bench button").forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+      build(parseInt(b.getAttribute("data-n"), 10));
+    });
+  });
+
+  build(4);
+})();
+</script>
+
+</body>
+</html>

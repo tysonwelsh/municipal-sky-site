@@ -15,11 +15,12 @@ include '../includes/header.php';
             <div class="entry-list entry-list--undated">
                 <div class="entry">
                     <div class="entry-content">
-                        <a href="/art/carbon-rain/" class="entry-title">The Carbon Rain</a>
-                        <span class="entry-description">A falling column of characters from
-                            seventy-three writing systems &mdash; Greek, Cherokee, Deseret,
-                            Devanagari, Tibetan, Chinese, Linear B &mdash; struck one to a printed
-                            square on a sheet of engineering paper. No column ever repeats.</span>
+                        <a href="/art/rain-of-babel/" class="entry-title">Rain of Babel</a>
+                        <span class="entry-description">A rain of characters from seventy-three
+                            writing systems &mdash; Greek, Cherokee, Deseret, Devanagari, Tibetan,
+                            Chinese, Linear B &mdash; struck one to a printed square on engineering
+                            paper. It falls, it lands, it drifts. No column ever repeats and none of
+                            it means anything.</span>
                     </div>
                 </div>
                 <div class="entry">

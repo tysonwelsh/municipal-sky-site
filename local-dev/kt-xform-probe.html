@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  var CB = 'cb=' + Date.now() + Math.random();
+  document.write('<link rel="stylesheet" href="../art/kimis-take/kimis-take.css?' + CB + '">');
+</script>
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<div class="main-wrapper cr-page">
+  <div class="cr-sheet"><span class="cr-rain" id="cr-rain"></span></div>
+</div>
+<img id="hold" width="1" height="1" alt="" />
+<pre id="probe-result">RUNNING</pre>
+<script>document.write('<scr' + 'ipt src="../art/kimis-take/kimis-take.js?' + CB + '"><\/scr' + 'ipt>');</script>
+<script>
+  var host = document.getElementById('cr-rain');
+  var dd = [];
+  for (var i = 0; i < 32; i++) dd.push(['d','u','r','l'][i % 4]);
+  window.KimisTake.mount(host, { dirs: dd });
+  var mismatches = [], checks = 0;
+  var iv = setInterval(function () {
+    var hr = host.getBoundingClientRect();
+    var streams = host.querySelectorAll('.cr-s');
+    for (var s = 0; s < streams.length; s++) {
+      var cells = streams[s].children;
+      for (var i = 0; i < cells.length; i++) {
+        var el = cells[i];
+        var m = /translate\(([-\d.]+)px,\s*([-\d.]+)px\)/.exec(el.style.transform || '');
+        if (!m) continue;
+        var r = el.getBoundingClientRect();
+        var exX = parseFloat(m[1]), exY = parseFloat(m[2]);
+        var gotX = r.left - hr.left, gotY = r.top - hr.top;
+        checks++;
+        if (Math.abs(gotX - exX) > 2 || Math.abs(gotY - exY) > 2) {
+          mismatches.push('s' + s + 'g' + i + ' xf=(' + exX.toFixed(1) + ',' + exY.toFixed(1) +
+            ') rect=(' + gotX.toFixed(1) + ',' + gotY.toFixed(1) + ') cls=' + el.className +
+            ' scale=' + getComputedStyle(el).scale + ' rotate=' + getComputedStyle(el).rotate);
+        }
+      }
+    }
+  }, 250);
+  setTimeout(function () {
+    clearInterval(iv);
+    document.getElementById('probe-result').textContent =
+      'XFORM-CHECK checks=' + checks + ' mismatches=' + mismatches.length + '\n' +
+      mismatches.slice(0, 10).join('\n');
+  }, 4000);
+</script>
+<script>
+  document.getElementById('hold').src = 'slow.php?x=' + Math.random();
+</script>
+</body>
+</html>

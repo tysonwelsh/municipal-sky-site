@@ -2065,14 +2065,13 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark { position: relative; height: 100%; }
 
 /* ---- the four swatches -----------------------------------------------------
-   ~41% × 33% each (mockup-16e's scrap sizes), the toss tamed to ±1.4°–1.8°.
-   The pile was pulled inward (owner, 2026-08-21 — the rows read as two
-   separate pairs, not one pile): the outer margins went from 9%/9.5% to
-   13%/13.5%, which halves the empty band between the rows from ~15.5% to
-   7.5% of the card's height. The centred wait slip (min-height 15%, so it
-   spans 42.5%–57.5%) still overlaps both rows' inner edges by ~4% and
-   bridges the band. The print swatch is .jd-turn-art's own background,
-   border and shadow, copied verbatim. */
+   ~41% × 33% each (mockup-16e's scrap sizes). STRAIGHT AND ALIGNED since
+   round 26 rev. 4 (owner directive, 2026-08-21): the toss angles retired and
+   the four seats squared to one symmetric frame, so the darkroom matches the
+   Results card that follows it — same 2×2 discipline, and (same revision)
+   the same kraft photo corners, emitted by darkSwatch() in the JS. The print
+   swatch is .jd-turn-art's own background, border and shadow, copied
+   verbatim. */
 .jd-dark-sw {
   position: absolute;
   width: 41%; height: 33%;
@@ -2084,20 +2083,25 @@ html.jd-turn-open { overflow: hidden; }
     #f8f3e2;
   border: 1px solid rgba(55, 65, 79, 0.30);
   box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
-  transform: rotate(var(--rot));
   transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
 }
-.jd-dark-sw--a { left: 5.5%; top: 13%;     --rot: -1.8deg; --rot-flat: -0.7deg; }
-.jd-dark-sw--b { right: 5.5%; top: 13.5%;  --rot: 1.5deg;  --rot-flat: 0.5deg; }
-.jd-dark-sw--c { left: 6.5%; bottom: 13.5%; --rot: 1.4deg; --rot-flat: -0.4deg; }
-.jd-dark-sw--d { right: 6.5%; bottom: 13%; --rot: -1.6deg; --rot-flat: 0.8deg; }
+.jd-dark-sw--a { left: 6%; top: 13%; }
+.jd-dark-sw--b { right: 6%; top: 13%; }
+.jd-dark-sw--c { left: 6%; bottom: 13%; }
+.jd-dark-sw--d { right: 6%; bottom: 13%; }
 
-/* the pencilled corner letter — legible in every state, because the cards
-   that follow reference A–D */
-.jd-dark-letter {
-  position: absolute; top: 3px; left: 7px; z-index: 3;
-  font-family: var(--thand); font-size: 0.9rem;
-  color: var(--graphite); opacity: 0.85;
+/* the label, BENEATH each frame (rounds 28–29, owner calls 2026-08-21 —
+   the round-29 masking tape lasted one review): "Model A" in the pencil
+   hand, centred under the print on the sheet's own paper — clear of the
+   grid, so it needs no ground of its own, and the indicators keep their
+   whole frame. Legible in every state, because the cards that follow
+   reference the models by letter. A child of the swatch, so a settle or
+   judder carries its label with it. */
+.jd-dark-label {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  text-align: center;
+  font-family: var(--thand); font-size: 0.95rem; line-height: 1.1;
+  color: var(--graphite);
 }
 
 /* the fixed-height animation well: the swap to ✓/✗ never shifts the sheet */
@@ -2404,32 +2408,35 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark-sw[data-state="ok"] .jd-dark-verdict--ok { color: #4a6b18; }
 .jd-dark-sw[data-state="fail"] .jd-dark-verdict--fail { color: var(--tred); }
 
-/* arrived: the swatch settles near-level and the loop fades out */
+/* arrived: the swatch settles flat with a small drop and the loop fades out
+   (rev. 4: the seats are straight, so the settle is a vertical landing —
+   no rotation to shed any more) */
 .jd-dark-sw[data-state="ok"] {
-  transform: rotate(var(--rot-flat));
   box-shadow: 0 2px 5px -2px rgba(46, 34, 12, 0.4), 0 1px 2px rgba(46, 34, 12, 0.28);
 }
 @keyframes jdDarkSettle {
-  0%   { transform: rotate(var(--rot)) translateY(-4px); }
-  55%  { transform: rotate(calc(var(--rot-flat) - 1.2deg)) translateY(0); }
-  100% { transform: rotate(var(--rot-flat)); }
+  0%   { transform: translateY(-4px); }
+  55%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
 }
 .jd-dark-sw[data-state="ok"] .jd-dark-well { opacity: 0; }
 .jd-dark-sw[data-state="ok"] .jd-dark-result { opacity: 1; }
 
 /* failed: a quick judder, then the indicator FREEZES mid-loop where it
-   stands, dimmed; the swatch edges red */
+   stands, dimmed; the swatch edges red. The judder still swings through a
+   couple of degrees, but it ENDS straight (rev. 4) — the pile stays squared
+   whatever a slot's fortunes. */
 .jd-dark-sw[data-state="fail"] {
-  transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97);
+  transform: scale(0.97);
   border-color: rgba(179, 64, 47, 0.6);
   box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35),
               inset 0 0 0 1px rgba(179, 64, 47, 0.35);
 }
 @keyframes jdDarkJolt {
-  0%   { transform: rotate(var(--rot)) scale(1); }
-  35%  { transform: rotate(calc(var(--rot) - 3deg)) scale(0.98); }
-  70%  { transform: rotate(calc(var(--rot) + 3.4deg)) scale(0.965); }
-  100% { transform: rotate(calc(var(--rot) + 2.4deg)) scale(0.97); }
+  0%   { transform: scale(1); }
+  35%  { transform: rotate(-2.2deg) scale(0.98); }
+  70%  { transform: rotate(2.4deg) scale(0.965); }
+  100% { transform: scale(0.97); }
 }
 .jd-dark-sw[data-state="fail"] .jd-dark-well { opacity: 0.45; }
 .jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
@@ -2715,14 +2722,15 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn[data-view="plates"] .jd-turn-plate:only-child {
   grid-column: 1 / -1; width: 60%; margin: 0 auto;
 }
-/* the caption strip becomes the darkroom's pencilled corner letter, seated
-   just past the kraft corner's diagonal so the two never collide */
+/* the caption sits BENEATH the print (rounds 28–29, owner calls), matching
+   the darkroom's label: the pencil hand, centred, on the sheet's own paper —
+   the arrived print wears exactly the label its waiting frame wore */
 .jd-turn[data-view="plates"] .jd-turn-plate figcaption {
-  position: absolute; top: 2px; left: 26px; z-index: 3;
-  margin: 0; padding: 0; border: 0;
-  font-family: var(--thand); font-size: 0.9rem; font-weight: 400;
-  letter-spacing: 0; text-transform: lowercase;
-  color: var(--graphite); opacity: 0.85;
+  margin: 8px 0 0; padding: 0; border: 0;
+  text-align: center;
+  font-family: var(--thand); font-size: 0.95rem; font-weight: 400;
+  line-height: 1.1; letter-spacing: 0; text-transform: none;
+  color: var(--graphite);
 }
 /* the one action centres under the pile, the way the darkroom's margin
    line does, with real air on both sides of it (rev. 3: the button sat

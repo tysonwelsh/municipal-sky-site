@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head><style>
+  #m { width: 50px; height: 50px; background: #888; }
+  @keyframes slide { from { transform: translateY(-50px); } to { transform: translateY(300px); } }
+  #m { animation: slide 1.5s linear -0.7s infinite backwards; }
+</style></head>
+<body>
+<div id="m"></div>
+<img src="slow.php" width="1" height="1" alt="" />
+<pre id="out">RUNNING</pre>
+<script>
+  var iters = [];
+  document.getElementById('m').addEventListener('animationiteration', function (e) {
+    iters.push(e.animationName + '@' + (performance.now() / 1000).toFixed(2));
+  });
+  setTimeout(function () {
+    var r = document.getElementById('m').getBoundingClientRect();
+    document.getElementById('out').textContent =
+      'ITERS=' + iters.length + ' [' + iters.join(', ') + '] rectTop=' + r.top.toFixed(1);
+  }, 5000);
+</script>
+</body>
+</html>

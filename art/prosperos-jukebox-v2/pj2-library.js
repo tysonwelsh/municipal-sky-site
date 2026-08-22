@@ -293,6 +293,36 @@
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
+  // PER-LAYER FINE-TUNE PARAMS (mixing desk II — the per-row knob strips).
+  // Curated, honest knobs only: every one is a pure scalar a voice reads at
+  // schedule time (or, for halo, at the follower's 0.5 s poll) — never a
+  // seeded-stream draw, and every def equals the constant it replaces, so
+  // the default desk is bit-identical to the unparametrized engine.
+  // {key, label, min, max, def} — the label says what it audibly does.
+  var LAYER_PARAMS = {
+    drone: [
+      { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1 },
+      { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7 },
+    ],
+    hum: [
+      { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
+      { key: "waver", label: "waver — vibrato depth", min: 0, max: 2, def: 1 },
+    ],
+    harpsichord: [
+      { key: "brightness", label: "brightness — the string filter's starting bite", min: 1.8, max: 4.6, def: 3.0 },
+      { key: "resonance", label: "resonance — the string filter's Q", min: 0.2, max: 3, def: 0.5 },
+    ],
+    musicbox: [
+      { key: "shimmer", label: "shimmer — the metallic 3rd-partial glint", min: 0, max: 2, def: 1 },
+    ],
+    ambient: [
+      { key: "density", label: "density — how often the room speaks", min: 0.5, max: 2, def: 1 },
+    ],
+    halo: [
+      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
+    ],
+  };
+
   // Default seed when neither create({seed}) nor ?seed= supplies one. A fixed
   // constant, NOT Date.now() — house rule: no wall-clock in musical paths.
   // Pages that want a different evening per visit pass their own seed.
@@ -405,6 +435,20 @@
     var mixState = {};
     for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
       mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false, rate: 1 };
+    }
+    // Fine-tune param state (LAYER_PARAMS): same lifetime as mixState —
+    // survives reseed/stop/play. Voices read these through pVal at schedule
+    // time, so a knob turn is live from the next scheduled note/cycle.
+    var paramState = {};
+    for (var plk in LAYER_PARAMS) {
+      paramState[plk] = {};
+      for (var pdi = 0; pdi < LAYER_PARAMS[plk].length; pdi++) {
+        paramState[plk][LAYER_PARAMS[plk][pdi].key] = LAYER_PARAMS[plk][pdi].def;
+      }
+    }
+    function pVal(layer, key) {
+      var l = paramState[layer];
+      return (l && l[key] != null) ? l[key] : 1;
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -795,13 +839,14 @@
       jit.stop(t + durS + 0.1);
 
       // Vibrato — sine LFO on frequency, depth ramped in from zero (v1's
-      // own anchored ramp; never a click, never a cold wobble).
+      // own anchored ramp; never a click, never a cold wobble). The desk's
+      // waver knob scales the depth (def 1 = as-composed).
       var vib = c.createOscillator();
       vib.type = "sine";
       vib.frequency.setValueAtTime(4.6 + 1.2 * wx.breath, t);
       var vg = c.createGain();
       vg.gain.setValueAtTime(0, t);
-      vg.gain.linearRampToValueAtTime(0.4 + 1.3 * wx.breath, t + Math.min(0.4, durS * 0.25));
+      vg.gain.linearRampToValueAtTime((0.4 + 1.3 * wx.breath) * pVal("hum", "waver"), t + Math.min(0.4, durS * 0.25));
       vib.connect(vg);
       try { vg.connect(o.frequency); } catch (e1) {}
       vib.start(t);
@@ -809,8 +854,8 @@
 
       // Formants — openness (breath) widens the passbands by dividing Q
       // (v1's OPENNESS knob). Set once per note, never automated mid-note
-      // (pj2-voice lesson #4).
-      var open = 0.75 + 0.5 * wx.breath;
+      // (pj2-voice lesson #4). The desk's openness knob scales it further.
+      var open = (0.75 + 0.5 * wx.breath) * pVal("hum", "openness");
       var f1 = c.createBiquadFilter();
       f1.type = "bandpass";
       f1.frequency.setValueAtTime(vowel.f1, t);
@@ -1576,10 +1621,11 @@
         var c = ctx;
         var wx = wxAt(t);
         // Warmth opens slightly with intensity, and the weather's brightness
-        // tilts it ±40 Hz on top — the fire burning higher or lower.
+        // tilts it ±40 Hz on top — the fire burning higher or lower. The
+        // desk's warmth knob multiplies the whole cutoff (def 1 = as-composed).
         var lp = c.createBiquadFilter();
         lp.type = "lowpass";
-        lp.frequency.setValueAtTime(230 + 90 * iv + 80 * (wx.brightness - 0.5), t);
+        lp.frequency.setValueAtTime((230 + 90 * iv + 80 * (wx.brightness - 0.5)) * pVal("drone", "warmth"), t);
         lp.Q.setValueAtTime(0.5, t);
         // The shared tremolo bus, back from v1 (~1307): base = 1 - depth/2,
         // LFO swings ±depth/2, so the envelope breathes between (1 - depth)
@@ -1594,7 +1640,7 @@
         trem.gain.setValueAtTime(1 - tremDepth / 2, t);
         var tremLFO = c.createOscillator();
         tremLFO.type = "sine";
-        tremLFO.frequency.setValueAtTime(0.7, t);
+        tremLFO.frequency.setValueAtTime(pVal("drone", "sway"), t); // v1's 0.7 Hz at the default
         var tremG = c.createGain();
         tremG.gain.setValueAtTime(tremDepth / 2, t);
         tremLFO.connect(tremG);
@@ -1767,12 +1813,12 @@
       var src = c.createBufferSource();
       src.buffer = buf;
       src.loop = true;
-      var bright = 2.4 + 1.2 * wx.brightness;                  // v1 "brightness" 3.0, breathed
+      var bright = (pVal("harpsichord", "brightness") - 0.6) + 1.2 * wx.brightness; // v1 "brightness" 3.0 at the default, breathed ±0.6
       var lp = c.createBiquadFilter();
       lp.type = "lowpass";
       lp.frequency.setValueAtTime(freq * bright, t);           // anchored, then
       lp.frequency.exponentialRampToValueAtTime(freq * 0.8, t + durS * 0.8); // the string dulls
-      lp.Q.setValueAtTime(0.5, t);                             // v1 "resonance"
+      lp.Q.setValueAtTime(pVal("harpsichord", "resonance"), t); // v1 "resonance" 0.5 at the default
       var g = c.createGain();
       src.connect(lp); lp.connect(g); g.connect(out);
       g.connect(run.haloSend);                                 // the strings hear every pluck
@@ -1940,8 +1986,9 @@
         var out = mixOut("musicbox", run.poolMel.at(rng.rnd(-0.55, 0.55)));
         var c = ctx;
         // Weather read once per phrase (schedule time): brightness breathes
-        // v1's SHIMMER knob instead of a fixed constant (contract item 5).
-        var shimmerG = 0.005 + 0.006 * wxAt(t).brightness;
+        // v1's SHIMMER knob instead of a fixed constant (contract item 5);
+        // the desk's shimmer knob scales the dose (def 1 = as-composed).
+        var shimmerG = (0.005 + 0.006 * wxAt(t).brightness) * pVal("musicbox", "shimmer");
         for (var i = 0; i < m.notes.length; i++) {
           var vel = rng.rnd(0.65, 1) * velScale;
           var nt = t + tm.offs[i], nd = tm.durs[i];
@@ -2274,8 +2321,9 @@
           }
         } catch (e) { /* a missing one-shot is just a quieter room */ }
         // THE GAP LAW — unchanged from Phase 1 but for weather's sanctioned
-        // ±15% (gapMul): density stays within the family contract.
-        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t);
+        // ±15% (gapMul) and the desk's density knob (def 1 = as-composed):
+        // density stays within the family contract.
+        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / pVal("ambient", "density");
         lane.at(t + Math.max(8, next), oneShot);
       }
       lane.at(run.t0 + rng.rnd(8, 20), oneShot);
@@ -2297,7 +2345,7 @@
       function follow(t) {
         var iv = curIntensity(t);
         var tide = curTidePos();
-        var haloV = 0.015 + 0.055 * wxAt(t).haloLevel;
+        var haloV = (0.015 + 0.055 * wxAt(t).haloLevel) * pVal("halo", "level");
         if (curSceneType() === "candle-out") haloV *= Math.max(0, 1 - curSceneX());
         run.haloLevelCur = haloV;
         try { run.halo.setLevel(haloV, 0.5); } catch (eH) {}

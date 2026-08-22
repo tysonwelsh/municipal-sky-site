@@ -4832,7 +4832,15 @@ function JD_layerOpen() {
     var st = slotStatus(slot);
     return '<div class="jd-dark-sw jd-dark-sw--' + slot + '" data-slotline="' +
       slot + '" data-state="' + st.state + '">' +
-      '<span class="jd-dark-letter" aria-hidden="true">' + slot + '</span>' +
+      /* the kraft photo corners (round 26 rev. 4, owner directive): the
+         waiting swatch wears the same hardware the Results plates do, so a
+         slot visibly IS the frame its drawing will arrive in */
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      /* the label (rounds 28–29, owner calls): the whole phrase in the
+         pencil hand, seated by the CSS beneath the frame */
+      '<span class="jd-dark-label" aria-hidden="true">Model ' +
+      slot.toUpperCase() + '</span>' +
       '<div class="jd-dark-well jd-dark-well--' + anim + '" aria-hidden="true">' +
       darkWell(slot, anim) + '</div>' +
       '<div class="jd-dark-result" aria-hidden="true">' +
@@ -4957,7 +4965,10 @@ function JD_layerOpen() {
           'REPLAY ✎</button>'
         : '') +
       '</div>' +
-      (opts.pin ? '' : '<figcaption>' + slot.toUpperCase() + '</figcaption>') +
+      /* "Model A" since rounds 28–29 (owner): the Results view restyles this
+         caption as the darkroom's tape label; the call view keeps it as the
+         printed strip beneath the plate, now reading MODEL A */
+      (opts.pin ? '' : '<figcaption>Model ' + slot.toUpperCase() + '</figcaption>') +
       '</figure>';
   }
   function okSlots() {
@@ -5110,9 +5121,11 @@ function JD_layerOpen() {
       : lost === 1
         ? '<p class="jd-turn-notice" role="status">one machine’s drawing ' +
           'didn’t survive — you’ll grade the three that came back.</p>' : '';
-    var COUNT = { 1: 'One drawing came back', 2: 'Two drawings came back',
-      3: 'Three drawings came back', 4: 'Four drawings came back' };
-    return head(COUNT[ok.length] || COUNT[1], 3, { view: 'plates' }) +
+    /* "The results" (round 26 rev. 4, owner rename — was the per-count
+       "Four drawings came back" family): one fixed title, the darkroom's
+       PLEASE STAND BY discipline; the notice line above the plates still
+       states the count when a machine's drawing was lost */
+    return head('The results', 3, { view: 'plates' }) +
       notice +
       '<div class="jd-turn-plates">' + ok.map(function (s) { return plate(s); }).join('') +
       '</div>' +

@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>junk drawer — the card gallery (dev harness)</title>
+<!-- ==========================================================================
+     THE CARD GALLERY — owner-only dev harness (unlinked, noindex), in the
+     rating-bench / sizing-desk tradition.
+
+     Every card of the Take-a-Turn flow, on one page, WITHOUT sending a
+     prompt. This is not a set of hand-copied snapshots: the page loads the
+     REAL junk-drawer.js and junk-drawer.css, stubs only the network
+     (jd-generate / jd-rate / data.php's item list), drives the actual
+     JD_turn state machine through every state, and clones each card into a
+     panel below. The cards therefore can never drift from production — edit
+     junk-drawer.css, refresh, and every card shows the change at once.
+
+     Run it under the local dev server (no mock env needed; this page brings
+     its own mocks):   php -S 127.0.0.1:8000 router.php
+     then open        http://127.0.0.1:8000/art/junk-drawer/card-gallery.html
+
+     Notes:
+       · the clones are STATIC — buttons/selects in them are inert (no JS is
+         wired to them). CSS animations still run: the darkroom indicators
+         loop, the reveal replays its draw-on once, the ellipsis blinks.
+       · the drive takes a few seconds; panels appear as they are captured.
+       · sessionStorage is cleared on load so repeated refreshes don't
+         accumulate won items.
+     ========================================================================== -->
+<script>
+  try { sessionStorage.clear(); } catch (e) {}
+
+  /* ---- the network, mocked ------------------------------------------------
+     Installed before junk-drawer.js loads. data.php passes through but its
+     item list is emptied (the taxonomy is what the turn module needs; the
+     pile is beside the point here). jd-generate answers from JD_MOCK.genPlan
+     — a body per slot, or 'hold' to leave the slot pending until the driver
+     releases it. jd-rate answers JD_MOCK.rateNext. Everything else passes
+     through untouched. */
+  window.JD_MOCK = { genPlan: {}, genHold: {}, rateNext: null, run: 0 };
+  (function () {
+    var orig = window.fetch.bind(window);
+    function resp(body) { return { ok: true, json: function () { return Promise.resolve(body); } }; }
+    window.fetch = function (u, o) {
+      var url = String(u);
+      if (url.indexOf('/api/jd-generate.php') >= 0) {
+        var slot = JSON.parse(o.body).slot;
+        var plan = JD_MOCK.genPlan[slot];
+        if (plan === 'hold') {
+          return new Promise(function (res) { JD_MOCK.genHold[slot] = function (body) { res(resp(body)); }; });
+        }
+        return new Promise(function (res) { setTimeout(function () { res(resp(plan)); }, 120); });
+      }
+      if (url.indexOf('/api/jd-rate.php') >= 0) {
+        return new Promise(function (res) { setTimeout(function () { res(resp(JD_MOCK.rateNext)); }, 120); });
+      }
+      if (url.indexOf('page-event-tracking') >= 0) { return Promise.resolve(resp({ ok: true })); }
+      if (url.indexOf('data.php') >= 0) {
+        return orig(u, o).then(function (r) {
+          return r.json().then(function (d) { d.items = []; return resp(d); });
+        });
+      }
+      return orig(u, o);
+    };
+  })();
+</script>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/art/junk-drawer/junk-drawer.css">
+<style>
+  body {
+    margin: 0; background: #20242b; color: #d8d2c0;
+    font-family: "Courier Prime", "Courier New", Courier, monospace;
+    padding: 40px 18px 90px;
+  }
+  .gal-head { text-align: center; max-width: 640px; margin: 0 auto 34px; }
+  .gal-head h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.14em; color: #b9b29e; margin: 0 0 10px; }
+  .gal-head p { font-size: 11px; line-height: 1.6; opacity: 0.55; margin: 0; }
+  #gal-status { font-size: 11px; letter-spacing: 0.1em; color: #8ba06b; margin-top: 12px; }
+
+  #gallery { display: flex; flex-direction: column; gap: 46px; align-items: center; }
+  .gal-panel { width: 100%; max-width: 1000px; }
+  .gal-panel > h3 {
+    font-size: 11px; font-weight: normal; letter-spacing: 0.1em;
+    color: #cfc8b2; margin: 0 0 4px;
+  }
+  .gal-panel > p {
+    font-size: 10px; line-height: 1.5; opacity: 0.5; margin: 0 0 12px; max-width: 640px;
+  }
+  /* the clone's wrapper is a REAL .jd-turn-scrim (the form's tokens are
+     scoped to it), taken out of its fixed-overlay life: static, visible,
+     and sized by its content rather than the viewport */
+  .gal-stage .jd-turn-scrim {
+    position: static; display: flex; visibility: visible;
+    padding: 26px 14px; inset: auto; z-index: auto;
+    background: rgba(10, 5, 1, 0.32); border-radius: 3px;
+  }
+  /* the darkroom/reveal cards size against 100vh in production; in a panel
+     the viewport term still applies and is fine, but cap the height so a
+     short window doesn't squash the square */
+  .gal-stage .jd-turn { max-height: none; }
+
+  /* while the driver is walking the REAL modal through its states, keep it
+     out of sight (visibility, not display — the carbon rain and the fit
+     pass both need real geometry to measure) */
+  html.gal-driving .jd-turn-scrim.is-on { visibility: hidden; }
+  /* the page must keep scrolling even while the modal thinks it owns it */
+  html.jd-turn-open { overflow: auto !important; }
+</style>
+</head>
+<body>
+
+<div class="gal-head">
+  <h1>THE JUNK DRAWER — the turn flow's cards, all at once</h1>
+  <p>Rendered live by the production <code>junk-drawer.js</code> against the production
+  stylesheet — nothing here is a copy. Edit <code>junk-drawer.css</code> and refresh:
+  every card updates. Clones are inert (no wiring), but their CSS animations run.</p>
+  <div id="gal-status">building the gallery…</div>
+</div>
+
+<div id="gallery"></div>
+
+<!-- the minimal stage the modules expect to find (hidden; the pile is where
+     a won item lands during the unveil scenario) -->
+<div class="jd-stage" style="display:none" aria-hidden="true">
+  <div class="jd-frame"><div class="jd-well"><div class="jd-pile"></div></div></div>
+</div>
+
+<script src="/art/junk-drawer/junk-drawer.js"></script>
+<script>
+(function () {
+  var SHAPES = {
+    a: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg>',
+    b: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 60"><rect x="8" y="8" width="84" height="44" rx="8" fill="#4a628a"/><rect x="20" y="20" width="60" height="20" fill="#f4ead0"/></svg>',
+    c: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 100"><polygon points="30,5 55,90 5,90" fill="#46761a"/></svg>',
+    d: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg>'
+  };
+  var MODELS = {
+    a: { model_id: 'claude-sonnet-5', label: 'Claude Sonnet 5', vendor: 'Anthropic' },
+    b: { model_id: 'gpt-5-1', label: 'GPT-5.1', vendor: 'OpenAI' },
+    c: { model_id: 'kimi-k3', label: 'Kimi K3', vendor: 'Moonshot AI' },
+    d: { model_id: 'gemini-3-1-pro', label: 'Gemini 3.1 Pro', vendor: 'Google' }
+  };
+  var PROMPT = 'a brass fish that is also a whistle';
+
+  function ok(slot) {
+    return { ok: true, svg: SHAPES[slot], gen_id: 'gal' + JD_MOCK.run + '-' + slot,
+             submission_id: 'gal-sub-' + JD_MOCK.run };
+  }
+  function fail(code, retry) {
+    var r = { ok: false, error: { code: code } };
+    if (retry) r.retry_after = retry;
+    return r;
+  }
+  function revealPayload(status) {   /* status: {a:'ok'|'failed', ...} */
+    return { ok: true, reveal: ['a', 'b', 'c', 'd'].map(function (s) {
+      var m = MODELS[s];
+      return { slot: s, status: status[s] === 'ok' ? 'ok' : 'failed',
+               model_id: m.model_id, label: m.label, vendor: m.vendor,
+               tokens: { total: 8000 + s.charCodeAt(0) * 37 },
+               cost_usd: 0.03 + s.charCodeAt(0) / 4000 };
+    }) };
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function card() { return document.querySelector('.jd-turn'); }
+  function q(sel) { return document.querySelector('.jd-turn-scrim ' + sel); }
+  function click(sel) { var el = q(sel); if (el) el.click(); return !!el; }
+
+  /* type the prompt and press send, with the given per-slot plan in place */
+  function send(plan) {
+    JD_MOCK.run++;
+    JD_MOCK.genPlan = plan;
+    JD_MOCK.genHold = {};
+    var ta = q('[data-role="prompt"]');
+    ta.value = PROMPT;
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
+    click('[data-act="generate"]');
+  }
+  function release(slot, body) {
+    if (JD_MOCK.genHold[slot]) { JD_MOCK.genHold[slot](body); delete JD_MOCK.genHold[slot]; }
+  }
+
+  /* the capture: a deep clone of the live card, filed under a caption.
+     Panels are collected and appended in FLOW order at the end, whatever
+     order the scenarios produced them in. */
+  var panels = {};
+  function snap(key, title, blurb, mutate) {
+    var c = card();
+    if (!c) return;
+    var clone = c.cloneNode(true);
+    clone.classList.remove('is-enter');
+    if (mutate) mutate(clone);
+    panels[key] = { title: title, blurb: blurb, node: clone };
+    status('captured — ' + title.toLowerCase());
+  }
+  function status(t) { document.getElementById('gal-status').textContent = t; }
+
+  var ORDER = [
+    'prompt', 'prompt-notice',
+    'darkroom', 'darkroom-mixed', 'darkroom-slow', 'confirm',
+    'apology',
+    'reveal', 'reveal-degraded',
+    'bench',
+    'call-likert', 'call-pills',
+    'unveil-kept', 'unveil-tie',
+    'file-failed'
+  ];
+  function show() {
+    var host = document.getElementById('gallery');
+    ORDER.forEach(function (k) {
+      var p = panels[k];
+      if (!p) return;
+      var panel = document.createElement('div');
+      panel.className = 'gal-panel';
+      var h = document.createElement('h3');
+      h.textContent = p.title;
+      var d = document.createElement('p');
+      d.textContent = p.blurb;
+      var stage = document.createElement('div');
+      stage.className = 'gal-stage';
+      var scrim = document.createElement('div');
+      scrim.className = 'jd-turn-scrim';
+      scrim.appendChild(p.node);
+      stage.appendChild(scrim);
+      panel.appendChild(h); panel.appendChild(d); panel.appendChild(stage);
+      host.appendChild(panel);
+    });
+    status(Object.keys(panels).length + ' cards captured — this is the live production markup; edit junk-drawer.css and refresh');
+  }
+
+  /* ---- the drive ---------------------------------------------------------- */
+  async function drive() {
+    document.documentElement.classList.add('gal-driving');
+    await sleep(400);            /* let the loader hand JD_turn its payload */
+
+    /* RUN 1 — the brief, clean; then rate-limited, which bounces back to the
+       brief wearing its notice */
+    JD_turn.open(); await sleep(120);
+    snap('prompt', '§1 · THE BRIEF',
+      'The opening card: the prompt field, the counter, send, and the fine-print disclosure line.');
+    send({ a: fail('rate_limited', 1800), b: fail('rate_limited', 1800),
+           c: fail('rate_limited', 1800), d: fail('rate_limited', 1800) });
+    await sleep(700);
+    snap('prompt-notice', '§1 · THE BRIEF — rate-limited',
+      'All four slots refused with rate_limited: the brief returns with the notice slip and the typed words kept.');
+    click('.jd-turn-close'); await sleep(120);
+
+    /* RUN 2 — the happy path: darkroom (+ its slow-line variant and the
+       abandon confirm), the four-drawing reveal, the bench, the four-way
+       call, and the kept unveil */
+    JD_turn.open(); await sleep(120);
+    send({ a: 'hold', b: 'hold', c: 'hold', d: 'hold' });
+    await sleep(900);            /* indicators built (the rain waits on geometry) */
+    snap('darkroom', '§2 · THE DARKROOM',
+      'All four machines drawing — the dealt indicators run live in this clone. PLEASE STAND BY masthead, margin line with working ellipsis.');
+    snap('darkroom-slow', '§2 · THE DARKROOM — the slow line (60s)',
+      'The same card once the slow timer fires: the second line joins under the margin sentence. (Clone with the data-slow line un-hidden.)',
+      function (clone) {
+        var s = clone.querySelector('[data-slow]');
+        if (s) s.removeAttribute('hidden');
+      });
+    click('.jd-turn-close'); await sleep(150);
+    snap('confirm', '§2 · THE ABANDON CONFIRM',
+      'Closing mid-turn asks once. The confirm is a layer over whatever card is up (here, the darkroom).');
+    click('[data-act="stay"]'); await sleep(120);
+    release('a', ok('a')); release('b', ok('b'));
+    release('c', ok('c')); release('d', ok('d'));
+    await sleep(900);            /* reveal paints; the draw-on is mid-flight */
+    snap('reveal', '§3 · THE RESULTS',
+      'The 2×2 reveal on the darkroom’s measure — straight prints, pencilled slot letters, GRADE THEM centred. The clone replays the draw-on once.');
+    click('[data-act="rate"]'); await sleep(250);
+    /* one answered row, so the in-place gauge shows in the layout */
+    var sel = q('select[data-role="axis"]');
+    if (sel && sel.options.length > 1) {
+      sel.value = sel.options[1].value;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    snap('bench', '§4 · THE BENCH — grade drawing A',
+      'The single bench: rail, pinned exhibit with REPLAY, the axis selects (first row answered, showing the gauge), the report path, and next.');
+    click('[data-act="next"]'); await sleep(150);
+    click('[data-act="next"]'); await sleep(150);
+    click('[data-act="next"]'); await sleep(150);
+    click('[data-act="next"]'); await sleep(150);
+    snap('call-pills', '§5 · THE CALL — four survivors (pills)',
+      'With three or more drawings there is no honest line to string, so the call is two picks: the winner, then the margin.');
+    var win = q('input[data-role="callwin"][value="b"]');
+    if (win) win.click();
+    await sleep(120);
+    var mg = q('input[data-role="callmargin"][value="decisive"]');
+    if (mg) mg.click();
+    await sleep(120);
+    JD_MOCK.rateNext = revealPayload({ a: 'ok', b: 'ok', c: 'ok', d: 'ok' });
+    click('[data-act="file"]'); await sleep(700);
+    snap('unveil-kept', '§6 · WHO DREW WHAT — a winner kept',
+      'The unveil: each slot’s model and vendor, the winner marked "in the drawer", done / take another turn.');
+    click('[data-act="done"]'); await sleep(150);
+
+    /* RUN 3 — a degraded turn: one machine fails mid-darkroom (mixed states),
+       three drawings come back with the notice */
+    JD_turn.open(); await sleep(120);
+    send({ a: 'hold', b: 'hold', c: 'hold', d: 'hold' });
+    await sleep(900);
+    release('a', ok('a'));
+    release('b', fail('provider_failed'));
+    await sleep(900);            /* settle + verdict fade have run */
+    snap('darkroom-mixed', '§2 · THE DARKROOM — mixed fortunes',
+      'One landed (✓ settles flat), one failed (✗, red edge, frozen indicator), two still drawing.');
+    release('c', ok('c')); release('d', ok('d'));
+    await sleep(900);
+    snap('reveal-degraded', '§3 · THE RESULTS — a survivor short',
+      'One machine failed: the notice line above the pile states the count, and the grid compacts forward (three prints, no hole).');
+    click('.jd-turn-close'); await sleep(150);
+    click('[data-act="abandon"]'); await sleep(150);
+
+    /* RUN 4 — exactly two survive: the likert call, a tie, and the tie's
+       keep-chooser unveil */
+    JD_turn.open(); await sleep(120);
+    send({ a: ok('a'), b: fail('provider_failed'),
+           c: fail('sanitizer_rejected'), d: ok('d') });
+    await sleep(900);
+    click('[data-act="rate"]'); await sleep(250);
+    click('[data-act="next"]'); await sleep(150);
+    click('[data-act="next"]'); await sleep(150);
+    snap('call-likert', '§5 · THE CALL — two survivors (the likert rail)',
+      'Exactly two drawings: five title-only stops strung between the survivors’ letters, filed as winner + margin.');
+    var tie = q('input[data-role="call"][value="tie"]');
+    if (tie) tie.click();
+    await sleep(120);
+    JD_MOCK.rateNext = revealPayload({ a: 'ok', b: 'failed', c: 'failed', d: 'ok' });
+    click('[data-act="file"]'); await sleep(700);
+    snap('unveil-tie', '§6 · WHO DREW WHAT — a tie',
+      'A tie is filed as a tie; the unveil asks whether to keep one for the drawer anyway.');
+    click('.jd-turn-close'); await sleep(150);
+
+    /* RUN 5 — the apology: every machine fails outright */
+    JD_turn.open(); await sleep(120);
+    send({ a: fail('provider_failed'), b: fail('provider_failed'),
+           c: fail('sanitizer_rejected'), d: fail('network') });
+    await sleep(900);
+    snap('apology', '§2 · NOTHING CAME BACK',
+      'Every slot failed (not a rate limit): the apology, with try again / close.');
+    click('[data-act="done"]'); await sleep(150);
+
+    /* RUN 6 — the grades refuse to file */
+    JD_turn.open(); await sleep(120);
+    send({ a: ok('a'), b: ok('b'), c: fail('provider_failed'), d: fail('provider_failed') });
+    await sleep(900);
+    click('[data-act="rate"]'); await sleep(250);
+    click('[data-act="next"]'); await sleep(150);
+    click('[data-act="next"]'); await sleep(150);
+    var w2 = q('input[data-role="call"]');   /* first likert stop: a decisively */
+    if (w2) w2.click();
+    await sleep(120);
+    JD_MOCK.rateNext = fail('server_error');
+    click('[data-act="file"]'); await sleep(700);
+    snap('file-failed', '§6 · THE GRADES DIDN’T FILE',
+      'jd-rate refused the batch: nothing written, grades still held, try filing again / close.');
+    click('.jd-turn-close'); await sleep(150);
+    click('[data-act="abandon"]'); await sleep(150);
+  }
+
+  drive().catch(function (e) {
+    status('drive failed: ' + e.message + ' — captured cards still shown below');
+    if (window.console) console.error(e);
+  }).then(function () {
+    try { if (window.JD_turn && JD_turn.isOpen()) JD_turn.close(); } catch (e) {}
+    document.documentElement.classList.remove('gal-driving');
+    document.documentElement.classList.remove('jd-turn-open');
+    show();
+    window.scrollTo(0, 0);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,387 @@
+/* ============================================================================
+   THE CARBON RAIN — standalone piece.
+   One sheet of engineering paper, ruled the house way (9px fine, 45px heavy),
+   with the rain falling down its own rules. Everything is absolute px: the
+   ruling does NOT scale with the sheet, so a bigger sheet simply holds more
+   columns. That is the point — the paper stays the same paper.
+   ========================================================================== */
+.rb-page {
+  --rb-paper: #f8f3e2;
+  --rb-ink: #4a628a;          /* the ruling's own colour, struck solid */
+  --rb-type: #33240f;
+  --rb-type-2: rgba(51, 36, 15, 0.62);
+  --rb-type-3: rgba(51, 36, 15, 0.40);
+  --rb-rule: rgba(74, 53, 18, 0.34);
+  /* THE ZOOM. One number scales the whole piece: the paper's ruling, the
+     square each glyph sits in, and every script's font-size. The characters
+     are NOT re-tuned per zoom level — each script's size was measured once so
+     its advance matches the Latin's, and multiplying them all by the same
+     factor keeps that true. Change --rb-zoom and --rb-cell together: the cell
+     is 9px x zoom, and rain-of-babel.js reads the cell straight off this
+     element, so the two can never drift apart. */
+  --rb-zoom: 2;
+  --rb-cell: 18px;          /* 9px x --rb-zoom */
+  /* clamped, not min(): a short viewport must never be able to collapse the
+     sheet to nothing — it just gets the floor and scrolls */
+  --rb-sheet-h: clamp(320px, calc(100vh - 170px), 880px);
+  --rb-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --rb-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  /* the site's own white ground shows through: the sheet of paper is the
+     only object on the page (owner, 2026-08-21) */
+  padding: clamp(14px, 3vw, 30px) clamp(10px, 3vw, 34px) 34px;
+}
+
+/* ---- the sheet ------------------------------------------------------------
+   Height-driven so it always fits the window under the banner, and wide
+   enough to carry a real number of columns. */
+.rb-sheet {
+  position: relative;
+  width: min(1180px, 100%);
+  height: var(--rb-sheet-h);
+  margin: 0 auto;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--rb-cell) * 5)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--rb-cell) * 5)),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--rb-cell)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--rb-cell)),
+    var(--rb-paper);
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+.rb-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+.rb-c { position: absolute; top: 0; display: block; opacity: var(--rb-o); }
+.rb-s { position: absolute; top: 0; left: 0; display: block;
+  transform: translateY(var(--rb-y0)); }
+.rb-g {
+  display: block; text-align: center;
+  width: var(--rb-cell); height: var(--rb-cell); line-height: var(--rb-cell);
+  font-family: var(--rb-mono); font-style: normal; color: var(--rb-ink);
+  overflow: hidden;
+}
+.rb-g.is-rev  { transform: scaleX(-1); }
+.rb-g.is-spin { overflow: visible; }
+.rb-lat { font-size: calc(10.0px * var(--rb-zoom)); }
+.rb-dig { font-size: calc(10.0px * var(--rb-zoom)); }
+.rb-mrk { font-size: calc(10.0px * var(--rb-zoom)); }
+.rb-grk { font-size: calc(10.1px * var(--rb-zoom)); }
+.rb-cyr { font-size: calc(9.3px * var(--rb-zoom)); }
+.rb-heb { font-size: calc(10px * var(--rb-zoom)); }
+.rb-arb { font-size: calc(9.9px * var(--rb-zoom)); }
+.rb-dev { font-size: calc(8.9px * var(--rb-zoom)); }
+.rb-geo { font-size: calc(9.7px * var(--rb-zoom)); }
+.rb-arm { font-size: calc(9.7px * var(--rb-zoom)); }
+.rb-cjk { font-size: calc(6px * var(--rb-zoom)); }
+.rb-han { font-size: calc(7.5px * var(--rb-zoom)); }
+.rb-tha { font-size: calc(10.1px * var(--rb-zoom)); }
+.rb-che { font-size: calc(9.5px * var(--rb-zoom)); }
+.rb-des { font-size: calc(10.3px * var(--rb-zoom)); }
+.rb-tib { font-size: calc(12px * var(--rb-zoom)); }
+.rb-brh { font-size: calc(9.6px * var(--rb-zoom)); }
+.rb-sid { font-size: calc(8.3px * var(--rb-zoom)); }
+.rb-shr { font-size: calc(9.3px * var(--rb-zoom)); }
+.rb-gra { font-size: calc(6.8px * var(--rb-zoom)); }
+.rb-khr { font-size: calc(10px * var(--rb-zoom)); }
+.rb-ben { font-size: calc(9px * var(--rb-zoom)); }
+.rb-gur { font-size: calc(9.8px * var(--rb-zoom)); }
+.rb-guj { font-size: calc(8.2px * var(--rb-zoom)); }
+.rb-ori { font-size: calc(9.1px * var(--rb-zoom)); }
+.rb-tam { font-size: calc(8.1px * var(--rb-zoom)); }
+.rb-tel { font-size: calc(7.2px * var(--rb-zoom)); }
+.rb-kan { font-size: calc(7.2px * var(--rb-zoom)); }
+.rb-mal { font-size: calc(6.1px * var(--rb-zoom)); }
+.rb-sin { font-size: calc(7.9px * var(--rb-zoom)); }
+.rb-mya { font-size: calc(7.3px * var(--rb-zoom)); }
+.rb-khm { font-size: calc(8.5px * var(--rb-zoom)); }
+.rb-run { font-size: calc(8.2px * var(--rb-zoom)); }
+.rb-got { font-size: calc(9.3px * var(--rb-zoom)); }
+.rb-ita { font-size: calc(9.1px * var(--rb-zoom)); }
+.rb-phn { font-size: calc(9.1px * var(--rb-zoom)); }
+.rb-lnb { font-size: calc(7.6px * var(--rb-zoom)); }
+.rb-cop { font-size: calc(9.5px * var(--rb-zoom)); }
+.rb-tfn { font-size: calc(9.8px * var(--rb-zoom)); }
+.rb-osa { font-size: calc(8.8px * var(--rb-zoom)); }
+.rb-shw { font-size: calc(11.9px * var(--rb-zoom)); }
+.rb-vai { font-size: calc(7.9px * var(--rb-zoom)); }
+.rb-adl { font-size: calc(8.2px * var(--rb-zoom)); }
+.rb-nko { font-size: calc(11.1px * var(--rb-zoom)); }
+.rb-yii { font-size: calc(10.4px * var(--rb-zoom)); }
+.rb-gla { font-size: calc(7.2px * var(--rb-zoom)); }
+.rb-eth { font-size: calc(6.6px * var(--rb-zoom)); }
+.rb-syr { font-size: calc(8px * var(--rb-zoom)); }
+.rb-thn { font-size: calc(9.5px * var(--rb-zoom)); }
+.rb-lao { font-size: calc(10.1px * var(--rb-zoom)); }
+.rb-bam { font-size: calc(9.9px * var(--rb-zoom)); }
+.rb-ave { font-size: calc(9.4px * var(--rb-zoom)); }
+.rb-olt { font-size: calc(9.5px * var(--rb-zoom)); }
+.rb-arc { font-size: calc(9.2px * var(--rb-zoom)); }
+.rb-nab { font-size: calc(11.4px * var(--rb-zoom)); }
+.rb-pal { font-size: calc(10px * var(--rb-zoom)); }
+.rb-man { font-size: calc(7.6px * var(--rb-zoom)); }
+.rb-car { font-size: calc(8.8px * var(--rb-zoom)); }
+.rb-lyc { font-size: calc(9.5px * var(--rb-zoom)); }
+.rb-lyd { font-size: calc(9.6px * var(--rb-zoom)); }
+.rb-ugr { font-size: calc(6.1px * var(--rb-zoom)); }
+.rb-opr { font-size: calc(5.2px * var(--rb-zoom)); }
+.rb-mer { font-size: calc(7.2px * var(--rb-zoom)); }
+.rb-olc { font-size: calc(9.6px * var(--rb-zoom)); }
+.rb-cham { font-size: calc(5.5px * var(--rb-zoom)); }
+.rb-bali { font-size: calc(5.8px * var(--rb-zoom)); }
+.rb-java { font-size: calc(5.6px * var(--rb-zoom)); }
+.rb-bugi { font-size: calc(6.2px * var(--rb-zoom)); }
+.rb-batk { font-size: calc(6.1px * var(--rb-zoom)); }
+.rb-lisu { font-size: calc(9.7px * var(--rb-zoom)); }
+.rb-bass { font-size: calc(8.5px * var(--rb-zoom)); }
+.rb-mend { font-size: calc(8.5px * var(--rb-zoom)); }
+.rb-wcho { font-size: calc(9.4px * var(--rb-zoom)); }
+.rb-rohg { font-size: calc(11px * var(--rb-zoom)); }
+.rb-tale { font-size: calc(10.3px * var(--rb-zoom)); }
+.rb-mth { font-size: calc(10.0px * var(--rb-zoom)); }
+.rb-pla { font-size: calc(10.0px * var(--rb-zoom)); }
+.rb-alc { font-size: calc(6.6px * var(--rb-zoom)); }
+
+@keyframes rbFall {
+  from { transform: translateY(calc(-1 * var(--rb-dh))); }
+  to   { transform: translateY(var(--rb-h)); }
+}
+@keyframes rbSpin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+@keyframes rbSpinCcw { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rb-s { animation: rbFall var(--rb-d) linear var(--rb-dl) infinite; }
+  .rb-g.is-spin { animation: rbSpin var(--rb-sd) linear infinite; }
+  .rb-g.is-spin.is-ccw { animation-name: rbSpinCcw; }
+}
+/* stillness: with no fall there is no wrap, so the sheet simply holds the
+   page of type it was first dealt */
+@media (prefers-reduced-motion: reduce) {
+  .rb-s, .rb-g.is-spin { animation: none !important; }
+}
+
+
+/* ---- the sheets --------------------------------------------------------
+   One below the other in ordinary flow, each filling its own screenful, so
+   the second is found by scrolling rather than by peering round the first.
+   No overlap, no pile. */
+.rb-sheet + .rb-sheet { margin-top: clamp(28px, 6vh, 74px); }
+
+/* ---- mode: impact ----------------------------------------------------------
+   The column is dismantled one character at a time from the bottom up. Every
+   glyph runs THIS ONE trajectory — fall at a constant rate to the floor, then
+   be thrown — and the column exists only because each glyph is delayed by one
+   square's worth of falling relative to the one below it. So every glyph sits
+   at top:0 and the stacking is made of time.
+
+   --y0 and --y1 belong to the column and are shared; --dx / --ay / --dy / --r
+   belong to the glyph. Custom properties inherit, so one keyframe block reads
+   both and nothing has to be generated per column.
+
+   The fall is linear and the throw is eased. They are stated per keyframe
+   because a single animation covers both and they must not share a curve. */
+.rb-burst { position: absolute; top: 0; display: block; opacity: var(--rb-o); }
+.rb-burst > i {
+  position: absolute; left: 0; top: 0;
+  transform: translate(0, var(--y0));
+}
+
+/* Real projectile motion, not an eased approximation. x is linear in time,
+   y is quadratic — one constant downward acceleration and no fudging — and
+   the curve is SAMPLED at 14 points with linear joins between them, because
+   a cubic-bezier cannot express constant acceleration and will always leave
+   a slack moment at the top of the arc where the thing appears to hang.
+
+   --vx / --vy are this glyph's launch velocity expressed as the distance it
+   would cover in one flight; --gp is the drop gravity contributes over that
+   same flight, and it is set PER COLUMN, not per glyph, because every piece
+   of debris falls under the same gravity. --r spins at a constant rate: no
+   angular drag either. */
+@keyframes rbBurst {
+  /* the fall: constant rate, straight down the column */
+  0% {
+    transform: translate(0, var(--y0)) rotate(0deg);
+    opacity: 1; animation-timing-function: linear;
+  }
+  /* the landing, and the instant of the throw */
+  88% {
+    transform: translate(calc(var(--vx) * 0.00000), calc(var(--y1) + var(--vy) * 0.00000 + var(--gp) * 0.00000))
+               rotate(calc(var(--r) * 0.00000));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  88.857% {
+    transform: translate(calc(var(--vx) * 0.07143), calc(var(--y1) + var(--vy) * 0.07143 + var(--gp) * 0.00510))
+               rotate(calc(var(--r) * 0.07143));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  89.714% {
+    transform: translate(calc(var(--vx) * 0.14286), calc(var(--y1) + var(--vy) * 0.14286 + var(--gp) * 0.02041))
+               rotate(calc(var(--r) * 0.14286));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  90.571% {
+    transform: translate(calc(var(--vx) * 0.21429), calc(var(--y1) + var(--vy) * 0.21429 + var(--gp) * 0.04592))
+               rotate(calc(var(--r) * 0.21429));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  91.429% {
+    transform: translate(calc(var(--vx) * 0.28571), calc(var(--y1) + var(--vy) * 0.28571 + var(--gp) * 0.08163))
+               rotate(calc(var(--r) * 0.28571));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  92.286% {
+    transform: translate(calc(var(--vx) * 0.35714), calc(var(--y1) + var(--vy) * 0.35714 + var(--gp) * 0.12755))
+               rotate(calc(var(--r) * 0.35714));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  93.143% {
+    transform: translate(calc(var(--vx) * 0.42857), calc(var(--y1) + var(--vy) * 0.42857 + var(--gp) * 0.18367))
+               rotate(calc(var(--r) * 0.42857));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  94% {
+    transform: translate(calc(var(--vx) * 0.50000), calc(var(--y1) + var(--vy) * 0.50000 + var(--gp) * 0.25000))
+               rotate(calc(var(--r) * 0.50000));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  94.857% {
+    transform: translate(calc(var(--vx) * 0.57143), calc(var(--y1) + var(--vy) * 0.57143 + var(--gp) * 0.32653))
+               rotate(calc(var(--r) * 0.57143));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  95.714% {
+    transform: translate(calc(var(--vx) * 0.64286), calc(var(--y1) + var(--vy) * 0.64286 + var(--gp) * 0.41327))
+               rotate(calc(var(--r) * 0.64286));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  96.571% {
+    transform: translate(calc(var(--vx) * 0.71429), calc(var(--y1) + var(--vy) * 0.71429 + var(--gp) * 0.51020))
+               rotate(calc(var(--r) * 0.71429));
+    opacity: 1.000; animation-timing-function: linear;
+  }
+  97.429% {
+    transform: translate(calc(var(--vx) * 0.78571), calc(var(--y1) + var(--vy) * 0.78571 + var(--gp) * 0.61735))
+               rotate(calc(var(--r) * 0.78571));
+    opacity: 0.974; animation-timing-function: linear;
+  }
+  98.286% {
+    transform: translate(calc(var(--vx) * 0.85714), calc(var(--y1) + var(--vy) * 0.85714 + var(--gp) * 0.73469))
+               rotate(calc(var(--r) * 0.85714));
+    opacity: 0.649; animation-timing-function: linear;
+  }
+  99.143% {
+    transform: translate(calc(var(--vx) * 0.92857), calc(var(--y1) + var(--vy) * 0.92857 + var(--gp) * 0.86224))
+               rotate(calc(var(--r) * 0.92857));
+    opacity: 0.325; animation-timing-function: linear;
+  }
+  100% {
+    transform: translate(calc(var(--vx) * 1.00000), calc(var(--y1) + var(--vy) * 1.00000 + var(--gp) * 1.00000))
+               rotate(calc(var(--r) * 1.00000));
+    opacity: 0.000; animation-timing-function: linear;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* duration and delay ride inline, per glyph — the delay IS the column */
+  .rb-burst > i { animation-name: rbBurst; animation-iteration-count: infinite; }
+}
+/* stillness: one struck column, resting on the floor it fell to */
+@media (prefers-reduced-motion: reduce) {
+  .rb-burst > i { animation: none !important; }
+}
+
+/* ---- mode: pile ------------------------------------------------------------
+   The drift is ordinary static markup — characters that have come to rest and
+   are simply left there. No animation touches them; the only motion on this
+   sheet is the rain still arriving. A landed character is nudged a degree or
+   two off square, because nothing that has been thrown lands perfectly
+   aligned to the ruling it lands on. */
+.rb-pile { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; pointer-events: none; }
+.rb-pile { transition: opacity 2s ease; }
+.rb-pile.is-going { opacity: 0; }
+.rb-pile > i {
+  position: absolute; display: block;
+  font-family: var(--rb-mono); font-style: normal; color: #4a628a;
+  opacity: 0.9;
+}
+/* the falling glyphs must sit above the drift they are landing on. These
+   columns carry NO css animation: their whole flight, bounces included, is
+   computed in js and handed to element.animate(). */
+.rb-drop { z-index: 2; }
+.rb-drop { left: 0; right: 0; }
+.rb-drop > i {
+  position: absolute; top: 0; display: block;
+  /* a belt-and-braces resting place well above the sheet: if a glyph is ever
+     between animations for a frame, it must not appear at the top rule */
+  transform: translateY(-300%);
+}
+
+/* a paused sheet: the CSS-driven sheets stop where they stand. The pile
+   sheet's animations are paused through the Web Animations API instead, and
+   its reaper is stopped, so nothing lands while it is meant to be still. */
+.rb-rain.is-paused .rb-s,
+.rb-rain.is-paused .rb-burst > i,
+.rb-rain.is-paused .rb-g.is-spin { animation-play-state: paused; }
+
+/* ---- the controls ------------------------------------------------------
+   Kept to the same furniture as the version stamp: monospace, small, quiet,
+   aligned to the sheet's own width. The thumb is a square, because everything
+   else on this page sits in one. */
+.rb-ctl {
+  width: min(1180px, 100%); max-width: none; margin: 14px auto 0;
+  display: flex; align-items: center; gap: 12px;
+  font-family: var(--rb-mono); font-size: 0.52rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--rb-type-3);
+}
+.rb-ctl label { flex: 0 0 auto; }
+.rb-ctl button {
+  flex: 0 0 auto; min-width: 7ch;
+  font: inherit; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--rb-type-2); background: var(--rb-paper);
+  border: 1px solid rgba(74, 98, 138, 0.5); border-radius: 0;
+  padding: 3px 8px; cursor: pointer;
+}
+.rb-ctl button:hover { border-color: #4a628a; color: var(--rb-type); }
+.rb-ctl button[aria-pressed="true"] {
+  background: #4a628a; border-color: #4a628a; color: var(--rb-paper);
+}
+.rb-ctl button:focus-visible { outline: 1px solid var(--rb-type-2); outline-offset: 2px; }
+.rb-ctl output { flex: 0 0 auto; min-width: 12ch; text-align: right;
+  font-variant-numeric: tabular-nums; }
+.rb-ctl input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  flex: 1 1 auto; height: 18px; background: transparent; cursor: ew-resize;
+}
+.rb-ctl input[type="range"]::-webkit-slider-runnable-track {
+  height: 1px; background: rgba(74, 98, 138, 0.45);
+}
+.rb-ctl input[type="range"]::-moz-range-track {
+  height: 1px; background: rgba(74, 98, 138, 0.45);
+}
+.rb-ctl input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 9px; height: 9px; margin-top: -4px; border-radius: 0;
+  background: var(--rb-paper); border: 1px solid #4a628a;
+}
+.rb-ctl input[type="range"]::-moz-range-thumb {
+  width: 9px; height: 9px; border-radius: 0;
+  background: var(--rb-paper); border: 1px solid #4a628a;
+}
+.rb-ctl input[type="range"]:focus-visible { outline: 1px solid var(--rb-type-2);
+  outline-offset: 3px; }
+
+.rb-build {
+  /* the SAME width rule as the sheet, so the stamp sits exactly under its
+     right edge; the site's own paragraph width would otherwise shrink it */
+  width: min(1180px, 100%); max-width: none;
+  margin: 16px auto 0; text-align: right;
+  font-family: var(--rb-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--rb-type-3);
+}
+.rb-build-sep { padding: 0 0.5em; opacity: 0.55; }
+
+@media (max-width: 700px) {
+  .rb-page { --rb-sheet-h: clamp(280px, calc(100vh - 190px), 620px); }
+  

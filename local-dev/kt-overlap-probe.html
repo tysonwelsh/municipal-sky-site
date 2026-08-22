@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+  /* headless Chrome shares an HTTP cache across launches — a fixed ?v= query
+     serves STALE code. Bust with a per-run token. */
+  var CB = 'cb=' + Date.now() + Math.random();
+  document.write('<link rel="stylesheet" href="../art/kimis-take/kimis-take.css?' + CB + '">');
+</script>
+<style>body { margin: 0; }</style>
+</head>
+<body>
+<div class="main-wrapper cr-page">
+  <div class="cr-sheet"><span class="cr-rain" id="cr-rain"></span></div>
+</div>
+<img id="hold" width="1" height="1" alt="" />
+<pre id="probe-result">RUNNING</pre>
+<script>document.write('<scr' + 'ipt src="../art/kimis-take/kimis-take.js?' + CB + '"><\/scr' + 'ipt>');</script>
+<script>
+  var host = document.getElementById('cr-rain');
+  var n = +(location.search.match(/[?&]n=(\d+)/) || [0, 8])[1];
+  var dd = [];
+  for (var i = 0; i < n; i++) dd.push(['d','u','r','l'][i % 4]);
+  window.KimisTake.mount(host, { dirs: dd });
+  var overlaps = [], pairSeen = {}, samples = 0;
+  function streamOf(rec) { return rec.el; }
+  function sample() {
+    samples++;
+    var t = performance.now() / 1000;
+    var streams = host.querySelectorAll('.cr-s');
+    var boxes = [];
+    var hb = host.getBoundingClientRect();
+    for (var s = 0; s < streams.length; s++) {
+      var rec = streams[s].__rec;
+      if (!rec) continue;
+      var cells = streams[s].children;
+      for (var i = 0; i < cells.length; i++) {
+        var r = cells[i].getBoundingClientRect();
+        /* only what a viewer could SEE counts: the off-sheet run-up and
+           exit margins are unreserved by design and clipped away */
+        var cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        if (cx < hb.left || cx > hb.right || cy < hb.top || cy > hb.bottom) continue;
+        boxes.push({ r: r, rec: rec, el: cells[i], j: i, spin: !!cells[i].getAttribute('data-spin') });
+      }
+    }
+    for (var a = 0; a < boxes.length; a++) for (var b = a + 1; b < boxes.length; b++) {
+      var ra = boxes[a].rec, rb = boxes[b].rec;
+      if (ra.id === rb.id) continue;
+      var A = boxes[a].r, B = boxes[b].r;
+      var ox = Math.min(A.right, B.right) - Math.max(A.left, B.left);
+      var oy = Math.min(A.bottom, B.bottom) - Math.max(A.top, B.top);
+      if (ox > 2 && oy > 2) {
+        var pk = ra.id + 'x' + rb.id;
+        if (!pairSeen[pk]) {
+          pairSeen[pk] = 1;
+          overlaps.push({
+            t: +t.toFixed(2), ids: pk,
+            spinInvolved: boxes[a].spin || boxes[b].spin,
+            ox: +ox.toFixed(1), oy: +oy.toFixed(1),
+            rectA: [+A.left.toFixed(1), +A.top.toFixed(1)],
+            rectB: [+B.left.toFixed(1), +B.top.toFixed(1)],
+            jA: boxes[a].j, jB: boxes[b].j,
+            xformA: boxes[a].el.style.transform, xformB: boxes[b].el.style.transform,
+            sA: +(boxes[a].rec.v * (t - boxes[a].rec.t0)).toFixed(2),
+            sB: +(boxes[b].rec.v * (t - boxes[b].rec.t0)).toFixed(2),
+            planA: ra.plan, planB: rb.plan
+          });
+        }
+      }
+    }
+  }
+  var iv = setInterval(sample, 100);
+  setTimeout(function () {
+    clearInterval(iv);
+    document.getElementById('probe-result').textContent =
+      'PROBE DONE samples=' + samples + ' overlapPairs=' + overlaps.length + '\n' +
+      JSON.stringify(overlaps.slice(0, 6), null, 1);
+  }, /[?&]vt/.test(location.search) ? 45000 : 4500);
+</script>
+<script>
+  /* the hold-open image is for REAL-TIME runs only, and its fetch must start
+     LAST: php -S is single-threaded, so if the sleeping request lands before
+     the JS/CSS fetches, everything queues behind it and the dump fires before
+     the probe finishes. Under virtual time it would just eat budget. */
+  if (!/[?&]vt/.test(location.search)) {
+    document.getElementById('hold').src = 'slow.php?x=' + Math.random();
+  }
+</script>
+</body>
+</html>
