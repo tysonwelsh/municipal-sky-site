@@ -242,7 +242,9 @@
   // --------------------------------------------------------------------------
   // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute/rate contract
   // (getLayers / setLayerVolume / getLayerVolumes / toggleLayer /
-  // setLayerRate / getLayerRates, uniform across the three tracks). The gain
+  // setLayerRate / getLayerRates, plus the fine-tune knob doors
+  // getLayerParams / setLayerParam / getLayerParamValues — uniform across
+  // the three tracks). The gain
   // side owns one small set of user gain nodes (tagged _pj2Mix, the _pj2Tag
   // convention) inserted into — or cleanly reused from — each layer's
   // existing chain, draws NO randomness, and never shares a param with
@@ -2851,6 +2853,41 @@
         for (var i = 0; i < MIX_LAYERS.length; i++) {
           var k = MIX_LAYERS[i].key;
           if (MIX_RATE_LANES[k] && MIX_RATE_LANES[k].length) out[k] = mixState[k].rate;
+        }
+        return out;
+      },
+      // ---- the fine-tune params (LAYER_PARAMS; uniform across the tracks) ----
+      // getLayerParams returns the knob tables (fresh copies — the UI reads,
+      // never writes). setLayerParam clamps to the knob's [min, max] and
+      // stores; voices read the store live at schedule time.
+      getLayerParams: function () {
+        var out = {};
+        for (var lk in LAYER_PARAMS) {
+          var defs = LAYER_PARAMS[lk], list = [];
+          for (var i = 0; i < defs.length; i++) {
+            list.push({ key: defs[i].key, label: defs[i].label, min: defs[i].min, max: defs[i].max, def: defs[i].def });
+          }
+          out[lk] = list;
+        }
+        return out;
+      },
+      setLayerParam: function (layerKey, paramKey, value) {
+        var defs = LAYER_PARAMS[layerKey];
+        if (!defs) return;
+        for (var i = 0; i < defs.length; i++) {
+          if (defs[i].key === paramKey) {
+            var v = +value;
+            if (!isFinite(v)) v = defs[i].def;
+            paramState[layerKey][paramKey] = clamp(v, defs[i].min, defs[i].max);
+            return;
+          }
+        }
+      },
+      getLayerParamValues: function () {
+        var out = {};
+        for (var lk in paramState) {
+          out[lk] = {};
+          for (var pk in paramState[lk]) out[lk][pk] = paramState[lk][pk];
         }
         return out;
       },

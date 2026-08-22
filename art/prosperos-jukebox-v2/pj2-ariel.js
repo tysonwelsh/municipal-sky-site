@@ -177,8 +177,9 @@
   // --------------------------------------------------------------------------
   // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute/rate contract,
   // uniform with PJ2.Library/PJ2.Sycorax (getLayers / setLayerVolume /
-  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates; full design
-  // note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
+  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates, plus the
+  // fine-tune knob doors getLayerParams / setLayerParam / getLayerParamValues;
+  // full design note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
   // (tagged _pj2Mix) are inserted into — or cleanly reused from — each
   // layer's chain; no randomness, no event-time effects, and never a shared
   // param with the follower or the joints (breezeLevel/aeoLevel/breezeBreath
@@ -228,6 +229,39 @@
     ambient: ["ambient"], halo: [],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
+
+  // PER-LAYER FINE-TUNE PARAMS (mixing desk II — the per-row knob strips;
+  // pj2-library's design note is authoritative). Pure scalars read at
+  // schedule time (or at the follower's 0.5 s poll, for halo); every def
+  // equals the constant it replaces, so the default desk is bit-identical
+  // to the unparametrized engine.
+  var LAYER_PARAMS = {
+    breeze: [
+      { key: "breath", label: "breath — how deeply the pad sways", min: 0, max: 2.5, def: 1 },
+      { key: "hiss", label: "hiss — the high air-mist dose", min: 0, max: 3, def: 1 },
+    ],
+    whistle: [
+      { key: "breath", label: "breath — the airy noise under the song", min: 0, max: 2.5, def: 1 },
+      { key: "vibrato", label: "vibrato — the singer's wobble depth", min: 0, max: 2, def: 1 },
+    ],
+    chime: [
+      { key: "decay", label: "decay — how long the bell rings", min: 0.5, max: 2, def: 1 },
+      { key: "detune", label: "detune — how far apart the paired bells sit", min: 0, max: 3, def: 1 },
+    ],
+    bass: [
+      { key: "flourish", label: "flourish — how often the bass runs", min: 0, max: 2, def: 1 },
+    ],
+    aeolian: [
+      { key: "sheen", label: "sheen — the glass's high octave partial", min: 0, max: 2, def: 1 },
+      { key: "breath", label: "breath — the bow's airy thread", min: 0, max: 2.5, def: 1 },
+    ],
+    ambient: [
+      { key: "density", label: "density — how often the sky speaks", min: 0.5, max: 2, def: 1 },
+    ],
+    halo: [
+      { key: "level", label: "level — how loud the sympathetic strings whisper", min: 0, max: 2, def: 1 },
+    ],
+  };
 
   // Default seed when neither create({seed}) nor ?seed= supplies one — a
   // fixed constant ("ARIE" as a 32-bit word), never Date.now (house rule).
@@ -550,6 +584,19 @@
     var mixState = {};
     for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
       mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false, rate: 1 };
+    }
+    // Fine-tune param state (LAYER_PARAMS): same lifetime as mixState;
+    // voices read it live through pVal at schedule time.
+    var paramState = {};
+    for (var plk in LAYER_PARAMS) {
+      paramState[plk] = {};
+      for (var pdi = 0; pdi < LAYER_PARAMS[plk].length; pdi++) {
+        paramState[plk][LAYER_PARAMS[plk][pdi].key] = LAYER_PARAMS[plk][pdi].def;
+      }
+    }
+    function pVal(layer, key) {
+      var l = paramState[layer];
+      return (l && l[key] != null) ? l[key] : 1;
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -1448,7 +1495,7 @@
         // Dyad: root+5th; on I, the rare tritone breath (root + #4 — degree
         // 3 is a mode-third above... no: [0, 3] is F..B, the character pair).
         var degs = (tritone && rootCls === 0) ? [rootAbs, rootAbs + 3] : [rootAbs, rootAbs + 4];
-        var lfoDepth = 0.03 * (0.6 + 0.8 * wx.gustiness);
+        var lfoDepth = 0.03 * (0.6 + 0.8 * wx.gustiness) * pVal("breeze", "breath"); // desk knob: def 1 = as-composed
         var rates = [lfoR1, lfoR2];
         for (var i = 0; i < degs.length; i++) {
           var freq = run.field.degFreq(degs[i], oct);
@@ -1494,7 +1541,7 @@
         hp.Q.setValueAtTime(0.7, t);
         var ng = c.createGain();
         ns.connect(hp); hp.connect(ng); ng.connect(run.breezeBreath);
-        var airPeak = 0.004 * (0.5 + wx.gustiness);
+        var airPeak = 0.004 * (0.5 + wx.gustiness) * pVal("breeze", "hiss"); // desk knob: def 1 = as-composed
         PJ2.Voice.env(ng.gain, t, [[3, airPeak], [durS - 6, airPeak], [3, 0]]);
         ns.start(t, ns.randomOffset);
         ns.stop(t + durS + 0.1);
@@ -1529,7 +1576,7 @@
       var vg = c.createGain();
       vg.gain.setValueAtTime(0, t);
       vg.gain.linearRampToValueAtTime(
-        ((art && art.vibDepth) || 2) * (0.8 + 0.6 * wx.gustiness),
+        ((art && art.vibDepth) || 2) * (0.8 + 0.6 * wx.gustiness) * pVal("whistle", "vibrato"),
         t + Math.min(0.35, durS * 0.3));
       vib.connect(vg);
       try { vg.connect(o.frequency); } catch (e1) {}
@@ -1543,7 +1590,7 @@
       nf.frequency.setValueAtTime(1800, t);
       nf.Q.setValueAtTime(12, t);
       var bg = c.createGain();
-      bg.gain.setValueAtTime(0.25 + 0.5 * wx.shimmer, t);
+      bg.gain.setValueAtTime((0.25 + 0.5 * wx.shimmer) * pVal("whistle", "breath"), t); // desk knob: def 1 = as-composed
       ns.connect(pre); pre.connect(nf); nf.connect(bg);
       var mix = c.createGain();
       o.connect(mix);
@@ -1676,6 +1723,9 @@
     // gesture-cloud, and the whole cloud (+ any lone ping) holds ONE claim.
     function renderChime(out, freq, t, vel, decayS, detuneCents) {
       var c = ctx;
+      // the desk knobs (def 1 = as-composed): ring length and pair distance
+      decayS *= pVal("chime", "decay");
+      detuneCents *= pVal("chime", "detune");
       var wave = bellWave(c);
       for (var di = 0; di < 2; di++) {
         var o = c.createOscillator();
@@ -2028,7 +2078,7 @@
         // bounded wobble the old random walk supplied.
         var I = clamp((iv - FLOOR) / (CEIL - FLOOR) + 0.4 * (wx.thermals - 0.5), 0, 1);
         var pace = 1 - I * 0.6;
-        var flourishP = Math.min(0.6, 0.2 * (0.35 + I * 1.6));
+        var flourishP = Math.min(0.6, 0.2 * (0.35 + I * 1.6) * pVal("bass", "flourish")); // desk knob: def 1 = as-composed
         var reach = Math.min(1, 0.25 * (0.5 + I * 1.4));
         var threeP = 0.25 + I * 0.45;
         var gestureP = 0.22 + I * 0.18;
@@ -2130,7 +2180,7 @@
       h.type = "sine";
       h.frequency.setValueAtTime(freq * 2, t);
       var hg = c.createGain();
-      hg.gain.setValueAtTime(0.22, t);
+      hg.gain.setValueAtTime(0.22 * pVal("aeolian", "sheen"), t); // desk knob: def 1 = as-composed
       h.connect(hg); hg.connect(g);
       h.start(t);
       h.stop(t + durS + 0.1);
@@ -2142,7 +2192,7 @@
       bp.frequency.setValueAtTime(freq * 2, t);
       bp.Q.setValueAtTime(8, t);
       var ng = c.createGain();
-      ng.gain.setValueAtTime(0.18, t);
+      ng.gain.setValueAtTime(0.18 * pVal("aeolian", "breath"), t); // desk knob: def 1 = as-composed
       ns.connect(pre); pre.connect(bp); bp.connect(ng); ng.connect(g);
       ns.start(t, ns.randomOffset);
       ns.stop(t + durS + 0.1);
@@ -2495,8 +2545,9 @@
           else if (what === "bee") bumbleBee(t);
           else if (what === "bubbles") bubbles(t);
         } catch (e) { /* a missing one-shot is just a quieter sky */ }
-        // THE GAP LAW — the family density contract, thermals' sanctioned ±15%.
-        var next = rng.rnd(18, 50) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t);
+        // THE GAP LAW — the family density contract, thermals' sanctioned
+        // ±15%, and the desk's density knob (def 1 = as-composed).
+        var next = rng.rnd(18, 50) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / pVal("ambient", "density");
         lane.at(t + Math.max(7, next), oneShot);
       }
       lane.at(run.t0 + rng.rnd(8, 18), oneShot);
@@ -2514,7 +2565,7 @@
         var iv = curIntensity(t);
         var tide = curTidePos();
         var st = curSceneType();
-        var haloV = 0.015 + 0.05 * wxAt(t).altitude;
+        var haloV = (0.015 + 0.05 * wxAt(t).altitude) * pVal("halo", "level"); // desk knob: def 1 = as-composed
         if (st === "release") haloV = haloV + (0.09 - haloV) * curSceneX();
         run.haloLevelCur = haloV;
         try { run.halo.setLevel(haloV, 0.5); } catch (eH) {}
@@ -3027,6 +3078,39 @@
         for (var i = 0; i < MIX_LAYERS.length; i++) {
           var k = MIX_LAYERS[i].key;
           if (MIX_RATE_LANES[k] && MIX_RATE_LANES[k].length) out[k] = mixState[k].rate;
+        }
+        return out;
+      },
+      // ---- the fine-tune params (LAYER_PARAMS; pj2-library's note is
+      // authoritative) — knobs are read live by the voices at schedule time.
+      getLayerParams: function () {
+        var out = {};
+        for (var lk in LAYER_PARAMS) {
+          var defs = LAYER_PARAMS[lk], list = [];
+          for (var i = 0; i < defs.length; i++) {
+            list.push({ key: defs[i].key, label: defs[i].label, min: defs[i].min, max: defs[i].max, def: defs[i].def });
+          }
+          out[lk] = list;
+        }
+        return out;
+      },
+      setLayerParam: function (layerKey, paramKey, value) {
+        var defs = LAYER_PARAMS[layerKey];
+        if (!defs) return;
+        for (var i = 0; i < defs.length; i++) {
+          if (defs[i].key === paramKey) {
+            var v = +value;
+            if (!isFinite(v)) v = defs[i].def;
+            paramState[layerKey][paramKey] = clamp(v, defs[i].min, defs[i].max);
+            return;
+          }
+        }
+      },
+      getLayerParamValues: function () {
+        var out = {};
+        for (var lk in paramState) {
+          out[lk] = {};
+          for (var pk in paramState[lk]) out[lk][pk] = paramState[lk][pk];
         }
         return out;
       },

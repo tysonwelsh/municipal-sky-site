@@ -29,19 +29,26 @@
 //     seed + a ≤300 ms re-stamp animation), the lamp as master volume (one
 //     shared setting, applied to every engine).
 //
-//   · THE MIXING DESK — the cabinet's collapsible drawer (PLAN-MIXING-DESK),
-//     opened by the MIX pushplate (open state persisted in localStorage),
-//     desktop only: under the 700px breakpoint the drawer is never built.
-//     One row per layer, rebuilt from getLayers() on every tab switch: an
-//     authored voice sigil stamped from PJ2.Skin.atlas, VT323 name, the
-//     dithered-fill VOL slider (thumb position unquantized), a log-mapped
-//     RATE slider (0.25×–4×, double-click resets to 1× — only for layers
+//   · THE MIXING DESK — the cabinet's drawer (PLAN-MIXING-DESK, then
+//     PLAN-MIXING-DESK-2). Its header bar is always visible and IS the
+//     collapse toggle (caret + caption, role=button, keyboard-operable;
+//     open state persisted in localStorage); COPY/PASTE ride the header's
+//     right side, shown only while open. Desktop only: under the 700px
+//     breakpoint the desk is never built. One row per layer, rebuilt from
+//     getLayers() on every tab switch: an expand chevron, an authored voice
+//     sigil stamped from PJ2.Skin.atlas, VT323 name, the dithered-fill VOL
+//     slider (thumb position unquantized), a log-mapped RATE slider
+//     (0.25×–4×, double-click the readout resets to 1× — only for layers
 //     with a clock lane), v1's pixel mute square (filled = audible) wired
-//     to toggleLayer, and a solo square. Solo is UI-side only, composed
-//     through toggleLayer; clearing the last solo restores the pre-solo
-//     mutes, and tab switching dissolves it. The header's COPY/PASTE
-//     plates serialize the whole mix (master + volumes + mutes + rates)
-//     as JSON, forgiving of partial and hand-edited pastes.
+//     to toggleLayer, and a solo square. The chevron reveals the layer's
+//     fine-tune KNOB STRIP — the facade's getLayerParams contract, live
+//     per-voice scalars in the same slider idiom; layers with no params
+//     get a blank chevron slot so the columns stay true. Solo is UI-side
+//     only, composed through toggleLayer; clearing the last solo restores
+//     the pre-solo mutes, and tab switching dissolves it. COPY/PASTE
+//     serialize the whole mix (master + volumes + mutes + rates +
+//     non-default knob values under "p") as JSON, forgiving of partial
+//     and hand-edited pastes.
 //
 //   · THE SCRIBAL EVENT LOG (§4) — DOM rows fed by setEventListener. Scene
 //     lines print the ENGINE'S display labels (Calcinatio … Coagulatio;
@@ -755,6 +762,14 @@
     }
   }
 
+  // Plain readout formatting for the fine-tune knobs (fmtRate's trimming,
+  // no unit suffix).
+  function fmtParam(v) {
+    var s = (+v).toFixed(2);
+    if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+    return s;
+  }
+
   function buildLegend(key) {
     var box = $("pj2-legend");
     mixRowRender = [];
@@ -762,17 +777,37 @@
     var eng = engineFor(key);
     box.textContent = "";
     if (!eng) return;
-    var layers = [], vols = {}, rates = {}, info = null;
+    var layers = [], vols = {}, rates = {}, info = null, params = {}, paramVals = {};
     try { layers = eng.getLayers(); } catch (e) { return; }
     try { vols = eng.getLayerVolumes(); } catch (e) {}
     try { if (typeof eng.getLayerRates === "function") rates = eng.getLayerRates() || {}; } catch (e) {}
+    try { if (typeof eng.getLayerParams === "function") params = eng.getLayerParams() || {}; } catch (e) {}
+    try { if (typeof eng.getLayerParamValues === "function") paramVals = eng.getLayerParamValues() || {}; } catch (e) {}
     try { info = eng.getInfo(); } catch (e) {}
     var canRate = typeof eng.setLayerRate === "function";
+    var canParam = typeof eng.setLayerParam === "function";
 
     for (var i = 0; i < layers.length; i++) {
       (function (ly) {
         var row = document.createElement("div");
         row.className = "pj2-legend-row";
+
+        // the fine-tune chevron (mixing desk II) — layers with no exposed
+        // params keep a blank, unfocusable slot so the columns stay true
+        var knobDefs = (canParam && params[ly.key] && params[ly.key].length) ? params[ly.key] : null;
+        var chev = document.createElement("button");
+        chev.type = "button";
+        if (knobDefs) {
+          chev.className = "pj2-legend-chev";
+          chev.setAttribute("aria-label", "fine-tune " + ly.label);
+          chev.setAttribute("aria-expanded", "false");
+          chev.textContent = "▸︎";
+        } else {
+          chev.className = "pj2-legend-chev pj2-legend-chev-none";
+          chev.setAttribute("aria-hidden", "true");
+          chev.tabIndex = -1;
+        }
+        row.appendChild(chev);
 
         var sigilBox = document.createElement("div");
         sigilBox.className = "pj2-legend-sigil";
@@ -879,7 +914,59 @@
           renderSolo(!!soloSet[ly.key]);
         });
 
-        box.appendChild(row);
+        // the knob strip (mixing desk II): one compact slider per exposed
+        // param, linear across the knob's [min, max], live through
+        // setLayerParam. Sits beneath its row, in the same centered column;
+        // expansion dies with the rebuild on tab switch.
+        if (knobDefs) {
+          var strip = document.createElement("div");
+          strip.className = "pj2-knobs";
+          strip.id = "pj2-knobs-" + ly.key;
+          strip.setAttribute("hidden", "");
+          chev.setAttribute("aria-controls", strip.id);
+          for (var ki = 0; ki < knobDefs.length; ki++) {
+            (function (pd) {
+              var item = document.createElement("div");
+              item.className = "pj2-knob";
+              var lab = document.createElement("span");
+              lab.className = "pj2-knob-name";
+              lab.textContent = pd.key;
+              lab.title = pd.label;
+              item.appendChild(lab);
+              var sl = makeDeskSlider(ly.label + " " + pd.key);
+              item.appendChild(sl.el);
+              var rd = document.createElement("span");
+              rd.className = "pj2-knob-val";
+              item.appendChild(rd);
+              var vals = paramVals[ly.key] || {};
+              var v0 = (vals[pd.key] != null) ? vals[pd.key] : pd.def;
+              var span = pd.max - pd.min;
+              function showV(v) {
+                sl.set((v - pd.min) / span);
+                rd.textContent = fmtParam(v);
+              }
+              sl.range.value = String((v0 - pd.min) / span);
+              showV(v0);
+              sl.range.addEventListener("input", function () {
+                var v = pd.min + clamp01(sl.range.value) * span;
+                try { eng.setLayerParam(ly.key, pd.key, v); } catch (e) {}
+                showV(v);
+              });
+              strip.appendChild(item);
+            })(knobDefs[ki]);
+          }
+          chev.addEventListener("click", function () {
+            var open = strip.hasAttribute("hidden");
+            if (open) strip.removeAttribute("hidden"); else strip.setAttribute("hidden", "");
+            chev.setAttribute("aria-expanded", open ? "true" : "false");
+            chev.textContent = open ? "▾︎" : "▸︎";
+            if (open) chev.classList.add("is-open"); else chev.classList.remove("is-open");
+          });
+          box.appendChild(row);
+          box.appendChild(strip);
+        } else {
+          box.appendChild(row);
+        }
       })(layers[i]);
     }
   }
@@ -908,10 +995,12 @@
   function serializeMix() {
     var eng = engines[activeKey];
     if (!eng) return null;
-    var layers = [], vols = {}, rates = {}, info = null;
+    var layers = [], vols = {}, rates = {}, info = null, pDefs = {}, pVals = {};
     try { layers = eng.getLayers(); } catch (e) { return null; }
     try { vols = eng.getLayerVolumes(); } catch (e) {}
     try { if (typeof eng.getLayerRates === "function") rates = eng.getLayerRates() || {}; } catch (e) {}
+    try { if (typeof eng.getLayerParams === "function") pDefs = eng.getLayerParams() || {}; } catch (e) {}
+    try { if (typeof eng.getLayerParamValues === "function") pVals = eng.getLayerParamValues() || {}; } catch (e) {}
     try { info = eng.getInfo(); } catch (e) {}
     var out = { "pj2-mix": 1, track: activeKey, master: round3(masterVol), layers: {} };
     for (var i = 0; i < layers.length; i++) {
@@ -921,6 +1010,19 @@
         m: (info && info.layers && info.layers[k] && info.layers[k].muted) ? 1 : 0,
       };
       if (rates[k] != null) cell.r = round3(rates[k]); // lane-less layers carry no rate
+      // knob values ride under "p" — only non-defaults, to keep blobs short
+      var pd = pDefs[k], pv = pVals[k];
+      if (pd && pv) {
+        var pmap = null;
+        for (var pi = 0; pi < pd.length; pi++) {
+          var d = pd[pi];
+          if (pv[d.key] != null && round3(pv[d.key]) !== round3(d.def)) {
+            if (!pmap) pmap = {};
+            pmap[d.key] = round3(pv[d.key]);
+          }
+        }
+        if (pmap) cell.p = pmap;
+      }
       out.layers[k] = cell;
     }
     return JSON.stringify(out, null, 2);
@@ -943,7 +1045,7 @@
     var known = {}, layers = [];
     try { layers = eng.getLayers(); } catch (e) {}
     for (var i = 0; i < layers.length; i++) known[layers[i].key] = true;
-    var matched = 0, offered = 0;
+    var matched = 0, offered = 0, knobs = 0;
     for (var k in data.layers) {
       var cell = data.layers[k];
       if (!cell || typeof cell !== "object") continue;
@@ -959,45 +1061,63 @@
       if (typeof cell.r === "number" && isFinite(cell.r)) {
         try { if (typeof eng.setLayerRate === "function") eng.setLayerRate(k, cell.r); } catch (e) {}
       }
+      // knob values: clamped inside setLayerParam; unknown param keys ignored
+      if (cell.p && typeof cell.p === "object" && typeof eng.setLayerParam === "function") {
+        for (var pk in cell.p) {
+          if (typeof cell.p[pk] === "number" && isFinite(cell.p[pk])) {
+            try { eng.setLayerParam(k, pk, cell.p[pk]); knobs++; } catch (e) {}
+          }
+        }
+      }
     }
     dissolveSolo(false); // the pasted mutes stand as written
     buildLegend(activeKey);
     if (!note) return;
+    var knobTail = knobs ? " · " + knobs + " knobs" : "";
     if (data.track && data.track !== activeKey) {
       var fromNs = TRACK[data.track] ? TRACK[data.track].ns : String(data.track);
       note.textContent = "pasted a " + fromNs + " mix onto the " + TRACK[activeKey].ns
-        + " — " + matched + " of " + offered + " voices matched";
+        + " — " + matched + " of " + offered + " voices matched" + knobTail;
     } else if (matched < offered) {
-      note.textContent = "the mix is in — " + matched + " of " + offered + " voices matched, the rest ignored";
+      note.textContent = "the mix is in — " + matched + " of " + offered + " voices matched, the rest ignored" + knobTail;
     } else {
-      note.textContent = "the mix is in — " + matched + " voices";
+      note.textContent = "the mix is in — " + matched + " voices" + knobTail;
     }
   }
 
   function initMixdesk() {
-    var drawer = $("pj2-mixdesk"), toggle = $("pj2-mixdesk-toggle");
-    if (!drawer || !toggle) return;
+    var drawer = $("pj2-mixdesk"), head = $("pj2-mixdesk-head"), caret = $("pj2-mixdesk-caret");
+    if (!drawer || !head) return;
 
+    // The header bar IS the toggle (mixing desk II — the detached MIX plate
+    // is gone). Click anywhere on it; Enter/Space when it's focused.
     function setOpen(open, persist) {
       if (open) drawer.classList.add("is-open"); else drawer.classList.remove("is-open");
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
-      toggle.textContent = open ? "MIX ▴︎" : "MIX ▾︎";
-      toggle.setAttribute("aria-label", "the mixing desk — "
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+      if (caret) caret.textContent = open ? "▴︎" : "▾︎";
+      head.setAttribute("aria-label", "the mixing desk — "
         + (open ? "close" : "open") + " the per-voice mixer drawer");
-      if (open) toggle.classList.add("is-lit"); else toggle.classList.remove("is-lit");
       if (persist) { try { localStorage.setItem("pj2.mixdesk.open", open ? "1" : "0"); } catch (e) {} }
     }
     var open0 = false;
     try { open0 = localStorage.getItem("pj2.mixdesk.open") === "1"; } catch (e) {}
     setOpen(open0, false);
-    toggle.addEventListener("click", function () {
-      setOpen(toggle.getAttribute("aria-expanded") !== "true", true);
+    function toggleDesk() { setOpen(head.getAttribute("aria-expanded") !== "true", true); }
+    head.addEventListener("click", toggleDesk);
+    head.addEventListener("keydown", function (e) {
+      if (e.target !== head) return; // the COPY/PASTE plates keep their native keys
+      if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) {
+        if (e.preventDefault) e.preventDefault();
+        toggleDesk();
+      }
     });
 
-    // COPY — the plate flashes COPIED for a breath once the text is away
+    // COPY — the plate flashes COPIED for a breath once the text is away.
+    // The header plates never toggle the drawer (stopPropagation).
     var copyBtn = $("pj2-mix-copy");
     var copyTimer = null;
-    if (copyBtn) copyBtn.addEventListener("click", function () {
+    if (copyBtn) copyBtn.addEventListener("click", function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();
       var text = serializeMix();
       if (text == null) return;
       function flash() {
@@ -1013,7 +1133,7 @@
       }
     });
 
-    // PASTE — the inline popover in the drawer head: textarea + APPLY/CANCEL
+    // PASTE — the inline popover under the drawer head: textarea + APPLY/CANCEL
     var pasteBtn = $("pj2-mix-paste"), pop = $("pj2-mixdesk-paste");
     var pasteText = $("pj2-mix-paste-text");
     var applyBtn = $("pj2-mix-apply"), cancelBtn = $("pj2-mix-cancel");
@@ -1023,7 +1143,8 @@
       if (pasteBtn) pasteBtn.setAttribute("aria-expanded", open ? "true" : "false");
       if (open && pasteText) { try { pasteText.focus(); } catch (e) {} }
     }
-    if (pasteBtn) pasteBtn.addEventListener("click", function () {
+    if (pasteBtn) pasteBtn.addEventListener("click", function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();
       setPasteOpen(!!(pop && pop.hasAttribute("hidden")));
     });
     if (cancelBtn) cancelBtn.addEventListener("click", function () {
@@ -1436,12 +1557,14 @@
       });
     }
 
-    // space = play/stop (when not in an input; buttons keep native space)
+    // space = play/stop (when not in an input; buttons keep native space,
+    // and the mixing desk's header keeps its own Enter/Space toggle)
     document.addEventListener("keydown", function (e) {
       if (e.code !== "Space" && e.key !== " ") return;
       var t = e.target;
       var tag = (t && t.tagName) ? String(t.tagName).toUpperCase() : "";
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON") return;
+      if (t && t.id === "pj2-mixdesk-head") return;
       if (t && t.isContentEditable) return;
       if (e.preventDefault) e.preventDefault();
       if (playIntent) doStop(); else doPlay();

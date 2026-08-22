@@ -87,8 +87,9 @@
   // --------------------------------------------------------------------------
   // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute/rate contract,
   // uniform with PJ2.Library/PJ2.Ariel (getLayers / setLayerVolume /
-  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates; full design
-  // note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
+  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates, plus the
+  // fine-tune knob doors getLayerParams / setLayerParam / getLayerParamValues;
+  // full design note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
   // (tagged _pj2Mix) are inserted into — or cleanly reused from — each
   // layer's chain; no randomness, no event-time effects, never a shared param
   // with the followers or the cut (cutGain, gurdyLevel, noiseLevel,
@@ -144,6 +145,39 @@
     percussion: ["protodrum", "percussion"], ambient: ["ambient"],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
+
+  // PER-LAYER FINE-TUNE PARAMS (mixing desk II — the per-row knob strips;
+  // pj2-library's design note is authoritative). Pure scalars read at
+  // schedule time; every def equals the constant it replaces, so the
+  // default desk is bit-identical to the unparametrized engine.
+  var LAYER_PARAMS = {
+    gurdy: [
+      { key: "brightness", label: "brightness — how open the cluster's lowpass sits", min: 0.5, max: 1.6, def: 1 },
+      { key: "warble", label: "warble — the pitch drift's reach", min: 0, max: 2, def: 1 },
+    ],
+    chant: [
+      { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
+      { key: "vibrato", label: "vibrato — the cantor's wobble depth", min: 0, max: 2, def: 1 },
+    ],
+    rebec: [
+      { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 3, def: 1 },
+      { key: "body", label: "body — how hard the box resonances ring", min: 0.4, max: 2, def: 1 },
+    ],
+    waterphone: [
+      { key: "wail", label: "wail — how far each note glisses down (%)", min: 0, max: 6, def: 1.8 },
+      { key: "bloom", label: "bloom — the FM swell inside the sustain", min: 0, max: 2, def: 1 },
+    ],
+    boneflute: [
+      { key: "breath", label: "breath — the air across the embouchure", min: 0, max: 3, def: 1 },
+    ],
+    percussion: [
+      { key: "irregularity", label: "irregularity — how loosely the walk keeps its grid", min: 0, max: 2.5, def: 1 },
+      { key: "adorn", label: "adorn — how often pairs and rattles answer", min: 0, max: 2.5, def: 1 },
+    ],
+    ambient: [
+      { key: "density", label: "density — how often the dark speaks", min: 0.5, max: 2, def: 1 },
+    ],
+  };
 
   var DEFAULT_SEED = 1400137155; // "SYCX" as a 32-bit word, near enough
 
@@ -477,6 +511,19 @@
     var mixState = {};
     for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
       mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false, rate: 1 };
+    }
+    // Fine-tune param state (LAYER_PARAMS): same lifetime as mixState;
+    // voices read it live through pVal at schedule time.
+    var paramState = {};
+    for (var plk in LAYER_PARAMS) {
+      paramState[plk] = {};
+      for (var pdi = 0; pdi < LAYER_PARAMS[plk].length; pdi++) {
+        paramState[plk][LAYER_PARAMS[plk][pdi].key] = LAYER_PARAMS[plk][pdi].def;
+      }
+    }
+    function pVal(layer, key) {
+      var l = paramState[layer];
+      return (l && l[key] != null) ? l[key] : 1;
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -878,9 +925,13 @@
     // vibrato blooming late. Peak ~0.032 pre-formant-loss compensation
     // (formants eat energy; the v1 hum precedent). Returns the env gain so
     // callers can add the seasick-delay send. ~11 nodes.
-    function renderChantNote(dest, freq, t, durS, peak, vowel, wx, extraSend) {
+    function renderChantNote(dest, freq, t, durS, peak, vowel, wx, extraSend, layerKey) {
       var c = ctx;
-      var open = 0.75 + 0.5 * wx.breath;
+      // The desk knobs bind to the layer that owns the sound: the ambient
+      // pool's keen borrows this body but passes its own layer, so the
+      // chant's knobs never leak across the desk's rows.
+      var pLayer = layerKey || "chant";
+      var open = (0.75 + 0.5 * wx.breath) * pVal(pLayer, "openness");
       var o1 = c.createOscillator();
       o1.type = "sawtooth";
       o1.frequency.setValueAtTime(freq, t);
@@ -901,7 +952,7 @@
       vib.frequency.setValueAtTime(3.6 + 1.1 * wx.breath, t);
       var vg = c.createGain();
       vg.gain.setValueAtTime(0, t);
-      vg.gain.linearRampToValueAtTime(0.5 + 1.4 * wx.breath, t + Math.min(1.2, durS * 0.33));
+      vg.gain.linearRampToValueAtTime((0.5 + 1.4 * wx.breath) * pVal(pLayer, "vibrato"), t + Math.min(1.2, durS * 0.33));
       vib.connect(vg);
       try { vg.connect(o1.frequency); } catch (e0) {}
       try { vg.connect(o2.frequency); } catch (e1) {}
@@ -958,11 +1009,12 @@
       var mix = c.createGain();
       mix.gain.setValueAtTime(1, t);
       var picks = [REBEC_BODY[i1], REBEC_BODY[i2]];
+      var bodyQ = pVal("rebec", "body"); // the desk knob: resonance Q multiplier (def 1 = as-composed)
       for (var i = 0; i < 2; i++) {
         var bp = c.createBiquadFilter();
         bp.type = "bandpass";
         bp.frequency.setValueAtTime(picks[i][0], t);
-        bp.Q.setValueAtTime(picks[i][1], t);
+        bp.Q.setValueAtTime(picks[i][1] * bodyQ, t);
         pre.connect(bp);
         bp.connect(mix);
       }
@@ -974,7 +1026,7 @@
       bf.Q.setValueAtTime(1.2, t);
       var bg = c.createGain();
       bn.connect(bf); bf.connect(bg); bg.connect(mix);
-      PJ2.Voice.env(bg.gain, t, [[0.12, 0.006 * vel], [Math.max(0.05, durS * 0.4), 0]]);
+      PJ2.Voice.env(bg.gain, t, [[0.12, 0.006 * vel * pVal("rebec", "rosin")], [Math.max(0.05, durS * 0.4), 0]]);
       bn.start(t, bn.randomOffset);
       bn.stop(t + durS * 0.6);
       var env = c.createGain();
@@ -1007,7 +1059,7 @@
       var sustainEnd = Math.max(durS - 2.2, durS * 0.6);
       PJ2.Voice.env(env.gain, t, [[a, peak], [Math.max(0.05, sustainEnd - a), peak], [Math.max(0.1, durS - sustainEnd), 0]]);
 
-      var glissEnd = 1 - WATERPHONE.wail / 100;
+      var glissEnd = 1 - pVal("waterphone", "wail") / 100; // WATERPHONE.wail 1.8 at the default
       var wobbleAmt = WATERPHONE.wobble / 100;
       var stopAt = t + durS + 0.5;
 
@@ -1071,7 +1123,7 @@
       mod.type = "sine";
       mod.frequency.setValueAtTime(freq * 1.41, t);
       mod.frequency.linearRampToValueAtTime(freq * 1.41 * glissEnd, t + durS);
-      var peakIdx = freq * WATERPHONE.bloomIntensity;
+      var peakIdx = freq * WATERPHONE.bloomIntensity * pVal("waterphone", "bloom"); // def 1 = as-composed
       modG.gain.setValueAtTime(0, t);
       modG.gain.linearRampToValueAtTime(peakIdx, t + Math.min(1.5, durS * 0.25));
       modG.gain.linearRampToValueAtTime(peakIdx * 0.44, t + durS * 0.7);
@@ -1115,7 +1167,8 @@
       bf.Q.setValueAtTime(4, t);
       var ng = c.createGain();
       n.connect(bf); bf.connect(ng); ng.connect(dest);
-      PJ2.Voice.env(ng.gain, t, [[atk, 0.006 * vel], [Math.max(0.02, durS - atk - rel), 0.005 * vel], [rel, 0]]);
+      var flBreath = pVal("boneflute", "breath"); // the desk knob (def 1 = as-composed)
+      PJ2.Voice.env(ng.gain, t, [[atk, 0.006 * vel * flBreath], [Math.max(0.02, durS - atk - rel), 0.005 * vel * flBreath], [rel, 0]]);
       n.start(t, n.randomOffset);
       n.stop(t + durS + 0.05);
       // overblown octave, a whisper
@@ -1313,8 +1366,9 @@
         var overlap = rng.rnd(3, 5);
         var subRoll = rng.chance(0.3);
         var driftDraws = [];
+        var warble = pVal("gurdy", "warble"); // the desk knob: scales the drift's reach (def 1 = v1's ±3%)
         for (var dd = 0; dd < 5; dd++) {
-          driftDraws.push([1 + rng.rnd(-0.03, 0.03), 1 + rng.rnd(-0.02, 0.02)]);
+          driftDraws.push([1 + rng.rnd(-0.03, 0.03) * warble, 1 + rng.rnd(-0.02, 0.02) * warble]);
         }
         var cutoffDraw = rng.rnd(150, 350);
         var st = curSceneType();
@@ -1333,6 +1387,7 @@
         var cutoff = cutoffDraw * (1 - 0.35 * wx.murk) * (1 - 0.12 * curTidePos());
         if (t < run.darkenUntil) cutoff *= 0.85;
         cutoff = Math.max(90, cutoff + 60 * iv);
+        cutoff *= pVal("gurdy", "brightness"); // the desk knob (def 1 = as-composed)
         var lp = c.createBiquadFilter();
         lp.type = "lowpass";
         lp.frequency.setValueAtTime(cutoff, t);
@@ -1569,10 +1624,12 @@
       var rng = run.streams.percussion;
       var st = curSceneType();
       var iv = curIntensity(t);
-      // Draws first, unconditionally (stream discipline).
+      // Draws first, unconditionally (stream discipline). The desk's adorn
+      // knob scales the pair/rattle chances (def 1 = as-composed).
       var gap = rng.rnd(3, 10) * (1.25 - 0.7 * iv);
-      var pairRoll = rng.chance(0.25);
-      var rattleRoll = rng.chance(0.3);
+      var adorn = pVal("percussion", "adorn");
+      var pairRoll = rng.chance(0.25 * adorn);
+      var rattleRoll = rng.chance(0.3 * adorn);
       if (st === "circling" && !inHush(t)) {
         frameDrum(t, rng, { mode: "loose" });
         if (pairRoll) {
@@ -1598,8 +1655,10 @@
       var lane = run.clock.lane("percussion");
       var rng = run.streams.percussion;
       if (curSceneType() !== "processional") return; // the rite has moved on
-      var jitter = rng.rnd(0.8, 1.2);                // Â±20%, per stroke
-      var rattleRoll = rng.chance(0.25);
+      // the desk knobs: irregularity widens/narrows the walk jitter, adorn
+      // scales the rattle-accent chance (def 1 = as-composed)
+      var jitter = 1 + (rng.rnd(0.8, 1.2) - 1) * pVal("percussion", "irregularity");
+      var rattleRoll = rng.chance(0.25 * pVal("percussion", "adorn"));
       if (!inHush(t)) {
         frameDrum(t, rng, { mode: "walk" });
         if (rattleRoll) boneRattle(t + 0.02, rng, { mode: "walk-accent" });
@@ -2167,7 +2226,7 @@
         if (!tok) return;
         run.tokens.push(tok);
         var freq = run.field.degFreq(deg, 1);
-        renderChantNote(run.layAmb, freq, t, durS, 0.014, walkVowel(), wxAt(t), null);
+        renderChantNote(run.layAmb, freq, t, durS, 0.014, walkVowel(), wxAt(t), null, "ambient");
         emitNote({
           voice: "ambient", kind: "keen", freq: freq, t: t, durS: durS,
           deg: deg, oct: 1,
@@ -2201,9 +2260,10 @@
           else if (what === "bell") ironBell(t);
           else if (what === "keen") keen(t);
         } catch (e) { /* a missing one-shot is just a darker treeline */ }
-        // THE GAP LAW — the Library's, verbatim: density within the family
-        // contract by construction.
-        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t);
+        // THE GAP LAW — the Library's, verbatim (plus the desk's density
+        // knob, def 1 = as-composed): density within the family contract by
+        // construction.
+        var next = rng.rnd(20, 60) * (1.3 - 0.6 * iv - 0.15 * tide) * gmAt(t) / pVal("ambient", "density");
         lane.at(t + Math.max(8, next), oneShot);
       }
       lane.at(run.t0 + rng.rnd(8, 20), oneShot);
@@ -3152,6 +3212,39 @@
         for (var i = 0; i < MIX_LAYERS.length; i++) {
           var k = MIX_LAYERS[i].key;
           if (MIX_RATE_LANES[k] && MIX_RATE_LANES[k].length) out[k] = mixState[k].rate;
+        }
+        return out;
+      },
+      // ---- the fine-tune params (LAYER_PARAMS; pj2-library's note is
+      // authoritative) — knobs are read live by the voices at schedule time.
+      getLayerParams: function () {
+        var out = {};
+        for (var lk in LAYER_PARAMS) {
+          var defs = LAYER_PARAMS[lk], list = [];
+          for (var i = 0; i < defs.length; i++) {
+            list.push({ key: defs[i].key, label: defs[i].label, min: defs[i].min, max: defs[i].max, def: defs[i].def });
+          }
+          out[lk] = list;
+        }
+        return out;
+      },
+      setLayerParam: function (layerKey, paramKey, value) {
+        var defs = LAYER_PARAMS[layerKey];
+        if (!defs) return;
+        for (var i = 0; i < defs.length; i++) {
+          if (defs[i].key === paramKey) {
+            var v = +value;
+            if (!isFinite(v)) v = defs[i].def;
+            paramState[layerKey][paramKey] = clamp(v, defs[i].min, defs[i].max);
+            return;
+          }
+        }
+      },
+      getLayerParamValues: function () {
+        var out = {};
+        for (var lk in paramState) {
+          out[lk] = {};
+          for (var pk in paramState[lk]) out[lk][pk] = paramState[lk][pk];
         }
         return out;
       },

@@ -649,13 +649,14 @@
   cursor: pointer;
 }
 
-/* --- the mixing desk: the cabinet's collapsible drawer (PLAN-MIXING-DESK) ---
-   The same wood-and-brass frame as the cabinet; the old legend strip moved
-   here and grew a rate slider and a solo square per voice. Desktop only —
-   the 700px breakpoint below hides the drawer and its MIX toggle, and
-   pj2-ui.js never builds the rows there. */
+/* --- the mixing desk: the cabinet's drawer (PLAN-MIXING-DESK / -2) ---------
+   The same wood-and-brass frame as the cabinet. Mixing desk II: the header
+   bar is always visible and IS the collapse toggle (caret + caption,
+   keyboard-operable); COPY/PASTE ride its right side, shown only while
+   open. Each row's chevron reveals per-voice fine-tune knobs. Desktop
+   only — the 700px breakpoint hides the desk and pj2-ui.js builds nothing. */
 .pj2-mixdesk {
-  display: none;
+  display: block;
   margin-top: 8px;
   background: linear-gradient(180deg, var(--pj2c-wood-hi) 0%, var(--pj2c-wood) 55%, var(--pj2c-wood-lo) 100%);
   border: 2px solid var(--pj2c-wood-edge);
@@ -669,7 +670,9 @@
   );
   padding: 8px 16px 12px;
 }
-.pj2-mixdesk.is-open { display: block; }
+/* the body is what collapses; the header bar stays */
+.pj2-mixdesk-body { display: none; }
+.pj2-mixdesk.is-open .pj2-mixdesk-body { display: block; }
 .pj2-mixdesk-head {
   display: flex;
   align-items: center;
@@ -680,9 +683,24 @@
   max-width: 720px;
   width: 100%;
   box-sizing: border-box;
-  margin: 0 auto 6px;
+  margin: 0 auto;
+  cursor: pointer;
+  user-select: none;
 }
-.pj2-mixdesk-actions { display: flex; gap: 8px; }
+.pj2-mixdesk.is-open .pj2-mixdesk-head { margin-bottom: 6px; }
+.pj2-mixdesk-head:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
+/* hover affordance — the header IS the toggle, so it should feel like one */
+.pj2-mixdesk-head:hover .pj2-mixdesk-caret { color: var(--pj2c-bone); }
+.pj2-mixdesk-caret {
+  color: var(--pj2c-caption);
+  font-size: 15px;
+  margin-right: 2px;
+}
+/* the lit treatment the removed MIX plate had, moved to caret + caption */
+.pj2-mixdesk.is-open .pj2-mixdesk-caret,
+.pj2-mixdesk.is-open .pj2-mixdesk-head .pj2-cab-cap { color: #e8c95a; }
+.pj2-mixdesk-actions { display: none; gap: 8px; }
+.pj2-mixdesk.is-open .pj2-mixdesk-actions { display: flex; }
 .pj2-pushplate.pj2-mini {
   font-size: 14px;
   letter-spacing: 0.12em;
@@ -716,7 +734,7 @@
   letter-spacing: 0.06em;
 }
 
-/* --- the desk rows: sigil · name · VOL · RATE · M · S, one line each ------ */
+/* --- the desk rows: chevron · sigil · name · VOL · RATE · M · S, one line each */
 .pj2-legend {
   display: flex;
   flex-direction: column;
@@ -817,6 +835,61 @@
 .pj2-legend-solo.is-on { background: var(--pj2-accent); }
 .pj2-legend-solo:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
 
+/* --- the fine-tune chevron + knob strip (mixing desk II) ------------------ */
+.pj2-legend-chev {
+  flex: 0 0 14px;
+  width: 14px;
+  height: 14px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font-family: "VT323", monospace;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--pj2c-caption);
+  text-align: center;
+}
+.pj2-legend-chev.is-open { color: var(--pj2c-bone); }
+.pj2-legend-chev:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 1px; }
+/* layers with no exposed params keep the slot, blank, so columns stay true */
+.pj2-legend-chev-none { visibility: hidden; cursor: default; }
+/* the strip sits beneath its row in the same 720px column, indented past
+   the chevron+sigil so the knobs read as belonging to the name above */
+.pj2-knobs {
+  display: flex;
+  flex-wrap: wrap; /* narrow desktops: wrap to two lines, never crush */
+  gap: 14px;
+  max-width: 720px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 0 0 4px 56px; /* past chevron+sigil, flush under the name column */
+}
+.pj2-knobs[hidden] { display: none; }
+.pj2-knob {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.pj2-knob-name {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--pj2c-caption);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.pj2-knob .pj2-legend-slider { flex: 1 1 auto; }
+.pj2-knob-val {
+  flex: 0 0 34px;
+  font-size: 13px;
+  color: var(--pj2c-caption);
+  letter-spacing: 0.04em;
+  text-align: right;
+}
+
 /* --- build stamp ------------------------------------------------------------ */
 .pj2-build {
   max-width: 1392px;
@@ -853,7 +926,7 @@
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
   /* the mixing desk is desktop-only (PLAN-MIXING-DESK) — never rendered,
      and pj2-ui.js never builds its rows at this width either */
-  .pj2-mixdesk, #pj2-mixdesk-toggle { display: none; }
+  .pj2-mixdesk { display: none; }
   .pj2-cab-spacer { display: none; }
   /* the head transport drops to its own full-width row, three equal thumb
      targets — still above the plate, so play is reachable on open */
