@@ -696,8 +696,8 @@
   letter-spacing: 0.12em;
   padding: 4px 10px;
 }
-/* the paste popover rides the same centered 720px column as head + rows */
-.pj2-mixdesk-paste { margin: 0 auto 8px; max-width: 720px; width: 100%; box-sizing: border-box; }
+/* the paste popover left-aligns with the desk rows */
+.pj2-mixdesk-paste { margin: 0 0 8px; max-width: 720px; width: 100%; box-sizing: border-box; }
 .pj2-mixdesk-paste-text {
   display: block;
   width: 100%;
@@ -724,7 +724,10 @@
   letter-spacing: 0.06em;
 }
 
-/* --- the desk rows: chevron · sigil · name · VOL · RATE · M · S, one line each */
+/* --- the desk rows: chevron · sigil · name · VOL, one line each ------------
+   Everything else (M/S, RATE, the fine-tune knobs) lives in the per-row
+   detail strip the chevron unfolds (owner 2026-08-22). Rows left-align at
+   the cabinet's edge — a centered column with empty wings read as lost. */
 .pj2-legend {
   display: flex;
   flex-direction: column;
@@ -735,7 +738,6 @@
   align-items: center;
   gap: 8px;
   max-width: 720px;  /* keep the VOL throw a fist-width, not a forearm */
-  margin: 0 auto;
   width: 100%;
 }
 .pj2-legend-sigil {
@@ -825,7 +827,7 @@
 .pj2-legend-solo.is-on { background: var(--pj2-accent); }
 .pj2-legend-solo:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
 
-/* --- the fine-tune chevron + knob strip (mixing desk II) ------------------ */
+/* --- the expand chevron + the detail strip (mixing desk II/III) ---------- */
 .pj2-legend-chev {
   flex: 0 0 14px;
   width: 14px;
@@ -842,26 +844,34 @@
 }
 .pj2-legend-chev.is-open { color: var(--pj2c-bone); }
 .pj2-legend-chev:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 1px; }
-/* layers with no exposed params keep the slot, blank, so columns stay true */
-.pj2-legend-chev-none { visibility: hidden; cursor: default; }
-/* the strip sits beneath its row in the same 720px column, indented past
-   the chevron+sigil so the knobs read as belonging to the name above */
-.pj2-knobs {
+/* the detail strip: unfolds beneath its row, indented past the chevron +
+   sigil so it reads as belonging to the name above. Holds the M/S squares
+   (with captions), the RATE throw + readout, and the fine-tune knobs;
+   wraps rather than crushes. */
+.pj2-detail {
   display: flex;
-  flex-wrap: wrap; /* narrow desktops: wrap to two lines, never crush */
-  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
   max-width: 720px;
   width: 100%;
   box-sizing: border-box;
-  margin: 0 auto;
-  padding: 0 0 4px 56px; /* past chevron+sigil, flush under the name column */
+  padding: 2px 0 6px 56px; /* past chevron+sigil, flush under the name column */
 }
-.pj2-knobs[hidden] { display: none; }
+.pj2-detail[hidden] { display: none; }
+.pj2-detail-ms { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; }
+.pj2-detail-rate { display: flex; align-items: center; gap: 6px; flex: 0 1 210px; }
+.pj2-detail-cap {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--pj2c-caption);
+  letter-spacing: 0.1em;
+}
 .pj2-knob {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex: 1 1 0;
+  flex: 1 1 150px;
   min-width: 0;
 }
 .pj2-knob-name {

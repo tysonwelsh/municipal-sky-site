@@ -29,26 +29,28 @@
 //     seed + a ≤300 ms re-stamp animation), the lamp as master volume (one
 //     shared setting, applied to every engine).
 //
-//   · THE MIXING DESK — the cabinet's drawer (PLAN-MIXING-DESK, then
-//     PLAN-MIXING-DESK-2). Its header bar is always visible and IS the
-//     collapse toggle (caret + caption, role=button, keyboard-operable;
-//     open state persisted in localStorage); COPY/PASTE ride the header's
-//     right side, shown only while open. Desktop only: under the 700px
-//     breakpoint the desk is never built. One row per layer, rebuilt from
-//     getLayers() on every tab switch: an expand chevron, an authored voice
-//     sigil stamped from PJ2.Skin.atlas, VT323 name, the dithered-fill VOL
-//     slider (thumb position unquantized), a log-mapped RATE slider
-//     (0.25×–4×, double-click the readout resets to 1× — only for layers
-//     with a clock lane), v1's pixel mute square (filled = audible) wired
-//     to toggleLayer, and a solo square. The chevron reveals the layer's
-//     fine-tune KNOB STRIP — the facade's getLayerParams contract, live
-//     per-voice scalars in the same slider idiom; layers with no params
-//     get a blank chevron slot so the columns stay true. Solo is UI-side
-//     only, composed through toggleLayer; clearing the last solo restores
-//     the pre-solo mutes, and tab switching dissolves it. COPY/PASTE
-//     serialize the whole mix (master + volumes + mutes + rates +
-//     non-default knob values under "p") as JSON, forgiving of partial
-//     and hand-edited pastes.
+//   · THE MIXING DESK — inside the cabinet frame (owner 2026-08-22: the
+//     header rides the controls row — binding · seal · lamp · the mixing
+//     desk ▾ — via display:contents; the drawer unfolds full-width below
+//     only while open). The header IS the collapse toggle (caret +
+//     caption, role=button, keyboard-operable; open state persisted in
+//     localStorage); COPY/PASTE ride the header's right side, shown only
+//     while open. Desktop only: under the 700px breakpoint the desk is
+//     never built. One row per layer, rebuilt from getLayers() on every
+//     tab switch — the collapsed row is just an expand chevron, an
+//     authored voice sigil stamped from PJ2.Skin.atlas, VT323 name, and
+//     the dithered-fill VOL slider (thumb position unquantized). The
+//     chevron unfolds the layer's DETAIL STRIP: v1's pixel mute square
+//     (filled = audible) wired to toggleLayer, a solo square, the
+//     log-mapped RATE slider (0.25×–4×, double-click the readout resets
+//     to 1× — only for layers with a clock lane), and the fine-tune
+//     knobs (the facade's getLayerParams contract, live per-voice
+//     scalars in the same slider idiom). Solo is UI-side only, composed
+//     through toggleLayer; clearing the last solo restores the pre-solo
+//     mutes, and tab switching dissolves it. COPY/PASTE serialize the
+//     whole mix (master + volumes + mutes + rates + non-default knob
+//     values under "p") as JSON, forgiving of partial and hand-edited
+//     pastes.
 //
 //   · THE SCRIBAL EVENT LOG (§4) — DOM rows fed by setEventListener. Scene
 //     lines print the ENGINE'S display labels (Calcinatio … Coagulatio;
@@ -626,8 +628,10 @@
   // --------------------------------------------------------------------------
   // THE MIXING DESK (PLAN-MIXING-DESK) — the per-layer mixer, rebuilt from
   // getLayers() per book into the drawer's #pj2-legend. One row per layer:
-  // sigil · name · VOL · RATE · M · S. Desktop only — init leaves mixdeskOn
-  // false under the 700px breakpoint and nothing here is ever built there.
+  // chevron · sigil · name · VOL; the chevron unfolds the detail strip
+  // (M · S · RATE · the fine-tune knobs). Desktop only — init leaves
+  // mixdeskOn false under the 700px breakpoint and nothing here is ever
+  // built there.
   // --------------------------------------------------------------------------
   function stampSigil(cv, track, layerKey, label) {
     var def = TRACK[track];
@@ -792,21 +796,17 @@
         var row = document.createElement("div");
         row.className = "pj2-legend-row";
 
-        // the fine-tune chevron (mixing desk II) — layers with no exposed
-        // params keep a blank, unfocusable slot so the columns stay true
+        // The collapsed row is chevron · sigil · name · VOL and nothing
+        // else (owner 2026-08-22). Every layer has a detail strip — RATE,
+        // M/S and the fine-tune knobs live there — so every chevron works.
         var knobDefs = (canParam && params[ly.key] && params[ly.key].length) ? params[ly.key] : null;
+        var hasRate = canRate && rates[ly.key] != null;
         var chev = document.createElement("button");
         chev.type = "button";
-        if (knobDefs) {
-          chev.className = "pj2-legend-chev";
-          chev.setAttribute("aria-label", "fine-tune " + ly.label);
-          chev.setAttribute("aria-expanded", "false");
-          chev.textContent = "▸︎";
-        } else {
-          chev.className = "pj2-legend-chev pj2-legend-chev-none";
-          chev.setAttribute("aria-hidden", "true");
-          chev.tabIndex = -1;
-        }
+        chev.className = "pj2-legend-chev";
+        chev.setAttribute("aria-label", "fine-tune " + ly.label);
+        chev.setAttribute("aria-expanded", "false");
+        chev.textContent = "▸︎";
         row.appendChild(chev);
 
         var sigilBox = document.createElement("div");
@@ -832,13 +832,76 @@
           vol.set(v);
         });
 
+        // THE DETAIL STRIP — unfolds beneath the row: the M/S squares,
+        // RATE + readout (lane-ful layers only), then the fine-tune knobs.
+        // Expansion dies with the rebuild on tab switch.
+        var strip = document.createElement("div");
+        strip.className = "pj2-detail";
+        strip.id = "pj2-detail-" + ly.key;
+        strip.setAttribute("hidden", "");
+        chev.setAttribute("aria-controls", strip.id);
+
+        // v1's pixel mute square, kept verbatim: filled = audible
+        var muteBox = document.createElement("span");
+        muteBox.className = "pj2-detail-ms";
+        var mute = document.createElement("button");
+        mute.type = "button";
+        mute.className = "pj2-legend-mute";
+        mute.setAttribute("aria-label", "mute " + ly.label);
+        function renderMute(muted) {
+          if (muted) mute.classList.remove("is-on"); else mute.classList.add("is-on");
+          mute.setAttribute("aria-pressed", muted ? "true" : "false");
+        }
+        var muted0 = !!(info && info.layers && info.layers[ly.key] && info.layers[ly.key].muted);
+        renderMute(muted0);
+        mute.addEventListener("click", function () {
+          if (countSolo()) dissolveSolo(false); // a manual mute takes the mutes back over
+          try { eng.toggleLayer(ly.key); } catch (e) {}
+          refreshMixRows();
+        });
+        muteBox.appendChild(mute);
+        var mcap = document.createElement("span");
+        mcap.className = "pj2-detail-cap";
+        mcap.textContent = "MUTE";
+        muteBox.appendChild(mcap);
+        strip.appendChild(muteBox);
+
+        // the solo square — the accent fill to the mute's bone fill
+        var soloBox = document.createElement("span");
+        soloBox.className = "pj2-detail-ms";
+        var solo = document.createElement("button");
+        solo.type = "button";
+        solo.className = "pj2-legend-solo";
+        solo.setAttribute("aria-label", "solo " + ly.label);
+        function renderSolo(on) {
+          if (on) solo.classList.add("is-on"); else solo.classList.remove("is-on");
+          solo.setAttribute("aria-pressed", on ? "true" : "false");
+        }
+        renderSolo(!!soloSet[ly.key]);
+        solo.addEventListener("click", function () {
+          applySolo(eng, layers, ly.key);
+          refreshMixRows();
+        });
+        soloBox.appendChild(solo);
+        var scap = document.createElement("span");
+        scap.className = "pj2-detail-cap";
+        scap.textContent = "SOLO";
+        soloBox.appendChild(scap);
+        strip.appendChild(soloBox);
+
+        mixRowRender.push(function (inf) {
+          renderMute(!!(inf && inf.layers && inf.layers[ly.key] && inf.layers[ly.key].muted));
+          renderSolo(!!soloSet[ly.key]);
+        });
+
         // RATE — only for layers with a clock lane (getLayerRates omits the
-        // lane-less ones, e.g. halo); lane-less rows get a same-width
-        // placeholder so the M/S squares stay column-true. Log-mapped,
-        // center detent: a double-click on the READOUT settles the throw
-        // back to 1× (the invisible range covers the slider, so a dblclick
-        // there would jump the rate twice before resetting).
-        if (canRate && rates[ly.key] != null) {
+        // lane-less ones, e.g. halo). Log-mapped, center detent: a
+        // double-click on the READOUT settles the throw back to 1× (the
+        // invisible range covers the slider, so a dblclick there would
+        // jump the rate twice before resetting).
+        if (hasRate) {
+          var rateBox = document.createElement("span");
+          rateBox.className = "pj2-detail-rate";
           var rate = makeDeskSlider(ly.label + " rate");
           rate.el.classList.add("pj2-legend-rate");
           var readout = document.createElement("span");
@@ -861,69 +924,18 @@
             rate.set(0.5);
             readout.textContent = fmtRate(1);
           });
-          row.appendChild(rate.el);
-          row.appendChild(readout);
-        } else {
-          var noRate = document.createElement("span");
-          noRate.className = "pj2-legend-rate";
-          noRate.setAttribute("aria-hidden", "true");
-          row.appendChild(noRate);
-          var noVal = document.createElement("span");
-          noVal.className = "pj2-legend-rate-val";
-          noVal.setAttribute("aria-hidden", "true");
-          noVal.textContent = "—";
-          row.appendChild(noVal);
+          rateBox.appendChild(rate.el);
+          rateBox.appendChild(readout);
+          var rcap = document.createElement("span");
+          rcap.className = "pj2-detail-cap";
+          rcap.textContent = "RATE";
+          rateBox.appendChild(rcap);
+          strip.appendChild(rateBox);
         }
 
-        // v1's pixel mute square, kept verbatim: filled = audible
-        var mute = document.createElement("button");
-        mute.type = "button";
-        mute.className = "pj2-legend-mute";
-        mute.setAttribute("aria-label", "mute " + ly.label);
-        function renderMute(muted) {
-          if (muted) mute.classList.remove("is-on"); else mute.classList.add("is-on");
-          mute.setAttribute("aria-pressed", muted ? "true" : "false");
-        }
-        var muted0 = !!(info && info.layers && info.layers[ly.key] && info.layers[ly.key].muted);
-        renderMute(muted0);
-        mute.addEventListener("click", function () {
-          if (countSolo()) dissolveSolo(false); // a manual mute takes the mutes back over
-          try { eng.toggleLayer(ly.key); } catch (e) {}
-          refreshMixRows();
-        });
-        row.appendChild(mute);
-
-        // the solo square — the accent fill to the mute's bone fill
-        var solo = document.createElement("button");
-        solo.type = "button";
-        solo.className = "pj2-legend-solo";
-        solo.setAttribute("aria-label", "solo " + ly.label);
-        function renderSolo(on) {
-          if (on) solo.classList.add("is-on"); else solo.classList.remove("is-on");
-          solo.setAttribute("aria-pressed", on ? "true" : "false");
-        }
-        renderSolo(!!soloSet[ly.key]);
-        solo.addEventListener("click", function () {
-          applySolo(eng, layers, ly.key);
-          refreshMixRows();
-        });
-        row.appendChild(solo);
-
-        mixRowRender.push(function (inf) {
-          renderMute(!!(inf && inf.layers && inf.layers[ly.key] && inf.layers[ly.key].muted));
-          renderSolo(!!soloSet[ly.key]);
-        });
-
-        // the knob strip (mixing desk II): one compact slider per exposed
-        // param, linear across the knob's [min, max], live through
-        // setLayerParam. Sits beneath its row, in the same centered column;
-        // expansion dies with the rebuild on tab switch.
+        // the fine-tune knobs: one compact slider per exposed param, linear
+        // across the knob's [min, max], live through setLayerParam.
         if (knobDefs) {
-          var strip = document.createElement("div");
-          strip.className = "pj2-knobs";
-          strip.id = "pj2-knobs-" + ly.key;
-          strip.setAttribute("hidden", "");
-          chev.setAttribute("aria-controls", strip.id);
           for (var ki = 0; ki < knobDefs.length; ki++) {
             (function (pd) {
               var item = document.createElement("div");
@@ -955,18 +967,17 @@
               strip.appendChild(item);
             })(knobDefs[ki]);
           }
-          chev.addEventListener("click", function () {
-            var open = strip.hasAttribute("hidden");
-            if (open) strip.removeAttribute("hidden"); else strip.setAttribute("hidden", "");
-            chev.setAttribute("aria-expanded", open ? "true" : "false");
-            chev.textContent = open ? "▾︎" : "▸︎";
-            if (open) chev.classList.add("is-open"); else chev.classList.remove("is-open");
-          });
-          box.appendChild(row);
-          box.appendChild(strip);
-        } else {
-          box.appendChild(row);
         }
+
+        chev.addEventListener("click", function () {
+          var open = strip.hasAttribute("hidden");
+          if (open) strip.removeAttribute("hidden"); else strip.setAttribute("hidden", "");
+          chev.setAttribute("aria-expanded", open ? "true" : "false");
+          chev.textContent = open ? "▾︎" : "▸︎";
+          if (open) chev.classList.add("is-open"); else chev.classList.remove("is-open");
+        });
+        box.appendChild(row);
+        box.appendChild(strip);
       })(layers[i]);
     }
   }
