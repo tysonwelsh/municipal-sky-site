@@ -609,7 +609,17 @@
   100% { transform: translateY(0) scale(1); }
 }
 
-/* --- the lamp: master volume as the wick gauge ----------------------------- */
+/* --- the lamp: master volume as the wick gauge -----------------------------
+   The lamp stacks with the binding plate beneath it (owner 2026-08-22):
+   the stack is one cabinet item sitting right of the seal; its children
+   stretch to the lamp's 136px so the plate and the gauge share a width. */
+.pj2-lamp-stack {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+}
+.pj2-lamp-stack .pj2-pushplate { width: 100%; } /* the plate matches the gauge's width */
 .pj2-lamp {
   display: flex;
   flex-direction: column;

@@ -125,18 +125,17 @@ include '../../includes/header.php';
       </div><!-- /pj2-folio -->
     </div><!-- /pj2-folio-wrap -->
 
-    <!-- THE CABINET — one shared frame holding all the chrome (§5): the
-         binding plate, then THE MIXING DESK itself (owner 2026-08-22: no
-         collapse, no header — just the instrument rows with COPY below),
-         then seal and lamp. Each desk row is chevron · sigil · name · VOL;
-         the chevron unfolds that voice's detail strip (M · S · RATE ·
-         fine-tune knobs). Desktop only — hidden at the 700px breakpoint
-         and never built by pj2-ui.js there. -->
+    <!-- THE CABINET — one shared frame holding all the chrome (§5): THE
+         MIXING DESK (owner 2026-08-22: no collapse, no header — just the
+         instrument rows with COPY below), then the seal, then the lamp
+         with the binding plate stacked beneath it (owner 2026-08-22: the
+         binding moved off the row's left end to sit under the master
+         volume, right of the seal). Each desk row is chevron · sigil ·
+         name · VOL; the chevron unfolds that voice's detail strip
+         (M · S · RATE · fine-tune knobs). Desktop only — the desk is
+         hidden at the 700px breakpoint and never built by pj2-ui.js
+         there. -->
     <div class="pj2-cabinet">
-
-      <div class="pj2-transport" role="group" aria-label="binding">
-        <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
-      </div>
 
       <div class="pj2-mixdesk" id="pj2-mixdesk">
         <div class="pj2-legend" id="pj2-legend" role="group" aria-label="the mixing desk — per-voice volumes, rates, mutes, solos and fine-tune knobs"></div>
@@ -158,12 +157,17 @@ include '../../includes/header.php';
         <span class="pj2-cab-cap">the seed</span>
       </div>
 
-      <div class="pj2-lamp">
-        <label class="pj2-cab-cap" for="pj2-vol">the lamp &middot; volume</label>
-        <div class="pj2-lamp-track">
-          <div class="pj2-lamp-fill" id="pj2-lamp-fill"></div>
-          <div class="pj2-lamp-thumb" id="pj2-lamp-thumb"></div>
-          <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
+      <div class="pj2-lamp-stack">
+        <div class="pj2-lamp">
+          <label class="pj2-cab-cap" for="pj2-vol">the lamp &middot; volume</label>
+          <div class="pj2-lamp-track">
+            <div class="pj2-lamp-fill" id="pj2-lamp-fill"></div>
+            <div class="pj2-lamp-thumb" id="pj2-lamp-thumb"></div>
+            <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
+          </div>
+        </div>
+        <div class="pj2-transport" role="group" aria-label="binding">
+          <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
         </div>
       </div>
 
