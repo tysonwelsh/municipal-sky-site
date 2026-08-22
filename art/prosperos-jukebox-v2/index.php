@@ -126,15 +126,15 @@ include '../../includes/header.php';
     </div><!-- /pj2-folio-wrap -->
 
     <!-- THE CABINET — one shared frame holding all the chrome (§5): binding,
-         seal and lamp on the controls row, with THE MIXING DESK as the
-         frame's own drawer below (owner 2026-08-22: the desk moves UP into
-         the cabinet container — one unit, not a separate box). Desk per
-         PLAN-MIXING-DESK / PLAN-MIXING-DESK-2: the header bar IS the
-         collapse toggle (caret + caption, keyboard-operable); COPY/PASTE ride
-         its right side, shown only while open. Each row expands (chevron) to
-         per-voice fine-tune knobs. Desktop only — hidden at the 700px
-         breakpoint and never built by pj2-ui.js there. Collapsed by default;
-         state persists in localStorage. -->
+         seal, lamp AND the mixing desk's toggle on the one controls row
+         (owner 2026-08-22: no separate box, no divider — the desk's header
+         rides the row; its drawer unfolds full-width below only while
+         open). Desk per PLAN-MIXING-DESK / PLAN-MIXING-DESK-2: the header
+         IS the collapse toggle (caret + caption, keyboard-operable);
+         COPY/PASTE ride its right side, shown only while open. Each row
+         expands (chevron) to per-voice fine-tune knobs. Desktop only —
+         hidden at the 700px breakpoint and never built by pj2-ui.js there.
+         Collapsed by default; state persists in localStorage. -->
     <div class="pj2-cabinet">
 
       <div class="pj2-transport" role="group" aria-label="binding">

@@ -650,40 +650,34 @@
 }
 
 /* --- the mixing desk: the cabinet's own drawer (PLAN-MIXING-DESK / -2) -----
-   Lives INSIDE .pj2-cabinet (owner 2026-08-22: one unit, not a separate
-   box) — a full-width flex child wrapping below the controls row, so the
-   cabinet's wood frame and clip-path enclose it; its own former frame is
-   gone, replaced by a hairline divider. The header bar is always visible
-   and IS the collapse toggle (caret + caption, keyboard-operable);
-   COPY/PASTE ride its right side, shown only while open. Each row's
-   chevron reveals per-voice fine-tune knobs. Desktop only — the 700px
-   breakpoint hides the desk and pj2-ui.js builds nothing. */
-.pj2-mixdesk {
+   Lives INSIDE .pj2-cabinet (owner 2026-08-22): no box of its own —
+   `display: contents` lets the HEADER join the controls row as a normal
+   flex item (binding · seal · lamp · the mixing desk ▾) while the BODY
+   becomes a full-width row beneath only while open, with the hairline
+   divider appearing with it. The header bar IS the collapse toggle
+   (caret + caption, keyboard-operable); COPY/PASTE ride its right side,
+   shown only while open. Each row's chevron reveals per-voice fine-tune
+   knobs. Desktop only — the 700px breakpoint hides the desk and
+   pj2-ui.js builds nothing. */
+.pj2-mixdesk { display: contents; }
+.pj2-mixdesk-body { display: none; }
+.pj2-mixdesk.is-open .pj2-mixdesk-body {
   display: block;
-  flex: 0 0 100%;          /* wraps below binding · seal · lamp */
+  flex: 0 0 100%;          /* wraps below the controls row */
   margin-top: 10px;
   border-top: 2px solid var(--pj2c-wood-edge);
   box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel); /* the drawer's parting line */
-  padding: 4px 0 0;        /* the cabinet supplies side/bottom padding */
+  padding-top: 8px;
 }
-/* the body is what collapses; the header bar stays */
-.pj2-mixdesk-body { display: none; }
-.pj2-mixdesk.is-open .pj2-mixdesk-body { display: block; }
 .pj2-mixdesk-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  /* ride the rows' 720px centered column, so COPY/PASTE sit with the
-     content they act on at wide viewports */
-  max-width: 720px;
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0 auto;
+  /* a normal item of the cabinet's controls row — sized to content,
+     sitting after the lamp */
   cursor: pointer;
   user-select: none;
 }
-.pj2-mixdesk.is-open .pj2-mixdesk-head { margin-bottom: 6px; }
 .pj2-mixdesk-head:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
 /* hover affordance — the header IS the toggle, so it should feel like one */
 .pj2-mixdesk-head:hover .pj2-mixdesk-caret { color: var(--pj2c-bone); }
