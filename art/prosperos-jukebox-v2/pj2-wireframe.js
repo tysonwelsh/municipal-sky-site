@@ -150,8 +150,8 @@
       note: "the lamp — master volume",
       size: "width 136px · 14px track" },
     { sel: "#pj2-legend", name: "#pj2-legend", color: C.leaf,
-      note: "the mixing desk's rows — one .pj2-legend-row per voice (sigil · name · VOL · RATE · M · S), rebuilt on every tab switch; lives inside the collapsible .pj2-mixdesk drawer, desktop only",
-      size: "full drawer width" },
+      note: "the mixing desk's rows — one .pj2-legend-row per voice (chevron · sigil · name · VOL; chevron unfolds M · S · RATE · knobs), rebuilt on every tab switch; sits in the cabinet between the binding plate and the seal, desktop only",
+      size: "flex 1 1 460px, capped 720px" },
 
     { sel: ".pj2-build", name: ".pj2-build", color: C.ground,
       note: "the build stamp — version · fingerprint · deploy time",

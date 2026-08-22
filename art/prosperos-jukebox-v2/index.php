@@ -125,21 +125,26 @@ include '../../includes/header.php';
       </div><!-- /pj2-folio -->
     </div><!-- /pj2-folio-wrap -->
 
-    <!-- THE CABINET — one shared frame holding all the chrome (§5): binding,
-         seal, lamp AND the mixing desk's toggle on the one controls row
-         (owner 2026-08-22: no separate box, no divider — the desk's header
-         rides the row; its drawer unfolds full-width below only while
-         open). Desk per PLAN-MIXING-DESK / PLAN-MIXING-DESK-2: the header
-         IS the collapse toggle (caret + caption, keyboard-operable);
-         COPY/PASTE ride its right side, shown only while open. Each row
-         expands (chevron) to per-voice fine-tune knobs. Desktop only —
-         hidden at the 700px breakpoint and never built by pj2-ui.js there.
-         Collapsed by default; state persists in localStorage. -->
+    <!-- THE CABINET — one shared frame holding all the chrome (§5): the
+         binding plate, then THE MIXING DESK itself (owner 2026-08-22: no
+         collapse, no header — just the instrument rows with COPY below),
+         then seal and lamp. Each desk row is chevron · sigil · name · VOL;
+         the chevron unfolds that voice's detail strip (M · S · RATE ·
+         fine-tune knobs). Desktop only — hidden at the 700px breakpoint
+         and never built by pj2-ui.js there. -->
     <div class="pj2-cabinet">
 
       <div class="pj2-transport" role="group" aria-label="binding">
         <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
       </div>
+
+      <div class="pj2-mixdesk" id="pj2-mixdesk">
+        <div class="pj2-legend" id="pj2-legend" role="group" aria-label="the mixing desk — per-voice volumes, rates, mutes, solos and fine-tune knobs"></div>
+        <div class="pj2-mixdesk-actions">
+          <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-copy"
+                  aria-label="copy the whole mix — volumes, mutes, rates and fine-tune knobs — as text">COPY</button>
+        </div>
+      </div><!-- /pj2-mixdesk -->
 
       <div class="pj2-cab-spacer"></div>
 
@@ -161,35 +166,6 @@ include '../../includes/header.php';
           <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
         </div>
       </div>
-
-      <div class="pj2-mixdesk" id="pj2-mixdesk">
-        <div class="pj2-mixdesk-head" id="pj2-mixdesk-head" role="button" tabindex="0"
-             aria-expanded="false" aria-controls="pj2-mixdesk-body"
-             aria-label="the mixing desk — open the per-voice mixer drawer">
-          <span class="pj2-mixdesk-caret" id="pj2-mixdesk-caret" aria-hidden="true">&#9662;&#xFE0E;</span>
-          <span class="pj2-cab-cap">the mixing desk</span>
-          <div class="pj2-mixdesk-actions">
-            <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-copy"
-                    aria-label="copy the whole mix — volumes, mutes, rates and fine-tune knobs — as text">COPY</button>
-            <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-paste"
-                    aria-expanded="false" aria-controls="pj2-mixdesk-paste"
-                    aria-label="paste a mix from text">PASTE</button>
-          </div>
-        </div>
-        <div class="pj2-mixdesk-body" id="pj2-mixdesk-body">
-          <div class="pj2-mixdesk-paste" id="pj2-mixdesk-paste" hidden>
-            <textarea class="pj2-mixdesk-paste-text" id="pj2-mix-paste-text" rows="5"
-                      aria-label="paste a mix here — the JSON the copy button writes; partial and hand-edited mixes are fine"
-                      spellcheck="false"></textarea>
-            <div class="pj2-mixdesk-paste-row">
-              <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-apply" aria-label="apply the pasted mix">APPLY</button>
-              <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-cancel" aria-label="cancel — keep the current mix">CANCEL</button>
-              <span class="pj2-mixdesk-note" id="pj2-mix-note" aria-live="polite"></span>
-            </div>
-          </div>
-          <div class="pj2-legend" id="pj2-legend" role="group" aria-label="the mixing desk — per-voice volumes, rates, mutes, solos and fine-tune knobs"></div>
-        </div><!-- /pj2-mixdesk-body -->
-      </div><!-- /pj2-mixdesk -->
 
     </div><!-- /pj2-cabinet -->
 

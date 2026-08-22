@@ -649,79 +649,22 @@
   cursor: pointer;
 }
 
-/* --- the mixing desk: the cabinet's own drawer (PLAN-MIXING-DESK / -2) -----
-   Lives INSIDE .pj2-cabinet (owner 2026-08-22): no box of its own —
-   `display: contents` lets the HEADER join the controls row as a normal
-   flex item (binding · seal · lamp · the mixing desk ▾) while the BODY
-   becomes a full-width row beneath only while open, with the hairline
-   divider appearing with it. The header bar IS the collapse toggle
-   (caret + caption, keyboard-operable); COPY/PASTE ride its right side,
-   shown only while open. Each row's chevron reveals per-voice fine-tune
-   knobs. Desktop only — the 700px breakpoint hides the desk and
-   pj2-ui.js builds nothing. */
-.pj2-mixdesk { display: contents; }
-.pj2-mixdesk-body { display: none; }
-.pj2-mixdesk.is-open .pj2-mixdesk-body {
-  display: block;
-  flex: 0 0 100%;          /* wraps below the controls row */
-  margin-top: 10px;
-  border-top: 2px solid var(--pj2c-wood-edge);
-  box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel); /* the drawer's parting line */
-  padding-top: 8px;
+/* --- the mixing desk: the instrument rows inside the cabinet --------------
+   (PLAN-MIXING-DESK / -2; mixing desk III, owner 2026-08-22: no collapse,
+   no header, no PASTE — the rows simply sit in the cabinet between the
+   binding plate and the seal, with the COPY plate beneath them.) The desk
+   is a flex item of the cabinet's row, growing up to the rows' 720px cap.
+   Desktop only — the 700px breakpoint hides the desk and pj2-ui.js builds
+   nothing. */
+.pj2-mixdesk {
+  flex: 1 1 460px;
+  max-width: 720px;
 }
-.pj2-mixdesk-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  /* a normal item of the cabinet's controls row — sized to content,
-     sitting after the lamp */
-  cursor: pointer;
-  user-select: none;
-}
-.pj2-mixdesk-head:focus-visible { outline: 2px solid var(--pj2c-bone); outline-offset: 2px; }
-/* hover affordance — the header IS the toggle, so it should feel like one */
-.pj2-mixdesk-head:hover .pj2-mixdesk-caret { color: var(--pj2c-bone); }
-.pj2-mixdesk-caret {
-  color: var(--pj2c-caption);
-  font-size: 15px;
-  margin-right: 2px;
-}
-/* the lit treatment the removed MIX plate had, moved to caret + caption */
-.pj2-mixdesk.is-open .pj2-mixdesk-caret,
-.pj2-mixdesk.is-open .pj2-mixdesk-head .pj2-cab-cap { color: #e8c95a; }
-.pj2-mixdesk-actions { display: none; gap: 8px; }
-.pj2-mixdesk.is-open .pj2-mixdesk-actions { display: flex; }
+.pj2-mixdesk-actions { display: flex; gap: 8px; margin-top: 6px; }
 .pj2-pushplate.pj2-mini {
   font-size: 14px;
   letter-spacing: 0.12em;
   padding: 4px 10px;
-}
-/* the paste popover left-aligns with the desk rows */
-.pj2-mixdesk-paste { margin: 0 0 8px; max-width: 720px; width: 100%; box-sizing: border-box; }
-.pj2-mixdesk-paste-text {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  font-family: "VT323", monospace;
-  font-size: 15px;
-  letter-spacing: 0.03em;
-  color: var(--pj2c-bone);
-  background: var(--pj2c-slot);
-  border: 2px solid var(--pj2c-brass);
-  padding: 6px 8px;
-  resize: vertical;
-}
-.pj2-mixdesk-paste-text:focus { outline: 2px solid var(--pj2c-bone); outline-offset: 1px; }
-.pj2-mixdesk-paste-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 6px;
-}
-.pj2-mixdesk-note {
-  font-size: 14px;
-  color: var(--pj2c-caption);
-  letter-spacing: 0.06em;
 }
 
 /* --- the desk rows: chevron · sigil · name · VOL, one line each ------------
