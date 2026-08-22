@@ -126,12 +126,15 @@ include '../../includes/header.php';
     </div><!-- /pj2-folio-wrap -->
 
     <!-- THE CABINET — one shared frame, track-skinned inserts (§5); the
-         track tabs live ABOVE the folio now, so the cabinet is transport,
-         seal, lamp and legend only -->
+         track tabs live ABOVE the folio now, so the cabinet is binding,
+         seal, lamp and the mixing-desk toggle only -->
     <div class="pj2-cabinet">
 
-      <div class="pj2-transport" role="group" aria-label="binding">
+      <div class="pj2-transport" role="group" aria-label="binding and mixing desk">
         <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
+        <button type="button" class="pj2-pushplate" id="pj2-mixdesk-toggle"
+                aria-expanded="false" aria-controls="pj2-mixdesk"
+                aria-label="the mixing desk — open the per-voice mixer drawer">MIX&nbsp;&#9662;&#xFE0E;</button>
       </div>
 
       <div class="pj2-cab-spacer"></div>
@@ -155,9 +158,37 @@ include '../../includes/header.php';
         </div>
       </div>
 
-      <div class="pj2-legend" id="pj2-legend" aria-label="the plate's legend — per-voice volumes and mutes"></div>
-
     </div><!-- /pj2-cabinet -->
+
+    <!-- THE MIXING DESK (PLAN-MIXING-DESK, 2026-08-21) — the cabinet's
+         collapsible drawer: the old legend strip moved here and grew a RATE
+         slider and a solo square per voice, plus copy/paste of the whole mix
+         as text. Desktop only — hidden at the 700px breakpoint and never
+         built by pj2-ui.js there. Collapsed by default; the MIX pushplate
+         above opens it (state persists in localStorage). -->
+    <div class="pj2-mixdesk" id="pj2-mixdesk">
+      <div class="pj2-mixdesk-head">
+        <span class="pj2-cab-cap">the mixing desk</span>
+        <div class="pj2-mixdesk-actions">
+          <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-copy"
+                  aria-label="copy the whole mix — volumes, mutes and rates — as text">COPY</button>
+          <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-paste"
+                  aria-expanded="false" aria-controls="pj2-mixdesk-paste"
+                  aria-label="paste a mix from text">PASTE</button>
+        </div>
+      </div>
+      <div class="pj2-mixdesk-paste" id="pj2-mixdesk-paste" hidden>
+        <textarea class="pj2-mixdesk-paste-text" id="pj2-mix-paste-text" rows="5"
+                  aria-label="paste a mix here — the JSON the copy button writes; partial and hand-edited mixes are fine"
+                  spellcheck="false"></textarea>
+        <div class="pj2-mixdesk-paste-row">
+          <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-apply" aria-label="apply the pasted mix">APPLY</button>
+          <button type="button" class="pj2-pushplate pj2-mini" id="pj2-mix-cancel" aria-label="cancel — keep the current mix">CANCEL</button>
+          <span class="pj2-mixdesk-note" id="pj2-mix-note" aria-live="polite"></span>
+        </div>
+      </div>
+      <div class="pj2-legend" id="pj2-legend" role="group" aria-label="the mixing desk — per-voice volumes, rates, mutes and solos"></div>
+    </div><!-- /pj2-mixdesk -->
 
   </div><!-- /pj2-app -->
 

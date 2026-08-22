@@ -10,7 +10,9 @@
 // listeners, getInfo). It owns the spiral (v1's honest FFT coil — 7 octaves
 // × 96 samples, one turn per octave, dB floor −75 / ceil −10, adaptive
 // baseline, drag + auto-rotate camera) and the margin apparatus (§4
-// diegetic telemetry, plus the theme staff).
+// diegetic telemetry, plus the theme staff and the harmony readout — the
+// live chord/pose, cadence approach and sea-change state under the scene
+// label, PLAN-HARMONY-READOUT).
 //
 // SPIRAL REVERT + NIGHT FOLIO (PLAN-SPIRAL-REVERT / PLAN-NIGHT-FOLIO,
 // owner 2026-07-20): the coil renders v1's phosphor treatment for ALL
@@ -1830,6 +1832,42 @@ PJ2.Viz = (function () {
       Skin.Type.smallCaps(G.ctx, text, r.x, r.y + r.h - 6, 12, marginInk().mid, 1);
     }
 
+    // THE HARMONY READOUT (PLAN-HARMONY-READOUT, 2026-08-21): the harmony
+    // brain's live line — the one brain the margin didn't show. Composed
+    // from the getInfo() poll (info.harmony / harmonyTones / pose /
+    // cadence / seaChange / sink / mode / tonicHz): line 1 is the current
+    // chord (library: name + spelled tones; ariel: name + mode + tonic —
+    // the tonic is live information on a track that re-grounds nightly) or
+    // Sycorax's pose; line 2 is the approach (a planned cadence's label +
+    // countdown) or the state (the fired sea change's new ground, kept
+    // until the next performance; the sink, planned/done). Stopped or
+    // silent: null — nothing draws, no stale chord frozen on the plate.
+    function harmonyLines(info) {
+      if (!info || !info.playing) return null;
+      var l1 = null, l2 = null;
+      if (track === "sycorax") {
+        // no cadences by construction; the sink is the pose track's sea change
+        if (info.pose) l1 = "pose · " + info.pose;
+        if (info.sink && info.sink.planned) l2 = "the sink · " + (info.sink.done ? "done" : "planned");
+      } else {
+        if (info.harmony) {
+          l1 = String(info.harmony);
+          if (track === "ariel") {
+            if (info.mode) l1 += " · " + info.mode + (isFinite(info.tonicHz) ? " " + Math.round(info.tonicHz) : "");
+          } else if (info.harmonyTones) {
+            l1 += " · " + info.harmonyTones;
+          }
+        }
+        if (info.cadence && info.cadence.label != null) {
+          l2 = String(info.cadence.label).toLowerCase() + " in " + Math.ceil(Math.max(0, info.cadence.inS || 0)) + "s";
+        } else if (info.seaChange && info.seaChange.done && info.seaChange.label) {
+          l2 = "sea change → " + info.seaChange.label;
+        }
+      }
+      if (!l1 && !l2) return null;
+      return [l1, l2];
+    }
+
     // ---- THE APPARATUS WINDOWS (owner 2026-08-08) ----------------------------
     // On the parchment binding each panel sits WHOLE in its own night
     // window cut into the sheet — the same kind of opening as the spiral's
@@ -2043,6 +2081,30 @@ PJ2.Viz = (function () {
             c.restore();
             Skin.Type.smallCaps(c, sub, S.x, py - 6, 12, ic.mid, 1);
           }
+        }
+        // the harmony readout — up to two short lines under the scene
+        // label, in the readout idiom (12px caption face, the surface's
+        // mid ink, the sub-line's own pare-to-fit law). It shares the band
+        // with the heading above and the sub-line/progress below and never
+        // crosses either; idle draws nothing (harmonyLines returns null).
+        var hLines = harmonyLines(info);
+        if (hLines && fontsReady) {
+          var hhf = Math.max(16, Math.min(22, Math.floor(S.h * 0.42))); // the band's own heading-fit law
+          c.save();
+          c.font = '12px ' + Skin.Type.MONO;
+          var hW = function (s) { return c.measureText(String(s).toUpperCase()).width + String(s).length; };
+          for (var hl = 0; hl < 2; hl++) {
+            var hTxt = hLines[hl];
+            if (!hTxt) continue;
+            var hBase = S.y + 4 + hhf + 15 + hl * 14;
+            if (hBase > S.y + S.h - 24) break; // the sub-line row's caps start here
+            if (hW(hTxt) > S.w - 2) {
+              while (hTxt.length > 1 && hW(hTxt + "…") > S.w - 2) hTxt = hTxt.slice(0, hTxt.length - 1);
+              hTxt += "…";
+            }
+            Skin.Type.smallCaps(c, hTxt, S.x, hBase, 12, ic.mid, 1);
+          }
+          c.restore();
         }
         drawThemeStaff(G, panelContentRect(L.staff), info);
         var A = panelContentRect(L.dialA), B = panelContentRect(L.dialB);

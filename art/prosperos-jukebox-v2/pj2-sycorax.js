@@ -85,14 +85,17 @@
   }
 
   // --------------------------------------------------------------------------
-  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute contract,
+  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute/rate contract,
   // uniform with PJ2.Library/PJ2.Ariel (getLayers / setLayerVolume /
-  // getLayerVolumes / toggleLayer; full design note in pj2-library.js).
-  // STRICTLY GAIN-SIDE: mixer gains (tagged _pj2Mix) are inserted into — or
-  // cleanly reused from — each layer's chain; no randomness, no event-time
-  // effects, never a shared param with the followers or the cut (cutGain,
-  // gurdyLevel, noiseLevel, breathLevel, gritBlend, gritSendTromp keep
-  // their one writer; the mixer gets its OWN stage beside each).
+  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates; full design
+  // note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
+  // (tagged _pj2Mix) are inserted into — or cleanly reused from — each
+  // layer's chain; no randomness, no event-time effects, never a shared param
+  // with the followers or the cut (cutGain, gurdyLevel, noiseLevel,
+  // breathLevel, gritBlend, gritSendTromp keep their one writer; the mixer
+  // gets its OWN stage beside each). The rate side only re-paces the layer's
+  // own clock lanes; the form lanes (harmony, arrival, cut, follow) are
+  // never scaled.
   //
   // Layer -> params (design values in parens):
   //   gurdy       mixGurdy (1) inserted gurdyLevel -> cutGain, + mixGritGurdy
@@ -130,6 +133,17 @@
   ];
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
+
+  // Layer -> clock lanes the RATE control re-paces (the mixing desk). The
+  // breath bed rides with the noise layer — the mixer's "noise" already owns
+  // its gain (mixBreath), and both are the same user-facing murk. The form
+  // lanes (harmony, arrival, cut, follow) are never scaled.
+  var MIX_RATE_LANES = {
+    gurdy: ["gurdy"], noise: ["noisebed", "breath"], chant: ["chant"],
+    rebec: ["rebec"], waterphone: ["waterphone"], boneflute: ["boneflute"],
+    percussion: ["protodrum", "percussion"], ambient: ["ambient"],
+  };
+  var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
   var DEFAULT_SEED = 1400137155; // "SYCX" as a 32-bit word, near enough
 
@@ -462,7 +476,7 @@
     // ----------------------------------------------------------------------
     var mixState = {};
     for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
-      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false };
+      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false, rate: 1 };
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -499,6 +513,18 @@
       if (!w) return slotIn;
       var i = w.slots.indexOf(slotIn);
       return (i >= 0) ? w.wraps[i] : slotIn;
+    }
+    // Rate write-through (MIX_RATE_LANES; pj2-library's note is
+    // authoritative): stamps the stored rate onto the layer's live lanes;
+    // a rate equal to the lane's current rate no-ops inside the clock.
+    function mixRateApply(key) {
+      if (!run || !run.live) return;
+      var names = MIX_RATE_LANES[key];
+      if (!names || !names.length) return;
+      var r = mixState[key].rate;
+      for (var i = 0; i < names.length; i++) {
+        try { run.clock.lane(names[i]).rate = r; } catch (e) {}
+      }
     }
 
     function degClass(d) {
@@ -3029,6 +3055,10 @@
       startBoneflute();
       startAmbient();
 
+      // Born already mixed, rate side: stamp each layer's stored rate onto
+      // its lanes (no-op at the default 1 — setLaneRate early-outs).
+      for (var mri = 0; mri < MIX_LAYERS.length; mri++) mixRateApply(MIX_LAYERS[mri].key);
+
       emitEvent({ type: "engine", state: "play", seed: seed, t: clock.now() });
     }
 
@@ -3066,8 +3096,9 @@
       },
 
       // ---- the per-layer mixer (MIX_LAYERS; uniform across the tracks) ----
-      // Gain-side only: none of these consume randomness or move events —
-      // a run with mixer calls emits the identical note/event streams.
+      // Gain-side calls consume no randomness and move no events; rate calls
+      // only re-pace the layer's own lanes — a run left at the defaults
+      // emits the identical note/event streams.
       getLayers: function () {
         var out = [];
         for (var i = 0; i < MIX_LAYERS.length; i++) {
@@ -3103,6 +3134,26 @@
           mixApply(key, MIX_MUTE_S);
         }
         return st.muted;
+      },
+      // r multiplies the layer's event pace (1 = as-composed), clamped to
+      // [0.25, 4]. Persists across performances and stop/play like volume;
+      // a playing run's lanes are re-stamped live. Layers with no lane keep
+      // rate 1 and are absent from getLayerRates().
+      setLayerRate: function (key, rate) {
+        var st = mixState[key];
+        if (!st) return;
+        var r = +rate;
+        if (!isFinite(r)) r = 1;
+        st.rate = clamp(r, MIX_RATE_MIN, MIX_RATE_MAX);
+        mixRateApply(key);
+      },
+      getLayerRates: function () {
+        var out = {};
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          var k = MIX_LAYERS[i].key;
+          if (MIX_RATE_LANES[k] && MIX_RATE_LANES[k].length) out[k] = mixState[k].rate;
+        }
+        return out;
       },
 
       getInfo: function () {

@@ -175,14 +175,16 @@
   }
 
   // --------------------------------------------------------------------------
-  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute contract,
+  // THE MIXER SURFACE — the jukebox UI's per-layer volume/mute/rate contract,
   // uniform with PJ2.Library/PJ2.Sycorax (getLayers / setLayerVolume /
-  // getLayerVolumes / toggleLayer; full design note in pj2-library.js).
-  // STRICTLY GAIN-SIDE: mixer gains (tagged _pj2Mix) are inserted into — or
-  // cleanly reused from — each layer's chain; no randomness, no event-time
-  // effects, and never a shared param with the follower or the joints
-  // (breezeLevel/aeoLevel/breezeBreath keep their one writer; the mixer
-  // gets its OWN stage beside them).
+  // getLayerVolumes / toggleLayer / setLayerRate / getLayerRates; full design
+  // note in pj2-library.js). The gain side is STRICTLY GAIN-SIDE: mixer gains
+  // (tagged _pj2Mix) are inserted into — or cleanly reused from — each
+  // layer's chain; no randomness, no event-time effects, and never a shared
+  // param with the follower or the joints (breezeLevel/aeoLevel/breezeBreath
+  // keep their one writer; the mixer gets its OWN stage beside them). The
+  // rate side only re-paces the layer's own clock lanes; the form lanes
+  // (harmony, cadence, seachange, follow, release) are never scaled.
   //
   // Layer -> params (design values in parens):
   //   breeze   mixBreeze (1) inserted breezeLevel -> rooms (pad, sub, hiss
@@ -215,6 +217,17 @@
   ];
   var MIX_MUTE_S = 0.3;  // mute/unmute ramp — click-safe, unhurried
   var MIX_VOL_S = 0.08;  // volume moves ride the master-volume ramp length
+
+  // Layer -> clock lanes the RATE control re-paces (the mixing desk). Only
+  // the layer's own voice lanes; the form lanes (harmony, cadence,
+  // seachange, follow, release) carry structure, not voice, and are never
+  // scaled. halo has no lane (fx return layer) — it gets no rate slider.
+  var MIX_RATE_LANES = {
+    breeze: ["breeze"], whistle: ["whistle"], chime: ["chime"],
+    flutter: ["flutter"], bass: ["bass"], aeolian: ["aeolian", "aeolianSing"],
+    ambient: ["ambient"], halo: [],
+  };
+  var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
   // Default seed when neither create({seed}) nor ?seed= supplies one — a
   // fixed constant ("ARIE" as a 32-bit word), never Date.now (house rule).
@@ -536,7 +549,7 @@
     // ----------------------------------------------------------------------
     var mixState = {};
     for (var mxi = 0; mxi < MIX_LAYERS.length; mxi++) {
-      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false };
+      mixState[MIX_LAYERS[mxi].key] = { volume: 1, muted: false, rate: 1 };
     }
     function mixEff(key) {
       var st = mixState[key];
@@ -573,6 +586,18 @@
       if (!w) return slotIn;
       var i = w.slots.indexOf(slotIn);
       return (i >= 0) ? w.wraps[i] : slotIn;
+    }
+    // Rate write-through (MIX_RATE_LANES; pj2-library's note is
+    // authoritative): stamps the stored rate onto the layer's live lanes;
+    // a rate equal to the lane's current rate no-ops inside the clock.
+    function mixRateApply(key) {
+      if (!run || !run.live) return;
+      var names = MIX_RATE_LANES[key];
+      if (!names || !names.length) return;
+      var r = mixState[key].rate;
+      for (var i = 0; i < names.length; i++) {
+        try { run.clock.lane(names[i]).rate = r; } catch (e) {}
+      }
     }
 
     // Weather reads: schedule-time t, RUN-RELATIVE (the Library's hard-won
@@ -1066,6 +1091,37 @@
       }
     }
 
+    // ---- harmony-readout spelling (display only) -------------------------------
+    // The margin readout (PLAN-HARMONY-READOUT) spells what the harmony brain
+    // is doing. Pure observation of existing run state — no draws, no
+    // scheduling influence; the determinism guard is kept by construction.
+    // Flat-spelled pitch-class names, lowercase.
+    var PC_NAMES = ["c", "d♭", "d", "e♭", "e", "f", "g♭", "g", "a♭", "a", "b♭", "b"];
+    function pcNameForHz(hz) {
+      var pc = ((Math.round(69 + 12 * Math.log(hz / 440) / Math.LN2) % 12) + 12) % 12;
+      return PC_NAMES[pc];
+    }
+    // The current chord's tones, spelled: current() already carries the
+    // degree set, so the harmony API grows not at all.
+    function spellChordTones(chordDegs) {
+      var out = [];
+      for (var i = 0; i < chordDegs.length; i++) {
+        out.push(pcNameForHz(run.field.degFreq(chordDegs[i], 0)));
+      }
+      return out.join(" ");
+    }
+    // The sea change's target in words. A reroot's concrete root/mode exist
+    // only AFTER execution (resolved from the live field); the true change
+    // (Ariel's own, 3:1) is the subdominant lift ("+P4").
+    function seaChangeLabel(target, res) {
+      if (res && res.to && isFinite(res.to.tonicHz)) {
+        return pcNameForHz(res.to.tonicHz) + " " + res.to.mode;
+      }
+      if (target && target.kind === "true") return "+P4";
+      if (target && target.kind === "ratio") return target.name || null;
+      return null;
+    }
+
     function cadenceChanceFor(fromType, toType, isSeam) {
       if (isSeam) return 0.7;                       // the float home under the seam
       if (toType === "hover" || toType === "release") return 0.75;
@@ -1090,6 +1146,7 @@
     var CADENCE_LEAD_S = 12; // scenes are short; harmony's 9–13 s act is scaled inside
 
     function realizeCadence(plan) {
+      if (run) run.nextCadence = null; // realized or moot — the readout moves on
       if (!run || !run.live) return;
       var cad = null;
       try { cad = run.harmony.cadence(plan.kind); } catch (e) { cad = null; }
@@ -1145,6 +1202,9 @@
       if (evt.durS < CADENCE_LEAD_S + 6) return; // too short to breathe before it
       var plan = { kind: kind, nParts: nParts, from: evt.scene, to: toType, tB: tB };
       run.clock.lane("cadence").at(tB - CADENCE_LEAD_S, function () { realizeCadence(plan); });
+      // telemetry for the harmony readout: the approach, announced (the kind
+      // words ARE Ariel's display labels — observation only, no draws)
+      run.nextCadence = { kind: kind, label: kind, t: tB };
     }
 
     // ---- the sea change -----------------------------------------------------
@@ -1157,6 +1217,7 @@
       run.seaChange.done = true;
       var res = null;
       try { res = run.harmony.executeSeaChange(run.seaChange.target); } catch (e) { res = null; }
+      run.seaChange.label = seaChangeLabel(run.seaChange.target, res); // the new ground, spelled
       seaChangePad(t);          // the breeze is the seam: new key blooms under the old tail
       run.haloRetuneAt = t;     // armed; the NEXT boundary retunes (never this one)
       emitEvent({
@@ -1304,6 +1365,7 @@
 
           // The sea change plan (harmony draws whether/where/what).
           run.seaChange = null;
+          run.nextCadence = null;      // no approach rides across the seam
           try {
             var sceneList = [];
             if (evt.scenes) {
@@ -1312,7 +1374,8 @@
             var sc = run.harmony.planSeaChange({ sceneList: sceneList, tidePos: evt.tidePos });
             if (sc && isFinite(sc.atSceneIdx) &&
                 sc.atSceneIdx >= 1 && evt.scenes && sc.atSceneIdx < evt.scenes.length) {
-              run.seaChange = { atSceneIdx: Math.floor(sc.atSceneIdx), target: sc.target, done: false };
+              run.seaChange = { atSceneIdx: Math.floor(sc.atSceneIdx), target: sc.target, done: false,
+                label: seaChangeLabel(sc.target, null) };
             }
           } catch (e) {}
         } else if (evt.type === "scene") {
@@ -2790,6 +2853,7 @@
         harmony: harmony, motif: motif,
         perfScenes: null,
         seaChange: null,
+        nextCadence: null,             // {kind, label, t: boundary} once planned, cleared at realize
         pendingGhost: null,
         signature: { name: null, promoted: false },
         heldUtterance: { whistle: null, chime: null, flutter: null, aeolian: null },
@@ -2866,6 +2930,10 @@
       startAeolianSing();
       startAmbient();
 
+      // Born already mixed, rate side: stamp each layer's stored rate onto
+      // its lanes (no-op at the default 1 — setLaneRate early-outs).
+      for (var mri = 0; mri < MIX_LAYERS.length; mri++) mixRateApply(MIX_LAYERS[mri].key);
+
       emitEvent({ type: "engine", state: "play", seed: seed, t: clock.now() });
     }
 
@@ -2903,8 +2971,9 @@
       },
 
       // ---- the per-layer mixer (MIX_LAYERS; uniform across the tracks) ----
-      // Gain-side only: none of these consume randomness or move events —
-      // a run with mixer calls emits the identical note/event streams.
+      // Gain-side calls consume no randomness and move no events; rate calls
+      // only re-pace the layer's own lanes — a run left at the defaults
+      // emits the identical note/event streams.
       getLayers: function () {
         var out = [];
         for (var i = 0; i < MIX_LAYERS.length; i++) {
@@ -2941,6 +3010,26 @@
         }
         return st.muted;
       },
+      // r multiplies the layer's event pace (1 = as-composed), clamped to
+      // [0.25, 4]. Persists across performances and stop/play like volume;
+      // a playing run's lanes are re-stamped live. Layers with no lane keep
+      // rate 1 and are absent from getLayerRates().
+      setLayerRate: function (key, rate) {
+        var st = mixState[key];
+        if (!st) return;
+        var r = +rate;
+        if (!isFinite(r)) r = 1;
+        st.rate = clamp(r, MIX_RATE_MIN, MIX_RATE_MAX);
+        mixRateApply(key);
+      },
+      getLayerRates: function () {
+        var out = {};
+        for (var i = 0; i < MIX_LAYERS.length; i++) {
+          var k = MIX_LAYERS[i].key;
+          if (MIX_RATE_LANES[k] && MIX_RATE_LANES[k].length) out[k] = mixState[k].rate;
+        }
+        return out;
+      },
 
       getInfo: function () {
         var info = {};
@@ -2955,6 +3044,22 @@
           try {
             var cur = run.harmony.current();
             info.harmony = cur ? cur.name : null;
+            // the chord's tones, spelled for the readout (current() already
+            // carries the degree set — no harmony API growth)
+            info.harmonyTones = (cur && cur.chordDegs) ? spellChordTones(cur.chordDegs) : null;
+          } catch (e) {}
+          // The harmony readout's approach/state lines: the planned cadence
+          // (inS to its boundary, clamped ≥0) and the evening's sea change.
+          try {
+            info.cadence = run.nextCadence
+              ? { kind: run.nextCadence.kind, label: run.nextCadence.label,
+                  inS: Math.max(0, run.nextCadence.t - run.clock.now()) }
+              : null;
+          } catch (e) {}
+          try {
+            info.seaChange = run.seaChange
+              ? { planned: true, done: !!run.seaChange.done, label: run.seaChange.label || null }
+              : null;
           } catch (e) {}
           try { info.motif = run.motif.stats(); } catch (e) {}
           // THE SIGNATURE LINE: the promoted ghost when there is one, else
