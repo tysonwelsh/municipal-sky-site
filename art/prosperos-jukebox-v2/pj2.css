@@ -649,26 +649,22 @@
   cursor: pointer;
 }
 
-/* --- the mixing desk: the cabinet's drawer (PLAN-MIXING-DESK / -2) ---------
-   The same wood-and-brass frame as the cabinet. Mixing desk II: the header
-   bar is always visible and IS the collapse toggle (caret + caption,
-   keyboard-operable); COPY/PASTE ride its right side, shown only while
-   open. Each row's chevron reveals per-voice fine-tune knobs. Desktop
-   only — the 700px breakpoint hides the desk and pj2-ui.js builds nothing. */
+/* --- the mixing desk: the cabinet's own drawer (PLAN-MIXING-DESK / -2) -----
+   Lives INSIDE .pj2-cabinet (owner 2026-08-22: one unit, not a separate
+   box) — a full-width flex child wrapping below the controls row, so the
+   cabinet's wood frame and clip-path enclose it; its own former frame is
+   gone, replaced by a hairline divider. The header bar is always visible
+   and IS the collapse toggle (caret + caption, keyboard-operable);
+   COPY/PASTE ride its right side, shown only while open. Each row's
+   chevron reveals per-voice fine-tune knobs. Desktop only — the 700px
+   breakpoint hides the desk and pj2-ui.js builds nothing. */
 .pj2-mixdesk {
   display: block;
-  margin-top: 8px;
-  background: linear-gradient(180deg, var(--pj2c-wood-hi) 0%, var(--pj2c-wood) 55%, var(--pj2c-wood-lo) 100%);
-  border: 2px solid var(--pj2c-wood-edge);
-  box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel), inset 0 -2px 0 var(--pj2c-wood-edge);
-  clip-path: polygon(
-    0 4px, 2px 4px, 2px 2px, 4px 2px, 4px 0,
-    calc(100% - 4px) 0, calc(100% - 4px) 2px, calc(100% - 2px) 2px, calc(100% - 2px) 4px, 100% 4px,
-    100% calc(100% - 4px), calc(100% - 2px) calc(100% - 4px), calc(100% - 2px) calc(100% - 2px),
-    calc(100% - 4px) calc(100% - 2px), calc(100% - 4px) 100%,
-    4px 100%, 4px calc(100% - 2px), 2px calc(100% - 2px), 2px calc(100% - 4px), 0 calc(100% - 4px)
-  );
-  padding: 8px 16px 12px;
+  flex: 0 0 100%;          /* wraps below binding · seal · lamp */
+  margin-top: 10px;
+  border-top: 2px solid var(--pj2c-wood-edge);
+  box-shadow: inset 0 2px 0 var(--pj2c-wood-bevel); /* the drawer's parting line */
+  padding: 4px 0 0;        /* the cabinet supplies side/bottom padding */
 }
 /* the body is what collapses; the header bar stays */
 .pj2-mixdesk-body { display: none; }
