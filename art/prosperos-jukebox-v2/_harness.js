@@ -2140,6 +2140,47 @@ if (!SHORT2) {
 })();
 
 // ============================================================================
+// CELLO (rc.22) — the under-voice's laws. All draws live on the "cello"
+// fork, so the streams every check above audits are byte-identical to the
+// cello-less engine by construction (label-hashed forks re-roll nothing);
+// what needs asserting is the voice's OWN conduct: one bow at a time (the
+// hold law), never more than a double-stop, and — over a long run — that
+// it actually enters (an under-voice that never speaks is a wiring bug,
+// not restraint).
+// ============================================================================
+(function testCello() {
+  var i;
+  var notes = [];
+  for (i = 0; i < runP2.notes.length; i++) {
+    if (runP2.notes[i].voice === "cello") notes.push(runP2.notes[i]);
+  }
+  // Group into bows by onset: a double-stop is two notes sharing one t —
+  // one bow, one arm. Notes arrive in schedule order (one emit site).
+  var bows = [];
+  for (i = 0; i < notes.length; i++) {
+    var b = bows.length ? bows[bows.length - 1] : null;
+    if (b && Math.abs(notes[i].t - b.t) < 1e-9) { b.n++; continue; }
+    bows.push({ t: notes[i].t, durS: notes[i].durS, n: 1 });
+  }
+  var overlapBad = 0, stopBad = 0;
+  for (i = 1; i < bows.length; i++) {
+    if (bows[i].t < bows[i - 1].t + bows[i - 1].durS - 1e-6) overlapBad++;
+  }
+  for (i = 0; i < bows.length; i++) if (bows[i].n > 2) stopBad++;
+  check("CELLO hold law: one bow at a time, never more than a double-stop",
+    overlapBad === 0 && stopBad === 0,
+    bows.length + " bow(s), " + notes.length + " note(s)" +
+    (overlapBad ? ", " + overlapBad + " overlap(s)" : ""));
+  if (!SHORT2) {
+    check("CELLO enters over a full run (movement-following, not silent)",
+      bows.length >= 3, bows.length + " bow(s)");
+  } else {
+    check("CELLO presence (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+      true, bows.length + " bow(s) so far");
+  }
+})();
+
+// ============================================================================
 // SEA CHANGE
 // ============================================================================
 (function testSeaChange() {
@@ -3210,6 +3251,44 @@ function p3AmbientFires(r) {
   check("SYC the sink: exactly one semitone down, never more than one per evening",
     sSinkBad === 0 && sSinks.length <= Math.max(1, sBegins.length),
     sSinks.length + " sink(s) in " + sBegins.length + " evening(s)");
+
+  // rc.23 — the low horn's laws: an onset never falls inside the hush
+  // (the horn holds its breath from 4 s before the cut), tones stack no
+  // deeper than the two-note call (<= 2 concurrent), the register is
+  // oct -1 only, and over a full run the voice actually enters. All its
+  // draws live on the "horn" fork, so the streams every check above
+  // audits are byte-identical to the horn-less engine by construction.
+  var sHornN = [], sHornHushBad = 0, sHornOctBad = 0, sHornStack = 0;
+  for (ni = 0; ni < S1.notes.length; ni++) {
+    if (String(S1.notes[ni].voice || "") === "horn") sHornN.push(S1.notes[ni]);
+  }
+  for (si = 0; si < sCuts.length; si++) {
+    for (ni = 0; ni < sHornN.length; ni++) {
+      var hn = sHornN[ni];
+      if (hn.t > sCuts[si].t + 0.001 &&
+          hn.t < sCuts[si].t + (sCuts[si].holdS || 5) - 0.001) sHornHushBad++;
+    }
+  }
+  for (ni = 0; ni < sHornN.length; ni++) {
+    if (sHornN[ni].oct !== -1) sHornOctBad++;
+    var sHornConc = 1;
+    for (var nj = 0; nj < sHornN.length; nj++) {
+      if (nj !== ni && sHornN[nj].t < sHornN[ni].t + 1e-9 &&
+          sHornN[nj].t + sHornN[nj].durS > sHornN[ni].t + 1e-9) sHornConc++;
+    }
+    if (sHornConc > 2) sHornStack++;
+  }
+  check("SYC HORN: never inside the hush, <= 2 concurrent (the call), oct -1 only",
+    sHornHushBad === 0 && sHornOctBad === 0 && sHornStack === 0,
+    sHornN.length + " horn note(s)" +
+    (sHornHushBad ? ", " + sHornHushBad + " in the hush" : ""));
+  if (!SHORTT) {
+    check("SYC HORN enters over a full run (movement-following, not silent)",
+      sHornN.length >= 2, sHornN.length + " horn note(s)");
+  } else {
+    check("SYC HORN presence (RELAXED: short sim — mechanism fires or is absent without error)",
+      true, sHornN.length + " horn note(s) so far");
+  }
 
   var SD1 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
   var SD2 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
