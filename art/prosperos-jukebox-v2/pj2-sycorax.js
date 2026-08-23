@@ -59,7 +59,8 @@
 // 300 → ~900 Hz and back (the brass crescendo that is the instrument),
 // 800 Hz breath riding the same shape, a whisper of 3rd partial while
 // the bell is open; 3–6 s swells, 12–30 s tones on the POSE's root or
-// fifth at oct −1, peak 0.04 — and rarely (p ≈ 0.15) the two-note call,
+// fifth at oct −1, peak 0.028 (rc.25: ~30% under the launch level,
+// owner's ear) — and rarely (p ≈ 0.15) the two-note call,
 // the fifth FALLING to the root; the treeline does not fanfare. It
 // enters only on the rite's movement: pose changes (weighted toward
 // sting and hollow), the darkening arrivals (the organum gains its
@@ -1512,7 +1513,10 @@
       var c = ctx;
       var wx = wxAt(t);
       var freq = run.field.degFreq(deg, -1); // read at schedule time, never cached
-      var peak = 0.04 * (vel || 1);
+      // 0.028: ~30% under the rc.23 launch level (owner, 2026-08-23, by
+      // ear on the live mix). Breath, 3rd partial and the grit tap all
+      // scale from here; the mixer's horn fader scales from here too.
+      var peak = 0.028 * (vel || 1);
       // the body: one sawtooth finding its partial
       var o = c.createOscillator();
       o.type = "sawtooth";
@@ -3090,10 +3094,10 @@
       gritSendTromp.connect(mixGritGurdy);
       noiseLevel.connect(gritSendNoise); // the bed's grit share (partial)
       // rc.23: the horn's grit tap hangs off layHorn ITSELF (post-mixer),
-      // so the layer fader scales voice and shadow together. Energy math:
-      // 0.04 peak x 0.08 send = 0.0032 into the shaper — small-signal
-      // territory, where the curve's ~21x slope gives the far horn its
-      // bronze edge without ever rivaling the bed's own grit share.
+      // so the layer fader scales voice and shadow together. Energy math
+      // (rc.25 level): 0.028 peak x 0.08 send = 0.0022 into the shaper —
+      // small-signal territory, where the curve's ~21x slope gives the
+      // far horn its bronze edge without rivaling the bed's grit share.
       var gritSendHorn = c.createGain();
       gritSendHorn.gain.setValueAtTime(0.08, clock.now());
       gritSendHorn._pj2Grit = "horn";
