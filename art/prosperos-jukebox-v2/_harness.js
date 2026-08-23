@@ -3252,6 +3252,44 @@ function p3AmbientFires(r) {
     sSinkBad === 0 && sSinks.length <= Math.max(1, sBegins.length),
     sSinks.length + " sink(s) in " + sBegins.length + " evening(s)");
 
+  // rc.23 — the low horn's laws: an onset never falls inside the hush
+  // (the horn holds its breath from 4 s before the cut), tones stack no
+  // deeper than the two-note call (<= 2 concurrent), the register is
+  // oct -1 only, and over a full run the voice actually enters. All its
+  // draws live on the "horn" fork, so the streams every check above
+  // audits are byte-identical to the horn-less engine by construction.
+  var sHornN = [], sHornHushBad = 0, sHornOctBad = 0, sHornStack = 0;
+  for (ni = 0; ni < S1.notes.length; ni++) {
+    if (String(S1.notes[ni].voice || "") === "horn") sHornN.push(S1.notes[ni]);
+  }
+  for (si = 0; si < sCuts.length; si++) {
+    for (ni = 0; ni < sHornN.length; ni++) {
+      var hn = sHornN[ni];
+      if (hn.t > sCuts[si].t + 0.001 &&
+          hn.t < sCuts[si].t + (sCuts[si].holdS || 5) - 0.001) sHornHushBad++;
+    }
+  }
+  for (ni = 0; ni < sHornN.length; ni++) {
+    if (sHornN[ni].oct !== -1) sHornOctBad++;
+    var sHornConc = 1;
+    for (var nj = 0; nj < sHornN.length; nj++) {
+      if (nj !== ni && sHornN[nj].t < sHornN[ni].t + 1e-9 &&
+          sHornN[nj].t + sHornN[nj].durS > sHornN[ni].t + 1e-9) sHornConc++;
+    }
+    if (sHornConc > 2) sHornStack++;
+  }
+  check("SYC HORN: never inside the hush, <= 2 concurrent (the call), oct -1 only",
+    sHornHushBad === 0 && sHornOctBad === 0 && sHornStack === 0,
+    sHornN.length + " horn note(s)" +
+    (sHornHushBad ? ", " + sHornHushBad + " in the hush" : ""));
+  if (!SHORTT) {
+    check("SYC HORN enters over a full run (movement-following, not silent)",
+      sHornN.length >= 2, sHornN.length + " horn note(s)");
+  } else {
+    check("SYC HORN presence (RELAXED: short sim — mechanism fires or is absent without error)",
+      true, sHornN.length + " horn note(s) so far");
+  }
+
   var SD1 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
   var SD2 = trackRun("Sycorax", 777, Math.min(TSIM, 900));
   var SD3 = trackRun("Sycorax", 778, Math.min(TSIM, 900));

@@ -51,6 +51,26 @@
 // processional; a Â±20%-jittered walk inside it; accelerating clusters in
 // the invocation whose SPEED rises while their level never does).
 //
+// rc.23 — THE LOW HORN, the rite's under-voice (PLAN-UNDERVOICES §2b,
+// owner-approved by ear in instrument-mockup-horn.html): an aurochs horn
+// heard from the treeline — a LANDSCAPE voice that never claims the air
+// and never speaks a melody. One sawtooth finding its partial (a −35¢
+// scoop settling over 0.4 s) through a lowpass whose cutoff BLOSSOMS
+// 300 → ~900 Hz and back (the brass crescendo that is the instrument),
+// 800 Hz breath riding the same shape, a whisper of 3rd partial while
+// the bell is open; 3–6 s swells, 12–30 s tones on the POSE's root or
+// fifth at oct −1, peak 0.04 — and rarely (p ≈ 0.15) the two-note call,
+// the fifth FALLING to the root; the treeline does not fanfare. It
+// enters only on the rite's movement: pose changes (weighted toward
+// sting and hollow), the darkening arrivals (the organum gains its
+// fundament), weighted to the processional and invocation, HOLDS ITS
+// BREATH from 4 s before the cut through the hush, and may sound one far
+// final call in the afterimage once the return completes. One call at a
+// time (the hold law), a drawn rest after each; every draw on the NEW
+// "horn" fork, so every pre-existing stream is byte-identical to rc.22.
+// It sums into cutGain like all landscape (the cut ducks it with the
+// rest of the night) and taps the grit bus at 0.08 off its own layer.
+//
 // ACROSS EVENINGS the rite remembers: the standard motif ghost (intoned by
 // the chant in the next gathering, quiet), and THE BRUISE — last evening's
 // cut severity carried as one scalar (murkier opening, earlier heartbeat,
@@ -102,6 +122,9 @@
   //   gurdy       mixGurdy (1) inserted gurdyLevel -> cutGain, + mixGritGurdy
   //               (1) inserted between the gurdy/trompette grit sends and the
   //               shaper — mute the gurdy and its saturated shadow dies too
+  //   horn        layHorn (1) -> cutGain (rc.23, the under-voice); its fixed
+  //               0.08 grit tap hangs off layHorn itself, so a muted horn
+  //               sheds its saturated shadow with the same fader
   //   noise       mixNoise (1) inserted noiseLevel -> cutGain, + mixBreath (1)
   //               inserted breathLevel -> cutGain (ember-smoke, ruin-wind and
   //               the treeline murmur are one user-facing murk), +
@@ -124,6 +147,7 @@
   // --------------------------------------------------------------------------
   var MIX_LAYERS = [
     { key: "gurdy",      label: "Hurdy-Gurdy", kind: "landscape" },
+    { key: "horn",       label: "Low Horn",    kind: "landscape" },
     { key: "noise",      label: "Noise Bed",   kind: "landscape" },
     { key: "chant",      label: "Chant",       kind: "melodic" },
     { key: "rebec",      label: "Rebec",       kind: "melodic" },
@@ -140,9 +164,10 @@
   // its gain (mixBreath), and both are the same user-facing murk. The form
   // lanes (harmony, arrival, cut, follow) are never scaled.
   var MIX_RATE_LANES = {
-    gurdy: ["gurdy"], noise: ["noisebed", "breath"], chant: ["chant"],
-    rebec: ["rebec"], waterphone: ["waterphone"], boneflute: ["boneflute"],
-    percussion: ["protodrum", "percussion"], ambient: ["ambient"],
+    gurdy: ["gurdy"], horn: ["horn"], noise: ["noisebed", "breath"],
+    chant: ["chant"], rebec: ["rebec"], waterphone: ["waterphone"],
+    boneflute: ["boneflute"], percussion: ["protodrum", "percussion"],
+    ambient: ["ambient"],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
@@ -154,6 +179,11 @@
     gurdy: [
       { key: "brightness", label: "brightness — how open the cluster's lowpass sits", min: 0.5, max: 1.6, def: 1 },
       { key: "warble", label: "warble — the pitch drift's reach", min: 0, max: 2, def: 1 },
+    ],
+    horn: [
+      { key: "blossom", label: "blossom — how far the bell opens", min: 0, max: 1.5, def: 1 },
+      { key: "breath", label: "breath — the air in the bore", min: 0, max: 2, def: 1 },
+      { key: "scoop", label: "scoop — the attack's pitch dip", min: 0, max: 2, def: 1 },
     ],
     chant: [
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
@@ -1451,6 +1481,172 @@
       lane.at(run.t0, cycle);
     }
 
+    // ---- the low horn (landscape — THE UNDER-VOICE, rc.23) -------------------
+    // See the header paragraph. Ported from the owner-approved prototype
+    // (instrument-mockup-horn.html) onto the engine's discipline: draws on
+    // the dedicated "horn" fork only (chance roll FIRST, unconditionally,
+    // at every opportunity — stream discipline); pitch from the LIVE field
+    // + pose at schedule time (era-aware through the sink); envelopes
+    // through env(); budget-claimed; routed layHorn -> cutGain so the cut
+    // ducks it with the rest of the landscape. Filter cutoff and detune
+    // are pitch/timbre motions, not amplitude, so they use anchored
+    // setValue/ramp pairs directly (env() anchors at 0, which is no
+    // frequency at all).
+    var HORN_CHANCE = { pose: 0.4, arrival: 0.6 };
+    var HORN_SCENE_MUL = {
+      "gathering": 0.5, "processional": 1.2, "circling": 0.85,
+      "invocation": 1.25, "afterimage": 0, // the afterimage keeps its own far call
+    };
+
+    // One horn tone. Returns true if it sounded (budget willing).
+    function renderHornTone(deg, t, durS, vel, kind) {
+      var rng = run.streams.horn;
+      // Draw everything FIRST so a budget refusal can't shift the stream.
+      var atk = rng.rnd(3, 6);
+      var rel = rng.rnd(4, 8);
+      if (atk + rel > durS - 1) { atk = durS * 0.35; rel = durS * 0.45; }
+      var hold = durS - atk - rel;
+      var tok = run.budget.claim(8, t + durS + 0.4);
+      if (!tok) return false;
+      run.tokens.push(tok);
+      var c = ctx;
+      var wx = wxAt(t);
+      var freq = run.field.degFreq(deg, -1); // read at schedule time, never cached
+      var peak = 0.04 * (vel || 1);
+      // the body: one sawtooth finding its partial
+      var o = c.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(freq, t);
+      o.detune.setValueAtTime(-35 * pVal("horn", "scoop"), t);
+      o.detune.linearRampToValueAtTime(0, t + 0.4);
+      // the bell: the blossom is the crescendo. Murk leans on how far it
+      // opens, and a darkening arrival's window closes it ~15% like the
+      // gurdy's — the horn darkens with the night it stands in.
+      var open = (300 + 600 * pVal("horn", "blossom")) * (1 - 0.2 * wx.murk);
+      if (t < run.darkenUntil) open *= 0.85;
+      open = Math.max(320, open);
+      var lp = c.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.Q.setValueAtTime(0.7, t);
+      lp.frequency.setValueAtTime(300, t);
+      lp.frequency.exponentialRampToValueAtTime(open, t + durS * 0.45);
+      lp.frequency.setValueAtTime(open, t + durS * 0.55);
+      lp.frequency.exponentialRampToValueAtTime(300, t + durS);
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[atk, peak], [hold, peak * 0.92], [rel, 0]]);
+      o.connect(lp); lp.connect(g); g.connect(run.layHorn);
+      o.start(t);
+      o.stop(t + durS + 0.3);
+      // the breath: 800 Hz band of air riding the same shape, quieter;
+      // the weather's breath channel breathes the dose around the knob
+      var bPeak = peak * 0.20 * pVal("horn", "breath") * (0.8 + 0.4 * wx.breath);
+      if (bPeak > 0) {
+        var nz = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(800, t);
+        bp.Q.setValueAtTime(1.2, t);
+        var bg = c.createGain();
+        PJ2.Voice.env(bg.gain, t, [[atk, bPeak], [hold, bPeak * 0.8], [rel, 0]]);
+        nz.connect(bp); bp.connect(bg); bg.connect(run.layHorn);
+        nz.start(t, nz.randomOffset);
+        nz.stop(t + durS + 0.3);
+      }
+      // the whisper of brightness: a 3rd partial that exists only while
+      // the bell is open — it rises out of nothing mid-note and sinks back
+      var wPeak = peak * 0.10 * Math.min(1, pVal("horn", "blossom"));
+      if (wPeak > 0) {
+        var p3 = c.createOscillator();
+        p3.type = "sine";
+        p3.frequency.setValueAtTime(freq * 3, t);
+        var pg = c.createGain();
+        PJ2.Voice.env(pg.gain, t, [[durS * 0.32, 0], [durS * 0.18, wPeak],
+                                   [durS * 0.22, wPeak * 0.5], [durS * 0.28, 0]]);
+        p3.connect(pg); pg.connect(run.layHorn);
+        p3.start(t);
+        p3.stop(t + durS + 0.3);
+      }
+      emitNote({ voice: "horn", kind: kind, freq: freq, t: t, durS: durS, deg: deg, oct: -1 });
+      return true;
+    }
+
+    // One entry = one call: usually a single held tone on the pose's root
+    // or fifth (the fifth favored when the pose actually holds it); rarely
+    // the two-note call — the fifth FALLING to the root, overlapped like a
+    // breath re-taken. Never the other way; the treeline does not fanfare.
+    function hornCall(t) {
+      var rng = run.streams.horn;
+      if (rng.chance(0.15)) {
+        var d1 = rng.rnd(10, 14);
+        var d2 = rng.rnd(14, 22);
+        var rest2 = rng.rnd(6, 14);
+        renderHornTone(5, t, d1, 1, "call");
+        run.clock.lane("horn").at(t + d1 * 0.55, function (tt) {
+          if (!run || !run.live || inHush(tt)) return;
+          renderHornTone(0, tt, d2, 1, "call");
+        });
+        run.hornHoldUntil = t + d1 * 0.55 + d2 + rest2;
+        return;
+      }
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var hasFifth = false;
+      var cds = (ch && ch.chordDegs) ? ch.chordDegs : [0];
+      for (var i = 0; i < cds.length; i++) if (cds[i] === 5) hasFifth = true;
+      var deg = rng.chance(hasFifth ? 0.45 : 0.25) ? 5 : 0;
+      var durS = rng.rnd(12, 30);
+      var rest = rng.rnd(6, 14);
+      renderHornTone(deg, t, durS, 1, "held");
+      run.hornHoldUntil = t + durS + rest;
+    }
+
+    // One opportunity, one decision. Gates AFTER the unconditional roll:
+    // the afterimage keeps its own far call; the hush is never entered and
+    // the horn holds its breath from 4 s before the cut (a swell chopped
+    // mid-bloom would read as an event, and the cut must own that moment);
+    // the gathering stays bare below intensity 0.12; one call at a time.
+    function hornConsider(kind, t, poseName) {
+      if (!run || !run.live) return;
+      var rng = run.streams.horn;
+      var roll = rng.next();                    // drawn first, unconditionally
+      var mul = HORN_SCENE_MUL[curSceneType()];
+      if (mul == null) mul = 1;
+      if (mul <= 0) return;
+      if (inHush(t)) return;
+      if (run.cut && !run.cut.fired && t > run.cut.tB - 4) return;
+      var iv = curIntensity(t);
+      if (iv < 0.12) return;
+      if (t < run.hornHoldUntil) return;
+      var poseMul = (poseName === "sting" || poseName === "hollow") ? 1.3 : 1;
+      var x = clamp((iv - 0.12) / 0.3, 0, 1);
+      if (roll >= Math.min(1, (HORN_CHANCE[kind] || 0.3) * mul * poseMul * (0.25 + 0.75 * x))) return;
+      hornCall(t);
+    }
+
+    // The afterimage's far final call — at most one per evening, drawn at
+    // the scene's entry, sounded only after the cut's hush AND return have
+    // fully passed (the residue answers the noticing, it never interrupts
+    // it), quiet (vel 0.7) and on the root: residue, not resolution.
+    function hornFinalCall(evt) {
+      if (!run || !run.live) return;
+      var rng = run.streams.horn;
+      var roll = rng.next();                    // drawn first, unconditionally
+      var wait = rng.rnd(8, 20);
+      var durS = rng.rnd(16, 26);
+      var rest = rng.rnd(6, 14);
+      if (run.hornFinalDone) return;
+      if (roll >= 0.6) return;
+      run.hornFinalDone = true;
+      var t0 = evt.t + wait;
+      if (run.cut) t0 = Math.max(t0, run.cut.end + run.cut.retS + 2);
+      run.clock.lane("horn").at(t0, function (t) {
+        if (!run || !run.live || inHush(t)) return;
+        if (t < run.hornHoldUntil) return;
+        renderHornTone(0, t, durS, 0.7, "far-call");
+        run.hornHoldUntil = t + durS + rest;
+      });
+    }
+
     // ---- the ritual noise bed (landscape — "darker and noisier") -------------
     // Two slow sources into ONE slaved level gain (noiseLevel — the
     // follower holds it â¤ 0.8Ã the gurdy's level, always; that ceiling is
@@ -2295,6 +2491,7 @@
           var after = run.harmony.current().name;
           if (after !== before) {
             emitEvent({ type: "pose", pose: after, rootDeg: 0, via: "step", t: t });
+            hornConsider("pose", t, after); // rc.23: the treeline may answer the turn
           }
         } catch (e) { /* a stuck pose is still a pose */ }
         lane.at(t + periodAt(t), stepFn);
@@ -2347,6 +2544,7 @@
         run.darkenUntil = t + 25;   // the lowpass closes ~15% for a while
         run.forceSubUntil = t + 30; // the sub-octave sinks in
         emitEvent({ type: "arrival", to: toType, t: t });
+        hornConsider("arrival", t, "sting"); // rc.23: the darkening may gain its fundament
       });
     }
 
@@ -2604,6 +2802,7 @@
         // The evening's only consonance — the bare {0,5} fifth, used
         // nowhere else. Nothing moves ONTO it: residue, not resolution.
         setPoseIfNew("afterimage", evt.t, "afterimage");
+        hornFinalCall(evt); // rc.23: one far call may answer, after the hush
       }
       // Darkening arrivals at boundaries into the rite's active scenes.
       // Never into the afterimage (the cut — or plain dispersal — owns that
@@ -2634,6 +2833,7 @@
           setPoseIfNew(run.bruise > 0.5 ? "sting" : "coil", evt.t, "opening");
           run.fluteCount = 0;
           run.fluteMax = run.streams.boneflute.rint(2, 3);
+          run.hornFinalDone = false; // each evening earns its own far call (rc.23)
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
             try { run.motif.seedGhost(run.pendingGhost); } catch (e) {}
@@ -2684,7 +2884,7 @@
     }
 
     var LANE_NAMES = [
-      "gurdy", "noisebed", "breath", "protodrum", "percussion",
+      "gurdy", "horn", "noisebed", "breath", "protodrum", "percussion",
       "chant", "rebec", "waterphone", "boneflute", "ambient",
       "follow", "harmony", "arrival", "cut",
     ];
@@ -2750,6 +2950,10 @@
         weather: master.fork("weather"),
         fx: master.fork("fx"),
         vowels: master.fork("vowels"),
+        // rc.23: the under-voice's own dice. A label-hashed fork re-rolls
+        // nothing — every stream above is byte-identical to the horn-less
+        // engine (the stream-purity contract, as the Library's cello).
+        horn: master.fork("horn"),
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
       };
@@ -2816,6 +3020,11 @@
       var mixGurdy = mAttach("gurdy", c.createGain(), 1); // the mixer's own stage, beside the follower's
       gurdyLevel.connect(mixGurdy);
       mixGurdy.connect(cutGain);
+      // rc.23: the horn sums into cutGain like all landscape — the cut
+      // ducks it with the rest of the night. Per-note envelopes carry its
+      // level (no follower stage); the mixer layer is the whole chain.
+      var layHorn = mAttach("horn", c.createGain(), 1);
+      layHorn.connect(cutGain);
       var noiseLevel = c.createGain();
       noiseLevel.gain.setValueAtTime(0, clock.now());
       noiseLevel._pj2Tag = "noiseLevel"; // harness handle: per-source peak inspection
@@ -2880,6 +3089,16 @@
       gritSendTromp._pj2Grit = "trompette";
       gritSendTromp.connect(mixGritGurdy);
       noiseLevel.connect(gritSendNoise); // the bed's grit share (partial)
+      // rc.23: the horn's grit tap hangs off layHorn ITSELF (post-mixer),
+      // so the layer fader scales voice and shadow together. Energy math:
+      // 0.04 peak x 0.08 send = 0.0032 into the shaper — small-signal
+      // territory, where the curve's ~21x slope gives the far horn its
+      // bronze edge without ever rivaling the bed's own grit share.
+      var gritSendHorn = c.createGain();
+      gritSendHorn.gain.setValueAtTime(0.08, clock.now());
+      gritSendHorn._pj2Grit = "horn";
+      layHorn.connect(gritSendHorn);
+      gritSendHorn.connect(gritShaper);
 
       roomBlend.register("landscape", cutGain, 0.08);
       roomBlend.register("percussion", layPerc, -0.25); // a drum is HERE
@@ -3033,6 +3252,9 @@
         gurdyCur: 0.10, noiseCur: 0, breathCur: 0, gritCur: 0,
         layAmb: layAmb, layPerc: layPerc, layProto: layProto,
         layMel: layMel, layThroat: layThroat,
+        layHorn: layHorn, gritSendHorn: gritSendHorn,
+        hornHoldUntil: 0,     // the hold law: one call at a time (rc.23)
+        hornFinalDone: false, // one far call per evening's afterimage
         mix: mix, mixWraps: mixWraps,
         // grit
         gritShaper: gritShaper, gritMakeup: gritMakeup, gritBlend: gritBlend,
