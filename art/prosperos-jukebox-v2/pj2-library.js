@@ -66,8 +66,9 @@
 //                  x droneBreath (<= 1) x droneLevel (<= 0.48) ~ 0.079;
 //                  cycle overlap doubles it briefly ~ 0.158; + cadence pads
 //                  2 x 0.012 or a sea-change bloom 2 x 0.05   -> ~ 0.21 worst
-//   cello          ONE bow at a time (the hold law): single 0.045 or a
-//                  stop 2 x 0.036 = 0.072; x bow swell <= 1.12 -> ~ 0.081 worst
+//   cello          ONE bow at a time (the hold law): single 0.0225 or a
+//                  stop 2 x 0.018 = 0.036; x bow swell <= 1.12 -> ~ 0.04 worst
+//                  (rc.24: halved from the rc.22 launch level, owner's ear)
 //   melody         pluck 0.055 + sparkle <= 0.012, box <= 0.030 + shimmer
 //                  <= 0.009; two speakers + a rare third (limit+1)
 //                                                             -> ~ 0.16 worst
@@ -79,14 +80,13 @@
 //   halo           levelGain <= 0.07 on a whisper-fed ring    -> ~ 0.02
 //   far-wall delay wet 0.18 x sends (0.5 box / 0.35 pluck)    -> ~ 0.02
 //   ------------------------------------------------------------------
-//   sum into the rooms ~ 0.68 absolute worst (rc.22: +0.081 cello); the
+//   sum into the rooms ~ 0.64 absolute worst (rc.24: +0.04 cello); the
 //   equal-power room split conserves power and each room is dry 1.0 +
-//   wet ~0.3 -> ~ 0.88 at bus input; x masterGain default 0.6 x saturator
-//   small-signal gain ~1.66 (pj2-voice lesson #1) ~ 0.88 into the limiter
-//   — still under the ~0.89 (~ -1 dB) master ceiling, though the glue
-//   compressor now earns its keep at the absolute-worst coincidence (the
-//   hold law caps the cello at one bow, so that coincidence is rarer than
-//   even this ledger's pessimism). The
+//   wet ~0.3 -> ~ 0.83 at bus input; x masterGain default 0.6 x saturator
+//   small-signal gain ~1.66 (pj2-voice lesson #1) ~ 0.83 into the limiter
+//   — under the ~0.89 (~ -1 dB) master ceiling with the glue compressor
+//   still idling (the hold law caps the cello at one bow, so even this
+//   coincidence is rarer than the ledger's pessimism). The
 //   MEASURED worst case (time-varying mock-param inspection, 2600 s run,
 //   pj2-phase3-check.js): 0.360 at the bus input -> 0.298 into the limiter
 //   (~ -10.5 dB) at volume 0.5, ~ -8.9 dB at the default 0.6 — concurrence
@@ -1775,7 +1775,10 @@
       vib.frequency.setValueAtTime(vibHz, t);
       vib.start(t);
       vib.stop(t + durS + 0.1);
-      var toneLevel = 0.045 * (velMul || 1) * (degList.length > 1 ? 0.8 : 1);
+      // 0.0225: HALF the rc.22 launch level (owner, 2026-08-23, by ear on
+      // the live mix — "the cello is way too loud"). The mixer's cello
+      // fader still scales from here; this is the new design center.
+      var toneLevel = 0.0225 * (velMul || 1) * (degList.length > 1 ? 0.8 : 1);
       var vibDepthK = 0.0046 * pVal("cello", "vibrato") * (0.7 + 0.6 * wx.breath);
       var cutoff = pVal("cello", "brightness") * (0.9 + 0.2 * wx.brightness);
       for (var i = 0; i < degList.length; i++) {
