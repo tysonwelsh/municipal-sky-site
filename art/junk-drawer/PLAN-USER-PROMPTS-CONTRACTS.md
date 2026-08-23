@@ -212,7 +212,13 @@ server guarantee, not a UI courtesy).
     { "gen_id": "01J…B", "kind": "flag",
       "note": "response is broken or offensive (optional note)" }
   ],
-  "comparison": { "winner": "a", "strength": "decisive" }
+  "comparison": { "winner": "a", "strength": "decisive" },
+  "ranking": [
+    { "slot": "c", "rank": 1 },
+    { "slot": "a", "rank": 2 },
+    { "slot": "b", "rank": 2 },
+    { "slot": "d", "rank": 3 }
+  ]
 }
 ```
 
@@ -240,6 +246,31 @@ server guarantee, not a UI courtesy).
   `jd_comparisons.strength`; on a database that has not yet run the
   setup script's migration, jd-rate falls back to filing the batch
   without the margin rather than failing it.
+- `ranking` (added 2026-08-22, the four-chair era): the FULL order of
+  the survivors — one entry per `status='ok'` slot, `{ "slot": …,
+  "rank": <int ≥ 1> }`, named **by slot** for the same reason the
+  winner is. It supersedes `comparison` as the judgment of record. The
+  rules, all enforced server-side (a violation is `400
+  ranking_invalid`, and nothing at all is written):
+  - one entry per ok slot, every ok slot present exactly once, no
+    unknown slots, no non-ok slots, no duplicates;
+  - `rank` is a whole number ≥ 1;
+  - **exactly one** entry at rank 1 — there is never a tie for first;
+  - ranks are **dense**: the distinct ranks used are exactly {1..k}.
+    Ties below first are legal and expected (`1,2,2,3` and `1,2,2,2`
+    both pass); a gap is not (`1,2,4` fails).
+
+  **Acceptance policy**, which exists so a visitor on a cached copy of
+  the old JS keeps working: `ranking` present and valid ⇒ it is the
+  answer. `ranking` absent, `comparison` present ⇒ exactly the legacy
+  path, unchanged. Both absent with >1 ok slot ⇒ `400
+  comparison_required` as before. Both present ⇒ `ranking` is read and
+  `comparison` is ignored without error (the old key is not evidence of
+  a bug). The client sends `ranking` only when more than one slot
+  survived; a well-formed one-entry order on a single-survivor
+  submission is nonetheless accepted rather than rejected, because it
+  records the same fact and refusing it would throw away the visitor's
+  whole rating batch.
 
 **Server processing:**
 
@@ -262,10 +293,29 @@ server guarantee, not a UI courtesy).
    `version` field (currently 9). The client never sends it (its payload
    came from the same file via data.php; the server copy is
    authoritative).
-6. INSERT rating rows (each with `visitor_hash` of the rater, `client`,
-   `rated_at`); INSERT `jd_comparisons` row when `comparison` non-null
-   (`winner_gen_id` = mapped gen id, NULL for `"tie"`); UPDATE submission
-   `status='rated'`. All in one transaction.
+6. UPDATE submission `status='rated'` **first**, guarded (`WHERE id = ?
+   AND status <> 'rated'`) — that UPDATE is the serialization point, and
+   a `rowCount() !== 1` is `409 already_rated`. Then INSERT rating rows
+   (each with `visitor_hash` of the rater, `client`, `rated_at`); INSERT
+   one `jd_ranks` row per ok slot when `ranking` was filed (gen id
+   resolved from the slot, never from client input); INSERT the
+   `jd_comparisons` row whenever either judgment key was accepted —
+   `winner_gen_id` = the mapped winner (the rank-1 generation when the
+   answer came as a ranking, NULL for a legacy `"tie"`), `strength` NULL
+   on a ranking because an order carries no margin. All in one
+   transaction.
+
+   The `jd_comparisons` row is written for BOTH shapes on purpose: it
+   keeps the win series that predates ranking one continuous table, and
+   keeps every existing reader working untouched.
+
+   If `jd_ranks` does not exist yet (the setup script is a manual run and
+   a deploy is instant), the rank rows are skipped, the batch still
+   commits, and a line goes to the error log — the same bargain
+   `jd_comparisons.strength` already makes. Only the missing-table error
+   is caught (`jd_missing_table()`, the sibling of `jd_missing_column()`);
+   any other failure still rolls the whole batch back. Rating must never
+   break because a migration lagged a deploy.
 7. Respond with the reveal.
 
 **Success response (200):**
@@ -287,7 +337,7 @@ failed slots ARE included with their model identity (the visitor may
 fairly learn who failed): entries carry an extra `"status": "ok"|"failed"|"rejected"`.
 
 **Status-code map (jd-rate):** `200` ok · `400
-bad_request|rating_invalid|comparison_required` · `403 origin_forbidden`
+bad_request|rating_invalid|comparison_required|ranking_invalid` · `403 origin_forbidden`
 · `404 not_found` · `405` · `409 already_rated|nothing_to_rate` · `500
 server_error`.
 
@@ -379,7 +429,32 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
     CONSTRAINT fk_jdc_submission FOREIGN KEY (submission_id) REFERENCES jd_submissions(id),
     CONSTRAINT fk_jdc_winner FOREIGN KEY (winner_gen_id) REFERENCES jd_generations(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS jd_ranks (
+    id             CHAR(26)    NOT NULL PRIMARY KEY,
+    submission_id  CHAR(26)    NOT NULL,
+    generation_id  CHAR(26)    NOT NULL,
+    rank_pos       TINYINT     NOT NULL,       -- 1 = best; dense (the distinct
+                                               -- ranks used are exactly 1..k);
+                                               -- ties legal below 1 only
+    visitor_hash   CHAR(64)    NOT NULL,
+    client         VARCHAR(16) NOT NULL DEFAULT 'web',
+    rated_at       DATETIME    NOT NULL,
+    UNIQUE KEY uq_submission_generation (submission_id, generation_id),
+    KEY idx_submission (submission_id),
+    CONSTRAINT fk_jdrk_submission FOREIGN KEY (submission_id) REFERENCES jd_submissions(id),
+    CONSTRAINT fk_jdrk_generation FOREIGN KEY (generation_id) REFERENCES jd_generations(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+
+`jd_ranks` (added 2026-08-22) is the full order behind each judgment;
+`jd_comparisons` keeps its rank-1 winner alongside it. **The column is
+`rank_pos`, never `rank`** — `RANK` is a reserved word in MySQL 8.0 (the
+window function) and an unquoted `rank` column is a syntax error there.
+Do not "tidy" that name, quoted or otherwise. Being a new TABLE rather
+than a new column, it needs no ALTER: the `CREATE TABLE IF NOT EXISTS`
+above is itself the migration, and `setup-jd-tables.php` reports whether
+it landed.
 
 Notes binding on BE-C: the rate-limit queries must use
 `idx_visitor_created` and `idx_created` shapes exactly as in C1.2 step 7;
@@ -812,10 +887,16 @@ consent → prompt → generating → reveal → rate → compare → unveil →
    Everything skippable. Plus one unobtrusive flag control per response:
    "this response is broken or offensive" checkbox + optional note →
    a `kind:'flag'` rating row (APP §4.6). No size picker, no pin.
-6. **compare** — "Which belongs in the drawer?" A / B / tie. Required
-   in the two-slot path. On submit: build the C1.3 body from held state,
-   POST jd-rate. Degraded path skips this state; jd-rate is sent from
-   **rate**'s "done" with `comparison: null`.
+6. **compare** — the visitor's judgment: with four chairs drawing every
+   turn this is now a full ORDER of the survivors, not a single pick,
+   and it goes up as C1.3's `ranking` (exactly one first place; ties
+   allowed below it). Required whenever more than one slot survived. On
+   submit: build the C1.3 body from held state, POST jd-rate. Degraded
+   path skips this state; jd-rate is sent from **rate**'s "done" with
+   no judgment key. (The A/B/tie `comparison` this state used to send
+   is still accepted by the server forever — that is what a visitor on
+   a cached copy of the old JS is holding. FE owns the widget; the wire
+   shape is C1.3's.)
 7. **unveil** — render `reveal[]` ("A was Claude Sonnet 5; B was
    GPT-5"), then place the winner: if winner `a`/`b`, that generation;
    if `tie`, ask the visitor "keep one?" (A / B / neither) — a purely

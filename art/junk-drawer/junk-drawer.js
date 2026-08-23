@@ -4021,7 +4021,7 @@ function JD_layerOpen() {
      carrying four graph-paper print swatches in a tight 2×2 — the same
      swatch the finished drawings land in (.jd-turn-art's background, reused
      verbatim). While a machine works, its swatch runs an OLD-SCHOOL WEB
-     WAIT INDICATOR printed in ink, dealt per turn from a pool of five
+     WAIT INDICATOR printed in ink, dealt per turn from a pool of six
      (round-24 rotation, owner directive 2026-08-21 — see darkDeal; before
      then each indicator was keyed stably to its slot letter):
        plotter — a generated circuit, fresh every turn (round-20
@@ -4042,6 +4042,10 @@ function JD_layerOpen() {
            stalls, takes setbacks, and second-guesses itself above ~80,
            never finishing (rounds 24–25, owner pick 2026-08-21; see
            darkHonestBar below for the construction)
+       mesh — Kimi's Take (art/kimis-take/) run small: the
+           traffic-managed rain — streams of characters crossing the
+           swatch in all four directions on its own 9px grid, iframed
+           from mini.php (owner directive 2026-08-22; see darkWell)
      ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
      fifth slip — "please wait…" in the pencil hand, floated ON TOP of the
      pile — is retired; it covered the indicators, which are the whole show.
@@ -4540,7 +4544,7 @@ function JD_layerOpen() {
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   /* THE ROTATION (round 24, owner directive 2026-08-21): the waiting
-     indicators are a POOL, not a seating chart — five animations, four
+     indicators are a POOL, not a seating chart — six animations, four
      swatches, dealt fresh every turn so two runs of a prompt no longer show
      the same card and no two swatches in a turn ever match. The deal is a
      Fisher–Yates shuffle of the pool, seeded the house way from the turn's
@@ -4548,8 +4552,8 @@ function JD_layerOpen() {
      arrangement. The slot letters now mean POSITION only (the pencilled
      corner labels the later cards reference); which indicator a position
      hosts is the turn's own business. Each well wears its indicator's name
-     — jd-dark-well--plot/stray/scatter/watch/bar — and the CSS keys the
-     full-bleed and overflow tailoring to THAT, not to the slot. */
+     — jd-dark-well--plot/stray/scatter/watch/bar/rain/mesh — and the CSS
+     keys the full-bleed and overflow tailoring to THAT, not to the slot. */
   /* ---- the carbon rain (round 25) -----------------------------------------
      The character pool: 78 writing systems, 5987 characters. It is GENERATED,
      not typed — each script enumerated from its full Unicode block, then
@@ -4744,7 +4748,7 @@ function JD_layerOpen() {
      2026-08-21): darkHonestBar(), its darkWell branch and its CSS are all
      still here and still work. Put the string back in this array and it
      rejoins the rotation; nothing else needs touching. */
-  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'rain'];
+  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'rain', 'mesh'];
   function darkDeal() {
     var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
     var h = 2166136261 >>> 0, i;
@@ -4796,6 +4800,19 @@ function JD_layerOpen() {
          it lands in and binds a listener per stream, so it is built by
          jdRainMount() from paint(), once this markup is in the document. */
       return '<span class="jd-rain"></span>';
+    }
+    if (anim === 'mesh') {
+      /* Kimi's Take, run small (owner directive 2026-08-22): the
+         traffic-managed rain — streams crossing the swatch in all four
+         directions, turning for each other, never touching. It cannot be
+         built in place the rain's way: the engine holds ONE sheet of state
+         per page, and a darkroom can need four sheets at once. The frame
+         is the isolation — same-origin, our own paper, our own ink, and
+         mini.php re-deals itself if the swatch changes size. The well is
+         aria-hidden, so the frame is too (tabindex keeps it out of the
+         tab order); the status line beside it still does the talking. */
+      return '<iframe class="jd-dark-mesh" src="/art/kimis-take/mini.php" ' +
+        'title="streams of characters" tabindex="-1" scrolling="no"></iframe>';
     }
     if (anim === 'bar') {
       /* the whole climb is generated per turn (see darkHonestBar): a
@@ -5104,7 +5121,11 @@ function JD_layerOpen() {
      plate replays its OWN drawing (the button carries data-slot, but the
      plate it rides is authority enough). */
   function replayPlate(btn) {
-    var pl = btn.closest ? btn.closest('.jd-turn-plate') : null;
+    /* the bench's REPLAY rides INSIDE the plate; the podium's sits under it,
+       outside the figure, because there the figure is a drag handle. Either
+       ancestor names the same one drawing. */
+    var pl = btn.closest
+      ? (btn.closest('.jd-turn-plate') || btn.closest('.jd-pod-print')) : null;
     var svg = pl ? pl.querySelector('.jd-turn-art-in svg') : null;
     if (svg && window.JD_drawOn) window.JD_drawOn(svg, { force: true });
   }
@@ -5161,43 +5182,363 @@ function JD_layerOpen() {
      tooltip anchored to a plain-text label (OVERRIDE 1, round-16 — the
      click-to-unfold ⓘ popover it used to pair with is retired outright).
      The two-panel pill survey and the separate compare state are retired;
-     the call is the 5-point likert finale (winner + margin) and closes the
-     same state. pillRow above survives for the unveil's keep-chooser only. */
+     the call is THE PODIUM (below) and closes the same state. pillRow above
+     survives for the unveil's keep-chooser only. */
 
-  /* the finale's five stops: winner + strength. strength is the C1.3
-     contract addition (see jd-rate.php) — a tie has no margin. The rail is
-     strung between the two surviving slots, whatever letters they carry
-     (four models fly since 2026-08-14, so a degraded turn's survivors are
-     not always A and B); likertStops() builds the run for the pair at hand. */
-  function likertStops(x, y) {
-    var X = x.toUpperCase(), Y = y.toUpperCase();
-    return [
-      { id: x + '2', big: X, word: 'decisively', title: X + ' · decisively better',
-        desc: 'No contest — ' + X + ' is clearly the stronger drawing.', winner: x, strength: 'decisive' },
-      { id: x + '1', big: X, word: 'narrowly', title: X + ' · narrowly better',
-        desc: 'A close call, but ' + X + ' edges it.', winner: x, strength: 'slight' },
-      { id: 'tie', big: '=', word: 'dead even', title: 'dead even',
-        desc: 'No daylight between them — filed as a tie.', winner: 'tie', strength: null },
-      { id: y + '1', big: Y, word: 'narrowly', title: Y + ' · narrowly better',
-        desc: 'A close call, but ' + Y + ' edges it.', winner: y, strength: 'slight' },
-      { id: y + '2', big: Y, word: 'decisively', title: Y + ' · decisively better',
-        desc: 'No contest — ' + Y + ' is clearly the stronger drawing.', winner: y, strength: 'decisive' }
-    ];
+  /* ═══════════════════════════════════════════════════════════════════════
+     THE PODIUM (owner pick, mockups/mockup-32-podium.html, 2026-08-22).
+     The call files a RANK ORDER now, not a winner and a margin. Four blocks
+     descend left to right — tallest is 1st — and exactly one print stands
+     on each; the survivors wait in a row underneath until they are dragged,
+     tapped or Entered up onto a step, and dropping on a taken step SWAPS
+     the two, so a visitor can reorder without ever clearing a place first.
+     Two survivors build two steps, three build three. The height alone
+     carries the order, so the card's only words are the four ordinals and
+     the button: no instruction line, no margin question, no likert.
+
+     The answer lives in work.ranks (slot → rank, 1 = first). work.winner is
+     kept in step with whoever stands on 1st, so the unveil, the pile and
+     the tracking beacon downstream need no notion of a ranking at all — and
+     because the podium holds exactly one 1st, a 'tie' winner can no longer
+     be minted (the unveil's tie chooser stays put for old/cached flows).
+     ═══════════════════════════════════════════════════════════════════════ */
+  var POD_ORD = ['1st', '2nd', '3rd', '4th'];
+  var podHand = null;   /* the slot in hand — the tap-to-place path */
+  var podDrag = null;   /* the drag in flight, or null */
+
+  /* Nothing is cached across paints: the card is repainted by assigning an
+     HTML string, so a held reference is a reference to a node that may
+     already be off the document. Every lookup below is live, and during a
+     drag the DOM does not change at all, so the rects stay honest. */
+  function podRoot() { return bodyEl ? bodyEl.querySelector('.jd-pod') : null; }
+  function podTiers() {
+    var r = podRoot();
+    return r ? r.querySelectorAll('.jd-pod-tier') : [];
   }
-  /* the stops of the call currently on the bench, so the change handler can
-     map a picked stop back to winner + margin */
-  var curCallStops = [];
-  function likertStop(id) {
-    for (var i = 0; i < curCallStops.length; i++) if (curCallStops[i].id === id) return curCallStops[i];
+  function podTier(k) {
+    var r = podRoot();
+    return r ? r.querySelector('.jd-pod-tier[data-rank="' + k + '"]') : null;
+  }
+  function podPrintEl(slot) {
+    var r = podRoot();
+    return r ? r.querySelector('.jd-pod-print[data-pod="' + slot + '"]') : null;
+  }
+  function podRankOf(slot) {
+    var r = (work && work.ranks) ? work.ranks[slot] : 0;
+    return r > 0 ? r : 0;
+  }
+  function podAt(rank) {
+    var ok = okSlots();
+    for (var i = 0; i < ok.length; i++) if (podRankOf(ok[i]) === rank) return ok[i];
     return null;
   }
-  /* the id the visitor's stored pick maps back to, so a re-render (step
-     navigation) restores the checked stop */
-  function likertChosen() {
-    if (!work.winner) return null;
-    if (work.winner === 'tie') return 'tie';
-    return work.winner + (work.strength === 'decisive' ? '2' : '1');
+  /* the one bridge to everything downstream: whoever stands on 1st IS the
+     winner, and the podium has no margin concept, so strength is always null */
+  function podSync() {
+    work.winner = podAt(1);
+    work.strength = null;
   }
+  /* a restored or degraded turn may hold ranks for slots that didn't survive,
+     or ranks past the end of a shorter podium — drop them rather than build a
+     step nobody can reach */
+  function podNormalize(ok) {
+    if (!work.ranks) work.ranks = {};
+    var seen = {};
+    JD_SLOTS.forEach(function (s) {
+      var r = work.ranks[s];
+      if (r == null) return;
+      if (ok.indexOf(s) === -1 || !(r >= 1) || r > ok.length || seen[r]) delete work.ranks[s];
+      else seen[r] = true;
+    });
+    podSync();
+  }
+  /* land `slot` on rank k (0 = back to the row). A taken step swaps its
+     occupant into whatever place the incoming print just left; if the
+     incoming print came from the row, the displaced one goes to the row. */
+  function podMove(slot, k) {
+    var from = podRankOf(slot);
+    var sitting = k ? podAt(k) : null;
+    if (from) delete work.ranks[slot];
+    if (k) {
+      work.ranks[slot] = k;
+      if (sitting && sitting !== slot) {
+        if (from) work.ranks[sitting] = from;
+        else delete work.ranks[sitting];
+      }
+    }
+    podHand = null;
+    podSync();
+    podPaint();
+    podSay('Model ' + slot.toUpperCase() +
+      (k ? ' on ' + POD_ORD[k - 1] : ' back in the row') +
+      (callReady() ? '. Ready to file.' : '.'));
+  }
+  function podPick(slot) {
+    podHand = (podHand === slot) ? null : slot;
+    podPaint();
+    podSay(podHand ? 'Model ' + podHand.toUpperCase() + ' in hand — now choose a step.'
+      : 'Put down.');
+  }
+  function podPlace(k) {
+    if (!podHand) return;
+    podMove(podHand, k);
+  }
+
+  /* Move a print into its place — and ONLY if it isn't already there. Every
+     re-parent detaches the node, and detaching the node the pointer is
+     holding releases its pointer capture and fires pointercancel, which would
+     kill the drag the instant it began. So: never touch a node whose place
+     has not changed, and never touch the node currently in the air at all. */
+  function podSeat(el, host) {
+    if (!el || !host || el.parentNode === host) return;
+    if (podDrag && podDrag.live && podDrag.el === el) return;
+    var had = document.activeElement === el;
+    host.appendChild(el);
+    if (had) { try { el.focus({ preventScroll: true }); } catch (err) {} }
+  }
+  /* the in-place update. Classes, attributes and seating only — this never
+     writes HTML, so it is safe to run with a drag in flight. */
+  function podPaint() {
+    var root = podRoot();
+    if (!root) return;
+    var ok = okSlots(), n = ok.length, placed = 0, k;
+    for (k = 1; k <= n; k++) {
+      var t = podTier(k);
+      if (!t) continue;
+      var occ = podAt(k), hole = t.querySelector('.jd-pod-hole');
+      if (hole) hole.hidden = !!occ;
+      t.setAttribute('aria-label', POD_ORD[k - 1] +
+        (occ ? ', Model ' + occ.toUpperCase() : ', empty'));
+    }
+    ok.forEach(function (s, i) {
+      var el = podPrintEl(s), r = podRankOf(s);
+      if (!el) return;
+      if (r) {
+        placed++;
+        var t2 = podTier(r);
+        podSeat(el, t2 ? t2.querySelector('.jd-pod-stand') : null);
+      } else {
+        podSeat(el, root.querySelector('.jd-pod-cell[data-cell="' + i + '"]'));
+      }
+      el.classList.toggle('is-hand', podHand === s);
+      el.setAttribute('aria-label', 'Model ' + s.toUpperCase() +
+        (r ? ', ' + POD_ORD[r - 1] : ', unplaced') + (podHand === s ? ', in hand' : ''));
+    });
+    var tray = root.querySelector('.jd-pod-tray');
+    if (tray) tray.classList.toggle('is-bare', placed === n);
+    setDisabled('[data-act="file"]', !callReady());
+  }
+  /* the only words the podium ever produces, and they are never printed:
+     a visually-hidden status line, for the visitors who can't see the steps */
+  function podSay(msg) {
+    var root = podRoot();
+    var live = root ? root.querySelector('.jd-pod-live') : null;
+    if (live) live.textContent = msg || '';
+  }
+
+  /* ---- the drag, and why it lives on the WINDOW ---------------------------
+     This card is repainted by assigning an HTML string, and any re-render or
+     re-parent of the dragged node releases its pointer capture and fires
+     pointercancel — which killed this design's first draft outright. Two
+     rules keep it alive: (1) while a drag is in flight nothing re-renders
+     or re-parents a print (podPaint writes classes only; podSeat refuses to
+     touch the one in the air), and (2) move/up/cancel are watched on the
+     WINDOW, capture phase, filtered by pointerId — so whatever happens to
+     the print's node, the pointer stream keeps arriving. A window blur
+     cancels, and every exit runs through podDone(), so there is never a
+     stuck ghost, a stuck faded print or a stale armed step left behind. */
+  function podDown(e) {
+    if (podDrag) return;
+    if (e.button !== undefined && e.button > 0) return;
+    if (!work || !bodyEl) return;
+    /* ENLARGE and REPLAY live inside the print but are not part of it: a press
+       on either is a press on a button, never the start of a drag. Bailing
+       BEFORE preventDefault is the whole trick — the default is what lets the
+       button emit its click at all. */
+    if (e.target && e.target.closest && e.target.closest('.jd-pod-ctl')) return;
+    var el = (e.target && e.target.closest) ? e.target.closest('.jd-pod-print') : null;
+    if (!el || !bodyEl.contains(el)) return;
+    e.preventDefault();          /* no native drag, no text selection, no scroll */
+    try { el.focus({ preventScroll: true }); } catch (err) {}
+    podDrag = {
+      slot: el.getAttribute('data-pod'), el: el, live: false, ghost: null,
+      gw: 0, dx: 0, dy: 0, x0: e.clientX, y0: e.clientY,
+      pointerId: e.pointerId, over: null
+    };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', podOnMove, true);
+    window.addEventListener('pointerup', podOnUp, true);
+    window.addEventListener('pointercancel', podOnCancel, true);
+    window.addEventListener('blur', podOnCancel);
+  }
+  function podLift(e) {
+    var el = podDrag.el, r = el.getBoundingClientRect(), root = podRoot();
+    /* a drag supersedes anything in hand — classes only, no repaint */
+    if (podHand) {
+      podHand = null;
+      if (root) {
+        Array.prototype.forEach.call(root.querySelectorAll('.jd-pod-print'),
+          function (p) { p.classList.remove('is-hand'); });
+      }
+    }
+    var g = document.createElement('div');
+    g.className = 'jd-pod-ghost';
+    g.style.width = r.width + 'px';
+    var c = el.cloneNode(true);
+    c.removeAttribute('tabindex'); c.removeAttribute('role');
+    c.removeAttribute('data-pod'); c.removeAttribute('aria-label');
+    c.setAttribute('aria-hidden', 'true');
+    g.appendChild(c);
+    /* the ghost is appended to the SCRIM, not <body>: the form's tokens are
+       scoped there, and the scrim carries no transform or filter, so
+       position:fixed still means the viewport */
+    (scrim || document.body).appendChild(g);
+    podDrag.live = true; podDrag.ghost = g; podDrag.gw = r.width;
+    podDrag.dx = e.clientX - r.left; podDrag.dy = e.clientY - r.top;
+    el.classList.add('is-lifted');
+    document.body.classList.add('jd-pod-drag');
+    var sel = window.getSelection && window.getSelection();
+    if (sel && sel.rangeCount) { try { sel.removeAllRanges(); } catch (err) {} }
+  }
+  /* the drop is judged from the middle of the swatch the visitor can actually
+     see, not the raw pointer — highlight and landing then agree by
+     construction, because both read this one point */
+  function podAim(e) {
+    return { x: e.clientX - podDrag.dx + podDrag.gw / 2,
+             y: e.clientY - podDrag.dy + podDrag.gw / 2 };
+  }
+  function podGrow(r, top, side, bottom) {
+    return { left: r.left - side, right: r.right + side,
+             top: r.top - top, bottom: r.bottom + bottom };
+  }
+  function podIn(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+  /* nearest step by horizontal distance — the gaps between the blocks, and
+     the empty air above a short block, all belong to the step nearest them */
+  function podNearest(x) {
+    var tiers = podTiers(), best = 1, d = Infinity;
+    for (var i = 0; i < tiers.length; i++) {
+      var q = tiers[i].getBoundingClientRect();
+      var dd = Math.abs(x - (q.left + q.right) / 2);
+      if (dd < d) { d = dd; best = Number(tiers[i].getAttribute('data-rank')); }
+    }
+    return best;
+  }
+  /* rank 1..N, 0 for the row, null for nowhere. Rects are read fresh every
+     time, so a scroll or a reflow mid-drag can never aim at a stale target. */
+  function podHit(x, y) {
+    var root = podRoot();
+    if (!root) return null;
+    var row = root.querySelector('.jd-pod-row');
+    var tray = root.querySelector('.jd-pod-tray');
+    if (row && podIn(podGrow(row.getBoundingClientRect(), 14, 8, 4), x, y)) return podNearest(x);
+    if (tray && podIn(podGrow(tray.getBoundingClientRect(), 6, 8, 14), x, y)) return 0;
+    return null;
+  }
+  function podOver(k) {
+    if (!podDrag || k === podDrag.over) return;
+    podDrag.over = k;
+    var tiers = podTiers();
+    for (var i = 0; i < tiers.length; i++) {
+      tiers[i].classList.toggle('is-armed',
+        Number(tiers[i].getAttribute('data-rank')) === k);
+    }
+  }
+  function podOnMove(e) {
+    if (!podDrag || e.pointerId !== podDrag.pointerId) return;
+    if (!podDrag.live) {
+      if (Math.abs(e.clientX - podDrag.x0) < 6 && Math.abs(e.clientY - podDrag.y0) < 6) return;
+      podLift(e);
+    }
+    podDrag.ghost.style.left = (e.clientX - podDrag.dx) + 'px';
+    podDrag.ghost.style.top = (e.clientY - podDrag.dy) + 'px';
+    var a = podAim(e);
+    podOver(podHit(a.x, a.y));
+    if (e.cancelable) e.preventDefault();
+  }
+  function podDone() {
+    if (!podDrag) return null;
+    var d = podDrag;
+    podDrag = null;
+    window.removeEventListener('pointermove', podOnMove, true);
+    window.removeEventListener('pointerup', podOnUp, true);
+    window.removeEventListener('pointercancel', podOnCancel, true);
+    window.removeEventListener('blur', podOnCancel);
+    try { d.el.releasePointerCapture(d.pointerId); } catch (err) {}
+    if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    var root = podRoot();
+    if (root) {
+      Array.prototype.forEach.call(root.querySelectorAll('.jd-pod-tier.is-armed'),
+        function (t) { t.classList.remove('is-armed'); });
+    }
+    d.el.classList.remove('is-lifted');
+    document.body.classList.remove('jd-pod-drag');
+    if (d.live) podSwallowClick();   /* the click it is about to emit is not a tap */
+    return d;
+  }
+  function podOnUp(e) {
+    if (!podDrag || e.pointerId !== podDrag.pointerId) return;
+    if (!podDrag.live) { var s = podDrag.slot; podDone(); podPick(s); return; }
+    var a = podAim(e), k = podHit(a.x, a.y), moved = podDrag.slot;
+    podDone();
+    if (k === null) { podPaint(); return; }   /* dead space: back where it was */
+    podMove(moved, k);
+  }
+  function podOnCancel(e) {
+    if (!podDrag) return;
+    if (e && e.pointerId !== undefined && e.pointerId !== podDrag.pointerId) return;
+    podDone();
+    podPaint();
+  }
+  /* A finished drag emits one trailing click on the print it started from
+     (pointer capture puts it there even if the finger ended elsewhere). Eat
+     exactly that one, and only inside the podium, so a drag can never also
+     read as a tap — and so this can never swallow the back button, the
+     brass button, or anything else on the card. */
+  function podSwallowClick() {
+    var timer = 0;
+    function eat(ev) {
+      document.removeEventListener('click', eat, true);
+      if (timer) clearTimeout(timer);
+      var root = podRoot();
+      /* never the controls: the trailing click of a drag can only land where
+         the drag STARTED, and a drag can never start on a control — so a click
+         on one inside the window is always a real press, and eating it would
+         cost the visitor an enlarge for no reason */
+      if (root && ev.target && root.contains(ev.target) &&
+          !(ev.target.closest && ev.target.closest('.jd-pod-ctl'))) {
+        ev.stopPropagation(); ev.preventDefault();
+      }
+    }
+    document.addEventListener('click', eat, true);
+    timer = setTimeout(function () {
+      document.removeEventListener('click', eat, true);
+    }, 800);
+  }
+  /* Bound once, on the window, capture phase — the card's own delegated
+     listeners are re-bound to nothing here, and a print's pointerdown has to
+     be seen before the scrim's. Both bail immediately unless the press
+     actually landed on a podium that is on screen. */
+  window.addEventListener('pointerdown', podDown, true);
+  window.addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+    if (!work || !bodyEl) return;
+    var t = e.target;
+    if (!t || !t.closest || !bodyEl.contains(t)) return;
+    /* a real button answers Enter and Space itself — taking the key here would
+       pick the print up instead of enlarging or replaying it */
+    if (t.closest('.jd-pod-ctl')) return;
+    var p = t.closest('.jd-pod-print');
+    if (p) {
+      e.preventDefault(); e.stopPropagation();
+      podPick(p.getAttribute('data-pod'));
+      return;
+    }
+    var tier = t.closest('.jd-pod-tier');
+    if (tier) {
+      e.preventDefault(); e.stopPropagation();
+      podPlace(Number(tier.getAttribute('data-rank')));
+    }
+  }, true);
 
   /* one question row: the label (a plain, non-interactive gloss — OVERRIDE
      1, round-16), a permanently-present hidden definition wired to the
@@ -5373,80 +5714,84 @@ function JD_layerOpen() {
     return h + actions(acts) + '</div></div>';
   }
 
-  /* a call is ready to file when a winner is named AND (it's a tie, or the
-     margin is picked too). The likert sets winner+margin in one stop, so it
-     satisfies this the same way the two-pick call does. */
+  /* a call is ready to file when the podium is FULL: every surviving drawing
+     stands on a step, and exactly one of them stands on 1st. (One survivor
+     is no call at all — that panel files from the bench.) */
   function callReady() {
-    return !!work.winner && (work.winner === 'tie' || !!work.strength);
+    var ok = okSlots();
+    if (ok.length < 2) return true;
+    var ones = 0;
+    for (var i = 0; i < ok.length; i++) {
+      var r = podRankOf(ok[i]);
+      if (!r) return false;
+      if (r === 1) ones++;
+    }
+    return ones === 1;
   }
 
-  /* THE CALL — the preserved likert finale when exactly two drawings
-     survived (mockup 10c salvage, kept by the owner through the round-10
-     review: the call as geometry, five title-only stops on a rail strung
-     between the two survivors, tooltips per stop, filed as winner + margin).
-     With three or more survivors there is no honest LINE to string — a rail
-     reads A↔B as the axis and C falls off the world — so the multi-way call
-     is two picks in the survey's own pill language: the winner (or dead
-     even), then the margin. Same contract either way: winner + strength,
-     tie has no margin. (Third model per turn 2026-08-14; fourth later the
-     same day.) */
+  /* one print, as the podium carries it: the exhibit plate at print size,
+     wrapped in the handle the drag and the tap both read, with ENLARGE and
+     REPLAY on their own line beneath (owner, 2026-08-22 — a drawing has to be
+     examinable at the moment it is being ranked, not only one step back on the
+     bench).
+     They are NOT the bench's fittings. The bench passes plate() zoom:true,
+     which makes the whole figure the enlarge control; here that figure is the
+     drag handle, so the press that enlarges and the press that lifts would be
+     the same press. Both controls therefore sit outside the plate, below the
+     caption, and both are kept off the drag path in the four places that read
+     a press: podDown, the podium keydown, podSwallowClick and onClick.
+     data-slot rides the WRAPPER because openZoom() reads it there and finds
+     the artwork by descending — which is exactly what the bench's figure does,
+     one element out. */
+  function podPrintHTML(slot) {
+    var r = podRankOf(slot), up = slot.toUpperCase();
+    return '<div class="jd-pod-print" data-pod="' + slot + '" data-slot="' + slot +
+      '" role="button" tabindex="0" draggable="false" aria-label="Model ' + up +
+      (r ? ', ' + POD_ORD[r - 1] : ', unplaced') + '">' + plate(slot) +
+      '<div class="jd-pod-cap">' +
+      '<button type="button" class="jd-pod-ctl" data-act="pod-zoom" data-slot="' +
+      slot + '" title="see the drawing bigger" aria-label="Enlarge drawing ' +
+      up + '">&#10530;</button>' +
+      '<button type="button" class="jd-pod-ctl" data-act="pod-replay" data-slot="' +
+      slot + '" title="watch the drawing draw itself again" aria-label="Replay drawing ' +
+      up + '">&#9998;</button>' +
+      '</div></div>';
+  }
+
+  /* THE CALL — THE PODIUM (owner pick, mockup-32, 2026-08-22; the likert
+     finale and the two-pill multi-way call are both retired). The panel is
+     built ONCE per paint, with every print already standing where work.ranks
+     says it stands; from then on the podium only ever moves nodes and toggles
+     classes (podPaint/podSeat), never rewrites this HTML — which is what lets
+     a drag survive on a card that otherwise repaints by assigning a string.
+     Two survivors build two steps, three build three, four build four. */
   function callPanel(ok) {
-    var h = '<div class="jd-turn-plates jd-turn-plates--call">' +
-      ok.map(function (s) { return plate(s, { zoom: true, replay: true }); }).join('') + '</div>' +
-      '<div class="jd-callhead">' +
-      '<span class="jd-def" data-tt-t="the call" data-tt-d="Which ' +
-      'drawing belongs in the drawer, and by how much.">' +
-      '<span>Which belongs in the drawer?</span></span>' +
-      '<span class="jd-req">Required</span></div>' +
-      /* one line, like every other def: the per-stop wording is on the
-         stops themselves, in the tooltip, and in the hidden descriptions
-         below — this one line is the control's own description */
-      '<span class="jd-vh" id="jd-d-call-what">The one required answer ' +
-      'when more than one drawing survived — filed as a winner plus a ' +
-      'margin (a tie has no margin).</span>';
-    if (ok.length === 2) {
-      var X = ok[0], Y = ok[1];
-      curCallStops = likertStops(X, Y);
-      var chosen = likertChosen();
-      h += '<div class="jd-likert" role="radiogroup" ' +
-        'aria-label="the call: which drawing belongs in the drawer" ' +
-        'aria-describedby="jd-d-call-what"' +
-        (work.winner && work.winner !== 'tie' ? ' data-pick="' + work.winner + '"' : '') + '>' +
-        '<span class="jd-lk-end jd-lk-end--a" aria-hidden="true">' + X.toUpperCase() + '</span>' +
-        '<div class="jd-lk-rail">';
-      curCallStops.forEach(function (o) {
-        var on = chosen === o.id;
-        h += '<label class="jd-lk-stop' + (on ? ' is-on' : '') + '" data-tt-t="' +
-          esc(o.title) + '" data-tt-d="' + esc(o.desc) + '">' +
-          '<input type="radio" name="jd-call" value="' + o.id +
-          '" data-role="call" aria-describedby="jd-d-call-' + o.id + '"' +
-          (on ? ' checked' : '') + '>' +
-          '<span class="jd-lk-dot" aria-hidden="true"></span>' +
-          '<span class="jd-lk-cap"><b>' + esc(o.big) + '</b><span>' +
-          esc(o.word) + '</span></span></label>';
-      });
-      h += '</div><span class="jd-lk-end jd-lk-end--b" aria-hidden="true">' + Y.toUpperCase() + '</span></div>';
-      curCallStops.forEach(function (o) {
-        h += '<span class="jd-vh" id="jd-d-call-' + o.id + '">' +
-          esc(o.title + ' — ' + o.desc) + '</span>';
-      });
-    } else {
-      curCallStops = [];
-      var winOpts = ok.map(function (s) {
-        return { value: s, label: 'Drawing ' + s.toUpperCase() };
-      });
-      winOpts.push({ value: 'tie', label: 'dead even' });
-      h += pillRow('jd-callwin', 'which drawing belongs in the drawer',
-        winOpts, work.winner, ' data-role="callwin"') +
-        '<div data-callmargin' +
-        (work.winner && work.winner !== 'tie' ? '' : ' hidden') + '>' +
-        '<p class="jd-turn-line jd-callmargin-q">By how much?</p>' +
-        pillRow('jd-callmargin', 'the margin', [
-          { value: 'slight', label: 'narrowly' },
-          { value: 'decisive', label: 'decisively' }
-        ], work.strength, ' data-role="callmargin"') +
-        '</div>';
+    if (podDrag) podDone();
+    podNormalize(ok);
+    podHand = null;
+    var n = ok.length, k, occ;
+    var h = '<div class="jd-pod"><div class="jd-pod-row">';
+    for (k = 1; k <= n; k++) {
+      occ = podAt(k);
+      h += '<div class="jd-pod-tier" data-rank="' + k + '" role="button" tabindex="0"' +
+        ' aria-label="' + POD_ORD[k - 1] +
+        (occ ? ', Model ' + occ.toUpperCase() : ', empty') + '">' +
+        '<div class="jd-pod-stand">' +
+        '<div class="jd-pod-hole"' + (occ ? ' hidden' : '') + ' aria-hidden="true"></div>' +
+        (occ ? podPrintHTML(occ) : '') + '</div>' +
+        '<div class="jd-pod-block">' + POD_ORD[k - 1] + '</div></div>';
     }
+    h += '</div><div class="jd-pod-floor" aria-hidden="true"></div>';
+    var placed = 0;
+    ok.forEach(function (s) { if (podRankOf(s)) placed++; });
+    /* every drawing keeps its own column in the row, so nothing shuffles
+       sideways when its neighbour is lifted onto a step */
+    h += '<div class="jd-pod-tray' + (placed === n ? ' is-bare' : '') + '">';
+    ok.forEach(function (s, i) {
+      h += '<div class="jd-pod-cell" data-cell="' + i + '">' +
+        (podRankOf(s) ? '' : podPrintHTML(s)) + '</div>';
+    });
+    h += '</div><span class="jd-vh jd-pod-live" role="status" aria-live="polite"></span></div>';
     return h + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
@@ -5600,33 +5945,8 @@ function JD_layerOpen() {
       /* mutate in place — see benchPanel */
       var fn = bodyEl.querySelector('[data-flagnote="' + slot + '"]');
       if (fn) fn.hidden = !t.checked;
-    } else if (role === 'call') {
-      /* the likert finale: one stop = winner + margin */
-      var stop = likertStop(t.value);
-      work.winner = stop ? stop.winner : null;
-      work.strength = stop ? stop.strength : null;
-      var lk = t.closest('.jd-likert');
-      if (lk) {
-        if (work.winner && work.winner !== 'tie') lk.setAttribute('data-pick', work.winner);
-        else lk.setAttribute('data-pick', 'tie');
-        Array.prototype.forEach.call(lk.querySelectorAll('.jd-lk-stop'), function (st) {
-          var input = st.querySelector('input');
-          st.classList.toggle('is-on', !!(input && input.checked));
-        });
-      }
-      setDisabled('[data-act="file"]', !callReady());
-    } else if (role === 'callwin') {
-      /* the multi-way call's first pick: the winner (or dead even). The
-         margin question stands down on a tie — a tie has no margin — and a
-         changed winner keeps any margin already picked */
-      work.winner = val;
-      if (work.winner === 'tie') work.strength = null;
-      var mg = bodyEl.querySelector('[data-callmargin]');
-      if (mg) mg.hidden = !(work.winner && work.winner !== 'tie');
-      setDisabled('[data-act="file"]', !callReady());
-    } else if (role === 'callmargin') {
-      work.strength = val;
-      setDisabled('[data-act="file"]', !callReady());
+      /* (the call has no <input> of its own any more — the podium files its
+         answer through pointer/keyboard handlers, not a change event) */
     } else if (role === 'keep') {
       work.keep = val;
     }
@@ -5654,6 +5974,27 @@ function JD_layerOpen() {
     if (b) b.disabled = !!off;
   }
   function onClick(e) {
+    /* THE PODIUM's taps, first and by themselves. A print's own press is
+       answered on pointerup (podOnUp), so the click it trails is absorbed
+       here — otherwise a tap would read twice, and it would fall through to
+       the row underneath it as "put this back". A step, or the row, places
+       whatever is in hand. Prints are tested BEFORE steps: a seated print
+       sits inside its own tier. */
+    /* the print's own two controls, ahead of everything: they sit INSIDE the
+       print, whose clicks are absorbed on the next line */
+    var pc = e.target.closest ? e.target.closest('.jd-pod-ctl') : null;
+    if (pc) {
+      var pcAct = pc.getAttribute('data-act');
+      if (pcAct === 'pod-zoom') openZoom(pc.closest('.jd-pod-print'));
+      else if (pcAct === 'pod-replay') replayPlate(pc);
+      return;
+    }
+    var pp = e.target.closest ? e.target.closest('.jd-pod-print') : null;
+    if (pp) return;
+    var pt = e.target.closest ? e.target.closest('.jd-pod-tier') : null;
+    if (pt) { podPlace(Number(pt.getAttribute('data-rank'))); return; }
+    var ptr = e.target.closest ? e.target.closest('.jd-pod-tray') : null;
+    if (ptr) { podPlace(0); return; }
     /* REPLAY rides the plate: it redraws, never zooms (the record card's
        handler exempts its .rc-draw the same way). An explicit press is
        requested motion, so it plays under reduced-motion too — replayPlate
@@ -5717,10 +6058,15 @@ function JD_layerOpen() {
       prompt: '', notice: '', slow: false,
       slots: blankSlots(),
       ratings: blankRatings(),
-      /* the single bench: which step is on the bench, which steps the
-         visitor has reached (the rail's first pass is linear), and the
-         call's margin alongside its winner */
+      /* the single bench: which step is on the bench, and which steps the
+         visitor has reached (the rail's first pass is linear). THE CALL'S
+         ANSWER is `ranks` — slot → rank, 1 = first, one entry per drawing
+         standing on the podium. `winner` is derived from it (whoever is on
+         1st) and kept only because everything downstream — the unveil, the
+         pile, the tracking beacon — was built to read a winner; `strength`
+         survives as a permanent null, the podium having no margin. */
       step: 'a', reached: { a: true },
+      ranks: {},
       winner: null, strength: null,
       keep: null, kept: false, placed: false, reveal: null
     };
@@ -5864,15 +6210,28 @@ function JD_layerOpen() {
         ratings.push(f);
       }
     });
-    /* a comparison is legal as null ONLY in the degraded one-slot path.
-       strength is the likert's margin (C1.3 addition, 2026-08-11): absent
-       exactly when the call is a tie. */
+    /* THE CALL ON THE WIRE (podium, 2026-08-22). `ranking` is the real
+       answer now: one entry per surviving slot, ranks dense from 1, exactly
+       one 1st — the podium can't produce anything else. `comparison` is sent
+       alongside it exactly as before, naming the rank-1 slot, so nothing
+       downstream regresses and a cached older client posting only a
+       comparison still means the same thing. strength is permanently null:
+       the podium has no margin. Both are null in the degraded one-slot
+       path, where there is no call at all. */
+    var okNow = okSlots();
+    var ranking = null;
+    if (okNow.length > 1 && callReady()) {
+      ranking = okNow.map(function (s) {
+        return { slot: s, rank: podRankOf(s) };
+      }).sort(function (p, q) { return p.rank - q.rank; });
+    }
     var body = {
       submission_id: turn.submission_id,
       client: JD_CLIENT,
       ratings: ratings,
-      comparison: okSlots().length > 1
-        ? { winner: work.winner, strength: work.winner === 'tie' ? null : work.strength }
+      ranking: ranking,
+      comparison: okNow.length > 1
+        ? { winner: ranking ? ranking[0].slot : work.winner, strength: null }
         : null
     };
     setDisabled('[data-act="file"]', true);

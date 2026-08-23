@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — rank the drawings: THE STRING BOARD (round 31)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #ece0bf;
+    --paper-hi: #f4ead0;
+    --paper-lo: #e0d1a4;
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --ink-3: rgba(51, 36, 15, 0.44);
+    --rule: rgba(74, 53, 18, 0.40);
+    --pencil: #4b4030;
+    --red: #b3402f;            /* the elastic's own red — junk-drawer.js line 1484 */
+    --green: #4a6b18;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+    --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --brass: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+    --row: 66px;               /* one board row — left and right agree */
+    --gap: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 44px 20px 90px;
+    font-family: var(--mono); color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 26px; max-width: 640px; }
+  header h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.13em; margin: 0 0 10px; color: #b9b29e; }
+  header p { font-size: 11px; margin: 0 auto; opacity: 0.6; line-height: 1.75; }
+
+  .bench { display: flex; align-items: center; gap: 8px; margin-bottom: 30px; font-size: 10px; letter-spacing: 0.1em; color: #8d8778; }
+  .bench button {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    min-height: 30px; padding: 0 12px; cursor: pointer;
+    background: #2b3038; color: #b9b29e; border: 1px solid #3d434d;
+  }
+  .bench button[aria-pressed="true"] { background: #3f4650; color: #efe7d2; border-color: #5b6470; }
+
+  /* ─────────────────────────  THE CARD  ───────────────────────── */
+  .card {
+    position: relative; width: 100%; max-width: 462px;
+    color: var(--ink);
+    background: var(--paper) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.55);
+    box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66), 3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+    padding: 14px 15px 15px;
+  }
+  .card::before { content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none; border: 1px solid var(--rule); }
+  .card .x {
+    position: absolute; top: 9px; right: 9px; z-index: 20;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.5); font-size: 13px;
+    color: var(--ink); cursor: pointer;
+  }
+  .head {
+    position: relative; z-index: 7; text-align: center; padding: 6px 40px 0;
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.2em; text-indent: 0.2em; text-transform: uppercase;
+  }
+  .rule-h { height: 1px; background: var(--rule); margin: 11px 3px 0; position: relative; z-index: 7; }
+  .colcaps {
+    position: relative; z-index: 7; display: flex; justify-content: space-between; align-items: baseline;
+    margin: 9px 2px 7px;
+    font-family: var(--form); font-weight: 700; font-size: 0.54rem;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2);
+  }
+  .colcaps .r { color: var(--ink-3); font-family: var(--mono); font-weight: normal; letter-spacing: 0.02em; text-transform: none; font-size: 0.6rem; }
+
+  /* ─────────────────────────  THE BOARD  ───────────────────────── */
+  .board {
+    position: relative; z-index: 7;
+    display: grid; grid-template-columns: 118px 1fr 104px;
+    align-items: start;
+  }
+  .col { display: flex; flex-direction: column; gap: var(--gap); }
+  .gutter { position: relative; }
+
+  /* --- a rank: a plain outlined container, nothing else in it but the
+         ordinal. The string ties straight onto its right edge. --- */
+  .rank {
+    position: relative; height: var(--row);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border: 1px solid var(--rule);
+    background: rgba(255, 250, 232, 0.34);
+    cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  .rank .ord {
+    font-family: var(--form); font-weight: 700; font-size: 1.02rem;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink); white-space: nowrap;
+  }
+  .rank .one {
+    font-size: 0.43rem; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--ink-3); white-space: nowrap;
+  }
+  .rank.first { background: var(--paper-hi); }
+
+  /* --- a drawing: the print, with its pencil name written underneath --- */
+  .mcard {
+    position: relative; height: var(--row);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  .mcard .thumb {
+    position: relative; width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.16) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.16) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 7px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 7px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 3px 7px -2px rgba(46, 34, 12, 0.5), 0 1px 2px rgba(46, 34, 12, 0.3);
+  }
+  .mcard .thumb svg { display: block; width: 74%; height: 74%; pointer-events: none; }
+  .kc {
+    position: absolute; width: 11px; height: 11px;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1px rgba(46, 34, 12, 0.4));
+  }
+  .kc.tl { top: -2px; left: -2px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .kc.br { bottom: -2px; right: -2px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+  .mcard .nm {
+    font-family: var(--hand); font-size: 0.76rem; line-height: 1; color: var(--pencil); white-space: nowrap;
+  }
+
+  /* picked / armed / refused */
+  .rank.picked, .mcard.picked { outline: 2px solid var(--pencil); outline-offset: 1px; }
+  .rank.armed, .mcard.armed { outline: 2px solid var(--pencil); outline-offset: 1px; }
+  .rank.refuse, .mcard.refuse { outline: 2px solid var(--red); outline-offset: 1px; }
+  .rank:focus-visible, .mcard:focus-visible { outline: 2px solid var(--pencil); outline-offset: 1px; }
+
+  .wires { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 8; pointer-events: none; overflow: visible; }
+  body.wiring, body.wiring * { -webkit-user-select: none !important; user-select: none !important; }
+
+  /* ─────────────────────────  FOOT  ───────────────────────── */
+  .tools { position: relative; z-index: 7; display: flex; justify-content: flex-end; margin: 6px 2px 0; min-height: 16px; }
+  .tools button {
+    font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.08em;
+    background: none; border: 0; border-bottom: 1px solid var(--ink-3);
+    color: var(--ink-2); padding: 1px 2px; cursor: pointer;
+  }
+  .tools button[hidden] { display: none; }
+  .notice {
+    position: relative; z-index: 7; margin: 0; padding: 0;
+    text-align: center; font-size: 0.62rem; line-height: 1.45; color: var(--ink-2);
+  }
+  .notice.has { margin: 9px 4px 0; }
+  .notice.bad { color: var(--red); }
+  .notice.done { color: var(--green); }
+  .sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .go {
+    position: relative; z-index: 7; display: block; width: 100%; min-height: 44px; margin-top: 11px;
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #2a1c07; border: 1px solid rgba(58, 40, 14, 0.6); cursor: pointer;
+    background: var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55), 2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+  }
+  .go[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+  .go:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .foot {
+    position: relative; z-index: 7; text-align: center; margin-top: 9px;
+    font-size: 0.55rem; line-height: 1.5; color: var(--ink-3);
+  }
+
+  @media (max-width: 430px) {
+    body { padding: 28px 12px 70px; }
+    .head { font-size: 0.86rem; letter-spacing: 0.16em; text-indent: 0.16em; padding: 6px 34px 0; }
+    .board { grid-template-columns: 104px 1fr 96px; }
+    .colcaps .r { display: none; }
+    .rank { padding-right: 10px; }
+    .rank .ord { font-size: 0.94rem; }
+    .rank.first .ord { font-size: 1.04rem; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .rank, .mcard, .go { transition: background-color 140ms ease, opacity 140ms ease; }
+    .go:active:not([disabled]) { transform: translateY(1px); box-shadow: none; }
+    @keyframes jd-snap { 0% { opacity: 0.25; } 100% { opacity: 1; } }
+    .wires .fresh { animation: jd-snap 180ms ease-out; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>junk drawer — rank the drawings: THE STRING BOARD (round 31)</h1>
+  <p><strong>Designer's note.</strong> Four plain outlined ranks down the left, the drawings down the right
+  as prints with their names pencilled underneath, and the answer is the drawer's own red elastic tied
+  straight from a rank's edge to a print's — it crosses freely, because the crossing IS the answer. Click a
+  rank or click a drawing, in either order, or drag the string across by hand; two strings on one rank is a
+  tie, 1st takes exactly one, and a skipped rank simply closes up when the call is filed. Three survivors
+  prints three ranks and two prints two, and since the board is a fixed grid rather than a growing stack the
+  whole call fits a phone without scrolling at any count.</p>
+</header>
+
+<div class="bench" role="group" aria-label="survivor count">
+  <span>SURVIVORS</span>
+  <button type="button" data-n="4" aria-pressed="true">4</button>
+  <button type="button" data-n="3" aria-pressed="false">3</button>
+  <button type="button" data-n="2" aria-pressed="false">2</button>
+</div>
+
+<div class="card" id="card">
+  <span class="x" role="button" tabindex="0" aria-label="close">✕</span>
+  <div class="head">Rank the Drawings</div>
+  <div class="rule-h"></div>
+
+  <div class="colcaps">
+    <span>The ranks</span><span class="r">tap one, then the other</span><span>The drawings</span>
+  </div>
+
+  <div class="board" id="board">
+    <div class="col ranks" id="ranks"></div>
+    <div class="gutter"></div>
+    <div class="col models" id="models"></div>
+    <svg class="wires" id="wires" aria-hidden="true"></svg>
+  </div>
+
+  <div class="tools"><button type="button" id="clear" hidden>cut every string</button></div>
+
+  <p class="notice" id="notice"></p>
+  <p class="sr" id="live" role="status" aria-live="polite"></p>
+  <button class="go" id="go" type="button" disabled>File the grades</button>
+  <p class="foot">Two strings on one rank is a tie. Ties are filed as written.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ART = {
+    A: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="7"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg>',
+    B: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="11" y="24" width="78" height="52" rx="13" fill="none" stroke="#4a628a" stroke-width="7"/><rect x="31" y="43" width="38" height="14" rx="7" fill="#4a628a" fill-opacity="0.55"/></svg>',
+    C: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12 L88 84 L12 84 Z" fill="none" stroke="#4a6b18" stroke-width="7" stroke-linejoin="round"/><circle cx="50" cy="63" r="8" fill="#4a6b18" fill-opacity="0.6"/></svg>',
+    D: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg>'
+  };
+  var ORD = ["1st", "2nd", "3rd", "4th"];
+
+  var board = document.getElementById("board");
+  var ranksCol = document.getElementById("ranks");
+  var modelsCol = document.getElementById("models");
+  var wiresSvg = document.getElementById("wires");
+  var notice = document.getElementById("notice");
+  var live = document.getElementById("live");
+  var go = document.getElementById("go");
+  var clearBtn = document.getElementById("clear");
+
+  var N = 4;
+  var order = [];        // model ids, top to bottom
+  var wire = {};         // model id -> rank line, or null
+  var mEls = {}, pEls = {};
+  var picked = null;     // {side:"model"|"rank", key}
+  var drag = null;
+  var freshKey = null;
+
+  /* ── build ───────────────────────────────────────────────────── */
+
+  function build(n) {
+    N = n;
+    order = ["A", "B", "C", "D"].slice(0, n);
+    wire = {}; order.forEach(function (id) { wire[id] = null; });
+    mEls = {}; pEls = {}; picked = null; drag = null;
+    ranksCol.innerHTML = ""; modelsCol.innerHTML = "";
+
+    for (var r = 1; r <= n; r++) {
+      var p = document.createElement("div");
+      p.className = "rank" + (r === 1 ? " first" : "");
+      p.setAttribute("data-rank", String(r));
+      p.setAttribute("role", "button");
+      p.setAttribute("tabindex", "0");
+      p.innerHTML = '<span class="ord">' + ORD[r - 1] + '</span>' +
+        (r === 1 ? '<span class="one">one only</span>' : "");
+      bindNode(p, "rank", r);
+      ranksCol.appendChild(p);
+      pEls[r] = p;
+    }
+
+    order.forEach(function (id) {
+      var c = document.createElement("div");
+      c.className = "mcard";
+      c.setAttribute("data-id", id);
+      c.setAttribute("role", "button");
+      c.setAttribute("tabindex", "0");
+      c.innerHTML =
+        '<span class="thumb"><span class="kc tl"></span><span class="kc br"></span>' +
+        ART[id] + '</span><span class="nm">Model ' + id + '</span>';
+      bindNode(c, "model", id);
+      modelsCol.appendChild(c);
+      mEls[id] = c;
+    });
+
+    refresh();
+    flag(""); announce("");
+  }
+
+  /* ── the rules ───────────────────────────────────────────────── */
+
+  function onLine(r) { return order.filter(function (id) { return wire[id] === r; }); }
+  function firstHolder(exceptId) {
+    var h = onLine(1).filter(function (id) { return id !== exceptId; });
+    return h.length ? h[0] : null;
+  }
+  // a skipped line closes up when the call is filed: 1,2,4 files as 1,2,3
+  function dense() {
+    var seen = [], map = {};
+    order.forEach(function (id) { if (wire[id] && seen.indexOf(wire[id]) === -1) seen.push(wire[id]); });
+    seen.sort(function (a, b) { return a - b; });
+    seen.forEach(function (r, i) { map[r] = i + 1; });
+    return map;
+  }
+  function allStrung() { return order.every(function (id) { return !!wire[id]; }); }
+  function valid() { return allStrung() && onLine(1).length === 1; }
+  function summary() {
+    var d = dense();
+    return order.slice().sort().map(function (id) { return id + " " + (d[wire[id]] || "—"); }).join(" · ");
+  }
+
+  function connect(id, r) {
+    if (r === 1 && firstHolder(id)) {
+      flag("Only one drawing can be first — Model " + firstHolder(id) + " is on that line. Cut it loose first.", "bad");
+      bump(pEls[r]);
+      refresh();
+      return;
+    }
+    wire[id] = r;
+    freshKey = id;
+    picked = null;
+    refresh();
+    var mates = onLine(r).filter(function (x) { return x !== id; });
+    if (allStrung() && !onLine(1).length) {
+      flag("Nothing is first — one drawing has to hang on the FIRST line.", "bad");
+    } else {
+      flag("");
+    }
+    announce("Model " + id + " strung to " + ORD[r - 1] +
+      (mates.length ? " — tied with " + mates.map(function (m) { return "Model " + m; }).join(" and ") : "") +
+      (valid() ? ". Ready to file." : "."));
+  }
+
+  function cut(id) {
+    if (!wire[id]) return;
+    wire[id] = null;
+    picked = null;
+    refresh();
+    flag("");
+    announce("Model " + id + "'s string is cut.");
+  }
+
+  function bump(el) {
+    if (!el) return;
+    el.classList.add("refuse");
+    setTimeout(function () { el.classList.remove("refuse"); }, 750);
+  }
+
+  /* ── render ──────────────────────────────────────────────────── */
+
+  function refresh() {
+    for (var r = 1; r <= N; r++) {
+      var p = pEls[r], here = onLine(r);
+      p.classList.toggle("picked", !!picked && picked.side === "rank" && picked.key === r);
+      p.setAttribute("aria-label", ORD[r - 1] + ", " +
+        (here.length ? "holding " + here.map(function (i) { return "Model " + i; }).join(" and ") : "empty"));
+    }
+    order.forEach(function (id) {
+      var c = mEls[id];
+      c.classList.toggle("picked", !!picked && picked.side === "model" && picked.key === id);
+      c.setAttribute("aria-label", "Model " + id + ", " +
+        (wire[id] ? "strung to " + ORD[wire[id] - 1] : "not strung yet"));
+    });
+    clearBtn.hidden = !order.some(function (id) { return !!wire[id]; });
+    go.disabled = !valid();
+    paint();
+  }
+
+  /* ── the strings ─────────────────────────────────────────────── */
+
+  // where a string ties on: the right edge of a rank box, the left edge of a print
+  function port(el, side) {
+    var r = el.getBoundingClientRect(), b = board.getBoundingClientRect();
+    return {
+      x: (side === "rank" ? r.right : r.left) - b.left,
+      y: r.top - b.top + r.height / 2
+    };
+  }
+  function rankPort(r) { return port(pEls[r], "rank"); }
+  function modelPort(id) { return port(mEls[id].querySelector(".thumb"), "model"); }
+
+  // one length of elastic, drawn like junk-drawer's .jd-rope
+  function strand(a, b, slack, seed, fresh) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var d = Math.sqrt(dx * dx + dy * dy);
+    var sag = (9 + d * 0.075) * (slack === undefined ? 1 : slack);
+    if (sag > 30) sag = 30;
+    var mx = (a.x + b.x) / 2 + (seed || 0) * 2.2;
+    var my = (a.y + b.y) / 2 + sag;
+    var p = "M" + a.x + "," + a.y + " Q" + mx + "," + my + " " + b.x + "," + b.y;
+    return '<path d="' + p + '" fill="none" stroke="rgba(58,20,10,0.22)" stroke-width="3.5" ' +
+             'stroke-linecap="round" transform="translate(0.5,2.5)"/>' +
+           '<path class="' + (fresh ? "fresh" : "") + '" d="' + p + '" fill="none" stroke="#b3402f" ' +
+             'stroke-width="2" stroke-linecap="round"/>';
+  }
+
+  function paint() {
+    var out = "";
+    order.forEach(function (id, i) {
+      if (!wire[id]) return;
+      if (drag && drag.id === id && drag.from === "model") return;
+      out += strand(rankPort(wire[id]), modelPort(id), 1, i - (N - 1) / 2, freshKey === id);
+    });
+    if (drag && drag.live) {
+      var anchor = drag.from === "model" ? modelPort(drag.id) : rankPort(drag.rank);
+      var bb = board.getBoundingClientRect();
+      out += strand(anchor, { x: drag.px - bb.left, y: drag.py - bb.top }, 0.45, 0, false);
+    }
+    wiresSvg.innerHTML = out;
+    freshKey = null;
+  }
+
+  window.addEventListener("resize", paint);
+
+  /* ── talking ─────────────────────────────────────────────────── */
+
+  function announce(msg) { live.textContent = msg || ""; }
+  function flag(msg, kind) {
+    notice.textContent = msg || "";
+    notice.className = "notice" + (msg ? " has" : "") + (kind ? " " + kind : "");
+    if (msg) announce(msg);
+  }
+
+  /* ── click one side, then the other ──────────────────────────── */
+
+  function tapped(side, key) {
+    if (picked && picked.side !== side) {
+      connect(side === "model" ? key : picked.key, side === "rank" ? key : picked.key);
+      return;
+    }
+    if (picked && picked.key === key) { picked = null; refresh(); flag(""); announce("Put down."); return; }
+    picked = { side: side, key: key };
+    refresh();
+    flag("");
+    announce(side === "model"
+      ? "Model " + key + " in hand — now choose a rank."
+      : ORD[key - 1] + " in hand — now choose a drawing.");
+  }
+
+  /* ── pulling a string by hand ────────────────────────────────── */
+
+  function bindNode(el, side, key) {
+    el.addEventListener("pointerdown", function (e) {
+      if (e.button !== undefined && e.button > 0) return;
+      e.preventDefault();
+      el.focus({ preventScroll: true });
+      drag = {
+        from: side, key: key,
+        id: side === "model" ? key : null,
+        rank: side === "rank" ? key : null,
+        x0: e.clientX, y0: e.clientY, px: e.clientX, py: e.clientY,
+        pointerId: e.pointerId, live: false, over: null, el: el
+      };
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      el.addEventListener("pointermove", onMove);
+      el.addEventListener("pointerup", onUp);
+      el.addEventListener("pointercancel", onCancel);
+    });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault(); tapped(side, key);
+      } else if ((e.key === "Delete" || e.key === "Backspace") && side === "model") {
+        e.preventDefault(); cut(key);
+      } else if (side === "model" && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault(); shift(key, e.key === "ArrowUp" ? -1 : 1);
+      }
+    });
+  }
+
+  function targets() {
+    var list = [];
+    for (var r = 1; r <= N; r++) list.push({ side: "rank", key: r, el: pEls[r] });
+    order.forEach(function (id) { list.push({ side: "model", key: id, el: mEls[id] }); });
+    return list.map(function (t) { t.r = t.el.getBoundingClientRect(); return t; });
+  }
+
+  function hit(x, y) {
+    var found = null;
+    drag.list.forEach(function (t) {
+      if (x >= t.r.left && x <= t.r.right && y >= t.r.top && y <= t.r.bottom) found = t;
+    });
+    return found;
+  }
+
+  function onMove(e) {
+    if (!drag) return;
+    drag.px = e.clientX; drag.py = e.clientY;
+    if (!drag.live) {
+      if (Math.abs(e.clientX - drag.x0) < 6 && Math.abs(e.clientY - drag.y0) < 6) return;
+      drag.live = true;
+      drag.list = targets();
+      document.body.classList.add("wiring");
+      picked = null;
+      clearSel();
+      refresh();
+    }
+    var t = hit(e.clientX, e.clientY);
+    var k = t ? t.side + t.key : null;
+    if (k !== drag.over) {
+      drag.list.forEach(function (q) { q.el.classList.remove("armed", "refuse"); });
+      drag.over = k;
+      if (t && t.side !== drag.from) {
+        var r = t.side === "rank" ? t.key : drag.rank;
+        var id = t.side === "model" ? t.key : drag.id;
+        t.el.classList.add(r === 1 && firstHolder(id) ? "refuse" : "armed");
+      }
+    }
+    paint();
+  }
+
+  function endDrag() {
+    if (!drag) return;
+    var el = drag.el;
+    el.removeEventListener("pointermove", onMove);
+    el.removeEventListener("pointerup", onUp);
+    el.removeEventListener("pointercancel", onCancel);
+    try { el.releasePointerCapture(drag.pointerId); } catch (err) {}
+    if (drag.list) drag.list.forEach(function (q) { q.el.classList.remove("armed", "refuse"); });
+    document.body.classList.remove("wiring");
+    drag = null;
+  }
+
+  function onUp(e) {
+    if (!drag) return;
+    if (!drag.live) { var s = drag.from, k = drag.key; endDrag(); refresh(); tapped(s, k); return; }
+    var t = hit(e.clientX, e.clientY);
+    var from = drag.from, id = drag.id, rank = drag.rank;
+    endDrag();
+    if (!t || t.side === from) {
+      if (from === "model" && wire[id]) { cut(id); return; }   // pulled onto bare paper = cut
+      refresh(); announce("Nothing strung.");
+      return;
+    }
+    if (from === "model") connect(id, t.key);
+    else connect(t.key, rank);
+  }
+
+  function onCancel() { endDrag(); refresh(); }
+
+  function clearSel() {
+    var s = window.getSelection && window.getSelection();
+    if (s && s.rangeCount) { try { s.removeAllRanges(); } catch (err) {} }
+  }
+
+  /* ── re-seating a drawing (tidying only — never a rank) ──────── */
+
+  function shift(id, dir) {
+    var i = order.indexOf(id), j = i + dir;
+    if (j < 0 || j >= order.length) return;
+    order.splice(i, 1); order.splice(j, 0, id);
+    order.forEach(function (m) { modelsCol.appendChild(mEls[m]); });
+    refresh();
+    announce("Model " + id + " moved to row " + (j + 1) + ". Ranks unchanged.");
+  }
+
+  /* ── chrome ──────────────────────────────────────────────────── */
+
+  clearBtn.addEventListener("click", function () {
+    order.forEach(function (id) { wire[id] = null; });
+    picked = null; refresh(); flag(""); announce("Every string cut.");
+  });
+
+  go.addEventListener("click", function () {
+    if (go.disabled) return;
+    flag("Filed: " + summary() + ".", "done");
+  });
+
+  document.querySelectorAll(".bench button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".bench button").forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+      build(parseInt(b.getAttribute("data-n"), 10));
+    });
+  });
+
+  build(4);
+})();
+</script>
+
+</body>
+</html>

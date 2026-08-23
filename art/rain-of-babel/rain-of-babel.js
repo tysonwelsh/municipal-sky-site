@@ -287,7 +287,15 @@
   function claimSlot(st, owner, avoid) {
     var free = [];
     for (var i = 0; i < st.cols; i++) if (laneFree(st, i)) free.push(i);
-    if (!free.length) return avoid;                 /* nothing spare: stay put */
+    if (!free.length) {
+      /* nothing spare, so this run keeps the lane it is in — and must
+         RE-RESERVE it. relocate() has already cleared the reservation by the
+         time this is called, and returning without restoring it leaves the run
+         falling in a lane it no longer holds, which is exactly how two runs
+         end up sharing one. */
+      st.busy[avoid] = owner;
+      return avoid;
+    }
     var pick = free[rnd(free.length)];
     st.busy[pick] = owner;
     return pick;

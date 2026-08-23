@@ -1,10 +1,10 @@
 <?php
 // One-time setup script — delete after running.
-// The four Junk Drawer visitor-prompt tables (PLAN-USER-PROMPTS-CONTRACTS C2,
+// The five Junk Drawer visitor-prompt tables (PLAN-USER-PROMPTS-CONTRACTS C2,
 // with the C6.2 SQLite deltas and the C6.4 environment gating).
 //
-// Production requires ?key=<jd_setup_key> because this one creates four
-// tables, unlike the older single-table setup scripts.
+// Production requires ?key=<jd_setup_key> because this one creates every
+// table the feature has, unlike the older single-table setup scripts.
 
 require_once __DIR__ . '/jd-config.php';
 
@@ -144,6 +144,31 @@ try {
     echo str_pad('item_id column', 20) . " FAILED: " . $e->getMessage() . "\n";
 }
 
+// jd_ranks — the full rank order (C1.3 addition, 2026-08-22).
+//
+// This one needs no ALTER: it is a whole new TABLE, so the CREATE TABLE IF
+// NOT EXISTS in the DDL above is itself the migration and is idempotent on a
+// live database. The check below exists only so the run SAYS so — the owner
+// has to know the table landed, because jd-rate.php deliberately keeps filing
+// ratings (minus the rank rows) while it is absent.
+try {
+    $present = false;
+    if (JD_DEV_MODE) {
+        $q = $db->query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'jd_ranks'");
+        $present = $q !== false && $q->fetch() !== false;
+    } else {
+        $q = $db->query("SHOW TABLES LIKE 'jd_ranks'");
+        $present = $q !== false && $q->fetch() !== false;
+    }
+    echo str_pad('jd_ranks table', 20) . ($present ? " present\n" : " MISSING — see the failure above\n");
+    if (!$present) {
+        $failed++;
+    }
+} catch (PDOException $e) {
+    $failed++;
+    echo str_pad('jd_ranks table', 20) . " FAILED: " . $e->getMessage() . "\n";
+}
+
 echo "\n" . ($failed === 0 ? "All tables present. Delete this script when you are done.\n" : "$failed statement(s) failed.\n");
 
 // ---------------------------------------------------------------------------
@@ -223,6 +248,32 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
     KEY idx_winner (winner_gen_id),
     CONSTRAINT fk_jdc_submission FOREIGN KEY (submission_id) REFERENCES jd_submissions(id),
     CONSTRAINT fk_jdc_winner FOREIGN KEY (winner_gen_id) REFERENCES jd_generations(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+        // The full rank order of the surviving drawings (C1.3 addition,
+        // 2026-08-22): one row per ok slot, replacing "who won" with "in what
+        // order". jd_comparisons keeps being written alongside it (winner =
+        // the rank-1 generation) so the historical win series stays one
+        // continuous table.
+        //
+        // THE COLUMN IS rank_pos, NOT rank: RANK is a reserved word in MySQL
+        // 8.0 (the window function), and an unquoted `rank` column is a
+        // syntax error there. Do not "tidy" this name, quoted or otherwise.
+        'jd_ranks' => "
+CREATE TABLE IF NOT EXISTS jd_ranks (
+    id             CHAR(26)    NOT NULL PRIMARY KEY,
+    submission_id  CHAR(26)    NOT NULL,
+    generation_id  CHAR(26)    NOT NULL,
+    rank_pos       TINYINT     NOT NULL,       -- 1 = best; dense (the distinct
+                                               -- ranks used are exactly 1..k);
+                                               -- ties legal below 1 only
+    visitor_hash   CHAR(64)    NOT NULL,
+    client         VARCHAR(16) NOT NULL DEFAULT 'web',
+    rated_at       DATETIME    NOT NULL,
+    UNIQUE KEY uq_submission_generation (submission_id, generation_id),
+    KEY idx_submission (submission_id),
+    CONSTRAINT fk_jdrk_submission FOREIGN KEY (submission_id) REFERENCES jd_submissions(id),
+    CONSTRAINT fk_jdrk_generation FOREIGN KEY (generation_id) REFERENCES jd_generations(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     ];
 }
@@ -310,5 +361,23 @@ CREATE TABLE IF NOT EXISTS jd_comparisons (
 )",
         'jd_comparisons idx' => "
 CREATE INDEX IF NOT EXISTS idx_jdc_winner ON jd_comparisons (winner_gen_id)",
+
+        // See the MySQL DDL above for why the column is rank_pos and never
+        // `rank`. TINYINT -> INTEGER, DATETIME -> TEXT, as everywhere else.
+        'jd_ranks' => "
+CREATE TABLE IF NOT EXISTS jd_ranks (
+    id             TEXT     NOT NULL PRIMARY KEY,
+    submission_id  TEXT     NOT NULL,
+    generation_id  TEXT     NOT NULL,
+    rank_pos       INTEGER  NOT NULL,
+    visitor_hash   TEXT     NOT NULL,
+    client         TEXT     NOT NULL DEFAULT 'web',
+    rated_at       TEXT     NOT NULL,
+    UNIQUE (submission_id, generation_id),
+    CONSTRAINT fk_jdrk_submission FOREIGN KEY (submission_id) REFERENCES jd_submissions(id),
+    CONSTRAINT fk_jdrk_generation FOREIGN KEY (generation_id) REFERENCES jd_generations(id)
+)",
+        'jd_ranks idx' => "
+CREATE INDEX IF NOT EXISTS idx_jdrk_submission ON jd_ranks (submission_id)",
     ];
 }

@@ -7,7 +7,14 @@ preference-tuning harnesses actually ingest:
     {"submission": {...},
      "generations": [ {...slot a...}, {...slot b...} ],
      "ratings":     [ {...}, ... ],
-     "comparison":  {...} | null}
+     "comparison":  {...} | null,
+     "ranking":     [ {...rank 1...}, {...rank 2...} ] | null}
+
+`comparison` is the visitor's winner (with the likert `strength` margin where
+one was filed); `ranking` is the full order of the survivors, best first, and
+is null on every record filed before ranking shipped (2026-08-22) — the two
+agree by construction, because the write path files the rank-1 generation as
+the comparison's winner.
 
 Everything the write path recorded is carried through verbatim — the prompt
 byte-exact, the model/harness/params provenance per generation, the numeric
@@ -44,7 +51,7 @@ mirror the keys in private_config/secrets.php:
 The script's own code is Python 3 standard library only. MySQL needs one
 DB-API driver present — PyMySQL, mysql.connector or MySQLdb, whichever the
 owner's machine already has (`pip install PyMySQL` is the smallest). SQLite
-needs nothing. On Bluehost the practical route is to dump the four jd_ tables
+needs nothing. On Bluehost the practical route is to dump the five jd_ tables
 locally and export from the copy.
 
 OPTIONS
@@ -56,9 +63,9 @@ OPTIONS
     --include-raw             include the full pre-extraction provider text
                               (this is where a failed slot's error body lives)
     --out FILE                write there instead of stdout
-    --summary                 print counts, a position-bias estimate and
-                              per-model win rates to STDERR (never to the
-                              JSONL stream)
+    --summary                 print counts, two position-bias estimates and
+                              per-model win rates / first-place rates / mean
+                              ranks to STDERR (never to the JSONL stream)
 
 By default a generation carries only `svg_bytes` / `raw_response_bytes`,
 so the file stays small enough to read; the flags above add the payloads.
@@ -69,7 +76,7 @@ import json
 import os
 import sys
 
-TABLES = ("jd_submissions", "jd_generations", "jd_ratings", "jd_comparisons")
+TABLES = ("jd_submissions", "jd_generations", "jd_ratings", "jd_comparisons", "jd_ranks")
 
 
 # --------------------------------------------------------------------------
@@ -128,6 +135,30 @@ def rows(conn, sql, params=()):
     out = [r if isinstance(r, dict) else dict(zip(columns, r)) for r in cur.fetchall()]
     cur.close()
     return out
+
+
+def rows_optional(conn, sql, params=(), table=""):
+    """Same as rows(), but tolerates the table not existing yet.
+
+    jd_ranks arrives with a manual migration (api/setup-jd-tables.php), and an
+    export run against a database that has not had it run — or against an old
+    dump taken before it — must still produce every other field rather than
+    die. Only the missing-table error is swallowed; anything else propagates,
+    because a real failure that silently exported as "no data" would be
+    indistinguishable from an honest empty table.
+    """
+    try:
+        return rows(conn, sql, params)
+    except Exception as error:                     # noqa: BLE001 — re-raised below
+        message = str(error).lower()
+        if "no such table" not in message and "doesn't exist" not in message \
+                and "table or view not found" not in message:
+            raise
+        sys.stderr.write(
+            "export-jd-evals: %s is not in this database — exporting without it "
+            "(run api/setup-jd-tables.php)\n" % (table or "a table")
+        )
+        return []
 
 
 def _is_connector(conn):
@@ -253,11 +284,43 @@ def build_comparison(row, slot_of):
         "winner_slot": slot_of.get(winner_gen) if winner_gen else None,
         "tie": winner_gen is None,                 # NULL winner = explicit tie
         "winner_gen_id": winner_gen,
+        # The likert margin (added to the write path 2026-08-11): 'decisive' |
+        # 'slight', NULL on a tie, on a pre-likert client, and on a row filed
+        # from a full ranking — an order carries no margin.
+        "strength": as_text(row["strength"]),
         "visitor_hash": as_text(row["visitor_hash"]),
         "client": as_text(row["client"]),
         "rated_at": as_stamp(row["rated_at"]),
         "id": as_text(row["id"]),
     }
+
+
+def build_ranking(rank_rows, slot_of):
+    """The full order of the survivors, best first.
+
+    None (not []) on every submission filed before ranking shipped, so "no
+    order was recorded" stays distinguishable from "an empty order". Ties below
+    first are real data: two entries may share a rank, and the sort then falls
+    back to slot so the line is still deterministic.
+    """
+    if not rank_rows:
+        return None
+    return [
+        {
+            "slot": slot_of.get(as_text(r["generation_id"])),
+            "rank": as_int(r["rank_pos"]),         # 1 = best; dense; ties below 1
+            "gen_id": as_text(r["generation_id"]),
+            "visitor_hash": as_text(r["visitor_hash"]),
+            "client": as_text(r["client"]),
+            "rated_at": as_stamp(r["rated_at"]),
+            "id": as_text(r["id"]),
+        }
+        for r in sorted(
+            rank_rows,
+            key=lambda r: (as_int(r["rank_pos"]) or 0,
+                           slot_of.get(as_text(r["generation_id"])) or ""),
+        )
+    ]
 
 
 RATING_ORDER = {"grade": 0, "axis": 1, "flag": 2}
@@ -296,9 +359,17 @@ def export(conn, ph, args):
     )
     comparisons = rows(
         conn,
-        "SELECT id, submission_id, winner_gen_id, visitor_hash, client, rated_at"
+        "SELECT id, submission_id, winner_gen_id, strength, visitor_hash, client, rated_at"
         " FROM jd_comparisons WHERE submission_id IN (%s)" % marks,
         ids,
+    )
+    # rank_pos, never `rank` — RANK is a reserved word in MySQL 8.0.
+    rank_rows = rows_optional(
+        conn,
+        "SELECT id, submission_id, generation_id, rank_pos, visitor_hash, client, rated_at"
+        " FROM jd_ranks WHERE submission_id IN (%s)" % marks,
+        ids,
+        table="jd_ranks",
     )
 
     gen_ids = [as_text(g["id"]) for g in generations]
@@ -315,7 +386,7 @@ def export(conn, ph, args):
     slot_of = {as_text(g["id"]): as_text(g["slot"]) for g in generations}
     submission_of_gen = {as_text(g["id"]): as_text(g["submission_id"]) for g in generations}
 
-    gens_by_sub, ratings_by_sub, comp_by_sub = {}, {}, {}
+    gens_by_sub, ratings_by_sub, comp_by_sub, ranks_by_sub = {}, {}, {}, {}
     for g in generations:
         gens_by_sub.setdefault(as_text(g["submission_id"]), []).append(g)
     for r in ratings:
@@ -323,6 +394,8 @@ def export(conn, ph, args):
         ratings_by_sub.setdefault(sub, []).append(r)
     for c in comparisons:
         comp_by_sub[as_text(c["submission_id"])] = c
+    for r in rank_rows:
+        ranks_by_sub.setdefault(as_text(r["submission_id"]), []).append(r)
 
     records = []
     for submission in submissions:
@@ -344,6 +417,7 @@ def export(conn, ph, args):
             ],
             "ratings": [build_rating(r, slot_of) for r in sub_ratings],
             "comparison": build_comparison(comp_by_sub.get(sid), slot_of),
+            "ranking": build_ranking(ranks_by_sub.get(sid), slot_of),
         })
     return records
 
@@ -396,6 +470,53 @@ def summarize(records, stream):
         seen = appearances[model]
         write("win rate %-18s %.3f  (%d/%d)\n"
               % (model, float(wins.get(model, 0)) / seen, wins.get(model, 0), seen))
+
+    # --- the full order (2026-08-22) ---------------------------------------
+    # Deliberately a separate block from the comparison numbers above, which
+    # keep counting exactly what they always counted. A record filed before
+    # ranking shipped has no jd_ranks rows and simply does not appear here, so
+    # nothing above is restated or double-counted.
+    ranked = [r for r in records if r.get("ranking")]
+    if not ranked:
+        return
+
+    # A one-entry order is a degraded submission ranking its only survivor:
+    # real data, but nobody beat anybody, so it is excluded the same way
+    # paired() excludes a one-slot comparison.
+    contested = [r for r in ranked if len(r["ranking"]) > 1]
+    with_ties = sum(1 for r in contested
+                    if len({e["rank"] for e in r["ranking"]}) < len(r["ranking"]))
+    write("rankings               %d filed, %d contested, %d carrying a tie below first\n"
+          % (len(ranked), len(contested), with_ties))
+    if not contested:
+        return
+
+    first_a = sum(1 for r in contested
+                  if any(e["rank"] == 1 and e["slot"] == "a" for e in r["ranking"]))
+    write("position bias (P slot A ranks first)     %.3f  (%d/%d)\n"
+          % (float(first_a) / len(contested), first_a, len(contested)))
+
+    # mean rank is NOT comparable across differently sized fields — rank 2 of
+    # 2 and rank 2 of 4 are different achievements — so the field size is
+    # printed alongside it rather than averaged away.
+    firsts, rank_sum, placed, field = {}, {}, {}, {}
+    for record in contested:
+        model_of = {g["slot"]: g["model_id"] for g in record["generations"]}
+        size = len(record["ranking"])
+        for entry in record["ranking"]:
+            model = model_of.get(entry["slot"])
+            if model is None or entry["rank"] is None:
+                continue
+            placed[model] = placed.get(model, 0) + 1
+            rank_sum[model] = rank_sum.get(model, 0) + entry["rank"]
+            field[model] = field.get(model, 0) + size
+            if entry["rank"] == 1:
+                firsts[model] = firsts.get(model, 0) + 1
+    for model in sorted(placed):
+        n = placed[model]
+        write("ranked %-20s first %.3f (%d/%d)  mean rank %.2f of %.1f\n"
+              % (model, float(firsts.get(model, 0)) / n, firsts.get(model, 0), n,
+                 float(rank_sum[model]) / n, float(field[model]) / n))
 
 
 # --------------------------------------------------------------------------

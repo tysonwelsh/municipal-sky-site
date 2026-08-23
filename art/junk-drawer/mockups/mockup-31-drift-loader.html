@@ -1,0 +1,392 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>The Drift &mdash; wait-indicator tuning bench</title><style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --blue:#4a628a; --graphite:#4b4030;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --thand:"Bradley Hand","Segoe Print","Chalkboard SE",Chalkboard,cursive;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+     color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1080px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+   text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);
+   text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+   text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:44px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;color:var(--tink-3);margin:0 0 22px}
+
+/* the swatch, copied from junk-drawer.css so this bench is honest about size */
+.sw{position:relative;overflow:hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    var(--plate);
+  border:1px solid rgba(55,65,79,.30);
+  box-shadow:0 4px 10px -3px rgba(46,34,12,.5), 0 1px 3px rgba(46,34,12,.35)}
+.sw-letter{position:absolute;top:3px;left:7px;z-index:4;font-family:var(--thand);
+  font-size:.9rem;color:var(--graphite);opacity:.85}
+.well{position:absolute;left:0;top:0;right:0;bottom:0;overflow:hidden}
+.dcol{position:absolute;top:0;left:0;right:0;display:block;z-index:2}
+.dcol > i{position:absolute;top:0;display:block;font-family:var(--tmono);
+  font-style:normal;color:#4a628a;transform:translateY(-300%)}
+.dcol > i.rev{}
+.dpile{position:absolute;left:0;top:0;right:0;bottom:0;display:block;z-index:1}
+.dpile > i{position:absolute;display:block;font-family:var(--tmono);
+  font-style:normal;color:#4a628a;opacity:.9;animation:none !important}
+.dg.rev{transform:scaleX(-1)}
+@media (prefers-reduced-motion: reduce){ .dcol > i{animation:none !important} }
+
+.row{display:flex;gap:36px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0}
+figcaption{margin-top:8px;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tink-3);text-align:center}
+
+/* the card, at the size the darkroom actually shows it */
+.card{width:460px;height:460px;position:relative;margin:0 auto;
+  background:var(--tpaper-hi) var(--tgrain);border:1px solid rgba(74,53,18,.3);
+  box-shadow:0 10px 26px -8px rgba(20,10,2,.5)}
+.card .sw{position:absolute;width:41%;height:33%}
+.p-a{left:5.5%;top:9%;transform:rotate(-1.8deg)}
+.p-b{right:5.5%;top:9.5%;transform:rotate(1.5deg)}
+.p-c{left:6.5%;bottom:9.5%;transform:rotate(1.4deg)}
+.p-d{right:6.5%;bottom:9%;transform:rotate(-1.6deg)}
+
+/* the desk */
+.desk{max-width:640px;margin:26px auto 0;display:grid;
+  grid-template-columns:auto 1fr auto;gap:7px 14px;align-items:center;
+  font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tink-3)}
+.desk input[type=range]{-webkit-appearance:none;appearance:none;height:26px;
+  background:transparent;cursor:ew-resize;width:100%;touch-action:manipulation}
+.desk input[type=range]::-webkit-slider-runnable-track{height:1px;background:rgba(74,98,138,.45)}
+/* a small square still, but 15px on a 26px input: the old 9px mark gave about
+   80 square pixels to aim at, which is not enough to grab reliably */
+.desk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;
+  margin-top:-7px;border-radius:0;background:var(--plate);border:1px solid #4a628a;
+  box-shadow:0 1px 2px rgba(46,34,12,.35)}
+.desk input[type=range]::-webkit-slider-thumb:active{background:#4a628a}
+.desk input[type=range]::-moz-range-track{height:1px;background:rgba(74,98,138,.45)}
+.desk input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:0;
+  background:var(--plate);border:1px solid #4a628a}
+.desk label{cursor:ew-resize}
+.desk output{font-variant-numeric:tabular-nums;min-width:7ch;text-align:right}
+.desk .act{grid-column:1/-1;display:flex;gap:10px;justify-content:center;margin-top:10px}
+.desk button{font:inherit;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tink-2);background:var(--plate);border:1px solid rgba(74,98,138,.5);
+  padding:4px 10px;cursor:pointer}
+.desk button:hover{border-color:#4a628a;color:var(--tink)}
+#dump{max-width:640px;margin:14px auto 0;font-size:.52rem;line-height:1.7;
+  color:var(--tink-3);white-space:pre-wrap;word-break:break-word}
+footer{margin-top:48px;padding-top:12px;border-top:1px solid var(--trule);
+  font-size:.52rem;letter-spacing:.14em;color:var(--tink-3);text-align:center;
+  text-transform:uppercase;line-height:2}
+</style></head><body><div class="sheet"><h1>The Drift</h1><div class="no">The Junk Drawer &middot; mockup 31 &middot; a wait indicator, at the size the darkroom shows it</div><hr class="rule"><p class="dek">Rain falls down the paper&rsquo;s own ruling; each character lands on the bottom rule, is thrown, and comes to rest. The heap builds. For a wait indicator that is the point &mdash; <b>the depth of the drift is how long you have been waiting</b>, which is the one honest thing a loading screen can tell you. Everything below is at true size: 230 &times; 185 is the swatch on a desktop, 137 &times; 110 is the same swatch on a phone, and the card is the darkroom&rsquo;s own 2&times;2.</p><h2>True size</h2><div class="sub">230 &times; 185 desktop &middot; 137 &times; 110 phone &mdash; the ruling stays at 9 / 45 in both</div><div class="row"><figure><div class="sw" id="sw-big" style="width:230px;height:185px"><span class="sw-letter">a</span><span class="well" id="w-big"></span></div><figcaption>Desktop &middot; 230 &times; 185</figcaption></figure><figure><div class="sw" id="sw-small" style="width:137px;height:110px"><span class="sw-letter">a</span><span class="well" id="w-small"></span></div><figcaption>Phone &middot; 137 &times; 110</figcaption></figure></div><h2>In the card</h2><div class="sub">four swatches, as the darkroom deals them &mdash; here all four run the drift so it can be judged at once</div><div class="card"><div class="sw p-a"><span class="sw-letter">a</span><span class="well" data-card></span></div><div class="sw p-b"><span class="sw-letter">b</span><span class="well" data-card></span></div><div class="sw p-c"><span class="sw-letter">c</span><span class="well" data-card></span></div><div class="sw p-d"><span class="sw-letter">d</span><span class="well" data-card></span></div></div><h2>The desk</h2><div class="sub">every number the indicator runs on. Rebuilds on release, not on every pixel of a drag.</div><div class="desk"><label for="d-cell">Cell</label><input type="range" id="d-cell" data-k="cell" min="6" max="14" step="1" value="9"><output for="d-cell">9px</output><label for="d-density">Density</label><input type="range" id="d-density" data-k="density" min="5" max="100" step="1" value="36"><output for="d-density">36%</output><label for="d-speedLo">Fall speed</label><input type="range" id="d-speedLo" data-k="speedLo" min="15" max="200" step="5" value="45"><output for="d-speedLo">45px/s</output><label for="d-speedHi">  … to</label><input type="range" id="d-speedHi" data-k="speedHi" min="15" max="260" step="5" value="85"><output for="d-speedHi">85px/s</output><label for="d-throwLo">Throw</label><input type="range" id="d-throwLo" data-k="throwLo" min="20" max="500" step="10" value="90"><output for="d-throwLo">90px/s</output><label for="d-throwHi">  … to</label><input type="range" id="d-throwHi" data-k="throwHi" min="20" max="900" step="10" value="400"><output for="d-throwHi">400px/s</output><label for="d-liftLo">Lift</label><input type="range" id="d-liftLo" data-k="liftLo" min="20" max="400" step="10" value="110"><output for="d-liftLo">110px/s</output><label for="d-liftHi">  … to</label><input type="range" id="d-liftHi" data-k="liftHi" min="20" max="600" step="10" value="280"><output for="d-liftHi">280px/s</output><label for="d-gravity">Gravity</label><input type="range" id="d-gravity" data-k="gravity" min="200" max="4000" step="50" value="1300"><output for="d-gravity">1300px/s²</output><label for="d-bounce">Bounce</label><input type="range" id="d-bounce" data-k="bounce" min="0" max="100" step="1" value="48"><output for="d-bounce">48%</output><label for="d-overlap">Nesting</label><input type="range" id="d-overlap" data-k="overlap" min="20" max="90" step="1" value="56"><output for="d-overlap">56%</output><label for="d-blockLo">Run length</label><input type="range" id="d-blockLo" data-k="blockLo" min="2" max="30" step="1" value="4"><output for="d-blockLo">4chars</output><label for="d-blockHi">  … to</label><input type="range" id="d-blockHi" data-k="blockHi" min="2" max="40" step="1" value="12"><output for="d-blockHi">12chars</output><label for="d-gapLo">Break</label><input type="range" id="d-gapLo" data-k="gapLo" min="1" max="40" step="1" value="6"><output for="d-gapLo">6squares</output><label for="d-gapHi">  … to</label><input type="range" id="d-gapHi" data-k="gapHi" min="1" max="60" step="1" value="18"><output for="d-gapHi">18squares</output><label for="d-maxDepth">Drift depth</label><input type="range" id="d-maxDepth" data-k="maxDepth" min="1" max="18" step="1" value="8"><output for="d-maxDepth">8squares</output><label for="d-cap">Budget</label><input type="range" id="d-cap" data-k="cap" min="50" max="900" step="10" value="380"><output for="d-cap">380chars</output><div class="act"><button type="button" id="restart">Restart</button><button type="button" id="pause">Pause</button><button type="button" id="copy">Copy settings</button></div></div><pre id="dump"></pre><footer>Ink on engineering paper &middot; 78 writing systems &middot; 5987 characters<br>The drift is the wait made visible</footer></div><script>window.__DRIFT_POOL={"lat": {"w": 13, "s": 10.0, "c": "ABCDEFGHIJKLMNOPQRSTUVWXYZ"}, "dig": {"w": 7, "s": 10.0, "c": "0123456789"}, "mrk": {"w": 5, "s": 10.0, "c": "/-.:§¶№×÷±°†‡¤¢£¥"}, "grk": {"w": 6, "s": 10.1, "c": "ͰͱͲͳͶͷͻͼͽͿΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϏϐϑϒϓϔϕϖϗϘϙϚϛϜϝϞϟϠϡϢϣϤϥϦϧϨϩϪϫϬϭϮϯϰϱϲϳϴϵ϶ϷϸϹϺϻϼϾϿἀἁἂἃἄἅἆἇἈἉἊἋἌἍἎἏἐἑἒἓἔἕἘἙἚἛἜἝἠἡἢἣἤἥἦἧἨἩἪἫἬἭἮἯἰἱἲἳἴἵἶἷἸἹἺἻἼἽἾἿὀὁὂὃὄὅὈὉὊὋὌὍὐὑὒὓὔὕὖὗὙὛὝὟὠὡὢὣὤὥὦὧὨὩὪὫὬὭὮὯὰάὲέὴήὶίὸόὺύὼώᾀᾁᾂᾃᾄᾅᾆᾇᾈᾉᾊᾋᾌᾍᾎᾏᾐᾑᾒᾓᾔᾕᾖᾗᾘᾙᾚᾛᾜᾝᾞᾟᾠᾡᾢᾣᾤᾥᾦᾧᾨᾩᾪᾫᾬᾭᾮᾯᾰᾱᾲᾳᾴᾶᾷᾸᾹᾺΆᾼῂῃῄῆῇῈΈῊΉῌῐῑῒΐῖῗῘῙῚΊῠῡῢΰῤῥῦῧῨῩῪΎῬῲῳῴῶῷῸΌῺΏῼ"}, "cyr": {"w": 6, "s": 9.3, "c": "ЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџѠѡѢѣѤѥѦѧѨѩѪѫѬѭѮѯѰѱѲѳѴѵѶѷѸѹѺѻѼѽѾѿҀҁ҂ҊҋҌҍҎҏҐґҒғҔҕҖҗҘҙҚқҜҝҞҟҠҡҢңҤҥҦҧҨҩҪҫҬҭҮүҰұҲҳҴҵҶҷҸҹҺһҼҽҾҿӀӁӂӃӄӅӆӇӈӉӊӋӌӍӎӐӑӒӓӔӕӖӗӘәӚӛӜӝӞӟӠӡӢӣӤӥӦӧӨөӪӫӬӭӮӯӰӱӲӳӴӵӶӷӸӹӺӻӼӽӾӿԀԁԂԃԄԅԆԇԈԉԊԋԌԍԎԏԐԑԒԓԔԕԖԗԘԙԚԛԜԝԞԟԠԡԢԣԤԥԦԧԨԩԫԬԭԮԯꙀꙁꙂꙃꙄꙅꙆꙇꙈꙉꙊꙋꙌꙍꙎꙏꙐꙑꙒꙓꙔꙕꙖꙗꙘꙙꙚꙛꙜꙝꙞꙟꙠꙡꙢꙣꙤꙥꙦꙧꙨꙩꙪꙫꙬꙭꙮꙿꚀꚁꚂꚃꚆꚇꚈꚉꚊꚋꚌꚍꚎꚏꚐꚑꚒꚓꚔꚕꚖꚗꚘꚙꚚꚛ"}, "heb": {"w": 5, "s": 10, "c": "אבגדהוזחטךכלםמןנסעףפץצקרשתװױײײַﬠﬡﬢﬣﬤﬥﬦﬧﬨ﬩שׁשׂשּׁשּׂאַאָאּבּגּדּהּוּזּטּךּכּלּמּנּסּףּפּצּקּרּשּתּוֹבֿכֿפֿﭏ"}, "arb": {"w": 5, "s": 9.9, "c": "ؠءآأؤإئبةتثجحخدذرزسشصضطظعغػؼؽؾؿفقكلمنهوىيٮٯٱٲٳٵٶٷٸٹٺٻټٽپٿڀځڂڃڄڅچڇڈډڊڋڌڍڎڏڐڑڒړڔڕږڗژڙښڛڜڝڞڟڠڡڢڣڤڥڦڧڨکڪګڬڭڮگڰڱڲڳڴڵڶڷڸڹںڻڼڽھڿۀہۂۃۄۅۆۇۈۉۊۋیۍێۏېۑےۓݐݑݒݓݔݕݖݗݘݙݚݛݜݝݞݟݠݡݢݣݤݥݦݧݨݩݪݫݬݭݮݯݰݱݲݳݴݵݶݷݸݹݺݻݼݽݾݿࢠࢡࢢࢣࢤࢥࢦࢧࢨࢩࢪࢫࢬࢮࢰࢱࢲࢳࢴࢵࢶࢷࢸࢹࢺࢻࢼࢽ"}, "dev": {"w": 5, "s": 8.9, "c": "ऄअआइईउऊऋऌऍऎएऐऑऒओऔकखगघङचछजझञटठडढणतथदधनऩपफबभमयरऱलळऴवशषसहक़ख़ग़ज़ड़ढ़फ़य़ॠॡॲॳॴॵॶॷॸॹॺॻॼॽॾॿ"}, "geo": {"w": 4, "s": 9.7, "c": "ႠႡႢႣႤႥႦႧႨႩႪႫႬႭႮႯႰႱႲႳႴႵႶႷႸႹႺႻႼႽႾႿჀჁჂჃჄჅაბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰჱჲჳჴჵჶჷჸჹჺჼჽჾჿᲐᲑᲒᲓᲔᲕᲖᲗᲘᲙᲚᲛᲜᲝᲞᲟᲠᲡᲢᲣᲤᲥᲦᲧᲨᲩᲪᲫᲬᲭᲮᲯᲰᲱᲲᲳᲴᲵᲶᲷᲸᲹᲺᲽᲾᲿ"}, "arm": {"w": 4, "s": 9.7, "c": "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՙաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆև"}, "cjk": {"w": 4, "s": 6, "c": "⼃⼨⽌⽰⾔⾸万丬乑乵亙亽仡伅伩位佱侕侹保倁倥偉偭傑債僙僽儡充兩再决凗击刟剃剧劋劯勓勷匛匿卣厇厫叏右吗吻呟咃咧哋哯唓唷啛啿喣嗇嗫嘏嘳噗噻嚟囃囧國圯坓坷垛垿埣堇堫塏塳増墻壟夃大奋奯妓妷姛姿娣婇婫媏媳嫗嫻嬟孃孧宋宯寓寷尛尿屣岇岫峏峳崗崻嵟嶃嶧巋巯帓帷幛广庣廇廫式弳彗彻徟心忧怋怯恓恷悛悿惣愇愫慏慳憗憻懟戃戧手扯抓抷招拿挣捇捫掏掳揗揻搟摃摧撋撯擓擷攛政散文斫族旳昗昻晟暃暧曋曯朓朷杛板枣柇柫栏栳桗桻梟棃棧椋椯楓楷榛榿槣樇樫橏橳檗檻櫟欃欧歋歯殓殷毛毿氣汇汫沏河泗泻洟浃浧涋涯淓混減渿湣溇溫滏滳漗漻潟澃澧濋濯瀓瀷灛灿炣烇烫焏焳煗煻熟燃燧爋爯牓牷犛犿狣猇猫獏獳玗玻珟球琧瑋瑯璓璷瓛瓿産畇畫疏疳痗痻瘟癃癧皋皯盓盷眛眿督瞇瞫矏石砗砻硟碃碧磋磯礓礷祛祿禣秇秫稏稳穗穻窟竃竧笋笯筓筷箛箿篣簇簫籏米粗粻糟紃紧絋絯經綷緛緿縣繇繫纏纳绗绻缟罃罧羋羯翓翷耛耿聣肇肫胏胳脗脻腟膃膧臋臯舓舷艛艿芣苇苫茏茳荗荻莟菃菧萋萯葓葷蒛蒿蓣蔇蔫蕏蕳薗薻藟蘃蘧虋虯蚓蚷蛛蛿蜣蝇蝫螏螳蟗蟻蠟衃衧袋袯裓裷褛褿襣覇覫觏觳託註詟誃誧請諯謓謷譛譿讣诇诫谏谳豗豻貟賃賧贋贯赓起趛趿跣踇踫蹏蹳躗躻軟較輧轋软输辷进迿連遇遫邏邳郗郻鄟酃酧醋醯釓釷鈛鈿鉣銇銫鋏鋳錗錻鍟鎃鎧鏋鏯鐓鐷鑛鑿钣铇铫锏锳镗镻閟闃闧阋阯陓陷際隿難震霫靏靳鞗鞻韟頃頧顋顯颓颷飛飿餣饇饫馏馳駗駻騟驃驧骋骯髓髷鬛鬿魣鮇鮫鯏鯳鰗鰻鱟鲃鲧鳋鳯鴓鴷鵛鵿鶣鷇鷫鸏鸳鹗鹻麟黃黧鼋鼯齓齷龛"}, "han": {"w": 4, "s": 7.5, "c": "ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅢㅥㅦㅧㅨㅩㅪㅫㅬㅭㅮㅯㅰㅱㅲㅳㅴㅵㅶㅷㅸㅹㅺㅻㅼㅽㅾㅿㆀㆁㆂㆃㆄㆅㆆㆇㆈㆉㆊㆋㆌㆎ"}, "tha": {"w": 3, "s": 10.1, "c": "กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮ"}, "che": {"w": 6, "s": 9.5, "c": "ᎠᎡᎢᎣᎤᎥᎦᎧᎨᎩᎪᎫᎬᎭᎮᎯᎰᎱᎲᎳᎴᎵᎶᎷᎸᎹᎺᎻᎼᎽᎾᎿᏀᏁᏂᏃᏄᏅᏆᏇᏈᏊᏋᏌᏍᏎᏏᏐᏑᏒᏓᏔᏕᏖᏗᏘᏙᏚᏛᏜᏝᏞᏟᏠᏡᏢᏣᏤᏥᏦᏧᏨᏩᏫᏬᏭᏮᏯᏰᏱᏲᏳᏴᏵꭰꭱꭲꭳꭴꭵꭶꭷꭸꭹꭺꭻꭼꭽꭾꭿꮀꮁꮂꮃꮄꮅꮆꮇꮈꮉꮊꮋꮌꮍꮎꮏꮐꮑꮒꮓꮔꮕꮖꮗꮘꮙꮚꮛꮜꮝꮞꮟꮠꮡꮢꮣꮤꮥꮦꮧꮨꮩꮪꮫꮬꮭꮮꮯꮰꮱꮲꮳꮴꮵꮶꮷꮸꮹꮺꮻꮼꮽꮾꮿ"}, "des": {"w": 6, "s": 10.3, "c": "𐐀𐐁𐐂𐐃𐐄𐐆𐐇𐐈𐐉𐐊𐐋𐐌𐐍𐐎𐐏𐐐𐐑𐐒𐐓𐐕𐐖𐐗𐐙𐐚𐐛𐐜𐐝𐐞𐐟𐐠𐐡𐐢𐐣𐐤𐐥𐐧𐐨𐐩𐐪𐐫𐐬𐐭𐐮𐐯𐐰𐐱𐐲𐐳𐐴𐐵𐐶𐐷𐐸𐐹𐐺𐐻𐐼𐐽𐐾𐐿𐑀𐑁𐑂𐑃𐑄𐑅𐑆𐑇𐑈𐑉𐑊𐑋𐑌𐑍𐑎𐑏"}, "tib": {"w": 5, "s": 12, "c": "ཀཁགགྷངཅཆཇཉཊཋཌཌྷཎཏཐདདྷནཔཕབབྷམཙཚཛཛྷཝཞཟའཡརལཤཥསཧཨཀྵཪཫཬ"}, "brh": {"w": 3, "s": 9.6, "c": "𑀓𑀔𑀕𑀖𑀗𑀘𑀙𑀚𑀛𑀜𑀝𑀞𑀟𑀠𑀡𑀢𑀣𑀤𑀥𑀦𑀧𑀨𑀩𑀪𑀫𑀬𑀮𑀯𑀰𑀱𑀲𑀳𑀴𑀵𑀶𑀷"}, "sid": {"w": 3, "s": 8.3, "c": "𑖀𑖁𑖂𑖃𑖄𑖅𑖆𑖇𑖈𑖉𑖊𑖋𑖌𑖍𑖎𑖏𑖐𑖑𑖒𑖓𑖔𑖕𑖖𑖗𑖘𑖙𑖚𑖛𑖜𑖝𑖞𑖟𑖠𑖡𑖢𑖣𑖤𑖥𑖦𑖧𑖨𑖩𑖪𑖫𑖬𑖭𑖮"}, "shr": {"w": 3, "s": 9.3, "c": "𑆃𑆄𑆅𑆆𑆇𑆈𑆉𑆊𑆋𑆌𑆍𑆎𑆏𑆐𑆑𑆒𑆓𑆔𑆕𑆖𑆗𑆘𑆙𑆚𑆛𑆜𑆝𑆞𑆟𑆠𑆡𑆢𑆣𑆤𑆥𑆦𑆧𑆨𑆩𑆪𑆫𑆬𑆭𑆮𑆯𑆰𑆱𑆲"}, "gra": {"w": 3, "s": 6.8, "c": "𑌅𑌆𑌇𑌈𑌉𑌊𑌋𑌌𑌏𑌓𑌔𑌕𑌖𑌗𑌘𑌙𑌚𑌛𑌜𑌝𑌞𑌟𑌠𑌡𑌢𑌣𑌤𑌥𑌦𑌧𑌨𑌪𑌫𑌬𑌭𑌮𑌯𑌰𑌲𑌳𑌵𑌶𑌷𑌸𑌹"}, "khr": {"w": 3, "s": 10, "c": "𐨀𐨐𐨑𐨒𐨓𐨕𐨖𐨗𐨙𐨚𐨛𐨜𐨝𐨞𐨟𐨠𐨡𐨢𐨣𐨤𐨥𐨦𐨧𐨨𐨩𐨪𐨫𐨬𐨭𐨮𐨯𐨰𐨱𐨲𐨳"}, "ben": {"w": 2, "s": 9, "c": "অইঈউঊঋঌএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়"}, "gur": {"w": 2, "s": 9.8, "c": "ਅਆਇਈਉਊਏਐਓਔਕਖਗਘਙਚਛਜਝਞਟਠਡਢਣਤਥਦਧਨਪਫਬਭਮਯਰਲਲ਼ਵਸ਼ਸਹਖ਼ਗ਼ਜ਼ੜਫ਼"}, "guj": {"w": 2, "s": 8.2, "c": "અઆઇઈઉઊઋઌઍએઐઓઔકખગઘઙચછજઝઞટઠડઢણતથદધનપફબભમયરલળવશષસહ"}, "ori": {"w": 2, "s": 9.1, "c": "ଅଆଇଈଉଊଋଌଏଐଓଔକଖଗଘଙଚଛଜଝଞଟଠଡଢଣତଥଦଧନପଫବଭମଯରଲଳଵଶଷସହ"}, "tam": {"w": 2, "s": 8.1, "c": "அஆஇஈஉஊஎஏஐஒஓகஙசஜஞடணதநனமயரறலளழவஶஷஸஹ"}, "tel": {"w": 2, "s": 7.2, "c": "అఆఇఈఉఊఌఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరఱలళఴవశషసహౘౙౚ"}, "kan": {"w": 2, "s": 7.2, "c": "ಅಆಇಈಉಋಌಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಱಲಳವಶಷಸಹ"}, "mal": {"w": 2, "s": 6.1, "c": "അആഇഈഉഊഋഌഎഏഐഒഓഔകഖഗഘങചഛജഝഞടഠഡഢണതഥദധനഩപഫബഭമയരറലളഴവശഷസഹൔൕൖ"}, "sin": {"w": 2, "s": 7.9, "c": "අආඇඈඉඊඋඌඍඏඐඑඒඓඔඕඖකඛගඝඞඟචඡජඣඤඥඦටඨඩඪණඬතථදධනඳපඵබභමඹයරලවශෂසහළෆ"}, "mya": {"w": 2, "s": 7.3, "c": "ကခဂဃငစဆဇဈဉညဋဌဍဎဏတထဒဓနပဖဗဘမယရလဝသဟဠအၐၑၒၓၔၕ"}, "khm": {"w": 2, "s": 8.5, "c": "កខគឃងចឆជញដឋឌឍណតថទធនបផពភមយរលវឝឞសហឡអ"}, "run": {"w": 4, "s": 8.2, "c": "ᚠᚡᚢᚣᚤᚥᚦᚧᚨᚩᚪᚫᚬᚭᚮᚯᚰᚱᚲᚳᚴᚵᚶᚷᚸᚹᚺᚻᚼᚽᚾᚿᛀᛁᛂᛃᛄᛅᛆᛇᛈᛉᛊᛋᛍᛎᛏᛐᛑᛒᛓᛔᛕᛖᛗᛘᛙᛚᛛᛜᛝᛞᛟᛠᛡᛣᛤᛥᛦᛨᛩᛪᛮᛯᛰ"}, "got": {"w": 3, "s": 9.3, "c": "𐌰𐌱𐌲𐌳𐌴𐌵𐌶𐌷𐌸𐌺𐌻𐌼𐌽𐌾𐌿𐍀𐍁𐍂𐍃𐍄𐍅𐍆𐍇𐍈𐍉𐍊"}, "ita": {"w": 3, "s": 9.1, "c": "𐌀𐌁𐌂𐌃𐌄𐌅𐌆𐌇𐌈𐌊𐌋𐌌𐌍𐌎𐌏𐌐𐌑𐌒𐌓𐌔𐌕𐌖𐌗𐌘𐌙𐌚𐌛𐌜𐌝𐌞𐌟"}, "phn": {"w": 3, "s": 9.1, "c": "𐤀𐤁𐤂𐤃𐤄𐤅𐤆𐤇𐤈𐤉𐤊𐤋𐤌𐤍𐤎𐤏𐤐𐤑𐤒𐤓𐤔𐤕"}, "lnb": {"w": 3, "s": 7.6, "c": "𐀀𐀁𐀂𐀃𐀄𐀅𐀆𐀇𐀈𐀉𐀊𐀋𐀍𐀎𐀏𐀐𐀑𐀒𐀓𐀔𐀕𐀖𐀗𐀘𐀙𐀚𐀛𐀜𐀝𐀞𐀟𐀠𐀡𐀢𐀣𐀤𐀥𐀦𐀨𐀩𐀪𐀫𐀬𐀭𐀮𐀯𐀰𐀱𐀲𐀳𐀴𐀵𐀶𐀷𐀸𐀹𐀺𐀼𐀽𐀿𐁀𐁁𐁂𐁃𐁄𐁅𐁆𐁇𐁈𐁉𐁊𐁋𐁌𐁍𐁐𐁑𐁒𐁓𐁔𐁕𐁖𐁗𐁘𐁙𐁚𐁛𐁜𐁝𐂀𐂁𐂂𐂃𐂄𐂅𐂆𐂇𐂈𐂉𐂊𐂋𐂌𐂍𐂎𐂏𐂐𐂑𐂒𐂓𐂔𐂕𐂖𐂗𐂘𐂙𐂚𐂛𐂜𐂝𐂞𐂟𐂠𐂡𐂢𐂣𐂤𐂥𐂦𐂧𐂨𐂩𐂪𐂫𐂬𐂭𐂮𐂯𐂰𐂲𐂳𐂴𐂵𐂶𐂷𐂸𐂹𐂺𐂻𐂼𐂽𐂾𐂿𐃀𐃁𐃂𐃃𐃄𐃅𐃇𐃈𐃉𐃊𐃋𐃏𐃐𐃑𐃒𐃓𐃔𐃕𐃖𐃗𐃘𐃙𐃛𐃜𐃝𐃞𐃟𐃠𐃡𐃢𐃣𐃤𐃥𐃦𐃧𐃨𐃩𐃪𐃫𐃬𐃭𐃮𐃯𐃰𐃱𐃲𐃳𐃴𐃶𐃷𐃸𐃹𐃺"}, "cop": {"w": 3, "s": 9.5, "c": "ⲀⲁⲂⲃⲄⲅⲆⲇⲈⲉⲊⲋⲌⲍⲎⲏⲐⲑⲒⲔⲕⲖⲗⲘⲙⲚⲛⲜⲝⲞⲟⲠⲡⲢⲣⲤⲥⲦⲧⲨⲩⲪⲫⲬⲭⲮⲯⲰⲱⲲⲳⲴⲵⲶⲷⲸⲹⲼⲽⲾⲿⳀⳁⳃⳄⳅⳆⳇⳈⳉⳊⳋⳌⳍⳎⳏⳐⳑⳒⳓⳔⳕⳖⳗⳘⳙⳚⳛⳜⳝⳞⳟⳠⳡⳢⳣⳤ⳥⳦⳨⳩⳪ⳫⳬⳭⳮⳲⳳϢϣϤϥϦϧϨϩϪϫϬϭϮϯ"}, "tfn": {"w": 3, "s": 9.8, "c": "ⴰⴱⴲⴳⴴⴵⴶⴷⴸⴹⴺⴻⴼⴽⴾⴿⵀⵁⵂⵃⵄⵅⵆⵇⵈⵉⵊⵋⵌⵍⵎⵏⵐⵑⵒⵓⵔⵕⵖⵗⵘⵙⵚⵛⵜⵝⵞⵟⵠⵡⵢⵣⵤⵥⵦ"}, "osa": {"w": 3, "s": 8.8, "c": "𐒰𐒱𐒲𐒳𐒴𐒵𐒶𐒷𐒸𐒹𐒺𐒻𐒼𐒽𐒾𐒿𐓀𐓁𐓂𐓃𐓄𐓅𐓆𐓇𐓈𐓉𐓊𐓋𐓌𐓍𐓎𐓏𐓐𐓑𐓒𐓓𐓘𐓙𐓚𐓛𐓜𐓝𐓞𐓟𐓠𐓡𐓢𐓣𐓤𐓥𐓦𐓧𐓨𐓩𐓪𐓫𐓬𐓭𐓮𐓯𐓰𐓱𐓲𐓳𐓴𐓵𐓶𐓷𐓸𐓹𐓺𐓻"}, "shw": {"w": 3, "s": 11.9, "c": "𐑐𐑑𐑒𐑓𐑔𐑕𐑖𐑗𐑘𐑙𐑚𐑛𐑜𐑝𐑞𐑟𐑠𐑡𐑢𐑣𐑤𐑥𐑦𐑧𐑨𐑩𐑪𐑫𐑬𐑭𐑮𐑯𐑰𐑱𐑲𐑳𐑴𐑵𐑶𐑷𐑸𐑹𐑺𐑻𐑼𐑽𐑾𐑿"}, "vai": {"w": 3, "s": 7.9, "c": "ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗꔘꔙꔚꔛꔜꔝꔟꔠꔡꔢꔣꔤꔥꔦꔧꔨꔩꔪꔫꔬꔭꔮꔯꔰꔱꔲꔳꔴꔵꔶꔷꔸꔹꔺꔻꔼꔽꔾꔿꕀꕁꕂꕃꕄꕅꕆꕇꕈꕉꕊꕋꕌꕍꕎꕏꕐꕑꕒꕓꕔꕕꕖꕗꕘꕙꕚꕛꕜꕝꕞꕟꕠꕡꕢꕣꕤꕥꕦꕧꕨꕩꕪꕫꕬꕭꕮꕯꕰꕱꕲꕳꕴꕵꕶꕷꕸꕹꕺꕻꕼꕽꕾꕿꖀꖁꖂꖃꖄꖅꖆꖇꖈꖉꖊꖋꖌꖍꖎꖏꖐꖑꖒꖓꖔꖕꖖꖗꖘꖙꖚꖛꖜꖝꖞꖟꖠꖡꖢꖣꖤꖥꖦꖧꖨꖩꖪꖫꖬꖭꖮꖯꖰꖱꖲꖳꖴꖵꖶꖷꖸꖹꖺꖻꖼꖽꖾꖿꗀꗁꗂꗃꗄꗅꗆꗇꗈꗉꗊꗋꗌꗍꗎꗏꗐꗑꗒꗓꗔꗕꗖꗗꗘꗙꗚꗛꗜꗝꗞꗟꗠꗡꗢꗣꗤꗥꗦꗧꗨꗩꗪꗫꗬꗭꗮꗯꗰꗱꗲꗳꗴꗵꗶꗷꗸꗹꗺꗻꗼꗽꗾꗿꘀꘁꘂꘃꘄꘅꘆꘇꘈꘉꘊꘋꘌꘐꘑꘒꘓꘔꘕꘖꘗꘘꘙꘚꘛꘜꘝꘞꘟꘪꘫ"}, "adl": {"w": 3, "s": 8.2, "c": "𞤀𞤁𞤂𞤃𞤄𞤅𞤆𞤇𞤈𞤉𞤊𞤋𞤌𞤍𞤎𞤏𞤐𞤑𞤒𞤓𞤔𞤕𞤖𞤗𞤘𞤙𞤚𞤛𞤜𞤝𞤞𞤟𞤠𞤡𞤢𞤣𞤤𞤥𞤦𞤧𞤨𞤩𞤪𞤫𞤬𞤭𞤮𞤯𞤰𞤱𞤲𞤳𞤴𞤵𞤶𞤷𞤸𞤹𞤺𞤻𞤼𞤽𞤾𞤿𞥀𞥁𞥂𞥃"}, "nko": {"w": 3, "s": 11.1, "c": "ߊߋߌߍߎߏߐߑߒߓߔߕߖߗߘߙߚߛߜߝߞߟߠߡߢߣߤߥߦߧߨߩߪ"}, "yii": {"w": 3, "s": 10.4, "c": "ꀀꀃꀆꀉꀌꀏꀒꀕꀘꀛꀞꀡꀤꀧꀪꀭꀰꀳꀶꀹꀼꀿꁂꁅꁈꁋꁎꁑꁔꁗꁚꁝꁠꁣꁦꁩꁬꁯꁲꁵꁸꁻꁾꂁꂄꂇꂌꂏꂒꂕꂘꂛꂞꂡꂤꂧꂪꂭꂰꂳꂶꂹꂼꂿꃂꃅꃈꃋꃎꃑꃔꃗꃚꃝꃠꃣꃦꃩꃬꃯꃲꃵꃸꃻꃾꄁꄄꄇꄊꄍꄐꄓꄖꄙꄜꄟꄢꄥꄨꄫꄮꄱꄴꄷꄺꄽꅀꅃꅆꅉꅌꅏꅒꅕꅘꅛꅞꅡꅤꅧꅪꅭꅰꅳꅶꅹꅼꅿꆂꆅꆈꆋꆎꆑꆔꆗꆚꆝꆠꆣꆦꆩꆬꆯꆲꆵꆸꆻꆾꇁꇄꇇꇊꇍꇐꇓꇖꇙꇜꇟꇢꇥꇨꇫꇮꇱꇴꇷꇺꇽꈀꈃꈆꈉꈌꈏꈒꈕꈘꈛꈞꈡꈤꈧꈪꈭꈰꈳꈶꈹꈼꈿꉂꉅꉈꉋꉎꉑꉔꉗꉚꉝꉠꉣꉦꉩꉬꉯꉲꉵꉸꉻꉾꊁꊄꊇꊊꊍꊐꊓꊖꊙꊜꊟꊢꊥꊨꊫꊮꊱꊴꊷꊺꊽꋀꋃꋆꋉꋌꋏꋒꋕꋘꋛꋞꋡꋤꋧꋪꋭꋰꋳꋶꋹꋼꋿꌂꌅꌈꌋꌎꌑꌔꌗꌚꌝꌠꌣꌦꌩꌬꌯꌲꌵꌸꌻꌾꍁꍄꍇꍊꍍꍐꍓꍖꍙꍜꍟꍢꍥꍨꍫꍮꍱꍴꍷꍺꍽꎀꎃꎆꎉꎌꎏꎒꎕꎘꎛꎞꎡꎤꎧꎪꎭꎰꎳꎶꎹꎼꎿꏂꏅꏈꏋꏎꏑꏔꏗꏚꏝꏠꏣꏦꏩꏬꏯꏲꏵꏸꏻꏾꐁꐄꐇꐊꐍꐐꐓꐖꐙꐜꐟꐢꐥꐨꐫꐮꐱꐴꐷꐺꐽꑀꑃꑆꑉꑌꑏꑒꑕꑘꑛꑞꑡꑤꑧꑪꑭꑰꑳꑶꑹꑼꑿꒂꒅꒈꒋ"}, "gla": {"w": 3, "s": 7.2, "c": "ⰀⰁⰂⰃⰄⰅⰆⰇⰈⰉⰊⰋⰌⰍⰎⰏⰐⰑⰒⰓⰔⰕⰖⰗⰘⰙⰚⰛⰜⰝⰞⰟⰠⰡⰢⰣⰤⰥⰦⰧⰨⰩⰪⰫⰬⰭⰮⰯⰰⰱⰲⰳⰴⰵⰶⰷⰸⰹⰺⰻⰼⰽⰾⰿⱀⱁⱂⱃⱄⱅⱆⱇⱈⱉⱊⱋⱌⱍⱎⱏⱐⱑⱒⱓⱔⱕⱖⱗⱘⱙⱚⱛⱝⱞ"}, "eth": {"w": 3, "s": 6.6, "c": "ሀሂሄሆለሊሌሎሐሒሔሖመሚሜሞሠሢሤሦረሪሬሮሰሲሴሶሸሺሼሾቀቂቄቆቈቊቌቐቒቔቖቘቚቜበቢቤቦቨቪቬቮተቲቴቶቸቺቼቾኀኂኄኆኈኊኌነኒኔኖኘኚኜኞአኢኤኦከኪኬኮኰኲኴኸኺኼኾዀዂዄወዊዌዎዐዒዔዖዘዚዜዞዠዢዤዦየዪዬዮደዲዴዶዸዺዼዾጀጂጄጆገጊጌጎጐጒጔጘጚጜጞጠጢጤጦጨጪጭጯጱጳጵጷጹጻጽጿፁፃፅፇፉፋፍፏፑፓፕፗፙᎁᎃᎅᎇᎉᎋᎍᎏ᎔᎘ⶀⶂⶄⶆⶈⶊⶌⶎⶑⶓⶕⶡⶣⶥⶩⶫⶭⶱⶳⶵⶹⶻⶾⷀⷂⷄⷆⷈⷊⷌⷎⷐⷒⷔⷖⷘⷚⷜⷞ"}, "syr": {"w": 3, "s": 8, "c": "ܐܒܓܔܕܖܗܘܚܛܜܞܟܠܡܢܣܤܥܦܧܨܩܪܫܬܭܮܯ"}, "thn": {"w": 3, "s": 9.5, "c": "ހށނރބޅކއވމފދތލގޏސޑޒޓޔޕޖޗޘޙޚޛޜޝޞޟޠޡޢޣޤޥ"}, "lao": {"w": 3, "s": 10.1, "c": "ກຂຄງຈຊຍດຕຖທນບປຜຝພຟມຢຣລວສຫອຮ"}, "bam": {"w": 2, "s": 9.9, "c": "ꚠꚡꚢꚣꚤꚥꚦꚧꚨꚩꚪꚫꚬꚭꚮꚯꚰꚱꚲꚳꚴꚵꚶꚷꚸꚹꚺꚻꚼꚽꚾꚿꛀꛁꛂꛃꛄꛅꛆꛇꛈꛉꛊꛋꛌꛍꛎꛏꛐꛑꛒꛓꛔꛕꛖꛗꛘꛙꛚꛛꛜꛝꛞꛟꛠꛡꛢꛣꛤꛥꛦꛧꛨꛩꛪꛫꛬꛭꛮꛯ"}, "ave": {"w": 2, "s": 9.4, "c": "𐬀𐬂𐬄𐬅𐬆𐬇𐬈𐬉𐬊𐬋𐬌𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗𐬘𐬙𐬚𐬛𐬜𐬝𐬞𐬟𐬠𐬡𐬢𐬣𐬤𐬦𐬧𐬨𐬩𐬪𐬫𐬬𐬭𐬮𐬯𐬰𐬱𐬲𐬳𐬴𐬵"}, "olt": {"w": 2, "s": 9.5, "c": "𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰉𐰊𐰋𐰌𐰍𐰎𐰏𐰐𐰑𐰒𐰓𐰔𐰕𐰖𐰗𐰘𐰙𐰚𐰛𐰜𐰝𐰞𐰟𐰠𐰡𐰢𐰣𐰤𐰥𐰦𐰧𐰨𐰩𐰪𐰫𐰬𐰭𐰮𐰯𐰰𐰱𐰲𐰳𐰴𐰵𐰶𐰷𐰸𐰹𐰺𐰻𐰼𐰽𐰾𐰿𐱀𐱁𐱂𐱃𐱄𐱅𐱆𐱇𐱈"}, "arc": {"w": 2, "s": 9.2, "c": "𐡀𐡁𐡂𐡃𐡄𐡅𐡆𐡇𐡈𐡉𐡊𐡋𐡌𐡍𐡎𐡏𐡐𐡑𐡒𐡓𐡔𐡕"}, "nab": {"w": 2, "s": 11.4, "c": "𐢀𐢁𐢂𐢃𐢄𐢅𐢆𐢇𐢈𐢉𐢊𐢋𐢌𐢍𐢎𐢏𐢐𐢑𐢒𐢓𐢔𐢕𐢖𐢗𐢘𐢙𐢚𐢛𐢜𐢝𐢞"}, "pal": {"w": 2, "s": 10, "c": "𐡠𐡡𐡢𐡣𐡤𐡥𐡦𐡧𐡨𐡩𐡪𐡫𐡬𐡭𐡮𐡯𐡰𐡱𐡲𐡳𐡴𐡵𐡶"}, "man": {"w": 2, "s": 7.6, "c": "𐫀𐫁𐫂𐫃𐫄𐫅𐫆𐫇𐫈𐫉𐫊𐫋𐫌𐫍𐫎𐫏𐫐𐫑𐫒𐫓𐫔𐫕𐫖𐫗𐫘𐫙𐫚𐫛𐫜𐫝𐫞𐫟𐫠𐫡𐫢𐫣𐫤"}, "car": {"w": 2, "s": 8.8, "c": "𐊠𐊡𐊢𐊣𐊤𐊥𐊦𐊧𐊨𐊩𐊪𐊫𐊬𐊭𐊮𐊯𐊰𐊱𐊲𐊳𐊴𐊵𐊶𐊷𐊸𐊹𐊺𐊻𐊼𐊽𐊾𐊿𐋀𐋁𐋂𐋃𐋄𐋅𐋆𐋇𐋈𐋉𐋊𐋋𐋌𐋍𐋎𐋏𐋐"}, "lyc": {"w": 2, "s": 9.5, "c": "𐊀𐊁𐊂𐊃𐊄𐊅𐊆𐊇𐊈𐊉𐊊𐊋𐊌𐊍𐊎𐊏𐊐𐊑𐊒𐊓𐊔𐊕𐊖𐊗𐊘𐊙𐊚𐊛𐊜"}, "lyd": {"w": 2, "s": 9.6, "c": "𐤠𐤡𐤢𐤣𐤤𐤥𐤦𐤧𐤨𐤩𐤪𐤫𐤬𐤭𐤮𐤯𐤰𐤱𐤲𐤳𐤴𐤵𐤶𐤷𐤸𐤹"}, "ugr": {"w": 2, "s": 6.1, "c": "𐎀𐎁𐎂𐎃𐎄𐎅𐎆𐎇𐎈𐎉𐎊𐎋𐎌𐎍𐎎𐎏𐎐𐎑𐎒𐎓𐎔𐎕𐎖𐎗𐎘𐎙𐎚𐎛𐎜𐎝"}, "opr": {"w": 2, "s": 5.2, "c": "𐎠𐎡𐎢𐎣𐎤𐎥𐎦𐎧𐎨𐎩𐎪𐎫𐎬𐎭𐎮𐎯𐎰𐎱𐎲𐎳𐎴𐎵𐎶𐎷𐎸𐎹𐎺𐎻𐎼𐎽𐎾𐎿𐏀𐏁𐏂𐏃"}, "mer": {"w": 2, "s": 7.2, "c": "𐦀𐦁𐦂𐦃𐦄𐦅𐦆𐦇𐦈𐦉𐦊𐦋𐦌𐦍𐦎𐦏𐦑𐦒𐦓𐦔𐦕𐦖𐦗𐦘𐦚𐦛𐦜𐦝𐦞𐦟𐦠𐦡𐦢𐦤𐦥𐦦𐦧𐦨𐦩𐦪𐦫𐦬𐦭𐦮𐦯𐦰𐦱𐦲𐦳𐦴𐦵𐦶𐦷"}, "olc": {"w": 2, "s": 9.6, "c": "ᱚᱛᱜᱝᱞᱟᱠᱡᱢᱣᱤᱥᱦᱧᱨᱩᱪᱫᱬᱭᱮᱯᱰᱱᱲᱳᱴᱵᱶᱷ"}, "cham": {"w": 2, "s": 5.5, "c": "ꨀꨁꨂꨃꨄꨅꨆꨇꨈꨉꨊꨋꨌꨍꨎꨏꨐꨑꨒꨓꨔꨕꨖꨗꨘꨙꨚꨛꨜꨝꨞꨟꨠꨡꨢꨣꨤꨥꨦꨧꨨ"}, "bali": {"w": 2, "s": 5.8, "c": "ᬅᬆᬇᬈᬉᬊᬋᬌᬍᬎᬏᬐᬑᬒᬓᬔᬕᬖᬗᬘᬙᬚᬛᬜᬝᬞᬟᬠᬡᬢᬣᬤᬥᬦᬧᬨᬩᬪᬫᬬᬭᬮᬯᬰᬱᬲᬳ"}, "java": {"w": 2, "s": 5.6, "c": "ꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗꦘꦙꦚꦛꦜꦝꦞꦟꦠꦡꦢꦣꦤꦥꦦꦧꦨꦩꦪꦫꦬꦭꦮꦯꦰꦱꦲ"}, "bugi": {"w": 2, "s": 6.2, "c": "ᨀᨁᨂᨃᨄᨅᨆᨇᨈᨉᨊᨋᨌᨍᨎᨏᨐᨑᨒᨓᨔᨕᨖ"}, "batk": {"w": 2, "s": 6.1, "c": "ᯀᯁᯂᯃᯄᯅᯆᯈᯉᯊᯋᯌᯍᯎᯏᯐᯑᯒᯓᯔᯕᯖᯗᯘᯙᯚᯛᯜᯝᯞᯟᯠᯡᯢᯣᯤᯥ"}, "lisu": {"w": 2, "s": 9.7, "c": "ꓐꓑꓒꓓꓔꓕꓖꓗꓘꓙꓚꓛꓜꓝꓞꓟꓠꓡꓢꓣꓤꓥꓦꓧꓨꓩꓪꓫꓬꓭꓮꓯꓰꓱꓲꓳꓴꓵꓶꓷ"}, "bass": {"w": 2, "s": 8.5, "c": "𖫐𖫑𖫒𖫓𖫔𖫕𖫖𖫗𖫘𖫙𖫚𖫛𖫜𖫝𖫞𖫟𖫠𖫡𖫢𖫣𖫤𖫥𖫦𖫧𖫨𖫩𖫪𖫫𖫬𖫭"}, "mend": {"w": 2, "s": 8.5, "c": "𞠀𞠁𞠂𞠃𞠄𞠅𞠆𞠇𞠈𞠉𞠊𞠋𞠌𞠍𞠎𞠏𞠐𞠒𞠓𞠔𞠕𞠖𞠗𞠘𞠙𞠚𞠛𞠜𞠝𞠞𞠟𞠠𞠡𞠣𞠤𞠥𞠦𞠧𞠨𞠩𞠪𞠫𞠬𞠭𞠮𞠯𞠰𞠱𞠲𞠳𞠴𞠵𞠶𞠷𞠸𞠹𞠺𞠻𞠼𞠽𞠾𞠿𞡀𞡁𞡂𞡃𞡄𞡅𞡆𞡇𞡈𞡉𞡊𞡋𞡌𞡍𞡎𞡏𞡐𞡑𞡒𞡓𞡔𞡕𞡖𞡗𞡘𞡙𞡚𞡛𞡜𞡝𞡞𞡟𞡠𞡡𞡢𞡣𞡤𞡥𞡦𞡧𞡨𞡩𞡪𞡫𞡬𞡭𞡮𞡯𞡰"}, "wcho": {"w": 2, "s": 9.4, "c": "𞋀𞋁𞋂𞋃𞋄𞋅𞋆𞋇𞋈𞋉𞋊𞋋𞋌𞋍𞋎𞋏𞋐𞋑𞋒𞋓𞋔𞋕𞋖𞋗𞋘𞋙𞋚𞋛𞋜𞋝𞋞𞋟𞋠𞋡𞋢𞋣𞋤𞋥𞋦𞋧𞋨𞋩𞋪𞋫"}, "rohg": {"w": 2, "s": 11, "c": "𐴀𐴁𐴂𐴃𐴄𐴅𐴆𐴇𐴈𐴉𐴊𐴋𐴌𐴍𐴎𐴏𐴐𐴒𐴓𐴔𐴖𐴗𐴘𐴙𐴚𐴛𐴜𐴝𐴞𐴟𐴠𐴡𐴢𐴣"}, "tale": {"w": 2, "s": 10.3, "c": "ᥐᥑᥒᥓᥔᥕᥖᥗᥘᥙᥚᥛᥜᥝᥞᥟᥠᥡᥢᥣᥤᥥᥦᥧᥨᥩᥪᥫᥬᥭ"}, "mth": {"w": 3, "s": 10.0, "c": "∑∏∫√∞≠≤≥∂∆∇⊂⊃∈∀∃⊕⊗"}, "pla": {"w": 2, "s": 10.0, "c": "☉☽☿♀♁♂♃♄♅♆♇☊☋"}, "alc": {"w": 2, "s": 6.6, "c": "🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜔🜛🜚"}};window.__DRIFT_MIRROR=["lat", "dig", "grk", "cyr", "mrk"];window.__DRIFT_SYM="AHIMOTUVWXY08.:\u00d7\u00f7\u00b1\u00b0\u2021\u2020\u0391\u0394\u0397\u0398\u0399\u039b\u039c\u039e\u039f\u03a0\u03a4\u03a5\u03a6\u03a7\u03a8\u03a9\u0410\u0414\u0416\u041b\u041c\u041d\u041e\u041f\u0422\u0424\u0425\u0428";</script><script>
+/* ===========================================================================
+   THE DRIFT — a wait indicator for the junk drawer's darkroom.
+
+   Rain falls down the paper's own ruling; each character lands on the bottom
+   rule, is thrown, and comes to rest. The drift builds. For a WAIT indicator
+   that is the whole point: the depth of the heap is how long you have been
+   waiting, which is the one honest thing a loading screen can tell you.
+
+   Sized for the real swatch — 230x185 at 9px to the square — not for the
+   full-page piece. Everything that governs it is on a slider here.
+   ======================================================================== */
+(function () {
+  var POOL = window.__DRIFT_POOL, MIRROR_OK = window.__DRIFT_MIRROR,
+      SYM = window.__DRIFT_SYM;
+  var BAG = [], k, i;
+  for (k in POOL) {
+    /* code points, not UTF-16 units: half these scripts live above U+FFFF */
+    POOL[k].a = Array.from(POOL[k].c);
+    for (i = 0; i < POOL[k].w; i++) BAG.push(k);
+  }
+  var MOK = {};
+  for (i = 0; i < MIRROR_OK.length; i++) MOK[MIRROR_OK[i]] = 1;
+  function rnd(n) { return (Math.random() * n) | 0; }
+
+  function strike(el, cell) {
+    var key = BAG[rnd(BAG.length)], set = POOL[key].a;
+    var ch = set[rnd(set.length)];
+    var rev = MOK[key] && SYM.indexOf(ch) < 0 && Math.random() < 0.18;
+    el.className = 'dg k-' + key + (rev ? ' rev' : '');
+    el.style.fontSize = (POOL[key].s * (cell / 9)).toFixed(1) + 'px';
+    el.textContent = ch;
+  }
+
+  function surfaceAt(st, x) {
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + st.CELL) / st.bw));
+    var y = st.H;
+    for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
+    return y;
+  }
+  function deposit(st, x, restY) {
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + st.CELL) / st.bw));
+    var t = restY + st.CELL * st.overlap;
+    for (var b = b0; b <= b1; b++) if (t < st.top[b]) st.top[b] = t;
+  }
+  /* integrate the throw: gravity down, reflected off the side walls, stopped
+     by whatever is already lying there */
+  function fly(st, x0, y0, vx, vy, dt) {
+    var pts = [{ x: x0, y: y0 }], x = x0, y = y0;
+    for (var n = 0; n < 260; n++) {
+      vy += st.g * dt; x += vx * dt; y += vy * dt;
+      if (x <= 0) { x = -x; vx = -vx * st.bounce; }
+      else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
+      var floorY = surfaceAt(st, x) - st.CELL;
+      if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
+      pts.push({ x: x, y: y });
+    }
+    return pts;
+  }
+
+  function laneFree(st, i) { return !st.busy[i] && !st.lane[i]; }
+  function claim(st, owner, avoid) {
+    var free = [];
+    for (var i = 0; i < st.cols; i++) if (laneFree(st, i)) free.push(i);
+    if (!free.length) {
+      /* nothing spare, so this run keeps the lane it is in — and must RE-RESERVE
+         it. relocate() has already cleared the reservation by this point, and
+         returning without restoring it leaves the run falling in a lane it no
+         longer holds, which is exactly how two runs end up sharing one. */
+      st.busy[avoid] = owner;
+      return avoid;
+    }
+    var p = free[rnd(free.length)];
+    st.busy[p] = owner;
+    return p;
+  }
+  function relocate(col) {
+    var st = col.st;
+    if (st.busy[col.c] === col) st.busy[col.c] = null;
+    col.c = claim(st, col, col.c);
+    col.x = col.c * st.CELL;
+  }
+
+  function runGlyph(g) {
+    var col = g.col, st = col.st;
+    /* A queued phrase is dealt HERE, as the character is launched — never
+       written into one already falling. Consecutive launches are one square
+       apart, so the word forms itself as the column enters and descends whole.
+       Overwriting mid-flight is what made a stream change its mind halfway
+       down. */
+    if (col.pending && col.pending.length) {
+      var pc = col.pending.shift();
+      g.className = 'dg cr-' + pc.sc;
+      g.textContent = pc.ch === ' ' ? '' : pc.ch;
+    }
+    /* the slot first: where it enters decides everything downstream */
+    var now = performance.now();
+    if (col.next < now) { col.starved = (col.starved || 0) + 1; col.next = now; }
+    var wait = col.next - now;
+    col.next += col.beat;
+    col.launched++;
+    var x0 = col.x;                        /* before any relocation */
+    if (col.launched % col.block === 0) { col.next += col.gap; relocate(col); }
+    g.style.left = x0 + 'px';
+    g.lane = Math.round(x0 / st.CELL);
+    st.lane[g.lane] = (st.lane[g.lane] || 0) + 1;
+
+    var impactY = surfaceAt(st, x0) - st.CELL;
+    var fallMs = (impactY - col.y0) / col.speed * 1000;
+    var vx = (Math.random() < 0.5 ? -1 : 1) * (st.throwLo + Math.random() * st.throwHi);
+    var vy = -(st.liftLo + Math.random() * st.liftHi);
+    var dt = 1 / 60;
+    var pts = fly(st, x0, impactY, vx, vy, dt);
+    var flightMs = (pts.length - 1) * dt * 1000;
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 380);
+    var total = fallMs + flightMs;
+
+    var frames = [{ transform: 'translate(0px,' + col.y0 + 'px) rotate(0deg)',
+                    offset: 0, easing: 'linear' },
+                  { transform: 'translate(0px,' + impactY + 'px) rotate(0deg)',
+                    offset: fallMs / total, easing: 'linear' }];
+    for (var j = 1; j < pts.length; j++) {
+      var f = j / (pts.length - 1);
+      frames.push({ transform: 'translate(' + (pts[j].x - x0).toFixed(1) + 'px,' +
+                    pts[j].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+                    offset: Math.min(1, (fallMs + f * flightMs) / total), easing: 'linear' });
+    }
+    g.rest = pts[pts.length - 1];
+    g.spin = spin;
+    if (g.anim) g.anim.cancel();
+    /* fill BOTH: backwards alone releases the glyph the instant it finishes
+       and it flashes at the top rule until the reaper collects it */
+    g.anim = g.animate(frames, { duration: total, delay: wait, fill: 'both' });
+  }
+
+  /* THE CHARACTER THAT FELL IS THE CHARACTER THAT RESTS — the same element.
+     Copying it into the drift and then recycling the original meant both
+     existed at the same spot until the reaper came round, so every single
+     landing flickered: two glyphs stacked for a few frames, then one of them
+     jumping back to the top of the sheet. Retiring the element itself and
+     giving the column a fresh one instead removes the overlap completely, and
+     is what the piece claims to be doing anyway. */
+  function landed(g) {
+    var col = g.col, st = col.st, r = g.rest;
+    if (g.lane != null && st.lane[g.lane]) st.lane[g.lane]--;
+
+    if (st.n < st.cap && r.y > st.floorLimit) {
+      if (g.anim) g.anim.cancel();
+      g.style.left = r.x.toFixed(1) + 'px';
+      g.style.top = r.y.toFixed(1) + 'px';
+      g.style.transform = 'rotate(' + ((g.spin % 360) + (rnd(21) - 10)).toFixed(0) + 'deg)';
+      st.layer.appendChild(g);          /* it stops being rain and becomes drift */
+      deposit(st, r.x, r.y);
+      st.n++;
+      /* the column is one short, so give it a new one on the same clock */
+      var fresh = document.createElement('i');
+      fresh.col = col;
+      strike(fresh, st.CELL);
+      col.el.appendChild(fresh);
+      runGlyph(fresh);
+      return;
+    }
+    strike(g, st.CELL);
+    runGlyph(g);
+  }
+
+  window.Drift = { mount: function (host, o) {
+    if (host.reaper) { clearInterval(host.reaper); host.reaper = null; }
+    host.innerHTML = '';
+    var W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return;
+    var CELL = o.cell;
+    var st = {
+      W: W, H: H, CELL: CELL, bw: CELL / 3, cols: Math.floor(W / CELL),
+      top: [], busy: {}, lane: {}, n: 0,
+      g: o.gravity, bounce: o.bounce, overlap: o.overlap,
+      throwLo: o.throwLo, throwHi: o.throwHi - o.throwLo,
+      liftLo: o.liftLo, liftHi: o.liftHi - o.liftLo,
+      floorLimit: H - o.maxDepth * CELL,
+      cap: o.cap
+    };
+    for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
+    var layer = document.createElement('span');
+    layer.className = 'dpile'; host.appendChild(layer); st.layer = layer;
+
+    var bag = [];
+    for (var c = 0; c < st.cols; c++) bag.push(c);
+    for (var i2 = bag.length - 1; i2 > 0; i2--) {
+      var j2 = rnd(i2 + 1), t2 = bag[i2]; bag[i2] = bag[j2]; bag[j2] = t2;
+    }
+    var picks = bag.slice(0, Math.max(1, Math.round(st.cols * o.density)));
+    var frag = document.createDocumentFragment();
+    for (var p = 0; p < picks.length; p++) {
+      var cIdx = picks[p];
+      st.busy[cIdx] = null;
+      var speed = o.speedLo + Math.random() * (o.speedHi - o.speedLo);
+      var lead = CELL * (2 + rnd(5));
+      var colEl = document.createElement('span');
+      colEl.className = 'dcol';
+      var col = { el: colEl, c: cIdx, pending: [], x: cIdx * CELL, st: st, speed: speed,
+                  y0: -(CELL + lead), beat: CELL / speed * 1000,
+                  block: o.blockLo + rnd(o.blockHi - o.blockLo + 1),
+                  gap: (o.gapLo + rnd(o.gapHi - o.gapLo + 1)) * CELL / speed * 1000,
+                  launched: 0, next: performance.now() + Math.random() * 400 };
+      st.busy[cIdx] = col;
+      colEl.rec = col;                    /* so a phrase can be queued onto it */
+      /* enough glyphs to cover a whole round trip, or the stream shows gaps */
+      var fallSec = (H - CELL - col.y0) / speed;
+      var n = Math.min(60, Math.ceil((fallSec + 1.2) / (col.beat / 1000)) + 3);
+      for (var q = 0; q < n; q++) {
+        var g = document.createElement('i');
+        g.col = col; strike(g, CELL);
+        colEl.appendChild(g); runGlyph(g);
+      }
+      frag.appendChild(colEl);
+    }
+    host.appendChild(frag);
+    host.st = st;
+    host.reaper = setInterval(function () {
+      var gl = host.querySelectorAll('.dcol > i');
+      for (var i = 0; i < gl.length; i++) {
+        if (gl[i].anim && gl[i].anim.playState === 'finished') landed(gl[i]);
+      }
+    }, 80);
+  }};
+})();
+</script><script>
+  (function () {
+    var desk = document.querySelector('.desk');
+    var wells = [document.getElementById('w-big'), document.getElementById('w-small')]
+      .concat(Array.prototype.slice.call(document.querySelectorAll('[data-card]')));
+    var paused = false;
+
+    function opts() {
+      var o = {};
+      Array.prototype.forEach.call(desk.querySelectorAll('input[type=range]'), function (s) {
+        o[s.getAttribute('data-k')] = +s.value;
+      });
+      /* the percentages are stored as whole numbers on the sliders */
+      o.density = o.density / 100;
+      o.bounce = o.bounce / 100;
+      o.overlap = o.overlap / 100;
+      return o;
+    }
+    function paint() {
+      var o = opts();
+      wells.forEach(function (w) { window.Drift.mount(w, o); });
+      if (paused) setTimeout(setPaused, 60);
+      dump(o);
+    }
+    function setPaused() {
+      wells.forEach(function (w) {
+        if (w.reaper && paused) { clearInterval(w.reaper); w.reaper = null; }
+        Array.prototype.forEach.call(w.querySelectorAll('.dcol > i'), function (g) {
+          if (g.anim) { try { paused ? g.anim.pause() : g.anim.play(); } catch (e) {} }
+        });
+      });
+      if (!paused) wells.forEach(function (w) {
+        if (!w.reaper) w.reaper = setInterval(function () {
+          var gl = w.querySelectorAll('.dcol > i');
+          for (var i = 0; i < gl.length; i++) {
+            if (gl[i].anim && gl[i].anim.playState === 'finished') {
+              /* the runtime owns landing; nudge it by letting the poll run */
+            }
+          }
+        }, 80);
+      });
+    }
+    function dump(o) {
+      document.getElementById('dump').textContent =
+        'cell ' + o.cell + '  ·  density ' + Math.round(o.density * 100) + '%  ·  fall ' +
+        o.speedLo + '\u2013' + o.speedHi + ' px/s  ·  throw ' + o.throwLo + '\u2013' +
+        o.throwHi + '  ·  lift ' + o.liftLo + '\u2013' + o.liftHi + '  ·  g ' + o.gravity +
+        '\n' + JSON.stringify(o);
+    }
+
+    var t = null;
+    desk.addEventListener('input', function (e) {
+      var s = e.target;
+      if (s.tagName !== 'INPUT') return;
+      var out = desk.querySelector('output[for=' + s.id + ']');
+      if (out) out.textContent = s.value;
+      clearTimeout(t); t = setTimeout(paint, 200);
+    });
+    document.getElementById('restart').addEventListener('click', paint);
+    document.getElementById('copy').addEventListener('click', function () {
+      var ta = document.createElement('textarea');
+      ta.value = JSON.stringify(opts()); document.body.appendChild(ta);
+      ta.select(); try { document.execCommand('copy'); } catch (e) {}
+      ta.remove(); this.textContent = 'Copied'; var b = this;
+      setTimeout(function () { b.textContent = 'Copy settings'; }, 1200);
+    });
+    document.getElementById('pause').addEventListener('click', function () {
+      paused = !paused; this.textContent = paused ? 'Play' : 'Pause'; setPaused();
+    });
+    paint();
+  })();
+</script></body></html>

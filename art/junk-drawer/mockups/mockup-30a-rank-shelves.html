@@ -64,16 +64,7 @@
     font-family: var(--form); font-weight: 700; font-size: 0.98rem;
     letter-spacing: 0.2em; text-indent: 0.2em; text-transform: uppercase;
   }
-  .subhead {
-    position: relative; z-index: 7; text-align: center; margin-top: 5px;
-    font-size: 0.56rem; letter-spacing: 0.2em; text-indent: 0.2em; color: var(--ink-3);
-  }
-  .rule-h { height: 1px; background: var(--rule); margin: 10px 3px 0; position: relative; z-index: 7; }
-  .instr {
-    position: relative; z-index: 7; margin: 9px 3px 0;
-    font-size: 0.63rem; line-height: 1.62; color: var(--ink-2); text-align: center;
-  }
-  .instr .alt { display: block; margin-top: 3px; color: var(--ink-3); }
+  .rule-h { height: 1px; background: var(--rule); margin: 11px 3px 0; position: relative; z-index: 7; }
 
   /* ─────────────────────────  ZONES  ───────────────────────── */
   .zone { position: relative; z-index: 7; }
@@ -204,15 +195,20 @@
   .ghost .sw { box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6), 0 3px 7px rgba(6, 3, 0, 0.4); }
 
   /* ─────────────────────────  NOTICE + ACTION  ───────────────────────── */
+  /* the notice speaks only when the form has to refuse something, or when it is filed */
   .notice {
-    position: relative; z-index: 7; min-height: 30px; margin-top: 12px;
-    display: flex; align-items: center; justify-content: center; text-align: center;
-    font-size: 0.62rem; line-height: 1.45; color: var(--ink-2); padding: 0 4px;
+    position: relative; z-index: 7; margin: 0; padding: 0;
+    text-align: center; font-size: 0.62rem; line-height: 1.45; color: var(--ink-2);
   }
+  .notice.has { margin: 11px 4px 0; }
   .notice.bad { color: var(--red); }
   .notice.done { color: var(--green); }
+  .sr {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+  }
   .go {
-    position: relative; z-index: 7; display: block; width: 100%; min-height: 44px; margin-top: 2px;
+    position: relative; z-index: 7; display: block; width: 100%; min-height: 44px; margin-top: 13px;
     font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
     color: #2a1c07; border: 1px solid rgba(58, 40, 14, 0.6); cursor: pointer;
     background: var(--brass);
@@ -269,14 +265,8 @@
 
 <div class="card" id="card">
   <span class="x" role="button" tabindex="0" aria-label="close">✕</span>
-  <div class="head">The Order of Finish</div>
-  <div class="subhead">FORM JD-1 · PART IV</div>
+  <div class="head">Rank the Drawings</div>
   <div class="rule-h"></div>
-  <p class="instr">
-    Drag each print onto a shelf. Only one print may sit on the first shelf; below it,
-    prints may share a shelf and share a rank.
-    <span class="alt">No dragging? Tap a print to take it in hand, then tap a shelf.</span>
-  </p>
 
   <div class="zone tray" id="tray" data-zone="tray">
     <div class="zone-cap"><span>Arrived — awaiting placement</span><span class="note" id="trayCount"></span></div>
@@ -285,7 +275,8 @@
 
   <div class="rack" id="rack"></div>
 
-  <p class="notice" id="notice" role="status" aria-live="polite"></p>
+  <p class="notice" id="notice"></p>
+  <p class="sr" id="live" role="status" aria-live="polite"></p>
   <button class="go" id="go" type="button" disabled>File the grades</button>
   <p class="foot">An empty shelf is skipped: the count closes up. Ties are filed as written.</p>
 </div>
@@ -308,6 +299,7 @@
   var trayCount = document.getElementById("trayCount");
   var rack = document.getElementById("rack");
   var notice = document.getElementById("notice");
+  var live = document.getElementById("live");
   var go = document.getElementById("go");
 
   var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -377,7 +369,8 @@
     });
 
     render();
-    say("");
+    flag("");
+    announce("");
   }
 
   function makePrint(id) {
@@ -484,11 +477,17 @@
     return found;
   }
 
-  function say(msg, kind) {
-    notice.textContent = msg || (picked
+  // the running state is spoken to assistive tech only — the rack itself is the visible readout
+  function announce(msg) {
+    live.textContent = msg || (picked
       ? "Model " + picked + " is in hand — now choose a shelf."
-      : "Nothing in hand — take a print by dragging it, or tap it.");
-    notice.className = "notice" + (kind ? " " + kind : "");
+      : "Nothing in hand.");
+  }
+  // the printed notice appears only when the form refuses, or when the call is filed
+  function flag(msg, kind) {
+    notice.textContent = msg || "";
+    notice.className = "notice" + (msg ? " has" : "") + (kind ? " " + kind : "");
+    if (msg) announce(msg);
   }
 
   /* ── moving a print ──────────────────────────────────────────── */
@@ -500,7 +499,7 @@
 
   function refuse(zid) {
     var holder = zones.s1[0];
-    say("Only one drawing can be first — Model " + holder + " is on that shelf. Move it off, or choose another shelf.", "bad");
+    flag("Only one drawing can be first — Model " + holder + " is on that shelf. Move it off, or choose another shelf.", "bad");
     var shelf = shelves[zid];
     if (!shelf) return;
     shelf.classList.add("refused");
@@ -516,7 +515,7 @@
 
   function placeHere(zid) {
     if (!picked) {
-      say("Take a print in hand first — tap one of the drawings.", "bad");
+      flag("Take a print in hand first — tap one of the drawings.", "bad");
       return;
     }
     var id = picked;
@@ -528,15 +527,13 @@
   }
 
   function announcePlacement(id, zid) {
-    if (zid === "tray") { say("Model " + id + " is back in the tray."); return; }
-    if (valid()) {
-      say("Ready to file. " + summary(), "done");
-      return;
-    }
+    flag("");
+    if (zid === "tray") { announce("Model " + id + " is back in the tray."); return; }
+    if (valid()) { announce("Ready to file. " + summary()); return; }
     var r = denseRanks()[zid];
     var mates = zones[zid].filter(function (x) { return x !== id; });
     var tie = mates.length ? " — tied with " + mates.map(function (m) { return "Model " + m; }).join(" and ") : "";
-    say("Model " + id + " placed at rank " + r + tie + ". " + remaining());
+    announce("Model " + id + " placed at rank " + r + tie + ". " + remaining());
   }
 
   function remaining() {
@@ -554,7 +551,8 @@
   function togglePick(id) {
     picked = (picked === id) ? null : id;
     render();
-    say(picked ? "" : "Put down. Nothing in hand.");
+    flag("");
+    announce(picked ? "" : "Put down. Nothing in hand.");
   }
 
   /* ── drag ────────────────────────────────────────────────────── */
@@ -686,7 +684,7 @@
     var z = hitZone(e.clientX, e.clientY);
     var id2 = drag.id;
 
-    if (!z) { killGhost(); cleanupDrag(); render(); say("Put back — that is not a shelf."); return; }
+    if (!z) { killGhost(); cleanupDrag(); render(); announce("Put back — that is not a shelf."); return; }
 
     if (!canDrop(id2, z.zid)) {
       var zid = z.zid;
@@ -723,7 +721,7 @@
 
   go.addEventListener("click", function () {
     if (go.disabled) return;
-    say("Filed: " + summary() + ".", "done");
+    flag("Filed: " + summary() + ".", "done");
   });
 
   document.querySelectorAll(".bench button").forEach(function (b) {

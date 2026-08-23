@@ -13,7 +13,7 @@ function kt_v($file)
 // Build/version stamp, the house way: a hand-set VERSION, a build hash derived
 // from the actual served bytes, and the newest asset's mtime as the deploy time.
 // It is the only text on the page — the piece explains itself or it does not.
-$cr_assets   = ['kimis-take.js', 'kimis-take.css', 'index.php'];
+$cr_assets   = ['kimis-take.js', 'kimis-take.css', 'index.php', 'mini.php'];
 $cr_version  = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
 $cr_number   = $cr_version === 'dev' ? 'dev' : explode(' ', $cr_version)[0];
 $cr_build    = substr(md5(implode('', array_map('kt_v', $cr_assets))), 0, 6);
@@ -53,6 +53,13 @@ include '../../includes/header.php';
     <button id="cr-pause" type="button">pause</button>
     <button id="cr-reset" type="button">reset</button>
   </p>
+
+  <!-- the same engine at junk-drawer loading-card size (the darkroom's
+       swatches, ~41% x 33% of a card on the 9px grid): a second instance
+       would clobber the first — the engine holds one sheet of state — so
+       the mini is mini.php in a frame, zoom 1, six streams -->
+  <p class="cr-dial cr-mini-note">at loading-card size</p>
+  <iframe class="cr-mini-frame" src="mini.php?v=<?php echo kt_v('mini.php'); ?>" title="Kimi's Take at junk-drawer loading-card size" loading="lazy"></iframe>
 
   <p class="cr-build">v<?php echo htmlspecialchars($cr_number); ?><span class="cr-build-sep">&middot;</span><?php echo $cr_build; ?><?php if ($cr_deployed): ?><span class="cr-build-sep">&middot;</span><?php echo $cr_deployed; ?><?php endif; ?></p>
 

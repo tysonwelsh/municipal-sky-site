@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>junk drawer — rank the drawings: the podium (round 32)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --paper: #ece0bf;
+    --paper-hi: #f4ead0;
+    --paper-lo: #e0d1a4;
+    --ink: #33240f;
+    --ink-2: rgba(51, 36, 15, 0.68);
+    --ink-3: rgba(51, 36, 15, 0.44);
+    --rule: rgba(74, 53, 18, 0.40);
+    --pencil: #4b4030;
+    --red: #b3402f;
+    --green: #4a6b18;
+    --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+    --mono: "Courier Prime", "Courier New", Courier, monospace;
+    --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --brass: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+    --pw: 72px;          /* one print */
+    --step: 15px;        /* how much one rank rises over the next */
+    --base: 44px;        /* the shortest block (4th) */
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; background: #20242b;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 44px 20px 90px;
+    font-family: var(--mono); color: #d8d2c0;
+  }
+  header { text-align: center; margin-bottom: 26px; max-width: 620px; }
+  header h1 { font-size: 15px; font-weight: normal; letter-spacing: 0.13em; margin: 0 0 10px; color: #b9b29e; }
+  header p { font-size: 11px; margin: 0 auto; opacity: 0.6; line-height: 1.75; }
+
+  .bench { display: flex; align-items: center; gap: 8px; margin-bottom: 30px; font-size: 10px; letter-spacing: 0.1em; color: #8d8778; }
+  .bench button {
+    font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em;
+    min-height: 30px; padding: 0 12px; cursor: pointer;
+    background: #2b3038; color: #b9b29e; border: 1px solid #3d434d;
+  }
+  .bench button[aria-pressed="true"] { background: #3f4650; color: #efe7d2; border-color: #5b6470; }
+
+  /* ─────────────────────────  card  ───────────────────────── */
+  .card {
+    position: relative; width: 100%; max-width: 462px;
+    color: var(--ink);
+    background: var(--paper) var(--grain);
+    border: 1px solid rgba(48, 38, 20, 0.55);
+    box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66), 3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+    padding: 14px 15px 15px;
+  }
+  .card::before { content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none; border: 1px solid var(--rule); }
+  .card .x {
+    position: absolute; top: 9px; right: 9px; z-index: 20;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--rule); background: rgba(255, 250, 232, 0.5); font-size: 13px;
+    color: var(--ink); cursor: pointer;
+  }
+  .head {
+    position: relative; z-index: 7; text-align: center; padding: 6px 40px 0;
+    font-family: var(--form); font-weight: 700; font-size: 0.98rem;
+    letter-spacing: 0.2em; text-indent: 0.2em; text-transform: uppercase;
+  }
+  .rule-h { height: 1px; background: var(--rule); margin: 11px 3px 14px; position: relative; z-index: 7; }
+
+  /* ─────────────────────────  the podium  ───────────────────────── */
+  .podium {
+    position: relative; z-index: 7;
+    display: flex; align-items: flex-end; justify-content: center; gap: 6px;
+  }
+  .tier {
+    flex: 1 1 0; min-width: 0;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: none;
+    -webkit-user-select: none; user-select: none;
+  }
+  /* the standing place: exactly one print tall, sitting on the block's top */
+  .stand {
+    height: calc(var(--pw) + 19px);
+    display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 3px;
+  }
+  .stand .empty {
+    width: var(--pw); height: var(--pw);
+    border: 1px dashed rgba(74, 53, 18, 0.34);
+    background: rgba(255, 250, 232, 0.22);
+  }
+  .stand .empty[hidden] { display: none; }
+  .block {
+    position: relative;
+    border: 1px solid var(--rule); border-bottom: 0;
+    background: var(--paper-hi);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding-top: 7px;
+    font-family: var(--form); font-weight: 700; font-size: 0.82rem;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink);
+  }
+  .tier[data-rank="1"] .block { height: calc(var(--base) + var(--step) * 3); }
+  .tier[data-rank="2"] .block { height: calc(var(--base) + var(--step) * 2); }
+  .tier[data-rank="3"] .block { height: calc(var(--base) + var(--step)); }
+  .tier[data-rank="4"] .block { height: var(--base); }
+  /* the floor the whole thing stands on */
+  .floor { position: relative; z-index: 7; height: 3px; background: var(--rule); margin: 0 2px; }
+
+  .tier.armed .empty, .tier.armed .block { border-color: var(--pencil); }
+  .tier.armed .empty { border-style: solid; background: rgba(255, 250, 232, 0.6); }
+  body.dragging .stand .empty { border-color: rgba(75, 64, 48, 0.7); }
+  .tier.picked .block { outline: 2px solid var(--pencil); outline-offset: -2px; }
+  .tier:focus-visible { outline: 2px solid var(--pencil); outline-offset: 2px; }
+
+  /* ─────────────────────────  the tray  ───────────────────────── */
+  .tray {
+    position: relative; z-index: 7; margin-top: 16px;
+    display: flex; align-items: flex-start; justify-content: center; gap: 6px;
+    min-height: calc(var(--pw) + 22px);
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* once every drawing is up on the podium the row has nothing left to hold,
+     so it gives most of its height back — but stays a real drop target */
+  .tray.bare { min-height: 46px; }
+  .tray .slotless { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+
+  /* ─────────────────────────  a print  ───────────────────────── */
+  .print {
+    position: relative; width: var(--pw);
+    cursor: grab; touch-action: none; -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none; -webkit-user-drag: none;
+  }
+  .print .sw {
+    position: relative; width: var(--pw); height: var(--pw);
+    display: flex; align-items: center; justify-content: center;
+    background:
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+      repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+      #f8f3e2;
+    border: 1px solid rgba(55, 65, 79, 0.30);
+    box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  }
+  .print .sw svg { display: block; width: 64%; height: 64%; pointer-events: none; }
+  .print .lb {
+    display: block; text-align: center; margin-top: 3px;
+    font-family: var(--hand); font-size: 0.72rem; line-height: 1.1; color: var(--pencil);
+  }
+  .kc {
+    position: absolute; width: 15px; height: 15px;
+    background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+    filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+  }
+  .kc.tl { top: -3px; left: -3px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .kc.tr { top: -3px; right: -3px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .kc.bl { bottom: -3px; left: -3px;  clip-path: polygon(0 0, 100% 100%, 0 100%); background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+  .kc.br { bottom: -3px; right: -3px; clip-path: polygon(100% 0, 100% 100%, 0 100%); background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+  .print:focus-visible { outline: 2px solid var(--pencil); outline-offset: 3px; }
+  .print.picked .sw { outline: 2px solid var(--pencil); outline-offset: 3px; }
+  .print.lifted .sw { opacity: 0.2; box-shadow: none; }
+  .print.lifted .lb { opacity: 0.3; }
+
+  .ghost { position: fixed; z-index: 90; pointer-events: none; left: 0; top: 0; }
+  .ghost .sw { box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6), 0 3px 7px rgba(6, 3, 0, 0.4); }
+  body.dragging, body.dragging * { -webkit-user-select: none !important; user-select: none !important; }
+
+  /* ─────────────────────────  foot  ───────────────────────── */
+  .notice {
+    position: relative; z-index: 7; margin: 0; padding: 0;
+    text-align: center; font-size: 0.62rem; line-height: 1.45; color: var(--ink-2);
+  }
+  .notice.has { margin: 10px 4px 0; }
+  .notice.done { color: var(--green); }
+  .sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .go {
+    position: relative; z-index: 7; display: block; width: 100%; min-height: 44px; margin-top: 14px;
+    font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase;
+    color: #2a1c07; border: 1px solid rgba(58, 40, 14, 0.6); cursor: pointer;
+    background: var(--brass);
+    box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55), 2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+  }
+  .go[disabled] { opacity: 0.42; cursor: default; box-shadow: none; }
+  .go:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+
+  @media (max-width: 430px) {
+    :root { --pw: 62px; --step: 13px; --base: 40px; }
+    body { padding: 28px 12px 70px; }
+    .head { font-size: 0.86rem; letter-spacing: 0.16em; text-indent: 0.16em; padding: 6px 34px 0; }
+    .podium, .tray { gap: 4px; }
+    .block { font-size: 0.74rem; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .block, .empty, .go, .print .sw { transition: background-color 130ms ease, border-color 130ms ease, opacity 130ms ease; }
+    .go:active:not([disabled]) { transform: translateY(1px); box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>junk drawer — rank the drawings: the podium (round 32)</h1>
+  <p><strong>Designer's note.</strong> Four steps, tallest at the left, each one rank lower than the last —
+  the height alone carries the order, so the only words on the card are the ordinals and the button. The
+  drawings wait in a row underneath and are dragged (or tapped) up onto a step; dropping one on a taken step
+  swaps the two, so a visitor can reorder without ever having to clear a place first. Three survivors builds
+  three steps and two builds two. One print per step here — ties would need a second print standing beside
+  the first, which this shape can't hold at phone width, so say if ties still matter and I'll fit them.</p>
+</header>
+
+<div class="bench" role="group" aria-label="survivor count">
+  <span>SURVIVORS</span>
+  <button type="button" data-n="4" aria-pressed="true">4</button>
+  <button type="button" data-n="3" aria-pressed="false">3</button>
+  <button type="button" data-n="2" aria-pressed="false">2</button>
+</div>
+
+<div class="card" id="card">
+  <span class="x" role="button" tabindex="0" aria-label="close">✕</span>
+  <div class="head">Rank the Drawings</div>
+  <div class="rule-h"></div>
+
+  <div class="podium" id="podium"></div>
+  <div class="floor"></div>
+  <div class="tray" id="tray"></div>
+
+  <p class="notice" id="notice"></p>
+  <p class="sr" id="live" role="status" aria-live="polite"></p>
+  <button class="go" id="go" type="button" disabled>File the grades</button>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ART = {
+    A: '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="42" fill="none" stroke="#b3402f" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#33240f"/></svg>',
+    B: '<svg viewBox="0 0 100 100" aria-hidden="true"><rect x="11" y="24" width="78" height="52" rx="13" fill="none" stroke="#4a628a" stroke-width="6"/><rect x="31" y="43" width="38" height="14" rx="7" fill="#4a628a" fill-opacity="0.55"/></svg>',
+    C: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 12 L88 84 L12 84 Z" fill="none" stroke="#4a6b18" stroke-width="6" stroke-linejoin="round"/><circle cx="50" cy="63" r="8" fill="#4a6b18" fill-opacity="0.6"/></svg>',
+    D: '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M20 80 Q50 10 80 80 Z" fill="#a06200"/><circle cx="50" cy="38" r="8" fill="#f4ead0"/></svg>'
+  };
+  var ORD = ["1st", "2nd", "3rd", "4th"];
+
+  var podium = document.getElementById("podium");
+  var tray = document.getElementById("tray");
+  var notice = document.getElementById("notice");
+  var live = document.getElementById("live");
+  var go = document.getElementById("go");
+
+  var N = 4;
+  var ids = [];
+  var on = {};        // rank -> model id (or null)
+  var mEls = {}, tEls = {}, bays = {}, holes = {}, cells = [];
+  var picked = null;  // model id in hand
+  var drag = null;
+  var swallowClick = false;   // one click, eaten, so a drag never also reads as a tap
+
+  function build(n) {
+    if (drag) done();         // a bench switch mid-drag must not orphan the drag
+    N = n;
+    ids = ["A", "B", "C", "D"].slice(0, n);
+    on = {}; for (var r = 1; r <= n; r++) on[r] = null;
+    mEls = {}; tEls = {}; bays = {}; holes = {}; cells = [];
+    picked = null; drag = null;
+    podium.innerHTML = ""; tray.innerHTML = "";
+
+    for (var k = 1; k <= n; k++) {
+      var t = document.createElement("div");
+      t.className = "tier";
+      t.setAttribute("data-rank", String(k));
+      t.setAttribute("role", "button");
+      t.setAttribute("tabindex", "0");
+      // the dashed standing place is built once and hidden when taken — it is
+      // never thrown away and rebuilt, so nothing in a bay is ever detached
+      t.innerHTML = '<div class="stand"><div class="empty"></div></div>' +
+                    '<div class="block">' + ORD[k - 1] + "</div>";
+      bindTier(t, k);
+      podium.appendChild(t);
+      tEls[k] = t;
+      bays[k] = t.querySelector(".stand");
+      holes[k] = t.querySelector(".empty");
+    }
+
+    ids.forEach(function (id) {
+      var cell = document.createElement("div");
+      cell.className = "slotless";
+      tray.appendChild(cell);
+      cells.push(cell);
+      mEls[id] = makePrint(id);
+    });
+
+    render();
+    flag(""); announce("");
+  }
+
+  function makePrint(id) {
+    var el = document.createElement("div");
+    el.className = "print";
+    el.setAttribute("data-id", id);
+    el.setAttribute("role", "button");
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("draggable", "false");
+    el.innerHTML =
+      '<div class="sw"><span class="kc tl"></span><span class="kc tr"></span>' +
+      '<span class="kc bl"></span><span class="kc br"></span>' + ART[id] + "</div>" +
+      '<span class="lb">Model ' + id + "</span>";
+    el.addEventListener("dragstart", function (e) { e.preventDefault(); });
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("click", function (e) { e.stopPropagation(); });
+    el.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+        e.preventDefault(); e.stopPropagation(); pick(id);
+      }
+    });
+    return el;
+  }
+
+  function bindTier(t, k) {
+    t.addEventListener("click", function () { place(k); });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") { e.preventDefault(); place(k); }
+    });
+  }
+  tray.addEventListener("click", function () { place(0); });   // 0 = back to the tray
+
+  /* ── state ───────────────────────────────────────────────────── */
+
+  function rankOf(id) {
+    for (var r = 1; r <= N; r++) if (on[r] === id) return r;
+    return 0;
+  }
+  function valid() { return ids.every(function (id) { return rankOf(id) > 0; }); }
+  function summary() {
+    return ids.map(function (id) { return id + " " + (rankOf(id) || "—"); }).join(" · ");
+  }
+
+  // land `id` on rank k (0 = tray). A taken step swaps its occupant into
+  // whatever place the incoming print just left.
+  function move(id, k) {
+    var from = rankOf(id);
+    if (from) on[from] = null;
+    if (k) {
+      var sitting = on[k];
+      on[k] = id;
+      // a taken step swaps its occupant back into the place this print left;
+      // if it came from the row, the displaced print goes to the row
+      if (sitting && sitting !== id && from) on[from] = sitting;
+    }
+    picked = null;
+    render();
+    announce("Model " + id + (k ? " on " + ORD[k - 1] : " back in the row") +
+      (valid() ? ". Ready to file." : "."));
+  }
+
+  function pick(id) {
+    picked = (picked === id) ? null : id;
+    render();
+    announce(picked ? "Model " + picked + " in hand — now choose a step." : "Put down.");
+  }
+
+  function place(k) {
+    if (!picked) return;
+    move(picked, k);
+  }
+
+  /* ── render ──────────────────────────────────────────────────── */
+
+  // Move a print into its place — and ONLY if it isn't already there. Every
+  // re-parent (and `innerHTML = ""` is a re-parent of everything inside)
+  // detaches the node; detaching the node the pointer is holding releases its
+  // pointer capture and fires pointercancel, which would kill the drag the
+  // instant it began. So: never touch a node whose place has not changed, and
+  // never touch the node currently in the air at all.
+  function seat(el, host) {
+    if (!host || el.parentNode === host) return;
+    if (drag && drag.live && drag.el === el) return;   // in flight; it is seated when it lands
+    var hadFocus = document.activeElement === el;
+    host.appendChild(el);
+    if (hadFocus) { try { el.focus({ preventScroll: true }); } catch (err) {} }
+  }
+
+  function render() {
+    for (var r = 1; r <= N; r++) {
+      holes[r].hidden = !!on[r];
+      tEls[r].classList.toggle("picked", false);
+      tEls[r].setAttribute("aria-label", ORD[r - 1] + (on[r] ? ", Model " + on[r] : ", empty"));
+    }
+    // every drawing keeps its own column in the row, so nothing shuffles
+    // sideways when its neighbour is lifted onto a step
+    ids.forEach(function (id, i) { seat(mEls[id], rankOf(id) ? bays[rankOf(id)] : cells[i]); });
+    tray.classList.toggle("bare", ids.every(function (id) { return !!rankOf(id); }));
+
+    ids.forEach(function (id) {
+      mEls[id].classList.toggle("picked", picked === id);
+      var r = rankOf(id);
+      mEls[id].setAttribute("aria-label", "Model " + id + (r ? ", " + ORD[r - 1] : ", unplaced") +
+        (picked === id ? ", in hand" : ""));
+    });
+    go.disabled = !valid();
+  }
+
+  function announce(m) { live.textContent = m || ""; }
+  function flag(m, kind) {
+    notice.textContent = m || "";
+    notice.className = "notice" + (m ? " has" : "") + (kind ? " " + kind : "");
+  }
+
+  /* ── drag ────────────────────────────────────────────────────── */
+
+  function onDown(e) {
+    if (e.button !== undefined && e.button > 0) return;
+    if (drag) return;
+    var el = e.currentTarget;
+    e.preventDefault();                 // no native drag, no text selection, no scroll
+    swallowClick = false;
+    el.focus({ preventScroll: true });
+    drag = { id: el.getAttribute("data-id"), el: el, live: false, ghost: null,
+             x0: e.clientX, y0: e.clientY, pointerId: e.pointerId, over: null };
+    try { el.setPointerCapture(e.pointerId); } catch (err) {}
+    // the rest of the drag is watched on the WINDOW, not on the print: whatever
+    // happens to the print's node — a re-render, a swap, a bench rebuild — the
+    // pointer stream keeps arriving and the drag keeps tracking.
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    window.addEventListener("blur", onCancel);
+  }
+
+  function startDrag(e) {
+    var el = drag.el, r = el.getBoundingClientRect();
+    // a drag supersedes anything in hand — classes only, no re-render
+    if (picked) { picked = null; ids.forEach(function (i) { mEls[i].classList.remove("picked"); }); }
+    var g = document.createElement("div");
+    g.className = "ghost";
+    g.style.width = r.width + "px";
+    var c = el.cloneNode(true);
+    c.removeAttribute("tabindex"); c.removeAttribute("role"); c.removeAttribute("aria-label");
+    c.setAttribute("aria-hidden", "true");
+    g.appendChild(c);
+    document.body.appendChild(g);
+    drag.live = true; drag.ghost = g; drag.gw = r.width;
+    drag.dx = e.clientX - r.left; drag.dy = e.clientY - r.top;
+    el.classList.add("lifted");
+    document.body.classList.add("dragging");
+    var s = window.getSelection && window.getSelection();
+    if (s && s.rangeCount) { try { s.removeAllRanges(); } catch (err) {} }
+  }
+
+  // Where the drop is judged from: the middle of the swatch the visitor can
+  // actually see, not the raw pointer. Highlight and landing then agree by
+  // construction, because both read this one point.
+  function aim(e) {
+    return { x: e.clientX - drag.dx + drag.gw / 2, y: e.clientY - drag.dy + drag.gw / 2 };
+  }
+
+  function grow(r, top, side, bottom) {
+    return { left: r.left - side, right: r.right + side, top: r.top - top, bottom: r.bottom + bottom };
+  }
+  function inside(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
+
+  // nearest step by horizontal distance — gaps between the blocks, and the
+  // empty air above a short block, all belong to the step they are closest to
+  function nearestTier(x) {
+    var best = 1, d = Infinity;
+    for (var r = 1; r <= N; r++) {
+      var q = tEls[r].getBoundingClientRect();
+      var dd = Math.abs(x - (q.left + q.right) / 2);
+      if (dd < d) { d = dd; best = r; }
+    }
+    return best;
+  }
+
+  // rank 1..N, 0 for the row, null for nowhere. Rects are read fresh each
+  // time so a scroll or a reflow mid-drag can never aim at a stale target.
+  function hitAt(x, y) {
+    if (inside(grow(podium.getBoundingClientRect(), 14, 8, 4), x, y)) return nearestTier(x);
+    if (inside(grow(tray.getBoundingClientRect(), 6, 8, 14), x, y)) return 0;
+    return null;
+  }
+
+  function markOver(k) {
+    if (k === drag.over) return;
+    drag.over = k;
+    for (var r = 1; r <= N; r++) tEls[r].classList.toggle("armed", k === r);
+  }
+
+  function onMove(e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    if (!drag.live) {
+      if (Math.abs(e.clientX - drag.x0) < 6 && Math.abs(e.clientY - drag.y0) < 6) return;
+      startDrag(e);
+    }
+    drag.ghost.style.left = (e.clientX - drag.dx) + "px";
+    drag.ghost.style.top = (e.clientY - drag.dy) + "px";
+    var a = aim(e);
+    markOver(hitAt(a.x, a.y));
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function done() {
+    if (!drag) return null;
+    var d = drag;
+    drag = null;
+    window.removeEventListener("pointermove", onMove, true);
+    window.removeEventListener("pointerup", onUp, true);
+    window.removeEventListener("pointercancel", onCancel, true);
+    window.removeEventListener("blur", onCancel);
+    try { d.el.releasePointerCapture(d.pointerId); } catch (err) {}
+    if (d.ghost && d.ghost.parentNode) d.ghost.parentNode.removeChild(d.ghost);
+    podium.querySelectorAll(".tier.armed").forEach(function (t) { t.classList.remove("armed"); });
+    d.el.classList.remove("lifted");
+    document.body.classList.remove("dragging");
+    if (d.live) swallowClick = true;   // the click this drag is about to produce is not a tap
+    return d;
+  }
+
+  function onUp(e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    if (!drag.live) { var id = drag.id; done(); pick(id); return; }
+    var k = hitAt(aim(e).x, aim(e).y), mid = drag.id;
+    done();
+    if (k === null) { render(); return; }   // dead space: it goes back where it was
+    move(mid, k);
+  }
+
+  function onCancel(e) {
+    if (!drag) return;
+    if (e && e.pointerId !== undefined && e.pointerId !== drag.pointerId) return;
+    done();
+    render();
+  }
+
+  // A finished drag emits one trailing click. Eat exactly that one, and only
+  // inside the card, so it can never be read as a tap-to-place — and never
+  // swallow a bench button or anything else outside.
+  var card = document.getElementById("card");
+  document.addEventListener("click", function (e) {
+    if (!swallowClick) return;
+    swallowClick = false;
+    if (card.contains(e.target)) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  /* ── chrome ──────────────────────────────────────────────────── */
+
+  go.addEventListener("click", function () {
+    if (go.disabled) return;
+    flag("Filed: " + summary() + ".", "done");
+  });
+
+  document.querySelectorAll(".bench button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".bench button").forEach(function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+      build(parseInt(b.getAttribute("data-n"), 10));
+    });
+  });
+
+  build(4);
+})();
+</script>
+
+</body>
+</html>

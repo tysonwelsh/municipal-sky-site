@@ -352,7 +352,8 @@
   font-variant-numeric: tabular-nums; }
 .rb-ctl input[type="range"] {
   -webkit-appearance: none; appearance: none;
-  flex: 1 1 auto; height: 18px; background: transparent; cursor: ew-resize;
+  flex: 1 1 auto; height: 26px; background: transparent; cursor: ew-resize;
+  touch-action: manipulation;
 }
 .rb-ctl input[type="range"]::-webkit-slider-runnable-track {
   height: 1px; background: rgba(74, 98, 138, 0.45);
@@ -360,13 +361,18 @@
 .rb-ctl input[type="range"]::-moz-range-track {
   height: 1px; background: rgba(74, 98, 138, 0.45);
 }
+/* a small square still, but a 15px one on a 26px-tall input — the 9px mark
+   on an 18px input gave about 80 square pixels to aim at, which is not enough
+   to grab reliably */
 .rb-ctl input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
-  width: 9px; height: 9px; margin-top: -4px; border-radius: 0;
+  width: 15px; height: 15px; margin-top: -7px; border-radius: 0;
   background: var(--rb-paper); border: 1px solid #4a628a;
+  box-shadow: 0 1px 2px rgba(46, 34, 12, 0.35);
 }
+.rb-ctl input[type="range"]::-webkit-slider-thumb:active { background: #4a628a; }
 .rb-ctl input[type="range"]::-moz-range-thumb {
-  width: 9px; height: 9px; border-radius: 0;
+  width: 15px; height: 15px; border-radius: 0;
   background: var(--rb-paper); border: 1px solid #4a628a;
 }
 .rb-ctl input[type="range"]:focus-visible { outline: 1px solid var(--rb-type-2);

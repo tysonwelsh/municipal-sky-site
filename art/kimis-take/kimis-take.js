@@ -114,6 +114,8 @@
   var nextId = 1;
   var timers = [];
   var stubbornP = 0.35;     /* live-tunable via KimisTake.set() */
+  var words = null;         /* opt.words: every stream IS a word, head first */
+  var spdMin = SPD_MIN, spdSpan = SPD_SPAN;   /* per-mount via opt.speed* */
 
   /* the piece's clock is the wall clock MINUS whatever time it spent paused,
      so pausing freezes everything the model does — births, retirements,
@@ -310,7 +312,7 @@
     });
   }
 
-  function spawn(cells, len, v, t0, ivals, slot, stubborn, dir) {
+  function spawn(cells, len, v, t0, ivals, slot, stubborn, dir, word) {
     var id = nextId++, j;
     var P = cells.length;
     var st = document.createElement('span');
@@ -321,7 +323,7 @@
     for (j = 0; j < len; j++) {
       var cell = document.createElement('i');
       cell.appendChild(document.createElement('u'));   /* mirror/spin wrapper */
-      if (Math.random() < grid.spinP) {
+      if (!word && Math.random() < grid.spinP) {
         cell.setAttribute('data-spin',
           ' is-spin' + (Math.random() < 0.5 ? ' is-ccw' : ''));
         cell.firstChild.style.setProperty('--cr-sd',
@@ -329,7 +331,20 @@
       }
       st.appendChild(cell);
     }
-    fill(st);
+    if (word) {
+      /* the letters are dealt once, at birth, and never re-struck — a
+         re-struck letter is a misprint. Head to tail is reading order: the
+         head arrives first wherever the path turns. A space is a blank
+         square travelling inside the word. No mirrors, no pinwheels — a
+         reversed letter is a different word. */
+      var letters = Array.from(word), gs = st.children;
+      for (j = 0; j < len; j++) {
+        gs[j].className = 'cr-g cr-lat';
+        gs[j].firstChild.textContent = letters[j] === ' ' ? '' : letters[j];
+      }
+    } else {
+      fill(st);
+    }
     var keys = [];
     for (j = 0; j < ivals.length; j++) keys.push(ivals[j][0]);
     reserve(id, ivals);
@@ -395,9 +410,18 @@
     var cands = [];
     for (var attempt = 0; attempt < 40 && cands.length < 3; attempt++) {
       var dir = slot.dir || 'd';
-      var len = 8 + rnd(38);   /* 8–45 glyphs: paths wind, so the old
-                                  axis-length cap no longer applies */
-      var v = SPD_MIN + Math.random() * SPD_SPAN;
+      /* word mode: the stream IS the word — its length is the spelling's,
+         dealt per candidate because the length shapes the walk */
+      var word = null, len;
+      if (words) {
+        word = words[rnd(words.length)];
+        len = Array.from(word).length;
+        if (len < 2) continue;   /* one letter is not a string */
+      } else {
+        len = 8 + rnd(38);   /* 8–45 glyphs: paths wind, so the old
+                                axis-length cap no longer applies */
+      }
+      var v = spdMin + Math.random() * spdSpan;
       var stubborn = Math.random() < stubbornP;   /* the commissioned share */
       /* t0 is dealt BEFORE the walk: the walk avoids cells by the moment
          the strip would arrive, so the moment has to exist first */
@@ -412,7 +436,8 @@
                                            checked each cell at arrival time */
       var cost = axisCost(cells, len, v);
       cands.push({ cells: cells, len: len, v: v, t0: t0, ivals: ivals,
-                   cv: cost.v, ch: cost.h, stubborn: stubborn, dir: dir });
+                   cv: cost.v, ch: cost.h, stubborn: stubborn, dir: dir,
+                   word: word });
     }
     if (!cands.length) return false;   /* the gap stays; the planner comes back around */
     var best = cands[0], bestScore = Infinity;
@@ -421,7 +446,7 @@
       if (sc < bestScore) { bestScore = sc; best = cands[j]; }
     }
     spawn(best.cells, best.len, best.v, best.t0, best.ivals, slot,
-          best.stubborn, best.dir);
+          best.stubborn, best.dir, best.word);
     return true;
   }
 
@@ -458,6 +483,9 @@
     grid = { cols: cols, rows: rows, CELL: CELL, host: host,
              spinP: opt.spinP == null ? 0.06 : opt.spinP };
     if (opt.stubbornP != null) stubbornP = opt.stubbornP;
+    words = opt.words && opt.words.length ? opt.words : null;
+    spdMin = opt.speedMin == null ? SPD_MIN : opt.speedMin;
+    spdSpan = opt.speedSpan == null ? SPD_SPAN : opt.speedSpan;
     booked = new Map();
     axisTime = { v: 0, h: 0 };
     live = [];
@@ -493,9 +521,11 @@
       }, 250));
       if (!paused) { cancelAnimationFrame(rafId); frame(); }
       /* the slow in-view re-strike: a few squares a second, caught out of the
-         corner of an eye rather than watched */
-      var rate = opt.visibleRate == null ? 10 : opt.visibleRate;
-      timers.push(setInterval(function () {
+         corner of an eye rather than watched. Word streams are never
+         re-struck — a changed letter is a misprint — so the default there
+         is stillness */
+      var rate = opt.visibleRate == null ? (words ? 0 : 10) : opt.visibleRate;
+      if (rate > 0) timers.push(setInterval(function () {
         if (paused || !live.length) return;
         for (var i = 0; i < rate; i++) {
           var rec = live[rnd(live.length)];

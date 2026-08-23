@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Word Mesh &mdash; Kimi's Take, spelled out</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap">
+<!-- the REAL engine and its paper, like the card gallery loads the real
+     junk-drawer assets: this page can never drift from the piece -->
+<link rel="stylesheet" href="/art/kimis-take/kimis-take.css">
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --blue:#4a628a; --graphite:#4b4030;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:580px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:42px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;color:var(--tink-3);margin:0 0 22px}
+
+/* the stage: the piece's own .cr-sheet, sized for this page. The wrapper
+   carries the piece's variables so the desk's zoom can retune them — the
+   engine reads --cr-cell straight off the host at mount, so the ruling and
+   the glyph squares can never drift apart */
+.ktw{
+  --cr-paper:#f8f3e2;
+  --cr-ink:#4a628a;
+  --cr-type:#33240f;
+  --cr-type-2:rgba(51,36,15,.62);
+  --cr-type-3:rgba(51,36,15,.40);
+  --cr-rule:rgba(74,53,18,.34);
+  --cr-zoom:2;
+  --cr-cell:18px;
+  --cr-mono:"Courier Prime","Courier New",Courier,monospace;
+  --cr-form:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+}
+.ktw .cr-sheet{width:100%;height:min(520px,calc(100vh - 280px));min-height:300px;margin:0}
+
+/* the desk, the house way (mockup-33's own) */
+.desk{max-width:600px;margin:24px auto 0;display:grid;
+  grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;
+  font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tink-3)}
+.desk input[type=range]{-webkit-appearance:none;appearance:none;height:26px;width:100%;
+  background:transparent;cursor:ew-resize;touch-action:manipulation}
+.desk input[type=range]::-webkit-slider-runnable-track{height:1px;background:rgba(74,98,138,.45)}
+.desk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;
+  margin-top:-7px;border-radius:0;background:var(--plate);border:1px solid #4a628a;
+  box-shadow:0 1px 2px rgba(46,34,12,.35)}
+.desk input[type=range]::-moz-range-track{height:1px;background:rgba(74,98,138,.45)}
+.desk input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:0;
+  background:var(--plate);border:1px solid #4a628a}
+.desk output{font-variant-numeric:tabular-nums;min-width:8ch;text-align:right}
+.words{grid-column:1/-1;display:flex;gap:12px;align-items:flex-start;margin-top:6px}
+.words textarea{flex:1;min-height:64px;font:inherit;font-size:.56rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--tink);background:var(--plate);
+  border:1px solid rgba(74,98,138,.4);padding:7px 9px;resize:vertical}
+.act{grid-column:1/-1;display:flex;gap:10px;justify-content:center;margin-top:8px}
+.act button{font:inherit;letter-spacing:.14em;text-transform:uppercase;color:var(--tink-2);
+  background:var(--plate);border:1px solid rgba(74,98,138,.5);padding:4px 10px;cursor:pointer}
+.act button:hover{border-color:#4a628a;color:var(--tink)}
+footer{margin-top:46px;padding-top:12px;border-top:1px solid var(--trule);
+  font-size:.52rem;letter-spacing:.14em;color:var(--tink-3);text-align:center;
+  text-transform:uppercase;line-height:2}
+</style></head><body><div class="sheet">
+
+<h1>Word Mesh</h1>
+<div class="no">Kimi's Take &middot; mockup 34 &middot; every string is a word</div>
+<hr class="rule">
+<p class="dek">The mesh, spelled out. No character pool, no seventy-three scripts — <b>every
+string on the sheet is a word from the list below</b>, one letter to a printed square, head
+letter first so the word reads in the order it arrives. Words run in all four directions at
+once, turn when traffic forces them to (snake-game rules), and never touch — the spacetime
+reservation table sees to that. The red ones are the stubborn share, commissioned to cross
+the whole sheet and exit by the far edge. A space travels as a blank square inside the
+word.</p>
+
+<h2>The sheet</h2>
+<div class="sub">the piece&rsquo;s own engine and paper — nothing here is a copy</div>
+<div class="ktw" id="ktw">
+  <div class="cr-sheet"><span class="cr-rain" id="host" aria-hidden="true"></span></div>
+</div>
+
+<h2>The desk</h2>
+<div class="sub">rebuilds when a slider settles &middot; stubborn retunes live</div>
+<div class="desk">
+  <label for="d-streams">Streams</label>
+  <input type="range" id="d-streams" data-k="streams" min="2" max="64" step="2" value="8">
+  <output for="d-streams">8</output>
+  <label for="d-speedLo">Speed</label>
+  <input type="range" id="d-speedLo" data-k="speedLo" min="0.5" max="6" step="0.1" value="2.2">
+  <output for="d-speedLo">2.2</output>
+  <label for="d-speedHi">&hellip; to</label>
+  <input type="range" id="d-speedHi" data-k="speedHi" min="0.5" max="6" step="0.1" value="4.7">
+  <output for="d-speedHi">4.7</output>
+  <label for="d-stubborn">Stubborn</label>
+  <input type="range" id="d-stubborn" data-k="stubborn" min="0" max="100" step="5" value="35">
+  <output for="d-stubborn">35%</output>
+  <label for="d-zoom">Zoom</label>
+  <input type="range" id="d-zoom" data-k="zoom" min="1" max="2" step="0.25" value="2">
+  <output for="d-zoom">2&times;</output>
+  <div class="words"><textarea id="wordlist" spellcheck="false">LOADING
+STAND BY
+PLEASE WAIT
+ONE MOMENT
+PENDING
+PROCESSING
+PLEASE HOLD</textarea></div>
+  <div class="act"><button type="button" id="restart">Restart</button>
+    <button type="button" id="pause">Pause</button>
+    <button type="button" id="copy">Copy settings</button></div>
+</div>
+
+<footer>Ink on engineering paper &middot; every string is a word &middot; head letter first<br>
+Words turn for traffic, never for show &middot; the stubborn cross the whole sheet</footer>
+</div>
+
+<script src="/art/kimis-take/kimis-take.js"></script>
+<script>
+(function () {
+  var host = document.getElementById('host');
+  var ktw = document.getElementById('ktw');
+  var desk = document.querySelector('.desk');
+  var ta = document.getElementById('wordlist');
+  var POINTS = ['d', 'u', 'r', 'l'];
+
+  function words() {
+    var w = ta.value.split('\n').map(function (s) { return s.trim().toUpperCase(); })
+      .filter(function (s) { return Array.from(s).length >= 2; });
+    return w.length ? w : ['LOADING'];
+  }
+  function opts() {
+    var o = {};
+    Array.prototype.forEach.call(desk.querySelectorAll('input[type=range]'), function (s) {
+      o[s.getAttribute('data-k')] = +s.value;
+    });
+    o.words = words();
+    return o;
+  }
+  function dirsFor(n) {
+    var d = [];
+    for (var i = 0; i < n; i++) d.push(POINTS[i % 4]);
+    return d;
+  }
+  function mount() {
+    var o = opts();
+    /* zoom is just the two variables — the ruling, the glyph squares and
+       every script's font-size all follow, and the engine re-measures */
+    ktw.style.setProperty('--cr-zoom', o.zoom);
+    ktw.style.setProperty('--cr-cell', (9 * o.zoom) + 'px');
+    window.KimisTake.mount(host, {
+      dirs: dirsFor(o.streams),
+      stubbornP: o.stubborn / 100,
+      words: o.words,
+      speedMin: Math.min(o.speedLo, o.speedHi),
+      speedSpan: Math.abs(o.speedHi - o.speedLo)
+    });
+  }
+  var t = null;
+  desk.addEventListener('input', function (e) {
+    if (e.target.tagName === 'INPUT') {
+      var o = desk.querySelector('output[for=' + e.target.id + ']');
+      if (o) o.textContent = e.target.id === 'd-stubborn' ? e.target.value + '%'
+                           : e.target.id === 'd-zoom' ? e.target.value + '×'
+                           : e.target.value;
+      /* the stubborn share retunes live — it changes what the planner deals
+         next, no remount; everything else rebuilds once the thumb settles */
+      if (e.target.id === 'd-stubborn') {
+        window.KimisTake.set({ stubbornP: +e.target.value / 100 });
+        return;
+      }
+    }
+    clearTimeout(t); t = setTimeout(mount, 200);
+  });
+  document.getElementById('restart').addEventListener('click', mount);
+  var pauseBtn = document.getElementById('pause');
+  pauseBtn.addEventListener('click', function () {
+    if (window.KimisTake.paused()) {
+      window.KimisTake.resume(); pauseBtn.textContent = 'Pause';
+    } else {
+      window.KimisTake.pause(); pauseBtn.textContent = 'Play';
+    }
+  });
+  document.getElementById('copy').addEventListener('click', function () {
+    var txt = JSON.stringify(opts());
+    var c = document.createElement('textarea');
+    c.value = txt; document.body.appendChild(c); c.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    c.remove();
+    var b = this; b.textContent = 'Copied';
+    setTimeout(function () { b.textContent = 'Copy settings'; }, 1400);
+  });
+  /* the sheet is sized off the viewport — a resize changes the grid, so
+     re-deal once the dragging stops */
+  var rt = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(rt); rt = setTimeout(mount, 320);
+  });
+  mount();
+})();
+</script></body></html>

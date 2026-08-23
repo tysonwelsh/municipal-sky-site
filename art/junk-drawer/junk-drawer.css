@@ -2470,6 +2470,16 @@ html.jd-turn-open { overflow: hidden; }
    by eye — the inventory and the sizes are generated together.
    -------------------------------------------------------------------------- */
 .jd-dark-well--rain { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+
+/* the mesh (owner directive 2026-08-22): Kimi's Take iframed whole into the
+   swatch — full-bleed like the rain, since mini.php brings its own paper at
+   the same 9px ruling. The frame must never scroll or show a seam: it is a
+   window onto a sheet, not a document in a box. On a settle the well's own
+   fade covers it (opacity 0 on ok, 0.45 on fail) — the piece runs on behind
+   it, unheard, the way the rain merely pauses. */
+.jd-dark-well--mesh { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-mesh { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  border: 0; display: block; background: transparent; }
 .jd-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
 .jd-rain-c { position: absolute; top: 0; display: block; opacity: var(--jdr-o); }
@@ -2690,14 +2700,13 @@ html.jd-turn-open { overflow: hidden; }
    the sheet. An attached photograph is an attached photograph.
    ========================================================================== */
 .jd-turn-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
-.jd-turn-plates--call { justify-content: center; }
-.jd-turn-plates--call .jd-turn-plate { max-width: 200px; }
-/* the CALL still widens for the same reason the bench does — it carries
-   every surviving plate in one row, and only for as long as it needs the
-   room (fourth chair, 2026-08-14). The reveal used to widen with it; since
-   round 26 rev. 2 it is a 2×2 pile on the darkroom's own measure instead —
-   see below. */
-.jd-turn[data-view="call"] { width: min(880px, 100%); }
+/* THE CALL NARROWS (podium, 2026-08-22). It used to widen to 880px because it
+   carried every surviving plate full-size in one row; the podium carries them
+   at print size instead, and a 4-step podium is 306px of content — so the card
+   comes back to the mockup's own measure and stops being the widest sheet in
+   the flow. One value covers every width: min() folds the phone case in, and
+   there is no ≤700px override for the call any more. */
+.jd-turn[data-view="call"] { width: min(462px, 100%); }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
 /* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21;
@@ -3032,67 +3041,198 @@ html.jd-turn-open { overflow: hidden; }
 }
 
 /* ============================================================================
-   THE CALL — five graduated stops printed across the form, A hard left to B
-   hard right: the width itself says direction. The pick is a PENCILLED RING —
-   the visitor's hand on the bureau's printed scale.
+   THE CALL — THE PODIUM (owner pick, mockups/mockup-32-podium.html,
+   2026-08-22; the five-stop likert rail and the two-pill multi-way call are
+   both retired with it). The call files a RANK ORDER now. Four blocks
+   descend left to right — tallest is 1st — with exactly one print standing
+   on each, and the survivors waiting in a row underneath. The HEIGHT carries
+   the order, so the card's only words are the four ordinals and the button:
+   no instruction line, no caption, no margin question. Nothing is tilted,
+   nothing is stamped, and every motion is inside the no-preference query at
+   the foot of this block.
    ========================================================================== */
-.jd-callhead { display: flex; align-items: center; gap: 0.5em; flex-wrap: wrap; }
-.jd-req {
-  font-family: var(--tform); font-size: var(--t-micro); letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--tstamp);
-  border: 1px solid rgba(168, 51, 42, 0.5); padding: 1px 4px 0;
-}
-.jd-likert { display: flex; align-items: flex-start; gap: 10px; margin: 0.15rem 0 0; }
-/* R2-F4 (round-17): the A/B glyphs sit on the STOP DOTS' centreline, not a
-   guessed padding. .jd-lk-rail::before draws the connecting line at
-   top: 13px — that's the dot centre (.jd-lk-stop's 5px padding-top + half
-   the 16px dot). A 26px-tall flex box centres its text at exactly half its
-   own height, so starting from the same flex-start edge as the rail
-   (.jd-likert is align-items: flex-start) puts the glyph's centre at 13px
-   too, matched to the dots instead of approximated against them. */
-.jd-lk-end {
-  flex: 0 0 auto; height: 26px;
-  display: flex; align-items: center;
-  font-family: var(--tform); font-size: 0.95rem; font-weight: 700;
-  letter-spacing: 0.1em; color: var(--tink-3);
-}
-.jd-likert[data-pick="a"] .jd-lk-end--a,
-.jd-likert[data-pick="b"] .jd-lk-end--b { color: var(--tred); }
-.jd-lk-rail { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
-.jd-lk-rail::before {
-  content: ""; position: absolute; left: 9%; right: 9%; top: 13px;
-  border-top: 2px solid var(--trule);
-}
-.jd-lk-stop {
-  position: relative; z-index: 1;
-  flex: 1 1 0; min-width: 0; min-height: 44px;
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding-top: 5px; cursor: pointer;
-}
-.jd-lk-stop input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
-.jd-lk-stop:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-lk-dot {
+/* The step rail wears its SHORT labels on this card, at every width. The
+   call's sheet is now the NARROWEST in the flow (462px against the bench's
+   680), and five spelled-out steps overrun it — the same trim the phone
+   already takes at ≤600px, taken here for the same reason. */
+.jd-turn[data-view="call"] .jd-rail-long { display: none; }
+.jd-turn[data-view="call"] .jd-rail-short { display: inline; }
+
+.jd-pod {
+  --pw: 72px;        /* one print */
+  --pstep: 15px;     /* how much one rank rises over the next */
+  --pbase: 44px;     /* the shortest block (4th) */
+  --pctl: 20px;      /* the enlarge/replay line under each print */
   position: relative;
-  width: 16px; height: 16px; border-radius: 50%;
-  background: var(--tpaper-hi); border: 2px solid var(--trule);
 }
-.jd-lk-stop.is-on .jd-lk-dot { background: var(--tred); border-color: var(--tred); }
-/* the pencilled ring — deliberately off-round and off-axis */
-.jd-lk-stop.is-on .jd-lk-dot::after {
-  content: ""; position: absolute; left: -8px; top: -7px;
-  width: 30px; height: 28px;
-  border: 1.6px solid var(--graphite); border-radius: 50%;
-  transform: rotate(-8deg) scale(1.04, 0.95);
-  opacity: 0.85;
+.jd-pod-row { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
+.jd-pod-tier {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  cursor: pointer; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
 }
-.jd-lk-cap {
-  display: flex; flex-direction: column; align-items: center;
-  font-family: var(--tform); font-size: var(--t-micro); letter-spacing: 0.1em;
-  text-transform: uppercase; line-height: 1.35; text-align: center; color: var(--tink-3);
+/* the standing place: exactly one print tall, sitting on the block's top.
+   The dashed hole is built once and HIDDEN when taken — never thrown away
+   and rebuilt, so nothing inside a stand is ever detached under a drag. */
+.jd-pod-stand {
+  height: calc(var(--pw) + 25px + var(--pctl));
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 3px;
 }
-.jd-lk-cap b { font-family: var(--tmono); font-size: var(--t-body); letter-spacing: 0.14em; color: var(--tink-2); }
-.jd-lk-stop.is-on .jd-lk-cap { color: var(--tink); }
-.jd-lk-stop.is-on .jd-lk-cap b { color: var(--tred); }
+.jd-pod-hole {
+  width: var(--pw); height: var(--pw);
+  /* the stand is bottom-aligned so a seated print's CAPTION sits on the
+     block; the hole marks the artwork, which lands at the stand's TOP. Left
+     bottom-aligned it drew the empty square a caption-and-controls' height
+     below where the drawing actually arrives — a drop preview that lied by
+     about 45px. flex-start puts the square exactly where the print's own
+     artwork will be. */
+  align-self: flex-start;
+  border: 1px dashed rgba(74, 53, 18, 0.34);
+  background: rgba(255, 250, 232, 0.22);
+}
+.jd-pod-hole[hidden] { display: none; }
+.jd-pod-block {
+  position: relative;
+  border: 1px solid var(--trule); border-bottom: 0;
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 7px;
+  font-family: var(--tform); font-weight: 700; font-size: 0.82rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--tink);
+}
+/* a rank always stands at ITS OWN height, whatever the survivor count: a
+   two-step podium is the top two steps of a four-step one, not a rebuilt
+   pair, so 1st means the same thing on every turn */
+.jd-pod-tier[data-rank="1"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep) * 3); }
+.jd-pod-tier[data-rank="2"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep) * 2); }
+.jd-pod-tier[data-rank="3"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep)); }
+.jd-pod-tier[data-rank="4"] .jd-pod-block { height: var(--pbase); }
+/* the floor the whole thing stands on */
+.jd-pod-floor { height: 3px; background: var(--trule); margin: 0 2px; }
+
+/* the step under the print in the air (GRAPHITE — the visitor's hand, the
+   same ink the finished rail step and the tie election's tick are written in) */
+.jd-pod-tier.is-armed .jd-pod-hole,
+.jd-pod-tier.is-armed .jd-pod-block { border-color: var(--graphite); }
+.jd-pod-tier.is-armed .jd-pod-hole {
+  border-style: solid; background: rgba(255, 250, 232, 0.6);
+}
+body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
+.jd-pod-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* the row underneath. Every drawing keeps its own column, so nothing shuffles
+   sideways when its neighbour is lifted onto a step; once the podium is full
+   the row has nothing left to hold and gives most of its height back — but it
+   stays a real drop target, so a print can always come back down. */
+.jd-pod-tray {
+  display: flex; align-items: flex-start; justify-content: center; gap: 6px;
+  margin-top: 16px; min-height: calc(var(--pw) + 29px + var(--pctl));
+  -webkit-tap-highlight-color: transparent;
+}
+.jd-pod-tray.is-bare { min-height: 46px; }
+.jd-pod-cell { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+
+/* A PRINT — the exhibits' own plate (.jd-turn-plate, from plate() in
+   junk-drawer.js) at print size, wrapped in the handle the drag and the tap
+   both read. The caption wears the darkroom/reveal label rather than the
+   plate's default printed strip: pencil hand, centred, no rule. */
+.jd-pod-print {
+  position: relative; width: var(--pw);
+  cursor: grab; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none; -webkit-user-drag: none;
+}
+.jd-pod-print .jd-turn-plate { width: 100%; }
+.jd-pod-print .jd-turn-corner { width: 15px; height: 15px; }
+.jd-pod-print .jd-turn-plate figcaption {
+  margin: 3px 0 0; padding: 0; border: 0;
+  text-align: center;
+  font-family: var(--thand); font-size: 0.72rem; font-weight: 400;
+  line-height: 1.1; letter-spacing: 0; text-transform: none;
+  color: var(--graphite);
+}
+.jd-pod-print svg { pointer-events: none; }
+.jd-pod-print:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+
+/* ENLARGE + REPLAY, restored to the call (owner, 2026-08-22). The bench hangs
+   these two off the plate itself — the whole figure is the enlarge control and
+   REPLAY rides its corner — but here the plate is the thing being MOVED, so a
+   control anywhere on the artwork would eat the press that lifts it. They get
+   their own line under the caption instead: below the print, never over it.
+   They cannot sit BESIDE the caption, which is the other obvious arrangement —
+   "Model A" in the pencil hand is ~48px of a 72px print (62px on a phone), and
+   what is left will not hold two targets. */
+.jd-pod-cap {
+  display: flex; justify-content: center; gap: 4px;
+  height: var(--pctl); margin-top: 3px;
+}
+.jd-pod-ctl {
+  flex: 1 1 0; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0; border: 1px solid var(--trule-2);
+  background: rgba(255, 250, 232, 0.55);
+  color: var(--tink-2);
+  font-family: var(--tmono); font-size: 0.7rem; line-height: 1;
+  cursor: pointer;
+}
+.jd-pod-ctl:hover { background: rgba(255, 250, 232, 0.9); color: var(--tink); }
+.jd-pod-ctl:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-pod-ctl:active { background: rgba(232, 217, 168, 0.9); }
+/* the two states the print wears also read on its controls */
+.jd-pod-print.is-lifted .jd-pod-cap { opacity: 0.3; }
+/* on the ghost they keep their space but not their look: a floating copy that
+   appears pressable is a lie, and the ghost takes no pointer events at all */
+.jd-pod-ghost .jd-pod-cap { visibility: hidden; }
+/* in hand (tapped, not yet placed) */
+.jd-pod-print.is-hand .jd-turn-art { outline: 2px solid var(--graphite); outline-offset: 3px; }
+/* in the air: the seat it left keeps its place and fades, so the row never
+   collapses under a drag */
+.jd-pod-print.is-lifted .jd-turn-art { opacity: 0.2; box-shadow: none; }
+.jd-pod-print.is-lifted figcaption { opacity: 0.3; }
+
+/* the ghost that rides the pointer. Appended to the SCRIM rather than <body>
+   — this form's tokens are scoped there, and the scrim carries no transform
+   or filter, so position:fixed still means the viewport. */
+.jd-pod-ghost { position: fixed; z-index: 90; left: 0; top: 0; pointer-events: none; }
+.jd-pod-ghost .jd-turn-art {
+  box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6), 0 3px 7px rgba(6, 3, 0, 0.4);
+}
+body.jd-pod-drag, body.jd-pod-drag * {
+  -webkit-user-select: none !important; user-select: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .jd-pod-block, .jd-pod-hole,
+  .jd-pod-print .jd-turn-art, .jd-pod-print .jd-turn-plate figcaption {
+    transition: background-color 130ms ease, border-color 130ms ease, opacity 130ms ease;
+  }
+}
+/* The podium's own breakpoint, and the only one it has: at ≤430px the three
+   size tokens step down together so four prints, four blocks and their gaps
+   still fit a 375px sheet without a horizontal scroll — and 62px is still
+   well over the 44px touch floor the coarse-pointer rules below guard for
+   everything else. The SHAPE never changes; nothing is hidden, stacked or
+   tabbed away (see "THE CALL NEVER TABS" at the ≤600px block). */
+@media (max-width: 430px) {
+  .jd-pod { --pw: 62px; --pstep: 13px; --pbase: 40px; }
+  .jd-pod-row, .jd-pod-tray { gap: 4px; }
+  .jd-pod-block { font-size: 0.74rem; }
+  .jd-pod-print .jd-turn-corner { width: 13px; height: 13px; }
+}
+/* OVERRIDE 2's 44px floor, reached the only way this row can reach it: by
+   growing the LINE, never the button's width. A print is 72px wide (62px on a
+   phone), so two side-by-side targets can only be ~34px across — the height is
+   the axis there is room on, and it is grown downward into the podium's own
+   space, never upward over the artwork the drag needs. The stand and the row
+   read --pctl, so raising it moves the print and the block down together and
+   the print still stands ON its step. */
+@media (any-pointer: coarse) {
+  .jd-pod { --pctl: 44px; }
+}
 
 /* ============================================================================
    THE UNVEIL — who drew what, and where it went.
@@ -3147,14 +3287,6 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-pill.is-on .jd-pill-tick { opacity: 1; }
 
-/* the three-way call (2026-08-14): two picks in the tie election's own pill
-   language — the winner (or dead even), then the margin. The margin question
-   unfolds under the winner pick like the flag note does under its checkbox */
-.jd-callmargin-q {
-  margin: 0.7rem 0 0.1rem;
-  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
-  text-transform: uppercase; color: var(--tink-3);
-}
 
 /* ---- the singleton hover/focus tooltip ------------------------------------
    Fixed and pointer-events:none — it can never take a press a control should
@@ -3211,7 +3343,6 @@ html.jd-turn-open { overflow: hidden; }
      call — a short transition makes that read as one document changing
      shape rather than two cards swapping */
   .jd-turn { transition: width 0.22s cubic-bezier(.2, .8, .25, 1); }
-  .jd-lk-dot { transition: border-color 0.15s, background-color 0.15s; }
   /* the def label's one hover feedback (OVERRIDE 1): an ink shift, no
      click-to-unfold left to animate open */
   .jd-def > span { transition: color 0.15s; }
@@ -3226,7 +3357,8 @@ html.jd-turn-open { overflow: hidden; }
      the column wrappers go display:contents (the DOM's source order IS the
      portrait order), and the exhibit goes sticky again */
   .jd-turn[data-view="bench"] { width: min(680px, 100%); }
-  .jd-turn[data-view="call"] { width: min(680px, 100%); }
+  /* (the call needs no clamp here: since the podium it is 462px at every
+     width — see .jd-turn[data-view="call"] above) */
   /* (the reveal needs no clamp here: its 2×2 pile lives on the darkroom's
      560px measure at every width — round 26 rev. 2) */
   .jd-bench { display: block; }
@@ -3272,14 +3404,12 @@ html.jd-turn-open { overflow: hidden; }
     font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
   }
   .jd-turn-scroll { padding: 10px 12px 14px; }
-  /* the CALL stacks, never tabs: the whole question is "which of these
-     two", and a tab that hides one of them asks the visitor to hold it in
-     their head. (The reveal no longer stacks — holding the 2×2 pile at
-     every width is the point of the round-26 rev. 2 layout.) */
-  .jd-turn-plates--call { flex-direction: column; }
-  .jd-turn-plates--call .jd-turn-plate {
-    width: 100%; max-width: 190px; margin-left: auto; margin-right: auto;
-  }
+  /* THE CALL NEVER TABS. The standing rule was that it stacks rather than
+     hide one of the drawings behind a tab — the visitor must not have to
+     hold a drawing in their head. The podium honours the same rule by not
+     needing to stack at all: every survivor is on the card at once, at
+     print size, at every width (the tokens shrink at ≤430px, the shape does
+     not change). Nothing here hides a survivor. */
   /* the examination row becomes label-over-control */
   .jd-row { grid-template-columns: minmax(0, 1fr); }
   .jd-row .jd-turn-select { margin-bottom: 0.3rem; }
@@ -3295,10 +3425,6 @@ html.jd-turn-open { overflow: hidden; }
      precisely the devices with the most vertical room to give it.) */
   .jd-rail-long { display: none; }
   .jd-rail-short { display: inline; }
-  .jd-likert { gap: 5px; }
-  .jd-lk-cap { font-size: 0.42rem; letter-spacing: 0.01em; }
-  .jd-lk-cap b { font-size: 0.6rem; }
-  .jd-lk-end { font-size: 0.85rem; }
   /* the counter leaves the field: at 16px the text would scroll under it */
   .jd-turn-count {
     position: static; display: block; text-align: right; margin-top: 4px;

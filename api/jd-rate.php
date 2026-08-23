@@ -1,5 +1,6 @@
 <?php
-// POST /api/jd-rate.php — the rating batch and the pairwise preference.
+// POST /api/jd-rate.php — the rating batch and the visitor's judgment (a full
+// rank order of the survivors, or the legacy single winner).
 // Contract: PLAN-USER-PROMPTS-CONTRACTS.md C1.3.
 //
 // This is the ONLY place model identity is ever released. Blind rating is a
@@ -35,6 +36,20 @@ if (count($ratings) > JD_RATINGS_MAX) {
 $comparison = $body['comparison'] ?? null;
 if ($comparison !== null && !is_array($comparison)) {
     jd_fail(400, 'bad_request', 'comparison must be an object or null.');
+}
+
+// ranking — the full order of the survivors (C1.3 addition, 2026-08-22), the
+// successor to comparison's single winner. Both keys are accepted forever:
+// ranking is the answer of record when it is present, comparison is what a
+// visitor on a cached copy of the old JS still sends, and a client that sends
+// both gets ranking read and comparison ignored (never an error — the old key
+// is not evidence of a bug).
+$ranking = $body['ranking'] ?? null;
+if ($ranking !== null && (!is_array($ranking) || !array_is_list($ranking))) {
+    jd_fail(400, 'bad_request', 'ranking must be a list or null.');
+}
+if (is_array($ranking) && count($ranking) > JD_RATINGS_MAX) {
+    jd_fail(400, 'ranking_invalid', 'Too many entries in one ranking.');
 }
 
 $taxonomy = jd_taxonomy();
@@ -160,11 +175,28 @@ try {
         jd_fail(400, 'rating_invalid', 'Unknown rating kind.');
     }
 
-    // Comparison. The winner is named by SLOT and mapped here, so a client can
-    // never file a foreign generation as the winner.
+    // The judgment. Every slot here is named by SLOT and mapped through
+    // $bySlot, so a client can never file a foreign generation as a winner or
+    // as a ranked entry.
+    //
+    // Three accepted shapes, in precedence order:
+    //   ranking present    -> the full order is the answer; comparison, if it
+    //                         also came, is ignored without complaint.
+    //   comparison present -> exactly today's legacy path, unchanged.
+    //   neither            -> legal only on a single-survivor submission.
     $winnerGenId = null;
     $strength = null;
-    if ($comparison === null) {
+    $rankBySlot = null;   // slot => rank_pos, only when a full order was filed
+
+    if ($ranking !== null) {
+        $rankBySlot = jd_validate_ranking($ranking, $okSlots);
+        // The rank-1 slot is the winner of record. Validation guarantees
+        // exactly one of them, so this search cannot come back false.
+        $winnerSlot = array_search(1, $rankBySlot, true);
+        $winnerGenId = $bySlot[$winnerSlot]['id'];
+        // strength stays NULL: a rank order carries no likert margin, and a
+        // fabricated one would be indistinguishable from a real answer.
+    } elseif ($comparison === null) {
         if (count($okSlots) > 1) {
             jd_fail(400, 'comparison_required', 'A comparison is required when more than one drawing survived.');
         }
@@ -234,7 +266,45 @@ try {
             ]);
         }
 
-        if ($comparison !== null) {
+        if ($rankBySlot !== null) {
+            // One row per surviving slot. The whole jd_ranks table lands via
+            // setup-jd-tables.php, and a deploy is instant while that script is
+            // a manual run — so a database that has not had it run yet files
+            // the batch WITHOUT the order rather than 500ing every rating in
+            // the gap. jd_missing_table() is deliberately narrow: any other
+            // PDOException still reaches the outer catch and rolls the batch
+            // back. Rating must never break because a migration lagged a
+            // deploy.
+            try {
+                $insertRank = $db->prepare(
+                    'INSERT INTO jd_ranks
+                        (id, submission_id, generation_id, rank_pos, visitor_hash, client, rated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)'
+                );
+                foreach ($rankBySlot as $slot => $rankPos) {
+                    $insertRank->execute([
+                        jd_ulid(),
+                        $submissionId,
+                        $bySlot[$slot]['id'],   // never from client input
+                        $rankPos,
+                        $visitorHash,
+                        $client,
+                        $ratedAt,
+                    ]);
+                }
+            } catch (PDOException $e) {
+                if (!jd_missing_table($e)) {
+                    throw $e;
+                }
+                error_log('jd-rate: jd_ranks is missing — filed the winner only, without the order (run setup-jd-tables.php)');
+            }
+        }
+
+        // jd_comparisons is written for BOTH shapes: a ranking files its
+        // rank-1 generation as the winner with a NULL margin, so the win
+        // series that predates ranking stays one continuous table and the
+        // export keeps working unchanged.
+        if ($rankBySlot !== null || $comparison !== null) {
             // The strength column lands via setup-jd-tables.php's migration;
             // deploys are instant while the migration is a manual run, so a
             // database that has not run it yet files the batch WITHOUT the
@@ -343,6 +413,118 @@ function jd_missing_column(PDOException $e): bool
     return str_contains($msg, 'no such column')
         || str_contains($msg, 'has no column named')
         || str_contains($msg, 'Unknown column');
+}
+
+// MySQL says SQLSTATE 42S02 / "Table ... doesn't exist" (8.0: "Base table or
+// view not found"); SQLite says "no such table". Anything else re-throws —
+// this recovers a migration that has not been run yet, not a bad statement.
+function jd_missing_table(PDOException $e): bool
+{
+    if (($e->getCode() ?: '') === '42S02') {
+        return true;
+    }
+    $msg = $e->getMessage();
+    return str_contains($msg, 'no such table')
+        || str_contains($msg, "doesn't exist")
+        || str_contains($msg, 'Base table or view not found');
+}
+
+/**
+ * C1.3's ranking rules, enforced here and never trusted from the client.
+ *
+ * Takes the raw `ranking` list and the submission's ok generations; returns
+ * slot => rank_pos on success and never returns on failure (jd_fail exits).
+ *
+ * The rules, all of them:
+ *   - one entry per ok slot, every ok slot present exactly once, nothing else;
+ *   - rank is an integer >= 1;
+ *   - EXACTLY ONE entry at rank 1 — there is never a tie for first;
+ *   - ranks are DENSE: the distinct ranks used are exactly {1..k}. Ties below
+ *     first are legal and expected (1,2,2,3 and 1,2,2,2 both pass), a gap is
+ *     not (1,2,4 fails).
+ *
+ * Presence is NOT policed here: the contract says a client sends `ranking`
+ * only when more than one slot survived, but a well-formed one-entry order on
+ * a single-survivor submission records exactly the same fact as the legacy
+ * one-slot comparison does, and rejecting it would throw away a visitor's
+ * whole rating batch over a shape the server can read perfectly well.
+ *
+ * @param array $ranking  the client's list, already known to be a list
+ * @param array $okSlots  jd_generations rows with status 'ok'
+ * @return array<string,int>
+ */
+function jd_validate_ranking(array $ranking, array $okSlots): array
+{
+    $okBySlot = [];
+    foreach ($okSlots as $generation) {
+        $okBySlot[(string) $generation['slot']] = true;
+    }
+
+    if (count($ranking) !== count($okBySlot)) {
+        jd_fail(400, 'ranking_invalid', 'The ranking must place every surviving drawing exactly once.');
+    }
+
+    $rankBySlot = [];
+    foreach ($ranking as $entry) {
+        if (!is_array($entry)) {
+            jd_fail(400, 'ranking_invalid', 'A ranking entry was not an object.');
+        }
+
+        $slot = $entry['slot'] ?? null;
+        if (!is_string($slot) || !isset($okBySlot[$slot])) {
+            jd_fail(400, 'ranking_invalid', 'A ranking entry named a slot with no usable drawing.');
+        }
+        if (isset($rankBySlot[$slot])) {
+            jd_fail(400, 'ranking_invalid', 'A slot was ranked twice.');
+        }
+
+        $rank = jd_rank_position($entry['rank'] ?? null);
+        if ($rank === null) {
+            jd_fail(400, 'ranking_invalid', 'A rank must be a whole number of 1 or more.');
+        }
+
+        $rankBySlot[$slot] = $rank;
+    }
+
+    // count($ranking) === count($okBySlot), every slot was a known ok slot and
+    // none repeated, so by now every ok slot is present exactly once.
+
+    if (count(array_keys($rankBySlot, 1, true)) !== 1) {
+        jd_fail(400, 'ranking_invalid', 'Exactly one drawing must be ranked first.');
+    }
+
+    // Dense: the distinct ranks used, sorted, must be 1..k. This is what makes
+    // a stored order readable years later without knowing the field size —
+    // and it is checked on the values, so a client cannot smuggle a gap past
+    // the rank-1 test.
+    $distinct = array_values(array_unique(array_values($rankBySlot)));
+    sort($distinct);
+    if ($distinct !== range(1, count($distinct))) {
+        jd_fail(400, 'ranking_invalid', 'Ranks must run 1, 2, 3 … with no gaps.');
+    }
+
+    return $rankBySlot;
+}
+
+// A rank position: a whole number >= 1. Accepts the integer a JSON client
+// sends, and the integral float/numeric string a looser one might; rejects
+// booleans, 0, negatives and anything fractional.
+function jd_rank_position(mixed $value): ?int
+{
+    if (is_bool($value)) {
+        return null;
+    }
+    if (is_int($value)) {
+        return $value >= 1 ? $value : null;
+    }
+    if (is_float($value) || (is_string($value) && is_numeric($value))) {
+        $number = (float) $value;
+        if ($number < 1 || floor($number) !== $number) {
+            return null;
+        }
+        return (int) $number;
+    }
+    return null;
 }
 
 function jd_clean_note(mixed $note): ?string
