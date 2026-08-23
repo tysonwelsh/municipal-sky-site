@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Library under-voice mockup — the cello</title>
+<!--
+  Dev-only mockup (PLAN-UNDERVOICES.md §2a / §3): the REAL Library engine,
+  completely unmodified, plus a prototype CELLO under-voice the owner can
+  audition before a single engine file changes. The cello is the Library's
+  chest voice: it never claims THE AIR and never speaks a melody — it bows
+  the chord's root, fifth or third down where the drone dyad lives, and it
+  only enters when the music itself moves (a harmony step, a cadence
+  approach, a sea change, a scene turn). Between movements it is silent.
+  The drone gains a body now and then; nothing gains a soloist.
+
+  How it plumbs in without touching the engine (the room-mockup trick,
+  applied to plumbing instead of rooms): before create()/play() we wrap
+  PJ2.Voice.buildBus, PJ2.Pitch.field and PJ2.Harmony.create so each fresh
+  run hands us its live AudioContext, master bus, pitch field and harmony
+  brain on the way past. The engine sees the same return values and plays
+  the same evening; we read harmony.current() + field.degFreq AT SCHEDULE
+  TIME (the family's no-cached-Hz law) and pour our tones into bus.input
+  through our own small generated-IR reverb.
+
+  Prototype-grade dice: the ENTRY BRAIN here rolls Math.random. That is
+  deliberate and temporary — this page exists to judge the SOUND and the
+  MANNER of entering, not to be reproducible. The integrated voice will
+  live on label-hashed forks ("cello" + sub-forks) per the plan's stream-
+  purity contract.
+-->
+<script>
+  // surface any JS error on the page itself — silence must never be mute
+  window.__pjErr = null;
+  window.onerror = function (msg, src, line) {
+    window.__pjErr = msg + " @ " + (src || "").split("/").pop() + ":" + line;
+    var el = document.getElementById("errbar");
+    if (el) el.textContent = "JS ERROR: " + window.__pjErr;
+    return false;
+  };
+</script>
+<style>
+  body { font-family: monospace; background: #14120f; color: #d8cdb4; max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; }
+  #errbar { color: #c96a5a; white-space: pre-wrap; }
+  #meter { color: #7a9c6e; }
+  h1 { font-size: 1.05rem; } h2 { font-size: 0.9rem; color: #b8a87f; margin: 1.2rem 0 0.4rem; }
+  p, label { color: #8f866f; font-size: 0.85rem; }
+  select, input[type=number] { font-family: inherit; background: #2a251d; color: #d8cdb4; border: 1px solid #4a4335; padding: 0.25rem; }
+  button { font-family: inherit; background: #2a251d; color: #d8cdb4; border: 1px solid #4a4335; padding: 0.4rem 0.9rem; margin: 0.15rem; cursor: pointer; }
+  button:hover { background: #3a3225; }
+  button.on { background: #4a4335; border-color: #7a6f55; }
+  .row { margin: 0.35rem 0; }
+  .knobs { display: grid; grid-template-columns: 16rem 1fr 3.6rem; gap: 0.3rem; align-items: center; max-width: 36rem; }
+  .knobs span.v { color: #b8a87f; text-align: right; }
+  #status { color: #7a9c6e; white-space: pre-wrap; }
+  #log { font-size: 0.78rem; color: #6f6753; max-height: 14rem; overflow-y: auto; border-top: 1px solid #2a251d; margin-top: 0.5rem; padding-top: 0.3rem; }
+  #log .did { color: #9c8f6e; }
+</style>
+</head>
+<body>
+<h1>Library under-voice mockup — the cello</h1>
+<p>The full Library engine, unmodified, plus a prototype <b>cello</b> —
+the under-voice proposed in PLAN-UNDERVOICES.md §2a. It bows the current
+chord's root, fifth or third down in the drone's register, entering only
+when the music moves: harmony steps, cadence approaches, the sea change,
+scene turns. No engine file is touched; the page captures the live
+plumbing on the way past and pours the cello into the same room.</p>
+<p><b>Listening notes:</b> the evening opens from near-silence by design —
+the cello holds its tongue until intensity clears ~0.15, so expect the
+first bow a minute or two in (or press "bow one note now" for an instant
+audition). "Hush the melody" mutes harpsichord, music box and hum so
+drone + cello can be judged alone. Every entry decision — taken or passed
+— is logged below.</p>
+
+<h2>transport</h2>
+<div class="row">
+  <button id="play">play</button>
+  <button id="stop">stop</button>
+  <label>seed <input type="number" id="seed" value="1347571539" style="width:9rem"></label>
+  <button id="reroll">new seed</button>
+  <label>volume <input type="range" id="vol" min="0" max="1" step="0.01" value="0.85"></label>
+  <button id="beep" title="0.5s sine straight to the output — tests the audio device, not the engine">test beep</button>
+</div>
+<div class="row" id="errbar"></div>
+<div class="row" id="meter"></div>
+
+<h2>the cello</h2>
+<div class="row">
+  <label><input type="checkbox" id="celloOn" checked> cello enabled</label>
+  <button id="bowNow" title="immediately bows one tone on the current chord — works only while playing">bow one note now</button>
+  <button id="hush" title="mutes harpsichord + music box + hum so drone and cello can be judged alone">hush the melody</button>
+</div>
+<div class="knobs">
+  <label for="kLevel">level — peak per bowed tone (&times;0.045)</label>
+  <input type="range" id="kLevel" min="0" max="2" step="0.05" value="1">
+  <span class="v" id="vLevel">1.00</span>
+
+  <label for="kPresence">presence — entry-chance multiplier</label>
+  <input type="range" id="kPresence" min="0" max="2" step="0.05" value="1">
+  <span class="v" id="vPresence">1.00</span>
+
+  <label for="kBright">brightness — body lowpass (Hz)</label>
+  <input type="range" id="kBright" min="1800" max="2600" step="20" value="2200">
+  <span class="v" id="vBright">2200</span>
+
+  <label for="kVib">vibrato depth</label>
+  <input type="range" id="kVib" min="0" max="2" step="0.05" value="1">
+  <span class="v" id="vVib">1.00</span>
+
+  <label for="kBow">bow noise (rosin)</label>
+  <input type="range" id="kBow" min="0" max="2" step="0.05" value="1">
+  <span class="v" id="vBow">1.00</span>
+
+  <label for="kDouble">double-stop chance</label>
+  <input type="range" id="kDouble" min="0" max="1" step="0.05" value="0.3">
+  <span class="v" id="vDouble">0.30</span>
+
+  <label for="kLen">note length (&times;10&ndash;25 s)</label>
+  <input type="range" id="kLen" min="0.5" max="1.5" step="0.05" value="1">
+  <span class="v" id="vLen">1.00</span>
+</div>
+
+<h2>now</h2>
+<div id="status">stopped.</div>
+<h2>entry decisions</h2>
+<div id="log"></div>
+
+<script src="pj2-rand.js"></script>
+<script src="pj2-pitch.js"></script>
+<script src="pj2-clock.js"></script>
+<script src="pj2-voice.js"></script>
+<script src="pj2-fx.js"></script>
+<script src="pj2-air.js"></script>
+<script src="pj2-motif.js"></script>
+<script src="pj2-harmony.js"></script>
+<script src="pj2-conductor.js"></script>
+<script src="pj2-library.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var errbar = document.getElementById("errbar");
+  var logEl = document.getElementById("log");
+  var statusEl = document.getElementById("status");
+
+  function showErr(msg) {
+    window.__pjErr = window.__pjErr || msg;
+    errbar.textContent = "PROTOTYPE DEGRADED: " + msg;
+  }
+
+  function logLine(text, did) {
+    var line = document.createElement("div");
+    if (did) line.className = "did";
+    var t = "";
+    try {
+      if (cap.ctx) {
+        var s = Math.floor(cap.ctx.currentTime);
+        t = Math.floor(s / 60) + ":" + ("0" + (s % 60)).slice(-2) + " ";
+      }
+    } catch (e) {}
+    line.textContent = t + text;
+    logEl.insertBefore(line, logEl.firstChild);
+    while (logEl.children.length > 90) logEl.removeChild(logEl.lastChild);
+  }
+
+  // ==========================================================================
+  // THE CAPTURE — the room-mockup interception trick, aimed at plumbing.
+  // The engine's play() builds a fresh world every time (bus, field,
+  // harmony, in that order, synchronously). We wrap the three factories so
+  // each pass leaves its live objects here, tagged with a run generation:
+  // the 250 ms brain poll notices a new generation and re-plumbs the cello
+  // into the new run (reseed and stop/play both rebuild — nothing is ever
+  // cached across runs; the field object itself mutates through a sea
+  // change, which is exactly why we read it live at schedule time).
+  // Everything guarded: if the engine's internals drift, the page degrades
+  // to "engine only" with a visible errbar note instead of dying.
+  // ==========================================================================
+  var cap = {
+    gen: 0,                 // bumped per buildBus (== per run)
+    ctx: null, bus: null,   // from Voice.buildBus
+    field: null, fieldGen: -1,   // from Pitch.field
+    harmony: null, harmGen: -1,  // from Harmony.create
+  };
+
+  try {
+    var origBuildBus = PJ2.Voice.buildBus;
+    PJ2.Voice.buildBus = function (ctx, opts) {
+      var bus = origBuildBus(ctx, opts);
+      try { cap.gen++; cap.ctx = ctx; cap.bus = bus; } catch (e) {}
+      return bus;
+    };
+    var origField = PJ2.Pitch.field;
+    PJ2.Pitch.field = function (opts) {
+      var f = origField(opts);
+      try { cap.field = f; cap.fieldGen = cap.gen; } catch (e) {}
+      return f;
+    };
+    var origHarmCreate = PJ2.Harmony.create;
+    PJ2.Harmony.create = function (opts) {
+      var h = origHarmCreate(opts);
+      try { cap.harmony = h; cap.harmGen = cap.gen; } catch (e) {}
+      return h;
+    };
+  } catch (e) {
+    showErr("could not wrap the engine factories (" + e.message + ") — engine plays, cello stays silent");
+  }
+
+  function capReady() {
+    return !!(cap.ctx && cap.bus && cap.field && cap.harmony &&
+              cap.fieldGen === cap.gen && cap.harmGen === cap.gen);
+  }
+
+  // ==========================================================================
+  // THE ENGINE — created after the wraps, driven exactly like any demo page.
+  // ==========================================================================
+  var seedInput = document.getElementById("seed");
+  var engine = null;
+  try {
+    engine = PJ2.Library.create({ seed: +seedInput.value, volume: 0.85 });
+  } catch (e) {
+    showErr("engine create failed: " + e.message);
+  }
+
+  // ==========================================================================
+  // KNOBS — read at schedule time, every one of them (house style: a knob
+  // is a scalar the voice asks about at the moment it bows, never a value
+  // baked into a closure at page load).
+  // ==========================================================================
+  function knob(id) { return +document.getElementById(id).value; }
+  var KNOB_LABELS = [
+    ["kLevel", "vLevel", 2], ["kPresence", "vPresence", 2],
+    ["kBright", "vBright", 0], ["kVib", "vVib", 2], ["kBow", "vBow", 2],
+    ["kDouble", "vDouble", 2], ["kLen", "vLen", 2],
+  ];
+  KNOB_LABELS.forEach(function (kl) {
+    var inp = document.getElementById(kl[0]), out = document.getElementById(kl[1]);
+    inp.oninput = function () { out.textContent = (+inp.value).toFixed(kl[2]); };
+  });
+
+  function celloEnabled() { return document.getElementById("celloOn").checked; }
+
+  // ==========================================================================
+  // THE CELLO'S ROOM — per-run plumbing. One small generated-IR reverb of
+  // its own (decayS 2.5: between the engine's parlor and hall — a cello
+  // sits mid-room, not at the reader's elbow) whose output joins bus.input
+  // beside the engine's rooms. Rebuilt whenever the capture generation
+  // moves; the old run's nodes are cut loose and its notes killed.
+  // ==========================================================================
+  var plumb = { gen: -1, out: null, rev: null };
+  var activeNotes = [];   // [{sources:[], gains:[], tEnd}] — finite, swept on ended/stop
+  var brain = null;       // per-run entry-brain state (reset with the plumbing)
+
+  function buildPlumbing() {
+    // sever the previous run's tail (its bus is finalized anyway)
+    killCello(0.05);
+    if (plumb.rev) { try { plumb.rev.output.disconnect(); } catch (e) {} }
+    try {
+      var c = cap.ctx;
+      plumb.out = c.createGain();
+      plumb.out.gain.setValueAtTime(1, c.currentTime);
+      plumb.rev = PJ2.Voice.reverb(c, { decayS: 2.5, preDelayS: 0.03, wet: 0.3, brightness: 1.3 });
+      plumb.out.connect(plumb.rev.send);
+      plumb.rev.output.connect(cap.bus.input);
+      plumb.gen = cap.gen;
+      brain = {
+        lastChord: null,     // harmony.current().name at the last poll
+        holdUntil: 0,        // ctx time the current bow releases
+        entries: 0,          // bows this run
+        candleBowed: false,  // the guttering law: one early tonic bow, then silence
+      };
+      pendingOps.length = 0; // the previous run's queued movements are not ours
+      logLine("— fresh run (gen " + cap.gen + "): cello plumbed into the bus —", true);
+    } catch (e) {
+      plumb.gen = cap.gen; // don't retry-loop a broken build every poll
+      showErr("cello plumbing failed: " + e.message);
+    }
+  }
+
+  // ==========================================================================
+  // THE BOW — one entry = one bow = 1–2 tones (a double-stop counts as one
+  // bow). Patch per PLAN-UNDERVOICES §2a, every pitch read from the LIVE
+  // field + harmony at this very moment:
+  //
+  //   two saws (±4 cents) → body stack (peaking 230 Hz +6 dB Q2,
+  //   400 Hz +4 dB, 1 kHz wood +3 dB Q1.5) → lowpass 1.8–2.6 kHz (knob) →
+  //   tone env (1.5–3 s attack, plateau, 2.5–4 s release; 10–25 s whole)
+  //   → shared swell (±2 dB slow bow-pressure sine — the integrated voice
+  //   will use slow-noise) → the cello's room → bus.
+  //
+  //   bow noise: 2–3 kHz bandpass over the shared noise buffer, very low,
+  //   riding the attack then thinning to a rosin whisper. It joins AFTER
+  //   the lowpass (the scrape lives above the body's cutoff by design).
+  //   vibrato: one osc 4.5–5.5 Hz, depth delayed ~1.5 s then blooming,
+  //   fed to every saw at a depth proportional to its frequency.
+  //
+  // Every gain envelope goes through PJ2.Voice.env — anchored, click-safe.
+  // Peak ≈ 0.045 × level knob per tone (drone pads are 2 × 0.07: the cello
+  // stays under the bed it enriches). Double-stop tones take 0.8× each so
+  // the dyad's sum stays inside the same ledger line.
+  // ==========================================================================
+  function bowNote(opts) {
+    // opts: {why, degs: [[deg, oct], ...], durS?, level?} — degs resolved by
+    // the caller FROM THE LIVE HARMONY moments before this call.
+    if (!capReady() || plumb.gen !== cap.gen || !plumb.out) return false;
+    var c = cap.ctx, ENV = PJ2.Voice.env;
+    var t0 = c.currentTime + 0.08;
+    var lenX = knob("kLen");
+    var durS = opts.durS || ((10 + Math.random() * 15) * lenX);
+    var attackS = 1.5 + Math.random() * 1.5;    // 1.5–3 s: the bow leans in
+    var releaseS = 2.5 + Math.random() * 1.5;   // 2.5–4 s: it eases off
+    if (durS < attackS + releaseS + 1) durS = attackS + releaseS + 1;
+    var note = { sources: [], gains: [], tEnd: t0 + durS + 0.4 };
+
+    try {
+      // shared per-bow: swell (bow pressure), vibrato clock, rosin noise
+      var swell = c.createGain();
+      swell.gain.setValueAtTime(1, t0);
+      var swLfo = c.createOscillator();
+      swLfo.frequency.value = 0.06 + Math.random() * 0.06; // one breath per ~10–16 s
+      var swDepth = c.createGain();
+      swDepth.gain.setValueAtTime(0, t0);
+      // the swell itself fades in with the attack — a flat start, then breath
+      ENV(swDepth.gain, t0, [[attackS, 0.2], [durS - attackS - releaseS, 0.2], [releaseS, 0]]);
+      swLfo.connect(swDepth); swDepth.connect(swell.gain);
+      swell.connect(plumb.out);
+      note.sources.push(swLfo); note.gains.push(swDepth);
+
+      var vib = c.createOscillator();
+      vib.frequency.value = 4.5 + Math.random() * 1.0; // 4.5–5.5 Hz
+      note.sources.push(vib);
+
+      var toneLevel = 0.045 * knob("kLevel") * (opts.level || 1) *
+                      (opts.degs.length > 1 ? 0.8 : 1);
+
+      for (var i = 0; i < opts.degs.length && i < 2; i++) {
+        var deg = opts.degs[i][0], oct = opts.degs[i][1];
+        var f = cap.field.degFreq(deg, oct); // AT SCHEDULE TIME — never cached
+        var mix = c.createGain();
+        mix.gain.setValueAtTime(0.5, t0); // two saws share one body
+        [4, -4].forEach(function (cents) {
+          var o = c.createOscillator();
+          o.type = "sawtooth";
+          o.frequency.value = f * Math.pow(2, cents / 1200);
+          o.connect(mix);
+          o.start(t0); o.stop(note.tEnd);
+          note.sources.push(o);
+          // vibrato: depth ~8 cents of THIS tone's frequency, delayed 1.5 s
+          var vg = c.createGain();
+          ENV(vg.gain, t0, [[1.5, 0], [1.0, f * 0.0046 * knob("kVib")],
+                            [Math.max(0.1, durS - 2.5 - releaseS), f * 0.0046 * knob("kVib")],
+                            [releaseS, 0]]);
+          vib.connect(vg); vg.connect(o.frequency);
+          note.gains.push(vg);
+        });
+        // the wooden body: three formant bumps, then the dark top
+        var eq1 = c.createBiquadFilter(); eq1.type = "peaking";
+        eq1.frequency.value = 230; eq1.gain.value = 6; eq1.Q.value = 2;
+        var eq2 = c.createBiquadFilter(); eq2.type = "peaking";
+        eq2.frequency.value = 400; eq2.gain.value = 4; eq2.Q.value = 1;
+        var eq3 = c.createBiquadFilter(); eq3.type = "peaking";
+        eq3.frequency.value = 1000; eq3.gain.value = 3; eq3.Q.value = 1.5;
+        var lp = c.createBiquadFilter(); lp.type = "lowpass";
+        lp.frequency.value = knob("kBright"); lp.Q.value = 0.7;
+        var tg = c.createGain();
+        ENV(tg.gain, t0, [[attackS, toneLevel],
+                          [durS - attackS - releaseS, toneLevel], // flat plateau; the swell breathes it
+                          [releaseS, 0]]);
+        mix.connect(eq1); eq1.connect(eq2); eq2.connect(eq3); eq3.connect(lp);
+        lp.connect(tg); tg.connect(swell);
+        note.gains.push(tg);
+      }
+
+      // rosin: the bow's grip, loudest as the tone finds its feet
+      var bowAmt = knob("kBow");
+      if (bowAmt > 0) {
+        var ns = PJ2.Voice.noiseBuffer.source(c, 8);
+        var bp = c.createBiquadFilter(); bp.type = "bandpass";
+        bp.frequency.value = 2500; bp.Q.value = 1.1;
+        var ng = c.createGain();
+        var bowPeak = toneLevel * 0.22 * bowAmt;
+        // the rosin decay squeezes on short notes so its release always
+        // lands inside the note (a source stopped mid-envelope clicks)
+        var rosinDecay = Math.min(2.0, Math.max(0.4, durS - attackS - releaseS - 0.2));
+        ENV(ng.gain, t0, [[attackS, bowPeak], [rosinDecay, bowPeak * 0.16],
+                          [Math.max(0.05, durS - attackS - rosinDecay - releaseS), bowPeak * 0.16],
+                          [releaseS, 0]]);
+        ns.connect(bp); bp.connect(ng); ng.connect(swell);
+        ns.start(t0, ns.randomOffset || 0); ns.stop(note.tEnd);
+        note.sources.push(ns); note.gains.push(ng);
+      }
+
+      swLfo.start(t0); swLfo.stop(note.tEnd);
+      vib.start(t0); vib.stop(note.tEnd);
+
+      // sweep the note when its last source ends — finite nodes, no leaks
+      note.sources[0].onended = function () { sweepNote(note); };
+      activeNotes.push(note);
+
+      brain.holdUntil = t0 + durS;
+      brain.entries++;
+      return true;
+    } catch (e) {
+      showErr("bow failed: " + e.message);
+      sweepNote(note);
+      return false;
+    }
+  }
+
+  function sweepNote(note) {
+    for (var i = 0; i < note.sources.length; i++) {
+      try { note.sources[i].onended = null; } catch (e) {}
+      try { note.sources[i].disconnect(); } catch (e) {}
+    }
+    for (var j = 0; j < note.gains.length; j++) {
+      try { note.gains[j].disconnect(); } catch (e) {}
+    }
+    var k = activeNotes.indexOf(note);
+    if (k >= 0) activeNotes.splice(k, 1);
+  }
+
+  // kill every sounding bow with a short ANCHORED fade (lesson #3: cancel,
+  // re-anchor at the current value, then ramp — a bare cancel clicks).
+  function killCello(fadeS) {
+    if (!activeNotes.length) return;
+    var c = cap.ctx;
+    var t = c ? c.currentTime : 0;
+    var notes = activeNotes.slice();
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      for (var j = 0; j < n.gains.length; j++) {
+        var g = n.gains[j].gain;
+        try {
+          var v = (typeof g.value === "number") ? g.value : 0;
+          g.cancelScheduledValues(t);
+          g.setValueAtTime(v, t);
+          g.linearRampToValueAtTime(0, t + (fadeS || 0.1));
+        } catch (e) {}
+      }
+      for (var s = 0; s < n.sources.length; s++) {
+        try { n.sources[s].stop(t + (fadeS || 0.1) + 0.05); } catch (e) {}
+      }
+    }
+    if (brain) brain.holdUntil = 0;
+    // Deterministic sweep on a JS timer: the engine's stop() suspends the
+    // ctx once its own fade lands, and a suspended clock never reaches the
+    // sources' stop times — onended would wait for the next play. The
+    // sources are silenced either way; this closes the books on EXACTLY the
+    // notes killed here (a fresh run may already be bowing by then).
+    setTimeout(function () {
+      for (var q = 0; q < notes.length; q++) sweepNote(notes[q]);
+    }, ((fadeS || 0.1) + 0.3) * 1000);
+  }
+
+  // ==========================================================================
+  // THE ENTRY BRAIN — prototype-grade. Opportunities arrive two ways:
+  //   - the 250 ms poll notices harmony.current().name changed (a step),
+  //   - engine events queue cadence / seachange / scene turns.
+  // Each opportunity draws Math.random() against
+  //   base chance (per kind) × intensity scaling × the presence knob,
+  // and every decision — bowed OR passed — is logged with its arithmetic,
+  // so the owner can see the voice thinking. Gates, in order:
+  //   cello disabled · plumbing missing · candle-out (the guttering law:
+  //   one early long tonic bow, then silence) · intensity < 0.15 (the
+  //   settling stays bare) · still holding a bow (one bow at a time).
+  // ==========================================================================
+  var BASE_CHANCE = {
+    harmony:   0.35,  // steps are frequent; the cello voice-leads SOME of them
+    cadence:   0.85,  // the consort approach almost always gains its body
+    seachange: 1.0,   // the one true change of substance — always doubled
+    scene:     0.45,  // a scene turn is a reasonable place to breathe in
+  };
+
+  function intensityScale(intensity) {
+    // 0 at the floor, full weight once the evening is properly under way
+    var x = (intensity - 0.15) / 0.3;
+    return x < 0 ? 0 : (x > 1 ? 1 : 0.25 + 0.75 * x);
+  }
+
+  function chooseDegs(why, cur) {
+    // cur = harmony.current() read moments ago. chordDegs = [root, 3rd, 5th]
+    // as degree classes; the cello lives at oct −1 (≈131–235 Hz, wrapped
+    // around the drone dyad).
+    var root = cur.chordDegs[0], third = cur.chordDegs[1], fifth = cur.chordDegs[2];
+    if (why === "seachange") {
+      // double the bloom an octave up: the new root, low and lifted
+      return [[root, -1], [root, 0]];
+    }
+    var r = Math.random();
+    var main = (r < 0.5) ? root : (r < 0.8 ? fifth : third);
+    var degs = [[main, -1]];
+    if (Math.random() < knob("kDouble")) {
+      // a double-stop: root + 5th or root + 3rd (§2a) — re-rooted so the
+      // stop always contains the root
+      degs = [[root, -1], [Math.random() < 0.6 ? fifth : third, -1]];
+    }
+    return degs;
+  }
+
+  function considerOp(kind, detail, info) {
+    var cur = null;
+    try { cur = cap.harmony.current(); } catch (e) { return; }
+    if (!cur || !cur.chordDegs || cur.chordDegs.length < 3) return;
+    var tag = kind + (detail ? " (" + detail + ")" : "") + " · chord " + cur.name;
+
+    if (!celloEnabled()) { logLine(tag + " → cello disabled"); return; }
+
+    var scene = info.sceneType || "?";
+    var intensity = (info.intensity != null) ? info.intensity : 0;
+
+    // the guttering law, borrowed from the halo: through candle-out the
+    // cello may bow ONCE, early, on the tonic — then it lets the room set
+    if (scene === "candle-out") {
+      if (brain.candleBowed) { logLine(tag + " → candle-out: already bowed once, silent now"); return; }
+      if (info.x != null && info.x > 0.5) { logLine(tag + " → candle-out: too late in the guttering, silent"); return; }
+      var cDraw = Math.random(), cChance = 0.8 * knob("kPresence");
+      if (cDraw < cChance) {
+        brain.candleBowed = true;
+        if (bowNote({ why: "candle-out", degs: [[0, -1]], durS: 20 + Math.random() * 5 })) {
+          logLine(tag + " → draw " + cDraw.toFixed(2) + " < " + cChance.toFixed(2) +
+                  " → ONE long tonic bow, then silence", true);
+        }
+      } else {
+        logLine(tag + " → draw " + cDraw.toFixed(2) + " ≥ " + cChance.toFixed(2) + " → passed (stays silent)");
+      }
+      return;
+    }
+
+    if (intensity < 0.15) { logLine(tag + " → intensity " + intensity.toFixed(2) + " < 0.15 → silent"); return; }
+    var now = cap.ctx ? cap.ctx.currentTime : 0;
+    if (now < brain.holdUntil) {
+      logLine(tag + " → still holding (" + (brain.holdUntil - now).toFixed(0) + "s left) → passed");
+      return;
+    }
+
+    var base = BASE_CHANCE[kind] || 0.3;
+    var iScale = intensityScale(intensity);
+    var chance = base * iScale * knob("kPresence");
+    if (chance > 1) chance = 1;
+    var draw = Math.random();
+    var math = "draw " + draw.toFixed(2) + " vs " + base.toFixed(2) +
+               "×" + iScale.toFixed(2) + "×" + knob("kPresence").toFixed(2) +
+               " = " + chance.toFixed(2);
+    if (draw < chance) {
+      var degs = chooseDegs(kind, cur);
+      var durS = (kind === "seachange") ? (20 + Math.random() * 8) : null;
+      if (bowNote({ why: kind, degs: degs, durS: durS })) {
+        var names = [];
+        for (var i = 0; i < degs.length; i++) names.push("deg " + degs[i][0] + " oct " + degs[i][1]);
+        logLine(tag + " → " + math + " → BOW " + names.join(" + ") +
+                (degs.length > 1 ? (kind === "seachange" ? " (octave double)" : " (double-stop)") : ""), true);
+      }
+    } else {
+      logLine(tag + " → " + math + " → passed");
+    }
+  }
+
+  // ---- engine events feed the opportunity queue ---------------------------
+  var pendingOps = [];
+  if (engine) {
+    engine.setEventListener(function (evt) {
+      if (!evt) return;
+      try {
+        if (evt.type === "cadence") pendingOps.push(["cadence", evt.kind || ""]);
+        else if (evt.type === "seachange") pendingOps.push(["seachange", evt.target || ""]);
+        else if (evt.type === "scene") pendingOps.push(["scene", evt.scene || ""]);
+        else if (evt.type === "engine" && evt.state === "reseed") logLine("— reseed " + evt.seed + " —", true);
+      } catch (e) {}
+    });
+  }
+
+  // ---- the 250 ms poll: re-plumb, watch the harmony, consume the queue ----
+  setInterval(function () {
+    if (!engine || !engine.isPlaying()) { pendingOps.length = 0; return; }
+    if (!capReady()) return;
+    if (plumb.gen !== cap.gen) buildPlumbing();
+    if (!brain) return;
+    var info = {};
+    try { info = engine.getInfo() || {}; } catch (e) {}
+
+    // harmony step: the chord's NAME moved since the last look
+    var name = null;
+    try { name = cap.harmony.current().name; } catch (e) {}
+    if (name != null) {
+      if (brain.lastChord != null && name !== brain.lastChord) {
+        pendingOps.push(["harmony", brain.lastChord + " → " + name]);
+      }
+      brain.lastChord = name;
+    }
+
+    // consume queued opportunities (each drawn independently)
+    while (pendingOps.length) {
+      var op = pendingOps.shift();
+      considerOp(op[0], op[1], info);
+    }
+  }, 250);
+
+  // ==========================================================================
+  // CONTROLS
+  // ==========================================================================
+  document.getElementById("play").onclick = function () {
+    if (!engine) return;
+    try { engine.play(); ensureAnalyser(); } catch (e) { showErr("play failed: " + e.message); }
+  };
+  document.getElementById("stop").onclick = function () {
+    if (!engine) return;
+    killCello(0.15);
+    try { engine.stop(); } catch (e) {}
+  };
+  document.getElementById("reroll").onclick = function () {
+    seedInput.value = Math.floor(Math.random() * 4294967295);
+    killCello(0.1);
+    if (engine) engine.reseed(+seedInput.value);
+  };
+  seedInput.onchange = function () {
+    killCello(0.1);
+    if (engine) engine.reseed(+seedInput.value);
+  };
+  document.getElementById("vol").oninput = function () {
+    if (engine) engine.setMasterVolume(+this.value);
+  };
+
+  // instant audition: bows one tone on the current chord RIGHT NOW —
+  // bypasses the brain's chance math but honors nothing else (the owner
+  // must never wait for an entry to hear the instrument)
+  document.getElementById("bowNow").onclick = function () {
+    if (!engine || !engine.isPlaying() || !capReady()) {
+      logLine("bow now → engine not playing (press play first)");
+      return;
+    }
+    if (plumb.gen !== cap.gen) buildPlumbing();
+    var cur = null;
+    try { cur = cap.harmony.current(); } catch (e) {}
+    if (!cur) { logLine("bow now → could not read the harmony"); return; }
+    var degs = chooseDegs("manual", cur);
+    if (bowNote({ why: "manual", degs: degs })) {
+      logLine("bow now → chord " + cur.name + " → BOW (manual audition)", true);
+    }
+  };
+
+  // hush the melody: drone + cello alone. Mutes the melodic layers AND the
+  // hum (the third speaker) via the engine's own mixer; untoggle restores.
+  var hushed = false;
+  var HUSH_KEYS = ["harpsichord", "musicbox", "hum"];
+  document.getElementById("hush").onclick = function () {
+    if (!engine) return;
+    hushed = !hushed;
+    this.classList.toggle("on", hushed);
+    for (var i = 0; i < HUSH_KEYS.length; i++) {
+      try { engine.toggleLayer(HUSH_KEYS[i], !hushed); } catch (e) {}
+    }
+    logLine(hushed ? "— melody hushed: drone + cello alone —" : "— melody restored —", true);
+  };
+
+  document.getElementById("beep").onclick = function () {
+    try {
+      var C = window.AudioContext || window.webkitAudioContext;
+      var c = cap.ctx || new C();
+      if (c.state === "suspended") c.resume();
+      var t = c.currentTime + 0.05;
+      var o = c.createOscillator(); o.frequency.value = 220;
+      var g = c.createGain();
+      PJ2.Voice.env(g.gain, t, [[0.02, 0.2], [0.4, 0.15], [0.1, 0]]);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t + 0.6);
+    } catch (e) { showErr("beep failed: " + e.message); }
+  };
+
+  // ==========================================================================
+  // METER + STATUS READOUT
+  // ==========================================================================
+  var analyser = null, meterBuf = null;
+  var meterEl = document.getElementById("meter");
+  function ensureAnalyser() {
+    if (analyser || !cap.ctx) return;
+    try {
+      analyser = cap.ctx.createAnalyser();
+      analyser.fftSize = 2048;
+      engine.attachAnalyser(analyser); // re-tapped by the facade per fresh bus
+    } catch (e) { analyser = null; }
+  }
+  (function meterLoop() {
+    var line = "";
+    if (cap.ctx) line += "ctx: " + cap.ctx.state;
+    line += " · engine: " + (engine && engine.isPlaying() ? "playing" : "stopped");
+    if (analyser) {
+      if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+      try {
+        analyser.getFloatTimeDomainData(meterBuf);
+        var sum = 0;
+        for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+        var rms = Math.sqrt(sum / meterBuf.length);
+        var db = rms > 0 ? 20 * Math.log10(rms) : -120;
+        var bars = Math.max(0, Math.min(40, Math.round((db + 80) / 2)));
+        line += " · out " + (db <= -119 ? "-inf" : db.toFixed(0)) + " dB " +
+          new Array(bars + 1).join("#");
+      } catch (e) {}
+    }
+    meterEl.textContent = line;
+    requestAnimationFrame(meterLoop);
+  })();
+
+  setInterval(function () {
+    // headless-verification handle (not a UI feature) — refreshed whether
+    // playing or stopped, so a test can watch the note list drain
+    window.__cello = {
+      entries: brain ? brain.entries : 0,
+      plumbed: plumb.gen === cap.gen && !!plumb.out,
+      activeNotes: activeNotes.length,
+    };
+    if (!engine || !engine.isPlaying()) { statusEl.textContent = "stopped."; return; }
+    var parts = [];
+    var i = {};
+    try { i = engine.getInfo() || {}; } catch (e) {}
+    if (i.sceneLabel || i.sceneType) parts.push("scene: " + (i.sceneLabel || "") + (i.sceneType ? " (" + i.sceneType + ")" : ""));
+    if (i.intensity != null) parts.push("intensity: " + Number(i.intensity).toFixed(2));
+    if (i.harmony) parts.push("chord: " + i.harmony + (i.harmonyTones ? " [" + i.harmonyTones + "]" : ""));
+    var cs = "cello: ";
+    if (!celloEnabled()) cs += "disabled";
+    else if (!capReady() || !brain) cs += "waiting for the run";
+    else {
+      var now = cap.ctx ? cap.ctx.currentTime : 0;
+      cs += (now < brain.holdUntil)
+        ? "holding (" + (brain.holdUntil - now).toFixed(0) + "s left)"
+        : "idle";
+      cs += " · " + brain.entries + " entr" + (brain.entries === 1 ? "y" : "ies") + " this run";
+      if (hushed) cs += " · melody hushed";
+    }
+    parts.push(cs);
+    statusEl.textContent = parts.join("\n") || "playing…";
+  }, 500);
+
+  // ==========================================================================
+  // headless self-test: ?autoplay=1 starts the engine without a click
+  // (needs --autoplay-policy=no-user-gesture-required), bows one manual
+  // note at t+4 s, and logs a DIAG line per second for stderr capture.
+  // ==========================================================================
+  if (/[?&]autoplay=1/.test(window.location.search)) {
+    var diagT0 = Date.now();
+    setTimeout(function () {
+      try { engine.play(); ensureAnalyser(); } catch (e) { showErr("autoplay: " + e.message); }
+    }, 1200);
+    setTimeout(function () {
+      try { document.getElementById("bowNow").onclick(); } catch (e) {}
+    }, 4200);
+    setInterval(function () {
+      var line = "DIAG t=" + Math.round((Date.now() - diagT0) / 1000) +
+        " ctx=" + (cap.ctx ? cap.ctx.state : "none") +
+        " playing=" + (engine ? engine.isPlaying() : "no-engine") +
+        " cap=" + capReady() +
+        " plumbed=" + (plumb.gen === cap.gen && !!plumb.out) +
+        " entries=" + (brain ? brain.entries : "-") +
+        " notes=" + activeNotes.length +
+        " err=" + (window.__pjErr || "none");
+      if (analyser) {
+        if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+        try {
+          analyser.getFloatTimeDomainData(meterBuf);
+          var sum = 0;
+          for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+          var rms = Math.sqrt(sum / meterBuf.length);
+          line += " out=" + (rms > 0 ? (20 * Math.log10(rms)).toFixed(1) : "-inf") + "dB";
+        } catch (e) {}
+      }
+      console.log(line);
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>
