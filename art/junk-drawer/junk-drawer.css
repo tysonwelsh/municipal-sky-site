@@ -2442,34 +2442,22 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
 .jd-dark-sw[data-state="fail"] .jd-dark-big { color: var(--tink-2); }
 
-/* ---- f — the carbon rain (round 25, owner pick 2026-08-21) ------------------
-   A falling-glyph column in the manner of the film everyone has seen, retyped
-   on the office machine: 78 writing systems, 5987 characters, one glyph to a
-   printed square, falling down the paper's own rules. The joke is the charset
-   — the inscrutable machine language turns out to be a filing cabinet — and
-   the reversed strikes, which the Matrix does for the look and a carbon copy
-   does because you are reading the second sheet from behind.
+/* ---- f — the word drift (round 27, replaces the carbon rain 2026-08-23) ----
+   The rain, rewritten in English. Columns of words fall down the paper's own
+   rules, one letter to a printed square; each letter strikes the bottom rule,
+   is thrown off it, and comes to rest in a heap along the floor. The depth of
+   the heap is how long you have been waiting.
 
-   THE COLUMN NEVER REPEATS, and the mechanism is worth knowing before anyone
-   changes it. A stream loops; at the instant it wraps — jumping from below
-   the bottom edge back above the top — every square in it is off the sheet.
-   junk-drawer.js listens for that exact moment (animationiteration on the
-   stream, guarded to the `fall` animation, because the pinwheel squares'
-   own iteration events BUBBLE to the same listener) and re-draws the whole
-   column's characters there. Nobody ever sees a glyph change, and the supply
-   is the entire pool rather than a fixed strip of markup.
+   It replaces the carbon rain (78 writing systems, 5987 generated characters),
+   which read as texture rather than as language — the owner wanted the wait
+   said in words you can actually read. Everything the rain knew about falling
+   is still here; only the alphabet and the landing are new.
 
-   MIND THE TRAVEL DISTANCE: --jdr-h is the SHEET's height, set inline by the
-   builder. A percentage in translateY resolves against the ELEMENT's own
-   height, so `100%` here would move a stream by its own length and wrap it
-   in full view, mid-sheet.
-
-   Each script carries its own font-size (--jdr-* below), measured so that its
-   advance matches the Latin's; Cherokee at 8.9px, Deseret at 9.2px, Chinese
-   at 6px and Latin at 10px all sit on one rhythm. Never re-tune one of these
-   by eye — the inventory and the sizes are generated together.
+   The layout is the drawer's own: 9px ruling, one letter to a square, struck
+   in the paper's ruling blue. Nothing here is per-script, so the generated
+   font-size table the rain needed is gone with it.
    -------------------------------------------------------------------------- */
-.jd-dark-well--rain { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-well--drift { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
 
 /* the mesh (owner directive 2026-08-22): Kimi's Take iframed whole into the
    swatch — full-bleed like the rain, since mini.php brings its own paper at
@@ -2480,126 +2468,41 @@ html.jd-turn-open { overflow: hidden; }
 .jd-dark-well--mesh { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
 .jd-dark-mesh { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
   border: 0; display: block; background: transparent; }
-.jd-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+.jd-drift { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
-.jd-rain-c { position: absolute; top: 0; display: block; opacity: var(--jdr-o); }
-.jd-rain-s { position: absolute; top: 0; left: 0; display: block;
-  transform: translateY(var(--jdr-y0)); }
-.jd-rain-s i {
-  display: block; width: 9px; height: 9px; line-height: 9px; text-align: center;
-  font-family: var(--tmono); font-style: normal; color: #4a628a;   /* the paper's own ruling colour, struck solid */
-  overflow: hidden;
+.jd-drift .col { position: absolute; left: 0; top: 0; display: block; }
+/* the heap. Letters are MOVED here when they settle — the same element that
+   fell, not a copy of it: copying leaves two glyphs stacked at the landing
+   point for several frames, and it reads as a flicker at every landing. */
+.jd-drift .drift { position: absolute; left: 0; top: 0; display: block; }
+.jd-drift i {
+  position: absolute; left: 0; top: 0;
+  width: 9px; height: 9px; line-height: 9px; text-align: center;
+  font-family: var(--tmono); font-style: normal;
+  color: #4a628a;                    /* the paper's own ruling colour, struck solid */
+  will-change: transform;
 }
-.jd-rain-s i.is-rev  { transform: scaleX(-1); }
-.jd-rain-s i.is-spin { overflow: visible; }
-/* a word laid into the rain: upright Latin, never reversed, never re-struck.
-   It stays the SAME BLUE as the rain around it (owner, 2026-08-21) — the word
-   is meant to surface out of the noise because it is coherent, not because it
-   changes colour. The office's own two words (LOADING / STAND BY) carry a
-   little more weight than the words of the job in hand; that is the whole
-   difference between them. */
-.jd-rain-s i.is-word  { color: #4a628a; }
-.jd-rain-s i.is-heavy { color: #4a628a; font-weight: 700; }
-.jdr-lat { font-size: 10.0px; }
-.jdr-dig { font-size: 10.0px; }
-.jdr-mrk { font-size: 10.0px; }
-.jdr-grk { font-size: 10.1px; }
-.jdr-cyr { font-size: 9.3px; }
-.jdr-heb { font-size: 10px; }
-.jdr-arb { font-size: 9.9px; }
-.jdr-dev { font-size: 8.9px; }
-.jdr-geo { font-size: 9.7px; }
-.jdr-arm { font-size: 9.7px; }
-.jdr-cjk { font-size: 6px; }
-.jdr-han { font-size: 7.5px; }
-.jdr-tha { font-size: 10.1px; }
-.jdr-che { font-size: 9.5px; }
-.jdr-des { font-size: 10.3px; }
-.jdr-tib { font-size: 12px; }
-.jdr-brh { font-size: 9.6px; }
-.jdr-sid { font-size: 8.3px; }
-.jdr-shr { font-size: 9.3px; }
-.jdr-gra { font-size: 6.8px; }
-.jdr-khr { font-size: 10px; }
-.jdr-ben { font-size: 9px; }
-.jdr-gur { font-size: 9.8px; }
-.jdr-guj { font-size: 8.2px; }
-.jdr-ori { font-size: 9.1px; }
-.jdr-tam { font-size: 8.1px; }
-.jdr-tel { font-size: 7.2px; }
-.jdr-kan { font-size: 7.2px; }
-.jdr-mal { font-size: 6.1px; }
-.jdr-sin { font-size: 7.9px; }
-.jdr-mya { font-size: 7.3px; }
-.jdr-khm { font-size: 8.5px; }
-.jdr-run { font-size: 8.2px; }
-.jdr-got { font-size: 9.3px; }
-.jdr-ita { font-size: 9.1px; }
-.jdr-phn { font-size: 9.1px; }
-.jdr-lnb { font-size: 7.6px; }
-.jdr-cop { font-size: 9.5px; }
-.jdr-tfn { font-size: 9.8px; }
-.jdr-osa { font-size: 8.8px; }
-.jdr-shw { font-size: 11.9px; }
-.jdr-vai { font-size: 7.9px; }
-.jdr-adl { font-size: 8.2px; }
-.jdr-nko { font-size: 11.1px; }
-.jdr-yii { font-size: 10.4px; }
-.jdr-gla { font-size: 7.2px; }
-.jdr-eth { font-size: 6.6px; }
-.jdr-syr { font-size: 8px; }
-.jdr-thn { font-size: 9.5px; }
-.jdr-lao { font-size: 10.1px; }
-.jdr-bam { font-size: 9.9px; }
-.jdr-ave { font-size: 9.4px; }
-.jdr-olt { font-size: 9.5px; }
-.jdr-arc { font-size: 9.2px; }
-.jdr-nab { font-size: 11.4px; }
-.jdr-pal { font-size: 10px; }
-.jdr-man { font-size: 7.6px; }
-.jdr-car { font-size: 8.8px; }
-.jdr-lyc { font-size: 9.5px; }
-.jdr-lyd { font-size: 9.6px; }
-.jdr-ugr { font-size: 6.1px; }
-.jdr-opr { font-size: 5.2px; }
-.jdr-mer { font-size: 7.2px; }
-.jdr-olc { font-size: 9.6px; }
-.jdr-cham { font-size: 5.5px; }
-.jdr-bali { font-size: 5.8px; }
-.jdr-java { font-size: 5.6px; }
-.jdr-bugi { font-size: 6.2px; }
-.jdr-batk { font-size: 6.1px; }
-.jdr-lisu { font-size: 9.7px; }
-.jdr-bass { font-size: 8.5px; }
-.jdr-mend { font-size: 8.5px; }
-.jdr-wcho { font-size: 9.4px; }
-.jdr-rohg { font-size: 11px; }
-.jdr-tale { font-size: 10.3px; }
-.jdr-mth { font-size: 10.0px; }
-.jdr-pla { font-size: 10.0px; }
-.jdr-alc { font-size: 6.6px; }
+/* a letter still falling starts ABOVE the sheet. Its animation carries
+   fill:both, so this only shows in the instant before the animation is
+   attached — but without it that instant is a glyph at the top-left corner. */
+.jd-drift .col > i { transform: translateY(-300%); }
 
-@keyframes jdRainFall {
-  from { transform: translateY(calc(-1 * var(--jdr-dh))); }
-  to   { transform: translateY(var(--jdr-h)); }
-}
-@keyframes jdRainSpin    { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-@keyframes jdRainSpinCcw { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+/* arrived / failed: the drift stops where it stands, with the rest of the
+   well. The metronomes are stopped in JS at the same moment — a paused
+   animation still holds its letter on the paper, which is what we want, but
+   a running metronome would go on minting letters behind the fade. */
+.jd-dark-sw[data-state="ok"] .jd-drift i,
+.jd-dark-sw[data-state="fail"] .jd-drift i { animation-play-state: paused; }
 
-@media (prefers-reduced-motion: no-preference) {
-  .jd-rain-s { animation: jdRainFall var(--jdr-d) linear var(--jdr-dl) infinite; }
-  .jd-rain-s i.is-spin { animation: jdRainSpin var(--jdr-sd) linear infinite; }
-  .jd-rain-s i.is-spin.is-ccw { animation-name: jdRainSpinCcw; }
-}
-/* stillness: with no fall there is no wrap, so animationiteration never fires
-   and the sheet simply holds the page of type it was first dealt */
+/* stillness: no fall, no landing, no heap. The sheet holds one line of the
+   office's own words, set where the drift would have come to rest. */
 @media (prefers-reduced-motion: reduce) {
-  .jd-rain-s, .jd-rain-s i.is-spin { animation: none !important; }
-}
-/* arrived / failed: the rain stops where it stands, with the rest of the well */
-.jd-dark-sw[data-state="ok"]   .jd-rain-s, .jd-dark-sw[data-state="ok"]   .jd-rain-s i.is-spin,
-.jd-dark-sw[data-state="fail"] .jd-rain-s, .jd-dark-sw[data-state="fail"] .jd-rain-s i.is-spin {
-  animation-play-state: paused;
+  .jd-drift { display: none; }
+  .jd-dark-well--drift::after {
+    content: "PLEASE WAIT"; position: absolute; left: 0; right: 0; bottom: 9px;
+    text-align: center; font-family: var(--tmono); font-size: 10px;
+    letter-spacing: 2px; color: #4a628a;
+  }
 }
 
 /* ---- the margin line, under the pile (round 26) ----------------------------
@@ -2707,6 +2610,10 @@ html.jd-turn-open { overflow: hidden; }
    the flow. One value covers every width: min() folds the phone case in, and
    there is no ≤700px override for the call any more. */
 .jd-turn[data-view="call"] { width: min(462px, 100%); }
+/* the unveil is the call's own podium carrying its answer, so it stands at
+   the call's measure — a wider sheet would make the same steps read as a
+   different object. */
+.jd-turn[data-view="said"] { width: min(462px, 100%); }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
 /* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21;
@@ -3062,7 +2969,6 @@ html.jd-turn-open { overflow: hidden; }
   --pw: 72px;        /* one print */
   --pstep: 15px;     /* how much one rank rises over the next */
   --pbase: 44px;     /* the shortest block (4th) */
-  --pctl: 20px;      /* the enlarge/replay line under each print */
   position: relative;
 }
 .jd-pod-row { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
@@ -3077,7 +2983,7 @@ html.jd-turn-open { overflow: hidden; }
    The dashed hole is built once and HIDDEN when taken — never thrown away
    and rebuilt, so nothing inside a stand is ever detached under a drag. */
 .jd-pod-stand {
-  height: calc(var(--pw) + 25px + var(--pctl));
+  height: calc(var(--pw) + 25px);
   display: flex; align-items: flex-end; justify-content: center;
   padding-bottom: 3px;
 }
@@ -3111,6 +3017,40 @@ html.jd-turn-open { overflow: hidden; }
 .jd-pod-tier[data-rank="2"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep) * 2); }
 .jd-pod-tier[data-rank="3"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep)); }
 .jd-pod-tier[data-rank="4"] .jd-pod-block { height: var(--pbase); }
+
+/* ── THE PODIUM STANDS: the unveil (owner, 2026-08-23) ────────────────────
+   The same steps the visitor just built, now carrying the answer. A block
+   reads rank at the top and the machine's name at its foot, so the shape of
+   their verdict and the identity behind it are one object.
+   The blocks stand on MORE PAPER here (--pbase is raised) and nothing else
+   changes: --pstep is untouched, so every step still rises over the next by
+   exactly what it did on the call and the staircase reads as the same
+   object. Names wrap to two lines rather than shrinking to fit — which is
+   why the phone's base is the TALLER of the two: at 62px a name wraps where
+   at 100px it does not. */
+.jd-pod--said { --pbase: 66px; }
+.jd-pod--said .jd-pod-block {
+  flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 7px 5px 6px; gap: 2px; text-align: center;
+}
+.jd-pod--said .jd-pod-ord { flex: 0 0 auto; }
+/* the name sits at the FOOT of its own pedestal */
+.jd-pod--said .jd-pod-who {
+  margin-top: auto; display: block; min-width: 0;
+  font-family: var(--tform); font-weight: 400; letter-spacing: 0.02em;
+  text-transform: none; line-height: 1.15; color: var(--tink);
+  overflow-wrap: anywhere;
+}
+.jd-pod--said .jd-pod-who b {
+  display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em;
+}
+/* nothing on this card is being moved: it is a filed answer */
+.jd-pod--said .jd-pod-tier { cursor: default; touch-action: auto; }
+.jd-pod--said .jd-pod-print { cursor: zoom-in; touch-action: auto; }
+.jd-pod-lost {
+  margin-top: 0.5rem; color: var(--tink-3);
+  font-size: var(--t-small); line-height: 1.5;
+}
 /* the floor the whole thing stands on */
 .jd-pod-floor { height: 3px; background: var(--trule); margin: 0 2px; }
 
@@ -3130,7 +3070,7 @@ body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
    stays a real drop target, so a print can always come back down. */
 .jd-pod-tray {
   display: flex; align-items: flex-start; justify-content: center; gap: 6px;
-  margin-top: 16px; min-height: calc(var(--pw) + 29px + var(--pctl));
+  margin-top: 16px; min-height: calc(var(--pw) + 29px);
   -webkit-tap-highlight-color: transparent;
 }
 .jd-pod-tray.is-bare { min-height: 46px; }
@@ -3158,37 +3098,14 @@ body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
 .jd-pod-print svg { pointer-events: none; }
 .jd-pod-print:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
 
-/* ENLARGE + REPLAY, restored to the call (owner, 2026-08-22). The bench hangs
-   these two off the plate itself — the whole figure is the enlarge control and
-   REPLAY rides its corner — but here the plate is the thing being MOVED, so a
-   control anywhere on the artwork would eat the press that lifts it. They get
-   their own line under the caption instead: below the print, never over it.
-   They cannot sit BESIDE the caption, which is the other obvious arrangement —
-   "Model A" in the pencil hand is ~48px of a 72px print (62px on a phone), and
-   what is left will not hold two targets. */
-.jd-pod-cap {
-  display: flex; justify-content: center; gap: 4px;
-  height: var(--pctl); margin-top: 3px;
-}
-.jd-pod-ctl {
-  flex: 1 1 0; min-width: 0;
-  display: flex; align-items: center; justify-content: center;
-  padding: 0; border: 1px solid var(--trule-2);
-  background: rgba(255, 250, 232, 0.55);
-  color: var(--tink-2);
-  font-family: var(--tmono); font-size: 0.7rem; line-height: 1;
-  cursor: pointer;
-}
-.jd-pod-ctl:hover { background: rgba(255, 250, 232, 0.9); color: var(--tink); }
-.jd-pod-ctl:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
-.jd-pod-ctl:active { background: rgba(232, 217, 168, 0.9); }
-/* the two states the print wears also read on its controls */
-.jd-pod-print.is-lifted .jd-pod-cap { opacity: 0.3; }
-/* on the ghost they keep their space but not their look: a floating copy that
-   appears pressable is a lie, and the ghost takes no pointer events at all */
-.jd-pod-ghost .jd-pod-cap { visibility: hidden; }
-/* in hand (tapped, not yet placed) */
-.jd-pod-print.is-hand .jd-turn-art { outline: 2px solid var(--graphite); outline-offset: 3px; }
+/* A PLACE THAT IS WAITING (owner, 2026-08-23). The no-drag path arms the
+   PLACE, not the print — so this graphite outline is the whole instruction:
+   the step you touched is holding itself open, and the next drawing you touch
+   goes into it. Graphite because it is the visitor's own hand, the same ink
+   their ranking is written in. */
+.jd-pod-tier.is-waiting .jd-pod-block,
+.jd-pod-tray.is-waiting { outline: 2px solid var(--graphite); outline-offset: 2px; }
+.jd-pod-tier.is-waiting .jd-pod-hole { border-color: var(--graphite); border-style: solid; }
 /* in the air: the seat it left keeps its place and fades, so the row never
    collapses under a drag */
 .jd-pod-print.is-lifted .jd-turn-art { opacity: 0.2; box-shadow: none; }
@@ -3206,6 +3123,23 @@ body.jd-pod-drag, body.jd-pod-drag * {
 }
 
 @media (prefers-reduced-motion: no-preference) {
+  /* THE COUNTDOWN. Last place is named first and the winner last — the one
+     reading order a podium makes natural. It lives inside no-preference and
+     nowhere else: with reduced motion every name is simply already there on
+     the first paint, which is the base state this is added to. */
+  @keyframes jd-pod-said {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .jd-pod--said .jd-pod-who {
+    /* BACKWARDS, never both: the fill holds the from-state through the delay
+       and then hands the element back to its own styles, so the resting state
+       of a name is the one it has with no animation at all. A card whose
+       whole job is to say a name must not depend on an animation finishing
+       in order to show it. */
+    animation: jd-pod-said 260ms ease-out backwards;
+    animation-delay: var(--pdelay, 0ms);
+  }
   .jd-pod-block, .jd-pod-hole,
   .jd-pod-print .jd-turn-art, .jd-pod-print .jd-turn-plate figcaption {
     transition: background-color 130ms ease, border-color 130ms ease, opacity 130ms ease;
@@ -3219,19 +3153,14 @@ body.jd-pod-drag, body.jd-pod-drag * {
    tabbed away (see "THE CALL NEVER TABS" at the ≤600px block). */
 @media (max-width: 430px) {
   .jd-pod { --pw: 62px; --pstep: 13px; --pbase: 40px; }
+  /* the unveil's raised base steps down too, and must be restated HERE: it
+     is the same specificity as the line above and would otherwise lose to it
+     purely on source order, taking the names' room with it */
+  .jd-pod--said { --pbase: 68px; }
+  .jd-pod--said .jd-pod-who b { font-size: 0.6rem; }
   .jd-pod-row, .jd-pod-tray { gap: 4px; }
   .jd-pod-block { font-size: 0.74rem; }
   .jd-pod-print .jd-turn-corner { width: 13px; height: 13px; }
-}
-/* OVERRIDE 2's 44px floor, reached the only way this row can reach it: by
-   growing the LINE, never the button's width. A print is 72px wide (62px on a
-   phone), so two side-by-side targets can only be ~34px across — the height is
-   the axis there is room on, and it is grown downward into the podium's own
-   space, never upward over the artwork the drag needs. The stand and the row
-   read --pctl, so raising it moves the print and the block down together and
-   the print still stands ON its step. */
-@media (any-pointer: coarse) {
-  .jd-pod { --pctl: 44px; }
 }
 
 /* ============================================================================

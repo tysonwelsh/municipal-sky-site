@@ -3948,9 +3948,11 @@ function JD_layerOpen() {
        the live card (fitView needs the rendered DOM for getBBox). Views with
        no plates match nothing and this is a no-op. */
     if (window.JD_fitAll) window.JD_fitAll(bodyEl);
-    /* the carbon rain builds itself from the painted DOM (it needs the
-       well's measured size); any view without one matches nothing here */
-    jdRainMount(bodyEl);
+    /* the word drift builds itself from the painted DOM (it needs the well's
+       measured size); any view without one matches nothing here. It also
+       clears any drift left running from the previous paint — those live on
+       timers, not on the elements, so dropping the DOM would not stop them. */
+    jdDriftMount(bodyEl);
     card.setAttribute('aria-label', stateTitle || 'take a turn');
     card.setAttribute('data-view', (pendingHead && pendingHead.view) || 'form');
   }
@@ -4552,203 +4554,252 @@ function JD_layerOpen() {
      arrangement. The slot letters now mean POSITION only (the pencilled
      corner labels the later cards reference); which indicator a position
      hosts is the turn's own business. Each well wears its indicator's name
-     — jd-dark-well--plot/stray/scatter/watch/bar/rain/mesh — and the CSS
+     — jd-dark-well--plot/stray/scatter/watch/bar/drift/mesh — and the CSS
      keys the full-bleed and overflow tailoring to THAT, not to the slot. */
-  /* ---- the carbon rain (round 25) -----------------------------------------
-     The character pool: 78 writing systems, 5987 characters. It is GENERATED,
-     not typed — each script enumerated from its full Unicode block, then
-     sieved by ink density (blobs and specks out), shape-tested for
-     missing-glyph boxes, filtered against unicodedata for unassigned code
-     points and non-letters, de-duplicated, and checked for bitmap-identical
-     glyphs. The per-script font sizes in junk-drawer.css were measured in the
-     same pass so every script's advance matches the Latin's. The two travel
-     together: do not hand-edit one of them.
-     `w` is the weight — how often a script turns up. The character inside it
-     is then drawn flat, so pool size and frequency stay independent.
+  /* ---- the word drift (round 27) ------------------------------------------
+     The rain, rewritten in English. Columns of words fall one letter to a
+     printed square, strike the bottom rule, are thrown off it, and settle into
+     a heap along the floor. How deep the heap is, is how long you have waited.
+
+     It replaces the carbon rain — 78 writing systems and 5987 generated
+     characters — which read as texture rather than as language. The owner
+     wanted the wait said in words you can read. The falling is unchanged; the
+     alphabet and the landing are new, and the generated character pool and its
+     per-script font-size table are gone with it.
+
+     ONE LETTER, ONE ELEMENT, created when it is due and gone when it is spent.
+     No pool, nothing recycled. The bench version began with a fixed set of
+     glyphs per column passed round — land one, relaunch it, retire it into the
+     heap, mint a replacement — which needs the pool sized against a round
+     trip, retire and replace to balance exactly, and a starvation guard for
+     when they don't. Any slip there quietly shrinks the column, and words lose
+     letters the longer it runs. A letter per element cannot drift out of
+     balance. The cost is a few DOM nodes a second per column.
      -------------------------------------------------------------------- */
-  var JD_RAIN_POOL = {"lat":{"w":13,"c":"ABCDEFGHIJKLMNOPQRSTUVWXYZ"},"dig":{"w":7,"c":"0123456789"},"mrk":{"w":5,"c":"/-.:§¶№×÷±°†‡¤¢£¥"},"grk":{"w":6,"c":"ͰͱͲͳͶͷͻͼͽͿΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϏϐϑϒϓϔϕϖϗϘϙϚϛϜϝϞϟϠϡϢϣϤϥϦϧϨϩϪϫϬϭϮϯϰϱϲϳϴϵ϶ϷϸϹϺϻϼϾϿἀἁἂἃἄἅἆἇἈἉἊἋἌἍἎἏἐἑἒἓἔἕἘἙἚἛἜἝἠἡἢἣἤἥἦἧἨἩἪἫἬἭἮἯἰἱἲἳἴἵἶἷἸἹἺἻἼἽἾἿὀὁὂὃὄὅὈὉὊὋὌὍὐὑὒὓὔὕὖὗὙὛὝὟὠὡὢὣὤὥὦὧὨὩὪὫὬὭὮὯὰάὲέὴήὶίὸόὺύὼώᾀᾁᾂᾃᾄᾅᾆᾇᾈᾉᾊᾋᾌᾍᾎᾏᾐᾑᾒᾓᾔᾕᾖᾗᾘᾙᾚᾛᾜᾝᾞᾟᾠᾡᾢᾣᾤᾥᾦᾧᾨᾩᾪᾫᾬᾭᾮᾯᾰᾱᾲᾳᾴᾶᾷᾸᾹᾺΆᾼῂῃῄῆῇῈΈῊΉῌῐῑῒΐῖῗῘῙῚΊῠῡῢΰῤῥῦῧῨῩῪΎῬῲῳῴῶῷῸΌῺΏῼ"},"cyr":{"w":6,"c":"ЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџѠѡѢѣѤѥѦѧѨѩѪѫѬѭѮѯѰѱѲѳѴѵѶѷѸѹѺѻѼѽѾѿҀҁ҂ҊҋҌҍҎҏҐґҒғҔҕҖҗҘҙҚқҜҝҞҟҠҡҢңҤҥҦҧҨҩҪҫҬҭҮүҰұҲҳҴҵҶҷҸҹҺһҼҽҾҿӀӁӂӃӄӅӆӇӈӉӊӋӌӍӎӐӑӒӓӔӕӖӗӘәӚӛӜӝӞӟӠӡӢӣӤӥӦӧӨөӪӫӬӭӮӯӰӱӲӳӴӵӶӷӸӹӺӻӼӽӾӿԀԁԂԃԄԅԆԇԈԉԊԋԌԍԎԏԐԑԒԓԔԕԖԗԘԙԚԛԜԝԞԟԠԡԢԣԤԥԦԧԨԩԫԬԭԮԯꙀꙁꙂꙃꙄꙅꙆꙇꙈꙉꙊꙋꙌꙍꙎꙏꙐꙑꙒꙓꙔꙕꙖꙗꙘꙙꙚꙛꙜꙝꙞꙟꙠꙡꙢꙣꙤꙥꙦꙧꙨꙩꙪꙫꙬꙭꙮꙿꚀꚁꚂꚃꚆꚇꚈꚉꚊꚋꚌꚍꚎꚏꚐꚑꚒꚓꚔꚕꚖꚗꚘꚙꚚꚛ"},"heb":{"w":5,"c":"אבגדהוזחטךכלםמןנסעףפץצקרשתװױײײַﬠﬡﬢﬣﬤﬥﬦﬧﬨ﬩שׁשׂשּׁשּׂאַאָאּבּגּדּהּוּזּטּךּכּלּמּנּסּףּפּצּקּרּשּתּוֹבֿכֿפֿﭏ"},"arb":{"w":5,"c":"ؠءآأؤإئبةتثجحخدذرزسشصضطظعغػؼؽؾؿفقكلمنهوىيٮٯٱٲٳٵٶٷٸٹٺٻټٽپٿڀځڂڃڄڅچڇڈډڊڋڌڍڎڏڐڑڒړڔڕږڗژڙښڛڜڝڞڟڠڡڢڣڤڥڦڧڨکڪګڬڭڮگڰڱڲڳڴڵڶڷڸڹںڻڼڽھڿۀہۂۃۄۅۆۇۈۉۊۋیۍێۏېۑےۓݐݑݒݓݔݕݖݗݘݙݚݛݜݝݞݟݠݡݢݣݤݥݦݧݨݩݪݫݬݭݮݯݰݱݲݳݴݵݶݷݸݹݺݻݼݽݾݿࢠࢡࢢࢣࢤࢥࢦࢧࢨࢩࢪࢫࢬࢮࢰࢱࢲࢳࢴࢵࢶࢷࢸࢹࢺࢻࢼࢽ"},"dev":{"w":5,"c":"ऄअआइईउऊऋऌऍऎएऐऑऒओऔकखगघङचछजझञटठडढणतथदधनऩपफबभमयरऱलळऴवशषसहक़ख़ग़ज़ड़ढ़फ़य़ॠॡॲॳॴॵॶॷॸॹॺॻॼॽॾॿ"},"geo":{"w":4,"c":"ႠႡႢႣႤႥႦႧႨႩႪႫႬႭႮႯႰႱႲႳႴႵႶႷႸႹႺႻႼႽႾႿჀჁჂჃჄჅაბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰჱჲჳჴჵჶჷჸჹჺჼჽჾჿᲐᲑᲒᲓᲔᲕᲖᲗᲘᲙᲚᲛᲜᲝᲞᲟᲠᲡᲢᲣᲤᲥᲦᲧᲨᲩᲪᲫᲬᲭᲮᲯᲰᲱᲲᲳᲴᲵᲶᲷᲸᲹᲺᲽᲾᲿ"},"arm":{"w":4,"c":"ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՙաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆև"},"cjk":{"w":4,"c":"⼃⼨⽌⽰⾔⾸万丬乑乵亙亽仡伅伩位佱侕侹保倁倥偉偭傑債僙僽儡充兩再决凗击刟剃剧劋劯勓勷匛匿卣厇厫叏右吗吻呟咃咧哋哯唓唷啛啿喣嗇嗫嘏嘳噗噻嚟囃囧國圯坓坷垛垿埣堇堫塏塳増墻壟夃大奋奯妓妷姛姿娣婇婫媏媳嫗嫻嬟孃孧宋宯寓寷尛尿屣岇岫峏峳崗崻嵟嶃嶧巋巯帓帷幛广庣廇廫式弳彗彻徟心忧怋怯恓恷悛悿惣愇愫慏慳憗憻懟戃戧手扯抓抷招拿挣捇捫掏掳揗揻搟摃摧撋撯擓擷攛政散文斫族旳昗昻晟暃暧曋曯朓朷杛板枣柇柫栏栳桗桻梟棃棧椋椯楓楷榛榿槣樇樫橏橳檗檻櫟欃欧歋歯殓殷毛毿氣汇汫沏河泗泻洟浃浧涋涯淓混減渿湣溇溫滏滳漗漻潟澃澧濋濯瀓瀷灛灿炣烇烫焏焳煗煻熟燃燧爋爯牓牷犛犿狣猇猫獏獳玗玻珟球琧瑋瑯璓璷瓛瓿産畇畫疏疳痗痻瘟癃癧皋皯盓盷眛眿督瞇瞫矏石砗砻硟碃碧磋磯礓礷祛祿禣秇秫稏稳穗穻窟竃竧笋笯筓筷箛箿篣簇簫籏米粗粻糟紃紧絋絯經綷緛緿縣繇繫纏纳绗绻缟罃罧羋羯翓翷耛耿聣肇肫胏胳脗脻腟膃膧臋臯舓舷艛艿芣苇苫茏茳荗荻莟菃菧萋萯葓葷蒛蒿蓣蔇蔫蕏蕳薗薻藟蘃蘧虋虯蚓蚷蛛蛿蜣蝇蝫螏螳蟗蟻蠟衃衧袋袯裓裷褛褿襣覇覫觏觳託註詟誃誧請諯謓謷譛譿讣诇诫谏谳豗豻貟賃賧贋贯赓起趛趿跣踇踫蹏蹳躗躻軟較輧轋软输辷进迿連遇遫邏邳郗郻鄟酃酧醋醯釓釷鈛鈿鉣銇銫鋏鋳錗錻鍟鎃鎧鏋鏯鐓鐷鑛鑿钣铇铫锏锳镗镻閟闃闧阋阯陓陷際隿難震霫靏靳鞗鞻韟頃頧顋顯颓颷飛飿餣饇饫馏馳駗駻騟驃驧骋骯髓髷鬛鬿魣鮇鮫鯏鯳鰗鰻鱟鲃鲧鳋鳯鴓鴷鵛鵿鶣鷇鷫鸏鸳鹗鹻麟黃黧鼋鼯齓齷龛"},"han":{"w":4,"c":"ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅢㅥㅦㅧㅨㅩㅪㅫㅬㅭㅮㅯㅰㅱㅲㅳㅴㅵㅶㅷㅸㅹㅺㅻㅼㅽㅾㅿㆀㆁㆂㆃㆄㆅㆆㆇㆈㆉㆊㆋㆌㆎ"},"tha":{"w":3,"c":"กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮ"},"che":{"w":6,"c":"ᎠᎡᎢᎣᎤᎥᎦᎧᎨᎩᎪᎫᎬᎭᎮᎯᎰᎱᎲᎳᎴᎵᎶᎷᎸᎹᎺᎻᎼᎽᎾᎿᏀᏁᏂᏃᏄᏅᏆᏇᏈᏊᏋᏌᏍᏎᏏᏐᏑᏒᏓᏔᏕᏖᏗᏘᏙᏚᏛᏜᏝᏞᏟᏠᏡᏢᏣᏤᏥᏦᏧᏨᏩᏫᏬᏭᏮᏯᏰᏱᏲᏳᏴᏵꭰꭱꭲꭳꭴꭵꭶꭷꭸꭹꭺꭻꭼꭽꭾꭿꮀꮁꮂꮃꮄꮅꮆꮇꮈꮉꮊꮋꮌꮍꮎꮏꮐꮑꮒꮓꮔꮕꮖꮗꮘꮙꮚꮛꮜꮝꮞꮟꮠꮡꮢꮣꮤꮥꮦꮧꮨꮩꮪꮫꮬꮭꮮꮯꮰꮱꮲꮳꮴꮵꮶꮷꮸꮹꮺꮻꮼꮽꮾꮿ"},"des":{"w":6,"c":"𐐀𐐁𐐂𐐃𐐄𐐆𐐇𐐈𐐉𐐊𐐋𐐌𐐍𐐎𐐏𐐐𐐑𐐒𐐓𐐕𐐖𐐗𐐙𐐚𐐛𐐜𐐝𐐞𐐟𐐠𐐡𐐢𐐣𐐤𐐥𐐧𐐨𐐩𐐪𐐫𐐬𐐭𐐮𐐯𐐰𐐱𐐲𐐳𐐴𐐵𐐶𐐷𐐸𐐹𐐺𐐻𐐼𐐽𐐾𐐿𐑀𐑁𐑂𐑃𐑄𐑅𐑆𐑇𐑈𐑉𐑊𐑋𐑌𐑍𐑎𐑏"},"tib":{"w":5,"c":"ཀཁགགྷངཅཆཇཉཊཋཌཌྷཎཏཐདདྷནཔཕབབྷམཙཚཛཛྷཝཞཟའཡརལཤཥསཧཨཀྵཪཫཬ"},"brh":{"w":3,"c":"𑀓𑀔𑀕𑀖𑀗𑀘𑀙𑀚𑀛𑀜𑀝𑀞𑀟𑀠𑀡𑀢𑀣𑀤𑀥𑀦𑀧𑀨𑀩𑀪𑀫𑀬𑀮𑀯𑀰𑀱𑀲𑀳𑀴𑀵𑀶𑀷"},"sid":{"w":3,"c":"𑖀𑖁𑖂𑖃𑖄𑖅𑖆𑖇𑖈𑖉𑖊𑖋𑖌𑖍𑖎𑖏𑖐𑖑𑖒𑖓𑖔𑖕𑖖𑖗𑖘𑖙𑖚𑖛𑖜𑖝𑖞𑖟𑖠𑖡𑖢𑖣𑖤𑖥𑖦𑖧𑖨𑖩𑖪𑖫𑖬𑖭𑖮"},"shr":{"w":3,"c":"𑆃𑆄𑆅𑆆𑆇𑆈𑆉𑆊𑆋𑆌𑆍𑆎𑆏𑆐𑆑𑆒𑆓𑆔𑆕𑆖𑆗𑆘𑆙𑆚𑆛𑆜𑆝𑆞𑆟𑆠𑆡𑆢𑆣𑆤𑆥𑆦𑆧𑆨𑆩𑆪𑆫𑆬𑆭𑆮𑆯𑆰𑆱𑆲"},"gra":{"w":3,"c":"𑌅𑌆𑌇𑌈𑌉𑌊𑌋𑌌𑌏𑌓𑌔𑌕𑌖𑌗𑌘𑌙𑌚𑌛𑌜𑌝𑌞𑌟𑌠𑌡𑌢𑌣𑌤𑌥𑌦𑌧𑌨𑌪𑌫𑌬𑌭𑌮𑌯𑌰𑌲𑌳𑌵𑌶𑌷𑌸𑌹"},"khr":{"w":3,"c":"𐨀𐨐𐨑𐨒𐨓𐨕𐨖𐨗𐨙𐨚𐨛𐨜𐨝𐨞𐨟𐨠𐨡𐨢𐨣𐨤𐨥𐨦𐨧𐨨𐨩𐨪𐨫𐨬𐨭𐨮𐨯𐨰𐨱𐨲𐨳"},"ben":{"w":2,"c":"অইঈউঊঋঌএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়"},"gur":{"w":2,"c":"ਅਆਇਈਉਊਏਐਓਔਕਖਗਘਙਚਛਜਝਞਟਠਡਢਣਤਥਦਧਨਪਫਬਭਮਯਰਲਲ਼ਵਸ਼ਸਹਖ਼ਗ਼ਜ਼ੜਫ਼"},"guj":{"w":2,"c":"અઆઇઈઉઊઋઌઍએઐઓઔકખગઘઙચછજઝઞટઠડઢણતથદધનપફબભમયરલળવશષસહ"},"ori":{"w":2,"c":"ଅଆଇଈଉଊଋଌଏଐଓଔକଖଗଘଙଚଛଜଝଞଟଠଡଢଣତଥଦଧନପଫବଭମଯରଲଳଵଶଷସହ"},"tam":{"w":2,"c":"அஆஇஈஉஊஎஏஐஒஓகஙசஜஞடணதநனமயரறலளழவஶஷஸஹ"},"tel":{"w":2,"c":"అఆఇఈఉఊఌఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరఱలళఴవశషసహౘౙౚ"},"kan":{"w":2,"c":"ಅಆಇಈಉಋಌಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಱಲಳವಶಷಸಹ"},"mal":{"w":2,"c":"അആഇഈഉഊഋഌഎഏഐഒഓഔകഖഗഘങചഛജഝഞടഠഡഢണതഥദധനഩപഫബഭമയരറലളഴവശഷസഹൔൕൖ"},"sin":{"w":2,"c":"අආඇඈඉඊඋඌඍඏඐඑඒඓඔඕඖකඛගඝඞඟචඡජඣඤඥඦටඨඩඪණඬතථදධනඳපඵබභමඹයරලවශෂසහළෆ"},"mya":{"w":2,"c":"ကခဂဃငစဆဇဈဉညဋဌဍဎဏတထဒဓနပဖဗဘမယရလဝသဟဠအၐၑၒၓၔၕ"},"khm":{"w":2,"c":"កខគឃងចឆជញដឋឌឍណតថទធនបផពភមយរលវឝឞសហឡអ"},"run":{"w":4,"c":"ᚠᚡᚢᚣᚤᚥᚦᚧᚨᚩᚪᚫᚬᚭᚮᚯᚰᚱᚲᚳᚴᚵᚶᚷᚸᚹᚺᚻᚼᚽᚾᚿᛀᛁᛂᛃᛄᛅᛆᛇᛈᛉᛊᛋᛍᛎᛏᛐᛑᛒᛓᛔᛕᛖᛗᛘᛙᛚᛛᛜᛝᛞᛟᛠᛡᛣᛤᛥᛦᛨᛩᛪᛮᛯᛰ"},"got":{"w":3,"c":"𐌰𐌱𐌲𐌳𐌴𐌵𐌶𐌷𐌸𐌺𐌻𐌼𐌽𐌾𐌿𐍀𐍁𐍂𐍃𐍄𐍅𐍆𐍇𐍈𐍉𐍊"},"ita":{"w":3,"c":"𐌀𐌁𐌂𐌃𐌄𐌅𐌆𐌇𐌈𐌊𐌋𐌌𐌍𐌎𐌏𐌐𐌑𐌒𐌓𐌔𐌕𐌖𐌗𐌘𐌙𐌚𐌛𐌜𐌝𐌞𐌟"},"phn":{"w":3,"c":"𐤀𐤁𐤂𐤃𐤄𐤅𐤆𐤇𐤈𐤉𐤊𐤋𐤌𐤍𐤎𐤏𐤐𐤑𐤒𐤓𐤔𐤕"},"lnb":{"w":3,"c":"𐀀𐀁𐀂𐀃𐀄𐀅𐀆𐀇𐀈𐀉𐀊𐀋𐀍𐀎𐀏𐀐𐀑𐀒𐀓𐀔𐀕𐀖𐀗𐀘𐀙𐀚𐀛𐀜𐀝𐀞𐀟𐀠𐀡𐀢𐀣𐀤𐀥𐀦𐀨𐀩𐀪𐀫𐀬𐀭𐀮𐀯𐀰𐀱𐀲𐀳𐀴𐀵𐀶𐀷𐀸𐀹𐀺𐀼𐀽𐀿𐁀𐁁𐁂𐁃𐁄𐁅𐁆𐁇𐁈𐁉𐁊𐁋𐁌𐁍𐁐𐁑𐁒𐁓𐁔𐁕𐁖𐁗𐁘𐁙𐁚𐁛𐁜𐁝𐂀𐂁𐂂𐂃𐂄𐂅𐂆𐂇𐂈𐂉𐂊𐂋𐂌𐂍𐂎𐂏𐂐𐂑𐂒𐂓𐂔𐂕𐂖𐂗𐂘𐂙𐂚𐂛𐂜𐂝𐂞𐂟𐂠𐂡𐂢𐂣𐂤𐂥𐂦𐂧𐂨𐂩𐂪𐂫𐂬𐂭𐂮𐂯𐂰𐂲𐂳𐂴𐂵𐂶𐂷𐂸𐂹𐂺𐂻𐂼𐂽𐂾𐂿𐃀𐃁𐃂𐃃𐃄𐃅𐃇𐃈𐃉𐃊𐃋𐃏𐃐𐃑𐃒𐃓𐃔𐃕𐃖𐃗𐃘𐃙𐃛𐃜𐃝𐃞𐃟𐃠𐃡𐃢𐃣𐃤𐃥𐃦𐃧𐃨𐃩𐃪𐃫𐃬𐃭𐃮𐃯𐃰𐃱𐃲𐃳𐃴𐃶𐃷𐃸𐃹𐃺"},"cop":{"w":3,"c":"ⲀⲁⲂⲃⲄⲅⲆⲇⲈⲉⲊⲋⲌⲍⲎⲏⲐⲑⲒⲔⲕⲖⲗⲘⲙⲚⲛⲜⲝⲞⲟⲠⲡⲢⲣⲤⲥⲦⲧⲨⲩⲪⲫⲬⲭⲮⲯⲰⲱⲲⲳⲴⲵⲶⲷⲸⲹⲼⲽⲾⲿⳀⳁⳃⳄⳅⳆⳇⳈⳉⳊⳋⳌⳍⳎⳏⳐⳑⳒⳓⳔⳕⳖⳗⳘⳙⳚⳛⳜⳝⳞⳟⳠⳡⳢⳣⳤ⳥⳦⳨⳩⳪ⳫⳬⳭⳮⳲⳳϢϣϤϥϦϧϨϩϪϫϬϭϮϯ"},"tfn":{"w":3,"c":"ⴰⴱⴲⴳⴴⴵⴶⴷⴸⴹⴺⴻⴼⴽⴾⴿⵀⵁⵂⵃⵄⵅⵆⵇⵈⵉⵊⵋⵌⵍⵎⵏⵐⵑⵒⵓⵔⵕⵖⵗⵘⵙⵚⵛⵜⵝⵞⵟⵠⵡⵢⵣⵤⵥⵦ"},"osa":{"w":3,"c":"𐒰𐒱𐒲𐒳𐒴𐒵𐒶𐒷𐒸𐒹𐒺𐒻𐒼𐒽𐒾𐒿𐓀𐓁𐓂𐓃𐓄𐓅𐓆𐓇𐓈𐓉𐓊𐓋𐓌𐓍𐓎𐓏𐓐𐓑𐓒𐓓𐓘𐓙𐓚𐓛𐓜𐓝𐓞𐓟𐓠𐓡𐓢𐓣𐓤𐓥𐓦𐓧𐓨𐓩𐓪𐓫𐓬𐓭𐓮𐓯𐓰𐓱𐓲𐓳𐓴𐓵𐓶𐓷𐓸𐓹𐓺𐓻"},"shw":{"w":3,"c":"𐑐𐑑𐑒𐑓𐑔𐑕𐑖𐑗𐑘𐑙𐑚𐑛𐑜𐑝𐑞𐑟𐑠𐑡𐑢𐑣𐑤𐑥𐑦𐑧𐑨𐑩𐑪𐑫𐑬𐑭𐑮𐑯𐑰𐑱𐑲𐑳𐑴𐑵𐑶𐑷𐑸𐑹𐑺𐑻𐑼𐑽𐑾𐑿"},"vai":{"w":3,"c":"ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗꔘꔙꔚꔛꔜꔝꔟꔠꔡꔢꔣꔤꔥꔦꔧꔨꔩꔪꔫꔬꔭꔮꔯꔰꔱꔲꔳꔴꔵꔶꔷꔸꔹꔺꔻꔼꔽꔾꔿꕀꕁꕂꕃꕄꕅꕆꕇꕈꕉꕊꕋꕌꕍꕎꕏꕐꕑꕒꕓꕔꕕꕖꕗꕘꕙꕚꕛꕜꕝꕞꕟꕠꕡꕢꕣꕤꕥꕦꕧꕨꕩꕪꕫꕬꕭꕮꕯꕰꕱꕲꕳꕴꕵꕶꕷꕸꕹꕺꕻꕼꕽꕾꕿꖀꖁꖂꖃꖄꖅꖆꖇꖈꖉꖊꖋꖌꖍꖎꖏꖐꖑꖒꖓꖔꖕꖖꖗꖘꖙꖚꖛꖜꖝꖞꖟꖠꖡꖢꖣꖤꖥꖦꖧꖨꖩꖪꖫꖬꖭꖮꖯꖰꖱꖲꖳꖴꖵꖶꖷꖸꖹꖺꖻꖼꖽꖾꖿꗀꗁꗂꗃꗄꗅꗆꗇꗈꗉꗊꗋꗌꗍꗎꗏꗐꗑꗒꗓꗔꗕꗖꗗꗘꗙꗚꗛꗜꗝꗞꗟꗠꗡꗢꗣꗤꗥꗦꗧꗨꗩꗪꗫꗬꗭꗮꗯꗰꗱꗲꗳꗴꗵꗶꗷꗸꗹꗺꗻꗼꗽꗾꗿꘀꘁꘂꘃꘄꘅꘆꘇꘈꘉꘊꘋꘌꘐꘑꘒꘓꘔꘕꘖꘗꘘꘙꘚꘛꘜꘝꘞꘟꘪꘫ"},"adl":{"w":3,"c":"𞤀𞤁𞤂𞤃𞤄𞤅𞤆𞤇𞤈𞤉𞤊𞤋𞤌𞤍𞤎𞤏𞤐𞤑𞤒𞤓𞤔𞤕𞤖𞤗𞤘𞤙𞤚𞤛𞤜𞤝𞤞𞤟𞤠𞤡𞤢𞤣𞤤𞤥𞤦𞤧𞤨𞤩𞤪𞤫𞤬𞤭𞤮𞤯𞤰𞤱𞤲𞤳𞤴𞤵𞤶𞤷𞤸𞤹𞤺𞤻𞤼𞤽𞤾𞤿𞥀𞥁𞥂𞥃"},"nko":{"w":3,"c":"ߊߋߌߍߎߏߐߑߒߓߔߕߖߗߘߙߚߛߜߝߞߟߠߡߢߣߤߥߦߧߨߩߪ"},"yii":{"w":3,"c":"ꀀꀃꀆꀉꀌꀏꀒꀕꀘꀛꀞꀡꀤꀧꀪꀭꀰꀳꀶꀹꀼꀿꁂꁅꁈꁋꁎꁑꁔꁗꁚꁝꁠꁣꁦꁩꁬꁯꁲꁵꁸꁻꁾꂁꂄꂇꂌꂏꂒꂕꂘꂛꂞꂡꂤꂧꂪꂭꂰꂳꂶꂹꂼꂿꃂꃅꃈꃋꃎꃑꃔꃗꃚꃝꃠꃣꃦꃩꃬꃯꃲꃵꃸꃻꃾꄁꄄꄇꄊꄍꄐꄓꄖꄙꄜꄟꄢꄥꄨꄫꄮꄱꄴꄷꄺꄽꅀꅃꅆꅉꅌꅏꅒꅕꅘꅛꅞꅡꅤꅧꅪꅭꅰꅳꅶꅹꅼꅿꆂꆅꆈꆋꆎꆑꆔꆗꆚꆝꆠꆣꆦꆩꆬꆯꆲꆵꆸꆻꆾꇁꇄꇇꇊꇍꇐꇓꇖꇙꇜꇟꇢꇥꇨꇫꇮꇱꇴꇷꇺꇽꈀꈃꈆꈉꈌꈏꈒꈕꈘꈛꈞꈡꈤꈧꈪꈭꈰꈳꈶꈹꈼꈿꉂꉅꉈꉋꉎꉑꉔꉗꉚꉝꉠꉣꉦꉩꉬꉯꉲꉵꉸꉻꉾꊁꊄꊇꊊꊍꊐꊓꊖꊙꊜꊟꊢꊥꊨꊫꊮꊱꊴꊷꊺꊽꋀꋃꋆꋉꋌꋏꋒꋕꋘꋛꋞꋡꋤꋧꋪꋭꋰꋳꋶꋹꋼꋿꌂꌅꌈꌋꌎꌑꌔꌗꌚꌝꌠꌣꌦꌩꌬꌯꌲꌵꌸꌻꌾꍁꍄꍇꍊꍍꍐꍓꍖꍙꍜꍟꍢꍥꍨꍫꍮꍱꍴꍷꍺꍽꎀꎃꎆꎉꎌꎏꎒꎕꎘꎛꎞꎡꎤꎧꎪꎭꎰꎳꎶꎹꎼꎿꏂꏅꏈꏋꏎꏑꏔꏗꏚꏝꏠꏣꏦꏩꏬꏯꏲꏵꏸꏻꏾꐁꐄꐇꐊꐍꐐꐓꐖꐙꐜꐟꐢꐥꐨꐫꐮꐱꐴꐷꐺꐽꑀꑃꑆꑉꑌꑏꑒꑕꑘꑛꑞꑡꑤꑧꑪꑭꑰꑳꑶꑹꑼꑿꒂꒅꒈꒋ"},"gla":{"w":3,"c":"ⰀⰁⰂⰃⰄⰅⰆⰇⰈⰉⰊⰋⰌⰍⰎⰏⰐⰑⰒⰓⰔⰕⰖⰗⰘⰙⰚⰛⰜⰝⰞⰟⰠⰡⰢⰣⰤⰥⰦⰧⰨⰩⰪⰫⰬⰭⰮⰯⰰⰱⰲⰳⰴⰵⰶⰷⰸⰹⰺⰻⰼⰽⰾⰿⱀⱁⱂⱃⱄⱅⱆⱇⱈⱉⱊⱋⱌⱍⱎⱏⱐⱑⱒⱓⱔⱕⱖⱗⱘⱙⱚⱛⱝⱞ"},"eth":{"w":3,"c":"ሀሂሄሆለሊሌሎሐሒሔሖመሚሜሞሠሢሤሦረሪሬሮሰሲሴሶሸሺሼሾቀቂቄቆቈቊቌቐቒቔቖቘቚቜበቢቤቦቨቪቬቮተቲቴቶቸቺቼቾኀኂኄኆኈኊኌነኒኔኖኘኚኜኞአኢኤኦከኪኬኮኰኲኴኸኺኼኾዀዂዄወዊዌዎዐዒዔዖዘዚዜዞዠዢዤዦየዪዬዮደዲዴዶዸዺዼዾጀጂጄጆገጊጌጎጐጒጔጘጚጜጞጠጢጤጦጨጪጭጯጱጳጵጷጹጻጽጿፁፃፅፇፉፋፍፏፑፓፕፗፙᎁᎃᎅᎇᎉᎋᎍᎏ᎔᎘ⶀⶂⶄⶆⶈⶊⶌⶎⶑⶓⶕⶡⶣⶥⶩⶫⶭⶱⶳⶵⶹⶻⶾⷀⷂⷄⷆⷈⷊⷌⷎⷐⷒⷔⷖⷘⷚⷜⷞ"},"syr":{"w":3,"c":"ܐܒܓܔܕܖܗܘܚܛܜܞܟܠܡܢܣܤܥܦܧܨܩܪܫܬܭܮܯ"},"thn":{"w":3,"c":"ހށނރބޅކއވމފދތލގޏސޑޒޓޔޕޖޗޘޙޚޛޜޝޞޟޠޡޢޣޤޥ"},"lao":{"w":3,"c":"ກຂຄງຈຊຍດຕຖທນບປຜຝພຟມຢຣລວສຫອຮ"},"bam":{"w":2,"c":"ꚠꚡꚢꚣꚤꚥꚦꚧꚨꚩꚪꚫꚬꚭꚮꚯꚰꚱꚲꚳꚴꚵꚶꚷꚸꚹꚺꚻꚼꚽꚾꚿꛀꛁꛂꛃꛄꛅꛆꛇꛈꛉꛊꛋꛌꛍꛎꛏꛐꛑꛒꛓꛔꛕꛖꛗꛘꛙꛚꛛꛜꛝꛞꛟꛠꛡꛢꛣꛤꛥꛦꛧꛨꛩꛪꛫꛬꛭꛮꛯ"},"ave":{"w":2,"c":"𐬀𐬂𐬄𐬅𐬆𐬇𐬈𐬉𐬊𐬋𐬌𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗𐬘𐬙𐬚𐬛𐬜𐬝𐬞𐬟𐬠𐬡𐬢𐬣𐬤𐬦𐬧𐬨𐬩𐬪𐬫𐬬𐬭𐬮𐬯𐬰𐬱𐬲𐬳𐬴𐬵"},"olt":{"w":2,"c":"𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰉𐰊𐰋𐰌𐰍𐰎𐰏𐰐𐰑𐰒𐰓𐰔𐰕𐰖𐰗𐰘𐰙𐰚𐰛𐰜𐰝𐰞𐰟𐰠𐰡𐰢𐰣𐰤𐰥𐰦𐰧𐰨𐰩𐰪𐰫𐰬𐰭𐰮𐰯𐰰𐰱𐰲𐰳𐰴𐰵𐰶𐰷𐰸𐰹𐰺𐰻𐰼𐰽𐰾𐰿𐱀𐱁𐱂𐱃𐱄𐱅𐱆𐱇𐱈"},"arc":{"w":2,"c":"𐡀𐡁𐡂𐡃𐡄𐡅𐡆𐡇𐡈𐡉𐡊𐡋𐡌𐡍𐡎𐡏𐡐𐡑𐡒𐡓𐡔𐡕"},"nab":{"w":2,"c":"𐢀𐢁𐢂𐢃𐢄𐢅𐢆𐢇𐢈𐢉𐢊𐢋𐢌𐢍𐢎𐢏𐢐𐢑𐢒𐢓𐢔𐢕𐢖𐢗𐢘𐢙𐢚𐢛𐢜𐢝𐢞"},"pal":{"w":2,"c":"𐡠𐡡𐡢𐡣𐡤𐡥𐡦𐡧𐡨𐡩𐡪𐡫𐡬𐡭𐡮𐡯𐡰𐡱𐡲𐡳𐡴𐡵𐡶"},"man":{"w":2,"c":"𐫀𐫁𐫂𐫃𐫄𐫅𐫆𐫇𐫈𐫉𐫊𐫋𐫌𐫍𐫎𐫏𐫐𐫑𐫒𐫓𐫔𐫕𐫖𐫗𐫘𐫙𐫚𐫛𐫜𐫝𐫞𐫟𐫠𐫡𐫢𐫣𐫤"},"car":{"w":2,"c":"𐊠𐊡𐊢𐊣𐊤𐊥𐊦𐊧𐊨𐊩𐊪𐊫𐊬𐊭𐊮𐊯𐊰𐊱𐊲𐊳𐊴𐊵𐊶𐊷𐊸𐊹𐊺𐊻𐊼𐊽𐊾𐊿𐋀𐋁𐋂𐋃𐋄𐋅𐋆𐋇𐋈𐋉𐋊𐋋𐋌𐋍𐋎𐋏𐋐"},"lyc":{"w":2,"c":"𐊀𐊁𐊂𐊃𐊄𐊅𐊆𐊇𐊈𐊉𐊊𐊋𐊌𐊍𐊎𐊏𐊐𐊑𐊒𐊓𐊔𐊕𐊖𐊗𐊘𐊙𐊚𐊛𐊜"},"lyd":{"w":2,"c":"𐤠𐤡𐤢𐤣𐤤𐤥𐤦𐤧𐤨𐤩𐤪𐤫𐤬𐤭𐤮𐤯𐤰𐤱𐤲𐤳𐤴𐤵𐤶𐤷𐤸𐤹"},"ugr":{"w":2,"c":"𐎀𐎁𐎂𐎃𐎄𐎅𐎆𐎇𐎈𐎉𐎊𐎋𐎌𐎍𐎎𐎏𐎐𐎑𐎒𐎓𐎔𐎕𐎖𐎗𐎘𐎙𐎚𐎛𐎜𐎝"},"opr":{"w":2,"c":"𐎠𐎡𐎢𐎣𐎤𐎥𐎦𐎧𐎨𐎩𐎪𐎫𐎬𐎭𐎮𐎯𐎰𐎱𐎲𐎳𐎴𐎵𐎶𐎷𐎸𐎹𐎺𐎻𐎼𐎽𐎾𐎿𐏀𐏁𐏂𐏃"},"mer":{"w":2,"c":"𐦀𐦁𐦂𐦃𐦄𐦅𐦆𐦇𐦈𐦉𐦊𐦋𐦌𐦍𐦎𐦏𐦑𐦒𐦓𐦔𐦕𐦖𐦗𐦘𐦚𐦛𐦜𐦝𐦞𐦟𐦠𐦡𐦢𐦤𐦥𐦦𐦧𐦨𐦩𐦪𐦫𐦬𐦭𐦮𐦯𐦰𐦱𐦲𐦳𐦴𐦵𐦶𐦷"},"olc":{"w":2,"c":"ᱚᱛᱜᱝᱞᱟᱠᱡᱢᱣᱤᱥᱦᱧᱨᱩᱪᱫᱬᱭᱮᱯᱰᱱᱲᱳᱴᱵᱶᱷ"},"cham":{"w":2,"c":"ꨀꨁꨂꨃꨄꨅꨆꨇꨈꨉꨊꨋꨌꨍꨎꨏꨐꨑꨒꨓꨔꨕꨖꨗꨘꨙꨚꨛꨜꨝꨞꨟꨠꨡꨢꨣꨤꨥꨦꨧꨨ"},"bali":{"w":2,"c":"ᬅᬆᬇᬈᬉᬊᬋᬌᬍᬎᬏᬐᬑᬒᬓᬔᬕᬖᬗᬘᬙᬚᬛᬜᬝᬞᬟᬠᬡᬢᬣᬤᬥᬦᬧᬨᬩᬪᬫᬬᬭᬮᬯᬰᬱᬲᬳ"},"java":{"w":2,"c":"ꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗꦘꦙꦚꦛꦜꦝꦞꦟꦠꦡꦢꦣꦤꦥꦦꦧꦨꦩꦪꦫꦬꦭꦮꦯꦰꦱꦲ"},"bugi":{"w":2,"c":"ᨀᨁᨂᨃᨄᨅᨆᨇᨈᨉᨊᨋᨌᨍᨎᨏᨐᨑᨒᨓᨔᨕᨖ"},"batk":{"w":2,"c":"ᯀᯁᯂᯃᯄᯅᯆᯈᯉᯊᯋᯌᯍᯎᯏᯐᯑᯒᯓᯔᯕᯖᯗᯘᯙᯚᯛᯜᯝᯞᯟᯠᯡᯢᯣᯤᯥ"},"lisu":{"w":2,"c":"ꓐꓑꓒꓓꓔꓕꓖꓗꓘꓙꓚꓛꓜꓝꓞꓟꓠꓡꓢꓣꓤꓥꓦꓧꓨꓩꓪꓫꓬꓭꓮꓯꓰꓱꓲꓳꓴꓵꓶꓷ"},"bass":{"w":2,"c":"𖫐𖫑𖫒𖫓𖫔𖫕𖫖𖫗𖫘𖫙𖫚𖫛𖫜𖫝𖫞𖫟𖫠𖫡𖫢𖫣𖫤𖫥𖫦𖫧𖫨𖫩𖫪𖫫𖫬𖫭"},"mend":{"w":2,"c":"𞠀𞠁𞠂𞠃𞠄𞠅𞠆𞠇𞠈𞠉𞠊𞠋𞠌𞠍𞠎𞠏𞠐𞠒𞠓𞠔𞠕𞠖𞠗𞠘𞠙𞠚𞠛𞠜𞠝𞠞𞠟𞠠𞠡𞠣𞠤𞠥𞠦𞠧𞠨𞠩𞠪𞠫𞠬𞠭𞠮𞠯𞠰𞠱𞠲𞠳𞠴𞠵𞠶𞠷𞠸𞠹𞠺𞠻𞠼𞠽𞠾𞠿𞡀𞡁𞡂𞡃𞡄𞡅𞡆𞡇𞡈𞡉𞡊𞡋𞡌𞡍𞡎𞡏𞡐𞡑𞡒𞡓𞡔𞡕𞡖𞡗𞡘𞡙𞡚𞡛𞡜𞡝𞡞𞡟𞡠𞡡𞡢𞡣𞡤𞡥𞡦𞡧𞡨𞡩𞡪𞡫𞡬𞡭𞡮𞡯𞡰"},"wcho":{"w":2,"c":"𞋀𞋁𞋂𞋃𞋄𞋅𞋆𞋇𞋈𞋉𞋊𞋋𞋌𞋍𞋎𞋏𞋐𞋑𞋒𞋓𞋔𞋕𞋖𞋗𞋘𞋙𞋚𞋛𞋜𞋝𞋞𞋟𞋠𞋡𞋢𞋣𞋤𞋥𞋦𞋧𞋨𞋩𞋪𞋫"},"rohg":{"w":2,"c":"𐴀𐴁𐴂𐴃𐴄𐴅𐴆𐴇𐴈𐴉𐴊𐴋𐴌𐴍𐴎𐴏𐴐𐴒𐴓𐴔𐴖𐴗𐴘𐴙𐴚𐴛𐴜𐴝𐴞𐴟𐴠𐴡𐴢𐴣"},"tale":{"w":2,"c":"ᥐᥑᥒᥓᥔᥕᥖᥗᥘᥙᥚᥛᥜᥝᥞᥟᥠᥡᥢᥣᥤᥥᥦᥧᥨᥩᥪᥫᥬᥭ"},"mth":{"w":3,"c":"∑∏∫√∞≠≤≥∂∆∇⊂⊃∈∀∃⊕⊗"},"pla":{"w":2,"c":"☉☽☿♀♁♂♃♄♅♆♇☊☋"},"alc":{"w":2,"c":"🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜔🜛🜚"}};
-  var JD_RAIN_MIRROR = ["lat", "dig", "grk", "cyr", "mrk"];   /* reversal only reads on a script one recognises */
-  var JD_RAIN_SYM = "AHIMOTUVWXY08.:\u00d7\u00f7\u00b1\u00b0\u2021\u2020\u0391\u0394\u0397\u0398\u0399\u039b\u039c\u039e\u039f\u03a0\u03a4\u03a5\u03a6\u03a7\u03a8\u03a9\u0410\u0414\u0416\u041b\u041c\u041d\u041e\u041f\u0422\u0424\u0425\u0428";      /* ...and never on a glyph symmetrical about x */
-  var jdRainBag = null, jdRainTimers = [];
+  var JD_DRIFT_WORDS = ['LOADING', 'STAND BY', 'PLEASE WAIT',
+                        'ONE MOMENT PLEASE', 'PENDING', 'PROCESSING',
+                        'PLEASE HOLD', 'ASSEMBLING', 'COMPUTING',
+                        'AWAITING RESPONSES', 'TRANSMISSION IN PROGRESS',
+                        'DO NOT ADJUST YOUR SET', 'TRANSMITTING',
+                        'DO NOT REFRESH', 'REMAIN SEATED',
+                        'PATIENCE IS APPRECIATED'];
+  /* the owner's bench settings, 2026-08-23 (mockup-33-word-drift.html) */
+  var JD_DRIFT = { cell: 9, density: 0.2, speedLo: 30, speedHi: 60,
+                   throwLo: 50, throwHi: 200, liftLo: 70, liftHi: 230,
+                   gravity: 1600, gap: 20, maxDepth: 10, cap: 900 };
 
-  function jdRainStrike(el) {
-    if (!jdRainBag) {
-      jdRainBag = [];
-      for (var k in JD_RAIN_POOL) {
-        /* Array.from splits by CODE POINT. Plain indexing splits by UTF-16
-           code unit, which tears every astral-plane script — Deseret,
-           Linear B, Gothic, Osage, Shavian, Adlam and all four historical
-           Sanskrit hands live above U+FFFF — into lone surrogates that
-           render as boxes. */
-        JD_RAIN_POOL[k].a = Array.from(JD_RAIN_POOL[k].c);
-        for (var i = 0; i < JD_RAIN_POOL[k].w; i++) jdRainBag.push(k);
-      }
+  function jdDriftRnd(n) { return (Math.random() * n) | 0; }
+
+  /* the heap's height field, in buckets a third of a square wide */
+  function jdDriftSurface(st, x) {
+    var C = JD_DRIFT.cell;
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + C) / st.bw));
+    var y = st.H;
+    for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
+    return y;
+  }
+  function jdDriftDeposit(st, x, restY) {
+    var C = JD_DRIFT.cell;
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + C) / st.bw));
+    var t = restY + C * 0.56;              /* the next letter nests into this one */
+    for (var b = b0; b <= b1; b++) if (t < st.top[b]) st.top[b] = t;
+  }
+  /* gravity down, reflected off the side walls, stopped by the heap */
+  function jdDriftFly(st, x0, y0, vx, vy) {
+    var C = JD_DRIFT.cell, dt = 1 / 60;
+    var pts = [{ x: x0, y: y0 }], x = x0, y = y0;
+    for (var n = 0; n < 240; n++) {
+      vy += JD_DRIFT.gravity * dt; x += vx * dt; y += vy * dt;
+      if (x <= 0) { x = -x; vx = -vx * 0.46; }
+      else if (x >= st.W - C) { x = 2 * (st.W - C) - x; vx = -vx * 0.46; }
+      var floorY = jdDriftSurface(st, x) - C;
+      if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
+      pts.push({ x: x, y: y });
     }
-    var key = jdRainBag[(Math.random() * jdRainBag.length) | 0];
-    var set = JD_RAIN_POOL[key].a;
-    var ch = set[(Math.random() * set.length) | 0];
-    var rev = JD_RAIN_MIRROR.indexOf(key) >= 0 &&
-              JD_RAIN_SYM.indexOf(ch) < 0 && Math.random() < 0.18;
-    el.className = 'jdr-' + key + (rev ? ' is-rev' : '') +
-                   (el.getAttribute('data-spin') || '');
-    el.textContent = ch;
-    el.removeAttribute('data-word');
+    return pts;
   }
 
-  function jdRainFill(s, words) {
-    var cells = s.children, n = cells.length, i;
-    for (i = 0; i < n; i++) jdRainStrike(cells[i]);
-    /* the word is re-drawn with its stream, so no word is welded into one
-       column for the length of a wait */
-    if (Math.random() < 0.08) {
-      var pool = [], w;
-      /* the house words carry it most of the time; a word out of the
-         visitor's prompt is the rarer sighting (owner, 2026-08-21) */
-      var src = (Math.random() < 0.68 || !words.job.length) ? words.house : words.job;
-      for (i = 0; i < src.length; i++) {
-        if (src[i].length + 2 <= n) pool.push(src[i]);
+  /* a lane is free only if nothing has RESERVED it and nothing is falling in
+     it — reservation alone let a finished word's lane be taken while its last
+     letters were still on their way down, and two words shared a column */
+  function jdDriftClaim(st, owner, avoid) {
+    var free = [], i;
+    for (i = 0; i < st.cols; i++) if (!st.busy[i] && !st.lane[i]) free.push(i);
+    if (!free.length) { st.busy[avoid] = owner; return avoid; }
+    var p = free[jdDriftRnd(free.length)];
+    st.busy[p] = owner;
+    return p;
+  }
+
+  /* the next letter this column owes. REVERSED when a word is taken up:
+     letters are dealt one per beat and each is a beat behind the last, so the
+     letter sent first ends up LOWEST. Queued in reading order a word comes out
+     upside down — LOADING reads GNIDAOL down the sheet. */
+  function jdDriftNext(col) {
+    var st = col.st;
+    if (!col.queue.length) {
+      if (col.rest > 0) { col.rest--; return null; }    /* the gap between words */
+      col.queue = Array.from(st.words[jdDriftRnd(st.words.length)]).reverse();
+      col.rest = JD_DRIFT.gap;
+      if (st.busy[col.c] === col) st.busy[col.c] = null;
+      col.c = jdDriftClaim(st, col, col.c);             /* a new word, a new lane */
+      col.x = col.c * JD_DRIFT.cell;
+    }
+    return col.queue.shift();
+  }
+
+  /* delayMs is how far from NOW this letter was actually due — negative when
+     the metronome fired late. Handing it to the animation makes the letter's
+     position depend on the schedule rather than on when the timer happened to
+     run; without it, jitter of a tenth of a second puts a letter most of a
+     square out and it lands on the one below. */
+  function jdDriftEmit(col, delayMs) {
+    var st = col.st, C = JD_DRIFT.cell;
+    var ch = jdDriftNext(col);
+    if (ch === null || ch === ' ') return;              /* the beat still passes */
+
+    var x0 = col.x;
+    var g = document.createElement('i');
+    g.textContent = ch;
+    g.style.left = x0 + 'px';
+    col.el.appendChild(g);
+
+    var lane = Math.round(x0 / C);
+    st.lane[lane] = (st.lane[lane] || 0) + 1;
+
+    var impactY = jdDriftSurface(st, x0) - C;
+    var fallMs = Math.max(60, (impactY - col.y0) / col.speed * 1000);
+    var vx = (Math.random() < 0.5 ? -1 : 1) *
+             (JD_DRIFT.throwLo + Math.random() * (JD_DRIFT.throwHi - JD_DRIFT.throwLo));
+    var vy = -(JD_DRIFT.liftLo + Math.random() * (JD_DRIFT.liftHi - JD_DRIFT.liftLo));
+    var pts = jdDriftFly(st, x0, impactY, vx, vy);
+    var flightMs = (pts.length - 1) / 60 * 1000;
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 340);
+    var total = fallMs + flightMs, i, f;
+
+    /* sampled, not eased: no easing curve expresses constant acceleration, and
+       an approximated one reads as a hang at the top of the throw */
+    var frames = [
+      { transform: 'translate(0px,' + col.y0 + 'px) rotate(0deg)', offset: 0, easing: 'linear' },
+      { transform: 'translate(0px,' + impactY + 'px) rotate(0deg)',
+        offset: fallMs / total, easing: 'linear' }];
+    for (i = 1; i < pts.length; i++) {
+      f = i / (pts.length - 1);
+      frames.push({ transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
+        pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+        offset: Math.min(1, (fallMs + f * flightMs) / total), easing: 'linear' });
+    }
+    var anim = g.animate(frames, { duration: total, delay: delayMs || 0, fill: 'both' });
+    var rest = pts[pts.length - 1];
+
+    /* POLLED, not evented: this WebView does not fire animation finish events
+       while the page is hidden, and a wait that starts in a background tab
+       would never land a single letter */
+    var poll = setInterval(function () {
+      if (anim.playState !== 'finished') return;
+      clearInterval(poll);
+      var ix = st.polls.indexOf(poll); if (ix >= 0) st.polls.splice(ix, 1);
+      if (st.lane[lane]) st.lane[lane]--;
+      if (st.n < JD_DRIFT.cap && rest.y > st.floorLimit) {
+        anim.cancel();
+        g.style.left = rest.x.toFixed(1) + 'px';
+        g.style.top = rest.y.toFixed(1) + 'px';
+        g.style.transform = 'rotate(' + ((spin % 360) + (jdDriftRnd(19) - 9)) + 'deg)';
+        st.layer.appendChild(g);              /* the same letter, now at rest */
+        jdDriftDeposit(st, rest.x, rest.y);
+        st.n++;
+      } else {
+        g.remove();                           /* the heap is full: it is spent */
       }
-      if (pool.length) {
-        w = pool[(Math.random() * pool.length) | 0];
-        var at = (Math.random() * (n - w.length + 1)) | 0;
-        var heavy = (w === 'LOADING' || w === 'STAND BY');
-        for (i = 0; i < w.length; i++) {
-          var c = cells[at + i];
-          c.className = 'jdr-lat is-word' + (heavy ? ' is-heavy' : '');
-          c.textContent = w.charAt(i) === ' ' ? '' : w.charAt(i);
-          c.setAttribute('data-word', '1');
+    }, 40);
+    st.polls.push(poll);
+  }
+
+  /* every drift on the page, so a repaint or a settle can stop them all */
+  var jdDriftSheets = [];
+  function jdDriftStopAll() {
+    jdDriftSheets.forEach(function (st) {
+      st.beats.forEach(clearInterval);
+      st.polls.forEach(clearInterval);
+      st.beats = []; st.polls = [];
+    });
+    jdDriftSheets = [];
+  }
+
+  function jdDriftBuild(host) {
+    var C = JD_DRIFT.cell;
+    var W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return false;
+    host.innerHTML = '';
+    var st = { W: W, H: H, bw: C / 3, cols: Math.floor(W / C), top: [],
+               busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS,
+               floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [] };
+    for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
+    var layer = document.createElement('span');
+    layer.className = 'drift';
+    host.appendChild(layer);
+    st.layer = layer;
+    jdDriftSheets.push(st);
+
+    var bag = [], i, j, t;
+    for (i = 0; i < st.cols; i++) bag.push(i);
+    for (i = bag.length - 1; i > 0; i--) {
+      j = jdDriftRnd(i + 1); t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+    }
+    bag.slice(0, Math.max(1, Math.round(st.cols * JD_DRIFT.density)))
+       .forEach(function (idx) {
+      var el = document.createElement('span');
+      el.className = 'col';
+      host.appendChild(el);
+      var speed = JD_DRIFT.speedLo + Math.random() * (JD_DRIFT.speedHi - JD_DRIFT.speedLo);
+      var col = { el: el, c: idx, x: idx * C, st: st, speed: speed,
+                  y0: -(C * (2 + jdDriftRnd(5))), beat: C / speed * 1000,
+                  queue: [], rest: jdDriftRnd(JD_DRIFT.gap) };
+      st.busy[idx] = col;
+      /* One metronome per column, but WHEN EACH LETTER IS DUE is kept on a
+         cursor rather than taken from when the timer fired. A beat is exactly
+         one square of falling, so letters stay a square apart however badly
+         the timer behaves. */
+      col.next = performance.now() + Math.random() * 600;
+      st.beats.push(setInterval(function () {
+        /* while the tab is hidden the animation clock stops but timers do not,
+           so emitting would mint letters that can never fall, land, or be
+           cleared up — they pile up for as long as the visitor is elsewhere */
+        if (document.hidden) { col.next = performance.now(); return; }
+        var now = performance.now();
+        if (now - col.next > col.beat * 6) col.next = now;   /* woke up behind */
+        while (col.next <= now + 4) {
+          jdDriftEmit(col, col.next - now);
+          col.next += col.beat;
         }
-      }
-    }
+      }, Math.max(24, col.beat / 2)));
+    });
+    return true;
   }
 
-  /* Built after the card is painted, because it measures the well it lands in.
-     Called from paint(); a view with no rain matches nothing and it no-ops. */
-  function jdRainMount(root) {
-    var i;
-    for (i = 0; i < jdRainTimers.length; i++) clearInterval(jdRainTimers[i]);
-    jdRainTimers = [];
-    var hosts = root.querySelectorAll('.jd-rain');
+  function jdDriftMount(root) {
+    jdDriftStopAll();
+    var hosts = (root || document).querySelectorAll('.jd-drift');
     if (!hosts.length) return;
-    /* paint() writes the markup, but the card has not been laid out yet at
-       that point — a synchronous clientWidth read comes back 0 and the build
-       would quietly do nothing. Wait for a frame that has real geometry, and
-       give up after a handful rather than spin. */
-    var tries = 0;
-    (function attempt() {
-      if (++tries > 40) return;
-      if (!hosts[0].clientWidth || !hosts[0].clientHeight) {
-        /* setTimeout, NOT requestAnimationFrame: rAF is parked while the tab
-           is hidden, so a visitor who starts a turn and switches away would
-           come back to an empty sheet that never builds. Timers still run
-           (clamped) in a hidden tab. */
-        setTimeout(attempt, 40);
-        return;
-      }
-      var words = jdRainWords();
-      for (var hi = 0; hi < hosts.length; hi++) jdRainBuild(hosts[hi], words);
-    })();
-  }
-
-  /* the office's own two words, and the words of the job in hand, kept apart
-     so the mix between them is a decision rather than an accident of how many
-     words the visitor happened to type */
-  function jdRainWords() {
-    return { house: ['LOADING', 'STAND BY'], job: jdRainPromptWords() };
-  }
-
-  /* the visitor's own prompt, cut down to words worth reading in a column */
-  function jdRainPromptWords() {
-    var p = (turn && turn.prompt) || '';
-    var raw = p.toUpperCase().replace(/[^A-Z ]+/g, ' ').split(/\s+/), out = [];
-    var STOP = ' THE AND FOR WITH FROM THAT THIS INTO ONTO OVER ';
-    for (var i = 0; i < raw.length && out.length < 6; i++) {
-      if (raw[i].length >= 4 && raw[i].length <= 9 &&
-          STOP.indexOf(' ' + raw[i] + ' ') < 0) out.push(raw[i]);
-    }
-    return out;
-  }
-
-  function jdRainBuild(host, words) {
-    var CELL = 9, W = host.clientWidth, H = host.clientHeight;
-    if (!W || !H) return;
-    /* the travel distance every stream animates against — the SHEET, not
-       itself (see the note in junk-drawer.css) */
-    host.style.setProperty('--jdr-h', H + 'px');
-    var rows = Math.floor(H / CELL), frag = document.createDocumentFragment();
-    var streams = [];
-    for (var c = 0; c < Math.floor(W / CELL); c++) {
-      /* every column carries a stream. The gaps in the rain are made by a
-         run-up above the sheet, so a column empties and fills again on its
-         own cycle — rather than being dealt "empty" at build time and staying
-         blank for the whole wait, which reads as a fault, not as rhythm. */
-      var col = document.createElement('span');
-      col.className = 'jd-rain-c';
-      col.style.left = (c * CELL) + 'px';
-      col.style.setProperty('--jdr-o', (0.66 + Math.random() * 0.34).toFixed(2));
-      var ndrop = Math.random() < 0.45 ? 2 : 1;
-      var len = 7 + ((Math.random() * Math.max(2, rows - 7)) | 0);
-      var body = len * CELL;
-      var lead = body + Math.round(body * (0.08 + Math.random() * 1.05));
-      var travel = H + lead;
-      var d = travel / (20 + Math.random() * 14);      /* px per second */
-      var base = Math.random() * d;
-      for (var s = 0; s < ndrop; s++) {
-        var st = document.createElement('span');
-        st.className = 'jd-rain-s';
-        st.style.setProperty('--jdr-dh', lead + 'px');
-        st.style.setProperty('--jdr-d', d.toFixed(2) + 's');
-        var ph = (base + s * d / 2) % d;
-        st.style.setProperty('--jdr-dl', (-ph).toFixed(2) + 's');
-        st.style.setProperty('--jdr-y0',
-          Math.round(-lead + travel * ph / d) + 'px');
-        for (var i = 0; i < len; i++) {
-          var cell = document.createElement('i');
-          if (Math.random() < 0.07) {
-            cell.setAttribute('data-spin',
-              ' is-spin' + (Math.random() < 0.5 ? ' is-ccw' : ''));
-            cell.style.setProperty('--jdr-sd',
-              (3.5 + Math.random() * 5.5).toFixed(2) + 's');
-          }
-          st.appendChild(cell);
-        }
-        jdRainFill(st, words);
-        st.addEventListener('animationiteration', jdRainWrap);
-        st.__words = words;
-        col.appendChild(st);
-        streams.push(st);
-      }
-      frag.appendChild(col);
-    }
-    host.appendChild(frag);
-    /* the slow in-view re-strike: a handful of squares a second, caught out
-       of the corner of an eye rather than watched */
-    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      jdRainTimers.push(setInterval(function () {
-        for (var i = 0; i < 9; i++) {
-          var st = streams[(Math.random() * streams.length) | 0];
-          if (!st) continue;
-          var cell = st.children[(Math.random() * st.children.length) | 0];
-          if (cell && !cell.getAttribute('data-word')) jdRainStrike(cell);
-        }
-      }, 1000));
-    }
-  }
-
-  function jdRainWrap(e) {
-    /* animationiteration BUBBLES. Every pinwheel square inside this stream
-       runs its own jdRainSpin, and those events arrive here too — without
-       this guard a column re-rolls every time one of its pinwheels completes
-       a turn, mid-fall and in plain sight. */
-    if (e.target !== this || e.animationName !== 'jdRainFall') return;
-    jdRainFill(this, this.__words);
+    /* setTimeout, NOT requestAnimationFrame: rAF is parked while the tab is
+       hidden, and the swatch must be built and measured even if the visitor
+       sent the turn and switched away immediately */
+    Array.prototype.forEach.call(hosts, function (host) {
+      var tries = 0;
+      (function attempt() {
+        if (jdDriftBuild(host)) return;
+        if (++tries < 20) setTimeout(attempt, 40);   /* not laid out yet */
+      })();
+    });
   }
 
   /* 'bar' — the honest progress bar — is BENCHED, not deleted (owner,
      2026-08-21): darkHonestBar(), its darkWell branch and its CSS are all
      still here and still work. Put the string back in this array and it
      rejoins the rotation; nothing else needs touching. */
-  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'rain', 'mesh'];
+  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'drift', 'mesh'];
   function darkDeal() {
     var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
     var h = 2166136261 >>> 0, i;
@@ -4795,11 +4846,11 @@ function JD_layerOpen() {
          never counts as a child of the well's flex box. */
       return darkScatterword(((turn && turn.client_ref) || 'jd') + ':' + slot);
     }
-    if (anim === 'rain') {
-      /* the only indicator that cannot be a string: it measures the well
-         it lands in and binds a listener per stream, so it is built by
-         jdRainMount() from paint(), once this markup is in the document. */
-      return '<span class="jd-rain"></span>';
+    if (anim === 'drift') {
+      /* cannot be a string on its own: it measures the well it lands in and
+         starts a metronome per column, so it is built by jdDriftMount() from
+         paint(), once this markup is in the document. */
+      return '<span class="jd-drift"></span>';
     }
     if (anim === 'mesh') {
       /* Kimi's Take, run small (owner directive 2026-08-22): the
@@ -5203,7 +5254,11 @@ function JD_layerOpen() {
      be minted (the unveil's tie chooser stays put for old/cached flows).
      ═══════════════════════════════════════════════════════════════════════ */
   var POD_ORD = ['1st', '2nd', '3rd', '4th'];
-  var podHand = null;   /* the slot in hand — the tap-to-place path */
+  /* THE ARMED PLACE — the no-drag path, inverted (owner, 2026-08-23). It used
+     to be the PRINT you picked up first; now it is the PLACE you arm first,
+     which frees the print's own press to mean "let me see this bigger" with
+     no icon on it at all. null = nothing armed, 0 = the row, 1..n = a step. */
+  var podArmed = null;
   var podDrag = null;   /* the drag in flight, or null */
 
   /* Nothing is cached across paints: the card is repainted by assigning an
@@ -5266,22 +5321,27 @@ function JD_layerOpen() {
         else delete work.ranks[sitting];
       }
     }
-    podHand = null;
+    podArmed = null;
     podSync();
     podPaint();
     podSay('Model ' + slot.toUpperCase() +
       (k ? ' on ' + POD_ORD[k - 1] : ' back in the row') +
       (callReady() ? '. Ready to file.' : '.'));
   }
-  function podPick(slot) {
-    podHand = (podHand === slot) ? null : slot;
+  /* arm a place and wait for a drawing. Arming the armed place disarms it. */
+  function podArm(k) {
+    podArmed = (podArmed === k) ? null : k;
     podPaint();
-    podSay(podHand ? 'Model ' + podHand.toUpperCase() + ' in hand — now choose a step.'
-      : 'Put down.');
+    podSay(podArmed === null ? 'Nothing waiting.'
+      : (podArmed === 0 ? 'The row' : POD_ORD[podArmed - 1]) +
+        ' is waiting — choose a drawing.');
   }
-  function podPlace(k) {
-    if (!podHand) return;
-    podMove(podHand, k);
+  /* a press on a print: it fills the armed place if one is waiting, and
+     otherwise it does the only other thing a drawing can do — get bigger. */
+  function podTap(slot) {
+    if (podArmed !== null) { podMove(slot, podArmed); return; }
+    var el = podPrintEl(slot);
+    if (el) openZoom(el);
   }
 
   /* Move a print into its place — and ONLY if it isn't already there. Every
@@ -5307,8 +5367,10 @@ function JD_layerOpen() {
       if (!t) continue;
       var occ = podAt(k), hole = t.querySelector('.jd-pod-hole');
       if (hole) hole.hidden = !!occ;
+      t.classList.toggle('is-waiting', podArmed === k);
       t.setAttribute('aria-label', POD_ORD[k - 1] +
-        (occ ? ', Model ' + occ.toUpperCase() : ', empty'));
+        (occ ? ', Model ' + occ.toUpperCase() : ', empty') +
+        (podArmed === k ? ', waiting for a drawing' : ''));
     }
     ok.forEach(function (s, i) {
       var el = podPrintEl(s), r = podRankOf(s);
@@ -5320,12 +5382,20 @@ function JD_layerOpen() {
       } else {
         podSeat(el, root.querySelector('.jd-pod-cell[data-cell="' + i + '"]'));
       }
-      el.classList.toggle('is-hand', podHand === s);
+      /* the label states what THIS press will do, because that changes with
+         whether a place is waiting */
       el.setAttribute('aria-label', 'Model ' + s.toUpperCase() +
-        (r ? ', ' + POD_ORD[r - 1] : ', unplaced') + (podHand === s ? ', in hand' : ''));
+        (r ? ', ' + POD_ORD[r - 1] : ', unplaced') +
+        (podArmed === null ? '. Press to enlarge'
+          : '. Press to put on ' + (podArmed === 0 ? 'the row' : POD_ORD[podArmed - 1])));
     });
     var tray = root.querySelector('.jd-pod-tray');
-    if (tray) tray.classList.toggle('is-bare', placed === n);
+    if (tray) {
+      tray.classList.toggle('is-bare', placed === n);
+      tray.classList.toggle('is-waiting', podArmed === 0);
+      tray.setAttribute('aria-label', 'The row' +
+        (podArmed === 0 ? ', waiting for a drawing' : ''));
+    }
     setDisabled('[data-act="file"]', !callReady());
   }
   /* the only words the podium ever produces, and they are never printed:
@@ -5351,13 +5421,13 @@ function JD_layerOpen() {
     if (podDrag) return;
     if (e.button !== undefined && e.button > 0) return;
     if (!work || !bodyEl) return;
-    /* ENLARGE and REPLAY live inside the print but are not part of it: a press
-       on either is a press on a button, never the start of a drag. Bailing
-       BEFORE preventDefault is the whole trick — the default is what lets the
-       button emit its click at all. */
-    if (e.target && e.target.closest && e.target.closest('.jd-pod-ctl')) return;
     var el = (e.target && e.target.closest) ? e.target.closest('.jd-pod-print') : null;
     if (!el || !bodyEl.contains(el)) return;
+    /* the unveil's podium is a photograph of a filed answer, not a working
+       one: nothing on it may start a drag, or a press after the grades are
+       in would quietly rewrite work.ranks. Its presses are answered as
+       clicks instead (onClick), and they only ever enlarge. */
+    if (el.closest('.jd-pod--said')) return;
     e.preventDefault();          /* no native drag, no text selection, no scroll */
     try { el.focus({ preventScroll: true }); } catch (err) {}
     podDrag = {
@@ -5373,12 +5443,12 @@ function JD_layerOpen() {
   }
   function podLift(e) {
     var el = podDrag.el, r = el.getBoundingClientRect(), root = podRoot();
-    /* a drag supersedes anything in hand — classes only, no repaint */
-    if (podHand) {
-      podHand = null;
+    /* a drag supersedes an armed place — classes only, no repaint */
+    if (podArmed !== null) {
+      podArmed = null;
       if (root) {
-        Array.prototype.forEach.call(root.querySelectorAll('.jd-pod-print'),
-          function (p) { p.classList.remove('is-hand'); });
+        Array.prototype.forEach.call(root.querySelectorAll('.is-waiting'),
+          function (p) { p.classList.remove('is-waiting'); });
       }
     }
     var g = document.createElement('div');
@@ -5477,7 +5547,7 @@ function JD_layerOpen() {
   }
   function podOnUp(e) {
     if (!podDrag || e.pointerId !== podDrag.pointerId) return;
-    if (!podDrag.live) { var s = podDrag.slot; podDone(); podPick(s); return; }
+    if (!podDrag.live) { var s = podDrag.slot; podDone(); podTap(s); return; }
     var a = podAim(e), k = podHit(a.x, a.y), moved = podDrag.slot;
     podDone();
     if (k === null) { podPaint(); return; }   /* dead space: back where it was */
@@ -5500,12 +5570,7 @@ function JD_layerOpen() {
       document.removeEventListener('click', eat, true);
       if (timer) clearTimeout(timer);
       var root = podRoot();
-      /* never the controls: the trailing click of a drag can only land where
-         the drag STARTED, and a drag can never start on a control — so a click
-         on one inside the window is always a real press, and eating it would
-         cost the visitor an enlarge for no reason */
-      if (root && ev.target && root.contains(ev.target) &&
-          !(ev.target.closest && ev.target.closest('.jd-pod-ctl'))) {
+      if (root && ev.target && root.contains(ev.target)) {
         ev.stopPropagation(); ev.preventDefault();
       }
     }
@@ -5524,19 +5589,26 @@ function JD_layerOpen() {
     if (!work || !bodyEl) return;
     var t = e.target;
     if (!t || !t.closest || !bodyEl.contains(t)) return;
-    /* a real button answers Enter and Space itself — taking the key here would
-       pick the print up instead of enlarging or replaying it */
-    if (t.closest('.jd-pod-ctl')) return;
+    /* the keyboard reads the same model as the finger: a place arms, a
+       drawing fills the armed place or, with none armed, gets bigger */
+    var said = t.closest('.jd-pod--said');
     var p = t.closest('.jd-pod-print');
     if (p) {
       e.preventDefault(); e.stopPropagation();
-      podPick(p.getAttribute('data-pod'));
+      if (said) openZoom(p); else podTap(p.getAttribute('data-pod'));
       return;
     }
+    if (said) return;          /* a filed podium arms nothing */
     var tier = t.closest('.jd-pod-tier');
     if (tier) {
       e.preventDefault(); e.stopPropagation();
-      podPlace(Number(tier.getAttribute('data-rank')));
+      podArm(Number(tier.getAttribute('data-rank')));
+      return;
+    }
+    var trayEl = t.closest('.jd-pod-tray');
+    if (trayEl) {
+      e.preventDefault(); e.stopPropagation();
+      podArm(0);
     }
   }, true);
 
@@ -5731,31 +5803,23 @@ function JD_layerOpen() {
 
   /* one print, as the podium carries it: the exhibit plate at print size,
      wrapped in the handle the drag and the tap both read, with ENLARGE and
-     REPLAY on their own line beneath (owner, 2026-08-22 — a drawing has to be
-     examinable at the moment it is being ranked, not only one step back on the
-     bench).
-     They are NOT the bench's fittings. The bench passes plate() zoom:true,
-     which makes the whole figure the enlarge control; here that figure is the
-     drag handle, so the press that enlarges and the press that lifts would be
-     the same press. Both controls therefore sit outside the plate, below the
-     caption, and both are kept off the drag path in the four places that read
-     a press: podDown, the podium keydown, podSwallowClick and onClick.
+     the print IS the enlarge control (owner, 2026-08-23: "just click on it to
+     enlarge it, no separate icon"). The icon pair that briefly lived under
+     each print is gone, and REPLAY with it — it stays on the BENCH, one step
+     back, which is where the owner put it on 2026-08-21.
+     What makes one press mean two things without an icon is the INVERSION in
+     podArm/podTap above: the place is armed first, so a press on a drawing is
+     only ever "put it there" when somewhere is already waiting, and "let me
+     see it bigger" the rest of the time.
      data-slot rides the WRAPPER because openZoom() reads it there and finds
      the artwork by descending — which is exactly what the bench's figure does,
      one element out. */
   function podPrintHTML(slot) {
-    var r = podRankOf(slot), up = slot.toUpperCase();
+    var r = podRankOf(slot);
     return '<div class="jd-pod-print" data-pod="' + slot + '" data-slot="' + slot +
-      '" role="button" tabindex="0" draggable="false" aria-label="Model ' + up +
-      (r ? ', ' + POD_ORD[r - 1] : ', unplaced') + '">' + plate(slot) +
-      '<div class="jd-pod-cap">' +
-      '<button type="button" class="jd-pod-ctl" data-act="pod-zoom" data-slot="' +
-      slot + '" title="see the drawing bigger" aria-label="Enlarge drawing ' +
-      up + '">&#10530;</button>' +
-      '<button type="button" class="jd-pod-ctl" data-act="pod-replay" data-slot="' +
-      slot + '" title="watch the drawing draw itself again" aria-label="Replay drawing ' +
-      up + '">&#9998;</button>' +
-      '</div></div>';
+      '" role="button" tabindex="0" draggable="false" aria-label="Model ' +
+      slot.toUpperCase() + (r ? ', ' + POD_ORD[r - 1] : ', unplaced') +
+      '. Press to enlarge">' + plate(slot) + '</div>';
   }
 
   /* THE CALL — THE PODIUM (owner pick, mockup-32, 2026-08-22; the likert
@@ -5768,7 +5832,7 @@ function JD_layerOpen() {
   function callPanel(ok) {
     if (podDrag) podDone();
     podNormalize(ok);
-    podHand = null;
+    podArmed = null;
     var n = ok.length, k, occ;
     var h = '<div class="jd-pod"><div class="jd-pod-row">';
     for (k = 1; k <= n; k++) {
@@ -5786,7 +5850,8 @@ function JD_layerOpen() {
     ok.forEach(function (s) { if (podRankOf(s)) placed++; });
     /* every drawing keeps its own column in the row, so nothing shuffles
        sideways when its neighbour is lifted onto a step */
-    h += '<div class="jd-pod-tray' + (placed === n ? ' is-bare' : '') + '">';
+    h += '<div class="jd-pod-tray' + (placed === n ? ' is-bare' : '') +
+      '" role="button" tabindex="0" aria-label="The row">';
     ok.forEach(function (s, i) {
       h += '<div class="jd-pod-cell" data-cell="' + i + '">' +
         (podRankOf(s) ? '' : podPrintHTML(s)) + '</div>';
@@ -5831,20 +5896,62 @@ function JD_layerOpen() {
     if (ok.length === 1) return ok[0];
     return (work.winner && ok.indexOf(work.winner) !== -1) ? work.winner : null;
   }
-  /* ---------- 7. the unveil (§6) -------------------------------------------- */
+  /* ---------- 7. the unveil (§6) --------------------------------------------
+     THE PODIUM STANDS (owner, 2026-08-23). The reveal used to be a list —
+     slot letter, name, vendor, fate — which said everything and staged
+     nothing. It is now the same podium the visitor just built, untouched:
+     same steps, same heights, every drawing still standing exactly where
+     they ranked it. The only thing that changes is that each pedestal
+     LEARNS WHOSE IT WAS — the model's name prints across the base of its own
+     block, under the ordinal that was always there, so a block reads rank at
+     the top and name at the foot.
+     The pencilled "Model A" under each print stays: it is the anonymous
+     label the whole turn ran under, and it sitting directly above the true
+     name is the point of the card.
+     Nothing here is draggable — the ranking is filed — so a press on a print
+     always means enlarge, with no armed place to check.
+     A model that never arrived has no pedestal to stand on, so it is named
+     in a printed line beneath the steps instead of being given a ghost step
+     it never earned. */
+  /* the name and NOTHING else (owner, 2026-08-23): no vendor on the pedestal,
+     no fate badge on the winner. The block's base says who drew it; the step
+     it stands on already said what the visitor thought of it. work.reveal
+     still carries .vendor — it is simply not this card's business. */
+  function revealName(r) {
+    return '<span class="jd-pod-who"><b>' +
+      esc((r && (r.label || r.model_id)) || 'unknown') + '</b></span>';
+  }
   function viewUnveil() {
     var kept = keptSlot();
-    var lines = (work.reveal || []).map(function (r) {
-      var slot = (r.slot || '').toLowerCase();
-      var who = esc(r.label || r.model_id || '');
-      var vendor = r.vendor ? ' <i>(' + esc(r.vendor) + ')</i>' : '';
-      var fate = r.status && r.status !== 'ok' ? 'didn’t survive'
-        : (kept && slot === kept && work.placed) ? 'in the drawer' : 'filed';
-      var kls = (kept && slot === kept && work.placed) ? ' kept' : '';
-      return '<li><b>' + esc(slot.toUpperCase()) + '</b>' + who + vendor +
-        '<span class="fate' + kls + '">' + fate + '</span></li>';
-    }).join('');
-    var h = head('Who drew what', 6) + '<ul class="jd-turn-reveal">' + lines + '</ul>';
+    var ok = okSlots(), n = ok.length, k;
+    var h = head('Who drew what', 6, { view: 'said' });
+    /* the steps, best first, each holding the drawing that stands on it */
+    var steps = '<div class="jd-pod jd-pod--said"><div class="jd-pod-row">';
+    for (k = 1; k <= n; k++) {
+      var occ = podAt(k);
+      var r = occ ? revealFor(occ) : null;
+      /* the countdown: last place is named first, the winner last. The delay
+         is written per step because it depends on how many survived — with
+         two steps the pause before 1st must be one beat, not three. */
+      steps += '<div class="jd-pod-tier" data-rank="' + k +
+        '" style="--pdelay:' + ((n - k) * 180) + 'ms">' +
+        '<div class="jd-pod-stand">' +
+        (occ ? podPrintHTML(occ) : '') + '</div>' +
+        '<div class="jd-pod-block"><span class="jd-pod-ord">' + POD_ORD[k - 1] +
+        '</span>' + (occ ? revealName(r) : '') +
+        '</div></div>';
+    }
+    steps += '</div><div class="jd-pod-floor" aria-hidden="true"></div></div>';
+    h += steps;
+    /* the ones that never arrived: named, not staged */
+    var lost = (work.reveal || []).filter(function (x) {
+      return x.status && x.status !== 'ok';
+    }).map(function (x) {
+      return esc(x.label || x.model_id || 'a machine') + ' — didn’t survive';
+    });
+    if (lost.length) {
+      h += '<p class="jd-turn-line jd-pod-lost">' + lost.join('<br>') + '</p>';
+    }
     if (work.winner === 'tie' && !work.kept) {
       var keepOpts = okSlots().map(function (s) {
         return { value: s, label: 'Drawing ' + s.toUpperCase() };
@@ -5856,10 +5963,10 @@ function JD_layerOpen() {
           work.keep, ' data-role="keep"') +
         actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
     } else {
-      h += '<p class="jd-turn-line">' + (work.placed
-        ? 'It’s in the drawer — yours only, tagged as such.'
-        : 'Nothing kept. The grades are filed all the same.') + '</p>' +
-        actions('<button type="button" class="jd-turn-go" data-act="done">done</button>' +
+      /* the card does not narrate the drawer (owner, 2026-08-23). The winner
+         still goes into the pile — placeWinner ran at filing time — it is
+         only the sentence about it that is gone. */
+      h += actions('<button type="button" class="jd-turn-go" data-act="done">done</button>' +
           '<button type="button" class="jd-turn-alt" data-act="again">take another turn</button>');
     }
     return h;
@@ -5980,21 +6087,22 @@ function JD_layerOpen() {
        the row underneath it as "put this back". A step, or the row, places
        whatever is in hand. Prints are tested BEFORE steps: a seated print
        sits inside its own tier. */
-    /* the print's own two controls, ahead of everything: they sit INSIDE the
-       print, whose clicks are absorbed on the next line */
-    var pc = e.target.closest ? e.target.closest('.jd-pod-ctl') : null;
-    if (pc) {
-      var pcAct = pc.getAttribute('data-act');
-      if (pcAct === 'pod-zoom') openZoom(pc.closest('.jd-pod-print'));
-      else if (pcAct === 'pod-replay') replayPlate(pc);
+    /* a print's press is answered on pointerup (podTap), because podDown
+       preventDefaults and a prevented pointerdown may emit no click at all;
+       the click it does emit is absorbed here so nothing reads twice */
+    var pp = e.target.closest ? e.target.closest('.jd-pod-print') : null;
+    if (pp) {
+      /* on the unveil the press never reached podDown, so the click is the
+         press — and on that card a drawing can only get bigger */
+      if (pp.closest('.jd-pod--said')) openZoom(pp);
       return;
     }
-    var pp = e.target.closest ? e.target.closest('.jd-pod-print') : null;
-    if (pp) return;
+    /* the filed podium arms nothing */
+    if (e.target.closest && e.target.closest('.jd-pod--said')) return;
     var pt = e.target.closest ? e.target.closest('.jd-pod-tier') : null;
-    if (pt) { podPlace(Number(pt.getAttribute('data-rank'))); return; }
+    if (pt) { podArm(Number(pt.getAttribute('data-rank'))); return; }
     var ptr = e.target.closest ? e.target.closest('.jd-pod-tray') : null;
-    if (ptr) { podPlace(0); return; }
+    if (ptr) { podArm(0); return; }
     /* REPLAY rides the plate: it redraws, never zooms (the record card's
        handler exempts its .rc-draw the same way). An explicit press is
        requested motion, so it plays under reduced-motion too — replayPlate

@@ -217,6 +217,15 @@
       /* BLOCKED — turn. When the walk has wandered long, prefer the side
          that heads for the nearer edge, so exits come around in time. */
       var perps = heading[0] === 0 ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]];
+      /* never double back against the entry heading: two perpendicular
+         turns would reverse the axis, and a string that folds back on
+         itself reads against its own letters (word mode made this
+         visible — a falling word that turns twice ends up rising,
+         spelled floor-to-ceiling) */
+      var anti = DVEC[dir];
+      perps = perps.filter(function (p) {
+        return p[0] !== -anti[0] || p[1] !== -anti[1];
+      });
       if (onLen >= maxOn) {
         perps.sort(function (a, b) {
           var da = a[0] ? (a[0] > 0 ? cols - 1 - col : col)
@@ -227,7 +236,7 @@
         });
       } else if (rnd(2)) perps.reverse();
       var chosen = null;
-      for (var q = 0; q < 2; q++) {
+      for (var q = 0; q < perps.length; q++) {
         var qc = col + perps[q][0], qr = row + perps[q][1];
         if (qc >= 0 && qc < cols && qr >= 0 && qr < rows &&
             !seen[qc + ',' + qr] &&
@@ -316,10 +325,12 @@
     var id = nextId++, j;
     var P = cells.length;
     var st = document.createElement('span');
-    st.className = 'cr-s' + (stubborn ? ' is-stubborn' : '');   /* TEMP: red ink
-      while the commissioned behaviour is being watched — remove with the
-      .cr-s.is-stubborn rule */
-    st.style.setProperty('--cr-o', (0.62 + Math.random() * 0.38).toFixed(2));
+    st.className = 'cr-s';
+    /* character rain keeps a per-stream opacity as a depth cue; words are
+       all alike — same ink, same weight, nothing nearer or farther
+       (owner, 2026-08-23) */
+    st.style.setProperty('--cr-o', word ? '1'
+                               : (0.62 + Math.random() * 0.38).toFixed(2));
     for (j = 0; j < len; j++) {
       var cell = document.createElement('i');
       cell.appendChild(document.createElement('u'));   /* mirror/spin wrapper */
@@ -333,14 +344,19 @@
     }
     if (word) {
       /* the letters are dealt once, at birth, and never re-struck — a
-         re-struck letter is a misprint. Head to tail is reading order: the
-         head arrives first wherever the path turns. A space is a blank
-         square travelling inside the word. No mirrors, no pinwheels — a
-         reversed letter is a different word. */
+         re-struck letter is a misprint. Reading order is SPATIAL, not
+         arrival (owner, 2026-08-23): horizontals read left-to-right and
+         verticals top-to-bottom whichever way they travel, so the LEADING
+         letter is the word's last for east- and south-bound streams, its
+         first for west- and north-bound. A space is a blank square
+         travelling inside the word. No mirrors, no pinwheels — a reversed
+         letter is a different word. */
       var letters = Array.from(word), gs = st.children;
+      var flip = (dir === 'r' || dir === 'd');
       for (j = 0; j < len; j++) {
+        var ch = letters[flip ? len - 1 - j : j];
         gs[j].className = 'cr-g cr-lat';
-        gs[j].firstChild.textContent = letters[j] === ' ' ? '' : letters[j];
+        gs[j].firstChild.textContent = ch === ' ' ? '' : ch;
       }
     } else {
       fill(st);

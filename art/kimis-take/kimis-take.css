@@ -57,9 +57,6 @@
    the coordinate system and the opacity. */
 .cr-s { position: absolute; top: 0; left: 0; display: block;
   opacity: var(--cr-o); }
-/* TEMP: stubborn streams in red ink while the commissioned behaviour is
-   being tuned. Remove this rule and the is-stubborn class in spawn(). */
-.cr-s.is-stubborn .cr-g { color: #b3331f; }
 .cr-g {
   position: absolute; top: 0; left: 0;
   display: block; text-align: center;

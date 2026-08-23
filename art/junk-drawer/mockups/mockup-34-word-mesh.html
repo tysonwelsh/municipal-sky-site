@@ -83,12 +83,14 @@ footer{margin-top:46px;padding-top:12px;border-top:1px solid var(--trule);
 <div class="no">Kimi's Take &middot; mockup 34 &middot; every string is a word</div>
 <hr class="rule">
 <p class="dek">The mesh, spelled out. No character pool, no seventy-three scripts — <b>every
-string on the sheet is a word from the list below</b>, one letter to a printed square, head
-letter first so the word reads in the order it arrives. Words run in all four directions at
-once, turn when traffic forces them to (snake-game rules), and never touch — the spacetime
-reservation table sees to that. The red ones are the stubborn share, commissioned to cross
-the whole sheet and exit by the far edge. A space travels as a blank square inside the
-word.</p>
+string on the sheet is a word from the list below</b>, one letter to a printed square.
+Words run in all four directions at once, turn when traffic forces them to (snake-game
+rules), and never touch — the spacetime reservation table sees to that. Reading order is
+spatial: <b>left-to-right, top-to-bottom, whichever way the string travels</b> — so the
+letter that leads is the word's last for east- and south-bound strings, its first for west-
+and north-bound. Every string is commissioned to cross the whole sheet and exit by the far
+edge, steering back on course whenever traffic lets it. A space travels as a blank square
+inside the word.</p>
 
 <h2>The sheet</h2>
 <div class="sub">the piece&rsquo;s own engine and paper — nothing here is a copy</div>
@@ -100,33 +102,42 @@ word.</p>
 <div class="sub">rebuilds when a slider settles &middot; stubborn retunes live</div>
 <div class="desk">
   <label for="d-streams">Streams</label>
-  <input type="range" id="d-streams" data-k="streams" min="2" max="64" step="2" value="8">
-  <output for="d-streams">8</output>
+  <input type="range" id="d-streams" data-k="streams" min="2" max="64" step="2" value="14">
+  <output for="d-streams">14</output>
   <label for="d-speedLo">Speed</label>
-  <input type="range" id="d-speedLo" data-k="speedLo" min="0.5" max="6" step="0.1" value="2.2">
-  <output for="d-speedLo">2.2</output>
+  <input type="range" id="d-speedLo" data-k="speedLo" min="0.5" max="6" step="0.1" value="2.8">
+  <output for="d-speedLo">2.8</output>
   <label for="d-speedHi">&hellip; to</label>
-  <input type="range" id="d-speedHi" data-k="speedHi" min="0.5" max="6" step="0.1" value="4.7">
-  <output for="d-speedHi">4.7</output>
+  <input type="range" id="d-speedHi" data-k="speedHi" min="0.5" max="6" step="0.1" value="5">
+  <output for="d-speedHi">5</output>
   <label for="d-stubborn">Stubborn</label>
-  <input type="range" id="d-stubborn" data-k="stubborn" min="0" max="100" step="5" value="35">
-  <output for="d-stubborn">35%</output>
+  <input type="range" id="d-stubborn" data-k="stubborn" min="0" max="100" step="5" value="100">
+  <output for="d-stubborn">100%</output>
   <label for="d-zoom">Zoom</label>
   <input type="range" id="d-zoom" data-k="zoom" min="1" max="2" step="0.25" value="2">
   <output for="d-zoom">2&times;</output>
   <div class="words"><textarea id="wordlist" spellcheck="false">LOADING
 STAND BY
 PLEASE WAIT
-ONE MOMENT
+ONE MOMENT PLEASE
 PENDING
 PROCESSING
-PLEASE HOLD</textarea></div>
+PLEASE HOLD
+ASSEMBLING
+COMPUTING
+AWAITING RESPONSES
+TRANSMISSION IN PROGRESS
+DO NOT ADJUST YOUR SET
+TRANSMITTING
+DO NOT REFRESH
+REMAIN SEATED
+YOUR PATIENCE IS APPRECIATED</textarea></div>
   <div class="act"><button type="button" id="restart">Restart</button>
     <button type="button" id="pause">Pause</button>
     <button type="button" id="copy">Copy settings</button></div>
 </div>
 
-<footer>Ink on engineering paper &middot; every string is a word &middot; head letter first<br>
+<footer>Ink on engineering paper &middot; every string is a word &middot; left-to-right, top-to-bottom<br>
 Words turn for traffic, never for show &middot; the stubborn cross the whole sheet</footer>
 </div>
 
