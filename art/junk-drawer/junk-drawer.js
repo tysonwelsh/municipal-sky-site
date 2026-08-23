@@ -4873,12 +4873,12 @@ function JD_layerOpen() {
       /* the word mesh (owner directive 2026-08-23, mockup-34's tuning):
          the SAME piece in word mode — every string is one of the office's
          sixteen wait-words, all of them commissioned (stubborn 100) to
-         cross the whole swatch, at mockup-34's 2.8–5 cells/sec. Six
-         streams, not fourteen: the mockup's cast was tuned on a sheet
-         three times the swatch's area, so the cast scales with the paper.
-         The frame is the mesh's precedent — same engine, same isolation. */
+         cross the whole swatch, at mockup-34's 2.8–5 cells/sec. The cast
+         is 32 (owner call, same day) — more than a swatch can hold at
+         once, which is the show: the traffic manager places what clear
+         spacetime it finds and the rest of the cast waits its turn. */
       return '<iframe class="jd-dark-mesh" ' +
-        'src="/art/kimis-take/mini.php?words=1&n=6&stubborn=100&speedLo=2.8&speedHi=5" ' +
+        'src="/art/kimis-take/mini.php?words=1&n=32&stubborn=100&speedLo=2.8&speedHi=5" ' +
         'title="streams of words" tabindex="-1" scrolling="no"></iframe>';
     }
     if (anim === 'bar') {
