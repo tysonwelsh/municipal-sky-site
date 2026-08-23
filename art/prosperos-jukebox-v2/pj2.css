@@ -204,6 +204,23 @@
 .pj2-unsupported.is-shown { display: block; }
 
 /* ---------------------------------------------------------------------------
+   THE MASTHEAD (owner 2026-08-23) — the jukebox's own name, once, above the
+   tabs; the blackletter display face the song titles used to wear in the
+   running head. The accent initial keeps the illuminated-capital habit.
+   ------------------------------------------------------------------------- */
+.pj2-masthead {
+  font-family: var(--pj2-head-font);
+  font-weight: 400;
+  font-size: 40px;
+  line-height: 1;
+  text-align: center;
+  color: var(--pj2c-bone);
+  letter-spacing: 0.02em;
+  margin: 0 0 12px;
+}
+.pj2-masthead .pj2-init { color: var(--pj2-accent); }
+
+/* ---------------------------------------------------------------------------
    THE TABS — v1's horizontal track row, restored above the folio (owner
    ruling). Three side-by-side buttons; each tab tints itself by its OWN
    data-track regardless of which book is open (v1's multi-colored tab rule —
@@ -211,21 +228,24 @@
    carry). The active tab is raised (taller against a flex-end baseline) and
    wears its book's paper. Pixel discipline kept: 1U (2px) borders, stepped
    1U top corners via clip-path, no glow anywhere.
+   Since 2026-08-23 the tabs ARE the song titles: they wear the display face
+   (the old running-head title's font) and sit FLUSH against the folio — no
+   gap, no repeated title inside the book.
    ------------------------------------------------------------------------- */
 .pj2-tabs {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   padding: 0 2px;
 }
 .pj2-tab {
   flex: 1 1 0;
   min-width: 0;
-  font-family: "VT323", monospace;
-  font-size: 21px;
+  font-family: var(--pj2-head-font);
+  font-size: 24px;
   line-height: 1.1;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.02em;
   text-align: center;
   padding: 8px 8px 7px;
   background: var(--tb-bg, #241d17);
@@ -269,7 +289,7 @@
 /* the active tab: raised/open — taller, in its book's paper, no hover shift */
 .pj2-tab.is-active {
   padding: 14px 8px 9px;
-  font-size: 23px;
+  font-size: 27px;
   background: var(--tb-open-bg);
   color: var(--tb-open-ink);
   box-shadow: inset 0 2px 0 var(--tb-edge);
@@ -317,47 +337,11 @@
 }
 /* the content rides above the sheet (an absolutely-positioned sibling would
    otherwise paint over static content, however early it appears in the DOM) */
-.pj2-folio-head,
 .pj2-folio-grid { position: relative; z-index: 1; }
 
-/* running head — title, folio number, and the transport (owner 2026-07-27:
-   play/stop/reset sit above the plate so they need no scrolling) */
-.pj2-folio-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  border-bottom: 2px solid var(--pj2-ink2);
-  padding: 0 4px 6px;
-  margin-bottom: 10px;
-}
-/* the head's transport rides the right edge, a size down from the cabinet's */
-.pj2-transport-head { margin-left: auto; }
-.pj2-transport-head .pj2-pushplate {
-  font-size: 16px;
-  padding: 7px 12px;
-}
-.pj2-title {
-  font-family: var(--pj2-head-font);
-  font-weight: 400;
-  font-size: 32px;
-  line-height: 1;
-  color: var(--pj2-ink0);
-  text-transform: var(--pj2-head-transform);
-  letter-spacing: var(--pj2-head-spacing);
-}
-.pj2-title .pj2-init { color: var(--pj2-accent); }
-/* the running-head kicker: "Prospero's Jukebox ·" small and quiet, so the
-   original song title (the owner's ruling) stays dominant */
-.pj2-title .pj2-title-pre {
-  font-family: "VT323", monospace;
-  font-size: 16px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--pj2-ink2);
-  margin-right: 4px;
-}
+/* (the running head — title + head transport — retired 2026-08-23: the
+   masthead and tabs own the top of the page, and the transport lives in
+   the cabinet above the seal and the lamp) */
 /* the folio number — rehomed from the running head into the margin column
    (owner 2026-07-27), so it reads as one of the apparatus captions */
 .pj2-folio-no {
@@ -549,6 +533,20 @@
   text-transform: uppercase;
 }
 .pj2-cab-spacer { flex: 1 1 auto; }
+
+/* the cabinet's right end (owner 2026-08-23): the transport stacked ABOVE
+   the seal + lamp pair — play moved down from the retired running head */
+.pj2-cab-right {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pj2-transport-cab { justify-content: center; }
+.pj2-cab-right-row {
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
 
 /* (the shelf/book-spine tab rules lived here; owner ruling moved the tracks
    to the .pj2-tabs row above the folio) */
@@ -871,27 +869,28 @@
   .pj2-desk { padding: 14px 6px 32px; }
   .pj2-folio { padding: 12px 10px 8px; }
   #pj2-plate { height: 360px; }
+  .pj2-masthead { font-size: 28px; margin-bottom: 8px; }
   .pj2-tabs { gap: 4px; }
-  .pj2-tab { font-size: 16px; letter-spacing: 0.04em; padding: 7px 4px 6px; }
-  .pj2-tab.is-active { font-size: 17px; padding: 11px 4px 7px; }
-  .pj2-title { font-size: 24px; }
-  .pj2-title .pj2-title-pre { font-size: 13px; }
+  .pj2-tab { font-size: 17px; letter-spacing: 0.01em; padding: 7px 4px 6px; }
+  .pj2-tab.is-active { font-size: 19px; padding: 11px 4px 7px; }
   .pj2-cabinet { gap: 10px; padding: 8px 10px 10px; }
-  /* the mixing desk is desktop-only (PLAN-MIXING-DESK) — never rendered,
-     and pj2-ui.js never builds its rows at this width either */
-  .pj2-mixdesk { display: none; }
+  /* the mixing desk lives at every width now (owner 2026-08-23: the
+     fine-tuning happens from a phone too) — full-width rows, compacted */
+  .pj2-mixdesk { flex: 1 1 100%; max-width: none; }
+  .pj2-legend-row { gap: 6px; }
+  .pj2-legend-name { flex: 0 0 92px; font-size: 14px; letter-spacing: 0.04em; }
+  .pj2-legend-rate { flex: 0 1 100px; }
+  .pj2-legend-rate-val { flex: 0 0 38px; font-size: 13px; }
   .pj2-cab-spacer { display: none; }
-  /* the head transport drops to its own full-width row, three equal thumb
-     targets — still above the plate, so play is reachable on open */
-  .pj2-transport-head {
-    width: 100%;
-    margin-left: 0;
-    gap: 6px;
-  }
-  .pj2-transport-head .pj2-pushplate {
+  /* the cabinet transport spans the width, three equal thumb targets,
+     above the seal + lamp row */
+  .pj2-cab-right { width: 100%; }
+  .pj2-transport-cab { gap: 6px; }
+  .pj2-transport-cab .pj2-pushplate {
     flex: 1 1 0;
     min-width: 0;
     text-align: center;
     padding: 10px 4px;
   }
+  .pj2-cab-right-row { justify-content: space-between; }
 }
