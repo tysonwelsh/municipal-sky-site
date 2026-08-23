@@ -24,9 +24,13 @@ listen-first gate below:
   the breeze pad a lit upper surface the way the cello gives the
   Library bed a floor.
 
-STATUS: mockup phase. Three prototype pages (below) let the owner listen
-to each instrument against the real engine before any engine file is
-touched. Full integration only after the owner approves each sound.
+STATUS (2026-08-23, owner listened): **cello APPROVED** (integrated in
+rc.22), **low horn APPROVED** (integrated in rc.23), **singing saw
+DECLINED** — too high-pitched for the owner's ear; Ariel keeps NO
+under-voice for now. The saw's mockup page stays in the tree as a
+reference (unlinked, dev-only) in case the idea returns in a lower
+register; §2c below is retained as documentation of what was auditioned,
+not as a plan of record.
 
 ---
 
