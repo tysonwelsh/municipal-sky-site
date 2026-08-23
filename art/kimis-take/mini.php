@@ -2,9 +2,11 @@
 // Kimi's Take, mini — the same engine at junk-drawer loading-card size
 // (the darkroom swatches run ~41% x 33% of a card on the house 9px grid).
 // Meant to be iframed; opened directly it caps at swatch size and gets the
-// lab bench (streams / stubborn / pause / reset). Query params n and
-// stubborn seed the dials. The sheet fills whatever box it is given and
-// re-deals itself on resize, so the frame can be any size.
+// lab bench (streams / stubborn / pause / reset). Query params: n (streams,
+// default 6), stubborn (0-100, default 35), speedLo/speedHi (cells/sec,
+// engine defaults when absent), words=1 (word mode: every string is one of
+// the office's wait-words, the list below). The sheet fills whatever box it
+// is given and re-deals itself on resize, so the frame can be any size.
 function kt_v($file)
 {
     $path = __DIR__ . '/' . $file;
@@ -12,6 +14,20 @@ function kt_v($file)
 }
 $kt_n    = max(2, min(64, (int) ($_GET['n'] ?? 6)));
 $kt_stub = max(0, min(100, (int) ($_GET['stubborn'] ?? 35)));
+$kt_words = !empty($_GET['words']);
+$kt_slo  = isset($_GET['speedLo']) ? (float) $_GET['speedLo'] : null;
+$kt_shi  = isset($_GET['speedHi']) ? (float) $_GET['speedHi'] : null;
+// the office's wait-words (owner's sixteen, 2026-08-23 — mockup-34's list).
+// The long ones simply place rarely on a small sheet: a 28-letter string
+// needs 28 cells of clear spacetime, so the traffic manager deals them only
+// when the weave has room. That is self-regulating, not a fault.
+$kt_wait_words = [
+    'LOADING', 'STAND BY', 'PLEASE WAIT', 'ONE MOMENT PLEASE', 'PENDING',
+    'PROCESSING', 'PLEASE HOLD', 'ASSEMBLING', 'COMPUTING',
+    'AWAITING RESPONSES', 'TRANSMISSION IN PROGRESS',
+    'DO NOT ADJUST YOUR SET', 'TRANSMITTING', 'DO NOT REFRESH',
+    'REMAIN SEATED', 'YOUR PATIENCE IS APPRECIATED',
+];
 ?>
 <!doctype html>
 <html lang="en">
@@ -55,6 +71,10 @@ $kt_stub = max(0, min(100, (int) ($_GET['stubborn'] ?? 35)));
     var host = document.getElementById('cr-rain');
     var dial = document.getElementById('cr-streams');
     var out = document.getElementById('cr-streams-n');
+    var WORDS = <?php echo $kt_words ? json_encode($kt_wait_words) : 'null'; ?>;
+    var SPEED = <?php echo ($kt_slo !== null && $kt_shi !== null)
+        ? '[' . json_encode($kt_slo) . ',' . json_encode($kt_shi) . ']'
+        : 'null'; ?>;
     var POINTS = ['d', 'u', 'r', 'l'];
     function dirsFor(n) {
       var d = [];
@@ -62,10 +82,16 @@ $kt_stub = max(0, min(100, (int) ($_GET['stubborn'] ?? 35)));
       return d;
     }
     function mount() {
-      window.KimisTake.mount(host, {
+      var o = {
         dirs: dirsFor(+dial.value),
         stubbornP: +stub.value / 100
-      });
+      };
+      if (WORDS) o.words = WORDS;
+      if (SPEED) {
+        o.speedMin = Math.min(SPEED[0], SPEED[1]);
+        o.speedSpan = Math.abs(SPEED[1] - SPEED[0]);
+      }
+      window.KimisTake.mount(host, o);
     }
     /* sliding remounts, but only once the thumb stops moving */
     var t = null;

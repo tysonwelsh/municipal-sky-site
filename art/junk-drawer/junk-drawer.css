@@ -2459,13 +2459,15 @@ html.jd-turn-open { overflow: hidden; }
    -------------------------------------------------------------------------- */
 .jd-dark-well--drift { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
 
-/* the mesh (owner directive 2026-08-22): Kimi's Take iframed whole into the
-   swatch — full-bleed like the rain, since mini.php brings its own paper at
-   the same 9px ruling. The frame must never scroll or show a seam: it is a
-   window onto a sheet, not a document in a box. On a settle the well's own
-   fade covers it (opacity 0 on ok, 0.45 on fail) — the piece runs on behind
-   it, unheard, the way the rain merely pauses. */
-.jd-dark-well--mesh { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+/* the mesh and the word mesh (owner directives 2026-08-22 / 2026-08-23):
+   Kimi's Take iframed whole into the swatch — full-bleed like the rain,
+   since mini.php brings its own paper at the same 9px ruling. The frame
+   must never scroll or show a seam: it is a window onto a sheet, not a
+   document in a box. On a settle the well's own fade covers it (opacity 0
+   on ok, 0.45 on fail) — the piece runs on behind it, unheard, the way the
+   rain merely pauses. */
+.jd-dark-well--mesh,
+.jd-dark-well--words { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
 .jd-dark-mesh { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
   border: 0; display: block; background: transparent; }
 .jd-drift { position: absolute; left: 0; top: 0; right: 0; bottom: 0;

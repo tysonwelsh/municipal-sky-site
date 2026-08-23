@@ -4023,7 +4023,7 @@ function JD_layerOpen() {
      carrying four graph-paper print swatches in a tight 2×2 — the same
      swatch the finished drawings land in (.jd-turn-art's background, reused
      verbatim). While a machine works, its swatch runs an OLD-SCHOOL WEB
-     WAIT INDICATOR printed in ink, dealt per turn from a pool of six
+     WAIT INDICATOR printed in ink, dealt per turn from a pool of seven
      (round-24 rotation, owner directive 2026-08-21 — see darkDeal; before
      then each indicator was keyed stably to its slot letter):
        plotter — a generated circuit, fresh every turn (round-20
@@ -4048,6 +4048,10 @@ function JD_layerOpen() {
            traffic-managed rain — streams of characters crossing the
            swatch in all four directions on its own 9px grid, iframed
            from mini.php (owner directive 2026-08-22; see darkWell)
+       words — the same piece in word mode: every string is one of
+           the office's sixteen wait-words, commissioned to cross the
+           whole swatch (owner directive 2026-08-23, mockup-34's
+           tuning; see darkWell)
      ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
      fifth slip — "please wait…" in the pencil hand, floated ON TOP of the
      pile — is retired; it covered the indicators, which are the whole show.
@@ -4554,8 +4558,8 @@ function JD_layerOpen() {
      arrangement. The slot letters now mean POSITION only (the pencilled
      corner labels the later cards reference); which indicator a position
      hosts is the turn's own business. Each well wears its indicator's name
-     — jd-dark-well--plot/stray/scatter/watch/bar/drift/mesh — and the CSS
-     keys the full-bleed and overflow tailoring to THAT, not to the slot. */
+     — jd-dark-well--plot/stray/scatter/watch/bar/drift/mesh/words — and the
+     CSS keys the full-bleed and overflow tailoring to THAT, not to the slot. */
   /* ---- the word drift (round 27) ------------------------------------------
      The rain, rewritten in English. Columns of words fall one letter to a
      printed square, strike the bottom rule, are thrown off it, and settle into
@@ -4799,7 +4803,7 @@ function JD_layerOpen() {
      2026-08-21): darkHonestBar(), its darkWell branch and its CSS are all
      still here and still work. Put the string back in this array and it
      rejoins the rotation; nothing else needs touching. */
-  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'drift', 'mesh'];
+  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'drift', 'mesh', 'words'];
   function darkDeal() {
     var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
     var h = 2166136261 >>> 0, i;
@@ -4864,6 +4868,18 @@ function JD_layerOpen() {
          tab order); the status line beside it still does the talking. */
       return '<iframe class="jd-dark-mesh" src="/art/kimis-take/mini.php" ' +
         'title="streams of characters" tabindex="-1" scrolling="no"></iframe>';
+    }
+    if (anim === 'words') {
+      /* the word mesh (owner directive 2026-08-23, mockup-34's tuning):
+         the SAME piece in word mode — every string is one of the office's
+         sixteen wait-words, all of them commissioned (stubborn 100) to
+         cross the whole swatch, at mockup-34's 2.8–5 cells/sec. Six
+         streams, not fourteen: the mockup's cast was tuned on a sheet
+         three times the swatch's area, so the cast scales with the paper.
+         The frame is the mesh's precedent — same engine, same isolation. */
+      return '<iframe class="jd-dark-mesh" ' +
+        'src="/art/kimis-take/mini.php?words=1&n=6&stubborn=100&speedLo=2.8&speedHi=5" ' +
+        'title="streams of words" tabindex="-1" scrolling="no"></iframe>';
     }
     if (anim === 'bar') {
       /* the whole climb is generated per turn (see darkHonestBar): a
