@@ -45,6 +45,20 @@
 // grew; the room did not get busier — the gap law is unchanged apart from
 // gapMul's ±15%).
 //
+// rc.22 — THE CELLO, the Library's under-voice (PLAN-UNDERVOICES §2a,
+// owner-approved by ear in instrument-mockup-cello.html): a LANDSCAPE
+// voice — it never claims the air and never speaks a melody. It bows the
+// current chord's root, fifth or third down where the drone dyad lives
+// (oct −1, sometimes a double-stop), and it enters ONLY when the music
+// moves: a harmony step, a cadence arrival (one bow underlining the
+// landing), the sea change (the bloom gains an octave-doubled bow), a
+// scene turn — plus ONE early tonic bow in candle-out, then silence (the
+// halo's guttering law, borrowed). One bow at a time, ever (the hold
+// law), with a drawn rest after each. Every draw lives on the NEW
+// "cello" fork — label-hashed off the birth seed, so every pre-existing
+// stream is byte-identical to rc.21's; entries scale with intensity, so
+// the voice breathes with the evening instead of ticking.
+//
 // GAIN STAGING (Phase 3 pass — worst-case *scheduled* peaks, the family
 // ledger; verified by mock-param inspection in the Phase 3 check run):
 //
@@ -52,6 +66,8 @@
 //                  x droneBreath (<= 1) x droneLevel (<= 0.48) ~ 0.079;
 //                  cycle overlap doubles it briefly ~ 0.158; + cadence pads
 //                  2 x 0.012 or a sea-change bloom 2 x 0.05   -> ~ 0.21 worst
+//   cello          ONE bow at a time (the hold law): single 0.045 or a
+//                  stop 2 x 0.036 = 0.072; x bow swell <= 1.12 -> ~ 0.081 worst
 //   melody         pluck 0.055 + sparkle <= 0.012, box <= 0.030 + shimmer
 //                  <= 0.009; two speakers + a rare third (limit+1)
 //                                                             -> ~ 0.16 worst
@@ -63,11 +79,14 @@
 //   halo           levelGain <= 0.07 on a whisper-fed ring    -> ~ 0.02
 //   far-wall delay wet 0.18 x sends (0.5 box / 0.35 pluck)    -> ~ 0.02
 //   ------------------------------------------------------------------
-//   sum into the rooms ~ 0.60 absolute worst; the equal-power room split
-//   conserves power and each room is dry 1.0 + wet ~0.3 -> ~ 0.78 at bus
-//   input; x masterGain default 0.6 x saturator small-signal gain ~1.66
-//   (pj2-voice lesson #1) ~ 0.78 into the limiter — under the ~0.89
-//   (~ -1 dB) master ceiling with the glue compressor still idling. The
+//   sum into the rooms ~ 0.68 absolute worst (rc.22: +0.081 cello); the
+//   equal-power room split conserves power and each room is dry 1.0 +
+//   wet ~0.3 -> ~ 0.88 at bus input; x masterGain default 0.6 x saturator
+//   small-signal gain ~1.66 (pj2-voice lesson #1) ~ 0.88 into the limiter
+//   — still under the ~0.89 (~ -1 dB) master ceiling, though the glue
+//   compressor now earns its keep at the absolute-worst coincidence (the
+//   hold law caps the cello at one bow, so that coincidence is rarer than
+//   even this ledger's pessimism). The
 //   MEASURED worst case (time-varying mock-param inspection, 2600 s run,
 //   pj2-phase3-check.js): 0.360 at the bus input -> 0.298 into the limiter
 //   (~ -10.5 dB) at volume 0.5, ~ -8.9 dB at the default 0.6 — concurrence
@@ -257,6 +276,8 @@
   // one.
   //
   // Layer -> params (design values in parens):
+  //   cello       mixCello (1) = layCello -> rooms (the under-voice, rc.22;
+  //               one bow at a time, so a single stage is the whole chain)
   //   drone       mixDrone (1) inserted droneLevel -> rooms
   //   hum         mixHumBed (1) inserted humLevel -> rooms, + layHum (1)
   //               (bed, singer AND cadence consort — one reader's voice)
@@ -276,6 +297,7 @@
   // --------------------------------------------------------------------------
   var MIX_LAYERS = [
     { key: "drone",       label: "Drone",       kind: "landscape" },
+    { key: "cello",       label: "Cello",       kind: "landscape" },
     { key: "hum",         label: "Hum",         kind: "landscape" },
     { key: "harpsichord", label: "Harpsichord", kind: "melodic" },
     { key: "musicbox",    label: "Music Box",   kind: "melodic" },
@@ -290,8 +312,9 @@
   // seachange, follow) carry structure, not voice, and are never scaled.
   // halo has no lane (fx return layer) — it gets no rate slider.
   var MIX_RATE_LANES = {
-    drone: ["drone"], hum: ["hum", "humSing"], harpsichord: ["pluck"],
-    musicbox: ["musicbox"], ambient: ["ambient"], halo: [],
+    drone: ["drone"], cello: ["cello"], hum: ["hum", "humSing"],
+    harpsichord: ["pluck"], musicbox: ["musicbox"], ambient: ["ambient"],
+    halo: [],
   };
   var MIX_RATE_MIN = 0.25, MIX_RATE_MAX = 4;
 
@@ -305,6 +328,11 @@
     drone: [
       { key: "warmth", label: "warmth — how open the bed's lowpass sits", min: 0.6, max: 1.5, def: 1 },
       { key: "sway", label: "sway — the tremolo's breath rate (Hz)", min: 0.2, max: 1.6, def: 0.7 },
+    ],
+    cello: [
+      { key: "brightness", label: "brightness — the wooden body's lowpass (Hz)", min: 1800, max: 2600, def: 2200 },
+      { key: "vibrato", label: "vibrato — the bowing hand's wobble depth", min: 0, max: 2, def: 1 },
+      { key: "rosin", label: "rosin — the bow-noise thread on the attack", min: 0, max: 2, def: 1 },
     ],
     hum: [
       { key: "openness", label: "openness — how wide the vowel mouth opens", min: 0.5, max: 1.6, def: 1 },
@@ -1404,6 +1432,11 @@
       renderConsort(c1, tA, dA + X, 2.0, X, plan.nParts);
       cadenceDronePad(c2, tArr, dB + RING, X, RING);  // holds through tB, releases after
       renderConsort(c2, tArr, dB + RING, X, 2.0, plan.nParts);
+      // rc.22: the arrival may gain its bow. Offset 0.4s past the chord's
+      // onset — the bow leans in AS the chord lands, not at its exact
+      // sample (sharing the consort's precise onset would also read as one
+      // compound attack to the harness's scheduled-value audit).
+      celloCadence(c2, tArr + 0.4, dB + RING + 1.6);
       emitEvent({
         type: "cadence", kind: cad.kind || plan.kind, t: tB,
         label: LABELS.cadences[cad.kind || plan.kind] || null, // display only
@@ -1461,6 +1494,7 @@
       // strings ring on — the straddle lesson, applied to resonance.
       run.roomSeaBonus = 0.08;
       run.haloRetuneAt = t;
+      celloSeaBloom(t);       // rc.22: the bloom may gain an octave-doubled bow
       emitEvent({
         type: "seachange", target: run.seaChange.target,
         label: LABELS.events.seachange, // Transmutatio — display only
@@ -1533,6 +1567,8 @@
           run.perfScenes = evt.scenes ? evt.scenes.slice() : null;
           run.roomSeaBonus = 0; // the room's sea-change memory lasts one evening
           run.coagulaDone = false; // each evening earns its own settling
+          run.celloCandleDone = false; // each evening earns its own last bow (rc.22)
+          run.celloLastChord = null;   // the seam is not a harmony step
           try { run.motif.newPerformance(evt.tidePos); } catch (e) {}
           if (run.pendingGhost) {
             try { run.motif.seedGhost(run.pendingGhost); } catch (e) {}
@@ -1574,6 +1610,7 @@
             try { run.halo.retune(haloFreqs(run.field)); } catch (e2) {}
           }
           onSceneEvent(evt);
+          celloSceneEntry(evt); // rc.22: a scene turn is a place to breathe in
         }
       } catch (e) { /* structure wiring must never stop the transport */ }
     }
@@ -1677,6 +1714,240 @@
         lane.at(t + (durS - overlap), cycle); // overlap: the next pad blooms under this one
       }
       lane.at(run.t0, cycle);
+    }
+
+    // ---- cello (landscape — THE UNDER-VOICE, rc.22) -------------------------
+    // The drone gains a body now and then; nothing gains a soloist. Ported
+    // from the owner-approved prototype (instrument-mockup-cello.html) onto
+    // the engine's discipline: every draw on the dedicated "cello" fork
+    // (pre-existing streams byte-identical by construction), every pitch
+    // from the live field at schedule time, every envelope through env().
+    //
+    // The patch (PLAN-UNDERVOICES §2a): two saws ±4 cents sharing one
+    // wooden body (peaking 230 Hz +6 dB Q2 / 400 Hz +4 dB / 1 kHz wood
+    // +3 dB Q1.5 → lowpass ~2.2 kHz, weather-breathed) → tone envelope
+    // (1.5–3 s attack, plateau, 2.5–4 s release, 10–25 s whole) → a shared
+    // bow-pressure swell (slow-noise, ±~1 dB) → layCello → the rooms
+    // (seated a step toward the stacks, deeper than the speakers). Rosin:
+    // a 2.5 kHz noise thread loudest as the tone finds its feet. Vibrato:
+    // one shared clock, depth delayed 1.5 s then blooming, weather's
+    // breath deepening it, released with the note.
+    //
+    // THE ENTRY LAW: one bow at a time, ever (run.celloHoldUntil), a drawn
+    // rest after each, and entries ONLY on musical movement — the poll
+    // below watches harmony.current().name for steps; realizeCadence,
+    // executeSeaChangeAt and the scene handler call in their own
+    // opportunities at their exact times. Every opportunity's chance roll
+    // is drawn FIRST, unconditionally, so the fork's sequence never
+    // depends on which gate said no (stream discipline).
+    var CELLO_CHANCE = { harmony: 0.35, cadence: 0.7, seachange: 0.85, scene: 0.4 };
+
+    // degList = [[deg, oct], ...] (1–2 entries), resolved by the caller
+    // from the LIVE harmony moments before this call. Returns true if the
+    // bow sounded. velMul scales the ledger peak (memories bow softly).
+    function renderCello(t, degList, durS, why, velMul) {
+      var rng = run.streams.cello;
+      // Draw everything FIRST so a budget refusal can't shift the stream.
+      var attackS = rng.rnd(1.5, 3);
+      var releaseS = rng.rnd(2.5, 4);
+      var vibHz = rng.rnd(4.5, 5.5);
+      var restS = rng.rnd(4, 10);          // the breath after the bow lifts
+      if (durS < attackS + releaseS + 1.5) durS = attackS + releaseS + 1.5;
+      var tok = run.budget.claim(9 + degList.length * 10, t + durS + 0.3);
+      if (!tok) return false;              // graceful thinning — no bow tonight
+      run.tokens.push(tok);
+      var c = ctx;
+      var wx = wxAt(t);
+      // the shared bow: one pressure swell and one vibrato clock for every
+      // string under it — it is one arm, however many strings it leans on
+      var swell = c.createGain();
+      swell.gain.setValueAtTime(1, t);
+      var swN = slowNoise(c, 0.15);        // one pressure change per ~7 s
+      var swD = c.createGain();
+      PJ2.Voice.env(swD.gain, t, [[attackS, 0.12], [durS - attackS - releaseS, 0.12], [releaseS, 0]]);
+      swN.connect(swD);
+      try { swD.connect(swell.gain); } catch (e0) {}
+      swN.start(t, swN.randomOffset);
+      swN.stop(t + durS + 0.1);
+      swell.connect(run.layCello);
+      var vib = c.createOscillator();
+      vib.type = "sine";
+      vib.frequency.setValueAtTime(vibHz, t);
+      vib.start(t);
+      vib.stop(t + durS + 0.1);
+      var toneLevel = 0.045 * (velMul || 1) * (degList.length > 1 ? 0.8 : 1);
+      var vibDepthK = 0.0046 * pVal("cello", "vibrato") * (0.7 + 0.6 * wx.breath);
+      var cutoff = pVal("cello", "brightness") * (0.9 + 0.2 * wx.brightness);
+      for (var i = 0; i < degList.length; i++) {
+        var deg = degList[i][0], oct = degList[i][1];
+        var freq = run.field.degFreq(deg, oct); // read at schedule time, never cached
+        var mix = c.createGain();
+        mix.gain.setValueAtTime(0.5, t);        // two saws share one body
+        for (var s = 0; s < 2; s++) {
+          var o = c.createOscillator();
+          o.type = "sawtooth";
+          o.frequency.setValueAtTime(freq, t);
+          o.detune.setValueAtTime(s ? 4 : -4, t);
+          o.connect(mix);
+          o.start(t);
+          o.stop(t + durS + 0.1);
+          // vibrato depth in Hz of THIS string, delayed then blooming —
+          // the hand settles before it wavers (mockup-proven envelope)
+          var vg = c.createGain();
+          PJ2.Voice.env(vg.gain, t, [[1.5, 0], [1.0, freq * vibDepthK],
+                                     [Math.max(0.1, durS - 2.5 - releaseS), freq * vibDepthK],
+                                     [releaseS, 0]]);
+          vib.connect(vg);
+          try { vg.connect(o.frequency); } catch (e1) {}
+        }
+        var eq1 = c.createBiquadFilter();
+        eq1.type = "peaking";
+        eq1.frequency.setValueAtTime(230, t);   // the box's main air resonance
+        eq1.gain.setValueAtTime(6, t);
+        eq1.Q.setValueAtTime(2, t);
+        var eq2 = c.createBiquadFilter();
+        eq2.type = "peaking";
+        eq2.frequency.setValueAtTime(400, t);
+        eq2.gain.setValueAtTime(4, t);
+        eq2.Q.setValueAtTime(1, t);
+        var eq3 = c.createBiquadFilter();
+        eq3.type = "peaking";
+        eq3.frequency.setValueAtTime(1000, t);  // the wood formant
+        eq3.gain.setValueAtTime(3, t);
+        eq3.Q.setValueAtTime(1.5, t);
+        var lp = c.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.setValueAtTime(cutoff, t); // set once, never automated mid-note
+        lp.Q.setValueAtTime(0.7, t);
+        var tg = c.createGain();
+        PJ2.Voice.env(tg.gain, t, [[attackS, toneLevel],
+                                   [durS - attackS - releaseS, toneLevel], // flat; the swell breathes it
+                                   [releaseS, 0]]);
+        mix.connect(eq1); eq1.connect(eq2); eq2.connect(eq3); eq3.connect(lp);
+        lp.connect(tg); tg.connect(swell);
+        emitNote({ voice: "cello", kind: why, freq: freq, t: t, durS: durS, deg: deg, oct: oct });
+      }
+      // rosin — the bow's grip, loudest as the tone finds its feet, its
+      // release squeezed inside the note so a stopped source never clips
+      // an envelope mid-air (mockup lesson)
+      var rosin = pVal("cello", "rosin");
+      if (rosin > 0) {
+        var ns = PJ2.Voice.noiseBuffer.source(c, 30);
+        var bp = c.createBiquadFilter();
+        bp.type = "bandpass";
+        bp.frequency.setValueAtTime(2500, t);
+        bp.Q.setValueAtTime(1.1, t);
+        var ng = c.createGain();
+        var bowPeak = toneLevel * 0.22 * rosin;
+        var rosinDecay = clamp(durS - attackS - releaseS - 0.2, 0.4, 2.0);
+        PJ2.Voice.env(ng.gain, t, [[attackS, bowPeak], [rosinDecay, bowPeak * 0.16],
+                                   [Math.max(0.05, durS - attackS - rosinDecay - releaseS), bowPeak * 0.16],
+                                   [releaseS, 0]]);
+        ns.connect(bp); bp.connect(ng); ng.connect(swell);
+        ns.start(t, ns.randomOffset);
+        ns.stop(t + durS + 0.1);
+      }
+      run.celloHoldUntil = t + durS + restS;
+      return true;
+    }
+
+    // One opportunity, one decision. Gates AFTER the unconditional roll:
+    // candle-out belongs to its own single bow; the settling stays bare
+    // below intensity 0.15; and the hold law (one bow at a time) is what
+    // keeps the cello an under-voice instead of a bed.
+    function celloConsider(kind, t, baseChance) {
+      if (!run || !run.live) return;
+      var rng = run.streams.cello;
+      var roll = rng.next();                    // drawn first, unconditionally
+      if (curSceneType() === "candle-out") return;
+      var iv = curIntensity(t);
+      if (iv < 0.15) return;
+      if (t < run.celloHoldUntil) return;
+      var x = clamp((iv - 0.15) / 0.3, 0, 1);
+      if (roll >= baseChance * (0.25 + 0.75 * x)) return;
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var r = foldRootLow(ch && isFinite(ch.rootDeg) ? ch.rootDeg : 0);
+      // root-heavy, the fifth for openness, the third for warmth; a stop
+      // (p .3) always contains the root — the cello grounds, it never asks
+      var main = rng.pickW([[r, 5], [r + 4, 3], [r + 2, 2]]);
+      var degs = [[main, -1]];
+      if (rng.chance(0.3)) degs = [[r, -1], [rng.chance(0.6) ? r + 4 : r + 2, -1]];
+      renderCello(t, degs, rng.rnd(10, 25), kind, 1);
+    }
+
+    // The cadence's body (called from realizeCadence with the arrival's
+    // exact chord and onset): one bow underlining the landing, holding
+    // through the boundary and releasing into the new scene beside the
+    // drone pad and the consort.
+    function celloCadence(chord, t, durS) {
+      if (!run || !run.live) return;
+      var rng = run.streams.cello;
+      var roll = rng.next();                    // drawn first, unconditionally
+      var isStop = rng.chance(0.35);
+      if (roll >= CELLO_CHANCE.cadence) return;
+      if (t < run.celloHoldUntil) return;
+      var r = foldRootLow(chord.rootDeg);
+      renderCello(t, isStop ? [[r, -1], [r + 4, -1]] : [[r, -1]], durS, "cadence", 0.9);
+    }
+
+    // The sea change's bow (called from executeSeaChangeAt at the seam's
+    // exact t): the bloom gains a body — the new key's root, low and
+    // lifted an octave, swelling with the pad it doubles.
+    function celloSeaBloom(t) {
+      if (!run || !run.live) return;
+      var rng = run.streams.cello;
+      var roll = rng.next();                    // drawn first, unconditionally
+      var durS = rng.rnd(18, 26);
+      if (roll >= CELLO_CHANCE.seachange) return;
+      if (t < run.celloHoldUntil) return;
+      var ch = null;
+      try { ch = run.harmony.current(); } catch (e) {}
+      var r = foldRootLow(ch && isFinite(ch.rootDeg) ? ch.rootDeg : 0);
+      renderCello(t, [[r, -1], [r, 0]], durS, "seachange", 1);
+    }
+
+    // Scene entries: candle-out draws its ONE early tonic bow (then the
+    // guttering law holds it silent); every other scene turn is a plain
+    // opportunity. Draws are unconditional in a fixed order either way.
+    function celloSceneEntry(evt) {
+      if (evt.scene === "candle-out") {
+        var rng = run.streams.cello;
+        var roll = rng.next();
+        var offset = rng.rnd(6, 15);
+        var durS = rng.rnd(18, 24);
+        if (run.celloCandleDone) return;
+        if (roll >= 0.8) return;
+        run.celloCandleDone = true;
+        var tBow = evt.t + Math.min(offset, evt.durS * 0.4); // early in the guttering
+        run.clock.lane("cello").at(tBow, function (tt) {
+          if (!run || !run.live) return;
+          if (tt < run.celloHoldUntil) return;
+          renderCello(tt, [[0, -1]], durS, "candle-out", 0.85);
+        });
+        return;
+      }
+      celloConsider("scene", evt.t, CELLO_CHANCE.scene);
+    }
+
+    // The poll: a cheap fixed-cadence look at the chord's NAME. The lane
+    // rides the mixer's rate control like any voice lane; a step noticed
+    // is an opportunity, and the notice time is pure clock arithmetic, so
+    // same seed hears the same steps at the same points in the piece.
+    function startCello() {
+      var lane = run.clock.lane("cello");
+      function poll(t) {
+        var name = null;
+        try { name = run.harmony.current().name; } catch (e) {}
+        if (name != null) {
+          if (run.celloLastChord != null && name !== run.celloLastChord) {
+            celloConsider("harmony", t, CELLO_CHANCE.harmony);
+          }
+          run.celloLastChord = name;
+        }
+        lane.at(t + 2.5, poll);
+      }
+      lane.at(run.t0 + 2.5, poll);
     }
 
     // ---- humBed (landscape) -------------------------------------------------
@@ -2402,8 +2673,8 @@
     }
 
     var LANE_NAMES = [
-      "drone", "hum", "humSing", "pluck", "musicbox", "ambient", "follow",
-      "harmony", "cadence", "seachange",
+      "drone", "cello", "hum", "humSing", "pluck", "musicbox", "ambient",
+      "follow", "harmony", "cadence", "seachange",
     ];
 
     function finalize(r) {
@@ -2479,6 +2750,10 @@
         vowels: master.fork("vowels"),
         delaySend: master.fork("delaySend"),
         rooms: master.fork("rooms"),
+        // rc.22: the under-voice's own dice. A label-hashed fork re-rolls
+        // nothing — every stream above is byte-identical to the cello-less
+        // engine, which is the whole stream-purity contract.
+        cello: master.fork("cello"),
       };
 
       // The Phase 2 brains and the Phase 3 sound tools. Harmony first (Motif
@@ -2552,6 +2827,7 @@
       var layHum = mAttach("hum", c.createGain(), 1);
       var layAmb = mAttach("ambient", c.createGain(), 1);
       var layHalo = mAttach("halo", c.createGain(), 1);
+      var layCello = mAttach("cello", c.createGain(), 1); // rc.22: the under-voice
 
       // Landscape chain: cycles → droneBreath (joints only) → droneLevel
       // (intensity follower only) → mixDrone (mixer only) → the drone's
@@ -2570,6 +2846,7 @@
       humLevel.connect(mixHumBed);
 
       roomBlend.register("drone", mixDrone, 0.05);
+      roomBlend.register("cello", layCello, 0.04); // mid-room: behind the speakers, before the stacks
       roomBlend.register("humBed", mixHumBed, 0.0);
       roomBlend.register("hum", layHum, 0.0);
       roomBlend.register("melody", layMel, -0.06);
@@ -2657,6 +2934,10 @@
         roomBalance: 0.15,                 // telemetry shadow of the blend's aim
         roomSeaBonus: 0,                   // +0.08 after a sea change, reset each evening
         layMel: layMel, layHum: layHum, layAmb: layAmb, layHalo: layHalo,
+        layCello: layCello,
+        celloHoldUntil: 0,                 // the hold law: one bow at a time (rc.22)
+        celloLastChord: null,              // the poll's step detector
+        celloCandleDone: false,            // one last bow per evening, then silence
         mix: mix, mixWraps: mixWraps,
         weather: weather,
         delay: delay, delaySendBox: delaySendBox, delaySendPluck: delaySendPluck,
@@ -2747,6 +3028,7 @@
       startFollower();
       startHarmonyLane();
       startDrone();
+      startCello();
       startHum();
       startHumSing();
       startPluck();

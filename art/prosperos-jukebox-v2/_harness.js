@@ -2140,6 +2140,47 @@ if (!SHORT2) {
 })();
 
 // ============================================================================
+// CELLO (rc.22) — the under-voice's laws. All draws live on the "cello"
+// fork, so the streams every check above audits are byte-identical to the
+// cello-less engine by construction (label-hashed forks re-roll nothing);
+// what needs asserting is the voice's OWN conduct: one bow at a time (the
+// hold law), never more than a double-stop, and — over a long run — that
+// it actually enters (an under-voice that never speaks is a wiring bug,
+// not restraint).
+// ============================================================================
+(function testCello() {
+  var i;
+  var notes = [];
+  for (i = 0; i < runP2.notes.length; i++) {
+    if (runP2.notes[i].voice === "cello") notes.push(runP2.notes[i]);
+  }
+  // Group into bows by onset: a double-stop is two notes sharing one t —
+  // one bow, one arm. Notes arrive in schedule order (one emit site).
+  var bows = [];
+  for (i = 0; i < notes.length; i++) {
+    var b = bows.length ? bows[bows.length - 1] : null;
+    if (b && Math.abs(notes[i].t - b.t) < 1e-9) { b.n++; continue; }
+    bows.push({ t: notes[i].t, durS: notes[i].durS, n: 1 });
+  }
+  var overlapBad = 0, stopBad = 0;
+  for (i = 1; i < bows.length; i++) {
+    if (bows[i].t < bows[i - 1].t + bows[i - 1].durS - 1e-6) overlapBad++;
+  }
+  for (i = 0; i < bows.length; i++) if (bows[i].n > 2) stopBad++;
+  check("CELLO hold law: one bow at a time, never more than a double-stop",
+    overlapBad === 0 && stopBad === 0,
+    bows.length + " bow(s), " + notes.length + " note(s)" +
+    (overlapBad ? ", " + overlapBad + " overlap(s)" : ""));
+  if (!SHORT2) {
+    check("CELLO enters over a full run (movement-following, not silent)",
+      bows.length >= 3, bows.length + " bow(s)");
+  } else {
+    check("CELLO presence (RELAXED: sim < 2700s — mechanism fires or is absent without error)",
+      true, bows.length + " bow(s) so far");
+  }
+})();
+
+// ============================================================================
 // SEA CHANGE
 // ============================================================================
 (function testSeaChange() {
