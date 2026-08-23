@@ -61,10 +61,18 @@ include '../../includes/header.php';
 
   <div class="pj2-app" id="pj2-app" data-track="library">
 
+    <!-- THE MASTHEAD — the jukebox names itself ONCE, above everything
+         (owner 2026-08-23: the running head's "Prospero's Jukebox ·" kicker
+         beside the song title was repetitive; the machine's name moves up
+         here and the tabs below carry the song titles alone). -->
+    <h1 class="pj2-masthead"><span class="pj2-init">P</span>rospero&rsquo;s Jukebox</h1>
+
     <!-- THE TABS — v1's horizontal track row restored above the folio (owner
          ruling: tabs, not book spines). Three side-by-side buttons; each tab
          keeps its own track palette even while idle (v1's multi-colored tab
-         rule); the active tab reads raised/open against the folio below. -->
+         rule); the active tab reads raised/open against the folio below.
+         Since 2026-08-23 the tabs ARE the song titles (display face, no
+         repeated title in the folio) and sit flush against the folio. -->
     <div class="pj2-tabs" role="tablist" aria-label="the three books">
       <button type="button" class="pj2-tab is-active" id="pj2-tab-library" data-track="library"
               role="tab" aria-selected="true" aria-label="Prospero's Library — the alchemical codex">Prospero&rsquo;s Library</button>
@@ -85,17 +93,9 @@ include '../../includes/header.php';
              instead of two textured rectangles on a bare field. -->
         <canvas class="pj2-folio-paper" id="pj2-folio-paper" aria-hidden="true"></canvas>
 
-        <header class="pj2-folio-head">
-          <h1 class="pj2-title" id="pj2-title"><span class="pj2-title-pre">Prospero&rsquo;s Jukebox &middot; </span><span class="pj2-init">P</span>rospero&rsquo;s Library</h1>
-          <!-- TRANSPORT — play/stop/reset ride the running head so they are
-               reachable without scrolling past the plate (owner 2026-07-27).
-               The binding toggle and the mixer stay down in the cabinet. -->
-          <div class="pj2-transport pj2-transport-head" role="group" aria-label="transport">
-            <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
-            <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
-            <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
-          </div>
-        </header>
+        <!-- (the running head is gone — owner 2026-08-23: the active tab IS
+             the song's title now, and the transport moved down to the
+             cabinet, above the seal and the lamp) -->
 
         <div class="pj2-folio-grid">
 
@@ -132,9 +132,9 @@ include '../../includes/header.php';
          binding moved off the row's left end to sit under the master
          volume, right of the seal). Each desk row is chevron · sigil ·
          name · VOL; the chevron unfolds that voice's detail strip
-         (M · S · RATE · fine-tune knobs). Desktop only — the desk is
-         hidden at the 700px breakpoint and never built by pj2-ui.js
-         there. -->
+         (M · S · RATE · fine-tune knobs). Since 2026-08-23 the desk is
+         built at EVERY width — the owner fine-tunes from a phone — with
+         the rows compacted under the 700px breakpoint. -->
     <div class="pj2-cabinet">
 
       <div class="pj2-mixdesk" id="pj2-mixdesk">
@@ -147,29 +147,43 @@ include '../../includes/header.php';
 
       <div class="pj2-cab-spacer"></div>
 
-      <div class="pj2-seal-wrap">
-        <div class="pj2-seal-stack" id="pj2-seal-stack">
-          <canvas id="pj2-seal" aria-hidden="true"></canvas>
-          <input type="text" inputmode="numeric" class="pj2-seal-num" id="pj2-seed"
-                 aria-label="the seed — type a number and press enter to re-stamp the seal"
-                 autocomplete="off" spellcheck="false" />
+      <div class="pj2-cab-right">
+        <!-- TRANSPORT — moved down from the running head (owner 2026-08-23):
+             play/stop/reset sit at the cabinet's right end, ABOVE the seal
+             and the lamp, so the top of the page belongs to the masthead
+             and the tabs alone. -->
+        <div class="pj2-transport pj2-transport-cab" role="group" aria-label="transport">
+          <button type="button" class="pj2-pushplate" id="pj2-play" aria-label="play">PLAY&nbsp;&#9654;&#xFE0E;</button>
+          <button type="button" class="pj2-pushplate" id="pj2-stop" aria-label="stop">STOP&nbsp;&#9632;&#xFE0E;</button>
+          <button type="button" class="pj2-pushplate" id="pj2-reset" aria-label="reset — reseed this book with a fresh evening">RESET&nbsp;&#8635;&#xFE0E;</button>
         </div>
-        <span class="pj2-cab-cap">the seed</span>
-      </div>
 
-      <div class="pj2-lamp-stack">
-        <div class="pj2-lamp">
-          <label class="pj2-cab-cap" for="pj2-vol">the lamp &middot; volume</label>
-          <div class="pj2-lamp-track">
-            <div class="pj2-lamp-fill" id="pj2-lamp-fill"></div>
-            <div class="pj2-lamp-thumb" id="pj2-lamp-thumb"></div>
-            <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
+        <div class="pj2-cab-right-row">
+          <div class="pj2-seal-wrap">
+            <div class="pj2-seal-stack" id="pj2-seal-stack">
+              <canvas id="pj2-seal" aria-hidden="true"></canvas>
+              <input type="text" inputmode="numeric" class="pj2-seal-num" id="pj2-seed"
+                     aria-label="the seed — type a number and press enter to re-stamp the seal"
+                     autocomplete="off" spellcheck="false" />
+            </div>
+            <span class="pj2-cab-cap">the seed</span>
           </div>
-        </div>
-        <div class="pj2-transport" role="group" aria-label="binding">
-          <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
-        </div>
-      </div>
+
+          <div class="pj2-lamp-stack">
+            <div class="pj2-lamp">
+              <label class="pj2-cab-cap" for="pj2-vol">the lamp &middot; volume</label>
+              <div class="pj2-lamp-track">
+                <div class="pj2-lamp-fill" id="pj2-lamp-fill"></div>
+                <div class="pj2-lamp-thumb" id="pj2-lamp-thumb"></div>
+                <input type="range" id="pj2-vol" min="0" max="1" step="0.01" value="0.6" aria-label="master volume" />
+              </div>
+            </div>
+            <div class="pj2-transport" role="group" aria-label="binding">
+              <button type="button" class="pj2-pushplate" id="pj2-binding" aria-label="binding — switch between the night folio and the parchment page">NIGHT&nbsp;&#9789;&#xFE0E;</button>
+            </div>
+          </div>
+        </div><!-- /pj2-cab-right-row -->
+      </div><!-- /pj2-cab-right -->
 
     </div><!-- /pj2-cabinet -->
 

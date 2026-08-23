@@ -32,7 +32,8 @@
 //   · THE MIXING DESK — the instrument rows inside the cabinet frame,
 //     next to the binding plate (owner 2026-08-22: no collapse, no
 //     header — just the rows, with the COPY plate beneath them).
-//     Desktop only: under the 700px breakpoint the desk is never built.
+//     Built at EVERY width since 2026-08-23 (the owner fine-tunes from a
+//     phone); CSS compacts the rows under the 700px breakpoint.
 //     One row per layer, rebuilt from getLayers() on every tab switch —
 //     the row is an expand chevron, an authored voice sigil stamped from
 //     PJ2.Skin.atlas, VT323 name, and the dithered-fill VOL slider
@@ -104,9 +105,8 @@
   var TRACK = {
     library: {
       ns: "Library",
-      // the original v1 song titles, verbatim (owner ruling) — the kicker
-      // "Prospero's Jukebox · " stays small; the title is the display text
-      title: { pre: "Prospero’s Jukebox · ", init: "P", rest: "rospero’s Library" },
+      // (the per-track running-head title retired 2026-08-23 — the tabs
+      // carry the original v1 song titles, verbatim, in the display face)
       folioNo: "c dorian · tonic 262",
       logHead: "annotationes · the scribal log",
       sigils: {
@@ -118,7 +118,6 @@
     },
     sycorax: {
       ns: "Sycorax",
-      title: { pre: "Prospero’s Jukebox · ", init: "S", rest: "ycorax’s Spell" },
       folioNo: "the ghost world · tonic 311",
       logHead: "the black book’s margins · scribal log",
       sigils: {
@@ -132,7 +131,6 @@
     },
     ariel: {
       ns: "Ariel",
-      title: { pre: "Prospero’s Jukebox · ", init: "A", rest: "riel’s Day Off" },
       folioNo: "f lydian · tonic 349",
       logHead: "chart annotations · the scribal log",
       sigils: {
@@ -169,10 +167,9 @@
   var logRowEls = [];          // DOM rows currently rendered (newest first)
   var MAX_LOG_ROWS = 120;
 
-  // The mixing desk (see THE MIXING DESK below). mixdeskOn is settled in
-  // init: false under the 700px breakpoint, where the drawer is never
-  // built. Solo is a transient listening mode of the ACTIVE book only —
-  // dissolved on tab switch, never serialized.
+  // The mixing desk (see THE MIXING DESK below) — built at every width
+  // since 2026-08-23. Solo is a transient listening mode of the ACTIVE
+  // book only — dissolved on tab switch, never serialized.
   var mixdeskOn = true;
   var soloSet = {};            // layer key -> true
   var soloMutes = null;        // the pre-solo mute set (key -> muted), else null
@@ -397,19 +394,8 @@
       tab.setAttribute("aria-selected", k === activeKey ? "true" : "false");
     }
 
-    var title = $("pj2-title");
-    if (title) {
-      title.textContent = "";
-      var pre = document.createElement("span");
-      pre.className = "pj2-title-pre";
-      pre.textContent = def.title.pre;
-      title.appendChild(pre);
-      var init = document.createElement("span");
-      init.className = "pj2-init";
-      init.textContent = def.title.init;
-      title.appendChild(init);
-      title.appendChild(document.createTextNode(def.title.rest));
-    }
+    // (no running-head title to rebuild — owner 2026-08-23: the masthead is
+    // static and the active TAB is the song's title now)
     var folioNo = $("pj2-folio-no");
     if (folioNo) folioNo.textContent = def.folioNo;
     var logHead = $("pj2-log-head");
@@ -1436,26 +1422,12 @@
     }
     updateLamp();
 
-    // the mixing desk — desktop only: under the 700px breakpoint (where CSS
-    // hides the drawer and its toggle) the drawer DOM is never built either.
-    // A viewport crossing UP to desktop after load wires the desk once and
-    // builds its rows (the other direction needs nothing — CSS hides it).
-    var mixdeskMq = window.matchMedia ? window.matchMedia("(max-width: 700px)") : null;
-    mixdeskOn = !mixdeskMq || !mixdeskMq.matches;
-    var mixdeskWired = false;
-    function wireMixdesk() {
-      if (mixdeskWired) return;
-      mixdeskWired = true;
-      mixdeskOn = true;
-      initMixdesk();
-      buildLegend(activeKey);
-    }
-    if (mixdeskOn) wireMixdesk();
-    if (mixdeskMq && mixdeskMq.addEventListener) {
-      mixdeskMq.addEventListener("change", function () {
-        if (!mixdeskMq.matches) wireMixdesk();
-      });
-    }
+    // the mixing desk — at EVERY width since 2026-08-23 (owner: the
+    // fine-tuning happens from a phone too). CSS compacts the rows under
+    // the 700px breakpoint instead of hiding them.
+    mixdeskOn = true;
+    initMixdesk();
+    buildLegend(activeKey);
 
     // space = play/stop (when not in an input; buttons keep native space,
     // and the mixing desk's header keeps its own Enter/Space toggle)
