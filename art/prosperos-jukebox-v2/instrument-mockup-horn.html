@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sycorax under-voice mockup — the low horn</title>
+<!--
+  Dev-only mockup (PLAN-UNDERVOICES.md §2b — the listen-first gate).
+
+  The REAL Sycorax engine runs completely unmodified; this page wraps three
+  PJ2 factory functions BEFORE create()/play() — PJ2.Voice.buildBus,
+  PJ2.Pitch.field, PJ2.Harmony.create — so that each fresh run hands us its
+  live AudioContext, master bus, pitch field and harmony (the room-mockup
+  interception trick, applied to plumbing instead of rooms). Re-captured on
+  every play/reseed, because the engine builds a fresh world each time.
+
+  On top of that plumbing sits the prototype LOW HORN — an aurochs horn /
+  bronze lur heard from the treeline: one sawtooth whose lowpass BLOSSOMS
+  open and closed across the note (the brass crescendo that is the
+  instrument), a breath of 800 Hz noise riding the same envelope, a −35 cent
+  scoop as the lips find the partial, and a soft-clip parallel send that
+  approximates the engine's grit bus. It voices the POSE's root or fifth at
+  oct −1, single tones only; rarely a two-note call of fifth FALLING to
+  root — never a rising fanfare. It is a landscape voice: it comes and goes
+  with the rite's movement and is HARD-GATED silent through the cut's hush.
+
+  Nothing here is an integration — it is a listening post. If the owner
+  likes what the treeline answers, the horn moves into pj2-sycorax.js per
+  PLAN-UNDERVOICES §4 (forked streams, mixer row, harness gates).
+-->
+<script>
+  // surface any JS error on the page itself — silence must never be mute
+  window.__pjErr = null;
+  window.onerror = function (msg, src, line) {
+    window.__pjErr = msg + " @ " + (src || "").split("/").pop() + ":" + line;
+    var el = document.getElementById("errbar");
+    if (el) el.textContent = "JS ERROR: " + window.__pjErr;
+    return false;
+  };
+</script>
+<style>
+  body { font-family: monospace; background: #100d0d; color: #cdbfae; max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.05rem; } h2 { font-size: 0.9rem; color: #a98f6f; margin: 1.2rem 0 0.4rem; }
+  p, label { color: #86756a; font-size: 0.85rem; }
+  input[type=number] { font-family: inherit; background: #241d1b; color: #cdbfae; border: 1px solid #453a33; padding: 0.25rem; }
+  button { font-family: inherit; background: #241d1b; color: #cdbfae; border: 1px solid #453a33; padding: 0.4rem 0.9rem; margin: 0.15rem; cursor: pointer; }
+  button:hover { background: #342a25; }
+  button.on { background: #453a33; border-color: #6f5c48; }
+  .row { margin: 0.35rem 0; }
+  .knobs { display: grid; grid-template-columns: 16rem 1fr 3.2rem; gap: 0.3rem; align-items: center; max-width: 40rem; }
+  .knobs span.v { color: #a98f6f; }
+  #status { color: #8a9c6e; white-space: pre-wrap; }
+  #errbar { color: #c96a5a; white-space: pre-wrap; }
+  #meter { color: #8a9c6e; }
+  #log { font-size: 0.78rem; color: #6a5c50; max-height: 14rem; overflow-y: auto; border-top: 1px solid #241d1b; margin-top: 0.5rem; padding-top: 0.3rem; }
+  #log .horn { color: #b0906a; }
+</style>
+</head>
+<body>
+<h1>Sycorax under-voice mockup — the low horn <span style="color:#8a9c6e">rev 1</span></h1>
+<p>This page prototypes the Sycorax track's under-voice — <b>a far low
+horn</b> (aurochs horn / bronze lur: dark, breathy, ceremonial) that gives
+the hurdy-gurdy drone a fundament now and then. The full Sycorax engine
+plays <b>unmodified</b>; the horn is synthesized page-side from the
+engine's own live telemetry (pose, scene, intensity, boundary events) and
+fed into the engine's master bus through its own long dark reverb. It
+enters on the rite's movement — pose changes, the organum arrivals, the
+processional and invocation — never continuously, never a melody, and it
+falls hard-silent through the cut's hush. Judge it against the gurdy:
+darker, not louder, is the track's law.</p>
+
+<h2>the rite</h2>
+<div class="row">
+  <button id="play">play</button>
+  <button id="stop">stop</button>
+  <label>seed <input type="number" id="seed" value="1400137155" style="width:9rem"></label>
+  <button id="reroll">new seed</button>
+  <label>volume <input type="range" id="vol" min="0" max="1" step="0.01" value="0.85"></label>
+  <button id="beep" title="plain tone straight to the output — tests the device, not the engine">test beep</button>
+</div>
+<div class="row">
+  <button id="hushRite" title="mutes chant / rebec / waterphone / boneflute via toggleLayer, so gurdy + noise bed + horn can be judged alone">hush the rite</button>
+  <button id="oneCall" title="one horn tone right now, on the current pose — the instant-audition path">sound one call now</button>
+</div>
+<div class="row" id="errbar"></div>
+<div class="row" id="meter"></div>
+
+<h2>the horn</h2>
+<div class="row">
+  <label><input type="checkbox" id="hornOn" checked> horn enabled (the entry brain listens)</label>
+</div>
+<div class="knobs">
+  <label for="hornLevel">level — peak per call (&times; 0.04)</label>
+  <input type="range" id="hornLevel" min="0" max="2" step="0.01" value="1"><span class="v" id="hornLevelV">1.00</span>
+  <label for="presence">presence — entry-chance multiplier</label>
+  <input type="range" id="presence" min="0" max="2" step="0.01" value="1"><span class="v" id="presenceV">1.00</span>
+  <label for="blossom">blossom depth — how far the bell opens</label>
+  <input type="range" id="blossom" min="0" max="1.5" step="0.01" value="1"><span class="v" id="blossomV">1.00</span>
+  <label for="breath">breath — the air in the bore</label>
+  <input type="range" id="breath" min="0" max="2" step="0.01" value="1"><span class="v" id="breathV">1.00</span>
+  <label for="scoop">scoop — the attack's pitch dip</label>
+  <input type="range" id="scoop" min="0" max="2" step="0.01" value="1"><span class="v" id="scoopV">1.00</span>
+  <label for="grit">grit send — the trompette shadow</label>
+  <input type="range" id="grit" min="0" max="0.3" step="0.005" value="0.1"><span class="v" id="gritV">0.10</span>
+  <label for="noteLen">note length &times;</label>
+  <input type="range" id="noteLen" min="0.5" max="1.5" step="0.01" value="1"><span class="v" id="noteLenV">1.00</span>
+</div>
+
+<h2>now</h2>
+<div id="status">idle. press play — the rite opens from near-silence; the
+horn waits for the gathering to fill (intensity &gt; 0.12) before it will
+even consider answering.</div>
+<div id="log"></div>
+
+<script src="pj2-rand.js"></script>
+<script src="pj2-pitch.js"></script>
+<script src="pj2-clock.js"></script>
+<script src="pj2-voice.js"></script>
+<script src="pj2-fx.js"></script>
+<script src="pj2-air.js"></script>
+<script src="pj2-motif.js"></script>
+<script src="pj2-harmony.js"></script>
+<script src="pj2-conductor.js"></script>
+<script src="pj2-sycorax.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ---- one shared AudioContext (pj2-ui's singleton trick) -----------------
+  // The engine builds its own ctx lazily; wrapping the constructor makes
+  // that ctx OURS too, so the horn and the rite live on one clock.
+  var RealAC = window.AudioContext || window.webkitAudioContext;
+  var sharedCtx = null;
+  function SharedAC() {
+    if (!sharedCtx) sharedCtx = new RealAC();
+    return sharedCtx;
+  }
+  window.AudioContext = SharedAC;
+  window.webkitAudioContext = SharedAC;
+
+  var status = document.getElementById("status");
+  var logEl = document.getElementById("log");
+  var errbar = document.getElementById("errbar");
+  var ENV = PJ2.Voice.env; // every amplitude envelope goes through this
+
+  function soft(msg) { // degrade visibly, never die silently
+    try { errbar.textContent = "horn mockup: " + msg; } catch (e) {}
+  }
+
+  function logLine(text, isHorn) {
+    var line = document.createElement("div");
+    if (isHorn) line.className = "horn";
+    line.textContent = text;
+    logEl.insertBefore(line, logEl.firstChild);
+    while (logEl.children.length > 80) logEl.removeChild(logEl.lastChild);
+  }
+
+  // ---- knobs --------------------------------------------------------------
+  function knob(id) { return +document.getElementById(id).value; }
+  ["hornLevel", "presence", "blossom", "breath", "scoop", "grit", "noteLen"]
+    .forEach(function (id) {
+      var el = document.getElementById(id), out = document.getElementById(id + "V");
+      el.oninput = function () {
+        out.textContent = (+el.value).toFixed(2);
+        if (id === "hornLevel" || id === "grit") applyChainKnobs();
+      };
+    });
+  function hornEnabled() { return document.getElementById("hornOn").checked; }
+
+  // ==========================================================================
+  // THE INTERCEPTION — wrap three factories before the engine ever runs.
+  // Each play()/reseed() builds a fresh world; the wrappers re-capture the
+  // ctx, bus, field and harmony every time, and rebuild the horn's own
+  // little corner of the graph onto the new bus. The engine notices nothing.
+  // ==========================================================================
+  var cap = { ctx: null, bus: null, field: null, harmony: null, runN: 0 };
+
+  var origBuildBus = PJ2.Voice.buildBus;
+  PJ2.Voice.buildBus = function (ctx, opts) {
+    var bus = origBuildBus.apply(this, arguments);
+    try {
+      cap.ctx = ctx;
+      cap.bus = bus;
+      cap.runN++;
+      rebuildHornChain(); // fresh chain into the fresh bus
+    } catch (e) { soft("bus capture failed — " + e.message); }
+    return bus;
+  };
+
+  var origField = PJ2.Pitch.field;
+  PJ2.Pitch.field = function (opts) {
+    var f = origField.apply(this, arguments);
+    try {
+      // capture only the rite's own field (the page builds a private one
+      // for the engine-idle audition path; that one must not shadow it)
+      if (opts && +opts.tonicHz === 311 && opts.mode === "sycorax") cap.field = f;
+    } catch (e) { soft("field capture failed — " + e.message); }
+    return f;
+  };
+
+  var origHarmonyCreate = PJ2.Harmony.create;
+  PJ2.Harmony.create = function () {
+    var h = origHarmonyCreate.apply(this, arguments);
+    try { cap.harmony = h; } catch (e) { soft("harmony capture failed — " + e.message); }
+    return h;
+  };
+
+  // ==========================================================================
+  // THE HORN CHAIN — the instrument's private plumbing, one per run.
+  //
+  //   note voices → sum → level ─┬────────────────────────→ pre → hush →
+  //                              └→ gritSend → shaper → makeup ↗
+  //   … → its own reverb (long and dark — the treeline answers from far
+  //   off) → bus.input, so the horn rides the engine's master chain
+  //   (compressor, saturator, master volume) like a citizen.
+  //
+  // `hush` is the cut's one page-side writer: the moment the engine narrates
+  // the cut, it ramps to silence and stays there until well after the
+  // return. `level` belongs to the level slider; `gritSend` to its knob.
+  // ==========================================================================
+  var chain = null;         // the live-engine chain (rebuilt per run)
+  var loneChain = null;     // engine-idle audition chain (lazy, → destination)
+  var activeNotes = [];     // {sources:[], endT} — finite nodes, torn down on stop
+
+  // the engine's own soft-clip shape (buildGritCurve, amount 0.45), page copy
+  function gritCurve() {
+    var n = 1024, curve = new Float32Array(n), k = 2 + 0.45 * 40;
+    for (var i = 0; i < n; i++) {
+      var x = (i / (n - 1)) * 2 - 1;
+      var y = (1 + k) * x / (1 + k * Math.abs(x));
+      y += 0.04 * Math.sin(x * 9);
+      curve[i] = Math.max(-1, Math.min(1, y));
+    }
+    return curve;
+  }
+
+  function buildChain(ctx, dest) {
+    var t0 = ctx.currentTime;
+    var sum = ctx.createGain(); sum.gain.setValueAtTime(1, t0);
+    var level = ctx.createGain(); level.gain.setValueAtTime(knob("hornLevel"), t0);
+    var pre = ctx.createGain(); pre.gain.setValueAtTime(1, t0);
+    var hush = ctx.createGain(); hush.gain.setValueAtTime(1, t0);
+    // parallel grit: the curve boosts small signals ~21×, so the engine's
+    // documented makeup-DOWN (0.4) rides here too, times a 0.5 blend cap
+    var gritSend = ctx.createGain(); gritSend.gain.setValueAtTime(knob("grit"), t0);
+    var shaper = ctx.createWaveShaper(); shaper.curve = gritCurve(); shaper.oversample = "2x";
+    var makeup = ctx.createGain(); makeup.gain.setValueAtTime(0.4 * 0.5, t0);
+    // the horn's own room: long and dark — a treeline, not a chamber
+    var rv = PJ2.Voice.reverb(ctx, { decayS: 4.0, preDelayS: 0.03, wet: 0.3, brightness: 2.2, ripple: 0.04 });
+    sum.connect(level);
+    level.connect(pre);
+    level.connect(gritSend); gritSend.connect(shaper); shaper.connect(makeup); makeup.connect(pre);
+    pre.connect(hush); hush.connect(rv.send);
+    rv.output.connect(dest);
+    return { ctx: ctx, sum: sum, level: level, hush: hush, gritSend: gritSend, rv: rv };
+  }
+
+  function teardownChain(c) {
+    if (!c) return;
+    try { c.rv.output.disconnect(); } catch (e) {}
+    try { c.sum.disconnect(); } catch (e) {}
+    try { c.level.disconnect(); } catch (e) {}
+    try { c.hush.disconnect(); } catch (e) {}
+    try { c.gritSend.disconnect(); } catch (e) {}
+  }
+
+  function rebuildHornChain() {
+    teardownChain(chain);
+    chain = null;
+    killAllNotes();
+    if (!cap.ctx || !cap.bus || !cap.bus.input) return;
+    try { chain = buildChain(cap.ctx, cap.bus.input); }
+    catch (e) { soft("horn chain build failed — " + e.message); }
+  }
+
+  function applyChainKnobs() {
+    [chain, loneChain].forEach(function (c) {
+      if (!c) return;
+      try {
+        var t = c.ctx.currentTime;
+        c.level.gain.setTargetAtTime(knob("hornLevel"), t, 0.05);
+        c.gritSend.gain.setTargetAtTime(knob("grit"), t, 0.05);
+      } catch (e) {}
+    });
+  }
+
+  function killAllNotes() {
+    for (var i = 0; i < activeNotes.length; i++) {
+      var h = activeNotes[i];
+      for (var j = 0; j < h.sources.length; j++) {
+        try { h.sources[j].stop(h.ctx.currentTime + 0.05); } catch (e) {}
+      }
+    }
+    activeNotes = [];
+  }
+  function pruneNotes(now) {
+    var live = [];
+    for (var i = 0; i < activeNotes.length; i++) {
+      if (activeNotes[i].endT > now) live.push(activeNotes[i]);
+    }
+    activeNotes = live;
+  }
+
+  // ==========================================================================
+  // ONE HORN TONE — the §2b patch, all amplitude envelopes via PJ2.Voice.env.
+  //
+  //   sawtooth (scooped −35¢·knob, settling over 0.4 s)
+  //     → lowpass Q 0.7 whose cutoff BLOSSOMS 300 → ~900 Hz and back
+  //     → amp env: 3–6 s swell / hold / 4–8 s die        } → chain.sum
+  //   + 800 Hz bandpass breath noise riding the envelope  }
+  //   + a whisper of 3rd partial while the blossom is open}
+  //
+  // Filter cutoff and detune are pitch/timbre motions, not amplitude, so
+  // they use anchored setValue/ramp pairs directly (env() anchors at 0,
+  // which is no frequency at all); every GAIN goes through env().
+  // ==========================================================================
+  function hornTone(c, field, deg, t, durS, velocity) {
+    var ctx = c.ctx;
+    var freq = field.degFreq(deg, -1); // read the LIVE field at schedule time
+    var peak = 0.04 * velocity;        // the ledger: ≈0.04 before the slider
+    var atk = 3 + Math.random() * 3;   // 3–6 s swell
+    var rel = 4 + Math.random() * 4;   // 4–8 s die
+    if (atk + rel > durS - 1) { atk = durS * 0.35; rel = durS * 0.45; }
+    var hold = durS - atk - rel;
+
+    // the body: one sawtooth finding its partial
+    var o = ctx.createOscillator(); o.type = "sawtooth";
+    o.frequency.setValueAtTime(freq, t);
+    var scoopC = -35 * knob("scoop");
+    o.detune.setValueAtTime(scoopC, t);
+    o.detune.linearRampToValueAtTime(0, t + 0.4);
+
+    // the bell: the blossom is the crescendo
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 0.7;
+    var openHz = 300 + 600 * knob("blossom");
+    lp.frequency.setValueAtTime(300, t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(301, openHz), t + durS * 0.45);
+    lp.frequency.setValueAtTime(Math.max(301, openHz), t + durS * 0.55);
+    lp.frequency.exponentialRampToValueAtTime(300, t + durS);
+
+    var g = ctx.createGain();
+    ENV(g.gain, t, [[atk, peak], [hold, peak * 0.92], [rel, 0]]);
+    o.connect(lp); lp.connect(g); g.connect(c.sum);
+    o.start(t); o.stop(t + durS + 0.3);
+
+    // the breath: 800 Hz band of air riding the same shape, quieter
+    var sources = [o];
+    try {
+      var nz = PJ2.Voice.noiseBuffer.source(ctx, 10);
+      var bp = ctx.createBiquadFilter(); bp.type = "bandpass";
+      bp.frequency.value = 800; bp.Q.value = 1.2;
+      var bg = ctx.createGain();
+      var bPeak = peak * 0.20 * knob("breath");
+      ENV(bg.gain, t, [[atk, bPeak], [hold, bPeak * 0.8], [rel, 0]]);
+      nz.connect(bp); bp.connect(bg); bg.connect(c.sum);
+      nz.start(t, nz.randomOffset || 0); nz.stop(t + durS + 0.3);
+      sources.push(nz);
+    } catch (e) { /* no breath is a quieter horn, not a dead page */ }
+
+    // the whisper of brightness: a 3rd partial that exists only while the
+    // blossom is open — it rises out of nothing mid-note and sinks back
+    try {
+      var p3 = ctx.createOscillator(); p3.type = "sine";
+      p3.frequency.setValueAtTime(freq * 3, t);
+      var pg = ctx.createGain();
+      var wPeak = peak * 0.10 * Math.min(1, knob("blossom"));
+      ENV(pg.gain, t, [
+        [durS * 0.32, 0], [durS * 0.18, wPeak],
+        [durS * 0.22, wPeak * 0.5], [durS * 0.28, 0]
+      ]);
+      p3.connect(pg); pg.connect(c.sum);
+      p3.start(t); p3.stop(t + durS + 0.3);
+      sources.push(p3);
+    } catch (e) {}
+
+    activeNotes.push({ ctx: ctx, sources: sources, endT: t + durS + 0.3 });
+    return t + durS;
+  }
+
+  // Choose the tone from the LIVE pose at schedule time: the pinned root
+  // (deg 0) or the fifth (deg 5 — Bb, the keen's own fifth), fifth favored
+  // when the pose actually holds it (sting, veil, the afterimage's shell).
+  function chooseDeg(pose) {
+    var hasFifth = false;
+    var degs = (pose && pose.chordDegs) || [0];
+    for (var i = 0; i < degs.length; i++) if (degs[i] === 5) hasFifth = true;
+    return (Math.random() < (hasFifth ? 0.45 : 0.25)) ? 5 : 0;
+  }
+
+  // One entry = one call: usually a single held tone; rarely (p ≈ 0.15)
+  // the two-note call — the fifth FALLING to the root, overlapped like a
+  // breath re-taken. Never the other way; the treeline does not fanfare.
+  function hornCall(c, field, pose, t, opts) {
+    opts = opts || {};
+    var lenX = knob("noteLen");
+    var vel = (opts.velocity != null) ? opts.velocity : 1;
+    if (!opts.single && Math.random() < 0.15) {
+      var d1 = (10 + Math.random() * 4) * lenX;
+      var d2 = (14 + Math.random() * 8) * lenX;
+      hornTone(c, field, 5, t, d1, vel);
+      var end = hornTone(c, field, 0, t + d1 * 0.55, d2, vel);
+      return { endT: end, what: "two-note call, fifth falling to root" };
+    }
+    var deg = (opts.deg != null) ? opts.deg : chooseDeg(pose);
+    var durS = (12 + Math.random() * 18) * lenX;
+    if (opts.durS) durS = opts.durS;
+    var e2 = hornTone(c, field, deg, t, durS, vel);
+    return { endT: e2, what: "held " + (deg === 5 ? "fifth" : "root") + " (" + durS.toFixed(0) + " s)" };
+  }
+
+  // ==========================================================================
+  // THE ENTRY BRAIN — prototype-grade (Math.random is fine here; the real
+  // integration gets forked seeded streams per PLAN-UNDERVOICES §1.4).
+  //
+  // Opportunities come from the engine's own narration (pose steps, the
+  // organum arrivals, boundary arrivals) plus a faint drift chance on the
+  // 250 ms poll. Each draws chance = base × scene weight × intensity ×
+  // presence. Guards: silent in the gathering until intensity clears 0.12;
+  // silent while a call is still sounding (plus a refractory breath);
+  // HARD-SILENT through the cut — from the cut's start until its return
+  // has fully completed, with generous margin (holdS is 3+5·sev ≤ 8 s,
+  // returnS ≤ 4 s; we add 6 s beyond both, and the apparition rings there
+  // anyway). The afterimage allows exactly one far final call.
+  // ==========================================================================
+  var brain = {
+    entries: 0, busyUntil: 0, soundingUntil: 0, cutHushUntil: 0,
+    finalCallDone: false, lastDecision: "—"
+  };
+  window.__horn = brain; // headless assertions peek here
+
+  var SCENE_W = { gathering: 0.5, processional: 1.25, circling: 0.8, invocation: 1.35, afterimage: 0 };
+  var POSE_W = { sting: 1.6, hollow: 1.4 };
+
+  function liveRig() {
+    if (!chain || !cap.field || !engine.isPlaying()) return null;
+    return chain;
+  }
+  function currentPose() {
+    try { if (cap.harmony) return cap.harmony.current(); } catch (e) {}
+    return { name: "coil", chordDegs: [0, 2, 4] };
+  }
+
+  function opportunity(kind, base, poseName) {
+    // EVERY decision logs — enters, declines, refusals — so the owner can
+    // read exactly why the treeline answered or held its breath.
+    function refuse(why) {
+      brain.lastDecision = kind + " → " + why;
+      logLine("horn · " + kind + " — held back (" + why + ")", true);
+    }
+    if (!hornEnabled()) return;
+    var c = liveRig();
+    if (!c) return;
+    var now = c.ctx.currentTime;
+    var info = {};
+    try { info = engine.getInfo() || {}; } catch (e) { return; }
+    if (!info.playing) return;
+    var scene = info.sceneType || "";
+    var intensity = (info.intensity != null) ? +info.intensity : 0;
+
+    if (now < brain.cutHushUntil || (info.cut && info.cut.active)) { refuse("cut-hushed — the horn respects the noticing"); return; }
+    if (now < brain.soundingUntil) { refuse("still holding"); return; }
+    if (now < brain.busyUntil) { refuse("catching breath"); return; }
+    if (scene === "gathering" && intensity < 0.12) { refuse("the treeline is still empty"); return; }
+    if (scene === "afterimage") { refuse("afterimage — only the one far call may come"); return; }
+
+    var sceneW = (SCENE_W[scene] != null) ? SCENE_W[scene] : 0.8;
+    var poseW = (poseName && POSE_W[poseName]) ? POSE_W[poseName] : 1;
+    var chance = base * sceneW * poseW * intensity * knob("presence");
+    var roll = Math.random();
+    if (roll >= chance) {
+      brain.lastDecision = kind + " → declined (p " + chance.toFixed(3) + ")";
+      if (!quiet) logLine("horn · " + kind + " — declined the entry (p " + chance.toFixed(3) + ", rolled " + roll.toFixed(3) + ")", true);
+      return;
+    }
+    enterHorn(kind, c, {});
+  }
+
+  function enterHorn(kind, c, opts) {
+    try {
+      var pose = currentPose();
+      var t = c.ctx.currentTime + 0.15;
+      var res = hornCall(c, cap.field, pose, t, opts);
+      brain.entries++;
+      brain.soundingUntil = res.endT;
+      brain.busyUntil = res.endT + 6; // the refractory breath after the bell closes
+      brain.lastDecision = kind + " → ENTERED: " + res.what;
+      logLine("horn · ENTER on " + kind + " — " + res.what + " · pose " + (pose ? pose.name : "?") + " · entry #" + brain.entries, true);
+    } catch (e) { soft("horn entry failed — " + e.message); }
+  }
+
+  // ---- the engine, unmodified ---------------------------------------------
+  var seedInput = document.getElementById("seed");
+  var engine = PJ2.Sycorax.create({ seed: +seedInput.value, volume: 0.85 });
+
+  // ---- events: the log + the brain's ears ---------------------------------
+  engine.setEventListener(function (evt) {
+    if (!evt || evt.type === "air") return;
+    // the page log (family pattern), horn decisions logged separately
+    if (evt.type !== "percussion") {
+      var bits = [evt.type];
+      if (evt.pose) bits.push(evt.pose);
+      else if (evt.scene) bits.push(evt.scene);
+      else if (evt.name) bits.push(evt.name);
+      if (evt.state) bits.push(evt.state);
+      if (evt.via) bits.push("via " + evt.via);
+      if (evt.to) bits.push("→ " + evt.to);
+      logLine(bits.join(" · "));
+    }
+
+    try {
+      if (evt.type === "engine") {
+        if (evt.state === "play") {
+          brain.entries = 0; brain.busyUntil = 0; brain.soundingUntil = 0;
+          brain.cutHushUntil = 0; brain.finalCallDone = false;
+        } else if (evt.state === "stop") {
+          killAllNotes();
+        }
+        return;
+      }
+      if (evt.type === "cut") {
+        // THE HARD GATE. The engine says how long its hush lasts
+        // (holdS = 3 + 5·sev, returnS 2.5–4 s); we stay silent from the
+        // cut's start until the return has fully completed, plus a
+        // generous 6 s (the apparition is still ringing out there).
+        var holdS = (evt.holdS != null) ? +evt.holdS : 8;
+        var retS = (evt.returnS != null) ? +evt.returnS : 4;
+        brain.cutHushUntil = evt.t + holdS + retS + 6;
+        // and any note already sounding breaks off — the horn player has
+        // seen what the drum saw. One writer on chain.hush: this handler.
+        if (chain) {
+          var hg = chain.hush.gain, tc = evt.t;
+          if (typeof hg.cancelScheduledValues === "function") hg.cancelScheduledValues(tc);
+          hg.setValueAtTime(1, tc);
+          hg.linearRampToValueAtTime(0, tc + 0.35);
+          var tBack = evt.t + holdS + retS + 2;
+          hg.setValueAtTime(0, tBack);
+          hg.linearRampToValueAtTime(1, tBack + 3);
+        }
+        brain.soundingUntil = 0; // the broken-off note no longer counts as holding
+        logLine("horn · CUT — hushed hard until t+" + (holdS + retS + 6).toFixed(0) + " s", true);
+        return;
+      }
+      if (evt.type === "pose") {
+        opportunity("pose → " + evt.pose, 0.55, evt.pose);
+      } else if (evt.type === "organum") {
+        // the darkening gains a fundament: the organum arrivals are the
+        // horn's most natural door
+        opportunity("organum (" + (evt.via || "?") + ")", 0.9, null);
+      } else if (evt.type === "arrival") {
+        opportunity("arrival → " + (evt.to || "?"), 0.75, null);
+      }
+    } catch (e) { soft("brain event error — " + e.message); }
+  });
+
+  // ---- the 250 ms poll: status readout + drift entries + the final call ---
+  setInterval(function () {
+    var info = {};
+    try { info = engine.getInfo() || {}; } catch (e) {}
+    var now = (cap.ctx && engine.isPlaying()) ? cap.ctx.currentTime : 0;
+    pruneNotes(now);
+
+    // faint drift chance — the horn may also simply decide the treeline
+    // needs answering, rarely, mid-scene
+    if (info.playing) {
+      var scene = info.sceneType || "";
+      if (scene !== "afterimage") {
+        // deliberately tiny per-poll base; opportunity() applies all guards
+        if (Math.random() < 0.02) opportunity("drift", 0.2, null);
+      } else if (!brain.finalCallDone && hornEnabled()) {
+        // ONE far final call in the afterimage — quieter, single, the root,
+        // long. Allowed only once the cut's hush has fully released us.
+        var c = liveRig();
+        if (c && now > brain.cutHushUntil && now > brain.busyUntil &&
+            Math.random() < 0.006 * knob("presence")) {
+          brain.finalCallDone = true;
+          enterHorn("the far final call", c, { single: true, deg: 0, velocity: 0.55, durS: 20 + Math.random() * 8 });
+        }
+      }
+    }
+
+    // status
+    var parts = [];
+    parts.push("engine: " + (info.playing ? "playing" : "stopped") + (cap.runN ? " · run " + cap.runN : ""));
+    if (info.sceneLabel || info.sceneType) parts.push("scene: " + (info.sceneLabel || "") + (info.sceneType ? " (" + info.sceneType + ")" : ""));
+    if (info.tideLabel) parts.push("tide: " + info.tideLabel);
+    if (info.intensity != null) parts.push("intensity: " + Number(info.intensity).toFixed(2));
+    if (info.pose) parts.push("pose: " + info.pose);
+    if (info.tonicHz) parts.push("tonic: " + Number(info.tonicHz).toFixed(1) + " Hz");
+    if (info.cut) parts.push("cut: " + (info.cut.fired ? (info.cut.active ? "ACTIVE" : "past") : (info.cut.planned ? "planned" : "—")));
+    var hstate = !info.playing ? "idle (engine stopped)"
+      : (now < brain.cutHushUntil) ? "CUT-HUSHED"
+      : (now < brain.soundingUntil) ? "holding"
+      : "idle";
+    parts.push("horn: " + hstate + " · entries " + brain.entries +
+      (brain.finalCallDone ? " · final call spent" : ""));
+    parts.push("horn last: " + brain.lastDecision);
+    status.textContent = parts.join("\n");
+  }, 250);
+
+  // ---- controls -----------------------------------------------------------
+  function ensureAudio() {
+    // must run inside a user gesture the first time (Safari's law)
+    var c = SharedAC();
+    if (c.state === "suspended") { try { c.resume(); } catch (e) {} }
+    try {
+      var ub = c.createBuffer(1, 1, 22050);
+      var us = c.createBufferSource(); us.buffer = ub;
+      us.connect(c.destination); us.start(0);
+    } catch (e) {}
+    return c;
+  }
+
+  document.getElementById("play").onclick = function () {
+    ensureAudio();
+    try { engine.play(); ensureAnalyser(); } catch (e) { soft("play failed — " + e.message); }
+  };
+  document.getElementById("stop").onclick = function () {
+    try { engine.stop(); } catch (e) {}
+    killAllNotes();
+  };
+  document.getElementById("reroll").onclick = function () {
+    seedInput.value = Math.floor(Math.random() * 4294967295);
+    engine.reseed(+seedInput.value);
+  };
+  seedInput.onchange = function () { engine.reseed(+seedInput.value); };
+  document.getElementById("vol").oninput = function () {
+    engine.setMasterVolume(+this.value);
+  };
+  document.getElementById("beep").onclick = function () {
+    var c = ensureAudio();
+    var t = c.currentTime + 0.05;
+    var o = c.createOscillator(); o.frequency.value = 220;
+    var g = c.createGain();
+    ENV(g.gain, t, [[0.02, 0.2], [0.4, 0.15], [0.1, 0]]);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.6);
+  };
+
+  // hush the rite: mute the melodic layers so gurdy + noise bed + horn can
+  // be judged alone; untoggle restores them. (This page has no other mixer,
+  // so a blanket restore is honest here.)
+  var MELODIC = ["chant", "rebec", "waterphone", "boneflute"];
+  var riteHushed = false;
+  document.getElementById("hushRite").onclick = function () {
+    riteHushed = !riteHushed;
+    this.classList.toggle("on", riteHushed);
+    for (var i = 0; i < MELODIC.length; i++) {
+      try { engine.toggleLayer(MELODIC[i], !riteHushed); } catch (e) {}
+    }
+    logLine(riteHushed ? "the rite hushed — melodic layers muted (drone + horn alone)"
+                       : "the rite restored — melodic layers back");
+  };
+
+  // sound one call now — the instant-audition path. On the live pose when
+  // the rite plays; on a private field (same 311/sycorax world) into the
+  // bare output when it does not, so the owner can hear the horn cold.
+  document.getElementById("oneCall").onclick = function () {
+    var c = ensureAudio();
+    try {
+      var rig = liveRig();
+      var field = cap.field;
+      if (!rig) {
+        if (!loneChain) {
+          // a modest stand-in master so the cold call sits near the level
+          // it would have inside the mix
+          var lg = c.createGain(); lg.gain.setValueAtTime(0.85, c.currentTime);
+          lg.connect(c.destination);
+          loneChain = buildChain(c, lg);
+        }
+        rig = loneChain;
+        if (!field) field = origField({ tonicHz: 311, mode: "sycorax", tuning: "et" });
+      }
+      var now = rig.ctx.currentTime;
+      if (now < brain.cutHushUntil) { logLine("horn · one call — refused: the cut's hush holds even the owner's hand", true); return; }
+      var pose = currentPose();
+      var res = hornCall(rig, field, pose, now + 0.1, { single: true });
+      if (rig === chain) { brain.soundingUntil = res.endT; brain.busyUntil = res.endT + 6; }
+      logLine("horn · one call now — " + res.what + " · pose " + (pose ? pose.name : "?"), true);
+    } catch (e) { soft("one-call failed — " + e.message); }
+  };
+
+  // ---- output meter (family pattern) --------------------------------------
+  var analyser = null, meterBuf = null;
+  var meterEl = document.getElementById("meter");
+  function ensureAnalyser() {
+    if (analyser || !sharedCtx) return;
+    try {
+      analyser = sharedCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      engine.attachAnalyser(analyser); // re-tapped by the facade per fresh bus
+    } catch (e) { analyser = null; }
+  }
+  (function meterLoop() {
+    var line = "";
+    if (sharedCtx) line += "ctx: " + sharedCtx.state;
+    line += " · engine: " + (engine.isPlaying() ? "playing" : "stopped");
+    if (analyser) {
+      if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(meterBuf);
+      var sum = 0;
+      for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+      var rms = Math.sqrt(sum / meterBuf.length);
+      var db = rms > 0 ? 20 * Math.log10(rms) : -120;
+      var bars = Math.max(0, Math.min(40, Math.round((db + 80) / 2)));
+      line += " · out " + (db <= -119 ? "-inf" : db.toFixed(0)) + " dB " +
+        new Array(bars + 1).join("#");
+    }
+    meterEl.textContent = line;
+    requestAnimationFrame(meterLoop);
+  })();
+
+  // ---- headless debug hook (harness-side eyes; no UI) ---------------------
+  // state() for capture/teardown assertions; measure(ms) taps the horn's own
+  // reverb output with a throwaway analyser and reports the window's peak —
+  // how the check run proves the horn actually breathes, and quietly.
+  window.__hornDebug = {
+    state: function () {
+      return { chain: !!chain, lone: !!loneChain, notes: activeNotes.length, run: cap.runN };
+    },
+    measure: function (ms) {
+      var c = loneChain || chain;
+      if (!c) return Promise.resolve(-1);
+      var an, buf, peak = 0;
+      try {
+        an = c.ctx.createAnalyser(); an.fftSize = 2048;
+        c.rv.output.connect(an);
+        buf = new Float32Array(an.fftSize);
+      } catch (e) { return Promise.resolve(-2); }
+      return new Promise(function (res) {
+        var iv = setInterval(function () {
+          an.getFloatTimeDomainData(buf);
+          for (var i = 0; i < buf.length; i++) {
+            var v = Math.abs(buf[i]); if (v > peak) peak = v;
+          }
+        }, 50);
+        setTimeout(function () {
+          clearInterval(iv);
+          try { c.rv.output.disconnect(an); } catch (e) {}
+          res(peak);
+        }, ms || 2000);
+      });
+    }
+  };
+
+  // ---- headless self-test: ?autoplay=1 starts the rite without a click
+  // (needs --autoplay-policy=no-user-gesture-required), forces one horn
+  // call early, and prints a DIAG line per second for stderr capture.
+  if (/[?&]autoplay=1/.test(window.location.search)) {
+    var diagT0 = Date.now();
+    setTimeout(function () {
+      ensureAudio();
+      try { engine.play(); ensureAnalyser(); } catch (e) { soft("autoplay failed — " + e.message); }
+    }, 1500);
+    setTimeout(function () {
+      try { document.getElementById("oneCall").onclick(); } catch (e) {}
+    }, 5000);
+    setInterval(function () {
+      var line = "DIAG t=" + Math.round((Date.now() - diagT0) / 1000) +
+        " ctx=" + (sharedCtx ? sharedCtx.state : "none") +
+        " playing=" + engine.isPlaying() +
+        " run=" + cap.runN +
+        " captured=" + (!!cap.bus && !!cap.field && !!cap.harmony) +
+        " chain=" + !!chain +
+        " entries=" + brain.entries +
+        " notes=" + activeNotes.length +
+        " err=" + (window.__pjErr || "none");
+      if (analyser) {
+        if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(meterBuf);
+        var sum = 0;
+        for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+        var rms = Math.sqrt(sum / meterBuf.length);
+        line += " out=" + (rms > 0 ? (20 * Math.log10(rms)).toFixed(1) : "-inf") + "dB";
+      }
+      console.log(line);
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>
