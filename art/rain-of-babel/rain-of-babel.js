@@ -254,7 +254,9 @@
      outliers that make the energy range read also, untreated, leave the
      scene of the crash entirely. Per px at zoom 1; flyPath divides by zoom. */
   var PLOUGH = 0.01;
-  var DUST_POOL = 48;         /* dust marks per sheet, pre-made, recycled */
+  var DUST_POOL = 80;         /* dust marks per sheet, pre-made, recycled —
+                                 sized so full default rain (~15 landings/s)
+                                 does not run the pool dry */
   var DUST = '·.,';      /* what dust is printed as */
 
   function surfaceAt(st, x, w) {
@@ -308,7 +310,7 @@
     var eB = imp ? imp.e : 0.28;
     var vB = imp ? imp.vB : 150 * st.zoom;
     var fric = imp ? imp.fric : 500 * st.zoom;
-    var sliding = false;
+    var sliding = false, slid = 0;
     for (i = 0; i < maxSteps; i++) {
       if (!sliding) {
         vy += g * dt;
@@ -330,6 +332,11 @@
         if (f > y + st.CELL * 0.9)      { sliding = false; vy = 0; }
         else if (f < y - st.CELL * 0.55) { x = pts[pts.length - 1].x; pts.push({ x: x, y: y }); break; }
         else y = f;
+        /* a toboggan has a story's worth of runway and no more: the rare
+           fast fragment on a long downslope was crossing most of the sheet
+           (44 cells seen), which stops being an impact and becomes an act */
+        slid += Math.abs(vx) * dt;
+        if (slid > st.CELL * 13) { pts.push({ x: x, y: y }); break; }
         var dv = (fric + PLOUGH * vx * vx / st.zoom) * dt;
         if (Math.abs(vx) <= dv) { pts.push({ x: x, y: y }); break; }
         vx -= dv * (vx > 0 ? 1 : -1);
@@ -1014,8 +1021,20 @@
     /* the reaper must stop too, or a paused sheet keeps harvesting whatever
        was already finished and the drift grows while it is meant to be still */
     if (want) {
+      host.__pausedAt = performance.now();
       if (host.__reaper) { clearInterval(host.__reaper); host.__reaper = null; }
     } else if (host.__pile && !host.__reaper) {
+      /* dwell deadlines are wall-clock: without this shift every seated
+         character's deadline expires during the pause and the first reaper
+         tick after a resume releases them all at once — a synchronized pop
+         across the whole sheet */
+      if (host.__pausedAt) {
+        var shift = performance.now() - host.__pausedAt;
+        for (i = 0; i < gl.length; i++) {
+          if (gl[i].__phase === 'dwell') gl[i].__dwellT += shift;
+        }
+        host.__pausedAt = null;
+      }
       startReaper(host, host.__pile);
     }
     if (host.__rbTimer) { clearInterval(host.__rbTimer); host.__rbTimer = null; }
