@@ -246,6 +246,20 @@
     for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
     return y;
   }
+  /* The MEAN of the span, not its highest point. A glyph that rests on the
+     single tallest bucket under it perches there, and its deposit then hoists
+     every neighbouring bucket to its own height — spires propagate sideways
+     and the drift grows tall on trapped air (measured: ~960 letters holding
+     up a 22-square field, under one letter per square). Resting on the mean
+     lets a letter settle INTO the hollows between spikes, which is what a
+     thrown thing does, and is what makes the heap read as packed. */
+  function surfaceMeanAt(st, x, w) {
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
+    var sum = 0, n = 0;
+    for (var b = b0; b <= b1; b++) { sum += st.top[b]; n++; }
+    return n ? sum / n : st.H;
+  }
   function depositAt(st, x, w, restY) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
     var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
@@ -264,7 +278,7 @@
       y += vy * dt;
       if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
       else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
-      var floorY = surfaceAt(st, x, st.CELL) - st.CELL;
+      var floorY = surfaceMeanAt(st, x, st.CELL) - st.CELL;
       if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
       pts.push({ x: x, y: y });
     }
@@ -430,8 +444,19 @@
     return picks.length;
   }
 
-  /* one glyph: fall, land, be thrown, bounce, come to rest — then leave a
-     copy of itself lying there and go back to the top */
+  /* one glyph: fall to WHATEVER THE FLOOR IS WHEN IT GETS THERE, be thrown,
+     bounce, come to rest — then lie there and go back to the top.
+
+     THE FALL AND THE THROW ARE TWO ANIMATIONS NOW. The whole trajectory used
+     to be baked at launch, but a glyph is in the air for seconds on this
+     sheet and the drift RISES underneath it while it falls — so a column
+     aimed at the launch-time surface plunged INTO the heap before
+     scattering, and its debris came to rest below the surface and vanished.
+     Instead the fall is aimed at the sheet's absolute bottom, and the
+     reaper watches it against the LIVE height field: the moment it meets
+     the drift's top — wherever that is by then — the fall is cancelled and
+     the throw is computed there (owner directive, 2026-08-24: the pile is
+     the new bottom, and the column breaks apart on IT). */
   function runGlyph(g) {
     var col = g.__col, st = col.__st;
 
@@ -461,36 +486,17 @@
     g.__lane = Math.round(x0 / st.CELL);
     st.lane[g.__lane] = (st.lane[g.__lane] || 0) + 1;
 
-    var impactY = surfaceAt(st, x0, st.CELL) - st.CELL;
-    var fallMs = (impactY - col.__y0) / col.__speed * 1000;
-
-    /* Launch. Deliberately gentler than the impact sheet: there the point is
-       debris leaving the frame, here it is debris coming to rest nearby, and
-       a hard throw scatters everything to the walls instead of building a
-       heap where the column actually fell. */
-    var vx = (Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 430) * st.zoom * st.throwX;
-    var vy = -(115 + Math.random() * 255) * st.zoom * st.popY;
-    var dt = 1 / 60;
-    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS);
-    var flightMs = (pts.length - 1) * dt * 1000;
-    var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
-
-    var frames = [{ transform: 'translate(0px,' + col.__y0 + 'px) rotate(0deg)',
-                    offset: 0, easing: 'linear' }];
-    var total = fallMs + flightMs;
-    frames.push({ transform: 'translate(0px,' + impactY + 'px) rotate(0deg)',
-                  offset: fallMs / total, easing: 'linear' });
-    for (var i = 1; i < pts.length; i++) {
-      var f = i / (pts.length - 1);
-      frames.push({
-        transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
-                   pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
-        offset: Math.min(1, (fallMs + f * flightMs) / total),
-        easing: 'linear'
-      });
-    }
-    var rest = pts[pts.length - 1];
-    g.__rest = { x: rest.x, y: rest.y, rot: spin };
+    /* the fall: straight down at a constant rate, aimed at the sheet's own
+       bottom. Where it actually ENDS is the reaper's call — the interception
+       against the live surface — so everything it needs to know the glyph's
+       exact position from the animation clock alone is kept on the glyph. */
+    g.__x0 = x0;
+    g.__fallY0 = col.__y0;
+    g.__fallDelay = wait;
+    g.__fallSpeed = col.__speed;
+    g.__phase = 'fall';
+    var floorY = st.H - st.CELL;
+    var fallMs = Math.max(1, (floorY - col.__y0) / col.__speed * 1000);
 
     if (g.__anim) g.__anim.cancel();
     /* NOT anim.onfinish: this WebView never dispatches finish events while the
@@ -504,20 +510,72 @@
        and until the reaper picks it up (up to a poll apart) it snaps back to
        its base css, which puts it at the top edge of the sheet in plain view.
        That was the flashing along the top rule. */
-    g.__anim = g.animate(frames,
-      { duration: total, delay: wait, fill: 'both' });
+    g.__anim = g.animate(
+      [{ transform: 'translate(0px,' + col.__y0 + 'px) rotate(0deg)', easing: 'linear' },
+       { transform: 'translate(0px,' + floorY + 'px) rotate(0deg)' }],
+      { duration: fallMs, delay: wait, fill: 'both' });
   }
 
-  /* one timer per sheet, collecting whatever has come to rest since last look */
+  /* The moment of impact: the fall is cancelled where it stands and the
+     throw is computed THERE, against the height field as it is now.
+     Deliberately gentler than the impact sheet: there the point is debris
+     leaving the frame, here it is debris coming to rest nearby, and a hard
+     throw scatters everything to the walls instead of building a heap where
+     the column actually fell. */
+  function throwNow(g, impactY) {
+    var col = g.__col, st = col.__st, x0 = g.__x0;
+    var vx = (Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 430) * st.zoom * st.throwX;
+    var vy = -(115 + Math.random() * 255) * st.zoom * st.popY;
+    var dt = 1 / 60;
+    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS);
+    var flightMs = Math.max(1, (pts.length - 1) * dt * 1000);
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
+
+    var frames = [];
+    for (var i = 0; i < pts.length; i++) {
+      var f = pts.length > 1 ? i / (pts.length - 1) : 1;
+      frames.push({
+        transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
+                   pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+        easing: 'linear'
+      });
+    }
+    if (frames.length < 2) frames.push(frames[0]);
+    var rest = pts[pts.length - 1];
+    g.__rest = { x: rest.x, y: rest.y, rot: spin };
+    g.__phase = 'fly';
+    if (g.__anim) g.__anim.cancel();
+    g.__anim = g.animate(frames, { duration: flightMs, fill: 'both' });
+  }
+
+  /* One timer per sheet, doing two jobs a poll: intercepting every FALLING
+     glyph against the surface as it is right now — the fall is linear at a
+     known speed, so its y comes off the animation's own clock with no layout
+     read — and collecting every FLOWN glyph that has come to rest. The
+     interception is what makes a column break apart on the drift's top
+     instead of at the paper's bottom rule: the floor it strikes is looked
+     up at the moment of arrival, not at launch. */
   function startReaper(host, st) {
     if (host.__reaper) clearInterval(host.__reaper);
     host.__reaper = setInterval(function () {
       var gl = host.querySelectorAll('.rb-drop > i');
       for (var i = 0; i < gl.length; i++) {
-        var a = gl[i].__anim;
-        if (a && a.playState === 'finished') onPileLanded(gl[i]);
+        var g = gl[i], a = g.__anim;
+        if (!a) continue;
+        if (g.__phase === 'fall') {
+          var ct = a.currentTime;
+          if (ct == null) continue;
+          var y = g.__fallY0 + Math.max(0, ct - g.__fallDelay) / 1000 * g.__fallSpeed;
+          var floorY = surfaceMeanAt(st, g.__x0, st.CELL) - st.CELL;
+          /* a poll is up to ~60ms behind, so the glyph may sit a few px past
+             the surface — the throw starts from the snapped floor, which is
+             also where it lands when the drift rose OVER it mid-fall */
+          if (y >= floorY || a.playState === 'finished') throwNow(g, floorY);
+        } else if (a.playState === 'finished') {
+          onPileLanded(g);
+        }
       }
-    }, 90);
+    }, 60);
   }
 
   function onPileLanded(g) {
@@ -534,7 +592,7 @@
        (measured: 877 landings, every bucket stuck under one square deep).
        Re-seat the letter on the surface as it is NOW; min() keeps the
        computed rest when it is already the higher of the two. */
-    var restY = Math.min(r.y, surfaceAt(st, r.x, st.CELL) - st.CELL);
+    var restY = Math.min(r.y, surfaceMeanAt(st, r.x, st.CELL) - st.CELL);
     st.calls = (st.calls || 0) + 1;
     if (st.clearing) st.skipClearing = (st.skipClearing || 0) + 1;
     else if (st.n >= st.cap) st.skipCap = (st.skipCap || 0) + 1;

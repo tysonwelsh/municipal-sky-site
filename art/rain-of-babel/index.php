@@ -84,8 +84,8 @@ include '../../includes/header.php';
       { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 90,   live: true,  u: '%' },
       { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 1,   def: 48,   live: true,  u: '%' },
       { k: 'grv', g: 'crash', label: 'Gravity',    min: 30,  max: 300,  step: 5,   def: 50,   live: true,  u: '%' },
-      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 56,   live: true,  u: '%' },
-      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 20,   live: true,  u: '%' },
+      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 68,   live: true,  u: '%' },
+      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 60,   live: true,  u: '%' },
       { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 500, max: 6100, step: 100, def: 6100, live: true,  u: '',
         fmt: function (v) { return v > 6000 ? 'never' : v; } }
     ];
