@@ -257,6 +257,26 @@
      outliers that make the energy range read also, untreated, leave the
      scene of the crash entirely. Per px at zoom 1; flyPath divides by zoom. */
   var PLOUGH = 0.01;
+  /* GRAVITY ALONG THE GROUND. The slide used to move at its launch speed
+     minus friction while its y merely FOLLOWED the height field — the slope
+     was scenery, not a force, and debris climbed a 37-degree flank exactly
+     as far as it ran down one (measured: matched slides, ratio 1.0-1.4,
+     zero uphill turn-backs). Now the local gradient pulls: the tangential
+     share of the glyph's own gravity, g*s/(1+s^2). Not at full strength —
+     heap friction here is an absolute deceleration, so the full physical
+     pull collapses the angle of repose to ~6 degrees and turns most slides
+     into luge runs to the slide cap (measured: 67-100% on 10-degree-plus
+     grades). Letters interlock instead:
+       DEAD  — grades under ~6 degrees stay exactly the tuned flat feel;
+       HOLD  — static repose ~29 degrees: a STOPPED letter keeps its footing
+               on anything gentler, and only re-slides past it;
+       GAIN  — the fraction of the physical pull a MOVING letter feels;
+       CLAMP — gradient cap ~50 degrees, so a jagged spike in the ledger
+               cannot inject an impulse. */
+  var SLOPE_DEAD  = 0.10;
+  var SLOPE_HOLD  = 0.55;
+  var SLOPE_GAIN  = 0.65;
+  var SLOPE_CLAMP = 1.2;
   var DUST_POOL = 80;         /* dust marks per sheet, pre-made, recycled —
                                  sized so full default rain (~15 landings/s)
                                  does not run the pool dry */
@@ -290,6 +310,14 @@
      registers a third of a square above visible contact. The slack closes
      that gap; a CELL fraction, so it scales with the zoom. */
   var INK_SLACK = 0.32;
+  /* A crossing the reaper only noticed after the fact (a missed tick, or a
+     drift risen over a slow faller mid-air) breaks from the detected y,
+     capped this far past the floor. The same kind of measured number as
+     the slack above: at 0.3 of a cell, point and crush starts at depth ran
+     to +8px into the ink (p90); 0.2 brings them back inside the ink
+     model's own spread. The predictive pre-roll never touches this — it is
+     the fallback path's leash only. */
+  var LATE_CAP = 0.2;
 
   /* Where the EYE says the drift's top is — the floor a falling thing should
      STRIKE. The height field is a growth ledger: a deposit raises it by only
@@ -306,6 +334,36 @@
     var s = surfaceMeanAt(st, x, w);
     var lift = Math.max(0, st.CELL * (st.overlap - INK_SLACK));
     return (s < st.H - 0.5 ? s - lift : s) - st.CELL;
+  }
+  /* The PER-CHARACTER strike floor: where THIS glyph's own ink meets the
+     ink actually lying under its lane. The constant slack above centers
+     contact but cannot remove the per-character spread — ink fills only
+     ~63% of the cell, with 3.5-8.5px of air below it, so a narrow-ink
+     glyph should fall visibly deeper than a full-height one before it
+     shatters. The mean of the ink ledger over the span (the same read
+     shape as surfaceMeanAt), less the striker's cached ink bottom. The
+     bare rule and every no-data case — blank ink, no 2d context — fall
+     back to the constant-slack floor and behave exactly as before. */
+  function strikeFloorFor(st, g) {
+    if (g.__inkBot != null) {
+      var b0 = Math.max(0, Math.floor(g.__x0 / st.bw));
+      var b1 = Math.min(st.inkTop.length - 1, Math.floor((g.__x0 + st.CELL) / st.bw));
+      var sum = 0, n = 0;
+      for (var b = b0; b <= b1; b++) { sum += st.inkTop[b]; n++; }
+      var m = n ? sum / n : st.H;
+      if (m < st.H - 0.5) return m - g.__inkBot;
+    }
+    return strikeFloorAt(st, g.__x0, st.CELL);
+  }
+  /* the gradient under a point: d(top)/dx over a two-cell central
+     difference of bucket MEANS, positive where the ground falls away to
+     the right. Each read is itself a three-bucket mean, so a five-bucket
+     window smooths every lookup; the clamp is the spike guard. */
+  function slopeAt(st, x) {
+    var l = surfaceMeanAt(st, x - st.CELL, st.CELL);
+    var r = surfaceMeanAt(st, x + st.CELL, st.CELL);
+    var s = (r - l) / (2 * st.CELL);
+    return s > SLOPE_CLAMP ? SLOPE_CLAMP : s < -SLOPE_CLAMP ? -SLOPE_CLAMP : s;
   }
   /* the fall line under a point: which side of it the ground is lower on.
      Two ledger reads a cell out either side; a tie is a coin. */
@@ -357,9 +415,23 @@
         if (y >= floorY && vy > 0) {
           y = floorY;
           if (bounces > 0 && vy > vB) { bounces--; vy = -vy * eB; vx *= 0.7; }
-          else { sliding = true; vy = 0; }
+          else {
+            /* the arrival keeps the tangential share of its velocity: a
+               lob landing on a flank runs on downhill instead of having
+               its vy simply discarded. On flat ground this is exactly the
+               old vx. */
+            var sL = slopeAt(st, x);
+            vx = (vx + 0.8 * sL * vy) / (1 + sL * sL);
+            sliding = true; vy = 0;
+          }
         }
       } else {
+        /* the pull along the ground. Dead-zoned so gentle grades keep the
+           tuned flat feel; g is this flight's own gravity, so the Gravity
+           dial reaches the slide with no extra wiring. */
+        var s = slopeAt(st, x);
+        var sEff = s > 0 ? Math.max(0, s - SLOPE_DEAD) : Math.min(0, s + SLOPE_DEAD);
+        vx += SLOPE_GAIN * g * sEff / (1 + sEff * sEff) * dt;
         x += vx * dt;
         if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
         else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
@@ -373,8 +445,20 @@
         slid += Math.abs(vx) * dt;
         if (slid > st.CELL * 13) { pts.push({ x: x, y: y }); break; }
         var dv = (fric + PLOUGH * vx * vx / st.zoom) * dt;
-        if (Math.abs(vx) <= dv) { pts.push({ x: x, y: y }); break; }
-        vx -= dv * (vx > 0 ? 1 : -1);
+        if (Math.abs(vx) <= dv) {
+          /* friction has it — but a grade past repose does not get to
+             keep it unless the pull is genuinely weaker than the ground's
+             grip. The |gT| clause is load-bearing, not caution: at a low
+             Gravity dial the pull above repose can fall under the
+             friction, and without it the path pads out with seconds of
+             standing still — vx pinned to zero, the lane held the whole
+             time. Weak gravity simply rests. */
+          var gT = SLOPE_GAIN * g * sEff / (1 + sEff * sEff);
+          if (Math.abs(s) <= SLOPE_HOLD || Math.abs(gT) <= fric) {
+            pts.push({ x: x, y: y }); break;
+          }
+          vx = 0;
+        } else vx -= dv * (vx > 0 ? 1 : -1);
       }
       pts.push({ x: x, y: y });
     }
@@ -456,6 +540,17 @@
       n: 0, clearing: false, columns: [], busy: {}, lane: {}
     };
     for (var i = 0; i < Math.ceil(W / st.bw) + 1; i++) st.top.push(H);
+    /* THE INK LEDGER — a second height field beside st.top, holding the
+       highest deposited INK top per bucket. st.top is the packing ledger
+       and keeps every job it had (resting, sliding, depositing, the dense
+       nesting); this one exists only so the BREAK can begin where ink
+       meets ink, per character, both sides of the collision. */
+    st.inkTop = [];
+    for (var ii = 0; ii < st.top.length; ii++) st.inkTop.push(H);
+    /* the ink-rect cache and its scratch context, filled lazily by
+       inkRect; emptied and remeasured when the webfont arrives */
+    st.ink = {};
+    st.inkCx = null;
 
     /* THE DRIFT IS ONE CANVAS. A deposited character is written once and
        never touched again — the sweep fades and clears the whole layer, and
@@ -508,9 +603,19 @@
         st.pending = null;
         if (st.clearing) return;
         st.met = {};
+        /* the ink cache was measured against the fallback face: remeasure
+           everything, and rebuild the ink ledger from the same buffered
+           deposits the repaint replays. A buffer that overflowed already
+           forfeits the repaint — the ledger then keeps its fallback-font
+           tops (~1px stale), the same forfeit. */
+        st.ink = {};
+        for (var rb = 0; rb < st.inkTop.length; rb++) st.inkTop[rb] = st.H;
         pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         pctx.clearRect(0, 0, st.W, st.H);
-        for (var qi = 0; qi < q.length; qi++) paintDeposit(st, q[qi]);
+        for (var qi = 0; qi < q.length; qi++) {
+          paintDeposit(st, q[qi]);
+          recordInkTop(st, q[qi]);
+        }
       });
     }
 
@@ -661,6 +766,10 @@
     g.__fallY0 = col.__y0;
     g.__fallDelay = wait;
     g.__fallSpeed = col.__speed;
+    /* the striker's half of the ink collision, measured here at launch —
+       one cache lookup a launch, nothing on the reaper's hot path */
+    var inkR = inkRect(st, g.__rbKey, g.textContent);
+    g.__inkBot = inkR ? inkR.bot : null;
     g.__phase = 'fall';
     var floorY = st.H - st.CELL;
     var fallMs = Math.max(1, (floorY - col.__y0) / col.__speed * 1000);
@@ -832,18 +941,28 @@
     g.__dwellT = now + pre + 40 + Math.random() * 120;
     g.__impY = impactY;
     st.dwell[g.__lane] = g;
-    var dir = Math.random() < 0.7 ? downhillDir(st, g.__x0) : (rnd(2) ? 1 : -1);
+    /* the skid obeys the same slope the slide does: on a steep flank the
+       plough leans harder downhill, and a draw that still goes against the
+       grade dies in half the distance — a letter lodging on a flank must
+       not contradict the physics running beside it */
+    var gr = slopeAt(st, g.__x0);
+    var dir = Math.random() < (Math.abs(gr) > 0.25 ? 0.85 : 0.7)
+      ? downhillDir(st, g.__x0) : (rnd(2) ? 1 : -1);
+    var dx = dir * (0.25 + Math.random() * 0.55) * st.CELL;
+    if (Math.abs(gr) > 0.25 && dir * gr < 0) dx *= 0.5;
     var s = g.__skid = {
       y: impactY,
-      dx: dir * (0.25 + Math.random() * 0.55) * st.CELL,
+      dx: dx,
       dy: 2 + Math.random(),
       rot: dir * (6 + Math.random() * 8),
-      dur: 120 + Math.random() * 60,
+      dur: 140 + Math.random() * 70,
       pre: pre,
       dir: dir
     };
-    /* sampled with the same cubic ease-out releaseDwell evaluates: fast off
-       the mark, dying to nothing — the deceleration is the message */
+    /* sampled with the same quadratic ease-out releaseDwell evaluates: fast
+       off the mark, dying to nothing — the deceleration is the message. The
+       cubic before it spent half the travel in the first fifth of the skid,
+       and at a degraded frame rate the tail read as an early stop. */
     var total = pre + s.dur;
     var fr = [], K = 5;
     if (pre > 0) {
@@ -851,7 +970,7 @@
                 transform: 'translate(0px,' + preY.toFixed(1) + 'px) rotate(0deg)' });
     }
     for (var k = 0; k <= K; k++) {
-      var u = 1 - k / K, e = 1 - u * u * u;
+      var u = 1 - k / K, e = 1 - u * u;
       fr.push({
         offset: (pre + (k / K) * s.dur) / total,
         transform: 'translate(' + (s.dx * e).toFixed(1) + 'px,' +
@@ -874,7 +993,10 @@
     var s = g.__skid, e = 1;
     if (g.__anim && g.__anim.currentTime != null)
       e = Math.max(0, Math.min(1, (g.__anim.currentTime - s.pre) / s.dur));
-    var u = 1 - e, k = 1 - u * u * u;
+    /* the same quadratic the skid keyframes were sampled at — the two MUST
+       share the shape, or the throw starts from a position the render
+       never showed */
+    var u = 1 - e, k = 1 - u * u;
     g.__dirHint = s.dir;
     throwNow(g, s.y + s.dy * k, kind, undefined, g.__x0 + s.dx * k, s.rot * k);
   }
@@ -949,7 +1071,8 @@
     col.__shockT = now + col.__beat * 6;
 
     var yBase = members[0].y;
-    var floorY = strikeFloorAt(st, x0, st.CELL);
+    /* the slab strikes where its BASE character's ink does */
+    var floorY = strikeFloorFor(st, members[0].g);
     var d = floorY - yBase;
     if (d < st.CELL * 0.5) {
       /* the surface is already at the base: no room to topple — it just goes */
@@ -1035,7 +1158,7 @@
           var ct = a.currentTime;
           if (ct == null) continue;
           var y = g.__fallY0 + Math.max(0, ct - g.__fallDelay) / 1000 * g.__fallSpeed;
-          var floorY = strikeFloorAt(st, g.__x0, st.CELL);
+          var floorY = strikeFloorFor(st, g);
           /* BREAK WHERE THE EYE SEES THE TOUCH. A poll every 60ms can only
              ever notice a crossing after the fact, and rendering the break
              from the snapped floor played as an upward rewind at the very
@@ -1059,7 +1182,7 @@
                  lodged one driven out low along its own skid, the newcomer
                  breaking harder. A clustered two-fragment burst. */
               if (!early) {
-                var impactY = Math.min(y, floorY + st.CELL * 0.3);
+                var impactY = Math.min(y, floorY + st.CELL * LATE_CAP);
                 st.dwell[g.__lane] = null;
                 releaseDwell(held, 'soft');
                 throwNow(g, impactY, 'crush');
@@ -1070,7 +1193,7 @@
                 g.__preMs = (floorY - y) / g.__fallSpeed * 1000;
                 g.__preY = y;
               }
-              var impY = early ? floorY : Math.min(y, floorY + st.CELL * 0.3);
+              var impY = early ? floorY : Math.min(y, floorY + st.CELL * LATE_CAP);
               if (Math.random() < 0.5) {
                 settle(g, impY, now);
               } else {
@@ -1138,6 +1261,75 @@
     return m;
   }
 
+  /* One character's ink bounds inside its unrotated cell box: rasterized
+     once on a scratch canvas at double scale — the exact font string and
+     baseline the deposit paint uses — and the alpha scanned for the
+     bounding rect (the technique pixel-validated to ±1px). Cached per
+     script|character pair, so the pool's own character set bounds the
+     cache; null for a character that leaves no mark. Clamped to the cell,
+     as the rendering clips. A sheet with no 2d context measures nothing
+     and the ledger machinery stands down to the constant-slack floor. */
+  function inkRect(st, key, ch) {
+    var id = key + '|' + ch;
+    var r = st.ink[id];
+    if (r !== undefined) return r;
+    if (!st.ctx) return (st.ink[id] = null);
+    var S = 2, px = Math.ceil(st.CELL * S);
+    if (!st.inkCx) {
+      var cv = document.createElement('canvas');
+      cv.width = px; cv.height = px;
+      st.inkCx = cv.getContext('2d', { willReadFrequently: true });
+      if (!st.inkCx) return (st.ink[id] = null);
+    }
+    var m = glyphFont(st, key), c = st.inkCx;
+    c.setTransform(S, 0, 0, S, 0, 0);
+    c.clearRect(0, 0, st.CELL, st.CELL);
+    c.font = m.font;
+    c.textAlign = 'center';
+    c.fillText(ch, st.CELL / 2, m.base);
+    var d = c.getImageData(0, 0, px, px).data;
+    var x0 = px, x1 = -1, y0 = px, y1 = -1;
+    for (var y = 0; y < px; y++) {
+      for (var x = 0; x < px; x++) {
+        if (d[(y * px + x) * 4 + 3] > 8) {
+          if (x < x0) x0 = x;
+          if (x > x1) x1 = x;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    r = x1 < 0 ? null
+      : { x0: Math.max(0, x0 / S), x1: Math.min(st.CELL, (x1 + 1) / S),
+          top: Math.max(0, y0 / S), bot: Math.min(st.CELL, (y1 + 1) / S) };
+    return (st.ink[id] = r);
+  }
+
+  /* A deposit's contribution to the ink ledger: its ink rect carried
+     through the same rotation the paint applied, the rotated corners' top
+     written with min() into the buckets under their x-extent. Blank ink
+     records nothing. The packing ledger is not touched here — st.top
+     alone decides how the heap nests. */
+  function recordInkTop(st, dep) {
+    var r = inkRect(st, dep.k, dep.ch);
+    if (!r) return;
+    var h = st.CELL / 2, a = dep.rot * Math.PI / 180;
+    var ca = Math.cos(a), sa = Math.sin(a);
+    var xs = [r.x0 - h, r.x1 - h, r.x0 - h, r.x1 - h];
+    var ys = [r.top - h, r.top - h, r.bot - h, r.bot - h];
+    var minX = 1e9, maxX = -1e9, minY = 1e9;
+    for (var i = 0; i < 4; i++) {
+      var x = xs[i] * ca - ys[i] * sa, y = xs[i] * sa + ys[i] * ca;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+    }
+    var top = dep.y + h + minY;
+    var b0 = Math.max(0, Math.floor((dep.x + h + minX) / st.bw));
+    var b1 = Math.min(st.inkTop.length - 1, Math.floor((dep.x + h + maxX) / st.bw));
+    for (var b = b0; b <= b1; b++) if (top < st.inkTop[b]) st.inkTop[b] = top;
+  }
+
   /* Paint one deposited character the way its element rendered: rotated
      about its own box center, clipped to the CELL square (the element had
      overflow:hidden), the drift's ink at the drift's opacity. No mirroring —
@@ -1181,8 +1373,8 @@
     if (!st.clearing && st.n < st.cap && restY > st.floorLimit) {
       /* lying at whatever angle it stopped at, plus a little */
       var rot = r.rot % 360 + (rnd(21) - 10);
+      var dep = { k: g.__rbKey, ch: g.textContent, x: r.x, y: restY, rot: rot };
       if (st.ctx) {
-        var dep = { k: g.__rbKey, ch: g.textContent, x: r.x, y: restY, rot: rot };
         paintDeposit(st, dep);
         if (st.pending) {
           st.pending.push(dep);
@@ -1197,6 +1389,7 @@
         d.style.transform = 'rotate(' + rot.toFixed(0) + 'deg)';
         st.layer.appendChild(d);
       }
+      recordInkTop(st, dep);
       depositAt(st, r.x, st.CELL, restY);
       st.n++;
       /* Sweep on the AVERAGE depth, not the highest point. surfaceAt returns
@@ -1234,7 +1427,10 @@
       else st.layer.innerHTML = '';
       if (st.pending) st.pending.length = 0;
       st.layer.classList.remove('is-going');
+      /* both ledgers go together, or a post-sweep strike would break on
+         the ghost ink of letters no longer there */
       for (var i = 0; i < st.top.length; i++) st.top[i] = st.H;
+      for (var i2 = 0; i2 < st.inkTop.length; i2++) st.inkTop[i2] = st.H;
       st.n = 0;
       st.clearing = false;
     }, 2200);
