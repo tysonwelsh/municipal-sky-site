@@ -525,20 +525,30 @@
     /* out of its lane. Decremented here and incremented in runGlyph, exactly
        once each per launch, so the count cannot drift. */
     if (g.__lane != null && st.lane[g.__lane]) st.lane[g.__lane]--;
+    /* THE SURFACE MAY HAVE RISEN WHILE THIS GLYPH WAS IN THE AIR. Its rest
+       was computed at launch against the height field of that moment, and a
+       long fall on a tall sheet leaves seconds for other landings to build
+       underneath it. Depositing at the stale y buries the letter inside the
+       drift and records nothing — the surface there is already above it —
+       so the heap converges to a shallow dense mat instead of stacking
+       (measured: 877 landings, every bucket stuck under one square deep).
+       Re-seat the letter on the surface as it is NOW; min() keeps the
+       computed rest when it is already the higher of the two. */
+    var restY = Math.min(r.y, surfaceAt(st, r.x, st.CELL) - st.CELL);
     st.calls = (st.calls || 0) + 1;
     if (st.clearing) st.skipClearing = (st.skipClearing || 0) + 1;
     else if (st.n >= st.cap) st.skipCap = (st.skipCap || 0) + 1;
-    else if (!(r.y > st.floorLimit)) st.skipFloor = (st.skipFloor || 0) + 1;
-    if (!st.clearing && st.n < st.cap && r.y > st.floorLimit) {
+    else if (!(restY > st.floorLimit)) st.skipFloor = (st.skipFloor || 0) + 1;
+    if (!st.clearing && st.n < st.cap && restY > st.floorLimit) {
       var d = document.createElement('i');
       d.className = g.className;
       d.textContent = g.textContent;
       d.style.left = r.x.toFixed(1) + 'px';
-      d.style.top = r.y.toFixed(1) + 'px';
+      d.style.top = restY.toFixed(1) + 'px';
       /* lying at whatever angle it stopped at, plus a little */
       d.style.transform = 'rotate(' + (r.rot % 360 + (rnd(21) - 10)).toFixed(0) + 'deg)';
       st.layer.appendChild(d);
-      depositAt(st, r.x, st.CELL, r.y);
+      depositAt(st, r.x, st.CELL, restY);
       st.n++;
       /* Sweep on the AVERAGE depth, not the highest point. surfaceAt returns
          the minimum top across its span, so the old test cleared the floor as
