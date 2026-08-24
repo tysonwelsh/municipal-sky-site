@@ -280,6 +280,20 @@
     for (var b = b0; b <= b1; b++) { sum += st.top[b]; n++; }
     return n ? sum / n : st.H;
   }
+  /* Where the EYE says the drift's top is — the floor a falling thing should
+     STRIKE. The height field is a growth ledger: a deposit raises it by only
+     (1 - nesting) of a square, so with deep nesting the recorded surface
+     sits almost a whole square below the tops of the letters actually lying
+     there — and a column that falls to the ledger visibly drifts INTO the
+     heap before breaking (owner, 2026-08-24: about one grid square, which
+     is nesting x cell, exactly). The strike floor lifts the ledger back by
+     the nesting depth, but only where letters lie: the bare rule is exactly
+     where it says it is. Resting and depositing keep the ledger — that
+     nesting-deep settle after the break is the packed look itself. */
+  function strikeFloorAt(st, x, w) {
+    var s = surfaceMeanAt(st, x, w);
+    return (s < st.H - 0.5 ? s - st.CELL * st.overlap : s) - st.CELL;
+  }
   function depositAt(st, x, w, restY) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
     var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
@@ -778,7 +792,7 @@
     col.__shockT = now + col.__beat * 6;
 
     var yBase = members[0].y;
-    var floorY = surfaceMeanAt(st, x0, st.CELL) - st.CELL;
+    var floorY = strikeFloorAt(st, x0, st.CELL);
     var d = floorY - yBase;
     if (d < st.CELL * 0.5) {
       /* the surface is already at the base: no room to topple — it just goes */
@@ -861,7 +875,7 @@
           var ct = a.currentTime;
           if (ct == null) continue;
           var y = g.__fallY0 + Math.max(0, ct - g.__fallDelay) / 1000 * g.__fallSpeed;
-          var floorY = surfaceMeanAt(st, g.__x0, st.CELL) - st.CELL;
+          var floorY = strikeFloorAt(st, g.__x0, st.CELL);
           /* a poll is up to ~60ms behind, so the glyph may sit a few px past
              the surface — the throw starts from the snapped floor, which is
              also where it lands when the drift rose OVER it mid-fall */
