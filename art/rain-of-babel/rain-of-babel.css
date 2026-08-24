@@ -313,6 +313,16 @@
      between animations for a frame, it must not appear at the top rule */
   transform: translateY(-300%);
 }
+/* dust: a pooled handful of tiny marks flicked out at each break. They ride
+   the Web Animations API like the debris does, deposit nothing, and are
+   invisible except while their one short fade is running — the base opacity
+   is what a pooled (cancelled) mark falls back to. */
+.rb-fx { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; pointer-events: none; z-index: 3; }
+.rb-fx > i { position: absolute; left: 0; top: 0; display: block;
+  font-family: var(--rb-mono); font-style: normal;
+  font-size: calc(4.5px * var(--rb-zoom)); line-height: 1;
+  color: #4a628a; opacity: 0; }
 
 /* a paused sheet: the CSS-driven sheets stop where they stand. The pile
    sheet's animations are paused through the Web Animations API instead, and
