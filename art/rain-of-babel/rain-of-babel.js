@@ -617,8 +617,14 @@
        'shock' — jostled loose ABOVE the break (scale = how little of the
                  blow reached it): sideways or slightly downward, never
                  lobbed, and it falls from wherever it was. */
-  function throwNow(g, impactY, kind, scale) {
+  function throwNow(g, impactY, kind, scale, fromX, rot0) {
     var col = g.__col, st = col.__st, x0 = g.__x0;
+    /* fromX/rot0: a slab member breaks from where the topple LEFT it — leaned
+       off its lane and already rotated — not from the lane's own x at zero.
+       The physics starts there; the keyframe offsets stay relative to the
+       element's left, which never moved. */
+    var sx = fromX == null ? x0 : fromX;
+    var r0 = rot0 || 0;
     var dir = Math.random() < 0.5 ? -1 : 1;
     var r = Math.random();
     var m = 0.4 + 0.9 * r * r;
@@ -656,10 +662,10 @@
       vx = dir * (95 + Math.random() * 430) * st.zoom * st.throwX * m;
       vy = -(115 + Math.random() * 255) * st.zoom * st.popY * m *
            (kind === 'soft' ? 0.35 : onBare ? 1.12 : 0.85);
-      if (kind == null || kind === 'crush') puff(st, x0, impactY, 1 + rnd(3));
+      if (kind == null || kind === 'crush') puff(st, sx, impactY, 1 + rnd(3));
     }
     var dt = 1 / 60;
-    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS, imp);
+    var pts = flyPath(st, sx, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS, imp);
     var flightMs = Math.max(1, (pts.length - 1) * dt * 1000);
     var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
 
@@ -668,13 +674,13 @@
       var f = pts.length > 1 ? i / (pts.length - 1) : 1;
       frames.push({
         transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
-                   pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+                   pts[i].y.toFixed(1) + 'px) rotate(' + (r0 + spin * f).toFixed(0) + 'deg)',
         easing: 'linear'
       });
     }
     if (frames.length < 2) frames.push(frames[0]);
     var rest = pts[pts.length - 1];
-    g.__rest = { x: rest.x, y: rest.y, rot: spin };
+    g.__rest = { x: rest.x, y: rest.y, rot: r0 + spin };
     g.__phase = 'fly';
     if (g.__anim) g.__anim.cancel();
     g.__anim = g.animate(frames, { duration: flightMs, fill: 'both' });
@@ -715,6 +721,7 @@
     if (now < (col.__shockT || 0) || Math.random() > 0.55) return;
     col.__shockT = now + col.__beat * 2;
     var kids = col.children, want = Math.random() < 0.4 ? 2 : 1, hits = 0;
+    var topY = null;
     for (var i = 0; i < kids.length && hits < want; i++) {
       var s = kids[i];
       if (s === g0 || s.__phase !== 'fall' || s.__x0 !== g0.__x0 || !s.__anim) continue;
@@ -724,7 +731,88 @@
       var dy = impactY - y;
       if (dy < st.CELL * 1.5 || dy > st.CELL * 7) continue;
       throwNow(s, y, 'shock', 1 - dy / (st.CELL * 9));
+      if (topY == null || y < topY) topY = y;
       hits++;
+    }
+    /* a character shaken out from under the run above it takes the run's
+       footing with it, most of the time */
+    if (hits && Math.random() < 0.65) collapseAbove(col, g0.__x0, topY, now);
+  }
+
+  /* THE COLLAPSE. When the shock shakes a character loose, the run above it
+     has lost what it stood on: those characters stop falling as rain and go
+     down TOGETHER — a slab, still spaced as the column it was, tipping a few
+     degrees to one side as it drops — and it breaks apart only when its BASE
+     strikes the surface (owner directive, 2026-08-24). Between the
+     one-at-a-time metronome and the all-at-once explosion, both already
+     rejected, this is the middle thing: the column falls as a unit and
+     shatters as a unit.
+
+     The rigidity costs nothing: the members share the column's fall speed,
+     so giving each the same drop keeps their spacing exact, and the lean is
+     a per-member offset that grows with height above the base — a rotation
+     about the base, small-angle, sampled into the same keyframes. Every
+     member's animation runs the same duration, so the reaper finds them all
+     finished on one tick and the shatter is simultaneous along the slab's
+     length: the base hits hardest, the pieces above burst from mid-air with
+     what reaches them. */
+  function collapseAbove(col, x0, topY, now) {
+    var st = col.__st;
+    var members = [], kids = col.children, i;
+    for (i = 0; i < kids.length; i++) {
+      var s = kids[i];
+      if (s.__phase !== 'fall' || s.__x0 !== x0 || !s.__anim) continue;
+      var ct = s.__anim.currentTime;
+      if (ct == null || ct <= s.__fallDelay) continue;
+      var y = s.__fallY0 + (ct - s.__fallDelay) / 1000 * s.__fallSpeed;
+      if (y >= topY || y < topY - st.CELL * 9) continue;
+      members.push({ g: s, y: y });
+    }
+    if (members.length < 2) return;
+    /* base first; keep the six nearest the break — anything higher is
+       another run's business */
+    members.sort(function (a, b) { return b.y - a.y; });
+    if (members.length > 6) members.length = 6;
+    /* a collapse is a bigger event than a jostle: the column earns a longer
+       quiet spell before the next one */
+    col.__shockT = now + col.__beat * 6;
+
+    var yBase = members[0].y;
+    var floorY = surfaceMeanAt(st, x0, st.CELL) - st.CELL;
+    var d = floorY - yBase;
+    if (d < st.CELL * 0.5) {
+      /* the surface is already at the base: no room to topple — it just goes */
+      for (i = 0; i < members.length; i++)
+        throwNow(members[i].g, members[i].y, 'shock', 0.7);
+      return;
+    }
+    var v0 = col.__speed, grav = st.gravity * st.zoom;
+    var T = (Math.sqrt(v0 * v0 + 2 * grav * d) - v0) / grav;
+    var dir = Math.random() < 0.5 ? -1 : 1;
+    var theta = (8 + Math.random() * 14) * Math.PI / 180;
+    var K = 12;
+    for (i = 0; i < members.length; i++) {
+      var m = members[i], g = m.g, h = yBase - m.y;
+      var frames = [];
+      for (var k = 0; k <= K; k++) {
+        var t = T * k / K;
+        /* the tip accelerates: an upright thing losing its footing leans
+           slowly at first and is moving fastest when it lands */
+        var th = theta * (k / K) * (k / K);
+        frames.push({
+          transform: 'translate(' + (Math.sin(th) * h * dir).toFixed(1) + 'px,' +
+                     (m.y + v0 * t + 0.5 * grav * t * t).toFixed(1) + 'px)' +
+                     ' rotate(' + (th * 180 / Math.PI * dir).toFixed(1) + 'deg)',
+          easing: 'linear'
+        });
+      }
+      g.__phase = 'slab';
+      g.__slabX = x0 + Math.sin(theta) * h * dir;
+      g.__slabY = m.y + v0 * T + 0.5 * grav * T * T;
+      g.__slabRot = theta * 180 / Math.PI * dir;
+      g.__slabH = h;
+      if (g.__anim) g.__anim.cancel();
+      g.__anim = g.animate(frames, { duration: Math.max(1, T * 1000), fill: 'both' });
     }
   }
 
@@ -802,6 +890,20 @@
           if (now >= g.__dwellT) {
             if (st.dwell[g.__lane] === g) st.dwell[g.__lane] = null;
             throwNow(g, g.__dwellY, 'soft');
+          }
+        } else if (g.__phase === 'slab') {
+          /* likewise before the landed check — a finished slab has struck,
+             not rested. Every member of a slab runs the same duration, so
+             the whole thing shatters on one tick: the base like a crush,
+             the pieces above bursting from mid-air with what reaches them,
+             each from where the topple left it, at the angle it leant to.
+             No shockwave off a slab's own break — a collapse does not beget
+             a collapse. */
+          if (a.playState === 'finished') {
+            var base = g.__slabH === 0;
+            throwNow(g, g.__slabY, base ? 'crush' : 'shock',
+                     base ? undefined : Math.max(0.35, 0.9 - g.__slabH / (st.CELL * 12)),
+                     g.__slabX, g.__slabRot);
           }
         } else if (a.playState === 'finished') {
           onPileLanded(g);
