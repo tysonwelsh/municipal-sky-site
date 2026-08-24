@@ -543,8 +543,16 @@
       /* Sweep on the AVERAGE depth, not the highest point. surfaceAt returns
          the minimum top across its span, so the old test cleared the floor as
          soon as a single spike reached the limit — with most of the sheet
-         still bare. The drift should be broadly full before it goes. */
-      if (st.n >= st.cap || meanTop(st) <= st.floorLimit) sweepPile(st);
+         still bare. The drift should be broadly full before it goes.
+
+         A cap of Infinity means NO sweeping at all — the dial's 'never'.
+         The drift then simply HOLDS when it is full: a letter that comes to
+         rest above the floor limit is not deposited (the r.y guard above),
+         so the rain keeps falling but nothing more sticks. The piece stopped
+         clearing itself because the owner watched it do exactly that and
+         called it "resetting" (2026-08-24). */
+      if (st.n >= st.cap ||
+          (st.cap !== Infinity && meanTop(st) <= st.floorLimit)) sweepPile(st);
     }
     strike(g);
     runGlyph(g);

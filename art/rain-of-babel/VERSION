@@ -1,1 +1,1 @@
-0.3.0 — one sheet only: the crashing, pooling rain — half again larger squares and type, letters thrown much higher off the crash, and a full panel of rain / crash / pool dials with reset and a copy-settings link
+0.3.1 — the drift stays put: scrolling no longer resets the sheet (mobile chrome resizes are ignored unless the grid really changed), a full pool holds instead of clearing itself, and Sweep At gains a "never" setting — now the default

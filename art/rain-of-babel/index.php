@@ -81,8 +81,12 @@ include '../../includes/header.php';
       { k: 'grv', g: 'crash', label: 'Gravity',    min: 30,  max: 300,  step: 5,   def: 100,  live: true,  u: '%' },
       { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 52,   live: true,  u: '%' },
       { k: 'fil', g: 'pool',  label: 'Pool depth', min: 20,  max: 100,  step: 2,   def: 72,   live: true,  u: '%' },
-      { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 200, max: 6000, step: 100, def: 2600, live: true,  u: '' }
+      { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 500, max: 6100, step: 100, def: 6100, live: true,  u: '',
+        fmt: function (v) { return v > 6000 ? 'never' : v; } }
     ];
+    /* the top of the Sweep At range means 'never': the drift holds when it
+       is full instead of clearing itself */
+    function capOf(v) { return v > 6000 ? Infinity : v; }
 
     /* a shared URL carries the dials as its query string; anything absent,
        out of range, or not a number falls back to the default */
@@ -99,7 +103,7 @@ include '../../includes/header.php';
         run: val.run / 100, gap: val.gap / 100,
         throwX: val.thr / 100, popY: val.pop / 100, spin: val.spn / 100,
         bounce: val.bnc / 100, gravity: val.grv / 100,
-        overlap: val.nst / 100, maxFill: val.fil / 100, cap: val.cap,
+        overlap: val.nst / 100, maxFill: val.fil / 100, cap: capOf(val.cap),
         onBuilt: function (n, of) { count.textContent = n + ' of ' + of + ' columns'; }
       };
     }
@@ -120,15 +124,16 @@ include '../../includes/header.php';
       var row = document.createElement('div');
       row.className = 'rb-row';
       var id = 'rb-p-' + d.k;
+      var show = function (v) { return d.fmt ? d.fmt(v) : v + d.u; };
       row.innerHTML =
         '<label for="' + id + '">' + d.label + '</label>' +
         '<input type="range" id="' + id + '" min="' + d.min + '" max="' + d.max +
         '" step="' + d.step + '" value="' + val[d.k] + '">' +
-        '<output for="' + id + '">' + val[d.k] + d.u + '</output>';
+        '<output for="' + id + '">' + show(val[d.k]) + '</output>';
       var input = row.querySelector('input'), out = row.querySelector('output');
       input.addEventListener('input', function () {
         val[d.k] = +input.value;
-        out.textContent = input.value + d.u;
+        out.textContent = show(val[d.k]);
         if (d.live) { CR.tune(host, opts()); }
         else { clearTimeout(bt); bt = setTimeout(build, 180); }
       });
@@ -173,12 +178,21 @@ include '../../includes/header.php';
 
     build();
 
-    /* the sheet is sized off the viewport, so a resize changes how many
-       columns it holds — rebuild, but only once the dragging stops */
+    /* The sheet is sized off the viewport, so a resize can change how many
+       columns it holds — rebuild, but only once the dragging stops, and ONLY
+       if the sheet's own grid actually changed. Mobile browsers fire resize
+       every time their chrome slides in or out while scrolling, with the
+       sheet's size unchanged — rebuilding on those wiped the drift just for
+       reading the page (owner, 2026-08-24). */
     var rt = null;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
-      rt = setTimeout(build, 320);
+      rt = setTimeout(function () {
+        var st = host.__pile;
+        if (st && Math.floor(host.clientWidth / st.CELL) === st.cols &&
+                  Math.floor(host.clientHeight / st.CELL) === st.rows) return;
+        build();
+      }, 320);
     });
   })();
 </script>
