@@ -1,1 +1,1 @@
-0.3.6 — the collapse: when the shock shakes a letter loose, the run above it goes down with it — a slab of letters keeping their spacing, tipping to one side as it drops, shattering along its length the moment its base strikes
+0.3.7 — the strike floor: falling columns and toppling slabs now break on the VISIBLE top of the drift, not the nesting-lowered ledger a square below it — no more drifting into the heap before the impact registers
