@@ -1,1 +1,1 @@
-0.3.8 — impacts land ON the letters, not a third of a square above them; no more dead stop at contact — lodged letters skid to rest, throws start where they touch, debris sheds downhill and spins with its travel, and a deep drift no longer stutters the rain
+0.3.9 — debris obeys the slope: downhill it runs and collects at the base, uphill it stalls and turns back; letters break exactly on each other's ink
