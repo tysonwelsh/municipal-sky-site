@@ -288,11 +288,13 @@
 }
 
 /* ---- mode: pile ------------------------------------------------------------
-   The drift is ordinary static markup — characters that have come to rest and
-   are simply left there. No animation touches them; the only motion on this
-   sheet is the rain still arriving. A landed character is nudged a degree or
-   two off square, because nothing that has been thrown lands perfectly
-   aligned to the ruling it lands on. */
+   The drift is ONE CANVAS — characters that have come to rest are painted
+   once and never touched again. No animation reaches them; the only motion
+   on this sheet is the rain still arriving. It stopped being markup because
+   markup does not scale to a drift: at ~5000 deposited elements the page
+   could no longer start a throw's animation on time and every break froze
+   at the moment of contact. The > i rules below serve the element fallback
+   a sheet takes when it cannot get a 2d context. */
 .rb-pile { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; pointer-events: none; }
 .rb-pile { transition: opacity 2s ease; }
