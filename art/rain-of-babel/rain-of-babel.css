@@ -19,8 +19,8 @@
      factor keeps that true. Change --rb-zoom and --rb-cell together: the cell
      is 9px x zoom, and rain-of-babel.js reads the cell straight off this
      element, so the two can never drift apart. */
-  --rb-zoom: 3;
-  --rb-cell: 27px;          /* 9px x --rb-zoom */
+  --rb-zoom: 2.5;
+  --rb-cell: 22.5px;        /* 9px x --rb-zoom */
   /* clamped, not min(): a short viewport must never be able to collapse the
      sheet to nothing — it just gets the floor and scrolls */
   --rb-sheet-h: clamp(320px, calc(100vh - 170px), 880px);
