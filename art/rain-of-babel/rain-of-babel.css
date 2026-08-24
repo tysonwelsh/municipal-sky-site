@@ -19,8 +19,8 @@
      factor keeps that true. Change --rb-zoom and --rb-cell together: the cell
      is 9px x zoom, and rain-of-babel.js reads the cell straight off this
      element, so the two can never drift apart. */
-  --rb-zoom: 2;
-  --rb-cell: 18px;          /* 9px x --rb-zoom */
+  --rb-zoom: 3;
+  --rb-cell: 27px;          /* 9px x --rb-zoom */
   /* clamped, not min(): a short viewport must never be able to collapse the
      sheet to nothing — it just gets the floor and scrolls */
   --rb-sheet-h: clamp(320px, calc(100vh - 170px), 880px);
@@ -162,11 +162,7 @@
 }
 
 
-/* ---- the sheets --------------------------------------------------------
-   One below the other in ordinary flow, each filling its own screenful, so
-   the second is found by scrolling rather than by peering round the first.
-   No overlap, no pile. */
-.rb-sheet + .rb-sheet { margin-top: clamp(28px, 6vh, 74px); }
+/* the page carries one sheet now: the pile, alone */
 
 /* ---- mode: impact ----------------------------------------------------------
    The column is dismantled one character at a time from the bottom up. Every
@@ -325,58 +321,75 @@
 .rb-rain.is-paused .rb-burst > i,
 .rb-rain.is-paused .rb-g.is-spin { animation-play-state: paused; }
 
-/* ---- the controls ------------------------------------------------------
+/* ---- the control panel -------------------------------------------------
    Kept to the same furniture as the version stamp: monospace, small, quiet,
    aligned to the sheet's own width. The thumb is a square, because everything
-   else on this page sits in one. */
-.rb-ctl {
+   else on this page sits in one. Three fieldsets — the rain, the crash, the
+   pool — each a stack of label / slider / value rows, with the transport
+   (pause, reset, copy) in one line above them. */
+.rb-panel {
   width: min(1180px, 100%); max-width: none; margin: 14px auto 0;
-  display: flex; align-items: center; gap: 12px;
   font-family: var(--rb-mono); font-size: 0.52rem; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--rb-type-3);
 }
-.rb-ctl label { flex: 0 0 auto; }
-.rb-ctl button {
+.rb-panel-actions { display: flex; align-items: center; gap: 12px; }
+.rb-panel-actions .rb-count { margin-left: auto; text-align: right;
+  font-variant-numeric: tabular-nums; }
+.rb-panel button {
   flex: 0 0 auto; min-width: 7ch;
   font: inherit; letter-spacing: 0.16em; text-transform: uppercase;
   color: var(--rb-type-2); background: var(--rb-paper);
   border: 1px solid rgba(74, 98, 138, 0.5); border-radius: 0;
   padding: 3px 8px; cursor: pointer;
 }
-.rb-ctl button:hover { border-color: #4a628a; color: var(--rb-type); }
-.rb-ctl button[aria-pressed="true"] {
+.rb-panel button:hover { border-color: #4a628a; color: var(--rb-type); }
+.rb-panel button[aria-pressed="true"] {
   background: #4a628a; border-color: #4a628a; color: var(--rb-paper);
 }
-.rb-ctl button:focus-visible { outline: 1px solid var(--rb-type-2); outline-offset: 2px; }
-.rb-ctl output { flex: 0 0 auto; min-width: 12ch; text-align: right;
-  font-variant-numeric: tabular-nums; }
-.rb-ctl input[type="range"] {
-  -webkit-appearance: none; appearance: none;
-  flex: 1 1 auto; height: 26px; background: transparent; cursor: ew-resize;
-  touch-action: manipulation;
+.rb-panel button:focus-visible { outline: 1px solid var(--rb-type-2); outline-offset: 2px; }
+.rb-panel-groups {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 12px 22px; margin-top: 14px; align-items: start;
 }
-.rb-ctl input[type="range"]::-webkit-slider-runnable-track {
+.rb-group {
+  border: 1px solid rgba(74, 98, 138, 0.30); border-radius: 0;
+  margin: 0; padding: 6px 12px 10px; min-width: 0;
+}
+.rb-group legend { padding: 0 6px; color: var(--rb-type-2); }
+.rb-row { display: flex; align-items: center; gap: 10px; }
+.rb-row label { flex: 0 0 10ch; }
+.rb-row output { flex: 0 0 5ch; text-align: right;
+  font-variant-numeric: tabular-nums; }
+.rb-panel input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  flex: 1 1 auto; min-width: 0; height: 26px; background: transparent;
+  cursor: ew-resize; touch-action: manipulation;
+}
+.rb-panel input[type="range"]::-webkit-slider-runnable-track {
   height: 1px; background: rgba(74, 98, 138, 0.45);
 }
-.rb-ctl input[type="range"]::-moz-range-track {
+.rb-panel input[type="range"]::-moz-range-track {
   height: 1px; background: rgba(74, 98, 138, 0.45);
 }
 /* a small square still, but a 15px one on a 26px-tall input — the 9px mark
    on an 18px input gave about 80 square pixels to aim at, which is not enough
    to grab reliably */
-.rb-ctl input[type="range"]::-webkit-slider-thumb {
+.rb-panel input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; appearance: none;
   width: 15px; height: 15px; margin-top: -7px; border-radius: 0;
   background: var(--rb-paper); border: 1px solid #4a628a;
   box-shadow: 0 1px 2px rgba(46, 34, 12, 0.35);
 }
-.rb-ctl input[type="range"]::-webkit-slider-thumb:active { background: #4a628a; }
-.rb-ctl input[type="range"]::-moz-range-thumb {
+.rb-panel input[type="range"]::-webkit-slider-thumb:active { background: #4a628a; }
+.rb-panel input[type="range"]::-moz-range-thumb {
   width: 15px; height: 15px; border-radius: 0;
   background: var(--rb-paper); border: 1px solid #4a628a;
 }
-.rb-ctl input[type="range"]:focus-visible { outline: 1px solid var(--rb-type-2);
+.rb-panel input[type="range"]:focus-visible { outline: 1px solid var(--rb-type-2);
   outline-offset: 3px; }
+@media (max-width: 960px) {
+  .rb-panel-groups { grid-template-columns: 1fr; }
+}
 
 .rb-build {
   /* the SAME width rule as the sheet, so the stamp sits exactly under its
@@ -390,4 +403,4 @@
 
 @media (max-width: 700px) {
   .rb-page { --rb-sheet-h: clamp(280px, calc(100vh - 190px), 620px); }
-  
+}

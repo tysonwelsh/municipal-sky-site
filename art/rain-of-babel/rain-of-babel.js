@@ -237,6 +237,7 @@
   var PILE_OVERLAP = 0.52;    /* how deep the next character nests in */
   var FLIGHT_ALLOWANCE = 1.1;  /* seconds a thrown glyph may stay in the air */
   var BOUNCE = 0.46;          /* speed kept after hitting a wall */
+  var PILE_STEPS = 600;       /* integration cap: 10s of flight at 60 steps/s */
 
   function surfaceAt(st, x, w) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
@@ -248,7 +249,7 @@
   function depositAt(st, x, w, restY) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
     var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
-    var newTop = restY + st.CELL * PILE_OVERLAP;
+    var newTop = restY + st.CELL * st.overlap;
     for (var b = b0; b <= b1; b++) if (newTop < st.top[b]) st.top[b] = newTop;
   }
 
@@ -261,8 +262,8 @@
       vy += g * dt;
       x += vx * dt;
       y += vy * dt;
-      if (x <= 0)            { x = -x; vx = -vx * BOUNCE; }
-      else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * BOUNCE; }
+      if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
+      else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
       var floorY = surfaceAt(st, x, st.CELL) - st.CELL;
       if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
       pts.push({ x: x, y: y });
@@ -322,12 +323,26 @@
     var cols = Math.floor(W / CELL);
     var rows = Math.floor(H / CELL);
 
+    /* Every number that shapes this sheet is a dial now. The multipliers are
+       all 1 at the tuned defaults, so an unadorned mount behaves exactly as
+       the piece always has — except that these are also LIVE: runGlyph and
+       flyPath read them off st at launch time, so tunePile() can turn them
+       mid-flight without a rebuild. */
+    var spdMul = opt.speed == null ? 1 : opt.speed;
+    var runMul = opt.run == null ? 1 : opt.run;
+    var gapMul = opt.gap == null ? 1 : opt.gap;
     var st = {
-      W: W, H: H, CELL: CELL, zoom: zoom, cols: cols,
+      W: W, H: H, CELL: CELL, zoom: zoom, cols: cols, rows: rows,
       bw: CELL / PILE_BUCKET,
       top: [],
       floorLimit: H - rows * CELL * (opt.maxFill == null ? 0.72 : opt.maxFill),
       cap: opt.cap == null ? 2600 : opt.cap,
+      overlap: opt.overlap == null ? PILE_OVERLAP : opt.overlap,
+      bounce: opt.bounce == null ? BOUNCE : opt.bounce,
+      gravity: GRAVITY * (opt.gravity == null ? 1 : opt.gravity),
+      throwX: opt.throwX == null ? 1 : opt.throwX,
+      popY: opt.popY == null ? 1 : opt.popY,
+      spinMul: opt.spin == null ? 1 : opt.spin,
       n: 0, clearing: false, columns: [], busy: {}, lane: {}
     };
     for (var i = 0; i < Math.ceil(W / st.bw) + 1; i++) st.top.push(H);
@@ -349,7 +364,7 @@
     var frag = document.createDocumentFragment();
     for (var pi = 0; pi < picks.length; pi++) {
       var c = picks[pi];
-      var speed = (48 + Math.random() * 44) * zoom;
+      var speed = (48 + Math.random() * 44) * zoom * spdMul;
       var lead = CELL * (2 + rnd(6));
       /* claimed below, once the column element exists to own it */
       var pileTop0 = surfaceAt(st, c * CELL, CELL) - CELL;
@@ -384,16 +399,20 @@
          glyph elements exist: the cursor lays down __block launches one beat
          apart and then skips __gap of them. Letting the pool size decide the
          length instead is what turned every column into an endless stream. */
-      col.__block = 7 + rnd(18);
-      col.__gap = (2 + rnd(7)) * beat * 1000;
+      col.__block = Math.max(2, Math.round((7 + rnd(18)) * runMul));
+      col.__gap = (2 + rnd(7)) * beat * 1000 * gapMul;
       col.__launched = 0;
       col.__fallMs = (pileTop0 - (-(CELL + lead))) / speed * 1000;
       st.busy[c] = col;
 
       /* the pool only has to cover a round trip — fall, flight, and back to
-         the top. The gaps make it easier, so this stays conservative. */
+         the top. The gaps make it easier, so this stays conservative. A
+         higher loft or a weaker gravity keeps the debris in the air longer,
+         so the allowance grows with the time a full up-and-down at the top
+         of the launch range actually takes: 2 * vy_max / g. */
       var fallSec = (pileTop0 - col.__y0) / speed;
-      var len = Math.min(46, Math.ceil((fallSec + FLIGHT_ALLOWANCE) / beat) + 3);
+      var flightSec = FLIGHT_ALLOWANCE + 740 * st.popY / st.gravity;
+      var len = Math.min(80, Math.ceil((fallSec + flightSec) / beat) + 3);
       for (var k = 0; k < len; k++) {
         var g = document.createElement('i');
         g.__col = col;
@@ -449,12 +468,12 @@
        debris leaving the frame, here it is debris coming to rest nearby, and
        a hard throw scatters everything to the walls instead of building a
        heap where the column actually fell. */
-    var vx = (Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 430) * st.zoom;
-    var vy = -(115 + Math.random() * 255) * st.zoom;
+    var vx = (Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 430) * st.zoom * st.throwX;
+    var vy = -(115 + Math.random() * 255) * st.zoom * st.popY;
     var dt = 1 / 60;
-    var pts = flyPath(st, x0, impactY, vx, vy, GRAVITY * st.zoom, dt, 220);
+    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS);
     var flightMs = (pts.length - 1) * dt * 1000;
-    var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420);
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
 
     var frames = [{ transform: 'translate(0px,' + col.__y0 + 'px) rotate(0deg)',
                     offset: 0, easing: 'linear' }];
@@ -648,6 +667,25 @@
     return streams.length;
   }
 
+  /* Re-tune a mounted pile sheet WITHOUT rebuilding it. Only the numbers the
+     physics reads at launch time can move this way — how a glyph is thrown,
+     how it falls, how it nests, when the drift sweeps. The shape of the rain
+     itself (which columns, how fast, in what runs) is baked into the columns
+     at build and needs a fresh mount. */
+  function tunePile(host, opt) {
+    var st = host.__pile;
+    if (!st || !opt) return false;
+    if (opt.throwX != null) st.throwX = opt.throwX;
+    if (opt.popY != null) st.popY = opt.popY;
+    if (opt.spin != null) st.spinMul = opt.spin;
+    if (opt.bounce != null) st.bounce = opt.bounce;
+    if (opt.gravity != null) st.gravity = GRAVITY * opt.gravity;
+    if (opt.overlap != null) st.overlap = opt.overlap;
+    if (opt.cap != null) st.cap = opt.cap;
+    if (opt.maxFill != null) st.floorLimit = st.H - st.rows * st.CELL * opt.maxFill;
+    return true;
+  }
+
   /* Pausing has to reach two different mechanisms: the fall and impact sheets
      run on CSS animations, the pile sheet on the Web Animations API with a
      timer collecting what has landed. One switch, both handled. */
@@ -673,6 +711,7 @@
 
   window.RainOfBabel = {
     setPaused: setPaused,
+    tune: tunePile,
     isPaused: function (host) { return !!host.__paused; },
     scripts: Object.keys(POOL).length,
     characters: (function () {

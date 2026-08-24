@@ -1,6 +1,6 @@
 <?php
 $page_title = 'Rain of Babel - Municipal Sky';
-$page_description = 'A rain of characters from 73 writing systems — Greek, Cherokee, Deseret, Devanagari, Tibetan, Chinese, Linear B — struck one to a printed square on a sheet of engineering paper. No column ever repeats.';
+$page_description = 'A rain of characters from 73 writing systems — Greek, Cherokee, Deseret, Devanagari, Tibetan, Chinese, Linear B — falling down a sheet of engineering paper, crashing on the bottom rule and drifting into a heap. No column ever repeats.';
 
 // Cache-bust local assets with an md5 content hash (?v=xxxxxxxx), computed at
 // request time so a changed file always ships a fresh URL.
@@ -30,24 +30,25 @@ include '../../includes/header.php';
 
 <div class="main-wrapper rb-page">
 
-  <?php
-  // One block per sheet: the sheet, then its own controls. `mode` is what
-  // rain-of-babel.js is asked to build; `density` is where its slider starts.
-  $rb_sheets = [
-      ['id' => 'rb-rain',        'mode' => '',       'density' => 100, 'label' => 'Falling'],
-      ['id' => 'rb-rain-impact', 'mode' => 'impact', 'density' => 55,  'label' => 'Impact'],
-      ['id' => 'rb-rain-pile',   'mode' => 'pile',   'density' => 34,  'label' => 'Pile'],
-  ];
-  foreach ($rb_sheets as $rb_s): ?>
-    <div class="rb-sheet"><span class="rb-rain" id="<?php echo $rb_s['id']; ?>" aria-hidden="true"></span></div>
-    <div class="rb-ctl" data-target="<?php echo $rb_s['id']; ?>" data-mode="<?php echo $rb_s['mode']; ?>">
+  <!-- one sheet: the pile. The rain falls, crashes on the bottom rule, and
+       what it throws comes to rest and accumulates. -->
+  <div class="rb-sheet"><span class="rb-rain" id="rb-rain-pile" aria-hidden="true"></span></div>
+
+  <!-- the control panel. The slider rows are dealt by the inline script from
+       one table of dials, into the three empty fieldsets below. -->
+  <div class="rb-panel" id="rb-panel">
+    <div class="rb-panel-actions">
       <button type="button" class="rb-pause" aria-pressed="false">Pause</button>
-      <label for="<?php echo $rb_s['id']; ?>-d"><?php echo $rb_s['label']; ?></label>
-      <input type="range" id="<?php echo $rb_s['id']; ?>-d" min="0" max="100" step="1"
-             value="<?php echo $rb_s['density']; ?>">
-      <output for="<?php echo $rb_s['id']; ?>-d">&mdash;</output>
+      <button type="button" class="rb-reset">Reset</button>
+      <button type="button" class="rb-copy">Copy settings</button>
+      <output class="rb-count">&mdash;</output>
     </div>
-  <?php endforeach; ?>
+    <div class="rb-panel-groups">
+      <fieldset class="rb-group" data-group="rain"><legend>The rain</legend></fieldset>
+      <fieldset class="rb-group" data-group="crash"><legend>The crash</legend></fieldset>
+      <fieldset class="rb-group" data-group="pool"><legend>The pool</legend></fieldset>
+    </div>
+  </div>
 
   <p class="rb-build">v<?php echo htmlspecialchars($rb_number); ?><span class="rb-build-sep">&middot;</span><?php echo $rb_build; ?><?php if ($rb_deployed): ?><span class="rb-build-sep">&middot;</span><?php echo $rb_deployed; ?><?php endif; ?></p>
 
@@ -57,60 +58,127 @@ include '../../includes/header.php';
 <script>
   (function () {
     var CR = window.RainOfBabel;
+    var host = document.getElementById('rb-rain-pile');
+    var panel = document.getElementById('rb-panel');
+    var count = panel.querySelector('.rb-count');
 
-    /* Each control row owns one sheet. Building is deferred until the sheet
-       has been laid out, so the row keeps its own paused state and re-applies
-       it after every rebuild — otherwise changing the density of a paused
-       sheet would quietly start it running again. */
-    function wire(row) {
-      var host = document.getElementById(row.getAttribute('data-target'));
-      var mode = row.getAttribute('data-mode');
-      var btn = row.querySelector('.rb-pause');
-      var slider = row.querySelector('input[type=range]');
-      var out = row.querySelector('output');
-      var paused = false;
+    /* THE DIALS. Every value is an integer (percent of the tuned default,
+       except `cap`, which is a plain count), which keeps the shareable URL
+       short and unambiguous. `live` says which mechanism a dial reaches:
+       a live dial is read by the physics at every launch, so CR.tune()
+       turns it on the running sheet; the rest shape the columns themselves
+       and only take hold when the sheet is rebuilt (a slide rebuilds after
+       a beat; Reset rebuilds at once). */
+    var DIALS = [
+      { k: 'den', g: 'rain',  label: 'Columns',    min: 2,   max: 100,  step: 1,   def: 34,   live: false, u: '%' },
+      { k: 'spd', g: 'rain',  label: 'Fall speed', min: 25,  max: 300,  step: 5,   def: 100,  live: false, u: '%' },
+      { k: 'run', g: 'rain',  label: 'Run length', min: 30,  max: 300,  step: 10,  def: 100,  live: false, u: '%' },
+      { k: 'gap', g: 'rain',  label: 'Run gap',    min: 30,  max: 300,  step: 10,  def: 100,  live: false, u: '%' },
+      { k: 'thr', g: 'crash', label: 'Throw',      min: 0,   max: 300,  step: 5,   def: 100,  live: true,  u: '%' },
+      { k: 'pop', g: 'crash', label: 'Loft',       min: 0,   max: 400,  step: 5,   def: 250,  live: true,  u: '%' },
+      { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 100,  live: true,  u: '%' },
+      { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 5,   def: 46,   live: true,  u: '%' },
+      { k: 'grv', g: 'crash', label: 'Gravity',    min: 30,  max: 300,  step: 5,   def: 100,  live: true,  u: '%' },
+      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 52,   live: true,  u: '%' },
+      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 20,  max: 100,  step: 2,   def: 72,   live: true,  u: '%' },
+      { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 200, max: 6000, step: 100, def: 2600, live: true,  u: '' }
+    ];
 
-      function build() {
-        var opt = { density: slider.value / 100,
-          onBuilt: function (n, of) { out.textContent = n + ' of ' + of + ' columns'; } };
-        if (mode) opt.mode = mode;
-        CR.mount(host, opt);
-        /* mount() defers until the sheet has a size, so re-assert the pause
-           after it has actually had a chance to build */
-        if (paused) setTimeout(function () { CR.setPaused(host, true); }, 60);
-      }
-
-      btn.addEventListener('click', function () {
-        paused = !paused;
-        CR.setPaused(host, paused);
-        btn.textContent = paused ? 'Play' : 'Pause';
-        btn.setAttribute('aria-pressed', paused ? 'true' : 'false');
-      });
-
-      var t = null;
-      slider.addEventListener('input', function () {
-        out.textContent = slider.value + '%';
-        clearTimeout(t);
-        t = setTimeout(build, 140);
-      });
-
-      build();
-      return build;
-    }
-
-    var builders = [];
-    Array.prototype.forEach.call(document.querySelectorAll('.rb-ctl'), function (row) {
-      builders.push(wire(row));
+    /* a shared URL carries the dials as its query string; anything absent,
+       out of range, or not a number falls back to the default */
+    var val = {}, qs = new URLSearchParams(location.search);
+    DIALS.forEach(function (d) {
+      var v = parseInt(qs.get(d.k), 10);
+      val[d.k] = isNaN(v) ? d.def : Math.min(d.max, Math.max(d.min, v));
     });
 
-    /* the sheets are sized off the viewport, so a resize changes how many
-       columns they hold — rebuild, but only once the dragging stops */
+    function opts() {
+      return {
+        mode: 'pile',
+        density: val.den / 100, speed: val.spd / 100,
+        run: val.run / 100, gap: val.gap / 100,
+        throwX: val.thr / 100, popY: val.pop / 100, spin: val.spn / 100,
+        bounce: val.bnc / 100, gravity: val.grv / 100,
+        overlap: val.nst / 100, maxFill: val.fil / 100, cap: val.cap,
+        onBuilt: function (n, of) { count.textContent = n + ' of ' + of + ' columns'; }
+      };
+    }
+
+    /* Building is deferred until the sheet has been laid out, so the panel
+       keeps its own paused state and re-applies it after every rebuild —
+       otherwise resetting a paused sheet would quietly start it running. */
+    var paused = false;
+    function build() {
+      CR.mount(host, opts());
+      if (paused) setTimeout(function () { CR.setPaused(host, true); }, 60);
+    }
+
+    /* deal the slider rows into their fieldsets */
+    var bt = null;
+    DIALS.forEach(function (d) {
+      var grp = panel.querySelector('[data-group="' + d.g + '"]');
+      var row = document.createElement('div');
+      row.className = 'rb-row';
+      var id = 'rb-p-' + d.k;
+      row.innerHTML =
+        '<label for="' + id + '">' + d.label + '</label>' +
+        '<input type="range" id="' + id + '" min="' + d.min + '" max="' + d.max +
+        '" step="' + d.step + '" value="' + val[d.k] + '">' +
+        '<output for="' + id + '">' + val[d.k] + d.u + '</output>';
+      var input = row.querySelector('input'), out = row.querySelector('output');
+      input.addEventListener('input', function () {
+        val[d.k] = +input.value;
+        out.textContent = input.value + d.u;
+        if (d.live) { CR.tune(host, opts()); }
+        else { clearTimeout(bt); bt = setTimeout(build, 180); }
+      });
+      grp.appendChild(row);
+    });
+
+    var pauseBtn = panel.querySelector('.rb-pause');
+    pauseBtn.addEventListener('click', function () {
+      paused = !paused;
+      CR.setPaused(host, paused);
+      pauseBtn.textContent = paused ? 'Play' : 'Pause';
+      pauseBtn.setAttribute('aria-pressed', paused ? 'true' : 'false');
+    });
+
+    /* an empty sheet, started over with whatever is dialled in now */
+    panel.querySelector('.rb-reset').addEventListener('click', build);
+
+    /* the settings travel as a URL, so sharing them is pasting a link */
+    var copyBtn = panel.querySelector('.rb-copy');
+    copyBtn.addEventListener('click', function () {
+      var q = new URLSearchParams();
+      DIALS.forEach(function (d) { q.set(d.k, val[d.k]); });
+      var url = location.origin + location.pathname + '?' + q.toString();
+      function done(ok) {
+        copyBtn.textContent = ok ? 'Copied' : 'Copy failed';
+        setTimeout(function () { copyBtn.textContent = 'Copy settings'; }, 1600);
+      }
+      function fallback() {
+        var ta = document.createElement('textarea');
+        ta.value = url; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(ta);
+        return ok;
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(
+          function () { done(true); }, function () { done(fallback()); });
+      } else { done(fallback()); }
+    });
+
+    build();
+
+    /* the sheet is sized off the viewport, so a resize changes how many
+       columns it holds — rebuild, but only once the dragging stops */
     var rt = null;
     window.addEventListener('resize', function () {
       clearTimeout(rt);
-      rt = setTimeout(function () {
-        builders.forEach(function (b) { b(); });
-      }, 320);
+      rt = setTimeout(build, 320);
     });
   })();
 </script>
