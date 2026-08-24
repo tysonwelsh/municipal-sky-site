@@ -222,9 +222,10 @@
      This sheet does NOT use the shared CSS keyframes the other two do, and it
      cannot: a bounce is piecewise, and x = vx*t has no way to express one. So
      the flight is integrated here, step by step, reflected off the walls when
-     it gets to them, and stopped when it meets the surface of the drift — and
-     the resulting path is handed to element.animate() as sampled keyframes.
-     Same physics as the impact sheet, simulated rather than solved.
+     it gets to them, and brought to rest against the surface of the drift —
+     bouncelet and skid included, contact by contact — and the resulting path
+     is handed to element.animate() as sampled keyframes. Same physics as the
+     impact sheet, simulated rather than solved.
 
      The drift is a HEIGHT FIELD, not a grid of columns: buckets a third of a
      square wide, each holding the height of whatever is lying there. A
@@ -235,9 +236,26 @@
      -------------------------------------------------------------------- */
   var PILE_BUCKET = 3;        /* buckets per square */
   var PILE_OVERLAP = 0.52;    /* how deep the next character nests in */
-  var FLIGHT_ALLOWANCE = 1.1;  /* seconds a thrown glyph may stay in the air */
+  /* seconds a thrown glyph may stay in motion. This covers the ground time
+     now as well as the air time: a fragment that skids, and one that sat a
+     beat before breaking, both take longer to come home than a pure lob. */
+  var FLIGHT_ALLOWANCE = 1.8;
   var BOUNCE = 0.46;          /* speed kept after hitting a wall */
   var PILE_STEPS = 600;       /* integration cap: 10s of flight at 60 steps/s */
+  /* The fall speed the pile's throw ranges are tuned at — the MIDDLE of this
+     sheet's own launch range at the shipped speed dial, so the default feel
+     is exactly the tuned one and only a re-dialled fall moves the punch. The
+     impact sheet's REF_SPEED is 33 and would double every throw here. */
+  var PUNCH_REF = 66;
+  /* Ploughing: extra slide drag that grows with the SQUARE of the speed, so
+     a fast skidder digs in and brakes hard while a slow glide barely feels
+     it. Without this the rare energetic fragment crosses half the sheet —
+     stopping distance under plain friction is quadratic in speed, so the
+     outliers that make the energy range read also, untreated, leave the
+     scene of the crash entirely. Per px at zoom 1; flyPath divides by zoom. */
+  var PLOUGH = 0.01;
+  var DUST_POOL = 48;         /* dust marks per sheet, pre-made, recycled */
+  var DUST = '·.,';      /* what dust is printed as */
 
   function surfaceAt(st, x, w) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
@@ -268,18 +286,54 @@
   }
 
   /* Integrate one flight: launched from (x0, y0), pulled down by gravity,
-     reflected off the side walls, stopped by the surface of the drift.
-     Returns the sampled path and where it came to rest. */
-  function flyPath(st, x0, y0, vx, vy, g, dt, maxSteps) {
+     reflected off the side walls. Returns the sampled path and where it came
+     to rest.
+
+     MEETING THE GROUND NO LONGER STOPS IT DEAD. A fragment used to end at
+     first contact, so all of its sideways energy simply vanished — at a low
+     loft the whole burst fit inside two display frames and read as a
+     teleport. Now contact spends the energy where it can be SEEN: arriving
+     fast enough it takes a bouncelet or two (low restitution, sideways speed
+     taxed each hit), and below that it SLIDES along the surface under a
+     per-fragment friction until the speed is gone. The slide follows the
+     height field downhill, stops against a bank taller than half a square,
+     and goes airborne again off an edge taller than most of one — a skid off
+     the top of the heap ends as a drop down its side, not a hover.
+     imp carries the contact numbers {maxB, e, vB, fric}; the wall bounce
+     stays the dial's. PILE_STEPS still caps the whole path, so the worst
+     case is what it always was. */
+  function flyPath(st, x0, y0, vx, vy, g, dt, maxSteps, imp) {
     var pts = [{ x: x0, y: y0 }], x = x0, y = y0, i;
+    var bounces = imp ? imp.maxB : 0;
+    var eB = imp ? imp.e : 0.28;
+    var vB = imp ? imp.vB : 150 * st.zoom;
+    var fric = imp ? imp.fric : 500 * st.zoom;
+    var sliding = false;
     for (i = 0; i < maxSteps; i++) {
-      vy += g * dt;
-      x += vx * dt;
-      y += vy * dt;
-      if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
-      else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
-      var floorY = surfaceMeanAt(st, x, st.CELL) - st.CELL;
-      if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
+      if (!sliding) {
+        vy += g * dt;
+        x += vx * dt;
+        y += vy * dt;
+        if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
+        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
+        var floorY = surfaceMeanAt(st, x, st.CELL) - st.CELL;
+        if (y >= floorY && vy > 0) {
+          y = floorY;
+          if (bounces > 0 && vy > vB) { bounces--; vy = -vy * eB; vx *= 0.7; }
+          else { sliding = true; vy = 0; }
+        }
+      } else {
+        x += vx * dt;
+        if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
+        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
+        var f = surfaceMeanAt(st, x, st.CELL) - st.CELL;
+        if (f > y + st.CELL * 0.9)      { sliding = false; vy = 0; }
+        else if (f < y - st.CELL * 0.55) { x = pts[pts.length - 1].x; pts.push({ x: x, y: y }); break; }
+        else y = f;
+        var dv = (fric + PLOUGH * vx * vx / st.zoom) * dt;
+        if (Math.abs(vx) <= dv) { pts.push({ x: x, y: y }); break; }
+        vx -= dv * (vx > 0 ? 1 : -1);
+      }
       pts.push({ x: x, y: y });
     }
     return pts;
@@ -365,6 +419,25 @@
     pile.className = 'rb-pile';
     host.appendChild(pile);
     st.layer = pile;
+
+    /* which lanes hold a character dwelling at the surface, waiting to be
+       crushed out by the next arrival */
+    st.dwell = {};
+    /* the dust pool, built once per mount. It lives inside the host, so
+       Reset (mount clears innerHTML) takes the marks and the state that
+       points at them down together. None under reduced motion. */
+    st.fxLive = [];
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var fx = document.createElement('span');
+      fx.className = 'rb-fx';
+      host.appendChild(fx);
+      st.fxPool = [];
+      for (var fi = 0; fi < DUST_POOL; fi++) {
+        var fd = document.createElement('i');
+        fx.appendChild(fd);
+        st.fxPool.push(fd);
+      }
+    }
 
     var want = opt.density != null
       ? Math.round(cols * Math.max(0, Math.min(1, opt.density))) : cols;
@@ -521,13 +594,65 @@
      Deliberately gentler than the impact sheet: there the point is debris
      leaving the frame, here it is debris coming to rest nearby, and a hard
      throw scatters everything to the walls instead of building a heap where
-     the column actually fell. */
-  function throwNow(g, impactY) {
+     the column actually fell.
+
+     THE ENERGY IS NOT UNIFORM ANY MORE. A breaking thing sheds mostly weak
+     pieces and the odd one that carries: squaring a uniform draw piles the
+     mass at the low end, and the rare doubling is the outlier that makes the
+     rest read as restrained rather than merely small. The dials multiply on
+     top, so throw and loft still mean what they mean.
+
+     kind says what sort of break this is:
+       (none)  — the point of impact, full energy;
+       'soft'  — a seated character crushed out of its dwell: its sideways
+                 energy kept, barely any lift — all slide;
+       'crush' — the newcomer that did the crushing: harder than a plain hit;
+       'shock' — jostled loose ABOVE the break (scale = how little of the
+                 blow reached it): sideways or slightly downward, never
+                 lobbed, and it falls from wherever it was. */
+  function throwNow(g, impactY, kind, scale) {
     var col = g.__col, st = col.__st, x0 = g.__x0;
-    var vx = (Math.random() < 0.5 ? -1 : 1) * (95 + Math.random() * 430) * st.zoom * st.throwX;
-    var vy = -(115 + Math.random() * 255) * st.zoom * st.popY;
+    var dir = Math.random() < 0.5 ? -1 : 1;
+    var r = Math.random();
+    var m = 0.4 + 0.9 * r * r;
+    if (Math.random() < 0.07) m *= 2.2;
+    /* the column's own momentum goes into what it throws, as on the impact
+       sheet: a faster fall hits harder, and the speed dial gains a physical
+       consequence. Clamped so no dialling makes the burst vanish or leave. */
+    var punch = col.__speed / (st.zoom * PUNCH_REF);
+    m *= punch < 0.6 ? 0.6 : punch > 1.6 ? 1.6 : punch;
+    /* what it hits matters: the bottom rule is hard and rings — a crisper
+       bouncelet, a touch more lift — where the heap is dead weight that
+       swallows the hop and gives the energy back as skid */
+    var onBare = (st.H - st.CELL - impactY) < st.CELL;
+    var imp = {
+      maxB: onBare ? 2 : 0,
+      e: 0.2 + Math.random() * 0.15 + (onBare ? 0.1 : 0),
+      vB: 150 * st.zoom,
+      /* the floor of this draw is what stops the far tail: a fast fragment
+         on the slickest ground is the one that crosses half the sheet */
+      fric: (120 + Math.random() * 180) * st.zoom * (onBare ? 1.25 : 0.55)
+    };
+    /* kept for inspection only: nothing reads it back but the harness */
+    g.__kind = kind || 'point';
+    var vx, vy;
+    if (kind === 'shock') {
+      m *= scale;
+      imp.maxB = 0;
+      vx = dir * (70 + Math.random() * 260) * st.zoom * st.throwX * m;
+      vy = (Math.random() * 90 - 15) * st.zoom * m;
+    } else {
+      /* a soft release keeps its sideways energy — being squeezed out under
+         arriving weight goes low and FAR, not up — it only loses the lift */
+      if (kind === 'soft')       { imp.maxB = 0; }
+      else if (kind === 'crush') { m *= 1.15; }
+      vx = dir * (95 + Math.random() * 430) * st.zoom * st.throwX * m;
+      vy = -(115 + Math.random() * 255) * st.zoom * st.popY * m *
+           (kind === 'soft' ? 0.35 : onBare ? 1.12 : 0.85);
+      if (kind == null || kind === 'crush') puff(st, x0, impactY, 1 + rnd(3));
+    }
     var dt = 1 / 60;
-    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS);
+    var pts = flyPath(st, x0, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS, imp);
     var flightMs = Math.max(1, (pts.length - 1) * dt * 1000);
     var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
 
@@ -548,6 +673,80 @@
     g.__anim = g.animate(frames, { duration: flightMs, fill: 'both' });
   }
 
+  /* Not every arrival breaks at once. About half LODGE where they strike —
+     a couple of px of give, a few degrees off square — and sit a fraction of
+     a beat before the break, so the rhythm of a column being taken apart is
+     tick...tick-TACK, not a metronome. The dwell deadline lives on the glyph
+     and is judged in the reaper's own time: pausing stops the reaper, so a
+     dwell can outlive a pause but can never leak past one. A dwelling
+     character is still in its lane — the lane count is untouched until it
+     finally comes to rest. */
+  function settle(g, floorY, now) {
+    var col = g.__col, st = col.__st;
+    g.__phase = 'dwell';
+    g.__dwellY = floorY;
+    g.__dwellT = now + 40 + Math.random() * 120;
+    st.dwell[g.__lane] = g;
+    var tilt = ((rnd(2) ? 1 : -1) * (3 + Math.random() * 3)).toFixed(1);
+    if (g.__anim) g.__anim.cancel();
+    g.__anim = g.animate(
+      [{ transform: 'translate(0px,' + floorY + 'px) rotate(0deg)', easing: 'ease-out' },
+       { transform: 'translate(0px,' + (floorY + 2) + 'px) rotate(' + tilt + 'deg)' }],
+      { duration: 90, fill: 'both' });
+  }
+
+  /* The break runs UP the column: a hit below has a fair chance of knocking
+     one or two of the characters still falling in the same lane loose EARLY,
+     from their own height, with what little of the blow reached them — so an
+     impact reads as a clustered burst with the mass above jostled, never as
+     the whole column letting go at once (tried, and rejected, by the owner).
+     Their y comes off the animation clock, no layout read; the scan is this
+     column's own children, only on impact; and the cooldown keeps a run
+     jostled and thinned rather than deleted. */
+  function shockwave(g0, impactY, now) {
+    var col = g0.__col, st = col.__st;
+    if (now < (col.__shockT || 0) || Math.random() > 0.55) return;
+    col.__shockT = now + col.__beat * 2;
+    var kids = col.children, want = Math.random() < 0.4 ? 2 : 1, hits = 0;
+    for (var i = 0; i < kids.length && hits < want; i++) {
+      var s = kids[i];
+      if (s === g0 || s.__phase !== 'fall' || s.__x0 !== g0.__x0 || !s.__anim) continue;
+      var ct = s.__anim.currentTime;
+      if (ct == null || ct <= s.__fallDelay) continue;
+      var y = s.__fallY0 + (ct - s.__fallDelay) / 1000 * s.__fallSpeed;
+      var dy = impactY - y;
+      if (dy < st.CELL * 1.5 || dy > st.CELL * 7) continue;
+      throwNow(s, y, 'shock', 1 - dy / (st.CELL * 9));
+      hits++;
+    }
+  }
+
+  /* Dust at the point of impact: a few tiny marks flicked outward and gone
+     inside a third of a second. The marks are a FIXED POOL, dealt out and
+     taken back — when the pool is out, dust is simply skipped, never grown —
+     because a landing can ask for three at once and the sheet takes dozens
+     of landings a second. Dust deposits nothing and touches no height
+     field; under reduced motion the pool is never built and this is a no-op. */
+  function puff(st, x, y, n) {
+    if (!st.fxPool) return;
+    while (n-- > 0 && st.fxPool.length) {
+      var d = st.fxPool.pop();
+      var dir = Math.random() < 0.5 ? -1 : 1;
+      var x1 = x + st.CELL * (0.2 + Math.random() * 0.6);
+      var y1 = y + st.CELL * (0.6 + Math.random() * 0.3);
+      if (d.__anim) d.__anim.cancel();
+      d.textContent = DUST[rnd(DUST.length)];
+      d.__anim = d.animate(
+        [{ transform: 'translate(' + x1.toFixed(1) + 'px,' + y1.toFixed(1) + 'px)',
+           opacity: 0.55, easing: 'ease-out' },
+         { transform: 'translate(' + (x1 + dir * (0.3 + Math.random() * 0.8) * st.CELL).toFixed(1) + 'px,' +
+                      (y1 + (Math.random() * 0.5 - 0.1) * st.CELL).toFixed(1) + 'px)',
+           opacity: 0 }],
+        { duration: 120 + Math.random() * 160, fill: 'both' });
+      st.fxLive.push(d);
+    }
+  }
+
   /* One timer per sheet, doing two jobs a poll: intercepting every FALLING
      glyph against the surface as it is right now — the fall is linear at a
      known speed, so its y comes off the animation's own clock with no layout
@@ -558,6 +757,7 @@
   function startReaper(host, st) {
     if (host.__reaper) clearInterval(host.__reaper);
     host.__reaper = setInterval(function () {
+      var now = performance.now();
       var gl = host.querySelectorAll('.rb-drop > i');
       for (var i = 0; i < gl.length; i++) {
         var g = gl[i], a = g.__anim;
@@ -570,9 +770,44 @@
           /* a poll is up to ~60ms behind, so the glyph may sit a few px past
              the surface — the throw starts from the snapped floor, which is
              also where it lands when the drift rose OVER it mid-fall */
-          if (y >= floorY || a.playState === 'finished') throwNow(g, floorY);
+          if (y >= floorY || a.playState === 'finished') {
+            var held = st.dwell[g.__lane];
+            if (held && held.__phase === 'dwell') {
+              /* the crush: this one lands on a character still seated where
+                 it struck. Both go in the same tick — the seated one driven
+                 out low, the newcomer breaking harder — a clustered
+                 two-fragment burst. */
+              st.dwell[g.__lane] = null;
+              throwNow(held, held.__dwellY, 'soft');
+              throwNow(g, floorY, 'crush');
+              shockwave(g, floorY, now);
+            } else if (Math.random() < 0.5) {
+              settle(g, floorY, now);
+            } else {
+              throwNow(g, floorY);
+              shockwave(g, floorY, now);
+            }
+          }
+        } else if (g.__phase === 'dwell') {
+          /* this branch must come before the landed check: the settle
+             animation FINISHES in ~90ms and a finished dwell is not a
+             landing — its __rest is a cycle stale */
+          if (now >= g.__dwellT) {
+            if (st.dwell[g.__lane] === g) st.dwell[g.__lane] = null;
+            throwNow(g, g.__dwellY, 'soft');
+          }
         } else if (a.playState === 'finished') {
           onPileLanded(g);
+        }
+      }
+      /* take spent dust back into the pool. Cancelled, not left finished:
+         resuming from a pause plays every animation it finds, and a finished
+         fade would replay — an idle one stays hidden under its base css. */
+      for (var j = st.fxLive.length - 1; j >= 0; j--) {
+        if (st.fxLive[j].__anim.playState === 'finished') {
+          st.fxLive[j].__anim.cancel();
+          st.fxPool.push(st.fxLive[j]);
+          st.fxLive.splice(j, 1);
         }
       }
     }, 60);
@@ -768,11 +1003,13 @@
   function setPaused(host, want) {
     host.__paused = !!want;
     host.classList.toggle('is-paused', !!want);
-    var gl = host.querySelectorAll('.rb-drop > i'), i;
+    var gl = host.querySelectorAll('.rb-drop > i, .rb-fx > i'), i;
     for (i = 0; i < gl.length; i++) {
       var a = gl[i].__anim;
       if (!a) continue;
-      try { want ? a.pause() : a.play(); } catch (e) {}
+      /* pooled dust holds a CANCELLED animation; play() would run it from
+         nothing, at a stale position, so idle ones are left idle */
+      try { want ? a.pause() : (a.playState !== 'idle' && a.play()); } catch (e) {}
     }
     /* the reaper must stop too, or a paused sheet keeps harvesting whatever
        was already finished and the drift grows while it is meant to be still */
