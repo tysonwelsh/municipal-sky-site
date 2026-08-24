@@ -69,23 +69,22 @@ include '../../includes/header.php';
        turns it on the running sheet; the rest shape the columns themselves
        and only take hold when the sheet is rebuilt (a slide rebuilds after
        a beat; Reset rebuilds at once). */
-    /* The defaults are the darkroom mockup's desk (mockups/mockup-31-drift-
-       loader.html), translated onto this engine's base ranges — the tuning
-       the owner liked: throws about half as far, arcs a quarter as high,
-       short sparse runs, and a shallow heap that reads as letters lying on
-       letters rather than sediment. */
+    /* The defaults are the owner's own dialled-in setting, filed from a
+       Copy-settings URL (2026-08-24): a soft close-in scatter — modest
+       throw, barely any loft, letters tumbling fast and bedding deep into
+       a drift that fills most of the sheet. */
     var DIALS = [
       { k: 'den', g: 'rain',  label: 'Columns',    min: 2,   max: 100,  step: 1,   def: 36,   live: false, u: '%' },
       { k: 'spd', g: 'rain',  label: 'Fall speed', min: 25,  max: 300,  step: 5,   def: 95,   live: false, u: '%' },
       { k: 'run', g: 'rain',  label: 'Run length', min: 30,  max: 300,  step: 10,  def: 50,   live: false, u: '%' },
       { k: 'gap', g: 'rain',  label: 'Run gap',    min: 30,  max: 300,  step: 10,  def: 220,  live: false, u: '%' },
-      { k: 'thr', g: 'crash', label: 'Throw',      min: 0,   max: 300,  step: 5,   def: 80,   live: true,  u: '%' },
-      { k: 'pop', g: 'crash', label: 'Loft',       min: 0,   max: 400,  step: 5,   def: 80,   live: true,  u: '%' },
-      { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 90,   live: true,  u: '%' },
-      { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 1,   def: 48,   live: true,  u: '%' },
+      { k: 'thr', g: 'crash', label: 'Throw',      min: 0,   max: 300,  step: 5,   def: 40,   live: true,  u: '%' },
+      { k: 'pop', g: 'crash', label: 'Loft',       min: 0,   max: 400,  step: 5,   def: 25,   live: true,  u: '%' },
+      { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 205,  live: true,  u: '%' },
+      { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 1,   def: 13,   live: true,  u: '%' },
       { k: 'grv', g: 'crash', label: 'Gravity',    min: 30,  max: 300,  step: 5,   def: 50,   live: true,  u: '%' },
-      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 68,   live: true,  u: '%' },
-      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 60,   live: true,  u: '%' },
+      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 92,   live: true,  u: '%' },
+      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 80,   live: true,  u: '%' },
       { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 500, max: 6100, step: 100, def: 6100, live: true,  u: '',
         fmt: function (v) { return v > 6000 ? 'never' : v; } }
     ];
