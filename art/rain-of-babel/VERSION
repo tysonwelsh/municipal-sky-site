@@ -1,1 +1,1 @@
-0.3.7 — the strike floor: falling columns and toppling slabs now break on the VISIBLE top of the drift, not the nesting-lowered ledger a square below it — no more drifting into the heap before the impact registers
+0.3.8 — impacts land ON the letters, not a third of a square above them; no more dead stop at contact — lodged letters skid to rest, throws start where they touch, debris sheds downhill and spins with its travel, and a deep drift no longer stutters the rain

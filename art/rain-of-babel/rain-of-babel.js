@@ -44,6 +44,9 @@
     var rev = MOK[key] && SYM.indexOf(ch) < 0 && Math.random() < 0.18;
     el.className = 'rb-g rb-' + key + (rev ? ' is-rev' : '') +
                    (el.getAttribute('data-spin') || '');
+    /* the pile sheet paints its deposits itself and needs the script key
+       back to look up the size the CSS would have used */
+    el.__rbKey = key;
     el.textContent = ch;
   }
 
@@ -280,6 +283,14 @@
     for (var b = b0; b <= b1; b++) { sum += st.top[b]; n++; }
     return n ? sum / n : st.H;
   }
+  /* The eye reads INK, not boxes: a glyph's ink fills only ~63% of its cell,
+     with ~4.5px of air inside the box below the striker's ink and ~3px above
+     the pile top's (measured over 447 char/class pairs, 2026-08-24). A lift
+     of the full nesting depth aligns box-bottom to box-top, and the strike
+     registers a third of a square above visible contact. The slack closes
+     that gap; a CELL fraction, so it scales with the zoom. */
+  var INK_SLACK = 0.32;
+
   /* Where the EYE says the drift's top is — the floor a falling thing should
      STRIKE. The height field is a growth ledger: a deposit raises it by only
      (1 - nesting) of a square, so with deep nesting the recorded surface
@@ -287,12 +298,22 @@
      there — and a column that falls to the ledger visibly drifts INTO the
      heap before breaking (owner, 2026-08-24: about one grid square, which
      is nesting x cell, exactly). The strike floor lifts the ledger back by
-     the nesting depth, but only where letters lie: the bare rule is exactly
-     where it says it is. Resting and depositing keep the ledger — that
-     nesting-deep settle after the break is the packed look itself. */
+     the nesting depth LESS the ink slack — boxes overlap where ink only
+     touches — and only where letters lie: the bare rule is exactly where it
+     says it is. Resting and depositing keep the ledger — that nesting-deep
+     settle after the break is the packed look itself. */
   function strikeFloorAt(st, x, w) {
     var s = surfaceMeanAt(st, x, w);
-    return (s < st.H - 0.5 ? s - st.CELL * st.overlap : s) - st.CELL;
+    var lift = Math.max(0, st.CELL * (st.overlap - INK_SLACK));
+    return (s < st.H - 0.5 ? s - lift : s) - st.CELL;
+  }
+  /* the fall line under a point: which side of it the ground is lower on.
+     Two ledger reads a cell out either side; a tie is a coin. */
+  function downhillDir(st, x) {
+    var l = surfaceMeanAt(st, x - st.CELL, st.CELL);
+    var r = surfaceMeanAt(st, x + st.CELL, st.CELL);
+    if (Math.abs(l - r) < 1) return Math.random() < 0.5 ? -1 : 1;
+    return r > l ? 1 : -1;
   }
   function depositAt(st, x, w, restY) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
@@ -436,10 +457,62 @@
     };
     for (var i = 0; i < Math.ceil(W / st.bw) + 1; i++) st.top.push(H);
 
-    var pile = document.createElement('span');
+    /* THE DRIFT IS ONE CANVAS. A deposited character is written once and
+       never touched again — the sweep fades and clears the whole layer, and
+       nothing ever reads a letter back — so it does not need to be an
+       element. It must NOT be one: at ~5000 deposited <i>s the page's frame
+       cadence degraded 17ms -> 67ms and every new throw sat parked on its
+       first keyframe for the difference, a dead stop at the exact moment of
+       contact (measured, 2026-08-24). The DOM now holds only what MOVES.
+       Painted at the device pixel ratio so the type stays crisp; the element
+       path below is the fallback for a sheet that cannot get a 2d context. */
+    var pile = null, pctx = null, dpr = window.devicePixelRatio || 1;
+    try {
+      pile = document.createElement('canvas');
+      pctx = pile.getContext('2d');
+    } catch (e) { pctx = null; }
+    if (pctx) {
+      pile.width = Math.max(1, Math.round(W * dpr));
+      pile.height = Math.max(1, Math.round(H * dpr));
+      /* a canvas is a REPLACED element: the layer's inset-0 css does not
+         stretch it, it sizes to its own bitmap — which is dpr times too big
+         on any retina screen. The css size is stated outright. */
+      pile.style.width = W + 'px';
+      pile.style.height = H + 'px';
+      pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    } else {
+      pile = document.createElement('span');
+    }
     pile.className = 'rb-pile';
     host.appendChild(pile);
     st.layer = pile;
+    st.ctx = pctx;
+    st.dpr = dpr;
+    /* per-script font strings and the baseline the CELL-high line box puts
+       its text on, measured lazily and cached */
+    st.met = {};
+    st.fontStack = (css.getPropertyValue('--rb-mono') || '').trim() ||
+      '"Courier Prime", "Courier New", Courier, monospace';
+    /* Courier Prime arrives late in production, and canvas ink is write-once:
+       letters painted before it lands would keep the fallback face for good
+       (the old elements re-rendered themselves when the font came). So the
+       first deposits are also kept as records, and one repaint follows the
+       font in. The buffer exists only to cover those first seconds — a font
+       that takes thousands of deposits to arrive forfeits the repaint. */
+    st.pending = null;
+    if (pctx && document.fonts && document.fonts.status !== 'loaded') {
+      st.pending = [];
+      document.fonts.ready.then(function () {
+        if (host.__pile !== st || !st.pending) return;
+        var q = st.pending;
+        st.pending = null;
+        if (st.clearing) return;
+        st.met = {};
+        pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        pctx.clearRect(0, 0, st.W, st.H);
+        for (var qi = 0; qi < q.length; qi++) paintDeposit(st, q[qi]);
+      });
+    }
 
     /* which lanes hold a character dwelling at the surface, waiting to be
        crushed out by the next arrival */
@@ -639,7 +712,17 @@
        element's left, which never moved. */
     var sx = fromX == null ? x0 : fromX;
     var r0 = rot0 || 0;
-    var dir = Math.random() < 0.5 ? -1 : 1;
+    /* what it hits matters, and so does which way it leaves: a mound sheds
+       debris off its flanks, so on the heap the throw leans downhill — the
+       drift's own shape acting on the physics instead of only receiving
+       them. The bare rule has no flanks and stays even. A letter released
+       out of a skid keeps the skid's direction — momentum does not re-roll —
+       and a shock break happens in mid-air, above any slope. */
+    var onBare = (st.H - st.CELL - impactY) < st.CELL;
+    var dir;
+    if (g.__dirHint) { dir = g.__dirHint; g.__dirHint = null; }
+    else if (kind === 'shock' || onBare) dir = Math.random() < 0.5 ? -1 : 1;
+    else dir = (Math.random() < 0.65 ? 1 : -1) * downhillDir(st, sx);
     var r = Math.random();
     var m = 0.4 + 0.9 * r * r;
     if (Math.random() < 0.07) m *= 2.2;
@@ -648,10 +731,9 @@
        consequence. Clamped so no dialling makes the burst vanish or leave. */
     var punch = col.__speed / (st.zoom * PUNCH_REF);
     m *= punch < 0.6 ? 0.6 : punch > 1.6 ? 1.6 : punch;
-    /* what it hits matters: the bottom rule is hard and rings — a crisper
-       bouncelet, a touch more lift — where the heap is dead weight that
-       swallows the hop and gives the energy back as skid */
-    var onBare = (st.H - st.CELL - impactY) < st.CELL;
+    /* the bottom rule is hard and rings — a crisper bouncelet, a touch more
+       lift — where the heap is dead weight that swallows the hop and gives
+       the energy back as skid */
     var imp = {
       maxB: onBare ? 2 : 0,
       e: 0.2 + Math.random() * 0.15 + (onBare ? 0.1 : 0),
@@ -660,8 +742,13 @@
          on the slickest ground is the one that crosses half the sheet */
       fric: (120 + Math.random() * 180) * st.zoom * (onBare ? 1.25 : 0.55)
     };
-    /* kept for inspection only: nothing reads it back but the harness */
+    /* kept for inspection only: nothing reads them back but the harness */
     g.__kind = kind || 'point';
+    g.__impY = impactY;
+    /* the pre-roll handed over by the reaper (see there): the crossing is
+       preMs away and the break must not show — or puff — before it */
+    var pre = g.__preMs || 0, preY = g.__preY;
+    g.__preMs = 0;
     var vx, vy;
     if (kind === 'shock') {
       m *= scale;
@@ -676,50 +763,120 @@
       vx = dir * (95 + Math.random() * 430) * st.zoom * st.throwX * m;
       vy = -(115 + Math.random() * 255) * st.zoom * st.popY * m *
            (kind === 'soft' ? 0.35 : onBare ? 1.12 : 0.85);
-      if (kind == null || kind === 'crush') puff(st, sx, impactY, 1 + rnd(3));
+      if (kind == null || kind === 'crush') puff(st, sx, impactY, 1 + rnd(3), pre);
     }
     var dt = 1 / 60;
     var pts = flyPath(st, sx, impactY, vx, vy, st.gravity * st.zoom, dt, PILE_STEPS, imp);
     var flightMs = Math.max(1, (pts.length - 1) * dt * 1000);
-    var spin = (Math.random() < 0.5 ? -1 : 1) * (80 + Math.random() * 420) * st.spinMul;
+    /* ground torque: a piece travelling right rolls clockwise. The sign
+       follows the sideways velocity most of the time; the exceptions are
+       clipped corners. A letter skidding one way while spinning the other
+       reads wrong, and it was a coin toss before. */
+    var spin = (Math.random() < 0.8 ? (vx >= 0 ? 1 : -1) : (vx >= 0 ? -1 : 1)) *
+               (80 + Math.random() * 420) * st.spinMul;
 
+    /* THE PRE-ROLL. When the reaper saw the crossing COMING rather than
+       gone by, the last few px of fall are baked into this same animation:
+       the glyph keeps falling to the exact floor and the break begins
+       THERE, in the same frame stream — no seam, no snap, no early or late
+       registration. */
+    var total = pre + flightMs;
     var frames = [];
+    if (pre > 0) {
+      frames.push({
+        offset: 0, easing: 'linear',
+        transform: 'translate(0px,' + preY.toFixed(1) + 'px) rotate(' + r0.toFixed(1) + 'deg)'
+      });
+    }
     for (var i = 0; i < pts.length; i++) {
       var f = pts.length > 1 ? i / (pts.length - 1) : 1;
       frames.push({
+        offset: (pre + f * flightMs) / total,
         transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
                    pts[i].y.toFixed(1) + 'px) rotate(' + (r0 + spin * f).toFixed(0) + 'deg)',
         easing: 'linear'
       });
     }
-    if (frames.length < 2) frames.push(frames[0]);
+    /* explicit offsets mean the edges must be pinned: a first keyframe past
+       0 or a last short of 1 makes the browser synthesize one from the base
+       css, which parks the glyph at the top of the sheet in plain view */
+    if (frames.length < 2) frames.push({ offset: 1, transform: frames[0].transform, easing: 'linear' });
+    frames[0].offset = 0;
     var rest = pts[pts.length - 1];
     g.__rest = { x: rest.x, y: rest.y, rot: r0 + spin };
     g.__phase = 'fly';
     if (g.__anim) g.__anim.cancel();
-    g.__anim = g.animate(frames, { duration: flightMs, fill: 'both' });
+    g.__anim = g.animate(frames, { duration: total, fill: 'both' });
   }
 
-  /* Not every arrival breaks at once. About half LODGE where they strike —
-     a couple of px of give, a few degrees off square — and sit a fraction of
-     a beat before the break, so the rhythm of a column being taken apart is
-     tick...tick-TACK, not a metronome. The dwell deadline lives on the glyph
-     and is judged in the reaper's own time: pausing stops the reaper, so a
-     dwell can outlive a pause but can never leak past one. A dwelling
-     character is still in its lane — the lane count is untouched until it
-     finally comes to rest. */
-  function settle(g, floorY, now) {
+  /* Not every arrival breaks at once. About half LODGE where they strike and
+     sit a fraction of a beat before the break, so the rhythm of a column
+     being taken apart is tick...tick-TACK, not a metronome. But a lodge is
+     not a freeze: the fragment that does not shatter keeps its momentum and
+     PLOUGHS to rest — a decelerating skid of a fraction of a square, biased
+     downhill, easing over into a lean. The old 2px wedge was sub-perceptual,
+     and a letter holding still just above the surface read as a dead stop
+     (owner, 2026-08-24). The TIMING machinery is unchanged: the deadline
+     lives on the glyph and is judged in the reaper's own time, so pausing
+     stops it and a dwell can outlive a pause but never leak past one. A
+     dwelling character is still in its lane — the lane count is untouched
+     until it finally comes to rest. */
+  function settle(g, impactY, now) {
     var col = g.__col, st = col.__st;
+    /* the pre-roll, exactly as in throwNow: the tail of the fall rides at
+       the front of this animation, and the lodge deadline counts from the
+       moment of CONTACT, not of scheduling */
+    var pre = g.__preMs || 0, preY = g.__preY;
+    g.__preMs = 0;
     g.__phase = 'dwell';
-    g.__dwellY = floorY;
-    g.__dwellT = now + 40 + Math.random() * 120;
+    g.__dwellT = now + pre + 40 + Math.random() * 120;
+    g.__impY = impactY;
     st.dwell[g.__lane] = g;
-    var tilt = ((rnd(2) ? 1 : -1) * (3 + Math.random() * 3)).toFixed(1);
+    var dir = Math.random() < 0.7 ? downhillDir(st, g.__x0) : (rnd(2) ? 1 : -1);
+    var s = g.__skid = {
+      y: impactY,
+      dx: dir * (0.25 + Math.random() * 0.55) * st.CELL,
+      dy: 2 + Math.random(),
+      rot: dir * (6 + Math.random() * 8),
+      dur: 120 + Math.random() * 60,
+      pre: pre,
+      dir: dir
+    };
+    /* sampled with the same cubic ease-out releaseDwell evaluates: fast off
+       the mark, dying to nothing — the deceleration is the message */
+    var total = pre + s.dur;
+    var fr = [], K = 5;
+    if (pre > 0) {
+      fr.push({ offset: 0, easing: 'linear',
+                transform: 'translate(0px,' + preY.toFixed(1) + 'px) rotate(0deg)' });
+    }
+    for (var k = 0; k <= K; k++) {
+      var u = 1 - k / K, e = 1 - u * u * u;
+      fr.push({
+        offset: (pre + (k / K) * s.dur) / total,
+        transform: 'translate(' + (s.dx * e).toFixed(1) + 'px,' +
+                   (impactY + s.dy * e).toFixed(1) + 'px) rotate(' +
+                   (s.rot * e).toFixed(1) + 'deg)',
+        easing: 'linear'
+      });
+    }
+    fr[0].offset = 0;
     if (g.__anim) g.__anim.cancel();
-    g.__anim = g.animate(
-      [{ transform: 'translate(0px,' + floorY + 'px) rotate(0deg)', easing: 'ease-out' },
-       { transform: 'translate(0px,' + (floorY + 2) + 'px) rotate(' + tilt + 'deg)' }],
-      { duration: 90, fill: 'both' });
+    g.__anim = g.animate(fr, { duration: total, fill: 'both' });
+  }
+
+  /* The break at the end of a lodge starts from wherever the skid has
+     carried the letter — evaluated off the animation clock with the ease the
+     keyframes were sampled at, no layout read — and it keeps the skid's
+     direction: being crushed out, or simply letting go, does not turn a
+     ploughing thing around. */
+  function releaseDwell(g, kind) {
+    var s = g.__skid, e = 1;
+    if (g.__anim && g.__anim.currentTime != null)
+      e = Math.max(0, Math.min(1, (g.__anim.currentTime - s.pre) / s.dur));
+    var u = 1 - e, k = 1 - u * u * u;
+    g.__dirHint = s.dir;
+    throwNow(g, s.y + s.dy * k, kind, undefined, g.__x0 + s.dx * k, s.rot * k);
   }
 
   /* The break runs UP the column: a hit below has a fair chance of knocking
@@ -836,7 +993,7 @@
      because a landing can ask for three at once and the sheet takes dozens
      of landings a second. Dust deposits nothing and touches no height
      field; under reduced motion the pool is never built and this is a no-op. */
-  function puff(st, x, y, n) {
+  function puff(st, x, y, n, delay) {
     if (!st.fxPool) return;
     while (n-- > 0 && st.fxPool.length) {
       var d = st.fxPool.pop();
@@ -845,13 +1002,16 @@
       var y1 = y + st.CELL * (0.6 + Math.random() * 0.3);
       if (d.__anim) d.__anim.cancel();
       d.textContent = DUST[rnd(DUST.length)];
+      /* fill none, NOT both: a delayed flick (dust waits out the striker's
+         pre-roll) must stay hidden under its base css until the moment of
+         contact, and both would paint the first keyframe through the wait */
       d.__anim = d.animate(
         [{ transform: 'translate(' + x1.toFixed(1) + 'px,' + y1.toFixed(1) + 'px)',
            opacity: 0.55, easing: 'ease-out' },
          { transform: 'translate(' + (x1 + dir * (0.3 + Math.random() * 0.8) * st.CELL).toFixed(1) + 'px,' +
                       (y1 + (Math.random() * 0.5 - 0.1) * st.CELL).toFixed(1) + 'px)',
            opacity: 0 }],
-        { duration: 120 + Math.random() * 160, fill: 'both' });
+        { duration: 120 + Math.random() * 160, delay: delay || 0, fill: 'none' });
       st.fxLive.push(d);
     }
   }
@@ -876,34 +1036,56 @@
           if (ct == null) continue;
           var y = g.__fallY0 + Math.max(0, ct - g.__fallDelay) / 1000 * g.__fallSpeed;
           var floorY = strikeFloorAt(st, g.__x0, st.CELL);
-          /* a poll is up to ~60ms behind, so the glyph may sit a few px past
-             the surface — the throw starts from the snapped floor, which is
-             also where it lands when the drift rose OVER it mid-fall */
-          if (y >= floorY || a.playState === 'finished') {
+          /* BREAK WHERE THE EYE SEES THE TOUCH. A poll every 60ms can only
+             ever notice a crossing after the fact, and rendering the break
+             from the snapped floor played as an upward rewind at the very
+             moment of contact (measured: 8-16px at the median). But the
+             fall is linear at a known speed, so the crossing can be seen
+             COMING: within a tick of the floor, the break is computed now
+             and the remaining fall rides at the front of its animation (the
+             pre-roll in throwNow/settle) — the glyph touches the exact ink
+             floor and reacts in the same frame stream, no seam either way.
+             A crossing already gone by (a late tick, or a drift that rose
+             OVER a slow faller mid-air) breaks from the detected y, capped
+             a few px past the floor. Rest and deposit keep the ledger;
+             only where the break begins moves. */
+          var early = y < floorY - 0.5;
+          if (y + g.__fallSpeed * 0.075 >= floorY || a.playState === 'finished') {
             var held = st.dwell[g.__lane];
             if (held && held.__phase === 'dwell') {
-              /* the crush: this one lands on a character still seated where
-                 it struck. Both go in the same tick — the seated one driven
-                 out low, the newcomer breaking harder — a clustered
-                 two-fragment burst. */
-              st.dwell[g.__lane] = null;
-              throwNow(held, held.__dwellY, 'soft');
-              throwNow(g, floorY, 'crush');
-              shockwave(g, floorY, now);
-            } else if (Math.random() < 0.5) {
-              settle(g, floorY, now);
+              /* the crush: this one lands on a character still skidding
+                 where it struck. It waits for the touch itself — the crush
+                 must be SEEN to be caused — then both go in one tick: the
+                 lodged one driven out low along its own skid, the newcomer
+                 breaking harder. A clustered two-fragment burst. */
+              if (!early) {
+                var impactY = Math.min(y, floorY + st.CELL * 0.3);
+                st.dwell[g.__lane] = null;
+                releaseDwell(held, 'soft');
+                throwNow(g, impactY, 'crush');
+                shockwave(g, impactY, now);
+              }
             } else {
-              throwNow(g, floorY);
-              shockwave(g, floorY, now);
+              if (early) {
+                g.__preMs = (floorY - y) / g.__fallSpeed * 1000;
+                g.__preY = y;
+              }
+              var impY = early ? floorY : Math.min(y, floorY + st.CELL * 0.3);
+              if (Math.random() < 0.5) {
+                settle(g, impY, now);
+              } else {
+                throwNow(g, impY);
+                shockwave(g, impY, now);
+              }
             }
           }
         } else if (g.__phase === 'dwell') {
-          /* this branch must come before the landed check: the settle
-             animation FINISHES in ~90ms and a finished dwell is not a
-             landing — its __rest is a cycle stale */
+          /* this branch must come before the landed check: the skid
+             animation FINISHES on its own in ~120-180ms and a finished
+             lodge is not a landing — its __rest is a cycle stale */
           if (now >= g.__dwellT) {
             if (st.dwell[g.__lane] === g) st.dwell[g.__lane] = null;
-            throwNow(g, g.__dwellY, 'soft');
+            releaseDwell(g, 'soft');
           }
         } else if (g.__phase === 'slab') {
           /* likewise before the landed check — a finished slab has struck,
@@ -936,6 +1118,47 @@
     }, 60);
   }
 
+  /* One script's font string and baseline, measured once and cached. The
+     size is the script's own (the same table the CSS sizes are generated
+     from, times the zoom); the baseline is where a CELL-high line box puts
+     its text — half the leading, then the ascent — measured off a Latin
+     strut character so the PRIMARY font's metrics rule, exactly as CSS
+     inline layout does for every script in the stack. */
+  function glyphFont(st, key) {
+    var m = st.met[key];
+    if (!m) {
+      var fs = (POOL[key] ? POOL[key].s : 10) * st.zoom;
+      st.ctx.font = fs.toFixed(2) + 'px ' + st.fontStack;
+      var tm = st.ctx.measureText('H');
+      var a = tm.fontBoundingBoxAscent, d = tm.fontBoundingBoxDescent;
+      if (a == null) { a = fs * 0.8; d = fs * 0.2; }
+      m = st.met[key] = { font: st.ctx.font,
+                          base: (st.CELL - (a + d)) / 2 + a };
+    }
+    return m;
+  }
+
+  /* Paint one deposited character the way its element rendered: rotated
+     about its own box center, clipped to the CELL square (the element had
+     overflow:hidden), the drift's ink at the drift's opacity. No mirroring —
+     an is-rev glyph's inline rotate replaced the class's scaleX on the old
+     elements too, so deposits have never rendered mirrored. */
+  function paintDeposit(st, dep) {
+    var ctx = st.ctx, m = glyphFont(st, dep.k), h = st.CELL / 2;
+    ctx.save();
+    ctx.translate(dep.x + h, dep.y + h);
+    ctx.rotate(dep.rot * Math.PI / 180);
+    ctx.beginPath();
+    ctx.rect(-h, -h, st.CELL, st.CELL);
+    ctx.clip();
+    ctx.font = m.font;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#4a628a';
+    ctx.globalAlpha = 0.9;
+    ctx.fillText(dep.ch, 0, m.base - h);
+    ctx.restore();
+  }
+
   function onPileLanded(g) {
     var col = g.__col, st = col.__st, r = g.__rest;
     /* out of its lane. Decremented here and incremented in runGlyph, exactly
@@ -956,14 +1179,24 @@
     else if (st.n >= st.cap) st.skipCap = (st.skipCap || 0) + 1;
     else if (!(restY > st.floorLimit)) st.skipFloor = (st.skipFloor || 0) + 1;
     if (!st.clearing && st.n < st.cap && restY > st.floorLimit) {
-      var d = document.createElement('i');
-      d.className = g.className;
-      d.textContent = g.textContent;
-      d.style.left = r.x.toFixed(1) + 'px';
-      d.style.top = restY.toFixed(1) + 'px';
       /* lying at whatever angle it stopped at, plus a little */
-      d.style.transform = 'rotate(' + (r.rot % 360 + (rnd(21) - 10)).toFixed(0) + 'deg)';
-      st.layer.appendChild(d);
+      var rot = r.rot % 360 + (rnd(21) - 10);
+      if (st.ctx) {
+        var dep = { k: g.__rbKey, ch: g.textContent, x: r.x, y: restY, rot: rot };
+        paintDeposit(st, dep);
+        if (st.pending) {
+          st.pending.push(dep);
+          if (st.pending.length > 1500) st.pending = null;
+        }
+      } else {
+        var d = document.createElement('i');
+        d.className = g.className;
+        d.textContent = g.textContent;
+        d.style.left = r.x.toFixed(1) + 'px';
+        d.style.top = restY.toFixed(1) + 'px';
+        d.style.transform = 'rotate(' + rot.toFixed(0) + 'deg)';
+        st.layer.appendChild(d);
+      }
       depositAt(st, r.x, st.CELL, restY);
       st.n++;
       /* Sweep on the AVERAGE depth, not the highest point. surfaceAt returns
@@ -995,7 +1228,11 @@
     st.clearing = true;
     st.layer.classList.add('is-going');
     setTimeout(function () {
-      st.layer.innerHTML = '';
+      /* the same 2s opacity fade as ever — a canvas element fades like any
+         other — then the ink itself is wiped */
+      if (st.ctx) st.ctx.clearRect(0, 0, st.W, st.H);
+      else st.layer.innerHTML = '';
+      if (st.pending) st.pending.length = 0;
       st.layer.classList.remove('is-going');
       for (var i = 0; i < st.top.length; i++) st.top[i] = st.H;
       st.n = 0;
