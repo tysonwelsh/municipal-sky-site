@@ -1,1 +1,1 @@
-0.3.9 — debris obeys the slope: downhill it runs and collects at the base, uphill it stalls and turns back; letters break exactly on each other's ink
+0.3.10 — the rain is even-handed: the right side of the sheet no longer out-rains and out-piles the left (a birth-ordered race for scarce free lanes, plus a height-field footprint that leaked one bucket rightward, both fixed) — which side runs heavier is finally chance
