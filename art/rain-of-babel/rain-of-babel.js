@@ -283,8 +283,16 @@
   var DUST = '·.,';      /* what dust is printed as */
 
   function surfaceAt(st, x, w) {
+    /* HALF-OPEN on the right: [x, x+w). A cell is exactly three buckets and
+       every lane is cell-aligned, so the old closed endpoint — floor((x+w)/bw)
+       — swept in a whole bucket to the RIGHT of the glyph on every read and
+       write. That loaded the coin: deposits smeared their footprint right,
+       crest reads told a letter the ground fell away rightward, and the
+       right side of every run outgrew the left (owner, 2026-08-24: dozens
+       of runs, never once left-heavy). ceil-1 equals floor everywhere except
+       exactly on a boundary, which is precisely where it must exclude. */
     var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var y = st.H;
     for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
     return y;
@@ -298,7 +306,7 @@
      thrown thing does, and is what makes the heap read as packed. */
   function surfaceMeanAt(st, x, w) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var sum = 0, n = 0;
     for (var b = b0; b <= b1; b++) { sum += st.top[b]; n++; }
     return n ? sum / n : st.H;
@@ -347,7 +355,8 @@
   function strikeFloorFor(st, g) {
     if (g.__inkBot != null) {
       var b0 = Math.max(0, Math.floor(g.__x0 / st.bw));
-      var b1 = Math.min(st.inkTop.length - 1, Math.floor((g.__x0 + st.CELL) / st.bw));
+      var b1 = Math.min(st.inkTop.length - 1,
+                        Math.max(b0, Math.ceil((g.__x0 + st.CELL) / st.bw) - 1));
       var sum = 0, n = 0;
       for (var b = b0; b <= b1; b++) { sum += st.inkTop[b]; n++; }
       var m = n ? sum / n : st.H;
@@ -375,7 +384,7 @@
   }
   function depositAt(st, x, w, restY) {
     var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.floor((x + w) / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var newTop = restY + st.CELL * st.overlap;
     for (var b = b0; b <= b1; b++) if (newTop < st.top[b]) st.top[b] = newTop;
   }
@@ -477,7 +486,23 @@
      quiet from the schedule is a guess, and getting it wrong puts two runs in
      one column. So occupancy is COUNTED instead: incremented when a character
      is launched into a lane, decremented when it comes to rest. */
-  function laneFree(st, i) { return !st.busy[i] && !st.lane[i]; }
+  /* A lane is blocked by a run still FALLING in it — nothing else. Debris
+     flying, dwelling, or skidding to rest does not conflict with a run
+     entering from the top a whole gap later; only a column still coming
+     down (or toppling as a slab) does. The old test (!st.lane[i], every
+     airborne glyph) blocked ~45 of 52 lanes at any moment; even with this
+     narrower count, falls outlast relocation cycles and most block-ends
+     find nothing free — which is why the relocation RACE at the queueing
+     site had to be made fair: scarce wins plus a birth-ordered contest was
+     the right-heavy drift. st.lane keeps its job as the rest-accounting
+     invariant; this is a separate count. */
+  function laneFree(st, i) { return !st.busy[i] && !st.fallN[i]; }
+  function unblockLane(st, g) {
+    if (g.__blocksLane) {
+      g.__blocksLane = false;
+      if (st.fallN[g.__lane]) st.fallN[g.__lane]--;
+    }
+  }
 
   function claimSlot(st, owner, avoid) {
     var free = [];
@@ -537,7 +562,7 @@
       throwX: opt.throwX == null ? 1 : opt.throwX,
       popY: opt.popY == null ? 1 : opt.popY,
       spinMul: opt.spin == null ? 1 : opt.spin,
-      n: 0, clearing: false, columns: [], busy: {}, lane: {}
+      n: 0, clearing: false, columns: [], busy: {}, lane: {}, fallN: {}
     };
     for (var i = 0; i < Math.ceil(W / st.bw) + 1; i++) st.top.push(H);
     /* THE INK LEDGER — a second height field beside st.top, holding the
@@ -751,12 +776,25 @@
     var x0 = col.__x;
     if (col.__launched % col.__block === 0) {
       col.__next += col.__gap;
-      relocate(col);
+      /* NOT relocated here. Free lanes are chronically scarce (falls outlast
+         relocation cycles, so most block-ends find none and the run stays
+         put), which makes winning a free lane precious — and glyphs recycle
+         in DOM order, which is column CREATION order, which is sorted left
+         to right. Relocating inline handed every same-tick race to the
+         leftmost-born column; the right-born ones lost, stayed, and rained
+         extra blocks where they stood — the right-heavy drift the owner saw
+         on every run (2026-08-24, measured: launches 54% right of centre
+         while claims were uniform). Queued instead, and the reaper drains
+         the queue in SHUFFLED order at the tick's end; the next launch into
+         the new lane is a whole gap away, so the deferral costs nothing. */
+      (st.reloQ = st.reloQ || []).push(col);
     }
     g.style.left = x0 + 'px';
     /* this character now occupies that lane until it comes to rest */
     g.__lane = Math.round(x0 / st.CELL);
     st.lane[g.__lane] = (st.lane[g.__lane] || 0) + 1;
+    st.fallN[g.__lane] = (st.fallN[g.__lane] || 0) + 1;
+    g.__blocksLane = true;
 
     /* the fall: straight down at a constant rate, aimed at the sheet's own
        bottom. Where it actually ENDS is the reaper's call — the interception
@@ -815,6 +853,8 @@
                  lobbed, and it falls from wherever it was. */
   function throwNow(g, impactY, kind, scale, fromX, rot0) {
     var col = g.__col, st = col.__st, x0 = g.__x0;
+    /* the fall (or the slab it became) is over: the lane is a lane again */
+    unblockLane(st, g);
     /* fromX/rot0: a slab member breaks from where the topple LEFT it — leaned
        off its lane and already rotated — not from the lane's own x at zero.
        The physics starts there; the keyframe offsets stay relative to the
@@ -932,6 +972,7 @@
      until it finally comes to rest. */
   function settle(g, impactY, now) {
     var col = g.__col, st = col.__st;
+    unblockLane(st, g);
     /* the pre-roll, exactly as in throwNow: the tail of the fall rides at
        the front of this animation, and the lodge deadline counts from the
        moment of CONTACT, not of scheduling */
@@ -1238,6 +1279,17 @@
           st.fxLive.splice(j, 1);
         }
       }
+      /* the tick's relocations, drained in SHUFFLED order: free lanes are
+         scarce and whoever asks first gets them, so the asking order must
+         not be the columns' birth order (see the queueing site) */
+      if (st.reloQ && st.reloQ.length) {
+        var q = st.reloQ;
+        st.reloQ = [];
+        for (var ri = q.length - 1; ri > 0; ri--) {
+          var rj = rnd(ri + 1), rt = q[ri]; q[ri] = q[rj]; q[rj] = rt;
+        }
+        for (ri = 0; ri < q.length; ri++) relocate(q[ri]);
+      }
     }, 60);
   }
 
@@ -1326,7 +1378,8 @@
     }
     var top = dep.y + h + minY;
     var b0 = Math.max(0, Math.floor((dep.x + h + minX) / st.bw));
-    var b1 = Math.min(st.inkTop.length - 1, Math.floor((dep.x + h + maxX) / st.bw));
+    var b1 = Math.min(st.inkTop.length - 1,
+                      Math.max(b0, Math.ceil((dep.x + h + maxX) / st.bw) - 1));
     for (var b = b0; b <= b1; b++) if (top < st.inkTop[b]) st.inkTop[b] = top;
   }
 
