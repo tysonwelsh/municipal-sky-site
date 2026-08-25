@@ -244,6 +244,20 @@
      beat before breaking, both take longer to come home than a pure lob. */
   var FLIGHT_ALLOWANCE = 1.8;
   var BOUNCE = 0.46;          /* speed kept after hitting a wall */
+  /* THE WALL MUST RETURN ENERGY, or it becomes an absorber that collects
+     the whole sheet. At the owner's Bounce dial (13%) a wall kept 1.7% of
+     a fragment's lateral energy: 99% of wall-touching flights rested flush
+     against it (measured), and the edge bucket integrated the tail of
+     every trajectory on the sheet into one solid climbing strip — the
+     other half of the wall-stack black hole. A letter striking plaster
+     crumples and tumbles back; it does not glue on. So the wall keeps its
+     own material response as a floor, jittered so rebounds do not read
+     metronome-identical. The Bounce dial keeps its meaning everywhere
+     above the floor — dial it past ~35-60 and the walls behave exactly as
+     dialled; only the dead low end is refused. That narrowing is the one
+     deliberate dial-semantics change in this fix (flagged to the owner). */
+  var WALL_E0 = 0.35, WALL_EJ = 0.25;  /* wall keeps 35-60% of vx */
+  function wallE(st) { return Math.max(st.bounce, WALL_E0 + Math.random() * WALL_EJ); }
   var PILE_STEPS = 600;       /* integration cap: 10s of flight at 60 steps/s */
   /* The fall speed the pile's throw ranges are tuned at — the MIDDLE of this
      sheet's own launch range at the shipped speed dial, so the default feel
@@ -290,9 +304,11 @@
        crest reads told a letter the ground fell away rightward, and the
        right side of every run outgrew the left (owner, 2026-08-24: dozens
        of runs, never once left-heavy). ceil-1 equals floor everywhere except
-       exactly on a boundary, which is precisely where it must exclude. */
-    var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
+       exactly on a boundary, which is precisely where it must exclude.
+       Clamped to bMax: the tail of the array past the last reachable bucket
+       is not terrain, and a span may not read it. */
+    var b0 = Math.max(0, Math.min(st.bMax, Math.floor(x / st.bw)));
+    var b1 = Math.min(st.bMax, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var y = st.H;
     for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
     return y;
@@ -305,8 +321,8 @@
      lets a letter settle INTO the hollows between spikes, which is what a
      thrown thing does, and is what makes the heap read as packed. */
   function surfaceMeanAt(st, x, w) {
-    var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
+    var b0 = Math.max(0, Math.min(st.bMax, Math.floor(x / st.bw)));
+    var b1 = Math.min(st.bMax, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var sum = 0, n = 0;
     for (var b = b0; b <= b1; b++) { sum += st.top[b]; n++; }
     return n ? sum / n : st.H;
@@ -354,8 +370,8 @@
      back to the constant-slack floor and behave exactly as before. */
   function strikeFloorFor(st, g) {
     if (g.__inkBot != null) {
-      var b0 = Math.max(0, Math.floor(g.__x0 / st.bw));
-      var b1 = Math.min(st.inkTop.length - 1,
+      var b0 = Math.max(0, Math.min(st.bMax, Math.floor(g.__x0 / st.bw)));
+      var b1 = Math.min(st.bMax,
                         Math.max(b0, Math.ceil((g.__x0 + st.CELL) / st.bw) - 1));
       var sum = 0, n = 0;
       for (var b = b0; b <= b1; b++) { sum += st.inkTop[b]; n++; }
@@ -367,24 +383,42 @@
   /* the gradient under a point: d(top)/dx over a two-cell central
      difference of bucket MEANS, positive where the ground falls away to
      the right. Each read is itself a three-bucket mean, so a five-bucket
-     window smooths every lookup; the clamp is the spike guard. */
+     window smooths every lookup; the clamp is the spike guard.
+
+     At the walls the difference goes ONE-SIDED: the probe centers pull in
+     to the ground that actually exists and the divisor is the real span.
+     The right probe used to hang over buckets no deposit can ever reach —
+     permanent bare floor — so within two cells of the right wall every
+     slope read said the ground fell away wallward, forever: the slide
+     pulled letters in, the landing turned fall speed into wallward skid,
+     the launch bias threw breaks at the wall, and nothing ever read a way
+     back out. That phantom cliff was half the wall-stack black hole. In
+     the interior the pulled probes are exactly the old central difference,
+     bit for bit. */
   function slopeAt(st, x) {
-    var l = surfaceMeanAt(st, x - st.CELL, st.CELL);
-    var r = surfaceMeanAt(st, x + st.CELL, st.CELL);
-    var s = (r - l) / (2 * st.CELL);
+    var xl = Math.max(0, x - st.CELL), xr = Math.min(st.W - st.CELL, x + st.CELL);
+    if (xr - xl < st.bw) return 0;
+    var l = surfaceMeanAt(st, xl, st.CELL);
+    var r = surfaceMeanAt(st, xr, st.CELL);
+    var s = (r - l) / (xr - xl);
     return s > SLOPE_CLAMP ? SLOPE_CLAMP : s < -SLOPE_CLAMP ? -SLOPE_CLAMP : s;
   }
   /* the fall line under a point: which side of it the ground is lower on.
-     Two ledger reads a cell out either side; a tie is a coin. */
+     Two ledger reads a cell out either side — pulled inboard at the walls,
+     same as slopeAt, so a crest against the wall sheds INTO the sheet
+     rather than at a phantom drop beyond it; a tie is a coin. */
   function downhillDir(st, x) {
-    var l = surfaceMeanAt(st, x - st.CELL, st.CELL);
-    var r = surfaceMeanAt(st, x + st.CELL, st.CELL);
+    var xl = Math.max(0, x - st.CELL), xr = Math.min(st.W - st.CELL, x + st.CELL);
+    var l = surfaceMeanAt(st, xl, st.CELL);
+    var r = surfaceMeanAt(st, xr, st.CELL);
     if (Math.abs(l - r) < 1) return Math.random() < 0.5 ? -1 : 1;
     return r > l ? 1 : -1;
   }
   function depositAt(st, x, w, restY) {
-    var b0 = Math.max(0, Math.floor(x / st.bw));
-    var b1 = Math.min(st.top.length - 1, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
+    /* writes cannot reach past bMax (x is clamped before any deposit) —
+       the clamp here documents the domain, it never bites */
+    var b0 = Math.max(0, Math.min(st.bMax, Math.floor(x / st.bw)));
+    var b1 = Math.min(st.bMax, Math.max(b0, Math.ceil((x + w) / st.bw) - 1));
     var newTop = restY + st.CELL * st.overlap;
     for (var b = b0; b <= b1; b++) if (newTop < st.top[b]) st.top[b] = newTop;
   }
@@ -404,8 +438,9 @@
      and goes airborne again off an edge taller than most of one — a skid off
      the top of the heap ends as a drop down its side, not a hover.
      imp carries the contact numbers {maxB, e, vB, fric}; the wall bounce
-     stays the dial's. PILE_STEPS still caps the whole path, so the worst
-     case is what it always was. */
+     is the dial's, floored at the wall's own response (see wallE).
+     PILE_STEPS still caps the whole path, so the worst case is what it
+     always was. */
   function flyPath(st, x0, y0, vx, vy, g, dt, maxSteps, imp) {
     var pts = [{ x: x0, y: y0 }], x = x0, y = y0, i;
     var bounces = imp ? imp.maxB : 0;
@@ -418,8 +453,8 @@
         vy += g * dt;
         x += vx * dt;
         y += vy * dt;
-        if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
-        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
+        if (x <= 0)            { x = -x; vx = -vx * wallE(st); }
+        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * wallE(st); }
         var floorY = surfaceMeanAt(st, x, st.CELL) - st.CELL;
         if (y >= floorY && vy > 0) {
           y = floorY;
@@ -442,8 +477,8 @@
         var sEff = s > 0 ? Math.max(0, s - SLOPE_DEAD) : Math.min(0, s + SLOPE_DEAD);
         vx += SLOPE_GAIN * g * sEff / (1 + sEff * sEff) * dt;
         x += vx * dt;
-        if (x <= 0)            { x = -x; vx = -vx * st.bounce; }
-        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * st.bounce; }
+        if (x <= 0)            { x = -x; vx = -vx * wallE(st); }
+        else if (x >= st.W - st.CELL) { x = 2 * (st.W - st.CELL) - x; vx = -vx * wallE(st); }
         var f = surfaceMeanAt(st, x, st.CELL) - st.CELL;
         if (f > y + st.CELL * 0.9)      { sliding = false; vy = 0; }
         else if (f < y - st.CELL * 0.55) { x = pts[pts.length - 1].x; pts.push({ x: x, y: y }); break; }
@@ -553,6 +588,11 @@
     var st = {
       W: W, H: H, CELL: CELL, zoom: zoom, cols: cols, rows: rows,
       bw: CELL / PILE_BUCKET,
+      /* the highest bucket a deposit can REACH (x clamps at W - CELL, spans
+         are half-open) — the ledger rows past it hold bare floor forever.
+         Every read clamps here, or a probe near the right wall reads that
+         never-touched ground as a cliff the pile keeps falling off. */
+      bMax: Math.ceil(W / (CELL / PILE_BUCKET)) - 1,
       top: [],
       floorLimit: H - rows * CELL * (opt.maxFill == null ? 0.72 : opt.maxFill),
       cap: opt.cap == null ? 2600 : opt.cap,
@@ -991,6 +1031,9 @@
       ? downhillDir(st, g.__x0) : (rnd(2) ? 1 : -1);
     var dx = dir * (0.25 + Math.random() * 0.55) * st.CELL;
     if (Math.abs(gr) > 0.25 && dir * gr < 0) dx *= 0.5;
+    /* the skid stays on the paper: a lodge in the last lane was animating
+       up to ~15px past the wall face before the throw pulled it back */
+    dx = Math.max(-g.__x0, Math.min(st.W - st.CELL - g.__x0, dx));
     var s = g.__skid = {
       y: impactY,
       dx: dx,
@@ -1377,8 +1420,9 @@
       if (y < minY) minY = y;
     }
     var top = dep.y + h + minY;
-    var b0 = Math.max(0, Math.floor((dep.x + h + minX) / st.bw));
-    var b1 = Math.min(st.inkTop.length - 1,
+    /* same domain note as depositAt: already unreachable past bMax */
+    var b0 = Math.max(0, Math.min(st.bMax, Math.floor((dep.x + h + minX) / st.bw)));
+    var b1 = Math.min(st.bMax,
                       Math.max(b0, Math.ceil((dep.x + h + maxX) / st.bw) - 1));
     for (var b = b0; b <= b1; b++) if (top < st.inkTop[b]) st.inkTop[b] = top;
   }
