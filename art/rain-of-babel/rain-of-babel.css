@@ -59,34 +59,76 @@
    its proportions and corners — and the panel script rebuilds when the
    grid underneath actually changed. */
 .rb-sheet[data-paper="ruled"] {
-  /* a leaf from the marbled composition book: white, 7.5 x 9.75 inches
-     (taller than it is wide — the width follows the sheet's height at
-     that ratio), with the book's rounded corners. The ruling is a blue
-     line every second row of squares — letters land ON the lines, not
-     between them — under a header band: four squares of open paper
-     closed by a red header line, where the name and date would go. The
-     red margin line runs the full height, crossing the header, as on
-     the real page. The band is made by an opaque paper-colour layer
-     laid OVER the ruling (the header line sits exactly on the ruling's
-     four-square beat, so the lines below stay in step). */
+  /* A LEAF FROM THE MARBLED COMPOSITION BOOK, drawn to the real thing's
+     measurements: 7.5 x 9.75 in of bright white stock, wide (legal) rule
+     at 11/32 in, a single red margin rule 1.25 in in from the left running
+     the full height, and an open header band at the top closed by a red
+     line — with the first blue rule a WHOLE rule-space below that red one,
+     so the first writing row is a full row like every row under it.
+
+     Everything is stated as a proportion of the sheet the way the paper
+     states it as a proportion of the page:
+
+       rule pitch   11/32 in / 9.75 in = 0.0351 H  ->  29.1px at H = 830
+       margin rule  1.25 in / 7.5 in   = 0.167 W   ->  16.7% (a percentage,
+                                                       so it holds at any W)
+       header band  0.81 in / 9.75 in  = 0.081 H   ->  3 squares = 67.5px
+
+     THE PITCH IS 1.25 SQUARES (28.125px). The physics snaps glyphs to the
+     22.5px square, so a rule at a whole number of squares would put every
+     letter on a line — but the nearest whole-square pitches are 22.5px
+     (a third too tight: 33 rows, college rule at best) and 45px (half the
+     rows real paper has). 28.125px is within 3.4% of the true wide-rule
+     proportion and still lands exactly on the square grid every fourth
+     rule, which is the best of both that this module allows. Realism of
+     the paper wins the tie, per the owner.
+
+     Layers, topmost first: the red margin (drawn over everything, as it is
+     printed over the ruling); an opaque paper strip at the foot, where the
+     rules simply stop; the red header rule; the blue ruling, laid as a
+     no-repeat tile whose box BEGINS one full pitch under the header rule,
+     so nothing has to be masked off the top. */
+  --rb-rl: calc(var(--rb-cell) * 1.25);      /* 28.125px — the rule pitch */
+  --rb-head: calc(var(--rb-cell) * 3);       /* 67.5px — open header band */
+  --rb-paper-w: #fdfdfc;                     /* white paper, a hair warm */
+  --rb-rl-blue: rgba(126, 158, 198, 0.75);
+  --rb-rl-red: rgba(203, 88, 98, 0.82);
   width: min(calc(var(--rb-sheet-h) * 0.7692), 100%);
-  border-radius: calc(var(--rb-cell) * 1.2);
-  background:
+  border-radius: calc(var(--rb-cell) * 0.8);
+  border-color: rgba(58, 68, 84, 0.20);
+  box-shadow: 0 12px 28px -12px rgba(28, 34, 46, 0.40),
+              0 2px 5px rgba(28, 34, 46, 0.14);
+  background-color: var(--rb-paper-w);
+  background-image:
+    /* the margin rule: full height, top edge to bottom edge */
     linear-gradient(90deg,
-      transparent 0 calc(var(--rb-cell) * 3),
-      rgba(214, 96, 96, 0.55) calc(var(--rb-cell) * 3) calc(var(--rb-cell) * 3 + 1px),
-      transparent calc(var(--rb-cell) * 3 + 1px)),
+      transparent 0 16.7%,
+      var(--rb-rl-red) 16.7% calc(16.7% + 1.5px),
+      transparent calc(16.7% + 1.5px)),
+    /* the foot: one rule-space of unruled paper */
     linear-gradient(180deg,
-      transparent 0 calc(var(--rb-cell) * 4),
-      rgba(214, 96, 96, 0.55) calc(var(--rb-cell) * 4) calc(var(--rb-cell) * 4 + 1px),
-      transparent calc(var(--rb-cell) * 4 + 1px)),
+      transparent 0 calc(100% - var(--rb-rl)),
+      var(--rb-paper-w) calc(100% - var(--rb-rl))),
+    /* the header rule, closing the open band */
     linear-gradient(180deg,
-      #fdfdfb 0 calc(var(--rb-cell) * 4 + 1px),
-      transparent calc(var(--rb-cell) * 4 + 1px)),
-    repeating-linear-gradient(0deg,
-      rgba(96, 128, 168, 0.38) 0 1px,
-      transparent 1px calc(var(--rb-cell) * 2)),
-    #fdfdfb;
+      transparent 0 var(--rb-head),
+      var(--rb-rl-red) var(--rb-head) calc(var(--rb-head) + 1.5px),
+      transparent calc(var(--rb-head) + 1.5px)),
+    /* the ruling itself */
+    repeating-linear-gradient(180deg,
+      var(--rb-rl-blue) 0 1px,
+      transparent 1px var(--rb-rl));
+  background-repeat: no-repeat;
+  background-position:
+    0 0,
+    0 0,
+    0 0,
+    0 calc(var(--rb-head) + var(--rb-rl));
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    100% 1600px;
 }
 .rb-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
