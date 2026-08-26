@@ -104,9 +104,12 @@ include '../../includes/header.php';
       val[d.k] = isNaN(v) ? d.def : Math.min(d.max, Math.max(d.min, v));
     });
 
-    /* THE PAPER. Purely a look — the physics never reads it, so switching
-       repaints the sheet under the drift without disturbing a single letter.
-       The choice rides the shared URL like the dials do (`ppr`). */
+    /* THE PAPER. The physics never reads it, but a paper may reshape the
+       sheet itself (the composition leaf is narrower than the grid), so a
+       switch rebuilds ONLY when the grid underneath actually changed —
+       same test as the resize handler. A same-shape switch repaints under
+       the drift without disturbing a letter. The choice rides the shared
+       URL like the dials do (`ppr`). */
     var PAPERS = ['grid', 'ruled'];
     var sheet = host.parentNode; /* .rb-sheet */
     var paperSel = panel.querySelector('.rb-paper');
@@ -116,6 +119,9 @@ include '../../includes/header.php';
       paper = p;
       sheet.setAttribute('data-paper', p);
       paperSel.value = p;
+      var st = host.__pile;
+      if (st && (Math.floor(host.clientWidth / st.CELL) !== st.cols ||
+                 Math.floor(host.clientHeight / st.CELL) !== st.rows)) build();
     }
     setPaper(paper);
     paperSel.addEventListener('change', function () { setPaper(paperSel.value); });

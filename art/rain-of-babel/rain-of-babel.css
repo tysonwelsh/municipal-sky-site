@@ -55,20 +55,26 @@
    Chosen from the panel's Paper menu; the engineering grid above is the
    default (and the no-JS fallback). Every paper is drawn on the same
    --rb-cell module the physics snaps to, so the letters keep their ruling
-   whatever is printed under them. */
+   whatever is printed under them. A paper may also change the SHEET —
+   its proportions and corners — and the panel script rebuilds when the
+   grid underneath actually changed. */
 .rb-sheet[data-paper="ruled"] {
-  /* composition-book ruling: a blue line every second row of squares —
-     letters land ON the lines, not between them — and one red margin
-     line three squares in from the left */
+  /* a leaf from the marbled composition book: white, 7.5 x 9.75 inches
+     (taller than it is wide — the width follows the sheet's height at
+     that ratio), with the book's rounded corners. The ruling is a blue
+     line every second row of squares — letters land ON the lines, not
+     between them — and one red margin line three squares in. */
+  width: min(calc(var(--rb-sheet-h) * 0.7692), 100%);
+  border-radius: calc(var(--rb-cell) * 1.2);
   background:
     linear-gradient(90deg,
       transparent 0 calc(var(--rb-cell) * 3),
-      rgba(196, 88, 88, 0.45) calc(var(--rb-cell) * 3) calc(var(--rb-cell) * 3 + 1px),
+      rgba(214, 96, 96, 0.55) calc(var(--rb-cell) * 3) calc(var(--rb-cell) * 3 + 1px),
       transparent calc(var(--rb-cell) * 3 + 1px)),
     repeating-linear-gradient(0deg,
-      rgba(74, 98, 138, 0.30) 0 1px,
+      rgba(96, 128, 168, 0.38) 0 1px,
       transparent 1px calc(var(--rb-cell) * 2)),
-    var(--rb-paper);
+    #fdfdfb;
 }
 .rb-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
