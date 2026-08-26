@@ -92,36 +92,149 @@
      so it can never run out of rules however tall the sheet gets. */
   --rb-rl: calc(var(--rb-sheet-h) * 0.0351); /* 11/32 in — the rule pitch */
   --rb-head: calc(var(--rb-sheet-h) * 0.083);/* open header band */
-  --rb-paper-w: #fdfdfc;                     /* white paper, a hair warm */
-  --rb-rl-blue: rgba(126, 158, 198, 0.75);
-  --rb-rl-red: rgba(203, 88, 98, 0.82);
+  --rb-paper-w: #fdfcf8;                     /* white paper, a hair warm */
+  /* THE BLEED, stated the same way the ruling is: as a fraction of the
+     sheet, so the softness scales with the paper instead of turning into a
+     fat line on a short window and a hard one on a tall. The comment gives
+     each stop's value at the 880px sheet the profile was tuned on. */
+  --rb-ink-a: calc(var(--rb-sheet-h) * 0.00080); /* 0.7px — rise shoulder  */
+  --rb-ink-b: calc(var(--rb-sheet-h) * 0.00182); /* 1.6px — the rule itself */
+  --rb-ink-c: calc(var(--rb-sheet-h) * 0.00284); /* 2.5px — decay shoulder */
+  --rb-ink-d: calc(var(--rb-sheet-h) * 0.00386); /* 3.4px */
+  --rb-ink-e: calc(var(--rb-sheet-h) * 0.00534); /* 4.7px — ink ends       */
+  --rb-red-a: calc(var(--rb-sheet-h) * 0.00102); /* 0.9px */
+  --rb-red-b: calc(var(--rb-sheet-h) * 0.00205); /* 1.8px */
+  --rb-red-c: calc(var(--rb-sheet-h) * 0.00352); /* 3.1px */
+
+  /* ---- THE INK -----------------------------------------------------------
+     Printed, not drawn. A composition book's ruling is laid down by a cheap
+     web press onto absorbent stock, so it is (a) LOW CONTRAST — a dusty
+     grey-blue, never a saturated stroke — and (b) SOFT-EDGED, because the ink
+     bleeds a hair into the tooth of the paper. Both colours are stated as
+     one base rgb with the alpha supplied per stop below, so the whole ruling
+     can be faded or lifted by moving the peak alphas alone.
+
+       blue  116 144 180   peak alpha 0.38-0.46 (was a flat 0.75)
+       red   188 116 120   peak alpha 0.47      (was 0.82 of a hotter red)
+
+     The line PROFILE is a feathered ramp rather than a 1px band: a rise, a
+     short peak, and a longer decay. Its centre of mass lands within half a
+     pixel of the old hard band's, and the ruling layer's background position
+     is pulled back by exactly its rise, so no rule moves. Because the
+     softness is expressed in gradient stops and not in a rasterised edge, it
+     survives at any device pixel ratio — at 2x the ramp simply gets twice as
+     many samples, where a blur or a 1px-band-plus-filter would not. */
   width: min(calc(var(--rb-sheet-h) * 0.7692), 100%);
   /* the cut corner of the book's leaf: ~1/8 in of a 7.5 in page = 0.017 W */
   border-radius: calc(var(--rb-sheet-h) * 0.7692 * 0.017);
-  border-color: rgba(58, 68, 84, 0.20);
+  /* a sheet edge, not an outline: warm and light, the shadow does the lifting */
+  border-color: rgba(122, 116, 102, 0.30);
   box-shadow: 0 12px 28px -12px rgba(28, 34, 46, 0.40),
               0 2px 5px rgba(28, 34, 46, 0.14);
   background-color: var(--rb-paper-w);
   background-image:
-    /* the margin rule: full height, top edge to bottom edge */
+    /* 1. PAPER GRAIN — the tooth of the stock. feTurbulence at ~0.6 cycles
+       per pixel, mapped to a warm near-black, then run through a deliberately SPARSE
+       alpha ramp (0 0 0.015 0.11 0.32). Turbulence is bunched around 0.5, so
+       a linear alpha would give an even haze that just greys the sheet; the
+       sparse ramp keeps the common case at almost nothing and lets the tail
+       spike, which is what fibre looks like — mostly clean paper with the
+       odd darker fleck. Mean darkening ~3%, so the stock stays white.
+       It rides ABOVE the ink, because the tooth shows through a printed
+       line too. stitchTiles keeps the 160px tile seamless.
+
+       This is the ONE measurement here that is not a fraction of the sheet.
+       Fibre is the surface of the stock rather than part of the printed
+       image, and holding it at a fixed size keeps it the same fineness at
+       every sheet height; scaled down with a short window it would resolve
+       into something closer to static. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.38 0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 1 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0.015 0.11 0.32'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23g)'/%3E%3C/svg%3E"),
+    /* 2. THE INK WASH — the one layer that does the most work. A very
+       low-frequency turbulence — on the full-height sheet a ~50px horizontal
+       cell and a ~70px vertical one — painted in the PAPER's own colour, so
+       it is invisible on bare stock and only shows where there is ink to eat
+       into. Its tile is sized as a fraction of the sheet, because press
+       unevenness belongs to the printed image and scales with it. It gives the
+       press-and-absorption unevenness that uniformity betrays: density
+       varying ALONG each rule in slow passages, and — because its vertical
+       cell does not divide the rule pitch — differing from one rule to the
+       next, and down the length of the red margin as well. The alpha table
+       is deliberately bottom-heavy (0 0 0.08 0.34 0.62): mostly nothing, with
+       occasional thin patches, rather than an even haze. */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='w' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.014' numOctaves='3' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.992 0 0 0 0 0.988 0 0 0 0 0.973 0 0 0 1 0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='table' tableValues='0 0 0.08 0.34 0.62'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23w)'/%3E%3C/svg%3E"),
+    /* 3. SHEET-SCALE MOTTLE: two enormous, almost-not-there warm washes, so
+       the stock is very slightly unevenly lit corner to corner the way a
+       real leaf photographed flat is. Alpha 0.03 — at this size the eye
+       reads it as depth, not as a gradient. */
+    radial-gradient(120% 85% at 20% 8%, rgba(122, 110, 86, 0.030), rgba(122, 110, 86, 0) 62%),
+    radial-gradient(110% 80% at 84% 88%, rgba(110, 102, 84, 0.026), rgba(110, 102, 84, 0) 60%),
+    /* 4. the margin rule: full height, top edge to bottom edge — printed over
+       the ruling, and feathered on both cheeks like everything else */
     linear-gradient(90deg,
-      transparent 0 16.7%,
-      var(--rb-rl-red) 16.7% calc(16.7% + 1.5px),
-      transparent calc(16.7% + 1.5px)),
-    /* the foot: one rule-space of unruled paper */
+      rgba(188, 116, 120, 0)    0,
+      rgba(188, 116, 120, 0)    calc(16.7% - var(--rb-ink-b)),
+      rgba(188, 116, 120, 0.14) calc(16.7% - var(--rb-red-a)),
+      rgba(188, 116, 120, 0.47) 16.7%,
+      rgba(188, 116, 120, 0.41) calc(16.7% + var(--rb-red-a)),
+      rgba(188, 116, 120, 0.21) calc(16.7% + var(--rb-red-b)),
+      rgba(188, 116, 120, 0)    calc(16.7% + var(--rb-red-c))),
+    /* 5. the foot: one rule-space of unruled paper */
     linear-gradient(180deg,
       transparent 0 calc(100% - var(--rb-rl)),
       var(--rb-paper-w) calc(100% - var(--rb-rl))),
-    /* the header rule, closing the open band */
+    /* 6. the header rule, closing the open band */
     linear-gradient(180deg,
-      transparent 0 var(--rb-head),
-      var(--rb-rl-red) var(--rb-head) calc(var(--rb-head) + 1.5px),
-      transparent calc(var(--rb-head) + 1.5px)),
-    /* the ruling itself */
+      rgba(188, 116, 120, 0)    0,
+      rgba(188, 116, 120, 0)    calc(var(--rb-head) - var(--rb-ink-b)),
+      rgba(188, 116, 120, 0.14) calc(var(--rb-head) - var(--rb-red-a)),
+      rgba(188, 116, 120, 0.47) var(--rb-head),
+      rgba(188, 116, 120, 0.41) calc(var(--rb-head) + var(--rb-red-a)),
+      rgba(188, 116, 120, 0.21) calc(var(--rb-head) + var(--rb-red-b)),
+      rgba(188, 116, 120, 0)    calc(var(--rb-head) + var(--rb-red-c))),
+    /* 7. THE RULING. One period covers FOUR rules, not one, so that no two
+       neighbouring lines carry quite the same ink: peaks run 0.46 / 0.40 /
+       0.43 / 0.38 and then repeat. The rules still land on exact multiples
+       of the pitch — only their density cycles. (The pitch itself is a
+       fraction of a viewport-clamped height and so is almost never a whole
+       number of pixels, which quietly adds a second, finer variation: each
+       rule falls on a different sub-pixel phase.)
+
+       Each line is a soft S-ramp rather than a band: it rises to its peak on
+       the geometric rule (--rb-ink-b) and decays over roughly twice that
+       again, with shoulder stops on both sides so the curve is rounded and
+       not a triangle. The footprint is deliberately wide enough that even at
+       1x — where the whole line is only four or five samples — the top edge
+       lands on an intermediate value instead of stepping straight to full
+       ink. The peaks were dropped ~12% when the profile was widened, so the
+       line carries the same total ink and does not read heavier. */
     repeating-linear-gradient(180deg,
-      var(--rb-rl-blue) 0 1px,
-      transparent 1px var(--rb-rl));
-  background-repeat: no-repeat;
+      rgba(116, 144, 180, 0)    0,
+      rgba(116, 144, 180, 0.14) var(--rb-ink-a),
+      rgba(116, 144, 180, 0.46) var(--rb-ink-b),
+      rgba(116, 144, 180, 0.40) var(--rb-ink-c),
+      rgba(116, 144, 180, 0.21) var(--rb-ink-d),
+      rgba(116, 144, 180, 0)    var(--rb-ink-e),
+      rgba(116, 144, 180, 0)    var(--rb-rl),
+      rgba(116, 144, 180, 0.12) calc(var(--rb-rl) + var(--rb-ink-a)),
+      rgba(116, 144, 180, 0.40) calc(var(--rb-rl) + var(--rb-ink-b)),
+      rgba(116, 144, 180, 0.34) calc(var(--rb-rl) + var(--rb-ink-c)),
+      rgba(116, 144, 180, 0.18) calc(var(--rb-rl) + var(--rb-ink-d)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) + var(--rb-ink-e)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) * 2),
+      rgba(116, 144, 180, 0.13) calc(var(--rb-rl) * 2 + var(--rb-ink-a)),
+      rgba(116, 144, 180, 0.43) calc(var(--rb-rl) * 2 + var(--rb-ink-b)),
+      rgba(116, 144, 180, 0.37) calc(var(--rb-rl) * 2 + var(--rb-ink-c)),
+      rgba(116, 144, 180, 0.19) calc(var(--rb-rl) * 2 + var(--rb-ink-d)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) * 2 + var(--rb-ink-e)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) * 3),
+      rgba(116, 144, 180, 0.11) calc(var(--rb-rl) * 3 + var(--rb-ink-a)),
+      rgba(116, 144, 180, 0.38) calc(var(--rb-rl) * 3 + var(--rb-ink-b)),
+      rgba(116, 144, 180, 0.33) calc(var(--rb-rl) * 3 + var(--rb-ink-c)),
+      rgba(116, 144, 180, 0.17) calc(var(--rb-rl) * 3 + var(--rb-ink-d)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) * 3 + var(--rb-ink-e)),
+      rgba(116, 144, 180, 0)    calc(var(--rb-rl) * 4));
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat,
+                     no-repeat, no-repeat, no-repeat;
   /* measure every layer from the sheet's outer edge, not from inside the
      1px border: otherwise the header band and the foot are each a pixel
      short of their fraction, and the foot's paper strip stops one row above
@@ -131,8 +244,18 @@
     0 0,
     0 0,
     0 0,
-    0 calc(var(--rb-head) + var(--rb-rl));
+    0 0,
+    0 0,
+    0 0,
+    0 0,
+    /* pulled back by the line profile's rise (--rb-ink-b), so the ink still
+       peaks on the geometric rule one full pitch under the header */
+    0 calc(var(--rb-head) + var(--rb-rl) - var(--rb-ink-b));
   background-size:
+    160px 160px,
+    calc(var(--rb-sheet-h) * 0.4773) calc(var(--rb-sheet-h) * 0.4773),
+    100% 100%,
+    100% 100%,
     100% 100%,
     100% 100%,
     100% 100%,
