@@ -121,6 +121,11 @@
       var(--rb-rl-blue) 0 1px,
       transparent 1px var(--rb-rl));
   background-repeat: no-repeat;
+  /* measure every layer from the sheet's outer edge, not from inside the
+     1px border: otherwise the header band and the foot are each a pixel
+     short of their fraction, and the foot's paper strip stops one row above
+     the bottom edge — leaving a hairline rule stranded on the border. */
+  background-origin: border-box;
   background-position:
     0 0,
     0 0,
