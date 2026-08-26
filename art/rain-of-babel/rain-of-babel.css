@@ -66,35 +66,37 @@
      line — with the first blue rule a WHOLE rule-space below that red one,
      so the first writing row is a full row like every row under it.
 
-     Everything is stated as a proportion of the sheet the way the paper
-     states it as a proportion of the page:
+     EVERY MEASUREMENT HERE IS A FRACTION OF THE SHEET, never a fixed px.
+     The sheet height is viewport-clamped, so anything absolute would make
+     the paper change ruling with the window — a tall window would get a
+     composition book and a short one a legal pad. The real page states all
+     of its measurements as fractions of its own height, and so does this:
 
-       rule pitch   11/32 in / 9.75 in = 0.0351 H  ->  29.1px at H = 830
-       margin rule  1.25 in / 7.5 in   = 0.167 W   ->  16.7% (a percentage,
-                                                       so it holds at any W)
-       header band  0.81 in / 9.75 in  = 0.081 H   ->  3 squares = 67.5px
+       rule pitch   11/32 in / 9.75 in = 0.0351 H
+       header band  0.81 in  / 9.75 in = 0.083  H
+       margin rule  1.25 in  / 7.5 in  = 0.167  W  (a percentage of width)
+       corner       ~1/8 in  / 7.5 in  = 0.017  W  (W = 0.7692 H)
 
-     THE PITCH IS 1.25 SQUARES (28.125px). The physics snaps glyphs to the
-     22.5px square, so a rule at a whole number of squares would put every
-     letter on a line — but the nearest whole-square pitches are 22.5px
-     (a third too tight: 33 rows, college rule at best) and 45px (half the
-     rows real paper has). 28.125px is within 3.4% of the true wide-rule
-     proportion and still lands exactly on the square grid every fourth
-     rule, which is the best of both that this module allows. Realism of
-     the paper wins the tie, per the owner.
+     The ruling deliberately does NOT chase the glyph module: at the true
+     wide-rule proportion no fixed multiple of the 22.5px square coincides
+     with the rules anyway, so the paper is drawn to the paper's numbers and
+     the rain simply falls across it.
 
      Layers, topmost first: the red margin (drawn over everything, as it is
      printed over the ruling); an opaque paper strip at the foot, where the
      rules simply stop; the red header rule; the blue ruling, laid as a
      no-repeat tile whose box BEGINS one full pitch under the header rule,
-     so nothing has to be masked off the top. */
-  --rb-rl: calc(var(--rb-cell) * 1.25);      /* 28.125px — the rule pitch */
-  --rb-head: calc(var(--rb-cell) * 3);       /* 67.5px — open header band */
+     so nothing has to be masked off the top. The tile is a full sheet-height
+     tall, which — starting 0.118 H down — always overruns the bottom edge,
+     so it can never run out of rules however tall the sheet gets. */
+  --rb-rl: calc(var(--rb-sheet-h) * 0.0351); /* 11/32 in — the rule pitch */
+  --rb-head: calc(var(--rb-sheet-h) * 0.083);/* open header band */
   --rb-paper-w: #fdfdfc;                     /* white paper, a hair warm */
   --rb-rl-blue: rgba(126, 158, 198, 0.75);
   --rb-rl-red: rgba(203, 88, 98, 0.82);
   width: min(calc(var(--rb-sheet-h) * 0.7692), 100%);
-  border-radius: calc(var(--rb-cell) * 0.8);
+  /* the cut corner of the book's leaf: ~1/8 in of a 7.5 in page = 0.017 W */
+  border-radius: calc(var(--rb-sheet-h) * 0.7692 * 0.017);
   border-color: rgba(58, 68, 84, 0.20);
   box-shadow: 0 12px 28px -12px rgba(28, 34, 46, 0.40),
               0 2px 5px rgba(28, 34, 46, 0.14);
@@ -128,7 +130,7 @@
     100% 100%,
     100% 100%,
     100% 100%,
-    100% 1600px;
+    100% 100%;
 }
 .rb-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
   display: block; overflow: hidden; }
