@@ -42,8 +42,8 @@ include '../../includes/header.php';
       <button type="button" class="rb-reset">Reset</button>
       <button type="button" class="rb-copy">Copy settings</button>
       <select class="rb-paper" aria-label="Paper">
-        <option value="grid">Engineering grid</option>
         <option value="ruled">Ruled notebook</option>
+        <option value="grid">Engineering grid</option>
       </select>
       <output class="rb-count">&mdash;</output>
     </div>
@@ -74,21 +74,22 @@ include '../../includes/header.php';
        and only take hold when the sheet is rebuilt (a slide rebuilds after
        a beat; Reset rebuilds at once). */
     /* The defaults are the owner's own dialled-in setting, filed from a
-       Copy-settings URL (2026-08-24): a soft close-in scatter — modest
-       throw, barely any loft, letters tumbling fast and bedding deep into
-       a drift that fills most of the sheet. */
+       Copy-settings URL (2026-08-26, superseding the 2026-08-24 filing):
+       a gentler rain on the composition leaf — slower fall, shorter
+       throw with a touch more loft, calmer spin, letters bedding into a
+       drift that may fill the whole sheet. */
     var DIALS = [
       { k: 'den', g: 'rain',  label: 'Columns',    min: 2,   max: 100,  step: 1,   def: 36,   live: false, u: '%' },
-      { k: 'spd', g: 'rain',  label: 'Fall speed', min: 25,  max: 300,  step: 5,   def: 95,   live: false, u: '%' },
+      { k: 'spd', g: 'rain',  label: 'Fall speed', min: 25,  max: 300,  step: 5,   def: 80,   live: false, u: '%' },
       { k: 'run', g: 'rain',  label: 'Run length', min: 30,  max: 300,  step: 10,  def: 50,   live: false, u: '%' },
-      { k: 'gap', g: 'rain',  label: 'Run gap',    min: 30,  max: 300,  step: 10,  def: 220,  live: false, u: '%' },
-      { k: 'thr', g: 'crash', label: 'Throw',      min: 0,   max: 300,  step: 5,   def: 40,   live: true,  u: '%' },
-      { k: 'pop', g: 'crash', label: 'Loft',       min: 0,   max: 400,  step: 5,   def: 25,   live: true,  u: '%' },
-      { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 205,  live: true,  u: '%' },
-      { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 1,   def: 13,   live: true,  u: '%' },
+      { k: 'gap', g: 'rain',  label: 'Run gap',    min: 30,  max: 300,  step: 10,  def: 190,  live: false, u: '%' },
+      { k: 'thr', g: 'crash', label: 'Throw',      min: 0,   max: 300,  step: 5,   def: 30,   live: true,  u: '%' },
+      { k: 'pop', g: 'crash', label: 'Loft',       min: 0,   max: 400,  step: 5,   def: 35,   live: true,  u: '%' },
+      { k: 'spn', g: 'crash', label: 'Spin',       min: 0,   max: 300,  step: 5,   def: 155,  live: true,  u: '%' },
+      { k: 'bnc', g: 'crash', label: 'Bounce',     min: 0,   max: 95,   step: 1,   def: 8,    live: true,  u: '%' },
       { k: 'grv', g: 'crash', label: 'Gravity',    min: 30,  max: 300,  step: 5,   def: 50,   live: true,  u: '%' },
-      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 92,   live: true,  u: '%' },
-      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 80,   live: true,  u: '%' },
+      { k: 'nst', g: 'pool',  label: 'Nesting',    min: 10,  max: 95,   step: 1,   def: 87,   live: true,  u: '%' },
+      { k: 'fil', g: 'pool',  label: 'Pool depth', min: 10,  max: 100,  step: 2,   def: 100,  live: true,  u: '%' },
       { k: 'cap', g: 'pool',  label: 'Sweep at',   min: 500, max: 6100, step: 100, def: 6100, live: true,  u: '',
         fmt: function (v) { return v > 6000 ? 'never' : v; } }
     ];
@@ -110,7 +111,7 @@ include '../../includes/header.php';
        same test as the resize handler. A same-shape switch repaints under
        the drift without disturbing a letter. The choice rides the shared
        URL like the dials do (`ppr`). */
-    var PAPERS = ['grid', 'ruled'];
+    var PAPERS = ['ruled', 'grid']; /* first entry is the default paper */
     var sheet = host.parentNode; /* .rb-sheet */
     var paperSel = panel.querySelector('.rb-paper');
     var paper = qs.get('ppr');

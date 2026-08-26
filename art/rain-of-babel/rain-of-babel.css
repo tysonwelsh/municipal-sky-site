@@ -52,12 +52,13 @@
               0 2px 6px rgba(46, 34, 12, 0.28);
 }
 /* ---- the paper -----------------------------------------------------------
-   Chosen from the panel's Paper menu; the engineering grid above is the
-   default (and the no-JS fallback). Every paper is drawn on the same
-   --rb-cell module the physics snaps to, so the letters keep their ruling
-   whatever is printed under them. A paper may also change the SHEET —
-   its proportions and corners — and the panel script rebuilds when the
-   grid underneath actually changed. */
+   Chosen from the panel's Paper menu; the ruled leaf below is the default
+   (the panel script sets data-paper before the first build — the
+   engineering grid above remains the no-JS fallback). Every paper is
+   drawn on the same --rb-cell module the physics snaps to, so the letters
+   keep their ruling whatever is printed under them. A paper may also
+   change the SHEET — its proportions and corners — and the panel script
+   rebuilds when the grid underneath actually changed. */
 .rb-sheet[data-paper="ruled"] {
   /* A LEAF FROM THE MARBLED COMPOSITION BOOK, drawn to the real thing's
      measurements: 7.5 x 9.75 in of bright white stock, wide (legal) rule
