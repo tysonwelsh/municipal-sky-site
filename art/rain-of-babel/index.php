@@ -41,6 +41,10 @@ include '../../includes/header.php';
       <button type="button" class="rb-pause" aria-pressed="false">Pause</button>
       <button type="button" class="rb-reset">Reset</button>
       <button type="button" class="rb-copy">Copy settings</button>
+      <select class="rb-paper" aria-label="Paper">
+        <option value="grid">Engineering grid</option>
+        <option value="ruled">Ruled notebook</option>
+      </select>
       <output class="rb-count">&mdash;</output>
     </div>
     <div class="rb-panel-groups">
@@ -99,6 +103,22 @@ include '../../includes/header.php';
       var v = parseInt(qs.get(d.k), 10);
       val[d.k] = isNaN(v) ? d.def : Math.min(d.max, Math.max(d.min, v));
     });
+
+    /* THE PAPER. Purely a look — the physics never reads it, so switching
+       repaints the sheet under the drift without disturbing a single letter.
+       The choice rides the shared URL like the dials do (`ppr`). */
+    var PAPERS = ['grid', 'ruled'];
+    var sheet = host.parentNode; /* .rb-sheet */
+    var paperSel = panel.querySelector('.rb-paper');
+    var paper = qs.get('ppr');
+    if (PAPERS.indexOf(paper) < 0) paper = PAPERS[0];
+    function setPaper(p) {
+      paper = p;
+      sheet.setAttribute('data-paper', p);
+      paperSel.value = p;
+    }
+    setPaper(paper);
+    paperSel.addEventListener('change', function () { setPaper(paperSel.value); });
 
     function opts() {
       return {
@@ -160,6 +180,7 @@ include '../../includes/header.php';
     copyBtn.addEventListener('click', function () {
       var q = new URLSearchParams();
       DIALS.forEach(function (d) { q.set(d.k, val[d.k]); });
+      q.set('ppr', paper);
       var url = location.origin + location.pathname + '?' + q.toString();
       function done(ok) {
         copyBtn.textContent = ok ? 'Copied' : 'Copy failed';
