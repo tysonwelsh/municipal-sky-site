@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Honest Bar &mdash; three redraws</title>
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --blue:#4a628a;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:48px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;line-height:2;
+  color:var(--tink-3);margin:0 auto 20px;max-width:560px}
+.row{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0}
+figcaption{margin-top:10px;font-size:.52rem;letter-spacing:.12em;line-height:2;
+  text-transform:uppercase;color:var(--tink-3);text-align:center;max-width:300px}
+figcaption b{color:var(--tink-2);letter-spacing:.16em}
+
+/* the darkroom swatch, at the desktop swatch measure, graph paper copied
+   from the live card (the 45px major / 9px fine ruling) */
+.sw{position:relative;overflow:hidden;width:229.6px;height:184.8px;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    var(--plate);
+  border:1px solid rgba(55,65,79,.30);
+  box-shadow:0 4px 10px -3px rgba(46,34,12,.5), 0 1px 3px rgba(46,34,12,.35)}
+
+/* ---- A · the ledger: the paper's own squares, inked one at a time ------- */
+.ledger{position:absolute;left:0;top:0;right:0;bottom:0}
+.ledger .cellrow{position:absolute}
+.ledger .cell{position:absolute;top:1px;width:7px;height:7px;background:var(--blue)}
+.ledger .cell.is-next{animation:lgBlink 0.9s steps(1,end) infinite}
+@keyframes lgBlink{0%{opacity:0}50%{opacity:.55}}
+.ledger .base{position:absolute;height:0;border-top:1px solid var(--blue);opacity:.8}
+.ledger .stub{position:absolute;font-size:9px;line-height:9px;color:var(--blue);
+  letter-spacing:.08em}
+
+/* ---- B · the teletype: the bar set in type, like the wait-words --------- */
+.tele{position:absolute;left:0;top:0;right:0;bottom:0;
+  display:flex;align-items:center;justify-content:center}
+.tele .line{font-family:var(--tmono);font-weight:700;font-size:11.4px;
+  letter-spacing:.08em;color:var(--blue);white-space:pre;text-align:center;
+  line-height:1.9}
+.tele .pct{display:inline-block;min-width:3.2em;text-align:left}
+
+/* ---- C · the tally: counting toward no total ---------------------------- */
+.tally{position:absolute;left:0;top:0;right:0;bottom:0}
+.tally svg{display:block;width:100%;height:100%}
+/* no ink-in fade: a once-only opacity animation parks at its FROM frame
+   (opacity 0) whenever the tab is hidden and animations are frozen, which
+   blanks the whole count — strokes simply appear on their tick instead */
+.tally line{stroke:var(--blue);stroke-width:1.6;stroke-linecap:round}
+
+footer{margin-top:56px;text-align:center;font-size:.5rem;letter-spacing:.16em;
+  color:var(--tink-3);text-transform:uppercase;line-height:2.2}
+</style></head><body>
+<div class="sheet">
+  <h1>The Honest Bar &mdash; Three Redraws</h1>
+  <p class="no">mockup 38 &middot; candidates for the benched bar &middot; 2026-08-26</p>
+  <hr class="rule">
+  <p class="dek">The joke stays; the dress goes. Each candidate below runs the bench&rsquo;s
+  own motion model verbatim &mdash; the seeded climb that <b>stalls, takes setbacks, and
+  second-guesses itself above 80 without ever finishing</b> (darkHonestBar&rsquo;s 150-tick,
+  45-second track) &mdash; but redrawn from scratch in the <b>ruling blue</b> the lettered
+  indicators now share, flat on the paper, nothing embossed. Three different answers to
+  &ldquo;what does fake progress look like on graph paper.&rdquo; Each runs on its own seed,
+  so they move independently.</p>
+
+  <h2>A &middot; The Ledger</h2>
+  <div class="sub">progress as squares of the paper inked in, one to a cell on the grid&rsquo;s
+  own row &middot; a setback lifts ink off the tail; the next square blinks, unsure &middot;
+  no numeral, no frame &mdash; the sheet&rsquo;s ruling is the track</div>
+  <div class="row">
+    <figure><div class="sw"><div class="ledger" id="cand-a"></div></div>
+    <figcaption><b>the ledger</b> &mdash; the bar is the graph paper doing what graph paper
+    is for. reads at any size; the blink on the waiting square is the flicker.</figcaption></figure>
+  </div>
+
+  <h2>B &middot; The Teletype &mdash; PICKED (owner, 2026-08-26)</h2>
+  <div class="sub">the bar set entirely in type, kin to the wait-words &middot; the readout
+  is a liar: it disagrees with the fill, repeats itself, and occasionally reports
+  <b>??%</b> &middot; centered like the scatterword</div>
+  <div class="row">
+    <figure><div class="sw"><div class="tele" id="cand-b"></div></div>
+    <figcaption><b>the teletype</b> &mdash; typography instead of chrome. the percent lies
+    independently of the bar, which is the whole joke said twice.
+    ported into darkHonestBar as generated change-point keyframes, 2026-08-26.</figcaption></figure>
+  </div>
+
+  <h2>C &middot; The Tally</h2>
+  <div class="sub">hand-count tally marks accumulating along the rules, four strokes and a
+  strike &middot; counting without a total &middot; a setback un-counts from the end,
+  stroke by stroke</div>
+  <div class="row">
+    <figure><div class="sw"><div class="tally" id="cand-c"><svg viewBox="0 0 229.6 184.8"
+      preserveAspectRatio="none"></svg></div></div>
+    <figcaption><b>the tally</b> &mdash; someone is keeping score of the wait by hand,
+    and the total means nothing. the most &ldquo;office&rdquo; of the three.</figcaption></figure>
+  </div>
+
+  <footer>behavior identical across all three: the bench&rsquo;s 45s seeded track &middot;
+  ink #4a628a &middot; pick one (or mix) and it ports into darkHonestBar&rsquo;s
+  markup branch</footer>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  /* the bench's motion model, verbatim from darkHonestBar (junk-drawer.js):
+     the house fold seeds a xorshift32, then 150 ticks of climb / stall /
+     setback below 80 and mean-reverting wander above. Here it runs LIVE on
+     a 0.3s interval instead of being baked into keyframes, because each
+     candidate repaints DOM rather than a width. */
+  var RATE = 6, SETBACK = 0.17, DEPTH = 18, THRESH = 80, AMP = 12;
+  var TICK = 300, TICKS = 150;
+  function makeTrack(seed) {
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    var st = h || 88172645;
+    function rnd() {
+      st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+      return st / 4294967296;
+    }
+    var track = [], v = 0, r, k;
+    for (k = 0; k <= TICKS; k++) {
+      track.push(v);
+      r = rnd();
+      if (v < THRESH) {
+        if (r < SETBACK) v -= rnd() * DEPTH;
+        else if (r < SETBACK + 0.18) { /* stall */ }
+        else v += rnd() * RATE;
+      } else {
+        v += (THRESH + 5 - v) * 0.12 + (rnd() - 0.5) * 2 * AMP * 0.4;
+      }
+      v = Math.max(0, Math.min(98, v));
+    }
+    return { track: track, rnd: rnd };
+  }
+  function drive(seed, paint) {
+    var m = makeTrack(seed), k = 0;
+    paint(m.track[0], 0, m.rnd);
+    setInterval(function () {
+      k = (k + 1) % m.track.length;
+      paint(m.track[k], k, m.rnd);
+    }, TICK);
+  }
+
+  /* ---- A · the ledger ---------------------------------------------------- */
+  (function () {
+    var host = document.getElementById('cand-a');
+    /* the track rides a fine rule: 21 cells of 9px = 189, snapped to the
+       grid so every inked square is one of the paper's own */
+    var COLS = 21, C = 9, left = 18, top = 90;
+    var row = document.createElement('div');
+    row.className = 'cellrow';
+    row.style.left = left + 'px'; row.style.top = top + 'px';
+    row.style.width = (COLS * C) + 'px'; row.style.height = C + 'px';
+    host.appendChild(row);
+    var base = document.createElement('div');
+    base.className = 'base';
+    base.style.left = left + 'px'; base.style.top = (top + C + 2) + 'px';
+    base.style.width = (COLS * C) + 'px';
+    host.appendChild(base);
+    var cells = [], i;
+    for (i = 0; i < COLS; i++) {
+      var d = document.createElement('div');
+      d.className = 'cell';
+      d.style.left = (i * C + 1) + 'px';
+      d.hidden = true;
+      row.appendChild(d);
+      cells.push(d);
+    }
+    drive('ledger', function (v) {
+      var n = Math.round(v / 100 * COLS);
+      for (var i = 0; i < COLS; i++) {
+        cells[i].hidden = i >= n;
+        cells[i].classList.toggle('is-next', i === n);
+      }
+    });
+  })();
+
+  /* ---- B · the teletype -------------------------------------------------- */
+  (function () {
+    var host = document.getElementById('cand-b');
+    var line = document.createElement('div');
+    line.className = 'line';
+    var word = document.createElement('span');
+    var bar = document.createElement('span');
+    var pct = document.createElement('span');
+    pct.className = 'pct';
+    line.appendChild(word); line.appendChild(document.createElement('br'));
+    line.appendChild(bar); line.appendChild(pct);
+    host.appendChild(line);
+    var SEG = 14;
+    word.textContent = 'LOADING';   /* no ellipsis (owner rev, 2026-08-26) */
+    word.style.display = 'inline-block';
+    drive('teletype', function (v, k, rnd) {
+      var f = Math.round(v / 100 * SEG);
+      /* the shiver: the word worries in place instead of growing dots */
+      word.style.transform = 'translateX(' + (rnd() * 3 - 1.5).toFixed(1) + 'px)';
+      bar.textContent = '[' + '#'.repeat(f) + '·'.repeat(SEG - f) + '] ';
+      /* the readout lies on its own schedule: usually the truth, every few
+         ticks a number from nowhere, occasionally a shrug */
+      var r = rnd();
+      pct.textContent = (r < 0.12 ? Math.round(rnd() * 99)
+                        : r < 0.18 ? '??'
+                        : Math.round(v)) + '%';
+    });
+  })();
+
+  /* ---- C · the tally ----------------------------------------------------- */
+  (function () {
+    var svg = document.querySelector('#cand-c svg');
+    var NS = 'http://www.w3.org/2000/svg';
+    /* 8 groups a row, 5 rows on every other major rule; 49 tallies max.
+       Each stroke gets its own hand-jitter, dealt once and kept. */
+    var GROUPS_X = 8, GW = 26, ROWS = 5, RH = 27, X0 = 14, Y0 = 32, TH = 13;
+    var strokes = [];             /* flat list of <line>, in count order */
+    var jit = [];
+    function jitter(rnd, n) {
+      while (jit.length < n * 2 + 2) jit.push((rnd() - 0.5) * 2);
+      return jit;
+    }
+    function mk(x1, y1, x2, y2) {
+      var l = document.createElementNS(NS, 'line');
+      l.setAttribute('x1', x1.toFixed(1)); l.setAttribute('y1', y1.toFixed(1));
+      l.setAttribute('x2', x2.toFixed(1)); l.setAttribute('y2', y2.toFixed(1));
+      return l;
+    }
+    function strokeFor(i, rnd) {
+      var g = Math.floor(i / 5), s = i % 5;
+      var gx = X0 + (g % GROUPS_X) * GW;
+      var gy = Y0 + Math.floor(g / GROUPS_X) * RH;
+      var j = jitter(rnd, i + 1);
+      var jx = j[i * 2] * 1.1, jy = j[i * 2 + 1] * 1.2;
+      if (s < 4) {         /* four uprights, a hair off vertical */
+        var x = gx + s * 4.6 + jx;
+        return mk(x + 0.6, gy + jy, x - 0.6, gy + TH + jy);
+      }
+      /* the fifth: the strike through the four */
+      return mk(gx - 2.5 + jx, gy + TH - 1.5 + jy, gx + 16 + jx, gy + 1.5 + jy);
+    }
+    var shown = 0;
+    drive('tally', function (v, k, rnd) {
+      var n = Math.round(v / 2);                /* 0–49 tallies */
+      while (shown < n) {
+        var l = strokes[shown];
+        if (!l) { l = strokes[shown] = strokeFor(shown, rnd); }
+        svg.appendChild(l);
+        shown++;
+      }
+      while (shown > n) {
+        shown--;
+        var el = strokes[shown];
+        if (el && el.parentNode) el.parentNode.removeChild(el);
+      }
+    });
+  })();
+})();
+</script>
+</body></html>

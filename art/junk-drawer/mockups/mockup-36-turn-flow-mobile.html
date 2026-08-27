@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Turn Flow &mdash; mobile, as built</title>
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1360px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:620px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+.row{display:flex;gap:34px;justify-content:center;align-items:flex-start;
+  flex-wrap:wrap;margin-top:46px}
+figure.phone{margin:0;width:390px}
+figure.phone figcaption{margin:0 0 8px;text-align:center}
+figure.phone figcaption b{display:block;font-family:var(--tform);font-size:.66rem;
+  font-weight:700;letter-spacing:.2em;text-transform:uppercase;margin-bottom:4px}
+figure.phone figcaption span{font-size:.52rem;letter-spacing:.1em;line-height:1.9;
+  color:var(--tink-3)}
+.bezel{border:2px solid rgba(48,38,20,.6);border-radius:18px;padding:6px;
+  background:#241a0e;box-shadow:0 12px 28px -8px rgba(20,10,2,.55)}
+.bezel iframe{display:block;width:374px;height:748px;border:0;border-radius:12px;background:#fff}
+</style></head><body>
+<div class="sheet">
+  <h1>The Turn Flow &mdash; Mobile</h1>
+  <p class="no">mockup 36 &middot; as-built capture &middot; 2026-08-26 &middot; pairs with 35 (desktop) &amp; 37 (darkroom)</p>
+  <hr class="rule">
+  <p class="dek">The same six cards as mockup&nbsp;35, each rendered in a real
+  <b>374px-wide viewport</b> linking the live <b>junk-drawer.css</b> &mdash; so
+  the site&rsquo;s own &le;700px portrait rules decide these layouts (the bench
+  stacks, the exhibit pins to the top of the scroller, the rail shrinks) exactly
+  as they would on a phone. Scroll inside a frame to see how a card&rsquo;s own
+  scroller behaves. Markup mirrors junk-drawer.js as of today; selects are real
+  controls; zoom, tooltips, drag and filing are not wired.</p>
+  <div class="row" id="stages"></div>
+</div>
+<script src="turn-flow-stages.js"></script>
+<script>
+(function () {
+  var host = document.getElementById('stages');
+  window.JD_STAGES.forEach(function (stage) {
+    var fig = document.createElement('figure');
+    fig.className = 'phone';
+    var cap = document.createElement('figcaption');
+    var b = document.createElement('b');
+    b.textContent = stage.title;
+    var s = document.createElement('span');
+    s.textContent = stage.note;
+    cap.appendChild(b); cap.appendChild(s);
+    var bez = document.createElement('div');
+    bez.className = 'bezel';
+    var f = document.createElement('iframe');
+    f.title = stage.title;
+    bez.appendChild(f);
+    fig.appendChild(cap); fig.appendChild(bez);
+    host.appendChild(fig);
+    window.JD_mountStage(f, stage);
+  });
+})();
+</script>
+</body></html>

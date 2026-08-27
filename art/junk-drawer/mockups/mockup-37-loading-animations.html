@@ -1,0 +1,3152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mockup 37 &mdash; darkroom loading animations, as built</title>
+<!-- ==========================================================================
+     MOCKUP 37 — the darkroom's turn loading animations, as-built inventory.
+     A REVIEW INSTRUMENT, not a redesign: every rule and every generator below
+     is copied VERBATIM from junk-drawer.css / junk-drawer.js (and, for the
+     word mesh, kimis-take.css / kimis-take.js + mini.php), assembled by
+     script so the copies cannot drift. The only hand-written CSS/JS is the
+     page scaffolding, marked "mockup staging".
+     Self-contained: no external requests; works from file:// or any server.
+     ========================================================================== -->
+<style>
+/* ---- the mockup sheet's own framing (the house mockup dress, mockup-33/34) */
+:root{
+  --banner-h:56px; /* site token (css/style.css): the fixed banner's band —
+                      the scrim's top padding reserves it, same as live */
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tred:#b3402f; --blue:#4a628a; --graphite:#4b4030;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --thand:"Bradley Hand","Segoe Print","Chalkboard SE",Chalkboard,cursive;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box} /* the site's own reset (css/style.css) — the live
+                            darkroom is laid out under border-box everywhere */
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:600px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:42px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;color:var(--tink-3);margin:0 0 22px}
+.row{display:flex;gap:30px 26px;justify-content:center;align-items:flex-start;flex-wrap:wrap;margin-top:20px}
+figure{margin:0}
+figcaption{margin-top:9px;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tink-3);text-align:center;line-height:1.8;max-width:230px}
+figcaption b{color:var(--tink-2);font-weight:700}
+footer{margin-top:46px;padding-top:12px;border-top:1px solid var(--trule);
+  font-size:.52rem;letter-spacing:.14em;color:var(--tink-3);text-align:center;
+  text-transform:uppercase;line-height:2}
+
+/* ==========================================================================
+   VERBATIM from junk-drawer.css — the turn-modal scrim + card shell.
+   (lines 1721–1836: tokens, scrim, card, printed border, mottle, ✕)
+   ========================================================================== */
+.jd-turn-scrim {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
+  --graphite: #4b4030;        /* the visitor's pencil */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
+     spacing scale for the whole form, named so the next new row reaches for
+     a token instead of inventing a 6th font-size. Every value below is used
+     more than once in the rules that follow — that repetition is the point:
+     a size that only ever appears once doesn't belong in the ladder, it's
+     a display size (the likert's A/B) and stays literal. */
+  --t-micro: 0.44rem;   /* form-nos, the tersest labels */
+  --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
+  --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
+  --t-lead: 0.78rem;    /* the one input field — leave it alone */
+  --t-title: 0.86rem;   /* the masthead heading — leave it alone */
+  --sp-1: 4px;           /* tight — icon-to-label gaps, row internal padding */
+  --sp-2: 8px;           /* default — label-to-control, masthead padding */
+  --sp-3: 14px;          /* between rows/blocks */
+  --sp-4: 22px;          /* between sections */
+
+  position: fixed; inset: 0; z-index: 322;
+  display: none;
+  align-items: center; justify-content: center;
+  /* The TOP inset reserves the fixed site banner's band. The banner carries
+     z-index 1000 (css/style.css) and this scrim is a stacking context at 322,
+     so the banner paints OVER the card — the same standing condition the
+     record card lives with. It only bites here because the bench is tall
+     enough to grow the card to the full scrim height: at 1280×900 the card
+     started at y=18 and its ✕ (27–71) sat behind the banner (0–56), where a
+     press reached .site-navigation instead of the close control — the ✕ was
+     dead and a few px either way navigated the visitor off the page mid-turn.
+     Reserving the band keeps the card under the banner without ever putting
+     its chrome there. Bottom keeps the old value, so the card is centred in
+     the space that is actually free. */
+  padding: max(12px, 2vh, calc(var(--banner-h) + 8px)) 12px max(12px, 2vh);
+  background: rgba(10, 5, 1, 0.58);
+}
+.jd-turn-scrim.is-on { display: flex; }
+html.jd-turn-open { overflow: hidden; }
+
+/* ---- the form itself ----------------------------------------------------- */
+.jd-turn {
+  position: relative;
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  /* .rc-bar-tick (reused verbatim on the bench, owner directive r4) paints
+     its dividers in --card, a custom property normally scoped to the
+     report card's own paper; this form has no such variable, so without a
+     local value the tick would fall back to the rc default (#efe4c6)
+     instead of this sheet's actual paper (--tpaper, #ece0bf) — close, but
+     visibly a different paper under the fill's leading edge. */
+  --card: var(--tpaper);
+  /* the card is a FLEX ITEM of the scrim, so its default min-width:auto lets
+     any nowrap descendant push it wider than the phone viewport. This line is
+     what keeps 375px honest. */
+  min-width: 0;
+  max-height: 100%;                 /* = the banner-reserved, padded viewport */
+  display: flex; flex-direction: column;
+  color: var(--tink);
+  font-family: var(--tmono);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the printed double border */
+.jd-turn::before {
+  content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+/* paper mottle */
+.jd-turn::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background-image: var(--tmottle); background-size: 420px 420px;
+}
+/* the boxed ✕ — the record card's control language (a 26px printed box
+   centred in a 44px target, so the box can stay form-sized). Owner rev
+   2026-08-16: seated in the sheet's TOP-RIGHT CORNER — the 44px target is
+   pinned to the head's corner so its printed box lands 9px in from the
+   card's edges, the record card's exact seat, instead of drifting with the
+   row's padding (it sat 26px in on desktop and 56px on phones, visibly
+   adrift). It anchors to the HEAD, not the card, so the darkroom's
+   cornered overlay strip carries it unchanged; DOM-wise it stays the
+   head's one static, never-replaced child (F1) — paint() rewrites only
+   .jd-turn-headline, so the close's click handler still binds once. The
+   head's min-height (44px + rule) keeps the band fully containing the
+   target, which also re-centres the box on a one-line title's centerline. */
+.jd-turn-close {
+  position: absolute; top: 0; right: 0; z-index: 8;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  font-family: var(--tmono); font-size: var(--t-title); line-height: 1;
+  color: var(--tink);
+}
+.jd-turn-close span {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+}
+.jd-turn-close:hover span { background: #33240f; color: var(--tpaper); border-color: #33240f; }
+.jd-turn-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* VERBATIM from junk-drawer.css — the masthead + the one scroller
+   (lines 1849–1886) */
+.jd-turn-head {
+  position: relative; z-index: 4; flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  /* right padding clears the cornered 44px close target (44 + a hair);
+     min-height guarantees the band contains it, title short or absent */
+  box-sizing: border-box; min-height: 44px;
+  padding: var(--sp-2) 48px var(--sp-2) 16px;
+  border-bottom: 1.5px solid var(--trule);
+  background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
+}
+.jd-turn-headline {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+}
+/* (the boxed FORM JD-1 §n badge that used to open this row was retired
+   2026-08-16, owner call — the heading is the whole headline now) */
+/* the heading — the one thing on this row a visitor actually reads. It is
+   also the dialog's accessible name and the focus target for every state
+   with no field of its own; focused programmatically (never a tab stop), so
+   the ring would be noise rather than a keyboard cue. */
+.jd-turn-title {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-family: var(--tform); font-weight: 700; font-size: var(--t-title);
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
+  color: var(--tink);
+}
+.jd-turn-title:focus { outline: none; }
+
+/* ---- the body: the one scroller ------------------------------------------ */
+.jd-turn-scroll {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 11px 16px 14px;
+  scrollbar-width: thin;
+}
+.jd-turn-scroll::-webkit-scrollbar { width: 7px; }
+.jd-turn-scroll::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
+
+/* ==========================================================================
+   VERBATIM from junk-drawer.css — THE DARKROOM, whole section
+   (lines 1988–2599: square card, swatches, all indicator dress + keyframes,
+   end poses, margin line, motion / reduced-motion blocks)
+   ========================================================================== */
+/* ============================================================================
+   THE DARKROOM (§2) — ROUND-17 REDESIGN, owner pick 2026-08-14.
+   Ported faithfully from mockups/mockup-17a-loading-scatter.html (16e's scrap
+   sizes, 16f's calm): the waiting card is a SQUARE sheet, and the four slots
+   are graph-paper print swatches in a tight 2×2 — the report card's
+   "photograph" (.jd-turn-art below), so a slot waits in the same frame its
+   drawing will arrive in. Each swatch runs an OLD-SCHOOL WEB WAIT INDICATOR,
+   printed in ink and dealt per turn from a pool of five (round-24 rotation,
+   owner directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from
+   the turn ref; before then each indicator was keyed stably to its slot
+   letter): a plotter pen tracing a circuit generated fresh each turn
+   (round-20 swap — the flipping hourglass retires), the stray word ("please /
+   wait" adrift, DVD-menu style — round-19 swap, owner pick 2026-08-16),
+   the scatterword (LOADING… blown apart and zooped back together, its flight
+   generated fresh each turn — round-22 swap, owner pick 2026-08-18, the Win95
+   segmented progress bar retires), a ticking wristwatch (round-21 swap — the
+   bouncing dots retire), and the honest bar (a hatched ink fill that climbs,
+   stalls, takes setbacks, and second-guesses itself above ~80 — rounds
+   24–25, owner pick 2026-08-21). The well under each indicator wears the
+   indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
+   full-bleed/overflow tailoring below keys to that, not to the slot: the
+   slot classes (--a…--d) now mean position only.
+   ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
+   fifth slip — "please wait…" in the pencil hand, floated over the pile —
+   is retired; it covered the indicators. The masthead is VISIBLE on this
+   card instead: PLEASE STAND BY centred in a full-width overlay band (the ✕
+   and its once-bound listener are untouched — F1 — only the row is
+   restyled), with a plain mono sentence in the sheet's bottom margin
+   (.jd-dark-foot) carrying the slow-timer line beneath it.
+
+   MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
+   (a partial plot with the pen resting on it, the stray word at rest in the
+   centre, the scatterword assembled and readable, the watch reading its
+   seeded time, the bar parked mid-climb at 68%); every animation lives under
+   prefers-reduced-motion: no-preference,
+   a reduce block stills the rest, and the end-state poses live on the
+   data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
+   settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
+   mid-loop. (The old --tstamp fail red is retired with this card: the
+   owner-approved mockup shipped --tred.)
+   ========================================================================== */
+/* the square cut, this view only. The 100vh reserve stands in for the scrim's
+   own padding (banner band + insets ≈ 76px desktop, 20px phone), so the
+   aspect-ratio never meets max-height: the card is square at 375px and
+   centred in 1280×800 alike. */
+.jd-turn[data-view="darkroom"] {
+  width: min(560px, 100%, calc(100vh - 110px));
+  aspect-ratio: 1 / 1;
+}
+/* the masthead as overlay band (round 26, owner pick 2026-08-21,
+   mockup-26-standby-claude rev. 3): PLEASE STAND BY floats over the sheet's
+   top margin in the form's own serif — out of the flow so the pile keeps the
+   whole square, no rule, no wash, ABOVE the printed double border (z 6). The
+   ✕ keeps its corner seat (F1: the head's static child, untouched); the
+   symmetric side padding clears it while keeping the phrase truly centred. */
+.jd-turn[data-view="darkroom"] .jd-turn-head,
+.jd-turn[data-view="plates"] .jd-turn-head {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  padding: 0 48px; border-bottom: 0; background: none;
+}
+.jd-turn[data-view="darkroom"] .jd-turn-headline,
+.jd-turn[data-view="plates"] .jd-turn-headline { justify-content: center; }
+/* the broadcast phrase reads as an announcement: a step up from the form
+   titles' size, and a touch more letterspacing (text-indent balances the
+   final tracking space so the centring is optical, not just geometric).
+   The reveal wears the same dress (rev. 3, owner directive 2026-08-21) —
+   the darkroom and the reveal are consecutive faces of one pile, and their
+   headings should say so; the reveal's scroller reserves the band's height
+   instead of the darkroom's zeroed padding (its content is in the flow). */
+.jd-turn[data-view="darkroom"] .jd-turn-title,
+.jd-turn[data-view="plates"] .jd-turn-title {
+  flex: 0 1 auto; text-align: center;
+  font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
+}
+.jd-turn[data-view="plates"] .jd-turn-scroll { padding-top: 50px; }
+/* the body stops scrolling and becomes the pile's table */
+.jd-turn[data-view="darkroom"] .jd-turn-scroll { padding: 0; overflow: hidden; }
+.jd-dark { position: relative; height: 100%; }
+
+/* ---- the four swatches -----------------------------------------------------
+   ~41% × 33% each (mockup-16e's scrap sizes). STRAIGHT AND ALIGNED since
+   round 26 rev. 4 (owner directive, 2026-08-21): the toss angles retired and
+   the four seats squared to one symmetric frame, so the darkroom matches the
+   Results card that follows it — same 2×2 discipline, and (same revision)
+   the same kraft photo corners, emitted by darkSwatch() in the JS. The print
+   swatch is .jd-turn-art's own background, border and shadow, copied
+   verbatim. */
+.jd-dark-sw {
+  position: absolute;
+  width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
+}
+.jd-dark-sw--a { left: 6%; top: 13%; }
+.jd-dark-sw--b { right: 6%; top: 13%; }
+.jd-dark-sw--c { left: 6%; bottom: 13%; }
+.jd-dark-sw--d { right: 6%; bottom: 13%; }
+
+/* the label, BENEATH each frame (rounds 28–29, owner calls 2026-08-21 —
+   the round-29 masking tape lasted one review): "Model A" in the pencil
+   hand, centred under the print on the sheet's own paper — clear of the
+   grid, so it needs no ground of its own, and the indicators keep their
+   whole frame. Legible in every state, because the cards that follow
+   reference the models by letter. A child of the swatch, so a settle or
+   judder carries its label with it. */
+.jd-dark-label {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  text-align: center;
+  font-family: var(--thand); font-size: 0.95rem; line-height: 1.1;
+  color: var(--graphite);
+}
+
+/* the fixed-height animation well: the swap to ✓/✗ never shifts the sheet */
+.jd-dark-well {
+  position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+
+/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+   retires): a machine plotting a circuit along the graph paper's own rules.
+   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
+   spanning-tree tour, different every turn, seamless by construction); this
+   file only knows two dash windows on that path. The ink is a 15-unit
+   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
+   around the circuit — line appearing at the head, lifting away at the
+   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
+   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
+   loop, so the dot rides the ink's leading edge forever. Static base: a
+   partial trace, pen resting on it.
+   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
+   printed rules, not near them, so the well opens to the whole swatch
+   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
+   round() snaps the centred offset down to a multiple of 9, then +5px
+   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
+   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
+   un-snapped pair above it is the fallback for browsers without round():
+   plain centring — a hair off the rules, never broken.
+   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
+   phases from the edge its gradient line starts at — 90deg from the LEFT,
+   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
+   swatch's height. Snapping `top` therefore only registered at heights
+   that happened to be multiples of 9 (the desktop harness was; phones
+   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
+   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
+   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
+   swatch height. Never snap `top` while the paper's 0deg layers phase
+   from the bottom. */
+.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-plot {
+  display: block; position: absolute;
+  left: calc(50% - 45px); bottom: calc(50% - 27px);
+  left: calc(round(down, 50% - 45px, 9px) + 5px);
+  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
+}
+.jd-dark-plot .plot-ink {
+  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 15 85; stroke-dashoffset: -15;
+}
+.jd-dark-plot .plot-nib {
+  fill: none; stroke: var(--tink); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
+}
+/* implicit from: each starts at its base offset, one full period apart */
+@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
+
+/* the stray word: "please / wait" adrift on the print, ricocheting off
+   the swatch's own edges like the DVD-menu logo of blessed memory (round-19
+   swap — mockup-19-offguard-loaders.html №10 rev B replaces the radial-tick
+   throbber; owner pick 2026-08-16. Round-23 reword, owner pick 2026-08-18:
+   LOADING retires for a two-line "please / wait" in an old-fashioned script
+   hand — a politer ghost to chase around the paper). The bounce field is the WHOLE swatch,
+   not the inset well — the well opens to inset 0 for this indicator only, so the
+   word rebounds off the graph paper's edges and slides UNDER the pencilled
+   letter (z 3) and the verdict (z 2). The two axes run incommensurate
+   periods, so the path never visibly repeats. Position trick: left/top
+   0→100% paired with translate 0→-100% makes each travel span exactly
+   (swatch − word) at ANY swatch size — both halves tween linearly, so the
+   sum is linear too. Static base: the word at rest in the centre. */
+.jd-dark-well--stray { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-stray {
+  position: absolute; left: 50%; top: 0; height: 100%;
+  width: max-content; transform: translateX(-50%);
+}
+.jd-dark-stray .sy {
+  /* RELATIVE, not absolute — the word must stay in flow so the x-mover's
+     max-content width IS the word's width: an absolutely-positioned child
+     sizes its parent to 0, which nulls the translateX(-100%) half of the
+     position trick and lets the word sail past the right edge until its
+     LEFT side hits (owner catch, 2026-08-17). Relative keeps the top:
+     0→100% animation working — the offset resolves against the mover's
+     full-well height, translateY(-100%) against the word's own. */
+  position: relative; top: 50%; transform: translateY(-50%);
+  display: block;
+  /* round-23: typewriter caps retire for an old-fashioned script hand —
+     classic system cursives, best-first (Snell on Apple, Brush Script on
+     Windows), never the chalky --thand: this is penmanship, not a scrawl.
+     Two lines set snug; the bounce math never notices — the travel is
+     %-based against the block's own max-content size */
+  font-family: "Snell Roundhand", "Apple Chancery", "Edwardian Script ITC",
+               "Brush Script MT", "Lucida Handwriting", cursive;
+  /* Sized up and un-faded (owner, 2026-08-19): at 17px in a translucent blue
+     it read as a smudge on the grid rather than a word adrift on it.
+     LINE-HEIGHT IS THE BUG FIX. The markup is two lines (please<br>wait) and
+     this was 1.02 — "set snug". Snell Roundhand and every fallback here are
+     script faces with deep descenders, so the tail of the p in "please" ran
+     down into "wait" and read as a clipped letter. 1.3 clears it while the
+     pair still reads as one block. None of this disturbs the DVD bounce:
+     jdDarkStrayX/Y travel left/top 0→100% against translate(-100%), measured
+     from the word's own max-content box, so the word can be any size and
+     still hit the walls exactly. */
+  font-size: 23px; font-weight: 400; line-height: 1.3;
+  letter-spacing: 0.02em; white-space: nowrap; text-align: center;
+  /* PADDING IS THE WALL-CLIP GUARANTEE (owner catch, 2026-08-21; role
+     narrowed 2026-08-26). Every face in this stack paints ink OUTSIDE its
+     own line box — descender tails, entry/exit swashes, italic overhang —
+     and the well clips at overflow: hidden, so when the bounce math kissed
+     a wall with an UNpadded box, any ink overhanging it was already past
+     the wall and got cut (the p's tail, sliced at the edge). (The 1.3
+     line-height above only stopped the p's tail colliding with "wait"
+     INSIDE the block; it does nothing at the walls, because the box the
+     travel is measured from is unchanged by leading.) The padding fixed
+     that by making the travelled box CONTAIN all the ink — but it also
+     meant the box's edge, not the ink's, was what touched the wall, so the
+     word bounced with up to ~17px of air under it (owner complaint,
+     2026-08-26). The collision is now the keyframes' job: darkWell()
+     canvas-measures the real box-edge-to-ink distances per side
+     (darkStrayInkInsets in the JS) and jdDarkStrayX/Y below overshoot each
+     wall by exactly that side's number, so the INK lands flush. The
+     padding stays, demoted to safety net: it keeps every measured inset
+     >= 0, and wherever the ruler cannot run (no canvas, no font metrics)
+     the insets fall back to 0px and the bounce degrades to the old
+     box-kiss — never a clip. 0.35em ≈ 8px at 23px: deeper than the
+     stack's deepest descender (Edwardian Script ≈ 0.3em). */
+  padding: 0.35em;
+  color: #4a628a;   /* the ruling's own colour, struck solid — one ink for all
+                       the darkroom's lettering (owner, 2026-08-26: was #3b4f70,
+                       a shade deeper; now matches drift/mesh/scatter) */
+}
+/* the trailing ellipsis (owner, 2026-08-26): three dots after "wait" that
+   blink into place one at a time — none, one, two, three, back to none —
+   each a quarter of a stepped 2.8s cycle. The dots always OCCUPY their
+   space (opacity, never display), so the word's max-content box — which
+   the ricochet's wall math is measured from — never changes mid-flight.
+   Base opacity 0 is also the reduced-motion pose: the still sheet reads
+   "please wait", unpunctuated. */
+.jd-dark-stray .sy i { font-style: normal; opacity: 0; }
+@keyframes jdDarkStrayDot1 { 0% { opacity: 0; } 25% { opacity: 1; } }
+@keyframes jdDarkStrayDot2 { 0% { opacity: 0; } 50% { opacity: 1; } }
+@keyframes jdDarkStrayDot3 { 0% { opacity: 0; } 75% { opacity: 1; } }
+/* THE INK KISSES THE WALL (owner directive, 2026-08-26): each extreme
+   overshoots by that side's --jd-si-* — the measured distance from the
+   padded box's edge to the ink's own edge (set inline on .jd-dark-stray by
+   darkWell(); see darkStrayInkInsets in the JS). The overhanging strip of
+   box that crosses the wall is pure padding — the ink stops exactly at the
+   edge, so nothing clips. Both halves of each pose still tween linearly
+   (the px offsets are constants), so the travel stays linear and the 7.4s /
+   9.8s alternate ricochet is untouched. Fallback 0px = the old box-kiss. */
+@keyframes jdDarkStrayX {
+  from { left: calc(0% - var(--jd-si-l, 0px));   transform: translateX(0); }
+  to   { left: calc(100% + var(--jd-si-r, 0px)); transform: translateX(-100%); }
+}
+@keyframes jdDarkStrayY {
+  from { top: calc(0% - var(--jd-si-t, 0px));   transform: translateY(0); }
+  to   { top: calc(100% + var(--jd-si-b, 0px)); transform: translateY(-100%); }
+}
+
+/* the scatterword (round-22 swap, owner pick 2026-08-18; the Win95
+   segmented block progress bar retires): the word LOADING… holds just long
+   enough to read, explodes — every glyph thrown straight out along its own
+   ray, fastest at the bang and decelerating the whole way, tumbling, knocking
+   back off the swatch's edges — and then a fast suction zoops it back into
+   the word. Three different bangs to an 18s super-cycle, so it does not
+   visibly repeat.
+   OWNER TUNING, 2026-08-18 (round-22 follow-up, three changes at once):
+   the type is 15% smaller against an unchanged flight field, so the word
+   sits more modestly in the swatch while the explosion still uses the whole
+   card; the ellipsis takes the same ink as the letters; and the bang runs at
+   the 6s "house tempo" the owner picked off the variant sheet (was 4.2s),
+   which makes the super-cycle 18s.
+   THE TRACKS ARE GENERATED PER TURN in the JS (darkScatterword — ten
+   ballistic flights integrated under drag, seeded from the turn ref, so
+   every turn gets its own explosion and a repaint re-derives the same one).
+   This file knows only the base pose and the fact that it loops: the
+   generated <style> rides inside the well and carries animation-name AND
+   animation-duration, so the super-cycle's length lives in exactly ONE
+   place — the generator — and can never drift out of sync with a
+   hand-written number here.
+   SIZING. The flight is authored in em against a 140×110 FIELD (the
+   approved mockup's card), so one generated stylesheet drives the swatch at
+   every size the card takes. The well opens to the whole swatch (the stray's
+   precedent) and the field is centred in it, sized so its 12.670em width IS
+   the swatch's width: container-type: size makes the WELL a container (the
+   round-24 rotation moved it off the swatch — the well is full-bleed, so
+   the geometry is identical), and
+   100/12.670 = 7.893cqw. (Owner tuning 2026-08-18: the glyph shrank from 13
+   to 11.05 real-scale px — 15% — while the FIELD stayed 140×110, which is
+   the whole point of the change: a smaller word thrown across exactly the
+   same card. That is the only reason this em-per-field number moved.) The
+   plain px above it is the fallback for browsers without container queries
+   (round()'s precedent in slot A — declare the dumb value first, the clever
+   one second); it is sized for the SMALLEST swatch we ship (~145px on a
+   phone) so that on those browsers the field can only ever under-fill, never
+   overflow.
+   The swatch is 41×33 (aspect 1.242) and the field is 140×110 (1.273), so
+   filling the width letterboxes the field by ~1% of the swatch's height top
+   and bottom. It is centred, and nothing is lost: the generator's roam box
+   already holds the glyph centres a little off every edge, so the letters
+   were never going to reach the extreme top and bottom anyway. */
+.jd-dark-well--scatter {
+  container-type: size;
+  left: 0; right: 0; top: 0; bottom: 0; overflow: hidden;
+}
+.jd-dark-word {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: pre;
+  font-family: var(--tmono); font-weight: 700; line-height: 1;
+  letter-spacing: 0.08em;
+  /* the ruling's own colour, struck solid — one ink for all the darkroom's
+     lettering (owner, 2026-08-26: was var(--tink), the sheet's brown;
+     now matches drift/mesh/stray) */
+  color: #4a628a;
+  font-size: 11.4px;
+  font-size: 7.893cqw;
+}
+/* BASE POSE = the assembled word, exactly as typed — transform: none puts
+   every glyph in its word position. This is the static frame AND the
+   reduced-motion frame: whenever nothing is moving, the swatch reads
+   LOADING… and nothing else. */
+.jd-dark-gl { display: inline-block; transform: none; }
+/* the ellipsis is set 1.45× so each dot survives as its own drifting body (a
+   period at this size is barely two pixels of ink) — and it matters more now
+   the type is 15% smaller. line-height: 0 stops the taller glyph from growing
+   the word's line box, and the negative margin pulls its advance back onto
+   the typewriter's monospace grid. Both of those are RATIOS in em, so they
+   survived the shrink untouched; the generator's measured glyph centres did
+   not, and were re-measured. Do not retune any of this without re-measuring.
+   The dots take the same ink as the letters (owner tuning, 2026-08-18 — they
+   used to be printed in the graph paper's own blue): one word, one pen, just
+   an ellipsis typed a size up. */
+.jd-dark-gl7, .jd-dark-gl8, .jd-dark-gl9 {
+  font-size: 1.45em; line-height: 0; margin-right: -0.186em;
+}
+
+/* the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
+   dots retire): the classic Mac "please wait" watch, drawn with a ruling
+   pen — case circle, twelve ticks faked by one dashed circle (pathLength
+   12, dash 0.14/0.86, offset 0.07 to centre each tick on its hour), two
+   hands, a centre pin, strap lugs. The minute hand clicks one tick per
+   second (steps(12) over 12s; owner slow-down 2026-08-17, from 6s), the
+   hour hand one tick per 12s. The hands' base angles arrive as --jdwm/--jdwh
+   inline on the svg — the JS seeds them from the turn's client_ref, so
+   every wait starts at a different (plausible) time; the keyframes add
+   360deg to whatever the seed says, so the loop is seamless at any start.
+   Static base: the watch reading its seeded time (10:10, the watch-
+   advertisement pose, if the vars are missing). */
+/* the dial and the strap lugs are FILLED (--tpaper-hi; owner, 2026-08-17)
+   so the graph paper never shows through the watch — it sits ON the sheet,
+   not printed into it. Ticks and hands draw after the case in the markup,
+   so they ride on the solid dial. */
+/* The watch's well, full-bleed like the plotter's, the stray's and the
+   scatterword's (owner catch, 2026-08-19: the watch
+   sat low). The BASE .jd-dark-well is inset top: 24% / bottom: 14% — room the
+   original indicator wanted under the slot letter — which puts its centre at
+   24 + (100-24-14)/2 = 55% of the swatch, 5% low. The other indicators each
+   overrode it to full-bleed as they were rebuilt; the watch was the one
+   indicator never re-based, so it alone kept the asymmetry and centred 5%
+   low. The watch centres on the swatch itself now, like its neighbours. */
+.jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
+/* The bar needs this for the same reason the other four do: the BASE
+   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
+   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
+   overrides it as it is built; the bar arrived in round 24 without one and
+   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
+   line too. */
+.jd-dark-well--bar { left: 0; right: 0; top: 0; bottom: 0; }
+
+/* the watch writes in the ruling blue like its neighbours (owner,
+   2026-08-26 — it stood out as the one brown indicator): the case, lugs,
+   ticks, hands and pin all take #4a628a, keeping the old two-tone
+   hierarchy (case/ticks a shade lighter than the hands), and the cream
+   dial trades for a translucent blue wash, so the paper's own ruling
+   breathes through the face the way it does under the lettered ones. */
+.jd-dark-watch .w-case {
+  fill: rgba(74, 98, 138, 0.12); stroke: rgba(74, 98, 138, 0.8);
+  stroke-width: 1.6; stroke-linejoin: round;
+}
+.jd-dark-watch .w-lug {
+  fill: rgba(74, 98, 138, 0.12); stroke: rgba(74, 98, 138, 0.8);
+  stroke-width: 1.4; stroke-linejoin: round;
+}
+.jd-dark-watch .w-ticks {
+  fill: none; stroke: rgba(74, 98, 138, 0.8); stroke-width: 2.2;
+  stroke-dasharray: 0.14 0.86; stroke-dashoffset: 0.07;
+}
+.jd-dark-watch .w-min, .jd-dark-watch .w-hr {
+  stroke: #4a628a; stroke-linecap: round;
+  transform-box: view-box; transform-origin: 20px 22px;
+}
+.jd-dark-watch .w-min { stroke-width: 2;   transform: rotate(var(--jdwm, 60deg)); }
+.jd-dark-watch .w-hr  { stroke-width: 2.6; transform: rotate(var(--jdwh, -55deg)); }
+.jd-dark-watch .w-pin { fill: #4a628a; }
+@keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
+@keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
+
+/* the honest bar (rounds 24–25, owner pick 2026-08-21; tuned on
+   mockup-24-honest-bar.html's bench, dressed by mockup-25-bar-styles.html's
+   hatched-stripes option with the stripes thickened): a hand-wobbled ink
+   outline whose fill climbs slowly, stalls, takes setbacks, and above ~80
+   second-guesses itself in wider swings — never finishing, never quite
+   erratic. The track is GENERATED per turn in the JS (darkHonestBar — a
+   seeded 150-tick climb baked into keyframes, one tick per 0.3s, a 45s
+   super-cycle whose seam is the sigh-and-start-over); this file knows only
+   the frame, the fill's dress, and the static pose. The bar keeps the
+   DEFAULT inset well — the one indicator that does — because the wobbled
+   frame wants the paper's margin around it. Stripes are the round-25
+   thickening: 5px of ink, 2.5px of paper. Static base: parked at 68%,
+   mid-climb — the pose a reduced-motion visitor sees. */
+/* (full-bleed seating for --bar lives with the other well overrides above;
+   here the well additionally becomes a container so the type scales in cqw) */
+.jd-dark-well--bar { overflow: hidden; container-type: size; }
+.jd-dark-tele {
+  font-family: var(--tmono); font-weight: 700;
+  letter-spacing: 0.08em; line-height: 1.9;
+  text-align: center; white-space: pre;
+  color: #4a628a;           /* the ruling's own colour, struck solid */
+  font-size: 11.4px;
+  font-size: 5cqw;
+}
+.jd-dark-tele .t-word { display: inline-block; }
+.jd-dark-tele .t-line { display: block; line-height: 1.2; }
+.jd-dark-tele .t-c { position: relative; display: inline-block; }
+.jd-dark-tele i { font-style: normal; }
+.jd-dark-tele .t-c .ge { position: absolute; left: 0; top: 0; }
+.jd-dark-tele .t-d {
+  display: inline-block; width: 0.62em; height: 1em; overflow: hidden;
+  vertical-align: -0.19em;
+}
+.jd-dark-tele .t-ds { display: block; }
+.jd-dark-tele .t-ds i { display: block; height: 1em; line-height: 1em; }
+.jd-dark-tele .t-c .gf { opacity: 0; }
+.jd-dark-tele .t-c .ge { opacity: 1; }
+.jd-dark-tele .t-c:nth-child(-n+10) .gf { opacity: 1; }
+.jd-dark-tele .t-c:nth-child(-n+10) .ge { opacity: 0; }
+.jd-dark-tele .t-dt .t-ds { transform: translateY(-6em); }
+.jd-dark-tele .t-du .t-ds { transform: translateY(-8em); }
+
+/* ---- arrival / failure: the end poses live on the state classes ----------- */
+.jd-dark-result {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+.jd-dark-big {
+  font-family: var(--tform); font-size: 1.7rem; line-height: 1; color: var(--tink);
+}
+.jd-dark-verdict {
+  font-family: var(--tmono); font-size: 0.55rem;
+  letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
+  padding: 0 7px;   /* the longer per-code failure phrases wrap to two lines —
+                       keep them off the swatch's edges when they do */
+}
+.jd-dark-verdict .m { font-style: normal; }
+.jd-dark-sw[data-state="ok"] .jd-dark-verdict--ok { color: #4a6b18; }
+.jd-dark-sw[data-state="fail"] .jd-dark-verdict--fail { color: var(--tred); }
+
+/* arrived: the swatch settles flat with a small drop and the loop fades out
+   (rev. 4: the seats are straight, so the settle is a vertical landing —
+   no rotation to shed any more) */
+.jd-dark-sw[data-state="ok"] {
+  box-shadow: 0 2px 5px -2px rgba(46, 34, 12, 0.4), 0 1px 2px rgba(46, 34, 12, 0.28);
+}
+@keyframes jdDarkSettle {
+  0%   { transform: translateY(-4px); }
+  55%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+.jd-dark-sw[data-state="ok"] .jd-dark-well { opacity: 0; }
+.jd-dark-sw[data-state="ok"] .jd-dark-result { opacity: 1; }
+
+/* failed: a quick judder and the swatch edges red. The judder still swings
+   through a couple of degrees, but it ENDS straight (rev. 4) — the pile
+   stays squared whatever a slot's fortunes. The indicator CLEARS, exactly
+   as on arrival (owner call, 2026-08-26 — it used to freeze mid-loop at
+   0.45, but the frozen watch under the failure phrase read as neither on
+   a phone swatch): the wait is over either way, so the well goes dark and
+   the ✗ and its phrase stand alone on the paper. */
+.jd-dark-sw[data-state="fail"] {
+  transform: scale(0.97);
+  border-color: rgba(179, 64, 47, 0.6);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35),
+              inset 0 0 0 1px rgba(179, 64, 47, 0.35);
+}
+@keyframes jdDarkJolt {
+  0%   { transform: scale(1); }
+  35%  { transform: rotate(-2.2deg) scale(0.98); }
+  70%  { transform: rotate(2.4deg) scale(0.965); }
+  100% { transform: scale(0.97); }
+}
+.jd-dark-sw[data-state="fail"] .jd-dark-well { opacity: 0; }
+.jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
+.jd-dark-sw[data-state="fail"] .jd-dark-big { color: var(--tink-2); }
+
+/* ---- f — the word drift (round 27, replaces the carbon rain 2026-08-23) ----
+   The rain, rewritten in English. Columns of words fall down the paper's own
+   rules, one letter to a printed square; each letter strikes the bottom rule,
+   is thrown off it, and comes to rest in a heap along the floor. The depth of
+   the heap is how long you have been waiting.
+
+   It replaces the carbon rain (78 writing systems, 5987 generated characters),
+   which read as texture rather than as language — the owner wanted the wait
+   said in words you can actually read. Everything the rain knew about falling
+   is still here; only the alphabet and the landing are new.
+
+   The layout is the drawer's own: 9px ruling, one letter to a square, struck
+   in the paper's ruling blue. Nothing here is per-script, so the generated
+   font-size table the rain needed is gone with it.
+   -------------------------------------------------------------------------- */
+.jd-dark-well--drift { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+
+/* the word mesh (owner directives 2026-08-22 / 2026-08-23; character mode
+   retired from the rotation 2026-08-26): Kimi's Take iframed whole into the
+   swatch — full-bleed like the rain, since mini.php brings its own paper at
+   the same 9px ruling. The frame must never scroll or show a seam: it is a
+   window onto a sheet, not a document in a box. On a settle the well's own
+   fade covers it (opacity 0 on ok and on fail alike) — the piece runs on behind
+   it, unheard, the way the rain merely pauses. */
+.jd-dark-well--words { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-mesh { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  border: 0; display: block; background: transparent; }
+.jd-drift { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+.jd-drift .col { position: absolute; left: 0; top: 0; display: block; }
+/* the heap. Letters are MOVED here when they settle — the same element that
+   fell, not a copy of it: copying leaves two glyphs stacked at the landing
+   point for several frames, and it reads as a flicker at every landing. */
+.jd-drift .drift { position: absolute; left: 0; top: 0; display: block; }
+.jd-drift i {
+  position: absolute; left: 0; top: 0;
+  width: 9px; height: 9px; line-height: 9px; text-align: center;
+  /* 10px on the 9px ruling — the bench's tuned pairing (mockup-33 fs:10,
+     CELL 9) and the word mesh's exact letter size (10.0px × --cr-zoom:1 in
+     the mini). Without this the glyph inherits the card's text size and
+     overflows its square — the port from the bench dropped it (fixed
+     2026-08-26, owner report). */
+  font-size: 10px;
+  font-family: var(--tmono); font-style: normal;
+  color: #4a628a;                    /* the paper's own ruling colour, struck solid */
+  will-change: transform;
+}
+/* a letter still falling starts ABOVE the sheet. Its animation carries
+   fill:both, so this only shows in the instant before the animation is
+   attached — but without it that instant is a glyph at the top-left corner. */
+.jd-drift .col > i { transform: translateY(-300%); }
+
+/* arrived / failed: the drift stops where it stands, with the rest of the
+   well. The metronomes are stopped in JS at the same moment — a paused
+   animation still holds its letter on the paper, which is what we want, but
+   a running metronome would go on minting letters behind the fade. */
+.jd-dark-sw[data-state="ok"] .jd-drift i,
+.jd-dark-sw[data-state="fail"] .jd-drift i { animation-play-state: paused; }
+
+/* stillness: no fall, no landing, no heap. The sheet holds one line of the
+   office's own words, set where the drift would have come to rest. */
+@media (prefers-reduced-motion: reduce) {
+  .jd-drift { display: none; }
+  .jd-dark-well--drift::after {
+    content: "PLEASE WAIT"; position: absolute; left: 0; right: 0; bottom: 9px;
+    text-align: center; font-family: var(--tmono); font-size: 10px;
+    letter-spacing: 2px; color: #4a628a;
+  }
+}
+
+/* ---- the margin line, under the pile (round 26) ----------------------------
+   The pencilled wait slip retired (owner pick 2026-08-21, mockup-26-standby-
+   claude rev. 3): laid over the pile it covered the indicators, which are the
+   whole show. One plain mono sentence in the sheet's bottom margin instead —
+   the line is ONE element so the owner can reword it in one place — with the
+   slow-timer line beneath it, behind the same data-slow/hidden pattern. The
+   working ellipsis is three dots arriving in turn: printed static as the base
+   pose, animated only where motion is welcome (the house rule). */
+.jd-dark-foot {
+  position: absolute; left: 8%; right: 8%; bottom: 3%; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center;
+}
+.jd-dark-line {
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
+}
+.jd-dark-dots i { font-style: normal; }
+.jd-dark-slow {
+  font-family: var(--tmono); font-size: var(--t-label); font-style: italic;
+  line-height: 1.45; text-align: center; color: var(--tink-2);
+}
+/* THE PHONE BAND (owner catch, 2026-08-26). At phone width the margin line
+   wraps to two lines, and the slow line beneath it adds two more — stacked
+   up from the square's bottom 3% they climbed over the Model C/D labels.
+   The card gives up its square below 600px: the PILE keeps the square
+   (every swatch keeps its proportions), and the card grows just enough
+   underneath for the foot to flow in a band of its own. The foot is a
+   sibling of .jd-dark (junk-drawer.js, same date), so on desktop its
+   absolute seat in the scroller is the very box it always had. */
+@media (max-width: 600px) {
+  .jd-turn[data-view="darkroom"] { aspect-ratio: auto; }
+  .jd-dark { height: auto; aspect-ratio: 1 / 1; }
+  .jd-turn[data-view="darkroom"] .jd-turn-scroll { padding-bottom: 10px; }
+  .jd-dark-foot { position: static; margin: 4px 8% 0; }
+}
+@keyframes jdDarkDot {
+  0%, 20%  { opacity: 0; }
+  30%, 90% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* ---- motion: added, never assumed ------------------------------------------
+   Everything above is the static reduced-motion page; the loops only run for
+   visitors who haven't asked for stillness. */
+@media (prefers-reduced-motion: no-preference) {
+  /* the pen covers the 540-unit circuit in 30s — about two grid squares a
+     second, plotter pace; both windows on the same clock or the dot drifts */
+  .jd-dark-plot .plot-ink  { animation: jdDarkPlotInk 30s linear infinite; }
+  .jd-dark-plot .plot-nib  { animation: jdDarkPlotNib 30s linear infinite; }
+  /* stray drift slowed 2x (owner, 2026-08-17): same 37:49 period ratio,
+     so the never-quite-repeating wander survives the slowdown */
+  .jd-dark-stray           { animation: jdDarkStrayX 7.4s linear infinite alternate; }
+  .jd-dark-stray .sy       { animation: jdDarkStrayY 9.8s linear infinite alternate; }
+  /* the plea's ellipsis: steps(1,end) holds each keyframe's value to the
+     next stop, so the cycle reads none / one / two / three, then wraps.
+     nth-of-TYPE, not nth-child: the <br> between please and wait is the
+     .sy's first element child, so nth-child shifted every dot one place
+     and the third never lit (owner catch, 2026-08-26). */
+  .jd-dark-stray .sy i:nth-of-type(1) { animation: jdDarkStrayDot1 2.8s steps(1, end) infinite; }
+  .jd-dark-stray .sy i:nth-of-type(2) { animation: jdDarkStrayDot2 2.8s steps(1, end) infinite; }
+  .jd-dark-stray .sy i:nth-of-type(3) { animation: jdDarkStrayDot3 2.8s steps(1, end) infinite; }
+  /* the scatterword: ten bodies on one super-cycle. animation-name and
+     animation-duration arrive from the generated block in the well, so only
+     the parts that are the same for every seed live here. LINEAR is the
+     default join on purpose — the deceleration after each bang lives in the
+     waypoint SPACING, not in a curve; the one eased keyframe in the whole
+     animation is the zoop, which carries its own timing function. */
+  .jd-dark-gl {
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
+  /* watch slowed 2x (owner, 2026-08-17): a click per second, horology pace */
+  .jd-dark-watch .w-min    { animation: jdDarkWatchMin 12s steps(12, end) infinite; }
+  .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 144s steps(12, end) infinite; }
+  /* the margin line's working ellipsis: three dots arriving in turn */
+  .jd-dark-dots i              { opacity: 0; animation: jdDarkDot 1.8s linear infinite; }
+  .jd-dark-dots i:nth-child(2) { animation-delay: 0.45s; }
+  .jd-dark-dots i:nth-child(3) { animation-delay: 0.9s; }
+
+  /* arrival / failure theatrics — one-shot, then the state class holds */
+  .jd-dark-sw[data-state="ok"]   { animation: jdDarkSettle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1; }
+  .jd-dark-sw[data-state="fail"] { animation: jdDarkJolt 0.5s ease-in-out 1; }
+
+  /* either ending: the loop stops where it stands, behind the well's fade
+     to 0 — pausing spares the compositor a show nobody can see. (The bar's
+     binding arrives from its generated <style> like the scatterword's, but
+     pausing works the same — it is in this list.) */
+  .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy i,
+  .jd-dark-sw[data-state="ok"] .jd-dark-gl,
+  .jd-dark-sw[data-state="ok"] .w-min, .jd-dark-sw[data-state="ok"] .w-hr,
+  .jd-dark-sw[data-state="ok"] .jd-dark-tele *,
+  .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy i,
+  .jd-dark-sw[data-state="fail"] .jd-dark-gl,
+  .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr,
+  .jd-dark-sw[data-state="fail"] .jd-dark-tele * {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-stray .sy i,
+  .jd-dark-gl, .jd-dark-tele *,
+  .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
+  .jd-dark-dots i, .jd-dark-sw {
+    animation: none !important;
+  }
+  .jd-dark-sw, .jd-dark-well, .jd-dark-result { transition: none; }
+}
+
+/* VERBATIM from junk-drawer.css — the kraft photo corners (lines 2672–2682) */
+.jd-turn-corner {
+  position: absolute; width: 22px; height: 22px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                     background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                     background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+
+/* VERBATIM from junk-drawer.css — visually-hidden (lines 3247–3250) */
+.jd-vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* VERBATIM from junk-drawer.css — the phone rules that touch this card
+   (subset of the ≤600px / ≤768px blocks; the rest of those blocks styles
+   form controls that do not appear on the darkroom) */
+@media (max-width: 600px) {
+  .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
+  .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
+  .jd-turn[data-view="darkroom"] .jd-turn-head { padding: 0 48px; }
+  .jd-turn[data-view="darkroom"] .jd-turn-title {
+    font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
+  }
+  .jd-turn-scroll { padding: 10px 12px 14px; }
+}
+@media (max-width: 768px) {
+  .jd-turn-scrim { padding: 10px 8px; align-items: flex-start; }
+}
+
+/* ==========================================================================
+   MOCKUP STAGING — this page's own scaffolding. Nothing below restyles the
+   darkroom; it only seats the verbatim card in a review page.
+   ========================================================================== */
+/* the scrim as a block in the flow instead of a fixed overlay */
+.stage { margin: 14px 0 0; }
+.stage .jd-turn-scrim { position: relative; inset: auto; z-index: 1; }
+
+/* the phone frame: media queries key on the BROWSER viewport, so the two
+   phone blocks above are re-stated here scoped to .phone, property for
+   property, so the frame shows the phone presentation on a desktop screen */
+.devframe { width: 390px; max-width: 100%; margin: 0 auto; border-radius: 22px;
+  border: 2px solid rgba(48, 38, 20, 0.55); overflow: hidden;
+  box-shadow: 0 16px 34px -14px rgba(20, 10, 2, 0.6); }
+.phone .jd-turn-scrim { padding: 10px 8px; align-items: flex-start;
+  min-height: 720px; }                       /* ≤768px scrim rule + frame height */
+.phone .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }            /* ≤600px */
+.phone .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }      /* ≤600px */
+.phone .jd-turn[data-view="darkroom"] .jd-turn-head { padding: 0 48px; }  /* ≤600px */
+.phone .jd-turn[data-view="darkroom"] .jd-turn-title {
+  font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em; }       /* ≤600px */
+/* the live width is min(560px, 100%, calc(100vh - 110px)) — the vh term
+   reads the browser viewport, not this frame, so it is pinned out here */
+.phone .jd-turn[data-view="darkroom"] { width: min(560px, 100%); }
+/* the ≤600px phone band, re-stated in scope (owner catch, 2026-08-26) */
+.phone .jd-turn[data-view="darkroom"] { aspect-ratio: auto; }
+.phone .jd-dark { height: auto; aspect-ratio: 1 / 1; }
+.phone .jd-turn[data-view="darkroom"] .jd-turn-scroll { padding-bottom: 10px; }
+.phone .jd-dark-foot { position: static; margin: 4px 8% 0; }
+
+/* single-swatch specimens: one .jd-dark-sw at the desktop card's exact
+   swatch measure (41% × 33% of the 560px square = 229.6 × 184.8). The
+   position override only re-seats the swatch; its dress is untouched.
+   The pencilled "Model X" label is hidden — the caption does the naming. */
+.spec-stage { position: relative; width: 229.6px; height: 184.8px; }
+.spec-stage .jd-dark-sw { left: 0; top: 0; right: auto; bottom: auto;
+  width: 100%; height: 100%; }
+.spec-stage .jd-dark-label { display: none; }
+
+/* the margin-line specimens: the card's bottom strip, on the card's paper */
+.footspec-fig { flex: 0 1 560px; min-width: 0; max-width: 100%; }
+.footspec { position: relative; width: 560px; max-width: 100%; height: 96px;
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 3px 6px 12px -4px rgba(6, 3, 0, 0.5); }
+.footspec figcaption, .footcap { max-width: 560px; }
+</style>
+</head><body><div class="sheet">
+
+<h1>The Darkroom</h1>
+<div class="no">Mockup 37 &mdash; Darkroom loading animations, as-built inventory, 2026-08-26</div>
+<hr class="rule">
+<p class="dek">Every wait indicator the turn card can deal, run live from <b>verbatim copies of the
+shipped code</b> (junk-drawer.js &sect;3 &ldquo;the darkroom&rdquo;, junk-drawer.css lines
+1988&ndash;2599; the word mesh brings the whole Kimi&rsquo;s Take engine). The live pool is
+<b>DARK_POOL = stray &middot; scatter &middot; watch &middot; drift &middot; words</b>
+(junk-drawer.js l.&thinsp;4808): five indicators, four swatches, Fisher&ndash;Yates-dealt per turn from the
+turn&rsquo;s client_ref &mdash; one sits out each turn. Two more are benched, not deleted:
+<b>bar</b>, the honest bar (owner, 2026-08-21 &mdash; it runs below), and <b>plot</b>, the plotter
+circuit (owner, 2026-08-26 &mdash; generator and CSS remain in the code; not shown here).
+Generated indicators (scatter, bar) are seeded per turn; the seeds here are this page&rsquo;s own.</p>
+
+<h2>Desktop</h2>
+<div class="sub">the real card at its 560px square measure, on the real scrim &middot; one turn&rsquo;s deal, seeded &ldquo;mockup-37&rdquo; &middot; <span id="desk-deal"></span></div>
+<div class="stage" id="desk-stage"></div>
+
+<h2>The pool, one by one</h2>
+<div class="sub">each indicator alone in a swatch at the desktop swatch size (229.6 &times; 184.8) &middot; the pencilled model label is hidden here; captions name the pool entry</div>
+<div class="row" id="spec-row"></div>
+
+<h2>End states</h2>
+<div class="sub">paintSlots() swaps data-state on the one swatch that changed &middot; arrived settles and fades its loop out; failed judders, clears its loop the same way, edges red</div>
+<div class="row" id="state-row"></div>
+<p class="dek">The failure phrase is per-code (FAIL_WORDS, junk-drawer.js l.&thinsp;4071):
+<b>the machine didn&rsquo;t answer</b> (provider_failed) &middot; <b>the drawer refused the drawing</b>
+(sanitizer_rejected) &middot; <b>lost on the wire</b> (network) &middot; <b>out of turns for now</b>
+(rate_limited) &middot; <b>the drawer is resting</b> (drawer_resting) &middot; <b>already at work</b>
+(slot_in_progress) &middot; anything else: <b>came back blank</b>.</p>
+
+<h2>The margin line</h2>
+<div class="sub">the sheet&rsquo;s bottom strip (.jd-dark-foot) &middot; the working ellipsis is three dots arriving in turn (1.8s loop) &middot; the slow line appears when a turn passes SLOW_MS = 60s</div>
+<div class="row" id="foot-row"></div>
+
+<h2>Mobile</h2>
+<div class="sub">a 390px device frame &middot; the live &le;768px scrim rule and &le;600px masthead rules re-stated in scope &middot; a second turn&rsquo;s deal, seeded &ldquo;mockup-37-phone&rdquo; &middot; <span id="phone-deal"></span></div>
+<div class="devframe phone"><div class="stage" id="phone-stage"></div></div>
+<p class="dek">There is no darkroom-specific breakpoint: the card is
+<b>width: min(560px, 100%, calc(100vh &minus; 110px)); aspect-ratio: 1/1</b> and every swatch,
+well and foot is %-sized, so a phone simply gets a smaller square. What DOES change at phone
+widths: the scrim pads 10px/8px and top-aligns the card (&le;768px), and the PLEASE STAND BY
+band steps down to 0.8rem/0.16em tracking (&le;600px). The scatterword resizes via container
+units (7.893cqw), the drift measures its well at mount, and the mesh re-deals itself on
+resize.</p>
+
+<footer>
+Fidelity notes &middot; all darkroom CSS/JS verbatim (build-assembled) except:
+(1) the word-mesh iframe loads /art/kimis-take/mini.php live &mdash; here the same document
+(kimis-take.css + kimis-take.js + mini.php&rsquo;s bootstrap, params words=1 n=32 stubborn=100
+speed 2.8&ndash;5) is inlined via srcdoc so the file needs no server;
+(2) webfonts are not fetched (no external requests) &mdash; Courier Prime falls back to Courier
+New; Iowan Old Style / Snell Roundhand / Bradley Hand are system faces on macOS;
+(3) the phone frame re-states the phone media rules in scope, and pins out the card&rsquo;s
+100vh term, which would read the browser viewport;
+(4) specimen swatches are re-seated at fixed size and their model labels hidden.
+The ✕ on the cards is inert here. Reduced-motion honours the live rules: with
+&ldquo;reduce motion&rdquo; on, every swatch shows its static base pose.
+</footer>
+</div>
+
+<!-- the word mesh's real assets, inlined for the srcdoc frames -->
+<script type="text/plain" id="kt-css">/* ============================================================================
+   KIMI'S TAKE — a spin-off of The Carbon Rain (art/carbon-rain/).
+   One sheet of engineering paper, ruled the house way (9px fine, 45px heavy),
+   with the rain falling down its own rules. Everything is absolute px: the
+   ruling does NOT scale with the sheet, so a bigger sheet simply holds more
+   columns. That is the point — the paper stays the same paper.
+   ========================================================================== */
+.cr-page {
+  --cr-paper: #f8f3e2;
+  --cr-ink: #4a628a;          /* the ruling's own colour, struck solid */
+  --cr-type: #33240f;
+  --cr-type-2: rgba(51, 36, 15, 0.62);
+  --cr-type-3: rgba(51, 36, 15, 0.40);
+  --cr-rule: rgba(74, 53, 18, 0.34);
+  /* THE ZOOM. One number scales the whole piece: the paper's ruling, the
+     square each glyph sits in, and every script's font-size. The characters
+     are NOT re-tuned per zoom level — each script's size was measured once so
+     its advance matches the Latin's, and multiplying them all by the same
+     factor keeps that true. Change --cr-zoom and --cr-cell together: the cell
+     is 9px x zoom, and carbon-rain.js reads the cell straight off this
+     element, so the two can never drift apart. */
+  --cr-zoom: 2;
+  --cr-cell: 18px;          /* 9px x --cr-zoom */
+  --cr-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --cr-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  /* the site's own white ground shows through: the sheet of paper is the
+     only object on the page (owner, 2026-08-21) */
+  padding: clamp(14px, 3vw, 30px) clamp(10px, 3vw, 34px) 34px;
+}
+
+/* ---- the sheet ------------------------------------------------------------
+   Height-driven so it always fits the window under the banner, and wide
+   enough to carry a real number of columns. */
+.cr-sheet {
+  position: relative;
+  width: min(1180px, 100%);
+  height: min(calc(100vh - 180px), 900px);
+  min-height: 380px;
+  margin: 0 auto;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    var(--cr-paper);
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+.cr-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+/* a stream is one strip of glyphs riding one PATH. Positions are written by
+   the JS renderer straight to each glyph's transform — the same arithmetic
+   as the reservation table, from the same clock. The container just anchors
+   the coordinate system and the opacity. */
+.cr-s { position: absolute; top: 0; left: 0; display: block;
+  opacity: var(--cr-o); }
+.cr-g {
+  position: absolute; top: 0; left: 0;
+  display: block; text-align: center;
+  width: var(--cr-cell); height: var(--cr-cell); line-height: var(--cr-cell);
+  font-family: var(--cr-mono); font-style: normal; color: var(--cr-ink);
+  overflow: hidden;
+}
+/* mirror and pinwheel live on the INNER wrapper: a glyph's spin/mirror must
+   never share a transform with the JS-written translate on the outer cell —
+   the scale/rotate would multiply the translation and teleport the glyph */
+.cr-g u { display: block; width: 100%; height: 100%; line-height: inherit;
+  text-decoration: none;   /* it is a wrapper, not an underline */ }
+.cr-g u.is-rev  { transform: scaleX(-1); }
+.cr-g.is-spin { overflow: hidden; }  /* the 0.65 scale in crSpin keeps the
+  rotating box inside its square; hidden is belt-and-braces against ink spill */
+.cr-lat { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-dig { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-mrk { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-grk { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-cyr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-heb { font-size: calc(10px * var(--cr-zoom)); }
+.cr-arb { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-dev { font-size: calc(8.9px * var(--cr-zoom)); }
+.cr-geo { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-arm { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-cjk { font-size: calc(6px * var(--cr-zoom)); }
+.cr-han { font-size: calc(7.5px * var(--cr-zoom)); }
+.cr-tha { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-che { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-des { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-tib { font-size: calc(12px * var(--cr-zoom)); }
+.cr-brh { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-sid { font-size: calc(8.3px * var(--cr-zoom)); }
+.cr-shr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-gra { font-size: calc(6.8px * var(--cr-zoom)); }
+.cr-khr { font-size: calc(10px * var(--cr-zoom)); }
+.cr-ben { font-size: calc(9px * var(--cr-zoom)); }
+.cr-gur { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-guj { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-ori { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-tam { font-size: calc(8.1px * var(--cr-zoom)); }
+.cr-tel { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-kan { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-mal { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-sin { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-mya { font-size: calc(7.3px * var(--cr-zoom)); }
+.cr-khm { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-run { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-got { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-ita { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-phn { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-lnb { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-cop { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-tfn { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-osa { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-shw { font-size: calc(11.9px * var(--cr-zoom)); }
+.cr-vai { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-adl { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-nko { font-size: calc(11.1px * var(--cr-zoom)); }
+.cr-yii { font-size: calc(10.4px * var(--cr-zoom)); }
+.cr-gla { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-eth { font-size: calc(6.6px * var(--cr-zoom)); }
+.cr-syr { font-size: calc(8px * var(--cr-zoom)); }
+.cr-thn { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lao { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-bam { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-ave { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-olt { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-arc { font-size: calc(9.2px * var(--cr-zoom)); }
+.cr-nab { font-size: calc(11.4px * var(--cr-zoom)); }
+.cr-pal { font-size: calc(10px * var(--cr-zoom)); }
+.cr-man { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-car { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-lyc { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lyd { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-ugr { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-opr { font-size: calc(5.2px * var(--cr-zoom)); }
+.cr-mer { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-olc { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-cham { font-size: calc(5.5px * var(--cr-zoom)); }
+.cr-bali { font-size: calc(5.8px * var(--cr-zoom)); }
+.cr-java { font-size: calc(5.6px * var(--cr-zoom)); }
+.cr-bugi { font-size: calc(6.2px * var(--cr-zoom)); }
+.cr-batk { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-lisu { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-bass { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-mend { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-wcho { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-rohg { font-size: calc(11px * var(--cr-zoom)); }
+.cr-tale { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-mth { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-pla { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-alc { font-size: calc(6.6px * var(--cr-zoom)); }
+
+/* pinwheels turn at 65% scale: an 18px box rotated raw has a ~25px bounding
+   box and sweeps into the neighbouring lane (or a crossing stream); scaled,
+   the rotating box's diagonal stays inside its own square, so even the
+   spinners can never touch another stream */
+@keyframes crSpin    { from { transform: rotate(0) scale(0.65); } to { transform: rotate(360deg) scale(0.65); } }
+@keyframes crSpinCcw { from { transform: rotate(0) scale(0.65); } to { transform: rotate(-360deg) scale(0.65); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cr-g u.is-spin { animation: crSpin var(--cr-sd) linear infinite; }
+  .cr-g u.is-spin.is-ccw { animation-name: crSpinCcw; }
+}
+/* stillness: with no motion the sheet simply holds the page of type it was
+   first dealt (stream positions are written once at birth) */
+@media (prefers-reduced-motion: reduce) {
+  .cr-g u.is-spin { animation: none !important; }
+}
+
+/* the dial sits on the stamp's own rules: same width as the sheet, same
+   small monospace — it is furniture, not part of the piece */
+.cr-dial {
+  width: min(1180px, 100%); max-width: none;
+  margin: 12px auto 0; text-align: left;
+  display: flex; align-items: baseline; gap: 1.2em;
+  font-family: var(--cr-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--cr-type-3);
+}
+.cr-dial input[type="range"] {
+  width: 140px; margin: 0; vertical-align: middle;
+  accent-color: var(--cr-ink);
+}
+.cr-dial button {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 1px solid var(--cr-type-3);
+  padding: 0.1em 0.9em 0.2em; cursor: pointer;
+}
+.cr-dial button:hover { color: var(--cr-ink); border-color: var(--cr-ink); }
+.cr-dial-live { opacity: 0.7; }
+
+.cr-build {
+  /* the SAME width rule as the sheet, so the stamp sits exactly under its
+     right edge; the site's own paragraph width would otherwise shrink it */
+  width: min(1180px, 100%); max-width: none;
+  margin: 12px auto 0; text-align: right;
+  font-family: var(--cr-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--cr-type-3);
+}
+.cr-build-sep { padding: 0 0.5em; opacity: 0.55; }
+
+/* ---- the mini (mini.php) ---------------------------------------------------
+   The same piece at junk-drawer loading-card size: the engine is written in
+   cells, so zoom 1 (the house 9px grid — the darkroom swatch's own ruling) is
+   just a smaller --cr-cell, and every script's measured font-size follows
+   --cr-zoom down on its own. The sheet fills the whole frame and carries no
+   shadow (the frame's edge would clip it); the swatch it will live in has a
+   shadow of its own. */
+.cr-mini-page {
+  --cr-paper: #f8f3e2;
+  --cr-ink: #4a628a;
+  --cr-type: #33240f;
+  --cr-type-2: rgba(51, 36, 15, 0.62);
+  --cr-type-3: rgba(51, 36, 15, 0.40);
+  --cr-rule: rgba(74, 53, 18, 0.34);
+  --cr-zoom: 1;
+  --cr-cell: 9px;
+  --cr-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --cr-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  margin: 0; height: 100%;
+  overflow: hidden;   /* the sheet fills the frame exactly; nothing may scroll */
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.cr-mini-page .cr-sheet {
+  width: 100%; height: 100%; min-height: 0;
+  /* iframed, the sheet IS the swatch and fills it; opened on its own it
+     stops at a darkroom swatch's measure (~41% x 33% of a desktop card)
+     instead of paving the whole window */
+  max-width: 300px; max-height: 243px;
+  box-sizing: border-box;   /* the 1px border must not push past the frame */
+  box-shadow: none;
+}
+/* the lab bench: solo viewing only — the junk drawer's frame never shows
+   it. It takes the sheet's width, so the two read as one instrument */
+.cr-mini-bench { display: none; }
+html.is-solo .cr-mini-bench { display: block; width: 300px; max-width: 100%; }
+.cr-mini-bench .cr-dial { width: 100%; }
+/* solo, it is a little sheet on the site's own white ground — the shadow
+   only ever shows here (a frame's edge would clip it). The class goes on
+   <html>: the canvas takes ITS background, so the paper must yield there.
+   The sheet's cap also makes room for the bench beneath it */
+html.is-solo { background: #fff; }
+html.is-solo .cr-sheet {
+  max-height: min(243px, calc(100% - 84px));
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+
+/* the frame the mini is iframed into on the piece's own page: roughly a
+   darkroom swatch (41% x 33% of a card) at a desktop card size */
+.cr-mini-frame {
+  display: block; border: 0; background: transparent;
+  width: min(300px, 90%); aspect-ratio: 41 / 33;
+  margin: 12px auto 0;
+}
+
+@media (max-width: 700px) {
+  .cr-sheet { height: min(calc(100vh - 170px), 660px); }
+  </script>
+<script type="text/plain" id="kt-js">/* ============================================================================
+   KIMI'S TAKE — a spin-off of The Carbon Rain (art/carbon-rain/), forked at
+   its v0.1.3: same rain, no words. The two are meant to grow apart.
+
+   The Matrix rain, re-run for the large-language-model era: 73 writing
+   systems and five sets of notation, one glyph to a printed square, streaming
+   along PATHS across a sheet of engineering paper — entering from every edge,
+   running straight or turning corners — at different speeds, and never once
+   overlapping.
+
+   THE TRAFFIC IS SOLVED AT BIRTH, NOT ON THE ROAD. Streams glide smoothly at
+   constant speed, but a glide along a fixed path at constant velocity is
+   predictable: each stream's whole traverse is a closed-form set of (cell,
+   time-interval) reservations, checked against every stream already booked
+   before it is allowed to exist. No braking, no yielding, no gridlock — a
+   stream that cannot find clear spacetime is simply not born this cycle, and
+   the gap reads as weather. Births are dealt one per planner tick: bursts
+   traverse in lockstep and the sheet waves; singletons never do. And the
+   MIX is balanced by a ledger, not by hope: the planner tracks booked
+   cell-seconds per axis and births whichever clear candidate most reduces
+   the imbalance — a wide sheet would otherwise belong to the horizontals.
+
+   THE COLUMN STILL NEVER REPEATS. A stream's glyphs are dealt when it is
+   born and re-dealt only while it is entirely off the sheet — retirement is
+   a fact about the clock, so it works in background tabs too. And the
+   renderer writes positions computed from the same arithmetic as the
+   bookings: no second clock, no engine-specific keyframe behaviour.
+
+   The character pool is a COPY of the one in art/junk-drawer/junk-drawer.js,
+   not a shared library — the two are meant to grow apart. If you change the
+   pool here, that one does not follow.
+   ========================================================================== */
+(function () {
+  'use strict';
+  var POOL = {"lat":{"w":13,"s":10.0,"c":"ABCDEFGHIJKLMNOPQRSTUVWXYZ","n":"Latin"},"dig":{"w":7,"s":10.0,"c":"0123456789","n":"Digits"},"mrk":{"w":5,"s":10.0,"c":"/-.:§¶№×÷±°†‡¤¢£¥","n":"Marks"},"grk":{"w":6,"s":10.1,"c":"ͰͱͲͳͶͷͻͼͽͿΆΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϏϐϑϒϓϔϕϖϗϘϙϚϛϜϝϞϟϠϡϢϣϤϥϦϧϨϩϪϫϬϭϮϯϰϱϲϳϴϵ϶ϷϸϹϺϻϼϾϿἀἁἂἃἄἅἆἇἈἉἊἋἌἍἎἏἐἑἒἓἔἕἘἙἚἛἜἝἠἡἢἣἤἥἦἧἨἩἪἫἬἭἮἯἰἱἲἳἴἵἶἷἸἹἺἻἼἽἾἿὀὁὂὃὄὅὈὉὊὋὌὍὐὑὒὓὔὕὖὗὙὛὝὟὠὡὢὣὤὥὦὧὨὩὪὫὬὭὮὯὰάὲέὴήὶίὸόὺύὼώᾀᾁᾂᾃᾄᾅᾆᾇᾈᾉᾊᾋᾌᾍᾎᾏᾐᾑᾒᾓᾔᾕᾖᾗᾘᾙᾚᾛᾜᾝᾞᾟᾠᾡᾢᾣᾤᾥᾦᾧᾨᾩᾪᾫᾬᾭᾮᾯᾰᾱᾲᾳᾴᾶᾷᾸᾹᾺΆᾼῂῃῄῆῇῈΈῊΉῌῐῑῒΐῖῗῘῙῚΊῠῡῢΰῤῥῦῧῨῩῪΎῬῲῳῴῶῷῸΌῺΏῼ","n":"Greek"},"cyr":{"w":6,"s":9.3,"c":"ЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџѠѡѢѣѤѥѦѧѨѩѪѫѬѭѮѯѰѱѲѳѴѵѶѷѸѹѺѻѼѽѾѿҀҁ҂ҊҋҌҍҎҏҐґҒғҔҕҖҗҘҙҚқҜҝҞҟҠҡҢңҤҥҦҧҨҩҪҫҬҭҮүҰұҲҳҴҵҶҷҸҹҺһҼҽҾҿӀӁӂӃӄӅӆӇӈӉӊӋӌӍӎӐӑӒӓӔӕӖӗӘәӚӛӜӝӞӟӠӡӢӣӤӥӦӧӨөӪӫӬӭӮӯӰӱӲӳӴӵӶӷӸӹӺӻӼӽӾӿԀԁԂԃԄԅԆԇԈԉԊԋԌԍԎԏԐԑԒԓԔԕԖԗԘԙԚԛԜԝԞԟԠԡԢԣԤԥԦԧԨԩԫԬԭԮԯꙀꙁꙂꙃꙄꙅꙆꙇꙈꙉꙊꙋꙌꙍꙎꙏꙐꙑꙒꙓꙔꙕꙖꙗꙘꙙꙚꙛꙜꙝꙞꙟꙠꙡꙢꙣꙤꙥꙦꙧꙨꙩꙪꙫꙬꙭꙮꙿꚀꚁꚂꚃꚆꚇꚈꚉꚊꚋꚌꚍꚎꚏꚐꚑꚒꚓꚔꚕꚖꚗꚘꚙꚚꚛ","n":"Cyrillic"},"heb":{"w":5,"s":10,"c":"אבגדהוזחטךכלםמןנסעףפץצקרשתװױײײַﬠﬡﬢﬣﬤﬥﬦﬧﬨ﬩שׁשׂשּׁשּׂאַאָאּבּגּדּהּוּזּטּךּכּלּמּנּסּףּפּצּקּרּשּתּוֹבֿכֿפֿﭏ","n":"Hebrew"},"arb":{"w":5,"s":9.9,"c":"ؠءآأؤإئبةتثجحخدذرزسشصضطظعغػؼؽؾؿفقكلمنهوىيٮٯٱٲٳٵٶٷٸٹٺٻټٽپٿڀځڂڃڄڅچڇڈډڊڋڌڍڎڏڐڑڒړڔڕږڗژڙښڛڜڝڞڟڠڡڢڣڤڥڦڧڨکڪګڬڭڮگڰڱڲڳڴڵڶڷڸڹںڻڼڽھڿۀہۂۃۄۅۆۇۈۉۊۋیۍێۏېۑےۓݐݑݒݓݔݕݖݗݘݙݚݛݜݝݞݟݠݡݢݣݤݥݦݧݨݩݪݫݬݭݮݯݰݱݲݳݴݵݶݷݸݹݺݻݼݽݾݿࢠࢡࢢࢣࢤࢥࢦࢧࢨࢩࢪࢫࢬࢮࢰࢱࢲࢳࢴࢵࢶࢷࢸࢹࢺࢻࢼࢽ","n":"Arabic"},"dev":{"w":5,"s":8.9,"c":"ऄअआइईउऊऋऌऍऎएऐऑऒओऔकखगघङचछजझञटठडढणतथदधनऩपफबभमयरऱलळऴवशषसहक़ख़ग़ज़ड़ढ़फ़य़ॠॡॲॳॴॵॶॷॸॹॺॻॼॽॾॿ","n":"Devanagari"},"geo":{"w":4,"s":9.7,"c":"ႠႡႢႣႤႥႦႧႨႩႪႫႬႭႮႯႰႱႲႳႴႵႶႷႸႹႺႻႼႽႾႿჀჁჂჃჄჅაბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰჱჲჳჴჵჶჷჸჹჺჼჽჾჿᲐᲑᲒᲓᲔᲕᲖᲗᲘᲙᲚᲛᲜᲝᲞᲟᲠᲡᲢᲣᲤᲥᲦᲧᲨᲩᲪᲫᲬᲭᲮᲯᲰᲱᲲᲳᲴᲵᲶᲷᲸᲹᲺᲽᲾᲿ","n":"Georgian"},"arm":{"w":4,"s":9.7,"c":"ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖՙաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆև","n":"Armenian"},"cjk":{"w":4,"s":6,"c":"⼃⼨⽌⽰⾔⾸万丬乑乵亙亽仡伅伩位佱侕侹保倁倥偉偭傑債僙僽儡充兩再决凗击刟剃剧劋劯勓勷匛匿卣厇厫叏右吗吻呟咃咧哋哯唓唷啛啿喣嗇嗫嘏嘳噗噻嚟囃囧國圯坓坷垛垿埣堇堫塏塳増墻壟夃大奋奯妓妷姛姿娣婇婫媏媳嫗嫻嬟孃孧宋宯寓寷尛尿屣岇岫峏峳崗崻嵟嶃嶧巋巯帓帷幛广庣廇廫式弳彗彻徟心忧怋怯恓恷悛悿惣愇愫慏慳憗憻懟戃戧手扯抓抷招拿挣捇捫掏掳揗揻搟摃摧撋撯擓擷攛政散文斫族旳昗昻晟暃暧曋曯朓朷杛板枣柇柫栏栳桗桻梟棃棧椋椯楓楷榛榿槣樇樫橏橳檗檻櫟欃欧歋歯殓殷毛毿氣汇汫沏河泗泻洟浃浧涋涯淓混減渿湣溇溫滏滳漗漻潟澃澧濋濯瀓瀷灛灿炣烇烫焏焳煗煻熟燃燧爋爯牓牷犛犿狣猇猫獏獳玗玻珟球琧瑋瑯璓璷瓛瓿産畇畫疏疳痗痻瘟癃癧皋皯盓盷眛眿督瞇瞫矏石砗砻硟碃碧磋磯礓礷祛祿禣秇秫稏稳穗穻窟竃竧笋笯筓筷箛箿篣簇簫籏米粗粻糟紃紧絋絯經綷緛緿縣繇繫纏纳绗绻缟罃罧羋羯翓翷耛耿聣肇肫胏胳脗脻腟膃膧臋臯舓舷艛艿芣苇苫茏茳荗荻莟菃菧萋萯葓葷蒛蒿蓣蔇蔫蕏蕳薗薻藟蘃蘧虋虯蚓蚷蛛蛿蜣蝇蝫螏螳蟗蟻蠟衃衧袋袯裓裷褛褿襣覇覫觏觳託註詟誃誧請諯謓謷譛譿讣诇诫谏谳豗豻貟賃賧贋贯赓起趛趿跣踇踫蹏蹳躗躻軟較輧轋软输辷进迿連遇遫邏邳郗郻鄟酃酧醋醯釓釷鈛鈿鉣銇銫鋏鋳錗錻鍟鎃鎧鏋鏯鐓鐷鑛鑿钣铇铫锏锳镗镻閟闃闧阋阯陓陷際隿難震霫靏靳鞗鞻韟頃頧顋顯颓颷飛飿餣饇饫馏馳駗駻騟驃驧骋骯髓髷鬛鬿魣鮇鮫鯏鯳鰗鰻鱟鲃鲧鳋鳯鴓鴷鵛鵿鶣鷇鷫鸏鸳鹗鹻麟黃黧鼋鼯齓齷龛","n":"Chinese"},"han":{"w":4,"s":7.5,"c":"ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅢㅥㅦㅧㅨㅩㅪㅫㅬㅭㅮㅯㅰㅱㅲㅳㅴㅵㅶㅷㅸㅹㅺㅻㅼㅽㅾㅿㆀㆁㆂㆃㆄㆅㆆㆇㆈㆉㆊㆋㆌㆎ","n":"Hangul"},"tha":{"w":3,"s":10.1,"c":"กขฃคฅฆงจฉชซฌญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรฤลฦวศษสหฬอฮ","n":"Thai"},"che":{"w":6,"s":9.5,"c":"ᎠᎡᎢᎣᎤᎥᎦᎧᎨᎩᎪᎫᎬᎭᎮᎯᎰᎱᎲᎳᎴᎵᎶᎷᎸᎹᎺᎻᎼᎽᎾᎿᏀᏁᏂᏃᏄᏅᏆᏇᏈᏊᏋᏌᏍᏎᏏᏐᏑᏒᏓᏔᏕᏖᏗᏘᏙᏚᏛᏜᏝᏞᏟᏠᏡᏢᏣᏤᏥᏦᏧᏨᏩᏫᏬᏭᏮᏯᏰᏱᏲᏳᏴᏵꭰꭱꭲꭳꭴꭵꭶꭷꭸꭹꭺꭻꭼꭽꭾꭿꮀꮁꮂꮃꮄꮅꮆꮇꮈꮉꮊꮋꮌꮍꮎꮏꮐꮑꮒꮓꮔꮕꮖꮗꮘꮙꮚꮛꮜꮝꮞꮟꮠꮡꮢꮣꮤꮥꮦꮧꮨꮩꮪꮫꮬꮭꮮꮯꮰꮱꮲꮳꮴꮵꮶꮷꮸꮹꮺꮻꮼꮽꮾꮿ","n":"Cherokee"},"des":{"w":6,"s":10.3,"c":"𐐀𐐁𐐂𐐃𐐄𐐆𐐇𐐈𐐉𐐊𐐋𐐌𐐍𐐎𐐏𐐐𐐑𐐒𐐓𐐕𐐖𐐗𐐙𐐚𐐛𐐜𐐝𐐞𐐟𐐠𐐡𐐢𐐣𐐤𐐥𐐧𐐨𐐩𐐪𐐫𐐬𐐭𐐮𐐯𐐰𐐱𐐲𐐳𐐴𐐵𐐶𐐷𐐸𐐹𐐺𐐻𐐼𐐽𐐾𐐿𐑀𐑁𐑂𐑃𐑄𐑅𐑆𐑇𐑈𐑉𐑊𐑋𐑌𐑍𐑎𐑏","n":"Deseret"},"tib":{"w":5,"s":12,"c":"ཀཁགགྷངཅཆཇཉཊཋཌཌྷཎཏཐདདྷནཔཕབབྷམཙཚཛཛྷཝཞཟའཡརལཤཥསཧཨཀྵཪཫཬ","n":"Tibetan"},"brh":{"w":3,"s":9.6,"c":"𑀓𑀔𑀕𑀖𑀗𑀘𑀙𑀚𑀛𑀜𑀝𑀞𑀟𑀠𑀡𑀢𑀣𑀤𑀥𑀦𑀧𑀨𑀩𑀪𑀫𑀬𑀮𑀯𑀰𑀱𑀲𑀳𑀴𑀵𑀶𑀷","n":"Brahmi"},"sid":{"w":3,"s":8.3,"c":"𑖀𑖁𑖂𑖃𑖄𑖅𑖆𑖇𑖈𑖉𑖊𑖋𑖌𑖍𑖎𑖏𑖐𑖑𑖒𑖓𑖔𑖕𑖖𑖗𑖘𑖙𑖚𑖛𑖜𑖝𑖞𑖟𑖠𑖡𑖢𑖣𑖤𑖥𑖦𑖧𑖨𑖩𑖪𑖫𑖬𑖭𑖮","n":"Siddham"},"shr":{"w":3,"s":9.3,"c":"𑆃𑆄𑆅𑆆𑆇𑆈𑆉𑆊𑆋𑆌𑆍𑆎𑆏𑆐𑆑𑆒𑆓𑆔𑆕𑆖𑆗𑆘𑆙𑆚𑆛𑆜𑆝𑆞𑆟𑆠𑆡𑆢𑆣𑆤𑆥𑆦𑆧𑆨𑆩𑆪𑆫𑆬𑆭𑆮𑆯𑆰𑆱𑆲","n":"Sharada"},"gra":{"w":3,"s":6.8,"c":"𑌅𑌆𑌇𑌈𑌉𑌊𑌋𑌌𑌏𑌓𑌔𑌕𑌖𑌗𑌘𑌙𑌚𑌛𑌜𑌝𑌞𑌟𑌠𑌡𑌢𑌣𑌤𑌥𑌦𑌧𑌨𑌪𑌫𑌬𑌭𑌮𑌯𑌰𑌲𑌳𑌵𑌶𑌷𑌸𑌹","n":"Grantha"},"khr":{"w":3,"s":10,"c":"𐨀𐨐𐨑𐨒𐨓𐨕𐨖𐨗𐨙𐨚𐨛𐨜𐨝𐨞𐨟𐨠𐨡𐨢𐨣𐨤𐨥𐨦𐨧𐨨𐨩𐨪𐨫𐨬𐨭𐨮𐨯𐨰𐨱𐨲𐨳","n":"Kharoshthi"},"ben":{"w":2,"s":9,"c":"অইঈউঊঋঌএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহড়ঢ়য়","n":"Bengali"},"gur":{"w":2,"s":9.8,"c":"ਅਆਇਈਉਊਏਐਓਔਕਖਗਘਙਚਛਜਝਞਟਠਡਢਣਤਥਦਧਨਪਫਬਭਮਯਰਲਲ਼ਵਸ਼ਸਹਖ਼ਗ਼ਜ਼ੜਫ਼","n":"Gurmukhi"},"guj":{"w":2,"s":8.2,"c":"અઆઇઈઉઊઋઌઍએઐઓઔકખગઘઙચછજઝઞટઠડઢણતથદધનપફબભમયરલળવશષસહ","n":"Gujarati"},"ori":{"w":2,"s":9.1,"c":"ଅଆଇଈଉଊଋଌଏଐଓଔକଖଗଘଙଚଛଜଝଞଟଠଡଢଣତଥଦଧନପଫବଭମଯରଲଳଵଶଷସହ","n":"Odia"},"tam":{"w":2,"s":8.1,"c":"அஆஇஈஉஊஎஏஐஒஓகஙசஜஞடணதநனமயரறலளழவஶஷஸஹ","n":"Tamil"},"tel":{"w":2,"s":7.2,"c":"అఆఇఈఉఊఌఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరఱలళఴవశషసహౘౙౚ","n":"Telugu"},"kan":{"w":2,"s":7.2,"c":"ಅಆಇಈಉಋಌಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಱಲಳವಶಷಸಹ","n":"Kannada"},"mal":{"w":2,"s":6.1,"c":"അആഇഈഉഊഋഌഎഏഐഒഓഔകഖഗഘങചഛജഝഞടഠഡഢണതഥദധനഩപഫബഭമയരറലളഴവശഷസഹൔൕൖ","n":"Malayalam"},"sin":{"w":2,"s":7.9,"c":"අආඇඈඉඊඋඌඍඏඐඑඒඓඔඕඖකඛගඝඞඟචඡජඣඤඥඦටඨඩඪණඬතථදධනඳපඵබභමඹයරලවශෂසහළෆ","n":"Sinhala"},"mya":{"w":2,"s":7.3,"c":"ကခဂဃငစဆဇဈဉညဋဌဍဎဏတထဒဓနပဖဗဘမယရလဝသဟဠအၐၑၒၓၔၕ","n":"Myanmar"},"khm":{"w":2,"s":8.5,"c":"កខគឃងចឆជញដឋឌឍណតថទធនបផពភមយរលវឝឞសហឡអ","n":"Khmer"},"run":{"w":4,"s":8.2,"c":"ᚠᚡᚢᚣᚤᚥᚦᚧᚨᚩᚪᚫᚬᚭᚮᚯᚰᚱᚲᚳᚴᚵᚶᚷᚸᚹᚺᚻᚼᚽᚾᚿᛀᛁᛂᛃᛄᛅᛆᛇᛈᛉᛊᛋᛍᛎᛏᛐᛑᛒᛓᛔᛕᛖᛗᛘᛙᛚᛛᛜᛝᛞᛟᛠᛡᛣᛤᛥᛦᛨᛩᛪᛮᛯᛰ","n":"Runic"},"got":{"w":3,"s":9.3,"c":"𐌰𐌱𐌲𐌳𐌴𐌵𐌶𐌷𐌸𐌺𐌻𐌼𐌽𐌾𐌿𐍀𐍁𐍂𐍃𐍄𐍅𐍆𐍇𐍈𐍉𐍊","n":"Gothic"},"ita":{"w":3,"s":9.1,"c":"𐌀𐌁𐌂𐌃𐌄𐌅𐌆𐌇𐌈𐌊𐌋𐌌𐌍𐌎𐌏𐌐𐌑𐌒𐌓𐌔𐌕𐌖𐌗𐌘𐌙𐌚𐌛𐌜𐌝𐌞𐌟","n":"Old Italic"},"phn":{"w":3,"s":9.1,"c":"𐤀𐤁𐤂𐤃𐤄𐤅𐤆𐤇𐤈𐤉𐤊𐤋𐤌𐤍𐤎𐤏𐤐𐤑𐤒𐤓𐤔𐤕","n":"Phoenician"},"lnb":{"w":3,"s":7.6,"c":"𐀀𐀁𐀂𐀃𐀄𐀅𐀆𐀇𐀈𐀉𐀊𐀋𐀍𐀎𐀏𐀐𐀑𐀒𐀓𐀔𐀕𐀖𐀗𐀘𐀙𐀚𐀛𐀜𐀝𐀞𐀟𐀠𐀡𐀢𐀣𐀤𐀥𐀦𐀨𐀩𐀪𐀫𐀬𐀭𐀮𐀯𐀰𐀱𐀲𐀳𐀴𐀵𐀶𐀷𐀸𐀹𐀺𐀼𐀽𐀿𐁀𐁁𐁂𐁃𐁄𐁅𐁆𐁇𐁈𐁉𐁊𐁋𐁌𐁍𐁐𐁑𐁒𐁓𐁔𐁕𐁖𐁗𐁘𐁙𐁚𐁛𐁜𐁝𐂀𐂁𐂂𐂃𐂄𐂅𐂆𐂇𐂈𐂉𐂊𐂋𐂌𐂍𐂎𐂏𐂐𐂑𐂒𐂓𐂔𐂕𐂖𐂗𐂘𐂙𐂚𐂛𐂜𐂝𐂞𐂟𐂠𐂡𐂢𐂣𐂤𐂥𐂦𐂧𐂨𐂩𐂪𐂫𐂬𐂭𐂮𐂯𐂰𐂲𐂳𐂴𐂵𐂶𐂷𐂸𐂹𐂺𐂻𐂼𐂽𐂾𐂿𐃀𐃁𐃂𐃃𐃄𐃅𐃇𐃈𐃉𐃊𐃋𐃏𐃐𐃑𐃒𐃓𐃔𐃕𐃖𐃗𐃘𐃙𐃛𐃜𐃝𐃞𐃟𐃠𐃡𐃢𐃣𐃤𐃥𐃦𐃧𐃨𐃩𐃪𐃫𐃬𐃭𐃮𐃯𐃰𐃱𐃲𐃳𐃴𐃶𐃷𐃸𐃹𐃺","n":"Linear B"},"cop":{"w":3,"s":9.5,"c":"ⲀⲁⲂⲃⲄⲅⲆⲇⲈⲉⲊⲋⲌⲍⲎⲏⲐⲑⲒⲔⲕⲖⲗⲘⲙⲚⲛⲜⲝⲞⲟⲠⲡⲢⲣⲤⲥⲦⲧⲨⲩⲪⲫⲬⲭⲮⲯⲰⲱⲲⲳⲴⲵⲶⲷⲸⲹⲼⲽⲾⲿⳀⳁⳃⳄⳅⳆⳇⳈⳉⳊⳋⳌⳍⳎⳏⳐⳑⳒⳓⳔⳕⳖⳗⳘⳙⳚⳛⳜⳝⳞⳟⳠⳡⳢⳣⳤ⳥⳦⳨⳩⳪ⳫⳬⳭⳮⳲⳳϢϣϤϥϦϧϨϩϪϫϬϭϮϯ","n":"Coptic"},"tfn":{"w":3,"s":9.8,"c":"ⴰⴱⴲⴳⴴⴵⴶⴷⴸⴹⴺⴻⴼⴽⴾⴿⵀⵁⵂⵃⵄⵅⵆⵇⵈⵉⵊⵋⵌⵍⵎⵏⵐⵑⵒⵓⵔⵕⵖⵗⵘⵙⵚⵛⵜⵝⵞⵟⵠⵡⵢⵣⵤⵥⵦ","n":"Tifinagh"},"osa":{"w":3,"s":8.8,"c":"𐒰𐒱𐒲𐒳𐒴𐒵𐒶𐒷𐒸𐒹𐒺𐒻𐒼𐒽𐒾𐒿𐓀𐓁𐓂𐓃𐓄𐓅𐓆𐓇𐓈𐓉𐓊𐓋𐓌𐓍𐓎𐓏𐓐𐓑𐓒𐓓𐓘𐓙𐓚𐓛𐓜𐓝𐓞𐓟𐓠𐓡𐓢𐓣𐓤𐓥𐓦𐓧𐓨𐓩𐓪𐓫𐓬𐓭𐓮𐓯𐓰𐓱𐓲𐓳𐓴𐓵𐓶𐓷𐓸𐓹𐓺𐓻","n":"Osage"},"shw":{"w":3,"s":11.9,"c":"𐑐𐑑𐑒𐑓𐑔𐑕𐑖𐑗𐑘𐑙𐑚𐑛𐑜𐑝𐑞𐑟𐑠𐑡𐑢𐑣𐑤𐑥𐑦𐑧𐑨𐑩𐑪𐑫𐑬𐑭𐑮𐑯𐑰𐑱𐑲𐑳𐑴𐑵𐑶𐑷𐑸𐑹𐑺𐑻𐑼𐑽𐑾𐑿","n":"Shavian"},"vai":{"w":3,"s":7.9,"c":"ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗꔘꔙꔚꔛꔜꔝꔟꔠꔡꔢꔣꔤꔥꔦꔧꔨꔩꔪꔫꔬꔭꔮꔯꔰꔱꔲꔳꔴꔵꔶꔷꔸꔹꔺꔻꔼꔽꔾꔿꕀꕁꕂꕃꕄꕅꕆꕇꕈꕉꕊꕋꕌꕍꕎꕏꕐꕑꕒꕓꕔꕕꕖꕗꕘꕙꕚꕛꕜꕝꕞꕟꕠꕡꕢꕣꕤꕥꕦꕧꕨꕩꕪꕫꕬꕭꕮꕯꕰꕱꕲꕳꕴꕵꕶꕷꕸꕹꕺꕻꕼꕽꕾꕿꖀꖁꖂꖃꖄꖅꖆꖇꖈꖉꖊꖋꖌꖍꖎꖏꖐꖑꖒꖓꖔꖕꖖꖗꖘꖙꖚꖛꖜꖝꖞꖟꖠꖡꖢꖣꖤꖥꖦꖧꖨꖩꖪꖫꖬꖭꖮꖯꖰꖱꖲꖳꖴꖵꖶꖷꖸꖹꖺꖻꖼꖽꖾꖿꗀꗁꗂꗃꗄꗅꗆꗇꗈꗉꗊꗋꗌꗍꗎꗏꗐꗑꗒꗓꗔꗕꗖꗗꗘꗙꗚꗛꗜꗝꗞꗟꗠꗡꗢꗣꗤꗥꗦꗧꗨꗩꗪꗫꗬꗭꗮꗯꗰꗱꗲꗳꗴꗵꗶꗷꗸꗹꗺꗻꗼꗽꗾꗿꘀꘁꘂꘃꘄꘅꘆꘇꘈꘉꘊꘋꘌꘐꘑꘒꘓꘔꘕꘖꘗꘘꘙꘚꘛꘜꘝꘞꘟꘪꘫ","n":"Vai"},"adl":{"w":3,"s":8.2,"c":"𞤀𞤁𞤂𞤃𞤄𞤅𞤆𞤇𞤈𞤉𞤊𞤋𞤌𞤍𞤎𞤏𞤐𞤑𞤒𞤓𞤔𞤕𞤖𞤗𞤘𞤙𞤚𞤛𞤜𞤝𞤞𞤟𞤠𞤡𞤢𞤣𞤤𞤥𞤦𞤧𞤨𞤩𞤪𞤫𞤬𞤭𞤮𞤯𞤰𞤱𞤲𞤳𞤴𞤵𞤶𞤷𞤸𞤹𞤺𞤻𞤼𞤽𞤾𞤿𞥀𞥁𞥂𞥃","n":"Adlam"},"nko":{"w":3,"s":11.1,"c":"ߊߋߌߍߎߏߐߑߒߓߔߕߖߗߘߙߚߛߜߝߞߟߠߡߢߣߤߥߦߧߨߩߪ","n":"N'Ko"},"yii":{"w":3,"s":10.4,"c":"ꀀꀃꀆꀉꀌꀏꀒꀕꀘꀛꀞꀡꀤꀧꀪꀭꀰꀳꀶꀹꀼꀿꁂꁅꁈꁋꁎꁑꁔꁗꁚꁝꁠꁣꁦꁩꁬꁯꁲꁵꁸꁻꁾꂁꂄꂇꂌꂏꂒꂕꂘꂛꂞꂡꂤꂧꂪꂭꂰꂳꂶꂹꂼꂿꃂꃅꃈꃋꃎꃑꃔꃗꃚꃝꃠꃣꃦꃩꃬꃯꃲꃵꃸꃻꃾꄁꄄꄇꄊꄍꄐꄓꄖꄙꄜꄟꄢꄥꄨꄫꄮꄱꄴꄷꄺꄽꅀꅃꅆꅉꅌꅏꅒꅕꅘꅛꅞꅡꅤꅧꅪꅭꅰꅳꅶꅹꅼꅿꆂꆅꆈꆋꆎꆑꆔꆗꆚꆝꆠꆣꆦꆩꆬꆯꆲꆵꆸꆻꆾꇁꇄꇇꇊꇍꇐꇓꇖꇙꇜꇟꇢꇥꇨꇫꇮꇱꇴꇷꇺꇽꈀꈃꈆꈉꈌꈏꈒꈕꈘꈛꈞꈡꈤꈧꈪꈭꈰꈳꈶꈹꈼꈿꉂꉅꉈꉋꉎꉑꉔꉗꉚꉝꉠꉣꉦꉩꉬꉯꉲꉵꉸꉻꉾꊁꊄꊇꊊꊍꊐꊓꊖꊙꊜꊟꊢꊥꊨꊫꊮꊱꊴꊷꊺꊽꋀꋃꋆꋉꋌꋏꋒꋕꋘꋛꋞꋡꋤꋧꋪꋭꋰꋳꋶꋹꋼꋿꌂꌅꌈꌋꌎꌑꌔꌗꌚꌝꌠꌣꌦꌩꌬꌯꌲꌵꌸꌻꌾꍁꍄꍇꍊꍍꍐꍓꍖꍙꍜꍟꍢꍥꍨꍫꍮꍱꍴꍷꍺꍽꎀꎃꎆꎉꎌꎏꎒꎕꎘꎛꎞꎡꎤꎧꎪꎭꎰꎳꎶꎹꎼꎿꏂꏅꏈꏋꏎꏑꏔꏗꏚꏝꏠꏣꏦꏩꏬꏯꏲꏵꏸꏻꏾꐁꐄꐇꐊꐍꐐꐓꐖꐙꐜꐟꐢꐥꐨꐫꐮꐱꐴꐷꐺꐽꑀꑃꑆꑉꑌꑏꑒꑕꑘꑛꑞꑡꑤꑧꑪꑭꑰꑳꑶꑹꑼꑿꒂꒅꒈꒋ","n":"Yi"},"gla":{"w":3,"s":7.2,"c":"ⰀⰁⰂⰃⰄⰅⰆⰇⰈⰉⰊⰋⰌⰍⰎⰏⰐⰑⰒⰓⰔⰕⰖⰗⰘⰙⰚⰛⰜⰝⰞⰟⰠⰡⰢⰣⰤⰥⰦⰧⰨⰩⰪⰫⰬⰭⰮⰯⰰⰱⰲⰳⰴⰵⰶⰷⰸⰹⰺⰻⰼⰽⰾⰿⱀⱁⱂⱃⱄⱅⱆⱇⱈⱉⱊⱋⱌⱍⱎⱏⱐⱑⱒⱓⱔⱕⱖⱗⱘⱙⱚⱛⱝⱞ","n":"Glagolitic"},"eth":{"w":3,"s":6.6,"c":"ሀሂሄሆለሊሌሎሐሒሔሖመሚሜሞሠሢሤሦረሪሬሮሰሲሴሶሸሺሼሾቀቂቄቆቈቊቌቐቒቔቖቘቚቜበቢቤቦቨቪቬቮተቲቴቶቸቺቼቾኀኂኄኆኈኊኌነኒኔኖኘኚኜኞአኢኤኦከኪኬኮኰኲኴኸኺኼኾዀዂዄወዊዌዎዐዒዔዖዘዚዜዞዠዢዤዦየዪዬዮደዲዴዶዸዺዼዾጀጂጄጆገጊጌጎጐጒጔጘጚጜጞጠጢጤጦጨጪጭጯጱጳጵጷጹጻጽጿፁፃፅፇፉፋፍፏፑፓፕፗፙᎁᎃᎅᎇᎉᎋᎍᎏ᎔᎘ⶀⶂⶄⶆⶈⶊⶌⶎⶑⶓⶕⶡⶣⶥⶩⶫⶭⶱⶳⶵⶹⶻⶾⷀⷂⷄⷆⷈⷊⷌⷎⷐⷒⷔⷖⷘⷚⷜⷞ","n":"Ethiopic"},"syr":{"w":3,"s":8,"c":"ܐܒܓܔܕܖܗܘܚܛܜܞܟܠܡܢܣܤܥܦܧܨܩܪܫܬܭܮܯ","n":"Syriac"},"thn":{"w":3,"s":9.5,"c":"ހށނރބޅކއވމފދތލގޏސޑޒޓޔޕޖޗޘޙޚޛޜޝޞޟޠޡޢޣޤޥ","n":"Thaana"},"lao":{"w":3,"s":10.1,"c":"ກຂຄງຈຊຍດຕຖທນບປຜຝພຟມຢຣລວສຫອຮ","n":"Lao"},"bam":{"w":2,"s":9.9,"c":"ꚠꚡꚢꚣꚤꚥꚦꚧꚨꚩꚪꚫꚬꚭꚮꚯꚰꚱꚲꚳꚴꚵꚶꚷꚸꚹꚺꚻꚼꚽꚾꚿꛀꛁꛂꛃꛄꛅꛆꛇꛈꛉꛊꛋꛌꛍꛎꛏꛐꛑꛒꛓꛔꛕꛖꛗꛘꛙꛚꛛꛜꛝꛞꛟꛠꛡꛢꛣꛤꛥꛦꛧꛨꛩꛪꛫꛬꛭꛮꛯ","n":"Bamum"},"ave":{"w":2,"s":9.4,"c":"𐬀𐬂𐬄𐬅𐬆𐬇𐬈𐬉𐬊𐬋𐬌𐬍𐬎𐬏𐬐𐬑𐬒𐬓𐬔𐬕𐬖𐬗𐬘𐬙𐬚𐬛𐬜𐬝𐬞𐬟𐬠𐬡𐬢𐬣𐬤𐬦𐬧𐬨𐬩𐬪𐬫𐬬𐬭𐬮𐬯𐬰𐬱𐬲𐬳𐬴𐬵","n":"Avestan"},"olt":{"w":2,"s":9.5,"c":"𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰉𐰊𐰋𐰌𐰍𐰎𐰏𐰐𐰑𐰒𐰓𐰔𐰕𐰖𐰗𐰘𐰙𐰚𐰛𐰜𐰝𐰞𐰟𐰠𐰡𐰢𐰣𐰤𐰥𐰦𐰧𐰨𐰩𐰪𐰫𐰬𐰭𐰮𐰯𐰰𐰱𐰲𐰳𐰴𐰵𐰶𐰷𐰸𐰹𐰺𐰻𐰼𐰽𐰾𐰿𐱀𐱁𐱂𐱃𐱄𐱅𐱆𐱇𐱈","n":"Old Turkic"},"arc":{"w":2,"s":9.2,"c":"𐡀𐡁𐡂𐡃𐡄𐡅𐡆𐡇𐡈𐡉𐡊𐡋𐡌𐡍𐡎𐡏𐡐𐡑𐡒𐡓𐡔𐡕","n":"Aramaic"},"nab":{"w":2,"s":11.4,"c":"𐢀𐢁𐢂𐢃𐢄𐢅𐢆𐢇𐢈𐢉𐢊𐢋𐢌𐢍𐢎𐢏𐢐𐢑𐢒𐢓𐢔𐢕𐢖𐢗𐢘𐢙𐢚𐢛𐢜𐢝𐢞","n":"Nabataean"},"pal":{"w":2,"s":10,"c":"𐡠𐡡𐡢𐡣𐡤𐡥𐡦𐡧𐡨𐡩𐡪𐡫𐡬𐡭𐡮𐡯𐡰𐡱𐡲𐡳𐡴𐡵𐡶","n":"Palmyrene"},"man":{"w":2,"s":7.6,"c":"𐫀𐫁𐫂𐫃𐫄𐫅𐫆𐫇𐫈𐫉𐫊𐫋𐫌𐫍𐫎𐫏𐫐𐫑𐫒𐫓𐫔𐫕𐫖𐫗𐫘𐫙𐫚𐫛𐫜𐫝𐫞𐫟𐫠𐫡𐫢𐫣𐫤","n":"Manichaean"},"car":{"w":2,"s":8.8,"c":"𐊠𐊡𐊢𐊣𐊤𐊥𐊦𐊧𐊨𐊩𐊪𐊫𐊬𐊭𐊮𐊯𐊰𐊱𐊲𐊳𐊴𐊵𐊶𐊷𐊸𐊹𐊺𐊻𐊼𐊽𐊾𐊿𐋀𐋁𐋂𐋃𐋄𐋅𐋆𐋇𐋈𐋉𐋊𐋋𐋌𐋍𐋎𐋏𐋐","n":"Carian"},"lyc":{"w":2,"s":9.5,"c":"𐊀𐊁𐊂𐊃𐊄𐊅𐊆𐊇𐊈𐊉𐊊𐊋𐊌𐊍𐊎𐊏𐊐𐊑𐊒𐊓𐊔𐊕𐊖𐊗𐊘𐊙𐊚𐊛𐊜","n":"Lycian"},"lyd":{"w":2,"s":9.6,"c":"𐤠𐤡𐤢𐤣𐤤𐤥𐤦𐤧𐤨𐤩𐤪𐤫𐤬𐤭𐤮𐤯𐤰𐤱𐤲𐤳𐤴𐤵𐤶𐤷𐤸𐤹","n":"Lydian"},"ugr":{"w":2,"s":6.1,"c":"𐎀𐎁𐎂𐎃𐎄𐎅𐎆𐎇𐎈𐎉𐎊𐎋𐎌𐎍𐎎𐎏𐎐𐎑𐎒𐎓𐎔𐎕𐎖𐎗𐎘𐎙𐎚𐎛𐎜𐎝","n":"Ugaritic"},"opr":{"w":2,"s":5.2,"c":"𐎠𐎡𐎢𐎣𐎤𐎥𐎦𐎧𐎨𐎩𐎪𐎫𐎬𐎭𐎮𐎯𐎰𐎱𐎲𐎳𐎴𐎵𐎶𐎷𐎸𐎹𐎺𐎻𐎼𐎽𐎾𐎿𐏀𐏁𐏂𐏃","n":"Old Permic"},"mer":{"w":2,"s":7.2,"c":"𐦀𐦁𐦂𐦃𐦄𐦅𐦆𐦇𐦈𐦉𐦊𐦋𐦌𐦍𐦎𐦏𐦑𐦒𐦓𐦔𐦕𐦖𐦗𐦘𐦚𐦛𐦜𐦝𐦞𐦟𐦠𐦡𐦢𐦤𐦥𐦦𐦧𐦨𐦩𐦪𐦫𐦬𐦭𐦮𐦯𐦰𐦱𐦲𐦳𐦴𐦵𐦶𐦷","n":"Meroitic"},"olc":{"w":2,"s":9.6,"c":"ᱚᱛᱜᱝᱞᱟᱠᱡᱢᱣᱤᱥᱦᱧᱨᱩᱪᱫᱬᱭᱮᱯᱰᱱᱲᱳᱴᱵᱶᱷ","n":"Ol Chiki"},"cham":{"w":2,"s":5.5,"c":"ꨀꨁꨂꨃꨄꨅꨆꨇꨈꨉꨊꨋꨌꨍꨎꨏꨐꨑꨒꨓꨔꨕꨖꨗꨘꨙꨚꨛꨜꨝꨞꨟꨠꨡꨢꨣꨤꨥꨦꨧꨨ","n":"Cham"},"bali":{"w":2,"s":5.8,"c":"ᬅᬆᬇᬈᬉᬊᬋᬌᬍᬎᬏᬐᬑᬒᬓᬔᬕᬖᬗᬘᬙᬚᬛᬜᬝᬞᬟᬠᬡᬢᬣᬤᬥᬦᬧᬨᬩᬪᬫᬬᬭᬮᬯᬰᬱᬲᬳ","n":"Balinese"},"java":{"w":2,"s":5.6,"c":"ꦄꦅꦆꦇꦈꦉꦊꦋꦌꦍꦎꦏꦐꦑꦒꦓꦔꦕꦖꦗꦘꦙꦚꦛꦜꦝꦞꦟꦠꦡꦢꦣꦤꦥꦦꦧꦨꦩꦪꦫꦬꦭꦮꦯꦰꦱꦲ","n":"Javanese"},"bugi":{"w":2,"s":6.2,"c":"ᨀᨁᨂᨃᨄᨅᨆᨇᨈᨉᨊᨋᨌᨍᨎᨏᨐᨑᨒᨓᨔᨕᨖ","n":"Buginese"},"batk":{"w":2,"s":6.1,"c":"ᯀᯁᯂᯃᯄᯅᯆᯈᯉᯊᯋᯌᯍᯎᯏᯐᯑᯒᯓᯔᯕᯖᯗᯘᯙᯚᯛᯜᯝᯞᯟᯠᯡᯢᯣᯤᯥ","n":"Batak"},"lisu":{"w":2,"s":9.7,"c":"ꓐꓑꓒꓓꓔꓕꓖꓗꓘꓙꓚꓛꓜꓝꓞꓟꓠꓡꓢꓣꓤꓥꓦꓧꓨꓩꓪꓫꓬꓭꓮꓯꓰꓱꓲꓳꓴꓵꓶꓷ","n":"Lisu"},"bass":{"w":2,"s":8.5,"c":"𖫐𖫑𖫒𖫓𖫔𖫕𖫖𖫗𖫘𖫙𖫚𖫛𖫜𖫝𖫞𖫟𖫠𖫡𖫢𖫣𖫤𖫥𖫦𖫧𖫨𖫩𖫪𖫫𖫬𖫭","n":"Bassa Vah"},"mend":{"w":2,"s":8.5,"c":"𞠀𞠁𞠂𞠃𞠄𞠅𞠆𞠇𞠈𞠉𞠊𞠋𞠌𞠍𞠎𞠏𞠐𞠒𞠓𞠔𞠕𞠖𞠗𞠘𞠙𞠚𞠛𞠜𞠝𞠞𞠟𞠠𞠡𞠣𞠤𞠥𞠦𞠧𞠨𞠩𞠪𞠫𞠬𞠭𞠮𞠯𞠰𞠱𞠲𞠳𞠴𞠵𞠶𞠷𞠸𞠹𞠺𞠻𞠼𞠽𞠾𞠿𞡀𞡁𞡂𞡃𞡄𞡅𞡆𞡇𞡈𞡉𞡊𞡋𞡌𞡍𞡎𞡏𞡐𞡑𞡒𞡓𞡔𞡕𞡖𞡗𞡘𞡙𞡚𞡛𞡜𞡝𞡞𞡟𞡠𞡡𞡢𞡣𞡤𞡥𞡦𞡧𞡨𞡩𞡪𞡫𞡬𞡭𞡮𞡯𞡰","n":"Mende"},"wcho":{"w":2,"s":9.4,"c":"𞋀𞋁𞋂𞋃𞋄𞋅𞋆𞋇𞋈𞋉𞋊𞋋𞋌𞋍𞋎𞋏𞋐𞋑𞋒𞋓𞋔𞋕𞋖𞋗𞋘𞋙𞋚𞋛𞋜𞋝𞋞𞋟𞋠𞋡𞋢𞋣𞋤𞋥𞋦𞋧𞋨𞋩𞋪𞋫","n":"Wancho"},"rohg":{"w":2,"s":11,"c":"𐴀𐴁𐴂𐴃𐴄𐴅𐴆𐴇𐴈𐴉𐴊𐴋𐴌𐴍𐴎𐴏𐴐𐴒𐴓𐴔𐴖𐴗𐴘𐴙𐴚𐴛𐴜𐴝𐴞𐴟𐴠𐴡𐴢𐴣","n":"Rohingya"},"tale":{"w":2,"s":10.3,"c":"ᥐᥑᥒᥓᥔᥕᥖᥗᥘᥙᥚᥛᥜᥝᥞᥟᥠᥡᥢᥣᥤᥥᥦᥧᥨᥩᥪᥫᥬᥭ","n":"Tai Le"},"mth":{"w":3,"s":10.0,"c":"∑∏∫√∞≠≤≥∂∆∇⊂⊃∈∀∃⊕⊗","n":"Math"},"pla":{"w":2,"s":10.0,"c":"☉☽☿♀♁♂♃♄♅♆♇☊☋","n":"Planetary"},"alc":{"w":2,"s":6.6,"c":"🜁🜂🜃🜄🜅🜆🜇🜈🜉🜊🜋🜌🜍🜔🜛🜚","n":"Alchemy"}};
+  var MIRROR_OK = ["lat", "dig", "grk", "cyr", "mrk"];
+  var SYM = "AHIMOTUVWXY08.:\u00d7\u00f7\u00b1\u00b0\u2021\u2020\u0391\u0394\u0397\u0398\u0399\u039b\u039c\u039e\u039f\u03a0\u03a4\u03a5\u03a6\u03a7\u03a8\u03a9\u0410\u0414\u0416\u041b\u041c\u041d\u041e\u041f\u0422\u0424\u0425\u0428";
+
+  var BAG = [], k, i;
+  for (k in POOL) {
+    /* Array.from splits by CODE POINT. Plain string indexing splits by UTF-16
+       code unit, which tears every astral-plane script — Deseret, Linear B,
+       Gothic, Osage, Shavian, Adlam and the four historical Sanskrit hands all
+       live above U+FFFF — into lone surrogates that render as boxes. */
+    POOL[k].a = Array.from(POOL[k].c);
+    for (i = 0; i < POOL[k].w; i++) BAG.push(k);
+  }
+  var MOK = {};
+  for (i = 0; i < MIRROR_OK.length; i++) MOK[MIRROR_OK[i]] = 1;
+  function rnd(n) { return (Math.random() * n) | 0; }
+
+  function strike(el) {
+    var key = BAG[rnd(BAG.length)], set = POOL[key].a;
+    var ch = set[rnd(set.length)];
+    /* a reversal only reads as one on a script the viewer recognises, and
+       never on a glyph that is symmetrical about its own vertical axis.
+       Mirror and spin live on the INNER wrapper: the scale/rotate must
+       never touch the outer cell's JS-written translate, or the glyph
+       teleports off its path (scale multiplies the translation too). */
+    var rev = MOK[key] && SYM.indexOf(ch) < 0 && Math.random() < 0.18;
+    el.className = 'cr-g cr-' + key;
+    var inner = el.firstChild;
+    inner.className = (el.getAttribute('data-spin') || '') +
+                      (rev ? ' is-rev' : '');
+    inner.textContent = ch;
+  }
+
+  function fill(s) {
+    var cells = s.children, n = cells.length, i;
+    for (i = 0; i < n; i++) strike(cells[i]);
+  }
+
+  /* ========================================================================
+     THE TRAFFIC MANAGER — paths, not lanes, and still zero collisions.
+
+     A stream is no longer a straight strip on one lane: it is a PATH on the
+     grid. It enters from an edge, runs straight or turns — cell centre to
+     cell centre, always orthogonally, never crossing its own trail — and
+     leaves by any edge. Motion is smooth (constant speed, positions written
+     to transform by the renderer), and because the whole path is fixed at
+     birth, occupancy is closed-form:
+     measure ARCLENGTH along the path in cells; glyph j rides at arclength
+     s−j where s = v·(t−t0), and path cell i (centre at arclength i) is
+     touched while s ∈ (i−0.5, i+len−0.5). Born at t0, that is the seconds
+     interval [t0 + (i−0.5)/v, t0 + (i+len−0.5)/v]. The reservation table
+     holds one interval list per grid cell; the planner only births a path
+     whose intervals conflict with nothing already booked. Streams never
+     brake, yield, or reroute — traffic is solved at birth or not at all.
+
+     Paths turn because the mesh is the point: a straight rain reads as
+     weather, a turning one reads as TRAFFIC. Roughly half the paths are
+     dealt 1–3 corners; the rest stay straight, keeping the rain's memory.
+
+     Births are dealt ONE per planner tick. Burst births were the wave bug:
+     streams born in the same cycle traverse in lockstep, wrap together, and
+     the sheet oscillated between orientations. One per tick decorrelates
+     them for good.
+     ====================================================================== */
+
+  /* motion is SMOOTH (linear CSS animation, continuous px); only the
+     collision model is discrete, because the paper's cells are. Speeds are
+     cells per second — zoom-independent by construction, and matched to the
+     original rain's pace: 22–42 squares/sec in 9px-square units = 2.4–4.7
+     cells/sec at the doubled cell. Much faster and a glyph crosses its own
+     square in a frame or two, which strobes instead of gliding. */
+  var SPD_MIN = 2.2, SPD_SPAN = 2.5;   /* 2.2–4.7 cells/sec */
+  var DEBUG = /[?&]debug/.test(location.search);
+
+  /* per-mount state */
+  var grid = null;          /* { cols, rows, CELL, host, spinP } */
+  var booked = new Map();   /* cellKey -> [[t0, t1, id], ...] */
+  var live = [];            /* stream records: { id, el, keys, slot } */
+  var slots = [];
+  var nextId = 1;
+  var timers = [];
+  var stubbornP = 0.35;     /* live-tunable via KimisTake.set() */
+  var words = null;         /* opt.words: every stream IS a word, head first */
+  /* word mode: which words are ON THE SHEET right now (owner, 2026-08-26 —
+     "the same string shouldn't appear twice"). A word joins at birth, leaves
+     at retirement, and the planner deals only from the words that are free;
+     when every word is out, the slot stays empty and the planner comes back
+     around — the same "cast waits its turn" discipline as clear spacetime. */
+  var inPlay = {};
+  var spdMin = SPD_MIN, spdSpan = SPD_SPAN;   /* per-mount via opt.speed* */
+
+  /* the piece's clock is the wall clock MINUS whatever time it spent paused,
+     so pausing freezes everything the model does — births, retirements,
+     positions — and resuming continues exactly where it left off */
+  var paused = false, pausedAt = 0, pauseAccum = 0;
+  function nowSec() {
+    return ((paused ? pausedAt : performance.now()) - pauseAccum) / 1000;
+  }
+  function keyOf(row, col) { return (row << 10) | col; }
+
+  var DVEC = { d: [0, 1], u: [0, -1], r: [1, 0], l: [-1, 0] };
+
+  /* Is one cell clear for a strip's whole passage? The window covers the
+     head's arrival through the tail's departure, padded to a visible beat. */
+  function cellFree(key, idx, len, v, t0) {
+    var a = t0 + (idx - 0.5) / v - PAD, b = t0 + (idx + len - 0.5) / v + PAD;
+    var list = booked.get(key);
+    if (!list) return true;
+    for (var m = 0; m < list.length; m++) {
+      if (a < list[m][1] && list[m][0] < b) return false;
+    }
+    return true;
+  }
+
+  /* Deal a path REACTIVELY. Enters from the edge dir implies with the
+     strip's length plus margin behind it, then runs straight until it has
+     a reason not to: a stream turns ONLY when the cell ahead is already
+     booked for the moment the strip would arrive — then it takes whichever
+     perpendicular is clear, snake-game style. Streams with an open road
+     never turn, so an empty sheet is pure rain and a busy one weaves.
+     Off-sheet travel is invisible and needs no clearance; leaving the sheet
+     is always allowed and is the exit. Returns null when the walk is boxed
+     in — the planner deals again with a different lane, speed or moment.
+
+     STUBBORN streams (a dealt share of births) carry a commission: exit by
+     the edge OPPOSITE the one they entered — which is exactly the edge their
+     entry heading points at. They still yield to traffic, but two rules
+     change: a wrong edge is a wall, not an exit, and when traffic has pushed
+     them off course they steer back toward the target at the next clear
+     square. A stubborn stream that has wandered past its budget gives up and
+     leaves by any edge — the release valve that keeps a stubborn majority
+     from gridlocking the sheet. */
+  function genPath(dir, len, v, t0, stubborn) {
+    var cols = grid.cols, rows = grid.rows;
+    var mB = len + 2 + rnd(8), mA = len + 2 + rnd(8);
+    var heading = DVEC[dir], col, row;
+    if (dir === 'd') { col = rnd(cols); row = -mB; }
+    else if (dir === 'u') { col = rnd(cols); row = rows - 1 + mB; }
+    else if (dir === 'r') { row = rnd(rows); col = -mB; }
+    else { row = rnd(rows); col = cols - 1 + mB; }
+    var cells = [[col, row]];
+    var seen = {}; seen[col + ',' + row] = 1;
+    var onSheet = false, exiting = false, onLen = 0, sinceCorrect = 0;
+    var giveUp = false;
+    var maxOn = 40 + rnd(30);   /* don't wander the sheet forever */
+    var guard = mB + 3 * (cols + rows) + mA + 16;
+    while (guard-- > 0) {
+      var nc = col + heading[0], nr = row + heading[1];
+      var on = nc >= 0 && nc < cols && nr >= 0 && nr < rows;
+      if (exiting) {
+        cells.push([nc, nr]); col = nc; row = nr;
+        if (nc < -mA || nc >= cols + mA || nr < -mA || nr >= rows + mA) return cells;
+        continue;
+      }
+      if (!onSheet) {
+        cells.push([nc, nr]); col = nc; row = nr;
+        if (on) { onSheet = true; seen[nc + ',' + nr] = 1; }
+        continue;
+      }
+      if (onLen > maxOn) giveUp = true;   /* the release valve */
+      if (!on) {
+        /* leaving the sheet: stubborn streams only leave by the edge their
+           commission names — any other edge is a wall */
+        if (!stubborn || giveUp || heading === DVEC[dir]) {
+          exiting = true; cells.push([nc, nr]); col = nc; row = nr; continue;
+        }
+      }
+      var idx = cells.length;
+      var straightOK = on && !seen[nc + ',' + nr] &&
+                       cellFree(keyOf(nr, nc), idx, len, v, t0);
+      if (stubborn && !giveUp && heading !== DVEC[dir]) {
+        /* off course: steer back toward the commission at the next clear
+           square (not instantly — a small run keeps the correction from
+           reading as jitter) */
+        var tc = col + DVEC[dir][0], tr = row + DVEC[dir][1];
+        if (sinceCorrect >= 2 &&
+            tc >= 0 && tc < cols && tr >= 0 && tr < rows &&
+            !seen[tc + ',' + tr] &&
+            cellFree(keyOf(tr, tc), idx, len, v, t0) &&
+            Math.random() < 0.8) {
+          heading = DVEC[dir]; sinceCorrect = 0; continue;
+        }
+      }
+      if (straightOK) {
+        cells.push([nc, nr]); seen[nc + ',' + nr] = 1; col = nc; row = nr;
+        onLen++; sinceCorrect++;
+        continue;
+      }
+      /* BLOCKED — turn. When the walk has wandered long, prefer the side
+         that heads for the nearer edge, so exits come around in time. */
+      var perps = heading[0] === 0 ? [[1, 0], [-1, 0]] : [[0, 1], [0, -1]];
+      /* never double back against the entry heading: two perpendicular
+         turns would reverse the axis, and a string that folds back on
+         itself reads against its own letters (word mode made this
+         visible — a falling word that turns twice ends up rising,
+         spelled floor-to-ceiling) */
+      var anti = DVEC[dir];
+      perps = perps.filter(function (p) {
+        return p[0] !== -anti[0] || p[1] !== -anti[1];
+      });
+      if (onLen >= maxOn) {
+        perps.sort(function (a, b) {
+          var da = a[0] ? (a[0] > 0 ? cols - 1 - col : col)
+                        : (a[1] > 0 ? rows - 1 - row : row);
+          var db = b[0] ? (b[0] > 0 ? cols - 1 - col : col)
+                        : (b[1] > 0 ? rows - 1 - row : row);
+          return da - db;
+        });
+      } else if (rnd(2)) perps.reverse();
+      var chosen = null;
+      for (var q = 0; q < perps.length; q++) {
+        var qc = col + perps[q][0], qr = row + perps[q][1];
+        if (qc >= 0 && qc < cols && qr >= 0 && qr < rows &&
+            !seen[qc + ',' + qr] &&
+            cellFree(keyOf(qr, qc), idx, len, v, t0)) { chosen = perps[q]; break; }
+      }
+      if (!chosen) return null;   /* boxed in — deal again */
+      heading = chosen; onLen = 0; sinceCorrect = 0;
+    }
+    return null;
+  }
+
+  /* The load balancer's ledger: how many cell-seconds of each axis are
+     currently booked. A stream passing over a cell occupies it for ~len/v
+     seconds, so cost = on-sheet cells of each axis × len/v. */
+  var axisTime = { v: 0, h: 0 };
+  function axisCost(cells, len, v) {
+    var cv = 0, ch = 0;
+    for (var i = 1; i < cells.length; i++) {
+      var c = cells[i];
+      if (c[0] < 0 || c[0] >= grid.cols || c[1] < 0 || c[1] >= grid.rows) continue;
+      if (c[0] === cells[i - 1][0]) cv++; else ch++;
+    }
+    var sec = len / v;
+    return { v: cv * sec, h: ch * sec };
+  }
+
+  /* Cell i's centre sits at arclength i cells along the path; a glyph's box
+     is one square, so cell i is touched while the head's arclength s lies in
+     (i−0.5, i+len−0.5). In seconds, with the pad that gives every handoff a
+     visible beat of clear paper (near-misses read as touches): */
+  var PAD = 0.35;
+  function pathIntervals(cells, len, v, t0) {
+    var out = [];
+    for (var i = 0; i < cells.length; i++) {
+      var c = cells[i][0], r = cells[i][1];
+      if (c < 0 || c >= grid.cols || r < 0 || r >= grid.rows) continue;
+      out.push([keyOf(r, c), t0 + (i - 0.5) / v - PAD,
+                t0 + (i + len - 0.5) / v + PAD]);
+    }
+    return out;
+  }
+
+  function conflicts(ivals) {
+    for (var j = 0; j < ivals.length; j++) {
+      var list = booked.get(ivals[j][0]);
+      if (!list) continue;
+      for (var m = 0; m < list.length; m++) {
+        if (ivals[j][1] < list[m][1] && list[m][0] < ivals[j][2]) return true;
+      }
+    }
+    return false;
+  }
+
+  function reserve(id, ivals) {
+    if (DEBUG && conflicts(ivals)) {
+      console.error('[kimis-take] double-booking detected, stream ' + id);
+    }
+    for (var j = 0; j < ivals.length; j++) {
+      var list = booked.get(ivals[j][0]);
+      if (!list) { list = []; booked.set(ivals[j][0], list); }
+      list.push([ivals[j][1], ivals[j][2], id]);
+    }
+  }
+
+  function release(id, keys) {
+    for (var j = 0; j < keys.length; j++) {
+      var list = booked.get(keys[j]);
+      if (!list) continue;
+      for (var m = list.length - 1; m >= 0; m--) {
+        if (list[m][2] === id) list.splice(m, 1);
+      }
+      if (!list.length) booked.delete(keys[j]);
+    }
+  }
+
+  function sweep(now) {
+    booked.forEach(function (list, key) {
+      for (var m = list.length - 1; m >= 0; m--) {
+        if (list[m][1] < now - 1) list.splice(m, 1);
+      }
+      if (!list.length) booked.delete(key);
+    });
+  }
+
+  function spawn(cells, len, v, t0, ivals, slot, stubborn, dir, word) {
+    var id = nextId++, j;
+    var P = cells.length;
+    var st = document.createElement('span');
+    st.className = 'cr-s';
+    /* character rain keeps a per-stream opacity as a depth cue; words are
+       all alike — same ink, same weight, nothing nearer or farther
+       (owner, 2026-08-23) */
+    st.style.setProperty('--cr-o', word ? '1'
+                               : (0.62 + Math.random() * 0.38).toFixed(2));
+    for (j = 0; j < len; j++) {
+      var cell = document.createElement('i');
+      cell.appendChild(document.createElement('u'));   /* mirror/spin wrapper */
+      if (!word && Math.random() < grid.spinP) {
+        cell.setAttribute('data-spin',
+          ' is-spin' + (Math.random() < 0.5 ? ' is-ccw' : ''));
+        cell.firstChild.style.setProperty('--cr-sd',
+          (4 + Math.random() * 7).toFixed(2) + 's');
+      }
+      st.appendChild(cell);
+    }
+    if (word) {
+      /* the letters are dealt once, at birth, and never re-struck — a
+         re-struck letter is a misprint. Reading order is SPATIAL, not
+         arrival (owner, 2026-08-23): horizontals read left-to-right and
+         verticals top-to-bottom whichever way they travel, so the LEADING
+         letter is the word's last for east- and south-bound streams, its
+         first for west- and north-bound. A space is a blank square
+         travelling inside the word. No mirrors, no pinwheels — a reversed
+         letter is a different word. */
+      var letters = Array.from(word), gs = st.children;
+      var flip = (dir === 'r' || dir === 'd');
+      for (j = 0; j < len; j++) {
+        var ch = letters[flip ? len - 1 - j : j];
+        gs[j].className = 'cr-g cr-lat';
+        gs[j].firstChild.textContent = ch === ' ' ? '' : ch;
+      }
+    } else {
+      fill(st);
+    }
+    var keys = [];
+    for (j = 0; j < ivals.length; j++) keys.push(ivals[j][0]);
+    reserve(id, ivals);
+    var rec = { id: id, el: st, keys: keys, slot: slot,
+                cells: cells, len: len, v: v, t0: t0, P: P,
+                endT: t0 + (P - 1) / v,
+                word: word || null,
+                cost: axisCost(cells, len, v) };
+    if (word) inPlay[word] = 1;
+    axisTime.v += rec.cost.v; axisTime.h += rec.cost.h;
+    /* the sim harness (local-dev/kimis-take-sim.js) replays positions from
+       these parameters and asserts no two streams ever share a cell */
+    if (DEBUG) rec.plan = { cells: cells, len: len, v: v, t0: t0, P: P,
+                            stubborn: !!stubborn, dir: dir };
+    st.__rec = rec;
+    grid.host.appendChild(st);
+    live.push(rec);
+    slot.free = false;
+    positionStream(rec, nowSec());
+  }
+
+  /* THE RENDERER IS THE MODEL. Glyph j rides at arclength s−j along the
+     path, s = v·(t−t0) — the same arithmetic the reservations are booked
+     with, from the same wall clock, written straight to transform. No CSS
+     animation, no second clock, no engine-specific keyframe behaviour to
+     drift from the bookings. rAF drives it in the foreground; the planner
+     tick re-renders at 4fps so background tabs (where rAF parks) stay
+     honest too. */
+  function positionStream(rec, now) {
+    var cells = rec.cells, P = rec.P, CELL = grid.CELL;
+    var els = rec.el.children;
+    var s = rec.v * (now - rec.t0);
+    for (var j = 0; j < rec.len; j++) {
+      var q = s - j;
+      if (q < 0) q = 0; else if (q > P - 1) q = P - 1;
+      var i0 = Math.floor(q);
+      if (i0 >= P - 1) i0 = P - 2;
+      var fr = q - i0;
+      var c0 = cells[i0], c1 = cells[i0 + 1];
+      els[j].style.transform =
+        'translate(' + ((c0[0] + (c1[0] - c0[0]) * fr) * CELL).toFixed(1) + 'px,' +
+                       ((c0[1] + (c1[1] - c0[1]) * fr) * CELL).toFixed(1) + 'px)';
+    }
+  }
+
+  var rafId = 0;
+  function frame() {
+    var now = nowSec();
+    for (var r = 0; r < live.length; r++) positionStream(live[r], now);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  /* Birth one stream into clear spacetime, or leave the slot empty. The
+     slot's compass point is the ENTRY heading; where the path goes from
+     there is the walk's business. With seedPhase the stream starts
+     mid-traverse (negative delays) so the sheet opens already woven.
+
+     Collision-free is necessary but not sufficient: the MIX is a controlled
+     quantity too. Up to three conflict-free candidates are dealt, and the
+     one that most reduces the global vertical/horizontal booked-time
+     imbalance is born. Straight horizontal runs live longer on a wide sheet
+     (more cells to cross), so without this the horizontals slowly eat the
+     page — with it the ledger corrects every birth. */
+  function planCandidate(slot, seedPhase) {
+    /* word mode deals only from the words not already on the sheet — the
+       deck is cut once per call (nothing retires mid-call) */
+    var deck = null;
+    if (words) {
+      deck = [];
+      for (var w = 0; w < words.length; w++) {
+        if (!inPlay[words[w]]) deck.push(words[w]);
+      }
+      if (!deck.length) return false;   /* every word is out; the planner
+                                           comes back around */
+    }
+    var cands = [];
+    for (var attempt = 0; attempt < 40 && cands.length < 3; attempt++) {
+      var dir = slot.dir || 'd';
+      /* word mode: the stream IS the word — its length is the spelling's,
+         dealt per candidate because the length shapes the walk */
+      var word = null, len;
+      if (words) {
+        word = deck[rnd(deck.length)];
+        len = Array.from(word).length;
+        if (len < 2) continue;   /* one letter is not a string */
+      } else {
+        len = 8 + rnd(38);   /* 8–45 glyphs: paths wind, so the old
+                                axis-length cap no longer applies */
+      }
+      var v = spdMin + Math.random() * spdSpan;
+      var stubborn = Math.random() < stubbornP;   /* the commissioned share */
+      /* t0 is dealt BEFORE the walk: the walk avoids cells by the moment
+         the strip would arrive, so the moment has to exist first */
+      var t0 = seedPhase ? nowSec() - Math.random() * 80
+                         : nowSec() + Math.random() * 1.2;
+      var cells = genPath(dir, len, v, t0, stubborn);
+      if (!cells) continue;
+      var dur = (cells.length - 1) / v;
+      if (seedPhase && -t0 > dur) continue;   /* already done — redeal */
+      var ivals = pathIntervals(cells, len, v, t0);
+      if (conflicts(ivals)) continue;   /* belt and braces: the walk already
+                                           checked each cell at arrival time */
+      var cost = axisCost(cells, len, v);
+      cands.push({ cells: cells, len: len, v: v, t0: t0, ivals: ivals,
+                   cv: cost.v, ch: cost.h, stubborn: stubborn, dir: dir,
+                   word: word });
+    }
+    if (!cands.length) return false;   /* the gap stays; the planner comes back around */
+    var best = cands[0], bestScore = Infinity;
+    for (var j = 0; j < cands.length; j++) {
+      var sc = Math.abs((axisTime.v + cands[j].cv) - (axisTime.h + cands[j].ch));
+      if (sc < bestScore) { bestScore = sc; best = cands[j]; }
+    }
+    spawn(best.cells, best.len, best.v, best.t0, best.ivals, slot,
+          best.stubborn, best.dir, best.word);
+    return true;
+  }
+
+  /* Retire streams whose traverse is done. Timer-driven, not event-driven:
+     the head reaching the path's end (with the margins guaranteeing the
+     tail is off the sheet behind it) is a fact about the clock, and the
+     clock works in background tabs where animation events may not fire. */
+  function retireDone(now) {
+    for (var j = live.length - 1; j >= 0; j--) {
+      var rec = live[j];
+      if (now < rec.endT) continue;
+      release(rec.id, rec.keys);
+      if (rec.word) delete inPlay[rec.word];   /* the word is free again */
+      axisTime.v -= rec.cost.v; axisTime.h -= rec.cost.h;
+      rec.slot.free = true;   /* the planner rebirths it when spacetime clears */
+      if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
+      live.splice(j, 1);
+    }
+  }
+
+  function build(host, opt) {
+    opt = opt || {};
+    var W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return 0;
+    /* CSS owns the zoom: --cr-cell is the square every glyph sits in, and the
+       same value rules the paper. Reading it here means the two cannot drift. */
+    var css = getComputedStyle(host);
+    var CELL = parseFloat(css.getPropertyValue('--cr-cell')) || 9;
+    var cols = Math.floor(W / CELL), rows = Math.floor(H / CELL);
+    if (cols < 4 || rows < 4) return 0;
+    /* the host is snapped to whole cells so the ruling and the glyph squares
+       share one origin */
+    host.style.width = (cols * CELL) + 'px';
+    host.style.height = (rows * CELL) + 'px';
+    grid = { cols: cols, rows: rows, CELL: CELL, host: host,
+             spinP: opt.spinP == null ? 0.06 : opt.spinP };
+    if (opt.stubbornP != null) stubbornP = opt.stubbornP;
+    words = opt.words && opt.words.length ? opt.words : null;
+    inPlay = {};
+    spdMin = opt.speedMin == null ? SPD_MIN : opt.speedMin;
+    spdSpan = opt.speedSpan == null ? SPD_SPAN : opt.speedSpan;
+    booked = new Map();
+    axisTime = { v: 0, h: 0 };
+    live = [];
+    slots = [];
+    /* the cast: one slot per entry heading — down, up, right, left — each
+       slot re-entering from its own edge forever, the path's turns re-dealt
+       at every birth. opt.dirs overrides the cast; the page's dial deals
+       n streams round-robin over the four points. */
+    var dirs = opt.dirs || ['d', 'u', 'r', 'l'];
+    for (var s = 0; s < dirs.length; s++) {
+      slots.push({ free: true, dir: dirs[s] });
+    }
+    /* deal the first page: seeds start mid-traverse, so the sheet opens
+       already woven rather than filling in from the edges */
+    for (s = 0; s < slots.length; s++) {
+      planCandidate(slots[s], true);
+    }
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      /* the planner: retires finished streams, then keeps free slots filled,
+         ONE birth per tick. Burst births were the wave bug — streams born
+         together traverse together, wrap together, and the sheet oscillated
+         between orientations. An empty slot is just another gap in the rain. */
+      timers.push(setInterval(function () {
+        if (paused) return;
+        var now = nowSec();
+        sweep(now);
+        retireDone(now);
+        for (var j = 0; j < slots.length; j++) {
+          if (slots[j].free) { planCandidate(slots[j], false); break; }
+        }
+        /* rAF parks in hidden tabs; keep positions honest at 4fps there */
+        for (j = 0; j < live.length; j++) positionStream(live[j], now);
+      }, 250));
+      if (!paused) { cancelAnimationFrame(rafId); frame(); }
+      /* the slow in-view re-strike: a few squares a second, caught out of the
+         corner of an eye rather than watched. Word streams are never
+         re-struck — a changed letter is a misprint — so the default there
+         is stillness */
+      var rate = opt.visibleRate == null ? (words ? 0 : 10) : opt.visibleRate;
+      if (rate > 0) timers.push(setInterval(function () {
+        if (paused || !live.length) return;
+        for (var i = 0; i < rate; i++) {
+          var rec = live[rnd(live.length)];
+          if (!rec) continue;
+          var cell = rec.el.children[rnd(rec.el.children.length)];
+          if (cell) strike(cell);
+        }
+      }, 1000));
+    }
+    return live.length;
+  }
+
+  window.KimisTake = {
+    scripts: Object.keys(POOL).length,
+    characters: (function () {
+      var seen = {}, n = 0;
+      for (var k in POOL) {
+        for (var i = 0; i < POOL[k].a.length; i++) {
+          if (!seen[POOL[k].a[i]]) { seen[POOL[k].a[i]] = 1; n++; }
+        }
+      }
+      return n;
+    })(),
+    /* the dial's readout: how many streams are actually on the sheet vs how
+       many the cast asked for — at high counts the gap is the point */
+    stats: function () { return { live: live.length, slots: slots.length }; },
+    /* lab controls: pause freezes the piece's own clock (render, planner,
+       births, retirements); resume continues from the frozen instant;
+       set() live-tunes what the planner deals next */
+    pause: function () {
+      if (paused) return;
+      paused = true;
+      pausedAt = performance.now();
+      cancelAnimationFrame(rafId);
+    },
+    resume: function () {
+      if (!paused) return;
+      pauseAccum += performance.now() - pausedAt;
+      paused = false;
+      if (live.length) { cancelAnimationFrame(rafId); frame(); }
+    },
+    paused: function () { return paused; },
+    set: function (o) { if (o && o.stubbornP != null) stubbornP = o.stubbornP; },
+    mount: function (host, opt) {
+      for (var i = 0; i < timers.length; i++) clearInterval(timers[i]);
+      timers = [];
+      cancelAnimationFrame(rafId);
+      host.innerHTML = '';
+      /* setTimeout, NOT requestAnimationFrame: rAF is parked while the tab is
+         hidden, so a visitor who opens this in a background tab would come
+         back to an empty sheet that never built itself. */
+      var tries = 0;
+      (function attempt() {
+        if (++tries > 60) return;
+        if (!host.clientWidth || !host.clientHeight) {
+          setTimeout(attempt, 40);
+          return;
+        }
+        build(host, opt);
+      })();
+    }
+  };
+})();
+</script>
+<script type="text/plain" id="kt-boot">  (function () {
+    /* opened directly (not iframed into the junk drawer), the sheet caps at
+       swatch size and sits on white — the CSS keys off this */
+    if (window === window.top) document.documentElement.className = 'is-solo';
+    var host = document.getElementById('cr-rain');
+    var dial = document.getElementById('cr-streams');
+    var out = document.getElementById('cr-streams-n');
+    var WORDS = ["LOADING","STAND BY","PLEASE WAIT","ONE MOMENT PLEASE","PENDING","PROCESSING","PLEASE HOLD","ASSEMBLING","COMPUTING","AWAITING RESPONSES","TRANSMISSION IN PROGRESS","DO NOT ADJUST YOUR SET","TRANSMITTING","DO NOT REFRESH","REMAIN SEATED","YOUR PATIENCE IS APPRECIATED"];
+    var SPEED = [2.8,5];
+    var POINTS = ['d', 'u', 'r', 'l'];
+    function dirsFor(n) {
+      var d = [];
+      for (var i = 0; i < n; i++) d.push(POINTS[i % 4]);
+      return d;
+    }
+    function mount() {
+      var o = {
+        dirs: dirsFor(+dial.value),
+        stubbornP: +stub.value / 100
+      };
+      if (WORDS) o.words = WORDS;
+      if (SPEED) {
+        o.speedMin = Math.min(SPEED[0], SPEED[1]);
+        o.speedSpan = Math.abs(SPEED[1] - SPEED[0]);
+      }
+      window.KimisTake.mount(host, o);
+    }
+    /* sliding remounts, but only once the thumb stops moving */
+    var t = null;
+    dial.addEventListener('input', function () {
+      out.textContent = dial.value;
+      clearTimeout(t);
+      t = setTimeout(mount, 200);
+    });
+    /* the stubborn share is live: it changes what the planner deals next,
+       no remount */
+    var stub = document.getElementById('cr-stubborn');
+    var stubOut = document.getElementById('cr-stubborn-n');
+    stub.addEventListener('input', function () {
+      stubOut.textContent = stub.value + '%';
+      window.KimisTake.set({ stubbornP: +stub.value / 100 });
+    });
+    /* pause freezes the piece's own clock; reset re-deals and runs */
+    var pauseBtn = document.getElementById('cr-pause');
+    pauseBtn.addEventListener('click', function () {
+      if (window.KimisTake.paused()) {
+        window.KimisTake.resume();
+        pauseBtn.textContent = 'pause';
+      } else {
+        window.KimisTake.pause();
+        pauseBtn.textContent = 'play';
+      }
+    });
+    document.getElementById('cr-reset').addEventListener('click', function () {
+      window.KimisTake.resume();
+      pauseBtn.textContent = 'pause';
+      mount();
+    });
+    mount();
+    /* the frame can be any size — a resize changes the grid, so re-deal,
+       once the dragging stops */
+    var rt = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(rt);
+      rt = setTimeout(mount, 320);
+    });
+    /* what the traffic manager actually placed */
+    var liveOut = document.getElementById('cr-streams-live');
+    setInterval(function () {
+      var s = window.KimisTake.stats();
+      liveOut.textContent = s.live + ' of ' + s.slots + ' placed';
+    }, 1000);
+  })();
+</script>
+<script type="text/plain" id="kt-bench"><div class="cr-mini-bench">
+  <p class="cr-dial">
+    <label for="cr-streams">streams</label>
+    <input type="range" id="cr-streams" min="2" max="64" step="2" value="32" />
+    <span id="cr-streams-n">32</span>
+    <span id="cr-streams-live" class="cr-dial-live"></span>
+  </p>
+  <p class="cr-dial">
+    <label for="cr-stubborn">stubborn</label>
+    <input type="range" id="cr-stubborn" min="0" max="100" step="5" value="100" />
+    <span id="cr-stubborn-n">100%</span>
+    <button id="cr-pause" type="button">pause</button>
+    <button id="cr-reset" type="button">reset</button>
+  </p>
+</div></script>
+
+<script>
+(function () {
+  'use strict';
+  /* ---- mockup adapter: the module state the verbatim copies read --------- */
+  var JD_SLOTS = ['a', 'b', 'c', 'd'];                 /* junk-drawer.js l.56 */
+  var turn = { client_ref: 'mockup-37' };              /* stands in for the live turn */
+  var work = { slots: {}, slow: false };
+  function pend() {
+    work.slots = { a: { status: 'pending' }, b: { status: 'pending' },
+                   c: { status: 'pending' }, d: { status: 'pending' } };
+  }
+  function esc(s) {                                    /* junk-drawer.js l.3538 */
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — FAIL_WORDS / slotStatus / darkResultInner
+     (lines 4071–4096)
+     ====================================================================== */
+  var FAIL_WORDS = {
+    provider_failed: 'the machine didn’t answer',
+    sanitizer_rejected: 'the drawer refused the drawing',
+    network: 'lost on the wire',
+    rate_limited: 'out of turns for now',
+    drawer_resting: 'the drawer is resting',
+    slot_in_progress: 'already at work'
+  };
+  function failWord(code) {
+    return FAIL_WORDS[code] || 'came back blank';
+  }
+  /* one slot's standing, read off the working copy — a restored or degraded
+     turn lands here too, so a slot that is neither ok nor failed is pending */
+  function slotStatus(slot) {
+    var s = work.slots[slot] || {};
+    if (s.status === 'ok') return { state: 'ok', word: 'arrived' };
+    if (s.status === 'failed') return { state: 'fail', word: failWord(s.code) };
+    return { state: 'pending', word: 'still drawing' };
+  }
+  /* the settled face of a swatch: its letter inks in over the verdict */
+  function darkResultInner(slot, st) {
+    return '<span class="jd-dark-big">' + slot.toUpperCase() + '</span>' +
+      '<span class="jd-dark-verdict jd-dark-verdict--' + st.state + '">' +
+      '<span class="m" aria-hidden="true">' + (st.state === 'ok' ? '✓' : '✗') +
+      '</span> ' + esc(st.word) + '</span>';
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — darkPlotCircuit (lines 4097–4162)
+     ====================================================================== */
+  /* a fresh plotted circuit for slot A (round 18, owner pick 2026-08-17):
+     a random spanning tree over a 5×3 grid of cells, then the closed tour
+     that walks the fine 10×6 lattice around it — the classic plotter-art
+     construction. Every intersection is visited exactly once, the line
+     never crosses itself, and it ends where it began, so the CSS dash loop
+     is seamless. ~1,242 distinct circuits observed over 2,000 seeds; the
+     seed is the turn's client_ref, so every TURN draws a different circuit
+     while repaints and restored turns re-derive the same one (paintSlots
+     never rewrites a pending swatch, but the guarantee costs nothing).
+     Geometry: 9px pitch + 4.5px margin = viewBox 0 0 90 54, and pathLength
+     100 normalizes the dash arithmetic no matter where the turns fall. */
+  function darkPlotCircuit(seed) {
+    var CW = 5, CH = 3, PITCH = 9, MARGIN = 4.5;
+    /* FNV-1a fold of the seed, then xorshift32 — tiny, seedable, plenty */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    if (!h) h = 88172645; /* xorshift must never sit at zero */
+    function rnd() {
+      h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0;
+      return h / 4294967296;
+    }
+    /* randomized DFS spanning tree over the coarse cells; conn[cell] is a
+       4-bit mask of tree edges: 1 up, 2 right, 4 down, 8 left */
+    var conn = [], seen = [], stack = [], c, n, k;
+    for (i = 0; i < CW * CH; i++) { conn.push(0); seen.push(false); }
+    c = (rnd() * CW * CH) | 0;
+    seen[c] = true; stack.push(c);
+    while (stack.length) {
+      c = stack[stack.length - 1];
+      var cx = c % CW, cy = (c / CW) | 0, opts = [];
+      if (cy > 0      && !seen[c - CW]) opts.push([c - CW, 1, 4]);
+      if (cx < CW - 1 && !seen[c + 1])  opts.push([c + 1, 2, 8]);
+      if (cy < CH - 1 && !seen[c + CW]) opts.push([c + CW, 4, 1]);
+      if (cx > 0      && !seen[c - 1])  opts.push([c - 1, 8, 2]);
+      if (!opts.length) { stack.pop(); continue; }
+      k = opts[(rnd() * opts.length) | 0];
+      n = k[0];
+      conn[c] |= k[1]; conn[n] |= k[2];
+      seen[n] = true; stack.push(n);
+    }
+    /* walk the fine lattice clockwise around the tree: at each vertex the
+       move follows from its corner of the cell and the tree's edges —
+       top-left goes up if the tree does (else right), and so on around */
+    var x = 0, y = 0, px = [], py = [], v = 0;
+    do {
+      px.push(x); py.push(y);
+      var m = conn[(y >> 1) * CW + (x >> 1)], ex = x & 1, ey = y & 1;
+      if (!ex && !ey)     { if (m & 1) y--; else x++; }
+      else if (ex && !ey) { if (m & 2) x++; else y++; }
+      else if (ex && ey)  { if (m & 4) y++; else x--; }
+      else                { if (m & 8) x--; else y--; }
+      v++;
+    } while ((x || y) && v <= CW * CH * 4);
+    /* merge straight runs so the d stays short: keep only the turns */
+    var d = 'M' + (MARGIN + px[0] * PITCH) + ' ' + (MARGIN + py[0] * PITCH), j;
+    for (j = 1; j < px.length; j++) {
+      var a = j - 1, b = (j + 1) % px.length;
+      if ((px[a] === px[j] && px[j] === px[b]) ||
+          (py[a] === py[j] && py[j] === py[b])) continue;
+      d += 'L' + (MARGIN + px[j] * PITCH) + ' ' + (MARGIN + py[j] * PITCH);
+    }
+    return d + 'Z';
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — darkScatterword (lines 4231–4479)
+     ====================================================================== */
+  function darkScatterword(seed) {
+    /* ---- choreography: FIXED for every seed, the 6s "house tempo" the
+           owner picked off the variant sheet (2026-08-18) ----------------- */
+    var BANG    = 6.0;      /* one bang, seconds                             */
+    var BANGS   = 3;        /* bangs per super-cycle                         */
+    var HOLD    = 0.70;     /* assembled hold, split across the loop seam    */
+    var LEAD    = 0.35;     /* fraction of that hold before the impulse      */
+    var ZOOP    = 0.38;     /* suction home, seconds                         */
+    var EZ_ZOOP = 'cubic-bezier(.7,.05,.9,.92)'; /* accelerate in, dead stop */
+    /* ---- physics: also fixed ------------------------------------------- */
+    var V0  = 260;          /* muzzle speed, px/s at real scale              */
+    var TAU = 0.30;         /* drag time constant, s                         */
+    /* ---- what the seed is allowed to vary ------------------------------ */
+    var V0_JITTER = 0.15;   /* ± fraction of V0                              */
+    var RAY_JITTER = 10;    /* ± deg off the glyph's slot in the fan         */
+    var SECTOR_JITTER = 32; /* ± deg a bang may wander inside its sector     */
+    var CURL_MIN = 8, CURL_MAX = 17;      /* deg/s, either direction         */
+    var SPIN_MIN = 450, SPIN_MAX = 700;   /* deg of spin during the flight   */
+    var SPIN_LEFT_MIN = 80, SPIN_LEFT_MAX = 150; /* deg left for the snap    */
+    /* ---- simulation / emission tuning ---------------------------------- */
+    var DT = 0.003;         /* integration step, s                           */
+    var POS_TOL = 0.60;     /* max waypoint error, real-scale px             */
+    var ROT_TOL = 4.0;      /* …and degrees                                  */
+    var MAX_GAP = 0.20;     /* never leave a gap longer than this, s         */
+    var ERR_PROBES = 6;     /* interior points probed per candidate chord    */
+    var AIM_SWEEP = 54;     /* deg the ray may be nudged for clearance       */
+    var AIM_STEP = 3;       /* granularity of that search, deg               */
+    var AIM_CLEAR = 44;     /* px of clear run we try to buy                 */
+    var AIM_COST = 0.45;    /* px of score paid per deg off the fan slot.
+                               Deliberately steep: a weak penalty here lets
+                               clearance override the seeded ray, and then
+                               different seeds pick the SAME heading and the
+                               bangs stop looking different from each other. */
+    var EM_DP = 2, DEG_DP = 1, PCT_DP = 3;  /* 0.01em ≈ 0.11px at real scale */
+    /* ---- the glyphs, measured (re-measured 2026-08-18 for the 11.05px
+           type; the word now spans 0.537 of the field's width, was 0.632) - */
+    var GLYPHS = 'LOADING...';
+    var NG = 10;
+    var CX = [36.16, 43.67, 51.19, 58.70, 66.22, 73.73, 81.25, 90.26, 97.79, 105.32];
+    var CY = [55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 55.00, 53.48, 53.48, 53.48];
+    var EM = [11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 11.05, 16.02, 16.02, 16.02];
+    /* roam box for glyph CENTRES — keeps the ink inside the field. UNCHANGED
+       by the 2026-08-18 shrink, on purpose: the word got smaller, the flight
+       did not. If anything the smaller glyphs now clear the edges by a
+       little more ink than they used to. */
+    var XMIN = 8, XMAX = 132, YMIN = 12, YMAX = 98;
+
+    var DEG = Math.PI / 180;
+    var CYCLE = BANG * BANGS;
+    var T1 = HOLD * LEAD;                   /* impulse, local to the bang    */
+    var T3 = BANG - (HOLD - T1) - ZOOP;     /* the suction grabs them        */
+    var T4 = T3 + ZOOP;                     /* home                          */
+
+    /* the house fold: FNV-1a of the seed string, then xorshift32 */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    var prefix = 'jdsw' + h.toString(36);   /* scopes classes AND keyframes  */
+    var st = h || 88172645;                 /* xorshift must never sit at 0  */
+    function rnd() {
+      st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+      return st / 4294967296;
+    }
+    function span(lo, hi) { return lo + rnd() * (hi - lo); }
+    function coin() { return rnd() < 0.5 ? 1 : -1; }
+
+    /* distance from (x, y) along `ang` before the roam box */
+    function freeRun(x, y, ang) {
+      var dx = Math.cos(ang), dy = Math.sin(ang), t = Infinity;
+      if (dx > 1e-9) t = Math.min(t, (XMAX - x) / dx);
+      else if (dx < -1e-9) t = Math.min(t, (XMIN - x) / dx);
+      if (dy > 1e-9) t = Math.min(t, (YMAX - y) / dy);
+      else if (dy < -1e-9) t = Math.min(t, (YMIN - y) / dy);
+      return t;
+    }
+    /* Nudge a fan ray so the glyph has room to actually FLY outward: stay
+       within ±AIM_SWEEP of its slot in the fan (the ten headings still cover
+       the circle) but prefer a heading with a long clear run, so nothing
+       smacks a wall 80ms in and loses its radial read. */
+    function aim(x, y, target) {
+      var best = target, bestScore = -1e9, dev, a, sc;
+      for (dev = -AIM_SWEEP; dev <= AIM_SWEEP; dev += AIM_STEP) {
+        a = target + dev * DEG;
+        sc = Math.min(freeRun(x, y, a), AIM_CLEAR) - AIM_COST * Math.abs(dev);
+        if (sc > bestScore) { bestScore = sc; best = a; }
+      }
+      return best;
+    }
+    /* one glyph's whole flight, integrated at DT; walls reflect elastically */
+    function fly(cx, cy, ang, v0, curl, rTotal) {
+      var n = Math.max(1, Math.round((T3 - T1) / DT));
+      var dt = (T3 - T1) / n;
+      var cc = Math.cos(curl * dt), ss = Math.sin(curl * dt);
+      var denom = Math.log(1 + (T3 - T1) / TAU);
+      var dx = Math.cos(ang), dy = Math.sin(ang);
+      var x = cx, y = cy;
+      var ts = [T1], xs = [cx], ys = [cy], rs = [0], bz = [0];
+      var k, t, sp, nx, ny, ndx, hit;
+      for (k = 1; k <= n; k++) {
+        t = T1 + k * dt;
+        sp = v0 / (1 + (k - 0.5) * dt / TAU);          /* midpoint speed */
+        ndx = dx * cc - dy * ss; dy = dx * ss + dy * cc; dx = ndx;
+        nx = x + dx * sp * dt;
+        ny = y + dy * sp * dt;
+        hit = 0;
+        if (nx < XMIN) { nx = 2 * XMIN - nx; dx = -dx; hit = 1; }
+        else if (nx > XMAX) { nx = 2 * XMAX - nx; dx = -dx; hit = 1; }
+        if (ny < YMIN) { ny = 2 * YMIN - ny; dy = -dy; hit = 1; }
+        else if (ny > YMAX) { ny = 2 * YMAX - ny; dy = -dy; hit = 1; }
+        x = nx < XMIN ? XMIN : (nx > XMAX ? XMAX : nx);
+        y = ny < YMIN ? YMIN : (ny > YMAX ? YMAX : ny);
+        ts.push(t); xs.push(x); ys.push(y); bz.push(hit);
+        /* spin on the same log profile as distance, normalised to rTotal */
+        rs.push(rTotal * Math.log(1 + (t - T1) / TAU) / denom);
+      }
+      return { ts: ts, xs: xs, ys: ys, rs: rs, bz: bz };
+    }
+    /* Does the straight chord i→cand stay within tolerance of the real
+       flight? Probed at up to ERR_PROBES evenly spaced interior points: a
+       segment never spans a bounce (those always cut), so between its ends
+       the path is a smooth arc under monotonically decaying speed and has no
+       high-frequency structure for the probes to step over. Keeping this
+       O(1) per candidate is what keeps the whole generator linear. */
+    function chordOk(s, i2, cand) {
+      var steps = cand - i2, sp, probes, p, k, f;
+      if (steps < 2) return true;
+      sp = s.ts[cand] - s.ts[i2];
+      probes = (steps - 1 < ERR_PROBES) ? steps - 1 : ERR_PROBES;
+      for (p = 1; p <= probes; p++) {
+        k = i2 + Math.round(steps * p / (probes + 1));
+        if (k <= i2 || k >= cand) continue;
+        f = (s.ts[k] - s.ts[i2]) / sp;
+        if (Math.abs(s.xs[i2] + (s.xs[cand] - s.xs[i2]) * f - s.xs[k]) > POS_TOL ||
+            Math.abs(s.ys[i2] + (s.ys[cand] - s.ys[i2]) * f - s.ys[k]) > POS_TOL ||
+            Math.abs(s.rs[i2] + (s.rs[cand] - s.rs[i2]) * f - s.rs[k]) > ROT_TOL) {
+          return false;
+        }
+      }
+      return true;
+    }
+    /* Keep the fewest waypoints whose LINEAR-IN-TIME interpolation stays
+       inside tolerance: dense while fast, sparse while loitering. Every
+       bounce is forced to be a waypoint so the turn-back stays crisp. */
+    function decimate(s) {
+      var n = s.ts.length, keep = [0], i2 = 0, j, cand;
+      while (i2 < n - 1) {
+        j = i2 + 1;
+        if (!s.bz[j]) {
+          while (j + 1 < n) {
+            cand = j + 1;
+            if (s.ts[cand] - s.ts[i2] > MAX_GAP) break;
+            if (!chordOk(s, i2, cand)) break;
+            j = cand;
+            if (s.bz[cand]) break;
+          }
+        }
+        keep.push(j);
+        i2 = j;
+      }
+      return keep;
+    }
+    /* one bang: ten independent flights. `base` and `fanDir` come from the
+       super-cycle below, not from here — a bang's fan is a rigid golden-angle
+       ring, so if two bangs drew similar bases independently the two
+       explosions would look the same. The caller stratifies them instead. */
+    function simulateBang(base, fanDir) {
+      var out = [], g, ang, v0, curl, sg, turns, rTotal, rHome, s;
+      for (g = 0; g < NG; g++) {
+        /* golden angle between NEIGHBOURING glyphs, so adjacent letters —
+           and the three dots, which start out touching — tear apart in very
+           different directions while the ten headings still cover the circle */
+        ang = aim(CX[g], CY[g],
+          (base + fanDir * g * 137.5 + span(-RAY_JITTER, RAY_JITTER)) * DEG);
+        v0 = V0 * (1 + span(-V0_JITTER, V0_JITTER));
+        curl = span(CURL_MIN, CURL_MAX) * coin() * DEG;
+        sg = coin();
+        /* land the flight's spin a controlled 80–150deg short of a whole
+           number of turns, so the zoop finishes it with a quarter-turn snap */
+        turns = Math.max(1, Math.round(span(SPIN_MIN, SPIN_MAX) / 360));
+        rTotal = sg * (360 * turns - span(SPIN_LEFT_MIN, SPIN_LEFT_MAX));
+        rHome = sg * 360 * turns;
+        s = fly(CX[g], CY[g], ang, v0, curl, rTotal);
+        out.push({ s: s, keep: decimate(s), rHome: rHome });
+      }
+      return out;
+    }
+    function tf(dx, dy, rot, em) {
+      return 'translate(' + (dx / em).toFixed(EM_DP) + 'em,' +
+        (dy / em).toFixed(EM_DP) + 'em) rotate(' + rot.toFixed(DEG_DP) + 'deg)';
+    }
+    function pc(t) { return (t / CYCLE * 100).toFixed(PCT_DP); }
+
+    /* Stratify the three bangs around the circle instead of drawing three
+       independent bases: each gets its own 360/BANGS sector (plus jitter,
+       plus a coin flip on which way its fan is dealt round the circle). */
+    var bangs = [], b, base0 = rnd() * 360;
+    for (b = 0; b < BANGS; b++) {
+      bangs.push(simulateBang(base0 + b * (360 / BANGS) +
+        span(-SECTOR_JITTER, SECTOR_JITTER), coin()));
+    }
+
+    var out = ['<style>'], j, idx, rotAcc, tOff, tr, keep, s;
+    for (i = 0; i < NG; i++) {
+      out.push('@keyframes ', prefix, '_', i, '{0%{transform:', tf(0, 0, 0, EM[i]), '}');
+      rotAcc = 0;
+      for (b = 0; b < BANGS; b++) {
+        tOff = b * BANG;
+        tr = bangs[b][i]; s = tr.s; keep = tr.keep;
+        /* flat hold right up to the impulse — the word must be EXACTLY the
+           typed word for the whole beat, not merely near it */
+        out.push(pc(tOff + T1), '%{transform:', tf(0, 0, rotAcc, EM[i]), '}');
+        for (j = 1; j < keep.length; j++) {
+          idx = keep[j];
+          out.push(pc(tOff + s.ts[idx]), '%{transform:',
+            tf(s.xs[idx] - CX[i], s.ys[idx] - CY[i], rotAcc + s.rs[idx], EM[i]));
+          /* the last flight waypoint is where the suction takes over, and
+             it carries the only easing curve in the whole animation */
+          if (j === keep.length - 1) out.push(';animation-timing-function:', EZ_ZOOP);
+          out.push('}');
+        }
+        rotAcc += tr.rHome;
+        out.push(pc(tOff + T4), '%');
+        if (b === BANGS - 1) out.push(',100%');
+        out.push('{transform:', tf(0, 0, rotAcc, EM[i]), '}');
+      }
+      out.push('}');
+    }
+    /* The bindings live inside the reduced-motion guard, so a visitor who
+       has asked for stillness gets the base pose — the assembled word — and
+       the @keyframes above go inert with nothing referencing them. The
+       DURATION is emitted here too, from CYCLE: change BANG or BANGS and the
+       super-cycle length can never drift out of sync with a hand-written
+       number in the stylesheet. Everything else about the loop
+       (iteration-count, the linear joins, fill-mode) is in junk-drawer.css
+       with the other slots. */
+    out.push('@media (prefers-reduced-motion:no-preference){');
+    out.push('.', prefix, ' .jd-dark-gl{animation-duration:', CYCLE.toFixed(2), 's}');
+    for (i = 0; i < NG; i++) {
+      out.push('.', prefix, ' .jd-dark-gl', i, '{animation-name:', prefix, '_', i, '}');
+    }
+    out.push('}</style><span class="jd-dark-word ', prefix, '">');
+    for (i = 0; i < NG; i++) {
+      out.push('<span class="jd-dark-gl jd-dark-gl', i, '">', GLYPHS.charAt(i), '</span>');
+    }
+    out.push('</span>');
+    return out.join('');
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — darkHonestBar (lines 4480–4548)
+     ====================================================================== */
+  /* the honest bar (rounds 24–25, owner pick 2026-08-21 — the pool's first
+     member beyond the original four; tuned on mockup-24-honest-bar.html's
+     bench, dressed by mockup-25-bar-styles.html's hatched-stripes option):
+     a hand-wobbled ink bar outline whose hatched fill climbs SLOWLY, stalls,
+     takes real setbacks, and once it gets above ~80 starts second-guessing
+     itself in wider swings — never finishing, never quite erratic, and when
+     the super-cycle ends it sighs and starts the climb over. No percentage,
+     no "est. remaining": the commentary is entirely in the motion.
+     OWNER TUNING, 2026-08-21 (pasted off the bench's copy-parameters
+     button): rate 6, setback 0.17, depth 18, thresh 80, amp 12, tick 300ms.
+     GENERATED, the house way (darkScatterword's precedent): the whole climb
+     is simulated once per turn from the turn's client_ref and baked into a
+     seed-scoped @keyframes track — one waypoint per tick, every segment
+     joined steps(1, end), so the bar HOLDS each value for a tick and then
+     jumps, like ink laid down one stroke at a time. A repaint or a restored
+     turn re-derives the same climb byte for byte; reduced-motion visitors
+     get the static base (parked at 68%) with the track inert. The loop seam
+     is the joke completing itself: fluctuating in the high eighties at
+     100%, then 0%. */
+  function darkHonestBar(seed) {
+    /* THE TELETYPE (owner pick, mockups/mockup-38-honest-bars.html option B,
+       2026-08-26; the wobbled frame and hatched fill retire). The bar is set
+       entirely in type, kin to the wait-words: the word LOADING (no
+       ellipsis) shivering above a typed track — [####··········] — and a
+       two-digit readout that LIES on its own schedule: usually the truth,
+       every few ticks a number from nowhere, occasionally a ?? shrug. The
+       joke said twice.
+       Same architecture as before: everything is baked into this generated
+       <style> from the seeded track — the cells are stacked #/· glyph pairs
+       toggled by change-point keyframes, the readout is two one-glyph
+       odometer strips stepped by translateY, the shiver is its own short
+       seeded loop — so the whole thing runs on the animation clock with no
+       JS ticking, pauses with the settle states, and a repaint re-derives
+       the identical performance. */
+    /* the bench's knobs, fixed by the owner 2026-08-21 */
+    var RATE = 6, SETBACK = 0.17, DEPTH = 18, THRESH = 80, AMP = 12;
+    var TICK = 0.3;          /* seconds per tick                              */
+    var TICKS = 150;         /* the super-cycle: 150 × 0.3s = 45s             */
+    var SEG = 14;            /* typed cells between the brackets              */
+    /* the house fold: FNV-1a of the seed string, then xorshift32 */
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    var prefix = 'jdhb' + h.toString(36);   /* scopes classes AND keyframes */
+    var st = h || 88172645;                 /* xorshift must never sit at 0 */
+    function rnd() {
+      st ^= st << 13; st >>>= 0; st ^= st >>> 17; st ^= st << 5; st >>>= 0;
+      return st / 4294967296;
+    }
+    /* the bench's motion model, verbatim: below the threshold a slow climb
+       with stalls and setbacks; above it a mean-reverting wander around the
+       high eighties — wider swings, but it never sprints, never finishes,
+       and never falls apart. Alongside the true track, the readout's track:
+       strip indices 0–9 are digits, 10 is the ? and 11 the blank tens of a
+       single-digit value. */
+    var fills = [], tens = [], units = [], v = 0, r, lie, shown, k;
+    for (k = 0; k <= TICKS; k++) {
+      fills.push(Math.round(v / 100 * SEG));
+      lie = rnd();
+      shown = lie < 0.12 ? Math.round(rnd() * 99)
+            : lie < 0.18 ? -1 : Math.round(v);
+      tens.push(shown < 0 ? 10 : shown < 10 ? 11 : Math.floor(shown / 10));
+      units.push(shown < 0 ? 10 : shown % 10);
+      r = rnd();
+      if (v < THRESH) {
+        if (r < SETBACK) v -= rnd() * DEPTH;            /* a setback */
+        else if (r < SETBACK + 0.18) { /* a stall: hold this tick */ }
+        else v += rnd() * RATE;                         /* the climb */
+      } else {
+        v += (THRESH + 5 - v) * 0.12 + (rnd() - 0.5) * 2 * AMP * 0.4;
+      }
+      v = Math.max(0, Math.min(98, v));
+    }
+    /* one keyframes block per series, CHANGE POINTS only — steps(1,end)
+       between stops holds each value to the next, so a cell that toggles
+       six times a cycle costs six lines, not 150 */
+    function stepsKf(name, series, fmt) {
+      var o = ['@keyframes ', prefix, name, '{'], prev = null, k;
+      for (k = 0; k < series.length; k++) {
+        if (series[k] === prev && k !== series.length - 1) continue;
+        o.push((k / TICKS * 100).toFixed(3), '%{', fmt(series[k]),
+          ';animation-timing-function:steps(1,end)}');
+        prev = series[k];
+      }
+      return o.join('') + '}';
+    }
+    var DUR = (TICKS * TICK).toFixed(1) + 's';
+    var out = ['<style>'];
+    var binds = [];
+    for (i = 0; i < SEG; i++) {
+      var cell = fills.map(function (f) { return i < f ? 1 : 0; });
+      out.push(stepsKf('_c' + i, cell, function (on) { return 'opacity:' + on; }));
+      out.push(stepsKf('_e' + i, cell, function (on) { return 'opacity:' + (1 - on); }));
+      binds.push('.', prefix, ' .t-c:nth-child(', i + 1, ') .gf{animation:',
+        prefix, '_c', i, ' ', DUR, ' linear infinite both}',
+        '.', prefix, ' .t-c:nth-child(', i + 1, ') .ge{animation:',
+        prefix, '_e', i, ' ', DUR, ' linear infinite both}');
+    }
+    function slide(idx) { return 'transform:translateY(-' + idx + 'em)'; }
+    out.push(stepsKf('_dt', tens, slide), stepsKf('_du', units, slide));
+    binds.push('.', prefix, ' .t-dt .t-ds{animation:', prefix, '_dt ', DUR,
+      ' linear infinite both}',
+      '.', prefix, ' .t-du .t-ds{animation:', prefix, '_du ', DUR,
+      ' linear infinite both}');
+    /* the shiver: the word worries in place — a short seeded loop of
+       one-pixel-ish lurches, stepwise like everything else here */
+    out.push('@keyframes ', prefix, '_sh{');
+    for (k = 0; k < 8; k++) {
+      out.push((k / 8 * 100).toFixed(1), '%{transform:translateX(',
+        (rnd() * 3 - 1.5).toFixed(1), 'px)}');
+    }
+    out.push('100%{transform:translateX(0)}}');
+    binds.push('.', prefix, ' .t-word{animation:', prefix, '_sh 2.7s ',
+      'steps(1,end) infinite}');
+    out.push('@media (prefers-reduced-motion:no-preference){',
+      binds.join(''), '}</style>');
+    /* the markup: the word, then the typed track and its readout */
+    out.push('<span class="jd-dark-tele ', prefix, '">',
+      '<b class="t-word">LOADING</b>',
+      '<span class="t-line">[');
+    for (i = 0; i < SEG; i++) {
+      out.push('<span class="t-c"><i class="gf">#</i><i class="ge">·</i></span>');
+    }
+    var strip = '<span class="t-ds"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i>' +
+      '<i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>?</i><i>&nbsp;</i></span>';
+    out.push('] <span class="t-d t-dt">', strip, '</span>',
+      '<span class="t-d t-du">', strip, '</span>%</span></span>');
+    return out.join('');
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — the word drift (lines 4582–4799)
+     ====================================================================== */
+  var JD_DRIFT_WORDS = ['LOADING', 'STAND BY', 'PLEASE WAIT',
+                        'ONE MOMENT PLEASE', 'PENDING', 'PROCESSING',
+                        'PLEASE HOLD', 'ASSEMBLING', 'COMPUTING',
+                        'AWAITING RESPONSES', 'TRANSMISSION IN PROGRESS',
+                        'DO NOT ADJUST YOUR SET', 'TRANSMITTING',
+                        'DO NOT REFRESH', 'REMAIN SEATED',
+                        'PATIENCE IS APPRECIATED'];
+  /* the owner's bench settings, 2026-08-23 (mockup-33-word-drift.html) */
+  var JD_DRIFT = { cell: 9, density: 0.2, speedLo: 30, speedHi: 60,
+                   throwLo: 50, throwHi: 200, liftLo: 70, liftHi: 230,
+                   gravity: 1600, gap: 20, maxDepth: 10, cap: 900 };
+
+  function jdDriftRnd(n) { return (Math.random() * n) | 0; }
+
+  /* the heap's height field, in buckets a third of a square wide */
+  function jdDriftSurface(st, x) {
+    var C = JD_DRIFT.cell;
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + C) / st.bw));
+    var y = st.H;
+    for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
+    return y;
+  }
+  function jdDriftDeposit(st, x, restY) {
+    var C = JD_DRIFT.cell;
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + C) / st.bw));
+    var t = restY + C * 0.56;              /* the next letter nests into this one */
+    for (var b = b0; b <= b1; b++) if (t < st.top[b]) st.top[b] = t;
+  }
+  /* gravity down, reflected off the side walls, stopped by the heap */
+  function jdDriftFly(st, x0, y0, vx, vy) {
+    var C = JD_DRIFT.cell, dt = 1 / 60;
+    var pts = [{ x: x0, y: y0 }], x = x0, y = y0;
+    for (var n = 0; n < 240; n++) {
+      vy += JD_DRIFT.gravity * dt; x += vx * dt; y += vy * dt;
+      if (x <= 0) { x = -x; vx = -vx * 0.46; }
+      else if (x >= st.W - C) { x = 2 * (st.W - C) - x; vx = -vx * 0.46; }
+      var floorY = jdDriftSurface(st, x) - C;
+      if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
+      pts.push({ x: x, y: y });
+    }
+    return pts;
+  }
+
+  /* a lane is free only if nothing has RESERVED it and nothing is falling in
+     it — reservation alone let a finished word's lane be taken while its last
+     letters were still on their way down, and two words shared a column */
+  function jdDriftClaim(st, owner, avoid) {
+    var free = [], i;
+    for (i = 0; i < st.cols; i++) if (!st.busy[i] && !st.lane[i]) free.push(i);
+    if (!free.length) { st.busy[avoid] = owner; return avoid; }
+    var p = free[jdDriftRnd(free.length)];
+    st.busy[p] = owner;
+    return p;
+  }
+
+  /* the next letter this column owes. REVERSED when a word is taken up:
+     letters are dealt one per beat and each is a beat behind the last, so the
+     letter sent first ends up LOWEST. Queued in reading order a word comes out
+     upside down — LOADING reads GNIDAOL down the sheet. */
+  function jdDriftNext(col) {
+    var st = col.st;
+    if (!col.queue.length) {
+      if (col.rest > 0) { col.rest--; return null; }    /* the gap between words */
+      /* no word twice on one sheet (owner, 2026-08-26): a column releases
+         its word only here, when it is done spelling it, and deals the next
+         from the words no other column holds. The fallback deck cannot be
+         reached at 5 columns over 16 words; it is there so a future tuning
+         (more columns, fewer words) degrades to repetition, not to a stall. */
+      if (col.word) { delete st.inPlay[col.word]; col.word = null; }
+      var deck = st.words.filter(function (w) { return !st.inPlay[w]; });
+      if (!deck.length) deck = st.words;
+      col.word = deck[jdDriftRnd(deck.length)];
+      st.inPlay[col.word] = 1;
+      col.queue = Array.from(col.word).reverse();
+      col.rest = JD_DRIFT.gap;
+      if (st.busy[col.c] === col) st.busy[col.c] = null;
+      col.c = jdDriftClaim(st, col, col.c);             /* a new word, a new lane */
+      col.x = col.c * JD_DRIFT.cell;
+    }
+    return col.queue.shift();
+  }
+
+  /* delayMs is how far from NOW this letter was actually due — negative when
+     the metronome fired late. Handing it to the animation makes the letter's
+     position depend on the schedule rather than on when the timer happened to
+     run; without it, jitter of a tenth of a second puts a letter most of a
+     square out and it lands on the one below. */
+  function jdDriftEmit(col, delayMs) {
+    var st = col.st, C = JD_DRIFT.cell;
+    var ch = jdDriftNext(col);
+    if (ch === null || ch === ' ') return;              /* the beat still passes */
+
+    var x0 = col.x;
+    var g = document.createElement('i');
+    g.textContent = ch;
+    g.style.left = x0 + 'px';
+    col.el.appendChild(g);
+
+    var lane = Math.round(x0 / C);
+    st.lane[lane] = (st.lane[lane] || 0) + 1;
+
+    var impactY = jdDriftSurface(st, x0) - C;
+    var fallMs = Math.max(60, (impactY - col.y0) / col.speed * 1000);
+    var vx = (Math.random() < 0.5 ? -1 : 1) *
+             (JD_DRIFT.throwLo + Math.random() * (JD_DRIFT.throwHi - JD_DRIFT.throwLo));
+    var vy = -(JD_DRIFT.liftLo + Math.random() * (JD_DRIFT.liftHi - JD_DRIFT.liftLo));
+    var pts = jdDriftFly(st, x0, impactY, vx, vy);
+    var flightMs = (pts.length - 1) / 60 * 1000;
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 340);
+    var total = fallMs + flightMs, i, f;
+
+    /* sampled, not eased: no easing curve expresses constant acceleration, and
+       an approximated one reads as a hang at the top of the throw */
+    var frames = [
+      { transform: 'translate(0px,' + col.y0 + 'px) rotate(0deg)', offset: 0, easing: 'linear' },
+      { transform: 'translate(0px,' + impactY + 'px) rotate(0deg)',
+        offset: fallMs / total, easing: 'linear' }];
+    for (i = 1; i < pts.length; i++) {
+      f = i / (pts.length - 1);
+      frames.push({ transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
+        pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+        offset: Math.min(1, (fallMs + f * flightMs) / total), easing: 'linear' });
+    }
+    var anim = g.animate(frames, { duration: total, delay: delayMs || 0, fill: 'both' });
+    var rest = pts[pts.length - 1];
+
+    /* POLLED, not evented: this WebView does not fire animation finish events
+       while the page is hidden, and a wait that starts in a background tab
+       would never land a single letter */
+    var poll = setInterval(function () {
+      if (anim.playState !== 'finished') return;
+      clearInterval(poll);
+      var ix = st.polls.indexOf(poll); if (ix >= 0) st.polls.splice(ix, 1);
+      if (st.lane[lane]) st.lane[lane]--;
+      if (st.n < JD_DRIFT.cap && rest.y > st.floorLimit) {
+        anim.cancel();
+        g.style.left = rest.x.toFixed(1) + 'px';
+        g.style.top = rest.y.toFixed(1) + 'px';
+        g.style.transform = 'rotate(' + ((spin % 360) + (jdDriftRnd(19) - 9)) + 'deg)';
+        st.layer.appendChild(g);              /* the same letter, now at rest */
+        jdDriftDeposit(st, rest.x, rest.y);
+        st.n++;
+      } else {
+        g.remove();                           /* the heap is full: it is spent */
+      }
+    }, 40);
+    st.polls.push(poll);
+  }
+
+  /* every drift on the page, so a repaint or a settle can stop them all */
+  var jdDriftSheets = [];
+  function jdDriftStopAll() {
+    jdDriftSheets.forEach(function (st) {
+      st.beats.forEach(clearInterval);
+      st.polls.forEach(clearInterval);
+      st.beats = []; st.polls = [];
+    });
+    jdDriftSheets = [];
+  }
+
+  function jdDriftBuild(host) {
+    var C = JD_DRIFT.cell;
+    var W = host.clientWidth, H = host.clientHeight;
+    if (!W || !H) return false;
+    host.innerHTML = '';
+    var st = { W: W, H: H, bw: C / 3, cols: Math.floor(W / C), top: [],
+               busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS, inPlay: {},
+               floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [] };
+    for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
+    var layer = document.createElement('span');
+    layer.className = 'drift';
+    host.appendChild(layer);
+    st.layer = layer;
+    jdDriftSheets.push(st);
+
+    var bag = [], i, j, t;
+    for (i = 0; i < st.cols; i++) bag.push(i);
+    for (i = bag.length - 1; i > 0; i--) {
+      j = jdDriftRnd(i + 1); t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+    }
+    bag.slice(0, Math.max(1, Math.round(st.cols * JD_DRIFT.density)))
+       .forEach(function (idx) {
+      var el = document.createElement('span');
+      el.className = 'col';
+      host.appendChild(el);
+      var speed = JD_DRIFT.speedLo + Math.random() * (JD_DRIFT.speedHi - JD_DRIFT.speedLo);
+      var col = { el: el, c: idx, x: idx * C, st: st, speed: speed,
+                  y0: -(C * (2 + jdDriftRnd(5))), beat: C / speed * 1000,
+                  queue: [], word: null, rest: jdDriftRnd(JD_DRIFT.gap) };
+      st.busy[idx] = col;
+      /* One metronome per column, but WHEN EACH LETTER IS DUE is kept on a
+         cursor rather than taken from when the timer fired. A beat is exactly
+         one square of falling, so letters stay a square apart however badly
+         the timer behaves. */
+      col.next = performance.now() + Math.random() * 600;
+      st.beats.push(setInterval(function () {
+        /* while the tab is hidden the animation clock stops but timers do not,
+           so emitting would mint letters that can never fall, land, or be
+           cleared up — they pile up for as long as the visitor is elsewhere */
+        if (document.hidden) { col.next = performance.now(); return; }
+        var now = performance.now();
+        if (now - col.next > col.beat * 6) col.next = now;   /* woke up behind */
+        while (col.next <= now + 4) {
+          jdDriftEmit(col, col.next - now);
+          col.next += col.beat;
+        }
+      }, Math.max(24, col.beat / 2)));
+    });
+    return true;
+  }
+
+  function jdDriftMount(root) {
+    jdDriftStopAll();
+    var hosts = (root || document).querySelectorAll('.jd-drift');
+    if (!hosts.length) return;
+    /* setTimeout, NOT requestAnimationFrame: rAF is parked while the tab is
+       hidden, and the swatch must be built and measured even if the visitor
+       sent the turn and switched away immediately */
+    Array.prototype.forEach.call(hosts, function (host) {
+      var tries = 0;
+      (function attempt() {
+        if (jdDriftBuild(host)) return;
+        if (++tries < 20) setTimeout(attempt, 40);   /* not laid out yet */
+      })();
+    });
+  }
+
+  /* ======================================================================
+     VERBATIM from junk-drawer.js — DARK_POOL / darkDeal / darkWell /
+     darkSwatch (lines 4801–4932; one marked edit in the words branch)
+     ====================================================================== */
+  /* 'bar' — the honest progress bar — is BENCHED, not deleted (owner,
+     2026-08-21): darkHonestBar(), its darkWell branch and its CSS are all
+     still here and still work. Put the string back in this array and it
+     rejoins the rotation; nothing else needs touching. */
+  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift', 'words'];
+  function darkDeal() {
+    var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
+    var h = 2166136261 >>> 0, i;
+    for (i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i);
+      h = (h + (h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24)) >>> 0;
+    }
+    if (!h) h = 88172645; /* xorshift must never sit at zero */
+    function rnd() {
+      h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0;
+      return h / 4294967296;
+    }
+    var deck = DARK_POOL.slice(), j, t;
+    for (i = deck.length - 1; i > 0; i--) {
+      j = (rnd() * (i + 1)) | 0;
+      t = deck[i]; deck[i] = deck[j]; deck[j] = t;
+    }
+    return deck;   /* slot a takes deck[0], b deck[1], and so on */
+  }
+  /* ---- the stray's ink ruler (owner directive, 2026-08-26) ---------------
+     The ricochet's travel math runs on the word's BOX, but the eye watches
+     the INK — and every face in the .sy stack (Snell Roundhand down to the
+     cursive fallback) seats its ink differently inside that box: half-leading
+     above the ascenders, no descenders at all on "wait", swash overhangs at
+     the sides. So the box used to kiss the wall while the ink hung back —
+     up to ~17px of air at the bottom. This ruler measures where the ink
+     actually IS, in two steps that split the truth between the two renderers
+     that each hold half of it. (1) THE BOX AND ITS BASELINES come from the
+     DOM: an offscreen clone of the real .sy (real classes, movers stilled)
+     is probed with zero-size inline-blocks — an inline-block's baseline is
+     its bottom edge, so each probe's rect pins its line's baseline exactly
+     where Chrome's inline layout puts it. No canvas font metric stands in
+     for the line box math (an earlier draft did exactly that, and canvas
+     fontBoundingBoxAscent seats the block 1–2px lower than real layout).
+     (2) THE INK comes from canvas: the same two lines + dots (dots painted —
+     they hold their space always, and a lit dot must never be the thing
+     that clips), drawn with the clone's own computed font at those DOM
+     baselines, alpha-scanned for the ink bbox. Each side's box-edge-to-ink
+     distance (minus a 0.4px safety so antialiased swash tips never cross
+     the wall) goes onto the mover as a --jd-si-* custom property, and the
+     jdDarkStrayX/Y keyframes push the box PAST each wall by exactly that
+     side's number, so the ink itself lands flush. Runtime measurement, not
+     constants, because the stack resolves to different faces (with
+     different overhangs) per platform. On any failure the zeros fall out
+     and the bounce degrades to the old box-kiss — never a clip. */
+  function darkStrayInkInsets() {
+    if (darkStrayInkInsets.v) return darkStrayInkInsets.v;
+    var zero = { l: 0, r: 0, t: 0, b: 0 };
+    try {
+      var SAFE = 0.4, S = 2;
+      var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+      var host = document.createElement('div');
+      host.style.cssText = 'position:absolute;left:-9999px;top:0;' +
+        'visibility:hidden;pointer-events:none';
+      host.innerHTML =
+        '<span class="jd-dark-stray" style="animation:none;position:relative;' +
+        'left:0;top:0;transform:none;display:inline-block">' +
+        '<span class="sy" style="animation:none;position:static;top:auto;' +
+        'transform:none">please' + PROBE + '<br>wait...' + PROBE +
+        '</span></span>';
+      document.body.appendChild(host);
+      var sy = host.querySelector('.sy');
+      var probes = host.querySelectorAll('[data-p]');
+      var box = sy.getBoundingClientRect();
+      var b1 = probes[0].getBoundingClientRect().top - box.top;
+      var b2 = probes[1].getBoundingClientRect().top - box.top;
+      var cs = getComputedStyle(sy);
+      var font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      var lsp = cs.letterSpacing;
+      var bw = box.width, bh = box.height;
+      var M = parseFloat(cs.fontSize) * 1.5;  /* margin catches any overhang */
+      document.body.removeChild(host);
+      if (!(bw > 0) || !(bh > 0) || !(b2 > b1)) return zero;
+      var cv = document.createElement('canvas');
+      cv.width = Math.ceil((bw + 2 * M) * S);
+      cv.height = Math.ceil((bh + 2 * M) * S);
+      var ctx = cv.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return zero;
+      ctx.scale(S, S);
+      ctx.font = font;
+      if ('letterSpacing' in ctx && lsp !== 'normal') ctx.letterSpacing = lsp;
+      ctx.textAlign = 'center';        /* .sy centres each line, so does this */
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#000';
+      ctx.fillText('please', M + bw / 2, M + b1);
+      ctx.fillText('wait...', M + bw / 2, M + b2);
+      var img = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      var minx = cv.width, miny = cv.height, maxx = -1, maxy = -1, x, y;
+      for (y = 0; y < cv.height; y++) {
+        for (x = 0; x < cv.width; x++) {
+          if (img[(y * cv.width + x) * 4 + 3] > 16) {
+            if (x < minx) minx = x;
+            if (x > maxx) maxx = x;
+            if (y < miny) miny = y;
+            if (y > maxy) maxy = y;
+          }
+        }
+      }
+      if (maxx < 0) return zero;
+      var side = function (v) {
+        return Math.max(0, Math.round((v - SAFE) * 100) / 100);
+      };
+      darkStrayInkInsets.v = {
+        l: side(minx / S - M),
+        r: side(M + bw - (maxx + 1) / S),
+        t: side(miny / S - M),
+        b: side(M + bh - (maxy + 1) / S)
+      };
+      return darkStrayInkInsets.v;
+    } catch (e) { return zero; }
+  }
+  function darkWell(slot, anim) {
+    if (anim === 'plot') {
+      /* the ink and the nib are the SAME path: the ink is a 15-unit dash
+         window crawling around the circuit, the nib a 0.01-unit dot riding
+         15 units ahead of the window's tail — i.e. exactly at its head */
+      var d = darkPlotCircuit(((turn && turn.client_ref) || 'jd') + ':' + slot);
+      return '<svg class="jd-dark-plot" width="90" height="54" viewBox="0 0 90 54">' +
+        '<path class="plot-ink" d="' + d + '" pathLength="100"/>' +
+        '<path class="plot-nib" d="' + d + '" pathLength="100"/>' +
+        '</svg>';
+    }
+    if (anim === 'stray') {
+      /* two nested movers, one axis each — the CSS runs them at
+         incommensurate periods so the ricochet never visibly repeats */
+      /* round-23 reword (owner pick 2026-08-18): the drifting word drops
+         LOADING for the office's own plea — "please / wait", two lines, in
+         an old-fashioned script hand (see .sy in the CSS). The trailing
+         ellipsis (owner, 2026-08-26) blinks into place a dot at a time —
+         none, one, two, three, back to none — on a stepped cycle; the dots
+         hold their space whether lit or not, so the ricochet's measured
+         box never changes mid-flight. */
+      /* the --jd-si-* numbers are the ink ruler's per-side box-to-ink
+         distances (see darkStrayInkInsets above): the keyframes read them
+         so the INK, not the box, is what kisses each wall (owner directive,
+         2026-08-26 — the word used to bounce with air under it) */
+      var si = darkStrayInkInsets();
+      return '<span class="jd-dark-stray" style="--jd-si-l:' + si.l +
+        'px;--jd-si-r:' + si.r + 'px;--jd-si-t:' + si.t +
+        'px;--jd-si-b:' + si.b + 'px"><span class="sy">please<br>wait' +
+        '<i>.</i><i>.</i><i>.</i></span></span>';
+    }
+    if (anim === 'scatter') {
+      /* the whole track is generated per turn (see darkScatterword): a
+         <style> carrying ten seed-scoped keyframe blocks, then the ten
+         glyphs that ride them. Style-via-innerHTML applies — a <style>
+         element inserted this way is live, and it is display:none so it
+         never counts as a child of the well's flex box. */
+      return darkScatterword(((turn && turn.client_ref) || 'jd') + ':' + slot);
+    }
+    if (anim === 'drift') {
+      /* cannot be a string on its own: it measures the well it lands in and
+         starts a metronome per column, so it is built by jdDriftMount() from
+         paint(), once this markup is in the document. */
+      return '<span class="jd-drift"></span>';
+    }
+    if (anim === 'words') {
+      /* the word mesh (owner directive 2026-08-23, mockup-34's tuning):
+         Kimi's Take (art/kimis-take/) run small in word mode — every
+         string is one of the office's sixteen wait-words, all of them
+         commissioned (stubborn 100) to cross the whole swatch, at
+         mockup-34's 2.8–5 cells/sec. The cast is 32 (owner call, same
+         day) — more than a swatch can hold at once, which is the show:
+         the traffic manager places what clear spacetime it finds and the
+         rest of the cast waits its turn.
+         It cannot be built in place the rain's way: the engine holds ONE
+         sheet of state per page, and a darkroom can need four sheets at
+         once. The frame is the isolation — same-origin, our own paper,
+         our own ink, and mini.php re-deals itself if the swatch changes
+         size. The well is aria-hidden, so the frame is too (tabindex
+         keeps it out of the tab order); the status line beside it still
+         does the talking. (The character-mode run of the same piece was
+         in this rotation 2026-08-22 – 2026-08-26; the owner kept the wait
+         said in words and retired the plain-character cast — the full
+         piece lives on at /art/kimis-take/.) */
+      return '<iframe class="jd-dark-mesh" ' +
+        /* MOCKUP EDIT (the one functional edit in these verbatim copies):
+           live src="/art/kimis-take/mini.php?words=1&n=32&stubborn=100&speedLo=2.8&speedHi=5"
+           — the same document is inlined and injected via srcdoc by
+           fillMesh() below, so this file needs no server. */
+        'data-mesh="1" ' +
+        'title="streams of words" tabindex="-1" scrolling="no"></iframe>';
+    }
+    if (anim === 'bar') {
+      /* the whole climb is generated per turn (see darkHonestBar): a
+         <style> carrying the seeded keyframe track, then the wobbled frame
+         and the fill that rides it. Style-via-innerHTML applies — the
+         scatterword's precedent. */
+      return darkHonestBar(((turn && turn.client_ref) || 'jd') + ':' + slot);
+    }
+    /* watch — the wristwatch. The hands' base angles ride inline as CSS vars,
+       seeded from the turn ref (same fold as darkPlotCircuit's) so each
+       wait starts at a different plausible time: the minute hand lands ON
+       a tick (a multiple of 30deg — steps(12) must stay on ticks) and the
+       hour hand sits proportionally between its own ticks, the way a real
+       watch holds its hour hand at ten past. The keyframes add 360deg to
+       whatever these say, so the loop closes from any start. */
+    var ws = ((turn && turn.client_ref) || 'jd') + ':' + slot;
+    var wh = 2166136261 >>> 0, wj;
+    for (wj = 0; wj < ws.length; wj++) {
+      wh ^= ws.charCodeAt(wj);
+      wh = (wh + (wh << 1) + (wh << 4) + (wh << 7) + (wh << 8) + (wh << 24)) >>> 0;
+    }
+    var wm = wh % 12, whr = (wh >> 4) % 12;
+    return '<svg class="jd-dark-watch" width="62" height="67" viewBox="0 0 40 44"' +
+      ' style="--jdwm:' + (wm * 30) + 'deg;--jdwh:' + (whr * 30 + wm * 2.5) + 'deg">' +
+      '<rect class="w-lug" x="15" y="0.5" width="10" height="6" rx="1.5"/>' +
+      '<rect class="w-lug" x="15" y="37.5" width="10" height="6" rx="1.5"/>' +
+      '<circle class="w-case" cx="20" cy="22" r="15"/>' +
+      '<circle class="w-ticks" cx="20" cy="22" r="12.5" pathLength="12"/>' +
+      '<line class="w-min" x1="20" y1="22" x2="20" y2="11.5"/>' +
+      '<line class="w-hr" x1="20" y1="22" x2="20" y2="15.5"/>' +
+      '<circle class="w-pin" cx="20" cy="22" r="1.2"/></svg>';
+  }
+  function darkSwatch(slot, anim) {
+    var st = slotStatus(slot);
+    return '<div class="jd-dark-sw jd-dark-sw--' + slot + '" data-slotline="' +
+      slot + '" data-state="' + st.state + '">' +
+      /* the kraft photo corners (round 26 rev. 4, owner directive): the
+         waiting swatch wears the same hardware the Results plates do, so a
+         slot visibly IS the frame its drawing will arrive in */
+      '<span class="jd-turn-corner tl"></span><span class="jd-turn-corner tr"></span>' +
+      '<span class="jd-turn-corner bl"></span><span class="jd-turn-corner br"></span>' +
+      /* the label (rounds 28–29, owner calls): the whole phrase in the
+         pencil hand, seated by the CSS beneath the frame */
+      '<span class="jd-dark-label" aria-hidden="true">Model ' +
+      slot.toUpperCase() + '</span>' +
+      '<div class="jd-dark-well jd-dark-well--' + anim + '" aria-hidden="true">' +
+      darkWell(slot, anim) + '</div>' +
+      '<div class="jd-dark-result" aria-hidden="true">' +
+      (st.state === 'pending' ? '' : darkResultInner(slot, st)) + '</div>' +
+      /* the words the live region actually announces */
+      '<span class="jd-vh" data-slotsr>slot ' + slot + ': ' + esc(st.word) +
+      '</span></div>';
+  }
+
+  /* ---- mockup driver ----------------------------------------------------- */
+  /* the darkroom card, exactly as viewGenerating() + the shell build emit it
+     (junk-drawer.js l.3657 shell, l.4938 view) — head() only stashes the
+     title, which paint() writes into .jd-turn-headline */
+  function cardHTML() {
+    var deal = darkDeal();
+    var html =
+      '<div class="jd-turn-scrim is-on"><div class="jd-turn" role="dialog" ' +
+      'aria-modal="true" aria-label="Please stand by" data-view="darkroom">' +
+      '<header class="jd-turn-head"><div class="jd-turn-headline">' +
+      '<h2 class="jd-turn-title" tabindex="-1">Please stand by</h2></div>' +
+      '<button type="button" class="jd-turn-close" aria-label="close">' +
+      '<span aria-hidden="true">✕</span></button></header>' +
+      '<div class="jd-turn-scroll">' +
+      '<div class="jd-dark" aria-live="polite">' +
+      JD_SLOTS.map(function (s, i) { return darkSwatch(s, deal[i]); }).join('') +
+      '</div>' +
+      /* the foot is a SIBLING of the pile since 2026-08-26 (owner catch) —
+         see viewGenerating() in junk-drawer.js */
+      footHTML(work.slow) +
+      '</div></div></div>';
+    return { html: html, deal: deal };
+  }
+  /* the margin line, verbatim from viewGenerating() (l.4961–4966) */
+  function footHTML(slow) {
+    return '<div class="jd-dark-foot"><span class="jd-dark-line">Your SVGs are ' +
+      'being drawn. This could take a few minutes<span class="jd-dark-dots" ' +
+      'aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span>' +
+      '<span class="jd-dark-slow" data-slow' + (slow ? '' : ' hidden') +
+      '>Still going. The drawing is long because it is being written line by ' +
+      'line.</span></div>';
+  }
+  function dealLine(deal) {
+    return JD_SLOTS.map(function (s, i) {
+      return s.toUpperCase() + ' → ' + deal[i];
+    }).join(' · ') + '  (left in the pool: ' + deal.slice(4).join(', ') + ')';
+  }
+  function buildCard(hostId, outId, ref, slow) {
+    turn.client_ref = ref;
+    pend();
+    if (slow) work.slow = true;   /* show the slow line, so the band under
+                                     the pile is reviewable */
+    var c = cardHTML();
+    document.getElementById(hostId).innerHTML = c.html;
+    document.getElementById(outId).textContent = dealLine(c.deal);
+  }
+  buildCard('desk-stage', 'desk-deal', 'mockup-37');
+  buildCard('phone-stage', 'phone-deal', 'mockup-37-phone', true);
+
+  /* the pool, one indicator per swatch. A specimen still goes through the
+     real darkSwatch() so its markup is the live markup. */
+  var SPECS = [
+    ['stray', 'b', '<b>stray</b> — “please / wait” adrift, the DVD-screensaver ricochet, incommensurate 7.4s/9.8s periods', 'darkWell() js 4836 · css 2164–2237'],
+    ['scatter', 'c', '<b>scatter</b> — LOADING… explodes, drifts, zoops back; 3 seeded bangs to an 18s super-cycle, keyframes generated per turn', 'darkScatterword() js 4231 · css 2239–2312'],
+    ['watch', 'd', '<b>watch</b> — the classic Mac wait watch; hands seeded from the turn ref, one tick per second', 'darkWell() js 4894 · css 2314–2367'],
+    ['drift', 'a', '<b>drift</b> — the word drift: wait-words fall a letter per square, strike, are thrown, and heap along the floor', 'jdDrift* js 4582–4799 · css 2445–2507'],
+    ['words', 'b', '<b>words</b> — the word mesh: Kimi&rsquo;s Take run small in word mode, 32 streams crossing the swatch (iframed; inlined here)', 'darkWell() js 4858 · css 2462–2471 · kimis-take/*'],
+    ['bar', 'c', '<b>bar</b> — the honest bar, redrawn as THE TELETYPE (mockup-38 pick, 2026-08-26): LOADING shivering over a typed [##··] track, the readout lying independently; same 45s seeded climb. BENCHED — in the code, not in DARK_POOL', 'darkHonestBar() js 4499 · css 2374ff']
+  ];
+  turn.client_ref = 'mockup-37-spec';
+  pend();
+  var specRow = document.getElementById('spec-row');
+  SPECS.forEach(function (sp) {
+    var f = document.createElement('figure');
+    f.innerHTML = '<div class="spec-stage">' + darkSwatch(sp[1], sp[0]) + '</div>' +
+      '<figcaption>' + sp[2] + '<br>' + sp[3] + '</figcaption>';
+    specRow.appendChild(f);
+  });
+
+  /* end states: the settled faces, over a frozen/faded indicator */
+  turn.client_ref = 'mockup-37-state';
+  work.slots = { a: { status: 'ok' },
+                 b: { status: 'failed', code: 'provider_failed' } };
+  document.getElementById('state-row').innerHTML =
+    '<figure><div class="spec-stage">' + darkSwatch('a', 'stray') + '</div>' +
+    '<figcaption><b>arrived</b> — data-state="ok": ✓ arrived in ok-green, the swatch settles flat (jdDarkSettle) and the loop fades out</figcaption></figure>' +
+    '<figure><div class="spec-stage">' + darkSwatch('b', 'watch') + '</div>' +
+    '<figcaption><b>failed</b> — data-state="fail": ✗ + the per-code phrase in --tred, a judder (jdDarkJolt), the indicator clears like an arrival (owner call, 2026-08-26), the swatch edges red at scale(0.97)</figcaption></figure>';
+
+  /* the margin line, both states */
+  document.getElementById('foot-row').innerHTML =
+    '<figure class="footspec-fig"><div class="footspec">' + footHTML(false) + '</div>' +
+    '<figcaption class="footcap"><b>normal</b> — “Your SVGs are being drawn. This could take a few minutes” + the working ellipsis (jdDarkDot, dots at 0 / 0.45 / 0.9s)</figcaption></figure>' +
+    '<figure class="footspec-fig"><div class="footspec">' + footHTML(true) + '</div>' +
+    '<figcaption class="footcap"><b>slow turn</b> — past SLOW_MS (60s) work.slow sets, and the italic line unhides beneath: “Still going. The drawing is long because it is being written line by line.”</figcaption></figure>';
+
+  /* ---- the word mesh's frames: mini.php inlined -------------------------- */
+  /* On the live page the iframe src is
+     /art/kimis-take/mini.php?words=1&n=32&stubborn=100&speedLo=2.8&speedHi=5.
+     Here the identical document — html/head/body markup from mini.php, the
+     real kimis-take.css and kimis-take.js, and mini.php's own bootstrap with
+     those query params baked — is injected via srcdoc. The one omission is
+     mini.php's Google-Fonts link (this file makes no external requests). */
+  function fillMesh() {
+    var kcss = document.getElementById('kt-css').textContent;
+    var kjs = document.getElementById('kt-js').textContent;
+    var boot = document.getElementById('kt-boot').textContent;
+    var bench = document.getElementById('kt-bench').textContent;
+    var doc = '<!doctype html>\n<html lang="en">\n<head>\n' +
+      '<meta charset="utf-8" />\n' +
+      '<meta name="viewport" content="width=device-width, initial-scale=1" />\n' +
+      '<title>Kimi&#39;s Take, mini</title>\n' +
+      '<style>html { height: 100%; background: #f8f3e2; }</style>\n' +
+      '<style>\n' + kcss + '\n</style>\n' +
+      '</head>\n<body class="cr-mini-page">\n' +
+      '<div class="cr-sheet cr-mini"><span class="cr-rain" id="cr-rain" aria-hidden="true"></span></div>\n' +
+      bench + '\n' +
+      '<' + 'script>\n' + kjs + '\n<' + '/script>\n' +
+      '<' + 'script>\n' + boot + '\n<' + '/script>\n' +
+      '</body>\n</html>\n';
+    Array.prototype.forEach.call(
+      document.querySelectorAll('iframe.jd-dark-mesh[data-mesh]'),
+      function (f) { f.srcdoc = doc; });
+  }
+  fillMesh();
+
+  /* the drift builds itself against the wells it finds, exactly as paint()
+     does on the live page (junk-drawer.js: jdDriftMount(bodyEl)) */
+  jdDriftMount(document);
+})();
+</script>
+</body></html>

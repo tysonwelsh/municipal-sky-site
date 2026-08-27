@@ -115,6 +115,12 @@
   var timers = [];
   var stubbornP = 0.35;     /* live-tunable via KimisTake.set() */
   var words = null;         /* opt.words: every stream IS a word, head first */
+  /* word mode: which words are ON THE SHEET right now (owner, 2026-08-26 —
+     "the same string shouldn't appear twice"). A word joins at birth, leaves
+     at retirement, and the planner deals only from the words that are free;
+     when every word is out, the slot stays empty and the planner comes back
+     around — the same "cast waits its turn" discipline as clear spacetime. */
+  var inPlay = {};
   var spdMin = SPD_MIN, spdSpan = SPD_SPAN;   /* per-mount via opt.speed* */
 
   /* the piece's clock is the wall clock MINUS whatever time it spent paused,
@@ -367,7 +373,9 @@
     var rec = { id: id, el: st, keys: keys, slot: slot,
                 cells: cells, len: len, v: v, t0: t0, P: P,
                 endT: t0 + (P - 1) / v,
+                word: word || null,
                 cost: axisCost(cells, len, v) };
+    if (word) inPlay[word] = 1;
     axisTime.v += rec.cost.v; axisTime.h += rec.cost.h;
     /* the sim harness (local-dev/kimis-take-sim.js) replays positions from
        these parameters and asserts no two streams ever share a cell */
@@ -423,6 +431,17 @@
      (more cells to cross), so without this the horizontals slowly eat the
      page — with it the ledger corrects every birth. */
   function planCandidate(slot, seedPhase) {
+    /* word mode deals only from the words not already on the sheet — the
+       deck is cut once per call (nothing retires mid-call) */
+    var deck = null;
+    if (words) {
+      deck = [];
+      for (var w = 0; w < words.length; w++) {
+        if (!inPlay[words[w]]) deck.push(words[w]);
+      }
+      if (!deck.length) return false;   /* every word is out; the planner
+                                           comes back around */
+    }
     var cands = [];
     for (var attempt = 0; attempt < 40 && cands.length < 3; attempt++) {
       var dir = slot.dir || 'd';
@@ -430,7 +449,7 @@
          dealt per candidate because the length shapes the walk */
       var word = null, len;
       if (words) {
-        word = words[rnd(words.length)];
+        word = deck[rnd(deck.length)];
         len = Array.from(word).length;
         if (len < 2) continue;   /* one letter is not a string */
       } else {
@@ -475,6 +494,7 @@
       var rec = live[j];
       if (now < rec.endT) continue;
       release(rec.id, rec.keys);
+      if (rec.word) delete inPlay[rec.word];   /* the word is free again */
       axisTime.v -= rec.cost.v; axisTime.h -= rec.cost.h;
       rec.slot.free = true;   /* the planner rebirths it when spacetime clears */
       if (rec.el.parentNode) rec.el.parentNode.removeChild(rec.el);
@@ -500,6 +520,7 @@
              spinP: opt.spinP == null ? 0.06 : opt.spinP };
     if (opt.stubbornP != null) stubbornP = opt.stubbornP;
     words = opt.words && opt.words.length ? opt.words : null;
+    inPlay = {};
     spdMin = opt.speedMin == null ? SPD_MIN : opt.speedMin;
     spdSpan = opt.speedSpan == null ? SPD_SPAN : opt.speedSpan;
     booked = new Map();

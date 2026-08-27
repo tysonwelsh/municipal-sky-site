@@ -4497,10 +4497,25 @@ function JD_layerOpen() {
      is the joke completing itself: fluctuating in the high eighties at
      100%, then 0%. */
   function darkHonestBar(seed) {
+    /* THE TELETYPE (owner pick, mockups/mockup-38-honest-bars.html option B,
+       2026-08-26; the wobbled frame and hatched fill retire). The bar is set
+       entirely in type, kin to the wait-words: the word LOADING (no
+       ellipsis) shivering above a typed track — [####··········] — and a
+       two-digit readout that LIES on its own schedule: usually the truth,
+       every few ticks a number from nowhere, occasionally a ?? shrug. The
+       joke said twice.
+       Same architecture as before: everything is baked into this generated
+       <style> from the seeded track — the cells are stacked #/· glyph pairs
+       toggled by change-point keyframes, the readout is two one-glyph
+       odometer strips stepped by translateY, the shiver is its own short
+       seeded loop — so the whole thing runs on the animation clock with no
+       JS ticking, pauses with the settle states, and a repaint re-derives
+       the identical performance. */
     /* the bench's knobs, fixed by the owner 2026-08-21 */
     var RATE = 6, SETBACK = 0.17, DEPTH = 18, THRESH = 80, AMP = 12;
     var TICK = 0.3;          /* seconds per tick                              */
     var TICKS = 150;         /* the super-cycle: 150 × 0.3s = 45s             */
+    var SEG = 14;            /* typed cells between the brackets              */
     /* the house fold: FNV-1a of the seed string, then xorshift32 */
     var h = 2166136261 >>> 0, i;
     for (i = 0; i < seed.length; i++) {
@@ -4516,11 +4531,17 @@ function JD_layerOpen() {
     /* the bench's motion model, verbatim: below the threshold a slow climb
        with stalls and setbacks; above it a mean-reverting wander around the
        high eighties — wider swings, but it never sprints, never finishes,
-       and never falls apart */
-    var out = ['<style>@keyframes ', prefix, '_w{'], v = 0, r, k;
+       and never falls apart. Alongside the true track, the readout's track:
+       strip indices 0–9 are digits, 10 is the ? and 11 the blank tens of a
+       single-digit value. */
+    var fills = [], tens = [], units = [], v = 0, r, lie, shown, k;
     for (k = 0; k <= TICKS; k++) {
-      out.push((k / TICKS * 100).toFixed(3), '%{width:', v.toFixed(1),
-        '%;animation-timing-function:steps(1,end)}');
+      fills.push(Math.round(v / 100 * SEG));
+      lie = rnd();
+      shown = lie < 0.12 ? Math.round(rnd() * 99)
+            : lie < 0.18 ? -1 : Math.round(v);
+      tens.push(shown < 0 ? 10 : shown < 10 ? 11 : Math.floor(shown / 10));
+      units.push(shown < 0 ? 10 : shown % 10);
       r = rnd();
       if (v < THRESH) {
         if (r < SETBACK) v -= rnd() * DEPTH;            /* a setback */
@@ -4531,19 +4552,60 @@ function JD_layerOpen() {
       }
       v = Math.max(0, Math.min(98, v));
     }
-    out.push('}@media (prefers-reduced-motion:no-preference){',
-      '.', prefix, ' .jd-dark-barfill{animation:', prefix, '_w ',
-      (TICKS * TICK).toFixed(1), 's linear infinite}}</style>');
-    /* the wobbled frame is the approved mockup's hand-drawn rectangle,
-       carried over byte for byte */
-    out.push('<span class="jd-dark-barwrap ', prefix, '">' +
-      '<svg width="100%" height="100%" viewBox="0 0 180 22" ' +
-      'preserveAspectRatio="none">' +
-      '<path d="M2,3 L178,2 L179,19 L3,20 Z" fill="none" stroke="#33240f" ' +
-      'stroke-width="1.4" stroke-linejoin="round" opacity="0.85"/>' +
-      '<path d="M2,3 L178,2 M3,20 L179,19" fill="none" stroke="#33240f" ' +
-      'stroke-width="0.6" opacity="0.3"/>' +
-      '</svg><span class="jd-dark-barfill"></span></span>');
+    /* one keyframes block per series, CHANGE POINTS only — steps(1,end)
+       between stops holds each value to the next, so a cell that toggles
+       six times a cycle costs six lines, not 150 */
+    function stepsKf(name, series, fmt) {
+      var o = ['@keyframes ', prefix, name, '{'], prev = null, k;
+      for (k = 0; k < series.length; k++) {
+        if (series[k] === prev && k !== series.length - 1) continue;
+        o.push((k / TICKS * 100).toFixed(3), '%{', fmt(series[k]),
+          ';animation-timing-function:steps(1,end)}');
+        prev = series[k];
+      }
+      return o.join('') + '}';
+    }
+    var DUR = (TICKS * TICK).toFixed(1) + 's';
+    var out = ['<style>'];
+    var binds = [];
+    for (i = 0; i < SEG; i++) {
+      var cell = fills.map(function (f) { return i < f ? 1 : 0; });
+      out.push(stepsKf('_c' + i, cell, function (on) { return 'opacity:' + on; }));
+      out.push(stepsKf('_e' + i, cell, function (on) { return 'opacity:' + (1 - on); }));
+      binds.push('.', prefix, ' .t-c:nth-child(', i + 1, ') .gf{animation:',
+        prefix, '_c', i, ' ', DUR, ' linear infinite both}',
+        '.', prefix, ' .t-c:nth-child(', i + 1, ') .ge{animation:',
+        prefix, '_e', i, ' ', DUR, ' linear infinite both}');
+    }
+    function slide(idx) { return 'transform:translateY(-' + idx + 'em)'; }
+    out.push(stepsKf('_dt', tens, slide), stepsKf('_du', units, slide));
+    binds.push('.', prefix, ' .t-dt .t-ds{animation:', prefix, '_dt ', DUR,
+      ' linear infinite both}',
+      '.', prefix, ' .t-du .t-ds{animation:', prefix, '_du ', DUR,
+      ' linear infinite both}');
+    /* the shiver: the word worries in place — a short seeded loop of
+       one-pixel-ish lurches, stepwise like everything else here */
+    out.push('@keyframes ', prefix, '_sh{');
+    for (k = 0; k < 8; k++) {
+      out.push((k / 8 * 100).toFixed(1), '%{transform:translateX(',
+        (rnd() * 3 - 1.5).toFixed(1), 'px)}');
+    }
+    out.push('100%{transform:translateX(0)}}');
+    binds.push('.', prefix, ' .t-word{animation:', prefix, '_sh 2.7s ',
+      'steps(1,end) infinite}');
+    out.push('@media (prefers-reduced-motion:no-preference){',
+      binds.join(''), '}</style>');
+    /* the markup: the word, then the typed track and its readout */
+    out.push('<span class="jd-dark-tele ', prefix, '">',
+      '<b class="t-word">LOADING</b>',
+      '<span class="t-line">[');
+    for (i = 0; i < SEG; i++) {
+      out.push('<span class="t-c"><i class="gf">#</i><i class="ge">·</i></span>');
+    }
+    var strip = '<span class="t-ds"><i>0</i><i>1</i><i>2</i><i>3</i><i>4</i>' +
+      '<i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>?</i><i>&nbsp;</i></span>';
+    out.push('] <span class="t-d t-dt">', strip, '</span>',
+      '<span class="t-d t-du">', strip, '</span>%</span></span>');
     return out.join('');
   }
   /* the pending face: one retro wait indicator per slot, printed in ink on
@@ -4644,7 +4706,17 @@ function JD_layerOpen() {
     var st = col.st;
     if (!col.queue.length) {
       if (col.rest > 0) { col.rest--; return null; }    /* the gap between words */
-      col.queue = Array.from(st.words[jdDriftRnd(st.words.length)]).reverse();
+      /* no word twice on one sheet (owner, 2026-08-26): a column releases
+         its word only here, when it is done spelling it, and deals the next
+         from the words no other column holds. The fallback deck cannot be
+         reached at 5 columns over 16 words; it is there so a future tuning
+         (more columns, fewer words) degrades to repetition, not to a stall. */
+      if (col.word) { delete st.inPlay[col.word]; col.word = null; }
+      var deck = st.words.filter(function (w) { return !st.inPlay[w]; });
+      if (!deck.length) deck = st.words;
+      col.word = deck[jdDriftRnd(deck.length)];
+      st.inPlay[col.word] = 1;
+      col.queue = Array.from(col.word).reverse();
       col.rest = JD_DRIFT.gap;
       if (st.busy[col.c] === col) st.busy[col.c] = null;
       col.c = jdDriftClaim(st, col, col.c);             /* a new word, a new lane */
@@ -4737,7 +4809,7 @@ function JD_layerOpen() {
     if (!W || !H) return false;
     host.innerHTML = '';
     var st = { W: W, H: H, bw: C / 3, cols: Math.floor(W / C), top: [],
-               busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS,
+               busy: {}, lane: {}, n: 0, words: JD_DRIFT_WORDS, inPlay: {},
                floorLimit: H - JD_DRIFT.maxDepth * C, beats: [], polls: [] };
     for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
     var layer = document.createElement('span');
@@ -4759,7 +4831,7 @@ function JD_layerOpen() {
       var speed = JD_DRIFT.speedLo + Math.random() * (JD_DRIFT.speedHi - JD_DRIFT.speedLo);
       var col = { el: el, c: idx, x: idx * C, st: st, speed: speed,
                   y0: -(C * (2 + jdDriftRnd(5))), beat: C / speed * 1000,
-                  queue: [], rest: jdDriftRnd(JD_DRIFT.gap) };
+                  queue: [], word: null, rest: jdDriftRnd(JD_DRIFT.gap) };
       st.busy[idx] = col;
       /* One metronome per column, but WHEN EACH LETTER IS DUE is kept on a
          cursor rather than taken from when the timer fired. A beat is exactly
@@ -4801,8 +4873,11 @@ function JD_layerOpen() {
   /* 'bar' — the honest progress bar — is BENCHED, not deleted (owner,
      2026-08-21): darkHonestBar(), its darkWell branch and its CSS are all
      still here and still work. Put the string back in this array and it
-     rejoins the rotation; nothing else needs touching. */
-  var DARK_POOL = ['plot', 'stray', 'scatter', 'watch', 'drift', 'words'];
+     rejoins the rotation; nothing else needs touching.
+     'plot' — the plotter circuit — joined it on the bench (owner,
+     2026-08-26), on the same terms: darkPlotCircuit(), its darkWell branch
+     and its CSS all stay. */
+  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift', 'words'];
   function darkDeal() {
     var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
     var h = 2166136261 >>> 0, i;
@@ -4822,6 +4897,98 @@ function JD_layerOpen() {
     }
     return deck;   /* slot a takes deck[0], b deck[1], and so on */
   }
+  /* ---- the stray's ink ruler (owner directive, 2026-08-26) ---------------
+     The ricochet's travel math runs on the word's BOX, but the eye watches
+     the INK — and every face in the .sy stack (Snell Roundhand down to the
+     cursive fallback) seats its ink differently inside that box: half-leading
+     above the ascenders, no descenders at all on "wait", swash overhangs at
+     the sides. So the box used to kiss the wall while the ink hung back —
+     up to ~17px of air at the bottom. This ruler measures where the ink
+     actually IS, in two steps that split the truth between the two renderers
+     that each hold half of it. (1) THE BOX AND ITS BASELINES come from the
+     DOM: an offscreen clone of the real .sy (real classes, movers stilled)
+     is probed with zero-size inline-blocks — an inline-block's baseline is
+     its bottom edge, so each probe's rect pins its line's baseline exactly
+     where Chrome's inline layout puts it. No canvas font metric stands in
+     for the line box math (an earlier draft did exactly that, and canvas
+     fontBoundingBoxAscent seats the block 1–2px lower than real layout).
+     (2) THE INK comes from canvas: the same two lines + dots (dots painted —
+     they hold their space always, and a lit dot must never be the thing
+     that clips), drawn with the clone's own computed font at those DOM
+     baselines, alpha-scanned for the ink bbox. Each side's box-edge-to-ink
+     distance (minus a 0.4px safety so antialiased swash tips never cross
+     the wall) goes onto the mover as a --jd-si-* custom property, and the
+     jdDarkStrayX/Y keyframes push the box PAST each wall by exactly that
+     side's number, so the ink itself lands flush. Runtime measurement, not
+     constants, because the stack resolves to different faces (with
+     different overhangs) per platform. On any failure the zeros fall out
+     and the bounce degrades to the old box-kiss — never a clip. */
+  function darkStrayInkInsets() {
+    if (darkStrayInkInsets.v) return darkStrayInkInsets.v;
+    var zero = { l: 0, r: 0, t: 0, b: 0 };
+    try {
+      var SAFE = 0.4, S = 2;
+      var PROBE = '<span data-p style="display:inline-block;width:0;height:0"></span>';
+      var host = document.createElement('div');
+      host.style.cssText = 'position:absolute;left:-9999px;top:0;' +
+        'visibility:hidden;pointer-events:none';
+      host.innerHTML =
+        '<span class="jd-dark-stray" style="animation:none;position:relative;' +
+        'left:0;top:0;transform:none;display:inline-block">' +
+        '<span class="sy" style="animation:none;position:static;top:auto;' +
+        'transform:none">please' + PROBE + '<br>wait...' + PROBE +
+        '</span></span>';
+      document.body.appendChild(host);
+      var sy = host.querySelector('.sy');
+      var probes = host.querySelectorAll('[data-p]');
+      var box = sy.getBoundingClientRect();
+      var b1 = probes[0].getBoundingClientRect().top - box.top;
+      var b2 = probes[1].getBoundingClientRect().top - box.top;
+      var cs = getComputedStyle(sy);
+      var font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      var lsp = cs.letterSpacing;
+      var bw = box.width, bh = box.height;
+      var M = parseFloat(cs.fontSize) * 1.5;  /* margin catches any overhang */
+      document.body.removeChild(host);
+      if (!(bw > 0) || !(bh > 0) || !(b2 > b1)) return zero;
+      var cv = document.createElement('canvas');
+      cv.width = Math.ceil((bw + 2 * M) * S);
+      cv.height = Math.ceil((bh + 2 * M) * S);
+      var ctx = cv.getContext('2d', { willReadFrequently: true });
+      if (!ctx) return zero;
+      ctx.scale(S, S);
+      ctx.font = font;
+      if ('letterSpacing' in ctx && lsp !== 'normal') ctx.letterSpacing = lsp;
+      ctx.textAlign = 'center';        /* .sy centres each line, so does this */
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#000';
+      ctx.fillText('please', M + bw / 2, M + b1);
+      ctx.fillText('wait...', M + bw / 2, M + b2);
+      var img = ctx.getImageData(0, 0, cv.width, cv.height).data;
+      var minx = cv.width, miny = cv.height, maxx = -1, maxy = -1, x, y;
+      for (y = 0; y < cv.height; y++) {
+        for (x = 0; x < cv.width; x++) {
+          if (img[(y * cv.width + x) * 4 + 3] > 16) {
+            if (x < minx) minx = x;
+            if (x > maxx) maxx = x;
+            if (y < miny) miny = y;
+            if (y > maxy) maxy = y;
+          }
+        }
+      }
+      if (maxx < 0) return zero;
+      var side = function (v) {
+        return Math.max(0, Math.round((v - SAFE) * 100) / 100);
+      };
+      darkStrayInkInsets.v = {
+        l: side(minx / S - M),
+        r: side(M + bw - (maxx + 1) / S),
+        t: side(miny / S - M),
+        b: side(M + bh - (maxy + 1) / S)
+      };
+      return darkStrayInkInsets.v;
+    } catch (e) { return zero; }
+  }
   function darkWell(slot, anim) {
     if (anim === 'plot') {
       /* the ink and the nib are the SAME path: the ink is a 15-unit dash
@@ -4838,8 +5005,20 @@ function JD_layerOpen() {
          incommensurate periods so the ricochet never visibly repeats */
       /* round-23 reword (owner pick 2026-08-18): the drifting word drops
          LOADING for the office's own plea — "please / wait", two lines, in
-         an old-fashioned script hand (see .sy in the CSS) */
-      return '<span class="jd-dark-stray"><span class="sy">please<br>wait</span></span>';
+         an old-fashioned script hand (see .sy in the CSS). The trailing
+         ellipsis (owner, 2026-08-26) blinks into place a dot at a time —
+         none, one, two, three, back to none — on a stepped cycle; the dots
+         hold their space whether lit or not, so the ricochet's measured
+         box never changes mid-flight. */
+      /* the --jd-si-* numbers are the ink ruler's per-side box-to-ink
+         distances (see darkStrayInkInsets above): the keyframes read them
+         so the INK, not the box, is what kisses each wall (owner directive,
+         2026-08-26 — the word used to bounce with air under it) */
+      var si = darkStrayInkInsets();
+      return '<span class="jd-dark-stray" style="--jd-si-l:' + si.l +
+        'px;--jd-si-r:' + si.r + 'px;--jd-si-t:' + si.t +
+        'px;--jd-si-b:' + si.b + 'px"><span class="sy">please<br>wait' +
+        '<i>.</i><i>.</i><i>.</i></span></span>';
     }
     if (anim === 'scatter') {
       /* the whole track is generated per turn (see darkScatterword): a
@@ -4950,6 +5129,7 @@ function JD_layerOpen() {
     return head('Please stand by', 2, { view: 'darkroom' }) +
       '<div class="jd-dark" aria-live="polite">' +
       JD_SLOTS.map(function (s, i) { return darkSwatch(s, deal[i]); }).join('') +
+      '</div>' +
       /* the margin line (round 26): the pencilled wait slip retired — it
          covered the indicators, which are the whole show. One plain
          sentence in the sheet's bottom margin instead, with a working
@@ -4957,13 +5137,20 @@ function JD_layerOpen() {
          theatre). The slow-timer line keeps its seat beneath it, behind
          the same data-slow/hidden pattern the timer has always used. This
          card still needs no summary line — pendingCount() hitting 0 goes
-         straight to 'reveal'. */
+         straight to 'reveal'.
+         The foot is a SIBLING of the pile since 2026-08-26 (owner catch):
+         as a child pinned to the square's bottom 3%, the phone-width
+         two-line wrap — and the slow line under it — climbed up into the
+         Model C/D labels. The scroller is the same box as the pile on
+         desktop, so the absolute seat is unchanged there; ≤600px the card
+         grows below the square and this foot flows into the new band (see
+         the darkroom media block in junk-drawer.css). */
       '<div class="jd-dark-foot"><span class="jd-dark-line">Your SVGs are ' +
       'being drawn. This could take a few minutes<span class="jd-dark-dots" ' +
       'aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span>' +
       '<span class="jd-dark-slow" data-slow' + (work.slow ? '' : ' hidden') +
       '>Still going. The drawing is long because it is being written line by ' +
-      'line.</span></div></div>';
+      'line.</span></div>';
   }
   function paintSlots() {
     if (!isOpen || state !== 'generating') return;
@@ -5045,11 +5232,23 @@ function JD_layerOpen() {
           'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
           'REPLAY ✎</button>'
         : '') +
+      /* the OVERLAY fittings (owner, 2026-08-26, best-to-worst prints):
+         the Model label rides INSIDE the frame, top-centred over the
+         artwork — bare text, no ground — and `spark` (pre-built by the
+         caller) lays the visitor's own overall-grade gauge along the
+         foot. Neither touches the artwork's box: both are absolutely
+         placed, so the drawing sits exactly where it did unlabelled.
+         aria-hidden — the pod wrapper's aria-label already says the name. */
+      (opts.overlay
+        ? '<span class="jd-pod-tag" aria-hidden="true">Model ' +
+          slot.toUpperCase() + '</span>' + (opts.spark || '')
+        : '') +
       '</div>' +
       /* "Model A" since rounds 28–29 (owner): the Results view restyles this
-         caption as the darkroom's tape label; the call view keeps it as the
-         printed strip beneath the plate, now reading MODEL A */
-      (opts.pin ? '' : '<figcaption>Model ' + slot.toUpperCase() + '</figcaption>') +
+         caption as the darkroom's tape label; a plate worn with `overlay`
+         (the podium prints) says it inside the frame instead */
+      (opts.pin || opts.overlay
+        ? '' : '<figcaption>Model ' + slot.toUpperCase() + '</figcaption>') +
       '</figure>';
   }
   function okSlots() {
@@ -5713,28 +5912,62 @@ function JD_layerOpen() {
       '<span>Axis</span><span>Your rating</span></div>';
   }
 
-  /* the step rail. First pass is linear (a step unlocks when the one before
-     it is left), back is always one press; a degraded one-survivor turn has
-     no rail at all — one panel, then file. A step the visitor has finished
-     carries a PENCIL tick (.is-done): their hand, not the bureau's. */
+  /* THE DOCKET (owner redesign, 2026-08-26; discovered in mockups/
+     mockup-39-rail-alternatives.html, replacing the numbered boxed rail).
+     A centred strip of circled letters: a ring the visitor has finished
+     FILLS IN — solid graphite, its letter reading paper (their pencil, not
+     the bureau's tick) — the current ring is red-rung and red-lettered on
+     raised paper, an unreached one sits dim and dead. The fifth ring is
+     THE SCALES (drawn inline in currentColor — the ⚖ character is
+     illegible at ring size), standing for "best to worst": the one node
+     that isn't a letter, as its step is the one step that isn't a single
+     drawing. Hairline connectors run between the rings — solid behind the
+     visitor, dashed on the road ahead. First pass is still linear (a step
+     unlocks when the one before it is left), back is always one press; a
+     degraded one-survivor turn has no rail at all — one panel, then file. */
+  var RAIL_SCALES =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M3.5 6 H20.5"/><circle cx="12" cy="3.8" r="1.2"/>' +
+    '<path d="M12 6 V18.5 M8.5 19.5 H15.5"/>' +
+    '<path d="M6 6 L3.5 11.5 M6 6 L8.5 11.5"/>' +
+    '<path d="M2.5 11.5 A3.5 3.5 0 0 0 9.5 11.5"/>' +
+    '<path d="M18 6 L15.5 11.5 M18 6 L20.5 11.5"/>' +
+    '<path d="M14.5 11.5 A3.5 3.5 0 0 0 21.5 11.5"/></svg>';
   function railHTML(ok) {
     var steps = ok.map(function (s) {
-      return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(), short: s.toUpperCase() };
+      return { id: s, n: ok.indexOf(s) + 1, label: 'drawing ' + s.toUpperCase(),
+        face: s.toUpperCase() };
     });
-    steps.push({ id: 'call', n: ok.length + 1, label: 'the call', short: 'CALL' });
+    /* "best to worst" — the ranking step's public name (owner, 2026-08-26;
+       it opened life as "the call", which survives in the internal ids).
+       Its ring wears the one-word form RANKING where words are worn. */
+    steps.push({ id: 'call', n: ok.length + 1, label: 'best to worst',
+      face: RAIL_SCALES, word: 'ranking' });
     var h = '<div class="jd-rail" role="list">';
-    steps.forEach(function (st) {
+    steps.forEach(function (st, i) {
       var current = work.step === st.id;
       var reached = !!work.reached[st.id];
+      /* the link INTO a node is walked once that node has been reached —
+         so the rule runs solid up to wherever the visitor has stood */
+      if (i > 0) {
+        h += '<i class="jd-rail-lnk' + (reached ? ' is-walked' : '') +
+          '" aria-hidden="true"></i>';
+      }
+      /* on the wide-viewport bench the node is a PILL wearing its word and
+         the ring stands down (the letter would repeat the word's own);
+         the phone and the narrow best-to-worst sheet keep bare rings —
+         CSS decides, keyed on width, data-view and the --call modifier */
       h += '<button type="button" role="listitem" class="jd-rail-step' +
+        (st.id === 'call' ? ' jd-rail-step--call' : '') +
         (current ? ' is-current' : reached ? ' is-done' : '') +
         '" data-act="step" data-step="' + st.id +
         '"' + (reached ? '' : ' disabled') +
         (current ? ' aria-current="step"' : '') +
         ' aria-label="step ' + st.n + ' — ' + esc(st.label) + '">' +
-        '<b>' + st.n + '</b><span class="jd-rail-long">' + esc(st.label) +
-        '</span><span class="jd-rail-short" aria-hidden="true">' +
-        esc(st.short) + '</span></button>';
+        '<span class="jd-rail-ring">' + st.face + '</span>' +
+        '<span class="jd-rail-word">' + esc(st.word || st.label) + '</span>' +
+        '</button>';
     });
     return h + '</div>';
   }
@@ -5766,21 +5999,22 @@ function JD_layerOpen() {
       h += scaleRow(slot, 'axis', ax, r.axes[ax.id]);
     });
     h += scaleRow(slot, 'grade', null, r.grade);
-    /* the report path (APP §4.6); F9 (round-16) — the checkbox label and the
-       note's placeholder used to ask the same question twice ("this drawing
-       is broken or offensive" / "what is wrong with it?"). The label is
-       trimmed to the fact being reported; the placeholder alone asks for the
-       reason, once the field is open to ask it. */
-    h += '<label class="jd-turn-check jd-turn-flag">' +
-      '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
-      (r.flag ? ' checked' : '') + '>' +
-      '<span>broken or offensive</span></label>' +
-      '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
-      '<input type="text" class="jd-turn-note" maxlength="' +
-      MAX_NOTE + '" placeholder="what is wrong with it?" ' +
-      'aria-label="note on the report for drawing ' + slot.toUpperCase() +
-      '" data-role="flagnote" data-slot="' + slot + '" value="' +
-      esc(r.flagNote || '') + '"></div>';
+    /* the report path (APP §4.6) is BENCHED from the form (owner,
+       2026-08-26): the "broken or offensive" checkbox and its note took
+       bench space the owner would rather spend on the scales, and reports
+       weren't proving necessary. Deliberately NOT dismantled — the state
+       (r.flag / r.flagNote), the flag/flagnote handlers, the wire fields
+       and the .jd-turn-flag styles all stand, so restoring the instrument
+       is re-adding the markup below, not an excavation.
+       (The retired markup, for that day:
+       '<label class="jd-turn-check jd-turn-flag">' +
+         '<input type="checkbox" data-role="flag" data-slot="' + slot + '"' +
+         (r.flag ? ' checked' : '') + '><span>broken or offensive</span></label>' +
+       '<div data-flagnote="' + slot + '"' + (r.flag ? '' : ' hidden') + '>' +
+         '<input type="text" class="jd-turn-note" maxlength="' + MAX_NOTE +
+         '" placeholder="what is wrong with it?" aria-label="note on the report ' +
+         'for drawing ' + slot.toUpperCase() + '" data-role="flagnote" ' +
+         'data-slot="' + slot + '" value="' + esc(r.flagNote || '') + '"></div>') */
     var acts = '';
     if (idx > 0) {
       acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
@@ -5788,7 +6022,7 @@ function JD_layerOpen() {
     if (!two) {
       acts += '<button type="button" class="jd-turn-go" data-act="file">file the grades</button>';
     } else {
-      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'the call';
+      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'best to worst';
       acts += '<button type="button" class="jd-turn-go" data-act="next">next — ' +
         esc(next) + ' &rarr;</button>';
     }
@@ -5829,10 +6063,16 @@ function JD_layerOpen() {
      one element out. */
   function podPrintHTML(slot) {
     var r = podRankOf(slot);
+    /* the spark at the print's foot: the visitor's own overall grade for
+       this drawing, as the report card's segmented gauge — no words
+       (owner, 2026-08-26). A skipped grade sparks nothing. */
+    var rt = work.ratings[slot];
+    var spark = gaugeFor(null, byRankDesc(tax().grades).length, rt ? rt.grade : null);
+    if (spark) spark = '<span class="jd-pod-spark" aria-hidden="true">' + spark + '</span>';
     return '<div class="jd-pod-print" data-pod="' + slot + '" data-slot="' + slot +
       '" role="button" tabindex="0" draggable="false" aria-label="Model ' +
       slot.toUpperCase() + (r ? ', ' + POD_ORD[r - 1] : ', unplaced') +
-      '. Press to enlarge">' + plate(slot) + '</div>';
+      '. Press to enlarge">' + plate(slot, { overlay: true, spark: spark }) + '</div>';
   }
 
   /* THE CALL — THE PODIUM (owner pick, mockup-32, 2026-08-22; the likert
@@ -5889,7 +6129,7 @@ function JD_layerOpen() {
     work.reached[work.step] = true;
     var two = ok.length > 1;
     var call = work.step === 'call';
-    return head(call ? 'The call' : 'Grade drawing ' + work.step.toUpperCase(),
+    return head(call ? 'Best to worst' : 'Grade drawing ' + work.step.toUpperCase(),
       call ? 5 : 4, { view: call ? 'call' : 'bench' }) +
       (two ? railHTML(ok) : '') +
       (call ? callPanel(ok) : benchPanel(work.step, ok));

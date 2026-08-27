@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>The Docket &mdash; landed</title>
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1280px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:620px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+.cap{font-size:.5rem;letter-spacing:.2em;text-transform:uppercase;color:var(--tink-3);
+  margin:34px 0 5px;text-align:center}
+.frame{overflow-x:auto;border:1px solid var(--trule);
+  box-shadow:0 10px 26px -8px rgba(20,10,2,.5)}
+.frame iframe{display:block;border:0;margin:0 auto}
+.frame.mob{width:392px;margin:0 auto}
+.frame.mob iframe{width:390px;height:780px}
+</style></head><body>
+<div class="sheet">
+  <h1>The Docket &mdash; Landed</h1>
+  <p class="no">mockup 39 &middot; design record &middot; 2026-08-26 &middot; as-built in junk-drawer.js/css (0.9.53)</p>
+  <hr class="rule">
+  <p class="dek">The step rail&rsquo;s replacement, as it SHIPPED &mdash; this
+  page went through nine rounds (three treatments, placement, circles, the
+  fifth node, connectors) and now simply renders the as-built bench from
+  <b>turn-flow-stages.js</b> over the live <b>junk-drawer.css</b>, nothing
+  injected. The design: a centred strip of <b>circled letters</b> in the old
+  rail&rsquo;s slot (numbers and boxes gone), a finished ring <b>filled solid
+  graphite</b> with its letter reading paper, the current ring <b>red-rung and
+  red-lettered</b> on raised paper, an unreached one dim and dead. The fifth
+  ring is <b>the scales, drawn</b> (the &#9878;&#65038; character is illegible
+  at ring size), standing for <b>best to worst</b> &mdash; the renamed call.
+  Between the rings runs a hairline: <b>solid where the visitor has been,
+  dashed on the road ahead</b>. On the wide-viewport bench each node becomes
+  a <b>pill wearing its word</b> &mdash; drawing A&hellip;D, and the scales
+  icon with <b>ranking</b> &mdash; no letter rings there (see mockup&nbsp;35);
+  the phone and the narrow best-to-worst sheet keep the bare rings. Frame
+  shows drawing D on the bench: A&ndash;C filled, the scales still locked.</p>
+  <p class="cap">mobile — 390px viewport</p>
+  <div class="frame mob"><iframe title="the docket, as built"></iframe></div>
+</div>
+<script src="turn-flow-stages.js"></script>
+<script>
+(function () {
+  var stage = window.JD_STAGES.filter(function (s) { return s.id === 'bench-answered'; })[0];
+  window.JD_mountStage(document.querySelector('iframe'), stage);
+})();
+</script>
+</body></html>

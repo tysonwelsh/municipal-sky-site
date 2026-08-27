@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 19,
+  "version": 20,
   "updated": "2026-08-16",
   "grades": [
     {
@@ -277,25 +277,25 @@
         {
           "id": "read-the-brief",
           "rank": 4,
-          "label": "Read the brief",
+          "label": "Fully Understands",
           "description": "Every explicit ask lands as specified, the intent behind the words comes through, and nothing added crowds the ask."
         },
         {
           "id": "skimmed-it",
           "rank": 3,
-          "label": "Skimmed it",
+          "label": "Mostly Understands",
           "description": "An ask bent, softened, or quietly swapped for something easier — or unrequested extras crept in without taking over."
         },
         {
           "id": "misread-it",
           "rank": 2,
-          "label": "Misread it",
+          "label": "Somewhat Understands",
           "description": "Asks missed or misunderstood, or additions that crowd and contradict; the subject survives, but the brief only partly does."
         },
         {
           "id": "own-brief",
           "rank": 1,
-          "label": "Wrote its own brief",
+          "label": "Barely Understands",
           "description": "Substantially not the thing that was asked for."
         }
       ]
@@ -591,6 +591,11 @@
       "date": "2026-08-19",
       "version": 19,
       "note": "Owner call: structural-coherence moves to second, directly after understanding-assignment, ahead of layering. Survey order is display order everywhere — the turn survey, the record card, the how-to-read legend and the rating bench all iterate this array and filter defunct — so this one move reorders every instrument. The reading it produces: did the model understand the brief, is the OBJECT sound, is the PICTURE of it sound, and does it have _it_ — object before picture, since a well-drawn impossible thing is the more basic failure. Order only; no scale, id, label or description changed, and nothing already filed is affected (annotations key by axis id, ratings store axis_id)."
+    },
+    {
+      "date": "2026-08-26",
+      "version": 20,
+      "note": "Owner call: understanding-assignment's four value labels reworded from the brief metaphor (Read the brief / Skimmed it / Misread it / Wrote its own brief) to a plain comprehension scale — Fully Understands / Mostly Understands / Somewhat Understands / Barely Understands. Labels only; ranks, value ids, and descriptions are unchanged, so nothing already filed is affected (grades and ratings store rank numbers) and no code changes are needed — every instrument renders labels from this file."
     }
   ]
 }

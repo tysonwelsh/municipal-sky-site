@@ -10,3 +10,4 @@
 0.14.2 — no more U-turns: a turn may never reverse the entry axis (two perpendiculars used to fold a path back on itself, and a folded word reads against its own letters). Applies in both modes; sims still clean at 8 and 32, axis balance holds
 0.14.3 — the TEMP red ink retires: stubborn streams wear the same blue as everyone (tuning settled; the is-stubborn class and its rule are gone). mockup-34 defaults: 14 streams, 2.8-5 cells/sec, 100% stubborn, zoom 2, the sixteen wait-words
 0.14.4 — word streams all wear the same ink: the per-stream opacity lottery (0.62-1.0, the character rain's depth cue) is pinned to 1 in word mode (owner, 2026-08-23)
+0.14.5 — word mode: no word twice on one sheet (owner call, via the darkroom). The planner deals a birth only from the words not currently live — a string re-enters only after its instance has left — and when every word is out the slot waits its turn, the same discipline as clear spacetime
