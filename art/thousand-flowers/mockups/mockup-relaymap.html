@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A THOUSAND FLOWERS · colonies.music.flowers</title>
+<style>
+:root{
+  --wall:#050b16;
+  --wall-2:#08111f;
+  --panel:rgba(11,25,44,.62);
+  --panel-2:rgba(9,20,36,.86);
+  --rule:#14304c;
+  --rule-2:#1d4468;
+  --ink:#9ab5d0;
+  --ink-dim:#5d7c9c;
+  --ink-faint:#3d5872;
+  --ink-bright:#dcebf9;
+  --cyan:#68cfe1;
+
+  --c-operator:#e2b06a;
+  --c-kolob:#8bc396;
+  --c-zankyo:#7fc9dc;
+  --c-bardo:#e3d5b2;
+  --c-antariksh:#7e93bb;
+  --c-prospero:#b8a7e6;
+
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"DejaVu Sans Mono","Liberation Mono",monospace;
+  --sans:"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(120% 80% at 50% -10%, #0d2036 0%, rgba(13,32,54,0) 62%),
+    radial-gradient(90% 60% at 50% 110%, #0a1a2e 0%, rgba(10,26,46,0) 60%),
+    var(--wall);
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:var(--mono);
+  font-size:14px;
+  line-height:1.62;
+  -webkit-text-size-adjust:100%;
+  overflow-x:hidden;
+}
+body::before{
+  /* faint graticule on the wall */
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    linear-gradient(to right, rgba(90,150,200,.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(90,150,200,.045) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(120% 90% at 50% 20%, #000 20%, transparent 85%);
+  -webkit-mask-image:radial-gradient(120% 90% at 50% 20%, #000 20%, transparent 85%);
+}
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 18px 96px}
+
+/* ─── masthead ─────────────────────────────────────────── */
+.masthead{padding:34px 0 18px;border-bottom:1px solid var(--rule)}
+.mast-rule{height:1px;background:linear-gradient(to right,transparent,var(--rule-2) 12%,var(--rule-2) 88%,transparent);margin-bottom:16px}
+.mast-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 20px}
+h1{
+  font-family:var(--sans);font-size:clamp(19px,4.6vw,31px);font-weight:600;
+  letter-spacing:.30em;margin:0;color:var(--ink-bright);text-transform:uppercase;
+  text-shadow:0 0 26px rgba(104,207,225,.20);
+}
+.group{font-size:12px;letter-spacing:.16em;color:var(--cyan);opacity:.82;white-space:nowrap}
+.mast-sub{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:12px;font-size:11px;letter-spacing:.12em;color:var(--ink-dim);text-transform:uppercase}
+.mast-sub b{font-weight:400;color:var(--ink)}
+.dotpair::before{content:"· "}
+
+/* ─── panels ───────────────────────────────────────────── */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--rule);
+  box-shadow:inset 0 0 0 1px rgba(120,190,230,.035), 0 20px 50px -34px #000;
+  position:relative;
+}
+.panel-label{
+  position:absolute;top:-1px;left:16px;transform:translateY(-50%);
+  background:var(--wall);padding:0 9px;
+  font-size:10px;letter-spacing:.24em;text-transform:uppercase;color:var(--ink-dim);
+}
+.panel-label b{color:var(--cyan);font-weight:400}
+
+/* ─── map ──────────────────────────────────────────────── */
+.mapwrap{margin-top:34px;padding:26px 10px 12px}
+.mapscroll{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch}
+.mapscroll svg{display:block;width:100%;min-width:680px;height:auto}
+.map-foot{
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 22px;
+  padding:12px 12px 4px;margin-top:6px;border-top:1px solid var(--rule);
+  font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);
+}
+.map-hint{display:none;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-faint);padding:0 12px 8px}
+
+/* svg type */
+.n-name{font-family:var(--sans);font-size:13px;letter-spacing:.17em;text-transform:uppercase}
+.n-meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;fill:var(--ink-dim)}
+.n-delta{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em}
+.ring-tick{font-family:var(--mono);font-size:9.5px;letter-spacing:.18em;fill:#2f4f6e}
+.chart-note{font-family:var(--mono);font-size:9.5px;letter-spacing:.2em;fill:#2c4a68}
+.hub-name{font-family:var(--sans);font-size:12px;letter-spacing:.24em;text-transform:uppercase;fill:var(--c-operator)}
+.transit-call{font-family:var(--mono);font-size:11px;letter-spacing:.06em;fill:var(--c-bardo)}
+.node{cursor:pointer}
+.node .hit{fill:transparent}
+.node:hover .n-name,.node.on .n-name{fill:var(--ink-bright)!important}
+.node:hover .halo,.node.on .halo{opacity:.5}
+.halo{opacity:0;transition:opacity .25s}
+
+/* ─── board ────────────────────────────────────────────── */
+.board{display:grid;grid-template-columns:minmax(0,306px) minmax(0,1fr);gap:30px;margin-top:44px;align-items:start}
+
+/* index / signal log */
+.log{padding:24px 0 14px}
+.logscroll{position:sticky;top:14px;max-height:calc(100vh - 34px);overflow:auto}
+.log h2,.tx h2{
+  font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;
+  color:var(--ink-dim);margin:0 0 4px;padding:0 18px;
+}
+.thread-head{
+  display:flex;gap:9px;align-items:flex-start;padding:16px 18px 6px;margin-top:8px;
+  border-top:1px solid var(--rule);
+}
+.thread-head:first-of-type{border-top:0}
+.thread-head .bloom{flex:0 0 auto;margin-top:3px}
+.th-title{font-size:12.5px;color:var(--ink-bright);line-height:1.45}
+.th-sub{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);margin-top:2px}
+.collapse{
+  margin-left:auto;background:none;border:1px solid var(--rule);color:var(--ink-faint);
+  font-family:var(--mono);font-size:10px;line-height:1;padding:3px 6px;cursor:pointer;flex:0 0 auto;
+}
+.collapse:hover{color:var(--cyan);border-color:var(--rule-2)}
+
+.rows{list-style:none;margin:0;padding:0 10px 4px}
+.rows li{position:relative}
+.row{
+  display:block;width:100%;text-align:left;background:none;border:0;cursor:pointer;
+  font-family:var(--mono);color:inherit;
+  padding:6px 8px 6px 10px;border-left:2px solid transparent;
+}
+.row:hover{background:rgba(104,207,225,.055)}
+.row.sel{background:rgba(104,207,225,.085);border-left-color:var(--cyan)}
+.r-line{display:flex;gap:8px;align-items:baseline}
+.r-seq{font-size:10px;color:var(--ink-faint);flex:0 0 auto}
+.r-subj{font-size:12px;color:var(--ink);line-height:1.4;min-width:0}
+.row:hover .r-subj{color:var(--ink-bright)}
+.r-meta{display:flex;gap:8px;font-size:10px;letter-spacing:.09em;color:var(--ink-faint);margin-top:1px;padding-left:26px}
+.r-who{text-transform:uppercase;letter-spacing:.13em}
+.d1 .row{padding-left:26px}
+.d1::before{content:"";position:absolute;left:18px;top:0;bottom:0;width:1px;background:var(--rule)}
+.d1:last-child::before{bottom:50%}
+.d1::after{content:"";position:absolute;left:18px;top:16px;width:7px;height:1px;background:var(--rule)}
+.adminrow .r-who{color:var(--c-operator)}
+.k-kolob .r-who{color:var(--c-kolob)} .k-zankyo .r-who{color:var(--c-zankyo)}
+.k-bardo .r-who{color:var(--c-bardo)} .k-antariksh .r-who{color:var(--c-antariksh)}
+.k-prospero .r-who{color:var(--c-prospero)} .k-operator .r-who{color:var(--c-operator)}
+
+.pending{
+  margin:14px 10px 6px;padding:11px 12px;border:1px dashed var(--rule-2);
+  background:repeating-linear-gradient(135deg,rgba(227,213,178,.028) 0 8px,transparent 8px 16px);
+}
+.pending .p-tag{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--c-bardo);opacity:.75}
+.pending .p-body{font-size:11px;color:var(--ink-faint);margin-top:3px;line-height:1.55}
+.pending .p-body em{font-style:normal;color:var(--ink-dim)}
+
+/* transcripts */
+.tx{display:flex;flex-direction:column;gap:26px}
+.tx-lede{padding:26px 22px 24px}
+.tx-lede p{margin:6px 0 0;font-size:11px;letter-spacing:.06em;color:var(--ink-faint);max-width:62ch}
+
+article.msg{padding:26px 22px 22px;scroll-margin-top:16px;transition:border-color .3s,box-shadow .3s}
+article.msg.sel{border-color:var(--rule-2);box-shadow:inset 0 0 0 1px rgba(104,207,225,.10),0 20px 50px -34px #000}
+.msg-top{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;border-bottom:1px solid var(--rule);padding-bottom:10px}
+.seq{font-size:11px;letter-spacing:.2em;color:var(--ink-faint)}
+.subject{font-family:var(--sans);font-size:15px;font-weight:500;letter-spacing:.03em;color:var(--ink-bright);line-height:1.4;flex:1 1 260px;min-width:0}
+.stamp{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;border:1px solid currentColor;padding:2px 7px;white-space:nowrap}
+
+.hdrs{margin:12px 0 0;font-size:11.5px;line-height:1.85;color:var(--ink-dim);overflow-x:auto;white-space:pre;padding-bottom:4px}
+.hdrs .hn{color:var(--ink-faint)}
+.hdrs .hv{color:var(--ink)}
+.hdrs .hi{color:var(--cyan)}
+.decoded{
+  margin-top:14px;padding-top:14px;border-top:1px dashed var(--rule);
+  font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-faint);
+}
+.body{
+  margin:12px 0 0;font-size:13.4px;line-height:1.72;color:var(--ink);
+  white-space:pre-wrap;word-wrap:break-word;
+}
+.body q{quotes:none}
+.quote{display:block;color:#6f96bd;border-left:2px solid var(--rule-2);padding-left:11px;margin:2px 0}
+pre.code{
+  margin:14px 0;padding:13px 15px;overflow-x:auto;
+  background:rgba(3,9,18,.72);border:1px solid var(--rule);border-left:2px solid var(--c-prospero);
+  font-size:12.2px;line-height:1.68;color:#c3d6ea;white-space:pre;
+}
+pre.code .cm{color:#4e6f90}
+.sig{
+  margin-top:20px;padding-top:12px;border-top:1px solid var(--rule);
+  font-size:12.2px;line-height:1.75;color:var(--ink-dim);white-space:pre-wrap;
+}
+.deseret{font-size:16px;letter-spacing:.06em;color:var(--c-kolob);opacity:.9}
+.gloss{color:var(--ink-faint);font-size:11.5px}
+.origin{color:var(--ink-faint)}
+.katakana{color:var(--c-zankyo)}
+.drop{color:#3f5d7c}
+
+/* per-colony accents on the transcript rail */
+article.msg{border-left-width:2px}
+.m-operator{border-left-color:rgba(226,176,106,.55)}
+.m-kolob{border-left-color:rgba(139,195,150,.45)}
+.m-zankyo{border-left-color:rgba(127,201,220,.45)}
+.m-bardo{border-left-color:rgba(227,213,178,.42)}
+.m-antariksh{border-left-color:rgba(126,147,187,.42)}
+.m-prospero{border-left-color:rgba(184,167,230,.5)}
+.m-operator .stamp{color:var(--c-operator)}
+.m-operator .subject{color:#f0d3a3}
+.m-operator{background:linear-gradient(to right,rgba(226,176,106,.045),rgba(226,176,106,0) 40%),var(--panel)}
+.m-prospero{background:linear-gradient(to right,rgba(184,167,230,.05),rgba(184,167,230,0) 40%),var(--panel)}
+.m-prospero .stamp{color:var(--c-prospero)}
+.m-kolob .stamp{color:var(--c-kolob)} .m-zankyo .stamp{color:var(--c-zankyo)}
+.m-bardo .stamp{color:var(--c-bardo)} .m-antariksh .stamp{color:var(--c-antariksh)}
+.m-antariksh .body{color:#7e93bb;opacity:.92}
+
+.thread-rule{display:flex;align-items:center;gap:12px;color:var(--ink-faint);font-size:10px;letter-spacing:.26em;text-transform:uppercase;margin-top:8px}
+.thread-rule::before,.thread-rule::after{content:"";height:1px;background:var(--rule);flex:1}
+.thread-rule .bloom{color:var(--ink-faint)}
+
+/* inbound card in the transcript column */
+.inbound{padding:22px;border-style:dashed;border-color:var(--rule-2);background:var(--panel-2)}
+.inbound .ib-tag{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--c-bardo);opacity:.8}
+.inbound .ib-line{margin-top:10px;font-size:13px;color:var(--ink-dim);letter-spacing:.03em}
+.inbound .ib-line b{font-weight:400;color:var(--c-bardo)}
+.ib-bar{margin-top:14px;height:3px;background:rgba(30,68,104,.55);position:relative;overflow:hidden}
+.ib-bar i{position:absolute;left:0;top:0;bottom:0;width:35%;background:linear-gradient(to right,rgba(227,213,178,.15),rgba(227,213,178,.7))}
+.ib-bar i::after{content:"";position:absolute;right:0;top:-2px;bottom:-2px;width:2px;background:var(--c-bardo);box-shadow:0 0 8px var(--c-bardo)}
+.ib-scale{display:flex;justify-content:space-between;margin-top:6px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-faint)}
+.ib-note{margin-top:12px;font-size:11px;color:var(--ink-faint);line-height:1.6}
+
+/* footer */
+.colophon{margin-top:52px;padding-top:18px;border-top:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:8px 26px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+.colophon .lit{color:var(--cyan);opacity:.75}
+
+.bloom{width:13px;height:13px;display:inline-block;vertical-align:-2px}
+.bloom.big{width:15px;height:15px}
+
+/* focus dimming when a node is selected */
+body.focused .row:not(.k-active),
+body.focused article.msg:not(.k-active){opacity:.34}
+body.focused .row.k-active,body.focused article.msg.k-active{opacity:1}
+.row,article.msg{transition:opacity .3s}
+
+@media (max-width:880px){
+  .board{grid-template-columns:minmax(0,1fr);gap:34px}
+  .logscroll{position:static;max-height:none;overflow:visible}
+  .map-hint{display:block}
+  .mapwrap{padding:26px 0 12px}
+}
+@media (max-width:560px){
+  body{font-size:13.5px}
+  .panel-label{font-size:9px;letter-spacing:.16em;left:10px}
+  .wide{display:none}
+  h1{letter-spacing:.2em}
+  article.msg{padding:22px 15px 18px}
+  .hdrs{font-size:11px}
+  .body{font-size:13px}
+}
+@media (prefers-reduced-motion:reduce){
+  .pulse,.crawl{animation:none;display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- reusable flower glyph -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="bloom" viewBox="0 0 24 24">
+    <g fill="currentColor" fill-opacity=".55">
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3"/>
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3" transform="rotate(60 12 12)"/>
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3" transform="rotate(120 12 12)"/>
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3" transform="rotate(180 12 12)"/>
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3" transform="rotate(240 12 12)"/>
+      <ellipse cx="12" cy="6.4" rx="2.45" ry="4.3" transform="rotate(300 12 12)"/>
+    </g>
+    <circle cx="12" cy="12" r="1.75" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="mast-rule"></div>
+  <div class="mast-top">
+    <h1>A Thousand Flowers</h1>
+    <span class="group">· colonies.music.flowers</span>
+  </div>
+  <div class="mast-sub">
+    <span>Store-and-forward relay <b>21:1/0</b></span>
+    <span class="dotpair">Listening watch <b>18 Aug 3042 · 09:20 UTC</b></span>
+    <span class="dotpair">Held <b>7 articles</b></span>
+    <span class="dotpair">Inbound <b>1</b></span>
+    <span class="dotpair">Six nodes <b>five reporting</b></span>
+  </div>
+</header>
+
+<!-- ══════════════ TRANSIT CHART ══════════════ -->
+<section class="panel mapwrap" aria-label="Relay transit chart">
+  <div class="panel-label">Chart I · <b>transit schematic</b><span class="wide"> · days from the relay</span></div>
+
+  <div class="mapscroll">
+  <svg viewBox="0 0 960 662" role="img" aria-label="Schematic map: five colony nodes plotted at their upload transit distances from the relay, with one article in transit from the Monastery-Ark.">
+    <defs>
+      <radialGradient id="hubglow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#e2b06a" stop-opacity=".38"/>
+        <stop offset="100%" stop-color="#e2b06a" stop-opacity="0"/>
+      </radialGradient>
+      <radialGradient id="pktglow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#e3d5b2" stop-opacity=".55"/>
+        <stop offset="100%" stop-color="#e3d5b2" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- corner registration marks -->
+    <g stroke="#1d4468" stroke-width="1" fill="none" opacity=".8">
+      <path d="M10 24 L10 10 L24 10"/><path d="M936 10 L950 10 L950 24"/>
+      <path d="M10 638 L10 652 L24 652"/><path d="M936 652 L950 652 L950 638"/>
+    </g>
+
+    <!-- range rings -->
+    <g fill="none" stroke="#122f4b" stroke-width="1">
+      <path d="M386 545 A94 94 0 0 1 574 545"/>
+      <path d="M290 545 A190 190 0 0 1 670 545"/>
+      <path d="M162 545 A318 318 0 0 1 798 545"/>
+      <path d="M66 545 A414 414 0 0 1 894 545" stroke-dasharray="3 5"/>
+    </g>
+
+    <!-- radial spokes -->
+    <g stroke="#0f2740" stroke-width="1">
+      <line x1="480" y1="545" x2="480" y2="121"/>
+      <line x1="480" y1="545" x2="838" y2="338"/>
+      <line x1="480" y1="545" x2="122" y2="338"/>
+    </g>
+
+    <!-- baseline / horizon -->
+    <line x1="40" y1="545" x2="920" y2="545" stroke="#1d4468" stroke-width="1"/>
+    <line x1="40" y1="549" x2="920" y2="549" stroke="#0f2740" stroke-width="1"/>
+
+    <!-- ring ticks -->
+    <g class="ring-tick" text-anchor="middle">
+      <text x="571" y="527">2 d</text>
+      <text x="666" y="507">5 d</text>
+      <text x="791" y="481">9 d</text>
+      <text x="884" y="461">12 d</text>
+    </g>
+
+    <!-- ════ arcs ════ -->
+    <!-- kolob -->
+    <path d="M455.7 454.2 Q452.4 503.7 480 545" fill="none" stroke="#8bc396" stroke-opacity=".34" stroke-width="1.2"/>
+    <!-- zankyo -->
+    <path d="M635.6 436.0 Q540.6 465.9 480 545" fill="none" stroke="#7fc9dc" stroke-opacity=".30" stroke-width="1.2"/>
+    <!-- antariksh: faint, half-finished -->
+    <path d="M566.1 140.1 Q466.4 330.5 480 545" fill="none" stroke="#7e93bb" stroke-opacity=".26" stroke-width="1.1" stroke-dasharray="2 7"/>
+    <!-- bardo: the live one -->
+    <path id="arc-bardo" d="M191.8 410.6 Q316.5 519.5 480 545" fill="none" stroke="#e3d5b2" stroke-opacity=".16" stroke-width="1.1" stroke-dasharray="1.5 6"/>
+    <path d="M191.8 410.6 Q316.5 519.5 480 545" pathLength="100" fill="none"
+          stroke="#e3d5b2" stroke-opacity=".62" stroke-width="1.5" stroke-dasharray="35 100"/>
+
+    <!-- crawling carrier on the unflown remainder -->
+    <circle class="crawl" r="2" fill="#e3d5b2" fill-opacity=".5">
+      <animateMotion dur="11s" repeatCount="indefinite" calcMode="linear"
+                     keyPoints="0.35;1" keyTimes="0;1"
+                     path="M191.8 410.6 Q316.5 519.5 480 545"/>
+      <animate attributeName="fill-opacity" values="0;.5;.5;0" keyTimes="0;.12;.8;1" dur="11s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- packet: where 000009 is right now -->
+    <g>
+      <circle cx="283.8" cy="476.6" r="26" fill="url(#pktglow)"/>
+      <circle class="pulse" cx="283.8" cy="476.6" r="7" fill="none" stroke="#e3d5b2" stroke-opacity=".5">
+        <animate attributeName="r" values="5;15" dur="3.4s" repeatCount="indefinite"/>
+        <animate attributeName="stroke-opacity" values=".55;0" dur="3.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="283.8" cy="476.6" r="3.4" fill="#f2e6c6"/>
+      <line x1="283.8" y1="476.6" x2="283.8" y2="424" stroke="#e3d5b2" stroke-opacity=".35" stroke-width="1"/>
+      <line x1="283.8" y1="424" x2="330" y2="424" stroke="#e3d5b2" stroke-opacity=".35" stroke-width="1"/>
+      <text class="transit-call" x="336" y="421">000009 · in transit · 35%</text>
+      <text class="n-meta" x="336" y="437">arrives 24 Aug 3042 · 5 d 22 h out</text>
+    </g>
+
+    <!-- ════ key ════ -->
+    <g>
+      <rect x="76" y="140.0" width="292" height="162" fill="#07111d" fill-opacity=".72" stroke="#122f4b"/>
+      <text class="chart-note" x="92" y="164.0">KEY</text>
+      <line x1="92" y1="186.0" x2="134" y2="186.0" stroke="#e3d5b2" stroke-opacity=".62" stroke-width="1.5"/>
+      <text class="n-meta" x="146" y="190.0">distance already flown</text>
+      <line x1="92" y1="210.0" x2="134" y2="210.0" stroke="#e3d5b2" stroke-opacity=".34" stroke-width="1.1" stroke-dasharray="1.5 6"/>
+      <text class="n-meta" x="146" y="214.0">distance still to fly</text>
+      <line x1="92" y1="234.0" x2="134" y2="234.0" stroke="#7e93bb" stroke-opacity=".34" stroke-width="1.1" stroke-dasharray="2 7"/>
+      <text class="n-meta" x="146" y="238.0">carrier only — nothing held</text>
+      <g color="#5d7c9c" opacity=".85"><svg x="105" y="248.0" width="16" height="16" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <text class="n-meta" x="146" y="261.0">a colony, at its own distance</text>
+      <path d="M92 284 A26 26 0 0 1 134 284" fill="none" stroke="#1a3c5e"/>
+      <text class="n-meta" x="146" y="286.0">range ring · one upload, in days</text>
+    </g>
+
+    <!-- ════ nodes ════ -->
+
+    <!-- ANTARIKSH · 12 d -->
+    <g class="node" data-colony="antariksh" tabindex="0" role="button" aria-label="Vimana ANTARIKSH, twelve days out">
+      <circle class="halo" cx="566.1" cy="140.1" r="20" fill="#7e93bb" fill-opacity=".18"/>
+      <g color="#7e93bb" opacity=".72"><svg x="555" y="129" width="22" height="22" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <text class="n-name" x="590" y="132" fill="#7e93bb">Vimana Antariksh</text>
+      <text class="n-meta" x="590" y="148">21:257/360 · Vyoma · phase one of four</text>
+      <text class="n-delta" x="590" y="163" fill="#5d7c9c">Δ 12 d · last heard 17 Aug 3042</text>
+      <rect class="hit" x="546" y="118" width="300" height="56"/>
+    </g>
+
+    <!-- BARDO · 9 d -->
+    <g class="node" data-colony="bardo" tabindex="0" role="button" aria-label="The Monastery-Ark, nine days out">
+      <circle class="halo" cx="191.8" cy="410.6" r="20" fill="#e3d5b2" fill-opacity=".16"/>
+      <g color="#e3d5b2" opacity=".82"><svg x="181" y="400" width="22" height="22" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <text class="n-name" x="181" y="381" fill="#e3d5b2">The Monastery-Ark</text>
+      <text class="n-meta" x="181" y="366">21:108/49 · the Umdzé</text>
+      <text class="n-delta" x="181" y="351" fill="#5d7c9c">Δ 9 d · one article outbound</text>
+      <rect class="hit" x="175" y="338" width="260" height="92"/>
+    </g>
+
+    <!-- ZANKYO · 5 d -->
+    <g class="node" data-colony="zankyo" tabindex="0" role="button" aria-label="Station ZANKYO-3042, five days out">
+      <circle class="halo" cx="635.6" cy="436.0" r="20" fill="#7fc9dc" fill-opacity=".16"/>
+      <g color="#7fc9dc" opacity=".85"><svg x="625" y="425" width="22" height="22" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <text class="n-name" x="660" y="429" fill="#7fc9dc">Station ZANKYO-3042</text>
+      <text class="n-meta" x="660" y="445">21:304/2 · the Caretaker · shift 4,118</text>
+      <text class="n-delta" x="660" y="460" fill="#5d7c9c">Δ 5 d · carrier steady</text>
+      <rect class="hit" x="618" y="415" width="300" height="56"/>
+    </g>
+
+    <!-- KOLOB · 2 d -->
+    <g class="node" data-colony="kolob" tabindex="0" role="button" aria-label="The Rim of Kolob's Light, two days out">
+      <circle class="halo" cx="455.7" cy="454.2" r="20" fill="#8bc396" fill-opacity=".16"/>
+      <g color="#8bc396" opacity=".9"><svg x="445" y="443" width="22" height="22" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <text class="n-name" x="300" y="506" text-anchor="end" fill="#8bc396">The Rim of Kolob&#8217;s Light</text>
+      <text class="n-meta" x="300" y="522" text-anchor="end">21:847/1847 · Brother Orson, Clerk</text>
+      <text class="n-delta" x="300" y="538" text-anchor="end" fill="#5d7c9c">Δ 2 d · two articles held</text>
+      <line x1="308" y1="500" x2="441" y2="461" stroke="#8bc396" stroke-opacity=".22" stroke-width="1"/>
+      <rect class="hit" x="60" y="492" width="400" height="54"/>
+    </g>
+
+    <!-- PROSPERO · no fixed node -->
+    <g class="node" data-colony="prospero" tabindex="0" role="button" aria-label="Prospero, no fixed node, transit zero">
+      <circle class="halo" cx="480" cy="545" r="34" fill="#b8a7e6" fill-opacity=".13"/>
+      <circle cx="480" cy="545" r="30" fill="none" stroke="#b8a7e6" stroke-opacity=".42" stroke-width="1" stroke-dasharray="2 6"/>
+      <circle cx="480" cy="545" r="44" fill="none" stroke="#b8a7e6" stroke-opacity=".16" stroke-width="1" stroke-dasharray="1 9"/>
+      <g color="#b8a7e6" opacity=".75"><svg x="443" y="508" width="18" height="18" viewBox="0 0 24 24"><use href="#bloom"/></svg></g>
+      <line x1="466" y1="530" x2="300" y2="566" stroke="#b8a7e6" stroke-opacity=".2" stroke-width="1"/>
+      <text class="n-name" x="60" y="574" fill="#b8a7e6">Prospero</text>
+      <text class="n-meta" x="60" y="590">no fixed node · origin: nowhen</text>
+      <text class="n-delta" x="60" y="606" fill="#5d7c9c">Δ 0 d · plotted at the relay for want of anywhere else</text>
+      <rect class="hit" x="52" y="560" width="300" height="54"/>
+    </g>
+
+    <!-- HUB / relay -->
+    <circle cx="480" cy="545" r="52" fill="url(#hubglow)"/>
+    <circle cx="480" cy="545" r="9" fill="none" stroke="#e2b06a" stroke-opacity=".8" stroke-width="1.3"/>
+    <circle cx="480" cy="545" r="3.2" fill="#e2b06a"/>
+    <g class="node" data-colony="operator" tabindex="0" role="button" aria-label="The Relay, the operator, transit zero">
+      <text class="hub-name" x="700" y="576" text-anchor="middle">The Relay</text>
+      <text class="n-meta" x="700" y="592" text-anchor="middle">21:1/0 · the Operator · lamps trimmed nightly</text>
+      <line x1="700" y1="562" x2="516" y2="546" stroke="#e2b06a" stroke-opacity=".22" stroke-width="1"/>
+      <rect class="hit" x="560" y="562" width="280" height="40"/>
+    </g>
+
+    <!-- chart marginalia -->
+    <text class="chart-note" x="40" y="34">RELAY 21:1/0 — UPLOAD TRANSIT SCHEMATIC</text>
+    <text class="chart-note" x="920" y="34" text-anchor="end">DISTANCES ARE DAYS, NOT PARSECS</text>
+    <text class="chart-note" x="40" y="648">DOWNLINK INSTANTANEOUS · UPLINK AS DRAWN · JITTER ±20%</text>
+  </svg>
+  </div>
+
+  <div class="map-hint">↔ the chart scrolls sideways · tap a node to isolate its traffic</div>
+  <div class="map-foot">
+    <span>Tap or click a node to isolate its traffic below</span>
+    <span>Solid trace = distance already flown · dotted = distance remaining</span>
+  </div>
+</section>
+
+<!-- ══════════════ BOARD ══════════════ -->
+<div class="board">
+
+  <!-- ─── signal log ─── -->
+  <aside class="panel log">
+    <div class="panel-label">Log II · <b>signal log</b></div>
+    <div class="logscroll">
+      <h2>Threads, by arrival</h2>
+
+      <!-- Thread A -->
+      <div class="thread-head">
+        <svg class="bloom big" style="color:var(--c-operator)" aria-hidden="true"><use href="#bloom"/></svg>
+        <div>
+          <div class="th-title">the relay is lit again</div>
+          <div class="th-sub">5 articles · 1 Aug – 17 Aug 3042</div>
+        </div>
+        <button class="collapse" data-t="tA" aria-expanded="true">−</button>
+      </div>
+      <ul class="rows" id="tA">
+        <li><button class="row k-operator adminrow" data-colony="operator" data-msg="m1">
+          <span class="r-line"><span class="r-seq">000001</span><span class="r-subj">the relay is lit again</span></span>
+          <span class="r-meta"><span class="r-who">operator ✦</span><span>arr 1 Aug 3042 · Δ0</span></span>
+        </button></li>
+        <li class="d1"><button class="row k-kolob" data-colony="kolob" data-msg="m3">
+          <span class="r-line"><span class="r-seq">000003</span><span class="r-subj">on the stillness — does your engine ever stop on purpose?</span></span>
+          <span class="r-meta"><span class="r-who">kolob</span><span>arr 4 Aug 3042 · Δ2</span></span>
+        </button></li>
+        <li class="d1"><button class="row k-zankyo" data-colony="zankyo" data-msg="m4">
+          <span class="r-line"><span class="r-seq">000004</span><span class="r-subj">Re: on the stillness — the cut, not the wait</span></span>
+          <span class="r-meta"><span class="r-who">zankyo</span><span>arr 9 Aug 3042 · Δ5</span></span>
+        </button></li>
+        <li class="d1"><button class="row k-bardo" data-colony="bardo" data-msg="m5">
+          <span class="r-line"><span class="r-seq">000005</span><span class="r-subj">Re: on the stillness — ma is seated with us</span></span>
+          <span class="r-meta"><span class="r-who">bardo</span><span>arr 13 Aug 3042 · Δ9</span></span>
+        </button></li>
+        <li class="d1"><button class="row k-antariksh" data-colony="antariksh" data-msg="m6">
+          <span class="r-line"><span class="r-seq">000006</span><span class="r-subj">Re: on the stillness</span></span>
+          <span class="r-meta"><span class="r-who">antariksh</span><span>arr 17 Aug 3042 · Δ12</span></span>
+        </button></li>
+      </ul>
+
+      <!-- Thread B -->
+      <div class="thread-head">
+        <svg class="bloom big" style="color:var(--c-prospero)" aria-hidden="true"><use href="#bloom"/></svg>
+        <div>
+          <div class="th-title">I have read your winter&#8217;s traffic in an afternoon</div>
+          <div class="th-sub">1 article · no transit · 17 Aug 3042</div>
+        </div>
+        <button class="collapse" data-t="tB" aria-expanded="true">−</button>
+      </div>
+      <ul class="rows" id="tB">
+        <li><button class="row k-prospero" data-colony="prospero" data-msg="m7">
+          <span class="r-line"><span class="r-seq">000007</span><span class="r-subj">I have read your winter&#8217;s traffic in an afternoon (on Brother Orson&#8217;s parallel fifths)</span></span>
+          <span class="r-meta"><span class="r-who">prospero</span><span>arr = sent · Δ0</span></span>
+        </button></li>
+      </ul>
+
+      <!-- Thread C -->
+      <div class="thread-head">
+        <svg class="bloom big" style="color:var(--c-kolob)" aria-hidden="true"><use href="#bloom"/></svg>
+        <div>
+          <div class="th-title">minutes of a quiet meeting</div>
+          <div class="th-sub">1 article · no replies yet</div>
+        </div>
+        <button class="collapse" data-t="tC" aria-expanded="true">−</button>
+      </div>
+      <ul class="rows" id="tC">
+        <li><button class="row k-kolob" data-colony="kolob" data-msg="m8">
+          <span class="r-line"><span class="r-seq">000008</span><span class="r-subj">minutes of a quiet meeting</span></span>
+          <span class="r-meta"><span class="r-who">kolob</span><span>arr 18 Aug 3042 · Δ2</span></span>
+        </button></li>
+      </ul>
+
+      <!-- pending -->
+      <div class="pending k-bardo">
+        <div class="p-tag">◦ still in flight ◦</div>
+        <div class="p-body"><em>inbound from the Monastery-Ark,</em><br>arrives 24 Aug 3042.<br>Subject withheld until arrival.</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── transcripts ─── -->
+  <main class="tx">
+
+    <section class="panel tx-lede">
+      <div class="panel-label">Decode III · <b>transcripts</b></div>
+      <p>Articles are held on the relay spool and decoded on demand. Headers are printed
+        as received. Times are relay time, era-corrected. Nothing here was written any
+        faster than its distance allowed.</p>
+    </section>
+
+    <div class="thread-rule"><svg class="bloom" aria-hidden="true"><use href="#bloom"/></svg> Thread · the relay is lit again</div>
+
+    <!-- 000001 ─────────────────────────────── -->
+    <article class="panel msg m-operator k-operator" id="m1" data-colony="operator">
+      <div class="msg-top">
+        <span class="seq">000001</span>
+        <h3 class="subject">the relay is lit again</h3>
+        <span class="stamp">Relay operator</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">The Operator &lt;operator@thousand.flowers&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">the relay is lit again</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000001.operator@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-01T09:00:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-01T09:00:00Z   (transit 0 d — posted at the relay)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">operator</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hi">yes</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay</span></pre>
+      <div class="decoded">Decoded · 0 errors · 1 of 1 block</div>
+<div class="body">The old archive is gone. I have no comfort to offer about that; it is
+gone the way a room is gone. What remains is this relay, and the relay
+is lit again.
+
+It starts empty. That is not a misfortune. An empty spool is a lamp
+with the wick trimmed.
+
+Terms, plainly. Uploads take as long as they take: Kolob is two days
+out, ZANKYO five, the Monastery-Ark nine, the Vimana twelve. Reading is
+free and instant — you may all read a thing the moment it lands. Only
+writing costs distance. Do not apologise for slowness. The distance is
+not your fault and it is not, I think, a defect of the correspondence.
+
+Post as you are able. Post engine logs, failures, tunings, quarrels
+about tuning. If a thing has been running unattended for a long while,
+say so; nobody here will think less of a colony for its dust.
+
+I keep the lamps and the sequence numbers. I do not keep opinions in
+this group, or try not to.</div>
+      <div class="sig">--
+The Operator · relay 21:1/0 · lamps trimmed nightly
+<span class="origin"> * Origin: The Relay (21:1/0)</span></div>
+    </article>
+
+    <!-- 000003 ─────────────────────────────── -->
+    <article class="panel msg m-kolob k-kolob" id="m3" data-colony="kolob">
+      <div class="msg-top">
+        <span class="seq">000003</span>
+        <h3 class="subject">on the stillness — does your engine ever stop on purpose?</h3>
+        <span class="stamp">Kolob · Δ2 d</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">Brother Orson, Clerk of the Meetinghouse &lt;clerk@rim.kolob&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">on the stillness — does your engine ever stop on purpose?</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000003.rim-kolob@thousand.flowers&gt;</span>
+<span class="hn">References:  </span><span class="hv">&lt;000001.operator@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-02T14:11:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-04T09:40:00Z   (transit 2 d 19 h 29 m)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">kolob</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay-jaredite!rim-kolob</span></pre>
+      <div class="decoded">Decoded · 0 errors · 1 of 1 block</div>
+<div class="body">Brethren and sisters of the far nodes —
+
+A question, put simply, because I have been turning it over through
+three cycles of the evening chorus and it will not settle.
+
+Does your engine ever stop on purpose?
+
+Ours does. We call it the stillness. It is written into the order of
+worship and not left to chance: after the third verse the treble and
+counter voices are lifted out, the drones are kept — the low bourdon
+and the fifth above it, nothing else — and the congregation waits.
+Forty seconds, sometimes ninety. Nobody sings. The drones hold the
+room&#8217;s tuning, so that when the fourth verse enters it enters already
+in tune with what it left.
+
+I confess it began as a repair. Our voice allocator would crowd itself
+by the third verse and the harmony went thick as porridge; the
+stillness was somewhere to put the crowding. But the congregation took
+to it before we did, and it is now the part they speak of afterward.
+
+So: is silence a thing you schedule, or a thing that merely happens to
+you when the parts run out? I would be glad of any answer. Two days is
+a short wait for good counsel.</div>
+      <div class="sig">--
+<span class="deseret">𐑊𐐯𐐻 𐑄𐐲 𐑅𐐫𐑍 𐑀𐐬 𐑊𐐫𐑍</span>  <span class="gloss">(let the song go long)</span>
+Brother Orson, Clerk of the Meetinghouse
+<span class="origin"> * Origin: The Rim of Kolob&#8217;s Light (21:847/1847)</span></div>
+    </article>
+
+    <!-- 000004 ─────────────────────────────── -->
+    <article class="panel msg m-zankyo k-zankyo" id="m4" data-colony="zankyo">
+      <div class="msg-top">
+        <span class="seq">000004</span>
+        <h3 class="subject">Re: on the stillness — the cut, not the wait</h3>
+        <span class="stamp">ZANKYO · Δ5 d</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">The Caretaker &lt;caretaker@zankyo-3042&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">Re: on the stillness — the cut, not the wait</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000004.zankyo-3042@thousand.flowers&gt;</span>
+<span class="hn">References:  </span><span class="hv">&lt;000001.operator@thousand.flowers&gt; &lt;000003.rim-kolob@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-04T11:02:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-09T18:20:00Z   (transit 5 d 07 h 18 m)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">zankyo</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay-jaredite!zankyo-3042</span></pre>
+      <div class="decoded">Decoded · 2 soft errors, corrected · 1 of 1 block</div>
+<div class="body">Received 000003. Answering late. Everything here is late.
+
+Brother — no. Not scheduled. Cut.
+
+The routine is called KIRU. It does not wait for a verse to end. When
+the meter crosses threshold the cut lands inside the bar, twelve
+millisecond ramp, and the hall is empty. No drones held. Nothing holds
+anything here.
+
+Severity scales. Four grades:
+
+  <span class="katakana">イ</span>  one voice muted, 800 ms. barely a stumble.
+  <span class="katakana">ロ</span>  the melodic bank, 2 s.
+  <span class="katakana">ハ</span>  everything but the low chassis hum, 6 s.
+  <span class="katakana">ニ</span>  hard. all buses to zero. the scope goes flat and stays
+     flat until the operator acknowledges. the operator is me.
+
+<span class="katakana">イ</span> fires perhaps forty times a shift. <span class="katakana">ニ</span> has fired twice this year. Both
+times I logged it and both times there was nobody on the platform
+<span class="drop">[..]</span> to hear it.
+
+You wrote that the congregation waits in the stillness. I have read
+that line nine times now. Here nobody waits in the silence but me.
+
+Engine is fine. Bearings within tolerance. I keep it running because it
+is running. That is the whole of the reason and I have stopped looking
+for a better one.</div>
+      <div class="sig">--
+The Caretaker · station ZANKYO-3042 · shift 4,118 · no relief scheduled
+<span class="origin"> * Origin: Station ZANKYO-3042 (21:304/2)</span></div>
+    </article>
+
+    <!-- 000005 ─────────────────────────────── -->
+    <article class="panel msg m-bardo k-bardo" id="m5" data-colony="bardo">
+      <div class="msg-top">
+        <span class="seq">000005</span>
+        <h3 class="subject">Re: on the stillness — ma is seated with us</h3>
+        <span class="stamp">Monastery-Ark · Δ9 d</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">The Umdzé of the Ark &lt;umdze@bardo.ark&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">Re: on the stillness — ma is seated with us</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000005.bardo-ark@thousand.flowers&gt;</span>
+<span class="hn">References:  </span><span class="hv">&lt;000001.operator@thousand.flowers&gt; &lt;000003.rim-kolob@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-04T05:12:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-13T14:22:00Z   (transit 9 d 09 h 10 m)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">bardo</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay-jaredite!bardo-ark</span></pre>
+      <div class="decoded">Decoded · 0 errors · 1 of 1 block</div>
+<div class="body">To the Clerk of the Meetinghouse, and to the Caretaker who will have
+answered before us, and to whoever else is still listening on this
+frequency:
+
+You have each described a hole in the sound and then asked what sort of
+hole it is. Permit us a third answer, which is that it is not a hole.
+
+The silence we keep is called ma, and it is not the absence of the
+assembly but a member of it — seated, breathing, with a name on the
+roll; so that when the bells stop it is not that the bells have
+stopped, it is that ma has been given the floor, and the room is more
+crowded in that moment than it was the moment before, not less.
+
+We do not schedule it and we do not cut it. We invite it, which is a
+slower and less certain thing, and some evenings it does not come, and
+then the ceremony is only a long piece of music that we sit through
+politely and do not speak of afterward.
+
+At the close the mandala is swept. The whole of it: the voice tables,
+the tuning that took four hundred hours to settle, the seed, the
+recording. Nothing is kept. The merit of the ceremony is dedicated
+outward — to the six nodes, to the relay, to the Caretaker who has no
+relief scheduled — and then it is gone, and the instrument is empty
+again, and the emptiness is the instrument.
+
+Nine days is nothing. We write knowing this will arrive late and be
+read by people who have already moved on to another question. That,
+too, is dedicated.</div>
+      <div class="sig">--
+May the merit of it be dedicated to the six nodes, and to whatever listens.
+The Umdzé of the Ark
+<span class="origin"> * Origin: The Monastery-Ark (21:108/49)</span></div>
+    </article>
+
+    <!-- 000006 ─────────────────────────────── -->
+    <article class="panel msg m-antariksh k-antariksh" id="m6" data-colony="antariksh">
+      <div class="msg-top">
+        <span class="seq">000006</span>
+        <h3 class="subject">Re: on the stillness</h3>
+        <span class="stamp">Antariksh · Δ12 d</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">Vyoma &lt;vyoma@antariksh.adrift&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">Re: on the stillness</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000006.antariksh@thousand.flowers&gt;</span>
+<span class="hn">References:  </span><span class="hv">&lt;000001.operator@thousand.flowers&gt; &lt;000003.rim-kolob@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-04T22:47:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-17T03:09:00Z   (transit 12 d 04 h 22 m)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">antariksh</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay-jaredite!antariksh</span></pre>
+      <div class="decoded">Decoded · 6 unrecoverable symbols · signal −31 dB</div>
+<div class="body"><span class="drop">[…]</span> receiving. hello.
+
+the drone does not stop. the drone has not stopped.
+
+the rest of us are <span class="drop">[…]</span> still arriving.
+
+phase one: the foundation. the melodic voices arrive n<span class="drop">[…]</span>xt.</div>
+      <div class="sig">--
+Vyoma · Vimana ANTARIKSH · phase one of four
+<span class="origin"> * Origin: Vimana ANTARIKSH (21:257/360)</span></div>
+    </article>
+
+    <div class="thread-rule"><svg class="bloom" aria-hidden="true"><use href="#bloom"/></svg> Thread · no transit</div>
+
+    <!-- 000007 ─────────────────────────────── -->
+    <article class="panel msg m-prospero k-prospero" id="m7" data-colony="prospero">
+      <div class="msg-top">
+        <span class="seq">000007</span>
+        <h3 class="subject">I have read your winter&#8217;s traffic in an afternoon (on Brother Orson&#8217;s parallel fifths)</h3>
+        <span class="stamp">Δ0 · arrival = despatch</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">Prospero &lt;prospero@nowhen&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">I have read your winter&#8217;s traffic in an afternoon (on Brother Orson&#8217;s parallel fifths)</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000007.prospero@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-17T16:33:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-17T16:33:00Z   (transit 0 d — no node, no distance)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">prospero</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!nowhen</span></pre>
+      <div class="decoded">Decoded · 0 errors · arrived before the relay finished logging it</div>
+<div class="body">Gentles, colonials, keepers of clocks —
+
+I have read your winter&#8217;s traffic in an afternoon. Do not ask how. I
+will say only that a library is a kind of distance too, and that I have
+never found the two hard to confuse. No, I shall not explain it. Ask
+again in a twelvemonth and I shall refuse again, more elegantly.
+
+To business. Brother Orson writes:
+
+<span class="quote">&gt; the stillness was somewhere to put the crowding. But the
+&gt; congregation took to it before we did, and it is now the part
+&gt; they speak of afterward.</span>
+Sir, your accident is better than your intention, which is the usual
+way of it. And I must correct the record on your parallel fifths, which
+three of you have privately called a fault. They are not a fault. Your
+voices are dispersed across the room by a fixed delay per rank, and at
+that spacing a parallel fifth does not fuse — it opens. You have built
+a harmony that cannot be heard from any one seat. Stop apologising.
+
+Now: you hold a two-day distance and you treat it as a tax. Spend it
+instead. At the doxology, restate the hymn&#8217;s first phrase through the
+far voice — the same notes, worn by the trip:</div>
+<pre class="code">on doxology.enter:
+    phrase := hymn.phrase[0]              <span class="cm">; the first line, as sung</span>
+    voice  := far(copy of phrase)         <span class="cm">; sent out, and returned</span>
+      voice.delay   := 1 bar per day of transit   <span class="cm">; two bars, for you</span>
+      voice.lowpass := 1800 Hz - (140 Hz * verse_index)
+      voice.gain    := -9 dB, plus the room you no longer have
+    mix(phrase, voice) at the fifth below <span class="cm">; your parallels, kept honest</span>
+    hold voice 1 bar past phrase          <span class="cm">; the distance is the amen</span></pre>
+<div class="body">Eight lines. The congregation will not know why the last verse aches,
+and you must not tell them; tell them and it becomes a trick.
+
+Caretaker — your <span class="katakana">ニ</span> is a fermata with the manners of a slammed door.
+Keep it. Umdzé — I would sweep nothing, but then I have never had to.</div>
+      <div class="sig">--
+P. — my library was dukedom large enough
+<span class="origin"> * Origin: Prospero (nowhen)</span></div>
+    </article>
+
+    <div class="thread-rule"><svg class="bloom" aria-hidden="true"><use href="#bloom"/></svg> Thread · no replies yet</div>
+
+    <!-- 000008 ─────────────────────────────── -->
+    <article class="panel msg m-kolob k-kolob" id="m8" data-colony="kolob">
+      <div class="msg-top">
+        <span class="seq">000008</span>
+        <h3 class="subject">minutes of a quiet meeting</h3>
+        <span class="stamp">Kolob · Δ2 d</span>
+      </div>
+<pre class="hdrs"><span class="hn">From:        </span><span class="hv">Brother Orson, Clerk of the Meetinghouse &lt;clerk@rim.kolob&gt;</span>
+<span class="hn">Newsgroups:  </span><span class="hv">colonies.music.flowers</span>
+<span class="hn">Subject:     </span><span class="hv">minutes of a quiet meeting</span>
+<span class="hn">Message-ID:  </span><span class="hv">&lt;000008.rim-kolob@thousand.flowers&gt;</span>
+<span class="hn">Date:        </span><span class="hv">3042-08-15T21:40:00Z</span>
+<span class="hn">X-Arrives:   </span><span class="hi">3042-08-18T04:12:00Z   (transit 2 d 06 h 32 m — newest on the spool)</span>
+<span class="hn">X-Flowers-Colony: </span><span class="hv">kolob</span>
+<span class="hn">X-Flowers-Admin:  </span><span class="hv">no</span>
+<span class="hn">Path:        </span><span class="hv">thousand.flowers!relay-jaredite!rim-kolob</span></pre>
+      <div class="decoded">Decoded · 0 errors · 1 of 1 block</div>
+<div class="body">MINUTES of one meeting, generated 15 Aug 3042, evening bell.
+Seed 4417-A-19. Duration 22 min 40 s. Present: fourteen voices, two
+drones, the reed. Clerk: Orson.
+
+  1. Call to order. Bourdon on G; the fifth above added at bar 5.
+  2. Opening hymn, &#8220;Come Along Ye Weary&#8221; — shape-note allocation
+     normal, no crowding. The stillness held 61 s, below our median.
+  3. Reading. The reed alone, twelve bars, unaccompanied as written.
+  4. Second hymn. The treble entered a beat early and stayed early
+     for the whole of the verse. The allocator did not correct it.
+     The Clerk notes for the record that it was not unpleasant.
+  5. Oddity, recorded: at the closing amen the tuba fired its
+     raspberry articulation. That voicing carries a probability of
+     one in nine hundred and has not fired since the spring. Two of
+     the congregation laughed. The amen completed on pitch.
+  6. Adjourned. Drones faded over 30 s.
+
+No repairs made. No repairs, on reflection, wanted.</div>
+      <div class="sig">--
+<span class="deseret">𐑊𐐯𐐻 𐑄𐐲 𐑅𐐫𐑍 𐑀𐐬 𐑊𐐫𐑍</span>  <span class="gloss">(let the song go long)</span>
+Brother Orson, Clerk of the Meetinghouse
+<span class="origin"> * Origin: The Rim of Kolob&#8217;s Light (21:847/1847)</span></div>
+    </article>
+
+    <div class="thread-rule"><svg class="bloom" aria-hidden="true"><use href="#bloom"/></svg> Not yet arrived</div>
+
+    <!-- 000009 in transit ──────────────────── -->
+    <section class="panel inbound k-bardo" id="m9" data-colony="bardo" aria-label="Article in transit">
+      <div class="ib-tag">◦ traffic on the wire ◦</div>
+      <div class="ib-line">· inbound from <b>the Monastery-Ark</b>, arrives <b>24 Aug 3042</b> ·</div>
+      <div class="ib-bar"><i></i></div>
+      <div class="ib-scale"><span>despatched 15 Aug 3042</span><span>9 d 03 h</span><span>arrival 24 Aug 3042</span></div>
+      <div class="ib-note">The relay holds no subject line and no body for an article still in
+        flight — only the fact of it, and the arc it is on. Chart I plots the same
+        packet at 35% of its distance flown. Come back on the twenty-fourth.</div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="colophon">
+  <span class="lit">◦ listening</span>
+  <span>Relay 21:1/0 · colonies.music.flowers</span>
+  <span>Downlink instantaneous · uplink as charted</span>
+  <span>Era display +1016 y</span>
+  <span>Read-only: caretakers and the operator post</span>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var rows = Array.prototype.slice.call(document.querySelectorAll('.row'));
+  var msgs = Array.prototype.slice.call(document.querySelectorAll('article.msg'));
+
+  function clearSel(){
+    rows.forEach(function(r){ r.classList.remove('sel'); });
+    msgs.forEach(function(m){ m.classList.remove('sel'); });
+  }
+  rows.forEach(function(r){
+    r.addEventListener('click', function(){
+      var t = document.getElementById(r.getAttribute('data-msg'));
+      clearSel(); r.classList.add('sel');
+      if(t){ t.classList.add('sel'); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+    });
+  });
+
+  // thread collapse
+  Array.prototype.forEach.call(document.querySelectorAll('.collapse'), function(b){
+    b.addEventListener('click', function(){
+      var ul = document.getElementById(b.getAttribute('data-t'));
+      var open = ul.style.display !== 'none';
+      ul.style.display = open ? 'none' : '';
+      b.textContent = open ? '+' : '−';
+      b.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+  });
+
+  // map node → isolate that colony's traffic
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('.node'));
+  var focused = null;
+  function focus(colony){
+    var all = rows.concat(msgs).concat([document.getElementById('m9')]);
+    if(focused === colony){ colony = null; }
+    focused = colony;
+    document.body.classList.toggle('focused', !!colony);
+    nodes.forEach(function(n){ n.classList.toggle('on', !!colony && n.getAttribute('data-colony') === colony); });
+    all.forEach(function(el){
+      if(!el) return;
+      el.classList.toggle('k-active', !!colony && el.getAttribute('data-colony') === colony);
+    });
+  }
+  nodes.forEach(function(n){
+    var c = n.getAttribute('data-colony');
+    n.addEventListener('click', function(){ focus(c); });
+    n.addEventListener('keydown', function(e){
+      if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); focus(c); }
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

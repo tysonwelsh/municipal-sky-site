@@ -1,0 +1,86 @@
+{
+  "schema": 2,
+  "id": "2026-07-29-booger",
+  "title": "Booger",
+  "prompt": "booger",
+  "created": "2026-07-29",
+  "tags": [
+    "gross",
+    "body",
+    "one-word-prompt"
+  ],
+  "sizeClass": "xs",
+  "sizeScale": 0.89,
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.9%. The only response that plays it straight as a rendered object rather than a cartoon: one lumpy blob path defined once in `<defs>` and reused seven times — as fill, as depth wash, as inner rim darkening, as clip path, as outline — with three Gaussian blur filters carrying the wet gloss and speculars. Adds trapped air bubbles, dark grit specks, and a single stray nose hair drawn twice (dark core plus a lighter highlight stroke) crossing the whole body. Obeyed the output format exactly — a bare SVG document, no prose or fences."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 4.2%, the loosest of the three. Reads the one-word prompt as a mascot: two mismatched googly eyes with white sclera and offset pupils, a smile stroke, and a teardrop drip hanging off the bottom edge. The body path is a hard-outlined lobed blob whose lower control points run past the viewBox floor (y up to 204 on a 200-tall box), so the drip and the chin are clipped by the frame. Disobeyed the output format: wrapped its SVG in a ```svg code fence — fence stripped at ingest, the bytes inside filed verbatim."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 3.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 2.0%. Faceless and abstract, the most economical of the three: one gradient-filled blob with a small pendant drip, two low-opacity olive crescents standing in for shading, and roughly a dozen plain circles at varying opacity doing double duty as trapped bubbles and surface texture. No filters, no clip paths, everything in a single flat layer — geometrically the cleanest and the least ambitious. Obeyed the output format exactly — a bare SVG document, no prose or fences."
+    }
+  ]
+}

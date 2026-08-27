@@ -1,0 +1,85 @@
+# ─────────────────────────────────────────────────────────────
+# Secrets — NEVER commit these
+# ─────────────────────────────────────────────────────────────
+secrets.php
+.vscode/sftp.json
+
+# ─────────────────────────────────────────────────────────────
+# macOS
+# ─────────────────────────────────────────────────────────────
+.DS_Store
+
+# ─────────────────────────────────────────────────────────────
+# Editor / IDE
+# ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+
+# ─────────────────────────────────────────────────────────────
+# Claude Code session state
+# ─────────────────────────────────────────────────────────────
+# .claude is fully local. (skills/ and agents/ were tracked for phone
+# sessions until 2026-08-26; re-include them here if that workflow returns)
+.claude/
+
+# ─────────────────────────────────────────────────────────────
+# Backup file patterns
+# Once Git tracks history, you won't need these.
+# ─────────────────────────────────────────────────────────────
+*.bak
+*.backup.*
+*.backup-*
+*-backup.*
+
+# ─────────────────────────────────────────────────────────────
+# Logs
+# ─────────────────────────────────────────────────────────────
+*.log
+
+# ─────────────────────────────────────────────────────────────
+# R session files
+# ─────────────────────────────────────────────────────────────
+.Rhistory
+.RData
+.Rapp.history
+
+# ─────────────────────────────────────────────────────────────
+# Local-only media (too big for GitHub anyway)
+# ─────────────────────────────────────────────────────────────
+local-dev/rabelais clips/
+
+# ─────────────────────────────────────────────────────────────
+# Local-only — not for the public repo
+# ─────────────────────────────────────────────────────────────
+information-graphics/Ulysses/
+local-dev/
+art/junk-drawer/PLAN-*.md
+art/prosperos-jukebox-v2/PLAN-*.md
+art/prosperos-jukebox-v2/ir/docs/
+api/chat copy.php
+
+# ─────────────────────────────────────────────────────────────
+# Generated debug/intermediate output and redundant local backups
+# ─────────────────────────────────────────────────────────────
+information-graphics/assets/rabelais-clips/svg_output/
+information-graphics/prosperos-jukebox-backup-*/
+
+# Junk Drawer dev-mock SQLite database (JD_DEV_MOCK=1) — local only
+local-dev/jd-dev.sqlite
+
+# Thousand Flowers dev accounts database (localhost SQLite fallback) — local only
+local-dev/flowers-dev.sqlite
+
+# ZANKYŌ headless dev harness — not for production
+art/zankyo/_harness.js
+
+# BARDO headless dev harness — not for production
+art/bardo/_harness.js
+# KOLOB headless dev harness — not for production
+art/kolob/_harness.js
+__pycache__/
+
+# cost-probe artwork (kept only when --save-svg is passed)
+local-dev/jd-probe/

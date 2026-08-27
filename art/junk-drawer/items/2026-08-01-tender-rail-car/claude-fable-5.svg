@@ -1,0 +1,264 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800">
+  <defs>
+    <radialGradient id="gGloom" cx="47%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#332a19"/>
+      <stop offset="0.5" stop-color="#1d1710"/>
+      <stop offset="1" stop-color="#0b0806"/>
+    </radialGradient>
+    <radialGradient id="gSmoke" cx="45%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#5a4d3c" stop-opacity="0.95"/>
+      <stop offset="0.6" stop-color="#42382b" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#2a231a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gSmokeWarm" cx="50%" cy="60%" r="55%">
+      <stop offset="0" stop-color="#8a6a38" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#5a4426" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3c4230"/>
+      <stop offset="0.45" stop-color="#232818"/>
+      <stop offset="1" stop-color="#0d0f08"/>
+    </linearGradient>
+    <radialGradient id="gWheel" cx="42%" cy="38%" r="65%">
+      <stop offset="0" stop-color="#7c3d27"/>
+      <stop offset="0.7" stop-color="#4a2113"/>
+      <stop offset="1" stop-color="#26100a"/>
+    </radialGradient>
+    <linearGradient id="gBrass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2d68c"/>
+      <stop offset="0.5" stop-color="#b98c3a"/>
+      <stop offset="1" stop-color="#6e4d18"/>
+    </linearGradient>
+    <linearGradient id="gRail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a89c85"/>
+      <stop offset="0.4" stop-color="#6e6455"/>
+      <stop offset="1" stop-color="#3a332a"/>
+    </linearGradient>
+    <linearGradient id="gGround" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#292013"/>
+      <stop offset="1" stop-color="#0b0805"/>
+    </linearGradient>
+    <radialGradient id="gGlass" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#fff9dd"/>
+      <stop offset="0.45" stop-color="#ffd97c"/>
+      <stop offset="1" stop-color="#c98f34" stop-opacity="0.9"/>
+    </radialGradient>
+    <radialGradient id="gGlassDim" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#b7b1a0" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#5f594c" stop-opacity="0.85"/>
+    </radialGradient>
+    <radialGradient id="gGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffeaa6" stop-opacity="0.75"/>
+      <stop offset="0.5" stop-color="#f2b544" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#f2b544" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="gFace" cx="45%" cy="40%" r="65%">
+      <stop offset="0" stop-color="#f6ebc8"/>
+      <stop offset="0.7" stop-color="#cfb37c"/>
+      <stop offset="1" stop-color="#93733c"/>
+    </radialGradient>
+    <radialGradient id="gFur" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#9c6c31"/>
+      <stop offset="0.6" stop-color="#5f3c17"/>
+      <stop offset="1" stop-color="#2f1b09"/>
+    </radialGradient>
+    <radialGradient id="gEyeW" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#f8f3e5"/>
+      <stop offset="0.6" stop-color="#cfc4a5"/>
+      <stop offset="1" stop-color="#837755"/>
+    </radialGradient>
+    <radialGradient id="gVin" cx="50%" cy="47%" r="72%">
+      <stop offset="0" stop-color="#000" stop-opacity="0"/>
+      <stop offset="0.68" stop-color="#0b0805" stop-opacity="0"/>
+      <stop offset="1" stop-color="#080502" stop-opacity="0.6"/>
+    </radialGradient>
+    <filter id="oil" x="-6%" y="-6%" width="112%" height="112%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.014 0.02" numOctaves="3" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="6"/>
+    </filter>
+
+    <g id="bulb">
+      <circle r="46" fill="url(#gGlow)"/>
+      <path d="M0,-36 C23,-36 36,-19 36,1 C36,15 27,24 19,33 L-19,33 C-27,24 -36,15 -36,1 C-36,-19 -23,-36 0,-36 Z" fill="url(#gGlass)" stroke="#7a5a22" stroke-opacity="0.5" stroke-width="1.5"/>
+      <circle cy="4" r="9" fill="#fff6d0" opacity="0.9"/>
+      <path d="M-9,28 L-5,6 Q-3,-2 0,-2 Q3,-2 5,6 L9,28" stroke="#ffe9a0" stroke-width="2" fill="none"/>
+      <path d="M-22,-18 Q-12,-30 2,-30" stroke="#fffbe8" stroke-width="4" fill="none" opacity="0.55" stroke-linecap="round"/>
+      <path d="M-17,33 L17,33 L14,58 Q0,64 -14,58 Z" fill="url(#gBrass)"/>
+      <path d="M-16,40 L16,40 M-15,47 L15,47 M-13,53 L13,53" stroke="#5c4012" stroke-width="2" opacity="0.7"/>
+      <circle cy="61" r="4.5" fill="#2b2018"/>
+    </g>
+    <g id="bulbDim">
+      <path d="M0,-36 C23,-36 36,-19 36,1 C36,15 27,24 19,33 L-19,33 C-27,24 -36,15 -36,1 C-36,-19 -23,-36 0,-36 Z" fill="url(#gGlassDim)" stroke="#3c362b" stroke-width="1.5"/>
+      <path d="M-9,28 L-5,6 Q0,-3 5,6 L9,28" stroke="#8b8574" stroke-width="1.6" fill="none" opacity="0.8"/>
+      <path d="M-22,-18 Q-12,-30 2,-30" stroke="#e8e2cf" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
+      <path d="M-17,33 L17,33 L14,58 Q0,64 -14,58 Z" fill="url(#gBrass)" opacity="0.85"/>
+      <path d="M-16,40 L16,40 M-15,47 L15,47" stroke="#4a3812" stroke-width="2" opacity="0.7"/>
+    </g>
+    <g id="eye">
+      <circle r="16" fill="url(#gEyeW)" stroke="#2a2114" stroke-opacity="0.6" stroke-width="1.2"/>
+      <circle cx="4.5" cy="4" r="7" fill="#0d0a07"/>
+      <circle cx="2.5" cy="1.5" r="2" fill="#e9dfc4" opacity="0.85"/>
+      <path d="M-11,-8 A13,13 0 0 1 2,-14" stroke="#fdf8e8" stroke-width="2.4" fill="none" opacity="0.7" stroke-linecap="round"/>
+    </g>
+    <g id="bear">
+      <circle cx="-30" cy="-30" r="16" fill="url(#gFur)"/>
+      <circle cx="30" cy="-30" r="16" fill="url(#gFur)"/>
+      <circle cx="-30" cy="-30" r="8" fill="#b9925b" opacity="0.8"/>
+      <circle cx="30" cy="-30" r="8" fill="#7c5a30" opacity="0.8"/>
+      <circle r="41" fill="url(#gFur)"/>
+      <ellipse cx="0" cy="14" rx="19" ry="14" fill="#c79d63"/>
+      <ellipse cx="0" cy="8" rx="7.5" ry="5.5" fill="#1a0f07"/>
+      <path d="M0,13 L0,20 M-7,25 Q0,29 7,25" stroke="#1a0f07" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <circle cx="-14" cy="-7" r="4.6" fill="#140b05"/>
+      <circle cx="14" cy="-7" r="4.6" fill="#140b05"/>
+      <circle cx="-15.5" cy="-8.5" r="1.5" fill="#e8d9a8" opacity="0.9"/>
+      <circle cx="12.5" cy="-8.5" r="1.5" fill="#e8d9a8" opacity="0.7"/>
+      <path d="M-34,-22 A38,38 0 0 1 -8,-39" stroke="#e3b briefly" fill="none"/>
+      <path d="M-34,-20 A38,38 0 0 1 -6,-39" stroke="#e6bd77" stroke-width="4" fill="none" opacity="0.5" stroke-linecap="round"/>
+      <path d="M18,26 A40,40 0 0 0 36,8" stroke="#170d05" stroke-width="5" fill="none" opacity="0.6" stroke-linecap="round"/>
+    </g>
+    <g id="clock">
+      <circle r="52" fill="url(#gBrass)"/>
+      <circle r="43" fill="url(#gFace)" stroke="#5f4a1e" stroke-width="1.4"/>
+      <g stroke="#3a2c12" stroke-width="2.4">
+        <line y1="-39" y2="-32" transform="rotate(30)"/><line y1="-39" y2="-32" transform="rotate(60)"/>
+        <line y1="-39" y2="-32" transform="rotate(120)"/><line y1="-39" y2="-32" transform="rotate(150)"/>
+        <line y1="-39" y2="-32" transform="rotate(210)"/><line y1="-39" y2="-32" transform="rotate(240)"/>
+        <line y1="-39" y2="-32" transform="rotate(300)"/><line y1="-39" y2="-32" transform="rotate(330)"/>
+      </g>
+      <g stroke="#2c210d" stroke-width="3.6">
+        <line y1="-39" y2="-29"/><line y1="-39" y2="-29" transform="rotate(90)"/>
+        <line y1="-39" y2="-29" transform="rotate(180)"/><line y1="-39" y2="-29" transform="rotate(270)"/>
+      </g>
+      <path d="M0,4 L-16,-17" stroke="#241a0a" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M0,4 L11,-30" stroke="#241a0a" stroke-width="3" stroke-linecap="round"/>
+      <circle r="4" fill="#241a0a"/>
+      <rect x="-6" y="-62" width="12" height="10" rx="3" fill="url(#gBrass)"/>
+      <circle cy="-68" r="6" fill="none" stroke="#b98c3a" stroke-width="3.4"/>
+      <path d="M-38,-24 A46,46 0 0 1 -12,-46" stroke="#f4dfa0" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round"/>
+    </g>
+    <g id="machine">
+      <path d="M-104,42 Q-110,50 -104,58 L104,58 Q110,50 104,42 Z" fill="#15110b" stroke="#37311f" stroke-width="1.5"/>
+      <path d="M-80,42 L-80,-6 Q-80,-16 -70,-16 L-56,-16 L-56,-48 Q-56,-66 -38,-68 L30,-68 Q56,-68 60,-44 L60,42 Z" fill="#181310" stroke="#000" stroke-opacity="0.5"/>
+      <circle cx="68" cy="-38" r="25" fill="#100c08" stroke="#8a6a2e" stroke-width="3"/>
+      <circle cx="68" cy="-38" r="9" fill="#2a2014" stroke="#8a6a2e" stroke-width="2"/>
+      <rect x="-74" y="-14" width="8" height="26" fill="#0d0a07"/>
+      <line x1="-70" y1="12" x2="-70" y2="30" stroke="#a99b7d" stroke-width="2"/>
+      <path d="M-52,-60 Q-10,-64 28,-62" stroke="#e9c77e" stroke-width="3.5" fill="none" opacity="0.55" stroke-linecap="round"/>
+      <path d="M-44,-54 Q-30,-60 -18,-54 Q-30,-48 -44,-54 Z M-8,-56 Q6,-62 18,-56 Q6,-50 -8,-56" fill="none" stroke="#c9a24b" stroke-width="2" opacity="0.85"/>
+      <path d="M-70,20 Q-40,14 -6,20 M-88,50 Q0,44 88,50" stroke="#c9a24b" stroke-width="2" fill="none" opacity="0.7"/>
+      <line x1="-6" y1="-68" x2="-6" y2="-84" stroke="#6e5a30" stroke-width="3"/>
+      <ellipse cx="-6" cy="-88" rx="8" ry="6" fill="#7a4a2a" stroke="#caa261" stroke-width="1.5"/>
+    </g>
+  </defs>
+
+  <g filter="url(#oil)">
+    <ellipse cx="500" cy="400" rx="780" ry="600" fill="url(#gGloom)" opacity="0.97"/>
+    <ellipse cx="480" cy="330" rx="520" ry="380" fill="#241c11" opacity="0.55"/>
+
+    <ellipse cx="500" cy="0" rx="560" ry="80" fill="url(#gSmoke)"/>
+    <ellipse cx="120" cy="55" rx="210" ry="90" fill="url(#gSmoke)"/>
+    <ellipse cx="340" cy="35" rx="215" ry="78" fill="url(#gSmoke)"/>
+    <ellipse cx="570" cy="70" rx="235" ry="88" fill="url(#gSmoke)"/>
+    <ellipse cx="810" cy="42" rx="225" ry="82" fill="url(#gSmoke)"/>
+    <ellipse cx="965" cy="100" rx="170" ry="100" fill="url(#gSmoke)"/>
+    <ellipse cx="30" cy="210" rx="100" ry="170" fill="url(#gSmoke)" opacity="0.8"/>
+    <ellipse cx="975" cy="240" rx="90" ry="180" fill="url(#gSmoke)" opacity="0.8"/>
+    <ellipse cx="470" cy="140" rx="300" ry="120" fill="url(#gSmokeWarm)" opacity="0.5"/>
+
+    <path d="M-10,724 L1010,724 L1010,810 L-10,810 Z" fill="url(#gGround)"/>
+    <g fill="#171008">
+      <rect x="60" y="758" width="120" height="20" rx="4"/><rect x="300" y="758" width="120" height="20" rx="4"/>
+      <rect x="540" y="758" width="120" height="20" rx="4"/><rect x="790" y="758" width="120" height="20" rx="4"/>
+    </g>
+    <rect x="-10" y="746" width="1020" height="14" fill="url(#gRail)"/>
+    <line x1="-10" y1="748" x2="1010" y2="748" stroke="#cfc3a4" stroke-width="2" opacity="0.7"/>
+
+    <path d="M70,432 C120,390 168,350 240,350 C302,350 322,298 382,280 C432,266 452,298 520,304 C580,308 612,264 670,270 C728,276 762,318 830,340 C882,356 912,392 930,432 Z" fill="#191309"/>
+
+    <use href="#machine" transform="translate(792,330) rotate(-12) scale(0.82)" opacity="0.92"/>
+    <use href="#bulbDim" transform="translate(872,258) rotate(24) scale(0.8)"/>
+    <use href="#bear" transform="translate(906,336) rotate(14) scale(0.75)"/>
+    <use href="#clock" transform="translate(682,272) rotate(12) scale(1.05)"/>
+    <use href="#bear" transform="translate(560,202) rotate(-8) scale(1.0)"/>
+    <use href="#eye" transform="translate(640,342) rotate(30) scale(0.85)"/>
+    <use href="#eye" transform="translate(392,338) rotate(-40) scale(0.7)"/>
+    <use href="#clock" transform="translate(556,306) rotate(-18) scale(0.5)" opacity="0.9"/>
+    <use href="#bulb" transform="translate(470,242) rotate(14) scale(1.35)"/>
+    <use href="#machine" transform="translate(248,296) rotate(4)"/>
+    <use href="#bear" transform="translate(168,268) rotate(-14) scale(1.1)"/>
+    <use href="#bulb" transform="translate(600,378) rotate(82) scale(0.85)"/>
+    <use href="#bulb" transform="translate(128,378) rotate(-28) scale(0.75)"/>
+    <use href="#bear" transform="translate(742,392) rotate(20) scale(0.85)"/>
+
+    <use href="#eye" transform="translate(300,412) rotate(15) scale(0.75)"/>
+    <use href="#eye" transform="translate(408,398) rotate(-20) scale(0.95)"/>
+    <use href="#eye" transform="translate(438,412) rotate(50) scale(0.75)"/>
+    <use href="#eye" transform="translate(470,402) rotate(0) scale(1.05)"/>
+    <use href="#eye" transform="translate(500,415) rotate(-60) scale(0.7)"/>
+    <use href="#eye" transform="translate(528,404) rotate(25) scale(0.9)"/>
+    <use href="#eye" transform="translate(558,414) rotate(-30) scale(0.65)"/>
+    <use href="#eye" transform="translate(586,406) rotate(70) scale(0.8)"/>
+    <use href="#eye" transform="translate(626,400) rotate(-15) scale(0.7)"/>
+
+    <path d="M64,416 L936,416 L922,438 L78,438 Z" fill="#101208"/>
+    <line x1="66" y1="418" x2="934" y2="418" stroke="#b98c3a" stroke-width="2.5" opacity="0.6"/>
+    <path d="M78,428 L922,428 L906,634 L94,634 Z" fill="url(#gBody)"/>
+    <path d="M104,452 L896,452 L884,610 L116,610 Z" fill="none" stroke="#b98c3a" stroke-width="2.5" opacity="0.55"/>
+    <path d="M112,460 L888,460 L877,602 L123,602 Z" fill="none" stroke="#7a5c22" stroke-width="1.2" opacity="0.5"/>
+    <path d="M96,444 L904,444" stroke="#caa050" stroke-width="5" stroke-linecap="round" stroke-dasharray="0.1 42" opacity="0.75"/>
+    <path d="M100,622 L900,622" stroke="#8a6a2e" stroke-width="5" stroke-linecap="round" stroke-dasharray="0.1 42" opacity="0.6"/>
+    <path d="M108,456 L98,626 M892,456 L902,626" stroke="#8a6a2e" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0.1 34" opacity="0.55"/>
+    <ellipse cx="470" cy="470" rx="230" ry="90" fill="url(#gGlow)" opacity="0.4"/>
+    <ellipse cx="500" cy="530" rx="92" ry="48" fill="none" stroke="#caa050" stroke-width="3" opacity="0.8"/>
+    <ellipse cx="500" cy="530" rx="80" ry="39" fill="#1c2013" opacity="0.7"/>
+    <path d="M404,530 Q392,516 404,506 M596,530 Q608,516 596,506 M404,530 Q392,544 404,554 M596,530 Q608,544 596,554" stroke="#caa050" stroke-width="2.5" fill="none" opacity="0.7"/>
+    <path d="M478,506 L490,498 L490,560" stroke="#d8b060" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+    <path d="M512,500 L548,500 L524,560" stroke="#d8b060" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+
+    <use href="#clock" transform="translate(352,428) rotate(-24) scale(0.62)"/>
+    <use href="#eye" transform="translate(660,438) rotate(40) scale(0.6)"/>
+    <use href="#eye" transform="translate(206,436) rotate(-70) scale(0.55)"/>
+
+    <rect x="92" y="628" width="816" height="26" fill="#0f0c07"/>
+    <path d="M160,652 Q215,632 270,652 M445,652 Q500,632 555,652 M740,652 Q795,632 850,652" stroke="#3a2c18" stroke-width="6" fill="none"/>
+    <g>
+      <g transform="translate(215,698)">
+        <circle r="54" fill="url(#gWheel)" stroke="#180a06" stroke-width="4"/>
+        <g stroke="#22100a" stroke-width="6"><line y1="-46" y2="46"/><line x1="-46" x2="46"/><line x1="-33" y1="-33" x2="33" y2="33"/><line x1="-33" y1="33" x2="33" y2="-33"/></g>
+        <circle r="11" fill="url(#gBrass)"/>
+        <path d="M-40,-30 A50,50 0 0 1 -6,-49" stroke="#d8a45e" stroke-width="4" fill="none" opacity="0.6"/>
+      </g>
+      <g transform="translate(500,698)">
+        <circle r="54" fill="url(#gWheel)" stroke="#180a06" stroke-width="4"/>
+        <g stroke="#22100a" stroke-width="6" transform="rotate(22)"><line y1="-46" y2="46"/><line x1="-46" x2="46"/><line x1="-33" y1="-33" x2="33" y2="33"/><line x1="-33" y1="33" x2="33" y2="-33"/></g>
+        <circle r="11" fill="url(#gBrass)"/>
+        <path d="M-40,-30 A50,50 0 0 1 -6,-49" stroke="#e8bc6e" stroke-width="4" fill="none" opacity="0.7"/>
+      </g>
+      <g transform="translate(795,698)">
+        <circle r="54" fill="url(#gWheel)" stroke="#180a06" stroke-width="4"/>
+        <g stroke="#22100a" stroke-width="6" transform="rotate(-15)"><line y1="-46" y2="46"/><line x1="-46" x2="46"/><line x1="-33" y1="-33" x2="33" y2="33"/><line x1="-33" y1="33" x2="33" y2="-33"/></g>
+        <circle r="11" fill="url(#gBrass)"/>
+        <path d="M-40,-30 A50,50 0 0 1 -6,-49" stroke="#d8a45e" stroke-width="4" fill="none" opacity="0.55"/>
+      </g>
+    </g>
+    <path d="M78,600 Q58,598 52,612 L52,632 Q66,640 80,632 Z" fill="#141009"/>
+    <path d="M922,600 Q942,598 948,612 L948,632 Q934,640 920,632 Z" fill="#141009"/>
+
+    <use href="#bulb" transform="translate(322,738) rotate(96) scale(0.7)"/>
+    <use href="#eye" transform="translate(612,742) rotate(-25) scale(0.85)"/>
+    <ellipse cx="330" cy="756" rx="46" ry="8" fill="#000" opacity="0.45"/>
+    <ellipse cx="612" cy="756" rx="22" ry="6" fill="#000" opacity="0.45"/>
+
+    <circle cx="470" cy="242" r="215" fill="url(#gGlow)" opacity="0.55"/>
+    <circle cx="600" cy="378" r="95" fill="url(#gGlow)" opacity="0.4"/>
+    <circle cx="128" cy="378" r="85" fill="url(#gGlow)" opacity="0.35"/>
+    <circle cx="322" cy="738" r="62" fill="url(#gGlow)" opacity="0.35"/>
+    <path d="M320,432 Q470,420 622,432" stroke="#e9c77e" stroke-width="3" fill="none" opacity="0.5"/>
+    <path d="M636,238 A52,52 0 0 0 660,224" stroke="#f2d68c" stroke-width="3.5" fill="none" opacity="0.6" stroke-linecap="round"/>
+    <path d="M524,190 A42,42 0 0 1 548,168" stroke="#f2d68c" stroke-width="4" fill="none" opacity="0.6" stroke-linecap="round"/>
+    <path d="M196,238 A44,44 0 0 1 160,232" stroke="#e6bd77" stroke-width="3.5" fill="none" opacity="0.5" stroke-linecap="round"/>
+  </g>
+
+  <rect x="0" y="0" width="1000" height="800" fill="url(#gVin)"/>
+</svg>

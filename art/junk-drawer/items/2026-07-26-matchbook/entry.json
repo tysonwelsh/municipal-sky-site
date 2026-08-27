@@ -1,0 +1,41 @@
+{
+  "schema": 2,
+  "id": "2026-07-26-matchbook",
+  "title": "Matchbook",
+  "prompt": "A closed matchbook viewed from above, flat graphic-design style: deep red cover with a large stylized flame emblem in yellow and orange, the word MATCHES in small caps along the striker edge. Bold flat shapes, minimal shading. Transparent background.",
+  "created": "2026-07-26",
+  "tags": [
+    "paper",
+    "fire"
+  ],
+  "sizeClass": "l",
+  "sizeScale": 0.712,
+  "retired": true,
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": 4.0,
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 3.0,
+        "geometry": 3.0,
+        "color": 3.0,
+        "composition": {
+          "value": 2.0,
+          "note": "The striker band crowds the wordmark; the flame emblem sits a hair off the cover’s optical center."
+        }
+      },
+      "transcript": null,
+      "notes": "Mockup-era item: SVG authored by claude-fable-5 while composing the Phase 0 drawer mockup (design pass + critique-driven revision). The prompt above is a post-hoc reconstruction, not the literal generating prompt. Grade and annotations are provisional self-assessment — owner to regrade or replace. viewBox normalized 2026-07-26: tightened from \"0 0 150 195\" to measured ink bounds (framing metadata only; artwork bytes untouched)."
+    }
+  ]
+}

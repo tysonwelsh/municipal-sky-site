@@ -1,0 +1,140 @@
+USE tdrivemy_db_29_2_mysql;
+SET @target_soc = '53-4041';
+
+WITH element_statistics AS (
+    SELECT
+        element_id,
+        AVG(data_value) as mean_value,
+        STDDEV(data_value) as std_dev,
+        COUNT(DISTINCT onetsoc_code) as total_occupations
+    FROM work_context
+    WHERE scale_id = 'CX'
+        AND data_value IS NOT NULL
+    GROUP BY element_id
+),
+ranked_data AS (
+    SELECT
+        wc.onetsoc_code,
+        wc.element_id,
+        wc.data_value,
+        es.mean_value,
+        es.std_dev,
+        (wc.data_value - es.mean_value) / NULLIF(es.std_dev, 0) as z_score,
+        RANK() OVER (PARTITION BY wc.element_id ORDER BY wc.data_value DESC) as rank_position,
+        es.total_occupations,
+        ((es.total_occupations - RANK() OVER (PARTITION BY wc.element_id ORDER BY wc.data_value DESC) + 1) / es.total_occupations) * 100 as percentile
+    FROM work_context wc
+    JOIN element_statistics es ON wc.element_id = es.element_id
+    WHERE wc.scale_id = 'CX'
+        AND wc.data_value IS NOT NULL
+),
+top_elements AS (
+    SELECT 
+        rd.element_id,
+        cmr.element_name,
+        rd.onetsoc_code,
+        ROUND(rd.data_value, 2) as occupation_value,
+        ROUND(rd.mean_value, 2) as average_value,
+        ROUND(rd.z_score, 2) as z_score,
+        ROUND(ABS(rd.z_score), 2) as abs_z_score,
+        rd.rank_position,
+        rd.total_occupations,
+        ROUND(rd.percentile, 1) as percentile,
+        CASE 
+            WHEN rd.z_score >= 2.5 THEN 'Extremely High'
+            WHEN rd.z_score >= 1.5 THEN 'Very High'
+            WHEN rd.z_score >= 1.0 THEN 'Notably High'
+            WHEN rd.z_score <= -2.5 THEN 'Extremely Low'
+            WHEN rd.z_score <= -1.5 THEN 'Very Low'
+            WHEN rd.z_score <= -1.0 THEN 'Notably Low'
+            ELSE 'Average'
+        END as distinctiveness,
+        ROW_NUMBER() OVER (PARTITION BY rd.onetsoc_code ORDER BY ABS(rd.z_score) DESC) as element_rank
+    FROM ranked_data rd
+    JOIN content_model_reference cmr ON rd.element_id = cmr.element_id
+    WHERE LEFT(rd.onetsoc_code, 7) = @target_soc
+        AND RIGHT(rd.onetsoc_code, 2) = '00'
+),
+distributions AS (
+    SELECT 
+        wc.onetsoc_code,
+        wc.element_id,
+        wc.category,
+        wc.data_value as percentage,
+        wcc.category_description
+    FROM work_context wc
+    LEFT JOIN work_context_categories wcc 
+        ON wc.element_id = wcc.element_id 
+        AND wc.scale_id = wcc.scale_id 
+        AND wc.category = wcc.category
+    WHERE wc.scale_id = 'CXP'
+        AND LEFT(wc.onetsoc_code, 7) = @target_soc
+        AND RIGHT(wc.onetsoc_code, 2) = '00'
+),
+median_distributions AS (
+    SELECT 
+        wc.element_id,
+        wc.category,
+        AVG(wc.data_value) as avg_percentage,
+        MAX(wcc.category_description) as category_description
+    FROM work_context wc
+    LEFT JOIN work_context_categories wcc 
+        ON wc.element_id = wcc.element_id 
+        AND wc.scale_id = wcc.scale_id 
+        AND wc.category = wcc.category
+    WHERE wc.scale_id = 'CXP'
+    GROUP BY wc.element_id, wc.category
+)
+SELECT 
+    -- Occupation details
+    shi.detailed_occupation_code AS soc_code,
+    soc_detailed.title AS occupation_title,
+    shi.major_group_code,
+    soc_major.title AS major_group_title,
+    shi.minor_group_code,
+    soc_minor.title AS minor_group_title,
+    shi.broad_group_code,
+    soc_broad.title AS broad_group_title,
+    od.onetsoc_code,
+    od.title AS onet_title,
+    
+    -- Top element details
+    te.element_rank,
+    te.element_id,
+    te.element_name,
+    te.occupation_value,
+    te.average_value,
+    te.z_score,
+    te.abs_z_score,
+    te.rank_position,
+    te.total_occupations,
+    te.percentile,
+    te.distinctiveness,
+    
+    -- VALENCE INFORMATION (NEW!)
+    wcv.valence_score,
+    wcv.valence_label,
+    wcv.rationale as valence_rationale,
+    
+    -- Distribution data for this occupation
+    d.category as dist_category,
+    d.percentage as dist_percentage,
+    d.category_description as dist_description,
+    
+    -- Median distribution across all occupations
+    md.avg_percentage as median_dist_percentage
+    
+FROM soc_hierarchy_index AS shi
+INNER JOIN SOC_major_groups AS soc_major ON shi.major_group_code = soc_major.id
+INNER JOIN SOC_minor_groups AS soc_minor ON shi.minor_group_code = soc_minor.id
+INNER JOIN SOC_broad_occupations AS soc_broad ON shi.broad_group_code = soc_broad.id
+INNER JOIN SOC_detailed_occupations AS soc_detailed ON shi.detailed_occupation_code = soc_detailed.id
+LEFT JOIN occupation_data AS od 
+    ON LEFT(od.onetsoc_code, 7) = shi.detailed_occupation_code 
+    AND RIGHT(od.onetsoc_code, 2) = '00'
+LEFT JOIN top_elements te ON te.onetsoc_code = od.onetsoc_code
+LEFT JOIN work_context_valence wcv ON wcv.element_id = te.element_id
+LEFT JOIN distributions d ON d.onetsoc_code = te.onetsoc_code AND d.element_id = te.element_id
+LEFT JOIN median_distributions md ON md.element_id = te.element_id AND md.category = d.category
+WHERE shi.detailed_occupation_code = @target_soc
+ORDER BY te.abs_z_score DESC, d.category;

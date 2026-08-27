@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="12 170 736 726" role="img" aria-label="A desktop succulent in a Scandinavian-style clay pot">
+  <defs>
+    <path id="leaf" d="M 0 15 C -32 -25 -42 -130 -16 -212 C -8 -238 8 -238 16 -212 C 42 -130 32 -25 0 15 Z"/>
+    <linearGradient id="gO" gradientUnits="userSpaceOnUse" x1="0" y1="15" x2="0" y2="-245">
+      <stop offset="0" stop-color="#49624a"/>
+      <stop offset="0.5" stop-color="#5f7f5c"/>
+      <stop offset="0.85" stop-color="#7f9c74"/>
+      <stop offset="1" stop-color="#b98878"/>
+    </linearGradient>
+    <linearGradient id="gM" gradientUnits="userSpaceOnUse" x1="0" y1="15" x2="0" y2="-245">
+      <stop offset="0" stop-color="#5c7a58"/>
+      <stop offset="0.5" stop-color="#78976d"/>
+      <stop offset="0.85" stop-color="#98b184"/>
+      <stop offset="1" stop-color="#c49685"/>
+    </linearGradient>
+    <linearGradient id="gI" gradientUnits="userSpaceOnUse" x1="0" y1="15" x2="0" y2="-245">
+      <stop offset="0" stop-color="#6e8c64"/>
+      <stop offset="0.5" stop-color="#8aa87b"/>
+      <stop offset="0.9" stop-color="#a8bf92"/>
+      <stop offset="1" stop-color="#cfa290"/>
+    </linearGradient>
+    <linearGradient id="gPot" gradientUnits="userSpaceOnUse" x1="224" y1="0" x2="536" y2="0">
+      <stop offset="0" stop-color="#d59d78"/>
+      <stop offset="0.5" stop-color="#c78e66"/>
+      <stop offset="1" stop-color="#aa6f4e"/>
+    </linearGradient>
+    <linearGradient id="gRim" gradientUnits="userSpaceOnUse" x1="212" y1="0" x2="548" y2="0">
+      <stop offset="0" stop-color="#dda684"/>
+      <stop offset="0.5" stop-color="#cf9770"/>
+      <stop offset="1" stop-color="#b47857"/>
+    </linearGradient>
+    <linearGradient id="gSau" gradientUnits="userSpaceOnUse" x1="240" y1="0" x2="520" y2="0">
+      <stop offset="0" stop-color="#b97e58"/>
+      <stop offset="1" stop-color="#96603f"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ground shadow -->
+  <ellipse cx="380" cy="878" rx="210" ry="12" fill="#000000" opacity="0.08"/>
+
+  <!-- outer rosette layer -->
+  <g fill="url(#gO)" stroke="#2f4433" stroke-opacity="0.22" stroke-width="2">
+    <use href="#leaf" transform="translate(380 545) rotate(-76) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) rotate(76) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) rotate(-51) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) rotate(51) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) rotate(-26) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) rotate(26) scale(1.5)"/>
+    <use href="#leaf" transform="translate(380 545) scale(1.5)"/>
+  </g>
+
+  <!-- middle rosette layer -->
+  <g fill="url(#gM)" stroke="#3a5340" stroke-opacity="0.2" stroke-width="2">
+    <use href="#leaf" transform="translate(380 548) rotate(-64) scale(1.05)"/>
+    <use href="#leaf" transform="translate(380 548) rotate(64) scale(1.05)"/>
+    <use href="#leaf" transform="translate(380 548) rotate(-38) scale(1.05)"/>
+    <use href="#leaf" transform="translate(380 548) rotate(38) scale(1.05)"/>
+    <use href="#leaf" transform="translate(380 548) rotate(-13) scale(1.05)"/>
+    <use href="#leaf" transform="translate(380 548) rotate(13) scale(1.05)"/>
+  </g>
+
+  <!-- inner rosette layer -->
+  <g fill="url(#gI)" stroke="#476049" stroke-opacity="0.2" stroke-width="2">
+    <use href="#leaf" transform="translate(380 550) rotate(-35) scale(0.62)"/>
+    <use href="#leaf" transform="translate(380 550) rotate(35) scale(0.62)"/>
+    <use href="#leaf" transform="translate(380 550) scale(0.66)"/>
+    <use href="#leaf" transform="translate(380 552) rotate(-15) scale(0.38)"/>
+    <use href="#leaf" transform="translate(380 552) rotate(15) scale(0.38)"/>
+  </g>
+
+  <!-- pot rim -->
+  <rect x="212" y="538" width="336" height="36" rx="12" fill="url(#gRim)"/>
+
+  <!-- pot body -->
+  <path d="M 224 570 L 262 830 Q 264 848 282 848 L 478 848 Q 496 848 498 830 L 536 570 Z" fill="url(#gPot)"/>
+
+  <!-- cream glaze bands -->
+  <path d="M 227 590 H 533 L 530 612 H 230 Z" fill="#f1e9d8" opacity="0.95"/>
+  <path d="M 231 622 H 529 L 528 628 H 232 Z" fill="#f1e9d8" opacity="0.8"/>
+
+  <!-- speckle texture -->
+  <g fill="#8f5a3e" opacity="0.32">
+    <circle cx="300" cy="670" r="3"/>
+    <circle cx="352" cy="720" r="2.5"/>
+    <circle cx="420" cy="655" r="2.5"/>
+    <circle cx="452" cy="742" r="3"/>
+    <circle cx="330" cy="790" r="2.5"/>
+    <circle cx="398" cy="810" r="2"/>
+    <circle cx="470" cy="690" r="2"/>
+  </g>
+
+  <!-- soft highlight -->
+  <rect x="252" y="600" width="24" height="200" rx="12" fill="#ffffff" opacity="0.14"/>
+
+  <!-- saucer -->
+  <path d="M 240 848 L 246 872 Q 248 878 256 878 L 504 878 Q 512 878 514 872 L 520 848 Z" fill="url(#gSau)"/>
+  <path d="M 240 848 H 520 L 518.5 854 H 241.5 Z" fill="#c58a63"/>
+</svg>

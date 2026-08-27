@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" role="img" aria-label="pocket mirror">
+        <defs>
+          <linearGradient id="mr-metal" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#f0f1f3"/>
+            <stop offset="0.45" stop-color="#b9bdc4"/>
+            <stop offset="1" stop-color="#7c828c"/>
+          </linearGradient>
+          <linearGradient id="mr-glass" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#e9f1f7"/>
+            <stop offset="1" stop-color="#b0c0cf"/>
+          </linearGradient>
+          <clipPath id="mr-clip"><circle cx="75" cy="75" r="56"/></clipPath>
+        </defs>
+        <circle cx="75" cy="75" r="70" fill="url(#mr-metal)"/>
+        <circle cx="75" cy="75" r="70" fill="none" stroke="#5c626c" stroke-width="2"/>
+        <circle cx="75" cy="75" r="56" fill="url(#mr-glass)"/>
+        <g clip-path="url(#mr-clip)">
+          <polygon points="30,150 74,0 96,0 52,150" fill="#ffffff" opacity="0.5"/>
+          <polygon points="62,150 106,0 116,0 72,150" fill="#ffffff" opacity="0.28"/>
+        </g>
+        <circle cx="75" cy="75" r="56" fill="none" stroke="#878e98" stroke-width="1.5"/>
+        <path d="M18 100 A60 60 0 0 1 50 21" fill="none" stroke="#ffffff" stroke-width="2.5" opacity="0.6"/>
+        <path d="M132 52 A60 60 0 0 1 99 130" fill="none" stroke="#3f444d" stroke-width="2.5" opacity="0.45"/>
+      </svg>

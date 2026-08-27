@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="93.0 25.0 778.2 922.5">
+  <defs>
+    <clipPath id="canBodyClip">
+      <path d="M210,385 C182,540 176,700 262,925 L558,925 C644,700 638,540 590,385 Z"/>
+    </clipPath>
+  </defs>
+
+  <g stroke="#171717" stroke-linejoin="round" stroke-linecap="round">
+
+    <!-- ===================== LID (leaning) ===================== -->
+    <g transform="translate(690,840) rotate(-20)">
+      <ellipse cx="0" cy="18" rx="178" ry="62" fill="#34505A" stroke-width="9"/>
+      <ellipse cx="0" cy="-12" rx="178" ry="50" fill="#B9D2D9" stroke-width="9"/>
+      <ellipse cx="0" cy="-12" rx="145" ry="38" fill="none" stroke="#7FA0AC" stroke-width="6"/>
+      <rect x="-95" y="-30" width="28" height="70" rx="10" fill="#E7F2F4" opacity="0.55" stroke="none" transform="rotate(-8)"/>
+      <ellipse cx="0" cy="-16" rx="34" ry="14" fill="#7FA0AC" stroke-width="7"/>
+      <path d="M -15,-26 Q -15,-50 0,-50 Q 15,-50 15,-26" fill="none" stroke="#171717" stroke-width="9"/>
+    </g>
+
+    <!-- ===================== CAN BODY ===================== -->
+    <path d="M210,385 C182,540 176,700 262,925 L558,925 C644,700 638,540 590,385 Z" fill="#B9D2D9" stroke-width="9"/>
+
+    <g clip-path="url(#canBodyClip)">
+      <ellipse cx="400" cy="470" rx="270" ry="17" fill="#7FA0AC"/>
+      <ellipse cx="400" cy="470" rx="270" ry="8"  fill="#4B6873"/>
+      <ellipse cx="400" cy="565" rx="278" ry="17" fill="#7FA0AC"/>
+      <ellipse cx="400" cy="565" rx="278" ry="8"  fill="#4B6873"/>
+      <ellipse cx="400" cy="660" rx="270" ry="17" fill="#7FA0AC"/>
+      <ellipse cx="400" cy="660" rx="270" ry="8"  fill="#4B6873"/>
+      <ellipse cx="400" cy="760" rx="250" ry="17" fill="#7FA0AC"/>
+      <ellipse cx="400" cy="760" rx="250" ry="8"  fill="#4B6873"/>
+      <ellipse cx="400" cy="855" rx="220" ry="17" fill="#7FA0AC"/>
+      <ellipse cx="400" cy="855" rx="220" ry="8"  fill="#4B6873"/>
+      <path d="M210,385 C182,540 176,700 262,925 L318,925 C258,700 262,540 282,385 Z" fill="#7FA0AC" opacity="0.55" stroke="none"/>
+      <path d="M540,385 C560,540 566,700 522,925 L558,925 C644,700 638,540 590,385 Z" fill="#34505A" opacity="0.45" stroke="none"/>
+      <rect x="248" y="410" width="34" height="470" fill="#EAF4F6" opacity="0.5" stroke="none"/>
+    </g>
+
+    <path d="M210,385 C182,540 176,700 262,925 L558,925 C644,700 638,540 590,385 Z" fill="none" stroke="#171717" stroke-width="10"/>
+
+    <!-- handles -->
+    <path d="M197,440 C160,447 152,502 190,518 C207,526 220,507 208,495 C186,478 190,454 213,448 Z" fill="#4B6873" stroke-width="7"/>
+    <path d="M603,440 C640,447 648,502 610,518 C593,526 580,507 592,495 C614,478 610,454 587,448 Z" fill="#4B6873" stroke-width="7"/>
+
+    <!-- top rim -->
+    <ellipse cx="400" cy="385" rx="190" ry="42" fill="#D7E7EB" stroke-width="10"/>
+    <ellipse cx="400" cy="388" rx="158" ry="28" fill="#26241F" stroke-width="8"/>
+
+    <!-- ===================== GARBAGE OVERFLOW ===================== -->
+
+    <!-- banana peel -->
+    <ellipse cx="352" cy="386" rx="38" ry="18" fill="#C9A428" stroke-width="7"/>
+    <path d="M335,388 C298,350 216,330 148,258 C108,216 92,172 124,148 C155,125 196,164 232,214 C272,270 312,330 350,388 Z" fill="#F4D216" stroke-width="8"/>
+    <ellipse cx="118" cy="156" rx="22" ry="15" fill="#8C5E18" stroke-width="5" transform="rotate(-30 118 156)"/>
+    <path d="M356,390 C345,318 330,218 350,138 C361,92 402,84 406,120 C413,176 396,292 381,390 Z" fill="#F4D216" stroke-width="8"/>
+    <ellipse cx="391" cy="96" rx="19" ry="14" fill="#8C5E18" stroke-width="5" transform="rotate(10 391 96)"/>
+    <path d="M370,390 C392,338 412,278 397,218 C390,188 358,190 358,220 C358,274 364,334 371,390 Z" fill="#F4D216" stroke-width="8"/>
+    <ellipse cx="393" cy="203" rx="16" ry="12" fill="#8C5E18" stroke-width="5" transform="rotate(-10 393 203)"/>
+
+    <!-- apple core -->
+    <path d="M282,300 C275,320 275,346 288,362 C295,371 305,371 312,362 C325,346 325,320 318,300 C314,284 302,279 300,279 C298,279 286,284 282,300 Z" fill="#E8DAB0" stroke-width="7"/>
+    <ellipse cx="294" cy="315" rx="4" ry="6" fill="#6B4A21" stroke="none"/>
+    <ellipse cx="308" cy="335" rx="4" ry="6" fill="#6B4A21" stroke="none"/>
+    <path d="M300,278 L295,258" stroke="#6B4A21" stroke-width="7"/>
+
+    <!-- eggshell bits -->
+    <path d="M212,298 L233,282 L250,297 L237,314 L219,312 Z" fill="#F4F1E6" stroke-width="6"/>
+    <path d="M220,299 Q234,293 245,300" fill="none" stroke="#D9D4C0" stroke-width="4"/>
+    <path d="M528,292 L546,280 L560,294 L548,308 L532,304 Z" fill="#F4F1E6" stroke-width="6"/>
+    <path d="M534,292 Q546,287 555,294" fill="none" stroke="#D9D4C0" stroke-width="4"/>
+
+    <!-- fish bone -->
+    <path d="M450,392 L470,356 L492,392 Z" fill="#F1EAD6" stroke-width="7"/>
+    <path d="M470,388 C480,318 460,236 480,158 C486,132 486,118 483,104" fill="none" stroke="#171717" stroke-width="22"/>
+    <path d="M470,388 C480,318 460,236 480,158 C486,132 486,118 483,104" fill="none" stroke="#F1EAD6" stroke-width="14"/>
+    <path d="M473,352 L436,336 L472,340 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M473,352 L510,336 L474,340 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M475,308 L442,294 L474,296 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M475,308 L508,294 L476,296 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M472,262 L444,250 L473,252 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M472,262 L500,250 L474,252 Z" fill="#F1EAD6" stroke-width="5"/>
+    <path d="M478,216 L455,206 L478,208 Z" fill="#F1EAD6" stroke-width="4"/>
+    <path d="M478,216 L500,206 L479,208 Z" fill="#F1EAD6" stroke-width="4"/>
+    <ellipse cx="482" cy="103" rx="26" ry="20" fill="#F1EAD6" stroke-width="7"/>
+    <circle cx="491" cy="98" r="4" fill="#171717" stroke="none"/>
+    <path d="M462,110 L446,116" stroke="#171717" stroke-width="5" fill="none"/>
+
+    <!-- crumpled paper -->
+    <path d="M398,180 L390,138 L410,108 L442,102 L458,128 L450,168 L420,182 Z" fill="#EEEEEA" stroke-width="7"/>
+    <path d="M404,150 L430,138 M414,166 L440,148 M406,128 L426,150" stroke="#B7B7B0" stroke-width="4" fill="none"/>
+
+    <!-- tin can -->
+    <g transform="translate(596,246) rotate(14)">
+      <path d="M-32,-160 L-58,-208 L-14,-198 L-18,-158 Z" fill="#C7CBCB" stroke-width="6"/>
+      <rect x="-42" y="-96" width="84" height="152" rx="10" fill="#D8483B" stroke-width="8"/>
+      <rect x="-42" y="-34" width="84" height="26" fill="#A32E24" stroke="none"/>
+      <ellipse cx="0" cy="56" rx="42" ry="13" fill="#A32E24" stroke-width="7"/>
+      <ellipse cx="0" cy="-96" rx="42" ry="13" fill="#C7CBCB" stroke-width="8"/>
+      <ellipse cx="0" cy="-96" rx="29" ry="8" fill="#2A2A2A" stroke-width="4"/>
+      <rect x="-28" y="-70" width="9" height="88" rx="4" fill="#E9776C" opacity="0.85" stroke="none"/>
+    </g>
+
+    <!-- orange peel -->
+    <path d="M560,330 C582,320 592,298 576,282 C562,270 543,280 546,297 C548,310 564,312 568,301" fill="none" stroke="#F2932A" stroke-width="15"/>
+    <path d="M538,342 C522,336 519,320 533,314" fill="none" stroke="#F2932A" stroke-width="12"/>
+    <circle cx="552" cy="298" r="3.5" fill="#F7E3C4" stroke="none"/>
+    <circle cx="562" cy="308" r="3.5" fill="#F7E3C4" stroke="none"/>
+
+  </g>
+</svg>

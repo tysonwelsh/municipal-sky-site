@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ariel room mockup — real IR audition</title>
+<!--
+  Dev-only mockup (sibling of room-mockup.html): the REAL Ariel engine
+  with its two rooms (close air / the sky) swappable for measured spaces
+  from the OpenAIR mirror, plus instant one-click instrument gestures
+  using the engine's own patch recipes. The page intercepts
+  PJ2.Voice.reverb; close vs sky told apart by spec.decayS (1.8 / 5.2).
+-->
+<script>
+  window.__pjErr = null;
+  window.onerror = function (msg, src, line) {
+    window.__pjErr = msg + " @ " + (src || "").split("/").pop() + ":" + line;
+    var el = document.getElementById("errbar");
+    if (el) el.textContent = "JS ERROR: " + window.__pjErr;
+    return false;
+  };
+</script>
+<style>
+  body { font-family: monospace; background: #0d1014; color: #c2ccd8; max-width: 860px; margin: 1.5rem auto; padding: 0 1rem; }
+  h1 { font-size: 1.05rem; } h2 { font-size: 0.9rem; color: #8fa3b8; margin: 1.2rem 0 0.4rem; }
+  p, label { color: #6f7d8f; font-size: 0.85rem; }
+  select, input[type=number] { font-family: inherit; background: #1b2129; color: #c2ccd8; border: 1px solid #33404f; padding: 0.25rem; }
+  button { font-family: inherit; background: #1b2129; color: #c2ccd8; border: 1px solid #33404f; padding: 0.4rem 0.9rem; margin: 0.15rem; cursor: pointer; }
+  button:hover { background: #253040; }
+  button.on { background: #33404f; border-color: #4f6a85; }
+  .row { margin: 0.35rem 0; }
+  .mix { display: grid; grid-template-columns: 8rem 1fr 3.2rem 3.2rem; gap: 0.3rem; align-items: center; max-width: 34rem; }
+  #status { color: #6e9c8a; white-space: pre-wrap; }
+  #errbar { color: #c96a5a; white-space: pre-wrap; }
+  #meter { color: #6e9c8a; }
+  #log { font-size: 0.78rem; color: #506070; max-height: 10rem; overflow-y: auto; border-top: 1px solid #1b2129; margin-top: 0.5rem; padding-top: 0.3rem; }
+  .roomdesc { font-size: 0.75rem; color: #506070; margin-left: 0.4rem; }
+</style>
+</head>
+<body>
+<h1>Ariel's Day Off — room mockup (real spaces) <span style="color:#6e9c8a">rev 1</span></h1>
+<p>The full Ariel engine with its two rooms — <i>close air</i> and
+<i>the sky</i> — swappable for real measured open-air and vast spaces.
+Instant buttons play single gestures with the engine's own patch
+recipes.</p>
+
+<h2>rooms</h2>
+<div class="row">
+  <label>close (the air):
+    <select id="roomClose"></select>
+  </label>
+  <span class="roomdesc" id="descClose"></span>
+</div>
+<div class="row">
+  <label>wide (the sky):
+    <select id="roomWide"></select>
+  </label>
+  <span class="roomdesc" id="descWide"></span>
+</div>
+
+<h2>instant audition — one click, one instrument, in the room</h2>
+<div class="row">
+  <label><input type="radio" name="audroom" value="close" checked> close room</label>
+  <label><input type="radio" name="audroom" value="wide"> wide room</label>
+  <label style="margin-left:1rem">room wet &times;<span id="wetxv">1.6</span>
+    <input type="range" id="wetx" min="0.5" max="3" step="0.1" value="1.6"></label>
+</div>
+<div class="row" id="instruments"></div>
+
+<h2>full engine (the flight itself)</h2>
+<div class="row">
+  <button id="play">play</button>
+  <button id="stop">stop</button>
+  <label>seed <input type="number" id="seed" value="20260713" style="width:9rem"></label>
+  <button id="reroll">new seed</button>
+  <label>volume <input type="range" id="vol" min="0" max="1" step="0.01" value="0.85"></label>
+  <button id="beep" title="plain tone straight to the output">test beep</button>
+</div>
+<div class="row" id="errbar"></div>
+<div class="row" id="meter"></div>
+
+<h2>instruments</h2>
+<div class="mix" id="mixer"></div>
+<div class="row"><button id="allon">all on</button></div>
+
+<h2>now</h2>
+<div id="status">loading impulse responses…</div>
+<div id="log"></div>
+
+<script src="pj2-rand.js"></script>
+<script src="pj2-pitch.js"></script>
+<script src="pj2-clock.js"></script>
+<script src="pj2-voice.js"></script>
+<script src="pj2-fx.js"></script>
+<script src="pj2-air.js"></script>
+<script src="pj2-motif.js"></script>
+<script src="pj2-harmony.js"></script>
+<script src="pj2-conductor.js"></script>
+<script src="pj2-ariel.js"></script>
+<script>
+(function () {
+  // ---- one shared AudioContext (pj2-ui's singleton trick) ----------------
+  var RealAC = window.AudioContext || window.webkitAudioContext;
+  var sharedCtx = null;
+  function SharedAC() {
+    if (!sharedCtx) sharedCtx = new RealAC();
+    return sharedCtx;
+  }
+  window.AudioContext = SharedAC;
+  window.webkitAudioContext = SharedAC;
+
+  // ---- the candidate rooms ----------------------------------------------
+  var ROOMS = {
+    "generated":           { file: null, desc: "the engine's synthetic IRs (current sound)" },
+    "koli-forest":         { file: "ir/candidates/ariel-koli-forest.wav", desc: "Koli National Park, Finland (summer) — real open air over a forest ridge" },
+    "trollers-gill":       { file: "ir/candidates/ariel-trollers-gill.wav", desc: "Trollers Gill — limestone gorge, open sky between rock walls" },
+    "hamilton-mausoleum":  { file: "ir/candidates/ariel-hamilton-mausoleum.wav", desc: "Hamilton Mausoleum — stone dome with a legendary ~15 s bloom" },
+    "tvisongur":           { file: "ir/candidates/ariel-tvisongur.wav", desc: "Tvísöngur sound sculpture, Iceland — tuned concrete singing domes (model)" },
+    "air-museum":          { file: "ir/candidates/ariel-air-museum.wav", desc: "Yorkshire Air Museum hangar — a big open span" }
+  };
+  var irBuffers = {};
+  var selClose = document.getElementById("roomClose");
+  var selWide = document.getElementById("roomWide");
+  var status = document.getElementById("status");
+  var logEl = document.getElementById("log");
+
+  Object.keys(ROOMS).forEach(function (k) {
+    [selClose, selWide].forEach(function (sel) {
+      var o = document.createElement("option");
+      o.value = k; o.textContent = k;
+      sel.appendChild(o);
+    });
+  });
+  selClose.value = "generated";
+  selWide.value = "generated";
+  function showDesc() {
+    document.getElementById("descClose").textContent = ROOMS[selClose.value].desc;
+    document.getElementById("descWide").textContent = ROOMS[selWide.value].desc;
+  }
+  showDesc();
+
+  // ---- fetch bytes at load; ctx + decode on first gesture (Safari rule) --
+  var irRaw = {};
+  function loadIRs() {
+    var names = Object.keys(ROOMS).filter(function (k) { return ROOMS[k].file; });
+    var left = names.length;
+    names.forEach(function (k) {
+      fetch(ROOMS[k].file)
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+        .then(function (ab) { irRaw[k] = ab; if (--left === 0) status.textContent = "rooms fetched — press anything."; })
+        .catch(function (e) { status.textContent = "IR fetch failed: " + k + " — " + e; });
+    });
+  }
+  function decodeOne(c, ab) {
+    return new Promise(function (res, rej) {
+      var settled = false;
+      function ok(b) { if (!settled) { settled = true; res(b); } }
+      function bad(e) { if (!settled) { settled = true; rej(e || new Error("decode failed")); } }
+      try {
+        var p = c.decodeAudioData(ab, ok, bad);
+        if (p && p.then) p.then(ok, bad);
+      } catch (e) { bad(e); }
+    });
+  }
+  var audioReady = null;
+  function ensureAudio() {
+    if (audioReady) return audioReady;
+    var c = SharedAC();
+    if (c.state === "suspended") c.resume();
+    try {
+      var ub = c.createBuffer(1, 1, 22050);
+      var us = c.createBufferSource(); us.buffer = ub;
+      us.connect(c.destination); us.start(0);
+    } catch (e) {}
+    var jobs = Object.keys(irRaw).map(function (k) {
+      if (irBuffers[k]) return Promise.resolve();
+      return decodeOne(c, irRaw[k].slice(0)).then(
+        function (buf) { irBuffers[k] = buf; },
+        function (e) { status.textContent = "IR decode failed: " + k + " — " + e; }
+      );
+    });
+    audioReady = Promise.all(jobs).then(function () {
+      if (!/failed/.test(status.textContent)) status.textContent = "rooms ready.";
+    });
+    return audioReady;
+  }
+
+  // ---- the room swap: intercept PJ2.Voice.reverb ------------------------
+  var origReverb = PJ2.Voice.reverb;
+  PJ2.Voice.reverb = function (ctx, spec) {
+    var slot = (spec && spec.decayS != null && spec.decayS <= 3) ? "close" : "wide";
+    var choice = (slot === "close" ? selClose : selWide).value;
+    if (choice === "generated" || !irBuffers[choice]) {
+      var s2 = {};
+      for (var k in spec) if (k !== "irUrl") s2[k] = spec[k];
+      return origReverb(ctx, s2);
+    }
+    var send = ctx.createGain(), output = ctx.createGain();
+    var dry = ctx.createGain(); dry.gain.value = 1.0;
+    send.connect(dry); dry.connect(output);
+    try {
+      var pre = ctx.createDelay(1.0);
+      pre.delayTime.value = (spec && spec.preDelayS) || 0.02;
+      var conv = ctx.createConvolver();
+      conv.normalize = true;
+      conv.buffer = irBuffers[choice];
+      var wet = ctx.createGain();
+      wet.gain.value = (spec && spec.wet != null) ? spec.wet : 0.35;
+      send.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(output);
+    } catch (e) {}
+    return { send: send, output: output };
+  };
+
+  // ========================================================================
+  // INSTANT AUDITION — Ariel gestures (engine patch recipes, ~+10 dB)
+  // ========================================================================
+  var AUD_LIFT = 3.2;
+  var audField = PJ2.Pitch.field({ tonicHz: 349, mode: "lydian", tuning: "et" });
+  var aud = { built: false, close: null, wide: null, master: null };
+  var fluteWave = null, bellWave = null;
+  function waves(c) {
+    if (!fluteWave) {
+      try {
+        fluteWave = c.createPeriodicWave(
+          new Float32Array([0, 0, 0, 0, 0]),
+          new Float32Array([0, 1, 0.28, 0.08, 0.02]));
+        bellWave = c.createPeriodicWave(
+          new Float32Array([0, 0, 0, 0, 0, 0]),
+          new Float32Array([0, 1, 0.5, 0.22, 0.12, 0.06]));
+      } catch (e) { fluteWave = bellWave = null; }
+    }
+  }
+
+  function wetX() { return +document.getElementById("wetx").value; }
+  function audRoomSel() {
+    var r = document.querySelector('input[name="audroom"]:checked');
+    return r ? r.value : "close";
+  }
+  function buildAuditionRooms() {
+    var c = SharedAC();
+    if (aud.master) { try { aud.master.disconnect(); } catch (e) {} }
+    if (aud.close) { try { aud.close.output.disconnect(); } catch (e) {} }
+    if (aud.wide) { try { aud.wide.output.disconnect(); } catch (e) {} }
+    aud.master = c.createGain(); aud.master.gain.value = 1.0;
+    aud.master.connect(c.destination);
+    aud.close = PJ2.Voice.reverb(c, { decayS: 1.8, preDelayS: 0.015, wet: 0.3 * wetX(), brightness: 0.95, ripple: 0.02 });
+    aud.wide = PJ2.Voice.reverb(c, { decayS: 5.2, preDelayS: 0.04, wet: 0.34 * wetX(), brightness: 1.2, ripple: { depth: 0.04, hz: 0.3 } });
+    aud.close.output.connect(aud.master);
+    aud.wide.output.connect(aud.master);
+    aud.built = true;
+  }
+  function roomIn() { return (audRoomSel() === "wide" ? aud.wide : aud.close).send; }
+  function audReady() {
+    var c = SharedAC();
+    if (c.state === "suspended") c.resume();
+    waves(c);
+    if (!aud.built) buildAuditionRooms();
+    return c;
+  }
+  document.getElementById("wetx").oninput = function () {
+    document.getElementById("wetxv").textContent = (+this.value).toFixed(1);
+    aud.built = false;
+  };
+  selClose.addEventListener("change", function () { aud.built = false; });
+  selWide.addEventListener("change", function () { aud.built = false; });
+  document.querySelectorAll('input[name="audroom"]').forEach(function (r) {
+    r.addEventListener("change", function () { aud.built = false; });
+  });
+
+  function noiseBurstSrc(c, seconds) {
+    var len = Math.max(8, Math.floor(c.sampleRate * seconds));
+    var b = c.createBuffer(1, len, c.sampleRate);
+    var d = b.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    var s = c.createBufferSource(); s.buffer = b;
+    return s;
+  }
+  var ENV = PJ2.Voice.env;
+
+  function playClap() {
+    var c = audReady(), t = c.currentTime + 0.05, dest = roomIn();
+    var src = noiseBurstSrc(c, 0.02);
+    var g = c.createGain();
+    ENV(g.gain, t, [[0.002, 0.28], [0.018, 0]]);
+    src.connect(g); g.connect(dest);
+    src.start(t); src.stop(t + 0.03);
+  }
+
+  // breeze: sine dyad with slow breathing, plus a whisper of hiss mist
+  function playBreeze() {
+    var c = audReady(), t = c.currentTime + 0.05, dur = 8, dest = roomIn();
+    [[0, -1], [4, -1]].forEach(function (dv) {
+      var o = c.createOscillator();
+      o.frequency.value = audField.degFreq(dv[0], dv[1]);
+      var g = c.createGain();
+      ENV(g.gain, t, [[2.5, 0.06 * AUD_LIFT], [dur - 5, 0.06 * AUD_LIFT], [2.5, 0]]);
+      var lfo = c.createOscillator(); lfo.frequency.value = 0.18;
+      var lg = c.createGain(); lg.gain.value = 0.02 * AUD_LIFT;
+      lfo.connect(lg); lg.connect(g.gain); lfo.start(t); lfo.stop(t + dur);
+      o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.1);
+    });
+    var hiss = noiseBurstSrc(c, 2); hiss.loop = true;
+    var hp = c.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 6000; hp.Q.value = 0.7;
+    var hg = c.createGain();
+    ENV(hg.gain, t, [[2.5, 0.004 * AUD_LIFT], [dur - 5, 0.004 * AUD_LIFT], [2.5, 0]]);
+    hiss.connect(hp); hp.connect(hg); hg.connect(dest);
+    hiss.start(t); hiss.stop(t + dur + 0.1);
+  }
+
+  // whistle: flute wave, vibrato blooming in, breathy noise thread
+  function playWhistle() {
+    var c = audReady(), dest = roomIn();
+    [[0, 0], [2, 0], [4, 0], [6, 0], [4, 0]].forEach(function (dv, i) {
+      var t = c.currentTime + 0.05 + i * 0.5, durS = 0.62;
+      var f = audField.degFreq(dv[0], dv[1]);
+      var o = c.createOscillator();
+      if (fluteWave) o.setPeriodicWave(fluteWave); else o.type = "sine";
+      o.frequency.value = f;
+      var vib = c.createOscillator(); vib.frequency.value = 5.5;
+      var vg = c.createGain(); vg.gain.setValueAtTime(0, t);
+      vg.gain.linearRampToValueAtTime(f * 0.0023, t + 0.3);
+      vib.connect(vg); vg.connect(o.frequency); vib.start(t); vib.stop(t + durS);
+      var g = c.createGain();
+      ENV(g.gain, t, [[0.15, 0.028 * AUD_LIFT], [durS - 0.35, 0.024 * AUD_LIFT], [0.2, 0]]);
+      o.connect(g); g.connect(dest); o.start(t); o.stop(t + durS + 0.1);
+      var br = noiseBurstSrc(c, 0.7);
+      var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 1800; bp.Q.value = 12;
+      var bg = c.createGain();
+      ENV(bg.gain, t, [[0.15, 0.006 * AUD_LIFT], [durS - 0.35, 0.005 * AUD_LIFT], [0.2, 0]]);
+      br.connect(bp); bp.connect(bg); bg.connect(dest);
+      br.start(t); br.stop(t + durS);
+    });
+  }
+
+  // chime: detuned bell-wave pair on the bell's shelf (an octave up)
+  function playChime() {
+    var c = audReady(), dest = roomIn();
+    [[0, 1], [4, 1], [1, 1]].forEach(function (dv, i) {
+      var t = c.currentTime + 0.05 + i * 0.4;
+      var f = audField.degFreq(dv[0], dv[1]);
+      [-3, 3].forEach(function (cents) {
+        var o = c.createOscillator();
+        if (bellWave) o.setPeriodicWave(bellWave); else o.type = "triangle";
+        o.frequency.value = f; o.detune.value = cents;
+        var g = c.createGain();
+        ENV(g.gain, t, [[0.003, 0.013 * AUD_LIFT], [2.1, 0.0008 * AUD_LIFT], [0.1, 0]]);
+        o.connect(g); g.connect(dest); o.start(t); o.stop(t + 2.3);
+      });
+    });
+  }
+
+  // flutter: quick triangle ornament cloud
+  function playFlutter() {
+    var c = audReady(), dest = roomIn();
+    [4, 5, 4, 2, 4, 5].forEach(function (d, i) {
+      var t = c.currentTime + 0.05 + i * 0.22, durS = 0.18;
+      var o = c.createOscillator(); o.type = "triangle";
+      o.frequency.value = audField.degFreq(d, 1);
+      o.detune.value = (i % 2 ? 2 : -2);
+      var g = c.createGain();
+      ENV(g.gain, t, [[0.005, 0.03 * AUD_LIFT], [durS * 0.4 - 0.005, 0.024 * AUD_LIFT], [durS * 0.6, 0]]);
+      o.connect(g); g.connect(dest); o.start(t); o.stop(t + durS + 0.05);
+    });
+  }
+
+  // bass: additive triangle (three partials), root then fifth
+  function playBass() {
+    var c = audReady(), dest = roomIn();
+    [[0, -3, 0], [4, -3, 1.6]].forEach(function (nv) {
+      var t = c.currentTime + 0.05 + nv[2], ring = 2.5;
+      var f = audField.degFreq(nv[0], nv[1]);
+      [[1, 1.0], [2, 0.4], [3, 0.18]].forEach(function (p) {
+        var o = c.createOscillator(); o.type = "triangle";
+        o.frequency.value = f * p[0];
+        var g = c.createGain();
+        ENV(g.gain, t, [[0.012, 0.10 * p[1] * AUD_LIFT], [0.088, 0.05 * p[1] * AUD_LIFT], [ring - 0.1, 0]]);
+        o.connect(g); g.connect(dest); o.start(t); o.stop(t + ring + 0.1);
+      });
+    });
+  }
+
+  // aeolian harp: detuned sine pair + glassy sheen + bow breath, slow bloom
+  function playAeolian() {
+    var c = audReady(), t = c.currentTime + 0.05, dur = 7, dest = roomIn();
+    [[0, 0], [4, 0]].forEach(function (dv) {
+      var f = audField.degFreq(dv[0], dv[1]);
+      [-3, 3].forEach(function (cents) {
+        var o = c.createOscillator();
+        o.frequency.value = f; o.detune.value = cents;
+        var g = c.createGain();
+        ENV(g.gain, t, [[2.5, 0.013 * AUD_LIFT], [dur - 5, 0.012 * AUD_LIFT], [2.5, 0]]);
+        o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.1);
+      });
+      var p2 = c.createOscillator(); p2.frequency.value = f * 2;
+      var pg = c.createGain();
+      ENV(pg.gain, t, [[2.5, 0.005 * AUD_LIFT], [dur - 5, 0.005 * AUD_LIFT], [2.5, 0]]);
+      p2.connect(pg); pg.connect(dest); p2.start(t); p2.stop(t + dur + 0.1);
+      var bow = noiseBurstSrc(c, 2); bow.loop = true;
+      var bp = c.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = f * 2; bp.Q.value = 8;
+      var bg = c.createGain();
+      ENV(bg.gain, t, [[2.5, 0.004 * AUD_LIFT], [dur - 5, 0.004 * AUD_LIFT], [2.5, 0]]);
+      bow.connect(bp); bp.connect(bg); bg.connect(dest);
+      bow.start(t); bow.stop(t + dur + 0.1);
+    });
+  }
+
+  var INSTRUMENTS = [
+    ["clap (room x-ray)", playClap],
+    ["breeze", playBreeze], ["whistle", playWhistle], ["chime", playChime],
+    ["flutter", playFlutter], ["bass", playBass], ["aeolian harp", playAeolian]
+  ];
+  var instRow = document.getElementById("instruments");
+  INSTRUMENTS.forEach(function (inst) {
+    var b = document.createElement("button");
+    b.textContent = inst[0];
+    b.onclick = function () {
+      ensureAudio().then(function () {
+        try { inst[1](); } catch (e) {
+          document.getElementById("errbar").textContent = "audition error: " + e.message;
+        }
+      });
+    };
+    instRow.appendChild(b);
+  });
+
+  // ---- engine lifecycle --------------------------------------------------
+  var seedInput = document.getElementById("seed");
+  var engine = PJ2.Ariel.create({ seed: +seedInput.value, volume: 0.85 });
+
+  function restartInNewRoom() {
+    showDesc();
+    if (engine.isPlaying()) {
+      status.textContent = "rebuilding the room…";
+      engine.reseed(+seedInput.value);
+    }
+  }
+  selClose.addEventListener("change", restartInNewRoom);
+  selWide.addEventListener("change", restartInNewRoom);
+
+  var analyser = null;
+  function ensureAnalyser() {
+    if (analyser || !sharedCtx) return;
+    try {
+      analyser = sharedCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      engine.attachAnalyser(analyser);
+    } catch (e) { analyser = null; }
+  }
+  var meterBuf = null;
+  var meterEl = document.getElementById("meter");
+  (function meterLoop() {
+    var line = "";
+    if (sharedCtx) line += "ctx: " + sharedCtx.state;
+    line += " · engine: " + (engine.isPlaying() ? "playing" : "stopped");
+    if (analyser) {
+      if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+      analyser.getFloatTimeDomainData(meterBuf);
+      var sum = 0;
+      for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+      var rms = Math.sqrt(sum / meterBuf.length);
+      var db = rms > 0 ? 20 * Math.log10(rms) : -120;
+      var bars = Math.max(0, Math.min(40, Math.round((db + 80) / 2)));
+      line += " · out " + (db <= -119 ? "-inf" : db.toFixed(0)) + " dB " +
+        new Array(bars + 1).join("#");
+    }
+    meterEl.textContent = line;
+    requestAnimationFrame(meterLoop);
+  })();
+
+  document.getElementById("beep").onclick = function () {
+    ensureAudio();
+    var c = SharedAC();
+    var t = c.currentTime + 0.05;
+    var o = c.createOscillator(); o.frequency.value = 220;
+    var g = c.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.2, t + 0.02);
+    g.gain.linearRampToValueAtTime(0, t + 0.5);
+    o.connect(g); g.connect(c.destination);
+    o.start(t); o.stop(t + 0.55);
+  };
+  document.getElementById("play").onclick = function () {
+    ensureAudio().then(function () {
+      engine.play();
+      ensureAnalyser();
+    });
+  };
+  document.getElementById("stop").onclick = function () { engine.stop(); };
+  document.getElementById("reroll").onclick = function () {
+    seedInput.value = Math.floor(Math.random() * 4294967295);
+    engine.reseed(+seedInput.value);
+  };
+  seedInput.onchange = function () { engine.reseed(+seedInput.value); };
+  document.getElementById("vol").oninput = function () {
+    engine.setMasterVolume(+this.value);
+  };
+
+  // ---- mixer -------------------------------------------------------------
+  var mixer = document.getElementById("mixer");
+  var layers = engine.getLayers();
+  var vols = engine.getLayerVolumes();
+  var muteBtns = {};
+  layers.forEach(function (l) {
+    var name = document.createElement("span"); name.textContent = l.label.toLowerCase();
+    var slider = document.createElement("input");
+    slider.type = "range"; slider.min = 0; slider.max = 1; slider.step = 0.01;
+    slider.value = (vols[l.key] != null) ? vols[l.key] : 1;
+    slider.oninput = function () { engine.setLayerVolume(l.key, +slider.value); };
+    var mute = document.createElement("button"); mute.textContent = "mute";
+    mute.onclick = function () {
+      var nowMuted = engine.toggleLayer(l.key);
+      mute.classList.toggle("on", nowMuted);
+    };
+    muteBtns[l.key] = mute;
+    var solo = document.createElement("button"); solo.textContent = "solo";
+    solo.onclick = function () {
+      layers.forEach(function (o) {
+        var muted = engine.toggleLayer(o.key, o.key === l.key);
+        muteBtns[o.key].classList.toggle("on", muted);
+      });
+    };
+    mixer.appendChild(name); mixer.appendChild(slider);
+    mixer.appendChild(mute); mixer.appendChild(solo);
+  });
+  document.getElementById("allon").onclick = function () {
+    layers.forEach(function (o) {
+      engine.toggleLayer(o.key, true);
+      muteBtns[o.key].classList.remove("on");
+    });
+  };
+
+  // ---- telemetry + event log --------------------------------------------
+  engine.setEventListener(function (evt) {
+    if (!evt || evt.type === "air") return;
+    var bits = [evt.type];
+    if (evt.label) bits.push(evt.label);
+    else if (evt.scene) bits.push(evt.scene);
+    else if (evt.kind) bits.push(evt.kind);
+    else if (evt.name) bits.push(evt.name);
+    if (evt.state) bits.push(evt.state);
+    var line = document.createElement("div");
+    line.textContent = bits.join(" · ");
+    logEl.insertBefore(line, logEl.firstChild);
+    while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+  });
+  setInterval(function () {
+    if (!engine.isPlaying()) return;
+    var i = engine.getInfo();
+    var parts = [];
+    if (i.perfN != null) parts.push("flight " + i.perfN);
+    if (i.sceneLabel || i.sceneType) parts.push("scene: " + (i.sceneLabel || "") + (i.sceneType ? " (" + i.sceneType + ")" : ""));
+    if (i.tideLabel) parts.push("tide: " + i.tideLabel);
+    if (i.harmony) parts.push("chord: " + i.harmony);
+    if (i.intensity != null) parts.push("intensity: " + Number(i.intensity).toFixed(2));
+    if (i.roomBalance != null) parts.push("room: " + Number(i.roomBalance).toFixed(2) + " (0=close 1=wide)");
+    status.textContent = parts.join("\n") || "playing…";
+  }, 500);
+
+  status.textContent = "loading impulse responses…";
+  loadIRs();
+
+  // ---- headless self-test hooks -----------------------------------------
+  if (/[?&]audtest=1/.test(window.location.search)) {
+    setTimeout(function () {
+      ensureAudio().then(runAudtest);
+    }, 1500);
+    var runAudtest = function () {
+      var c = audReady();
+      var an = c.createAnalyser(); an.fftSize = 2048;
+      aud.master.connect(an);
+      var buf = new Float32Array(an.fftSize);
+      var peak = 0;
+      setInterval(function () {
+        an.getFloatTimeDomainData(buf);
+        for (var i = 0; i < buf.length; i++) {
+          var v = Math.abs(buf[i]); if (v > peak) peak = v;
+        }
+      }, 50);
+      var q = INSTRUMENTS.slice();
+      (function next() {
+        if (!q.length) { console.log("AUDTEST done"); return; }
+        var inst = q.shift();
+        peak = 0;
+        try { inst[1](); } catch (e) { console.log("AUDTEST " + inst[0] + " THREW " + e.message); }
+        setTimeout(function () {
+          console.log("AUDTEST " + inst[0] + " peak=" + peak.toFixed(4));
+          next();
+        }, 3500);
+      })();
+    };
+  }
+  if (/[?&]autoplay=1/.test(window.location.search)) {
+    var diagT0 = Date.now();
+    setTimeout(function () {
+      ensureAudio().then(function () {
+        engine.play();
+        ensureAnalyser();
+      });
+    }, 1500);
+    setInterval(function () {
+      var line = "DIAG t=" + Math.round((Date.now() - diagT0) / 1000) +
+        " ctx=" + (sharedCtx ? sharedCtx.state : "none") +
+        " playing=" + engine.isPlaying() +
+        " err=" + (window.__pjErr || "none");
+      if (analyser) {
+        if (!meterBuf) meterBuf = new Float32Array(analyser.fftSize);
+        analyser.getFloatTimeDomainData(meterBuf);
+        var sum = 0;
+        for (var i = 0; i < meterBuf.length; i++) sum += meterBuf[i] * meterBuf[i];
+        var rms = Math.sqrt(sum / meterBuf.length);
+        line += " out=" + (rms > 0 ? (20 * Math.log10(rms)).toFixed(1) : "-inf") + "dB";
+      }
+      console.log(line);
+    }, 1000);
+  }
+})();
+</script>
+</body>
+</html>

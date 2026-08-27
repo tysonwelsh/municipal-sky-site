@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Context — Explorer (sandbox)</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:wght@400;500;600;700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ===== Design tokens — same set as underworld-labor-market.html ===== */
+      :root {
+        --color-bg-parchment: #ddd0b3;
+        --color-bg-card: #e4dac0;
+        --color-bg-subtle: #d8cdb5;
+        --color-bg-frame-inset: #cfc2a0;
+
+        --color-border-light: rgba(90, 62, 40, 0.18);
+        --color-border-medium: #5a3e28;
+        --color-border-subtle: rgba(90, 62, 40, 0.15);
+
+        --color-text-primary: #1a1408;
+        --color-text-secondary: #2c2014;
+        --color-text-tertiary: #3d2b18;
+        --color-text-muted: #4a3a28;
+        --color-text-subtle: #5c5347;
+        --color-text-faint: #5c4a38;
+
+        --color-rubrication: #b33a2b;
+        --color-rubrication-light: rgba(179, 58, 43, 0.15);
+        --color-rubrication-border: rgba(179, 58, 43, 0.2);
+
+        --font-family: "Cormorant Garamond", Georgia, "Times New Roman",
+          serif;
+        --font-family-sc: "Cormorant SC", "Cormorant Garamond", Georgia,
+          serif;
+        --font-family-display: "IM Fell Great Primer SC",
+          "Cormorant SC", Georgia, serif;
+        --font-family-display-body: "IM Fell Great Primer",
+          "Cormorant Garamond", Georgia, serif;
+      }
+
+      body {
+        margin: 0;
+        background: #c8baa0;
+        min-height: 100vh;
+        padding: 40px 24px 80px;
+        box-sizing: border-box;
+        font-family: var(--font-family);
+        color: var(--color-text-primary);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-synthesis: none;
+      }
+
+      .umlm-context {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .sandbox-banner {
+        font-family: var(--font-family-display);
+        font-size: 14px;
+        letter-spacing: 0.14em;
+        color: var(--color-rubrication);
+        text-align: center;
+        margin: 0 0 24px;
+        text-transform: uppercase;
+      }
+
+      /* ===== Slide-card chrome (matches labor-market) ===== */
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        padding: 0;
+        margin-bottom: 36px;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        /* Same fixed footprint as the live slide viewer:
+           800px wide × 700px tall. */
+        height: 700px;
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0;
+        line-height: 1.2;
+      }
+      .slide-body {
+        padding: 10px 20px 20px;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ===== WC compare chart (same look as labor-market deck) ===== */
+      .umlm-context .wc-compare-root {
+        display: flex;
+        flex-direction: column;
+        padding: 14px 18px;
+        gap: 12px;
+        flex: 1 1 auto;
+        min-height: 0;
+        box-sizing: border-box;
+      }
+      .umlm-context .wc-compare-plot-card {
+        background: var(--color-bg-card);
+        border: 1.5px solid var(--color-border-medium);
+        padding: 16px 28px 14px;
+        width: 100%;
+        margin: 0;
+        box-sizing: border-box;
+        flex-shrink: 0;
+      }
+      .umlm-context .wc-compare-header {
+        text-align: center;
+        margin: 0 0 14px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(90, 62, 40, 0.18);
+      }
+      .umlm-context .wc-compare-title {
+        font-family: var(--font-family-display-body);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0 0 4px;
+        line-height: 1.2;
+      }
+      .umlm-context .wc-compare-description {
+        font-family: var(--font-family);
+        font-size: 13px;
+        font-style: italic;
+        color: var(--color-text-secondary);
+        margin: 0;
+        line-height: 1.4;
+      }
+      .umlm-context .wc-compare-grid {
+        display: grid;
+        grid-template-columns: 130px 1fr 1fr;
+        column-gap: 16px;
+        row-gap: 6px;
+        align-items: center;
+        font-family: var(--font-family);
+      }
+      .umlm-context .wc-compare-col-header {
+        font-family: var(--font-family-sc);
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-rubrication);
+        text-align: left;
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+        border-bottom: 1.5px solid var(--color-rubrication);
+      }
+      .umlm-context .wc-compare-cat-label {
+        font-size: 13px;
+        color: var(--color-text-primary);
+        text-align: right;
+        line-height: 1.25;
+      }
+      .umlm-context .wc-compare-bar-cell {
+        position: relative;
+        height: 34px;
+        display: flex;
+        align-items: center;
+      }
+      .umlm-context .wc-compare-bar {
+        height: 28px;
+        background: #a65c53;
+        border: 1px solid #1a1408;
+        box-sizing: border-box;
+        transition: none;
+      }
+      .umlm-context .wc-compare-bar.is-empty {
+        background: rgba(90, 62, 40, 0.08);
+        border-style: dashed;
+      }
+      .umlm-context .wc-compare-pct {
+        font-size: 12px;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-secondary);
+        margin-left: 6px;
+        white-space: nowrap;
+      }
+      .umlm-context .wc-compare-axis-cell {
+        position: relative;
+        height: 18px;
+        margin-top: 2px;
+      }
+      .umlm-context .wc-compare-axis-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: var(--color-border-medium);
+      }
+      .umlm-context .wc-compare-axis-tick {
+        position: absolute;
+        top: 0;
+        width: 1px;
+        height: 4px;
+        background: var(--color-border-medium);
+      }
+      .umlm-context .wc-compare-axis-label {
+        position: absolute;
+        top: 5px;
+        font-family: var(--font-family);
+        font-size: 9px;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-text-subtle);
+        transform: translateX(-50%);
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .umlm-context .wc-compare-axis-label.is-edge-start {
+        transform: translateX(0);
+      }
+      .umlm-context .wc-compare-axis-label.is-edge-end {
+        transform: translateX(-100%);
+      }
+      .umlm-context .wc-compare-carousel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 14px;
+        padding-top: 10px;
+        border-top: 1px dotted rgba(90, 62, 40, 0.3);
+      }
+      .umlm-context .wc-compare-carousel-btn {
+        font-family: Georgia, serif;
+        font-size: 20px;
+        color: var(--color-text-primary);
+        background: var(--color-bg-parchment);
+        border: 1px solid var(--color-border-medium);
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 3px 10px;
+        line-height: 1;
+        box-shadow: 0 1px 0 rgba(26, 20, 8, 0.08);
+        transition:
+          color 0.15s,
+          background-color 0.15s,
+          border-color 0.15s,
+          transform 0.1s;
+      }
+      .umlm-context .wc-compare-carousel-btn:hover {
+        color: var(--color-rubrication);
+        background: var(--color-bg-card);
+        border-color: var(--color-rubrication);
+      }
+      .umlm-context .wc-compare-carousel-btn:active {
+        transform: translateY(1px);
+        box-shadow: none;
+      }
+      .umlm-context .wc-compare-carousel-counter {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        color: var(--color-rubrication);
+      }
+      .umlm-context .wc-compare-empty {
+        font-family: var(--font-family);
+        font-style: italic;
+        font-size: 14px;
+        color: var(--color-text-tertiary);
+        text-align: center;
+        padding: 40px 16px;
+      }
+      .umlm-context .riasec-slide-explainer {
+        margin-top: 14px;
+        background-color: var(--color-bg-card);
+        padding: 16px 28px;
+        border-top: 1px solid rgba(90, 62, 40, 0.2);
+      }
+      .umlm-context .riasec-slide-explainer p {
+        font-family: var(--font-family);
+        font-size: 18px;
+        line-height: 1.55;
+        color: var(--color-text-secondary);
+        margin: 0 0 10px;
+      }
+      .umlm-context .riasec-slide-explainer p:last-child {
+        margin-bottom: 0;
+      }
+      .loading-msg {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        color: var(--color-text-subtle);
+        text-align: center;
+        padding: 30px;
+      }
+
+      /* ===== Explorer-only: dropdowns in place of column headers ===== */
+      .umlm-context .wc-explorer-dropdown {
+        width: 100%;
+        font-family: var(--font-family);
+        font-size: 13px;
+        font-weight: 500;
+        padding: 6px 8px;
+        background: var(--color-bg-parchment);
+        border: 1px solid var(--color-border-medium);
+        color: var(--color-text-primary);
+        cursor: pointer;
+        box-sizing: border-box;
+        margin-bottom: 4px;
+        max-width: 100%;
+        text-overflow: ellipsis;
+      }
+      .umlm-context .wc-explorer-dropdown:focus {
+        outline: none;
+        border-color: var(--color-rubrication);
+        box-shadow: 0 0 0 2px var(--color-rubrication-light);
+      }
+      .umlm-context .wc-explorer-dropdown-cell {
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+        border-bottom: 1.5px solid var(--color-rubrication);
+      }
+      .umlm-context .wc-explorer-dropdown-mini-label {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--color-rubrication);
+        display: block;
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="umlm-context">
+      <p class="sandbox-banner">
+        Sandbox &middot; Work-Context Comparison Explorer
+      </p>
+
+      <!-- Slide A: the existing Diogenes-vs-Underworld carousel -->
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Work Context &mdash; Diogenes the CEO vs. the Underworld
+          </h1>
+        </div>
+        <div class="slide-body">
+          <div id="diogenes-wc-container">
+            <p class="loading-msg">Loading work context data&hellip;</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Slide B: interactive explorer — pick any two SOCs -->
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Work Context &mdash; Compare Any Two Occupations
+          </h1>
+        </div>
+        <div class="slide-body">
+          <div id="explorer-wc-container">
+            <p class="loading-msg">Loading work context data&hellip;</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+      (function () {
+        const API_URL =
+          "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+          Date.now();
+
+        const WC_COLORS_UNDESIRABLE = [
+          "#a65c53",
+          "#b47d6e",
+          "#c09885",
+          "#cbb199",
+          "#d6c9ad",
+        ];
+        const WC_COLORS_DESIRABLE = [
+          "#d6c9ad",
+          "#cbb199",
+          "#c09885",
+          "#b47d6e",
+          "#a65c53",
+        ];
+
+        function romanize(num) {
+          if (isNaN(num)) return "";
+          const digits = String(+num).split("");
+          const key = [
+            "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM",
+            "", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC",
+            "", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX",
+          ];
+          let roman = "";
+          let i = 3;
+          while (i--) roman = (key[+digits.pop() + i * 10] || "") + roman;
+          return Array(+digits.join("") + 1).join("M") + roman;
+        }
+        function cleanLabel(t) {
+          return (t || "")
+            .replace(/\s*\([^)]*\)\s*$/, "")
+            .replace(/\s+but\s+.*$/i, "")
+            .trim();
+        }
+        function cleanDesc(t) {
+          return (t || "")
+            .replace(/\s*\([^)]*\)/g, "")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+        function weightedMean(catMap, cats) {
+          let num = 0;
+          let den = 0;
+          cats.forEach((c) => {
+            const p = catMap.get(c) || 0;
+            num += c * p;
+            den += p;
+          });
+          return den > 0 ? num / den : 0;
+        }
+
+        // ----- Render the two-bar chart for given (element, leftMap, rightMap)
+        // Used by BOTH the Diogenes slide and the explorer.
+        // headerLeft / headerRight are either strings (rendered as
+        // .wc-compare-col-header) or D3 selection-builder callbacks that
+        // build the dropdown UI in the header cell.
+        function renderTwoBarComparison(opts) {
+          const {
+            container,
+            el,
+            leftMap,
+            rightMap,
+            headerLeft,
+            headerRight,
+            carouselText,
+            onPrev,
+            onNext,
+            explainerText,
+          } = opts;
+
+          container.html("");
+          const root = container
+            .append("div")
+            .attr("class", "wc-compare-root");
+          const plotCard = root
+            .append("div")
+            .attr("class", "wc-compare-plot-card");
+
+          const header = plotCard
+            .append("div")
+            .attr("class", "wc-compare-header");
+          header
+            .append("h2")
+            .attr("class", "wc-compare-title")
+            .text(el.name);
+          header
+            .append("p")
+            .attr("class", "wc-compare-description")
+            .text(cleanDesc(el.description));
+
+          const grid = plotCard
+            .append("div")
+            .attr("class", "wc-compare-grid");
+
+          grid.append("div"); // empty corner
+
+          // Header cells — either text or dropdown widget.
+          [headerLeft, headerRight].forEach((spec) => {
+            const cell = grid.append("div");
+            if (typeof spec === "function") {
+              cell.attr("class", "wc-explorer-dropdown-cell");
+              spec(cell);
+            } else {
+              cell
+                .attr("class", "wc-compare-col-header")
+                .text(spec);
+            }
+          });
+
+          // Build aggregated cats from BOTH maps so an axis row is
+          // always shown even if one side has no data for a category.
+          const catSet = new Set();
+          [leftMap, rightMap].forEach((m) => {
+            if (m && typeof m.forEach === "function") {
+              m.forEach((_p, c) => catSet.add(c));
+            }
+          });
+          // Also include any categories from el.categoryDescriptions.
+          if (
+            el.categoryDescriptions &&
+            typeof el.categoryDescriptions.forEach === "function"
+          ) {
+            el.categoryDescriptions.forEach((_d, c) => catSet.add(c));
+          }
+          const cats = [...catSet].sort((a, b) => a - b);
+          const rowOrder = cats.slice().sort((a, b) => b - a);
+
+          const palette =
+            el.valenceScore === 1
+              ? WC_COLORS_DESIRABLE
+              : WC_COLORS_UNDESIRABLE;
+
+          rowOrder.forEach((code, rowIdx) => {
+            const label =
+              el.categoryDescriptions.get(code) || "Category " + code;
+            grid
+              .append("div")
+              .attr("class", "wc-compare-cat-label")
+              .text(cleanLabel(label));
+
+            const barColor =
+              palette[Math.min(rowIdx, palette.length - 1)];
+
+            [
+              leftMap ? leftMap.get(code) || 0 : 0,
+              rightMap ? rightMap.get(code) || 0 : 0,
+            ].forEach((pct) => {
+              const cellEl = grid
+                .append("div")
+                .attr("class", "wc-compare-bar-cell");
+              const widthPct = Math.max(0, Math.min(100, pct));
+              const isEmpty = widthPct < 0.5;
+              cellEl
+                .append("div")
+                .attr(
+                  "class",
+                  "wc-compare-bar" + (isEmpty ? " is-empty" : ""),
+                )
+                .style("width", widthPct.toFixed(1) + "%")
+                .style(
+                  "background-color",
+                  isEmpty ? null : barColor,
+                );
+              cellEl
+                .append("span")
+                .attr("class", "wc-compare-pct")
+                .text(widthPct.toFixed(0) + "%");
+            });
+          });
+
+          // Axis row.
+          grid.append("div");
+          [0, 1].forEach(() => {
+            const axisCell = grid
+              .append("div")
+              .attr("class", "wc-compare-axis-cell");
+            axisCell
+              .append("div")
+              .attr("class", "wc-compare-axis-line");
+            [0, 25, 50, 75, 100].forEach((pct) => {
+              if (pct > 0 && pct < 100) {
+                axisCell
+                  .append("div")
+                  .attr("class", "wc-compare-axis-tick")
+                  .style("left", pct + "%");
+              }
+              const cls =
+                "wc-compare-axis-label" +
+                (pct === 0
+                  ? " is-edge-start"
+                  : pct === 100
+                    ? " is-edge-end"
+                    : "");
+              axisCell
+                .append("div")
+                .attr("class", cls)
+                .style("left", pct + "%")
+                .text(pct + "%");
+            });
+          });
+
+          // Carousel nav.
+          if (carouselText) {
+            const carousel = plotCard
+              .append("div")
+              .attr("class", "wc-compare-carousel");
+            carousel
+              .append("button")
+              .attr("type", "button")
+              .attr("class", "wc-compare-carousel-btn")
+              .attr("aria-label", "Previous question")
+              .html("&#9756;")
+              .on("click", onPrev);
+            carousel
+              .append("span")
+              .attr("class", "wc-compare-carousel-counter")
+              .text(carouselText);
+            carousel
+              .append("button")
+              .attr("type", "button")
+              .attr("class", "wc-compare-carousel-btn")
+              .attr("aria-label", "Next question")
+              .html("&#9758;")
+              .on("click", onNext);
+          }
+
+          if (explainerText) {
+            root
+              .append("div")
+              .attr("class", "riasec-slide-explainer")
+              .append("p")
+              .text(explainerText);
+          }
+        }
+
+        // ===========================================
+        // DIOGENES SLIDE — curated 12 questions
+        // ===========================================
+        function buildDiogenesSlide(payload) {
+          const container = d3.select("#diogenes-wc-container");
+          container.html("");
+          const { elements, characters } = payload;
+          const diogenes = (characters || []).find(
+            (c) =>
+              c &&
+              typeof c.name === "string" &&
+              c.name.toLowerCase().includes("diogenes"),
+          );
+          const diogenesSoc =
+            diogenes && diogenes.occ_code ? diogenes.occ_code : null;
+          if (!diogenesSoc) {
+            container
+              .append("p")
+              .attr("class", "wc-compare-empty")
+              .text("No SOC code on the Diogenes character record.");
+            return;
+          }
+          const charSocs = (characters || [])
+            .map((c) => c && c.occ_code)
+            .filter(Boolean);
+          const charSocsSet = new Set(charSocs);
+
+          const CURATED_QUESTIONS = [
+            "Spend Time Standing",
+            "Freedom to Make Decisions",
+            "Exposed to Hazardous Conditions",
+            "Exposed to Minor Burns, Cuts, Bites, or Stings",
+            "Exposed to Contaminants",
+            "Exposed to Very Hot or Cold Temperature",
+            "Physical Proximity",
+            "Pace Determined by Speed of Equipment",
+            "Exposed to Cramped Work Space, Awkward Positions",
+            "Sounds, Noise Levels",
+            "Spend Time Bending or Twisting",
+            "Spend Time Making Repetitive Motions",
+          ];
+
+          const eligible = (elements || []).filter(
+            (el) =>
+              el &&
+              el.categoriesBySoc &&
+              el.categoriesBySoc.has(diogenesSoc),
+          );
+          const cyclable = CURATED_QUESTIONS.map((needle) => {
+            const n = needle.toLowerCase();
+            return eligible.find(
+              (el) => (el.name || "").toLowerCase().indexOf(n) !== -1,
+            );
+          }).filter(Boolean);
+
+          if (cyclable.length === 0) {
+            container
+              .append("p")
+              .attr("class", "wc-compare-empty")
+              .text("None of the curated questions matched.");
+            return;
+          }
+
+          let idx = 0;
+          function step(delta) {
+            idx = (idx + delta + cyclable.length) % cyclable.length;
+            render();
+          }
+          function render() {
+            const el = cyclable[idx];
+            // Underworld average for this element.
+            const cats = [];
+            const catSet = new Set();
+            el.categoriesBySoc.forEach((m) =>
+              m.forEach((_p, c) => catSet.add(c)),
+            );
+            [...catSet].forEach((c) => cats.push(c));
+            cats.sort((a, b) => a - b);
+            const sums = Object.create(null);
+            cats.forEach((c) => (sums[c] = 0));
+            let n = 0;
+            charSocs.forEach((soc) => {
+              const m = el.categoriesBySoc.get(soc);
+              if (!m) return;
+              n++;
+              cats.forEach((c) => {
+                sums[c] += m.get(c) || 0;
+              });
+            });
+            const underMap = new Map();
+            cats.forEach((c) =>
+              underMap.set(c, n > 0 ? sums[c] / n : 0),
+            );
+            const dioMap = el.categoriesBySoc.get(diogenesSoc);
+            renderTwoBarComparison({
+              container,
+              el,
+              leftMap: dioMap,
+              rightMap: underMap,
+              headerLeft: "Diogenes (CEO)",
+              headerRight: "Underworld Average",
+              carouselText:
+                "Question " +
+                romanize(idx + 1) +
+                " of " +
+                romanize(cyclable.length),
+              onPrev: () => step(-1),
+              onNext: () => step(1),
+              explainerText:
+                "O*NET work-context data indicates that workers in " +
+                "Diogenes' modern occupation enjoy substantially " +
+                "better working conditions than the average figure " +
+                "in Rabelais's underworld.",
+            });
+          }
+          render();
+        }
+
+        // ===========================================
+        // EXPLORER SLIDE — pick any two SOCs, all questions
+        // ===========================================
+        function buildExplorerSlide(payload) {
+          const container = d3.select("#explorer-wc-container");
+          container.html("");
+          const { elements, characters } = payload;
+
+          // Build SOC → title map from every source we have. Characters
+          // give us underworld figures' SOCs + titles; hierarchical_data
+          // (when present) supplies BLS OEWS titles for the rest.
+          const socTitles = new Map();
+          (characters || []).forEach((c) => {
+            if (c && c.occ_code && c.occ_title) {
+              socTitles.set(c.occ_code, c.occ_title);
+            }
+          });
+          if (Array.isArray(payload.hierarchical_data)) {
+            payload.hierarchical_data.forEach((row) => {
+              if (row && row.OCC_CODE && row.OCC_TITLE) {
+                if (!socTitles.has(row.OCC_CODE)) {
+                  socTitles.set(row.OCC_CODE, row.OCC_TITLE);
+                }
+              }
+            });
+          }
+
+          // Universe of SOCs present in ANY element's per-SOC data.
+          const socSet = new Set();
+          (elements || []).forEach((el) => {
+            if (el && el.categoriesBySoc) {
+              el.categoriesBySoc.forEach((_m, soc) => socSet.add(soc));
+            }
+          });
+          const socList = [...socSet]
+            .map((code) => ({
+              code,
+              title: socTitles.get(code) || "(SOC " + code + ")",
+            }))
+            .sort((a, b) => a.title.localeCompare(b.title));
+
+          if (socList.length === 0 || (elements || []).length === 0) {
+            container
+              .append("p")
+              .attr("class", "wc-compare-empty")
+              .text("No work-context data available.");
+            return;
+          }
+
+          // Default selection: Chief Executives (Diogenes) vs.
+          // Tailors / Custom Sewers (Alexander) if available.
+          function findSoc(needle) {
+            const n = needle.toLowerCase();
+            const hit = socList.find(
+              (s) =>
+                s.code === needle ||
+                s.title.toLowerCase().indexOf(n) !== -1,
+            );
+            return hit ? hit.code : socList[0].code;
+          }
+          let leftSoc = findSoc("11-1011"); // Chief Executives
+          let rightSoc = findSoc("Tailors, Dressmakers");
+
+          // Carousel: ALL elements, alphabetical.
+          const cyclable = (elements || [])
+            .slice()
+            .sort((a, b) =>
+              (a.name || "").localeCompare(b.name || ""),
+            );
+          let idx = 0;
+
+          function step(delta) {
+            idx = (idx + delta + cyclable.length) % cyclable.length;
+            render();
+          }
+
+          function buildDropdown(side) {
+            return function (cell) {
+              const initial =
+                side === "left" ? leftSoc : rightSoc;
+              cell
+                .append("span")
+                .attr("class", "wc-explorer-dropdown-mini-label")
+                .text(
+                  side === "left" ? "Occupation A" : "Occupation B",
+                );
+              const sel = cell
+                .append("select")
+                .attr("class", "wc-explorer-dropdown")
+                .on("change", function () {
+                  if (side === "left") leftSoc = this.value;
+                  else rightSoc = this.value;
+                  render();
+                });
+              socList.forEach((s) => {
+                sel
+                  .append("option")
+                  .attr("value", s.code)
+                  .property("selected", s.code === initial)
+                  .text(s.title + " (" + s.code + ")");
+              });
+            };
+          }
+
+          function render() {
+            const el = cyclable[idx];
+            const leftMap = el.categoriesBySoc.get(leftSoc) || new Map();
+            const rightMap =
+              el.categoriesBySoc.get(rightSoc) || new Map();
+            renderTwoBarComparison({
+              container,
+              el,
+              leftMap,
+              rightMap,
+              headerLeft: buildDropdown("left"),
+              headerRight: buildDropdown("right"),
+              carouselText:
+                "Question " +
+                romanize(idx + 1) +
+                " of " +
+                romanize(cyclable.length),
+              onPrev: () => step(-1),
+              onNext: () => step(1),
+              explainerText: null,
+            });
+          }
+          render();
+        }
+
+        // ===========================================
+        // BUILD WORK-CONTEXT PAYLOAD (same shape as labor-market.html)
+        // ===========================================
+        function buildPayload(data) {
+          if (
+            !data ||
+            !data.work_context_data ||
+            !Array.isArray(data.work_context_data)
+          ) {
+            return null;
+          }
+          const elementsById = new Map();
+          data.work_context_data.forEach((row) => {
+            const elId = row.element_id;
+            if (!elId) return;
+            if (!elementsById.has(elId)) {
+              elementsById.set(elId, {
+                id: elId,
+                name: row.element_name || elId,
+                description: row.element_description || "",
+                valenceScore: parseInt(row.valence_score) || 0,
+                categoriesBySoc: new Map(),
+                categoryDescriptions: new Map(),
+              });
+            }
+            const el = elementsById.get(elId);
+            const soc = row.soc_2018_code;
+            const cat = parseInt(row.category);
+            if (!isNaN(cat) && row.category_percentage != null) {
+              if (!el.categoriesBySoc.has(soc))
+                el.categoriesBySoc.set(soc, new Map());
+              el.categoriesBySoc
+                .get(soc)
+                .set(cat, parseFloat(row.category_percentage) || 0);
+              if (
+                !el.categoryDescriptions.has(cat) &&
+                row.category_description
+              )
+                el.categoryDescriptions.set(
+                  cat,
+                  row.category_description,
+                );
+            }
+          });
+          const elements = Array.from(elementsById.values()).filter(
+            (el) => el.categoriesBySoc.size > 0,
+          );
+          return {
+            elements,
+            characters: data.characters || [],
+            hierarchical_data: data.hierarchical_data || [],
+          };
+        }
+
+        function showError(msg) {
+          d3.selectAll("#diogenes-wc-container, #explorer-wc-container")
+            .html("")
+            .append("p")
+            .attr("class", "wc-compare-empty")
+            .text(msg);
+        }
+
+        fetch(API_URL)
+          .then((r) => {
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            return r.json();
+          })
+          .then((data) => {
+            if (!data || !data.success) {
+              throw new Error(data?.error || "Server error");
+            }
+            const payload = buildPayload(data);
+            if (!payload || payload.elements.length === 0) {
+              showError("No work-context data in API response.");
+              return;
+            }
+            buildDiogenesSlide(payload);
+            buildExplorerSlide(payload);
+          })
+          .catch((err) => {
+            console.error("wc-compare-explorer load failed:", err);
+            showError("Could not load data: " + err.message);
+          });
+      })();
+    </script>
+  </body>
+</html>

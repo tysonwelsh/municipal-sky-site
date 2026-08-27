@@ -1,0 +1,189 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 300" role="img"
+     aria-label="A backlit arcade credit button: a charcoal coin-door housing around a glowing blue lens printed PUSH FOR JUNK">
+  <!-- THE TAKE-A-TURN OBJECT — candidate 9a, "the credit window" (owner's pick,
+       PLAN-TURN-OBJECT round 9, 2026-08-11), shipped BLUE with PUSH FOR JUNK
+       printed on the lens. Lifted from mockups/mockup-9a-credit-window.html;
+       only the shipping colour (amber → blue) and the label wording changed.
+
+       A backlit coin-door credit button in plan view: the charcoal housing
+       steps down through a bevel to a dark well; the translucent blue lens
+       rides one step proud of it, lit from behind; PUSH FOR JUNK is printed
+       on the lens in dark ink so the backlight silhouettes it, under the
+       reference hardware's two thick bars.
+
+       Ink is edge to edge: the housing spans x 20..220 / y 25..275 (83% of
+       the box both axes — the size math measures hardware) and the light
+       halo carries the ink to x 2..238 / y 2..298, under 1% dead margin on
+       the worst side. The halo is genuine artwork, not padding: it is the
+       light this object throws on the drawer floor, and the reason the
+       button no longer camouflages as collection.
+
+       No <script>, no on* handlers, no foreignObject, no external references,
+       NO SMIL. Every glowing/moving part is a NAMED GROUP that
+       junk-drawer.css drives:
+         .cw-halo     — the pool of lens-light on the wood, UNDER the housing
+         .cw-bloom    — light creeping over the bevel edges nearest the lens
+         .cw-lens     — the lens itself; the press sinks it (origin 120,150)
+         .cw-glowcore — the hot centre of the backlight, inside the lens
+         .cw-dim      — a lens-shaped veil of the lens's own deep blue, over
+                        the glowcore but UNDER the printed ink; opacity 0 AS
+                        AN ATTRIBUTE (correct still). The idle pulse drives
+                        it INVERSE to the glow: the lens ramp's hot stops
+                        leave the white core no headroom to brighten, so the
+                        visible half of the breath is this veil darkening the
+                        lit ground at the trough while the ink holds.
+         .cw-flash    — the press flare, opacity 0 AS AN ATTRIBUTE so the
+                        asset is a correct still with no stylesheet at all
+       The motion is page CSS and not SMIL precisely so prefers-reduced-motion
+       can switch it off; a baked-in animation could not be.
+
+       Every id is prefixed cw_ and every class uses cw- (hyphen), so the
+       pile's per-copy id namespacing (JD_svgInst) can re-prefix the ids
+       without ever touching a class the stylesheet depends on. The stop
+       classes cw-g0..3 (lens ramp), cw-h0..3 (halo), cw-c0..2 (glow core)
+       plus the .cw-rim / .cw-bloom-ink strokes are the lens-colour variant
+       hooks (blue ships as presentation attributes; a variant is a few
+       stop-color overrides on a host class, db-b0..4 precedent). -->
+  <defs>
+    <!-- the spilled light: hot near the housing, gone by the box edge -->
+    <radialGradient id="cw_halog" cx="0.5" cy="0.5" r="0.5">
+      <stop class="cw-h0" offset="0"    stop-color="#3fb0ff" stop-opacity="0.9"/>
+      <stop class="cw-h1" offset="0.55" stop-color="#3fb0ff" stop-opacity="0.7"/>
+      <stop class="cw-h2" offset="0.85" stop-color="#3fb0ff" stop-opacity="0.5"/>
+      <stop class="cw-h3" offset="1"    stop-color="#3fb0ff" stop-opacity="0"/>
+    </radialGradient>
+    <!-- charcoal housing: top-left catches the drawer's light, falls to
+         near-black lower-right — plan-view depth, no tilt -->
+    <linearGradient id="cw_houseg" x1="0.12" y1="0.06" x2="0.86" y2="0.96">
+      <stop offset="0"   stop-color="#524e58"/>
+      <stop offset="0.5" stop-color="#2b2830"/>
+      <stop offset="1"   stop-color="#141218"/>
+    </linearGradient>
+    <linearGradient id="cw_faceg" x1="0.14" y1="0.08" x2="0.84" y2="0.94">
+      <stop offset="0"   stop-color="#3d3a43"/>
+      <stop offset="1"   stop-color="#1e1c22"/>
+    </linearGradient>
+    <!-- the well the lens sits in: a dark step down -->
+    <radialGradient id="cw_wellg" cx="0.5" cy="0.45" r="0.75">
+      <stop offset="0"   stop-color="#17151b"/>
+      <stop offset="1"   stop-color="#050408"/>
+    </radialGradient>
+    <!-- the lens: hot backlit centre falling to saturated edges -->
+    <radialGradient id="cw_lensg" cx="0.5" cy="0.42" r="0.75">
+      <stop class="cw-g0" offset="0"    stop-color="#e4f6ff"/>
+      <stop class="cw-g1" offset="0.3"  stop-color="#85d2ff"/>
+      <stop class="cw-g2" offset="0.68" stop-color="#1f8ee4"/>
+      <stop class="cw-g3" offset="1"    stop-color="#0b539e"/>
+    </radialGradient>
+    <!-- the bulb behind the plastic -->
+    <radialGradient id="cw_coreg" cx="0.5" cy="0.5" r="0.5">
+      <stop class="cw-c0" offset="0"    stop-color="#ecf8ff" stop-opacity="0.95"/>
+      <stop class="cw-c1" offset="0.55" stop-color="#ecf8ff" stop-opacity="0.4"/>
+      <stop class="cw-c2" offset="1"    stop-color="#ecf8ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cw_flashg" cx="0.5" cy="0.46" r="0.62">
+      <stop offset="0"    stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="0.5"  stop-color="#fff3c8" stop-opacity="0.85"/>
+      <stop offset="1"    stop-color="#ffe08a" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="cw_lensclip"><rect x="54" y="62" width="132" height="176" rx="10"/></clipPath>
+  </defs>
+
+  <!-- ============ contact shadow: the housing pools its own dark =========
+       Painted FIRST, then the light over it (reordered 2026-08-11): a
+       shadow above the halo cut the pool with a hard dark edge down-right,
+       reading as glow tucked UNDER the casing. Light washes shadow out, so
+       it also softens: the glow owns the floor, the shadow only grounds
+       the housing. -->
+  <rect x="26" y="33" width="200" height="250" rx="20" fill="#1a0a03" opacity="0.3"/>
+
+  <!-- ============ the light on the wood (over the shadow, under the
+       hardware) ============ -->
+  <g class="cw-halo" opacity="0.85">
+    <ellipse cx="120" cy="150" rx="118" ry="148" fill="url(#cw_halog)"/>
+  </g>
+
+  <!-- ============ the housing: chunky coin-door plastic, plan view ======= -->
+  <rect x="20" y="25" width="200" height="250" rx="20"
+        fill="url(#cw_houseg)" stroke="#08070a" stroke-width="4"/>
+  <!-- top face plateau, one step in -->
+  <rect x="30" y="35" width="180" height="230" rx="14" fill="url(#cw_faceg)"/>
+  <!-- the arris: light catch upper-left, shade lower-right -->
+  <path d="M42 258 Q30 250 30 232 L30 49 Q30 35 44 35 L196 35" fill="none"
+        stroke="#8e94a2" stroke-opacity="0.4" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M198 42 Q210 50 210 68 L210 251 Q210 265 196 265 L44 265" fill="none"
+        stroke="#000000" stroke-opacity="0.55" stroke-width="3" stroke-linecap="round"/>
+  <!-- snap-clip notches, the coin-door tell -->
+  <rect x="14" y="130" width="8" height="40" rx="3" fill="#1c1a20" stroke="#08070a" stroke-width="2"/>
+  <rect x="218" y="130" width="8" height="40" rx="3" fill="#1c1a20" stroke="#08070a" stroke-width="2"/>
+
+  <!-- ============ the bevel step down into the lens well ================= -->
+  <rect x="46" y="54" width="148" height="192" rx="12" fill="url(#cw_wellg)"
+        stroke="#000000" stroke-opacity="0.7" stroke-width="2.5"/>
+  <!-- bevel arris highlight, upper-left only -->
+  <path d="M52 236 Q46 230 46 218 L46 68 Q46 54 60 54 L182 54" fill="none"
+        stroke="#6b7078" stroke-opacity="0.35" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- ============ light creeping over the step edge ====================== -->
+  <g class="cw-bloom" opacity="0.7">
+    <rect class="cw-bloom-ink" x="46" y="54" width="148" height="192" rx="12"
+          fill="none" stroke="#79ccff" stroke-width="6" opacity="0.4"/>
+    <rect class="cw-bloom-ink" x="38" y="46" width="164" height="208" rx="15"
+          fill="none" stroke="#79ccff" stroke-width="10" opacity="0.14"/>
+  </g>
+
+  <!-- ============ THE LENS: raised, backlit, printed ===================== -->
+  <g class="cw-lens">
+    <rect class="cw-rim" x="54" y="62" width="132" height="176" rx="10"
+          fill="url(#cw_lensg)" stroke="#093f78" stroke-width="3"/>
+    <!-- the bulb behind the plastic; page CSS breathes this -->
+    <g class="cw-glowcore" opacity="0.7">
+      <ellipse cx="120" cy="142" rx="80" ry="102" fill="url(#cw_coreg)"
+               clip-path="url(#cw_lensclip)"/>
+    </g>
+    <!-- the breathing shade (see the map above) — fill is the cw-g3 edge
+         blue; a colour variant overrides it with a .cw-dim fill rule the
+         same way it overrides the stop hooks -->
+    <rect class="cw-dim" x="54" y="62" width="132" height="176" rx="10"
+          fill="#0b539e" opacity="0" pointer-events="none"/>
+
+    <!-- the printed art: impression echo first, then the ink -->
+    <g clip-path="url(#cw_lensclip)"
+       font-family="'Arial Narrow', 'Franklin Gothic Medium', Impact, sans-serif"
+       font-weight="700" text-anchor="middle">
+      <!-- screened-ink impression: same art, nudged, warm dark, faint -->
+      <g fill="#7c4a08" opacity="0.38" transform="translate(1.6 1.6)">
+        <rect x="78" y="88"  width="84" height="10" rx="2"/>
+        <rect x="78" y="104" width="84" height="10" rx="2"/>
+        <text x="120" y="164" font-size="31" letter-spacing="1"
+              textLength="104" lengthAdjust="spacingAndGlyphs">PUSH FOR</text>
+        <text x="120" y="216" font-size="50" letter-spacing="2"
+              textLength="100" lengthAdjust="spacingAndGlyphs">JUNK</text>
+      </g>
+      <!-- the ink itself: near-black, warm, variant-independent -->
+      <g fill="#241505">
+        <rect x="78" y="88"  width="84" height="10" rx="2"/>
+        <rect x="78" y="104" width="84" height="10" rx="2"/>
+        <text x="120" y="164" font-size="31" letter-spacing="1"
+              textLength="104" lengthAdjust="spacingAndGlyphs">PUSH FOR</text>
+        <text x="120" y="216" font-size="50" letter-spacing="2"
+              textLength="100" lengthAdjust="spacingAndGlyphs">JUNK</text>
+      </g>
+    </g>
+
+    <!-- raised-plastic reads: edge light upper-left, edge shade lower-right,
+         one diagonal gloss streak -->
+    <path d="M60 226 Q57 223 57 214 L57 74 Q57 65 66 65 L172 65" fill="none"
+          stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M180 76 Q183 79 183 88 L183 226 Q183 235 174 235 L70 235" fill="none"
+          stroke="#093f78" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round"/>
+    <g clip-path="url(#cw_lensclip)">
+      <path d="M40 120 L128 32 L156 32 L52 148 Z" fill="#ffffff" opacity="0.16"/>
+      <path d="M56 160 L168 44 L180 44 L62 176 Z" fill="#ffffff" opacity="0.08"/>
+    </g>
+
+    <!-- the press flare — opacity 0 AS AN ATTRIBUTE (correct still) -->
+    <rect class="cw-flash" x="54" y="62" width="132" height="176" rx="10"
+          fill="url(#cw_flashg)" opacity="0" pointer-events="none"/>
+  </g>
+</svg>

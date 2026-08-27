@@ -1,0 +1,3638 @@
+// ============================================================================
+// KOLOB 𐐗𐐄𐐢𐐉𐐒 — an American-utopian aleatoric hymn-engine (audio)
+//
+// A generative jukebox in the lineage of Prospero's Jukebox, Antariksh, ZANKYŌ
+// and BARDO — but this one is close to home: the meetinghouse of a functioning
+// colony out at the rim of Kolob's light. Bright where its siblings are dark.
+// The congregation is out in the fields; the organ still plays prelude; the
+// telegraph taps hymns toward home. Nothing here is derelict. Everything waits,
+// hopeful, in enormous open air.
+//
+// The traditions flowing in (informing, never quoted):
+//  · LDS hymnody + English dissenting psalmody — hymn METERS (8.6.8.6 …)
+//    govern phrase structure; plagal (IV→I "amen") cadential gravity.
+//  · Sacred Harp / camp-meeting — dispersed harmony (parallel fifths LEGAL and
+//    lightly rewarded), open/third-less voicings, gapped scales, FUGING
+//    entries, LINING-OUT call-and-response.
+//  · Aaron Copland — open fifths, prairie strings, clarinet clarity.
+//  · John Cage — chance as diegetic oracle (the LIAHONA), scheduled true
+//    silence (the stillness), muted-tine prepared-piano timbre.
+//  · La Monte Young (Bern, Idaho) — 5-limit just intonation over a fixed
+//    tonic; pure sine drones that never stop. The ambient anchor.
+//
+// Architecture (what makes this one different from its siblings):
+//  · A real FOUR-PART HARMONY engine: SATB voice-leading (common tones kept,
+//    parallel octaves rejected, parallel fifths rewarded — the tradition).
+//  · A hymn-meter PROSODY engine: melodic phrases are poured into metrical
+//    lines with fermatas and breath at the line ends.
+//  · THE AIR: a courtesy protocol. Melodic voices claim the open air before
+//    speaking and defer while another holds it. Space is structural here —
+//    as expansive as the frontier. If a motif never gets its turn in a
+//    session, that is the piece working.
+//  · Sections: prelude → invocation → hymn×n → testimony → sacrament →
+//    doxology → postlude, conducted by THE CHORISTER; meetings drift across
+//    META-SEASONS (ordinary / fast day / conference / jubilee).
+//  · Everything seeded (mulberry32): a meeting is reproducible and shareable.
+//
+// Layers: organ, drone, choir, clarinet, bagpipe, harmonium, strings, bells,
+// voice, telegraph, ambient.   Public surface: window.KolobAudio
+// ============================================================================
+
+window.KolobAudio = (function () {
+  "use strict";
+
+  // ----- Core audio graph -----
+  var ctx = null;
+  var masterGain = null, compressorNode = null, masterSat = null, glueComp = null;
+  var bg = null;                   // background-audio handle (lock-screen survival)
+  // droneDuck sits between the drone layer and the hall: the stillness pulls
+  // ONLY the drone's ground away (the volume slider owns layerGains.drone, so
+  // the automation lives on its own node and the two never fight)
+  var droneDuck = null;
+  // voicesBus sits between every layer path and the master. STOP silences it
+  // and LEAVES it silent — long drone cycles keep their oscillators running
+  // for up to 90s after a stop, and the siblings' pattern of restoring the
+  // master gain after the fade let them come back from the dead. Not here.
+  var voicesBus = null;
+  // Two spaces: the TABERNACLE (vast, bright, famous pin-drop hall) and the
+  // PARLOR (close, warm, a front room with a pump organ).
+  var tabSend = null, tabDry = null, tabWet = null, tabConv = null, tabPre = null;
+  var parSend = null, parDry = null, parWet = null, parConv = null, parPre = null;
+  var sharedNoiseBuf = null;
+  var NOISE_BUF_DURATION = 30;
+
+  var playing = false;
+  var masterVolume = 0.6;
+
+  // ==========================================================================
+  // SEEDED RNG — every choice flows through rng(); meetings are reproducible.
+  // ==========================================================================
+  var seed = (function () {
+    try {
+      if (typeof location !== "undefined" && location.search) {
+        var m = location.search.match(/[?&]seed=(\d+)/);
+        if (m) return (parseInt(m[1], 10) >>> 0) || 1847;
+      }
+    } catch (e) {}
+    return (Date.now() % 0xffffffff) >>> 0;
+  })();
+  var rngState = seed;
+  function mulberry32() {
+    rngState |= 0; rngState = (rngState + 0x6D2B79F5) | 0;
+    var t = Math.imul(rngState ^ (rngState >>> 15), 1 | rngState);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+  function rng() { return mulberry32(); }
+  function rnd(a, b) { return a + rng() * (b - a); }
+  function rint(a, b) { return Math.floor(rnd(a, b + 1)); }
+  function chance(p) { return rng() < p; }
+  function pick(arr) { return arr[Math.floor(rng() * arr.length)]; }
+  function pickW(pool) {              // pool = [[value, weight], ...]
+    var total = 0, i;
+    for (i = 0; i < pool.length; i++) total += pool[i][1];
+    var r = rng() * total;
+    for (i = 0; i < pool.length; i++) { r -= pool[i][1]; if (r <= 0) return pool[i][0]; }
+    return pool[pool.length - 1][0];
+  }
+
+  // ==========================================================================
+  // TUNING — 5-limit just intonation over a fixed per-meeting tonic.
+  // ==========================================================================
+  // Everything is a ratio of F0 (La Monte Young's discipline). The COLLECTION
+  // is the meeting's mode — hymnbook major, the English folk modes, and the
+  // gapped folk-hymn scales. One gesture pool is authored in 7-degree space
+  // and projected onto smaller collections via DEG_MAP.
+  var F0 = 65;                                   // set per meeting in planMeeting()
+  var ROOT_MULT = 4;                             // melodic root = F0 * 4 (~260 Hz)
+  var COLLECTIONS = {
+    ionian:     { ratios: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8], map: [0,1,2,3,4,5,6] },
+    mixolydian: { ratios: [1, 9/8, 5/4, 4/3, 3/2, 5/3, 16/9], map: [0,1,2,3,4,5,6] },
+    dorian:     { ratios: [1, 9/8, 6/5, 4/3, 3/2, 5/3, 16/9], map: [0,1,2,3,4,5,6] },
+    aeolian:    { ratios: [1, 9/8, 6/5, 4/3, 3/2, 8/5, 16/9], map: [0,1,2,3,4,5,6] },
+    penta:      { ratios: [1, 9/8, 5/4, 3/2, 5/3],            map: [0,1,2,2,3,4,4] },
+    hexa:       { ratios: [1, 9/8, 5/4, 4/3, 3/2, 5/3],       map: [0,1,2,3,4,5,5] },
+  };
+  var MODE_NAMES = Object.keys(COLLECTIONS);
+  var mode = "ionian";
+  function COL() { return COLLECTIONS[mode]; }
+  function colN() { return COL().ratios.length; }
+  // Project a 7-degree index (gestures, chord roots) into the current collection.
+  function projDeg(d7) {
+    var n = colN();
+    if (n === 7) return d7;
+    var oct = Math.floor(d7 / 7);
+    var d = ((d7 % 7) + 7) % 7;
+    return COL().map[d] + oct * n;
+  }
+  function degFreq(i) {                          // i = collection-degree index; octaves fold at n
+    var n = colN();
+    var oct = Math.floor(i / n);
+    var d = ((i % n) + n) % n;
+    return F0 * ROOT_MULT * COL().ratios[d] * Math.pow(2, oct);
+  }
+  // Ascending frequency table across ~3.5 octaves for nearest-pitch work.
+  var SCALE = [];
+  function rebuildScale() {
+    SCALE.length = 0;
+    var n = colN();
+    for (var i = -2 * n; i <= 2 * n + 3; i++) SCALE.push({ deg: ((i % n) + n) % n, idx: i, freq: degFreq(i) });
+  }
+  function scaleIndexOf(i) {
+    for (var k = 0; k < SCALE.length; k++) if (SCALE[k].idx === i) return k;
+    return Math.floor(SCALE.length / 2);
+  }
+  function harm(h) { return F0 * h; }            // harmonic h of the fundamental
+  // Gravity: do and sol. Phrases rest on do / mi / sol (collection-degree classes).
+  function gravityDegs() { var n = colN(); return n === 5 ? { 0: true, 3: true } : { 0: true, 4: true }; }
+  function restDegs() { var n = colN(); return n === 5 ? { 0: true, 2: true, 3: true } : { 0: true, 2: true, 4: true }; }
+
+  // ==========================================================================
+  // LAYERS + STATE
+  // ==========================================================================
+  // NOTE: "tuba" is RESERVED FOR THE RASPBERRY AMEN ONLY — see tubaBlat().
+  var LAYERS = ["organ", "drone", "choir", "clarinet", "bagpipe", "harmonium", "strings", "bells", "voice", "telegraph", "tuba", "ambient"];
+  var PARLOR_SPACE = { harmonium: true, telegraph: true };  // close and warm; the rest sing in the tabernacle
+  var DRY_CLOSE = { voice: true };                          // the still small voice, near the ear
+
+  var layerGains = {};
+  var layerVolumes = { organ: 0.52, drone: 0.55, choir: 0.8, clarinet: 0.38, bagpipe: 0.18, harmonium: 0.45, strings: 0.5, bells: 0.5, voice: 0.35, telegraph: 0.25, tuba: 0.5, ambient: 0.5 };
+  var layerMuted = {}; LAYERS.forEach(function (l) { layerMuted[l] = false; });
+  var layerRate = {}; LAYERS.forEach(function (l) { layerRate[l] = 1; });
+
+  // FIELD — the ambient layer is one bus, but each of its events (wind, crickets,
+  // …) now rides its own gain so they can be balanced individually. The event's
+  // gain × the ambient bus gives its level; defaults preserve the old sound.
+  var FIELD_KEYS = ["wind", "crickets", "clock", "fork", "rain", "coyote", "bell", "beacon"];
+  var fieldVolumes = { wind: 2, crickets: 1.52, clock: 1, fork: 1, rain: 2, coyote: 2, bell: 1.56, beacon: 1.38 };
+  var fieldMuted = {};
+  var fieldGains = {};                            // key -> GainNode (lazily built)
+
+  var LAYER_PARAM_DEFAULTS = {
+    organ:     { stops: 0.5, tremulant: 0.15, pedal: 0.6 },
+    drone:     { presence: 0.5, fifth: 0.4 },
+    choir:     { size: 3, vowel: 0.4, scoop: 0.5 },
+    clarinet:  { vibrato: 0.4, pace: 1.0, grace: 0.5 },
+    bagpipe:   { grit: 0.42, reed: 0.5, breath: 0.32, pace: 1.0 },
+    harmonium: { bellows: 0.5, reed: 0.5, shadow: 0.5 },
+    strings:   { warmth: 0.5, lonesome: 0.4 },
+    bells:     { ring: 0.55, tine: 0.5 },
+    voice:     { presence: 0.4, syllables: 0.4 },
+    telegraph: { clack: 0.5 },
+    ambient:   {},
+  };
+  var layerParams = JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS));
+  // telegraph 0.5: the wire should be an occasional visitor, not a speaker —
+  // half the event density while its RATE slider still reads a clean 1.00x.
+  var LAYER_RATE_TRIM = { telegraph: 0.5, bells: 0.7 };
+  // voice 1.35: the still small voice sat too low in the mix — lift it ~50%
+  // in the room without moving its slider (the slider reads layerVolumes, this
+  // trim rides on top).
+  // clarinet 0.72 / bagpipe 0.49: both sat too loud in the mix. voice 9.0:
+  // lifted further by owner request — but the trim was never the reason the
+  // voice stayed faint (see the source peak in stillVoiceRender); this rides on
+  // top of that source lift. bells 0.8: pulled down 20% by owner request.
+  // telegraph 1.5: the wire lifted 50% so its taps carry. The trims seat each
+  // while the sliders still read their usual positions.
+  var LAYER_VOL_TRIM = { choir: 1.1, voice: 9.0, bagpipe: 0.44, clarinet: 0.72, bells: 0.8, telegraph: 1.5 };
+
+  // The tabernacle is brighter than Bardo's nave (hfDamp 0.8 vs 1.2) and
+  // breathes slowly; the parlor is small, warm, and quick to forgive.
+  // The wet is up from the pin-drop original: a fuller shared tail is the main
+  // glue that seats every voice in ONE room instead of side by side in the dry.
+  var TAB_REVERB = { decay: 7.6, preDelay: 55, wet: 0.44, hfDamp: 0.8 };
+  var PAR_REVERB = { decay: 1.6, preDelay: 18, wet: 0.30, hfDamp: 1.6 };
+
+  // ==========================================================================
+  // LISTENERS / LOG
+  // ==========================================================================
+  var noteListeners = [], eventListeners = [];
+  function emitNote(layer, freq, startTime, duration, extra) {
+    for (var i = 0; i < noteListeners.length; i++) {
+      var n = { layer: layer, freq: freq, startTime: startTime, duration: duration || 0 };
+      if (extra) { for (var ek in extra) n[ek] = extra[ek]; }   // e.g. telegraph { marks:[…] }
+      try { noteListeners[i](n); } catch (e) {}
+    }
+  }
+  function emitEvent(ev) {
+    ev.t = ctx ? ctx.currentTime : 0;
+    for (var i = 0; i < eventListeners.length; i++) {
+      try { eventListeners[i](ev); } catch (e) {}
+    }
+  }
+
+  // ==========================================================================
+  // INIT — signal chain
+  //   layers → layerGain → tabSend or parSend → dry + (preDelay→convolver→wet)
+  //   → master → masterSat (gentle tanh) → compressor → out.
+  //   NO grit bus in Zion: brightness comes from voicing and the hall, not
+  //   saturation. (The one dangerous component of the siblings, deleted.)
+  // ==========================================================================
+  function init() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+    var noiseSamples = Math.floor(ctx.sampleRate * NOISE_BUF_DURATION);
+    sharedNoiseBuf = ctx.createBuffer(1, noiseSamples, ctx.sampleRate);
+    var nd = sharedNoiseBuf.getChannelData(0);
+    for (var ni = 0; ni < noiseSamples; ni++) nd[ni] = Math.random() * 2 - 1;
+
+    masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
+    voicesBus = ctx.createGain();
+    voicesBus.gain.setValueAtTime(1, ctx.currentTime);
+    // A gentle shared "glue" compressor across the whole ensemble, before the
+    // master chain. Low ratio, wide knee, slow-ish attack: it lets the voices
+    // breathe together as one body of sound rather than a stack of separate
+    // tracks, without audibly pumping. The blend, not the level, is the point.
+    glueComp = ctx.createDynamicsCompressor();
+    glueComp.threshold.setValueAtTime(-20, ctx.currentTime);
+    glueComp.knee.setValueAtTime(22, ctx.currentTime);
+    glueComp.ratio.setValueAtTime(1.7, ctx.currentTime);
+    glueComp.attack.setValueAtTime(0.025, ctx.currentTime);
+    glueComp.release.setValueAtTime(0.22, ctx.currentTime);
+    voicesBus.connect(glueComp);
+    glueComp.connect(masterGain);
+    compressorNode = ctx.createDynamicsCompressor();
+    compressorNode.threshold.setValueAtTime(-18, ctx.currentTime);
+    compressorNode.knee.setValueAtTime(16, ctx.currentTime);
+    compressorNode.ratio.setValueAtTime(3, ctx.currentTime);
+    compressorNode.attack.setValueAtTime(0.015, ctx.currentTime);
+    compressorNode.release.setValueAtTime(0.25, ctx.currentTime);
+    masterSat = ctx.createWaveShaper();
+    var msc = new Float32Array(1024);
+    for (var mi = 0; mi < 1024; mi++) { var mx = (mi / 1023) * 2 - 1; msc[mi] = Math.tanh(mx * 1.15) / Math.tanh(1.15); }
+    masterSat.curve = msc; masterSat.oversample = "2x";
+    masterGain.connect(masterSat);
+    masterSat.connect(compressorNode);
+    // Final hop: prefer the background-audio route (a MediaStreamDestination
+    // feeding a real <audio> element — survives screen lock / backgrounding
+    // and carries lock-screen controls). Identical signal either way.
+    bg = window.MskyBackgroundAudio ? window.MskyBackgroundAudio.create({
+      context: ctx,
+      source: compressorNode,
+      title: "KOLOB 𐐗𐐄𐐢𐐉𐐒",
+      artist: "Municipal Sky",
+      artwork: "/images/kolob-share.png",
+      onPlay: play,
+      onPause: stop,
+    }) : null;
+    if (!bg || !bg.routed) compressorNode.connect(ctx.destination);
+
+    var effectsReady = false;
+    try {
+      tabSend = ctx.createGain(); tabDry = ctx.createGain(); tabWet = ctx.createGain();
+      tabConv = ctx.createConvolver(); tabPre = ctx.createDelay(0.25);
+      tabSend.connect(tabDry); tabSend.connect(tabPre); tabPre.connect(tabConv); tabConv.connect(tabWet);
+      tabDry.connect(voicesBus); tabWet.connect(voicesBus);
+      buildIR(tabConv, tabPre, tabWet, TAB_REVERB, true);
+
+      parSend = ctx.createGain(); parDry = ctx.createGain(); parWet = ctx.createGain();
+      parConv = ctx.createConvolver(); parPre = ctx.createDelay(0.25);
+      parSend.connect(parDry); parSend.connect(parPre); parPre.connect(parConv); parConv.connect(parWet);
+      parDry.connect(voicesBus); parWet.connect(voicesBus);
+      buildIR(parConv, parPre, parWet, PAR_REVERB, false);
+
+      effectsReady = true;
+    } catch (e) {
+      tabSend = ctx.createGain(); tabSend.connect(voicesBus); parSend = tabSend;
+      if (window.console) console.warn("Kolob effects init failed, dry fallback:", e);
+    }
+
+    for (var li = 0; li < LAYERS.length; li++) {
+      var layer = LAYERS[li];
+      var node = ctx.createGain();
+      node.gain.setValueAtTime(1, ctx.currentTime);
+      if (layer === "drone") {
+        droneDuck = ctx.createGain();
+        droneDuck.gain.setValueAtTime(1, ctx.currentTime);
+        node.connect(droneDuck);
+        droneDuck.connect(tabSend);
+      }
+      else if (DRY_CLOSE[layer] && effectsReady) {
+        node.connect(voicesBus);                               // intimate: mostly dry…
+        var whisper = ctx.createGain();
+        whisper.gain.setValueAtTime(0.3, ctx.currentTime);
+        node.connect(whisper); whisper.connect(tabSend);       // …with a breath of the hall
+      }
+      else if (PARLOR_SPACE[layer] && effectsReady) node.connect(parSend);
+      else node.connect(tabSend);
+      layerGains[layer] = node;
+      applyLayerGain(layer);
+    }
+  }
+
+  function buildIR(conv, pre, wet, R, breathe) {
+    var len = Math.floor(ctx.sampleRate * R.decay);
+    var buf = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (var ch = 0; ch < 2; ch++) {
+      var data = buf.getChannelData(ch);
+      var ph1 = Math.random() * Math.PI * 2;
+      for (var i = 0; i < len; i++) {
+        var t = i / ctx.sampleRate;
+        var env = Math.exp(-2.2 * t / R.decay);
+        var hf = Math.exp(-(R.hfDamp * 2.6) * t / R.decay);
+        // The tabernacle breathes — a slow swell ripple, the hall inhaling.
+        var color = breathe ? 1 + 0.07 * Math.sin(2 * Math.PI * 0.5 * t + ph1) : 1;
+        data[i] = (Math.random() * 2 - 1) * env * hf * color;
+      }
+    }
+    conv.buffer = buf;
+    pre.delayTime.setValueAtTime(R.preDelay / 1000, ctx.currentTime);
+    wet.gain.setValueAtTime(R.wet, ctx.currentTime);
+  }
+
+  // ==========================================================================
+  // SCHEDULING + HELPERS
+  // ==========================================================================
+  var timers = new Set();
+  function scheduleLayer(fn, baseMs, layer) {
+    var ms = baseMs / (getRate(layer) || 1);
+    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
+    timers.add(id);
+  }
+  function scheduleRaw(fn, ms) {
+    var id = setTimeout(function () { timers.delete(id); if (playing) fn(); }, ms);
+    timers.add(id);
+  }
+  function clearAllTimers() { timers.forEach(function (id) { clearTimeout(id); }); timers.clear(); }
+
+  var panPool = {};
+  function panAt(layer, p) {
+    var pool = panPool[layer];
+    if (!pool) {
+      // Some width for the open air, but pulled in from the old hard ±0.65
+      // slots: voices panned to the far edges read as separate tracks. Closer
+      // in, they share the centre and blend into one ensemble.
+      pool = panPool[layer] = [-0.42, 0, 0.42].map(function (pp) {
+        var sp = ctx.createStereoPanner(); sp.pan.setValueAtTime(pp, ctx.currentTime); sp.connect(layerGains[layer]); return sp;
+      });
+    }
+    var cl = p < -1 ? -1 : (p > 1 ? 1 : p);
+    return pool[cl < -0.2 ? 0 : cl > 0.2 ? 2 : 1];
+  }
+  function getRate(layer) {
+    var base = (layerRate[layer] != null ? layerRate[layer] : 1);
+    var trim = LAYER_RATE_TRIM[layer] != null ? LAYER_RATE_TRIM[layer] : 1;
+    return base * trim;
+  }
+  function getLayerParam(layer, key, fallback) {
+    if (layerParams[layer] && layerParams[layer][key] != null) return layerParams[layer][key];
+    return fallback;
+  }
+  function applyLayerGain(layer) {
+    var node = layerGains[layer];
+    if (!node) return;
+    var trim = LAYER_VOL_TRIM[layer] != null ? LAYER_VOL_TRIM[layer] : 1;
+    node.gain.setValueAtTime(layerMuted[layer] ? 0 : layerVolumes[layer] * trim, ctx.currentTime);
+  }
+  function applyFieldGain(key) {
+    var fg = fieldGains[key];
+    if (fg && ctx) fg.gain.setValueAtTime(fieldMuted[key] ? 0 : fieldVolumes[key], ctx.currentTime);
+  }
+  // a per-event destination on the FIELD bus: <event gain> -> ambient layer gain,
+  // so every field sound keeps the ambient routing (reverb) but its own level.
+  function fieldDest(key, pan) {
+    var fg = fieldGains[key];
+    if (!fg) {
+      fg = ctx.createGain();
+      fg.connect(layerGains.ambient);
+      fieldGains[key] = fg;
+      applyFieldGain(key);
+    }
+    var sp = ctx.createStereoPanner();
+    sp.pan.setValueAtTime(pan < -1 ? -1 : pan > 1 ? 1 : pan, ctx.currentTime);
+    sp.connect(fg);
+    return sp;
+  }
+  function noiseSource() {
+    var n = ctx.createBufferSource();
+    n.buffer = sharedNoiseBuf; n.loop = true;
+    n.loopStart = 0; n.loopEnd = NOISE_BUF_DURATION;
+    return n;
+  }
+  function noiseOffset() { return rng() * 20; }
+  // Click-safe gain envelope: always from true zero, linear on/off ramps.
+  function env(g, t, pts) {
+    g.gain.setValueAtTime(0, t);
+    var tt = t;
+    for (var i = 0; i < pts.length; i++) { tt += pts[i][0]; g.gain.linearRampToValueAtTime(pts[i][1], tt); }
+    return tt;
+  }
+
+  // ==========================================================================
+  // THE AIR — the courtesy protocol. This engine's answer to clutter.
+  // ==========================================================================
+  // A melodic voice claims the air for the length of its phrase plus a margin
+  // of silence after; other melodic voices defer and try again later. In hymn
+  // sections two voices may share the air (lining-out is a conversation);
+  // everywhere else, one speaker at a time and real space between speeches.
+  // The landscape voices (organ, drone, strings) never claim it — they are
+  // the prairie the speeches happen in.
+  var air = { busyUntil: 0, holders: 0 };
+  function airLimit() { return C.section === "hymn" || C.section === "doxology" ? 2 : 1; }
+  function airFree() {
+    if (!ctx) return true;
+    if (ctx.currentTime >= air.busyUntil) { air.holders = 0; return true; }
+    return air.holders < airLimit();
+  }
+  function claimAir(durS, marginS) {
+    if (!ctx) return;
+    var until = ctx.currentTime + durS + (marginS != null ? marginS : rnd(3, 8));
+    if (ctx.currentTime >= air.busyUntil) air.holders = 1;
+    else air.holders++;
+    air.busyUntil = Math.max(air.busyUntil, until);
+  }
+
+  // ==========================================================================
+  // HARMONY — the four-part engine. No sibling has this.
+  // ==========================================================================
+  // Chords are stacked diatonic triads in 7-degree space (root, +2, +4),
+  // projected into the current collection — so the same machine yields major,
+  // minor and modal color as the mode changes. Roots move by a weighted
+  // grammar with PLAGAL GRAVITY (IV→I, the amen). Voicing keeps common tones,
+  // rejects parallel octaves, and lightly REWARDS parallel fifths — dispersed
+  // harmony, the Sacred Harp sound, asserted rather than forbidden.
+  var Harmony = (function () {
+    var ROMAN = ["I", "ii", "iii", "IV", "V", "vi", "vii"];
+    var CHORD_MOVES = {                 // row = current root (7-space); [nextRoot, weight]
+      0: [[3, 3], [4, 2], [5, 2], [1, 1], [2, 0.5], [0, 1.5]],
+      1: [[4, 4], [3, 2.5], [0, 2], [5, 1.5]],
+      2: [[5, 3.5], [3, 3], [1, 2], [0, 1.5]],
+      3: [[0, 4.5], [4, 2], [1, 1.5], [5, 1], [3, 1]],     // IV→I: the amen leads home
+      4: [[0, 4], [5, 2.5], [3, 1.5], [4, 1], [2, 0.5]],
+      5: [[3, 3], [1, 2.5], [4, 2], [0, 1.5], [2, 1]],
+      6: [[0, 3], [5, 2]],
+    };
+    // Voice ranges as absolute collection-index windows (rebuilt per mode).
+    function ranges() {
+      var n = colN();
+      return {
+        b: [-n - 2, 1],
+        t: [-Math.ceil(n * 0.6), n - 1],
+        a: [0, n + 2],
+        s: [Math.floor(n * 0.45), 2 * n + 1],
+      };
+    }
+    var cur = null;                     // { root, tones{}, voicing[b,t,a,s], freqs[], open }
+    var parallelFifths = 0;             // counted, reported — they should be > 0
+
+    function toneClasses(root7, open) {
+      var n = colN(), set = {};
+      set[((projDeg(root7) % n) + n) % n] = "root";
+      if (!open) set[((projDeg(root7 + 2) % n) + n) % n] = "third";
+      set[((projDeg(root7 + 4) % n) + n) % n] = "fifth";
+      return set;
+    }
+    // The one 5-limit wolf: over 9/8 re, the ii chord's fifth (re–la) is
+    // 40/27. When the sounding chord is ii, re is played at 10/9 instead —
+    // a tiny adaptive-tuning override, inaudible as a shift, pure as a fifth.
+    function chordFreq(idx, root7) {
+      var n = colN();
+      var d = ((idx % n) + n) % n;
+      var oct = Math.floor(idx / n);
+      var ratio = COL().ratios[d];
+      if (root7 === 1 && n >= 6 && d === ((projDeg(1) % n) + n) % n && Math.abs(ratio - 9/8) < 1e-9) ratio = 10/9;
+      return F0 * ROOT_MULT * ratio * Math.pow(2, oct);
+    }
+    function classOf(idx) { var n = colN(); return ((idx % n) + n) % n; }
+    function nearestOfClass(from, classes, lo, hi, dir) {
+      // nearest absolute index whose class is a chord tone, within [lo,hi];
+      // dir (optional) restricts search direction (for contrary motion).
+      for (var off = 0; off <= colN() + 2; off++) {
+        var cands = off === 0 ? [from] : (dir === 1 ? [from + off] : dir === -1 ? [from - off] : [from - off, from + off]);
+        for (var i = 0; i < cands.length; i++) {
+          var c = cands[i];
+          if (c < lo || c > hi) continue;
+          if (classes[classOf(c)]) return c;
+        }
+      }
+      return null;
+    }
+    function foldRatio(r) { while (r >= 2) r /= 2; while (r < 1) r *= 2; return r; }
+    function near(a, b, cents) { return Math.abs(1200 * Math.log2(a / b)) < (cents || 22); }
+
+    // Score a candidate voicing against the previous one. Returns null = illegal.
+    function scoreVoicing(prev, next, classes, wantThird) {
+      var R = ranges(), keys = ["b", "t", "a", "s"], lims = [R.b, R.t, R.a, R.s];
+      var i, j, score = 0, fifthsHere = 0;
+      for (i = 0; i < 4; i++) {
+        if (next[i] == null) return null;
+        if (next[i] < lims[i][0] || next[i] > lims[i][1]) return null;
+        if (i > 0 && next[i] <= next[i - 1]) return null;          // no crossing / unison stacking
+        score += Math.abs(next[i] - prev[i]);                      // motion economy
+      }
+      var thirdSeen = false, rootCount = 0;
+      for (i = 0; i < 4; i++) {
+        var role = classes[classOf(next[i])];
+        if (role === "third") thirdSeen = true;
+        if (role === "root") rootCount++;
+      }
+      if (wantThird && !thirdSeen) score += 2.5;
+      if (rootCount === 0) return null;
+      score -= rootCount * 0.3;                                    // doubling: root > fifth > third
+      // parallel motion checks on actual frequency ratios (mode-agnostic)
+      for (i = 0; i < 4; i++) {
+        for (j = i + 1; j < 4; j++) {
+          var moved = next[i] !== prev[i] && next[j] !== prev[j];
+          if (!moved) continue;
+          var sameDir = (next[i] - prev[i]) * (next[j] - prev[j]) > 0;
+          if (!sameDir) continue;
+          var r0 = foldRatio(degFreq(prev[j]) / degFreq(prev[i]));
+          var r1 = foldRatio(degFreq(next[j]) / degFreq(next[i]));
+          if (near(r0, 1, 12) && near(r1, 1, 12)) return null;     // parallel octaves/unisons: rejected
+          if (near(r0, 1.5) && near(r1, 1.5)) { score -= 1.6; fifthsHere++; }  // parallel fifths: rewarded
+        }
+      }
+      return { score: score, fifths: fifthsHere };
+    }
+    function defaultVoicing(root7, classes) {
+      // a fresh seat: bass on the root an octave down, upper voices stacked near
+      var n = colN();
+      var rootIdx = projDeg(root7);
+      var b = ((rootIdx % n) + n) % n - n;
+      var t = nearestOfClass(b + Math.round(n * 0.6), classes, b + 2, b + n + 2);
+      var a = nearestOfClass(t + Math.round(n * 0.5), classes, t + 1, t + n);
+      var s = nearestOfClass(a + Math.round(n * 0.5), classes, a + 1, a + n + 2);
+      return [b, t, a, s];
+    }
+    function voice(root7, opts) {
+      opts = opts || {};
+      var bright = C.meeting ? MEETINGS[C.meeting.activity].bright : 0.5;
+      var open = opts.open != null ? opts.open : chance(0.25 + 0.35 * (1 - bright));
+      var classes = toneClasses(root7, open);
+      var R = ranges();
+      var prev = cur ? cur.voicing.slice() : null;
+      var next;
+      if (!prev) next = defaultVoicing(root7, classes);
+      else {
+        // candidates: nearest-motion / contrary soprano / open-dropped alto
+        var n = colN();
+        var rootIdx = projDeg(root7);
+        var bClasses = {}; bClasses[classOf(rootIdx)] = "root";
+        if (!opts.cadence && chance(0.1)) bClasses[classOf(projDeg(root7 + 4))] = "fifth";  // inversion, never at cadence
+        var b = nearestOfClass(prev[0], bClasses, R.b[0], R.b[1]);
+        var cands = [];
+        var c1 = [b,
+          nearestOfClass(prev[1], classes, R.t[0], R.t[1]),
+          nearestOfClass(prev[2], classes, R.a[0], R.a[1]),
+          nearestOfClass(prev[3], classes, R.s[0], R.s[1])];
+        cands.push(c1);
+        var bassDir = b === prev[0] ? 0 : (b > prev[0] ? 1 : -1);
+        if (bassDir !== 0) {
+          var sContr = nearestOfClass(prev[3] - bassDir, classes, R.s[0], R.s[1], -bassDir);
+          cands.push([b,
+            nearestOfClass(prev[1], classes, R.t[0], R.t[1]),
+            nearestOfClass(prev[2], classes, R.a[0], R.a[1]),
+            sContr != null ? sContr : c1[3]]);
+        }
+        if (c1[2] != null && c1[2] - n >= R.a[0]) {
+          cands.push([b, c1[1], c1[2] - n, c1[3]]);              // dropped alto: the dispersed spread
+        }
+        // a PLANING candidate: when two upper voices already stand a fifth
+        // apart, offer to carry the pair along with the bass — Sacred Harp
+        // parallel motion, legal here and welcome
+        var bd = b - prev[0];
+        if (bd !== 0) {
+          for (var pi2 = 1; pi2 < 3; pi2++) {
+            var r5 = foldRatio(degFreq(prev[pi2 + 1]) / degFreq(prev[pi2]));
+            if (near(r5, 1.5)) {
+              var cp = c1.slice();
+              cp[pi2] = prev[pi2] + bd;
+              cp[pi2 + 1] = prev[pi2 + 1] + bd;
+              if (classes[classOf(cp[pi2])] && classes[classOf(cp[pi2 + 1])]) cands.push(cp);
+              break;
+            }
+          }
+        }
+        var best = null, bestScore = 1e9, bestFifths = 0;
+        for (var ci = 0; ci < cands.length; ci++) {
+          var sc = scoreVoicing(prev, cands[ci], classes, !open);
+          if (sc && sc.score < bestScore) { best = cands[ci]; bestScore = sc.score; bestFifths = sc.fifths; }
+        }
+        next = best || defaultVoicing(root7, classes);
+        if (bestFifths > 0) parallelFifths += bestFifths;
+      }
+      var freqs = next.map(function (idx) { return chordFreq(idx, root7); });
+      cur = { root: root7, tones: classes, voicing: next, freqs: freqs, open: open };
+      emitEvent({
+        cat: "harmony",
+        label: "♮ " + ROMAN[root7] + (open ? " open" : ""),
+        detail: "b" + next[0] + " t" + next[1] + " a" + next[2] + " s" + next[3] +
+          (parallelFifths ? " · 5ths " + parallelFifths : ""),
+      });
+      return cur;
+    }
+    function advance(opts) {
+      opts = opts || {};
+      var from = cur ? cur.root : 0;
+      var pool = (CHORD_MOVES[from] || CHORD_MOVES[0]).map(function (m) { return m.slice(); });
+      if (C.section === "doxology") pool.forEach(function (m) { if (from === 3 && m[0] === 0) m[1] *= 2.5; });
+      if (C.section === "testimony") pool.forEach(function (m) { if (m[0] !== from) m[1] *= 0.5; });
+      var root7 = opts.root != null ? opts.root : pickW(pool);
+      return voice(root7, opts);
+    }
+    // A cadence is a two-chord act. Plagal is the house style — the amen.
+    function cadence(kind) {
+      var seq = kind === "authentic" ? [4, 0] : kind === "half" ? [cur ? cur.root : 0, 4] : [3, 0];
+      var out = [];
+      for (var i = 0; i < seq.length; i++) out.push(voice(seq[i], { cadence: true, open: i === seq.length - 1 ? chance(0.55) : false }));
+      emitEvent({ cat: "harmony", label: "∴ " + (kind || "plagal") + " cadence", detail: kind === "half" ? "resting on the dominant" : "amen" });
+      return out;
+    }
+    // Set an SATB frame under a melodic line (the lining-out answer): the
+    // soprano is pinned to the line; the machine voices beneath it.
+    function harmonize(lineNotes) {
+      var out = [], prevRoot = cur ? cur.root : 0;
+      for (var i = 0; i < lineNotes.length; i++) {
+        var idx = projDeg(lineNotes[i].deg);
+        var cls = classOf(idx);
+        // candidate roots whose triads contain this melody class
+        var roots = [];
+        for (var r = 0; r < 7; r++) {
+          var tc = toneClasses(r, false);
+          if (tc[cls]) {
+            var w = 1;
+            var moves = CHORD_MOVES[prevRoot] || [];
+            for (var mi = 0; mi < moves.length; mi++) if (moves[mi][0] === r) w = moves[mi][1];
+            roots.push([r, w]);
+          }
+        }
+        var root7 = roots.length ? pickW(roots) : 0;
+        var ch = voice(root7, { open: chance(0.3) });
+        // pin the soprano: replace with the melody index (kept within range by octave)
+        var R = ranges();
+        var sIdx = idx;
+        while (sIdx < R.s[0]) sIdx += colN();
+        while (sIdx > R.s[1]) sIdx -= colN();
+        ch = { root: ch.root, tones: ch.tones, open: ch.open, voicing: [ch.voicing[0], ch.voicing[1], ch.voicing[2], sIdx] };
+        ch.freqs = ch.voicing.map(function (ix) { return chordFreq(ix, ch.root); });
+        cur = ch;
+        out.push({ chord: ch, dur: lineNotes[i].dur });
+        prevRoot = root7;
+      }
+      return out;
+    }
+    function chordToneClasses() {
+      if (!cur) return null;
+      var out = {}; for (var k in cur.tones) out[k] = true;
+      return out;
+    }
+    function reset() { cur = null; }
+    return {
+      advance: advance, voice: voice, cadence: cadence, harmonize: harmonize,
+      current: function () { return cur; },
+      chordTones: chordToneClasses,
+      fifthCount: function () { return parallelFifths; },
+      reset: reset,
+    };
+  })();
+
+  // ==========================================================================
+  // PROSODY — hymn meters. A verse is lines of counted syllables; the melody
+  // is POURED into the line; the last syllable is a fermata on a rest tone.
+  // ==========================================================================
+  var METERS = {
+    "CM":    [8, 6, 8, 6],              // Common Meter
+    "LM":    [8, 8, 8, 8],              // Long Meter
+    "SM":    [6, 6, 8, 6],              // Short Meter
+    "87.87": [8, 7, 8, 7],
+    "CMD":   [8, 6, 8, 6, 8, 6, 8, 6],  // doubled — conference and jubilee verses
+  };
+  var Prosody = (function () {
+    function nearestRest7(d) {
+      var REST7 = { 0: true, 2: true, 4: true };
+      var dd = ((d % 7) + 7) % 7;
+      if (REST7[dd]) return d;
+      for (var off = 1; off <= 3; off++) {
+        if (REST7[(((d + off) % 7) + 7) % 7]) return d + off;
+        if (REST7[(((d - off) % 7) + 7) % 7]) return d - off;
+      }
+      return d;
+    }
+    // Fit a motif to exactly n syllable-notes (7-degree space).
+    function pourIntoLine(motif, n) {
+      var src = motif.notes.map(function (x) { return { deg: x.deg, durBeats: x.durBeats }; });
+      var out;
+      if (src.length === n) out = src;
+      else if (src.length > n) {
+        // elide the shortest interior notes — keep the head and the goal
+        out = src.slice();
+        while (out.length > n) {
+          var kill = -1, min = 1e9;
+          for (var i = 1; i < out.length - 1; i++) if (out[i].durBeats < min) { min = out[i].durBeats; kill = i; }
+          if (kill < 0) break;
+          out.splice(kill, 1);
+        }
+      } else {
+        // extend by stepwise sequence toward the line's rest tone
+        out = src.slice();
+        var goal = nearestRest7(out[out.length - 1].deg);
+        while (out.length < n) {
+          var lastD = out[out.length - 1].deg;
+          var step = goal === lastD ? pick([-1, 1]) : (goal > lastD ? 1 : -1);
+          if (chance(0.2)) step *= -1;                           // a wayward syllable
+          out.push({ deg: lastD + step, durBeats: pickW([[1, 5], [1.5, 2], [0.5, 2]]) });
+        }
+      }
+      // the fermata: last syllable lands on a rest tone and holds
+      var tail = out[out.length - 1];
+      tail.deg = nearestRest7(tail.deg);
+      // the fermata breathes but never stalls: an augmented final note times a
+      // big multiplier was producing 20-beat holds. Absolute cap at 5 beats.
+      tail.durBeats = Math.min(5, Math.max(2.2, tail.durBeats * rnd(1.4, 2)));
+      tail.fermata = true;
+      return out;
+    }
+    return { pourIntoLine: pourIntoLine, nearestRest7: nearestRest7 };
+  })();
+
+  // ==========================================================================
+  // THE CHORISTER — meeting conductor.
+  // ==========================================================================
+  // A meeting is a seeded plan of sections. Sections are unmetered inside;
+  // their joints are organ cadences and a single bell — not percussion.
+  // Every layer reads C (the conductor state) when it fires.
+  var SECTION_TYPES = ["prelude", "invocation", "hymn", "testimony", "sacrament", "doxology", "postlude"];
+  // The meeting-activity axis: what kind of Sunday is it?
+  var MEETINGS = {
+    ordinary:   { silenceMul: 1.0, hymns: 2, bells: 0.5, choirSize: 3, bright: 0.5,  meterW: [["CM", 3], ["LM", 2], ["SM", 2], ["87.87", 2], ["CMD", 1]] },
+    fast:       { silenceMul: 1.7, hymns: 1, bells: 0.2, choirSize: 2, bright: 0.3,  meterW: [["CM", 3], ["SM", 3], ["LM", 2], ["87.87", 1], ["CMD", 0.5]] },
+    conference: { silenceMul: 0.75, hymns: 3, bells: 0.8, choirSize: 4, bright: 0.75, meterW: [["CMD", 3], ["87.87", 3], ["CM", 2], ["LM", 2], ["SM", 1]] },
+    jubilee:    { silenceMul: 0.6, hymns: 3, bells: 1.0, choirSize: 4, bright: 0.9,  meterW: [["CMD", 3], ["87.87", 2.5], ["CM", 2], ["LM", 1.5], ["SM", 1]] },
+  };
+  var C = {
+    meetingNum: 0,
+    meeting: null,               // { activity }
+    plan: [],
+    si: 0,
+    section: "prelude",
+    meter: "CM",                 // current hymn's meter
+    sectionStart: 0,
+    sectionDur: 120,
+    jointing: false,
+    fugingFired: false,
+    fugingPlanned: false,
+    fugingUntil: 0,
+    hushUntil: 0,
+    verseLine: 0,
+    visitations: [],             // Ives guests drawn for this meeting
+    visitUntil: 0,
+    visitType: null,
+    raspberry: false,            // this meeting ends on the organist's own amen
+    cumulative: false,           // the tune is withheld until the doxology
+    assemblyFired: false,
+    assemblyUntil: 0,
+  };
+  var forceVisitation = false;   // the 𐐌𐐚𐐞 switch: guarantee a guest next meeting
+  var forceRaspberry = false;    // dev/test hook only — never part of the 𐐌𐐚𐐞 pool
+  // CUMULATIVE FORM's governor — the 𐐐𐐄𐐢 pill: "always" | "natural" | "never"
+  var cumulativeMode = "natural";
+  // META-SEASONS — the journey across meetings. A slow seeded cosine swings
+  // the colony from quiet fast-day troughs to conference/jubilee peaks over
+  // 4-7 meetings, the way ZANKYŌ's meta-arc drifts its cycles dark and back.
+  var metaPhase = 0, metaPeriod = 5, seasonPos = 0;
+
+  function planMeeting() {
+    C.meetingNum++;
+    if (C.meetingNum === 1) { metaPeriod = rnd(4, 7); metaPhase = rnd(0, 0.3); }
+    else { metaPhase += 1 / metaPeriod; if (metaPhase >= 1) { metaPhase -= 1; metaPeriod = rnd(4, 7); } }
+    seasonPos = 0.5 - 0.5 * Math.cos(2 * Math.PI * metaPhase);   // 0 trough … 1 festival peak
+
+    F0 = rnd(58, 74);
+    var activity = pickW([
+      ["ordinary", 3],
+      ["fast", 1 + 2.5 * (1 - seasonPos)],
+      ["conference", 0.6 + 2.6 * seasonPos],
+      ["jubilee", 0.2 + 1.8 * seasonPos],
+    ]);
+    C.meeting = { activity: activity };
+    var A = MEETINGS[activity];
+    // Mode lottery, tilted bright or modal by the kind of Sunday.
+    var b = A.bright;
+    mode = pickW([
+      ["ionian", 2 + 2 * b],
+      ["penta", 2.5],
+      ["hexa", 1.5],
+      ["mixolydian", 1 + b],
+      ["dorian", 1.4 - b * 0.8],
+      ["aeolian", 1.2 - b * 0.8],
+    ]);
+    rebuildScale();
+    Harmony.reset();
+
+    var plan = [];
+    plan.push({ type: "prelude", dur: rnd(60, 90) });
+    plan.push({ type: "invocation", dur: rnd(60, 100) });
+    for (var h = 0; h < A.hymns; h++) {
+      plan.push({ type: "hymn", dur: rnd(120, 180), meter: pickW(A.meterW) });
+    }
+    plan.push({ type: "testimony", dur: rnd(110, 160) });
+    plan.push({ type: "sacrament", dur: rnd(100, 150) });
+    plan.push({ type: "doxology", dur: rnd(70, 110) });
+    plan.push({ type: "postlude", dur: rnd(40, 70) });
+    // THE ORDER IS NOT FIXED — seeded mutations keep the ritual itself
+    // aleatoric. Some Sundays have no testimony; some hold an interlude of
+    // organ and tines between hymns; testimony and sacrament may trade
+    // places; a jubilee may sing the doxology twice.
+    if (chance(0.25)) {
+      for (var ti = plan.length - 1; ti >= 0; ti--) if (plan[ti].type === "testimony") plan.splice(ti, 1);
+    }
+    if (A.hymns >= 2 && chance(0.15)) {
+      for (var hi = 0; hi < plan.length; hi++) {
+        if (plan[hi].type === "hymn") { plan.splice(hi + 1, 0, { type: "interlude", dur: rnd(50, 80) }); break; }
+      }
+    }
+    if (chance(0.1)) {
+      var tIdx = -1, sIdx = -1;
+      for (var pi = 0; pi < plan.length; pi++) {
+        if (plan[pi].type === "testimony") tIdx = pi;
+        if (plan[pi].type === "sacrament") sIdx = pi;
+      }
+      if (tIdx >= 0 && sIdx >= 0) { var tmp = plan[tIdx]; plan[tIdx] = plan[sIdx]; plan[sIdx] = tmp; }
+    }
+    if (activity === "jubilee" && chance(0.5)) {
+      plan.splice(plan.length - 1, 0, { type: "doxology", dur: rnd(40, 60) });
+    }
+    C.plan = plan;
+    C.si = 0;
+    // IVES VISITATIONS — guests in the meeting. Each rolls its OWN dice
+    // (bands 36%, question 29%, per the owner's taste — roughly half of
+    // meetings carry one of the pair; a double bill lands ~1 in 10). The
+    // question favors the invocation; the bands favor the doxology. The
+    // 𐐌𐐚𐐞 switch forces one guaranteed guest, seated early enough that the
+    // guarantee is heard.
+    C.visitations = [];
+    C.visitUntil = 0;
+    C.visitType = null;
+    var haveSec = {};
+    for (var vp = 0; vp < plan.length; vp++) haveSec[plan[vp].type] = true;
+    function seatIn(prefs) {
+      for (var sp = 0; sp < prefs.length; sp++) if (haveSec[prefs[sp]]) return prefs[sp];
+      return null;
+    }
+    var forcedType = forceVisitation ? pickW([["question", 2], ["bands", 2], ["steeples", 1], ["oldtune", 1]]) : null;
+    if (forcedType === "question" || chance(0.29)) {
+      var qSeat = (forcedType === "question" || chance(0.7))
+        ? seatIn(["invocation", "testimony", "hymn"])
+        : seatIn(["testimony", "interlude", "invocation"]);
+      if (qSeat) C.visitations.push({ type: "question", section: qSeat, fired: false });
+    }
+    if (forcedType === "bands" || chance(0.36)) {
+      var bSeat = forcedType === "bands"
+        ? seatIn(["hymn", "doxology", "postlude"])
+        : (chance(0.7) ? seatIn(["doxology", "hymn", "postlude"]) : seatIn(["hymn", "postlude", "doxology"]));
+      if (bSeat) C.visitations.push({ type: "bands", section: bSeat, fired: false });
+    }
+    // the steeples: bells at the meeting's edges — the framing sections where
+    // a bell has civic meaning (calling the valley in, ringing it home)
+    if (forcedType === "steeples" || chance(0.075)) {
+      var stSeat = forcedType === "steeples" ? "prelude" : (chance(0.55) ? "prelude" : "postlude");
+      C.visitations.push({ type: "steeples", section: stSeat, fired: false });
+    }
+    // THE OLD TUNE — its own die, gated by the mode law (tuneFitsMode): major
+    // memories on major-ish Sundays; on dark Sundays the gate OPENS for
+    // KINGSFOLD alone. Seats where remembering belongs: the prelude's
+    // pre-gathering reverie, or testimony. Never the sacrament.
+    var oldPool = oldTuneCandidates();
+    if (oldPool.length && (forcedType === "oldtune" || chance(0.15))) {
+      var oSeat = forcedType === "oldtune"
+        ? seatIn(["prelude", "testimony", "hymn"])
+        : (chance(0.65) ? seatIn(["prelude", "testimony"]) : seatIn(["testimony", "interlude", "prelude"]));
+      if (oSeat) C.visitations.push({ type: "oldtune", section: oSeat, fired: false, tune: pickW(oldPool) });
+    }
+    // CUMULATIVE FORM (after Ives's cumulative settings): the day's theme is
+    // WITHHELD — only its fragments circulate, endings first — until the
+    // doxology sings it whole for the first time. Rarest of the guests
+    // (~1 meeting in 12) because it is a meeting-SHAPE, not an event.
+    // Governed by the 𐐐𐐄𐐢 pill: always / natural 8% / never. Set BEFORE
+    // Motif.newMeeting() — the theme-length guard there reads the flag.
+    C.cumulative = cumulativeMode === "always" || (cumulativeMode === "natural" && chance(0.08));
+    C.assemblyFired = false;
+    C.assemblyUntil = 0;
+    if (C.cumulative) {
+      // a marching band may still call, but never over the assembly
+      for (var cvi = 0; cvi < C.visitations.length; cvi++) {
+        if (C.visitations[cvi].type === "bands" && C.visitations[cvi].section === "doxology") {
+          C.visitations[cvi].section = haveSec.hymn ? "hymn" : "postlude";
+        }
+      }
+    }
+    if (C.visitations.length) emitEvent({ cat: "visitation-draw", label: C.visitations.map(function (v) { return v.type + "@" + v.section; }).join(",") });
+    // THE RASPBERRY AMEN — its own flag, not a seated visitation: it has no
+    // section, only the meeting's final cadence. Never on a fast Sunday; a
+    // solemn meeting does not end on a joke.
+    C.raspberry = forceRaspberry || (activity !== "fast" && chance(0.05));
+    Motif.newMeeting();
+    if (C.cumulative) {
+      var wTheme = Motif.theme();
+      emitEvent({ cat: "visitation", label: "◌ the tune is withheld", detail: (wTheme ? wTheme.name + " · " : "") + "until the doxology" });
+    }
+    enterSection(0);
+    // The Liahona: the load-bearing draws, surfaced as the oracle's pointing.
+    emitEvent({
+      cat: "liahona", label: "⌖ the Liahona points",
+      detail: mode + " · " + activity + " · F0 " + F0.toFixed(1) + " Hz",
+    });
+    emitEvent({
+      cat: "meeting", label: "☀ meeting " + C.meetingNum,
+      detail: "F0 " + F0.toFixed(1) + " Hz · " + mode + " · " + activity + " · season " + seasonPos.toFixed(2),
+    });
+  }
+
+  function enterSection(i) {
+    var s = C.plan[i];
+    C.si = i;
+    C.section = s.type;
+    C.sectionStart = ctx ? ctx.currentTime : 0;
+    C.sectionDur = s.dur;
+    C.jointing = false;
+    C.fugingFired = false;
+    C.fugingUntil = 0;
+    // the fuging entry is an EVENT, not a fixture — some hymns are meadows
+    C.fugingPlanned = s.type === "hymn" && chance(0.6);
+    if (s.type === "hymn") C.verseLine = 0;
+    if (s.type === "hymn" && s.meter) {
+      C.meter = s.meter;
+      emitEvent({ cat: "liahona", label: "⌖ the meter is given", detail: C.meter + " — " + METERS[C.meter].join(".") });
+    }
+    // the doxology SUNRISE: a dark-mode meeting may lift into major at the
+    // last — rare, and the most audible surprise the engine owns
+    if (s.type === "doxology" && (mode === "aeolian" || mode === "dorian") && chance(0.4)) {
+      mode = pick(["ionian", "mixolydian"]);
+      rebuildScale();
+      Harmony.reset();
+      emitEvent({
+        cat: "meeting", label: "☀ sunrise",
+        detail: "F0 " + F0.toFixed(1) + " Hz · " + mode + " · " + (C.meeting ? C.meeting.activity : "") + " · season " + seasonPos.toFixed(2),
+      });
+    }
+    emitEvent({ cat: "section", label: "§ " + s.type.toUpperCase(), detail: (s.type === "hymn" ? C.meter + " · " : "") + Math.round(s.dur) + "s" });
+    Motif.onSection(s.type);
+  }
+
+  function localArc() {
+    if (!ctx) return 0;
+    return Math.max(0, Math.min(1, (ctx.currentTime - C.sectionStart) / C.sectionDur));
+  }
+  // Global intensity 0..1 — ceilings kept LOW. This is open country; even the
+  // doxology's full gathering leaves sky above it.
+  function intensity() {
+    var x = localArc();
+    switch (C.section) {
+      case "prelude": return 0.12 + 0.18 * smooth(x);
+      case "invocation": return 0.06 + 0.08 * x;
+      case "hymn": {
+        var base = 0.28 + 0.34 * (x < 0.75 ? smooth(x / 0.75) : 1 - 0.25 * smooth((x - 0.75) / 0.25));
+        if (ctx && ctx.currentTime < C.fugingUntil) base += 0.12;
+        return Math.min(0.75, base);
+      }
+      case "testimony": return 0.2;
+      case "interlude": return 0.14 + 0.08 * smooth(x);
+      case "sacrament": return 0.05;
+      case "doxology": return Math.min(0.8, 0.32 + 0.48 * smooth(x < 0.8 ? x / 0.8 : 1 - 0.4 * smooth((x - 0.8) / 0.2)));
+      case "postlude": return 0.28 * (1 - x);
+    }
+    return 0.25;
+  }
+  function smooth(z) { z = Math.max(0, Math.min(1, z)); return z * z * (3 - 2 * z); }
+  function inHush() { return ctx && ctx.currentTime < C.hushUntil; }
+  function inFuging() { return ctx && ctx.currentTime < C.fugingUntil; }
+  function inVisit() { return ctx && ctx.currentTime < C.visitUntil; }
+  // the question is a scored passage — its performers' free cycles sit out;
+  // the bands are a COLLISION — nobody sits out, that is the piece
+  function inQuestion() { return inVisit() && C.visitType === "question"; }
+  function silenceMul() { return C.meeting ? MEETINGS[C.meeting.activity].silenceMul : 1; }
+  // The airy multiplier applied to every phrase gap: wide at rest, still wide
+  // at the peaks. The frontier never crowds.
+  function gapMul() { return (2.2 - intensity() * 0.9) * silenceMul(); }
+
+  // --- conductor poll: advances sections, fires fuging entries, keeps time ---
+  function conductorTick() {
+    if (!playing) return;
+    var x = localArc();
+    // Fuging entry: once per hymn, past the shoulder — the voices go their
+    // ways and gather again. A stillness follows the convergence.
+    // Ives visitations: fire once, past the section's first quarter, never
+    // over a hush, a fuging gathering, a joint, or each other.
+    for (var vv = 0; vv < C.visitations.length; vv++) {
+      var V = C.visitations[vv];
+      if (!V.fired && V.section === C.section && x > 0.2 && x < 0.55 &&
+          !C.jointing && !inHush() && !inFuging() && !inVisit()) {
+        V.fired = true;
+        // type → set piece; the old tune receives its visitation record (the drawn tune)
+        var VISIT_FN = { question: unansweredQuestion, bands: twoBandsCross, steeples: steeplesAnswer, oldtune: oldTuneRemembered };
+        var vdur = (VISIT_FN[V.type] || twoBandsCross)(V);
+        C.visitType = V.type;
+        C.visitUntil = ctx.currentTime + vdur;
+        break;
+      }
+    }
+    // The cumulative assembly: the withheld tune arrives in the doxology. A
+    // hush or a guest may delay it; past x 0.7 the fallback fires regardless
+    // (compressed) — the payoff is never skipped.
+    if (C.cumulative && !C.assemblyFired && C.section === "doxology" &&
+        ((x > 0.35 && !C.jointing && !inHush() && !inFuging() && !inVisit()) ||
+         (x > 0.7 && !C.jointing))) {
+      C.assemblyFired = true;
+      var adur = cumulativeAssembly();
+      C.assemblyUntil = ctx.currentTime + adur;
+    }
+    if (C.section === "hymn" && C.fugingPlanned && !C.fugingFired && x > 0.6 && x < 0.8 && !inHush() && !inVisit()) {
+      C.fugingFired = true;
+      var fugDur = fugingEntry();
+      C.fugingUntil = ctx.currentTime + fugDur;
+      if (chance(0.3)) scheduleRaw(function () { stillness("after the gathering"); }, (fugDur + 1.5) * 1000);
+    }
+    // Testimony: the Cage silences — rare, long, authoritative.
+    if (C.section === "testimony" && !inHush() && chance(0.008)) {
+      stillness("testimony");
+    }
+    // And once in a great while a silence falls where none was scheduled —
+    // about once a meeting, somewhere, unannounced.
+    if (C.section !== "sacrament" && C.section !== "testimony" && !C.jointing && !inHush() && chance(0.0004)) {
+      stillness("unbidden");
+    }
+    // Section end → joint → advance.
+    if (!C.jointing && x >= 1) {
+      C.jointing = true;
+      var last = C.si >= C.plan.length - 1;
+      var jointDur = runJoint(last);
+      scheduleRaw(function () {
+        if (C.si >= C.plan.length - 1) planMeeting();
+        else enterSection(C.si + 1);
+      }, (jointDur + 0.5) * 1000);
+    }
+    scheduleRaw(conductorTick, 600);
+  }
+
+  // Dev aid: jump the meeting to a section of the plan. Voices notice on
+  // their next scheduled fire; a few tail notes from the old section may
+  // ring over the seam — acceptable for a rehearsal skip.
+  function skipToSection(type) {
+    if (!playing) return false;
+    var idx = -1;
+    for (var i = 0; i < C.plan.length; i++) if (C.plan[i].type === type) { idx = i; break; }
+    if (idx < 0) return false;
+    C.hushUntil = 0;
+    air.busyUntil = 0; air.holders = 0;
+    if (droneDuck && ctx) {
+      // release any stillness dip that was in flight
+      droneDuck.gain.cancelScheduledValues(ctx.currentTime);
+      droneDuck.gain.setValueAtTime(1, ctx.currentTime);
+    }
+    enterSection(idx);
+    emitEvent({ cat: "conductor", label: "↷ skipped", detail: "to " + type + " (dev)" });
+    return true;
+  }
+
+  // The stillness — the ground falls away. Only the DRONE recedes; the other
+  // voices keep speaking and stand exposed in the open air. Sometimes a
+  // tuning fork rings in it; the ground breathes back after.
+  function stillness(why) {
+    if (!playing || !droneDuck) return;
+    var t = ctx.currentTime;
+    var holdS = rnd(6, 14) * silenceMul();
+    C.hushUntil = t + holdS + 2.5;
+    droneDuck.gain.cancelScheduledValues(t);
+    droneDuck.gain.setValueAtTime(droneDuck.gain.value || 1, t);
+    droneDuck.gain.linearRampToValueAtTime(0.12, t + 1.4);
+    if (chance(0.5)) evTuningFork(t + rnd(2, holdS * 0.5));
+    droneDuck.gain.setValueAtTime(0.12, t + 1.4 + holdS);
+    droneDuck.gain.linearRampToValueAtTime(1, t + 1.4 + holdS + 3);
+    emitEvent({ cat: "conductor", label: "◦ the still small voice", detail: why + " · " + holdS.toFixed(1) + "s" });
+  }
+
+  // ==========================================================================
+  // SECTION JOINTS — an organ cadence and a single bell. No cymbals in Zion.
+  // ==========================================================================
+  // THE RASPBERRY AMEN's cluster — two hands of neighboring seconds, every
+  // tone a collection ratio, so the wrongness is spelled in the meeting's
+  // own tuning. Warm JI beating, not a smear: dissonant, never broken.
+  function razzCluster() {
+    var n = colN();
+    var idxs = [-1, 0, 1, n + 1, n + 2, n + 4];
+    return { freqs: idxs.map(function (i) { return degFreq(i); }) };
+  }
+  // ==========================================================================
+  // VOICE: TUBA — the visiting brass.
+  //
+  // THE TUBA IS RESERVED FOR THE RASPBERRY AMEN ONLY. It has a stop in the
+  // rail and a sample blat, but NO cycle — it must never be given a
+  // scheduled voice in ordinary sections; the whole joke is that the stop
+  // sits there doing nothing, meeting after meeting, until the amen goes
+  // wrong. (Maintainers: do not "fix" this by wiring it into play().)
+  //
+  // His one entrance: a low committed blat — a scoop from under the note
+  // that settles nearly on it, held beneath the cluster, released with the
+  // organist's hands.
+  // ==========================================================================
+  function tubaBlat(t, gainMul) {
+    var target = degFreq(1 - colN() * 2);          // the second, two octaves down
+    var o = ctx.createOscillator();
+    o.type = "sawtooth";
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(target * 6, t);    // brassy at the attack…
+    lp.frequency.linearRampToValueAtTime(target * 3, t + 0.35);   // …then dark
+    // the blat: in from below, past the note, settling almost on it
+    o.frequency.setValueAtTime(target * 0.86, t);
+    o.frequency.linearRampToValueAtTime(target * 1.02, t + 0.12);
+    o.frequency.linearRampToValueAtTime(target, t + 0.3);
+    var g = ctx.createGain();
+    o.connect(lp); lp.connect(g); g.connect(panAt("tuba", 0));
+    var peak = 0.64 * (gainMul || 1);              // doubled again by owner request — the blat WILL be heard
+    env(g, t, [[0.05, peak], [2.4, peak * 0.77], [0.7, 0]]);
+    o.start(t); o.stop(t + 3.6);
+    emitNote("tuba", target, t, 3.0);
+  }
+
+  function runJoint(isLast) {
+    var t = ctx.currentTime + 0.2;
+    var dur = 4;
+    var next = !isLast && C.plan[C.si + 1] ? C.plan[C.si + 1].type : null;
+    if (next === "sacrament" || C.section === "sacrament") {
+      // fade into (or out of) the quietest room through pure drone — no chord
+      dur = rnd(4, 7);
+      emitEvent({ cat: "cadence", label: "∴ the room empties", detail: "into stillness" });
+    } else if (isLast && C.raspberry) {
+      // THE RASPBERRY AMEN (after the close of Ives's Second Symphony): the
+      // cadence sets up in earnest — the IV played perfectly straight — and
+      // the organist's hands land a quiet fistful of seconds where the tonic
+      // should be. The tuba player commits to it. Held long enough to be
+      // unmistakably on purpose; the bell rings anyway, unbothered; the
+      // clerk's pen stops mid-word.
+      var rChords = Harmony.cadence("plagal");
+      var rDur = rnd(2.6, 3.6);
+      organChord(t, rDur * 1.02, rChords[0], 0.6);             // the setup, in earnest
+      organChord(t + rDur, 3.2, razzCluster(), 0.5);           // the resolution that isn't
+      tubaBlat(t + rDur);
+      dur = rDur + 3.2 + 1.5;
+      // the sexton usually didn't notice — the ritual visibly continues
+      if (chance(Math.max(MEETINGS[C.meeting.activity].bells, 0.6))) {
+        meetinghouseBell(t + dur * 0.75, 1.0);
+      }
+      var razzWait = (t + rDur) - ctx.currentTime;
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "∴ raspberry", detail: "the tuba's own" });
+      }, (razzWait + 0.15) * 1000);
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "∴ amen—", detail: "the organist's own" });
+      }, (razzWait + 0.9) * 1000);
+    } else {
+      var kind = isLast || C.section === "doxology" ? "plagal" : (C.section === "prelude" || C.section === "hymn" ? pickW([["plagal", 3], ["authentic", 2], ["half", 1]]) : "plagal");
+      var chords = Harmony.cadence(kind);
+      var chDur = rnd(2.6, 3.6);
+      for (var i = 0; i < chords.length; i++) {
+        organChord(t + i * chDur, chDur * (i === chords.length - 1 ? 1.7 : 1.02), chords[i], 0.6);
+      }
+      dur = chDur * chords.length + 1.5;
+      if (chance(MEETINGS[C.meeting.activity].bells)) {
+        meetinghouseBell(t + dur * 0.7, isLast ? 1.0 : rnd(0.5, 0.8));
+        if (C.meeting.activity === "jubilee" && chance(0.6)) {
+          // a small peal for a festival Sunday
+          for (var p = 1; p <= rint(2, 4); p++) meetinghouseBell(t + dur * 0.7 + p * rnd(1.4, 2.2), rnd(0.4, 0.7));
+          dur += 5;
+        }
+      }
+    }
+    emitEvent({ cat: "cadence", label: "∴ joint", detail: (isLast ? "meeting ends" : "toward " + next) + " · " + Math.round(dur) + "s" });
+    return dur;
+  }
+
+  // ==========================================================================
+  // MOTIF ENGINE — gestures, transform algebra, genealogy, ledger.
+  // ==========================================================================
+  // Motifs live in 7-DEGREE space ({deg, durBeats}) and are projected into
+  // the meeting's collection only at render time — one gesture pool serves
+  // every mode. Identity + genealogy: { name, gen, chain[] }.
+  var Motif = (function () {
+    // The working motifs are numbered, not lettered: Ⅰ is the day's theme,
+    // Ⅱ and Ⅲ the subsidiary ideas. Roman numerals read in both scripts
+    // (numerals stay Latin by the app's own rule) and leave the WHOLE
+    // alphabet free for the gesture ciphers below.
+    var NAMES = ["Ⅰ", "Ⅱ", "Ⅲ"];
+    // THE GESTURE POOL — cultural DNA, abstracted from the tradition's
+    // rhetoric, never quoted. Nearly thirty gestures; each meeting draws only
+    // three, so most sessions never hear most of them. That is the diversity:
+    // no two visits work the same material.
+    // Every gesture carries a PERMANENT Deseret letter (its cipher on the hymn
+    // board): the alphabet in order from 𐐀, twenty-seven letters for
+    // twenty-seven shapes. The letters are stable across meetings, so a
+    // returning listener can learn that a given letter is a given tune-shape.
+    // (The working motifs are Roman-numbered Ⅰ/Ⅱ/Ⅲ, so no collision.)
+    var GESTURES = [
+      { letter: "𐐀", name: "gathering",   notes: [[-3, 1], [0, 2], [1, 1], [0, 3]] },                            // the rising-fourth call
+      { letter: "𐐁", name: "kolob arch",  notes: [[0, 1], [2, 1], [4, 1], [5, 2], [4, 1], [2, 1], [0, 3]] },     // arch litany, KINGSFOLD-shaped
+      { letter: "𐐂", name: "amen",        notes: [[3, 2], [2, 1], [0, 4]] },                                     // the plagal fall
+      { letter: "𐐃", name: "revival",     notes: [[0, 1], [2, 1], [4, 1], [7, 3]] },                             // gapped camp-meeting ascent
+      { letter: "𐐄", name: "sweet hour",  notes: [[4, 2], [3, 1], [2, 1], [1, 1], [0, 3]] },                     // stepwise evening descent
+      { letter: "𐐅", name: "fuging",      notes: [[0, 1], [4, 1], [3, 0.5], [2, 0.5], [1, 1], [0, 2]] },         // the imitative subject
+      { letter: "𐐆", name: "handcart",    notes: [[0, 1], [1, 1], [2, 2], [1, 1], [0, 1], [-1, 1], [0, 3]] },    // walking, patient
+      { letter: "𐐇", name: "wayfarer",    notes: [[5, 1], [4, 1], [2, 2], [3, 1], [1, 1], [0, 3]] },             // the lonesome stranger
+      { letter: "𐐈", name: "sego lily",   notes: [[2, 1], [4, 0.5], [2, 0.5], [1, 1], [2, 1], [0, 2]] },         // a light gapped lilt
+      { letter: "𐐉", name: "bells of Zion", notes: [[6, 1], [4, 1], [5, 1], [3, 1], [4, 1], [2, 1], [0, 2]] },   // falling thirds, pealing
+      { letter: "𐐊", name: "morning star", notes: [[0, 1], [5, 2], [4, 1], [3, 1], [4, 3]] },                    // the upward sixth, held
+      { letter: "𐐋", name: "still small", notes: [[1, 2], [0, 1], [1, 1], [2, 2], [1, 1], [0, 3]] },             // a narrow murmur
+      { letter: "𐐌", name: "cumorah",     notes: [[7, 2], [4, 1], [2, 1], [0, 3]] },                             // the falling-octave call
+      { letter: "𐐍", name: "beehive",     notes: [[2, 1], [2, 1], [2, 0.5], [3, 0.5], [2, 1], [0, 3]] },         // repeated-note industry
+      { letter: "𐐎", name: "ensign peak", notes: [[0, 1], [4, 1], [7, 2], [5, 1], [4, 3]] },                     // the wide climb, held high
+      { letter: "𐐏", name: "lullaby",     notes: [[0, 2], [-2, 1], [0, 1], [-1, 2], [0, 3]] },                   // low rocking, evening
+      { letter: "𐐐", name: "sego road",   notes: [[0, 1.5], [1, 0.5], [3, 1.5], [2, 0.5], [1, 1], [0, 3]] },     // dotted walking figure
+      { letter: "𐐑", name: "seagull",     notes: [[4, 1], [6, 1], [4, 1], [2, 2], [4, 1], [0, 3]] },            // a wheeling gull, the miracle
+      { letter: "𐐒", name: "north star",  notes: [[0, 1], [7, 3], [6, 1], [4, 2]] },                            // a bold leap of a seventh, held
+      { letter: "𐐓", name: "far water",   notes: [[2, 3], [1, 1], [2, 1], [0, 4]] },                            // long tones over great spaces
+      { letter: "𐐔", name: "quail",       notes: [[4, 0.5], [3, 0.5], [4, 0.5], [2, 0.5], [0, 2]] },            // a quick clipped call
+      { letter: "𐐕", name: "meridian",    notes: [[0, 1], [2, 1], [4, 1], [6, 1], [7, 2], [5, 1], [4, 3]] },    // the long ascent to the octave
+      { letter: "𐐖", name: "the ferry",   notes: [[0, 2], [1, 1], [0, 1], [-2, 2], [0, 3]] },                   // rocking across, dipping under
+      { letter: "𐐗", name: "sunstone",    notes: [[0, 1], [3, 1], [2, 1], [5, 1], [4, 1], [7, 2], [0, 3]] },    // a climbing zigzag, then home
+      { letter: "𐐘", name: "watchfire",   notes: [[0, 1], [1, 2], [0, 1], [2, 2], [0, 1], [3, 3]] },            // patient tending, slowly rising
+      { letter: "𐐙", name: "saltflat",    notes: [[4, 4], [4, 1], [3, 1], [2, 4]] },                            // very still, barely moving
+      { letter: "𐐚", name: "cottonwood",  notes: [[0, 2], [2, 1], [1, 1], [3, 2], [2, 1], [0, 3]] },            // a gentle sway in the wind
+    ];
+    var GESTURE_LETTER = {};
+    for (var gl = 0; gl < GESTURES.length; gl++) GESTURE_LETTER[GESTURES[gl].name] = GESTURES[gl].letter;
+    var working = { theme: null, subs: [] };      // the whole meeting works ≤3 ideas
+    var ledger = [];                              // [{from, to, motif, deadline, type}]
+    var stats = { developments: 0, answers: 0, transformsUsed: {}, gestures: [] };
+
+    // THE DAY'S TEMPER — a seeded dialect chosen per meeting that tilts HOW all
+    // the voices develop their material (not WHAT they play — the gestures are
+    // still drawn at random). One Sunday runs plain and psalmodic; another runs
+    // florid, or restless, or opens everything out into great expansive leaps.
+    // A meeting-level colour, layered over the per-voice and per-section tilts,
+    // so no two visits merely feel different moment to moment — they feel like
+    // different Sundays. Still fully aleatoric: it is only another bias.
+    var DIALECTS = {
+      plain:     { ornament: 0.35, mordent: 0.3, sequence: 0.7, syncopate: 0.5, intervalExpand: 0.7 },
+      psalmodic: { intervalCompress: 1.9, augment: 1.4, ornament: 0.5, mordent: 0.4, rotate: 1.3 },
+      florid:    { ornament: 2.1, mordent: 2.3, sequence: 1.5, syncopate: 1.4 },
+      expansive: { augment: 1.9, intervalExpand: 2.1, transpose: 1.4, diminish: 0.5, intervalCompress: 0.4 },
+      terse:     { diminish: 1.9, fragmentHead: 1.8, fragmentTail: 1.6, intervalCompress: 1.6, augment: 0.5 },
+      restless:  { sequence: 1.8, rotate: 2.0, syncopate: 1.9, retrograde: 1.5, invert: 1.4 },
+    };
+    var meetingDialect = null, dialectName = "plain";
+
+    function clone(m) { return JSON.parse(JSON.stringify(m)); }
+    function fromGesture(g, name) {
+      return {
+        name: name, gesture: g.name, gen: 0, chain: [],
+        notes: g.notes.map(function (n) { return { deg: n[0], durBeats: n[1] }; }),
+      };
+    }
+
+    // ---- the transform algebra (each returns a NEW motif, chain appended) ----
+    var TRANSFORMS = {
+      invert: function (m) {
+        var axis = m.notes[0].deg;
+        m.notes.forEach(function (n) { n.deg = axis - (n.deg - axis); });
+        return m;
+      },
+      transpose: function (m) {
+        var by = pickW([[1, 3], [2, 3], [-1, 3], [-2, 2], [3, 1], [4, 1], [-4, 1]]);
+        m.notes.forEach(function (n) { n.deg += by; });
+        return m;
+      },
+      fragmentHead: function (m) {
+        m.notes = m.notes.slice(0, Math.max(2, Math.ceil(m.notes.length / 2)));
+        return m;
+      },
+      fragmentTail: function (m) {
+        m.notes = m.notes.slice(-Math.max(2, Math.ceil(m.notes.length / 2)));
+        return m;
+      },
+      augment: function (m) {
+        var f = rnd(1.35, 1.9);
+        m.notes.forEach(function (n) { n.durBeats = Math.min(7, n.durBeats * f); });
+        return m;
+      },
+      diminish: function (m) {
+        var f = rnd(0.55, 0.75);
+        m.notes.forEach(function (n) { n.durBeats = Math.max(0.4, n.durBeats * f); });
+        return m;
+      },
+      retrograde: function (m) {
+        m.notes.reverse();
+        return m;
+      },
+      sequence: function (m) {                     // restate at a transposition — real sequencing
+        var step = pickW([[1, 3], [2, 2], [-1, 3], [-2, 2]]);
+        var rep = clone(m).notes.map(function (n) { return { deg: n.deg + step, durBeats: n.durBeats }; });
+        m.notes = m.notes.concat(rep).slice(0, 12);
+        return m;
+      },
+      ornament: function (m) {                     // passing tones between leaps — grace, not filigree
+        var res = [];
+        for (var i = 0; i < m.notes.length; i++) {
+          var n = m.notes[i], nx = m.notes[i + 1];
+          if (nx && res.length < 9 && Math.abs(nx.deg - n.deg) >= 2 && n.durBeats >= 1 && chance(0.55)) {
+            res.push({ deg: n.deg, durBeats: n.durBeats * 0.65 });
+            res.push({ deg: n.deg + Math.sign(nx.deg - n.deg), durBeats: Math.max(0.4, n.durBeats * 0.35) });
+          } else res.push({ deg: n.deg, durBeats: n.durBeats });
+        }
+        m.notes = res;
+        return m;
+      },
+      rotate: function (m) {                       // start the cell from a later note — the same
+        var len = m.notes.length;                  // pitches, a fresh angle of approach (modal turn)
+        if (len < 3) return m;
+        var k = 1 + Math.floor(rng() * (len - 1));
+        m.notes = m.notes.slice(k).concat(m.notes.slice(0, k));
+        return m;
+      },
+      intervalExpand: function (m) {               // widen every interval about the head — the same
+        var axis = m.notes[0].deg, f = rnd(1.4, 1.9);  // shape, opened out into bolder leaps
+        m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
+        return recentre(m);
+      },
+      intervalCompress: function (m) {             // narrow every interval — the shape drawn in
+        var axis = m.notes[0].deg, f = rnd(0.4, 0.65);  // toward chant, close to the reciting tone
+        m.notes.forEach(function (n) { n.deg = axis + Math.round((n.deg - axis) * f); });
+        return m;
+      },
+      syncopate: function (m) {                    // lilt: lengthen a strong note and clip the next
+        for (var i = 0; i < m.notes.length - 1; i++) {  // — a dotted / snap displacement of the pulse
+          if (m.notes[i].durBeats >= 1 && chance(0.5)) {
+            var take = m.notes[i].durBeats * 0.4;
+            m.notes[i].durBeats += take;
+            m.notes[i + 1].durBeats = Math.max(0.3, m.notes[i + 1].durBeats - take * 0.6);
+            i++;
+          }
+        }
+        return m;
+      },
+      mordent: function (m) {                      // a quick neighbor flick on one held note — the
+        var res = [], did = false;                 // reed's shake, distinct from filling a leap
+        for (var i = 0; i < m.notes.length; i++) {
+          var n = m.notes[i];
+          if (!did && n.durBeats >= 1.5 && res.length < 8 && chance(0.7)) {
+            var dir = chance(0.5) ? 1 : -1;
+            res.push({ deg: n.deg, durBeats: Math.max(0.3, n.durBeats * 0.3) });
+            res.push({ deg: n.deg + dir, durBeats: 0.3 });
+            res.push({ deg: n.deg, durBeats: Math.max(0.4, n.durBeats * 0.4) });
+            did = true;
+          } else res.push({ deg: n.deg, durBeats: n.durBeats });
+        }
+        m.notes = res;
+        return m;
+      },
+    };
+
+    // ---- chain grammar: which transform, given voice + section + chain ----
+    // INSTRUMENT PERSONALITIES. Every voice works the SAME motifs (the day's
+    // theme + subs) — but each has its own temperament for HOW it develops
+    // them, so you can tell who is speaking by their habits alone. These are
+    // only probability weights over the same random development: the piece
+    // stays aleatoric, the players just have characters.
+    //   · clarinet  — the deacon: agile, decorative, conversational
+    //   · choir     — the congregation: broad, grand, opens tunes out
+    //   · bells      — the peal: terse, bright, fragmentary, clipped
+    //   · telegraph — the wire: pure rhythm, syncopated code, no filigree
+    //   · harmonium — the parlor organ: warm, sustained, draws tunes inward
+    //   · bagpipe   — the piper on the bluff: bold, wide leaps, long-held,
+    //                 a march-snap — its OWN profile now, not the clarinet's
+    var VOICE_WEIGHTS = {
+      clarinet:  { ornament: 3.5, mordent: 3, sequence: 3, syncopate: 2.5, transpose: 2, rotate: 2, fragmentHead: 2, invert: 1.5, fragmentTail: 1.5, diminish: 1.5, intervalExpand: 1.2, intervalCompress: 1, retrograde: 1, augment: 0.6 },
+      choir:     { augment: 4, invert: 3, transpose: 2.5, intervalExpand: 2, retrograde: 1.5, sequence: 1, rotate: 1, fragmentTail: 1, intervalCompress: 0.8, fragmentHead: 0.6, diminish: 0.4, syncopate: 0.4, ornament: 0.3, mordent: 0.3 },
+      bells:     { fragmentHead: 4, diminish: 3.5, fragmentTail: 2.5, syncopate: 2.5, rotate: 2, transpose: 2, retrograde: 1.5, sequence: 1.5, intervalCompress: 1.5, invert: 1, mordent: 0.6, intervalExpand: 0.5, ornament: 0.2, augment: 0.2 },
+      telegraph: { syncopate: 3.5, diminish: 3, fragmentHead: 3, retrograde: 2.5, rotate: 2, sequence: 2, intervalCompress: 1.5, fragmentTail: 1.5, transpose: 1, invert: 0.5, mordent: 0.3, intervalExpand: 0.3, augment: 0.2, ornament: 0.15 },
+      harmonium: { augment: 3.5, transpose: 2.5, invert: 2, intervalCompress: 2, sequence: 1.5, intervalExpand: 1.2, rotate: 1, retrograde: 1, fragmentTail: 1, mordent: 0.6, ornament: 0.6, fragmentHead: 0.6, syncopate: 0.5, diminish: 0.4 },
+      bagpipe:   { intervalExpand: 3, augment: 3, sequence: 2.5, transpose: 2.5, rotate: 2, invert: 1.8, syncopate: 1.8, retrograde: 1.5, fragmentTail: 1, mordent: 0.8, fragmentHead: 0.8, diminish: 0.6, ornament: 0.6, intervalCompress: 0.5 },
+    };
+    var SECTION_TILT = {
+      prelude:    { augment: 1.6, transpose: 1.4, ornament: 0.4, diminish: 0.4, sequence: 0.6 },
+      invocation: { augment: 1.8, fragmentTail: 1.3, sequence: 0.2, ornament: 0.3 },
+      hymn:       { sequence: 1.5, invert: 1.3, ornament: 1.3 },
+      testimony:  { fragmentHead: 1.6, fragmentTail: 1.5, augment: 1.3, sequence: 0.4 },
+      sacrament:  { augment: 2, ornament: 0.2, diminish: 0.2 },
+      doxology:   { invert: 1.4, sequence: 1.5, transpose: 1.3 },
+      postlude:   { augment: 1.7, fragmentTail: 1.6, ornament: 0.4 },
+    };
+    var AFFINITY = {
+      fragmentHead: { sequence: 2.4, ornament: 1.6 },
+      fragmentTail: { sequence: 2.4, ornament: 1.6 },
+      invert:       { augment: 1.7, transpose: 1.5 },
+      sequence:     { diminish: 1.6 },
+      ornament:     { augment: 1.4 },
+    };
+    function beatsOf(m) { var b = 0; m.notes.forEach(function (n) { b += n.durBeats; }); return b; }
+    function isPalindromic(m) {
+      var s = m.notes.map(function (n) { return n.deg; });
+      for (var i = 0; i < s.length; i++) if (s[i] !== s[s.length - 1 - i]) return false;
+      return true;
+    }
+    function lastRealLink(chain) {
+      for (var i = chain.length - 1; i >= 0; i--)
+        if (chain[i] !== "dissolve" && chain[i] !== "tether" && chain[i] !== "seed") return chain[i];
+      return null;
+    }
+    function allowedTransform(name, m, chain) {
+      var len = m.notes.length;
+      var last = lastRealLink(chain);
+      if (name === last) return false;             // never twice running
+      if (name === "fragmentHead" || name === "fragmentTail") {
+        if (len <= 4) return false;
+        var frags = 0;
+        for (var i = 0; i < chain.length; i++) if (chain[i].indexOf("fragment") === 0) frags++;
+        if (frags >= 1 && len <= 6) return false;
+      }
+      if (name === "sequence" && len >= 7) return false;
+      if (name === "ornament" && len >= 8) return false;
+      if (name === "retrograde" && isPalindromic(m)) return false;
+      if (name === "augment" && beatsOf(m) > 20) return false;
+      if ((name === "rotate" || name === "syncopate") && len < 3) return false;
+      if (name === "mordent" && len >= 8) return false;
+      if (name === "intervalExpand" || name === "intervalCompress") {
+        var lo = 1e9, hi = -1e9;
+        for (var k = 0; k < m.notes.length; k++) { lo = Math.min(lo, m.notes[k].deg); hi = Math.max(hi, m.notes[k].deg); }
+        var span = hi - lo;
+        if (name === "intervalExpand" && span >= 8) return false;    // already wide — don't run away
+        if (name === "intervalCompress" && span <= 2) return false;  // already narrow — nothing to draw in
+      }
+      return true;
+    }
+    function pickTransform(voice, m, chain) {
+      var w = VOICE_WEIGHTS[voice] || VOICE_WEIGHTS.clarinet;
+      var tilt = SECTION_TILT[C.section] || {};
+      var dia = meetingDialect || {};
+      var last = lastRealLink(chain);
+      var pool = [];
+      for (var name in w) {
+        if (!allowedTransform(name, m, chain)) continue;
+        var wt = w[name] * (tilt[name] || 1) * (dia[name] || 1);   // voice · section · the day's temper
+        if (last && AFFINITY[last] && AFFINITY[last][name]) wt *= AFFINITY[last][name];
+        pool.push([name, wt]);
+      }
+      return pool.length ? pickW(pool) : null;
+    }
+    // Keep the centre of mass in the singable window by whole octaves —
+    // internal intervals untouched, the contour survives intact.
+    function recentre(m) {
+      if (!m.notes.length) return m;
+      var sum = 0; m.notes.forEach(function (n) { sum += n.deg; });
+      var mean = sum / m.notes.length;
+      while (mean > 8) { m.notes.forEach(function (n) { n.deg -= 7; }); mean -= 7; }
+      while (mean < -1) { m.notes.forEach(function (n) { n.deg += 7; }); mean += 7; }
+      return m;
+    }
+
+    // ---- genealogy ----
+    var lineage = {};
+    var climaxReprised = false;
+    function ancestorOf(name) {
+      if (working.theme && working.theme.name === name) return working.theme;
+      for (var i = 0; i < working.subs.length; i++) if (working.subs[i] && working.subs[i].name === name) return working.subs[i];
+      return working.theme;
+    }
+    function remember(m) {
+      var cur = lineage[m.name];
+      if (!cur || m.gen >= cur.gen) lineage[m.name] = clone(m);
+    }
+    // CUMULATIVE FORM — is this motif the withheld theme? While the flag
+    // holds, the theme family may circulate only as fragments (endings
+    // first); the whole tune waits for the doxology assembly.
+    function withheld(m) {
+      return C.cumulative && !C.assemblyFired && working.theme && m && m.name === working.theme.name;
+    }
+    // Ives's staging, endings before beginnings: what fragment family each
+    // section may work while the tune is withheld.
+    var CUMULATIVE_STAGE = {
+      prelude:    ["fragmentTail", "augment"],
+      invocation: ["fragmentTail", "intervalCompress"],
+      interlude:  ["fragmentTail", "intervalCompress"],
+      hymn:       ["fragmentHead", "sequence"],
+      testimony:  ["retrograde", "invert"],
+      sacrament:  ["fragmentTail", "augment"],
+      doxology:   ["fragmentHead", "sequence"],
+      postlude:   ["fragmentTail", "augment"],
+    };
+    function developWithheld(voice, m) {
+      var fam = CUMULATIVE_STAGE[C.section] || ["fragmentTail"];
+      var out = clone(m);
+      var forced = null;
+      for (var fi = 0; fi < fam.length; fi++) {
+        if (allowedTransform(fam[fi], out, out.chain)) { forced = fam[fi]; break; }
+      }
+      if (!forced) return develop(voice, out, 1);  // guards refused; one gentle link
+      out = TRANSFORMS[forced](out);
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat([forced]);
+      stats.transformsUsed[forced] = (stats.transformsUsed[forced] || 0) + 1;
+      recentre(out);
+      stats.developments++;
+      remember(out);
+      emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: forced + " · withheld" });
+      // occasionally one more free link — but only one, and never verbatim
+      if (chance(0.4)) out = develop(voice, out, 1);
+      return out;
+    }
+    // Identity tether: every 3rd generation, the ancestor's opening is grafted
+    // back on — development may wander the valley, but the head returns.
+    function tether(m) {
+      var anc = ancestorOf(m.name);
+      if (!anc) return m;
+      // under the withholding the graft is capped at 2 — the head may haunt,
+      // never announce
+      var kCap = withheld(m) ? 2 : 3;
+      var k = Math.min(kCap, anc.notes.length, Math.max(1, m.notes.length - 1));
+      m.notes = clone(anc).notes.slice(0, k).concat(m.notes.slice(k));
+      m.chain = m.chain.concat(["tether"]);
+      stats.transformsUsed.tether = (stats.transformsUsed.tether || 0) + 1;
+      return m;
+    }
+    function develop(voice, m, maxChain) {
+      if (m.gen >= 9) {                            // renewal: the line returns to its source
+        var anc = ancestorOf(m.name);
+        if (anc) m = anc;
+      }
+      var out = clone(m);
+      var links = rint(1, maxChain || 2);
+      var used = [];
+      for (var i = 0; i < links; i++) {
+        var name = pickTransform(voice, out, out.chain.concat(used));
+        if (!name) break;
+        out = TRANSFORMS[name](out);
+        used.push(name);
+        stats.transformsUsed[name] = (stats.transformsUsed[name] || 0) + 1;
+      }
+      if (!used.length) {
+        out = TRANSFORMS.transpose(out);
+        used.push("transpose");
+        stats.transformsUsed.transpose = (stats.transformsUsed.transpose || 0) + 1;
+      }
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat(used);
+      if (out.gen >= 3 && out.gen % 3 === 0) out = tether(out);
+      recentre(out);
+      stats.developments++;
+      remember(out);
+      emitEvent({ cat: "motif", label: "◆ " + out.name + "·g" + out.gen, detail: used.join("+") + " · " + (out.gesture || "") });
+      return out;
+    }
+    // Which motif should a voice work right now?
+    function request(voice) {
+      var m;
+      switch (C.section) {
+        case "prelude": case "invocation":
+          m = chance(0.7) ? working.theme : pick(working.subs); break;
+        case "hymn":
+          m = pickW([[working.theme, 3], [working.subs[0], 2], [working.subs[1] || working.theme, 2]]); break;
+        case "testimony": case "sacrament":
+          m = chance(0.55) ? pick(working.subs) : working.theme; break;
+        case "doxology":
+          m = chance(0.65) ? working.theme : pick(working.subs); break;
+        default:
+          m = working.theme;
+      }
+      if (!m) m = working.theme;
+      // CUMULATIVE: MORE of the theme's parts than usual — the form is
+      // presence of the fragments, absence of the whole
+      if (withheld(working.theme) && m !== working.theme && chance(0.33)) m = working.theme;
+      // Work the LINEAGE (what the meeting has built) about half the time in
+      // the singing sections; the tether keeps it recognizable.
+      if (C.section === "hymn" || C.section === "doxology") {
+        var line = lineage[m.name];
+        if (line && line.gen > 0 && line.gen < 6 && chance(0.45)) m = line;
+      }
+      // State it plainly first — the tradition trusts its tunes.
+      if ((C.section === "prelude" || C.section === "invocation") && m.gen === 0 && chance(0.5) && !withheld(m)) return clone(m);
+      if (C.section === "doxology" && !climaxReprised && localArc() > 0.55 && !(C.cumulative && !C.assemblyFired)) {
+        // THE reprise: once per meeting, at the doxology's height, something
+        // returns whole — usually the literal theme, sometimes its deepest
+        // descendant, sometimes the lesser hymn. Recognition, varied.
+        climaxReprised = true;
+        var roll = rng();
+        var deepLine = lineage[working.theme.name];
+        if (roll < 0.25 && deepLine && deepLine.gen >= 3) {
+          emitEvent({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, transfigured — g" + deepLine.gen });
+          return clone(deepLine);
+        }
+        if (roll < 0.4 && working.subs.length) {
+          var subRe = pick(working.subs);
+          emitEvent({ cat: "motif", label: "✸ reprise " + subRe.name, detail: "the lesser hymn returns — " + (subRe.gesture || "") });
+          return clone(subRe);
+        }
+        emitEvent({ cat: "motif", label: "✸ reprise " + working.theme.name, detail: "the theme returns, verbatim — " + (working.theme.gesture || "") });
+        return clone(working.theme);
+      }
+      if (C.section === "postlude") {
+        var deep = lineage[m.name];
+        return decompose((deep && deep.gen > m.gen) ? clone(deep) : clone(m));
+      }
+      // the withheld theme develops only through its section's fragment family
+      if (withheld(m)) return developWithheld(voice, m);
+      return develop(voice, m, C.section === "doxology" ? 3 : 2);
+    }
+    // Postlude: the motif releases its notes one at a time into the evening.
+    function decompose(m) {
+      var out = clone(m);
+      var x = localArc();
+      var keep = Math.max(1, Math.round(out.notes.length * (1 - 0.8 * x)));
+      while (out.notes.length > keep) out.notes.splice(rint(1, Math.max(1, out.notes.length - 1)), 1);
+      out.notes.forEach(function (n) { n.durBeats *= 1 + x; });
+      out.gen = m.gen + 1;
+      out.chain = m.chain.concat(["dissolve"]);
+      emitEvent({ cat: "motif", label: "࿙ " + out.name + " disperses", detail: "notes let go into the dusk" });
+      return out;
+    }
+
+    // ---- dialogue ledger: real obligations between voices ----
+    function post(fromVoice, toVoice, motif, type) {
+      ledger.push({ from: fromVoice, to: toVoice, motif: clone(motif), type: type, deadline: ctx.currentTime + rnd(8, 20) });
+      if (ledger.length > 6) ledger.shift();
+    }
+    function claim(voice) {
+      var i, ob = null;
+      for (i = 0; i < ledger.length; i++) {
+        if (ledger[i].to === voice) { ob = ledger.splice(i, 1)[0]; break; }
+      }
+      if (!ob) {
+        // An obligation past its deadline is taken up by whichever voice
+        // speaks next (never the caller itself) — the answer is always heard.
+        for (i = 0; i < ledger.length; i++) {
+          if (ledger[i].from !== voice && ctx.currentTime > ledger[i].deadline) { ob = ledger.splice(i, 1)[0]; break; }
+        }
+      }
+      if (!ob) return null;
+      var m = ob.motif;
+      if (m.gen >= 9) {
+        var anc = ancestorOf(m.name);
+        if (anc) m = clone(anc);
+      }
+      var ans;
+      if (ob.type === "line-out") {
+        // lining-out: the answer is the same line, sung back in harmony —
+        // the caller's notes verbatim; the choir sets them (renderer's job).
+        ans = clone(m);
+        ans.linedOut = true;
+      } else if (ob.type === "imitate") ans = develop(voice, m, 1);
+      else if (ob.type === "invert") {
+        var op = "invert";
+        if (lastRealLink(m.chain) === "invert") op = isPalindromic(m) ? "transpose" : "retrograde";
+        ans = TRANSFORMS[op](clone(m)); ans.gen = m.gen + 1; ans.chain = m.chain.concat([op]);
+        stats.transformsUsed[op] = (stats.transformsUsed[op] || 0) + 1;
+        recentre(ans); remember(ans);
+      }
+      else ans = develop(voice, m, 2);
+      stats.answers++;
+      emitEvent({ cat: "motif", label: "⇄ " + voice + " answers " + ob.from, detail: ob.type + " · " + ans.name + "·g" + ans.gen });
+      return ans;
+    }
+    function overdueFor(voice) {
+      for (var i = 0; i < ledger.length; i++) {
+        if (ledger[i].to === voice) return true;
+        if (ledger[i].from !== voice && ctx && ctx.currentTime > ledger[i].deadline) return true;
+      }
+      return false;
+    }
+    function pendingLineOut(voice) {
+      for (var i = 0; i < ledger.length; i++) if (ledger[i].to === voice && ledger[i].type === "line-out") return true;
+      return false;
+    }
+
+    function newMeeting() {
+      // THE DAY'S TEMPER — the developmental dialect for the whole meeting.
+      // Tilted by the kind of Sunday and the season: fast days run plain and
+      // terse, festivals run florid and expansive, but any temper can surface.
+      var act = C.meeting ? C.meeting.activity : "ordinary";
+      dialectName = pickW([
+        ["plain",     2 + 2.5 * (1 - seasonPos) + (act === "fast" ? 1.5 : 0)],
+        ["psalmodic", 1.8 + (act === "fast" ? 1 : 0)],
+        ["terse",     1.2 + (act === "fast" ? 2 : 0)],
+        ["florid",    0.8 + 2.4 * seasonPos + (act === "jubilee" ? 1.5 : 0)],
+        ["expansive", 1 + 2 * seasonPos + (act === "conference" ? 1.2 : 0)],
+        ["restless",  1.2 + seasonPos + (act === "conference" ? 1 : 0)],
+      ]);
+      meetingDialect = DIALECTS[dialectName];
+      // Draw DISTINCT gestures from the pool. Most stay home today — and a
+      // lean fast Sunday sometimes carries only two hymns in its pocket.
+      var draw = (C.meeting && C.meeting.activity === "fast" && chance(0.5)) ? 2 : 3;
+      var idxs = [];
+      while (idxs.length < draw) {
+        var gi = rint(0, GESTURES.length - 1);
+        if (idxs.indexOf(gi) < 0) idxs.push(gi);
+      }
+      working.theme = fromGesture(GESTURES[idxs[0]], NAMES[0]);
+      working.subs = [];
+      for (var si = 1; si < idxs.length; si++) working.subs.push(fromGesture(GESTURES[idxs[si]], NAMES[si]));
+      // Perturb each once, gently, so no two meetings state a gesture the same.
+      [working.theme].concat(working.subs).forEach(function (m) {
+        var op = pickW([["transpose", 3], ["augment", 2], ["ornament", 1], ["diminish", 1]]);
+        if (allowedTransform(op, m, [])) { TRANSFORMS[op](m); m.chain = ["seed"]; }
+      });
+      // CUMULATIVE: a 3-note theme withheld and finally assembled is an
+      // anticlimax — seat the day's longest hymn in the theme's chair (the
+      // chair keeps its name; the tune changes hands)
+      if (C.cumulative && working.theme.notes.length < 5) {
+        var best = -1;
+        for (var wi = 0; wi < working.subs.length; wi++) {
+          var cand = working.subs[wi].notes.length;
+          var cur2 = best < 0 ? working.theme.notes.length : working.subs[best].notes.length;
+          if (cand > cur2) best = wi;
+        }
+        if (best >= 0 && working.subs[best].notes.length >= 5) {
+          var swap = working.theme;
+          working.theme = working.subs[best];
+          working.subs[best] = swap;
+          var chairName = swap.name;
+          swap.name = working.theme.name;
+          working.theme.name = chairName;
+        }
+      }
+      ledger.length = 0;
+      lineage = {};
+      climaxReprised = false;
+      stats.gestures = idxs.map(function (g2) { return GESTURES[g2].name; });
+      emitEvent({
+        cat: "motif", label: "❁ the day's hymns",
+        detail: stats.gestures.map(function (g3, k) { return NAMES[k] + " " + g3; }).join(" · ") + " · temper: " + dialectName,
+      });
+    }
+    function onSection(type) {
+      if (type === "doxology") climaxReprised = false;
+    }
+    function theme() { return working.theme; }
+    function anyWorking() {
+      // under the withholding, casual callers never receive the raw theme
+      if (C.cumulative && !C.assemblyFired) {
+        if (working.subs.length) return pick(working.subs);
+        return developWithheld("choir", working.theme);
+      }
+      return (chance(0.7) || !working.subs.length) ? working.theme : pick(working.subs);
+    }
+
+    return {
+      newMeeting: newMeeting, onSection: onSection, theme: theme, anyWorking: anyWorking,
+      request: request, post: post, claim: claim, overdueFor: overdueFor, pendingLineOut: pendingLineOut,
+      decompose: decompose, develop: develop,
+      stats: function () {
+        return {
+          developments: stats.developments, answers: stats.answers,
+          transforms: Object.keys(stats.transformsUsed),
+          gestures: stats.gestures.slice(), dialect: dialectName,
+          working: {
+            theme: working.theme && working.theme.name,
+            gen: working.theme && working.theme.gen,
+            // the day's theme as its GESTURE cipher — the hymn board's letter
+            gesture: working.theme && working.theme.gesture,
+            letter: (working.theme && GESTURE_LETTER[working.theme.gesture]) || null,
+          },
+        };
+      },
+    };
+  })();
+
+  // ==========================================================================
+  // VOICE: ORGAN — the tabernacle instrument. Additive drawbar ranks (no
+  // biquad anywhere in this chain, by design); principal chorus crossfading
+  // toward flutes; a slow shallow tremulant; a pedal sine under the bass.
+  // Soloist in prelude and postlude; the harmonic bed under the singing.
+  // ==========================================================================
+  function organChord(t, dur, chord, gainMul) {
+    if (!chord) return;
+    var stops = getLayerParam("organ", "stops", 0.5);
+    var trem = getLayerParam("organ", "tremulant", 0.15);
+    var pedal = getLayerParam("organ", "pedal", 0.6);
+    var dest = panAt("organ", 0);
+    var master = ctx.createGain();
+    master.connect(dest);
+    // drawbar recipe, softened aloft — and the whole chord AN OCTAVE DOWN:
+    // the organ lives in the warm low-middle now, an instrument among the
+    // others, not a bright bed over them
+    var RANKS = [1, 2, 3, 4];
+    var P = [1, 0.48, 0.22, 0.1], FL = [1, 0.65, 0.09, 0.32];
+    var nTones = chord.freqs.length;
+    for (var v = 0; v < nTones; v++) {
+      var f = chord.freqs[v] * 0.5;
+      for (var r = 0; r < RANKS.length; r++) {
+        var g = P[r] * (1 - stops) + FL[r] * stops;
+        if (g < 0.05) continue;
+        var pair = r === 0 ? 2 : 1;                            // chorus detune on the unison rank only
+        for (var d = 0; d < pair; d++) {
+          var o = ctx.createOscillator();
+          o.type = "sine";
+          o.frequency.setValueAtTime(f * RANKS[r] * (pair === 2 ? (d ? 1.0015 : 0.9985) : 1), t);
+          var og = ctx.createGain();
+          og.gain.setValueAtTime(g * 0.16 / Math.sqrt(nTones) / pair, t);
+          o.connect(og); og.connect(master);
+          o.start(t); o.stop(t + dur + 0.3);
+        }
+      }
+    }
+    if (pedal > 0.05) {
+      var sub = ctx.createOscillator();
+      sub.type = "sine";
+      sub.frequency.setValueAtTime(chord.freqs[0] * 0.25, t);
+      var sg = ctx.createGain(); sg.gain.setValueAtTime(pedal * 0.15, t);
+      sub.connect(sg); sg.connect(master);
+      sub.start(t); sub.stop(t + dur + 0.3);
+    }
+    if (trem > 0.02) {
+      var lfo = ctx.createOscillator(); lfo.frequency.setValueAtTime(rnd(5, 6), t);
+      var lg = ctx.createGain(); lg.gain.setValueAtTime(trem * 0.1, t);
+      lfo.connect(lg); lg.connect(master.gain);
+      lfo.start(t); lfo.stop(t + dur + 0.3);
+    }
+    var peak = (gainMul || 1) * 0.7;
+    var atk = Math.min(2.2, dur * 0.3);
+    env(master, t, [[atk, peak], [Math.max(0.1, dur - atk - dur * 0.28), peak * 0.92], [dur * 0.28, 0]]);
+    emitNote("organ", chord.freqs[0] * 0.5, t, dur);
+  }
+  function organCycle() {
+    if (!playing) return;
+    var s = C.section;
+    if (s === "invocation" || s === "testimony" || s === "interlude") {
+      // mostly tacet — a rare soft open chord, like the organist resting hands
+      if (chance(0.25)) {
+        var ch = Harmony.advance({ open: true });
+        organChord(ctx.currentTime + 0.1, rnd(10, 16), ch, 0.35);
+      }
+      scheduleLayer(organCycle, rnd(20, 36) * 1000 * silenceMul(), "organ");
+      return;
+    }
+    if (s === "sacrament") { scheduleRaw(organCycle, 6000); return; }
+    // The organ is an INSTRUMENT here, never a bed. In the prelude and the
+    // postlude the organist plays phrases — a chord, a breath, a chord —
+    // with real silence between. In the singing sections it only punctuates,
+    // a swell under a cadence moment, then hands the hymn back to the voices.
+    // The sustained ground of this piece is the sine DRONE, nothing else.
+    if (s === "prelude" || s === "postlude") {
+      var chord = Harmony.advance();
+      var dur = rnd(6, 11);
+      organChord(ctx.currentTime + 0.1, dur, chord, 0.75 * (0.6 + intensity() * 0.4));
+      scheduleLayer(organCycle, (dur + rnd(4, 10) * silenceMul()) * 1000, "organ");
+      return;
+    }
+    if (chance(0.6)) {
+      var ch2 = Harmony.current() || Harmony.advance();
+      var d2 = rnd(7, 12);
+      organChord(ctx.currentTime + 0.1, d2, ch2, (s === "doxology" ? 0.65 : 0.5) * (0.6 + intensity() * 0.5));
+    }
+    scheduleLayer(organCycle, rnd(12, 24) * 1000 * gapMul() * 0.6, "organ");
+  }
+
+  // ==========================================================================
+  // VOICE: DRONE — the La Monte Young register. Pure sines on the harmonic
+  // series of F0, in very long crossfading cycles. It never stops — in the
+  // sacrament it is all there is. The stillness is the point.
+  // ==========================================================================
+  function droneCycle() {
+    if (!playing) return;
+    var t = ctx.currentTime;
+    var dur = rnd(60, 90);
+    var overlap = 20;
+    var presence = getLayerParam("drone", "presence", 0.5);
+    var fifthAmt = getLayerParam("drone", "fifth", 0.4);
+    var bright = C.meeting ? MEETINGS[C.meeting.activity].bright : 0.5;
+    var partials = [
+      { h: 1, g: 0.4 }, { h: 2, g: 0.24 }, { h: 3, g: 0.12 }, { h: 4, g: 0.07 },
+    ];
+    if (fifthAmt > 0.1 && bright > 0.4) partials.push({ h: 3, g: fifthAmt * 0.1, oct: 1 });  // 3/2 above, one octave up
+    var dest = panAt("drone", 0);
+    var master = ctx.createGain();
+    master.connect(dest);
+    for (var i = 0; i < partials.length; i++) {
+      var o = ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(harm(partials[i].h) * (partials[i].oct ? 2 : 1), t);
+      var og = ctx.createGain();
+      og.gain.setValueAtTime(partials[i].g, t);
+      o.connect(og); og.connect(master);
+      o.start(t); o.stop(t + dur + 0.5);
+    }
+    var peak = 0.5 * (0.5 + presence * 0.8);
+    // the drone holds through everything, even the sacrament — softer, never gone
+    if (C.section === "sacrament") peak *= 0.8;
+    env(master, t, [[overlap * 0.7, peak], [dur - overlap * 1.4, peak * 0.95], [overlap * 0.7, 0]]);
+    emitNote("drone", F0, t, dur);
+    scheduleLayer(droneCycle, (dur - overlap) * 1000, "drone");
+  }
+
+  // ==========================================================================
+  // VOICE: CHOIR — SATB from the harmony engine. Formant-filtered "ah"/"oo",
+  // congregational scoops between chords, dispersed voicings. Sings verses in
+  // the hymns (poured through the meter), answers lining-out calls, gathers
+  // for the fuging entries, amens the doxology.
+  // ==========================================================================
+  var CHOIR_FORMANTS = {
+    ah: [[700, 1080, 2650], [600, 1040, 2250], [440, 1800, 2700], [340, 870, 2250]],  // S A T B
+    oo: [[325, 700, 2530], [370, 630, 2750], [300, 870, 2240], [280, 630, 2340]],
+  };
+  var CHOIR_PANS = [0.35, -0.35, 0.55, -0.55];   // S A T B — spread wide; the frontier is broad
+  function choirVoiceLine(t, notes, vi, gainMul) {
+    // one SATB voice walks a line of {f, dur} with scoops between pitches
+    var vowelAmt = getLayerParam("choir", "vowel", 0.4);
+    var scoop = getLayerParam("choir", "scoop", 0.5);
+    var dest = panAt("choir", CHOIR_PANS[vi]);
+    var o = ctx.createOscillator();
+    o.type = "sawtooth";
+    // LESSON (Bardo, hard-won): pre-attenuate before resonant formants — the
+    // Q boosts ~9x and will rail the master via the compressor's auto-makeup.
+    var pre = ctx.createGain(); pre.gain.setValueAtTime(0.16, t);
+    o.connect(pre);
+    var fAh = CHOIR_FORMANTS.ah[vi], fOo = CHOIR_FORMANTS.oo[vi];
+    var vg = ctx.createGain();
+    for (var fi = 0; fi < 3; fi++) {
+      var bq = ctx.createBiquadFilter();
+      bq.type = "bandpass";
+      // vowel blend is FIXED per phrase — formant frequencies never chase
+      // automation mid-note (setValueAtTime only; biquads stay stable)
+      bq.frequency.setValueAtTime(fAh[fi] * (1 - vowelAmt) + fOo[fi] * vowelAmt, t);
+      bq.Q.setValueAtTime(fi === 0 ? 6 : fi === 1 ? 9 : 5, t);
+      var bg = ctx.createGain();
+      bg.gain.setValueAtTime(fi === 0 ? 1 : fi === 1 ? 0.6 : 0.1, t);
+      pre.connect(bq); bq.connect(bg); bg.connect(vg);
+    }
+    vg.connect(dest);
+    // the line: pitch moves by scoops (short linearRamps on the OSCILLATOR,
+    // never on a biquad), a breath of portamento into each syllable
+    var det = 1 + rnd(-0.004, 0.004);
+    o.frequency.setValueAtTime(notes[0].f * det, t);
+    var tt = t, total = 0;
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      if (i > 0) {
+        var port = Math.max(0.1, Math.min(0.45, n.dur * 0.3)) * (0.4 + scoop);
+        o.frequency.setValueAtTime(notes[i - 1].f * det, tt);
+        o.frequency.linearRampToValueAtTime(n.f * det, tt + port);
+      }
+      tt += n.dur;
+      total += n.dur;
+    }
+    var peak = (gainMul || 1) * 0.5;
+    env(vg, t, [[rnd(0.6, 1.2), peak], [Math.max(0.2, total - 2.4), peak * 0.88], [rnd(1, 1.6), 0]]);
+    o.start(t); o.stop(t + total + 1.8);
+    return total;
+  }
+  function activeVoices() {
+    var size = Math.round(getLayerParam("choir", "size", 3));
+    var meet = C.meeting ? MEETINGS[C.meeting.activity].choirSize : 3;
+    var n = Math.max(1, Math.min(4, Math.min(size, meet)));
+    return n === 1 ? [0] : n === 2 ? [0, 3] : n === 3 ? [0, 1, 3] : [0, 1, 2, 3];
+  }
+  // Render a harmonized line: chords per syllable from Harmony.harmonize.
+  // voiceIdx order in chord.voicing is [b,t,a,s]; CHOIR vi is [s,a,t,b]=[0..3].
+  var VI_TO_CHORDPOS = [3, 2, 1, 0];
+  function choirHarmonizedLine(t, harmonized, beat, gainMul) {
+    var vis = activeVoices();
+    var lineNotes = { 0: [], 1: [], 2: [], 3: [] };
+    for (var i = 0; i < harmonized.length; i++) {
+      var ch = harmonized[i].chord;
+      var dur = harmonized[i].dur * beat;
+      for (var v = 0; v < vis.length; v++) {
+        var vi = vis[v];
+        lineNotes[vi].push({ f: ch.freqs[VI_TO_CHORDPOS[vi]], dur: dur });
+      }
+    }
+    var total = 0;
+    for (var v2 = 0; v2 < vis.length; v2++) {
+      var vi2 = vis[v2];
+      var stagger = vi2 === 0 ? 0 : rnd(0.05, 0.25);           // the congregation breathes together, loosely
+      var tot = choirVoiceLine(t + stagger, lineNotes[vi2], vi2, gainMul * (vi2 === 0 ? 1 : 0.8));
+      if (tot > total) total = tot;
+    }
+    for (var i2 = 0; i2 < harmonized.length; i2++) {
+      var at = t; for (var k = 0; k < i2; k++) at += harmonized[k].dur * beat;
+      var ch2 = harmonized[i2].chord, dur2 = harmonized[i2].dur * beat;
+      // report EVERY singing voice to the visualizer (not just the soprano), so
+      // the grand staff shows the full four-part harmony — the bass voice fills
+      // the bass staff, the soprano the treble. emitNote is view-only; the sound
+      // is unchanged (the voices already sang above).
+      for (var vv = 0; vv < vis.length; vv++) {
+        emitNote("choir", ch2.freqs[VI_TO_CHORDPOS[vis[vv]]], at, dur2);
+      }
+    }
+    return total;
+  }
+  function choirVerse() {
+    if (!playing) return;
+    var s = C.section;
+    var sings = s === "hymn" || s === "doxology";
+    if (!sings || inFuging() || inQuestion()) { scheduleRaw(choirVerse, 6000); return; }
+    if (!airFree()) { scheduleRaw(choirVerse, rnd(4, 9) * 1000); return; }
+
+    var t = ctx.currentTime + 0.15;
+    var beat = rnd(1.05, 1.5);                                 // slow — hymn time, prairie time
+    var meterLines = METERS[C.meter] || METERS.CM;
+
+    // Lining-out answer takes precedence: sing back the deacon's line, slower.
+    if (Motif.pendingLineOut("choir")) {
+      var call = Motif.claim("choir");
+      if (call) {
+        var ln = call.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
+        var hz = Harmony.harmonize(ln);
+        var total = choirHarmonizedLine(t, hz, beat * 1.4, 0.95);  // 0.7x tempo of the call
+        claimAir(total, rnd(4, 9) * silenceMul());
+        emitNote("choir", 0, t, total);
+        scheduleLayer(choirVerse, (total + rnd(6, 14) * gapMul()) * 1000, "choir");
+        return;
+      }
+    }
+
+    // A verse: 2 lines of the meter per speech (whole verses would crowd the
+    // air; the field hears the hymn in couplets, with sky between).
+    var motif = Motif.overdueFor("choir") ? Motif.claim("choir") : Motif.request("choir");
+    if (!motif) { scheduleRaw(choirVerse, 6000); return; }
+    var nLines = s === "doxology" ? 1 : 2;
+    var lineStart = t, sungTotal = 0;
+    for (var li = 0; li < nLines; li++) {
+      var nSyl = meterLines[(C.verseLine + li) % meterLines.length];
+      var line = Prosody.pourIntoLine(motif, nSyl);
+      var ln2 = line.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
+      var hz2 = Harmony.harmonize(ln2);
+      var lt = choirHarmonizedLine(lineStart, hz2, beat, 0.9);
+      emitEvent({ cat: "verse", label: "¶ " + C.meter + " line " + (li + 1), detail: nSyl + " syllables · " + motif.name + "·g" + motif.gen });
+      sungTotal += lt;
+      lineStart += lt + rnd(1.8, 3.4);                         // the breath between lines
+      sungTotal += 2.5;
+    }
+    C.verseLine = (C.verseLine || 0) + nLines;                 // the hymn walks its stanza
+    // the doxology closes each speech with the amen
+    if (s === "doxology") {
+      var cadChords = Harmony.cadence("plagal");
+      var cd = rnd(2.8, 3.8);
+      for (var ci = 0; ci < cadChords.length; ci++) {
+        var vis = activeVoices();
+        for (var v = 0; v < vis.length; v++) {
+          var vi = vis[v];
+          var vf = cadChords[ci].freqs[VI_TO_CHORDPOS[vi]];
+          choirVoiceLine(lineStart + ci * cd, [{ f: vf, dur: cd * (ci ? 1.6 : 1.02) }], vi, 0.9);
+          emitNote("choir", vf, lineStart + ci * cd, cd);       // print every voice of the amen
+        }
+      }
+      sungTotal += cd * 2 + 1;
+    }
+    claimAir(sungTotal, rnd(5, 12) * silenceMul());
+    if (chance(0.4)) Motif.post("choir", pickW([["clarinet", 3], ["bells", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+    var gap = rnd(10, 22) * gapMul();
+    scheduleLayer(choirVerse, (sungTotal + gap) * 1000, "choir");
+  }
+
+  // ==========================================================================
+  // FUGING ENTRY — the voices go out one by one (bass first, at the fifth and
+  // the octave by turns) and gather again into homophony. Strings hold the
+  // open fifth beneath. After the convergence: the stillness.
+  // ==========================================================================
+  function fugingEntry() {
+    var theme = Motif.theme();
+    if (!theme) return 4;
+    // under the withholding a fuging head may quote at most 3 notes — the
+    // imitation foreshadows, it must not announce
+    var headCap = C.cumulative && !C.assemblyFired ? 3 : 6;
+    var head = theme.notes.slice(0, Math.min(headCap, theme.notes.length));
+    var t = ctx.currentTime + 0.3;
+    var beat = rnd(1.0, 1.3);
+    var vis = [3, 2, 1, 0];                                    // B, T, A, S — bottom up
+    var stagger = rnd(2.4, 3.2);
+    var octForVi = { 0: 7, 1: 7, 2: 0, 3: 0 };                 // upper voices an octave up (7-space)
+    var entryCount = Math.min(4, rint(2, activeVoices().length + 1));
+    var lastEnd = t;
+    for (var e = 0; e < entryCount; e++) {
+      var vi = vis[e % 4];
+      var shift = (e % 2 === 1 ? 4 : 0) + octForVi[vi];        // alternating tonic / fifth entries
+      var notes = head.map(function (n) {
+        return { f: degFreq(projDeg(n.deg + shift) - (vi >= 2 ? colN() : 0)), dur: n.durBeats * beat };
+      });
+      var at = t + e * stagger;
+      var tot = choirVoiceLine(at, notes, vi, 0.85);
+      emitNote("choir", notes[0].f, at, tot);
+      if (at + tot > lastEnd) lastEnd = at + tot;
+    }
+    // strings hold the open fifth under the imitation
+    stringsPad(t, (lastEnd - t) + 4, 0.7, true);
+    // convergence: all voices land a plagal amen together
+    var cadAt = lastEnd + rnd(0.5, 1.2);
+    var chords = Harmony.cadence("plagal");
+    var cd = rnd(2.6, 3.4);
+    for (var ci = 0; ci < chords.length; ci++) {
+      var avs = activeVoices();
+      for (var v = 0; v < avs.length; v++) {
+        var vvi = avs[v];
+        choirVoiceLine(cadAt + ci * cd, [{ f: chords[ci].freqs[VI_TO_CHORDPOS[vvi]], dur: cd * (ci ? 1.7 : 1.02) }], vvi, 0.95);
+      }
+    }
+    organChord(cadAt, cd * 2.4, chords[chords.length - 1], 0.55);
+    var totalDur = (cadAt + cd * 2.4) - t;
+    claimAir(totalDur, 4);
+    emitEvent({ cat: "fuging", label: "⁂ fuging entry ×" + entryCount, detail: "stagger " + stagger.toFixed(1) + "s · at the fifth · " + (theme.gesture || "") });
+    return totalDur;
+  }
+
+  // ==========================================================================
+  // CUMULATIVE ASSEMBLY — the payoff of a withheld meeting. After twenty
+  // minutes of tails, heads, and mirrors, the whole tune arrives for the
+  // first time: a breath, then the theme VERBATIM in four parts — never
+  // poured through the meter; this is a tune-statement, not a verse —
+  // clarinet doubling above, organ beneath, strings holding the fifth,
+  // closed with the plagal amen. The withholding lifts when it ends.
+  // ==========================================================================
+  function cumulativeAssembly() {
+    var theme = Motif.theme();
+    if (!theme) return 8;
+    var t = ctx.currentTime + 0.4;
+    var breath = rnd(2, 3);                        // the room inhales
+    // if the hour is late (the x>0.7 fallback), the statement compresses
+    var beat = localArc() > 0.7 ? rnd(0.95, 1.15) : rnd(1.3, 1.6);
+    var line = theme.notes.map(function (n) { return { deg: n.deg, dur: n.durBeats }; });
+    var hz = Harmony.harmonize(line);
+    var at = t + breath;
+    var total = choirHarmonizedLine(at, hz, beat, 0.95);
+    // the deacon doubles the melody an octave above the sopranos
+    var cnotes = theme.notes.map(function (n) {
+      return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, Math.min(beat * 3.5, n.durBeats * beat)) };
+    });
+    renderClarinetLine(at + 0.1, cnotes, 0.8);
+    // the ground beneath the arrival
+    if (hz.length) organChord(at, Math.max(6, total * 0.55), hz[0].chord, 0.5);
+    var chDur = rnd(2.8, 3.4);
+    stringsPad(at, total + chDur * 2 + 2, 0.85, true);
+    // the plagal amen — every voice lands together
+    var cadAt = at + total + rnd(0.4, 0.9);
+    var chords = Harmony.cadence("plagal");
+    var avs = activeVoices();
+    for (var ci = 0; ci < chords.length; ci++) {
+      for (var v = 0; v < avs.length; v++) {
+        var vi = avs[v];
+        choirVoiceLine(cadAt + ci * chDur, [{ f: chords[ci].freqs[VI_TO_CHORDPOS[vi]], dur: chDur * (ci ? 1.7 : 1.02) }], vi, 0.9);
+      }
+    }
+    organChord(cadAt, chDur * 2.2, chords[chords.length - 1], 0.55);
+    var dur = (cadAt + chDur * 2.2) - t;
+    claimAir(dur, 6);
+    emitEvent({ cat: "visitation", label: "✶ the whole tune, at last", detail: theme.name + " · " + (theme.gesture || "") + " · " + Math.round(dur) + "s" });
+    return dur;
+  }
+
+  // ==========================================================================
+  // IVES VISITATIONS — rare guests, drawn at planMeeting on independent dice.
+  //
+  // THE UNANSWERED QUESTION (after Ives, 1908): the drone is the eternal
+  // ground and never changes; the clarinet asks ONE fixed phrase over and
+  // over — it refuses the motif engine's development, which is the point;
+  // the harmonium answers, each time faster, denser, higher, more scattered.
+  // The last asking gets no answer. The air is claimed, so the meeting holds
+  // back and the drone is left alone with it.
+  // ==========================================================================
+  function unansweredQuestion() {
+    var t = ctx.currentTime + 0.5;
+    var beat = rnd(0.8, 0.95);
+    // the perennial question: rising, angular, ending high and unresolved
+    // (a 9th above the root — a step past the octave, asking)
+    var QDEGS = [[4, 1.3], [5, 0.9], [8, 1.0], [6, 0.8], [8, 2.8]];
+    var qNotes = QDEGS.map(function (q) {
+      return { f: degFreq(projDeg(q[0]) + colN()), dur: q[1] * beat };
+    });
+    var qdur = 0;
+    for (var qq = 0; qq < qNotes.length; qq++) qdur += qNotes[qq].dur;
+    var N = rint(4, 5);
+    var cursor = t;
+    for (var k = 0; k < N; k++) {
+      renderClarinetLine(cursor, qNotes, 0.9);
+      var afterQ = cursor + qdur;
+      if (k < N - 1) {
+        // the answer: more notes, quicker, higher, less patient each time
+        var aAt = afterQ + rnd(1.2, 2.2);
+        var count = 3 + k * 2;
+        var abeat = 1.25 * Math.pow(0.75, k);
+        var lift = k >= 2 ? colN() : 0;
+        var adeg = 2, anotes = [];
+        for (var an = 0; an < count; an++) {
+          adeg += rint(-(1 + k), 1 + k) || 1;
+          adeg = Math.max(0, Math.min(9 + k, adeg));
+          anotes.push({ f: degFreq(projDeg(adeg) + colN() + lift), dur: Math.max(0.3, abeat * rnd(0.7, 1.2)) });
+        }
+        var adur = renderHarmonium(aAt, anotes, 0.5 + k * 0.12);
+        emitNote("harmonium", anotes[0].f, aAt, adur);
+        // from the third answer the answerers argue among themselves
+        if (k >= 2) {
+          var bnotes = anotes.map(function (n) { return { f: n.f * 1.5, dur: n.dur * rnd(0.8, 1) }; });
+          renderHarmonium(aAt + abeat * 0.5, bnotes, 0.3 + k * 0.08);
+        }
+        cursor = aAt + adur + rnd(2.5, 4.5) * Math.pow(0.85, k);
+      } else {
+        cursor = afterQ;                       // the last asking hangs
+      }
+    }
+    var tail = 10;                             // the drone alone — no answer comes
+    var total = (cursor - t) + tail;
+    claimAir(total - 4, 6);
+    emitEvent({ cat: "visitation", label: "? the question", detail: "×" + N + " askings · " + Math.round(total) + "s" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "? unanswered", detail: "the drone alone" });
+    }, (cursor - t + 1.5) * 1000);
+    return total;
+  }
+
+  // ==========================================================================
+  // TWO BANDS CROSSING (after the Danbury green; Putnam's Camp): a visiting
+  // band enters from one side of the valley in ITS OWN key and ITS OWN
+  // marching tempo, swells as it approaches, crosses the meeting, and
+  // recedes. It claims no air and defers to no one; the resident voices
+  // carry on exactly as they were. The collision is the piece. The visitor
+  // is never engraved on the page — it is not one of ours.
+  // ==========================================================================
+  function twoBandsCross() {
+    // under the withholding the visiting band gets a lesser hymn — even a
+    // stranger's quickstep must not give the tune away
+    var theme = (C.cumulative && !C.assemblyFired) ? Motif.anyWorking() : Motif.theme();
+    var t = ctx.currentTime + 0.4;
+    var dur = rnd(45, 65);
+    var beat = rnd(0.4, 0.52);                 // quickstep — unrelated to the meeting's time
+    var trans = pickW([[9 / 8, 3], [4 / 3, 2], [16 / 9, 1]]);   // its own key, justly tuned to itself
+    var fromLeft = chance(0.5);
+
+    // the visiting band's own wire into the hall
+    var bus = ctx.createGain();
+    bus.gain.setValueAtTime(0.0001, t);
+    var pan = ctx.createStereoPanner();
+    pan.pan.setValueAtTime(fromLeft ? -0.95 : 0.95, t);
+    pan.pan.linearRampToValueAtTime(fromLeft ? 0.95 : -0.95, t + dur);
+    bus.connect(pan);
+    pan.connect(tabSend || voicesBus);
+    // approach — cross — recede
+    bus.gain.linearRampToValueAtTime(0.4, t + dur * 0.45);
+    bus.gain.setValueAtTime(0.4, t + dur * 0.6);
+    bus.gain.linearRampToValueAtTime(0.0001, t + dur);
+
+    // the tune: the day's theme as a quickstep, or a jaunty default
+    var degs = theme && theme.notes.length >= 4
+      ? theme.notes.map(function (n) { return n.deg; })
+      : [0, 2, 4, 4, 5, 4, 2, 0, 2, 4, 5, 7, 5, 4, 2, 1];
+
+    // fife: one continuous reed, tongued with the gain gate
+    var fife = ctx.createOscillator();
+    fife.type = "sawtooth";
+    var flp = ctx.createBiquadFilter();
+    flp.type = "lowpass";
+    flp.frequency.setValueAtTime(2000, t);
+    var fart = ctx.createGain();
+    fart.gain.setValueAtTime(0, t);
+    fife.connect(flp); flp.connect(fart); fart.connect(bus);
+    // bass: the oom and the pah
+    var oom = ctx.createOscillator();
+    oom.type = "sine";
+    var og = ctx.createGain();
+    og.gain.setValueAtTime(0, t);
+    oom.connect(og); og.connect(bus);
+
+    var tt = t, di = 0;
+    while (tt < t + dur - beat) {
+      var deg = degs[di % degs.length];
+      var nd = Math.min(2, 0.9 + (di % 4 === 0 ? 0.5 : 0)) * beat;
+      var f = degFreq(projDeg(deg)) * trans * 2;               // fife register
+      fife.frequency.setValueAtTime(f, tt);
+      fart.gain.setValueAtTime(0.0001, tt);
+      fart.gain.linearRampToValueAtTime(0.5, tt + 0.03);
+      fart.gain.setValueAtTime(0.5, tt + nd * 0.7);
+      fart.gain.linearRampToValueAtTime(0.08, tt + nd * 0.95); // the tongue lifts
+      tt += nd; di++;
+    }
+    var bt = t, bar = 0;
+    while (bt < t + dur - beat) {
+      var bf = degFreq(projDeg(bar % 2 === 0 ? 0 : 4)) * trans / 2;   // oom on the root, pah on the fifth
+      oom.frequency.setValueAtTime(bf, bt);
+      og.gain.setValueAtTime(0.0001, bt);
+      og.gain.linearRampToValueAtTime(0.55, bt + 0.02);
+      og.gain.linearRampToValueAtTime(0.0001, bt + beat * 0.8);
+      bt += beat * 2; bar++;
+    }
+    fife.start(t); fife.stop(t + dur + 0.5);
+    oom.start(t); oom.stop(t + dur + 0.5);
+
+    emitEvent({ cat: "visitation", label: "⇋ a band approaches", detail: (fromLeft ? "from the west" : "from the east") + " · its own key" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "⇋ the bands cross", detail: "two times at once" });
+    }, dur * 0.5 * 1000);
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "⇋ passes on", detail: "" });
+    }, dur * 1000);
+    return dur;
+  }
+
+  // ==========================================================================
+  // FROM THE STEEPLES (after Ives, 'From the Steeples and the Mountains'):
+  // the meetinghouse bell rings, and two or three far steeples answer from
+  // the edges of the valley — each in ITS OWN key, each keeping its one fixed
+  // pitch on its own slow period, phasing against the home bell for a minute.
+  // Bells are landscape, not conversation: no air is claimed, the meeting
+  // carries on beneath them, and the visitors are never engraved on the page
+  // (not one of ours). The home bell has the first word and the last.
+  // ==========================================================================
+  function steeplesAnswer() {
+    var t = ctx.currentTime + 0.3;
+    var remaining = Math.max(20, C.sectionDur * (1 - localArc()));
+    var dur = Math.min(rnd(45, 75), remaining + 12);
+
+    // the home steeple — center field, the same bell the joints ring
+    var homeBase = harm(pick([4, 5, 6]));
+    while (homeBase > 700) homeBase /= 2;
+    while (homeBase < 300) homeBase *= 2;
+    var ringAmt = getLayerParam("bells", "ring", 0.55);
+    var homeGain = 0.6 * ringAmt;
+
+    // the visitors: fixed transposed bases drawn without replacement — a bell
+    // keeps its key; a festive Sunday wakes a third steeple
+    var pool = [9 / 8, 4 / 3, 16 / 9, 6 / 5];
+    var nVis = MEETINGS[C.meeting.activity].bells >= 0.8 && chance(0.7) ? 3 : 2;
+    var visitors = [];
+    for (var v = 0; v < nVis; v++) {
+      var trans = pool.splice(rint(0, pool.length - 1), 1)[0];
+      var base = homeBase * trans;
+      while (base > 700) base /= 2;
+      while (base < 300) base *= 2;
+      // its own wire: the haze of distance, one fixed seat at a field edge
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(1, t);
+      var lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(2400, t);
+      var pan = ctx.createStereoPanner();
+      pan.pan.setValueAtTime((v % 2 === 0 ? 1 : -1) * rnd(0.7, 0.95), t);
+      g.connect(lp); lp.connect(pan); pan.connect(tabSend || voicesBus);
+      visitors.push({ base: base, dest: g, period: rnd(5.5, 11), gain: homeGain * rnd(0.35, 0.5) });
+    }
+
+    // every strike scheduled upfront at absolute times (the bands precedent)
+    var all = [];
+    // the home steeple: first word, steady period, and the last bell alone
+    var homeTimes = [t];
+    var ht = t + rnd(7, 9);
+    while (ht < t + dur - 6) { homeTimes.push(ht + rnd(-0.4, 0.4)); ht += rnd(7, 9); }
+    homeTimes.push(t + dur - rnd(0.5, 1.5));
+    for (var h = 0; h < homeTimes.length; h++) {
+      all.push({ at: homeTimes[h], base: homeBase, home: true, gain: homeGain * (h === homeTimes.length - 1 ? 0.9 : 1) });
+    }
+    for (var v2 = 0; v2 < visitors.length; v2++) {
+      var vis = visitors[v2];
+      var times = [];
+      var vt = t + 3.5 + v2 * rnd(2, 4);                       // each answers in turn
+      var lastAt = t + dur * rnd(0.72, 0.85);                  // gone before the last bell
+      while (vt < lastAt) { times.push(vt + rnd(-0.4, 0.4)); vt += vis.period; }
+      for (var k = 0; k < times.length; k++) {
+        // ring in over the first two strikes, taper over the final two
+        var m = k === 0 ? 0.55 : k === 1 ? 0.85 : k >= times.length - 1 ? 0.45 : k >= times.length - 2 ? 0.75 : 1;
+        all.push({ at: times[k], base: vis.base, home: false, dest: vis.dest, gain: vis.gain * m });
+      }
+    }
+    // sparse overlap is the texture; simultaneity is clangor — nudge collisions
+    all.sort(function (a, b) { return a.at - b.at; });
+    for (var s2 = 1; s2 < all.length; s2++) {
+      if (all[s2].at - all[s2 - 1].at < 0.6) all[s2].at = all[s2 - 1].at + 0.7;
+    }
+    for (var s3 = 0; s3 < all.length; s3++) {
+      var st = all[s3];
+      if (st.home) {
+        bellStrike(st.at, st.gain, st.base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
+        emitNote("bells", 0, st.at, 7);
+      } else {
+        bellStrike(st.at, st.gain, st.base, st.dest, { hum: false });
+      }
+    }
+
+    emitEvent({ cat: "visitation", label: "◎ the steeples answer", detail: nVis + " far bells · " + Math.round(dur) + "s" });
+    scheduleRaw(function () {
+      emitEvent({ cat: "visitation", label: "◎ the last bell", detail: "" });
+    }, dur * 1000);
+    return dur;
+  }
+
+  // ==========================================================================
+  // THE OLD TUNE, HALF-REMEMBERED (after Ives's borrowings): once in a great
+  // while, far off at the edge of the field, a REAL hymn — one the colony
+  // would carry — surfaces for one worn phrase and maybe a fainter second
+  // try, then is gone. The engine's only quotation of pre-existing music.
+  //
+  // The pool: public-domain melodies (all 19th-century or older) that live in
+  // BOTH the LDS hymnal and the shared American congregational tradition.
+  // Each entry is the tune's opening incipit only, in 7-degree space (deg 0 =
+  // tonic; negatives below), verified against hymnary.org incipit indices.
+  // Unengraved: the memory is never emitNoted — it comes from outside the
+  // valley (or outside the present); the clerk's row is the only record.
+  //
+  // MODE LAW (the inversion rule): major memories surface only on major-ish
+  // Sundays. KINGSFOLD — the house hymn, "If You Could Hie to Kolob" (LDS
+  // #284), the traditional English tune of the Dives-and-Lazarus family —
+  // is modal MINOR, so the rule inverts for it alone: it is the ONLY tune
+  // that may surface on aeolian/dorian Sundays, and it never appears on
+  // bright ones (a minor tune recolored major is the wrong tune, and so is
+  // the reverse). On penta/hexa Sundays a tune is quotable only if its
+  // degree classes survive the collection's fold (penta folds classes 3 and
+  // 6; hexa folds 6) — computed, not hand-flagged.
+  //
+  // TODO (owner, 2026-07-06): ALL SEVEN INCIPITS NEED A TUNING PASS. The
+  // owner ear-checked the pool in the tune lab (/art/kolob/tune-lab) and
+  // judged every transcription off to some degree — these were drafted from
+  // hymnary.org incipit digit indices with reconstructed rhythms, which is
+  // not enough. Plan: re-transcribe each opening phrase against public-
+  // domain sheet music of these tunes (all melodies predate 1900), degree by
+  // degree and duration by duration, then re-verify in the lab's "plain"
+  // mode. Only the OLD_TUNES arrays below should need to change; the lab
+  // reads this table live via KolobAudio.getOldTunes().
+  // ==========================================================================
+  var OLD_TUNES = [
+    { name: "all is well",     w: 3,   minor: false, notes: [[0, 1], [0, 1], [1, 1], [2, 1], [0, 2], [-1, 1], [0, 1], [1, 1], [2, 1], [3, 2]] },
+    { name: "kingsfold",       w: 3,   minor: true,  notes: [[2, 1], [1, 1], [0, 1], [0, 1], [0, 2], [-1, 1], [2, 1], [2, 1], [3, 1], [2, 3]] },
+    { name: "bethany",         w: 2.5, minor: false, notes: [[2, 1.5], [1, 0.5], [0, 1], [0, 1], [-2, 2], [-2, 1.5], [-3, 0.5], [0, 1], [2, 1], [1, 3]] },
+    { name: "foundation",      w: 2,   minor: false, notes: [[-3, 1], [-2, 0.5], [0, 0.5], [-2, 1], [0, 1], [-3, 1], [0, 0.5], [0, 0.5], [2, 1], [0, 2]] },
+    { name: "nettleton",       w: 1,   minor: false, notes: [[2, 1], [1, 0.5], [0, 0.5], [0, 1], [2, 1], [4, 1], [1, 0.5], [1, 0.5], [2, 1], [4, 2]] },
+    { name: "simple gifts",    w: 2,   minor: false, notes: [[-3, 1], [-3, 1], [0, 1], [0, 0.5], [1, 0.5], [2, 0.5], [0, 0.5], [2, 0.5], [3, 0.5], [4, 1], [4, 0.5], [4, 0.5], [2, 1], [1, 0.5], [0, 0.5]] },  // Shaker; the Copland tune. From the Traditional Tune Archive incipit (C major): G G | c cd ec ef | g gg e dc — "'Tis the gift to be simple, 'tis the gift to be free"
+    { name: "god be with you", w: 1,   minor: false, notes: [[2, 1], [2, 0.5], [2, 0.5], [2, 1], [2, 0.5], [2, 0.5], [4, 1], [1, 1], [2, 1], [5, 2]] },
+  ];
+  function tuneFitsMode(tn) {
+    if (mode === "aeolian" || mode === "dorian") return !!tn.minor;  // dark Sundays: only the house hymn
+    if (tn.minor) return false;                                      // and never elsewhere
+    if (mode === "penta" || mode === "hexa") {
+      for (var ci = 0; ci < tn.notes.length; ci++) {
+        var cls = ((tn.notes[ci][0] % 7) + 7) % 7;
+        if (cls === 6 || (mode === "penta" && cls === 3)) return false;
+      }
+    }
+    return true;
+  }
+  function oldTuneCandidates() {
+    var pool = [];
+    for (var i = 0; i < OLD_TUNES.length; i++) if (tuneFitsMode(OLD_TUNES[i])) pool.push([OLD_TUNES[i], OLD_TUNES[i].w]);
+    return pool;
+  }
+
+  // the far voice — a self-contained carrier for the memory: soft triangle
+  // with a breath of octave, dulled by distance, at the field's edge, all
+  // tail. Not one of the console's instruments; it has no stop.
+  function farVoice(t, notes, gainMul, side, det) {
+    var o = ctx.createOscillator(); o.type = "triangle";
+    var o2 = ctx.createOscillator(); o2.type = "sine";
+    var g2 = ctx.createGain(); g2.gain.setValueAtTime(0.1, t);
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(1200, t);
+    var g = ctx.createGain();
+    var pn = ctx.createStereoPanner(); pn.pan.setValueAtTime(side, t);
+    o.connect(lp); o2.connect(g2); g2.connect(lp);
+    lp.connect(g); g.connect(pn); pn.connect(tabSend || voicesBus);
+    var tt = t, total = 0, prevF = 0;
+    for (var i = 0; i < notes.length; i++) {
+      var f = degFreq(projDeg(notes[i].deg) + colN()) * det;
+      if (i === 0) {
+        o.frequency.setValueAtTime(f, t);
+        o2.frequency.setValueAtTime(f * 2, t);
+      } else {
+        var port = Math.min(0.15, notes[i].dur * 0.2);
+        o.frequency.setValueAtTime(prevF, tt);
+        o.frequency.linearRampToValueAtTime(f, tt + port);
+        o2.frequency.setValueAtTime(prevF * 2, tt);
+        o2.frequency.linearRampToValueAtTime(f * 2, tt + port);
+      }
+      prevF = f;
+      tt += notes[i].dur;
+      total += notes[i].dur;
+    }
+    var peak = 0.14 * (gainMul || 1);
+    env(g, t, [[1.2, peak], [Math.max(0.4, total - 2.6), peak * 0.85], [1.6, 0]]);
+    o.start(t); o.stop(t + total + 2);
+    o2.start(t); o2.stop(t + total + 2);
+    return total;
+  }
+
+  function oldTuneRemembered(V) {
+    var tune = (V && V.tune) || OLD_TUNES[0];
+    var t = ctx.currentTime + 0.6;
+    var beat = rnd(1.1, 1.4);                    // its own remembered tempo
+    var side = pick([-0.85, 0.85]);
+    var det = Math.pow(2, 8 / 1200);             // 8 cents sharp of true — worn
+    var notes = tune.notes.map(function (n) { return { deg: n[0], dur: n[1] * beat }; });
+    // seeded wear — never the first two notes; recognition lives in the head
+    if (chance(0.5) && notes.length > 4) {
+      var di = rint(2, notes.length - 2);
+      notes[di - 1].dur += notes[di].dur;        // a note dropped, its neighbor held wrong in its place
+      notes.splice(di, 1);
+    }
+    if (chance(0.4)) notes[rint(2, notes.length - 1)].dur *= 1.6;
+    var dur1 = farVoice(t, notes, 1.0, side, det);
+    var total = dur1;
+    emitEvent({ cat: "visitation", label: "✧ an old tune remembered", detail: tune.name + " · " + C.section });
+    if (chance(0.6)) {
+      // a fainter second try — the head only, trailing off
+      var gap = rnd(6, 10);
+      var head = notes.slice(0, Math.min(5, notes.length - 1));
+      var t2 = t + dur1 + gap;
+      var dur2 = farVoice(t2, head, 0.6, side, det);
+      total = dur1 + gap + dur2;
+      scheduleRaw(function () {
+        emitEvent({ cat: "visitation", label: "✧ the memory gives out", detail: tune.name });
+      }, (t2 - ctx.currentTime + dur2) * 1000);
+    }
+    return total + 4;
+  }
+
+  // ==========================================================================
+  // VOICE: CLARINET — the deacon. Copland clarity: triangle + one soft octave
+  // sine through a gentle fixed lowpass; delayed shallow vibrato; single
+  // grace notes, no trills. Lines out the hymn for the choir; speaks alone
+  // in testimony with real silence around it.
+  // ==========================================================================
+  function renderClarinetLine(t, notes, gainMul) {
+    var vib = getLayerParam("clarinet", "vibrato", 0.4);
+    var graceAmt = getLayerParam("clarinet", "grace", 0.5);
+    var dest = panAt("clarinet", rnd(-0.25, 0.25));
+    var o = ctx.createOscillator();
+    o.type = "triangle";
+    var oct = ctx.createOscillator();
+    oct.type = "sine";
+    var og2 = ctx.createGain(); og2.gain.setValueAtTime(0.12, t);
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(notes[0].f * 5, t);            // fixed — no filter automation at all
+    var g = ctx.createGain();
+    o.connect(lp); oct.connect(og2); og2.connect(lp);
+    lp.connect(g); g.connect(dest);
+    o.frequency.setValueAtTime(notes[0].f, t);
+    oct.frequency.setValueAtTime(notes[0].f * 2, t);
+    var tt = t, total = 0;
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      if (i > 0) {
+        var port = Math.max(0.04, Math.min(0.2, n.dur * 0.25));
+        o.frequency.setValueAtTime(notes[i - 1].f, tt);
+        o.frequency.linearRampToValueAtTime(n.f, tt + port);
+        oct.frequency.setValueAtTime(notes[i - 1].f * 2, tt);
+        oct.frequency.linearRampToValueAtTime(n.f * 2, tt + port);
+      }
+      // a single grace note into longer notes — an upper neighbor, lightly
+      if (n.dur > 1.6 && i > 0 && chance(graceAmt * 0.5)) {
+        var gf = n.f * Math.pow(2, 1 / 12 * 2);
+        o.frequency.setValueAtTime(gf, tt - 0.09);
+        o.frequency.linearRampToValueAtTime(n.f, tt + 0.05);
+      }
+      emitNote("clarinet", n.f, tt, n.dur);
+      tt += n.dur;
+      total += n.dur;
+    }
+    // delayed vibrato: fades in after 40% of the line, stays shallow.
+    // LESSON (Bardo's conch): keep LFO depth well under the fundamental so
+    // frequency never goes negative — depth here is f*0.004, tiny by design.
+    if (vib > 0.05) {
+      var lfo = ctx.createOscillator();
+      lfo.frequency.setValueAtTime(rnd(4.5, 5.5), t);
+      var lg = ctx.createGain();
+      lg.gain.setValueAtTime(0, t);
+      lg.gain.setValueAtTime(0, t + total * 0.4);
+      lg.gain.linearRampToValueAtTime(notes[0].f * 0.004 * vib * 2, t + total * 0.7);
+      lfo.connect(lg); lg.connect(o.frequency);
+      lfo.start(t); lfo.stop(t + total + 0.5);
+    }
+    var peak = (gainMul || 1) * 0.34;
+    env(g, t, [[rnd(0.4, 0.8), peak], [Math.max(0.2, total - 1.8), peak * 0.9], [rnd(0.9, 1.4), 0]]);
+    o.start(t); o.stop(t + total + 1.6);
+    oct.start(t); oct.stop(t + total + 1.6);
+    return total;
+  }
+  function clarinetToNotes(motif, beat) {
+    return motif.notes.map(function (n, i) {
+      var d = n.durBeats * beat;
+      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * rnd(1.6, 2.4));
+      // a wind player's phrase keeps moving: interior notes ≤ ~3 beats, the
+      // ends ≤ ~4 — augmented material sings long in the choir, not here
+      d = Math.min(d, beat * (i === motif.notes.length - 1 ? 4 : 2.8));
+      return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, d) };  // an octave above the choir root
+    });
+  }
+  function clarinetPhrase() {
+    if (!playing) return;
+    var s = C.section;
+    var speaks = s === "prelude" || s === "hymn" || s === "testimony" || s === "doxology" || s === "postlude";
+    if (!speaks || inFuging() || inQuestion()) { scheduleRaw(clarinetPhrase, 6000); return; }
+    if (!airFree()) { scheduleRaw(clarinetPhrase, rnd(5, 11) * 1000); return; }
+    // in the prelude the deacon only occasionally tries a line over the organ
+    if (s === "prelude" && chance(0.55)) { scheduleRaw(clarinetPhrase, rnd(10, 18) * 1000); return; }
+
+    var pace = getLayerParam("clarinet", "pace", 1);
+    var beat = rnd(1.0, 1.4) / pace;
+    var motif = Motif.overdueFor("clarinet") ? Motif.claim("clarinet") : Motif.request("clarinet");
+    if (!motif) { scheduleRaw(clarinetPhrase, 6000); return; }
+
+    var t = ctx.currentTime + 0.12;
+    var total;
+    var lined = false;
+    var spoken = motif;                                        // what actually sounded (the shadow reads this)
+    if (s === "hymn" && chance(0.5)) {
+      // LINING-OUT: state the first line of the hymn plainly, then post it to
+      // the choir, which sings it back harmonized and slower.
+      var nSyl = (METERS[C.meter] || METERS.CM)[0];
+      var line = Prosody.pourIntoLine(motif, nSyl);
+      var lm = { name: motif.name, gen: motif.gen, chain: motif.chain.slice(), gesture: motif.gesture, notes: line };
+      total = renderClarinetLine(t, clarinetToNotes(lm, beat), 1);
+      Motif.post("clarinet", "choir", lm, "line-out");
+      emitEvent({ cat: "verse", label: "☞ the deacon lines out", detail: C.meter + " · " + nSyl + " syllables · " + motif.name });
+      lined = true;
+      spoken = lm;
+    } else {
+      // chord-tone gravity: strong-position notes lean onto the sounding chord
+      var tones = Harmony.chordTones();
+      var m2 = JSON.parse(JSON.stringify(motif));
+      if (tones) {
+        for (var i = 0; i < m2.notes.length; i += 2) {
+          var pd = projDeg(m2.notes[i].deg);
+          var cls = ((pd % colN()) + colN()) % colN();
+          if (!tones[cls] && chance(0.7)) {
+            var up = ((pd + 1) % colN() + colN()) % colN();
+            m2.notes[i].deg += tones[up] ? 1 : -1;
+          }
+        }
+      }
+      // A SPEECH, not a fragment: pour the idea into a full metered line —
+      // a short gesture walks on toward its rest tone — and usually answer
+      // it with a consequent after a breath. Antecedent–consequent: the
+      // period form the hymns think in.
+      var nSy = Math.max(m2.notes.length, pickW([[6, 1], [8, 3], [10, 2], [12, 1]]));
+      var line1 = Prosody.pourIntoLine(m2, nSy);
+      var gm2 = s === "testimony" ? 0.8 : 1;
+      spoken = { name: m2.name, gen: m2.gen, chain: [], gesture: m2.gesture, notes: line1 };
+      total = renderClarinetLine(t, clarinetToNotes(spoken, beat), gm2);
+      if (chance(s === "testimony" ? 0.35 : 0.6)) {
+        var cons = Motif.develop("clarinet", motif, 1);
+        var line2 = Prosody.pourIntoLine(cons, Math.max(4, nSy - pickW([[0, 2], [2, 2]])));
+        var breath2 = rnd(1.4, 2.4);
+        total += breath2 + renderClarinetLine(t + total + breath2, clarinetToNotes({ notes: line2 }, beat), gm2 * 0.95);
+      }
+      if (chance(0.4) && !lined) Motif.post("clarinet", pickW([["choir", 2], ["bells", 2], ["harmonium", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+    }
+    // the harmonium shadows the deacon a breath behind, in the parlor —
+    // reading the line as actually spoken, not the raw motif
+    if (chance(getLayerParam("harmonium", "shadow", 0.5)) && s !== "testimony") {
+      harmoniumShadow(t + rnd(0.4, 0.9), spoken, beat);
+    }
+    claimAir(total, (s === "testimony" ? rnd(10, 22) : rnd(4, 10)) * silenceMul());
+    var gap = (s === "testimony" ? rnd(18, 40) : rnd(9, 20)) * gapMul();
+    scheduleLayer(clarinetPhrase, (total + gap) * 1000, "clarinet");
+  }
+
+  // ==========================================================================
+  // VOICE: HARMONIUM — the parlor pump organ. Detuned saw pair through a
+  // still reed formant; the bellows breathe at 0.2-0.4 Hz. Plays the inner
+  // voices (alto+tenor) of the sounding chord, close and warm; shadows the
+  // deacon's lines a breath behind.
+  // ==========================================================================
+  function renderHarmonium(t, notes, gainMul) {
+    var reed = getLayerParam("harmonium", "reed", 0.5);
+    var bellows = getLayerParam("harmonium", "bellows", 0.5);
+    var dest = panAt("harmonium", rnd(-0.2, 0.2));
+    var mix = ctx.createGain();
+    var os = [];
+    for (var d = 0; d < 2; d++) {
+      var o = ctx.createOscillator();
+      o.type = "sawtooth";
+      o.frequency.setValueAtTime(notes[0].f * (d ? 1 + rnd(0.003, 0.005) : 1 - rnd(0.003, 0.005)), t);
+      var og = ctx.createGain(); og.gain.setValueAtTime(0.5, t);
+      o.connect(og); og.connect(mix);
+      os.push(o);
+    }
+    var bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(1600 + reed * 800, t);         // the reed formant sits still
+    bp.Q.setValueAtTime(2 + reed * 3, t);
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.setValueAtTime(2600, t);
+    var g = ctx.createGain();
+    mix.connect(bp); bp.connect(lp); lp.connect(g); g.connect(dest);
+    // pitch walk
+    var tt = t, total = 0;
+    for (var i = 0; i < notes.length; i++) {
+      var n = notes[i];
+      if (i > 0) {
+        for (var oi = 0; oi < os.length; oi++) {
+          var det = oi ? 1.004 : 0.996;
+          os[oi].frequency.setValueAtTime(notes[i - 1].f * det, tt);
+          os[oi].frequency.linearRampToValueAtTime(n.f * det, tt + Math.min(0.3, n.dur * 0.3));
+        }
+      }
+      tt += n.dur; total += n.dur;
+    }
+    // bellows: slow AM + a matching breath of pitch wobble
+    if (bellows > 0.05) {
+      var lfo = ctx.createOscillator();
+      lfo.frequency.setValueAtTime(rnd(0.2, 0.4), t);
+      var lg = ctx.createGain(); lg.gain.setValueAtTime(bellows * 0.12, t);
+      lfo.connect(lg); lg.connect(g.gain);
+      lfo.start(t); lfo.stop(t + total + 0.5);
+    }
+    var peak = (gainMul || 1) * 0.22;
+    env(g, t, [[rnd(0.8, 1.4), peak], [Math.max(0.2, total - 3), peak * 0.9], [rnd(1.4, 2), 0]]);
+    for (var oi2 = 0; oi2 < os.length; oi2++) { os[oi2].start(t); os[oi2].stop(t + total + 2.2); }
+    return total;
+  }
+  function harmoniumShadow(t, motif, beat) {
+    // the parlor echo of the deacon: same page, +8 cents, quieter
+    var det = Math.pow(2, 8 / 1200);
+    var notes = motif.notes.map(function (n) {
+      return { f: degFreq(projDeg(n.deg) + colN()) * det, dur: Math.max(0.4, n.durBeats * beat) };
+    });
+    renderHarmonium(t, notes, 0.5);
+    emitNote("harmonium", notes[0].f, t, notes.length * beat);
+    emitEvent({ cat: "motif", label: "〰 harmonium shadows the deacon", detail: motif.name + "·g" + motif.gen });
+  }
+  function harmoniumCycle() {
+    if (!playing) return;
+    var s = C.section;
+    var plays = s === "prelude" || s === "hymn" || s === "doxology" || s === "postlude";
+    if (!plays || inQuestion()) { scheduleRaw(harmoniumCycle, 8000); return; }
+    // the parlor ANSWERS the deacon when an obligation stands — a fourth
+    // conversational timbre, close and warm
+    if (Motif.overdueFor("harmonium") && airFree()) {
+      var ans = Motif.claim("harmonium");
+      if (ans) {
+        var abeat = rnd(1.1, 1.5);
+        var poured = Prosody.pourIntoLine(ans, Math.max(ans.notes.length, rint(6, 8)));
+        var anotes = poured.map(function (n) {
+          return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.min(abeat * 3.5, Math.max(0.5, n.durBeats * abeat)) };
+        });
+        var atot = renderHarmonium(ctx.currentTime + 0.1, anotes, 0.7);
+        emitNote("harmonium", anotes[0].f, ctx.currentTime + 0.1, atot);
+        claimAir(atot, rnd(4, 9) * silenceMul());
+        scheduleLayer(harmoniumCycle, (atot + rnd(14, 26) * gapMul()) * 1000, "harmonium");
+        return;
+      }
+    }
+    var ch = Harmony.current();
+    if (ch && chance(0.55)) {
+      var dur = rnd(9, 15);
+      // the inner voices: tenor + alto, sustained — an occasional warmth,
+      // not a constant one; the hymn keeps its sky
+      renderHarmonium(ctx.currentTime + 0.1, [{ f: ch.freqs[1], dur: dur }], 0.6 * (0.5 + intensity() * 0.6));
+      renderHarmonium(ctx.currentTime + rnd(0.2, 0.6), [{ f: ch.freqs[2], dur: dur * rnd(0.85, 1) }], 0.5 * (0.5 + intensity() * 0.6));
+      emitNote("harmonium", ch.freqs[1], ctx.currentTime + 0.1, dur);
+    }
+    scheduleLayer(harmoniumCycle, rnd(14, 26) * 1000 * gapMul(), "harmonium");
+  }
+
+  // ==========================================================================
+  // VOICE: STRINGS — the prairie. Open fifths of the sounding chord in long
+  // trapezoid pads; one quiet high "lonesome" partial riding above. Widest in
+  // the doxology; silent in the invocation and the sacrament.
+  // ==========================================================================
+  function stringsPad(t, dur, gainMul, fifthOnly) {
+    var warmth = getLayerParam("strings", "warmth", 0.5);
+    var lonesome = getLayerParam("strings", "lonesome", 0.4);
+    var ch = Harmony.current();
+    var rootF = ch ? ch.freqs[0] * 2 : F0 * ROOT_MULT;
+    var fifthF = rootF * 1.5;
+    var pitches = fifthOnly ? [rootF, fifthF] : [rootF, fifthF, rootF * 2];
+    var master = ctx.createGain();
+    master.connect(panAt("strings", 0));
+    var lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(700 + (1 - warmth) * 900 + intensity() * 900, t);  // set once, never swept
+    lp.connect(master);
+    for (var p = 0; p < pitches.length; p++) {
+      for (var d = 0; d < 3; d++) {
+        var o = ctx.createOscillator();
+        o.type = "sawtooth";
+        o.frequency.setValueAtTime(pitches[p] * (1 + (d - 1) * rnd(0.002, 0.0035)), t);
+        var og = ctx.createGain();
+        og.gain.setValueAtTime(0.09 / pitches.length, t);
+        o.connect(og); og.connect(lp);
+        o.start(t); o.stop(t + dur + 0.5);
+      }
+    }
+    if (lonesome > 0.05) {
+      var lo = ctx.createOscillator();
+      lo.type = "sine";
+      lo.frequency.setValueAtTime(fifthF * 4, t);
+      var lg = ctx.createGain(); lg.gain.setValueAtTime(lonesome * 0.05, t);
+      lo.connect(lg); lg.connect(master);
+      lo.start(t); lo.stop(t + dur + 0.5);
+    }
+    var peak = (gainMul || 1) * 0.7 * (0.4 + intensity() * 0.7);
+    var edge = Math.min(8, dur * 0.3);
+    env(master, t, [[edge, peak], [Math.max(0.5, dur - edge * 2), peak * 0.92], [edge, 0]]);
+    emitNote("strings", rootF, t, dur);
+  }
+  function stringsCycle() {
+    if (!playing) return;
+    var s = C.section;
+    if (s === "invocation" || s === "sacrament" || s === "interlude") { scheduleRaw(stringsCycle, 8000); return; }
+    var dur = rnd(22, 34);
+    var overlap = 8;
+    stringsPad(ctx.currentTime + 0.1, dur, s === "doxology" ? 1 : 0.75, chance(0.7));
+    scheduleLayer(stringsCycle, (dur - overlap) * 1000 * (s === "doxology" ? 0.9 : 1.3), "strings");
+  }
+
+  // ==========================================================================
+  // VOICE: BAGPIPE — the piper on the bluff. A double-reed CHANTER: a detuned
+  // sawtooth pair driven through a waveshaper's reed-BUZZ, coloured by two
+  // fixed nasal FORMANTS and a breath of filtered air — the one voice with
+  // grain against the meetinghouse's smooth organs and drones. (The Highland
+  // patch, dialed in on the bagpipe-lab bench.)
+  //
+  // But it speaks KOLOB, not the Highlands. Its ROLE turns with the order of
+  // service: in the hymns and doxology it either LINES the tune (a melodic
+  // voice, claiming the air like the deacon) or SUSTAINS the sounding chord's
+  // open fifths (harmony, a landscape voice that never claims the air). And it
+  // keeps to its SEASONS — out in force at conference and jubilee, hardly heard
+  // on the fast day, gone entirely in the sacrament's stillness.
+  // ==========================================================================
+  var bagpipeCurveCache = {};
+  function bagpipeCurve(amount) {
+    var key = amount.toFixed(2);
+    if (bagpipeCurveCache[key]) return bagpipeCurveCache[key];
+    var n = 1024, c = new Float32Array(n), k = 3 + amount * 12, i, x;
+    for (i = 0; i < n; i++) { x = (i / (n - 1)) * 2 - 1; c[i] = (1 - amount) * x + amount * (Math.tanh(k * x) / Math.tanh(k)); }
+    bagpipeCurveCache[key] = c;
+    return c;
+  }
+  // One reed tone with the Highland timbre. opts: { pan, prevFreq, swell }.
+  // No grace-note flick — Kolob phrases smoothly; a short slur carries the
+  // pitch in from prevFreq. `swell` gives the long, breathed attack of a
+  // sustained harmony note; otherwise the reed speaks promptly.
+  function bagpipeReed(t, freq, dur, gainMul, opts) {
+    opts = opts || {};
+    var grit = getLayerParam("bagpipe", "grit", 0.42);
+    var reed = getLayerParam("bagpipe", "reed", 0.5);
+    var breathAmt = getLayerParam("bagpipe", "breath", 0.32);
+    var dest = panAt("bagpipe", opts.pan || 0);
+    var out = ctx.createGain(); out.connect(dest);
+    var mix = ctx.createGain(); mix.gain.setValueAtTime(0.5, t);
+    for (var d = 0; d < 2; d++) {
+      var o = ctx.createOscillator(); o.type = "sawtooth";
+      o.detune.setValueAtTime(d ? 3.5 : -3.5, t);                 // the reed's beat
+      if (opts.prevFreq && opts.prevFreq > 20) {
+        o.frequency.setValueAtTime(opts.prevFreq, t);
+        o.frequency.exponentialRampToValueAtTime(Math.max(20, freq), t + 0.05);
+      } else o.frequency.setValueAtTime(freq, t);
+      o.connect(mix); o.start(t); o.stop(t + dur + 0.5);
+    }
+    var shaper = ctx.createWaveShaper(); shaper.curve = bagpipeCurve(grit);
+    mix.connect(shaper);
+    // dry body + two bandpass formants, summed — the nasal reed color
+    var fmix = ctx.createGain();
+    var dry = ctx.createGain(); dry.gain.setValueAtTime(0.5, t); shaper.connect(dry); dry.connect(fmix);
+    var bp1 = ctx.createBiquadFilter(); bp1.type = "bandpass";
+    bp1.frequency.setValueAtTime(2100 + reed * 700, t); bp1.Q.setValueAtTime(6, t);
+    var g1 = ctx.createGain(); g1.gain.setValueAtTime(0.8, t); shaper.connect(bp1); bp1.connect(g1); g1.connect(fmix);
+    var bp2 = ctx.createBiquadFilter(); bp2.type = "bandpass";
+    bp2.frequency.setValueAtTime(3200 + reed * 800, t); bp2.Q.setValueAtTime(7, t);
+    var g2 = ctx.createGain(); g2.gain.setValueAtTime(0.5, t); shaper.connect(bp2); bp2.connect(g2); g2.connect(fmix);
+    var lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(3600 + reed * 2000, t);
+    fmix.connect(lp); lp.connect(out);
+    if (breathAmt > 0.02) {
+      var nz = noiseSource();
+      var nbp = ctx.createBiquadFilter(); nbp.type = "bandpass"; nbp.frequency.setValueAtTime(3200, t); nbp.Q.setValueAtTime(1.4, t);
+      var ng = ctx.createGain();
+      nz.connect(nbp); nbp.connect(ng); ng.connect(out);
+      var npk = breathAmt * 0.12 * (gainMul || 1);
+      env(ng, t, [[0.06, npk], [Math.max(0.1, dur - 0.2), npk * 0.8], [0.2, 0]]);
+      nz.start(t, noiseOffset()); nz.stop(t + dur + 0.3);
+    }
+    var peak = (gainMul || 1) * 0.5;
+    var atk = opts.swell ? Math.min(1.6, dur * 0.32) : 0.05;
+    var rel = opts.swell ? Math.min(0.8, 0.2 + dur * 0.06) : 0.22;
+    env(out, t, [[atk, peak], [Math.max(0.06, dur - atk - rel), peak * 0.9], [rel, 0]]);
+  }
+  // A melodic line — the deacon's register (an octave above the choir root),
+  // slurred note to note. Returns the total sounded length.
+  function bagpipeLine(t, notes, gainMul, pan) {
+    var tt = t, total = 0, prev = 0;
+    for (var i = 0; i < notes.length; i++) {
+      bagpipeReed(tt, notes[i].f, notes[i].dur, gainMul, { pan: pan, prevFreq: prev });
+      emitNote("bagpipe", notes[i].f, tt, notes[i].dur);
+      prev = notes[i].f; tt += notes[i].dur; total += notes[i].dur;
+    }
+    return total;
+  }
+  function bagpipeToNotes(motif, beat) {
+    return motif.notes.map(function (n, i) {
+      var d = n.durBeats * beat;
+      if (i === 0 || i === motif.notes.length - 1) d = Math.max(d, beat * rnd(1.4, 2.2));
+      d = Math.min(d, beat * (i === motif.notes.length - 1 ? 4 : 3));
+      return { f: degFreq(projDeg(n.deg) + colN()), dur: Math.max(0.4, d) };
+    });
+  }
+  // Harmony role — the sounding chord's open fifth (no third: the bright,
+  // parallel-fifth pipe sound the tradition rewards), sustained and swelling.
+  function bagpipeChord(t, dur, gainMul) {
+    var ch = Harmony.current() || Harmony.advance();
+    var rootF = ch ? ch.freqs[0] * 2 : F0 * ROOT_MULT;           // into the chanter register
+    var fifthF = rootF * 1.5;
+    var pan = rnd(-0.3, 0.3);
+    bagpipeReed(t, rootF, dur, gainMul, { pan: pan, swell: true });
+    bagpipeReed(t + rnd(0.02, 0.08), fifthF, dur, gainMul * 0.85, { pan: pan, swell: true });
+    if (chance(0.5)) bagpipeReed(t + rnd(0.02, 0.1), rootF * 2, dur, gainMul * 0.55, { pan: pan, swell: true });
+    emitNote("bagpipe", rootF, t, dur);
+    emitNote("bagpipe", fifthF, t, dur);
+  }
+  // How much the piper plays in this section (0 = tacet), before the season
+  // scales it. THE ORDER OF SERVICE governs the reed's frequency of use.
+  function bagpipePresence() {
+    var base;
+    switch (C.section) {
+      case "prelude":    base = 0.3;  break;
+      case "invocation": base = 0.12; break;
+      case "hymn":       base = 0.7;  break;
+      case "interlude":  base = 0.7;  break;
+      case "testimony":  base = 0.06; break;   // hardly — the pipe is loud, this room is intimate
+      case "sacrament":  base = 0;    break;   // gone — the stillness is the point
+      case "doxology":   base = 0.95; break;   // out in force — the whole gathering praising
+      case "postlude":   base = 0.6;  break;
+      default:           base = 0.25;
+    }
+    // The piper is a festival creature: seasonPos 0 (fast-day trough) → quieter,
+    // 1 (conference/jubilee peak) → out on the bluff.
+    var seasonMul = 0.55 + 0.75 * seasonPos;
+    var act = C.meeting ? C.meeting.activity : "ordinary";
+    if (act === "fast") seasonMul *= 0.4;
+    else if (act === "jubilee") seasonMul *= 1.15;
+    return Math.max(0, Math.min(1, base * seasonMul));
+  }
+  // Which role this section wants — melodic line vs. sustained harmony.
+  function bagpipeRole() {
+    switch (C.section) {
+      case "doxology":   return chance(0.7) ? "harmony" : "melody";  // swells the final praise
+      case "hymn":       return chance(0.5) ? "harmony" : "melody";
+      case "invocation": return chance(0.55) ? "harmony" : "melody";
+      default:           return "melody";                            // prelude, interlude, postlude
+    }
+  }
+  function bagpipeCycle() {
+    if (!playing) return;
+    var pres = bagpipePresence();
+    if (pres <= 0.001 || C.section === "sacrament") {
+      scheduleLayer(bagpipeCycle, rnd(6, 12) * 1000, "bagpipe"); return;
+    }
+    // gate by presence: some turns the piper simply stays his hand, and comes
+    // back around soon to try again
+    if (!chance(pres)) { scheduleLayer(bagpipeCycle, rnd(3, 7) * 1000, "bagpipe"); return; }
+    var gm = 0.9 * (0.6 + intensity() * 0.5);
+    var role = bagpipeRole();
+    // the melodic line wants the open air; when it's taken (the choir and the
+    // deacon are singing), the piper sustains harmony under them instead of
+    // competing for the line — so the reed is present either way
+    if (role === "melody" && !airFree()) role = "harmony";
+    if (role === "harmony") {
+      // a landscape voice: it does not claim the air
+      var dur = rnd(6, 11);
+      bagpipeChord(ctx.currentTime + 0.1, dur, gm * 0.85);
+      scheduleLayer(bagpipeCycle, (dur + rnd(2, 6) * gapMul()) * 1000, "bagpipe");
+      return;
+    }
+    // melodic role — claims the air like the deacon
+    var pace = getLayerParam("bagpipe", "pace", 1);
+    var beat = rnd(0.9, 1.25) / pace;
+    var motif = Motif.overdueFor("bagpipe") ? Motif.claim("bagpipe") : Motif.request("bagpipe");
+    if (!motif) { scheduleLayer(bagpipeCycle, 5000, "bagpipe"); return; }
+    var nSy = Math.max(motif.notes.length, pickW([[6, 2], [8, 3], [10, 1]]));
+    var line = Prosody.pourIntoLine(motif, nSy);
+    var pan = rnd(-0.35, 0.35);
+    var total = bagpipeLine(ctx.currentTime + 0.12, bagpipeToNotes({ notes: line }, beat), gm, pan);
+    if (chance(0.4)) Motif.post("bagpipe", pickW([["choir", 2], ["clarinet", 2], ["bells", 1]]), motif, pickW([["imitate", 3], ["invert", 2], ["develop", 2]]));
+    claimAir(total, rnd(3, 8) * silenceMul());
+    var gap = rnd(6, 14) * gapMul();
+    scheduleLayer(bagpipeCycle, (total + gap) * 1000, "bagpipe");
+  }
+
+  // ==========================================================================
+  // VOICE: BELLS — the meetinghouse bell (section joints, festival peals) and
+  // the muted TINE (the Cage nod: a prepared, damped, music-box tone that
+  // taps motif heads between speeches, quantized to the sounding chord).
+  // ==========================================================================
+  // One bell, one strike — extracted so far steeples can ring the same KIND
+  // of bell at their own bases and down their own wires. The partial stack
+  // and beating doublets are the meetinghouse bell's, untouched. opts.hum
+  // adds the 0.5× hum partial (the home bell keeps its hum; visitors don't,
+  // so transposed hums never pile up under the drone).
+  function bellStrike(t, gainMul, base, dest, opts) {
+    var ratios = [1, 2.0, 2.76, 3.98, 5.4];
+    var g0 = (gainMul || 0.6) * 0.55;
+    for (var i = 0; i < ratios.length; i++) {
+      for (var d = 0; d < 2; d++) {                            // beating doublets — a real bell shimmers
+        var o = ctx.createOscillator();
+        o.type = "sine";
+        o.frequency.setValueAtTime(base * ratios[i] + (d ? rnd(0.4, 2.2) : 0), t);
+        var og = ctx.createGain();
+        o.connect(og); og.connect(dest);
+        var pg = g0 * 0.5 / (1 + i * 1.0);
+        env(og, t, [[0.005, pg], [rnd(3.5, 8) / (1 + i * 0.55), 0]]);
+        o.start(t); o.stop(t + 10);
+      }
+    }
+    if (opts && opts.hum) {
+      var hum = ctx.createOscillator();
+      hum.type = "sine"; hum.frequency.setValueAtTime(base * 0.5, t);
+      var hg = ctx.createGain();
+      hum.connect(hg); hg.connect(dest);
+      env(hg, t, [[0.012, g0 * 0.28], [rnd(5, 9), 0]]);
+      hum.start(t); hum.stop(t + 10);
+    }
+  }
+  function meetinghouseBell(t, gainMul) {
+    if (!ctx) return;
+    var ringAmt = getLayerParam("bells", "ring", 0.55);
+    var base = harm(pick([4, 5, 6]));
+    while (base > 700) base /= 2;
+    while (base < 300) base *= 2;
+    bellStrike(t, (gainMul || 0.6) * ringAmt, base, panAt("bells", rnd(-0.2, 0.2)), { hum: true });
+    emitNote("bells", 0, t, 7);
+  }
+  function tineTap(t, f, amp) {
+    var dest = panAt("bells", rnd(-0.4, 0.4));
+    var partials = [[1, 1], [5.43, 0.35]];
+    for (var i = 0; i < partials.length; i++) {
+      var o = ctx.createOscillator();
+      o.type = "sine";
+      o.frequency.setValueAtTime(f * partials[i][0], t);
+      var og = ctx.createGain();
+      o.connect(og); og.connect(dest);
+      env(og, t, [[0.003, amp * partials[i][1]], [i === 0 ? rnd(0.7, 1.2) : rnd(0.12, 0.2), 0]]);
+      o.start(t); o.stop(t + 1.5);
+    }
+    // the fingernail thump — the felt against the tine
+    var n = noiseSource();
+    var nf = ctx.createBiquadFilter(); nf.type = "lowpass"; nf.frequency.setValueAtTime(500, t);
+    var ng = ctx.createGain();
+    n.connect(nf); nf.connect(ng); ng.connect(dest);
+    env(ng, t, [[0.003, amp * 0.2], [0.06, 0]]);
+    n.start(t, noiseOffset()); n.stop(t + 0.15);
+    emitNote("bells", f, t, 1);
+  }
+  function tineCycle() {
+    if (!playing) return;
+    var s = C.section;
+    if (s === "invocation" || s === "sacrament" || inFuging()) { scheduleRaw(tineCycle, 9000); return; }
+    if (!airFree()) { scheduleRaw(tineCycle, rnd(6, 12) * 1000); return; }
+    var tineAmt = getLayerParam("bells", "tine", 0.5);
+    var motif = Motif.overdueFor("bells") ? Motif.claim("bells") : Motif.request("bells");
+    if (!motif) { scheduleRaw(tineCycle, 9000); return; }
+    var head = motif.notes.slice(0, rint(4, 6));
+    var t = ctx.currentTime + 0.1;
+    var beat = rnd(0.55, 0.85);
+    var tones = Harmony.chordTones();
+    var total = 0;
+    for (var i = 0; i < head.length; i++) {
+      var pd = projDeg(head[i].deg) + colN();                  // up where a music box lives
+      if (tones) {
+        var cls = ((pd % colN()) + colN()) % colN();
+        if (!tones[cls]) pd += 1;                              // lean onto the chord
+      }
+      var f = degFreq(pd) * 2;
+      tineTap(t + total, f, 0.3 * tineAmt * 2);
+      total += Math.max(0.35, head[i].durBeats * beat * 0.6);
+    }
+    claimAir(total, rnd(3, 7));
+    var gap = rnd(20, 45) * gapMul();
+    scheduleLayer(tineCycle, (total + gap) * 1000, "bells");
+  }
+
+  // ==========================================================================
+  // VOICE: THE STILL SMALL VOICE — a near-threshold murmur, close to the ear.
+  // Not a wind, not an earthquake, not a fire. Speaks in the invocation and
+  // the sacrament; in the sacrament it is the only moving thing over the
+  // drone. Never words.
+  // ==========================================================================
+  var VOICE_VOWELS = [[320, 850], [430, 1100], [540, 1450], [660, 1800], [790, 2050]];
+  function stillVoiceRender(t, dur) {
+    var dest = panAt("voice", 0);
+    var presence = getLayerParam("voice", "presence", 0.4);
+    var sylAmt = getLayerParam("voice", "syllables", 0.4);
+    var sylRate = 2 + sylAmt * 1.5;                            // 2-3.5 syl/s — slower than speech
+    var o = ctx.createOscillator();
+    o.type = "sawtooth";
+    // recitation-tone drift — prosody, not song
+    o.frequency.setValueAtTime(F0 * 2, t);
+    o.frequency.linearRampToValueAtTime(F0 * 2 * rnd(0.985, 1.02), t + dur * 0.5);
+    o.frequency.linearRampToValueAtTime(F0 * 2 * 0.985, t + dur);
+    // LESSON: pre-attenuate before high-Q formants (they boost ~9x).
+    var pre = ctx.createGain(); pre.gain.setValueAtTime(0.16, t);
+    o.connect(pre);
+    var f1 = ctx.createBiquadFilter(); f1.type = "bandpass"; f1.Q.setValueAtTime(5, t);
+    var f2 = ctx.createBiquadFilter(); f2.type = "bandpass"; f2.Q.setValueAtTime(6, t);
+    f1.frequency.setValueAtTime(500, t); f2.frequency.setValueAtTime(1400, t);
+    var f1g = ctx.createGain(); f1g.gain.setValueAtTime(1, t);
+    var f2g = ctx.createGain(); f2g.gain.setValueAtTime(0.6, t);
+    var gate = ctx.createGain();
+    var og = ctx.createGain();
+    pre.connect(f1); f1.connect(f1g); f1g.connect(gate);
+    pre.connect(f2); f2.connect(f2g); f2g.connect(gate);
+    gate.connect(og); og.connect(dest);
+    gate.gain.setValueAtTime(0, t);
+    var st = t + 0.05, end = t + dur - 0.5;
+    // formant jumps as short linearRamps, NEVER setTargetAtTime (biquad
+    // frequency under exponential-approach automation destabilizes — measured)
+    var pv1 = 500, pv2 = 1400;
+    while (st < end) {
+      var syl = 1 / (sylRate * rnd(0.8, 1.25));
+      var v = pick(VOICE_VOWELS);
+      f1.frequency.setValueAtTime(pv1, st); f1.frequency.linearRampToValueAtTime(v[0], st + 0.035);
+      f2.frequency.setValueAtTime(pv2, st); f2.frequency.linearRampToValueAtTime(v[1], st + 0.035);
+      pv1 = v[0]; pv2 = v[1];
+      var on = Math.max(0.04, syl * 0.24);
+      var hold = syl * rnd(0.4, 0.62);
+      gate.gain.setValueAtTime(0, st);
+      gate.gain.linearRampToValueAtTime(1, st + on);
+      gate.gain.linearRampToValueAtTime(0, st + on + hold);
+      st += syl + (chance(0.2) ? rnd(0.3, 1.1) : 0);           // long breath commas
+    }
+    // The real governor of the voice's loudness. It was pinned near-threshold
+    // here (0.24), so raising only the layer trim doubled a near-silent source
+    // and read as no change. Lifted at the source by owner request so the still
+    // small voice actually sits in the room.
+    var peak = 0.55 * presence;
+    env(og, t, [[1.6, peak], [Math.max(0.4, dur - 3.4), peak * 0.9], [1.8, 0]]);
+    o.start(t); o.stop(t + dur + 0.3);
+    emitNote("voice", 0, t, dur);
+    return dur;
+  }
+  function stillVoicePhrase() {
+    if (!playing) return;
+    var s = C.section;
+    var speaks = s === "invocation" || s === "sacrament" || (s === "testimony" && chance(0.3));
+    if (!speaks) { scheduleRaw(stillVoicePhrase, 7000); return; }
+    var dur = rnd(7, 15);
+    stillVoiceRender(ctx.currentTime + 0.05, dur);
+    scheduleLayer(stillVoicePhrase, (dur + rnd(6, 16) * silenceMul()) * 1000, "voice");
+  }
+
+  // ==========================================================================
+  // VOICE: TELEGRAPH — the Deseret wire. It flashes a real word or two toward
+  // home in International Morse: dits and dahs on a soft keyed tone, panned far
+  // to one side, in the parlor. Historical and interstellar at once. The same
+  // mark run drives the keyed audio and the tape drawn on the page. No pitch.
+  // ==========================================================================
+  var MORSE = {
+    A: ".-", B: "-...", C: "-.-.", D: "-..", E: ".", F: "..-.", G: "--.",
+    H: "....", I: "..", J: ".---", K: "-.-", L: ".-..", M: "--", N: "-.",
+    O: "---", P: ".--.", Q: "--.-", R: ".-.", S: "...", T: "-", U: "..-",
+    V: "...-", W: ".--", X: "-..-", Y: "-.--", Z: "--..",
+  };
+  // short messages a colony at the rim of Kolob might wire home — faith, place,
+  // and the refrains of the pioneer hymn ("Come, Come, Ye Saints … all is well")
+  var TELEGRAPH_WORDS = [
+    "HOME", "ZION", "KOLOB", "AMEN", "DESERET", "SEGO", "GLORY", "GRACE",
+    "LIGHT", "HOLY", "WEST", "SNOW", "SAFE", "SOON", "WELL", "HOPE", "DAWN",
+    "PRAY", "SING", "STAR", "ALL IS WELL", "COME HOME", "GONE WEST",
+    "HOME SOON", "O ZION",
+  ];
+  var TEL_DIT = 0.07;                                // one Morse unit, in seconds
+  // Encode a word into a mark run: each mark is { dah, gap }, where gap is the
+  // space AFTER it — 'i' intra-letter (1 unit), 'l' between letters (3), 'w'
+  // between words (7), 'e' end (none). Both the audio and the tape read this.
+  // Each mark also carries its timing: `at` (start offset from the message's
+  // start, in seconds) and `len` (its own length). The tape uses these to key
+  // itself out mark-by-mark in step with the sound.
+  function telegraphMessage(word) {
+    var chars = word.toUpperCase().split(""), seq = [], t = 0;
+    for (var ci = 0; ci < chars.length; ci++) {
+      var code = MORSE[chars[ci]];
+      if (!code) continue;                            // spaces / unknowns → 'w' gaps below
+      for (var mi = 0; mi < code.length; mi++) {
+        var gap = "i";
+        if (mi === code.length - 1) {                 // last element of this letter
+          var rest = chars.slice(ci + 1).join("").replace(/[^A-Z]/g, "");
+          gap = !rest ? "e" : (chars[ci + 1] === " " ? "w" : "l");
+        }
+        var dah = code.charAt(mi) === "-";
+        var len = dah ? TEL_DIT * 3 : TEL_DIT;
+        seq.push({ dah: dah, gap: gap, at: t, len: len });
+        t += len + (gap === "e" ? 0 : gap === "w" ? TEL_DIT * 7 : gap === "l" ? TEL_DIT * 3 : TEL_DIT);
+      }
+    }
+    return seq;
+  }
+  // Key a mark run as audio from time t, panned to `side`; returns the end time.
+  function keyMorse(t, seq, side, peak) {
+    var carrier = F0 * 8;
+    while (carrier > 720) carrier /= 2;
+    while (carrier < 480) carrier *= 2;
+    var end = t;
+    for (var i = 0; i < seq.length; i++) {
+      var mt = t + seq[i].at, len = seq[i].len;
+      var o = ctx.createOscillator();
+      o.type = "square"; o.frequency.setValueAtTime(carrier, mt);
+      var lp = ctx.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.setValueAtTime(carrier * 2.5, mt);
+      var g = ctx.createGain();
+      o.connect(lp); lp.connect(g); g.connect(panAt("telegraph", side));
+      env(g, mt, [[0.004, peak], [len, peak * 0.9], [0.02, 0]]);
+      o.start(mt); o.stop(mt + len + 0.1);
+      if (mt + len > end) end = mt + len;
+    }
+    return end;
+  }
+  function telegraphCycle() {
+    if (!playing) return;
+    var s = C.section;
+    var taps = s === "prelude" || s === "hymn" || s === "testimony" || s === "postlude";
+    if (!taps || chance(0.4)) { scheduleRaw(telegraphCycle, rnd(20, 40) * 1000); return; }
+    var clack = getLayerParam("telegraph", "clack", 0.5);
+    var t = ctx.currentTime + 0.1;
+    var word = pick(TELEGRAPH_WORDS);
+    var seq = telegraphMessage(word);
+    if (!seq.length) { scheduleRaw(telegraphCycle, 15000); return; }
+    var side = pick([-0.8, 0.8]);
+    var tt = keyMorse(t, seq, side, 0.055);
+    // the relay clack — the instrument's wooden body speaking
+    if (chance(clack)) {
+      var n = noiseSource();
+      var nf = ctx.createBiquadFilter();
+      nf.type = "bandpass"; nf.frequency.setValueAtTime(rnd(1800, 2600), tt); nf.Q.setValueAtTime(5, tt);
+      var ng = ctx.createGain();
+      n.connect(nf); nf.connect(ng); ng.connect(panAt("telegraph", side));
+      env(ng, tt, [[0.003, 0.04], [0.05, 0]]);
+      n.start(tt, noiseOffset()); n.stop(tt + 0.12);
+    }
+    // once in a long while, a REPLY comes from home — the same word, fainter,
+    // from the other side of the sky
+    if (chance(0.1)) {
+      tt = keyMorse(tt + rnd(1.5, 2.5), seq, -side, 0.033);
+      emitEvent({ cat: "telegraph", label: "⌁ a reply from home", detail: word });
+    }
+    emitNote("telegraph", 0, t, tt - t, { marks: seq });
+    emitEvent({ cat: "telegraph", label: "⌁ the wire flashes home", detail: word });
+    scheduleLayer(telegraphCycle, (tt - t + rnd(45, 90) * gapMul()) * 1000, "telegraph");
+  }
+
+  // ==========================================================================
+  // AMBIENT — the valley. Six far-field events, most of them nearly nothing:
+  // wind off the benches, crickets after dark, the meetinghouse clock, a
+  // tuning fork giving the pitch, a far bell, and the KOLOB BEACON — the
+  // meeting's theme flashed home as light-Morse behind a narrow static.
+  // ==========================================================================
+  function evWind(t) {
+    var dur = rnd(12, 24);
+    var n = noiseSource();
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.setValueAtTime(rnd(260, 520), t);
+    var g = ctx.createGain();
+    n.connect(f); f.connect(g); g.connect(fieldDest("wind", rnd(-0.5, 0.5)));
+    env(g, t, [[dur * 0.45, 0.055], [dur * 0.55, 0]]);
+    n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
+    emitNote("ambient", 0, t, dur);
+    return "wind off the benches";
+  }
+  function evCrickets(t) {
+    if (intensity() > 0.5) return evWind(t);                   // crickets keep still when the hall is full
+    var span = rnd(4, 9);
+    var f = rnd(4200, 4800);
+    var period = rnd(0.38, 0.5);
+    var tt = t;
+    while (tt < t + span) {
+      for (var c = 0; c < 2; c++) {                            // the paired chirp
+        var o = ctx.createOscillator();
+        o.type = "sine"; o.frequency.setValueAtTime(f, tt + c * 0.045);
+        var g = ctx.createGain();
+        o.connect(g); g.connect(fieldDest("crickets", 0.5));
+        env(g, tt + c * 0.045, [[0.004, 0.016], [0.035, 0]]);
+        o.start(tt + c * 0.045); o.stop(tt + c * 0.045 + 0.08);
+      }
+      tt += period * rnd(0.9, 1.15);
+    }
+    emitNote("ambient", 0, t, span);
+    return "crickets";
+  }
+  function evClock(t) {
+    var ticks = rint(4, 8);
+    for (var i = 0; i < ticks; i++) {
+      var tt = t + i * rnd(0.96, 1.04);
+      var o = ctx.createOscillator();
+      o.type = "sine"; o.frequency.setValueAtTime(i % 2 ? 430 : 480, tt);
+      var g = ctx.createGain();
+      o.connect(g); g.connect(fieldDest("clock", -0.55));
+      env(g, tt, [[0.002, 0.03], [0.06, 0]]);
+      o.start(tt); o.stop(tt + 0.12);
+    }
+    emitNote("ambient", 0, t, ticks);
+    return "the meetinghouse clock";
+  }
+  function evTuningFork(t) {
+    var f = harm(8);
+    while (f > 900) f /= 2;
+    var o = ctx.createOscillator();
+    o.type = "sine"; o.frequency.setValueAtTime(f, t);
+    var g = ctx.createGain();
+    o.connect(g); g.connect(fieldDest("fork", 0));
+    env(g, t, [[0.01, 0.05], [rnd(6, 10), 0]]);
+    o.start(t); o.stop(t + 11);
+    emitNote("ambient", f, t, 8);
+    return "a tuning fork, giving the pitch";
+  }
+  function evFarBell(t) {
+    var base = harm(pick([4, 5]));
+    while (base > 520) base /= 2;
+    var ratios = [1, 2.0, 2.76];
+    for (var i = 0; i < ratios.length; i++) {
+      var o = ctx.createOscillator();
+      o.type = "sine"; o.frequency.setValueAtTime(base * ratios[i] + (i ? rnd(0.3, 1.4) : 0), t);
+      var g = ctx.createGain();
+      o.connect(g); g.connect(fieldDest("bell", pick([-0.6, 0.6])));
+      env(g, t, [[0.02, 0.035 / (1 + i * 0.8)], [rnd(6, 11) / (1 + i * 0.5), 0]]);
+      o.start(t); o.stop(t + 12);
+    }
+    emitNote("ambient", base, t, 8);
+    return "a bell across the valley";
+  }
+  function evBeacon(t) {
+    // the colony flashes the day's theme toward home — sine Morse behind a
+    // narrow-band static that is not quite there
+    var theme = Motif.theme();
+    var head = theme ? theme.notes.slice(0, rint(3, 5)) : [{ deg: 0, durBeats: 1 }, { deg: 4, durBeats: 2 }];
+    var side = pick([-0.7, 0.7]);
+    var st = noiseSource();
+    var sf = ctx.createBiquadFilter();
+    sf.type = "bandpass"; sf.frequency.setValueAtTime(rnd(950, 1200), t); sf.Q.setValueAtTime(14, t);
+    var sg = ctx.createGain();
+    st.connect(sf); sf.connect(sg); sg.connect(fieldDest("beacon", side));
+    var span = head.length * 0.5 + 1.5;
+    // The beacon is quiet by design — it rides the shared ambient layer (gain
+    // 0.5) and is washed into the tabernacle reverb, so it reads as far-off.
+    // No hidden cap here (unlike the voice): these envelope values ARE the
+    // source gain. Pushed hard by owner request, weighting the Morse tones
+    // (the signal) over the static bed (the hiss) so it carries without the
+    // hiss swelling.
+    env(sg, t, [[0.4, 0.05], [span, 0.041], [0.6, 0]]);
+    st.start(t, noiseOffset()); st.stop(t + span + 1.2);
+    var tt = t + 0.5;
+    for (var i = 0; i < head.length; i++) {
+      var f = degFreq(projDeg(head[i].deg));
+      while (f > 1000) f /= 2;
+      while (f < 600) f *= 2;
+      var isDah = head[i].durBeats >= 1;
+      var o = ctx.createOscillator();
+      o.type = "sine"; o.frequency.setValueAtTime(f, tt);
+      var g = ctx.createGain();
+      o.connect(g); g.connect(fieldDest("beacon", side));
+      env(g, tt, [[0.01, 0.15], [isDah ? 0.3 : 0.1, 0.127], [0.05, 0]]);
+      o.start(tt); o.stop(tt + 0.6);
+      emitNote("ambient", f, tt, isDah ? 0.35 : 0.15);
+      tt += (isDah ? 0.42 : 0.22) + rnd(0.05, 0.12);
+    }
+    return "the Kolob beacon";
+  }
+  // rain on the roof — a rare visitor; the patter is an LFO on lowpassed noise
+  function evRain(t) {
+    var dur = rnd(8, 16);
+    var n = noiseSource();
+    var f = ctx.createBiquadFilter();
+    f.type = "lowpass"; f.frequency.setValueAtTime(rnd(900, 1400), t);
+    var patter = ctx.createGain();
+    patter.gain.setValueAtTime(0.7, t);
+    var lfo = ctx.createOscillator(); lfo.frequency.setValueAtTime(rnd(0.5, 1), t);
+    var lg = ctx.createGain(); lg.gain.setValueAtTime(0.3, t);
+    lfo.connect(lg); lg.connect(patter.gain);
+    var g = ctx.createGain();
+    n.connect(f); f.connect(patter); patter.connect(g); g.connect(fieldDest("rain", 0));
+    env(g, t, [[dur * 0.35, 0.04], [dur * 0.65, 0]]);
+    n.start(t, noiseOffset()); n.stop(t + dur + 0.3);
+    lfo.start(t); lfo.stop(t + dur + 0.3);
+    emitNote("ambient", 0, t, dur);
+    return "rain on the roof";
+  }
+  // a far coyote — a falling fifth, very quiet, once in a great while
+  function evCoyote(t) {
+    var f = harm(6);
+    while (f > 700) f /= 2;
+    while (f < 380) f *= 2;
+    var o = ctx.createOscillator();
+    o.type = "sine";
+    o.frequency.setValueAtTime(f * 1.4, t);
+    o.frequency.linearRampToValueAtTime(f * 1.5, t + 0.25);
+    o.frequency.linearRampToValueAtTime(f, t + rnd(1.2, 1.8));
+    var g = ctx.createGain();
+    o.connect(g); g.connect(fieldDest("coyote", pick([-0.7, 0.7])));
+    env(g, t, [[0.2, 0.02], [1.2, 0.014], [0.5, 0]]);
+    o.start(t); o.stop(t + 2.4);
+    emitNote("ambient", 0, t, 2);                              // a gliss owns no single pitch
+    return "a far coyote";
+  }
+  var FIELD_FNS = { wind: evWind, crickets: evCrickets, clock: evClock, fork: evTuningFork, rain: evRain, coyote: evCoyote, bell: evFarBell, beacon: evBeacon };
+  function ambientEvent() {
+    if (!playing) return;
+    var s = C.section;
+    if (s === "sacrament") { scheduleRaw(ambientEvent, 9000); return; }
+    var pool = s === "invocation"
+      ? [[evWind, 4], [evCrickets, 3], [evTuningFork, 2]]
+      : [[evWind, 4], [evCrickets, 3], [evClock, 3], [evTuningFork, 2], [evFarBell, 3], [evBeacon, 2.5], [evRain, 0.3], [evCoyote, 0.3]];
+    var fn = pickW(pool);
+    var name = fn(ctx.currentTime + 0.1);
+    emitEvent({ cat: "ambient", label: "⋆ " + name, detail: s });
+    var gap = rnd(25, 70) * (1.15 - intensity() * 0.35) * silenceMul();
+    scheduleLayer(ambientEvent, gap * 1000, "ambient");
+  }
+
+  // ==========================================================================
+  // SAMPLE — one short isolated gesture per layer, playable while stopped
+  // (touch an instrument on the stop rail, hear it alone).
+  // ==========================================================================
+  function sample(layer) {
+    init();
+    if (!SCALE.length) rebuildScale();
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    if (bg) bg.poke();               // audition while stopped: the <audio> route must be live
+    var isField = layer.indexOf("field:") === 0;
+    if (!playing && voicesBus) {
+      // stopped: reopen the bus and only this layer's gain, so the audition
+      // sounds alone
+      voicesBus.gain.cancelScheduledValues(ctx.currentTime);
+      voicesBus.gain.setValueAtTime(1, ctx.currentTime);
+      applyLayerGain(isField ? "ambient" : layer);   // field events ride the ambient bus
+    }
+    var t = ctx.currentTime + 0.08;
+    if (isField) {
+      var ffn = FIELD_FNS[layer.slice(6)];
+      if (ffn) { applyFieldGain(layer.slice(6)); ffn(t); }
+      return;
+    }
+    switch (layer) {
+      case "tuba": {
+        // auditioning the tuba from the rail is part of the gag:
+        // one dignified solo blat, then silence until an amen goes wrong
+        tubaBlat(t, 1);
+        break;
+      }
+      case "organ": {
+        var ch = Harmony.voice(0, { open: false });
+        organChord(t, 6, ch, 0.85);
+        break;
+      }
+      case "drone": {
+        var master = ctx.createGain();
+        master.connect(panAt("drone", 0));
+        [[1, 0.4], [2, 0.24], [3, 0.12]].forEach(function (p) {
+          var o = ctx.createOscillator();
+          o.type = "sine"; o.frequency.setValueAtTime(harm(p[0]), t);
+          var og = ctx.createGain(); og.gain.setValueAtTime(p[1], t);
+          o.connect(og); og.connect(master);
+          o.start(t); o.stop(t + 7);
+        });
+        env(master, t, [[2.4, 0.5], [2, 0.46], [2.2, 0]]);
+        emitNote("drone", F0, t, 6.5);
+        break;
+      }
+      case "choir": {
+        var ch2 = Harmony.voice(0, { open: false });
+        [0, 1, 3].forEach(function (vi, k) {
+          choirVoiceLine(t + k * 0.12, [{ f: ch2.freqs[VI_TO_CHORDPOS[vi]], dur: 4.5 }], vi, 0.85);
+        });
+        emitNote("choir", ch2.freqs[3], t, 4.5);
+        break;
+      }
+      case "clarinet": {
+        var notes = [[-3, 1], [0, 2], [1, 1], [0, 2.6]].map(function (n) {
+          return { f: degFreq(projDeg(n[0]) + colN()), dur: n[1] };
+        });
+        renderClarinetLine(t, notes, 1);
+        break;
+      }
+      case "harmonium": {
+        renderHarmonium(t, [{ f: degFreq(projDeg(2)), dur: 5 }], 0.8);
+        emitNote("harmonium", degFreq(projDeg(2)), t, 5);
+        break;
+      }
+      case "bagpipe": {
+        var bnotes = [[-3, 1], [0, 1.4], [2, 1], [0, 2.4]].map(function (n) {
+          return { f: degFreq(projDeg(n[0]) + colN()), dur: n[1] };
+        });
+        bagpipeLine(t, bnotes, 0.95, 0);
+        break;
+      }
+      case "strings": stringsPad(t, 9, 0.9, false); break;
+      case "bells":
+        meetinghouseBell(t, 0.8);
+        tineTap(t + 2.2, degFreq(projDeg(4) + colN()) * 2, 0.3);
+        break;
+      case "voice": stillVoiceRender(t, 4.5); break;
+      case "telegraph": {
+        // a visitation flashes a word home, keyed like the wire
+        var telWord = pick(TELEGRAPH_WORDS);
+        var telSeq = telegraphMessage(telWord);
+        var telEnd = keyMorse(t, telSeq, 0.6, 0.055);
+        emitNote("telegraph", 0, t, telEnd - t, { marks: telSeq });
+        break;
+      }
+      case "ambient": evFarBell(t); break;
+      default: return;
+    }
+    emitEvent({ cat: "transport", label: "◈ sample " + layer, detail: "" });
+  }
+
+  // ==========================================================================
+  // TRANSPORT
+  // ==========================================================================
+  function play() {
+    init();
+    if (playing) return;
+    if (ctx.state !== "running") { try { ctx.resume(); } catch (e) {} }
+    playing = true;
+    if (bg) bg.started();
+    air.busyUntil = 0; air.holders = 0;
+    if (voicesBus) {
+      voicesBus.gain.cancelScheduledValues(ctx.currentTime);
+      voicesBus.gain.setValueAtTime(1, ctx.currentTime);
+    }
+    masterGain.gain.setValueAtTime(masterVolume, ctx.currentTime);
+    if (droneDuck) {
+      // a stop mid-stillness must not strand the next meeting on a low drone
+      droneDuck.gain.cancelScheduledValues(ctx.currentTime);
+      droneDuck.gain.setValueAtTime(1, ctx.currentTime);
+    }
+    LAYERS.forEach(applyLayerGain);
+    planMeeting();
+    // staggered assembly — the valley wakes the way a Sunday begins
+    droneCycle();
+    scheduleRaw(organCycle, 2500);
+    scheduleRaw(stillVoicePhrase, 12000);
+    scheduleRaw(ambientEvent, 16000);
+    scheduleRaw(choirVerse, 20000);
+    scheduleRaw(stringsCycle, 24000);
+    scheduleRaw(harmoniumCycle, 30000);
+    scheduleRaw(clarinetPhrase, 34000);
+    scheduleRaw(bagpipeCycle, 30000);
+    scheduleRaw(tineCycle, 42000);
+    scheduleRaw(telegraphCycle, 55000);
+    scheduleRaw(conductorTick, 1000);
+    emitEvent({ cat: "transport", label: "▶ the meeting is called", detail: "seed " + seed });
+  }
+  function stop() {
+    playing = false;
+    if (bg) bg.stopped();
+    clearAllTimers();
+    if (voicesBus && ctx) {
+      var t = ctx.currentTime;
+      // fade the voices bus to zero and LEAVE it there — the drone's
+      // oscillators keep running for up to 90s, silently, until they end
+      voicesBus.gain.cancelScheduledValues(t);
+      voicesBus.gain.setValueAtTime(voicesBus.gain.value != null ? voicesBus.gain.value : 1, t);
+      voicesBus.gain.linearRampToValueAtTime(0, t + 0.6);
+      // a stop during a stillness would otherwise strand the master at its
+      // hushed level; restore it silently behind the closed bus
+      masterGain.gain.cancelScheduledValues(t);
+      masterGain.gain.setValueAtTime(masterVolume, t + 0.7);
+      scheduleForStop();
+    }
+    emitEvent({ cat: "transport", label: "■ the benches empty", detail: "" });
+  }
+  function scheduleForStop() {
+    setTimeout(function () {
+      if (!playing && ctx) {
+        // belt and braces: zero the layer gains too, so a later sample() of
+        // one stop cannot resurrect another layer's lingering cycle
+        LAYERS.forEach(function (l) {
+          if (layerGains[l]) layerGains[l].gain.setValueAtTime(0, ctx.currentTime);
+        });
+      }
+    }, 800);
+  }
+
+  // ==========================================================================
+  // PUBLIC API
+  // ==========================================================================
+  return {
+    init: init,
+    play: play,
+    stop: stop,
+    isPlaying: function () { return playing; },
+    sample: sample,
+    setMasterVolume: function (v) { masterVolume = v; if (masterGain && ctx && playing) masterGain.gain.setTargetAtTime(v, ctx.currentTime, 0.1); },
+    setLayerVolume: function (layer, v) { layerVolumes[layer] = v; if (ctx) applyLayerGain(layer); },
+    toggleLayer: function (layer) { layerMuted[layer] = !layerMuted[layer]; if (ctx) applyLayerGain(layer); return !layerMuted[layer]; },
+    setLayerRate: function (layer, r) { layerRate[layer] = r; },
+    setLayerParam: function (layer, key, v) { if (!layerParams[layer]) layerParams[layer] = {}; layerParams[layer][key] = v; },
+    getLayerParam: getLayerParam,
+    getLayerDefaults: function () { return JSON.parse(JSON.stringify(LAYER_PARAM_DEFAULTS)); },
+    getLayers: function () { return LAYERS.slice(); },
+    getVolumes: function () { return JSON.parse(JSON.stringify(layerVolumes)); },
+    getFieldKeys: function () { return FIELD_KEYS.slice(); },
+    getFieldVolumes: function () { return JSON.parse(JSON.stringify(fieldVolumes)); },
+    setFieldVolume: function (key, v) { fieldVolumes[key] = v; applyFieldGain(key); },
+    toggleField: function (key) { fieldMuted[key] = !fieldMuted[key]; applyFieldGain(key); return !fieldMuted[key]; },
+    getSeed: function () { return seed; },
+    reseed: function (s) { seed = (s >>> 0) || 1847; rngState = seed; },
+    getConductor: function () {
+      return {
+        meeting: C.meetingNum, activity: C.meeting ? C.meeting.activity : null,
+        section: C.section, meter: C.meter, mode: mode,
+        local: localArc(), intensity: intensity(),
+        hush: inHush(), fuging: inFuging(),
+        visit: (ctx && ctx.currentTime < C.assemblyUntil) ? "assembly" : (inVisit() ? C.visitType : null),
+        f0: F0, season: seasonPos,
+        sectionIndex: C.si, planLength: C.plan.length,
+        fifths: Harmony.fifthCount(),
+      };
+    },
+    getHarmony: function () { return Harmony.current(); },
+    getAudioTime: function () { return ctx ? ctx.currentTime : 0; },
+    skipToSection: skipToSection,
+    getMotifStats: function () { return Motif.stats(); },
+    setNoteListener: function (fn) { noteListeners.push(fn); },
+    setEventListener: function (fn) { eventListeners.push(fn); },
+    setForceVisitation: function (on) { forceVisitation = !!on; },
+    setForceRaspberry: function (on) { forceRaspberry = !!on; },
+    setCumulativeMode: function (s) { if (s === "always" || s === "natural" || s === "never") cumulativeMode = s; },
+    getCumulativeMode: function () { return cumulativeMode; },
+    // dev accessor for the tune lab — the pool lives HERE and only here, so
+    // lab and engine can never drift apart
+    getOldTunes: function () { return JSON.parse(JSON.stringify(OLD_TUNES)); },
+    isForceVisitation: function () { return forceVisitation; },
+    attachAnalyser: function () {
+      if (!ctx || !masterGain) return null;
+      var an = ctx.createAnalyser(); an.fftSize = 1024;
+      masterGain.connect(an);
+      return an;
+    },
+  };
+})();

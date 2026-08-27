@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Underworld Ghost Strip — Single Slide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Single-slide preview file. Recreates the deck's slide-card
+         chrome (parchment frame + sepia border + header divider +
+         footer nav) at a fixed 680px total height, and renders just
+         the ghost strip: half-beeswarm of all 90 Rabelais figures +
+         box-and-whiskers reference. No major-group wheat plot.
+
+         Lifted CSS values verbatim from the deck so the chrome reads
+         identically to a real slide. */
+      :root {
+        --color-parchment: #d4c5a5;
+        --color-bg: #f3e9cf;
+        --color-svg-bg: #ede1c2;
+        --color-text-primary: #3d2818;
+        --color-text-secondary: #5a3e28;
+        --color-text-tertiary: #8a7152;
+        --color-border-medium: rgba(90, 62, 40, 0.35);
+        --color-rubrication: #a64224;
+        --color-rubrication-border: rgba(166, 66, 36, 0.65);
+        --color-rule: rgba(90, 62, 40, 0.35);
+        --color-axis: #5a3e28;
+        --color-national: #1a1408;
+        --color-box-fill: rgba(220, 200, 160, 0.55);
+        --color-grid: rgba(90, 62, 40, 0.15);
+        --font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+        --font-family-sc:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+        --font-family-display:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+      }
+      body {
+        margin: 0;
+        background: #f6efd9;
+        color: var(--color-text-primary);
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 32px;
+      }
+      .deck-wrapper {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      /* Slide-card frame — copied from the deck. height: 680 fixes
+         the overall outer dimension as requested; flex column lets
+         the body region absorb whatever space the header and footer
+         don't claim. */
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        height: 680px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0 0 6px;
+        line-height: 1.2;
+      }
+      .slide-subtitle {
+        font-family: var(--font-family);
+        font-size: 15px;
+        color: var(--color-text-secondary);
+        margin: 0;
+        line-height: 1.5;
+      }
+      .slide-body {
+        padding: 10px 20px 20px;
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+      }
+      .slide-body .viz-section {
+        background: var(--color-svg-bg);
+        padding: 14px 16px;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+        flex: 1 1 auto;
+        display: flex;
+        align-items: stretch;
+        box-sizing: border-box;
+      }
+      .slide-body .viz-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      /* Footer (prev / indicator / next), inert here. */
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-top: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-nav-btn {
+        font-family: var(--font-family-sc);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-primary);
+        background: transparent;
+        border: 1px solid var(--color-border-medium);
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      .slide-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      .slide-indicator {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--color-text-tertiary);
+      }
+
+      /* Tooltip (shared) */
+      .figure-tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--color-text-primary);
+        color: var(--color-bg);
+        padding: 6px 10px;
+        font-family: var(--font-family);
+        font-size: 13px;
+        line-height: 1.35;
+        max-width: 280px;
+        opacity: 0;
+        transition: opacity 0.1s;
+        z-index: 10;
+      }
+      .figure-tooltip .ft-name {
+        font-weight: 700;
+        font-size: 14px;
+        display: block;
+      }
+      .figure-tooltip .ft-soc {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        display: block;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck-wrapper">
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Distribution of Wages in Rabelais&rsquo;s Underworld
+          </h1>
+          <p class="slide-subtitle">
+            One ghost per Rabelais figure, hanging below a flat top
+            edge at the median wage of their assigned BLS detailed
+            occupation. Box-and-whiskers shows the U.S. workforce
+            distribution.
+          </p>
+        </div>
+        <div class="slide-body">
+          <div id="ghost-strip-container" class="viz-section"></div>
+        </div>
+        <div class="slide-footer">
+          <button type="button" class="slide-nav-btn" disabled>
+            ◀ Prev
+          </button>
+          <span class="slide-indicator">1 / 1</span>
+          <button type="button" class="slide-nav-btn" disabled>
+            Next ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltip" class="figure-tooltip"></div>
+
+    <script>
+      (async function () {
+        const safeFloat = (v) =>
+          v === null || v === undefined || v === ""
+            ? null
+            : isNaN(parseFloat(v))
+              ? null
+              : parseFloat(v);
+        const fmtMoney = (v) =>
+          v == null ? "—" : "$" + d3.format(",.0f")(v);
+
+        // Hit the same production API the deck uses.
+        async function loadData() {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok)
+            throw new Error("HTTP " + res.status + " from " + url);
+          return await res.json();
+        }
+        let data;
+        try {
+          data = await loadData();
+        } catch (e) {
+          d3.select("#ghost-strip-container").html(
+            '<p style="padding:16px;color:#a64224;font-family:Cormorant Garamond,serif">' +
+              "Failed to load annotation data: " +
+              e.message +
+              "</p>",
+          );
+          return;
+        }
+
+        const characters = data.characters || [];
+        const hierarchical = data.hierarchical_data || [];
+        const nationalRaw = data.national_stats || {};
+        const nationalStats = {
+          median: safeFloat(nationalRaw.A_MEDIAN),
+          pct10: safeFloat(nationalRaw.A_PCT10),
+          pct25: safeFloat(nationalRaw.A_PCT25),
+          pct75: safeFloat(nationalRaw.A_PCT75),
+          pct90: safeFloat(nationalRaw.A_PCT90),
+        };
+
+        const hierByCode = new Map();
+        hierarchical.forEach((d) => {
+          if (d.OCC_CODE) hierByCode.set(d.OCC_CODE, d);
+        });
+        const figureRows = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const median = h ? safeFloat(h.A_MEDIAN) : null;
+          return {
+            name: c.name,
+            occCode: c.occ_code || null,
+            occTitle: c.occ_title || (h && h.OCC_TITLE) || null,
+            labor: c.labor || "",
+            lotInLife: c.lot_in_life || "",
+            median,
+            suppressed: c.occ_code != null && median == null,
+            unmapped: c.occ_code == null,
+          };
+        });
+
+        // ── Chart ────────────────────────────────────────────
+        const container = d3.select("#ghost-strip-container");
+        const containerRect = container.node().getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+
+        const margin = { top: 12, right: 20, bottom: 56, left: 24 };
+        const width = containerWidth - margin.left - margin.right;
+        // Height is driven by the slide-card's fixed 680px outer
+        // dimension; everything inside flexes to match.
+        const innerHeight =
+          containerHeight - margin.top - margin.bottom;
+
+        // Section sizing: box plot at top, ghost strip below it.
+        const boxPlotH = 28;
+        const boxToGhostGap = 12;
+        const boxY0 = 0;
+        const boxCenterY = boxY0 + boxPlotH / 2;
+        const ghostY0 = boxY0 + boxPlotH + boxToGhostGap;
+        const ghostStripH = innerHeight - ghostY0;
+        const totalHeight = innerHeight;
+
+        const xMin = 20000,
+          xMax = 230000;
+        const x = d3
+          .scaleLinear()
+          .domain([xMin, xMax])
+          .range([0, width]);
+
+        const svg = container
+          .append("svg")
+          .attr("class", "viz-svg")
+          .attr("width", containerWidth)
+          .attr(
+            "height",
+            totalHeight + margin.top + margin.bottom,
+          )
+          .append("g")
+          .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        // Gridlines, full height.
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", totalHeight)
+            .attr("stroke", "var(--color-grid)")
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // ── BOX-AND-WHISKERS ───────────────────────────────
+        if (
+          nationalStats.pct10 != null &&
+          nationalStats.pct25 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct25))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct10))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct75 != null &&
+          nationalStats.pct90 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct75))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct90))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct25 != null &&
+          nationalStats.pct75 != null
+        ) {
+          svg
+            .append("rect")
+            .attr("x", x(nationalStats.pct25))
+            .attr("y", boxCenterY - 10)
+            .attr(
+              "width",
+              x(nationalStats.pct75) - x(nationalStats.pct25),
+            )
+            .attr("height", 20)
+            .attr("fill", "var(--color-box-fill)")
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+
+        // ── US MEDIAN LINE (3 segments) ────────────────────
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const dashColor = "rgba(26, 20, 8, 0.45)";
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxY0 - 6)
+            .attr("y2", boxY0)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxY0 - 1)
+            .attr("y2", boxY0 + boxPlotH + 1)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxY0 + boxPlotH)
+            .attr("y2", totalHeight)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+        }
+
+        const tooltip = d3.select("#tooltip");
+
+        // ── GHOST HALF-BEESWARM ─────────────────────────────
+        // One ghost per figure, deterministic column-pack from the
+        // top edge of the strip. Top edge stays flat; overlapping
+        // figures stack downward at their accurate-x positions.
+        const ghostScale = 0.95;
+        const ghostR = 8 * ghostScale + 0.4;
+        const collideR = ghostR + 0.5;
+        const stripTop = ghostY0 + 3;
+        const suppressedX = -ghostR * 1.8;
+        const topY = stripTop + ghostR;
+
+        const nodes = figureRows.map((d) => ({
+          ...d,
+          x: d.median != null ? x(d.median) : suppressedX,
+          y: topY,
+        }));
+        const sortedByX = [...nodes].sort((a, b) => {
+          if (a.suppressed !== b.suppressed)
+            return a.suppressed ? 1 : -1;
+          return a.x - b.x;
+        });
+        const placed = [];
+        const dy = 2;
+        for (const node of sortedByX) {
+          let y = topY;
+          while (true) {
+            const hit = placed.some((p) => {
+              const dxp = p.x - node.x;
+              const dyp = p.y - y;
+              return (
+                dxp * dxp + dyp * dyp <
+                2 * collideR * (2 * collideR)
+              );
+            });
+            if (!hit) break;
+            y += dy;
+            if (y > totalHeight + 200) break;
+          }
+          node.y = y;
+          placed.push(node);
+        }
+
+        function drawGhost(g, isSuppressed) {
+          const fill = isSuppressed
+            ? "transparent"
+            : "rgba(255, 250, 240, 0.65)";
+          const stroke = isSuppressed
+            ? "var(--color-text-tertiary)"
+            : "#1a1408";
+          const dash = isSuppressed ? "2,2" : null;
+          const inner = g
+            .append("g")
+            .attr("transform", `scale(${ghostScale})`);
+          inner
+            .append("path")
+            .attr(
+              "d",
+              "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+            )
+            .attr("fill", fill)
+            .attr("stroke", stroke)
+            .attr("stroke-width", 1.2)
+            .attr("stroke-linejoin", "round")
+            .attr("vector-effect", "non-scaling-stroke")
+            .attr("stroke-dasharray", dash);
+          if (!isSuppressed) {
+            inner
+              .append("ellipse")
+              .attr("cx", -2)
+              .attr("cy", -3)
+              .attr("rx", 1)
+              .attr("ry", 1.5)
+              .attr("fill", "#1a1408");
+            inner
+              .append("ellipse")
+              .attr("cx", 2)
+              .attr("cy", -3)
+              .attr("rx", 1)
+              .attr("ry", 1.5)
+              .attr("fill", "#1a1408");
+          }
+        }
+
+        const ghostG = svg
+          .append("g")
+          .selectAll("g.ghost-dot")
+          .data(nodes)
+          .enter()
+          .append("g")
+          .attr("transform", (d) => `translate(${d.x},${d.y})`);
+        ghostG.each(function (d) {
+          drawGhost(d3.select(this), d.suppressed);
+        });
+        ghostG
+          .on("mouseenter", function (event, d) {
+            const wage =
+              d.median != null
+                ? fmtMoney(d.median)
+                : "wage suppressed by BLS";
+            tooltip
+              .html(
+                '<span class="ft-name">' +
+                  d.name +
+                  "</span>" +
+                  (d.lotInLife
+                    ? "<div><em>" + d.lotInLife + "</em></div>"
+                    : "") +
+                  (d.occTitle
+                    ? '<span class="ft-soc">' +
+                      (d.occCode || "") +
+                      " · " +
+                      d.occTitle +
+                      "</span>"
+                    : "") +
+                  "<div>" +
+                  wage +
+                  "</div>",
+              )
+              .style("opacity", 1)
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mouseleave", () => tooltip.style("opacity", 0));
+
+        // ── X axis + caption ────────────────────────────────
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${totalHeight})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(6)
+              .tickFormat((v) => "$" + d3.format(",")(v)),
+          );
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", "var(--color-axis)")
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll(".tick text")
+          .attr("font-family", "Cormorant Garamond, serif")
+          .attr("font-size", 13)
+          .attr("fill", "var(--color-axis)");
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", totalHeight + 44)
+          .attr("text-anchor", "middle")
+          .attr(
+            "font-family",
+            "Cormorant SC, Cormorant Garamond, serif",
+          )
+          .attr("font-size", 11)
+          .attr("letter-spacing", "0.08em")
+          .attr("fill", "#5c5347")
+          .text("MEDIAN ANNUAL WAGE");
+
+        // ── US median label (deck-style: 2-line + leader) ──
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const labelX = mX + 10;
+          const labelTopY = boxY0 - 18;
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", labelX - 2)
+            .attr("y1", labelTopY + 10)
+            .attr("y2", labelTopY + 10)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1);
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 4)
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 11)
+            .attr("font-weight", 600)
+            .attr("letter-spacing", "0.08em")
+            .attr("fill", "#3d2b18")
+            .text("U.S. MEDIAN (2024)");
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 18)
+            .attr("font-family", "Cormorant Garamond, serif")
+            .attr("font-size", 13)
+            .attr("font-weight", 600)
+            .attr("fill", "var(--color-national)")
+            .text(fmtMoney(nationalStats.median));
+        }
+      })();
+    </script>
+  </body>
+</html>

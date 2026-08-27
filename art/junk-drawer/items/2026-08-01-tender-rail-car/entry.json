@@ -1,0 +1,81 @@
+{
+  "schema": 2,
+  "id": "2026-08-01-tender-rail-car",
+  "title": "Tender rail car",
+  "prompt": "a surrealistic tender rail car filled with light bulbs, clocks, googly eye balls, teddy bear heads, and sewing machines, done in a painterly style as though it is oil paint, like something from a 17th century painting by a Flemish master",
+  "created": "2026-08-01",
+  "sizeClass": "m",
+  "primary": "r1",
+  "retired": true,
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-08-01",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 4.0,
+      "graded": "2026-08-01",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Contains one malformed attribute in the bear symbol (stroke=\"#e3b briefly\" with no stroke-width) — browsers drop it; filed byte-exact."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-08-01",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-08-01",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 1.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 2.0
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. Disobeyed the transparent-background requirement with a full opaque landscape (sky, tree line, ballast); added invented text (cartouche \"TENDER · ANIMÆ / ANNO · M · DC · LVII\" and signature \"tender · animæ · f. 1657\"). Contains one malformed self-closing element (<g stroke=\"#b8literal\" />) in the sewing-machine symbol — filed byte-exact. The truncated-word attribute artifact parallels r1's independently (different strings, different elements; structures otherwise unrelated)."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-08-01",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-08-01",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 1.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; generation harness v2 (isolated svg-specimen agent, harness preamble, standard technical appendix v1). 0 tool uses — clean isolated sample. Ink-bounds check passed at ingest — worst dead margin 0.0%, viewBox left as generated. The model wrapped its SVG in a ```svg code fence, disobeying the appendix's \"no code fences\" instruction; the fence was stripped at ingest and the SVG bytes filed unchanged. Also used an opaque background rectangle despite the transparent-background requirement."
+    }
+  ]
+}

@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PJ2 mockup 3 — ARIEL · THE CELESTIAL ATLAS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   PROSPERO'S JUKEBOX v2 — MOCKUP 3 · ARIEL · THE CELESTIAL ATLAS
+   Renaissance celestial chart / portolan wind-rose (Harmonia Macrocosmica,
+   Astronomicum Caesareum). Night-blue engraved plate — plate scratches and
+   burnish, NOT stains — silver linework, gilt stars, one wind-rose. The one
+   light-on-dark skin: engraving, not phosphor. All type VT323; headers are
+   letter-spaced small caps with gilt star interpuncts. Palette LOCKED to the
+   §2 Ariel ramp. Art-pixel unit U = 2 CSS px.
+   ========================================================================== */
+:root {
+  --void:      #05070c;
+  --plate-0:   #101a30;
+  --plate-1:   #16233f;
+  --plate-2:   #22345a;
+  --silver-0:  #d8e4ec;   /* bright — primary data + body type            */
+  --silver-1:  #a8c0d4;   /* mid — secondary marks, aged type step 1      */
+  --silver-2:  #6e8aa4;   /* deep — depth-cue hairlines, aged type step 2 */
+  --gilt-0:    #ecd28a;
+  --gilt-1:    #d4af5f;
+  --rose:      #a04838;
+  --sky-0:     #bfe0f4;
+  --sky-1:     #8fc4e4;
+  /* cabinet chrome (shared frame, constant across tracks — not the plate) */
+  --wood:      #171009;
+  --wood-hi:   #241a0e;
+  --brass:     #93794f;
+  --brass-hi:  #c9a227;
+  --leather:   #4a3620;
+  --soot:      #241d17;
+  --bone:      #d8cfc0;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: var(--void); }
+body {
+  background: var(--void);
+  color: var(--silver-0);
+  font-family: "VT323", monospace;
+  padding: 2.2rem 1rem 4rem;
+}
+.mock-label {
+  max-width: 1320px; margin: 0 auto 1.1rem;
+  font-size: 15px; letter-spacing: 0.3em; color: var(--silver-2);
+  text-transform: uppercase; text-align: center;
+}
+.mock-label .st { color: var(--gilt-1); }
+
+.atlas-shell { max-width: 1320px; margin: 0 auto; }
+
+/* ---------------- the cabinet chrome strip (shared desk frame) --------- */
+.cabinet {
+  display: flex; align-items: stretch; gap: 18px;
+  background: linear-gradient(180deg, var(--wood-hi) 0%, var(--wood) 70%);
+  border: 2px solid var(--brass);
+  border-bottom-width: 4px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+.shelf { display: flex; align-items: flex-end; gap: 6px; }
+.spine {
+  width: 44px; height: 86px;
+  display: flex; align-items: center; justify-content: center;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: 15px; letter-spacing: 0.22em;
+  border: 2px solid; cursor: pointer;
+}
+.spine-library { background: var(--leather); color: var(--brass-hi); border-color: #6e5638; }
+.spine-sycorax { background: var(--soot); color: var(--bone); border-color: #453729; }
+/* the atlas folio lies OPEN — the whole plate below is its pages */
+.folio-open {
+  height: 86px; display: flex; align-items: flex-end; gap: 0;
+  filter: none;
+}
+.folio-page {
+  width: 58px; height: 78px; position: relative;
+  background: linear-gradient(180deg, var(--plate-1), var(--plate-0));
+  border: 2px solid var(--silver-2);
+}
+.folio-page.left  { border-right-width: 1px; transform: perspective(220px) rotateY(24deg); transform-origin: right center; }
+.folio-page.right { border-left-width: 1px;  transform: perspective(220px) rotateY(-24deg); transform-origin: left center; }
+.folio-page .star { position: absolute; color: var(--gilt-0); font-size: 13px; }
+.folio-caption {
+  align-self: center; margin-left: 10px; color: var(--silver-1);
+  font-size: 15px; letter-spacing: 0.24em; text-transform: uppercase; line-height: 1.5;
+}
+.folio-caption .st { color: var(--gilt-1); }
+.cab-spacer { flex: 1; }
+
+/* transport — brass pushplates, 1U (2px) bevels, no glow */
+.transport { display: flex; align-items: center; gap: 8px; }
+.pushplate {
+  font-family: "VT323", monospace; font-size: 17px; letter-spacing: 0.14em;
+  color: var(--wood); background: linear-gradient(180deg, var(--brass-hi), var(--brass));
+  border: 0; padding: 9px 16px 7px; cursor: pointer;
+  box-shadow: inset 2px 2px 0 #e8d9a0, inset -2px -2px 0 #5f4c2c;
+}
+.pushplate.lit { background: var(--brass-hi); box-shadow: inset -2px -2px 0 #e8d9a0, inset 2px 2px 0 #5f4c2c; }
+.pushplate.inset { box-shadow: inset 2px 2px 0 #5f4c2c, inset -2px -2px 0 #e8d9a0; }
+
+/* the wax seal (seed) + the lamp (volume) */
+.cab-right { display: flex; align-items: center; gap: 16px; }
+.seal {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #b8584a, var(--rose) 55%, #6e2e22);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 0 #000;
+  position: relative;
+}
+.seal::before {
+  content: ""; position: absolute; inset: 6px; border-radius: 50%;
+  border: 1px solid rgba(236, 210, 138, 0.55);
+}
+.seal-num { font-size: 15px; color: #f0dcc8; letter-spacing: 0.06em; }
+.lamp { display: flex; flex-direction: column; gap: 4px; }
+.lamp-label { font-size: 14px; letter-spacing: 0.24em; color: var(--brass); }
+.lamp-track { width: 120px; height: 10px; border: 2px solid var(--brass); position: relative; }
+.lamp-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 62%;
+  background: repeating-linear-gradient(90deg, var(--brass-hi) 0 2px, var(--wood) 2px 4px); }
+.lamp-thumb { position: absolute; left: 62%; top: -4px; width: 4px; height: 14px; background: var(--gilt-0); }
+
+/* ---------------- plate + margin grid ---------------------------------- */
+.atlas-grid { display: grid; grid-template-columns: 1fr 322px; gap: 22px; align-items: start; }
+.plate-wrap { position: relative; }
+canvas.plate { display: block; width: 100%; height: 700px; }
+canvas.legend { display: block; width: 100%; height: 86px; margin-top: 14px; }
+
+/* ---------------- margin apparatus ------------------------------------- */
+.apparatus { display: flex; flex-direction: column; gap: 16px; }
+.panel {
+  background: var(--plate-1);
+  border: 2px solid var(--plate-2);
+  outline: 1px solid var(--silver-2);
+  padding: 10px 10px 8px;
+}
+.panel-head {
+  font-size: 16px; letter-spacing: 0.26em; text-transform: uppercase;
+  color: var(--silver-0); margin-bottom: 6px;
+}
+.panel-head .st { color: var(--gilt-0); letter-spacing: 0; }
+.panel canvas { display: block; width: 100%; }
+.panel-readout { font-size: 16px; color: var(--silver-1); margin-top: 6px; letter-spacing: 0.08em; }
+.panel-readout .v { color: var(--silver-0); }
+.panel-readout .g { color: var(--gilt-0); }
+
+/* scribal log — entries age: ink pales in 3 palette steps */
+.log-rows { display: flex; flex-direction: column; }
+.log-row {
+  display: flex; gap: 9px; align-items: baseline;
+  font-size: 16px; padding: 3px 1px; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--plate-2);
+}
+.log-row:last-child { border-bottom: none; }
+.log-t { color: var(--silver-2); flex: 0 0 3.1em; font-size: 15px; }
+.log-tag { flex: 0 0 auto; padding: 0 5px; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; }
+.tag-seachange { color: var(--gilt-0); outline: 1px solid var(--gilt-1); }
+.tag-cadence   { color: var(--sky-0); outline: 1px solid var(--silver-2); }
+.tag-flight    { color: var(--silver-0); outline: 1px solid var(--silver-2); }
+.tag-song      { color: var(--silver-0); outline: 1px solid var(--silver-2); }
+.tag-ghost     { color: var(--silver-2); outline: 1px dashed var(--silver-2); }
+.tag-scene     { color: var(--gilt-1); outline: 1px solid var(--plate-2); }
+.tag-answer    { color: var(--sky-1); outline: 1px solid var(--plate-2); }
+.log-body { flex: 1; }
+.age-0 .log-body { color: var(--silver-0); }
+.age-1 .log-body { color: var(--silver-1); }
+.age-2 .log-body { color: var(--silver-2); }
+.log-body .g  { color: var(--gilt-0); }
+.log-body .g1 { color: var(--gilt-1); }
+.log-body .sk { color: var(--sky-1); }
+
+/* ---------------- dev contrast box + design notes ----------------------- */
+.devbox {
+  margin-top: 22px; padding: 12px 14px;
+  background: #090d16; border: 1px dashed var(--silver-2);
+  font-size: 16px; letter-spacing: 0.05em;
+}
+.devbox h3 { font-size: 16px; letter-spacing: 0.26em; color: var(--sky-0); margin-bottom: 8px; text-transform: uppercase; }
+.devbox table { border-collapse: collapse; width: 100%; }
+.devbox td, .devbox th { text-align: left; padding: 2px 12px 2px 0; color: var(--silver-1); font-weight: normal; }
+.devbox th { color: var(--silver-2); letter-spacing: 0.14em; text-transform: uppercase; font-size: 14px; }
+.devbox .pass { color: var(--sky-0); }
+.devbox .flag { color: var(--gilt-0); }
+.devbox .fail { color: #e08878; }
+.devbox .chip { display: inline-block; width: 12px; height: 12px; margin-right: 6px; vertical-align: -1px; outline: 1px solid var(--silver-2); }
+
+.design-notes {
+  margin-top: 22px; padding: 14px 16px 10px;
+  border: 2px solid var(--plate-2); outline: 1px solid var(--silver-2);
+  background: var(--plate-0);
+  font-size: 17px; line-height: 1.55; color: var(--silver-1); letter-spacing: 0.03em;
+}
+.design-notes h3 { font-size: 17px; letter-spacing: 0.28em; color: var(--silver-0); text-transform: uppercase; margin-bottom: 8px; }
+.design-notes h3 .st { color: var(--gilt-0); letter-spacing: 0; }
+.design-notes li { margin: 0 0 7px 1.2em; }
+.design-notes em { color: var(--silver-0); font-style: normal; }
+.design-notes .g { color: var(--gilt-1); }
+
+@media (max-width: 1080px) {
+  .atlas-grid { grid-template-columns: 1fr; }
+  canvas.plate { height: 560px; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label">mockup 3 of 3 <span class="st">✦</span> ariel — the celestial atlas <span class="st">✦</span> engraving, not phosphor</p>
+
+<div class="atlas-shell">
+
+  <!-- ============ CABINET CHROME (shared desk frame, §5) ============ -->
+  <div class="cabinet">
+    <div class="shelf" aria-label="track spines">
+      <div class="spine spine-library" title="LIBRARY — the alchemical codex">LIBRARY</div>
+      <div class="spine spine-sycorax" title="SYCORAX — the woodcut grimoire">SYCORAX</div>
+      <div class="folio-open" title="ARIEL — the star-atlas folio, open">
+        <div class="folio-page left"><span class="star" style="top:8px;left:10px">✦</span><span class="star" style="top:34px;left:26px;font-size:9px">✧</span><span class="star" style="top:54px;left:12px;font-size:10px">✦</span></div>
+        <div class="folio-page right"><span class="star" style="top:14px;left:24px">✦</span><span class="star" style="top:44px;left:12px;font-size:9px">✧</span></div>
+        <div class="folio-caption">ariel <span class="st">✦</span> atlas<br />lies open</div>
+      </div>
+    </div>
+    <div class="cab-spacer"></div>
+    <div class="transport">
+      <button type="button" class="pushplate lit">PLAY&nbsp;▶&#xFE0E;</button>
+      <button type="button" class="pushplate">STOP&nbsp;■&#xFE0E;</button>
+      <button type="button" class="pushplate">RESET&nbsp;↻&#xFE0E;</button>
+    </div>
+    <div class="cab-spacer"></div>
+    <div class="cab-right">
+      <div class="seal" title="the wax seal — reseeding re-stamps it"><span class="seal-num">451049</span></div>
+      <div class="lamp">
+        <span class="lamp-label">LAMP</span>
+        <div class="lamp-track"><div class="lamp-fill"></div><div class="lamp-thumb"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THE PLATE + THE MARGIN ============ -->
+  <div class="atlas-grid">
+
+    <div>
+      <div class="plate-wrap">
+        <canvas id="plate" class="plate" aria-label="ARIEL — the celestial atlas plate: the pitch spiral engraved in silver"></canvas>
+      </div>
+      <canvas id="legend" class="legend" aria-label="the plate's legend — per-voice mixer"></canvas>
+      <div class="panel" style="margin-top:14px">
+        <div class="panel-head">cadences <span class="st">✦</span> at the boundaries</div>
+        <canvas id="cadences" height="0"></canvas>
+        <div class="panel-readout"><span style="color:var(--sky-1)">LIFT</span> I→II — arrives a step up, a door opens · <span style="color:var(--sky-1)">FLOAT</span> II→I — falls a step, rises in register · draw ~50–65% of boundaries</div>
+      </div>
+    </div>
+
+    <div class="apparatus">
+
+      <div class="panel">
+        <div class="panel-head">the wind-rose <span class="st">✦</span> weather aloft</div>
+        <canvas id="windrose" height="0"></canvas>
+        <div class="panel-readout">TIDE <span class="v">0.42</span> · <span class="g">RISING-THERMALS</span> · streamers ×3</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">altitude <span class="st">✦</span> the astrolabe arm</div>
+        <canvas id="quadrant" height="0"></canvas>
+        <div class="panel-readout">INTENSITY <span class="v">0.41</span> · bounds 0.04–0.65 · aloft</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">the chord <span class="st">✦</span> lit constellation</div>
+        <canvas id="chordconst" height="0"></canvas>
+        <div class="panel-readout"><span class="g">II · G MAJOR</span> — the second home · the float</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">signature <span class="st">✦</span> the migration map</div>
+        <canvas id="migration" height="0"></canvas>
+        <div class="panel-readout">theme <span class="v">#a3</span> · gen <span class="v">V</span> · tether to gen III · the same bird</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- the annotation column — scribal log, full plate width -->
+  <div class="panel" style="margin-top:16px">
+        <div class="panel-head">scribal log <span class="st">✦</span> the evening</div>
+        <div class="log-rows">
+          <div class="log-row age-0"><span class="log-t">06:12</span><span class="log-tag tag-seachange">seachange</span><span class="log-body">true · F→B♭ lydian — <span class="g">the plate re-gilds, star by star</span></span></div>
+          <div class="log-row age-0"><span class="log-t">05:48</span><span class="log-tag tag-cadence">cadence</span><span class="log-body">lift · I→II — <span class="sk">a door opens upward</span></span></div>
+          <div class="log-row age-0"><span class="log-t">05:31</span><span class="log-tag tag-flight">flight</span><span class="log-body">№ 3 · chime cloud · 8 notes · one claim held</span></div>
+          <div class="log-row age-0"><span class="log-t">05:02</span><span class="log-t" style="display:none"></span><span class="log-tag tag-song">song</span><span class="log-body">whistle sings the signature · gen <span class="g1">IV</span> · develop (sequence)</span></div>
+          <div class="log-row age-1"><span class="log-t">04:44</span><span class="log-tag tag-ghost">ghost</span><span class="log-body">the returning bird — last evening's flight-line, ghosted</span></div>
+          <div class="log-row age-1"><span class="log-t">04:15</span><span class="log-tag tag-cadence">cadence</span><span class="log-body">float · II→I — falls a step, rises in register</span></div>
+          <div class="log-row age-1"><span class="log-t">03:58</span><span class="log-tag tag-scene">scene</span><span class="log-body">hover · still air · the halo lights the lone star (♯4)</span></div>
+          <div class="log-row age-1"><span class="log-t">03:20</span><span class="log-tag tag-scene">scene</span><span class="log-body">swirl · the wind-rose swings toward gale</span></div>
+          <div class="log-row age-2"><span class="log-t">02:47</span><span class="log-tag tag-answer">answer</span><span class="log-body">paired wingbeat · chime answers whistle</span></div>
+          <div class="log-row age-2"><span class="log-t">00:00</span><span class="log-tag tag-scene">scene</span><span class="log-body">alighting · <span class="g1">field reground · tonic F 349</span> — the descent home</span></div>
+        </div>
+  </div>
+
+  <!-- ============ CONTRAST VALIDATION (dev box) ============ -->
+  <div class="devbox" id="devbox">
+    <h3>contrast validation — measured live (WCAG 2.1, worst-case plate tone)</h3>
+    <table id="contrast-table"></table>
+    <div id="contrast-note" style="margin-top:8px;color:var(--silver-2)"></div>
+  </div>
+
+  <!-- ============ FAMILY DESIGN-NOTES BLOCK ============ -->
+  <div class="design-notes">
+    <h3>design notes <span class="st">✦</span> mockup 3 · the celestial atlas</h3>
+    <ul>
+      <li><em>Engraving, not phosphor.</em> No glow, no additive blending, no alpha fades anywhere on the plate. Depth on the rotating coil is carried by <em>line weight + palette step</em> (near limb: bright silver, 2px; far limb: deep-silver hairline) — the §3 ink-squash rule translated to metal. Fill under the FFT contour is engraver's hatching (radial burin strokes, density ∝ magnitude), the light-on-dark analog of the codex's Bayer ink-wash.</li>
+      <li><em>The frozen FFT is honest-fake:</em> authored dB peaks (breeze root+fifth low, whistle at G5 under the plumb-bob, chime cluster aloft, aeolian mid) summed as gaussians over 7 octaves × 96 samples, then pushed through the real v1 projection (yaw/pitch, painter-ordered) with slow auto-rotation. Data positions are never grid-quantized; only textures and stamps snap to U=2px.</li>
+      <li><em>Chart furniture means the music:</em> the two authored asterisms are the two Lydian homes (I printed quiet in old gilt, II lit bright — the current chord; the margin's chord panel is the same asterism repeated). The ♯4 is one lone gilt star that only the pale-sky halo rings — it lives in melody and halo, never in the pad. The dotted gilt flight-line climbs the coil leg by leg (scene legs), with paired wingbeat chevrons (answers) and last evening's line ghosted beneath in deep silver (the returning bird). The horizon rules the plate's foot and sinks through the release.</li>
+      <li><em>Plate texture is scratches + burnish, not stains:</em> per-art-pixel value noise across the three plate blues, a diagonal burnish sweep, ~50 seeded 1U scratch strokes with occasional deep-silver glints — density reduced inside the baked "plate zone" where the coil lives so texture never fights hairlines.</li>
+      <li><em>Typography:</em> VT323 everywhere; headers are letter-spaced small caps with gilt star interpuncts (✦) — engraved captions, no blackletter on this plate. Numerals always VT323.</li>
+      <li><em>Contrast:</em> all three required pairs measured live in the dev box against the LIGHTEST plate tone (#22345a, worst case) — silver data ≥ 6.5:1, VT323 ≥ 6.5:1, gilt ≥ 5.9:1, all ≥ 4.5:1 with no palette adjustment needed. The deep silver #6e8aa4 measures ~3.4:1 and is therefore demoted by rule to depth-cue hairlines, hatch shading, and aged-ink log lines — it is never the sole carrier of a data mark.</li>
+      <li><em>Carries to implementation:</em> L0 plate / L1 furniture (printed asterisms, cartouche, horizon, schema, border) / L2 data (coil, flight-line, plumb-bob) / L3 event gilding, per §6. The sea change re-gilds star points one by one toward the new tonic's angle; lift/float glyphs stamp at boundary t on the flight-line.</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* =========================== PALETTE (LOCKED, §2) ======================== */
+var PAL = {
+  void_:  "#05070c",
+  plate:  ["#101a30", "#16233f", "#22345a"],
+  silver: ["#d8e4ec", "#a8c0d4", "#6e8aa4"],
+  gilt:   ["#ecd28a", "#d4af5f"],
+  rose:   "#a04838",
+  sky:    ["#bfe0f4", "#8fc4e4"],
+};
+var U = 2; /* the art-pixel: 2 CSS px */
+
+/* =========================== helpers ==================================== */
+function hash2(x, y) {
+  var h = Math.sin(x * 127.1 + y * 311.7 + 74.7) * 43758.5453;
+  return h - Math.floor(h);
+}
+function vnoise(x, y) {
+  var xi = Math.floor(x), yi = Math.floor(y);
+  var xf = x - xi, yf = y - yi;
+  var sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+  var a = hash2(xi, yi), b = hash2(xi + 1, yi);
+  var c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+function fitCanvas(cv, cssH) {
+  var dpr = window.devicePixelRatio || 1;
+  var r = cv.getBoundingClientRect();
+  var h = cssH || r.height;
+  cv.width = Math.round(r.width * dpr);
+  cv.height = Math.round(h * dpr);
+  if (cssH) cv.style.height = cssH + "px";
+  var c = cv.getContext("2d");
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { c: c, w: r.width, h: h, dpr: dpr };
+}
+/* 4-point engraved star (two nested diamonds) */
+function star4(c, x, y, r, color, rays) {
+  c.fillStyle = color;
+  c.beginPath();
+  for (var i = 0; i < 8; i++) {
+    var a = i * Math.PI / 4 - Math.PI / 2;
+    var rr = (i % 2 === 0) ? r : r * 0.36;
+    c[i === 0 ? "moveTo" : "lineTo"](x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+  }
+  c.closePath(); c.fill();
+  if (rays) {
+    c.strokeStyle = color; c.lineWidth = 1;
+    for (var k = 0; k < 4; k++) {
+      var ra = k * Math.PI / 2 + Math.PI / 4;
+      c.beginPath();
+      c.moveTo(x + Math.cos(ra) * r * 1.1, y + Math.sin(ra) * r * 1.1);
+      c.lineTo(x + Math.cos(ra) * r * 2.0, y + Math.sin(ra) * r * 2.0);
+      c.stroke();
+    }
+  }
+}
+/* an engraved feather: shaft + barbs */
+function feather(c, x, y, len, ang, color) {
+  c.save();
+  c.translate(x, y); c.rotate(ang);
+  c.strokeStyle = color; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, 0);
+  c.quadraticCurveTo(len * 0.45, -len * 0.14, len, -len * 0.26);
+  c.stroke();
+  for (var i = 1; i <= 6; i++) {
+    var t = i / 7;
+    var bx = len * t * 0.96, by = -len * 0.24 * t * t - len * 0.02;
+    var bl = len * 0.22 * (1 - t * 0.55);
+    c.beginPath();
+    c.moveTo(bx, by);
+    c.quadraticCurveTo(bx - bl * 0.5, by - bl * 0.45, bx - bl * 0.8, by - bl);
+    c.stroke();
+  }
+  c.restore();
+}
+function smallCaps(c, txt, x, y, px, color, spacing, align) {
+  c.save();
+  c.fillStyle = color;
+  c.font = px + 'px "VT323", monospace';
+  if (c.letterSpacing !== undefined) c.letterSpacing = (spacing || 2) + "px";
+  c.textAlign = align || "left";
+  c.textBaseline = "alphabetic";
+  c.fillText(txt.toUpperCase(), x, y);
+  c.restore();
+}
+
+/* ======================================================================== */
+/* THE PLATE — L0 texture · L1 furniture · per-frame 3D data                */
+/* ======================================================================== */
+var plateCv = document.getElementById("plate");
+var P = fitCanvas(plateCv, 700);
+var PW = P.w, PH = P.h;
+
+/* spiral geometry (v1's honest coordinates) */
+var OCTAVES = 7, SPT = 96, TOTAL = OCTAVES * SPT;
+var CX = PW * 0.45, CY = PH * 0.54;
+var baseRadius = Math.min(PH * 0.20, PW * 0.16);
+var octaveStep = baseRadius * 0.42;
+var peakUp = octaveStep * 1.25;
+var camPitch = 0.32;
+
+/* -------- frozen honest-fake FFT: authored peaks, real projection ------- */
+/* anchor F (v1 ariel): ROW_F_MIN = F1; octaveFloat = log2(f / F1).         */
+/* pitch-class angle within a turn: F=0, G=2/12, A=4/12, B=6/12, C=7/12,    */
+/* D=9/12, E=11/12 (F Lydian in-key set).                                   */
+var mags = new Float32Array(TOTAL);
+(function bakeFFT() {
+  /* [octaveFloat, height, sigma(octaves)] */
+  var peaks = [
+    [1.000, 0.58, 0.030],   /* breeze root F2            */
+    [1.583, 0.50, 0.028],   /* breeze fifth C3           */
+    [2.000, 0.38, 0.026],   /* pad octave F3             */
+    [0.583, 0.30, 0.040],   /* bass under-fifth C2       */
+    [2.583, 0.22, 0.030],   /* pad partial C4            */
+    [3.750, 0.26, 0.055],   /* aeolian D5 (broad, bowed) */
+    [4.170, 0.80, 0.016],   /* whistle G5 — the singer   */
+    [5.170, 0.28, 0.020],   /* whistle harmonic G6       */
+    [4.500, 0.30, 0.014],   /* the ♯4 — B5, halo-lit     */
+    [4.583, 0.32, 0.014],   /* chime C6                  */
+    [4.917, 0.36, 0.014],   /* chime E6                  */
+    [5.417, 0.22, 0.016],   /* chime sparkle A6          */
+  ];
+  for (var i = 0; i < TOTAL; i++) {
+    var of = i / SPT;
+    var v = 0.028 + 0.030 * vnoise(i * 0.11, 7.3) + 0.02 * Math.max(0, 1.6 - of) ;
+    for (var p = 0; p < peaks.length; p++) {
+      var d = of - peaks[p][0], s = peaks[p][2];
+      if (d > -s * 4 && d < s * 4) v += peaks[p][1] * Math.exp(-(d * d) / (2 * s * s));
+    }
+    mags[i] = Math.min(1, v);
+  }
+})();
+
+/* -------------------- L0 · the engraved plate texture ------------------- */
+var L0 = document.createElement("canvas");
+L0.width = plateCv.width; L0.height = plateCv.height;
+(function bakePlate() {
+  var c = L0.getContext("2d");
+  c.setTransform(P.dpr, 0, 0, P.dpr, 0, 0);
+  var cols = Math.ceil(PW / U), rows = Math.ceil(PH / U);
+  var mx = cols / 2, my = rows / 2;
+  /* burnish sweep axis (a polisher's diagonal pass) */
+  var bAng = -0.52, bc = Math.cos(bAng), bs = Math.sin(bAng);
+  for (var gy = 0; gy < rows; gy++) {
+    for (var gx = 0; gx < cols; gx++) {
+      /* fine, low-contrast metal grain — burnish, not stains */
+      var n = 0.26 * vnoise(gx / 26, gy / 26)
+            + 0.38 * vnoise(gx / 8.5, gy / 8.5)
+            + 0.36 * vnoise(gx / 2.7, gy / 2.7);
+      /* radial edge darkening */
+      var dx = (gx - mx) / mx, dy = (gy - my) / my;
+      var d = Math.sqrt(dx * dx + dy * dy);
+      n -= d * d * 0.20;
+      /* burnish: two soft bright sweeps along the diagonal */
+      var u = (gx - mx) * bc + (gy - my) * bs;
+      n += 0.13 * Math.exp(-Math.pow((u + 60) / 110, 2));
+      n += 0.09 * Math.exp(-Math.pow((u - 170) / 70, 2));
+      /* fine per-pixel dither jitter (blue-noise stand-in) */
+      n += (hash2(gx, gy) - 0.5) * 0.12;
+      var tone = n < 0.27 ? 0 : (n < 0.72 ? 1 : 2);
+      c.fillStyle = PAL.plate[tone];
+      c.fillRect(gx * U, gy * U, U, U);
+    }
+  }
+  /* seeded scratch strokes — 1U runs; sparse in the plate zone */
+  function inPlateZone(x, y) {
+    var zx = (x - CX) / (baseRadius * 1.45);
+    var zy = (y - CY) / (octaveStep * 4.4);
+    return (zx * zx + zy * zy) < 1;
+  }
+  var s;
+  for (s = 0; s < 88; s++) {
+    var sx = hash2(s, 1) * PW, sy = hash2(s, 2) * PH;
+    var ang = -0.52 + (hash2(s, 3) - 0.5) * 0.7; /* all near the burnish axis */
+    var len = 26 + hash2(s, 4) * 84; /* in U cells */
+    var ca = Math.cos(ang), sa = Math.sin(ang);
+    for (var k = 0; k < len; k++) {
+      var px = sx + k * ca * U, py = sy + k * sa * U;
+      if (px < 8 || py < 8 || px > PW - 8 || py > PH - 8) break;
+      if (hash2(s * 3, k) < 0.30) continue; /* etched, broken stroke */
+      if (inPlateZone(px, py) && hash2(s, k) > 0.28) continue;
+      c.fillStyle = PAL.plate[2];
+      c.fillRect(Math.floor(px / U) * U, Math.floor(py / U) * U, U, U);
+    }
+  }
+  /* a few short deep-silver burnish glints (texture, not data) */
+  for (s = 0; s < 9; s++) {
+    var gx2 = hash2(s, 11) * PW, gy2 = hash2(s, 12) * PH;
+    var ga = -0.52 + (hash2(s, 13) - 0.5) * 0.4;
+    var gl = 6 + hash2(s, 14) * 12;
+    var gc = Math.cos(ga), gs = Math.sin(ga);
+    for (var q = 0; q < gl; q++) {
+      var qx = gx2 + q * gc * U, qy = gy2 + q * gs * U;
+      if (qx < 10 || qy < 10 || qx > PW - 10 || qy > PH - 10) break;
+      if (inPlateZone(qx, qy)) break;
+      c.fillStyle = PAL.silver[2];
+      c.fillRect(Math.floor(qx / U) * U, Math.floor(qy / U) * U, U, U);
+    }
+  }
+})();
+
+/* ---------------- L1 · printed furniture (static, screen-space) --------- */
+/* the two Lydian homes — authored asterisms (also reused by margin panel)  */
+var AST_I = {
+  stars: [[0, 6, 2.6], [15, -6, 2.0], [30, 2, 3.2], [45, -8, 2.0], [26, 18, 1.7]],
+  links: [[0, 1], [1, 2], [2, 3], [2, 4]],
+};
+var AST_II = {
+  stars: [[0, 14, 2.4], [14, 4, 3.0], [28, -6, 3.8], [44, -2, 2.6], [58, 8, 3.0], [32, 18, 2.0]],
+  links: [[0, 1], [1, 2], [2, 3], [3, 4], [2, 5]],
+};
+function drawAsterism(c, ast, x, y, lit, scale, label) {
+  var s = scale || 1;
+  c.save();
+  c.strokeStyle = lit ? PAL.silver[1] : PAL.silver[2];
+  c.lineWidth = 1;
+  var i, a, b;
+  for (i = 0; i < ast.links.length; i++) {
+    a = ast.stars[ast.links[i][0]]; b = ast.stars[ast.links[i][1]];
+    c.beginPath();
+    c.moveTo(x + a[0] * s, y + a[1] * s);
+    c.lineTo(x + b[0] * s, y + b[1] * s);
+    c.stroke();
+  }
+  for (i = 0; i < ast.stars.length; i++) {
+    a = ast.stars[i];
+    star4(c, x + a[0] * s, y + a[1] * s, a[2] * s * (lit ? 1.25 : 1),
+          lit ? PAL.gilt[0] : PAL.gilt[1], lit && a[2] > 3);
+  }
+  if (label) smallCaps(c, label, x + 28 * s, y + 34 * s, 15, lit ? PAL.gilt[0] : PAL.silver[1], 3, "center");
+  c.restore();
+}
+
+var L1 = document.createElement("canvas");
+L1.width = plateCv.width; L1.height = plateCv.height;
+function bakeFurniture() {
+  var c = L1.getContext("2d");
+  c.setTransform(P.dpr, 0, 0, P.dpr, 0, 0);
+  c.clearRect(0, 0, PW, PH);
+
+  /* the printed star-field — a chart is full of stars. Tiny engraved points,
+     sparse over the coil zone, a few larger gilt-deep ones. */
+  var sf;
+  for (sf = 0; sf < 150; sf++) {
+    var stx = 24 + hash2(sf, 41) * (PW - 48);
+    var sty = 24 + hash2(sf, 42) * (PH - 120);
+    var zx = (stx - CX) / (baseRadius * 1.5), zy = (sty - CY) / (octaveStep * 4.6);
+    if (zx * zx + zy * zy < 1 && hash2(sf, 43) > 0.22) continue;
+    var mag2 = hash2(sf, 44);
+    if (mag2 > 0.94) star4(c, stx, sty, 3.2, PAL.gilt[1]);
+    else if (mag2 > 0.78) star4(c, stx, sty, 2.2, PAL.silver[2]);
+    else { c.fillStyle = PAL.silver[2]; c.fillRect(Math.round(stx / U) * U, Math.round(sty / U) * U, U, U); }
+  }
+
+  /* engraved border: outer deep-silver rule, inner gilt rule, corner stars */
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = U;
+  c.strokeRect(7, 7, PW - 14, PH - 14);
+  c.strokeStyle = PAL.gilt[1]; c.lineWidth = 1;
+  c.strokeRect(13, 13, PW - 26, PH - 26);
+  star4(c, 13, 13, 5, PAL.gilt[1]); star4(c, PW - 13, 13, 5, PAL.gilt[1]);
+  star4(c, 13, PH - 13, 5, PAL.gilt[1]); star4(c, PW - 13, PH - 13, 5, PAL.gilt[1]);
+
+  /* the horizon — rules the plate's foot; sinks through the release */
+  var hy = PH * 0.885;
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(PW * 0.05, hy); c.lineTo(PW * 0.95, hy); c.stroke();
+  for (var hx = PW * 0.05; hx < PW * 0.95; hx += 5 * U) {
+    c.beginPath(); c.moveTo(hx, hy + 2); c.lineTo(hx - 4, hy + 8); c.stroke();
+  }
+  smallCaps(c, "horizon — sinks through the release", PW * 0.26, hy - 6, 13, PAL.silver[1], 2);
+
+  /* asterism I (home, printed quiet) and II (the second home, LIT = chord) */
+  drawAsterism(c, AST_I, PW * 0.085, PH * 0.125, false, 1.15, "I");
+  drawAsterism(c, AST_II, PW * 0.80, PH * 0.16, true, 1.2, "II ✦ G");
+  smallCaps(c, "the two lydian homes", PW * 0.085, PH * 0.125 + 68, 12, PAL.silver[2], 2);
+
+  /* the ♯4 — one lone gilt star, only the halo lights it */
+  var lx = PW * 0.615, ly = PH * 0.085;
+  c.strokeStyle = PAL.sky[1]; c.lineWidth = 1;
+  c.beginPath(); c.arc(lx, ly, 9, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([2, 4]);
+  c.beginPath(); c.arc(lx, ly, 15, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([]);
+  star4(c, lx, ly, 4.2, PAL.gilt[0], true);
+  smallCaps(c, "♯4 · the lone star", lx + 22, ly + 4, 13, PAL.sky[1], 2);
+
+  /* the breeze schema — 12-spoke square-in-circle, root & fifth inked */
+  var sx = PW * 0.105, sy = PH * 0.755, sr = 46;
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+  c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.stroke();
+  c.strokeRect(sx - sr * 0.71, sy - sr * 0.71, sr * 1.42, sr * 1.42);
+  var k;
+  for (k = 0; k < 12; k++) {
+    var a2 = k * Math.PI / 6 - Math.PI / 2;
+    c.beginPath();
+    c.moveTo(sx + Math.cos(a2) * sr * 0.2, sy + Math.sin(a2) * sr * 0.2);
+    c.lineTo(sx + Math.cos(a2) * sr, sy + Math.sin(a2) * sr);
+    c.stroke();
+  }
+  /* nodes: F (root, top) and C (fifth, 7 semitones cw); P5 = double rule */
+  var fA = -Math.PI / 2, cA = -Math.PI / 2 + 7 * Math.PI / 6;
+  var fx = sx + Math.cos(fA) * sr * 0.78, fy = sy + Math.sin(fA) * sr * 0.78;
+  var cx2 = sx + Math.cos(cA) * sr * 0.78, cy2 = sy + Math.sin(cA) * sr * 0.78;
+  c.strokeStyle = PAL.silver[1];
+  c.beginPath(); c.moveTo(fx, fy - 2); c.lineTo(cx2, cy2 - 2); c.stroke();
+  c.beginPath(); c.moveTo(fx, fy + 2); c.lineTo(cx2, cy2 + 2); c.stroke();
+  c.fillStyle = PAL.silver[0];
+  c.beginPath(); c.arc(fx, fy, 3, 0, Math.PI * 2); c.fill();
+  c.beginPath(); c.arc(cx2, cy2, 3, 0, Math.PI * 2); c.fill();
+  c.strokeStyle = PAL.gilt[1];
+  c.beginPath(); c.arc(fx, fy, 5.5, 0, Math.PI * 2); c.stroke();
+  smallCaps(c, "F", fx - 1, fy - 9, 13, PAL.silver[1], 0, "center");
+  smallCaps(c, "C", cx2, cy2 + 16, 13, PAL.silver[1], 0, "center");
+  smallCaps(c, "the breeze ✦ root & fifth", sx, sy + sr + 18, 12, PAL.silver[2], 2, "center");
+
+  /* the cartouche — corner title box over the horizon hatch */
+  var cw = 352, ch = 80, cx3 = PW - cw - 26, cy3 = PH - ch - 24;
+  c.fillStyle = PAL.plate[0];
+  c.fillRect(cx3, cy3, cw, ch);
+  c.strokeStyle = PAL.silver[1]; c.lineWidth = 1;
+  c.strokeRect(cx3 + 2, cy3 + 2, cw - 4, ch - 4);
+  c.strokeStyle = PAL.silver[2];
+  c.strokeRect(cx3 + 6, cy3 + 6, cw - 12, ch - 12);
+  star4(c, cx3 + 2, cy3 + 2, 4, PAL.gilt[1]); star4(c, cx3 + cw - 2, cy3 + 2, 4, PAL.gilt[1]);
+  star4(c, cx3 + 2, cy3 + ch - 2, 4, PAL.gilt[1]); star4(c, cx3 + cw - 2, cy3 + ch - 2, 4, PAL.gilt[1]);
+  smallCaps(c, "ariel ✦ flights and songs", cx3 + cw / 2, cy3 + 30, 20, PAL.silver[0], 3, "center");
+  smallCaps(c, "carta caelestis · f lydian · tonic 349", cx3 + cw / 2, cy3 + 52, 14, PAL.silver[1], 1, "center");
+  smallCaps(c, "song № 4 · x 0.63 ✦ evening 06:12", cx3 + cw / 2, cy3 + 68, 13, PAL.gilt[1], 1, "center");
+}
+bakeFurniture();
+
+/* ---------------- per-frame 3D data (L2) --------------------------------- */
+var IN_KEY = { 0: "F", 2: "G", 4: "A", 6: "B", 7: "C", 9: "D", 11: "E" }; /* semitones above F */
+var ctx = P.c;
+
+function project(x, y, z, cy1, sy1, cp1, sp1) {
+  var x1 = x * cy1 - z * sy1;
+  var z1 = x * sy1 + z * cy1;
+  var y1 = y * cp1 - z1 * sp1;
+  var z2 = y * sp1 + z1 * cp1;
+  return { sx: CX + x1, sy: CY - y1, z: z2 };
+}
+/* depth → engraved stroke: near = bright & wide, far = deep hairline */
+function depthStyle(z) {
+  var t = z / baseRadius; /* -1 far … +1 near (z2 sign: positive toward eye) */
+  if (t > 0.25) return { col: PAL.silver[0], w: 2 };
+  if (t > -0.35) return { col: PAL.silver[1], w: 1.4 };
+  return { col: PAL.silver[2], w: 0.9 };
+}
+function giltDepth(z) { return z / baseRadius > -0.15 ? PAL.gilt[0] : PAL.gilt[1]; }
+
+function drawSpiral(yaw) {
+  var cy1 = Math.cos(yaw), sy1 = Math.sin(yaw);
+  var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
+  var i, o, b, th, yW, pt;
+
+  /* pass 1 — hatch fill (engraver's shading): radial burin strokes from
+     baseline up to the contour, every 2nd sample, deep silver; near side
+     gets mid silver. Density carries magnitude; no alpha anywhere. */
+  for (i = 0; i < TOTAL; i++) {
+    var m = mags[i];
+    if (m < 0.09) continue;
+    o = (i / SPT) | 0; b = i % SPT;
+    th = (b / SPT) * 2 * Math.PI;
+    yW = (o + b / SPT - (OCTAVES - 1) / 2) * octaveStep;
+    var xw = baseRadius * Math.cos(th), zw = baseRadius * Math.sin(th);
+    var p0 = project(xw, yW, zw, cy1, sy1, cp1, sp1);
+    var p1 = project(xw, yW + m * peakUp, zw, cy1, sy1, cp1, sp1);
+    ctx.strokeStyle = (p0.z / baseRadius > -0.1) ? PAL.silver[2] : PAL.plate[2];
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(p0.sx, p0.sy); ctx.lineTo(p1.sx, p1.sy); ctx.stroke();
+  }
+
+  /* pass 2 — the baseline helix (compass-drawn coil) with depth ink-weight */
+  var prev = null;
+  for (i = 0; i <= TOTAL; i++) {
+    var ii = Math.min(i, TOTAL - 1);
+    o = (ii / SPT) | 0; b = ii % SPT;
+    var frac = i / SPT;
+    th = (frac % 1) * 2 * Math.PI;
+    yW = (frac - (OCTAVES - 1) / 2) * octaveStep;
+    /* tiny authored wobble — the pen's hand */
+    var wob = (vnoise(frac * 21.3, 3.1) - 0.5) * 1.6;
+    pt = project((baseRadius + wob) * Math.cos(th), yW, (baseRadius + wob) * Math.sin(th), cy1, sy1, cp1, sp1);
+    if (prev) {
+      /* the scaffold recedes: baseline never brighter than mid silver, so
+         the data contour (bright) always owns the eye */
+      var zAvg = (pt.z + prev.z) / 2 / baseRadius;
+      ctx.strokeStyle = zAvg > 0.1 ? PAL.silver[1] : PAL.silver[2];
+      ctx.lineWidth = zAvg > 0.1 ? 1 : 0.7;
+      ctx.beginPath(); ctx.moveTo(prev.sx, prev.sy); ctx.lineTo(pt.sx, pt.sy); ctx.stroke();
+    }
+    prev = pt;
+  }
+
+  /* pass 3 — the FFT contour: the data edge, full resolution. Drawn ONLY
+     where there is data (above the quiet floor) so the coil never reads as
+     a bare wireframe cylinder — the engraved line IS the sound. */
+  var FLOOR = 0.085;
+  prev = null;
+  var prevM = 0;
+  for (i = 0; i < TOTAL; i++) {
+    o = (i / SPT) | 0; b = i % SPT;
+    th = (b / SPT) * 2 * Math.PI;
+    yW = (o + b / SPT - (OCTAVES - 1) / 2) * octaveStep + mags[i] * peakUp;
+    pt = project(baseRadius * Math.cos(th), yW, baseRadius * Math.sin(th), cy1, sy1, cp1, sp1);
+    if (prev && b !== 0 && (mags[i] > FLOOR || prevM > FLOOR)) {
+      var st2 = depthStyle((pt.z + prev.z) / 2);
+      ctx.strokeStyle = st2.col; ctx.lineWidth = st2.w;
+      ctx.beginPath(); ctx.moveTo(prev.sx, prev.sy); ctx.lineTo(pt.sx, pt.sy); ctx.stroke();
+    }
+    prev = pt; prevM = mags[i];
+  }
+
+  /* pass 4 — degree ticks: in-key = mid-silver tick (bottom turn labeled),
+     out-of-key = bare deep tick. The in-key tinting relocated into weight. */
+  for (o = 0; o < OCTAVES; o++) {
+    for (var pc = 0; pc < 12; pc++) {
+      th = (pc / 12) * 2 * Math.PI;
+      yW = (o + pc / 12 - (OCTAVES - 1) / 2) * octaveStep;
+      var inK = IN_KEY[pc] !== undefined;
+      var r0 = baseRadius, r1 = baseRadius - (inK ? 7 : 4);
+      var q0 = project(r0 * Math.cos(th), yW, r0 * Math.sin(th), cy1, sy1, cp1, sp1);
+      var q1 = project(r1 * Math.cos(th), yW, r1 * Math.sin(th), cy1, sy1, cp1, sp1);
+      if (q0.z / baseRadius < -0.55) continue; /* far side: let it go */
+      ctx.strokeStyle = inK ? PAL.silver[1] : PAL.silver[2];
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(q0.sx, q0.sy); ctx.lineTo(q1.sx, q1.sy); ctx.stroke();
+      /* pc 0 (F, the tonic) is marked by the gilt seam star + numeral —
+         printing its letter too would collide at the seam */
+      if (o === 0 && inK && pc !== 0 && q0.z / baseRadius > -0.1) {
+        var qL = project((baseRadius + 16) * Math.cos(th), yW, (baseRadius + 16) * Math.sin(th), cy1, sy1, cp1, sp1);
+        smallCaps(ctx, IN_KEY[pc], qL.sx, qL.sy + 4, 13, PAL.silver[1], 0, "center");
+      }
+    }
+    /* octave seam: gilt star + roman numeral marginalia */
+    yW = (o - (OCTAVES - 1) / 2) * octaveStep;
+    var sPt = project(baseRadius * 1.05, yW, 0, cy1, sy1, cp1, sp1);
+    if (sPt.z / baseRadius > -0.6) {
+      star4(ctx, sPt.sx, sPt.sy, 3.4, giltDepth(sPt.z));
+      var ROM = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
+      smallCaps(ctx, ROM[o], sPt.sx + 11, sPt.sy + 4, 12, PAL.silver[2], 0);
+    }
+  }
+  return { cy1: cy1, sy1: sy1, cp1: cp1, sp1: sp1 };
+}
+
+/* dotted flight-line arcing up the coil — tonight in gilt; last evening's
+   ghosted beneath in deep silver (the returning bird). Legs = scenes. */
+function drawFlightLine(cam, ghost) {
+  var oct0 = ghost ? 1.05 : 1.15, oct1 = ghost ? 4.5 : 5.0;
+  var rr = baseRadius * (ghost ? 1.14 : 1.22);
+  var phase = ghost ? 1.1 : 0;
+  var N = 220;
+  for (var i = 0; i <= N; i++) {
+    if (i % 2 === 1) continue; /* dotted */
+    var t = i / N;
+    var of = oct0 + (oct1 - oct0) * (t * t * (3 - 2 * t)); /* eased climb */
+    var th = (of % 1) * 2 * Math.PI + phase;
+    var yW = (of - (OCTAVES - 1) / 2) * octaveStep;
+    var pt = project(rr * Math.cos(th), yW, rr * Math.sin(th), cam.cy1, cam.sy1, cam.cp1, cam.sp1);
+    if (pt.z / baseRadius < -0.75) continue;
+    ctx.fillStyle = ghost ? PAL.silver[2] : giltDepth(pt.z);
+    var s = ghost ? 1.8 : (pt.z / baseRadius > 0 ? 3 : 2.2);
+    ctx.fillRect(pt.sx - s / 2, pt.sy - s / 2, s, s);
+    /* leg junctions: tiny gilt stars at scene boundaries (t = 1/3, 2/3) */
+    if (!ghost && (i === 74 || i === 148)) {
+      star4(ctx, pt.sx, pt.sy, 3.2, PAL.gilt[0]);
+    }
+    /* paired wingbeat chevrons (answers), two spots along the line */
+    if (!ghost && (i === 60 || i === 170)) {
+      ctx.strokeStyle = PAL.sky[1]; ctx.lineWidth = 1;
+      for (var w = 0; w < 2; w++) {
+        ctx.beginPath();
+        ctx.moveTo(pt.sx - 4 + w * 6, pt.sy + 3);
+        ctx.lineTo(pt.sx + w * 6, pt.sy - 2);
+        ctx.lineTo(pt.sx + 4 + w * 6, pt.sy + 3);
+        ctx.stroke();
+      }
+    }
+  }
+  /* arrowhead at the top of tonight's line */
+  if (!ghost) {
+    var ofE = oct1, thE = (ofE % 1) * 2 * Math.PI + phase;
+    var yE = (ofE - (OCTAVES - 1) / 2) * octaveStep;
+    var pe = project(rr * Math.cos(thE), yE, rr * Math.sin(thE), cam.cy1, cam.sy1, cam.cp1, cam.sp1);
+    ctx.strokeStyle = PAL.gilt[0]; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(pe.sx - 5, pe.sy + 7); ctx.lineTo(pe.sx, pe.sy); ctx.lineTo(pe.sx + 5, pe.sy + 6); ctx.stroke();
+  }
+}
+
+/* the whistle's plumb-bob — silver stem from the coil, bob at the pitch head */
+function drawPlumbBob(cam) {
+  var of = 4.170; /* whistle G5, matching the frozen peak */
+  var th = (of % 1) * 2 * Math.PI;
+  var yB = (of - (OCTAVES - 1) / 2) * octaveStep;
+  var i0 = Math.round(of * SPT);
+  var yH = yB + mags[Math.min(TOTAL - 1, i0)] * peakUp + 14;
+  var xw = baseRadius * Math.cos(th), zw = baseRadius * Math.sin(th);
+  var pb = project(xw, yB, zw, cam.cy1, cam.sy1, cam.cp1, cam.sp1);
+  var ph = project(xw, yH, zw, cam.cy1, cam.sy1, cam.cp1, cam.sp1);
+  ctx.strokeStyle = PAL.silver[0]; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.moveTo(pb.sx, pb.sy); ctx.lineTo(ph.sx, ph.sy); ctx.stroke();
+  /* the bob: a pointed engraved weight (diamond with a waist) */
+  ctx.fillStyle = PAL.silver[0];
+  ctx.beginPath();
+  ctx.moveTo(ph.sx, ph.sy + 9);
+  ctx.lineTo(ph.sx - 5, ph.sy - 1);
+  ctx.lineTo(ph.sx - 3, ph.sy - 7);
+  ctx.lineTo(ph.sx + 3, ph.sy - 7);
+  ctx.lineTo(ph.sx + 5, ph.sy - 1);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = PAL.plate[0]; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ph.sx - 4, ph.sy - 1); ctx.lineTo(ph.sx + 4, ph.sy - 1); ctx.stroke();
+  /* anchor ring on the coil */
+  ctx.strokeStyle = PAL.silver[0]; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(pb.sx, pb.sy, 3, 0, Math.PI * 2); ctx.stroke();
+  smallCaps(ctx, "whistle · g5", ph.sx + 12, ph.sy - 2, 13, PAL.silver[1], 1);
+}
+
+var t0 = performance.now();
+function framePlate() {
+  var t = (performance.now() - t0) / 1000;
+  var yaw = 0.6 + t * 0.05; /* slow rotation */
+  ctx.clearRect(0, 0, PW, PH);
+  ctx.drawImage(L0, 0, 0, PW, PH);
+  ctx.drawImage(L1, 0, 0, PW, PH);
+  var cam = drawSpiral(yaw);
+  drawFlightLine(cam, true);   /* the ghost — last evening, in an earlier hand */
+  drawFlightLine(cam, false);  /* tonight, gilt */
+  drawPlumbBob(cam);
+  requestAnimationFrame(framePlate);
+}
+
+/* ======================================================================== */
+/* MARGIN APPARATUS                                                          */
+/* ======================================================================== */
+
+function drawApparatus() {
+
+/* ---- the wind-rose: tide. Active point = rising-thermals; feathers ×3 --- */
+(function windRose() {
+  var F = fitCanvas(document.getElementById("windrose"), 190);
+  var c = F.c, cx = F.w / 2, cy = F.h / 2 + 4, R = 66;
+  c.clearRect(0, 0, F.w, F.h);
+  var LABELS = ["STILL-AIR", "RISING-THERMALS", "GALE", "CLEARING"];
+  var ACTIVE = 1;
+  /* rings */
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+  c.beginPath(); c.arc(cx, cy, R + 8, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([1, 3]);
+  c.beginPath(); c.arc(cx, cy, R + 14, 0, Math.PI * 2); c.stroke();
+  c.setLineDash([]);
+  var i, a;
+  /* 8 minor points */
+  for (i = 0; i < 8; i++) {
+    a = i * Math.PI / 4 + Math.PI / 8;
+    c.strokeStyle = PAL.silver[2];
+    c.beginPath(); c.moveTo(cx, cy);
+    c.lineTo(cx + Math.cos(a) * R * 0.55, cy + Math.sin(a) * R * 0.55);
+    c.stroke();
+  }
+  /* 4 major points: N=still-air, E=rising-thermals, S=gale, W=clearing */
+  for (i = 0; i < 4; i++) {
+    a = i * Math.PI / 2 - Math.PI / 2;
+    var tipx = cx + Math.cos(a) * R, tipy = cy + Math.sin(a) * R;
+    var lw = 7;
+    var lx = cx + Math.cos(a + Math.PI / 2) * lw, ly = cy + Math.sin(a + Math.PI / 2) * lw;
+    var rx = cx + Math.cos(a - Math.PI / 2) * lw, ry = cy + Math.sin(a - Math.PI / 2) * lw;
+    var active = i === ACTIVE;
+    /* split-fill compass point: one half inked, one half open (portolan) */
+    c.fillStyle = active ? PAL.gilt[0] : PAL.silver[1];
+    c.beginPath(); c.moveTo(tipx, tipy); c.lineTo(lx, ly); c.lineTo(cx, cy); c.closePath(); c.fill();
+    c.strokeStyle = active ? PAL.gilt[0] : PAL.silver[1]; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(tipx, tipy); c.lineTo(rx, ry); c.lineTo(cx, cy); c.closePath(); c.stroke();
+    /* labels */
+    var lxx = cx + Math.cos(a) * (R + 26), lyy = cy + Math.sin(a) * (R + 26);
+    if (i === 0) lyy += 2; if (i === 2) lyy += 8;
+    if (i === 1) { lyy -= 16; lxx -= 12; } /* active label rides above its point */
+    var short_ = LABELS[i] === "RISING-THERMALS" ? "RISING·THERM." : LABELS[i];
+    smallCaps(c, short_, lxx, lyy + 4, 12, active ? PAL.gilt[0] : PAL.silver[1], 1, "center");
+  }
+  /* center boss */
+  star4(c, cx, cy, 5, PAL.gilt[1]);
+  /* feather streamers trailing the active (East) point — count = tidePos ×3 */
+  for (i = 0; i < 3; i++) {
+    feather(c, cx + R - 2 + i * 3, cy + 6 + i * 11, 24, 0.35, PAL.sky[1]);
+  }
+})();
+
+/* ---- altitude quadrant: the astrolabe arm, intensity 0.04–0.65 --------- */
+(function quadrant() {
+  var F = fitCanvas(document.getElementById("quadrant"), 128);
+  var c = F.c;
+  c.clearRect(0, 0, F.w, F.h);
+  var ox = 18, oy = F.h - 14, R = 100;
+  var IMIN = 0.04, IMAX = 0.65, IVAL = 0.41;
+  /* twin arcs */
+  c.strokeStyle = PAL.silver[1]; c.lineWidth = 1;
+  c.beginPath(); c.arc(ox, oy, R, -Math.PI / 2, 0); c.stroke();
+  c.strokeStyle = PAL.silver[2];
+  c.beginPath(); c.arc(ox, oy, R - 9, -Math.PI / 2, 0); c.stroke();
+  /* graduations */
+  var i;
+  for (i = 0; i <= 10; i++) {
+    var a = -Math.PI / 2 + (i / 10) * Math.PI / 2;
+    var big = i % 5 === 0;
+    c.strokeStyle = big ? PAL.silver[1] : PAL.silver[2];
+    c.beginPath();
+    c.moveTo(ox + Math.cos(a) * (R - (big ? 9 : 5)), oy + Math.sin(a) * (R - (big ? 9 : 5)));
+    c.lineTo(ox + Math.cos(a) * R, oy + Math.sin(a) * R);
+    c.stroke();
+  }
+  smallCaps(c, "0.65", ox + 10, oy - R + 14, 12, PAL.silver[1], 0);
+  smallCaps(c, "0.04", ox + R - 42, oy - 8, 12, PAL.silver[1], 0);
+  /* the arm: angle from horizontal by normalized intensity */
+  var tt = (IVAL - IMIN) / (IMAX - IMIN);
+  var aa = -tt * Math.PI / 2;
+  c.strokeStyle = PAL.silver[0]; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(ox, oy);
+  c.lineTo(ox + Math.cos(aa) * (R - 2), oy + Math.sin(aa) * (R - 2));
+  c.stroke();
+  /* sighting vanes on the arm */
+  c.fillStyle = PAL.silver[0];
+  var vx = ox + Math.cos(aa) * R * 0.55, vy = oy + Math.sin(aa) * R * 0.55;
+  c.fillRect(vx - 2, vy - 4, 4, 8);
+  star4(c, ox + Math.cos(aa) * (R - 2), oy + Math.sin(aa) * (R - 2), 3.6, PAL.gilt[0]);
+  /* pivot */
+  c.fillStyle = PAL.gilt[1];
+  c.beginPath(); c.arc(ox, oy, 3.4, 0, Math.PI * 2); c.fill();
+})();
+
+/* ---- the chord as lit constellation (same authored asterism II) -------- */
+(function chordPanel() {
+  var F = fitCanvas(document.getElementById("chordconst"), 96);
+  var c = F.c;
+  c.clearRect(0, 0, F.w, F.h);
+  drawAsterism(c, AST_II, F.w / 2 - 68, 46, true, 2.0);
+  /* the un-lit home beside it for comparison, small */
+  drawAsterism(c, AST_I, F.w - 66, 66, false, 0.85, "I");
+})();
+
+/* ---- signature migration map ------------------------------------------- */
+(function migration() {
+  var F = fitCanvas(document.getElementById("migration"), 148);
+  var c = F.c;
+  c.clearRect(0, 0, F.w, F.h);
+  var i;
+  /* a portolan coastline — dotted, engraved */
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+  c.setLineDash([2, 3]);
+  c.beginPath();
+  c.moveTo(6, F.h - 20);
+  c.bezierCurveTo(F.w * 0.25, F.h - 44, F.w * 0.4, F.h - 12, F.w * 0.62, F.h - 30);
+  c.bezierCurveTo(F.w * 0.8, F.h - 44, F.w * 0.9, F.h - 26, F.w - 6, F.h - 34);
+  c.stroke();
+  c.setLineDash([]);
+  /* rhumb crosses */
+  for (i = 0; i < 4; i++) {
+    var rx = 24 + i * (F.w - 48) / 3, ry = 18 + (i % 2) * 10;
+    c.strokeStyle = PAL.plate[2];
+    c.beginPath(); c.moveTo(rx - 4, ry); c.lineTo(rx + 4, ry); c.stroke();
+    c.beginPath(); c.moveTo(rx, ry - 4); c.lineTo(rx, ry + 4); c.stroke();
+  }
+  /* the lineage: gen I..V flying across; every-3rd-gen tether dotted home */
+  var nodes = [
+    [16, F.h - 34], [58, F.h - 58], [104, F.h - 44], [150, F.h - 74], [206, F.h - 60],
+  ];
+  var ROM = ["I", "II", "III", "IV", "V"];
+  c.strokeStyle = PAL.silver[1]; c.lineWidth = 1;
+  c.beginPath();
+  for (i = 0; i < nodes.length; i++) c[i ? "lineTo" : "moveTo"](nodes[i][0], nodes[i][1]);
+  c.stroke();
+  /* ancestor tether: gen III → root, dotted return line */
+  c.setLineDash([2, 4]); c.strokeStyle = PAL.gilt[1];
+  c.beginPath(); c.moveTo(nodes[2][0], nodes[2][1]); c.lineTo(nodes[0][0], nodes[0][1]); c.stroke();
+  c.setLineDash([]);
+  for (i = 0; i < nodes.length; i++) {
+    var lit = i === nodes.length - 1;
+    star4(c, nodes[i][0], nodes[i][1], lit ? 4 : 2.8, lit ? PAL.gilt[0] : PAL.silver[0], lit);
+    smallCaps(c, ROM[i], nodes[i][0] + 2, nodes[i][1] - 8, 12, lit ? PAL.gilt[0] : PAL.silver[1], 0, "center");
+  }
+  smallCaps(c, "tether", (nodes[0][0] + nodes[2][0]) / 2 + 4, nodes[0][1] + 14, 11, PAL.gilt[1], 1, "center");
+})();
+
+/* ---- cadence glyphs at the boundaries ----------------------------------- */
+(function cadencePanel() {
+  var F = fitCanvas(document.getElementById("cadences"), 84);
+  var c = F.c;
+  c.clearRect(0, 0, F.w, F.h);
+  var y = F.h - 22;
+  c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(8, y); c.lineTo(F.w - 8, y); c.stroke();
+  /* boundary ticks — scene seams along the evening's time axis */
+  var bf = [0.09, 0.26, 0.44, 0.61, 0.78, 0.92], bx = [], i;
+  for (i = 0; i < bf.length; i++) bx.push(Math.round(F.w * bf[i]));
+  var SCN = ["alighting", "song", "flight", "song", "flight", "release →"];
+  for (i = 0; i < bx.length; i++) {
+    c.beginPath(); c.moveTo(bx[i], y - 4); c.lineTo(bx[i], y + 4); c.stroke();
+    smallCaps(c, SCN[i], bx[i] + 6, y - 36, 12, PAL.silver[2], 1);
+  }
+  /* LIFT engraved at the song→flight boundary — a small ascending-step glyph */
+  var lx = bx[2] - 12, ly = y - 8;
+  c.strokeStyle = PAL.silver[0]; c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(lx, ly);
+  c.lineTo(lx + 8, ly); c.lineTo(lx + 8, ly - 8);
+  c.lineTo(lx + 16, ly - 8); c.lineTo(lx + 16, ly - 16);
+  c.lineTo(lx + 24, ly - 16);
+  c.stroke();
+  star4(c, lx + 27, ly - 22, 3, PAL.gilt[0]);
+  smallCaps(c, "lift · i→ii", bx[2], y + 16, 12, PAL.sky[1], 1, "center");
+  /* FLOAT engraved entering the release — a feather */
+  feather(c, bx[5] - 20, y - 6, 26, -0.28, PAL.silver[0]);
+  smallCaps(c, "float · ii→i", bx[5], y + 16, 12, PAL.sky[1], 1, "center");
+  /* the whole-evening rule: past solid, forecast pricked (pounce-holes) */
+  c.strokeStyle = PAL.silver[1]; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(8, y); c.lineTo(F.w * 0.63, y); c.stroke();
+  c.fillStyle = PAL.silver[1];
+  for (var px2 = F.w * 0.63; px2 < F.w - 10; px2 += 7) c.fillRect(px2, y - 1, 2, 2);
+  star4(c, F.w * 0.63, y, 3.4, PAL.gilt[0]); /* NOW */
+  smallCaps(c, "now", F.w * 0.63, y + 16, 12, PAL.gilt[1], 1, "center");
+})();
+
+/* ======================================================================== */
+/* THE LEGEND (mixer) — voice sigils on 12×12 art-pixel cells                */
+/* ======================================================================== */
+var SIGILS = {
+  breeze: [
+    "............",
+    "............",
+    ".###...###..",
+    "#...###...##",
+    "............",
+    "..###...###.",
+    ".#...###...#",
+    "............",
+    ".###...###..",
+    "#...###...##",
+    "............",
+    "............"],
+  whistle: [
+    "............",
+    "............",
+    ".##......##.",
+    "#..#....#..#",
+    "....#..#....",
+    ".....##.....",
+    "....####....",
+    ".....##.....",
+    "......#.....",
+    ".......#....",
+    "............",
+    "............"],
+  chime: [
+    ".....#......",
+    "....###.....",
+    "....#.#.....",
+    "...#...#....",
+    "...#...#....",
+    "..#.....#...",
+    "..#.....#...",
+    ".#.......#..",
+    ".#########..",
+    "....###.....",
+    ".....#......",
+    "............"],
+  flutter: [
+    "............",
+    ".##.....##..",
+    "#..#...#..#.",
+    "#...#.#...#.",
+    ".#..###..#..",
+    "..#.###.#...",
+    "....###.....",
+    "..#.###.#...",
+    ".#...#...#..",
+    "#....#....#.",
+    "............",
+    "............"],
+  bass: [
+    "............",
+    "............",
+    "............",
+    ".....##.....",
+    "....####....",
+    "....####....",
+    ".....##.....",
+    "............",
+    "############",
+    "..#..#..#...",
+    "............",
+    "............"],
+  aeolian: [
+    "............",
+    "############",
+    "............",
+    "..#..#..#...",
+    "..#..#..#...",
+    "..#..#..#...",
+    "..#..#..#...",
+    "..#..#..#...",
+    "..#..#..#...",
+    "............",
+    "############",
+    "............"],
+  gust: [
+    "............",
+    ".#######....",
+    "........#...",
+    ".....####...",
+    "............",
+    "..########..",
+    ".........#..",
+    "......###...",
+    "............",
+    ".########...",
+    "........#...",
+    "............"],
+};
+(function legend() {
+  var F = fitCanvas(document.getElementById("legend"), 86);
+  var c = F.c;
+  c.clearRect(0, 0, F.w, F.h);
+  /* strip plate */
+  c.fillStyle = PAL.plate[0];
+  c.fillRect(0, 0, F.w, F.h);
+  c.strokeStyle = PAL.plate[2]; c.lineWidth = 2;
+  c.strokeRect(1, 1, F.w - 2, F.h - 2);
+  smallCaps(c, "the legend ✦ voices of the air", 12, 18, 14, PAL.silver[1], 2);
+  var voices = [
+    { k: "breeze",  v: 0.72, on: true  },
+    { k: "whistle", v: 0.64, on: true  },
+    { k: "chime",   v: 0.55, on: true  },
+    { k: "flutter", v: 0.38, on: true  },
+    { k: "bass",    v: 0.60, on: true  },
+    { k: "aeolian", v: 0.45, on: true  },
+    { k: "gust",    v: 0.50, on: false },
+  ];
+  var colW = (F.w - 24) / voices.length;
+  for (var i = 0; i < voices.length; i++) {
+    var vo = voices[i];
+    var x0 = 12 + i * colW;
+    /* sigil stamped on the U grid */
+    var bm = SIGILS[vo.k];
+    for (var ry = 0; ry < 12; ry++) {
+      for (var rx = 0; rx < 12; rx++) {
+        if (bm[ry][rx] === "#") {
+          c.fillStyle = vo.on ? PAL.silver[0] : PAL.silver[2];
+          c.fillRect(x0 + rx * U, 28 + ry * U, U, U);
+        }
+      }
+    }
+    smallCaps(c, vo.k, x0 + 30, 40, 14, vo.on ? PAL.silver[0] : PAL.silver[2], 1);
+    /* slider: dithered fill, unquantized thumb */
+    var sx = x0 + 30, sw = colW - 46, sy = 48;
+    c.strokeStyle = PAL.silver[2]; c.lineWidth = 1;
+    c.strokeRect(sx, sy, sw, 8);
+    var fillW = sw * vo.v;
+    for (var fx = 0; fx < fillW - 1; fx += U) {
+      for (var fy = 0; fy < 8; fy += U) {
+        if (((fx / U) + (fy / U)) % 2 === 0) {
+          c.fillStyle = vo.on ? PAL.silver[1] : PAL.plate[2];
+          c.fillRect(sx + 1 + fx, sy + 1 + fy - 1 + 1, U, U);
+        }
+      }
+    }
+    c.fillStyle = vo.on ? PAL.silver[0] : PAL.silver[2];
+    c.fillRect(sx + fillW - 1.5, sy - 3, 3, 14); /* thumb: unquantized position */
+    /* mute square (v1's pixel toggle, kept verbatim) */
+    c.strokeStyle = PAL.silver[2];
+    c.strokeRect(x0 + 2, 52, 10, 10);
+    if (!vo.on) { c.fillStyle = PAL.rose; c.fillRect(x0 + 4, 54, 6, 6); }
+    else { c.fillStyle = PAL.silver[1]; c.fillRect(x0 + 4, 54, 6, 6); }
+    smallCaps(c, vo.on ? "" : "held", x0 + 2, 76, 11, PAL.silver[2], 1);
+  }
+})();
+
+} /* end drawApparatus */
+drawApparatus();
+
+/* ======================================================================== */
+/* CONTRAST VALIDATION — measured, printed                                   */
+/* ======================================================================== */
+(function contrast() {
+  function lum(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    var arr = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(function (v) {
+      v /= 255;
+      return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * arr[0] + 0.7152 * arr[1] + 0.0722 * arr[2];
+  }
+  function ratio(a, b) {
+    var la = lum(a), lb = lum(b);
+    var hi = Math.max(la, lb), lo = Math.min(la, lb);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+  var WORST = PAL.plate[2]; /* lightest plate tone = worst case for light marks */
+  var rows = [
+    ["silver bright (contour, near limb, plumb-bob)", PAL.silver[0], WORST, true],
+    ["silver mid (mid limb, ticks, labels)",          PAL.silver[1], WORST, true],
+    ["VT323 body type (log, captions)",               PAL.silver[0], PAL.plate[1], true],
+    ["VT323 secondary type (aged step 1)",            PAL.silver[1], WORST, true],
+    ["gilt bright (lit stars, flight-line near)",     PAL.gilt[0],  WORST, true],
+    ["gilt deep (quiet stars, seams, interpuncts)",   PAL.gilt[1],  WORST, true],
+    ["pale-sky (halo, wingbeats, cadence names)",     PAL.sky[1],   WORST, true],
+    ["silver deep — DEPTH-CUE ONLY, never sole data", PAL.silver[2], WORST, false],
+  ];
+  var html = "<tr><th></th><th>mark</th><th>vs plate</th><th>ratio</th><th>≥4.5</th></tr>";
+  rows.forEach(function (r) {
+    var rr = ratio(r[1], r[2]);
+    var pass = rr >= 4.5;
+    var cls = pass ? "pass" : (r[3] ? "fail" : "flag");
+    var verdict = pass ? "PASS" : (r[3] ? "FAIL" : "FLAGGED · by-design depth cue");
+    html += "<tr><td><span class='chip' style='background:" + r[1] + "'></span></td>" +
+      "<td>" + r[0] + "</td><td>" + r[1] + " on " + r[2] + "</td>" +
+      "<td>" + rr.toFixed(2) + ":1</td><td class='" + cls + "'>" + verdict + "</td></tr>";
+  });
+  document.getElementById("contrast-table").innerHTML = html;
+  document.getElementById("contrast-note").textContent =
+    "Worst-case ground is the lightest plate tone #22345a. All required pairs pass with the palette " +
+    "as specified — no adjustment needed. Deep silver #6e8aa4 (~" + ratio(PAL.silver[2], WORST).toFixed(1) +
+    ":1) is demoted by rule to far-limb hairlines, hatch shading, and aged log ink; it never carries a data mark alone.";
+})();
+
+/* start after the pixel face is ready so canvas text stamps in VT323 */
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function () {
+    bakeFurniture();
+    drawApparatus();
+    requestAnimationFrame(framePlate);
+  });
+} else {
+  requestAnimationFrame(framePlate);
+}
+}());
+</script>
+</body>
+</html>

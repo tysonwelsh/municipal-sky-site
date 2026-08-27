@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="44.3 21.5 288.8 106.8" role="img" aria-label="scissors">
+        <g stroke="#23201d" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M168 70 L330 40 L176 82 Z" fill="#35322e" stroke-width="2.5"/>
+          <path d="M168 80 L330 110 L176 68 Z" fill="#201d1a" stroke-width="2.5"/>
+          <path d="M166 76 L108 97" fill="none" stroke-width="6.5"/>
+          <path d="M166 74 L108 53" fill="none" stroke-width="6.5"/>
+          <ellipse cx="76" cy="105" rx="28" ry="17" fill="none" stroke-width="5.5" transform="rotate(20 76 105)"/>
+          <ellipse cx="76" cy="45" rx="28" ry="17" fill="none" stroke-width="5.5" transform="rotate(-20 76 45)"/>
+        </g>
+        <circle cx="170" cy="75" r="6" fill="#23201d"/>
+        <circle cx="170" cy="75" r="2.2" fill="#9a958e"/>
+      </svg>

@@ -1,0 +1,269 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>soak: pending</title>
+<!-- ==========================================================================
+render-soak.html — dev-only RENDERED-AUDIO soak test for Prospero's Jukebox v2
+(unlinked, like the demo pages; plain .html — no PHP needed).
+
+The symbolic harness proves the engines schedule the right values; it cannot
+prove the values are SAFE, because mock nodes record automation instead of
+propagating signal energy. This page runs the ACTUAL engine into an
+OfflineAudioContext and analyzes the rendered buffer — the test that catches
+runaway feedback, railed waveshapers, NaN-silenced graphs, and screaming
+buildups that no scheduled-value inspection can see.
+
+Usage (query params):
+  ?track=sycorax|library|ariel   which engine (default sycorax)
+  &seed=N                  fixed seed (default 20260713 — a first evening
+                           with processional + invocation + THE CUT inside
+                           the render window)
+  &dur=S                   render length in seconds (default 600 — a whole
+                           Sycorax evening plus the seam into the next)
+  &sink=1                  force the rare sink (wraps Harmony.create's
+                           profile p to 1 — sycorax only, test hook)
+
+How the offline render drives the engine's lookahead clock: PJ2.Clock pumps
+itself from setInterval against ctx.currentTime. Offline rendering races far
+ahead of wall-clock timers, so this page hijacks setInterval BEFORE play()
+(the clock reads the global at call time) and pumps every captured tick
+callback synchronously inside an OfflineAudioContext.suspend() chain stepped
+every 0.2 s — inside the clock's 0.25 s lookahead window, so nothing is ever
+scheduled late. Deterministic, wall-clock-free, render-bound.
+
+Analysis over the rendered buffer, per 1 s window (both channels):
+  - non-finite sample count           MUST be 0 (NaN silences a graph)
+  - worst-case peak                   MUST be <= -1 dBFS (0.891)
+  - windows after t=10s with peak < 1e-6 outside a cut hush   MUST be 0
+  - loudest window vs the median window (t>=10s)  SHOULD be within ~12 dB
+    (a bigger spread is the signature of a screaming buildup)
+
+Results: JSON into document.title, document.body, and console
+("SOAK-RESULT {...}") for headless capture via --enable-logging=stderr.
+=========================================================================== -->
+<script src="pj2-rand.js"></script>
+<script src="pj2-pitch.js"></script>
+<script src="pj2-clock.js"></script>
+<script src="pj2-voice.js"></script>
+<script src="pj2-fx.js"></script>
+<script src="pj2-air.js"></script>
+<script src="pj2-motif.js"></script>
+<script src="pj2-harmony.js"></script>
+<script src="pj2-conductor.js"></script>
+<script src="pj2-library.js"></script>
+<script src="pj2-sycorax.js"></script>
+<script src="pj2-ariel.js"></script>
+</head>
+<body>
+<pre id="out">rendering…</pre>
+<script>
+(function () {
+  "use strict";
+
+  function qp(name, dflt) {
+    var m = new RegExp("[?&]" + name + "=([^&]+)").exec(window.location.search);
+    return m ? decodeURIComponent(m[1]) : dflt;
+  }
+  var TRACK = qp("track", "sycorax");
+  var SEED = parseInt(qp("seed", "20260713"), 10) >>> 0;
+  var DUR = Math.max(30, parseFloat(qp("dur", "600")));
+  var FORCE_SINK = qp("sink", "0") === "1";
+  var SR = 44100;
+  var STEP = 0.2;          // suspend stride — inside the clock's 0.25s lookahead
+  var HUSH_PAD = 4.5;      // widen hush exclusion by the max return ramp
+
+  function fail(msg) {
+    document.title = "soak: ERROR";
+    document.getElementById("out").textContent = "ERROR: " + msg;
+    console.log("SOAK-RESULT " + JSON.stringify({ error: msg }));
+  }
+
+  try {
+    var ctx = new OfflineAudioContext(2, Math.ceil(DUR * SR), SR);
+  } catch (e) { fail("no OfflineAudioContext: " + e.message); return; }
+
+  // resume() before rendering rejects on an offline ctx; the engines call it
+  // defensively at play() — swallow that one rejection, keep the real ones.
+  var origResume = ctx.resume.bind(ctx);
+  ctx.resume = function () {
+    var p = origResume();
+    if (p && p.catch) p.catch(function () {});
+    return p;
+  };
+
+  // The engine lazily does `new window.AudioContext()`; a constructor that
+  // returns an object hands `new` that object (the harness precedent).
+  window.AudioContext = function () { return ctx; };
+  window.webkitAudioContext = window.AudioContext;
+
+  // Hijack setInterval BEFORE play(): PJ2.Clock wraps the global at call
+  // time, so the tick lands in our pump list instead of on wall time.
+  var pumps = [];
+  var realSetInterval = window.setInterval;
+  window.setInterval = function (fn) { pumps.push(fn); return pumps.length; };
+  window.clearInterval = function () {};
+  function pump() {
+    for (var i = 0; i < pumps.length; i++) {
+      try { pumps[i](); } catch (e) { console.log("SOAK pump error: " + e.message); }
+    }
+  }
+
+  // ---- BISECTION STUBS (dev): &nothroat=1 / &nodelay=1 stub the Fx units
+  // with dead-ended pass shells; &nogritcurve=1 swallows every WaveShaper
+  // curve (null curve = identity pass-through) — used to localize energy
+  // bugs to a subsystem without touching engine source.
+  if (qp("nothroat", "0") === "1") {
+    PJ2.Fx.sympathetic = function (c) {
+      var g = c.createGain(), o = c.createGain();
+      return { input: g, output: o, strings: [], retune: function () {}, setLevel: function () {} };
+    };
+  }
+  if (qp("nodelay", "0") === "1") {
+    PJ2.Fx.delay = function (c) {
+      var s = c.createGain(), o = c.createGain();
+      return { send: s, output: o, setWet: function () {} };
+    };
+  }
+  if (qp("nogritcurve", "0") === "1") {
+    var origWS = ctx.createWaveShaper.bind(ctx);
+    ctx.createWaveShaper = function () {
+      var n = origWS();
+      Object.defineProperty(n, "curve", { get: function () { return null; }, set: function () {} });
+      return n;
+    };
+  }
+
+  // Test hook: force the rare sink so the render exercises the modulation +
+  // throat retune path (sycorax profile only; harmless for library).
+  if (FORCE_SINK && window.PJ2 && PJ2.Harmony) {
+    var origHC = PJ2.Harmony.create;
+    PJ2.Harmony.create = function (o) {
+      if (o && o.profile && o.profile.seaChange) {
+        o.profile.seaChange.p = function () { return 1; };
+      }
+      return origHC(o);
+    };
+  }
+
+  var facade = (TRACK === "library") ? PJ2.Library
+    : (TRACK === "ariel") ? PJ2.Ariel
+    : PJ2.Sycorax;
+  var engine = facade.create({ seed: SEED, volume: 0.5 });
+  var hushes = [];   // [start, end] windows excluded from the silence check
+  var evCounts = {};
+  var noteCount = 0;
+  engine.setEventListener(function (e) {
+    evCounts[e.type] = (evCounts[e.type] || 0) + 1;
+    if (e.type === "cut") hushes.push([e.t, e.t + e.holdS + HUSH_PAD]);
+  });
+  engine.setNoteListener(function () { noteCount++; });
+
+  engine.play();
+  pump(); // cover [0, 0.25) before the first render quantum
+
+  // The suspend chain: each handler pumps the clock, arms the next suspend
+  // (legal only while suspended), then resumes.
+  function arm(t) {
+    ctx.suspend(t).then(function () {
+      pump();
+      if (t + STEP < DUR - 0.05) arm(t + STEP);
+      ctx.resume();
+    }).catch(function (e) { console.log("SOAK suspend error: " + e.message); });
+  }
+  arm(STEP);
+
+  ctx.startRendering().then(function (buf) {
+    // restore globals (tidy; nothing else runs after)
+    window.setInterval = realSetInterval;
+
+    var ch0 = buf.getChannelData(0);
+    var ch1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : ch0;
+    var n = buf.length;
+    var nonFinite = 0;
+    var wins = [];
+    var winN = Math.floor(n / SR);
+    for (var w = 0; w < winN; w++) {
+      var peak = 0, sum = 0;
+      var a = w * SR, b = a + SR;
+      for (var i = a; i < b; i++) {
+        var s0 = ch0[i], s1 = ch1[i];
+        if (!isFinite(s0)) { nonFinite++; s0 = 0; }
+        if (!isFinite(s1)) { nonFinite++; s1 = 0; }
+        var m0 = s0 < 0 ? -s0 : s0, m1 = s1 < 0 ? -s1 : s1;
+        if (m0 > peak) peak = m0;
+        if (m1 > peak) peak = m1;
+        sum += s0 * s0 + s1 * s1;
+      }
+      wins.push({ t: w, peak: peak, rms: Math.sqrt(sum / (2 * SR)) });
+    }
+
+    function inHush(t) {
+      for (var h = 0; h < hushes.length; h++) {
+        if (t + 1 > hushes[h][0] && t < hushes[h][1]) return true;
+      }
+      return false;
+    }
+    function db(v) { return v > 0 ? 20 * Math.log10(v) : -999; }
+
+    var worstPeak = 0, worstAt = 0, silent = [];
+    var steady = [];
+    for (w = 0; w < wins.length; w++) {
+      if (wins[w].peak > worstPeak) { worstPeak = wins[w].peak; worstAt = w; }
+      if (wins[w].t >= 10) {
+        if (wins[w].peak < 1e-6 && !inHush(wins[w].t)) silent.push(wins[w].t);
+        steady.push(wins[w].peak);
+      }
+    }
+    steady.sort(function (x, y) { return x - y; });
+    var median = steady.length ? steady[Math.floor(steady.length / 2)] : 0;
+    var spreadDb = (median > 0) ? db(worstPeak) - db(median) : 999;
+
+    var hot = wins.slice().sort(function (x, y) { return y.peak - x.peak; }).slice(0, 5)
+      .map(function (x) { return { t: x.t, peakDb: +db(x.peak).toFixed(1) }; });
+
+    // Forensics: first non-finite sample time, and a fine 0.25s peak trace
+    // of the opening 8 seconds (where a fast runaway lives).
+    var firstNaN = -1;
+    for (i = 0; i < n; i++) {
+      if (!isFinite(ch0[i]) || !isFinite(ch1[i])) { firstNaN = i / SR; break; }
+    }
+    var trace = [];
+    var Q = Math.floor(SR / 4);
+    for (w = 0; w < Math.min(32, Math.floor(n / Q)); w++) {
+      var tp = 0;
+      for (i = w * Q; i < (w + 1) * Q; i++) {
+        var v0 = Math.abs(ch0[i]);
+        if (isFinite(v0) && v0 > tp) tp = v0;
+      }
+      trace.push(+tp.toFixed(4));
+    }
+
+    var report = {
+      track: TRACK, seed: SEED, durS: DUR, sinkForced: FORCE_SINK,
+      nonFinite: nonFinite,
+      worstPeak: +worstPeak.toFixed(4),
+      worstPeakDb: +db(worstPeak).toFixed(2),
+      worstAtS: worstAt,
+      medianPeakDb: +db(median).toFixed(2),
+      spreadDb: +spreadDb.toFixed(2),
+      silentWindows: silent.slice(0, 10),
+      silentCount: silent.length,
+      hushes: hushes.map(function (h) { return [+h[0].toFixed(1), +h[1].toFixed(1)]; }),
+      hottest: hot,
+      firstNaNs: firstNaN < 0 ? null : +firstNaN.toFixed(3),
+      openingTrace: trace,
+      notes: noteCount,
+      events: evCounts,
+      pass: nonFinite === 0 && worstPeak <= 0.891 && silent.length === 0 && spreadDb <= 12,
+    };
+    var json = JSON.stringify(report);
+    document.title = "soak: " + (report.pass ? "PASS" : "FAIL") +
+      " peak " + report.worstPeakDb + "dB spread " + report.spreadDb + "dB nf " + nonFinite;
+    document.getElementById("out").textContent = JSON.stringify(report, null, 2);
+    console.log("SOAK-RESULT " + json);
+  }).catch(function (e) { fail("render failed: " + (e && e.message)); });
+})();
+</script>
+</body>
+</html>

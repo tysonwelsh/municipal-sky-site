@@ -1,0 +1,732 @@
+/* ============================================================================
+   KOLOB 𐐗𐐄𐐢𐐉𐐒 — ink and paper
+   The 1985 hymnbook: cream stock, deep green ink, letterpress rules, cloth
+   cover. Green academia — classical sheet music, liner notes, a chapel
+   library. Airy, open, minimal. NO neon, NO chrome, NO CRT. The one glow in
+   the whole interface lives in the Liahona dial (drawn by the canvas).
+   ========================================================================== */
+
+.kolob-scene {
+  /* the book */
+  --cover: #14382c;          /* cloth cover green */
+  --cover-hi: #1a4536;
+  --paper: #f5f0e4;          /* cream stock */
+  --paper-lo: #ece5d3;
+  --ink: #1e4d3b;            /* hymnbook green ink */
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;           /* restrained gold, the cover stamping */
+
+  /* the cover is a MAT now, not a backdrop: a bounded green cloth rectangle
+     lying on the site's white page, the way the hymnbook lies on a table */
+  position: relative;
+  max-width: 860px;
+  margin: 2.4rem auto 3.5rem;
+  padding: 34px;
+  border-radius: 3px;
+  background:
+    radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.22);
+  font-family: "EB Garamond", Georgia, serif;
+}
+/* the thin gold rule stamped into the cloth, inside the mat edge —
+   the hymnbook cover's frame line */
+.kolob-scene::before {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  pointer-events: none;
+  z-index: 1;
+  border: 1px solid var(--gilt);
+  opacity: 0.75;
+}
+/* cloth grain on the mat */
+.kolob-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 3px;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+
+/* the page on the cover */
+.kolob-scene .content-frame.kolob-frame {
+  position: relative;
+  z-index: 2;
+  max-width: none;
+  margin: 0;
+  background:
+    linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink);
+  border: none;
+  border-radius: 1px;
+  box-shadow:
+    0 1px 0 rgba(255, 250, 235, 0.12) inset,
+    0 6px 18px rgba(0, 0, 0, 0.35);
+  padding: 2.4rem 2.8rem 2.2rem;
+}
+/* paper grain */
+.kolob-scene .content-frame.kolob-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 2px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.kolob-frame > * { position: relative; z-index: 1; }
+
+/* the masthead — the three edition switches on a ruled band at the head of the
+   title page. In the flow now (no longer pinned to a corner overlapping the
+   title), right-justified, with a letterpress hairline beneath that answers the
+   double rule under the title, so the controls read as page furniture the title
+   page was set around. The buttons space themselves so a wider label (the
+   Deseret script name) never overlaps its neighbor; they wrap on a narrow page. */
+.kolob-toggles {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 1.8rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--rule);
+}
+/* dev script toggle — deliberately faint; a development aid, not a feature */
+.kolob-latin-toggle {
+  padding: 0.22rem 0.66rem;
+  font-family: "EB Garamond", serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--ink-soft);
+  background: var(--paper);
+  border: 1px solid var(--ink-faint);
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 150ms, color 150ms, border-color 150ms;
+}
+/* the Deseret label wants its own face and reads a touch small — nudge it up */
+.kolob-latin-toggle.is-deseret {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+.kolob-latin-toggle:hover,
+.kolob-latin-toggle:focus-visible {
+  opacity: 1;
+  color: var(--ink);
+  border-color: var(--ink-soft);
+}
+
+/* the Ives switch — sits beside the script toggle. Armed = a solid gilt pill
+   (gold-stamped, unmistakable); disarmed = the same faint outline as its
+   neighbor. The state must read at a glance. */
+.kolob-ives-toggle.is-on {
+  opacity: 1;
+  background: var(--gilt);
+  border-color: var(--gilt);
+  color: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.kolob-ives-toggle.is-on:hover,
+.kolob-ives-toggle.is-on:focus-visible {
+  background: #9a8950;
+  border-color: #9a8950;
+  color: var(--paper);
+}
+
+/* the Whole switch — three states, read at a glance: solid gilt = every
+   meeting withholds the tune; plain outline = the natural 4%; struck = never */
+.kolob-cumulative-toggle.is-always {
+  opacity: 1;
+  background: var(--gilt);
+  border-color: var(--gilt);
+  color: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.kolob-cumulative-toggle.is-always:hover,
+.kolob-cumulative-toggle.is-always:focus-visible {
+  background: #9a8950;
+  border-color: #9a8950;
+  color: var(--paper);
+}
+.kolob-cumulative-toggle.is-never {
+  opacity: 0.45;
+  text-decoration: line-through;
+  border-style: dashed;
+}
+
+/* dev mode: the order of service becomes a jump menu */
+.kolob-scene.is-dev .kolob-order-row { cursor: pointer; }
+.kolob-scene.is-dev .kolob-order-row:hover .kolob-order-name { color: var(--gilt); }
+
+/* the hush: the page holds its breath with the music */
+.kolob-scene.is-hush .kolob-viz-wrap,
+.kolob-scene.is-hush .kolob-organ-wrap { opacity: 0.7; transition: opacity 2.5s ease; }
+.kolob-scene .kolob-viz-wrap,
+.kolob-scene .kolob-organ-wrap { transition: opacity 2.5s ease; }
+
+/* ============================== title page ============================== */
+.kolob-header {
+  text-align: center;
+  margin: 0 0 1.7rem;
+}
+.kolob-title {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  margin: 0 0 0.6rem;
+  color: var(--ink);
+}
+/* the double letterpress rule with a small star */
+.kolob-rule {
+  position: relative;
+  height: 9px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 0 8%;
+}
+.kolob-rule::after {
+  content: "✧";
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -52%);
+  background: var(--paper);
+  padding: 0 0.7em;
+  color: var(--gilt);
+  font-size: 0.72rem;
+}
+
+/* ============================== the organ ================================ */
+/* the tabernacle facade as a spectrum analyzer — black pipe silhouettes on
+   their impost line, drawn entirely by the canvas */
+.kolob-organ-wrap {
+  position: relative;
+  height: 175px;
+  margin: 0 0 0.9rem;
+}
+.kolob-organ {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ============================== the page (viz) =========================== */
+/* The grand staff — two five-line staves, a brace, and the two clefs — is now
+   drawn entirely on the canvas (kolob-viz.js buildStaffLayer), so the strip is
+   just a sized, positioned frame. Taller than the single staff to hold both
+   staves plus ledger room above and below. */
+.kolob-viz-wrap {
+  position: relative;
+  height: 220px;
+  margin: 0 0 1.4rem;
+}
+.kolob-viz {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ================== running head + transport + liahona =================== */
+/* the console is a grid: the running head and dial share the top row, the
+   transport spans the row beneath. (Small screens re-lay these areas — see the
+   media query.) */
+.kolob-console {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "info dial"
+    "controls controls";
+  column-gap: 1.2rem;
+  row-gap: 1.4rem;
+  align-items: center;
+  margin: 0 0 2rem;
+}
+.kolob-telemetry { grid-area: info; }
+.kolob-dial { grid-area: dial; }
+.kolob-transport { grid-area: controls; }
+.kolob-telemetry {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  line-height: 1.9;
+}
+.kolob-telemetry .t-sep { margin: 0 0.55em; color: var(--ink-faint); }
+.kolob-telemetry .t-flag {
+  color: var(--gilt);
+}
+.kolob-dial {
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+}
+
+/* ============================== transport ================================ */
+.kolob-transport {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0;                        /* the console grid owns the outer spacing */
+}
+.kolob-btn {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.95rem;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink-soft);
+  border-radius: 2px;
+  padding: 0.55rem 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 1.5px 0 var(--ink-faint);
+  transition: box-shadow 120ms, transform 120ms, background 300ms;
+}
+.kolob-btn:hover { background: #faf6ec; }
+/* transport glyphs render tiny in text fonts — size them like real controls */
+.kolob-btn-glyph {
+  display: inline-block;
+  font-family: Georgia, serif;
+  font-size: 1.15em;
+  line-height: 0;
+  vertical-align: -0.06em;
+}
+.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
+.kolob-btn:active { transform: translateY(1px); box-shadow: 0 0 0 var(--ink-faint); }
+.kolob-btn.play-btn.is-playing {
+  background: var(--ink);
+  color: var(--paper);
+}
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-soft);
+}
+
+/* sliders — a hairline and a small round bead */
+.kolob-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 130px;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+  /* horizontal drags work the slider; vertical still scrolls the page. Without
+     this the browser can claim a touch as a scroll and the thumb never grabs. */
+  touch-action: pan-y;
+}
+.kolob-range::-webkit-slider-runnable-track {
+  height: 1px;
+  background: var(--ink-soft);
+}
+.kolob-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 11px; height: 11px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  margin-top: -5.5px;
+}
+.kolob-range::-moz-range-track { height: 1px; background: var(--ink-soft); }
+.kolob-range::-moz-range-thumb {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+/* On touch (coarse pointers) the hairline-and-bead is too small to hit: the
+   thumb is 11px and the input only 18px tall, so a fingertip lands beside it.
+   Keep the desktop look, but give touch a full-height target and a bigger bead.
+   The track stays a hairline (it's vertically centred), so only the invisible
+   hit area and the thumb grow. */
+@media (pointer: coarse) {
+  .kolob-range { height: 44px; }
+  .kolob-range::-webkit-slider-thumb { width: 18px; height: 18px; margin-top: -8.5px; }
+  .kolob-range::-moz-range-thumb { width: 18px; height: 18px; }
+}
+
+/* ===================== order of service + hymn board ==================== */
+.kolob-columns {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 2.4rem;
+  margin: 0 0 2.2rem;
+}
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.8rem;
+  letter-spacing: 0.22em;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.45rem;
+  margin: 0 0 1rem;
+}
+
+.kolob-order-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.34rem 0;
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.92rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-soft);
+  transition: color 600ms;
+}
+.kolob-order-row.current { color: var(--ink); }
+.kolob-order-row.done { color: var(--ink-faint); }
+.kolob-order-hand {
+  width: 1.3em;
+  opacity: 0;
+  transition: opacity 600ms;
+  font-family: Georgia, serif;
+}
+.kolob-order-row.current .kolob-order-hand { opacity: 1; }
+.kolob-order-fill {
+  flex: 1;
+  height: 1px;
+  align-self: center;
+  background: transparent;
+  border-bottom: 1px dotted var(--ink-faint);
+  position: relative;
+}
+.kolob-order-fill span {
+  position: absolute;
+  left: 0; bottom: -1px;
+  height: 1px;
+  width: 0;
+  background: var(--ink);
+  transition: width 900ms linear;
+}
+
+/* the hymn board: dark green board, ivory number cards */
+.kolob-board {
+  background: linear-gradient(175deg, var(--cover-hi), var(--cover));
+  border-radius: 3px;
+  padding: 1.1rem 1.1rem 1.2rem;
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+.kolob-board .kolob-ctl-label { color: rgba(245, 240, 228, 0.6); }
+/* the number cards ride the seed row now (right of GATHER), one line tall */
+.kolob-board-nums {
+  display: flex;
+  gap: 0.4rem;
+  margin: 0 0 0 auto;              /* pushed to the row's right edge */
+  min-height: 2.1rem;
+  align-items: center;
+}
+.kolob-board-card {
+  font-family: "Noto Sans Deseret", "EB Garamond", serif;
+  background: var(--paper);
+  color: var(--cover);
+  padding: 0.22rem 0.6rem;
+  border-radius: 1px;
+  font-size: 1.02rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+.kolob-seed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+.kolob-seed-current {
+  font-family: "EB Garamond", serif;
+  color: var(--paper);
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+.kolob-seed-input {
+  width: 7.5em;
+  font-family: "EB Garamond", serif;
+  font-size: 0.85rem;
+  color: var(--paper);
+  background: rgba(245, 240, 228, 0.08);
+  border: 1px solid rgba(245, 240, 228, 0.3);
+  border-radius: 2px;
+  padding: 0.3rem 0.5rem;
+}
+.kolob-seed-input:focus { outline: 1px solid var(--gilt); }
+.kolob-btn.kolob-btn-board {
+  background: transparent;
+  color: var(--paper);
+  border-color: rgba(245, 240, 228, 0.45);
+  box-shadow: none;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.9rem;
+}
+.kolob-btn.kolob-btn-board:hover { border-color: var(--paper); background: rgba(245, 240, 228, 0.06); }
+
+/* ========================= the instruments console ====================== */
+.kolob-stops-block { margin: 0 0 2.2rem; }
+/* the section head is now a collapse toggle (a caret + the label) */
+.kolob-instruments-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.kolob-instruments-head .kolob-sec-head-label { flex: 1; text-align: left; transition: color 150ms; }
+.kolob-instruments-head:hover .kolob-sec-head-label,
+.kolob-instruments-head:focus-visible .kolob-sec-head-label { color: var(--ink); }
+/* a CSS chevron: down when open, right when collapsed */
+.kolob-collapse-caret {
+  width: 0.5em; height: 0.5em;
+  flex: 0 0 auto;
+  border-right: 1.5px solid var(--ink-soft);
+  border-bottom: 1.5px solid var(--ink-soft);
+  transform: translateY(-0.12em) rotate(45deg);
+  transition: transform 160ms;
+}
+.kolob-instruments-head[aria-expanded="false"] .kolob-collapse-caret {
+  transform: translateY(0) rotate(-45deg);
+}
+.kolob-instruments-body[hidden] { display: none; }
+/* the FIELD subheading inside the console grid */
+.kolob-field-head {
+  grid-column: 1 / -1;
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--rule);
+  padding-top: 0.7rem;
+  margin-top: 0.35rem;
+}
+/* the copy-parameters button, seated under the console */
+.kolob-copy-btn {
+  margin-top: 1.2rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  padding: 0.45rem 1rem;
+}
+#kolob-layers {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.55rem 2.4rem;
+}
+.kolob-stop {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.28rem 0;
+}
+/* the drawknob: a plain hexagonal outline — the cell shape, engraved, flat.
+   An SVG background keeps the stroke an even hairline all the way around
+   (a clip-path border can't). on = inked outline; off = the same mark, faint */
+.kolob-drawknob {
+  width: 20px; height: 20px;
+  flex: 0 0 auto;
+  border: none;
+  padding: 0;
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpolygon points='0.7,10 5.35,1 14.65,1 19.3,10 14.65,19 5.35,19' fill='%23f5f0e4' stroke='%231e4d3b' stroke-opacity='0.75' stroke-width='1.3'/%3E%3C/svg%3E") center / contain no-repeat;
+  cursor: pointer;
+  transition: opacity 150ms;
+}
+.kolob-drawknob.is-off {
+  opacity: 0.4;
+}
+.kolob-stop-name {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  min-width: 7.5em;
+  text-align: left;
+}
+.kolob-stop-name:hover { color: var(--gilt); }
+.kolob-stop .kolob-range { flex: 1; width: auto; }
+.kolob-stop:has(.kolob-drawknob.is-off) .kolob-stop-name { color: var(--ink-faint); }
+
+/* ============================== broadside ================================ */
+/* seated in the right column beneath the hymn board */
+.kolob-broadside-block {
+  margin: 1.6rem 0 0;
+  text-align: center;
+}
+.kolob-broadside-block .kolob-sec-head { text-align: left; }
+.kolob-broadside-line {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 1.06rem;
+  line-height: 2;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  min-height: 2.2rem;
+  opacity: 0.25;
+}
+.kolob-broadside-line.is-set {
+  animation: kolob-ink-set 2.8s ease-out forwards;
+}
+@keyframes kolob-ink-set {
+  from { opacity: 0; filter: blur(1.5px); }
+  30%  { opacity: 0.9; filter: blur(0.3px); }
+  to   { opacity: 0.82; filter: blur(0); }
+}
+
+/* ============================ clerk's minutes ============================ */
+.kolob-log-block { margin: 0 0 2rem; }
+.kolob-log {
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-faint) transparent;
+}
+.kolob-log-empty {
+  font-family: "Noto Sans Deseret", serif;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  padding: 0.6rem 0;
+}
+.kolob-log-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.32rem 0.1rem;
+  border-bottom: 1px solid rgba(30, 77, 59, 0.12);
+  font-size: 0.9rem;
+}
+.kolob-log-time {
+  font-family: "EB Garamond", serif;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--ink-faint);
+  width: 3.2em;
+  flex: 0 0 auto;
+}
+.kolob-log-glyph {
+  width: 1.4em;
+  flex: 0 0 auto;
+  color: var(--ink-soft);
+  font-family: Georgia, serif;
+}
+.kolob-log-row.cat-liahona .kolob-log-glyph,
+.kolob-log-row.cat-fuging .kolob-log-glyph,
+.kolob-log-row.cat-visitation .kolob-log-glyph,
+.kolob-log-row.cat-meeting .kolob-log-glyph { color: var(--gilt); }
+.kolob-log-text {
+  font-family: "Noto Sans Deseret", serif;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+.kolob-log-row.cat-motif .kolob-log-text { color: var(--ink); }
+
+/* ============================== colophon ================================= */
+.kolob-note {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: 0.86rem;
+  line-height: 2.1;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  text-align: center;
+  border-top: 1px solid var(--rule);
+  padding-top: 1.4rem;
+  margin: 0;
+}
+.kolob-note a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ink-soft);
+}
+.kolob-note a:hover { color: var(--gilt); border-bottom-color: var(--gilt); }
+
+/* build stamp — dev/ops furniture, deliberately quiet: version · fingerprint ·
+   deploy time. Latin + monospace on purpose; it is a marginer's note, not part
+   of the piece. */
+.kolob-build {
+  margin: 1.3rem 0 0;
+  text-align: center;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-faint);
+  user-select: all;                 /* one tap/click selects it all to copy */
+}
+.kolob-build-sep { margin: 0 0.5em; opacity: 0.5; }
+
+/* ====================== the sacrament dims the page ===================== */
+.kolob-scene.is-sacrament .kolob-log-block,
+.kolob-scene.is-sacrament .kolob-broadside-block,
+.kolob-scene.is-sacrament .kolob-stops-block,
+.kolob-scene.is-sacrament .kolob-columns {
+  opacity: 0.55;
+  transition: opacity 4s ease;
+}
+.kolob-scene .kolob-log-block,
+.kolob-scene .kolob-broadside-block,
+.kolob-scene .kolob-stops-block,
+.kolob-scene .kolob-columns {
+  transition: opacity 4s ease;
+}
+
+/* ============================== small pages ============================== */
+@media (max-width: 700px) {
+  .kolob-scene { margin: 0.9rem auto 2rem; padding: 18px; }
+  .kolob-scene::before { inset: 8px; }
+  .kolob-scene .content-frame.kolob-frame { padding: 1.9rem 1.2rem 1.8rem; }
+  .kolob-columns { grid-template-columns: 1fr; gap: 1.8rem; }
+  #kolob-layers { grid-template-columns: 1fr; }
+  /* re-lay the console: the info text spans the top as TWO columns, and the
+     Liahona dial shares the row beneath with the transport (buttons + slider). */
+  /* fixed first track (the dial's width) so long info text can't stretch the
+     grid columns; the info area is therefore always the full width. */
+  .kolob-console {
+    grid-template-columns: 64px 1fr;
+    grid-template-areas:
+      "info info"
+      "dial controls";
+    column-gap: 0.9rem;
+    row-gap: 1rem;
+    align-items: center;
+  }
+  /* the running head breaks into two side-by-side columns of FIXED width: with
+     column-count over a full-width, min-width:0 box each column is exactly half,
+     independent of the text — long words wrap inside their column instead of
+     widening it. A min-height reserves room for the worst case (6 info parts +
+     the event flag that sometimes appears at the end = 4 lines) so the dial/
+     transport row below never shifts when that flag comes and goes. */
+  .kolob-telemetry {
+    column-count: 2;
+    column-gap: 1rem;
+    line-height: 1.5;
+    min-height: 5.2rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .kolob-telemetry .t-part { display: block; break-inside: avoid; overflow-wrap: anywhere; }
+  .kolob-telemetry .t-sep { display: none; }
+  .kolob-dial { justify-self: start; width: 64px; height: 64px; }
+  /* the transport sits beside the dial: buttons and slider on one line */
+  .kolob-transport {
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .kolob-transport-spacer { display: none; }
+  .kolob-transport .kolob-btn { padding: 0.5rem 0.7rem; }
+  /* the slider is self-evident (and keeps its aria-label) — drop the "VOL" caption */
+  .kolob-transport .kolob-ctl-label { display: none; }
+  .kolob-transport .kolob-range { flex: 1 1 70px; min-width: 60px; width: auto; }
+  .kolob-organ-wrap { height: 135px; }
+  .kolob-viz-wrap { height: 184px; }
+}

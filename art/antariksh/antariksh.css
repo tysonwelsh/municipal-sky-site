@@ -1,0 +1,326 @@
+/* ===========================================================================
+   ANTARIKSH — futuristic raga console
+   Cosmic dark palette: deep space indigo/violet with cyan + saffron accents.
+   The "future" lives in the chrome (glow, monospace data, neon edges); the
+   music keeps it firmly a raga.
+   =========================================================================== */
+
+.antariksh-scene {
+  --bg:        #06070f;
+  --surface:   #0c0e1c;
+  --surface-2: #11142a;
+  --border:    #20264a;
+  --grid:      #161a36;
+  --ink:       #c7d2f2;
+  --ink-dim:   #6f7aa6;
+  --ink-label: #8a93c8;
+  /* Accents: cyan = primary/structure, violet = secondary, saffron = "live". */
+  --cyan:      #5fe6ff;
+  --cyan-dim:  #2a6b86;
+  --violet:    #b98cff;
+  --violet-dim:#5a4a86;
+  --saffron:   #ffb155;
+  --cyan-rgb:  95, 230, 255;
+  --violet-rgb:185, 140, 255;
+  --saffron-rgb:255, 177, 85;
+
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 8px 16px 56px;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+}
+
+.antariksh-frame {
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(var(--violet-rgb), 0.10), transparent 60%),
+    radial-gradient(120% 90% at 50% 120%, rgba(var(--cyan-rgb), 0.07), transparent 60%),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 26px 30px;
+  box-shadow: 0 0 0 1px rgba(var(--cyan-rgb), 0.04),
+              0 24px 80px rgba(0, 0, 0, 0.6),
+              inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+/* Faint scan-grid for the techy backdrop. */
+.antariksh-frame::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 44px 44px;
+  opacity: 0.18;
+  pointer-events: none;
+  mask-image: radial-gradient(120% 100% at 50% 0%, #000 30%, transparent 85%);
+}
+.antariksh-frame > * { position: relative; }
+
+/* ---------- Header ---------- */
+.antariksh-header { text-align: center; margin-bottom: 22px; }
+.antariksh-title {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: clamp(30px, 7vw, 52px);
+  letter-spacing: 0.34em;
+  margin: 0;
+  padding-left: 0.34em; /* optical centering for the tracked letters */
+  color: #eaf3ff;
+  text-shadow: 0 0 18px rgba(var(--cyan-rgb), 0.45),
+               0 0 42px rgba(var(--violet-rgb), 0.25);
+}
+.antariksh-subtitle {
+  margin: 8px 0 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.22em;
+  text-transform: lowercase;
+  color: var(--ink-dim);
+}
+
+/* ---------- Raga info panel ---------- */
+.antariksh-raga {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  background: linear-gradient(180deg, rgba(var(--violet-rgb), 0.05), transparent),
+              var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+}
+.antariksh-raga-top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: 6px 16px;
+}
+.antariksh-raga-name {
+  font-family: "Orbitron", sans-serif;
+  font-size: 19px; letter-spacing: 0.16em; color: #eaf3ff;
+}
+.antariksh-raga-name b { color: var(--cyan); font-weight: 700; }
+.antariksh-raga-mood {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.16em; color: var(--violet);
+  text-transform: uppercase;
+}
+.antariksh-swaras { display: flex; gap: 8px; flex-wrap: wrap; }
+.antariksh-swara {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 15px; font-weight: 500;
+  min-width: 30px; text-align: center;
+  padding: 7px 9px;
+  border: 1px solid var(--cyan-dim);
+  border-radius: 8px;
+  color: var(--cyan);
+  background: rgba(var(--cyan-rgb), 0.05);
+  box-shadow: inset 0 0 12px rgba(var(--cyan-rgb), 0.06);
+}
+.antariksh-swara .full { color: var(--ink-dim); font-size: 10px; display: block; margin-top: 2px; }
+.antariksh-swara.vadi   { border-color: var(--saffron); color: var(--saffron); background: rgba(var(--saffron-rgb), 0.06); }
+.antariksh-swara.samvadi{ border-color: var(--violet);  color: var(--violet);  background: rgba(var(--violet-rgb), 0.06); }
+.antariksh-raga-meta {
+  display: flex; gap: 18px 26px; flex-wrap: wrap;
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  color: var(--ink-dim); letter-spacing: 0.06em;
+}
+.antariksh-raga-meta b { color: var(--ink); font-weight: 500; }
+
+/* ---------- Development meter (the long-form arc) ---------- */
+.antariksh-arc {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px 10px;
+  margin-bottom: 18px;
+}
+.antariksh-arc-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.antariksh-arc-label {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-label);
+}
+.antariksh-arc-stage {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: 0.14em; color: var(--saffron);
+}
+.antariksh-arc-track {
+  position: relative; height: 6px; border-radius: 4px;
+  background: var(--grid); overflow: hidden;
+}
+.antariksh-arc-fill {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  box-shadow: 0 0 12px rgba(var(--violet-rgb), 0.5);
+  transition: width 0.3s linear;
+}
+.antariksh-arc-scale {
+  display: flex; justify-content: space-between;
+  margin-top: 5px;
+  font-family: "JetBrains Mono", monospace; font-size: 9px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim);
+}
+
+/* ---------- Transport ---------- */
+.antariksh-transport {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 18px;
+}
+.antariksh-btn {
+  font-family: "Orbitron", sans-serif;
+  font-size: 13px; letter-spacing: 0.12em;
+  padding: 11px 18px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, color 0.15s, background 0.15s;
+}
+.antariksh-btn:hover { border-color: var(--cyan); color: #eaf3ff; }
+.antariksh-btn.play-btn.is-playing {
+  border-color: var(--saffron);
+  color: var(--saffron);
+  box-shadow: 0 0 18px rgba(var(--saffron-rgb), 0.3), inset 0 0 14px rgba(var(--saffron-rgb), 0.08);
+}
+.antariksh-btn.stop-btn:hover { border-color: var(--violet); color: var(--violet); }
+.antariksh-transport-spacer { flex: 1; }
+.antariksh-vol-label {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: 0.16em; color: var(--ink-label);
+}
+.antariksh-val-readout {
+  font-family: "JetBrains Mono", monospace; font-size: 12px;
+  color: var(--cyan); min-width: 26px; text-align: right;
+}
+.antariksh-vol-slider { width: 130px; }
+
+/* ---------- Range inputs ---------- */
+.antariksh-range {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 4px;
+  background: var(--grid);
+  border-radius: 3px; outline: none; cursor: pointer;
+}
+.antariksh-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px rgba(var(--cyan-rgb), 0.6);
+  cursor: pointer;
+}
+.antariksh-range::-moz-range-thumb {
+  width: 14px; height: 14px; border: none; border-radius: 50%;
+  background: var(--cyan); box-shadow: 0 0 10px rgba(var(--cyan-rgb), 0.6); cursor: pointer;
+}
+
+/* ---------- Mixer ---------- */
+.antariksh-mixer {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  padding: 8px 0 4px;
+}
+.antariksh-mixer-title {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--ink-label);
+  padding: 8px 18px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.antariksh-layer {
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(var(--cyan-rgb), 0.06);
+}
+.antariksh-layer:last-child { border-bottom: none; }
+.antariksh-layer-head {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 10px 12px; margin-bottom: 10px;
+}
+.antariksh-layer-name {
+  font-family: "Orbitron", sans-serif; font-size: 13px; letter-spacing: 0.12em;
+  color: #eaf3ff; flex: 1;
+}
+.antariksh-layer-mute {
+  font-family: "JetBrains Mono", monospace; font-size: 10px; letter-spacing: 0.1em;
+  padding: 5px 10px; border-radius: 6px;
+  border: 1px solid var(--cyan-dim); color: var(--cyan);
+  background: rgba(var(--cyan-rgb), 0.05); cursor: pointer;
+}
+.antariksh-layer-mute.muted { border-color: var(--violet-dim); color: var(--ink-dim); background: transparent; }
+.antariksh-layer-vol { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+.antariksh-layer-vol .antariksh-range { width: 120px; }
+.antariksh-layer-vol .antariksh-val-readout { color: var(--ink); }
+.antariksh-layer-rate { display: flex; align-items: center; gap: 10px; min-width: 168px; }
+.antariksh-layer-rate .antariksh-range { width: 110px; }
+.antariksh-layer-rate .antariksh-range::-webkit-slider-thumb { background: var(--violet); box-shadow: 0 0 10px rgba(var(--violet-rgb), 0.6); }
+.antariksh-layer-rate .antariksh-range::-moz-range-thumb { background: var(--violet); box-shadow: 0 0 10px rgba(var(--violet-rgb), 0.6); }
+.antariksh-layer-rate .antariksh-val-readout { color: var(--violet); }
+
+.antariksh-params {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 18px; margin-top: 4px;
+}
+.antariksh-param { display: flex; flex-direction: column; gap: 3px; }
+.antariksh-param-label {
+  font-family: "JetBrains Mono", monospace; font-size: 10px;
+  letter-spacing: 0.08em; color: var(--ink-dim);
+  display: flex; justify-content: space-between;
+}
+.antariksh-param-label b { color: var(--cyan); font-weight: 500; }
+
+/* ---------- Activity log ---------- */
+.antariksh-log-block { margin-top: 20px; }
+.antariksh-log-label {
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-label);
+  margin-bottom: 8px;
+}
+.antariksh-log {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-height: 240px; overflow-y: auto;
+  padding: 5px 0;
+}
+.antariksh-log-empty {
+  padding: 14px 16px; color: var(--ink-dim);
+  font-family: "JetBrains Mono", monospace; font-size: 11px;
+}
+.antariksh-log-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 5px 14px;
+  border-bottom: 1px solid rgba(var(--cyan-rgb), 0.05);
+  font-family: "JetBrains Mono", monospace; font-size: 12px;
+  animation: antlog-in 0.3s ease;
+}
+.antariksh-log-row:last-child { border-bottom: none; }
+@keyframes antlog-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.antariksh-log-time { color: var(--ink-dim); font-size: 10px; min-width: 36px; }
+.antariksh-log-tag {
+  font-size: 9px; letter-spacing: 0.1em;
+  padding: 2px 6px; border-radius: 4px;
+  min-width: 58px; text-align: center;
+}
+.antariksh-log-tag.lead    { color: var(--cyan);    border: 1px solid var(--cyan-dim);    background: rgba(var(--cyan-rgb), 0.06); }
+.antariksh-log-tag.bansuri { color: var(--violet);  border: 1px solid var(--violet-dim);  background: rgba(var(--violet-rgb), 0.06); }
+.antariksh-log-tag.santoor { color: var(--ink-dim); border: 1px solid var(--border); }
+.antariksh-log-tag.ambient { color: var(--saffron); border: 1px solid var(--saffron);    background: rgba(var(--saffron-rgb), 0.08); }
+.antariksh-log-tag.arc     { color: var(--saffron); border: 1px dashed var(--saffron); }
+.antariksh-log-text { color: var(--ink); }
+
+.antariksh-note {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px; line-height: 1.7; letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  margin: 20px 2px 0;
+}
+.antariksh-note strong { color: var(--violet); font-weight: 500; }
+
+/* The stop-square glyph renders undersized at text size everywhere — draw it at button-icon scale. */
+.stop-btn .stop-square { font-size: 1.55em; line-height: 0; vertical-align: -0.08em; }

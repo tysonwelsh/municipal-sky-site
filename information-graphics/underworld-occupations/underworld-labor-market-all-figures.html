@@ -1,0 +1,1505 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>All 90 Figures — Wage Strip (debug)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Standalone diagnostic page that mirrors the slideshow's
+         strip-plot composition (major-group dots above a box-and-
+         whisker plot, ghost beeswarm below) but renders ONE ghost
+         per Rabelais figure (~90) instead of the deck version's
+         one-dot-per-SOC collapse.
+
+         Ghost positioning uses a d3-force simulation: each ghost is
+         x-anchored at its assigned SOC's BLS median and y is
+         resolved by collision repulsion, so figures sharing a SOC
+         stack vertically as a column above their shared wage. */
+      :root {
+        --color-bg: #f3e9cf;
+        --color-svg-bg: #ede1c2;
+        --color-text-primary: #3d2818;
+        --color-text-secondary: #5a3e28;
+        --color-text-tertiary: #8a7152;
+        --color-border-medium: rgba(90, 62, 40, 0.35);
+        --color-rubrication: #a64224;
+        --color-rule: rgba(90, 62, 40, 0.35);
+        --color-axis: #5a3e28;
+        --color-national: #1a1408;
+        --color-box-fill: rgba(220, 200, 160, 0.55);
+        --color-grid: rgba(90, 62, 40, 0.15);
+        --font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+        --font-family-sc: "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+      }
+      body {
+        margin: 0;
+        background: var(--color-bg);
+        color: var(--color-text-primary);
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .page {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px 32px 80px;
+      }
+      h1 {
+        font-family: var(--font-family-sc);
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        margin: 0 0 4px;
+        color: var(--color-text-primary);
+        -webkit-text-stroke: 0.4px currentColor;
+      }
+      p.lede {
+        margin: 0 0 24px;
+        font-style: italic;
+        font-size: 16px;
+        color: var(--color-text-secondary);
+        max-width: 720px;
+      }
+      .toolbar {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 18px;
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--color-text-secondary);
+      }
+      .toolbar label {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        cursor: pointer;
+      }
+      .viz-section {
+        background: var(--color-svg-bg);
+        padding: 14px 16px;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+      }
+      .viz-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .axis-tick text {
+        font-family: var(--font-family);
+        font-size: 13px;
+        fill: var(--color-axis);
+      }
+      .axis-tick line,
+      .axis-domain {
+        stroke: var(--color-axis);
+        stroke-width: 1.5;
+      }
+      .axis-caption {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        fill: #5c5347;
+      }
+      .strip-divider {
+        stroke: var(--color-rule);
+        stroke-width: 0.75;
+      }
+      .strip-label {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        fill: var(--color-text-tertiary);
+      }
+      .legend {
+        font-family: var(--font-family);
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        margin-top: 16px;
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .legend-item {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .figure-tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--color-text-primary);
+        color: var(--color-bg);
+        padding: 6px 10px;
+        font-family: var(--font-family);
+        font-size: 13px;
+        line-height: 1.35;
+        max-width: 280px;
+        opacity: 0;
+        transition: opacity 0.1s;
+        z-index: 10;
+      }
+      .figure-tooltip .ft-name {
+        font-weight: 700;
+        font-size: 14px;
+        display: block;
+      }
+      .figure-tooltip .ft-soc {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        display: block;
+        margin-top: 2px;
+      }
+      .summary-line {
+        font-family: var(--font-family);
+        font-size: 14px;
+        color: var(--color-text-secondary);
+        margin-top: 14px;
+      }
+      .summary-line strong {
+        color: var(--color-text-primary);
+        font-weight: 700;
+      }
+      .figure-table {
+        width: 100%;
+        margin-top: 12px;
+        border-collapse: collapse;
+        font-family: var(--font-family);
+        font-size: 14px;
+        color: var(--color-text-secondary);
+      }
+      .figure-table th,
+      .figure-table td {
+        text-align: left;
+        padding: 6px 12px 6px 0;
+        border-bottom: 1px solid rgba(90, 62, 40, 0.15);
+        vertical-align: top;
+      }
+      .figure-table th {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        border-bottom-color: var(--color-border-medium);
+      }
+      .figure-table th.num,
+      .figure-table td.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .figure-table td.fig-name {
+        color: var(--color-text-primary);
+        font-weight: 600;
+      }
+      .figure-table td.do-cell .do-code {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        margin-left: 8px;
+      }
+      .figure-table td.suppressed,
+      .figure-table td.fig-unmapped {
+        color: var(--color-text-tertiary);
+        font-style: italic;
+      }
+      /* Second chart wrapper. Sized to roughly match the deck's
+         slide-card (1100px wide minus the 18px horizontal padding
+         on each side of .slide-body, leaving ~1064px of content
+         area). Lets the chart render in its native slide proportions
+         even though the page itself is wider. */
+      .slide-strip-card {
+        max-width: 1100px;
+        background: #f1e8d2;
+        padding: 18px;
+        box-sizing: border-box;
+        border: 1px solid var(--color-border-medium);
+        margin-top: 12px;
+      }
+      .slide-strip-card .viz-section {
+        background: var(--color-svg-bg);
+        padding: 14px 16px;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <h1>All 90 Figures &mdash; Wage Strip</h1>
+      <p class="lede">
+        Diagnostic version of the deck&rsquo;s strip plot: major-group
+        wheat plot above, U.S. wage box-and-whiskers in the middle,
+        ghost beeswarm of all <span id="figure-count">~90</span>
+        Rabelais figures below. Each ghost is one figure (the deck
+        collapses to one dot per BLS SOC code). Figures sharing a SOC
+        stack into a column above their shared wage; figures whose
+        SOC has a suppressed BLS median are parked to the far left.
+      </p>
+
+      <div class="toolbar">
+        <label>
+          <input type="checkbox" id="show-suppressed" checked />
+          Show figures with suppressed wages
+        </label>
+        <label>
+          <input type="checkbox" id="show-labels" />
+          Label every ghost
+        </label>
+      </div>
+
+      <div id="strip-container" class="viz-section"></div>
+
+      <div class="legend">
+        <span class="legend-item">
+          <svg width="22" height="14" style="vertical-align: middle">
+            <circle
+              cx="11"
+              cy="7"
+              r="6"
+              fill="rgba(179,58,43,0.65)"
+              stroke="#1a1408"
+              stroke-width="1.2"
+            />
+          </svg>
+          Major occupation group (median wage)
+        </span>
+        <span class="legend-item">
+          <svg width="22" height="14" style="vertical-align: middle">
+            <path
+              d="M 5,1 C 2,1 0,4 0,7 C 0,10 1.5,12 2,11 C 2.5,10 3,11 4,12 C 5,11 5.5,10 6,11 C 6.5,12 8,10 8,7 C 8,4 6,1 5,1 Z"
+              transform="translate(6,0)"
+              fill="rgba(255, 250, 240, 0.65)"
+              stroke="#1a1408"
+              stroke-width="1"
+            />
+          </svg>
+          Rabelais figure (one ghost per figure)
+        </span>
+        <span class="legend-item">
+          <svg width="22" height="14" style="vertical-align: middle">
+            <path
+              d="M 5,1 C 2,1 0,4 0,7 C 0,10 1.5,12 2,11 C 2.5,10 3,11 4,12 C 5,11 5.5,10 6,11 C 6.5,12 8,10 8,7 C 8,4 6,1 5,1 Z"
+              transform="translate(6,0)"
+              fill="none"
+              stroke="#8a7152"
+              stroke-dasharray="2 2"
+              stroke-width="1"
+            />
+          </svg>
+          Figure with suppressed BLS wage
+        </span>
+      </div>
+
+      <p id="summary" class="summary-line"></p>
+
+      <h2
+        style="
+          font-family: var(--font-family-sc);
+          font-size: 18px;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          margin: 28px 0 6px;
+          -webkit-text-stroke: 0.3px currentColor;
+        "
+      >
+        All Figures, by Wage
+      </h2>
+      <table id="figure-table" class="figure-table">
+        <thead>
+          <tr>
+            <th>Figure</th>
+            <th>Detailed Occupation</th>
+            <th class="num">Median Wage</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <h2
+        style="
+          font-family: var(--font-family-sc);
+          font-size: 18px;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
+          margin: 36px 0 6px;
+          -webkit-text-stroke: 0.3px currentColor;
+        "
+      >
+        At Slide Size &mdash; All 90 Figures
+      </h2>
+      <p
+        style="
+          margin: 0 0 12px;
+          font-style: italic;
+          font-size: 14px;
+          color: var(--color-text-secondary);
+          max-width: 720px;
+        "
+      >
+        Same chart, rendered at the deck&rsquo;s strip-plot
+        dimensions so we can see how all 90 figures behave in the
+        slide&rsquo;s available real estate.
+      </p>
+      <!-- Wrapped in a slide-card so we can match the deck's card
+           width (~1064px content area). Matches the .slide-card
+           styling in the deck file. -->
+      <div id="slide-strip-card" class="slide-strip-card">
+        <div id="slide-strip-container" class="viz-section"></div>
+      </div>
+
+      <div id="tooltip" class="figure-tooltip"></div>
+    </div>
+
+    <script>
+      (async function () {
+        const safeFloat = (v) =>
+          v === null || v === undefined || v === ""
+            ? null
+            : isNaN(parseFloat(v))
+              ? null
+              : parseFloat(v);
+        const fmtMoney = (v) =>
+          v == null ? "—" : "$" + d3.format(",.0f")(v);
+
+        // ── Data ────────────────────────────────────────────
+        async function loadData() {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok)
+            throw new Error("HTTP " + res.status + " from " + url);
+          return await res.json();
+        }
+        let data;
+        try {
+          data = await loadData();
+        } catch (e) {
+          d3.select("#strip-container").html(
+            '<p style="padding:16px;color:#a64224;font-family:Cormorant Garamond,serif">' +
+              "Failed to load annotation data: " +
+              e.message +
+              "</p>",
+          );
+          return;
+        }
+
+        const characters = data.characters || [];
+        const hierarchical = data.hierarchical_data || [];
+        const nationalRaw = data.national_stats || {};
+
+        const nationalStats = {
+          median: safeFloat(nationalRaw.A_MEDIAN),
+          pct10: safeFloat(nationalRaw.A_PCT10),
+          pct25: safeFloat(nationalRaw.A_PCT25),
+          pct75: safeFloat(nationalRaw.A_PCT75),
+          pct90: safeFloat(nationalRaw.A_PCT90),
+        };
+
+        // Index BLS rows by SOC code for quick lookup.
+        const hierByCode = new Map();
+        hierarchical.forEach((d) => {
+          if (d.OCC_CODE) hierByCode.set(d.OCC_CODE, d);
+        });
+
+        // Per-figure rows (one entry per Rabelais character).
+        const figureRows = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const median = h ? safeFloat(h.A_MEDIAN) : null;
+          return {
+            name: c.name,
+            occCode: c.occ_code || null,
+            occTitle: c.occ_title || (h && h.OCC_TITLE) || null,
+            majorGroup: c.major_group_title || null,
+            labor: c.labor || "",
+            lotInLife: c.lot_in_life || "",
+            median,
+            suppressed: c.occ_code != null && median == null,
+            unmapped: c.occ_code == null,
+          };
+        });
+
+        // Underworld SOC code set — used to flag major groups
+        // represented in the underworld vs. those that are not.
+        const underworldCodes = new Set(
+          characters.map((c) => c.occ_code).filter(Boolean),
+        );
+        const underworldGroupNames = new Set();
+        hierarchical.forEach((d) => {
+          if (
+            d.major_group_title &&
+            underworldCodes.has(d.OCC_CODE)
+          ) {
+            underworldGroupNames.add(d.major_group_title);
+          }
+        });
+
+        // Major-group aggregates (one row per major group). The API
+        // already denormalizes major_a_median etc. onto every
+        // hierarchical row, so we just take the first row per group.
+        const majorByName = new Map();
+        hierarchical.forEach((d) => {
+          if (!d.major_group_title) return;
+          if (majorByName.has(d.major_group_title)) return;
+          const median = safeFloat(d.major_a_median);
+          if (median == null) return;
+          majorByName.set(d.major_group_title, {
+            name: d.major_group_title,
+            median,
+            pct10: safeFloat(d.major_a_pct10),
+            pct25: safeFloat(d.major_a_pct25),
+            pct75: safeFloat(d.major_a_pct75),
+            pct90: safeFloat(d.major_a_pct90),
+            isUnderworld: underworldGroupNames.has(
+              d.major_group_title,
+            ),
+          });
+        });
+        const allMajorGroups = Array.from(majorByName.values());
+
+        // ── Layout (main chart) ─────────────────────────────
+        const container = d3.select("#strip-container");
+        const containerWidth = container
+          .node()
+          .getBoundingClientRect().width;
+        const margin = { top: 16, right: 20, bottom: 60, left: 24 };
+        const width = containerWidth - margin.left - margin.right;
+
+        const majorStripH = 100;
+        const majorToBoxGap = 10;
+        const boxPlotH = 28;
+        const boxToGhostGap = 14;
+        const ghostStripH = 460;
+
+        const majorY0 = 0;
+        const boxY0 = majorY0 + majorStripH + majorToBoxGap;
+        const boxCenterY = boxY0 + boxPlotH / 2;
+        const ghostY0 = boxY0 + boxPlotH + boxToGhostGap;
+        const totalHeight = ghostY0 + ghostStripH;
+
+        const xMin = 20000,
+          xMax = 230000;
+        const x = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+
+        const svg = container
+          .append("svg")
+          .attr("class", "viz-svg")
+          .attr("width", containerWidth)
+          .attr(
+            "height",
+            totalHeight + margin.top + margin.bottom,
+          )
+          .append("g")
+          .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        // Gridlines, full height.
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", totalHeight)
+            .attr("stroke", "var(--color-grid)")
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // ── BOX-AND-WHISKERS (national stats) ───────────────
+        const boxG = svg.append("g");
+        if (
+          nationalStats.pct10 != null &&
+          nationalStats.pct25 != null
+        ) {
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct25))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct10))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct75 != null &&
+          nationalStats.pct90 != null
+        ) {
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct75))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          boxG
+            .append("line")
+            .attr("x1", x(nationalStats.pct90))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct25 != null &&
+          nationalStats.pct75 != null
+        ) {
+          const bx0 = x(nationalStats.pct25);
+          const bx1 = x(nationalStats.pct75);
+          boxG
+            .append("rect")
+            .attr("x", bx0)
+            .attr("y", boxCenterY - 10)
+            .attr("width", bx1 - bx0)
+            .attr("height", 20)
+            .attr("fill", "var(--color-box-fill)")
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+
+        // US median line — three segments at the same x: dashed
+        // through the major-group strip, solid through the box,
+        // dashed down through the ghost strip. Drawn here (before
+        // dots/ghosts) so it sits behind them.
+        if (nationalStats.median != null) {
+          const medianX = x(nationalStats.median);
+          const dashColor = "rgba(26, 20, 8, 0.45)";
+          svg
+            .append("line")
+            .attr("x1", medianX)
+            .attr("x2", medianX)
+            .attr("y1", majorY0)
+            .attr("y2", boxY0)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+          svg
+            .append("line")
+            .attr("x1", medianX)
+            .attr("x2", medianX)
+            .attr("y1", boxY0 - 1)
+            .attr("y2", boxY0 + boxPlotH + 1)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", medianX)
+            .attr("x2", medianX)
+            .attr("y1", boxY0 + boxPlotH)
+            .attr("y2", totalHeight)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+        }
+
+        // ── US MEDIAN LABEL (deck-style: leader line + caption + value)
+        // Drawn after the dots/ghosts so it stays readable on top.
+        // Hoisted into its own variable so it can be drawn after the
+        // major-group / ghost layers further down.
+        function drawUsMedianLabel() {
+          if (nationalStats.median == null) return;
+          const lineX = x(nationalStats.median);
+          const labelOffset = 10;
+          const labelX = lineX + labelOffset;
+          const labelTopY = majorY0 + 24;
+          svg
+            .append("line")
+            .attr("x1", lineX)
+            .attr("x2", labelX - 2)
+            .attr("y1", labelTopY + 16)
+            .attr("y2", labelTopY + 16)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1);
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 9)
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 11)
+            .attr("font-weight", 600)
+            .attr("letter-spacing", "0.08em")
+            .attr("fill", "#3d2b18")
+            .text("U.S. MEDIAN (2024)");
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 24)
+            .attr(
+              "font-family",
+              "Cormorant Garamond, serif",
+            )
+            .attr("font-size", 13)
+            .attr("font-weight", 600)
+            .attr("fill", "var(--color-national)")
+            .text(fmtMoney(nationalStats.median));
+        }
+
+        const tooltip = d3.select("#tooltip");
+
+        // ── MAJOR-GROUP WHEAT PLOT ──────────────────────────
+        // One ink-blob dot per BLS major group, placed at its median
+        // wage. Dots that collide horizontally stack upward in rows
+        // so the strip's bottom edge stays a clean baseline shared
+        // with the box plot below.
+        const majorDotR = 7;
+        const majorRowH = 15;
+        const majorFloorOffset = majorDotR + 1;
+        const majorCollisionDist = 2 * majorDotR + 1;
+
+        const sortedMajorDots = allMajorGroups
+          .filter((d) => d.median != null)
+          .map((d) => ({ ...d, px: x(d.median) }))
+          .sort((a, b) => a.px - b.px);
+
+        const majorStripBottom = majorY0 + majorStripH;
+        const placedMajor = [];
+        sortedMajorDots.forEach((d) => {
+          let row = 0;
+          while (
+            placedMajor.some(
+              (p) =>
+                p.row === row &&
+                Math.abs(p.px - d.px) < majorCollisionDist,
+            )
+          )
+            row++;
+          d.row = row;
+          d.y = majorStripBottom - majorFloorOffset - row * majorRowH;
+          placedMajor.push(d);
+        });
+
+        function generateBlobPath(r) {
+          const pts = [];
+          const numPts = 7;
+          for (let i = 0; i < numPts; i++) {
+            const a = (i / numPts) * Math.PI * 2;
+            const rad = r + (Math.random() * 3 - 1.5);
+            pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+          }
+          return d3.line().curve(d3.curveCatmullRomClosed)(pts);
+        }
+
+        const majorG = svg
+          .append("g")
+          .selectAll("g.major-dot")
+          .data(sortedMajorDots)
+          .enter()
+          .append("g")
+          .attr("class", "major-dot")
+          .attr("transform", (d) => `translate(${d.px},${d.y})`)
+          .style("cursor", "pointer");
+        majorG
+          .append("path")
+          .attr("d", () => generateBlobPath(majorDotR))
+          .attr("fill", "rgba(179,58,43,0.65)")
+          .attr("stroke", "#1a1408")
+          .attr("stroke-width", 1.5);
+        majorG
+          .on("mouseenter", function (event, d) {
+            tooltip
+              .html(
+                '<span class="ft-name">' +
+                  d.name +
+                  "</span>" +
+                  '<span class="ft-soc">Major group · ' +
+                  (d.isUnderworld
+                    ? "represented in underworld"
+                    : "not in underworld") +
+                  "</span>" +
+                  "<div>median " +
+                  fmtMoney(d.median) +
+                  "</div>" +
+                  "<div>p10–p90: " +
+                  fmtMoney(d.pct10) +
+                  " – " +
+                  fmtMoney(d.pct90) +
+                  "</div>",
+              )
+              .style("opacity", 1)
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mouseleave", () => tooltip.style("opacity", 0));
+
+        // ── GHOST BEESWARM (one ghost per figure) ───────────
+        // x is fixed at each figure's SOC median (or parked far left
+        // for suppressed-median figures); y is resolved by d3-force
+        // collision so figures sharing a SOC stack into a column.
+        // Ghost dimensions: the SVG path below is drawn at its
+        // natural ~8px half-extent. ghostScale shrinks the drawing
+        // uniformly; ghostR is the corresponding collision radius
+        // (kept in proportion so visual size ≈ packed size).
+        const ghostScale = 0.8;
+        const ghostR = 8 * ghostScale + 0.5;
+        const ghostCollideR = ghostR + 0.5;
+        const ghostStripTop = ghostY0 + 4;
+        const ghostStripBottom = ghostY0 + ghostStripH - 4;
+        const ghostCenterY = (ghostStripTop + ghostStripBottom) / 2;
+        const suppressedX = -ghostR * 1.8;
+
+        const ghostNodes = figureRows.map((d) => ({
+          ...d,
+          fx: d.median != null ? x(d.median) : suppressedX,
+          x: d.median != null ? x(d.median) : suppressedX,
+          y:
+            ghostStripTop +
+            ghostR +
+            Math.random() * (ghostStripBottom - ghostStripTop - 2 * ghostR),
+        }));
+
+        const sim = d3
+          .forceSimulation(ghostNodes)
+          .force(
+            "x",
+            d3
+              .forceX((d) =>
+                d.median != null ? x(d.median) : suppressedX,
+              )
+              .strength(1),
+          )
+          .force("y", d3.forceY(ghostCenterY).strength(0.025))
+          .force(
+            "collide",
+            d3.forceCollide(ghostCollideR).strength(0.95),
+          )
+          .stop();
+        for (let i = 0; i < 400; i++) sim.tick();
+        ghostNodes.forEach((n) => {
+          n.y = Math.max(
+            ghostStripTop + ghostR,
+            Math.min(ghostStripBottom - ghostR, n.y),
+          );
+        });
+
+        // Classic-white ghost icon — same drawing as the deck, scaled
+        // down by ghostScale so the dots are smaller. The inner scaled
+        // group lets `vector-effect: non-scaling-stroke` keep strokes
+        // crisp at the reduced size.
+        function drawGhost(g, isSuppressed) {
+          const fill = isSuppressed
+            ? "transparent"
+            : "rgba(255, 250, 240, 0.65)";
+          const stroke = isSuppressed
+            ? "var(--color-text-tertiary)"
+            : "#1a1408";
+          const dash = isSuppressed ? "2,2" : null;
+          const inner = g
+            .append("g")
+            .attr("transform", `scale(${ghostScale})`);
+          inner
+            .append("path")
+            .attr("class", "ghost-body")
+            .attr(
+              "d",
+              "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+            )
+            .attr("fill", fill)
+            .attr("stroke", stroke)
+            .attr("stroke-width", 1.2)
+            .attr("stroke-linejoin", "round")
+            .attr("vector-effect", "non-scaling-stroke")
+            .attr("stroke-dasharray", dash);
+          if (!isSuppressed) {
+            inner
+              .append("ellipse")
+              .attr("cx", -2)
+              .attr("cy", -3)
+              .attr("rx", 1)
+              .attr("ry", 1.5)
+              .attr("fill", "#1a1408");
+            inner
+              .append("ellipse")
+              .attr("cx", 2)
+              .attr("cy", -3)
+              .attr("rx", 1)
+              .attr("ry", 1.5)
+              .attr("fill", "#1a1408");
+          }
+        }
+
+        const ghostLayer = svg.append("g").attr("class", "ghost-layer");
+        const labelLayer = svg
+          .append("g")
+          .attr("class", "label-layer")
+          .style("display", "none");
+
+        function renderGhosts() {
+          const showSuppressed = d3
+            .select("#show-suppressed")
+            .property("checked");
+          const visible = ghostNodes.filter(
+            (n) => showSuppressed || !n.suppressed,
+          );
+
+          const sel = ghostLayer
+            .selectAll("g.ghost-dot")
+            .data(visible, (d) => d.name);
+          sel.exit().remove();
+          const enter = sel
+            .enter()
+            .append("g")
+            .attr("class", "ghost-dot")
+            .style("cursor", "default");
+          enter.each(function (d) {
+            drawGhost(d3.select(this), d.suppressed);
+          });
+          enter
+            .merge(sel)
+            .attr("transform", (d) => `translate(${d.x},${d.y})`)
+            .on("mouseenter", function (event, d) {
+              const wage =
+                d.median != null
+                  ? fmtMoney(d.median)
+                  : "wage suppressed by BLS";
+              tooltip
+                .html(
+                  '<span class="ft-name">' +
+                    d.name +
+                    "</span>" +
+                    (d.lotInLife
+                      ? "<div><em>" + d.lotInLife + "</em></div>"
+                      : "") +
+                    (d.occTitle
+                      ? '<span class="ft-soc">' +
+                        (d.occCode || "") +
+                        " · " +
+                        d.occTitle +
+                        "</span>"
+                      : "") +
+                    "<div>" +
+                    wage +
+                    "</div>",
+                )
+                .style("opacity", 1)
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mousemove", function (event) {
+              tooltip
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mouseleave", () => tooltip.style("opacity", 0));
+
+          // Optional always-on labels above each ghost.
+          const labelSel = labelLayer
+            .selectAll("text")
+            .data(visible, (d) => d.name);
+          labelSel.exit().remove();
+          labelSel
+            .enter()
+            .append("text")
+            .attr("font-family", "Cormorant Garamond, serif")
+            .attr("font-size", 9)
+            .attr("fill", "var(--color-text-primary)")
+            .attr("text-anchor", "middle")
+            .merge(labelSel)
+            .attr("x", (d) => d.x)
+            .attr("y", (d) => d.y - ghostR - 2)
+            .text((d) => d.name);
+        }
+        renderGhosts();
+
+        d3.select("#show-suppressed").on("change", renderGhosts);
+        d3.select("#show-labels").on("change", function () {
+          labelLayer.style(
+            "display",
+            this.checked ? "block" : "none",
+          );
+        });
+
+        // ── X axis + caption ────────────────────────────────
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${totalHeight})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(6)
+              .tickFormat((v) => "$" + d3.format(",")(v)),
+          );
+        xAxis
+          .selectAll(".tick")
+          .attr("class", "axis-tick");
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", "var(--color-axis)")
+          .attr("stroke-width", 1.5);
+        svg
+          .append("text")
+          .attr("class", "axis-caption")
+          .attr("x", width / 2)
+          .attr("y", totalHeight + 44)
+          .attr("text-anchor", "middle")
+          .text("MEDIAN ANNUAL WAGE");
+
+        // ── Section labels (left margin) ────────────────────
+        svg
+          .append("text")
+          .attr("class", "strip-label")
+          .attr("x", 0)
+          .attr("y", majorY0 + 10)
+          .text("Major groups");
+        svg
+          .append("text")
+          .attr("class", "strip-label")
+          .attr("x", 0)
+          .attr("y", ghostY0 + 10)
+          .text("Figures (one ghost each)");
+
+        // US median label drawn last so it sits on top of every other
+        // layer (otherwise the gridlines / ghosts can occlude it).
+        drawUsMedianLabel();
+
+        // ── Summary line + figure table ─────────────────────
+        const total = figureRows.length;
+        const suppressedN = figureRows.filter((d) => d.suppressed).length;
+        const unmappedN = figureRows.filter((d) => d.unmapped).length;
+        const plottedN = total - suppressedN - unmappedN;
+        const uniqueSocs = new Set(
+          figureRows
+            .filter((d) => d.median != null)
+            .map((d) => d.occCode),
+        ).size;
+        d3.select("#figure-count").text(total);
+
+        d3.select("#summary").html(
+          "<strong>" +
+            total +
+            "</strong> figures total · <strong>" +
+            plottedN +
+            "</strong> ghosts plotted with a BLS median · <strong>" +
+            suppressedN +
+            "</strong> with suppressed wages · <strong>" +
+            unmappedN +
+            "</strong> with no SOC code mapping · <strong>" +
+            uniqueSocs +
+            "</strong> distinct SOC codes (this is the dot count on the deck&rsquo;s strip plot).",
+        );
+
+        const tbody = d3.select("#figure-table tbody");
+        const sorted = [...figureRows].sort((a, b) => {
+          const av = a.median == null ? -1 : a.median;
+          const bv = b.median == null ? -1 : b.median;
+          return bv - av;
+        });
+        const trs = tbody
+          .selectAll("tr")
+          .data(sorted)
+          .enter()
+          .append("tr");
+        trs
+          .append("td")
+          .attr("class", "fig-name")
+          .text((d) => d.name);
+        trs
+          .append("td")
+          .attr("class", (d) =>
+            d.unmapped ? "do-cell fig-unmapped" : "do-cell",
+          )
+          .html((d) => {
+            if (d.unmapped) return "no SOC mapping";
+            const title = d.occTitle || "(untitled)";
+            const code = d.occCode
+              ? '<span class="do-code">' + d.occCode + "</span>"
+              : "";
+            return title + code;
+          });
+        trs
+          .append("td")
+          .attr("class", (d) =>
+            d.median == null ? "num suppressed" : "num",
+          )
+          .text((d) =>
+            d.median != null
+              ? fmtMoney(d.median)
+              : d.unmapped
+                ? "—"
+                : "suppressed",
+          );
+
+        // ─────────────────────────────────────────────────────
+        // Second chart: same data, deck-slide dimensions
+        // ─────────────────────────────────────────────────────
+        // Reuses every data structure from the main chart (figureRows,
+        // allMajorGroups, nationalStats). Layout numbers mirror the
+        // deck's drawStripPlot in underworld-labor-market.html so we
+        // can see how the 90-ghost beeswarm behaves at slide size.
+        drawSlideSizedChart();
+
+        function drawSlideSizedChart() {
+          const slideContainer = d3.select("#slide-strip-container");
+          const slideWidth = slideContainer
+            .node()
+            .getBoundingClientRect().width;
+          // Margins match the deck's strip plot exactly so the chart
+          // proportions are identical to what appears in a slide.
+          const sMargin = { top: 10, right: 20, bottom: 65, left: 24 };
+          const sWidth = slideWidth - sMargin.left - sMargin.right;
+
+          const sMajorStripH = 115;
+          const sMajorToBoxGap = 10;
+          const sBoxPlotH = 28;
+          const sBoxToGhostGap = 10;
+          const sGhostStripH = 270;
+          const sMajorY0 = 0;
+          const sBoxY0 = sMajorY0 + sMajorStripH + sMajorToBoxGap;
+          const sBoxCenterY = sBoxY0 + sBoxPlotH / 2;
+          const sGhostY0 = sBoxY0 + sBoxPlotH + sBoxToGhostGap;
+          const sTotalHeight = sGhostY0 + sGhostStripH;
+
+          const sx = d3
+            .scaleLinear()
+            .domain([20000, 230000])
+            .range([0, sWidth]);
+
+          const sSvg = slideContainer
+            .append("svg")
+            .attr("class", "viz-svg")
+            .attr("width", slideWidth)
+            .attr(
+              "height",
+              sTotalHeight + sMargin.top + sMargin.bottom,
+            )
+            .append("g")
+            .attr(
+              "transform",
+              `translate(${sMargin.left},${sMargin.top})`,
+            );
+
+          // Gridlines
+          sx.ticks(6).forEach((tick) => {
+            sSvg
+              .append("line")
+              .attr("x1", sx(tick))
+              .attr("x2", sx(tick))
+              .attr("y1", 0)
+              .attr("y2", sTotalHeight)
+              .attr("stroke", "var(--color-grid)")
+              .attr("stroke-width", 0.5)
+              .attr("stroke-dasharray", "4,3");
+          });
+
+          // Box plot
+          if (
+            nationalStats.pct10 != null &&
+            nationalStats.pct25 != null
+          ) {
+            sSvg
+              .append("line")
+              .attr("x1", sx(nationalStats.pct10))
+              .attr("x2", sx(nationalStats.pct25))
+              .attr("y1", sBoxCenterY)
+              .attr("y2", sBoxCenterY)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+            sSvg
+              .append("line")
+              .attr("x1", sx(nationalStats.pct10))
+              .attr("x2", sx(nationalStats.pct10))
+              .attr("y1", sBoxCenterY - 7)
+              .attr("y2", sBoxCenterY + 7)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+          }
+          if (
+            nationalStats.pct75 != null &&
+            nationalStats.pct90 != null
+          ) {
+            sSvg
+              .append("line")
+              .attr("x1", sx(nationalStats.pct75))
+              .attr("x2", sx(nationalStats.pct90))
+              .attr("y1", sBoxCenterY)
+              .attr("y2", sBoxCenterY)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+            sSvg
+              .append("line")
+              .attr("x1", sx(nationalStats.pct90))
+              .attr("x2", sx(nationalStats.pct90))
+              .attr("y1", sBoxCenterY - 7)
+              .attr("y2", sBoxCenterY + 7)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+          }
+          if (
+            nationalStats.pct25 != null &&
+            nationalStats.pct75 != null
+          ) {
+            sSvg
+              .append("rect")
+              .attr("x", sx(nationalStats.pct25))
+              .attr("y", sBoxCenterY - 10)
+              .attr(
+                "width",
+                sx(nationalStats.pct75) - sx(nationalStats.pct25),
+              )
+              .attr("height", 20)
+              .attr("fill", "var(--color-box-fill)")
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+          }
+
+          // US median line — 3 segments
+          if (nationalStats.median != null) {
+            const mX = sx(nationalStats.median);
+            const dashColor = "rgba(26, 20, 8, 0.45)";
+            sSvg
+              .append("line")
+              .attr("x1", mX)
+              .attr("x2", mX)
+              .attr("y1", sMajorY0)
+              .attr("y2", sBoxY0)
+              .attr("stroke", dashColor)
+              .attr("stroke-width", 1.5)
+              .attr("stroke-dasharray", "6,3");
+            sSvg
+              .append("line")
+              .attr("x1", mX)
+              .attr("x2", mX)
+              .attr("y1", sBoxY0 - 1)
+              .attr("y2", sBoxY0 + sBoxPlotH + 1)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1.5);
+            sSvg
+              .append("line")
+              .attr("x1", mX)
+              .attr("x2", mX)
+              .attr("y1", sBoxY0 + sBoxPlotH)
+              .attr("y2", sTotalHeight)
+              .attr("stroke", dashColor)
+              .attr("stroke-width", 1.5)
+              .attr("stroke-dasharray", "6,3");
+          }
+
+          // Major-group wheat plot
+          const sMajorDotR = 7;
+          const sMajorRowH = 15;
+          const sMajorFloorOffset = sMajorDotR + 1;
+          const sMajorCollisionDist = 2 * sMajorDotR + 1;
+          const sSortedMajor = allMajorGroups
+            .filter((d) => d.median != null)
+            .map((d) => ({ ...d, px: sx(d.median) }))
+            .sort((a, b) => a.px - b.px);
+          const sMajorStripBottom = sMajorY0 + sMajorStripH;
+          const sPlacedMajor = [];
+          sSortedMajor.forEach((d) => {
+            let row = 0;
+            while (
+              sPlacedMajor.some(
+                (p) =>
+                  p.row === row &&
+                  Math.abs(p.px - d.px) < sMajorCollisionDist,
+              )
+            )
+              row++;
+            d.row = row;
+            d.y =
+              sMajorStripBottom -
+              sMajorFloorOffset -
+              row * sMajorRowH;
+            sPlacedMajor.push(d);
+          });
+
+          function blobPath(r) {
+            const pts = [];
+            for (let i = 0; i < 7; i++) {
+              const a = (i / 7) * Math.PI * 2;
+              const rad = r + (Math.random() * 3 - 1.5);
+              pts.push([Math.cos(a) * rad, Math.sin(a) * rad]);
+            }
+            return d3.line().curve(d3.curveCatmullRomClosed)(pts);
+          }
+
+          const sMajorG = sSvg
+            .append("g")
+            .selectAll("g.major-dot")
+            .data(sSortedMajor)
+            .enter()
+            .append("g")
+            .attr("transform", (d) => `translate(${d.px},${d.y})`)
+            .style("cursor", "pointer");
+          sMajorG
+            .append("path")
+            .attr("d", () => blobPath(sMajorDotR))
+            .attr("fill", "rgba(179,58,43,0.65)")
+            .attr("stroke", "#1a1408")
+            .attr("stroke-width", 1.5);
+          sMajorG
+            .on("mouseenter", function (event, d) {
+              tooltip
+                .html(
+                  '<span class="ft-name">' +
+                    d.name +
+                    "</span>" +
+                    "<div>median " +
+                    fmtMoney(d.median) +
+                    "</div>",
+                )
+                .style("opacity", 1)
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mousemove", function (event) {
+              tooltip
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mouseleave", () => tooltip.style("opacity", 0));
+
+          // Ghost beeswarm — at slide size. Scale is tuned by eye so
+          // the swarm fills the available strip without overflowing.
+          const sScale = 0.95;
+          const sGhostR = 8 * sScale + 0.4;
+          const sCollideR = sGhostR + 0.5;
+          const sStripTop = sGhostY0 + 3;
+          const sStripBottom = sGhostY0 + sGhostStripH - 3;
+          const sSuppressedX = -sGhostR * 1.8;
+
+          // Half-beeswarm arrangement: a deterministic column-packed
+          // layout (instead of d3-force, which kept clustering every
+          // ghost near the top once forceY was strong enough to win).
+          //
+          // For each ghost (processed in x-sorted order), find the
+          // shallowest y at the ghost's x where it doesn't collide
+          // with any already-placed ghost. Result: a flat top edge,
+          // with overlapping figures stacking strictly downward at
+          // their accurate-x positions.
+          const sTopY = sStripTop + sGhostR;
+          const sNodes = figureRows.map((d) => ({
+            ...d,
+            x: d.median != null ? sx(d.median) : sSuppressedX,
+            y: sTopY,
+          }));
+          // Process in a stable order — x ascending, then suppressed
+          // ghosts last so they pile on the left side cleanly.
+          const sorted = [...sNodes].sort((a, b) => {
+            if (a.suppressed !== b.suppressed)
+              return a.suppressed ? 1 : -1;
+            return a.x - b.x;
+          });
+          const placed = [];
+          const dy = 2; // y-step granularity for the downward search
+          for (const node of sorted) {
+            let y = sTopY;
+            // Walk downward in dy increments until no collision.
+            // Collision check is just euclidean distance vs collide
+            // radius doubled — same metric d3-force uses.
+            // Brute-force is fine here (~90 ghosts).
+            while (true) {
+              const hit = placed.some((p) => {
+                const dxp = p.x - node.x;
+                const dyp = p.y - y;
+                return (
+                  dxp * dxp + dyp * dyp <
+                  (2 * sCollideR) * (2 * sCollideR)
+                );
+              });
+              if (!hit) break;
+              y += dy;
+              if (y > sStripBottom + 200) break; // safety
+            }
+            node.y = y;
+            placed.push(node);
+          }
+
+          function drawCompactGhost(g, isSuppressed) {
+            const fill = isSuppressed
+              ? "transparent"
+              : "rgba(255, 250, 240, 0.65)";
+            const stroke = isSuppressed
+              ? "var(--color-text-tertiary)"
+              : "#1a1408";
+            const dash = isSuppressed ? "2,2" : null;
+            const inner = g
+              .append("g")
+              .attr("transform", `scale(${sScale})`);
+            inner
+              .append("path")
+              .attr(
+                "d",
+                "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+              )
+              .attr("fill", fill)
+              .attr("stroke", stroke)
+              .attr("stroke-width", 1.2)
+              .attr("stroke-linejoin", "round")
+              .attr("vector-effect", "non-scaling-stroke")
+              .attr("stroke-dasharray", dash);
+            if (!isSuppressed) {
+              inner
+                .append("ellipse")
+                .attr("cx", -2)
+                .attr("cy", -3)
+                .attr("rx", 1)
+                .attr("ry", 1.5)
+                .attr("fill", "#1a1408");
+              inner
+                .append("ellipse")
+                .attr("cx", 2)
+                .attr("cy", -3)
+                .attr("rx", 1)
+                .attr("ry", 1.5)
+                .attr("fill", "#1a1408");
+            }
+          }
+
+          const sGhostG = sSvg
+            .append("g")
+            .selectAll("g.ghost-dot")
+            .data(sNodes)
+            .enter()
+            .append("g")
+            .attr("transform", (d) => `translate(${d.x},${d.y})`);
+          sGhostG.each(function (d) {
+            drawCompactGhost(d3.select(this), d.suppressed);
+          });
+          sGhostG
+            .on("mouseenter", function (event, d) {
+              const wage =
+                d.median != null
+                  ? fmtMoney(d.median)
+                  : "wage suppressed by BLS";
+              tooltip
+                .html(
+                  '<span class="ft-name">' +
+                    d.name +
+                    "</span>" +
+                    (d.occTitle
+                      ? '<span class="ft-soc">' +
+                        (d.occCode || "") +
+                        " · " +
+                        d.occTitle +
+                        "</span>"
+                      : "") +
+                    "<div>" +
+                    wage +
+                    "</div>",
+                )
+                .style("opacity", 1)
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mousemove", function (event) {
+              tooltip
+                .style("left", event.pageX + 12 + "px")
+                .style("top", event.pageY + 12 + "px");
+            })
+            .on("mouseleave", () => tooltip.style("opacity", 0));
+
+          // X axis
+          const sAxis = sSvg
+            .append("g")
+            .attr("transform", `translate(0,${sTotalHeight})`)
+            .call(
+              d3
+                .axisBottom(sx)
+                .ticks(6)
+                .tickFormat((v) => "$" + d3.format(",")(v)),
+            );
+          sAxis
+            .selectAll("path, line")
+            .attr("stroke", "var(--color-axis)")
+            .attr("stroke-width", 1.5);
+          sAxis
+            .selectAll(".tick text")
+            .attr("font-family", "Cormorant Garamond, serif")
+            .attr("font-size", 13)
+            .attr("fill", "var(--color-axis)");
+          sSvg
+            .append("text")
+            .attr("x", sWidth / 2)
+            .attr("y", sTotalHeight + 44)
+            .attr("text-anchor", "middle")
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 11)
+            .attr("letter-spacing", "0.08em")
+            .attr("fill", "#5c5347")
+            .text("MEDIAN ANNUAL WAGE");
+
+          // US median label (deck-style)
+          if (nationalStats.median != null) {
+            const mX = sx(nationalStats.median);
+            const labelX = mX + 10;
+            const labelTopY = sMajorY0 + 24;
+            sSvg
+              .append("line")
+              .attr("x1", mX)
+              .attr("x2", labelX - 2)
+              .attr("y1", labelTopY + 16)
+              .attr("y2", labelTopY + 16)
+              .attr("stroke", "var(--color-national)")
+              .attr("stroke-width", 1);
+            sSvg
+              .append("text")
+              .attr("x", labelX)
+              .attr("y", labelTopY + 9)
+              .attr(
+                "font-family",
+                "Cormorant SC, Cormorant Garamond, serif",
+              )
+              .attr("font-size", 11)
+              .attr("font-weight", 600)
+              .attr("letter-spacing", "0.08em")
+              .attr("fill", "#3d2b18")
+              .text("U.S. MEDIAN (2024)");
+            sSvg
+              .append("text")
+              .attr("x", labelX)
+              .attr("y", labelTopY + 24)
+              .attr("font-family", "Cormorant Garamond, serif")
+              .attr("font-size", 13)
+              .attr("font-weight", 600)
+              .attr("fill", "var(--color-national)")
+              .text(fmtMoney(nationalStats.median));
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

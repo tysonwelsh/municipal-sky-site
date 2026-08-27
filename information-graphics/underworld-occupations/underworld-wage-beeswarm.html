@@ -1,0 +1,1574 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Underworld Wage Beeswarm — Single Slide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Single-slide preview file. Slide-card chrome at 720x680 (deck
+         viewer dimensions). Renders a bidirectional beeswarm of every
+         Rabelais figure with a median wage, packed symmetrically
+         around a horizontal axis line at the center of the viz area.
+         Suppressed/unmapped figures are dropped entirely. */
+      :root {
+        --color-parchment: #d4c5a5;
+        --color-bg: #f3e9cf;
+        --color-svg-bg: #ede1c2;
+        --color-text-primary: #3d2818;
+        --color-text-secondary: #5a3e28;
+        --color-text-tertiary: #8a7152;
+        --color-border-medium: rgba(90, 62, 40, 0.35);
+        --color-rubrication: #a64224;
+        --color-rubrication-border: rgba(166, 66, 36, 0.65);
+        --color-rule: rgba(90, 62, 40, 0.35);
+        --color-axis: #5a3e28;
+        --color-national: #1a1408;
+        --color-grid: rgba(90, 62, 40, 0.15);
+        --font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+        --font-family-sc:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+        --font-family-display:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+      }
+      body {
+        margin: 0;
+        background: #f6efd9;
+        color: var(--color-text-primary);
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 32px;
+      }
+      .deck-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        height: 700px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0;
+        line-height: 1.2;
+      }
+      .slide-body {
+        padding: 10px 20px 20px;
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+      }
+      .slide-body .viz-section {
+        background: var(--color-svg-bg);
+        padding: 14px 16px;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+        flex: 1 1 auto;
+        display: flex;
+        align-items: stretch;
+        box-sizing: border-box;
+      }
+      .slide-body .viz-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-top: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-nav-btn {
+        font-family: var(--font-family-sc);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-primary);
+        background: transparent;
+        border: 1px solid var(--color-border-medium);
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      .slide-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      .slide-indicator {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--color-text-tertiary);
+      }
+
+      /* Deck-style hover/click tooltip — lifted from
+         underworld-labor-market.html with variable values inlined so
+         this prototype remains self-contained. */
+      .gt-tooltip {
+        position: absolute;
+        pointer-events: none;
+        width: 320px;
+        box-sizing: border-box;
+        background-color: #f3e9cf;
+        border: 2px solid rgba(90, 62, 40, 0.35);
+        box-shadow:
+          0 8px 24px -4px rgba(26, 20, 8, 0.2),
+          0 2px 8px -2px rgba(26, 20, 8, 0.12);
+        padding: 12px;
+        font-family: var(--font-family);
+        font-size: 13px;
+        color: var(--color-text-primary);
+        line-height: 1.5;
+        display: none;
+        z-index: 10;
+      }
+      .gt-header {
+        display: block;
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+        border-bottom: 2px solid var(--color-rubrication-border);
+      }
+      .gt-name {
+        color: var(--color-text-primary);
+        font-family: var(--font-family-sc);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+      }
+      .gt-name.is-underworld {
+        color: var(--color-rubrication);
+      }
+      .gt-role {
+        color: var(--color-text-tertiary);
+        font-size: 13px;
+        margin-left: 4px;
+      }
+      .gt-section {
+        margin-bottom: 12px;
+      }
+      .gt-section:last-child {
+        margin-bottom: 0;
+      }
+      .gt-label {
+        display: block;
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        margin-bottom: 4px;
+      }
+      .gt-content em {
+        font-style: italic;
+      }
+      .gt-wage-line {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .gt-wage-amount {
+        font-family: var(--font-family);
+        font-size: 20px;
+        color: var(--color-text-primary);
+      }
+      .gt-wage-delta {
+        font-family: var(--font-family);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+      }
+      .gt-wage-delta.is-above {
+        color: #2e7358;
+      }
+      .gt-box-compare {
+        display: block;
+      }
+      .gt-box-row-label {
+        font-family: var(--font-family-sc);
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        fill: var(--color-text-tertiary);
+      }
+      .gt-box-row-value {
+        font-family: var(--font-family);
+        font-size: 13px;
+        font-weight: 600;
+        fill: var(--color-text-primary);
+      }
+      .gt-axis-tick {
+        font-family: var(--font-family);
+        font-size: 11px;
+        fill: var(--color-text-tertiary);
+      }
+
+      /* Specimen tags — SVG-based annotations attached to clicked
+         ghosts / major dots, mirroring the strip-plot tags in
+         underworld-labor-market.html. The dashed leader line connects
+         the source dot to the parchment-rect label group; the label
+         group is draggable. */
+      .specimen-tag .tag-label-group {
+        cursor: grab;
+      }
+      .specimen-tag .tag-label-group.is-dragging {
+        cursor: grabbing;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck-wrapper">
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Distribution of Wages in Rabelais&rsquo;s Underworld
+          </h1>
+        </div>
+        <div class="slide-body">
+          <div id="beeswarm-container" class="viz-section"></div>
+        </div>
+        <div class="slide-footer">
+          <button type="button" class="slide-nav-btn" disabled>
+            ◀ Prev
+          </button>
+          <span class="slide-indicator">1 / 2</span>
+          <button type="button" class="slide-nav-btn" disabled>
+            Next ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="deck-wrapper" style="margin-top: 24px;">
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Underworld Wages with BLS Major Groups
+          </h1>
+        </div>
+        <div class="slide-body">
+          <div id="beeswarm-majors-container" class="viz-section"></div>
+        </div>
+        <div class="slide-footer">
+          <button type="button" class="slide-nav-btn" disabled>
+            ◀ Prev
+          </button>
+          <span class="slide-indicator">2 / 2</span>
+          <button type="button" class="slide-nav-btn" disabled>
+            Next ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltip" class="gt-tooltip"></div>
+
+    <script>
+      (async function () {
+        const safeFloat = (v) =>
+          v === null || v === undefined || v === ""
+            ? null
+            : isNaN(parseFloat(v))
+              ? null
+              : parseFloat(v);
+        const fmtMoney = (v) =>
+          v == null ? "—" : "$" + d3.format(",.0f")(v);
+        const formatCurrency = fmtMoney;
+
+        // ── Tooltip helpers (deck parity) ────────────────────
+        const tooltipEl = d3.select("#tooltip");
+        function showTooltip(event, html) {
+          tooltipEl
+            .style("display", "block")
+            .html(html)
+            .style("top", event.pageY - 10 + "px")
+            .style("left", event.pageX + 15 + "px");
+        }
+        function moveTooltip(event) {
+          tooltipEl
+            .style("top", event.pageY - 10 + "px")
+            .style("left", event.pageX + 15 + "px");
+        }
+        function hideTooltip() {
+          tooltipEl.style("display", "none");
+        }
+
+        // Two-row box-plot SVG used inside major-group tooltips —
+        // this group on top (vermillion), all U.S. occupations below
+        // (dark), sharing one x-axis.
+        function buildWageBoxComparisonSVG(group, national) {
+          const W = 290;
+          const PAD = 4;
+          const plotX = PAD;
+          const plotW = W - PAD * 2;
+          const LABEL_H = 16;
+          const BOX_TOP = LABEL_H + 4;
+          const BOX_H = 14;
+          const ROW_PAD = 12;
+          const ROW_H = LABEL_H + 4 + BOX_H + ROW_PAD;
+          const AXIS_H = 22;
+          const totalH = ROW_H * 2 + AXIS_H;
+          const xMin = 20000;
+          const xMax = 230000;
+          const xScale = (v) => {
+            const c = Math.max(xMin, Math.min(xMax, v));
+            return plotX + ((c - xMin) / (xMax - xMin)) * plotW;
+          };
+          function drawRow(stats, color, fillColor, rowY, label) {
+            let s = "";
+            s +=
+              `<text x="${plotX}" y="${rowY + 11}" class="gt-box-row-label">${label}</text>`;
+            if (stats.median != null) {
+              s +=
+                `<text x="${plotX + plotW}" y="${rowY + 11}" text-anchor="end" class="gt-box-row-value">${formatCurrency(stats.median)}</text>`;
+            }
+            const boxY = rowY + BOX_TOP;
+            const centerYY = boxY + BOX_H / 2;
+            const w = 5;
+            if (stats.pct25 != null && stats.pct75 != null) {
+              const p25 = xScale(stats.pct25);
+              const p75 = xScale(stats.pct75);
+              if (stats.pct10 != null) {
+                const p10 = xScale(stats.pct10);
+                s += `<line x1="${p10}" y1="${centerYY}" x2="${p25}" y2="${centerYY}" stroke="${color}" stroke-width="1" />`;
+                s += `<line x1="${p10}" y1="${centerYY - w}" x2="${p10}" y2="${centerYY + w}" stroke="${color}" stroke-width="1" />`;
+              }
+              if (stats.pct90 != null) {
+                const p90 = xScale(stats.pct90);
+                s += `<line x1="${p75}" y1="${centerYY}" x2="${p90}" y2="${centerYY}" stroke="${color}" stroke-width="1" />`;
+                s += `<line x1="${p90}" y1="${centerYY - w}" x2="${p90}" y2="${centerYY + w}" stroke="${color}" stroke-width="1" />`;
+              }
+              s += `<rect x="${p25}" y="${boxY}" width="${p75 - p25}" height="${BOX_H}" fill="${fillColor}" stroke="${color}" stroke-width="1" />`;
+            }
+            if (stats.median != null) {
+              const med = xScale(stats.median);
+              s += `<line x1="${med}" y1="${boxY - 2}" x2="${med}" y2="${boxY + BOX_H + 2}" stroke="${color}" stroke-width="2" />`;
+            }
+            return s;
+          }
+          let out = `<svg class="gt-box-compare" width="${W}" height="${totalH}" viewBox="0 0 ${W} ${totalH}">`;
+          out += drawRow(group, "#b33a2b", "rgba(179,58,43,0.18)", 0, "this group");
+          out += drawRow(national, "#1a1408", "rgba(26,20,8,0.15)", ROW_H, "U.S. all occupations");
+          const axisY = ROW_H * 2 + 4;
+          out += `<line x1="${plotX}" y1="${axisY}" x2="${plotX + plotW}" y2="${axisY}" stroke="#5a3e28" stroke-width="0.5" />`;
+          [50000, 100000, 150000, 200000].forEach((t) => {
+            const tx = xScale(t);
+            out += `<line x1="${tx}" y1="${axisY}" x2="${tx}" y2="${axisY + 3}" stroke="#5a3e28" stroke-width="0.5" />`;
+            out += `<text x="${tx}" y="${axisY + 14}" text-anchor="middle" class="gt-axis-tick">$${(t / 1000) | 0}K</text>`;
+          });
+          out += `</svg>`;
+          return out;
+        }
+
+        // Build the ghost-tooltip body (header + sections + wage
+        // delta). Used by both hover and click-to-pin paths.
+        function buildGhostTipHTML(d, nationalMedian) {
+          const diff =
+            d.median != null && nationalMedian != null
+              ? d.median - nationalMedian
+              : null;
+          let wageLine = "";
+          if (d.median != null && nationalMedian) {
+            const pct = Math.abs(
+              Math.round((diff / nationalMedian) * 100),
+            );
+            const isAbove = diff >= 0;
+            const arrow = isAbove ? "&uarr;" : "&darr;";
+            const dir = isAbove ? "above" : "below";
+            const delta =
+              `<span class="gt-wage-delta${isAbove ? " is-above" : ""}">` +
+              `<span aria-hidden="true">${arrow}</span> ${pct}% ${dir} U.S. median</span>`;
+            wageLine =
+              `<div class="gt-wage-line">` +
+              `<span class="gt-wage-amount">${formatCurrency(d.median)}</span>` +
+              delta +
+              `</div>`;
+          } else {
+            wageLine =
+              `<div class="gt-wage-line"><span class="gt-wage-amount">—</span></div>`;
+          }
+          return (
+            `<header class="gt-header">` +
+            `<span class="gt-name is-underworld">${d.name}</span>` +
+            (d.lotInLife
+              ? `<span class="gt-role">&mdash; ${d.lotInLife}</span>`
+              : "") +
+            `</header>` +
+            (d.labor
+              ? `<div class="gt-section"><span class="gt-label">Underworld Labor</span>` +
+                `<div class="gt-content"><em>&ldquo;&hellip; ${d.labor} &hellip;&rdquo;</em></div></div>`
+              : "") +
+            (d.occTitle
+              ? `<div class="gt-section"><span class="gt-label">Modern Equivalent</span>` +
+                `<div class="gt-content">${d.occTitle}</div></div>`
+              : "") +
+            `<div class="gt-section"><span class="gt-label">Median Wage</span>${wageLine}</div>`
+          );
+        }
+        function buildMajorTipHTML(d, nationalStatsArg) {
+          return (
+            `<header class="gt-header">` +
+            `<span class="gt-name">${d.name}</span>` +
+            `<span class="gt-role">&mdash; BLS major group ${d.code}</span>` +
+            `</header>` +
+            `<div class="gt-section"><span class="gt-label">Wage Distribution</span>` +
+            buildWageBoxComparisonSVG(
+              {
+                median: d.median,
+                pct10: d.pct10,
+                pct25: d.pct25,
+                pct75: d.pct75,
+                pct90: d.pct90,
+              },
+              nationalStatsArg,
+            ) +
+            `</div>`
+          );
+        }
+
+        async function loadData() {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok)
+            throw new Error("HTTP " + res.status + " from " + url);
+          return await res.json();
+        }
+        let data;
+        try {
+          data = await loadData();
+        } catch (e) {
+          d3.select("#beeswarm-container").html(
+            '<p style="padding:16px;color:#a64224;font-family:Cormorant Garamond,serif">' +
+              "Failed to load annotation data: " +
+              e.message +
+              "</p>",
+          );
+          return;
+        }
+
+        const characters = data.characters || [];
+        const hierarchical = data.hierarchical_data || [];
+        const nationalRaw = data.national_stats || {};
+        const nationalStats = {
+          median: safeFloat(nationalRaw.A_MEDIAN),
+          pct10: safeFloat(nationalRaw.A_PCT10),
+          pct25: safeFloat(nationalRaw.A_PCT25),
+          pct75: safeFloat(nationalRaw.A_PCT75),
+          pct90: safeFloat(nationalRaw.A_PCT90),
+        };
+
+        const hierByCode = new Map();
+        hierarchical.forEach((d) => {
+          if (d.OCC_CODE) hierByCode.set(d.OCC_CODE, d);
+        });
+
+        // Map characters → wage rows; drop suppressed/unmapped.
+        const allFigures = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const median = h ? safeFloat(h.A_MEDIAN) : null;
+          return {
+            name: c.name,
+            occCode: c.occ_code || null,
+            occTitle: c.occ_title || (h && h.OCC_TITLE) || null,
+            lotInLife: c.lot_in_life || "",
+            labor: c.labor || "",
+            median,
+          };
+        });
+        const figureRows = allFigures.filter((d) => d.median != null);
+        const suppressedCount = allFigures.length - figureRows.length;
+
+        // ── Major-group data ────────────────────────────────
+        // hierarchical_data carries a major_group_title + median on
+        // every detailed-occupation row. De-dupe by code to get the
+        // 22 (or so) BLS major groups with their group-level median.
+        const majorGroupsByCode = new Map();
+        hierarchical.forEach((h) => {
+          const code = h.major_group_code;
+          if (!code) return;
+          if (majorGroupsByCode.has(code)) return;
+          const median = safeFloat(h.major_a_median);
+          if (median == null) return;
+          majorGroupsByCode.set(code, {
+            code,
+            name: h.major_group_title || code,
+            median,
+            pct10: safeFloat(h.major_a_pct10),
+            pct25: safeFloat(h.major_a_pct25),
+            pct75: safeFloat(h.major_a_pct75),
+            pct90: safeFloat(h.major_a_pct90),
+          });
+        });
+        const majorGroups = Array.from(majorGroupsByCode.values());
+
+        // Procedural ink-blob path generator — mirrors the deck's
+        // major-dot styling on underworld-labor-market.html so the
+        // two prototypes read as the same family.
+        function generateBlobPath(r) {
+          const numPoints = 7;
+          const points = [];
+          for (let i = 0; i < numPoints; i++) {
+            const angle = (i / numPoints) * Math.PI * 2;
+            const rad = r + (Math.random() * 3 - 1.5);
+            points.push([Math.cos(angle) * rad, Math.sin(angle) * rad]);
+          }
+          return d3.line().curve(d3.curveCatmullRomClosed)(points);
+        }
+
+        renderChart("#beeswarm-container", { showMajorGroups: false });
+        renderChart("#beeswarm-majors-container", {
+          showMajorGroups: true,
+        });
+
+        function renderChart(containerId, options) {
+          const showMajorGroups = !!(
+            options && options.showMajorGroups
+          );
+
+        // ── Chart sizing ─────────────────────────────────────
+        // The viz-section has 14/16 px padding + 1 px borders on top
+        // and bottom. The SVG renders inside that content box, so we
+        // strip the padding/borders off `getBoundingClientRect` (which
+        // returns the outer border-box) before sizing the SVG — that
+        // way the SVG's internal coord system matches the visible
+        // area and content near the right edge doesn't get clipped.
+        const container = d3.select(containerId);
+        const containerRect = container.node().getBoundingClientRect();
+        const containerWidth = containerRect.width - 32; // 16 px L+R
+        const containerHeight = containerRect.height;
+
+        const margin = { top: 18, right: 10, bottom: 56, left: 10 };
+        const width = containerWidth - margin.left - margin.right;
+        // Strip out viz-section's padding (14/16) + 1px top/bottom
+        // border so the internal coord system matches the rendered
+        // area.
+        const innerHeight = Math.max(
+          200,
+          containerHeight - margin.top - margin.bottom - 30,
+        );
+
+        // ── Force-directed beeswarm ─────────────────────────
+        // Wage domain matches ghost-strip-slide so the prototypes
+        // read comparably. Figures with wages above xMax get clamped
+        // to xMax (their tooltip still shows the true wage).
+        const xMin = 20000;
+        const xMax = 230000;
+        const x = d3
+          .scaleLinear()
+          .domain([xMin, xMax])
+          .range([0, width]);
+
+        const ghostScale = 0.85;
+        const ghostR = 8 * ghostScale + 0.4; // ≈ 7.2 px visible radius
+        const collideR = 7.5;
+
+        // Layout. With major groups OFF: box at top, then swarm below.
+        // With major groups ON: major-group dots band at top, then the
+        // box-and-whiskers (acting as a divider), then the swarm. The
+        // dots column-pack upward from the bottom of their band so
+        // their bases sit just above the box's top edge.
+        const majorDotR = 6;
+        const majorRowH = 14;
+        const boxPlotH = 28;
+
+        let majorBandTop, majorBandBottom, boxTopY, boxBottomY;
+        if (showMajorGroups) {
+          majorBandTop = 14;
+          majorBandBottom = majorBandTop + 64;
+          boxTopY = majorBandBottom + 6;
+          boxBottomY = boxTopY + boxPlotH;
+        } else {
+          boxTopY = 14;
+          boxBottomY = boxTopY + boxPlotH;
+          majorBandTop = boxBottomY;
+          majorBandBottom = majorBandTop;
+        }
+        const boxCenterY = boxTopY + boxPlotH / 2;
+
+        const boxToSwarmGap = 10;
+        const swarmTopY = boxBottomY + boxToSwarmGap;
+        const centerY = swarmTopY + (innerHeight - swarmTopY) / 2;
+
+        function clampWage(v) {
+          if (v < xMin) return xMin;
+          if (v > xMax) return xMax;
+          return v;
+        }
+
+        // Initialize each ghost at its true (x, centerY). The
+        // simulation will let collision nudge them off the line while
+        // a strong forceX pulls them back toward the exact wage. With
+        // strength near 1 the horizontal drift is on the order of a
+        // pixel or two — wages still read accurately, but the swarm
+        // gets the organic look you can't get from a deterministic
+        // column-pack.
+        const nodes = figureRows.map((d) => ({
+          ...d,
+          targetX: x(clampWage(d.median)),
+          x: x(clampWage(d.median)),
+          y: centerY,
+        }));
+
+        // Asymmetric (flat-top) packing with x pinned exactly to the
+        // wage axis. forceY pulls every node up to the floor at
+        // swarmTopY; the topBoundary force clamps anything that
+        // drifts above. pinX resets x and vx on every tick so
+        // collision resolves vertically only — ghosts at the same
+        // wage stack into vertical columns hanging from the flat top.
+        const topFloor = swarmTopY + ghostR;
+        const simulation = d3
+          .forceSimulation(nodes)
+          .force("y", d3.forceY(topFloor).strength(0.18))
+          .force(
+            "collide",
+            d3.forceCollide(collideR).strength(1).iterations(3),
+          )
+          .force("topBoundary", () => {
+            for (const n of nodes) {
+              if (n.y < topFloor) {
+                n.y = topFloor;
+                if (n.vy < 0) n.vy = 0;
+              }
+            }
+          })
+          .force("pinX", () => {
+            for (const n of nodes) {
+              n.x = n.targetX;
+              n.vx = 0;
+            }
+          })
+          .stop();
+
+        // Run the simulation synchronously so ghosts are laid out
+        // before we render. 300 ticks settles a swarm of ~90 nodes
+        // comfortably; cooling beyond that yields no visible change.
+        for (let i = 0; i < 300; i++) simulation.tick();
+
+        // Keep ghosts inside the swarm band so they don't drift up
+        // into the box-and-whiskers or below the x-axis.
+        nodes.forEach((n) => {
+          if (n.y < swarmTopY + ghostR) n.y = swarmTopY + ghostR;
+          if (n.y > innerHeight - ghostR) n.y = innerHeight - ghostR;
+        });
+
+        const placed = nodes;
+
+        // ── SVG scaffold ────────────────────────────────────
+        const svgHeight = innerHeight + margin.top + margin.bottom;
+        const svg = container
+          .append("svg")
+          .attr("class", "viz-svg")
+          .attr("width", containerWidth)
+          .attr("height", svgHeight)
+          .append("g")
+          .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        // Axis-tick gridlines, dashed. Run full vertical extent.
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", innerHeight)
+            .attr("stroke", "var(--color-grid)")
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // ── BOX-AND-WHISKERS (U.S. workforce) ──────────────
+        // Sits above the ghost swarm. Whiskers from pct10 → pct25
+        // and pct75 → pct90; box from pct25 → pct75; median line is
+        // drawn separately below so it runs through both the box and
+        // the swarm.
+        const boxFill = "rgba(220, 200, 160, 0.55)";
+        if (
+          nationalStats.pct10 != null &&
+          nationalStats.pct25 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct25))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct10))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct75 != null &&
+          nationalStats.pct90 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct75))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct90))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct25 != null &&
+          nationalStats.pct75 != null
+        ) {
+          svg
+            .append("rect")
+            .attr("x", x(nationalStats.pct25))
+            .attr("y", boxCenterY - 9)
+            .attr(
+              "width",
+              x(nationalStats.pct75) - x(nationalStats.pct25),
+            )
+            .attr("height", 18)
+            .attr("fill", boxFill)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+
+        // U.S. median vertical line: dashed above and below the box,
+        // solid through the box itself.
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const dashColor = "rgba(26, 20, 8, 0.45)";
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", 0)
+            .attr("y2", boxTopY - 1)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxTopY - 1)
+            .attr("y2", boxBottomY + 1)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxBottomY + 1)
+            .attr("y2", innerHeight)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+        }
+
+        // ── MAJOR-GROUP DOTS ───────────────────────────────
+        // Wheat-plot column-pack from the bottom of the band — each
+        // dot keeps its true x, and is bumped up to the lowest row
+        // where it doesn't horizontally overlap any earlier dot.
+        if (showMajorGroups) {
+          const dotCollisionDist = 2 * majorDotR + 2;
+          const sortedDots = majorGroups
+            .map((d) => ({ ...d, px: x(clampWage(d.median)) }))
+            .sort((a, b) => a.px - b.px);
+          const placedDots = [];
+          sortedDots.forEach((d) => {
+            let row = 0;
+            while (
+              placedDots.some(
+                (p) =>
+                  p.row === row &&
+                  Math.abs(p.px - d.px) < dotCollisionDist,
+              )
+            ) {
+              row++;
+            }
+            d.row = row;
+            d.y =
+              majorBandBottom -
+              majorDotR -
+              row * majorRowH;
+            placedDots.push(d);
+          });
+
+          const majorG = svg
+            .append("g")
+            .selectAll("g.major-dot")
+            .data(placedDots)
+            .enter()
+            .append("g")
+            .attr("class", "major-dot")
+            .attr(
+              "transform",
+              (d) => `translate(${d.px},${d.y})`,
+            )
+            .style("cursor", "help");
+          majorG
+            .append("path")
+            .attr("d", () => generateBlobPath(majorDotR))
+            .attr("fill", "rgba(179,58,43,0.65)")
+            .attr("stroke", "#1a1408")
+            .attr("stroke-width", 1.2);
+          majorG
+            .on("mouseenter", function (event, d) {
+              showTooltip(event, buildMajorTipHTML(d, nationalStats));
+            })
+            .on("mousemove", moveTooltip)
+            .on("mouseleave", hideTooltip)
+            .on("click", function (event, d) {
+              event.stopPropagation();
+              hideTooltip();
+              toggleSelection({
+                id: "major-" + d.code,
+                kind: "major",
+                px: d.px,
+                y: d.y,
+                data: d,
+              });
+            });
+
+          // Faint divider just below the major-dot band, marking the
+          // baseline shared with the ghost swarm's flat top.
+          svg
+            .append("line")
+            .attr("x1", 0)
+            .attr("x2", width)
+            .attr("y1", majorBandBottom + 2)
+            .attr("y2", majorBandBottom + 2)
+            .attr("stroke", "var(--color-rule)")
+            .attr("stroke-width", 0.5)
+            .attr("opacity", 0.6);
+        }
+
+        // ── GHOSTS ─────────────────────────────────────────
+
+        function drawGhost(g) {
+          const inner = g
+            .append("g")
+            .attr("transform", `scale(${ghostScale})`);
+          inner
+            .append("path")
+            .attr(
+              "d",
+              "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+            )
+            .attr("fill", "rgba(255, 250, 240, 0.7)")
+            .attr("stroke", "#1a1408")
+            .attr("stroke-width", 1.2)
+            .attr("stroke-linejoin", "round")
+            .attr("vector-effect", "non-scaling-stroke");
+          inner
+            .append("ellipse")
+            .attr("cx", -2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+          inner
+            .append("ellipse")
+            .attr("cx", 2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+        }
+
+        const ghostG = svg
+          .append("g")
+          .selectAll("g.ghost-dot")
+          .data(placed)
+          .enter()
+          .append("g")
+          .attr("class", "ghost-dot")
+          .attr("transform", (d) => `translate(${d.x},${d.y})`)
+          .style("cursor", "help");
+        ghostG.each(function () {
+          drawGhost(d3.select(this));
+        });
+        ghostG
+          .on("mouseenter", function (event, d) {
+            showTooltip(
+              event,
+              buildGhostTipHTML(d, nationalStats.median),
+            );
+          })
+          .on("mousemove", moveTooltip)
+          .on("mouseleave", hideTooltip)
+          .on("click", function (event, d) {
+            event.stopPropagation();
+            hideTooltip();
+            toggleSelection({
+              id: "ghost-" + d.name,
+              kind: "ghost",
+              px: d.x,
+              y: d.y,
+              data: d,
+            });
+          });
+
+        // ── X axis ─────────────────────────────────────────
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${innerHeight})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(6)
+              .tickFormat((v) => "$" + d3.format(",")(v)),
+          );
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", "var(--color-axis)")
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll(".tick text")
+          .attr("font-family", "Cormorant Garamond, serif")
+          .attr("font-size", 13)
+          .attr("fill", "var(--color-axis)");
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", innerHeight + 44)
+          .attr("text-anchor", "middle")
+          .attr(
+            "font-family",
+            "Cormorant SC, Cormorant Garamond, serif",
+          )
+          .attr("font-size", 11)
+          .attr("letter-spacing", "0.08em")
+          .attr("fill", "#5c5347")
+          .text("MEDIAN ANNUAL WAGE");
+
+        // ── US median label (2-line + leader) ──────────────
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const labelX = mX + 10;
+          // Anchor above the topmost chart element. With the box in
+          // the middle (major-groups mode) the label sits in the
+          // top margin so it can't collide with the dots band.
+          const labelTopY = showMajorGroups ? -14 : boxTopY - 20;
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", labelX - 2)
+            .attr("y1", labelTopY + 10)
+            .attr("y2", labelTopY + 10)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1);
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 4)
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 11)
+            .attr("font-weight", 600)
+            .attr("letter-spacing", "0.08em")
+            .attr("fill", "#3d2b18")
+            .text("U.S. MEDIAN (2024)");
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 18)
+            .attr("font-family", "Cormorant Garamond, serif")
+            .attr("font-size", 13)
+            .attr("font-weight", 600)
+            .attr("fill", "var(--color-national)")
+            .text(fmtMoney(nationalStats.median));
+        }
+
+        // ── Legend ─────────────────────────────────────────
+        // Matches the deck's strip-plot legend on
+        // underworld-labor-market.html — a small parchment-tinted box
+        // top-right with a major-group dot and a ghost. The major-
+        // group row only appears when this chart has major groups.
+        (function drawLegend() {
+          const legendG = svg
+            .append("g")
+            .attr("transform", `translate(${width - 232}, 26)`);
+          const rows = [];
+          if (showMajorGroups) {
+            rows.push("major");
+          }
+          rows.push("ghost");
+
+          legendG
+            .append("rect")
+            .attr("x", -6)
+            .attr("y", -2)
+            .attr("width", 236)
+            .attr("height", rows.length === 2 ? 50 : 30)
+            .attr("fill", "rgba(214, 201, 173, 0.85)")
+            .attr("stroke", "#1a1408")
+            .attr("stroke-width", 0.5);
+
+          rows.forEach((kind, i) => {
+            const y = 14 + i * 20;
+            if (kind === "major") {
+              const dot = legendG
+                .append("g")
+                .attr("transform", `translate(14,${y})`);
+              dot
+                .append("path")
+                .attr("d", generateBlobPath(6))
+                .attr("fill", "rgba(179,58,43,0.65)")
+                .attr("stroke", "#1a1408")
+                .attr("stroke-width", 1);
+              legendG
+                .append("text")
+                .attr("x", 30)
+                .attr("y", y)
+                .attr("dominant-baseline", "middle")
+                .style(
+                  "font-family",
+                  "Cormorant Garamond, Georgia, serif",
+                )
+                .style("font-size", "12px")
+                .style("fill", "#1a1408")
+                .text("Major Occupational Group");
+            } else if (kind === "ghost") {
+              const ghost = legendG
+                .append("g")
+                .attr("transform", `translate(14,${y})`);
+              ghost
+                .append("path")
+                .attr(
+                  "d",
+                  "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+                )
+                .attr("fill", "rgba(255, 250, 240, 0.85)")
+                .attr("stroke", "#1a1408")
+                .attr("stroke-width", 1.2);
+              ghost
+                .append("ellipse")
+                .attr("cx", -2)
+                .attr("cy", -3)
+                .attr("rx", 1)
+                .attr("ry", 1.5)
+                .attr("fill", "#1a1408");
+              ghost
+                .append("ellipse")
+                .attr("cx", 2)
+                .attr("cy", -3)
+                .attr("rx", 1)
+                .attr("ry", 1.5)
+                .attr("fill", "#1a1408");
+              legendG
+                .append("text")
+                .attr("x", 30)
+                .attr("y", y)
+                .attr("dominant-baseline", "middle")
+                .style(
+                  "font-family",
+                  "Cormorant Garamond, Georgia, serif",
+                )
+                .style("font-size", "12px")
+                .style("fill", "#1a1408")
+                .text("Solitary Soul");
+            }
+          });
+        })();
+
+        // ── Specimen tags (click-to-pin annotations) ───────
+        // SVG-based, attached to the source dot via a dashed leader
+        // line, draggable, with word-wrapped content. Ported from
+        // underworld-labor-market.html's strip-plot tag system.
+        const annotationLayer = svg
+          .append("g")
+          .attr("class", "annotation-layer");
+        const selection = new Map();
+
+        function wrapText(text, maxChars) {
+          if (!text) return [];
+          const words = text.split(/\s+/);
+          const lines = [];
+          let line = words[0] || "";
+          for (let i = 1; i < words.length; i++) {
+            if (line.length + 1 + words[i].length <= maxChars) {
+              line += " " + words[i];
+            } else {
+              lines.push(line);
+              line = words[i];
+            }
+          }
+          if (line) lines.push(line);
+          return lines;
+        }
+
+        function wrapAroundLabel(label, value, labelLen, maxChars) {
+          if (!value) return { firstLine: "", rest: [] };
+          const words = value.split(/\s+/);
+          const rest = [];
+          let firstLine = "";
+          let currentLine = "";
+          const firstLineRoom = Math.max(1, maxChars - labelLen);
+          for (const word of words) {
+            if (firstLine === "" && currentLine === "") {
+              if (word.length <= firstLineRoom) currentLine = word;
+              else {
+                firstLine = "";
+                currentLine = word;
+              }
+              continue;
+            }
+            const limit =
+              firstLine === "" ? firstLineRoom : maxChars;
+            if (currentLine.length + word.length + 1 <= limit) {
+              currentLine = currentLine
+                ? currentLine + " " + word
+                : word;
+            } else {
+              if (firstLine === "") {
+                firstLine = currentLine;
+                currentLine = word;
+              } else {
+                rest.push(currentLine);
+                currentLine = word;
+              }
+            }
+          }
+          if (firstLine === "") {
+            firstLine = currentLine;
+            currentLine = "";
+          }
+          if (currentLine) rest.push(currentLine);
+          return { firstLine, rest };
+        }
+
+        function updateTagVisuals(selG) {
+          selG.each(function (d) {
+            const tagW = (d.textWidth || 0) + 16;
+            const padding = 4;
+            const virtualDepth = d.tagHeight + 5;
+            const cy =
+              d.labelDy +
+              (d.labelDy < 0 ? -virtualDepth : virtualDepth);
+            const intersectX =
+              cy === 0 ? 0 : d.labelDx * (d.labelDy / cy);
+            const minX = d.labelDx - tagW / 2 + padding;
+            const maxX = d.labelDx + tagW / 2 - padding;
+            d.targetX = Math.max(
+              minX,
+              Math.min(maxX, intersectX),
+            );
+            d.targetY = d.labelDy;
+            const dist = Math.hypot(d.targetX, d.targetY);
+            d.startX = dist ? (d.targetX / dist) * 12 : 0;
+            d.startY = dist ? (d.targetY / dist) * 12 : 0;
+          });
+          selG
+            .select(".tag-line")
+            .attr("x1", (d) => d.startX)
+            .attr("y1", (d) => d.startY)
+            .attr("x2", (d) => d.targetX)
+            .attr("y2", (d) => d.targetY);
+          selG
+            .select(".tag-label-group")
+            .attr(
+              "transform",
+              (d) => `translate(${d.labelDx},${d.labelDy})`,
+            );
+          selG
+            .select(".tag-label-group circle")
+            .attr("cx", (d) => d.targetX - d.labelDx)
+            .attr("cy", 0);
+          selG
+            .select(".tag-label-group rect")
+            .attr("y", (d) =>
+              d.labelDy < 0 ? -d.tagHeight : 0,
+            );
+          selG
+            .select(".tag-label-group text")
+            .attr("y", (d) =>
+              d.labelDy < 0 ? -(d.tagHeight - 14) : 14,
+            );
+        }
+
+        function renderSpecimenTags() {
+          const tagData = Array.from(selection.values()).map(
+            (item) => {
+              const d = item.data;
+              const defaultDy =
+                item.kind === "major"
+                  ? 130
+                  : item.y < centerY
+                    ? -45
+                    : 45;
+              if (item.kind === "ghost") {
+                return {
+                  id: item.id,
+                  kind: "ghost",
+                  px: item.px,
+                  y: item.y,
+                  title: d.name,
+                  description: d.lotInLife || "",
+                  laborText: d.labor || "",
+                  occTitle: d.occTitle || "",
+                  median: d.median,
+                  defaultDy,
+                };
+              }
+              return {
+                id: item.id,
+                kind: "major",
+                px: item.px,
+                y: item.y,
+                title: null,
+                bodyToWrap: d.name,
+                median: d.median,
+                defaultDy,
+              };
+            },
+          );
+
+          const tags = annotationLayer
+            .selectAll(".specimen-tag")
+            .data(tagData, (d) => d.id);
+
+          tags.exit().remove();
+
+          const tagsEnter = tags
+            .enter()
+            .append("g")
+            .attr("class", "specimen-tag")
+            .attr(
+              "transform",
+              (d) => `translate(${d.px},${d.y})`,
+            )
+            .each(function (d) {
+              d.labelDx = 0;
+              d.labelDy = d.defaultDy;
+              if (d.kind === "ghost") {
+                const maxChars = 36;
+                d.laborWrap = wrapAroundLabel(
+                  "Underworld Labor:",
+                  '"' + d.laborText + '"',
+                  "Underworld Labor:".length + 1,
+                  maxChars,
+                );
+                d.equivWrap = wrapAroundLabel(
+                  "Modern Equivalent:",
+                  d.occTitle,
+                  "Modern Equivalent:".length + 1,
+                  maxChars,
+                );
+                d.wageWrap = wrapAroundLabel(
+                  "Median Annual Wage:",
+                  formatCurrency(d.median),
+                  "Median Annual Wage:".length + 1,
+                  maxChars,
+                );
+                const HEADER_H = 17;
+                let lines = 0;
+                lines += 1 + d.laborWrap.rest.length;
+                lines += 1 + d.equivWrap.rest.length;
+                lines += 1 + d.wageWrap.rest.length;
+                d.tagHeight = HEADER_H + lines * 13 + 11 + 3 * 5;
+              } else {
+                const maxChars = 28;
+                d.occLines = wrapText(d.bodyToWrap, maxChars);
+                const lines = d.occLines.length + 1;
+                d.tagHeight = lines * 13 + 11;
+              }
+            });
+
+          tagsEnter
+            .append("line")
+            .attr("class", "tag-line")
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "3,2");
+
+          const labelGroup = tagsEnter
+            .append("g")
+            .attr("class", "tag-label-group")
+            .call(
+              d3
+                .drag()
+                .on("start", function () {
+                  d3.select(this).classed("is-dragging", true);
+                  d3.select(this.parentNode).raise();
+                })
+                .on("drag", function (event, d) {
+                  d.labelDx += event.dx;
+                  d.labelDy += event.dy;
+                  updateTagVisuals(
+                    d3.select(this.parentNode),
+                  );
+                })
+                .on("end", function () {
+                  d3.select(this).classed("is-dragging", false);
+                }),
+            );
+
+          labelGroup
+            .append("rect")
+            .attr("height", (d) => d.tagHeight)
+            .attr("fill", "#e4dac0")
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1)
+            .attr("rx", 2);
+
+          labelGroup
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 2)
+            .attr("fill", "#b33a2b");
+
+          labelGroup
+            .append("text")
+            .attr("text-anchor", "start")
+            .style("fill", "#1a1408")
+            .each(function (d) {
+              const node = d3.select(this);
+              let isFirstLine = true;
+
+              function addLine(text, opts) {
+                opts = opts || {};
+                const dy = isFirstLine
+                  ? 0
+                  : opts.dy != null
+                    ? opts.dy
+                    : 13;
+                const tspan = node
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .attr("dy", dy)
+                  .style(
+                    "font-family",
+                    opts.font ||
+                      "Cormorant Garamond, Georgia, serif",
+                  )
+                  .style("font-size", opts.size || "11px")
+                  .style("fill", opts.color || "#3d2b18")
+                  .text(text);
+                if (opts.weight)
+                  tspan.style("font-weight", opts.weight);
+                if (opts.italic)
+                  tspan.style("font-style", "italic");
+                isFirstLine = false;
+              }
+
+              function addInlineSection(label, wrap, valueOpts) {
+                valueOpts = valueOpts || {};
+                const labelDy = isFirstLine ? 0 : 18;
+                node
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .attr("dy", labelDy)
+                  .style(
+                    "font-family",
+                    "Cormorant Garamond, Georgia, serif",
+                  )
+                  .style("font-size", "11px")
+                  .style("font-weight", "700")
+                  .style("fill", "#b33a2b")
+                  .text(label);
+                isFirstLine = false;
+                if (wrap.firstLine) {
+                  const inline = node
+                    .append("tspan")
+                    .style(
+                      "font-family",
+                      valueOpts.font ||
+                        "Cormorant Garamond, Georgia, serif",
+                    )
+                    .style(
+                      "font-size",
+                      valueOpts.size || "11px",
+                    )
+                    .style(
+                      "fill",
+                      valueOpts.color || "#3d2b18",
+                    )
+                    .text(" " + wrap.firstLine);
+                  if (valueOpts.weight)
+                    inline.style("font-weight", valueOpts.weight);
+                  if (valueOpts.italic)
+                    inline.style("font-style", "italic");
+                }
+                wrap.rest.forEach((line) =>
+                  addLine(line, {
+                    font:
+                      valueOpts.font ||
+                      "Cormorant Garamond, Georgia, serif",
+                    size: valueOpts.size || "11px",
+                    color: valueOpts.color || "#3d2b18",
+                    weight: valueOpts.weight,
+                    italic: valueOpts.italic,
+                  }),
+                );
+              }
+
+              if (d.kind === "ghost") {
+                node
+                  .append("tspan")
+                  .attr("class", "tag-line-start")
+                  .attr("x", 0)
+                  .attr("dy", 0)
+                  .style(
+                    "font-family",
+                    "Cormorant SC, Cormorant Garamond, serif",
+                  )
+                  .style("font-size", "13px")
+                  .style("font-weight", "700")
+                  .style("fill", "#1a1408")
+                  .text(d.title);
+                if (d.description) {
+                  node
+                    .append("tspan")
+                    .style(
+                      "font-family",
+                      "Cormorant Garamond, Georgia, serif",
+                    )
+                    .style("font-size", "11px")
+                    .style("font-style", "italic")
+                    .style("fill", "#5c4a38")
+                    .text(" — " + d.description);
+                }
+                isFirstLine = false;
+                addInlineSection(
+                  "Underworld Labor:",
+                  d.laborWrap,
+                  { italic: true },
+                );
+                addInlineSection(
+                  "Modern Equivalent:",
+                  d.equivWrap,
+                  {},
+                );
+                addInlineSection(
+                  "Median Annual Wage:",
+                  d.wageWrap,
+                  { size: "12px", weight: "600", color: "#1a1408" },
+                );
+              } else {
+                d.occLines.forEach((line) =>
+                  addLine(line, {
+                    font:
+                      "Cormorant SC, Cormorant Garamond, serif",
+                    color: "#1a1408",
+                    weight: "700",
+                  }),
+                );
+                addLine(
+                  "Median Wage: " + formatCurrency(d.median),
+                  {
+                    size: "12px",
+                    weight: "600",
+                    color: "#b33a2b",
+                    dy: 14,
+                  },
+                );
+              }
+
+              d.textWidth = this.getBBox().width;
+              node
+                .selectAll("tspan.tag-line-start")
+                .attr("x", -d.textWidth / 2);
+            });
+
+          labelGroup
+            .selectAll("rect")
+            .attr("x", (d) => -(d.textWidth + 16) / 2)
+            .attr("width", (d) => d.textWidth + 16);
+
+          const allTags = tagsEnter.merge(tags);
+          allTags.each(function () {
+            updateTagVisuals(d3.select(this));
+          });
+        }
+
+        function toggleSelection(item) {
+          if (selection.has(item.id)) selection.delete(item.id);
+          else selection.set(item.id, item);
+          renderSpecimenTags();
+        }
+
+        // Background click on this chart's SVG clears its selection.
+        container.select("svg").on("click", function (event) {
+          if (
+            event.target.closest(".ghost-dot") ||
+            event.target.closest(".major-dot") ||
+            event.target.closest(".specimen-tag")
+          )
+            return;
+          if (selection.size === 0) return;
+          selection.clear();
+          renderSpecimenTags();
+        });
+        } // end renderChart
+      })();
+    </script>
+  </body>
+</html>

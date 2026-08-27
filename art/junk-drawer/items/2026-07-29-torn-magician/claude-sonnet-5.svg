@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 460">
+  <defs>
+    <path id="petal" d="M0,0 C10,-10 10,-28 0,-38 C-10,-28 -10,-10 0,0 Z"/>
+    <path id="lilypetal" d="M0,0 C13,-14 15,-38 0,-52 C-15,-38 -13,-14 0,0 Z"/>
+    <path id="leaf" d="M0,0 C6,-9 16,-9 20,0 C16,9 6,9 0,0 Z"/>
+    <path id="paperShape" d="M6,6 L594,6 L594,407 L566,452 L539,405 L512,450 L485,408 L458,449 L431,406 L404,451 L377,407 L350,449 L323,405 L296,452 L269,406 L242,449 L215,405 L188,451 L161,407 L134,448 L107,405 L80,450 L53,407 L6,430 Z"/>
+    <clipPath id="paperClip">
+      <use href="#paperShape"/>
+    </clipPath>
+  </defs>
+
+  <use href="#paperShape" fill="#fffdf6" stroke="#161616" stroke-width="5" stroke-linejoin="round"/>
+
+  <g clip-path="url(#paperClip)" fill="none" stroke="#161616" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round">
+
+    <!-- climbing vines -->
+    <path d="M65,92 C55,150 72,210 55,270 C46,310 50,345 50,385 C50,410 50,430 50,452" />
+    <path d="M535,92 C545,150 528,210 545,270 C554,310 550,345 550,385 C550,410 550,430 550,452" />
+
+    <g transform="translate(78,178) rotate(20)"><use href="#leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(44,248) rotate(200)"><use href="#leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(522,178) rotate(160)"><use href="#leaf"/><path d="M0,0 L16,0"/></g>
+    <g transform="translate(556,248) rotate(-20)"><use href="#leaf"/><path d="M0,0 L16,0"/></g>
+
+    <!-- roses top corners -->
+    <g transform="translate(65,58)">
+      <use href="#petal"/>
+      <use href="#petal" transform="rotate(72)"/>
+      <use href="#petal" transform="rotate(144)"/>
+      <use href="#petal" transform="rotate(216)"/>
+      <use href="#petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+    <g transform="translate(535,58)">
+      <use href="#petal"/>
+      <use href="#petal" transform="rotate(72)"/>
+      <use href="#petal" transform="rotate(144)"/>
+      <use href="#petal" transform="rotate(216)"/>
+      <use href="#petal" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="6"/>
+    </g>
+
+    <!-- lilies lower sides -->
+    <g transform="translate(50,388)">
+      <use href="#lilypetal" transform="rotate(-25)"/>
+      <use href="#lilypetal"/>
+      <use href="#lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+    <g transform="translate(550,388)">
+      <use href="#lilypetal" transform="rotate(-25)"/>
+      <use href="#lilypetal"/>
+      <use href="#lilypetal" transform="rotate(25)"/>
+      <path d="M-4,-2 L-4,-18 M4,-2 L4,-20 M0,-2 L0,-24"/>
+    </g>
+
+    <!-- double border frame -->
+    <path d="M20,20 L580,20 L580,391 L556,436 L529,389 L502,434 L475,392 L448,433 L421,390 L394,435 L367,391 L340,433 L313,389 L286,436 L259,390 L232,433 L205,389 L178,435 L151,391 L124,432 L97,389 L70,434 L43,391 L20,414" stroke-width="2.2"/>
+
+    <!-- roman numeral corners -->
+    <rect x="16" y="16" width="34" height="30" stroke-width="2.2"/>
+    <rect x="550" y="16" width="34" height="30" stroke-width="2.2"/>
+    <text x="33" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+    <text x="567" y="39" font-family="Georgia, 'Times New Roman', serif" font-size="20" text-anchor="middle" fill="#161616" stroke="none">I</text>
+
+    <!-- infinity symbol above head -->
+    <path d="M270,58 C270,46 284,46 300,58 C316,70 330,70 330,58 C330,46 316,46 300,58 C284,70 270,70 270,58 Z" stroke-width="3.6"/>
+
+    <!-- altar items at torn edge -->
+    <path d="M154,394 L182,394 L179,404 C179,412 173,417 168,417 C163,417 157,412 157,404 Z"/>
+    <path d="M168,417 L168,428 M160,430 L176,430"/>
+    <path d="M193,398 L193,424" />
+    <circle cx="193" cy="396" r="3"/>
+    <circle cx="300" cy="415" r="20"/>
+    <path d="M300,399 L305,411 L318,411 L307,419 L311,432 L300,424 L289,432 L293,419 L282,411 L295,411 Z"/>
+    <path d="M430,378 L430,422 M417,390 L443,390 M426,392 L434,392 L434,405 L426,405 Z"/>
+    <circle cx="430" cy="408" r="3"/>
+
+    <!-- robe body -->
+    <path d="M258,180 C230,212 222,262 232,302 C245,332 262,347 300,352 C338,347 355,332 368,302 C378,262 370,212 342,180 C320,170 280,170 258,180 Z" fill="#fffdf6"/>
+    <path d="M276,202 C271,242 273,282 279,322 M300,196 L300,342 M324,202 C329,242 327,282 321,322" stroke-width="2.4"/>
+
+    <!-- collar -->
+    <path d="M246,178 C262,162 338,162 354,178 L338,196 C320,182 280,182 262,196 Z" fill="#fffdf6"/>
+
+    <!-- ouroboros belt -->
+    <path d="M236,300 C258,286 282,312 300,297 C318,282 342,308 364,296" stroke-width="3.2"/>
+    <path d="M364,296 C372,292 374,300 366,303 C360,305 358,300 364,296 Z"/>
+    <circle cx="369" cy="298" r="1.6" fill="#161616"/>
+    <path d="M236,300 C230,296 226,300 232,304" stroke-width="2.4"/>
+
+    <!-- lower arm (pointing down) -->
+    <path d="M250,190 C225,200 205,226 195,262 C186,300 183,342 181,382 L193,384 C197,346 202,306 212,270 C222,234 240,210 264,198 Z" fill="#fffdf6"/>
+    <circle cx="186" cy="392" r="10" fill="#fffdf6"/>
+    <path d="M182,398 L176,418 M186,401 L184,417 M190,400 L191,414 M194,398 L197,410"/>
+
+    <!-- raised arm (holding wand) -->
+    <path d="M352,190 C378,183 394,161 398,131 C401,102 403,76 405,54 L393,52 C390,74 388,100 385,128 C381,157 368,177 340,184 Z" fill="#fffdf6"/>
+    <circle cx="401" cy="46" r="13" fill="#fffdf6"/>
+    <path d="M394,42 L408,42 M393,48 L407,48 M396,54 L406,54"/>
+
+    <!-- wand + flame -->
+    <path d="M398,42 L398,14 M406,42 L406,14"/>
+    <circle cx="402" cy="44" r="3"/>
+    <path d="M402,4 L405,10 L412,10 L406,14 L408,20 L402,16 L396,20 L398,14 L392,10 L399,10 Z"/>
+
+    <!-- head + hair -->
+    <path d="M264,92 C270,70 284,64 300,70 C316,64 330,70 336,92" stroke-width="3.6"/>
+    <path d="M264,94 C246,110 240,142 246,178 M336,94 C354,110 360,142 354,178" stroke-width="3.6"/>
+    <path d="M256,120 C246,132 244,150 248,168 M344,120 C354,132 356,150 352,168" stroke-width="2.4"/>
+    <ellipse cx="300" cy="108" rx="34" ry="38" fill="#fffdf6"/>
+
+    <!-- face -->
+    <circle cx="288" cy="104" r="4" fill="#161616"/>
+    <circle cx="312" cy="104" r="4" fill="#161616"/>
+    <path d="M280,94 Q288,88 296,94 M304,94 Q312,88 320,94" stroke-width="2.6"/>
+    <path d="M300,110 C298,116 297,120 300,122" stroke-width="2.6"/>
+    <path d="M286,128 Q300,138 314,128" stroke-width="2.8"/>
+    <path d="M282,140 L280,160 M318,140 L320,160" stroke-width="2.8"/>
+
+  </g>
+</svg>

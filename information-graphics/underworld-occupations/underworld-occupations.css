@@ -1,0 +1,1986 @@
+/* ===========================================
+   LOCAL DEV STYLESHEET
+   U.S. Occupations Treemap Dashboard
+   
+   Woodcut Manuscript Edition
+   Inspired by Gregor Reisch's Margarita
+   Philosophica (1503), Christoph Scheiner's
+   Rosa Ursina (1630), and Geoffrey Tory's
+   Champ Fleury (1529). Darker parchment ground,
+   Vermillion rubrication, squared woodcut corners,
+   Cormorant Garamond + Cormorant SC body typography; IM Fell Great
+   Primer reserved for display-scale headings.
+   
+   TABLE OF CONTENTS
+   -----------------
+   0. CSS CUSTOM PROPERTIES
+   1. BASE & GLOBAL STYLES
+   2. MAIN LAYOUT CONTAINERS
+   3. DASHBOARD FRAME STRUCTURE
+   4. NAVIGATION ELEMENTS
+   5. TREEMAP CELLS & LABELS
+   6. SIDEBAR PANELS
+   7. RIASEC RADAR CHART
+   8. RAINCLOUD PLOT (WAGE DISTRIBUTION)
+   9. INDUSTRY DISTRIBUTION CHART
+   10. DETAILED OCCUPATION DASHBOARD
+   11. WORK CONTEXT CAROUSEL
+   12. UNDERWORLD / GHOST FIGURES
+   13. TOOLTIPS
+   =========================================== */
+
+/* ===========================================
+   0. CSS CUSTOM PROPERTIES
+   =========================================== */
+:root {
+  /* --- Background Colors --- */
+  --color-bg-page: #ffffff;
+  --color-bg-parchment: #ddd0b3;
+  --color-bg-card: #e4dac0;
+  --color-bg-subtle: #d8cdb5;
+  --color-bg-button: #d5c8ac;
+  --color-bg-button-hover: #cdbf9e;
+  --color-bg-table-header: #d8cdb5;
+  --color-bg-table-alt: #e2d8c0;
+
+  /* --- Border Colors (Sepia Ink) --- */
+  --color-border-light: rgba(90, 62, 40, 0.18);
+  --color-border-medium: #5a3e28;
+  --color-border-subtle: rgba(90, 62, 40, 0.15);
+  --color-border-hover: rgba(90, 62, 40, 0.22);
+
+  /* --- Text Colors (Iron Gall Ink) --- */
+  --color-text-primary: #1a1408;
+  --color-text-secondary: #2c2014;
+  --color-text-tertiary: #3d2b18;
+  --color-text-muted: #4a3a28;
+  --color-text-subtle: #5c5347;
+  --color-text-faint: #5c4a38;
+
+  /* --- Rubrication Color (Vermillion) --- */
+  --color-rubrication: #b33a2b;
+  --color-rubrication-light: rgba(179, 58, 43, 0.15);
+  --color-rubrication-border: rgba(179, 58, 43, 0.2);
+
+  /* --- Status Colors --- */
+  --color-status-positive: #2e7358;
+  --color-status-negative: #b33a2b;
+
+  /* --- Shadows (Parchment-appropriate) --- */
+  --shadow-card:
+    0 2px 8px -2px rgba(26, 20, 8, 0.15), 0 1px 3px -1px rgba(26, 20, 8, 0.1);
+  --shadow-tooltip:
+    0 8px 24px -4px rgba(26, 20, 8, 0.2), 0 2px 8px -2px rgba(26, 20, 8, 0.12);
+
+  /* --- Transitions --- */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow: 0.3s ease;
+
+  /* --- Typography (Cormorant + IM Fell Great Primer for display) --- */
+  --font-family: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-family-sc: "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+  --font-family-display:
+    "IM Fell Great Primer SC", "Cormorant SC", Georgia, serif;
+  --font-family-display-body:
+    "IM Fell Great Primer", "Cormorant Garamond", Georgia, serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13px;
+  --font-size-md: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 16px;
+  --font-size-2xl: 20px;
+  /* --font-size-2xs retired; alias kept at 11px for any lingering references. */
+  --font-size-2xs: 11px;
+  --font-family-data: "Cormorant Garamond", Georgia, serif;
+
+  /* --- Frame Inset Background --- */
+  --color-bg-frame-inset: #cfc2a0;
+
+  /* --- Spacing --- */
+  --spacing-xs: 4px;
+  --spacing-sm: 6px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+
+  /* --- Layout Widths (for alignment) --- */
+  --width-panel-riasec: 270px;
+  --width-panel-employment: 180px;
+}
+
+/* ===========================================
+   0.5 UTILITY CLASSES (Tailwind replacements)
+   ===========================================
+   These replicate the small subset of Tailwind utilities used in
+   underworld-occupations.html. They previously came from the Tailwind CDN
+   (cdn.tailwindcss.com), which generates CSS at runtime by scanning the DOM.
+   That runtime gap caused chart containers to measure as zero width before
+   their utility CSS was applied — so chart-init code fell back to the
+   `|| 128` / `|| 160` defaults and locked SVGs into a small size, especially
+   on slower-painting environments like external monitors.
+   Inlining these classes makes them apply with the rest of the stylesheet,
+   eliminating the race. */
+.flex { display: flex; }
+.flex-row { flex-direction: row; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.overflow-visible { overflow: visible; }
+.w-full { width: 100%; }
+.text-center { text-align: center; }
+.text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+.mt-16 { margin-top: 4rem; }
+.mt-4 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.py-10 { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+.p-5 { padding: 1.25rem; }
+/* Tailwind arbitrary-value class — escape brackets in selector. */
+.max-w-\[1020px\] { max-width: 1020px; }
+/* Tailwind `md:` breakpoint = 768px and up. */
+@media (min-width: 768px) {
+  .md\:p-10 { padding: 2.5rem; }
+}
+
+/* ===========================================
+   1. BASE & GLOBAL STYLES
+   =========================================== */
+
+/* Override site content-frame so the 1020px visualization
+   isn't squeezed by the site's default padding/max-width.
+   Widened to match the site banner (--max-width-wide: 1080px)
+   so the parchment background aligns with the banner edges.
+   This CSS only loads on the underworld-occupations page. */
+.main-wrapper > .content-frame {
+  max-width: var(--max-width-wide);
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg-page);
+  color: var(--color-text-primary);
+}
+
+/* ===========================================
+   2. MAIN LAYOUT CONTAINERS
+   =========================================== */
+/* --- Visualization Container --- */
+#viz-container {
+  margin: 0 !important;
+  height: 605px !important;
+  background: transparent;
+  overflow: visible;
+}
+
+#viz-container svg {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  overflow: visible;
+}
+
+/* ===========================================
+   3. DASHBOARD FRAME STRUCTURE
+   =========================================== */
+/* --- Main Frame Container --- */
+.dashboard-frame {
+  border: 2px solid var(--color-border-medium);
+  border-radius: 0;
+  background:
+    radial-gradient(
+      ellipse at 30% 70%,
+      rgba(120, 90, 50, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 30%,
+      rgba(100, 75, 40, 0.06) 0%,
+      transparent 50%
+    ),
+    linear-gradient(175deg, #ddd0b3 0%, #d4c5a5 30%, #cdbf9e 60%, #d6c9ad 100%);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+/* --- Frame Header --- */
+.dashboard-frame-header {
+  background: var(--color-bg-parchment);
+  border-bottom: 2px solid var(--color-border-medium);
+  padding: 10px var(--spacing-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-frame-header .level-title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 700 !important;
+  color: var(--color-rubrication);
+  flex: 1;
+  margin: 0 var(--spacing-xl);
+  text-align: center;
+  letter-spacing: 0.03em;
+}
+
+/* --- Frame Body --- */
+.dashboard-frame-body {
+  position: relative;
+  background: var(--color-bg-parchment);
+}
+
+/* --- Frame Backgrounds (Hierarchical Layers) --- */
+.frame-backgrounds {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.frame-bg {
+  position: absolute;
+  transition: all var(--transition-slow);
+  border-radius: 0;
+}
+
+/* --- Frame Labels --- */
+.frame-labels {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.frame-label {
+  position: absolute;
+  font-family: var(--font-family-sc);
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  padding: var(--spacing-sm) var(--spacing-sm);
+  border-radius: 0;
+  transition: background var(--transition-fast);
+  pointer-events: auto;
+}
+
+.frame-label:hover {
+  background: var(--color-border-hover);
+}
+
+/* --- Content Wrapper --- */
+.content-wrapper {
+  position: relative;
+  z-index: 5;
+}
+
+/* ===========================================
+   4. NAVIGATION ELEMENTS
+   =========================================== */
+/* --- Dashboard Frame Navigation Buttons --- */
+.dashboard-frame-header .nav-btn {
+  font-family: var(--font-family-sc);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: var(--color-bg-button);
+  border: 1.5px solid var(--color-border-medium);
+  border-radius: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dashboard-frame-header .nav-btn:hover:not(:disabled) {
+  background: var(--color-bg-button-hover);
+  border-color: var(--color-text-muted);
+}
+
+.dashboard-frame-header .nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===========================================
+   5. TREEMAP CELLS & LABELS
+   =========================================== */
+.treemap-cell {
+  stroke: #5a5347;
+  stroke-width: 1px;
+  cursor: pointer;
+  transition: opacity var(--transition-normal);
+  pointer-events: all;
+}
+
+.treemap-cell:hover {
+  opacity: 1 !important;
+}
+
+.treemap-cell-selected {
+  stroke: var(--color-text-primary) !important;
+  stroke-width: 3px !important;
+}
+
+.treemap-cell-dimmed {
+  opacity: 0.4 !important;
+}
+
+/* --- Cell Labels --- */
+.cell-label {
+  font-family: var(--font-family-sc);
+  fill: var(--color-text-label);
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+
+.cell-value {
+  font-family: var(--font-family-data);
+  fill: var(--color-text-value);
+  font-weight: 600;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ===========================================
+   6. SIDEBAR PANELS
+   =========================================== */
+/* --- Sidebar Wrapper --- */
+.sidebar-wrapper {
+  padding: 0 0 32px 0;
+  margin-top: 10px;
+  background: transparent;
+}
+
+.sidebar-content-inner {
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+  width: 952px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 var(--spacing-xs);
+  box-sizing: border-box;
+}
+
+/* --- Panel Size Variants --- */
+/* Order: Wage (left), RIASEC (middle), Employment (right) */
+.sidebar-panel-wage {
+  flex: 1;
+  min-width: 0;
+  margin-right: var(--spacing-xs);
+}
+
+.sidebar-panel-riasec {
+  width: var(--width-panel-riasec);
+  flex-shrink: 0;
+  margin: 0 var(--spacing-xs);
+}
+
+.sidebar-panel-employment {
+  width: var(--width-panel-employment);
+  flex-shrink: 0;
+  margin-left: var(--spacing-xs);
+}
+
+.sidebar-panel-employment .nuremberg-title-banner {
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.04em;
+}
+
+/* ===========================================
+   7. RIASEC RADAR CHART
+   =========================================== */
+/* ===========================================
+   8. WAGE DISTRIBUTION (WOODBLOCK IMPRESSION)
+   =========================================== */
+
+/* --- Nuremberg Frame --- */
+.frame-nuremberg {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  padding: 12px 16px 8px;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.nuremberg-title-banner {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  -webkit-text-stroke: 0.4px currentColor;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-align: center;
+  /* Subtle vermillion-on-parchment hairline, matching the divider used
+     under "Souls Assigned to This Fate" in ghost-animation.js. */
+  border-bottom: 1.5px solid rgba(179, 58, 43, 0.2);
+  padding: 0 0 4px;
+  margin: 0 0 10px;
+}
+
+/* ===========================================
+   9. INDUSTRY DISTRIBUTION CHART
+   =========================================== */
+.industry-chart-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  -webkit-text-stroke: 0.4px currentColor;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--spacing-xs) 0;
+  padding: 0 0 4px;
+  text-align: center;
+  /* Match the understated vermillion divider used by .nuremberg-title-banner
+     and "Souls Assigned to This Fate". */
+  border-bottom: 1.5px solid rgba(179, 58, 43, 0.2);
+}
+
+/* ===========================================
+   10. DETAILED OCCUPATION DASHBOARD
+   =========================================== */
+/* --- CSS Grid Layout --- */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 240px 1fr var(--width-panel-riasec);
+  grid-template-rows: auto 1fr;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xs) var(--spacing-xs) 4px;
+  height: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+/* Reset global site margins inside the detail grid so they
+   don't inflate the auto-height row and steal space from 1fr */
+.detail-grid p,
+.detail-grid h1,
+.detail-grid h2,
+.detail-grid h3,
+.detail-grid h4,
+.detail-grid h5,
+.detail-grid h6 {
+  margin: 0;
+}
+
+/* --- Stat Boxes --- */
+.detail-stat-employment,
+.detail-stat-injury {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: var(--spacing-sm) var(--spacing-md);
+  box-sizing: border-box;
+}
+
+/* --- Section Containers --- */
+/* Work Context (center column, row 2) */
+.detail-section-wc {
+  --chart-label-width: 95px;
+  --chart-bar-area-width: 265px;
+  --axis-color: #5c4a38;
+  --gridline-color: rgba(90, 62, 40, 0.08);
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: 10px var(--spacing-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Underworld (right column, row 2) */
+.underworld-section {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+  position: relative;
+  pointer-events: none;
+  box-sizing: border-box;
+  margin: 0 2px;
+}
+
+/* Industry (left column, spans both rows) */
+.detail-industry-column {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  padding: var(--spacing-md) var(--spacing-sm);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* --- Section Titles --- */
+.detail-section-title {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  -webkit-text-stroke: 0.4px currentColor;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1.5px solid rgba(179, 58, 43, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-section-title-text {
+  flex: 1;
+}
+
+/* Work Context section: no divider under its title. */
+.detail-section-wc .detail-section-title {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* ----- Intro prose -------------------------------------------------
+   This page's :root redefines --font-size-base to 13px for the dashboard,
+   which unintentionally shrinks .prose-flow paragraphs (the site default
+   is a clamp() fluid value). Restore the site's prose scale inside the
+   intro, using the same values the site's style.css declares so the intro
+   typography matches gendered-pronouns.php and other prose pages. */
+.prose-flow p,
+.prose-flow li {
+  font-size: clamp(0.875rem, 2vw + 0.5rem, 1rem);
+  line-height: 1.65;
+}
+
+.prose-flow p {
+  margin-bottom: 24px;
+}
+.prose-flow p:last-child {
+  margin-bottom: 0;
+}
+/* Inline prose links — match the rubricated, dotted-underline idiom used
+   by .soc-tree-card-footer a so links read as part of the parchment theme
+   rather than default browser blue. */
+.prose-flow a {
+  color: var(--color-rubrication);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-rubrication);
+}
+.prose-flow a:hover {
+  border-bottom-style: solid;
+}
+
+
+.detail-section-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* ===========================================
+   11. WORK CONTEXT CAROUSEL
+   =========================================== */
+/* Make carousel container fill the section */
+#wc-carousel-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.wc-no-data-layout {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+  padding: 8px;
+}
+
+.wc-no-data-text {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.wc-no-data-ornament {
+  flex: 1;
+  max-height: 240px;
+  opacity: 0.7;
+  object-fit: contain;
+  object-position: right;
+}
+
+.riasec-no-data-layout {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 1;
+  padding: 12px 16px 8px;
+}
+
+.riasec-no-data-text {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.riasec-no-data-ornament {
+  max-width: 150px;
+  margin-top: 10px;
+  opacity: 0.7;
+  object-fit: contain;
+}
+
+.wc-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.wc-card-header {
+  flex-shrink: 0;
+  padding-left: 8px;
+  margin-bottom: 8px;
+}
+
+.wc-card-title {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.wc-card-description {
+  font-family: var(--font-family);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  height: 2.8em;
+  overflow: hidden;
+  margin: 0;
+}
+
+/* --- Navigation Buttons --- */
+.wc-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-hover);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+  transition: all var(--transition-fast);
+}
+
+.wc-nav-btn:hover:not(:disabled) {
+  background: var(--color-bg-button);
+  color: var(--color-text-secondary);
+}
+
+.wc-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.wc-nav-counter {
+  font-family: var(--font-family);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-weight: 500;
+  min-width: 36px;
+  text-align: center;
+}
+
+/* --- Chart Area --- */
+.wc-chart-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+  position: relative;
+  min-height: 0;
+}
+
+.wc-chart-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  position: relative;
+  min-height: 0;
+}
+
+/* --- Gridlines --- */
+.wc-gridlines {
+  position: absolute;
+  top: 0;
+  left: var(--chart-label-width);
+  width: var(--chart-bar-area-width);
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wc-gridline {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: var(--gridline-color);
+}
+
+/* --- Y-axis line --- */
+.wc-axis-y {
+  position: absolute;
+  top: 0;
+  left: var(--chart-label-width);
+  width: 1px;
+  height: 100%;
+  background-color: var(--axis-color);
+  z-index: 1;
+}
+
+/* --- Bar Rows --- */
+.wc-bar-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  margin-bottom: 0;
+}
+
+.wc-bar-label {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  width: var(--chart-label-width);
+  text-align: right;
+  padding-right: 8px;
+  flex-shrink: 0;
+  line-height: 1.3;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.wc-bar-area {
+  width: var(--chart-bar-area-width);
+  height: 26px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.wc-bar-segment {
+  height: 100%;
+  border-radius: 0;
+  min-width: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: 1px solid #1a1408;
+  box-sizing: border-box;
+}
+
+.wc-bar-pct {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-family-data);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* --- X-axis --- */
+.wc-axis-x-container {
+  margin-left: var(--chart-label-width);
+  width: var(--chart-bar-area-width);
+  flex-shrink: 0;
+}
+
+.wc-axis-x {
+  height: 2px;
+  background-color: #1a1408;
+  width: 100%;
+}
+
+.wc-axis-ticks {
+  position: relative;
+  height: 6px;
+  width: 100%;
+}
+
+.wc-axis-tick {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 6px;
+  background-color: #1a1408;
+}
+
+.wc-axis-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.wc-axis-label {
+  font-family: var(--font-family);
+  font-size: 11px;
+  color: #5c5347;
+}
+
+/* ===========================================
+   12. UNDERWORLD / GHOST FIGURES
+   =========================================== */
+/* --- Container --- */
+.underworld-figures-container {
+  height: 100%;
+  position: relative;
+  padding-top: 30px;
+  pointer-events: none;
+}
+
+/* --- Static Ghost Icons on Treemap --- */
+.character-ghost {
+  cursor: pointer;
+  opacity: 0.85;
+  transition: opacity var(--transition-fast);
+}
+
+.character-ghost:hover {
+  opacity: 1;
+}
+
+/* --- Wandering Ghosts (Underworld Section) --- */
+.wandering-ghost {
+  cursor: pointer;
+  transition: opacity var(--transition-fast);
+}
+
+.wandering-ghost:hover {
+  opacity: 1 !important;
+}
+
+/* --- No Data Message --- */
+.underworld-no-data {
+  background: var(--color-bg-frame-inset);
+  border: 1.5px solid rgba(26, 20, 8, 0.5);
+  box-shadow:
+    inset 0 0 0 1px var(--color-bg-frame-inset),
+    inset 0 0 0 2px rgba(61, 43, 24, 0.35);
+  border-radius: 0;
+  pointer-events: none;
+  box-sizing: border-box;
+  height: 100%;
+}
+
+.underworld-no-data-content {
+  padding: var(--spacing-lg);
+}
+
+.underworld-no-data-header {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  -webkit-text-stroke: 0.4px currentColor;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--spacing-md);
+}
+
+.underworld-no-data-divider {
+  height: 2px;
+  background: var(--color-rubrication-border);
+  margin-bottom: var(--spacing-lg);
+}
+
+.underworld-no-data-text {
+  font-family: var(--font-family);
+  font-size: 16px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ===========================================
+   13. TOOLTIPS
+   =========================================== */
+.tooltip {
+  position: absolute;
+  display: none;
+  background-color: var(--color-bg-card);
+  border: 2px solid var(--color-border-medium);
+  border-radius: 0;
+  box-shadow: var(--shadow-tooltip);
+  padding: var(--spacing-lg);
+  font-size: var(--font-size-md);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  z-index: 50;
+  line-height: 1.5;
+  width: 280px;
+  box-sizing: border-box;
+  font-family: var(--font-family);
+}
+
+.tooltip.bar-tooltip {
+  width: 200px;
+}
+
+.tooltip.riasec-tooltip {
+  width: 360px;
+}
+
+.tooltip.character-tooltip {
+  width: 360px;
+}
+
+.tooltip.character-tooltip-treemap {
+  width: 420px;
+}
+
+/* ===========================================
+   14. BAN STYLES - Employment & Injury Stats
+   Tabular two-column grid layout
+   =========================================== */
+
+/* Shared BAN header style */
+.ban-header {
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  -webkit-text-stroke: 0.4px currentColor;
+  color: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+  padding-bottom: 3px;
+  border-bottom: 1.5px solid rgba(179, 58, 43, 0.2);
+}
+
+/* Two-column grid */
+.ban-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.ban-cell {
+  padding: 2px 4px;
+  text-align: center;
+}
+
+.ban-cell:first-child {
+  border-right: 1px solid var(--color-border-light);
+}
+
+.ban-cell-label {
+  /* Match the visual register of .emp-year-suffix ("Projected" / "Workforce")
+     in the workforce stat card — same small-caps face, size, color, and
+     letter-spacing. Natural case is preserved (no forced uppercase) so
+     "This Occupation" reads with the same texture as "Projected". */
+  font-family: var(--font-family-sc);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+  /* Reserve the same label-row height as .emp-year-label-b in the workforce
+     card (18px font × ~1.2 default line-height ≈ 22px, plus 4px margin-bottom)
+     so the value rows in both cards land at the same y-position. */
+  min-height: 22px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.ban-cell-value {
+  font-family: var(--font-family-data);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.ban-cell-value-small {
+  font-family: var(--font-family-data);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1;
+}
+
+.ban-cell-sub {
+  font-family: var(--font-family);
+  font-size: var(--font-size-md);
+  color: var(--color-text-faint);
+  margin-top: 8px;
+}
+
+.ban-cell-sub.positive {
+  color: var(--color-status-positive);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.ban-cell-sub.negative {
+  color: var(--color-status-negative);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.ban-cell-sub.safer {
+  color: var(--color-status-positive);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.ban-cell-sub.riskier {
+  color: var(--color-status-negative);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.ban-cell-sub.average {
+  color: var(--color-text-subtle);
+  font-weight: 600;
+  font-style: normal;
+}
+
+.ban-subtitle {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text-faint);
+  text-align: center;
+  padding: 10px 8px 2px;
+  line-height: 1.3;
+}
+
+/* Injury no-data layout */
+.injury-no-data-layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.injury-no-data-ornament {
+  width: 140px;
+  height: 120px;
+  opacity: 0.7;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.injury-no-data-text {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--color-text-secondary, #5c5347);
+  line-height: 1.5;
+  padding: 10px 0;
+  text-align: center;
+  width: 100px;
+  flex-shrink: 0;
+  margin-left: 0;
+}
+
+/* ===========================================
+   15. WAGE STATS TABLE
+   =========================================== */
+.wage-stats-table {
+  width: 100%;
+  margin-top: 24px;
+  border-collapse: collapse;
+}
+
+.wage-stats-table th {
+  font-family: var(--font-family-sc);
+  font-weight: 600;
+  color: #b33a2b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 8px 6px;
+  text-align: center;
+  font-size: 12px;
+  background: rgba(90, 62, 40, 0.1);
+  border-bottom: 1.5px solid rgba(90, 62, 40, 0.2);
+  border-right: 1px solid rgba(90, 62, 40, 0.12);
+}
+
+.wage-stats-table th:last-child {
+  border-right: none;
+}
+
+.wage-stats-table td {
+  font-family: var(--font-family-data);
+  padding: 8px 6px;
+  text-align: center;
+  color: #3d2b18;
+  font-weight: 600;
+  font-size: 15px;
+  border-right: 1px solid rgba(90, 62, 40, 0.12);
+}
+
+.wage-stats-table td:last-child {
+  border-right: none;
+}
+
+.wage-stats-table .row-label {
+  font-family: var(--font-family-sc);
+  text-align: left;
+  font-weight: 600;
+  color: #b33a2b;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding-left: 8px;
+}
+
+/* ===========================================
+   16. CHARACTER TOOLTIP - SPINE DESIGN
+   =========================================== */
+
+/* Spine container */
+.ct-spine {
+  padding: 14px 16px;
+  position: relative;
+}
+
+/* Vertical spine line */
+.ct-spine::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 22px;
+  bottom: 18px;
+  width: 1.5px;
+  background: var(--color-border-light, rgba(90, 62, 40, 0.18));
+}
+
+/* Individual tier */
+.ct-tier {
+  position: relative;
+  padding-left: 24px;
+  padding-bottom: 14px;
+}
+
+.ct-tier:last-child {
+  padding-bottom: 0;
+}
+
+/* Step marker (circle on spine) */
+.ct-step {
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border-light, rgba(90, 62, 40, 0.18));
+  background: var(--color-bg-card, #e8dfc8);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Colored dot inside step marker */
+.ct-step-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.ct-step-dot.figure {
+  background: #2e7358;
+}
+
+.ct-step-dot.rabelais {
+  background: #c49a2a;
+}
+
+.ct-step-dot.bls {
+  background: #1e3f7a;
+}
+
+/* Tier label */
+.ct-tier-label {
+  font-family: var(--font-family-sc);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #b33a2b;
+  margin-bottom: 5px;
+}
+
+/* Character name */
+.ct-name {
+  font-family: var(--font-family-display-body);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a1408);
+  line-height: 1.2;
+}
+
+/* Lot in life as italic epithet */
+.ct-epithet {
+  font-family: var(--font-family);
+  font-size: 11px;
+  color: var(--color-text-subtle, #5c5347);
+  font-style: italic;
+  margin-top: 2px;
+  margin-bottom: 6px;
+}
+
+/* Description text */
+.ct-desc {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--color-text-muted, #3d2b18);
+  line-height: 1.5;
+}
+
+/* Labor title in Rabelais tier */
+.ct-labor {
+  font-family: var(--font-family-sc);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1a1408);
+  margin-bottom: 4px;
+}
+
+/* Quote/snippet — curly quotes in the markup already signal the quotation. */
+.ct-snippet {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--color-text-muted, #3d2b18);
+  line-height: 1.45;
+}
+
+/* ===========================================
+   17. EMPLOYMENT BAN YEAR LABELS
+   =========================================== */
+.emp-year-label-b {
+  font-family: var(--font-family-data);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+  margin-bottom: 4px;
+}
+
+.emp-year-suffix {
+  font-family: var(--font-family-sc);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+}
+
+/* ===========================================
+   18. SOC TREE CARD — book-spread layout
+   ===========================================
+   The worked-example carousel that pairs a Rabelais chapter excerpt
+   (left page) with the figure's BLS classification tree (right page).
+   Single full-width card; the whole viewer is locked to 600px tall. */
+
+.soc-tree-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  border: 2px solid var(--color-border-medium);
+  background: var(--color-bg-parchment);
+  box-shadow: var(--shadow-card);
+  margin: var(--s-4) 0;
+}
+
+.soc-tree-card-header {
+  padding: 6px var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-card);
+  text-align: center;
+}
+.soc-tree-card-header-text {
+  font-family: var(--font-family-sc);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-rubrication);
+}
+
+/* Body: 2 columns; each column owns its own scroll. The left page
+   (excerpt) and the right page (figure metadata + tree) scroll
+   INDEPENDENTLY when their content exceeds the body height, so
+   neither column ever pushes the card taller than its locked 600px
+   or overlaps the footer. */
+.soc-tree-card-body {
+  position: relative;
+  display: grid;
+  grid-template-columns: 50% 50%;
+  padding: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden; /* clip any rogue overflow at the column edges */
+  background: #f1e8d2; /* lighter cream — shared by both pages */
+}
+
+/* ---- Loading state ----
+   Positioned overlay covering the whole body until the API resolves
+   AND the first render() lands. */
+.soc-tree-card-loading {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(221, 208, 179, 0.9);
+  z-index: 10;
+  margin: 0;
+}
+.soc-tree-card-loading-text {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--color-text-subtle);
+}
+.soc-tree-card--carousel.is-loading .soc-tree-card-loading {
+  display: flex;
+}
+
+/* ---- Left page: wrapper holding the (non-scrolling) attribution
+   banner above the (scrolling) chapter excerpt. The wrapper owns the
+   left-column's binding-seam border and cream background; the scroll
+   container inside therefore starts BELOW the banner, so the scrollbar
+   track only runs alongside the chapter content. position:relative
+   anchors the figure-indicator overlay on the scrollbar gutter. */
+.soc-tree-left-page {
+  grid-column: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 2px solid var(--color-border-medium); /* binding seam */
+  background: #f1e8d2;
+}
+
+/* Position indicator overlaid on the excerpt's scrollbar track. Marks
+   where the currently-selected figure's span sits in the full chapter
+   so the reader can see "the figure is here" relative to their scroll
+   position. Only the line moves on figure change — it stays put when
+   the excerpt is scrolled. */
+.soc-tree-figure-indicator {
+  position: absolute;
+  right: 0;
+  width: 10px;
+  height: 3px;
+  background: var(--color-rubrication);
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition:
+    top 0.25s ease-out,
+    opacity var(--transition-fast);
+}
+.soc-tree-figure-indicator.is-visible {
+  opacity: 0.55;
+}
+
+.soc-tree-card-excerpt {
+  margin: 0;
+  padding: 24px;
+  flex: 1;
+  min-height: 0; /* allow shrinking inside parent flex for overflow:auto */
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+  overflow-y: auto;
+}
+
+/* Top/bottom fade strips over the scrolling excerpt. Painted as overlays
+   on the parent page (not as a mask on the scroll element) so the
+   scrollbar track stays fully visible — the strips stop short of the
+   scrollbar gutter via `right: 10px` (matching the scrollbar width). The
+   color matches the page background (#f1e8d2) so text reads as fading
+   into the parchment rather than getting clipped. */
+.soc-tree-left-page::before,
+.soc-tree-left-page::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 10px;
+  height: 24px;
+  pointer-events: none;
+  z-index: 3;
+}
+.soc-tree-left-page::before {
+  top: 36px; /* sits flush under the attribution band (min-height: 36px) */
+  background: linear-gradient(
+    to bottom,
+    #f1e8d2 0%,
+    rgba(241, 232, 210, 0) 100%
+  );
+}
+.soc-tree-left-page::after {
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    #f1e8d2 0%,
+    rgba(241, 232, 210, 0) 100%
+  );
+}
+.soc-tree-card-excerpt p {
+  margin: 0 0 16px;
+  text-indent: 1.5rem;
+}
+.soc-tree-card-excerpt p:first-of-type {
+  text-indent: 0;
+}
+/* Drop cap on the opening paragraph — vermillion rubrication, Cormorant. */
+.soc-tree-card-excerpt p:first-of-type::first-letter {
+  font-family: var(--font-family);
+  font-style: normal;
+  font-size: 3.5rem;
+  line-height: 1;
+  float: left;
+  margin-right: 0.5rem;
+  margin-top: -0.25rem;
+  color: var(--color-rubrication);
+}
+
+/* Attribution band at the top of the left page (sibling of the
+   scrolling excerpt, not inside it). */
+.soc-tree-card-excerpt-attribution {
+  flex: none;
+  min-height: 36px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  background: var(--color-bg-card);
+  border-bottom: 1.5px solid var(--color-border-medium);
+  font-family: var(--font-family-sc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.soc-tree-card-excerpt-attribution cite {
+  font-family: var(--font-family);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+  font-size: 18px;
+}
+
+/* Figure spans inside the excerpt — dotted underline (via
+   text-decoration so it renders consistently across browsers),
+   vermillion on hover, solid red current state with a faint tint. */
+.soc-tree-card-excerpt [data-figures] {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: var(--color-border-medium);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition:
+    color var(--transition-fast),
+    text-decoration-color var(--transition-fast),
+    background var(--transition-fast);
+}
+.soc-tree-card-excerpt [data-figures]:hover {
+  color: var(--color-rubrication);
+  text-decoration-color: var(--color-rubrication);
+}
+.soc-tree-card-excerpt [data-figures].is-current {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  text-decoration-style: solid;
+  text-decoration-color: var(--color-rubrication);
+  text-decoration-thickness: 1.5px;
+  background: rgba(179, 58, 43, 0.05);
+}
+
+.epistemon-chapter-heading {
+  font-family: var(--font-family-sc);
+  font-style: normal;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* ---- Right page: wrapper holding the (non-scrolling) "Underworld
+   Figure" banner above the (scrolling) column with the figure label,
+   section header, tree mount, and O*NET description. ---- */
+.soc-tree-right-page {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Inner scroll container — the banner above sits in the wrapper as
+   a flex sibling so the scrollbar only starts beneath the banner. */
+.soc-tree-right-column {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* ===========================================
+   Shared themed scrollbars for both pages.
+   Sepia ink thumb (matches the manuscript palette) over a recessed
+   parchment-card track with a hairline left border that reads as a
+   manuscript-margin rule. Hover swaps the thumb to vermillion to echo
+   the rubrication used throughout the card. */
+.soc-tree-card-excerpt,
+.soc-tree-right-column {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-medium) rgba(90, 62, 40, 0.16);
+}
+.soc-tree-card-excerpt::-webkit-scrollbar,
+.soc-tree-right-column::-webkit-scrollbar {
+  /* -webkit-appearance: none forces a custom (non-overlay) scrollbar
+     on macOS Safari/Chrome — without it the system overlay scrollbar
+     wins, ignores `width`, and the custom theming never shows. */
+  -webkit-appearance: none;
+  width: 10px;
+  background: rgba(90, 62, 40, 0.16);
+}
+.soc-tree-card-excerpt::-webkit-scrollbar-track,
+.soc-tree-right-column::-webkit-scrollbar-track {
+  background: rgba(90, 62, 40, 0.16);
+  border-left: 1px solid var(--color-border-light);
+  box-shadow: inset 1px 0 0 rgba(90, 62, 40, 0.1);
+}
+.soc-tree-card-excerpt::-webkit-scrollbar-thumb,
+.soc-tree-right-column::-webkit-scrollbar-thumb {
+  background: var(--color-border-medium);
+  border: 1px solid rgba(232, 223, 200, 0.6);
+  border-radius: 0;
+  background-clip: padding-box;
+}
+.soc-tree-card-excerpt::-webkit-scrollbar-thumb:hover,
+.soc-tree-right-column::-webkit-scrollbar-thumb:hover {
+  background: var(--color-rubrication);
+  border-color: rgba(232, 223, 200, 0.6);
+}
+.soc-tree-card-excerpt::-webkit-scrollbar-button,
+.soc-tree-right-column::-webkit-scrollbar-button {
+  display: none;
+}
+.soc-tree-card-excerpt::-webkit-scrollbar-corner,
+.soc-tree-right-column::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---- Right page: top banner with manicules ---- */
+.soc-tree-right-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 8px;
+  background: var(--color-bg-card);
+  border-bottom: 1.5px solid var(--color-border-medium);
+  font-family: var(--font-family-sc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.soc-tree-right-banner-text {
+  flex: 1;
+  text-align: center;
+}
+.soc-tree-right-banner-text [data-soc-tree-counter] {
+  margin-left: 4px;
+  font-family: var(--font-family-data);
+  font-weight: 600;
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+
+.soc-tree-nav-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 26px;
+  padding: 0 4px;
+  border: 1.5px solid var(--color-border-medium);
+  background: var(--color-bg-parchment);
+  font-family: var(--font-family);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+.soc-tree-nav-btn:hover {
+  background: var(--color-bg-button-hover);
+  border-color: var(--color-rubrication);
+  color: var(--color-rubrication);
+}
+.soc-tree-nav-btn:active {
+  background: var(--color-bg-subtle);
+  transform: translateY(1px);
+}
+.soc-tree-nav-btn:focus-visible {
+  outline: 1px dotted var(--color-rubrication);
+  outline-offset: 2px;
+}
+
+/* ---- Right page: figure label (name + description + labor) ---- */
+.soc-tree-figure-label {
+  margin: 0;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--color-border-light);
+  text-align: left;
+  line-height: 1.2;
+}
+.soc-tree-figure-name {
+  display: block;
+  font-family: var(--font-family-display-body);
+  font-style: italic;
+  font-size: 28px;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+.soc-tree-figure-description {
+  display: block;
+  margin: 6px 0;
+  font-family: var(--font-family-data);
+  font-style: normal;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--color-text-tertiary);
+}
+.soc-tree-figure-description:empty {
+  display: none;
+}
+.soc-tree-figure-description:not(:empty)::before {
+  content: "Lot in life: ";
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.soc-tree-figure-labor {
+  display: block;
+  font-family: var(--font-family-data);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--color-text-muted);
+}
+.soc-tree-figure-labor:not(:empty)::before {
+  content: "Underworld labor: ";
+  font-weight: 700;
+  font-style: normal;
+  color: var(--color-text-primary);
+}
+
+/* ---- Right page: "Modern Equivalent" sub-header above the tree ---- */
+.soc-tree-section-header {
+  padding: 12px 24px 0;
+  font-family: var(--font-family-sc);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+.soc-tree-section-header-aux {
+  margin-left: 4px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-rubrication);
+}
+
+/* ---- Right page: tree mount ----
+   No own overflow — the parent .soc-tree-right-column handles
+   scrolling for the whole column. */
+.soc-tree-mount {
+  padding: 4px 24px 4px;
+}
+.soc-tree-svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.soc-tree-svg-path {
+  stroke: var(--color-border-medium, #c9bfa8);
+  stroke-width: 1px;
+  fill: none;
+}
+.soc-tree-svg-node {
+  fill: #e8dfc8;
+  stroke: #5a3e28;
+  stroke-width: 1px;
+}
+.soc-tree-svg-node.is-leaf {
+  fill: #5a3e28;
+  stroke: none;
+}
+.soc-tree-svg-text {
+  font-family: var(--font-family, "Cormorant Garamond", Georgia, serif);
+  font-size: 14px;
+  fill: var(--color-text-secondary, #2c2014);
+}
+.soc-tree-svg-text.is-leaf {
+  fill: var(--color-text-primary, #1a1408);
+  font-weight: 700;
+}
+/* Per-level meta-label sitting above each row's text (MAJOR GROUP,
+   MINOR GROUP, etc.) — vermillion small caps. */
+.soc-tree-svg-meta {
+  font-family: var(--font-family-sc);
+  font-size: 10px;
+  fill: var(--color-rubrication);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.soc-tree-mount-empty {
+  margin: 0;
+  font-family: var(--font-family);
+  font-style: italic;
+  font-size: var(--font-size-base);
+  color: var(--color-text-subtle);
+}
+
+/* ---- Source-attribution footer ---- */
+.soc-tree-card-footer {
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--color-bg-card);
+  border-top: 1.5px solid var(--color-border-medium);
+  font-family: var(--font-family-data);
+  font-style: italic;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+.soc-tree-card-footer strong {
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--color-text-primary);
+}
+.soc-tree-card-footer cite {
+  font-style: italic;
+}
+.soc-tree-card-footer a {
+  color: var(--color-rubrication);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--color-rubrication);
+}
+.soc-tree-card-footer a:hover {
+  border-bottom-style: solid;
+}
+
+/* ===========================================
+   14. MOBILE — EXHIBIT UNAVAILABLE
+   ===========================================
+   The treemap dashboard and the Underworld Labor-Market slide deck are
+   authored for a desktop-width viewport and do not reflow to a phone.
+   Below the site's 768px mobile breakpoint we hide the interactive
+   exhibit (.uo-desktop-only) and show a themed notice instead — the
+   parchment card and sepia L-bracket corners echo
+   the slide deck's title card so the turn-away stays in character.
+   Markup lives in information-graphics/underworld-occupations/index.php. */
+
+/* Hidden on desktop; the media query below reveals it. */
+.uo-mobile-unavailable {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .uo-desktop-only {
+    display: none;
+  }
+
+  .uo-mobile-unavailable {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 70vh;
+    padding: 32px 4px;
+  }
+
+  /* Parchment card — mirrors the slide deck's .slide-card ground. */
+  .uo-mobile-card {
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 360px;
+    padding: 40px 30px 36px;
+    text-align: center;
+    background:
+      radial-gradient(
+        ellipse at 25% 75%,
+        rgba(120, 90, 50, 0.07) 0%,
+        transparent 50%
+      ),
+      radial-gradient(
+        ellipse at 75% 25%,
+        rgba(100, 75, 40, 0.05) 0%,
+        transparent 50%
+      ),
+      linear-gradient(
+        175deg,
+        #ddd0b3 0%,
+        #d4c5a5 30%,
+        #cdbf9e 60%,
+        #d6c9ad 100%
+      );
+    border: 2px solid var(--color-border-medium);
+    box-shadow:
+      0 4px 16px -4px rgba(26, 20, 8, 0.18),
+      0 1px 4px -1px rgba(26, 20, 8, 0.1);
+  }
+
+  /* Sepia L-brackets at the four corners — same four-corner overlay
+     technique as the deck's .title-slide-frame, inset from the card
+     edge. Eight 40px linear-gradient strokes (two per corner). */
+  .uo-mobile-frame {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    bottom: 14px;
+    left: 14px;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      linear-gradient(to right, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to bottom, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to left, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to bottom, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to right, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to top, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to left, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px),
+      linear-gradient(to top, var(--color-border-medium) 0, var(--color-border-medium) 32px, transparent 32px);
+    background-repeat: no-repeat;
+    background-size:
+      32px 1.5px, 1.5px 32px,
+      32px 1.5px, 1.5px 32px,
+      32px 1.5px, 1.5px 32px,
+      32px 1.5px, 1.5px 32px;
+    background-position:
+      top left, top left,
+      top right, top right,
+      bottom left, bottom left,
+      bottom right, bottom right;
+  }
+
+  /* A Rabelais woodcut clip (the wine-bearing demon emblem) — one of
+     the underworld figures, chosen to be distinct from the slide deck's
+     own title illustration. */
+  .uo-mobile-image {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    max-width: 150px;
+    height: auto;
+    margin: 0 auto 22px;
+  }
+
+  .uo-mobile-eyebrow {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 10px;
+    font-family: var(--font-family-sc);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-rubrication);
+  }
+
+  .uo-mobile-title {
+    position: relative;
+    z-index: 1;
+    margin: 0 0 16px;
+    font-family: var(--font-family-display);
+    font-size: 27px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+    color: var(--color-rubrication);
+  }
+
+  .uo-mobile-body {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font-family: var(--font-family);
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+}

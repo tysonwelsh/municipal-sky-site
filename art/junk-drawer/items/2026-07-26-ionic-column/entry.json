@@ -1,0 +1,33 @@
+{
+  "schema": 2,
+  "id": "2026-07-26-ionic-column",
+  "title": "Ionic column",
+  "prompt": "a greek column in the ionic style",
+  "created": "2026-07-26",
+  "tags": [],
+  "sizeClass": "l",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 3.0,
+        "geometry": 2.0,
+        "color": 2.0,
+        "composition": 3.0
+      },
+      "transcript": null,
+      "notes": "generated via clean-context subagent; standard technical appendix v1 appended to the prompt. One-shot; output format fully obeyed (bare SVG, no prose). Ink check passed (worst-side margin 2.0%) — no viewBox normalization. Owner-graded 2026-07-26."
+    }
+  ]
+}

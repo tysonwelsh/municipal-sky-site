@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Drone visualization mockup — Library</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    /* Library amber palette to match the actual jukebox library theme */
+    --bg: #0a0805;
+    --panel: #14110a;
+    --panel-deep: #0a0805;
+    --border: #2a2410;
+    --text: #d8b878;
+    --text-dim: #9b7a3a;
+    --text-mute: #5a4520;
+    --accent: #f4c95a;
+    --accent-strong: #ffeab0;
+    --teal: #c89855;     /* secondary accent — warm bronze */
+    --red: #f48199;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  body { padding: 28px 24px 60px; }
+
+  h1 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--accent);
+    margin: 0 0 4px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    margin: 0 0 22px;
+  }
+  .blurb { color: var(--text-dim); max-width: 760px; margin: 0 0 24px; }
+  .blurb em { color: var(--text); font-style: normal; }
+
+  .controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 26px;
+  }
+  .controls label {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  .controls select, .controls input[type="range"] { font-family: "VT323", monospace; font-size: 16px; }
+  .controls select {
+    background: #0a0814;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  .controls input[type="range"] { width: 140px; accent-color: var(--accent); }
+  .controls .value-readout { color: var(--teal); font-size: 14px; min-width: 50px; }
+  .controls .static-label {
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 14px;
+  }
+  .controls .spacer { flex: 1; }
+
+  button {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    background: #110d1f;
+    border: 1px solid var(--text-dim);
+    border-radius: 3px;
+    padding: 6px 14px;
+    cursor: pointer;
+  }
+  button:hover { background: #1a1530; color: var(--accent); }
+  button.primary { color: var(--accent-strong); border-color: var(--accent); }
+  button.danger { color: var(--red); border-color: var(--red); }
+
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px;
+  }
+  .card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+  .card h2 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--accent);
+    margin: 0;
+    letter-spacing: 1px;
+  }
+  .card .tag {
+    color: var(--teal);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+  .card .desc { color: var(--text); font-size: 16px; margin: 0 0 12px; max-width: 760px; }
+  .card .desc .ingredient { color: var(--teal); }
+  .viz-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--panel-deep);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  canvas { display: block; }
+  /* Compact / square viz canvases get fixed sizes; wide ones fill the wrap. */
+  canvas.wide  { width: 100%; height: 100px; }
+  canvas.tall  { width: 100%; height: 140px; }
+  canvas.tall-xl { width: 100%; height: 240px; }
+  canvas.tall-xxl { width: 100%; height: 280px; }
+  canvas.square{ width: 240px; height: 240px; }
+  canvas.large-square { width: 300px; height: 300px; }
+  canvas.wide-rings { width: 100%; height: 300px; }
+
+  .footer-note { margin-top: 28px; color: var(--text-mute); font-size: 14px; max-width: 760px; }
+  .footer-note code { color: var(--teal); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Drone Visualization Mockup</h1>
+<p class="subtitle">~ sound wave + coupled waves + ring + coupled rings + pulse constellation ~</p>
+
+<p class="blurb">
+  Five visualizations for the library drone. The first four are the same slowed-sound-wave concept in four geometries: <em>line (summed)</em>, <em>two lines (per-tone)</em>, <em>closed loop (summed)</em>, and <em>two side-by-side loops (per-tone)</em>. Real partial frequencies (~65–200 Hz) become 1–3 Hz visible at 60× slowdown, matching the slow meditative pace of the drone. <em>Pulse Constellation</em> carries the pitch / harmonic / interval / cycle-progress information on a chromatic circle.
+</p>
+
+<div class="controls">
+  <span class="static-label">Library track</span>
+
+  <label for="time-scale">Time scale</label>
+  <input type="range" id="time-scale" min="0.5" max="3" step="0.1" value="1.6" />
+  <span class="value-readout" id="val-time-scale">1.6×</span>
+
+  <label for="volume">Volume</label>
+  <input type="range" id="volume" min="0" max="100" step="1" value="35" />
+  <span class="value-readout" id="val-volume">35%</span>
+
+  <span class="spacer"></span>
+
+  <button id="play" class="primary">▶ Play</button>
+  <button id="pause">❚❚ Pause</button>
+  <button id="reset" class="danger">↺ Reset</button>
+</div>
+
+<div class="cards">
+
+  <!-- 1. Slowed Sound Wave -->
+  <div class="card">
+    <div class="card-header">
+      <h2>1. Slowed Sound Wave</h2>
+      <span class="tag">single line · the actual wave, slowed</span>
+    </div>
+    <p class="desc">
+      A single line whose shape is the <span class="ingredient">literal sum of slowed-down partial waves</span> — each active partial contributes a sinusoid whose spatial wavelength is proportional to its actual frequency (lowest partial fills the canvas with ~2 wavelengths), and whose temporal amplitude oscillates at the partial's slowed pitch rate (real freq ÷ 30). The line takes the shape of a real sound wave on a string, just slow enough to see. Beats emerge naturally as relative phases drift.
+    </p>
+    <div class="viz-wrap"><canvas id="viz-sound-wave" class="tall-xl"></canvas></div>
+  </div>
+
+  <!-- 2. Coupled Sound Waves -->
+  <div class="card">
+    <div class="card-header">
+      <h2>2. Coupled Sound Waves</h2>
+      <span class="tag">two stacked lines · one per tone</span>
+    </div>
+    <p class="desc">
+      The horizontal counterpart to Coupled Wave Rings — <span class="ingredient">two stacked sound waves</span>, one per drone tone. The top lane carries the lower fundamental + its harmonics + sub-octave; the bottom lane carries the upper fundamental + its harmonics. Each lane is normalized to its own tone's fMin so each fundamental gets ~2 wavelengths across the lane width. The pitch ratio between the two tones is visible as the rate ratio of the two waves' oscillations.
+    </p>
+    <div class="viz-wrap"><canvas id="viz-coupled-waves" class="tall-xxl"></canvas></div>
+  </div>
+
+  <!-- 3. Sound Wave Ring -->
+  <div class="card">
+    <div class="card-header">
+      <h2>3. Sound Wave Ring</h2>
+      <span class="tag">closed loop · sound wave in a circle</span>
+    </div>
+    <p class="desc">
+      The same Slowed Sound Wave wrapped into a <span class="ingredient">closed circle</span>. The base ring has a fixed radius; each angle θ around it carries the summed wave displacement (radially in/out from the ring). Lowest partial fits ~2 wavelengths around the circumference, higher partials add more bumps. For partials in integer ratios (like a perfect 5th, 3:2), the shape repeats around the ring and closes cleanly. Each partial's contribution pulses in amplitude at its slowed pitch rate, so the ring shape <em>breathes</em> in place.
+    </p>
+    <div class="viz-wrap"><canvas id="viz-sound-ring" class="large-square"></canvas></div>
+  </div>
+
+  <!-- 3. Coupled Wave Rings -->
+  <div class="card">
+    <div class="card-header">
+      <h2>4. Coupled Wave Rings</h2>
+      <span class="tag">two concentric rings · one per tone</span>
+    </div>
+    <p class="desc">
+      Two <span class="ingredient">side-by-side closed loops</span> — one per drone tone. The left ring carries the lower fundamental plus its harmonics (and the sub-octave when present); the right ring carries the upper fundamental plus its harmonics. Each ring is normalized to its own tone, so each fundamental fits ~2 wavelengths around its own circumference — the spatial signature of <em>each</em> tone is visible separately rather than summed. Both pulse at their slowed pitch rates. <em>These two rings correspond directly to the two partial nodes on the Pulse Constellation</em> — the same data, just laid out by physics here vs by pitch class there.
+    </p>
+    <div class="viz-wrap"><canvas id="viz-coupled-rings" class="wide-rings"></canvas></div>
+  </div>
+
+
+
+  <!-- 3. Pulse Constellation (Halo + Constellation merged) -->
+  <div class="card">
+    <div class="card-header">
+      <h2>5. Pulse Constellation</h2>
+      <span class="tag">chromatic geometry + pulsing rings</span>
+    </div>
+    <p class="desc">
+      Active partials are placed on a <span class="ingredient">chromatic circle</span> (12 pitch classes labeled C–B around the ring, octave-from-center via radius). Each partial node <span class="ingredient">emits an expanding ring</span> outward — the ring's radius tracks the cycle's progress (0 at note start, full size at fade-out), its opacity follows the envelope. The connecting line between simultaneous partials is <span class="ingredient">colored and thickened by interval consonance</span>; the interval name (P5, P4, m3...) sits at its midpoint. <span class="ingredient">Smaller dots at 3f and 5f harmonic positions</span> show where the triangle overtones land in pitch-class space. Sub-octaves render in deeper amber, with their own smaller ring.
+    </p>
+    <div class="viz-wrap"><canvas id="viz-constellation" class="large-square"></canvas></div>
+  </div>
+
+</div>
+
+<p class="footer-note">
+  Pick a favorite (or two — different visualizations might suit different contexts). The next step is to lift the chosen renderer into <code>prosperos-jukebox-viz.js</code> alongside or replacing the current lens-ribbon drone viz, point it at the live <code>droneListener</code> stream, and re-theme between library/sycorax via the existing <code>TRACK_COLORS</code> palette.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // ----------------------------------------------------------------------
+  // Library drone pair data — pulled from the actual audio engine constants.
+  // ----------------------------------------------------------------------
+  const LIB_DRONE_PAIRS = [
+    [65.41, 98],     // C2, G2 — open fifth
+    [58.27, 87.31],  // Bb1, F2 — warm fourth
+    [73.42, 110],    // D2, A2 — bright fifth
+    [65.41, 82.41],  // C2, Eb2 — minor third
+  ];
+
+  // Library amber palette to match the jukebox.
+  const PALETTE = { fg: '255, 170, 0', sub: '255, 130, 40', bg: '#0a0805' };
+
+  // Frequency range for log-mapping. Library drones are ~58-110 Hz; with
+  // triangle harmonics (3f, 5f...) we need to show up to ~800 Hz.
+  const FREQ_MIN = 22;
+  const FREQ_MAX = 800;
+  // Lowpass filter the library drone applies before output.
+  const LIBRARY_LOWPASS = 180;
+
+  // ----------------------------------------------------------------------
+  // Spectral / interval helpers — used to enrich the visualizations with
+  // additional data dimensions (harmonic content, filter response,
+  // interval relationships, harmonic state).
+  // ----------------------------------------------------------------------
+
+  // First-order lowpass amplitude response at frequency f.
+  function lowpassResponse(f) {
+    const r = f / LIBRARY_LOWPASS;
+    return 1 / Math.sqrt(1 + r * r);
+  }
+
+  // Triangle-wave odd-harmonic series for a given fundamental, attenuated
+  // by the library's 180 Hz lowpass. Returns [{freq, relAmp}, ...] for n=1..9.
+  function libraryTriangleHarmonics(fundamental, maxFreq) {
+    const result = [];
+    for (let n = 1; n <= 9; n += 2) {
+      const f = fundamental * n;
+      if (f > maxFreq) break;
+      const triangleAmp = 1 / (n * n);
+      result.push({ freq: f, relAmp: triangleAmp * lowpassResponse(f) });
+    }
+    return result;
+  }
+
+  function freqToMidi(f) { return 12 * Math.log2(f / 440) + 69; }
+  function pitchClass(f) { return ((freqToMidi(f) % 12) + 12) % 12; }
+  function pitchClassAngle(f) { return (pitchClass(f) / 12) * 2 * Math.PI - Math.PI / 2; }
+
+  // Interval in semitones between two frequencies (mod 12).
+  function intervalSemitones(f1, f2) {
+    const m = Math.abs(freqToMidi(f1) - freqToMidi(f2));
+    return Math.round(m) % 12;
+  }
+
+  // Consonance score (1.0 = most consonant, 0 = least). Used to weight
+  // visual emphasis on the interval relationship.
+  function consonance(semitones) {
+    const C = { 0: 1.0, 7: 0.95, 5: 0.85, 4: 0.75, 3: 0.7,
+                8: 0.55, 9: 0.55, 2: 0.4, 10: 0.4,
+                1: 0.25, 11: 0.25, 6: 0.3 };
+    return C[semitones] != null ? C[semitones] : 0.5;
+  }
+
+  // Human-readable interval name (for the harmonic-state-ish label).
+  const INTERVAL_NAMES = {
+    0: "unison", 1: "m2", 2: "M2", 3: "m3", 4: "M3",
+    5: "P4",     6: "tritone", 7: "P5", 8: "m6", 9: "M6",
+    10: "m7",    11: "M7",
+  };
+
+  // Two partials within this many Hz produce an audible beat (amplitude
+  // modulation at |Δf|). Used by the Vibration Trace.
+  const BEAT_THRESHOLD = 30;
+
+  // Collect every active partial (fundamentals + harmonics + sub-octave)
+  // with its current envelope-weighted amplitude.
+  function collectPartialsAt(now) {
+    const result = [];
+    const active = activeCycles(now);
+    active.forEach(cycle => {
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const normAmp = amp / cycle.peakGain;
+      cycle.frequencies.forEach(freq => {
+        const harmonics = libraryTriangleHarmonics(freq, FREQ_MAX);
+        harmonics.forEach(harm => {
+          result.push({ freq: harm.freq, amp: normAmp * harm.relAmp });
+        });
+      });
+      if (cycle.subFreq) {
+        result.push({
+          freq: cycle.subFreq,
+          amp: normAmp * (cycle.subPeakGain / cycle.peakGain) * 0.85,
+        });
+      }
+    });
+    return result;
+  }
+
+  // ----------------------------------------------------------------------
+  // Simulator state
+  // ----------------------------------------------------------------------
+  let timeScale = 1.6;
+  let isRunning = false;   // start paused so the user clicks Play to enable audio
+  let simTime = 0;
+  let lastFrameTimestamp = null;
+  let nextPairIdx = 0;
+  let nextScheduleTime = 0;
+  const cycles = [];
+
+  // ----------------------------------------------------------------------
+  // Audio engine — replicates the libraryDrone synthesis so the four
+  // visualizations can be compared against the real sound. Each scheduled
+  // cycle creates triangle oscillators + a lowpass filter + an envelope;
+  // optionally a sub-octave sine. masterGain feeds destination.
+  // ----------------------------------------------------------------------
+  let audioCtx = null;
+  let masterGain = null;
+  let masterVolume = 0.35;
+
+  function ensureAudio() {
+    if (audioCtx) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return;
+    }
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = masterVolume;
+    masterGain.connect(audioCtx.destination);
+  }
+
+  // Rebuild master gain to silence all in-flight cycles (used on Reset).
+  function rebuildMaster() {
+    if (!audioCtx) return;
+    try { masterGain.disconnect(); } catch (e) {}
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = masterVolume;
+    masterGain.connect(audioCtx.destination);
+  }
+
+  function scheduleDroneAudio(cycle) {
+    if (!audioCtx || !masterGain) return;
+    const start = audioCtx.currentTime;
+    // Real (wall-clock) durations are sim-time durations divided by timeScale,
+    // so audio and visualization advance together.
+    const realDur     = cycle.duration / timeScale;
+    const realFadeIn  = cycle.fadeIn / timeScale;
+    const realFadeOut = cycle.fadeOut / timeScale;
+
+    cycle.frequencies.forEach(freq => {
+      const osc = audioCtx.createOscillator();
+      const filt = audioCtx.createBiquadFilter();
+      const g = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, start);
+      filt.type = 'lowpass';
+      filt.frequency.setValueAtTime(180, start);
+      osc.connect(filt);
+      filt.connect(g);
+      g.connect(masterGain);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(cycle.peakGain, start + realFadeIn);
+      g.gain.setValueAtTime(cycle.peakGain, start + realDur - realFadeOut);
+      g.gain.linearRampToValueAtTime(0, start + realDur);
+      osc.start(start);
+      osc.stop(start + realDur + 0.1);
+    });
+
+    if (cycle.subFreq) {
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(cycle.subFreq, start);
+      osc.connect(g);
+      g.connect(masterGain);
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(cycle.subPeakGain, start + realFadeIn);
+      g.gain.setValueAtTime(cycle.subPeakGain, start + realDur - realFadeOut);
+      g.gain.linearRampToValueAtTime(0, start + realDur);
+      osc.start(start);
+      osc.stop(start + realDur + 0.1);
+    }
+  }
+
+  function maybeScheduleCycle() {
+    if (simTime < nextScheduleTime) return;
+    const partials = LIB_DRONE_PAIRS[nextPairIdx % LIB_DRONE_PAIRS.length];
+    // Compressed durations so the demo moves at a watchable pace. (Actual
+    // library cycles are 17–23 s; here we use 8–12 sim-seconds.)
+    const duration = 8 + Math.random() * 4;
+    const fadeIn = 2 + Math.random() * 1.2;
+    const fadeOut = 2 + Math.random() * 1.2;
+    const peakGain = 0.09;
+    const hasSub = Math.random() < 0.3;
+    const cycle = {
+      startTime: simTime,
+      duration: duration,
+      fadeIn: fadeIn,
+      fadeOut: fadeOut,
+      peakGain: peakGain,
+      frequencies: partials.slice(),
+      subFreq: hasSub ? partials[0] / 2 : null,
+      subPeakGain: hasSub ? 0.03 : 0,
+    };
+    cycles.push(cycle);
+    // Audio mirrors the same cycle so visualization and sound stay in sync.
+    scheduleDroneAudio(cycle);
+    nextPairIdx += 1;
+    // Overlap: next cycle starts a few seconds before this one ends.
+    const overlap = 2 + Math.random() * 2;
+    nextScheduleTime = simTime + (duration - overlap);
+  }
+
+  function envelopeAt(cycle, t) {
+    const rel = t - cycle.startTime;
+    if (rel < 0 || rel > cycle.duration) return 0;
+    if (rel < cycle.fadeIn) return (rel / cycle.fadeIn) * cycle.peakGain;
+    if (rel > cycle.duration - cycle.fadeOut) {
+      return ((cycle.duration - rel) / cycle.fadeOut) * cycle.peakGain;
+    }
+    return cycle.peakGain;
+  }
+
+  function activeCycles(now) {
+    return cycles.filter(c => now >= c.startTime && now <= c.startTime + c.duration);
+  }
+
+  function freqToX(f, w) {
+    const logMin = Math.log(FREQ_MIN);
+    const logMax = Math.log(FREQ_MAX);
+    const norm = (Math.log(f) - logMin) / (logMax - logMin);
+    return Math.max(0, Math.min(1, norm)) * w;
+  }
+
+  // ----------------------------------------------------------------------
+  // Canvas resize helper (DPR-aware)
+  // ----------------------------------------------------------------------
+  function ensureCanvasSize(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const wantW = Math.floor(rect.width * dpr);
+    const wantH = Math.floor(rect.height * dpr);
+    if (canvas.width !== wantW || canvas.height !== wantH) {
+      canvas.width = wantW;
+      canvas.height = wantH;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { ctx: ctx, w: rect.width, h: rect.height };
+  }
+
+  // ----------------------------------------------------------------------
+  // Literal-vibration constants
+  // ----------------------------------------------------------------------
+  // Real partial frequencies (~65–200 Hz) are slowed by this factor so the
+  // eye can track them at a meditative pace matching the slow drone:
+  // 65 Hz → 1.08 Hz visible, 200 Hz → 3.3 Hz visible.
+  const SLOWDOWN = 60;
+
+  // ----------------------------------------------------------------------
+  // 1. Slowed Sound Wave — single line, sum of slowed partial standing waves
+  // ----------------------------------------------------------------------
+  const soundWaveCanvas = document.getElementById('viz-sound-wave');
+  const SOUND_WAVE_AMP_PX = 55;
+
+  function renderSoundWave(now) {
+    const { ctx, w, h } = ensureCanvasSize(soundWaveCanvas);
+    const pal = PALETTE;
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const cy = h / 2;
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(w, cy);
+    ctx.stroke();
+
+    const partials = collectPartialsAt(now);
+    if (!partials.length) return;
+
+    // Use the lowest active partial to set the spatial scale: ~2 wavelengths
+    // of the lowest pitch fit across the canvas.
+    let fMin = Infinity;
+    for (let i = 0; i < partials.length; i++) {
+      if (partials[i].freq < fMin) fMin = partials[i].freq;
+    }
+    const baseK = (4 * Math.PI) / (w * fMin); // multiply by freq → wavenumber
+
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 1) {
+      let y = 0;
+      for (let i = 0; i < partials.length; i++) {
+        const p = partials[i];
+        const kx = baseK * p.freq * x;
+        const omegaT = (2 * Math.PI * p.freq / SLOWDOWN) * now;
+        y += p.amp * Math.sin(kx) * Math.cos(omegaT);
+      }
+      const yPos = cy - y * SOUND_WAVE_AMP_PX;
+      if (x === 0) ctx.moveTo(x, yPos);
+      else ctx.lineTo(x, yPos);
+    }
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // ----------------------------------------------------------------------
+  // 2. Coupled Sound Waves — two stacked lines, one per drone tone
+  // ----------------------------------------------------------------------
+  // Horizontal analog of Coupled Wave Rings. Each lane is its own slowed
+  // sound wave normalized to its own fMin so the fundamental fits
+  // ~2 wavelengths across the lane.
+  const coupledWavesCanvas = document.getElementById('viz-coupled-waves');
+  const COUPLED_WAVE_AMP_PX = 32;
+
+  // Draws one slowed-wave line for a single set of partials.
+  function drawToneWave(ctx, now, partials, cy, w, ampPx, palFg) {
+    // Faint baseline
+    ctx.strokeStyle = 'rgba(' + palFg + ', 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, cy);
+    ctx.lineTo(w, cy);
+    ctx.stroke();
+
+    if (!partials.length) return;
+    let fMin = Infinity;
+    for (let i = 0; i < partials.length; i++) {
+      if (partials[i].freq < fMin) fMin = partials[i].freq;
+    }
+    // Match the Slowed Sound Wave: ~2 wavelengths of fMin across the width
+    const baseK = (4 * Math.PI) / (w * fMin);
+
+    ctx.beginPath();
+    for (let x = 0; x <= w; x += 1) {
+      let y = 0;
+      for (let i = 0; i < partials.length; i++) {
+        const p = partials[i];
+        const kx = baseK * p.freq * x;
+        const omegaT = (2 * Math.PI * p.freq / SLOWDOWN) * now;
+        y += p.amp * Math.sin(kx) * Math.cos(omegaT);
+      }
+      const yPos = cy - y * ampPx;
+      if (x === 0) ctx.moveTo(x, yPos);
+      else ctx.lineTo(x, yPos);
+    }
+    ctx.strokeStyle = 'rgba(' + palFg + ', 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function renderCoupledWaves(now) {
+    const { ctx, w, h } = ensureCanvasSize(coupledWavesCanvas);
+    const pal = PALETTE;
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Two stacked lanes — top lane = lower tone, bottom lane = upper tone.
+    const cyTop = h * 0.25;
+    const cyBot = h * 0.75;
+    drawToneWave(ctx, now, collectPartialsForTone(now, 0), cyTop, w, COUPLED_WAVE_AMP_PX, pal.fg);
+    drawToneWave(ctx, now, collectPartialsForTone(now, 1), cyBot, w, COUPLED_WAVE_AMP_PX, pal.fg);
+  }
+
+  // ----------------------------------------------------------------------
+  // 3. Sound Wave Ring — same slowed-wave math wrapped into a closed loop
+  // ----------------------------------------------------------------------
+  const soundRingCanvas = document.getElementById('viz-sound-ring');
+  // Quieter amplitude — reads as subtle modulation on a substantial ring,
+  // matching the slow meditative pace of the drone. Still proportional to
+  // the underlying signal.
+  const RING_AMP_PX = 10;
+  const RING_POINTS = 360;
+
+  function renderSoundRing(now) {
+    const { ctx, w, h } = ensureCanvasSize(soundRingCanvas);
+    const pal = PALETTE;
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const cx = w / 2, cy = h / 2;
+    const baseR = Math.min(cx, cy) * 0.6;
+
+    // Faint base circle so the wave's deviation from rest is readable.
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    const partials = collectPartialsAt(now);
+    if (!partials.length) return;
+
+    // Anchor: the lowest active partial gets ~2 wavelengths around the
+    // ring's circumference. Higher partials scale up from there.
+    let fMin = Infinity;
+    for (let i = 0; i < partials.length; i++) {
+      if (partials[i].freq < fMin) fMin = partials[i].freq;
+    }
+
+    ctx.beginPath();
+    for (let i = 0; i <= RING_POINTS; i++) {
+      const theta = (i / RING_POINTS) * 2 * Math.PI;
+      let disp = 0;
+      for (let p = 0; p < partials.length; p++) {
+        const part = partials[p];
+        const k = 2 * part.freq / fMin;
+        const omegaT = (2 * Math.PI * part.freq / SLOWDOWN) * now;
+        disp += part.amp * Math.sin(k * theta) * Math.cos(omegaT);
+      }
+      const r = baseR + disp * RING_AMP_PX;
+      // -π/2 so θ=0 lands at the top of the ring, sweeping clockwise.
+      const x = cx + r * Math.cos(theta - Math.PI / 2);
+      const y = cy + r * Math.sin(theta - Math.PI / 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // ----------------------------------------------------------------------
+  // 4. Coupled Wave Rings — two side-by-side rings, one per drone tone
+  // ----------------------------------------------------------------------
+  const coupledRingsCanvas = document.getElementById('viz-coupled-rings');
+  // Each ring fills half the canvas width. Base radius is a fraction of the
+  // shorter dimension between half-width and full height.
+  const COUPLED_RING_R_FRAC = 0.6;
+  const COUPLED_RING_AMP_PX = 10;
+  const COUPLED_RING_POINTS = 360;
+
+  // Partials from a single cycle's single tone (no summing across cycles).
+  // Used by the Pulse Constellation so each node draws only its own tone.
+  function buildPartialsForCycleTone(cycle, toneIndex, now) {
+    const result = [];
+    const fund = cycle.frequencies[toneIndex];
+    if (fund == null) return result;
+    const amp = envelopeAt(cycle, now);
+    if (amp === 0) return result;
+    const normAmp = amp / cycle.peakGain;
+    const harmonics = libraryTriangleHarmonics(fund, FREQ_MAX);
+    harmonics.forEach(harm => {
+      result.push({ freq: harm.freq, amp: normAmp * harm.relAmp });
+    });
+    if (toneIndex === 0 && cycle.subFreq) {
+      result.push({
+        freq: cycle.subFreq,
+        amp: normAmp * (cycle.subPeakGain / cycle.peakGain) * 0.85,
+      });
+    }
+    return result;
+  }
+
+  // Like collectPartialsAt, but only for the partials derived from one of
+  // the cycle's fundamentals. toneIndex 0 = lower, 1 = upper. Sub-octave
+  // is attached to the lower tone since it's pair[0] / 2.
+  function collectPartialsForTone(now, toneIndex) {
+    const result = [];
+    const active = activeCycles(now);
+    active.forEach(cycle => {
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const normAmp = amp / cycle.peakGain;
+      const fund = cycle.frequencies[toneIndex];
+      if (fund == null) return;
+      const harmonics = libraryTriangleHarmonics(fund, FREQ_MAX);
+      harmonics.forEach(harm => {
+        result.push({ freq: harm.freq, amp: normAmp * harm.relAmp });
+      });
+      if (toneIndex === 0 && cycle.subFreq) {
+        result.push({
+          freq: cycle.subFreq,
+          amp: normAmp * (cycle.subPeakGain / cycle.peakGain) * 0.85,
+        });
+      }
+    });
+    return result;
+  }
+
+  // Draws one ring shape into the current canvas at (cx, cy) with given
+  // base radius. Wavelength count is normalized to this tone's own fMin so
+  // each ring shows ~2 wavelengths of its fundamental + harmonic ripples.
+  function drawToneRing(ctx, now, partials, cx, cy, baseR, ampPx, palFg) {
+    // Faint base circle so the wave's deviation from rest is visible.
+    ctx.strokeStyle = 'rgba(' + palFg + ', 0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseR, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    if (!partials.length) return;
+    let fMin = Infinity;
+    for (let i = 0; i < partials.length; i++) {
+      if (partials[i].freq < fMin) fMin = partials[i].freq;
+    }
+
+    // Spatial wavenumber factor: 3 means the lowest partial (fMin) wraps
+    // ~3 wavelengths around the ring → 6 extrema (3 peaks + 3 troughs).
+    const FUNDAMENTAL_WAVELENGTHS = 3;
+    ctx.beginPath();
+    for (let i = 0; i <= COUPLED_RING_POINTS; i++) {
+      const theta = (i / COUPLED_RING_POINTS) * 2 * Math.PI;
+      let disp = 0;
+      for (let p = 0; p < partials.length; p++) {
+        const part = partials[p];
+        const k = FUNDAMENTAL_WAVELENGTHS * part.freq / fMin;
+        const omegaT = (2 * Math.PI * part.freq / SLOWDOWN) * now;
+        disp += part.amp * Math.sin(k * theta) * Math.cos(omegaT);
+      }
+      const r = baseR + disp * ampPx;
+      const x = cx + r * Math.cos(theta - Math.PI / 2);
+      const y = cy + r * Math.sin(theta - Math.PI / 2);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(' + palFg + ', 0.85)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function renderCoupledRings(now) {
+    const { ctx, w, h } = ensureCanvasSize(coupledRingsCanvas);
+    const pal = PALETTE;
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // Two side-by-side ring centers; each lives in half the canvas width.
+    const cy = h / 2;
+    const cxLeft  = w * 0.25;
+    const cxRight = w * 0.75;
+    // Use the shorter of half-width or half-height as the radius budget.
+    const span = Math.min(w / 4, h / 2);
+    const ringR = span * COUPLED_RING_R_FRAC;
+
+    // Left ring: lower tone + its harmonics + sub-octave
+    drawToneRing(ctx, now, collectPartialsForTone(now, 0), cxLeft,  cy, ringR, COUPLED_RING_AMP_PX, pal.fg);
+    // Right ring: upper tone + its harmonics
+    drawToneRing(ctx, now, collectPartialsForTone(now, 1), cxRight, cy, ringR, COUPLED_RING_AMP_PX, pal.fg);
+  }
+
+  // ----------------------------------------------------------------------
+  // 5. Pulse Constellation — chromatic circle + halo rings per partial
+  // ----------------------------------------------------------------------
+  // Partials sit at their chromatic-circle positions (pitch class around,
+  // octave outward). Each partial node emits an expanding ring whose radius
+  // tracks cycle progress and whose opacity follows the envelope — the
+  // "halo" pulse cycle indicator, now plotted at each node's location.
+  const constellationCanvas = document.getElementById('viz-constellation');
+  const PITCH_LABELS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+  const HALO_MAX_RADIUS = 38;   // pixels — how far rings expand from each node
+
+  function renderConstellation(now) {
+    const { ctx, w, h } = ensureCanvasSize(constellationCanvas);
+    const pal = PALETTE;
+    ctx.fillStyle = pal.bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const cx = w / 2, cy = h / 2;
+    const maxR = Math.min(cx, cy) - 24;
+
+    function octaveOf(f) { return Math.floor(freqToMidi(f) / 12) - 1; }
+    function radiusFor(f) {
+      const norm = Math.max(0, Math.min(1, (octaveOf(f) - 1) / 4));
+      return 0.25 * maxR + norm * 0.75 * maxR;
+    }
+    function nodePos(freq) {
+      const a = pitchClassAngle(freq);
+      const r = radiusFor(freq);
+      return { x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r };
+    }
+
+    // --- Background: chromatic spokes + outer ring + pitch labels ---
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.13)';
+    ctx.lineWidth = 1;
+    ctx.fillStyle = 'rgba(' + pal.fg + ', 0.45)';
+    ctx.font = '12px "VT323", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * 2 * Math.PI - Math.PI / 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + Math.cos(a) * maxR, cy + Math.sin(a) * maxR);
+      ctx.stroke();
+      ctx.fillText(PITCH_LABELS[i],
+                   cx + Math.cos(a) * (maxR + 12),
+                   cy + Math.sin(a) * (maxR + 12));
+    }
+    ctx.strokeStyle = 'rgba(' + pal.fg + ', 0.20)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, maxR, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+
+    const active = activeCycles(now);
+
+    // --- Layer 1: Waveform halo rings emanating from each partial node ---
+    // Each node grows its own closed wave ring. Base radius still tracks
+    // cycle progress (0 → HALO_MAX_RADIUS) like before; the ring's shape
+    // is the slowed-sound-wave of THAT tone's partials. So the lower-tone
+    // node grows a ring shaped by C2 + harmonics + sub-octave (for example),
+    // and the upper-tone node grows a ring shaped by G2 + its harmonics.
+    const HALO_WAVE_AMP_FRAC = 0.2;  // wave displacement as fraction of base radius
+    const HALO_WAVE_POINTS = 180;
+    const HALO_WAVELENGTHS = 3;      // wavelengths of fMin around the ring
+
+    ctx.globalCompositeOperation = 'lighter';
+    active.forEach(cycle => {
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const intensity = amp / cycle.peakGain;
+      // Faster fade-in/out: saturate stroke opacity earlier so the ring
+      // spends more of the cycle at full strength rather than slowly
+      // ramping up and down with the linear envelope.
+      const visualIntensity = Math.min(1, intensity * 1.7);
+      const progress = (now - cycle.startTime) / cycle.duration;
+      const baseRingR = progress * HALO_MAX_RADIUS;
+
+      cycle.frequencies.forEach((freq, toneIdx) => {
+        const n = nodePos(freq);
+        ctx.strokeStyle = 'rgba(' + pal.fg + ', ' + (visualIntensity * 0.85) + ')';
+        ctx.lineWidth = 0.5 + 0.8 * visualIntensity;
+
+        // Build partials for this specific cycle's specific tone.
+        const partials = buildPartialsForCycleTone(cycle, toneIdx, now);
+
+        // Fall back to a plain circle when the ring is too small to carry
+        // wave detail, or no partials are active.
+        if (!partials.length || baseRingR < 1.5) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, baseRingR, 0, Math.PI * 2);
+          ctx.stroke();
+          return;
+        }
+
+        let fMin = Infinity;
+        for (let i = 0; i < partials.length; i++) {
+          if (partials[i].freq < fMin) fMin = partials[i].freq;
+        }
+        const waveAmp = baseRingR * HALO_WAVE_AMP_FRAC;
+
+        ctx.beginPath();
+        for (let i = 0; i <= HALO_WAVE_POINTS; i++) {
+          const theta = (i / HALO_WAVE_POINTS) * 2 * Math.PI;
+          let disp = 0;
+          for (let p = 0; p < partials.length; p++) {
+            const part = partials[p];
+            const k = HALO_WAVELENGTHS * part.freq / fMin;
+            const omegaT = (2 * Math.PI * part.freq / SLOWDOWN) * now;
+            disp += part.amp * Math.sin(k * theta) * Math.cos(omegaT);
+          }
+          const r = baseRingR + disp * waveAmp;
+          const x = n.x + r * Math.cos(theta);
+          const y = n.y + r * Math.sin(theta);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+      });
+      // Sub-octave: its data is already in the lower tone's wave ring;
+      // its node is still drawn separately in Layer 4. No extra halo here.
+    });
+    ctx.globalCompositeOperation = 'source-over';
+
+    // --- Layer 2: Connecting lines, colored by interval consonance ---
+    active.forEach(cycle => {
+      if (cycle.frequencies.length < 2) return;
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const intensity = amp / cycle.peakGain;
+      const sem = intervalSemitones(cycle.frequencies[0], cycle.frequencies[1]);
+      const cons = consonance(sem);
+      // Thinner + more opaque so the line reads as a sharp connection
+      // rather than a soft glow. Consonance still differentiates weight.
+      const alpha = intensity * (0.6 + cons * 0.4);
+      if (alpha < 0.02) return;
+      const a = nodePos(cycle.frequencies[0]);
+      const b = nodePos(cycle.frequencies[1]);
+      ctx.strokeStyle = 'rgba(' + pal.fg + ', ' + alpha + ')';
+      ctx.lineWidth = 0.5 + cons * 1.0;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    });
+
+    // --- Layer 3: Harmonic dots (3f, 5f overtones on the chromatic wheel) ---
+    active.forEach(cycle => {
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const intensity = amp / cycle.peakGain;
+      cycle.frequencies.forEach(freq => {
+        // Use a wider freq ceiling so 3f / 5f land on real positions.
+        const harmonics = libraryTriangleHarmonics(freq, 4000);
+        harmonics.slice(1, 3).forEach(harm => {
+          const p = nodePos(harm.freq);
+          const ha = intensity * harm.relAmp;
+          if (ha < 0.02) return;
+          ctx.fillStyle = 'rgba(' + pal.fg + ', ' + (ha * 0.55) + ')';
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 1.5 + ha * 2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      });
+    });
+
+    // --- Layer 4: Partial nodes (on top of rings) ---
+    active.forEach(cycle => {
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const intensity = amp / cycle.peakGain;
+      cycle.frequencies.forEach(freq => {
+        const p = nodePos(freq);
+        ctx.fillStyle = 'rgba(' + pal.fg + ', ' + intensity + ')';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.5 + intensity * 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      if (cycle.subFreq) {
+        const p = nodePos(cycle.subFreq);
+        const subI = intensity * (cycle.subPeakGain / cycle.peakGain);
+        ctx.fillStyle = 'rgba(' + pal.sub + ', ' + subI + ')';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3 + subI * 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    // --- Layer 5: Interval labels at the midpoint of each pair ---
+    ctx.font = '12px "VT323", monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    active.forEach(cycle => {
+      if (cycle.frequencies.length < 2) return;
+      const amp = envelopeAt(cycle, now);
+      if (amp === 0) return;
+      const intensity = amp / cycle.peakGain;
+      if (intensity < 0.1) return;
+      const sem = intervalSemitones(cycle.frequencies[0], cycle.frequencies[1]);
+      const txt = INTERVAL_NAMES[sem] || '';
+      if (!txt) return;
+      const a = nodePos(cycle.frequencies[0]);
+      const b = nodePos(cycle.frequencies[1]);
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      const padX = 4, padY = 2;
+      const tw = ctx.measureText(txt).width;
+      ctx.fillStyle = 'rgba(10, 8, 5, 0.85)';
+      ctx.fillRect(mx - tw / 2 - padX, my - 8 - padY, tw + padX * 2, 14 + padY * 2);
+      ctx.fillStyle = 'rgba(' + pal.fg + ', ' + (0.55 + intensity * 0.35) + ')';
+      ctx.fillText(txt, mx, my);
+    });
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  // ----------------------------------------------------------------------
+  // Main animation loop
+  // ----------------------------------------------------------------------
+  function pruneCycles() {
+    for (let i = cycles.length - 1; i >= 0; i--) {
+      if (cycles[i].startTime + cycles[i].duration < simTime - 0.5) {
+        cycles.splice(i, 1);
+      }
+    }
+  }
+
+  function tick(timestamp) {
+    if (lastFrameTimestamp == null) lastFrameTimestamp = timestamp;
+    const dtMs = timestamp - lastFrameTimestamp;
+    lastFrameTimestamp = timestamp;
+
+    if (isRunning) {
+      simTime += (dtMs / 1000) * timeScale;
+      maybeScheduleCycle();
+      pruneCycles();
+    }
+
+    renderSoundWave(simTime);
+    renderCoupledWaves(simTime);
+    renderSoundRing(simTime);
+    renderCoupledRings(simTime);
+    renderConstellation(simTime);
+
+    requestAnimationFrame(tick);
+  }
+
+  // ----------------------------------------------------------------------
+  // Wiring
+  // ----------------------------------------------------------------------
+  document.getElementById('play').addEventListener('click', () => {
+    ensureAudio(); // creates audio context on first click; resumes after pause
+    isRunning = true;
+    lastFrameTimestamp = null;
+  });
+  document.getElementById('pause').addEventListener('click', () => {
+    isRunning = false;
+    if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+  });
+  document.getElementById('reset').addEventListener('click', () => {
+    cycles.length = 0;
+    simTime = 0;
+    nextPairIdx = 0;
+    nextScheduleTime = 0;
+    lastFrameTimestamp = null;
+    // Silence in-flight audio by rebuilding the master gain.
+    rebuildMaster();
+  });
+  const tsSlider = document.getElementById('time-scale');
+  const tsReadout = document.getElementById('val-time-scale');
+  tsSlider.addEventListener('input', () => {
+    timeScale = parseFloat(tsSlider.value);
+    tsReadout.textContent = timeScale.toFixed(1) + '×';
+  });
+  const volSlider = document.getElementById('volume');
+  const volReadout = document.getElementById('val-volume');
+  volSlider.addEventListener('input', () => {
+    masterVolume = parseInt(volSlider.value, 10) / 100;
+    volReadout.textContent = volSlider.value + '%';
+    if (masterGain && audioCtx) {
+      masterGain.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
+    }
+  });
+
+  // Animation loop runs from page load (so canvases are not blank), but the
+  // simulator only advances when isRunning is true (set by Play).
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>

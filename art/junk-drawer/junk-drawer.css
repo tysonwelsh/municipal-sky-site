@@ -1,0 +1,3424 @@
+/* ============================================================================
+   THE JUNK DRAWER — Phase 1 drawer + field-notes styles.
+   Promoted from mockups/mockup-2-frame-kit.html (the proven Phase 0 build).
+   Plans: PLAN-FRONTEND §1/§3/§6, PLAN-MOBILE §§1–3; data contract
+   PLAN-BACKEND §7. Site tokens (css/style.css) supply --banner-h (56px /
+   48px ≤768px), --font-mono, --plot-red, --max-narrow, --ink/--paper, the
+   8px --s-* grid and the 768px breakpoint — none are redefined here.
+
+   Safari lessons carried over intact from Phase 0 — do not regress:
+     · the three procedural textures below are data-URI SVGs whose
+       feTurbulence filters use stitchTiles="stitch"; they are copied
+       VERBATIM from the mockup — never regenerate them (a reseed breaks
+       the stitched tile seams)
+     · NO mix-blend-mode ON A FULL-STAGE LAYER: blended layers over per-item
+       filter layers rasterize with visible seam lines in Safari; at these
+       opacities plain alpha is visually identical. (The turn modal's rubber
+       stamps used to be the one small-element exception to this; the owner
+       retired the stamps 2026-08-14, and the file carries no mix-blend-mode
+       at all now — if one comes back, it earns fresh Safari testing, not a
+       free pass from this old exception.)
+     · the stage keeps its own compositing layer (translateZ(0)) so Safari's
+       rasterization of the turbulence-heavy textures stays stable
+     · drag motion is transform-only (--dx/--dy) — layout moves of a
+       filtered element leave stale drop-shadow trails in Blink
+   ========================================================================== */
+
+html { scroll-behavior: smooth; }
+
+/* ---------------- the stage: drawer as object on the page ---------------- */
+.jd-stage {
+  /* thinned ~30% on every side (owner, 2026-08-11): was clamp(28px, 9vw,
+     64px). One variable, four walls — the well, the pile's cqmin item
+     sizing, and the fixed corner seat all follow it on their own. */
+  --wall: clamp(20px, 6.3vw, 45px);
+  /* the pull's seating, as one invariant both breakpoints derive from. The
+     bail is drawn in PLAN VIEW in a 0 0 300 70 viewBox whose y=10 line is the
+     drawer's FACE PLANE: the backplate sits on it, everything below it (bail,
+     posts) hangs past the drawer onto the page. Seating that line on the
+     stage's OUTER bottom edge means dropping the svg box below the edge by
+     its own height minus the face line, which for a pull of width W is
+     (70 - 10)/300 * W = 0.2 * W — independent of the pull's size, so scaling
+     the hardware never unseats it. Anything less and the backplate creeps up
+     onto the inner arris and the bail points into the well instead of out. */
+  --jd-pull-w: 220px;
+  --jd-pull-drop: calc(var(--jd-pull-w) * 0.2);
+  /* the painted drawer frame does not exist yet; the walls are a procedural
+     feTurbulence-wood placeholder served as a data-URI and sliced with real
+     border-image — production art later swaps --jd-frame-url for the painted
+     frame-2000.webp and nothing else changes (PLAN-MOBILE §1) */
+  --jd-frame-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22600%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22gh%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.008%200.11%22%20numOctaves%3D%224%22%20seed%3D%2211%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gh2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%223%22%20seed%3D%2229%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.11%200.008%22%20numOctaves%3D%224%22%20seed%3D%227%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.15%200%200%200%200%200.08%200%200%200%200%200.03%200.9%201.2%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22gv2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.09%200.006%22%20numOctaves%3D%223%22%20seed%3D%2223%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.80%200%200%200%200%200.62%200%200%200%200%200.36%200.8%201.0%200%200%20-1.05%22%2F%3E%3C%2Ffilter%3E%3CclipPath%20id%3D%22ct%22%3E%3Cpolygon%20points%3D%220%2C0%20600%2C0%20450%2C150%20150%2C150%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cl%22%3E%3Cpolygon%20points%3D%220%2C0%20150%2C150%20150%2C450%200%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cb%22%3E%3Cpolygon%20points%3D%220%2C600%20150%2C450%20450%2C450%20600%2C600%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22cr%22%3E%3Cpolygon%20points%3D%22600%2C0%20600%2C600%20450%2C450%20450%2C150%22%2F%3E%3C%2FclipPath%3E%3C%21--%20shaded%20wall%20%28top%20%2F%20left%29%3A%20rim%2C%20bright%20arris%2C%20then%20the%20inner%20face%20falling%20into%20shade%20toward%20the%20floor%20--%3E%3ClinearGradient%20id%3D%22sbt%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22sbl%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.09%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.06%22%2F%3E%3Cstop%20offset%3D%220.46%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.56%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.02%22%2F%3E%3Cstop%20offset%3D%220.585%22%20stop-color%3D%22%23ffe2a8%22%20stop-opacity%3D%220.34%22%2F%3E%3Cstop%20offset%3D%220.62%22%20stop-color%3D%22%23180a03%22%20stop-opacity%3D%220.44%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%230b0401%22%20stop-opacity%3D%220.66%22%2F%3E%3C%2FlinearGradient%3E%3C%21--%20lit%20wall%20%28bottom%20%2F%20right%29%3A%20thin%20crevice%20at%20the%20floor%20line%2C%20then%20a%20warm%20lit%20inner%20face%2C%20bright%20arris%2C%20rim%20--%3E%3ClinearGradient%20id%3D%22lbb%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3ClinearGradient%20id%3D%22lbr%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%220%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.55%22%2F%3E%3Cstop%20offset%3D%220.022%22%20stop-color%3D%22%231c0c03%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.05%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.30%22%2F%3E%3Cstop%20offset%3D%220.34%22%20stop-color%3D%22%23ffd894%22%20stop-opacity%3D%220.20%22%2F%3E%3Cstop%20offset%3D%220.385%22%20stop-color%3D%22%23fff0c8%22%20stop-opacity%3D%220.50%22%2F%3E%3Cstop%20offset%3D%220.43%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220%22%2F%3E%3Cstop%20offset%3D%220.90%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.05%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23000000%22%20stop-opacity%3D%220.30%22%2F%3E%3C%2FlinearGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22600%22%20height%3D%22600%22%20fill%3D%22%237a5228%22%2F%3E%3Cg%20clip-path%3D%22url%28%23ct%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23sbt%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cl%29%22%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23sbl%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cb%29%22%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20filter%3D%22url%28%23gh2%29%22%2F%3E%3Crect%20x%3D%220%22%20y%3D%22450%22%20width%3D%22600%22%20height%3D%22150%22%20fill%3D%22url%28%23lbb%29%22%2F%3E%3C%2Fg%3E%3Cg%20clip-path%3D%22url%28%23cr%29%22%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20filter%3D%22url%28%23gv2%29%22%2F%3E%3Crect%20x%3D%22450%22%20y%3D%220%22%20width%3D%22150%22%20height%3D%22600%22%20fill%3D%22url%28%23lbr%29%22%2F%3E%3C%2Fg%3E%3C%21--%20miter%20seams%2C%20corner%20joints%20--%3E%3Cg%20stroke%3D%22%23241206%22%20stroke-opacity%3D%220.5%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%22150%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%220%22%20x2%3D%22450%22%20y2%3D%22150%22%2F%3E%3Cline%20x1%3D%220%22%20y1%3D%22600%22%20x2%3D%22150%22%20y2%3D%22450%22%2F%3E%3Cline%20x1%3D%22600%22%20y1%3D%22600%22%20x2%3D%22450%22%20y2%3D%22450%22%2F%3E%3C%2Fg%3E%3C%21--%20wall%2Ffloor%20junction%20and%20outer%20contour%20--%3E%3Crect%20x%3D%22148%22%20y%3D%22148%22%20width%3D%22304%22%20height%3D%22304%22%20fill%3D%22none%22%20stroke%3D%22%23170a03%22%20stroke-opacity%3D%220.55%22%20stroke-width%3D%222%22%2F%3E%3Crect%20x%3D%222%22%20y%3D%222%22%20width%3D%22596%22%20height%3D%22596%22%20fill%3D%22none%22%20stroke%3D%22%231c0e06%22%20stroke-opacity%3D%220.8%22%20stroke-width%3D%224%22%2F%3E%3C%2Fsvg%3E");
+  --jd-floor-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22900%22%20height%3D%22640%22%3E%3Cdefs%3E%3Cfilter%20id%3D%22fg%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.006%200.09%22%20numOctaves%3D%224%22%20seed%3D%2219%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.18%200%200%200%200%200.10%200%200%200%200%200.04%200.9%201.1%200%200%20-1.12%22%2F%3E%3C%2Ffilter%3E%3Cfilter%20id%3D%22fg2%22%20x%3D%220%25%22%20y%3D%220%25%22%20width%3D%22100%25%22%20height%3D%22100%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.005%200.07%22%20numOctaves%3D%223%22%20seed%3D%2241%22%2F%3E%3CfeColorMatrix%20type%3D%22matrix%22%20values%3D%220%200%200%200%200.76%200%200%200%200%200.58%200%200%200%200%200.34%200.7%200.9%200%200%20-1.0%22%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%22fl%22%20cx%3D%220.72%22%20cy%3D%220.78%22%20r%3D%220.85%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220.15%22%2F%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%23ffdf9e%22%20stop-opacity%3D%220%22%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22%238d6537%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20filter%3D%22url%28%23fg2%29%22%2F%3E%3Crect%20width%3D%22900%22%20height%3D%22640%22%20fill%3D%22url%28%23fl%29%22%2F%3E%3C%2Fsvg%3E");
+  --jd-craq-url: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22260%22%20height%3D%22260%22%3E%3Cfilter%20id%3D%22c%22%20x%3D%22-20%25%22%20y%3D%22-20%25%22%20width%3D%22140%25%22%20height%3D%22140%25%22%20color-interpolation-filters%3D%22sRGB%22%3E%3CfeTurbulence%20stitchTiles%3D%22stitch%22%20type%3D%22fractalNoise%22%20baseFrequency%3D%220.055%22%20numOctaves%3D%222%22%20seed%3D%228%22%20result%3D%22t%22%2F%3E%3CfeDisplacementMap%20in%3D%22SourceGraphic%22%20in2%3D%22t%22%20scale%3D%2220%22%20xChannelSelector%3D%22R%22%20yChannelSelector%3D%22G%22%2F%3E%3C%2Ffilter%3E%3Cg%20filter%3D%22url%28%23c%29%22%20fill%3D%22none%22%20stroke%3D%22%23241207%22%3E%3Cg%20stroke-width%3D%221%22%20stroke-opacity%3D%220.9%22%3E%3Cpath%20d%3D%22M-15%2016%20Q%2060%2012%20130%2017%20T%20275%2015%22%2F%3E%3Cpath%20d%3D%22M-15%2088%20Q%2070%2092%20140%2087%20T%20275%2090%22%2F%3E%3Cpath%20d%3D%22M-15%20158%20Q%2055%20154%20135%20159%20T%20275%20156%22%2F%3E%3Cpath%20d%3D%22M-15%20232%20Q%2075%20236%20145%20231%20T%20275%20234%22%2F%3E%3Cpath%20d%3D%22M24%20-15%20Q%2020%2070%2025%20130%20T%2022%20275%22%2F%3E%3Cpath%20d%3D%22M103%20-15%20Q%20108%2060%20102%20140%20T%20106%20275%22%2F%3E%3Cpath%20d%3D%22M186%20-15%20Q%20182%2075%20187%20145%20T%20184%20275%22%2F%3E%3C%2Fg%3E%3Cg%20stroke-width%3D%220.7%22%20stroke-opacity%3D%220.7%22%3E%3Cpath%20d%3D%22M-15%2049%20Q%2065%2052%20140%2048%20T%20275%2051%22%2F%3E%3Cpath%20d%3D%22M-15%20121%20Q%2060%20118%20130%20122%20T%20275%20119%22%2F%3E%3Cpath%20d%3D%22M-15%20197%20Q%2070%20200%20150%20196%20T%20275%20199%22%2F%3E%3Cpath%20d%3D%22M61%20-15%20Q%2057%2065%2062%20135%20T%2059%20275%22%2F%3E%3Cpath%20d%3D%22M141%20-15%20Q%20146%2070%20140%20150%20T%20144%20275%22%2F%3E%3Cpath%20d%3D%22M224%20-15%20Q%20220%2065%20226%20140%20T%20222%20275%22%2F%3E%3Cpath%20d%3D%22M30%20200%20L%2085%20248%22%2F%3E%3Cpath%20d%3D%22M180%2040%20L%20235%2095%22%2F%3E%3Cpath%20d%3D%22M120%20150%20L%20160%20195%22%2F%3E%3Cpath%20d%3D%22M210%20170%20L%20250%20130%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  position: relative;
+  /* DEEPER than wide (4:5) but never past the bottom of the window:
+     height-driven — the drawer fills the viewport below the banner + dek
+     (~120px of chrome above it, small gap below) and derives its width
+     from the aspect. On tall monitors it grows until its edges reach the
+     site's widest content column (--max-wide) and caps there. The three
+     wishes (column-width, deeper-than-wide, fits-the-window) can't all
+     bind at once on a normal screen; fits-the-window wins. */
+  height: min(calc(100vh - 90px), calc(var(--max-wide) * 1.25));
+  aspect-ratio: 4 / 5;
+  width: auto;
+  max-width: min(var(--max-wide), 92vw);
+  min-height: 420px;
+  margin: 0.4rem auto 3rem;
+  /* the ↑ back-link and any anchor arrival must land below the fixed banner */
+  scroll-margin-top: calc(var(--banner-h) + 0.5rem);
+  /* own compositing layer: stabilizes Safari's rasterization of the
+     turbulence-heavy textures (tile-seam lines otherwise blink in as
+     items move and regions re-raster) */
+  transform: translateZ(0);
+  /* the drawer sits on the page; its own cast shadow obeys the same
+     upper-left light — offset down-right */
+  box-shadow: 18px 26px 48px -14px rgba(30, 18, 8, 0.5),
+              5px 8px 18px -6px rgba(30, 18, 8, 0.35);
+}
+
+/* ---------------- the frame kit: four wall bands via border-image -------- */
+.jd-frame {
+  position: absolute; inset: 0;
+  border: var(--wall) solid transparent;
+  border-image-source: var(--jd-frame-url);
+  border-image-slice: 150;
+  border-image-repeat: stretch;
+}
+
+/* ---------------- the well: drawer floor; positioning context for items -- */
+/* child of .jd-frame, so inset:0 = the frame's padding box = inside the walls.
+   container-type: size makes the well a CONTAINER: item sizes are in cqmin
+   (1% of the well's min dimension), so an item's footprint scales with the
+   drawer. Placements arrive from the DATA LAYER — each entry.json carries a
+   "placement" {x, y, rotation, scale, z} with x/y as fractions of the well
+   (item centre; PLAN-BACKEND §7) — and are applied inline by the pile
+   loader in junk-drawer.js. */
+.jd-well {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  container-type: size;
+  background: #8d6537 var(--jd-floor-url) center / cover no-repeat;
+}
+
+/* ---------------- the pile: one stacking context for all items ----------- */
+/* every item lives in here. Because .jd-pile is positioned WITH a z-index it
+   opens its own stacking context, so the items' z values — including the
+   drag script's ever-climbing zTop counter and the 999 on hover/held — only
+   ever compete with EACH OTHER and can never climb out past the layers that
+   sit above the pile (wall shade, varnish, vignette) or below it
+   (craquelure). Without this, the first tap on any item lifted it clean out
+   of the drawer's light and aging. */
+.jd-pile {
+  position: absolute; inset: 0;
+  z-index: 2;                  /* above .jd-craquelure (1), below the rest */
+}
+
+/* ---------------- items ------------------------------------------------- */
+/* rotation lives on the inner svg, the drop-shadow on the outer div, so
+   shadows always fall down-right in SCREEN space no matter the rotation */
+.jd-item {
+  position: absolute;
+  width: calc(var(--w) * 1cqmin);
+  /* the picked zoom: how much a tap-selected specimen grows for inspection.
+     JS reads this var to seat the tag/rope clear of the enlarged item. */
+  --pick-scale: 1.6;
+  /* drag moves ride on --dx/--dy (transform-only motion — layout moves of a
+     filtered element leave stale drop-shadow trails in Blink) */
+  transform: translate(-50%, -50%) translate(var(--dx, 0px), var(--dy, 0px));
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62));
+  cursor: grab;
+  transition: filter 0.15s ease-out;      /* lift/settle ease, mouse AND touch */
+  /* item INK owns the gesture (G5 on-device revision #2, 2026-07-26):
+     with pan-y, iOS's own ~8px pan threshold stole taps as micro-scrolls
+     before our slop values were ever consulted. touch-action: none makes
+     touches on painted silhouettes always mean select/drag — the page
+     scrolls from wood, frame, tag, and notes (plenty of surface, since
+     silhouette hit-testing keeps transparent regions pass-through).
+     Bonus: kills double-tap zoom on items. */
+  touch-action: none;
+  -webkit-user-select: none; user-select: none;
+  /* silhouette hit-testing: the wrapper's box (and the svg root's box) must
+     never take the hit — only painted ink may. Shapes re-enable below, and
+     their events still bubble up to this element's listeners. This is also
+     what makes hit areas follow ROTATED geometry correctly. Caveat, accepted:
+     SVG masks aren't consulted (the key's masked clover holes still hit). */
+  pointer-events: none;
+}
+.jd-item svg {
+  display: block; width: 100%; height: auto;
+  transform: rotate(var(--rot));
+  transition: transform 0.15s ease-out;
+  pointer-events: none;
+}
+.jd-item svg * { pointer-events: visiblePainted; }
+/* the LIFT shadow (hover / held). Its blur must stay well under its OFFSET,
+   or the penumbra outruns the displacement and the shadow haloes on every
+   side instead of falling down-right — on a long item rotated near the
+   light axis the offset projects to only a few px across the short ends, so
+   a fat blur pools there as an unanchored blot with no visible caster. 8px
+   blur (~±12px penumbra) against a 16/22 offset keeps it attached and
+   directional. */
+@media (hover: hover) {
+  /* :not(.jd-item--turn) — the turn button is a fixed button, not a draggable
+     specimen (owner, 2026-08-10): no hover lift, no grow, no z jump. Its
+     pointer cursor and idle gleam are its whole hover story. */
+  .jd-item:not(.jd-item--turn):hover {
+    filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+    z-index: 999 !important;
+  }
+  .jd-item:not(.jd-item--turn):hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+}
+/* held while dragging: same lifted grammar, above everything. will-change
+   promotes the moving filtered element to its own compositor layer so the
+   drag repaints cleanly (no shadow trails). */
+.jd-item.is-held {
+  will-change: transform, filter;
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+  cursor: grabbing;
+  z-index: 999 !important;
+}
+.jd-item.is-held svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+
+/* picked = SELECTED: the lift persists for as long as the tag is attached
+   (not a pulse — the object stays raised off the pile while inspected),
+   and the specimen zooms up to --pick-scale so it can actually be SEEN
+   (owner request, 2026-08-09). The zoom is transform-only: layout, drop
+   clamps, and neighbours are untouched; it may overhang the well edge.
+   A picked specimen also STANDS UPRIGHT (owner request, 2026-08-09): the
+   scatter angle is how the thing happens to be LYING in the drawer, and
+   picking it up is precisely the act of turning it the right way round —
+   so it shows at 0deg, exactly as the SVG reads in an editor, and drops
+   back to its scattered angle on dismissal. The rotate() function is kept
+   with an explicit 0deg rather than dropped: transform interpolates
+   function-by-function, so both directions animate on the 0.15s ease below
+   only while the same function list is present on either side.
+   Rule ORDER is load-bearing — :hover svg, .is-held svg and this rule all
+   score (0,2,1), so the last one written wins. This must stay last, or a
+   hovered/dragged picked item would snap back to its scatter angle. */
+.jd-item.is-picked {
+  filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
+}
+.jd-item.is-picked svg { transform: rotate(0deg) scale(var(--pick-scale)); }
+
+/* while something is picked, the REST of the pile falls back into shade —
+   selection as stage light. Held/hovered items step back out of the dim
+   (hover exempt via :not(:hover); a drag exempt via :not(.is-held)). */
+.jd-well.jd-has-pick .jd-item:not(.is-picked):not(.is-held):not(:hover) {
+  filter: drop-shadow(3px 4px 3px rgba(22, 11, 4, 0.62))
+          brightness(0.68) saturate(0.8);
+}
+
+/* ---------------- the item tag ------------------------------------------
+   The manila specimen tag (owner design, mockup-6): two lines, tethered to
+   the picked item by a red elastic through the grommet on its left end.
+   Seated just below the item (above it when the drawer floor runs out),
+   persists until dismissed. Since 2026-08-09 it is also DRAGGABLE while
+   selected — press the manila and it moves, the elastic stretching after
+   it; the two buttons are exempt so they still click. */
+.jd-itemtag {
+  position: absolute;
+  z-index: 70;              /* sandwich: tag 70 < elastic 71 < picked item 72 */
+  cursor: grab;
+  /* the whole tag owns its touches: a drag across the manila must move the
+     tag, never pan the page (same reasoning as item ink above). The buttons
+     are small and there is plenty of wood, frame, and notes left to scroll
+     from, so no exemption is carved out for them. */
+  touch-action: none;
+  /* PRESSED & FILED (round 12, mockup-12a, owner pick 2026-08-12): manila
+     with a whisper of feTurbulence paper grain (stitchTiles='stitch' — the
+     Safari rule above applies; never reseed) and a 178deg top-edge sheen */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='p' x='0' y='0' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.55' numOctaves='2' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.29 0 0 0 0 0.21 0 0 0 0 0.09 0 0 0 0.55 -0.42'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23p)'/%3E%3C/svg%3E"),
+    linear-gradient(178deg, rgba(255, 250, 228, 0.55) 0%, rgba(255, 250, 228, 0) 22%,
+                    rgba(0, 0, 0, 0) 78%, rgba(96, 68, 26, 0.10) 100%),
+    #e8d9a8;
+  color: #3a2a12;
+  padding: 0.75rem 0.95rem 0.8rem 2rem;   /* extra room right of the grommet */
+  /* FIXED width (owner request, 2026-07-30): the tag used to be sized by its
+     longest line, so a long specimen name stretched it until it pushed past
+     the well's edges on a phone. The width is set here instead and the NAME
+     wraps inside it (two lines, reserved below) — the tag grows downward, not
+     sideways. max-width is the hard guarantee: whatever the tier, the tag can
+     never be wider than the well it is clamped into by pick(). */
+  width: var(--jd-tag-w, 20.5rem);
+  max-width: calc(100% - 16px);
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  /* the clip-path polygon keeps the full right edge, so the radius survives
+     it while the point stays sharp */
+  border-radius: 0 7px 7px 0;
+  filter: drop-shadow(1px 2px 2px rgba(22, 11, 4, 0.38))
+          drop-shadow(4px 7px 10px rgba(22, 11, 4, 0.26));
+  border: 1px solid rgba(74, 53, 18, 0.4);
+  box-shadow: inset 0 0 0 1px rgba(255, 249, 226, 0.28);   /* pressed edge */
+  font-family: var(--font-mono);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease-out;
+}
+.jd-itemtag.is-on { opacity: 1; pointer-events: auto; }
+/* being dragged: the tag moves via left/top (it is not on the items'
+   transform-only path), so it gets promoted to its own compositor layer for
+   the duration — a drop-shadowed element moved by layout leaves stale shadow
+   trails in Blink otherwise, the same failure the item drag documents. */
+.jd-itemtag.is-dragging {
+  cursor: grabbing;
+  will-change: left, top, filter;
+  transition: none;
+}
+.jd-itemtag::before {         /* the grommet, turned metal: dark bore, washer
+                                 seated on 2px of paper. Centre ~10.5px from
+                                 the left edge — the rope's tag endpoint in
+                                 pick() is left+10, close enough to agree. */
+  content: ""; position: absolute; left: 5px; top: 50%;
+  width: 11px; height: 11px; transform: translateY(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 50% 44%,
+    #4a3a1c 0 21%, #b39a5e 30%, #8a713c 52%, #c9ad67 72%, #75592a 100%);
+  box-shadow: 0 1px 1px rgba(58, 42, 18, 0.45),
+              0 0 0 2px rgba(232, 217, 168, 0.9);
+}
+/* register 1 — the specimen NAME: the one part that can outgrow the tag, so
+   it is the one part allowed to wrap. Two lines are RESERVED (min-height)
+   whether the name needs them or not, so tags keep a steady height from item
+   to item, and clamped at two so a runaway title can't grow the tag without
+   limit. A hairline rule closes the register. */
+.jd-itemtag .name {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; line-height: 1.4;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.8em;      /* = two lines at this line-height */
+  padding-bottom: 0.4rem; margin-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(74, 53, 18, 0.28);
+}
+/* register 2 — the filing grid: MODEL and GRADE share one fixed label
+   column so the values start on a common left edge. The model value is the
+   one that may wrap ("Claude Sonnet 5 → Opus 5 refine" overflows a phone
+   tag otherwise) — pick() measures the tag's height at runtime, so a taller
+   tag seats and ropes correctly on its own. */
+.jd-itemtag .rows { display: flex; flex-direction: column; gap: 0.22rem; }
+.jd-itemtag .row  { display: flex; align-items: baseline; min-width: 0; }
+.jd-itemtag .lab {
+  flex: 0 0 3.4rem;
+  font-size: 0.5rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: rgba(58, 42, 18, 0.62); line-height: 1.5;
+}
+.jd-itemtag .val {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.62rem; letter-spacing: 0.05em; line-height: 1.5;
+  text-transform: uppercase; overflow-wrap: break-word;
+}
+.jd-itemtag .val.g { font-weight: 700; letter-spacing: 0.12em; flex: 0 0 auto; }
+.jd-itemtag .val.g.none { color: rgba(58, 42, 18, 0.62); }
+.jd-itemtag .row--grade { align-items: center; }
+.jd-itemtag .row--grade svg {
+  margin-left: auto; overflow: visible; display: block;
+  margin-right: -11px;   /* the gauge svg carries 11px of empty right padding
+                            (viewBox -9 0 88, bar ends at x=68) — pull it out
+                            so the BAR, not the box, aligns flush right over
+                            the button bar's edge */
+}
+/* register 3 — the button bar: one line, equal flex halves (a download-only
+   tag is the same bar with the lone button taking the full width — no
+   special case). nowrap holds each label to one line at both widths. */
+.jd-itemtag .btns {
+  display: flex; gap: 0.45rem;
+  margin-top: 0.55rem; padding-top: 0.55rem;
+  border-top: 1px solid rgba(74, 53, 18, 0.28);
+}
+.jd-itemtag .btn {
+  flex: 1 1 0; min-width: 0;
+  font-size: 0.55rem; letter-spacing: 0.1em; line-height: 1;
+  color: #3a2a12; text-decoration: none; text-align: center;
+  white-space: nowrap;
+  border: 1px solid rgba(74, 53, 18, 0.55); border-radius: 3px;
+  padding: 0.44rem 0.2rem 0.4rem;
+  background: rgba(255, 252, 240, 0.3);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;          /* the two links stay links, not drag handles */
+}
+.jd-itemtag .btn:hover { background: rgba(255, 252, 240, 0.65); }
+.jd-itemtag .btn:active { box-shadow: none; transform: translateY(1px); }
+
+/* the red elastic: drawn across the whole well, above items, under the tag.
+   One <path> rewritten per frame by the Verlet chain in junk-drawer.js — the
+   overlay geometry below (full well, no viewBox, so user units are CSS px)
+   is what lets the simulation work directly in well coordinates. */
+.jd-rope {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  z-index: 71; pointer-events: none;   /* over the tag, under the object */
+  opacity: 0; transition: opacity 0.16s ease-out;
+}
+.jd-rope.is-on { opacity: 1; }
+
+/* ---------------- placements ----------------------------------------------
+   No per-item CSS: every placement (left/top as % of the well, --rot,
+   z-index, --w) is applied INLINE by the pile loader. --w is the WIDTH the
+   loader computed under area normalization (tier box² footprint ÷ the
+   artwork's aspect, × sizeScale × id-hash jitter — see SIZE in
+   junk-drawer.js); this stylesheet just multiplies it onto the cqmin ruler. */
+
+/* fallback note: shown in the well when data.php is unreachable */
+.jd-fallback {
+  position: absolute; left: 50%; top: 50%; z-index: 2;
+  transform: translate(-50%, -50%);
+  max-width: 38ch; padding: 0.5em 1em;
+  font-family: var(--font-mono); font-size: 0.66rem; line-height: 1.8;
+  letter-spacing: 0.06em; text-align: center;
+  color: rgba(52, 33, 12, 0.78);
+}
+.jd-fallback code { font-family: inherit; color: rgba(38, 23, 8, 0.85); }
+.jd-fallback a { color: rgba(38, 23, 8, 0.85); }
+
+/* ---------------- lighting stack over the items -------------------------- */
+/* wall shade cast onto the floor AND onto items lying near the top/left
+   walls (the walls rise toward the viewer; these two face away from the
+   light); only a thin crevice line bottom/right */
+.jd-wallshade {
+  position: absolute; inset: 0; z-index: 50; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(24,12,4,0.50) 0, rgba(24,12,4,0.22) 26px, rgba(24,12,4,0) 80px),
+    linear-gradient(90deg,  rgba(24,12,4,0.46) 0, rgba(24,12,4,0.20) 24px, rgba(24,12,4,0) 72px),
+    linear-gradient(0deg,   rgba(24,12,4,0.07) 0, rgba(24,12,4,0) 22px),
+    linear-gradient(270deg, rgba(24,12,4,0.06) 0, rgba(24,12,4,0) 20px);
+}
+/* craquelure = the DRAWER's aging. It runs over the frame bands and the well
+   floor and stops there: z-index 1 puts it UNDER .jd-pile, so no crack ever
+   crosses an item (G2 resolved — the items are objects IN the drawer, not
+   painted into it). Item drop-shadows therefore fall ON the cracked wood and
+   dim the cracks beneath them, which is what we want. The G2 strength toggle
+   was a dev-only affordance: production fixes the "subtle" value. */
+.jd-craquelure {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background-image: var(--jd-craq-url);
+  background-repeat: repeat;
+  /* tile scales with the viewport so crack spacing reads the same on a
+     320px phone well as on desktop (fixed 260px = scribble-scale there) */
+  background-size: clamp(160px, 24vmin, 260px) auto;
+  /* NO mix-blend-mode: blended full-stage layers over per-item filter layers
+     produce rasterization-seam lines in Safari (visible as faint horizontal/
+     vertical breaks at item layer bounds, blinking on hover re-compositing).
+     At these opacities plain alpha is visually identical. */
+  opacity: 0.08;                                   /* G2: subtle, fixed */
+}
+/* varnish sheen: soft diagonal highlight, upper-left biased */
+.jd-varnish {
+  position: absolute; inset: 0; z-index: 61; pointer-events: none;
+  background: linear-gradient(133deg,
+    rgba(255, 246, 214, 0.55) 0%,
+    rgba(255, 246, 214, 0.12) 32%,
+    rgba(255, 255, 255, 0) 56%);
+  /* no mix-blend-mode — see craquelure note (Safari seam bug); plain alpha
+     at this opacity reads the same */
+  opacity: 0.13;
+}
+/* vignette, over everything, centre biased toward the light */
+.jd-vignette {
+  position: absolute; inset: 0; z-index: 62; pointer-events: none;
+  background: radial-gradient(115% 115% at 42% 40%,
+    rgba(0, 0, 0, 0) 55%, rgba(20, 10, 4, 0.30) 100%);
+}
+
+/* ---------------- the FIELD NOTES manila tag on the bottom band ---------- */
+/* the tag hangs from a brass tack pinned into the bottom rim: a short string
+   runs tack → grommet, so the tag's attachment to the drawer is stated */
+/* the pull: plan-view victorian bail (owner's pick, mockup-5), centered on
+   the front band, face-plane line (svg y=10) seated on the stage's outer
+   edge so the hardware overhangs onto the page. Decorative only. */
+.jd-pull {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--jd-pull-drop) * -1);   /* face line on the outer edge */
+  width: var(--jd-pull-w);
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 55;
+}
+
+
+/* ---------------- TAKE A TURN: the credit button in the pile -------------
+   Candidate 9a won mockup round 9 (PLAN-TURN-OBJECT, 2026-08-11): the
+   doorbell — which round 8 planted as an object hiding among the junk —
+   camouflaged TOO well, so the trigger is now a BACKLIT ARCADE CREDIT
+   BUTTON, blue lens, PUSH FOR JUNK printed on the glass. The premise
+   inverted: it is the only light-emitting thing in the drawer, and the
+   pool of lens-light it throws on the wood is what says "pressable" before
+   the words do.
+
+   The object is still a .jd-item — width, silhouette hit-testing, the
+   fixed corner seat, and the dim while something else is picked all apply
+   unchanged. What this block adds is only what lit hardware does that a
+   specimen doesn't.
+
+   The glowing/moving parts are named groups inside turn-object.svg
+   (.cw-halo, .cw-bloom, .cw-lens, .cw-glowcore, .cw-flash); the asset
+   carries the structure and this stylesheet carries every frame of the
+   motion. That division is deliberate: a SMIL animation baked into the
+   asset could not be switched off for prefers-reduced-motion, and CSS
+   can. */
+.jd-item--turn {
+  /* pressable, and ONLY pressable — fixed hardware since 2026-08-10, so the
+     pile's `grab` cursor would be a lie here */
+  cursor: pointer;
+  /* THE TOUCH FLOOR — the one size rule a specimen doesn't get, because this
+     is the only way to take a turn and the retired corner button held ≥44px
+     at every viewport by construction (min-height: max(44px, …)).
+     Items are sized in cqmin, so a SHORT well shrinks the whole pile, and the
+     ×1.2 small-well band that would compensate is keyed to `max-width: 768px`
+     — which a phone in LANDSCAPE is not (812×375, 932×430 …) while its well
+     is at its 300px minimum. Measured there before this rule: 32.5 × 40.6px.
+     A floor, not another size band, because a band multiplies whatever cqmin
+     happened to produce (×1.2 of 32.5 is still only 39px) while a floor
+     states the guarantee itself. 53px, NOT the bare 44px the doorbell held:
+     the credit button's viewBox spends its outer 17% on the light halo, and
+     light is not hardware (the halo is pointer-events:none below) — the
+     solid housing spans 83% of the box, so 53px of element is 44 × 55px of
+     genuinely pressable plastic. On any well tall enough for the cqmin size
+     to clear 53px this never fires, and the button measures exactly like
+     the medium specimen it is. */
+  min-width: 53px;
+}
+/* NO WRAPPER SHADOW ON LIT HARDWARE (owner glow boost, 2026-08-11). The
+   shared .jd-item drop-shadow filter reads the WHOLE alpha, halo included —
+   at the boosted halo opacities it re-cast the pool of light as a dark
+   ghost offset down-right, the exact "light source with a dark aura" the 9a
+   mockup's notes flagged as the one read this design cannot afford. The
+   asset bakes its own contact shadow under the housing, so hardware still
+   sits ON the floor rather than floating. */
+.jd-item--turn { filter: none; }
+
+/* THE PRESS NEEDS ROOM. An <svg> clips at its viewport by default, and this
+   asset's halo ink deliberately runs to within 2/240 of the viewBox edge —
+   while jdCreditSink overshoots to scale(1.02, 1.03) on the way back up.
+   The lens itself sits deep inside the box so nothing SHOULD clip, but the
+   doorbell taught the lesson the hard way (its buzz flattened against the
+   viewport wall for the first ~150ms of every press), and the wrapper
+   already spills a drop-shadow well past this box, so nothing downstream is
+   relying on the SVG to clip. Cheap insurance, kept. */
+.jd-item--turn svg { overflow: visible; }
+/* THE KEYBOARD VISITOR'S FOCUS STATE — THE LAMP, NOT A BOX (owner,
+   2026-08-15: "I don't want the boundaries of that box to ever be visible").
+
+   What was here: a 3px dashed rect at inset -9px on the wrapper. The wrapper
+   is the whole reserved seat, and this asset spends its outer 17% on halo —
+   light, not hardware — so the rect landed a long way off the plastic and
+   read as exactly what the owner called it, the boundary of the space the
+   button occupies rather than an outline of the button. Escape out of the
+   prompt card and there it was: the modal hands focus back to its opener,
+   .is-tap was cleared by the blur on the way in, and the box drew.
+
+   The rect is gone outright — no pseudo-element, no outline, nothing that
+   can paint that rectangle in any state. But focus must still be VISIBLE
+   for anyone arriving by Tab, so it moved onto the object: the lamp holds
+   at its peak (the idle breath stops, the veil lifts, the backlight goes to
+   full) and blooms a little warm light off the plate. That is a state this
+   hardware already knows how to be in, it is the shape of the object rather
+   than of its seat, and no rectangle exists anywhere in it.
+
+   :not(.is-tap) is still the pointer exemption: the wrapper is
+   pointer-events:none (the ink takes the hit), so a press has to focus the
+   object explicitly, and Chromium counts a programmatic focus as
+   focus-visible. The flag says "this focus came from a finger" — and it now
+   SURVIVES THE MODAL (see press() in junk-drawer.js), so a pointer visitor
+   who opens the card and leaves it, by any exit, gets no focus state at all.
+   One Tab clears the flag and the lamp answers the keyboard again.
+
+   Every rule below also says :not(.is-pressed). A press outranks a focus
+   state — it is the newer, louder event and it has its own choreography —
+   but these selectors are the more specific ones, so without that guard a
+   keyboard press (Enter on a focused object, which by definition is not
+   .is-tap) would have its sink and flare overruled by the state it is
+   supposed to interrupt. */
+.jd-item--turn:focus-visible { outline: none; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-glowcore { opacity: 1; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-dim      { opacity: 0; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-flash    { opacity: 0.34; }
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-halo,
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-bloom {
+  opacity: 1; transform: scale(1.09);
+}
+/* the bloom is drawn from the artwork's own alpha, so it is the object's
+   silhouette in warm light — never a frame around it. The wrapper carries
+   filter:none on this item (see above), so this is the only filter in play
+   and it exists only while focused. */
+.jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) svg {
+  filter: drop-shadow(0 0 5px rgba(255, 214, 130, 0.95))
+          drop-shadow(0 0 12px rgba(255, 198, 92, 0.55));
+}
+/* THE ONE EXCEPTION, and it is not the owner's screen. Under an OS high-
+   contrast theme the browser repaints the artwork in system colours — the
+   lamp, the halo, the bloom and this filter all flatten — so the focus
+   state above would leave nothing at all on the only control in the drawer.
+   A ring is the only thing that survives forced colours, so one is drawn
+   HERE and nowhere else: it cannot appear unless the visitor has turned
+   high contrast on at the operating system, by which point the drawer is
+   not the drawer any more. */
+@media (forced-colors: active) {
+  .jd-item--turn:focus-visible:not(.is-tap) {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+/* …and .is-tap has to say `none` out loud, not merely decline to draw: the
+   browser's OWN focus ring is what shows otherwise (measured: `outline: auto
+   1px` around the plate on a mouse press), which is the very thing the flag
+   exists to keep off a finger-pressed object. */
+.jd-item--turn.is-tap:focus,
+.jd-item--turn.is-tap:focus-visible { outline: none; }
+/* the parts' own axes, in the asset's user units (viewBox 0 0 240 300) */
+.jd-item--turn .cw-lens,
+.jd-item--turn .cw-glowcore,
+.jd-item--turn .cw-halo,
+.jd-item--turn .cw-bloom {
+  transform-box: view-box;
+  transform-origin: 120px 150px;   /* the lens well's centre */
+}
+/* pointer-events must live HERE, not as an attribute in the SVG: the generic
+   .jd-item svg * { pointer-events: visiblePainted } rule beats a presentation
+   attribute, so only a CSS rule actually keeps these un-hittable. The halo
+   and bloom are LIGHT, not hardware — a press landing on the glow two
+   housing-widths from the plastic would read as a haunted drawer — and the
+   flash is the same invisible-overlay case the doorbell's rim flash was.
+   The touch-floor math above leans on this: pressable = the 83% housing. */
+.jd-item--turn .cw-halo,
+.jd-item--turn .cw-bloom,
+.jd-item--turn .cw-dim,
+.jd-item--turn .cw-flash { pointer-events: none; }
+
+/* THE BASE STATE IS THE REDUCED STATE (the 9a mockup's discipline, inverted
+   from the doorbell's disable-under-reduce block): a static lit button, and
+   a press that is a DISCRETE depressed pose — the lens one step down in its
+   well, backlight and halo held bright, flash up — held ~320ms by the JS,
+   then dropped. Motion is added back only inside no-preference, so
+   prefers-reduced-motion needs no undo rules. Feedback survives either way:
+   this is the gesture that opens a modal, and it must read. */
+/* opacities raised 2026-08-11 (owner: "make it clear that it's glowing"),
+   in step with the brighter halo stops in the asset itself */
+.jd-item--turn .cw-halo     { opacity: 1; }
+.jd-item--turn .cw-glowcore { opacity: 0.75; }
+.jd-item--turn .cw-bloom    { opacity: 0.85; }
+/* the breathing shade stays OFF at rest: the reduced-motion state is the
+   fully lit button, and the veil exists only as the idle pulse's dark half
+   (see jdCreditPulseDim below — the lens ramp tops out near white, so the
+   glowcore's surge alone moves pixels single-digit RGB points; the visible
+   breath is this veil lifting and settling over the lit ground) */
+.jd-item--turn .cw-dim      { opacity: 0; }
+.jd-item--turn .cw-flash    { opacity: 0; }
+.jd-item--turn.is-pressed .cw-lens     { transform: scale(0.93, 0.9); }
+.jd-item--turn.is-pressed .cw-flash    { opacity: 0.5; }
+.jd-item--turn.is-pressed .cw-glowcore { opacity: 1; }
+.jd-item--turn.is-pressed .cw-dim      { opacity: 0; }
+.jd-item--turn.is-pressed .cw-halo,
+.jd-item--turn.is-pressed .cw-bloom    { opacity: 1; }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* THE IDLE TELL (§1's discoverability guardrail) — a continuous slow PULSE
+     (owner revision 2026-08-11, replacing the once-per-8s breath): the glow
+     swells and settles on a gentle ~3.6s sine so the button always reads as
+     live hardware, but the amplitude stays small and the cycle slow enough
+     that the corner never becomes a slot machine. */
+  .jd-item--turn .cw-glowcore { animation: jdCreditPulse 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-halo     { animation: jdCreditPulseHalo 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-bloom    { animation: jdCreditPulseBloom 3.6s ease-in-out infinite; }
+  .jd-item--turn .cw-dim      { animation: jdCreditPulseDim 3.6s ease-in-out infinite; }
+  /* THE PRESS — the lens travels DOWN a step into the housing: it shrinks
+     with a slight squash (the dark well mouth widening around it is what
+     makes the sink read as travel rather than wobble), holds a beat at the
+     bottom of the stroke, then springs back with a small overshoot; the
+     backlight flares white-hot and the halo surges off the plate. */
+  .jd-item--turn.is-pressed .cw-lens {
+    transform: none;
+    animation: jdCreditSink 420ms cubic-bezier(0.22, 0.9, 0.24, 1);
+  }
+  .jd-item--turn.is-pressed .cw-flash {
+    opacity: 0;
+    animation: jdCreditFlash 420ms ease-out;
+  }
+  .jd-item--turn.is-pressed .cw-glowcore {
+    opacity: 0.75;
+    animation: jdCreditFlare 420ms ease-out;
+  }
+  .jd-item--turn.is-pressed .cw-halo,
+  .jd-item--turn.is-pressed .cw-bloom {
+    animation: jdCreditSurge 460ms ease-out;
+  }
+  /* the veil must not mute the press: whatever phase the breath was in,
+     a press pins it clear so the flare reads at full brightness */
+  .jd-item--turn.is-pressed .cw-dim {
+    opacity: 0;
+    animation: none;
+  }
+  /* FOCUS HOLDS THE BREATH. The idle pulse is an animation, and an animation
+     beats any static declaration however specific, so the focus state above
+     would be invisible here without this — the lamp would go on breathing
+     straight through it. Stopping the cycle is also half of what makes the
+     state read: a steadily-lit button next to a slowly-breathing one is a
+     difference the eye catches without a rectangle being involved. */
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-glowcore,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-halo,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-bloom,
+  .jd-item--turn:focus-visible:not(.is-tap):not(.is-pressed) .cw-dim {
+    animation: none;
+  }
+}
+/* amplitude widened + a size breath on the pool (owner, 2026-08-11: "make
+   the pulsing a bit more pronounced — I'm not really seeing it"). The
+   radius change is what the eye actually catches; the cycle stays slow. */
+@keyframes jdCreditPulse {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+/* the INNER pulse's visible half (2026-08-11): the glowcore swing above is
+   near-invisible on its own — the lens gradient's upper stops sit a few RGB
+   points from white, so compositing the white core at 0.5 vs 1.0 alpha moves
+   the lit ground single digits (measured ~8–16 luminance points, all of it
+   crammed into the red channel). Instead of brightening a ceiling, the
+   trough DARKENS: the .cw-dim veil (the lens's own #0b539e, under the ink)
+   settles in as the glow ebbs and lifts clear at the peak, so the whole lit
+   ground breathes while the printed silhouette keeps its contrast. Counter-
+   phase to jdCreditPulse: dim is 0 exactly when glow is 1. */
+@keyframes jdCreditPulseDim {
+  0%, 100% { opacity: 0.3; }
+  50%      { opacity: 0; }
+}
+@keyframes jdCreditPulseHalo {
+  0%, 100% { opacity: 0.65; transform: scale(0.97); }
+  50%      { opacity: 1;    transform: scale(1.04); }
+}
+@keyframes jdCreditPulseBloom {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+@keyframes jdCreditSink {
+  0%   { transform: scale(1); }
+  16%  { transform: scale(0.925, 0.895); }
+  44%  { transform: scale(0.935, 0.915); }
+  74%  { transform: scale(1.02, 1.03); }
+  100% { transform: scale(1); }
+}
+@keyframes jdCreditFlash {
+  0%   { opacity: 0; }
+  12%  { opacity: 0.95; }
+  55%  { opacity: 0.3; }
+  100% { opacity: 0; }
+}
+@keyframes jdCreditFlare {
+  0%   { opacity: 0.75; }
+  12%  { opacity: 1; }
+  100% { opacity: 0.75; }
+}
+/* with the halo now fully lit at rest, the press surge is a small scale POP
+   of the light pool instead of an opacity step it no longer has room for */
+@keyframes jdCreditSurge {
+  0%   { transform: scale(1); }
+  14%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* ---------------- arrange mode (?arrange=1, dev affordance) --------------- */
+.jd-arrange {
+  margin: -2.2rem auto 2.2rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-align: center;
+  color: var(--ink-mute);
+}
+#copy-layout { color: var(--plot-red); }
+
+/* ======================= below the drawer: field notes ====================
+   One narrow column in the site voice: Courier Prime chrome, hairline rules,
+   --plot-red reserved for the grade marks (PLAN-MOBILE §3). */
+
+/* the fixed banner would otherwise cover the anchor target on arrival */
+#notes { scroll-margin-top: calc(var(--banner-h) + 0.75rem); }
+
+.jd-notes {
+  max-width: var(--max-narrow);
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-2) var(--s-6);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-loose);
+  color: var(--ink);
+}
+.jd-notes h1,
+.jd-notes h2,
+.jd-notes h3 {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.jd-notes h2 {
+  font-size: var(--fs-sm);
+  letter-spacing: 0.24em;
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: var(--s-1);
+  margin: var(--s-5) 0 var(--s-2);
+}
+.jd-notes h3 {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.2em;
+  margin: var(--s-3) 0 var(--s-2);
+}
+/* the site's global p rule sets Spectral at --fs-base; the notes column is
+   mono throughout (the field-notes voice — style.css chrome tokens) */
+.jd-notes p {
+  margin: 0 0 var(--s-2);
+  font-family: inherit;
+  font-size: inherit;
+}
+.jd-notes code {
+  font-family: inherit;
+  font-size: inherit;
+  background: var(--paper-pure);
+  padding: 0 0.25em;
+}
+
+/* the wall label */
+.jd-wall-label {
+  border-bottom: 1px solid var(--rule-soft);
+  padding-bottom: var(--s-2);
+}
+.jd-title {
+  font-size: var(--fs-lg);
+  letter-spacing: 0.3em;
+  margin: 0 0 var(--s-1);
+}
+.jd-label-dek {
+  margin: 0 0 var(--s-1);
+  color: var(--ink-soft);
+}
+.jd-count {
+  margin: 0;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  color: var(--ink-mute);
+}
+
+/* the grade legend — rendered from the taxonomy block, never hardcoded */
+.jd-grade-row {
+  display: grid;
+  grid-template-columns: 9em 1fr;
+  gap: 2px var(--s-2);
+  margin: 0 0 var(--s-1);
+}
+.jd-grade-mark {
+  color: var(--plot-red);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding-top: 2px;
+}
+.jd-grade-desc { color: var(--ink-soft); }
+@media (max-width: 480px) {
+  .jd-grade-row { grid-template-columns: 1fr; gap: 0; margin-bottom: var(--s-2); }
+}
+
+/* the axes */
+.jd-axis-row { margin: 0 0 var(--s-2); }
+.jd-axis-label {
+  display: block;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.jd-axis-desc { color: var(--ink-soft); }
+
+/* the inventory — one mono line per item; plain text (the specimen card and
+   its links are Phase 3) */
+.jd-inventory { list-style: none; margin: 0; padding: 0; }
+.jd-inventory li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--s-2);
+  padding: 0.35em 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.jd-inventory li:last-child { border-bottom: 0; }
+.jd-inv-title { flex: 1 1 auto; }
+.jd-inv-model { color: var(--ink-mute); white-space: nowrap; }
+.jd-inv-grade {
+  color: var(--plot-red);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* the colophon + build stamp (kolob's convention) */
+.jd-build {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  color: var(--ink-mute);
+}
+.jd-build-sep { margin: 0 0.5em; opacity: 0.5; }
+
+/* the ↑ twin of the manila tag */
+.jd-back {
+  margin: var(--s-4) 0 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* ================= mobile: full-viewport drawer (PLAN-MOBILE §1) ========= */
+@media (max-width: 768px) {
+
+  /* "peering down into a drawer" on load: the stage fills the viewport under
+     the REAL fixed banner. svh, not dvh — the small-viewport unit is stable
+     (never mutates as the URL bar collapses), so the well's geometry never
+     shifts mid-scroll or mid-drag; 100vh line is the pre-svh fallback. */
+  .jd-stage {
+    width: 100%; margin: 0;
+    /* the desktop base rules now carry max-width (content column) and
+       aspect-ratio — both must yield on mobile or the full-bleed drawer
+       gets clamped to 92vw (regression caught by the owner on-device) */
+    max-width: none;
+    aspect-ratio: auto;
+    /* smaller hardware suits the smaller well; the drop follows it */
+    --jd-pull-w: 160px;
+    /* the stage gives back exactly the pull's overhang, so the drawer AND
+       its handle both land inside the first screen. Without this the stage
+       ends at the viewport bottom and the overhang falls below the fold —
+       which is why the pull used to be tucked inside the stage instead,
+       seating the backplate on the bottom wall's INNER arris. */
+    height: calc(100vh - var(--jd-pull-drop));    /* fallback */
+    height: calc(100svh - var(--jd-pull-drop));   /* TRUE full viewport minus
+       the hardware: the banner is hidden while the drawer is in view
+       (immersive mode, below) — the drawer owns the whole screen on load */
+    min-height: 420px;
+    box-shadow: none;
+  }
+    /* item tag compacts for small wells: a narrower fixed width, and the
+       gap between meter and buttons tightens so line 2 still fits on one
+       row on a phone (the max-width in the base rule remains the backstop) */
+  .jd-itemtag { padding: 0.6rem 0.75rem 0.65rem 1.75rem; --jd-tag-w: 17rem; }
+  .jd-itemtag .name { font-size: 0.62rem; }
+  .jd-itemtag .lab  { font-size: 0.46rem; flex-basis: 2.9rem; }
+  .jd-itemtag .val  { font-size: 0.56rem; }
+  .jd-itemtag .btn  {
+    font-size: 0.5rem; letter-spacing: 0.08em;
+    padding: 0.4rem 0.15rem 0.36rem;
+  }
+  /* IMMERSIVE MODE (owner request, G5 revision 4, 2026-07-26): on this
+     page only, the fixed site banner slides away while the drawer is in
+     view and returns when the visitor scrolls to the notes. Page-scoped
+     by construction — these rules live in junk-drawer.css. */
+  body { padding-top: 0; }                    /* drawer starts at y=0 */
+  .site-banner {
+    transform: translateY(-100%);
+    transition: transform 0.25s ease;
+  }
+  html.jd-chrome .site-banner { transform: translateY(0); }
+  /* sizes shift up a band on small wells (PLAN-MOBILE §4 form-factor size
+     bands): same cqmin ruler, ×1.2. Portrait POSITIONS are re-seated by the
+     pile loader (MOBILE_POUR map), not by CSS. */
+  .jd-item { width: calc(var(--w) * 1.2cqmin); }
+
+  /* ALL-OR-NOTHING page snap (owner directive, PLAN-MOBILE §2): the page
+     never rests half-on/half-off the drawer — either the drawer fills the
+     viewport or a swipe flips you to the notes. Native mandatory snapping,
+     no scroll-jacking JS; the tall notes section scrolls freely inside
+     itself per spec (a snap area taller than the snapport permits any
+     scroll position while it covers the viewport). Desktop gets NO snap. */
+  html {
+    /* PROXIMITY, not mandatory (owner on-device report, 2026-07-26):
+       with the drawer exactly one viewport tall, mandatory made ANY
+       registered swipe commit a full page-flip — hair-trigger. The two
+       snap points are one viewport apart, so proximity still lands every
+       release on one or the other (all-or-nothing preserved) but a flip
+       now requires crossing the midpoint; accidental drifts spring BACK
+       to the drawer. */
+    scroll-snap-type: y proximity;
+    /* no global snap offset: the drawer snaps to the TRUE top (banner is
+       hidden there — immersive mode); the notes carry their own
+       banner-height offset via scroll-margin-top below */
+    scroll-padding-top: 0;
+  }
+  .jd-stage {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;   /* a hard fling can't skip the notes landing */
+  }
+  #notes {
+    scroll-snap-align: start;
+    /* the banner is VISIBLE at the notes rest (immersive mode restores
+       chrome once you leave the drawer), so the notes offset themselves
+       by exactly the banner height — no drawer sliver, no hidden title */
+    scroll-margin-top: var(--banner-h);
+  }
+  /* the inherited site footer (includes/footer.php renders
+     <footer class="site-footer">) sits after the notes in the DOM; without
+     its own rest position, mandatory snapping could make the subscribe form
+     unreachable. End-alignment gives the document end a valid stop. */
+  .site-footer { scroll-snap-align: end; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .jd-item, .jd-item svg, .site-banner { transition: none !important; }
+}
+
+/* ============================================================================
+   THE FULL RECORD — the report card (Phase 3, promoted from mockup-7a)
+   Opens from the item tag's REPORT CARD button over a scrim; the card is
+   self-contained (info line, artwork plate on the vaporwave floor, verbatim
+   prompt, annotations table with the overall grade as its footer row, the
+   alternatives strip, download + accession no.). Markup is built by
+   junk-drawer.js from the data.php payload — nothing here is hardcoded.
+   All rc-* classes exist only inside .jd-record-scrim, and the paper tokens
+   are scoped to it. feTurbulence textures carry stitchTiles="stitch"
+   (the standing Safari lesson).
+   ========================================================================== */
+.jd-record-scrim {
+  /* the report card's paper + ink, scoped */
+  --card: #efe4c6;
+  --card-hi: #f7efd8;
+  --form-ink: #37414f;
+  --form-ink-2: #6a7280;
+  --form-rule: rgba(55, 65, 79, 0.42);
+  --form-rule-2: rgba(55, 65, 79, 0.20);
+  --typed: #3a3428;
+  --red: #b02a24;
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --hand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --mottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
+     design — so the scrim RESERVES it (round-13 fit contract, owner bug
+     report 2026-08-13): the modal's world starts below the banner and the
+     card can never slide its masthead or close ✕ underneath it. */
+  position: fixed; inset: var(--banner-h, 56px) 0 0 0; z-index: 320;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: max(14px, 2.2vh) 14px;
+  background: rgba(10, 5, 1, 0.55);
+}
+.jd-record-scrim.is-on { display: flex; }
+html.jd-record-open { overflow: hidden; }
+
+/* ---- the card, landscape (round 13, owner pick 2026-08-13) ---------------
+   --plate is the display window's square side, clamped by VIEWPORT HEIGHT —
+   the round-13 fix: the retired aspect-ratio:10/9 plate derived its height
+   from the card's WIDTH, which is what ran short desktops out of room. The
+   42vw guard keeps both columns fitting at every landscape width; the card's
+   own width follows the plate. max-height is 100% of the banner-reserved,
+   padded scrim = calc(100dvh − banner − 2×pad), border-box throughout. */
+.jd-record {
+  --plate: clamp(240px, min(52dvh, 42vw), 420px);
+  position: relative;
+  box-sizing: border-box;
+  width: min(calc(var(--plate) + 500px), 100%);
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--form-ink);
+  background: var(--card) var(--grain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the inner hairline of the double border */
+.jd-record::before {
+  content: ""; position: absolute; inset: 5px; z-index: 4; pointer-events: none;
+  border: 1px solid rgba(55, 65, 79, 0.42);
+}
+/* paper mottle (no fold crease — owner call, 2026-07-28) */
+.jd-record::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background-image: var(--mottle);
+  background-size: 420px 420px;
+}
+@keyframes jdRecEnter {
+  from { opacity: 0; transform: translateY(16px) rotate(-0.5deg); }
+  to   { opacity: 1; transform: none; }
+}
+.jd-record.is-enter { animation: jdRecEnter 0.44s cubic-bezier(.2,.8,.25,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .jd-record.is-enter { animation: none; }
+}
+/* the close control: a proper boxed ✕ (owner rev, 2026-08-13 — bigger and
+   more official than the bare glyph it replaces; same boxed language as
+   the axis expanders and the download button) */
+.jd-record-close {
+  position: absolute; top: 9px; right: 9px; z-index: 5;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.5);
+  cursor: pointer;
+  font-family: var(--rc-mono); font-size: 0.9rem; line-height: 1;
+  color: var(--form-ink); padding: 0;
+}
+.jd-record-close:hover {
+  background: #37414f; color: var(--card); border-color: #37414f;
+}
+.jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+/* the card's one content box: a grid — masthead across, then the two
+   columns. overflow-y:auto is a SAFETY VALVE only (sub-500px landscape
+   viewports); at every target size the columns fit the reserved viewport
+   and no scrollbar exists. Under 700px this goes back to a flex column
+   and scrolling is correct again. */
+.rc-scroll {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 11px 20px 12px;
+  display: grid;
+  grid-template-columns: var(--plate) minmax(330px, 1fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "mast mast" "left right";
+  column-gap: 22px;
+  scrollbar-width: thin;
+}
+.rc-scroll::-webkit-scrollbar { width: 7px; }
+.rc-scroll::-webkit-scrollbar-thumb { background: rgba(55, 65, 79, 0.30); }
+.rc-block { flex: 0 0 auto; }
+
+/* the two columns: exhibit left, paperwork right. The wrappers are layout
+   only — under 700px they go display:contents and the DOM's source order
+   reads as the portrait flow. The folded prompt is the column's springy
+   row (below): it absorbs the slack a tall photograph leaves, so the two
+   columns close together. */
+.rc-col-l { grid-area: left; min-width: 0; display: flex; flex-direction: column; }
+.rc-col-r {
+  grid-area: right; min-width: 0; display: flex; flex-direction: column;
+  border-left: 1px solid var(--form-rule-2); padding-left: 20px;
+}
+
+/* ---- masthead: the item title, once, across both columns ----------------- */
+.rc-masthead {
+  grid-area: mast; text-align: center;
+  padding: 0.2em 0 0.4em;
+  border-bottom: 1px solid var(--form-rule-2);
+  margin-bottom: 8px;
+}
+.rc-item {
+  font-family: var(--form); font-size: 0.75rem; font-weight: 700;
+  letter-spacing: 0.19em; text-transform: uppercase;
+  color: #2f3846;
+}
+
+/* ---- the margin notes: MODEL · DATE (· TOKENS · COST on a visitor's own
+   item) (· PROCESS when refined) — (owner pick, mockup-14 option B,
+   2026-08-13) The response's data is typed straight onto the graph paper in
+   the print's lower-left margin, the way a lab tech pencils a plate number
+   on a proof. A soft paper halo keeps the type legible where it crosses the
+   grid rules. The old ruled caption (.rc-fillsline) retired with SIZE on the
+   same call. Bottom edge dropped 4% → 3% on 2026-08-15: the file number
+   leaving the stack freed a line, and the data rides lower for it. */
+.rc-notes {
+  position: absolute; left: 4.5%; bottom: 3%; z-index: 2;
+  max-width: 64%;          /* clear of the DOWNLOAD button's corner */
+  display: flex; flex-direction: column; gap: 1px;
+  pointer-events: none;    /* the photograph stays one whole enlarge target */
+}
+.rc-note-line { display: flex; align-items: baseline; gap: 0.5em; min-width: 0; }
+.rc-note-l {
+  flex: 0 0 auto;
+  font-family: var(--form); font-size: 0.46rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  min-width: 4.6em;
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+}
+/* values hold one line and ellipsize rather than run under the DOWNLOAD
+   button in the opposite corner */
+.rc-note-v {
+  flex: 0 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: var(--rc-mono); font-size: 0.58rem; color: var(--typed);
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2, 0 0 7px #f8f3e2;
+}
+/* the file number: unlabelled fine print, moved out of the margin notes to
+   sit directly beneath the DOWNLOAD button (owner rev, 2026-08-15 — the
+   notes band was a line too tall once Tokens/Cost joined; the button's old
+   footprint is the spot already proven clear of the kraft corner, so the
+   number takes it and the button nudges up to make the room). Inert to
+   presses, like the notes: the photograph stays one whole enlarge target. */
+.rc-note-no {
+  position: absolute; right: 18px; bottom: 15px; z-index: 3;
+  pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 40%;
+  font-family: var(--rc-mono); font-size: 0.46rem; letter-spacing: 0.04em;
+  color: rgba(55, 65, 79, 0.55);
+  text-shadow: 0 0 3px #f8f3e2, 0 0 5px #f8f3e2;
+}
+
+/* ---- section heading ---------------------------------------------------- */
+.rc-head {
+  display: flex; align-items: center; gap: 0.7em;
+  font-family: var(--form); font-size: 0.55rem; letter-spacing: 0.26em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  margin: 0 0 0.3rem;
+}
+.rc-head::after { content: ""; flex: 1 1 auto; border-top: 1px solid var(--form-rule-2); }
+.rc-col-r .rc-head + .rc-head, .rc-assign + .rc-head,
+.rc-col-r .rc-block + .rc-head { margin-top: 0.55rem; }
+.rc-col-r > .rc-head:first-child { margin-top: 0.1rem; }
+
+/* ---- the photograph (round 13: 13a's landscape carrying 13b's paper
+   display container; the twin-grid vaporwave stage is retired — see
+   floorSVG's note in junk-drawer.js) ---------------------------------------
+   A SQUARE window whose side IS --plate (vh-clamped on .jd-record): its
+   height never derives from the card's width again. The backing is a
+   photo-lab print swatch — a faint engineering grid ruled in a pale
+   blueprint dilution of the form ink, on paper a shade lighter than the
+   form; decisively NOT neon, decisively still paper. Kraft photo corners
+   hold the print down (they overhang 4px, so NO overflow:hidden here) and
+   the drop shadow floats it a millimetre off the form. 13b's FILED stamp
+   was cut on the same owner call. Items letterbox inside the 8% inset
+   (their own preserveAspectRatio meet) — every aspect gets the same frame,
+   which is why the retired stage's shape-tuning went with it. */
+.rc-plate {
+  position: relative;
+  width: 100%; aspect-ratio: 1 / 1;   /* width = --plate ⇒ height = --plate */
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5),
+              0 1px 3px rgba(46, 34, 12, 0.35);
+}
+/* the artwork yields its bottom band to the margin notes */
+.rc-plate-art { position: absolute; inset: 6% 8% 20%; }
+.rc-plate-art svg { display: block; width: 100%; height: 100%; }
+/* THE DRAW-ON REVEAL's keyframes (owner, 2026-08-16; the scheduling —
+   who draws when, for how long — is all JS in junk-drawer.js drawOn():
+   per-element inline animations against these three names). jdDrawOn
+   runs a stroke back along its own measured dash; jdFillOn/jdFadeOn
+   raise fills and unstrokeables to the opacity the artwork itself
+   declared, carried in via --jdfo/--jdo so a translucent original
+   never overshoots to 1. prefers-reduced-motion is honored in the JS
+   (it skips scheduling entirely), so no motion query is needed here. */
+@keyframes jdDrawOn { to { stroke-dashoffset: 0; } }
+@keyframes jdFillOn { from { fill-opacity: 0; } to { fill-opacity: var(--jdfo, 1); } }
+@keyframes jdFadeOn { from { opacity: 0; }      to { opacity: var(--jdo, 1); } }
+/* the kraft photo corners */
+.rc-corner {
+  position: absolute; width: 26px; height: 26px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.rc-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rc-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.rc-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.rc-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+
+/* ---- the enlargement (owner, 2026-08-09) --------------------------------
+   The photograph is a small field on a form; press it and the same artwork
+   comes up full-viewport on the same print swatch, so it reads as the photo
+   held up rather than a second picture. Out again by pressing anywhere on
+   the layer (the art, the caption, the surround) or by Escape — which peels
+   this layer before it peels the card (junk-drawer.js). The corner hint
+   carries the affordance on touch, where nothing hovers. */
+.rc-plate { cursor: zoom-in; }
+.rc-plate:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+/* the DOWNLOAD button rides the photograph's lower-right corner (owner rev,
+   2026-08-13 — it replaced the "⤢ enlarge" hint, and the card's footer with
+   it), wearing the specimen tag's button tailoring: hairline border, 3px
+   radius, cream fill, a 1px press shadow. The card's click/key handlers
+   exempt it from the plate's zoom. */
+/* the photograph's button row (owner rev, 2026-08-16: REPLAY sits on the
+   SAME row as DOWNLOAD). One positioned flex box owns the corner — inset
+   far enough to clear the kraft corner's 26px diagonal, bottom 28px so the
+   file number keeps its line beneath (see .rc-note-no) — and the buttons
+   inside are ordinary flow, so neither needs to guess the other's width. */
+.rc-plate-btns {
+  position: absolute; right: 18px; bottom: 28px; z-index: 3;
+  display: flex; align-items: center; gap: 8px;
+  /* a plate too narrow for the pair stacks them UPWARD (wrap-reverse) —
+     back to the brief stacked layout — rather than spilling onto the
+     file number's line below */
+  flex-wrap: wrap-reverse; justify-content: flex-end;
+}
+/* the buttons' shared tailoring (the specimen tag's: hairline border, 3px
+   radius, cream fill, 1px press shadow). REPLAY is a real <button>, so the
+   font the <a> inherited is set explicitly for both. */
+.rc-dl, .rc-draw {
+  display: inline-block;
+  font-family: var(--rc-mono); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; text-decoration: none; white-space: nowrap;
+  color: #46505e;
+  border: 1px solid var(--form-rule); border-radius: 3px;
+  padding: 0.5em 0.85em 0.46em;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
+}
+.rc-dl:hover, .rc-draw:hover {
+  background: #37414f; color: var(--card); border-color: #37414f; }
+.rc-dl:active, .rc-draw:active { box-shadow: none; transform: translateY(1px); }
+.rc-dl:focus-visible, .rc-draw:focus-visible {
+  outline: 2px solid var(--red); outline-offset: 2px; }
+
+/* The layer is a child of <body>, NOT of the scrim, and that is deliberate:
+   the scrim carries z-index 320, which makes it a stacking context, so
+   anything inside it is capped below the fixed site banner (z 1000,
+   css/style.css) no matter what z-index it asks for. The card has always
+   lived under the banner; the enlargement can't, because "easier to see"
+   means the whole viewport and because a press on that top strip has to
+   dismiss like every other press. Being outside the scrim also puts it out
+   of reach of the scrim's click-to-close-the-card entirely.
+   Its paper/ink tokens are declared here for the same reason — the scrim's
+   copies are scoped to the scrim, and this layer is no longer inside it. */
+.jd-record-zoom {
+  --form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+          Georgia, serif;
+  --rc-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --red: #b02a24;
+
+  position: fixed; inset: 0; z-index: 1100;
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: 9px;
+  padding: max(14px, 3vh) max(12px, 2.6vw);
+  /* not fully opaque — the card stays faintly present underneath, so the
+     enlargement reads as a thing held up off the record rather than a
+     separate screen you navigated to */
+  background: rgba(6, 4, 1, 0.93);
+  cursor: zoom-out;
+}
+.jd-record-zoom.is-on { display: flex; }
+/* the box takes the room the viewport has; the SVG inside keeps its aspect
+   (preserveAspectRatio meet), so tall art and wide art both simply fit */
+.rc-zoom-fig {
+  /* the paper grew with the print (owner, 2026-08-14): the same graph
+     swatch the plate wears, with every gradient length multiplied by
+     --gk — the measured fig-width / plate-width factor junk-drawer.js
+     sets on open (zoomGridScale). The 2.5 fallback approximates the
+     common desktop ratio if the measurement never lands, so a script
+     hiccup still beats a same-size grid. Rule weights scale too: a
+     zoomed-in pen line is a wider pen line. */
+  --gk: 2.5;
+  position: relative; overflow: hidden;
+  flex: 0 1 auto; min-height: 0;
+  width: min(1040px, 100%); height: 100%;
+  padding: 16px 18px;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(45px * var(--gk))),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 calc(1px * var(--gk)), transparent calc(1px * var(--gk)) calc(9px * var(--gk))),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.35);
+  box-shadow: 0 18px 44px -12px rgba(0, 0, 0, 0.8);
+  cursor: zoom-out;
+}
+.rc-zoom-fig:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
+.rc-zoom-art { position: relative; height: 100%; }
+.rc-zoom-art svg { display: block; width: 100%; height: 100%; }
+.rc-zoom-cap {
+  flex: 0 0 auto; text-align: center;
+  display: flex; flex-direction: column; gap: 3px;
+  /* the card's own type shows faintly through the veil right here; the
+     shadow keeps the caption legible over whatever it happens to land on */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.rc-zoom-cap-t {
+  font-family: var(--form); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.2em; text-transform: uppercase; color: #e7ddc2;
+}
+.rc-zoom-cap-h {
+  font-family: var(--rc-mono); font-size: 0.48rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(231, 221, 194, 0.48);
+}
+@keyframes jdZoomIn {
+  from { opacity: 0; transform: scale(0.955); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes jdZoomVeil { from { opacity: 0; } to { opacity: 1; } }
+.jd-record-zoom.is-on { animation: jdZoomVeil 0.2s ease both; }
+.jd-record-zoom.is-on .rc-zoom-fig {
+  animation: jdZoomIn 0.26s cubic-bezier(.2,.8,.25,1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-record-zoom.is-on,
+  .jd-record-zoom.is-on .rc-zoom-fig { animation: none; }
+  .rc-plate-hint { transition: none; }
+  .rc-axcaret { transition: none; }
+}
+
+/* ---- THE PROMPT (verbatim) -----------------------------------------------
+   Long prompts FOLD to three lines behind a "show full prompt" expander
+   (round 13 — the old always-on max-height:7.4em inner scrollbar was the
+   third nested scroller on the card and is gone). cardHTML renders every
+   prompt foldable; render() measures after paint and strips rc-can-fold
+   when the prompt fits its three lines, which also hides the expander. */
+.rc-assign {
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.36rem 0.1rem 0.3rem;
+}
+.rc-assign p {
+  margin: 0;   /* the site sheet gives every p a 1rem tail (css/style.css) —
+                  here it opened a dead band between the folded prompt's
+                  fade and the expander (owner, 2026-08-16) */
+  font-family: var(--rc-mono); font-size: 0.665rem; line-height: 1.5;
+  color: #33302a; white-space: pre-wrap; word-break: break-word;
+  text-indent: -0.52em; padding-left: 0.52em;
+}
+.rc-can-fold:not(.is-open) p {
+  max-height: 4.5em;      /* 3 lines of the 1.5 line-height — the floor */
+  overflow: hidden;
+  /* the cut dissolves over the LAST TEXT LINE, and only there (owner rev
+     ×3, 2026-08-13 — first a proportional fade dimmed half the box, then
+     a 1.9em band still zeroed the final two lines, which read as the text
+     truncating early over blank space; a band deeper than one line always
+     will, because everything past the fade's midpoint is unreadable). The
+     em pair is the fallback; the lh pair, where supported, is exactly one
+     line whatever the line-height. */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
+}
+/* in landscape the folded prompt is the column's springy row (owner rev,
+   2026-08-13 — the text "fills the space available to it"): a tall
+   photograph leaves the right column slack, and instead of dead air under
+   a 3-line cut, the fold stretches into that slack and fades out where it
+   ends. flex-basis 0 is load-bearing: basis auto would start from the
+   prompt's FULL height and defeat the fold whenever the right column is
+   the taller one. The 4.5em floor keeps short columns at the 3-line fold. */
+@media (min-width: 701px) {
+  .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) {
+    display: flex; flex-direction: column;
+    flex: 1 1 auto; min-height: 0;
+  }
+  .rc-col-r > .rc-assign.rc-can-fold:not(.is-open) p {
+    flex: 1 1 0; min-height: 4.5em; max-height: none;
+  }
+}
+.rc-pv {
+  display: inline-block; margin-top: 3px; cursor: pointer;
+  align-self: flex-start;   /* the folded block is a flex column in
+                               landscape — keep the expander left */
+  border: 0; background: none; padding: 0 0 1px; margin-left: 0;
+  font-family: var(--rc-mono); font-size: 0.5rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--form-ink-2);
+  border-bottom: 1px dotted var(--form-rule);
+}
+.rc-pv:hover { color: var(--red); border-bottom-color: var(--red); }
+.rc-pv:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.rc-assign:not(.rc-can-fold) .rc-pv { display: none; }
+.rc-can-fold.is-open .rc-pv-more { display: none; }
+.rc-can-fold:not(.is-open) .rc-pv-less { display: none; }
+
+/* ---- the annotations table (AXIS | VERDICT + OVERALL GRADE footer) ------ */
+table.rc-subj { width: 100%; border-collapse: collapse; table-layout: fixed; }
+table.rc-subj th {
+  font-family: var(--form); font-weight: 400;
+  font-size: 0.5rem; letter-spacing: 0.19em; text-transform: uppercase;
+  color: var(--form-ink-2); text-align: left;
+  padding: 0.3em 0.5em; background: rgba(55, 65, 79, 0.055);
+  border-top: 1px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+}
+table.rc-subj th + th, table.rc-subj td + td { border-left: 1px solid var(--form-rule-2); }
+table.rc-subj td {
+  padding: 0.24em 0.5em 0.28em;
+  border-bottom: 1px solid var(--form-rule-2);
+  vertical-align: middle;
+}
+table.rc-subj tr:last-child td { border-bottom: 1px solid var(--form-rule); }
+table.rc-subj tfoot td {
+  border-top: 2px solid var(--form-rule);
+  border-bottom: 1px solid var(--form-rule);
+  padding: 0.24em 0.5em 0.28em;
+  background: rgba(55, 65, 79, 0.03);
+}
+table.rc-subj tfoot .rc-avg-l { padding-top: 0; }
+.rc-subj-name {
+  font-family: var(--form); font-size: 0.62rem; letter-spacing: 0.05em;
+  line-height: 1.26; color: #2f3846;
+}
+/* every axis name is a disclosure (owner, 2026-08-13): press it and the
+   row beneath unfolds the axis's taxonomy description. Button reset keeps
+   the form's face; the caret is the affordance. */
+.rc-axbtn {
+  display: inline-flex; align-items: center; gap: 0.45em;
+  border: 0; background: none; padding: 0; margin: 0;
+  text-align: left; cursor: pointer;
+}
+/* the boxed +/− ahead of the name (owner rev, 2026-08-13): the index-mark
+   of a form's appendix, not a dropdown arrow. − replaces + while open. */
+.rc-axcaret {
+  flex: 0 0 auto;
+  width: 11px; height: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--form-rule);
+  background: rgba(255, 250, 232, 0.5);
+  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1;
+  color: var(--form-ink-2);
+}
+.rc-axcaret::before { content: "+"; }
+.rc-axbtn[aria-expanded="true"] .rc-axcaret::before { content: "−"; }
+.rc-axbtn:hover .rc-subj-name, .rc-axbtn:hover .rc-avg-l { color: var(--red); }
+.rc-axbtn:hover .rc-axcaret { color: var(--red); border-color: var(--red); }
+.rc-axbtn:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+tr.rc-axdesc td {
+  padding: 0.12em 0.5em 0.5em;
+  font-family: var(--rc-mono); font-size: 0.56rem; line-height: 1.6;
+  letter-spacing: 0.02em; color: var(--form-ink-2);
+}
+.rc-skip {
+  font-family: var(--rc-mono); font-size: 0.545rem; letter-spacing: 0.11em;
+  color: #8c8676; text-transform: uppercase; line-height: 1.4;
+}
+.rc-avg-l {
+  font-family: var(--form); font-size: 0.5rem; letter-spacing: 0.19em;
+  text-transform: uppercase; color: var(--form-ink-2);
+}
+
+/* ---- the red pencil ------------------------------------------------------ */
+.rc-mark {
+  position: relative; display: inline-block;
+  font-family: var(--hand); color: var(--red);
+  line-height: 1.12; letter-spacing: 0.005em;
+  transform: rotate(var(--jit, -1.2deg));
+  transform-origin: 12% 70%;
+}
+.rc-mark.sm { font-size: 0.84rem; }
+.rc-mark-word { position: relative; display: inline-block; }
+/* the graded pencils (owner, 2026-08-11): the verdict is inked in the
+   pencil it earned — dark green when clean, deep red when broken, and a
+   warm ramp between. The label text still says the word; the colour
+   seconds it, never carries it alone. r* = the 3-step axes, q* = the
+   4-step axes (v17 — a rank only means something against its own scale,
+   so each length gets its own ramp; JD_axisCls picks), g* = the five
+   grade tiers. All tuned dark enough to hold on the paper ground. */
+.rc-mark.rc-r3, .rc-bar.rc-r3 { color: #0b6a1f; }   /* no problems / has it — dark green */
+.rc-mark.rc-r2, .rc-bar.rc-r2 { color: #a06200; }   /* small problems / just a hint — ochre */
+.rc-mark.rc-r1, .rc-bar.rc-r1 { color: #8f1d12; }   /* big problems / ain't got it — deep red */
+.rc-mark.rc-q4, .rc-bar.rc-q4 { color: #0b6a1f; }   /* read the brief / neat stack — dark green */
+.rc-mark.rc-q3, .rc-bar.rc-q3 { color: #46761a; }   /* skimmed it / a little shuffled — leaf green */
+.rc-mark.rc-q2, .rc-bar.rc-q2 { color: #a06200; }   /* misread it / out of order — ochre */
+.rc-mark.rc-q1, .rc-bar.rc-q1 { color: #8f1d12; }   /* wrote its own brief / fifty-two pickup — deep red */
+
+/* the verdict cell: ONE segmented bar gauge ahead of the pencilled word
+   (owner pick, mockup 11 option C — it replaced the dot sparkline whose
+   unequal meter widths left an awkward gap someone always noticed).
+   Every gauge spans the same fixed width, filled to rank/steps of its
+   own scale; hairline ticks at the step boundaries are what keep a
+   3-step axis and the 5-tier grade honestly distinguishable, and a full
+   bar carries none. The gauge inherits the rating pencil's colour and
+   stays decoration — aria-hidden, the word carries the meaning. */
+.rc-verdict { display: inline-flex; align-items: center; gap: 0.6rem; }
+.rc-bar {
+  position: relative; width: 47px; height: 8px; flex: 0 0 auto;
+  border: 1.5px solid currentColor; border-radius: 2px;
+  overflow: hidden; box-sizing: border-box;
+}
+.rc-bar-fill { position: absolute; top: 0; bottom: 0; left: 0; background: currentColor; }
+/* the step dividers ride OVER the fill in the card's own paper colour
+   (owner rev: battery-style), so a full bar still shows its segments;
+   on the empty track they melt into the paper, which is fine — the
+   fill's leading edge is the reading there */
+.rc-bar-tick {
+  position: absolute; top: 0; bottom: 0; width: 1.5px;
+  background: var(--card, #efe4c6);
+}
+.rc-mark.rc-g5, .rc-alt-grade.rc-g5, .rc-bar.rc-g5 { color: #0b6a1f; }   /* prime — dark green */
+.rc-mark.rc-g4, .rc-alt-grade.rc-g4, .rc-bar.rc-g4 { color: #46761a; }   /* choice — leaf green */
+.rc-mark.rc-g3, .rc-alt-grade.rc-g3, .rc-bar.rc-g3 { color: #a06200; }   /* select — ochre */
+.rc-mark.rc-g2, .rc-alt-grade.rc-g2, .rc-bar.rc-g2 { color: #b0490f; }   /* standard — burnt orange */
+.rc-mark.rc-g1, .rc-alt-grade.rc-g1, .rc-bar.rc-g1 { color: #8f1d12; }   /* utility — deep red */
+
+/* ---- the alternatives strip: OTHER MODELS, SAME PROMPT ------------------ */
+/* The strip is a rail with a SCROLL PORT between its two pagers (owner,
+   2026-08-15: "I'd also like to be able to scrub my finger across them").
+   The pagers sit outside the port so they stay put while the thumbnails
+   travel; the port is the only thing that scrolls, and on a phone it is the
+   platform's own pan — momentum, rubber-band and snap, none of it written
+   here. overscroll-behavior keeps a scrub that runs off the end from
+   turning into a page swipe or a browser back gesture. */
+.rc-alts { display: flex; gap: 8px; margin-top: 0.15rem; align-items: stretch; }
+.rc-alt-port {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; gap: 8px;
+  overflow-x: auto; overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  /* NO SCROLL SNAPPING, and it was tried: centre-aligned snap points are
+     unreachable for the first and last thumbnail, and Chromium re-snaps
+     whenever the box relayouts — which here is every time a lazily-fetched
+     alternative lands. The card opened showing the END of the strip with the
+     selected thumbnail clipped to a sliver at the left edge. Position is set
+     deliberately (centerAlt, on open and on every pick) and otherwise left
+     exactly where the finger put it, which is what scrubbing means. */
+  /* the bar is furniture this form doesn't own: the peeking next thumbnail
+     and the pagers are the affordance, and a scrollbar under a row of
+     photographs reads as a browser part that wandered onto the page */
+  scrollbar-width: none;
+}
+.rc-alt-port::-webkit-scrollbar { display: none; }
+/* the mouse's own scrub (see wireAltScrub): the platform pans for touch and
+   trackpad, but a held button drags nothing without help, so that one case
+   is synthesised — and while it runs, nothing under the cursor may select */
+.rc-alt-port.is-scrubbing { cursor: grabbing; user-select: none; }
+.rc-alt-port.is-scrubbing .rc-alt { pointer-events: none; }
+/* A SCROLLER HAS TO LOOK LIKE ONE. Three thumbnails at exactly a third of
+   the port each (minus the two gaps) is the tidy answer and the wrong one:
+   the fourth then begins precisely at the edge and is clipped to nothing, so
+   the strip looks complete and the scrub nobody can see is a scrub nobody
+   will try. Dividing by 3¼ instead spends about 8% of each thumbnail's width
+   to leave a sliver of the next one showing — the oldest affordance there
+   is, and the reason a finger goes to it at all. Three or fewer share the
+   port as before: nothing is hidden, so nothing should pretend to be. */
+.rc-alt-port.is-many .rc-alt { flex: 0 0 calc((100% - 16px) / 3.25); }
+.rc-alt {
+  flex: 1 1 0; min-width: 0;
+  font: inherit; text-align: center; cursor: pointer;
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+  padding: 5px 4px 6px;
+}
+.rc-alt:hover { background: rgba(255, 250, 232, 0.85); border-color: var(--form-rule); }
+.rc-alt.is-cur { border-color: rgba(176, 42, 36, 0.75); background: rgba(255, 250, 232, 0.92); }
+/* the thumbnail is a SCALE MODEL OF THE PLATE, not a letterbox slot (owner
+   report, 2026-08-15: "the SVGs in the strip differ from how they're shown
+   elsewhere"). It used to be a fixed 46px band the full width of the button
+   — roughly 2.7 : 1, while the plate's window (.rc-plate-art, inset 6/8/20
+   of a square) is 84 : 74. Every drawing letterboxes inside whatever box it
+   is given, so a TALL item drew at 14 × 46 in the strip against 93 × 309 on
+   the plate: a seventh of the size, small enough that hairlines, small type
+   and thin limbs fall under a device pixel and simply stop being drawn —
+   parts of the artwork missing, exactly as reported, while the same file
+   looked complete on the plate two inches away. Matching the plate's
+   proportion makes the strip the plate in miniature: same framing, same
+   letterboxing, same drawing, one scale down. */
+.rc-alt-art { display: block; width: 100%; aspect-ratio: 84 / 74; }
+.rc-alt-art svg { display: block; width: 100%; height: 100%; }
+.rc-alt-cap {
+  display: block; margin-top: 4px;
+  font-family: var(--form); font-size: 0.505rem; letter-spacing: 0.09em;
+  line-height: 1.3; color: #4d5462; text-transform: uppercase;
+}
+.rc-alt.is-cur .rc-alt-cap { color: #2f3846; }
+.rc-alt-grade {
+  display: block; margin-top: 2px;
+  font-family: var(--hand); font-size: 0.66rem; color: var(--red);
+  text-transform: none; letter-spacing: 0;
+}
+/* the strip pagers (owner directive, 2026-08-14 — entries reached 4
+   responses and the row was built for 3): plain boxed ◂ ▸ in the same
+   paper-and-rule language as the thumbnails they sit beside, form-ink
+   rather than pencil — this is furniture, not a verdict. Disabled at the
+   filing order's ends (no wraparound), dimmed like a spent control. */
+.rc-alt-nav {
+  flex: 0 0 auto; align-self: stretch; width: 20px;
+  font: inherit; font-size: 0.62rem; line-height: 1; padding: 0;
+  cursor: pointer; color: var(--form-ink-2);
+  background: rgba(255, 250, 232, 0.42);
+  border: 1px solid var(--form-rule-2);
+}
+.rc-alt-nav:hover:not(:disabled) {
+  background: rgba(255, 250, 232, 0.85);
+  border-color: var(--form-rule); color: var(--form-ink);
+}
+.rc-alt-nav:disabled { opacity: 0.32; cursor: default; }
+
+/* (the card foot — download + accession no. — retired 2026-08-13: the
+   DOWNLOAD button rides the photograph and the file number its notes) */
+
+/* ---- small screens ------------------------------------------------------- */
+/* under 700px the card stacks back to the single-column portrait flow:
+   masthead, photograph, fills, prompt, annotations, strip, footer. The
+   column wrappers go display:contents (the DOM's source order IS the
+   portrait order), the body scrolls again — correct on a phone — and the
+   close ✕ stays pinned to the card, outside the scrolling box. */
+@media (max-width: 700px) {
+  .jd-record { width: min(560px, 100%); }
+  .rc-scroll { display: flex; flex-direction: column; padding: 12px 14px 11px; }
+  .rc-col-l, .rc-col-r { display: contents; }
+  .rc-masthead { margin-bottom: 6px; }
+  /* still vh-clamped — a landscape phone can't blow the card out */
+  .rc-plate { width: min(100%, 52dvh, 420px); margin: 0 auto 0.55rem; }
+  .rc-head { margin-top: 0.55rem; }
+}
+/* the compact register: a short landscape viewport gives up ~30px of air
+   instead of growing a scrollbar — the same form, set solid. Landscape
+   only; the portrait stack above has its own (correct) scroll. */
+@media (min-width: 701px) and (max-height: 640px) {
+  .jd-record-scrim { padding: max(10px, 1.5dvh) 14px; }
+  .rc-scroll { padding: 10px 20px 10px; }
+  .rc-masthead { padding: 0.15em 0 0.3em; margin-bottom: 6px; }
+  .rc-col-r .rc-head + .rc-head, .rc-assign + .rc-head,
+  .rc-col-r .rc-block + .rc-head { margin-top: 0.42rem; }
+  .rc-assign { padding: 0.3rem 0.1rem 0.26rem; }
+  table.rc-subj td, table.rc-subj tfoot td { padding: 0.13em 0.5em 0.17em; }
+  /* a short viewport buys its vertical back by narrowing the thumbnail, not
+     by squashing it: the box keeps the plate's proportion (see .rc-alt-art)
+     and simply gets smaller, so the drawing inside stays the drawing the
+     plate shows. Bounding the WIDTH is what leaves the ratio in charge of
+     the height — a fixed height with a full-width box would ignore the
+     ratio outright and put the letterbox band back. */
+  .rc-alt-art { width: min(100%, 82px); margin-inline: auto; }
+  .rc-alt { padding: 3px 4px 4px; }
+}
+@media (max-width: 480px) {
+  .jd-record-scrim { padding: 10px 8px; }
+  .rc-scroll { padding: 12px 12px 10px; }
+  /* on a phone the enlargement IS the point — give it nearly the whole
+     screen and keep only enough chrome to say what it is and how to leave */
+  .jd-record-zoom { padding: 10px 8px; gap: 7px; }
+  .rc-zoom-fig { padding: 9px 10px; }
+  .rc-zoom-cap-t { font-size: 0.55rem; letter-spacing: 0.16em; }
+}
+
+/* (the defunct-axis legend rules retired 2026-08-11: the legend now lists
+   live axes only — see renderLegend in junk-drawer.js) */
+
+/* ============================================================================
+   TAKE A TURN — FORM JD-1.  (Round-15 redesign, owner pick 2026-08-13:
+   mockups/mockup-15a-requisition.html "The Requisition", rev. 2, plus the
+   owner's LANDSCAPE BENCH modification.)  Built entirely by junk-drawer.js;
+   every string in it is either UI copy from the JS constants or a taxonomy
+   label from the data.php payload.
+
+   THE FICTION: the whole turn is ONE municipal document. The visitor never
+   changes screens — the same sheet gains a heading and a section number on
+   its FORM JD-1 badge as it goes.
+
+   THE STAMPS ARE GONE (owner call, 2026-08-14). Round 15 built this modal
+   around "stamps are the state machine" — a red rubber seal or box stamp
+   standing in for every state that would otherwise need a sentence. The
+   owner didn't like them and asked for every one removed: the RECEIVED seal,
+   the ATTACHED box, ACCESSIONED, OVER QUOTA / CLOSED FOR THE DAY, RETURNED TO
+   SENDER, NOT FILED — all six sites. Do not reintroduce a stamp to "restore"
+   this; it is a deliberate reversal, not a regression to fix. Each state's
+   meaning survives in prose that was already there alongside its stamp (the
+   heading, the notice slip, the line under the plates) — nothing here is
+   silent for having lost its stamp.
+
+   ONE HAND ON THE FORM NOW: the visitor writes in graphite (--graphite) —
+   the pencilled ring on the chosen likert stop, the pencil tick on a
+   finished rail step, the tie election's tick. --tstamp (the old stamp-pad
+   red) survives only as a plain ink-red accent, unconnected to any stamp:
+   the failed-slot glyph, the required-scale flag, the "kept" fate on the
+   unveil.
+
+   Tokens are scoped to the scrim, the same way the rc-* ones are, so neither
+   modal can leach into the other. The grain/mottle data-URIs are copied
+   VERBATIM from the record card (stitchTiles="stitch" — never regenerate
+   them; a reseed breaks the tile seams in Safari).
+
+   This file carries no mix-blend-mode: the stamps were its one user, and
+   the Safari lesson at the head of this file still forbids blending a
+   FULL-STAGE layer over the filtered pile regardless.
+   ========================================================================== */
+.jd-turn-scrim {
+  --tpaper: #ece0bf;
+  --tpaper-hi: #f4ead0;
+  --tink: #33240f;
+  --tink-2: rgba(51, 36, 15, 0.68);
+  --tink-3: rgba(51, 36, 15, 0.44);
+  --trule: rgba(74, 53, 18, 0.40);
+  --trule-2: rgba(74, 53, 18, 0.19);
+  --tred: #b3402f;
+  --tstamp: #a8332a;          /* stamp-pad red — a shade deeper than --tred */
+  --graphite: #4b4030;        /* the visitor's pencil */
+  --tmono: "Courier Prime", "Courier New", Courier, monospace;
+  --tform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --thand: "Bradley Hand", "Segoe Print", "Chalkboard SE", "Chalkboard", cursive;
+  --tgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+  --tmottle: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420'%3E%3Cfilter id='m' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.011 0.016' numOctaves='4' seed='23'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.44 0 0 0 0 0.32 0 0 0 0 0.11 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='420' height='420' filter='url(%23m)'/%3E%3C/svg%3E");
+
+  /* THE SPACING SYSTEM (round-16 tidy, 2026-08-13). One type scale and one
+     spacing scale for the whole form, named so the next new row reaches for
+     a token instead of inventing a 6th font-size. Every value below is used
+     more than once in the rules that follow — that repetition is the point:
+     a size that only ever appears once doesn't belong in the ladder, it's
+     a display size (the likert's A/B) and stays literal. */
+  --t-micro: 0.44rem;   /* form-nos, the tersest labels */
+  --t-label: 0.55rem;   /* rail labels, row labels, skip/notice text */
+  --t-body: 0.66rem;    /* running copy: turn-line, selects, list rows */
+  --t-lead: 0.78rem;    /* the one input field — leave it alone */
+  --t-title: 0.86rem;   /* the masthead heading — leave it alone */
+  --sp-1: 4px;           /* tight — icon-to-label gaps, row internal padding */
+  --sp-2: 8px;           /* default — label-to-control, masthead padding */
+  --sp-3: 14px;          /* between rows/blocks */
+  --sp-4: 22px;          /* between sections */
+
+  position: fixed; inset: 0; z-index: 322;
+  display: none;
+  align-items: center; justify-content: center;
+  /* The TOP inset reserves the fixed site banner's band. The banner carries
+     z-index 1000 (css/style.css) and this scrim is a stacking context at 322,
+     so the banner paints OVER the card — the same standing condition the
+     record card lives with. It only bites here because the bench is tall
+     enough to grow the card to the full scrim height: at 1280×900 the card
+     started at y=18 and its ✕ (27–71) sat behind the banner (0–56), where a
+     press reached .site-navigation instead of the close control — the ✕ was
+     dead and a few px either way navigated the visitor off the page mid-turn.
+     Reserving the band keeps the card under the banner without ever putting
+     its chrome there. Bottom keeps the old value, so the card is centred in
+     the space that is actually free. */
+  padding: max(12px, 2vh, calc(var(--banner-h) + 8px)) 12px max(12px, 2vh);
+  background: rgba(10, 5, 1, 0.58);
+}
+.jd-turn-scrim.is-on { display: flex; }
+html.jd-turn-open { overflow: hidden; }
+
+/* ---- the form itself ----------------------------------------------------- */
+.jd-turn {
+  position: relative;
+  box-sizing: border-box;
+  width: min(680px, 100%);
+  /* .rc-bar-tick (reused verbatim on the bench, owner directive r4) paints
+     its dividers in --card, a custom property normally scoped to the
+     report card's own paper; this form has no such variable, so without a
+     local value the tick would fall back to the rc default (#efe4c6)
+     instead of this sheet's actual paper (--tpaper, #ece0bf) — close, but
+     visibly a different paper under the fill's leading edge. */
+  --card: var(--tpaper);
+  /* the card is a FLEX ITEM of the scrim, so its default min-width:auto lets
+     any nowrap descendant push it wider than the phone viewport. This line is
+     what keeps 375px honest. */
+  min-width: 0;
+  max-height: 100%;                 /* = the banner-reserved, padded viewport */
+  display: flex; flex-direction: column;
+  color: var(--tink);
+  font-family: var(--tmono);
+  background: var(--tpaper) var(--tgrain);
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+/* the printed double border */
+.jd-turn::before {
+  content: ""; position: absolute; inset: 5px; z-index: 6; pointer-events: none;
+  border: 1px solid var(--trule);
+}
+/* paper mottle */
+.jd-turn::after {
+  content: ""; position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background-image: var(--tmottle); background-size: 420px 420px;
+}
+/* the boxed ✕ — the record card's control language (a 26px printed box
+   centred in a 44px target, so the box can stay form-sized). Owner rev
+   2026-08-16: seated in the sheet's TOP-RIGHT CORNER — the 44px target is
+   pinned to the head's corner so its printed box lands 9px in from the
+   card's edges, the record card's exact seat, instead of drifting with the
+   row's padding (it sat 26px in on desktop and 56px on phones, visibly
+   adrift). It anchors to the HEAD, not the card, so the darkroom's
+   cornered overlay strip carries it unchanged; DOM-wise it stays the
+   head's one static, never-replaced child (F1) — paint() rewrites only
+   .jd-turn-headline, so the close's click handler still binds once. The
+   head's min-height (44px + rule) keeps the band fully containing the
+   target, which also re-centres the box on a one-line title's centerline. */
+.jd-turn-close {
+  position: absolute; top: 0; right: 0; z-index: 8;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  font-family: var(--tmono); font-size: var(--t-title); line-height: 1;
+  color: var(--tink);
+}
+.jd-turn-close span {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
+}
+.jd-turn-close:hover span { background: #33240f; color: var(--tpaper); border-color: #33240f; }
+.jd-turn-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the masthead: one line -----------------------------------------------
+   A form number and the heading. This is the entire surviving "form band":
+   no docket, no routing strip, no narration. It sits OUTSIDE the scroller,
+   so the sheet's identity never scrolls away from the words it names.
+   THE MASTHEAD RULE (F1, amended 2026-08-16): everything here belongs to
+   ONE row's box model (.jd-turn-head) — the heading flows in it, and the ✕
+   is pinned to its corner, never positioned against anything outside it.
+   The heading lives in .jd-turn-headline (a nested flex row, because
+   paint() replaces just its innerHTML on every state change); the ✕ is the
+   row's one static, never-replaced child, so a future edit to the head's
+   content can never orphan its click handler. */
+.jd-turn-head {
+  position: relative; z-index: 4; flex: 0 0 auto;
+  display: flex; align-items: center; gap: 10px;
+  /* right padding clears the cornered 44px close target (44 + a hair);
+     min-height guarantees the band contains it, title short or absent */
+  box-sizing: border-box; min-height: 44px;
+  padding: var(--sp-2) 48px var(--sp-2) 16px;
+  border-bottom: 1.5px solid var(--trule);
+  background: linear-gradient(180deg, rgba(255, 250, 232, 0.46), rgba(255, 250, 232, 0) 85%);
+}
+.jd-turn-headline {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 10px;
+}
+/* (the boxed FORM JD-1 §n badge that used to open this row was retired
+   2026-08-16, owner call — the heading is the whole headline now) */
+/* the heading — the one thing on this row a visitor actually reads. It is
+   also the dialog's accessible name and the focus target for every state
+   with no field of its own; focused programmatically (never a tab stop), so
+   the ring would be noise rather than a keyboard cue. */
+.jd-turn-title {
+  flex: 1 1 auto; min-width: 0; margin: 0;
+  font-family: var(--tform); font-weight: 700; font-size: var(--t-title);
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.3;
+  color: var(--tink);
+}
+.jd-turn-title:focus { outline: none; }
+
+/* ---- the body: the one scroller ------------------------------------------ */
+.jd-turn-scroll {
+  position: relative; z-index: 1;
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 11px 16px 14px;
+  scrollbar-width: thin;
+}
+.jd-turn-scroll::-webkit-scrollbar { width: 7px; }
+.jd-turn-scroll::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
+
+/* THE ONE INSTRUCTION LINE. Where a card needs none, it has none — the Bench
+   and the Call, the two cards where the visitor is working, carry none. */
+.jd-turn-line {
+  margin: 0 0 0.6rem;
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
+}
+.jd-turn-line b { color: var(--tink); font-weight: 700; }
+/* a ruled notice slip — honest bad news, never a red alarm bar */
+.jd-turn-notice {
+  margin: 0 0 0.7rem; padding: 0.4rem 0.6rem;
+  background: rgba(255, 250, 232, 0.62);
+  border-left: 3px solid var(--tred);
+  border-top: 1px solid var(--trule-2); border-bottom: 1px solid var(--trule-2);
+  font-size: var(--t-body); line-height: 1.5; color: var(--tink-2);
+}
+/* the form's small print. Round 16 kept JD_CONSENT.text printed here
+   verbatim (OVERRIDE 3) and just tightened the typography; round 17 (owner
+   call, 2026-08-14) stopped printing it at all — privacy.php §4 already
+   quotes those words live, so the card now carries one linked line instead
+   of the full paragraph. The class stays: still quiet fine print, still a
+   lighter rule than the rest of the card. */
+.jd-turn-fine {
+  margin: var(--sp-3) 0 0; padding-top: var(--sp-2);
+  border-top: 1px solid var(--trule-2);
+  font-size: var(--t-label); line-height: 1.5; letter-spacing: 0.02em;
+  color: var(--tink-2);
+}
+/* the one link on the card: reads as a link within the paper fiction (ink
+   underline, darkens on hover) rather than a UI-blue affordance that would
+   break it */
+.jd-turn-link { color: var(--tink-2); text-decoration: underline; text-decoration-color: var(--tink-2); }
+.jd-turn-link:hover { color: var(--tink); text-decoration-color: var(--tink); }
+.jd-turn-link:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- BOX 1: the requester's own field ------------------------------------ */
+.jd-turn-fieldwrap { position: relative; }
+.jd-turn-input {
+  display: block; width: 100%; box-sizing: border-box;
+  padding: 0.55rem 0.65rem 1.35rem;
+  background: rgba(255, 252, 240, 0.78);
+  border: 1px solid var(--trule);
+  box-shadow: inset 0 0 0 1px rgba(255, 252, 240, 0.85),
+              inset 0 1px 3px rgba(74, 53, 18, 0.12);
+  color: var(--tink);
+  font-family: var(--tmono); font-size: 0.78rem; line-height: 1.5;
+  /* 16px on the phone would be ideal against iOS's focus zoom, but the modal
+     is a fixed layer that zoom would leave half off-screen — the ≤768px rule
+     at the foot raises it there instead of here */
+  resize: vertical;
+}
+.jd-turn-input:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+/* the character count, seated INSIDE the field like a form's printed counter */
+.jd-turn-count {
+  position: absolute; left: 7px; bottom: 7px;
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--tink-2);
+  background: rgba(255, 252, 240, 0.9);
+  border: 1px solid var(--trule-2); padding: 1px 5px 0;
+  margin: 0;
+}
+.jd-turn-count.is-over { color: var(--tred); font-weight: 700; }
+/* the honeypot: off-screen, never display:none (which most bots skip), never
+   in the tab order. Negative left overflow is not scrollable in LTR, so it
+   cannot widen the scroll container. */
+.jd-turn-hp {
+  position: absolute; left: -9999px; top: auto;
+  width: 1px; height: 1px; overflow: hidden;
+}
+
+/* ---- actions: brass forward, paper otherwise ----------------------------- */
+.jd-turn-actions {
+  position: relative;
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.jd-turn-go, .jd-turn-alt {
+  /* OVERRIDE 2: touch floor, not a universal one — see the coarse-pointer
+     query near .jd-row below, which restores 44px wherever it's needed. */
+  min-height: 34px; padding: 0 1.1rem;
+  font-family: var(--tmono); font-size: var(--t-body);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  border: 1px solid rgba(58, 40, 14, 0.6);
+  cursor: pointer;
+}
+.jd-turn-go {
+  color: #2a1c07;
+  background: linear-gradient(180deg, #e2c07a 0%, #b3873a 46%, #7a5722 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 204, 0.55),
+              2px 3px 5px -2px rgba(22, 11, 4, 0.5);
+}
+.jd-turn-go:active { transform: translateY(1px); box-shadow: none; }
+.jd-turn-alt { color: var(--tink); background: rgba(255, 250, 232, 0.55); }
+.jd-turn-go[disabled], .jd-turn-alt[disabled] {
+  opacity: 0.42; cursor: default; box-shadow: none; transform: none;
+}
+.jd-turn-go:focus-visible, .jd-turn-alt:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px;
+}
+
+/* ============================================================================
+   THE DARKROOM (§2) — ROUND-17 REDESIGN, owner pick 2026-08-14.
+   Ported faithfully from mockups/mockup-17a-loading-scatter.html (16e's scrap
+   sizes, 16f's calm): the waiting card is a SQUARE sheet, and the four slots
+   are graph-paper print swatches in a tight 2×2 — the report card's
+   "photograph" (.jd-turn-art below), so a slot waits in the same frame its
+   drawing will arrive in. Each swatch runs an OLD-SCHOOL WEB WAIT INDICATOR,
+   printed in ink and dealt per turn from a pool of five (round-24 rotation,
+   owner directive 2026-08-21 — the JS darkDeal shuffles the pool seeded from
+   the turn ref; before then each indicator was keyed stably to its slot
+   letter): a plotter pen tracing a circuit generated fresh each turn
+   (round-20 swap — the flipping hourglass retires), the stray word ("please /
+   wait" adrift, DVD-menu style — round-19 swap, owner pick 2026-08-16),
+   the scatterword (LOADING… blown apart and zooped back together, its flight
+   generated fresh each turn — round-22 swap, owner pick 2026-08-18, the Win95
+   segmented progress bar retires), a ticking wristwatch (round-21 swap — the
+   bouncing dots retire), and the honest bar (a hatched ink fill that climbs,
+   stalls, takes setbacks, and second-guesses itself above ~80 — rounds
+   24–25, owner pick 2026-08-21). The well under each indicator wears the
+   indicator's NAME (jd-dark-well--plot/stray/scatter/watch/bar) and the
+   full-bleed/overflow tailoring below keys to that, not to the slot: the
+   slot classes (--a…--d) now mean position only.
+   ROUND 26 (owner pick 2026-08-21, mockup-26-standby-claude rev. 3): the
+   fifth slip — "please wait…" in the pencil hand, floated over the pile —
+   is retired; it covered the indicators. The masthead is VISIBLE on this
+   card instead: PLEASE STAND BY centred in a full-width overlay band (the ✕
+   and its once-bound listener are untouched — F1 — only the row is
+   restyled), with a plain mono sentence in the sheet's bottom margin
+   (.jd-dark-foot) carrying the slow-timer line beneath it.
+
+   MOTION IS ADDED, NEVER ASSUMED: base styles are the static pending frames
+   (a partial plot with the pen resting on it, the stray word at rest in the
+   centre, the scatterword assembled and readable, the watch reading its
+   seeded time, the bar parked mid-climb at 68%); every animation lives under
+   prefers-reduced-motion: no-preference,
+   a reduce block stills the rest, and the end-state poses live on the
+   data-state classes themselves. Arrived = ✓ in ok-green #4a6b18, the loop
+   settles and fades. Failed = ✗ in ink red --tred, the indicator FREEZES
+   mid-loop. (The old --tstamp fail red is retired with this card: the
+   owner-approved mockup shipped --tred.)
+   ========================================================================== */
+/* the square cut, this view only. The 100vh reserve stands in for the scrim's
+   own padding (banner band + insets ≈ 76px desktop, 20px phone), so the
+   aspect-ratio never meets max-height: the card is square at 375px and
+   centred in 1280×800 alike. */
+.jd-turn[data-view="darkroom"] {
+  width: min(560px, 100%, calc(100vh - 110px));
+  aspect-ratio: 1 / 1;
+}
+/* the masthead as overlay band (round 26, owner pick 2026-08-21,
+   mockup-26-standby-claude rev. 3): PLEASE STAND BY floats over the sheet's
+   top margin in the form's own serif — out of the flow so the pile keeps the
+   whole square, no rule, no wash, ABOVE the printed double border (z 6). The
+   ✕ keeps its corner seat (F1: the head's static child, untouched); the
+   symmetric side padding clears it while keeping the phrase truly centred. */
+.jd-turn[data-view="darkroom"] .jd-turn-head,
+.jd-turn[data-view="plates"] .jd-turn-head {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  padding: 0 48px; border-bottom: 0; background: none;
+}
+.jd-turn[data-view="darkroom"] .jd-turn-headline,
+.jd-turn[data-view="plates"] .jd-turn-headline { justify-content: center; }
+/* the broadcast phrase reads as an announcement: a step up from the form
+   titles' size, and a touch more letterspacing (text-indent balances the
+   final tracking space so the centring is optical, not just geometric).
+   The reveal wears the same dress (rev. 3, owner directive 2026-08-21) —
+   the darkroom and the reveal are consecutive faces of one pile, and their
+   headings should say so; the reveal's scroller reserves the band's height
+   instead of the darkroom's zeroed padding (its content is in the flow). */
+.jd-turn[data-view="darkroom"] .jd-turn-title,
+.jd-turn[data-view="plates"] .jd-turn-title {
+  flex: 0 1 auto; text-align: center;
+  font-size: 0.98rem; letter-spacing: 0.22em; text-indent: 0.22em;
+}
+.jd-turn[data-view="plates"] .jd-turn-scroll { padding-top: 50px; }
+/* the body stops scrolling and becomes the pile's table */
+.jd-turn[data-view="darkroom"] .jd-turn-scroll { padding: 0; overflow: hidden; }
+.jd-dark { position: relative; height: 100%; }
+
+/* ---- the four swatches -----------------------------------------------------
+   ~41% × 33% each (mockup-16e's scrap sizes). STRAIGHT AND ALIGNED since
+   round 26 rev. 4 (owner directive, 2026-08-21): the toss angles retired and
+   the four seats squared to one symmetric frame, so the darkroom matches the
+   Results card that follows it — same 2×2 discipline, and (same revision)
+   the same kraft photo corners, emitted by darkSwatch() in the JS. The print
+   swatch is .jd-turn-art's own background, border and shadow, copied
+   verbatim. */
+.jd-dark-sw {
+  position: absolute;
+  width: 41%; height: 33%;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+  transition: transform 0.6s ease, border-color 0.5s, box-shadow 0.7s;
+}
+.jd-dark-sw--a { left: 6%; top: 13%; }
+.jd-dark-sw--b { right: 6%; top: 13%; }
+.jd-dark-sw--c { left: 6%; bottom: 13%; }
+.jd-dark-sw--d { right: 6%; bottom: 13%; }
+
+/* the label, BENEATH each frame (rounds 28–29, owner calls 2026-08-21 —
+   the round-29 masking tape lasted one review): "Model A" in the pencil
+   hand, centred under the print on the sheet's own paper — clear of the
+   grid, so it needs no ground of its own, and the indicators keep their
+   whole frame. Legible in every state, because the cards that follow
+   reference the models by letter. A child of the swatch, so a settle or
+   judder carries its label with it. */
+.jd-dark-label {
+  position: absolute; left: 0; right: 0; top: calc(100% + 6px);
+  text-align: center;
+  font-family: var(--thand); font-size: 0.95rem; line-height: 1.1;
+  color: var(--graphite);
+}
+
+/* the fixed-height animation well: the swap to ✓/✗ never shifts the sheet */
+.jd-dark-well {
+  position: absolute; left: 12%; right: 12%; top: 24%; bottom: 14%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.5s;
+}
+
+/* the plotter pen (round 18, owner pick 2026-08-17; the hourglass
+   retires): a machine plotting a circuit along the graph paper's own rules.
+   The path itself is GENERATED per turn in the JS (darkPlotCircuit — a
+   spanning-tree tour, different every turn, seamless by construction); this
+   file only knows two dash windows on that path. The ink is a 15-unit
+   window (of pathLength 100; owner trim 2026-08-17, from 30) crawling
+   around the circuit — line appearing at the head, lifting away at the
+   tail — and the nib is a 0.01-unit round dot pinned to the window's head:
+   base offsets -15 and -30 stay exactly 15 apart, and both travel -100 per
+   loop, so the dot rides the ink's leading edge forever. Static base: a
+   partial trace, pen resting on it.
+   REGISTRATION (owner note, 2026-08-17): the pen must draw ON the swatch's
+   printed rules, not near them, so the well opens to the whole swatch
+   (the stray's precedent) and the SVG pins to the paper's own 9px grid:
+   round() snaps the centred offset down to a multiple of 9, then +5px
+   seats the stroke's centre on the 1px rule (rules paint at [9k, 9k+1),
+   centre 9k+0.5; the SVG's inner margin is 4.5, and 5 + 4.5 = 9.5). The
+   un-snapped pair above it is the fallback for browsers without round():
+   plain centring — a hair off the rules, never broken.
+   MIND THE ANCHOR EDGES (mobile fix, 2026-08-17): each gradient layer
+   phases from the edge its gradient line starts at — 90deg from the LEFT,
+   but 0deg from the BOTTOM — so the horizontal rules' phase moves with the
+   swatch's height. Snapping `top` therefore only registered at heights
+   that happened to be multiples of 9 (the desktop harness was; phones
+   weren't). The vertical pin is `bottom`, same arithmetic: the SVG's
+   bottom margin is also 4.5, so bottom = 9m+5 puts every horizontal
+   stroke at 9k+0.5 off the bottom edge, exactly the painted rule, at ANY
+   swatch height. Never snap `top` while the paper's 0deg layers phase
+   from the bottom. */
+.jd-dark-well--plot { left: 0; right: 0; top: 0; bottom: 0; }
+.jd-dark-plot {
+  display: block; position: absolute;
+  left: calc(50% - 45px); bottom: calc(50% - 27px);
+  left: calc(round(down, 50% - 45px, 9px) + 5px);
+  bottom: calc(round(down, 50% - 27px, 9px) + 5px);
+}
+.jd-dark-plot .plot-ink {
+  fill: none; stroke: rgba(74, 98, 138, 0.9); stroke-width: 1.6;
+  stroke-linecap: round; stroke-linejoin: round;
+  stroke-dasharray: 15 85; stroke-dashoffset: -15;
+}
+.jd-dark-plot .plot-nib {
+  fill: none; stroke: var(--tink); stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 0.01 99.99; stroke-dashoffset: -30;
+}
+/* implicit from: each starts at its base offset, one full period apart */
+@keyframes jdDarkPlotInk { to { stroke-dashoffset: -115; } }
+@keyframes jdDarkPlotNib { to { stroke-dashoffset: -130; } }
+
+/* the stray word: "please / wait" adrift on the print, ricocheting off
+   the swatch's own edges like the DVD-menu logo of blessed memory (round-19
+   swap — mockup-19-offguard-loaders.html №10 rev B replaces the radial-tick
+   throbber; owner pick 2026-08-16. Round-23 reword, owner pick 2026-08-18:
+   LOADING retires for a two-line "please / wait" in an old-fashioned script
+   hand — a politer ghost to chase around the paper). The bounce field is the WHOLE swatch,
+   not the inset well — the well opens to inset 0 for this indicator only, so the
+   word rebounds off the graph paper's edges and slides UNDER the pencilled
+   letter (z 3) and the verdict (z 2). The two axes run incommensurate
+   periods, so the path never visibly repeats. Position trick: left/top
+   0→100% paired with translate 0→-100% makes each travel span exactly
+   (swatch − word) at ANY swatch size — both halves tween linearly, so the
+   sum is linear too. Static base: the word at rest in the centre. */
+.jd-dark-well--stray { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-stray {
+  position: absolute; left: 50%; top: 0; height: 100%;
+  width: max-content; transform: translateX(-50%);
+}
+.jd-dark-stray .sy {
+  /* RELATIVE, not absolute — the word must stay in flow so the x-mover's
+     max-content width IS the word's width: an absolutely-positioned child
+     sizes its parent to 0, which nulls the translateX(-100%) half of the
+     position trick and lets the word sail past the right edge until its
+     LEFT side hits (owner catch, 2026-08-17). Relative keeps the top:
+     0→100% animation working — the offset resolves against the mover's
+     full-well height, translateY(-100%) against the word's own. */
+  position: relative; top: 50%; transform: translateY(-50%);
+  display: block;
+  /* round-23: typewriter caps retire for an old-fashioned script hand —
+     classic system cursives, best-first (Snell on Apple, Brush Script on
+     Windows), never the chalky --thand: this is penmanship, not a scrawl.
+     Two lines set snug; the bounce math never notices — the travel is
+     %-based against the block's own max-content size */
+  font-family: "Snell Roundhand", "Apple Chancery", "Edwardian Script ITC",
+               "Brush Script MT", "Lucida Handwriting", cursive;
+  /* Sized up and un-faded (owner, 2026-08-19): at 17px in a translucent blue
+     it read as a smudge on the grid rather than a word adrift on it.
+     LINE-HEIGHT IS THE BUG FIX. The markup is two lines (please<br>wait) and
+     this was 1.02 — "set snug". Snell Roundhand and every fallback here are
+     script faces with deep descenders, so the tail of the p in "please" ran
+     down into "wait" and read as a clipped letter. 1.3 clears it while the
+     pair still reads as one block. None of this disturbs the DVD bounce:
+     jdDarkStrayX/Y travel left/top 0→100% against translate(-100%), measured
+     from the word's own max-content box, so the word can be any size and
+     still hit the walls exactly. */
+  font-size: 23px; font-weight: 400; line-height: 1.3;
+  letter-spacing: 0.02em; white-space: nowrap; text-align: center;
+  /* PADDING IS THE WALL-CLIP FIX (owner catch, 2026-08-21): the p's tail was
+     sliced at the swatch's edge. Every face in this stack paints ink OUTSIDE
+     its own line box — descender tails, entry/exit swashes, italic overhang —
+     and the well clips at overflow: hidden, so at the exact moment the
+     bounce math kissed a wall with the word's BOX, any ink overhanging that
+     box was already past the wall and got cut. (The 1.3 line-height above
+     only stopped the p's tail colliding with "wait" INSIDE the block; it
+     does nothing at the walls, because the box the travel is measured from
+     is unchanged by leading.) The fix is padding, not more line-height: the
+     position trick measures the PADDED box — the x-mover's max-content width
+     takes the child's padding, and translateY(-100%) resolves against the
+     padded height — so the walls are now kissed by a box that CONTAINS all
+     the ink, on all four sides, at any swatch size. 0.35em ≈ 8px at 23px:
+     deeper than the stack's deepest descender (Edwardian Script ≈ 0.3em),
+     small enough that the word still reads as touching the walls — the
+     padding is the word's own breathing room. */
+  padding: 0.35em;
+  color: #3b4f70;   /* the graph paper's own blue ink, opaque and a shade deeper */
+}
+@keyframes jdDarkStrayX {
+  from { left: 0;    transform: translateX(0); }
+  to   { left: 100%; transform: translateX(-100%); }
+}
+@keyframes jdDarkStrayY {
+  from { top: 0;    transform: translateY(0); }
+  to   { top: 100%; transform: translateY(-100%); }
+}
+
+/* the scatterword (round-22 swap, owner pick 2026-08-18; the Win95
+   segmented block progress bar retires): the word LOADING… holds just long
+   enough to read, explodes — every glyph thrown straight out along its own
+   ray, fastest at the bang and decelerating the whole way, tumbling, knocking
+   back off the swatch's edges — and then a fast suction zoops it back into
+   the word. Three different bangs to an 18s super-cycle, so it does not
+   visibly repeat.
+   OWNER TUNING, 2026-08-18 (round-22 follow-up, three changes at once):
+   the type is 15% smaller against an unchanged flight field, so the word
+   sits more modestly in the swatch while the explosion still uses the whole
+   card; the ellipsis takes the same ink as the letters; and the bang runs at
+   the 6s "house tempo" the owner picked off the variant sheet (was 4.2s),
+   which makes the super-cycle 18s.
+   THE TRACKS ARE GENERATED PER TURN in the JS (darkScatterword — ten
+   ballistic flights integrated under drag, seeded from the turn ref, so
+   every turn gets its own explosion and a repaint re-derives the same one).
+   This file knows only the base pose and the fact that it loops: the
+   generated <style> rides inside the well and carries animation-name AND
+   animation-duration, so the super-cycle's length lives in exactly ONE
+   place — the generator — and can never drift out of sync with a
+   hand-written number here.
+   SIZING. The flight is authored in em against a 140×110 FIELD (the
+   approved mockup's card), so one generated stylesheet drives the swatch at
+   every size the card takes. The well opens to the whole swatch (the stray's
+   precedent) and the field is centred in it, sized so its 12.670em width IS
+   the swatch's width: container-type: size makes the WELL a container (the
+   round-24 rotation moved it off the swatch — the well is full-bleed, so
+   the geometry is identical), and
+   100/12.670 = 7.893cqw. (Owner tuning 2026-08-18: the glyph shrank from 13
+   to 11.05 real-scale px — 15% — while the FIELD stayed 140×110, which is
+   the whole point of the change: a smaller word thrown across exactly the
+   same card. That is the only reason this em-per-field number moved.) The
+   plain px above it is the fallback for browsers without container queries
+   (round()'s precedent in slot A — declare the dumb value first, the clever
+   one second); it is sized for the SMALLEST swatch we ship (~145px on a
+   phone) so that on those browsers the field can only ever under-fill, never
+   overflow.
+   The swatch is 41×33 (aspect 1.242) and the field is 140×110 (1.273), so
+   filling the width letterboxes the field by ~1% of the swatch's height top
+   and bottom. It is centred, and nothing is lost: the generator's roam box
+   already holds the glyph centres a little off every edge, so the letters
+   were never going to reach the extreme top and bottom anyway. */
+.jd-dark-well--scatter {
+  container-type: size;
+  left: 0; right: 0; top: 0; bottom: 0; overflow: hidden;
+}
+.jd-dark-word {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: pre;
+  font-family: var(--tmono); font-weight: 700; line-height: 1;
+  letter-spacing: 0.08em;
+  color: var(--tink);
+  font-size: 11.4px;
+  font-size: 7.893cqw;
+}
+/* BASE POSE = the assembled word, exactly as typed — transform: none puts
+   every glyph in its word position. This is the static frame AND the
+   reduced-motion frame: whenever nothing is moving, the swatch reads
+   LOADING… and nothing else. */
+.jd-dark-gl { display: inline-block; transform: none; }
+/* the ellipsis is set 1.45× so each dot survives as its own drifting body (a
+   period at this size is barely two pixels of ink) — and it matters more now
+   the type is 15% smaller. line-height: 0 stops the taller glyph from growing
+   the word's line box, and the negative margin pulls its advance back onto
+   the typewriter's monospace grid. Both of those are RATIOS in em, so they
+   survived the shrink untouched; the generator's measured glyph centres did
+   not, and were re-measured. Do not retune any of this without re-measuring.
+   The dots take the same ink as the letters (owner tuning, 2026-08-18 — they
+   used to be printed in the graph paper's own blue): one word, one pen, just
+   an ellipsis typed a size up. */
+.jd-dark-gl7, .jd-dark-gl8, .jd-dark-gl9 {
+  font-size: 1.45em; line-height: 0; margin-right: -0.186em;
+}
+
+/* the wristwatch (round-21 swap, owner pick 2026-08-17; the bouncing
+   dots retire): the classic Mac "please wait" watch, drawn with a ruling
+   pen — case circle, twelve ticks faked by one dashed circle (pathLength
+   12, dash 0.14/0.86, offset 0.07 to centre each tick on its hour), two
+   hands, a centre pin, strap lugs. The minute hand clicks one tick per
+   second (steps(12) over 12s; owner slow-down 2026-08-17, from 6s), the
+   hour hand one tick per 12s. The hands' base angles arrive as --jdwm/--jdwh
+   inline on the svg — the JS seeds them from the turn's client_ref, so
+   every wait starts at a different (plausible) time; the keyframes add
+   360deg to whatever the seed says, so the loop is seamless at any start.
+   Static base: the watch reading its seeded time (10:10, the watch-
+   advertisement pose, if the vars are missing). */
+/* the dial and the strap lugs are FILLED (--tpaper-hi; owner, 2026-08-17)
+   so the graph paper never shows through the watch — it sits ON the sheet,
+   not printed into it. Ticks and hands draw after the case in the markup,
+   so they ride on the solid dial. */
+/* The watch's well, full-bleed like the plotter's, the stray's and the
+   scatterword's (owner catch, 2026-08-19: the watch
+   sat low). The BASE .jd-dark-well is inset top: 24% / bottom: 14% — room the
+   original indicator wanted under the slot letter — which puts its centre at
+   24 + (100-24-14)/2 = 55% of the swatch, 5% low. The other indicators each
+   overrode it to full-bleed as they were rebuilt; the watch was the one
+   indicator never re-based, so it alone kept the asymmetry and centred 5%
+   low. The watch centres on the swatch itself now, like its neighbours. */
+.jd-dark-well--watch { left: 0; right: 0; top: 0; bottom: 0; }
+/* The bar needs this for the same reason the other four do: the BASE
+   .jd-dark-well is inset top:24% / bottom:14% — legacy room under the slot
+   letter — which centres it at 55% of the swatch, ~5% low. Every indicator
+   overrides it as it is built; the bar arrived in round 24 without one and
+   measured 54.8% against its neighbours' 50%. Any SIXTH indicator needs this
+   line too. */
+.jd-dark-well--bar { left: 0; right: 0; top: 0; bottom: 0; }
+
+.jd-dark-watch .w-case {
+  fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.jd-dark-watch .w-lug {
+  fill: var(--tpaper-hi); stroke: var(--tink-2); stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+.jd-dark-watch .w-ticks {
+  fill: none; stroke: var(--tink-2); stroke-width: 2.2;
+  stroke-dasharray: 0.14 0.86; stroke-dashoffset: 0.07;
+}
+.jd-dark-watch .w-min, .jd-dark-watch .w-hr {
+  stroke: var(--tink); stroke-linecap: round;
+  transform-box: view-box; transform-origin: 20px 22px;
+}
+.jd-dark-watch .w-min { stroke-width: 2;   transform: rotate(var(--jdwm, 60deg)); }
+.jd-dark-watch .w-hr  { stroke-width: 2.6; transform: rotate(var(--jdwh, -55deg)); }
+.jd-dark-watch .w-pin { fill: var(--tink); }
+@keyframes jdDarkWatchMin { to { transform: rotate(calc(var(--jdwm, 60deg) + 360deg)); } }
+@keyframes jdDarkWatchHr  { to { transform: rotate(calc(var(--jdwh, -55deg) + 360deg)); } }
+
+/* the honest bar (rounds 24–25, owner pick 2026-08-21; tuned on
+   mockup-24-honest-bar.html's bench, dressed by mockup-25-bar-styles.html's
+   hatched-stripes option with the stripes thickened): a hand-wobbled ink
+   outline whose fill climbs slowly, stalls, takes setbacks, and above ~80
+   second-guesses itself in wider swings — never finishing, never quite
+   erratic. The track is GENERATED per turn in the JS (darkHonestBar — a
+   seeded 150-tick climb baked into keyframes, one tick per 0.3s, a 45s
+   super-cycle whose seam is the sigh-and-start-over); this file knows only
+   the frame, the fill's dress, and the static pose. The bar keeps the
+   DEFAULT inset well — the one indicator that does — because the wobbled
+   frame wants the paper's margin around it. Stripes are the round-25
+   thickening: 5px of ink, 2.5px of paper. Static base: parked at 68%,
+   mid-climb — the pose a reduced-motion visitor sees. */
+.jd-dark-barwrap { position: relative; width: 100%; height: 22px; }
+.jd-dark-barfill {
+  position: absolute; left: 3px; top: 3px; bottom: 3px;
+  width: 68%; max-width: calc(100% - 6px);
+  background:
+    repeating-linear-gradient(90deg, var(--tink-2) 0 5px, transparent 5px 7.5px);
+}
+
+/* ---- arrival / failure: the end poses live on the state classes ----------- */
+.jd-dark-result {
+  position: absolute; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  opacity: 0;
+  transition: opacity 0.5s 0.3s;
+}
+.jd-dark-big {
+  font-family: var(--tform); font-size: 1.7rem; line-height: 1; color: var(--tink);
+}
+.jd-dark-verdict {
+  font-family: var(--tmono); font-size: 0.55rem;
+  letter-spacing: 0.14em; text-transform: uppercase; text-align: center;
+  padding: 0 7px;   /* the longer per-code failure phrases wrap to two lines —
+                       keep them off the swatch's edges when they do */
+}
+.jd-dark-verdict .m { font-style: normal; }
+.jd-dark-sw[data-state="ok"] .jd-dark-verdict--ok { color: #4a6b18; }
+.jd-dark-sw[data-state="fail"] .jd-dark-verdict--fail { color: var(--tred); }
+
+/* arrived: the swatch settles flat with a small drop and the loop fades out
+   (rev. 4: the seats are straight, so the settle is a vertical landing —
+   no rotation to shed any more) */
+.jd-dark-sw[data-state="ok"] {
+  box-shadow: 0 2px 5px -2px rgba(46, 34, 12, 0.4), 0 1px 2px rgba(46, 34, 12, 0.28);
+}
+@keyframes jdDarkSettle {
+  0%   { transform: translateY(-4px); }
+  55%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+.jd-dark-sw[data-state="ok"] .jd-dark-well { opacity: 0; }
+.jd-dark-sw[data-state="ok"] .jd-dark-result { opacity: 1; }
+
+/* failed: a quick judder, then the indicator FREEZES mid-loop where it
+   stands, dimmed; the swatch edges red. The judder still swings through a
+   couple of degrees, but it ENDS straight (rev. 4) — the pile stays squared
+   whatever a slot's fortunes. */
+.jd-dark-sw[data-state="fail"] {
+  transform: scale(0.97);
+  border-color: rgba(179, 64, 47, 0.6);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35),
+              inset 0 0 0 1px rgba(179, 64, 47, 0.35);
+}
+@keyframes jdDarkJolt {
+  0%   { transform: scale(1); }
+  35%  { transform: rotate(-2.2deg) scale(0.98); }
+  70%  { transform: rotate(2.4deg) scale(0.965); }
+  100% { transform: scale(0.97); }
+}
+.jd-dark-sw[data-state="fail"] .jd-dark-well { opacity: 0.45; }
+.jd-dark-sw[data-state="fail"] .jd-dark-result { opacity: 1; }
+.jd-dark-sw[data-state="fail"] .jd-dark-big { color: var(--tink-2); }
+
+/* ---- f — the word drift (round 27, replaces the carbon rain 2026-08-23) ----
+   The rain, rewritten in English. Columns of words fall down the paper's own
+   rules, one letter to a printed square; each letter strikes the bottom rule,
+   is thrown off it, and comes to rest in a heap along the floor. The depth of
+   the heap is how long you have been waiting.
+
+   It replaces the carbon rain (78 writing systems, 5987 generated characters),
+   which read as texture rather than as language — the owner wanted the wait
+   said in words you can actually read. Everything the rain knew about falling
+   is still here; only the alphabet and the landing are new.
+
+   The layout is the drawer's own: 9px ruling, one letter to a square, struck
+   in the paper's ruling blue. Nothing here is per-script, so the generated
+   font-size table the rain needed is gone with it.
+   -------------------------------------------------------------------------- */
+.jd-dark-well--drift { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+
+/* the word mesh (owner directives 2026-08-22 / 2026-08-23; character mode
+   retired from the rotation 2026-08-26): Kimi's Take iframed whole into the
+   swatch — full-bleed like the rain, since mini.php brings its own paper at
+   the same 9px ruling. The frame must never scroll or show a seam: it is a
+   window onto a sheet, not a document in a box. On a settle the well's own
+   fade covers it (opacity 0 on ok, 0.45 on fail) — the piece runs on behind
+   it, unheard, the way the rain merely pauses. */
+.jd-dark-well--words { left: 0; right: 0; top: 0; bottom: 0; overflow: hidden; }
+.jd-dark-mesh { position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  border: 0; display: block; background: transparent; }
+.jd-drift { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+.jd-drift .col { position: absolute; left: 0; top: 0; display: block; }
+/* the heap. Letters are MOVED here when they settle — the same element that
+   fell, not a copy of it: copying leaves two glyphs stacked at the landing
+   point for several frames, and it reads as a flicker at every landing. */
+.jd-drift .drift { position: absolute; left: 0; top: 0; display: block; }
+.jd-drift i {
+  position: absolute; left: 0; top: 0;
+  width: 9px; height: 9px; line-height: 9px; text-align: center;
+  font-family: var(--tmono); font-style: normal;
+  color: #4a628a;                    /* the paper's own ruling colour, struck solid */
+  will-change: transform;
+}
+/* a letter still falling starts ABOVE the sheet. Its animation carries
+   fill:both, so this only shows in the instant before the animation is
+   attached — but without it that instant is a glyph at the top-left corner. */
+.jd-drift .col > i { transform: translateY(-300%); }
+
+/* arrived / failed: the drift stops where it stands, with the rest of the
+   well. The metronomes are stopped in JS at the same moment — a paused
+   animation still holds its letter on the paper, which is what we want, but
+   a running metronome would go on minting letters behind the fade. */
+.jd-dark-sw[data-state="ok"] .jd-drift i,
+.jd-dark-sw[data-state="fail"] .jd-drift i { animation-play-state: paused; }
+
+/* stillness: no fall, no landing, no heap. The sheet holds one line of the
+   office's own words, set where the drift would have come to rest. */
+@media (prefers-reduced-motion: reduce) {
+  .jd-drift { display: none; }
+  .jd-dark-well--drift::after {
+    content: "PLEASE WAIT"; position: absolute; left: 0; right: 0; bottom: 9px;
+    text-align: center; font-family: var(--tmono); font-size: 10px;
+    letter-spacing: 2px; color: #4a628a;
+  }
+}
+
+/* ---- the margin line, under the pile (round 26) ----------------------------
+   The pencilled wait slip retired (owner pick 2026-08-21, mockup-26-standby-
+   claude rev. 3): laid over the pile it covered the indicators, which are the
+   whole show. One plain mono sentence in the sheet's bottom margin instead —
+   the line is ONE element so the owner can reword it in one place — with the
+   slow-timer line beneath it, behind the same data-slow/hidden pattern. The
+   working ellipsis is three dots arriving in turn: printed static as the base
+   pose, animated only where motion is welcome (the house rule). */
+.jd-dark-foot {
+  position: absolute; left: 8%; right: 8%; bottom: 3%; z-index: 6;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  text-align: center;
+}
+.jd-dark-line {
+  font-family: var(--tmono); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
+}
+.jd-dark-dots i { font-style: normal; }
+.jd-dark-slow {
+  font-family: var(--tmono); font-size: var(--t-label); font-style: italic;
+  line-height: 1.45; text-align: center; color: var(--tink-2);
+}
+@keyframes jdDarkDot {
+  0%, 20%  { opacity: 0; }
+  30%, 90% { opacity: 1; }
+  100%     { opacity: 0; }
+}
+
+/* ---- motion: added, never assumed ------------------------------------------
+   Everything above is the static reduced-motion page; the loops only run for
+   visitors who haven't asked for stillness. */
+@media (prefers-reduced-motion: no-preference) {
+  /* the pen covers the 540-unit circuit in 30s — about two grid squares a
+     second, plotter pace; both windows on the same clock or the dot drifts */
+  .jd-dark-plot .plot-ink  { animation: jdDarkPlotInk 30s linear infinite; }
+  .jd-dark-plot .plot-nib  { animation: jdDarkPlotNib 30s linear infinite; }
+  /* stray drift slowed 2x (owner, 2026-08-17): same 37:49 period ratio,
+     so the never-quite-repeating wander survives the slowdown */
+  .jd-dark-stray           { animation: jdDarkStrayX 7.4s linear infinite alternate; }
+  .jd-dark-stray .sy       { animation: jdDarkStrayY 9.8s linear infinite alternate; }
+  /* the scatterword: ten bodies on one super-cycle. animation-name and
+     animation-duration arrive from the generated block in the well, so only
+     the parts that are the same for every seed live here. LINEAR is the
+     default join on purpose — the deceleration after each bang lives in the
+     waypoint SPACING, not in a curve; the one eased keyframe in the whole
+     animation is the zoop, which carries its own timing function. */
+  .jd-dark-gl {
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+  }
+  /* watch slowed 2x (owner, 2026-08-17): a click per second, horology pace */
+  .jd-dark-watch .w-min    { animation: jdDarkWatchMin 12s steps(12, end) infinite; }
+  .jd-dark-watch .w-hr     { animation: jdDarkWatchHr 144s steps(12, end) infinite; }
+  /* the margin line's working ellipsis: three dots arriving in turn */
+  .jd-dark-dots i              { opacity: 0; animation: jdDarkDot 1.8s linear infinite; }
+  .jd-dark-dots i:nth-child(2) { animation-delay: 0.45s; }
+  .jd-dark-dots i:nth-child(3) { animation-delay: 0.9s; }
+
+  /* arrival / failure theatrics — one-shot, then the state class holds */
+  .jd-dark-sw[data-state="ok"]   { animation: jdDarkSettle 0.9s cubic-bezier(0.2, 1.4, 0.4, 1) 1; }
+  .jd-dark-sw[data-state="fail"] { animation: jdDarkJolt 0.5s ease-in-out 1; }
+
+  /* arrived: the loop stops where it stands (the well fades over it).
+     failed: it FREEZES mid-loop. (The bar's binding arrives from its
+     generated <style> like the scatterword's, but pausing works the same —
+     it is in this list.) */
+  .jd-dark-sw[data-state="ok"] .plot-ink, .jd-dark-sw[data-state="ok"] .plot-nib,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray,
+  .jd-dark-sw[data-state="ok"] .jd-dark-stray .sy,
+  .jd-dark-sw[data-state="ok"] .jd-dark-gl,
+  .jd-dark-sw[data-state="ok"] .w-min, .jd-dark-sw[data-state="ok"] .w-hr,
+  .jd-dark-sw[data-state="ok"] .jd-dark-barfill,
+  .jd-dark-sw[data-state="fail"] .plot-ink, .jd-dark-sw[data-state="fail"] .plot-nib,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray,
+  .jd-dark-sw[data-state="fail"] .jd-dark-stray .sy,
+  .jd-dark-sw[data-state="fail"] .jd-dark-gl,
+  .jd-dark-sw[data-state="fail"] .w-min, .jd-dark-sw[data-state="fail"] .w-hr,
+  .jd-dark-sw[data-state="fail"] .jd-dark-barfill {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-dark-plot .plot-ink, .jd-dark-plot .plot-nib,
+  .jd-dark-stray, .jd-dark-stray .sy, .jd-dark-gl, .jd-dark-barfill,
+  .jd-dark-watch .w-min, .jd-dark-watch .w-hr,
+  .jd-dark-dots i, .jd-dark-sw {
+    animation: none !important;
+  }
+  .jd-dark-sw, .jd-dark-well, .jd-dark-result { transition: none; }
+}
+
+/* ============================================================================
+   THE EXHIBITS — the record card's photograph, reused exactly: a graph-paper
+   print swatch held down by kraft photo corners, floating a millimetre off
+   the sheet. An attached photograph is an attached photograph.
+   ========================================================================== */
+.jd-turn-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
+/* THE CALL NARROWS (podium, 2026-08-22). It used to widen to 880px because it
+   carried every surviving plate full-size in one row; the podium carries them
+   at print size instead, and a 4-step podium is 306px of content — so the card
+   comes back to the mockup's own measure and stops being the widest sheet in
+   the flow. One value covers every width: min() folds the phone case in, and
+   there is no ≤700px override for the call any more. */
+.jd-turn[data-view="call"] { width: min(462px, 100%); }
+/* the unveil is the call's own podium carrying its answer, so it stands at
+   the call's measure — a wider sheet would make the same steps read as a
+   different object. */
+.jd-turn[data-view="said"] { width: min(462px, 100%); }
+.jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
+
+/* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21;
+   rev. 3 same day: the prints sit STRAIGHT — the toss angles came and went
+   in one review — and the masthead wears the darkroom's own dress, so the
+   two cards read as consecutive pages of one sheet): the drawings come
+   back in the same 2×2 arrangement their indicators ran in, on the
+   darkroom card's measure, with the slot letter pencilled onto each print
+   instead of printed on a caption strip beneath it. Survivors fill the
+   grid in slot order, so a full turn seats a/b/c/d exactly where their
+   swatches stood; a degraded turn compacts forward rather than leaving
+   holes. */
+.jd-turn[data-view="plates"] { width: min(560px, 100%); }
+.jd-turn[data-view="plates"] .jd-turn-plates {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5.5% 6%;
+  padding: 1.5% 1% 2%;
+}
+.jd-turn[data-view="plates"] .jd-turn-plate { position: relative; }
+/* the lone survivor of a fully-degraded turn takes the middle rather than
+   sitting in one corner of an otherwise empty grid */
+.jd-turn[data-view="plates"] .jd-turn-plate:only-child {
+  grid-column: 1 / -1; width: 60%; margin: 0 auto;
+}
+/* the caption sits BENEATH the print (rounds 28–29, owner calls), matching
+   the darkroom's label: the pencil hand, centred, on the sheet's own paper —
+   the arrived print wears exactly the label its waiting frame wore */
+.jd-turn[data-view="plates"] .jd-turn-plate figcaption {
+  margin: 8px 0 0; padding: 0; border: 0;
+  text-align: center;
+  font-family: var(--thand); font-size: 0.95rem; font-weight: 400;
+  line-height: 1.1; letter-spacing: 0; text-transform: none;
+  color: var(--graphite);
+}
+/* the one action centres under the pile, the way the darkroom's margin
+   line does, with real air on both sides of it (rev. 3: the button sat
+   tight against the pile and the sheet's edge) */
+.jd-turn[data-view="plates"] .jd-turn-actions {
+  justify-content: center;
+  margin-top: var(--sp-4); margin-bottom: var(--sp-2);
+}
+.jd-turn-art {
+  position: relative; width: 100%; aspect-ratio: 1 / 1;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.07) 0 1px, transparent 1px 9px),
+    #f8f3e2;
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 4px 10px -3px rgba(46, 34, 12, 0.5), 0 1px 3px rgba(46, 34, 12, 0.35);
+}
+.jd-turn-art-in { position: absolute; inset: 7%; }
+.jd-turn-art-in svg { display: block; width: 100%; height: 100%; }
+.jd-turn-corner {
+  position: absolute; width: 22px; height: 22px; z-index: 2;
+  background: linear-gradient(135deg, #dfcd9a, #c3aa6e);
+  filter: drop-shadow(0 1px 1.5px rgba(46, 34, 12, 0.45));
+}
+.jd-turn-corner.tl { top: -4px; left: -4px;  clip-path: polygon(0 0, 100% 0, 0 100%); }
+.jd-turn-corner.tr { top: -4px; right: -4px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+.jd-turn-corner.bl { bottom: -4px; left: -4px;  clip-path: polygon(0 0, 100% 100%, 0 100%);
+                     background: linear-gradient(45deg, #c3aa6e, #dfcd9a); }
+.jd-turn-corner.br { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%);
+                     background: linear-gradient(-45deg, #c3aa6e, #dfcd9a); }
+/* the caption is the letter. Nothing else is known about it yet. */
+.jd-turn-plate figcaption {
+  margin-top: 0.35rem; padding-top: 0.2rem;
+  border-top: 1px solid var(--trule-2);
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--tink);
+}
+
+/* RATE-plate fittings (owner, 2026-08-21) — the bench and the call borrow
+   the report photograph's two tricks. Press-to-enlarge: the whole plate is
+   the control (role="button" from plate() in junk-drawer.js), and the
+   enlargement itself reuses the record card's .jd-record-zoom layer
+   class-for-class — nothing here restyles it. REPLAY: the report card's
+   .rc-draw re-tailored in THIS form's tokens, because that rule reaches for
+   --rc-mono/--form-rule, which are scoped to .jd-record-scrim and resolve
+   to nothing inside .jd-turn. It rides the print's lower-right corner,
+   inset far enough (12px) to clear the kraft corner's 18px inner diagonal,
+   and the click/key handlers exempt it from the plate's zoom — it redraws,
+   never zooms. */
+.jd-turn-plate[role="button"] { cursor: zoom-in; }
+.jd-turn-plate[role="button"]:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-draw {
+  position: absolute; right: 12px; bottom: 12px; z-index: 3;
+  font-family: var(--tmono); font-size: 0.5rem; letter-spacing: 0.12em;
+  text-transform: uppercase; white-space: nowrap;
+  color: var(--tink);
+  border: 1px solid var(--trule); border-radius: 3px;
+  padding: 0.5em 0.85em 0.46em;
+  background: rgba(255, 250, 232, 0.82);
+  box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
+  cursor: pointer;
+}
+.jd-turn-draw:hover {
+  background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
+.jd-turn-draw:active { box-shadow: none; transform: translateY(1px); }
+.jd-turn-draw:focus-visible {
+  outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ============================================================================
+   THE BENCH — the rail is the one navigation control on the form.
+   ========================================================================== */
+.jd-rail { display: flex; gap: 6px; margin: 0 0 0.6rem; }
+.jd-rail-step {
+  /* OVERRIDE 2 (round-16): 44px is a TOUCH floor, not a universal one — see
+     the same note on .jd-row below. Compressed by default; the coarse-
+     pointer/mobile media queries at the foot of this file restore the
+     floor wherever a finger, not a cursor, has to land on it. */
+  flex: 1 1 0; min-width: 0; min-height: 34px;
+  display: flex; align-items: center; justify-content: center; gap: 0.45em;
+  padding: 0.3rem 0.4rem;
+  font-family: var(--tform); font-size: var(--t-label);
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tink-3);
+  background: rgba(255, 250, 232, 0.35);
+  border: 1px solid var(--trule);
+  cursor: pointer; white-space: nowrap; overflow: hidden;
+}
+.jd-rail-step b {
+  font-family: var(--tmono); font-size: var(--t-label); font-weight: 700;
+  letter-spacing: 0.1em; color: var(--tink-2);
+}
+.jd-rail-step[disabled] { opacity: 0.45; cursor: default; }
+/* a step the visitor has finished carries a PENCIL tick — the visitor's own
+   hand, graphite against the printed form. */
+.jd-rail-step.is-done b::after {
+  content: " ✓"; font-family: var(--thand); color: var(--graphite); letter-spacing: 0;
+}
+/* the current step: never colour alone — red type, filled ground, 3px bar */
+.jd-rail-step.is-current {
+  color: var(--tred); background: var(--tpaper-hi);
+  border-color: var(--tred); box-shadow: inset 0 -3px 0 var(--tred);
+}
+.jd-rail-step.is-current b { color: var(--tred); }
+.jd-rail-step:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-rail-short { display: none; }
+
+/* ---- the landscape bench (owner modification, 2026-08-13) -----------------
+   The bench borrows the REPORT CARD's two-column pattern (see .jd-record /
+   .rc-col-l / .rc-col-r above — that card itself is untouched): the pinned
+   exhibit on the LEFT at a square, VIEWPORT-HEIGHT-clamped plate, the grade
+   and axis selects and the flag on the RIGHT. The turn card widens to carry
+   it, and only while it carries it — data-view is written by the JS on every
+   paint, so the Brief and the Unveil keep the form's narrow 680px measure.
+   Under 700px the wrappers go display:contents and the DOM's source order IS
+   the portrait flow: rail, plate (sticky again), scales, flag, actions. */
+/* the exhibit is sized on the REPORT CARD'S OWN RULER (owner, 2026-08-15:
+   "I would like these to be larger, more like the main display in the report
+   card"). The bench used to run a stop below the card on every term —
+   46dvh/34vw/380px against the card's 52dvh/42vw/420px — for no reason that
+   survives stating: the drawing being GRADED is at least as important as the
+   drawing being read about, and it is the same square window either way. The
+   card widens to carry it, exactly as .jd-record's width follows its own
+   --plate, so the paperwork column keeps the room it had. */
+.jd-turn[data-view="bench"] {
+  --plate: clamp(240px, min(52dvh, 42vw), 420px);
+  width: min(960px, 100%);
+}
+.jd-bench {
+  display: grid;
+  grid-template-columns: var(--plate) minmax(280px, 1fr);
+  column-gap: 20px; align-items: start;
+}
+.jd-bench-l { min-width: 0; }
+/* R2-F1/F2 (round-17, owner override): the "let them differ" approach from
+   round 16 fixed the auto-margin bug but relocated the dead space instead of
+   removing it — the exhibit (up to 380px) and the paperwork (~246px) are
+   structurally mismatched by design, so the outer card was always going to
+   be exhibit-height, and whatever the paperwork column didn't use just sat
+   there as a blank rectangle under the button. The plate stays full size —
+   it's the thing being judged, not a bug to paper over by shrinking it.
+   Instead the column SPANS the exhibit's height (stretch + min-height: 100%,
+   so the border-left rule reaches all the way down) and CENTRES its content
+   inside that span — the leftover space splits above and below the block of
+   rows instead of collecting under it, which reads as composition rather
+   than as a column that ran out of content. */
+.jd-bench-r {
+  min-width: 0;
+  display: flex; flex-direction: column;
+  align-self: stretch; min-height: 100%; justify-content: center;
+  border-left: 1px solid var(--trule-2); padding-left: 20px;
+}
+.jd-bench-r .jd-turn-actions { margin-top: var(--sp-4); }
+/* the pinned exhibit: the artwork under examination stays in view for the
+   whole panel. On the landscape bench it simply sits in its column; in the
+   portrait stack (≤700px) it goes sticky and repaints the sheet's own paper
+   so the rows slide under it. No caption — the heading already says which
+   drawing this is. */
+.jd-turn-pin { display: flex; justify-content: center; }
+.jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: 100%; }
+
+/* ---- the examination rows -------------------------------------------------
+   F4/OVERRIDE 2 (round-16): a row's height used to be its 44px control PLUS
+   its own 0.15rem top/bottom padding — the row and the control were both
+   spending space on the same "give this a touch target" job. The padding is
+   gone; the control's own min-height carries the row entirely, and that
+   min-height is now a TOUCH floor, not a universal one (below). */
+/* the column split (owner directive r4): brought toward the report card's
+   own 47/53 (.rc-subj th, above) — 1fr against 1.13fr lands there while
+   staying fluid, and the 170px floor keeps a select legible once the
+   ≤700px fold has room to give it. */
+.jd-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 1.13fr);
+  gap: 2px 10px; align-items: center;
+  border-bottom: 1px solid var(--trule-2);
+  padding: 0;
+}
+/* OVERALL GRADE outranks the axes, the way the report card's tfoot grade
+   row outranks the axis rows above it: a 2px rule (not the row's usual
+   1px) sets it off from whatever came before it. It now sits LAST (owner
+   directive r4, matching the report card's own axes-then-tfoot order —
+   see benchPanel), so this rule finally separates what it looks like it
+   separates, rather than sitting above the very first row. */
+.jd-row--grade { border-top: 2px solid var(--trule); }
+/* the column head above the rows (owner directive r4): same grid as the
+   rows below it so the two labels land over their columns, set in the
+   report card's own <th> voice — small form caps, not the row's mono. */
+.jd-row--head {
+  padding: 0.3em 0 0.35em; border-bottom: 1px solid var(--trule);
+  font-family: var(--tform); font-size: var(--t-micro); font-weight: 400;
+  letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-2);
+}
+.jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* OVERRIDE 1 (round-16, owner): the ⓘ circle and the click-to-unfold
+   popover it drove are both gone outright — see the note at .jd-vh below
+   for the accessibility replacement (aria-describedby, not a widget). The
+   label is now an inert PRINTED GLOSS, not a control: a <span>, no
+   tabindex, no role. Its only affordance is typographic — a hairline
+   dotted rule under the text, the way a footnote marker sits under a word
+   rather than looking like a button — and it still anchors the hover/focus
+   tooltip on mouseover (ttInit reads data-tt-t/data-tt-d off any element,
+   not just interactive ones). */
+.jd-def {
+  display: inline-flex; align-items: center; min-width: 0;
+  font-family: var(--tform);
+  font-size: var(--t-label); letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--tink-2); text-align: left;
+}
+.jd-row--grade .jd-def { color: var(--tink); }
+.jd-def > span {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border-bottom: 1px dotted var(--trule-2);
+}
+.jd-def:hover > span { color: var(--tink); }
+
+/* the picked-value gauge sits ahead of the select (owner directive r4):
+   .rc-bar is the report card's own gauge, unchanged — reused, not
+   reinvented, so a filled bench row and its report-card row draw the same
+   mark. width:auto overrides .jd-turn-select's own width:100%, which would
+   otherwise fight the gauge for the row; flex:1 lets the select take
+   whatever the gauge doesn't need. Empty (no value picked yet) collapses
+   to nothing, so an unanswered row looks exactly as it did before this
+   round. */
+.jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
+.jd-row-ctrl .rc-bar { flex: 0 0 auto; }
+/* THE ONE BAND THE GAUGE CANNOT HAVE (measured, 2026-08-14). Between 701px
+   and 768px three rules collide: the bench is still LANDSCAPE (its portrait
+   fold is ≤700px), inputs are already raised to 16px against iOS focus-zoom
+   (the ≤768px rule at the foot of this file), and the paperwork column is at
+   its narrowest. A 47px bar plus its gap then leaves ~107px for a word that
+   wants 148px, and the select truncates mid-word — "SMALL PROBLEMS" renders
+   "SMALL PROB". The gauge is decoration; the visitor's own answer is not, so
+   the gauge is what yields. Above 768px the type drops back and both fit;
+   below 701px the row folds to label-over-control and the select spans the
+   full width, so the gauge is welcome at both ends and only stands down in
+   between. Verified at 720/760/800/860/920/1440. */
+@media (min-width: 701px) and (max-width: 768px) {
+  .jd-row-ctrl .rc-bar { display: none; }
+}
+
+/* the scale itself stays a NATIVE select — phone OS pickers, titles only.
+   OVERRIDE 2: 44px is a touch floor. Compressed by default (a <select>
+   doesn't need 44px of height to be legibly a select on a device with a
+   cursor); the coarse-pointer/mobile media queries below restore the floor
+   wherever a finger has to land on it. */
+.jd-turn-select {
+  min-height: 34px; width: 100%;
+  padding: 0.3rem 1.7rem 0.3rem 0.55rem;
+  font-family: var(--tmono); font-size: var(--t-body);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--tink-3);
+  background: rgba(255, 252, 240, 0.62)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1 L5 5 L9 1' fill='none' stroke='%2333240f' stroke-width='1.6'/%3E%3C/svg%3E")
+    right 0.55rem center no-repeat;
+  border: 1px solid var(--trule);
+  border-radius: 0;
+  -webkit-appearance: none; appearance: none;
+  cursor: pointer;
+}
+/* a chosen value is never colour alone: it goes bold and ink-dark */
+.jd-turn-select.is-set { color: var(--tink); font-weight: 700; background-color: rgba(255, 252, 240, 0.92); }
+.jd-turn-select:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* ---- the report path: a checkbox, and a note only once it is ticked ------ */
+.jd-turn-check {
+  display: flex; align-items: center; gap: 0.55rem;
+  min-height: 34px; cursor: pointer;               /* OVERRIDE 2: touch floor below */
+  font-size: var(--t-body); line-height: 1.45; color: var(--tink-2);
+}
+/* the native control, tinted to the drawer's red rather than the platform's
+   blue (accent-color is Safari 15.4+, under the iOS 16 floor; where it is
+   ignored the checkbox is simply the platform's own — no behaviour rides on
+   it) */
+.jd-turn-scrim input { accent-color: var(--tred); }
+.jd-turn-check input { width: 18px; height: 18px; flex: 0 0 auto; }
+/* the report path sits below the scales, not among them */
+.jd-turn-flag { margin-top: var(--sp-3); }   /* row rhythm: last row → flag = sp-3 (14px) */
+.jd-turn-note {
+  display: block; width: 100%; box-sizing: border-box;
+  min-height: 34px;           /* OVERRIDE 2: matches .jd-turn-check's floor */
+  padding: 0.4rem 0.55rem;
+  background: rgba(255, 252, 240, 0.78);
+  border: 1px solid var(--trule);
+  font-family: var(--tmono); font-size: var(--t-body); color: var(--tink);
+}
+.jd-turn-note:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+
+/* OVERRIDE 2 — the 44px floor, restored wherever a coarse pointer exists.
+   any-pointer:coarse catches a touchscreen even on a device that ALSO has a
+   mouse (a touch laptop); the ≤768px rule below is the belt-and-braces case
+   for browsers/devices that misreport pointer type. */
+@media (any-pointer: coarse) {
+  .jd-turn-select, .jd-turn-check, .jd-turn-note, .jd-rail-step,
+  .jd-turn-go, .jd-turn-alt { min-height: 44px; }
+}
+
+/* ============================================================================
+   THE CALL — THE PODIUM (owner pick, mockups/mockup-32-podium.html,
+   2026-08-22; the five-stop likert rail and the two-pill multi-way call are
+   both retired with it). The call files a RANK ORDER now. Four blocks
+   descend left to right — tallest is 1st — with exactly one print standing
+   on each, and the survivors waiting in a row underneath. The HEIGHT carries
+   the order, so the card's only words are the four ordinals and the button:
+   no instruction line, no caption, no margin question. Nothing is tilted,
+   nothing is stamped, and every motion is inside the no-preference query at
+   the foot of this block.
+   ========================================================================== */
+/* The step rail wears its SHORT labels on this card, at every width. The
+   call's sheet is now the NARROWEST in the flow (462px against the bench's
+   680), and five spelled-out steps overrun it — the same trim the phone
+   already takes at ≤600px, taken here for the same reason. */
+.jd-turn[data-view="call"] .jd-rail-long { display: none; }
+.jd-turn[data-view="call"] .jd-rail-short { display: inline; }
+
+.jd-pod {
+  --pw: 72px;        /* one print */
+  --pstep: 15px;     /* how much one rank rises over the next */
+  --pbase: 44px;     /* the shortest block (4th) */
+  position: relative;
+}
+.jd-pod-row { display: flex; align-items: flex-end; justify-content: center; gap: 6px; }
+.jd-pod-tier {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  cursor: pointer; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none;
+}
+/* the standing place: exactly one print tall, sitting on the block's top.
+   The dashed hole is built once and HIDDEN when taken — never thrown away
+   and rebuilt, so nothing inside a stand is ever detached under a drag. */
+.jd-pod-stand {
+  height: calc(var(--pw) + 25px);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 3px;
+}
+.jd-pod-hole {
+  width: var(--pw); height: var(--pw);
+  /* the stand is bottom-aligned so a seated print's CAPTION sits on the
+     block; the hole marks the artwork, which lands at the stand's TOP. Left
+     bottom-aligned it drew the empty square a caption-and-controls' height
+     below where the drawing actually arrives — a drop preview that lied by
+     about 45px. flex-start puts the square exactly where the print's own
+     artwork will be. */
+  align-self: flex-start;
+  border: 1px dashed rgba(74, 53, 18, 0.34);
+  background: rgba(255, 250, 232, 0.22);
+}
+.jd-pod-hole[hidden] { display: none; }
+.jd-pod-block {
+  position: relative;
+  border: 1px solid var(--trule); border-bottom: 0;
+  background: var(--tpaper-hi);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 240, 0.8);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 7px;
+  font-family: var(--tform); font-weight: 700; font-size: 0.82rem;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--tink);
+}
+/* a rank always stands at ITS OWN height, whatever the survivor count: a
+   two-step podium is the top two steps of a four-step one, not a rebuilt
+   pair, so 1st means the same thing on every turn */
+.jd-pod-tier[data-rank="1"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep) * 3); }
+.jd-pod-tier[data-rank="2"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep) * 2); }
+.jd-pod-tier[data-rank="3"] .jd-pod-block { height: calc(var(--pbase) + var(--pstep)); }
+.jd-pod-tier[data-rank="4"] .jd-pod-block { height: var(--pbase); }
+
+/* ── THE PODIUM STANDS: the unveil (owner, 2026-08-23) ────────────────────
+   The same steps the visitor just built, now carrying the answer. A block
+   reads rank at the top and the machine's name at its foot, so the shape of
+   their verdict and the identity behind it are one object.
+   The blocks stand on MORE PAPER here (--pbase is raised) and nothing else
+   changes: --pstep is untouched, so every step still rises over the next by
+   exactly what it did on the call and the staircase reads as the same
+   object. Names wrap to two lines rather than shrinking to fit — which is
+   why the phone's base is the TALLER of the two: at 62px a name wraps where
+   at 100px it does not. */
+.jd-pod--said { --pbase: 66px; }
+.jd-pod--said .jd-pod-block {
+  flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 7px 5px 6px; gap: 2px; text-align: center;
+}
+.jd-pod--said .jd-pod-ord { flex: 0 0 auto; }
+/* the name sits at the FOOT of its own pedestal */
+.jd-pod--said .jd-pod-who {
+  margin-top: auto; display: block; min-width: 0;
+  font-family: var(--tform); font-weight: 400; letter-spacing: 0.02em;
+  text-transform: none; line-height: 1.15; color: var(--tink);
+  overflow-wrap: anywhere;
+}
+.jd-pod--said .jd-pod-who b {
+  display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em;
+}
+/* nothing on this card is being moved: it is a filed answer */
+.jd-pod--said .jd-pod-tier { cursor: default; touch-action: auto; }
+.jd-pod--said .jd-pod-print { cursor: zoom-in; touch-action: auto; }
+.jd-pod-lost {
+  margin-top: 0.5rem; color: var(--tink-3);
+  font-size: var(--t-small); line-height: 1.5;
+}
+/* the floor the whole thing stands on */
+.jd-pod-floor { height: 3px; background: var(--trule); margin: 0 2px; }
+
+/* the step under the print in the air (GRAPHITE — the visitor's hand, the
+   same ink the finished rail step and the tie election's tick are written in) */
+.jd-pod-tier.is-armed .jd-pod-hole,
+.jd-pod-tier.is-armed .jd-pod-block { border-color: var(--graphite); }
+.jd-pod-tier.is-armed .jd-pod-hole {
+  border-style: solid; background: rgba(255, 250, 232, 0.6);
+}
+body.jd-pod-drag .jd-pod-hole { border-color: rgba(75, 64, 48, 0.7); }
+.jd-pod-tier:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+
+/* the row underneath. Every drawing keeps its own column, so nothing shuffles
+   sideways when its neighbour is lifted onto a step; once the podium is full
+   the row has nothing left to hold and gives most of its height back — but it
+   stays a real drop target, so a print can always come back down. */
+.jd-pod-tray {
+  display: flex; align-items: flex-start; justify-content: center; gap: 6px;
+  margin-top: 16px; min-height: calc(var(--pw) + 29px);
+  -webkit-tap-highlight-color: transparent;
+}
+.jd-pod-tray.is-bare { min-height: 46px; }
+.jd-pod-cell { flex: 1 1 0; min-width: 0; display: flex; justify-content: center; }
+
+/* A PRINT — the exhibits' own plate (.jd-turn-plate, from plate() in
+   junk-drawer.js) at print size, wrapped in the handle the drag and the tap
+   both read. The caption wears the darkroom/reveal label rather than the
+   plate's default printed strip: pencil hand, centred, no rule. */
+.jd-pod-print {
+  position: relative; width: var(--pw);
+  cursor: grab; touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none; user-select: none; -webkit-user-drag: none;
+}
+.jd-pod-print .jd-turn-plate { width: 100%; }
+.jd-pod-print .jd-turn-corner { width: 15px; height: 15px; }
+.jd-pod-print .jd-turn-plate figcaption {
+  margin: 3px 0 0; padding: 0; border: 0;
+  text-align: center;
+  font-family: var(--thand); font-size: 0.72rem; font-weight: 400;
+  line-height: 1.1; letter-spacing: 0; text-transform: none;
+  color: var(--graphite);
+}
+.jd-pod-print svg { pointer-events: none; }
+.jd-pod-print:focus-visible { outline: 2px solid var(--tred); outline-offset: 3px; }
+
+/* A PLACE THAT IS WAITING (owner, 2026-08-23). The no-drag path arms the
+   PLACE, not the print — so this graphite outline is the whole instruction:
+   the step you touched is holding itself open, and the next drawing you touch
+   goes into it. Graphite because it is the visitor's own hand, the same ink
+   their ranking is written in. */
+.jd-pod-tier.is-waiting .jd-pod-block,
+.jd-pod-tray.is-waiting { outline: 2px solid var(--graphite); outline-offset: 2px; }
+.jd-pod-tier.is-waiting .jd-pod-hole { border-color: var(--graphite); border-style: solid; }
+/* in the air: the seat it left keeps its place and fades, so the row never
+   collapses under a drag */
+.jd-pod-print.is-lifted .jd-turn-art { opacity: 0.2; box-shadow: none; }
+.jd-pod-print.is-lifted figcaption { opacity: 0.3; }
+
+/* the ghost that rides the pointer. Appended to the SCRIM rather than <body>
+   — this form's tokens are scoped there, and the scrim carries no transform
+   or filter, so position:fixed still means the viewport. */
+.jd-pod-ghost { position: fixed; z-index: 90; left: 0; top: 0; pointer-events: none; }
+.jd-pod-ghost .jd-turn-art {
+  box-shadow: 0 12px 22px -6px rgba(6, 3, 0, 0.6), 0 3px 7px rgba(6, 3, 0, 0.4);
+}
+body.jd-pod-drag, body.jd-pod-drag * {
+  -webkit-user-select: none !important; user-select: none !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* THE COUNTDOWN. Last place is named first and the winner last — the one
+     reading order a podium makes natural. It lives inside no-preference and
+     nowhere else: with reduced motion every name is simply already there on
+     the first paint, which is the base state this is added to. */
+  @keyframes jd-pod-said {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .jd-pod--said .jd-pod-who {
+    /* BACKWARDS, never both: the fill holds the from-state through the delay
+       and then hands the element back to its own styles, so the resting state
+       of a name is the one it has with no animation at all. A card whose
+       whole job is to say a name must not depend on an animation finishing
+       in order to show it. */
+    animation: jd-pod-said 260ms ease-out backwards;
+    animation-delay: var(--pdelay, 0ms);
+  }
+  .jd-pod-block, .jd-pod-hole,
+  .jd-pod-print .jd-turn-art, .jd-pod-print .jd-turn-plate figcaption {
+    transition: background-color 130ms ease, border-color 130ms ease, opacity 130ms ease;
+  }
+}
+/* The podium's own breakpoint, and the only one it has: at ≤430px the three
+   size tokens step down together so four prints, four blocks and their gaps
+   still fit a 375px sheet without a horizontal scroll — and 62px is still
+   well over the 44px touch floor the coarse-pointer rules below guard for
+   everything else. The SHAPE never changes; nothing is hidden, stacked or
+   tabbed away (see "THE CALL NEVER TABS" at the ≤600px block). */
+@media (max-width: 430px) {
+  .jd-pod { --pw: 62px; --pstep: 13px; --pbase: 40px; }
+  /* the unveil's raised base steps down too, and must be restated HERE: it
+     is the same specificity as the line above and would otherwise lose to it
+     purely on source order, taking the names' room with it */
+  .jd-pod--said { --pbase: 68px; }
+  .jd-pod--said .jd-pod-who b { font-size: 0.6rem; }
+  .jd-pod-row, .jd-pod-tray { gap: 4px; }
+  .jd-pod-block { font-size: 0.74rem; }
+  .jd-pod-print .jd-turn-corner { width: 13px; height: 13px; }
+}
+
+/* ============================================================================
+   THE UNVEIL — who drew what, and where it went.
+   ========================================================================== */
+.jd-turn-reveal { list-style: none; margin: 0 0 0.6rem; padding: 0; }
+.jd-turn-reveal li {
+  display: flex; align-items: baseline; gap: 0.7em; flex-wrap: wrap;
+  padding: 0.4rem 0.1rem;
+  border-bottom: 1px solid var(--trule-2);
+  font-size: var(--t-body); color: var(--tink);
+}
+.jd-turn-reveal li:first-child { border-top: 1px solid var(--trule-2); }
+.jd-turn-reveal b {
+  flex: 0 0 auto; width: 1.5rem; text-align: center;
+  font-family: var(--tform); font-size: var(--t-body); font-weight: 700; letter-spacing: 0.1em;
+  border: 1px solid var(--trule-2); background: rgba(255, 250, 232, 0.5);
+  padding: 1px 0 0;
+}
+.jd-turn-reveal i { font-style: normal; color: var(--tink-3); }
+/* the fate follows the name rather than sitting at the row's right margin */
+.jd-turn-reveal .fate {
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--tink-3);
+}
+.jd-turn-reveal .fate.kept { color: var(--tstamp); font-weight: 700; }
+
+/* the tie election: the pill row survives for this alone. The tick is
+   GRAPHITE — the visitor's hand, the same as the likert's pencilled ring. */
+.jd-pillrow { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.15rem 0 0; }
+.jd-pill {
+  position: relative; flex: 1 1 110px; min-width: 92px; min-height: 44px;
+  display: flex; align-items: center; box-sizing: border-box;
+  padding: 0.45rem 0.55rem 0.5rem 1.5rem;
+  background: rgba(255, 250, 232, 0.5); border: 1px solid var(--trule);
+  font-family: var(--tform); font-size: var(--t-label); letter-spacing: 0.16em;
+  text-transform: uppercase; cursor: pointer;
+}
+/* the real radio stays in the accessibility tree and in the tab order; only
+   its box is hidden, and the pill takes the focus ring via :focus-within */
+.jd-pill input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.jd-pill:focus-within { outline: 2px solid var(--tred); outline-offset: 2px; }
+/* selection is never signalled by colour alone: the tick is the primary
+   statement, the border and the inset rule second it */
+.jd-pill-tick {
+  position: absolute; left: 0.4rem; top: 50%;
+  transform: translateY(-58%) rotate(-9deg);
+  font-family: var(--thand); font-size: 0.95rem; color: var(--graphite); opacity: 0;
+}
+.jd-pill.is-on {
+  background: rgba(255, 250, 232, 0.95);
+  border-color: var(--tred); box-shadow: inset 0 0 0 1px var(--tred);
+}
+.jd-pill.is-on .jd-pill-tick { opacity: 1; }
+
+
+/* ---- the singleton hover/focus tooltip ------------------------------------
+   Fixed and pointer-events:none — it can never take a press a control should
+   have had. aria-hidden: screen readers get every definition natively via
+   aria-describedby (the likert radios, and — OVERRIDE 1, round-16 — every
+   row's scale select, pointed at the .jd-vh text that used to live behind a
+   click-to-unfold .jd-pop). Appended to <body>, so its fonts/colours are
+   literal rather than the scrim's scoped tokens. */
+.jd-tt {
+  position: fixed; z-index: 999;
+  max-width: 270px; padding: 0.5rem 0.6rem;
+  background: #2c1c09; color: #f3e9c8;
+  border: 1px solid rgba(243, 233, 200, 0.4);
+  box-shadow: 4px 6px 12px -4px rgba(0, 0, 0, 0.55);
+  font-family: "Courier Prime", "Courier New", Courier, monospace;
+  font-size: var(--t-body); line-height: 1.55;
+  pointer-events: none;
+}
+.jd-tt b {
+  display: block; margin-bottom: 0.15rem;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+/* visually-hidden. Carries the likert's per-stop descriptions, and (OVERRIDE
+   1, round-16) each row's scale definition — permanently in the DOM instead
+   of behind the retired click-to-unfold .jd-pop, wired to its control via
+   aria-describedby so a screen reader announces it the moment the control
+   itself receives focus. No toggle, no state, nothing to keep in sync. */
+.jd-vh {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---- the abandon confirm: one layer, peeled before the modal ------------- */
+.jd-turn-confirm {
+  position: absolute; inset: 0; z-index: 8;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px;
+  background: rgba(20, 10, 4, 0.55);
+}
+.jd-turn-confirm-card {
+  max-width: 340px;
+  padding: 0.9rem 1rem 1rem;
+  background: var(--tpaper-hi);
+  border: 1px solid rgba(48, 38, 20, 0.6);
+  box-shadow: 6px 10px 18px -6px rgba(6, 3, 0, 0.6);
+}
+.jd-turn-confirm-card p {
+  margin: 0; font-family: var(--tmono); font-size: var(--t-body); line-height: 1.55;
+}
+
+/* motion is added, never assumed */
+@media (prefers-reduced-motion: no-preference) {
+  /* the sheet is re-folded for the landscape bench and back again at the
+     call — a short transition makes that read as one document changing
+     shape rather than two cards swapping */
+  .jd-turn { transition: width 0.22s cubic-bezier(.2, .8, .25, 1); }
+  /* the def label's one hover feedback (OVERRIDE 1): an ink shift, no
+     click-to-unfold left to animate open */
+  .jd-def > span { transition: color 0.15s; }
+}
+
+/* ============================================================================
+   THE PORTRAIT STACK — ≤700px the bench folds back to the mockup's phone
+   flow, and ≤600px everything else compresses with it.
+   ========================================================================== */
+@media (max-width: 700px) {
+  /* the landscape bench unwinds: the card returns to the form's own measure,
+     the column wrappers go display:contents (the DOM's source order IS the
+     portrait order), and the exhibit goes sticky again */
+  .jd-turn[data-view="bench"] { width: min(680px, 100%); }
+  /* (the call needs no clamp here: since the podium it is 462px at every
+     width — see .jd-turn[data-view="call"] above) */
+  /* (the reveal needs no clamp here: its 2×2 pile lives on the darkroom's
+     560px measure at every width — round 26 rev. 2) */
+  .jd-bench { display: block; }
+  .jd-bench-l, .jd-bench-r { display: contents; }
+  .jd-turn-pin {
+    position: sticky; top: 0; z-index: 4;
+    padding: 0.1rem 0 0.45rem; margin: 0 0 0.15rem;
+    background: var(--tpaper) var(--tgrain);
+    /* R2-F3 (round-17), reasoning updated (owner directive r4 — grade moved
+       to last, see benchPanel): no border-bottom here. The HEADER row is
+       always first under the pin in the portrait stack (order changed, its
+       position in the DOM did not), and the header carries no top rule of
+       its own to double against; a rule painted here would just be a lone
+       hairline with nothing on either side of it justifying it. The
+       box-shadow stays — it's doing a different job, selling the sticky
+       plate lifting off the rows sliding underneath it, not ruling off a
+       section. */
+    box-shadow: 0 8px 10px -9px rgba(20, 10, 3, 0.55);
+  }
+  /* THE PINNED EXHIBIT, sized by the viewport it has to share (owner,
+     2026-08-15). 148px was a thumbnail of the thing under examination — a
+     phone's report card gives the same artwork the card's full width, so the
+     visitor graded a drawing a quarter the size of the one they'd just been
+     reading about. The constraint the flat 148px was really guarding is that
+     this plate is STICKY: whatever it takes, it takes for the whole panel,
+     out of the scroller the rows live in. So it is bounded in the axis that
+     actually matters — dvh, not px — the way the record card's --plate is.
+     At 30dvh a tall phone gets a ~250px exhibit and still has room for the
+     rail, four rows and the button without scrolling; a short landscape
+     window yields down to the floor instead of swallowing the form. */
+  .jd-turn-pin .jd-turn-plate { width: min(100%, clamp(140px, 30dvh, 300px)); }
+  .jd-turn-pin .jd-turn-corner { width: 15px; height: 15px; }
+}
+@media (max-width: 600px) {
+  .jd-turn-head { padding: 7px 48px 6px 12px; gap: 8px; }
+  .jd-turn-title { font-size: 0.76rem; letter-spacing: 0.1em; }
+  /* the darkroom/reveal announcement heading steps down with the sheet, or
+     the reveal's longer counts ("Four drawings came back") wrap the band */
+  .jd-turn[data-view="darkroom"] .jd-turn-head,
+  .jd-turn[data-view="plates"] .jd-turn-head { padding: 0 48px; }
+  .jd-turn[data-view="darkroom"] .jd-turn-title,
+  .jd-turn[data-view="plates"] .jd-turn-title {
+    font-size: 0.8rem; letter-spacing: 0.16em; text-indent: 0.16em;
+  }
+  .jd-turn-scroll { padding: 10px 12px 14px; }
+  /* THE CALL NEVER TABS. The standing rule was that it stacks rather than
+     hide one of the drawings behind a tab — the visitor must not have to
+     hold a drawing in their head. The podium honours the same rule by not
+     needing to stack at all: every survivor is on the card at once, at
+     print size, at every width (the tokens shrink at ≤430px, the shape does
+     not change). Nothing here hides a survivor. */
+  /* the examination row becomes label-over-control */
+  .jd-row { grid-template-columns: minmax(0, 1fr); }
+  .jd-row .jd-turn-select { margin-bottom: 0.3rem; }
+  /* the header row named two COLUMNS; label-over-control just stacked
+     both of them into one, so there is no pair left for it to name — each
+     row's own dotted-underline label already says what it is at this
+     width, the way it always has. Drop the header rather than let it read
+     as two mystery lines above the first row. */
+  .jd-row--head { display: none; }
+  /* (the 108px pin is gone: a narrow screen is not a short one, and the
+     ≤700px rule above is already bounded by the height it competes for.
+     Stacking a width breakpoint on top of it only shrank the exhibit on
+     precisely the devices with the most vertical room to give it.) */
+  .jd-rail-long { display: none; }
+  .jd-rail-short { display: inline; }
+  /* the counter leaves the field: at 16px the text would scroll under it */
+  .jd-turn-count {
+    position: static; display: block; text-align: right; margin-top: 4px;
+    border: 0; background: none; padding: 0;
+  }
+  .jd-turn-input { padding-bottom: 0.55rem; }
+  .jd-pill { flex: 1 1 100%; }
+}
+@media (max-width: 768px) {
+  /* 16px kills iOS's focus zoom, which would otherwise leave this fixed
+     layer parked half off-screen */
+  .jd-turn-input, .jd-turn-select, .jd-turn-note { font-size: 16px; }
+  .jd-turn-input { min-height: 8.5rem; }
+  .jd-turn-select { letter-spacing: 0.06em; }
+  /* OVERRIDE 2: the 44px touch floor, kept UNCONDITIONALLY at this
+     breakpoint regardless of what any-pointer reports — a phone-width
+     viewport is a touch target regardless of what the UA claims about the
+     pointer that's actually attached to it right now */
+  .jd-turn-select, .jd-turn-check, .jd-turn-note, .jd-rail-step,
+  .jd-turn-go, .jd-turn-alt { min-height: 44px; }
+  /* immersive mode has slid the banner off the top (see .site-banner above),
+     so the reserved band comes back as ordinary padding — and returns only
+     while the chrome is actually showing */
+  /* padding tightens for the small screen; and the card rides the TOP of
+     the screen instead of centring (owner, 2026-08-16): a centred card put
+     the prompt's textarea at mid-screen, exactly where the software
+     keyboard lands — the field and the keys crowded each other.
+     Top-aligned, the field sits in the strip the keyboard never covers,
+     on every card of the flow alike. */
+  .jd-turn-scrim { padding: 10px 8px; align-items: flex-start; }
+  html.jd-chrome .jd-turn-scrim { padding-top: calc(var(--banner-h) + 8px); }
+  .jd-turn-actions .jd-turn-go, .jd-turn-actions .jd-turn-alt { flex: 1 1 auto; }
+}
+/* ---- the visitor's own item, in the pile --------------------------------
+   A standard .jd-item in every respect that the gesture code can see — the
+   tag is a pseudo-element on the wrapper, which is pointer-events:none, so
+   it can never take a press the artwork should have had, and the item's own
+   drop-shadow carries it. It stays axis-aligned while the artwork rotates:
+   it reads as a paper tag lying beside the object, not printed on it. */
+.jd-item--visitor::after {
+  content: attr(data-visitor);
+  position: absolute; left: -6px; bottom: -9px;
+  padding: 2px 5px 2px 8px;
+  background: #e8d9a8; color: #3a2a12;
+  border: 1px solid rgba(74, 53, 18, 0.45);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+  font-family: var(--font-mono);
+  font-size: 8px; line-height: 1.4; letter-spacing: 0.14em;
+  transform: rotate(-7deg);
+  pointer-events: none;
+}
+/* the drop: NO animation-fill-mode, deliberately — a retained final
+   transform would outrank the picked-upright zoom for the rest of the
+   session, since animations beat declarative styles */
+.jd-item--visitor.is-dropped { animation: jdTurnDropIn 0.55s ease-out; }
+.jd-item--visitor.is-dropped svg {
+  animation: jdTurnDropArt 0.5s cubic-bezier(.2, .8, .25, 1);
+}
+@keyframes jdTurnDropIn { from { opacity: 0; } 40% { opacity: 1; } }
+@keyframes jdTurnDropArt {
+  from { transform: rotate(var(--rot)) scale(2.1); }
+  to   { transform: rotate(var(--rot)) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jd-item--visitor.is-dropped,
+  .jd-item--visitor.is-dropped svg { animation: none; }
+}

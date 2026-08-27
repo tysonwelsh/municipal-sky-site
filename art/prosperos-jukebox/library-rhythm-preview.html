@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Library Rhythm Preview — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        background: #0a0a0a;
+        color: #997733;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 32px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 760px;
+        margin: 0 auto;
+        position: relative;
+      }
+      /* CRT scanline */
+      .container::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 2px,
+          rgba(0, 0, 0, 0.08) 2px,
+          rgba(0, 0, 0, 0.08) 4px
+        );
+        z-index: 10;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffaa00;
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        font-weight: 700;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.5),
+          0 0 30px rgba(255, 170, 0, 0.15);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665520;
+        letter-spacing: 3px;
+        margin: 0 0 28px;
+        font-size: 18px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 22px;
+      }
+      .transport .vol-label {
+        font-size: 14px;
+        letter-spacing: 1px;
+        color: #554422;
+      }
+      .transport input[type="range"] {
+        flex: 1;
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+      }
+      .transport input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+      .transport input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: none;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+        cursor: pointer;
+      }
+      .stop-all {
+        font-family: "VT323", monospace;
+        font-size: 18px;
+        padding: 6px 16px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .stop-all:hover,
+      .stop-all.active {
+        border-color: #ff4444;
+        color: #ff4444;
+        text-shadow: 0 0 6px rgba(255, 68, 68, 0.4);
+      }
+
+      .rhythm-card {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 16px 20px 18px;
+        margin-bottom: 16px;
+        transition: border-color 0.2s;
+      }
+      .rhythm-card.active {
+        border-color: #ffaa00;
+        box-shadow: 0 0 12px rgba(255, 170, 0, 0.15);
+      }
+      .rhythm-card.featured {
+        border-color: #554422;
+        background: #12100a;
+      }
+      .rhythm-card.featured h2 {
+        color: #ffcc33;
+      }
+      .rhythm-card h2 {
+        font-family: "VT323", monospace;
+        color: #ffaa00;
+        font-size: 22px;
+        letter-spacing: 2px;
+        margin: 0 0 6px;
+      }
+      .rhythm-card .desc {
+        font-size: 16px;
+        color: #776644;
+        line-height: 1.5;
+        margin: 0 0 8px;
+      }
+      .rhythm-card .diagram {
+        font-family: "VT323", monospace;
+        color: #336677;
+        font-size: 16px;
+        margin: 0 0 12px;
+        letter-spacing: 1px;
+        white-space: nowrap;
+        overflow-x: auto;
+      }
+      .play-btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 20px;
+        background: #111118;
+        color: #554422;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      .play-btn:hover {
+        border-color: #ffaa00;
+        color: #ffaa00;
+      }
+      .play-btn.active {
+        border-color: #ffaa00;
+        color: #ffaa00;
+        text-shadow: 0 0 6px rgba(255, 170, 0, 0.4);
+        background: #1a1820;
+      }
+
+      .footnote {
+        color: #443322;
+        font-size: 14px;
+        text-align: center;
+        margin-top: 28px;
+        letter-spacing: 1px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Library Rhythm Preview</h1>
+      <p class="subtitle">~ harpsichord cluster patterns ~</p>
+
+      <div class="transport">
+        <span class="vol-label">VOL</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <button class="stop-all" id="stop-all">&#9632; STOP</button>
+      </div>
+
+      <div class="rhythm-card featured" data-id="combined">
+        <h2>&#9733; All 4, randomized</h2>
+        <p class="desc">
+          Each fire, picks one of the four patterns at random &mdash; grace,
+          rolled chord, trill, or question &amp; answer &mdash; each with its
+          own internal randomization (intervals, directions, note counts,
+          spacing, durations). This is the proposed Library behavior.
+        </p>
+        <p class="diagram">
+          &#9833;&#9833;&#9839; &middot; &middot; &#9833;&#9833;&#9833;&#9833;
+          &middot; &middot; &middot; &#9833;&#9833;&#9833;&#9833;&#9833;
+          &middot; &middot; &middot; &#9833;&#9833; &middot;
+          &#9833;&#9833;&#9833; &middot; &middot;
+        </p>
+        <button class="play-btn" data-id="combined">&#9654; PLAY</button>
+      </div>
+
+      <div class="rhythm-card" data-id="current">
+        <h2>0. Current behavior (baseline)</h2>
+        <p class="desc">
+          Single note every 3–7 seconds with a 20% chance of rest. This is what
+          the Library harpsichord does today &mdash; included here for A/B
+          comparison.
+        </p>
+        <p class="diagram">
+          &#9833; &middot; &middot; &middot; &middot; &middot; &middot; &middot;
+          &middot; &#9833; &middot; &middot; &middot; &middot; &middot; &middot;
+          &#9833; &middot; &middot; &middot; &middot;
+        </p>
+        <button class="play-btn" data-id="current">&#9654; PLAY</button>
+      </div>
+
+      <div class="rhythm-card" data-id="grace">
+        <h2>1. Grace note + hold</h2>
+        <p class="desc">
+          A quick appoggiatura a step above the main note, landing on the main
+          note ~80ms later, held long. Classic baroque ornamentation &mdash; two
+          notes per cluster.
+        </p>
+        <p class="diagram">
+          &#9833;&#9833;&#9839;&#9839;&#9839;&#9839;&#9839;&#9839; &middot;
+          &middot; &middot; &middot; &middot; &middot;
+          &#9833;&#9833;&#9839;&#9839;&#9839;&#9839;&#9839;&#9839; &middot;
+          &middot; &middot; &middot; &middot;
+        </p>
+        <button class="play-btn" data-id="grace">&#9654; PLAY</button>
+      </div>
+
+      <div class="rhythm-card" data-id="roll">
+        <h2>2. Rolled chord</h2>
+        <p class="desc">
+          Three or four scale tones rolled up or down with ~80ms between notes,
+          like a harpsichordist arpeggiating a chord. Then a long breath.
+        </p>
+        <p class="diagram">
+          &#9833;&#9833;&#9833;&#9833;&#9839;&#9839;&#9839;&#9839; &middot;
+          &middot; &middot; &middot; &middot; &middot; &middot; &middot;
+          &#9833;&#9833;&#9833;&#9839;&#9839;&#9839;&#9839; &middot; &middot;
+        </p>
+        <button class="play-btn" data-id="roll">&#9654; PLAY</button>
+      </div>
+
+      <div class="rhythm-card" data-id="trill">
+        <h2>3. Trill and rest</h2>
+        <p class="desc">
+          Quick alternation between two adjacent scale tones (5&ndash;7 notes at
+          ~55ms spacing), then a long silence. Very baroque, ornate.
+        </p>
+        <p class="diagram">
+          &#9833;&#9833;&#9833;&#9833;&#9833;&#9833; &middot; &middot; &middot;
+          &middot; &middot; &middot; &middot; &middot; &middot; &middot;
+          &middot; &#9833;&#9833;&#9833;&#9833;&#9833; &middot; &middot;
+        </p>
+        <button class="play-btn" data-id="trill">&#9654; PLAY</button>
+      </div>
+
+      <div class="rhythm-card" data-id="qa">
+        <h2>4. Question &amp; answer</h2>
+        <p class="desc">
+          Two rising notes (question), a short breath, then three descending
+          notes (answer) with the last held long. A conversational phrase, then
+          silence.
+        </p>
+        <p class="diagram">
+          &#9833;&#9833; &middot; &middot; &#9833;&#9833;&#9833;&#9839;&#9839;
+          &middot; &middot; &middot; &middot; &middot; &middot; &middot;
+          &#9833;&#9833; &middot; &middot; &#9833;&#9833;&#9833;&#9839;&#9839;
+          &middot;
+        </p>
+        <button class="play-btn" data-id="qa">&#9654; PLAY</button>
+      </div>
+
+      <p class="footnote">
+        C DORIAN &middot; KARPLUS-STRONG HARPSICHORD &middot; WARM LIBRARY
+        REVERB
+      </p>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // --- Scale + Markov (Library) ---
+        var LIB_SCALE_4 = [262, 294, 311, 349, 392, 440, 466]; // C Dorian (C–Bb)
+        var LIB_MELODY_MARKOV = [
+          [0.05, 0.3, 0.25, 0.1, 0.2, 0.05, 0.05],
+          [0.2, 0.05, 0.3, 0.15, 0.15, 0.1, 0.05],
+          [0.15, 0.25, 0.05, 0.25, 0.15, 0.05, 0.1],
+          [0.1, 0.1, 0.25, 0.05, 0.3, 0.1, 0.1],
+          [0.2, 0.1, 0.1, 0.2, 0.05, 0.2, 0.15],
+          [0.1, 0.15, 0.05, 0.15, 0.25, 0.05, 0.25],
+          [0.25, 0.1, 0.15, 0.1, 0.15, 0.2, 0.05],
+        ];
+        var melodyIdx = 0;
+
+        function markovNext(row, r) {
+          var s = 0;
+          for (var i = 0; i < row.length; i++) {
+            s += row[i];
+            if (r < s) return i;
+          }
+          return row.length - 1;
+        }
+        function nextMelodyIdx() {
+          melodyIdx = markovNext(LIB_MELODY_MARKOV[melodyIdx], Math.random());
+          return melodyIdx;
+        }
+
+        // --- Audio graph ---
+        var ctx, masterGain, compressor;
+        var reverbSend, reverbDry, reverbWet, reverbConv, reverbPreDelay;
+        var masterVol = 0.12;
+        var playing = false;
+        var activeId = null;
+        var timers = new Set();
+
+        function buildReverbIR() {
+          // Library: warm intimate room — decay 2.0, hfDamp 4, preDelay 25ms, wet 0.35
+          var decay = 2.0,
+            hfDamp = 4.0;
+          var irLen = ctx.sampleRate * decay;
+          var buf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var d = buf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decay);
+              var hf = Math.exp((-hfDamp * t) / decay);
+              d[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+          reverbConv.buffer = buf;
+          reverbPreDelay.delayTime.setValueAtTime(0.025, ctx.currentTime);
+          reverbWet.gain.setValueAtTime(0.35, ctx.currentTime);
+        }
+
+        function initAudio() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+
+          reverbSend = ctx.createGain();
+          reverbDry = ctx.createGain();
+          reverbWet = ctx.createGain();
+          reverbConv = ctx.createConvolver();
+          reverbPreDelay = ctx.createDelay(0.1);
+
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(reverbPreDelay);
+          reverbPreDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          reverbDry.connect(masterGain);
+          reverbWet.connect(masterGain);
+          masterGain.connect(compressor);
+          compressor.connect(ctx.destination);
+
+          buildReverbIR();
+        }
+
+        // Pan node per cluster — keep the cluster feeling like one event
+        function newPanner() {
+          var p = ctx.createStereoPanner();
+          p.pan.setValueAtTime((Math.random() * 2 - 1) * 0.7, ctx.currentTime);
+          p.connect(reverbSend);
+          return p;
+        }
+
+        // Karplus-Strong pluck + octave-harmonic sine (matches production libraryMelody)
+        function pluck(freq, startTime, duration, out, gainMult) {
+          if (gainMult == null) gainMult = 1.0;
+          var c = ctx;
+
+          var pluckLen = 0.03;
+          var buf = c.createBuffer(1, c.sampleRate * pluckLen, c.sampleRate);
+          var data = buf.getChannelData(0);
+          for (var j = 0; j < data.length; j++) data[j] = Math.random() * 2 - 1;
+          var n = c.createBufferSource();
+          n.buffer = buf;
+          n.loop = true;
+
+          var pf = c.createBiquadFilter();
+          pf.type = "lowpass";
+          pf.frequency.setValueAtTime(freq * 3, startTime);
+          pf.frequency.exponentialRampToValueAtTime(
+            freq * 0.8,
+            startTime + duration * 0.8,
+          );
+          pf.Q.setValueAtTime(0.5, startTime);
+
+          var pg = c.createGain();
+          n.connect(pf);
+          pf.connect(pg);
+          pg.connect(out);
+          pg.gain.setValueAtTime(0.09 * gainMult, startTime);
+          pg.gain.exponentialRampToValueAtTime(
+            0.03 * gainMult,
+            startTime + 0.15,
+          );
+          pg.gain.linearRampToValueAtTime(0, startTime + duration);
+          n.start(startTime);
+          n.stop(startTime + duration + 0.01);
+
+          // Octave harmonic
+          var ho = c.createOscillator();
+          var hg = c.createGain();
+          ho.type = "sine";
+          ho.frequency.setValueAtTime(freq * 2, startTime);
+          ho.connect(hg);
+          hg.connect(out);
+          hg.gain.setValueAtTime(0.03 * gainMult, startTime);
+          hg.gain.exponentialRampToValueAtTime(0.001, startTime + 0.3);
+          hg.gain.linearRampToValueAtTime(0, startTime + 0.4);
+          ho.start(startTime);
+          ho.stop(startTime + 0.5);
+        }
+
+        function schedule(fn, ms) {
+          var id = setTimeout(function () {
+            timers.delete(id);
+            if (playing) fn();
+          }, ms);
+          timers.add(id);
+        }
+        function clearTimers() {
+          timers.forEach(function (id) {
+            clearTimeout(id);
+          });
+          timers.clear();
+        }
+
+        // --- Cluster functions: each plays ONE cluster through the given panner. ---
+        // Separated from scheduling so the "combined" rhythm can pick one at random.
+
+        function clusterSingle(out) {
+          var now = ctx.currentTime;
+          if (Math.random() >= 0.2) {
+            var idx = nextMelodyIdx();
+            pluck(LIB_SCALE_4[idx], now, 1.5 + Math.random(), out, 1.0);
+          }
+        }
+
+        function clusterGrace(out) {
+          var now = ctx.currentTime;
+          var mainIdx = nextMelodyIdx();
+
+          // 10% chance: "turn" ornament — above / main / below / main
+          if (Math.random() < 0.1) {
+            var above = Math.min(mainIdx + 1, LIB_SCALE_4.length - 1);
+            var below = Math.max(mainIdx - 1, 0);
+            var g = 0.055 + Math.random() * 0.02;
+            pluck(LIB_SCALE_4[above], now, 0.14, out, 0.6);
+            pluck(LIB_SCALE_4[mainIdx], now + g, 0.14, out, 0.55);
+            pluck(LIB_SCALE_4[below], now + g * 2, 0.14, out, 0.6);
+            pluck(
+              LIB_SCALE_4[mainIdx],
+              now + g * 3 + 0.02,
+              1.5 + Math.random() * 0.8,
+              out,
+              1.0,
+            );
+            return;
+          }
+
+          var graceRnd = Math.random();
+          var graceIdx;
+          if (graceRnd < 0.6)
+            graceIdx = Math.min(mainIdx + 1, LIB_SCALE_4.length - 1);
+          else if (graceRnd < 0.85) graceIdx = Math.max(mainIdx - 1, 0);
+          else graceIdx = Math.min(mainIdx + 2, LIB_SCALE_4.length - 1);
+          var graceGap = 0.06 + Math.random() * 0.05;
+
+          pluck(
+            LIB_SCALE_4[graceIdx],
+            now,
+            0.2 + Math.random() * 0.1,
+            out,
+            0.65 + Math.random() * 0.1,
+          );
+          pluck(
+            LIB_SCALE_4[mainIdx],
+            now + graceGap,
+            1.6 + Math.random() * 0.8,
+            out,
+            1.0,
+          );
+
+          // 15% chance: octave-double the main for emphasis
+          if (Math.random() < 0.15) {
+            pluck(
+              LIB_SCALE_4[mainIdx] * 2,
+              now + graceGap,
+              1.0 + Math.random() * 0.5,
+              out,
+              0.45,
+            );
+          }
+
+          if (Math.random() < 0.2) {
+            var grace2Idx = Math.max(mainIdx - 1, 0);
+            pluck(
+              LIB_SCALE_4[grace2Idx],
+              now + graceGap * 0.5,
+              0.15,
+              out,
+              0.55,
+            );
+          }
+        }
+
+        function clusterRoll(out) {
+          var now = ctx.currentTime;
+          var rootIdx = Math.floor(Math.random() * 4);
+          var chord = [rootIdx, rootIdx + 2, rootIdx + 4];
+          var shapeRnd = Math.random();
+          if (shapeRnd < 0.25) chord = [rootIdx, rootIdx + 4];
+          else if (shapeRnd >= 0.55) chord.push(rootIdx + 6);
+          chord = chord.map(function (i) {
+            return i % LIB_SCALE_4.length;
+          });
+
+          // 15% chance: insert a non-chord passing tone in the middle
+          if (Math.random() < 0.15 && chord.length >= 3) {
+            var mid = Math.floor(chord.length / 2);
+            var passIdx = (chord[mid] + 1) % LIB_SCALE_4.length;
+            chord.splice(mid, 0, passIdx);
+          }
+
+          var dirRnd = Math.random();
+          if (dirRnd >= 0.55 && dirRnd < 0.9) chord.reverse();
+          else if (dirRnd >= 0.9 && chord.length >= 4)
+            chord = [chord[0], chord[2], chord[1], chord[3]];
+
+          // 15% chance: swap adjacent pair so the roll feels less mechanical
+          if (Math.random() < 0.15 && chord.length >= 3) {
+            var swapIdx = Math.floor(Math.random() * (chord.length - 1));
+            var tmp = chord[swapIdx];
+            chord[swapIdx] = chord[swapIdx + 1];
+            chord[swapIdx + 1] = tmp;
+          }
+
+          var spacing = 0.06 + Math.random() * 0.05;
+          for (var i = 0; i < chord.length; i++) {
+            var jit = (Math.random() - 0.5) * 0.025;
+            pluck(
+              LIB_SCALE_4[chord[i]],
+              now + i * spacing + jit,
+              1.0 + Math.random() * 0.8,
+              out,
+              0.82 + Math.random() * 0.18,
+            );
+          }
+          melodyIdx = chord[chord.length - 1];
+        }
+
+        function clusterTrill(out) {
+          var now = ctx.currentTime;
+          // 20% chance: wider interval (third instead of step)
+          var interval = Math.random() < 0.2 ? 2 : 1;
+
+          // 20% chance: mordent — three-note ornament
+          if (Math.random() < 0.2) {
+            var mIdx = Math.floor(
+              Math.random() * (LIB_SCALE_4.length - interval),
+            );
+            var nIdx = mIdx + interval;
+            var sp = 0.05 + Math.random() * 0.02;
+            pluck(LIB_SCALE_4[mIdx], now, 0.18, out, 0.65);
+            pluck(LIB_SCALE_4[nIdx], now + sp, 0.18, out, 0.6);
+            pluck(
+              LIB_SCALE_4[mIdx],
+              now + sp * 2,
+              1.4 + Math.random() * 0.6,
+              out,
+              0.9,
+            );
+            melodyIdx = mIdx;
+            return;
+          }
+
+          var noteCount = 4 + Math.floor(Math.random() * 4);
+          var lowIdx = Math.floor(
+            Math.random() * (LIB_SCALE_4.length - interval),
+          );
+          var highIdx = lowIdx + interval;
+          var spacing = 0.045 + Math.random() * 0.025;
+
+          for (var i = 0; i < noteCount; i++) {
+            var idx = i % 2 === 0 ? lowIdx : highIdx;
+            var jt = (Math.random() - 0.5) * 0.012;
+            pluck(
+              LIB_SCALE_4[idx],
+              now + i * spacing + jt,
+              0.2 + Math.random() * 0.15,
+              out,
+              0.55 + Math.random() * 0.15,
+            );
+          }
+          if (Math.random() < 0.7) {
+            pluck(
+              LIB_SCALE_4[lowIdx],
+              now + noteCount * spacing + 0.02,
+              1.4 + Math.random() * 0.6,
+              out,
+              0.85,
+            );
+          }
+          melodyIdx = lowIdx;
+        }
+
+        function clusterQA(out) {
+          var now = ctx.currentTime;
+          var qLow = Math.floor(Math.random() * 3);
+          var intervalRnd = Math.random();
+          var qHigh;
+          if (intervalRnd < 0.5) qHigh = qLow + 2;
+          else if (intervalRnd < 0.75) qHigh = qLow + 1;
+          else qHigh = qLow + 3;
+          if (qHigh >= LIB_SCALE_4.length) qHigh = qLow + 2;
+
+          // 25% chance: inverted phrase (descending Q, ascending A)
+          var inverted = Math.random() < 0.25;
+          var qGap = 0.22 + Math.random() * 0.2;
+          var q1 = inverted ? qHigh : qLow;
+          var q2 = inverted ? qLow : qHigh;
+
+          pluck(LIB_SCALE_4[q1], now, 0.75 + Math.random() * 0.2, out, 0.9);
+          pluck(
+            LIB_SCALE_4[q2],
+            now + qGap,
+            0.9 + Math.random() * 0.3,
+            out,
+            0.9,
+          );
+
+          var ansStart = 0.7 + Math.random() * 0.8;
+          var ansCount = 2 + Math.floor(Math.random() * 3); // 2, 3, or 4
+          var aIdx = q2;
+          var dir = inverted ? 1 : -1;
+          for (var i = 0; i < ansCount; i++) {
+            var step = 0.26 + Math.random() * 0.14;
+            pluck(
+              LIB_SCALE_4[aIdx],
+              now + ansStart + i * step,
+              0.7 + i * 0.35,
+              out,
+              0.82,
+            );
+            aIdx = Math.max(0, Math.min(LIB_SCALE_4.length - 1, aIdx + dir));
+          }
+          melodyIdx = aIdx;
+        }
+
+        // --- Schedulers: each plays its cluster then queues the next one ---
+
+        function rhythmCurrent() {
+          if (!playing) return;
+          clusterSingle(newPanner());
+          schedule(rhythmCurrent, 3000 + Math.random() * 4000);
+        }
+        function rhythmGrace() {
+          if (!playing) return;
+          clusterGrace(newPanner());
+          schedule(rhythmGrace, 4000 + Math.random() * 4000);
+        }
+        function rhythmRoll() {
+          if (!playing) return;
+          clusterRoll(newPanner());
+          schedule(rhythmRoll, 5000 + Math.random() * 5000);
+        }
+        function rhythmTrill() {
+          if (!playing) return;
+          clusterTrill(newPanner());
+          schedule(rhythmTrill, 6000 + Math.random() * 6000);
+        }
+        function rhythmQA() {
+          if (!playing) return;
+          clusterQA(newPanner());
+          schedule(rhythmQA, 6000 + Math.random() * 6000);
+        }
+
+        var CLUSTER_FNS = [
+          clusterSingle,
+          clusterGrace,
+          clusterRoll,
+          clusterTrill,
+          clusterQA,
+        ];
+        function rhythmCombined() {
+          if (!playing) return;
+          var pick = Math.floor(Math.random() * CLUSTER_FNS.length);
+          CLUSTER_FNS[pick](newPanner());
+          // Bimodal gap: 30% quick impulse (2–4s), 70% breath (5–12s)
+          var gap =
+            Math.random() < 0.3
+              ? 2000 + Math.random() * 2000
+              : 5000 + Math.random() * 7000;
+          schedule(rhythmCombined, gap);
+        }
+
+        var rhythms = {
+          current: rhythmCurrent,
+          grace: rhythmGrace,
+          roll: rhythmRoll,
+          trill: rhythmTrill,
+          qa: rhythmQA,
+          combined: rhythmCombined,
+        };
+
+        // --- UI wiring ---
+        var playButtons = document.querySelectorAll(".play-btn");
+        var cards = document.querySelectorAll(".rhythm-card");
+        var stopBtn = document.getElementById("stop-all");
+        var volInput = document.getElementById("vol");
+
+        function updateUI() {
+          playButtons.forEach(function (b) {
+            var id = b.getAttribute("data-id");
+            if (playing && id === activeId) {
+              b.classList.add("active");
+              b.innerHTML = "&#9632; STOP";
+            } else {
+              b.classList.remove("active");
+              b.innerHTML = "&#9654; PLAY";
+            }
+          });
+          cards.forEach(function (c) {
+            if (playing && c.getAttribute("data-id") === activeId)
+              c.classList.add("active");
+            else c.classList.remove("active");
+          });
+          if (playing) stopBtn.classList.add("active");
+          else stopBtn.classList.remove("active");
+        }
+
+        function startRhythm(id) {
+          initAudio();
+          if (ctx.state === "suspended") ctx.resume();
+          clearTimers();
+          melodyIdx = Math.floor(Math.random() * LIB_SCALE_4.length);
+          playing = true;
+          activeId = id;
+          masterGain.gain.cancelScheduledValues(ctx.currentTime);
+          masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+          rhythms[id]();
+          updateUI();
+        }
+
+        function stopAll() {
+          playing = false;
+          activeId = null;
+          clearTimers();
+          if (masterGain && ctx) {
+            masterGain.gain.cancelScheduledValues(ctx.currentTime);
+            // Quick fade to 0 to cut any in-flight notes cleanly
+            masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
+          }
+          updateUI();
+        }
+
+        playButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            var id = btn.getAttribute("data-id");
+            if (playing && id === activeId) stopAll();
+            else startRhythm(id);
+          });
+        });
+        stopBtn.addEventListener("click", stopAll);
+
+        volInput.addEventListener("input", function () {
+          masterVol = (parseInt(volInput.value, 10) / 100) * 0.2;
+          if (masterGain && playing) {
+            masterGain.gain.setValueAtTime(masterVol, ctx.currentTime);
+          }
+        });
+
+        updateUI();
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Carbon Point Cloud</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page:        #f9f9f7;
+    --surface:     #fcfcfb;
+    --ink:         #0b0b0b;
+    --ink-2:       #52514e;
+    --muted:       #898781;
+    --grid:        #e1e0d9;
+    --baseline:    #c3c2b7;
+    --border:      rgba(11,11,11,0.10);
+    --bond:        rgba(120,118,112,0.40);
+    --cn0: #0b0b0b; --cn1: #e34948; --cn2: #eda100; --cn3: #008300;
+    --cn4: #2a78d6; --cn5: #e87ba4; --cn6: #4a3aa7; --cn7: #eb6834; --cn8: #1baf7a;
+    /* ring sizes: diverging around the graphitic 6-ring (warm = smaller, cool = larger) */
+    --ring3: #a11f1e; --ring4: #cc3d3b; --ring5: #e98481; --ring6: #b3b1aa;
+    --ring7: #7fb1ed; --ring8: #3987e5; --ring9: #1c5cab; --ring10: #0d366b;
+    /* bond strain: compressed → median → stretched (median must read neutral on the surface) */
+    --strain-lo: #d03b3b; --strain-mid: #a8a6a0; --strain-hi: #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --page:        #0d0d0d;
+      --surface:     #1a1a19;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --muted:       #898781;
+      --grid:        #2c2c2a;
+      --baseline:    #383835;
+      --border:      rgba(255,255,255,0.10);
+      --bond:        rgba(150,148,142,0.35);
+      --cn0: #ffffff; --cn1: #e0403f; --cn2: #c98500; --cn3: #008300;
+      --cn4: #3987e5; --cn5: #d55181; --cn6: #9085e9; --cn7: #d95926; --cn8: #199e70;
+      --ring3: #f28d8b; --ring4: #e2716f; --ring5: #cf5654; --ring6: #6e6c66;
+      --ring7: #4f92e4; --ring8: #6da7ec; --ring9: #9ec5f4; --ring10: #cde2fb;
+      --strain-lo: #e0403f; --strain-mid: #ffffff; --strain-hi: #3987e5;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    padding: 20px 24px;
+  }
+  /* probe element: lets resize() read the stable small-viewport height (svh) in px.
+     position: fixed so the probe does NOT contribute to the document's scroll
+     overflow — an absolute 100svh probe would pin scrollHeight >= the iframe's
+     viewport height and the host page could never shrink the iframe again */
+  #svhProbe {
+    position: fixed; top: 0; left: 0;
+    height: 100vh; height: 100svh;
+    visibility: hidden; pointer-events: none;
+  }
+  header h1 { font-size: 19px; font-weight: 650; letter-spacing: -0.01em; }
+  header .sub { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 14px; align-items: center;
+    margin: 14px 0 12px; font-size: 13px; color: var(--ink-2);
+  }
+  .controls label { display: flex; align-items: center; gap: 6px; }
+  select {
+    font: inherit; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+    max-width: 340px;
+  }
+  input[type=range] { width: 90px; accent-color: var(--cn4); }
+  input[type=checkbox] { accent-color: var(--cn4); }
+  button {
+    font: inherit; font-size: 13px; color: var(--ink-2); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer;
+  }
+  button:hover { color: var(--ink); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #seqControls { display: inline-flex; align-items: center; gap: 4px; }
+  #seqPrev, #seqNext { padding: 4px 7px; }
+  .layout { display: flex; gap: 16px; align-items: stretch; }
+  /* left column: plot stacked over the analysis strips. Both are therefore the
+     same width, and the side column runs alongside the pair rather than the
+     strips cutting across underneath it. */
+  .main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .plot {
+    position: relative; flex: 0 0 auto; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden;
+  }
+  .side { flex: 0 0 300px; display: flex; flex-direction: column; gap: 14px; align-self: flex-start; }
+  #plotStrips {
+    display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch; margin-top: 14px;
+  }
+  /* Between the 760px breakpoint and roughly 1000px the sidebar leaves the
+     strips too little room, and they squeeze until headings and cell
+     dimensions wrap mid-phrase. Floors + wrapping let the row reflow onto a
+     second line instead — the panels stay legible and the plot gives up the
+     height. Floors must stay small enough that any two still fit one line. */
+  #plotStrips .panel { min-width: 208px; margin: 0; padding: 8px 14px; }
+  /* needs the extra id to outrank #plotStrips .panel above. 328 = the 300px
+     floor buildRdf() gives the g(r) SVG, plus the panel's 28px of padding —
+     any narrower and the SVG overflows its own panel. */
+  #plotStrips #rdfPanel { min-width: 328px; }
+  /* the row under the cloud: coordination legend, then g(r) as the widest
+     panel, then the bond-length histogram */
+  #cnPanel { flex: 2.5 2.5 0; }
+  #rdfPanel { flex: 6 6 0; }
+  #bondPanel { flex: 3 3 0; }
+  #plotStrips h2 { margin-bottom: 4px; }
+  #plotStrips .hint { margin-top: 4px; font-size: 11px; }
+  canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas.dragging { cursor: grabbing; }
+  .panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+  }
+  .ring-row {
+    position: relative; /* anchors the hover tip */
+    display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+    border-radius: 6px; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+    border: 1px solid transparent; /* button-like: selected rows get a frame, no layout shift */
+  }
+  .ring-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .ring-row.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .ring-row.dim { opacity: 0.35; }
+  .ring-size { color: var(--ink); font-weight: 550; width: 18px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ring-track { flex: 1; height: 10px; display: block; position: relative; }
+  .ring-tick { position: absolute; top: -2px; bottom: -2px; width: 1px; background: var(--grid); }
+  /* hover tip on a chart row: same surface treatment as the heading tooltips */
+  .row-tip {
+    display: none; position: absolute; z-index: 20; top: calc(100% + 3px); right: 0; width: 248px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+    padding: 8px 10px; font-size: 12px; font-weight: 400; line-height: 1.55;
+    color: var(--ink-2); text-align: left; cursor: default;
+  }
+  .row-tip b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .row-tip .swatch {
+    display: inline-block; width: 9px; height: 9px; border-radius: 2px; margin-right: 6px;
+    box-shadow: inset 0 0 0 1px var(--border);
+  }
+  .ring-row:hover .row-tip { display: block; }
+  .ring-axis { display: flex; align-items: center; gap: 8px; padding: 2px 6px 0; margin: 0 -6px; }
+  .ring-axis-track { position: relative; flex: 1; height: 13px; display: block; }
+  .ring-tick-label { position: absolute; top: 0; transform: translateX(-50%); font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ring-bar { height: 100%; display: block; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .ring-bar-drawn { height: 100%; display: block; border-radius: 0 4px 4px 0; }
+  .ring-count { color: var(--ink-2); width: 46px; text-align: right; font-variant-numeric: tabular-nums; }
+  .ring-axis-cap { color: var(--muted); font-size: 10px; }
+  #bondSvg { display: block; width: 100%; }
+  #bondSvg text { font: 10px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  #bondSvg .domain, #bondSvg .tick line { stroke: var(--baseline); }
+  #bondSvg .selection { fill: var(--cn2); fill-opacity: 0.14; stroke: var(--cn2); stroke-opacity: 0.5; }
+  #rdfSvg { display: block; width: 100%; }
+  #rdfSvg text { font: 11px system-ui, sans-serif; fill: var(--muted); }
+  #rdfSvg .rdf-readout { fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+  #rdfSvg .domain, #rdfSvg .tick line { stroke: var(--baseline); }
+  #rdfSvg .grid line { stroke: var(--grid); }
+  #rdfSvg .grid .domain { stroke: none; }
+  #rdfSvg .selection { fill: var(--cn2); fill-opacity: 0.14; stroke: var(--cn2); stroke-opacity: 0.5; }
+  .panel h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  .cn-row {
+    display: flex; align-items: center; gap: 8px; padding: 5px 6px; margin: 0 -6px;
+    border-radius: 6px; cursor: pointer;
+    -webkit-user-select: none; user-select: none;
+    border: 1px solid transparent; /* button-like: selected rows get a frame, no layout shift */
+  }
+  .cn-row:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .cn-row.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .cn-row.dim { opacity: 0.35; }
+  .cn-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px var(--border); }
+  .cn-label { color: var(--ink); font-weight: 550; width: 42px; }
+  .cn-count { color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .cn-pct { color: var(--muted); width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
+  /* ---- bond-network entropy panel ---- */
+  #bneSvg { display: block; width: 100%; margin-top: 2px; }
+  #bneSvg text { font: 10px system-ui, sans-serif; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  #bneSvg .domain, #bneSvg .tick line { stroke: var(--baseline); }
+  #bneSvg .descband { fill: var(--cn2); fill-opacity: 0.10; }
+  .bne-big { display: flex; align-items: baseline; gap: 7px; margin-bottom: 2px; }
+  .bne-big b { font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .bne-big span { font-size: 11px; color: var(--muted); }
+  .bne-strip { position: relative; height: 14px; margin: 8px 0 0;
+               border-bottom: 1px solid var(--baseline); }
+  .bne-tick { position: absolute; bottom: 0; width: 1px; height: 7px; background: var(--muted);
+              transform: translateX(-0.5px); }
+  .bne-tick.me { height: 14px; width: 2px; background: var(--cn4); }
+  .bne-nrow { display: flex; align-items: center; gap: 8px; color: var(--ink-2); margin-top: 6px; }
+  .bne-nrow input[type=range] { flex: 1; width: auto; }
+  .bne-nrow b { font-variant-numeric: tabular-nums; width: 20px; text-align: right; color: var(--ink); }
+  .bne-ramp { height: 9px; border-radius: 3px; margin-top: 10px; }
+  .bne-ramp-lab { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+                  font-variant-numeric: tabular-nums; margin-top: 3px; }
+  .bne-cls { display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
+             border-radius: 6px; cursor: pointer; -webkit-user-select: none; user-select: none;
+             border: 1px solid transparent; }
+  .bne-cls:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+  .bne-cls.sel { background: color-mix(in srgb, var(--ink) 7%, transparent); border-color: var(--border); }
+  .bne-cls.dim { opacity: 0.35; }
+  .bne-cls .dot { width: 11px; height: 11px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px var(--border); }
+  .bne-cls .bars { color: var(--ink); font-variant-numeric: tabular-nums; font-size: 12px;
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bne-cls .pct { color: var(--ink-2); margin-left: auto; font-variant-numeric: tabular-nums; }
+  /* "i" badge beside a panel heading: the explanation lives in a hover/focus
+     tooltip so it costs no vertical space in the sidebar */
+  .info {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 14px; height: 14px; margin-left: 6px; border-radius: 50%;
+    border: 1px solid var(--muted); color: var(--muted);
+    font-size: 9px; font-weight: 500; line-height: 1;
+    text-transform: none; letter-spacing: 0; font-style: italic;
+    cursor: help; position: relative; vertical-align: middle;
+  }
+  .info:hover, .info:focus-visible { color: var(--ink); border-color: var(--ink); outline: none; }
+  .info-tip {
+    display: none; position: absolute; z-index: 20; top: 20px; right: -6px; width: 286px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.16);
+    padding: 9px 11px; font-size: 12px; font-weight: 400; font-style: normal; line-height: 1.5;
+    /* the tip lives inside an <h2>: undo every heading treatment a theme may
+       set there (small caps, tracking, uppercase) so it reads as body text */
+    text-transform: none; letter-spacing: 0; font-variant: normal; font-variant-caps: normal;
+    color: var(--ink-2); text-align: left; white-space: normal;
+  }
+  .info:hover .info-tip, .info:focus .info-tip { display: block; }
+  /* strip panels sit left of centre, so their tips open rightward instead —
+     a right-anchored tip on the CN panel would run off the left edge */
+  #plotStrips .info-tip { left: -6px; right: auto; }
+  .panel .hint { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.45; }
+  .panel .divider { border-top: 1px solid var(--grid); margin: 12px 0; }
+  .meta-row { display: flex; justify-content: space-between; padding: 2px 0; color: var(--ink-2); }
+  .meta-row b { color: var(--ink); font-weight: 550; font-variant-numeric: tabular-nums; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.14);
+    padding: 8px 10px; font-size: 12px; color: var(--ink-2); line-height: 1.5;
+    max-width: 220px; z-index: 10;
+  }
+  .tooltip b { color: var(--ink); font-weight: 600; }
+  .tooltip .tt-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
+  /* on-screen fly controls (touch only — shown via JS when coarsePointer && flying) */
+  #flyPad {
+    position: absolute; right: 12px; bottom: 12px; z-index: 5;
+    flex-direction: column; gap: 8px; touch-action: none;
+  }
+  #flyPad button {
+    width: 52px; height: 52px; border-radius: 50%; opacity: 0.85;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+    /* held down, these are buttons — not text. The arrows are SVG so there is
+       no text node to select, and these four kill the rest of the mobile
+       press-and-hold behaviour: selection, the iOS callout menu, the tap
+       flash, and the double-tap-to-zoom delay. */
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  #flyPad button svg {
+    width: 19px; height: 19px; display: block; fill: currentColor;
+    pointer-events: none; /* presses always land on the button itself */
+  }
+  @media (max-width: 760px) {
+    .layout { flex-direction: column; }
+    .side { flex: none; width: 100%; }
+    #plotStrips { flex-direction: column; }
+    /* pared-down controls + removed analysis strips (JS gates buildRdf/buildBondPanel too) */
+    .controls .seqWrap, #seqControls { display: none; }
+    #rdfPanel, #bondPanel { display: none; }
+    .controls select { max-width: 100%; }
+    .controls label { max-width: 100%; padding: 6px 0; }
+    /* let dropdown labels shrink below content width so long selects don't
+       overflow; checkbox labels keep intrinsic width and wrap whole instead */
+    .controls label:has(select) { min-width: 0; }
+  }
+  footer { margin-top: 10px; font-size: 12px; color: var(--muted); }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div id="svhProbe" aria-hidden="true"></div>
+<header>
+  <h1 id="title">Loading…</h1>
+  <div class="sub" id="subtitle"></div>
+</header>
+
+<div class="controls">
+  <label>Structure
+    <select id="structSel" aria-label="Structure"></select>
+  </label>
+  <label>Theme
+    <select id="themeSel" aria-label="Theme"></select>
+  </label>
+  <label>Color by
+    <select id="colorSel" aria-label="Color by">
+      <option value="cn">Coordination number</option>
+      <option value="bne">Bond-network entropy</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="bondsChk" checked> Bonds</label>
+  <label><input type="checkbox" id="ringsChk"> Rings</label>
+  <label><input type="checkbox" id="strainChk"> Bond strain</label>
+  <label><input type="checkbox" id="hideGridChk"> Hide gridlines</label>
+  <label><input type="checkbox" id="spinChk"> Spin</label>
+  <label><input type="checkbox" id="flyChk"> <span id="flyLabel">Fly (WASD)</span></label>
+  <label class="sizeWrap">Point size <input type="range" id="sizeRange" min="1" max="6" step="0.25" value="2"></label>
+  <button id="resetBtn">Reset view</button>
+  <label class="seqWrap">Sequence
+    <select id="seqSel" aria-label="Sequence">
+      <option value="">—</option>
+    </select>
+  </label>
+  <span id="seqControls" style="display:none">
+    <button id="seqPrev" title="Previous stage">◀</button>
+    <span id="seqPos" style="font-variant-numeric:tabular-nums; margin:0 2px;"></span>
+    <button id="seqNext" title="Next stage">▶</button>
+    <button id="seqPlay">Play</button>
+  </span>
+</div>
+
+<div class="layout">
+  <!-- left column: the cloud with its analysis row directly beneath, so the
+       strips stay as wide as the plot and the side column runs past both -->
+  <div class="main">
+    <div class="plot" id="plot">
+      <canvas id="canvas"></canvas>
+      <div class="tooltip" id="tooltip"></div>
+      <div id="flyPad" style="display:none">
+        <button id="flyFwd" type="button" aria-label="Move forward">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5l8 14H4z"/></svg>
+        </button>
+        <button id="flyBack" type="button" aria-label="Move back">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 19L4 5h16z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="plotStrips">
+      <aside class="panel" id="cnPanel">
+        <h2>Coordination number @1.8 Å<span class="info" tabindex="0" role="note"
+          aria-label="About coordination number">i<span class="info-tip">Neighbours within 1.8 Å of
+          each atom, counted against full periodic images — an atom bonded across the cell boundary
+          still counts. The bonds drawn in the cloud are intra-box only, so a CN 3 atom near a face
+          may show fewer than three lines. CN 3 is graphitic sp², CN 4 diamond-like sp³; CN 1–2 are
+          chain ends and CN 5+ over-coordination. Click a class to isolate it, shift-click to add.
+          Density and mean CN below are computed from the relaxed cell.</span></span></h2>
+        <div id="legend"></div>
+        <div class="divider"></div>
+        <div id="meta"></div>
+      </aside>
+      <div class="panel" id="rdfPanel" style="display:none">
+        <h2>Radial distribution function g(r)<span class="info" tabindex="0" role="note"
+          aria-label="About the radial distribution function">i<span class="info-tip">The density of
+          atom pairs at separation r, normalised so a uniform structure sits at 1. Computed with
+          periodic images out to the smaller of 10 Å and half the cell's thinnest width. The first
+          peak is the bond length, the second the first-neighbour shell; where the curve settles to
+          1 the structure has lost all order. Dashed line: the 1.8 Å bond/CN cutoff. Dotted lines:
+          graphite (1.42 Å) and diamond (1.54 Å) first-neighbour distances. Brush a range of r to
+          highlight every atom pair at that separation in the cloud — available to 5 Å, capped at
+          120,000 pairs — and click outside the band to clear. With a sequence active, the other
+          stages draw as gray ghost curves.</span></span></h2>
+        <svg id="rdfSvg"></svg>
+      </div>
+      <aside class="panel" id="bondPanel" style="display:none">
+        <h2>Bond lengths &lt; 1.8 Å<span class="info" tabindex="0" role="note"
+          aria-label="About the bond-length histogram">i<span class="info-tip">Every intra-box bond
+          shorter than the 1.8 Å cutoff, binned at 0.02 Å; bonds crossing the box boundary are
+          excluded. Bars carry the same ramp as the Bond strain toggle — red compressed, neutral at
+          the median, blue stretched — scaled symmetrically about the median, so colour reads as
+          strain magnitude rather than absolute length. Brush a range to select those bonds in the
+          cloud; click outside the band to clear.</span></span></h2>
+        <svg id="bondSvg"></svg>
+        <div class="hint" id="bondHint"></div>
+      </aside>
+    </div>
+  </div>
+  <div class="side">
+    <aside class="panel" id="ringPanel" style="display:none">
+      <h2>Rings by size<span class="info" tabindex="0" role="note"
+        aria-label="About the ring-size distribution">i<span class="info-tip">Shortest-path
+        (Franzblau) rings of size 3–10 on the periodic bond network: a cycle counts as a ring only
+        if no shortcut exists between any two of its atoms. Solid bar: rings lying entirely inside
+        the box, drawn in the cloud. Faded bar: rings crossing the box boundary — counted here, but
+        not drawable. The 6-ring is the graphitic reference state; 5- and 7-rings are the
+        characteristic defects of a disordered network. Click a size to isolate those rings,
+        shift-click to add.</span></span></h2>
+      <div id="ringChart"></div>
+    </aside>
+    <aside class="panel" id="bnePanel" style="display:none">
+      <h2>Bond-network entropy<span class="info" tabindex="0" role="note"
+        aria-label="About the bond-network entropy panel">i<span class="info-tip" id="bneAbout"></span></span></h2>
+      <div id="bneHead"></div>
+      <svg id="bneSvg"></svg>
+      <div class="bne-nrow">
+        <span>Environment n</span>
+        <input type="range" id="bneN" min="0" max="6" step="1" value="3">
+        <b id="bneNVal"></b>
+      </div>
+      <div id="bneRamp"></div>
+      <div class="divider"></div>
+      <div id="bneClasses"></div>
+      <div class="hint" id="bneHint"></div>
+    </aside>
+  </div>
+</div>
+
+<footer>
+  Structures &amp; method: Iwanowski, Csányi &amp; Simoncelli, <i>Bond-network entropy governs heat transport in coordination-disordered solids</i>, <a href="https://journals.aps.org/prx/abstract/10.1103/w4p6-b9mp">Phys. Rev. X 15, 041041 (2025)</a>, relaxed with the GAP potential. Bond-network entropy computed with the authors' <a href="https://github.com/MPA2suite/smooth-disorder">smooth-disorder</a> package.
+</footer>
+
+<script>window.__THEMES = []; window.__registerTheme = t => window.__THEMES.push(t);</script>
+<script src="themes/default.js?v=8e22d835"></script>
+<script src="themes/midnight.js?v=74032fd1"></script>
+<script src="themes/oppenheimer.js?v=e7d0430c"></script>
+<script src="themes/kandinsky.js?v=1ae38699"></script>
+<script src="d3.min.js?v=69faba9d"></script>
+<script src="structures/manifest.js"></script>
+<script>window.__BNE_INDEX = [];</script>
+<script src="structures_bne/index.js?v=209332ad"></script>
+<script>
+"use strict";
+
+// mobile gates: mobileMQ = layout breakpoint (matches the CSS media query) —
+// read .matches live, never a cached boolean: rotating a phone across 760px
+// re-runs the panel builders via resize(). coarsePointer = touch interaction
+// changes (a narrow desktop window keeps the mouse); static per device.
+const mobileMQ = matchMedia("(max-width: 760px)");
+const coarsePointer = matchMedia("(pointer: coarse)").matches;
+
+const CN_NAMES = ["sp⁰ isolated", "sp¹-like end", "sp (chain)", "sp² (graphitic)", "sp³ (diamond-like)", "over-coordinated", "CN 6", "CN 7", "CN 8"];
+const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+// A theme may ask for one signature colour to always land on the structure's
+// most populous coordination class (theme.cnDominant). That's a per-structure
+// decision, so it can't live in the CSS vars: instead cnColor() consults a
+// remap that swaps the dominant class with whichever class owns that colour.
+// Only CN colouring is affected — the strain and entropy ramps read the
+// --cn* vars directly and stay fixed.
+let cnRemap = null;
+const cnColor = cn => (cnRemap && cnRemap.has(cn))
+  ? cnRemap.get(cn)
+  : css(`--cn${Math.min(cn, 8)}`);
+
+function updateCnRemap() {
+  cnRemap = null;
+  const want = activeTheme && activeTheme.cnDominant;
+  if (!want || !S || !S.cnCounts || !S.cnCounts.size) return;
+  const norm = c => c.trim().toLowerCase();
+  let dom = null, domN = -1;
+  for (const [cn, n] of S.cnCounts) if (n > domN) { domN = n; dom = cn; }
+  if (dom === null) return;
+  const cls = [...S.cnCounts.keys()];
+  const owner = cls.find(cn => norm(css(`--cn${Math.min(cn, 8)}`)) === norm(want));
+  if (owner === dom) return;                       // already the dominant class
+  cnRemap = new Map([[dom, want]]);
+  // hand the dominant class's old colour to the class that had the signature
+  // colour, so the palette keeps exactly one of each
+  if (owner !== undefined) cnRemap.set(owner, css(`--cn${Math.min(dom, 8)}`));
+}
+
+// ---------- themes ----------
+// Appearance is driven by the active theme: CSS custom properties (vars /
+// varsDark), extra CSS text, and canvas render parameters (render). Themes
+// register via window.__registerTheme from files in themes/. FALLBACK_RENDER
+// reproduces the original built-in rendering, so partial themes are safe.
+const FALLBACK_RENDER = {
+  bondWidth: 1, bondAlphaBrushed: 0.10, dimAlpha: 0.10,
+  ringFillAlpha: 0.30, ringStrokeAlpha: 0.7, ringMutedFactor: 0.18, ringWidth: 1,
+  pairHighlightAlpha: 0.55, pairHighlightWidth: 1,
+  rdfFillAlpha: 0.12, // opacity of the area fill beneath the g(r) curve
+  cellBoxWidth: 1, axisLabelFont: "12px system-ui, sans-serif",
+  orbitSize: t => 0.72 + 0.55 * t,
+  orbitAlpha: t => 0.55 + 0.45 * t,
+  flySize: (rBase, radius, rz) => Math.min(14, Math.max(0.4, rBase * 1.5 * radius / rz)),
+  flyAlpha: (radius, rz) => Math.max(0.14, Math.min(1, 1.25 - rz / (2.5 * radius))),
+};
+let activeRender = { ...FALLBACK_RENDER };
+let activeTheme = null, appliedVars = [];
+const darkMQ = matchMedia("(prefers-color-scheme: dark)");
+const themeStyleEl = document.createElement("style");
+themeStyleEl.id = "theme-css";
+document.head.appendChild(themeStyleEl);
+
+function applyThemeVars() {
+  if (!activeTheme) return;
+  const rootStyle = document.documentElement.style;
+  for (const k of appliedVars) rootStyle.removeProperty(k);
+  appliedVars = [];
+  const useDark = activeTheme.varsDark && darkMQ.matches;
+  const vars = { ...(activeTheme.vars || {}), ...(useDark ? activeTheme.varsDark : {}) };
+  for (const [k, v] of Object.entries(vars)) { rootStyle.setProperty(k, v); appliedVars.push(k); }
+  rootStyle.setProperty("color-scheme",
+    activeTheme.colorScheme || (activeTheme.varsDark ? "light dark" : "light"));
+}
+
+function applyTheme(id) {
+  const theme = window.__THEMES.find(t => t.id === id) || window.__THEMES[0];
+  if (!theme) return;
+  activeTheme = theme;
+  document.documentElement.dataset.theme = theme.id;
+  applyThemeVars();
+  themeStyleEl.textContent = theme.css || "";
+  activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
+  updateCnRemap();
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); scheduleQuadtree(); resize(); }
+}
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const plot = document.getElementById("plot");
+const tooltip = document.getElementById("tooltip");
+
+// ---------- state ----------
+let S = null;               // current structure payload
+let px = null, py = null, pz = null;   // projected coords (screen space)
+let order = null;           // depth order (Uint32Array)
+let yaw = 0.55, pitch = -0.35, zoom = 1, panX = 0, panY = 0;
+let selectedCNs = new Set();   // legend isolate filter (empty = show all; shift+click multi-selects)
+let quad = null;            // quadtree for hover, rebuilt after redraws settle
+let spinTimer = null;
+let W = 0, H = 0, DPR = 1;
+
+// ---------- data loading ----------
+const CACHE = {};
+let pendingId = null;
+window.__STRUCT_CB = payload => {
+  CACHE[payload.id] = payload;
+  if (pendingId !== null && payload.id !== pendingId) {
+    // prefetch for ghost curves — refresh the RDF overlay if it belongs to the active sequence
+    if (seq && seq.ids.includes(payload.id)) buildRdf();
+    return;
+  }
+  S = payload;
+  S.n = payload.natoms;
+  S.P = Float64Array.from(payload.pos);
+  // center on cell midpoint
+  const lat = payload.lattice;
+  S.cx = (lat[0][0] + lat[1][0] + lat[2][0]) / 2;
+  S.cy = (lat[0][1] + lat[1][1] + lat[2][1]) / 2;
+  S.cz = (lat[0][2] + lat[1][2] + lat[2][2]) / 2;
+  // half-diagonal for fit
+  S.radius = Math.hypot(S.cx, S.cy, S.cz) * 1.05;
+  px = new Float64Array(S.n); py = new Float64Array(S.n); pz = new Float64Array(S.n);
+  order = Uint32Array.from({length: S.n}, (_, i) => i);
+  S.cnCounts = d3.rollup(payload.cn, v => v.length, d => d);
+  updateCnRemap(); // dominant-class colour is per-structure
+  selectedCNs = new Set();
+  selectedRings = new Set(); ringMembers = null; ringBondMask = null;
+  selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  pairIndex = null;
+  // keep the brushed ranges while stepping a sequence so they can be compared stage-to-stage
+  if (!(seq && seq.ids.includes(payload.id))) { brushRange = null; bondBrushRange = null; }
+  computeBondData();
+  updateBondSel(); // re-derive masks for this structure's bonds
+  buildHeader(); buildLegend(); buildMeta(); buildRingPanel(); buildBondPanel(); buildRdf();
+  loadBne(payload.id); bneAttach();
+  resize(); // re-fit the plot now that the strips have their real height
+};
+
+// ---------- bond lengths & strain ----------
+const STRAIN_N = 33; // color buckets for the smooth compressed→median→stretched ramp
+let bondBrushRange = null;   // [lo, hi] Å selected on the histogram
+let bondSelMask = null;      // per-bond: 1 = inside the brushed length range
+let bondAtomMask = null;     // per-atom: 1 = endpoint of a selected bond
+function updateBondSel() {
+  if (!bondBrushRange || !S) { bondSelMask = null; bondAtomMask = null; return; }
+  const nb = S.bonds.length / 2;
+  bondSelMask = new Uint8Array(nb);
+  bondAtomMask = new Uint8Array(S.n);
+  const [lo, hi] = bondBrushRange;
+  for (let k = 0; k < nb; k++) {
+    if (S.bondLen[k] >= lo && S.bondLen[k] <= hi) {
+      bondSelMask[k] = 1;
+      bondAtomMask[S.bonds[2*k]] = 1;
+      bondAtomMask[S.bonds[2*k+1]] = 1;
+    }
+  }
+}
+function computeBondData() {
+  if (S.bondLen) return;
+  const nb = S.bonds.length / 2, P = S.P, B = S.bonds;
+  const len = new Float32Array(nb);
+  for (let k = 0; k < nb; k++) {
+    const a = B[2*k], b = B[2*k+1];
+    len[k] = Math.hypot(P[3*b] - P[3*a], P[3*b+1] - P[3*a+1], P[3*b+2] - P[3*a+2]);
+  }
+  const sorted = Float32Array.from(len).sort();
+  const med = nb ? sorted[nb >> 1] : 0;
+  const lo = nb ? sorted[0] : 0, hi = nb ? sorted[nb - 1] : 0;
+  const span = Math.max(med - lo, hi - med) || 1; // symmetric so color = strain magnitude
+  const bucket = new Uint8Array(nb);
+  for (let k = 0; k < nb; k++) {
+    const t = 0.5 + (len[k] - med) / (2 * span); // 0 compressed … 0.5 median … 1 stretched
+    bucket[k] = Math.max(0, Math.min(STRAIN_N - 1, Math.round(t * (STRAIN_N - 1))));
+  }
+  S.bondLen = len; S.bondMed = med; S.bondSpan = span; S.bondBucket = bucket;
+}
+// A theme may define --strain-lo/mid/hi as inline overrides; otherwise pick a trio
+// suited to the active surface (median must be white on dark, neutral gray on light).
+function strainTrio() {
+  const explicit = n => document.documentElement.style.getPropertyValue(n).trim();
+  const darkSurface = d3.lab(css("--surface")).l < 50;
+  return [
+    explicit("--strain-lo") || (darkSurface ? "#e0403f" : "#d03b3b"),
+    explicit("--strain-mid") || (darkSurface ? "#ffffff" : "#a8a6a0"),
+    explicit("--strain-hi") || (darkSurface ? "#3987e5" : "#2a78d6"),
+  ];
+}
+function strainScale() {
+  return d3.scaleLinear().domain([0, 0.5, 1]).range(strainTrio()).interpolate(d3.interpolateLab);
+}
+function strainColors() {
+  const scale = strainScale();
+  return Array.from({ length: STRAIN_N }, (_, b) => scale(b / (STRAIN_N - 1)));
+}
+
+// chart heights are grown by fitStripCharts() to fill their panel — the strips
+// row is as tall as its tallest member (the CN legend), and since the hints
+// moved into heading tooltips the two charts would otherwise sit above dead space
+let BOND_H = 110;
+const BOND_H_MIN = 110, BOND_M = { l: 8, r: 8, t: 8, b: 22 };
+function buildBondPanel() {
+  if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
+  const panel = document.getElementById("bondPanel");
+  const nb = S.bonds.length / 2;
+  if (!nb) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const svg = d3.select("#bondSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(160, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", BOND_H).attr("viewBox", `0 0 ${w} ${BOND_H}`);
+  const lo = d3.min(S.bondLen), binW = 0.02;
+  const x0 = Math.floor(lo / binW) * binW, x1 = 1.8;
+  const nbins = Math.max(1, Math.round((x1 - x0) / binW));
+  const counts = new Array(nbins).fill(0);
+  for (const v of S.bondLen)
+    counts[Math.max(0, Math.min(nbins - 1, Math.floor((v - x0) / binW)))]++;
+  const x = d3.scaleLinear([x0, x1], [BOND_M.l, w - BOND_M.r]);
+  const y = d3.scaleLinear([0, d3.max(counts)], [BOND_H - BOND_M.b, BOND_M.t]);
+  const med = S.bondMed, span = S.bondSpan;
+  const scale = strainScale();
+  const bw = x(x0 + binW) - x(x0);
+  for (let k = 0; k < nbins; k++) {
+    if (!counts[k]) continue;
+    const mid = x0 + (k + 0.5) * binW;
+    svg.append("rect")
+      .attr("x", x(x0 + k * binW) + 0.5).attr("width", Math.max(1, bw - 1))
+      .attr("y", y(counts[k])).attr("height", y(0) - y(counts[k]))
+      .attr("rx", 1)
+      .attr("fill", scale(0.5 + (mid - med) / (2 * span)))
+      .append("title").text(`${counts[k].toLocaleString()} bonds at ${(x0 + k * binW).toFixed(2)}–${(x0 + (k + 1) * binW).toFixed(2)} Å`);
+  }
+  svg.append("line").attr("x1", x(med)).attr("x2", x(med))
+    .attr("y1", BOND_M.t).attr("y2", BOND_H - BOND_M.b)
+    .attr("stroke", css("--ink")).attr("stroke-dasharray", "3,3").attr("opacity", 0.6);
+  svg.append("g").attr("transform", `translate(0,${BOND_H - BOND_M.b})`)
+    .call(d3.axisBottom(x).ticks(4).tickFormat(v => v.toFixed(1)));
+  // live readout only — the explanation of the ramp lives in the heading tooltip
+  const updateHint = () => {
+    let selLine = "";
+    if (bondBrushRange && bondSelMask) {
+      let n = 0;
+      for (const v of bondSelMask) n += v;
+      selLine = `<br><b style="color:var(--ink)">${n.toLocaleString()} bonds selected</b> ` +
+                `(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)} Å)`;
+    }
+    document.getElementById("bondHint").innerHTML =
+      `${nb.toLocaleString()} intra-box bonds · median ` +
+      `<b style="color:var(--ink)">${med.toFixed(3)} Å</b> (dashed)` + selLine;
+  };
+  let rafPending = false;
+  const brush = d3.brushX()
+    .extent([[BOND_M.l, BOND_M.t], [w - BOND_M.r, BOND_H - BOND_M.b]])
+    .on("brush end", ev => {
+      bondBrushRange = ev.selection ? ev.selection.map(x.invert) : null;
+      updateBondSel();
+      updateHint();
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { rafPending = false; draw(); });
+      }
+    });
+  const bg = svg.append("g").call(brush);
+  if (bondBrushRange) bg.call(brush.move, bondBrushRange.map(x));
+  updateHint();
+}
+
+function inject(id) {
+  const el = document.createElement("script");
+  el.src = `structures/${id}.js?v=${Date.now()}`; // bypass stale webview cache of regenerated data
+  el.onload = () => el.remove();
+  document.body.appendChild(el);
+}
+function loadStructure(id) {
+  pendingId = id;
+  if (CACHE[id]) { window.__STRUCT_CB(CACHE[id]); return; }
+  document.getElementById("title").textContent = "Loading…";
+  inject(id);
+}
+function prefetch(id) { if (!CACHE[id]) inject(id); }
+
+// ---------- header / legend / meta ----------
+function buildHeader() {
+  document.getElementById("title").textContent = `${S.group} — ${S.name}`;
+  document.getElementById("subtitle").textContent =
+    `${S.natoms.toLocaleString()} atoms · ${S.nbonds.toLocaleString()} intra-box bonds at 1.8 Å (wrapping bonds omitted)`;
+}
+
+function buildLegend() {
+  const cns = [...S.cnCounts.keys()].sort(d3.ascending);
+  const rows = d3.select("#legend").selectAll(".cn-row").data(cns, d => d).join("div")
+    .attr("class", "cn-row")
+    .on("mousedown", e => e.preventDefault()) // keep shift+click from selecting text
+    .on("click", (e, cn) => {
+      if (e.shiftKey) selectedCNs.has(cn) ? selectedCNs.delete(cn) : selectedCNs.add(cn);
+      else selectedCNs = (selectedCNs.size === 1 && selectedCNs.has(cn)) ? new Set() : new Set([cn]);
+      refreshLegendDim(); draw(); scheduleQuadtree();
+    });
+  rows.html(cn => {
+    const count = S.cnCounts.get(cn);
+    const pct = (100 * count / S.n).toFixed(1);
+    return `<span class="cn-dot" style="background:${cnColor(cn)}"></span>` +
+           `<span class="cn-label">CN ${cn}</span>` +
+           `<span class="cn-count">${count.toLocaleString()}</span>` +
+           `<span class="cn-pct">${pct}%</span>`;
+  });
+  refreshLegendDim();
+}
+function refreshLegendDim() {
+  d3.selectAll(".cn-row")
+    .classed("dim", d => selectedCNs.size > 0 && !selectedCNs.has(d))
+    .classed("sel", d => selectedCNs.has(d));
+}
+
+function buildMeta() {
+  const lat = S.lattice;
+  const a = Math.hypot(...lat[0]), b = Math.hypot(...lat[1]), c = Math.hypot(...lat[2]);
+  const vol = cellVolume(lat);
+  const massG = S.n * 12.011 / 6.02214076e23;
+  const dens = massG / (vol * 1e-24);
+  const rows = [
+    ["Cell a·b·c", `${a.toFixed(1)} × ${b.toFixed(1)} × ${c.toFixed(1)} Å`],
+    ["Density", `${dens.toFixed(2)} g/cm³`],
+    ["Mean CN", d3.mean(S.cn).toFixed(2)],
+  ];
+  if (bneData) rows.push(["BNE growth rate", bneData.descriptor.toFixed(3)]);
+  document.getElementById("meta").innerHTML =
+    rows.map(([k, v]) => `<div class="meta-row"><span>${k}</span><b>${v}</b></div>`).join("");
+}
+function cellVolume(l) {
+  return Math.abs(
+    l[0][0]*(l[1][1]*l[2][2]-l[1][2]*l[2][1]) -
+    l[0][1]*(l[1][0]*l[2][2]-l[1][2]*l[2][0]) +
+    l[0][2]*(l[1][0]*l[2][1]-l[1][1]*l[2][0]));
+}
+
+// ---------- projection ----------
+function rotMatrix() {
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  // yaw about world z (the cell's vertical), then pitch about screen x
+  return [
+    cy, -sy, 0,
+    sy * cp, cy * cp, -sp,
+    sy * sp, cy * sp, cp,
+  ];
+}
+function project(x, y, z, m, scale) {
+  x -= S.cx; y -= S.cy; z -= S.cz;
+  const rx = m[0]*x + m[1]*y + m[2]*z;
+  const ry = m[3]*x + m[4]*y + m[5]*z;
+  const rz = m[6]*x + m[7]*y + m[8]*z;
+  return [W/2 + panX + rx * scale, H/2 + panY - rz * scale, ry]; // ry = depth (into screen)
+}
+
+// ---------- drawing ----------
+// Grow the g(r) and bond-length charts into whatever vertical slack their panel
+// has. Slack is measured as the gap between the last child's bottom edge and
+// the panel's content box; panels stretch to the row height, so that gap is
+// exactly the dead space. One corrective pass — after it the gap is ~0, so this
+// settles rather than oscillating.
+function fitStripCharts() {
+  if (mobileMQ.matches || !S) return;
+  const slackOf = panel => {
+    if (!panel || !panel.offsetParent || !panel.lastElementChild) return 0;
+    const padB = parseFloat(getComputedStyle(panel).paddingBottom) || 0;
+    return Math.floor(panel.getBoundingClientRect().bottom - padB -
+                      panel.lastElementChild.getBoundingClientRect().bottom);
+  };
+  const rdfSlack = slackOf(document.getElementById("rdfPanel"));
+  if (rdfSlack > 2) { RDF_H = Math.max(RDF_H_MIN, RDF_H + rdfSlack); buildRdf(); }
+  const bondSlack = slackOf(document.getElementById("bondPanel"));
+  if (bondSlack > 2) { BOND_H = Math.max(BOND_H_MIN, BOND_H + bondSlack); buildBondPanel(); }
+}
+
+let resizing = false;
+function resize() {
+  // The plot's height now depends on the side column's height, and the panel
+  // builders below rebuild panels in BOTH columns — so a resize can trigger the
+  // ResizeObserver that called it. One guarded pass per event; it converges
+  // because panel content is a pure function of the data, not of the plot size.
+  if (resizing) return;
+  resizing = true;
+  try { resizeInner(); } finally { resizing = false; }
+}
+function resizeInner() {
+  DPR = window.devicePixelRatio || 1;
+  const headerH = document.querySelector("header").offsetHeight +
+                  document.querySelector(".controls").offsetHeight;
+  const stripsH = document.getElementById("plotStrips").offsetHeight;
+  const footerH = document.querySelector("footer").offsetHeight;
+  // svh probe: stable across mobile browser chrome show/hide, so scrolling
+  // doesn't re-fit the layout (falls back to vh where svh is unsupported).
+  // When embedded, read the HOST page's svh probe instead of our own: ours
+  // tracks the iframe's viewport, which the host page grows to fit our
+  // document — fitting the plot to it would feed that growth back (loop).
+  let vh = document.getElementById("svhProbe").offsetHeight;
+  if (window.frameElement) {
+    try {
+      const hostProbe = window.parent.document.getElementById("carbonSvhProbe");
+      if (hostProbe) vh = hostProbe.offsetHeight;
+    } catch (e) { /* cross-origin embed: keep our own probe */ }
+  }
+  // Fit the plot to the viewport and let the strips follow immediately beneath
+  // it. The plot is deliberately NOT grown to match a taller side column: the
+  // strips belong directly under the cloud, and the side column is free to run
+  // past the bottom of the left column instead.
+  // 110 = body padding + inter-row gaps + a few px of slack, tuned so the
+  // dashboard lands just inside the viewport rather than just outside it
+  const h = Math.max(250, vh - headerH - stripsH - footerH - 110);
+  plot.style.height = h + "px";
+  // the side column keeps its natural height: if it is taller than the plot,
+  // the document grows past the viewport and the OUTER page scrolls (or the
+  // host page grows the iframe) — never an inner scrollbar on the dashboard
+  W = plot.clientWidth; H = plot.clientHeight;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  if (S) {
+    // rebuild from the baseline heights, then grow into the slack — without the
+    // reset the charts could only ever get taller, and a shrinking window would
+    // leave them oversized and push the row out
+    RDF_H = RDF_H_MIN; BOND_H = BOND_H_MIN;
+    draw(); scheduleQuadtree(); buildBondPanel(); buildRdf(); buildBnePanel();
+    fitStripCharts();
+  }
+}
+
+// ---------- fly camera ----------
+const FOV = 72 * Math.PI / 180, NEAR = 0.35;
+let flying = false, cam = [0, 0, 0], fyaw = 0, fpitch = 0;
+const keys = new Set();
+let flyRAF = null, lastT = 0;
+
+function flyBasis() {
+  const cp = Math.cos(fpitch), sp = Math.sin(fpitch);
+  const cy = Math.cos(fyaw), sy = Math.sin(fyaw);
+  const f = [cp * cy, cp * sy, sp];          // forward
+  const r = [sy, -cy, 0];                    // right (world-z up)
+  const u = [r[1]*f[2] - r[2]*f[1], r[2]*f[0] - r[0]*f[2], r[0]*f[1] - r[1]*f[0]];
+  return { f, r, u, focal: H / (2 * Math.tan(FOV / 2)) };
+}
+function flyProject(x, y, z, B) {
+  const dx = x - cam[0], dy = y - cam[1], dz = z - cam[2];
+  const rz = dx*B.f[0] + dy*B.f[1] + dz*B.f[2];
+  if (rz < NEAR) return null;
+  const s = B.focal / rz;
+  return [W/2 + (dx*B.r[0] + dy*B.r[1] + dz*B.r[2]) * s,
+          H/2 - (dx*B.u[0] + dy*B.u[1] + dz*B.u[2]) * s, rz];
+}
+
+function draw() {
+  if (!S) return;
+  ctx.clearRect(0, 0, W, H);
+  const n = S.n, P = S.P;
+  const B = flying ? flyBasis() : null;
+  const m = flying ? null : rotMatrix();
+  const scale = zoom * Math.min(W, H) / (2 * S.radius);
+
+  if (flying) {
+    for (let i = 0; i < n; i++) {
+      const p = flyProject(P[3*i], P[3*i+1], P[3*i+2], B);
+      if (p) { px[i] = p[0]; py[i] = p[1]; pz[i] = p[2]; }
+      else { px[i] = NaN; py[i] = NaN; pz[i] = -1e9; }
+    }
+  } else {
+    for (let i = 0; i < n; i++) {
+      const [sx, sy, d] = project(P[3*i], P[3*i+1], P[3*i+2], m, scale);
+      px[i] = sx; py[i] = sy; pz[i] = d;
+    }
+  }
+
+  if (!document.getElementById("hideGridChk").checked) drawCellBox(m, scale, B);
+
+  // bonds: batched by strain bucket when the toggle is on, single gray path otherwise
+  if (document.getElementById("bondsChk").checked) {
+    const BB = S.bonds;
+    const strain = document.getElementById("strainChk").checked && S.bondBucket;
+    ctx.lineWidth = activeRender.bondWidth;
+    ctx.globalAlpha = brushRange ? activeRender.bondAlphaBrushed : 1; // recede while an RDF range is brushed
+    const visible = k => {
+      const a = BB[2*k], b = BB[2*k+1];
+      if (flying && (!isFinite(px[a]) || !isFinite(px[b]))) return false;
+      if (selectedCNs.size && !selectedCNs.has(S.cn[a]) && !selectedCNs.has(S.cn[b])) return false;
+      return true;
+    };
+    // histogram selection: unselected bonds recede to a faint gray pass
+    const baseAlpha = brushRange ? activeRender.bondAlphaBrushed : 1;
+    if (bondSelMask) {
+      ctx.beginPath();
+      for (let k = 0; k < BB.length / 2; k++) {
+        if (bondSelMask[k] || !visible(k)) continue;
+        ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+      }
+      ctx.strokeStyle = css("--bond");
+      ctx.globalAlpha = Math.min(baseAlpha, 0.10);
+      ctx.stroke();
+    }
+    const sel = k => !bondSelMask || bondSelMask[k];
+    // with a ring size isolated, bonds outside those rings render at half opacity;
+    // an isolated barcode class pulls back everything it doesn't touch, harder
+    const bneTouch = bneSelSet ? k => bneSelSet.has(BB[2*k]) || bneSelSet.has(BB[2*k+1]) : null;
+    const alphaGroups = ringBondMask
+      ? [[k => ringBondMask[k] === 1, 1], [k => ringBondMask[k] === 0, 0.5]]
+      : bneTouch
+      ? [[bneTouch, 1], [k => !bneTouch(k), 0.22]]
+      : [[() => true, 1]];
+    for (const [inGroup, mult] of alphaGroups) {
+      ctx.globalAlpha = baseAlpha * mult;
+      if (strain) {
+        const nb = BB.length / 2, buckets = Array.from({ length: STRAIN_N }, () => []);
+        for (let k = 0; k < nb; k++) if (sel(k) && inGroup(k) && visible(k)) buckets[S.bondBucket[k]].push(k);
+        const cols = strainColors();
+        for (let b = 0; b < STRAIN_N; b++) {
+          if (!buckets[b].length) continue;
+          ctx.beginPath();
+          for (const k of buckets[b]) {
+            ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+          }
+          ctx.strokeStyle = cols[b];
+          ctx.stroke();
+        }
+      } else {
+        ctx.beginPath();
+        for (let k = 0; k < BB.length / 2; k++) {
+          if (!sel(k) || !inGroup(k) || !visible(k)) continue;
+          ctx.moveTo(px[BB[2*k]], py[BB[2*k]]); ctx.lineTo(px[BB[2*k+1]], py[BB[2*k+1]]);
+        }
+        ctx.strokeStyle = bondSelMask ? css("--cn2") : css("--bond");
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  drawRings();
+  drawPairHighlight();
+
+  // atoms: depth-sorted, far → near
+  order.sort((a, b) => pz[b] - pz[a]);
+  const rBase = +document.getElementById("sizeRange").value;
+  const colors = {}; // cn -> css color cache
+  const depthNorm = 1 / (S.radius * 2);
+  const TAU = 2 * Math.PI;
+  const fadeFill = css("--muted");
+  // colour-by-entropy: per-atom ramp bucket precomputed with the surprisals
+  const byBne = colorMode() === "bne" && bneBucket;
+  const bneCols = byBne ? bneColors() : null;
+  const bneUnsampled = css("--baseline");
+  for (let k = 0; k < n; k++) {
+    const i = order[k];
+    if (flying && !isFinite(px[i])) continue;
+    const cn = S.cn[i];
+    const dimmed = (selectedCNs.size && !selectedCNs.has(cn)) ||
+                   (ringMembers !== null && !ringMembers.has(i)) ||
+                   (brushRange !== null && hlMask !== null && !hlMask[i]) ||
+                   (bondAtomMask !== null && !bondAtomMask[i]) ||
+                   (bneSelSet !== null && !bneSelSet.has(i)) ||
+                   (atomSelSet !== null && !atomSelSet.has(i));
+    let r, alpha;
+    if (flying) {
+      // calibrated so an atom at the entry distance (1.5 × cell radius) renders at
+      // exactly the slider size — toggling fly on/off doesn't change apparent dot size
+      const rz = pz[i];
+      r = activeRender.flySize(rBase, S.radius, rz);
+      alpha = activeRender.flyAlpha(S.radius, rz);
+    } else {
+      const t = 0.5 - pz[i] * depthNorm; // 0 (far) … 1 (near)
+      r = rBase * activeRender.orbitSize(t);
+      alpha = activeRender.orbitAlpha(t);
+    }
+    ctx.globalAlpha = dimmed ? activeRender.dimAlpha : alpha;
+    ctx.fillStyle = dimmed ? fadeFill
+      : byBne ? (isNaN(bneSurp[i]) ? bneUnsampled : bneCols[bneBucket[i]])
+      : (colors[cn] ??= cnColor(cn));
+    ctx.beginPath();
+    ctx.arc(px[i], py[i], r, 0, TAU);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // halo around the click-selected atom
+  if (selectedAtom !== null && isFinite(px[selectedAtom])) {
+    const rBaseSel = +document.getElementById("sizeRange").value;
+    ctx.beginPath();
+    ctx.arc(px[selectedAtom], py[selectedAtom], rBaseSel * 1.6 + 3, 0, TAU);
+    ctx.strokeStyle = css("--ink");
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+}
+
+// ---------- radial distribution function ----------
+const PAIR_MAX = 5;        // pair-highlight range limit (Å)
+const HL_CAP = 120000;     // max highlighted pair lines per frame
+let brushRange = null, pairIndex = null, hlClipped = false;
+
+function buildPairIndex() {
+  if (S.pairIdx) { pairIndex = S.pairIdx; return; }
+  const n = S.n, P = S.P, cell = 2.5, reach = Math.ceil(PAIR_MAX / cell);
+  const grid = new Map();
+  const key = (a, b, c) => a * 73856093 ^ b * 19349663 ^ c * 83492791;
+  const gx = new Int32Array(n), gy = new Int32Array(n), gz = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    gx[i] = Math.floor(P[3*i] / cell); gy[i] = Math.floor(P[3*i+1] / cell); gz[i] = Math.floor(P[3*i+2] / cell);
+    const k = key(gx[i], gy[i], gz[i]);
+    let bucket = grid.get(k);
+    if (!bucket) grid.set(k, bucket = []);
+    bucket.push(i);
+  }
+  const di = [], pi = [];
+  const m2 = PAIR_MAX * PAIR_MAX;
+  for (let i = 0; i < n; i++) {
+    for (let a = -reach; a <= reach; a++)
+      for (let b = -reach; b <= reach; b++)
+        for (let c = -reach; c <= reach; c++) {
+          const bucket = grid.get(key(gx[i] + a, gy[i] + b, gz[i] + c));
+          if (!bucket) continue;
+          for (const j of bucket) {
+            if (j <= i) continue;
+            const dx = P[3*j] - P[3*i], dy = P[3*j+1] - P[3*i+1], dz = P[3*j+2] - P[3*i+2];
+            const d2 = dx*dx + dy*dy + dz*dz;
+            if (d2 < m2 && d2 > 1e-8) { di.push(Math.sqrt(d2)); pi.push(i, j); }
+          }
+        }
+  }
+  const idx = Array.from(di.keys()).sort((a, b) => di[a] - di[b]);
+  const d = new Float32Array(idx.length), p = new Uint32Array(idx.length * 2);
+  for (let k = 0; k < idx.length; k++) {
+    d[k] = di[idx[k]]; p[2*k] = pi[2*idx[k]]; p[2*k+1] = pi[2*idx[k]+1];
+  }
+  S.pairIdx = pairIndex = { d, p };
+}
+const bisect = (arr, v) => {
+  let lo = 0, hi = arr.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] < v) lo = m + 1; else hi = m; }
+  return lo;
+};
+
+let hlMask = null; // atoms participating in the brushed pairs
+function drawPairHighlight() {
+  hlClipped = false;
+  if (!brushRange) { hlMask = null; return; }
+  buildPairIndex();
+  if (!hlMask || hlMask.length !== S.n) hlMask = new Uint8Array(S.n);
+  else hlMask.fill(0);
+  const lo = bisect(pairIndex.d, brushRange[0]);
+  let hi = bisect(pairIndex.d, brushRange[1]);
+  if (hi - lo > HL_CAP) { hi = lo + HL_CAP; hlClipped = true; }
+  if (hi <= lo) return;
+  const p = pairIndex.p;
+  ctx.beginPath();
+  for (let k = lo; k < hi; k++) {
+    const a = p[2*k], b = p[2*k+1];
+    hlMask[a] = 1; hlMask[b] = 1;
+    if (flying && (!isFinite(px[a]) || !isFinite(px[b]))) continue;
+    ctx.moveTo(px[a], py[a]); ctx.lineTo(px[b], py[b]);
+  }
+  ctx.globalAlpha = activeRender.pairHighlightAlpha;
+  ctx.strokeStyle = css("--cn2");
+  ctx.lineWidth = activeRender.pairHighlightWidth;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+}
+
+let RDF_H = 130;
+const RDF_H_MIN = 130, RDF_M = { l: 46, r: 16, t: 36, b: 22 };
+function buildRdf() {
+  if (mobileMQ.matches) return; // panel is display:none under 760px — skip SVG/brush work
+  const panel = document.getElementById("rdfPanel");
+  if (!S || !S.rdf) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const svg = d3.select("#rdfSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(300, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", RDF_H).attr("viewBox", `0 0 ${w} ${RDF_H}`);
+  const { dr, rmax, g } = S.rdf;
+  const ghosts = seq
+    ? seq.ids.filter(id => id !== S.id).map(id => CACHE[id]).filter(c => c && c.rdf)
+    : [];
+  const x = d3.scaleLinear([0, rmax], [RDF_M.l, w - RDF_M.r]);
+  const ymax = d3.max([g, ...ghosts.map(c => c.rdf.g)], a => d3.max(a));
+  const y = d3.scaleLinear([0, ymax * 1.06], [RDF_H - RDF_M.b, RDF_M.t]).nice();
+  svg.append("g").attr("class", "grid").attr("transform", `translate(${RDF_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(4).tickSize(-(w - RDF_M.l - RDF_M.r)).tickFormat(""));
+  svg.append("g").attr("transform", `translate(0,${RDF_H - RDF_M.b})`)
+    .call(d3.axisBottom(x).ticks(w < 520 ? 6 : 10));
+  svg.append("g").attr("transform", `translate(${RDF_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(4));
+  // both captions ride in the top margin: on a narrow panel an axis-line "r (Å)"
+  // collides with the last tick label
+  svg.append("text").attr("x", 6).attr("y", 12).text("g(r)");
+  svg.append("text").attr("x", w - RDF_M.r).attr("y", 12).attr("text-anchor", "end").text("r (Å)");
+  const line = d3.line().x((v, k) => x((k + 0.5) * dr)).y(v => y(v));
+  const area = d3.area().x((v, k) => x((k + 0.5) * dr)).y0(RDF_H - RDF_M.b).y1(v => y(v));
+  for (const c of ghosts)
+    svg.append("path").attr("d", d3.line().x((v, k) => x((k + 0.5) * c.rdf.dr)).y(v => y(v))(c.rdf.g))
+      .attr("fill", "none").attr("stroke", css("--baseline")).attr("stroke-width", 1.2);
+  // tasteful fill beneath the main g(r) curve; intensity is per-theme
+  svg.append("path").attr("d", area(g))
+    .attr("fill", css("--cn4")).attr("opacity", activeRender.rdfFillAlpha);
+  svg.append("path").attr("d", line(g))
+    .attr("fill", "none").attr("stroke", css("--cn4")).attr("stroke-width", 2);
+  // annotations: bond cutoff + graphite/diamond first-neighbor distances
+  const ann = (r, dash, label, anchor, row) => {
+    if (r > rmax) return;
+    svg.append("line").attr("x1", x(r)).attr("x2", x(r))
+      .attr("y1", RDF_M.t).attr("y2", RDF_H - RDF_M.b)
+      .attr("stroke", css("--muted")).attr("stroke-dasharray", dash).attr("opacity", 0.7);
+    svg.append("text").attr("x", x(r) + (anchor === "end" ? -3 : 3))
+      .attr("y", row === 2 ? RDF_M.t - 4 : RDF_M.t - 18)
+      .attr("text-anchor", anchor).text(label);
+  };
+  ann(1.42, "1,2", "graphite", "end", 1);
+  ann(1.54, "1,2", "diamond", "start", 1);
+  ann(1.8, "5,3", "cutoff 1.8 Å", "start", 2);
+  // crosshair + readout
+  const cross = svg.append("line").attr("y1", RDF_M.t).attr("y2", RDF_H - RDF_M.b)
+    .attr("stroke", css("--muted")).attr("opacity", 0).attr("pointer-events", "none");
+  const readout = svg.append("text").attr("class", "rdf-readout")
+    .attr("x", w - RDF_M.r).attr("y", RDF_M.t + 2).attr("text-anchor", "end");
+  svg.on("mousemove", ev => {
+    const [mx] = d3.pointer(ev);
+    const r = x.invert(mx);
+    if (r < 0 || r > rmax) { cross.attr("opacity", 0); readout.text(""); return; }
+    const k = Math.min(g.length - 1, Math.max(0, Math.floor(r / dr)));
+    cross.attr("x1", mx).attr("x2", mx).attr("opacity", 0.5);
+    readout.text(`r = ${r.toFixed(2)} Å   g(r) = ${g[k].toFixed(2)}${hlClipped ? "   (highlight capped)" : ""}`);
+  }).on("mouseleave", () => { cross.attr("opacity", 0); readout.text(""); });
+  // brush → pair highlight
+  let rafPending = false;
+  const brush = d3.brushX()
+    .extent([[RDF_M.l, RDF_M.t], [w - RDF_M.r, RDF_H - RDF_M.b]])
+    .on("brush end", ev => {
+      brushRange = ev.selection ? ev.selection.map(x.invert) : null;
+      if (!rafPending) {
+        rafPending = true;
+        requestAnimationFrame(() => { rafPending = false; draw(); });
+      }
+    });
+  const bg = svg.append("g").call(brush);
+  if (brushRange) bg.call(brush.move, brushRange.map(x));
+}
+let selectedRings = new Set(), ringMembers = null, ringBondMask = null; // empty set = show all; shift+click multi-selects
+let selectedAtom = null, atomRingIdxSel = null, atomSelSet = null;
+const ringColor = size => css(`--ring${Math.max(3, Math.min(10, size))}`);
+
+// per-bond membership mask: bonds forming an edge of any ring in ringList keep full opacity
+function ringBondMaskFrom(ringList) {
+  if (!ringList.length) return null;
+  if (!S.bondMap) {
+    S.bondMap = new Map();
+    for (let k = 0; k < S.bonds.length / 2; k++) {
+      const a = S.bonds[2*k], b = S.bonds[2*k+1];
+      S.bondMap.set(Math.min(a, b) * S.n + Math.max(a, b), k);
+    }
+  }
+  const mask = new Uint8Array(S.bonds.length / 2);
+  for (const r of ringList) {
+    for (let t = 0; t < r.length; t++) {
+      const a = r[t], b = r[(t + 1) % r.length];
+      const k = S.bondMap.get(Math.min(a, b) * S.n + Math.max(a, b));
+      if (k !== undefined) mask[k] = 1;
+    }
+  }
+  return mask;
+}
+function refreshRingBondMask() {
+  if (atomRingIdxSel !== null)
+    ringBondMask = ringBondMaskFrom(S.rings.filter((r, idx) => atomRingIdxSel.has(idx)));
+  else if (selectedRings.size)
+    ringBondMask = ringBondMaskFrom(S.rings.filter(r => selectedRings.has(r.length)));
+  else ringBondMask = null;
+}
+function updateRingMembers() {
+  ringMembers = selectedRings.size === 0 ? null
+    : new Set(S.rings.filter(r => selectedRings.has(r.length)).flat());
+  refreshRingBondMask();
+}
+
+// atom click-selection: spotlight one atom plus every drawable ring through it
+function selectAtom(i) {
+  if (i === null || i === selectedAtom) {
+    selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  } else {
+    selectedAtom = i;
+    atomRingIdxSel = new Set();
+    atomSelSet = new Set([i]);
+    S.rings.forEach((r, idx) => {
+      if (r.includes(i)) { atomRingIdxSel.add(idx); for (const a of r) atomSelSet.add(a); }
+    });
+  }
+  refreshRingBondMask();
+  draw();
+}
+
+function drawRings() {
+  const atomMode = atomRingIdxSel !== null; // atom selection shows its rings even with the toggle off
+  if (!document.getElementById("ringsChk").checked && !atomMode) return;
+  const rings = S.rings;
+  if (!rings || !rings.length) return;
+  // mean projected depth per ring, drawn far → near
+  const vis = [];
+  for (let k = 0; k < rings.length; k++) {
+    const r = rings[k];
+    if (atomMode) { if (!atomRingIdxSel.has(k)) continue; }
+    else if (selectedRings.size && !selectedRings.has(r.length)) continue;
+    let d = 0, ok = true;
+    for (const i of r) {
+      if (flying && !isFinite(px[i])) { ok = false; break; }
+      d += pz[i];
+    }
+    if (ok) vis.push([d / r.length, k]);
+  }
+  vis.sort((a, b) => b[0] - a[0]);
+  const mute = brushRange ? activeRender.ringMutedFactor : 1; // recede while an RDF range is brushed
+  const fillA = activeRender.ringFillAlpha * mute, strokeA = activeRender.ringStrokeAlpha * mute;
+  ctx.lineWidth = activeRender.ringWidth;
+  for (const [, k] of vis) {
+    const r = rings[k];
+    const col = ringColor(r.length);
+    ctx.beginPath();
+    ctx.moveTo(px[r[0]], py[r[0]]);
+    for (let t = 1; t < r.length; t++) ctx.lineTo(px[r[t]], py[r[t]]);
+    ctx.closePath();
+    ctx.globalAlpha = fillA;
+    ctx.fillStyle = col;
+    ctx.fill();
+    ctx.globalAlpha = strokeA;
+    ctx.strokeStyle = col;
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function buildRingPanel() {
+  const panel = document.getElementById("ringPanel");
+  const counts = S.ringCounts;
+  if (!counts || !Object.keys(counts).length) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const sizes = Object.keys(counts).map(Number).sort(d3.ascending);
+  const total = d3.sum(sizes, s => counts[s]);
+  const max = d3.max(sizes, s => counts[s]);
+  const drawn = {};
+  for (const r of S.rings) drawn[r.length] = (drawn[r.length] || 0) + 1;
+  // count gridlines at nice round values — bars are %-of-max, so ticks at
+  // (100*t/max)% sit exactly on the data scale
+  const ticks = d3.ticks(0, max, 5).filter(t => t > 0 && t < max);
+  const tickSpans = ticks.map(t =>
+    `<span class="ring-tick" style="left:${(100 * t / max).toFixed(2)}%"></span>`).join("");
+  const chart = d3.select("#ringChart");
+  chart.selectAll(".ring-row").data(sizes, d => d).join("div")
+    .attr("class", "ring-row")
+    .on("mousedown", e => e.preventDefault()) // keep shift+click from selecting text
+    .on("click", (e, size) => {
+      if (e.shiftKey) selectedRings.has(size) ? selectedRings.delete(size) : selectedRings.add(size);
+      else selectedRings = (selectedRings.size === 1 && selectedRings.has(size)) ? new Set() : new Set([size]);
+      if (selectedRings.size) document.getElementById("ringsChk").checked = true;
+      updateRingMembers();
+      refreshRingDim(); draw();
+    })
+    .html(d => {
+      const dn = drawn[d] || 0, miss = counts[d] - dn;
+      const faded = `color-mix(in srgb, ${ringColor(d)} 30%, transparent)`;
+      return `<span class="ring-size">${d}</span>` +
+        `<span class="ring-track">` + tickSpans +
+          `<span class="ring-bar" style="width:${(100 * counts[d] / max).toFixed(1)}%; background:${faded}">` +
+            `<span class="ring-bar-drawn" style="width:${(100 * dn / counts[d]).toFixed(1)}%; background:${ringColor(d)}"></span>` +
+          `</span>` +
+        `</span>` +
+        `<span class="ring-count">${counts[d].toLocaleString()}</span>` +
+        // hover tip: the two counts the bar's solid and faded segments encode,
+        // each keyed by a swatch in the matching treatment
+        `<span class="row-tip">` +
+          `<b>${counts[d].toLocaleString()} ${d}-rings</b> · ` +
+          `${(100 * counts[d] / total).toFixed(1)}% of all rings` +
+          `<br><span class="swatch" style="background:${ringColor(d)}"></span>` +
+          `<b>${dn.toLocaleString()}</b> drawn in the cloud` +
+          `<br><span class="swatch" style="background:${faded}"></span>` +
+          `<b>${miss.toLocaleString()}</b> crossing the box boundary` +
+        `</span>`;
+    });
+  // labeled count axis under the chart, on the same %-of-max scale. Every tick
+  // is labeled where the track has room for it (~26px per label), otherwise
+  // every other one; k-notation keeps the 14k-ring cells legible.
+  const fmtTick = v => v >= 1000 ? `${+(v / 1000).toFixed(1)}k` : String(v);
+  const trackPx = Math.max(80, panel.clientWidth - 130); // track ≈ panel − size/count columns
+  const everyTick = trackPx / (ticks.length + 1) >= 26;
+  chart.selectAll(".ring-axis").remove();
+  chart.append("div").attr("class", "ring-axis")
+    .html(`<span class="ring-size"></span>` +
+      `<span class="ring-axis-track">` +
+        `<span class="ring-tick-label" style="left:0">0</span>` +
+        ticks.map((t, i) => (everyTick || i % 2 === 1)
+          ? `<span class="ring-tick-label" style="left:${(100 * t / max).toFixed(2)}%">${fmtTick(t)}</span>`
+          : "").join("") +
+      `</span>` +
+      `<span class="ring-count ring-axis-cap">rings</span>`);
+  refreshRingDim();
+}
+function refreshRingDim() {
+  d3.selectAll(".ring-row")
+    .classed("dim", d => selectedRings.size > 0 && !selectedRings.has(d))
+    .classed("sel", d => selectedRings.has(d));
+}
+
+function drawCellBox(m, scale, B) {
+  const [A, Bv, C] = S.lattice;
+  const corners = [];
+  for (let i = 0; i < 8; i++) {
+    const x = (i & 1) * A[0] + ((i >> 1) & 1) * Bv[0] + ((i >> 2) & 1) * C[0];
+    const y = (i & 1) * A[1] + ((i >> 1) & 1) * Bv[1] + ((i >> 2) & 1) * C[1];
+    const z = (i & 1) * A[2] + ((i >> 1) & 1) * Bv[2] + ((i >> 2) & 1) * C[2];
+    corners.push(flying ? flyProject(x, y, z, B) : project(x, y, z, m, scale));
+  }
+  const edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  ctx.beginPath();
+  for (const [i, j] of edges) {
+    if (!corners[i] || !corners[j]) continue; // edge endpoint behind the camera
+    ctx.moveTo(corners[i][0], corners[i][1]);
+    ctx.lineTo(corners[j][0], corners[j][1]);
+  }
+  ctx.strokeStyle = css("--grid");
+  ctx.lineWidth = activeRender.cellBoxWidth;
+  ctx.stroke();
+  if (flying) return; // no axis labels while inside the box
+
+  // axis labels + extent ticks on the three origin edges
+  ctx.font = activeRender.axisLabelFont;
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const axes = [[1, "x"], [2, "y"], [4, "z"]];
+  for (const [ci, name] of axes) {
+    const p0 = corners[0], p1 = corners[ci];
+    const mx = (p0[0] + p1[0]) / 2, my = (p0[1] + p1[1]) / 2;
+    // push label outward from box center
+    const bx = d3.mean(corners, d => d[0]), by = d3.mean(corners, d => d[1]);
+    const dx = mx - bx, dy = my - by;
+    const len = Math.hypot(dx, dy) || 1;
+    const ux = dx / len, uy = dy / len;      // outward unit vector (screen space)
+    const L = S.lattice[[null,0,1,null,2][ci]];
+    const Llen = Math.hypot(...L);
+    const ex = p1[0] - p0[0], ey = p1[1] - p0[1];
+    const elen = Math.hypot(ex, ey) || 1;
+    const nx = -ey / elen, ny = ex / elen;   // tick-mark perpendicular (screen)
+    ctx.fillStyle = css("--muted");
+    const axisText = activeRender.axisLabel ? activeRender.axisLabel(name) : `${name} (Å)`;
+    // axis name runs parallel to its edge and turns with it as the box
+    // rotates; flip 180° where that would leave the text upside down
+    let ang = Math.atan2(ey, ex);
+    if (ang > Math.PI / 2 || ang < -Math.PI / 2) ang += Math.PI;
+    ctx.save();
+    ctx.translate(mx + 26 * ux, my + 26 * uy);
+    ctx.rotate(ang);
+    ctx.fillText(axisText, 0, 0);
+    ctx.restore();
+    ctx.fillText(`${Llen.toFixed(0)}`, p1[0] + 10 * ux, p1[1] + 10 * uy);
+    // scale ticks along the edge at nice round Å intervals, true to the cell
+    const tv = d3.ticks(0, Llen, Math.max(2, Math.round(Llen / 5)))
+      .filter(v => v > 0 && v < Llen);
+    ctx.strokeStyle = css("--muted");
+    ctx.globalAlpha = 0.55;
+    ctx.beginPath();
+    for (const v of tv) {
+      const f = v / Llen, tx = p0[0] + ex * f, ty = p0[1] + ey * f;
+      ctx.moveTo(tx - nx * 3, ty - ny * 3); ctx.lineTo(tx + nx * 3, ty + ny * 3);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = css("--muted");
+    for (const v of tv) {
+      const f = v / Llen;
+      ctx.fillText(String(v), p0[0] + ex * f + 13 * ux, p0[1] + ey * f + 13 * uy);
+    }
+  }
+  // single origin label (three per-axis zeros would collide)
+  const bx0 = d3.mean(corners, d => d[0]), by0 = d3.mean(corners, d => d[1]);
+  const odx = corners[0][0] - bx0, ody = corners[0][1] - by0;
+  const olen = Math.hypot(odx, ody) || 1;
+  ctx.fillStyle = css("--muted");
+  ctx.fillText("0", corners[0][0] + 10 * odx / olen, corners[0][1] + 10 * ody / olen);
+}
+
+// ---------- hover tooltip ----------
+function scheduleQuadtree() {
+  clearTimeout(scheduleQuadtree.t);
+  scheduleQuadtree.t = setTimeout(() => {
+    if (!S) return;
+    const visible = Array.from(order).filter(i => isFinite(px[i]));
+    quad = d3.quadtree().x(i => px[i]).y(i => py[i]).addAll(visible);
+  }, 120);
+}
+
+// shared atom-tooltip body: hover (mouse) and tap (touch) both use it
+function showAtomTooltip(i, mx, my) {
+  const cn = S.cn[i];
+  // ring-size distribution through this atom (full periodic ring set)
+  let ringLine = "";
+  const sizes = S.atomRings ? S.atomRings[i]
+    : S.rings ? S.rings.filter(r => r.includes(i)).map(r => r.length) : null;
+  if (sizes) {
+    if (!sizes.length) ringLine = "<br>Rings: none";
+    else {
+      const byS = d3.rollup(sizes, v => v.length, d => d);
+      ringLine = "<br>Rings: " + [...byS.keys()].sort(d3.ascending)
+        .map(s => `${byS.get(s)}×<span style="color:${ringColor(s)}">${s}-ring</span>`).join(", ");
+    }
+  }
+  // local-topology line: this atom's H₁ barcode class and its surprisal
+  let bneLine = "";
+  const bcur = bneCur();
+  if (bcur && bneSurp && bcur.cls[i] >= 0) {
+    const c = bcur.cls[i];
+    bneLine = `<br>LAE(n=${bcur.n}): <b>${barsText(bcur.bars[c])}</b>` +
+      ` · ${(100 * bcur.counts[c] / bcur.sampled).toFixed(1)}% of atoms` +
+      `<br>surprisal ${bneSurp[i].toFixed(2)} nats`;
+  }
+  tooltip.innerHTML =
+    `<span class="tt-dot" style="background:${cnColor(cn)}"></span><b>Atom ${i}</b> — CN ${cn}` +
+    `<br>${CN_NAMES[Math.min(cn, 8)]}` +
+    ringLine + bneLine +
+    `<br>(${S.P[3*i].toFixed(2)}, ${S.P[3*i+1].toFixed(2)}, ${S.P[3*i+2].toFixed(2)}) Å`;
+  tooltip.style.display = "block";
+  const tw = tooltip.offsetWidth;
+  tooltip.style.left = Math.min(mx + 14, W - tw - 8) + "px";
+  tooltip.style.top = (my + 14) + "px";
+}
+canvas.addEventListener("mousemove", e => {
+  if (!quad || !S) return tooltip.style.display = "none";
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const i = quad.find(mx, my, 9);
+  if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i]))) {
+    tooltip.style.display = "none"; return;
+  }
+  showAtomTooltip(i, mx, my);
+});
+canvas.addEventListener("mouseleave", () => tooltip.style.display = "none");
+
+// ---------- interaction ----------
+let dragMoved = false;
+canvas.addEventListener("click", e => {
+  if (dragMoved) { dragMoved = false; return; } // a rotate gesture is not a selection click
+  if (!quad || !S) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const i = quad.find(mx, my, 9);
+  selectAtom(i === undefined ? null : i);
+  // tap parity with desktop hover: show the same tooltip (mouse users already
+  // have it via mousemove, so this is touch-only)
+  if (coarsePointer) {
+    if (i === undefined || (selectedCNs.size && !selectedCNs.has(S.cn[i])))
+      tooltip.style.display = "none";
+    else showAtomTooltip(i, mx, my);
+  }
+});
+// pinch zoom / dolly — touch only (desktop zooms with the wheel below).
+// Registered BEFORE d3.drag so these listeners run first at-target: on a
+// staggered pinch finger 1 already owns a rotate drag when finger 2 lands, and
+// d3.drag's touchmove calls preventDefault + stopImmediatePropagation, which
+// would starve these handlers if they were registered after it. While a pinch
+// is live, stopImmediatePropagation keeps the stale rotate gesture out until
+// every finger lifts (also avoids a position jump when fingers lift one at a
+// time). Two fingers are also excluded from starting a drag via its .filter().
+if (coarsePointer) {
+  let pinchD = 0;       // finger separation at the last move; 0 = re-arm on next move
+  let pinching = false; // two fingers down; stays true until every finger lifts
+  const pinchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  canvas.addEventListener("touchstart", e => {
+    if (e.touches.length === 2) { pinching = true; pinchD = 0; }
+  });
+  canvas.addEventListener("touchmove", e => {
+    if (!pinching) return; // single finger: leave the rotate drag alone
+    e.stopImmediatePropagation(); // suppress the competing d3.drag rotate mid-pinch
+    if (e.touches.length !== 2 || !S) return;
+    e.preventDefault(); // suppress the browser's page pinch-zoom
+    const d = pinchDist(e.touches);
+    if (!d) return;
+    if (pinchD) {
+      const k = d / pinchD;
+      if (flying) {
+        const B = flyBasis(), step = (k - 1) * 0.9 * S.radius;
+        cam[0] += B.f[0] * step; cam[1] += B.f[1] * step; cam[2] += B.f[2] * step;
+      } else {
+        zoom = Math.max(0.3, Math.min(8, zoom * k));
+      }
+      draw(); scheduleQuadtree();
+    }
+    pinchD = d;
+  }, { passive: false });
+  const pinchEnd = e => {
+    if (e.touches.length < 2) pinchD = 0;
+    if (!e.touches.length) pinching = false;
+  };
+  canvas.addEventListener("touchend", pinchEnd);
+  canvas.addEventListener("touchcancel", pinchEnd);
+}
+
+d3.select(canvas).call(
+  d3.drag()
+    // two fingers = pinch (handled above); never start a competing rotation
+    // drag — without this the two per-finger drags cancel each other's rotation
+    .filter(e => !e.touches || e.touches.length < 2)
+    .on("start", () => { dragMoved = false; canvas.classList.add("dragging"); tooltip.style.display = "none"; })
+    .on("drag", e => {
+      if (flying) {
+        fyaw -= e.dx * 0.0035;
+        fpitch = Math.max(-1.5, Math.min(1.5, fpitch - e.dy * 0.0035));
+      } else if (e.sourceEvent.shiftKey) { panX += e.dx; panY += e.dy; }
+      else {
+        yaw += e.dx * 0.006;
+        pitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch - e.dy * 0.006));
+      }
+      dragMoved = true;
+      draw();
+    })
+    .on("end", () => { canvas.classList.remove("dragging"); scheduleQuadtree(); })
+);
+canvas.addEventListener("wheel", e => {
+  // Embedded on the site: let a plain wheel scroll the HOST page instead —
+  // the dashboard fills the viewport, so trapping the wheel here would
+  // strand the page scroll (and the host's retracting banner). Hold
+  // Ctrl/Cmd (or trackpad pinch, which sets ctrlKey) to zoom as before.
+  if (window.frameElement && !e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  if (flying) {
+    const B = flyBasis(), step = -e.deltaY * 0.0018 * S.radius;
+    cam[0] += B.f[0] * step; cam[1] += B.f[1] * step; cam[2] += B.f[2] * step;
+  } else {
+    zoom = Math.max(0.3, Math.min(8, zoom * Math.exp(-e.deltaY * 0.0015)));
+  }
+  draw(); scheduleQuadtree();
+}, { passive: false });
+
+// ---------- fly mode ----------
+const flyChk = document.getElementById("flyChk");
+const navHint = document.getElementById("navHint");
+const flyPad = document.getElementById("flyPad");
+
+if (coarsePointer) {
+  document.getElementById("flyLabel").textContent = "Fly"; // no WASD on a phone
+  // on-screen forward/back: feed the same key set the fly loop reads for WASD
+  const bindFlyKey = (id, key) => {
+    const btn = document.getElementById(id);
+    btn.addEventListener("pointerdown", e => { e.preventDefault(); keys.add(key); });
+    const off = () => { keys.delete(key); if (flying && !keys.size) scheduleQuadtree(); };
+    btn.addEventListener("pointerup", off);
+    btn.addEventListener("pointercancel", off);
+    btn.addEventListener("pointerleave", off);
+  };
+  bindFlyKey("flyFwd", "w");
+  bindFlyKey("flyBack", "s");
+}
+
+function flyLoop(t) {
+  if (!flying) return;
+  const dt = Math.min(0.06, (t - lastT) / 1000) || 0.016;
+  lastT = t;
+  if (keys.size && S) {
+    const B = flyBasis();
+    const sp = S.radius * 0.55 * (keys.has("shift") ? 3 : 1) * dt;
+    let mx = 0, my = 0, mz = 0;
+    const add = (v, s) => { mx += v[0] * s; my += v[1] * s; mz += v[2] * s; };
+    if (keys.has("w")) add(B.f, sp);
+    if (keys.has("s")) add(B.f, -sp);
+    if (keys.has("d")) add(B.r, sp);
+    if (keys.has("a")) add(B.r, -sp);
+    if (keys.has("e")) add(B.u, sp);
+    if (keys.has("q")) add(B.u, -sp);
+    if (mx || my || mz) { cam[0] += mx; cam[1] += my; cam[2] += mz; draw(); }
+  }
+  flyRAF = requestAnimationFrame(flyLoop);
+}
+
+function setFly(on) {
+  if (on === flying) return;
+  flying = on;
+  flyChk.checked = on;
+  flyPad.style.display = coarsePointer && on ? "flex" : "none";
+  if (on && S) {
+    // enter along the current orbit view direction, just outside the cell
+    const m = rotMatrix();
+    let f = [m[3], m[4], m[5]];
+    const nrm = Math.hypot(...f) || 1;
+    f = f.map(v => v / nrm);
+    fyaw = Math.atan2(f[1], f[0]);
+    fpitch = Math.asin(Math.max(-1, Math.min(1, f[2])));
+    cam = [S.cx - f[0] * S.radius * 1.5, S.cy - f[1] * S.radius * 1.5, S.cz - f[2] * S.radius * 1.5];
+    lastT = performance.now();
+    flyRAF = requestAnimationFrame(flyLoop);
+  } else {
+    cancelAnimationFrame(flyRAF);
+    keys.clear();
+  }
+  if (navHint) navHint.textContent = flying
+    ? (window.frameElement
+      ? "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · Ctrl/⌘+scroll to dolly · Esc exits"
+      : "W/A/S/D move · Q/E down/up · hold Shift for speed · drag to look · scroll to dolly · Esc exits")
+    : (window.frameElement
+      ? "Drag to rotate · Ctrl/⌘+scroll to zoom"  // plain wheel scrolls the host page when embedded
+      : "Drag to rotate · scroll to zoom");
+  if (S) { draw(); scheduleQuadtree(); }
+}
+flyChk.addEventListener("change", () => setFly(flyChk.checked));
+
+const FLY_KEYS = new Set(["w", "a", "s", "d", "q", "e", "shift"]);
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") return setFly(false);
+  if (!flying) return;
+  const tag = e.target.tagName;
+  if (tag === "SELECT" || tag === "INPUT" || tag === "BUTTON" || tag === "TEXTAREA") return;
+  const k = e.key.toLowerCase();
+  if (FLY_KEYS.has(k)) { keys.add(k); e.preventDefault(); }
+});
+window.addEventListener("keyup", e => {
+  keys.delete(e.key.toLowerCase());
+  if (flying && !keys.size) scheduleQuadtree();
+});
+window.addEventListener("blur", () => keys.clear());
+
+document.getElementById("bondsChk").addEventListener("change", () => { draw(); });
+document.getElementById("hideGridChk").addEventListener("change", () => { draw(); });
+document.getElementById("ringsChk").addEventListener("change", () => { draw(); });
+document.getElementById("strainChk").addEventListener("change", e => {
+  if (e.target.checked) document.getElementById("bondsChk").checked = true;
+  draw();
+});
+document.getElementById("sizeRange").addEventListener("input", () => { draw(); });
+document.getElementById("resetBtn").addEventListener("click", () => {
+  setFly(false);
+  yaw = 0.55; pitch = -0.35; zoom = 1; panX = panY = 0; selectedCNs = new Set(); selectedRings = new Set(); ringMembers = null; ringBondMask = null;
+  selectedAtom = null; atomRingIdxSel = null; atomSelSet = null;
+  brushRange = null; buildRdf();
+  bondBrushRange = null; updateBondSel(); buildBondPanel();
+  bneSel = new Set(); bneSelSet = null; buildBnePanel();
+  refreshLegendDim(); refreshRingDim(); draw(); scheduleQuadtree();
+});
+document.getElementById("spinChk").addEventListener("change", e => {
+  clearInterval(spinTimer);
+  if (e.target.checked) spinTimer = setInterval(() => { if (!flying) { yaw += 0.004; draw(); } }, 33);
+  else scheduleQuadtree();
+});
+
+// ---------- bond-network entropy ----------
+// Sidecar payloads from tools/bne.py: per-atom H1-barcode CLASS at several
+// environment sizes n, plus the BNE(n) curve and the growth-rate descriptor.
+// BNE(n) = -Σ P ln P over barcode classes, so the per-atom SURPRISAL
+// -ln P(class) averages (over sampled atoms) to exactly BNE(n): the colour
+// channel in the cloud and the published number are the same quantity.
+const BNE_CACHE = {};
+const BNE_BUCKETS = 33;
+let bneData = null;          // sidecar for the displayed structure
+// index into bneData.nDisplay. Default n = 18: large enough to see medium-range
+// topology, small enough that classes still repeat in a few-thousand-atom cell
+// (at n = 26–30 nearly every environment is unique and the colour saturates).
+let bneNIdx = 3;
+let bneSurp = null;          // Float32Array per atom (NaN = atom not sampled)
+let bneBucket = null;        // Uint8Array per atom, index into the colour ramp
+let bneSMin = 0, bneSMax = 1;
+let bneSel = new Set();      // selected barcode classes (empty = show all)
+let bneSelSet = null;        // atoms allowed by that selection
+const colorSel = document.getElementById("colorSel");
+const colorMode = () => colorSel.value;
+
+window.__BNE_CB = payload => {
+  BNE_CACHE[payload.id] = payload;
+  if (S && payload.id === S.id) bneAttach();
+  else if (bneData && seq && seq.ids.includes(payload.id)) buildBnePanel(); // ghost curve arrived
+};
+function loadBne(id) {
+  if (id in BNE_CACHE) return; // null = sidecar missing, don't retry forever
+  const el = document.createElement("script");
+  el.src = `structures_bne/${id}.js?v=${Date.now()}`;
+  el.onload = () => el.remove();
+  el.onerror = () => { BNE_CACHE[id] = null; el.remove(); if (S && S.id === id) bneAttach(); };
+  document.body.appendChild(el);
+}
+
+function bneCur() { // the byN block for the active environment size
+  if (!bneData) return null;
+  const n = bneData.nDisplay[Math.min(bneNIdx, bneData.nDisplay.length - 1)];
+  return { n, ...bneData.byN[String(n)] };
+}
+function bneAttach() {
+  bneData = (S && BNE_CACHE[S.id]) || null;
+  bneSel = new Set(); bneSelSet = null;
+  if (bneData) {
+    const slider = document.getElementById("bneN");
+    slider.max = bneData.nDisplay.length - 1;
+    bneNIdx = Math.min(bneNIdx, bneData.nDisplay.length - 1);
+    slider.value = bneNIdx;
+    document.getElementById("bneNVal").textContent = bneData.nDisplay[bneNIdx];
+  }
+  computeBneAtoms();
+  buildBnePanel(); buildMeta(); draw();
+}
+// per-atom surprisal + ramp bucket, recomputed whenever n changes
+function computeBneAtoms() {
+  bneSurp = null; bneBucket = null;
+  const cur = bneCur();
+  if (!cur || !S || cur.cls.length !== S.n) return;
+  const tot = cur.sampled;
+  const surpOf = cur.counts.map(c => -Math.log(c / tot));
+  bneSurp = new Float32Array(S.n);
+  bneSMin = Infinity; bneSMax = -Infinity;
+  for (let i = 0; i < S.n; i++) {
+    const c = cur.cls[i];
+    if (c < 0) { bneSurp[i] = NaN; continue; }
+    const s = surpOf[c];
+    bneSurp[i] = s;
+    if (s < bneSMin) bneSMin = s;
+    if (s > bneSMax) bneSMax = s;
+  }
+  if (!isFinite(bneSMin)) { bneSMin = 0; bneSMax = 1; }
+  const span = (bneSMax - bneSMin) || 1;
+  bneBucket = new Uint8Array(S.n);
+  for (let i = 0; i < S.n; i++)
+    bneBucket[i] = isNaN(bneSurp[i]) ? 0
+      : Math.round(((bneSurp[i] - bneSMin) / span) * (BNE_BUCKETS - 1));
+}
+// ordinary → rare ramp, theme-derived (same idiom as the bond-strain trio)
+function bneTrio() {
+  const explicit = n => document.documentElement.style.getPropertyValue(n).trim();
+  return [
+    explicit("--bne-lo") || css("--baseline"),
+    explicit("--bne-mid") || css("--cn2"),
+    explicit("--bne-hi") || css("--cn1"),
+  ];
+}
+const bneScale = () =>
+  d3.scaleLinear().domain([0, 0.5, 1]).range(bneTrio()).interpolate(d3.interpolateLab);
+function bneColors() {
+  const sc = bneScale();
+  return Array.from({ length: BNE_BUCKETS }, (_, b) => sc(b / (BNE_BUCKETS - 1)));
+}
+
+function bneSelectClass(c, additive) {
+  if (additive) bneSel.has(c) ? bneSel.delete(c) : bneSel.add(c);
+  else bneSel = (bneSel.size === 1 && bneSel.has(c)) ? new Set() : new Set([c]);
+  const cur = bneCur();
+  if (!bneSel.size) bneSelSet = null;
+  else {
+    bneSelSet = new Set();
+    for (let i = 0; i < S.n; i++) if (bneSel.has(cur.cls[i])) bneSelSet.add(i);
+  }
+  d3.selectAll(".bne-cls")
+    .classed("dim", d => bneSel.size > 0 && !bneSel.has(d.c))
+    .classed("sel", d => bneSel.has(d.c));
+  draw(); scheduleQuadtree();
+}
+
+const barsText = bars => bars.length
+  ? bars.map(([a, b]) => a === b ? `${a}` : `${a}–${b}`).join(" ")
+  : "no rings";
+
+const BNE_H = 104, BNE_M = { l: 28, r: 10, t: 18, b: 16 };
+function buildBnePanel() {
+  const panel = document.getElementById("bnePanel");
+  const cur = bneCur();
+  if (!cur) { panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const [lo, hi] = bneData.descRange;
+  const curve = bneData.curve;
+  const bneAtN = curve.bne[curve.ns.indexOf(cur.n)];
+
+  // where this structure's growth rate sits among every structure in the set —
+  // a bare 0.113 means nothing without the population behind it
+  let strip = "";
+  if (window.__BNE_INDEX && window.__BNE_INDEX.length > 1) {
+    const all = window.__BNE_INDEX;
+    const ext = d3.extent(all, d => d.descriptor);
+    const pos = d => (100 * (d - ext[0]) / (ext[1] - ext[0])).toFixed(1);
+    strip =
+      `<div class="bne-strip" title="Growth-rate descriptor of all ${all.length} structures; ` +
+      `this one marked.">` +
+      all.map(d => `<span class="bne-tick${d.id === S.id ? " me" : ""}" ` +
+        `style="left:${pos(d.descriptor)}%" title="${d.name}: ${d.descriptor.toFixed(3)}"></span>`).join("") +
+      `</div><div class="bne-ramp-lab"><span>${ext[0].toFixed(2)} ordered</span>` +
+      `<span>all ${all.length} structures</span><span>disordered ${ext[1].toFixed(2)}</span></div>`;
+  }
+  document.getElementById("bneHead").innerHTML =
+    `<div class="bne-big"><b>${bneData.descriptor.toFixed(3)}</b>` +
+    `<span>mean BNE(n)/n, n = ${lo}–${hi}</span></div>` + strip +
+    `<div class="meta-row"><span>BNE(n = ${cur.n})</span><b>${(bneAtN ?? NaN).toFixed(2)} nats</b></div>` +
+    `<div class="meta-row"><span>distinct environments</span><b>${cur.counts.length.toLocaleString()}</b></div>`;
+
+  // BNE(n) curve — other sequence stages draw as gray ghosts, as in g(r)
+  const svg = d3.select("#bneSvg");
+  svg.selectAll("*").remove();
+  const w = Math.max(180, panel.clientWidth - 32);
+  svg.attr("width", w).attr("height", BNE_H).attr("viewBox", `0 0 ${w} ${BNE_H}`);
+  const ghosts = seq
+    ? seq.ids.filter(id => id !== S.id).map(id => BNE_CACHE[id]).filter(Boolean)
+    : [];
+  const x = d3.scaleLinear([curve.ns[0], curve.ns[curve.ns.length - 1]], [BNE_M.l, w - BNE_M.r]);
+  const ymax = d3.max([curve, ...ghosts.map(g => g.curve)], c => d3.max(c.bne)) || 1;
+  const y = d3.scaleLinear([0, ymax * 1.08], [BNE_H - BNE_M.b, BNE_M.t]).nice();
+  svg.append("rect").attr("class", "descband")
+    .attr("x", x(lo)).attr("width", x(hi) - x(lo))
+    .attr("y", BNE_M.t).attr("height", BNE_H - BNE_M.b - BNE_M.t);
+  svg.append("g").attr("transform", `translate(0,${BNE_H - BNE_M.b})`)
+    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format("d")));
+  svg.append("g").attr("transform", `translate(${BNE_M.l},0)`)
+    .call(d3.axisLeft(y).ticks(3));
+  const line = c => d3.line().x((v, k) => x(c.ns[k])).y(v => y(v))(c.bne);
+  for (const g of ghosts)
+    svg.append("path").attr("d", line(g.curve))
+      .attr("fill", "none").attr("stroke", css("--baseline")).attr("stroke-width", 1.2);
+  svg.append("path").attr("d", line(curve))
+    .attr("fill", "none").attr("stroke", css("--cn4")).attr("stroke-width", 2);
+  svg.append("line").attr("x1", x(cur.n)).attr("x2", x(cur.n))
+    .attr("y1", BNE_M.t).attr("y2", BNE_H - BNE_M.b)
+    .attr("stroke", css("--ink")).attr("stroke-dasharray", "3,3").attr("opacity", 0.55);
+  // axis captions sit in the top margin so neither collides with a tick label
+  svg.append("text").attr("x", 2).attr("y", 9).text("BNE (nats)");
+  svg.append("text").attr("x", w - BNE_M.r).attr("y", 9).attr("text-anchor", "end")
+    .text(`n → (band: ${lo}–${hi})`);
+
+  // colour ramp legend (only meaningful while the cloud is coloured by BNE)
+  const cols = bneColors();
+  document.getElementById("bneRamp").innerHTML =
+    `<div class="bne-ramp" style="background:linear-gradient(90deg,${cols.join(",")})"></div>` +
+    `<div class="bne-ramp-lab"><span>${bneSMin.toFixed(2)} common</span>` +
+    `<span>surprisal −ln P (nats)</span><span>rare ${bneSMax.toFixed(2)}</span></div>`;
+
+  // commonest barcode classes
+  const tot = cur.sampled;
+  const sc = bneScale(), span = (bneSMax - bneSMin) || 1;
+  const rows = cur.counts.map((count, c) => ({ c, count, bars: cur.bars[c] }))
+    .slice(0, 6);
+  d3.select("#bneClasses").selectAll(".bne-cls").data(rows, d => d.c).join("div")
+    .attr("class", "bne-cls")
+    .on("mousedown", e => e.preventDefault())
+    .attr("title", d =>
+      `${d.count.toLocaleString()} atoms (${(100 * d.count / tot).toFixed(1)}%) share this local topology.\n` +
+      `H₁ barcode: ${d.bars.length} independent ring${d.bars.length === 1 ? "" : "s"}` +
+      (d.bars.length ? ` at hop intervals ${barsText(d.bars)}` : "") +
+      `\nsurprisal ${(-Math.log(d.count / tot)).toFixed(2)} nats`)
+    .on("click", (e, d) => bneSelectClass(d.c, e.shiftKey))
+    .html(d => {
+      const s = -Math.log(d.count / tot);
+      return `<span class="dot" style="background:${sc((s - bneSMin) / span)}"></span>` +
+             `<span class="bars">${barsText(d.bars)}</span>` +
+             `<span class="pct">${(100 * d.count / tot).toFixed(1)}%</span>`;
+    });
+  d3.selectAll(".bne-cls")
+    .classed("dim", d => bneSel.size > 0 && !bneSel.has(d.c))
+    .classed("sel", d => bneSel.has(d.c));
+
+  const ceiling = Math.log(tot);
+  const sampled = cur.sampled < S.n
+    ? ` Sampled ${cur.sampled.toLocaleString()} of ${S.n.toLocaleString()} atoms; the rest draw neutral.`
+    : "";
+  // Explanation moves to the heading's hover tooltip, where it costs no height —
+  // so the instructional lines trimmed earlier can come back at no cost.
+  document.getElementById("bneAbout").innerHTML =
+    `Shannon entropy of the H₁-barcode distribution over ${cur.n}-atom local environments on the ` +
+    `1.8 Å bond graph — a topological measure of disorder. The curve is BNE(n); the band is the ` +
+    `${lo}–${hi} window whose mean slope is the growth rate, and other sequence stages draw as gray ` +
+    `ghost curves. Rows are the commonest barcodes, each independent ring written as its hop-distance ` +
+    `interval from the reference atom; click one to isolate the atoms carrying it, shift-click to add.` +
+    sampled;
+  // Only the finite-size warning stays on the panel: it says the number on
+  // screen is not trustworthy, which shouldn't be hidden behind a hover.
+  const warn = bneAtN > 0.75 * ceiling
+    ? `<b style="color:var(--cn1)">Near the finite-size ceiling</b> (ln N = ${ceiling.toFixed(2)}): ` +
+      `almost every environment in this cell is unique, so BNE saturates and the growth rate understates the disorder.`
+    : "";
+  const hintEl = document.getElementById("bneHint");
+  hintEl.innerHTML = warn;
+  hintEl.style.display = warn ? "" : "none";
+}
+
+document.getElementById("bneN").addEventListener("input", e => {
+  bneNIdx = +e.target.value;
+  const cur = bneCur();
+  document.getElementById("bneNVal").textContent = cur ? cur.n : "";
+  bneSel = new Set(); bneSelSet = null;
+  computeBneAtoms(); buildBnePanel(); draw();
+});
+colorSel.addEventListener("change", () => {
+  if (colorMode() === "bne" && S && !BNE_CACHE[S.id]) loadBne(S.id);
+  draw();
+});
+
+// ---------- structure selector ----------
+const sel = d3.select("#structSel");
+const groups = d3.group(window.__MANIFEST, d => d.group);
+for (const [g, items] of groups) {
+  const og = sel.append("optgroup").attr("label", g);
+  og.selectAll("option").data(items).join("option")
+    .attr("value", d => d.id)
+    .text(d => `${d.name} (${d.natoms.toLocaleString()})`);
+}
+sel.on("change", function () { syncSequenceTo(this.value); loadStructure(this.value); });
+
+// ---------- sequences (ordered stages; camera holds still across steps) ----------
+const SEQUENCES = [
+  { key: "irg", label: "Irradiation damage — IRG T2→T9",
+    ids: ["irradiated_graphite__irg_t2_14009", "irradiated_graphite__irg_t3_14009",
+          "irradiated_graphite__irg_t5_14009", "irradiated_graphite__irg_t9_14009"] },
+  { key: "cdc", label: "CDC1200 annealing — before→after",
+    ids: ["carbide_derived_carbon__cdc1200", "carbide_derived_carbon__ann_cdc1200"] },
+  { key: "ac", label: "AC densification — ρ 1.5→2.9 (216 atoms)",
+    ids: ["amorphous_carbon__density_1d5_216", "amorphous_carbon__density_1d8_216",
+          "amorphous_carbon__density_2d0_216", "amorphous_carbon__density_2d1_216",
+          "amorphous_carbon__density_2d4_216", "amorphous_carbon__density_2d6_216",
+          "amorphous_carbon__density_2d9_216"] },
+  { key: "vpc", label: "VPC(D) density — ρ 0.9→1.9",
+    ids: ["variable_porosity_carbon__vpc_d_density_0d9_930",
+          "variable_porosity_carbon__vpc_d_density_1d5_991",
+          "variable_porosity_carbon__vpc_d_density_1d9_989"] },
+];
+let seq = null, seqIdx = 0, playTimer = null;
+const seqSel = document.getElementById("seqSel");
+const seqControls = document.getElementById("seqControls");
+const playBtn = document.getElementById("seqPlay");
+for (const s of SEQUENCES) {
+  const o = document.createElement("option");
+  o.value = s.key; o.textContent = s.label;
+  seqSel.appendChild(o);
+}
+
+function stopPlay() {
+  clearInterval(playTimer); playTimer = null; playBtn.textContent = "Play";
+}
+function seqUI() {
+  seqControls.style.display = seq ? "inline-flex" : "none";
+  if (seq) {
+    document.getElementById("seqPos").textContent = `${seqIdx + 1}/${seq.ids.length}`;
+    document.getElementById("seqPrev").disabled = seqIdx === 0;
+    document.getElementById("seqNext").disabled = seqIdx === seq.ids.length - 1;
+  }
+}
+function seqGo(i) {
+  seqIdx = Math.max(0, Math.min(seq.ids.length - 1, i));
+  const id = seq.ids[seqIdx];
+  sel.property("value", id);
+  loadStructure(id);
+  seqUI();
+}
+// keep the sequence picker consistent when the structure dropdown is used directly
+function syncSequenceTo(id) {
+  if (seq && seq.ids.includes(id)) { seqIdx = seq.ids.indexOf(id); seqUI(); return; }
+  if (seq) { stopPlay(); seq = null; seqSel.value = ""; seqUI(); }
+}
+seqSel.addEventListener("change", () => {
+  stopPlay();
+  seq = SEQUENCES.find(s => s.key === seqSel.value) || null;
+  if (seq) {
+    seq.ids.forEach(prefetch); // warm the cache so RDF ghost curves appear
+    seq.ids.forEach(loadBne);  // …and the BNE(n) ghost curves
+    const cur = seq.ids.indexOf(sel.property("value"));
+    seqGo(cur >= 0 ? cur : 0);
+  } else { seqUI(); buildRdf(); }
+});
+document.getElementById("seqPrev").addEventListener("click", () => { stopPlay(); seqGo(seqIdx - 1); });
+document.getElementById("seqNext").addEventListener("click", () => { stopPlay(); seqGo(seqIdx + 1); });
+playBtn.addEventListener("click", () => {
+  if (playTimer) return stopPlay();
+  playBtn.textContent = "Pause";
+  if (seqIdx === seq.ids.length - 1) seqGo(0);          // restart from the first stage
+  playTimer = setInterval(() => {
+    if (seqIdx === seq.ids.length - 1) return stopPlay(); // hold on the last stage
+    seqGo(seqIdx + 1);
+  }, 1800);
+});
+
+// ---------- theme redraw ----------
+darkMQ.addEventListener("change", () => {
+  applyThemeVars();
+  updateCnRemap(); // the palette just changed under it
+  if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); }
+});
+
+window.addEventListener("resize", resize);
+new ResizeObserver(() => resize()).observe(plot);
+resize();
+
+// ---------- theme selector ----------
+const themeSel = document.getElementById("themeSel");
+for (const t of window.__THEMES) {
+  const o = document.createElement("option");
+  o.value = t.id; o.textContent = t.name;
+  themeSel.appendChild(o);
+}
+let savedTheme = null;
+try { savedTheme = localStorage.getItem("pc-theme-v2"); } catch (_) { /* file:// may deny storage */ }
+themeSel.value = savedTheme || "oppenheimer";
+themeSel.addEventListener("change", () => {
+  try { localStorage.setItem("pc-theme-v2", themeSel.value); } catch (_) {}
+  applyTheme(themeSel.value);
+  themeSel.value = activeTheme.id; // reflect fallback if the saved id was unknown
+});
+applyTheme(themeSel.value);
+themeSel.value = activeTheme.id;
+
+const DEFAULT = "variable_porosity_carbon__vpc_d_200_density_0d9_model_9"; // VPC(D) 0.9 model 9, 213 atoms
+sel.property("value", DEFAULT);
+loadStructure(DEFAULT);
+</script>
+</body>
+</html>

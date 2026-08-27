@@ -1,0 +1,13 @@
+{
+  "eraOffsetYears": 1016,
+  "group": "colonies.music.flowers",
+  "nodes": {
+    "prospero":  { "title": "Prospero (no fixed node)", "transitDays": 0,  "origin": "nowhen" },
+    "kolob":     { "title": "The Rim of Kolob's Light", "transitDays": 2,  "origin": "21:847/1847" },
+    "zankyo":    { "title": "Station ZANKYO-3042",      "transitDays": 5,  "origin": "21:304/2" },
+    "bardo":     { "title": "The Monastery-Ark",        "transitDays": 9,  "origin": "21:108/49" },
+    "antariksh": { "title": "Vimana ANTARIKSH",         "transitDays": 12, "origin": "21:257/360" },
+    "operator":  { "title": "The Relay",                "transitDays": 0,  "origin": "21:1/0" }
+  },
+  "jitterFrac": 0.2
+}

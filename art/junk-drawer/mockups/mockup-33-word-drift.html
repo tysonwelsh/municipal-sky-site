@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Word Drift &mdash; wait indicator</title>
+<style>
+:root{
+  --tpaper:#ece0bf; --tpaper-hi:#f4ead0; --plate:#f8f3e2;
+  --tink:#33240f; --tink-2:rgba(51,36,15,.68); --tink-3:rgba(51,36,15,.44);
+  --trule:rgba(74,53,18,.40); --trule-2:rgba(74,53,18,.19);
+  --blue:#4a628a; --graphite:#4b4030;
+  --tmono:"Courier Prime","Courier New",Courier,monospace;
+  --tform:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --thand:"Bradley Hand","Segoe Print","Chalkboard SE",Chalkboard,cursive;
+  --tgrain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box}
+body{margin:0;padding:36px 20px 70px;background:var(--tpaper) var(--tgrain);
+  color:var(--tink);font-family:var(--tmono)}
+.sheet{max-width:1000px;margin:0 auto}
+h1{font-family:var(--tform);font-size:1.3rem;font-weight:700;letter-spacing:.28em;
+  text-transform:uppercase;margin:0 0 8px;text-align:center}
+.no{text-align:center;font-size:.56rem;letter-spacing:.2em;color:var(--tink-3);text-transform:uppercase}
+hr.rule{border:0;border-top:1px solid var(--trule);margin:22px 0 0}
+.dek{max-width:580px;margin:22px auto 0;font-size:.66rem;line-height:1.9;color:var(--tink-2)}
+.dek b{color:var(--tink);font-weight:400;border-bottom:1px solid var(--trule-2)}
+h2{font-family:var(--tform);font-size:.72rem;font-weight:700;letter-spacing:.26em;
+  text-transform:uppercase;display:flex;align-items:center;gap:14px;margin:42px 0 6px}
+h2::before,h2::after{content:"";flex:1;border-top:1px solid var(--trule-2)}
+.sub{text-align:center;font-size:.54rem;letter-spacing:.12em;color:var(--tink-3);margin:0 0 22px}
+
+/* the swatch, copied from junk-drawer.css so the size is honest */
+.sw{position:relative;overflow:hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.17) 0 1px, transparent 1px 45px),
+    repeating-linear-gradient(0deg,  rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    repeating-linear-gradient(90deg, rgba(74,98,138,.07) 0 1px, transparent 1px 9px),
+    var(--plate);
+  border:1px solid rgba(55,65,79,.30);
+  box-shadow:0 4px 10px -3px rgba(46,34,12,.5), 0 1px 3px rgba(46,34,12,.35)}
+.sw-letter{position:absolute;top:3px;left:7px;z-index:4;font-family:var(--thand);
+  font-size:.9rem;color:var(--graphite);opacity:.85}
+.well{position:absolute;inset:0;overflow:hidden}
+
+/* every letter on the sheet, falling or fallen, is one of these */
+.col{position:absolute;top:0;left:0;right:0;display:block;z-index:2}
+.col > i{position:absolute;top:0;display:block;font-style:normal;
+  font-family:var(--tmono);color:var(--blue);transform:translateY(-400%)}
+.drift{position:absolute;inset:0;display:block;z-index:1}
+.drift > i{position:absolute;display:block;font-style:normal;
+  font-family:var(--tmono);color:var(--blue);opacity:.9;animation:none!important}
+
+.row{display:flex;gap:36px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+figure{margin:0}
+figcaption{margin-top:8px;font-size:.5rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--tink-3);text-align:center}
+.card{width:460px;height:460px;position:relative;margin:0 auto;
+  background:var(--tpaper-hi) var(--tgrain);border:1px solid rgba(74,53,18,.3);
+  box-shadow:0 10px 26px -8px rgba(20,10,2,.5)}
+.card .sw{position:absolute;width:41%;height:33%}
+.p-a{left:5.5%;top:9%;transform:rotate(-1.8deg)}
+.p-b{right:5.5%;top:9.5%;transform:rotate(1.5deg)}
+.p-c{left:6.5%;bottom:9.5%;transform:rotate(1.4deg)}
+.p-d{right:6.5%;bottom:9%;transform:rotate(-1.6deg)}
+
+.desk{max-width:600px;margin:24px auto 0;display:grid;
+  grid-template-columns:auto 1fr auto;gap:8px 14px;align-items:center;
+  font-size:.52rem;letter-spacing:.12em;text-transform:uppercase;color:var(--tink-3)}
+.desk input[type=range]{-webkit-appearance:none;appearance:none;height:26px;width:100%;
+  background:transparent;cursor:ew-resize;touch-action:manipulation}
+.desk input[type=range]::-webkit-slider-runnable-track{height:1px;background:rgba(74,98,138,.45)}
+.desk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;
+  margin-top:-7px;border-radius:0;background:var(--plate);border:1px solid #4a628a;
+  box-shadow:0 1px 2px rgba(46,34,12,.35)}
+.desk input[type=range]::-moz-range-track{height:1px;background:rgba(74,98,138,.45)}
+.desk input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:0;
+  background:var(--plate);border:1px solid #4a628a}
+.desk output{font-variant-numeric:tabular-nums;min-width:8ch;text-align:right}
+.words{grid-column:1/-1;display:flex;gap:12px;align-items:flex-start;margin-top:6px}
+.words textarea{flex:1;min-height:64px;font:inherit;font-size:.56rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--tink);background:var(--plate);
+  border:1px solid rgba(74,98,138,.4);padding:7px 9px;resize:vertical}
+.act{grid-column:1/-1;display:flex;gap:10px;justify-content:center;margin-top:8px}
+.act button{font:inherit;letter-spacing:.14em;text-transform:uppercase;color:var(--tink-2);
+  background:var(--plate);border:1px solid rgba(74,98,138,.5);padding:4px 10px;cursor:pointer}
+.act button:hover{border-color:#4a628a;color:var(--tink)}
+footer{margin-top:46px;padding-top:12px;border-top:1px solid var(--trule);
+  font-size:.52rem;letter-spacing:.14em;color:var(--tink-3);text-align:center;
+  text-transform:uppercase;line-height:2}
+@media (prefers-reduced-motion: reduce){ .col > i{animation:none!important} }
+</style></head><body><div class="sheet">
+
+<h1>Word Drift</h1>
+<div class="no">The Junk Drawer &middot; mockup 33 &middot; english only</div>
+<hr class="rule">
+<p class="dek">No character pool, no other scripts, nothing generated. <b>Every letter on
+the sheet belongs to a word</b> — a column is a word, spelled downward one letter to a
+printed square. The letters fall, strike the bottom rule, are thrown, and come to rest in
+a heap. For a wait indicator the heap is the useful part: <b>its depth is how long you
+have been waiting</b>.</p>
+
+<h2>True size</h2>
+<div class="sub">230 &times; 185 desktop &middot; 137 &times; 110 phone</div>
+<div class="row">
+  <figure><div class="sw" style="width:230px;height:185px"><span class="sw-letter">a</span>
+    <span class="well" data-well></span></div><figcaption>Desktop</figcaption></figure>
+  <figure><div class="sw" style="width:137px;height:110px"><span class="sw-letter">b</span>
+    <span class="well" data-well></span></div><figcaption>Phone</figcaption></figure>
+</div>
+
+<h2>In the card</h2>
+<div class="sub">the darkroom&rsquo;s own 2&times;2</div>
+<div class="card">
+  <div class="sw p-a"><span class="sw-letter">a</span><span class="well" data-well></span></div>
+  <div class="sw p-b"><span class="sw-letter">b</span><span class="well" data-well></span></div>
+  <div class="sw p-c"><span class="sw-letter">c</span><span class="well" data-well></span></div>
+  <div class="sw p-d"><span class="sw-letter">d</span><span class="well" data-well></span></div>
+</div>
+
+<h2>The desk</h2>
+<div class="sub">rebuilds when a slider settles</div>
+<div class="desk">
+  <label for="d-density">Columns</label>
+  <input type="range" id="d-density" data-k="density" min="5" max="100" step="1" value="20">
+  <output for="d-density">20</output>
+  <label for="d-speedLo">Fall</label>
+  <input type="range" id="d-speedLo" data-k="speedLo" min="15" max="200" step="5" value="30">
+  <output for="d-speedLo">30</output>
+  <label for="d-speedHi">&hellip; to</label>
+  <input type="range" id="d-speedHi" data-k="speedHi" min="15" max="260" step="5" value="60">
+  <output for="d-speedHi">60</output>
+  <label for="d-throwLo">Throw</label>
+  <input type="range" id="d-throwLo" data-k="throwLo" min="0" max="600" step="10" value="50">
+  <output for="d-throwLo">50</output>
+  <label for="d-throwHi">&hellip; to</label>
+  <input type="range" id="d-throwHi" data-k="throwHi" min="0" max="900" step="10" value="200">
+  <output for="d-throwHi">200</output>
+  <label for="d-liftLo">Lift</label>
+  <input type="range" id="d-liftLo" data-k="liftLo" min="0" max="500" step="10" value="70">
+  <output for="d-liftLo">70</output>
+  <label for="d-liftHi">&hellip; to</label>
+  <input type="range" id="d-liftHi" data-k="liftHi" min="0" max="700" step="10" value="230">
+  <output for="d-liftHi">230</output>
+  <label for="d-gravity">Gravity</label>
+  <input type="range" id="d-gravity" data-k="gravity" min="200" max="4000" step="50" value="1600">
+  <output for="d-gravity">1600</output>
+  <label for="d-gap">Gap between words</label>
+  <input type="range" id="d-gap" data-k="gap" min="1" max="60" step="1" value="20">
+  <output for="d-gap">20</output>
+  <label for="d-maxDepth">Drift depth</label>
+  <input type="range" id="d-maxDepth" data-k="maxDepth" min="1" max="18" step="1" value="10">
+  <output for="d-maxDepth">10</output>
+  <label for="d-cap">Budget</label>
+  <input type="range" id="d-cap" data-k="cap" min="50" max="1600" step="10" value="900">
+  <output for="d-cap">900</output>
+  <div class="words"><textarea id="wordlist" spellcheck="false">LOADING
+STAND BY
+PLEASE WAIT
+ONE MOMENT PLEASE
+PENDING
+PROCESSING
+PLEASE HOLD
+ASSEMBLING
+COMPUTING
+AWAITING RESPONSES
+TRANSMISSION IN PROGRESS
+DO NOT ADJUST YOUR SET
+TRANSMITTING
+DO NOT REFRESH
+REMAIN SEATED
+PATIENCE IS APPRECIATED</textarea></div>
+  <div class="act"><button type="button" id="restart">Restart</button>
+    <button type="button" id="pause">Pause</button>
+    <button type="button" id="copy">Copy settings</button></div>
+</div>
+
+<footer>Ink on engineering paper &middot; english only &middot; every letter belongs to a word<br>
+The depth of the heap is the length of the wait</footer>
+</div>
+
+<script>
+/* ===========================================================================
+   WORD DRIFT — english only.
+
+   A column IS a word, spelled downward one letter to a printed square. Each
+   letter falls, strikes the bottom rule, is thrown, and comes to rest in a
+   heap. The depth of the heap is how long you have been waiting.
+
+   ONE LETTER, ONE ELEMENT — created when it is due, gone when it is spent.
+   There is no pool and nothing is recycled. An earlier version kept a fixed
+   set of glyphs per column and passed them round: land one, relaunch it,
+   retire it into the drift, mint a replacement. That needs the pool sized
+   against a round trip, retire and replace to balance exactly, blanks to
+   recycle correctly, and a starvation guard for when the sums are wrong. Any
+   slip in any of them quietly shrinks the column — which is why words began
+   losing letters the longer it ran. A letter per element costs a few DOM
+   nodes a second and cannot drift out of balance at all.
+
+   Two rules kept from that work because they were learned the hard way:
+   a letter is fixed at birth and never rewritten in flight, and the letter
+   that fell is the letter that rests — the same element is retired into the
+   drift rather than copied, since copying leaves two glyphs stacked at the
+   landing point for several frames.
+   ======================================================================== */
+(function () {
+  var CELL = 9;
+  function rnd(n) { return (Math.random() * n) | 0; }
+
+  function surfaceAt(st, x) {
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + CELL) / st.bw));
+    var y = st.H;
+    for (var b = b0; b <= b1; b++) if (st.top[b] < y) y = st.top[b];
+    return y;
+  }
+  function deposit(st, x, restY) {
+    var b0 = Math.max(0, Math.floor(x / st.bw));
+    var b1 = Math.min(st.top.length - 1, Math.floor((x + CELL) / st.bw));
+    var t = restY + CELL * 0.56;          /* the next letter nests into this one */
+    for (var b = b0; b <= b1; b++) if (t < st.top[b]) st.top[b] = t;
+  }
+  /* gravity down, reflected off the side walls, stopped by the heap */
+  function fly(st, x0, y0, vx, vy) {
+    var dt = 1 / 60, pts = [{ x: x0, y: y0 }], x = x0, y = y0;
+    for (var n = 0; n < 240; n++) {
+      vy += st.g * dt; x += vx * dt; y += vy * dt;
+      if (x <= 0) { x = -x; vx = -vx * 0.46; }
+      else if (x >= st.W - CELL) { x = 2 * (st.W - CELL) - x; vx = -vx * 0.46; }
+      var floorY = surfaceAt(st, x) - CELL;
+      if (y >= floorY && vy > 0) { y = floorY; pts.push({ x: x, y: y }); break; }
+      pts.push({ x: x, y: y });
+    }
+    return pts;
+  }
+
+  function freeLane(st, i) { return !st.busy[i] && !st.lane[i]; }
+  function claim(st, owner, avoid) {
+    var free = [];
+    for (var i = 0; i < st.cols; i++) if (freeLane(st, i)) free.push(i);
+    if (!free.length) { st.busy[avoid] = owner; return avoid; }
+    var p = free[rnd(free.length)];
+    st.busy[p] = owner;
+    return p;
+  }
+
+  /* the next letter this column owes. REVERSED when a word is taken up: the
+     letter sent first ends up lowest, so a word queued in reading order comes
+     out upside down. */
+  function nextLetter(col) {
+    var st = col.st;
+    if (!col.queue.length) {
+      if (col.rest > 0) { col.rest--; return null; }     /* the gap between words */
+      col.queue = Array.from(st.words[rnd(st.words.length)]).reverse();
+      col.rest = st.gap;
+      if (st.busy[col.c] === col) st.busy[col.c] = null;
+      col.c = claim(st, col, col.c);                     /* a new word, a new lane */
+      col.x = col.c * CELL;
+    }
+    return col.queue.shift();
+  }
+
+  /* delayMs is how far from NOW this letter was actually due — negative when
+     the metronome fired late. Handing it to the animation makes the letter's
+     position depend on the schedule rather than on when the timer happened to
+     run, which is the whole reason letters stopped drifting into each other. */
+  function emit(col, delayMs) {
+    var st = col.st;
+    var ch = nextLetter(col);
+    if (ch === null || ch === ' ') return;               /* the beat still passes */
+
+    var x0 = col.x;
+    var g = document.createElement('i');
+    g.textContent = ch;
+    g.style.left = x0 + 'px';
+    g.style.fontSize = st.fs + 'px';
+    col.el.appendChild(g);
+
+    var lane = Math.round(x0 / CELL);
+    st.lane[lane] = (st.lane[lane] || 0) + 1;
+
+    var impactY = surfaceAt(st, x0) - CELL;
+    var fallMs = Math.max(60, (impactY - col.y0) / col.speed * 1000);
+    /* both ends of both ranges come off the desk; nothing is baked in */
+    var vx = (Math.random() < 0.5 ? -1 : 1) *
+             (st.throwLo + Math.random() * Math.max(0, st.throwHi - st.throwLo));
+    var vy = -(st.liftLo + Math.random() * Math.max(0, st.liftHi - st.liftLo));
+    var pts = fly(st, x0, impactY, vx, vy);
+    var flightMs = (pts.length - 1) / 60 * 1000;
+    var spin = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 340);
+    var total = fallMs + flightMs;
+
+    var frames = [
+      { transform: 'translate(0px,' + col.y0 + 'px) rotate(0deg)', offset: 0, easing: 'linear' },
+      { transform: 'translate(0px,' + impactY + 'px) rotate(0deg)',
+        offset: fallMs / total, easing: 'linear' }];
+    for (var i = 1; i < pts.length; i++) {
+      var f = i / (pts.length - 1);
+      frames.push({ transform: 'translate(' + (pts[i].x - x0).toFixed(1) + 'px,' +
+        pts[i].y.toFixed(1) + 'px) rotate(' + (spin * f).toFixed(0) + 'deg)',
+        offset: Math.min(1, (fallMs + f * flightMs) / total), easing: 'linear' });
+    }
+    var anim = g.animate(frames, { duration: total, delay: delayMs || 0, fill: 'both' });
+    var rest = pts[pts.length - 1];
+
+    /* polled, not evented: this WebView never fires animation finish events
+       while the page is hidden */
+    var poll = setInterval(function () {
+      if (anim.playState !== 'finished') return;
+      clearInterval(poll);
+      var ix = st.polls.indexOf(poll); if (ix >= 0) st.polls.splice(ix, 1);
+      if (st.lane[lane]) st.lane[lane]--;
+      if (st.n < st.cap && rest.y > st.floorLimit) {
+        anim.cancel();
+        g.style.left = rest.x.toFixed(1) + 'px';
+        g.style.top = rest.y.toFixed(1) + 'px';
+        g.style.transform = 'rotate(' + ((spin % 360) + (rnd(19) - 9)) + 'deg)';
+        st.layer.appendChild(g);                /* the same letter, now at rest */
+        deposit(st, rest.x, rest.y);
+        st.n++;
+      } else {
+        g.remove();                             /* the heap is full: it is spent */
+      }
+    }, 40);
+    st.polls.push(poll);
+  }
+
+  window.WordDrift = {
+    stop: function (well) {
+      var st = well.st;
+      if (st) {
+        st.beats.forEach(clearInterval);
+        st.polls.forEach(clearInterval);
+        st.beats = []; st.polls = [];
+      }
+    },
+    setPaused: function (well, want) {
+      var st = well.st; if (!st) return;
+      st.paused = !!want;
+      Array.prototype.forEach.call(well.querySelectorAll('.col > i'), function (g) {
+        g.getAnimations().forEach(function (a) {
+          try { want ? a.pause() : a.play(); } catch (e) {}
+        });
+      });
+    },
+    mount: function (well, o) {
+      this.stop(well);
+      well.innerHTML = '';
+      var W = well.clientWidth, H = well.clientHeight;
+      if (!W || !H) return;
+      var st = { W: W, H: H, bw: CELL / 3, cols: Math.floor(W / CELL), top: [],
+                 busy: {}, lane: {}, n: 0, fs: 10, paused: false,
+                 g: o.gravity, gap: o.gap,
+                 throwLo: o.throwLo, throwHi: o.throwHi,
+                 liftLo: o.liftLo, liftHi: o.liftHi,
+                 words: o.words, cap: o.cap,
+                 floorLimit: H - o.maxDepth * CELL,
+                 beats: [], polls: [] };
+      for (var b = 0; b < Math.ceil(W / st.bw) + 1; b++) st.top.push(H);
+      var layer = document.createElement('span');
+      layer.className = 'drift'; well.appendChild(layer); st.layer = layer;
+      well.st = st;
+
+      var bag = [];
+      for (var c = 0; c < st.cols; c++) bag.push(c);
+      for (var i = bag.length - 1; i > 0; i--) {
+        var j = rnd(i + 1), t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+      }
+      var picks = bag.slice(0, Math.max(1, Math.round(st.cols * o.density)));
+
+      picks.forEach(function (idx) {
+        var el = document.createElement('span');
+        el.className = 'col';
+        well.appendChild(el);
+        var speed = o.speedLo + Math.random() * Math.max(1, o.speedHi - o.speedLo);
+        var col = { el: el, c: idx, x: idx * CELL, st: st, speed: speed,
+                    y0: -(CELL * (2 + rnd(5))), beat: CELL / speed * 1000,
+                    queue: [], rest: rnd(o.gap) };
+        st.busy[idx] = col; el.rec = col;
+        /* One metronome per column, but the TIME EACH LETTER IS DUE is kept
+           on a cursor, not taken from when the timer fired. setInterval is not
+           precise — a tick a hundred milliseconds late would put that letter
+           most of a square low and it would land on the one below. The cursor
+           says when the letter was due, the animation's delay absorbs the
+           difference, and a beat is exactly one square of falling, so letters
+           stay a square apart however badly the timer behaves. */
+        col.next = performance.now() + Math.random() * 600;
+        st.beats.push(setInterval(function () {
+          if (st.paused) return;
+          /* While the tab is hidden the animation clock stops but timers do
+             not, so emitting would mint letters that can never fall, land or
+             be cleared up — they accumulate for as long as the visitor is
+             looking at something else. Hold the cursor with them. */
+          if (document.hidden) { col.next = performance.now(); return; }
+          var now = performance.now();
+          /* if the tab was asleep the cursor can be far behind; resync rather
+             than emitting a minute's worth of letters at once */
+          if (now - col.next > col.beat * 6) col.next = now;
+          while (col.next <= now + 4) {
+            emit(col, col.next - now);
+            col.next += col.beat;
+          }
+        }, Math.max(24, col.beat / 2)));
+      });
+    }
+  };
+})();
+
+(function () {
+  var wells = Array.prototype.slice.call(document.querySelectorAll('[data-well]'));
+  var desk = document.querySelector('.desk');
+  var ta = document.getElementById('wordlist');
+  var paused = false;
+
+  function words() {
+    return ta.value.split('\n').map(function (s) { return s.trim().toUpperCase(); })
+      .filter(function (s) { return s.length; });
+  }
+  function opts() {
+    var o = {};
+    Array.prototype.forEach.call(desk.querySelectorAll('input[type=range]'), function (s) {
+      o[s.getAttribute('data-k')] = +s.value;
+    });
+    o.density = o.density / 100;
+    o.words = words();
+    if (!o.words.length) o.words = ['LOADING'];
+    return o;
+  }
+  function paint() {
+    var o = opts();
+    wells.forEach(function (w) { window.WordDrift.mount(w, o); });
+    if (paused) setTimeout(setPaused, 80);
+  }
+  function setPaused() {
+    wells.forEach(function (w) { window.WordDrift.setPaused(w, paused); });
+  }
+  var t = null;
+  desk.addEventListener('input', function (e) {
+    if (e.target.tagName === 'INPUT') {
+      var o = desk.querySelector('output[for=' + e.target.id + ']');
+      if (o) o.textContent = e.target.value;
+    }
+    clearTimeout(t); t = setTimeout(paint, 200);
+  });
+  document.getElementById('restart').addEventListener('click', paint);
+  document.getElementById('copy').addEventListener('click', function () {
+    var o = opts();
+    var txt = JSON.stringify(o);
+    var ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    ta.remove();
+    var b = this; b.textContent = 'Copied';
+    setTimeout(function () { b.textContent = 'Copy settings'; }, 1400);
+  });
+  document.getElementById('pause').addEventListener('click', function () {
+    paused = !paused; this.textContent = paused ? 'Play' : 'Pause'; setPaused();
+  });
+  paint();
+})();
+</script></body></html>

@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PJ2 mockup 1 — LIBRARY · the alchemical codex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   PROSPERO'S JUKEBOX v2 — MOCKUP 1 · LIBRARY — THE ALCHEMICAL CODEX
+   The dark reading desk; one parchment folio floating on the void; the pitch
+   spiral as an iron-gall diagram rotating IN FRONT of its own page (primary),
+   with a dev toggle to the parchment-mapped inked-object treatment (§3 alt).
+   Palette LOCKED to the §2 Library ramp. Art-pixel U = 2 CSS px.
+   ========================================================================== */
+:root {
+  --void: #0b0a08;
+  --paper-0: #efe3c0; --paper-1: #e3d3a8; --paper-2: #d0bc8c;
+  --paper-3: #b49a68; --paper-4: #8a704a;
+  --ink-0: #2e2114; --ink-1: #4a3620; --ink-2: #6e5638; --ink-3: #93794f;
+  --rubric-0: #8e3b2c; --rubric-1: #b0553c;
+  --gilt-0: #c9a227; --gilt-1: #e8c95a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--void); }
+body {
+  font-family: "VT323", monospace;
+  color: var(--paper-1);
+  padding: 18px 12px 60px;
+}
+button { font-family: "VT323", monospace; cursor: pointer; }
+
+/* mockup caption — curator's label, not part of the design */
+.mock-label {
+  max-width: 1392px; margin: 0 auto 10px;
+  font-size: 15px; letter-spacing: 0.24em; color: #6b6252;
+  text-transform: uppercase; text-align: center;
+}
+.mock-label .rb { color: var(--rubric-1); letter-spacing: 0; }
+
+.codex-shell { max-width: 1392px; margin: 0 auto; }
+
+/* ---------------- THE FOLIO — one parchment page on the void desk -------- */
+.folio {
+  position: relative;
+  box-shadow: 0 26px 70px rgba(0,0,0,0.8), 0 6px 18px rgba(0,0,0,0.6);
+}
+#folio-bg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.folio-inner { position: relative; z-index: 1; padding: 26px 28px 16px; }
+
+/* folio running head */
+.folio-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 2px solid var(--ink-2);
+  padding: 0 6px 6px; margin-bottom: 12px;
+}
+.folio-title {
+  font-family: "Jacquard 12", "VT323", monospace; font-weight: 400;
+  font-size: 34px; color: var(--ink-0); letter-spacing: 0.02em;
+}
+.folio-title .rb { color: var(--rubric-0); }
+.folio-no { font-size: 17px; color: var(--ink-2); letter-spacing: 0.12em; }
+
+.folio-grid { display: flex; gap: 22px; }
+
+/* ---------------- the plate column --------------------------------------- */
+.plate-col { flex: 1 1 auto; min-width: 0; position: relative; }
+#plate { display: block; width: 100%; height: 860px; }
+.treatment-toggle {
+  position: absolute; top: 8px; right: 8px; z-index: 3;
+  background: var(--ink-0); color: var(--paper-1);
+  border: 2px solid var(--ink-2); border-radius: 0;
+  font-size: 15px; letter-spacing: 0.1em; padding: 4px 10px;
+}
+.treatment-toggle:hover { color: var(--gilt-1); }
+.plate-caption {
+  font-size: 15px; color: var(--ink-2); letter-spacing: 0.14em;
+  text-transform: uppercase; padding: 4px 6px 0;
+}
+.plate-caption .rb { color: var(--rubric-0); }
+
+/* ---------------- the margin apparatus ----------------------------------- */
+.apparatus { flex: 0 0 402px; width: 402px; display: flex; flex-direction: column; gap: 10px; }
+
+.panel { padding: 2px 4px; }
+.panel-head {
+  font-size: 15px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--ink-2); border-bottom: 1px solid var(--ink-3);
+  padding-bottom: 2px; margin-bottom: 4px;
+}
+.panel-readout { font-size: 17px; color: var(--ink-1); }
+.panel-readout .v { color: var(--ink-0); }
+.panel-readout .rb { color: var(--rubric-0); }
+.panel-readout .g { color: #8a6a14; }
+
+/* scene heading — rubricated Jacquard initial + operation emblem */
+.scene-row { display: flex; align-items: center; gap: 10px; }
+.scene-word {
+  font-family: "Jacquard 12", "VT323", monospace; font-weight: 400;
+  font-size: 40px; line-height: 0.9; color: var(--ink-0);
+}
+.scene-word .init { color: var(--rubric-0); font-size: 46px; }
+#emblem { image-rendering: pixelated; width: 48px; height: 48px; }
+.scene-sub { font-size: 16px; color: var(--ink-1); margin-top: 2px; }
+.scene-sub .v { color: var(--ink-0); }
+#sceneprog { display: block; width: 100%; height: 10px; margin-top: 3px; }
+
+.duo { display: flex; gap: 10px; }
+.duo .panel { flex: 1 1 0; min-width: 0; }
+#volvelle { display: block; width: 100%; height: 118px; }
+#athanor  { display: block; width: 100%; height: 118px; }
+#airq     { display: block; width: 100%; height: 54px; }
+#chordq   { display: block; width: 100%; height: 54px; }
+#genetree { display: block; width: 100%; height: 118px; }
+
+/* scribal event log — VT323 body, rubricated tags, 3-step ink aging */
+.log-rows { display: flex; flex-direction: column; gap: 1px; }
+.log-row { display: flex; gap: 7px; font-size: 16.5px; line-height: 1.25; align-items: baseline; }
+.log-t { flex: 0 0 40px; color: var(--ink-3); }
+.log-tag {
+  flex: 0 0 86px; text-transform: lowercase; letter-spacing: 0.05em;
+  color: var(--rubric-0);
+}
+.log-tag.tag-plain { color: var(--ink-2); }
+.log-body { flex: 1 1 auto; }
+.age-0 .log-body { color: var(--ink-0); }
+.age-1 .log-body { color: var(--ink-1); }
+.age-2 .log-body { color: var(--ink-2); }
+.age-1 .log-tag { color: var(--rubric-1); }
+.age-2 .log-tag { color: var(--rubric-1); opacity: 1; }
+.log-body .cap {
+  font-family: "Jacquard 12", "VT323", monospace; font-weight: 400;
+  font-size: 24px; color: var(--rubric-0); line-height: 0.8;
+}
+.log-body .g { color: #8a6a14; }
+.log-body .sig { font-size: 18px; }
+
+/* density footer rule — past solid, forecast pricked */
+.density-strip { margin-top: 12px; padding: 0 6px; }
+#density { display: block; width: 100%; height: 64px; }
+
+/* ---------------- THE CHROME STRIP — the conjurer's cabinet -------------- */
+.cabinet {
+  max-width: 1392px; margin: 14px auto 0;
+  background: #17120b;
+  border: 2px solid #2c2214;
+  display: flex; align-items: stretch; gap: 14px;
+  padding: 10px 14px;
+}
+.shelf { display: flex; align-items: flex-end; gap: 5px; }
+.spine {
+  width: 34px; height: 92px;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; letter-spacing: 0.22em;
+  border: 2px solid #000;
+}
+.spine-sycorax { background: #241d17; color: #b3a68e; border-color: #0d0b09; }
+.spine-ariel   { background: #16233f; color: #a8c0d4; border-color: #05070c; }
+.folio-open { display: flex; border: 2px solid #2c2214; position: relative; }
+.folio-open .pg {
+  width: 52px; height: 66px; background: var(--paper-1);
+  border: 1px solid var(--paper-3); position: relative;
+}
+.folio-open .pg.l { border-right: 2px solid var(--paper-4); }
+.folio-open .pg .scrib { position: absolute; inset: 8px 7px; }
+.folio-open .pg .scrib i {
+  display: block; height: 2px; background: var(--ink-2); margin-bottom: 5px;
+}
+.folio-open .pg .scrib i:nth-child(1) { background: var(--rubric-0); width: 60%; }
+.folio-open .pg .scrib i:nth-child(4) { width: 72%; }
+.folio-open-cap {
+  position: absolute; left: 50%; bottom: -4px; transform: translate(-50%, 100%);
+  font-size: 13px; color: #6b6252; white-space: nowrap; letter-spacing: 0.1em;
+}
+.shelf-wrap { display: flex; flex-direction: column; gap: 2px; }
+.shelf-cap { font-size: 13px; color: #6b6252; letter-spacing: 0.18em; text-transform: uppercase; }
+
+.transport { display: flex; align-items: center; gap: 8px; }
+.pushplate {
+  background: #3a2d18; color: var(--gilt-1);
+  border: 0; padding: 10px 14px; font-size: 18px; letter-spacing: 0.08em;
+  box-shadow: inset -2px -2px 0 #1d1509, inset 2px 2px 0 #6e5626;
+}
+.pushplate.lit { background: var(--gilt-0); color: var(--ink-0); box-shadow: inset -2px -2px 0 #8a6a14, inset 2px 2px 0 #f0daa0; }
+.pushplate:active { box-shadow: inset 2px 2px 0 #1d1509; }
+
+.cab-spacer { flex: 1 1 auto; }
+
+.seal-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; justify-content: center; }
+#seal { width: 84px; height: 84px; display: block; }
+.seal-num {
+  position: relative; margin-top: -54px; margin-bottom: 24px;
+  text-align: center; font-size: 17px; color: #f0d9c8; letter-spacing: 0.08em;
+  text-shadow: 1px 1px 0 #5e2018;
+}
+.seal-cap { font-size: 13px; color: #6b6252; letter-spacing: 0.16em; }
+
+.lamp { display: flex; flex-direction: column; justify-content: center; gap: 4px; width: 130px; }
+.lamp-label { font-size: 14px; color: #6b6252; letter-spacing: 0.2em; }
+.lamp-track { position: relative; height: 14px; border: 2px solid #3a2d18; background: #0f0c07; }
+.lamp-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 72%; background:
+  repeating-linear-gradient(90deg, var(--gilt-0) 0 2px, #7a6216 2px 4px); }
+.lamp-thumb { position: absolute; top: -4px; left: calc(72% - 3px); width: 6px; height: 18px; background: var(--gilt-1); }
+
+.legend { display: flex; flex-direction: column; gap: 5px; justify-content: center; width: 300px; }
+.legend-row { display: flex; align-items: center; gap: 8px; }
+.legend-row canvas { width: 24px; height: 24px; image-rendering: pixelated; flex: 0 0 24px; }
+.legend-name { flex: 0 0 108px; font-size: 16px; color: #c7b795; letter-spacing: 0.08em; }
+.legend-slider { position: relative; flex: 1 1 auto; height: 12px; border: 2px solid #3a2d18; background: #0f0c07; }
+.legend-fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.legend-thumb { position: absolute; top: -3px; width: 4px; height: 14px; background: var(--paper-1); }
+.legend-mute {
+  flex: 0 0 14px; width: 14px; height: 14px; border: 2px solid #6b6252; background: transparent;
+}
+.legend-mute.on { background: #c7b795; }
+
+/* ---------------- dev contrast box --------------------------------------- */
+.devbox {
+  position: fixed; right: 10px; bottom: 10px; z-index: 9;
+  background: rgba(11,10,8,0.94); border: 1px solid #3a2d18;
+  padding: 8px 10px; font-size: 14px; color: #a89a78; max-width: 430px;
+}
+.devbox h3 { font-size: 13px; letter-spacing: 0.16em; text-transform: uppercase; color: #6b6252; margin-bottom: 5px; }
+.devbox table { border-collapse: collapse; }
+.devbox td { padding: 1px 8px 1px 0; }
+.devbox .pass { color: #9ab86a; }
+.devbox .fail { color: #d06848; }
+
+/* ---------------- design notes ------------------------------------------- */
+.design-notes {
+  max-width: 1392px; margin: 26px auto 0; padding: 14px 18px;
+  border: 1px solid #2c2214; color: #a89a78; font-size: 17px; line-height: 1.42;
+}
+.design-notes h3 { font-size: 17px; letter-spacing: 0.26em; text-transform: uppercase; color: #c7b795; margin-bottom: 8px; }
+.design-notes h3 .rb { color: var(--rubric-1); letter-spacing: 0; }
+.design-notes li { margin: 0 0 7px 1.2em; }
+.design-notes em { color: #c7b795; font-style: normal; }
+.design-notes .g { color: var(--gilt-1); }
+</style>
+</head>
+<body>
+
+<p class="mock-label">mockup 1 of 3 <span class="rb">✠</span> library — the alchemical codex <span class="rb">✠</span> a diagram spinning in space</p>
+
+<div class="codex-shell">
+  <div class="folio">
+    <canvas id="folio-bg" aria-hidden="true"></canvas>
+    <div class="folio-inner">
+
+      <div class="folio-head">
+        <div class="folio-title">Prospero&#8217;s Jukebox &middot; <span class="rb">L</span>iber Primus — The Library</div>
+        <div class="folio-no">fol. xlii v&#186; · c dorian · tonic 65.4</div>
+      </div>
+
+      <div class="folio-grid">
+
+        <!-- THE PLATE — the spiral in iron-gall ink -->
+        <div class="plate-col">
+          <button type="button" class="treatment-toggle" id="toggle">TREATMENT: BACKDROP PLATE ⟳</button>
+          <canvas id="plate" aria-label="the pitch spiral — FFT coil, one turn per octave, drawn in iron-gall ink and rotating over the parchment plate"></canvas>
+          <div class="plate-caption" id="plate-caption">figura I · the coil of pitches — seven turns, one per octave · in-key degrees bear their metal <span class="rb">✠</span> rotating, one revolution per minute</div>
+        </div>
+
+        <!-- THE MARGIN APPARATUS -->
+        <div class="apparatus">
+
+          <div class="panel">
+            <div class="scene-row">
+              <canvas id="emblem" width="16" height="16" title="the operation's authored 16×16 emblem"></canvas>
+              <div>
+                <div class="scene-word"><span class="init">C</span>onjunctio</div>
+                <div class="scene-sub">chapter iii of the evening · x <span class="v">0.58</span> · inked so far—</div>
+              </div>
+            </div>
+            <canvas id="sceneprog"></canvas>
+          </div>
+
+          <div class="duo">
+            <div class="panel">
+              <div class="panel-head">the tide · volvelle</div>
+              <canvas id="volvelle"></canvas>
+              <div class="panel-readout">tide <span class="v">0.62</span> · <span class="rb">late-night</span></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">the athanor · fire</div>
+              <canvas id="athanor"></canvas>
+              <div class="panel-readout">fire <span class="v">0.38</span> · gradus <span class="rb">II</span> temperatus</div>
+            </div>
+          </div>
+
+          <div class="duo">
+            <div class="panel">
+              <div class="panel-head">aer · the air</div>
+              <canvas id="airq"></canvas>
+              <div class="panel-readout"><span class="v">2</span> quills aloft · limit 3</div>
+            </div>
+            <div class="panel">
+              <div class="panel-head">the chord · its metal</div>
+              <canvas id="chordq"></canvas>
+              <div class="panel-readout"><span class="v">IV</span> — F major · <span class="rb">venus · copper</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">genealogia motivi · theme #b2</div>
+            <canvas id="genetree"></canvas>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">annotationes · the scribal log</div>
+            <div class="log-rows">
+              <div class="log-row age-0"><span class="log-t">07:41</span><span class="log-tag">scene</span><span class="log-body"><span class="cap">C</span>onjunctio — chapter iii · the marriage of the two motifs</span></div>
+              <div class="log-row age-0"><span class="log-t">07:12</span><span class="log-tag">cadence</span><span class="log-body">plagal · arrival F — <span class="sig">♀</span> stamped and rubricated</span></div>
+              <div class="log-row age-0"><span class="log-t">06:58</span><span class="log-tag tag-plain">develop</span><span class="log-body">motif #b2 · gen V · inversion — the branch forks</span></div>
+              <div class="log-row age-0"><span class="log-t">06:31</span><span class="log-tag">seachange</span><span class="log-body"><span class="cap">T</span>ransmutatio · true reroot C→F — the ink re-oxidizes, warmer</span></div>
+              <div class="log-row age-1"><span class="log-t">06:04</span><span class="log-tag">ghost</span><span class="log-body">last evening&#8217;s motif #a7 returns · an earlier hand</span></div>
+              <div class="log-row age-1"><span class="log-t">05:47</span><span class="log-tag tag-plain">tide</span><span class="log-body">late-night · the volvelle turns one phase</span></div>
+              <div class="log-row age-1"><span class="log-t">05:20</span><span class="log-tag tag-plain">answer</span><span class="log-body">music box answers the harpsichord · paired limb</span></div>
+              <div class="log-row age-1"><span class="log-t">04:52</span><span class="log-tag tag-plain">develop</span><span class="log-body">gen IV · tether to gen I — the dotted return</span></div>
+              <div class="log-row age-2"><span class="log-t">04:31</span><span class="log-tag">scene</span><span class="log-body"><span class="cap">S</span>eparatio closes · x 1.00 — the elements parted</span></div>
+              <div class="log-row age-2"><span class="log-t">00:00</span><span class="log-tag">scene</span><span class="log-body"><span class="cap">C</span>alcinatio · the evening settles · seed <span class="g">451049</span></span></div>
+            </div>
+          </div>
+
+        </div><!-- /apparatus -->
+      </div><!-- /folio-grid -->
+
+      <!-- density footer rule -->
+      <div class="density-strip">
+        <canvas id="density" aria-label="density envelope — solid ink past, pricked pounce-hole forecast"></canvas>
+      </div>
+
+    </div><!-- /folio-inner -->
+  </div><!-- /folio -->
+
+  <!-- THE CHROME STRIP — the conjurer's cabinet -->
+  <div class="cabinet">
+    <div class="shelf-wrap">
+      <div class="shelf-cap">the shelf</div>
+      <div class="shelf">
+        <div class="folio-open" title="LIBRARY — the tooled-leather tome, open">
+          <div class="pg l"><div class="scrib"><i></i><i></i><i></i><i></i></div></div>
+          <div class="pg r"><div class="scrib"><i style="background:var(--ink-2);width:80%"></i><i></i><i></i><i style="width:55%"></i></div></div>
+          <div class="folio-open-cap">library lies open</div>
+        </div>
+        <div class="spine spine-sycorax" title="SYCORAX — the birch-and-sinew black book">SYCORAX</div>
+        <div class="spine spine-ariel" title="ARIEL — the star-atlas folio">ARIEL</div>
+      </div>
+    </div>
+
+    <div class="cab-spacer"></div>
+
+    <div class="transport">
+      <button type="button" class="pushplate lit">PLAY&nbsp;▶&#xFE0E;</button>
+      <button type="button" class="pushplate">STOP&nbsp;■&#xFE0E;</button>
+      <button type="button" class="pushplate">RESET&nbsp;↻&#xFE0E;</button>
+    </div>
+
+    <div class="cab-spacer"></div>
+
+    <div class="seal-wrap" title="the wax seal — reseeding re-stamps it">
+      <canvas id="seal"></canvas>
+      <div class="seal-num">451049</div>
+      <div class="seal-cap">the seed</div>
+    </div>
+
+    <div class="lamp" title="master volume — the desk lamp's wick">
+      <span class="lamp-label">THE LAMP · VOLUME</span>
+      <div class="lamp-track"><div class="lamp-fill"></div><div class="lamp-thumb"></div></div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-row"><canvas data-sigil="drone" width="12" height="12"></canvas><span class="legend-name">DRONE</span><div class="legend-slider"><div class="legend-fill" data-w="0.66"></div><div class="legend-thumb"></div></div><div class="legend-mute on"></div></div>
+      <div class="legend-row"><canvas data-sigil="harp" width="12" height="12"></canvas><span class="legend-name">HARPSICHORD</span><div class="legend-slider"><div class="legend-fill" data-w="0.52"></div><div class="legend-thumb"></div></div><div class="legend-mute on"></div></div>
+      <div class="legend-row"><canvas data-sigil="box" width="12" height="12"></canvas><span class="legend-name">MUSIC BOX</span><div class="legend-slider"><div class="legend-fill" data-w="0.38"></div><div class="legend-thumb"></div></div><div class="legend-mute"></div></div>
+    </div>
+  </div><!-- /cabinet -->
+
+  <!-- dev contrast box -->
+  <div class="devbox">
+    <h3>contrast validation — measured from baked pixels (WCAG 2.1)</h3>
+    <table id="contrast-table"></table>
+    <div id="contrast-note" style="margin-top:6px;color:#7a6f5a"></div>
+  </div>
+
+  <!-- design notes -->
+  <div class="design-notes">
+    <h3>design notes <span class="rb">✠</span> mockup 1 · the alchemical codex</h3>
+    <ul id="notes-list">
+      <li><em>What to look at first:</em> the spiral. It is the real v1 geometry — 7 octaves × 96 samples, one turn per octave, honest 3D projection — rotating at ~1 rpm <em>in front of</em> its own parchment page (§3 primary treatment). Depth is carried by ink weight, never alpha: the near limb is dark iron-gall and slightly wider; the far limb is a pale hairline. The page never moves; only the ink does.</li>
+      <li><em>The toggle</em> (top-right of the plate) switches to the §3 <em>alternative</em>: the inked object. The backdrop page vanishes from the plate region and the parchment maps into the coil itself — paper tone fills the coil&#8217;s quads from a world-space texture, and the contour&#8217;s ink darkens where it crosses fibers. A curled parchment strip spinning in the void. The margin keeps its own paper (bounded version — losing the page entirely would lose the apparatus&#8217;s home).</li>
+      <li><em>What is real:</em> the parchment (all §1a layers, procedurally baked once at load on the U = 2 CSS px art-pixel grid — value-noise mottling, seeded blue-noise stains, 1U fiber streaks, Bayer-dithered radial edge darkening, deckled border); the 3D projection and depth sort (ported from v1&#8217;s spiral, seeds the eventual renderer); the Bayer ink-wash fill under the contour (screen-grid-aligned pattern tiles, chunky by design); the seven planetary-metal sigils as authored 12×12 art-pixel stamps on the in-key degree ticks of the base ring; the measured contrast numbers in the dev box (sampled from the baked pixels, not from the palette table).</li>
+      <li><em>What is fake:</em> the FFT is a frozen, authored spectrum (drone C2–G2, hum F3, a harpsichord phrase, music-box pings at C6/E&#9837;6) — plausible, static, honest in its mapping but not live audio. All margin data (tide 0.62, fire 0.38, chord IV, the genealogy, every log line) is frozen plausible telemetry per §4. Transport, seal, lamp, and mixer are dressed but not wired.</li>
+      <li><em>The margin apparatus</em> (§4 Library column): Conjunctio folio heading with rubricated Jacquard 12 initial and its authored 16×16 operation emblem; the moon-phase tide volvelle; the athanor with the four degrees of fire; two quills aloft of an air-limit of three; chord IV with Venus&#8217;s copper sigil (IV of C Dorian is F — F <em>is</em> Venus in the §1a metal mapping, so the readout is self-consistent); the genealogy tree with roman-numeral generations, one dotted ancestor tether (gen IV → gen I), and the ghost branch in an earlier, paler hand; a ten-line scribal log with three steps of ink aging and a Transmutatio entry; the density footer — solid ink past, pricked pounce-hole forecast.</li>
+      <li><em>Chrome strip</em> (§5): the shelf with Library lying open and the two idle spines keeping their own palettes; brass pushplates with 1U bevels and a gilt lit state (no glow); the wax-seal seed; the lamp wick as master volume; three legend rows — authored 12×12 voice sigil, VT323 name, dithered slider fill with an unquantized thumb, and v1&#8217;s pixel mute square kept verbatim.</li>
+      <li class="g" id="contrast-note-li"><em>Contrast (risk #1):</em> see the dev box — all three measured ratios hold ≥ 4.5:1 against the worst-case (darkest-decile) baked paper in their zones. Two adjustments inside the palette&#8217;s spirit were needed: (1) the plate zone and the text columns are baked at reduced mottle amplitude — clamped to the two lightest paper tones — exactly the §6 &#8220;plate zone&#8221; rule, extended to wherever ink must carry data; the darker ramp steps live in the borders, stains, and deckle. (2) The rubric&#8217;s body-text duty always uses rubric-0 (#8e3b2c); rubric-1 (#b0553c) is reserved for aged tags and accents at display sizes. The far-limb hairline (ink-3) is <em>deliberately</em> below 4.5 — it is a depth cue, and the same datum returns at full contrast every half revolution.</li>
+      <li><em>Also per rulings:</em> no CRT scanlines anywhere (§8 Q1); the paper is fully static — all motion is ink (§8 Q2); the page is genuinely parchment-light, floating on the void (§8 Q3); headers are Jacquard 12 (§8 Q4); the log stays text (§8 Q5). Out-of-key degrees are bare pale ticks — the in-key tinting relocated from color into symbol weight.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+(function () {
+"use strict";
+
+/* =========================== PALETTE (LOCKED, §2) ======================== */
+var PAL = {
+  void_:  "#0b0a08",
+  paper:  ["#efe3c0", "#e3d3a8", "#d0bc8c", "#b49a68", "#8a704a"],
+  ink:    ["#2e2114", "#4a3620", "#6e5638", "#93794f"],
+  rubric: ["#8e3b2c", "#b0553c"],
+  gilt:   ["#c9a227", "#e8c95a"],
+};
+var U = 2; /* the art-pixel: 2 CSS px (§2) */
+
+/* Bayer 4×4 ordered-dither matrix (§2) */
+var BAYER = [ [0,8,2,10], [12,4,14,6], [3,11,1,9], [15,7,13,5] ];
+
+/* =========================== helpers ==================================== */
+function hash2(x, y) {
+  var h = Math.sin(x * 127.1 + y * 311.7 + 74.7) * 43758.5453;
+  return h - Math.floor(h);
+}
+function vnoise(x, y) {
+  var xi = Math.floor(x), yi = Math.floor(y);
+  var xf = x - xi, yf = y - yi;
+  var sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+  var a = hash2(xi, yi), b = hash2(xi + 1, yi);
+  var c = hash2(xi, yi + 1), d = hash2(xi + 1, yi + 1);
+  return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
+}
+/* fBm: 4 octaves of value noise, ~[0,1] */
+function fbm(x, y) {
+  return 0.44 * vnoise(x, y) + 0.28 * vnoise(x * 2.13, y * 2.13)
+       + 0.18 * vnoise(x * 4.31, y * 4.31) + 0.10 * vnoise(x * 8.77, y * 8.77);
+}
+/* precomputed 64×64 blue-noise-style tile (best-candidate; good enough for
+   organic fields — no visible pattern at U scale) */
+var BN = (function () {
+  var N = 64, pts = [], vals = new Float32Array(N * N);
+  var i, j, k;
+  for (i = 0; i < N * N; i++) {
+    var best = null, bestD = -1;
+    for (k = 0; k < 12; k++) {
+      var cx = (hash2(i, k * 3 + 1) * N) | 0, cy = (hash2(i, k * 3 + 2) * N) | 0;
+      var dmin = 1e9;
+      for (j = Math.max(0, pts.length - 90); j < pts.length; j++) {
+        var dx = Math.abs(cx - pts[j][0]); if (dx > N / 2) dx = N - dx;
+        var dy = Math.abs(cy - pts[j][1]); if (dy > N / 2) dy = N - dy;
+        var dd = dx * dx + dy * dy;
+        if (dd < dmin) dmin = dd;
+      }
+      if (dmin > bestD) { bestD = dmin; best = [cx, cy]; }
+    }
+    pts.push(best);
+    vals[best[1] * N + best[0]] = i / (N * N);
+  }
+  return function (x, y) {
+    return vals[((y % N + N) % N) * N + ((x % N + N) % N)];
+  };
+})();
+function fitCanvas(cv, cssH) {
+  var dpr = window.devicePixelRatio || 1;
+  var r = cv.getBoundingClientRect();
+  var h = cssH || r.height;
+  cv.width = Math.round(r.width * dpr);
+  cv.height = Math.round(h * dpr);
+  var c = cv.getContext("2d");
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { c: c, w: r.width, h: h, dpr: dpr };
+}
+function scaps(c, txt, x, y, px, color, spacing, align) {
+  c.save();
+  c.fillStyle = color;
+  c.font = px + 'px "VT323", monospace';
+  if (c.letterSpacing !== undefined) c.letterSpacing = (spacing || 1) + "px";
+  c.textAlign = align || "left";
+  c.textBaseline = "alphabetic";
+  c.fillText(txt.toUpperCase(), x, y);
+  c.restore();
+}
+
+/* ============== authored 12×12 planetary-metal sigil stamps ============== */
+/* ☉ C · ☽ D · ☿ Eb · ♀ F · ♂ G · ♃ A · ♄ Bb — the seven degrees of C Dorian */
+var SIGILS = {
+  sol: [ /* ☉ gold — C, the tonic */
+    "....XXXX....",
+    "..XX....XX..",
+    ".X........X.",
+    ".X........X.",
+    "X....XX....X",
+    "X...X..X...X",
+    "X...X..X...X",
+    "X....XX....X",
+    ".X........X.",
+    ".X........X.",
+    "..XX....XX..",
+    "....XXXX...."],
+  luna: [ /* ☽ silver — D */
+    "....XXXX....",
+    "..XXX.......",
+    ".XXX........",
+    ".XX.........",
+    "XXX.........",
+    "XX..........",
+    "XX..........",
+    "XXX.........",
+    ".XX.........",
+    ".XXX........",
+    "..XXX.......",
+    "....XXXX...."],
+  mercury: [ /* ☿ quicksilver — Eb */
+    ".XX......XX.",
+    "..X......X..",
+    "..XX....XX..",
+    "....XXXX....",
+    "...X....X...",
+    "...X....X...",
+    "...X....X...",
+    "....XXXX....",
+    ".....XX.....",
+    "...XXXXXX...",
+    ".....XX.....",
+    ".....XX....."],
+  venus: [ /* ♀ copper — F */
+    "....XXXX....",
+    "...X....X...",
+    "..X......X..",
+    "..X......X..",
+    "..X......X..",
+    "...X....X...",
+    "....XXXX....",
+    ".....XX.....",
+    ".....XX.....",
+    "...XXXXXX...",
+    ".....XX.....",
+    ".....XX....."],
+  mars: [ /* ♂ iron — G */
+    ".......XXXXX",
+    "..........XX",
+    ".........X.X",
+    "........X..X",
+    ".......X....",
+    "..XXX象X.....",
+    ".X....X.....",
+    "X......X....",
+    "X......X....",
+    "X......X....",
+    ".X....X.....",
+    "..XXXX......"],
+  jupiter: [ /* ♃ tin — A */
+    "..XXX.......",
+    ".X...X......",
+    ".....X......",
+    "....X....X..",
+    "....X....X..",
+    "...X.....X..",
+    "..X......X..",
+    ".X.......X..",
+    ".XXXXXXXXXX.",
+    ".........X..",
+    ".........X..",
+    ".........X.."],
+  saturn: [ /* ♄ lead — Bb */
+    "..XX........",
+    "XXXXXX......",
+    "..XX........",
+    "..XX........",
+    "..XX.XXX....",
+    "..XXX...X...",
+    "..XX.....X..",
+    "..XX.....X..",
+    ".........X..",
+    ".........X..",
+    "........X...",
+    ".....XXX...."],
+};
+/* fix a typo-proofing pass: keep bitmaps pure ascii */
+(function scrub() {
+  for (var k in SIGILS) {
+    for (var r = 0; r < SIGILS[k].length; r++) {
+      SIGILS[k][r] = SIGILS[k][r].replace(/[^.X]/g, "X");
+    }
+  }
+})();
+/* in-key degree (semitones above C) → sigil name; C Dorian */
+var DEGREE_SIGIL = { 0: "sol", 2: "luna", 3: "mercury", 5: "venus", 7: "mars", 9: "jupiter", 10: "saturn" };
+var DEGREE_NAME  = { 0: "C", 2: "D", 3: "E♭", 5: "F", 7: "G", 9: "A", 10: "B♭" };
+
+/* stamp a bitmap at art-pixel scale s (CSS px per bit) centered on (x,y) */
+function stamp(c, bits, x, y, s, color) {
+  var rows = bits.length, cols = bits[0].length;
+  var ox = Math.round(x - cols * s / 2), oy = Math.round(y - rows * s / 2);
+  c.fillStyle = color;
+  for (var r = 0; r < rows; r++) {
+    for (var q = 0; q < cols; q++) {
+      if (bits[r].charAt(q) === "X") c.fillRect(ox + q * s, oy + r * s, s, s);
+    }
+  }
+}
+
+/* authored 12×12 voice sigils for the mixer legend */
+var VOICE_SIGILS = {
+  drone: [ /* two slow waves */
+    "............",
+    "............",
+    "..XX........",
+    ".X..X...XX..",
+    "X....X.X..X.",
+    "......X....X",
+    "............",
+    "..XX........",
+    ".X..X...XX..",
+    "X....X.X..X.",
+    "......X....X",
+    "............"],
+  harp: [ /* a string and its jack */
+    ".....X......",
+    ".....X......",
+    ".....X......",
+    "...XXXXX....",
+    "...X.X.X....",
+    "...XXXXX....",
+    ".....X......",
+    ".....X......",
+    ".....X......",
+    ".....X......",
+    ".....X......",
+    ".....X......"],
+  box: [ /* the comb over the cylinder */
+    "..X..X..X...",
+    "..X..X..X...",
+    "..XXXXXXX...",
+    "..X..X..X...",
+    "............",
+    "XXXXXXXXXXXX",
+    "X..........X",
+    "X.XX.XX.XX.X",
+    "X..........X",
+    "XXXXXXXXXXXX",
+    "............",
+    "............"],
+};
+/* the quill, 12×12 (air holders) */
+var QUILL = [
+  "..........X.",
+  ".........XX.",
+  "........XXX.",
+  ".......XXX..",
+  "......XXXX..",
+  ".....XXXX...",
+  "....XXXX....",
+  "...XXX......",
+  "..XXX.......",
+  ".XX.........",
+  "XX..........",
+  "X..........."];
+
+/* ======================================================================== */
+/* THE FOLIO PAGE — L0 parchment, baked once (§1a layers, §6 plate zone)    */
+/* ======================================================================== */
+var folioEl = document.querySelector(".folio");
+var folioBgCv = document.getElementById("folio-bg");
+var plateCv = document.getElementById("plate");
+
+/* Layout must exist before measuring; folio bg sized to folio box. */
+var FB = null, PW = 0, PH = 0, plateRect = null;
+
+/* plate-zone geometry (filled in once the plate canvas is measured) */
+var CX = 0, CY = 0, baseRadius = 0, octaveStep = 0, peakUp = 0;
+var camPitch = 0.30;
+
+/* stains: seeded blotch centers in folio-normalized coords */
+var STAINS = [
+  [0.16, 0.90, 0.085, 1.0], [0.92, 0.12, 0.070, 0.8],
+  [0.055, 0.30, 0.055, 0.9], [0.60, 0.965, 0.075, 0.7],
+];
+
+function bakeFolio() {
+  var r = folioEl.getBoundingClientRect();
+  folioBgCv.style.height = r.height + "px";
+  FB = fitCanvas(folioBgCv, r.height);
+  var c = FB.c, W = FB.w, H = FB.h;
+
+  var pr = plateCv.getBoundingClientRect();
+  var fr = folioBgCv.getBoundingClientRect();
+  plateRect = { x: pr.left - fr.left, y: pr.top - fr.top, w: pr.width, h: pr.height };
+
+  /* zones that must stay light for ink to carry data */
+  var textX = plateRect.x + plateRect.w + 6; /* apparatus column */
+  function inPlateZone(px, py) {
+    var zx = (px - (plateRect.x + plateRect.w / 2)) / (plateRect.w * 0.50);
+    var zy = (py - (plateRect.y + plateRect.h / 2)) / (plateRect.h * 0.52);
+    return zx * zx + zy * zy < 1;
+  }
+  function inTextZone(px, py) {
+    return px > textX && px < W - 18 && py > 18 && py < H - 18;
+  }
+
+  var cols = Math.ceil(W / U), rows = Math.ceil(H / U);
+  var mx = cols / 2, my = rows / 2;
+  for (var gy = 0; gy < rows; gy++) {
+    for (var gx = 0; gx < cols; gx++) {
+      var px = gx * U, py = gy * U;
+      /* base mottle: fBm mapped across the ramp */
+      var n = fbm(gx / 26, gy / 26);                       /* 0..1 */
+      var v = (n - 0.5) * 1.15 + 0.30;                     /* mostly light */
+      /* blue-noise stains — large soft blotches (§1a) */
+      for (var s = 0; s < STAINS.length; s++) {
+        var stx = STAINS[s][0] * W, sty = STAINS[s][1] * H;
+        var sd = Math.sqrt((px - stx) * (px - stx) + (py - sty) * (py - sty)) / (STAINS[s][2] * W);
+        if (sd < 1) v += (1 - sd) * (1 - sd) * 1.5 * STAINS[s][3] * (0.6 + 0.8 * BN(gx, gy));
+      }
+      /* horizontal fiber streaks: thin 1U runs, ±4% */
+      var fy = vnoise(gx / 34, gy * 1.7);
+      if (fy > 0.78) v += 0.34; else if (fy < 0.16) v -= 0.20;
+      /* radial edge darkening, Bayer-dithered */
+      var dx = (gx - mx) / mx, dy = (gy - my) / my;
+      var d = Math.max(Math.abs(dx), Math.abs(dy));
+      if (d > 0.72) v += (d - 0.72) * 3.4;
+      /* dither the tone choice */
+      var bt = (BAYER[gy & 3][gx & 3] + 0.5) / 16 - 0.5;   /* -0.5..0.5 */
+      var tone = Math.floor(v + bt * 0.55 + 0.5);
+      if (tone < 0) tone = 0; if (tone > 4) tone = 4;
+      /* §6 plate zone + text zones: clamp to the two lightest tones */
+      if (inPlateZone(px, py) || inTextZone(px, py)) { if (tone > 1) tone = 1; }
+      c.fillStyle = PAL.paper[tone];
+      c.fillRect(px, py, U, U);
+    }
+  }
+  /* deckled / worn border: 1–2U irregular dark edge on the void */
+  c.fillStyle = PAL.void_;
+  for (var e = 0; e < cols; e++) {
+    var dt = 1 + ((hash2(e, 7) * 2.4) | 0);   /* 1..3 cells */
+    var db = 1 + ((hash2(e, 8) * 2.4) | 0);
+    c.fillRect(e * U, 0, U, dt * U);
+    c.fillRect(e * U, H - db * U, U, db * U);
+    if (hash2(e, 9) > 0.86) { c.fillStyle = PAL.paper[4]; c.fillRect(e * U, dt * U, U, U); c.fillRect(e * U, H - (db + 1) * U, U, U); c.fillStyle = PAL.void_; }
+  }
+  for (var e2 = 0; e2 < rows; e2++) {
+    var dl = 1 + ((hash2(e2, 17) * 2.4) | 0);
+    var drr = 1 + ((hash2(e2, 18) * 2.4) | 0);
+    c.fillRect(0, e2 * U, dl * U, U);
+    c.fillRect(W - drr * U, e2 * U, drr * U, U);
+  }
+}
+
+/* ======================================================================== */
+/* THE SPIRAL — frozen honest-fake FFT through real 3D projection (§3)      */
+/* ======================================================================== */
+var OCTAVES = 7, SPT = 96, TOTAL = OCTAVES * SPT;
+
+/* frozen plausible Library spectrum. anchor C1; octaveFloat = log2(f/C1);
+   pitch-class angle within a turn: C=0, D=2/12, Eb=3/12, F=5/12, G=7/12,
+   A=9/12, Bb=10/12 (C Dorian in-key set). [octaveFloat, height, sigma]    */
+var mags = new Float32Array(TOTAL);
+(function bakeFFT() {
+  var pc = { C: 0, D: 2 / 12, Eb: 3 / 12, F: 5 / 12, G: 7 / 12, A: 9 / 12, Bb: 10 / 12 };
+  var peaks = [
+    [0 + pc.C,  0.34, 0.050],  /* sub C1                      */
+    [1 + pc.C,  0.62, 0.030],  /* drone root C2               */
+    [1 + pc.G,  0.52, 0.028],  /* drone fifth G2              */
+    [2 + pc.C,  0.42, 0.026],  /* drone octave C3             */
+    [2 + pc.Eb, 0.30, 0.028],  /* drone color Eb3             */
+    [2 + pc.G,  0.26, 0.026],  /* partial G3                  */
+    [2 + pc.F,  0.44, 0.055],  /* the hum — F3, broad vowel   */
+    [3 + pc.D,  0.40, 0.016],  /* harpsichord D4              */
+    [3 + pc.F,  0.50, 0.015],  /* harpsichord F4              */
+    [3 + pc.A,  0.38, 0.015],  /* harpsichord A4              */
+    [4 + pc.C,  0.36, 0.014],  /* harpsichord C5              */
+    [5 + pc.C,  0.56, 0.012],  /* music box C6                */
+    [5 + pc.Eb, 0.42, 0.012],  /* music box Eb6               */
+    [5 + pc.G,  0.30, 0.012],  /* music box G6                */
+    [5 + pc.Bb, 0.20, 0.013],  /* air Bb6                     */
+    [6 + pc.C,  0.16, 0.014],  /* air C7                      */
+  ];
+  for (var i = 0; i < TOTAL; i++) {
+    var of = i / SPT;
+    var v = 0.020 + 0.026 * vnoise(i * 0.13, 5.1) + 0.018 * Math.max(0, 1.5 - of);
+    for (var p = 0; p < peaks.length; p++) {
+      var d = of - peaks[p][0], s = peaks[p][2];
+      if (d > -s * 4 && d < s * 4) v += peaks[p][1] * Math.exp(-(d * d) / (2 * s * s));
+    }
+    mags[i] = Math.min(1, v);
+  }
+})();
+
+var PC = null, ctx = null;
+function sizePlate() {
+  PC = fitCanvas(plateCv, 860);
+  ctx = PC.c;
+  PW = PC.w; PH = PC.h;
+  CX = PW * 0.5; CY = PH * 0.485;
+  baseRadius = Math.min(PH * 0.21, PW * 0.27);
+  octaveStep = baseRadius * 0.46;
+  peakUp = octaveStep * 1.3;
+}
+
+function project(x, y, z, cy1, sy1, cp1, sp1) {
+  var x1 = x * cy1 - z * sy1;
+  var z1 = x * sy1 + z * cy1;
+  var y1 = y * cp1 - z1 * sp1;
+  var z2 = y * sp1 + z1 * cp1;
+  return { sx: CX + x1, sy: CY - y1, z: z2 };
+}
+/* depth → ink weight, NEVER alpha (§3): near dark & wide, far pale hairline */
+function inkDepth(z) {
+  var t = z / baseRadius;
+  if (t > 0.30)  return { col: PAL.ink[0], w: 2.2 };
+  if (t > -0.30) return { col: PAL.ink[1], w: 1.4 };
+  return { col: PAL.ink[3], w: 0.85 };
+}
+
+/* Bayer wash pattern tiles: coverage levels × ink tones, aligned to the
+   screen's U grid (patterns tile from canvas origin). */
+var WASH = {};
+(function makeWash() {
+  var LEVELS = [3, 6, 9, 13]; /* of 16 Bayer cells inked */
+  var tones = [PAL.ink[2], PAL.ink[1]];
+  for (var t = 0; t < tones.length; t++) {
+    for (var L = 0; L < LEVELS.length; L++) {
+      var cv = document.createElement("canvas");
+      cv.width = 4 * U; cv.height = 4 * U;
+      var c = cv.getContext("2d");
+      c.fillStyle = tones[t];
+      for (var y = 0; y < 4; y++) for (var x = 0; x < 4; x++) {
+        if (BAYER[y][x] < LEVELS[L]) c.fillRect(x * U, y * U, U, U);
+      }
+      WASH[t + "_" + L] = cv;
+    }
+  }
+})();
+var washPatterns = null;
+function washPattern(toneIdx, levelIdx) {
+  if (!washPatterns) {
+    washPatterns = {};
+    for (var k in WASH) washPatterns[k] = ctx.createPattern(WASH[k], "repeat");
+  }
+  return washPatterns[toneIdx + "_" + levelIdx];
+}
+
+/* world-space parchment strip texture for the ALT treatment: paper tone +
+   fiber value per coil sample, baked once. */
+var stripTone = new Uint8Array(TOTAL);
+var stripFiber = new Float32Array(TOTAL);
+(function bakeStrip() {
+  for (var i = 0; i < TOTAL; i++) {
+    var n = fbm(i / 38, 3.7) + (BN(i & 63, (i >> 3) & 63) - 0.5) * 0.16;
+    stripTone[i] = n < 0.42 ? 0 : (n < 0.62 ? 1 : 2);
+    stripFiber[i] = vnoise(i / 9.5, 11.3);
+  }
+})();
+
+/* authored wobble on the compass-drawn baseline (the pen's hand) */
+function wobble(frac) { return (vnoise(frac * 24.7, 3.1) - 0.5) * 2.4; }
+
+var MODE = "backdrop"; /* or "object" */
+var scratch = { inner: new Array(TOTAL + 1), outer: new Array(TOTAL + 1), order: new Int32Array(TOTAL) };
+for (var qi = 0; qi < TOTAL; qi++) scratch.order[qi] = qi;
+
+function drawSpiral(yaw) {
+  var cy1 = Math.cos(yaw), sy1 = Math.sin(yaw);
+  var cp1 = Math.cos(camPitch), sp1 = Math.sin(camPitch);
+  var i, o, b, th, yW, m;
+
+  ctx.clearRect(0, 0, PW, PH);
+  if (MODE === "object") {
+    /* the page is gone: the coil itself is the parchment object */
+    ctx.fillStyle = PAL.void_;
+    ctx.fillRect(0, 0, PW, PH);
+    /* a hairline inked frame keeps the plate's bounds on the desk */
+    ctx.strokeStyle = "#2c2214"; ctx.lineWidth = 2;
+    ctx.strokeRect(3, 3, PW - 6, PH - 6);
+  }
+
+  /* project inner (baseline+wobble) and outer (contour) once */
+  for (i = 0; i <= TOTAL; i++) {
+    var ii = Math.min(i, TOTAL - 1);
+    var frac = i / SPT;
+    th = (frac % 1) * 2 * Math.PI;
+    yW = (frac - (OCTAVES - 1) / 2) * octaveStep;
+    m = mags[ii];
+    var rr = baseRadius + wobble(frac);
+    var xw = rr * Math.cos(th), zw = rr * Math.sin(th);
+    var hEff = (MODE === "object") ? Math.max(m, 0.20) : m;
+    scratch.inner[i] = project(xw, yW, zw, cy1, sy1, cp1, sp1);
+    scratch.outer[i] = project(xw, yW + hEff * peakUp, zw, cy1, sy1, cp1, sp1);
+  }
+  /* depth sort the quads, far → near */
+  var ord = scratch.order;
+  for (i = 0; i < TOTAL; i++) ord[i] = i;
+  Array.prototype.sort.call(ord, function (a, b2) {
+    return (scratch.inner[a].z + scratch.inner[a + 1].z) - (scratch.inner[b2].z + scratch.inner[b2 + 1].z);
+  });
+
+  for (var k = 0; k < TOTAL; k++) {
+    i = ord[k];
+    var i0 = scratch.inner[i], i1 = scratch.inner[i + 1];
+    var o0 = scratch.outer[i], o1 = scratch.outer[i + 1];
+    m = mags[i];
+    var zMid = (i0.z + i1.z) / 2;
+
+    if (MODE === "backdrop") {
+      /* Bayer ink-wash fill under the contour (chunky allowed, §3) */
+      if (m > 0.10) {
+        var lvl = m < 0.28 ? 0 : (m < 0.46 ? 1 : (m < 0.68 ? 2 : 3));
+        var tn = zMid > 0 ? 1 : 0;
+        ctx.fillStyle = washPattern(tn, lvl);
+        ctx.beginPath();
+        ctx.moveTo(i0.sx, i0.sy); ctx.lineTo(i1.sx, i1.sy);
+        ctx.lineTo(o1.sx, o1.sy); ctx.lineTo(o0.sx, o0.sy);
+        ctx.closePath(); ctx.fill();
+      }
+    } else {
+      /* ALT: paper tone fills the coil's quads (world-space strip texture);
+         far limb rendered one paper tone darker — depth by tone, no alpha */
+      var toneI = stripTone[i] + (zMid < -baseRadius * 0.25 ? 1 : 0);
+      if (toneI > 3) toneI = 3;
+      ctx.fillStyle = PAL.paper[toneI];
+      ctx.beginPath();
+      ctx.moveTo(i0.sx, i0.sy); ctx.lineTo(i1.sx, i1.sy);
+      ctx.lineTo(o1.sx, o1.sy); ctx.lineTo(o0.sx, o0.sy);
+      ctx.closePath(); ctx.fill();
+      /* the strip's own FFT wash: light Bayer hatch where magnitude is high */
+      if (m > 0.34) {
+        ctx.fillStyle = washPattern(0, m < 0.55 ? 0 : 1);
+        ctx.fill();
+      }
+    }
+
+    /* baseline coil segment — compass line, ink weight by depth */
+    var st = inkDepth(zMid);
+    if (MODE === "object") {
+      /* stroke darkness modulated by the fibers it crosses */
+      var f = stripFiber[i];
+      st = { col: f > 0.62 ? PAL.ink[0] : (f > 0.3 ? st.col : PAL.ink[2]), w: st.w };
+    }
+    ctx.strokeStyle = st.col; ctx.lineWidth = Math.max(1, st.w - 0.4);
+    ctx.beginPath(); ctx.moveTo(i0.sx, i0.sy); ctx.lineTo(i1.sx, i1.sy); ctx.stroke();
+
+    /* FFT contour segment — full resolution, never quantized (§2) */
+    ctx.strokeStyle = st.col; ctx.lineWidth = st.w;
+    ctx.beginPath(); ctx.moveTo(o0.sx, o0.sy); ctx.lineTo(o1.sx, o1.sy); ctx.stroke();
+  }
+
+  /* the degree dial: a compass-drawn rim below the coil's base turn, its
+     12 ticks, and the planetary sigils on the in-key degrees.
+     On the void (object mode) the furniture flips to paper tones — depth
+     still by tone weight, never alpha. */
+  var FURN = MODE === "backdrop"
+    ? { near: PAL.ink[0], mid: PAL.ink[1], far: PAL.ink[3], rim: PAL.ink[3] }
+    : { near: PAL.paper[0], mid: PAL.paper[1], far: PAL.paper[3], rim: PAL.paper[3] };
+  var yBase = (0 - (OCTAVES - 1) / 2) * octaveStep;
+  ctx.save();
+  ctx.setLineDash([3, 4]);
+  ctx.strokeStyle = FURN.rim; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (var rp = 0; rp <= 72; rp++) {
+    th = (rp / 72) * 2 * Math.PI;
+    var pR = project(baseRadius * 1.16 * Math.cos(th), yBase, baseRadius * 1.16 * Math.sin(th), cy1, sy1, cp1, sp1);
+    if (rp === 0) ctx.moveTo(pR.sx, pR.sy); else ctx.lineTo(pR.sx, pR.sy);
+  }
+  ctx.stroke();
+  ctx.restore();
+  for (var dg = 0; dg < 12; dg++) {
+    th = (dg / 12) * 2 * Math.PI;
+    var ct = Math.cos(th), s2 = Math.sin(th);
+    var pIn = project(baseRadius * 1.04 * ct, yBase, baseRadius * 1.04 * s2, cy1, sy1, cp1, sp1);
+    var pOut = project(baseRadius * 1.16 * ct, yBase, baseRadius * 1.16 * s2, cy1, sy1, cp1, sp1);
+    var sig = DEGREE_SIGIL[dg];
+    if (sig) {
+      var pS = project(baseRadius * 1.36 * ct, yBase, baseRadius * 1.36 * s2, cy1, sy1, cp1, sp1);
+      var near = pS.z > 0;
+      ctx.strokeStyle = near ? FURN.near : FURN.far;
+      ctx.lineWidth = near ? 1.6 : 1;
+      ctx.beginPath(); ctx.moveTo(pIn.sx, pIn.sy); ctx.lineTo(pOut.sx, pOut.sy); ctx.stroke();
+      stamp(ctx, SIGILS[sig], pS.sx, pS.sy, U, near ? FURN.near : FURN.far);
+    } else {
+      /* out-of-key: bare pale tick (in-key tinting relocated to symbol weight) */
+      ctx.strokeStyle = FURN.far; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pIn.sx, pIn.sy); ctx.lineTo(pOut.sx, pOut.sy); ctx.stroke();
+    }
+  }
+  /* octave numerals as marginalia at each turn's seam (theta = 0) */
+  var ROMAN = ["i", "ii", "iii", "iv", "v", "vi", "vii"];
+  for (o = 0; o < OCTAVES; o++) {
+    var yO = (o - (OCTAVES - 1) / 2) * octaveStep;
+    var pN = project(baseRadius * 1.12, yO, 0, cy1, sy1, cp1, sp1);
+    scaps(ctx, ROMAN[o], pN.sx + 6, pN.sy + 4, 15, pN.z > 0 ? FURN.mid : FURN.far, 0, "left");
+  }
+
+  if (MODE === "backdrop") drawSchema();
+}
+
+/* the plate's LOWER SCHEMA (§3 marginalia): the drone as a 12-spoke
+   horoscope-style square-in-circle diagram, screen-space plate furniture.
+   Drone tones C2+G2 inked as nodes; P5 = double rule; labeled in VT323. */
+function drawSchema() {
+  var sx = PW * 0.165, sy = PH * 0.845, sr = Math.min(PW, PH) * 0.085;
+  ctx.strokeStyle = PAL.ink[2]; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = PAL.ink[3];
+  ctx.strokeRect(sx - sr * 0.707, sy - sr * 0.707, sr * 1.414, sr * 1.414);
+  for (var k = 0; k < 12; k++) {
+    var a = k * Math.PI / 6 - Math.PI / 2;
+    ctx.strokeStyle = PAL.ink[3]; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(sx + Math.cos(a) * sr * 0.28, sy + Math.sin(a) * sr * 0.28);
+    ctx.lineTo(sx + Math.cos(a) * sr, sy + Math.sin(a) * sr);
+    ctx.stroke();
+  }
+  /* nodes: C (top) and G (7 semitones cw); interval P5 → double rule */
+  var cA = -Math.PI / 2, gA = -Math.PI / 2 + 7 * Math.PI / 6;
+  var cxN = sx + Math.cos(cA) * sr * 0.8, cyN = sy + Math.sin(cA) * sr * 0.8;
+  var gxN = sx + Math.cos(gA) * sr * 0.8, gyN = sy + Math.sin(gA) * sr * 0.8;
+  ctx.strokeStyle = PAL.ink[1]; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(cxN - 1.5, cyN); ctx.lineTo(gxN - 1.5, gyN); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cxN + 1.5, cyN); ctx.lineTo(gxN + 1.5, gyN); ctx.stroke();
+  ctx.fillStyle = PAL.ink[0];
+  ctx.beginPath(); ctx.arc(cxN, cyN, 3.4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(gxN, gyN, 3.4, 0, Math.PI * 2); ctx.fill();
+  stamp(ctx, SIGILS.sol, cxN + 14, cyN - 4, 1, PAL.ink[1]);
+  stamp(ctx, SIGILS.mars, gxN - 16, gyN + 8, 1, PAL.ink[1]);
+  scaps(ctx, "schema inferius · the drone — c2 & g2, a fifth", Math.max(sx, 150), sy + sr + 16, 13, PAL.ink[2], 1, "center");
+}
+
+/* rotation: ~1 rpm, proving the "spinning in space" read.
+   ?t=SECONDS in the URL offsets the phase (art-direction of stills). */
+var t0 = performance.now();
+var tOff = (function () { var m = location.search.match(/[?&]t=([\d.]+)/); return m ? parseFloat(m[1]) : 0; })();
+function frame(ts) {
+  requestAnimationFrame(frame);
+  var yaw = 0.55 + ((ts - t0) / 1000 + tOff) * (2 * Math.PI / 60);
+  drawSpiral(yaw);
+}
+
+/* the toggle (?mode=object in the URL pre-selects the alternative) */
+var toggleBtn = document.getElementById("toggle");
+var capEl = document.getElementById("plate-caption");
+function applyMode() {
+  toggleBtn.textContent = MODE === "backdrop" ? "TREATMENT: BACKDROP PLATE ⟳" : "TREATMENT: INKED OBJECT ⟳";
+  capEl.innerHTML = MODE === "backdrop"
+    ? 'figura I · the coil of pitches — seven turns, one per octave · in-key degrees bear their metal <span class="rb">✠</span> rotating, one revolution per minute'
+    : 'figura I (altera) · the inked object — parchment mapped into the coil itself, no backdrop page <span class="rb">✠</span> the margin keeps its paper';
+}
+toggleBtn.addEventListener("click", function () {
+  MODE = MODE === "backdrop" ? "object" : "backdrop";
+  applyMode();
+});
+if (/[?&]mode=object/.test(location.search)) { MODE = "object"; applyMode(); }
+
+/* ======================================================================== */
+/* THE MARGIN APPARATUS — frozen plausible data (§4)                        */
+/* ======================================================================== */
+function drawEmblem() { /* Conjunctio: sun and moon conjoined, 16×16 art px */
+  var cv = document.getElementById("emblem");
+  var c = cv.getContext("2d");
+  c.imageSmoothingEnabled = false;
+  var g = []; /* 16×16 grid of 0 empty / 1 ink / 2 rubric */
+  for (var y = 0; y < 16; y++) { g.push(new Array(16).fill(0)); }
+  function circle(cx0, cy0, r, val) {
+    for (var y2 = 0; y2 < 16; y2++) for (var x2 = 0; x2 < 16; x2++) {
+      var dd = Math.sqrt((x2 - cx0) * (x2 - cx0) + (y2 - cy0) * (y2 - cy0));
+      if (Math.abs(dd - r) < 0.55) g[y2][x2] = val;
+    }
+  }
+  circle(6, 7, 4.6, 1);       /* sol */
+  circle(10, 7, 4.6, 1);      /* luna */
+  /* the overlap hatched with Bayer — the conjunction */
+  for (var y3 = 3; y3 < 12; y3++) for (var x3 = 6; x3 < 11; x3++) {
+    var d1 = Math.hypot(x3 - 6, y3 - 7), d2 = Math.hypot(x3 - 10, y3 - 7);
+    if (d1 < 4.2 && d2 < 4.2 && BAYER[y3 & 3][x3 & 3] < 6) g[y3][x3] = 2;
+  }
+  g[14][7] = 1; g[14][8] = 1; g[15][7] = 1; g[15][8] = 1; /* footed cross */
+  g[13][7] = 1; g[13][8] = 1;
+  g[14][5] = 1; g[14][6] = 1; g[14][9] = 1; g[14][10] = 1;
+  for (var y4 = 0; y4 < 16; y4++) for (var x4 = 0; x4 < 16; x4++) {
+    if (!g[y4][x4]) continue;
+    c.fillStyle = g[y4][x4] === 2 ? PAL.rubric[0] : PAL.ink[0];
+    c.fillRect(x4, y4, 1, 1);
+  }
+}
+
+function drawSceneProg() {
+  var S = fitCanvas(document.getElementById("sceneprog"), 10);
+  var c = S.c, W = S.w;
+  var x = 0.58 * W;
+  c.strokeStyle = PAL.ink[0]; c.lineWidth = 2;
+  c.beginPath(); c.moveTo(2, 5); c.lineTo(x, 5); c.stroke();
+  c.fillStyle = PAL.ink[3];
+  for (var px = x + 6; px < W - 2; px += 3 * U) c.fillRect(px, 4, U, U);
+  c.fillStyle = PAL.rubric[0];
+  c.fillRect(x - 1, 1, 2, 8);
+}
+
+function drawVolvelle() { /* the moon-phase tide wheel */
+  var S = fitCanvas(document.getElementById("volvelle"), 118);
+  var c = S.c, W = S.w, H = S.h;
+  var cx = W / 2, cy = H / 2 + 4, R = 46;
+  /* wheel rims — compass-drawn */
+  c.strokeStyle = PAL.ink[1]; c.lineWidth = 1.4;
+  c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
+  c.strokeStyle = PAL.ink[3]; c.lineWidth = 1;
+  c.beginPath(); c.arc(cx, cy, R - 13, 0, Math.PI * 2); c.stroke();
+  c.beginPath(); c.arc(cx, cy, 6, 0, Math.PI * 2); c.stroke();
+  /* rivet */
+  c.fillStyle = PAL.ink[0];
+  c.beginPath(); c.arc(cx, cy, 2.2, 0, Math.PI * 2); c.fill();
+  /* eight phases around the wheel; tide 0.62 → phase 5 (waning gibbous
+     of the candlelit→late-night arc) sits under the index at top.
+     shadow drawn by the offset-disc method, clipped to the moon. */
+  var CUR = 5, rot = -CUR * Math.PI / 4 - Math.PI / 2;
+  for (var p = 0; p < 8; p++) {
+    var a = rot + p * Math.PI / 4;
+    var px = cx + Math.cos(a) * (R - 8), py = cy + Math.sin(a) * (R - 8);
+    var mr = 5.8;
+    c.fillStyle = PAL.paper[0];
+    c.beginPath(); c.arc(px, py, mr, 0, Math.PI * 2); c.fill();
+    if (p !== 4) { /* 4 = full moon, all paper */
+      c.save();
+      c.beginPath(); c.arc(px, py, mr - 0.5, 0, Math.PI * 2); c.clip();
+      c.fillStyle = PAL.ink[1];
+      if (p === 0) {
+        c.fillRect(px - mr, py - mr, mr * 2, mr * 2);       /* new — all ink */
+      } else {
+        /* offset shadow disc: crescent → half → gibbous as it slides off */
+        var q = p < 4 ? p : 8 - p;                          /* 1,2,3 */
+        var sgn = p < 4 ? -1 : 1;                           /* waxing: shadow left */
+        c.beginPath();
+        c.arc(px + sgn * mr * (0.8 * q - 0.4), py, mr * 1.2, 0, Math.PI * 2);
+        c.fill();
+      }
+      c.restore();
+    }
+    c.strokeStyle = PAL.ink[1]; c.lineWidth = 1;
+    c.beginPath(); c.arc(px, py, mr, 0, Math.PI * 2); c.stroke();
+  }
+  /* the index — a rubricated pointer at top */
+  c.fillStyle = PAL.rubric[0];
+  c.beginPath();
+  c.moveTo(cx, cy - R - 1); c.lineTo(cx - 5, cy - R - 9); c.lineTo(cx + 5, cy - R - 9);
+  c.closePath(); c.fill();
+  scaps(c, "candlelit", 2, H - 3, 13, PAL.ink[2], 1, "left");
+  scaps(c, "late-night", W - 2, H - 3, 13, PAL.rubric[0], 1, "right");
+}
+
+function drawAthanor() { /* the furnace + four degrees of fire */
+  var S = fitCanvas(document.getElementById("athanor"), 118);
+  var c = S.c, W = S.w, H = S.h;
+  var fx = W * 0.30, fy = H - 12, fw = 54, fh = 84;
+  /* furnace body — ink outline with Bayer shading */
+  c.strokeStyle = PAL.ink[0]; c.lineWidth = 2;
+  c.beginPath();
+  c.moveTo(fx - fw / 2, fy);
+  c.lineTo(fx - fw / 2, fy - fh * 0.55);
+  c.arc(fx, fy - fh * 0.55, fw / 2, Math.PI, 0);
+  c.lineTo(fx + fw / 2, fy);
+  c.closePath(); c.stroke();
+  c.save();
+  c.clip();
+  c.fillStyle = washPatternLocal(c, PAL.ink[2], 4);
+  c.fillRect(fx - fw / 2, fy - fh, fw, fh * 0.34);
+  c.restore();
+  /* chimney */
+  c.strokeStyle = PAL.ink[0]; c.lineWidth = 2;
+  c.strokeRect(fx - 7, fy - fh - 2, 14, 16);
+  /* stoke arch + the fire within (rubric, gradus II of IV) */
+  c.fillStyle = PAL.ink[0];
+  c.beginPath(); c.arc(fx, fy, 15, Math.PI, 0); c.lineTo(fx + 15, fy); c.closePath(); c.fill();
+  c.fillStyle = PAL.rubric[1];
+  c.beginPath(); c.arc(fx, fy, 9, Math.PI, 0); c.closePath(); c.fill();
+  c.fillStyle = PAL.gilt[1];
+  c.fillRect(fx - 3, fy - 9, 2, 4); c.fillRect(fx + 2, fy - 7, 2, 3);
+  /* the gauge — four degrees of fire, intensity 0.38 → into gradus II */
+  var gx = W * 0.66, gTop = 14, gBot = H - 14, gw = 16;
+  c.strokeStyle = PAL.ink[1]; c.lineWidth = 1.4;
+  c.strokeRect(gx, gTop, gw, gBot - gTop);
+  var DEG = ["IV", "III", "II", "I"];
+  for (var d3 = 0; d3 < 4; d3++) {
+    var yq = gTop + (d3 / 4) * (gBot - gTop);
+    if (d3 > 0) { c.beginPath(); c.moveTo(gx, yq); c.lineTo(gx + gw, yq); c.stroke(); }
+    scaps(c, DEG[d3], gx + gw + 5, yq + (gBot - gTop) / 8 + 5, 14, PAL.ink[2], 0, "left");
+  }
+  /* fill: 0.04–0.65 mapped onto the four degrees; 0.38 ≈ upper gradus II */
+  var frac = (0.38 - 0.04) / (0.65 - 0.04);
+  var fillH = frac * (gBot - gTop);
+  c.fillStyle = washPatternLocal(c, PAL.rubric[0], 8);
+  c.fillRect(gx + 2, gBot - fillH, gw - 4, fillH);
+  c.fillStyle = PAL.rubric[0];
+  c.fillRect(gx, gBot - fillH - 1, gw, 2);
+  scaps(c, "athanor", fx, 12, 13, PAL.ink[2], 1, "center");
+}
+/* small local Bayer pattern helper for panel fills */
+var localPatCache = {};
+function washPatternLocal(c, color, level) {
+  var k = color + level;
+  if (!localPatCache[k]) {
+    var cv = document.createElement("canvas");
+    cv.width = 4 * U; cv.height = 4 * U;
+    var cc = cv.getContext("2d");
+    cc.fillStyle = color;
+    for (var y = 0; y < 4; y++) for (var x = 0; x < 4; x++) {
+      if (BAYER[y][x] < level) cc.fillRect(x * U, y * U, U, U);
+    }
+    localPatCache[k] = cv;
+  }
+  return c.createPattern(localPatCache[k], "repeat");
+}
+
+function drawAir() { /* two quills aloft, limit three — inked rests */
+  var S = fitCanvas(document.getElementById("airq"), 54);
+  var c = S.c;
+  stamp(c, QUILL, 28, 26, U + 1, PAL.ink[0]);
+  stamp(c, QUILL, 70, 26, U + 1, PAL.ink[1]);
+  /* the third slot: an inked rest (the air not yet taken) */
+  var rx = 112, ry = 26;
+  c.strokeStyle = PAL.ink[3]; c.lineWidth = 1.4;
+  c.strokeRect(rx - 11, ry - 11, 22, 22);
+  c.beginPath(); c.moveTo(rx - 5, ry + 5); c.lineTo(rx + 5, ry - 5); c.stroke();
+}
+
+function drawChord() { /* IV + Venus sigil */
+  var S = fitCanvas(document.getElementById("chordq"), 54);
+  var c = S.c;
+  c.fillStyle = PAL.ink[0];
+  c.font = '44px "VT323", monospace';
+  c.textBaseline = "alphabetic";
+  c.fillText("IV", 6, 42);
+  stamp(c, SIGILS.venus, 92, 27, U + 1, PAL.rubric[0]);
+  scaps(c, "arrival", 122, 32, 13, PAL.ink[2], 1, "left");
+}
+
+function drawTree() { /* motif genealogy as codex-margin pen-work */
+  var S = fitCanvas(document.getElementById("genetree"), 118);
+  var c = S.c, W = S.w, H = S.h;
+  var baseY = H * 0.62;
+  /* node positions: [x, y, gen label, ghost?] */
+  var N = {
+    root: [16, baseY, "θ", 0],
+    g1: [76, baseY, "I", 0],
+    g2: [136, baseY - 22, "II", 0],
+    g3: [196, baseY - 22, "III", 0],
+    g4: [258, baseY - 40, "IV", 0],
+    g5a: [326, baseY - 52, "V", 0],
+    g5b: [322, baseY - 14, "V", 0],
+    ghost: [150, baseY + 30, "α", 1],
+  };
+  function penLine(a, b, col, w2, dash) {
+    c.save();
+    if (dash) c.setLineDash(dash);
+    c.strokeStyle = col; c.lineWidth = w2;
+    c.beginPath();
+    c.moveTo(a[0], a[1]);
+    var mx2 = (a[0] + b[0]) / 2;
+    c.quadraticCurveTo(mx2, a[1] + (b[1] - a[1]) * 0.15, b[0], b[1]);
+    c.stroke(); c.restore();
+  }
+  penLine(N.root, N.g1, PAL.ink[1], 1.6);
+  penLine(N.g1, N.g2, PAL.ink[1], 1.4);
+  penLine(N.g2, N.g3, PAL.ink[1], 1.4);
+  penLine(N.g3, N.g4, PAL.ink[0], 1.6);
+  penLine(N.g4, N.g5a, PAL.ink[0], 1.4);  /* the fork — develop */
+  penLine(N.g4, N.g5b, PAL.ink[0], 1.4);
+  /* the every-3rd-gen ancestor tether: gen IV returns to gen I, dotted */
+  c.save();
+  c.setLineDash([2, 4]); c.strokeStyle = PAL.rubric[0]; c.lineWidth = 1.2;
+  c.beginPath();
+  c.moveTo(N.g4[0], N.g4[1] - 4);
+  c.quadraticCurveTo((N.g4[0] + N.g1[0]) / 2, baseY - 74, N.g1[0], N.g1[1] - 6);
+  c.stroke(); c.restore();
+  /* the ghost — a faint branch in an earlier hand (paler, tilted) */
+  c.save();
+  c.translate(N.ghost[0], N.ghost[1]); c.rotate(-0.06); c.translate(-N.ghost[0], -N.ghost[1]);
+  penLine([N.g1[0] + 4, N.g1[1] + 4], N.ghost, PAL.ink[3], 1.1, [4, 3]);
+  c.fillStyle = PAL.ink[3];
+  c.beginPath(); c.arc(N.ghost[0], N.ghost[1], 3.2, 0, Math.PI * 2); c.fill();
+  c.font = 'italic 14px "VT323", monospace';
+  c.fillText("α — an earlier hand (#a7)", N.ghost[0] + 8, N.ghost[1] + 4);
+  c.restore();
+  /* nodes + roman numerals */
+  for (var k2 in N) {
+    if (k2 === "ghost") continue;
+    var n2 = N[k2];
+    c.fillStyle = k2 === "g5a" || k2 === "g5b" || k2 === "g4" ? PAL.ink[0] : PAL.ink[1];
+    c.beginPath(); c.arc(n2[0], n2[1], k2 === "root" ? 4.4 : 3.2, 0, Math.PI * 2); c.fill();
+    scaps(c, n2[2], n2[0], n2[1] - 8, 15, k2 === "root" ? PAL.rubric[0] : PAL.ink[1], 0, "center");
+  }
+  scaps(c, "tether iv→i", (N.g4[0] + N.g1[0]) / 2 - 30, 12, 12, PAL.rubric[0], 1, "center");
+  scaps(c, "gen ix renews — the ouroboros closes", 16, H - 4, 12, PAL.ink[3], 1, "left");
+}
+
+function drawDensity() { /* footer rule: solid past, pricked forecast */
+  var S = fitCanvas(document.getElementById("density"), 64);
+  var c = S.c, W = S.w, H = S.h;
+  var nowX = W * 0.78;
+  function dens(x) { /* frozen plausible envelope, 0..1 */
+    return 0.5 + 0.27 * Math.sin(x / W * 9.5) + 0.13 * Math.sin(x / W * 23 + 1.7);
+  }
+  function yOf(x) { return H * 0.86 - dens(x) * H * 0.66; }
+  /* reference rules */
+  c.strokeStyle = PAL.ink[3]; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(0, H * 0.86); c.lineTo(W, H * 0.86); c.stroke();
+  c.setLineDash([1, 5]);
+  c.beginPath(); c.moveTo(0, H * 0.20); c.lineTo(W, H * 0.20); c.stroke();
+  c.setLineDash([]);
+  scaps(c, "0.40×", 3, H * 0.84, 12, PAL.ink[2], 0);
+  scaps(c, "1.40×", 3, H * 0.20 + 11, 12, PAL.ink[2], 0);
+  /* past: solid iron-gall */
+  c.strokeStyle = PAL.ink[0]; c.lineWidth = 2;
+  c.beginPath();
+  for (var x = 0; x <= nowX; x += 2) { var y = yOf(x); if (x === 0) c.moveTo(x, y); else c.lineTo(x, y); }
+  c.stroke();
+  /* forecast: pricked pounce-holes */
+  c.fillStyle = PAL.ink[1];
+  for (var x2 = nowX + 5; x2 < W - 2; x2 += 7) {
+    c.beginPath(); c.arc(x2, yOf(x2), 1.3, 0, Math.PI * 2); c.fill();
+  }
+  /* NOW */
+  c.strokeStyle = PAL.rubric[0]; c.lineWidth = 1.4;
+  c.beginPath(); c.moveTo(nowX, 4); c.lineTo(nowX, H - 4); c.stroke();
+  scaps(c, "nunc", nowX + 5, 13, 13, PAL.rubric[0], 1);
+  scaps(c, "densitas · past in ink, forecast pricked for pouncing", 40, 13, 13, PAL.ink[2], 1);
+}
+
+/* ======================================================================== */
+/* CHROME — seal + voice sigils                                             */
+/* ======================================================================== */
+function drawSeal() {
+  var cv = document.getElementById("seal");
+  var S = fitCanvas(cv, 84);
+  var c = S.c, cx = 42, cy = 42;
+  /* wax blob: irregular pixel-stepped disc in rubric tones */
+  for (var gy = 0; gy < 42; gy++) {
+    for (var gx = 0; gx < 42; gx++) {
+      var px = gx * U + 1, py = gy * U + 1;
+      var d = Math.hypot(px - cx, py - cy) + (vnoise(gx / 4.5, gy / 4.5) - 0.5) * 9;
+      if (d < 36) {
+        c.fillStyle = d > 31 ? "#5e2018" : (BN(gx, gy) > 0.72 ? PAL.rubric[1] : PAL.rubric[0]);
+        c.fillRect(px - 1, py - 1, U, U);
+      }
+    }
+  }
+  /* stamped ring */
+  c.strokeStyle = "#5e2018"; c.lineWidth = 2;
+  c.beginPath(); c.arc(cx, cy, 26, 0, Math.PI * 2); c.stroke();
+}
+function drawVoiceSigils() {
+  var cvs = document.querySelectorAll("[data-sigil]");
+  for (var i = 0; i < cvs.length; i++) {
+    var cv = cvs[i];
+    var c = cv.getContext("2d");
+    var bits = VOICE_SIGILS[cv.getAttribute("data-sigil")];
+    c.fillStyle = "#c7b795";
+    for (var r = 0; r < 12; r++) for (var q = 0; q < 12; q++) {
+      if (bits[r].charAt(q) === "X") c.fillRect(q, r, 1, 1);
+    }
+  }
+  /* dithered slider fills + unquantized thumbs */
+  var fills = document.querySelectorAll(".legend-fill");
+  for (var f = 0; f < fills.length; f++) {
+    var w = parseFloat(fills[f].getAttribute("data-w"));
+    fills[f].style.width = (w * 100) + "%";
+    fills[f].style.background = "repeating-linear-gradient(90deg,#c9a227 0 2px,#4d3c10 2px 4px)";
+    var thumb = fills[f].parentNode.querySelector(".legend-thumb");
+    thumb.style.left = "calc(" + (w * 100) + "% - 2px)";
+  }
+}
+
+/* ======================================================================== */
+/* CONTRAST VALIDATION (risk #1, §6) — measured from the baked pixels       */
+/* ======================================================================== */
+function relLum(r, g, b) {
+  function ch(v) { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }
+  return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+}
+function hexLum(hex) {
+  return relLum(parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16));
+}
+function ratio(l1, l2) {
+  var a = Math.max(l1, l2), b = Math.min(l1, l2);
+  return (a + 0.05) / (b + 0.05);
+}
+/* darkest-decile luminance of a folio-bg region (CSS-px rect) */
+function zoneLum(x, y, w, h) {
+  var d = FB.dpr;
+  var img = FB.c.getImageData(Math.round(x * d), Math.round(y * d), Math.round(w * d), Math.round(h * d)).data;
+  var lums = [];
+  for (var i = 0; i < img.length; i += 4 * 7) { /* sample every 7th px */
+    lums.push(relLum(img[i], img[i + 1], img[i + 2]));
+  }
+  lums.sort(function (a, b) { return a - b; });
+  return lums[Math.floor(lums.length * 0.10)]; /* 10th pct — worst-case paper */
+}
+function runContrast() {
+  var plateZone = zoneLum(plateRect.x + plateRect.w * 0.25, plateRect.y + plateRect.h * 0.25,
+                          plateRect.w * 0.5, plateRect.h * 0.5);
+  var fr = folioBgCv.getBoundingClientRect();
+  var app = document.querySelector(".apparatus").getBoundingClientRect();
+  var textZone = zoneLum(app.left - fr.left + 4, app.top - fr.top + 4, app.width - 8, app.height - 8);
+  var rows = [
+    ["(a) ink contour (ink-0) vs plate zone", ratio(hexLum(PAL.ink[0]), plateZone)],
+    ["(b) VT323 body (ink-1) vs parchment", ratio(hexLum(PAL.ink[1]), textZone)],
+    ["(c) rubric (rubric-0) vs parchment", ratio(hexLum(PAL.rubric[0]), textZone)],
+  ];
+  var tbl = document.getElementById("contrast-table");
+  var html = "";
+  var allPass = true;
+  for (var i = 0; i < rows.length; i++) {
+    var ok = rows[i][1] >= 4.5;
+    if (!ok) allPass = false;
+    html += "<tr><td>" + rows[i][0] + "</td><td class='" + (ok ? "pass" : "fail") + "'>"
+          + rows[i][1].toFixed(2) + ":1 " + (ok ? "PASS" : "FAIL") + "</td></tr>";
+  }
+  tbl.innerHTML = html;
+  document.getElementById("contrast-note").textContent = allPass
+    ? "measured vs darkest-decile baked paper in each zone · threshold 4.5:1 · far-limb hairline (ink-3) is a depth cue, exempt by design"
+    : "ADJUST: a zone is baking too dark — see design notes";
+}
+
+/* ======================================================================== */
+/* INIT — after fonts settle so Jacquard/VT323 canvases measure right       */
+/* ======================================================================== */
+function init() {
+  sizePlate();
+  bakeFolio();
+  drawEmblem();
+  drawSceneProg();
+  drawVolvelle();
+  drawAthanor();
+  drawAir();
+  drawChord();
+  drawTree();
+  drawDensity();
+  drawSeal();
+  drawVoiceSigils();
+  runContrast();
+  requestAnimationFrame(frame);
+}
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(function () { setTimeout(init, 30); });
+} else {
+  window.addEventListener("load", function () { setTimeout(init, 60); });
+}
+})();
+</script>
+</script>
+</body>
+</html>

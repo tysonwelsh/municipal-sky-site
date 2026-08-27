@@ -1,0 +1,17 @@
+USE tdrivemy_db_29_2_mysql;
+
+SELECT DISTINCT
+    cmr.element_id,
+    cmr.element_name,
+    cmr.description,
+    COUNT(DISTINCT wc.onetsoc_code) as num_occupations_with_data,
+    ROUND(AVG(wc.data_value), 2) as overall_avg_value,
+    ROUND(MIN(wc.data_value), 2) as min_value,
+    ROUND(MAX(wc.data_value), 2) as max_value,
+    ROUND(STDDEV(wc.data_value), 2) as std_dev
+FROM content_model_reference cmr
+INNER JOIN work_context wc ON cmr.element_id = wc.element_id
+WHERE wc.scale_id = 'CX'
+    AND wc.data_value IS NOT NULL
+GROUP BY cmr.element_id, cmr.element_name, cmr.description
+ORDER BY cmr.element_name;

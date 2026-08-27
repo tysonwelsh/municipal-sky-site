@@ -1,0 +1,261 @@
+/* ============================================================================
+   KIMI'S TAKE — a spin-off of The Carbon Rain (art/carbon-rain/).
+   One sheet of engineering paper, ruled the house way (9px fine, 45px heavy),
+   with the rain falling down its own rules. Everything is absolute px: the
+   ruling does NOT scale with the sheet, so a bigger sheet simply holds more
+   columns. That is the point — the paper stays the same paper.
+   ========================================================================== */
+.cr-page {
+  --cr-paper: #f8f3e2;
+  --cr-ink: #4a628a;          /* the ruling's own colour, struck solid */
+  --cr-type: #33240f;
+  --cr-type-2: rgba(51, 36, 15, 0.62);
+  --cr-type-3: rgba(51, 36, 15, 0.40);
+  --cr-rule: rgba(74, 53, 18, 0.34);
+  /* THE ZOOM. One number scales the whole piece: the paper's ruling, the
+     square each glyph sits in, and every script's font-size. The characters
+     are NOT re-tuned per zoom level — each script's size was measured once so
+     its advance matches the Latin's, and multiplying them all by the same
+     factor keeps that true. Change --cr-zoom and --cr-cell together: the cell
+     is 9px x zoom, and carbon-rain.js reads the cell straight off this
+     element, so the two can never drift apart. */
+  --cr-zoom: 2;
+  --cr-cell: 18px;          /* 9px x --cr-zoom */
+  --cr-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --cr-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  /* the site's own white ground shows through: the sheet of paper is the
+     only object on the page (owner, 2026-08-21) */
+  padding: clamp(14px, 3vw, 30px) clamp(10px, 3vw, 34px) 34px;
+}
+
+/* ---- the sheet ------------------------------------------------------------
+   Height-driven so it always fits the window under the banner, and wide
+   enough to carry a real number of columns. */
+.cr-sheet {
+  position: relative;
+  width: min(1180px, 100%);
+  height: min(calc(100vh - 180px), 900px);
+  min-height: 380px;
+  margin: 0 auto;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.19) 0 1px, transparent 1px calc(var(--cr-cell) * 5)),
+    repeating-linear-gradient(0deg,  rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    repeating-linear-gradient(90deg, rgba(74, 98, 138, 0.08) 0 1px, transparent 1px var(--cr-cell)),
+    var(--cr-paper);
+  border: 1px solid rgba(55, 65, 79, 0.30);
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+.cr-rain { position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+  display: block; overflow: hidden; }
+/* a stream is one strip of glyphs riding one PATH. Positions are written by
+   the JS renderer straight to each glyph's transform — the same arithmetic
+   as the reservation table, from the same clock. The container just anchors
+   the coordinate system and the opacity. */
+.cr-s { position: absolute; top: 0; left: 0; display: block;
+  opacity: var(--cr-o); }
+.cr-g {
+  position: absolute; top: 0; left: 0;
+  display: block; text-align: center;
+  width: var(--cr-cell); height: var(--cr-cell); line-height: var(--cr-cell);
+  font-family: var(--cr-mono); font-style: normal; color: var(--cr-ink);
+  overflow: hidden;
+}
+/* mirror and pinwheel live on the INNER wrapper: a glyph's spin/mirror must
+   never share a transform with the JS-written translate on the outer cell —
+   the scale/rotate would multiply the translation and teleport the glyph */
+.cr-g u { display: block; width: 100%; height: 100%; line-height: inherit;
+  text-decoration: none;   /* it is a wrapper, not an underline */ }
+.cr-g u.is-rev  { transform: scaleX(-1); }
+.cr-g.is-spin { overflow: hidden; }  /* the 0.65 scale in crSpin keeps the
+  rotating box inside its square; hidden is belt-and-braces against ink spill */
+.cr-lat { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-dig { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-mrk { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-grk { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-cyr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-heb { font-size: calc(10px * var(--cr-zoom)); }
+.cr-arb { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-dev { font-size: calc(8.9px * var(--cr-zoom)); }
+.cr-geo { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-arm { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-cjk { font-size: calc(6px * var(--cr-zoom)); }
+.cr-han { font-size: calc(7.5px * var(--cr-zoom)); }
+.cr-tha { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-che { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-des { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-tib { font-size: calc(12px * var(--cr-zoom)); }
+.cr-brh { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-sid { font-size: calc(8.3px * var(--cr-zoom)); }
+.cr-shr { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-gra { font-size: calc(6.8px * var(--cr-zoom)); }
+.cr-khr { font-size: calc(10px * var(--cr-zoom)); }
+.cr-ben { font-size: calc(9px * var(--cr-zoom)); }
+.cr-gur { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-guj { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-ori { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-tam { font-size: calc(8.1px * var(--cr-zoom)); }
+.cr-tel { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-kan { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-mal { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-sin { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-mya { font-size: calc(7.3px * var(--cr-zoom)); }
+.cr-khm { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-run { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-got { font-size: calc(9.3px * var(--cr-zoom)); }
+.cr-ita { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-phn { font-size: calc(9.1px * var(--cr-zoom)); }
+.cr-lnb { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-cop { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-tfn { font-size: calc(9.8px * var(--cr-zoom)); }
+.cr-osa { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-shw { font-size: calc(11.9px * var(--cr-zoom)); }
+.cr-vai { font-size: calc(7.9px * var(--cr-zoom)); }
+.cr-adl { font-size: calc(8.2px * var(--cr-zoom)); }
+.cr-nko { font-size: calc(11.1px * var(--cr-zoom)); }
+.cr-yii { font-size: calc(10.4px * var(--cr-zoom)); }
+.cr-gla { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-eth { font-size: calc(6.6px * var(--cr-zoom)); }
+.cr-syr { font-size: calc(8px * var(--cr-zoom)); }
+.cr-thn { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lao { font-size: calc(10.1px * var(--cr-zoom)); }
+.cr-bam { font-size: calc(9.9px * var(--cr-zoom)); }
+.cr-ave { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-olt { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-arc { font-size: calc(9.2px * var(--cr-zoom)); }
+.cr-nab { font-size: calc(11.4px * var(--cr-zoom)); }
+.cr-pal { font-size: calc(10px * var(--cr-zoom)); }
+.cr-man { font-size: calc(7.6px * var(--cr-zoom)); }
+.cr-car { font-size: calc(8.8px * var(--cr-zoom)); }
+.cr-lyc { font-size: calc(9.5px * var(--cr-zoom)); }
+.cr-lyd { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-ugr { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-opr { font-size: calc(5.2px * var(--cr-zoom)); }
+.cr-mer { font-size: calc(7.2px * var(--cr-zoom)); }
+.cr-olc { font-size: calc(9.6px * var(--cr-zoom)); }
+.cr-cham { font-size: calc(5.5px * var(--cr-zoom)); }
+.cr-bali { font-size: calc(5.8px * var(--cr-zoom)); }
+.cr-java { font-size: calc(5.6px * var(--cr-zoom)); }
+.cr-bugi { font-size: calc(6.2px * var(--cr-zoom)); }
+.cr-batk { font-size: calc(6.1px * var(--cr-zoom)); }
+.cr-lisu { font-size: calc(9.7px * var(--cr-zoom)); }
+.cr-bass { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-mend { font-size: calc(8.5px * var(--cr-zoom)); }
+.cr-wcho { font-size: calc(9.4px * var(--cr-zoom)); }
+.cr-rohg { font-size: calc(11px * var(--cr-zoom)); }
+.cr-tale { font-size: calc(10.3px * var(--cr-zoom)); }
+.cr-mth { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-pla { font-size: calc(10.0px * var(--cr-zoom)); }
+.cr-alc { font-size: calc(6.6px * var(--cr-zoom)); }
+
+/* pinwheels turn at 65% scale: an 18px box rotated raw has a ~25px bounding
+   box and sweeps into the neighbouring lane (or a crossing stream); scaled,
+   the rotating box's diagonal stays inside its own square, so even the
+   spinners can never touch another stream */
+@keyframes crSpin    { from { transform: rotate(0) scale(0.65); } to { transform: rotate(360deg) scale(0.65); } }
+@keyframes crSpinCcw { from { transform: rotate(0) scale(0.65); } to { transform: rotate(-360deg) scale(0.65); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .cr-g u.is-spin { animation: crSpin var(--cr-sd) linear infinite; }
+  .cr-g u.is-spin.is-ccw { animation-name: crSpinCcw; }
+}
+/* stillness: with no motion the sheet simply holds the page of type it was
+   first dealt (stream positions are written once at birth) */
+@media (prefers-reduced-motion: reduce) {
+  .cr-g u.is-spin { animation: none !important; }
+}
+
+/* the dial sits on the stamp's own rules: same width as the sheet, same
+   small monospace — it is furniture, not part of the piece */
+.cr-dial {
+  width: min(1180px, 100%); max-width: none;
+  margin: 12px auto 0; text-align: left;
+  display: flex; align-items: baseline; gap: 1.2em;
+  font-family: var(--cr-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--cr-type-3);
+}
+.cr-dial input[type="range"] {
+  width: 140px; margin: 0; vertical-align: middle;
+  accent-color: var(--cr-ink);
+}
+.cr-dial button {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: 1px solid var(--cr-type-3);
+  padding: 0.1em 0.9em 0.2em; cursor: pointer;
+}
+.cr-dial button:hover { color: var(--cr-ink); border-color: var(--cr-ink); }
+.cr-dial-live { opacity: 0.7; }
+
+.cr-build {
+  /* the SAME width rule as the sheet, so the stamp sits exactly under its
+     right edge; the site's own paragraph width would otherwise shrink it */
+  width: min(1180px, 100%); max-width: none;
+  margin: 12px auto 0; text-align: right;
+  font-family: var(--cr-mono); font-size: 0.5rem; letter-spacing: 0.14em;
+  color: var(--cr-type-3);
+}
+.cr-build-sep { padding: 0 0.5em; opacity: 0.55; }
+
+/* ---- the mini (mini.php) ---------------------------------------------------
+   The same piece at junk-drawer loading-card size: the engine is written in
+   cells, so zoom 1 (the house 9px grid — the darkroom swatch's own ruling) is
+   just a smaller --cr-cell, and every script's measured font-size follows
+   --cr-zoom down on its own. The sheet fills the whole frame and carries no
+   shadow (the frame's edge would clip it); the swatch it will live in has a
+   shadow of its own. */
+.cr-mini-page {
+  --cr-paper: #f8f3e2;
+  --cr-ink: #4a628a;
+  --cr-type: #33240f;
+  --cr-type-2: rgba(51, 36, 15, 0.62);
+  --cr-type-3: rgba(51, 36, 15, 0.40);
+  --cr-rule: rgba(74, 53, 18, 0.34);
+  --cr-zoom: 1;
+  --cr-cell: 9px;
+  --cr-mono: "Courier Prime", "Courier New", Courier, monospace;
+  --cr-form: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+             Georgia, serif;
+  margin: 0; height: 100%;
+  overflow: hidden;   /* the sheet fills the frame exactly; nothing may scroll */
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.cr-mini-page .cr-sheet {
+  width: 100%; height: 100%; min-height: 0;
+  /* iframed, the sheet IS the swatch and fills it; opened on its own it
+     stops at a darkroom swatch's measure (~41% x 33% of a desktop card)
+     instead of paving the whole window */
+  max-width: 300px; max-height: 243px;
+  box-sizing: border-box;   /* the 1px border must not push past the frame */
+  box-shadow: none;
+}
+/* the lab bench: solo viewing only — the junk drawer's frame never shows
+   it. It takes the sheet's width, so the two read as one instrument */
+.cr-mini-bench { display: none; }
+html.is-solo .cr-mini-bench { display: block; width: 300px; max-width: 100%; }
+.cr-mini-bench .cr-dial { width: 100%; }
+/* solo, it is a little sheet on the site's own white ground — the shadow
+   only ever shows here (a frame's edge would clip it). The class goes on
+   <html>: the canvas takes ITS background, so the paper must yield there.
+   The sheet's cap also makes room for the bench beneath it */
+html.is-solo { background: #fff; }
+html.is-solo .cr-sheet {
+  max-height: min(243px, calc(100% - 84px));
+  box-shadow: 0 10px 26px -10px rgba(46, 34, 12, 0.55),
+              0 2px 6px rgba(46, 34, 12, 0.28);
+}
+
+/* the frame the mini is iframed into on the piece's own page: roughly a
+   darkroom swatch (41% x 33% of a card) at a desktop card size */
+.cr-mini-frame {
+  display: block; border: 0; background: transparent;
+  width: min(300px, 90%); aspect-ratio: 41 / 33;
+  margin: 12px auto 0;
+}
+
+@media (max-width: 700px) {
+  .cr-sheet { height: min(calc(100vh - 170px), 660px); }
+  

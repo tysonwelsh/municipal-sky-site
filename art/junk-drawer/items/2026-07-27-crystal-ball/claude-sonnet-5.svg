@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 900">
+  <defs>
+    <filter id="rough1" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="24" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough2" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="12" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="12" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="rough3" x="-40%" y="-40%" width="180%" height="180%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="2" seed="21" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="30" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="blurS" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="blurM" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+    <filter id="blurL" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+
+    <radialGradient id="glassGrad" cx="38%" cy="32%" r="78%">
+      <stop offset="0%" stop-color="#f3f7ee" stop-opacity="0.95"/>
+      <stop offset="26%" stop-color="#bfe6dd" stop-opacity="0.6"/>
+      <stop offset="55%" stop-color="#9b86c9" stop-opacity="0.5"/>
+      <stop offset="80%" stop-color="#5a3a8f" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#341f5c" stop-opacity="0.65"/>
+    </radialGradient>
+
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f7e7b8" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#f7e7b8" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="washA" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e7c9e8" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#e7c9e8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="washB" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#bfe3da" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#bfe3da" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="washC" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f0c896" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#f0c896" stop-opacity="0"/>
+    </radialGradient>
+
+    <clipPath id="orbClip">
+      <circle cx="350" cy="432" r="212"/>
+    </clipPath>
+
+    <path id="star" d="M0,-10 L2.35,-3.24 L9.51,-3.09 L3.80,1.24 L5.88,8.09 L0,4 L-5.88,8.09 L-3.80,1.24 L-9.51,-3.09 L-2.35,-3.24 Z"/>
+    <path id="spark" d="M0,-14 C2,-4 4,-2 14,0 C4,2 2,4 0,14 C-2,4 -4,2 -14,0 C-4,-2 -2,-4 0,-14 Z"/>
+    <circle id="dot" cx="0" cy="0" r="1"/>
+    <path id="ray" d="M-16,0 L16,0 L6,-660 L-6,-660 Z"/>
+    <path id="leaf" d="M0,-58 C28,-56 42,-28 36,2 C31,30 12,52 -12,48 C-34,44 -43,14 -29,-16 C-19,-36 -10,-54 0,-58 Z"/>
+    <path id="leafVein" d="M-4,-32 C2,-18 3,-2 -3,14"/>
+    <path id="crescent" d="M0,-26 A26,26 0 1,0 0,26 A19,19 0 1,1 0,-26 Z"/>
+  </defs>
+
+  <!-- soft painterly background washes, edge to edge -->
+  <ellipse cx="350" cy="450" rx="430" ry="520" fill="url(#washB)" opacity="0.9"/>
+  <g filter="url(#rough3)">
+    <ellipse cx="120" cy="120" rx="320" ry="300" fill="url(#washA)" filter="url(#blurL)"/>
+    <ellipse cx="600" cy="150" rx="310" ry="320" fill="url(#washB)" filter="url(#blurL)"/>
+    <ellipse cx="90" cy="760" rx="320" ry="310" fill="url(#washC)" filter="url(#blurL)"/>
+    <ellipse cx="610" cy="780" rx="320" ry="320" fill="url(#washA)" filter="url(#blurL)"/>
+    <ellipse cx="350" cy="30" rx="300" ry="180" fill="url(#washC)" filter="url(#blurL)"/>
+    <ellipse cx="350" cy="870" rx="300" ry="180" fill="url(#washB)" filter="url(#blurL)"/>
+    <ellipse cx="350" cy="450" rx="330" ry="380" fill="url(#glow)" filter="url(#blurL)"/>
+  </g>
+
+  <!-- sunburst rays -->
+  <g opacity="0.85">
+    <use href="#ray" transform="translate(350,432) rotate(0)"   fill="#e8b64c" opacity="0.30" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(24)"  fill="#c2529a" opacity="0.26" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(48)"  fill="#3fa9a0" opacity="0.28" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(72)"  fill="#e8b64c" opacity="0.30" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(96)"  fill="#4b2e83" opacity="0.24" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(120)" fill="#3fa9a0" opacity="0.28" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(144)" fill="#c2529a" opacity="0.26" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(168)" fill="#e8b64c" opacity="0.30" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(192)" fill="#4b2e83" opacity="0.24" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(216)" fill="#3fa9a0" opacity="0.28" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(240)" fill="#c2529a" opacity="0.26" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(264)" fill="#e8b64c" opacity="0.30" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(288)" fill="#4b2e83" opacity="0.24" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(312)" fill="#3fa9a0" opacity="0.28" filter="url(#rough2)"/>
+    <use href="#ray" transform="translate(350,432) rotate(336)" fill="#c2529a" opacity="0.26" filter="url(#rough2)"/>
+  </g>
+
+  <!-- corner paisley / leaf motifs -->
+  <g fill="#3fa9a0" opacity="0.75" filter="url(#rough1)">
+    <use href="#leaf" transform="translate(70,95) rotate(-18) scale(1.05)"/>
+    <use href="#leafVein" transform="translate(70,95) rotate(-18) scale(1.05)" fill="none" stroke="#20544f" stroke-width="2" opacity="0.5"/>
+  </g>
+  <use href="#leaf" transform="translate(150,60) rotate(35) scale(0.6)" fill="#d9713c" opacity="0.7" filter="url(#rough1)"/>
+  <g fill="#c2529a" opacity="0.75" filter="url(#rough1)">
+    <use href="#leaf" transform="translate(632,100) rotate(198) scale(1.05)"/>
+    <use href="#leafVein" transform="translate(632,100) rotate(198) scale(1.05)" fill="none" stroke="#6e2748" stroke-width="2" opacity="0.5"/>
+  </g>
+  <use href="#leaf" transform="translate(555,58) rotate(150) scale(0.6)" fill="#e8b64c" opacity="0.7" filter="url(#rough1)"/>
+  <g fill="#4b2e83" opacity="0.75" filter="url(#rough1)">
+    <use href="#leaf" transform="translate(75,808) rotate(160) scale(1.05)"/>
+    <use href="#leafVein" transform="translate(75,808) rotate(160) scale(1.05)" fill="none" stroke="#241141" stroke-width="2" opacity="0.5"/>
+  </g>
+  <use href="#leaf" transform="translate(150,845) rotate(210) scale(0.6)" fill="#e8b64c" opacity="0.7" filter="url(#rough1)"/>
+  <g fill="#3fa9a0" opacity="0.75" filter="url(#rough1)">
+    <use href="#leaf" transform="translate(628,805) rotate(20) scale(1.05)"/>
+    <use href="#leafVein" transform="translate(628,805) rotate(20) scale(1.05)" fill="none" stroke="#20544f" stroke-width="2" opacity="0.5"/>
+  </g>
+  <use href="#leaf" transform="translate(552,845) rotate(-30) scale(0.6)" fill="#d9713c" opacity="0.7" filter="url(#rough1)"/>
+
+  <!-- crescent moons -->
+  <use href="#crescent" transform="translate(60,50) scale(1.6) rotate(20)" fill="#f7ead0" stroke="#4b2e83" stroke-width="1.5" opacity="0.95" filter="url(#rough1)"/>
+  <use href="#crescent" transform="translate(645,60) scale(1.6) rotate(160)" fill="#f7ead0" stroke="#4b2e83" stroke-width="1.5" opacity="0.95" filter="url(#rough1)"/>
+
+  <!-- scattered stars and sparkles -->
+  <use href="#star" transform="translate(35,220) scale(1.3)" fill="#e8b64c" opacity="0.8"/>
+  <use href="#star" transform="translate(660,240) scale(1.6)" fill="#c2529a" opacity="0.8"/>
+  <use href="#star" transform="translate(45,470) scale(1.1)" fill="#3fa9a0" opacity="0.75"/>
+  <use href="#star" transform="translate(655,500) scale(1.3)" fill="#e8b64c" opacity="0.8"/>
+  <use href="#star" transform="translate(90,650) scale(1.5)" fill="#f7ead0" opacity="0.85"/>
+  <use href="#star" transform="translate(615,660) scale(1.1)" fill="#d9713c" opacity="0.75"/>
+  <use href="#star" transform="translate(150,140) scale(0.8)" fill="#f7ead0" opacity="0.7"/>
+  <use href="#star" transform="translate(560,160) scale(0.9)" fill="#f7ead0" opacity="0.7"/>
+  <use href="#star" transform="translate(200,800) scale(0.9)" fill="#e8b64c" opacity="0.75"/>
+  <use href="#star" transform="translate(505,815) scale(1.0)" fill="#c2529a" opacity="0.75"/>
+  <use href="#spark" transform="translate(120,340) scale(0.6)" fill="#f7ead0" opacity="0.8"/>
+  <use href="#spark" transform="translate(600,370) scale(0.7)" fill="#f7ead0" opacity="0.8"/>
+  <use href="#spark" transform="translate(160,560) scale(0.5)" fill="#f7ead0" opacity="0.7"/>
+  <use href="#spark" transform="translate(545,580) scale(0.6)" fill="#f7ead0" opacity="0.7"/>
+
+  <!-- mala-bead dotted borders -->
+  <g fill="#4b2e83" opacity="0.6">
+    <use href="#dot" transform="translate(20,20) scale(3)"/>
+    <use href="#dot" transform="translate(60,15) scale(2.4)"/>
+    <use href="#dot" transform="translate(100,22) scale(3.2)"/>
+    <use href="#dot" transform="translate(600,18) scale(3.2)"/>
+    <use href="#dot" transform="translate(640,24) scale(2.4)"/>
+    <use href="#dot" transform="translate(680,16) scale(3)"/>
+    <use href="#dot" transform="translate(20,880) scale(3)"/>
+    <use href="#dot" transform="translate(60,875) scale(2.4)"/>
+    <use href="#dot" transform="translate(100,882) scale(3.2)"/>
+    <use href="#dot" transform="translate(600,878) scale(3.2)"/>
+    <use href="#dot" transform="translate(640,884) scale(2.4)"/>
+    <use href="#dot" transform="translate(680,876) scale(3)"/>
+  </g>
+
+  <!-- ORB outer soft glow -->
+  <circle cx="350" cy="432" r="255" fill="url(#glow)" filter="url(#blurL)"/>
+
+  <!-- ORB base watercolor layers -->
+  <circle cx="350" cy="432" r="215" fill="url(#glassGrad)" filter="url(#rough1)"/>
+  <circle cx="336" cy="418" r="205" fill="#8f5bb0" opacity="0.18" filter="url(#rough1)"/>
+  <circle cx="368" cy="452" r="200" fill="#3fa9a0" opacity="0.16" filter="url(#rough3)"/>
+  <circle cx="350" cy="432" r="212" fill="none" stroke="#341f5c" stroke-width="9" opacity="0.55" filter="url(#rough1)"/>
+
+  <!-- misty interior, clipped -->
+  <g clip-path="url(#orbClip)">
+    <circle cx="350" cy="432" r="215" fill="#efe7f5" opacity="0.28"/>
+    <path d="M180,380 C240,320 300,340 330,400 C355,450 300,470 340,510 C370,540 430,520 470,470 C500,432 480,390 520,360"
+          fill="none" stroke="#f6f1e6" stroke-width="26" stroke-linecap="round" opacity="0.35" filter="url(#blurM)"/>
+    <path d="M200,520 C260,560 300,500 360,520 C410,536 420,590 480,570"
+          fill="none" stroke="#cfe9e4" stroke-width="22" stroke-linecap="round" opacity="0.4" filter="url(#blurM)"/>
+    <path d="M220,300 C270,270 330,300 350,350 C365,388 420,380 460,340"
+          fill="none" stroke="#d9c9ec" stroke-width="20" stroke-linecap="round" opacity="0.35" filter="url(#blurM)"/>
+    <path d="M300,260 C330,310 320,360 360,400 C400,440 390,500 340,540 C300,570 270,540 260,590"
+          fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.3" filter="url(#blurS)"/>
+    <ellipse cx="380" cy="470" rx="70" ry="50" fill="#b7a4d8" opacity="0.25" filter="url(#blurM)"/>
+    <ellipse cx="300" cy="400" rx="60" ry="42" fill="#9fd6cd" opacity="0.22" filter="url(#blurM)"/>
+    <ellipse cx="270" cy="330" rx="90" ry="60" fill="#f3ecda" opacity="0.35" filter="url(#blurL)"/>
+
+    <!-- crack -->
+    <path d="M270,235 L292,278 L280,300 L312,340 L298,368 L336,412 L322,438 L358,486 L344,520 L372,580"
+          fill="none" stroke="#2a1b45" stroke-width="2.4" opacity="0.55"/>
+    <path d="M268,233 L290,276 L278,298 L310,338 L296,366 L334,410 L320,436 L356,484 L342,518 L370,578"
+          fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.85"/>
+    <path d="M292,278 L322,290 L340,272" fill="none" stroke="#2a1b45" stroke-width="1.6" opacity="0.45"/>
+    <path d="M312,340 L280,352 L268,336" fill="none" stroke="#2a1b45" stroke-width="1.4" opacity="0.4"/>
+    <path d="M336,412 L368,420 L384,402" fill="none" stroke="#2a1b45" stroke-width="1.4" opacity="0.4"/>
+    <use href="#spark" transform="translate(292,278) scale(0.45)" fill="#ffffff" opacity="0.9"/>
+    <use href="#spark" transform="translate(336,412) scale(0.35)" fill="#ffffff" opacity="0.8"/>
+    <use href="#spark" transform="translate(358,486) scale(0.3)" fill="#ffffff" opacity="0.75"/>
+
+    <!-- glass sheen -->
+    <ellipse cx="278" cy="350" rx="70" ry="100" fill="#ffffff" opacity="0.3" filter="url(#blurM)" transform="rotate(-18 278 350)"/>
+    <path d="M240,290 A170,170 0 0,1 320,250" fill="none" stroke="#ffffff" stroke-width="6" opacity="0.5" stroke-linecap="round" filter="url(#blurS)"/>
+  </g>
+
+  <!-- rim brush outline for painted glass edge -->
+  <circle cx="350" cy="432" r="216" fill="none" stroke="#4b2e83" stroke-width="5" opacity="0.5" filter="url(#rough2)"/>
+  <circle cx="350" cy="432" r="220" fill="none" stroke="#e8b64c" stroke-width="2.5" opacity="0.4" filter="url(#rough2)"/>
+
+  <!-- small sparkles right beside the ball -->
+  <use href="#spark" transform="translate(555,300) scale(0.8)" fill="#f7ead0" opacity="0.85"/>
+  <use href="#star" transform="translate(140,560) scale(1.2)" fill="#e8b64c" opacity="0.8"/>
+</svg>

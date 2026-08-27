@@ -1,0 +1,45 @@
+{
+  "schema": 2,
+  "id": "2026-07-26-skeleton-key",
+  "title": "Brass skeleton key",
+  "prompt": "A single antique brass skeleton key viewed from directly above, lying at a slight angle on a transparent background. Vintage engraving style: fine hatched linework, warm brass tones, an ornate bow with a clover-shaped cutout, a long stem, and a single toothed bit. No background shapes, no text.",
+  "created": "2026-07-26",
+  "tags": [
+    "hardware",
+    "vintage"
+  ],
+  "sizeClass": "s",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-26",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-07-26",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": {
+          "value": 2.0,
+          "note": "The 'clover-shaped cutout' renders as three separate round holes; the lobes never merge into a clover."
+        },
+        "geometry": {
+          "value": 2.0,
+          "note": "The bit floats visibly clear of the stem tip — a detached join the model did not close."
+        },
+        "color": {
+          "value": 2.0,
+          "note": "Flat fills; the brass warmth is carried by the hatch overlays rather than tonal modeling."
+        },
+        "composition": 3.0
+      },
+      "transcript": null,
+      "notes": "Schema fixture: first item, added while scaffolding the backend. Grade and annotations are a provisional self-assessment by the generating model — owner to regrade. viewBox normalized 2026-07-26: tightened from \"0 0 240 480\" to measured ink bounds (framing metadata only; artwork bytes untouched)."
+    }
+  ]
+}

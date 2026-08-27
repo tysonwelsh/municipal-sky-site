@@ -1,0 +1,3793 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>U.S. Occupations Treemap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Renaissance Typography: Cormorant Garamond + Cormorant SC for body; IM Fell Great Primer for display -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:wght@400;500;600&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="underworld-occupations.css" />
+  </head>
+  <body class="p-5 md:p-10">
+    <!-- Page Header -->
+    <div class="post-container">
+      <header>
+        <h1 class="display-heading">Classifying Rabelais&rsquo;s Underworld With the Bureau of Labor Statistics</h1>
+        <p class="post-date">2026.02.23</p>
+      </header>
+    </div>
+
+    <!-- Introduction (pre-chart) -->
+    <div class="post-container">
+      <section class="prose-flow">
+        <p>
+          One of the texts I had the most fun exploring with large language
+          models is the 16th century novel <em>Gargantua and Pantagruel</em>
+          by French satirist Fran&ccedil;ois Rabelais. I&rsquo;ve found the
+          translation of these books available on
+          <a href="https://www.gutenberg.org/ebooks/1200" target="_blank" rel="noopener"
+            >Project Gutenberg</a
+          >
+          to be a rich source of challenging prompts, because they are full of
+          elaborate wordplay, and a Renaissance frame of reference that does
+          not fit neatly into modern categories.
+        </p>
+        <p>
+          In
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link22HCH0029" target="_blank" rel="noopener"
+            >one chapter</a
+          >
+          the scholar Epistemon recounts a brief tour of the underworld,
+          where he sees once great figures of history reduced to
+          performing menial occupations. For example, he describes Alexander
+          the Great as &ldquo;amending and patching on clouts upon old
+          breeches and stockings,&rdquo; or Cleopatra as &ldquo;a crier of
+          onions.&rdquo; Before the chapter is finished, Rabelais catalogs
+          the underworld labors of ninety figures, including Roman emperors,
+          popes, mythological heroes, and knights of medieval romance.
+        </p>
+        <p>
+          Rabelais&rsquo;s novels are full of such long, absurd catalogs,
+          including
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link2HCH0022" target="_blank" rel="noopener"
+            >made-up children&rsquo;s games</a
+          >,
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link22HCH0007" target="_blank" rel="noopener"
+            >non-existent books</a
+          >, and
+          <a href="https://www.gutenberg.org/files/1200/1200-h/1200-h.htm#link42HCH0059" target="_blank" rel="noopener"
+            >offerings to the ventripotent god</a
+          >
+          of a gluttonous cult. In my work
+          on RLHF projects I&rsquo;ve found they make great material for
+          categorization prompts. I sent the chapter listing the laborers of
+          the underworld to three large language models and asked each to
+          classify every figure&rsquo;s job using the
+          <a href="https://www.bls.gov/soc/2018/major_groups.htm" target="_blank" rel="noopener"
+            >Standard Occupational Classification (SOC)</a
+          >
+          system from the U.S. Bureau of Labor Statistics. This lets us
+          measure the labor conditions of
+          Rabelais&rsquo;s underworld and see how they compare to those of
+          the 2024 U.S. workforce. I created the slide deck below to share
+          the results.
+        </p>
+      </section>
+    </div>
+
+    <!--__CHART_UNDERWORLD_LABOR_MARKET__-->
+
+    <!-- Transition between slide deck and dashboard -->
+    <div class="post-container">
+      <section class="prose-flow">
+        <p>
+          In addition to the slide deck which tells the story of the data,
+          I also created an interactive dashboard you can use to explore it
+          yourself. It visualizes the BLS&rsquo;s categories as a treemap,
+          with each underworld figure depicted as a ghost in the
+          occupational category its underworld labor was classified under.
+          Click any group to drill down through the SOC hierarchy until you
+          reach an individual occupation, where the dashboard shows its
+          workplace injury rate, work context, wage distribution, and more.
+        </p>
+      </section>
+    </div>
+
+    <div class="max-w-[1020px] mx-auto mt-16">
+      <!-- Unified Dashboard Frame -->
+      <div id="dashboard-container" class="dashboard-frame">
+        <!-- Frame Header (Navigation) -->
+        <div class="dashboard-frame-header">
+          <button class="nav-btn" id="back-btn" onclick="handleBack()" disabled>
+            ☜ Back
+          </button>
+          <span class="level-title" id="level-title"
+            >All Occupation Groups</span
+          >
+          <button class="nav-btn" id="reset-btn" onclick="handleReset()">
+            Reset
+          </button>
+        </div>
+        <!-- Frame Body -->
+        <div class="dashboard-frame-body">
+          <!-- Frame backgrounds - absolutely positioned, don't affect layout -->
+          <div class="frame-backgrounds" id="frame-backgrounds">
+            <div id="frame-bg-1" class="frame-bg"></div>
+            <div id="frame-bg-2" class="frame-bg"></div>
+            <div id="frame-bg-3" class="frame-bg"></div>
+            <div id="frame-bg-4" class="frame-bg"></div>
+          </div>
+          <!-- Frame labels container - absolutely positioned -->
+          <div class="frame-labels" id="frame-labels"></div>
+          <!-- Content wrapper - fixed layout, unaffected by frames -->
+          <div class="content-wrapper">
+            <!-- Treemap Section -->
+            <div id="viz-container"></div>
+            <!-- Sidebar wrapper - padded to match innermost frame -->
+            <div id="sidebar-wrapper" class="sidebar-wrapper">
+              <!-- Sidebar/Data Panels Section -->
+              <div class="sidebar-content-inner">
+                <div class="w-full flex flex-row overflow-visible">
+                  <!-- Wage Distribution Panel (Nuremberg frame) -->
+                  <div class="sidebar-panel-wage frame-nuremberg">
+                    <div id="raincloud-title" class="nuremberg-title-banner">
+                      Wage Distribution
+                    </div>
+                    <div id="raincloud-container" class="w-full"></div>
+                  </div>
+                  <!-- RIASEC Panel (Nuremberg frame) -->
+                  <div class="sidebar-panel-riasec frame-nuremberg">
+                    <div
+                      id="riasec-container"
+                      class="flex flex-col items-center overflow-visible"
+                    >
+                      <p
+                        class="py-10 text-sm"
+                        style="
+                          font-family: var(--font-family);
+                          font-style: italic;
+                          color: #5c4a38;
+                        "
+                      >
+                        Loading...
+                      </p>
+                    </div>
+                  </div>
+                  <!-- Employment Type Panel (Nuremberg frame) -->
+                  <div class="sidebar-panel-employment frame-nuremberg">
+                    <div
+                      id="employment-type-title"
+                      class="nuremberg-title-banner"
+                    >
+                      Employment Type
+                    </div>
+                    <div id="employment-type-container" class="w-full">
+                      <p
+                        class="text-sm"
+                        style="
+                          font-family: var(--font-family);
+                          font-style: italic;
+                          color: #5c4a38;
+                        "
+                      >
+                        Loading...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p
+        class="mt-4 mb-1"
+        style="
+          font-family: var(--font-family);
+          font-style: italic;
+          color: #5c5347;
+        "
+      >
+        Click to drill down. At detailed occupation level, click a cell to see
+        the dashboard.
+      </p>
+      <p
+        class="mb-4"
+        style="
+          font-family: var(--font-family-data);
+          font-size: 11px;
+          color: #5c4a38;
+          letter-spacing: 0.05em;
+        "
+      >
+        v1.9
+      </p>
+    </div>
+
+    <!-- Works Consulted -->
+    <div class="post-container works-consulted">
+      <section class="prose-flow">
+        <h3>Data Sources</h3>
+        <p>
+          U.S. Bureau of Labor Statistics. <em>Occupational Employment and
+          Wage Statistics</em> (OEWS), May 2024. Wages and employment counts.
+          <a href="https://www.bls.gov/oes/" target="_blank" rel="noopener"
+            >bls.gov/oes</a
+          >.
+        </p>
+        <p>
+          U.S. Bureau of Labor Statistics. <em>Survey of Occupational
+          Injuries and Illnesses</em> (SOII). Workplace injury and illness
+          rates by occupation.
+          <a href="https://www.bls.gov/iif/" target="_blank" rel="noopener"
+            >bls.gov/iif</a
+          >.
+        </p>
+        <p>
+          U.S. Bureau of Labor Statistics. <em>Employment Projections</em>
+          &mdash; National Employment Matrix. Employment type and industry
+          breakdowns by occupation.
+          <a href="https://www.bls.gov/emp/" target="_blank" rel="noopener"
+            >bls.gov/emp</a
+          >.
+        </p>
+        <p>
+          Interest profiles (RIASEC) and work-context measures are from
+          <a href="https://www.onetonline.org/" target="_blank" rel="noopener"
+            >O*NET OnLine</a
+          >, by the U.S. Department of Labor,
+          <a href="https://www.dol.gov/agencies/eta" target="_blank" rel="noopener"
+            >Employment and Training Administration</a
+          >
+          (USDOL/ETA). For this project, occupation-level O*NET values were
+          aggregated to SOC groups and weighted by employment.
+        </p>
+        <p>
+          Text marked with &ldquo;&#x1F916;&rdquo; is AI generated, including
+          the biographical descriptions of underworld figures. Each
+          description has been reviewed for factual accuracy.
+        </p>
+
+        <h3>Image Credits</h3>
+        <p>
+          All illustrations are from Frank C. Pap&eacute;&rsquo;s
+          illustrations for <em>The Works of Rabelais</em>, trans. Urquhart
+          &amp; Motteux (London: John Lane / New York: Boni and Liveright,
+          1927). Public domain.
+        </p>
+      </section>
+    </div>
+
+    <!-- Ghost Animation Module -->
+    <script src="ghost-animation.js?v=ac09799d"></script>
+    <script>
+      // ===========================================
+      // RENAISSANCE PIGMENT PALETTE
+      // ===========================================
+      const PIGMENTS = [
+        {
+          name: "Vermillion",
+          colors: ["#a65c53", "#b47d6e", "#c09885", "#cbb199"],
+        },
+        {
+          name: "Ultramarine",
+          colors: ["#576d84", "#747d86", "#979894", "#b7b1a1"],
+        },
+        {
+          name: "Verdigris",
+          colors: ["#5c7a68", "#81927d", "#9fa58e", "#bbb89e"],
+        },
+        {
+          name: "Minium",
+          colors: ["#b5704a", "#c48c68", "#cfa383", "#d9b89c"],
+        },
+        {
+          name: "Tyrian Purple",
+          colors: ["#75526b", "#92767f", "#aa938f", "#c1af9e"],
+        },
+        {
+          name: "Burnt Sienna",
+          colors: ["#8c6e56", "#a28970", "#b5a086", "#c6b59a"],
+        },
+        {
+          name: "Madder Lake",
+          colors: ["#8a5a6e", "#a17b81", "#b49791", "#c5b19f"],
+        },
+        {
+          name: "Woad",
+          colors: ["#507880", "#769194", "#98a8a4", "#b5bcb2"],
+        },
+        {
+          name: "Sap Green",
+          colors: ["#6a7a52", "#8a926d", "#a5a584", "#beb899"],
+        },
+        {
+          name: "Orpiment",
+          colors: ["#b09858", "#bba772", "#c5b387", "#cebe9a"],
+        },
+        {
+          name: "Pumice",
+          colors: ["#7e7a6d", "#989480", "#adaa92", "#c0bda4"],
+        },
+      ];
+
+      // Perceptual cycle: indices into PIGMENTS arranged so that
+      // similar hue families are maximally separated.
+      const PIGMENT_CYCLE = [0, 1, 9, 2, 5, 4, 8, 6, 3, 7, 10];
+
+      // Populated in createTreemap() after employment data is available
+      let majorGroupPigmentMap = new Map();
+
+      function getPigment(majorGroupName) {
+        const idx = majorGroupPigmentMap.get(majorGroupName);
+        return idx !== undefined ? PIGMENTS[idx] : PIGMENTS[PIGMENT_CYCLE[0]];
+      }
+
+      function getCellColor(d, focusDepth, focusNode) {
+        let majorName;
+        if (focusDepth === 0) {
+          majorName = d.data.name;
+        } else {
+          let mg = focusNode;
+          while (mg.depth > 1) mg = mg.parent;
+          majorName = mg.data.name;
+        }
+        return getPigment(majorName).colors[Math.min(focusDepth, 3)];
+      }
+
+      function getFrameColors(majorGroupName, depth) {
+        const pigment = getPigment(majorGroupName);
+        const tintIndex = Math.min(depth - 1, 3);
+        return {
+          fill: pigment.colors[tintIndex],
+          stroke: d3.color(pigment.colors[0]).darker(0.3).formatHex(),
+          text: "#1a1408",
+        };
+      }
+
+      // ===========================================
+      // RIASEC CONFIG
+      // ===========================================
+      const RIASEC = {
+        realistic: {
+          name: "Realistic",
+          code: 1,
+          color: "#a65c53",
+          initial: "R",
+        },
+        investigative: {
+          name: "Investigative",
+          code: 2,
+          color: "#576d84",
+          initial: "I",
+        },
+        artistic: { name: "Artistic", code: 3, color: "#6a7a52", initial: "A" },
+        social: { name: "Social", code: 4, color: "#b5704a", initial: "S" },
+        enterprising: {
+          name: "Enterprising",
+          code: 5,
+          color: "#8a5a6e",
+          initial: "E",
+        },
+        conventional: {
+          name: "Conventional",
+          code: 6,
+          color: "#b09858",
+          initial: "C",
+        },
+      };
+      const RIASEC_KEYS = Object.keys(RIASEC);
+      const LETTER_SVG_BASE = "../assets/riasec-letters/";
+
+      // ===========================================
+      // GLOBAL STATE
+      // ===========================================
+      const g = {
+        width: 250,
+        rootNode: null,
+        nationalStats: null,
+        nationalTotalEmp: null,
+        workContextData: new Map(),
+        detailedViewActive: false,
+        currentDetailedOcc: null,
+        currentFocus: null,
+        renderFn: null,
+        charactersData: null,
+        svg: null,
+        frameGroup: null,
+        rectGroup: null,
+        labelGroup: null,
+        dotGroup: null,
+        dashboardGroup: null,
+        tooltip: null,
+        svgWidth: 1020,
+        svgHeight: 605,
+        riasecData: {
+          national: null,
+          major: new Map(),
+          minor: new Map(),
+          broad: new Map(),
+          detailed: new Map(),
+        },
+        riasecDescriptions: {},
+        injuryData: {
+          national: null,
+          major: new Map(),
+          minor: new Map(),
+          broad: new Map(),
+          detailed: new Map(),
+        },
+        employmentTypeData: {
+          national: null,
+          major: new Map(),
+          minor: new Map(),
+          broad: new Map(),
+          detailed: new Map(),
+        },
+        industryData: {
+          detailed: new Map(),
+        },
+        allOccupationsExpanded: [],
+        kdeBandwidth: 7000,
+      };
+      const wcCarouselState = { index: 0, total: 0, elements: [] };
+
+      const WOODCUT_CONFIG = {
+        bg: "#d6c9ad",
+        stroke: "#1a1408",
+        strokeWidth: 1,
+        fontFamily: "'Cormorant Garamond', serif",
+        scFont: "'Cormorant SC', serif",
+        dataFont: "'Cormorant Garamond', Georgia, serif",
+      };
+
+      // ===========================================
+      // WORK CONTEXT CHART CONFIGURATION
+      // ===========================================
+      const WC_COLORS_UNDESIRABLE = [
+        "#a65c53",
+        "#b47d6e",
+        "#c09885",
+        "#cbb199",
+        "#d6c9ad",
+      ];
+      const WC_COLORS_DESIRABLE = [
+        "#d6c9ad",
+        "#cbb199",
+        "#c09885",
+        "#b47d6e",
+        "#a65c53",
+      ];
+      const WC_GRID_TICKS = [0, 25, 50, 75, 100];
+      const WC_MAX_PERCENTAGE = 100;
+      const WC_BAR_AREA_WIDTH = 265;
+
+      // ===========================================
+      // UTILITY FUNCTIONS
+      // ===========================================
+      function safeParseFloat(value) {
+        const parsed = parseFloat(value);
+        return isNaN(parsed) || value === null || value === undefined
+          ? null
+          : parsed;
+      }
+      function abbreviateNumber(num) {
+        const parsedNum = safeParseFloat(num);
+        if (parsedNum === null) return "N/A";
+        if (parsedNum >= 1e6) return (parsedNum / 1e6).toFixed(2) + "M";
+        if (parsedNum >= 1e3) return (parsedNum / 1e3).toFixed(0) + "K";
+        return parsedNum.toLocaleString(undefined, {
+          maximumFractionDigits: 0,
+        });
+      }
+      function formatCurrency(num) {
+        if (num === null || num === undefined || isNaN(num)) return "N/A";
+        return "$" + abbreviateNumber(num);
+      }
+      function formatInjuryRate(rate) {
+        if (rate === null || rate === undefined || isNaN(rate) || rate <= 0)
+          return null;
+        return Math.round(10000 / rate);
+      }
+      function formatWorkforcePct(val) {
+        if (val === null) return "N/A";
+        if (val < 0.01) return "<0.01%";
+        if (val < 0.1) return val.toFixed(3) + "%";
+        if (val < 1) return val.toFixed(2) + "%";
+        return val.toFixed(1) + "%";
+      }
+      function wrapTextFull(text, maxLength) {
+        let abbreviated = text
+          .replace(/Miscellaneous/g, "Misc.")
+          .replace(/ and /g, " & ");
+        if (abbreviated.length <= maxLength) return [abbreviated];
+        const words = abbreviated.split(" ");
+        const lines = [];
+        let currentLine = "";
+        words.forEach((word) => {
+          const testLine = currentLine ? currentLine + " " + word : word;
+          if (testLine.length <= maxLength) currentLine = testLine;
+          else {
+            if (currentLine) lines.push(currentLine);
+            currentLine = word;
+          }
+        });
+        if (currentLine) lines.push(currentLine);
+        return lines;
+      }
+      function cleanLegendLabel(text) {
+        return text
+          .replace(/\s*\([^)]*\)\s*$/, "")
+          .replace(/\s+but\s+.*$/i, "")
+          .trim();
+      }
+      function cleanDescription(text) {
+        return text
+          .replace(/\s*\([^)]*\)/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+      function extractRiasecScores(occ) {
+        const scores = {};
+        RIASEC_KEYS.forEach((key) => {
+          scores[key] = parseFloat(occ[key]) || 0;
+        });
+        return scores;
+      }
+      function calculateWeightedRiasecAverage(occupations) {
+        const totalEmployment = d3.sum(occupations, (d) => d.employment);
+        const scores = {};
+        RIASEC_KEYS.forEach((key) => {
+          const weightedSum = d3.sum(
+            occupations,
+            (d) => d.scores[key] * d.employment,
+          );
+          scores[key] = totalEmployment > 0 ? weightedSum / totalEmployment : 0;
+        });
+        return scores;
+      }
+
+      // ===========================================
+      // RIASEC CHART HELPERS
+      // ===========================================
+      function hexToRgb(hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const gg = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return r + "," + gg + "," + b;
+      }
+
+      function makeScoreTooltip(pt, nationalScores, cfg) {
+        const natVal = nationalScores ? nationalScores[pt.key] : null;
+        const fullDesc =
+          g.riasecDescriptions[pt.key] ||
+          "Interest in " + cfg.name.toLowerCase() + " activities.";
+        const desc = fullDesc.split(". ")[0] + ".";
+        const pct = ((pt.value / 7) * 100).toFixed(1);
+        const natPct = natVal !== null ? ((natVal / 7) * 100).toFixed(1) : null;
+        let html =
+          '<div style="background:rgba(' +
+          hexToRgb(cfg.color) +
+          ",0.08); border-bottom:2px solid rgba(" +
+          hexToRgb(cfg.color) +
+          ',0.2); padding:8px 10px 6px; margin:-12px -12px 0; ">' +
+          '<div style="font-weight:600; color:' +
+          cfg.color +
+          ';">' +
+          cfg.name +
+          "</div></div>";
+        html +=
+          '<div style="padding:8px 0 0;">' +
+          '<div style="color:#3d2b18; font-size:12px; line-height:1.5; margin-bottom:8px;">' +
+          desc +
+          "</div>";
+        html +=
+          '<div style="display:flex; justify-content:space-between; font-size:12px; color:#3d2b18; margin-bottom:3px;">' +
+          '<span style="font-size:12px;">Score</span>' +
+          "<span><strong>" +
+          pt.value.toFixed(2) +
+          '</strong> <span style="color:#5c4a38; font-size:11px;">/ 7</span></span></div>';
+        html +=
+          '<div style="background:rgba(90,62,40,0.06); height:10px; width:100%; position:relative; border-bottom:1px solid rgba(90,62,40,0.2);">' +
+          '<div style="height:100%; width:' +
+          pct +
+          "%; background:linear-gradient(to right, rgba(" +
+          hexToRgb(cfg.color) +
+          ",0.15), rgba(" +
+          hexToRgb(cfg.color) +
+          ",0.45), rgba(" +
+          hexToRgb(cfg.color) +
+          ",0.35), rgba(" +
+          hexToRgb(cfg.color) +
+          ',0.5));"></div>';
+        if (natPct !== null) {
+          html +=
+            '<div style="position:absolute; top:-3px; bottom:-3px; left:' +
+            natPct +
+            '%; width:1.5px; background:#5a3e28;"></div>';
+        }
+        html += "</div>";
+        html +=
+          '<div style="position:relative; font-size:11px; color:#5c4a38; margin-top:2px;">' +
+          '<div style="display:flex; justify-content:space-between;">' +
+          "<span>0</span><span>7</span></div>";
+        if (natVal !== null) {
+          html +=
+            '<div style="position:absolute; top:0; left:' +
+            natPct +
+            '%; transform:translateX(-6px); display:flex; align-items:baseline; gap:2px; white-space:nowrap; margin-top:3px;">' +
+            '<span style="font-size:13px; line-height:1;">&#x261D;</span>' +
+            '<span style="font-size:11px;">All U.S. Occupations</span></div>';
+        }
+        html += "</div>";
+        if (natVal !== null) {
+          const diff = pt.value - natVal;
+          html +=
+            '<div style="font-size:11px; color:' +
+            (diff >= 0 ? "#2e7358" : "#b33a2b") +
+            '; text-align:right; font-style:italic; margin-top:3px;">' +
+            (diff >= 0 ? "+" : "") +
+            diff.toFixed(2) +
+            " " +
+            (diff >= 0 ? "above" : "below") +
+            " avg.</div>";
+        }
+        html += "</div>";
+        return html + "</div>";
+      }
+
+      function makeLabelTooltip(key, cfg) {
+        const desc =
+          g.riasecDescriptions[key] ||
+          "Interest in " + cfg.name.toLowerCase() + " activities.";
+        return (
+          '<div style="background:rgba(' +
+          hexToRgb(cfg.color) +
+          ",0.08); border-bottom:2px solid rgba(" +
+          hexToRgb(cfg.color) +
+          ',0.2); padding:8px 10px 6px; margin:-12px -12px 0;">' +
+          '<div style="font-weight:600; color:' +
+          cfg.color +
+          ';">' +
+          cfg.name +
+          "</div></div>" +
+          '<div style="padding:8px 0 0;">' +
+          '<div style="color:#3d2b18; font-size:12px; line-height:1.5;">' +
+          desc +
+          "</div></div>"
+        );
+      }
+
+      function appendLetterLabels(svg, cx, cy, R, a, national, opts) {
+        const size = opts.size || 32;
+        const lr = opts.lr || R + 22;
+        const tooltipFn = opts.tooltipFn || makeLabelTooltip;
+        const tooltipClass = opts.tooltipClass || "";
+
+        RIASEC_KEYS.forEach((k, i) => {
+          const ang = a * i - Math.PI / 2,
+            cfg = RIASEC[k];
+          const lx = Math.cos(ang) * lr,
+            ly = Math.sin(ang) * lr;
+          const lg = svg
+            .append("g")
+            .attr("transform", `translate(${cx},${cy})`)
+            .style("cursor", "help");
+          lg.append("image")
+            .attr("href", LETTER_SVG_BASE + cfg.initial + "_combined.svg")
+            .attr("x", lx - size / 2)
+            .attr("y", ly - size / 2)
+            .attr("width", size)
+            .attr("height", size);
+          lg.on("mouseover", (ev) =>
+            showTooltip(ev, tooltipFn(k, cfg), 15, -10, tooltipClass),
+          )
+            .on("mousemove", (ev) => moveTooltip(ev, 15, -10))
+            .on("mouseout", hideTooltip);
+        });
+      }
+
+      // ===========================================
+      // TOOLTIP HELPERS
+      // ===========================================
+      function showTooltip(event, html, dx, dy, extraClass) {
+        if (dx === undefined) dx = 10;
+        if (dy === undefined) dy = 10;
+        g.tooltip
+          .attr("class", "tooltip" + (extraClass ? " " + extraClass : ""))
+          .style("display", "block")
+          .html(html)
+          .style("top", event.pageY + dy + "px")
+          .style("left", event.pageX + dx + "px");
+      }
+      function moveTooltip(event, dx, dy) {
+        if (dx === undefined) dx = 10;
+        if (dy === undefined) dy = 10;
+        g.tooltip
+          .style("top", event.pageY + dy + "px")
+          .style("left", event.pageX + dx + "px");
+      }
+      function hideTooltip() {
+        g.tooltip.style("display", "none");
+      }
+
+      // ===========================================
+      // TREE SVG HELPER (shared by tooltip & character tooltip)
+      // ===========================================
+      function generateTreeSVG(names, width) {
+        if (!names || names.length === 0) return "";
+        // Layout constants mirror renderSocTree() so the tooltip's indented
+        // tree visually matches the "Classifying the Underworld" carousel.
+        const INDENT = 22;
+        const TEXT_GAP = 12;
+        const LINE_H = 18;
+        const ROW_GAP = 32;
+        const OFFSET_X = 6;
+        const OFFSET_Y = 28;
+        const CHAR_W = 6.5;
+        const META_LABELS = [
+          "Major Group",
+          "Minor Group",
+          "Broad Group",
+          "Detailed Occupation",
+        ];
+
+        const nodes = [];
+        let cy = 0;
+        for (let i = 0; i < names.length; i++) {
+          const cleanName = names[i].replace(" Occupations", "");
+          const x = i * INDENT;
+          const textX = x + TEXT_GAP;
+          const availW = width - OFFSET_X * 2 - textX;
+          const maxChars = Math.max(10, Math.floor(availW / CHAR_W));
+          const lines = wrapTextFull(cleanName, maxChars);
+          nodes.push({
+            x,
+            textX,
+            y: cy,
+            lines,
+            isLeaf: i === names.length - 1,
+            levelLabel: META_LABELS[i] || "",
+          });
+          cy += Math.max(ROW_GAP, lines.length * LINE_H + 18);
+        }
+        const last = nodes[nodes.length - 1];
+        const totalH = last.y + last.lines.length * LINE_H + OFFSET_Y + 4;
+
+        let svg =
+          '<svg class="soc-tree-svg mb-2" width="' +
+          width +
+          '" height="' +
+          totalH +
+          '" viewBox="0 0 ' +
+          width +
+          " " +
+          totalH +
+          '">';
+        svg +=
+          '<g transform="translate(' + OFFSET_X + ", " + OFFSET_Y + ')">';
+        for (let i = 1; i < nodes.length; i++) {
+          const p = nodes[i - 1];
+          const c = nodes[i];
+          svg +=
+            '<path class="soc-tree-svg-path" d="M' +
+            p.x +
+            "," +
+            (p.y + 4) +
+            " V" +
+            (c.y + 4) +
+            " H" +
+            c.x +
+            '" />';
+        }
+        for (const n of nodes) {
+          const cls = n.isLeaf
+            ? "soc-tree-svg-node is-leaf"
+            : "soc-tree-svg-node";
+          svg +=
+            '<circle class="' +
+            cls +
+            '" cx="' +
+            n.x +
+            '" cy="' +
+            (n.y + 4) +
+            '" r="3.5" />';
+        }
+        for (const n of nodes) {
+          const cls = n.isLeaf
+            ? "soc-tree-svg-text is-leaf"
+            : "soc-tree-svg-text";
+          const textY = n.y + 8;
+          svg +=
+            '<text class="soc-tree-svg-meta" x="' +
+            n.textX +
+            '" y="' +
+            (textY - 14) +
+            '">' +
+            n.levelLabel +
+            "</text>";
+          if (n.lines.length === 1) {
+            svg +=
+              '<text class="' +
+              cls +
+              '" x="' +
+              n.textX +
+              '" y="' +
+              textY +
+              '">' +
+              n.lines[0] +
+              "</text>";
+          } else {
+            svg +=
+              '<text class="' +
+              cls +
+              '" x="' +
+              n.textX +
+              '" y="' +
+              textY +
+              '">';
+            for (let li = 0; li < n.lines.length; li++) {
+              const dy = li === 0 ? "" : ' dy="' + LINE_H + '"';
+              svg +=
+                '<tspan x="' +
+                n.textX +
+                '"' +
+                dy +
+                ">" +
+                n.lines[li] +
+                "</tspan>";
+            }
+            svg += "</text>";
+          }
+        }
+        svg += "</g></svg>";
+        return svg;
+      }
+
+      // ===========================================
+      // DATA AGGREGATION FUNCTIONS
+      // ===========================================
+      function aggregateRiasecData(interestsData) {
+        interestsData.forEach((occ) => {
+          if (occ.TOT_EMP && parseFloat(occ.TOT_EMP) > 0) {
+            g.riasecData.detailed.set(occ.soc_2018_code, {
+              code: occ.soc_2018_code,
+              title: occ.occupation_title,
+              employment: parseFloat(occ.TOT_EMP),
+              scores: extractRiasecScores(occ),
+              major_group_code: occ.major_group_code,
+              minor_group_code: occ.minor_group_code,
+              broad_group_code: occ.broad_group_code,
+              major_group_title: occ.major_group_title,
+              minor_group_title: occ.minor_group_title,
+              broad_group_title: occ.broad_group_title,
+            });
+          }
+        });
+        const broadGroups = d3.group(
+          Array.from(g.riasecData.detailed.values()),
+          (d) => d.broad_group_title,
+        );
+        broadGroups.forEach((occupations, title) => {
+          if (!title) return;
+          const firstOcc = occupations[0];
+          g.riasecData.broad.set(title, {
+            title,
+            employment: d3.sum(occupations, (d) => d.employment),
+            scores: calculateWeightedRiasecAverage(occupations),
+            major_group_title: firstOcc.major_group_title,
+            minor_group_title: firstOcc.minor_group_title,
+          });
+        });
+        const minorGroups = d3.group(
+          Array.from(g.riasecData.detailed.values()),
+          (d) => d.minor_group_title,
+        );
+        minorGroups.forEach((occupations, title) => {
+          if (!title) return;
+          g.riasecData.minor.set(title, {
+            title,
+            employment: d3.sum(occupations, (d) => d.employment),
+            scores: calculateWeightedRiasecAverage(occupations),
+            major_group_title: occupations[0].major_group_title,
+          });
+        });
+        const majorGroups = d3.group(
+          Array.from(g.riasecData.detailed.values()),
+          (d) => d.major_group_title,
+        );
+        majorGroups.forEach((occupations, title) => {
+          if (!title) return;
+          g.riasecData.major.set(title, {
+            title,
+            employment: d3.sum(occupations, (d) => d.employment),
+            scores: calculateWeightedRiasecAverage(occupations),
+          });
+        });
+        const allOccupations = Array.from(g.riasecData.detailed.values());
+        g.riasecData.national = {
+          title: "All U.S. Occupations",
+          employment: d3.sum(allOccupations, (d) => d.employment),
+          scores: calculateWeightedRiasecAverage(allOccupations),
+        };
+      }
+      function aggregateInjuryData(injuryData, hierarchicalData) {
+        const employmentByOccCode = new Map();
+        hierarchicalData.forEach((occ) => {
+          if (occ.OCC_CODE && occ.TOT_EMP)
+            employmentByOccCode.set(occ.OCC_CODE, parseFloat(occ.TOT_EMP));
+        });
+        injuryData.forEach((occ) => {
+          const rate = safeParseFloat(occ.total_rate);
+          if (rate !== null && occ.occupation_code) {
+            g.injuryData.detailed.set(occ.occupation_code, {
+              code: occ.occupation_code,
+              title: occ.occupation,
+              rate,
+              employment: employmentByOccCode.get(occ.occupation_code) || 0,
+              major_group_code: occ.major_group_code,
+              minor_group_code: occ.minor_group_code,
+              broad_group_code: occ.broad_group_code,
+              major_group_title: occ.major_group_title,
+              minor_group_title: occ.minor_group_title,
+              broad_group_title: occ.broad_group_title,
+            });
+          }
+        });
+        function aggregateInjuryLevel(groupByKey, targetMap, extraFields) {
+          const groups = d3.group(
+            Array.from(g.injuryData.detailed.values()).filter(
+              (d) => d.employment > 0,
+            ),
+            (d) => d[groupByKey],
+          );
+          groups.forEach((occupations, title) => {
+            if (!title) return;
+            const totalEmployment = d3.sum(occupations, (d) => d.employment);
+            const weightedRate =
+              totalEmployment > 0
+                ? d3.sum(occupations, (d) => d.rate * d.employment) /
+                  totalEmployment
+                : null;
+            const entry = {
+              title,
+              rate: weightedRate,
+              employment: totalEmployment,
+            };
+            if (extraFields) extraFields(entry, occupations[0]);
+            targetMap.set(title, entry);
+          });
+        }
+        aggregateInjuryLevel(
+          "broad_group_title",
+          g.injuryData.broad,
+          (e, first) => {
+            e.major_group_title = first.major_group_title;
+            e.minor_group_title = first.minor_group_title;
+          },
+        );
+        aggregateInjuryLevel(
+          "minor_group_title",
+          g.injuryData.minor,
+          (e, first) => {
+            e.major_group_title = first.major_group_title;
+          },
+        );
+        aggregateInjuryLevel("major_group_title", g.injuryData.major);
+        const allOccupations = Array.from(
+          g.injuryData.detailed.values(),
+        ).filter((d) => d.employment > 0);
+        const totalEmployment = d3.sum(allOccupations, (d) => d.employment);
+        g.injuryData.national = {
+          title: "All U.S. Occupations",
+          rate:
+            totalEmployment > 0
+              ? d3.sum(allOccupations, (d) => d.rate * d.employment) /
+                totalEmployment
+              : null,
+          employment: totalEmployment,
+        };
+      }
+      function aggregateEmploymentTypeData(
+        employmentTypeRawData,
+        hierarchicalData,
+      ) {
+        const employmentByOccCode = new Map();
+        hierarchicalData.forEach((occ) => {
+          if (occ.OCC_CODE && occ.TOT_EMP)
+            employmentByOccCode.set(occ.OCC_CODE, parseFloat(occ.TOT_EMP));
+        });
+        const detailedByOcc = d3.group(
+          employmentTypeRawData,
+          (d) => d.occupation_code,
+        );
+        detailedByOcc.forEach((records, occCode) => {
+          const selfEmp = records.find((r) => r.industry_code === "TE1100");
+          const wageSal = records.find((r) => r.industry_code === "TE1200");
+          if (selfEmp && wageSal) {
+            g.employmentTypeData.detailed.set(occCode, {
+              code: occCode,
+              selfEmployedPct:
+                parseFloat(selfEmp["2024_percent_of_occupation"]) || 0,
+              wageSalaryPct:
+                parseFloat(wageSal["2024_percent_of_occupation"]) || 0,
+              selfEmployedCount:
+                parseFloat(selfEmp["2024_employment"]) * 1000 || 0,
+              wageSalaryCount:
+                parseFloat(wageSal["2024_employment"]) * 1000 || 0,
+              employment: employmentByOccCode.get(occCode) || 0,
+            });
+          }
+        });
+        const detailedWithHierarchy = Array.from(
+          g.employmentTypeData.detailed.entries(),
+        )
+          .map(([code, data]) => {
+            const hierInfo = hierarchicalData.find((h) => h.OCC_CODE === code);
+            return hierInfo
+              ? {
+                  ...data,
+                  major_group_title: hierInfo.major_group_title,
+                  minor_group_title: hierInfo.minor_group_title,
+                  broad_group_title: hierInfo.broad_group_title,
+                }
+              : null;
+          })
+          .filter((d) => d !== null);
+        function aggregateEmpTypeLevel(groupByKey, targetMap, extraFields) {
+          const groups = d3.group(detailedWithHierarchy, (d) => d[groupByKey]);
+          groups.forEach((occupations, title) => {
+            if (!title) return;
+            const totalEmp = d3.sum(occupations, (d) => d.employment);
+            const selfEmpTotal = d3.sum(
+              occupations,
+              (d) => d.selfEmployedCount,
+            );
+            const wageSalTotal = d3.sum(occupations, (d) => d.wageSalaryCount);
+            const entry = {
+              title,
+              selfEmployedPct:
+                totalEmp > 0 ? (selfEmpTotal / totalEmp) * 100 : 0,
+              wageSalaryPct: totalEmp > 0 ? (wageSalTotal / totalEmp) * 100 : 0,
+              selfEmployedCount: selfEmpTotal,
+              wageSalaryCount: wageSalTotal,
+              employment: totalEmp,
+            };
+            if (extraFields) extraFields(entry, occupations[0]);
+            targetMap.set(title, entry);
+          });
+        }
+        aggregateEmpTypeLevel(
+          "broad_group_title",
+          g.employmentTypeData.broad,
+          (e, first) => {
+            e.major_group_title = first.major_group_title;
+            e.minor_group_title = first.minor_group_title;
+          },
+        );
+        aggregateEmpTypeLevel(
+          "minor_group_title",
+          g.employmentTypeData.minor,
+          (e, first) => {
+            e.major_group_title = first.major_group_title;
+          },
+        );
+        aggregateEmpTypeLevel("major_group_title", g.employmentTypeData.major);
+        const totalNationalEmp = d3.sum(
+          detailedWithHierarchy,
+          (d) => d.employment,
+        );
+        const nationalSelfEmp = d3.sum(
+          detailedWithHierarchy,
+          (d) => d.selfEmployedCount,
+        );
+        const nationalWageSal = d3.sum(
+          detailedWithHierarchy,
+          (d) => d.wageSalaryCount,
+        );
+        g.employmentTypeData.national = {
+          title: "All U.S. Occupations",
+          selfEmployedPct:
+            totalNationalEmp > 0
+              ? (nationalSelfEmp / totalNationalEmp) * 100
+              : 0,
+          wageSalaryPct:
+            totalNationalEmp > 0
+              ? (nationalWageSal / totalNationalEmp) * 100
+              : 0,
+          selfEmployedCount: nationalSelfEmp,
+          wageSalaryCount: nationalWageSal,
+          employment: totalNationalEmp,
+        };
+      }
+      const INDUSTRY_NAMES = {
+        110000: "Agriculture",
+        210000: "Mining",
+        220000: "Utilities",
+        230000: "Construction",
+        "31-330": "Manufacturing",
+        420000: "Wholesale Trade",
+        "44-450": "Retail Trade",
+        "48-490": "Transportation",
+        510000: "Information",
+        520000: "Finance",
+        530000: "Real Estate",
+        540000: "Professional Svcs",
+        550000: "Management",
+        560000: "Admin & Support",
+        610000: "Education",
+        620000: "Healthcare",
+        710000: "Arts & Recreation",
+        720000: "Hospitality",
+        810000: "Other Services",
+        900000: "Government",
+      };
+      const INDUSTRY_COLORS = {
+        110000: "#4a6a2a",
+        210000: "#5a3e28",
+        220000: "#c49a2a",
+        230000: "#8b4c2a",
+        "31-330": "#3d3470",
+        420000: "#8d5a7e",
+        "44-450": "#8b2252",
+        "48-490": "#4a6ba3",
+        510000: "#1e3f7a",
+        520000: "#2e7358",
+        530000: "#6b2d5b",
+        540000: "#635e96",
+        550000: "#7e6650",
+        560000: "#a07830",
+        610000: "#b33a2b",
+        620000: "#5a9a7c",
+        710000: "#a75478",
+        720000: "#a87452",
+        810000: "#b8985c",
+        900000: "#6f8d52",
+      };
+      const BAR_PALETTE = [
+        "#576d84",
+        "#b5704a",
+        "#5c7a68",
+        "#a65c53",
+        "#75526b",
+        "#507880",
+        "#8c6e56",
+        "#5a3e28",
+      ];
+      const EMP_COLORS = { wage: "#576d84", self: "#b5704a" };
+      function aggregateIndustryData(industryRawData) {
+        const industryOnly = industryRawData.filter(
+          (d) => !d.industry_code.startsWith("TE"),
+        );
+        const byOccupation = d3.group(industryOnly, (d) => d.occupation_code);
+        byOccupation.forEach((records, occCode) => {
+          const sorted = records
+            .map((r) => ({
+              industryCode: r.industry_code,
+              industryTitle: r.industry_title,
+              shortName: INDUSTRY_NAMES[r.industry_code] || r.industry_title,
+              employment: parseFloat(r["2024_employment"]) * 1000 || 0,
+              percent: parseFloat(r["2024_percent_of_occupation"]) || 0,
+              color: INDUSTRY_COLORS[r.industry_code] || "#a89480",
+            }))
+            .filter((r) => r.percent > 0)
+            .sort((a, b) => b.percent - a.percent);
+          if (sorted.length > 0) {
+            g.industryData.detailed.set(occCode, {
+              code: occCode,
+              industries: sorted,
+              topIndustry: sorted[0],
+            });
+          }
+        });
+      }
+
+      // ===========================================
+      // DATA ACCESSOR FUNCTIONS
+      // ===========================================
+      function getIndustryDataForNode(node) {
+        if (!node || node.depth !== 4) return null;
+        const occCode = node.data.occCode;
+        return occCode ? g.industryData.detailed.get(occCode) : null;
+      }
+      function getEmploymentTypeForNode(node) {
+        if (!node) return null;
+        const nodeName = node.data.name;
+        if (node.depth === 0) return g.employmentTypeData.national;
+        if (node.depth === 1) return g.employmentTypeData.major.get(nodeName);
+        if (node.depth === 2) return g.employmentTypeData.minor.get(nodeName);
+        if (node.depth === 3) return g.employmentTypeData.broad.get(nodeName);
+        if (node.depth === 4) {
+          const occCode = node.data.occCode;
+          return occCode ? g.employmentTypeData.detailed.get(occCode) : null;
+        }
+        return null;
+      }
+      function getRiasecScoresForNode(node) {
+        if (!node) return null;
+        const nodeName = node.data.name;
+        if (node.depth === 0) return g.riasecData.national?.scores || null;
+        if (node.depth === 1)
+          return g.riasecData.major.get(nodeName)?.scores || null;
+        if (node.depth === 2)
+          return g.riasecData.minor.get(nodeName)?.scores || null;
+        if (node.depth === 3)
+          return g.riasecData.broad.get(nodeName)?.scores || null;
+        if (node.depth === 4) {
+          const occCode = node.data.occCode;
+          return occCode
+            ? g.riasecData.detailed.get(occCode)?.scores || null
+            : null;
+        }
+        return null;
+      }
+
+      // ===========================================
+      // SIDEBAR CHART FUNCTIONS
+      // ===========================================
+      function drawEmploymentTypeChart(node, selectedOcc) {
+        const container = d3.select("#employment-type-container");
+        container.html("");
+        const targetNode = selectedOcc || node;
+        const empTypeData = getEmploymentTypeForNode(targetNode);
+        if (!empTypeData) {
+          container.html(
+            '<p style="font-family: var(--font-family); font-style: italic; color: #5c4a38; font-size: 12px;">No data</p>',
+          );
+          return;
+        }
+
+        const data = [
+          {
+            pct: empTypeData.wageSalaryPct,
+            fill: EMP_COLORS.wage,
+            label: "Wage & Salary",
+            shortLabel: "Wage & Salary",
+            count: empTypeData.wageSalaryCount,
+          },
+          {
+            pct: empTypeData.selfEmployedPct,
+            fill: EMP_COLORS.self,
+            label: "Self-Employed",
+            shortLabel: "Self-Employed",
+            count: empTypeData.selfEmployedCount,
+          },
+        ];
+
+        const panelHeight = 250;
+        const titleHeight = 25;
+        const containerWidth = container.node().clientWidth || 128;
+
+        const margin = { top: 25, right: 10, bottom: 60, left: 10 };
+        const width = containerWidth;
+        const height =
+          panelHeight - titleHeight - 24 - margin.top - margin.bottom;
+        const chartW = width - margin.left - margin.right;
+        const chartH = height;
+
+        const svg = container
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")",
+          );
+
+        const y = d3.scaleLinear().domain([0, 100]).range([chartH, 0]);
+
+        // Bar positioning — two side-by-side bars
+        const gap = 16;
+        const barW = (chartW - gap) / 2;
+
+        // Ground line
+        svg
+          .append("line")
+          .attr("x1", 0)
+          .attr("x2", chartW)
+          .attr("y1", chartH)
+          .attr("y2", chartH)
+          .attr("stroke", WOODCUT_CONFIG.stroke)
+          .attr("stroke-width", 2);
+
+        data.forEach(function (d, i) {
+          const barX = i * (barW + gap);
+          const barH = y(0) - y(d.pct);
+
+          // Bar
+          const rect = svg
+            .append("rect")
+            .attr("x", barX)
+            .attr("y", y(d.pct))
+            .attr("width", barW)
+            .attr("height", barH)
+            .attr("fill", d.fill)
+            .attr("stroke", WOODCUT_CONFIG.stroke)
+            .attr("stroke-width", WOODCUT_CONFIG.strokeWidth)
+            .style("cursor", "pointer");
+
+          // Percentage label on top
+          svg
+            .append("text")
+            .attr("x", barX + barW / 2)
+            .attr("y", y(d.pct) - 5)
+            .attr("text-anchor", "middle")
+            .style("font-family", WOODCUT_CONFIG.dataFont)
+            .style("font-size", "13px")
+            .style("font-weight", "500")
+            .style("fill", WOODCUT_CONFIG.stroke)
+            .style("pointer-events", "none")
+            .text(Math.round(d.pct) + "%");
+
+          // Tooltip
+          rect
+            .on("mouseover", function (event) {
+              d3.select(this).style("opacity", 0.8);
+              showTooltip(
+                event,
+                "<div><strong>" +
+                  d.label +
+                  "</strong></div>" +
+                  '<div style="margin-top: 4px;">' +
+                  d.pct.toFixed(1) +
+                  "% of occupation</div><div>" +
+                  abbreviateNumber(d.count) +
+                  " workers</div>",
+                10,
+                -10,
+                "bar-tooltip",
+              );
+            })
+            .on("mousemove", function (event) {
+              moveTooltip(event, 10, -10);
+            })
+            .on("mouseout", function () {
+              d3.select(this).style("opacity", 1);
+              hideTooltip();
+            });
+        });
+
+        // Legend below chart
+        const legendG = svg
+          .append("g")
+          .attr("transform", "translate(0," + (chartH + 20) + ")");
+
+        data.forEach(function (d, i) {
+          const ly = i * 18;
+          legendG
+            .append("rect")
+            .attr("x", 0)
+            .attr("y", ly)
+            .attr("width", 12)
+            .attr("height", 12)
+            .attr("fill", d.fill)
+            .attr("stroke", WOODCUT_CONFIG.stroke)
+            .attr("stroke-width", 1);
+          legendG
+            .append("text")
+            .attr("x", 18)
+            .attr("y", ly + 10)
+            .style("font-family", WOODCUT_CONFIG.scFont)
+            .style("font-size", "13px")
+            .style("fill", WOODCUT_CONFIG.stroke)
+            .text(d.shortLabel);
+        });
+      }
+      function drawIndustryDistributionChart(node, container) {
+        container.innerHTML = "";
+        if (!node || node.depth !== 4) {
+          container.innerHTML =
+            '<p style="font-family: var(--font-family); font-style: italic; color: #5c4a38; font-size: 11px; text-align: center; padding: 16px 4px;">Select a detailed occupation</p>';
+          return;
+        }
+        const industryData = getIndustryDataForNode(node);
+        if (
+          !industryData ||
+          !industryData.industries ||
+          industryData.industries.length === 0
+        ) {
+          container.innerHTML =
+            '<p style="font-family: var(--font-family); font-style: italic; color: #5c4a38; font-size: 11px; text-align: center; padding: 16px 4px;">No industry data</p>';
+          return;
+        }
+        let industries = industryData.industries
+          .filter((d) => d.percent >= 0.5)
+          .slice(0, 10);
+        const shownPercent = d3.sum(industries, (d) => d.percent);
+        if (shownPercent < 99.5) {
+          industries.push({
+            industryCode: "OTHER",
+            industryTitle: "Other Industries",
+            shortName: "Other",
+            employment: 0,
+            percent: 100 - shownPercent,
+            color: "#d6c9ad",
+          });
+        }
+        if (industries.length === 0) {
+          container.innerHTML =
+            '<p style="font-family: var(--font-family); font-style: italic; color: #5c4a38; font-size: 11px; text-align: center; padding: 16px 4px;">No data</p>';
+          return;
+        }
+
+        // Title
+        const titleDiv = document.createElement("h4");
+        titleDiv.className = "industry-chart-title";
+        titleDiv.textContent = "Industry";
+        container.appendChild(titleDiv);
+
+        // Dimensions — adapt to container
+        const containerWidth = container.offsetWidth || 160;
+        const containerHeight = container.offsetHeight || 400;
+        const margin = { top: 15, right: 10, bottom: 40, left: 10 };
+        const width = containerWidth;
+        const chartW = width - margin.left - margin.right;
+
+        // Dynamic row height based on number of items
+        const itemCount = industries.length;
+        const availableChartH =
+          containerHeight - 24 - margin.top - margin.bottom;
+        const rowHeight = Math.min(35, availableChartH / itemCount);
+        const chartH = availableChartH;
+        const svgHeight = chartH + margin.top + margin.bottom;
+
+        const d3Container = d3.select(container);
+        const svg = d3Container
+          .append("svg")
+          .attr("width", width)
+          .attr("height", svgHeight)
+          .style("display", "block")
+          .append("g")
+          .attr(
+            "transform",
+            "translate(" + margin.left + "," + margin.top + ")",
+          );
+
+        // X scale — percentage axis with tight buffer for end label
+        const maxBarWidth = chartW - 24;
+        const x = d3.scaleLinear().domain([0, 100]).range([0, maxBarWidth]);
+
+        // Vertical gridlines
+        const gridHeight = itemCount * rowHeight;
+        [25, 50, 75, 100].forEach(function (t) {
+          svg
+            .append("line")
+            .attr("x1", x(t))
+            .attr("x2", x(t))
+            .attr("y1", 0)
+            .attr("y2", gridHeight)
+            .attr("stroke", WOODCUT_CONFIG.stroke)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "2,2")
+            .attr("opacity", 0.25);
+        });
+
+        // X axis at bottom
+        const xAxis = d3
+          .axisBottom(x)
+          .tickValues([0, 25, 50, 75, 100])
+          .tickFormat(function (d) {
+            return d + "%";
+          });
+        const axisG = svg
+          .append("g")
+          .attr("transform", "translate(0," + gridHeight + ")")
+          .call(xAxis);
+
+        axisG
+          .select(".domain")
+          .attr("stroke", WOODCUT_CONFIG.stroke)
+          .attr("stroke-width", 1.5);
+        axisG
+          .selectAll(".tick line")
+          .attr("stroke", WOODCUT_CONFIG.stroke)
+          .attr("stroke-width", 1);
+        axisG
+          .selectAll("text")
+          .style("font-family", WOODCUT_CONFIG.dataFont)
+          .style("font-size", "11px")
+          .style("fill", "#5c5347");
+
+        // Draw each industry as a horizontal bar
+        industries.forEach(function (industry, i) {
+          const yPos = i * rowHeight;
+          const fillColor =
+            industry.industryCode === "OTHER"
+              ? "#d6c9ad"
+              : BAR_PALETTE[i % BAR_PALETTE.length];
+
+          // Label above bar
+          svg
+            .append("text")
+            .attr("x", 0)
+            .attr("y", yPos + 10)
+            .style("fill", WOODCUT_CONFIG.stroke)
+            .style("font-family", WOODCUT_CONFIG.dataFont)
+            .style("font-size", "12px")
+            .style("pointer-events", "none")
+            .text(industry.shortName);
+
+          // Bar
+          const barW = x(industry.percent);
+          const barH = Math.max(4, rowHeight * 0.35);
+          const rect = svg
+            .append("rect")
+            .attr("x", 0)
+            .attr("y", yPos + 14)
+            .attr("width", Math.max(barW, 2))
+            .attr("height", barH)
+            .attr("fill", fillColor)
+            .attr("stroke", WOODCUT_CONFIG.stroke)
+            .attr("stroke-width", 1.5)
+            .style("cursor", "pointer");
+
+          // Percentage text at end of bar
+          svg
+            .append("text")
+            .attr("x", Math.max(barW, 2) + 4)
+            .attr("y", yPos + 14 + barH / 2 + 4)
+            .style("fill", "#5c5347")
+            .style("font-family", WOODCUT_CONFIG.dataFont)
+            .style("font-size", "12px")
+            .style("font-weight", "500")
+            .style("pointer-events", "none")
+            .text(industry.percent.toFixed(1) + "%");
+
+          // Tooltip
+          rect
+            .on("mouseover", function (event) {
+              d3.select(this).style("opacity", 0.8);
+              showTooltip(
+                event,
+                "<div><strong>" +
+                  industry.industryTitle +
+                  "</strong></div>" +
+                  '<div style="margin-top: 4px;">' +
+                  industry.percent.toFixed(1) +
+                  "% of workers</div>" +
+                  (industry.employment > 0
+                    ? "<div>" +
+                      abbreviateNumber(industry.employment) +
+                      " employed</div>"
+                    : ""),
+                10,
+                -10,
+                "bar-tooltip",
+              );
+            })
+            .on("mousemove", function (event) {
+              moveTooltip(event, 10, -10);
+            })
+            .on("mouseout", function () {
+              d3.select(this).style("opacity", 1);
+              hideTooltip();
+            });
+        });
+
+        // Ornament at bottom of container — only show if enough space
+        const axisBottom = gridHeight + 30; // axis line + ticks + labels
+        const ornamentW = chartW * 0.7;
+        const ornamentHeight = ornamentW / 2.23; // preserve aspect ratio (1533:687)
+        const spaceForOrnament = chartH - axisBottom;
+        if (spaceForOrnament > ornamentHeight * 0.6) {
+          const ornamentY = chartH - ornamentHeight + 30;
+          const ornamentX = (chartW - ornamentW) / 2 - margin.left;
+          svg
+            .append("image")
+            .attr("href", "../assets/rabelais-clips/ornament-4.svg")
+            .attr("x", ornamentX)
+            .attr("y", ornamentY)
+            .attr("width", ornamentW)
+            .attr("height", ornamentHeight)
+            .attr("preserveAspectRatio", "xMidYMid meet")
+            .attr("opacity", 0.7)
+            .style("pointer-events", "none");
+        }
+      }
+      function drawRiasecRadarChart(
+        currentScores,
+        nationalScores,
+        showComparison = true,
+      ) {
+        const national = showComparison ? nationalScores : null;
+        const container = d3.select("#riasec-container");
+        container.html("");
+        container
+          .append("div")
+          .attr("class", "nuremberg-title-banner")
+          .text("RIASEC Interest Profile");
+
+        const W = 260,
+          H = 210;
+        const R = 65,
+          cx = W / 2,
+          cy = H / 2;
+        const svg = container
+          .append("svg")
+          .attr("viewBox", `0 0 ${W} ${H}`)
+          .attr("preserveAspectRatio", "xMidYMid meet")
+          .style("display", "block")
+          .style("width", "100%")
+          .style("max-width", `${W}px`)
+          .style("height", "auto")
+          .style("margin", "0 auto");
+
+        const chartG = svg
+          .append("g")
+          .attr("transform", `translate(${cx},${cy})`);
+        const r = d3.scaleLinear().domain([0, 7]).range([0, R]);
+        const a = (Math.PI * 2) / 6;
+
+        // --- Rosa Ursina frame: engraved rings + tick marks ---
+        const structG = chartG.append("g");
+        structG
+          .append("circle")
+          .attr("r", R + 8)
+          .attr("fill", "none")
+          .attr("stroke", "#3d2b18")
+          .attr("stroke-width", 1.5);
+        structG
+          .append("circle")
+          .attr("r", R + 12)
+          .attr("fill", "none")
+          .attr("stroke", "#3d2b18")
+          .attr("stroke-width", 0.5);
+
+        for (let i = 0; i < 72; i++) {
+          const ang = (i / 72) * Math.PI * 2 - Math.PI / 2;
+          const major = i % 12 === 0;
+          structG
+            .append("line")
+            .attr("x1", Math.cos(ang) * (R + 8))
+            .attr("y1", Math.sin(ang) * (R + 8))
+            .attr("x2", Math.cos(ang) * (R + (major ? 12 : 10)))
+            .attr("y2", Math.sin(ang) * (R + (major ? 12 : 10)))
+            .attr("stroke", "#3d2b18")
+            .attr("stroke-width", major ? 0.8 : 0.4);
+        }
+
+        [1, 2, 3, 4, 5, 6, 7].forEach((lv) => {
+          structG
+            .append("circle")
+            .attr("r", (R / 7) * lv)
+            .attr("fill", "none")
+            .attr("stroke", "#5a3e28")
+            .attr("stroke-width", lv === 7 ? 1.2 : 0.5)
+            .attr("stroke-opacity", lv === 7 ? 0.6 : 0.3);
+        });
+
+        RIASEC_KEYS.forEach((k, i) => {
+          const ang = a * i - Math.PI / 2;
+          structG
+            .append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", Math.cos(ang) * R)
+            .attr("y2", Math.sin(ang) * R)
+            .attr("stroke", "#5a3e28")
+            .attr("stroke-width", 0.5)
+            .attr("stroke-opacity", 0.4);
+        });
+
+        // Center crosshair
+        structG
+          .append("line")
+          .attr("x1", -3)
+          .attr("y1", 0)
+          .attr("x2", 3)
+          .attr("y2", 0)
+          .attr("stroke", "#3d2b18")
+          .attr("stroke-width", 0.8);
+        structG
+          .append("line")
+          .attr("x1", 0)
+          .attr("y1", -3)
+          .attr("x2", 0)
+          .attr("y2", 3)
+          .attr("stroke", "#3d2b18")
+          .attr("stroke-width", 0.8);
+        structG.append("circle").attr("r", 1.5).attr("fill", "#3d2b18");
+
+        const rl = d3
+          .lineRadial()
+          .radius((d) => r(d.value))
+          .angle((d, i) => i * a)
+          .curve(d3.curveLinearClosed);
+
+        // --- Solid fills ---
+        if (national) {
+          chartG
+            .append("path")
+            .datum(
+              RIASEC_KEYS.map((k) => ({ key: k, value: national[k] || 0 })),
+            )
+            .attr("d", rl)
+            .attr("fill", "#b33a2b")
+            .attr("fill-opacity", 0.2)
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1.5);
+        }
+
+        const pts = RIASEC_KEYS.map((k, i) => {
+          const v = currentScores[k] || 0,
+            ang = a * i - Math.PI / 2;
+          return {
+            key: k,
+            value: v,
+            x: Math.cos(ang) * r(v),
+            y: Math.sin(ang) * r(v),
+          };
+        });
+        chartG
+          .append("path")
+          .datum(pts)
+          .attr("d", rl)
+          .attr("fill", "none")
+          .attr("stroke", "#3d2b18")
+          .attr("stroke-width", 1.5);
+
+        // --- Watercolour markers ---
+        pts.forEach((pt) => {
+          const cfg = RIASEC[pt.key];
+
+          // Outer bleed halo
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 8)
+            .attr("fill", cfg.color)
+            .attr("fill-opacity", 0.15)
+            .attr("stroke", "none");
+
+          // Main pigment blob — irregular edges
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 5.5)
+            .attr("fill", cfg.color)
+            .attr("fill-opacity", 0.55)
+            .attr("stroke", cfg.color)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-opacity", 0.3);
+
+          // Ink outline ring
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 5)
+            .attr("fill", "none")
+            .attr("stroke", "#3d2b18")
+            .attr("stroke-width", 1.2)
+            .attr("stroke-opacity", 0.7);
+
+          // Concentrated center — where pigment pools
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 2.5)
+            .attr("fill", cfg.color)
+            .attr("fill-opacity", 0.8);
+
+          // Center ink dot
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 1)
+            .attr("fill", "#3d2b18")
+            .attr("fill-opacity", 0.7);
+
+          // Hover target
+          chartG
+            .append("circle")
+            .attr("cx", pt.x)
+            .attr("cy", pt.y)
+            .attr("r", 14)
+            .attr("fill", "transparent")
+            .attr("cursor", "pointer")
+            .on("mouseover", (ev) =>
+              showTooltip(
+                ev,
+                makeScoreTooltip(pt, national, cfg),
+                15,
+                -10,
+                "riasec-tooltip",
+              ),
+            )
+            .on("mousemove", (ev) => moveTooltip(ev, 15, -10))
+            .on("mouseout", hideTooltip);
+        });
+
+        appendLetterLabels(svg, cx, cy, R, a, national, {
+          size: 25,
+          lr: R + 26,
+          tooltipClass: "riasec-tooltip",
+        });
+      }
+
+      // ===========================================
+      // KDE DATA EXPANSION FUNCTION
+      // ===========================================
+      function expandToWeightedPoints(hierarchicalData) {
+        const points = [];
+        hierarchicalData.forEach((occ) => {
+          const emp = parseFloat(occ.PROJ_TOT_EMP ?? occ.TOT_EMP);
+          const pct10 = parseFloat(occ.A_PCT10);
+          const pct25 = parseFloat(occ.A_PCT25);
+          const median = parseFloat(occ.A_MEDIAN);
+          const pct75 = parseFloat(occ.A_PCT75);
+          const pct90 = parseFloat(occ.A_PCT90);
+          if (!emp || isNaN(emp) || emp <= 0) return;
+          if (isNaN(pct10)) return;
+          if (isNaN(pct25)) return;
+          if (isNaN(median)) return;
+          if (isNaN(pct75)) return;
+          if (isNaN(pct90)) return;
+          points.push(
+            { wage: pct10, employment: emp * 0.175 },
+            { wage: pct25, employment: emp * 0.2 },
+            { wage: median, employment: emp * 0.25 },
+            { wage: pct75, employment: emp * 0.2 },
+            { wage: pct90, employment: emp * 0.175 },
+          );
+        });
+        return points;
+      }
+
+      function weightedKDE(data, bandwidth, xMin, xMax, numPoints = 200) {
+        const points = [];
+        const step = (xMax - xMin) / numPoints;
+        const totalWeight = d3.sum(data, (d) => d.employment);
+        const norm = 1 / (bandwidth * Math.sqrt(2 * Math.PI));
+        for (let x = xMin; x <= xMax; x += step) {
+          let density = 0;
+          for (const d of data) {
+            const z = (x - d.wage) / bandwidth;
+            density += d.employment * norm * Math.exp(-0.5 * z * z);
+          }
+          density /= totalWeight;
+          points.push({ x, density });
+        }
+        return points;
+      }
+
+      // ===========================================
+      // WAGE DISTRIBUTION CHART — WOODBLOCK IMPRESSION
+      // ===========================================
+      function drawRaincloudPlot(node, selectedOcc) {
+        const plotContainer = d3.select("#raincloud-container");
+        plotContainer.selectAll("*").remove();
+        if (!g.nationalStats || g.allOccupationsExpanded.length === 0) {
+          plotContainer.html(
+            '<p style="font-family: var(--font-family); font-style: italic; color: #5c4a38; font-size: 12px; padding: 16px; text-align: center;">Loading...</p>',
+          );
+          return;
+        }
+        const targetNode = selectedOcc || node;
+        const containerWidth = plotContainer
+          .node()
+          .getBoundingClientRect().width;
+        const margin = { top: 0, right: 16, bottom: 0, left: 12 };
+        const width = containerWidth - margin.left - margin.right;
+        const kdeHeight = 55;
+        const kdeLabelHeight = 18;
+        const boxPlotHeight = 14;
+        const boxPlotLabelHeight = 16;
+        const boxPlotRowHeight = boxPlotLabelHeight + boxPlotHeight + 6;
+        const stripPlotHeight = 80;
+        const isRootLevel = targetNode.depth === 0;
+        const hasChildren =
+          targetNode.children && targetNode.children.length > 0;
+        const isDetailedOccupation = !hasChildren && targetNode.depth === 4;
+        let totalHeight = margin.top + kdeLabelHeight + kdeHeight;
+        totalHeight += boxPlotRowHeight;
+        if (!isDetailedOccupation) totalHeight += stripPlotHeight;
+        totalHeight += 13;
+        const xMin = 15000,
+          xMax = 250000;
+        const nodeStats = isRootLevel ? g.nationalStats : targetNode.data.stats;
+        let childrenData = [];
+        if (hasChildren) {
+          childrenData = targetNode.children
+            .map((d) => ({ name: d.data.name, median: d.data.stats?.median }))
+            .filter((d) => d.median !== null);
+        }
+        const xScale = d3.scaleLinear().domain([xMin, xMax]).range([0, width]);
+        const kdePoints = weightedKDE(
+          g.allOccupationsExpanded,
+          g.kdeBandwidth,
+          xMin,
+          xMax,
+          200,
+        );
+        const maxDensity = d3.max(kdePoints, (d) => d.density);
+        const yScaleKDE = d3
+          .scaleLinear()
+          .domain([0, maxDensity])
+          .range([kdeHeight, 0]);
+
+        const svgEl = plotContainer
+          .append("svg")
+          .attr("width", containerWidth)
+          .attr("height", totalHeight)
+          .style("overflow", "visible")
+          .style("display", "block");
+
+        const svg = svgEl
+          .append("g")
+          .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        // Dashed gridlines
+        xScale.ticks(4).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", xScale(tick))
+            .attr("x2", xScale(tick))
+            .attr("y1", 0)
+            .attr("y2", totalHeight - margin.top - margin.bottom)
+            .attr("stroke", "#2c1a08")
+            .attr("stroke-opacity", 0.15)
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+        let currentY = 0;
+
+        // KDE label — rubricated
+        svg
+          .append("text")
+          .attr("x", 0)
+          .attr("y", currentY + 13)
+          .style("font-family", "var(--font-family)")
+          .style("font-size", "11px")
+          .style("font-weight", "700")
+          .style("letter-spacing", "0.04em")
+          .style("fill", "#b33a2b")
+          .attr("stroke", "#b33a2b")
+          .attr("stroke-width", "0.4")
+          .attr("paint-order", "stroke fill")
+          .text("ALL U.S. OCCUPATIONS");
+        currentY += kdeLabelHeight;
+
+        // KDE area — solid fill
+        const area = d3
+          .area()
+          .x((d) => xScale(d.x))
+          .y0(kdeHeight)
+          .y1((d) => yScaleKDE(d.density))
+          .curve(d3.curveBasis);
+        svg
+          .append("path")
+          .datum(kdePoints)
+          .attr("d", area)
+          .attr("fill", "#2c1a08")
+          .attr("fill-opacity", 0.18)
+          .attr("stroke", "#2c1a08")
+          .attr("stroke-width", 1.2)
+          .attr("transform", `translate(0, ${currentY})`);
+
+        // Median — rubricated line
+        const nationalMedian = g.nationalStats?.median;
+        if (nationalMedian) {
+          svg
+            .append("line")
+            .attr("x1", xScale(nationalMedian))
+            .attr("x2", xScale(nationalMedian))
+            .attr("y1", currentY)
+            .attr("y2", currentY + kdeHeight)
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 2);
+          svg
+            .append("text")
+            .attr("x", xScale(nationalMedian) + 8)
+            .attr("y", currentY + 11)
+            .style("font-family", "var(--font-family)")
+            .style("font-size", "11px")
+            .style("font-weight", "700")
+            .style("text-transform", "uppercase")
+            .style("fill", "#b33a2b")
+            .style("letter-spacing", "0.04em")
+            .text("\u261C Median Wage " + formatCurrency(nationalMedian));
+        }
+        currentY += kdeHeight;
+
+        // Box plot — rubricated median
+        if (nodeStats) {
+          const label = isRootLevel
+            ? "NATIONAL"
+            : targetNode.data.name.replace(" Occupations", "").toUpperCase();
+          const displayLabel =
+            label.length > 63 ? label.substring(0, 60) + "\u2026" : label;
+          svg
+            .append("text")
+            .attr("x", 0)
+            .attr("y", currentY + 12)
+            .style("font-family", "var(--font-family-sc)")
+            .style("font-size", "11px")
+            .style("fill", "#2c1a08")
+            .style("font-weight", "700")
+            .style("letter-spacing", "0.04em")
+            .text(displayLabel);
+          currentY += boxPlotLabelHeight;
+
+          const boxY = currentY + boxPlotHeight / 2;
+          if (nodeStats.median !== null) {
+            const lowerWhisker =
+              nodeStats.pct10 ?? nodeStats.pct25 ?? nodeStats.median;
+            const upperWhisker =
+              nodeStats.pct90 ?? nodeStats.pct75 ?? nodeStats.median;
+            const boxLower = nodeStats.pct25 ?? nodeStats.median;
+            const boxUpper = nodeStats.pct75 ?? nodeStats.median;
+            const boxG = svg.append("g");
+            if (lowerWhisker < boxLower) {
+              boxG
+                .append("line")
+                .attr("x1", xScale(lowerWhisker))
+                .attr("x2", xScale(boxLower))
+                .attr("y1", boxY)
+                .attr("y2", boxY)
+                .attr("stroke", "#2c1a08")
+                .attr("stroke-width", 1.5);
+              boxG
+                .append("line")
+                .attr("x1", xScale(lowerWhisker))
+                .attr("x2", xScale(lowerWhisker))
+                .attr("y1", boxY - 5)
+                .attr("y2", boxY + 5)
+                .attr("stroke", "#2c1a08")
+                .attr("stroke-width", 1.5);
+            }
+            if (upperWhisker > boxUpper) {
+              boxG
+                .append("line")
+                .attr("x1", xScale(boxUpper))
+                .attr("x2", xScale(upperWhisker))
+                .attr("y1", boxY)
+                .attr("y2", boxY)
+                .attr("stroke", "#2c1a08")
+                .attr("stroke-width", 1.5);
+              boxG
+                .append("line")
+                .attr("x1", xScale(upperWhisker))
+                .attr("x2", xScale(upperWhisker))
+                .attr("y1", boxY - 5)
+                .attr("y2", boxY + 5)
+                .attr("stroke", "#2c1a08")
+                .attr("stroke-width", 1.5);
+            }
+            const boxWidthPx = xScale(boxUpper) - xScale(boxLower);
+            if (boxWidthPx > 0) {
+              boxG
+                .append("rect")
+                .attr("x", xScale(boxLower))
+                .attr("y", boxY - 7)
+                .attr("width", boxWidthPx)
+                .attr("height", 14)
+                .attr("fill", "rgba(44,26,8,0.25)")
+                .attr("stroke", "#2c1a08")
+                .attr("stroke-width", 1.5);
+            }
+            boxG
+              .append("line")
+              .attr("x1", xScale(nodeStats.median))
+              .attr("x2", xScale(nodeStats.median))
+              .attr("y1", boxY - 8)
+              .attr("y2", boxY + 8)
+              .attr("stroke", "#b33a2b")
+              .attr("stroke-width", 2);
+          }
+          currentY += boxPlotHeight + 6;
+        }
+
+        // Strip plot — rubricated red circles
+        if (childrenData.length > 0) {
+          const availHeight = stripPlotHeight - 4;
+          const stripCenterY = currentY + 2 + availHeight / 2;
+          function beeswarmDots(data, scale, centerY, radius, availHeight) {
+            const minDist = radius * 2 + 2;
+            const sorted = data
+              .map((d) => ({ ...d, x: scale(d.median) }))
+              .sort((a, b) => a.x - b.x);
+            const placed = [];
+            sorted.forEach((dot) => {
+              let bestY = centerY,
+                found = false;
+              for (
+                let offset = 0;
+                offset <= availHeight / 2;
+                offset += radius * 0.8
+              ) {
+                const tryPositions =
+                  offset === 0
+                    ? [centerY]
+                    : [centerY - offset, centerY + offset];
+                for (const tryY of tryPositions) {
+                  if (
+                    tryY < centerY - availHeight / 2 + radius ||
+                    tryY > centerY + availHeight / 2 - radius
+                  )
+                    continue;
+                  const hasConflict = placed.some((p) => {
+                    const dx = p.x - dot.x,
+                      dy = p.y - tryY;
+                    return Math.sqrt(dx * dx + dy * dy) < minDist;
+                  });
+                  if (!hasConflict) {
+                    bestY = tryY;
+                    found = true;
+                    break;
+                  }
+                }
+                if (found) break;
+              }
+              dot.y = bestY;
+              placed.push(dot);
+            });
+            return sorted;
+          }
+          const dotRadius = 4.5;
+          const dodged = beeswarmDots(
+            childrenData,
+            xScale,
+            stripCenterY,
+            dotRadius,
+            availHeight,
+          );
+          dodged.forEach((d) => {
+            svg
+              .append("circle")
+              .attr("cx", d.x)
+              .attr("cy", d.y)
+              .attr("r", dotRadius)
+              .attr("fill", "rgba(179,58,43,0.2)")
+              .attr("stroke", "#b33a2b")
+              .attr("stroke-width", 1.5)
+              .style("cursor", "pointer")
+              .on("mouseover", function (event) {
+                d3.select(this).attr("fill", "#b33a2b").attr("r", 5);
+                showTooltip(
+                  event,
+                  '<strong style="color:#b33a2b;">' +
+                    d.name.replace(" Occupations", "") +
+                    "</strong><br>" +
+                    formatCurrency(d.median),
+                );
+              })
+              .on("mousemove", (event) => moveTooltip(event))
+              .on("mouseout", function () {
+                d3.select(this)
+                  .attr("fill", "rgba(179,58,43,0.2)")
+                  .attr("r", dotRadius);
+                hideTooltip();
+              });
+          });
+          currentY += stripPlotHeight;
+        }
+
+        // Strip plot legend
+        if (childrenData.length > 0) {
+          const legendG = svg
+            .append("g")
+            .attr("transform", `translate(${width - 100}, ${currentY - 15})`);
+          legendG
+            .append("rect")
+            .attr("x", -8)
+            .attr("y", -10)
+            .attr("width", 120)
+            .attr("height", 20)
+            .attr("rx", 3)
+            .attr("fill", "rgba(90,62,40,0.1)")
+            .attr("stroke", "rgba(90,62,40,0.18)")
+            .attr("stroke-width", 0.75);
+          legendG
+            .append("rect")
+            .attr("x", -7)
+            .attr("y", -9)
+            .attr("width", 118)
+            .attr("height", 18)
+            .attr("rx", 2)
+            .attr("fill", "none")
+            .attr("stroke", "rgba(26,20,8,0.06)")
+            .attr("stroke-width", 0.5);
+          legendG
+            .append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", 4.5)
+            .attr("fill", "rgba(179,58,43,0.2)")
+            .attr("stroke", "#b33a2b")
+            .attr("stroke-width", 1.5);
+          legendG
+            .append("text")
+            .attr("x", 9.5)
+            .attr("y", 0)
+            .attr("dominant-baseline", "central")
+            .style("font-family", WOODCUT_CONFIG.dataFont)
+            .style("font-size", "11px")
+            .style("fill", "#3d2b18")
+            .text("Occupational Group");
+        }
+
+        // Axis
+        const ax = svg
+          .append("g")
+          .attr("transform", `translate(0, ${currentY})`)
+          .call(d3.axisBottom(xScale).ticks(4).tickFormat(formatCurrency));
+        ax.selectAll("path, line")
+          .attr("stroke", "#2c1a08")
+          .attr("stroke-width", 1.5);
+        ax.selectAll("text")
+          .style("font-family", WOODCUT_CONFIG.dataFont)
+          .style("font-size", "12px")
+          .style("fill", "#2c1a08");
+
+        // Wage stats table for detailed occupations
+        if (isDetailedOccupation && nodeStats) {
+          plotContainer
+            .append("div")
+            .html(
+              '<table class="wage-stats-table"><thead><tr><th></th><th>10th</th><th>25th</th><th>Median</th><th>75th</th><th>90th</th></tr></thead><tbody><tr>' +
+                '<td class="row-label">Annual</td><td>' +
+                formatCurrency(nodeStats.pct10) +
+                "</td><td>" +
+                formatCurrency(nodeStats.pct25) +
+                "</td><td>" +
+                formatCurrency(nodeStats.median) +
+                "</td><td>" +
+                formatCurrency(nodeStats.pct75) +
+                "</td><td>" +
+                formatCurrency(nodeStats.pct90) +
+                "</td></tr></tbody></table>",
+            );
+        }
+      }
+
+      // ===========================================
+      // SIDEBAR UPDATE FUNCTIONS
+      // ===========================================
+      function updateSidebar(node, selectedOcc) {
+        if (!node) return;
+        const riasecNode = selectedOcc || node;
+        const currentScores = getRiasecScoresForNode(riasecNode);
+        const nationalScores = g.riasecData.national
+          ? g.riasecData.national.scores
+          : null;
+        if (currentScores) {
+          drawRiasecRadarChart(
+            currentScores,
+            nationalScores,
+            riasecNode.depth > 0,
+          );
+        } else {
+          d3.select("#riasec-container").html(
+            '<div class="nuremberg-title-banner">RIASEC Interest Profile</div>' +
+              '<div class="riasec-no-data-layout">' +
+              '<span class="riasec-no-data-text">No RIASEC interest data available for this occupation.</span>' +
+              '<img src="../assets/rabelais-clips/demon-wine-ornament-owl.svg" alt="" class="riasec-no-data-ornament" />' +
+              "</div>",
+          );
+        }
+        drawRaincloudPlot(node, selectedOcc);
+        drawEmploymentTypeChart(node, selectedOcc);
+      }
+
+      // ===========================================
+      // NAVIGATION HELPERS
+      // ===========================================
+      function getAncestors(node) {
+        const ancestors = [];
+        let current = node;
+        while (current && current.depth > 0) {
+          ancestors.unshift({
+            name: current.data.name,
+            depth: current.depth,
+            node: current,
+          });
+          current = current.parent;
+        }
+        return ancestors;
+      }
+      function updateSidebarFrames(node) {
+        const ancestors = getAncestors(node);
+        let majorGroupName = null;
+        if (node.depth > 0) {
+          let majorNode = node;
+          while (majorNode.depth > 1) majorNode = majorNode.parent;
+          majorGroupName = majorNode.data.name;
+        }
+        const frameBgs = [
+          document.getElementById("frame-bg-1"),
+          document.getElementById("frame-bg-2"),
+          document.getElementById("frame-bg-3"),
+          document.getElementById("frame-bg-4"),
+        ];
+        const labelsContainer = document.getElementById("frame-labels");
+        labelsContainer.innerHTML = "";
+        frameBgs.forEach((bg) => {
+          if (bg) bg.style.display = "none";
+        });
+        let totalInsetLeft = 0,
+          totalInsetRight = 0;
+        if (ancestors.length > 0) {
+          let frameTop = 0,
+            frameLeft = 0,
+            frameRight = 0,
+            frameBottom = 0;
+          ancestors.forEach((ancestor, i) => {
+            const bg = frameBgs[i];
+            if (bg) {
+              const colors = getFrameColors(majorGroupName, ancestor.depth);
+              bg.style.display = "block";
+              bg.style.top = frameTop + "px";
+              bg.style.left = frameLeft + "px";
+              bg.style.right = frameRight + "px";
+              bg.style.bottom = frameBottom + "px";
+              bg.style.background = colors.fill;
+              const label = document.createElement("div");
+              label.className = "frame-label";
+              label.style.color = colors.text;
+              label.style.top = frameTop + 4 + "px";
+              label.style.left = frameLeft + 10 + "px";
+              label.textContent =
+                (i > 0 ? "\u2514\u2500 " : "") +
+                ancestor.name.replace(" Occupations", "");
+              label.onclick = (e) => {
+                e.stopPropagation();
+                navigateToAncestor(ancestor.node);
+              };
+              labelsContainer.appendChild(label);
+              frameTop += 28;
+              frameLeft += 8;
+              frameRight += 8;
+              frameBottom += 8;
+            }
+          });
+          totalInsetLeft = frameLeft;
+          totalInsetRight = frameRight;
+        }
+        // Dynamically adjust sidebar width to match innermost frame
+        const sidebarInner = document.querySelector(".sidebar-content-inner");
+        if (sidebarInner) {
+          if (ancestors.length > 0) {
+            const frameBody = document.querySelector(".dashboard-frame-body");
+            if (frameBody) {
+              const bodyWidth = frameBody.clientWidth;
+              const innermostWidth =
+                bodyWidth - totalInsetLeft - totalInsetRight;
+              sidebarInner.style.width = innermostWidth + "px";
+            }
+          } else {
+            sidebarInner.style.width = "";
+          }
+        }
+      }
+      function processWorkContextData(rawData) {
+        rawData.forEach((row) => {
+          const socCode = row.soc_2018_code;
+          if (!g.workContextData.has(socCode))
+            g.workContextData.set(socCode, new Map());
+          const occElements = g.workContextData.get(socCode);
+          const elementId = row.element_id;
+          if (!occElements.has(elementId)) {
+            occElements.set(elementId, {
+              element_id: elementId,
+              element_name: row.element_name,
+              element_description: row.element_description || "",
+              concern_rank: parseInt(row.concern_rank) || 999,
+              valence_score: parseInt(row.valence_score) || 0,
+              categories: [],
+            });
+          }
+          if (row.category !== null && row.category !== undefined) {
+            occElements.get(elementId).categories.push({
+              category: parseInt(row.category),
+              percentage: parseFloat(row.category_percentage) || 0,
+              description:
+                row.category_description || "Category " + row.category,
+            });
+          }
+        });
+      }
+
+      // ===========================================
+      // TOOLTIP FUNCTIONS
+      // ===========================================
+      function createTreeSVG(d) {
+        const names = [];
+        let current = d;
+        while (current.depth > 0) {
+          names.unshift(current.data.name);
+          current = current.parent;
+        }
+        return names.length > 0 ? generateTreeSVG(names, g.width) : "";
+      }
+      function createTooltipHTML(node) {
+        if (!node) return "Error: No node data";
+        return node.depth > 0 ? createTreeSVG(node) : "";
+      }
+
+      // ===========================================
+      // CHARACTER TOOLTIP - SPINE DESIGN
+      // Unified: showBLS=true shows BLS Classification tier
+      // ===========================================
+      function createCharacterTooltipHTML(character, showBLS) {
+        if (showBLS === undefined) showBLS = true;
+        if (!character) return "Error: No character data";
+        let html = '<div class="ct-spine">';
+        // Figure tier
+        html += '<div class="ct-tier">';
+        html +=
+          '<div class="ct-step"><div class="ct-step-dot figure"></div></div>';
+        html += '<div class="ct-tier-label">The Figure</div>';
+        html += '<div class="ct-name">' + character.name + "</div>";
+        if (character.lot_in_life)
+          html += '<div class="ct-epithet">' + character.lot_in_life + "</div>";
+        if (character.description)
+          html += '<div class="ct-desc">🤖: ' + character.description + "</div>";
+        html += "</div>";
+        // Underworld tier
+        html += '<div class="ct-tier">';
+        html +=
+          '<div class="ct-step"><div class="ct-step-dot rabelais"></div></div>';
+        html += '<div class="ct-tier-label">In the Underworld</div>';
+        if (character.labor)
+          html += '<div class="ct-labor">' + character.labor + "</div>";
+        if (character.snippet)
+          html +=
+            '<div class="ct-snippet">\u201C' +
+            character.snippet +
+            "\u201D</div>";
+        html += "</div>";
+        // BLS Classification tier (optional)
+        if (showBLS) {
+          const treeNames = [];
+          if (character.major_group_title)
+            treeNames.push(character.major_group_title);
+          if (character.minor_group_title)
+            treeNames.push(character.minor_group_title);
+          if (character.broad_group_title)
+            treeNames.push(character.broad_group_title);
+          if (character.occ_title) treeNames.push(character.occ_title);
+          if (treeNames.length > 0) {
+            html += '<div class="ct-tier">';
+            html +=
+              '<div class="ct-step"><div class="ct-step-dot bls"></div></div>';
+            html += '<div class="ct-tier-label">BLS Classification</div>';
+            html += generateTreeSVG(treeNames, g.width || 280);
+            html += "</div>";
+          }
+        }
+        html += "</div>";
+        return html;
+      }
+
+      // ===========================================
+      // NAVIGATION & BANNER
+      // ===========================================
+      function updateNavBanner(node) {
+        document.getElementById("back-btn").disabled =
+          !node.parent && !g.detailedViewActive;
+        let titleText = "All Occupation Groups";
+        if (g.detailedViewActive && g.currentDetailedOcc) {
+          const occCode = g.currentDetailedOcc.data.occCode;
+          titleText = g.currentDetailedOcc.data.name;
+          if (occCode) titleText += " \u00B7 " + occCode;
+        } else if (node.depth > 0) {
+          titleText = node.data.name;
+          const groupCode = node.data.groupCode || node.data.occCode;
+          if (groupCode) titleText += " \u00B7 " + groupCode;
+        }
+        document.getElementById("level-title").textContent = titleText;
+      }
+      function handleBack() {
+        if (g.detailedViewActive) hideDetailedOccupationDashboard();
+        else if (g.currentFocus && g.currentFocus.parent)
+          g.renderFn(g.currentFocus.parent);
+      }
+      function handleReset() {
+        GhostAnimation.cleanup();
+        if (g.detailedViewActive) {
+          g.detailedViewActive = false;
+          g.currentDetailedOcc = null;
+        }
+        g.renderFn(g.rootNode);
+      }
+      function navigateToAncestor(ancestorNode) {
+        if (!ancestorNode) return;
+        if (g.detailedViewActive) {
+          GhostAnimation.cleanup();
+          g.detailedViewActive = false;
+          g.currentDetailedOcc = null;
+          g.dashboardGroup.selectAll("*").remove();
+        }
+        if (ancestorNode.parent) g.renderFn(ancestorNode.parent);
+        else g.renderFn(g.rootNode);
+      }
+
+      // ===========================================
+      // DETAILED OCCUPATION DASHBOARD
+      // ===========================================
+      function generateEmploymentBanHTML(stats) {
+        const emp2024 = stats ? stats.totalEmployment : null;
+        const emp2034 = stats ? stats.projectedEmployment2034 : null;
+        const empChangePct = stats ? stats.empChangePct : null;
+        const pctOfNational =
+          g.nationalTotalEmp && g.nationalTotalEmp > 0 && emp2024
+            ? (emp2024 / g.nationalTotalEmp) * 100
+            : null;
+        const changeClass =
+          empChangePct !== null
+            ? empChangePct >= 0
+              ? "positive"
+              : "negative"
+            : "";
+        const changeArrow =
+          empChangePct !== null
+            ? empChangePct >= 0
+              ? "\u2191"
+              : "\u2193"
+            : "";
+        const changeText =
+          empChangePct !== null
+            ? changeArrow +
+              " " +
+              Math.abs(empChangePct).toFixed(1) +
+              "% " +
+              (empChangePct >= 0 ? "increase" : "decrease")
+            : "N/A";
+        return (
+          '<div class="detail-stat-employment">' +
+          '<div class="ban-header">Share of U.S. Workforce</div>' +
+          '<div class="ban-grid">' +
+          '<div class="ban-cell">' +
+          '<div class="emp-year-label-b">2024 <span class="emp-year-suffix">Workforce</span></div>' +
+          '<div class="ban-cell-value">' +
+          abbreviateNumber(emp2024) +
+          "</div>" +
+          '<div class="ban-cell-sub">' +
+          formatWorkforcePct(pctOfNational) +
+          " of workforce</div>" +
+          "</div>" +
+          '<div class="ban-cell">' +
+          '<div class="emp-year-label-b">2034 <span class="emp-year-suffix">Projected</span></div>' +
+          '<div class="ban-cell-value">' +
+          abbreviateNumber(emp2034) +
+          "</div>" +
+          '<div class="ban-cell-sub ' +
+          changeClass +
+          '">' +
+          changeText +
+          "</div>" +
+          "</div>" +
+          "</div></div>"
+        );
+      }
+
+      function generateInjuryBanHTML(occCode) {
+        const injuryInfo = g.injuryData.detailed.get(occCode);
+        const injuryRate = injuryInfo ? injuryInfo.rate : null;
+        const nationalRate = g.injuryData.national
+          ? g.injuryData.national.rate
+          : null;
+        const oneInX = formatInjuryRate(injuryRate);
+        if (oneInX === null) {
+          return (
+            '<div class="detail-stat-injury"><div class="ban-header">Annual Workplace Injury Rate</div>' +
+            '<div class="injury-no-data-layout">' +
+            '<img src="../assets/rabelais-clips/body-parts-spread.svg" class="injury-no-data-ornament" alt="" />' +
+            '<span class="injury-no-data-text">No injury data available for this occupation</span>' +
+            "</div></div>"
+          );
+        }
+        const oneInXDisplay = oneInX.toLocaleString();
+        const valueClass =
+          oneInX >= 1000 ? "ban-cell-value-small" : "ban-cell-value";
+
+        // National comparison cell
+        let natCellHTML =
+          '<div class="ban-cell">' +
+          '<div class="ban-cell-label">All Others</div>' +
+          '<div class="ban-cell-value" style="color: var(--color-text-faint);">\u2014</div>' +
+          "</div>";
+        if (nationalRate !== null && injuryRate !== null && nationalRate > 0) {
+          const natOneInX = formatInjuryRate(nationalRate);
+          const natValueClass =
+            natOneInX >= 1000 ? "ban-cell-value-small" : "ban-cell-value";
+          natCellHTML =
+            '<div class="ban-cell">' +
+            '<div class="ban-cell-label">All Others</div>' +
+            '<div class="' +
+            natValueClass +
+            '">1 in ' +
+            natOneInX.toLocaleString() +
+            "</div>" +
+            "</div>";
+        }
+        return (
+          '<div class="detail-stat-injury"><div class="ban-header">Annual Workplace Injury Rate</div>' +
+          '<div class="ban-grid">' +
+          '<div class="ban-cell">' +
+          '<div class="ban-cell-label">This Occupation</div>' +
+          '<div class="' +
+          valueClass +
+          '">1 in ' +
+          oneInXDisplay +
+          "</div>" +
+          "</div>" +
+          natCellHTML +
+          "</div>" +
+          '<div class="ban-subtitle">sustain a serious workplace injury annually</div>' +
+          "</div>"
+        );
+      }
+
+      function showDetailedOccupationDashboard(node) {
+        g.detailedViewActive = true;
+        g.currentDetailedOcc = node;
+        updateNavBanner(node);
+        hideTooltip();
+        g.rectGroup.selectAll("*").remove();
+        g.labelGroup.selectAll("*").remove();
+        g.dotGroup.selectAll("*").remove();
+        g.dashboardGroup.selectAll("*").remove();
+        const ancestors = getAncestors(node);
+        g.frameGroup.selectAll("*").remove();
+        const framePadding = 8,
+          labelHeight = 28,
+          bottomPadding = 0;
+        let innerX = 0,
+          innerY = 0,
+          innerWidth = g.svgWidth,
+          innerHeight = g.svgHeight;
+        for (let i = 0; i < ancestors.length; i++) {
+          innerX += framePadding;
+          innerY += labelHeight;
+          innerWidth -= framePadding * 2;
+          innerHeight -= labelHeight + bottomPadding;
+        }
+        const fo = g.dashboardGroup
+          .append("foreignObject")
+          .attr("x", innerX + 2)
+          .attr("y", innerY + 2)
+          .attr("width", innerWidth - 4)
+          .attr("height", innerHeight + 7);
+        const stats = node.data.stats;
+        const occCode = node.data.occCode;
+        let dashboardHTML =
+          '<div xmlns="http://www.w3.org/1999/xhtml" class="detail-grid">';
+        dashboardHTML += generateEmploymentBanHTML(stats);
+        dashboardHTML += generateInjuryBanHTML(occCode);
+        dashboardHTML +=
+          '<div class="detail-section-wc"><h3 class="detail-section-title">' +
+          '<span class="detail-section-title-text">Work Context</span>' +
+          '<div class="detail-section-nav" id="wc-nav-container"></div></h3>' +
+          '<div id="wc-carousel-container"></div></div>';
+        dashboardHTML +=
+          '<div class="underworld-section">' +
+          '<div id="underworld-figures-container" class="underworld-figures-container"></div></div>';
+        dashboardHTML +=
+          '<div class="detail-industry-column" id="industry-distribution-container"></div>';
+        dashboardHTML += "</div>";
+        fo.html(dashboardHTML);
+        setTimeout(() => {
+          const wcContainer = document.getElementById("wc-carousel-container");
+          if (wcContainer)
+            renderWorkContextCarousel(node.data.occCode, wcContainer);
+          const figuresContainer = document.getElementById(
+            "underworld-figures-container",
+          );
+          if (figuresContainer)
+            GhostAnimation.render(node.data.occCode, figuresContainer, {
+              g,
+              createUnderworldTooltipHTML: (char) =>
+                createCharacterTooltipHTML(char, false),
+            });
+          const industryContainer = document.getElementById(
+            "industry-distribution-container",
+          );
+          if (industryContainer)
+            drawIndustryDistributionChart(node, industryContainer);
+        }, 0);
+        updateSidebarFrames(node);
+        updateSidebar(g.currentFocus, node);
+      }
+      function hideDetailedOccupationDashboard() {
+        GhostAnimation.cleanup();
+        g.detailedViewActive = false;
+        const parentNode = g.currentDetailedOcc
+          ? g.currentDetailedOcc.parent
+          : null;
+        g.currentDetailedOcc = null;
+        g.dashboardGroup.selectAll("*").remove();
+        if (parentNode && g.renderFn) g.renderFn(parentNode);
+      }
+
+      // ===========================================
+      // WORK CONTEXT CAROUSEL
+      // ===========================================
+      function renderWorkContextCard(container) {
+        const element = wcCarouselState.elements[wcCarouselState.index];
+        if (!element) return;
+        const colors =
+          element.valence_score === 1
+            ? WC_COLORS_DESIRABLE
+            : WC_COLORS_UNDESIRABLE;
+        const sortedCategories = [...element.categories].sort(
+          (a, b) => b.category - a.category,
+        );
+        const prevBtn = document.getElementById("wc-prev-btn");
+        const nextBtn = document.getElementById("wc-next-btn");
+        const counter = document.getElementById("wc-nav-counter");
+        if (prevBtn) prevBtn.disabled = wcCarouselState.index === 0;
+        if (nextBtn)
+          nextBtn.disabled =
+            wcCarouselState.index === wcCarouselState.total - 1;
+        if (counter)
+          counter.textContent =
+            wcCarouselState.index + 1 + " / " + wcCarouselState.total;
+        let html = '<div class="wc-card"><div class="wc-card-header">';
+        html += '<div class="wc-card-title">' + element.element_name + "</div>";
+        html +=
+          '<p class="wc-card-description">' +
+          cleanDescription(element.element_description) +
+          "</p>";
+        html += '</div><div class="wc-chart-area"><div class="wc-chart-rows">';
+        html += '<div class="wc-gridlines">';
+        WC_GRID_TICKS.forEach((tick) => {
+          html +=
+            '<div class="wc-gridline" style="left: ' +
+            (tick / WC_MAX_PERCENTAGE) * 100 +
+            '%"></div>';
+        });
+        html += '</div><div class="wc-axis-y"></div>';
+        sortedCategories.forEach((cat, i) => {
+          const barWidthPct = Math.min(
+            (cat.percentage / WC_MAX_PERCENTAGE) * 100,
+            100,
+          );
+          const barWidthPx = (barWidthPct / 100) * WC_BAR_AREA_WIDTH;
+          const clr = colors[Math.min(i, colors.length - 1)];
+          html +=
+            '<div class="wc-bar-row"><span class="wc-bar-label">' +
+            cleanLegendLabel(cat.description) +
+            "</span>";
+          html +=
+            '<div class="wc-bar-area"><div class="wc-bar-segment" style="width: ' +
+            Math.max(barWidthPx, 4) +
+            "px; background-color: " +
+            clr +
+            ';"></div>';
+          html +=
+            '<span class="wc-bar-pct" style="left: ' +
+            (Math.max(barWidthPx, 4) + 4) +
+            'px;">' +
+            cat.percentage.toFixed(0) +
+            "%</span></div></div>";
+        });
+        html +=
+          '</div><div class="wc-axis-x-container"><div class="wc-axis-x"></div><div class="wc-axis-ticks">';
+        WC_GRID_TICKS.forEach((tick) => {
+          html +=
+            '<div class="wc-axis-tick" style="left: ' +
+            (tick / WC_MAX_PERCENTAGE) * 100 +
+            '%"></div>';
+        });
+        html += '</div><div class="wc-axis-labels">';
+        WC_GRID_TICKS.forEach((tick) => {
+          html += '<span class="wc-axis-label">' + tick + "%</span>";
+        });
+        html += "</div></div></div></div>";
+        container.innerHTML = html;
+      }
+
+      function renderWorkContextCarousel(occCode, container) {
+        const occElements = g.workContextData.get(occCode);
+        const navContainer = document.getElementById("wc-nav-container");
+        const wcNoDataHTML =
+          '<div class="wc-no-data-layout">' +
+          '<span class="wc-no-data-text">No work context data available for this occupation.</span>' +
+          '<img src="../assets/rabelais-clips/demon-frying.svg" class="wc-no-data-ornament" alt="" />' +
+          "</div>";
+        if (!occElements || occElements.size === 0) {
+          container.innerHTML = wcNoDataHTML;
+          if (navContainer) navContainer.innerHTML = "";
+          return;
+        }
+        const elements = Array.from(occElements.values())
+          .filter((el) => el.categories.length > 0)
+          .sort((a, b) => a.concern_rank - b.concern_rank);
+        if (elements.length === 0) {
+          container.innerHTML = wcNoDataHTML;
+          if (navContainer) navContainer.innerHTML = "";
+          return;
+        }
+        wcCarouselState.index = 0;
+        wcCarouselState.total = elements.length;
+        wcCarouselState.elements = elements;
+        if (navContainer) {
+          navContainer.innerHTML =
+            '<button class="wc-nav-btn" id="wc-prev-btn" onclick="navigateWcCarousel(-1)" disabled>\u261C</button>' +
+            '<span class="wc-nav-counter" id="wc-nav-counter">1 / ' +
+            elements.length +
+            "</span>" +
+            '<button class="wc-nav-btn" id="wc-next-btn" onclick="navigateWcCarousel(1)"' +
+            (elements.length <= 1 ? " disabled" : "") +
+            ">\u261E</button>";
+        }
+        renderWorkContextCard(container);
+      }
+      window.navigateWcCarousel = function (direction) {
+        const newIndex = wcCarouselState.index + direction;
+        if (newIndex < 0 || newIndex >= wcCarouselState.total) return;
+        wcCarouselState.index = newIndex;
+        renderWorkContextCard(document.getElementById("wc-carousel-container"));
+      };
+      // ===========================================
+      // DATA FETCH & INITIALIZATION
+      // ===========================================
+      fetch(
+        "https://municipalsky.com/api/rabelais-annotations.php?v=" + Date.now(),
+      )
+        .then((response) => {
+          if (!response.ok)
+            throw new Error("HTTP error! status: " + response.status);
+          return response.json();
+        })
+        .then((data) => {
+          if (!data) throw new Error("Empty response from server");
+          if (!data.success)
+            throw new Error(data.error || "Server returned success: false");
+          if (!data.hierarchical_data || !Array.isArray(data.hierarchical_data))
+            throw new Error("Missing hierarchical_data");
+          if (!data.characters || !Array.isArray(data.characters))
+            throw new Error("Missing characters data");
+          if (data.national_stats) {
+            g.nationalStats = {
+              median: safeParseFloat(data.national_stats.A_MEDIAN),
+              pct10: safeParseFloat(data.national_stats.A_PCT10),
+              pct25: safeParseFloat(data.national_stats.A_PCT25),
+              pct75: safeParseFloat(data.national_stats.A_PCT75),
+              pct90: safeParseFloat(data.national_stats.A_PCT90),
+            };
+            if (data.national_stats.TOT_EMP)
+              g.nationalTotalEmp = parseFloat(data.national_stats.TOT_EMP);
+          }
+          if (data.work_context_data && Array.isArray(data.work_context_data))
+            processWorkContextData(data.work_context_data);
+          if (data.interests_data && Array.isArray(data.interests_data))
+            aggregateRiasecData(data.interests_data);
+          if (
+            data.injuries_by_event_data &&
+            Array.isArray(data.injuries_by_event_data)
+          )
+            aggregateInjuryData(
+              data.injuries_by_event_data,
+              data.hierarchical_data,
+            );
+          if (
+            data.employment_type_data &&
+            Array.isArray(data.employment_type_data)
+          )
+            aggregateEmploymentTypeData(
+              data.employment_type_data,
+              data.hierarchical_data,
+            );
+          if (
+            data.industry_by_major_sectors &&
+            Array.isArray(data.industry_by_major_sectors)
+          )
+            aggregateIndustryData(data.industry_by_major_sectors);
+          if (
+            data.riasec_descriptions &&
+            Array.isArray(data.riasec_descriptions)
+          ) {
+            const elementIdToKey = {
+              "1.B.1.a": "realistic",
+              "1.B.1.b": "investigative",
+              "1.B.1.c": "artistic",
+              "1.B.1.d": "social",
+              "1.B.1.e": "enterprising",
+              "1.B.1.f": "conventional",
+            };
+            data.riasec_descriptions.forEach((item) => {
+              const key = elementIdToKey[item.element_id];
+              if (key) g.riasecDescriptions[key] = item.description;
+            });
+          } else {
+            g.riasecDescriptions = {
+              realistic:
+                "Interest in work activities that include practical, hands-on problems and solutions.",
+              investigative:
+                "Interest in work activities that involve researching and thinking.",
+              artistic:
+                "Interest in work activities that deal with the artistic side of things.",
+              social:
+                "Interest in work activities that assist others and promote learning.",
+              enterprising:
+                "Interest in work activities that involve starting up and carrying out projects.",
+              conventional:
+                "Interest in work activities that follow set procedures and routines.",
+            };
+          }
+          g.allOccupationsExpanded = expandToWeightedPoints(
+            data.hierarchical_data,
+          );
+          createTreemap(data.hierarchical_data, data.characters);
+        })
+        .catch((error) => {
+          console.error("Error loading data:", error);
+          document.getElementById("viz-container").innerHTML =
+            '<div style="font-family: var(--font-family); background: rgba(179,58,43,0.1); border: 2px solid #b33a2b; color: #b33a2b; padding: 12px 16px; margin: 16px;">' +
+            "<strong>Error:</strong> Failed to load data. " +
+            error.message +
+            "</div>";
+        });
+
+      // ===========================================
+      // TREEMAP CREATION & RENDER
+      // ===========================================
+      function createTreemap(hierarchicalData, charactersData) {
+        const container = d3.select("#viz-container");
+        g.charactersData = charactersData;
+        d3.selectAll(".tooltip").remove();
+        const width = g.svgWidth,
+          height = g.svgHeight;
+        container.selectAll("*").remove();
+        const svg = container
+          .append("svg")
+          .attr("viewBox", "0 0 " + width + " " + height)
+          .attr("width", "100%")
+          .attr("height", "100%")
+          .style("display", "block");
+        g.svg = svg;
+        const defs = svg.append("defs");
+        GhostAnimation.initialize(defs);
+
+        g.tooltip = d3.select("body").append("div").attr("class", "tooltip");
+        const groupedByMajor = d3.group(
+          hierarchicalData,
+          (d) => d.major_group_title,
+        );
+        const rootData = { name: "U.S. Occupations", children: [] };
+        hierarchicalData.forEach((d) => {
+          d.A_PCT10 = parseFloat(d.A_PCT10);
+          d.A_PCT90 = parseFloat(d.A_PCT90);
+        });
+        // Build pigment assignments
+        const majorGroupsByEmployment = Array.from(
+          groupedByMajor,
+          ([title, occs]) => ({
+            title,
+            employment: parseFloat(occs[0].major_tot_emp) || 0,
+          }),
+        ).sort((a, b) => b.employment - a.employment);
+        majorGroupPigmentMap = new Map();
+        majorGroupsByEmployment.forEach((mg, i) => {
+          majorGroupPigmentMap.set(
+            mg.title,
+            PIGMENT_CYCLE[i % PIGMENT_CYCLE.length],
+          );
+        });
+
+        groupedByMajor.forEach((majorOccupations, majorTitle) => {
+          const firstMajorRow = majorOccupations[0];
+          const majorStats = {
+            totalEmployment: parseFloat(firstMajorRow.major_tot_emp),
+            median: safeParseFloat(firstMajorRow.major_a_median),
+            pct10: safeParseFloat(firstMajorRow.major_a_pct10),
+            pct25: safeParseFloat(firstMajorRow.major_a_pct25),
+            pct75: safeParseFloat(firstMajorRow.major_a_pct75),
+            pct90: safeParseFloat(firstMajorRow.major_a_pct90),
+          };
+          const groupedByMinor = d3.group(
+            majorOccupations,
+            (d) => d.minor_group_title,
+          );
+          const minorGroups = [];
+          groupedByMinor.forEach((minorOccupations, minorTitle) => {
+            const firstMinorRow = minorOccupations[0];
+            const minorStats = {
+              totalEmployment: parseFloat(firstMinorRow.minor_tot_emp),
+              median: safeParseFloat(firstMinorRow.minor_a_median),
+              pct10: safeParseFloat(firstMinorRow.minor_a_pct10),
+              pct25: safeParseFloat(firstMinorRow.minor_a_pct25),
+              pct75: safeParseFloat(firstMinorRow.minor_a_pct75),
+              pct90: safeParseFloat(firstMinorRow.minor_a_pct90),
+            };
+            const groupedByBroad = d3.group(
+              minorOccupations,
+              (d) => d.broad_group_title,
+            );
+            const broadGroups = [];
+            groupedByBroad.forEach((broadOccupations, broadTitle) => {
+              const firstBroadRow = broadOccupations[0];
+              const broadStats = {
+                totalEmployment: parseFloat(firstBroadRow.broad_tot_emp),
+                median: safeParseFloat(firstBroadRow.broad_a_median),
+                pct10: safeParseFloat(firstBroadRow.broad_a_pct10),
+                pct25: safeParseFloat(firstBroadRow.broad_a_pct25),
+                pct75: safeParseFloat(firstBroadRow.broad_a_pct75),
+                pct90: safeParseFloat(firstBroadRow.broad_a_pct90),
+              };
+              broadGroups.push({
+                name: broadTitle,
+                groupCode: firstBroadRow.broad_group_code,
+                stats: broadStats,
+                occupationCount: broadOccupations.length,
+                children: broadOccupations.map((occ) => ({
+                  name: occ.OCC_TITLE,
+                  occCode: occ.OCC_CODE,
+                  value: parseFloat(occ.TOT_EMP) || 0,
+                  stats: {
+                    totalEmployment: parseFloat(occ.TOT_EMP) || 0,
+                    median: safeParseFloat(occ.A_MEDIAN),
+                    mean: safeParseFloat(occ.A_MEAN),
+                    pct10: safeParseFloat(occ.A_PCT10),
+                    pct25: safeParseFloat(occ.A_PCT25),
+                    pct75: safeParseFloat(occ.A_PCT75),
+                    pct90: safeParseFloat(occ.A_PCT90),
+                    projectedEmployment2034: safeParseFloat(occ.EMP_2034),
+                    empChangePct: safeParseFloat(occ.EMP_CHANGE_PCT),
+                  },
+                })),
+              });
+            });
+            minorGroups.push({
+              name: minorTitle,
+              groupCode: firstMinorRow.minor_group_code,
+              stats: minorStats,
+              occupationCount: minorOccupations.length,
+              broadGroupCount: broadGroups.length,
+              children: broadGroups,
+            });
+          });
+          rootData.children.push({
+            name: majorTitle,
+            groupCode: firstMajorRow.major_group_code,
+            stats: majorStats,
+            minorGroupCount: minorGroups.length,
+            children: minorGroups,
+          });
+        });
+
+        const root = d3
+          .hierarchy(rootData)
+          .sum((d) => (d.children ? 0 : d.value))
+          .sort((a, b) => b.value - a.value);
+        g.rootNode = root;
+
+        let currentFocus = root;
+        g.currentFocus = root;
+        g.frameGroup = svg.append("g").attr("class", "treemap-frames");
+        g.rectGroup = svg.append("g").attr("class", "treemap-rects");
+        g.labelGroup = svg.append("g").attr("class", "treemap-labels");
+        g.dotGroup = svg.append("g").attr("class", "treemap-dots");
+        g.dashboardGroup = svg.append("g").attr("class", "treemap-dashboard");
+        g.renderFn = render;
+        render(root);
+
+        function render(node) {
+          currentFocus = node;
+          g.currentFocus = node;
+          g.detailedViewActive = false;
+          g.currentDetailedOcc = null;
+          updateNavBanner(node);
+          g.dashboardGroup.selectAll("*").remove();
+          const focusDepth = node.depth;
+          const ancestors = getAncestors(node);
+          const framePadding = 8,
+            labelHeight = 28;
+          let innerX = 0,
+            innerY = 0,
+            innerWidth = width,
+            innerHeight = height;
+          for (let i = 0; i < ancestors.length; i++) {
+            innerX += framePadding;
+            innerY += labelHeight;
+            innerWidth -= framePadding * 2;
+            innerHeight -= labelHeight + framePadding;
+          }
+          g.frameGroup.selectAll("*").remove();
+          g.rectGroup
+            .selectAll("rect")
+            .classed("treemap-cell-selected", false)
+            .classed("treemap-cell-dimmed", false);
+          const sumFn = (d) => (d.children ? 0 : d.value);
+          const layoutRoot = d3
+            .hierarchy(node === root ? rootData : node.data)
+            .sum(sumFn)
+            .sort((a, b) => b.value - a.value);
+          const layout = d3
+            .treemap()
+            .tile(d3.treemapSquarify.ratio(1))
+            .size([innerWidth, innerHeight])
+            .paddingTop(5)
+            .paddingLeft(5)
+            .paddingRight(5)
+            .paddingInner(2);
+          layout(layoutRoot);
+          const nodesToDraw = layoutRoot.children || [layoutRoot];
+          const t = svg.transition().duration(250).ease(d3.easeQuadOut);
+          const offsetX = innerX,
+            offsetY = innerY;
+          const fillFn = (d) => getCellColor(d, focusDepth, node);
+          const rects = g.rectGroup
+            .selectAll("rect")
+            .data(
+              nodesToDraw,
+              (d) =>
+                d.data.name +
+                "-" +
+                d.depth +
+                "-" +
+                (d.parent ? d.parent.data.name : "root"),
+            )
+            .join(
+              (enter) =>
+                enter
+                  .append("rect")
+                  .attr("class", (d) =>
+                    !d.data.children || d.data.children.length === 0
+                      ? "treemap-cell treemap-cell-detailed"
+                      : "treemap-cell",
+                  )
+                  .attr("x", (d) => d.x0 + offsetX)
+                  .attr("y", (d) => d.y0 + offsetY)
+                  .attr("width", (d) => d.x1 - d.x0)
+                  .attr("height", (d) => d.y1 - d.y0)
+                  .attr("fill", fillFn)
+                  .attr("opacity", 1)
+                  .attr("stroke", WOODCUT_CONFIG.stroke)
+                  .attr("stroke-width", 2),
+              (update) =>
+                update
+                  .transition(t)
+                  .attr("x", (d) => d.x0 + offsetX)
+                  .attr("y", (d) => d.y0 + offsetY)
+                  .attr("width", (d) => d.x1 - d.x0)
+                  .attr("height", (d) => d.y1 - d.y0)
+                  .attr("fill", fillFn)
+                  .attr("opacity", 1)
+                  .attr("stroke", WOODCUT_CONFIG.stroke)
+                  .attr("stroke-width", 2),
+              (exit) => exit.transition(t).attr("opacity", 0).remove(),
+            );
+          rects
+            .on("click", (event, d) => {
+              event.stopPropagation();
+              if (!d.data.children || d.data.children.length === 0) {
+                const originalNode = currentFocus.children.find(
+                  (child) => child.data.name === d.data.name,
+                );
+                if (originalNode) showDetailedOccupationDashboard(originalNode);
+                return;
+              }
+              const originalNode = (
+                currentFocus === root ? root : currentFocus
+              ).children.find((child) => child.data.name === d.data.name);
+              if (originalNode && originalNode.children) render(originalNode);
+            })
+            .on("mouseover", (event, d) => {
+              const originalNode = (
+                currentFocus === root ? root : currentFocus
+              ).children.find((child) => child.data.name === d.data.name);
+              if (originalNode)
+                showTooltip(event, createTooltipHTML(originalNode));
+            })
+            .on("mousemove", (event) => moveTooltip(event))
+            .on("mouseout", hideTooltip);
+
+          // ── Labels ──
+          const labelHeights = new Map();
+          const calculateScaleFactor = (w, h) =>
+            Math.min(Math.min(1, w / 150), Math.min(1, h / 80));
+          const calculateFontSize = (w, h) =>
+            10 + (14 - 10) * calculateScaleFactor(w, h);
+          const calculateDotRadius = (w, h) =>
+            2.5 + (8 - 2.5) * calculateScaleFactor(w, h);
+          g.labelGroup
+            .selectAll("text.cell-label")
+            .data(nodesToDraw, (d) => d.data.name + "-" + d.depth)
+            .join(
+              (enter) =>
+                enter
+                  .append("text")
+                  .attr("class", "cell-label")
+                  .attr("opacity", 0),
+              (update) => update,
+              (exit) => exit.transition(t).attr("opacity", 0).remove(),
+            )
+            .each(function (d) {
+              const cellWidth = d.x1 - d.x0,
+                cellHeight = d.y1 - d.y0;
+              const fontSize = calculateFontSize(cellWidth, cellHeight);
+              const padding = 5,
+                maxTextWidth = cellWidth - padding * 2;
+              d3.select(this).selectAll("*").remove();
+              const textEl = d3.select(this);
+              const textX = d.x0 + offsetX + padding,
+                textY = d.y0 + offsetY + fontSize + 5;
+              textEl.attr("opacity", 0);
+              labelHeights.set(d.data.name, 0);
+              if (cellWidth > 60 && cellHeight > 35) {
+                const labelText = d.data.name.replace(" Occupations", "");
+                const words = labelText.split(/\s+/);
+                let line = [],
+                  lineNumber = 0;
+                textEl.style("font-size", fontSize + "px");
+                let tspan = textEl
+                  .append("tspan")
+                  .attr("x", textX)
+                  .attr("y", textY);
+                for (const word of words) {
+                  line.push(word);
+                  tspan.text(line.join(" "));
+                  if (
+                    tspan.node().getComputedTextLength() > maxTextWidth &&
+                    line.length > 1
+                  ) {
+                    line.pop();
+                    tspan.text(line.join(" "));
+                    line = [word];
+                    lineNumber++;
+                    tspan = textEl
+                      .append("tspan")
+                      .attr("x", textX)
+                      .attr("dy", "1.1em")
+                      .text(word);
+                  }
+                }
+                const lines = lineNumber + 1;
+                const textHeight = lines * (fontSize * 1.1);
+                const valueFontSize = Math.max(10, fontSize - 2);
+                const valueLineHeight = valueFontSize * 1.3;
+                let totalLabelHeight = fontSize + 5 + textHeight;
+                if (cellHeight > textHeight + valueLineHeight + 10) {
+                  const abbr = abbreviateNumber(d.value);
+                  const pct = ((d.value / g.rootNode.value) * 100).toFixed(1);
+                  textEl
+                    .append("tspan")
+                    .attr("class", "cell-value")
+                    .attr("x", textX)
+                    .attr("dy", "1.3em")
+                    .style("font-size", valueFontSize + "px")
+                    .text(abbr + " (" + pct + "%)");
+                  totalLabelHeight += valueLineHeight;
+                }
+                if (
+                  textHeight +
+                    (cellHeight > textHeight + valueLineHeight + 10
+                      ? valueLineHeight
+                      : 0) <
+                  cellHeight - padding * 2
+                ) {
+                  textEl.attr("opacity", 1);
+                  labelHeights.set(d.data.name, totalLabelHeight);
+                } else {
+                  d3.select(this).selectAll("*").remove();
+                }
+              }
+            });
+
+          // ── Character dots (ghosts) ──
+          let dotsData = [];
+          function processGroup(characters, rectNode) {
+            const rectX = rectNode.x0 + offsetX,
+              rectY = rectNode.y0 + offsetY;
+            const cellWidth = rectNode.x1 - rectNode.x0,
+              cellHeight = rectNode.y1 - rectNode.y0;
+            const storedLabelHeight = labelHeights.get(rectNode.data.name) || 0;
+            const topMargin = storedLabelHeight > 0 ? storedLabelHeight + 4 : 8;
+            const dotRadius = calculateDotRadius(cellWidth, cellHeight);
+            const iconSize = dotRadius * 2.5;
+            const dotSpacing = iconSize + Math.max(2, dotRadius / 2);
+            const cols = Math.max(1, Math.floor((cellWidth - 10) / dotSpacing));
+            characters.forEach((char, i) => {
+              const col = i % cols,
+                row = Math.floor(i / cols);
+              const charX = rectX + 5 + col * dotSpacing + iconSize / 2;
+              const charY = rectY + topMargin + row * dotSpacing + iconSize / 2;
+              if (charY + iconSize / 2 < rectY + cellHeight - 5)
+                dotsData.push({
+                  ...char,
+                  x: charX,
+                  y: charY,
+                  radius: dotRadius,
+                });
+            });
+          }
+          if (focusDepth === 0) {
+            nodesToDraw.forEach((rn) => {
+              const chars = charactersData.filter(
+                (c) => c.major_group_title === rn.data.name,
+              );
+              if (chars.length > 0) processGroup(chars, rn);
+            });
+          } else if (focusDepth === 1) {
+            nodesToDraw.forEach((rn) => {
+              const chars = charactersData.filter(
+                (c) =>
+                  c.major_group_title === node.data.name &&
+                  c.minor_group_title === rn.data.name,
+              );
+              if (chars.length > 0) processGroup(chars, rn);
+            });
+          } else if (focusDepth === 2) {
+            nodesToDraw.forEach((rn) => {
+              const chars = charactersData.filter(
+                (c) =>
+                  c.major_group_title === node.parent.data.name &&
+                  c.minor_group_title === node.data.name &&
+                  c.broad_group_title === rn.data.name,
+              );
+              if (chars.length > 0) processGroup(chars, rn);
+            });
+          } else if (focusDepth === 3) {
+            nodesToDraw.forEach((rn) => {
+              const chars = charactersData.filter(
+                (c) => c.occ_code === rn.data.occCode,
+              );
+              if (chars.length > 0) processGroup(chars, rn);
+            });
+          }
+          const getIconSize = (d) => d.radius * 2.5;
+          const dots = g.dotGroup
+            .selectAll("g.character-ghost")
+            .data(dotsData, (d) => d.name);
+          dots
+            .exit()
+            .style("pointer-events", "none")
+            .transition(t)
+            .style("opacity", 0)
+            .remove();
+          const enterDots = dots
+            .enter()
+            .append("g")
+            .attr("class", "character-ghost")
+            .attr("transform", (d) => "translate(" + d.x + ", " + d.y + ")")
+            .style("opacity", 0);
+          enterDots
+            .append("use")
+            .attr("href", "#spectre-creux")
+            .attr("width", getIconSize)
+            .attr("height", getIconSize)
+            .attr("x", (d) => -getIconSize(d) / 2)
+            .attr("y", (d) => -getIconSize(d) / 2);
+          const allDots = enterDots.merge(dots);
+          allDots
+            .on("mouseover", (event, d) =>
+              showTooltip(
+                event,
+                createCharacterTooltipHTML(d),
+                10,
+                10,
+                "character-tooltip-treemap",
+              ),
+            )
+            .on("mousemove", (event) => moveTooltip(event))
+            .on("mouseout", hideTooltip);
+          allDots
+            .transition(t)
+            .attr("transform", (d) => "translate(" + d.x + ", " + d.y + ")")
+            .style("opacity", 0.85);
+          allDots
+            .select("use")
+            .attr("width", getIconSize)
+            .attr("height", getIconSize)
+            .attr("x", (d) => -getIconSize(d) / 2)
+            .attr("y", (d) => -getIconSize(d) / 2);
+          updateSidebarFrames(node);
+          updateSidebar(node);
+        }
+      }
+    </script>
+
+    <!-- Worked-example carousel for the SOC tree card.
+         Fetches rabelais-annotations once, builds a navigation order
+         from the [data-figures] spans inside the chapter excerpt, and
+         renders an SVG tree for the currently-selected character.
+         Click a figure span OR the manicule buttons to navigate. -->
+    <script>
+      (function () {
+        const API_URL =
+          "https://municipalsky.com/api/rabelais-annotations.php";
+
+        const stripOcc = (s) =>
+          (s || "").replace(/\s+Occupations$/i, "");
+
+        function wrapLines(text, maxChars) {
+          const words = String(text).split(/\s+/).filter(Boolean);
+          const lines = [];
+          let cur = "";
+          for (const w of words) {
+            const next = cur ? cur + " " + w : w;
+            if (next.length > maxChars && cur) {
+              lines.push(cur);
+              cur = w;
+            } else {
+              cur = next;
+            }
+          }
+          if (cur) lines.push(cur);
+          return lines.length ? lines : [""];
+        }
+
+        const escape = (s) =>
+          String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+
+        // Extract the first sentence from a description. Greedy match
+        // up to the first sentence-ending punctuation (.!?). Falls back
+        // to the whole string if no terminator is found.
+        function firstSentence(text) {
+          if (!text) return "";
+          const m = String(text).match(/^[^.!?]*[.!?]/);
+          return m ? m[0].trim() : String(text).trim();
+        }
+
+        // Tree layout constants — tuned to 14px Cormorant Garamond inside a
+        // ~312px-wide card body. Adjust TREE_W if the right page width
+        // changes. OFFSET_Y is the buffer above row 0 so the meta-label
+        // ("MAJOR GROUP") doesn't clip outside the SVG viewBox.
+        const TREE_W_DEFAULT = 320;
+        const INDENT = 22;
+        const TEXT_GAP = 12;
+        // LINE_H = vertical distance between baselines of wrapped lines
+        // inside a single label. 18 at 14px font = ~1.29 line-height —
+        // tight enough to read as a single label, loose enough to keep
+        // descenders + ascenders from kissing.
+        const LINE_H = 18;
+        const ROW_GAP = 32;
+        const OFFSET_X = 6;
+        const OFFSET_Y = 28;
+        const CHAR_W = 6.5;
+
+        function renderSocTree(mount, character, opts) {
+          const treeW = (opts && opts.treeW) || TREE_W_DEFAULT;
+          if (!character) {
+            mount.innerHTML =
+              '<p class="soc-tree-mount-empty">Classification unavailable.</p>';
+            return;
+          }
+          const labels = [
+            stripOcc(character.major_group_title),
+            stripOcc(character.minor_group_title),
+            stripOcc(character.broad_group_title),
+            character.occ_title || "",
+          ].filter((s) => s && s.length > 0);
+          if (labels.length === 0) {
+            mount.innerHTML = "";
+            return;
+          }
+          const nodes = [];
+          let cy = 0;
+          for (let i = 0; i < labels.length; i++) {
+            const x = i * INDENT;
+            const textX = x + TEXT_GAP;
+            const availW = treeW - OFFSET_X * 2 - textX;
+            const maxChars = Math.max(
+              10,
+              Math.floor(availW / CHAR_W),
+            );
+            const lines = wrapLines(labels[i], maxChars);
+            nodes.push({
+              x,
+              textX,
+              y: cy,
+              lines,
+              isLeaf: i === labels.length - 1,
+              levelLabel: [
+                "Major Group",
+                "Minor Group",
+                "Broad Group",
+                "Detailed Occupation",
+              ][i],
+            });
+            // Buffer keeps the gap between this row's last line and the
+            // next row's meta-label constant regardless of LINE_H tweaks.
+            cy += Math.max(ROW_GAP, lines.length * LINE_H + 18);
+          }
+          const last = nodes[nodes.length - 1];
+          // Bottom buffer kept tight; the O*NET description sits flush
+          // below the SVG and the empty parchment fills the rest.
+          const totalH =
+            last.y + last.lines.length * LINE_H + OFFSET_Y + 4;
+          const figureName = character.name || "figure";
+          const pathDesc = labels.join(" › ");
+          let svg =
+            '<svg class="soc-tree-svg" ' +
+            `width="${treeW}" height="${totalH}" ` +
+            `viewBox="0 0 ${treeW} ${totalH}" ` +
+            'role="img" aria-label="' +
+            escape(figureName) +
+            " SOC classification path: " +
+            escape(pathDesc) +
+            '">';
+          svg += `<g transform="translate(${OFFSET_X}, ${OFFSET_Y})">`;
+          // Right-angle elbow connectors drawn first so circles sit on top.
+          for (let i = 1; i < nodes.length; i++) {
+            const p = nodes[i - 1];
+            const c = nodes[i];
+            svg +=
+              `<path class="soc-tree-svg-path" d="M${p.x},${p.y + 4}` +
+              ` V${c.y + 4} H${c.x}" />`;
+          }
+          for (const n of nodes) {
+            const cls = n.isLeaf
+              ? "soc-tree-svg-node is-leaf"
+              : "soc-tree-svg-node";
+            svg +=
+              `<circle class="${cls}" cx="${n.x}" cy="${n.y + 4}"` +
+              ' r="3.5" />';
+          }
+          for (const n of nodes) {
+            const cls = n.isLeaf
+              ? "soc-tree-svg-text is-leaf"
+              : "soc-tree-svg-text";
+            const textY = n.y + 8;
+            // Per-level meta-label (MAJOR GROUP, MINOR GROUP, etc.) in
+            // vermillion small caps above each row's label.
+            svg +=
+              `<text class="soc-tree-svg-meta" x="${n.textX}"` +
+              ` y="${textY - 14}">${n.levelLabel}</text>`;
+            if (n.lines.length === 1) {
+              svg +=
+                `<text class="${cls}" x="${n.textX}" y="${textY}">` +
+                escape(n.lines[0]) +
+                "</text>";
+            } else {
+              svg +=
+                `<text class="${cls}" x="${n.textX}" y="${textY}">`;
+              for (let li = 0; li < n.lines.length; li++) {
+                const dy = li === 0 ? "" : ` dy="${LINE_H}"`;
+                svg +=
+                  `<tspan x="${n.textX}"${dy}>` +
+                  escape(n.lines[li]) +
+                  "</tspan>";
+              }
+              svg += "</text>";
+            }
+          }
+          svg += "</g></svg>";
+          mount.innerHTML = svg;
+        }
+
+        function initFigureCarousel(card, byName) {
+          const excerpt = card.querySelector(
+            "[data-soc-tree-excerpt]",
+          );
+          const mount = card.querySelector(".soc-tree-mount");
+          const figureNameEl = card.querySelector(
+            "[data-soc-tree-figure-name]",
+          );
+          const figureDescEl = card.querySelector(
+            "[data-soc-tree-figure-description]",
+          );
+          const figureLaborEl = card.querySelector(
+            "[data-soc-tree-figure-labor]",
+          );
+          const indicatorEl = card.querySelector(
+            "[data-soc-tree-figure-indicator]",
+          );
+          const counter = card.querySelector("[data-soc-tree-counter]");
+          const prevBtn = card.querySelector(
+            '[data-soc-tree-nav="prev"]',
+          );
+          const nextBtn = card.querySelector(
+            '[data-soc-tree-nav="next"]',
+          );
+          if (!excerpt || !mount) return;
+
+          // Flat-map spans into navigation entries (one entry per name).
+          // A single span may carry pipe-separated names (e.g.
+          // data-figures="Brutus|Cassius") when one chapter sentence
+          // introduces multiple figures.
+          const entries = [];
+          excerpt
+            .querySelectorAll("[data-figures]")
+            .forEach((el) => {
+              const raw = el.getAttribute("data-figures") || "";
+              raw.split("|").forEach((name) => {
+                const trimmed = name.trim();
+                if (trimmed) entries.push({ name: trimmed, span: el });
+              });
+              // Click-to-navigate: clicking a span in the chapter jumps
+              // directly to that figure's tree (first name if paired).
+              el.addEventListener("click", () => {
+                const targetName = raw.split("|")[0].trim();
+                const foundIdx = entries.findIndex(
+                  (e) => e.name === targetName,
+                );
+                if (foundIdx >= 0) {
+                  idx = foundIdx;
+                  render({ scrollInto: false });
+                }
+              });
+            });
+          if (entries.length === 0) return;
+
+          const startName = card.getAttribute("data-soc-tree-start");
+          let idx = 0;
+          if (startName) {
+            const found = entries.findIndex(
+              (e) => e.name === startName,
+            );
+            if (found >= 0) idx = found;
+          }
+
+          const treeWAttr = parseInt(
+            card.getAttribute("data-soc-tree-width") || "",
+            10,
+          );
+          const treeW = Number.isFinite(treeWAttr) ? treeWAttr : null;
+
+          // Position the indicator line on the excerpt's right edge
+          // so it sits where the current span falls in the FULL chapter
+          // (i.e. its position on the scrollbar track). Does not move
+          // when the excerpt scrolls — only when the figure changes.
+          function updateFigureIndicator(span) {
+            if (!indicatorEl || !excerpt || !span) return;
+            if (excerpt.scrollHeight <= excerpt.clientHeight) {
+              indicatorEl.classList.remove("is-visible");
+              return;
+            }
+            const spanRect = span.getBoundingClientRect();
+            const excerptRect = excerpt.getBoundingClientRect();
+            // Distance from top of full scroll content to top of the span
+            const spanTopInContent =
+              excerpt.scrollTop + (spanRect.top - excerptRect.top);
+            const fraction = spanTopInContent / excerpt.scrollHeight;
+            // Map to the scrollbar track on the right edge of the excerpt.
+            // Subtract half the line's height so it visually centers on
+            // the figure's position.
+            const indicatorY =
+              excerpt.offsetTop + fraction * excerpt.clientHeight - 1.5;
+            indicatorEl.style.top = indicatorY + "px";
+            indicatorEl.classList.add("is-visible");
+          }
+
+          // Scroll the excerpt (and only the excerpt — not the page) so
+          // the current span sits roughly centered in the viewport.
+          function centerSpanInExcerpt(span, smooth) {
+            if (
+              !span ||
+              excerpt.scrollHeight <= excerpt.clientHeight
+            ) {
+              return;
+            }
+            const spanRect = span.getBoundingClientRect();
+            const excerptRect = excerpt.getBoundingClientRect();
+            const spanTopInExcerpt =
+              excerpt.scrollTop +
+              (spanRect.top - excerptRect.top);
+            const target =
+              spanTopInExcerpt -
+              (excerpt.clientHeight - spanRect.height) / 2;
+            excerpt.scrollTo({
+              top: Math.max(0, target),
+              behavior: smooth ? "smooth" : "auto",
+            });
+          }
+
+          function render(opts) {
+            const scrollInto = opts && opts.scrollInto;
+            const smooth = !(opts && opts.instant);
+            const current = entries[idx];
+            const seen = new Set();
+            entries.forEach((e) => {
+              if (seen.has(e.span)) return;
+              seen.add(e.span);
+              e.span.classList.toggle(
+                "is-current",
+                e.span === current.span,
+              );
+            });
+            if (counter) {
+              counter.textContent =
+                entries.length > 1
+                  ? "#" + (idx + 1) + " of " + entries.length
+                  : "";
+            }
+            const character = byName.get(current.name);
+            if (figureNameEl) figureNameEl.textContent = current.name;
+            if (figureDescEl) {
+              figureDescEl.textContent = firstSentence(
+                character && character.description,
+              );
+            }
+            if (figureLaborEl) {
+              let laborStr = (character && character.labor) || "";
+              if (laborStr) {
+                laborStr =
+                  laborStr.charAt(0).toUpperCase() + laborStr.slice(1);
+              }
+              figureLaborEl.textContent = laborStr;
+            }
+            renderSocTree(
+              mount,
+              character,
+              treeW ? { treeW: treeW } : undefined,
+            );
+            if (scrollInto) {
+              centerSpanInExcerpt(current.span, smooth);
+            }
+            updateFigureIndicator(current.span);
+          }
+
+          function step(delta) {
+            idx = (idx + delta + entries.length) % entries.length;
+            render({ scrollInto: true });
+          }
+          if (prevBtn)
+            prevBtn.addEventListener("click", () => step(-1));
+          if (nextBtn)
+            nextBtn.addEventListener("click", () => step(+1));
+
+          // Reveal the card body BEFORE the initial render+scroll so
+          // the excerpt has real layout for the scroll math to work.
+          card.classList.remove("is-loading");
+          render({ scrollInto: true, instant: true });
+        }
+
+        function init() {
+          const carousels = document.querySelectorAll(
+            ".soc-tree-card--carousel",
+          );
+          if (carousels.length === 0) return;
+
+          fetch(API_URL + "?v=" + Date.now())
+            .then((r) => {
+              if (!r.ok) throw new Error("HTTP " + r.status);
+              return r.json();
+            })
+            .then((data) => {
+              if (!data || !data.characters) {
+                throw new Error("Missing characters in API response");
+              }
+              const byName = new Map();
+              for (const c of data.characters) {
+                if (c && c.name) byName.set(c.name, c);
+              }
+              carousels.forEach((card) =>
+                initFigureCarousel(card, byName),
+              );
+            })
+            .catch((err) => {
+              console.error("SOC tree data load failed:", err);
+              carousels.forEach((c) => {
+                c.classList.remove("is-loading");
+                c.classList.add("is-error");
+                const loadingEl = c.querySelector(
+                  "[data-soc-tree-loading]",
+                );
+                if (loadingEl) {
+                  loadingEl.innerHTML =
+                    '<span class="soc-tree-card-loading-text">Could not load classification data.</span>';
+                }
+              });
+            });
+        }
+
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", init);
+        } else {
+          init();
+        }
+      })();
+    </script>
+  </body>
+</html>

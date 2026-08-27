@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PJ2 dev — pj2-viz.js test bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+<style>
+/* dev bench for the live renderer (family pattern: skin-test.html). One
+   engine at a time, REAL audio + viz. Plain chrome by design — the real
+   cabinet is pj2-ui.js's job; this page exists to art-direct the plates. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0908; color: #a89a78; font-family: "VT323", monospace; font-size: 17px; padding: 12px 14px 40px; }
+h1 { font-size: 20px; letter-spacing: 0.2em; color: #c7b795; margin-bottom: 6px; }
+.controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+button, select, input { background: #17120b; color: #c7b795; border: 1px solid #3a2d18; font-family: inherit; font-size: 16px; padding: 3px 10px; cursor: pointer; }
+button.lit { background: #3a2d18; color: #e8c95a; }
+input { width: 90px; cursor: text; }
+.stage { display: flex; gap: 14px; align-items: flex-start; }
+.plate-col { flex: 1 1 auto; min-width: 0; }
+#plate { display: block; width: 100%; height: 760px; }
+.margin-col { flex: 0 0 402px; }
+#margin { display: block; width: 402px; height: 640px; }
+.devbox {
+  margin-top: 10px; border: 1px solid #2c2214; padding: 8px 10px;
+  font-size: 14px; color: #8a7d63; white-space: pre; overflow-x: auto;
+  max-height: 190px; overflow-y: auto;
+}
+.logbox {
+  flex: 0 0 402px; margin-top: 6px; border: 1px solid #2c2214; padding: 6px 8px;
+  font-size: 14px; color: #8a7d63; height: 150px; overflow-y: auto; white-space: pre-wrap;
+}
+.note { color: #6b6252; font-size: 14px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>PJ2-VIZ TEST BENCH — one engine at a time, real audio</h1>
+<div class="note">dev tool · ?track=library|sycorax|ariel &amp; ?autoplay=1 &amp; ?seed=N &amp; ?vol=0..1 · the DOM event log below is a bench aid (the real log is pj2-ui.js's)</div>
+
+<div class="controls">
+  <select id="track">
+    <option value="library">LIBRARY — the alchemical codex</option>
+    <option value="sycorax">SYCORAX — the woodcut grimoire</option>
+    <option value="ariel">ARIEL — the celestial atlas</option>
+  </select>
+  <button id="play">PLAY ▶</button>
+  <button id="stop">STOP ■</button>
+  seed <input id="seed" value="451049" />
+  vol <input id="vol" value="0.5" style="width:50px" />
+  <button id="rot">AUTO-ROTATE: ON</button>
+  <span id="status" class="note">idle</span>
+</div>
+
+<div class="stage">
+  <div class="plate-col">
+    <canvas id="plate"></canvas>
+  </div>
+  <div class="margin-col">
+    <canvas id="margin"></canvas>
+    <div class="logbox" id="log"></div>
+  </div>
+</div>
+
+<div class="devbox" id="dev">boot…</div>
+
+<script src="pj2-rand.js"></script>
+<script src="pj2-pitch.js"></script>
+<script src="pj2-clock.js"></script>
+<script src="pj2-voice.js"></script>
+<script src="pj2-fx.js"></script>
+<script src="pj2-air.js"></script>
+<script src="pj2-motif.js"></script>
+<script src="pj2-harmony.js"></script>
+<script src="pj2-conductor.js"></script>
+<script src="pj2-library.js"></script>
+<script src="pj2-sycorax.js"></script>
+<script src="pj2-ariel.js"></script>
+<script src="pj2-skin.js"></script>
+<script src="pj2-viz.js"></script>
+<script>
+(function () {
+"use strict";
+
+PJ2.Skin.dev = true; // bench runs with the ink-law tripwire armed
+
+var Q = {};
+location.search.replace(/[?&]([^=&]+)=([^&]*)/g, function (_, k, v) { Q[k] = decodeURIComponent(v); });
+
+// ---- ONE AudioContext for engine + viz. The engines new up their own ctx
+// via window.AudioContext; the viz needs the SAME ctx to create the
+// analyser (cross-context nodes cannot connect). Shim the constructor to a
+// singleton — a bench-side trick; the real UI owns this decision.
+var RealAC = window.AudioContext || window.webkitAudioContext;
+var sharedCtx = null;
+function SharedAC() {
+  if (!sharedCtx) sharedCtx = new RealAC();
+  return sharedCtx;
+}
+window.AudioContext = SharedAC;
+window.webkitAudioContext = SharedAC;
+
+var FACTORY = { library: "Library", sycorax: "Sycorax", ariel: "Ariel" };
+var engines = {};   // one facade per track, created lazily
+var current = null; // track name of the attached+playing engine
+var viz = null;
+
+var elTrack = document.getElementById("track");
+var elPlay = document.getElementById("play");
+var elStop = document.getElementById("stop");
+var elSeed = document.getElementById("seed");
+var elVol = document.getElementById("vol");
+var elRot = document.getElementById("rot");
+var elStatus = document.getElementById("status");
+var elDev = document.getElementById("dev");
+var elLog = document.getElementById("log");
+
+var logLines = [];
+function blog(s) {
+  logLines.push(s);
+  if (logLines.length > 60) logLines.shift();
+  elLog.textContent = logLines.join("\n");
+  elLog.scrollTop = elLog.scrollHeight;
+}
+
+function engineFor(track) {
+  if (!engines[track]) {
+    var seed = parseInt(elSeed.value, 10) || 1;
+    engines[track] = PJ2[FACTORY[track]].create({ seed: seed, volume: parseFloat(elVol.value) || 0.5 });
+    engines[track].setEventListener(function (ev) {
+      var extra = ev.label ? " · " + ev.label : (ev.kind ? " · " + ev.kind : (ev.pose ? " · " + ev.pose : ""));
+      if (ev.type !== "air" && ev.type !== "percussion") {
+        blog("[" + track.slice(0, 3) + "] " + (ev.t != null ? ev.t.toFixed(1) + "s " : "") + ev.type + extra);
+      }
+    });
+  }
+  return engines[track];
+}
+
+function switchTrack(track, andPlay) {
+  // stop the old evening (one engine at a time)
+  if (current && engines[current]) {
+    try { engines[current].stop(); } catch (e) {}
+  }
+  viz.detach();
+  viz.setTrack(track);
+  current = track;
+  elTrack.value = track;
+  if (andPlay) {
+    var eng = engineFor(track);
+    eng.play();                 // creates/reuses the shared AudioContext
+    viz.attach(eng, sharedCtx); // same ctx the engine's bus lives on
+    elStatus.textContent = "playing " + track;
+  } else {
+    elStatus.textContent = "idle · " + track;
+  }
+}
+
+function boot() {
+  viz = PJ2.Viz.create({
+    plateCanvas: document.getElementById("plate"),
+    marginCanvas: document.getElementById("margin"),
+    seed: parseInt(elSeed.value, 10) || 1,
+  });
+  window.__viz = viz; // console access for art direction
+  viz.resize();
+  viz.start();
+
+  // camera phase offset for reproducible stills: ?t=SECONDS
+  if (Q.t) viz.setCamera(0.55 + parseFloat(Q.t) * 2 * Math.PI / 60, 0.30);
+
+  elPlay.addEventListener("click", function () { switchTrack(elTrack.value, true); });
+  elStop.addEventListener("click", function () {
+    if (current && engines[current]) engines[current].stop();
+    elStatus.textContent = "stopped (viz stays attached — tails ring out)";
+  });
+  elTrack.addEventListener("change", function () {
+    switchTrack(elTrack.value, !!(current && engines[current] && engines[current].isPlaying()));
+  });
+  elRot.addEventListener("click", function () {
+    var on = elRot.textContent.indexOf("ON") >= 0;
+    viz.setAutoRotate(!on);
+    elRot.textContent = "AUTO-ROTATE: " + (on ? "OFF" : "ON");
+  });
+  elVol.addEventListener("change", function () {
+    if (current && engines[current]) engines[current].setMasterVolume(parseFloat(elVol.value) || 0.5);
+  });
+  window.addEventListener("resize", function () { viz.resize(); });
+
+  // dev readout — the art director's numbers
+  setInterval(function () {
+    var d = viz.debug();
+    var i = d.info || {};
+    elDev.textContent =
+      "track " + d.track + " · attached " + d.attached + " · fftPeak " + d.fftPeak.toFixed(3)
+      + " · plate " + (d.plateMs || 0).toFixed(1) + "ms · marks " + d.marks
+      + " · illus " + d.illustrations + " · tonicPc " + d.era.tonicPc + "\n"
+      + "scene " + (i.sceneLabel || i.sceneType || "—") + " x" + (i.x || 0).toFixed(2)
+      + " · tide " + (i.tidePos == null ? "—" : i.tidePos.toFixed(2)) + " (" + (i.tideLabel || "—") + ")"
+      + " · intensity " + (i.intensity == null ? "—" : i.intensity.toFixed(2))
+      + " · harmony " + (i.harmony || i.pose || "—")
+      + " · air " + (i.airHolders == null ? "—" : i.airHolders);
+  }, 500);
+
+  var track = Q.track || "library";
+  if (Q.autoplay === "1") {
+    switchTrack(track, true);
+  } else {
+    switchTrack(track, false);
+  }
+
+  // ?inject=1 — bench-only: fire a scripted §4 event set over the live
+  // audio at t≈5s, so the L3 illustrations can be art-directed without
+  // waiting for a natural sea change / cut. Synthetic events, real shapes.
+  if (Q.inject === "1") {
+    setTimeout(function () {
+      var aT = sharedCtx ? sharedCtx.currentTime : 0;
+      var inj = viz._injectEvent;
+      if (track === "library") {
+        inj({ type: "cadence", kind: "plagal", label: "Ablutio", t: aT, startT: aT - 4, chords: ["iv", "i"] });
+        inj({ type: "develop", voice: "pluck", name: "#b2", gen: 2, t: aT });
+        inj({ type: "develop", voice: "pluck", name: "#b2", gen: 3, t: aT });
+        inj({ type: "answer", voice: "musicbox", name: "#b2", gen: 3, t: aT });
+        inj({ type: "develop", voice: "pluck", name: "#b2", gen: 4, t: aT });
+        inj({ type: "ghost", voice: "pluck", name: "#a7", t: aT, label: "Caput Mortuum" });
+        inj({ type: "seachange", target: "reroot", label: "Transmutatio", field: { tonicHz: 349.23, mode: "dorian" }, t: aT });
+      } else if (track === "sycorax") {
+        inj({ type: "pose", pose: "veil", rootDeg: 0, via: "set", t: aT });
+        inj({ type: "organum", top: 4, low: 0, parts: 2, t: aT, via: "arrival" });
+        inj({ type: "arrival", to: "invocation", t: aT });
+        inj({ type: "cut", t: aT + 0.5, severity: 0.71, dip: 0.25 });
+        inj({ type: "air", voice: "waterphone", t: aT + 1, durS: 8, marginS: 2 });
+        inj({ type: "develop", voice: "chant", name: "#c1", gen: 2, t: aT });
+        setTimeout(function () {
+          viz._injectEvent({ type: "cut-return", t: sharedCtx.currentTime, returnS: 6 });
+        }, 9000);
+      } else {
+        inj({ type: "cadence", kind: "lift", t: aT, startT: aT - 3, chords: ["II", "I"] });
+        inj({ type: "cadence", kind: "float", t: aT, startT: aT - 2, chords: ["I"] });
+        inj({ type: "feather", deg: 4, t: aT });
+        inj({ type: "develop", voice: "whistle", name: "#a4", gen: 2, t: aT });
+        inj({ type: "answer", voice: "chime", name: "#a4", gen: 2, t: aT });
+        inj({ type: "ghost", voice: "whistle", name: "#z1", promoted: true, t: aT });
+        inj({ type: "seachange", target: "up", field: { tonicHz: 392, mode: "lydian" }, t: aT });
+        inj({ type: "release", t: aT, durS: 40 });
+      }
+    }, 5000);
+  }
+}
+
+// fonts first — the skin lesson: canvas-only fonts need an explicit load
+if (document.fonts && document.fonts.load) {
+  Promise.all([
+    document.fonts.load('38px "Jacquard 12"'),
+    document.fonts.load('17px "VT323"'),
+  ]).then(function () { setTimeout(boot, 30); }, function () { boot(); });
+} else {
+  window.addEventListener("load", function () { setTimeout(boot, 60); });
+}
+})();
+</script>
+</body>
+</html>

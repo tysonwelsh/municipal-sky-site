@@ -1,0 +1,596 @@
+{
+  "schema": 1,
+  "version": 19,
+  "updated": "2026-08-16",
+  "grades": [
+    {
+      "id": "prime",
+      "rank": 5,
+      "label": "Prime",
+      "description": "Exceptional. Faithful to the prompt, technically clean, aesthetically strong. Would ship as-is."
+    },
+    {
+      "id": "choice",
+      "rank": 4,
+      "label": "Choice",
+      "description": "Strong result with minor blemishes a careful eye can find."
+    },
+    {
+      "id": "select",
+      "rank": 3,
+      "label": "Select",
+      "description": "Competent and recognizable; noticeable flaws on one or more axes."
+    },
+    {
+      "id": "standard",
+      "rank": 2,
+      "label": "Standard",
+      "description": "Gets the idea across despite significant defects."
+    },
+    {
+      "id": "utility",
+      "rank": 1,
+      "label": "Utility",
+      "description": "The lowest tier. Barely fit for purpose; kept for the record (and the comedy)."
+    }
+  ],
+  "axes": [
+    {
+      "id": "prompt-fidelity",
+      "label": "Prompt fidelity",
+      "defunct": true,
+      "description": "Did the model draw what was asked? Omissions, additions, misreadings. (Defunct as of v6, 2026-07-29 — superseded by Instruction following; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "faithful",
+          "rank": 3,
+          "label": "Faithful",
+          "description": "All requested elements present as specified."
+        },
+        {
+          "id": "partial",
+          "rank": 2,
+          "label": "Partial",
+          "description": "Some requested elements missing, extra, or misread."
+        },
+        {
+          "id": "off-brief",
+          "rank": 1,
+          "label": "Off-brief",
+          "description": "Substantially not the thing that was asked for."
+        }
+      ]
+    },
+    {
+      "id": "geometry",
+      "label": "Geometry & topology",
+      "defunct": true,
+      "description": "Path construction: self-intersections, broken joins, misaligned shapes, impossible anatomy. (Defunct as of v6, 2026-07-29 — superseded by Integrity; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "clean",
+          "rank": 3,
+          "label": "Clean",
+          "description": "No visible construction errors."
+        },
+        {
+          "id": "minor",
+          "rank": 2,
+          "label": "Minor defects",
+          "description": "Small misalignments or overlaps visible on inspection."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major defects",
+          "description": "Structural errors that dominate the read of the image."
+        }
+      ]
+    },
+    {
+      "id": "color",
+      "label": "Color & rendering",
+      "defunct": true,
+      "description": "Palette coherence, gradient quality, fill/stroke errors, z-order mistakes. (Defunct as of v6, 2026-07-29 — kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "clean",
+          "rank": 3,
+          "label": "Clean",
+          "description": "Palette and rendering read as intended."
+        },
+        {
+          "id": "minor",
+          "rank": 2,
+          "label": "Minor defects",
+          "description": "Off colors, banding, or stacking slips that don't break the image."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major defects",
+          "description": "Rendering errors that break the image."
+        }
+      ]
+    },
+    {
+      "id": "composition",
+      "label": "Composition",
+      "defunct": true,
+      "description": "Framing, balance, use of the canvas; is the subject well-placed and scaled? (Defunct as of v6, 2026-07-29 — kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "clean",
+          "rank": 3,
+          "label": "Clean",
+          "description": "Well-composed within its viewBox."
+        },
+        {
+          "id": "minor",
+          "rank": 2,
+          "label": "Minor defects",
+          "description": "Awkward margins, crowding, or scale oddities."
+        },
+        {
+          "id": "major",
+          "rank": 1,
+          "label": "Major defects",
+          "description": "Subject clipped, marooned, or scaled absurdly."
+        }
+      ]
+    },
+    {
+      "id": "instruction-following",
+      "label": "Instruction following",
+      "defunct": true,
+      "description": "Did the output honor each explicit ask — elements, constraints, viewpoint, style requests? (Defunct as of v17, 2026-08-16 — superseded by Understanding the Assignment; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "followed",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Every explicit ask is honored as specified."
+        },
+        {
+          "id": "drifted",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Some asks bent, missed, or quietly replaced."
+        },
+        {
+          "id": "ignored",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "Explicit asks are disregarded outright."
+        }
+      ]
+    },
+    {
+      "id": "restraint",
+      "defunct": true,
+      "label": "Restraint",
+      "description": "Did the model stick to what was asked — or add unrequested elements, decoration, and flourishes? (Retired v16; superseded by the re-scoped Restraint axis of v17, 2026-08-16 — kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "disciplined",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Nothing appears that the prompt didn't call for."
+        },
+        {
+          "id": "embellished",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Unrequested extras crept in without taking over."
+        },
+        {
+          "id": "overgrown",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "Additions crowd or upstage what was actually asked for."
+        }
+      ]
+    },
+    {
+      "id": "integrity",
+      "label": "Structural integrity",
+      "defunct": true,
+      "description": "Does the picture hold together — parts connect, joins meet, anatomy is possible, occlusion and viewpoint stay consistent? (Defunct as of v17, 2026-08-16 — its territory split: the object side went to Structural Coherence, the rendered-occlusion side to Layering; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "sound",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
+        },
+        {
+          "id": "strained",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Visible seams — small breaks, misalignments, or spatial slips."
+        },
+        {
+          "id": "broken",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "Structural or spatial failures dominate the read."
+        }
+      ]
+    },
+    {
+      "id": "style",
+      "defunct": true,
+      "label": "Style",
+      "description": "Is the image one consistent visual language, well executed — whatever language it chose?",
+      "values": [
+        {
+          "id": "unified",
+          "rank": 3,
+          "label": "Unified",
+          "description": "One coherent visual language throughout."
+        },
+        {
+          "id": "mixed",
+          "rank": 2,
+          "label": "Mixed",
+          "description": "Registers collide — parts of the image speak different styles."
+        },
+        {
+          "id": "incoherent",
+          "rank": 1,
+          "label": "Incoherent",
+          "description": "No governing style survives the image."
+        }
+      ]
+    },
+    {
+      "id": "je-ne-sais-quoi",
+      "label": "Je ne sais quoi",
+      "defunct": true,
+      "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway. (Defunct as of v17, 2026-08-16 — superseded by the fresh jnsq axis, same scale, so the new rubric starts blank everywhere; kept for responses graded under it.)",
+      "values": [
+        {
+          "id": "abundant",
+          "rank": 3,
+          "label": "Has _it_",
+          "description": "The piece has it — undeniable, unaccountable appeal."
+        },
+        {
+          "id": "trace",
+          "rank": 2,
+          "label": "Just a hint",
+          "description": "A glimmer of something beyond competence."
+        },
+        {
+          "id": "none-detected",
+          "rank": 1,
+          "label": "Ain't got it",
+          "description": "Technically present, spiritually absent."
+        }
+      ]
+    },
+    {
+      "id": "understanding-assignment",
+      "label": "Understanding the Assignment",
+      "description": "Did the model grasp the brief — each explicit ask, the evident intent behind it, and the brief's negative space? Prompts underspecify and filling the gaps is the job; additions are charged here only when they crowd, contradict, or upstage what was asked. Judged on what it TRIED to draw; whether the drawing itself holds up belongs to the axes below.",
+      "values": [
+        {
+          "id": "read-the-brief",
+          "rank": 4,
+          "label": "Read the brief",
+          "description": "Every explicit ask lands as specified, the intent behind the words comes through, and nothing added crowds the ask."
+        },
+        {
+          "id": "skimmed-it",
+          "rank": 3,
+          "label": "Skimmed it",
+          "description": "An ask bent, softened, or quietly swapped for something easier — or unrequested extras crept in without taking over."
+        },
+        {
+          "id": "misread-it",
+          "rank": 2,
+          "label": "Misread it",
+          "description": "Asks missed or misunderstood, or additions that crowd and contradict; the subject survives, but the brief only partly does."
+        },
+        {
+          "id": "own-brief",
+          "rank": 1,
+          "label": "Wrote its own brief",
+          "description": "Substantially not the thing that was asked for."
+        }
+      ]
+    },
+    {
+      "id": "restraint-2",
+      "label": "Restraint",
+      "description": "Did the model respect the brief's negative space? Prompts underspecify, and filling the gaps is the job — this axis charges only additions that crowd, contradict, or upstage the ask.",
+      "values": [
+        {
+          "id": "disciplined",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Nothing crowds the ask; what the model added fills the brief's gaps in its spirit."
+        },
+        {
+          "id": "embellished",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Unrequested extras crept in without taking over."
+        },
+        {
+          "id": "overgrown",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "Additions crowd, contradict, or upstage what was actually asked for."
+        }
+      ],
+      "defunct": true
+    },
+    {
+      "id": "structural-coherence",
+      "label": "Structural Coherence",
+      "description": "Errors of the object: parts attach, anatomy is possible, proportions and viewpoint stay self-consistent. If fixing it means redrawing geometry, it lands here.",
+      "values": [
+        {
+          "id": "sound",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Coherent construction; nothing floats, breaks, or contradicts itself."
+        },
+        {
+          "id": "strained",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "Visible seams — small breaks, misalignments, or spatial slips."
+        },
+        {
+          "id": "broken",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "The object could not exist; structural failures dominate the read."
+        }
+      ]
+    },
+    {
+      "id": "layering",
+      "label": "Layering",
+      "description": "Errors of the picture: stacking order and occlusion as rendered, fill, stroke and gradient work, framing and use of the canvas. The test — if it could be fixed without moving a single path (reorder, repaint, reframe), it lands here.",
+      "values": [
+        {
+          "id": "clean",
+          "rank": 3,
+          "label": "No problems",
+          "description": "Stacking, paint, and framing all read as intended."
+        },
+        {
+          "id": "shuffled",
+          "rank": 2,
+          "label": "Small problems",
+          "description": "A slip you find on inspection — one wrong overlap, a paint or framing oddity."
+        },
+        {
+          "id": "fifty-two-pickup",
+          "rank": 1,
+          "label": "Big problems",
+          "description": "A visible rendering error changes how the image reads, or the picture loses outright to its own stacking, paint, or framing."
+        }
+      ]
+    },
+    {
+      "id": "jnsq",
+      "label": "Je ne sais quoi",
+      "description": "The intangible — whatever makes a piece more than the sum of its axes. Not captured elsewhere; graded anyway.",
+      "values": [
+        {
+          "id": "abundant",
+          "rank": 3,
+          "label": "Has _it_",
+          "description": "The piece has it — undeniable, unaccountable appeal."
+        },
+        {
+          "id": "trace",
+          "rank": 2,
+          "label": "Just a hint",
+          "description": "A glimmer of something beyond competence."
+        },
+        {
+          "id": "none-detected",
+          "rank": 1,
+          "label": "Ain't got it",
+          "description": "Technically present, spiritually absent."
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "id": "claude-fable-5",
+      "label": "Claude Fable 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-sonnet-5",
+      "label": "Claude Sonnet 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-5",
+      "label": "Claude Opus 5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-4-6",
+      "label": "Claude Opus 4.6",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-opus-4-1",
+      "label": "Claude Opus 4.1",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "label": "Claude Sonnet 4.5",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "claude-sonnet-5-opus-5-refine",
+      "label": "Claude Sonnet 5 → Opus 5 refine",
+      "vendor": "Anthropic"
+    },
+    {
+      "id": "gpt-5",
+      "label": "GPT-5",
+      "vendor": "OpenAI"
+    },
+    {
+      "id": "gpt-5-1",
+      "label": "GPT-5.1",
+      "vendor": "OpenAI"
+    },
+    {
+      "id": "gemini-2-5-pro",
+      "label": "Gemini 2.5 Pro",
+      "vendor": "Google"
+    },
+    {
+      "id": "kimi-k3",
+      "label": "Kimi K3",
+      "vendor": "Moonshot AI"
+    },
+    {
+      "id": "gemini-3-1-pro",
+      "label": "Gemini 3.1 Pro",
+      "vendor": "Google"
+    }
+  ],
+  "sizeTiers": [
+    {
+      "id": "xs",
+      "label": "Extra small",
+      "box": 6,
+      "description": "Tiny — a fleck or trinket, easily lost among the larger junk."
+    },
+    {
+      "id": "s",
+      "label": "Small",
+      "box": 9,
+      "description": "A minor curio; reads small but distinct."
+    },
+    {
+      "id": "m",
+      "label": "Medium",
+      "box": 15.5,
+      "description": "The default; a middling object in the drawer."
+    },
+    {
+      "id": "l",
+      "label": "Large",
+      "box": 22,
+      "description": "Prominent; claims real space in the well."
+    },
+    {
+      "id": "xl",
+      "label": "Extra large",
+      "box": 30,
+      "description": "A centerpiece — dominates the drawer."
+    }
+  ],
+  "changelog": [
+    {
+      "date": "2026-07-26",
+      "version": 1,
+      "note": "Initial taxonomy: 5-tier grade scale, 4 axes, starter model registry."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 2,
+      "note": "Relabel utility: \"Utility Grade\" -> \"Utility\" (the display context already says Grade:)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 3,
+      "note": "Register model claude-opus-5 (Claude Opus 5)."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 4,
+      "note": "Add sizeTiers: 5-tier curatorial size scale (xs/s/m/l/xl) as data. Per-item sizeScale remains the continuous fine dial on top of the tier."
+    },
+    {
+      "date": "2026-07-27",
+      "version": 5,
+      "note": "Register model claude-opus-4-6 (Claude Opus 4.6)."
+    },
+    {
+      "date": "2026-07-29",
+      "version": 6,
+      "note": "Axes reworked: prompt-fidelity, geometry, color, composition marked defunct (kept — filed responses reference them; never surveyed again). Five new axes: instruction-following, restraint, integrity, style, je-ne-sais-quoi."
+    },
+    {
+      "date": "2026-07-30",
+      "version": 7,
+      "note": "Register model claude-sonnet-5-opus-5-refine (Claude Sonnet 5 → Opus 5 refine) — the first cross-model lineage id: one model's composition refined by another, given the base SVG as context. Filed under its own id rather than either parent's so neither model's record implies a clean-context one-shot sample it did not produce."
+    },
+    {
+      "date": "2026-08-09",
+      "version": 8,
+      "note": "Grades stored numerically (entry schema 2): every response's grade — and each grade_history grade — is now the tier's rank as a number (5.0 … 1.0), not the grade id string. The scale's `rank` is the permanent key entries reference; grade ids remain as internal handles and labels/descriptions (and even the ids themselves) may now be reworded freely without touching filed entries. Groundwork for relabeling the scale."
+    },
+    {
+      "date": "2026-08-09",
+      "version": 9,
+      "note": "Annotation axis values stored numerically too, completing entry schema 2: every axis value gains a rank (3 = best … 1 = worst, in listed order), and entries file an annotation as that rank number (3.0/2.0/1.0, bare or as {value, note}) instead of the value id string. Like the grade scale, value ids/labels may now be reworded freely — an axis's rank numbers are the permanent part. Axis ids themselves are still referenced by entries as annotation keys and remain permanent."
+    },
+    {
+      "date": "2026-08-10",
+      "version": 10,
+      "note": "Register model gpt-5-1 (GPT-5.1) — the visitor-prompt feature's OpenAI slot moves to the flagship pair (Claude Opus 5 vs GPT-5.1, jd-config.php)."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 11,
+      "note": "Retire the \"style\" axis (owner call): defunct: true, the v6 mechanism — the survey stops asking it, jd-rate stops accepting it, the legend and report card drop it, and every filed style grading stays in the data untouched."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 12,
+      "note": "Relabel the three problem-shaped axes to one uniform scale (owner call): instruction-following, restraint and integrity now grade No problems / Small problems / Big problems (ranks unchanged — the v9 numeric filing makes this a pure rewording; per-axis descriptions keep the definitions). Je ne sais quoi keeps its labels pending its own rework — it grades a virtue, not a defect, and the problems framing does not fit it."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 13,
+      "note": "Relabel je ne sais quoi (owner call, completing the v12 pass): Has it / Just a hint / Ain't got it — the axis grades a virtue, so it gets a presence scale in plain speech rather than the defect axes' problems scale. Ranks unchanged; the filed descriptions keep the definitions."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 14,
+      "note": "Labels gain an _underscored emphasis_ convention (owner: italicize the it in \"Has it\"). HTML surfaces render the run in italics; plain-text surfaces (native option text, aria strings, stamped marks) strip the markers — JD_labelText in junk-drawer.js. Applied to je-ne-sais-quoi rank 3: Has _it_."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 15,
+      "note": "Spell out \"Structural integrity\" (owner call) — the integrity axis's display label, everywhere labels render (survey, popovers, legend, report card). The axis id stays integrity, as ids must."
+    },
+    {
+      "date": "2026-08-11",
+      "version": 16,
+      "note": "Retire the \"restraint\" axis (owner call — possibly temporary): defunct: true, the v6 mechanism. The survey stops asking it, jd-rate stops accepting it, the report card and legend drop it; every filed restraint grading stays in the data, and un-retiring is one flag removal away."
+    },
+    {
+      "date": "2026-08-16",
+      "version": 17,
+      "note": "The v17 rework (owner call, 2026-08-16): the placeholder rubric gives way to a benchmark-shaped one, and EVERY response starts blank under it — all five new axes get fresh ids, so nothing filed under the old rubric carries forward and a full re-rating pass follows. Retired (the v6 mechanism — filed gradings stay in the data, the survey and report card stop asking): instruction-following (superseded by understanding-assignment), integrity (its territory split between structural-coherence and layering) and je-ne-sais-quoi (superseded by jnsq — same scale and labels, new id purely so the slate is clean). The five new axes, in survey order: understanding-assignment \"Understanding the Assignment\" (4-point: Read the brief / Skimmed it / Misread it / Wrote its own brief) — comprehension of the brief, judged on what the model TRIED to draw; restraint-2 \"Restraint\" (the problems scale, re-scoped from the v16-retired restraint: gap-filling is the job, only upstaging additions are charged); layering \"Layering\" (4-point: Neat stack / A little shuffled / Out of order / Fifty-two pickup) — errors of the PICTURE: stacking, paint, framing — anything fixable without moving a path; structural-coherence \"Structural Coherence\" (the problems scale) — errors of the OBJECT: anything whose fix means redrawing geometry; jnsq \"Je ne sais quoi\" (Has _it_ / Just a hint / Ain't got it, unchanged). The picture/object bright line is written into the two axis descriptions so a defect has exactly one home. First 4-point scales in the taxonomy: their values file as ranks 4.0 … 1.0, the same v9 numeric convention."
+    },
+    {
+      "date": "2026-08-19",
+      "version": 18,
+      "note": "Owner call, 2026-08-19, before any v17 rating was filed — so nothing is stranded and no re-rating is lost. Retired (v6 mechanism): restraint-2 \"Restraint\", folded into understanding-assignment. Living with the rubric showed the two asking one question: an unrequested addition that upstages the ask IS a failure to understand the assignment, and splitting it invited double-charging the same defect. understanding-assignment's description and its top three value descriptions now carry the negative-space test explicitly. layering drops from 4-point to the 3-point problems scale (No problems / Small problems / Big problems), matching structural-coherence: the picture and object axes are the same question about different territory, and asking them in different shapes made the survey harder to answer than the judgment warranted. Its old \"Out of order\" and \"Fifty-two pickup\" fold into Big problems. The rubric is now four axes: understanding-assignment (4-point), layering, structural-coherence and jnsq (3-point) — 308 cells across the 77 live responses, down from 385."
+    },
+    {
+      "date": "2026-08-19",
+      "version": 19,
+      "note": "Owner call: structural-coherence moves to second, directly after understanding-assignment, ahead of layering. Survey order is display order everywhere — the turn survey, the record card, the how-to-read legend and the rating bench all iterate this array and filter defunct — so this one move reorders every instrument. The reading it produces: did the model understand the brief, is the OBJECT sound, is the PICTURE of it sound, and does it have _it_ — object before picture, since a well-drawn impossible thing is the more basic failure. Order only; no scale, id, label or description changed, and nothing already filed is affected (annotations key by axis id, ratings store axis_id)."
+    }
+  ]
+}

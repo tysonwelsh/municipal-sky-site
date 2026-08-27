@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Music-Box Glints — Style Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#0b0b0f; --panel:#15151c; --line:#2a2a38; --ink:#e8e4d8; --soft:#9a96a6; --accent:#e6b455; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:16px 20px 8px; }
+  h1 { margin:0; font-size:18px; letter-spacing:.3px; }
+  .sub { color:var(--soft); font-size:12px; margin-top:2px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 16px 48px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center;
+              background:var(--panel); border:1px solid var(--line); border-radius:10px;
+              padding:12px 14px; margin:8px 0 14px; }
+  button { background:#23232e; color:var(--ink); border:1px solid var(--line);
+           border-radius:7px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:#1a1407; border-color:var(--accent); }
+  .sliders { display:flex; flex-wrap:wrap; gap:14px; }
+  .ctl { display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--soft); }
+  .ctl input[type=range] { width:130px; accent-color:var(--accent); }
+  .ctl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .hsrc { display:flex; gap:6px; align-items:center; }
+  .hsrc .lbl { color:var(--soft); font-size:11px; }
+  .hsrc button { padding:6px 11px; font-size:12px; }
+  .status { color:var(--soft); font-size:12px; margin-left:auto; }
+  canvas { display:block; width:100%; height:560px; background:#0a0805;
+           border:1px solid var(--line); border-radius:10px; }
+  .legend { color:var(--soft); font-size:11px; margin-top:8px; }
+  code { color:var(--accent); }
+</style>
+</head>
+<body>
+<header class="wrap" style="padding-bottom:0">
+  <h1>Music-Box Glints — Style Prototype</h1>
+  <div class="sub">Each Library music-box ping drops a glint at its pitch. Four render styles are stacked as lanes (a ridgeline-style layout) and fire the <b>same</b> notes, so you can compare them directly. Pick a direction; we'll wire the winner into the spiral.</div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <button id="audioBtn">&#9654; Live music box</button>
+    <button id="pingBtn">Ping (with sound)</button>
+    <button id="autoBtn">Auto-fire</button>
+    <button id="clearBtn">Clear</button>
+    <span class="hsrc"><span class="lbl">Height from:</span><span id="hsrcBtns"></span></span>
+    <div class="sliders">
+      <label class="ctl">Size <b id="sizeV">14</b><input id="size" type="range" min="6" max="30" step="1" value="14"></label>
+      <label class="ctl">Lifetime (s) <b id="lifeV">1.3</b><input id="life" type="range" min="0.4" max="3.0" step="0.1" value="1.3"></label>
+      <label class="ctl">Max rise <b id="riseV">160</b><input id="rise" type="range" min="0" max="320" step="2" value="160"></label>
+      <label class="ctl">Height jitter <b id="spreadV">12</b><input id="spread" type="range" min="0" max="60" step="2" value="12"></label>
+      <label class="ctl">Spin (&deg;/s) <b id="spinV">12</b><input id="spin" type="range" min="0" max="180" step="2" value="12"></label>
+      <label class="ctl">Shimmer <b id="shimV">0.40</b><input id="shim" type="range" min="0" max="1" step="0.05" value="0.40"></label>
+    </div>
+    <div class="status" id="status">idle</div>
+  </div>
+
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    <b>A · Soft glow star</b> — lo-fi posterized glow (stepped rings, 2px grid snap) + tapered rays, slow spin, subtle twinkle and flickering square sparkle-specks.
+    <b>B · Sharp spark</b> — crisp vector 4-point star with <b>shimmer</b> (twinkle + per-point scintillation) and slow <b>spin</b> as it drifts.
+    Notes land at their pitch (C5 Dorian, left&rarr;right) and drift up from the baseline over their life (ease-out). <b>Height from</b> sets what the ultimate height encodes: <b>Loudness</b> (per-note velocity — louder = higher; the spiral already shows pitch, so height carries loudness instead), <b>Duration</b>, or <b>Fixed</b> (random). <b>Max rise</b> is the ceiling that fraction scales; <b>Height jitter</b> adds variation; <b>Spin</b>/<b>Shimmer</b> tune the sparkle. <b>Live</b> taps the real music box (sped up); <b>Ping</b> fires one note; <b>Auto-fire</b> drops silent notes for fast comparison.
+  </div>
+</div>
+
+<script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
+<script src="prosperos-jukebox-audio.js?v=94355490"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ----- Style lanes. Each glint event is drawn once per lane using that lane's
+  // renderer, so all four react to the same notes for a fair comparison. -----
+  var STYLES = [
+    { key: "A", name: "Soft glow star" },
+    { key: "B", name: "Sharp spark (shimmer + spin)" },
+  ];
+
+  // Library music-box palette (warm gold) from the shared theme registry, with a
+  // defensive fallback if themes.js didn't load.
+  var pal = (window.JUKEBOX_THEMES && JUKEBOX_THEMES.library && JUKEBOX_THEMES.library.canvas) || {};
+  var C = pal.ribbonStroke || [255, 220, 130];   // glint color
+  function rgba(c, a) { return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + a.toFixed(3) + ")"; }
+
+  // C5 Dorian (the music box's LIB_SCALE_5 register) for manual / auto pings.
+  var LIB5 = [523.25, 587.33, 622.25, 698.46, 783.99, 880.00, 932.33];
+  function freqToX(f) {                            // log pitch -> 0..1 across the lane
+    var lo = Math.log2(490), hi = Math.log2(1000);
+    var x = (Math.log2(f) - lo) / (hi - lo);
+    return x < 0.05 ? 0.05 : (x > 0.95 ? 0.95 : x);
+  }
+
+  // ----- Tunables (bound to sliders) -----
+  var P = { size: 14, life: 1.3, rise: 160, spread: 12, spin: 12, shim: 0.4 };
+
+  // Which per-note audio datum sets a glint's ultimate height. Default is
+  // LOUDNESS (per-note velocity): the spiral already encodes pitch as position,
+  // so height carries something the spiral doesn't show. Duration/fixed kept
+  // for comparison.
+  var HEIGHT_SRC = "loudness";
+  function clamp01(v) { return v < 0 ? 0 : (v > 1 ? 1 : v); }
+  function pitchNorm(f) {                          // C5..B5-ish → 0..1 (higher = taller)
+    return clamp01((Math.log2(f) - Math.log2(490)) / (Math.log2(1000) - Math.log2(490)));
+  }
+  function durNorm(d) {                            // ~0.4..1.2s → 0..1 (longer = taller)
+    return clamp01(((d || 0.8) - 0.4) / (1.2 - 0.4));
+  }
+  function loudNorm(v) {                           // velocity 0.45..1.0 → 0..1
+    return clamp01(((v == null ? 0.8 : v) - 0.45) / 0.55);
+  }
+
+  // ----- Glint events: {x, t0, rise, seed, dir (spin direction)} -------------
+  var glints = [];
+  function addGlint(freq, t0, dur, vel) {
+    var norm = HEIGHT_SRC === "loudness" ? loudNorm(vel)
+             : HEIGHT_SRC === "duration" ? durNorm(dur)
+             : HEIGHT_SRC === "pitch" ? pitchNorm(freq)
+             : 0.5 + (Math.random() * 2 - 1) * 0.5;          // fixed: random
+    // Ultimate height = audio-driven fraction of Max rise, + small organic jitter.
+    var rise = P.rise * (0.2 + 0.8 * norm) + (Math.random() * 2 - 1) * P.spread;
+    if (rise < 0) rise = 0;
+    glints.push({ x: freqToX(freq), t0: t0, rise: rise,
+                  seed: Math.random() * 6.283, dir: Math.random() < 0.5 ? -1 : 1 });
+    if (glints.length > 120) glints.shift();
+  }
+
+  // Bloom fast, then ease out over the remaining lifetime (mirrors the engine).
+  function envOf(age, life) {
+    var atk = 0.07;
+    if (age < 0) return 0;
+    if (age < atk) return age / atk;
+    var k = 1 - (age - atk) / (life - atk);
+    return k <= 0 ? 0 : Math.pow(k, 1.6);
+  }
+
+  // ----- Clock: audio time when live (notes are scheduled ahead), else wall. -----
+  var audioOn = false;
+  function clock() {
+    return (audioOn && window.ProsperoAudio && ProsperoAudio.getAudioTime)
+      ? ProsperoAudio.getAudioTime() : performance.now() / 1000;
+  }
+
+  // ===== Glint renderers ====================================================
+  // Each gets (gx, gy screen coords, age, env, R base radius, rot rotation,
+  // seed per-glint phase). Color is the shared gold C; the core is white.
+
+  function drawA(gx, gy, age, env, R, rot, seed) { // Soft glow star (lo-fi, subtle shimmer)
+    // Subtle brightness twinkle (scaled down from the Shimmer knob so it stays gentle).
+    var shim = 1 + P.shim * 0.3 * Math.sin(age * 10 + seed * 4);
+    var e = env * (shim < 0 ? 0 : shim);
+    // Snap to a 2px grid → a touch of low-res without going chunky.
+    var GS = 2;
+    var sx = Math.round(gx / GS) * GS, sy = Math.round(gy / GS) * GS;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    // Lo-fi glow: a few STEPPED alpha rings instead of a smooth gradient — reads
+    // posterized / limited-depth rather than clean.
+    var rings = 5, maxR = R * (0.9 + 0.7 * env);
+    for (var k = rings; k >= 1; k--) {
+      var a = 0.15 * e * (1 - (k - 1) / rings);
+      ctx.fillStyle = rgba(C, clamp01(a));
+      ctx.beginPath(); ctx.arc(sx, sy, maxR * (k / rings), 0, Math.PI * 2); ctx.fill();
+    }
+    // 4 tapered rays (slow spin).
+    var len = R * 1.8 * (0.5 + 0.5 * env), wid = R * 0.22;
+    ctx.fillStyle = rgba(C, clamp01(0.85 * e));
+    for (var i = 0; i < 4; i++) {
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(rot + i * Math.PI / 2);
+      ctx.beginPath(); ctx.moveTo(0, -wid); ctx.lineTo(len, 0); ctx.lineTo(0, wid); ctx.closePath();
+      ctx.fill(); ctx.restore();
+    }
+    // A few tiny square sparkle-specks that flicker around the star — mostly off,
+    // so the sparkle stays subtle and reads pixel-ish (lo-fi).
+    for (var s2 = 0; s2 < 4; s2++) {
+      var fl = Math.sin(age * (8 + s2 * 3) + seed * 5 + s2);
+      if (fl <= 0.55) continue;
+      var ang = seed * 2 + s2 * 1.9, dist = R * (1.1 + 0.5 * ((s2 * 7 + seed) % 1));
+      var px = Math.round((sx + Math.cos(ang) * dist) / GS) * GS;
+      var py = Math.round((sy + Math.sin(ang) * dist) / GS) * GS;
+      ctx.fillStyle = "rgba(255,255,255," + clamp01(0.7 * e * (fl - 0.55) / 0.45).toFixed(3) + ")";
+      ctx.fillRect(px - 1, py - 1, GS, GS);
+    }
+    // Core.
+    ctx.fillStyle = "rgba(255,255,255," + clamp01(0.9 * e).toFixed(3) + ")";
+    ctx.beginPath(); ctx.arc(sx, sy, R * 0.2 * (0.6 + env), 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  // Sharp vector spark with shimmer (brightness twinkle + per-point
+  // scintillation) and a faint counter-phase secondary star, rotating slowly.
+  function drawB(gx, gy, age, env, R, rot, seed) {
+    var shim = 1 + P.shim * Math.sin(age * 17 + seed * 5);   // whole-spark brightness twinkle
+    var baseA = env * (shim < 0 ? 0 : shim);
+    var outer = R * 1.6 * (0.55 + 0.45 * env), inner = R * 0.34;
+    ctx.save();
+    ctx.translate(gx, gy);
+    ctx.rotate(rot);
+    // Main 4-point star; outer points scintillate independently.
+    ctx.beginPath();
+    for (var i = 0; i < 8; i++) {
+      var ang = i * Math.PI / 4 - Math.PI / 2, rr;
+      if (i % 2 === 0) {
+        var tw = 1 + P.shim * 0.5 * Math.sin(age * 23 + i * 1.7 + seed * 6);
+        rr = outer * tw;
+      } else rr = inner;
+      var px = Math.cos(ang) * rr, py = Math.sin(ang) * rr;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(C, clamp01(0.85 * baseA));
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255," + clamp01(0.7 * baseA).toFixed(3) + ")";
+    ctx.lineWidth = 1; ctx.stroke();
+    // Faint secondary star at 45°, counter-phase shimmer → extra sparkle.
+    ctx.rotate(Math.PI / 4);
+    var sec = 1 + P.shim * Math.sin(age * 13 + seed * 3 + 1.5);
+    ctx.beginPath();
+    for (var j = 0; j < 8; j++) {
+      var a2 = j * Math.PI / 4 - Math.PI / 2;
+      var r2 = (j % 2 === 0) ? outer * 0.7 * (sec < 0 ? 0 : sec) : inner * 0.6;
+      var x2 = Math.cos(a2) * r2, y2 = Math.sin(a2) * r2;
+      if (j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+    }
+    ctx.closePath();
+    ctx.fillStyle = rgba(C, clamp01(0.3 * baseA));
+    ctx.fill();
+    ctx.restore();
+    // White core (screen-aligned, twinkles with the spark).
+    ctx.fillStyle = "rgba(255,255,255," + clamp01(0.95 * baseA).toFixed(3) + ")";
+    ctx.beginPath(); ctx.arc(gx, gy, R * 0.16, 0, Math.PI * 2); ctx.fill();
+  }
+
+  var RENDER = { A: drawA, B: drawB };
+
+  // ----- Canvas -----
+  var cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+
+  var PAD_L = 24, PAD_R = 24, PAD_T = 14, PAD_B = 14;
+  function laneW() { return W - PAD_L - PAD_R; }
+  function laneH() { return (H - PAD_T - PAD_B) / STYLES.length; }
+  function laneBaseY(i) { return PAD_T + (i + 1) * laneH() - 16; }   // baseline near each lane's bottom
+
+  function draw() {
+    var t = clock();
+    ctx.clearRect(0, 0, W, H);
+    glints = glints.filter(function (g) { return envOf(t - g.t0, P.life) > 0.002; });
+
+    var lw = laneW();
+    for (var li = 0; li < STYLES.length; li++) {
+      var by = laneBaseY(li);
+      // Lane baseline + faint scale ticks where glints can land.
+      ctx.strokeStyle = "rgba(232,228,216,0.18)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(PAD_L, by); ctx.lineTo(W - PAD_R, by); ctx.stroke();
+      ctx.fillStyle = "rgba(232,228,216,0.16)";
+      for (var s = 0; s < LIB5.length; s++) {
+        var tx = PAD_L + freqToX(LIB5[s]) * lw;
+        ctx.fillRect(tx - 0.5, by - 3, 1, 6);
+      }
+      // Lane label.
+      ctx.font = '13px "VT323", monospace';
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "rgba(230,180,85,0.85)";
+      ctx.fillText(STYLES[li].key + " · " + STYLES[li].name, PAD_L + 2, PAD_T + li * laneH() + 16);
+
+      // Draw every live glint in this lane with the lane's renderer.
+      var R = P.size;
+      for (var gi = 0; gi < glints.length; gi++) {
+        var g = glints[gi];
+        var age = t - g.t0;
+        var env = envOf(age, P.life);
+        if (env <= 0.002) continue;
+        // Drift up from the baseline over the glint's life (ease-out: quick
+        // launch, then settle as it fades).
+        var rt = age / P.life; if (rt > 1) rt = 1;
+        var gx = PAD_L + g.x * lw;
+        var gy = by - g.rise * (1 - Math.pow(1 - rt, 1.6));
+        // Slow rotation as it drifts (per-glint direction + phase).
+        var rot = g.seed + g.dir * (P.spin * Math.PI / 180) * age;
+        RENDER[STYLES[li].key](gx, gy, age, env, R, rot, g.seed);
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  // ----- Local music-box ping (sine + 3rd-harmonic shimmer), routed through a
+  // prototype-owned gain so it sounds without starting the engine's full mix. --
+  var protoOut = null;
+  function soundBox(freq, vel) {
+    if (!(window.ProsperoAudio && ProsperoAudio.getAudioContext)) return;
+    var ac = ProsperoAudio.getAudioContext();
+    if (!ac && ProsperoAudio.init) { ProsperoAudio.init(); ac = ProsperoAudio.getAudioContext(); }
+    if (!ac) return;
+    if (ac.state === "suspended") ac.resume();
+    if (!protoOut || protoOut.context !== ac) {
+      protoOut = ac.createGain(); protoOut.gain.value = 1; protoOut.connect(ac.destination);
+    }
+    var vg = 0.4 + 0.6 * (vel == null ? 0.8 : vel);  // match the engine's velocity → gain
+    var t = ac.currentTime, dur = 0.9;
+    var o = ac.createOscillator(), g = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(freq, t);
+    o.connect(g); g.connect(protoOut);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.16 * vg, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.05 * vg, t + 0.1);
+    g.gain.linearRampToValueAtTime(0, t + dur);
+    o.start(t); o.stop(t + dur + 0.02);
+    var h = ac.createOscillator(), hg = ac.createGain();
+    h.type = "sine"; h.frequency.setValueAtTime(freq * 3, t);
+    h.connect(hg); hg.connect(protoOut);
+    hg.gain.setValueAtTime(0.02 * vg, t);
+    hg.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.5);
+    hg.gain.linearRampToValueAtTime(0, t + dur * 0.6);
+    h.start(t); h.stop(t + dur + 0.02);
+  }
+
+  function ping(withSound) {
+    var f = LIB5[Math.floor(Math.random() * LIB5.length)];
+    var dur = 0.6 + Math.random() * 0.4;            // mirror the engine's note length
+    var vel = 0.45 + Math.random() * 0.55;          // mirror the engine's per-note velocity
+    addGlint(f, clock(), dur, vel);
+    if (withSound) soundBox(f, vel);
+    setStatus("ping @ " + Math.round(f) + "Hz · vel " + vel.toFixed(2));
+  }
+
+  // ----- Live audio: play the real Library track, speed the music box up, and
+  // drop a glint on every musicBox note event. -----
+  var noteHooked = false;
+  function startAudio() {
+    if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
+    try {
+      ProsperoAudio.init();
+      var ac = ProsperoAudio.getAudioContext();
+      if (ac && ac.state === "suspended") ac.resume();
+      ProsperoAudio.switchTrack("library");
+      ProsperoAudio.play("library");
+      audioOn = true;
+      if (ProsperoAudio.setLayerRate) ProsperoAudio.setLayerRate("library", "musicBox", 3.5);  // fire often
+      if (!noteHooked && ProsperoAudio.setNoteListener) {
+        ProsperoAudio.setNoteListener(function (ev) {
+          if (ev.track === "library" && ev.layer === "musicBox") {
+            addGlint(ev.freq, ev.startTime, ev.duration, ev.velocity);
+            setStatus("music box @ " + Math.round(ev.freq) + "Hz · vel " + (ev.velocity || 0).toFixed(2));
+          }
+        });
+        noteHooked = true;
+      }
+      setStatus("playing · music box sped up · dropping glints on each ping");
+    } catch (e) {
+      setStatus("audio error: " + (e && e.message ? e.message : e));
+      if (window.console) console.error(e);
+    }
+  }
+  function stopAudio() {
+    if (window.ProsperoAudio && ProsperoAudio.stop) ProsperoAudio.stop();
+    audioOn = false; setStatus("stopped");
+  }
+
+  // ----- UI -----
+  function setStatus(s) { document.getElementById("status").textContent = s; }
+  function bindSlider(id, key, dec) {
+    var el = document.getElementById(id), out = document.getElementById(id + "V");
+    function up() { P[key] = parseFloat(el.value); out.textContent = dec != null ? P[key].toFixed(dec) : el.value; }
+    el.addEventListener("input", up); up();
+  }
+  bindSlider("size", "size"); bindSlider("life", "life", 1);
+  bindSlider("rise", "rise"); bindSlider("spread", "spread");
+  bindSlider("spin", "spin"); bindSlider("shim", "shim", 2);
+
+  // Height-source selector.
+  var HSRC = [["loudness", "Loudness"], ["duration", "Duration"], ["fixed", "Fixed"]];
+  var hsrcWrap = document.getElementById("hsrcBtns");
+  HSRC.forEach(function (s) {
+    var b = document.createElement("button");
+    b.textContent = s[1];
+    if (s[0] === HEIGHT_SRC) b.classList.add("on");
+    b.addEventListener("click", function () {
+      HEIGHT_SRC = s[0];
+      Array.prototype.forEach.call(hsrcWrap.children, function (x) { x.classList.toggle("on", x === b); });
+      setStatus("height from " + s[1].toLowerCase());
+    });
+    hsrcWrap.appendChild(b);
+  });
+
+  document.getElementById("audioBtn").addEventListener("click", function () {
+    if (audioOn) { stopAudio(); this.classList.remove("on"); this.textContent = "▶ Live music box"; }
+    else { startAudio(); this.classList.add("on"); this.textContent = "■ Stop"; }
+  });
+  document.getElementById("pingBtn").addEventListener("click", function () { ping(true); });
+  document.getElementById("clearBtn").addEventListener("click", function () { glints = []; setStatus("cleared"); });
+
+  var autoTimer = null;
+  document.getElementById("autoBtn").addEventListener("click", function () {
+    if (autoTimer) { clearInterval(autoTimer); autoTimer = null; this.classList.remove("on"); setStatus("auto off"); }
+    else { autoTimer = setInterval(function () { ping(false); }, 1100); this.classList.add("on"); setStatus("auto-firing"); }
+  });
+
+  // ----- Go -----
+  resize();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

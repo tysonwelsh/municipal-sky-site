@@ -1,0 +1,294 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 900" width="700" height="900" role="img" aria-label="A Grecian urn rendered in vaporwave colors, its body holding a chrome sun, a neon perspective grid and palm silhouettes">
+  <defs>
+    <linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a1266"/>
+      <stop offset="0.35" stop-color="#1d0740"/>
+      <stop offset="0.72" stop-color="#240a4a"/>
+      <stop offset="1" stop-color="#3b1170"/>
+    </linearGradient>
+
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffb96"/>
+      <stop offset="0.22" stop-color="#ff71ce"/>
+      <stop offset="0.46" stop-color="#ffffff"/>
+      <stop offset="0.68" stop-color="#01cdfe"/>
+      <stop offset="1" stop-color="#7b2ff7"/>
+    </linearGradient>
+
+    <linearGradient id="chromeH" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#5a1f9e"/>
+      <stop offset="0.18" stop-color="#ff71ce"/>
+      <stop offset="0.42" stop-color="#ffffff"/>
+      <stop offset="0.62" stop-color="#01cdfe"/>
+      <stop offset="0.84" stop-color="#b967ff"/>
+      <stop offset="1" stop-color="#3d1173"/>
+    </linearGradient>
+
+    <linearGradient id="sunG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffb96"/>
+      <stop offset="0.34" stop-color="#ffc46b"/>
+      <stop offset="0.62" stop-color="#ff5fb4"/>
+      <stop offset="1" stop-color="#c026a8"/>
+    </linearGradient>
+
+    <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a0538"/>
+      <stop offset="0.55" stop-color="#4b1177"/>
+      <stop offset="1" stop-color="#8c1f8e"/>
+    </linearGradient>
+
+    <linearGradient id="floorG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a0846"/>
+      <stop offset="1" stop-color="#0d0224"/>
+    </linearGradient>
+
+    <linearGradient id="shadeG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.72"/>
+      <stop offset="0.16" stop-color="#2b0040" stop-opacity="0.3"/>
+      <stop offset="0.36" stop-color="#ffffff" stop-opacity="0.24"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="0.72" stop-color="#000000" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.75"/>
+    </linearGradient>
+
+    <linearGradient id="bandG" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#6a1b9a"/>
+      <stop offset="0.3" stop-color="#ff71ce"/>
+      <stop offset="0.55" stop-color="#ff9ae0"/>
+      <stop offset="0.8" stop-color="#b967ff"/>
+      <stop offset="1" stop-color="#4a1180"/>
+    </linearGradient>
+
+    <linearGradient id="gridFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.15"/>
+      <stop offset="0.25" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="1"/>
+    </linearGradient>
+
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <filter id="sunGlow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="14" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <pattern id="meander" patternUnits="userSpaceOnUse" x="0" y="0" width="44" height="40">
+      <g fill="none" stroke="#fffb96" stroke-width="4.5" stroke-linecap="square">
+        <path d="M0 34 H44"/>
+        <path d="M9 34 V8 H35 V22 H21"/>
+      </g>
+    </pattern>
+
+    <pattern id="scan" patternUnits="userSpaceOnUse" width="5" height="5">
+      <rect x="0" y="0" width="5" height="1.7" fill="#000000" opacity="0.2"/>
+      <rect x="0" y="3.4" width="5" height="0.7" fill="#01cdfe" opacity="0.07"/>
+    </pattern>
+
+    <mask id="sunSlats">
+      <circle cx="350" cy="430" r="152" fill="#ffffff"/>
+      <g fill="#000000">
+        <rect x="180" y="432" width="340" height="5"/>
+        <rect x="180" y="447" width="340" height="7"/>
+        <rect x="180" y="465" width="340" height="9"/>
+        <rect x="180" y="487" width="340" height="12"/>
+        <rect x="180" y="514" width="340" height="15"/>
+        <rect x="180" y="546" width="340" height="20"/>
+      </g>
+    </mask>
+
+    <path id="bodyPath" d="M175 26
+      A175 22 0 0 1 525 26
+      C525 60 500 70 470 86
+      C430 108 418 140 424 178
+      C452 250 560 268 606 356
+      C640 430 636 540 596 620
+      C556 690 470 700 442 740
+      C432 756 430 774 434 790
+      C444 820 490 826 528 846
+      C546 856 552 870 552 886
+      L148 886
+      C148 870 154 856 172 846
+      C210 826 256 820 266 790
+      C270 774 268 756 258 740
+      C230 700 144 690 104 620
+      C64 540 60 430 94 356
+      C140 268 248 250 276 178
+      C282 140 270 108 230 86
+      C200 70 175 60 175 26 Z"/>
+
+    <path id="handlePath" d="M418 142
+      C545 96 700 160 692 282
+      C688 342 636 374 592 364
+      L598 330
+      C632 338 660 320 660 278
+      C664 190 548 142 428 176 Z"/>
+
+    <clipPath id="bodyClip"><use href="#bodyPath"/></clipPath>
+    <clipPath id="sceneClip">
+      <path d="M262 262 H438 V656 H262 Z" transform="scale(1)"/>
+    </clipPath>
+
+    <clipPath id="urnClip">
+      <use href="#bodyPath"/>
+      <use href="#handlePath"/>
+      <use href="#handlePath" transform="translate(700,0) scale(-1,1)"/>
+    </clipPath>
+
+    <g id="palm">
+      <path d="M-6 0 C-3 -42 3 -82 13 -112 L25 -110 C13 -78 8 -40 6 0 Z"/>
+      <path d="M18 -112 C-12 -130 -36 -125 -49 -110 C-30 -117 -7 -113 16 -103 Z"/>
+      <path d="M18 -112 C-3 -143 -23 -152 -42 -150 C-21 -141 -5 -128 14 -105 Z"/>
+      <path d="M18 -112 C24 -148 43 -162 64 -162 C43 -149 31 -132 22 -105 Z"/>
+      <path d="M18 -112 C41 -129 64 -131 79 -121 C58 -121 37 -112 20 -101 Z"/>
+      <path d="M18 -112 C13 -141 16 -154 23 -167 C28 -147 27 -130 25 -106 Z"/>
+      <path d="M18 -112 C36 -152 34 -168 26 -180 C30 -160 24 -140 22 -108 Z"/>
+    </g>
+  </defs>
+
+  <!-- HANDLES (behind body) -->
+  <g>
+    <use href="#handlePath" fill="url(#chrome)"/>
+    <use href="#handlePath" fill="none" stroke="#ff9ae0" stroke-width="3" filter="url(#glow)" opacity="0.9"/>
+    <use href="#handlePath" transform="translate(700,0) scale(-1,1)" fill="url(#chrome)"/>
+    <use href="#handlePath" transform="translate(700,0) scale(-1,1)" fill="none" stroke="#ff9ae0" stroke-width="3" filter="url(#glow)" opacity="0.9"/>
+  </g>
+
+  <!-- BODY -->
+  <use href="#bodyPath" fill="url(#bodyG)"/>
+
+  <g clip-path="url(#bodyClip)">
+
+    <!-- inset scene panel -->
+    <g>
+      <rect x="60" y="262" width="580" height="394" fill="url(#skyG)"/>
+
+      <!-- stars -->
+      <g fill="#fffb96" opacity="0.85">
+        <circle cx="128" cy="300" r="2.4"/>
+        <circle cx="176" cy="342" r="1.7"/>
+        <circle cx="232" cy="292" r="2"/>
+        <circle cx="286" cy="330" r="1.5"/>
+        <circle cx="420" cy="288" r="1.8"/>
+        <circle cx="474" cy="332" r="2.3"/>
+        <circle cx="528" cy="296" r="1.6"/>
+        <circle cx="572" cy="344" r="2"/>
+        <circle cx="352" cy="276" r="1.6"/>
+      </g>
+      <g stroke="#ffffff" stroke-width="1.6" opacity="0.7" stroke-linecap="round">
+        <path d="M150 320 v-10 M145 315 h10"/>
+        <path d="M556 372 v-9 M551.5 367.5 h9"/>
+        <path d="M256 358 v-8 M252 354 h8"/>
+      </g>
+
+      <!-- sun -->
+      <g filter="url(#sunGlow)">
+        <circle cx="350" cy="430" r="152" fill="url(#sunG)" mask="url(#sunSlats)"/>
+      </g>
+      <circle cx="350" cy="430" r="152" fill="none" stroke="#ffd9f2" stroke-width="1.4" opacity="0.5"/>
+
+      <!-- mountains -->
+      <path d="M60 540 L152 452 L206 502 L242 470 L318 540 Z" fill="#2b0850" opacity="0.95"/>
+      <path d="M382 540 L448 486 L488 512 L546 456 L640 540 Z" fill="#2b0850" opacity="0.95"/>
+      <g fill="none" stroke="#01cdfe" stroke-width="2" opacity="0.85" filter="url(#softGlow)">
+        <path d="M60 540 L152 452 L206 502 L242 470 L318 540"/>
+        <path d="M382 540 L448 486 L488 512 L546 456 L640 540"/>
+      </g>
+
+      <!-- floor -->
+      <rect x="60" y="540" width="580" height="116" fill="url(#floorG)"/>
+
+      <g stroke="#01cdfe" stroke-width="1.8" opacity="0.9" filter="url(#softGlow)" fill="none">
+        <path d="M350 540 L350 700"/>
+        <path d="M350 540 L290 700 M350 540 L410 700"/>
+        <path d="M350 540 L215 700 M350 540 L485 700"/>
+        <path d="M350 540 L120 700 M350 540 L580 700"/>
+        <path d="M350 540 L10 700 M350 540 L690 700"/>
+        <path d="M350 540 L-130 700 M350 540 L830 700"/>
+      </g>
+      <g stroke="#ff71ce" stroke-width="1.8" opacity="0.95" filter="url(#softGlow)" fill="none">
+        <path d="M60 548 H640"/>
+        <path d="M60 558 H640"/>
+        <path d="M60 572 H640"/>
+        <path d="M60 591 H640"/>
+        <path d="M60 617 H640"/>
+        <path d="M60 652 H640"/>
+      </g>
+      <path d="M60 540 H640" stroke="#ffffff" stroke-width="2.6" opacity="0.95" filter="url(#softGlow)"/>
+
+      <!-- palms -->
+      <g fill="#1a0433">
+        <use href="#palm" transform="translate(146,542) scale(1.05)"/>
+        <use href="#palm" transform="translate(566,540) scale(-0.95,0.95)"/>
+        <use href="#palm" transform="translate(228,536) scale(0.62)"/>
+        <use href="#palm" transform="translate(486,534) scale(-0.58,0.58)"/>
+      </g>
+      <g fill="none" stroke="#b967ff" stroke-width="1.2" opacity="0.65">
+        <use href="#palm" transform="translate(146,542) scale(1.05)"/>
+        <use href="#palm" transform="translate(566,540) scale(-0.95,0.95)"/>
+      </g>
+
+      <!-- panel frame -->
+      <rect x="60" y="262" width="580" height="394" fill="none" stroke="#01cdfe" stroke-width="2.5" opacity="0.5"/>
+    </g>
+
+    <!-- meander bands -->
+    <g>
+      <rect x="0" y="140" width="700" height="40" fill="url(#bandG)"/>
+      <rect x="0" y="140" width="700" height="40" fill="url(#meander)"/>
+      <rect x="0" y="222" width="700" height="40" fill="url(#bandG)"/>
+      <rect x="0" y="222" width="700" height="40" fill="url(#meander)"/>
+      <rect x="0" y="656" width="700" height="40" fill="url(#bandG)"/>
+      <rect x="0" y="656" width="700" height="40" fill="url(#meander)"/>
+      <g stroke="#01cdfe" stroke-width="2.5" opacity="0.9">
+        <path d="M0 138 H700 M0 182 H700 M0 220 H700 M0 264 H700 M0 654 H700 M0 698 H700"/>
+      </g>
+    </g>
+
+    <!-- lower body flutes -->
+    <g stroke="#ff71ce" stroke-width="2" opacity="0.4" fill="none">
+      <path d="M350 700 C350 740 350 770 350 790"/>
+      <path d="M310 700 C300 738 296 766 292 786"/>
+      <path d="M390 700 C400 738 404 766 408 786"/>
+      <path d="M268 702 C250 736 238 762 230 782"/>
+      <path d="M432 702 C450 736 462 762 470 782"/>
+    </g>
+
+    <!-- ceramic volume shading -->
+    <rect x="0" y="0" width="700" height="900" fill="url(#shadeG)"/>
+
+    <!-- specular highlight -->
+    <ellipse cx="128" cy="440" rx="20" ry="118" fill="#ffffff" opacity="0.1" transform="rotate(-6 128 440)"/>
+    <ellipse cx="160" cy="430" rx="7" ry="80" fill="#ffffff" opacity="0.13" transform="rotate(-6 160 430)"/>
+  </g>
+
+  <!-- FOOT -->
+  <g clip-path="url(#bodyClip)">
+    <rect x="0" y="838" width="700" height="52" fill="url(#chromeH)"/>
+    <rect x="0" y="806" width="700" height="16" fill="url(#chromeH)" opacity="0.9"/>
+    <path d="M0 838 H700 M0 822 H700 M0 806 H700" stroke="#2b0850" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- RIM / MOUTH -->
+  <g>
+    <path d="M175 26 A175 22 0 0 1 525 26 C525 60 500 70 470 86 L232 86 C200 70 175 60 175 26 Z" fill="url(#chromeH)"/>
+    <ellipse cx="350" cy="26" rx="175" ry="22" fill="url(#chromeH)"/>
+    <ellipse cx="350" cy="28" rx="147" ry="15" fill="#150431"/>
+    <ellipse cx="350" cy="28" rx="147" ry="15" fill="none" stroke="#ff71ce" stroke-width="2.5" filter="url(#softGlow)"/>
+    <path d="M186 44 C230 66 470 66 514 44" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- NEON OUTLINE -->
+  <use href="#bodyPath" fill="none" stroke="#ff9ae0" stroke-width="3.4" filter="url(#glow)" opacity="0.95"/>
+  <use href="#bodyPath" fill="none" stroke="#ffffff" stroke-width="1.1" opacity="0.6"/>
+
+  <!-- SCANLINES -->
+  <rect x="0" y="0" width="700" height="900" fill="url(#scan)" clip-path="url(#urnClip)"/>
+</svg>

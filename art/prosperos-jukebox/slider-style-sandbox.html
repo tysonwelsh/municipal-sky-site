@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slider Style Sandbox &mdash; Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ============================================================
+         Page chrome — matches the Jukebox aesthetic.
+         ============================================================ */
+      body {
+        background: #0a0a0a;
+        color: #bb9966;
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 28px 20px 60px;
+        min-height: 100vh;
+      }
+      .wrap { max-width: 880px; margin: 0 auto; }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: #ffcc66;
+        text-align: center;
+        letter-spacing: 2px;
+        font-size: 28px;
+        margin: 0 0 4px;
+        text-shadow:
+          0 0 12px rgba(255, 170, 0, 0.45),
+          0 0 30px rgba(255, 170, 0, 0.12);
+      }
+      .subtitle {
+        text-align: center;
+        color: #665033;
+        letter-spacing: 3px;
+        font-size: 17px;
+        margin: 0 0 26px;
+      }
+      .note {
+        background: #15100a;
+        border: 1px solid #2a2010;
+        border-radius: 4px;
+        padding: 12px 16px;
+        margin-bottom: 24px;
+        font-size: 15px;
+        color: #aa8855;
+        line-height: 1.55;
+      }
+      .note strong { color: #ffcc66; font-weight: 400; }
+      .note em     { color: #cc9966; font-style: normal; }
+
+      /* ============================================================
+         Sample card — one per style, each with 3 sliders + a label.
+         ============================================================ */
+      .sample {
+        background: #15100a;
+        border: 2px solid #2a2010;
+        border-radius: 4px;
+        padding: 18px 20px 22px;
+        margin-bottom: 22px;
+      }
+      .sample-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid #2a2010;
+      }
+      .sample-name {
+        font-size: 18px;
+        color: #ffcc66;
+        letter-spacing: 2px;
+      }
+      .sample-desc {
+        font-size: 13px;
+        color: #886644;
+        letter-spacing: 1px;
+        text-align: right;
+        max-width: 380px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 90px 1fr 60px;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 0;
+      }
+      .row .label {
+        color: #aa8855;
+        font-size: 14px;
+        letter-spacing: 1px;
+        text-align: right;
+      }
+      .row .val {
+        color: #ffcc66;
+        font-size: 15px;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* ============================================================
+         A — Refined current (centered, slight border)
+         ------------------------------------------------------------
+         The closest to the existing app sliders, but with the
+         margin-top fix that actually centers the thumb in the track
+         and a thin border for sharper definition.
+         ============================================================ */
+      .slider-a {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+      }
+      .slider-a::-webkit-slider-runnable-track {
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+      }
+      .slider-a::-moz-range-track {
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+      }
+      .slider-a::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        margin-top: -4px;          /* centers 14px thumb on 6px track */
+        background: #ffaa00;
+        border: 1px solid #ffcc66;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.35);
+      }
+      .slider-a::-moz-range-thumb {
+        width: 12px; height: 12px;
+        background: #ffaa00;
+        border: 1px solid #ffcc66;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.35);
+      }
+      .slider-a:hover::-webkit-slider-thumb,
+      .slider-a:active::-webkit-slider-thumb {
+        background: #ffcc66; box-shadow: 0 0 10px rgba(255, 200, 100, 0.55);
+      }
+
+      /* ============================================================
+         B — Fill track + pill thumb
+         ------------------------------------------------------------
+         The track shows progress as an amber fill from left to the
+         thumb. Pill-shaped thumb (rounded rectangle) is taller than
+         it is wide so it reads as a fader knob.
+         ============================================================ */
+      .slider-b {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 18px;            /* total click row height */
+        background: transparent;
+        outline: none;
+        cursor: pointer;
+        --val: 50%;              /* live filled percentage, set by JS */
+      }
+      .slider-b::-webkit-slider-runnable-track {
+        height: 4px;
+        background:
+          linear-gradient(to right,
+            #ffaa00 0 var(--val),
+            #1a1a2a var(--val) 100%);
+        border-radius: 2px;
+        border: 1px solid #2a2010;
+      }
+      .slider-b::-moz-range-track {
+        height: 4px;
+        background: #1a1a2a;
+        border-radius: 2px;
+        border: 1px solid #2a2010;
+      }
+      .slider-b::-moz-range-progress {
+        height: 4px;
+        background: #ffaa00;
+        border-radius: 2px;
+      }
+      .slider-b::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 8px;
+        height: 18px;
+        margin-top: -8px;        /* (track 4 - thumb 18) / 2 + small fudge */
+        background: #ffcc66;
+        border: 1px solid #ffaa00;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 200, 80, 0.5);
+      }
+      .slider-b::-moz-range-thumb {
+        width: 8px; height: 18px;
+        background: #ffcc66;
+        border: 1px solid #ffaa00;
+        border-radius: 2px;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 200, 80, 0.5);
+      }
+      .slider-b:hover::-webkit-slider-thumb,
+      .slider-b:active::-webkit-slider-thumb {
+        background: #ffe2a3; box-shadow: 0 0 10px rgba(255, 200, 100, 0.7);
+      }
+
+      /* ============================================================
+         C — A + segmented amber fill (5% marks)
+         ------------------------------------------------------------
+         Same track geometry and thumb as A, but the portion of the
+         track to the left of the thumb is filled amber, and the
+         entire track is overlaid with thin dark dividers every 5%
+         so the fill reads as 20 discrete segments lighting up as
+         the thumb moves right.
+         ============================================================ */
+      .slider-c {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 14px;
+        background: transparent;
+        outline: none;
+        cursor: pointer;
+        --val: 50%;
+      }
+      .slider-c::-webkit-slider-runnable-track {
+        height: 6px;
+        border-radius: 3px;
+        background:
+          /* TOP layer — thin 1 px dark dividers at every 5% line. */
+          repeating-linear-gradient(
+            to right,
+            transparent 0 calc(5% - 1px),
+            rgba(0, 0, 0, 0.55) calc(5% - 1px) 5%),
+          /* BOTTOM layer — amber fill from 0 → --val, dark beyond. */
+          linear-gradient(to right,
+            #ffaa00 0 var(--val),
+            #1a1a2a var(--val) 100%);
+      }
+      .slider-c::-moz-range-track {
+        height: 6px;
+        border-radius: 3px;
+        background:
+          repeating-linear-gradient(
+            to right,
+            transparent 0 calc(5% - 1px),
+            rgba(0, 0, 0, 0.55) calc(5% - 1px) 5%),
+          linear-gradient(to right,
+            #ffaa00 0 var(--val),
+            #1a1a2a var(--val) 100%);
+      }
+      .slider-c::-moz-range-progress {
+        height: 6px;
+        background: #ffaa00;
+        border-radius: 3px;
+      }
+      .slider-c::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        margin-top: -4px;          /* centers 14 px thumb on 6 px track */
+        background: #ffaa00;
+        border: 1px solid #ffcc66;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.35);
+      }
+      .slider-c::-moz-range-thumb {
+        width: 12px; height: 12px;
+        background: #ffaa00;
+        border: 1px solid #ffcc66;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.35);
+      }
+      .slider-c:hover::-webkit-slider-thumb,
+      .slider-c:active::-webkit-slider-thumb {
+        background: #ffcc66; box-shadow: 0 0 10px rgba(255, 200, 100, 0.55);
+      }
+
+      /* ============================================================
+         Sync swatch — small visual proof the value updates live.
+         ============================================================ */
+      .all-row {
+        background: #15100a;
+        border: 2px dashed #2a2010;
+        border-radius: 4px;
+        padding: 14px 20px;
+        margin-top: 30px;
+        text-align: center;
+        font-size: 14px;
+        color: #886644;
+      }
+      .all-row strong { color: #ffcc66; font-weight: 400; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Slider Style Sandbox</h1>
+      <p class="subtitle">~ three alternatives, sampled together ~</p>
+
+      <div class="note">
+        <p>
+          The current app sliders have two real problems &mdash; the 14&nbsp;px thumb is missing a <code>margin-top: -4px</code> on the WebKit thumb so it actually rides above the 6&nbsp;px track instead of centered on it (that's the &ldquo;not centered&rdquo; you noticed), and the 14&nbsp;&times;&nbsp;14 hit target is small. Each card below is one alternative dialed in to fix both.
+        </p>
+        <p>
+          Drag any slider in any card &mdash; values update live in the right column.
+        </p>
+      </div>
+
+      <!-- =======================================================
+           A — Refined current
+           ======================================================= -->
+      <div class="sample">
+        <div class="sample-head">
+          <span class="sample-name">A &middot; Refined current</span>
+          <span class="sample-desc">6&nbsp;px track, 14&nbsp;px square thumb properly centered, thin amber border, soft glow on hover.</span>
+        </div>
+        <div class="row">
+          <span class="label">VOL</span>
+          <input type="range" min="0" max="100" value="75" class="slider-a" data-sample="A" />
+          <span class="val">75</span>
+        </div>
+        <div class="row">
+          <span class="label">WARMTH</span>
+          <input type="range" min="0" max="100" value="40" class="slider-a" data-sample="A" />
+          <span class="val">40</span>
+        </div>
+        <div class="row">
+          <span class="label">DENSITY</span>
+          <input type="range" min="0" max="100" value="60" class="slider-a" data-sample="A" />
+          <span class="val">60</span>
+        </div>
+      </div>
+
+      <!-- =======================================================
+           B — Fill track + pill thumb
+           ======================================================= -->
+      <div class="sample">
+        <div class="sample-head">
+          <span class="sample-name">B &middot; Fill track + pill thumb</span>
+          <span class="sample-desc">4&nbsp;px track with a left-to-thumb amber fill; tall 8&nbsp;&times;&nbsp;18 thumb reads as a fader knob; bigger vertical hit target.</span>
+        </div>
+        <div class="row">
+          <span class="label">VOL</span>
+          <input type="range" min="0" max="100" value="75" class="slider-b" data-sample="B" style="--val: 75%" />
+          <span class="val">75</span>
+        </div>
+        <div class="row">
+          <span class="label">WARMTH</span>
+          <input type="range" min="0" max="100" value="40" class="slider-b" data-sample="B" style="--val: 40%" />
+          <span class="val">40</span>
+        </div>
+        <div class="row">
+          <span class="label">DENSITY</span>
+          <input type="range" min="0" max="100" value="60" class="slider-b" data-sample="B" style="--val: 60%" />
+          <span class="val">60</span>
+        </div>
+      </div>
+
+      <!-- =======================================================
+           C — Pixel-art tall fader
+           ======================================================= -->
+      <div class="sample">
+        <div class="sample-head">
+          <span class="sample-name">C &middot; A + segmented amber fill</span>
+          <span class="sample-desc">Same square thumb as A, but the track fills amber to the left of the thumb and is divided into 20 discrete segments by thin dark lines at every 5% mark.</span>
+        </div>
+        <div class="row">
+          <span class="label">VOL</span>
+          <input type="range" min="0" max="100" value="75" class="slider-c" data-sample="C" style="--val: 75%" />
+          <span class="val">75</span>
+        </div>
+        <div class="row">
+          <span class="label">WARMTH</span>
+          <input type="range" min="0" max="100" value="40" class="slider-c" data-sample="C" style="--val: 40%" />
+          <span class="val">40</span>
+        </div>
+        <div class="row">
+          <span class="label">DENSITY</span>
+          <input type="range" min="0" max="100" value="60" class="slider-c" data-sample="C" style="--val: 60%" />
+          <span class="val">60</span>
+        </div>
+      </div>
+
+      <div class="all-row">
+        Each card's VAL column updates as you drag. <strong>B</strong> and <strong>C</strong> both fill the track left-to-thumb &mdash; B with a single continuous bar, C with 20 discrete segments at the 5% marks. <strong>A</strong> leaves the track unchanged.
+      </div>
+    </div>
+
+    <script>
+      // Live value labels. For samples B + D we also update the inline
+      // CSS --val custom property so the track's left-side fill follows
+      // the thumb position pixel-for-pixel.
+      document.querySelectorAll("input[type='range']").forEach(function (el) {
+        var valEl = el.parentElement.querySelector(".val");
+        var updateFill = function () {
+          if (valEl) valEl.textContent = el.value;
+          var pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+          el.style.setProperty("--val", pct.toFixed(2) + "%");
+        };
+        el.addEventListener("input", updateFill);
+        updateFill(); // initial sync
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Harpsichord Strings — Ridgeline Prototype</title>
+<style>
+  :root { --bg:#0b0b0f; --panel:#15151c; --line:#2a2a38; --ink:#e8e4d8; --soft:#9a96a6; --accent:#e6b455; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  header { padding:16px 20px 8px; }
+  h1 { margin:0; font-size:18px; letter-spacing:.3px; }
+  .sub { color:var(--soft); font-size:12px; margin-top:2px; }
+  .wrap { max-width:1100px; margin:0 auto; padding:0 16px 48px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center;
+              background:var(--panel); border:1px solid var(--line); border-radius:10px;
+              padding:12px 14px; margin:8px 0 14px; }
+  button { background:#23232e; color:var(--ink); border:1px solid var(--line);
+           border-radius:7px; padding:7px 12px; font-size:13px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.on { background:var(--accent); color:#1a1407; border-color:var(--accent); }
+  .sliders { display:flex; flex-wrap:wrap; gap:14px; }
+  .ctl { display:flex; flex-direction:column; gap:2px; font-size:11px; color:var(--soft); }
+  .ctl input[type=range] { width:130px; accent-color:var(--accent); }
+  .ctl b { color:var(--ink); font-variant-numeric:tabular-nums; }
+  .notes { display:flex; gap:6px; flex-wrap:wrap; }
+  .notes button { padding:5px 9px; font-size:12px; }
+  .status { color:var(--soft); font-size:12px; margin-left:auto; }
+  canvas { display:block; width:100%; height:560px; background:var(--bg);
+           border:1px solid var(--line); border-radius:10px; }
+  .legend { color:var(--soft); font-size:11px; margin-top:8px; }
+  code { color:var(--accent); }
+</style>
+</head>
+<body>
+<header class="wrap" style="padding-bottom:0">
+  <h1>Harpsichord Strings — Ridgeline Prototype</h1>
+  <div class="sub">One row per octave. Each harpsichord note plucks a vibrating string at its pitch. A sandbox for the Library track's bespoke visualization.</div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <button id="audioBtn">▶ Live audio</button>
+    <button id="demoBtn">◆ Demo auto-pluck</button>
+    <button id="clearBtn">Clear</button>
+    <button id="copyBtn">Copy params</button>
+    <span style="display:flex;gap:6px;align-items:center;">
+      <span style="color:var(--soft);font-size:11px;">Style</span>
+      <button class="styleBtn" data-style="smooth">Smooth</button>
+      <button class="styleBtn" data-style="pixel">Pixel</button>
+      <button class="styleBtn on" data-style="sharp">Sharp</button>
+    </span>
+    <button id="audioDriveBtn" class="on" title="String shape follows the live audio waveform">Audio-driven</button>
+    <button id="alignBtn" title="Snap the waveform read to a zero crossing so it holds steady">Steady</button>
+    <div class="sliders">
+      <label class="ctl">Amplitude <b id="ampV">80</b><input id="amp" type="range" min="6" max="120" value="80"></label>
+      <label class="ctl">Decay (s) <b id="tauV">1.5</b><input id="tau" type="range" min="0.3" max="3" step="0.1" value="1.5"></label>
+      <label class="ctl">Vibration <b id="vibV">9.5</b><input id="vib" type="range" min="2" max="20" step="0.5" value="9.5"></label>
+      <label class="ctl">String width <b id="widV">5</b><input id="wid" type="range" min="1.5" max="10" step="0.5" value="5"></label>
+      <label class="ctl">Live sensitivity <b id="senV">8</b><input id="sen" type="range" min="2" max="14" step="0.5" value="8"></label>
+      <label class="ctl">Peaks <b id="wsampV">200</b><input id="wsamp" type="range" min="120" max="1600" step="40" value="200"></label>
+    </div>
+    <div class="status" id="status">idle</div>
+  </div>
+
+  <div class="notes" id="noteBtns"></div>
+
+  <canvas id="cv"></canvas>
+  <div class="legend">
+    Notes: C–D–E♭–F–G–A–B♭ (the harpsichord's C-minor set), octaves 3–5. Higher strings vibrate faster.
+    Live mode taps the real Library harpsichord; Demo plucks random notes; the buttons pluck specific notes.
+  </div>
+</div>
+
+<script src="prosperos-jukebox-themes.js?v=cc7678a3"></script>
+<script src="prosperos-jukebox-audio.js?v=94355490"></script>
+<script>
+(function () {
+  "use strict";
+
+  // ----- Harpsichord pitch model (from the engine: LIB_SCALE_4 * octMult) -----
+  var SCALE_C4 = [262, 294, 311, 349, 392, 440, 466];        // C4 D4 Eb4 F4 G4 A4 Bb4
+  var SCALE_NAMES = ["C", "D", "E♭", "F", "G", "A", "B♭"];
+  var OCT_MULTS = [0.5, 1, 2];                                // octaves 3, 4, 5
+  var OCTAVES = [5, 4, 3];                                    // drawn top -> bottom (high octave up top)
+
+  // All sounding harpsichord frequencies, for snapping detected pitch.
+  var NOTE_FREQS = [];
+  SCALE_C4.forEach(function (f) { OCT_MULTS.forEach(function (m) { NOTE_FREQS.push(f * m); }); });
+
+  function freqToMidi(f) { return 69 + 12 * Math.log2(f / 440); }
+  function midiOctave(m) { return Math.floor(m / 12) - 1; }   // C4=60 -> octave 4
+  function midiPitchClass(m) { return ((Math.round(m) % 12) + 12) % 12; }
+  function snapFreq(f) {
+    var best = NOTE_FREQS[0], bd = Infinity;
+    for (var i = 0; i < NOTE_FREQS.length; i++) {
+      var d = Math.abs(Math.log2(NOTE_FREQS[i] / f));
+      if (d < bd) { bd = d; best = NOTE_FREQS[i]; }
+    }
+    return best;
+  }
+
+  // ----- Tunable params (bound to sliders) -----
+  var P = { amp: 80, tau: 1.5, vib: 9.5, wid: 5, sens: 8 };
+  var STYLE = "sharp";    // "smooth" | "pixel" | "sharp"
+  var AUDIODRIVE = true;  // string SHAPE follows the live audio waveform (real multi-peak)
+  var WSAMP = 200, AUDIO_GAIN = 20;   // audio-waveform window (samples across a string) + visual gain
+  var ALIGN = false, wOffset = 0;     // "Steady": read from a zero crossing so the wave holds still
+
+  // ----- State -----
+  // Each row = one octave. plucks: {x, t0, fvib, amp} where x is fraction 0..1 of lane width.
+  var rows = OCTAVES.map(function (oct) { return { oct: oct, plucks: [] }; });
+  function rowForOctave(oct) {
+    var clamped = Math.max(OCTAVES[OCTAVES.length - 1], Math.min(OCTAVES[0], oct));
+    for (var i = 0; i < rows.length; i++) if (rows[i].oct === clamped) return rows[i];
+    return rows[Math.floor(rows.length / 2)];
+  }
+
+  var clock = function () { return performance.now() / 1000; };
+
+  // Pluck a string given an absolute frequency.
+  function pluck(freq, amp) {
+    var m = freqToMidi(freq);
+    var row = rowForOctave(midiOctave(m));
+    var x = midiPitchClass(m) / 12;                  // 0..1 across the octave lane
+    var fvib = P.vib * (freq / 262);                 // higher notes wobble faster
+    row.plucks.push({ x: x, t0: clock(), fvib: fvib, amp: (amp || P.amp) });
+    if (row.plucks.length > 16) row.plucks.shift();
+    lastNote = noteName(m);
+  }
+  function noteName(m) {
+    return SCALE_NAMES[[0,2,3,5,7,9,10].indexOf(midiPitchClass(m))] || "?";
+  }
+  var lastNote = "";
+
+  // ----- Audible pluck synth (so Demo + note buttons make sound, not just
+  // animate). A quick harpsichord-ish plucked tone. Live-audio detection does
+  // NOT call this — the real engine already sounds those notes. -----
+  // Authentic harpsichord pluck via the engine (Karplus-Strong), routed through
+  // a prototype-owned output node so it sounds the real voice without touching
+  // the engine's mix. Falls back to a simple synth if the method isn't present.
+  var protoOut = null, pctx = null;
+  function synthPluck(freq) {
+    if (window.ProsperoAudio && ProsperoAudio.pluckLibraryInto) {
+      var ac = ProsperoAudio.getAudioContext && ProsperoAudio.getAudioContext();
+      if (!ac && ProsperoAudio.init) { ProsperoAudio.init(); ac = ProsperoAudio.getAudioContext(); }
+      if (ac) {
+        if (ac.state === "suspended") ac.resume();
+        if (!protoOut || protoOut.context !== ac) {
+          protoOut = ac.createGain(); protoOut.gain.value = 0.6; protoOut.connect(ac.destination);
+          protoTapped = false;
+        }
+        ensureAnalyser(ac);
+        if (!protoTapped) { try { protoOut.connect(analyser); protoTapped = true; } catch (e) {} }
+        ProsperoAudio.pluckLibraryInto(freq, 1.2, protoOut, 1);
+        return;
+      }
+    }
+    fallbackPluck(freq);
+  }
+  function fallbackPluck(freq) {
+    if (!pctx) { try { pctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; } }
+    if (pctx.state === "suspended") pctx.resume();
+    var ac = pctx, t = ac.currentTime, dur = 0.85;
+    var osc = ac.createOscillator(); osc.type = "sawtooth"; osc.frequency.setValueAtTime(freq, t);
+    var osc2 = ac.createOscillator(); osc2.type = "triangle"; osc2.frequency.setValueAtTime(freq * 2, t);
+    var lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.Q.value = 1;
+    lp.frequency.setValueAtTime(freq * 7, t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.5, 500), t + dur * 0.5);
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(lp); osc2.connect(lp); lp.connect(g); g.connect(ac.destination);
+    osc.start(t);  osc.stop(t + dur + 0.05);
+    osc2.start(t); osc2.stop(t + dur + 0.05);
+  }
+  // Visual + audible pluck, for Demo and the manual note buttons.
+  function triggerNote(freq) { pluck(freq); synthPluck(freq); }
+
+  // ----- Canvas -----
+  var cv = document.getElementById("cv"), ctx2d = cv.getContext("2d");
+  var W = 0, H = 0, dpr = 1;
+  function resize() {
+    dpr = window.devicePixelRatio || 1;
+    var r = cv.getBoundingClientRect();
+    W = r.width; H = r.height;
+    cv.width = Math.floor(W * dpr); cv.height = Math.floor(H * dpr);
+    ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+
+  var PAD_L = 56, PAD_R = 20, PAD_T = 24, PAD_B = 24;
+  function laneW() { return W - PAD_L - PAD_R; }
+
+  function rowBaseline(i) {
+    // Evenly spaced rows; spacing intentionally < amplitude so tall plucks
+    // rise into the row above (the joyplot/ridgeline overlap).
+    var usable = H - PAD_T - PAD_B;
+    return PAD_T + (usable * (i + 0.5)) / rows.length;
+  }
+
+  function rowColor(i, a) {
+    var hue = 38 + (i / Math.max(1, rows.length - 1)) * 150;  // warm low -> cool high
+    return "hsla(" + hue.toFixed(0) + ",70%,62%," + a + ")";
+  }
+
+  function displacementAt(row, xFrac, t) {
+    var sharp = (STYLE === "sharp");
+    var d = 0, lw = laneW();
+    var sigmaPx = (P.wid / 100) * lw;
+    for (var k = 0; k < row.plucks.length; k++) {
+      var pk = row.plucks[k];
+      var age = t - pk.t0;
+      if (age < 0) continue;
+      var env = Math.exp(-age / P.tau);
+      if (env < 0.003) continue;
+      var dxpx = (xFrac - pk.x) * lw;
+      var shape;
+      if (sharp) {                                       // tent: straight sides, pointy apex
+        var a = Math.abs(dxpx) / (sigmaPx * 1.8);
+        shape = a < 1 ? (1 - a) : 0;
+      } else {                                           // gaussian: rounded hump
+        shape = Math.exp(-(dxpx * dxpx) / (2 * sigmaPx * sigmaPx));
+      }
+      var osc;
+      if (AUDIODRIVE && vizTime) {
+        // The string's shape IS a windowed slice of the real audio waveform, so
+        // its multiple peaks genuinely depict the harpsichord signal (higher
+        // notes naturally show more peaks). `shape` windows it to the pitch.
+        var W = sigmaPx * 2.5;
+        var frac = (dxpx + W) / (2 * W);
+        frac = frac < 0 ? 0 : (frac > 1 ? 1 : frac);
+        osc = vizTime[Math.min(vizTime.length - 1, wOffset + ((frac * (WSAMP - 1)) | 0))] * AUDIO_GAIN;
+        if (osc > 2.6) osc = 2.6; else if (osc < -2.6) osc = -2.6;
+      } else {
+        osc = Math.sin(2 * Math.PI * pk.fvib * age);   // synthetic single-bump wobble
+      }
+      d += pk.amp * env * shape * osc;
+    }
+    return d;
+  }
+
+  function pruneRow(row, t) {
+    row.plucks = row.plucks.filter(function (pk) { return (t - pk.t0) / P.tau < 6; });
+  }
+
+  var SCALE_PC = [0, 2, 3, 5, 7, 9, 10];
+
+  // Smooth (glow) or Sharp (crisp, angular, no glow) line styles.
+  function drawRowLine(row, i, base, t, lw, sharp) {
+    // Sharp samples the waveform coarsely → faceted/angular; Smooth samples
+    // finely → rounded. (With the audio waveform as the shape, this is what
+    // visually separates the two styles.)
+    var step = sharp ? Math.max(5, Math.floor(lw / 90)) : Math.max(2, Math.floor(lw / 240));
+    var pts = [];
+    for (var px = 0; px <= lw; px += step) pts.push([PAD_L + px, base - displacementAt(row, px / lw, t)]);
+    // Fill under (opaque bg) to occlude the row behind — the ridgeline overlap.
+    ctx2d.beginPath();
+    ctx2d.moveTo(pts[0][0], pts[0][1]);
+    for (var j = 1; j < pts.length; j++) ctx2d.lineTo(pts[j][0], pts[j][1]);
+    ctx2d.lineTo(PAD_L + lw, H); ctx2d.lineTo(PAD_L, H); ctx2d.closePath();
+    ctx2d.fillStyle = "#0b0b0f"; ctx2d.fill();
+    // The string.
+    ctx2d.beginPath();
+    ctx2d.moveTo(pts[0][0], pts[0][1]);
+    for (var k = 1; k < pts.length; k++) ctx2d.lineTo(pts[k][0], pts[k][1]);
+    ctx2d.lineJoin = sharp ? "miter" : "round";
+    ctx2d.strokeStyle = rowColor(i, sharp ? 1 : 0.95);
+    ctx2d.lineWidth = sharp ? 1.3 : 1.6;
+    if (!sharp) { ctx2d.shadowColor = rowColor(i, 0.6); ctx2d.shadowBlur = 8; }
+    ctx2d.stroke();
+    ctx2d.shadowBlur = 0;
+  }
+
+  // Pixel: quantize displacement to a grid and draw blocky "pixels".
+  function drawRowPixel(row, i, base, t, lw) {
+    var cell = 7;
+    for (var x = 0; x <= lw; x += cell) {
+      var disp = displacementAt(row, (x + cell / 2) / lw, t);
+      var top = base - Math.round(disp / cell) * cell - cell / 2;
+      ctx2d.fillStyle = "#0b0b0f";                  // occlude rows behind
+      ctx2d.fillRect(PAD_L + x, top + cell, cell, H);
+      ctx2d.fillStyle = rowColor(i, 0.95);          // the pixel block
+      ctx2d.fillRect(PAD_L + x, top, cell - 1, cell - 1);
+    }
+  }
+
+  function draw() {
+    var t = clock();
+    ctx2d.clearRect(0, 0, W, H);
+
+    var lw = laneW();
+    // Faint pitch-class gridlines + note labels (shared across rows).
+    ctx2d.font = '11px "VT323", monospace';
+    ctx2d.textAlign = "center"; ctx2d.textBaseline = "alphabetic";
+    for (var p = 0; p < SCALE_PC.length; p++) {
+      var gx = PAD_L + (SCALE_PC[p] / 12) * lw;
+      ctx2d.strokeStyle = "rgba(255,255,255,0.05)";
+      ctx2d.beginPath(); ctx2d.moveTo(gx, PAD_T - 8); ctx2d.lineTo(gx, H - PAD_B + 6); ctx2d.stroke();
+      ctx2d.fillStyle = "rgba(255,255,255,0.28)";
+      ctx2d.fillText(SCALE_NAMES[p], gx, PAD_T - 12);
+    }
+
+    // Draw rows top (back) -> bottom (front); fill under each so the row in
+    // front masks the one behind it (classic ridgeline overlap).
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      pruneRow(row, t);
+      var base = rowBaseline(i);
+
+      if (STYLE === "pixel") drawRowPixel(row, i, base, t, lw);
+      else                   drawRowLine(row, i, base, t, lw, STYLE === "sharp");
+
+      // Octave label.
+      ctx2d.fillStyle = rowColor(i, 0.9);
+      ctx2d.font = '12px "VT323", monospace';
+      ctx2d.textAlign = "right"; ctx2d.textBaseline = "middle";
+      ctx2d.fillText("C" + row.oct, PAD_L - 12, base);
+      ctx2d.textAlign = "center";
+    }
+    requestAnimationFrame(draw);
+  }
+
+  // ----- Live audio: tap the melody layer, detect onsets, snap pitch -----
+  var ctxA = null, analyser = null, fft = null, vizTime = null, audioOn = false, tapOk = false, protoTapped = false;
+  var emaEnergy = 0, lastTrig = 0, liveLevel = 0;
+  // One analyser, fed by BOTH the live melody layer and the prototype's own
+  // pluck output, so its level reflects whatever harpsichord is sounding.
+  function ensureAnalyser(ac) {
+    if (analyser && analyser.context === ac) return;
+    analyser = ac.createAnalyser();
+    analyser.fftSize = 8192;
+    analyser.smoothingTimeConstant = 0;
+    fft = new Float32Array(analyser.frequencyBinCount);
+    vizTime = new Float32Array(analyser.fftSize);
+    protoTapped = false;
+  }
+  function startAudio() {
+    if (!window.ProsperoAudio) { setStatus("audio engine not loaded"); return; }
+    try {
+      // Mirror the proven spiral-prototype bootstrap: create + resume the
+      // context within the click gesture, THEN switch track and play.
+      ProsperoAudio.init();
+      ctxA = ProsperoAudio.getAudioContext();
+      if (!ctxA) { setStatus("no audio context"); return; }
+      if (ctxA.state === "suspended") ctxA.resume();
+      ProsperoAudio.switchTrack("library");
+      ProsperoAudio.play("library");
+      audioOn = true;                       // audio is playing now (independent of the tap)
+
+      ensureAnalyser(ctxA);
+      tapOk = ProsperoAudio.attachLayerAnalyser("library", "melody", analyser);
+      setStatus("playing · ctx " + ctxA.state + (tapOk ? " · tapping harpsichord" : " · tap failed"));
+    } catch (e) {
+      setStatus("audio error: " + (e && e.message ? e.message : e));
+      if (window.console) console.error(e);
+    }
+  }
+  function stopAudio() {
+    if (window.ProsperoAudio) ProsperoAudio.stop && ProsperoAudio.stop();
+    audioOn = false; tapOk = false; setStatus("stopped");
+  }
+  function analyzeLive() {
+    if (!tapOk || !analyser) return;
+    analyser.getFloatFrequencyData(fft);
+    var binHz = ctxA.sampleRate / analyser.fftSize;
+    var lo = Math.max(1, Math.floor(110 / binHz)), hi = Math.ceil(1100 / binHz);
+    var sum = 0, peakDb = -Infinity, peakBin = -1;
+    for (var i = lo; i <= hi; i++) {
+      var db = fft[i];
+      sum += Math.pow(10, db / 20);
+      if (db > peakDb) { peakDb = db; peakBin = i; }
+    }
+    var now = clock();
+    var threshold = emaEnergy * (1 + P.sens * 0.25);
+    if (sum > threshold && peakDb > -82 && (now - lastTrig) > 0.08) {
+      lastTrig = now;
+      pluck(snapFreq(peakBin * binHz));
+    }
+    emaEnergy = emaEnergy * 0.85 + sum * 0.15;
+  }
+
+  // ----- Demo auto-plucker -----
+  var demoOn = false, demoTimer = null;
+  function demoStep() {
+    if (!demoOn) return;
+    var f = NOTE_FREQS[Math.floor(Math.random() * NOTE_FREQS.length)];
+    triggerNote(f);
+    demoTimer = setTimeout(demoStep, 250 + Math.random() * 650);
+  }
+
+  // ----- UI -----
+  function setStatus(s) { document.getElementById("status").textContent = s + (lastNote ? "  ·  last: " + lastNote : ""); }
+  function bindSlider(id, key, fmt) {
+    var el = document.getElementById(id), out = document.getElementById(id + "V");
+    function up() { P[key] = parseFloat(el.value); out.textContent = fmt ? fmt(P[key]) : el.value; }
+    el.addEventListener("input", up); up();
+  }
+  bindSlider("amp", "amp"); bindSlider("tau", "tau"); bindSlider("vib", "vib");
+  bindSlider("wid", "wid"); bindSlider("sen", "sens");
+
+  document.getElementById("audioBtn").addEventListener("click", function () {
+    if (audioOn) { stopAudio(); this.classList.remove("on"); this.textContent = "▶ Live audio"; }
+    else { startAudio(); this.classList.add("on"); this.textContent = "■ Stop audio"; }
+  });
+  document.getElementById("demoBtn").addEventListener("click", function () {
+    demoOn = !demoOn; this.classList.toggle("on", demoOn);
+    if (demoOn) demoStep(); else if (demoTimer) clearTimeout(demoTimer);
+    setStatus(demoOn ? "demo auto-pluck" : "idle");
+  });
+  document.getElementById("clearBtn").addEventListener("click", function () {
+    rows.forEach(function (r) { r.plucks = []; });
+  });
+  function fallbackCopy(s) {
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = s; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      document.execCommand("copy"); document.body.removeChild(ta);
+    } catch (e) {}
+  }
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var s = "{ amp: " + P.amp + ", tau: " + P.tau + ", vib: " + P.vib +
+            ", wid: " + P.wid + ", sens: " + P.sens + " }";
+    var btn = this, orig = btn.textContent;
+    function flash() {
+      btn.textContent = "Copied!";
+      setTimeout(function () { btn.textContent = orig; }, 1100);
+      setStatus("copied " + s);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(s).then(flash, function () { fallbackCopy(s); flash(); });
+    } else { fallbackCopy(s); flash(); }
+  });
+
+  // Style selector.
+  var styleBtns = document.querySelectorAll(".styleBtn");
+  styleBtns.forEach(function (b) {
+    b.addEventListener("click", function () {
+      STYLE = b.getAttribute("data-style");
+      styleBtns.forEach(function (x) { x.classList.toggle("on", x === b); });
+    });
+  });
+  document.getElementById("audioDriveBtn").addEventListener("click", function () {
+    AUDIODRIVE = !AUDIODRIVE;
+    this.classList.toggle("on", AUDIODRIVE);
+  });
+  var wsampEl = document.getElementById("wsamp");
+  wsampEl.addEventListener("input", function () {
+    WSAMP = parseInt(this.value, 10);
+    document.getElementById("wsampV").textContent = this.value;
+  });
+  document.getElementById("alignBtn").addEventListener("click", function () {
+    ALIGN = !ALIGN;
+    this.classList.toggle("on", ALIGN);
+  });
+
+  // Manual note buttons: one per scale note in the middle octave (4), plus
+  // octave-shift via shift/alt could be added later.
+  var nb = document.getElementById("noteBtns");
+  [3, 4, 5].forEach(function (oct) {
+    SCALE_C4.forEach(function (f, idx) {
+      var b = document.createElement("button");
+      b.textContent = SCALE_NAMES[idx] + oct;
+      var freq = f * Math.pow(2, oct - 4);
+      b.addEventListener("click", function () { triggerNote(freq); });
+      nb.appendChild(b);
+    });
+  });
+
+  // ----- Main loop -----
+  resize();
+  function findTrigger(buf) {                       // first rising zero crossing
+    var limit = Math.min(buf.length - WSAMP - 1, buf.length >> 1);
+    for (var i = 1; i < limit; i++) if (buf[i - 1] <= 0 && buf[i] > 0) return i;
+    return 0;
+  }
+  (function loop() {
+    if (analyser && vizTime) {
+      analyser.getFloatTimeDomainData(vizTime);                          // live waveform
+      wOffset = ALIGN ? findTrigger(vizTime) : 0;
+    }
+    analyzeLive();
+    requestAnimationFrame(loop);
+  })();
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>

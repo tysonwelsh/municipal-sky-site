@@ -1,0 +1,77 @@
+{
+  "schema": 2,
+  "id": "2026-07-27-subway-rat",
+  "title": "Sneaky subway rat",
+  "prompt": "I'd like a sneaky stealthy subway rat. It should have googly eyes and be showing in profile as though it is a scampering off somewhere. Let's give it a cartoony style like from the looney tunes or something",
+  "created": "2026-07-27",
+  "tags": [],
+  "sizeClass": "m",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 2.0,
+        "geometry": 2.0,
+        "color": 3.0,
+        "composition": 3.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 3.8% — tight, ≤6%); viewBox left exactly as generated."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 3.0,
+        "geometry": 1.0,
+        "color": 3.0,
+        "composition": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 1.8% — tight, ≤6%); viewBox left exactly as generated."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-27",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 2.0,
+      "graded": "2026-07-27",
+      "grade_history": [],
+      "annotations": {
+        "prompt-fidelity": 2.0,
+        "geometry": 1.0,
+        "color": 3.0,
+        "composition": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed via headless Chromium (worst dead margin 2.5% — tight, ≤6%); viewBox left exactly as generated."
+    }
+  ]
+}

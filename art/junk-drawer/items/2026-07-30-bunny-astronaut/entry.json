@@ -1,0 +1,86 @@
+{
+  "schema": 2,
+  "id": "2026-07-30-bunny-astronaut",
+  "title": "Mutant bunny astronaut",
+  "prompt": "A mutant bunny astronaut in the style of an 18th century woodcut. So it should be a bunny rabbit with three ears in an astronaut suit with one of those transparent globular helmets that space men wear in the cartoons, but in an old timey woodcut style",
+  "created": "2026-07-30",
+  "tags": [
+    "animal",
+    "woodcut",
+    "space"
+  ],
+  "sizeClass": "m",
+  "primary": "r3",
+  "retired": true,
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": 2.0,
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 1.0,
+        "integrity": 2.0,
+        "style": 2.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.7% at one-shot, 0.0% after the refinement's full-bleed ground. Second prompt (owner-approved, sent verbatim): \"Add a printed-paper ground behind the whole plate — an aged off-white sheet filling the entire viewBox, sitting behind every existing mark so the line-work reads as ink printed on paper. Change nothing else.\" It complied narrowly and well: the only changes are a radialGradient (#faf4e4 → #f3ead4 → #e6d8b8, off-centre at 0.42/0.36) appended to defs and one full-bleed rect filled with it, so the sheet reads as vignetted paper rather than a flat swatch; no existing mark was touched. Note the ground contradicts the appendix's \"transparent background, no opaque backdrop rectangle\" — the conflict was introduced by the refinement, not missed by the model. Builds the figure as a cream #f7f0e1 silhouette over which four userSpaceOnUse hatch patterns (hA–hD, decreasing coarseness) and a stippling pattern do all the shading; a 38-ray radiating burst clipped to the plate sits behind everything. Three ears are drawn as separate stacked paths inside a clipPath keyed to the helmet dome. Captioned itself LEPVS ASTRONAVTICVS in a ribbon cartouche and added corner ornaments and a double border, none of which were asked for."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 2.0,
+        "style": 1.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 0.7%. Filed as a one-shot while r1 and r3 were refined: the paper-ground refinement was sent to this response too, but what came back was byte-for-byte the Opus document rather than a refinement of this one (it had lost every marker distinguishing the two — torso M258,614, glove A42,42, belt M182,806, moon A44,44 — and gained Opus's), so it was rejected rather than filed under this model's name. This file is the untouched one-shot, which is why it is the only response with no paper ground and still sits on transparency. Its own construction is close to but independent of r1's: same pattern-and-cream approach, but a wider belt, rounder gloves, and its own star placement. Carries a malformed path command, \"M192,796 l--12,-14\" (doubled minus), which browsers drop — the thumb stroke it was meant to draw is simply absent. Also captioned itself LEPVS ASTRONAVTICVS."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-30",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": 2.0,
+      "graded": "2026-07-30",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 2.0,
+        "restraint": 2.0,
+        "integrity": 1.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.3% at one-shot, 0.0% after the refinement's full-bleed ground. Second prompt (owner-approved, sent verbatim): \"Add a printed-paper ground behind the whole plate — an aged off-white sheet filling the entire viewBox, sitting behind every existing mark so the line-work reads as ink printed on paper. Change nothing else.\" The most literal reading of the three: it added exactly one flat #f0e6cf rect plus a comment naming it, and the diff against its one-shot contains nothing else. Note the ground contradicts the appendix's \"transparent background, no opaque backdrop rectangle\" — the conflict was introduced by the refinement, not missed by the model. Structurally the odd one out and the only response with no solid light fill on the figure itself: everything is stroke plus one of three hatch patterns, so the whole plate is line-work. Draws a full scene rather than a figure — crescent moon with a face, lunar ground with craters, a flagpole flying a carrot emblem. The three ears are the clearest of any response, drawn as one central and two swept-back paths. Legs are four bare parallel strokes that never join a hip or the boots, and the arms terminate in ellipse mittens that float free of the sleeves."
+    }
+  ]
+}

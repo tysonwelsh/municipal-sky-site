@@ -1,0 +1,85 @@
+{
+  "schema": 2,
+  "id": "2026-07-29-torn-magician",
+  "title": "The Magician, top half",
+  "prompt": "The top half of a tarot card depicting The Magician that has been ripped in half. I’d like the art style of the card to be like a child’s coloring book, so it should still accurately depict the archetypes and motifs and so forth traditionally used on The Magician tarot cards, but in the line art style of a coloring book that you might find in a third grade classroom",
+  "created": "2026-07-29",
+  "tags": [
+    "tarot",
+    "line-art",
+    "media"
+  ],
+  "sizeClass": "m",
+  "primary": "r1",
+  "responses": [
+    {
+      "rid": "r1",
+      "file": "claude-opus-5.svg",
+      "model": "claude-opus-5",
+      "model_version": "claude-opus-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "refined",
+        "prompt_count": 2
+      },
+      "grade": 4.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 3.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Refined: the one-shot left the card face transparent — a literal reading of the appendix's \"transparent background (no opaque backdrop rectangle)\" — and the owner's second prompt asked for a parchment colored background on the card. The revision adds one closed path tracing the card outline and continuing down through the torn edge, filled #f3e3c1 with no stroke, beneath all the linework, so the paper stops exactly at the rip rather than behind it; the canvas outside the card stays transparent. Nothing else in the drawing changed between the two turns. Ink-bounds check passed — worst dead margin 1.5%; no viewBox normalization. Iterated internally during the first turn (rendered its own pass, then reworked arms, hair, snake belt and the rip's irregularity) before answering — still a single response. Motif coverage is the widest of the three: lemniscate over the head, double-ended wand held in a drawn fist, ouroboros belt with a head biting its own tail and diamond scale marks, rose arbour overhead with vines down both margins, garden lilies, and the Roman numeral I as an outlined serif glyph. The rip is a 33-vertex zigzag that doubles as the parchment fill's lower boundary, so tear and paper share one edge. Unlike the other two it uses no clipPath — every stroke is hand-terminated near the tear instead of being cut by the card shape, which is where the strained integrity shows: the arms are open stroke pairs rather than closed limb outlines, and robe and vine lines run to hand-tuned stops around the rip. Every <use> carries both xlink:href and href."
+    },
+    {
+      "rid": "r2",
+      "file": "claude-sonnet-5.svg",
+      "model": "claude-sonnet-5",
+      "model_version": "claude-sonnet-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 1.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 1.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 1.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.2%; no viewBox normalization. Disobeyed the output format: wrapped the document in a ```svg code fence, which was stripped — artwork bytes otherwise untouched. Clips all linework to the card silhouette and fills that silhouette #fffdf6, so it produced a paper face unprompted where Opus left one transparent. Integrity is where it comes apart: the opaque head ellipse is painted after the hair, covering the hairline it just drew; the raised arm and wand overdraw the card's inner border on their way up, and the flame at the wand's tip is sliced off by the clip at the card's top edge; the altar objects (cup, wand, pentacle, sword) float in a row below the robe with no altar under them, cut by the tear; and the inner frame's own zigzag runs parallel to the paper's rip, so the tear reads as two nested sawtooth lines. The Roman numeral is duplicated in both top corners as \"I\" in boxed serif <text> rather than sitting once at the top center."
+    },
+    {
+      "rid": "r3",
+      "file": "claude-fable-5.svg",
+      "model": "claude-fable-5",
+      "model_version": "claude-fable-5",
+      "date": "2026-07-29",
+      "generation": {
+        "mode": "one-shot",
+        "prompt_count": 1
+      },
+      "grade": 3.0,
+      "graded": "2026-07-29",
+      "grade_history": [],
+      "annotations": {
+        "instruction-following": 3.0,
+        "restraint": 3.0,
+        "integrity": 2.0,
+        "style": 3.0,
+        "je-ne-sais-quoi": 2.0
+      },
+      "transcript": null,
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.9%; no viewBox normalization. The smallest and cleanest document of the three (4.2 KB): rounded top corners on the card, everything clipped to the card shape, white paper fill, and the heaviest stroke weights, which is what makes it read most like a printed third-grade coloring page. Card outline is stroked twice — once under the clipped linework and once over it — so the border stays crisp against the tear. Motifs are present but abbreviated: the lemniscate and rose arbour are there, the ouroboros belt is reduced to a plain circle with a small head-and-eye circle riding on it, and the wand is a floating rounded rect that overlaps the fist rather than being gripped by it. Limbs are flat quadrilaterals meeting the robe at visible seams, and the scattered eight-pointed stars are an addition the prompt didn't call for, though a small one within the tarot idiom."
+    }
+  ]
+}

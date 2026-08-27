@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <title>gradients, pattern, filter, clip and mask</title>
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffd27f"/>
+      <stop offset="1" stop-color="#a1560c"/>
+    </linearGradient>
+    <radialGradient id="rg" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#88aacc"/>
+    </radialGradient>
+    <pattern id="pt" width="8" height="8" patternUnits="userSpaceOnUse">
+      <path d="M0 8 L8 0" stroke="#5a4a2a" stroke-width="1"/>
+    </pattern>
+    <filter id="fx" x="-25%" y="-25%" width="150%" height="150%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feOffset dx="1" dy="2" in="blur" result="shifted"/>
+      <feColorMatrix type="saturate" values="0.4" in="shifted" result="muted"/>
+      <feMerge>
+        <feMergeNode in="muted"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="cp">
+      <circle cx="60" cy="60" r="52"/>
+    </clipPath>
+    <mask id="mk">
+      <rect x="0" y="0" width="120" height="120" fill="#ffffff"/>
+      <rect x="0" y="96" width="120" height="24" fill="#000000"/>
+    </mask>
+    <marker id="mrk" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+      <circle cx="3" cy="3" r="2" fill="#333"/>
+    </marker>
+    <symbol id="tick" viewBox="0 0 10 10">
+      <path d="M1 5 L4 8 L9 1" fill="none" stroke="#333" stroke-width="2"/>
+    </symbol>
+  </defs>
+  <style>
+    .plate { stroke: #3a2a10; stroke-width: 2; }
+    .washed { fill: url(#rg); opacity: 0.85; }
+    .hatched { fill: url("#pt"); }
+  </style>
+  <g clip-path="url(#cp)" mask="url(#mk)">
+    <rect class="plate" x="6" y="6" width="108" height="108" rx="10" fill="url(#lg)" filter="url(#fx)"/>
+    <circle class="washed" cx="60" cy="52" r="30"/>
+    <rect class="hatched" x="20" y="86" width="80" height="18" rx="4"/>
+    <path d="M18 74 L102 74" stroke="#3a2a10" stroke-width="2" marker-end="url(#mrk)"/>
+  </g>
+  <use href="#tick" x="52" y="44" width="16" height="16" style="opacity:0.9"/>
+  <switch>
+    <text x="60" y="116" font-size="6" text-anchor="middle" fill="#3a2a10">plate</text>
+  </switch>
+</svg>

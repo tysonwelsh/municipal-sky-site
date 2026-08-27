@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PJ2 dev — pj2-skin.js test bench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Jacquard+12&display=swap" rel="stylesheet" />
+<style>
+/* dev bench for the shared skin engine — plain by design (family pattern:
+   render-soak.html). Everything drawn here comes from PJ2.Skin; if a section
+   looks wrong, the engine is wrong. */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #0a0908; color: #a89a78; font-family: "VT323", monospace; font-size: 17px; padding: 16px 18px 60px; }
+h1 { font-size: 22px; letter-spacing: 0.2em; color: #c7b795; margin-bottom: 4px; }
+h2 { font-size: 17px; letter-spacing: 0.24em; text-transform: uppercase; color: #8a7d63; margin: 26px 0 8px; border-bottom: 1px solid #2c2214; padding-bottom: 3px; }
+.note { color: #6b6252; margin-bottom: 8px; }
+.row { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+.paperbox { position: relative; }
+.paperbox canvas { display: block; }
+.paperbox .cap { font-size: 14px; color: #6b6252; margin-top: 3px; letter-spacing: 0.1em; }
+.atlasgrid { display: flex; gap: 10px; flex-wrap: wrap; }
+.cell { width: 92px; text-align: center; }
+.cell canvas { display: block; margin: 0 auto; image-rendering: pixelated; }
+.cell span { display: block; font-size: 13px; color: #6b6252; margin-top: 2px; word-break: break-all; line-height: 1.1; }
+.swatchrow { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.swatchrow canvas { display: block; }
+.swatchrow .lbl { width: 190px; font-size: 14px; color: #6b6252; }
+table { border-collapse: collapse; font-size: 16px; }
+td, th { padding: 2px 12px 2px 0; text-align: left; }
+th { color: #6b6252; letter-spacing: 0.14em; text-transform: uppercase; font-size: 13px; }
+.pass { color: #9ab86a; } .fail { color: #d06848; } .exc { color: #8a7d63; }
+.chip { display: inline-block; width: 13px; height: 13px; margin-right: 6px; vertical-align: -2px; outline: 1px solid #444; }
+#seedrow { margin: 6px 0 0; }
+input { background: #17120b; color: #c7b795; border: 1px solid #3a2d18; font-family: inherit; font-size: 16px; padding: 2px 6px; width: 90px; }
+button { background: #3a2d18; color: #c7b795; border: 0; font-family: inherit; font-size: 16px; padding: 3px 10px; cursor: pointer; }
+#verdict { font-size: 19px; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>PJ2-SKIN TEST BENCH</h1>
+<div class="note">dev tool · everything below is drawn by pj2-skin.js — papers, atlas, dithers, type, compositor. stays in the repo (family pattern).</div>
+<div id="seedrow">seed <input id="seed" value="451049" /> <button id="rebake">rebake papers</button> <span class="note" id="baketime"></span></div>
+
+<h2>1 · the three papers — plate zones + quiet rects dashed</h2>
+<div class="note">library parchment / sycorax soot rag / ariel engraved plate. the ellipse is the §6 plate zone; the rect is a quiet text column. texture must calm inside both.</div>
+<div class="row" id="papers"></div>
+
+<h2>2 · type — per-track header treatments on their own papers</h2>
+<div class="row" id="typerow"></div>
+
+<h2>3 · the sprite atlas — every cell, stamped at 2× via atlas().stamp</h2>
+<div id="atlases"></div>
+
+<h2>4 · dithers — bayer ramp · blue-noise fill · re-threshold fade (ink absorbing)</h2>
+<div id="dithers"></div>
+
+<h2>5 · compositor — stack() running: cached paper, furniture, live data line, one decaying emblem</h2>
+<div class="note">the data line sweeps every frame (L2, smoothed); the stamped emblem decays by re-threshold (L3); paper is baked once (L0).</div>
+<div class="row" id="stacks"></div>
+
+<h2>6 · contrast — every dataInk color vs its paper's worst-case zone tone</h2>
+<table id="contrast"><thead><tr><th>track</th><th>ink</th><th>worst bg</th><th>ratio</th><th>rule</th></tr></thead><tbody></tbody></table>
+<div id="verdict"></div>
+
+<script src="pj2-rand.js"></script>
+<script src="pj2-skin.js"></script>
+<script>
+(function () {
+"use strict";
+var Skin = PJ2.Skin;
+Skin.dev = true; // the bench runs with the tripwire armed
+
+var TRACKS = Skin.TRACKS;
+var paperGs = {};
+
+/* ---------------- 1 · papers with visible zones ---------------- */
+function bakePapers(seed) {
+  var host = document.getElementById("papers");
+  host.innerHTML = "";
+  var t0 = performance.now();
+  TRACKS.forEach(function (track) {
+    var box = document.createElement("div");
+    box.className = "paperbox";
+    var cv = document.createElement("canvas");
+    cv.style.width = "430px"; cv.style.height = "330px";
+    box.appendChild(cv);
+    var cap = document.createElement("div");
+    cap.className = "cap";
+    box.appendChild(cap);
+    host.appendChild(box);
+    var G = Skin.Grid.fit(cv, { w: 430, h: 330, kind: "art" });
+    var zone = { cx: 150, cy: 165, rx: 105, ry: 120 };
+    var qr = { x: 292, y: 24, w: 116, h: 282 };
+    Skin.paper(G.ctx, G.w, G.h, track, seed, { u: G.u, plateZone: zone, quietRects: [qr] });
+    // dev overlay: show the zones (not part of the skin)
+    G.ctx.save();
+    G.ctx.setLineDash([4, 4]);
+    G.ctx.strokeStyle = track === "library" ? "#8e3b2c" : "#c4b5fd";
+    G.ctx.lineWidth = 1;
+    G.ctx.beginPath();
+    G.ctx.ellipse(zone.cx, zone.cy, zone.rx, zone.ry, 0, 0, Math.PI * 2);
+    G.ctx.stroke();
+    G.ctx.strokeRect(qr.x, qr.y, qr.w, qr.h);
+    G.ctx.restore();
+    // sample ink on the zone to prove data legibility right on the texture
+    var ink = Skin.dataInk(track);
+    G.ctx.strokeStyle = ink[0];
+    G.ctx.lineWidth = 1.5;
+    G.ctx.beginPath();
+    for (var x = 0; x <= 190; x += 2) {
+      var y = 165 - Math.sin(x / 19) * 58 * Math.sin(x / 61);
+      if (x === 0) G.ctx.moveTo(55 + x, y); else G.ctx.lineTo(55 + x, y);
+    }
+    G.ctx.stroke();
+    Skin.Type.smallCaps(G.ctx, "a data line in " + ink[0], 300, 40, 13, ink[0], 1);
+    cap.textContent = track + " · seed " + seed;
+  });
+  document.getElementById("baketime").textContent =
+    "3 papers baked in " + (performance.now() - t0).toFixed(0) + " ms";
+}
+
+/* ---------------- 2 · type treatments ---------------- */
+function drawType() {
+  var host = document.getElementById("typerow");
+  host.innerHTML = "";
+  var texts = { library: "Conjunctio", sycorax: "The Rite Observed", ariel: "flights and songs" };
+  TRACKS.forEach(function (track) {
+    var cv = document.createElement("canvas");
+    cv.style.width = "430px"; cv.style.height = "86px";
+    host.appendChild(cv);
+    var G = Skin.Grid.fit(cv, { w: 430, h: 86, kind: "art" });
+    Skin.paper(G.ctx, G.w, G.h, track, 7, { u: G.u, quietRects: [{ x: 0, y: 0, w: 430, h: 86 }], deckle: false, stars: false });
+    Skin.Type.drawHeader(G.ctx, track, texts[track], 14, 46, 38, { u: G.u });
+    var pal = Skin.palette(track);
+    Skin.Type.smallCaps(G.ctx, "aged: ", 14, 72, 15, Skin.Type.inkAge(track, 0), 1);
+    Skin.Type.smallCaps(G.ctx, "step 0", 64, 72, 15, Skin.Type.inkAge(track, 0), 1);
+    Skin.Type.smallCaps(G.ctx, "step 1", 124, 72, 15, Skin.Type.inkAge(track, 1), 1);
+    Skin.Type.smallCaps(G.ctx, "step 2", 184, 72, 15, Skin.Type.inkAge(track, 2), 1);
+  });
+}
+
+/* ---------------- 3 · the atlas, every cell labeled ---------------- */
+function drawAtlases() {
+  var host = document.getElementById("atlases");
+  host.innerHTML = "";
+  TRACKS.forEach(function (track) {
+    var h = document.createElement("h2");
+    h.textContent = "atlas · " + track;
+    host.appendChild(h);
+    var grid = document.createElement("div");
+    grid.className = "atlasgrid";
+    host.appendChild(grid);
+    var at = Skin.atlas(track);
+    var pal = Skin.palette(track);
+    at.list().forEach(function (name) {
+      var spec = at.cells[name];
+      var cellDiv = document.createElement("div");
+      cellDiv.className = "cell";
+      var cv = document.createElement("canvas");
+      var w = Math.max(72, spec.w * 4 + 16), hh = spec.h * 4 + 16;
+      cv.style.width = w + "px"; cv.style.height = hh + "px";
+      cellDiv.appendChild(cv);
+      var lab = document.createElement("span");
+      lab.textContent = name;
+      cellDiv.appendChild(lab);
+      grid.appendChild(cellDiv);
+      var G = Skin.Grid.fit(cv, { w: w, h: hh, kind: "art" });
+      // each glyph sits on its own paper so we see it in situ
+      Skin.paper(G.ctx, G.w, G.h, track, 3, { u: G.u, quietRects: [{ x: 0, y: 0, w: w, h: hh }], deckle: false, stars: false });
+      at.stamp(G.ctx, name, w / 2, hh / 2, { u: G.u, scale: 2 });
+    });
+  });
+}
+
+/* ---------------- 4 · dither swatches ---------------- */
+function drawDithers() {
+  var host = document.getElementById("dithers");
+  host.innerHTML = "";
+  TRACKS.forEach(function (track) {
+    var pal = Skin.palette(track);
+    var ink = Skin.dataInk(track)[0];
+    var paperTone = pal.worstBg;
+    // bayer ramp
+    var row1 = document.createElement("div");
+    row1.className = "swatchrow";
+    row1.innerHTML = '<span class="lbl">' + track + " · bayer 10%→90%</span>";
+    var cv1 = document.createElement("canvas");
+    cv1.style.width = "460px"; cv1.style.height = "34px";
+    row1.appendChild(cv1); host.appendChild(row1);
+    var G1 = Skin.Grid.fit(cv1, { w: 460, h: 34, kind: "art" });
+    G1.ctx.fillStyle = paperTone; G1.ctx.fillRect(0, 0, 460, 34);
+    for (var i = 0; i < 9; i++) {
+      Skin.Dither.fill(G1.ctx, 6 + i * 50, 4, 44, 26, ink, (i + 1) / 10, { u: G1.u, mode: "bayer" });
+    }
+    // blue-noise ramp
+    var row2 = document.createElement("div");
+    row2.className = "swatchrow";
+    row2.innerHTML = '<span class="lbl">' + track + " · blue-noise 10%→90%</span>";
+    var cv2 = document.createElement("canvas");
+    cv2.style.width = "460px"; cv2.style.height = "34px";
+    row2.appendChild(cv2); host.appendChild(row2);
+    var G2 = Skin.Grid.fit(cv2, { w: 460, h: 34, kind: "art" });
+    G2.ctx.fillStyle = paperTone; G2.ctx.fillRect(0, 0, 460, 34);
+    for (var j = 0; j < 9; j++) {
+      Skin.Dither.fill(G2.ctx, 6 + j * 50, 4, 44, 26, ink, (j + 1) / 10, { u: G2.u, mode: "blue", seed: 42 });
+    }
+    // the re-threshold fade: one emblem at nine lives
+    var row3 = document.createElement("div");
+    row3.className = "swatchrow";
+    row3.innerHTML = '<span class="lbl">' + track + " · stamp fade life 1→0.1</span>";
+    var cv3 = document.createElement("canvas");
+    cv3.style.width = "460px"; cv3.style.height = "44px";
+    row3.appendChild(cv3); host.appendChild(row3);
+    var G3 = Skin.Grid.fit(cv3, { w: 460, h: 44, kind: "art" });
+    G3.ctx.fillStyle = paperTone; G3.ctx.fillRect(0, 0, 460, 44);
+    var at = Skin.atlas(track);
+    var glyph = track === "library" ? "op-conjunctio" : (track === "sycorax" ? "apparition" : "asterism-i");
+    for (var k = 0; k < 9; k++) {
+      at.stamp(G3.ctx, glyph, 28 + k * 50, 22, { u: G3.u, fade: 1 - k * 0.11, seed: 42 });
+    }
+  });
+}
+
+/* ---------------- 5 · the compositor, live ---------------- */
+var stacks = [];
+function buildStacks() {
+  var host = document.getElementById("stacks");
+  host.innerHTML = "";
+  stacks = [];
+  TRACKS.forEach(function (track) {
+    var cv = document.createElement("canvas");
+    cv.style.width = "300px"; cv.style.height = "170px";
+    host.appendChild(cv);
+    var at = Skin.atlas(track);
+    var pal = Skin.palette(track);
+    var ink = Skin.dataInk(track);
+    var st = Skin.stack(cv, track, {
+      seed: 11, w: 300, h: 170,
+      zones: { plateZone: { cx: 150, cy: 85, rx: 120, ry: 60 } },
+      renderers: {
+        furniture: function (G) {
+          Skin.Type.smallCaps(G.ctx, track + " · stack()", 10, 18, 14, ink[0], 1);
+          var names = at.list().slice(0, 5);
+          for (var i = 0; i < names.length; i++) {
+            at.stamp(G.ctx, names[i], 26 + i * 34, 150, { u: G.u });
+          }
+        },
+        data: function (G, tr, tNow) {
+          var c = G.ctx;
+          c.strokeStyle = ink[0];
+          c.lineWidth = 1.5;
+          c.beginPath();
+          for (var x = 0; x <= 280; x += 2) {
+            var y = 85 - Math.sin(x / 17 + tNow * 1.7) * 34 * Math.sin(x / 47 + tNow * 0.6);
+            if (x === 0) c.moveTo(10 + x, y); else c.lineTo(10 + x, y);
+          }
+          c.stroke();
+        },
+      },
+    });
+    // one decaying emblem on L3 — the re-threshold fade in motion
+    var emblem = track === "library" ? "op-transmutatio" : (track === "sycorax" ? "pose-sting" : "glyph-lift");
+    st.addIllustration({
+      ttl: 12,
+      draw: function (G, age) {
+        at.stamp(G.ctx, emblem, 250, 50, { u: G.u, scale: 2, fade: 1 - age, seed: 5 });
+      },
+    }, performance.now() / 1000);
+    stacks.push(st);
+  });
+}
+function frame() {
+  var tNow = performance.now() / 1000;
+  for (var i = 0; i < stacks.length; i++) stacks[i].composite(tNow);
+  requestAnimationFrame(frame);
+}
+
+/* ---------------- 6 · the contrast table ---------------- */
+function drawContrast() {
+  var rows = Skin.checkContrast();
+  var tb = document.querySelector("#contrast tbody");
+  var html = "", allPass = true;
+  rows.forEach(function (r) {
+    var cls = r.note === "data" ? (r.pass ? "pass" : "fail") : "exc";
+    if (r.note === "data" && !r.pass) allPass = false;
+    html += "<tr><td>" + r.track + "</td>"
+      + "<td><span class='chip' style='background:" + r.hex + "'></span>" + r.hex + "</td>"
+      + "<td><span class='chip' style='background:" + r.bg + "'></span>" + r.bg + "</td>"
+      + "<td class='" + cls + "'>" + r.ratio.toFixed(2) + ":1</td>"
+      + "<td class='" + cls + "'>" + (r.note === "data" ? (r.pass ? "PASS ≥ 4.5" : "FAIL") : r.note) + "</td></tr>";
+  });
+  tb.innerHTML = html;
+  document.getElementById("verdict").innerHTML = allPass
+    ? '<span class="pass">ALL DATA INKS ≥ 4.5:1 — the registry holds</span>'
+    : '<span class="fail">REGISTRY VIOLATION — a data ink fails its paper</span>';
+}
+
+/* ---------------- boot ---------------- */
+function boot() {
+  var seed = parseInt(document.getElementById("seed").value, 10) || 1;
+  bakePapers(seed);
+  drawType();
+  drawAtlases();
+  drawDithers();
+  buildStacks();
+  drawContrast();
+}
+document.getElementById("rebake").addEventListener("click", function () {
+  bakePapers(parseInt(document.getElementById("seed").value, 10) || 1);
+});
+// canvas-only fonts are never fetched by the CSS link alone (no DOM text
+// uses them), so fonts.ready resolves WITHOUT Jacquard 12 — load explicitly.
+// (the mockups dodged this by styling DOM headers; a bench has none.)
+if (document.fonts && document.fonts.load) {
+  Promise.all([
+    document.fonts.load('38px "Jacquard 12"'),
+    document.fonts.load('17px "VT323"'),
+  ]).then(function () { setTimeout(function () { boot(); requestAnimationFrame(frame); }, 30); });
+} else {
+  window.addEventListener("load", function () { setTimeout(function () { boot(); requestAnimationFrame(frame); }, 60); });
+}
+})();
+</script>
+</body>
+</html>

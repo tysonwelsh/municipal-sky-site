@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KOLOB mockup 2 — THE FACSIMILE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Sans+Deseret&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================================
+   KOLOB — MOCKUP 2 · THE FACSIMILE
+   The page becomes a lithographed PLATE, in the manner of Facsimile No. 2
+   (the hypocephalus): a slowly counter-rotating cosmological wheel with
+   Kolob at the hub, Deseret glyphs seated in its rings, and the seven
+   numbered panels of the order of service around the rim. The order of
+   service is printed below as an EXPLANATION of figures. Green mat, thin
+   gold rule, cream plate. The current section's needle walks the wheel.
+   ========================================================================== */
+:root {
+  --cover: #14382c;
+  --cover-hi: #1a4536;
+  --paper: #f5efe0;
+  --paper-lo: #ebe3cf;
+  --ink: #1e4d3b;
+  --ink-soft: rgba(30, 77, 59, 0.62);
+  --ink-faint: rgba(30, 77, 59, 0.28);
+  --rule: rgba(30, 77, 59, 0.42);
+  --gilt: #8a7a45;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #ffffff; font-family: "EB Garamond", Georgia, serif; padding: 2.6rem 1rem 4rem; }
+.mock-label {
+  max-width: 860px; margin: 0 auto 1rem;
+  font-size: 0.7rem; letter-spacing: 0.24em; color: #999;
+  text-transform: uppercase; text-align: center;
+}
+
+/* ---------------- the mat + gold rule + plate ---------------- */
+.kolob-mat {
+  position: relative; max-width: 860px; margin: 0 auto; padding: 34px; border-radius: 3px;
+  background: radial-gradient(130% 100% at 50% 0%, var(--cover-hi) 0%, var(--cover) 60%, #0e2a21 100%);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.22);
+}
+.kolob-mat::after {
+  content: ""; position: absolute; inset: 0; border-radius: 3px; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23c)' opacity='0.06'/%3E%3C/svg%3E");
+}
+.kolob-mat::before {
+  content: ""; position: absolute; inset: 13px; pointer-events: none; z-index: 1;
+  border: 1px solid var(--gilt); opacity: 0.75;
+}
+/* tiny gold corner stars, stamped in the mat like the hymnbook spine tooling */
+.mat-star { position: absolute; z-index: 1; color: var(--gilt); font-size: 0.6rem; opacity: 0.8; }
+.mat-star.tl { top: 6px; left: 8px; } .mat-star.tr { top: 6px; right: 8px; }
+.mat-star.bl { bottom: 6px; left: 8px; } .mat-star.br { bottom: 6px; right: 8px; }
+
+.kolob-page {
+  position: relative; z-index: 2;
+  background: linear-gradient(178deg, var(--paper) 0%, var(--paper) 84%, var(--paper-lo) 100%);
+  color: var(--ink); border-radius: 1px;
+  padding: 2.2rem 2.8rem 2.2rem;
+  box-shadow: 0 1px 0 rgba(255,250,235,0.1) inset, 0 6px 18px rgba(0,0,0,0.35);
+}
+.kolob-page::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23p)' opacity='0.05'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+.kolob-page > * { position: relative; z-index: 1; }
+
+/* ---------------- plate heading ---------------- */
+.kolob-header { text-align: center; margin: 0 0 1.2rem; }
+.kolob-plate-no {
+  font-size: 0.72rem; letter-spacing: 0.34em; color: var(--ink-soft);
+  text-transform: uppercase; margin: 0 0 0.7rem;
+}
+.kolob-title {
+  font-family: "Noto Sans Deseret", serif;
+  font-size: clamp(2rem, 5.5vw, 2.9rem); font-weight: 400;
+  letter-spacing: 0.22em; margin: 0 0 0.3rem; color: var(--ink);
+}
+.kolob-subtitle {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.9rem;
+  letter-spacing: 0.14em; color: var(--ink-soft); margin: 0;
+}
+
+/* ---------------- the wheel ---------------- */
+.kolob-wheel-wrap { position: relative; height: 360px; margin: 0.4rem 0 0.2rem; }
+.kolob-wheel { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.kolob-plate-caption {
+  text-align: center; font-style: italic; font-size: 0.85rem;
+  color: var(--ink-soft); margin: 0 0 1.6rem;
+}
+.kolob-plate-caption .ds { font-family: "Noto Sans Deseret", serif; font-style: normal; letter-spacing: 0.1em; }
+
+/* ---------------- the page strip (tightened staff) ---------------- */
+.kolob-staff-wrap {
+  position: relative; height: 74px; margin: 0 0 1.5rem;
+  background:
+    linear-gradient(90deg, var(--ink-faint) 0, var(--ink-faint) 1px, transparent 1px) no-repeat 14px 0 / 1px 100%,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 10% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 30% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 50% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 70% / 100% 1px,
+    linear-gradient(var(--rule), var(--rule)) no-repeat 0 90% / 100% 1px;
+}
+.kolob-staff { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------------- transport ---------------- */
+.kolob-transport { display: flex; align-items: center; gap: 0.9rem; margin: 0 0 2rem; }
+.kolob-btn {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.95rem; letter-spacing: 0.16em;
+  color: var(--ink); background: var(--paper);
+  border: 1px solid var(--ink-soft); border-radius: 2px;
+  padding: 0.55rem 1.4rem; cursor: pointer; box-shadow: 0 1.5px 0 var(--ink-faint);
+}
+.kolob-btn.is-playing { background: var(--ink); color: var(--paper); }
+.kolob-btn-glyph { display: inline-block; font-family: Georgia, serif; font-size: 1.15em; line-height: 0; vertical-align: -0.06em; }
+.kolob-glyph-stop { font-size: 1.45em; vertical-align: -0.1em; }
+.kolob-transport-spacer { flex: 1; }
+.kolob-ctl-label { font-family: "Noto Sans Deseret", serif; font-size: 0.78rem; letter-spacing: 0.14em; color: var(--ink-soft); }
+.kolob-range { -webkit-appearance: none; appearance: none; width: 130px; height: 18px; background: transparent; cursor: pointer; }
+.kolob-range::-webkit-slider-runnable-track { height: 1px; background: var(--ink-soft); }
+.kolob-range::-webkit-slider-thumb { -webkit-appearance: none; width: 11px; height: 11px; border-radius: 50%; background: var(--paper); border: 1px solid var(--ink); margin-top: -5.5px; }
+
+/* ---------------- EXPLANATION (the order of service as figures) ----------- */
+.kolob-columns { display: grid; grid-template-columns: 1.3fr 1fr; gap: 2.4rem; margin: 0 0 2.2rem; }
+.kolob-sec-head {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.8rem; letter-spacing: 0.22em;
+  color: var(--ink-soft); border-bottom: 1px solid var(--rule);
+  padding-bottom: 0.45rem; margin: 0 0 0.9rem;
+}
+.kolob-fig-row {
+  display: flex; align-items: baseline; gap: 0.7rem; padding: 0.3rem 0;
+  font-size: 0.92rem; color: var(--ink-soft);
+}
+.kolob-fig-no { font-style: italic; width: 3.4em; flex: 0 0 auto; color: var(--ink-soft); }
+.kolob-fig-name { font-family: "Noto Sans Deseret", serif; letter-spacing: 0.1em; }
+.kolob-fig-row.current { color: var(--ink); }
+.kolob-fig-row.current .kolob-fig-no { color: var(--gilt); }
+.kolob-fig-row.done { color: var(--ink-faint); }
+.kolob-fig-fill { flex: 1; align-self: center; border-bottom: 1px dotted var(--ink-faint); }
+
+.kolob-board { background: linear-gradient(175deg, var(--cover-hi), var(--cover)); border-radius: 3px; padding: 1rem 1.1rem 1.1rem; box-shadow: inset 0 1px 6px rgba(0,0,0,0.4); }
+.kolob-board .kolob-ctl-label { color: rgba(245,240,228,0.6); }
+.kolob-board-nums { display: flex; gap: 0.5rem; margin: 0.6rem 0 0.85rem; min-height: 2.1rem; }
+.kolob-board-card { font-family: "Noto Sans Deseret", serif; background: var(--paper); color: var(--cover); padding: 0.22rem 0.6rem; border-radius: 1px; font-size: 1.02rem; box-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+.kolob-seed-row { display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; }
+.kolob-seed-current { color: var(--paper); font-size: 0.95rem; }
+.kolob-seed-input { width: 6.5em; font-family: "EB Garamond", serif; font-size: 0.85rem; color: var(--paper); background: rgba(245,240,228,0.08); border: 1px solid rgba(245,240,228,0.3); border-radius: 2px; padding: 0.3rem 0.5rem; }
+.kolob-btn-board { background: transparent; color: var(--paper); border-color: rgba(245,240,228,0.45); box-shadow: none; font-size: 0.82rem; padding: 0.35rem 0.9rem; }
+
+/* ---------------- stops ---------------- */
+.kolob-stops-block { margin: 0 0 2.2rem; }
+.kolob-layers { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 2.4rem; }
+.kolob-stop { display: flex; align-items: center; gap: 0.8rem; padding: 0.24rem 0; }
+.kolob-drawknob {
+  width: 20px; height: 20px; flex: 0 0 auto; border-radius: 50%;
+  border: 1px solid var(--ink-soft);
+  background: radial-gradient(circle at 36% 32%, #fbf7ed, var(--paper) 55%, var(--paper-lo));
+  box-shadow: 0 2px 3px rgba(30,77,59,0.35), inset 0 -1px 1px rgba(30,77,59,0.2);
+  cursor: pointer;
+}
+.kolob-drawknob.is-off { box-shadow: inset 0 1px 3px rgba(30,77,59,0.4); transform: scale(0.92); opacity: 0.55; }
+.kolob-stop-name { font-family: "Noto Sans Deseret", serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--ink); min-width: 7.5em; }
+.kolob-stop .kolob-range { flex: 1; width: auto; }
+
+/* ---------------- broadside + footnote minutes ---------------- */
+.kolob-broadside-block { margin: 0 0 2.2rem; text-align: center; }
+.kolob-broadside-block .kolob-sec-head { text-align: left; }
+.kolob-broadside-line { font-family: "Noto Sans Deseret", serif; font-size: 1.06rem; line-height: 2; letter-spacing: 0.06em; color: var(--ink); opacity: 0.82; }
+/* minutes printed as the plate's footnotes, asterisked, two columns */
+.kolob-log-block { margin: 0 0 2rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+.kolob-log-cols { columns: 2; column-gap: 2.4rem; }
+.kolob-log-row { break-inside: avoid; display: flex; align-items: baseline; gap: 0.6rem; padding: 0.22rem 0; font-size: 0.86rem; }
+.kolob-log-mark { flex: 0 0 auto; width: 1.4em; color: var(--gilt); font-family: Georgia, serif; font-size: 0.8rem; }
+.kolob-log-text { font-family: "Noto Sans Deseret", serif; letter-spacing: 0.08em; color: var(--ink-soft); }
+.kolob-log-time { font-style: italic; font-size: 0.75rem; color: var(--ink-faint); margin-left: 0.4em; }
+
+.kolob-note {
+  font-family: "Noto Sans Deseret", serif; font-size: 0.86rem; line-height: 2.1;
+  letter-spacing: 0.08em; color: var(--ink-soft); text-align: center;
+  border-top: 1px solid var(--rule); padding-top: 1.4rem;
+}
+.kolob-note a { color: var(--ink); text-decoration: none; border-bottom: 1px dotted var(--ink-soft); }
+
+@media (max-width: 700px) {
+  .kolob-mat { padding: 18px; } .kolob-mat::before { inset: 8px; }
+  .kolob-page { padding: 1.8rem 1.2rem 1.6rem; }
+  .kolob-columns, .kolob-layers { grid-template-columns: 1fr; }
+  .kolob-wheel-wrap { height: 280px; }
+  .kolob-log-cols { columns: 1; }
+}
+</style>
+</head>
+<body>
+
+<p class="mock-label">mockup 2 of 3 · the facsimile — hypocephalus wheel, explanation of figures</p>
+
+<div class="kolob-mat">
+  <span class="mat-star tl">✧</span><span class="mat-star tr">✧</span>
+  <span class="mat-star bl">✧</span><span class="mat-star br">✧</span>
+ <div class="kolob-page">
+
+  <header class="kolob-header">
+    <p class="kolob-plate-no">A FACSIMILE FROM THE MEETING · No. 2</p>
+    <h1 class="kolob-title">𐐗𐐄𐐢𐐉𐐒</h1>
+    <p class="kolob-subtitle">𐐊 𐐐𐐆𐐣 𐐇𐐤𐐖𐐆𐐤 𐐈𐐓 𐐜 𐐡𐐆𐐣 𐐊𐐚 𐐜 𐐢𐐌𐐓</p>
+  </header>
+
+  <!-- THE WHEEL: the Liahona grown to a hypocephalus. Rings counter-rotate at
+       prairie speed; the gold needle names the current figure; notes flare as
+       stars on the orbits. -->
+  <div class="kolob-wheel-wrap">
+    <canvas id="wheel" class="kolob-wheel" aria-label="the cosmological wheel of the meeting"></canvas>
+  </div>
+  <p class="kolob-plate-caption"><span class="ds">𐐗𐐄𐐢𐐉𐐒, 𐐝𐐆𐐘𐐤𐐆𐐙𐐌𐐆𐐥 𐐜 𐐙𐐊𐐡𐐝𐐓 𐐗𐐡𐐆𐐁𐐟𐐊𐐤</span> — <em>one day to a cubit</em></p>
+
+  <!-- the page — tightened staff -->
+  <div class="kolob-staff-wrap">
+    <canvas id="staff" class="kolob-staff" aria-label="shape-note engraving"></canvas>
+  </div>
+
+  <div class="kolob-transport">
+    <button type="button" class="kolob-btn is-playing"><span class="kolob-btn-glyph">▶&#xFE0E;</span>&nbsp; 𐐑𐐢𐐁</button>
+    <button type="button" class="kolob-btn"><span class="kolob-btn-glyph kolob-glyph-stop">■&#xFE0E;</span>&nbsp; 𐐝𐐓𐐉𐐑</button>
+    <div class="kolob-transport-spacer"></div>
+    <span class="kolob-ctl-label">𐐚𐐉𐐢</span>
+    <input type="range" min="0" max="100" value="60" class="kolob-range" />
+  </div>
+
+  <div class="kolob-columns">
+    <div>
+      <div class="kolob-sec-head">𐐇𐐗𐐝𐐑𐐢𐐊𐐤𐐁𐐟𐐊𐐤</div>
+      <div class="kolob-fig-row done"><span class="kolob-fig-no">Fig. 1.</span><span class="kolob-fig-name">𐐑𐐡𐐇𐐢𐐧𐐔</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row done"><span class="kolob-fig-no">Fig. 2.</span><span class="kolob-fig-name">𐐆𐐤𐐚𐐄𐐗𐐁𐐟𐐊𐐤</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row current"><span class="kolob-fig-no">Fig. 3.</span><span class="kolob-fig-name">𐐐𐐆𐐣</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row"><span class="kolob-fig-no">Fig. 4.</span><span class="kolob-fig-name">𐐓𐐇𐐝𐐓𐐆𐐣𐐄𐐤𐐆</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row"><span class="kolob-fig-no">Fig. 5.</span><span class="kolob-fig-name">𐐝𐐈𐐗𐐡𐐊𐐣𐐇𐐤𐐓</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row"><span class="kolob-fig-no">Fig. 6.</span><span class="kolob-fig-name">𐐐𐐆𐐣</span><span class="kolob-fig-fill"></span></div>
+      <div class="kolob-fig-row"><span class="kolob-fig-no">Fig. 7.</span><span class="kolob-fig-name">𐐑𐐄𐐝𐐓𐐢𐐅𐐔</span><span class="kolob-fig-fill"></span></div>
+    </div>
+    <div>
+      <div class="kolob-sec-head">𐐐𐐆𐐣 𐐒𐐄𐐡𐐔</div>
+      <div class="kolob-board">
+        <div class="kolob-board-nums"><span class="kolob-board-card">𐑉𐑈</span><span class="kolob-board-card">𐑃𐑁</span><span class="kolob-board-card">𐑄𐑀</span></div>
+        <div class="kolob-seed-row">
+          <span class="kolob-ctl-label">𐐝𐐀𐐔</span>
+          <span class="kolob-seed-current">738294</span>
+          <input type="text" class="kolob-seed-input" />
+          <button type="button" class="kolob-btn kolob-btn-board">𐐘𐐈𐐜𐐊𐐡</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kolob-stops-block">
+    <div class="kolob-sec-head">𐐜 𐐝𐐓𐐉𐐑𐐝</div>
+    <div class="kolob-layers">
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐃𐐡𐐘𐐊𐐤</span><input type="range" class="kolob-range" value="45" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓</span><input type="range" class="kolob-range" value="70" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐗𐐎𐐌𐐊𐐡</span><input type="range" class="kolob-range" value="60" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob is-off"></button><span class="kolob-stop-name">𐐒𐐈𐐘𐐑𐐌𐐑</span><input type="range" class="kolob-range" value="50" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣</span><input type="range" class="kolob-range" value="40" /></div>
+      <div class="kolob-stop"><button class="kolob-drawknob"></button><span class="kolob-stop-name">𐐙𐐀𐐢𐐔</span><input type="range" class="kolob-range" value="55" /></div>
+    </div>
+  </div>
+
+  <div class="kolob-broadside-block">
+    <div class="kolob-sec-head">𐐜 𐐒𐐡𐐃𐐔𐐝𐐌𐐔</div>
+    <div class="kolob-broadside-line">𐑄 𐑂𐐰𐑊𐐮 𐐮𐑆 𐑅𐐻𐐮𐑊 · 𐑄 𐑊𐐴𐐻 𐐮𐑆 𐐬𐑌 𐑄 𐑉𐐮𐑋</div>
+  </div>
+
+  <!-- clerk's minutes as the plate's footnotes -->
+  <div class="kolob-log-block">
+    <div class="kolob-log-cols">
+      <div class="kolob-log-row"><span class="kolob-log-mark">✸</span><span class="kolob-log-text">𐐙𐐧𐐘𐐆𐐥 𐐇𐐤𐐓𐐡𐐆</span><span class="kolob-log-time">4·12</span></div>
+      <div class="kolob-log-row"><span class="kolob-log-mark">†</span><span class="kolob-log-text">𐐗𐐢𐐇𐐡𐐆𐐤𐐇𐐓 𐐢𐐌𐐤𐐞 𐐍𐐓</span><span class="kolob-log-time">3·41</span></div>
+      <div class="kolob-log-row"><span class="kolob-log-mark">◉</span><span class="kolob-log-text">𐐜 𐐢𐐆𐐊𐐐𐐄𐐤𐐊 𐐑𐐌𐐤𐐓𐐝</span><span class="kolob-log-time">2·58</span></div>
+      <div class="kolob-log-row"><span class="kolob-log-mark">‡</span><span class="kolob-log-text">𐐐𐐂𐐡𐐣𐐄𐐤𐐆𐐊𐐣 𐐟𐐈𐐔𐐄𐐞</span><span class="kolob-log-time">2·10</span></div>
+    </div>
+  </div>
+
+  <p class="kolob-note">𐐤𐐊𐐛𐐆𐐥 𐐡𐐆𐐑𐐀𐐓𐐝 · 𐐇𐐚𐐡𐐆 𐐣𐐀𐐓𐐆𐐥 𐐆𐐞 𐐆𐐓𐐝 𐐄𐐤<br /><a href="#">𐐂𐐡𐐓</a></p>
+
+ </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var INK = "#1e4d3b", GILT = "#8a7a45", PAPER = "#f5efe0";
+  var GLYPHS_OUT = "𐐗𐐄𐐢𐐉𐐒𐐐𐐆𐐣𐐊𐐚𐐜𐐡𐐌𐐓".split("");
+  var GLYPHS_IN  = "𐐝𐐀𐐔𐐢𐐆𐐊𐐐𐐄𐐤".split("");
+
+  var t = 0;
+  var stars = [];                        // notes flaring on the orbits
+  var starClock = 0;
+
+  function drawWheel(ctx, W, H, dt) {
+    t += dt;
+    ctx.clearRect(0, 0, W, H);
+    var cx = W / 2, cy = H / 2;
+    var R = Math.min(W, H) / 2 - 14;
+
+    ctx.save();
+    ctx.translate(0.5, 0.5);
+    ctx.strokeStyle = INK;
+    ctx.fillStyle = INK;
+
+    // ---- outer double rim
+    ctx.lineWidth = 1.4; ctx.globalAlpha = 0.8;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.955, 0, Math.PI * 2); ctx.stroke();
+
+    // ---- seven numbered panels of the order, around the rim
+    var SEC = 7;
+    for (var i = 0; i < SEC; i++) {
+      var a0 = -Math.PI / 2 + (i / SEC) * Math.PI * 2;
+      ctx.globalAlpha = 0.45; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a0) * R * 0.78, cy + Math.sin(a0) * R * 0.78);
+      ctx.lineTo(cx + Math.cos(a0) * R * 0.955, cy + Math.sin(a0) * R * 0.955);
+      ctx.stroke();
+      // the figure number, seated mid-panel
+      var am = a0 + Math.PI / SEC;
+      ctx.globalAlpha = 0.7;
+      ctx.font = "italic 11px 'EB Garamond', serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i + 1), cx + Math.cos(am) * R * 0.865, cy + Math.sin(am) * R * 0.865);
+    }
+    ctx.lineWidth = 1; ctx.globalAlpha = 0.55;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.78, 0, Math.PI * 2); ctx.stroke();
+
+    // ---- outer glyph ring — rotates one way, a day to a cubit
+    ctx.globalAlpha = 0.8;
+    ctx.font = "13px 'Noto Sans Deseret', serif";
+    var rotO = t * 0.018;                          // imperceptible until you stare
+    for (var g = 0; g < GLYPHS_OUT.length; g++) {
+      var ga = rotO + (g / GLYPHS_OUT.length) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(cx + Math.cos(ga) * R * 0.685, cy + Math.sin(ga) * R * 0.685);
+      ctx.rotate(ga + Math.PI / 2);
+      ctx.fillText(GLYPHS_OUT[g], 0, 0);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.60, 0, Math.PI * 2); ctx.stroke();
+
+    // ---- hatched band — the waters beneath, engraver's shading
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, R * 0.60, 0, Math.PI * 2);
+    ctx.arc(cx, cy, R * 0.47, 0, Math.PI * 2, true);
+    ctx.clip("evenodd");
+    ctx.globalAlpha = 0.22; ctx.lineWidth = 0.7;
+    for (var hx = -R; hx < R; hx += 4.5) {
+      ctx.beginPath();
+      ctx.moveTo(cx + hx, cy - R); ctx.lineTo(cx + hx + R * 0.7, cy + R);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.47, 0, Math.PI * 2); ctx.stroke();
+
+    // ---- inner glyph ring — rotates the OTHER way
+    ctx.globalAlpha = 0.7;
+    ctx.font = "12px 'Noto Sans Deseret', serif";
+    var rotI = -t * 0.03;
+    for (var g2 = 0; g2 < GLYPHS_IN.length; g2++) {
+      var ga2 = rotI + (g2 / GLYPHS_IN.length) * Math.PI * 2;
+      ctx.save();
+      ctx.translate(cx + Math.cos(ga2) * R * 0.385, cy + Math.sin(ga2) * R * 0.385);
+      ctx.rotate(ga2 + Math.PI / 2);
+      ctx.fillText(GLYPHS_IN[g2], 0, 0);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.30, 0, Math.PI * 2); ctx.stroke();
+
+    // ---- the hub: Kolob, first of the governing ones — rayed seat
+    var breathe = 0.5 + 0.5 * Math.sin(t * 0.5);
+    ctx.save();
+    ctx.shadowColor = "rgba(138,160,90," + (0.25 + breathe * 0.3).toFixed(2) + ")";
+    ctx.shadowBlur = 8 + breathe * 6;
+    ctx.strokeStyle = GILT; ctx.globalAlpha = 0.85; ctx.lineWidth = 1;
+    for (var ry = 0; ry < 8; ry++) {
+      var ra = t * 0.05 + (ry / 8) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(ra) * R * 0.10, cy + Math.sin(ra) * R * 0.10);
+      ctx.lineTo(cx + Math.cos(ra) * R * (0.19 + breathe * 0.02), cy + Math.sin(ra) * R * (0.19 + breathe * 0.02));
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 0.9;
+    ctx.font = "16px 'Noto Sans Deseret', serif";
+    ctx.fillText("𐐗", cx, cy + 1);
+
+    // ---- the section needle — walks the seven figures (demo: fig. 3)
+    var prog = (2 + 0.35 + 0.05 * Math.sin(t * 0.1)) / 7;
+    var na = -Math.PI / 2 + prog * Math.PI * 2;
+    ctx.save();
+    ctx.shadowColor = "rgba(138,160,90,0.45)"; ctx.shadowBlur = 6;
+    ctx.strokeStyle = GILT; ctx.globalAlpha = 0.95; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(na) * R * 0.22, cy + Math.sin(na) * R * 0.22);
+    ctx.lineTo(cx + Math.cos(na) * R * 0.93, cy + Math.sin(na) * R * 0.93);
+    ctx.stroke();
+    // arrowhead
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(na) * R * 0.93, cy + Math.sin(na) * R * 0.93);
+    ctx.lineTo(cx + Math.cos(na - 0.06) * R * 0.87, cy + Math.sin(na - 0.06) * R * 0.87);
+    ctx.lineTo(cx + Math.cos(na + 0.06) * R * 0.87, cy + Math.sin(na + 0.06) * R * 0.87);
+    ctx.closePath();
+    ctx.fillStyle = GILT; ctx.fill();
+    ctx.restore();
+
+    // ---- notes flare as stars on the orbits
+    starClock -= dt;
+    if (starClock <= 0) {
+      starClock = 0.5 + Math.random() * 1.6;
+      var orbit = [0.30, 0.47, 0.60, 0.685][Math.floor(Math.random() * 4)];
+      stars.push({ a: Math.random() * Math.PI * 2, r: orbit, life: 1 });
+    }
+    for (var s = stars.length - 1; s >= 0; s--) {
+      var st = stars[s];
+      st.life -= dt * 0.4;
+      if (st.life <= 0) { stars.splice(s, 1); continue; }
+      var sx = cx + Math.cos(st.a) * R * st.r, sy = cy + Math.sin(st.a) * R * st.r;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, st.life * 1.6);
+      ctx.fillStyle = GILT;
+      ctx.shadowColor = "rgba(176,154,85,0.7)"; ctx.shadowBlur = 6;
+      var sr = 1.6 + (1 - st.life) * 1.4;
+      ctx.beginPath();
+      for (var p = 0; p < 8; p++) {
+        var pa = (p / 8) * Math.PI * 2;
+        var pr = p % 2 === 0 ? sr * 2 : sr * 0.7;
+        ctx[p === 0 ? "moveTo" : "lineTo"](sx + Math.cos(pa) * pr, sy + Math.sin(pa) * pr);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  // ---- tightened staff (same demo as mockup 1) --------------------------------
+  var SHAPES = ["fa", "sol", "la", "mi"];
+  var notes = [], noteClock = 0;
+  function drawShape(c, shape, x, y, s) {
+    c.beginPath();
+    if (shape === "fa") { c.moveTo(x - s, y + s * 0.8); c.lineTo(x + s, y + s * 0.8); c.lineTo(x - s, y - s * 0.8); c.closePath(); }
+    else if (shape === "la") { c.rect(x - s, y - s * 0.7, s * 2, s * 1.4); }
+    else if (shape === "mi") { c.moveTo(x, y - s * 0.9); c.lineTo(x + s, y); c.lineTo(x, y + s * 0.9); c.lineTo(x - s, y); c.closePath(); }
+    else { c.ellipse(x, y, s, s * 0.72, -0.22, 0, Math.PI * 2); }
+  }
+  function drawStaff(ctx, W, H, dt) {
+    noteClock -= dt;
+    if (noteClock <= 0) {
+      noteClock = 0.4 + Math.random() * 1.4;
+      notes.push({ x: W - 20, y: H * (0.1 + Math.round(Math.random() * 8) / 8 * 0.8), shape: SHAPES[Math.floor(Math.random() * 4)], a: 0.95, filled: Math.random() < 0.6 });
+    }
+    ctx.clearRect(0, 0, W, H);
+    ctx.strokeStyle = INK; ctx.fillStyle = INK; ctx.lineWidth = 1.2;
+    for (var i = notes.length - 1; i >= 0; i--) {
+      var n = notes[i];
+      n.x -= 11 * dt; n.a -= 0.012 * dt;
+      if (n.x < -10 || n.a <= 0) { notes.splice(i, 1); continue; }
+      ctx.globalAlpha = Math.max(0, n.a);
+      drawShape(ctx, n.shape, n.x, n.y, 5);
+      if (n.filled) ctx.fill(); else ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(n.x + 5, n.y - 1); ctx.lineTo(n.x + 5, n.y - 12); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  // ---- plumbing ---------------------------------------------------------------
+  function fit(cv) {
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var r = cv.getBoundingClientRect();
+    cv.width = r.width * dpr; cv.height = r.height * dpr;
+    var c = cv.getContext("2d");
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: r.width, h: r.height };
+  }
+  var Wl, S;
+  function refit() { Wl = fit(document.getElementById("wheel")); S = fit(document.getElementById("staff")); }
+  refit();
+  window.addEventListener("resize", refit);
+
+  var last = 0;
+  function frame(ts) {
+    requestAnimationFrame(frame);
+    var dt = last ? Math.min(0.1, (ts - last) / 1000) : 0.016;
+    last = ts;
+    drawWheel(Wl.c, Wl.w, Wl.h, dt);
+    drawStaff(S.c, S.w, S.h, dt);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

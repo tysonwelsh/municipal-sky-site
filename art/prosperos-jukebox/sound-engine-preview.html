@@ -1,0 +1,1307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sound Engine Enhancement Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: #0a0a0a;
+        font-family: "VT323", monospace;
+        padding: 32px 24px;
+        max-width: 880px;
+        margin: 0 auto;
+        color: #998855;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        font-size: 24px;
+        text-align: center;
+        color: #ffaa00;
+        text-shadow: 0 0 12px rgba(255, 170, 0, 0.4);
+        margin-bottom: 4px;
+      }
+      .subtitle {
+        text-align: center;
+        color: #554422;
+        font-size: 16px;
+        letter-spacing: 2px;
+        margin-bottom: 28px;
+      }
+
+      /* Master controls */
+      .master {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        margin-bottom: 24px;
+      }
+      .master label {
+        color: #554422;
+        font-size: 14px;
+        letter-spacing: 1px;
+      }
+      .rng {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100px;
+        height: 6px;
+        background: #1a1a2a;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .rng::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+      }
+      .rng::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: #ffaa00;
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+      }
+      .stop-btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 14px;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        background: #111118;
+        color: #554422;
+        cursor: pointer;
+      }
+      .stop-btn:hover {
+        border-color: #ff4444;
+        color: #ff4444;
+      }
+
+      /* Enhancement section */
+      .enh {
+        background: #0d0d14;
+        border: 2px solid #1a1a2a;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .enh-title {
+        font-size: 22px;
+        margin-bottom: 6px;
+        text-shadow: 0 0 6px rgba(255, 170, 0, 0.25);
+      }
+      .enh-desc {
+        color: #665530;
+        font-size: 15px;
+        line-height: 1.6;
+        margin-bottom: 14px;
+      }
+      .enh-params {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .enh-params label {
+        color: #554422;
+        font-size: 13px;
+        letter-spacing: 1px;
+      }
+      .enh-params .val {
+        color: #665530;
+        font-size: 13px;
+        width: 36px;
+      }
+
+      /* Tracks row */
+      .tracks-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .demo-btn {
+        font-family: "VT323", monospace;
+        font-size: 15px;
+        padding: 7px 14px;
+        border: 2px solid #2a2a3a;
+        border-radius: 3px;
+        background: #111118;
+        cursor: pointer;
+        letter-spacing: 1px;
+        transition: all 0.15s;
+      }
+      /* Library = amber */
+      .demo-btn.lib {
+        color: #776633;
+      }
+      .demo-btn.lib:hover {
+        border-color: #ffaa00;
+        color: #ffaa00;
+      }
+      /* Sycorax = purple */
+      .demo-btn.syc {
+        color: #664488;
+      }
+      .demo-btn.syc:hover {
+        border-color: #c896ff;
+        color: #c896ff;
+      }
+      /* Ariel = blue */
+      .demo-btn.ari {
+        color: #336688;
+      }
+      .demo-btn.ari:hover {
+        border-color: #55ccff;
+        color: #55ccff;
+      }
+
+      .divider {
+        border: none;
+        border-top: 1px solid #1a1a2a;
+        margin: 24px 0;
+      }
+
+      /* AB section */
+      .ab-section {
+        background: #0d0d14;
+        border: 2px solid #332a1a;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+      .ab-section .enh-title {
+        color: #ffaa00;
+      }
+      .ab-toggle-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .ab-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .ab-toggle label {
+        color: #998855;
+        font-size: 15px;
+        cursor: pointer;
+      }
+      .ab-cb {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #2a2a3a;
+        background: #0a0a0a;
+        cursor: pointer;
+        position: relative;
+      }
+      .ab-cb:hover {
+        border-color: #ffaa00;
+      }
+      .ab-cb:checked {
+        border-color: #ffaa00;
+        background: #ffaa00;
+        box-shadow: 0 0 6px rgba(255, 170, 0, 0.3);
+      }
+      .ab-cb:checked::after {
+        content: "";
+        position: absolute;
+        inset: 3px;
+        background: #0a0a0a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Sound Engine Preview</h1>
+    <p class="subtitle">
+      ~ infrastructure enhancements across all three tracks ~
+    </p>
+
+    <div class="master">
+      <label>VOL</label>
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value="50"
+        id="master-vol"
+        class="rng"
+      />
+      <button type="button" class="stop-btn" id="stop-all">
+        &#9632; STOP ALL
+      </button>
+    </div>
+
+    <!-- 0. Dry baseline -->
+    <div class="enh">
+      <div class="enh-title">0. Current Sound (Dry, Mono)</div>
+      <div class="enh-desc">
+        How each track sounds right now. No effects, no spatial processing, mono
+        center. This is your reference point.
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="dry" data-track="lib">
+          &#9654; Library Drone + Melody
+        </button>
+        <button class="demo-btn syc" data-demo="dry" data-track="syc">
+          &#9654; Sycorax Drone + Ghost
+        </button>
+        <button class="demo-btn ari" data-demo="dry" data-track="ari">
+          &#9654; Ariel Breeze + Chimes
+        </button>
+      </div>
+    </div>
+
+    <!-- 1. Reverb -->
+    <div class="enh">
+      <div class="enh-title">1. Reverb</div>
+      <div class="enh-desc">
+        A convolution reverb on the master output. Each track gets a different
+        room character: Library = warm intimate study, Sycorax = dark cavernous
+        cave, Ariel = open airy outdoors. This single change affects every
+        sound.
+      </div>
+      <div class="enh-params">
+        <label>WET</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="35"
+          id="reverb-wet"
+          class="rng"
+        />
+        <span class="val" id="reverb-wet-val">35%</span>
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="reverb" data-track="lib">
+          &#9654; Library
+        </button>
+        <button class="demo-btn syc" data-demo="reverb" data-track="syc">
+          &#9654; Sycorax
+        </button>
+        <button class="demo-btn ari" data-demo="reverb" data-track="ari">
+          &#9654; Ariel
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. Stereo -->
+    <div class="enh">
+      <div class="enh-title">2. Stereo Panning</div>
+      <div class="enh-desc">
+        Individual notes and events are randomly placed in the stereo field.
+        Drones stay centered for anchoring. Melodic and ambient events float
+        left and right. Best with headphones.
+      </div>
+      <div class="enh-params">
+        <label>WIDTH</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="70"
+          id="stereo-width"
+          class="rng"
+        />
+        <span class="val" id="stereo-width-val">70%</span>
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="stereo" data-track="lib">
+          &#9654; Library
+        </button>
+        <button class="demo-btn syc" data-demo="stereo" data-track="syc">
+          &#9654; Sycorax
+        </button>
+        <button class="demo-btn ari" data-demo="stereo" data-track="ari">
+          &#9654; Ariel
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. Waveshaper -->
+    <div class="enh">
+      <div class="enh-title">3. Waveshaping (Warmth / Grit)</div>
+      <div class="enh-desc">
+        A subtle waveshaping curve on the drone layers adds harmonic richness.
+        Library gets soft-clip warmth (analog tape feel). Sycorax gets harder
+        saturation (menacing overtones). Ariel gets gentle tube warmth.
+      </div>
+      <div class="enh-params">
+        <label>DRIVE</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="40"
+          id="drive-amt"
+          class="rng"
+        />
+        <span class="val" id="drive-amt-val">40%</span>
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="waveshape" data-track="lib">
+          &#9654; Library Drone
+        </button>
+        <button class="demo-btn syc" data-demo="waveshape" data-track="syc">
+          &#9654; Sycorax Drone
+        </button>
+        <button class="demo-btn ari" data-demo="waveshape" data-track="ari">
+          &#9654; Ariel Breeze
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. Delay -->
+    <div class="enh">
+      <div class="enh-title">4. Delay / Echo</div>
+      <div class="enh-desc">
+        Short feedback delays on melodic and ambient events. Creates depth and
+        space. Library = warm slapback on melody. Sycorax = dark trailing
+        echoes. Ariel = bright ping-pong shimmer.
+      </div>
+      <div class="enh-params">
+        <label>FEEDBACK</label>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="35"
+          id="delay-fb"
+          class="rng"
+        />
+        <span class="val" id="delay-fb-val">35%</span>
+        <label>TIME</label>
+        <input
+          type="range"
+          min="10"
+          max="100"
+          value="40"
+          id="delay-time"
+          class="rng"
+        />
+        <span class="val" id="delay-time-val">320ms</span>
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="delay" data-track="lib">
+          &#9654; Library Melody
+        </button>
+        <button class="demo-btn syc" data-demo="delay" data-track="syc">
+          &#9654; Sycorax Ghost
+        </button>
+        <button class="demo-btn ari" data-demo="delay" data-track="ari">
+          &#9654; Ariel Chimes
+        </button>
+      </div>
+    </div>
+
+    <!-- 5. Compression -->
+    <div class="enh">
+      <div class="enh-title">5. Master Compression</div>
+      <div class="enh-desc">
+        A gentle compressor on the master output glues all layers together and
+        prevents peaks from spiking. Makes the overall mix feel cohesive and
+        polished rather than a collection of independent sounds.
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="compress" data-track="lib">
+          &#9654; Library (Multi-layer)
+        </button>
+        <button class="demo-btn syc" data-demo="compress" data-track="syc">
+          &#9654; Sycorax (Multi-layer)
+        </button>
+        <button class="demo-btn ari" data-demo="compress" data-track="ari">
+          &#9654; Ariel (Multi-layer)
+        </button>
+      </div>
+    </div>
+
+    <!-- 6. PeriodicWave -->
+    <div class="enh">
+      <div class="enh-title">6. Custom Waveforms (PeriodicWave)</div>
+      <div class="enh-desc">
+        Instead of basic sine/triangle/sawtooth, custom waveforms designed from
+        harmonic coefficients. A "bell" wave for chimes, a "reed" wave for the
+        hum, a "glass" wave for ghost tones. Each has the overtone fingerprint
+        of a real material. Compare each pair: basic oscillator vs. custom wave.
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="pwave" data-track="lib">
+          &#9654; Sine vs. Bell Chime
+        </button>
+        <button class="demo-btn syc" data-demo="pwave" data-track="syc">
+          &#9654; Sine vs. Glass Ghost
+        </button>
+        <button class="demo-btn ari" data-demo="pwave" data-track="ari">
+          &#9654; Triangle vs. Flute Whistle
+        </button>
+      </div>
+    </div>
+
+    <hr class="divider" />
+
+    <!-- A/B Combined -->
+    <div class="ab-section">
+      <div class="enh-title">A/B: Everything Combined</div>
+      <div class="enh-desc">
+        Toggle each enhancement on/off. Hear a multi-layer sample from each
+        track with your chosen combination. Start with everything off, then turn
+        them on one at a time to hear each layer build.
+      </div>
+      <div class="ab-toggle-row">
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-reverb" checked />
+          <label for="ab-reverb">Reverb</label>
+        </div>
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-stereo" checked />
+          <label for="ab-stereo">Stereo</label>
+        </div>
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-waveshape" checked />
+          <label for="ab-waveshape">Waveshape</label>
+        </div>
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-delay" checked />
+          <label for="ab-delay">Delay</label>
+        </div>
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-compress" checked />
+          <label for="ab-compress">Compress</label>
+        </div>
+        <div class="ab-toggle">
+          <input type="checkbox" class="ab-cb" id="ab-pwave" checked />
+          <label for="ab-pwave">Custom Waves</label>
+        </div>
+      </div>
+      <div class="tracks-row">
+        <button class="demo-btn lib" data-demo="combined" data-track="lib">
+          &#9654; Library Scene
+        </button>
+        <button class="demo-btn syc" data-demo="combined" data-track="syc">
+          &#9654; Sycorax Scene
+        </button>
+        <button class="demo-btn ari" data-demo="combined" data-track="ari">
+          &#9654; Ariel Scene
+        </button>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        "use strict";
+
+        // =====================================================================
+        // SCALES & CONSTANTS (from jukebox)
+        // =====================================================================
+        var LIB_SCALE = [262, 294, 311, 349, 392, 440, 466];
+        var LIB_DRONE_PAIR = [65.41, 98];
+        var SYC_GHOST_SCALE = [311, 330, 370, 392, 415, 466, 494];
+        var SYC_DRONE_CLUSTER = [55, 58.5, 82.5, 117];
+        var ARIEL_SCALE = [698, 784, 880, 988, 1047, 1175, 1319];
+        var ARIEL_BREEZE_PAIR = [175, 262];
+
+        // =====================================================================
+        // AUDIO STATE
+        // =====================================================================
+        var ctx = null;
+        var masterGain = null;
+        var noiseBuf = null;
+        var timers = [];
+
+        // Effects nodes (rebuilt per demo)
+        var reverbConv = null,
+          reverbWet = null,
+          reverbDry = null,
+          reverbSend = null;
+        var delayNode = null,
+          delayFb = null,
+          delaySend = null,
+          delayFilter = null;
+        var compressor = null;
+        var waveshaper = null;
+
+        // PeriodicWave custom waveforms
+        var bellWave = null,
+          glassWave = null,
+          fluteWave = null,
+          reedWave = null;
+
+        function init() {
+          if (ctx) return;
+          ctx = new (window.AudioContext || window.webkitAudioContext)();
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(0.1, ctx.currentTime);
+          masterGain.connect(ctx.destination);
+
+          // Noise buffer
+          var len = ctx.sampleRate * 10;
+          noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+          var d = noiseBuf.getChannelData(0);
+          for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+
+          // Custom waveforms
+          // Bell: strong fundamental, inharmonic partials at 2.76x, 5.4x, 8.93x
+          bellWave = ctx.createPeriodicWave(
+            new Float32Array([
+              0, 1, 0.1, 0.3, 0, 0.15, 0.08, 0, 0.12, 0.05, 0, 0.06,
+            ]),
+            new Float32Array([0, 0, 0.05, 0, 0.08, 0, 0, 0.04, 0, 0, 0.03, 0]),
+          );
+          // Glass: hollow, odd harmonics dominant, breathy
+          glassWave = ctx.createPeriodicWave(
+            new Float32Array([0, 1, 0, 0.4, 0, 0.2, 0, 0.12, 0, 0.06, 0, 0.03]),
+            new Float32Array([
+              0, 0, 0.3, 0, 0.15, 0, 0.08, 0, 0.04, 0, 0.02, 0,
+            ]),
+          );
+          // Flute: fundamental + soft 2nd and 3rd, almost no higher
+          fluteWave = ctx.createPeriodicWave(
+            new Float32Array([0, 1, 0.25, 0.08, 0.02, 0, 0, 0, 0]),
+            new Float32Array([0, 0, 0.1, 0.03, 0, 0, 0, 0, 0]),
+          );
+          // Reed: many harmonics, sawtooth-like but with formant emphasis
+          reedWave = ctx.createPeriodicWave(
+            new Float32Array([
+              0, 1, 0.5, 0.7, 0.3, 0.5, 0.2, 0.3, 0.15, 0.1, 0.08,
+            ]),
+            new Float32Array([0, 0, 0.2, 0, 0.3, 0, 0.1, 0, 0.08, 0, 0.04]),
+          );
+        }
+
+        // =====================================================================
+        // EFFECTS BUILDERS
+        // =====================================================================
+
+        function buildReverb(track) {
+          var wet =
+            parseInt(document.getElementById("reverb-wet").value, 10) / 100;
+          // Different reverb characters per track
+          var decayTime, hfDamping, preDelayMs;
+          if (track === "lib") {
+            decayTime = 2.0;
+            hfDamping = 4.0;
+            preDelayMs = 25;
+          } else if (track === "syc") {
+            decayTime = 4.5;
+            hfDamping = 1.5;
+            preDelayMs = 40;
+          } else {
+            decayTime = 3.0;
+            hfDamping = 6.0;
+            preDelayMs = 15;
+          }
+
+          var irLen = ctx.sampleRate * decayTime;
+          var irBuf = ctx.createBuffer(2, irLen, ctx.sampleRate);
+          for (var ch = 0; ch < 2; ch++) {
+            var data = irBuf.getChannelData(ch);
+            for (var i = 0; i < irLen; i++) {
+              var t = i / ctx.sampleRate;
+              var env = Math.exp((-3.0 * t) / decayTime);
+              var hf = Math.exp((-hfDamping * t) / decayTime);
+              data[i] = (Math.random() * 2 - 1) * env * hf;
+            }
+          }
+
+          reverbConv = ctx.createConvolver();
+          reverbConv.buffer = irBuf;
+          reverbDry = ctx.createGain();
+          reverbDry.gain.setValueAtTime(1.0, ctx.currentTime);
+          reverbWet = ctx.createGain();
+          reverbWet.gain.setValueAtTime(wet, ctx.currentTime);
+          var preDelay = ctx.createDelay(0.1);
+          preDelay.delayTime.setValueAtTime(preDelayMs / 1000, ctx.currentTime);
+          reverbSend = ctx.createGain();
+          reverbSend.gain.setValueAtTime(1.0, ctx.currentTime);
+          reverbSend.connect(reverbDry);
+          reverbSend.connect(preDelay);
+          preDelay.connect(reverbConv);
+          reverbConv.connect(reverbWet);
+          return { send: reverbSend, dry: reverbDry, wet: reverbWet };
+        }
+
+        function buildDelay(track) {
+          var fb =
+            parseInt(document.getElementById("delay-fb").value, 10) / 100;
+          var timeMs =
+            100 +
+            (parseInt(document.getElementById("delay-time").value, 10) / 100) *
+              700;
+          // Filter character per track
+          var filterFreq;
+          if (track === "lib")
+            filterFreq = 2000; // warm
+          else if (track === "syc")
+            filterFreq = 800; // dark
+          else filterFreq = 6000; // bright
+
+          delayNode = ctx.createDelay(1.0);
+          delayNode.delayTime.setValueAtTime(timeMs / 1000, ctx.currentTime);
+          delayFb = ctx.createGain();
+          delayFb.gain.setValueAtTime(fb, ctx.currentTime);
+          delayFilter = ctx.createBiquadFilter();
+          delayFilter.type = "lowpass";
+          delayFilter.frequency.setValueAtTime(filterFreq, ctx.currentTime);
+
+          delaySend = ctx.createGain();
+          delaySend.gain.setValueAtTime(1.0, ctx.currentTime);
+
+          // Feedback loop: send -> delay -> filter -> feedback -> delay
+          delaySend.connect(delayNode);
+          delayNode.connect(delayFilter);
+          delayFilter.connect(delayFb);
+          delayFb.connect(delayNode);
+          return { send: delaySend, output: delayFilter };
+        }
+
+        function buildCompressor() {
+          compressor = ctx.createDynamicsCompressor();
+          compressor.threshold.setValueAtTime(-24, ctx.currentTime);
+          compressor.knee.setValueAtTime(12, ctx.currentTime);
+          compressor.ratio.setValueAtTime(4, ctx.currentTime);
+          compressor.attack.setValueAtTime(0.01, ctx.currentTime);
+          compressor.release.setValueAtTime(0.15, ctx.currentTime);
+          return compressor;
+        }
+
+        function buildWaveshaper(track) {
+          var drive =
+            parseInt(document.getElementById("drive-amt").value, 10) / 100;
+          var amount;
+          if (track === "lib")
+            amount = 5 + drive * 15; // soft
+          else if (track === "syc")
+            amount = 10 + drive * 40; // aggressive
+          else amount = 3 + drive * 10; // gentle
+
+          var samples = 256;
+          var curve = new Float32Array(samples);
+          for (var i = 0; i < samples; i++) {
+            var x = (i / (samples - 1)) * 2 - 1;
+            // Soft-clip tanh curve
+            curve[i] = Math.tanh(x * amount) / Math.tanh(amount);
+          }
+          waveshaper = ctx.createWaveShaper();
+          waveshaper.curve = curve;
+          waveshaper.oversample = "2x";
+          return waveshaper;
+        }
+
+        // =====================================================================
+        // SOUND GENERATORS (miniature versions of jukebox sounds)
+        // =====================================================================
+
+        function noise(dur) {
+          var n = ctx.createBufferSource();
+          n.buffer = noiseBuf;
+          var off = Math.random() * Math.max(0, 10 - dur);
+          n._off = off;
+          n._dur = dur;
+          n.loop = dur > 10;
+          return n;
+        }
+        function startN(n, when) {
+          n.start(when, n._off, n._dur);
+        }
+
+        // --- Library sounds ---
+
+        function libDrone(out, dur, useWaveshaper, ws) {
+          var c = ctx;
+          var now = c.currentTime;
+          var target = useWaveshaper && ws ? ws : out;
+          for (var i = 0; i < LIB_DRONE_PAIR.length; i++) {
+            var o = c.createOscillator();
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            o.type = "triangle";
+            o.frequency.setValueAtTime(LIB_DRONE_PAIR[i], now);
+            f.type = "lowpass";
+            f.frequency.setValueAtTime(180, now);
+            o.connect(f);
+            f.connect(g);
+            g.connect(target);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.09, now + 1.5);
+            g.gain.setValueAtTime(0.09, now + dur - 1.5);
+            g.gain.linearRampToValueAtTime(0, now + dur);
+            o.start(now);
+            o.stop(now + dur + 0.1);
+          }
+        }
+
+        function libMelody(out, startTime, usePwave, panOut, stereoWidth) {
+          var c = ctx;
+          var notes = [0, 2, 4, 3, 5, 1, 4];
+          for (var i = 0; i < notes.length; i++) {
+            var freq = LIB_SCALE[notes[i]];
+            var t = startTime + i * 0.7;
+            var dur = 1.5;
+            var dest = out;
+            if (panOut) {
+              var pan = c.createStereoPanner();
+              pan.pan.setValueAtTime((Math.random() * 2 - 1) * stereoWidth, t);
+              pan.connect(out);
+              dest = pan;
+            }
+            // Karplus-Strong pluck
+            var pluckLen = 0.03;
+            var buf = c.createBuffer(1, c.sampleRate * pluckLen, c.sampleRate);
+            var data = buf.getChannelData(0);
+            for (var j = 0; j < data.length; j++)
+              data[j] = Math.random() * 2 - 1;
+            var n = c.createBufferSource();
+            n.buffer = buf;
+            n.loop = true;
+            var pf = c.createBiquadFilter();
+            pf.type = "lowpass";
+            pf.frequency.setValueAtTime(freq * 3, t);
+            pf.frequency.exponentialRampToValueAtTime(
+              freq * 0.8,
+              t + dur * 0.8,
+            );
+            var pg = c.createGain();
+            n.connect(pf);
+            pf.connect(pg);
+            pg.connect(dest);
+            pg.gain.setValueAtTime(0.09, t);
+            pg.gain.exponentialRampToValueAtTime(0.03, t + 0.15);
+            pg.gain.linearRampToValueAtTime(0, t + dur);
+            n.start(t);
+            n.stop(t + dur + 0.01);
+          }
+        }
+
+        // --- Sycorax sounds ---
+
+        function sycDrone(out, dur, useWaveshaper, ws) {
+          var c = ctx;
+          var now = c.currentTime;
+          var target = useWaveshaper && ws ? ws : out;
+          for (var i = 0; i < SYC_DRONE_CLUSTER.length; i++) {
+            var freq = SYC_DRONE_CLUSTER[i];
+            var o = c.createOscillator();
+            var g = c.createGain();
+            var f = c.createBiquadFilter();
+            o.type = "sawtooth";
+            o.frequency.setValueAtTime(freq, now);
+            o.frequency.linearRampToValueAtTime(freq * 0.98, now + dur * 0.5);
+            o.frequency.linearRampToValueAtTime(freq, now + dur);
+            f.type = "lowpass";
+            f.frequency.setValueAtTime(200, now);
+            o.connect(f);
+            f.connect(g);
+            g.connect(target);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.035, now + 2);
+            g.gain.setValueAtTime(0.035, now + dur - 2);
+            g.gain.linearRampToValueAtTime(0, now + dur);
+            o.start(now);
+            o.stop(now + dur + 0.1);
+          }
+        }
+
+        function sycGhost(out, startTime, usePwave, panOut, stereoWidth) {
+          var c = ctx;
+          var indices = [0, 3, 1, 5, 2];
+          for (var ni = 0; ni < indices.length; ni++) {
+            var freq = SYC_GHOST_SCALE[indices[ni]];
+            var t = startTime + ni * 1.8;
+            var dur = 3.0;
+            var dest = out;
+            if (panOut) {
+              var pan = c.createStereoPanner();
+              pan.pan.setValueAtTime((Math.random() * 2 - 1) * stereoWidth, t);
+              pan.connect(out);
+              dest = pan;
+            }
+            var detunes = [-15, 0, 15];
+            for (var di = 0; di < detunes.length; di++) {
+              var o = c.createOscillator();
+              var g = c.createGain();
+              if (usePwave) o.setPeriodicWave(glassWave);
+              else o.type = "sine";
+              o.frequency.setValueAtTime(freq, t);
+              o.detune.setValueAtTime(detunes[di], t);
+              var vib = c.createOscillator();
+              var vibG = c.createGain();
+              vib.type = "sine";
+              vib.frequency.setValueAtTime(0.4, t);
+              vibG.gain.setValueAtTime(5, t);
+              vib.connect(vibG);
+              vibG.connect(o.frequency);
+              o.connect(g);
+              g.connect(dest);
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.03, t + dur * 0.35);
+              g.gain.linearRampToValueAtTime(0, t + dur);
+              o.start(t);
+              o.stop(t + dur + 0.1);
+              vib.start(t);
+              vib.stop(t + dur + 0.1);
+            }
+          }
+        }
+
+        // --- Ariel sounds ---
+
+        function ariBreeze(out, dur, useWaveshaper, ws) {
+          var c = ctx;
+          var now = c.currentTime;
+          var target = useWaveshaper && ws ? ws : out;
+          for (var i = 0; i < ARIEL_BREEZE_PAIR.length; i++) {
+            var o = c.createOscillator();
+            var g = c.createGain();
+            var lfo = c.createOscillator();
+            var lfoG = c.createGain();
+            lfo.type = "sine";
+            lfo.frequency.setValueAtTime(0.15, now);
+            lfoG.gain.setValueAtTime(0.03, now);
+            lfo.connect(lfoG);
+            lfoG.connect(g.gain);
+            o.type = "sine";
+            o.frequency.setValueAtTime(ARIEL_BREEZE_PAIR[i], now);
+            o.connect(g);
+            g.connect(target);
+            g.gain.setValueAtTime(0, now);
+            g.gain.linearRampToValueAtTime(0.06, now + 1.5);
+            g.gain.setValueAtTime(0.06, now + dur - 1.5);
+            g.gain.linearRampToValueAtTime(0, now + dur);
+            o.start(now);
+            o.stop(now + dur + 0.1);
+            lfo.start(now);
+            lfo.stop(now + dur + 0.1);
+          }
+          // Air noise
+          var ns = noise(dur);
+          var nf = c.createBiquadFilter();
+          nf.type = "highpass";
+          nf.frequency.setValueAtTime(6000, now);
+          var ng = c.createGain();
+          ns.connect(nf);
+          nf.connect(ng);
+          ng.connect(target);
+          ng.gain.setValueAtTime(0, now);
+          ng.gain.linearRampToValueAtTime(0.008, now + 1.5);
+          ng.gain.setValueAtTime(0.008, now + dur - 1.5);
+          ng.gain.linearRampToValueAtTime(0, now + dur);
+          startN(ns, now);
+        }
+
+        function ariChimes(out, startTime, usePwave, panOut, stereoWidth) {
+          var c = ctx;
+          // Burst & Breathe pattern
+          var offsets = [0, 0.09, 0.19, 0.8, 0.89, 0.97, 2.0, 2.09, 2.18, 2.27];
+          var noteIndices = [0, 2, 4, 1, 4, 5, 0, 2, 5, 4];
+          for (var ni = 0; ni < offsets.length; ni++) {
+            var freq = ARIEL_SCALE[noteIndices[ni]];
+            var t = startTime + offsets[ni];
+            var decay = 1.5 + Math.random() * 0.5;
+            var detune = 2 + Math.random() * 2;
+            var dest = out;
+            if (panOut) {
+              var pan = c.createStereoPanner();
+              pan.pan.setValueAtTime((Math.random() * 2 - 1) * stereoWidth, t);
+              pan.connect(out);
+              dest = pan;
+            }
+            for (var di = 0; di < 2; di++) {
+              var o = c.createOscillator();
+              var g = c.createGain();
+              if (usePwave) o.setPeriodicWave(bellWave);
+              else o.type = "sine";
+              o.frequency.setValueAtTime(
+                freq + (di === 0 ? -detune : detune),
+                t,
+              );
+              o.connect(g);
+              g.connect(dest);
+              g.gain.setValueAtTime(0, t);
+              g.gain.linearRampToValueAtTime(0.03, t + 0.003);
+              g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+              o.start(t);
+              o.stop(t + decay + 0.1);
+            }
+          }
+        }
+
+        // PeriodicWave A/B comparison
+        function pwaveCompare(track) {
+          var c = ctx;
+          var now = c.currentTime;
+          if (track === "lib") {
+            // Sine chime vs Bell chime
+            var notes = [523, 698, 880];
+            for (var i = 0; i < notes.length; i++) {
+              // Plain sine (left)
+              var t1 = now + i * 0.4;
+              var oA = c.createOscillator();
+              var gA = c.createGain();
+              var pA = c.createStereoPanner();
+              oA.type = "sine";
+              oA.frequency.setValueAtTime(notes[i], t1);
+              pA.pan.setValueAtTime(-0.7, t1);
+              oA.connect(gA);
+              gA.connect(pA);
+              pA.connect(masterGain);
+              gA.gain.setValueAtTime(0.03, t1);
+              gA.gain.exponentialRampToValueAtTime(0.001, t1 + 1.5);
+              oA.start(t1);
+              oA.stop(t1 + 1.6);
+              // Bell wave (right)
+              var t2 = now + 2.0 + i * 0.4;
+              var oB = c.createOscillator();
+              var gB = c.createGain();
+              var pB = c.createStereoPanner();
+              oB.setPeriodicWave(bellWave);
+              oB.frequency.setValueAtTime(notes[i], t2);
+              pB.pan.setValueAtTime(0.7, t2);
+              oB.connect(gB);
+              gB.connect(pB);
+              pB.connect(masterGain);
+              gB.gain.setValueAtTime(0.03, t2);
+              gB.gain.exponentialRampToValueAtTime(0.001, t2 + 1.5);
+              oB.start(t2);
+              oB.stop(t2 + 1.6);
+            }
+          } else if (track === "syc") {
+            // Sine vs Glass for ghost tones
+            var gFreqs = [311, 392, 466];
+            for (var gi = 0; gi < gFreqs.length; gi++) {
+              var tA = now + gi * 1.5;
+              for (var dd = 0; dd < 3; dd++) {
+                var det = [-15, 0, 15][dd];
+                var oS = c.createOscillator();
+                var gS = c.createGain();
+                var pS = c.createStereoPanner();
+                oS.type = "sine";
+                oS.frequency.setValueAtTime(gFreqs[gi], tA);
+                oS.detune.setValueAtTime(det, tA);
+                pS.pan.setValueAtTime(-0.7, tA);
+                oS.connect(gS);
+                gS.connect(pS);
+                pS.connect(masterGain);
+                gS.gain.setValueAtTime(0, tA);
+                gS.gain.linearRampToValueAtTime(0.025, tA + 0.8);
+                gS.gain.linearRampToValueAtTime(0, tA + 2.5);
+                oS.start(tA);
+                oS.stop(tA + 2.6);
+              }
+              var tB = now + 5.0 + gi * 1.5;
+              for (var dd2 = 0; dd2 < 3; dd2++) {
+                var det2 = [-15, 0, 15][dd2];
+                var oG = c.createOscillator();
+                var gG = c.createGain();
+                var pG = c.createStereoPanner();
+                oG.setPeriodicWave(glassWave);
+                oG.frequency.setValueAtTime(gFreqs[gi], tB);
+                oG.detune.setValueAtTime(det2, tB);
+                pG.pan.setValueAtTime(0.7, tB);
+                oG.connect(gG);
+                gG.connect(pG);
+                pG.connect(masterGain);
+                gG.gain.setValueAtTime(0, tB);
+                gG.gain.linearRampToValueAtTime(0.025, tB + 0.8);
+                gG.gain.linearRampToValueAtTime(0, tB + 2.5);
+                oG.start(tB);
+                oG.stop(tB + 2.6);
+              }
+            }
+          } else {
+            // Triangle vs Flute for whistle
+            var wFreqs = [440, 523, 587];
+            for (var wi = 0; wi < wFreqs.length; wi++) {
+              var tw1 = now + wi * 0.7;
+              var oT = c.createOscillator();
+              var gT = c.createGain();
+              var pT = c.createStereoPanner();
+              oT.type = "triangle";
+              oT.frequency.setValueAtTime(wFreqs[wi], tw1);
+              pT.pan.setValueAtTime(-0.7, tw1);
+              oT.connect(gT);
+              gT.connect(pT);
+              pT.connect(masterGain);
+              gT.gain.setValueAtTime(0, tw1);
+              gT.gain.linearRampToValueAtTime(0.035, tw1 + 0.1);
+              gT.gain.linearRampToValueAtTime(0, tw1 + 0.7);
+              oT.start(tw1);
+              oT.stop(tw1 + 0.75);
+
+              var tw2 = now + 3.0 + wi * 0.7;
+              var oF = c.createOscillator();
+              var gF = c.createGain();
+              var pF = c.createStereoPanner();
+              oF.setPeriodicWave(fluteWave);
+              oF.frequency.setValueAtTime(wFreqs[wi], tw2);
+              // Add vibrato
+              var vib = c.createOscillator();
+              var vibG = c.createGain();
+              vib.type = "sine";
+              vib.frequency.setValueAtTime(5.5, tw2);
+              vibG.gain.setValueAtTime(2, tw2);
+              vib.connect(vibG);
+              vibG.connect(oF.frequency);
+              pF.pan.setValueAtTime(0.7, tw2);
+              oF.connect(gF);
+              gF.connect(pF);
+              pF.connect(masterGain);
+              gF.gain.setValueAtTime(0, tw2);
+              gF.gain.linearRampToValueAtTime(0.035, tw2 + 0.1);
+              gF.gain.linearRampToValueAtTime(0, tw2 + 0.7);
+              oF.start(tw2);
+              oF.stop(tw2 + 0.75);
+              vib.start(tw2);
+              vib.stop(tw2 + 0.75);
+            }
+          }
+        }
+
+        // =====================================================================
+        // DEMO RUNNER
+        // =====================================================================
+
+        function stopAll() {
+          for (var i = 0; i < timers.length; i++) clearTimeout(timers[i]);
+          timers = [];
+          // Close the entire audio context to kill all scheduled oscillators,
+          // then null it so init() creates a fresh one on next play.
+          if (ctx) {
+            ctx.close();
+            ctx = null;
+            masterGain = null;
+            reverbConv = null;
+            reverbWet = null;
+            reverbDry = null;
+            reverbSend = null;
+            delayNode = null;
+            delayFb = null;
+            delaySend = null;
+            delayFilter = null;
+            compressor = null;
+            waveshaper = null;
+            bellWave = null;
+            glassWave = null;
+            fluteWave = null;
+            reedWave = null;
+            noiseBuf = null;
+          }
+        }
+
+        function getOutput(opts) {
+          // Build the output chain based on enabled effects
+          // Returns { source: node-to-connect-sounds-to, droneSource: node-for-drones }
+          var finalOut = masterGain;
+
+          // Compressor sits right before master
+          if (opts.compress) {
+            var comp = buildCompressor();
+            comp.connect(masterGain);
+            finalOut = comp;
+          }
+
+          // Reverb
+          var reverbOut = finalOut;
+          if (opts.reverb) {
+            var rev = buildReverb(opts.track);
+            rev.dry.connect(finalOut);
+            rev.wet.connect(finalOut);
+            reverbOut = rev.send;
+          }
+
+          // Delay (feeds into reverb or final)
+          var melodicOut = reverbOut;
+          if (opts.delay) {
+            var del = buildDelay(opts.track);
+            del.output.connect(reverbOut);
+            // Melodic sounds connect to both direct + delay send
+            var delaySplit = ctx.createGain();
+            delaySplit.gain.setValueAtTime(1.0, ctx.currentTime);
+            delaySplit.connect(reverbOut); // direct
+            delaySplit.connect(del.send); // delay send
+            melodicOut = delaySplit;
+          }
+
+          // Waveshaper for drones
+          var droneOut = reverbOut;
+          if (opts.waveshape) {
+            var ws = buildWaveshaper(opts.track);
+            ws.connect(reverbOut);
+            droneOut = ws;
+          }
+
+          return { melodic: melodicOut, drone: droneOut };
+        }
+
+        function runDemo(demoType, track) {
+          stopAll();
+          init();
+          if (ctx.state === "suspended") ctx.resume();
+
+          var c = ctx;
+          var now = c.currentTime;
+          var stereoWidth =
+            parseInt(document.getElementById("stereo-width").value, 10) / 100;
+
+          var opts = {
+            track: track,
+            reverb: false,
+            stereo: false,
+            waveshape: false,
+            delay: false,
+            compress: false,
+            pwave: false,
+          };
+
+          if (demoType === "dry") {
+            // No effects
+          } else if (demoType === "reverb") {
+            opts.reverb = true;
+          } else if (demoType === "stereo") {
+            opts.reverb = true;
+            opts.stereo = true;
+          } else if (demoType === "waveshape") {
+            opts.waveshape = true;
+          } else if (demoType === "delay") {
+            opts.reverb = true;
+            opts.delay = true;
+          } else if (demoType === "compress") {
+            opts.reverb = true;
+            opts.stereo = true;
+            opts.compress = true;
+          } else if (demoType === "pwave") {
+            pwaveCompare(track);
+            return;
+          } else if (demoType === "combined") {
+            opts.reverb = document.getElementById("ab-reverb").checked;
+            opts.stereo = document.getElementById("ab-stereo").checked;
+            opts.waveshape = document.getElementById("ab-waveshape").checked;
+            opts.delay = document.getElementById("ab-delay").checked;
+            opts.compress = document.getElementById("ab-compress").checked;
+            opts.pwave = document.getElementById("ab-pwave").checked;
+          }
+
+          var chain = getOutput(opts);
+
+          if (track === "lib") {
+            libDrone(chain.drone, 8, opts.waveshape, null);
+            libMelody(
+              chain.melodic,
+              now + 1.5,
+              opts.pwave,
+              opts.stereo,
+              stereoWidth,
+            );
+          } else if (track === "syc") {
+            sycDrone(chain.drone, 12, opts.waveshape, null);
+            sycGhost(
+              chain.melodic,
+              now + 1.5,
+              opts.pwave,
+              opts.stereo,
+              stereoWidth,
+            );
+          } else {
+            ariBreeze(chain.drone, 8, opts.waveshape, null);
+            ariChimes(
+              chain.melodic,
+              now + 1.0,
+              opts.pwave,
+              opts.stereo,
+              stereoWidth,
+            );
+          }
+        }
+
+        // =====================================================================
+        // EVENT WIRING
+        // =====================================================================
+
+        document.addEventListener("click", function (e) {
+          var btn = e.target.closest(".demo-btn");
+          if (!btn) return;
+          var demo = btn.getAttribute("data-demo");
+          var track = btn.getAttribute("data-track");
+          if (demo && track) runDemo(demo, track);
+        });
+
+        document.getElementById("stop-all").addEventListener("click", stopAll);
+
+        document
+          .getElementById("master-vol")
+          .addEventListener("input", function () {
+            init();
+            masterGain.gain.setValueAtTime(
+              (parseInt(this.value, 10) / 100) * 0.2,
+              ctx.currentTime,
+            );
+          });
+
+        // Param readouts
+        document
+          .getElementById("reverb-wet")
+          .addEventListener("input", function () {
+            document.getElementById("reverb-wet-val").textContent =
+              this.value + "%";
+            if (reverbWet && ctx)
+              reverbWet.gain.setValueAtTime(
+                parseInt(this.value, 10) / 100,
+                ctx.currentTime,
+              );
+          });
+        document
+          .getElementById("stereo-width")
+          .addEventListener("input", function () {
+            document.getElementById("stereo-width-val").textContent =
+              this.value + "%";
+          });
+        document
+          .getElementById("drive-amt")
+          .addEventListener("input", function () {
+            document.getElementById("drive-amt-val").textContent =
+              this.value + "%";
+          });
+        document
+          .getElementById("delay-fb")
+          .addEventListener("input", function () {
+            document.getElementById("delay-fb-val").textContent =
+              this.value + "%";
+          });
+        document
+          .getElementById("delay-time")
+          .addEventListener("input", function () {
+            var ms = 100 + (parseInt(this.value, 10) / 100) * 700;
+            document.getElementById("delay-time-val").textContent =
+              Math.round(ms) + "ms";
+          });
+      })();
+    </script>
+  </body>
+</html>

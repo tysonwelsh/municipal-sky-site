@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Waterphone motifs sandbox — Sycorax</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #07060c;
+    --panel: #0c0a14;
+    --border: #1c1830;
+    --text: #c4b5fd;
+    --text-dim: #7c6ec1;
+    --text-mute: #4b4670;
+    --accent: #d4c0ff;
+    --accent-strong: #ede9fe;
+    --teal: #80e0d0;
+    --red: #f48199;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+  body { padding: 28px 24px 60px; }
+
+  h1 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 700;
+    font-size: 36px;
+    color: var(--accent);
+    margin: 0 0 4px;
+    letter-spacing: 1px;
+  }
+  .subtitle {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: lowercase;
+    margin: 0 0 22px;
+  }
+  .blurb { color: var(--text-dim); max-width: 760px; margin: 0 0 28px; }
+  .blurb a { color: var(--teal); }
+
+  .controls {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 18px;
+    margin-bottom: 26px;
+  }
+  .controls label {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 14px;
+    margin-right: 6px;
+  }
+  .controls select, .controls input[type="range"] {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+  }
+  .controls select {
+    background: #0a0814;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    border-radius: 3px;
+  }
+  .controls input[type="range"] { width: 140px; accent-color: var(--accent); }
+  .controls .spacer { flex: 1; }
+
+  button {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+    background: #110d1f;
+    border: 1px solid var(--text-dim);
+    border-radius: 3px;
+    padding: 6px 14px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  button:hover { background: #1a1530; color: var(--accent); }
+  button:active { background: #251f44; }
+  button.danger { color: var(--red); border-color: var(--red); }
+  button.danger:hover { background: rgba(244, 129, 153, 0.12); }
+  button.primary { color: var(--accent-strong); border-color: var(--accent); }
+  button.playing {
+    background: rgba(196, 181, 253, 0.18);
+    color: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .card h2 {
+    font-family: "Cinzel Decorative", serif;
+    font-weight: 400;
+    font-size: 22px;
+    color: var(--accent);
+    margin: 0 0 6px;
+    letter-spacing: 1px;
+  }
+  .card .approach {
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+  .card .desc { color: var(--text); font-size: 16px; margin-bottom: 16px; flex: 1; }
+  .card .desc .ingredient { color: var(--teal); }
+  .card .actions { display: flex; gap: 10px; align-items: center; }
+  .card .status { color: var(--text-mute); font-size: 14px; letter-spacing: 1px; margin-left: auto; }
+  .card .status.is-playing { color: var(--accent-strong); }
+
+  .footer-note { margin-top: 28px; color: var(--text-mute); font-size: 14px; max-width: 760px; }
+  .footer-note code { color: var(--teal); font-size: 15px; }
+</style>
+</head>
+<body>
+
+<h1>Waterphone Motifs</h1>
+<p class="subtitle">~ seven options for the Sycorax waterphone layer ~</p>
+
+<p class="blurb">
+  The waterphone layer currently has one motif type — a single sustained tone. These six new patterns add melodic motion, dynamic contrast, and dramatic gestures. The synthesis core is the same as <a href="waterphone-sandbox.html">voice 3 (Sea Bell)</a>; the difference is what notes get played, with what timing, and at what intensity. Pitches are pulled from the Sycorax chromatic-Locrian scale (Eb4 – B4) like the actual track.
+</p>
+
+<div class="controls">
+  <label for="start-degree">Starting degree</label>
+  <select id="start-degree">
+    <option value="0">1 — Eb4 (311 Hz)</option>
+    <option value="1">2 — E4 (330 Hz)</option>
+    <option value="2">3 — F#4 (370 Hz)</option>
+    <option value="3" selected>4 — G4 (392 Hz)</option>
+    <option value="4">5 — Ab4 (415 Hz)</option>
+    <option value="5">6 — Bb4 (466 Hz)</option>
+    <option value="6">7 — B4 (494 Hz)</option>
+  </select>
+
+  <label for="master-vol">Master</label>
+  <input type="range" id="master-vol" min="0" max="100" value="60" />
+
+  <span class="spacer"></span>
+
+  <button id="play-all">▶ Play all in sequence</button>
+  <button id="stop-all" class="danger">■ Stop all</button>
+</div>
+
+<div class="cards">
+
+  <div class="card" data-motif="tone">
+    <h2>1. Tone</h2>
+    <div class="approach">Current default · sustained single note</div>
+    <p class="desc">
+      One <span class="ingredient">sustained waterphone note</span>, 8 seconds. The motif that the jukebox already plays. Included here for A/B reference against the new options.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="call">
+    <h2>2. Call</h2>
+    <div class="approach">Two-note gesture · breath between</div>
+    <p class="desc">
+      First note holds for ~2.8 s, then a brief <span class="ingredient">breath</span> of ~0.3 s, then a second note at a <span class="ingredient">dissonant interval</span> above (tritone 60% / minor 2nd 40%) for ~3.6 s. Feels like the instrument is asking a quick question and then answering itself. Adds gestural rhythm to a layer that's otherwise static-pitched.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="lament">
+    <h2>3. Lament</h2>
+    <div class="approach">Slow descending phrase</div>
+    <p class="desc">
+      A <span class="ingredient">3 – 4 note descending Markov walk</span>, each note 4 – 5 s, overlapping into the next. The phrase glides downward through the chromatic-Locrian scale. Adds <em>melodic motion</em> — a falling line where previously the waterphone could only hold a single tone.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="reach">
+    <h2>4. Reach</h2>
+    <div class="approach">Slow ascending phrase</div>
+    <p class="desc">
+      Opposite of Lament — <span class="ingredient">2 – 3 notes climbing stepwise</span>, the last note held longest. Tense, anxious feel; like something rising slowly out of water. Weighted rarer than Lament in the rotation so the descending gesture stays the dominant melodic motion.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="pendulum">
+    <h2>5. Pendulum</h2>
+    <div class="approach">Zigzag · alternating high-low</div>
+    <p class="desc">
+      <span class="ingredient">4 – 5 notes alternating above and below</span> the starting degree, with intervals shrinking toward the center as the phrase progresses (e.g., <span class="ingredient">+2, −2, +1, −1, 0</span>). The zigzag motion contrasts with Lament's straight descent and Reach's straight ascent — like a slow swing settling toward rest. Sometimes plays a tighter 4-note <span class="ingredient">+1, −1, +1, −1</span> oscillation instead.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="apparition">
+    <h2>6. Apparition</h2>
+    <div class="approach">Very long, very quiet single note</div>
+    <p class="desc">
+      Same single-tone structure as Tone but <span class="ingredient">15 seconds long</span> with the envelope peak dropped to about <span class="ingredient">55%</span>. Feels distant, barely there. Adds <em>dynamic</em> variety — a moment where the waterphone recedes rather than presents.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+  <div class="card" data-motif="resonantPair">
+    <h2>7. Resonant Pair</h2>
+    <div class="approach">Two simultaneous notes · beat patterns</div>
+    <p class="desc">
+      Two waterphone notes played at the <span class="ingredient">same time</span> at a dissonant interval (tritone or minor 2nd). The close partials produce <span class="ingredient">audible beat patterns</span> — interference rhythms that move slowly through the sustain. Like a ghost-tone chord but with the waterphone's bell + bloom texture. Intense; weighted rare.
+    </p>
+    <div class="actions">
+      <button class="play-btn primary">▶ Play</button>
+      <span class="status">ready</span>
+    </div>
+  </div>
+
+</div>
+
+<p class="footer-note">
+  Listen, pick a subset (or all). The jukebox integration is mechanical once decided: add a <code>SYC_WATERPHONE_CLUSTER_WEIGHTS</code> map, build a motif-builder function per pattern, and wire them into <code>buildFreshSycoraxWaterphoneMotif</code> with weighted random pick — same pattern as ghost's five clusters.
+</p>
+
+<script>
+(function () {
+  'use strict';
+
+  // -------- Sycorax chromatic-Locrian scale (mirrors audio.js SYC_GHOST_SCALE) --------
+  const SCALE = [311, 330, 370, 392, 415, 466, 494]; // Eb4, E4, F#4, G4, Ab4, Bb4, B4
+  function deg(idx) {
+    if (idx < 0) idx = 0;
+    else if (idx >= SCALE.length) idx = SCALE.length - 1;
+    return SCALE[idx];
+  }
+  function getStartIdx() {
+    return parseInt(document.getElementById('start-degree').value, 10);
+  }
+
+  // -------- Default synth params (waterphone-sandbox cranked defaults) --------
+  const DEFAULT_PARAMS = {
+    shimmer: 1.30,
+    bloomLevel: 0.28,
+    bloomIntensity: 2.4,
+    wail: 1.8,
+    wobble: 2.0,
+    bodyWobbleRate: 0.6,
+    envPeak: 0.40, // master envelope peak — sandbox-level loudness
+  };
+
+  // -------- Audio context lifecycle --------
+  let ctx = null;
+  let masterGain = null;
+  let reverb = null;
+  let reverbWet = null;
+  let reverbDry = null;
+
+  // Track everything scheduled per-motif so Stop can cancel cleanly.
+  // Each entry: { nodes: AudioNode[], envs: GainNode[], stopAt: time, timer }
+  const playing = {
+    tone: null, call: null, lament: null, reach: null, pendulum: null,
+    apparition: null, resonantPair: null,
+  };
+
+  function ensureContext() {
+    if (ctx) {
+      // Resume if a previously-running context was suspended (some browsers
+      // suspend on tab switches, audio device changes, etc.).
+      if (ctx.state === 'suspended') ctx.resume();
+      return;
+    }
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Chrome/Edge may still start in 'suspended' even from a user gesture
+    // under strict autoplay policies. Resume defensively.
+    if (ctx.state === 'suspended') ctx.resume();
+    masterGain = ctx.createGain();
+    masterGain.gain.value = getMasterVol();
+    masterGain.connect(ctx.destination);
+    reverb = ctx.createConvolver();
+    reverb.buffer = buildIR(ctx, 4.0, 1.5);
+    reverbWet = ctx.createGain();
+    reverbDry = ctx.createGain();
+    reverbWet.gain.value = 0.38;
+    reverbDry.gain.value = 0.85;
+    reverb.connect(reverbWet);
+    reverbWet.connect(masterGain);
+    reverbDry.connect(masterGain);
+    console.info('[waterphone-motifs] AudioContext created, state =', ctx.state);
+  }
+
+  function buildIR(ctx, decay, hfDamp) {
+    const rate = ctx.sampleRate;
+    const length = Math.floor(rate * decay);
+    const buf = ctx.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = buf.getChannelData(ch);
+      let prev = 0;
+      for (let i = 0; i < length; i++) {
+        const env = Math.pow(1 - i / length, decay);
+        const noise = (Math.random() * 2 - 1) * env;
+        prev = prev + (noise - prev) / hfDamp;
+        data[i] = prev;
+      }
+    }
+    return buf;
+  }
+
+  function getMasterVol() {
+    return (parseInt(document.getElementById('master-vol').value, 10) / 100) * 0.6;
+  }
+
+  function voiceOut() {
+    const bus = ctx.createGain();
+    bus.connect(reverbDry);
+    bus.connect(reverb);
+    return bus;
+  }
+
+  // -------- Core synth: one waterphone note --------
+  // Identical to playSycWaterphoneNote in the jukebox engine, but accepts a
+  // params override for per-motif tweaks (Lurch, Apparition) and is called
+  // with an absolute audio time.
+  function playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, fundamental, duration, overrides) {
+    const P = Object.assign({}, DEFAULT_PARAMS, overrides || {});
+    const out = voiceOut();
+    const env = ctx.createGain();
+    env.connect(out);
+    const peak = P.envPeak;
+    env.gain.setValueAtTime(0, startTime);
+    env.gain.linearRampToValueAtTime(peak, startTime + Math.min(1.5, duration * 0.22));
+    env.gain.setValueAtTime(peak, startTime + Math.max(duration - 2.2, duration * 0.6));
+    env.gain.linearRampToValueAtTime(0, startTime + duration);
+    scheduledEnvs.push(env);
+
+    const glissEnd  = 1 - P.wail / 100;
+    const wobbleAmt = P.wobble / 100;
+    const shimmer   = P.shimmer;
+    const stopAt    = startTime + duration + 0.5;
+
+    const bodyWobble = ctx.createOscillator();
+    bodyWobble.type = 'sine';
+    bodyWobble.frequency.setValueAtTime(P.bodyWobbleRate, startTime);
+    bodyWobble.start(startTime);
+    bodyWobble.stop(stopAt);
+    scheduledNodes.push(bodyWobble);
+
+    const partials = [
+      { ratio: 1.00, gain: 0.42, trem: 0,    body: true  },
+      { ratio: 1.41, gain: 0.30, trem: 0,    body: true  },
+      { ratio: 2.07, gain: 0.22, trem: 0,    body: true  },
+      { ratio: 2.95, gain: 0.20, trem: 0.55, body: false },
+      { ratio: 4.13, gain: 0.16, trem: 0.65, body: false },
+      { ratio: 5.62, gain: 0.12, trem: 0.75, body: false },
+    ];
+    partials.forEach((p, i) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = 'sine';
+      const startFreq = fundamental * p.ratio;
+      osc.frequency.setValueAtTime(startFreq, startTime);
+      osc.frequency.linearRampToValueAtTime(startFreq * glissEnd, startTime + duration);
+      g.gain.setValueAtTime(p.gain, startTime);
+
+      const lfo = ctx.createOscillator();
+      const lfoG = ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(0.25 + i * 0.08, startTime);
+      lfoG.gain.setValueAtTime(startFreq * 0.006, startTime);
+      lfo.connect(lfoG);
+      lfoG.connect(osc.frequency);
+
+      if (p.body) {
+        const bw = ctx.createGain();
+        bw.gain.setValueAtTime(startFreq * wobbleAmt, startTime);
+        bodyWobble.connect(bw);
+        bw.connect(osc.frequency);
+      }
+
+      if (p.trem > 0) {
+        const trem = ctx.createOscillator();
+        const tremG = ctx.createGain();
+        trem.type = 'sine';
+        trem.frequency.setValueAtTime(2.5 + Math.random() * 4, startTime);
+        tremG.gain.setValueAtTime(p.gain * p.trem * shimmer, startTime);
+        trem.connect(tremG);
+        tremG.connect(g.gain);
+        trem.start(startTime); trem.stop(stopAt);
+        scheduledNodes.push(trem);
+      }
+
+      osc.connect(g);
+      g.connect(env);
+      osc.start(startTime); osc.stop(stopAt);
+      lfo.start(startTime); lfo.stop(stopAt);
+      scheduledNodes.push(osc, lfo);
+    });
+
+    const carrier = ctx.createOscillator();
+    const carrierGain = ctx.createGain();
+    carrier.type = 'sine';
+    carrier.frequency.setValueAtTime(fundamental, startTime);
+    carrier.frequency.linearRampToValueAtTime(fundamental * glissEnd, startTime + duration);
+    carrierGain.gain.setValueAtTime(P.bloomLevel, startTime);
+
+    const mod = ctx.createOscillator();
+    const modG = ctx.createGain();
+    mod.type = 'sine';
+    mod.frequency.setValueAtTime(fundamental * 1.41, startTime);
+    mod.frequency.linearRampToValueAtTime(fundamental * 1.41 * glissEnd, startTime + duration);
+    const peakIdx = fundamental * P.bloomIntensity;
+    modG.gain.setValueAtTime(0, startTime);
+    modG.gain.linearRampToValueAtTime(peakIdx,        startTime + Math.min(1.5, duration * 0.25));
+    modG.gain.linearRampToValueAtTime(peakIdx * 0.44, startTime + duration * 0.7);
+    modG.gain.linearRampToValueAtTime(0,              startTime + duration);
+    mod.connect(modG);
+    modG.connect(carrier.frequency);
+
+    const carrierBw = ctx.createGain();
+    carrierBw.gain.setValueAtTime(fundamental * wobbleAmt, startTime);
+    bodyWobble.connect(carrierBw);
+    carrierBw.connect(carrier.frequency);
+
+    carrier.connect(carrierGain);
+    carrierGain.connect(env);
+    carrier.start(startTime); carrier.stop(stopAt);
+    mod.start(startTime); mod.stop(stopAt);
+    scheduledNodes.push(carrier, mod);
+
+    return stopAt;
+  }
+
+  // -------- Motif builders --------
+  // Each returns the absolute end time (last note's stopAt) so Stop can
+  // schedule cleanup. All take a start audio time and a scale-degree index.
+
+  function motifTone(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    return playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx), 8);
+  }
+
+  function motifCall(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // First note holds, brief breath, then dissonant response.
+    // Tightened: shorter notes + tighter gap so the gesture reads as a
+    // quick question/answer rather than a drawn-out duet.
+    const dur1 = 2.8;
+    const gap = 0.3;
+    const dur2 = 3.6;
+    const interval = Math.random() < 0.6 ? 3 : 1; // tritone or min 2nd
+    const end1 = playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx), dur1);
+    const start2 = startTime + dur1 + gap;
+    const end2 = playWaterphoneNote(scheduledNodes, scheduledEnvs, start2, deg(startIdx + interval), dur2);
+    return Math.max(end1, end2);
+  }
+
+  function motifLament(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // 3-4 descending notes, each overlapping the previous.
+    const count = 3 + Math.floor(Math.random() * 2);
+    let t = startTime;
+    let lastEnd = t;
+    for (let i = 0; i < count; i++) {
+      // Each step goes down 1 scale degree; clamped at the bottom.
+      const idx = Math.max(0, startIdx - i);
+      const isLast = (i === count - 1);
+      const dur = isLast ? 5 + Math.random() * 1 : 3.5 + Math.random() * 1;
+      const end = playWaterphoneNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+      if (end > lastEnd) lastEnd = end;
+      t += 2.6 + Math.random() * 0.7; // overlapping spacing
+    }
+    return lastEnd;
+  }
+
+  function motifReach(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // 2-3 ascending notes; last note held longest.
+    const count = 2 + Math.floor(Math.random() * 2);
+    let t = startTime;
+    let lastEnd = t;
+    for (let i = 0; i < count; i++) {
+      const idx = Math.min(SCALE.length - 1, startIdx + i);
+      const isLast = (i === count - 1);
+      const dur = isLast ? 5.5 + Math.random() * 1.5 : 3 + Math.random() * 0.8;
+      const end = playWaterphoneNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+      if (end > lastEnd) lastEnd = end;
+      t += 2.5 + Math.random() * 0.8;
+    }
+    return lastEnd;
+  }
+
+  function motifPendulum(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // Alternating high-low motion. 60% wide convergent pattern (5 notes),
+    // 40% tighter narrow oscillation (4 notes).
+    const wide = Math.random() < 0.6;
+    const offsets = wide
+      ? [+2, -2, +1, -1, 0]   // wide → narrow → settle on center
+      : [+1, -1, +1, -1];     // 4-note oscillation
+    let t = startTime;
+    let lastEnd = t;
+    offsets.forEach((off, i) => {
+      const isLast = (i === offsets.length - 1);
+      const dur = isLast ? 4.5 + Math.random() * 1.0 : 2.8 + Math.random() * 0.8;
+      const idx = Math.max(0, Math.min(SCALE.length - 1, startIdx + off));
+      const end = playWaterphoneNote(scheduledNodes, scheduledEnvs, t, deg(idx), dur);
+      if (end > lastEnd) lastEnd = end;
+      t += 2.0 + Math.random() * 0.5; // tighter than Lament — keeps the swing momentum
+    });
+    return lastEnd;
+  }
+
+  function motifApparition(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // Long, quiet, distant.
+    return playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx), 15, {
+      envPeak: DEFAULT_PARAMS.envPeak * 0.55,
+      wail: 1.2,
+    });
+  }
+
+  function motifResonantPair(scheduledNodes, scheduledEnvs, startTime, startIdx) {
+    // Two simultaneous notes at a dissonant interval, both dimmed so they
+    // don't overload when summed.
+    const dur = 8;
+    const interval = Math.random() < 0.6 ? 3 : 1;
+    const end1 = playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx), dur, { envPeak: DEFAULT_PARAMS.envPeak * 0.7 });
+    const end2 = playWaterphoneNote(scheduledNodes, scheduledEnvs, startTime, deg(startIdx + interval), dur, { envPeak: DEFAULT_PARAMS.envPeak * 0.55 });
+    return Math.max(end1, end2);
+  }
+
+  const MOTIFS = {
+    tone: motifTone,
+    call: motifCall,
+    lament: motifLament,
+    reach: motifReach,
+    pendulum: motifPendulum,
+    apparition: motifApparition,
+    resonantPair: motifResonantPair,
+  };
+
+  // -------- Play / stop bookkeeping --------
+  function playMotif(motifName) {
+    ensureContext();
+    stopMotif(motifName); // restart-on-repeat
+    const startIdx = getStartIdx();
+    const startTime = ctx.currentTime + 0.05; // small lead for scheduling
+    const entry = { nodes: [], envs: [], timer: null };
+    console.info('[waterphone-motifs] play', motifName, 'at degree', startIdx + 1,
+                 '— ctx.state:', ctx.state, 'time:', ctx.currentTime.toFixed(3));
+    let stopAt;
+    try {
+      stopAt = MOTIFS[motifName](entry.nodes, entry.envs, startTime, startIdx);
+    } catch (e) {
+      console.error('[waterphone-motifs] motif threw:', motifName, e);
+      return;
+    }
+    entry.stopAt = stopAt;
+    playing[motifName] = entry;
+    updateStatus(motifName, true);
+    entry.timer = setTimeout(() => {
+      if (playing[motifName] === entry) {
+        playing[motifName] = null;
+        updateStatus(motifName, false);
+      }
+    }, (stopAt - ctx.currentTime) * 1000 + 100);
+  }
+
+  function stopMotif(motifName) {
+    const entry = playing[motifName];
+    if (!entry || !ctx) return;
+    const now = ctx.currentTime;
+    // Fade all envs in 50ms
+    entry.envs.forEach((g) => {
+      try {
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.05);
+      } catch (e) {}
+    });
+    entry.nodes.forEach((n) => {
+      try { n.stop(now + 0.08); } catch (e) {}
+    });
+    if (entry.timer) clearTimeout(entry.timer);
+    playing[motifName] = null;
+    updateStatus(motifName, false);
+  }
+
+  function stopAll() {
+    Object.keys(playing).forEach(stopMotif);
+    sequenceTimers.forEach(clearTimeout);
+    sequenceTimers = [];
+  }
+
+  function updateStatus(motifName, isPlaying) {
+    const card = document.querySelector('[data-motif="' + motifName + '"]');
+    if (!card) return;
+    const status = card.querySelector('.status');
+    const btn = card.querySelector('.play-btn');
+    if (status) {
+      status.textContent = isPlaying ? 'playing…' : 'ready';
+      status.classList.toggle('is-playing', isPlaying);
+    }
+    if (btn) btn.classList.toggle('playing', isPlaying);
+  }
+
+  // -------- Wiring --------
+  document.querySelectorAll('.card').forEach((card) => {
+    const motifName = card.getAttribute('data-motif');
+    const playBtn = card.querySelector('.play-btn');
+    if (playBtn) playBtn.addEventListener('click', () => playMotif(motifName));
+  });
+
+  document.getElementById('stop-all').addEventListener('click', stopAll);
+
+  document.getElementById('master-vol').addEventListener('input', () => {
+    if (masterGain && ctx) masterGain.gain.setValueAtTime(getMasterVol(), ctx.currentTime);
+  });
+
+  // Play all motifs back-to-back with a short silence between.
+  let sequenceTimers = [];
+  document.getElementById('play-all').addEventListener('click', () => {
+    ensureContext();
+    stopAll();
+    // Approximate per-motif durations (audio time, generous so they don't overlap)
+    const order = [
+      { name: 'tone',         dur: 8.5  },
+      { name: 'call',         dur: 7.5  },
+      { name: 'lament',       dur: 13.0 },
+      { name: 'reach',        dur: 10.0 },
+      { name: 'pendulum',     dur: 13.0 },
+      { name: 'apparition',   dur: 16.0 },
+      { name: 'resonantPair', dur: 9.0  },
+    ];
+    const gap = 1.2;
+    let accumulated = 0;
+    order.forEach((step) => {
+      sequenceTimers.push(setTimeout(() => playMotif(step.name), accumulated * 1000));
+      accumulated += step.dur + gap;
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

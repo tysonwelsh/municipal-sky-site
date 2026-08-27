@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Figures of Rabelais&rsquo;s Underworld &mdash; Table</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="/css/style.css?v=67031ad4" />
+    <link rel="stylesheet" href="underworld-occupations.css?v=76635e2e" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IM+Fell+Great+Primer:ital@0;1&family=IM+Fell+Great+Primer+SC&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ================================================================
+         FIGURES-TABLE — modern, conventional data table.
+         Sans-serif typography on a neutral gray palette; sticky Name
+         column + header row; horizontal scroll for the data columns;
+         drag-resizable column widths via header right-edge handles;
+         ellipsis truncation on every cell with hover-to-see tooltips
+         for the full value.
+         ================================================================ */
+
+      .figures-table {
+        /* Column widths driven by these vars via <colgroup>. Drag the
+           resize handle in any header's right edge to update them.
+           SOC classification columns (major → minor → broad → detailed)
+           share a base width since their content is similar in length. */
+        --w-name: 180px;
+        --w-labor: 280px;
+        --w-major: 200px;
+        --w-minor: 200px;
+        --w-broad: 200px;
+        --w-occ: 220px;
+        --w-wage: 150px;
+
+        /* Pinned viewport: 800px wide, centered relative to the parent
+           column even when the parent is narrower (extra width bleeds
+           symmetrically into the gutter). */
+        width: 800px;
+        margin: 32px calc((100% - 800px) / 2) 48px;
+      }
+
+      .figures-table-status {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        font-size: 14px;
+        color: #6b7280;
+        padding: 32px 16px;
+        text-align: center;
+      }
+      .figures-table-status.error {
+        color: #b91c1c;
+      }
+      .figures-table-caption {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        font-size: 12px;
+        color: #6b7280;
+        padding: 8px 4px 0;
+        margin: 0;
+      }
+
+      /* ---- Scroll container -------------------------------------------- */
+      .figures-table .table-scroll {
+        overflow: auto;
+        max-height: 600px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: #ffffff;
+      }
+
+      /* ---- Table ------------------------------------------------------- */
+      .figures-table table.figures {
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        width: calc(
+          var(--w-name) + var(--w-labor) + var(--w-major) + var(--w-minor)
+            + var(--w-broad) + var(--w-occ) + var(--w-wage)
+        );
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        font-size: 14px;
+        color: #1f2937;
+      }
+      .figures-table col.col-name { width: var(--w-name); }
+      .figures-table col.col-labor { width: var(--w-labor); }
+      .figures-table col.col-major { width: var(--w-major); }
+      .figures-table col.col-minor { width: var(--w-minor); }
+      .figures-table col.col-broad { width: var(--w-broad); }
+      .figures-table col.col-occ { width: var(--w-occ); }
+      .figures-table col.col-wage { width: var(--w-wage); }
+
+      /* Universal cell behavior: single-line with ellipsis. */
+      .figures-table table.figures th,
+      .figures-table table.figures td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-align: left;
+      }
+
+      /* ---- Header row -------------------------------------------------- */
+      .figures-table table.figures thead th {
+        position: sticky;
+        top: 0;
+        background: #f9fafb;
+        color: #374151;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e7eb;
+        /* Subtle vertical rule between every header column to signal
+           that columns are resizable. Gray-200 — lighter than the
+           gray-300 used for the Rabelais → BLS divider on col-labor,
+           so that source-split rule stays the dominant vertical line.
+           Header-only — body cells stay borderless between columns. */
+        border-right: 1px solid #e5e7eb;
+        vertical-align: middle;
+        z-index: 2;
+      }
+      .figures-table table.figures thead th:last-child {
+        border-right: none;
+      }
+
+      /* ---- Body cells -------------------------------------------------- */
+      .figures-table table.figures tbody td {
+        padding: 12px 16px;
+        background: #ffffff;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+      }
+      .figures-table table.figures tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .figures-table table.figures tbody tr:hover td {
+        background: #f9fafb;
+      }
+
+      /* ---- Sticky Name column ----------------------------------------- */
+      .figures-table th.col-name,
+      .figures-table td.col-name {
+        position: sticky;
+        left: 0;
+        z-index: 2;
+      }
+      /* Vertical freeze line on the Name column header only. Body cells
+         in the Name column skip this border so that the Name and
+         Underworld Labor cells — which share the Rabelais tint — read
+         as one continuous group. The header still shows the line
+         because the header row has a divider between every column to
+         signal resize affordances. */
+      .figures-table th.col-name {
+        border-right: 1px solid #e5e7eb;
+      }
+      /* Corner cell needs to outrank both the row-sticky headers and the
+         column-sticky body cells; specificity bumped so the row-level
+         `.figures-table table.figures thead th` z-index can't override. */
+      .figures-table table.figures thead th.col-name {
+        z-index: 4;
+      }
+      /* Name + Underworld Labor (the Rabelais-source columns) share a
+         tinted background so they read as a group, distinct from the
+         BLS half of the table. Selectors are bumped with `table.figures
+         tbody` to outrank the base `.figures-table table.figures tbody
+         td` background rule. */
+      .figures-table table.figures tbody td.col-name,
+      .figures-table table.figures tbody td.col-labor {
+        background: #f9fafb;
+      }
+      .figures-table table.figures tbody tr:hover td.col-name,
+      .figures-table table.figures tbody tr:hover td.col-labor {
+        background: #f3f4f6;
+      }
+      /* Name column additionally carries semibold weight to read as a
+         row identifier. */
+      .figures-table table.figures tbody td.col-name {
+        font-weight: 600;
+        color: #111827;
+      }
+
+      /* Source divider: a single 1px gray-300 vertical rule on the
+         right edge of the Underworld Labor column (= the boundary
+         between Rabelais and BLS columns). Applies to both the header
+         cell and the body cells. */
+      .figures-table table.figures thead th.col-labor,
+      .figures-table table.figures tbody td.col-labor {
+        border-right: 1px solid #d1d5db;
+      }
+
+      /* ---- Per-column treatments -------------------------------------- */
+      .figures-table th.col-wage,
+      .figures-table td.col-wage {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .figures-table td.col-wage {
+        font-weight: 600;
+        color: #111827;
+      }
+      .figures-table td.col-wage.suppressed {
+        color: #9ca3af;
+        font-weight: 400;
+        cursor: help;
+      }
+      .figures-table td.col-major.empty,
+      .figures-table td.col-minor.empty,
+      .figures-table td.col-broad.empty,
+      .figures-table td.col-occ.empty {
+        color: #9ca3af;
+      }
+
+      /* ---- Column resize handles -------------------------------------- */
+      /* Each header cell gets a 6px-wide drag handle pinned to its right
+         edge. Mousedown captures the column's current width; mousemove
+         updates the matching --w-* variable on .figures-table. */
+      .col-resize-handle {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 6px;
+        cursor: col-resize;
+        user-select: none;
+        z-index: 1;
+      }
+      .col-resize-handle::after {
+        content: "";
+        position: absolute;
+        top: 6px;
+        bottom: 6px;
+        right: 2px;
+        width: 2px;
+        background: transparent;
+        transition: background 120ms;
+      }
+      .col-resize-handle:hover::after,
+      .col-resize-handle.is-dragging::after {
+        background: #9ca3af;
+      }
+      /* While a drag is in progress, lock the page cursor + suppress
+         text-selection so the pointer stays consistent. */
+      body.is-resizing-col {
+        cursor: col-resize !important;
+        user-select: none;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div class="main-wrapper">
+      <div class="content-frame">
+        <section class="post-container prose-flow">
+          <p>
+            Below is the full roster of figures Epistemon meets during his
+            tour of the underworld. The first two columns &mdash; Name and
+            Underworld Labor &mdash; come from Rabelais&rsquo;s chapter.
+            The remaining columns come from the U.S. Bureau of Labor
+            Statistics: four levels of the Standard Occupational
+            Classification hierarchy (Major Group &rarr; Minor Group
+            &rarr; Broad Group &rarr; Detailed Occupation), followed by
+            the median wage. The Name column stays pinned at left and
+            the header row stays pinned at top while you scroll; hover
+            any truncated cell to see the full value; drag the right edge
+            of any header to resize that column.
+          </p>
+
+          <div class="figures-table">
+            <div class="figures-mount">
+              <p class="figures-table-status">Loading&hellip;</p>
+            </div>
+            <p class="figures-table-caption">
+              Median wages: BLS OEWS, May 2024. Em dash = suppressed by BLS
+              or unmapped.
+            </p>
+          </div>
+
+          <p>
+            The mappings are LLM-extracted from the chapter prose, then
+            classified against the Standard Occupational Classification
+            system. Suppressed wages mean BLS withheld the figure
+            (typically because the occupation has too few workers to
+            report without compromising survey-respondent privacy);
+            unmapped rows are figures whose underworld labor &mdash;
+            chimney-sweeping for popes, mustard-selling for kings
+            &mdash; has no clean modern analogue.
+          </p>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      (async function () {
+        const mounts = document.querySelectorAll(".figures-mount");
+        if (!mounts.length) return;
+
+        const fmtWage = (v) => {
+          const n = typeof v === "number" ? v : parseFloat(v);
+          if (!isFinite(n)) return null;
+          return (
+            "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 })
+          );
+        };
+
+        const esc = (s) => {
+          if (s == null) return "";
+          return String(s)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+        };
+
+        let data;
+        try {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("HTTP " + res.status);
+          data = await res.json();
+        } catch (e) {
+          const msg =
+            '<p class="figures-table-status error">Failed to load figures: ' +
+            esc(e.message) +
+            "</p>";
+          mounts.forEach((m) => (m.innerHTML = msg));
+          return;
+        }
+
+        const characters = Array.isArray(data.characters)
+          ? data.characters
+          : [];
+        const hierarchical = Array.isArray(data.hierarchical_data)
+          ? data.hierarchical_data
+          : [];
+
+        const hierByCode = new Map();
+        hierarchical.forEach((h) => {
+          if (h && h.OCC_CODE) hierByCode.set(h.OCC_CODE, h);
+        });
+
+        const rows = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const wageRaw = h ? h.A_MEDIAN : null;
+          const wageNum =
+            wageRaw == null || wageRaw === ""
+              ? null
+              : isNaN(parseFloat(wageRaw))
+                ? null
+                : parseFloat(wageRaw);
+          const major =
+            c.major_group_title || (h && h.major_group_title) || null;
+          const minor =
+            c.minor_group_title || (h && h.minor_group_title) || null;
+          const broad =
+            c.broad_group_title || (h && h.broad_group_title) || null;
+          const occTitle = c.occ_title || (h && h.OCC_TITLE) || null;
+          return {
+            name: c.name || "",
+            lot: c.lot_in_life || "",
+            labor: c.labor || "",
+            major,
+            minor,
+            broad,
+            occTitle,
+            occCode: c.occ_code || null,
+            wage: wageNum,
+          };
+        });
+
+        rows.sort((a, b) =>
+          a.name.localeCompare(b.name, "en", { sensitivity: "base" }),
+        );
+
+        const SUPPRESSED_TITLE = "Wage data suppressed by BLS";
+        const EM_DASH = "—";
+
+        const html = [];
+        html.push('<div class="table-scroll" role="region" ');
+        html.push('aria-label="Figures of the underworld table">');
+        html.push('<table class="figures">');
+        html.push("<colgroup>");
+        html.push('<col class="col-name" />');
+        html.push('<col class="col-labor" />');
+        html.push('<col class="col-major" />');
+        html.push('<col class="col-minor" />');
+        html.push('<col class="col-broad" />');
+        html.push('<col class="col-occ" />');
+        html.push('<col class="col-wage" />');
+        html.push("</colgroup>");
+        html.push("<thead><tr>");
+        html.push('<th class="col-name" scope="col">Name</th>');
+        html.push('<th class="col-labor" scope="col">Underworld Labor</th>');
+        html.push('<th class="col-major" scope="col">Major Group</th>');
+        html.push('<th class="col-minor" scope="col">Minor Group</th>');
+        html.push('<th class="col-broad" scope="col">Broad Group</th>');
+        html.push('<th class="col-occ" scope="col">Detailed Occupation</th>');
+        html.push('<th class="col-wage" scope="col">Median Wage</th>');
+        html.push("</tr></thead><tbody>");
+
+        // Helper: emit a <td> with title=fullValue so truncated cells
+        // reveal their full content on hover.
+        const cell = (cls, value, opts) => {
+          const text = value == null || value === "" ? EM_DASH : String(value);
+          const isEmpty = value == null || value === "";
+          const klass = isEmpty ? cls + " empty" : cls;
+          const titleText =
+            opts && opts.title != null ? opts.title : isEmpty ? "" : text;
+          const titleAttr = titleText ? ' title="' + esc(titleText) + '"' : "";
+          return '<td class="' + klass + '"' + titleAttr + ">" + esc(text) + "</td>";
+        };
+
+        for (const r of rows) {
+          const wageFmt = r.wage != null ? fmtWage(r.wage) : null;
+          const isUnmapped = r.occCode == null;
+          const wageCell =
+            wageFmt != null
+              ? '<td class="col-wage" title="' +
+                esc(wageFmt) +
+                '">' +
+                esc(wageFmt) +
+                "</td>"
+              : '<td class="col-wage suppressed" title="' +
+                (isUnmapped ? "No BLS mapping" : SUPPRESSED_TITLE) +
+                '">' +
+                EM_DASH +
+                "</td>";
+
+          html.push("<tr>");
+          html.push(cell("col-name", r.name));
+          html.push(cell("col-labor", r.labor));
+          html.push(cell("col-major", r.major));
+          html.push(cell("col-minor", r.minor));
+          html.push(cell("col-broad", r.broad));
+          html.push(cell("col-occ", r.occTitle));
+          html.push(wageCell);
+          html.push("</tr>");
+        }
+
+        html.push("</tbody></table></div>");
+        const tableHtml = html.join("");
+        mounts.forEach((m) => {
+          m.innerHTML = tableHtml;
+          const table = m.querySelector("table.figures");
+          if (table) wireColumnResize(table);
+        });
+
+        // ---- Column resize ------------------------------------------------
+        // For each thead th, append a 6px drag handle. Mousedown captures
+        // the current column width; mousemove updates the corresponding
+        // --w-* CSS variable on the .figures-table ancestor (which the
+        // table's `width: calc(sum-of-vars)` reads). MIN_WIDTH stops the
+        // user from collapsing a column to nothing.
+        function wireColumnResize(table) {
+          const figuresTable = table.closest(".figures-table");
+          if (!figuresTable) return;
+          const COL_VAR_MAP = {
+            "col-name": "--w-name",
+            "col-labor": "--w-labor",
+            "col-major": "--w-major",
+            "col-minor": "--w-minor",
+            "col-broad": "--w-broad",
+            "col-occ": "--w-occ",
+            "col-wage": "--w-wage",
+          };
+          const MIN_WIDTH = 60;
+          const ths = table.querySelectorAll("thead th");
+          ths.forEach((th) => {
+            const colClass = Array.from(th.classList).find(
+              (c) => COL_VAR_MAP[c],
+            );
+            if (!colClass) return;
+            const cssVar = COL_VAR_MAP[colClass];
+
+            const handle = document.createElement("span");
+            handle.className = "col-resize-handle";
+            handle.setAttribute("aria-hidden", "true");
+            th.appendChild(handle);
+
+            handle.addEventListener("mousedown", (e) => {
+              e.preventDefault();
+              const startX = e.clientX;
+              const startWidth = th.getBoundingClientRect().width;
+              handle.classList.add("is-dragging");
+              document.body.classList.add("is-resizing-col");
+
+              const onMove = (ev) => {
+                const delta = ev.clientX - startX;
+                const newWidth = Math.max(MIN_WIDTH, startWidth + delta);
+                figuresTable.style.setProperty(cssVar, newWidth + "px");
+              };
+              const onUp = () => {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+                handle.classList.remove("is-dragging");
+                document.body.classList.remove("is-resizing-col");
+              };
+              document.addEventListener("mousemove", onMove);
+              document.addEventListener("mouseup", onUp);
+            });
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

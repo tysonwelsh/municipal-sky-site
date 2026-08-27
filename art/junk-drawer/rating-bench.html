@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Rating bench — The Junk Drawer</title>
+<style>
+/* The bench is a WORKBENCH, not the exhibit. No paper, no graphite, no stamps,
+   no municipal fiction — that language belongs to the drawer itself. Flat dark
+   panels, system font, high contrast, and the shortest possible path from
+   looking at a drawing to filing a judgment about it. Palette is the existing
+   rating instrument's, deliberately, so this is not a third visual language. */
+:root{
+  --bg:#1b1a22; --panel:#232230; --panel2:#2b2a3a; --line:#3a3850;
+  --ink:#e8e6f0; --dim:#9a97ad; --accent:#a78bfa; --accent-dim:#6d5bb8;
+  --ok:#4ade80; --warn:#fbbf24; --bad:#f87171;
+  --checker:#2a2936;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+
+/* ---- sticky header: where you are, and whether the server has it --------- */
+#bar{position:sticky;top:0;z-index:20;background:var(--panel);
+  border-bottom:1px solid var(--line);padding:8px 12px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}
+#pos{font-variant-numeric:tabular-nums;color:var(--dim)}
+#who{font-weight:600}
+#model{color:var(--accent);font-size:12px}
+#done{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--dim)}
+#sync{padding:2px 8px;border-radius:10px;font-size:12px;white-space:nowrap;
+  background:var(--panel2);color:var(--dim)}
+#sync.saving{color:var(--warn)}
+#sync.saved{color:var(--ok)}
+#sync.failed{color:var(--bad);background:#3a2029}
+#prog{height:2px;background:var(--panel2);width:100%}
+#prog>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+
+/* ---- the artwork -------------------------------------------------------- */
+#stage{position:sticky;top:41px;z-index:10;background:var(--bg);
+  border-bottom:1px solid var(--line);padding:10px;text-align:center}
+#art{display:inline-block;max-width:min(100%,420px);width:100%;
+  aspect-ratio:1/1;background-color:var(--checker);
+  background-image:
+    linear-gradient(45deg,#24232f 25%,transparent 25%,transparent 75%,#24232f 75%),
+    linear-gradient(45deg,#24232f 25%,transparent 25%,transparent 75%,#24232f 75%);
+  background-size:18px 18px;background-position:0 0,9px 9px;
+  border:1px solid var(--line);border-radius:4px;overflow:hidden;
+  transition:max-width .18s ease}
+#art img{width:100%;height:100%;object-fit:contain;display:block}
+body.compact #art{max-width:min(100%,190px)}
+#prompt{margin:8px auto 0;max-width:640px;color:var(--dim);font-size:12.5px;
+  text-align:left;cursor:pointer;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+#prompt.open{-webkit-line-clamp:unset;display:block}
+#sibs{display:flex;gap:6px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+.sib{width:34px;height:34px;border:1px solid var(--line);border-radius:4px;
+  background:var(--panel2);cursor:pointer;padding:2px;opacity:.5}
+.sib.on{opacity:1;border-color:var(--accent)}
+.sib.ok{border-color:var(--ok)}
+.sib img{width:100%;height:100%;object-fit:contain}
+
+/* ---- the rubric --------------------------------------------------------- */
+#axes{flex:1;padding:10px;max-width:720px;margin:0 auto;width:100%}
+.axis{border:1px solid var(--line);border-radius:5px;margin-bottom:6px;
+  background:var(--panel);overflow:hidden}
+.axis.cur{border-color:var(--accent);background:var(--panel2)}
+.axis>h3{margin:0;padding:8px 10px;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:8px;cursor:pointer}
+.axis>h3 .ans{margin-left:auto;font-weight:400;font-size:12px;color:var(--dim)}
+.axis>h3 .ans.set{color:var(--ok)}
+.vals{display:none;padding:0 10px 10px;gap:6px;flex-wrap:wrap}
+.axis.cur .vals{display:flex}
+.val{flex:1 1 150px;text-align:left;padding:7px 9px;border-radius:4px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);
+  cursor:pointer;font:inherit;font-size:12.5px;display:flex;gap:7px;align-items:baseline}
+.val:hover{border-color:var(--accent-dim)}
+.val.on{border-color:var(--accent);background:#312c4d}
+.val kbd{font:600 11px ui-monospace,SFMono-Regular,Menlo,monospace;
+  background:var(--panel2);border:1px solid var(--line);border-radius:3px;
+  padding:1px 5px;color:var(--accent);flex:none}
+.axis .desc{padding:0 10px 9px;font-size:11.5px;color:var(--dim);display:none}
+.axis.cur .desc{display:block}
+
+/* ---- footer controls ---------------------------------------------------- */
+#foot{position:sticky;bottom:0;background:var(--panel);border-top:1px solid var(--line);
+  padding:8px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px}
+#grade{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+#grade b{color:var(--dim);font-weight:400;margin-right:2px}
+.g{padding:3px 8px;border-radius:3px;border:1px solid var(--line);
+  background:var(--bg);color:var(--dim);cursor:pointer;font:inherit;font-size:12px}
+.g.on{border-color:var(--accent);color:var(--ink);background:#312c4d}
+.g.seed{border-style:dashed}
+#acts{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+#build{width:100%;text-align:right;color:var(--dim);font-size:11px;
+  font-variant-numeric:tabular-nums;opacity:.75}
+#build.stale{color:var(--warn);opacity:1}
+.act{padding:4px 10px;border-radius:3px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);cursor:pointer;font:inherit;font-size:12px}
+.act:hover{border-color:var(--accent-dim)}
+.act.on{background:#3a2029;border-color:var(--bad);color:var(--bad)}
+.act.rerun.on{background:#2a2a12;border-color:var(--warn);color:var(--warn)}
+
+#banner{display:none;padding:6px 12px;background:#3a2029;color:var(--bad);
+  font-size:12.5px;text-align:center}
+body.excluded #banner{display:block}
+
+#help{position:fixed;inset:0;background:rgba(12,11,18,.94);z-index:50;
+  display:none;padding:24px;overflow:auto}
+#help.on{display:block}
+#help table{margin:0 auto;border-collapse:collapse;font-size:13px}
+#help td{padding:4px 12px;border-bottom:1px solid var(--line)}
+#help kbd{font:600 12px ui-monospace,Menlo,monospace;background:var(--panel2);
+  border:1px solid var(--line);border-radius:3px;padding:1px 6px;color:var(--accent)}
+#gate{position:fixed;inset:0;background:var(--bg);z-index:60;display:none;
+  place-items:center;padding:24px;text-align:center}
+#gate.on{display:grid}
+#gate input{font:inherit;padding:8px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--line);border-radius:4px;margin-top:10px;width:260px}
+#msg{padding:10px;text-align:center;color:var(--dim)}
+@media (max-width:520px){
+  #stage{top:57px}
+  .val{flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+
+<div id="bar">
+  <span id="pos">—</span>
+  <span id="who">loading…</span>
+  <span id="model"></span>
+  <span id="done"></span>
+  <span id="sync">idle</span>
+</div>
+<div id="prog"><i></i></div>
+<div id="banner">EXCLUDED — this item will be retired from the drawer</div>
+
+<div id="stage">
+  <div id="art"><img id="img" alt=""></div>
+  <div id="prompt" title="click to expand"></div>
+  <div id="sibs"></div>
+</div>
+
+<div id="axes"><div id="msg">Loading the queue…</div></div>
+
+<div id="foot">
+  <div id="grade"></div>
+  <div id="acts">
+    <button class="act" id="bReplay">replay ↻ r</button>
+    <button class="act" id="bPrev">←</button>
+    <button class="act" id="bNext">next ⏎</button>
+    <button class="act" id="bExcl">flag exclude x</button>
+    <button class="act rerun" id="bRerun">rerun ↗ g</button>
+    <button class="act" id="bHelp">?</button>
+  </div>
+  <div id="build" title="version · byte fingerprint · deploy time — from the server, so it cannot lie about what is running">—
+  </div>
+</div>
+
+<div id="help">
+  <table>
+    <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td>answer current axis — <b>1 is always best</b> — and advance</td></tr>
+    <tr><td><kbd>0</kbd> / <kbd>s</kbd></td><td>skip this axis (files nothing)</td></tr>
+    <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>move between axes without answering</td></tr>
+    <tr><td><kbd>⏎</kbd></td><td>commit and jump to the next unrated response</td></tr>
+    <tr><td><kbd>u</kbd> / <kbd>⌫</kbd></td><td>undo the last judgment</td></tr>
+    <tr><td><kbd>`</kbd> then <kbd>1</kbd>–<kbd>5</kbd></td><td>override the grade</td></tr>
+    <tr><td><kbd>n</kbd></td><td>note on this response</td></tr>
+    <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>previous / next response</td></tr>
+    <tr><td><kbd>Tab</kbd></td><td>cycle siblings in this item</td></tr>
+    <tr><td><kbd>x</kbd></td><td>flag to exclude — applied later, not immediate</td></tr>
+    <tr><td><kbd>g</kbd></td><td>rerun this item — opens a real turn in a new tab</td></tr>
+    <tr><td><kbd>r</kbd></td><td>replay the drawing — repaints it from scratch so you can watch it assemble</td></tr>
+    <tr><td><kbd>p</kbd></td><td>expand the prompt</td></tr>
+    <tr><td><kbd>?</kbd> / <kbd>Esc</kbd></td><td>this legend</td></tr>
+  </table>
+</div>
+
+<div id="gate">
+  <div>
+    <div>Bench key</div>
+    <input id="gateKey" type="password" autocomplete="off">
+    <div style="margin-top:8px;color:var(--dim);font-size:12px">Stored for this tab only.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+var API_Q = '/api/jd-bench-queue.php';
+var API_R = '/api/jd-item-rate.php';
+var BASE  = '/art/junk-drawer/';
+var K_KEY = 'jd-bench-key';
+
+var Q = null;            /* the queue payload */
+var loadedBuild = null;  /* the build this page loaded against */
+var flat = [];           /* every response, flattened, in queue order */
+var idx = 0;             /* current response index into flat */
+var axisIdx = 0;         /* which axis is expanded */
+var gradePrefix = false; /* ` pressed, next digit sets the grade */
+var undoStack = [];
+var excluded = {};       /* item_id -> true (local intent, exported) */
+var reruns   = {};       /* item_id -> true */
+
+/* --- the outbox ---------------------------------------------------------- */
+/* A POST can fail where a localStorage write could not, so every judgment goes
+   through a queue that retries. The bench NEVER claims saved until the server
+   has said so — an optimistic tick that lies is worse than a slow one. */
+var outbox = [], sending = false, failures = 0;
+
+function bkey(){ try{ return sessionStorage.getItem(K_KEY)||''; }catch(e){ return ''; } }
+
+function post(url, body){
+  var h = {'Content-Type':'application/json'};
+  var k = bkey(); if (k) h['X-Bench-Key'] = k;
+  return fetch(url,{method:'POST',headers:h,body:JSON.stringify(body)})
+    .then(function(r){ return r.json().catch(function(){ return {ok:false,error:{code:'server_error'}}; }); });
+}
+
+function enqueue(body){
+  outbox.push(body);
+  pump();
+}
+
+function pump(){
+  if (sending || !outbox.length) { return; }
+  sending = true; setSync('saving');
+  var job = outbox[0];
+  post(API_R, job).then(function(j){
+    sending = false;
+    if (j && j.ok){
+      /* The write endpoint reports its own build. If it disagrees with the one
+         this page loaded against, a deploy landed mid-session and the page is
+         stale — worth saying, because the rubric could have changed under it. */
+      if (j.build && loadedBuild && j.build !== loadedBuild){
+        var b = document.getElementById('build');
+        b.classList.add('stale');
+        b.textContent = 'build changed on the server (' + loadedBuild + ' → ' +
+                        j.build + ') — reload before rating further';
+      }
+      outbox.shift(); failures = 0;
+      if (outbox.length) { pump(); } else { setSync('saved'); }
+    } else {
+      failures++;
+      setSync('failed', (j && j.error && j.error.message) || 'save failed');
+      setTimeout(pump, Math.min(1000 * failures, 8000));
+    }
+  }, function(){
+    sending = false; failures++;
+    setSync('failed','network');
+    setTimeout(pump, Math.min(1000 * failures, 8000));
+  });
+}
+
+function setSync(state, detail){
+  var el = document.getElementById('sync');
+  el.className = state;
+  el.textContent = state === 'saving' ? ('saving' + (outbox.length>1?' ('+outbox.length+')':''))
+                 : state === 'saved'  ? '✓ saved'
+                 : state === 'failed' ? ('⚠ ' + (detail||'failed') + ' — retrying')
+                 : 'idle';
+}
+
+/* --- data ---------------------------------------------------------------- */
+function load(){
+  var h = {}; var k = bkey(); if (k) h['X-Bench-Key'] = k;
+  fetch(API_Q,{headers:h}).then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.ok){
+      if (j && j.error && j.error.code === 'forbidden'){ gate(); return; }
+      document.getElementById('msg').textContent =
+        'Could not load: ' + ((j && j.error && j.error.message) || 'unknown');
+      return;
+    }
+    Q = j; flat = [];
+    if (j.build){
+      loadedBuild = j.build.build;
+      document.getElementById('build').textContent =
+        j.build.version + ' · ' + j.build.build +
+        (j.build.deployed ? ' · ' + j.build.deployed : '') +
+        ' · taxonomy v' + j.build.taxonomy +
+        ' · harness ' + j.build.harness.web + '/' + j.build.harness.bench;
+    }
+    j.items.forEach(function(it){
+      it.responses.forEach(function(r){ r._item = it; flat.push(r); });
+    });
+    if (!flat.length){
+      document.getElementById('msg').textContent =
+        'Queue is empty — has scripts/backfill-curated.php been run?';
+      return;
+    }
+    /* resume: first response missing any axis */
+    var first = flat.findIndex(function(r){ return !r.complete; });
+    idx = first < 0 ? 0 : first;
+    render();
+  }, function(){
+    document.getElementById('msg').textContent = 'Could not reach the queue endpoint.';
+  });
+}
+
+function gate(){
+  var g = document.getElementById('gate'); g.classList.add('on');
+  var i = document.getElementById('gateKey'); i.focus();
+  i.onkeydown = function(e){
+    if (e.key === 'Enter'){
+      try{ sessionStorage.setItem(K_KEY, i.value); }catch(err){}
+      g.classList.remove('on'); load();
+    }
+  };
+}
+
+/* --- render -------------------------------------------------------------- */
+function cur(){ return flat[idx]; }
+
+function render(){
+  var r = cur(); if (!r) { return; }
+  var it = r._item;
+
+  document.getElementById('pos').textContent = (idx+1) + '/' + flat.length;
+  document.getElementById('who').textContent = it.title + ' · ' + r.rid;
+  document.getElementById('model').textContent = r.model_id;
+  document.getElementById('img').src = r.svg ? (BASE + r.svg) : '';
+  document.getElementById('img').alt = it.title + ' by ' + r.model_id;
+  document.getElementById('prompt').textContent = it.prompt;
+  document.body.classList.toggle('excluded', !!excluded[it.item_id]);
+  document.getElementById('bExcl').classList.toggle('on', !!excluded[it.item_id]);
+  document.getElementById('bRerun').classList.toggle('on', !!reruns[it.item_id]);
+
+  /* siblings */
+  var sibs = document.getElementById('sibs'); sibs.innerHTML = '';
+  if (it.responses.length > 1){
+    it.responses.forEach(function(s){
+      var b = document.createElement('button');
+      b.className = 'sib' + (s === r ? ' on' : '') + (s.complete ? ' ok' : '');
+      b.title = s.model_id;
+      if (s.svg){ var im = document.createElement('img'); im.src = BASE + s.svg; b.appendChild(im); }
+      b.onclick = function(){ idx = flat.indexOf(s); axisIdx = 0; render(); };
+      sibs.appendChild(b);
+    });
+  }
+
+  /* axes */
+  var wrap = document.getElementById('axes'); wrap.innerHTML = '';
+  Q.axes.forEach(function(ax, ai){
+    var filed = r.axes[ax.id];
+    var d = document.createElement('div');
+    d.className = 'axis' + (ai === axisIdx ? ' cur' : '');
+
+    var h = document.createElement('h3');
+    h.innerHTML = '<span>' + esc(ax.label) + '</span>';
+    var ans = document.createElement('span');
+    ans.className = 'ans' + (filed !== undefined ? ' set' : '');
+    ans.textContent = filed !== undefined ? labelFor(ax, filed) : '— pending';
+    h.appendChild(ans);
+    h.onclick = function(){ axisIdx = ai; render(); };
+    d.appendChild(h);
+
+    if (ai === axisIdx && ax.description){
+      var ds = document.createElement('div'); ds.className = 'desc';
+      ds.textContent = ax.description; d.appendChild(ds);
+    }
+
+    var vs = document.createElement('div'); vs.className = 'vals';
+    ax.values.forEach(function(v, vi){
+      var b = document.createElement('button');
+      b.className = 'val' + (filed === v.rank ? ' on' : '');
+      b.innerHTML = '<kbd>' + (vi+1) + '</kbd><span>' + esc(v.label) + '</span>';
+      b.title = v.description || '';
+      b.onclick = function(){ answer(ai, vi); };
+      vs.appendChild(b);
+    });
+    d.appendChild(vs);
+    wrap.appendChild(d);
+  });
+
+  /* grade */
+  var g = document.getElementById('grade'); g.innerHTML = '<b>Grade</b>';
+  Q.grades.forEach(function(gr){
+    var b = document.createElement('button');
+    var isSet  = r.grade === gr.rank;
+    var isSeed = r.grade == null && r.grade_seed === gr.rank;
+    b.className = 'g' + (isSet ? ' on' : '') + (isSeed ? ' on seed' : '');
+    b.textContent = gr.label;
+    b.title = isSeed ? 'carried over from entry.json — press ` then a digit to change' : '';
+    b.onclick = function(){ setGrade(gr.rank); };
+    g.appendChild(b);
+  });
+
+  var done = flat.filter(function(x){ return x.complete; }).length;
+  document.getElementById('done').textContent = done + '/' + flat.length + ' done';
+  document.querySelector('#prog>i').style.width = (100*done/flat.length) + '%';
+}
+
+function labelFor(ax, rank){
+  for (var i=0;i<ax.values.length;i++){ if (ax.values[i].rank === rank) { return ax.values[i].label; } }
+  return String(rank);
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){
+  return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+
+/* --- actions ------------------------------------------------------------- */
+function answer(ai, vi){
+  var r = cur(), ax = Q.axes[ai];
+  var v = ax.values[vi]; if (!v) { return; }
+  undoStack.push({gen:r.generation_id, axis:ax.id, prev:r.axes[ax.id], ai:ai});
+  r.axes[ax.id] = v.rank;
+  r.complete = Object.keys(r.axes).length === Q.axes.length;
+  enqueue({generation_id:r.generation_id, ratings:[{kind:'axis', axis_id:ax.id, value:v.rank}]});
+  if (ai < Q.axes.length - 1){ axisIdx = ai + 1; }
+  render();
+}
+
+function setGrade(rank){
+  var r = cur();
+  undoStack.push({gen:r.generation_id, grade:true, prev:r.grade});
+  r.grade = rank;
+  enqueue({generation_id:r.generation_id, ratings:[{kind:'grade', value:rank}]});
+  render();
+}
+
+function undo(){
+  var u = undoStack.pop(); if (!u) { return; }
+  var r = flat.find(function(x){ return x.generation_id === u.gen; }); if (!r) { return; }
+  if (u.grade){
+    r.grade = u.prev;
+    if (u.prev != null){ enqueue({generation_id:r.generation_id, ratings:[{kind:'grade', value:u.prev}]}); }
+  } else {
+    if (u.prev === undefined){ delete r.axes[u.axis]; }
+    else { r.axes[u.axis] = u.prev; enqueue({generation_id:r.generation_id, ratings:[{kind:'axis', axis_id:u.axis, value:u.prev}]}); }
+    axisIdx = u.ai;
+  }
+  r.complete = Object.keys(r.axes).length === Q.axes.length;
+  render();
+}
+
+function go(delta){
+  idx = Math.max(0, Math.min(flat.length-1, idx + delta));
+  axisIdx = 0; render();
+}
+
+function nextUnrated(){
+  for (var i = idx+1; i < flat.length; i++){ if (!flat[i].complete){ idx = i; axisIdx = 0; render(); return; } }
+  for (var j = 0; j < flat.length; j++){ if (!flat[j].complete){ idx = j; axisIdx = 0; render(); return; } }
+  go(1);
+}
+
+/* Exclude and rerun are INTENTS, not file edits: `retired` lives in entry.json
+   which is git-tracked, and the bench cannot commit. They are filed as flag
+   rows for the audit trail and exported for a session to apply. */
+function toggleExclude(){
+  var it = cur()._item, on = !excluded[it.item_id];
+  excluded[it.item_id] = on; if (!on) { delete excluded[it.item_id]; }
+  enqueue({generation_id:cur().generation_id,
+           ratings:[{kind:'flag', axis_id:'retire-request'}],
+           note:(on?'RETIRE ':'UNRETIRE ') + it.item_id});
+  render();
+}
+/* A rerun is a REAL turn, so it happens where turns happen: a new tab on the
+   drawer, deep-linked with the item id. The drawer re-issues the stored prompt
+   to the four current models with the ordinary loading animations, blind
+   rating and reveal. Rebuilding any of that here would drift from the real
+   flow and stop being comparable to it. The flag row is still filed so the
+   rerun is on the record next to the ratings that prompted it. */
+function toggleRerun(){
+  var it = cur()._item;
+  reruns[it.item_id] = true;
+  enqueue({generation_id:cur().generation_id,
+           ratings:[{kind:'flag', axis_id:'rerun-request'}],
+           note:'RERUN ' + it.item_id});
+  window.open(BASE + '?rerun=' + encodeURIComponent(it.item_id), '_blank');
+  render();
+}
+
+/* Replay: repaint the SVG from scratch so it assembles in front of you.
+   Judging Layering means judging stacking order, and the order paths land in
+   IS the stacking order — watching it build is the most direct read of the
+   axis there is. An <img> only animates on load, and re-setting the same src
+   is a no-op against cache, so the node is replaced with a cache-busted URL
+   to guarantee a genuinely fresh document every press. */
+var replayN = 0;
+function replay(){
+  var r = cur(); if (!r || !r.svg) { return; }
+  var old = document.getElementById('img');
+  var img = document.createElement('img');
+  img.id = 'img';
+  img.alt = old.alt;
+  old.replaceWith(img);
+  img.src = BASE + r.svg + '?replay=' + (++replayN);
+}
+
+function addNote(){
+  var r = cur();
+  var t = window.prompt('Note for ' + r._item.title + ' · ' + r.rid, r.note || '');
+  if (t === null) { return; }
+  r.note = t.slice(0,500);
+  enqueue({generation_id:r.generation_id, note:r.note,
+           ratings:[{kind:'flag', axis_id:'note'}]});
+  render();
+}
+
+/* --- keys ---------------------------------------------------------------- */
+document.addEventListener('keydown', function(e){
+  if (document.getElementById('gate').classList.contains('on')) { return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) { return; }
+  var k = e.key;
+
+  if (k === '?' ){ document.getElementById('help').classList.toggle('on'); e.preventDefault(); return; }
+  if (k === 'Escape'){ document.getElementById('help').classList.remove('on'); return; }
+  if (document.getElementById('help').classList.contains('on')) { return; }
+
+  if (k === '`'){ gradePrefix = true; e.preventDefault(); return; }
+  if (gradePrefix && /^[1-5]$/.test(k)){
+    gradePrefix = false;
+    var gr = Q.grades[parseInt(k,10)-1]; if (gr) { setGrade(gr.rank); }
+    e.preventDefault(); return;
+  }
+  gradePrefix = false;
+
+  if (/^[1-4]$/.test(k)){ answer(axisIdx, parseInt(k,10)-1); e.preventDefault(); return; }
+  if (k === '0' || k === 's'){ if (axisIdx < Q.axes.length-1){ axisIdx++; render(); } e.preventDefault(); return; }
+  if (k === 'ArrowDown'){ axisIdx = Math.min(Q.axes.length-1, axisIdx+1); render(); e.preventDefault(); return; }
+  if (k === 'ArrowUp'){ axisIdx = Math.max(0, axisIdx-1); render(); e.preventDefault(); return; }
+  if (k === 'Enter'){ nextUnrated(); e.preventDefault(); return; }
+  if (k === 'u' || k === 'Backspace'){ undo(); e.preventDefault(); return; }
+  if (k === 'ArrowLeft'){ go(-1); e.preventDefault(); return; }
+  if (k === 'ArrowRight'){ go(1); e.preventDefault(); return; }
+  if (k === 'Tab'){
+    var it = cur()._item, sib = it.responses;
+    var at = sib.indexOf(cur()); idx = flat.indexOf(sib[(at+1)%sib.length]);
+    axisIdx = 0; render(); e.preventDefault(); return;
+  }
+  if (k === 'x'){ toggleExclude(); e.preventDefault(); return; }
+  if (k === 'g'){ toggleRerun(); e.preventDefault(); return; }
+  if (k === 'n'){ addNote(); e.preventDefault(); return; }
+  if (k === 'r'){ replay(); e.preventDefault(); return; }
+  if (k === 'p'){ document.getElementById('prompt').classList.toggle('open'); e.preventDefault(); return; }
+});
+
+document.getElementById('prompt').onclick = function(){ this.classList.toggle('open'); };
+document.getElementById('bReplay').onclick = replay;
+document.getElementById('bPrev').onclick  = function(){ go(-1); };
+document.getElementById('bNext').onclick  = function(){ nextUnrated(); };
+document.getElementById('bExcl').onclick  = toggleExclude;
+document.getElementById('bRerun').onclick = toggleRerun;
+document.getElementById('bHelp').onclick  = function(){ document.getElementById('help').classList.toggle('on'); };
+document.getElementById('help').onclick   = function(){ this.classList.remove('on'); };
+
+/* the artwork shrinks once you start scrolling the rubric, so the current axis
+   and the picture stay on screen together on a phone */
+document.addEventListener('scroll', function(){
+  document.body.classList.toggle('compact', window.scrollY > 40);
+}, {passive:true});
+
+/* a judgment in flight must not be lost to a stray tab close */
+window.addEventListener('beforeunload', function(e){
+  if (outbox.length){ e.preventDefault(); e.returnValue = ''; }
+});
+
+load();
+})();
+</script>
+</body>
+</html>

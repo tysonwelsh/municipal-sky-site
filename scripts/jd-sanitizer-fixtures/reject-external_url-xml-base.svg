@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" xml:base="https://evil.example/">
+  <circle id="dot" cx="20" cy="20" r="8" fill="#ccc"/>
+  <use href="#dot" x="40" y="40"/>
+</svg>

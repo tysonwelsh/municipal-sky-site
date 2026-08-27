@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Underworld Wage Waffle — Single Slide</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Cormorant+SC:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Standalone wage-waffle prototype. Recreates the deck slide-card
+         chrome at 720x680 (matching underworld-ghost-strip-slide.html)
+         and renders a binned waffle: each figure stacks as a ghost into
+         a wage bin, columns grow upward from a US-distribution
+         box-and-whiskers at the bottom. Suppressed/unmapped figures
+         are omitted entirely (per the to-do spec). */
+      :root {
+        --color-parchment: #d4c5a5;
+        --color-bg: #f3e9cf;
+        --color-svg-bg: #ede1c2;
+        --color-text-primary: #3d2818;
+        --color-text-secondary: #5a3e28;
+        --color-text-tertiary: #8a7152;
+        --color-border-medium: rgba(90, 62, 40, 0.35);
+        --color-rubrication: #a64224;
+        --color-rubrication-border: rgba(166, 66, 36, 0.65);
+        --color-rule: rgba(90, 62, 40, 0.35);
+        --color-axis: #5a3e28;
+        --color-national: #1a1408;
+        --color-box-fill: rgba(220, 200, 160, 0.55);
+        --color-grid: rgba(90, 62, 40, 0.15);
+        --font-family: "Cormorant Garamond", "Cormorant", Georgia, serif;
+        --font-family-sc:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+        --font-family-display:
+          "Cormorant SC", "Cormorant Garamond", Georgia, serif;
+      }
+      body {
+        margin: 0;
+        background: #f6efd9;
+        color: var(--color-text-primary);
+        font-family: var(--font-family);
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 32px;
+      }
+      .deck-wrapper {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .slide-card {
+        background:
+          radial-gradient(
+            ellipse at 25% 75%,
+            rgba(120, 90, 50, 0.07) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 75% 25%,
+            rgba(100, 75, 40, 0.05) 0%,
+            transparent 50%
+          ),
+          linear-gradient(
+            175deg,
+            #ddd0b3 0%,
+            #d4c5a5 30%,
+            #cdbf9e 60%,
+            #d6c9ad 100%
+          );
+        border: 2px solid #5a3e28;
+        height: 680px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 4px 16px -4px rgba(26, 20, 8, 0.18),
+          0 1px 4px -1px rgba(26, 20, 8, 0.1);
+      }
+      .slide-header {
+        padding: 14px 20px 10px;
+        border-bottom: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-title {
+        font-family: var(--font-family-display);
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-rubrication);
+        letter-spacing: 0.04em;
+        margin: 0 0 6px;
+        line-height: 1.2;
+      }
+      .slide-subtitle {
+        font-family: var(--font-family);
+        font-size: 15px;
+        color: var(--color-text-secondary);
+        margin: 0;
+        line-height: 1.5;
+      }
+      .slide-body {
+        padding: 10px 20px 20px;
+        flex: 1 1 auto;
+        display: flex;
+        min-height: 0;
+      }
+      .slide-body .viz-section {
+        background: var(--color-svg-bg);
+        padding: 14px 16px;
+        border-top: 1px solid var(--color-rule);
+        border-bottom: 1px solid var(--color-rule);
+        flex: 1 1 auto;
+        display: flex;
+        align-items: stretch;
+        box-sizing: border-box;
+      }
+      .slide-body .viz-svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .slide-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 16px;
+        border-top: 2px solid rgba(90, 62, 40, 0.25);
+        flex-shrink: 0;
+      }
+      .slide-nav-btn {
+        font-family: var(--font-family-sc);
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--color-text-primary);
+        background: transparent;
+        border: 1px solid var(--color-border-medium);
+        padding: 6px 14px;
+        cursor: pointer;
+      }
+      .slide-nav-btn:disabled {
+        opacity: 0.35;
+        cursor: default;
+      }
+      .slide-indicator {
+        font-family: var(--font-family-sc);
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        color: var(--color-text-tertiary);
+      }
+
+      .figure-tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: var(--color-text-primary);
+        color: var(--color-bg);
+        padding: 6px 10px;
+        font-family: var(--font-family);
+        font-size: 13px;
+        line-height: 1.35;
+        max-width: 280px;
+        opacity: 0;
+        transition: opacity 0.1s;
+        z-index: 10;
+      }
+      .figure-tooltip .ft-name {
+        font-weight: 700;
+        font-size: 14px;
+        display: block;
+      }
+      .figure-tooltip .ft-soc {
+        font-family: var(--font-family-sc);
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--color-text-tertiary);
+        display: block;
+        margin-top: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck-wrapper">
+      <div class="slide-card">
+        <div class="slide-header">
+          <h1 class="slide-title">
+            Distribution of Wages in Rabelais&rsquo;s Underworld
+          </h1>
+        </div>
+        <div class="slide-body">
+          <div id="waffle-container" class="viz-section"></div>
+        </div>
+        <div class="slide-footer">
+          <button type="button" class="slide-nav-btn" disabled>
+            ◀ Prev
+          </button>
+          <span class="slide-indicator">1 / 1</span>
+          <button type="button" class="slide-nav-btn" disabled>
+            Next ▶
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="tooltip" class="figure-tooltip"></div>
+
+    <script>
+      (async function () {
+        const safeFloat = (v) =>
+          v === null || v === undefined || v === ""
+            ? null
+            : isNaN(parseFloat(v))
+              ? null
+              : parseFloat(v);
+        const fmtMoney = (v) =>
+          v == null ? "—" : "$" + d3.format(",.0f")(v);
+
+        async function loadData() {
+          const url =
+            "https://municipalsky.com/api/rabelais-annotations.php?v=" +
+            Date.now();
+          const res = await fetch(url);
+          if (!res.ok)
+            throw new Error("HTTP " + res.status + " from " + url);
+          return await res.json();
+        }
+        let data;
+        try {
+          data = await loadData();
+        } catch (e) {
+          d3.select("#waffle-container").html(
+            '<p style="padding:16px;color:#a64224;font-family:Cormorant Garamond,serif">' +
+              "Failed to load annotation data: " +
+              e.message +
+              "</p>",
+          );
+          return;
+        }
+
+        const characters = data.characters || [];
+        const hierarchical = data.hierarchical_data || [];
+        const nationalRaw = data.national_stats || {};
+        const nationalStats = {
+          median: safeFloat(nationalRaw.A_MEDIAN),
+          pct10: safeFloat(nationalRaw.A_PCT10),
+          pct25: safeFloat(nationalRaw.A_PCT25),
+          pct75: safeFloat(nationalRaw.A_PCT75),
+          pct90: safeFloat(nationalRaw.A_PCT90),
+        };
+
+        const hierByCode = new Map();
+        hierarchical.forEach((d) => {
+          if (d.OCC_CODE) hierByCode.set(d.OCC_CODE, d);
+        });
+
+        // Build figure rows, then drop suppressed/unmapped per spec.
+        const allFigures = characters.map((c) => {
+          const h = c.occ_code ? hierByCode.get(c.occ_code) : null;
+          const median = h ? safeFloat(h.A_MEDIAN) : null;
+          return {
+            name: c.name,
+            occCode: c.occ_code || null,
+            occTitle: c.occ_title || (h && h.OCC_TITLE) || null,
+            lotInLife: c.lot_in_life || "",
+            labor: c.labor || "",
+            median,
+          };
+        });
+        const figureRows = allFigures.filter((d) => d.median != null);
+        const suppressedCount = allFigures.length - figureRows.length;
+
+        // ── Chart sizing ─────────────────────────────────────
+        const container = d3.select("#waffle-container");
+        const containerRect = container.node().getBoundingClientRect();
+        const containerWidth = containerRect.width;
+        const containerHeight = containerRect.height;
+
+        const margin = { top: 14, right: 20, bottom: 56, left: 24 };
+        const width = containerWidth - margin.left - margin.right;
+        // viz-section uses padding (14/16) + 1px top/bottom border;
+        // its content box is what the SVG actually fills. Strip those
+        // out so the internal coord system matches the rendered area.
+        const innerHeight = Math.max(
+          200,
+          containerHeight - margin.top - margin.bottom - 30,
+        );
+
+        // Wage domain — same range as ghost-strip-slide so the two
+        // prototypes read comparably.
+        const xMin = 20000;
+        const xMax = 230000;
+        const x = d3
+          .scaleLinear()
+          .domain([xMin, xMax])
+          .range([0, width]);
+
+        // Bin every $5k from $20k onward → 42 bins. At this
+        // granularity bins are too narrow for multi-column ghost
+        // stacks (only ~15px each), so COLS_PER_BIN below drops to 1.
+        const BIN_W = 5000;
+        const binEdges = [];
+        for (let v = xMin; v < xMax; v += BIN_W) binEdges.push(v);
+        const binCount = binEdges.length;
+        const binPxWidth = width / binCount;
+
+        // Two ghost columns per bin. Cell sizing falls out of the bin
+        // width; shrink the ghost slightly from the strip prototype
+        // so the two columns stay clearly separated.
+        const COLS_PER_BIN = 1;
+        const cellW = binPxWidth / COLS_PER_BIN;
+        const cellH = 14;
+        const ghostScale = Math.min(0.82, (cellW - 2) / (2 * 8));
+
+        // Bottom region: box plot + axis. Top region: bin-range
+        // captions, then waffle ghosts stacking upward from just above
+        // the box plot.
+        const boxPlotH = 26;
+        const boxToGhostGap = 10;
+        const captionH = 22; // reserved at top for per-bin labels
+        const boxBottomY = innerHeight;
+        const boxTopY = boxBottomY - boxPlotH;
+        const boxCenterY = boxTopY + boxPlotH / 2;
+        const ghostBaseY = boxTopY - boxToGhostGap;
+
+        // Bin-edge labels. At $5k granularity full-range captions
+        // don't fit, so each bin gets just its lower-bound edge — the
+        // next label is the implicit upper bound. Final bin is open-
+        // ended so we mark it with a "+".
+        function formatBinLabel(binIdx) {
+          const lo = xMin + binIdx * BIN_W;
+          const loK = Math.round(lo / 1000);
+          if (binIdx === binCount - 1) return "$" + loK + "k+";
+          return "$" + loK;
+        }
+
+        // ── Bin figures and assign waffle slots ────────────
+        // Bin index by wage; clamp values above xMax into the last
+        // bin so no figure escapes the strip.
+        const binnedFigures = binEdges.map(() => []);
+        figureRows.forEach((d) => {
+          let idx = Math.floor((d.median - xMin) / BIN_W);
+          if (idx < 0) idx = 0;
+          if (idx >= binCount) idx = binCount - 1;
+          binnedFigures[idx].push(d);
+        });
+
+        // Within each bin: sort ascending by wage so left column gets
+        // the lower wages. Then place row-major from the bottom up:
+        // (col 0, col 1) at row 0, then row 1, etc.
+        const placed = [];
+        binnedFigures.forEach((bin, binIdx) => {
+          bin.sort((a, b) => a.median - b.median);
+          bin.forEach((fig, i) => {
+            const col = i % COLS_PER_BIN;
+            const row = Math.floor(i / COLS_PER_BIN);
+            const cx = binIdx * binPxWidth + cellW * (col + 0.5);
+            const cy = ghostBaseY - cellH * (row + 0.5);
+            placed.push({ ...fig, cx, cy, binIdx, row, col });
+          });
+        });
+
+        // ── SVG scaffold ────────────────────────────────────
+        // Size the SVG to fit the content + margins. With CSS
+        // height:auto the SVG's box height comes from this attribute
+        // (no flex-percentage resolution to fight with).
+        const svgHeight = innerHeight + margin.top + margin.bottom;
+        const svg = container
+          .append("svg")
+          .attr("class", "viz-svg")
+          .attr("width", containerWidth)
+          .attr("height", svgHeight)
+          .append("g")
+          .attr(
+            "transform",
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        // Faint vertical rules between bins so the waffle grid reads
+        // without overpowering the ghosts.
+        for (let i = 1; i < binCount; i++) {
+          const sx = i * binPxWidth;
+          svg
+            .append("line")
+            .attr("x1", sx)
+            .attr("x2", sx)
+            .attr("y1", 0)
+            .attr("y2", ghostBaseY + 2)
+            .attr("stroke", "var(--color-grid)")
+            .attr("stroke-width", 0.5);
+        }
+
+        // Per-bin range captions. One per column, centered above the
+        // bin, small-caps so they read as headers rather than data.
+        for (let i = 0; i < binCount; i++) {
+          const cx = i * binPxWidth + binPxWidth / 2;
+          svg
+            .append("text")
+            .attr("x", cx)
+            .attr("y", captionH - 8)
+            .attr("text-anchor", "middle")
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 8)
+            .attr("letter-spacing", "0.02em")
+            .attr("fill", "var(--color-text-tertiary)")
+            .text(formatBinLabel(i));
+        }
+
+        // Major axis-tick gridlines, dashed.
+        x.ticks(6).forEach((tick) => {
+          svg
+            .append("line")
+            .attr("x1", x(tick))
+            .attr("x2", x(tick))
+            .attr("y1", 0)
+            .attr("y2", boxTopY)
+            .attr("stroke", "var(--color-grid)")
+            .attr("stroke-width", 0.5)
+            .attr("stroke-dasharray", "4,3");
+        });
+
+        // ── BOX-AND-WHISKERS (U.S. workforce) ──────────────
+        if (
+          nationalStats.pct10 != null &&
+          nationalStats.pct25 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct25))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct10))
+            .attr("x2", x(nationalStats.pct10))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct75 != null &&
+          nationalStats.pct90 != null
+        ) {
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct75))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY)
+            .attr("y2", boxCenterY)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+          svg
+            .append("line")
+            .attr("x1", x(nationalStats.pct90))
+            .attr("x2", x(nationalStats.pct90))
+            .attr("y1", boxCenterY - 7)
+            .attr("y2", boxCenterY + 7)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+        if (
+          nationalStats.pct25 != null &&
+          nationalStats.pct75 != null
+        ) {
+          svg
+            .append("rect")
+            .attr("x", x(nationalStats.pct25))
+            .attr("y", boxCenterY - 9)
+            .attr(
+              "width",
+              x(nationalStats.pct75) - x(nationalStats.pct25),
+            )
+            .attr("height", 18)
+            .attr("fill", "var(--color-box-fill)")
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+
+        // ── US MEDIAN VERTICAL LINE (2 segments) ───────────
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const dashColor = "rgba(26, 20, 8, 0.45)";
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", 0)
+            .attr("y2", boxTopY - 1)
+            .attr("stroke", dashColor)
+            .attr("stroke-width", 1.5)
+            .attr("stroke-dasharray", "6,3");
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", mX)
+            .attr("y1", boxTopY - 1)
+            .attr("y2", boxBottomY + 1)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1.5);
+        }
+
+        // ── GHOSTS ─────────────────────────────────────────
+        const tooltip = d3.select("#tooltip");
+
+        function drawGhost(g) {
+          const inner = g
+            .append("g")
+            .attr("transform", `scale(${ghostScale})`);
+          inner
+            .append("path")
+            .attr(
+              "d",
+              "M 0,-8 C -4,-8 -6,-3 -6,2 C -6,6 -4,8 -3,6 C -2,4 -1,6 0,8 C 1,6 2,4 3,6 C 4,8 6,6 6,2 C 6,-3 4,-8 0,-8 Z",
+            )
+            .attr("fill", "rgba(255, 250, 240, 0.65)")
+            .attr("stroke", "#1a1408")
+            .attr("stroke-width", 1.2)
+            .attr("stroke-linejoin", "round")
+            .attr("vector-effect", "non-scaling-stroke");
+          inner
+            .append("ellipse")
+            .attr("cx", -2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+          inner
+            .append("ellipse")
+            .attr("cx", 2)
+            .attr("cy", -3)
+            .attr("rx", 1)
+            .attr("ry", 1.5)
+            .attr("fill", "#1a1408");
+        }
+
+        const ghostG = svg
+          .append("g")
+          .selectAll("g.ghost-dot")
+          .data(placed)
+          .enter()
+          .append("g")
+          .attr("class", "ghost-dot")
+          .attr("transform", (d) => `translate(${d.cx},${d.cy})`)
+          .style("cursor", "help");
+        ghostG.each(function () {
+          drawGhost(d3.select(this));
+        });
+        ghostG
+          .on("mouseenter", function (event, d) {
+            tooltip
+              .html(
+                '<span class="ft-name">' +
+                  d.name +
+                  "</span>" +
+                  (d.lotInLife
+                    ? "<div><em>" + d.lotInLife + "</em></div>"
+                    : "") +
+                  (d.occTitle
+                    ? '<span class="ft-soc">' +
+                      (d.occCode || "") +
+                      " · " +
+                      d.occTitle +
+                      "</span>"
+                    : "") +
+                  "<div>" +
+                  fmtMoney(d.median) +
+                  "</div>",
+              )
+              .style("opacity", 1)
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mousemove", function (event) {
+            tooltip
+              .style("left", event.pageX + 12 + "px")
+              .style("top", event.pageY + 12 + "px");
+          })
+          .on("mouseleave", () => tooltip.style("opacity", 0));
+
+        // ── X axis ─────────────────────────────────────────
+        const xAxis = svg
+          .append("g")
+          .attr("transform", `translate(0,${boxBottomY})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(6)
+              .tickFormat((v) => "$" + d3.format(",")(v)),
+          );
+        xAxis
+          .selectAll("path, line")
+          .attr("stroke", "var(--color-axis)")
+          .attr("stroke-width", 1.5);
+        xAxis
+          .selectAll(".tick text")
+          .attr("font-family", "Cormorant Garamond, serif")
+          .attr("font-size", 13)
+          .attr("fill", "var(--color-axis)");
+        svg
+          .append("text")
+          .attr("x", width / 2)
+          .attr("y", boxBottomY + 44)
+          .attr("text-anchor", "middle")
+          .attr(
+            "font-family",
+            "Cormorant SC, Cormorant Garamond, serif",
+          )
+          .attr("font-size", 11)
+          .attr("letter-spacing", "0.08em")
+          .attr("fill", "#5c5347")
+          .text("MEDIAN ANNUAL WAGE");
+
+        // ── US median label (2-line + leader) ──────────────
+        if (nationalStats.median != null) {
+          const mX = x(nationalStats.median);
+          const labelX = mX + 10;
+          const labelTopY = 0;
+          svg
+            .append("line")
+            .attr("x1", mX)
+            .attr("x2", labelX - 2)
+            .attr("y1", labelTopY + 10)
+            .attr("y2", labelTopY + 10)
+            .attr("stroke", "var(--color-national)")
+            .attr("stroke-width", 1);
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 4)
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 11)
+            .attr("font-weight", 600)
+            .attr("letter-spacing", "0.08em")
+            .attr("fill", "#3d2b18")
+            .text("U.S. MEDIAN (2024)");
+          svg
+            .append("text")
+            .attr("x", labelX)
+            .attr("y", labelTopY + 18)
+            .attr("font-family", "Cormorant Garamond, serif")
+            .attr("font-size", 13)
+            .attr("font-weight", 600)
+            .attr("fill", "var(--color-national)")
+            .text(fmtMoney(nationalStats.median));
+        }
+
+        // ── Suppressed-count footnote ──────────────────────
+        if (suppressedCount > 0) {
+          svg
+            .append("text")
+            .attr("x", width)
+            .attr("y", -2)
+            .attr("text-anchor", "end")
+            .attr(
+              "font-family",
+              "Cormorant SC, Cormorant Garamond, serif",
+            )
+            .attr("font-size", 10)
+            .attr("letter-spacing", "0.06em")
+            .attr("fill", "var(--color-text-tertiary)")
+            .text(
+              suppressedCount +
+                " FIGURE" +
+                (suppressedCount === 1 ? "" : "S") +
+                " OMITTED · WAGE SUPPRESSED OR UNMAPPED",
+            );
+        }
+      })();
+    </script>
+  </body>
+</html>

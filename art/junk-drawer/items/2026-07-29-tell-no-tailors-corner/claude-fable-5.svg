@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffd978" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#ffd978" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="cob" x="0" y="466" width="68" height="36" patternUnits="userSpaceOnUse">
+      <ellipse cx="17" cy="10" rx="15" ry="8" fill="#7a7280" stroke="#5b5462" stroke-width="1.5"/>
+      <ellipse cx="51" cy="28" rx="15" ry="8" fill="#7a7280" stroke="#5b5462" stroke-width="1.5"/>
+    </pattern>
+    <path id="jbody" d="M-42 22 C-42 -14 -20 -38 0 -38 C20 -38 42 -14 42 22 C42 30 33 26 26 31 C19 36 13 29 6 34 C-1 39 -7 31 -14 35 C-21 39 -28 30 -34 33 C-40 36 -42 28 -42 22 Z"/>
+    <g id="quoinL">
+      <rect x="304" y="0" width="36" height="461" fill="#9a695c"/>
+      <rect x="304" y="44" width="36" height="44" fill="#8f5f53"/>
+      <rect x="304" y="132" width="36" height="44" fill="#8f5f53"/>
+      <rect x="304" y="220" width="36" height="44" fill="#8f5f53"/>
+      <rect x="304" y="308" width="36" height="44" fill="#8f5f53"/>
+      <rect x="304" y="396" width="36" height="44" fill="#8f5f53"/>
+      <path d="M304 44 H340 M304 88 H340 M304 132 H340 M304 176 H340 M304 220 H340 M304 264 H340 M304 308 H340 M304 352 H340 M304 396 H340 M304 440 H340" stroke="#7c5044" stroke-width="2.5" fill="none"/>
+    </g>
+  </defs>
+
+  <!-- alley night sky -->
+  <rect x="340" y="0" width="120" height="475" fill="#2e2c52"/>
+  <circle cx="420" cy="42" r="22" fill="#f2e6bd"/>
+  <circle cx="428" cy="37" r="18" fill="#2e2c52"/>
+  <g fill="#efe6c2" opacity="0.85">
+    <circle cx="355" cy="25" r="1.8"/>
+    <circle cx="446" cy="18" r="1.5"/>
+    <circle cx="368" cy="52" r="1.3"/>
+    <circle cx="452" cy="120" r="1.6"/>
+    <circle cx="350" cy="95" r="1.4"/>
+  </g>
+  <path d="M378 24 V36 M372 30 H384" stroke="#efe6c2" stroke-width="1.2" opacity="0.8"/>
+
+  <!-- clothesline with tailored laundry -->
+  <path d="M340 70 Q400 92 460 62" stroke="#cdbfa6" stroke-width="2" fill="none"/>
+  <path d="M366 79 L388 79 L385 118 L378 118 L377 96 L376 118 L369 118 Z" fill="#3d4468"/>
+  <path d="M414 75 L436 75 L433 104 L417 104 Z" fill="#79374a"/>
+  <path d="M425 75 L425 86" stroke="#5c2938" stroke-width="1.5"/>
+  <rect x="374" y="76" width="3" height="7" fill="#b9a98d"/>
+  <rect x="424" y="72" width="3" height="7" fill="#b9a98d"/>
+
+  <!-- left building: the tailor's shop -->
+  <g>
+    <rect x="0" y="0" width="340" height="475" fill="#8f5f55"/>
+    <path d="M0 36 H302 M0 72 H302 M0 108 H302 M0 144 H302 M0 180 H302 M0 216 H302 M0 252 H302 M0 288 H302 M0 324 H302 M0 360 H302 M0 396 H302 M0 432 H302" stroke="#7a4f47" stroke-width="2" opacity="0.5" fill="none"/>
+    <path d="M60 324 V360 M130 360 V396 M30 396 V432 M100 432 V462 M290 180 V216 M260 216 V252 M295 252 V288 M20 324 V360 M150 108 V144 M240 108 V144 M40 8 V36 M285 72 V108" stroke="#7a4f47" stroke-width="2" opacity="0.5" fill="none"/>
+    <use href="#quoinL"/>
+    <!-- street plaque -->
+    <rect x="32" y="22" width="236" height="88" rx="4" fill="#f1e6cc" stroke="#463527" stroke-width="3"/>
+    <rect x="40" y="30" width="220" height="72" fill="none" stroke="#8a6d4e" stroke-width="1.5"/>
+    <text x="150" y="61" font-family="Georgia, 'Times New Roman', serif" font-size="21" font-weight="bold" fill="#3c2d20" text-anchor="middle" textLength="204" lengthAdjust="spacingAndGlyphs">TELL-NO-TAILORS'</text>
+    <text x="150" y="93" font-family="Georgia, 'Times New Roman', serif" font-size="23" fill="#3c2d20" text-anchor="middle" letter-spacing="6">CORNER</text>
+    <!-- shuttered window with a wary eye -->
+    <rect x="47" y="142" width="136" height="150" fill="#5a3a2e"/>
+    <rect x="55" y="150" width="120" height="132" fill="#241d2c"/>
+    <path d="M55 150 L112 150 C108 192 114 238 108 282 L55 282 Z" fill="#7a5f9e"/>
+    <path d="M175 150 L120 150 C124 192 118 238 124 282 L175 282 Z" fill="#6f5590"/>
+    <path d="M66 160 C72 200 66 244 70 278 M160 160 C154 200 160 244 156 278" stroke="#8f77b0" stroke-width="2" fill="none" opacity="0.7"/>
+    <ellipse cx="116" cy="208" rx="4" ry="6" fill="#efe8f2"/>
+    <circle cx="116" cy="209" r="2" fill="#241d2c"/>
+    <rect x="41" y="282" width="148" height="12" fill="#6b463a"/>
+    <!-- door -->
+    <path d="M180 464 L180 340 Q180 302 230 302 Q280 302 280 340 L280 464 Z" fill="#54382b" stroke="#3c281e" stroke-width="3"/>
+    <path d="M205 310 V460 M230 303 V460 M255 310 V460" stroke="#3c281e" stroke-width="2" opacity="0.7"/>
+    <circle cx="252" cy="400" r="9" fill="#c9a24b" stroke="#8a6d33" stroke-width="2"/>
+    <circle cx="252" cy="397" r="3" fill="#3a2418"/>
+    <path d="M252 397 L247 408 L257 408 Z" fill="#3a2418"/>
+  </g>
+
+  <!-- right building: the watchers -->
+  <g>
+    <rect x="460" y="0" width="340" height="475" fill="#5d6b76"/>
+    <path d="M478 44 H800 M478 88 H800 M478 132 H800 M478 176 H800 M478 220 H800 M478 264 H800 M478 308 H800 M478 352 H800 M478 396 H800 M478 440 H800" stroke="#4b5761" stroke-width="2" opacity="0.4" fill="none"/>
+    <rect x="460" y="0" width="18" height="475" fill="#4d5a64"/>
+    <path d="M460 44 H478 M460 88 H478 M460 132 H478 M460 176 H478 M460 220 H478 M460 264 H478 M460 308 H478 M460 352 H478 M460 396 H478 M460 440 H478" stroke="#3f4a53" stroke-width="2.5" fill="none"/>
+    <rect x="782" y="0" width="14" height="475" fill="#3f4a52"/>
+    <path d="M782 60 H796 M782 200 H796 M782 340 H796" stroke="#333d44" stroke-width="3"/>
+    <!-- round attic window, occupied -->
+    <circle cx="700" cy="66" r="36" fill="#46525c"/>
+    <circle cx="700" cy="66" r="28" fill="#262130"/>
+    <path d="M700 38 V94 M672 66 H728" stroke="#46525c" stroke-width="4"/>
+    <ellipse cx="691" cy="76" rx="5" ry="6" fill="#efe8f2"/>
+    <ellipse cx="709" cy="76" rx="5" ry="6" fill="#efe8f2"/>
+    <circle cx="689.5" cy="77.5" r="2.2" fill="#262130"/>
+    <circle cx="707.5" cy="77.5" r="2.2" fill="#262130"/>
+    <!-- shuttered window, cracked open, more eyes -->
+    <rect x="558" y="148" width="104" height="134" fill="#3a4147"/>
+    <rect x="566" y="156" width="88" height="118" fill="#241f2e"/>
+    <rect x="566" y="156" width="38" height="118" fill="#6d5a3f"/>
+    <rect x="616" y="156" width="38" height="118" fill="#6d5a3f"/>
+    <path d="M570 186 H600 M570 216 H600 M570 246 H600 M620 186 H650 M620 216 H650 M620 246 H650" stroke="#57462f" stroke-width="2"/>
+    <ellipse cx="606" cy="202" rx="3.5" ry="5" fill="#efe8f2"/>
+    <ellipse cx="614" cy="202" rx="3.5" ry="5" fill="#efe8f2"/>
+    <circle cx="605" cy="204" r="1.7" fill="#241f2e"/>
+    <circle cx="613" cy="204" r="1.7" fill="#241f2e"/>
+    <!-- poster -->
+    <g transform="translate(688,196) rotate(3)">
+      <rect x="0" y="0" width="100" height="124" fill="#e4d8bc" stroke="#6b5a44" stroke-width="2"/>
+      <circle cx="10" cy="10" r="3" fill="#8a3b34"/>
+      <circle cx="90" cy="10" r="3" fill="#8a3b34"/>
+      <text x="50" y="38" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="bold" fill="#503e2c" text-anchor="middle">SEEN</text>
+      <text x="50" y="58" font-family="Georgia, 'Times New Roman', serif" font-size="14" font-weight="bold" fill="#503e2c" text-anchor="middle">SOMETHING?</text>
+      <path d="M20 68 H80" stroke="#8a6d4e" stroke-width="1.5"/>
+      <text x="50" y="90" font-family="Georgia, 'Times New Roman', serif" font-size="16" font-weight="bold" fill="#503e2c" text-anchor="middle">SAY</text>
+      <text x="50" y="110" font-family="Georgia, 'Times New Roman', serif" font-size="15" font-weight="bold" fill="#503e2c" text-anchor="middle">NOTHING.</text>
+    </g>
+    <!-- corner lamp -->
+    <path d="M460 140 L448 140 Q440 140 440 148 L440 152" stroke="#2e2a26" stroke-width="5" fill="none"/>
+    <rect x="431" y="146" width="20" height="6" rx="2" fill="#2e2a26"/>
+    <rect x="433" y="150" width="16" height="26" rx="2" fill="#2e2a26"/>
+    <rect x="436" y="154" width="10" height="18" fill="#ffd978"/>
+    <circle cx="441" cy="163" r="85" fill="url(#glow)"/>
+  </g>
+
+  <!-- hanging scissors sign -->
+  <path d="M340 118 H446" stroke="#33291f" stroke-width="6" stroke-linecap="round"/>
+  <path d="M340 150 L390 118" stroke="#33291f" stroke-width="4"/>
+  <circle cx="446" cy="118" r="4" fill="none" stroke="#33291f" stroke-width="3"/>
+  <path d="M372 121 V150 M428 121 V150" stroke="#4a3d30" stroke-width="3"/>
+  <rect x="360" y="150" width="80" height="60" rx="6" fill="#e8d9b8" stroke="#4a3a30" stroke-width="3"/>
+  <path d="M391 191 L410 160 M409 191 L390 160" stroke="#4a3a30" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="388" cy="197" r="6" fill="none" stroke="#4a3a30" stroke-width="3.5"/>
+  <circle cx="412" cy="197" r="6" fill="none" stroke="#4a3a30" stroke-width="3.5"/>
+  <!-- tiny derryjellyby perched on the sign -->
+  <g transform="translate(428,141) scale(0.42)">
+    <use href="#jbody" fill="#54c2a0" opacity="0.95"/>
+    <ellipse cx="-16" cy="-14" rx="7" ry="12" transform="rotate(-18)" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="-8" cy="-14" rx="8" ry="10" fill="#f7f4ee"/>
+    <ellipse cx="12" cy="-14" rx="8" ry="10" fill="#f7f4ee"/>
+    <circle cx="-10" cy="-10" r="4" fill="#2a1a30"/>
+    <circle cx="10" cy="-10" r="4" fill="#2a1a30"/>
+  </g>
+
+  <!-- cobbled street -->
+  <rect x="0" y="462" width="800" height="138" fill="#6f6775"/>
+  <rect x="0" y="466" width="800" height="134" fill="url(#cob)"/>
+  <rect x="0" y="454" width="800" height="9" fill="#847b8a"/>
+  <rect x="172" y="456" width="116" height="10" rx="2" fill="#7d685c"/>
+
+  <!-- barrel + orange jelly eavesdropping under the shutters -->
+  <ellipse cx="590" cy="468" rx="42" ry="9" fill="#1c1826" opacity="0.25"/>
+  <rect x="560" y="380" width="54" height="90" rx="8" fill="#8a6a45"/>
+  <path d="M574 382 V468 M588 381 V469 M602 382 V468" stroke="#6f5436" stroke-width="1.5"/>
+  <rect x="558" y="392" width="58" height="7" rx="3" fill="#59452c"/>
+  <rect x="558" y="448" width="58" height="7" rx="3" fill="#59452c"/>
+  <g transform="translate(587,374) scale(0.78,0.95)">
+    <use href="#jbody" fill="#f5a23c" opacity="0.92"/>
+    <ellipse cx="-16" cy="-14" rx="7" ry="12" transform="rotate(-18)" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="8" cy="-20" rx="8" ry="10" fill="#f7f4ee"/>
+    <ellipse cx="25" cy="-18" rx="7" ry="9" fill="#f7f4ee"/>
+    <circle cx="10" cy="-24" r="4" fill="#2a1a30"/>
+    <circle cx="27" cy="-22" r="3.6" fill="#2a1a30"/>
+    <path d="M12 -6 Q17 -3 22 -6" stroke="#a8641d" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- lime jelly with magnifier at the keyhole -->
+  <ellipse cx="232" cy="474" rx="34" ry="8" fill="#1c1826" opacity="0.25"/>
+  <g transform="translate(230,444) scale(0.85)">
+    <use href="#jbody" fill="#8bc34a" opacity="0.92"/>
+    <ellipse cx="-16" cy="-14" rx="7" ry="12" transform="rotate(-18)" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="10" cy="-18" rx="8" ry="10" fill="#f7f4ee"/>
+    <ellipse cx="27" cy="-16" rx="7" ry="9" fill="#f7f4ee"/>
+    <circle cx="13" cy="-21" r="4" fill="#2a1a30"/>
+    <circle cx="29" cy="-19" r="3.6" fill="#2a1a30"/>
+    <path d="M14 -4 Q19 -1 24 -4" stroke="#5c8a26" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  </g>
+  <path d="M241 413 L233 430" stroke="#6e4a28" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="252" cy="401" r="16" fill="#dceefb" opacity="0.45" stroke="#6e4a28" stroke-width="4.5"/>
+
+  <!-- blueberry jelly tip-toeing across the alley mouth -->
+  <ellipse cx="402" cy="568" rx="52" ry="10" fill="#1c1826" opacity="0.25"/>
+  <circle cx="455" cy="564" r="5" fill="#5b6ee1" opacity="0.35"/>
+  <circle cx="480" cy="568" r="4" fill="#5b6ee1" opacity="0.35"/>
+  <circle cx="502" cy="570" r="3" fill="#5b6ee1" opacity="0.35"/>
+  <g transform="translate(402,532)">
+    <use href="#jbody" transform="scale(1.2,0.78)" fill="#5b6ee1" opacity="0.92"/>
+    <ellipse cx="-20" cy="-12" rx="8" ry="11" transform="rotate(-18)" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="-12" cy="-16" rx="9" ry="11" fill="#f7f4ee"/>
+    <ellipse cx="10" cy="-16" rx="9" ry="11" fill="#f7f4ee"/>
+    <circle cx="-16" cy="-15" r="4.5" fill="#2a1a30"/>
+    <circle cx="6" cy="-15" r="4.5" fill="#2a1a30"/>
+    <ellipse cx="-3" cy="2" rx="3" ry="4" fill="#31377d"/>
+    <ellipse cx="-3" cy="4" rx="4" ry="9" fill="#4657c4"/>
+  </g>
+
+  <!-- pink jelly surfacing from the manhole -->
+  <ellipse cx="655" cy="548" rx="42" ry="15" fill="#494452" stroke="#353040" stroke-width="3"/>
+  <ellipse cx="655" cy="545" rx="32" ry="11" fill="#2b2733"/>
+  <g transform="translate(655,545)">
+    <path d="M-26 0 C-26 -20 -13 -30 0 -30 C13 -30 26 -20 26 0 Z" fill="#ef8fc4" opacity="0.95"/>
+    <ellipse cx="-10" cy="-16" rx="4" ry="8" transform="rotate(-15 -10 -16)" fill="#ffffff" opacity="0.45"/>
+    <ellipse cx="-7" cy="-14" rx="5" ry="6" fill="#f7f4ee"/>
+    <ellipse cx="6" cy="-14" rx="5" ry="6" fill="#f7f4ee"/>
+    <circle cx="-9" cy="-15" r="2.5" fill="#2a1a30"/>
+    <circle cx="4" cy="-15" r="2.5" fill="#2a1a30"/>
+    <ellipse cx="-19" cy="-2" rx="5" ry="3" fill="#d970ab"/>
+    <ellipse cx="19" cy="-2" rx="5" ry="3" fill="#d970ab"/>
+  </g>
+
+  <!-- raspberry jelly peeking around the corner -->
+  <ellipse cx="356" cy="470" rx="30" ry="7" fill="#1c1826" opacity="0.25"/>
+  <g transform="translate(346,432)">
+    <use href="#jbody" fill="#e0485a" opacity="0.92"/>
+    <ellipse cx="4" cy="-24" rx="5" ry="9" transform="rotate(-14 4 -24)" fill="#ffffff" opacity="0.4"/>
+    <ellipse cx="12" cy="-16" rx="7" ry="9" fill="#f7f4ee"/>
+    <ellipse cx="28" cy="-12" rx="6" ry="8" fill="#f7f4ee"/>
+    <circle cx="14.5" cy="-15" r="3.5" fill="#2a1a30"/>
+    <circle cx="30" cy="-11" r="3.2" fill="#2a1a30"/>
+    <path d="M8 -28 Q13 -31 18 -28 M24 -24 Q28 -27 33 -24" stroke="#a12a3c" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M16 0 Q20 3 25 1" stroke="#a12a3c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-2" cy="6" rx="5" ry="8" fill="#c93a4e"/>
+  </g>
+  <use href="#quoinL"/>
+</svg>

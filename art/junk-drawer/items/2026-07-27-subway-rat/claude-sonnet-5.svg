@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+<g transform="matrix(1,0,0,1.07658,0,-41.829)">
+  <!-- shadow -->
+  <ellipse cx="470" cy="478" rx="340" ry="16" fill="#000000" opacity="0.18"/>
+
+  <!-- motion lines -->
+  <g fill="none" stroke="#3a3a42" stroke-linecap="round" opacity="0.5">
+    <path d="M35 150 Q 110 140 175 158" stroke-width="7"/>
+    <path d="M25 205 Q 100 200 165 212" stroke-width="6"/>
+    <path d="M45 258 Q 110 256 168 262" stroke-width="5"/>
+  </g>
+
+  <!-- tail -->
+  <path d="M275 230 C 190 190 140 140 90 110 C 65 96 45 90 25 78
+           L 30 86 C 50 98 75 108 100 128 C 150 160 200 205 275 270 Z"
+        fill="#a98a8f" stroke="#000000" stroke-width="7" stroke-linejoin="round"/>
+
+  <!-- back (far) leg -->
+  <g>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#000000" stroke-width="52" stroke-linecap="round"/>
+    <line x1="335" y1="300" x2="245" y2="290" stroke="#4d4d57" stroke-width="42" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#000000" stroke-width="40" stroke-linecap="round"/>
+    <line x1="245" y1="290" x2="270" y2="415" stroke="#4d4d57" stroke-width="30" stroke-linecap="round"/>
+    <ellipse cx="248" cy="432" rx="40" ry="22" transform="rotate(-15 248 432)" fill="#4d4d57" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="215" y1="435" x2="195" y2="425"/>
+      <line x1="218" y1="448" x2="198" y2="448"/>
+      <line x1="222" y1="460" x2="204" y2="466"/>
+    </g>
+  </g>
+
+  <!-- body -->
+  <path d="M560 235 C 520 150 500 90 460 65 C 420 45 370 55 330 90
+           C 290 125 275 175 285 225 C 260 260 250 300 290 340
+           C 330 380 380 385 430 375 C 470 368 500 350 520 320
+           C 545 300 555 265 560 235 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- belly patch -->
+  <ellipse cx="425" cy="322" rx="88" ry="44" fill="#9a9aa4" opacity="0.85"/>
+
+  <!-- grime spots -->
+  <g fill="#2f2f36" opacity="0.2">
+    <ellipse cx="360" cy="150" rx="14" ry="10"/>
+    <ellipse cx="430" cy="120" rx="10" ry="8"/>
+    <ellipse cx="500" cy="200" rx="12" ry="9"/>
+  </g>
+
+  <!-- front (near) leg, tiptoe -->
+  <g>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#000000" stroke-width="50" stroke-linecap="round"/>
+    <line x1="560" y1="300" x2="600" y2="340" stroke="#6b6b76" stroke-width="40" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#000000" stroke-width="38" stroke-linecap="round"/>
+    <line x1="600" y1="340" x2="630" y2="430" stroke="#6b6b76" stroke-width="28" stroke-linecap="round"/>
+    <ellipse cx="638" cy="452" rx="32" ry="16" transform="rotate(-25 638 452)" fill="#c99aa0" stroke="#000000" stroke-width="6"/>
+    <g stroke="#000000" stroke-width="5" stroke-linecap="round">
+      <line x1="660" y1="445" x2="678" y2="435"/>
+      <line x1="663" y1="456" x2="682" y2="452"/>
+      <line x1="660" y1="466" x2="676" y2="468"/>
+    </g>
+  </g>
+
+  <!-- head -->
+  <path d="M555 230 C 620 195 700 195 745 225 C 800 250 845 270 880 300
+           C 850 315 810 325 770 330 C 730 335 690 330 655 322
+           C 630 316 610 310 590 295 C 575 280 563 255 555 230 Z"
+        fill="#5c5c66" stroke="#000000" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- far ear -->
+  <ellipse cx="612" cy="178" rx="32" ry="42" transform="rotate(-20 612 178)" fill="#4a4a54" stroke="#000000" stroke-width="6"/>
+
+  <!-- near ear -->
+  <ellipse cx="668" cy="163" rx="40" ry="52" transform="rotate(-15 668 163)" fill="#5c5c66" stroke="#000000" stroke-width="7"/>
+  <ellipse cx="668" cy="170" rx="22" ry="32" transform="rotate(-15 668 170)" fill="#d99aa3"/>
+
+  <!-- small second googly eye peeking above -->
+  <circle cx="633" cy="196" r="22" fill="#ffffff" stroke="#000000" stroke-width="5"/>
+  <circle cx="626" cy="201" r="10" fill="#000000"/>
+  <circle cx="622" cy="197" r="3" fill="#ffffff"/>
+
+  <!-- main googly eye -->
+  <circle cx="702" cy="248" r="42" fill="#ffffff" stroke="#000000" stroke-width="6"/>
+  <circle cx="686" cy="254" r="19" fill="#000000"/>
+  <circle cx="679" cy="246" r="6" fill="#ffffff"/>
+
+  <!-- nose -->
+  <ellipse cx="876" cy="298" rx="10" ry="8" fill="#000000"/>
+
+  <!-- whiskers -->
+  <g stroke="#1a1a1a" stroke-width="3" stroke-linecap="round">
+    <path d="M845 282 L 893 258" fill="none"/>
+    <path d="M852 294 L 897 290" fill="none"/>
+    <path d="M847 305 L 892 320" fill="none"/>
+  </g>
+
+  <!-- mouth -->
+  <path d="M858 308 Q 815 330 772 326" fill="none" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <!-- buck tooth -->
+  <rect x="700" y="320" width="13" height="20" rx="4" fill="#f5f0e6" stroke="#000000" stroke-width="4"/>
+
+  <!-- pizza slice held near mouth -->
+  <g>
+    <path d="M765 322 L 700 292 L 690 405 Z" fill="#f4b942" stroke="#000000" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M753 322 L 705 302 L 700 385 Z" fill="#c0392b" stroke="none"/>
+    <path d="M700 292 Q 693 350 690 405" fill="none" stroke="#e8d9a0" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="725" cy="330" r="7" fill="#7a2020"/>
+    <circle cx="715" cy="360" r="6" fill="#7a2020"/>
+    <circle cx="735" cy="365" r="6" fill="#7a2020"/>
+  </g>
+</g>
+</svg>

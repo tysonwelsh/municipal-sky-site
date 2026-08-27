@@ -1,0 +1,1648 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pitch-Class Ridgeline — Prospero's Jukebox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=VT323&family=Cinzel+Decorative:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        /* Default = Library/Prospero theme (overridden by body.theme-* below) */
+        --fg: #bb9966;
+        --fg-bright: #ffcc66;
+        --fg-dim: #665033;
+        --fg-mute: #2a1f10;
+        --bg: #0a0805;
+        --panel: #15100a;
+        --border: #2a2010;
+        --border-hot: #553820;
+        --accent-rgb: 255, 170, 0;
+        --in-key-label: rgba(255, 220, 140, 0.9);
+        --in-key-grid: rgba(255, 170, 0, 0.16);
+        --out-key-label: rgba(120, 95, 50, 0.55);
+        --out-key-grid: rgba(120, 95, 50, 0.10);
+      }
+      body.theme-library {
+        --fg: #bb9966;
+        --fg-bright: #ffcc66;
+        --fg-dim: #665033;
+        --fg-mute: #2a1f10;
+        --bg: #0a0805;
+        --panel: #15100a;
+        --border: #2a2010;
+        --border-hot: #553820;
+        --accent-rgb: 255, 170, 0;
+        --in-key-label: rgba(255, 220, 140, 0.9);
+        --in-key-grid: rgba(255, 170, 0, 0.16);
+        --out-key-label: rgba(120, 95, 50, 0.55);
+        --out-key-grid: rgba(120, 95, 50, 0.10);
+      }
+      body.theme-sycorax {
+        --fg: #a896d8;
+        --fg-bright: #dcc8ff;
+        --fg-dim: #5a4880;
+        --fg-mute: #1a142a;
+        --bg: #08070f;
+        --panel: #100a20;
+        --border: #2a2050;
+        --border-hot: #4a3880;
+        --accent-rgb: 200, 150, 255;
+        --in-key-label: rgba(220, 200, 255, 0.9);
+        --in-key-grid: rgba(200, 150, 255, 0.16);
+        --out-key-label: rgba(95, 80, 130, 0.55);
+        --out-key-grid: rgba(95, 80, 130, 0.10);
+      }
+      body.theme-ariel {
+        --fg: #88bbdd;
+        --fg-bright: #d8f0ff;
+        --fg-dim: #4a7088;
+        --fg-mute: #15252e;
+        --bg: #06090e;
+        --panel: #0a1018;
+        --border: #152535;
+        --border-hot: #2a4060;
+        --accent-rgb: 150, 220, 255;
+        --in-key-label: rgba(216, 240, 255, 0.9);
+        --in-key-grid: rgba(150, 220, 255, 0.16);
+        --out-key-label: rgba(85, 110, 130, 0.55);
+        --out-key-grid: rgba(85, 110, 130, 0.10);
+      }
+      body {
+        transition: background 0.6s, color 0.6s;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: "VT323", monospace;
+        margin: 0;
+        padding: 28px 20px 60px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1080px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-family: "Cinzel Decorative", serif;
+        color: var(--fg-bright);
+        text-align: center;
+        letter-spacing: 2px;
+        margin: 0 0 4px;
+        font-size: 28px;
+        text-shadow:
+          0 0 12px rgba(var(--accent-rgb), 0.45),
+          0 0 30px rgba(var(--accent-rgb), 0.12);
+      }
+      .subtitle {
+        text-align: center;
+        color: var(--fg-dim);
+        letter-spacing: 3px;
+        margin: 0 0 26px;
+        font-size: 17px;
+      }
+
+      .transport {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        margin-bottom: 18px;
+        flex-wrap: wrap;
+      }
+      .track-tabs { display: flex; gap: 6px; }
+      .tab {
+        font-family: "VT323", monospace;
+        font-size: 15px;
+        padding: 6px 14px;
+        background: #0d1218;
+        color: var(--fg-dim);
+        border: 2px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .tab:hover { border-color: var(--border-hot); color: var(--fg); }
+      .tab.active {
+        background: #142028;
+        color: var(--fg-bright);
+        border-color: var(--fg-bright);
+      }
+      .btn {
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        padding: 6px 16px;
+        background: #0d1218;
+        color: var(--fg-dim);
+        border: 2px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+      }
+      .btn:hover { border-color: var(--fg-bright); color: var(--fg-bright); }
+      .btn.active { color: #66dd99; border-color: #66dd99; }
+      .vol-label { font-size: 14px; color: var(--fg-dim); margin-left: 4px; }
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 6px;
+        background: #1a232c;
+        border-radius: 3px;
+        outline: none;
+        cursor: pointer;
+        width: 140px;
+      }
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 14px;
+        height: 14px;
+        background: var(--fg-bright);
+        box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      input[type="range"]::-moz-range-thumb {
+        width: 14px;
+        height: 14px;
+        background: var(--fg-bright);
+        border: none;
+        box-shadow: 0 0 6px rgba(var(--accent-rgb), 0.5);
+        cursor: pointer;
+        border-radius: 50%;
+      }
+      .status { font-size: 14px; color: var(--fg-dim); letter-spacing: 1px; margin-left: auto; }
+      .status.is-playing { color: #66dd99; }
+      select {
+        font-family: "VT323", monospace;
+        font-size: 14px;
+        padding: 6px 24px 6px 10px;
+        background-color: #0d1218;
+        color: var(--fg);
+        border: 2px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 1px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        background-image: linear-gradient(45deg, transparent 50%, var(--fg-dim) 50%),
+                          linear-gradient(135deg, var(--fg-dim) 50%, transparent 50%);
+        background-position: calc(100% - 13px) 50%, calc(100% - 8px) 50%;
+        background-size: 5px 5px, 5px 5px;
+        background-repeat: no-repeat;
+      }
+      select:focus {
+        outline: none;
+        border-color: var(--fg-bright);
+      }
+      select option {
+        background: #0d1218;
+        color: var(--fg);
+      }
+
+      .scope {
+        background: var(--bg);
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        position: relative;
+        transition: background 0.6s, border-color 0.6s;
+      }
+      .canvas-wrap {
+        position: relative;
+        height: 700px;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      .bottom-grid {
+        display: grid;
+        grid-template-columns: 1.8fr 1fr;
+        gap: 14px;
+        margin-top: 14px;
+      }
+      .bottom-left {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .bottom-right {
+        display: flex;
+        flex-direction: column;
+      }
+      .test-panel {
+        padding: 10px 14px 14px;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 4px;
+      }
+      /* Override the standalone-margin since these are now in the grid */
+      .bottom-left .test-panel,
+      .bottom-left .legend,
+      .bottom-right .event-log {
+        margin-top: 0;
+      }
+      .test-panel-title {
+        font-size: 12px;
+        color: var(--fg-dim);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 0 0 8px;
+      }
+      .test-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 0;
+      }
+      .test-row + .test-row {
+        border-top: 1px dashed var(--border);
+      }
+      /* Show only the row matching the active track theme. */
+      body.theme-library .test-row.row-sycorax,
+      body.theme-library .test-row.row-ariel,
+      body.theme-sycorax .test-row.row-library,
+      body.theme-sycorax .test-row.row-ariel,
+      body.theme-ariel   .test-row.row-library,
+      body.theme-ariel   .test-row.row-sycorax {
+        display: none;
+      }
+      .test-row-label {
+        font-family: "Cinzel Decorative", serif;
+        font-size: 14px;
+        letter-spacing: 1.5px;
+        min-width: 84px;
+        padding-right: 8px;
+      }
+      .test-row.row-library .test-row-label { color: #ffcc66; }
+      .test-row.row-sycorax .test-row-label { color: #dcc8ff; }
+      .test-row.row-ariel   .test-row-label { color: #d8f0ff; }
+      .test-btn {
+        font-family: "VT323", monospace;
+        font-size: 13px;
+        padding: 4px 10px;
+        background: #0d1218;
+        color: var(--fg-dim);
+        border: 1.5px solid var(--border);
+        border-radius: 3px;
+        cursor: pointer;
+        letter-spacing: 0.5px;
+        transition: all 0.15s;
+      }
+      .test-row.row-library .test-btn:hover { border-color: #ffcc66; color: #ffcc66; }
+      .test-row.row-sycorax .test-btn:hover { border-color: #dcc8ff; color: #dcc8ff; }
+      .test-row.row-ariel   .test-btn:hover { border-color: #d8f0ff; color: #d8f0ff; }
+      .test-row.row-library .test-btn.active {
+        background: rgba(255, 170, 0, 0.18);
+        border-color: #ffcc66;
+        color: #ffcc66;
+      }
+      .test-row.row-sycorax .test-btn.active {
+        background: rgba(200, 150, 255, 0.18);
+        border-color: #dcc8ff;
+        color: #dcc8ff;
+      }
+      .test-row.row-ariel .test-btn.active {
+        background: rgba(150, 220, 255, 0.18);
+        border-color: #d8f0ff;
+        color: #d8f0ff;
+      }
+
+      .legend {
+        margin-top: 14px;
+        padding: 12px 16px;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        font-size: 15px;
+        color: var(--fg);
+        line-height: 1.5;
+      }
+
+      .event-log {
+        height: 100%;
+        min-height: 320px;
+        padding: 10px 14px 14px;
+        background: var(--panel);
+        border: 2px solid var(--border);
+        border-radius: 4px;
+        display: flex;
+        flex-direction: column;
+      }
+      .event-log-title {
+        font-size: 12px;
+        color: var(--fg-dim);
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin: 0 0 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+      }
+      .event-log-title .count {
+        font-size: 11px;
+        color: var(--fg-mute);
+      }
+      .event-log-clear {
+        font-family: "VT323", monospace;
+        font-size: 11px;
+        background: transparent;
+        color: var(--fg-dim);
+        border: 1px solid var(--border);
+        border-radius: 2px;
+        padding: 1px 6px;
+        cursor: pointer;
+        margin-left: 8px;
+        letter-spacing: 0.5px;
+      }
+      .event-log-clear:hover {
+        color: var(--fg-bright);
+        border-color: var(--fg-bright);
+      }
+      .log-rows {
+        flex: 1;
+        overflow-y: auto;
+        font-family: "VT323", monospace;
+        font-size: 13px;
+        line-height: 1.35;
+        padding: 4px 0;
+      }
+      .log-empty {
+        color: var(--fg-mute);
+        font-style: italic;
+        padding: 10px 4px;
+        text-align: center;
+      }
+      .log-row {
+        display: grid;
+        grid-template-columns: 52px 56px 1fr;
+        gap: 6px;
+        padding: 3px 4px;
+        border-bottom: 1px solid rgba(80, 100, 120, 0.07);
+        align-items: baseline;
+      }
+      .log-row .log-time {
+        color: var(--fg-dim);
+        font-variant-numeric: tabular-nums;
+      }
+      .log-row .log-layer {
+        color: var(--fg);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 11px;
+      }
+      .log-row .log-detail {
+        color: var(--fg-bright);
+      }
+      .log-row .log-detail .meta {
+        color: var(--fg-dim);
+        font-size: 11px;
+      }
+      .log-row.track-library .log-layer { color: #ffaa00; }
+      .log-row.track-sycorax .log-layer { color: #c896ff; }
+      .log-row.track-ariel   .log-layer { color: #96dcff; }
+      .log-row .tag {
+        display: inline-block;
+        padding: 0 5px;
+        border-radius: 2px;
+        font-size: 10px;
+        letter-spacing: 0.5px;
+        margin-right: 4px;
+        vertical-align: 1px;
+      }
+      .tag-fresh    { background: rgba(102, 221, 153, 0.16); color: #66dd99; }
+      .tag-verbatim { background: rgba(255, 204, 102, 0.16); color: #ffcc66; }
+      .tag-transform{ background: rgba(255, 170, 102, 0.16); color: #ffaa66; }
+      .tag-drone    { background: rgba(150, 220, 255, 0.16); color: #96dcff; }
+      .tag-ambient  { background: rgba(170, 207, 214, 0.14); color: var(--fg); }
+      .tag-preview  { background: rgba(216, 240, 255, 0.16); color: var(--fg-bright); }
+      .log-row .pitch {
+        color: var(--fg);
+        font-variant-numeric: tabular-nums;
+      }
+      .legend p { margin: 0 0 6px; }
+      .legend p:last-child { margin-bottom: 0; }
+      .legend strong { color: var(--fg-bright); }
+    </style>
+  </head>
+  <body class="theme-library">
+    <div class="container">
+      <h1>Pitch-Class Ridgeline</h1>
+      <p class="subtitle">~ spectrum stacked by octave, breathing in place ~</p>
+
+      <div class="transport">
+        <div class="track-tabs">
+          <button class="tab active" data-track="library">Library</button>
+          <button class="tab" data-track="sycorax">Sycorax</button>
+          <button class="tab" data-track="ariel">Ariel</button>
+        </div>
+        <button class="btn" id="play-btn">&#9654; PLAY</button>
+        <button class="btn" id="stop-btn">&#9632; STOP</button>
+        <button class="btn" id="freeze-btn">&#10074;&#10074; FREEZE</button>
+        <span class="vol-label">VOL</span>
+        <input type="range" id="vol" min="0" max="100" value="60" />
+        <span class="vol-label" title="Temporal smoothing of the FFT. 0 = raw boil, 0.9 = very stable. Lower = more frame-to-frame variation.">SMOOTH</span>
+        <input type="range" id="smooth" min="0" max="90" value="15" />
+        <span class="vol-label" title="Spectral blur: Gaussian smoothing across the frequency axis. Higher = wide bumps lose internal noise; very high = narrow peaks also flatten out.">BLUR</span>
+        <input type="range" id="blur" min="0" max="80" value="22" />
+        <span class="vol-label" title="How the curve is drawn between data points. Each choice is an editorial assertion about what's 'between' the samples.">CURVE</span>
+        <select id="curve">
+          <option value="linear">Linear</option>
+          <option value="step">Step (mid)</option>
+          <option value="stepBefore">Step before</option>
+          <option value="stepAfter">Step after</option>
+          <option value="catmullRom">Catmull-Rom</option>
+          <option value="monotone" selected>Monotone</option>
+          <option value="basis">Basis</option>
+        </select>
+        <span class="vol-label" title="When a Step curve is selected, this controls how many source samples each visual step aggregates. 1 = one step per FFT sample (very granular). 8 = one step per semitone (clean bar-chart look). Higher = chunkier.">STEP W</span>
+        <input type="range" id="stepw" min="1" max="24" value="1" />
+        <span class="status" id="status">READY</span>
+      </div>
+
+      <div class="scope">
+        <div class="canvas-wrap">
+          <canvas id="ridge"></canvas>
+        </div>
+      </div>
+
+      <div class="bottom-grid">
+       <div class="bottom-left">
+        <div class="test-panel">
+        <p class="test-panel-title">Preview individual layers</p>
+        <div class="test-row row-library">
+          <span class="test-row-label">Library</span>
+          <button class="test-btn" data-track="library" data-layer="drone">Drone</button>
+          <button class="test-btn" data-track="library" data-layer="melody">Harpsichord</button>
+          <button class="test-btn" data-track="library" data-layer="musicBox">Music Box</button>
+          <button class="test-btn" data-track="library" data-layer="clock">Clock</button>
+          <button class="test-btn" data-track="library" data-layer="hum">Hum</button>
+          <button class="test-btn" data-track="library" data-layer="ambient">Ambient</button>
+        </div>
+        <div class="test-row row-sycorax">
+          <span class="test-row-label">Sycorax</span>
+          <button class="test-btn" data-track="sycorax" data-layer="drone">Drone</button>
+          <button class="test-btn" data-track="sycorax" data-layer="whispers">Whispers</button>
+          <button class="test-btn" data-track="sycorax" data-layer="ghost">Ghost</button>
+          <button class="test-btn" data-track="sycorax" data-layer="waterphone">Waterphone</button>
+          <button class="test-btn" data-track="sycorax" data-layer="heartbeat">Heartbeat</button>
+          <button class="test-btn" data-track="sycorax" data-layer="scrape">Scrape</button>
+          <button class="test-btn" data-track="sycorax" data-layer="ambient">Ambient</button>
+        </div>
+        <div class="test-row row-ariel">
+          <span class="test-row-label">Ariel</span>
+          <button class="test-btn" data-track="ariel" data-layer="breeze">Breeze</button>
+          <button class="test-btn" data-track="ariel" data-layer="chimes">Chimes</button>
+          <button class="test-btn" data-track="ariel" data-layer="flutter">Flutter</button>
+          <button class="test-btn" data-track="ariel" data-layer="bubbles">Bubbles</button>
+          <button class="test-btn" data-track="ariel" data-layer="whistle">Whistle</button>
+          <button class="test-btn" data-track="ariel" data-layer="ambient">Ambient</button>
+        </div>
+        </div>
+
+      <div class="legend">
+        <p>
+          <strong>Each row</strong> is one octave of the audible spectrum, lowest at the bottom (C2–B2 ≈ 65–123 Hz), highest at the top (C7–B7 ≈ 2093–3951 Hz). Within each row, the curve traces the current spectral magnitude across the 12 pitch classes (C, C#, D, … B), left to right.
+        </p>
+        <p>
+          Foreground rows partially occlude rows behind them, so the visual depth shows you where energy is concentrated. <strong>A bright vertical column across multiple rows</strong> means that pitch class is sounding strongly across several octaves at once — the tonal center. <strong>A tall peak on a single row</strong> means a single note is active at that octave. <strong>Broad fuzzy lumps</strong> mean noisy/aperiodic content (wind, leaf rustle).
+        </p>
+      </div>
+       </div>
+       <div class="bottom-right">
+        <div class="event-log">
+          <p class="event-log-title">
+            <span>Event log <span class="count" id="log-count">(0)</span></span>
+            <button class="event-log-clear" id="log-clear">CLEAR</button>
+          </p>
+          <div class="log-rows" id="log-rows">
+            <div class="log-empty">No events yet. Hit PLAY or preview a layer.</div>
+          </div>
+        </div>
+       </div>
+      </div>
+    </div>
+
+    <script src="prosperos-jukebox-audio.js?v=94355490"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        if (!window.ProsperoAudio) {
+          alert("Audio engine failed to load.");
+          return;
+        }
+
+        // ============================================================
+        // CONFIG
+        // ============================================================
+        var OCTAVES = 7;
+        var BASE_OCTAVE = 1;     // bottom row's octave number
+        // Per-track row anchor — set to each song's tonic so the "home"
+        // of the music sits at column 0 of every row, like a movable-do
+        // representation. Row boundaries fall ON the tonic, so the
+        // lollipop tracker uses a small frame debounce to suppress flicker
+        // when the tonic note actually plays (a real row change has to
+        // sustain for a handful of frames before it commits).
+        // pcIndex: 0=C, 1=C#, 2=D, ..., 11=B
+        var ANCHORS = {
+          library: { pcIndex: 0, name: "C"  },  // tonic of C Dorian
+          sycorax: { pcIndex: 3, name: "Eb" },  // tonic of Eb Chromatic-Locrian
+          ariel:   { pcIndex: 5, name: "F"  },  // tonic of F Lydian
+        };
+        // PC index 0 (C) at octave 2 = 65.41 Hz. Other PCs are shifts in semitones.
+        // Anchor pitch at a given octave. Uses C0 = 16.35 Hz as the reference
+        // so anchorFreq(0, 2) = C2 = 65.41, anchorFreq(0, 1) = C1 = 32.70, etc.
+        function anchorFreq(pc, octave) { return 16.35 * Math.pow(2, octave + pc / 12); }
+        // Active anchor — initialized after currentTrack is known.
+        var ROW_F_MIN = anchorFreq(ANCHORS.library.pcIndex, BASE_OCTAVE);
+        var ANCHOR_PC = ANCHORS.library.pcIndex;
+        var ANCHOR_NAME = ANCHORS.library.name;
+        // Curve sample density per row. Higher = finer wiggle visible in
+        // the curve. We linearly interpolate the underlying FFT data at
+        // these log-spaced positions — every spectral feature in the FFT
+        // shows through (no peak-binning, no max-reduction).
+        var BIN_COUNT_PER_ROW = 96;
+        var FFT_SIZE = 8192;
+        var DB_FLOOR = -80;
+        var DB_CEIL = -15;
+        // Per-octave tilt to compensate for the natural pink spectral slope
+        // (energy drops as frequency rises). +4 dB / octave makes high octaves
+        // visible without changing the underlying measurement.
+        var DB_PER_OCTAVE_TILT = 4.0;
+
+        // ============================================================
+        // AUDIO SETUP
+        // ============================================================
+        ProsperoAudio.init();
+        var actx = ProsperoAudio.getAudioContext();
+        var analyser = actx.createAnalyser();
+        analyser.fftSize = FFT_SIZE;
+        // Low default smoothing — let the spectrum boil. Drag SMOOTH slider
+        // to dampen if it feels too chaotic.
+        analyser.smoothingTimeConstant = 0.15;
+        analyser.minDecibels = -100;
+        analyser.maxDecibels = 0;
+        ProsperoAudio.attachAnalyser(analyser);
+
+        var fftBins = analyser.frequencyBinCount;
+        var fftData = new Float32Array(fftBins);
+        var sampleRate = actx.sampleRate;
+
+        // ============================================================
+        // WHISTLE TAP — separate analyser on Ariel's whistle layer so we
+        // can detect its active notes independently of the rest of the
+        // mix. The lollipop overlay (Ariel-only) reads from this.
+        // ============================================================
+        var whistleAnalyser = actx.createAnalyser();
+        whistleAnalyser.fftSize = FFT_SIZE;
+        whistleAnalyser.smoothingTimeConstant = 0.08; // fast response for transient notes
+        whistleAnalyser.minDecibels = -100;
+        whistleAnalyser.maxDecibels = 0;
+        var whistleTapOk = ProsperoAudio.attachLayerAnalyser("ariel", "whistle", whistleAnalyser);
+        var whistleFft = new Float32Array(fftBins);
+        console.log("[ridgeline] whistle tap attached:", whistleTapOk);
+
+        function fftBinForFreq(f) { return f * FFT_SIZE / sampleRate; }
+
+        // For each (octave, sample) precompute the floating-point FFT-bin
+        // index at the sample's log-frequency position. This depends on
+        // ROW_F_MIN (the anchor), so it must be re-derived whenever the
+        // track changes.
+        var sampleFftIdx = new Float32Array(OCTAVES * BIN_COUNT_PER_ROW);
+        function rebuildSampleFftIdx() {
+          for (var o = 0; o < OCTAVES; o++) {
+            var rowF = ROW_F_MIN * Math.pow(2, o);
+            for (var b = 0; b < BIN_COUNT_PER_ROW; b++) {
+              var f = rowF * Math.pow(2, b / BIN_COUNT_PER_ROW);
+              sampleFftIdx[o * BIN_COUNT_PER_ROW + b] = fftBinForFreq(f);
+            }
+          }
+        }
+        rebuildSampleFftIdx();
+
+        ProsperoAudio.setMasterVolume(0.12);
+
+        // ============================================================
+        // CANVAS — DPR-aware sizing
+        // ============================================================
+        var canvas = document.getElementById("ridge");
+        var ctx2d = canvas.getContext("2d");
+        function resize() {
+          var rect = canvas.getBoundingClientRect();
+          var dpr = window.devicePixelRatio || 1;
+          canvas.width = Math.floor(rect.width * dpr);
+          canvas.height = Math.floor(rect.height * dpr);
+          ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        // ============================================================
+        // PITCH-CLASS LABELS
+        // ============================================================
+        var PITCH_CLASSES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        // Track-specific accidental highlighting (the song's "in-key" pitches)
+        var KEY_PITCHES = {
+          library:  { name: "C Dorian",            classes: ["C", "D", "D#", "F", "G", "A", "A#"] },
+          sycorax:  { name: "Eb Chromatic-Locrian", classes: ["D#", "E", "F#", "G", "G#", "A#", "B"] },
+          ariel:    { name: "F Lydian",            classes: ["C", "D", "E", "F", "G", "A", "B"] },
+        };
+
+        // Per-track viz defaults. The three songs have very different
+        // spectral character — Library's triangle-drone-plus-transient
+        // mix needs low smoothing and sharp peaks to reveal harpsichord
+        // plucks, music-box pings, and clock ticks. Sycorax's beating
+        // detuned-sawtooth clusters want more smoothing so the inherent
+        // wobble reads cleanly. Values map to the SMOOTH and BLUR slider
+        // positions (×100), applied on track-switch.
+        var TRACK_DEFAULTS = {
+          library: { smooth: 4,  blur: 8  },
+          sycorax: { smooth: 20, blur: 25 },
+          ariel:   { smooth: 15, blur: 22 },
+        };
+
+        // ============================================================
+        // PER-TRACK PALETTES (for canvas rendering — canvas can't read
+        // CSS vars, so we mirror the theme here).
+        // ============================================================
+        var PALETTES = {
+          library: {
+            bg:           "#0a0805",                          // warm black
+            ridgeStroke:  "rgba(255, 220, 130, 0.88)",        // amber peak
+            ridgeGlow:    "rgba(255, 170,   0, 0.30)",        // gold halo
+            baseline:     "rgba(180, 130,  60, 0.18)",
+            octaveLabel:  "rgba(255, 200, 120, 0.55)",
+            inKeyLabel:   "rgba(255, 220, 140, 0.95)",
+            outKeyLabel:  "rgba(120,  95,  50, 0.55)",
+            inKeyGrid:    "rgba(255, 170,   0, 0.18)",
+            outKeyGrid:   "rgba(120,  95,  50, 0.10)",
+            keyLabel:     "rgba(255, 200, 120, 0.55)",
+          },
+          sycorax: {
+            bg:           "#08070f",                          // deep violet-black
+            ridgeStroke:  "rgba(220, 200, 255, 0.88)",        // pale lavender
+            ridgeGlow:    "rgba(200, 150, 255, 0.30)",        // violet halo
+            baseline:     "rgba(140, 100, 200, 0.18)",
+            octaveLabel:  "rgba(200, 170, 240, 0.55)",
+            inKeyLabel:   "rgba(220, 200, 255, 0.95)",
+            outKeyLabel:  "rgba( 95,  80, 130, 0.55)",
+            inKeyGrid:    "rgba(200, 150, 255, 0.18)",
+            outKeyGrid:   "rgba( 95,  80, 130, 0.10)",
+            keyLabel:     "rgba(200, 170, 240, 0.55)",
+          },
+          ariel: {
+            bg:           "#06090e",                          // deep blue-black
+            ridgeStroke:  "rgba(216, 240, 255, 0.88)",        // bright sky
+            ridgeGlow:    "rgba(150, 220, 255, 0.30)",        // aqua halo
+            baseline:     "rgba(100, 160, 200, 0.18)",
+            octaveLabel:  "rgba(170, 220, 240, 0.55)",
+            inKeyLabel:   "rgba(216, 240, 255, 0.95)",
+            outKeyLabel:  "rgba( 85, 110, 130, 0.55)",
+            inKeyGrid:    "rgba(150, 220, 255, 0.18)",
+            outKeyGrid:   "rgba( 85, 110, 130, 0.10)",
+            keyLabel:     "rgba(170, 220, 240, 0.55)",
+          },
+        };
+
+        // ============================================================
+        // SPECTRAL BLUR — Gaussian smoothing along the frequency axis.
+        // Removes high-frequency noise from the spectrum (FFT-bin jitter,
+        // phase fluctuations) so wide bumps render smoothly while narrow
+        // peaks stay sharp. Operates per-row (per-octave); doesn't blur
+        // across octave boundaries.
+        // ============================================================
+        var blurTempBuf = new Float32Array(BIN_COUNT_PER_ROW);
+        function applySpectralBlur(mags, octaves, binsPerRow, sigma) {
+          if (sigma <= 0) return;
+          var halfWidth = Math.max(1, Math.ceil(sigma * 3));
+          var kernelLen = halfWidth * 2 + 1;
+          // Build the kernel inline (small enough that allocation is fine).
+          var kernel = new Float32Array(kernelLen);
+          var twoSigmaSq = 2 * sigma * sigma;
+          var ksum = 0;
+          for (var k = 0; k < kernelLen; k++) {
+            var dx = k - halfWidth;
+            kernel[k] = Math.exp(-dx * dx / twoSigmaSq);
+            ksum += kernel[k];
+          }
+          for (var k2 = 0; k2 < kernelLen; k2++) kernel[k2] /= ksum;
+
+          for (var o = 0; o < octaves; o++) {
+            var rowOffset = o * binsPerRow;
+            for (var b = 0; b < binsPerRow; b++) {
+              var acc = 0;
+              var wAcc = 0;
+              for (var k3 = 0; k3 < kernelLen; k3++) {
+                var src = b + (k3 - halfWidth);
+                if (src >= 0 && src < binsPerRow) {
+                  acc += mags[rowOffset + src] * kernel[k3];
+                  wAcc += kernel[k3];
+                }
+              }
+              blurTempBuf[b] = wAcc > 0 ? acc / wAcc : mags[rowOffset + b];
+            }
+            for (var b2 = 0; b2 < binsPerRow; b2++) {
+              mags[rowOffset + b2] = blurTempBuf[b2];
+            }
+          }
+        }
+
+        // ============================================================
+        // CURVE INTERPOLATION — assumes the current path is at pts[0].
+        // Traces the curve through pts[1..n-1]. Each case is one editorial
+        // assertion about what lies between data points.
+        // ============================================================
+        // For step curves with currentStepWidth > 1, aggregate every N source
+        // samples into one step by taking the highest peak (smallest y in
+        // canvas coords). Produces wider visual steps without changing the
+        // FFT sampling density.
+        function aggregateForSteps(pts, width) {
+          if (width <= 1 || pts.length <= 1) return pts;
+          var out = [];
+          for (var k = 0; k < pts.length; k += width) {
+            var bestY = pts[k].y;
+            var end = Math.min(k + width, pts.length);
+            for (var m = k + 1; m < end; m++) {
+              if (pts[m].y < bestY) bestY = pts[m].y;
+            }
+            out.push({ x: pts[k].x, y: bestY });
+          }
+          // Ensure the last source point is represented so the curve
+          // reaches the right edge of the row.
+          if (out.length > 0) {
+            var lastSrc = pts[pts.length - 1];
+            var lastOut = out[out.length - 1];
+            if (lastSrc.x !== lastOut.x) {
+              out.push({ x: lastSrc.x, y: lastOut.y });
+            }
+          }
+          return out;
+        }
+
+        function traceCurve(ctx, pts, type) {
+          // For step variants, optionally aggregate source samples into
+          // wider visual steps before tracing.
+          if ((type === "step" || type === "stepBefore" || type === "stepAfter") &&
+              currentStepWidth > 1) {
+            pts = aggregateForSteps(pts, currentStepWidth);
+          }
+          var n = pts.length;
+          if (n < 2) return;
+          var i, mx, my, p0, p1, p2, p3, cp1x, cp1y, cp2x, cp2y, dx;
+
+          switch (type) {
+            case "linear":
+              for (i = 1; i < n; i++) ctx.lineTo(pts[i].x, pts[i].y);
+              break;
+
+            case "step":
+              // Horizontal to midpoint, then vertical, then horizontal.
+              for (i = 1; i < n; i++) {
+                mx = (pts[i - 1].x + pts[i].x) / 2;
+                ctx.lineTo(mx, pts[i - 1].y);
+                ctx.lineTo(mx, pts[i].y);
+                ctx.lineTo(pts[i].x, pts[i].y);
+              }
+              break;
+
+            case "stepBefore":
+              // Vertical jump first, then horizontal to next x.
+              for (i = 1; i < n; i++) {
+                ctx.lineTo(pts[i - 1].x, pts[i].y);
+                ctx.lineTo(pts[i].x, pts[i].y);
+              }
+              break;
+
+            case "stepAfter":
+              // Horizontal hold, then vertical jump at next x.
+              for (i = 1; i < n; i++) {
+                ctx.lineTo(pts[i].x, pts[i - 1].y);
+                ctx.lineTo(pts[i].x, pts[i].y);
+              }
+              break;
+
+            case "catmullRom":
+              // Cubic Catmull-Rom through all points. Can overshoot at peaks.
+              // Endpoint handling: duplicate the first/last point for the
+              // ghost neighbors needed by the formula.
+              for (i = 0; i < n - 1; i++) {
+                p0 = i > 0 ? pts[i - 1] : pts[i];
+                p1 = pts[i];
+                p2 = pts[i + 1];
+                p3 = i + 2 < n ? pts[i + 2] : pts[i + 1];
+                cp1x = p1.x + (p2.x - p0.x) / 6;
+                cp1y = p1.y + (p2.y - p0.y) / 6;
+                cp2x = p2.x - (p3.x - p1.x) / 6;
+                cp2y = p2.y - (p3.y - p1.y) / 6;
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+              }
+              break;
+
+            case "monotone":
+              // Fritsch-Carlson monotone cubic Hermite — smooth without
+              // overshoot. Peaks stay at their measured height.
+              var d = new Array(n - 1);
+              for (i = 0; i < n - 1; i++) {
+                dx = pts[i + 1].x - pts[i].x;
+                d[i] = dx === 0 ? 0 : (pts[i + 1].y - pts[i].y) / dx;
+              }
+              var t = new Array(n);
+              t[0] = d[0];
+              t[n - 1] = d[n - 2];
+              for (i = 1; i < n - 1; i++) {
+                if (d[i - 1] * d[i] <= 0) t[i] = 0;
+                else t[i] = (d[i - 1] + d[i]) / 2;
+              }
+              // Limit tangents to enforce monotonicity.
+              for (i = 0; i < n - 1; i++) {
+                if (d[i] === 0) { t[i] = 0; t[i + 1] = 0; continue; }
+                var a = t[i] / d[i];
+                var b = t[i + 1] / d[i];
+                var sumSq = a * a + b * b;
+                if (sumSq > 9) {
+                  var s = 3 / Math.sqrt(sumSq);
+                  t[i] = s * a * d[i];
+                  t[i + 1] = s * b * d[i];
+                }
+              }
+              for (i = 0; i < n - 1; i++) {
+                dx = (pts[i + 1].x - pts[i].x) / 3;
+                cp1x = pts[i].x + dx;
+                cp1y = pts[i].y + t[i] * dx;
+                cp2x = pts[i + 1].x - dx;
+                cp2y = pts[i + 1].y - t[i + 1] * dx;
+                ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, pts[i + 1].x, pts[i + 1].y);
+              }
+              break;
+
+            case "basis":
+              // Quadratic Bezier through midpoints (the standard "smooth
+              // canvas line" technique; approximates B-spline). The curve
+              // only touches the first and last points — internal points
+              // act as control points, not knots.
+              if (n === 2) {
+                ctx.lineTo(pts[1].x, pts[1].y);
+                break;
+              }
+              // Move to midpoint of segment 0-1 (curve doesn't pass through
+              // pts[0] in true basis — but we already started there, so we
+              // line to the first midpoint).
+              var sx = (pts[0].x + pts[1].x) / 2;
+              var sy = (pts[0].y + pts[1].y) / 2;
+              ctx.lineTo(sx, sy);
+              for (i = 1; i < n - 1; i++) {
+                mx = (pts[i].x + pts[i + 1].x) / 2;
+                my = (pts[i].y + pts[i + 1].y) / 2;
+                ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+              }
+              ctx.lineTo(pts[n - 1].x, pts[n - 1].y);
+              break;
+
+            default:
+              for (i = 1; i < n; i++) ctx.lineTo(pts[i].x, pts[i].y);
+          }
+        }
+
+        // ============================================================
+        // RENDER LOOP
+        // ============================================================
+        var ridgeMags = new Float32Array(OCTAVES * BIN_COUNT_PER_ROW);
+        var frozen = false;
+        var currentTrack = "library";
+        var currentCurve = "monotone";
+        var currentBlur = 2.2; // sigma in bins (matches slider default)
+        var currentStepWidth = 1; // # source samples aggregated per step (step curves only)
+
+        // Empirical scale factor estimating the whistle layer's contribution
+        // to the post-master spectrum (master volume × (dry + reverb-wet)
+        // contributions). Used to subtract the whistle from the ridge so the
+        // only visualization of it is the lollipop overlay.
+        var WHISTLE_SUBTRACT_SCALE = 0.18;
+
+        function computeMagnitudes(subtractWhistle) {
+          analyser.getFloatFrequencyData(fftData);
+          for (var o = 0; o < OCTAVES; o++) {
+            var tilt = (o - (OCTAVES - 1) / 2) * DB_PER_OCTAVE_TILT;
+            for (var b = 0; b < BIN_COUNT_PER_ROW; b++) {
+              var idx = o * BIN_COUNT_PER_ROW + b;
+              var fi = sampleFftIdx[idx];
+              // Linear interpolation between the two FFT bins surrounding
+              // this log-frequency sample.
+              var lo = Math.floor(fi);
+              var t = fi - lo;
+              var hi = lo + 1;
+              if (lo < 0) lo = 0;
+              if (hi >= fftBins) hi = fftBins - 1;
+              var db = fftData[lo] * (1 - t) + fftData[hi] * t;
+
+              if (subtractWhistle) {
+                // Same interpolation on the whistle's isolated spectrum,
+                // then linear-amplitude subtraction. Clamp at a tiny positive
+                // floor so log10 doesn't blow up.
+                var wdb = whistleFft[lo] * (1 - t) + whistleFft[hi] * t;
+                var masterAmp = Math.pow(10, db / 20);
+                var whistleAmp = Math.pow(10, wdb / 20) * WHISTLE_SUBTRACT_SCALE;
+                var residual = Math.max(1e-10, masterAmp - whistleAmp);
+                db = 20 * Math.log10(residual);
+              }
+
+              ridgeMags[idx] = db + tilt;
+            }
+          }
+        }
+
+        function normDb(db) {
+          if (db < DB_FLOOR) return 0;
+          if (db > DB_CEIL) return 1;
+          return (db - DB_FLOOR) / (DB_CEIL - DB_FLOOR);
+        }
+
+        // ============================================================
+        // WHISTLE PEAK DETECTION — finds the current note(s) in the
+        // whistle's isolated spectrum. Returns an array of {freq, db}
+        // for visualizing as lollipops.
+        // ============================================================
+        var WHISTLE_PEAK_DB_THRESHOLD = -55;        // ignore very quiet content
+        var WHISTLE_PEAK_DROP_DB = 8;               // peaks within this of loudest are kept
+        var WHISTLE_FREQ_MIN_BIN = Math.floor(200 * FFT_SIZE / 48000);
+        var WHISTLE_FREQ_MAX_BIN = Math.ceil(3500 * FFT_SIZE / 48000);
+
+        // Parabolic interpolation — refines a peak bin to fractional precision
+        // by fitting a parabola through the three points around the local max.
+        // Cuts the "bin-jump flicker" caused by vibrato moving across integer
+        // FFT bins.
+        function parabolicRefine(arr, bin) {
+          if (bin <= 0 || bin >= arr.length - 1) return bin;
+          var y0 = arr[bin - 1], y1 = arr[bin], y2 = arr[bin + 1];
+          var denom = y0 - 2 * y1 + y2;
+          if (Math.abs(denom) < 1e-6) return bin;
+          var offset = 0.5 * (y0 - y2) / denom;
+          // Clamp offset to ±0.5 so we stay within the central bin.
+          if (offset < -0.5) offset = -0.5;
+          else if (offset > 0.5) offset = 0.5;
+          return bin + offset;
+        }
+
+        function detectWhistlePeaks() {
+          // whistleFft is assumed already populated by the caller (tick).
+          var raw = [];
+          var maxBin = Math.min(whistleFft.length - 2, WHISTLE_FREQ_MAX_BIN);
+          for (var i = Math.max(1, WHISTLE_FREQ_MIN_BIN); i <= maxBin; i++) {
+            var db = whistleFft[i];
+            if (db > WHISTLE_PEAK_DB_THRESHOLD &&
+                db > whistleFft[i - 1] &&
+                db > whistleFft[i + 1]) {
+              var refined = parabolicRefine(whistleFft, i);
+              raw.push({ bin: refined, freq: refined * sampleRate / FFT_SIZE, db: db });
+            }
+          }
+          if (raw.length === 0) return raw;
+          // Keep only peaks within WHISTLE_PEAK_DROP_DB of the loudest.
+          raw.sort(function (a, b) { return b.db - a.db; });
+          var ceiling = raw[0].db - WHISTLE_PEAK_DROP_DB;
+          var bright = raw.filter(function (p) { return p.db >= ceiling; });
+          // Filter integer-ratio harmonics of stronger peaks (whistle sine
+          // has very faint harmonics but they sometimes cross the threshold).
+          var kept = [];
+          for (var k = 0; k < bright.length; k++) {
+            var p = bright[k];
+            var isHarmonic = false;
+            for (var j = 0; j < bright.length; j++) {
+              if (k === j) continue;
+              if (bright[j].db <= p.db) continue;
+              var ratio = p.freq / bright[j].freq;
+              for (var n = 2; n <= 5; n++) {
+                if (Math.abs(ratio - n) < 0.04) { isHarmonic = true; break; }
+              }
+              if (isHarmonic) break;
+            }
+            if (!isHarmonic) kept.push(p);
+          }
+          return kept;
+        }
+
+        // ============================================================
+        // LOLLIPOP STATE — one persistent tracked lollipop per "note." The
+        // base is anchored at the note's starting pitch; the head smoothly
+        // tracks the current pitch (and amplitude). The stick goes diagonal
+        // as the head moves, visualizing pitch variation as a lean.
+        // ============================================================
+        var trackedLollipop = null;
+        // Shape: { baseX, headX, headY, rowY, octIdx, framesQuiet }
+
+        // Smoothing factors (per-frame blend toward target).
+        var HEAD_SMOOTH = 0.30;   // higher = head moves more readily
+        var BASE_DRIFT = 0.015;   // very low = base nearly fixed; bumps very slowly
+        var BIG_JUMP_X_FRAC = 1 / 6;   // > 2 semitones is treated as a new note
+        var LOLLIPOP_FADE_FRAMES = 10; // ~165ms at 60fps until release
+        // Row-locking workaround for the tonic-on-boundary flicker.
+        //
+        // A "note" is defined as a continuous run of audio detection. Once
+        // a note's row is assigned (at the moment the lollipop is born), it
+        // is FROZEN for the lifetime of that note — no amount of vibrato,
+        // bending, or even genuine pitch glide across an octave will switch
+        // rows mid-note. If the pitch genuinely drifts past the row's
+        // boundary, the head just clamps to the row's edge instead.
+        //
+        // A new "note" is detected after a brief audio gap (>NOTE_START_GAP_FRAMES
+        // frames of audio below the release floor). Inter-note gaps in the
+        // whistle layer are ~80ms, so consecutive notes comfortably trigger
+        // new lollipops with their own (natural) row assignment. Inside the
+        // same note, the row is locked.
+        //
+        // This is purely cosmetic — the audio engine is unchanged, only
+        // how the lollipop is positioned on screen.
+        var NOTE_START_GAP_FRAMES = 3;          // ~50ms of silence = new note
+
+        function updateTrackedLollipop(peaks, leftPad, topPad, plotW, rowSpacing, peakHeight) {
+          // Pick the loudest peak (whistle is monophonic; usually 1 peak).
+          var p = null;
+          if (peaks.length > 0) {
+            var best = peaks[0];
+            for (var i = 1; i < peaks.length; i++) {
+              if (peaks[i].db > best.db) best = peaks[i];
+            }
+            p = best;
+          }
+
+          if (p) {
+            var octaveFloat = Math.log2(p.freq / ROW_F_MIN);
+            if (octaveFloat < 0 || octaveFloat >= OCTAVES) {
+              return; // out of view range
+            }
+            var rawOctIdx = Math.floor(octaveFloat);
+            // Is this the start of a new note? Either no lollipop exists,
+            // or the previous one had a meaningful silence gap.
+            var isNoteStart =
+              !trackedLollipop ||
+              trackedLollipop.framesQuiet > NOTE_START_GAP_FRAMES;
+            // If continuing the same note, the row stays locked to whatever
+            // the lollipop was born in. If starting fresh, use natural row.
+            var octIdx = isNoteStart ? rawOctIdx : trackedLollipop.octIdx;
+
+            // Compute fracInOctave relative to the (possibly locked) row.
+            // Clamp into [0, 0.999] so if the pitch drifts past the row
+            // boundary during a held note, the head sits at the row's edge
+            // rather than wrapping or disappearing.
+            var rawFrac = octaveFloat - octIdx;
+            var fracInOctave = Math.max(0, Math.min(0.999, rawFrac));
+            var o2 = OCTAVES - 1 - octIdx;
+            var rowY = topPad + o2 * rowSpacing;
+            var targetX = leftPad + fracInOctave * plotW;
+            var nv = normDb(p.db);
+            var targetY = rowY - nv * peakHeight;
+
+            // New-note detection collapses to "is this a note start?" —
+            // either no existing lollipop, or the prior one had a silence
+            // gap that marked the end of its note.
+            var bigJump = isNoteStart;
+
+            if (bigJump) {
+              // Anchor base at where this note begins.
+              trackedLollipop = {
+                baseX: targetX,
+                headX: targetX,
+                headY: targetY,
+                rowY: rowY,
+                octIdx: octIdx,
+                freq: p.freq,
+                framesQuiet: 0,
+              };
+            } else {
+              // Smooth head toward target.
+              trackedLollipop.headX += (targetX - trackedLollipop.headX) * HEAD_SMOOTH;
+              trackedLollipop.headY += (targetY - trackedLollipop.headY) * HEAD_SMOOTH;
+              // Base drifts toward head VERY slowly — represents the
+              // note's "settled" center pitch over time.
+              trackedLollipop.baseX +=
+                (trackedLollipop.headX - trackedLollipop.baseX) * BASE_DRIFT;
+              trackedLollipop.freq = p.freq;
+              trackedLollipop.framesQuiet = 0;
+            }
+          } else if (trackedLollipop) {
+            // No clear peak above the detection threshold (-55 dB), but the
+            // note is probably still fading. Sample the FFT magnitude AT the
+            // last-tracked frequency (with a ±2-bin window to be robust to
+            // vibrato) so the head height keeps tracking actual volume
+            // through the inaudible tail, not a fixed fall rate.
+            var fi = trackedLollipop.freq * FFT_SIZE / sampleRate;
+            var bLo = Math.max(0, Math.floor(fi - 2));
+            var bHi = Math.min(whistleFft.length - 1, Math.ceil(fi + 2));
+            var sampledDb = -Infinity;
+            for (var bb = bLo; bb <= bHi; bb++) {
+              if (whistleFft[bb] > sampledDb) sampledDb = whistleFft[bb];
+            }
+            var LOLLIPOP_RELEASE_FLOOR = -80;
+            if (sampledDb > LOLLIPOP_RELEASE_FLOOR) {
+              // Still audible content at the tracked freq — head follows it.
+              var n2 = normDb(sampledDb);
+              var t2 = trackedLollipop.rowY - n2 * peakHeight;
+              trackedLollipop.headY += (t2 - trackedLollipop.headY) * HEAD_SMOOTH;
+              trackedLollipop.framesQuiet = 0;
+            } else {
+              // True silence. Snap-to-baseline animation and release.
+              trackedLollipop.framesQuiet++;
+              trackedLollipop.headY +=
+                (trackedLollipop.rowY - trackedLollipop.headY) * 0.3;
+              var distFromBase = trackedLollipop.rowY - trackedLollipop.headY;
+              if (distFromBase < 1.2 || trackedLollipop.framesQuiet > 12) {
+                trackedLollipop = null;
+              }
+            }
+          }
+        }
+
+        function drawTrackedLollipop(pal) {
+          if (!trackedLollipop) return;
+          var lp = trackedLollipop;
+          ctx2d.save();
+
+          // Soft additive halo around the head
+          ctx2d.globalCompositeOperation = "lighter";
+          var grad = ctx2d.createRadialGradient(lp.headX, lp.headY, 1, lp.headX, lp.headY, 16);
+          grad.addColorStop(0, pal.ridgeStroke);
+          grad.addColorStop(1, "rgba(0,0,0,0)");
+          ctx2d.fillStyle = grad;
+          ctx2d.beginPath();
+          ctx2d.arc(lp.headX, lp.headY, 16, 0, Math.PI * 2);
+          ctx2d.fill();
+          ctx2d.globalCompositeOperation = "source-over";
+
+          // Stick: anchored base → smoothed head (diagonal when pitch leans)
+          ctx2d.strokeStyle = pal.ridgeStroke;
+          ctx2d.lineWidth = 2;
+          ctx2d.beginPath();
+          ctx2d.moveTo(lp.baseX, lp.rowY);
+          ctx2d.lineTo(lp.headX, lp.headY);
+          ctx2d.stroke();
+
+          // Small base marker so the anchor is visible
+          ctx2d.fillStyle = pal.ridgeStroke;
+          ctx2d.beginPath();
+          ctx2d.arc(lp.baseX, lp.rowY, 2.2, 0, Math.PI * 2);
+          ctx2d.fill();
+
+          // Head circle + bright center
+          ctx2d.fillStyle = pal.ridgeStroke;
+          ctx2d.beginPath();
+          ctx2d.arc(lp.headX, lp.headY, 5, 0, Math.PI * 2);
+          ctx2d.fill();
+          ctx2d.fillStyle = "rgba(255,255,255,0.85)";
+          ctx2d.beginPath();
+          ctx2d.arc(lp.headX, lp.headY, 1.6, 0, Math.PI * 2);
+          ctx2d.fill();
+
+          ctx2d.restore();
+        }
+
+        function tick() {
+          var rect = canvas.getBoundingClientRect();
+          var w = rect.width, h = rect.height;
+          var pal = PALETTES[currentTrack] || PALETTES.library;
+
+          var whistleOverlay = currentTrack === "ariel" && whistleTapOk;
+
+          if (!frozen) {
+            if (whistleOverlay) whistleAnalyser.getFloatFrequencyData(whistleFft);
+            computeMagnitudes(whistleOverlay);
+            applySpectralBlur(ridgeMags, OCTAVES, BIN_COUNT_PER_ROW, currentBlur);
+          }
+
+          // ---------------- Background ----------------
+          ctx2d.fillStyle = pal.bg;
+          ctx2d.fillRect(0, 0, w, h);
+
+          // ---------------- Layout ----------------
+          var leftPad = 64;     // octave labels
+          var rightPad = 16;
+          var topPad = 24;
+          var bottomPad = 36;   // pitch-class labels
+          var plotW = w - leftPad - rightPad;
+          var plotH = h - topPad - bottomPad;
+          // Rows top-down: row 0 (highest octave) at top.
+          var rowSpacing = plotH / (OCTAVES - 1);
+          var peakHeight = rowSpacing * 1.9; // generous so rows overlap
+
+          // ---------------- Pitch-class grid (faint vertical lines) ----------------
+          var keyInfo = KEY_PITCHES[currentTrack] || KEY_PITCHES.library;
+          var inKey = {};
+          keyInfo.classes.forEach(function (c) { inKey[c] = true; });
+          // Rotate pitch classes so the anchor sits at column 0 (left edge).
+          var orderedPCs = [];
+          for (var rp = 0; rp < 12; rp++) {
+            orderedPCs.push(PITCH_CLASSES[(rp + ANCHOR_PC) % 12]);
+          }
+          for (var i = 0; i < 12; i++) {
+            var x = leftPad + (i + 0.5) * (plotW / 12);
+            var isInKey = !!inKey[orderedPCs[i]];
+            ctx2d.strokeStyle = isInKey ? pal.inKeyGrid : pal.outKeyGrid;
+            ctx2d.lineWidth = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(x, topPad);
+            ctx2d.lineTo(x, h - bottomPad);
+            ctx2d.stroke();
+          }
+
+          // ---------------- Ridges (drawn back-to-front) ----------------
+          // Row index o=0 is the HIGHEST octave; we draw it FIRST (back, top).
+          for (var o2 = 0; o2 < OCTAVES; o2++) {
+            var rowY = topPad + o2 * rowSpacing;
+            var oct = BASE_OCTAVE + (OCTAVES - 1 - o2); // 7 at top, 1 at bottom
+
+            // Build the row's sample points first.
+            var dataRow = OCTAVES - 1 - o2;
+            var pts = new Array(BIN_COUNT_PER_ROW);
+            for (var b2 = 0; b2 < BIN_COUNT_PER_ROW; b2++) {
+              var x2 = leftPad + (b2 / (BIN_COUNT_PER_ROW - 1)) * plotW;
+              var nv = normDb(ridgeMags[dataRow * BIN_COUNT_PER_ROW + b2]);
+              pts[b2] = { x: x2, y: rowY - nv * peakHeight };
+            }
+
+            // Closed fill path: baseline → first point → curve → last point → baseline.
+            ctx2d.beginPath();
+            ctx2d.moveTo(leftPad, rowY);
+            ctx2d.lineTo(pts[0].x, pts[0].y);
+            traceCurve(ctx2d, pts, currentCurve);
+            ctx2d.lineTo(leftPad + plotW, rowY);
+            ctx2d.closePath();
+
+            // Opaque fill so this row occludes anything behind it.
+            ctx2d.fillStyle = pal.bg;
+            ctx2d.fill();
+
+            // Subtle accent glow under the curve top (additive).
+            ctx2d.save();
+            ctx2d.globalCompositeOperation = "lighter";
+            ctx2d.fillStyle = pal.ridgeGlow;
+            ctx2d.fill();
+            ctx2d.restore();
+
+            // Stroke just the curve top (no baseline).
+            ctx2d.beginPath();
+            ctx2d.moveTo(pts[0].x, pts[0].y);
+            traceCurve(ctx2d, pts, currentCurve);
+            ctx2d.strokeStyle = pal.ridgeStroke;
+            ctx2d.lineWidth = 1.2;
+            ctx2d.stroke();
+
+            // Baseline (subtle)
+            ctx2d.strokeStyle = pal.baseline;
+            ctx2d.lineWidth = 1;
+            ctx2d.beginPath();
+            ctx2d.moveTo(leftPad, rowY);
+            ctx2d.lineTo(leftPad + plotW, rowY);
+            ctx2d.stroke();
+
+            // Octave label on the left — uses the active track's anchor.
+            ctx2d.fillStyle = pal.octaveLabel;
+            ctx2d.font = '13px "VT323", monospace';
+            ctx2d.textAlign = "right";
+            ctx2d.textBaseline = "middle";
+            ctx2d.fillText(ANCHOR_NAME + oct, leftPad - 8, rowY);
+          }
+
+          // ---------------- Whistle lollipop overlay (Ariel only) ----------------
+          if (whistleOverlay) {
+            if (!frozen) {
+              var whistlePeaks = detectWhistlePeaks();
+              updateTrackedLollipop(whistlePeaks, leftPad, topPad, plotW, rowSpacing, peakHeight);
+            }
+            drawTrackedLollipop(pal);
+          } else if (trackedLollipop) {
+            // Track changed away from Ariel — clear any held lollipop.
+            trackedLollipop = null;
+          }
+
+          // ---------------- Pitch-class labels at bottom ----------------
+          ctx2d.font = '14px "VT323", monospace';
+          ctx2d.textAlign = "center";
+          ctx2d.textBaseline = "top";
+          for (var i2 = 0; i2 < 12; i2++) {
+            var lblX = leftPad + (i2 + 0.5) * (plotW / 12);
+            var pc = orderedPCs[i2];
+            var isInKey2 = !!inKey[pc];
+            ctx2d.fillStyle = isInKey2 ? pal.inKeyLabel : pal.outKeyLabel;
+            ctx2d.fillText(pc, lblX, h - bottomPad + 6);
+          }
+
+          // Key label
+          ctx2d.fillStyle = pal.keyLabel;
+          ctx2d.font = '13px "VT323", monospace';
+          ctx2d.textAlign = "right";
+          ctx2d.fillText(keyInfo.name, w - rightPad, h - 4);
+
+          requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+
+        // ============================================================
+        // TRANSPORT
+        // ============================================================
+        var statusEl = document.getElementById("status");
+        var playBtn = document.getElementById("play-btn");
+        var stopBtn = document.getElementById("stop-btn");
+        var freezeBtn = document.getElementById("freeze-btn");
+        var volSlider = document.getElementById("vol");
+
+        function refreshStatus() {
+          var s = ProsperoAudio.getState();
+          if (s.playing) {
+            statusEl.textContent = "PLAYING · " + s.currentTrack.toUpperCase();
+            statusEl.classList.add("is-playing");
+          } else {
+            statusEl.textContent = "STOPPED";
+            statusEl.classList.remove("is-playing");
+          }
+        }
+        refreshStatus();
+
+        playBtn.addEventListener("click", function () {
+          if (actx.state === "suspended") actx.resume();
+          ProsperoAudio.play(currentTrack);
+          refreshStatus();
+        });
+        stopBtn.addEventListener("click", function () {
+          ProsperoAudio.stop();
+          refreshStatus();
+        });
+        freezeBtn.addEventListener("click", function () {
+          frozen = !frozen;
+          freezeBtn.classList.toggle("active", frozen);
+        });
+
+        function applyTheme(track) {
+          var body = document.body;
+          body.classList.remove("theme-library", "theme-sycorax", "theme-ariel");
+          body.classList.add("theme-" + track);
+        }
+        function applyAnchor(track) {
+          var a = ANCHORS[track] || ANCHORS.library;
+          ANCHOR_PC = a.pcIndex;
+          ANCHOR_NAME = a.name;
+          ROW_F_MIN = anchorFreq(a.pcIndex, BASE_OCTAVE);
+          rebuildSampleFftIdx();
+          // Clear any in-flight lollipop so it doesn't draw with stale coords.
+          trackedLollipop = null;
+        }
+
+        // Apply each track's preferred SMOOTH and BLUR settings. Each
+        // song has a different spectral character; per-track defaults
+        // give the cleanest "active" reading without manual tuning.
+        function applyTrackDefaults(track) {
+          var d = TRACK_DEFAULTS[track] || TRACK_DEFAULTS.library;
+          var smoothEl = document.getElementById("smooth");
+          var blurEl = document.getElementById("blur");
+          if (smoothEl) {
+            smoothEl.value = d.smooth;
+            analyser.smoothingTimeConstant = d.smooth / 100;
+          }
+          if (blurEl) {
+            blurEl.value = d.blur;
+            currentBlur = d.blur / 10;
+          }
+        }
+        applyTheme(currentTrack);
+        applyAnchor(currentTrack);
+        applyTrackDefaults(currentTrack);
+
+        var tabs = document.querySelectorAll(".tab");
+        tabs.forEach(function (tab) {
+          tab.addEventListener("click", function () {
+            var t = tab.getAttribute("data-track");
+            if (t === currentTrack) return;
+            ProsperoAudio.switchTrack(t);
+            currentTrack = t;
+            applyTheme(t);
+            applyAnchor(t);
+            applyTrackDefaults(t);
+            tabs.forEach(function (x) {
+              x.classList.toggle("active", x === tab);
+            });
+            refreshStatus();
+          });
+        });
+
+        volSlider.addEventListener("input", function () {
+          ProsperoAudio.setMasterVolume((parseInt(volSlider.value, 10) / 100) * 0.2);
+        });
+
+        var smoothSlider = document.getElementById("smooth");
+        smoothSlider.addEventListener("input", function () {
+          analyser.smoothingTimeConstant = parseInt(smoothSlider.value, 10) / 100;
+        });
+
+        var curveSelect = document.getElementById("curve");
+        curveSelect.addEventListener("change", function () {
+          currentCurve = curveSelect.value;
+        });
+        currentCurve = curveSelect.value;
+
+        var stepwSlider = document.getElementById("stepw");
+        stepwSlider.addEventListener("input", function () {
+          currentStepWidth = parseInt(stepwSlider.value, 10);
+        });
+        currentStepWidth = parseInt(stepwSlider.value, 10);
+
+        var blurSlider = document.getElementById("blur");
+        blurSlider.addEventListener("input", function () {
+          // Slider value 0–80 maps to sigma 0–8 bins.
+          currentBlur = parseInt(blurSlider.value, 10) / 10;
+        });
+        currentBlur = parseInt(blurSlider.value, 10) / 10;
+
+        // ============================================================
+        // LAYER PREVIEW BUTTONS — fire ProsperoAudio.preview(track, layer)
+        // for any layer of any track so you can audition the visuals
+        // against a single sound source.
+        // ============================================================
+        var testButtons = document.querySelectorAll(".test-btn");
+        testButtons.forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            if (actx.state === "suspended") actx.resume();
+            var t = btn.getAttribute("data-track");
+            var l = btn.getAttribute("data-layer");
+            // The engine's preview() no-ops if the full transport is already
+            // playing. Stop the transport first so the per-layer preview
+            // always runs in isolation.
+            var s = ProsperoAudio.getState();
+            if (s.playing) {
+              ProsperoAudio.stop();
+              refreshStatus();
+            }
+            ProsperoAudio.preview(t, l);
+          });
+        });
+        // The engine fires this when preview starts/ends — flip the
+        // matching button's active state so you can see what's playing.
+        ProsperoAudio.setPreviewListener(function (track, layer, active) {
+          var sel = '.test-btn[data-track="' + track + '"][data-layer="' + layer + '"]';
+          var btn = document.querySelector(sel);
+          if (btn) btn.classList.toggle("active", !!active);
+          if (active) {
+            logEvent({
+              kind: "preview",
+              track: track,
+              layer: layer,
+              detail: 'preview started',
+            });
+          }
+        });
+
+        // ============================================================
+        // EVENT LOG — capture every audio event the engine emits via
+        // motif / drone / ambient listeners, plus preview start/stop,
+        // and render them in the side panel with newest at top.
+        // ============================================================
+        var LOG_MAX = 200;
+        var logEntries = [];     // newest first
+        var logRowsEl = document.getElementById("log-rows");
+        var logCountEl = document.getElementById("log-count");
+        var sessionStartT = null;
+
+        function formatMmSs(sec) {
+          if (sec < 0) sec = 0;
+          var m = Math.floor(sec / 60);
+          var s = Math.floor(sec - m * 60);
+          return (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+        }
+
+        function pitchClassFromMidi(midi) {
+          var names = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+          var octave = Math.floor(midi / 12) - 1;
+          return names[((Math.round(midi) % 12) + 12) % 12] + octave;
+        }
+        function pitchFromHz(hz) {
+          if (!hz || hz <= 0) return "";
+          var midi = 69 + 12 * Math.log2(hz / 440);
+          return pitchClassFromMidi(midi);
+        }
+
+        function logEvent(ev) {
+          if (sessionStartT === null) {
+            sessionStartT = ProsperoAudio.getAudioTime() || 0;
+          }
+          var t = ProsperoAudio.getAudioTime() - sessionStartT;
+          ev.t = t;
+          logEntries.unshift(ev);
+          if (logEntries.length > LOG_MAX) logEntries.length = LOG_MAX;
+          renderLog();
+        }
+
+        function renderLog() {
+          if (logEntries.length === 0) {
+            logRowsEl.innerHTML =
+              '<div class="log-empty">No events yet. Hit PLAY or preview a layer.</div>';
+            logCountEl.textContent = "(0)";
+            return;
+          }
+          var html = "";
+          for (var i = 0; i < logEntries.length; i++) {
+            var ev = logEntries[i];
+            var trackKey = ev.track || "";
+            var detail = "";
+            if (ev.kind === "motif") {
+              var tag = '<span class="tag tag-' + ev.action + '">' + ev.action + "</span>";
+              detail = tag + 'motif #' + ev.motifId +
+                       ' <span class="meta">' + (ev.cluster || "") +
+                       (ev.transform ? " · " + ev.transform : "") + '</span>';
+            } else if (ev.kind === "drone") {
+              detail = '<span class="tag tag-drone">drone</span>' +
+                       '<span class="pitch">' + ev.pitches + '</span>' +
+                       (ev.chord ? ' <span class="meta">' + ev.chord + '</span>' : "");
+            } else if (ev.kind === "ambient") {
+              detail = '<span class="tag tag-ambient">' + ev.event + '</span>';
+            } else if (ev.kind === "preview") {
+              detail = '<span class="tag tag-preview">preview</span>' +
+                       '<span class="meta">' + (ev.detail || "") + '</span>';
+            } else {
+              detail = ev.detail || "";
+            }
+            html +=
+              '<div class="log-row track-' + trackKey + '">' +
+                '<span class="log-time">' + formatMmSs(ev.t) + '</span>' +
+                '<span class="log-layer">' + (ev.layer || "") + '</span>' +
+                '<span class="log-detail">' + detail + '</span>' +
+              '</div>';
+          }
+          logRowsEl.innerHTML = html;
+          logCountEl.textContent = "(" + logEntries.length + ")";
+        }
+
+        document.getElementById("log-clear").addEventListener("click", function () {
+          logEntries = [];
+          sessionStartT = null;
+          renderLog();
+        });
+
+        // --- Motif events (melody / ghost / whistle primary motif layers) ---
+        ProsperoAudio.setMotifListener(function (ev) {
+          if (!ev) return;
+          if (ev.type === "clear") {
+            // Track switch — start a fresh session timer.
+            sessionStartT = null;
+            return;
+          }
+          if (ev.type === "fire") {
+            logEvent({
+              kind: "motif",
+              track: ev.track,
+              layer: ev.layer,
+              motifId: ev.motifId,
+              cluster: ev.cluster,
+              action: ev.action,
+              transform: ev.transform,
+            });
+          }
+        });
+
+        // --- Drone events (one entry per cycle on each track) ---
+        ProsperoAudio.setDroneListener(function (cycle) {
+          if (!cycle) return;
+          var pitches = (cycle.frequencies || [])
+            .map(pitchFromHz).filter(Boolean).join(" + ");
+          if (cycle.subFreq) pitches += " (+sub " + pitchFromHz(cycle.subFreq) + ")";
+          logEvent({
+            kind: "drone",
+            track: cycle.track,
+            layer: "drone",
+            pitches: pitches,
+            chord: cycle.chord || "",
+          });
+        });
+
+        // --- Ambient events (newly exposed in engine v=65) ---
+        if (ProsperoAudio.setAmbientListener) {
+          ProsperoAudio.setAmbientListener(function (ev) {
+            if (!ev || ev.type !== "fire") return;
+            logEvent({
+              kind: "ambient",
+              track: ev.track,
+              layer: ev.layer,
+              event: ev.event,
+            });
+          });
+        }
+
+        console.log(
+          "[ridgeline] init: sampleRate=", sampleRate,
+          "fftSize=", FFT_SIZE,
+          "octaves=", OCTAVES,
+          "bins/octave=", BIN_COUNT_PER_ROW,
+          "tilt=", DB_PER_OCTAVE_TILT,
+        );
+      })();
+    </script>
+  </body>
+</html>

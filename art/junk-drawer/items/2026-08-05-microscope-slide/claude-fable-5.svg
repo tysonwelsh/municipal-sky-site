@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" width="900" height="900">
+  <defs>
+    <radialGradient id="gField" cx="45%" cy="42%" r="65%">
+      <stop offset="0%" stop-color="#f8eef6"/>
+      <stop offset="60%" stop-color="#eddcea"/>
+      <stop offset="100%" stop-color="#d6bcd6"/>
+    </radialGradient>
+    <radialGradient id="gPurple" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#c9a3e8"/>
+      <stop offset="45%" stop-color="#7a49ad"/>
+      <stop offset="100%" stop-color="#3a1c60"/>
+    </radialGradient>
+    <radialGradient id="gPink" cx="35%" cy="28%" r="80%">
+      <stop offset="0%" stop-color="#f4b0c1"/>
+      <stop offset="45%" stop-color="#d24b6a"/>
+      <stop offset="100%" stop-color="#7f2038"/>
+    </radialGradient>
+    <radialGradient id="gTeal" cx="35%" cy="30%" r="78%">
+      <stop offset="0%" stop-color="#9fe6d8"/>
+      <stop offset="45%" stop-color="#3a9d8c"/>
+      <stop offset="100%" stop-color="#155248"/>
+    </radialGradient>
+    <radialGradient id="gCorner" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#241733"/>
+      <stop offset="100%" stop-color="#080510"/>
+    </radialGradient>
+    <linearGradient id="gGloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="fBlur" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="fSoft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.1"/>
+    </filter>
+    <mask id="corners">
+      <rect width="900" height="900" fill="#fff"/>
+      <circle cx="450" cy="450" r="451" fill="#000"/>
+    </mask>
+    <clipPath id="fieldClip">
+      <circle cx="450" cy="450" r="449"/>
+    </clipPath>
+  </defs>
+
+  <!-- optical field of view -->
+  <circle cx="450" cy="450" r="450" fill="url(#gField)"/>
+
+  <g clip-path="url(#fieldClip)" filter="url(#fSoft)">
+
+    <!-- out-of-focus background microbes (depth of field) -->
+    <g filter="url(#fBlur)" opacity="0.5">
+      <circle cx="150" cy="220" r="26" fill="url(#gPurple)"/>
+      <circle cx="185" cy="245" r="24" fill="url(#gPurple)"/>
+      <rect x="720" y="180" width="78" height="28" rx="14" fill="url(#gPink)" transform="rotate(40 759 194)"/>
+      <circle cx="330" cy="720" r="30" fill="url(#gTeal)"/>
+      <circle cx="620" cy="760" r="22" fill="url(#gPurple)"/>
+      <rect x="120" y="560" width="70" height="26" rx="13" fill="url(#gPink)" transform="rotate(-25 155 573)"/>
+    </g>
+
+    <!-- faint stained debris -->
+    <g fill="#8a5a86" opacity="0.18">
+      <circle cx="410" cy="180" r="4"/><circle cx="520" cy="330" r="3"/>
+      <circle cx="260" cy="520" r="5"/><circle cx="640" cy="300" r="3.5"/>
+      <circle cx="480" cy="560" r="4.5"/><circle cx="360" cy="600" r="3"/>
+      <circle cx="700" cy="620" r="4"/><circle cx="230" cy="380" r="3.5"/>
+      <circle cx="560" cy="700" r="3"/><circle cx="150" cy="460" r="4"/>
+    </g>
+
+    <!-- Staphylococcus: grape-like clusters (gram-positive cocci) -->
+    <g stroke="#2b1350" stroke-width="1.5">
+      <circle cx="300" cy="300" r="21" fill="url(#gPurple)"/>
+      <circle cx="326" cy="316" r="20" fill="url(#gPurple)"/>
+      <circle cx="286" cy="342" r="21" fill="url(#gPurple)"/>
+      <circle cx="321" cy="352" r="19" fill="url(#gPurple)"/>
+      <circle cx="347" cy="336" r="20" fill="url(#gPurple)"/>
+      <circle cx="273" cy="308" r="19" fill="url(#gPurple)"/>
+      <circle cx="312" cy="277" r="20" fill="url(#gPurple)"/>
+      <circle cx="343" cy="298" r="19" fill="url(#gPurple)"/>
+      <circle cx="365" cy="320" r="18" fill="url(#gPurple)"/>
+      <circle cx="297" cy="372" r="19" fill="url(#gPurple)"/>
+      <circle cx="332" cy="380" r="18" fill="url(#gPurple)"/>
+      <circle cx="266" cy="345" r="18" fill="url(#gPurple)"/>
+    </g>
+
+    <!-- Streptococcus: chain of cocci -->
+    <g stroke="#2b1350" stroke-width="1.4">
+      <circle cx="555" cy="175" r="16" fill="url(#gPurple)"/>
+      <circle cx="583" cy="188" r="16" fill="url(#gPurple)"/>
+      <circle cx="611" cy="199" r="16" fill="url(#gPurple)"/>
+      <circle cx="640" cy="205" r="16" fill="url(#gPurple)"/>
+      <circle cx="669" cy="209" r="16" fill="url(#gPurple)"/>
+      <circle cx="698" cy="215" r="16" fill="url(#gPurple)"/>
+      <circle cx="726" cy="226" r="16" fill="url(#gPurple)"/>
+      <circle cx="751" cy="243" r="16" fill="url(#gPurple)"/>
+    </g>
+
+    <!-- Bacilli: gram-negative rods with flagella -->
+    <g>
+      <g transform="rotate(28 585 605)">
+        <path d="M540 597 Q505 590 470 610 Q515 604 540 613 Z" fill="none" stroke="#c05070" stroke-width="2" opacity="0.7"/>
+        <rect x="540" y="592" width="82" height="27" rx="13" fill="url(#gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="581" y1="595" x2="581" y2="616" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(-18 660 665)">
+        <rect x="620" y="652" width="86" height="27" rx="13" fill="url(#gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="663" y1="655" x2="663" y2="676" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(62 560 700)">
+        <path d="M600 700 Q640 690 680 710 Q636 704 600 715 Z" fill="none" stroke="#c05070" stroke-width="2" opacity="0.7"/>
+        <rect x="520" y="687" width="80" height="26" rx="13" fill="url(#gPink)" stroke="#611830" stroke-width="1.4"/>
+      </g>
+      <g transform="rotate(-40 700 540)">
+        <rect x="662" y="527" width="76" height="26" rx="13" fill="url(#gPink)" stroke="#611830" stroke-width="1.4"/>
+        <line x1="700" y1="530" x2="700" y2="550" stroke="#611830" stroke-width="1" opacity="0.5"/>
+      </g>
+      <g transform="rotate(10 470 470)">
+        <rect x="430" y="458" width="80" height="25" rx="12" fill="url(#gPink)" stroke="#611830" stroke-width="1.4"/>
+      </g>
+    </g>
+
+    <!-- Diplococci: paired cocci -->
+    <g stroke="#155248" stroke-width="1.4">
+      <circle cx="170" cy="465" r="20" fill="url(#gTeal)"/>
+      <circle cx="205" cy="478" r="20" fill="url(#gTeal)"/>
+      <circle cx="700" cy="440" r="19" fill="url(#gTeal)"/>
+      <circle cx="732" cy="452" r="19" fill="url(#gTeal)"/>
+    </g>
+
+    <!-- Spirilla / spirochetes: spiral bacteria -->
+    <path d="M150 660 q20 -34 40 0 q20 34 40 0 q20 -34 40 0 q20 34 40 0"
+          fill="none" stroke="url(#gTeal)" stroke-width="10" stroke-linecap="round"/>
+    <path d="M150 660 q20 -34 40 0 q20 34 40 0 q20 -34 40 0 q20 34 40 0"
+          fill="none" stroke="#0e4038" stroke-width="10" stroke-linecap="round" opacity="0.25"/>
+    <path d="M640 700 q18 -30 36 0 q18 30 36 0 q18 -30 36 0"
+          fill="none" stroke="url(#gPurple)" stroke-width="9" stroke-linecap="round"/>
+
+    <!-- solitary cocci scattered -->
+    <g stroke="#2b1350" stroke-width="1.2">
+      <circle cx="470" cy="250" r="14" fill="url(#gPurple)"/>
+      <circle cx="440" cy="700" r="15" fill="url(#gPurple)"/>
+      <circle cx="600" cy="380" r="13" fill="url(#gTeal)"/>
+    </g>
+
+  </g>
+
+  <!-- glass gloss highlight -->
+  <ellipse cx="360" cy="260" rx="300" ry="180" fill="url(#gGloss)" clip-path="url(#fieldClip)"/>
+
+  <!-- lens rim -->
+  <circle cx="450" cy="450" r="447" fill="none" stroke="#0d0716" stroke-width="8" opacity="0.55"/>
+  <circle cx="450" cy="450" r="441" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.2"/>
+
+  <!-- optics vignette in corners -->
+  <rect width="900" height="900" fill="url(#gCorner)" mask="url(#corners)"/>
+</svg>
