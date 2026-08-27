@@ -83,3 +83,7 @@ __pycache__/
 
 # cost-probe artwork (kept only when --save-svg is passed)
 local-dev/jd-probe/
+
+# carbon dashboard: regeneration-only local material (see its README)
+information-graphics/carbon-point-cloud/smooth-disorder/
+information-graphics/carbon-point-cloud/.venv/
