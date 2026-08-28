@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 260" role="img"
+     aria-label="A closed manila file folder lying flat, its tab typed ANALYTICS, with the corner of a bar-chart page peeking out the right side">
+  <!-- THE ANALYTICS FOLDER (PLAN-ANALYTICS §2, 2026-08-28) — drawer furniture
+       in the instructions-sheet / turn-object tradition: a static asset the
+       page injects, never an entry. Tapping it opens the dashboard; the
+       artwork's whole job is to say "closed file folder, charts inside"
+       at pile size.
+
+       Plan view of a real manila folder: the FOLD is the bottom long edge,
+       the tab rises off the BACK panel's top edge, and the front flap sits
+       one step in front of it — so the folder reads closed from the 14px
+       strip of darker back panel showing above the flap's cut edge, and
+       from the ridge along the bottom fold. Sits deliberately between its
+       two siblings: warmer and more dimensional than the flat instructions
+       sheet, far quieter than the turn button's backlit hardware.
+
+       Ink runs x 6..337, y 4..254 — worst dead margin 2.3% (bottom), and
+       the drawer's drag/size math trusts the viewBox rectangle, so it must
+       stay that way if this is ever reframed.
+
+       NO baked cast shadow: the pile's CSS drop-shadow grounds the item.
+       The only darks here are the folder's own layers on each other (the
+       flap's shadow on the back strip, the flap's shadow on the sheet
+       sticking out) and both are clipped to paper they actually fall on.
+
+       The restraint clause holds: the bar-chart page tucked inside and
+       poking out the open right edge is the one loud detail, and the typed
+       file code plus the FIELD RECORDS box stamp are both faint enough to
+       be texture rather than a third and fourth thing to read. Nothing is
+       set at the tab's weight but the tab.
+
+       Self-contained: no script, no on* handlers, no foreignObject, no
+       external refs, no SMIL, no raster. Every id is prefixed af_ so the
+       pile's per-copy id namespacing (JD_svgInst) has a clean handle. -->
+  <defs>
+    <!-- back panel: lighter where the tab stands clear of the flap, falling
+         off downward where the flap covers it anyway -->
+    <linearGradient id="af_backg" gradientUnits="userSpaceOnUse" x1="80" y1="4" x2="250" y2="252">
+      <stop offset="0"    stop-color="#e7c78e"/>
+      <stop offset="0.45" stop-color="#dcb87c"/>
+      <stop offset="1"    stop-color="#cba468"/>
+    </linearGradient>
+    <!-- front flap: the manila everyone pictures, light off the top-left -->
+    <linearGradient id="af_frontg" gradientUnits="userSpaceOnUse" x1="20" y1="50" x2="316" y2="252">
+      <stop offset="0"    stop-color="#eed3a0"/>
+      <stop offset="0.5"  stop-color="#e5c489"/>
+      <stop offset="1"    stop-color="#d7b073"/>
+    </linearGradient>
+    <!-- age: soft handling blotches, the instructions sheet's stain idiom -->
+    <radialGradient id="af_stain" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0"   stop-color="#a97c3c" stop-opacity="0.13"/>
+      <stop offset="0.7" stop-color="#a97c3c" stop-opacity="0.05"/>
+      <stop offset="1"   stop-color="#a97c3c" stop-opacity="0"/>
+    </radialGradient>
+    <!-- the flap's shadow on the strip of back panel above its cut edge -->
+    <linearGradient id="af_flapshadow" gradientUnits="userSpaceOnUse" x1="0" y1="35" x2="0" y2="46">
+      <stop offset="0" stop-color="#6b4a1c" stop-opacity="0"/>
+      <stop offset="1" stop-color="#6b4a1c" stop-opacity="0.3"/>
+    </linearGradient>
+    <!-- the flap's shadow on the sheet emerging from under it -->
+    <linearGradient id="af_papershade" gradientUnits="userSpaceOnUse" x1="317" y1="0" x2="337" y2="0">
+      <stop offset="0"   stop-color="#5d431e" stop-opacity="0.36"/>
+      <stop offset="0.5" stop-color="#5d431e" stop-opacity="0.12"/>
+      <stop offset="1"   stop-color="#5d431e" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ============ BACK PANEL + TAB ======================================= -->
+  <path d="M6,37 Q6,32 11,32 L88,32 Q92,32 93,27.5 L95.5,9 Q96.3,4 101,4
+           L231,4 Q235.7,4 236.5,9 L239,27.5 Q240,32 244,32 L321,32
+           Q326,32 326,37 L326,247 Q326,252 321,252 L11,252 Q6,252 6,247 Z"
+        fill="url(#af_backg)" stroke="#ab8850" stroke-width="1.1" stroke-opacity="0.85"/>
+  <!-- fibre wear along the tab's exposed top edge -->
+  <path d="M102,5.2 L230,5.2" fill="none" stroke="#f5e4bb" stroke-opacity="0.5" stroke-width="1.2"/>
+
+  <!-- ============ THE PAGE INSIDE ========================================
+       Drawn on the back panel and then buried by the flap, so only the few
+       millimetres past the folder's open right edge survive: a white sliver
+       with the ends of four bars running off it. Askew by 1.4°, because
+       nothing filed by hand is square. -->
+  <g transform="rotate(-1.4 300 122)">
+    <rect x="252" y="84" width="85" height="72" rx="1.5"
+          fill="#f6f1e4" stroke="#d5c9ae" stroke-width="0.8"/>
+    <g>
+      <rect x="288" y="94"  width="47" height="6" rx="1" fill="#c2652b"/>
+      <rect x="288" y="109" width="39" height="6" rx="1" fill="#2f7d70"/>
+      <rect x="288" y="124" width="44" height="6" rx="1" fill="#35538f"/>
+      <rect x="288" y="139" width="41" height="6" rx="1" fill="#7a3b63"/>
+    </g>
+    <!-- the flap's shade falling across the emerging sheet; clipped to the
+         sheet by construction (it is a sub-rect of it), so nothing dark
+         floats outside the folder silhouette -->
+    <rect x="317" y="84" width="20" height="72" fill="url(#af_papershade)"/>
+  </g>
+
+  <!-- the flap's shadow on the back strip, laid before the flap itself -->
+  <rect x="9" y="35" width="314" height="11" fill="url(#af_flapshadow)"/>
+
+  <!-- ============ FRONT FLAP ============================================= -->
+  <path d="M9,51 Q9,46 14,46 L318,46 Q323,46 323,51 L323,246
+           Q323,254 315,254 L17,254 Q9,254 9,246 Z"
+        fill="url(#af_frontg)" stroke="#b8935a" stroke-width="1.1" stroke-opacity="0.85"/>
+
+  <!-- handling stains -->
+  <ellipse cx="252" cy="196" rx="72" ry="46" fill="url(#af_stain)"/>
+  <ellipse cx="74"  cy="104" rx="58" ry="42" fill="url(#af_stain)"/>
+
+  <!-- the cut edge of the flap catches light; the far edge falls away -->
+  <path d="M15,47.2 L317,47.2" fill="none" stroke="#f7e8c4" stroke-opacity="0.5" stroke-width="1.3"/>
+  <path d="M11.6,178 L11.6,52 Q11.6,48.4 15.5,48.4 L104,48.4" fill="none"
+        stroke="#f7e8c4" stroke-opacity="0.3" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M320.6,92 L320.6,226" fill="none"
+        stroke="#a87f47" stroke-opacity="0.34" stroke-width="1.8" stroke-linecap="round"/>
+
+  <!-- ============ THE FOLD ===============================================
+       The closed edge: a shallow trough, then the ridge of the crease
+       itself catching the drawer light. -->
+  <path d="M19,244.6 L313,244.6" fill="none" stroke="#b58e55" stroke-opacity="0.34" stroke-width="1.3"/>
+  <path d="M17,249.2 L315,249.2" fill="none" stroke="#f4e3ba" stroke-opacity="0.45" stroke-width="2.2"/>
+  <!-- softened, slightly bruised corners of the fold -->
+  <path d="M9.6,243 Q9.6,251.5 17.5,251.8" fill="none" stroke="#a87f47" stroke-opacity="0.35" stroke-width="1.4"/>
+  <path d="M322.4,243 Q322.4,251.5 314.5,251.8" fill="none" stroke="#a87f47" stroke-opacity="0.4" stroke-width="1.4"/>
+
+  <!-- ============ THE BOX STAMP =========================================
+       Added 2026-08-28 on the design critic's note: the closed face read
+       ~85% blank manila, which in a drawer of dense colourful junk looks
+       like a placeholder. One element only, and deliberately the quietest
+       kind — a ruled box stamp knocked slightly off square, at 0.28 in the
+       house browns, so the ANALYTICS tab stays far and away the loudest
+       thing here. Chosen over faint ruling lines because hairlines simply
+       vanish at the ~150px the item is actually drawn at. Its rotated box
+       spans x 148..294 / y 88..142, clear of both stains and every edge. -->
+  <g transform="rotate(-6.5 221 115)" opacity="0.28">
+    <rect x="150" y="96" width="142" height="38" rx="2.5"
+          fill="none" stroke="#6b4f22" stroke-width="2.4"/>
+    <text x="221" y="121" text-anchor="middle"
+          font-family="'Courier Prime','Courier New',Courier,monospace"
+          font-size="15" font-weight="700" fill="#6b4f22"
+          textLength="118" lengthAdjust="spacing">FIELD RECORDS</text>
+  </g>
+
+  <!-- ============ THE FILE CODE ==========================================
+       Typed once, small, half worn off — the second and last detail. -->
+  <text x="34" y="234" transform="rotate(-1.1 34 234)"
+        font-family="'Courier Prime','Courier New',Courier,monospace"
+        font-size="9" letter-spacing="1.8" fill="#6d5a34" opacity="0.6">JD-A1</text>
+
+  <!-- ============ THE TAB LABEL ==========================================
+       The item's entire name in the pile, so it is set big for its strip
+       and locked to 116 units of advance: mono, bold, letterspaced, with a
+       faint impression under the ink the way a struck key leaves one. -->
+  <g text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace"
+     font-size="18" font-weight="700" textLength="116" lengthAdjust="spacing">
+    <text x="166.9" y="26.9" fill="#8a6a34" opacity="0.35" textLength="116" lengthAdjust="spacing">ANALYTICS</text>
+    <text x="166"   y="26"   fill="#33240f" textLength="116" lengthAdjust="spacing">ANALYTICS</text>
+  </g>
+</svg>

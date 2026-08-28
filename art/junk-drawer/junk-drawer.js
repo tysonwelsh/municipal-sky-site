@@ -116,7 +116,9 @@ function JD_track(type, label) {
    never reaches through it to the selection underneath. */
 function JD_layerOpen() {
   return !!((window.JD_record && window.JD_record.isOpen()) ||
-            (window.JD_turn && window.JD_turn.isOpen()));
+            (window.JD_turn && window.JD_turn.isOpen()) ||
+            /* the analytics folder is the third one (2026-08-28) */
+            (window.JD_folder && window.JD_folder.isOpen()));
 }
 
 /* ---- the pile loader + field-notes renderer ------------------------------ */
@@ -133,6 +135,18 @@ function JD_layerOpen() {
      from taxonomy.sizeTiers at load (see sizeBoxes), so the scale is
      data-driven. */
   var BASE = { xs: 6, s: 9, m: 15.5, l: 22, xl: 30 };
+  /* THE TIER RULER, and why it is declared all the way out here (2026-08-28,
+     found while wiring the analytics folder onto the same line): it is
+     RESOLVED from the live taxonomy inside the data.php .then, and READ two
+     .then's later, by the furniture's ready() calls — separate function
+     scopes. Declared as a local `function boxFor` in the first block, the
+     sheet's `ready(boxFor('xl'))` in the second threw a ReferenceError
+     INSIDE the success handler, so every single load fell through to the
+     .catch: the fallback note printed under a pile that had in fact loaded,
+     and JD_record.setData / JD_turn.setData / the #<id> deep link never ran
+     at all (the report card was dead on every press). Hoisting the binding
+     is the whole fix; the fallback body is what a failed load still gets. */
+  var boxFor = function (sc) { return BASE[sc] || BASE.m; };
 
   /* ---- size normalization (owner decision, 2026-08-09) -------------------
      Tiers are AREA classes. The tier box is the side of the square every
@@ -675,7 +689,7 @@ function JD_layerOpen() {
          the hardcoded BASE as fallback if an id is missing */
       var tiers = {};
       (tax.sizeTiers || []).forEach(function (t) { tiers[t.id] = t.box; });
-      function boxFor(sc) { return tiers[sc] || BASE[sc] || BASE.m; }
+      boxFor = function (sc) { return tiers[sc] || BASE[sc] || BASE.m; };
       turnBox = boxFor('m');   /* the turn button is a medium drawer object */
       return Promise.all(data.items.map(function (item) {
         var primary = item.responses.filter(function (r) {
@@ -778,6 +792,9 @@ function JD_layerOpen() {
       /* …and the instructions sheet, on the xl ruler — furniture in the
          same tradition (see the sheet module below) */
       if (window.JD_sheet) window.JD_sheet.ready(boxFor('xl'));
+      /* …and the analytics folder, on the l ruler — the third piece of
+         furniture, same tradition (see the folder module below) */
+      if (window.JD_folder) window.JD_folder.ready(boxFor('l'));
       /* hand the record module the payload + the primary SVG texts, so a
          record opens with zero extra requests */
       if (window.JD_record) {
@@ -835,6 +852,9 @@ function JD_layerOpen() {
          The instructions sheet rides the same rule. */
       if (window.JD_turnObject) window.JD_turnObject.ready(null);
       if (window.JD_sheet) window.JD_sheet.ready(null);
+      /* the folder likewise: its numbers come from jd-analytics.php, which
+         data.php's failure says nothing about */
+      if (window.JD_folder) window.JD_folder.ready(null);
       if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
     });
 })();
@@ -1823,6 +1843,11 @@ function JD_layerOpen() {
                away, Esc and resize already put it back via hideTag. */
             if (item === picked) hideTag();
             else pick(item);
+          } else if (item.dataset.folder) {
+            /* the analytics folder: a tap OPENS it into its dialog. No pick,
+               no specimen tag, no report card — it is not collection either,
+               and what is inside it is a dashboard, not an object. */
+            if (window.JD_folder) window.JD_folder.open();
           } else {
             pick(item);
           }
@@ -2436,6 +2461,737 @@ function JD_layerOpen() {
   }
 
   window.JD_sheet = { ready: ready };
+})();
+
+/* ---- THE ANALYTICS FOLDER — the drawer's own paperwork ---------------------
+   (owner commission, 2026-08-28; the contract is PLAN-ANALYTICS §2–§3)
+
+   A closed manila folder lying in the pile: furniture in the instructions
+   sheet's and the turn object's tradition — a static asset
+   (analytics-folder.svg, cache-busted through index.php's $jd_assets like
+   its two siblings) injected from here, never an entry. data.php has never
+   heard of it, it earns no count line and no legend row. One dataset flag,
+   data-folder="analytics", buys its one difference: a tap does NOT pick it
+   and never raises a specimen tag — it OPENS the folder into a dialog
+   carrying the drawer's own numbers, so a curious visitor can see what is
+   actually being measured.
+
+   IT SCATTERS ANYWHERE, AT THE FULL TILT, AT AN ORDINARY z — and that is
+   the deliberate opposite of the instructions sheet's rule two modules up.
+   The sheet is signage: it has to be found, so it deals centred, nearly
+   upright, and above everything on every load. The folder is junk that
+   happens to be furniture. A visitor who buries it under a handful of
+   scraps has done nothing wrong, and a reload will not dig it back out.
+
+   THE DASHBOARD IS FETCHED LAZILY — on the first open only, then cached for
+   the page life and re-rendered from cache on every open after. A visitor
+   who never taps the folder never pays for the aggregate queries, and the
+   drawer's own first paint is never behind them. A failed fetch renders a
+   quiet mono note inside the open folder (the fallbackNote voice), never a
+   broken dashboard.
+
+   Charts are inline SVG strings built here from the payload, in the
+   meterSVG/barHTML tradition at the top of this file: no libraries, no
+   build step, everything interpolated through the local esc(). The design
+   brief is Tufte × the drawer — no chart frames, no graph paper behind the
+   marks, no legend where a direct label fits, value labels instead of axis
+   ticks, and every chart's subtitle states its population honestly. The
+   fun lives in the folder, the tab and the paper cards; the marks stay
+   flat. */
+(function () {
+  var ID = 'jd-analytics';
+  var ASSET = '/art/junk-drawer/analytics-folder.svg';
+  var API = '/api/jd-analytics.php';
+  var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
+  var FALLBACK_BOX = 22;               /* = BASE.l, if the drawer never loaded */
+  var ROT = 34;                        /* the pile's own scatter range, ± deg */
+  var Z_FOLDER = 50;                   /* above nothing in particular: it is
+                                          ordinary junk, and it says so */
+  var INSET = 0.012;                   /* same wall clearance as the scatter */
+
+  var art = null, box = null, armed = false, el = null;
+  var scrim = null, cardEl = null, bodyEl = null;
+  var isOpen = false, lastFocus = null;
+  var data = null, mmap = null, inflight = null, failed = false;
+
+  /* every module in this file carries its own — the interpolations below are
+     model labels and axis labels out of a JSON payload, and they go into both
+     markup and SVG attribute values */
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /* cache-busted exactly as the turn object's and the sheet's artwork are —
+     the hash rides the script tag because there is no <link> or <img> to
+     hang it on */
+  function assetUrl() {
+    var tag = document.querySelector('script[data-jd-analytics]');
+    var v = tag && tag.getAttribute('data-jd-analytics');
+    return ASSET + (v ? '?v=' + encodeURIComponent(v) : '');
+  }
+
+  /* retried like the sheet's fetch, and with NO inline fallback for the same
+     reason: a drawer without its folder still works — the numbers are a
+     curiosity, not the feature — so a failed deploy leaves the pile one
+     object lighter and says so in the console. */
+  var RETRY_MS = [600, 1800];
+  function loadArt(tries) {
+    fetch(JD_API + assetUrl())
+      .then(function (r) {
+        if (!r.ok) throw new Error(ASSET + ' ' + r.status);
+        return r.text();
+      })
+      .then(function (text) {
+        if (text.indexOf('<svg') < 0) throw new Error(ASSET + ' is not an SVG');
+        art = text; build();
+      })
+      .catch(function (err) {
+        if (tries < RETRY_MS.length) {
+          window.setTimeout(function () { loadArt(tries + 1); }, RETRY_MS[tries]);
+          return;
+        }
+        if (window.console && console.warn) {
+          console.warn('junk drawer: the analytics folder did not load (' +
+            err.message + ')');
+        }
+      });
+  }
+  loadArt(0);
+
+  /* called by the pile loader with the l tier box (or null when the drawer
+     itself failed to load); `build` runs when both artwork and ruler are in */
+  function ready(tierBox) {
+    box = (typeof tierBox === 'number' && tierBox > 0) ? tierBox : FALLBACK_BOX;
+    armed = true;
+    build();
+  }
+
+  function build() {
+    if (el || !armed || !art) return;
+    var pile = document.querySelector('.jd-pile');
+    if (!pile || !window.JD_svgInst || !window.JD_applySize) return;
+    el = document.createElement('div');
+    el.className = 'jd-item jd-item--folder';
+    el.dataset.id = ID;
+    el.dataset.folder = 'analytics';   /* the one flag the tap path branches on */
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-label', 'Analytics — press to open the folder');
+    el.innerHTML = window.JD_svgInst(art, 'jaf_');
+    var svg = el.querySelector('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+    pile.appendChild(el);
+    /* NO fitView: controlled repo art, frame honest by construction (the
+       turn object's rule) — sized on the shared ruler like everything else */
+    window.JD_applySize(el, box, ID, 1);
+    seat(el, pile);
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();   /* or Space scrolls the page under the dialog */
+        open();
+      }
+    });
+    /* ordinary pile plumbing — drag, twist, settle; the tap branch in
+       wireItem is what routes a press here instead of pick() */
+    if (window.JD_wirePile) window.JD_wirePile();
+  }
+
+  /* the seat: stable per session through the shared scatter map (layoutFor
+     merges unknown ids forward, exactly as it keeps a won item's spot), a
+     fresh anywhere-in-the-well spot otherwise — the turn module's freshSpot
+     math, at the pile's full tilt. z is NEVER stored: it is pinned flat at
+     Z_FOLDER on every load, so a session can neither promote nor permanently
+     entomb it. */
+  function seat(node, pile) {
+    var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
+    var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
+    var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
+    /* inside(): a centre far enough from every wall that the whole object
+       clears it — the scatter's own rule, borrowed verbatim from freshSpot */
+    function inside(half) {
+      var lo = half + INSET, span = Math.max(0, 1 - 2 * lo);
+      return +(lo + Math.random() * span).toFixed(4);
+    }
+    var map = JD_store.get(SCATTER_KEY) || {};
+    var p = map[ID];
+    if (!p) {
+      p = {
+        x: inside(hw), y: inside(hh),
+        rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
+      };
+      map[ID] = p;
+      JD_store.set(SCATTER_KEY, map);
+    }
+    /* pushed clear of the turn button's reserved corner at apply time, same
+       as every other item; the stored seat itself stays untouched */
+    var a = window.JD_avoidTurn ? window.JD_avoidTurn(p.x, p.y, hw, hh) : p;
+    node.style.left = (a.x * 100) + '%';
+    node.style.top = (a.y * 100) + '%';
+    node.style.setProperty('--rot', (p.rot || 0) + 'deg');
+    node.style.zIndex = Z_FOLDER;
+  }
+
+  /* ---- the data ----------------------------------------------------------
+     One fetch per page life. `failed` is sticky on purpose: a visitor who
+     opens the folder again after the endpoint fell over gets the note back
+     immediately rather than a second spinner and a second dead request. */
+  function load() {
+    if (inflight) return;
+    inflight = fetch(JD_API + API)
+      .then(function (r) {
+        if (!r.ok) throw new Error(API + ' ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error(API + ' answered without ok:true');
+        data = j; indexModels(); inflight = null;
+        if (isOpen) render();
+      })
+      .catch(function (err) {
+        failed = true; inflight = null;
+        if (window.console && console.warn) {
+          console.warn('junk drawer: the analytics folder is empty (' +
+            err.message + ')');
+        }
+        if (isOpen) render();
+      });
+  }
+
+  /* ---- ONE COLOR PER MODEL, EVERYWHERE (the brief's hardest line) ---------
+     A fixed ordered list of print inks chosen to sit on warm paper, assigned
+     by POSITION — but position among the models that actually DRAW a
+     colored mark, not position in the payload's models[] array (design
+     review, 2026-08-28). The registry carries models that appear in no
+     chart, or only in rows the MIN_N filter drops; letting those consume
+     inks pushed the visible marks down the list and landed cobalt next to
+     slate teal, which is the one adjacency this palette cannot survive.
+     Walking data.models order and handing the next ink to each model that
+     survives into cost, firsts or a plotted axis row keeps the top of the
+     list — the maximally separated end — doing the work, and still gives a
+     model the SAME ink in the cost bars, the first-place bars and all four
+     axis panels, which is what makes the small multiples readable without a
+     legend in every panel. The grade book is the one chart that does NOT
+     use these — a grade has its own meaning-carrying ramp (worst→best) and
+     the model's identity is already in its label — so it consumes no ink. */
+  var PALETTE = ['#b8541f',   /* burnt orange */
+                 '#1f7a63',   /* teal green */
+                 '#2b5aa3',   /* cobalt */
+                 '#7a3b66',   /* plum */
+                 '#6f7a1e',   /* olive */
+                 '#9b2d3a',   /* crimson */
+                 '#46707a',   /* slate teal */
+                 '#8a6a1a'];  /* bronze */
+  /* the report card's worst→best grade ramp, copied from meterSVG at the top
+     of this file — the grade book has to speak the ramp visitors already
+     learned on the specimen tag */
+  var RAMP = ['#8f1d12', '#b0490f', '#a06200', '#46761a', '#0b6a1f'];
+
+  function indexModels() {
+    mmap = {};
+    /* the marked set: every model that will put a colored rect or dot on
+       the page. The axes contribute only rows that survive MIN_N, because a
+       dropped row draws nothing and an ink spent on it is an ink wasted. */
+    var marked = {};
+    (data.cost || []).forEach(function (c) { marked[c.model_id] = 1; });
+    (data.firsts || []).forEach(function (f) { marked[f.model_id] = 1; });
+    (data.axes || []).forEach(function (ax) {
+      (ax.models || []).forEach(function (r) {
+        if ((+r.n || 0) >= MIN_N) marked[r.model_id] = 1;
+      });
+    });
+    var ink = 0;
+    (data.models || []).forEach(function (m) {
+      mmap[m.model_id] = {
+        label: m.label || m.model_id,
+        /* unmarked models get no ink at all — mColor's warm-brown fallback
+           covers them if one ever does reach a mark */
+        color: marked[m.model_id] ? PALETTE[ink++ % PALETTE.length] : null
+      };
+    });
+  }
+  function mLabel(id) { return (mmap && mmap[id] && mmap[id].label) || id; }
+  function mColor(id) { return (mmap && mmap[id] && mmap[id].color) || '#5b4526'; }
+
+  /* Direct labels only work if they FIT: the gutter is a fixed number of user
+     units and SVG text does not wrap or clip itself — an over-long name just
+     runs off the left of the viewBox and is silently beheaded (which is what
+     "Claude Sonnet 5 → Opus 5 refine" did on first paint). One step down in
+     size buys the long names most of their length back; past that they are
+     truncated with an ellipsis, and the chart's aria-label still carries
+     every name in full. */
+  function labFor(id) {
+    var s = mLabel(id);
+    if (s.length <= 17) return { t: s, cls: 'fx-t-lab' };
+    return { t: s.length > 22 ? s.slice(0, 21) + '…' : s, cls: 'fx-t-lab is-long' };
+  }
+  function keyFor(id) {
+    var s = mLabel(id);
+    return s.length > 14 ? s.slice(0, 13) + '…' : s;
+  }
+
+  /* ---- chart geometry ----------------------------------------------------
+     Every bar chart shares ONE ruler (user units, viewBox width W): the same
+     label gutter, the same bar origin and the same maximum bar length, so
+     cost, firsts and grades stack as three readings of one instrument
+     rather than three drawings. The CSS caps the rendered width, which is
+     what keeps the type near its natural size at every card width instead
+     of ballooning with the column. */
+  var W = 340;        /* bar-chart viewBox width */
+  var LAB = 104;      /* the label gutter's right edge */
+  var BAR0 = 110;     /* where every bar and every track starts */
+  var BARW = 118;     /* the longest bar / the full 5-segment track */
+  var ROWH = 21;
+  /* the axis panels are narrower than they were (design review, 2026-08-28):
+     the old 200-unit box rendered its type a full step below the bar
+     charts', and three of the four panels were paying for a key gutter that
+     CSS then hid. PW/PLAB/PX0/PXW all come down together so the ruler keeps
+     its proportions while the rendered px-per-unit goes up. */
+  var PW = 172;       /* an axis panel's viewBox width */
+  var PLAB = 62,      /* the key gutter's right edge — also the crop line for
+                         panels 2–4, which drop the gutter entirely */
+      PX0 = 68, PXW = 84, PROWH = 15;
+  /* PXW 90 → 84 (2026-08-28): a dot at the scale's CEILING sat at the
+     ruler's end, 158, and painted over the head of its own value label
+     (anchored end at 170 — "3.0" read ".0"). Ending the ruler at 152 buys
+     the label its clearance at every value the scale can produce; every
+     panel shares the constant, so the rulers stay geometrically identical. */
+  /* below this a mean is one person's opinion, not a reading */
+  var MIN_N = 3;
+
+  function num(n) {
+    return String(Math.round(+n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function day(iso) { return String(iso || '').slice(0, 10); }
+
+  function cardHTML(cls, title, sub, inner) {
+    return '<section class="fx-card ' + cls + '">' +
+      '<h3 class="fx-title">' + esc(title) + '</h3>' +
+      '<p class="fx-sub">' + esc(sub) + '</p>' + inner + '</section>';
+  }
+
+  /* the footnote a MIN_N drop owes the reader: the models left off this
+     chart, each named with the n that disqualified it. Dropping them in
+     silence would read as "these models have no data", which is a different
+     and false claim — the subtitle is the only place that can say so. */
+  function notPlotted(list) {
+    if (!list || !list.length) return '';
+    return ' — not plotted: ' + list.map(function (x) {
+      return mLabel(x.id) + ' (n ' + num(x.n) + ')';
+    }).join(', ');
+  }
+
+  /* THE LEDGER — four figures, not a chart. Tufte's own rule: a handful of
+     numbers is a table, and a table beats a graph of it.
+
+     ITS FOUR FIGURES SPAN TWO POPULATIONS and the subtitle has to say so
+     (design review, 2026-08-28 — it used to read "everything on file",
+     which is true of nothing here). Turns and drawings are visitor turns
+     only: the curated backfill sits at status='generated' forever and never
+     was a turn. Ratings and spend include the curated bench, because the
+     bench is the owner's corpus and its generations cost real money. Four
+     figures under one honest line beats four figures under a wrong one. */
+  function ledgerHTML() {
+    var t = data.totals || {};
+    function fig(v, label) {
+      return '<div class="fx-fig"><span class="fx-fig-v">' + esc(v) + '</span>' +
+        '<span class="fx-fig-l">' + esc(label) + '</span></div>';
+    }
+    return '<section class="fx-card fx-ledger">' +
+      '<div class="fx-figs">' +
+        fig(num(t.turns), 'turns taken') +
+        fig(num(t.survived), 'drawings survived') +
+        fig(num(t.rated_responses), 'responses rated') +
+        fig('$' + (+t.cost_usd || 0).toFixed(2), 'provider spend') +
+      '</div>' +
+      '<p class="fx-sub fx-ledger-sub">turns and drawings are visitor ' +
+        'turns; ratings and spend include the curated bench — counted ' +
+        esc(day(data.generated)) + '</p>' +
+      '</section>';
+  }
+
+  /* the shared horizontal-bar drawing. rows: {id, v, value, tail} — v sets
+     the length (scaled to the largest v in THIS chart, never across charts:
+     dollars and rates are different quantities), value is printed at the
+     bar's end, tail is the optional small figure at the right margin. */
+  function barsSVG(rows, alt) {
+    var h = rows.length * ROWH + 6, max = 0, s = '';
+    rows.forEach(function (r) { if (r.v > max) max = r.v; });
+    if (max <= 0) max = 1;
+    rows.forEach(function (r, i) {
+      var y = 4 + i * ROWH;
+      var w = Math.max(1.5, BARW * r.v / max);
+      var lb = labFor(r.id);
+      s += '<text x="' + (LAB - 8) + '" y="' + (y + 10.4) +
+           '" text-anchor="end" class="' + lb.cls + '">' + esc(lb.t) + '</text>' +
+           '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + w.toFixed(1) +
+           '" height="11" fill="' + mColor(r.id) + '"/>' +
+           '<text x="' + (BAR0 + w + 5).toFixed(1) + '" y="' + (y + 10.6) +
+           '" class="fx-t-val">' + esc(r.value) + '</text>';
+      if (r.tail) {
+        s += '<text x="' + (W - 2) + '" y="' + (y + 10.4) +
+             '" text-anchor="end" class="fx-t-tail">' + esc(r.tail) + '</text>';
+      }
+    });
+    return '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' + h +
+      '" role="img" aria-label="' + esc(alt) + '">' + s + '</svg>';
+  }
+  function altOf(title, rows) {
+    return title + '. ' + rows.map(function (r) {
+      return mLabel(r.id) + ', ' + r.value + (r.tail ? ', ' + r.tail : '');
+    }).join('. ');
+  }
+
+  /* WHAT A DRAWING COSTS — pre-sorted by the endpoint, descending; the order
+     is the finding, so it is never re-sorted here. Three decimals, not four
+     (design review, 2026-08-28): $0.0479 is a claim about the fourth digit
+     that an n of 86 across two model versions does not earn, and the
+     endpoint's own figure is untouched — this is a printing decision. */
+  function costHTML() {
+    var src = data.cost || [];
+    if (!src.length) return '';
+    var rows = src.map(function (c) {
+      return { id: c.model_id, v: +c.avg_usd || 0,
+               value: '$' + (+c.avg_usd || 0).toFixed(3),
+               tail: 'n ' + num(c.n) };
+    });
+    return cardHTML('fx-cost', 'What a drawing costs',
+      'average provider cost per surviving response, every harness, the ' +
+      'curated bench included',
+      barsSVG(rows, altOf('Average cost per surviving response', rows)));
+  }
+
+  /* WHO TAKES FIRST — the BAR is the rate, so the number AT the bar's end is
+     the rate too (design review, 2026-08-28). It used to print the raw count
+     there, which put "8 of 22" at the end of a bar longer than the one
+     ending "9 of 31" — a longer mark carrying a smaller printed number is
+     the one thing a bar chart may never do. The count has not gone away and
+     must not: a rate off 22 turns and a rate off 31 are not the same claim,
+     so it moves to the tail column, in the cost card's "n 86" seat. */
+  function firstsHTML() {
+    var src = data.firsts || [];
+    if (!src.length) return '';
+    var rows = src.map(function (f) {
+      return { id: f.model_id, v: +f.rate || 0,
+               value: Math.round((+f.rate || 0) * 100) + '%',
+               tail: num(f.firsts) + ' of ' + num(f.judged) };
+    });
+    return cardHTML('fx-firsts', 'Who takes first',
+      'first place on judged visitor turns; the denominator is the turns ' +
+      'that model survived',
+      barsSVG(rows, altOf('First place on judged visitor turns', rows)));
+  }
+
+  /* THE GRADE BOOK — the report card's segmented gauge, rebuilt at chart
+     size: a 5-segment track filled to the mean in the grade ramp's ink and
+     the paper-coloured dividers drawn OVER the fill (battery-style, so a
+     nearly full bar still reads as its segments).
+
+     THREE THINGS THE FIRST BUILD GOT WRONG (design review, 2026-08-28):
+
+     - The empty part of the track drew nothing, so a 1.9 showed one short
+       segment and four units of blank paper — the reader could not see what
+       the mark was short OF. The dividers past the fill edge now draw in
+       the faint rule instead of the paper (fx-seg-out), so all five
+       segments stand whether or not they are filled.
+     - An ink tick was drawn at the fill edge. The fill edge already IS the
+       mean, to the pixel — the tick restated it and encoded nothing. Gone.
+     - The full-track outline was stroked in the GRADE ink, which drew a red
+       rectangle the whole width of the track for a 1.9 and let it read as a
+       full red bar at a glance. The outline is scaffolding; only the fill
+       carries the datum, so the outline is now the same neutral brown at
+       every grade. */
+  function gradesHTML() {
+    var src = data.grades || [];
+    if (!src.length) return '';
+    var STEPS = 5;   /* the permanent 1..5 rank scale (PLAN-ANALYTICS §1) */
+    /* MIN_N: a mean over one or two ratings is a person, not a reading, and
+       a grade bar states it with the same authority as a mean over forty.
+       Dropped rows are named in the subtitle rather than vanishing. */
+    var rows = [], dropped = [];
+    src.forEach(function (g) {
+      if ((+g.n || 0) < MIN_N) dropped.push({ id: g.model_id, n: +g.n || 0 });
+      else rows.push(g);
+    });
+    if (!rows.length) return '';
+    var s = '', alt = [];
+    rows.forEach(function (g, i) {
+      var v = Math.max(1, Math.min(STEPS, +g.avg || 1));
+      var y = 4 + i * ROWH;
+      /* the ramp tier is the WHOLE grade the mean sits in — floor, not a
+         rescale-and-round, which put the tier boundaries at 1.5/2.5/… and
+         coloured a 3.4 and a 3.6 differently for no reason a reader of the
+         1–5 scale could name */
+      var ink = RAMP[Math.min(4, Math.max(0, Math.floor(v) - 1))];
+      var w = BARW * v / STEPS;
+      var lb = labFor(g.model_id);
+      s += '<text x="' + (LAB - 8) + '" y="' + (y + 10.4) +
+           '" text-anchor="end" class="' + lb.cls + '">' + esc(lb.t) + '</text>' +
+           '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + w.toFixed(1) +
+           '" height="11" fill="' + ink + '"/>';
+      for (var t = 1; t < STEPS; t++) {
+        var tx = BAR0 + BARW * t / STEPS;
+        s += '<line x1="' + tx.toFixed(1) + '" y1="' + (y + 1.5) + '" x2="' +
+             tx.toFixed(1) + '" y2="' + (y + 12.5) + '" class="' +
+             (tx <= BAR0 + w ? 'fx-seg' : 'fx-seg-out') + '"/>';
+      }
+      s += '<rect x="' + BAR0 + '" y="' + (y + 1.5) + '" width="' + BARW +
+           '" height="11" fill="none" stroke="rgba(74,53,18,0.28)" ' +
+           'stroke-width="1"/>' +
+           '<text x="' + (BAR0 + BARW + 7) + '" y="' + (y + 10.6) +
+           '" class="fx-t-val">' + v.toFixed(1) + ' of ' + STEPS + '</text>' +
+           '<text x="' + (W - 2) + '" y="' + (y + 10.4) +
+           '" text-anchor="end" class="fx-t-tail">n ' + esc(num(g.n)) + '</text>';
+      alt.push(mLabel(g.model_id) + ', ' + v.toFixed(1) + ' of ' + STEPS +
+        ', n ' + num(g.n));
+    });
+    var svg = '<svg class="fx-chart" viewBox="0 0 ' + W + ' ' +
+      (rows.length * ROWH + 6) + '" role="img" aria-label="' +
+      esc('Average overall grade. ' + alt.join('. ')) + '">' + s + '</svg>';
+    return cardHTML('fx-grades', 'The grade book',
+      'average overall grade on the permanent 1–5 scale, all rated ' +
+      'responses, live rubric only, n ' + MIN_N + ' and up' +
+      notPlotted(dropped), svg);
+  }
+
+  /* THE FOUR AXES — small multiples. models[] arrives in the global models[]
+     order inside every panel, deliberately, and is NOT re-sorted here: a row
+     has to mean the same model in all four panels or the comparison the
+     panels exist for is a lie. The scales are NEVER normalized together —
+     a 3-point axis and a 4-point axis are different rulers, and each panel
+     states its own.
+
+     THE KEY GUTTER IS PAID FOR ONCE (design review, 2026-08-28). The key is
+     still drawn into EVERY panel, so all four keep byte-identical geometry
+     — that is what makes them small multiples — but only the lead panel
+     shows the gutter: panels 2–4 crop it out of their viewBox at PLAB, so
+     their whole width goes to the ruler instead of to reserved white space.
+     Same user units, same ruler, three-quarters less waste; the CSS caps
+     each panel's rendered width in the same proportion, so the px-per-unit
+     is identical across all four and the type does not change size from
+     panel to panel.
+
+     MIN_N applies here too: a row whose n is 1 or 2 is dropped before the
+     loop, so a panel never plots a dot it cannot stand behind, and the
+     dropped models are named in the card's subtitle. */
+  function axesHTML() {
+    var axes = data.axes || [];
+    if (!axes.length) return '';
+    /* worst case per model across the four axes — if even its largest n is
+       under the floor, the model is nowhere on this card and is named */
+    var thin = {}, dropped = [];
+    axes.forEach(function (ax) {
+      (ax.models || []).forEach(function (r) {
+        var n = +r.n || 0;
+        if (n >= MIN_N) { thin[r.model_id] = -1; return; }
+        if (thin[r.model_id] !== -1) {
+          thin[r.model_id] = Math.max(thin[r.model_id] || 0, n);
+        }
+      });
+    });
+    Object.keys(thin).forEach(function (id) {
+      if (thin[id] !== -1) dropped.push({ id: id, n: thin[id] });
+    });
+    var panels = axes.map(function (ax, pi) {
+      var pts = +ax.points || 3;
+      var rows = (ax.models || []).filter(function (r) {
+        return (+r.n || 0) >= MIN_N;
+      });
+      var h = 8 + rows.length * PROWH + 14, s = '', key = '', alt = [];
+      rows.forEach(function (r, i) {
+        var y = 8 + i * PROWH + PROWH / 2;
+        var v = Math.max(1, Math.min(pts, +r.avg || 1));
+        var x = PX0 + PXW * (pts > 1 ? (v - 1) / (pts - 1) : 1);
+        s += '<line x1="' + PX0 + '" y1="' + y + '" x2="' + (PX0 + PXW) +
+             '" y2="' + y + '" class="fx-track"/>' +
+             '<circle cx="' + x.toFixed(1) + '" cy="' + y + '" r="3.4" fill="' +
+             mColor(r.model_id) + '"/>' +
+             '<text x="' + (PW - 2) + '" y="' + (y + 2.6) +
+             '" text-anchor="end" class="fx-t-axval">' + v.toFixed(1) + '</text>';
+        key += '<text x="' + PLAB + '" y="' + (y + 2.6) +
+               '" text-anchor="end" class="fx-t-key">' +
+               esc(keyFor(r.model_id)) + '</text>';
+        alt.push(mLabel(r.model_id) + ' ' + v.toFixed(1));
+      });
+      var base = 8 + rows.length * PROWH + 9;
+      s += '<text x="' + PX0 + '" y="' + base + '" class="fx-t-scale">1</text>' +
+           '<text x="' + (PX0 + PXW) + '" y="' + base +
+           '" text-anchor="end" class="fx-t-scale">' + pts + '</text>';
+      /* the lead panel keeps the whole box, key gutter and all; every panel
+         after it starts its viewBox at the gutter's right edge, which shows
+         the identical ruler and simply never renders the key it carries */
+      var vb = pi === 0 ? '0 0 ' + PW + ' ' + h
+                        : PLAB + ' 0 ' + (PW - PLAB) + ' ' + h;
+      return '<div class="fx-panel"><h4>' + esc(ax.label) +
+        ' <span class="fx-of">of ' + pts + '</span></h4>' +
+        '<svg viewBox="' + vb + '" role="img" aria-label="' +
+        esc(ax.label + ', 1 to ' + pts + '. ' + alt.join('. ')) + '">' +
+        '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
+    }).join('');
+    return cardHTML('fx-axes', 'The four axes',
+      'average per axis, all rated responses, live axes only, n ' + MIN_N +
+      ' and up — each panel is its own ruler and the scales are never ' +
+      'pooled' + notPlotted(dropped),
+      '<div class="fx-axgrid">' + panels + '</div>');
+  }
+
+  /* THE METER RUNS — one ink line, cumulative, x spaced by real DATE (not by
+     row index: the drawer is not used every day, and index spacing would
+     quietly redraw a quiet fortnight as steady work). No y axis, no
+     gridlines: the ends are labelled and the total is printed where the line
+     stops, which is the whole reading. Sparkline humility.
+
+     ITS BOX IS ITS OWN, NOT the bar charts' W (design review, 2026-08-28).
+     The line has no label gutter and no tail column, so borrowing the
+     340-unit bar box left it stopping two-thirds of the way across its card
+     with a quarter of the paper blank. W2 is exactly what the line needs:
+     the x0/x1/y0/y1 constants below are untouched — this widens nothing and
+     redraws nothing, it just stops reserving room the chart never used. */
+  function spendHTML() {
+    var rows = data.spend || [];
+    if (!rows.length) return '';
+    var x0 = 6, x1 = 264, y0 = 16, y1 = 84, H2 = 112, W2 = 306;
+    var max = 0;
+    rows.forEach(function (r) { if ((+r.cum_usd || 0) > max) max = +r.cum_usd; });
+    if (max <= 0) max = 1;
+    function dnum(s) {
+      var t = Date.parse(String(s) + 'T00:00:00Z');
+      return isNaN(t) ? 0 : t / 86400000;
+    }
+    var d0 = dnum(rows[0].date), span = dnum(rows[rows.length - 1].date) - d0;
+    function px(r) { return span > 0 ? x0 + (x1 - x0) * (dnum(r.date) - d0) / span : x1; }
+    function py(v) { return y1 - (y1 - y0) * ((+v || 0) / max); }
+    var d = rows.map(function (r, i) {
+      return (i ? 'L' : 'M') + px(r).toFixed(1) + ' ' + py(r.cum_usd).toFixed(1);
+    }).join(' ');
+    var last = rows[rows.length - 1];
+    var lx = px(last), ly = py(last.cum_usd);
+    var s = (rows.length > 1
+        ? '<path d="' + d + '" class="fx-line"/>'
+        : '') +
+      '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) +
+      '" r="2.6" class="fx-dot"/>' +
+      '<text x="' + (lx + 6).toFixed(1) + '" y="' + (ly + 3.4).toFixed(1) +
+      '" class="fx-t-val">$' + max.toFixed(2) + '</text>' +
+      '<text x="' + x0 + '" y="' + (H2 - 6) + '" class="fx-t-scale">' +
+      esc(day(rows[0].date)) + '</text>' +
+      '<text x="' + x1 + '" y="' + (H2 - 6) +
+      '" text-anchor="end" class="fx-t-scale">' + esc(day(last.date)) + '</text>';
+    return cardHTML('fx-spend', 'The meter runs',
+      'cumulative provider spend, every model and harness, on the ' +
+      num(rows.length) + ' days with any',
+      '<svg class="fx-chart" viewBox="0 0 ' + W2 + ' ' + H2 +
+      '" role="img" aria-label="' +
+      esc('Cumulative provider spend from ' + day(rows[0].date) + ' to ' +
+        day(last.date) + ', ending at $' + max.toFixed(2)) + '">' + s + '</svg>');
+  }
+
+  /* ---- the dialog: the folder OPENED ------------------------------------
+     JD_record's scrim + card, with the turn card's masthead discipline —
+     the head (tab, title, ✕) sits OUTSIDE the scroller so the folder's
+     identity never scrolls away from its contents. No history/pushState:
+     the record card needs deep links because a report card is a thing you
+     send someone; the folder is a drawer you opened. */
+  function buildDialog() {
+    if (scrim) return;
+    scrim = document.createElement('div');
+    scrim.className = 'jd-folder-scrim';
+    scrim.innerHTML =
+      '<div class="jd-folder-card" role="dialog" aria-modal="true" ' +
+      'aria-label="analytics">' +
+        '<div class="jd-folder-head">' +
+          '<div class="jd-folder-tabrow">' +
+            '<span class="jd-folder-tab">ANALYTICS</span></div>' +
+          '<div class="jd-folder-bar">' +
+            '<h2 class="jd-folder-h">The drawer, by the numbers</h2>' +
+            '<p class="jd-folder-dek">what the drawer has actually ' +
+            'measured, counted straight out of its own records</p>' +
+          '</div>' +
+          '<button type="button" class="jd-folder-close" aria-label="close">' +
+          '<span>✕</span></button>' +
+        '</div>' +
+        '<div class="jd-folder-scroll"></div>' +
+      '</div>';
+    document.body.appendChild(scrim);
+    cardEl = scrim.querySelector('.jd-folder-card');
+    bodyEl = scrim.querySelector('.jd-folder-scroll');
+    scrim.addEventListener('pointerdown', function (e) {
+      if (e.target === scrim) close();
+    });
+    scrim.querySelector('.jd-folder-close').addEventListener('click', close);
+  }
+
+  function render() {
+    if (!bodyEl) return;
+    if (!data) {
+      /* the fallbackNote voice: say what did not answer, name the file, and
+         stop — a half-drawn dashboard would be worse than none */
+      bodyEl.innerHTML = '<p class="fx-stuck">the paperwork is stuck — the ' +
+        'numbers load from jd-analytics.php, which did not answer</p>';
+      return;
+    }
+    bodyEl.innerHTML = ledgerHTML() + costHTML() + firstsHTML() +
+      gradesHTML() + axesHTML() + spendHTML();
+  }
+
+  function open() {
+    if (isOpen || !el) return;
+    /* ONE MODAL AT A TIME (C5.4): two aria-modal dialogs on one page is a
+       trap, and whichever is up owns Escape. Both of the others carry the
+       mirror-image line for this folder. */
+    if (window.JD_record && window.JD_record.isOpen()) return;
+    if (window.JD_turn && window.JD_turn.isOpen()) return;
+    /* a live specimen tag belongs to the pile, not under this dialog */
+    if (window.JD_hideTag) window.JD_hideTag();
+    buildDialog();
+    lastFocus = document.activeElement;
+    isOpen = true;
+    scrim.classList.add('is-on');
+    document.documentElement.classList.add('jd-folder-open');
+    cardEl.classList.remove('is-enter');
+    void cardEl.offsetWidth;
+    cardEl.classList.add('is-enter');
+    if (data || failed) render();
+    else {
+      bodyEl.innerHTML = '<p class="fx-stuck">pulling the file&hellip;</p>';
+      load();
+    }
+    var b = scrim.querySelector('.jd-folder-close');
+    if (b) { try { b.focus(); } catch (e) {} }
+  }
+
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    scrim.classList.remove('is-on');
+    document.documentElement.classList.remove('jd-folder-open');
+    /* home is the folder itself: a pointer tap leaves activeElement on
+       <body>, and dumping focus there would send the next Tab back to the
+       top of the page instead of to the object the visitor just closed */
+    var back = (lastFocus && lastFocus !== document.body &&
+                document.contains(lastFocus)) ? lastFocus : el;
+    if (back) { try { back.focus({ preventScroll: true }); } catch (e) {} }
+    lastFocus = null;
+  }
+
+  /* Escape closes. Guarded on isOpen so it is a claim on the key only while
+     the folder is actually up — the pile's own Escape handler is already
+     standing down for that whole time (JD_layerOpen). */
+  window.addEventListener('keydown', function (e) {
+    if (!isOpen || e.key !== 'Escape') return;
+    e.preventDefault();
+    close();
+  });
+
+  window.JD_folder = {
+    ready: ready,
+    open: open,
+    close: close,
+    isOpen: function () { return isOpen; }
+  };
 })();
 
 /* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
@@ -3530,6 +4286,8 @@ function JD_layerOpen() {
     /* one modal at a time: the turn modal owns Esc and the scrim while it is
        up, and two aria-modal dialogs on one page is a trap (C5.4) */
     if (window.JD_turn && window.JD_turn.isOpen()) return;
+    /* …and the analytics folder, which is a third such dialog (2026-08-28) */
+    if (window.JD_folder && window.JD_folder.isOpen()) return;
     var entry = byId(payload.items, id);
     if (!entry) return;
     curEntry = entry;
@@ -3891,6 +4649,8 @@ function JD_layerOpen() {
     if (isOpen) return;
     /* one modal at a time (C5.4): the record card owns Escape while it is up */
     if (window.JD_record && window.JD_record.isOpen()) return;
+    /* …and the analytics folder, which is a third such dialog (2026-08-28) */
+    if (window.JD_folder && window.JD_folder.isOpen()) return;
     /* the working copy is minted by whoever opens the modal; since the opener
        is now an object in the pile rather than a button this module owns, it
        is minted HERE so every entry point gets the same clean start */

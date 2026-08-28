@@ -19,14 +19,15 @@ function jd_v($file)
 //                shifts the instant any JS/CSS/markup ships, with no upkeep
 //   · deployed — the newest asset's mtime; the server stamps this at upload,
 //                so it reads as the moment the live files landed (UTC)
-// turn-object.svg and instructions-object.svg are in this list because they
-// are SERVED ART, not decoration in the stylesheet: the Take-a-Turn trigger's
-// and the instructions sheet's whole appearance, fetched at runtime by
-// junk-drawer.js. Listing them means an art-only edit both busts the
-// visitor's cache (the hashes are stamped onto the script tag below) and
-// moves the build fingerprint + deploy stamp the owner reads in the colophon.
+// turn-object.svg, instructions-object.svg and analytics-folder.svg are in
+// this list because they are SERVED ART, not decoration in the stylesheet:
+// the Take-a-Turn trigger's, the instructions sheet's and the analytics
+// folder's whole appearance, fetched at runtime by junk-drawer.js. Listing
+// them means an art-only edit both busts the visitor's cache (the hashes are
+// stamped onto the script tag below) and moves the build fingerprint +
+// deploy stamp the owner reads in the colophon.
 $jd_assets  = ['junk-drawer.css', 'junk-drawer.js', 'turn-object.svg',
-               'instructions-object.svg', 'index.php'];
+               'instructions-object.svg', 'analytics-folder.svg', 'index.php'];
 // VERSION grew from a one-line marker into an append-only changelog, so the
 // stamp reads the NEWEST (last) line and prints only its leading semver —
 // the prose tail after the em dash is for humans reading git, not for the
@@ -174,13 +175,14 @@ include '../../includes/header.php';
 
 </div>
 
-<!-- data-jd-turn-object / data-jd-instructions: the content hashes of the
-     two runtime-fetched artworks. The script fetches them itself, so their
-     cache-busting tokens have to reach JS from here — there is no <link> or
-     <img> to hang them on. -->
+<!-- data-jd-turn-object / data-jd-instructions / data-jd-analytics: the
+     content hashes of the three runtime-fetched artworks. The script fetches
+     them itself, so their cache-busting tokens have to reach JS from here —
+     there is no <link> or <img> to hang them on. -->
 <script src="junk-drawer.js?v=<?php echo jd_v('junk-drawer.js'); ?>"
         data-jd-turn-object="<?php echo jd_v('turn-object.svg'); ?>"
-        data-jd-instructions="<?php echo jd_v('instructions-object.svg'); ?>"></script>
+        data-jd-instructions="<?php echo jd_v('instructions-object.svg'); ?>"
+        data-jd-analytics="<?php echo jd_v('analytics-folder.svg'); ?>"></script>
 
 <!-- Anonymous usage tracking: a page view. No personal data leaves the
      browser; the server records only a salted, daily-rotating visitor hash

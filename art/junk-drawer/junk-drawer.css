@@ -3615,3 +3615,336 @@ body.jd-pod-drag, body.jd-pod-drag * {
   .jd-item--visitor.is-dropped,
   .jd-item--visitor.is-dropped svg { animation: none; }
 }
+
+/* ============================================================================
+   THE ANALYTICS FOLDER — the closed folder's dialog (PLAN-ANALYTICS §2–§3,
+   owner commission 2026-08-28)
+
+   Tapping the manila folder in the pile opens THIS: the same folder, seen
+   OPEN. The card is manila ground with the ANALYTICS tab reproduced at its
+   head; the dashboard inside is a set of warm-white paper cards laid in the
+   folder, softly shadowed the way the drawer's other paper is. Everything
+   dimensional stops there — the CHARTS are flat and honest (the §3 brief):
+   no frames, no graph paper behind the marks, no legend where a direct
+   label fits, value labels instead of axis ticks.
+
+   Tokens are scoped to .jd-folder-scrim, exactly as the rc-* and turn tokens
+   are scoped to theirs, so none of the three modals can leach into another.
+   The grain data-URI is copied VERBATIM from the record card
+   (stitchTiles="stitch" — never regenerate it; a reseed breaks the tile
+   seams in Safari).
+
+   THE CHART TYPE SIZES LIVE HERE, IN USER UNITS. A CSS length inside an SVG
+   is in the local coordinate system, so `font-size: 9.5px` on .fx-t-val is
+   9.5 viewBox units and scales with the chart — which is why every chart
+   also carries a max-width: uncapped, a full-bleed card would blow the type
+   up to headline size on a wide screen and shrink it to nothing on a phone.
+   Capped, every chart renders within ±25% of its natural size at every
+   width the dialog has.
+   ========================================================================== */
+.jd-folder-scrim {
+  --fmanila: #e8c98e;
+  --fmanila-hi: #f0d8a6;
+  --fmanila-lo: #d5b171;
+  --fpaper: #f7f0dd;
+  --fink: #33240f;
+  /* the two quiet inks, raised after measurement (design review,
+     2026-08-28): --fink-3 at 0.40 came out at 2.32:1 on the paper, which is
+     a hard fail — and it was carrying the n's, the scale ends and the axis
+     ruler labels, i.e. the smallest and most load-bearing type on the
+     dashboard. Quiet is a RANK here, not a licence to be unreadable: these
+     still sit below --fink, they just clear the floor. */
+  --fink-2: rgba(51, 36, 15, 0.78);
+  --fink-3: rgba(51, 36, 15, 0.64);
+  --frule: rgba(74, 53, 18, 0.38);
+  --frule-2: rgba(74, 53, 18, 0.18);
+  --fred: #b3402f;
+  --fmono: "Courier Prime", "Courier New", Courier, monospace;
+  --fform: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+           Georgia, serif;
+  --fgrain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence stitchTiles='stitch' type='fractalNoise' baseFrequency='0.86' numOctaves='3' seed='7'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.34 0 0 0 0 0.26 0 0 0 0 0.13 0 0 0 0.17 0'/%3E%3C/filter%3E%3Crect width='170' height='170' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  /* the fixed site banner (css/style.css, z 1000) paints over this scrim by
+     design — so the scrim RESERVES its band, the record card's standing fix:
+     the modal's world starts below the banner and the card can never slide
+     its tab or its ✕ underneath it. */
+  position: fixed; inset: var(--banner-h, 56px) 0 0 0; z-index: 321;
+  display: none;
+  align-items: center; justify-content: center;
+  padding: max(14px, 2.2vh) 14px;
+  background: rgba(10, 5, 1, 0.55);
+}
+.jd-folder-scrim.is-on { display: flex; }
+html.jd-folder-open { overflow: hidden; }
+
+/* ---- the folder, opened --------------------------------------------------
+   A flex column: the head does not scroll (the turn card's masthead
+   discipline — the folder's identity must never scroll away from its
+   contents), the contents do. */
+.jd-folder-card {
+  position: relative;
+  box-sizing: border-box;
+  width: min(920px, 100%);
+  min-width: 0;
+  max-height: 100%;
+  display: flex; flex-direction: column;
+  color: var(--fink);
+  font-family: var(--fmono);
+  background: var(--fmanila) var(--fgrain);
+  border: 1px solid rgba(48, 38, 20, 0.6);
+  border-radius: 2px 2px 6px 6px;
+  box-shadow: 14px 22px 34px -10px rgba(6, 3, 0, 0.66),
+              3px 6px 12px -4px rgba(6, 3, 0, 0.5);
+}
+@keyframes jdFolderEnter {
+  from { opacity: 0; transform: translateY(14px) rotate(-0.4deg); }
+  to   { opacity: 1; transform: none; }
+}
+.jd-folder-card.is-enter { animation: jdFolderEnter 0.4s cubic-bezier(.2,.8,.25,1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .jd-folder-card.is-enter { animation: none; }
+}
+
+/* ---- the head: the tab, then the folder's cut edge, then the title ------- */
+.jd-folder-head {
+  position: relative; flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--fmanila-hi), var(--fmanila) 70%);
+  border-bottom: 1px solid var(--frule);
+}
+.jd-folder-tabrow { padding: 7px 56px 0 15px; }
+/* the tab reproduced from the artwork: a raised manila flag, house mono,
+   heavily letterspaced. text-indent cancels the trailing letter-space so the
+   word still reads optically centred in its box. */
+.jd-folder-tab {
+  display: inline-block;
+  padding: 4px 13px 3px;
+  background: var(--fmanila-hi);
+  border: 1px solid var(--frule);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  font-family: var(--fmono); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.32em; text-indent: 0.32em;
+  color: var(--fink);
+  box-shadow: 0 -1px 0 rgba(255, 248, 226, 0.55) inset;
+}
+/* the fold: the folder's cut edge, under the tab and over the contents */
+.jd-folder-bar {
+  padding: 7px 56px 9px 15px;
+  border-top: 1px solid var(--frule);
+  background: linear-gradient(180deg, rgba(255,247,224,0.5), rgba(255,247,224,0) 14px);
+}
+.jd-folder-h {
+  margin: 0;
+  font-family: var(--fform); font-weight: 700;
+  font-size: 0.86rem; line-height: 1.2; color: var(--fink);
+}
+.jd-folder-dek {
+  margin: 3px 0 0;
+  font-family: var(--fmono); font-size: 0.62rem; line-height: 1.5;
+  color: var(--fink-2);
+}
+/* the boxed ✕ — the record/turn control language: a 26px printed box centred
+   in a 44px target, pinned to the head's top-right corner so the box lands
+   9px in from the card's edges (the record card's exact seat) */
+.jd-folder-close {
+  position: absolute; top: 0; right: 0; z-index: 3;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer; padding: 0;
+  font-family: var(--fmono); font-size: 0.86rem; line-height: 1;
+  color: var(--fink);
+}
+.jd-folder-close span {
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--frule); background: rgba(255, 250, 232, 0.5);
+}
+.jd-folder-close:hover span {
+  background: var(--fink); color: var(--fmanila-hi); border-color: var(--fink);
+}
+/* the ring belongs on the printed box, not on the 44px target: focus moves
+   here programmatically when the folder opens, and the UA's own ring drew a
+   large blue rectangle over the head */
+.jd-folder-close:focus { outline: none; }
+.jd-folder-close:focus-visible span { outline: 2px solid var(--fred); outline-offset: 2px; }
+
+/* ---- the contents: paper cards laid in the folder ------------------------
+   Two columns on desktop, read as a 2×2 of chart cards between two
+   full-width strips: the ledger opens, the four charts pair up, the axes'
+   small multiples close. Only the ledger and the axes span both columns
+   (design review, 2026-08-28 — the grade book and the spend line used to
+   span too, and since every chart is capped at 440px, a spanning chart card
+   was half paper and half nothing). Under 700px it is one column throughout
+   (the record card's breakpoint discipline) — note the span resets, or a
+   `span 2` in a one-column grid would quietly invent a second column and
+   halve every card. */
+.jd-folder-scroll {
+  position: relative; flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* DENSE, because the axes strip sits fifth in the brief's card order and
+     the spend line sixth: with default sparse flow the span-2 axes card
+     cannot start in a half-empty row, so it pushed itself to a new row and
+     left a chart-sized hole beside the grade book. Dense backfills that
+     hole with the spend line and the 2×2 closes up. The DOM order — which
+     is the reading order, and the brief's — is untouched. */
+  grid-auto-flow: row dense;
+  gap: 12px;
+  align-content: start;
+  scrollbar-width: thin;
+}
+.jd-folder-scroll::-webkit-scrollbar { width: 7px; }
+.jd-folder-scroll::-webkit-scrollbar-thumb { background: rgba(74, 53, 18, 0.3); }
+
+.fx-card {
+  grid-column: span 2;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 11px 13px 13px;
+  background: var(--fpaper);
+  border: 1px solid var(--frule-2);
+  box-shadow: 2px 3px 8px -3px rgba(40, 24, 4, 0.42);
+}
+.fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
+@media (max-width: 700px) {
+  .jd-folder-scroll { grid-template-columns: 1fr; padding: 11px; }
+  .fx-card, .fx-cost, .fx-firsts, .fx-grades, .fx-spend { grid-column: span 1; }
+}
+
+.fx-title {
+  margin: 0 0 2px;
+  font-family: var(--fform); font-weight: 700; font-size: 0.62rem;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--fink);
+}
+/* the population line: every chart states what it counted, and what it did
+   not — including, since the MIN_N floor, the models it declined to plot.
+   Non-negotiable in the brief; it is why these charts can be trusted, which
+   is also why it is no longer set at 0.5rem (design review, 2026-08-28):
+   the sentence that makes a chart trustworthy cannot be the one nobody
+   can read. */
+.fx-sub {
+  margin: 0 0 9px;
+  font-family: var(--fmono); font-size: 0.62rem; line-height: 1.55;
+  color: var(--fink-2);
+}
+
+/* ---- THE LEDGER: four figures, set like a form row ----------------------- */
+.fx-ledger { padding-bottom: 10px; }
+.fx-figs { display: flex; flex-wrap: wrap; gap: 12px 34px; }
+.fx-fig { display: flex; flex-direction: column; gap: 3px; min-width: 88px; }
+.fx-fig-v {
+  font-family: var(--fmono); font-weight: 700;
+  font-size: clamp(1.25rem, 3.4vw, 1.6rem); line-height: 1;
+  color: var(--fink); font-variant-numeric: tabular-nums;
+}
+.fx-fig-l {
+  font-family: var(--fform); font-size: 0.58rem; letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--fink-2);
+}
+.fx-ledger-sub { margin: 11px 0 0; }
+
+/* ---- the charts ---------------------------------------------------------- */
+/* the cap that keeps the type honest: chart type is set in USER UNITS, so an
+   uncapped chart would render its labels at whatever size its column
+   happened to be. Every chart tops out at the same rendered width instead,
+   and a card wider than that simply gets white space rather than a
+   magnified drawing. Since the 2×2 (design review, 2026-08-28) all four
+   chart cards sit in the same half-width column, so the cap now mostly
+   guards the wide screens rather than the difference between two spans. */
+.fx-chart { display: block; width: 100%; max-width: 440px; height: auto; }
+.fx-t-lab  { font-family: var(--fmono); font-size: 9px;   fill: var(--fink); }
+/* one step down for the long model names — see labFor() in junk-drawer.js */
+.fx-t-lab.is-long { font-size: 7px; }
+.fx-t-val  { font-family: var(--fmono); font-size: 9.5px; fill: var(--fink); font-weight: 700; }
+.fx-t-tail { font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
+.fx-t-scale{ font-family: var(--fmono); font-size: 8px;   fill: var(--fink-3); }
+.fx-t-key  { font-family: var(--fmono); font-size: 7.2px; fill: var(--fink); }
+.fx-t-axval{ font-family: var(--fmono); font-size: 7.2px; fill: var(--fink-2); }
+/* the grade book's segment dividers, in two states. INSIDE the fill they are
+   drawn in the PAPER, over the ink — the report card's battery idiom, so a
+   nearly full track still reads as five steps rather than one long bar.
+   BEYOND the fill edge there is no ink to cut, so they are drawn in the
+   faint rule instead (design review, 2026-08-28): an empty stretch of track
+   that shows nothing hides what the grade fell short OF, and a 1.9 has four
+   fifths of the reading in that empty stretch. */
+.fx-seg  { stroke: var(--fpaper); stroke-width: 1.4; }
+.fx-seg-out { stroke: var(--frule-2); stroke-width: 1; }
+/* an axis panel's 1..points rule: the faintest thing on the page, because it
+   is scaffolding and the dot is the datum */
+.fx-track { stroke: rgba(74, 53, 18, 0.22); stroke-width: 1; }
+.fx-line { fill: none; stroke: var(--fink); stroke-width: 1.6;
+           stroke-linejoin: round; stroke-linecap: round; }
+.fx-dot  { fill: var(--fink); }
+
+/* the charts' in-SVG type, one notch up on a phone (design review,
+   2026-08-28). These sizes are USER UNITS, so they scale with the chart, and
+   every chart is capped at 440px — on a 360px screen that cap is never
+   reached, the whole drawing renders well below its natural size, and the
+   smallest labels landed under 7 rendered px. Raising the units is the only
+   lever that does not touch the geometry. It has to sit AFTER the base
+   declarations above: a media query adds no specificity, so a block placed
+   with the layout rules further up would simply lose to them. */
+@media (max-width: 700px) {
+  .fx-t-lab { font-size: 10px; }
+  .fx-t-lab.is-long { font-size: 8.2px; }
+  .fx-t-val { font-size: 10.5px; }
+  .fx-t-tail, .fx-t-scale { font-size: 8.8px; }
+}
+
+/* ---- THE FOUR AXES: small multiples --------------------------------------
+   Four panels, identical geometry, reflowing 4 → 2×2 → 1.
+
+   THE KEY GUTTER IS PAID FOR ONCE (design review, 2026-08-28). It used to be
+   reserved in all four panels and shown in one, so three quarters of it was
+   white space that nothing could ever occupy. Now the JS crops panels 2–4
+   to the ruler alone (viewBox starting at PLAB), and the caps below give
+   each panel a rendered width in the SAME proportion as its viewBox — 215px
+   over 172 units for the lead panel, 137.5px over 110 for the rest, both
+   1.25px per unit. That is what "identical geometry" has to mean once the
+   boxes differ: the rulers, the dots and the type all render at exactly one
+   scale across the card, and every panel is wider than it was.
+
+   The crop is baked into the markup, so the key can no longer be re-shown
+   on a reflowed panel the way it was at 900px and 560px — the lead panel
+   labels the row order for the whole card at every width, and each panel's
+   aria-label still names every model in full. */
+.fx-axgrid {
+  display: grid; grid-template-columns: 1.32fr 1fr 1fr 1fr;
+  gap: 12px 8px;
+}
+.fx-panel { min-width: 0; }
+.fx-panel h4 {
+  margin: 0 0 3px;
+  font-family: var(--fform); font-weight: 700; font-size: 0.56rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--fink);
+  line-height: 1.35;
+}
+.fx-of {
+  font-family: var(--fmono); font-weight: 400; font-size: 0.92em;
+  letter-spacing: 0.04em; text-transform: none; color: var(--fink-3);
+}
+/* the lead panel's cap: 215px across a 172-unit box. Every other panel's is
+   the same scale over its cropped box, so the two must move together. */
+.fx-panel svg { display: block; width: 100%; max-width: 215px; height: auto; }
+.fx-panel:nth-child(n + 2) svg { max-width: 137.5px; }
+.fx-panel:nth-child(n + 2) .fx-key { display: none; }
+@media (max-width: 900px) {
+  .fx-axgrid { grid-template-columns: 1.32fr 1fr; }
+}
+@media (max-width: 560px) {
+  .fx-axgrid { grid-template-columns: 1fr; }
+}
+
+/* the paperwork is stuck, or still being pulled: a quiet mono note in the
+   folder — never a half-drawn dashboard */
+.fx-stuck {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 18px 16px;
+  background: var(--fpaper);
+  border: 1px dashed var(--frule);
+  font-family: var(--fmono); font-size: 0.62rem; line-height: 1.7;
+  color: var(--fink-2);
+}
