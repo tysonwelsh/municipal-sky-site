@@ -3105,13 +3105,15 @@ function JD_layerOpen() {
   }
 
   /* ---- the dialog: the folder OPENED ------------------------------------
-     JD_record's scrim + card. NO MASTHEAD (owner call, 2026-08-28): the
-     reproduced tab, "The drawer, by the numbers" and its dek were cut as
-     unnecessary — the folder item the visitor just tapped already said
-     ANALYTICS, and the cards say the rest. The ✕ floats on the card
-     itself, the record card's idiom. No history/pushState: the record
-     card needs deep links because a report card is a thing you send
-     someone; the folder is a drawer you opened. */
+     JD_record's scrim + card. THE HEAD IS A SLIM BAND (owner calls,
+     2026-08-28, two rounds): "The drawer, by the numbers" and its dek
+     were cut as unnecessary — the cards say the rest — but cutting the
+     WHOLE band left the ✕ floating over the ledger's big figures, so
+     the band came back at tab height: the small ANALYTICS tab on the
+     left, the ✕ seated on the right, no title, no dek. No
+     history/pushState: the record card needs deep links because a
+     report card is a thing you send someone; the folder is a drawer
+     you opened. */
   function buildDialog() {
     if (scrim) return;
     scrim = document.createElement('div');
@@ -3119,8 +3121,12 @@ function JD_layerOpen() {
     scrim.innerHTML =
       '<div class="jd-folder-card" role="dialog" aria-modal="true" ' +
       'aria-label="analytics">' +
-        '<button type="button" class="jd-folder-close" aria-label="close">' +
-        '<span>✕</span></button>' +
+        '<div class="jd-folder-head">' +
+          '<div class="jd-folder-tabrow">' +
+            '<span class="jd-folder-tab">ANALYTICS</span></div>' +
+          '<button type="button" class="jd-folder-close" aria-label="close">' +
+          '<span>✕</span></button>' +
+        '</div>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
     document.body.appendChild(scrim);

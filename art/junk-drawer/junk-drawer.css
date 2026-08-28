@@ -3716,14 +3716,38 @@ html.jd-folder-open { overflow: hidden; }
   .jd-folder-card.is-enter { animation: none; }
 }
 
-/* (the masthead — the reproduced tab, "The drawer, by the numbers" and its
-   dek — was cut entire, owner call 2026-08-28: the folder the visitor just
-   tapped already says ANALYTICS, the cards say the rest, and the band it
-   rode on went with it. The ✕ below floats on the card instead.) */
+/* ---- the head: a SLIM BAND — the tab and the ✕, nothing else -------------
+   Two owner rounds, 2026-08-28: the title ("The drawer, by the numbers")
+   and its dek were unnecessary and are gone for good, but cutting the whole
+   band left the ✕ floating over the ledger's figures — so the band returned
+   at tab height. The tab keeps the folder's identity on the open card; the
+   fold-edge border keeps it reading as the folder's cut edge. */
+.jd-folder-head {
+  position: relative; flex: 0 0 auto;
+  background: linear-gradient(180deg, var(--fmanila-hi), var(--fmanila) 70%);
+  border-bottom: 1px solid var(--frule);
+}
+/* bottom padding closes the band under the tab now that no title row
+   follows; the tab still sits flush on the band's bottom edge */
+.jd-folder-tabrow { padding: 9px 56px 0 15px; }
+/* the tab reproduced from the artwork: a raised manila flag, house mono,
+   heavily letterspaced. text-indent cancels the trailing letter-space so the
+   word still reads optically centred in its box. */
+.jd-folder-tab {
+  display: inline-block;
+  padding: 4px 13px 3px;
+  background: var(--fmanila-hi);
+  border: 1px solid var(--frule);
+  border-bottom: 0;
+  border-radius: 4px 4px 0 0;
+  font-family: var(--fmono); font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.32em; text-indent: 0.32em;
+  color: var(--fink);
+  box-shadow: 0 -1px 0 rgba(255, 248, 226, 0.55) inset;
+}
 /* the boxed ✕ — the record/turn control language: a 26px printed box centred
-   in a 44px target, pinned to the CARD's top-right corner (the card is
-   position:relative) so the box lands 9px in from the card's edges (the
-   record card's exact seat); z 3 keeps it over the scrolled paper cards */
+   in a 44px target, pinned to the band's top-right corner so the box lands
+   9px in from the card's edges (the record card's exact seat) */
 .jd-folder-close {
   position: absolute; top: 0; right: 0; z-index: 3;
   width: 44px; height: 44px;
