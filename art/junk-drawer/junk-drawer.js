@@ -6172,13 +6172,21 @@ function JD_layerOpen() {
      A model that never arrived has no pedestal to stand on, so it is named
      in a printed line beneath the steps instead of being given a ghost step
      it never earned. */
-  /* the name and NOTHING else (owner, 2026-08-23): no vendor on the pedestal,
-     no fate badge on the winner. The block's base says who drew it; the step
-     it stands on already said what the visitor thought of it. work.reveal
-     still carries .vendor — it is simply not this card's business. */
+  /* the name — and, since 2026-08-28 (owner call), what the drawing COST:
+     the reveal payload's exact provider spend prints under the name, the
+     same number the report card's Cost line states. It appears HERE and
+     nowhere earlier — the price is part of the answer, and the answer
+     waits for the ranking to be filed. Omitted entirely (never $0) when
+     the model is unpriced or no usage was recorded — the house rule.
+     Otherwise the 2026-08-23 discipline stands: no vendor on the pedestal,
+     no fate badge on the winner. work.reveal still carries .vendor — it is
+     simply not this card's business. */
   function revealName(r) {
+    var cost = (r && r.cost_usd != null && isFinite(+r.cost_usd))
+      ? '<span class="jd-pod-cost">$' + (+r.cost_usd).toFixed(4) + '</span>'
+      : '';
     return '<span class="jd-pod-who"><b>' +
-      esc((r && (r.label || r.model_id)) || 'unknown') + '</b></span>';
+      esc((r && (r.label || r.model_id)) || 'unknown') + '</b>' + cost + '</span>';
   }
   function viewUnveil() {
     var ok = okSlots(), n = ok.length, k;

@@ -3197,10 +3197,10 @@ html.jd-turn-open { overflow: hidden; }
    The blocks stand on MORE PAPER here (--pbase is raised) and nothing else
    changes: --pstep is untouched, so every step still rises over the next by
    exactly what it did on the call and the staircase reads as the same
-   object. Names wrap to two lines rather than shrinking to fit — which is
-   why the phone's base is the TALLER of the two: at 62px a name wraps where
-   at 100px it does not. */
-.jd-pod--said { --pbase: 66px; }
+   object. Names wrap to two lines rather than shrinking to fit. (66 → 76,
+   2026-08-28: the cost line joined the name at the foot — see .jd-pod-cost
+   — and the shortest block has to seat a wrapped name AND the price.) */
+.jd-pod--said { --pbase: 76px; }
 .jd-pod--said .jd-pod-block {
   flex-direction: column; align-items: center; justify-content: flex-start;
   padding: 7px 5px 6px; gap: 2px; text-align: center;
@@ -3215,6 +3215,15 @@ html.jd-turn-open { overflow: hidden; }
 }
 .jd-pod--said .jd-pod-who b {
   display: block; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.03em;
+}
+/* the drawing's cost (owner, 2026-08-28): the unveil prices each pedestal —
+   the same exact spend the report card's Cost line states, in the mono hand
+   under the name. The span is simply absent when the model is unpriced or
+   no usage was recorded — never a confident $0. */
+.jd-pod--said .jd-pod-cost {
+  display: block; margin-top: 1px;
+  font-family: var(--tmono); font-size: 0.56rem; letter-spacing: 0.03em;
+  color: var(--tink-3);
 }
 /* nothing on this card is being moved: it is a filed answer */
 .jd-pod--said .jd-pod-tier { cursor: default; touch-action: auto; }
@@ -3338,10 +3347,10 @@ body.jd-pod-drag, body.jd-pod-drag * {
      against ~327 of usable card) — the 320px-class relics this may now
      nudge into a scroll were never this breakpoint's stated floor */
   .jd-pod { --pw: 74px; --pstep: 13px; --pbase: 40px; }
-  /* the unveil's raised base steps down too, and must be restated HERE: it
-     is the same specificity as the line above and would otherwise lose to it
-     purely on source order, taking the names' room with it */
-  .jd-pod--said { --pbase: 68px; }
+  /* the unveil's raised base must be restated HERE: it is the same
+     specificity as the line above and would otherwise lose to it purely on
+     source order, taking the names' (and the cost line's) room with it */
+  .jd-pod--said { --pbase: 76px; }
   .jd-pod--said .jd-pod-who b { font-size: 0.6rem; }
   .jd-pod-row, .jd-pod-tray { gap: 4px; }
   .jd-pod-block { font-size: 0.74rem; }

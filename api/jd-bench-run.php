@@ -126,7 +126,6 @@ if ($dryRun) {
 $db = jd_db();
 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-$prices = json_decode((string) file_get_contents(__DIR__ . '/jd-prices.json'), true) ?: [];
 $curator = jd_curator_hash();
 
 $totalCost = 0.0; $okCount = 0; $failCount = 0;
@@ -187,9 +186,16 @@ foreach ($targets as $itemId => $entry) {
 
         $raw   = (string) ($res['raw'] ?? '');
         $usage = !empty($res['usage']) ? $res['usage'] : [];
-        $norm  = $usage ? jd_normalize_usage($provider, $usage) : [];
-        $cost  = $norm ? jd_cost($norm, $prices[$model['model_id']] ?? []) : 0.0;
-        $totalCost += $cost;
+        // Priced through the same jd-usage.php path the reveal uses, keyed by
+        // model_version (the wire string) — this used to read the raw prices
+        // file and key by model_id, which priced everything $0. cost_usd is
+        // null (printed 'unpriced'), never $0, when no rate or usage exists.
+        $priced = jd_generation_cost($provider, $model['api_model'], $usage);
+        $norm   = $priced['tokens'] ?? [];
+        $cost   = $priced['cost_usd'];
+        if ($cost !== null) {
+            $totalCost += $cost;
+        }
 
         $fields = [
             'raw_response' => $raw,
@@ -223,10 +229,10 @@ foreach ($targets as $itemId => $entry) {
                     $fields['status'] = 'ok';
                     $fields['svg'] = $verdict['svg'];
                     $okCount++;
-                    printf("ok      %5.1fs  reasoning %6s tok  $%.4f%s\n",
+                    printf("ok      %5.1fs  reasoning %6s tok  %s%s\n",
                         $ms / 1000,
                         isset($norm['reasoning']) ? number_format($norm['reasoning']) : '?',
-                        $cost,
+                        $cost !== null ? sprintf('$%.4f', $cost) : 'unpriced',
                         !empty($fields['disobedience']) ? '  (disobedience)' : '');
                 }
             }
