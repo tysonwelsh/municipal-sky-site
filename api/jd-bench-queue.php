@@ -18,6 +18,16 @@ require_once __DIR__ . '/jd-build.php';
 
 jd_require_allowed_origin();
 
+// The host fronts the site with an edge cache (Newfold/nginx) that will
+// happily cache a header-less GET — observed serving a previous deploy's
+// queue to a fresh session (2026-08-28). A stale queue silently breaks the
+// bench's whole cross-device story: the phone files an item, the desktop
+// refetches, and the cache hands back the world from before. This response
+// must never be stored anywhere.
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     jd_fail(405, 'method_not_allowed', 'GET only.');
 }

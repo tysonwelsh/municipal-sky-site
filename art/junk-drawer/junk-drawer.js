@@ -8541,7 +8541,10 @@ function JD_layerOpen() {
           '<span class="jd-bench-note">loading the queue…</span>';
       }
     }
-    fetch(API_Q, { headers: { 'X-Bench-Key': bkey() } })
+    /* the timestamp defeats any cache that ignores the endpoint's no-store
+       headers (the host's edge cache was caught serving a stale queue,
+       2026-08-28) — a cached queue would quietly break cross-device sync */
+    fetch(API_Q + '?t=' + Date.now(), { headers: { 'X-Bench-Key': bkey() } })
       .then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j || !j.ok) {
