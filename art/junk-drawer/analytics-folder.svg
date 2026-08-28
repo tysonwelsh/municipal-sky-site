@@ -16,17 +16,19 @@
        than the flat instructions sheet, far quieter than the turn button's
        backlit hardware.
 
-       OWNER REVISION 2026-08-28 — tab moved off-centre to first position,
-       rebuilt as a real trapezoid cut (45° side cuts, 2.5-unit corner
-       radii only), and the FIELD RECORDS stamp plus the JD-A1 code struck
-       so the face went back to quiet manila.
+       OWNER REVISION 2026-08-28 — tab moved off-centre, rebuilt as a real
+       trapezoid cut (45° side cuts at that point, 2.5-unit corner radii),
+       and the FIELD RECORDS stamp plus the JD-A1 code struck so the face
+       went back to quiet manila.
 
        PHOTO-CRITIC LOOP 2026-08-28 — the folder was then measured against
        two photographs of real manila folders (a 1/3-cut first-position
        letter folder close-shot, and a two-folder top-down). What survived
-       photographic comparison and is now FROZEN: the 45° cuts, the tab's
-       depth exaggeration, the 2.5-unit corner radii, the reveal strip, and
-       the quiet face. What the photographs killed:
+       photographic comparison and is FROZEN: the tab's depth exaggeration,
+       the reveal strip, and the quiet face. (The cut angle and the corner
+       radii were blessed at 45°/2.5 by this pass but have since been
+       re-cut by the owner — see OWNER ROUND TWO below, which governs.)
+       What the photographs killed:
        1. THE FRAME. The flap had been inset from the back panel on three
           sides, leaving slivers that read as an icon in a tray at 150px.
           A real folder is ONE FOLDED SHEET with a single clean outer edge,
@@ -55,18 +57,27 @@
           read as the folder's top rather than as the sliver-ledge the
           earlier inset left. Not touching the corner, it honestly gets
           TWO cuts again, one either side.
-       2. GENTLER CUTS. 45° from vertical read too sharp and too pointy.
-          Both cuts now run 44 across in 28 down — 57.5° from vertical,
-          which is also where the critic's own measurements of the
-          reference photographs landed (55–57°); the 45° had been a
-          mid-range compromise, not a measured value. Corner radii stay
-          at 2.5.
-       Shallow cuts are expensive in width — 88 units of the tab go to the
-       two runs — so the top edge (x 80..172) is narrower than the label,
-       and ANALYTICS is allowed to overhang it and sit over the diagonals,
-       the way a real tab label runs close to its cut. It clears both cuts
-       by ~4 units at its cap line. Letterspacing was trimmed before the
-       font was, per the brief: 19/110 rather than shrinking below 18.
+       2. (Superseded by round two below — this round relaxed the cuts to
+          57.5° from vertical, which turned out to be the wrong reading of
+          the complaint.)
+
+       OWNER ROUND TWO ON THE TAB 2026-08-28 — relaxing the cuts made it
+       worse, and reading the two rounds together says why: the original
+       objection was to the ONE dramatic diagonal of the flush-left shape,
+       never to steepness. With the inset two-cut tab, steep is wanted.
+       1. STEEPER CUTS. Both now run 21 across in 28 down — 36.9° from
+          vertical, a clean 3-4-5 triangle, clearly steeper than the 45°
+          that started this and the opposite of the 57.5° detour. Base
+          position x 36..216 is untouched (it was accepted); only the cut
+          geometry moved, which WIDENS the top edge 108 → 138 and buys the
+          label its size back.
+       2. ROUNDED TOP CORNERS. At 2.5 the top corners read as points. They
+          are now pulled back 7 units along each edge — soft the way a
+          real tab wears round — while the bottom junctions where the cuts
+          meet the folder's top edge stay subtle at 3, because those are
+          knife cuts into the panel and not handled corners.
+       The label now clears both diagonals by ~9 units at its cap line, so
+       it no longer has to lean on the overhang trick: 20/132.
 
        The one proportion knowingly exaggerated against the photographs is
        tab depth, and the critic blessed it: a real letter folder's tab
@@ -126,18 +137,20 @@
        One continuous outline, because on a real folder the tab is not a
        part stuck on — it is the back panel, cut. LEFT OF CENTRE: 30 units
        of plain top edge run out from the folder's left corner, then the
-       cut rises from the base at x 36 to the top edge (x 80..172 at y 4)
-       and drops again to the base at x 216 — both cuts 44 across by 28
-       down, i.e. 57.5° from vertical. -->
-  <path d="M6,37 Q6,32 11,32 L33.5,32 Q36,32 38.11,30.66 L77.89,5.34
-           Q80,4 82.5,4 L169.5,4 Q172,4 174.11,5.34 L213.89,30.66
-           Q216,32 218.5,32 L321,32 Q326,32 326,37 L326,249
+       cut rises steeply from the base at x 36 to the top edge (x 57..195
+       at y 4) and drops again to the base at x 216 — both cuts 21 across
+       by 28 down, i.e. 36.9° from vertical. The two top corners are
+       pulled back 7 units into soft rounds; the two bottom junctions stay
+       sharp-ish at 3, being knife cuts into the panel. -->
+  <path d="M6,37 Q6,32 11,32 L33,32 Q36,32 37.8,29.6 L52.8,9.6
+           Q57,4 64,4 L188,4 Q195,4 199.2,9.6 L214.2,29.6
+           Q216,32 219,32 L321,32 Q326,32 326,37 L326,249
            Q326,254 321,254 L11,254 Q6,254 6,249 Z"
         fill="url(#af_backg)" stroke="#ab8850" stroke-width="1.1" stroke-opacity="0.85"/>
   <!-- fibre wear along the whole exposed cut: up one, across the top, down
        the other -->
-  <path d="M40.8,29.8 L78.4,5.8 Q79.8,4.8 82.4,4.8 L169.6,4.8
-           Q172.2,4.8 173.6,5.8 L211.2,29.8"
+  <path d="M39.4,29.6 L53.75,10.5 Q57,5.3 64,5.3 L188,5.3
+           Q195,5.3 198.25,10.5 L212.6,29.6"
         fill="none" stroke="#f5e4bb" stroke-opacity="0.4" stroke-width="1.2" stroke-linejoin="round"/>
 
   <!-- ============ THE PAPERS INSIDE ======================================
@@ -198,16 +211,16 @@
 
   <!-- ============ THE TAB LABEL ==========================================
        The item's entire name in the pile, so it is set as big as the cut
-       will hold and locked to 110 units of advance: mono, bold,
+       will hold and locked to 132 units of advance: mono, bold,
        letterspaced, with a faint impression under the ink the way a struck
-       key leaves one. Centred at x 126 on the tab's axis. It is WIDER than
-       the tab's top edge (x 80..172) on purpose — the shallow cuts spend
-       88 units on the two runs, and a real tab label runs close to its cut
-       — but it sits below y 4, where the trapezoid has already opened out,
-       and clears both diagonals by about 4 units at its cap line. -->
+       key leaves one. Centred at x 126 on the tab's axis. The steep cuts
+       widened the top edge to x 57..195, so the label no longer has to
+       lean over the diagonals to fit — at its cap line (y 11.6) the cut
+       edges stand at x 51.3 and 200.7 and the type clears them by about
+       9 units on each side. -->
   <g text-anchor="middle" font-family="'Courier Prime','Courier New',Courier,monospace"
-     font-size="19" font-weight="700">
-    <text x="126.8" y="26.8" fill="#8a6a34" opacity="0.35" textLength="110" lengthAdjust="spacing">ANALYTICS</text>
-    <text x="126"   y="26"   fill="#33240f" textLength="110" lengthAdjust="spacing">ANALYTICS</text>
+     font-size="20" font-weight="700">
+    <text x="126.8" y="26.8" fill="#8a6a34" opacity="0.35" textLength="132" lengthAdjust="spacing">ANALYTICS</text>
+    <text x="126"   y="26"   fill="#33240f" textLength="132" lengthAdjust="spacing">ANALYTICS</text>
   </g>
 </svg>
