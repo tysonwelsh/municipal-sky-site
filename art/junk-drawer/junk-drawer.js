@@ -2499,6 +2499,14 @@ function JD_layerOpen() {
    fun lives in the folder, the tab and the paper cards; the marks stay
    flat. */
 (function () {
+  /* BENCHED, not deleted (owner call, 2026-08-28, the darkroom pool's own
+     terms): the folder does not appear in the drawer for now. Everything
+     stands — the module, the dialog, the charts, analytics-folder.svg,
+     api/jd-analytics.php, the tap branch, the loader's ready() calls —
+     and flipping this ONE flag to false puts it back in the pile; nothing
+     else needs touching. While true, the artwork is never even fetched. */
+  var BENCHED = true;
+
   var ID = 'jd-analytics';
   var ASSET = '/art/junk-drawer/analytics-folder.svg';
   var API = '/api/jd-analytics.php';
@@ -2560,11 +2568,12 @@ function JD_layerOpen() {
         }
       });
   }
-  loadArt(0);
+  if (!BENCHED) loadArt(0);
 
   /* called by the pile loader with the l tier box (or null when the drawer
      itself failed to load); `build` runs when both artwork and ruler are in */
   function ready(tierBox) {
+    if (BENCHED) return;
     box = (typeof tierBox === 'number' && tierBox > 0) ? tierBox : FALLBACK_BOX;
     armed = true;
     build();
