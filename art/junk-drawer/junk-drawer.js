@@ -3105,11 +3105,13 @@ function JD_layerOpen() {
   }
 
   /* ---- the dialog: the folder OPENED ------------------------------------
-     JD_record's scrim + card, with the turn card's masthead discipline —
-     the head (tab, title, ✕) sits OUTSIDE the scroller so the folder's
-     identity never scrolls away from its contents. No history/pushState:
-     the record card needs deep links because a report card is a thing you
-     send someone; the folder is a drawer you opened. */
+     JD_record's scrim + card. NO MASTHEAD (owner call, 2026-08-28): the
+     reproduced tab, "The drawer, by the numbers" and its dek were cut as
+     unnecessary — the folder item the visitor just tapped already said
+     ANALYTICS, and the cards say the rest. The ✕ floats on the card
+     itself, the record card's idiom. No history/pushState: the record
+     card needs deep links because a report card is a thing you send
+     someone; the folder is a drawer you opened. */
   function buildDialog() {
     if (scrim) return;
     scrim = document.createElement('div');
@@ -3117,17 +3119,8 @@ function JD_layerOpen() {
     scrim.innerHTML =
       '<div class="jd-folder-card" role="dialog" aria-modal="true" ' +
       'aria-label="analytics">' +
-        '<div class="jd-folder-head">' +
-          '<div class="jd-folder-tabrow">' +
-            '<span class="jd-folder-tab">ANALYTICS</span></div>' +
-          '<div class="jd-folder-bar">' +
-            '<h2 class="jd-folder-h">The drawer, by the numbers</h2>' +
-            '<p class="jd-folder-dek">what the drawer has actually ' +
-            'measured, counted straight out of its own records</p>' +
-          '</div>' +
-          '<button type="button" class="jd-folder-close" aria-label="close">' +
-          '<span>✕</span></button>' +
-        '</div>' +
+        '<button type="button" class="jd-folder-close" aria-label="close">' +
+        '<span>✕</span></button>' +
         '<div class="jd-folder-scroll"></div>' +
       '</div>';
     document.body.appendChild(scrim);
