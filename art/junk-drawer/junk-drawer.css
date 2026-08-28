@@ -827,28 +827,6 @@ html { scroll-behavior: smooth; }
 }
 .jd-axis-desc { color: var(--ink-soft); }
 
-/* the inventory — one mono line per item; plain text (the specimen card and
-   its links are Phase 3) */
-.jd-inventory { list-style: none; margin: 0; padding: 0; }
-.jd-inventory li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--s-2);
-  padding: 0.35em 0;
-  border-bottom: 1px solid var(--rule-soft);
-}
-.jd-inventory li:last-child { border-bottom: 0; }
-.jd-inv-title { flex: 1 1 auto; }
-.jd-inv-model { color: var(--ink-mute); white-space: nowrap; }
-.jd-inv-grade {
-  color: var(--plot-red);
-  font-size: var(--fs-xs);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 /* the colophon + build stamp (kolob's convention) */
 .jd-build {
   font-size: var(--fs-xs);

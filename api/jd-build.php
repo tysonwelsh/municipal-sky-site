@@ -34,9 +34,14 @@ function jd_build_files(): array
 function jd_build_stamp(): array
 {
     $version = trim((string) @file_get_contents(__DIR__ . '/../art/junk-drawer/VERSION'));
-    // The VERSION file's first token is the semver; the prose tail after the
-    // em dash is for humans reading git, not for a one-line stamp.
-    $short = $version !== '' ? preg_split('/\s+—\s+/u', $version)[0] : 'dev';
+    // VERSION is an append-only changelog: the NEWEST entry is the LAST line,
+    // and its first token is the semver — the prose tail after the em dash is
+    // for humans reading git, not for a one-line stamp. (Until 2026-08-28
+    // this read the first token of the whole file and reported 0.9.41
+    // forever.)
+    $lines = preg_split('/\R/', $version, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $last  = $lines ? (string) end($lines) : '';
+    $short = $last !== '' ? preg_split('/\s+—\s+/u', $last)[0] : 'dev';
 
     $hashes = [];
     $mtime  = 0;

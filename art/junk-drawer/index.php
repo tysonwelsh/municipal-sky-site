@@ -25,7 +25,13 @@ function jd_v($file)
 // visitor's cache (the hash is stamped onto the script tag below) and moves
 // the build fingerprint + deploy stamp the owner reads in the colophon.
 $jd_assets  = ['junk-drawer.css', 'junk-drawer.js', 'turn-object.svg', 'index.php'];
-$jd_version = trim((string) @file_get_contents(__DIR__ . '/VERSION')) ?: 'dev';
+// VERSION grew from a one-line marker into an append-only changelog, so the
+// stamp reads the NEWEST (last) line and prints only its leading semver —
+// the prose tail after the em dash is for humans reading git, not for the
+// colophon (which printed the entire changelog until 2026-08-28).
+$jd_vlines  = preg_split('/\R/', trim((string) @file_get_contents(__DIR__ . '/VERSION')), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+$jd_vlast   = $jd_vlines ? (string) end($jd_vlines) : '';
+$jd_version = $jd_vlast !== '' ? preg_split('/\s+—\s+/u', $jd_vlast)[0] : 'dev';
 $jd_build   = substr(md5(implode('', array_map('jd_v', $jd_assets))), 0, 6);
 $jd_mtime   = 0;
 foreach ($jd_assets as $jd_a) {
@@ -40,9 +46,6 @@ include '../../includes/header.php';
 <link rel="stylesheet" href="junk-drawer.css?v=<?php echo jd_v('junk-drawer.css'); ?>" />
 
 <div class="main-wrapper">
-
-  <!-- Desktop dek: one line above the drawer. Hidden ≤768px — on a phone
-       every explanatory word lives below the drawer (PLAN-MOBILE §3). -->
 
   <!-- ============ THE DRAWER STAGE (transplanted from Phase 0) ============
        Layer stack, bottom to top: craquelure (the DRAWER's own aging, under
@@ -121,9 +124,10 @@ include '../../includes/header.php';
   </div>
 
   <!-- ============ FIELD NOTES ============
-       The wall label, intro, taxonomy legend, inventory, and colophon. The
-       legend and inventory render from data.php's payload (junk-drawer.js);
-       everything else is static copy. -->
+       The wall label, a one-paragraph intro, the taxonomy legend, and the
+       colophon (pared down 2026-08-28, owner call — the full inventory list
+       and two intro paragraphs went with it). The legend renders from
+       data.php's payload (junk-drawer.js); everything else is static copy. -->
   <section class="jd-notes" id="notes">
 
     <header class="jd-wall-label">
@@ -134,23 +138,12 @@ include '../../includes/header.php';
 
     <div class="jd-intro">
       <p>Every object in the drawer above is an SVG drawn by a large language
-      model &mdash; asked, in plain words, for a skeleton key or a matchbook
-      or a pair of scissors, and taken at its word. The drawing arrives as
-      code; what lands in the drawer is exactly what the model wrote,
-      imperfections intact. Nothing is cleaned up. The imperfections are the
-      point.</p>
-
-      <p>Each response is graded the way model output gets graded: an overall
-      grade on a five-tier scale, then notes along a few fixed axes &mdash;
-      did it draw what was asked, does the geometry hold together, and so on.
-      The rubric is data, not prose: the legend below renders from the same
-      file the grades are recorded in, so when the taxonomy grows, this page
-      follows on its own.</p>
-
-      <p>The collection accumulates. New prompts add objects; old prompts
-      collect alternative takes from other models, filed with the original.
-      For now the drawer shows each item&rsquo;s best-graded response &mdash;
-      the per-item paperwork and the alternatives surface in a later phase.</p>
+      model &mdash; asked, in plain words, for a skeleton key or a matchbook,
+      and taken at its word. What lands in the drawer is exactly the code the
+      model wrote, imperfections intact, and each response is graded like the
+      model output it is: an overall grade on a five-tier scale, then notes
+      along the fixed axes below. The rubric is data &mdash; the legend
+      renders from the same file the grades are recorded in.</p>
     </div>
 
     <section class="jd-legend" aria-label="how to read the grades">
@@ -160,18 +153,11 @@ include '../../includes/header.php';
       <div class="jd-axes" id="jd-axes"></div>
     </section>
 
-    <section class="jd-inventory-block" aria-label="inventory">
-      <h2>Inventory</h2>
-      <ol class="jd-inventory" id="jd-inventory"></ol>
-    </section>
-
     <section class="jd-colophon" aria-label="colophon">
       <h2>Colophon</h2>
-      <p>Flat files in a git repository: one directory per prompt, one SVG
-      per response, one JSON file of grades and notes, and a taxonomy the
-      whole page renders from. <code>data.php</code> assembles them at
-      request time &mdash; no database, no build step; a commit to the
-      repository is the entire publishing act.</p>
+      <p>Flat files in a git repository, assembled at request time by
+      <code>data.php</code> &mdash; no database, no build step; a commit is
+      the entire publishing act.</p>
       <p><a href="/art/" aria-label="the generative art series">the generative art series</a></p>
       <!-- Build stamp: version · content fingerprint · deploy time. A quiet
            way to confirm which build is actually live. -->

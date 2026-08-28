@@ -6,8 +6,8 @@
         PLAN-BACKEND §7), each item's PRIMARY response SVG inlined into a
         .jd-item wrapper with its entry.json placement applied inline. The
         same payload also renders the field-notes sections in #notes: the
-        wall-label count line, the taxonomy-driven grade legend, and the
-        inventory list — zero hardcoded rubric strings anywhere.
+        wall-label count line and the taxonomy-driven grade legend — zero
+        hardcoded rubric strings anywhere.
      2. the drag/rotate gesture script — Pointer Events, one code path:
         hold-to-grip on touch, transform-only drag motion, wheel / [ ] keys /
         second-finger twist rotation, silhouette-accurate hit-testing.
@@ -579,14 +579,6 @@ function JD_layerOpen() {
 
   /* ---------- the field notes, rendered from the same payload ------------- */
 
-  function findById(list, id) {
-    list = list || [];
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].id === id) return list[i];
-    }
-    return null;
-  }
-
   /* the wall label's live line: "10 items · 2026" (year range once it spans) */
   function renderCount(data) {
     var el = document.getElementById('jd-count');
@@ -651,43 +643,12 @@ function JD_layerOpen() {
     }
   }
 
-  /* the inventory — one mono line per item: title, primary model, overall
-     grade. Plain text for now; the lines become links when the specimen
-     card lands (Phase 3). Display strings resolve through the taxonomy's
-     model/grade registries (guarantee 1), raw ids as fallback. */
-  function renderInventory(data) {
-    var inv = document.getElementById('jd-inventory');
-    if (!inv) return;
-    var tax = data.taxonomy || {};
-    (data.items || []).forEach(function (item) {
-      var primary = null;
-      (item.responses || []).forEach(function (r) {
-        if (r.rid === item.primary) primary = r;
-      });
-      primary = primary || (item.responses || [])[0] || {};
-      var model = findById(tax.models, primary.model);
-      var grade = gradeOf(tax, primary.grade);
-      var li = document.createElement('li');
-      var t = document.createElement('span');
-      t.className = 'jd-inv-title';
-      t.textContent = item.title || item.id;
-      var m = document.createElement('span');
-      m.className = 'jd-inv-model';
-      m.textContent = model ? model.label : (primary.model || '');
-      var g = document.createElement('span');
-      g.className = 'jd-inv-grade';
-      g.textContent = grade ? grade.label : (primary.grade == null ? '' : String(primary.grade));
-      li.appendChild(t);
-      li.appendChild(m);
-      li.appendChild(g);
-      inv.appendChild(li);
-    });
-  }
-
+  /* (the inventory — one mono line per item — left the field notes
+     2026-08-28, owner call: the pile IS the inventory, and the count line
+     above says how many. Every item's paperwork lives on its report card.) */
   function renderNotes(data) {
     renderCount(data);
     renderLegend(data.taxonomy || {});
-    renderInventory(data);
   }
 
   /* ---------- one request, then the pile ---------------------------------- */
