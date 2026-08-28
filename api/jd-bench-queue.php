@@ -75,6 +75,16 @@ foreach ($taxonomy['grades'] ?? [] as $g) {
 }
 usort($grades, fn($a, $b) => $b['rank'] <=> $a['rank']);
 
+// id -> label, for the bench's unveil: model names print only after an item's
+// grades are filed, and the queue is the one payload the bench is guaranteed
+// to hold (data.php may not have answered on a broken page).
+$models = [];
+foreach ($taxonomy['models'] ?? [] as $m) {
+    if (isset($m['id'])) {
+        $models[(string) $m['id']] = (string) ($m['label'] ?? $m['id']);
+    }
+}
+
 try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -104,9 +114,29 @@ try {
            JOIN jd_submissions s  ON s.id = g.submission_id
           WHERE s.item_id IS NOT NULL"
     )->fetchAll(PDO::FETCH_ASSOC);
+
+    // The curator's filed rank order (the podium's answer), one row per
+    // response. jd_ranks lands via the manual setup script, so its absence
+    // reads as "no ranks yet", never as a broken queue.
+    $rankRows = [];
+    try {
+        $rankRows = $db->query(
+            "SELECT r.generation_id, r.rank_pos
+               FROM jd_ranks r
+               JOIN jd_submissions s ON s.id = r.submission_id
+              WHERE s.item_id IS NOT NULL AND r.client = 'bench'"
+        )->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log('jd-bench-queue: jd_ranks unavailable (' . $e->getMessage() . ') — serving without ranks');
+    }
 } catch (PDOException $e) {
     error_log('jd-bench-queue: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The queue could not be read.');
+}
+
+$rankByGen = [];
+foreach ($rankRows as $r) {
+    $rankByGen[$r['generation_id']] = (int) $r['rank_pos'];
 }
 
 $byGen = [];
@@ -170,8 +200,19 @@ foreach ($subs as $sub) {
             }
         }
 
+        // A response is complete when every live axis is answered AND it
+        // carries a grade — the curator's own, or the seed carried over from
+        // entry.json (a deliberate, recent judgment on a scale the taxonomy
+        // reworks did not touch). The turn card's own gate requires a grade,
+        // so completeness has to as well or a "done" response would reopen
+        // the moment it was put back on the bench. (Tightened 2026-08-28,
+        // when the bench moved into the real turn card; before that,
+        // complete meant axes alone.)
+        $isComplete = count($axisValues) === count($axes)
+            && ($gradeBench !== null || $gradeSeed !== null);
+
         $totalResponses++;
-        if (count($axisValues) === count($axes)) {
+        if ($isComplete) {
             $totalRated++;
         }
 
@@ -188,8 +229,9 @@ foreach ($subs as $sub) {
             'note'          => $note,
             'grade'         => $gradeBench,
             'grade_seed'    => $gradeSeed,
+            'rank'          => $rankByGen[$g['id']] ?? null,
             'flags'         => $flags,
-            'complete'      => count($axisValues) === count($axes),
+            'complete'      => $isComplete,
         ];
     }
 
@@ -209,6 +251,7 @@ jd_json_out(200, [
     'taxonomy_version' => (int) ($taxonomy['version'] ?? 0),
     'axes'             => $axes,
     'grades'           => $grades,
+    'models'           => $models,
     'items'            => $items,
     'progress'         => [
         'responses' => $totalResponses,

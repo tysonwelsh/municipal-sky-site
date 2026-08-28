@@ -4463,6 +4463,12 @@ function JD_layerOpen() {
   var payload = null;       /* the data.php payload — the survey renders from it */
   var scrim = null, card = null, headEl = null, bodyEl = null, confirmEl = null;
   var state = '', isOpen = false, confirmOn = false, restored = false;
+  /* CURATE MODE (the re-rating bench, 2026-08-28): while this is set, the
+     card is seated with an existing curated item's responses instead of a
+     fresh turn — same bench, same rail, same podium, filed through the
+     contract's file() callback (JD_bench's jd-item-rate.php outbox) instead
+     of jd-rate.php. Null on every visitor turn. See curateOpen() below. */
+  var curJob = null;
   /* set only at the go('reveal') that ends the darkroom wait: the next
      render draws the fresh plates on (see the hook at render()'s foot) */
   var revealFresh = false;
@@ -4694,9 +4700,19 @@ function JD_layerOpen() {
     confirmOn = false;
     scrim.classList.add('is-on');
     document.documentElement.classList.add('jd-turn-open');
-    /* a turn from a previous page life was already discarded at init */
-    go(!turn ? 'prompt' : state || 'prompt');
-    JD_track('turn_open', null);
+    /* a turn from a previous page life was already discarded at init;
+       a curated item skips the brief outright — its prompt is on record
+       and its drawings already exist, so the card opens on the bench */
+    go(curJob ? 'rate' : (!turn ? 'prompt' : state || 'prompt'));
+    /* the curator working the backlog is not a visitor taking a turn — the
+       analytics count real turns only */
+    if (!curJob) JD_track('turn_open', null);
+    /* close's twin, for the same one listener: JD_bench repaints its strip
+       when the card actually stands (curate opens async behind a payload
+       fetch, so the caller can't know this moment) */
+    try {
+      window.dispatchEvent(new CustomEvent('jd-turn-open'));
+    } catch (e) {}
   }
   /* close paths that are free to leave: nothing is in flight or unfiled */
   function close() {
@@ -4713,6 +4729,14 @@ function JD_layerOpen() {
       try { lastFocus.focus(); } catch (e) {}
     }
     lastFocus = null;
+    curJob = null;
+    /* the LAST act of closing, after every bit of state above is settled:
+       JD_bench listens for this to advance the backlog (or offer resume),
+       and its handler may synchronously reopen this same modal — including
+       via rerun(), which checks isOpen. Nothing may run after the dispatch. */
+    try {
+      window.dispatchEvent(new CustomEvent('jd-turn-close'));
+    } catch (e) {}
   }
   /* Escape / scrim / ✕. Mid-flow states cost something to leave, so they ask
      once; the in-flight fetches are NOT aborted — the server finishes and
@@ -4739,14 +4763,22 @@ function JD_layerOpen() {
     confirmEl.className = 'jd-turn-confirm';
     confirmEl.setAttribute('role', 'alertdialog');
     confirmEl.setAttribute('aria-modal', 'true');
-    confirmEl.setAttribute('aria-label', 'abandon this turn?');
+    confirmEl.setAttribute('aria-label',
+      curJob ? 'set this item aside?' : 'abandon this turn?');
+    /* the curate card costs nothing to leave — but the grades on it file as
+       one item at the end, so leaving mid-card does drop this card's unfiled
+       answers. Different stake, different sentence. */
     confirmEl.innerHTML =
       '<div class="jd-turn-confirm-card">' +
-      '<p>abandon this turn? the machines finish either way — the drawing ' +
-      'just goes unrated.</p>' +
+      (curJob
+        ? '<p>set this item aside? grades file when the whole item files — ' +
+          'this card’s answers aren’t saved yet.</p>'
+        : '<p>abandon this turn? the machines finish either way — the drawing ' +
+          'just goes unrated.</p>') +
       '<div class="jd-turn-actions">' +
       '<button type="button" class="jd-turn-go" data-act="stay" data-autofocus>keep going</button>' +
-      '<button type="button" class="jd-turn-alt" data-act="abandon">abandon</button>' +
+      '<button type="button" class="jd-turn-alt" data-act="abandon">' +
+      (curJob ? 'set it aside' : 'abandon') + '</button>' +
       '</div></div>';
     confirmEl.addEventListener('click', function (e) {
       var b = e.target.closest ? e.target.closest('[data-act]') : null;
@@ -7180,6 +7212,10 @@ function JD_layerOpen() {
         pillRow('jd-keep', 'which drawing to keep', keepOpts,
           work.keep, ' data-role="keep"') +
         actions('<button type="button" class="jd-turn-go" data-act="keep">put it in the drawer</button>');
+    } else if (curJob) {
+      /* the backlog's unveil closes to the NEXT ITEM, not to another turn —
+         JD_bench hears the close and seats the next card */
+      h += actions('<button type="button" class="jd-turn-go" data-act="done">next item &rarr;</button>');
     } else {
       /* the card does not narrate the drawer (owner, 2026-08-23). The winner
          still goes into the pile — placeWinner ran at filing time — it is
@@ -7373,7 +7409,7 @@ function JD_layerOpen() {
     } else if (act === 'file') {
       /* the one-survivor bench files directly — same gate as next */
       if (work.step !== 'call' && !benchRated(work.step)) return;
-      submitRatings();
+      if (curJob) curateFile(); else submitRatings();
     } else if (act === 'keep') {
       if (work.keep) placeWinner(work.keep);
       work.kept = true;
@@ -7386,7 +7422,7 @@ function JD_layerOpen() {
       clearTurn();
       close();
     } else if (act === 'retry-file') {
-      submitRatings();
+      if (curJob) curateFile(); else submitRatings();
     }
   }
 
@@ -7924,11 +7960,584 @@ function JD_layerOpen() {
     return true;
   }
 
+  /* ---------- CURATE MODE — the re-rating bench (owner, 2026-08-28) --------
+     The backlog instrument IS this card. JD_bench (the ?bench driver at the
+     foot of this file) hands over one curated item at a time and the card
+     runs its ordinary rate machinery on it — the same benchPanel, rail and
+     podium a visitor gets, so every hour spent re-rating is spent inside the
+     real instrument, and every refinement made to it ships to visitors.
+
+     What curation changes, and ONLY this:
+       — entry: no brief, no darkroom. The item's existing drawings are
+         seated straight onto the bench (open() routes to 'rate').
+       — blindness is reconstructed: the responses are dealt into slots in a
+         shuffled order, so the letter says nothing about the model. Ratings
+         key on generation ids, so a reshuffle on a later resume changes
+         nothing recorded. The names still wait for the unveil.
+       — filing goes through the job's file() callback (jd-item-rate.php,
+         which replaces this curator's prior answers) instead of jd-rate.php.
+       — resume is server-truth: answers already filed arrive prefilled, the
+         rail opens at the first unfinished drawing, and a fully-answered
+         item opens on the podium.
+       — nothing joins the pile, nothing persists to the turn store, and
+         nothing is tracked as a turn. */
+  function curateOpen(job) {
+    if (isOpen || !job || !job.responses || !job.file) return false;
+    var n = job.responses.length;
+    if (n < 1 || n > JD_SLOTS.length) return false;
+    clearTurn();
+    curJob = job;
+    /* the rubric renders from the payload; without it the bench would paint
+       zero axis rows and the gate would pass vacuously */
+    ensurePayload().then(function () {
+      if (!curJob || isOpen) return;
+      work = blankWork();
+      work.prompt = String(job.prompt || '').slice(0, MAX_PROMPT);
+      var order = job.responses.slice();
+      for (var i = order.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = order[i]; order[i] = order[j]; order[j] = t;
+      }
+      order.forEach(function (resp, k) {
+        var slot = JD_SLOTS[k];
+        work.slots[slot] = {
+          status: 'ok', gen_id: resp.generation_id, svg: resp.svg, cur: resp
+        };
+        var r = work.ratings[slot];
+        /* the seed grade (carried from entry.json by the backfill) prefills
+           like a prior answer: it is a deliberate, recent judgment on a
+           scale the taxonomy reworks did not touch */
+        r.grade = resp.grade != null ? resp.grade
+          : (resp.grade_seed != null ? resp.grade_seed : null);
+        Object.keys(resp.axes || {}).forEach(function (a) {
+          r.axes[a] = resp.axes[a];
+        });
+        /* a filed rank resumes only while it fits this podium — a stale row
+           from a different response count would seat a print on a step that
+           doesn't exist (or, on a one-drawing item, on none at all) */
+        if (resp.rank >= 1 && resp.rank <= n) work.ranks[slot] = resp.rank;
+      });
+      /* the rail's linear first pass, resumed: every finished drawing is
+         reached, the first unfinished one is the bench's opening step */
+      var ok = okSlots(), firstOpenSlot = null;
+      for (var s = 0; s < ok.length; s++) {
+        work.reached[ok[s]] = true;
+        if (!benchRated(ok[s])) { firstOpenSlot = ok[s]; break; }
+      }
+      if (firstOpenSlot) {
+        work.step = firstOpenSlot;
+      } else if (ok.length > 1) {
+        work.step = 'call';
+        work.reached.call = true;
+      } else {
+        work.step = ok[0];
+      }
+      open();
+    }, function () {
+      curJob = null;   /* no rubric, no bench — the driver shows the failure */
+    });
+    return true;
+  }
+
+  /* filing, curate-shaped: the whole item goes through the job's file()
+     callback as one batch — same moment the real flow files, same gate. The
+     writes replace this curator's prior answers, so a retry after a partial
+     failure is safe by construction. */
+  function curateFile() {
+    if (!curJob) return;
+    var ok = okSlots();
+    var per = ok.map(function (s) {
+      var r = work.ratings[s], axes = {};
+      Object.keys(r.axes).forEach(function (a) {
+        if (r.axes[a] != null) axes[a] = r.axes[a];
+      });
+      return {
+        generation_id: work.slots[s].gen_id,
+        grade: r.grade,
+        axes: axes,
+        rank: ok.length > 1 ? (podRankOf(s) || null) : null
+      };
+    });
+    setDisabled('[data-act="file"]', true);
+    setDisabled('[data-act="retry-file"]', true);
+    var mine = token;
+    curJob.file(per).then(function () {
+      if (mine !== token || !isOpen || !curJob) return;
+      curateUnveil();
+    }, function (err) {
+      if (mine !== token || !isOpen || !curJob) return;
+      var code = (err && err.code) || 'server_error';
+      paint(head('The grades didn’t file', 6) +
+        '<p class="jd-turn-line">The drawer couldn’t record them ' +
+        '(<b>' + esc(code) + '</b>). Your answers are still on the card, and ' +
+        'refiling replaces rather than doubles.</p>' +
+        actions('<button type="button" class="jd-turn-go" data-act="retry-file">try filing again</button>' +
+          '<button type="button" class="jd-turn-alt" data-act="done">close</button>'));
+      focusFirst();
+    });
+  }
+
+  /* the unveil, built from what the queue already knew: no server reveal to
+     wait for — the names were on file all along, just withheld */
+  function curateUnveil() {
+    var ok = okSlots();
+    /* a one-drawing item has no call, but its print still deserves to stand
+       somewhere on the unveil — same seat the degraded turn gives a winner */
+    if (ok.length === 1 && !podRankOf(ok[0])) work.ranks[ok[0]] = 1;
+    work.reveal = ok.map(function (s) {
+      var c = work.slots[s].cur || {};
+      return {
+        slot: s, status: 'ok',
+        model_id: c.model_id || '',
+        label: c.label || c.model_id || ''
+      };
+    });
+    podSync();
+    go('unveil');
+  }
+
   window.JD_turn = {
     setData: setData,
     open: open,
     close: close,
     rerun: rerun,
+    curate: curateOpen,
     isOpen: function () { return isOpen; }
   };
+})();
+
+/* ---- THE CURATOR'S BENCH (?bench) — JD_bench ------------------------------
+   The re-rating driver for the curated backlog (owner, 2026-08-28; successor
+   to rating-bench.html, which was its own page in its own visual language).
+   The INSTRUMENT is the turn card itself — JD_turn.curate() seats an item's
+   existing responses on the same bench, rail and podium a visitor gets, so
+   the hours spent working the backlog are spent inside the real flow, and
+   every refinement made along the way ships to visitors. This module is only
+   the furniture AROUND that card: the key gate, the queue, the bottom strip,
+   and the curator-only acts (scrap, rerun, skip, prev). Nothing of the
+   card's chrome is duplicated here.
+
+   STATE IS SERVER-SIDE (jd_ratings / jd_ranks, via jd-item-rate.php with
+   replace-on-refile semantics), which is what keeps a phone and a desktop
+   working the same backlog in sync: finish an item on one, and the other
+   learns on its next queue load — the strip refetches whenever the tab comes
+   back to the front. Scrap and rerun are INTENTS, filed as flag rows for a
+   session to apply later (`retired` lives in git-tracked entry.json; a
+   rerun's drawings land as turn rows) — the bench itself commits nothing.
+
+   A RERUN IS A REAL TURN, exactly as the old bench held: the flag row goes
+   on the record, then JD_turn.rerun() runs the ordinary four-model turn —
+   darkroom, blind bench, podium, unveil — and its ratings file through
+   jd-rate.php like any visitor's. The strip resumes the backlog when that
+   turn's card comes down. */
+(function () {
+  if (!/[?&]bench(?:=|&|$)/.test(location.search)) return;
+
+  var API_Q = JD_API + '/api/jd-bench-queue.php';
+  var API_R = JD_API + '/api/jd-item-rate.php';
+  var BASE = '/art/junk-drawer/';
+  var K_KEY = 'jd-bench-key';
+
+  var Q = null;             /* the queue payload */
+  var curId = null;         /* the item on (or awaiting) the bench */
+  var visited = [];         /* item_ids opened this session — prev walks it */
+  var filedNow = {};        /* item_id -> true once its batch filed */
+  var svgCache = {};        /* svg path -> document text */
+  var intent = null;        /* why the card is coming down: scrap|skip|prev|rerun */
+  var rerunFor = null;      /* item_id whose rerun turn holds the stage */
+  var stale = false;        /* a deploy landed since this page loaded */
+  var sync = { state: 'idle', detail: '' };
+  var bar = null, sheet = null;
+
+  function bkey() {
+    try { return sessionStorage.getItem(K_KEY) || ''; } catch (e) { return ''; }
+  }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+  function itemById(id) {
+    var list = (Q && Q.items) || [];
+    for (var i = 0; i < list.length; i++) if (list[i].item_id === id) return list[i];
+    return null;
+  }
+
+  /* ---------- what still needs the curator ------------------------------- */
+  /* the write path REPLACES flag rows per generation, so the last word wins;
+     an UNRETIRE/UNRERUN note is the flag standing down */
+  function flagged(it, which) {
+    for (var i = 0; i < it.responses.length; i++) {
+      var fs = it.responses[i].flags || [];
+      for (var k = 0; k < fs.length; k++) {
+        if (fs[k].axis_id === which &&
+            String(fs[k].note || '').indexOf('UN') !== 0) return true;
+      }
+    }
+    return false;
+  }
+  function itemDone(it) {
+    var multi = it.responses.length > 1;
+    for (var i = 0; i < it.responses.length; i++) {
+      var r = it.responses[i];
+      if (!r.complete) return false;
+      if (multi && !(r.rank >= 1)) return false;
+    }
+    return true;
+  }
+  function workable(it) {
+    return !it.retired && !itemDone(it) &&
+      !flagged(it, 'retire-request') && !flagged(it, 'rerun-request') &&
+      it.responses.some(function (r) { return !!r.svg; });
+  }
+  function firstWorkable(afterId) {
+    var list = (Q && Q.items) || [], start = 0, i;
+    if (afterId) {
+      for (i = 0; i < list.length; i++) {
+        if (list[i].item_id === afterId) { start = i + 1; break; }
+      }
+    }
+    for (i = start; i < list.length; i++) if (workable(list[i])) return list[i];
+    /* wrap once — items skipped earlier come round again */
+    for (i = 0; i < start; i++) if (workable(list[i])) return list[i];
+    return null;
+  }
+  function counts() {
+    var list = (Q && Q.items) || [];
+    var c = { left: 0, scrapped: 0, rerun: 0, resp: 0, respDone: 0 };
+    list.forEach(function (it) {
+      if (it.retired) return;
+      if (flagged(it, 'retire-request')) { c.scrapped++; return; }
+      if (flagged(it, 'rerun-request')) { c.rerun++; return; }
+      if (!itemDone(it)) c.left++;
+      it.responses.forEach(function (r) {
+        c.resp++;
+        if (r.complete) c.respDone++;
+      });
+    });
+    return c;
+  }
+
+  /* ---------- the wire ---------------------------------------------------- */
+  function post(body) {
+    return fetch(API_R, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Bench-Key': bkey() },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () {
+        return { ok: false, error: { code: 'server_error' } };
+      });
+    }).then(function (j) {
+      if (!j || !j.ok) throw ((j && j.error) || { code: 'network' });
+      /* the write endpoint names its own build — a mismatch means a deploy
+         landed under this page, and the rubric could have moved */
+      if (j.build && Q && Q.build && j.build !== Q.build.build) stale = true;
+      return j;
+    });
+  }
+  function setSync(state, detail) {
+    sync = { state: state, detail: detail || '' };
+    paintBar();
+  }
+
+  /* the curate card's file() callback: one item, every response, filed
+     sequentially. Replace-on-refile makes a retry after a partial landing
+     converge rather than double. */
+  function fileItem(it, per) {
+    setSync('saving');
+    var chain = Promise.resolve();
+    per.forEach(function (p) {
+      chain = chain.then(function () {
+        var ratings = [];
+        Object.keys(p.axes || {}).forEach(function (a) {
+          ratings.push({ kind: 'axis', axis_id: a, value: p.axes[a] });
+        });
+        if (p.grade != null) ratings.push({ kind: 'grade', value: p.grade });
+        if (p.rank >= 1) ratings.push({ kind: 'rank', value: p.rank });
+        if (!ratings.length) return null;
+        return post({ generation_id: p.generation_id, ratings: ratings });
+      });
+    });
+    return chain.then(function () {
+      filedNow[it.item_id] = true;
+      /* fold the answers back into the queue copy, so done/left arithmetic
+         and any revisit read what the server now holds */
+      it.responses.forEach(function (r) {
+        for (var i = 0; i < per.length; i++) {
+          if (per[i].generation_id !== r.generation_id) continue;
+          r.axes = per[i].axes;
+          r.grade = per[i].grade;
+          if (per[i].rank >= 1) r.rank = per[i].rank;
+          r.complete = true;   /* it passed the card's own gate to get here */
+        }
+      });
+      setSync('saved');
+    }, function (err) {
+      setSync('failed', (err && err.code) || '');
+      throw err;
+    });
+  }
+
+  /* an intent flag on the item's record — retire-request or rerun-request —
+     filed against its first response's generation, with the note carrying
+     which item and which way ('RETIRE x' / 'RERUN x') */
+  function fileFlag(it, which, note) {
+    var gen = null;
+    for (var i = 0; i < it.responses.length; i++) {
+      if (it.responses[i].generation_id) { gen = it.responses[i].generation_id; break; }
+    }
+    if (!gen) return;
+    setSync('saving');
+    post({
+      generation_id: gen,
+      ratings: [{ kind: 'flag', axis_id: which }],
+      note: note
+    }).then(function () { setSync('saved'); },
+      function (err) { setSync('failed', (err && err.code) || ''); });
+    /* the local queue copy learns it now — the strip must not re-offer an
+       item the curator just dispatched, whatever the wire is doing */
+    if (it.responses[0]) {
+      it.responses[0].flags = (it.responses[0].flags || []).concat(
+        [{ axis_id: which, note: note }]);
+    }
+  }
+
+  /* ---------- seating an item on the bench ------------------------------- */
+  function openItem(it) {
+    if (!it) { curId = null; paintBar(); return; }
+    curId = it.item_id;
+    if (visited[visited.length - 1] !== it.item_id) visited.push(it.item_id);
+    hideSheet();
+    paintBar();
+    var usable = it.responses.filter(function (r) { return !!r.svg; });
+    Promise.all(usable.map(function (r) {
+      if (svgCache[r.svg]) return null;
+      return fetch(BASE + r.svg).then(function (res) {
+        if (!res.ok) throw new Error('svg ' + res.status);
+        return res.text();
+      }).then(function (t) { svgCache[r.svg] = t; });
+    })).then(function () {
+      if (curId !== it.item_id) return;   /* the curator moved on mid-fetch */
+      var models = (Q && Q.models) || {};
+      window.JD_turn.curate({
+        prompt: it.prompt,
+        responses: usable.map(function (r) {
+          return {
+            generation_id: r.generation_id,
+            svg: svgCache[r.svg] || '',
+            model_id: r.model_id,
+            label: models[r.model_id] || r.model_id,
+            axes: r.axes || {},
+            grade: r.grade,
+            grade_seed: r.grade_seed,
+            rank: r.rank
+          };
+        }),
+        file: function (per) { return fileItem(it, per); }
+      });
+      paintBar();
+    }, function () {
+      setSync('failed', 'svg fetch');
+    });
+  }
+
+  /* ---------- the card coming down --------------------------------------- */
+  window.addEventListener('jd-turn-close', function () {
+    var why = intent;
+    intent = null;
+    if (why === 'rerun') {
+      var rr = itemById(rerunFor);
+      if (rr && window.JD_turn.rerun(rr.prompt)) { paintBar(); return; }
+      rerunFor = null;                   /* the turn refused to start */
+      openItem(firstWorkable(curId));
+      return;
+    }
+    if (rerunFor) {
+      /* the rerun turn itself just closed — back to the backlog */
+      rerunFor = null;
+      openItem(firstWorkable(curId));
+      return;
+    }
+    if (why === 'scrap' || why === 'skip') { openItem(firstWorkable(curId)); return; }
+    if (why === 'prev') return;          /* act() reopens the earlier item */
+    if (curId && filedNow[curId] && itemById(curId) && !workable(itemById(curId))) {
+      openItem(firstWorkable(curId));    /* filed and dismissed — next */
+      return;
+    }
+    paintBar();                          /* set aside — the strip offers resume */
+  });
+
+  /* ---------- the strip's acts ------------------------------------------- */
+  function act(kind) {
+    var it = itemById(curId);
+    var open = window.JD_turn.isOpen();
+    if (kind === 'skip') {
+      if (open) { intent = 'skip'; window.JD_turn.close(); }
+      else openItem(firstWorkable(curId));
+    } else if (kind === 'scrap') {
+      if (!it) return;
+      fileFlag(it, 'retire-request', 'RETIRE ' + it.item_id);
+      if (open) { intent = 'scrap'; window.JD_turn.close(); }
+      else openItem(firstWorkable(curId));
+    } else if (kind === 'rerun') {
+      if (!it) return;
+      fileFlag(it, 'rerun-request', 'RERUN ' + it.item_id);
+      rerunFor = it.item_id;
+      if (open) { intent = 'rerun'; window.JD_turn.close(); }
+      else if (!window.JD_turn.rerun(it.prompt)) { rerunFor = null; }
+      paintBar();
+    } else if (kind === 'resume') {
+      if (!open) openItem(it || firstWorkable(null));
+    } else if (kind === 'prev') {
+      if (visited.length < 2) return;
+      visited.pop();
+      var back = itemById(visited[visited.length - 1]);
+      if (open) { intent = 'prev'; window.JD_turn.close(); }
+      if (back) openItem(back);
+    } else if (kind === 'prompt') {
+      toggleSheet();
+    }
+  }
+
+  /* ---------- the strip --------------------------------------------------- */
+  function buildBar() {
+    if (bar) return;
+    document.documentElement.classList.add('jd-bench-on');
+    sheet = document.createElement('div');
+    sheet.className = 'jd-bench-sheet';
+    sheet.hidden = true;
+    document.body.appendChild(sheet);
+    bar = document.createElement('div');
+    bar.className = 'jd-bench-bar';
+    bar.setAttribute('role', 'toolbar');
+    bar.setAttribute('aria-label', 'curator’s bench');
+    document.body.appendChild(bar);
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-bench]') : null;
+      if (b) act(b.getAttribute('data-bench'));
+    });
+  }
+  function hideSheet() { if (sheet) sheet.hidden = true; }
+  function toggleSheet() {
+    var it = itemById(curId);
+    if (!sheet || !it) return;
+    if (!sheet.hidden) { sheet.hidden = true; return; }
+    sheet.innerHTML =
+      '<b>' + esc(it.title) + '</b> · ' + esc(String(it.created).slice(0, 10)) +
+      ' · ' + it.responses.length +
+      (it.responses.length === 1 ? ' response' : ' responses') +
+      '<p>' + esc(it.prompt) + '</p>';
+    sheet.hidden = false;
+  }
+  function syncHTML() {
+    if (sync.state === 'saving') return '<span class="jd-bench-sync is-saving">saving…</span>';
+    if (sync.state === 'saved') return '<span class="jd-bench-sync is-saved">✓ filed</span>';
+    if (sync.state === 'failed') {
+      return '<span class="jd-bench-sync is-failed">⚠ ' +
+        esc(sync.detail || 'failed') + '</span>';
+    }
+    return '';
+  }
+  function paintBar() {
+    if (!bar) return;
+    var c = counts();
+    var it = itemById(curId);
+    var open = window.JD_turn.isOpen();
+    var left = '';
+    if (rerunFor) {
+      left = '<span class="jd-bench-note">rerun running — it files as a real turn</span>';
+    } else if (it) {
+      left = '<span class="jd-bench-pos">' + c.left + ' to go</span>' +
+        '<button type="button" class="jd-bench-title" data-bench="prompt" ' +
+        'title="the item’s prompt">' + esc(it.title) + '</button>' +
+        (!open ? '<button type="button" data-bench="resume">resume</button>' : '');
+    } else {
+      left = '<span class="jd-bench-note">backlog clear — ' + c.respDone + '/' +
+        c.resp + ' responses filed' +
+        (c.scrapped ? ', ' + c.scrapped + ' scrapped' : '') +
+        (c.rerun ? ', ' + c.rerun + ' sent to rerun' : '') + '</span>';
+    }
+    var acts = (it && !rerunFor)
+      ? '<div class="jd-bench-acts">' +
+        (visited.length > 1 ? '<button type="button" data-bench="prev" title="previous item">&larr;</button>' : '') +
+        '<button type="button" data-bench="skip" title="set this item aside for now">skip &rarr;</button>' +
+        '<button type="button" class="jd-bench-scrap" data-bench="scrap" ' +
+        'title="flag this item to be retired from the drawer">scrap ✕</button>' +
+        '<button type="button" class="jd-bench-rerun" data-bench="rerun" ' +
+        'title="re-issue this prompt to the four current models, as a real turn">rerun ↻</button>' +
+        '</div>'
+      : '';
+    var stamp = Q && Q.build
+      ? '<span class="jd-bench-build' + (stale ? ' is-stale' : '') + '">' +
+        (stale ? 'a deploy landed — reload before rating on'
+          : esc(Q.build.version + ' · ' + Q.build.build +
+                ' · tax v' + Q.taxonomy_version)) + '</span>'
+      : '';
+    bar.innerHTML =
+      '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
+      left + syncHTML() + acts + stamp;
+  }
+
+  /* ---------- the gate and the queue -------------------------------------- */
+  function gate(msg) {
+    if (!bar) buildBar();
+    bar.innerHTML =
+      '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
+      '<label class="jd-bench-gate">' + (msg ? esc(msg) + ' ' : '') +
+      'bench key <input type="password" autocomplete="off"></label>';
+    var input = bar.querySelector('input');
+    input.focus();
+    input.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter') return;
+      try { sessionStorage.setItem(K_KEY, input.value); } catch (err) {}
+      loadQueue(false);
+    });
+  }
+  function loadQueue(quiet) {
+    if (!quiet) {
+      if (bar) {
+        bar.innerHTML = '<span class="jd-bench-tag" aria-hidden="true">BENCH</span>' +
+          '<span class="jd-bench-note">loading the queue…</span>';
+      }
+    }
+    fetch(API_Q, { headers: { 'X-Bench-Key': bkey() } })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j || !j.ok) {
+          if (j && j.error && j.error.code === 'forbidden') {
+            gate(quiet ? '' : 'the key was refused —');
+            return;
+          }
+          if (!quiet) gate('queue failed (' + esc(((j || {}).error || {}).code || 'network') + ') —');
+          return;
+        }
+        Q = j;
+        var open = window.JD_turn.isOpen();
+        if (!open && !rerunFor) {
+          /* nothing on the stage: seat the current item if it still needs
+             work (it may have been finished on another device), else move on */
+          var cur = itemById(curId);
+          if (!cur || !workable(cur)) openItem(firstWorkable(curId));
+          else paintBar();
+        } else {
+          paintBar();
+        }
+      }, function () {
+        if (!quiet) gate('the queue endpoint didn’t answer —');
+      });
+  }
+
+  window.addEventListener('jd-turn-open', function () { paintBar(); });
+
+  /* the other device may have moved the backlog — refetch when this tab
+     comes back to the front (never mid-card: an open card is not disturbed) */
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && Q) loadQueue(true);
+  });
+
+  buildBar();
+  /* try first, gate on refusal: dev serves the queue keyless, and production
+     answers 403, which routes to the key prompt */
+  loadQueue(false);
 })();

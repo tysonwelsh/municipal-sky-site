@@ -138,11 +138,29 @@ endpoint filters `defunct`, the write endpoint validates against the live ranks,
 and the bench binds keys by POSITION. A taxonomy change of this shape needs no
 code change — which is the test a future rubric edit should still pass.
 
-- `art/junk-drawer/rating-bench.html` — the owner's rating instrument
-  (unlinked, noindex), the DB-writing successor to `sizing-desk.html`'s
-  export-a-blob pattern. Keys answer by POSITION, 1 always best.
+- **`index.php?bench` — the owner's rating instrument since 2026-08-28.**
+  Bench mode runs the backlog INSIDE the real turn card (`JD_turn.curate` in
+  `junk-drawer.js`): an item's existing responses are dealt blind into slots
+  on the same bench/rail/podium a visitor gets, filed per item through
+  `jd-item-rate.php` (ranks land in `jd_ranks`), names withheld until the
+  unveil. The `JD_bench` driver at the foot of `junk-drawer.js` owns only
+  the furniture around the card — key gate, queue, the dark strip at the
+  viewport foot with scrap / rerun / skip / prev. The POINT of this seating:
+  every layout/appearance change the owner requests for the rating flow is
+  made ONCE, in the shared card, and reaches visitors and backlog alike —
+  never fork a bench-only copy of the instrument. Scrap and rerun file
+  intent FLAG rows (`retire-request` / `rerun-request`, note `RETIRE <id>` /
+  `RERUN <id>`) for a session to apply later; a rerun then runs as a REAL
+  turn via `JD_turn.rerun`. Phone and desktop stay in sync through the
+  server (the strip refetches the queue when the tab regains visibility).
+- `art/junk-drawer/rating-bench.html` — the RETIRED first instrument
+  (unlinked, noindex; its own flat-dark page, keys answer by position).
+  Superseded by `?bench`; keep until the owner says to delete.
 - `api/jd-bench-queue.php` (read) and `api/jd-item-rate.php` (write) — both
-  gated on `jd_bench_key`, falling back to `jd_setup_key`.
+  gated on `jd_bench_key`, falling back to `jd_setup_key`. A response is
+  `complete` when every live axis AND a grade (bench, or the entry.json
+  seed) are on file; multi-response items additionally need every response
+  ranked before bench mode counts the item done.
 - `api/jd-backfill-curated.php` — files each curated item as a synthetic
   `jd_submissions` row (keyed by `item_id`) with one `jd_generations` row per
   response, so a rating has something to hang off. Idempotent; run it after

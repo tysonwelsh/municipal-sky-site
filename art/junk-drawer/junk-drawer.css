@@ -3950,3 +3950,93 @@ html.jd-folder-open { overflow: hidden; }
   font-family: var(--fmono); font-size: 0.62rem; line-height: 1.7;
   color: var(--fink-2);
 }
+
+/* ==========================================================================
+   THE CURATOR'S BENCH STRIP (?bench) — JD_bench's furniture (2026-08-28).
+   The re-rating backlog runs INSIDE the ordinary turn card (JD_turn.curate);
+   this strip is everything around it — queue position, sync truth, and the
+   curator-only acts. It is deliberately NOT the form's paper: the card is
+   the exhibit's own instrument, the strip is the underside of the drawer the
+   curator is leaning on — dark kraft, same Courier, no fiction. It sits at
+   the viewport FOOT (the site banner owns the top band at z-index 1000) and
+   above the turn scrim (322), which gains bottom padding while bench mode is
+   on so the card never slides its action row underneath the strip.
+   ========================================================================== */
+.jd-bench-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 1200;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px;
+  padding: 7px 12px calc(7px + env(safe-area-inset-bottom, 0px));
+  background: #221809;
+  color: #e6d9b4;
+  border-top: 2px solid #6d5426;
+  box-shadow: 0 -6px 18px rgba(6, 3, 0, 0.5);
+  font: 11px/1.5 "Courier Prime", "Courier New", Courier, monospace;
+}
+.jd-bench-tag {
+  font-size: 9px; letter-spacing: 0.14em; font-weight: 700;
+  color: #221809; background: #c9a84c; padding: 2px 6px; border-radius: 2px;
+}
+.jd-bench-pos { color: #b3a37c; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.jd-bench-note { color: #b3a37c; }
+.jd-bench-bar button {
+  font: inherit; color: inherit; cursor: pointer;
+  background: none; border: 1px solid rgba(230, 217, 180, 0.35);
+  border-radius: 2px; padding: 3px 9px; white-space: nowrap;
+}
+.jd-bench-bar button:hover { border-color: #e6d9b4; }
+.jd-bench-bar button:focus-visible { outline: 2px solid #c9a84c; outline-offset: 1px; }
+/* the item's name doubles as the prompt toggle — a control, but worn as a
+   title: no box until the hand is on it */
+.jd-bench-bar .jd-bench-title {
+  border-color: transparent; font-weight: 700; padding: 3px 4px;
+  max-width: 34vw; overflow: hidden; text-overflow: ellipsis;
+  text-decoration: underline dotted rgba(230, 217, 180, 0.5);
+  text-underline-offset: 3px;
+}
+.jd-bench-acts { display: flex; gap: 6px; margin-left: auto; }
+.jd-bench-bar .jd-bench-scrap { color: #e8917f; border-color: rgba(232, 145, 127, 0.45); }
+.jd-bench-bar .jd-bench-scrap:hover { border-color: #e8917f; }
+.jd-bench-bar .jd-bench-rerun { color: #e5c06b; border-color: rgba(229, 192, 107, 0.45); }
+.jd-bench-bar .jd-bench-rerun:hover { border-color: #e5c06b; }
+.jd-bench-sync { white-space: nowrap; }
+.jd-bench-sync.is-saving { color: #e5c06b; }
+.jd-bench-sync.is-saved { color: #9fc98a; }
+.jd-bench-sync.is-failed { color: #e8917f; }
+.jd-bench-build {
+  margin-left: auto; color: #7d6f4e; font-size: 10px; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.jd-bench-acts + .jd-bench-build { margin-left: 0; }
+.jd-bench-build.is-stale { color: #e5c06b; }
+.jd-bench-gate { display: flex; align-items: center; gap: 8px; }
+.jd-bench-gate input {
+  font: inherit; color: inherit; width: 200px;
+  background: rgba(230, 217, 180, 0.08);
+  border: 1px solid rgba(230, 217, 180, 0.35); border-radius: 2px;
+  padding: 3px 7px;
+}
+/* the prompt sheet: the one thing the visitor's card never needed (they
+   wrote the words themselves) — a slip of the card's paper pinned above the
+   strip, so judging "understanding the assignment" has the assignment */
+.jd-bench-sheet {
+  position: fixed; left: 10px; right: 10px;
+  bottom: calc(46px + env(safe-area-inset-bottom, 0px));
+  z-index: 1199; max-width: 620px; margin: 0 auto; max-height: 40vh;
+  overflow: auto; padding: 10px 14px;
+  background: #ece0bf; color: #33240f;
+  border: 1px solid rgba(48, 38, 20, 0.55);
+  box-shadow: 6px 10px 22px -6px rgba(6, 3, 0, 0.6);
+  font: 11.5px/1.55 "Courier Prime", "Courier New", Courier, monospace;
+}
+.jd-bench-sheet p { margin: 6px 0 0; white-space: pre-wrap; }
+/* the turn card stands clear of the strip while bench mode is on */
+html.jd-bench-on .jd-turn-scrim {
+  padding-bottom: calc(52px + env(safe-area-inset-bottom, 0px));
+}
+@media (max-width: 560px) {
+  .jd-bench-bar .jd-bench-title { max-width: 46vw; }
+  .jd-bench-build { display: none; }
+  html.jd-bench-on .jd-turn-scrim {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
+}

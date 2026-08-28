@@ -107,8 +107,8 @@ foreach ($ratings as $r) {
         jd_fail(400, 'bad_request', 'Each rating must be an object.');
     }
     $kind = $r['kind'] ?? 'axis';
-    if (!in_array($kind, ['axis', 'grade', 'flag'], true)) {
-        jd_fail(400, 'rating_invalid', 'kind must be axis, grade or flag.');
+    if (!in_array($kind, ['axis', 'grade', 'flag', 'rank'], true)) {
+        jd_fail(400, 'rating_invalid', 'kind must be axis, grade, flag or rank.');
     }
 
     if ($kind === 'axis') {
@@ -127,6 +127,20 @@ foreach ($ratings as $r) {
             jd_fail(400, 'rating_invalid', 'Value out of range for the grade scale.');
         }
         $clean[] = ['grade', null, (float) $value];
+    } elseif ($kind === 'rank') {
+        // The podium's answer for this one response: its position in the
+        // item's rank order (1 = best). Goes to jd_ranks, NOT jd_ratings —
+        // the kind column's enum does not know 'rank' and the turn flow
+        // already keeps rank rows in their own table. Dense-from-1 across
+        // the whole item cannot be checked one response at a time; the
+        // podium client guarantees it, and this endpoint is the curator's
+        // gated instrument, not public intake.
+        $value = $r['value'] ?? null;
+        if (!is_numeric($value) || (float) $value != (int) $value
+            || (int) $value < 1 || (int) $value > 8) {
+            jd_fail(400, 'rating_invalid', 'A rank must be an integer position from 1.');
+        }
+        $clean[] = ['rank', null, (float) $value];
     } else {
         $clean[] = ['flag', is_string($r['axis_id'] ?? null) ? $r['axis_id'] : null, null];
     }
@@ -141,7 +155,7 @@ try {
     // keeps the two write paths from crossing: a visitor's turn is rated
     // through jd-rate.php, under its one-batch-per-submission rule.
     $stmt = $db->prepare(
-        'SELECT g.id, s.item_id
+        'SELECT g.id, g.submission_id, s.item_id
            FROM jd_generations g
            JOIN jd_submissions s ON s.id = g.submission_id
           WHERE g.id = ?'
@@ -181,8 +195,40 @@ try {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
 
+    // Rank rows live in jd_ranks (the turn flow's own rank table — the
+    // jd_ratings kind enum does not know 'rank'), replaced per generation the
+    // same way an axis answer is. The table lands via setup-jd-tables.php,
+    // which is a manual run, so a database without it yet files the rest of
+    // the batch rather than 500ing (jd-rate.php's own discipline).
+    $delRank = $db->prepare(
+        "DELETE FROM jd_ranks
+          WHERE generation_id = ? AND client = 'bench' AND visitor_hash = ?"
+    );
+    $insRank = $db->prepare(
+        'INSERT INTO jd_ranks
+            (id, submission_id, generation_id, rank_pos, visitor_hash, client, rated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)'
+    );
+
     $written = 0;
+    $noteUsed = false;
     foreach ($clean as [$kind, $axisId, $value]) {
+        if ($kind === 'rank') {
+            try {
+                $delRank->execute([$generationId, $curator]);
+                $insRank->execute([
+                    jd_ulid(), $gen['submission_id'], $generationId,
+                    (int) $value, $curator, 'bench', $now,
+                ]);
+                $written++;
+            } catch (PDOException $e) {
+                if (!jd_item_rate_missing_table($e)) {
+                    throw $e;
+                }
+                error_log('jd-item-rate: jd_ranks is missing — filed without the rank (run setup-jd-tables.php)');
+            }
+            continue;
+        }
         if ($kind === 'axis') {
             $delAxis->execute([$generationId, $curator, $axisId]);
         } else {
@@ -190,10 +236,11 @@ try {
         }
         $ins->execute([
             jd_ulid(), $generationId, $kind, $axisId, $value,
-            // the note rides on the first row of the batch only
-            $written === 0 ? $note : null,
+            // the note rides on the first jd_ratings row of the batch only
+            $noteUsed ? null : $note,
             $taxonomyVersion, $curator, 'bench', $now,
         ]);
+        $noteUsed = true;
         $written++;
     }
 
@@ -224,4 +271,18 @@ try {
     }
     error_log('jd-item-rate: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The rating could not be filed.');
+}
+
+// jd-rate.php's jd_missing_table, under its own name (the two endpoints are
+// never included together, but a shared name would be a fatal redeclare if
+// they ever were). MySQL says SQLSTATE 42S02; SQLite says "no such table".
+function jd_item_rate_missing_table(PDOException $e): bool
+{
+    if (($e->getCode() ?: '') === '42S02') {
+        return true;
+    }
+    $msg = $e->getMessage();
+    return str_contains($msg, 'no such table')
+        || str_contains($msg, "doesn't exist")
+        || str_contains($msg, 'Base table or view not found');
 }
