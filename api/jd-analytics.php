@@ -107,7 +107,8 @@ try {
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $rates = $db->query(
-        'SELECT generation_id, kind, axis_id, value FROM jd_ratings'
+        'SELECT generation_id, kind, axis_id, value, taxonomy_version
+           FROM jd_ratings'
     )->fetchAll(PDO::FETCH_ASSOC);
 
     $comparisons = $db->query(
@@ -219,20 +220,34 @@ foreach ($gens as $g) {
 }
 
 // --- the ratings: grades and the live axes ---------------------------------
-// All clients count. 'web' is a visitor's turn rating, 'bench' is the curator
-// at the rating bench, 'seed' is the grade carried over from entry.json — they
-// are three raters of the same corpus, not three populations, and the drawer
-// has never claimed otherwise. The 1..5 grade scale is permanent across
-// taxonomy versions (only labels have ever been reworded), so grades take no
-// taxonomy_version filter; axis ratings are filtered by LIVE AXIS instead,
-// which is the honest version guard for a scale that has actually changed.
+// All clients count — 'web' (a visitor's turn), 'bench' (the curator at the
+// rating bench) and 'seed' (grades carried over from entry.json) are three
+// raters of the same corpus, not three populations.
+//
+// CURRENT RUBRIC ONLY (owner call, 2026-08-28). The quality charts count
+// ratings filed under the v17 rework onward — the era the whole current
+// rubric belongs to (v18–20 are refinements of v17's reset, which retired
+// every earlier axis at once). Everything stamped before v17 is the old
+// Claude-only demo era and is excluded, grades included: the 1..5 rank scale
+// is technically permanent, but the owner's call is that a judgment filed
+// under a retired rubric is not the same judgment, and the pre-v17 material
+// will re-enter these charts by being RE-RATED, not by being grandfathered.
+// (Axis ratings additionally pass the live-axis filter below, which guards
+// the scales that changed shape.)
+const JD_ANALYTICS_RUBRIC_SINCE = 17;
+
 $ratedGenIds = [];
 $gradeByModel = [];   // model_id => ['sum', 'n']
 $axisByModel  = [];   // axis_id => model_id => ['sum', 'n']
 
 foreach ($rates as $r) {
+    // The era gate, before anything is counted — the ledger's rated_responses
+    // must agree with what the charts below actually draw from.
+    if ((int) ($r['taxonomy_version'] ?? 0) < JD_ANALYTICS_RUBRIC_SINCE) {
+        continue;
+    }
     $genId = (string) $r['generation_id'];
-    $ratedGenIds[$genId] = true;      // any row at all — flags included
+    $ratedGenIds[$genId] = true;      // any current-rubric row — flags included
 
     $gen = $genById[$genId] ?? null;
     if ($gen === null || $r['value'] === null) {
@@ -445,7 +460,10 @@ jd_json_out(200, [
         'survived'        => $turnSurvived,
         // Corpus-wide on purpose, unlike the three above: a rated response is
         // a judgment on file, and the curated backfill exists precisely so the
-        // owner's 77 responses could be rated through the same table.
+        // owner's 77 responses could be rated through the same table. Counted
+        // under the same current-rubric gate as the charts (v17+), so this
+        // figure and the grade book can never disagree about what "rated"
+        // means.
         'rated_responses' => count($ratedGenIds),
         'cost_usd'        => round($running, 6),
     ],

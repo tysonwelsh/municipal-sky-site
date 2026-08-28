@@ -2791,9 +2791,11 @@ function JD_layerOpen() {
      (design review, 2026-08-28 — it used to read "everything on file",
      which is true of nothing here). Turns and drawings are visitor turns
      only: the curated backfill sits at status='generated' forever and never
-     was a turn. Ratings and spend include the curated bench, because the
-     bench is the owner's corpus and its generations cost real money. Four
-     figures under one honest line beats four figures under a wrong one. */
+     was a turn. Ratings count the CURRENT RUBRIC only (owner call,
+     2026-08-28 — the endpoint's v17+ era gate; the old demo-era grades
+     re-enter by re-rating). Spend includes the curated bench, because its
+     generations cost real money whatever rubric was live. Four figures
+     under one honest line beats four figures under a wrong one. */
   function ledgerHTML() {
     var t = data.totals || {};
     function fig(v, label) {
@@ -2808,7 +2810,8 @@ function JD_layerOpen() {
         fig('$' + (+t.cost_usd || 0).toFixed(2), 'provider spend') +
       '</div>' +
       '<p class="fx-sub fx-ledger-sub">turns and drawings are visitor ' +
-        'turns; ratings and spend include the curated bench — counted ' +
+        'turns; ratings count the current rubric only; spend includes the ' +
+        'curated bench — counted ' +
         esc(day(data.generated)) + '</p>' +
       '</section>';
   }
@@ -2952,8 +2955,11 @@ function JD_layerOpen() {
       (rows.length * ROWH + 6) + '" role="img" aria-label="' +
       esc('Average overall grade. ' + alt.join('. ')) + '">' + s + '</svg>';
     return cardHTML('fx-grades', 'The grade book',
-      'average overall grade on the permanent 1–5 scale, all rated ' +
-      'responses, live rubric only, n ' + MIN_N + ' and up' +
+      /* "current rubric" = the v17 rework onward — the endpoint's era gate
+         (owner call, 2026-08-28): pre-v17 grades are the old demo era and
+         re-enter by being re-rated, never by being grandfathered */
+      'average overall grade on the 1–5 scale, every rating filed under ' +
+      'the current rubric, n ' + MIN_N + ' and up' +
       notPlotted(dropped), svg);
   }
 
@@ -2995,6 +3001,14 @@ function JD_layerOpen() {
     Object.keys(thin).forEach(function (id) {
       if (thin[id] !== -1) dropped.push({ id: id, n: thin[id] });
     });
+    /* when NO model clears the floor on ANY axis, the card omits itself —
+       the empty-payload discipline firsts and the grade book already keep.
+       Four bare rulers with no dots read as a rendering failure, and a
+       young database (or the dev sandbox) sits in exactly that state. */
+    var anyRow = axes.some(function (ax) {
+      return (ax.models || []).some(function (r) { return (+r.n || 0) >= MIN_N; });
+    });
+    if (!anyRow) return '';
     var panels = axes.map(function (ax, pi) {
       var pts = +ax.points || 3;
       var rows = (ax.models || []).filter(function (r) {
@@ -3032,7 +3046,8 @@ function JD_layerOpen() {
         '<g class="fx-key">' + key + '</g>' + s + '</svg></div>';
     }).join('');
     return cardHTML('fx-axes', 'The four axes',
-      'average per axis, all rated responses, live axes only, n ' + MIN_N +
+      'average per axis, every rating filed under the current rubric, ' +
+      'live axes only, n ' + MIN_N +
       ' and up — each panel is its own ruler and the scales are never ' +
       'pooled' + notPlotted(dropped),
       '<div class="fx-axgrid">' + panels + '</div>');
