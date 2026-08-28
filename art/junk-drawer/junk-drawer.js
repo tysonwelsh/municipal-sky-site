@@ -4891,6 +4891,15 @@ function JD_layerOpen() {
     paint(h);
     bodyEl.scrollTop = 0;
     focusFirst();
+    /* the assignment's fold is only honest if the words actually overflow
+       it: measured here, on the painted DOM (the record card's discipline —
+       its render strips rc-can-fold the same way). is-fit lifts the mask
+       and hides the expander in one class. */
+    var asn = bodyEl.querySelector('.jd-turn-assign');
+    if (asn) {
+      var ap = asn.querySelector('p');
+      if (ap && ap.scrollHeight <= ap.clientHeight + 2) asn.classList.add('is-fit');
+    }
     /* the fresh drawings' first appearance draws itself on (owner,
        2026-08-16 — "it should feel magical"): all surviving plates at
        once, via the shared engine, and ONLY on the arrival from the
@@ -6964,6 +6973,26 @@ function JD_layerOpen() {
     return h + '</div>';
   }
 
+  /* THE ASSIGNMENT ON THE BENCH (owner, 2026-08-28): the prompt, verbatim,
+     rides every drawing's grading panel — under the exhibit in the landscape
+     columns, between the sticky plate and the rows in the portrait stack.
+     Judging "Understanding the Assignment" with the assignment off the card
+     meant grading against memory; now every word is in reach. The fold is
+     the record card's own idiom (three lines, a mask fade over the last,
+     SHOW FULL PROMPT to unfold) — render() measures after paint and marks
+     is-fit when the words never overflowed, which hides the expander. The
+     toggle flips classes in place (data-act="brief"), never a re-render, so
+     the native selects and scroll position stay put. */
+  function briefHTML() {
+    var words = (work && work.prompt) || '';
+    if (!words.trim()) return '';
+    return '<div class="jd-turn-assign">' +
+      '<span class="jd-turn-assign-tag" aria-hidden="true">the assignment</span>' +
+      '<p>' + esc(words) + '</p>' +
+      '<button type="button" class="jd-turn-pv" data-act="brief">show full prompt</button>' +
+      '</div>';
+  }
+
   /* THE LANDSCAPE BENCH (owner modification on the round-15 pick,
      2026-08-13). The bench borrows the report card's two-column pattern: the
      exhibit on the LEFT, the paperwork on the RIGHT. The wrappers are layout
@@ -6977,7 +7006,10 @@ function JD_layerOpen() {
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      plate(slot, { pin: true, zoom: true, replay: true }) + '</div></div>' +
+      plate(slot, { pin: true, zoom: true, replay: true }) + '</div>' +
+      /* OUTSIDE the pin: the sticky exhibit stays just the drawing, and in
+         the portrait stack the assignment scrolls with the rows beneath it */
+      briefHTML() + '</div>' +
       '<div class="jd-bench-r">' +
       benchHeadHTML();
     /* axes first, in taxonomy order, THEN the overall grade (owner
@@ -7423,6 +7455,14 @@ function JD_layerOpen() {
       close();
     } else if (act === 'retry-file') {
       if (curJob) curateFile(); else submitRatings();
+    } else if (act === 'brief') {
+      /* in place, no re-render — a repaint here would close the native
+         picker under a finger mid-survey and lose the scroll position */
+      var asn2 = b.closest('.jd-turn-assign');
+      if (asn2) {
+        var on = asn2.classList.toggle('is-open');
+        b.textContent = on ? 'fold the prompt' : 'show full prompt';
+      }
     }
   }
 

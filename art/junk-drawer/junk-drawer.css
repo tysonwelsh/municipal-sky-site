@@ -2937,6 +2937,57 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-pin { display: flex; justify-content: center; }
 .jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: 100%; }
 
+/* ---- the assignment (owner, 2026-08-28) -----------------------------------
+   The prompt, verbatim, on every grading panel — the words being judged
+   against, in reach while judging. Landscape: under the exhibit, closing its
+   column. Portrait (the wrappers go display:contents below): a flex child of
+   the scroller between the sticky plate and the rows — "just above the
+   ratings" — scrolling away with them under the pin. The fold is the record
+   card's rc-assign idiom re-cut in this sheet's tokens: three lines, the cut
+   dissolving over exactly the last text line, SHOW FULL PROMPT to unfold;
+   render() marks is-fit when the words never overflowed, which lifts the
+   mask and retires the expander in one class. */
+.jd-turn-assign {
+  margin: var(--sp-2) 2px 0;
+  padding-top: var(--sp-2);
+  border-top: 1px solid var(--trule-2);
+}
+.jd-turn-assign-tag {
+  display: block; margin-bottom: 3px;
+  font-size: var(--t-micro); letter-spacing: 0.17em; text-transform: uppercase;
+  color: var(--tink-3);
+}
+.jd-turn-assign p {
+  margin: 0; font-size: var(--t-body); line-height: 1.55;
+  color: var(--tink-2); white-space: pre-wrap; word-break: break-word;
+}
+.jd-turn-assign:not(.is-open):not(.is-fit) p {
+  max-height: 4.65em;    /* 3 lines of the 1.55 line-height */
+  overflow: hidden;
+  /* em pair is the fallback; the lh pair, where supported, is exactly one
+     line whatever the line-height (the record card's own note applies) */
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1.05em), rgba(0, 0, 0, 0) 100%);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
+          mask-image: linear-gradient(#000 calc(100% - 1lh), rgba(0, 0, 0, 0) 100%);
+}
+.jd-turn-pv {
+  display: inline-block; margin-top: 3px; cursor: pointer;
+  border: 0; background: none; padding: 0 0 1px;
+  font-family: var(--tmono); font-size: var(--t-micro); letter-spacing: 0.17em;
+  text-transform: uppercase; color: var(--tink-3);
+  border-bottom: 1px dotted var(--trule);
+}
+.jd-turn-pv:hover { color: var(--tred); border-bottom-color: var(--tred); }
+.jd-turn-pv:focus-visible { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-assign.is-fit .jd-turn-pv { display: none; }
+@media (max-width: 700px) {
+  /* a flex child of the portrait scroller (the wrappers are contents): it
+     must never be the block the flexbox squeezes — the elastic exhibit
+     above it is the one that gives */
+  .jd-turn[data-view="bench"] .jd-turn-assign { flex: 0 0 auto; }
+}
+
 /* ---- the examination rows -------------------------------------------------
    F4/OVERRIDE 2 (round-16): a row's height used to be its 44px control PLUS
    its own 0.15rem top/bottom padding — the row and the control were both
