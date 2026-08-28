@@ -1479,6 +1479,9 @@ function JD_layerOpen() {
   /* the turn object dismisses the selection before it opens the modal, from
      both the pointer and the keyboard press — and it lives outside this IIFE */
   window.JD_hideTag = hideTag;
+  /* the instructions sheet's keyboard path (Enter/Space on the wrapper)
+     picks through the same door the tap does — see the sheet module */
+  window.JD_pick = pick;
 
   /* An item lying against a wall zooms straight into the well's
      overflow:hidden and gets a slice shaved off it — the skeleton key lost
@@ -1528,6 +1531,14 @@ function JD_layerOpen() {
        box — the pile is inset:0 of the well. Returned on dismissal. */
     if (item.parentNode !== well) well.appendChild(item);
     item.style.zIndex = 72;
+    /* THE INSTRUCTIONS SHEET reads bare (owner, 2026-08-28): the same
+       in-place zoom-and-straighten as any pick — hoisted, upright,
+       ×--pick-scale, the pile dimmed behind it — with no specimen tag and
+       no elastic, because the words on it ARE the paperwork. Nudged into
+       the well like every pick so the enlarged sheet can't hang past the
+       wall; every standard dismissal (tap away, Esc, resize, hideTag)
+       puts it back exactly as it puts back a specimen. */
+    if (item.dataset.sheet) { nudgeIntoWell(item); return; }
     if (!tag) buildTag();
 
     var d = item.dataset;
@@ -1807,9 +1818,11 @@ function JD_layerOpen() {
                pointer and the keyboard path — see the turn-object module */
             if (window.JD_turnObject) window.JD_turnObject.press();
           } else if (item.dataset.sheet) {
-            /* the instructions sheet ENLARGES instead of picking: no
-               specimen tag, no report card — see the sheet module */
-            if (window.JD_sheet) window.JD_sheet.press();
+            /* the instructions sheet: tap = larger (a bare pick — see the
+               data-sheet branch in pick()), tap again = back down. Tapping
+               away, Esc and resize already put it back via hideTag. */
+            if (item === picked) hideTag();
+            else pick(item);
           } else {
             pick(item);
           }
@@ -2256,11 +2269,15 @@ function JD_layerOpen() {
    cache-busted through index.php's $jd_assets like turn-object.svg), never
    an entry — no count line, no legend row, and data.php has never heard of
    it. One dataset flag, data-sheet="instructions", buys its one difference:
-   a tap ENLARGES it onto the record card's own full-viewport reading layer
-   (.jd-record-zoom, reused class-for-class) instead of growing a specimen
-   tag — no tag, no report card, just the words held closer. Everything
-   else is ordinary junk behaviour: it drags, twists, and settles like any
-   scrap, and its seat persists in the session scatter like a won item's.
+   a tap gives it the ordinary pick's in-place zoom-and-straighten — a bit
+   bigger, upright, the pile dimmed but visible behind it — with NO specimen
+   tag and NO report card (the data-sheet branch in pick(); a first draft
+   lifted it onto the record card's full-screen reading layer, and the owner
+   called it down the same day: in the drawer, over the junk, no graph-paper
+   backdrop). Tap it again, tap away, Esc or resize puts it back — the
+   standard dismissals, shared verbatim. Everything else is ordinary junk
+   behaviour: it drags, twists, and settles like any scrap, and its seat
+   persists in the session scatter like a won item's.
 
    ON TOP ON EVERY LOAD (the owner's one hard requirement): at build time
    it takes one MORE than the highest z already in the pile — above the
@@ -2286,11 +2303,10 @@ function JD_layerOpen() {
   var INSET = 0.012;                   /* same wall clearance as the scatter */
 
   var art = null, box = null, armed = false, el = null;
-  var zoomEl = null, zoomOn = false;
 
   /* the full text, for assistive tech: the artwork's <text> runs are
      aria-hidden with the rest of the svg, and this one string is what the
-     wrapper (and the enlargement) actually says */
+     wrapper actually says */
   var SHEET_TEXT = 'Instructions. 1: Dig around — drag the junk; twist it ' +
     'while held. 2: Tap an object for its specimen tag; REPORT CARD opens ' +
     'its full grades. 3: Press PUSH FOR JUNK and four AIs draw your idea — ' +
@@ -2351,7 +2367,6 @@ function JD_layerOpen() {
     el.dataset.sheet = 'instructions';   /* the one flag the tap path branches on */
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
-    el.setAttribute('aria-haspopup', 'dialog');
     el.setAttribute('aria-label', 'Instructions — press to enlarge');
     el.innerHTML = window.JD_svgInst(art, 'jio_') +
       '<span class="jd-vh">' + SHEET_TEXT + '</span>';
@@ -2365,7 +2380,14 @@ function JD_layerOpen() {
     el.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
-        press();
+        /* the keyboard reads as the tap does: larger, or back down. One
+           dialog at a time still holds — a pick can't happen under a
+           modal, and the sheet can't take focus while one is up anyway. */
+        if (el.classList.contains('is-picked')) {
+          if (window.JD_hideTag) window.JD_hideTag();
+        } else if (window.JD_pick) {
+          window.JD_pick(el);
+        }
       }
     });
     /* ordinary pile plumbing — drag, twist, settle; the tap branch in
@@ -2413,66 +2435,7 @@ function JD_layerOpen() {
     node.style.zIndex = Math.max(Z_SHEET_MIN, maxZ + 1);
   }
 
-  /* ---- the enlargement: the reading layer, reused class-for-class -------- */
-  function buildZoom() {
-    if (zoomEl) return;
-    zoomEl = document.createElement('div');
-    zoomEl.className = 'jd-record-zoom';
-    zoomEl.setAttribute('role', 'dialog');
-    zoomEl.setAttribute('aria-modal', 'true');
-    zoomEl.setAttribute('aria-label', 'instructions');
-    document.body.appendChild(zoomEl);
-    /* one dismissal path for every press inside the layer — the sheet, the
-       caption, or the dark surround: put it back */
-    zoomEl.addEventListener('click', function () { closeZoom(); });
-    zoomEl.addEventListener('keydown', function (e) {
-      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
-      e.preventDefault();
-      closeZoom();
-    });
-  }
-  function press() {
-    if (zoomOn || !art) return;
-    /* one modal at a time (C5.4's rule, honoured from outside): the sheet
-       is only tappable with no dialog up, but the keyboard path can reach
-       it any time the item holds focus */
-    if (window.JD_record && window.JD_record.isOpen()) return;
-    if (window.JD_turn && window.JD_turn.isOpen()) return;
-    /* a press puts the drawer down, the turn button's discipline: any
-       picked specimen is dismissed before the layer covers the stage */
-    if (window.JD_hideTag) window.JD_hideTag();
-    buildZoom();
-    zoomOn = true;
-    zoomEl.innerHTML =
-      '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
-      'aria-label="Shrink the instructions">' +
-      '<div class="rc-zoom-art">' + window.JD_svgInst(art, 'jiz_') +
-      '</div></div>' +
-      '<span class="jd-vh">' + SHEET_TEXT + '</span>' +
-      '<div class="rc-zoom-cap">' +
-      '<span class="rc-zoom-cap-t">Instructions</span>' +
-      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
-      '</div>';
-    var zs = zoomEl.querySelector('svg');
-    if (zs) zs.setAttribute('aria-hidden', 'true');
-    zoomEl.classList.add('is-on');
-    var fig = zoomEl.querySelector('.rc-zoom-fig');
-    if (fig) { try { fig.focus(); } catch (e) {} }
-  }
-  function closeZoom() {
-    if (!zoomOn) return;
-    zoomOn = false;
-    if (zoomEl) { zoomEl.classList.remove('is-on'); zoomEl.innerHTML = ''; }
-    /* focus goes home to the sheet, the opener */
-    if (el && document.contains(el)) { try { el.focus(); } catch (e) {} }
-  }
-  /* Escape peels the layer. The pile's own Esc handler also runs (hideTag)
-     and is a no-op — no tag can be up while this layer is. */
-  window.addEventListener('keydown', function (e) {
-    if (zoomOn && e.key === 'Escape') closeZoom();
-  });
-
-  window.JD_sheet = { ready: ready, press: press };
+  window.JD_sheet = { ready: ready };
 })();
 
 /* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
