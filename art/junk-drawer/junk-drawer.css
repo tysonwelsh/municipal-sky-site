@@ -166,7 +166,13 @@ html { scroll-behavior: smooth; }
     filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
     z-index: 999 !important;
   }
-  .jd-item:not(.jd-item--turn):hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
+  /* :not(.is-picked) — the fix for a specificity break (owner report,
+     2026-08-28): when :not(.jd-item--turn) joined this selector it began
+     outscoring .jd-item.is-picked svg, so a freshly-clicked item HELD ITS
+     HOVER SIZE until the cursor left it — the pick zoom only landed once
+     you moved the mouse away, which read as the click doing nothing. A
+     picked item is already zoomed and upright; hover has nothing to add. */
+  .jd-item:not(.jd-item--turn):not(.is-picked):hover svg { transform: rotate(calc(var(--rot) * 0.94)) scale(1.06); }
 }
 /* held while dragging: same lifted grammar, above everything. will-change
    promotes the moving filtered element to its own compositor layer so the
@@ -192,9 +198,14 @@ html { scroll-behavior: smooth; }
    with an explicit 0deg rather than dropped: transform interpolates
    function-by-function, so both directions animate on the 0.15s ease below
    only while the same function list is present on either side.
-   Rule ORDER is load-bearing — :hover svg, .is-held svg and this rule all
-   score (0,2,1), so the last one written wins. This must stay last, or a
-   hovered/dragged picked item would snap back to its scatter angle. */
+   Rule ORDER is load-bearing between .is-held svg and this rule — both
+   score (0,2,1), so the last one written wins, and this must stay last or
+   a DRAGGED picked item would snap back to its scatter angle. The :hover
+   svg rule no longer competes: it outgrew (0,2,1) when the turn-button
+   exemption joined it, which silently beat this rule for as long as the
+   cursor sat on the item (the click looked dead until the mouse moved
+   away) — so it now carries :not(.is-picked) and stands down here
+   entirely (2026-08-28). */
 .jd-item.is-picked {
   filter: drop-shadow(16px 22px 8px rgba(22, 11, 4, 0.45));
 }
