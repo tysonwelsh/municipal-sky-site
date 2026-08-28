@@ -2602,25 +2602,35 @@ function JD_layerOpen() {
 
   /* the seat: stable per session through the shared scatter map (layoutFor
      merges unknown ids forward, exactly as it keeps a won item's spot), a
-     fresh anywhere-in-the-well spot otherwise — the turn module's freshSpot
-     math, at the pile's full tilt. z is NEVER stored: it is pinned flat at
-     Z_FOLDER on every load, so a session can neither promote nor permanently
-     entomb it. */
+     fresh spot in the well's BOTTOM-RIGHT band otherwise (owner call,
+     2026-08-28 — was anywhere-in-the-well), at the pile's full tilt.
+     z is NEVER stored: it is pinned flat at Z_FOLDER on every load — the
+     folder is ordinary junk, deliberately NOT the instructions sheet's
+     always-on-top (owner, same call) — so a session can neither promote
+     nor permanently entomb it. */
   function seat(node, pile) {
     var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
     var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
     var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
-    /* inside(): a centre far enough from every wall that the whole object
-       clears it — the scatter's own rule, borrowed verbatim from freshSpot */
-    function inside(half) {
-      var lo = half + INSET, span = Math.max(0, 1 - 2 * lo);
-      return +(lo + Math.random() * span).toFixed(4);
+    /* zone(): a centre inside [zoneLo..zoneHi] of the well on that axis,
+       shrunk as needed so the whole object still clears the walls — the
+       scatter's inside() rule with a band instead of the full run. The
+       BOTTOM-RIGHT band is the owner's call (2026-08-28): the folder deals
+       into the drawer's lower-right region — away from the sheet's
+       upper-centre spawn and the turn button's lower-left corner — rather
+       than anywhere in the well. JD_avoidTurn below still has the last
+       word if a small well squeezes the bands toward the button. */
+    function zone(half, zoneLo, zoneHi) {
+      var lo = Math.max(half + INSET, zoneLo);
+      var hi = Math.min(1 - half - INSET, zoneHi);
+      if (hi < lo) { hi = lo = Math.max(half + INSET, Math.min(1 - half - INSET, (zoneLo + zoneHi) / 2)); }
+      return +(lo + Math.random() * (hi - lo)).toFixed(4);
     }
     var map = JD_store.get(SCATTER_KEY) || {};
     var p = map[ID];
     if (!p) {
       p = {
-        x: inside(hw), y: inside(hh),
+        x: zone(hw, 0.58, 0.92), y: zone(hh, 0.58, 0.92),
         rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
       };
       map[ID] = p;
