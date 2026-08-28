@@ -36,6 +36,8 @@ function jd_provider_params(string $provider, string $profile = 'web'): string
     ]));
 }
 
+// The owner's runbook adds the dedicated jd_* keys; the fallback keeps the
+// feature launchable on the existing ones.
 function jd_provider_key(string $provider): ?string
 {
     $secrets = jd_secrets();

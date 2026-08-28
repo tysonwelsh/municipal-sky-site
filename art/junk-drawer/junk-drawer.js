@@ -1239,11 +1239,6 @@ function JD_layerOpen() {
     }, ZOOM_SETTLE);
   }
 
-  /* the live item endpoint: the anchor, carried by the centre */
-  function ropeItemEnd(item) {
-    var c = ropeCentre(item);
-    return { x: c.x + ropeOffX, y: c.y + ropeOffY };
-  }
   /* re-read the anchor against the CURRENT grommet direction and move the
      endpoint to match. Called at the two moments the geometry has just
      changed and everything is at rest — an item drop and a tag drop — because
@@ -6160,14 +6155,6 @@ function JD_layerOpen() {
     for (var i = 0; i < list.length; i++) if (list[i].slot === slot) return list[i];
     return null;
   }
-  /* which slot (if any) the visitor ends up keeping — the fate column below
-     states it once */
-  function keptSlot() {
-    var ok = okSlots();
-    if (work.winner === 'tie') return work.kept ? (work.keep || null) : null;
-    if (ok.length === 1) return ok[0];
-    return (work.winner && ok.indexOf(work.winner) !== -1) ? work.winner : null;
-  }
   /* ---------- 7. the unveil (§6) --------------------------------------------
      THE PODIUM STANDS (owner, 2026-08-23). The reveal used to be a list —
      slot letter, name, vendor, fate — which said everything and staged
@@ -6194,7 +6181,6 @@ function JD_layerOpen() {
       esc((r && (r.label || r.model_id)) || 'unknown') + '</b></span>';
   }
   function viewUnveil() {
-    var kept = keptSlot();
     var ok = okSlots(), n = ok.length, k;
     var h = head('Who drew what', 6, { view: 'said' });
     /* the steps, best first, each holding the drawing that stands on it */

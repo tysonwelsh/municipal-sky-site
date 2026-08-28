@@ -407,6 +407,3 @@ function jd_finish_generation(PDO $db, string $generationId, array $fields): voi
         ]);
     }, $db);
 }
-
-// The owner's runbook adds the dedicated keys; the fallback keeps the feature
-// launchable on the existing ones.
