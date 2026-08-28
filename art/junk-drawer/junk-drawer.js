@@ -775,6 +775,9 @@ function JD_layerOpen() {
          Take-a-Turn button, sized on the tier box just resolved. It is not
          an entry and never was — see the turn-object module below. */
       if (window.JD_turnObject) window.JD_turnObject.ready(turnBox);
+      /* …and the instructions sheet, on the xl ruler — furniture in the
+         same tradition (see the sheet module below) */
+      if (window.JD_sheet) window.JD_sheet.ready(boxFor('xl'));
       /* hand the record module the payload + the primary SVG texts, so a
          record opens with zero extra requests */
       if (window.JD_record) {
@@ -828,8 +831,10 @@ function JD_layerOpen() {
       fallbackNote();
       /* the collection is what failed, not the drawer: the turn object is
          frontend-injected and owes data.php nothing, and it is the only
-         trigger there is now — so it still goes in, on the fallback tier box */
+         trigger there is now — so it still goes in, on the fallback tier box.
+         The instructions sheet rides the same rule. */
       if (window.JD_turnObject) window.JD_turnObject.ready(null);
+      if (window.JD_sheet) window.JD_sheet.ready(null);
       if (window.console && console.warn) console.warn('junk drawer: ' + err.message);
     });
 })();
@@ -1801,6 +1806,10 @@ function JD_layerOpen() {
             /* press() dismisses any live specimen tag itself, on both the
                pointer and the keyboard path — see the turn-object module */
             if (window.JD_turnObject) window.JD_turnObject.press();
+          } else if (item.dataset.sheet) {
+            /* the instructions sheet ENLARGES instead of picking: no
+               specimen tag, no report card — see the sheet module */
+            if (window.JD_sheet) window.JD_sheet.press();
           } else {
             pick(item);
           }
@@ -1911,9 +1920,10 @@ function JD_layerOpen() {
   if (copy) copy.addEventListener('click', function (e) {
     e.preventDefault();
     var w = well.getBoundingClientRect(), out = {};
-    /* :not([data-turn]) — the turn button is hardware, not a specimen, and this
-       readout is a list of where the COLLECTION is lying */
-    well.querySelectorAll('.jd-item:not([data-turn])').forEach(function (item) {
+    /* :not([data-turn]):not([data-sheet]) — the turn button and the
+       instructions sheet are furniture, not specimens, and this readout is
+       a list of where the COLLECTION is lying */
+    well.querySelectorAll('.jd-item:not([data-turn]):not([data-sheet])').forEach(function (item) {
       var r = item.getBoundingClientRect();
       out[item.dataset.id || 'item'] = {
         x: +(((r.left + r.width / 2 - w.left) / w.width).toFixed(4)),
@@ -2238,6 +2248,231 @@ function JD_layerOpen() {
   window.JD_turnObject = {
     ready: ready, press: press, standDown: standDown, GEOM: GEOM
   };
+})();
+
+/* ---- THE INSTRUCTIONS SHEET — furniture in the pile (owner, 2026-08-28) --
+   A torn scrap of paper carrying the drawer's how-to, in the turn object's
+   tradition: injected here from a static asset (instructions-object.svg,
+   cache-busted through index.php's $jd_assets like turn-object.svg), never
+   an entry — no count line, no legend row, and data.php has never heard of
+   it. One dataset flag, data-sheet="instructions", buys its one difference:
+   a tap ENLARGES it onto the record card's own full-viewport reading layer
+   (.jd-record-zoom, reused class-for-class) instead of growing a specimen
+   tag — no tag, no report card, just the words held closer. Everything
+   else is ordinary junk behaviour: it drags, twists, and settles like any
+   scrap, and its seat persists in the session scatter like a won item's.
+
+   ON TOP ON EVERY LOAD (the owner's one hard requirement): at build time
+   it takes one MORE than the highest z already in the pile — above the
+   fresh scatter (1..N), above the turn button's fixed 99, above restored
+   won items (100) — and its stored seat never records a z, so no session
+   can bury it across a reload. The button needs no z protection from
+   this: its corner is a spatial reservation (turnRect/JD_avoidTurn) and
+   the sheet is pushed clear of it like everything else. Junk the visitor
+   DRAGS afterward rides the zTop counter past the sheet, so deliberately
+   dropping a scrap on it covers it for that session — the turn button's
+   own rule — and a reload deals the sheet back on top. Its load rotation
+   is capped at a small tilt — a sheet you are meant to read arrives
+   readable, not at the pile's full ±34°. */
+(function () {
+  var ID = 'jd-instructions';
+  var ASSET = '/art/junk-drawer/instructions-object.svg';
+  var SCATTER_KEY = 'jd-scatter-v2';   /* the shared seat map — see layoutFor */
+  var FALLBACK_BOX = 30;               /* = BASE.xl, if the drawer never loaded */
+  var Z_SHEET_MIN = 101;               /* floor: over scatter (1..N), the turn
+                                          button (99) and restored wins (100)
+                                          even if the pile reads empty */
+  var ROT = 7;                         /* load tilt, ± degrees */
+  var INSET = 0.012;                   /* same wall clearance as the scatter */
+
+  var art = null, box = null, armed = false, el = null;
+  var zoomEl = null, zoomOn = false;
+
+  /* the full text, for assistive tech: the artwork's <text> runs are
+     aria-hidden with the rest of the svg, and this one string is what the
+     wrapper (and the enlargement) actually says */
+  var SHEET_TEXT = 'Instructions. 1: Dig around — drag the junk; twist it ' +
+    'while held. 2: Tap an object for its specimen tag; REPORT CARD opens ' +
+    'its full grades. 3: Press PUSH FOR JUNK and four AIs draw your idea — ' +
+    'grade them blind, rank them, see who drew what; your pick joins the ' +
+    'drawer.';
+
+  /* cache-busted exactly as the turn object's artwork is — the hash rides
+     the script tag because there is no <link> or <img> to hang it on */
+  function assetUrl() {
+    var tag = document.querySelector('script[data-jd-instructions]');
+    var v = tag && tag.getAttribute('data-jd-instructions');
+    return ASSET + (v ? '?v=' + encodeURIComponent(v) : '');
+  }
+
+  /* retried like the turn object's fetch, but with NO inline fallback: a
+     drawer without its instructions still works — the sheet is furniture,
+     not the feature — so a failed deploy just leaves the pile one scrap
+     lighter and says so in the console. */
+  var RETRY_MS = [600, 1800];
+  function loadArt(tries) {
+    fetch(JD_API + assetUrl())
+      .then(function (r) {
+        if (!r.ok) throw new Error(ASSET + ' ' + r.status);
+        return r.text();
+      })
+      .then(function (text) {
+        if (text.indexOf('<svg') < 0) throw new Error(ASSET + ' is not an SVG');
+        art = text; build();
+      })
+      .catch(function (err) {
+        if (tries < RETRY_MS.length) {
+          window.setTimeout(function () { loadArt(tries + 1); }, RETRY_MS[tries]);
+          return;
+        }
+        if (window.console && console.warn) {
+          console.warn('junk drawer: the instructions sheet did not load (' +
+            err.message + ')');
+        }
+      });
+  }
+  loadArt(0);
+
+  /* called by the pile loader with the xl tier box (or null when the drawer
+     itself failed to load); `build` runs when both artwork and ruler are in */
+  function ready(tierBox) {
+    box = (typeof tierBox === 'number' && tierBox > 0) ? tierBox : FALLBACK_BOX;
+    armed = true;
+    build();
+  }
+
+  function build() {
+    if (el || !armed || !art) return;
+    var pile = document.querySelector('.jd-pile');
+    if (!pile || !window.JD_svgInst || !window.JD_applySize) return;
+    el = document.createElement('div');
+    el.className = 'jd-item jd-item--sheet';
+    el.dataset.id = ID;
+    el.dataset.sheet = 'instructions';   /* the one flag the tap path branches on */
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-haspopup', 'dialog');
+    el.setAttribute('aria-label', 'Instructions — press to enlarge');
+    el.innerHTML = window.JD_svgInst(art, 'jio_') +
+      '<span class="jd-vh">' + SHEET_TEXT + '</span>';
+    var svg = el.querySelector('svg');
+    if (svg) svg.setAttribute('aria-hidden', 'true');
+    pile.appendChild(el);
+    /* NO fitView: controlled repo art, frame honest by construction (the
+       turn object's rule) — sized on the shared ruler like everything else */
+    window.JD_applySize(el, box, ID, 1);
+    seat(el, pile);
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        press();
+      }
+    });
+    /* ordinary pile plumbing — drag, twist, settle; the tap branch in
+       wireItem is what routes a press here instead of pick() */
+    if (window.JD_wirePile) window.JD_wirePile();
+  }
+
+  /* the seat: stable per session through the shared scatter map (layoutFor
+     merges unknown ids forward, exactly as it keeps a won item's spot), a
+     fresh gently-tilted spot otherwise. z is NEVER stored — pinned per load. */
+  function seat(node, pile) {
+    var host = pile.getBoundingClientRect(), r = node.getBoundingClientRect();
+    var hw = Math.min(0.45, (r.width || 40) / 2 / (host.width || 1));
+    var hh = Math.min(0.45, (r.height || 40) / 2 / (host.height || 1));
+    var map = JD_store.get(SCATTER_KEY) || {};
+    var p = map[ID];
+    if (!p) {
+      /* NOT the pile's anywhere-scatter (owner, 2026-08-28): the sheet
+         deals centred on the x-axis (a whisper of jitter so it never reads
+         machine-placed) and inside the well's upper two-thirds — the whole
+         sheet, so its centre stays above 2/3 minus its own half-height.
+         A sheet too tall for that band just centres in what room there is. */
+      var loY = hh + INSET, hiY = Math.max(loY, 2 / 3 - hh);
+      p = {
+        x: +(0.5 + (Math.random() * 2 - 1) * 0.05).toFixed(4),
+        y: +(loY + Math.random() * (hiY - loY)).toFixed(4),
+        rot: +((Math.random() * 2 - 1) * ROT).toFixed(1)
+      };
+      map[ID] = p;
+      JD_store.set(SCATTER_KEY, map);
+    }
+    /* pushed clear of the turn button's reserved corner at apply time, same
+       as every other item; the stored seat itself stays untouched */
+    var a = window.JD_avoidTurn ? window.JD_avoidTurn(p.x, p.y, hw, hh) : p;
+    node.style.left = (a.x * 100) + '%';
+    node.style.top = (a.y * 100) + '%';
+    node.style.setProperty('--rot', (p.rot || 0) + 'deg');
+    /* one more than whatever is already lying there — see the banner */
+    var maxZ = 0;
+    pile.querySelectorAll('.jd-item').forEach(function (n) {
+      if (n === node) return;
+      var z = parseInt(n.style.zIndex, 10) || 0;
+      if (z > maxZ) maxZ = z;
+    });
+    node.style.zIndex = Math.max(Z_SHEET_MIN, maxZ + 1);
+  }
+
+  /* ---- the enlargement: the reading layer, reused class-for-class -------- */
+  function buildZoom() {
+    if (zoomEl) return;
+    zoomEl = document.createElement('div');
+    zoomEl.className = 'jd-record-zoom';
+    zoomEl.setAttribute('role', 'dialog');
+    zoomEl.setAttribute('aria-modal', 'true');
+    zoomEl.setAttribute('aria-label', 'instructions');
+    document.body.appendChild(zoomEl);
+    /* one dismissal path for every press inside the layer — the sheet, the
+       caption, or the dark surround: put it back */
+    zoomEl.addEventListener('click', function () { closeZoom(); });
+    zoomEl.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+      e.preventDefault();
+      closeZoom();
+    });
+  }
+  function press() {
+    if (zoomOn || !art) return;
+    /* one modal at a time (C5.4's rule, honoured from outside): the sheet
+       is only tappable with no dialog up, but the keyboard path can reach
+       it any time the item holds focus */
+    if (window.JD_record && window.JD_record.isOpen()) return;
+    if (window.JD_turn && window.JD_turn.isOpen()) return;
+    /* a press puts the drawer down, the turn button's discipline: any
+       picked specimen is dismissed before the layer covers the stage */
+    if (window.JD_hideTag) window.JD_hideTag();
+    buildZoom();
+    zoomOn = true;
+    zoomEl.innerHTML =
+      '<div class="rc-zoom-fig" role="button" tabindex="0" ' +
+      'aria-label="Shrink the instructions">' +
+      '<div class="rc-zoom-art">' + window.JD_svgInst(art, 'jiz_') +
+      '</div></div>' +
+      '<span class="jd-vh">' + SHEET_TEXT + '</span>' +
+      '<div class="rc-zoom-cap">' +
+      '<span class="rc-zoom-cap-t">Instructions</span>' +
+      '<span class="rc-zoom-cap-h">click, or press Esc, to shrink</span>' +
+      '</div>';
+    var zs = zoomEl.querySelector('svg');
+    if (zs) zs.setAttribute('aria-hidden', 'true');
+    zoomEl.classList.add('is-on');
+    var fig = zoomEl.querySelector('.rc-zoom-fig');
+    if (fig) { try { fig.focus(); } catch (e) {} }
+  }
+  function closeZoom() {
+    if (!zoomOn) return;
+    zoomOn = false;
+    if (zoomEl) { zoomEl.classList.remove('is-on'); zoomEl.innerHTML = ''; }
+    /* focus goes home to the sheet, the opener */
+    if (el && document.contains(el)) { try { el.focus(); } catch (e) {} }
+  }
+  /* Escape peels the layer. The pile's own Esc handler also runs (hideTag)
+     and is a no-op — no tag can be up while this layer is. */
+  window.addEventListener('keydown', function (e) {
+    if (zoomOn && e.key === 'Escape') closeZoom();
+  });
+
+  window.JD_sheet = { ready: ready, press: press };
 })();
 
 /* ---- immersive chrome (G5 revision 4, 2026-07-26) -----------------------
