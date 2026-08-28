@@ -5901,15 +5901,28 @@ function JD_layerOpen() {
     return h + '</div>';
   }
   /* the column head above the rows, mirroring the report card's <thead>
-     (owner directive r4 — see .rc-subj th): same two-column split and the
-     same left-hand word ("Axis"), but the right column is worded to ASK
-     rather than report — the report card's "Verdict" names a fact already
-     filed, this one names a blank still waiting to be filled. A plain grid
-     row, not a table head, so it carries nothing assistive tech needs; each
-     select's own aria-label/aria-describedby already says what it is. */
+     (owner directive r4 — see .rc-subj th): same two-column split, but the
+     left word is SUBJECT (owner, 2026-08-27 — a school report card's word;
+     "Axis" is the taxonomy's word, and the visitor isn't reading the
+     taxonomy), and the right column is worded to ASK rather than report —
+     the report card's "Verdict" names a fact already filed, this one names
+     a blank still waiting to be filled. A plain grid row, not a table head,
+     so it carries nothing assistive tech needs; each select's own
+     aria-label/aria-describedby already says what it is. */
   function benchHeadHTML() {
     return '<div class="jd-row jd-row--head" aria-hidden="true">' +
-      '<span>Axis</span><span>Your rating</span></div>';
+      '<span>Subject</span><span>Your rating</span></div>';
+  }
+  /* the bench gate (owner, 2026-08-27): a drawing's panel doesn't hand off
+     — to the next drawing or to the ranking — until every scale on it is
+     answered, the overall grade included. Same disabled-until-done contract
+     the podium's FILE THE GRADES button already keeps; "skip" stays in the
+     list as the unanswered state's own name, but it no longer walks through
+     the gate. */
+  function benchRated(slot) {
+    var r = work.ratings[slot];
+    if (!r || r.grade == null) return false;
+    return liveAxes().every(function (ax) { return r.axes[ax.id] != null; });
   }
 
   /* THE DOCKET (owner redesign, 2026-08-26; discovered in mockups/
@@ -6019,12 +6032,18 @@ function JD_layerOpen() {
     if (idx > 0) {
       acts += '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>';
     }
+    /* the gate: disabled until benchRated — onChange re-arms it live */
+    var gate = benchRated(slot) ? '' : ' disabled';
     if (!two) {
-      acts += '<button type="button" class="jd-turn-go" data-act="file">file the grades</button>';
+      acts += '<button type="button" class="jd-turn-go" data-act="file"' +
+        gate + '>file the grades</button>';
     } else {
-      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'best to worst';
-      acts += '<button type="button" class="jd-turn-go" data-act="next">next — ' +
-        esc(next) + ' &rarr;</button>';
+      /* the ranking step's button wears the one-word form (owner,
+         2026-08-27), like the docket ring's word — "best to worst" stays
+         the card's own title */
+      var next = idx + 1 < ok.length ? 'drawing ' + ok[idx + 1].toUpperCase() : 'ranking';
+      acts += '<button type="button" class="jd-turn-go" data-act="next"' +
+        gate + '>next — ' + esc(next) + ' &rarr;</button>';
     }
     /* the action row closes the PAPERWORK column, not the sheet: on the
        landscape bench it settles against the foot of the exhibit beside it
@@ -6300,7 +6319,13 @@ function JD_layerOpen() {
         val == null ? null : Number(val);
       t.classList.toggle('is-set', val != null);
       paintGauge(t, byId(liveAxes(), t.getAttribute('data-axis')), val);
-    } else if (role === 'flag') {
+    }
+    if (role === 'grade' || role === 'axis') {
+      /* the bench gate re-arms (or re-locks — a scale set back to skip
+         closes it) on every answer; back is never gated */
+      setDisabled('[data-act="next"], [data-act="file"]', !benchRated(slot));
+    }
+    if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
       /* mutate in place — see benchPanel */
       var fn = bodyEl.querySelector('[data-flagnote="' + slot + '"]');
@@ -6389,6 +6414,9 @@ function JD_layerOpen() {
       var seq = okSlots();
       if (seq.length > 1) seq = seq.concat(['call']);
       var at = seq.indexOf(work.step);
+      /* the gate, held at the door as well as on the button (the disabled
+         attribute is state the DOM could lose; this check can't) */
+      if (act === 'next' && work.step !== 'call' && !benchRated(work.step)) return;
       var dest = act === 'step' ? b.getAttribute('data-step')
         : seq[at + (act === 'next' ? 1 : -1)];
       if (dest && seq.indexOf(dest) !== -1) {
@@ -6397,6 +6425,8 @@ function JD_layerOpen() {
         render();
       }
     } else if (act === 'file') {
+      /* the one-survivor bench files directly — same gate as next */
+      if (work.step !== 'call' && !benchRated(work.step)) return;
       submitRatings();
     } else if (act === 'keep') {
       if (work.keep) placeWinner(work.keep);

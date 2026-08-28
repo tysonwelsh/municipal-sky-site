@@ -332,15 +332,21 @@
       plate(slot, { pin: true, zoom: true, replay: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
       '<div class="jd-row jd-row--head" aria-hidden="true">' +
-      '<span>Axis</span><span>Your rating</span></div>';
+      '<span>Subject</span><span>Your rating</span></div>';
     AXES.forEach(function (ax) { h += scaleRow(slot, ax, answers[ax.id]); });
     h += scaleRow(slot, null, answers.grade);
     /* the report path (checkbox + note) is benched from the form
        (owner, 2026-08-26) — see the matching note in junk-drawer.js */
     var acts = '';
     if (idx > 0) acts += '<button type="button" class="jd-turn-alt">&larr; back</button>';
-    var next = idx + 1 < OK.length ? 'drawing ' + OK[idx + 1].toUpperCase() : 'best to worst';
-    acts += '<button type="button" class="jd-turn-go">next — ' + next + ' &rarr;</button>';
+    var next = idx + 1 < OK.length ? 'drawing ' + OK[idx + 1].toUpperCase() : 'ranking';
+    /* the bench gate (owner, 2026-08-27): NEXT stays disabled until every
+       scale on the panel is answered — mirrors benchRated in junk-drawer.js */
+    var rated = answers.grade != null && AXES.every(function (ax) {
+      return answers[ax.id] != null;
+    });
+    acts += '<button type="button" class="jd-turn-go"' + (rated ? '' : ' disabled') +
+      '>next — ' + next + ' &rarr;</button>';
     return h + actions(acts) + '</div></div>';
   }
 
@@ -436,12 +442,12 @@
         actions('<button type="button" class="jd-turn-go">grade them</button>')) },
     { id: 'bench-blank',
       title: '§4 — The bench, untouched (drawing A)',
-      note: 'First bench step as the visitor lands on it: exhibit pinned left, paperwork right (portrait: stacked, exhibit sticky). Every scale opens on skip; the rail’s later steps are locked.',
+      note: 'First bench step as the visitor lands on it: exhibit pinned left, paperwork right (portrait: stacked, exhibit sticky). Every scale opens on skip, and NEXT stays disabled until all five are answered; the rail’s later steps are locked.',
       html: shell('Grade drawing A', 'bench',
         railHTML('a', ['a']) + benchPanel('a', {})) },
     { id: 'bench-answered',
       title: '§4 — The bench, filled in (drawing D)',
-      note: 'A worked panel: chosen values grow the report card’s segmented gauge beside each select, and the grade row sits last above its rule (the broken-or-offensive report path was benched 2026-08-26). Button hands off to best to worst.',
+      note: 'A worked panel: chosen values grow the report card’s segmented gauge beside each select, and the grade row sits last above its rule (the broken-or-offensive report path was benched 2026-08-26). All five answered, so NEXT — RANKING is armed.',
       html: shell('Grade drawing D', 'bench',
         railHTML('d', ['a', 'b', 'c', 'd']) +
         benchPanel('d', ANSWERED)) },
