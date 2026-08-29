@@ -42,3 +42,5 @@
 0.9.81 — the gauges wait in gray: every rating row shows its segmented bar from the start — empty, grayed, ticks marking the scale's steps — filling with the pencil's color the moment a value is picked
 0.9.82 — REPLAY becomes a mark: the corner button trades its word for a pencil mid-stroke, the line it's leaving trailing behind (owner's provisional pick; the word survives in the tooltip)
 0.9.83 — the disclosure's caret becomes a plus, quarter-turning to an × while the explanation stands open
+0.9.84 — the disclosure mark settles: a small boxed plus in the selects' own chrome, swapping to a minus while its explanation stands open
+0.9.85 — the dialogs' close mark goes bare: the printed 26px box retires on the turn card, the record card and the analytics folder alike — a larger ✕ in the head's own ink, centred on the band's true height, red on hover

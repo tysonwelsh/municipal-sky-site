@@ -7540,6 +7540,10 @@ function JD_layerOpen() {
         exp.hidden = !exp.hidden;
         caret.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
         caret.classList.toggle('is-open', !exp.hidden);
+        /* the boxed mark reads + closed, − open (round 9; U+2212, a real
+           minus, so the two glyphs sit on the same optical centre) */
+        var glyph = caret.querySelector('span');
+        if (glyph) glyph.textContent = exp.hidden ? '+' : '−';
       }
     }
   }

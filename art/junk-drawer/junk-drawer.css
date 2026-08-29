@@ -1034,20 +1034,19 @@ html.jd-record-open { overflow: hidden; }
 /* the close control: a proper boxed ✕ (owner rev, 2026-08-13 — bigger and
    more official than the bare glyph it replaces; same boxed language as
    the axis expanders and the download button) */
+/* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close):
+   box retired, glyph up a size, a 40px target holding the old visual seat */
 .jd-record-close {
-  position: absolute; top: 9px; right: 9px; z-index: 5;
-  width: 26px; height: 26px;
+  position: absolute; top: 2px; right: 2px; z-index: 5;
+  width: 40px; height: 40px;
   display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--form-rule);
-  background: rgba(255, 250, 232, 0.5);
+  border: 0; background: none;
   cursor: pointer;
-  font-family: var(--rc-mono); font-size: 0.9rem; line-height: 1;
+  font-family: var(--rc-mono); font-size: 1.1rem; line-height: 1;
   color: var(--form-ink); padding: 0;
 }
-.jd-record-close:hover {
-  background: #37414f; color: var(--card); border-color: #37414f;
-}
-.jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.jd-record-close:hover { color: var(--red); }
+.jd-record-close:focus-visible { outline: 2px solid var(--red); outline-offset: -6px; }
 /* the card's one content box: a grid — masthead across, then the two
    columns. overflow-y:auto is a SAFETY VALVE only (sub-500px landscape
    viewports); at every target size the columns fit the reserved viewport
@@ -1806,21 +1805,23 @@ html.jd-turn-open { overflow: hidden; }
    .jd-turn-headline, so the close's click handler still binds once. The
    head's min-height (44px + rule) keeps the band fully containing the
    target, which also re-centres the box on a one-line title's centerline. */
+/* THE PRINTED BOX RETIRED (owner, 2026-08-29, all three dialogs at once —
+   turn card, record card, analytics folder): the ✕ stands bare now, a size
+   up and set in the head's ink, spanning the head's FULL height so it
+   centres on the title's own line whatever the band measures — the 26px
+   box never quite did (the owner could see it riding high). Clickability
+   is carried by the cursor, the red hover ink, and the focus ring. */
 .jd-turn-close {
   position: absolute; top: 0; right: 0; z-index: 8;
-  width: 44px; height: 44px;
+  width: 48px; height: 100%; min-height: 44px;
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--tmono); font-size: var(--t-title); line-height: 1;
+  font-family: var(--tmono); font-size: 1.15rem; line-height: 1;
   color: var(--tink);
 }
-.jd-turn-close span {
-  width: 26px; height: 26px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--trule); background: rgba(255, 250, 232, 0.5);
-}
-.jd-turn-close:hover span { background: #33240f; color: var(--tpaper); border-color: #33240f; }
-.jd-turn-close:focus-visible span { outline: 2px solid var(--tred); outline-offset: 2px; }
+.jd-turn-close span { display: block; }
+.jd-turn-close:hover { color: var(--tred); }
+.jd-turn-close:focus-visible { outline: 2px solid var(--tred); outline-offset: -8px; }
 
 /* ---- the masthead: one line -----------------------------------------------
    A form number and the heading. This is the entire surviving "form band":
@@ -3105,18 +3106,19 @@ html.jd-turn-open { overflow: hidden; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 /* the disclosure mark: LEADS the label since round 5 (owner: left of the
-   text, and "that arrow is tiny — I can barely see it"); a PLUS since
-   round 8 (owner call, was a caret) — it quarter-turns into an × while the
-   explanation is open, the close it promises. Its own press just bubbles
-   into the rowhead's, which carries data-act. */
+   text); a PLUS since round 8, and since round 9 a small BOXED plus — a
+   printed form-control square in the selects' own chrome, quiet but
+   legibly pressable — whose glyph swaps to a minus while the explanation
+   stands open (the JS toggle writes the glyph; nothing rotates any more).
+   Its own press just bubbles into the rowhead's, which carries data-act. */
 .jd-defx {
-  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; margin-left: -4px;
+  flex: 0 0 auto; width: 17px; height: 17px; padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 0; background: none; cursor: pointer;
-  font-size: 1.05rem; line-height: 1; color: var(--tink-2);
+  border: 1px solid var(--trule); border-radius: 2px;
+  background: rgba(255, 250, 232, 0.7); cursor: pointer;
+  font-size: 0.78rem; line-height: 1; color: var(--tink-2);
 }
-.jd-defx > span { display: block; transition: transform 0.12s; }
-.jd-defx.is-open > span { transform: rotate(45deg); }
+.jd-defx > span { display: block; }
 .jd-defx:hover { color: var(--tred); }
 .jd-defx:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
 /* the unfolded explanation: the tooltip's words, now printed on the sheet —
@@ -3880,27 +3882,22 @@ html.jd-folder-open { overflow: hidden; }
 /* the boxed ✕ — the record/turn control language: a 26px printed box centred
    in a 44px target, pinned to the band's top-right corner so the box lands
    9px in from the card's edges (the record card's exact seat) */
+/* the bare-✕ idiom (owner, 2026-08-29 — see the note at .jd-turn-close) */
 .jd-folder-close {
   position: absolute; top: 0; right: 0; z-index: 3;
-  width: 44px; height: 44px;
+  width: 48px; height: 100%; min-height: 44px;
   display: flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer; padding: 0;
-  font-family: var(--fmono); font-size: 0.86rem; line-height: 1;
+  font-family: var(--fmono); font-size: 1.1rem; line-height: 1;
   color: var(--fink);
 }
-.jd-folder-close span {
-  width: 26px; height: 26px;
-  display: flex; align-items: center; justify-content: center;
-  border: 1px solid var(--frule); background: rgba(255, 250, 232, 0.5);
-}
-.jd-folder-close:hover span {
-  background: var(--fink); color: var(--fmanila-hi); border-color: var(--fink);
-}
-/* the ring belongs on the printed box, not on the 44px target: focus moves
-   here programmatically when the folder opens, and the UA's own ring drew a
-   large blue rectangle over the head */
+.jd-folder-close span { display: block; }
+.jd-folder-close:hover { color: var(--fred, #a8332a); }
+/* focus moves here programmatically when the folder opens, and the UA's own
+   ring drew a large blue rectangle over the head — keep :focus quiet and
+   ring only keyboard focus, drawn inset now that the printed box is gone */
 .jd-folder-close:focus { outline: none; }
-.jd-folder-close:focus-visible span { outline: 2px solid var(--fred); outline-offset: 2px; }
+.jd-folder-close:focus-visible { outline: 2px solid var(--fred); outline-offset: -8px; }
 
 /* ---- the contents: paper cards laid in the folder ------------------------
    Two columns on desktop, read as a 2×2 of chart cards between two
