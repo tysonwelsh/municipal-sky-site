@@ -1,0 +1,124 @@
+<?php
+// GET /api/jd-harvest.php?item=<item_id> — the RERUN HARVEST read (2026-08-29).
+//
+// The bench's rerun files a curated item's prompt as an ordinary visitor turn:
+// four fresh generations, rated blind, filed through jd-rate.php. Everything a
+// session needs to commit that rerun back into the item's directory — the SVG
+// texts, the owner's grades and axis ratings, the rank order — lives only in
+// these tables, and no other endpoint serves turn rows. This one returns, for
+// one curated item, every RATED visitor submission whose prompt matches the
+// item's prompt byte-for-byte (a rerun re-issues the stored prompt verbatim,
+// so exact match is the honest join), newest first.
+//
+// Read-only. Same soft gate as the other bench endpoints (JD_BENCH_REQUIRE_KEY,
+// currently off by owner call, 2026-08-18 — see jd-config.php). What it could
+// expose while open: generated SVGs and the ratings on them for prompts that
+// are already public in the drawer. No visitor identity: hashes are omitted.
+
+require_once __DIR__ . '/jd-config.php';
+require_once __DIR__ . '/jd-origin.php';
+require_once __DIR__ . '/jd-build.php';
+
+jd_require_allowed_origin();
+
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
+    jd_fail(405, 'method_not_allowed', 'GET only.');
+}
+
+if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
+    $secrets  = jd_secrets();
+    $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
+    $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
+    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
+        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
+    }
+}
+
+$itemId = (string) ($_GET['item'] ?? '');
+if (!preg_match('/^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,64}$/', $itemId)) {
+    jd_fail(400, 'bad_request', 'An item id is required (YYYY-MM-DD-slug).');
+}
+
+try {
+    $db = jd_db();
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    $stmt = $db->prepare(
+        'SELECT prompt FROM jd_submissions WHERE item_id = ? LIMIT 1'
+    );
+    $stmt->execute([$itemId]);
+    $prompt = $stmt->fetchColumn();
+    if ($prompt === false) {
+        jd_fail(404, 'not_found', 'No curated submission for that item — has the backfill run?');
+    }
+
+    $stmt = $db->prepare(
+        "SELECT id, created, status
+           FROM jd_submissions
+          WHERE item_id IS NULL AND status = 'rated' AND prompt = ?
+          ORDER BY created DESC
+          LIMIT 5"
+    );
+    $stmt->execute([$prompt]);
+    $subs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $genQ = $db->prepare(
+        'SELECT id, slot, model_id, model_version, provider, harness, status,
+                reject_reason, svg, latency_ms, usage_tokens, created
+           FROM jd_generations
+          WHERE submission_id = ?
+          ORDER BY slot'
+    );
+    $rateQ = $db->prepare(
+        'SELECT generation_id, kind, axis_id, value, note, taxonomy_version, client
+           FROM jd_ratings
+          WHERE generation_id IN (SELECT id FROM jd_generations WHERE submission_id = ?)'
+    );
+    $rankQ = $db->prepare(
+        'SELECT generation_id, rank_pos, client
+           FROM jd_ranks
+          WHERE submission_id = ?'
+    );
+    $compQ = $db->prepare(
+        'SELECT winner_gen_id, strength
+           FROM jd_comparisons
+          WHERE submission_id = ?'
+    );
+
+    $out = [];
+    foreach ($subs as $sub) {
+        $genQ->execute([$sub['id']]);
+        $rateQ->execute([$sub['id']]);
+        $ranks = [];
+        try {
+            $rankQ->execute([$sub['id']]);
+            $ranks = $rankQ->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            // jd_ranks lands via the manual setup script; absent = no order
+        }
+        $compQ->execute([$sub['id']]);
+        $out[] = [
+            'submission_id' => $sub['id'],
+            'created'       => $sub['created'],
+            'generations'   => $genQ->fetchAll(PDO::FETCH_ASSOC),
+            'ratings'       => $rateQ->fetchAll(PDO::FETCH_ASSOC),
+            'ranks'         => $ranks,
+            'comparison'    => $compQ->fetch(PDO::FETCH_ASSOC) ?: null,
+        ];
+    }
+} catch (PDOException $e) {
+    error_log('jd-harvest: ' . $e->getMessage());
+    jd_fail(500, 'server_error', 'The turn rows could not be read.');
+}
+
+jd_json_out(200, [
+    'ok'      => true,
+    'build'   => jd_build_stamp()['build'],
+    'item_id' => $itemId,
+    'prompt'  => $prompt,
+    'reruns'  => $out,
+]);
