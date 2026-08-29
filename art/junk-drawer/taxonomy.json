@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "version": 20,
-  "updated": "2026-08-16",
+  "version": 21,
+  "updated": "2026-08-29",
   "grades": [
     {
       "id": "prime",
@@ -271,7 +271,7 @@
     },
     {
       "id": "understanding-assignment",
-      "label": "Understanding the Assignment",
+      "label": "Understanding Assignment",
       "description": "Did the model grasp the brief — each explicit ask, the evident intent behind it, and the brief's negative space? Prompts underspecify and filling the gaps is the job; additions are charged here only when they crowd, contradict, or upstage what was asked. Judged on what it TRIED to draw; whether the drawing itself holds up belongs to the axes below.",
       "values": [
         {
@@ -596,6 +596,11 @@
       "date": "2026-08-26",
       "version": 20,
       "note": "Owner call: understanding-assignment's four value labels reworded from the brief metaphor (Read the brief / Skimmed it / Misread it / Wrote its own brief) to a plain comprehension scale — Fully Understands / Mostly Understands / Somewhat Understands / Barely Understands. Labels only; ranks, value ids, and descriptions are unchanged, so nothing already filed is affected (grades and ratings store rank numbers) and no code changes are needed — every instrument renders labels from this file."
+    },
+    {
+      "date": "2026-08-29",
+      "version": 21,
+      "note": "Owner call: understanding-assignment's LABEL shortened from 'Understanding the Assignment' to 'Understanding Assignment' — the full phrase truncated in the bench's desktop subject column. Label only; the axis id, ranks, values and description are unchanged, so nothing filed is affected and no code changes are needed."
     }
   ]
 }
