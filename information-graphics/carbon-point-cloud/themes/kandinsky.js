@@ -133,6 +133,12 @@ window.__registerTheme({
     "--baseline": "rgba(24,21,18,0.40)",
     "--border":   "rgba(24,21,18,0.70)",
     "--bond":     "rgba(24,21,18,0.45)", // black construction lines
+    // ordinary → rare, read as ink on paper: straw ground → orange → the
+    // ultramarine the CN palette already breaks to. Explicit, because the
+    // engine's fallback runs pale-grey → mustard → vermilion, which *rises*
+    // in lightness before it falls — rare atoms would be no louder than
+    // ordinary ones. The hues are the plate's own; only the order is stated.
+    "--bne-lo":   "#C9BFA9", "--bne-mid": "#E85A24", "--bne-hi": "#1D4E9E",
   },
 
   css: KANDINSKY_CSS,
@@ -149,8 +155,29 @@ window.__registerTheme({
 
   vars: {
     ...KANDINSKY_SHARED,
+    // The pigments are the identity, so the nocturne keeps every hue and lifts
+    // only its lightness — which is what "Several Circles" itself does: the
+    // circles are luminous against the indigo, not the flat gouache of the
+    // daylight plate. Unlifted, ultramarine sits at 1.9:1 on this ground and
+    // the sp² mass reads as holes in the cloud.
     "--cn0":      "#F4EDDE", // isolated atoms read as pale marks, not black
+    "--cn1":      "#E85862", // vermilion, lit    4.33:1
+    "--cn3":      "#5A88DB", // ultramarine, lit  4.31:1
+    "--cn5":      "#AF68C8", // violet, lit       4.07:1
+    "--cn6":      "#7C8E45", // olive, lit        4.19:1
+    "--cn7":      "#B0793C", // ochre, lit        4.07:1
+    "--cn8":      "#2E9C9C", // teal, lit         4.58:1
+    // Rings keep the diverging rule but invert its lightness for this ground:
+    // on cream, distance from the graphitic 6 means denser pigment; on indigo
+    // it has to mean brighter, or the 3- and 10-rings — the two poles — are
+    // the least visible bars on the chart. The 6-ring stays the quietest.
+    "--ring3":    "#F2938A", "--ring4": "#E06B5F", "--ring5":  "#C94A44",
     "--ring6":    "#6E6858",
+    "--ring7":    "#4A6CB0", "--ring8": "#6089D4", "--ring9":  "#8AACE6",
+    "--ring10":   "#BCD2F4",
+    // ordinary → rare: indigo ground → mustard → pale yellow, so the hot pole
+    // is the primaries' own gold rather than the fallback's vermilion
+    "--bne-lo":   "#3A3F57", "--bne-mid": "#F2A81D", "--bne-hi": "#FFE066",
     "--page":     "#191B26", // near-black indigo
     "--surface":  "#222536",
     "--ink":      "#F4EDDE",

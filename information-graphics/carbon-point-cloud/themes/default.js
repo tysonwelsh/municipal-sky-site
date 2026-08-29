@@ -35,12 +35,18 @@ window.__registerTheme({
     "--baseline": "#383835",
     "--border":   "rgba(255,255,255,0.10)",
     "--bond":     "rgba(150,148,142,0.35)",
-    "--cn0": "#ffffff", "--cn1": "#e0403f", "--cn2": "#c98500",
-    "--cn3": "#008300", "--cn4": "#3987e5", "--cn5": "#d55181",
-    "--cn6": "#9085e9", "--cn7": "#d95926", "--cn8": "#199e70",
+    // the light hues do not survive a near-black ground (#008300 was 3.5:1 on
+    // --surface, and CN 3 is most of the cloud) — same neutral "system"
+    // character, lifted to dark-ground luminances
+    "--cn0": "#ffffff", "--cn1": "#f85149", "--cn2": "#d29922",
+    "--cn3": "#3fb950", "--cn4": "#58a6ff", "--cn5": "#db61a2",
+    "--cn6": "#a371f7", "--cn7": "#f0883e", "--cn8": "#2dd4bf",
     "--ring3": "#f28d8b", "--ring4": "#e2716f", "--ring5": "#cf5654",
     "--ring6": "#6e6c66", "--ring7": "#4f92e4", "--ring8": "#6da7ec",
     "--ring9": "#9ec5f4", "--ring10": "#cde2fb",
+    // ordinary → rare: the fallback (baseline→cn2→cn1) ends on a red that is
+    // darker than its own midpoint, so rare atoms receded instead of popping
+    "--bne-lo": "#3a3a38", "--bne-mid": "#d29922", "--bne-hi": "#ffcf40",
   },
 
   // Extra CSS injected as-is (textures, fonts, radii, shadows…). Empty here.

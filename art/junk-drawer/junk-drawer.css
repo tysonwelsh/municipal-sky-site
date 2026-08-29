@@ -3062,7 +3062,16 @@ html.jd-turn-open { overflow: hidden; }
   font-family: var(--tform); font-size: var(--t-micro); font-weight: 400;
   letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-2);
 }
-.jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
+/* the whole head is the disclosure's press target (owner, round 5): pointer
+   cursor, no text selection — a label you can press must not sprout an
+   I-beam and start selecting itself under the finger */
+.jd-rowhead {
+  display: flex; align-items: center; gap: 5px; min-width: 0;
+  cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.jd-rowhead:hover .jd-def { color: var(--tink); }
+.jd-rowhead:hover .jd-defx { color: var(--tred); }
 /* THE DISCLOSURE (owner, 2026-08-28 — the third life of this definition
    system, replacing OVERRIDE 1's hover/focus tooltip, which had replaced
    the ⓘ popover): the definition opens by PRESS. The label is plain print
@@ -3082,13 +3091,15 @@ html.jd-turn-open { overflow: hidden; }
 .jd-def > span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* the caret: form-sized print in a quiet 24px target, turning to point at
-   the explanation it opened */
+/* the caret: LEADS the label since round 5 (owner: left of the text, and
+   "that arrow is tiny — I can barely see it"), sized up to real print and
+   inked a step darker; it turns to point at the explanation it opened.
+   Its own press just bubbles into the rowhead's, which carries data-act. */
 .jd-defx {
-  flex: 0 0 auto; width: 24px; height: 24px; padding: 0;
+  flex: 0 0 auto; width: 22px; height: 22px; padding: 0; margin-left: -4px;
   display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer;
-  font-size: 0.62rem; line-height: 1; color: var(--tink-3);
+  font-size: 0.88rem; line-height: 1; color: var(--tink-2);
 }
 .jd-defx > span { display: block; transition: transform 0.12s; }
 .jd-defx.is-open > span { transform: rotate(90deg); }

@@ -6870,12 +6870,17 @@ function JD_layerOpen() {
        rule. aria-describedby on the select stays — a screen reader hears
        the definition at the control whether or not the sighted disclosure
        is open. */
+    /* the WHOLE head is the toggle (owner, round 5): data-act rides the
+       rowhead, so the label text and the air around it all answer the
+       press — the caret (now LEADING the label, and grown to be seen) is
+       kept as the tab stop and the state-bearer, its own click simply
+       bubbling into the rowhead's. */
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
-      '<div class="jd-rowhead">' +
-      '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
-      '<button type="button" class="jd-defx" data-act="def" aria-expanded="false" ' +
+      '<div class="jd-rowhead" data-act="def">' +
+      '<button type="button" class="jd-defx" aria-expanded="false" ' +
       'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
       ' means"><span aria-hidden="true">&#9656;</span></button>' +
+      '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
       /* the gauge (if any) is the FIRST CHILD of .jd-row-ctrl, not wrapped
@@ -7493,13 +7498,16 @@ function JD_layerOpen() {
       }
     } else if (act === 'def') {
       /* the subject's disclosure — in place, like the prompt's fold: a
-         repaint would close a native picker and lose the scroll */
+         repaint would close a native picker and lose the scroll. `b` may be
+         the rowhead or the caret inside it; the caret is always the element
+         that wears the state. */
       var row = b.closest('.jd-row');
       var exp = row && row.querySelector('.jd-row-exp');
-      if (exp) {
+      var caret = row && row.querySelector('.jd-defx');
+      if (exp && caret) {
         exp.hidden = !exp.hidden;
-        b.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
-        b.classList.toggle('is-open', !exp.hidden);
+        caret.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
+        caret.classList.toggle('is-open', !exp.hidden);
       }
     }
   }

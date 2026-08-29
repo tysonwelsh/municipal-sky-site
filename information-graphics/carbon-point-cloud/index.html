@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Carbon Point Cloud</title>
+<!-- one atom of the cloud, in the sp³ blue every theme's palette carries; inline
+     so the viewer still runs with no network and no sibling files -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Ccircle%20cx='16'%20cy='16'%20r='8.5'%20fill='%232a78d6'/%3E%3C/svg%3E">
 <style>
   :root {
     color-scheme: light;
@@ -36,11 +39,16 @@
       --baseline:    #383835;
       --border:      rgba(255,255,255,0.10);
       --bond:        rgba(150,148,142,0.35);
-      --cn0: #ffffff; --cn1: #e0403f; --cn2: #c98500; --cn3: #008300;
-      --cn4: #3987e5; --cn5: #d55181; --cn6: #9085e9; --cn7: #d95926; --cn8: #199e70;
+      /* lifted for a near-black ground — the light hues (notably #008300 on
+         CN 3, which is most of the cloud) sit under 4:1 on --surface */
+      --cn0: #ffffff; --cn1: #f85149; --cn2: #d29922; --cn3: #3fb950;
+      --cn4: #58a6ff; --cn5: #db61a2; --cn6: #a371f7; --cn7: #f0883e; --cn8: #2dd4bf;
       --ring3: #f28d8b; --ring4: #e2716f; --ring5: #cf5654; --ring6: #6e6c66;
       --ring7: #4f92e4; --ring8: #6da7ec; --ring9: #9ec5f4; --ring10: #cde2fb;
       --strain-lo: #e0403f; --strain-mid: #ffffff; --strain-hi: #3987e5;
+      /* ordinary → rare surprisal: explicit, so the ramp stays monotonic in
+         lightness (the baseline→cn2→cn1 fallback ends darker than its mid) */
+      --bne-lo: #3a3a38; --bne-mid: #d29922; --bne-hi: #ffcf40;
     }
   }
   * { box-sizing: border-box; margin: 0; }
@@ -81,7 +89,12 @@
   button:disabled { opacity: 0.4; cursor: default; }
   #seqControls { display: inline-flex; align-items: center; gap: 4px; }
   #seqPrev, #seqNext { padding: 4px 7px; }
-  .layout { display: flex; gap: 16px; align-items: stretch; }
+  /* One spacing scale: 14px between the macro blocks (.layout's two columns,
+     the side column's panels, the plot and the strips beneath it — the same
+     step the controls row already uses), 12px as the minor step inside a
+     block. 16px was tried for the macro step and pushes the footer under the
+     fold at 1440x900, so 14 is the scale everywhere. */
+  .layout { display: flex; gap: 14px; align-items: stretch; }
   /* left column: plot stacked over the analysis strips. Both are therefore the
      same width, and the side column runs alongside the pair rather than the
      strips cutting across underneath it. */
@@ -164,6 +177,14 @@
   #rdfSvg .grid .domain { stroke: none; }
   #rdfSvg .selection { fill: var(--cn2); fill-opacity: 0.14; stroke: var(--cn2); stroke-opacity: 0.5; }
   .panel h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px; }
+  /* Text may wrap, but never between a number and its unit, and never so that
+     a heading's unit and "i" badge are left alone on the second line: this
+     span holds such a group together so the break lands in front of it.
+     (Tooltips use it for their "3×6-ring" tokens; .info-tip re-normalises
+     white-space itself, so a badge may sit inside one.) */
+  .nb { white-space: nowrap; }
+  /* Ångström is a proper name — no theme's case treatment applies to it. */
+  .panel h2 .unit { text-transform: none; }
   .cn-row {
     display: flex; align-items: center; gap: 8px; padding: 5px 6px; margin: 0 -6px;
     border-radius: 6px; cursor: pointer;
@@ -194,8 +215,18 @@
   .bne-nrow input[type=range] { flex: 1; width: auto; }
   .bne-nrow b { font-variant-numeric: tabular-nums; width: 20px; text-align: right; color: var(--ink); }
   .bne-ramp { height: 9px; border-radius: 3px; margin-top: 10px; }
-  .bne-ramp-lab { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted);
+  .bne-ramp-lab { display: flex; justify-content: space-between; gap: 8px;
+                  font-size: 10px; color: var(--muted);
                   font-variant-numeric: tabular-nums; margin-top: 3px; }
+  /* Three labels in a 300px column: in a monospace theme their natural widths
+     exceed it and space-between collapses to zero, so the numbers run into the
+     caption. The numeric endpoints must never truncate — the caption in the
+     middle is the sacrificial one. */
+  .bne-ramp-lab span { white-space: nowrap; }
+  .bne-ramp-lab span:nth-child(2) {
+    flex: 1; min-width: 0; text-align: center;
+    overflow: hidden; text-overflow: ellipsis;
+  }
   .bne-cls { display: flex; align-items: center; gap: 8px; padding: 4px 6px; margin: 0 -6px;
              border-radius: 6px; cursor: pointer; -webkit-user-select: none; user-select: none;
              border: 1px solid transparent; }
@@ -234,13 +265,19 @@
   .panel .hint { color: var(--muted); font-size: 12px; margin-top: 10px; line-height: 1.45; }
   .panel .divider { border-top: 1px solid var(--grid); margin: 12px 0; }
   .meta-row { display: flex; justify-content: space-between; padding: 2px 0; color: var(--ink-2); }
-  .meta-row b { color: var(--ink); font-weight: 550; font-variant-numeric: tabular-nums; }
+  /* the value is a single measurement — never let its unit orphan onto a line
+     of its own ("19.0 × 19.1 × 18.9" / "Å"); the label side wraps instead */
+  .meta-row b { color: var(--ink); font-weight: 550; font-variant-numeric: tabular-nums;
+                white-space: nowrap; }
   .tooltip {
     position: absolute; pointer-events: none; display: none;
     background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
     box-shadow: 0 4px 14px rgba(0,0,0,0.14);
     padding: 8px 10px; font-size: 12px; color: var(--ink-2); line-height: 1.5;
-    max-width: 220px; z-index: 10;
+    /* 240, not 220: the ring line's widest single token ("12×10-ring, ") plus
+       the LAE line's "% of atoms" are now unbreakable, and a monospace theme
+       needs the extra column to place them without a widow */
+    max-width: 240px; z-index: 10;
   }
   .tooltip b { color: var(--ink); font-weight: 600; }
   .tooltip .tt-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
@@ -341,19 +378,19 @@
     </div>
     <div id="plotStrips">
       <aside class="panel" id="cnPanel">
-        <h2>Coordination number @1.8 Å<span class="info" tabindex="0" role="note"
+        <h2>Coordination number <span class="nb">@1.8&nbsp;<span class="unit">Å</span><span class="info" tabindex="0" role="note"
           aria-label="About coordination number">i<span class="info-tip">Neighbours within 1.8 Å of
           each atom, counted against full periodic images — an atom bonded across the cell boundary
           still counts. The bonds drawn in the cloud are intra-box only, so a CN 3 atom near a face
           may show fewer than three lines. CN 3 is graphitic sp², CN 4 diamond-like sp³; CN 1–2 are
           chain ends and CN 5+ over-coordination. Click a class to isolate it, shift-click to add.
-          Density and mean CN below are computed from the relaxed cell.</span></span></h2>
+          Density and mean CN below are computed from the relaxed cell.</span></span></span></h2>
         <div id="legend"></div>
         <div class="divider"></div>
         <div id="meta"></div>
       </aside>
       <div class="panel" id="rdfPanel" style="display:none">
-        <h2>Radial distribution function g(r)<span class="info" tabindex="0" role="note"
+        <h2>Radial distribution function <span class="nb">g(r)<span class="info" tabindex="0" role="note"
           aria-label="About the radial distribution function">i<span class="info-tip">The density of
           atom pairs at separation r, normalised so a uniform structure sits at 1. Computed with
           periodic images out to the smaller of 10 Å and half the cell's thinnest width. The first
@@ -362,17 +399,17 @@
           graphite (1.42 Å) and diamond (1.54 Å) first-neighbour distances. Brush a range of r to
           highlight every atom pair at that separation in the cloud — available to 5 Å, capped at
           120,000 pairs — and click outside the band to clear. With a sequence active, the other
-          stages draw as gray ghost curves.</span></span></h2>
+          stages draw as gray ghost curves.</span></span></span></h2>
         <svg id="rdfSvg"></svg>
       </div>
       <aside class="panel" id="bondPanel" style="display:none">
-        <h2>Bond lengths &lt; 1.8 Å<span class="info" tabindex="0" role="note"
+        <h2>Bond lengths <span class="nb">&lt;&nbsp;1.8&nbsp;<span class="unit">Å</span><span class="info" tabindex="0" role="note"
           aria-label="About the bond-length histogram">i<span class="info-tip">Every intra-box bond
           shorter than the 1.8 Å cutoff, binned at 0.02 Å; bonds crossing the box boundary are
           excluded. Bars carry the same ramp as the Bond strain toggle — red compressed, neutral at
           the median, blue stretched — scaled symmetrically about the median, so colour reads as
           strain magnitude rather than absolute length. Brush a range to select those bonds in the
-          cloud; click outside the band to clear.</span></span></h2>
+          cloud; click outside the band to clear.</span></span></span></h2>
         <svg id="bondSvg"></svg>
         <div class="hint" id="bondHint"></div>
       </aside>
@@ -380,19 +417,19 @@
   </div>
   <div class="side">
     <aside class="panel" id="ringPanel" style="display:none">
-      <h2>Rings by size<span class="info" tabindex="0" role="note"
+      <h2>Rings by <span class="nb">size<span class="info" tabindex="0" role="note"
         aria-label="About the ring-size distribution">i<span class="info-tip">Shortest-path
         (Franzblau) rings of size 3–10 on the periodic bond network: a cycle counts as a ring only
         if no shortcut exists between any two of its atoms. Solid bar: rings lying entirely inside
         the box, drawn in the cloud. Faded bar: rings crossing the box boundary — counted here, but
         not drawable. The 6-ring is the graphitic reference state; 5- and 7-rings are the
         characteristic defects of a disordered network. Click a size to isolate those rings,
-        shift-click to add.</span></span></h2>
+        shift-click to add.</span></span></span></h2>
       <div id="ringChart"></div>
     </aside>
     <aside class="panel" id="bnePanel" style="display:none">
-      <h2>Bond-network entropy<span class="info" tabindex="0" role="note"
-        aria-label="About the bond-network entropy panel">i<span class="info-tip" id="bneAbout"></span></span></h2>
+      <h2>Bond-network <span class="nb">entropy<span class="info" tabindex="0" role="note"
+        aria-label="About the bond-network entropy panel">i<span class="info-tip" id="bneAbout"></span></span></span></h2>
       <div id="bneHead"></div>
       <svg id="bneSvg"></svg>
       <div class="bne-nrow">
@@ -413,14 +450,17 @@
 </footer>
 
 <script>window.__THEMES = []; window.__registerTheme = t => window.__THEMES.push(t);</script>
-<script src="themes/default.js?v=8e22d835"></script>
-<script src="themes/midnight.js?v=74032fd1"></script>
+<!-- ?v bumps on theme edits: webviews cache these aggressively and a stale
+     theme silently overrides the current stylesheet (same trick the structure
+     loader uses with ?v=Date.now()) -->
+<script src="themes/default.js?v=c16e8c9a"></script>
+<script src="themes/midnight.js?v=5d7d81c6"></script>
 <script src="themes/oppenheimer.js?v=e7d0430c"></script>
-<script src="themes/kandinsky.js?v=1ae38699"></script>
-<script src="d3.min.js?v=69faba9d"></script>
+<script src="themes/kandinsky.js?v=a2dfc62b"></script>
+<script src="d3.min.js"></script>
 <script src="structures/manifest.js"></script>
 <script>window.__BNE_INDEX = [];</script>
-<script src="structures_bne/index.js?v=209332ad"></script>
+<script src="structures_bne/index.js"></script>
 <script>
 "use strict";
 
@@ -666,11 +706,11 @@ function buildBondPanel() {
       let n = 0;
       for (const v of bondSelMask) n += v;
       selLine = `<br><b style="color:var(--ink)">${n.toLocaleString()} bonds selected</b> ` +
-                `(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)} Å)`;
+                `<span class="nb">(${bondBrushRange[0].toFixed(2)}–${bondBrushRange[1].toFixed(2)}&nbsp;Å)</span>`;
     }
     document.getElementById("bondHint").innerHTML =
       `${nb.toLocaleString()} intra-box bonds · median ` +
-      `<b style="color:var(--ink)">${med.toFixed(3)} Å</b> (dashed)` + selLine;
+      `<b class="nb" style="color:var(--ink)">${med.toFixed(3)}&nbsp;Å</b> (dashed)` + selLine;
   };
   let rafPending = false;
   const brush = d3.brushX()
@@ -1425,7 +1465,10 @@ function showAtomTooltip(i, mx, my) {
     else {
       const byS = d3.rollup(sizes, v => v.length, d => d);
       ringLine = "<br>Rings: " + [...byS.keys()].sort(d3.ascending)
-        .map(s => `${byS.get(s)}×<span style="color:${ringColor(s)}">${s}-ring</span>`).join(", ");
+        // each "N×M-ring" token is one word as far as the reader is concerned —
+        // it must not break across lines at the × or the hyphen
+        .map(s => `<span class="nb">${byS.get(s)}×<span style="color:${ringColor(s)}">${s}-ring</span></span>`)
+        .join(", ");
     }
   }
   // local-topology line: this atom's H₁ barcode class and its surprisal
@@ -1434,7 +1477,7 @@ function showAtomTooltip(i, mx, my) {
   if (bcur && bneSurp && bcur.cls[i] >= 0) {
     const c = bcur.cls[i];
     bneLine = `<br>LAE(n=${bcur.n}): <b>${barsText(bcur.bars[c])}</b>` +
-      ` · ${(100 * bcur.counts[c] / bcur.sampled).toFixed(1)}% of atoms` +
+      ` · ${(100 * bcur.counts[c] / bcur.sampled).toFixed(1)}%&nbsp;of&nbsp;atoms` +
       `<br>surprisal ${bneSurp[i].toFixed(2)} nats`;
   }
   tooltip.innerHTML =
@@ -1741,12 +1784,14 @@ function computeBneAtoms() {
       : Math.round(((bneSurp[i] - bneSMin) / span) * (BNE_BUCKETS - 1));
 }
 // ordinary → rare ramp, theme-derived (same idiom as the bond-strain trio)
+// A theme should set the trio explicitly: the fallback below is only monotonic
+// in lightness where cn1 happens to be the most salient colour on the theme's
+// ground, which is not true on a dark one (rare atoms end up receding).
 function bneTrio() {
-  const explicit = n => document.documentElement.style.getPropertyValue(n).trim();
   return [
-    explicit("--bne-lo") || css("--baseline"),
-    explicit("--bne-mid") || css("--cn2"),
-    explicit("--bne-hi") || css("--cn1"),
+    css("--bne-lo") || css("--baseline"),
+    css("--bne-mid") || css("--cn2"),
+    css("--bne-hi") || css("--cn1"),
   ];
 }
 const bneScale = () =>

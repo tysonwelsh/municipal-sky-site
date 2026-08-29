@@ -17,20 +17,38 @@ window.__registerTheme({
     "--baseline": "#2a3a5e",
     "--border":   "rgba(160,180,255,0.14)",
     "--bond":     "rgba(140,160,220,0.35)",
-    "--cn0": "#e8ecf8", "--cn1": "#ff5d73", "--cn2": "#ffb020",
-    "--cn3": "#3ddc84", "--cn4": "#4cc3ff", "--cn5": "#ff7ad9",
-    "--cn6": "#a78bfa", "--cn7": "#ff8a3d", "--cn8": "#2dd4bf",
-    "--ring3": "#ff8a80", "--ring4": "#ff6d64", "--ring5": "#e8503f",
-    "--ring6": "#4a5578", "--ring7": "#5e8ce6", "--ring8": "#7aa5f0",
-    "--ring9": "#a3c2fa", "--ring10": "#d3e0ff",
+    // One hue family, read as instrument emission: ice-cyan carries sp²,
+    // violet carries sp³ (hue AND a ~2× luminance gap, so the primary read
+    // survives colour blindness), gold the sp chains, magenta the defects.
+    "--cn0": "#f0f4ff", "--cn1": "#ff5c87", "--cn2": "#ffc857",
+    "--cn3": "#33d6ff", "--cn4": "#9d7bff", "--cn5": "#ff7ad9",
+    "--cn6": "#c084fc", "--cn7": "#ff9e64", "--cn8": "#2dd4bf",
+    // rings: same diverging rule (warm = smaller, cool = larger), retuned to
+    // the palette above; the graphitic 6 stays the quietest bar.
+    "--ring3": "#ffb3a0", "--ring4": "#ff8f7d", "--ring5": "#ff6a5e",
+    "--ring6": "#4a5578", "--ring7": "#5fb7ff", "--ring8": "#8ccfff",
+    "--ring9": "#b8e2ff", "--ring10": "#e0f2ff",
+    // bond strain: compressed → median → stretched. The median must read
+    // neutral on THIS surface, so it cannot inherit the light-theme grey.
+    "--strain-lo": "#ff6a5e", "--strain-mid": "#7a86a8", "--strain-hi": "#5fb7ff",
+    // ordinary → rare surprisal ramp: dim indigo → warm → bright gold.
+    // Explicit rather than the baseline→cn2→cn1 fallback, which is not
+    // monotonic in lightness on this ground.
+    "--bne-lo": "#3a4a78", "--bne-mid": "#ff8a5c", "--bne-hi": "#ffe08a",
   },
 
   css: `
     body { font-family: "Avenir Next", "Trebuchet MS", system-ui, sans-serif; }
     .panel, .plot { box-shadow: 0 8px 30px rgba(0,0,0,0.35); }
+    /* a low glow under the cloud, then the dot grid over it — the canvas is
+       transparent, so this reads as light in the instrument rather than as a
+       graphic. Order matters: the gradient is listed second so it paints
+       beneath the grid, and its background-size entry must match. */
     .plot {
-      background-image: radial-gradient(rgba(120,150,255,0.06) 1px, transparent 1px);
-      background-size: 22px 22px;
+      background-image:
+        radial-gradient(rgba(120,150,255,0.06) 1px, transparent 1px),
+        radial-gradient(70% 60% at 50% 50%, rgba(80,150,255,0.05), transparent 70%);
+      background-size: 22px 22px, auto;
     }
     #rdfSvg text { font-family: "Avenir Next", system-ui, sans-serif; }
   `,
