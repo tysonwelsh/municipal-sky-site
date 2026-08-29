@@ -4453,6 +4453,7 @@ function JD_layerOpen() {
 (function () {
   var API_GEN = '/api/jd-generate.php';
   var API_RATE = '/api/jd-rate.php';
+  var API_TITLE = '/api/jd-title.php';
   var K_TURN = 'jd-turn-v1', K_CONSENT = 'jd-consent-v1';
   var K_ITEMS = 'jd-user-items-v1', K_SCATTER = 'jd-scatter-v2';
   var MAX_PROMPT = 500, MAX_NOTE = 500, MAX_ITEMS = 5;
@@ -7602,6 +7603,38 @@ function JD_layerOpen() {
     go('generating');
     startSlowTimer();
     JD_track('turn_submit', null);
+    /* THE TAG'S TITLE (owner, 2026-08-29): a small fast model names the
+       object in 2–5 words, replacing the 52-char prompt truncation that
+       used to run on ("A crystal ball the kind a fortune teller might…").
+       Fired here so it rides the darkroom wait, invisible; every failure
+       path leaves work.title unset and shortTitle() carries on as before.
+       One retry after 4s covers the race where no slot's submission row
+       has landed yet (the endpoint answers no_turn until one has). */
+    (function fetchTitle(attempt) {
+      fetch(JD_API + API_TITLE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ client_ref: turn.client_ref, prompt: text })
+      }).then(function (r) {
+        return r.json().catch(function () { return null; });
+      }).then(function (j) {
+        if (mine !== token || !work) return;
+        if (j && j.ok && j.title) {
+          work.title = j.title;
+          if (turn) { turn.title = j.title; persist(); }
+        } else if (attempt < 2) {
+          setTimeout(function () {
+            if (mine === token) fetchTitle(attempt + 1);
+          }, 4000);
+        }
+      }, function () {
+        if (mine === token && attempt < 2) {
+          setTimeout(function () {
+            if (mine === token) fetchTitle(attempt + 1);
+          }, 4000);
+        }
+      });
+    })(1);
     JD_SLOTS.forEach(function (slot) {
       /* NO client abort and NO client timeout — the server owns the 90s
          budget, and a fetch cancelled here would abandon a generation the
@@ -7795,6 +7828,9 @@ function JD_layerOpen() {
       submission_id: turn.submission_id,
       svg: s.svg,
       prompt: work.prompt,
+      /* the model-written tag title (jd-title.php); records without one
+         fall back to shortTitle(prompt) wherever they're read */
+      title: work.title || null,
       model_id: rv.model_id || '',
       label: rv.label || '',
       won_at: new Date().toISOString(),
@@ -7869,7 +7905,7 @@ function JD_layerOpen() {
     var pile = document.querySelector('.jd-pile');
     if (!pile || !rec || !rec.svg || !window.JD_svgInst) return null;
     if (pile.querySelector('[data-id="' + rec.gen_id + '"]')) return null;
-    var title = shortTitle(rec.prompt);
+    var title = rec.title || shortTitle(rec.prompt);
     var el = document.createElement('div');
     el.className = 'jd-item jd-item--visitor';
     el.dataset.id = rec.gen_id;
@@ -8043,7 +8079,7 @@ function JD_layerOpen() {
       var el = pile && pile.querySelector('[data-id="' + rec.gen_id + '"]');
       if (!el) return;                /* not in the drawer, so no card for it */
       labelItem(el, rec);
-      markCard(el, registerRecord(rec, shortTitle(rec.prompt)));
+      markCard(el, registerRecord(rec, rec.title || shortTitle(rec.prompt)));
     });
   }
 
