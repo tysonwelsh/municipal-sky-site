@@ -6973,21 +6973,24 @@ function JD_layerOpen() {
     return h + '</div>';
   }
 
-  /* THE ASSIGNMENT ON THE BENCH (owner, 2026-08-28): the prompt, verbatim,
-     rides every drawing's grading panel — under the exhibit in the landscape
-     columns, between the sticky plate and the rows in the portrait stack.
-     Judging "Understanding the Assignment" with the assignment off the card
-     meant grading against memory; now every word is in reach. The fold is
-     the record card's own idiom (three lines, a mask fade over the last,
-     SHOW FULL PROMPT to unfold) — render() measures after paint and marks
-     is-fit when the words never overflowed, which hides the expander. The
-     toggle flips classes in place (data-act="brief"), never a re-render, so
-     the native selects and scroll position stay put. */
+  /* THE PROMPT ON THE BENCH (owner, 2026-08-28; reseated same day): the
+     prompt, verbatim, at the head of the paperwork column — exhibit on the
+     left, then the words, then the ratings they're judged against, a rule
+     dividing prompt from paperwork. In the portrait stack the same DOM
+     reads sticky plate → prompt → rows. No label on it (owner: "just put
+     the prompt", the THE ASSIGNMENT tag was too cute) — the rule and the
+     spacing carry the division. Judging "Understanding the Assignment" with
+     the prompt off the card meant grading against memory; now every word is
+     in reach. The fold is the record card's own idiom (three lines, a mask
+     fade over the last, SHOW FULL PROMPT to unfold) — render() measures
+     after paint and marks is-fit when the words never overflowed, which
+     hides the expander. The toggle flips classes in place
+     (data-act="brief"), never a re-render, so the native selects and
+     scroll position stay put. */
   function briefHTML() {
     var words = (work && work.prompt) || '';
     if (!words.trim()) return '';
     return '<div class="jd-turn-assign">' +
-      '<span class="jd-turn-assign-tag" aria-hidden="true">the assignment</span>' +
       '<p>' + esc(words) + '</p>' +
       '<button type="button" class="jd-turn-pv" data-act="brief">show full prompt</button>' +
       '</div>';
@@ -7006,11 +7009,12 @@ function JD_layerOpen() {
     var two = ok.length > 1;
     var h = '<div class="jd-bench">' +
       '<div class="jd-bench-l"><div class="jd-turn-pin">' +
-      plate(slot, { pin: true, zoom: true, replay: true }) + '</div>' +
-      /* OUTSIDE the pin: the sticky exhibit stays just the drawing, and in
-         the portrait stack the assignment scrolls with the rows beneath it */
-      briefHTML() + '</div>' +
+      plate(slot, { pin: true, zoom: true, replay: true }) + '</div></div>' +
       '<div class="jd-bench-r">' +
+      /* the prompt OPENS the paperwork column, above the rows (owner,
+         2026-08-28) — and, the wrappers being display:contents in the
+         portrait stack, sits between the sticky plate and the rows there */
+      briefHTML() +
       benchHeadHTML();
     /* axes first, in taxonomy order, THEN the overall grade (owner
        directive r4): the report card files axes in <tbody> and the overall

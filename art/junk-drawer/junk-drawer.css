@@ -2937,25 +2937,24 @@ html.jd-turn-open { overflow: hidden; }
 .jd-turn-pin { display: flex; justify-content: center; }
 .jd-turn-pin .jd-turn-plate { flex: 0 0 auto; width: 100%; }
 
-/* ---- the assignment (owner, 2026-08-28) -----------------------------------
+/* ---- the prompt (owner, 2026-08-28; reseated to the paperwork column the
+   same day) -----------------------------------------------------------------
    The prompt, verbatim, on every grading panel — the words being judged
-   against, in reach while judging. Landscape: under the exhibit, closing its
-   column. Portrait (the wrappers go display:contents below): a flex child of
-   the scroller between the sticky plate and the rows — "just above the
-   ratings" — scrolling away with them under the pin. The fold is the record
+   against, in reach while judging. Landscape: it OPENS the right column,
+   above the rating rows, a rule beneath it dividing words from paperwork
+   (owner: "some kind of divider so that it's clear"). Portrait (the
+   wrappers go display:contents below): a flex child of the scroller between
+   the sticky plate and the rows — "just above the ratings" — scrolling away
+   with them under the pin. Unlabelled by owner call ("just put the prompt"
+   — the THE ASSIGNMENT tag was retired as too cute). The fold is the record
    card's rc-assign idiom re-cut in this sheet's tokens: three lines, the cut
    dissolving over exactly the last text line, SHOW FULL PROMPT to unfold;
    render() marks is-fit when the words never overflowed, which lifts the
    mask and retires the expander in one class. */
 .jd-turn-assign {
-  margin: var(--sp-2) 2px 0;
-  padding-top: var(--sp-2);
-  border-top: 1px solid var(--trule-2);
-}
-.jd-turn-assign-tag {
-  display: block; margin-bottom: 3px;
-  font-size: var(--t-micro); letter-spacing: 0.17em; text-transform: uppercase;
-  color: var(--tink-3);
+  margin: 0 2px var(--sp-3);
+  padding-bottom: var(--sp-2);
+  border-bottom: 1px solid var(--trule-2);
 }
 .jd-turn-assign p {
   margin: 0; font-size: var(--t-body); line-height: 1.55;
