@@ -6,8 +6,8 @@
 // posterized to three screenprint layers and atoms are hard squares — every
 // mark is still its true projected position, class, and color; only the
 // printing process got cheaper. Set dressing is documentation that documents
-// nothing: crop marks, a stencil pour number, a catalog strip, one marker
-// gesture, a cyan survey lattice drifting overhead at 160-second tempo.
+// nothing: crop marks, a stencil pour number, a catalog strip, a cyan survey
+// lattice drifting behind the title at 160-second tempo.
 //
 //   ᵈᵃʸ — the slab at inspection hour. Grain multiplies, ink sits matte.
 //   ⁿᵗ  — the same room at 3 a.m. Same hues gone phosphorescent, grain
@@ -80,16 +80,6 @@ const LATTICE_SVG = `
   </g>
 </svg>`;
 
-// one marker gesture across the plot corner — the zine hand
-const MARKER_SVG = `
-<svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"
-     stroke="currentColor" stroke-width="7" stroke-linecap="round" aria-hidden="true">
-  <path d="M18 25 C 40 37, 61 54, 85 75"/>
-  <path d="M79 21 C 60 40, 37 59, 15 79"/>
-  <path d="M51 11 C 49 34, 52 66, 49 89"/>
-  <path d="M11 53 C 34 50, 68 52, 90 49"/>
-</svg>`;
-
 const STRIP_TEXT = "ᴘᴏᴜʀ·³³ ⌇ ʜᴀʟʟ ⌭ ⌇ 140 ᴍɪɴ⁻¹ ⌇ sp²∕sp³ ⌇ ⎔⎔⎔ ⌇ ᴅʀʏ ᴛɪᴍᴇ ∞ ⌇ ɴᴏ ʀᴇ-ᴇɴᴛʀʏ";
 
 // panel headings become catalog codes; the i-badge tooltips (left intact —
@@ -122,10 +112,7 @@ function slabMount({ body, plot }) {
   el("div", "slab-crop slab-crop-bl"); el("div", "slab-crop slab-crop-br");
   el("div", "slab-stamp", "33");
   el("div", "slab-lattice", LATTICE_SVG);
-  if (plot) {
-    el("div", "slab-strip", STRIP_TEXT, plot);
-    el("div", "slab-marker", MARKER_SVG, plot);
-  }
+  if (plot) el("div", "slab-strip", STRIP_TEXT, plot);
   const restored = [];
   for (const [sel, code] of HEADING_CODES) {
     const h = document.querySelector(sel);
@@ -258,10 +245,6 @@ const SLAB_CSS = `
     font-family: "Space Mono", monospace; font-size: 9px; letter-spacing: 0.34em;
     color: var(--slab-strip-ink); white-space: nowrap; overflow: hidden;
   }
-  .slab-marker {
-    position: absolute; top: -10px; right: 6px; width: 88px; z-index: 6; pointer-events: none;
-    color: var(--slab-marker-ink); opacity: 0.85; transform: rotate(-9deg);
-  }
 
   @media (prefers-reduced-motion: reduce) {
     .slab-grain, .slab-lattice { animation: none; }
@@ -351,7 +334,6 @@ window.__registerTheme({
     "--slab-canvas-filter": "url(#slab-warp)",
     "--slab-lattice-ink":   "rgba(38,146,166,0.5)",
     "--slab-lattice-blend": "multiply",
-    "--slab-marker-ink":    "#171715",
     "--slab-strip-ink":     "rgba(23,23,21,0.55)",
     "--slab-mis1":          "rgba(194,103,135,0.55)",
     "--slab-mis2":          "rgba(47,143,119,0.55)",
@@ -396,7 +378,6 @@ window.__registerTheme({
     "--slab-canvas-filter": "url(#slab-warp) drop-shadow(1px 0 0 rgba(255,79,154,0.3)) drop-shadow(-1px 0 0 rgba(95,212,180,0.28))",
     "--slab-lattice-ink":   "rgba(69,196,216,0.45)",
     "--slab-lattice-blend": "screen",
-    "--slab-marker-ink":    "#ef8bb0",
     "--slab-strip-ink":     "rgba(236,234,226,0.5)",
     "--slab-mis1":          "rgba(255,79,154,0.6)",
     "--slab-mis2":          "rgba(95,212,180,0.6)",
