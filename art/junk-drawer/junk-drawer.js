@@ -6181,6 +6181,16 @@ function JD_layerOpen() {
      millimetre off the sheet. An attached photograph is an attached
      photograph. `pin` drops the caption — on the bench the heading already
      says which drawing this is. */
+  /* the replay button's sketch mark: a pencil mid-stroke and the line it's
+     leaving behind (see the replay note in plate() below) */
+  var SKETCH_ICON =
+    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" ' +
+    'stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M2 20.8 C4.5 18.5, 6.5 22.5, 10 21.4"/>' +
+    '<path d="M11 18.2 L19.8 5.8 L22.8 7.9 L14 20.3 Z"/>' +
+    '<path d="M11 18.2 L10 21.6 L14 20.3 Z" fill="currentColor"/></svg>';
+
   function plate(slot, opts) {
     var s = work.slots[slot];
     if (!s || s.status !== 'ok') return '';
@@ -6214,11 +6224,17 @@ function JD_layerOpen() {
       esc(s.gen_id || ((turn && turn.client_ref) || 'turn') + ':' + slot) + '">' +
       window.JD_svgInst(s.svg, 'ju' + slot + (instSeq++) + '_') + '</div>' +
       (opts.replay
-        ? '<button type="button" class="jd-turn-draw" data-act="replay" ' +
+        /* icon-only since 2026-08-29 (owner, provisional pick "for now"):
+           the pencil mid-stroke with the squiggle it's leaving — the button
+           depicts the PROCESS it replays, not repetition (the ↻ family) and
+           not the word. Inline currentColor SVG, the docket-scales idiom,
+           so the hover inversion carries it. The word survives in title +
+           aria-label. */
+        ? '<button type="button" class="jd-turn-draw jd-turn-draw--icon" data-act="replay" ' +
           'data-slot="' + slot + '" ' +
           'title="watch the drawing draw itself again" ' +
           'aria-label="Replay drawing ' + slot.toUpperCase() + '">' +
-          'REPLAY ✎</button>'
+          SKETCH_ICON + '</button>'
         : '') +
       /* the OVERLAY fittings (owner, 2026-08-26, best-to-worst prints):
          the Model label rides INSIDE the frame, top-centred over the
@@ -6845,8 +6861,24 @@ function JD_layerOpen() {
      written, and the row itself never re-renders, so the gauge was
      invisible the whole way through a live turn. A mark that reports state
      has to be written wherever the state is written. */
-  function gaugeFor(ax, total, chosen) {
-    if (chosen == null) return '';
+  /* `empty` (owner, 2026-08-29): the bench's rows keep their gauge on show
+     even before an answer — the same rc-bar shell at the same size, grayed,
+     no fill, its segment ticks drawn in the gray so the scale's step count
+     still reads. An answer swaps it for the real filled bar in place
+     (paintGauge finds either by the shared .rc-bar class); clearing back to
+     skip swaps the empty one back in. Callers that DON'T pass empty keep
+     the old contract — the podium's grade spark still sparks nothing for a
+     skipped grade (owner call, 2026-08-26). */
+  function gaugeFor(ax, total, chosen, empty) {
+    if (chosen == null) {
+      if (!empty) return '';
+      var eh = '<span class="rc-bar jd-bar--empty" aria-hidden="true">';
+      for (var t = 1; t < total; t++) {
+        eh += '<span class="rc-bar-tick" style="left:' +
+          (100 * t / total).toFixed(1) + '%"></span>';
+      }
+      return eh + '</span>';
+    }
     var picked = ax ? window.JD_byRank(ax.values, chosen)
       : window.JD_gradeOf(tax(), chosen);
     var rank = picked ? Math.round(picked.rank) : 0;
@@ -6889,7 +6921,7 @@ function JD_layerOpen() {
          direct child on every change, so first paint has to hand it the
          identical shape or the live update's removeChild throws on a node
          that isn't actually its child. */
-      '<div class="jd-row-ctrl">' + gaugeFor(ax, levels.length, chosen) +
+      '<div class="jd-row-ctrl">' + gaugeFor(ax, levels.length, chosen, true) +
       '<select class="jd-turn-select' + (chosen != null ? ' is-set' : '') + '" ' +
       'data-role="' + (ax ? 'axis' : 'grade') + '" data-slot="' + slot + '"' +
       (axisId ? ' data-axis="' + esc(axisId) + '"' : '') +
@@ -7339,7 +7371,7 @@ function JD_layerOpen() {
     var old = ctrl.querySelector('.rc-bar');
     if (old) ctrl.removeChild(old);
     var levels = byRankDesc(ax ? ax.values : tax().grades);
-    var html = gaugeFor(ax, levels.length, val == null ? null : Number(val));
+    var html = gaugeFor(ax, levels.length, val == null ? null : Number(val), true);
     if (html) ctrl.insertAdjacentHTML('afterbegin', html);
   }
   function onChange(e) {

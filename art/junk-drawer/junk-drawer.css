@@ -2796,6 +2796,14 @@ html.jd-turn-open { overflow: hidden; }
   box-shadow: 0 1px 0 rgba(58, 42, 18, 0.18);
   cursor: pointer;
 }
+/* the icon-only cut (owner, 2026-08-29): a square-ish seat for the sketch
+   mark — the SVG strokes in currentColor, so the hover inversion below
+   repaints it with no extra rule */
+.jd-turn-draw--icon {
+  padding: 5px 6px 4px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.jd-turn-draw--icon svg { display: block; }
 .jd-turn-draw:hover {
   background: var(--tink); color: var(--tpaper); border-color: var(--tink); }
 .jd-turn-draw:active { box-shadow: none; transform: translateY(1px); }
@@ -2970,8 +2978,13 @@ html.jd-turn-open { overflow: hidden; }
    mask and retires the expander in one class. */
 .jd-turn-assign {
   margin: 0 2px var(--sp-3);
-  padding-bottom: var(--sp-2);
-  border-bottom: 1px solid var(--trule-2);
+  /* a PANEL since round 6 (owner): the selects' own lighter beige and
+     hairline, so the prompt sits on the sheet the way the form's other
+     filled-in elements do — set off from the paper, one family with the
+     dropdowns below it (their exact background recipe, deliberately) */
+  padding: var(--sp-2) 10px;
+  background: rgba(255, 252, 240, 0.62);
+  border: 1px solid var(--trule);
 }
 /* the header (owner, round 3; ENLARGED round 4 — "make the header of the
    prompt bigger"): the plain word, but now in a section-heading voice a
@@ -3125,6 +3138,14 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row-ctrl { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
 .jd-row-ctrl .jd-turn-select { width: auto; flex: 1 1 auto; min-width: 0; }
 .jd-row-ctrl .rc-bar { flex: 0 0 auto; }
+/* the WAITING gauge (owner, 2026-08-29): an unanswered row shows the same
+   bar, empty and grayed — the track sits open and its segment ticks are
+   drawn in the gray itself (the filled bar's paper-colored ticks would
+   vanish on an empty track), so the scale's step count reads before a
+   value does. An answer swaps in the real colored bar; the rows stop
+   jumping sideways as they're filled in. */
+.rc-bar.jd-bar--empty { color: var(--tink-3); opacity: 0.55; }
+.rc-bar.jd-bar--empty .rc-bar-tick { background: currentColor; opacity: 0.7; }
 /* THE ONE BAND THE GAUGE CANNOT HAVE (measured, 2026-08-14). Between 701px
    and 768px three rules collide: the bench is still LANDSCAPE (its portrait
    fold is ≤700px), inputs are already raised to 16px against iOS focus-zoom
