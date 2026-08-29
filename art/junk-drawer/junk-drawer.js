@@ -6911,7 +6911,7 @@ function JD_layerOpen() {
       '<div class="jd-rowhead" data-act="def">' +
       '<button type="button" class="jd-defx" aria-expanded="false" ' +
       'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
-      ' means"><span aria-hidden="true">&#9656;</span></button>' +
+      ' means"><span aria-hidden="true">+</span></button>' +
       '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +

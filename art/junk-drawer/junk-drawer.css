@@ -3104,18 +3104,19 @@ html.jd-turn-open { overflow: hidden; }
 .jd-def > span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* the caret: LEADS the label since round 5 (owner: left of the text, and
-   "that arrow is tiny — I can barely see it"), sized up to real print and
-   inked a step darker; it turns to point at the explanation it opened.
-   Its own press just bubbles into the rowhead's, which carries data-act. */
+/* the disclosure mark: LEADS the label since round 5 (owner: left of the
+   text, and "that arrow is tiny — I can barely see it"); a PLUS since
+   round 8 (owner call, was a caret) — it quarter-turns into an × while the
+   explanation is open, the close it promises. Its own press just bubbles
+   into the rowhead's, which carries data-act. */
 .jd-defx {
   flex: 0 0 auto; width: 22px; height: 22px; padding: 0; margin-left: -4px;
   display: inline-flex; align-items: center; justify-content: center;
   border: 0; background: none; cursor: pointer;
-  font-size: 0.88rem; line-height: 1; color: var(--tink-2);
+  font-size: 1.05rem; line-height: 1; color: var(--tink-2);
 }
 .jd-defx > span { display: block; transition: transform 0.12s; }
-.jd-defx.is-open > span { transform: rotate(90deg); }
+.jd-defx.is-open > span { transform: rotate(45deg); }
 .jd-defx:hover { color: var(--tred); }
 .jd-defx:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
 /* the unfolded explanation: the tooltip's words, now printed on the sheet —

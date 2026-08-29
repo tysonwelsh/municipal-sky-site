@@ -457,6 +457,8 @@
 <script src="themes/midnight.js?v=5d7d81c6"></script>
 <script src="themes/oppenheimer.js?v=e7d0430c"></script>
 <script src="themes/kandinsky.js?v=a2dfc62b"></script>
+<script src="themes_claude/oppenheimer-trinity.js?v=2"></script>
+<script src="themes/slab.js?v=3"></script>
 <script src="d3.min.js"></script>
 <script src="structures/manifest.js"></script>
 <script>window.__BNE_INDEX = [];</script>
@@ -540,11 +542,24 @@ function applyThemeVars() {
 function applyTheme(id) {
   const theme = window.__THEMES.find(t => t.id === id) || window.__THEMES[0];
   if (!theme) return;
+  const prev = activeTheme;
+  // theme lifecycle: a theme may inject DOM (overlays, stamps, rewritten
+  // headings) via mount()/unmount(). Unmount the outgoing theme first, then
+  // sweep anything it forgot — every injected node carries data-theme-owned,
+  // so a buggy teardown can never leak set dressing into the next theme.
+  if (prev !== theme && prev && typeof prev.unmount === "function") {
+    try { prev.unmount(); } catch (_) { /* teardown must never block the switch */ }
+  }
+  if (prev !== theme) for (const el of document.querySelectorAll("[data-theme-owned]")) el.remove();
   activeTheme = theme;
   document.documentElement.dataset.theme = theme.id;
   applyThemeVars();
   themeStyleEl.textContent = theme.css || "";
   activeRender = { ...FALLBACK_RENDER, ...(theme.render || {}) };
+  if (prev !== theme && typeof theme.mount === "function") {
+    // after css injection, so mounted nodes are styled on their first frame
+    try { theme.mount({ body: document.body, plot: document.getElementById("plot") }); } catch (_) {}
+  }
   updateCnRemap();
   if (S) { buildLegend(); buildRingPanel(); buildBondPanel(); buildRdf(); buildBnePanel(); draw(); scheduleQuadtree(); resize(); }
 }
@@ -1006,6 +1021,9 @@ function draw() {
   const depthNorm = 1 / (S.radius * 2);
   const TAU = 2 * Math.PI;
   const fadeFill = css("--muted");
+  // theme hook: draw the atom mark itself (fillStyle/globalAlpha already set);
+  // absent, atoms are the original circles
+  const drawAtom = activeRender.drawAtom || null;
   // colour-by-entropy: per-atom ramp bucket precomputed with the surprisals
   const byBne = colorMode() === "bne" && bneBucket;
   const bneCols = byBne ? bneColors() : null;
@@ -1020,7 +1038,7 @@ function draw() {
                    (bondAtomMask !== null && !bondAtomMask[i]) ||
                    (bneSelSet !== null && !bneSelSet.has(i)) ||
                    (atomSelSet !== null && !atomSelSet.has(i));
-    let r, alpha;
+    let r, alpha, t = null; // t: orbit depth 0 (far) … 1 (near); null in fly mode
     if (flying) {
       // calibrated so an atom at the entry distance (1.5 × cell radius) renders at
       // exactly the slider size — toggling fly on/off doesn't change apparent dot size
@@ -1028,7 +1046,7 @@ function draw() {
       r = activeRender.flySize(rBase, S.radius, rz);
       alpha = activeRender.flyAlpha(S.radius, rz);
     } else {
-      const t = 0.5 - pz[i] * depthNorm; // 0 (far) … 1 (near)
+      t = 0.5 - pz[i] * depthNorm;
       r = rBase * activeRender.orbitSize(t);
       alpha = activeRender.orbitAlpha(t);
     }
@@ -1036,20 +1054,28 @@ function draw() {
     ctx.fillStyle = dimmed ? fadeFill
       : byBne ? (isNaN(bneSurp[i]) ? bneUnsampled : bneCols[bneBucket[i]])
       : (colors[cn] ??= cnColor(cn));
-    ctx.beginPath();
-    ctx.arc(px[i], py[i], r, 0, TAU);
-    ctx.fill();
+    if (drawAtom) {
+      drawAtom(ctx, px[i], py[i], r, t);
+    } else {
+      ctx.beginPath();
+      ctx.arc(px[i], py[i], r, 0, TAU);
+      ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
 
-  // halo around the click-selected atom
+  // halo around the click-selected atom (theme hook drawHalo may restyle it)
   if (selectedAtom !== null && isFinite(px[selectedAtom])) {
     const rBaseSel = +document.getElementById("sizeRange").value;
-    ctx.beginPath();
-    ctx.arc(px[selectedAtom], py[selectedAtom], rBaseSel * 1.6 + 3, 0, TAU);
-    ctx.strokeStyle = css("--ink");
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
+    if (activeRender.drawHalo) {
+      activeRender.drawHalo(ctx, px[selectedAtom], py[selectedAtom], rBaseSel);
+    } else {
+      ctx.beginPath();
+      ctx.arc(px[selectedAtom], py[selectedAtom], rBaseSel * 1.6 + 3, 0, TAU);
+      ctx.strokeStyle = css("--ink");
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
   }
 }
 

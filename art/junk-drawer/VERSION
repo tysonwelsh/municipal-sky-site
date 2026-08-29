@@ -41,3 +41,4 @@
 0.9.80 — the prompt gets its own slip: the panel takes the dropdowns' lighter beige and hairline, setting the words off from the sheet as one more filled-in form element
 0.9.81 — the gauges wait in gray: every rating row shows its segmented bar from the start — empty, grayed, ticks marking the scale's steps — filling with the pencil's color the moment a value is picked
 0.9.82 — REPLAY becomes a mark: the corner button trades its word for a pencil mid-stroke, the line it's leaving trailing behind (owner's provisional pick; the word survives in the tooltip)
+0.9.83 — the disclosure's caret becomes a plus, quarter-turning to an × while the explanation stands open
