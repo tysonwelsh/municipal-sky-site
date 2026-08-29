@@ -184,7 +184,22 @@ When filing a NEW item, still collect a grade as described below — the backfil
 carries it into the DB as a seed row. Per-axis annotations for new items are
 the bench's job now, not the entry file's.
 
-## Procedure: regrade / annotate an existing response
+## Procedure: harvest a RERUN into its item (first run: crystal ball, 2026-08-29)
+
+A bench rerun files the item's prompt as a real visitor turn; its drawings
+and the owner's blind ratings live only in the DB. To commit them back:
+`GET api/jd-harvest.php?item=<item_id>` returns the rated rerun turns whole
+(SVG text, ratings, ranks, comparison). Then: write each SVG as
+`<model-slug>.svg` (run the ink check), APPEND responses **in the owner's
+rank order** — so the earliest-rid tiebreak encodes the podium and
+best-grade-wins re-points the drawer without a pin — with `grade` from the
+turn's grade rating, and **`tokens` + `cost_usd`** computed from the
+harvest's `usage_tokens` via `jd_generation_cost()` (mirror jd-rate.php's
+reveal shape: `tokens: {input, output, total}`, cost rounded to 6) so the
+report card states Cost/Tokens. Do NOT write axis annotations to
+entry.json — they're already in jd_ratings as turn rows. Old responses
+stay untouched (permanent record). Validate, commit
+`junk-drawer: add rerun responses to "<title>" (<models>)`.
 
 Push the old grade into `grade_history` as
 `{"grade": <old rank number>, "date": <old graded date>, "taxonomy_version": <n>, "note": <why>}`,
