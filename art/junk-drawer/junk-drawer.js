@@ -6860,10 +6860,22 @@ function JD_layerOpen() {
     var desc = ax ? (ax.description || '') : 'The drawer’s own five-tier scale, best to worst.';
     var levels = byRankDesc(ax ? ax.values : tax().grades);
     var descId = 'jd-d-' + slot + '-' + (axisId || 'grade');
+    /* THE DISCLOSURE (owner, 2026-08-28, replacing OVERRIDE 1's hover/focus
+       tooltip): the definition now opens by PRESS, not hover — a caret
+       beside the label toggles the row's explanation open under the whole
+       row (see .jd-row-exp: last child, so the collapsed grid is untouched
+       and the open text spans both columns). One behavior on desktop and
+       phone alike, which also closes the touch gap the tooltip always had.
+       The label goes back to plain print: no data-tt anchor, no dotted
+       rule. aria-describedby on the select stays — a screen reader hears
+       the definition at the control whether or not the sighted disclosure
+       is open. */
     var h = '<div class="jd-row' + (ax ? '' : ' jd-row--grade') + '">' +
       '<div class="jd-rowhead">' +
-      '<span class="jd-def" data-tt-t="' + esc(label) + '" data-tt-d="' +
-      esc(desc) + '"><span>' + esc(label) + '</span></span>' +
+      '<span class="jd-def"><span>' + esc(label) + '</span></span>' +
+      '<button type="button" class="jd-defx" data-act="def" aria-expanded="false" ' +
+      'aria-label="what ' + esc(window.JD_labelText ? window.JD_labelText(label) : label) +
+      ' means"><span aria-hidden="true">&#9656;</span></button>' +
       '</div>' +
       '<span class="jd-vh" id="' + descId + '">' + esc(desc) + '</span>' +
       /* the gauge (if any) is the FIRST CHILD of .jd-row-ctrl, not wrapped
@@ -6885,7 +6897,12 @@ function JD_layerOpen() {
       h += '<option value="' + l.rank + '"' + (on ? ' selected' : '') + '>' +
         esc(window.JD_labelText(l.label || l.id)) + '</option>';
     });
-    h += '</select></div>';
+    h += '</select></div>' +
+      /* LAST child, deliberately: hidden it leaves the grid exactly as it
+         was; open it auto-places on the next grid row spanning both
+         columns — and the stacked narrow-band folds inherit it with no
+         extra rules */
+      '<div class="jd-row-exp" hidden>' + esc(desc) + '</div>';
     return h + '</div>';
   }
   /* the column head above the rows, mirroring the report card's <thead>
@@ -6987,10 +7004,17 @@ function JD_layerOpen() {
      hides the expander. The toggle flips classes in place
      (data-act="brief"), never a re-render, so the native selects and
      scroll position stay put. */
+  /* The header returned by owner call (2026-08-28, round 3): unlabelled, the
+     words floated with nothing saying what they were. It reads PROMPT — the
+     plain word, not the retired THE ASSIGNMENT flourish. The fold now trips
+     only on genuinely long prompts (seven lines — see the CSS), so most
+     cards show every word with no control at all; when it does fold, the
+     pair is SHOW FULL PROMPT / HIDE. */
   function briefHTML() {
     var words = (work && work.prompt) || '';
     if (!words.trim()) return '';
     return '<div class="jd-turn-assign">' +
+      '<span class="jd-turn-assign-tag" aria-hidden="true">prompt</span>' +
       '<p>' + esc(words) + '</p>' +
       '<button type="button" class="jd-turn-pv" data-act="brief">show full prompt</button>' +
       '</div>';
@@ -7465,7 +7489,17 @@ function JD_layerOpen() {
       var asn2 = b.closest('.jd-turn-assign');
       if (asn2) {
         var on = asn2.classList.toggle('is-open');
-        b.textContent = on ? 'fold the prompt' : 'show full prompt';
+        b.textContent = on ? 'hide' : 'show full prompt';
+      }
+    } else if (act === 'def') {
+      /* the subject's disclosure — in place, like the prompt's fold: a
+         repaint would close a native picker and lose the scroll */
+      var row = b.closest('.jd-row');
+      var exp = row && row.querySelector('.jd-row-exp');
+      if (exp) {
+        exp.hidden = !exp.hidden;
+        b.setAttribute('aria-expanded', exp.hidden ? 'false' : 'true');
+        b.classList.toggle('is-open', !exp.hidden);
       }
     }
   }

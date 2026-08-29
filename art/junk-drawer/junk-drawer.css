@@ -2909,7 +2909,17 @@ html.jd-turn-open { overflow: hidden; }
   grid-template-columns: var(--plate) minmax(280px, 1fr);
   column-gap: 20px; align-items: start;
 }
-.jd-bench-l { min-width: 0; }
+/* the exhibit rides the vertical CENTRE of its column (owner, 2026-08-28):
+   with the prompt now opening the paperwork, the right column usually runs
+   taller than the plate, and a top-pinned drawing left dead paper under
+   itself. Stretch the column and centre the pin in it — the same composition
+   move the paperwork column makes below. (Portrait is untouched: both
+   wrappers go display:contents in the ≤700px block, which overrides this.) */
+.jd-bench-l {
+  min-width: 0;
+  align-self: stretch;
+  display: flex; flex-direction: column; justify-content: center;
+}
 /* R2-F1/F2 (round-17, owner override): the "let them differ" approach from
    round 16 fixed the auto-margin bug but relocated the dead space instead of
    removing it — the exhibit (up to 380px) and the paperwork (~246px) are
@@ -2925,10 +2935,17 @@ html.jd-turn-open { overflow: hidden; }
 .jd-bench-r {
   min-width: 0;
   display: flex; flex-direction: column;
-  align-self: stretch; min-height: 100%; justify-content: center;
+  /* TOP-ANCHORED since round 4 (owner, 2026-08-28, reversing the round-17
+     centring): with the prompt opening the column, its header has to start
+     at the container's top — right under the rail — not float mid-column
+     wherever the centring left it. Slack, when the exhibit runs taller,
+     now collects between the grade row and the action button (the button
+     keeps the column's foot via margin-top: auto below), never under the
+     button — which was the dead rectangle round 17 was killing. */
+  align-self: stretch; min-height: 100%; justify-content: flex-start;
   border-left: 1px solid var(--trule-2); padding-left: 20px;
 }
-.jd-bench-r .jd-turn-actions { margin-top: var(--sp-4); }
+.jd-bench-r .jd-turn-actions { margin-top: auto; padding-top: var(--sp-4); }
 /* the pinned exhibit: the artwork under examination stays in view for the
    whole panel. On the landscape bench it simply sits in its column; in the
    portrait stack (≤700px) it goes sticky and repaints the sheet's own paper
@@ -2956,12 +2973,26 @@ html.jd-turn-open { overflow: hidden; }
   padding-bottom: var(--sp-2);
   border-bottom: 1px solid var(--trule-2);
 }
+/* the header (owner, round 3; ENLARGED round 4 — "make the header of the
+   prompt bigger"): the plain word, but now in a section-heading voice a
+   full step above the row labels, so the column's order of things reads at
+   a glance — PROMPT, the words, then the subjects they're judged on */
+.jd-turn-assign-tag {
+  display: block; margin-bottom: 4px;
+  font-family: var(--tform); font-weight: 600;
+  font-size: var(--t-body); letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--tink-2);
+}
 .jd-turn-assign p {
   margin: 0; font-size: var(--t-body); line-height: 1.55;
   color: var(--tink-2); white-space: pre-wrap; word-break: break-word;
 }
 .jd-turn-assign:not(.is-open):not(.is-fit) p {
-  max-height: 4.65em;    /* 3 lines of the 1.55 line-height */
+  /* SEVEN lines of the 1.55 line-height (owner, round 3 — the three-line
+     fold was cutting prompts the column could easily carry; "six or seven
+     lines easy". At 500 chars max, most prompts never reach this and show
+     whole, expander retired by is-fit). */
+  max-height: 10.85em;
   overflow: hidden;
   /* em pair is the fallback; the lh pair, where supported, is exactly one
      line whatever the line-height (the record card's own note applies) */
@@ -3032,15 +3063,15 @@ html.jd-turn-open { overflow: hidden; }
   letter-spacing: 0.17em; text-transform: uppercase; color: var(--tink-2);
 }
 .jd-rowhead { display: flex; align-items: center; gap: 6px; min-width: 0; }
-/* OVERRIDE 1 (round-16, owner): the ⓘ circle and the click-to-unfold
-   popover it drove are both gone outright — see the note at .jd-vh below
-   for the accessibility replacement (aria-describedby, not a widget). The
-   label is now an inert PRINTED GLOSS, not a control: a <span>, no
-   tabindex, no role. Its only affordance is typographic — a hairline
-   dotted rule under the text, the way a footnote marker sits under a word
-   rather than looking like a button — and it still anchors the hover/focus
-   tooltip on mouseover (ttInit reads data-tt-t/data-tt-d off any element,
-   not just interactive ones). */
+/* THE DISCLOSURE (owner, 2026-08-28 — the third life of this definition
+   system, replacing OVERRIDE 1's hover/focus tooltip, which had replaced
+   the ⓘ popover): the definition opens by PRESS. The label is plain print
+   again — no dotted rule, no hover shift, no data-tt anchor (ttInit stands
+   idle; it reads data-tt attributes off any element and now finds none) —
+   and the control is the caret beside it, which unfolds the row's
+   explanation (.jd-row-exp) under the whole row. Same gesture on desktop
+   and phone, which also closes the tooltip's standing touch gap. The
+   select's aria-describedby survives untouched — see .jd-vh below. */
 .jd-def {
   display: inline-flex; align-items: center; min-width: 0;
   font-family: var(--tform);
@@ -3050,9 +3081,27 @@ html.jd-turn-open { overflow: hidden; }
 .jd-row--grade .jd-def { color: var(--tink); }
 .jd-def > span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  border-bottom: 1px dotted var(--trule-2);
 }
-.jd-def:hover > span { color: var(--tink); }
+/* the caret: form-sized print in a quiet 24px target, turning to point at
+   the explanation it opened */
+.jd-defx {
+  flex: 0 0 auto; width: 24px; height: 24px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; background: none; cursor: pointer;
+  font-size: 0.62rem; line-height: 1; color: var(--tink-3);
+}
+.jd-defx > span { display: block; transition: transform 0.12s; }
+.jd-defx.is-open > span { transform: rotate(90deg); }
+.jd-defx:hover { color: var(--tred); }
+.jd-defx:focus-visible { outline: 2px solid var(--tred); outline-offset: 1px; }
+/* the unfolded explanation: the tooltip's words, now printed on the sheet —
+   last grid child, so it spans both columns on its own row (and simply
+   stacks last in the narrow one-column folds) */
+.jd-row-exp {
+  grid-column: 1 / -1;
+  padding: 1px 2px 5px;
+  font-size: var(--t-label); line-height: 1.55; color: var(--tink-2);
+}
 
 /* the picked-value gauge sits ahead of the select (owner directive r4):
    .rc-bar is the report card's own gauge, unchanged — reused, not
