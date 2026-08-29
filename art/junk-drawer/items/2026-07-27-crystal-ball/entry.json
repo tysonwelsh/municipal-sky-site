@@ -91,7 +91,13 @@
       "graded": "2026-08-29",
       "grade_history": [],
       "transcript": null,
-      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule."
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 1 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule.",
+      "tokens": {
+        "input": 513,
+        "output": 4305,
+        "total": 4818
+      },
+      "cost_usd": 0.11019
     },
     {
       "rid": "r5",
@@ -107,7 +113,13 @@
       "graded": "2026-08-29",
       "grade_history": [],
       "transcript": null,
-      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule."
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 2 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule.",
+      "tokens": {
+        "input": 445,
+        "output": 2112,
+        "total": 2557
+      },
+      "cost_usd": 0.033015
     },
     {
       "rid": "r6",
@@ -123,7 +135,13 @@
       "graded": "2026-08-29",
       "grade_history": [],
       "transcript": null,
-      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule."
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 3 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule.",
+      "tokens": {
+        "input": 357,
+        "output": 3119,
+        "total": 3476
+      },
+      "cost_usd": 0.031636
     },
     {
       "rid": "r7",
@@ -139,7 +157,13 @@
       "graded": "2026-08-29",
       "grade_history": [],
       "transcript": null,
-      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule."
+      "notes": "Rerun of the original prompt through the live turn flow (bench rerun, submission 01M17WVZJZ719Q3C766N9A0JVD), rated blind by the owner; filed rank 4 of 4. Axis ratings live in jd_ratings (v21), per the DB-era rule.",
+      "tokens": {
+        "input": 352,
+        "output": 3182,
+        "total": 3534
+      },
+      "cost_usd": 0.038888
     }
   ]
 }
