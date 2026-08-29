@@ -2688,17 +2688,35 @@ html.jd-turn-open { overflow: hidden; }
    the sheet. An attached photograph is an attached photograph.
    ========================================================================== */
 .jd-turn-plates { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 0.6rem; }
-/* THE CALL NARROWS (podium, 2026-08-22). It used to widen to 880px because it
-   carried every surviving plate full-size in one row; the podium carries them
-   at print size instead, and a 4-step podium is 306px of content — so the card
-   comes back to the mockup's own measure and stops being the widest sheet in
-   the flow. One value covers every width: min() folds the phone case in, and
-   there is no ≤700px override for the call any more. */
+/* THE CALL NARROWS (podium, 2022-08-22 design) — ON PHONES ONLY since
+   2026-08-29 (owner: reaching the ranking used to shrink the sheet to a
+   phone card mid-desktop-flow, "strange"). The 462px measure survives as
+   the narrow-viewport case; on the landscape viewports where the bench
+   runs 960, the call now HOLDS that measure — the sheet stops changing
+   size at the exact step where the visitor starts dragging — and the
+   podium scales up to spend the room (larger prints, taller blocks,
+   capped and centred so four steps compose rather than stretch). */
 .jd-turn[data-view="call"] { width: min(462px, 100%); }
 /* the unveil is the call's own podium carrying its answer, so it stands at
-   the call's measure — a wider sheet would make the same steps read as a
-   different object. */
+   the call's measure at EVERY width — a different sheet would make the
+   same steps read as a different object. */
 .jd-turn[data-view="said"] { width: min(462px, 100%); }
+@media (min-width: 701px) {
+  .jd-turn[data-view="call"], .jd-turn[data-view="said"] {
+    width: min(960px, 100%);
+  }
+  .jd-turn[data-view="call"] .jd-pod,
+  .jd-turn[data-view="said"] .jd-pod {
+    --pw: 120px; --pstep: 20px; --pbase: 58px;
+    max-width: 720px; margin: 0 auto;
+  }
+  .jd-turn[data-view="said"] .jd-pod--said,
+  .jd-turn[data-view="said"] .jd-pod.jd-pod--said { --pbase: 88px; }
+  .jd-turn[data-view="call"] .jd-pod-row,
+  .jd-turn[data-view="said"] .jd-pod-row,
+  .jd-turn[data-view="call"] .jd-pod-tray,
+  .jd-turn[data-view="said"] .jd-pod-tray { gap: 10px; }
+}
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
 /* THE REVEAL AS A 2×2 PILE (round 26 rev. 2, owner directive 2026-08-21;
@@ -2845,32 +2863,40 @@ html.jd-turn-open { overflow: hidden; }
 /* THE PILLS (owner, 2026-08-26): on the wide-viewport bench each node is a
    pill wearing its word — DRAWING A…D, and the scales icon + RANKING —
    and the ring stands down (its letter would just repeat the word's own).
-   The phone keeps bare rings, and so does the best-to-worst sheet, the
-   narrowest in the flow (462px against ~570px of five worded pills: the
-   same arithmetic that made the old rail wear its short labels there). */
+   The phone keeps bare rings. The best-to-worst sheet used to keep them
+   too (it was the flow's narrowest card, 462px against ~570px of pills);
+   since 2026-08-29 it stands at the bench's own 960 measure on these
+   viewports, so the pills stay through the ranking — the rail no longer
+   snaps back to phone rings at the last step (owner). */
 .jd-rail-word {
   display: none;
   font-family: var(--tform); font-size: var(--t-label);
   letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
 }
 @media (min-width: 769px) {
-  .jd-turn[data-view="bench"] .jd-rail-step {
+  .jd-turn[data-view="bench"] .jd-rail-step,
+  .jd-turn[data-view="call"] .jd-rail-step {
     min-height: 26px; padding: 0 12px;
     background: rgba(255, 250, 232, 0.35);
     border: 1px solid var(--trule); border-radius: 999px;
   }
-  .jd-turn[data-view="bench"] .jd-rail-word { display: inline; }
-  .jd-turn[data-view="bench"] .jd-rail-ring { display: none; }
+  .jd-turn[data-view="bench"] .jd-rail-word,
+  .jd-turn[data-view="call"] .jd-rail-word { display: inline; }
+  .jd-turn[data-view="bench"] .jd-rail-ring,
+  .jd-turn[data-view="call"] .jd-rail-ring { display: none; }
   /* the scales keep their icon inside the pill, unringed */
-  .jd-turn[data-view="bench"] .jd-rail-step--call .jd-rail-ring {
+  .jd-turn[data-view="bench"] .jd-rail-step--call .jd-rail-ring,
+  .jd-turn[data-view="call"] .jd-rail-step--call .jd-rail-ring {
     display: flex; width: auto; height: auto;
     border: 0; background: none;
   }
-  .jd-turn[data-view="bench"] .jd-rail-step.is-done {
+  .jd-turn[data-view="bench"] .jd-rail-step.is-done,
+  .jd-turn[data-view="call"] .jd-rail-step.is-done {
     background: var(--graphite); border-color: var(--graphite);
     color: var(--tpaper-hi);
   }
-  .jd-turn[data-view="bench"] .jd-rail-step.is-current {
+  .jd-turn[data-view="bench"] .jd-rail-step.is-current,
+  .jd-turn[data-view="call"] .jd-rail-step.is-current {
     border: 2px solid var(--tred); background: var(--tpaper-hi);
   }
 }
