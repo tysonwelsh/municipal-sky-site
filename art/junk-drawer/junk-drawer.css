@@ -2705,7 +2705,15 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="call"], .jd-turn[data-view="said"] {
     width: min(960px, 100%);
   }
-  .jd-turn[data-view="call"] .jd-pod,
+  /* the CALL's podium only: 120 → 140 (owner, 2026-08-29, "a little larger
+     still") — the three size tokens and the cap all scale by the same 7/6,
+     so four steps compose at the old proportions, just bigger. The unveil
+     does NOT ride along: it is a filed photograph of the answer and holds
+     the measure it was filed at (the hard rule below). */
+  .jd-turn[data-view="call"] .jd-pod {
+    --pw: 140px; --pstep: 23px; --pbase: 68px;
+    max-width: 840px; margin: 0 auto;
+  }
   .jd-turn[data-view="said"] .jd-pod {
     --pw: 120px; --pstep: 20px; --pbase: 58px;
     max-width: 720px; margin: 0 auto;
@@ -2716,6 +2724,43 @@ html.jd-turn-open { overflow: hidden; }
   .jd-turn[data-view="said"] .jd-pod-row,
   .jd-turn[data-view="call"] .jd-pod-tray,
   .jd-turn[data-view="said"] .jd-pod-tray { gap: 10px; }
+  /* THE ROW IS A TRAY NOW (owner, 2026-08-29, landscape sheets only; phones
+     keep the bare row). Three calls in one block:
+     — an INSET container: the printed hairline and a shade pressed into the
+       paper, so the waiting drawings sit IN something rather than under
+       dead air;
+     — each drawing's cell keeps a dashed HOME — the pedestals' own
+       .jd-pod-hole idiom, verbatim — that shows the moment its print stands
+       up on a step. :empty carries it (the cell string is built with no
+       whitespace and podSeat moves whole nodes), so no markup and no paint
+       code changed; a lifted print still occupies its cell mid-drag, so the
+       home never flashes under the visitor's own hand;
+     — the cell reserves its print's height whether or not it is home, so
+       seating the LAST drawing no longer buckles the sheet (the base
+       .is-bare collapse loses to these two min-heights up here). */
+  .jd-turn[data-view="call"] .jd-pod-tray {
+    padding: 9px;
+    border: 1px solid var(--trule);
+    background: rgba(74, 53, 18, 0.05);
+    box-shadow: inset 0 1px 4px rgba(74, 53, 18, 0.14),
+                inset 0 -1px 0 rgba(255, 255, 240, 0.5);
+  }
+  .jd-turn[data-view="call"] .jd-pod-cell { min-height: calc(var(--pw) + 4px); }
+  .jd-turn[data-view="call"] .jd-pod-tray.is-bare {
+    min-height: calc(var(--pw) + 10px);
+  }
+  .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
+    content: "";
+    box-sizing: border-box;
+    width: var(--pw); height: var(--pw);
+    border: 1px dashed rgba(74, 53, 18, 0.34);
+    background: rgba(255, 250, 232, 0.22);
+  }
+  /* under a drag the homes state themselves a shade harder, exactly as the
+     pedestal holes do (body.jd-pod-drag .jd-pod-hole above) */
+  body.jd-pod-drag .jd-turn[data-view="call"] .jd-pod-cell:empty::before {
+    border-color: rgba(75, 64, 48, 0.7);
+  }
 }
 .jd-turn-plate { flex: 1 1 0; min-width: 0; margin: 0; }
 
