@@ -245,6 +245,31 @@ try {
             jd_fail(409, 'already_rated', 'This submission has already been rated.');
         }
 
+        // THE TURN'S OWN CARD (2026-08-30). A fully rated turn now takes a
+        // place in the drawer itself rather than living out its life as a
+        // souvenir in one browser's storage (owner call), so two facts the
+        // client knows have to reach the record: the TITLE a model wrote for
+        // the object (jd-title.php drafts it during the darkroom wait), and
+        // whether the visitor asked to SUPPRESS it — everything recorded,
+        // nothing displayed. Both ride as flag rows on the winning slot's
+        // generation, the shape retire-request and rerun-request already use;
+        // jd_submissions has no free column and this needs no migration.
+        // $okSlots holds the surviving GENERATION ROWS (not slot letters)
+        $firstGen = $okSlots ? (string) $okSlots[0]['id'] : null;
+        if ($firstGen !== null) {
+            $titleIn = $body['title'] ?? null;
+            if (is_string($titleIn) && trim($titleIn) !== '') {
+                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
+                    'axis_id' => 'title', 'value' => null,
+                    'note' => 'TITLE ' . mb_substr(trim($titleIn), 0, 60)];
+            }
+            if (!empty($body['suppress'])) {
+                $prepared[] = ['gen_id' => $firstGen, 'kind' => 'flag',
+                    'axis_id' => 'suppress', 'value' => null,
+                    'note' => 'SUPPRESS — kept out of the drawer by the visitor'];
+            }
+        }
+
         $insertRating = $db->prepare(
             'INSERT INTO jd_ratings
                 (id, generation_id, kind, axis_id, value, note, taxonomy_version,

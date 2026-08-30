@@ -729,6 +729,14 @@ function JD_layerOpen() {
       /* build + size every item first (sizeClass only; positions come next) */
       var els = loaded.map(function (rec, i) {
         var item = rec.item;
+        /* a turn the visitor JUST won is already in the pile, dropped from
+           their own storage the moment they filed — and since 2026-08-30 the
+           server serves that same turn to everyone, keyed on the winning
+           drawing's generation, which is the id the local copy carries. Same
+           id, same item: reuse the element rather than laying a second copy
+           of the object on top of the first. */
+        var had = pile.querySelector('[data-id="' + item.id + '"]');
+        if (had) { had.parentNode.removeChild(had); }
         var el = document.createElement('div');
         el.className = 'jd-item';
         el.dataset.id = item.id;
@@ -7441,11 +7449,27 @@ function JD_layerOpen() {
       acts += '<button type="button" class="jd-turn-go" data-act="next"' +
         gate + '>next — ' + esc(next) + ' &rarr;</button>';
     }
+    if (!two && !sized) { acts = suppressHTML() + acts; }
     /* the action row closes the PAPERWORK column, not the sheet: on the
        landscape bench it settles against the foot of the exhibit beside it
        (margin-top:auto), and in the portrait stack it is simply the last
        thing on the card, exactly where it was */
     return h + actions(acts) + '</div></div>';
+  }
+
+  /* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30). A finished turn now takes
+     a real place in the drawer rather than living in one browser's storage,
+     so the visitor needs a way to say "record it, don't show it" — the data
+     is filed either way, which is the point: the drawer loses the object,
+     the record keeps everything. Curation mode never shows it: the owner
+     scraps from the bench strip instead, which files the same intent under
+     its own flag. */
+  function suppressHTML() {
+    if (curJob) return '';
+    return '<label class="jd-turn-check jd-suppress">' +
+      '<input type="checkbox" data-role="suppress"' +
+      (work && work.suppress ? ' checked' : '') + '>' +
+      '<span>keep this one out of the drawer</span></label>';
   }
 
   /* a call is ready to file when the podium is FULL: every surviving drawing
@@ -7528,7 +7552,7 @@ function JD_layerOpen() {
     /* a curation has one more card after this one — the size (owner,
        2026-08-30) — so the ranking hands on rather than filing */
     var more = curJob && curJob.sizeTiers && curJob.sizeTiers.length;
-    return h + actions(
+    return h + suppressHTML() + actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="' +
       (more ? 'next' : 'file') + '"' + (callReady() ? '' : ' disabled') + '>' +
@@ -7775,6 +7799,10 @@ function JD_layerOpen() {
       /* the bench gate re-arms (or re-locks — a scale set back to skip
          closes it) on every answer; back is never gated */
       setDisabled('[data-act="next"], [data-act="file"]', !benchRated(slot));
+    }
+    if (role === 'suppress') {
+      work.suppress = !!t.checked;
+      return;
     }
     if (role === 'flag') {
       work.ratings[slot].flag = t.checked;
@@ -8145,6 +8173,10 @@ function JD_layerOpen() {
     var body = {
       submission_id: turn.submission_id,
       client: JD_CLIENT,
+      /* the object's name and the visitor's wish about showing it — both
+         belong to the record now that a rated turn joins the drawer */
+      title: work.title || null,
+      suppress: !!work.suppress,
       ratings: ratings,
       ranking: ranking,
       comparison: okNow.length > 1

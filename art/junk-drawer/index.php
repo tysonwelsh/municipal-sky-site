@@ -159,8 +159,10 @@ include '../../includes/header.php';
     <section class="jd-colophon" aria-label="colophon">
       <h2>Colophon</h2>
       <p>Flat files in a git repository, assembled at request time by
-      <code>data.php</code> &mdash; no database, no build step; a commit is
-      the entire publishing act.</p>
+      <code>data.php</code> &mdash; no build step, and for the curated
+      objects a commit is the entire publishing act. Objects drawn by
+      visitors join the drawer from the database the moment their grades are
+      filed.</p>
       <p><a href="/art/" aria-label="the generative art series">the generative art series</a></p>
       <!-- Build stamp: version · content fingerprint · deploy time. A quiet
            way to confirm which build is actually live. -->

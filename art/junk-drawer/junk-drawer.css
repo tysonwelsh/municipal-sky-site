@@ -4306,3 +4306,15 @@ html.jd-bench-on .jd-turn-scrim {
   margin: 0 2px var(--sp-2); font-size: var(--t-body); line-height: 1.5;
   color: var(--tink-2);
 }
+
+/* KEEP IT OUT OF THE DRAWER (owner, 2026-08-30) — the visitor's one say over
+   what their finished turn does next. It sits under the last rating card,
+   quiet: a finished turn goes into the drawer by default, and this is the
+   exception, not a decision the card should press for. (.jd-turn-check is
+   the report path's own checkbox styling, benched but standing — reused
+   here rather than reinvented.) */
+.jd-suppress {
+  margin: var(--sp-2) 2px 0;
+  font-size: var(--t-label); color: var(--tink-2);
+}
+.jd-suppress input { accent-color: var(--graphite); }

@@ -21,13 +21,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     jd_fail(405, 'method_not_allowed', 'GET only.');
 }
 
+// THE DRAWER DEPENDS ON THIS ENDPOINT NOW (2026-08-30): a rated turn's
+// artwork is served from here to every visitor, so the key cannot be the
+// only way in. A drawing whose turn is RATED is public by definition — it
+// is on display — and is served to anyone; everything else (an unrated
+// turn's drawings, which only the bench has business seeing) still answers
+// to the gate when the gate is on.
+$keyed = true;
 if (JD_IS_PRODUCTION && JD_BENCH_REQUIRE_KEY) {
     $secrets  = jd_secrets();
     $expected = $secrets['jd_bench_key'] ?? ($secrets['jd_setup_key'] ?? null);
     $supplied = $_SERVER['HTTP_X_BENCH_KEY'] ?? ($_GET['key'] ?? '');
-    if (!is_string($expected) || $expected === '' || !hash_equals($expected, (string) $supplied)) {
-        jd_fail(403, 'forbidden', 'The bench key is missing or wrong.');
-    }
+    $keyed = is_string($expected) && $expected !== ''
+        && hash_equals($expected, (string) $supplied);
 }
 
 $gen = (string) ($_GET['gen'] ?? '');
@@ -38,9 +44,21 @@ if (!preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/', $gen)) {
 try {
     $db = jd_db();
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $stmt = $db->prepare("SELECT svg FROM jd_generations WHERE id = ? AND status = 'ok'");
+    $stmt = $db->prepare(
+        "SELECT g.svg, s.status, s.item_id
+           FROM jd_generations g
+           JOIN jd_submissions s ON s.id = g.submission_id
+          WHERE g.id = ? AND g.status = 'ok'"
+    );
     $stmt->execute([$gen]);
-    $svg = $stmt->fetchColumn();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $svg = $row === false ? false : $row['svg'];
+    // on display = rated turn, or any curated response
+    $public = $row !== false
+        && ($row['status'] === 'rated' || $row['item_id'] !== null);
+    if (!$keyed && !$public) {
+        jd_fail(403, 'forbidden', 'That drawing is not on display.');
+    }
 } catch (PDOException $e) {
     error_log('jd-gen-svg: ' . $e->getMessage());
     jd_fail(500, 'server_error', 'The drawing could not be read.');
