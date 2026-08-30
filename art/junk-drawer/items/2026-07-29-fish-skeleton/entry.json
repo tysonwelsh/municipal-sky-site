@@ -9,7 +9,7 @@
     "animal"
   ],
   "sizeClass": "m",
-  "primary": "r5",
+  "primary": "r1",
   "responses": [
     {
       "rid": "r1",
@@ -22,18 +22,16 @@
         "prompt_count": 1
       },
       "grade": 4.0,
-      "graded": "2026-07-29",
+      "graded": "2026-08-30",
       "grade_history": [],
       "annotations": {
-        "instruction-following": 3.0,
-        "restraint": 3.0,
-        "integrity": 2.0,
-        "style": 3.0,
-        "je-ne-sais-quoi": 2.0
+        "understanding-assignment": 3.0,
+        "structural-coherence": 3.0,
+        "layering": 3.0,
+        "jnsq": 3.0
       },
       "transcript": null,
-      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.9%. The most illustrated of the three and the only one to give the head interior anatomy: a blue head with a dark red open mouth, three cream teeth, a lighter throat wedge, a bubble, and a separate white eyeball disc with the X struck over it rather than the X floating on bare skin. Ribs are drawn as full pairs above and below the spine so it reads as a ribcage rather than a comb, and each rib is stroked twice (dark then cream) to fake an outlined bone. Small tick marks mark where each rib meets the spine. Declares role, aria-label and a title element. Retired from display by owner rule (2026-08-30): once an item has a rerun set, the card shows those four — an older response appears only when the owner asks for it by name. Row and file stay for the record.",
-      "retired": true
+      "notes": "Generated via clean-context subagent; standard technical appendix v1 appended to the prompt. Ink-bounds check passed — worst dead margin 1.9%. The most illustrated of the three and the only one to give the head interior anatomy: a blue head with a dark red open mouth, three cream teeth, a lighter throat wedge, a bubble, and a separate white eyeball disc with the X struck over it rather than the X floating on bare skin. Ribs are drawn as full pairs above and below the spine so it reads as a ribcage rather than a comb, and each rib is stroked twice (dark then cream) to fake an outlined bone. Small tick marks mark where each rib meets the spine. Declares role, aria-label and a title element. Brought back as the drawer’s display by owner call (2026-08-30) — the best of this item’s originals, hand-filed on the current rubric: top marks throughout except Understanding Assignment, one step down; grade already Choice. The rerun set stands as the comparison."
     },
     {
       "rid": "r2",
