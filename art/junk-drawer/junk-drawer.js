@@ -7549,10 +7549,21 @@ function JD_layerOpen() {
         '</button>';
     });
     h += '</div>';
-    return h + actions(
+    /* THE ONE CARD THAT SAYS WHAT IT WANTS (owner report, 2026-08-30: "it
+       won't let me submit"). The bench and the ranking carry no instruction
+       line — they are self-evident, and their gates are visibly unmet rows
+       and empty steps. This card's gate is invisible: with nothing chosen
+       the button is simply dead, and an item that arrives with no size on
+       file (every turn does) reads as stuck. So the button says what it is
+       waiting for, and a line under the tiers says why. */
+    return h + (chosen ? '' :
+      '<p class="jd-size-hint">Pick a size to file this item — it sets how ' +
+      'big the object reads among the others in the drawer.</p>') +
+      actions(
       '<button type="button" class="jd-turn-alt" data-act="back">&larr; back</button>' +
       '<button type="button" class="jd-turn-go" data-act="file"' +
-      (chosen ? '' : ' disabled') + '>file the grades</button>');
+      (chosen ? '' : ' disabled') + '>' +
+      (chosen ? 'file the grades' : 'choose a size first') + '</button>');
   }
 
   function viewRate() {
@@ -7859,6 +7870,10 @@ function JD_layerOpen() {
           el.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
       setDisabled('[data-act="file"]', false);
+      var fileBtn = bodyEl.querySelector('[data-act="file"]');
+      if (fileBtn) fileBtn.textContent = 'file the grades';
+      var hint = bodyEl.querySelector('.jd-size-hint');
+      if (hint && hint.parentNode) hint.parentNode.removeChild(hint);
     } else if (act === 'file') {
       /* the one-survivor bench files directly — same gate as next */
       if (work.step !== 'call' && work.step !== 'size' && !benchRated(work.step)) return;

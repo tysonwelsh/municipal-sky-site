@@ -4301,3 +4301,8 @@ html.jd-bench-on .jd-turn-scrim {
   }
   .jd-size-desc { display: none; }   /* the swatch says it on a phone */
 }
+/* the size card's gate, said out loud (owner report, 2026-08-30) */
+.jd-size-hint {
+  margin: 0 2px var(--sp-2); font-size: var(--t-body); line-height: 1.5;
+  color: var(--tink-2);
+}
