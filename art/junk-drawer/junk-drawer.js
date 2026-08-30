@@ -5600,9 +5600,11 @@ function JD_layerOpen() {
   /* the pending face: one retro wait indicator per slot, printed in ink on
      the graph paper. All of it is decoration — aria-hidden by the caller. */
   /* THE ROTATION (round 24, owner directive 2026-08-21): the waiting
-     indicators are a POOL, not a seating chart — six animations, four
-     swatches, dealt fresh every turn so two runs of a prompt no longer show
-     the same card and no two swatches in a turn ever match. The deal is a
+     indicators are a POOL, not a seating chart — dealt fresh every turn so
+     two runs of a prompt no longer show the same card and no two swatches
+     in a turn ever match. The pool has run six deep; with 'words' benched
+     (2026-08-30) it holds exactly four, so the deal is a full permutation
+     and no indicator sits a turn out any more. The deal is a
      Fisher–Yates shuffle of the pool, seeded the house way from the turn's
      client_ref, so a repaint or a restored turn re-derives the same
      arrangement. The slot letters now mean POSITION only (the pencilled
@@ -5881,8 +5883,14 @@ function JD_layerOpen() {
      rejoins the rotation; nothing else needs touching.
      'plot' — the plotter circuit — joined it on the bench (owner,
      2026-08-26), on the same terms: darkPlotCircuit(), its darkWell branch
-     and its CSS all stay. */
-  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift', 'words'];
+     and its CSS all stay.
+     'words' — the Kimi's Take word mesh — joined them (benched, owner call
+     2026-08-30): its falling word-streams cross the sheet and leave without
+     ever piling, and twice running the owner took them for a broken word
+     drift. One letters animation in the pool, the one that piles; the mesh's
+     darkWell branch, its CSS and mini.php all stay, and the full piece
+     lives on at /art/kimis-take/. */
+  var DARK_POOL = ['stray', 'scatter', 'watch', 'drift'];
   function darkDeal() {
     var seed = ((turn && turn.client_ref) || 'jd') + ':rota';
     var h = 2166136261 >>> 0, i;
@@ -6040,6 +6048,9 @@ function JD_layerOpen() {
       return '<span class="jd-drift"></span>';
     }
     if (anim === 'words') {
+      /* BENCHED from the rotation (owner call 2026-08-30, see DARK_POOL):
+         kept whole on the bar/plot terms — put 'words' back in the array
+         and this branch serves it again unchanged. */
       /* the word mesh (owner directive 2026-08-23, mockup-34's tuning):
          Kimi's Take (art/kimis-take/) run small in word mode — every
          string is one of the office's sixteen wait-words, all of them
