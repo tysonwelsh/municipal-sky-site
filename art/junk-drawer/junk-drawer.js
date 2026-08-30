@@ -8730,7 +8730,7 @@ function JD_layerOpen() {
   }
   function workable(it) {
     if (it.retired || flagged(it, 'retire-request')) return false;
-    if (!it.responses.some(function (r) { return !!r.svg; })) return false;
+    if (!it.responses.some(function (r) { return !!(r.svg || r.svg_url); })) return false;
     if (rerunPending(it)) return true;      /* unfinished business, always */
     return !itemDone(it) && !flagged(it, 'rerun-request');
   }
@@ -8876,13 +8876,19 @@ function JD_layerOpen() {
     if (visited[visited.length - 1] !== it.item_id) visited.push(it.item_id);
     hideSheet();
     paintBar();
-    var usable = it.responses.filter(function (r) { return !!r.svg; });
+    /* a curated response's artwork is a file under the item; a TURN's lives
+       in the database and comes from jd-gen-svg.php (2026-08-30). One cache,
+       keyed on whichever address the response carries. */
+    var usable = it.responses.filter(function (r) { return !!(r.svg || r.svg_url); });
     Promise.all(usable.map(function (r) {
-      if (svgCache[r.svg]) return null;
-      return fetch(BASE + r.svg).then(function (res) {
+      var key = r.svg || r.svg_url;
+      if (svgCache[key]) return null;
+      return fetch(r.svg ? (BASE + r.svg) : (JD_API + r.svg_url), {
+        headers: bkey() ? { 'X-Bench-Key': bkey() } : {}
+      }).then(function (res) {
         if (!res.ok) throw new Error('svg ' + res.status);
         return res.text();
-      }).then(function (t) { svgCache[r.svg] = t; });
+      }).then(function (t) { svgCache[key] = t; });
     })).then(function () {
       if (curId !== it.item_id) return;   /* the curator moved on mid-fetch */
       var models = (Q && Q.models) || {};
@@ -8893,15 +8899,21 @@ function JD_layerOpen() {
         sizeTiers: (Q && Q.size_tiers) || [],
         size: it.size_filed || it.size_class || null,
         responses: usable.map(function (r) {
+          /* the bench's own answers outrank the seeds: a turn arrives
+             carrying the judgment its visitor pass filed under today's
+             rubric (axes_seed/grade_seed/rank_seed), which prefills the
+             card for the owner to confirm or change (2026-08-30) */
+          var ax = r.axes && Object.keys(r.axes).length ? r.axes
+                 : (r.axes_seed || {});
           return {
             generation_id: r.generation_id,
-            svg: svgCache[r.svg] || '',
+            svg: svgCache[r.svg || r.svg_url] || '',
             model_id: r.model_id,
             label: models[r.model_id] || r.model_id,
-            axes: r.axes || {},
+            axes: ax,
             grade: r.grade,
             grade_seed: r.grade_seed,
-            rank: r.rank
+            rank: r.rank != null ? r.rank : r.rank_seed
           };
         }),
         file: function (per) { return fileItem(it, per); }

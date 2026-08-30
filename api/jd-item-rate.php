@@ -165,9 +165,17 @@ try {
     if ($gen === false) {
         jd_fail(404, 'not_found', 'That drawing is not on file.');
     }
-    if (($gen['item_id'] ?? null) === null) {
-        jd_fail(409, 'not_curated', 'That drawing is a visitor turn — rate it through jd-rate.php.');
-    }
+    // TURN GENERATIONS ARE RATEABLE HERE TOO (owner call, 2026-08-30). This
+    // endpoint used to refuse them, to keep the two write paths from
+    // crossing — a visitor's turn is rated once, through jd-rate.php, under
+    // its one-batch-per-submission rule. The reassessment changed the
+    // question: 84 prompts that never became drawer items have to be
+    // re-rated at the bench, and their drawings are turn generations. The
+    // paths still do not cross, because these rows are written as
+    // client='bench' under the CURATOR's hash: a visitor's own client='web'
+    // judgment on the same drawing is left exactly where it is, and every
+    // reader that cares (the queue's prefill, jd-analytics) already splits
+    // on client. jd-rate.php's rules are untouched.
 
     $curator = jd_curator_hash();
     $now     = gmdate('Y-m-d H:i:s');

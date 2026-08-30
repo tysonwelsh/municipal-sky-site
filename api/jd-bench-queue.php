@@ -308,6 +308,182 @@ foreach ($subs as $sub) {
     ];
 }
 
+// ===========================================================================
+// THE SECOND POPULATION — turns that never became items (owner, 2026-08-30)
+//
+// The queue above is the curated corpus. This is everything else the drawer
+// has ever drawn: the blue-button turns whose prompts never became items —
+// 84 of them at the time of writing, 314 surviving drawings, none of which
+// has ever appeared in the drawer. They are the reassessment backlog.
+//
+// One row per DISTINCT PROMPT (a prompt re-sent is one subject, not two):
+// the run with the most survivors wins, newest breaking the tie. A turn's
+// artwork lives in the database rather than in a file, so each response
+// carries `svg_url` — jd-gen-svg.php, fetched per item — instead of `svg`.
+//
+// PREFILL: a turn may already carry the visitor-path judgment the owner made
+// when they took it (client='web'). Only CURRENT-RUBRIC rows may prefill —
+// v17 was the rewrite that set today's four axes, and a v16 value answered a
+// question that is no longer asked — so those arrive as `axes_seed` /
+// `grade_seed` / `rank_seed`, the same shape the curated grade seed uses.
+// The bench's own answers (client='bench') outrank them.
+// ===========================================================================
+$RUBRIC_SINCE = 17;
+try {
+    $curatedPrompts = [];
+    foreach ($subs as $s) {
+        $curatedPrompts[(string) $s['prompt']] = true;
+    }
+
+    $tSubs = $db->query(
+        "SELECT id, prompt, created, status
+           FROM jd_submissions
+          WHERE item_id IS NULL
+          ORDER BY created"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    // one submission per prompt: most surviving drawings, then newest
+    $tGenRows = $db->query(
+        "SELECT g.id, g.submission_id, g.slot, g.model_id, g.model_version,
+                g.provider, g.status
+           FROM jd_generations g
+           JOIN jd_submissions s ON s.id = g.submission_id
+          WHERE s.item_id IS NULL AND g.status = 'ok' AND g.svg IS NOT NULL
+          ORDER BY g.submission_id, g.slot"
+    )->fetchAll(PDO::FETCH_ASSOC);
+    $tGensBySub = [];
+    foreach ($tGenRows as $g) {
+        $tGensBySub[(string) $g['submission_id']][] = $g;
+    }
+
+    $bestBySubject = [];
+    foreach ($tSubs as $s) {
+        $p = (string) $s['prompt'];
+        if (isset($curatedPrompts[$p])) {
+            continue;                       // a rerun of a drawer item
+        }
+        $n = count($tGensBySub[(string) $s['id']] ?? []);
+        if ($n === 0) {
+            continue;                       // nothing survived; nothing to rate
+        }
+        $prev = $bestBySubject[$p] ?? null;
+        if ($prev === null || $n > $prev['n']
+            || ($n === $prev['n'] && $s['created'] > $prev['sub']['created'])) {
+            $bestBySubject[$p] = ['sub' => $s, 'n' => $n];
+        }
+    }
+
+    // ratings and ranks on exactly those generations
+    $tRates = $db->query(
+        "SELECT r.generation_id, r.kind, r.axis_id, r.value, r.note, r.client,
+                r.taxonomy_version
+           FROM jd_ratings r
+           JOIN jd_generations g  ON g.id = r.generation_id
+           JOIN jd_submissions s  ON s.id = g.submission_id
+          WHERE s.item_id IS NULL"
+    )->fetchAll(PDO::FETCH_ASSOC);
+    $tRatesByGen = [];
+    foreach ($tRates as $r) {
+        $tRatesByGen[(string) $r['generation_id']][] = $r;
+    }
+    $tRankByGen = [];
+    try {
+        foreach ($db->query(
+            "SELECT r.generation_id, r.rank_pos, r.client
+               FROM jd_ranks r
+               JOIN jd_submissions s ON s.id = r.submission_id
+              WHERE s.item_id IS NULL"
+        )->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $g = (string) $r['generation_id'];
+            // the bench's own order wins; the turn's is the seed
+            if ($r['client'] === 'bench' || !isset($tRankByGen[$g])) {
+                $tRankByGen[$g] = ['pos' => (int) $r['rank_pos'], 'client' => $r['client']];
+            }
+        }
+    } catch (PDOException $e) {
+        error_log('jd-bench-queue: jd_ranks unavailable for turns');
+    }
+
+    foreach ($bestBySubject as $prompt => $best) {
+        $sub = $best['sub'];
+        $sid = (string) $sub['id'];
+        $responses = [];
+        $sizeFiledT = null;
+        foreach ($tGensBySub[$sid] as $i => $g) {
+            $axisValues = [];  $axisSeed = [];
+            $gradeBench = null; $gradeSeed = null; $flags = []; $note = null;
+            foreach ($tRatesByGen[(string) $g['id']] ?? [] as $r) {
+                $isCurrent = (int) $r['taxonomy_version'] >= $RUBRIC_SINCE;
+                if ($r['client'] === 'bench') {
+                    if ($r['kind'] === 'axis' && isset($liveAxisIds[$r['axis_id']])) {
+                        $axisValues[$r['axis_id']] = (float) $r['value'];
+                    } elseif ($r['kind'] === 'grade') {
+                        $gradeBench = (float) $r['value'];
+                    } elseif ($r['kind'] === 'flag') {
+                        $flags[] = ['axis_id' => $r['axis_id'], 'note' => $r['note']];
+                        if ($r['axis_id'] === 'size' && $sizeFiledT === null
+                            && preg_match('/^SIZE ([a-z]{1,2})$/', (string) $r['note'], $m3)) {
+                            $sizeFiledT = $m3[1];
+                        }
+                    }
+                    if ($r['note'] !== null && $note === null) {
+                        $note = $r['note'];
+                    }
+                } elseif ($isCurrent) {
+                    // the visitor-path judgment, current rubric only
+                    if ($r['kind'] === 'axis' && isset($liveAxisIds[$r['axis_id']])) {
+                        $axisSeed[$r['axis_id']] = (float) $r['value'];
+                    } elseif ($r['kind'] === 'grade') {
+                        $gradeSeed = (float) $r['value'];
+                    }
+                }
+            }
+            $rk = $tRankByGen[(string) $g['id']] ?? null;
+            $isComplete = count($axisValues) === count($axes)
+                && ($gradeBench !== null || $gradeSeed !== null);
+            $totalResponses++;
+            if ($isComplete) {
+                $totalRated++;
+            }
+            $responses[] = [
+                'generation_id' => $g['id'],
+                'rid'           => 'g' . ($i + 1),
+                'slot'          => $g['slot'],
+                'model_id'      => $g['model_id'],
+                'model_version' => $g['model_version'],
+                'provider'      => $g['provider'],
+                'svg'           => null,
+                'svg_url'       => '/api/jd-gen-svg.php?gen=' . rawurlencode((string) $g['id']),
+                'axes'          => $axisValues,
+                'axes_seed'     => $axisSeed,
+                'note'          => $note,
+                'grade'         => $gradeBench,
+                'grade_seed'    => $gradeSeed,
+                'rank'          => ($rk && $rk['client'] === 'bench') ? $rk['pos'] : null,
+                'rank_seed'     => $rk ? $rk['pos'] : null,
+                'flags'         => $flags,
+                'complete'      => $isComplete,
+            ];
+        }
+        $items[] = [
+            // a turn has no item id; this is its handle everywhere the bench
+            // keys on one, and it is stable (the submission is)
+            'item_id'      => 'turn:' . $sid,
+            'source'       => 'turn',
+            'title'        => mb_substr(trim(preg_replace('/\s+/u', ' ', $prompt)), 0, 42),
+            'prompt'       => $prompt,
+            'created'      => (string) $sub['created'],
+            'retired'      => false,
+            'rerun_landed' => null,
+            'size_class'   => null,
+            'size_filed'   => $sizeFiledT,
+            'responses'    => $responses,
+        ];
+    }
+} catch (PDOException $e) {
+    error_log('jd-bench-queue: turn population unavailable (' . $e->getMessage() . ')');
+}
+
 jd_json_out(200, [
     'ok'               => true,
     'build'            => jd_build_stamp(),
